@@ -42,6 +42,27 @@
         return M?.o?.({ A: 'Supervisor' })[0]?.o?.({ w: 'Supervisor' })[0] ?? null
     })
 
+    // THE PREFS, and this panel is where they come BACK ON. The Butler carries the off-switch (it is
+    //  where you are annoyed by the screen); a switch that can only ever be turned off is a trap, and
+    //   a dev panel is exactly the "semi-hidden" place to find the other half of it. Read in an
+    //    $effect, not the derived below, because the first read mirrors the House stash into a
+    //     particle — a derived that mutates is a derived that will one day loop.
+    const PREFS = [
+        { key: 'butler.quiet', label: 'skip the arrival screen', note: 'the Butler does not hold this tab' },
+    ]
+    let prefs: Record<string, number> = $state({})
+    $effect(() => {
+        void tick
+        const w = world
+        if (!w || !H?.Supervisor_pref) return
+        for (const p of PREFS) prefs[p.key] = H.Supervisor_pref(w, p.key)
+    })
+    function flip(key: string) {
+        const w = world
+        if (!w || !H?.Supervisor_pref_set) return
+        prefs[key] = H.Supervisor_pref_set(w, key, !prefs[key])
+    }
+
     let view = $derived.by(() => {
         void tick
         const w = world
@@ -109,10 +130,15 @@
                         <td class="m">{l.mark}</td>
                         <td class="k">{l.key}</td>
                         <td class="s">
+                            {#if l.arrival}<span class="flag" title="the declared ARRIVAL — the Butler holds the screen until this is met">⚑</span>{/if}
                             {l.sentence}
                             <!-- the NOTE is the attribution — "no A:Vyto in any of 2 House(s)" is a
                                  diagnosis, "?" is a riddle. §5: attribution before action. -->
                             {#if l.note}<span class="note">{l.note}</span>{/if}
+                            <!-- the ADVICE is what a LISTENER is told once we gave up on this claim.
+                                 It shows here too so a dev can see the sentence that reached them
+                                 without having to reproduce the give-up. -->
+                            {#if l.advice}<span class="advice">{l.gaveup ? '→ ' : '(on give-up) '}{l.advice}</span>{/if}
                         </td>
                         <!-- the probe NAME is guts, and guts is this panel's job: it is the one thing
                              that turns "? no probe named X" into a grep. Neither the cell nor the
@@ -144,6 +170,16 @@
         </div>
     {/if}
 
+    {#if view.found}
+        <div class="prefs">
+            {#each PREFS as p (p.key)}
+                <button class="pref" class:on={prefs[p.key]} onclick={() => flip(p.key)} title={p.note}>
+                    <span class="m">{prefs[p.key] ? '☑' : '☐'}</span>{p.label}
+                </button>
+            {/each}
+        </div>
+    {/if}
+
     {#if view.log}
         <div class="log">
             reporting:
@@ -171,6 +207,14 @@
     .fn { white-space: nowrap; opacity: .45; font-size: .85em;
           font-family: ui-monospace, monospace; }
     .note { display: block; opacity: .55; font-size: .92em; }
+    .advice { display: block; font-size: .92em; color: #9fc4dd; }
+    .flag { color: #d8c98a; margin-right: .25em; }
+    .prefs { margin-top: .45em; padding-top: .3em; border-top: 1px solid #333;
+             display: flex; flex-wrap: wrap; gap: .4em; }
+    .pref { background: none; border: 1px solid #3a3a3a; border-radius: 3px; cursor: pointer;
+            color: #9aa5b5; font: inherit; font-size: .95em; padding: .15em .5em; }
+    .pref .m { margin-right: .35em; }
+    .pref.on { color: #d8c98a; border-color: #5a5240; }
     tr.good  .m { color: #7fbf7f; }
     tr.bad   { color: #ff9b8a; }
     tr.todo  { color: #cfc8bb; }

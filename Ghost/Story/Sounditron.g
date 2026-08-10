@@ -311,17 +311,30 @@ Sounditron_commission(w):
     //   because it is the reasoning that produced it, not a stale TODO.
     let xfer = krw && krw.oai ? krw.oai({ Transfer: 1, dontSnap: 1 }) : null
     if (xfer && xfer.c.up !== krw) xfer.c.up = krw
-    // THE SANITY CELL — ALWAYS ON, and the answer to the open item the paragraph above left standing.
-    //  It is the one cell allowed to be permanent because it is the one cell that stays QUIET: with
-    //   nothing wrong it draws a single dim line, so it costs no attention at rest and is the first
-    //    thing you see the moment something breaks.  That is exactly the trade the idle HUDs failed.
+    // THE SANITY CELL — AND IT IS NOT THERE WHEN NOTHING IS OUT OF LINE (2026-08-10, the owner
+    //  re-aiming the three surfaces: *"the Supervisor cell is smaller and simpler, perhaps not even
+    //   there if nothing is out of line"*).  It used to be ALWAYS ON, on the reasoning that a cell
+    //    which draws one dim line costs no attention — but a cell costs a SEAT, and the glass has a
+    //     fixed number of them (the 2026-07-28 friend-Crate ruling: two more cells made every jewel
+    //      unreadably tiny).  Quiet-when-healthy taken all the way is absence, not a small dim line,
+    //       and the two other surfaces both remain reachable when it is gone: the Butler at boot and
+    //        the panel on ▦.
+    //  IT READS `sc.amiss`, NOT `sc.loud`, and that is the whole correctness of it.  `loud` counts
+    //   everything worth SAYING, outstanding milestones included — and on a tab with no friends
+    //    `sound.grant`/`sound.shelf`/`sound.pulled` are unmet FOREVER with nothing wrong at all, so a
+    //     cell keyed on `loud` would be permanent on exactly the machine it was meant to leave alone.
+    //      `amiss` is the model's narrower ruling: a standing watch reading wrong, or anything blind.
+    //       Both keys are deleted when zero (the snapped-boolean law), so `Number(… || 0)` is the read.
+    //  UNDER show_diag IT STANDS REGARDLESS — a developer who opened the diagnostics is asking to see
+    //   the machinery, including the part that has nothing to report.
     //  It comes from ANOTHER HOUSE — w:Supervisor stands on Mundo, this glass is commissioned from the
     //   Run House — and that is fine and deliberate: a grapple is a `.c` ref, so the cross-House reach
     //    costs nothing, and the supervisor OUTLIVES this run rather than dying with the thing it
     //     reports on.  A missing Supervisor is simply no cell (a bare Book may have none).
     let supw = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     let suprow = supw ? supw.o({ Supervisor: 1 })[0] : null
-    if (suprow) organs.push(suprow)
+    let sup_out_of_line = suprow ? (Number(suprow.sc.amiss || 0) > 0 || w.c.show_diag) : 0
+    if (suprow && sup_out_of_line) organs.push(suprow)
     // ITS SIZE IS ITS VOLUME — quiet when healthy made SPATIAL, not just textual.  A calm supervisor
     //  takes a small readable seat; a loud one grows until it rivals the music (%Now is dose 1.6, and
     //   when something is actually broken the sanity cell SHOULD win that argument).
@@ -546,6 +559,21 @@ Sounditron_commission(w):
     //   Sounditron glass.  Every Vyto* Book commissions without a foamereo, `Vyto_fo` returns null there,
     //    and the whole block is skipped — the fleet stays byte-identical and no fixture can move.
     commission.sc.foamereo = 'room'
+    // THE SEAT REGIME, off by default and flipped per-tab (the owner 2026-08-10: *"shall we now do a
+    //  completely other UI for all these cells... way less skittishness, but eating the same model"*,
+    //   and on the landing *"don't throw away everything we have? is it going to be switchable?"*).
+    //  SWITCHABLE AND OFF: `w.c.seat_ui` is runtime `.c`, so it resets on reload and the players keep
+    //   the foam unless someone asks for the seat on that tab.  Nothing is replaced — the foam cut,
+    //    the seat floor, the repair pass and the vanish floor all stand exactly as they were, and a
+    //     glass with this off is byte-identical.  The regime itself lives in `vyto_seat.ts`.
+    //  Flip it with `Sounditron_seat_toggle` (allowlisted on the relay's poke op, like the diag one),
+    //   so the two treatments can be put side by side on one page without a rebuild.
+    //  ON THE TOP HOUSE, not on `w`: the commission is reached from several callers and there is more
+    //   than one world object in play on a live tab, so a flag hung on the world the TOGGLE happened to
+    //    be handed is not necessarily the one the COMMISSION reads.  That is exactly what went wrong on
+    //     the first landing — the poke reported `seat=1` and the glass stayed foam, with no error
+    //      anywhere.  One flag, one place, per tab.
+    if (MH && MH.c.seat_ui) commission.sc.foamereo = 'room,seat'
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
     return 1
@@ -559,6 +587,21 @@ Sounditron_diag_toggle(w):
         w.c.show_diag = 1
     }
     this.Sounditron_commission(w)
+
+// Sounditron_seat_toggle — flip THE SEAT REGIME on this tab (runtime .c, resets on reload, same
+//  discipline as the diag flag).  Re-commissions, so the glass re-reads foamereo and the whole
+//   layout changes over without a rebuild — which is the only honest way to judge a replacement,
+//    the same argument the `plain` flag above was built on.
+Sounditron_seat_toggle(w):
+    let MH = this.top_House()
+    if (!MH) return 0
+    if (MH.c.seat_ui) {
+        delete MH.c.seat_ui
+    } else {
+        MH.c.seat_ui = 1
+    }
+    this.Sounditron_commission(w)
+    return 1
 
 // THE POSE — the App↔Vyto wrangler (the human 2026-08-09: "lets rebuild afresh? what we've got seems
 //  quite trivial. I think I want more things broken up into smaller parts. the Transfer for example.
@@ -1330,15 +1373,39 @@ Sounditron_supervise(w):
     //  should then shut up forever; "the friend online" is a live condition that may go wrong again
     //   the moment they close a tab, so it must never latch.  The old posed needs latched all four
     //    alike — which meant a friend who went offline still read met, permanently.
-    this.Supervisor_watch(sup, 'sound.grant',  'a sealed Music grant stands — the door open both ways', 'milestone', 'Sounditron_probe_grant',  w)
-    this.Supervisor_watch(sup, 'sound.live',   'a friend is online — bytes only flow live',             'standing',  'Sounditron_probe_live',   w)
-    this.Supervisor_watch(sup, 'sound.shelf',  'a friend has counted their shelf — records to want',    'milestone', 'Sounditron_probe_shelf',  w)
-    this.Supervisor_watch(sup, 'sound.pulled', 'original bytes crossed over Repli — the pull landed',   'milestone', 'Sounditron_probe_pulled', w)
+    // STAGED (2026-08-10), because these six were the roster's whole UNPLACED population and unplaced
+    //  sorts LAST — so on the Butler's arc they landed after the arrival milestone that depends on
+    //   them, and the loading screen read as a machine finishing before it started.  The rungs are
+    //    Supervisor_stage's words, not numbers invented here.
+    let friend = this.Supervisor_stage('friend')
+    let sound = this.Supervisor_stage('sound')
+    this.Supervisor_watch(sup, 'sound.grant',  'a sealed Music grant stands — the door open both ways', 'milestone', 'Sounditron_probe_grant',  w, friend)
+    this.Supervisor_watch(sup, 'sound.live',   'a friend is online — bytes only flow live',             'standing',  'Sounditron_probe_live',   w, friend)
+    this.Supervisor_watch(sup, 'sound.shelf',  'a friend has counted their shelf — records to want',    'milestone', 'Sounditron_probe_shelf',  w, friend)
+    this.Supervisor_watch(sup, 'sound.pulled', 'original bytes crossed over Repli — the pull landed',   'milestone', 'Sounditron_probe_pulled', w, sound)
     // THE TWO HEALTH WATCHES — "is this tab working right now", beside the four readiness milestones
     //  above ("can this tab receive music").  Both wrap sensors that landed with NO READER AT ALL and
     //   had therefore never been seen to fire; a sensor nothing consults gates nothing.
-    this.Supervisor_watch(sup, 'sound.glass',  'the glass is drawing every organ it was handed',       'standing',  'Sounditron_probe_glass',  w)
-    this.Supervisor_watch(sup, 'sound.audible','sound is actually coming out — the analyser hears it',  'standing',  'Sounditron_probe_sound',  w)
+    this.Supervisor_watch(sup, 'sound.glass',  'the glass is drawing every organ it was handed',       'standing',  'Sounditron_probe_glass',  w, sound)
+    this.Supervisor_watch(sup, 'sound.audible','sound is actually coming out — the analyser hears it',  'standing',  'Sounditron_probe_sound',  w, sound)
+    // THE ARRIVAL — the finish line, and the only watch on the roster that a face is allowed to wait
+    //  for (Supervisor_arrival declares it; Supervisor_arrived is what the Butler asks).  Last rung of
+    //   the arc on purpose: `sound + 5` sits inside the gap-of-ten the stage list leaves for exactly
+    //    this, so it reads after the two health watches whose truth it is composed of.
+    //  ONE FILE MAY DECLARE THIS, and it should be the commissioner — a subsystem declaring itself the
+    //   arrival is the same weak witness as a subsystem reporting on its own health.
+    //  PLAYER TABS ONLY, and this is not caution, it is what the claim MEANS.  Arrival is a statement
+    //   about a person in front of a screen: `vw_frame` — half of what the probe reads — is stamped
+    //    only by a humdinger tab's publish_frame, so on a runner this milestone could never be met and
+    //     would sit `wrong` forever, keeping the roster permanently loud about a listener who is not
+    //      there.  A finish line nobody can cross is the unplaced-watch trap in a hat.  Same test the
+    //       reporter uses (Supervisor_log_tick's `c.humdinger`), for the same reason.
+    //  A runner therefore reads `Supervisor_arrived → 'none'`, which is exactly the answer the Butler's
+    //   fallback is built for — and the Butler is off over a Book anyway.
+    if (this.top_House().c.humdinger) {
+        this.Supervisor_watch(sup, 'arrive.playing', 'the glass is up and music is playing — you have arrived', 'milestone', 'Sounditron_probe_arrived', w, sound + 5)
+        this.Supervisor_arrival(sup, 'arrive.playing')
+    }
     // AND COMPLETE THE PASS HERE, rather than waiting for w:Supervisor's own tick on Mundo.  Registering
     //  and being READ are different events, and the gap between them is a wall clock: the roster would
     //   sit verdict-less until Mundo next ticked, so the step at which the witness could first swear
@@ -1347,6 +1414,14 @@ Sounditron_supervise(w):
     //  Supervisor_say also mints the summary row, which is what the glass push immediately after this
     //   needs to exist.
     this.Supervisor_read(sup)
+    // AND THE DIALS, for exactly the same reason, found by a mutation test (2026-08-10).  Breaking a
+    //  dial's probe name ON PURPOSE did NOT turn the blind-spot gate red for the dial — only for the
+    //   watch — because a dial is stamped nowhere but Supervisor_read_dials, which runs on MUNDO's own
+    //    tick.  So at the step where the gate swears, a dial can still be unread and therefore
+    //     indistinguishable from a healthy one: the roster covered dials in principle and the
+    //      ASSERTION did not, which is the same "a green claim gates nothing" hole one level down.
+    //  This is what a mutation test is FOR — the gap was invisible while everything was green.
+    this.Supervisor_read_dials(sup)
     this.Supervisor_say(sup)
 
 // ── the four probes.  Each is a pure READ of `w` (the Sounditron world, handed over as the watch's
@@ -1405,19 +1480,14 @@ Sounditron_supervisor_blind(w):
 //  The owner saw the first cut as "? the glass is drawing every o…" — the probe worked perfectly and
 //   answered about the wrong House, which is the most expensive kind of correct.
 Sounditron_probe_glass(w, sup):
-    let vw = null
-    let where = ''
-    // WALK EVERY HOUSE, which is what BigSoundland's own vyto_trace does — and it is authoritative
-    //  because it is the code that actually finds the live glass for the badge.  Two earlier cuts
-    //   guessed a fixed home (Mundo, then the Run House) and both were wrong; the Run House snap
-    //    carries `A:Sounditron` and no `A:Vyto`, and Mundo did not have it either.  There is no fixed
-    //     home to hardcode, so stop trying to name one.
-    for (const H of this.Sounditron_houses()) {
-        if (vw) continue
-        let a = H.o ? H.o({ A: 'Vyto' })[0] : null
-        let got = a ? a.o({ w: 'Vyto' })[0] : null
-        if (got) { vw = got; where = String(H.name || '?') }
-    }
+    // WALK EVERY HOUSE (Sounditron_vyto), which is what BigSoundland's own vyto_trace does — and it is
+    //  authoritative because it is the code that actually finds the live glass for the badge.  Two
+    //   earlier cuts guessed a fixed home (Mundo, then the Run House) and both were wrong; the Run
+    //    House snap carries `A:Sounditron` and no `A:Vyto`, and Mundo did not have it either.  There
+    //     is no fixed home to hardcode, so stop trying to name one.
+    let found = this.Sounditron_vyto()
+    let vw = found.vw
+    let where = found.where
     // NAME WHERE IT LOOKED.  The owner spent two rounds staring at a bare "?" — a verdict that says
     //  only "I could not find it" costs a person the whole diagnosis, which is this doc's §5 in one
     //   line: attribution before action.
@@ -1427,12 +1497,71 @@ Sounditron_probe_glass(w, sup):
     if (!missing.length) return { verdict: 'ok', note: where }
     return { verdict: 'wrong', note: where + ': ' + missing.length + ' organ(s) with no cell — ' + missing.slice(0, 3).join(' ') }
 
+// Sounditron_vyto — WHERE THE LIVE GLASS IS, as {vw, where}.  Extracted from Sounditron_probe_glass
+//  the day a second reader needed the same answer (Sounditron_probe_arrived): the walk itself is six
+//   lines, and two copies of it is how the second reader ends up looking in a different set of
+//    Houses than the first and disagreeing about whether the glass exists.
+Sounditron_vyto():
+    let vw = null
+    let where = ''
+    for (const H of this.Sounditron_houses()) {
+        if (vw) continue
+        let a = H.o ? H.o({ A: 'Vyto' })[0] : null
+        let got = a ? a.o({ w: 'Vyto' })[0] : null
+        if (got) { vw = got; where = String(H.name || '?') }
+    }
+    return { vw: vw, where: where }
+
 // Sounditron_houses — Mundo plus every House standing under it.  The glass has no fixed home (see
 //  above), so anything hunting for it must walk, exactly as BigSoundland's vyto_trace does.
 Sounditron_houses():
     let M = this.top_House ? this.top_House() : null
     if (!M) return []
     return [M].concat(M.o({ H: 1 }) ?? [])
+
+// Sounditron_probe_arrived — THE ARRIVAL: the glass is up and drawing, AND music is actually coming
+//  out.  The owner 2026-08-10: *"the Butler is supposed to carry you all the way, letting you know
+//   what's happening, until the Vyto glass is up and running AND playing the thing you want."*
+//  IT IS THE COMMISSIONER'S CLAIM TO MAKE, which is why it lives here and not in Vyto or Radio.  Both
+//   halves are somebody else's fact — the glass is Vyto's, the sound is Radio's — and neither of them
+//    can see the other.  Sounditron already asks both questions separately (sound.glass, sound.audible);
+//     this is the one claim that says the LISTENER has what they came for, and it is the difference
+//      between a loading screen that lifts on a timer and one that lifts on arrival.
+//  A PUBLISHED FRAME IS PART OF IT, and that is the one place this refuses to reuse Sounditron_probe_glass:
+//   that probe answers `ok — no frame published yet`, which is correct for "is the glass drawing what it
+//    was handed" (nothing has been judged, so nothing is wrong) and quite wrong for "is there a glass in
+//     front of a person" (there is not).  Same underlying reading, two different questions.
+//  NO SILENCE COUNTS.  `Sounditron_probe_sound` grades `quiet` as ok — an idle tab making no noise is
+//   not a fault — but an idle tab has not arrived either, so this asks Radio_sound for `sound` and
+//    nothing else.  Folding the two would make every silent boot claim to have arrived, which is
+//     exactly the posed-milestone failure this whole roster replaced.
+//  MILESTONE, so it latches: a track ending later is not an un-arrival, and the standing watches keep
+//   reporting the live truth after the arrival screen has done its job.
+//  IT MUST ASK A POSITIVE QUESTION (2026-08-10, the owner: *"it faded out before the Vyto glass was
+//   ready tho"*).  The first cut tested `Object.keys(vw.c.normal_said).length === 0` — "nothing is
+//    missing" — and that is TRUE OF AN EMPTY GLASS: a commission with no grapples has no missing
+//     organs, and `Vyto_normal` returns early before a frame or a mirror exists, so it never writes
+//      anything to be missing in the first place.  Absence of complaint is not presence of a glass.
+//   So the ladder is: a frame · a commission · grapples it was actually handed · a mirror with rows
+//    in it · and only THEN "nothing missing".  Each rung names itself, because "the glass is not
+//     ready" without saying which part costs a person the whole diagnosis (§5).
+Sounditron_probe_arrived(w, sup):
+    let found = this.Sounditron_vyto()
+    if (!found.vw) return { verdict: 'wrong', note: 'no glass yet' }
+    let vw = found.vw
+    if (!vw.c.vw_frame) return { verdict: 'wrong', note: 'the glass has not drawn a frame yet' }
+    if (!vw.c.commission) return { verdict: 'wrong', note: 'the glass has not been commissioned yet' }
+    let grapples = (vw.c.grapples || []).length
+    if (!grapples) return { verdict: 'wrong', note: 'the glass has been handed nothing to draw' }
+    let cells = vw.c.mirror ? vw.c.mirror.o().length : 0
+    if (!cells) return { verdict: 'wrong', note: 'the glass has drawn no cells yet' }
+    if (Object.keys(vw.c.normal_said || {}).length) return { verdict: 'wrong', note: cells + ' cells — but organs are missing' }
+    let radio = w ? w.o({ Radio: 1 })[0] : null
+    if (!radio) return { verdict: 'wrong', note: 'no radio yet' }
+    if (!this.Radio_sound) return { verdict: 'unknown', note: 'Radio_sound not loaded' }
+    let s = this.Radio_sound(radio)
+    if (s && s.verdict === 'sound') return { verdict: 'ok', note: cells + ' cells and music playing' }
+    return { verdict: 'wrong', note: cells + ' cells — ' + (s ? String(s.verdict) : 'no reading') }
 
 // Sounditron_probe_sound — IS ANY SOUND ACTUALLY COMING OUT.  Radio_sound landed 2026-08-09 and had
 //  never been called by anything; this is its first reader.  It grades three silences that need

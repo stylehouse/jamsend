@@ -190,6 +190,12 @@ Socket_real(w):
         claim(channel) { this.send({ control: 'claim', channel }) },
         subscribe(channel) { this.send({ control: 'subscribe', channel }) },
         unsubscribe(channel) { this.send({ control: 'unsubscribe', channel }) },
+        // who — batch presence probe: which of these addrs have a live hello-verified socket on the
+        //  relay right now?  The reply (who_ok {online, asked, corr} | who_error) comes back on THIS
+        //   socket as a control frame and is handed to w.c.on_who inline (see on_message) — never the
+        //    belief queue.  Refused by the relay unless OUR socket is itself hello-bound, so ask only
+        //     after hello_ok.  This is what replaces the per-friend speculative pulse fan-out.
+        who(addrs, corr) { this.send({ control: 'who', addrs, corr }) },
         // on_open — register a callback fired on EVERY (re)connect (fires immediately if already open).
         //  The consumer (Lies) re-sends the relay `become` through this so a reconnected socket re-binds.
         on_open(cb) { open_hooks.push(cb); if (ws && ws.readyState === WebSocket.OPEN) { try { cb() } catch (e) {} } },
@@ -224,6 +230,14 @@ Socket_real(w):
             if (frame.control === 'peer-relay') {
                 let m = frame.up ? `🌉 relay bridge UP${frame.target ? ' → ' + frame.target : ''}` : `🌉 relay bridge DOWN — error=${frame.error || '?'}${frame.detail ? ' — ' + frame.detail : ''}`
                 note(m, !frame.up)
+                return
+            }
+            // who_ok|who_error — the presence answer, handed to the consumer's w.c.on_who hook right
+            //  here (inline, like every control frame). The hook is a plain function on .c (transport
+            //   seam); absent hook → the note alone, which is still a live diagnostic.
+            if (frame.control === 'who_ok' || frame.control === 'who_error') {
+                note(`👥 ws RECV ${frame.control}${frame.online ? ' ' + frame.online.length + '/' + frame.asked + ' online' : ''}${frame.reason ? ' — ' + frame.reason : ''}${frame.corr ? ' corr=' + frame.corr : ''}`)
+                if (w.c && w.c.on_who) { try { w.c.on_who(frame) } catch (e) { console.log('👥☠ on_who threw', e) } }
                 return
             }
             note(`🛰 ws RECV control:${frame.control}${frame.role ? ' role=' + frame.role : ''}`)

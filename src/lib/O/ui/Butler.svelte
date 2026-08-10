@@ -6,35 +6,71 @@
     //     needs keeping out of happening by the first, which shall become endowed with Supervisor
     //      progress reporting very elegantly"*).
     //
-    //  THE SPLIT, all three surfaces:
-    //     SupervisorFace  — the Vyto cell.  Tiny, and quiet while all is well.
-    //     SupervisorPanel — UIs:'Supervisor'.  Everything, probe names included.  Devs.
-    //     this            — the arrival.  One thing at a time, in the order it happens, and the tap.
+    //  THE SPLIT, all three surfaces — RE-AIMED 2026-08-10 by the owner, and the middle one is this
+    //   file: *"I kind of want that as the mid-complexity, LOG-LOOKING version of the Supervisor
+    //    business, whereas the Supervisor cell is smaller and simpler — perhaps not even there if
+    //     nothing is out of line — and the Supervisor UI itself is the bull bollocking"*:
+    //     SupervisorFace  — the Vyto cell.  Smallest.  ABSENT when nothing is out of line.
+    //     this            — MID-COMPLEXITY, and it should LOOK LIKE A LOG: the arc with its notes, and
+    //                        the notice ring under it — what must be true, and what actually happened,
+    //                         in the order it happened.  Plus the tap.
+    //     SupervisorPanel — UIs:'Supervisor'.  The whole bollocking: probe names, kinds, latches,
+    //                        patience clocks, prefs, the reporting ladder.  Devs.
+    //  MID-COMPLEXITY IS A REAL CONSTRAINT, not a hedge.  What separates this from the panel is that
+    //   every line here is a SENTENCE a listener could read — the claim, its note, the things that
+    //    happened.  A probe method name is not one, and the day one appears here this file has become
+    //     the panel and the panel has become redundant.
     //
     //  IT JUDGES NOTHING.  Every mark, tone and ordering comes from `Supervisor_lines` — the model is
     //   the one authority on what a row means, and a face that re-decides it is the second opinion
     //    that eventually disagrees.  This file chooses only what to SHOW and how it looks.  It names
     //     no subsystem, so a watch registered tomorrow appears here tomorrow with no edit.
     //
-    //  IT MAY NOT TRAP THE LISTENER.  Progress is held for at most CAP_MS, and the *carry on* tap is
-    //   there from the first frame.  Once it lifts it LATCHES DOWN for the tab: minting an invite
-    //    mid-session arms an expectation too, and a fullscreen gate dropping over somebody's music
-    //     because they showed a friend a QR code would be the worst bug in this file.
+    //  IT CARRIES YOU ALL THE WAY (the owner 2026-08-10: *"the Butler is supposed to carry you all the
+    //   way, letting you know what's happening, until the Vyto glass is up and running AND playing the
+    //    thing you want"*).  So the exit this screen is FOR is ARRIVAL — `Supervisor_arrived`, the
+    //     milestone the commissioner declared — and the clock below is the GIVE-UP, not the success.
+    //      Every earlier cut had it the other way round: three impatience exits and no arrival at all,
+    //       so a listener was handed a half-built machine on a timer and told nothing about it.
+    //
+    //  IT MAY NOT TRAP THE LISTENER.  Progress is held for at most GIVEUP_MS, the *carry on* tap is
+    //   there from the first frame, and a listener who never wants this screen again has one small
+    //    persistent switch (see QUIET).  Once it lifts it LATCHES DOWN for the tab: minting an invite
+    //     mid-session arms an expectation too, and a fullscreen gate dropping over somebody's music
+    //      because they showed a friend a QR code would be the worst bug in this file.
     //   THE ONE THING THAT IS NOT CAPPED is a pending PERMISSION.  A share or an audio gesture is not
     //    news about progress, it is the thing blocking everything, and timing out of it would just
     //     hand the screen back to BootGate — two gates in a row, in the other order.
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
     import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
+    import { boot_param } from "$lib/boot"
     import { onMount } from "svelte"
     import { fly, fade } from "svelte/transition"
     import { quintOut } from "svelte/easing"
 
     let { H = null }: { H?: any } = $props()
 
-    const CAP_MS   = 12000   // the ceiling on holding for PROGRESS — past this the app beats the gate
-    const GRACE_MS = 1800    // …and this long before believing "nothing to wait for": the station arms
-                             //  its expectation a beat or two after mount, and letting go at t=0 would
-                             //   mean the gate never showed on exactly the boot it is for
+    // THERE IS NO CLOCK THAT LIFTS THIS. The owner, 2026-08-10, watching it fade with the glass still
+    //  coming up: *"has to not de-facesuck UNTIL arrive.playing"*. A 40s ceiling was tried first and it
+    //   is exactly the impatience exit this screen was rebuilt to remove — it just fired later. The
+    //    only automatic lift is ARRIVAL; the only other way out is the listener's own tap, which is on
+    //     screen from the first frame and grows at IMPATIENT_MS. That is what keeps "may not trap the
+    //      listener" true without a timer: there is always a way out, and a person chooses it.
+    //  (If a tab can reach a state where arrival never comes and the tap is the only exit, that is a
+    //    BUG IN THE ROSTER worth seeing, not a reason to put the clock back. The give-up ladder this
+    //     doc is named for is about saying so, not about quietly stepping aside.)
+    const IMPATIENT_MS = 12000  // past this we stop pretending the wait is normal: the carry-on tap
+                                //  grows and names itself. Silence is the trap, not duration.
+    const GRACE_MS     = 6000   // …and this long before believing "nothing to wait for", which is only
+                                //  ever the NO-ARRIVAL fallback below. It was 1.8s — enough for the
+                                //   station to arm its expectation, and NOT enough for the resident
+                                //    Book to reach the beat where the arrival gets declared. A warm tab
+                                //     whose first two watches both read ok would lift before the finish
+                                //      line existed, which is the impatience exit wearing the new code.
+    const QUIET = 'butler.quiet' // the persistent switch (the owner: *"one semi-hidden persistent-state
+                                 //  toggle, like we used to have, quit_fullscreen or so"*). A particle
+                                 //   + the House stash, both owned by Supervisor_pref — NOT a `$state`
+                                 //    here, which would forget itself on the very reload it is for.
 
     const gate = boot_gate(H, { proactive: true })
     onMount(gate.start)
@@ -53,40 +89,99 @@
         return () => clearInterval(iv)
     })
 
-    // A BOOK MUST NEVER BE COVERED. A Story run on this page is a machine watching a machine; a
-    //  listener's loading screen over it hides the run UI and every diagnostic on it — the one
-    //   situation where the guts are the point. `H.c.book` is the tell BigQualand stamps.
-    let for_a_book = $derived(!!H?.c?.book)
+    // A MACHINE TAB MUST NEVER BE COVERED. A Story run driven on this page is a machine watching a
+    //  machine; a listener's loading screen over it hides the run UI and every diagnostic on it — the
+    //   one situation where the guts are the point.
+    //
+    //  THE FIRST CUT OF THIS READ `!!H?.c?.book`, AND IT KILLED THE WHOLE FILE (found 2026-08-10 by
+    //   the owner: *"the Butler closes when the interface is still at 'nothing mounted yet'"*).
+    //    `BigQualand.svelte.ts:57` stamps `h.c.book = opts.book` on EVERY qualand page — /BigSoundland's
+    //     resident Book IS Sounditron — so `c.book` is set on every listener tab there has ever been.
+    //      Worse, it read as FALSE for the first frames (boot_qualand assigns `H` inside an `$effect`,
+    //       so the Butler mounts with `H` null), which is why it appeared to flash up and then vanish
+    //        rather than never showing: it latched shut the instant H arrived. **The Butler had never
+    //         once done its job.** Nothing about arrival or the clock was ever reached.
+    //
+    //  THE HONEST TELL IS `humdinger` — the flag BigQualand stamps for role word|sound, i.e. "this is
+    //   an end-user room", the same flag the arrival milestone and the /log reporter already gate on.
+    //    Plus an EXPLICIT `?B=`: someone who deliberately drives a Book from their own music page is
+    //     asking to watch the machine, and covering that with a loading screen would be the original
+    //      worry made real. A null H reads FALSE here and the Butler holds — which is right: "we do not
+    //       know yet" is the one answer that must not latch a gate shut.
+    let machine_tab = $derived(!!H?.c && (!(H.c as any).humdinger || !!boot_param('B')))
+
+    // the world, the way the model finds it (Supervisor_w) rather than a hardcoded House.
+    function sup_w() {
+        const M = H?.top_House ? H.top_House() : H
+        return M?.o?.({ A: 'Supervisor' })[0]?.o?.({ w: 'Supervisor' })[0] ?? null
+    }
+
+    // THE PERSISTENT SWITCH, read through the model so the stash and the particle can never disagree.
+    //  Read in an $effect rather than the $derived below because the first read MINTS (it mirrors a
+    //   stashed `on` into a particle), and a derived that mutates is a derived that will one day loop.
+    //    It stops asking the moment it reads on — there is nothing to un-latch here, the panel is
+    //     where it gets turned back off.
+    let quiet = $state(false)
+    $effect(() => {
+        void tick
+        if (quiet) return
+        const w = sup_w()
+        if (!w || !H?.Supervisor_pref) return
+        if (H.Supervisor_pref(w, QUIET)) quiet = true
+    })
 
     let view = $derived.by(() => {
         void tick
-        const M = H?.top_House ? H.top_House() : H
-        const w = M?.o?.({ A: 'Supervisor' })[0]?.o?.({ w: 'Supervisor' })[0] ?? null
+        const w = sup_w()
         // ONE call, and the model has already ordered, marked and toned every row.
         const lines = (w && H?.Supervisor_lines) ? H.Supervisor_lines(w) : []
         const waiting = lines.filter((l: any) => l.waiting)
         const unfinished = lines.filter((l: any) => !l.done)
+        // WHAT TO SAY WHEN WE GAVE UP ON SOMETHING — the registrar's sentence, carried on the line
+        //  (Supervisor_line's `advice`). This is the "no friend is online — you can listen to your own
+        //   music" the owner asked for, and the reason it is not written here is that this file has no
+        //    business knowing that friends, invites or local music exist.
+        const advice = lines.filter((l: any) => l.gaveup && l.advice).map((l: any) => l.advice)
+        // THE NOTICE RING — what actually HAPPENED, newest last (the order it happened in, which is
+        //  the order a log reads in). This is the log half of "log-looking": the arc says what must
+        //   become true, the ring says what turned. Entirely `.c`, so it costs the snap nothing.
+        const notices = (w && H?.Supervisor_noticed) ? H.Supervisor_noticed(w).slice(-6) : []
         return {
             lines,
             waiting,
             unfinished,
+            advice,
+            notices,
+            arrived: (w && H?.Supervisor_arrived) ? H.Supervisor_arrived(w) : 'none',
             since: mounted_at ? Date.now() - mounted_at : 0,
             holding: !!unfinished.length,
         }
     })
 
+    // past this we stop looking patient — the tap grows and says what it is for.
+    let impatient = $derived(view.since > IMPATIENT_MS && !gate.wanted)
+
     // the exit, evaluated on every poll. An $effect and not a $derived because it LATCHES — the whole
     //  point is that the answer is one-way.
+    //  THE ORDER IS THE DESIGN. Arrival is the reason this screen exists; the clock is the apology for
+    //   when arrival never comes. A `none` arrival (no registrar has declared one — a bare tab, a
+    //    half-loaded spine) falls back to the old reading, because holding a listener behind a finish
+    //     line nobody will ever cross is the one failure mode worse than lifting early.
     $effect(() => {
         void tick
         if (done) return
-        if (carried_on || for_a_book) { done = true; return }
+        if (carried_on || machine_tab || quiet) { done = true; return }
         if (gate.wanted) return                                   // a permission is not progress
-        if (view.since > CAP_MS) { done = true; return }
-        if (view.since > GRACE_MS && !view.holding) done = true
+        if (view.arrived === 'arrived') { done = true; return }   // ★ THE ONLY AUTOMATIC EXIT
+        // …and the fallback for a page where NOBODY EVER DECLARES AN ARRIVAL — not a clock, a
+        //  different question. `none` means no registrar has a finish line at all (a host that is not
+        //   BigSoundland, a spine that never loaded Sounditron), and there holding forever would be
+        //    waiting on something that cannot happen. Where an arrival IS declared this never fires,
+        //     however long it takes.
+        if (view.arrived === 'none' && view.since > GRACE_MS && !view.holding) done = true
     })
 
-    let up = $derived(!done && !for_a_book)
+    let up = $derived(!done && !machine_tab)
 
     // TELL BOOTGATE TO STAND DOWN while we hold the screen — it carries the same button, and two
     //  fullscreen gates in a row is the bad arrival this was built to remove. On plain `.c` because
@@ -104,6 +199,20 @@
         || view.unfinished[0]?.sentence
         || 'starting up')
     let left = $derived(view.waiting[0]?.left ?? 0)
+
+    // elapsed, log-style: how long ago it turned. Seconds while a boot is still a boot.
+    function ago(at: number) {
+        const s = Math.max(0, Math.round((Date.now() - at) / 1000))
+        return s < 60 ? '+' + s + 's' : '+' + Math.round(s / 60) + 'm'
+    }
+
+    // hush — the switch, written through the model (particle + stash in one place) and taking effect
+    //  at once: a control that only worked NEXT time would look broken the moment it was pressed.
+    function hush() {
+        const w = sup_w()
+        if (w && H?.Supervisor_pref_set) H.Supervisor_pref_set(w, QUIET, 1)
+        quiet = true
+    }
 </script>
 
 {#if up}
@@ -145,15 +254,59 @@
                                 <li class={l.tone} class:done={l.done}
                                     in:fly={{ y: 6, duration: 260, delay: i * 40, easing: quintOut }}>
                                     <span class="m">{l.mark}</span>
-                                    <span class="s">{l.sentence}</span>
+                                    <span class="s">
+                                        {l.sentence}
+                                        <!-- THE NOTE IS WHAT MAKES THIS MID-COMPLEXITY. The cell has
+                                             room for a sentence; this has room for the sentence AND
+                                             its evidence ("no A:Vyto in any of 2 House(s)", "12
+                                             records"). §5: attribution before action — a claim with
+                                             no evidence under it is a riddle, and the panel should
+                                             not be the only place a person can read one. -->
+                                        {#if l.note}<span class="note">{l.note}</span>{/if}
+                                    </span>
                                     {#if l.waiting && l.left}<span class="secs">{l.left}s</span>{/if}
                                 </li>
                             {/each}
                         </ul>
                     {/if}
 
+                    <!-- THE LOG TAIL — the notice ring: every watch or dial that CHANGED ITS MIND,
+                         in the order it happened. The arc above says what must become true; this says
+                         what turned. Together they are the "log-looking" half of this surface, and
+                         neither alone reads as a machine coming up. Last six only — a loading screen
+                         is not a scrollback, and the panel holds the full twelve. -->
+                    {#if view.notices.length}
+                        <ul class="log">
+                            {#each view.notices as ev (ev.at + ev.sentence)}
+                                <li transition:fade={{ duration: 200 }}>
+                                    <span class="when">{ago(ev.at)}</span>
+                                    <span class="s">{ev.sentence}{#if ev.n > 1} ×{ev.n}{/if}</span>
+                                </li>
+                            {/each}
+                        </ul>
+                    {/if}
+
+                    <!-- THE GIVE-UP, IN WORDS. A wait that quietly expires tells a listener nothing;
+                         this is the whole of the owner's *"it should also explain clearly that no
+                         friend is online and you can play local music instead"*. Calm, not red — it
+                         is not a fault, it is the machine being honest about what it settled for. -->
+                    {#if view.advice.length}
+                        <div class="advice" transition:fade={{ duration: 240 }}>
+                            {#each view.advice as a}<p>{a}</p>{/each}
+                        </div>
+                    {/if}
+
                     {#if !gate.wanted}
-                        <button class="carry" onclick={() => carried_on = true}>carry on →</button>
+                        <button class="carry" class:big={impatient} onclick={() => carried_on = true}>
+                            {impatient ? 'this is taking a while — carry on →' : 'carry on →'}
+                        </button>
+                        <!-- THE SEMI-HIDDEN SWITCH. Deliberately the quietest thing on the card: it
+                             costs a listener their arrival screen forever, so it must never be the
+                             easiest thing to hit. It is turned back ON from the Supervisor panel —
+                             the off-switch is where you are annoyed, the on-switch where you are
+                             looking for it. Persistent because it is a particle + the House stash. -->
+                        <button class="quiet" title="don't show this arrival screen again — turn it back on in the Supervisor panel"
+                                onclick={hush}>don't wait for me</button>
                     {/if}
                 </div>
             </div>
@@ -196,8 +349,13 @@
         align-items: center;
         gap: 1.1rem;
         text-align: center;
-        max-width: 30em;
-        padding: 2.4rem 2.2rem;
+        /* wider than the old 30em: a log wants a line long enough to hold a sentence and its note
+           without wrapping every row into three. */
+        max-width: 38em;
+        width: 100%;
+        max-height: 84vh;
+        overflow-y: auto;
+        padding: 2.2rem 2.2rem;
         border-radius: 1.1rem;
         background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
         border: 1px solid rgba(255,255,255,.09);
@@ -266,22 +424,50 @@
         .rings span, .glint, .aurora { animation: none; }
         .rings span:first-child { opacity: .8; }
     }
+    /* LOG-LOOKING: left-aligned, one row per fact, marks and clocks in a fixed gutter so the eye
+       scans a column rather than re-reading centred prose. The card is wider for the same reason. */
     .arc { list-style: none; padding: 0; margin: .3rem 0 0; font-size: .95rem;
-           width: 100%; display: flex; flex-direction: column; gap: .3em; text-align: left; }
+           width: 100%; display: flex; flex-direction: column; gap: .25em; text-align: left; }
     .arc li { display: flex; gap: .6em; align-items: baseline;
               padding: .2em .3em; border-radius: .35em; transition: opacity 300ms ease; }
     .arc .m { width: 1em; flex: 0 0 auto; text-align: center; }
-    .arc .s { flex: 1 1 auto; }
+    .arc .s { flex: 1 1 auto; min-width: 0; }
+    .arc .note { display: block; opacity: .5; font-size: .85em; line-height: 1.35;
+                 font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     .arc li.done    { opacity: .35; }
     .arc li.good    { color: #9fd8a8; }
     .arc li.waiting { color: #ffd08a; background: rgba(255, 208, 138, .06); }
     .arc li.bad     { color: #ff9b8a; }
     .arc li.todo    { color: #cfd8e0; }
     .arc li.blind   { color: #9aa5b5; }
+    /* the log tail — dimmer than the arc on purpose: the arc is what must happen, this is what did */
+    .log { list-style: none; padding: .4em 0 0; margin: .2rem 0 0; width: 100%;
+           border-top: 1px solid rgba(255,255,255,.07); text-align: left;
+           display: flex; flex-direction: column; gap: .1em;
+           font-size: .82rem; opacity: .62;
+           font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .log li { display: flex; gap: .6em; align-items: baseline; }
+    .log .when { flex: 0 0 3em; text-align: right; opacity: .6;
+                 font-variant-numeric: tabular-nums; }
+    .log .s { flex: 1 1 auto; min-width: 0; }
+    .advice { margin: .1rem 0 0; display: flex; flex-direction: column; gap: .25em;
+              max-width: 24em; color: #cfe0ee; font-size: .95rem; line-height: 1.45;
+              padding: .55em .8em; border-radius: .5rem;
+              background: rgba(127, 199, 255, .07); border: 1px solid rgba(127, 199, 255, .14); }
+    .advice p { margin: 0; }
     .carry {
         margin-top: .3rem; background: none; color: #8fb6d0; cursor: pointer;
         border: 1px solid #33505f; border-radius: .5rem; padding: .45em 1.1em; font-size: .88rem;
         transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
     }
     .carry:hover { color: #e8f3ff; border-color: #6ea3bf; background: rgba(255,255,255,.04); }
+    .carry.big { color: #e8f3ff; border-color: #6ea3bf; font-size: 1rem; padding: .6em 1.4em; }
+    /* the semi-hidden one: legible if you look, invisible if you don't */
+    .quiet {
+        margin-top: -.35rem; background: none; border: none; cursor: pointer;
+        color: #6d8496; font-size: .74rem; letter-spacing: .02em; padding: .3em .5em;
+        text-decoration: underline dotted; text-underline-offset: .25em;
+        transition: color 140ms ease;
+    }
+    .quiet:hover { color: #b9cede; }
 </style>

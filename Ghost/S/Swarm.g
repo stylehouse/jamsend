@@ -336,7 +336,12 @@ Swarm_expect_arrival(w):
     let watch = this.Supervisor_expect(sup, 'swarm.arrival', 'someone answered the invite — a pier came online', 'Swarm_probe_arrival', null, 5, this.Supervisor_stage('friend'))
     // WHY we are hoping, carried for whoever has to explain the give-up.  Without it the radio's
     //  bottom rung says "nobody answered your invite" on a boot where no invite was ever minted.
-    if (watch) { watch.sc.because = 'invite'; watch.bump() }
+    // AND WHAT TO DO ABOUT IT — the sentence a listener gets when the five seconds run out.  Its
+    //  twin in Swarm_expect_friends says "no friend is online"; here somebody was explicitly invited
+    //   and did not come, which is a different fact and deserves a different sentence.  Either way
+    //    the second half is the same and is the point of saying anything at all: this machine plays
+    //     your own music perfectly well on its own.
+    if (watch) { watch.sc.because = 'invite'; watch.sc.advice = 'nobody has answered your invite yet — your own music plays in the meantime'; watch.bump() }
 
 // Swarm_expect_friends — THE OTHER EVENT THAT MAKES US EXPECT SOMEBODY: our own standup, on a machine
 //  that already has friends (the owner 2026-08-10, having killed Lefto to produce the case: *"this is
@@ -360,7 +365,13 @@ Swarm_expect_friends(w, ident):
     let piers = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).filter(p => p.sc.pub && String(p.sc.pub) !== me)
     if (!piers.length) return
     let watch = this.Supervisor_expect(sup, 'swarm.arrival', 'a friend came online — somebody to play radio with', 'Swarm_probe_arrival', null, 5, this.Supervisor_stage('friend'))
-    if (watch) { watch.sc.because = 'friends'; watch.bump() }
+    // THE SENTENCE THE OWNER ASKED FOR, verbatim in intent (2026-08-10): *"it should also explain
+    //  clearly that no friend is online and you can play local music instead… it doesn't DO anything
+    //   with your local music yet, but you can listen to it of course, as its what this machine
+    //    does"*.  Note the scope — WORDS, not behaviour: nothing here plays anything, and the radio's
+    //     own local rung (which already runs the moment this expectation expires) is what actually
+    //      makes the sound.  This only stops the give-up from being a silent nothing.
+    if (watch) { watch.sc.because = 'friends'; watch.sc.advice = 'no friend is online — you can listen to your own music'; watch.bump() }
 
 // Swarm_watch_station — the one HIGH-LEVEL task this layer owns: are we on the relay at all?  A
 //  milestone, because it completes: the door opens once per boot and then stays open (a reconnect is
@@ -809,6 +820,9 @@ Swarm_station_up(w, ident):
     station.c.up = w
     this.Swarm_arm(w)
     this.Socket_real(w)
+    // presence: install the who_ok hook BEFORE the socket can answer (Presence.g).  Idempotent, and
+    //  arming it costs nothing if nobody ever asks — the ask itself rides the pulse round below.
+    if (typeof this.Presence_arm === 'function') this.Presence_arm(w)
     let port = w.o({ transport: 1, type: 'websocket' })[0]?.c.port
     if (port?.on_open) {
         port.on_open(async () => {
@@ -1760,7 +1774,22 @@ Swarm_music_census(w, ident):
 //     the caller paces it (the Sounditron trickle: every ~5s on a live page, never in a Book).
 Swarm_pulse_all(w, ident):
     let sent = 0
+    // ── ask ONCE who is actually there, instead of guessing once per friend ──────────────────────
+    //  This loop is the N-speculative-frames-per-round problem: with 100 friends and 5 online, 95
+    //   pulses per round bought nothing, and a miss is silent (an ephemeral frame books no emit and
+    //    takes no ack, so absence of a reply is the ONLY signal there ever was).  One `who` up the
+    //     relay answers it properly — see Presence.g for the whole argument.
+    //  Suppression is one-way by construction: Presence_worth_sending is false ONLY on a fresh,
+    //   positive "no socket for them".  Unknown — never asked, stale, refused, no relay, a Book with
+    //    the mock carrier — sends exactly as before, so this cannot strand a friend.
+    //  NOT a race, though it reads like one: the ask below is a round trip, so the loop that follows
+    //   uses the PREVIOUS round's answer (~10s old, well inside the 30s freshness window).  That is
+    //    the intent — presence is a standing fact refreshed on a cadence, not a request/response this
+    //     loop waits on.  A first-ever round therefore has no answer yet and pulses everybody, which
+    //      is exactly the old behaviour.
+    if (typeof this.Presence_ask_roster === 'function') this.Presence_ask_roster(w, ident)
     for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (typeof this.Presence_worth_sending === 'function' && !this.Presence_worth_sending(w, pier.sc.pub)) continue
         if (this.Swarm_deliver(w, ident, pier.sc.pub, { kind: 'pulse', page: this.Swarm_page(ident) })) sent = sent + 1
         // self-heal: a friend we haven't heard for a while gets the rebirth greeting too —
         //  ephemeral, collision-immune, so it lands even when the booked lane is muted (their
@@ -1955,10 +1984,16 @@ Swarm_share_granted(peer):
 
 // Swarm_share_present — the pull's source-liveness hook: only want pages over wires whose
 //  caster has pulsed recently (a want at silence is a permanent ra_wanted hole).
-Swarm_share_present(from):
+//  Presence SUBTRACTS here, never adds: a relay socket being open does NOT mean that peer will
+//   serve us, so it can only rule a source OUT (the relay says their socket is gone ⇒ the want is a
+//    guaranteed hole), never in.  heard_at — an actual voucher-checked frame from them — stays the
+//     positive evidence.  Unknown presence leaves the gate exactly as it was.
+Swarm_share_present(from, w):
     let me = this.Swarm_live_self ? this.Swarm_live_self() : null
     let p = me ? this.Swarm_peering(me)?.o({ Pier: 1, pub: String(from) })[0] : null
-    return !!(p && p.c.heard_at && (Date.now() - p.c.heard_at) < 20000)
+    if (!(p && p.c.heard_at && (Date.now() - p.c.heard_at) < 20000)) return false
+    if (w && typeof this.Presence_live === 'function' && this.Presence_live(w, from) === false) return false
+    return true
 
 // Swarm_share_up — idempotent: arm Repli on the station world, wire the grant gate + the
 //  mirror conventions, and start the pump.  Needs the radio world standing (top.c.radio_w —
@@ -1975,7 +2010,7 @@ Swarm_share_up(w, ident):
     w.c.repli_mirror_w = rw                            // crates mint in the radio world — the glass sees them
     w.c.census_w = rw                                  // the boast counts the shelf the stoker actually fills
     w.c.repli_allow = (peer) => this.Swarm_share_granted(peer)
-    w.c.ra_source_live = (from) => this.Swarm_share_present(from)
+    w.c.ra_source_live = (from) => this.Swarm_share_present(from, w)
     w.c.share_up = 1
     if (typeof this.Radio_trace === 'function') {
         try { this.Radio_trace(null, { ev: 'share-up' }) } catch (er) {}

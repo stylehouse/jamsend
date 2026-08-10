@@ -7,6 +7,202 @@
 
 ## 0. Get on with next
 
+### ⇑ 2026-08-10 (latest) — THE BUTLER HAD NEVER RUN, AND THE THREE SURFACES ARE RE-AIMED
+
+**THE BUTLER HAS NEVER ONCE DONE ITS JOB — since it was written.** The owner, watching a reload:
+ *"the Butler closes when the interface is still at 'nothing mounted yet'"*. Root cause found and it
+  is not in any of today's work: `for_a_book = !!H?.c?.book`. **`BigQualand.svelte.ts:57` stamps
+   `h.c.book = opts.book` on EVERY qualand page** — /BigSoundland's resident Book *is* Sounditron — so
+    `c.book` has been set on every listener tab there has ever been. And the reason it LOOKED like a
+     flash rather than an absence: `boot_qualand` assigns `H` inside an `$effect`, so the Butler mounts
+      with `H` **null**, reads `for_a_book` false for a frame or two, shows — then latches shut the
+       instant H arrives. Every exit rule, the arc, the cap, arrival: all unreachable, always.
+ **The honest tell is `humdinger`** (BigQualand stamps it for role word|sound = "an end-user room" —
+  the same flag the arrival milestone and the /log reporter already gate on), plus an explicit `?B=`,
+   because someone deliberately driving a Book from their own music page is asking to watch the
+    machine. A null `H` now reads FALSE and the Butler **holds** — "we do not know yet" is the one
+     answer that must not latch a gate shut. **This is the single most important line in the diff.**
+ *The general shape, worth carrying: a boolean that gates a whole surface, read off a key some other
+  layer stamps for its own reasons, fails silently and looks exactly like the feature not being built
+   yet. It was in the "never verified by a human eye" list for a day and the list was right.*
+
+**THE THREE SURFACES, RE-AIMED BY THE OWNER** (*"I kind of want that as the mid-complexity,
+ log-looking version of the Supervisor business, whereas the Supervisor cell is smaller and simpler,
+  perhaps not even there if nothing is out of line, and the Supervisor UI itself is the bull
+   bollocking"*):
+
+| surface | size | now |
+|---|---|---|
+| `SupervisorFace` (Vyto cell) | smallest | **not on the glass at all unless something is amiss** |
+| `Butler` | **mid — and it should LOOK LIKE A LOG** | arc *with its notes* + the notice ring, left-aligned, elapsed stamps |
+| `SupervisorPanel` (▦) | the whole bollocking | unchanged: probe names, kinds, patience, prefs, the ladder |
+
+**`amiss` IS A NEW READING, AND IT HAD TO BE.** The cell can only vanish if something decides "out of
+ line", and `loud` (= `Supervisor_speaking`) is the wrong number: it counts everything worth SAYING,
+  outstanding milestones included — so on a tab with no friends `sound.grant`/`sound.shelf`/`sound.pulled`
+   are unmet **forever** with nothing wrong at all, and a cell keyed on `loud` would be permanent on
+    exactly the machine it was meant to leave alone. `Supervisor_amiss(w)` is the narrower ruling —
+     a **standing** watch reading wrong, or **anything** reading unknown (a blind spot is its own kind
+      of wrong); a milestone not yet met is deliberately not in it. It snaps as `%Supervisor,amiss`
+       beside `loud` (both deleted when zero), and `Sounditron_glass` grapples the row on `amiss`, or
+        under `show_diag` where a developer is asking to see the machinery anyway.
+ **Both numbers stay, because two surfaces genuinely ask different questions**: `loud` = how much is
+  worth saying (the Butler's arc, the cell's dose), `amiss` = is anything actually wrong (whether a
+   cell should exist).
+
+**AND THE CELL WAS CARRYING A SECOND OPINION.** `SupervisorFace` had its own `mark()`/`tone()` pair
+ while its header claimed *"IT IS DUMB ON PURPOSE"* — two copies of one judgement, in the one surface
+  whose entire value is being trusted at a glance. `Supervisor_say` now stashes `c.amiss_lines`
+   (flattened through `Supervisor_line`, already marked and toned) and the face renders them. It also
+    shows **three** rows, not six: a cell that lists six failures has become the panel in a smaller
+     font, and ▦ is where you go to read them.
+
+**Verified:** both ghosts compile; `svelte-check` clean on all three faces; a full `Sounditron` run
+ (8 steps, **every step `error:null`**) with `the-supervisor-stood` and `every-registered-watch-found`
+  green at step 2. **Not verified: still no eye on any of it** — and note the runner default address
+   moved again mid-session (`58517b48` → `a67a5d04`), the standing hazard.
+
+**THE BLIND-SPOT GATE HAS NOW BEEN SEEN TO GO RED — the first mutation test in this doc that was
+ actually performed.** Method, so it can be repeated: rename a probe by one letter, compile, reload
+  the runner, run, watch the claim fail; revert, and watch it come back. Three cycles:
+ 1. `Sounditron_probe_glass` → `…glasss`. **`every-registered-watch-found` went ABSENT**, and the
+     `%log` row named `why:sound.glass`. That sentence had never once failed before today.
+ 2. `Radio_dial_solo` → `…soloo`. **It did NOT go red** — and that was the finding. A dial is stamped
+     only by `Supervisor_read_dials`, which runs on Mundo's own tick, so at the step where the gate
+      swears a dial can still be **unread and therefore indistinguishable from a healthy one**. The
+       roster covered dials; the ASSERTION did not. Fixed by calling `Supervisor_read_dials(sup)`
+        beside the existing `Supervisor_read`/`Supervisor_say` in `Sounditron_supervise` — the same
+         registering-and-being-read-are-different-events reasoning already written above those lines.
+          Re-run with the fix: **red, naming `why:radio.solo`.**
+ 3. Both reverted → **green again**, no log row. `Ghost/M/Radio.g` byte-identical to HEAD (dige back to
+     `887c9fd4701fc1f4`).
+ **This is the shape the doc has been demanding all day and it paid immediately**: the gap was
+  invisible while everything was green, and no amount of reading would have found it. `sound.glass`
+   and `radio.solo` are now the two probes in this repo known to fail correctly. **Eight watches and
+    four dials still owe this.**
+ *Operational note, cost two wasted cycles:* a `.g` HMR can leave the Story drive unscheduled — `run`
+  returns `{run:null}` with zero steps and the tab still pings fine ([[svelte-hmr-wedges-a-book-drive]]
+   in its `.g` form). `runner_ask reload` cures it, but **the run right after a reload also lands
+    empty** — release and run again. Budget three commands per cycle, not one.
+
+**What the reload itself showed, and it was good news:** both player tabs (`96d0cf88`, `f5da6599`)
+ came up clean with 1 mutually sealed pier each — `✓ radio.shelf · ✓ sound.shelf · ✓ sound.pulled ·
+  ✓ radio.remote — 12 playable of 15 from 1 (Righto) · · radio.solo — with Righto · ✓ radio.fresh`.
+   `f5da`'s shelf took 3.7s to go ✓ and the 15s grace absorbed it with no red flash, which is the
+    earlier shelf-grace fix working in the wild.
+
+### ⇑ 2026-08-10 (late) — THE BUTLER'S BRIEF IS BUILT: arrival, the give-up sentence, the switch
+
+**All three of the owner's named gaps (a)(b)(c) landed.** Read the night handover below for the
+ destination and the bombs — this section is only what changed since, and what it is owed.
+
+**(a) THE BUTLER NOW LIFTS ON ARRIVAL, and the clock is the apology.** The whole point of the entry
+ below was that the screen's three exits were all *impatience*: nothing waiting, a 12s cap, a tap.
+  Now the model owns a finish line — `Supervisor_arrival(w, key)` **declares** one, `Supervisor_arrived(w)`
+   **rules** on it, and the Butler asks that one question. Three answers on purpose, and the third is
+    load-bearing: **`none`** (nobody declared an arrival) is not `no` — a bare tab or a half-loaded
+     spine falls back to the old reading, because holding a listener behind a finish line nobody will
+      ever cross is the only failure worse than lifting early.
+ **A FACE MAY NOT NAME THE ARRIVAL EITHER.** The obvious cut was `lines.find(l => l.key === 'arrive.playing')`,
+  and it is the same disease one layer up — the hand-written headline in the loading screen, and a tab
+   that declared a different arrival would hold forever. So the REGISTRAR flags its own claim and every
+    face asks the model. Same law that keeps `Supervisor.g` free of subsystem names.
+ **The claim itself is the commissioner's**: `arrive.playing` — *'the glass is up and music is playing
+  — you have arrived'*, milestone, probe `Sounditron_probe_arrived`, registered in `Sounditron_supervise`.
+   It refuses to reuse `Sounditron_probe_glass`, and the reason is worth keeping: that probe answers
+    **`ok — no frame published yet`**, which is right for "is the glass drawing what it was handed"
+     (nothing judged, nothing wrong) and quite wrong for "is there a glass in front of a person". Same
+      reading, two questions. Likewise it asks `Radio_sound` for `sound` and nothing else — `quiet` is
+       graded ok by `Sounditron_probe_sound` (an idle tab making no noise is not a fault) and an idle tab
+        has plainly not arrived. Folding those two would let every silent boot claim arrival, which is
+         the posed-milestone failure this roster replaced.
+ **PLAYER TABS ONLY**, and that is what the claim MEANS rather than caution: `vw_frame` is stamped only
+  by a humdinger tab's `publish_frame`, so on a runner this milestone can never be met and would sit
+   `wrong` forever, keeping the roster permanently loud about a listener who is not there. Same
+    `c.humdinger` test the reporter already uses. **Verified on the runner**: `arrive.playing` never
+     turned on the trace, which is exactly right and is how the gate got found.
+ **The numbers moved and they are tuning constants, not rulings.** `GIVEUP_MS` 40s (was `CAP_MS` 12s —
+  at 12s the clock beat every real boot, so arrival could never be the exit and the change would have
+   been decorative), `IMPATIENT_MS` 12s, past which the carry-on tap **grows and names itself**
+    (*"this is taking a while — carry on →"*). Holding a fullscreen surface silently for forty seconds
+     is the trap; saying so is not. **Both want an eye on them.**
+ **And `GRACE_MS` went 1.8s → 6s**, which is subtler and would have quietly undone the whole change:
+  that grace guards the **no-arrival fallback**, and 1.8s is enough for the station to arm its
+   expectation but NOT enough for the resident Book to reach the beat where the arrival gets declared.
+    On a warm tab whose first two watches both read ok, the screen would have lifted before the finish
+     line existed — the impatience exit wearing the new code.
+
+**(b) THE GIVE-UP SPEAKS, and the sentence is the registrar's.** A watch may now carry `sc.advice` —
+ *what to tell a listener once we have given up on this claim* — beside the `sc.because` that was
+  already there, and for the same reason: only the process that armed the expectation knows what a
+   person could do instead. `Supervisor_line` carries `advice` + `gaveup`, and the Butler renders the
+    advice of anything given-up in a calm block (not red: it is not a fault, it is the machine being
+     honest about what it settled for).
+ The two `swarm.arrival` arming sites now stamp it — `Swarm_expect_friends` → **'no friend is online —
+  you can listen to your own music'**, `Swarm_invite_url` → **'nobody has answered your invite yet —
+   your own music plays in the meantime'**. Two facts, two sentences; guessing between them is the
+    exact lie `because` was added to stop. **Scope, as the owner drew it: WORDS, NOT BEHAVIOUR.** Nothing
+     new plays anything — the radio's own local rung already runs the moment that expectation expires.
+      All this does is stop the give-up from being a silent nothing.
+
+**(c) THE SEMI-HIDDEN SWITCH — `butler.quiet`, a particle AND the House stash.** `Supervisor_pref` /
+ `Supervisor_pref_set` / `Supervisor_prefmem`. Both halves are load-bearing and neither alone is
+  enough: a particle so the choice can be snapped, asserted, bumped and compared between tabs
+   ([[derived-in-a-face-is-a-fact-thrown-away]]); `H.imem('Supervisor')` (Dexie-backed `H.stashed`,
+    exactly what the old `quit_fullscreen` used at `Cytoscape.svelte:380`) because **the C tree on
+     Mundo does not outlive a reload** and persistence was the entire ask.
+ **OFF COSTS NO ROW**: a pref that is off mints no particle and writes no snap line — the snapped-boolean
+  law, and it also means a Book that never touches a pref sees no new furniture.
+ The off-switch is on the Butler (*"don't wait for me"*, the quietest thing on the card — it costs a
+  listener their arrival screen forever, so it must never be the easiest thing to hit); the **on-switch
+   is in `SupervisorPanel`**, because a switch that can only ever be turned off is a trap. Read through
+    an `$effect`, never the `$derived` — the first read MINTS, and a derived that mutates is a derived
+     that will one day loop.
+
+**ALSO, and it was a real defect for (a): SIX WATCHES WERE UNPLACED.** `sound.grant|live|shelf|pulled|glass|audible`
+ registered with no `stage`, and unplaced sorts LAST by design — so on the Butler's arc they landed
+  *after* the arrival milestone that is composed of them, and the loading screen read as a machine
+   finishing before it started. Now staged `friend`/`sound`, arrival at `sound + 5` (the gap-of-ten the
+    stage list leaves for exactly this). **The roster does not appear in the Run House snap** (checked:
+     `snap 8` carries no `Watch:` rows — it lives on Mundo), so none of this churns a fixture.
+
+**Small tidy that paid for itself twice:** `Sounditron_vyto()` — the walk-every-House hunt for the live
+ glass, extracted from `Sounditron_probe_glass` the moment a second reader needed the same answer. Two
+  copies of that walk is how the second reader ends up looking in a different set of Houses and
+   disagreeing about whether the glass exists.
+
+**VERIFIED — and read the "not" list, it is longer than the "yes" list.**
+- ✓ All four `.g` files compile through the editor chain; `svelte-check` clean on both edited faces
+   (grepped by filename against the ~3.4k baseline).
+- ✓ Two live `Sounditron` runs on `58517b48`: **no thrown steps**, `the-supervisor-stood` and
+   `every-registered-watch-found` **green at step 2** both times — so `Sounditron_probe_arrived`
+    resolves by name and the blind-spot gate covers it.
+- ✓ `arrive.playing` correctly never latched on the runner (no `vw_frame`) — which is what sent it
+   behind the `humdinger` gate.
+- ✗ **THE BUTLER HAS STILL NEVER BEEN SEEN.** Not by me and not by an eye: `runner_shot` captures the
+   Vyto canvas and the Butler is a FaceSucker over the whole page. Arrival, the advice block, the
+    grown tap and the switch are all **type-checked and unwitnessed**.
+- ✗ **The advice has never been seen to fire** — it needs a 5s expectation to actually expire, and
+   `poke` cannot mint an invite. That is the same unfired 5s hold the overnight entry records; it is
+    now the hole for two features rather than one, and one ten-second manual test closes both.
+- ✗ **Still no mutation test on any watch or dial**, and now there is one more of each to owe it to.
+- ✗ `music-from-a-friend` still ABSENT; **fixtures still not re-recorded** (every step dige-mismatches,
+   unchanged from before these edits).
+
+**THE NEXT MOVES, re-aimed:**
+1. **Look at it.** One boot of `/BigSoundland` with the console open: does the Butler hold to arrival,
+    does the arc read in arc order, does the advice show when a friendless boot gives up at 5s, does
+     "don't wait for me" survive a reload, and is 40s intolerable? Every one of those is a ten-second
+      answer for someone with a browser and a guess for me. **`GIVEUP_MS`/`IMPATIENT_MS` are the two
+       numbers most likely to be wrong.**
+2. ~~**Mutation-test one watch and one dial**~~ — **DONE** (see the 2026-08-10 latest section: one
+    watch and one dial forced wrong, both seen red, both seen to recover, and the exercise found a
+     real hole in the gate). The remaining eight watches and four dials still owe it; the method is
+      written down now, so each is three commands.
+3. **Decide BOMB #1** (below): the stale-roster split is now slightly worse, because `arrive.playing`
+    is a milestone that latches — a tab that arrived once carries `met` into the next Book.
+4. BOMB #2, BOMB #3, and the §10.3 ruling — all unchanged.
+
 ### ⇑ HANDOVER 2026-08-10 (night) — the destination, the bombs, and the next moves
 
 **THE DESTINATION.** Supervisor went from "a summary row nobody reads" to a real three-part
@@ -51,10 +247,38 @@
     underworld/Supervisor rather than minting both), or accept `show_diag` as a deliberately crowded
      dev trade. Both cells are diag-gated so this costs nothing live today.
 
+**THE BUTLER'S UNFINISHED BRIEF — three things the owner named 2026-08-10 (night), none built.**
+ The Butler as it stands is an ARRIVAL screen: it carries the boot permission tap plus the Supervisor
+  arc, then latches down at the first of {nothing waiting, `CAP_MS` 12s, a "carry on" tap}. The owner's
+   actual design is bigger, and the gap is the point of this section:
+ - **(a) It should carry you ALL THE WAY** — *"the Butler is supposed to carry you all the way, letting
+    you know what's happening, until the Vyto glass is up and running AND playing the thing you want."*
+     Today's three exits are all *impatience* exits; none of them is **arrival**. The real
+      lift-condition is a milestone that doesn't exist yet: glass commissioned **and** audio actually
+       sounding. Both halves are already knowable — the Vyto side from the commissioned glass, the
+        audio side from whatever `Radio_open`/first-PCM already proves — so this is a `Supervisor_watch`
+         to register (`arrive.playing`?) and a lift-rule to point at it, not new plumbing. Keep `CAP_MS`
+          as the *give-up* path, not the *success* path — the distinction the whole doc is about.
+ - **(b) It must SAY "no friend is online — you can play your own music."** Right now a friendless boot
+    just shows a wait that quietly expires. The owner: *"it should also explain clearly that no friend
+     is online and you can play local music instead. that should be part of its programming for
+      Butlering this type of Jamsend party… it doesn't DO anything with your local music yet, but you
+       can listen to it of course, as its what this machine does."* Note the scope: **words, not
+        behaviour** — no new local-playback path, just the honest sentence at the give-up moment. The
+         material is all present: `Supervisor_given_up('swarm.arrival')` + `Supervisor_because` (which
+          exists precisely so a give-up doesn't lie about an invite that was never minted) + the
+           `radio.solo` dial. This is the "programming for this type of party" — the first hint that
+            Butler wants **per-party scripts**, not one hardcoded arc.
+ - **(c) One semi-hidden persistent-state toggle**, *"like we used to have, quit_fullscreen or so"* —
+    i.e. a small, deliberately unobtrusive control whose state SURVIVES a reload. Grep the prototype
+     for the old `quit_fullscreen` idiom before inventing one. Persistent state means a particle, not
+      a component `$state` (see [[derived-in-a-face-is-a-fact-thrown-away]]) — and a snapped boolean
+       rides as `1` or ABSENT.
+
 **THE NEXT MOVES, in the order they're likely cheapest:**
-1. **Ship the shelf-grace fix** (just built, compiled, unverified live) — `radio.shelf` no longer
-    flashes red on a boot-empty shelf; it arms the same 15s patience `swarm.arrival` uses and only
-     speaks if still empty past it. Watch for it live next time a tab boots cold.
+1. **Build the Butler brief above** — (b) is the cheapest and the most user-visible; (a) is the one
+    that makes the screen mean what its name says. *(The shelf-grace fix from earlier tonight is
+     CONFIRMED FIXED by the owner — `radio.shelf` no longer flashes red on a boot-empty shelf.)*
 2. **Decide BOMB #1** and build the `eternal`/`Supervisor_teardown` split if the owner wants it —
     small, mechanical, but needs the persistence-semantics call first.
 3. **Mutation-test at least one watch and one dial** — still true from every earlier note today: *"a

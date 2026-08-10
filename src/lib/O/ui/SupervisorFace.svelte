@@ -9,58 +9,58 @@
     //   what glyph — is made in Supervisor.g and read off `n.c.speaking` / `n.sc.say`.  A face that
     //    re-derived the order would be a second opinion about health, and the first thing to drift.
     //
-    //  QUIET WHEN HEALTHY is the whole design: with nothing wrong this draws one dim line and asks
-    //   for no attention.  If you find yourself wanting it to show more at rest, that want belongs in
-    //    the roster (register another watch), never here.
+    //  IT IS USUALLY NOT HERE AT ALL (2026-08-10, the owner re-aiming the three surfaces: *"the
+    //   Supervisor cell is smaller and simpler, perhaps not even there if nothing is out of line"*).
+    //    Quiet-when-healthy taken all the way is ABSENCE: `Sounditron_glass` only grapples the
+    //     %Supervisor row when the model says something is `amiss` (or under show_diag), because a
+    //      cell costs a SEAT and the glass has a fixed number of them.  So this face renders almost
+    //       exclusively in its loud state, and the calm branch below is what a developer sees with
+    //        diagnostics open — not what a listener sees at rest.
+    //  ITS SIBLINGS: the Butler is the mid-complexity log-looking one at boot; SupervisorPanel (▦) is
+    //   the whole bollocking.  This one is the smallest and simplest of the three, and must stay so.
     let { n, H } = $props()
 
-    // react off the particle's own version: Supervisor_say writes sc.say|sc.watches|sc.loud every
-    //  pass it changes, so the bump that matters always lands on this row.
+    // react off the particle's own version: Supervisor_say writes sc.say|sc.watches|sc.loud|sc.amiss
+    //  every pass it changes, so the bump that matters always lands on this row.
+    //  ROWS COME PRE-MARKED from `Supervisor_say` (`c.amiss_lines`, flattened by Supervisor_line).
+    //   This face carried its OWN mark()/tone() pair until 2026-08-10 — two copies of one judgement,
+    //    in the one surface whose entire value is being trusted at a glance.
     let view = $derived.by(() => {
         void n?.version
         void H?.version
         const say = String(n?.sc?.say ?? '')
         const loud = Number(n?.sc?.loud ?? 0)
+        const amiss = Number(n?.sc?.amiss ?? 0)
         const watches = Number(n?.sc?.watches ?? 0)
-        const speaking = (n?.c?.speaking ?? []) as any[]
-        return { say, loud, watches, speaking }
+        const rows = (n?.c?.amiss_lines ?? []) as any[]
+        return { say, loud, amiss, watches, rows }
     })
-
-    // ✗ broken now · ○ hasn't happened yet · ? nobody could look.  Mirrors Supervisor_mark; kept here
-    //  only for the per-row list (the headline arrives already marked, in sc.say).
-    function mark(w: any) {
-        if (w?.sc?.verdict === 'wrong' && w?.sc?.kind === 'milestone') return '○'
-        if (w?.sc?.verdict === 'wrong') return '✗'
-        if (w?.sc?.verdict === 'unknown') return '?'
-        return '○'
-    }
-    function tone(w: any) {
-        if (w?.sc?.verdict === 'wrong' && w?.sc?.kind !== 'milestone') return 'bad'
-        if (w?.sc?.verdict === 'unknown') return 'blind'
-        return 'todo'
-    }
 </script>
 
-<div class="sup" class:calm={!view.loud}>
+<div class="sup" class:calm={!view.amiss}>
     <div class="head">
         <span class="say">{view.say}</span>
-        {#if view.loud > 1}<span class="more">+{view.loud - 1}</span>{/if}
+        {#if view.amiss > 1}<span class="more">+{view.amiss - 1}</span>{/if}
     </div>
-    {#if view.loud}
+    {#if view.rows.length}
+        <!-- THREE, not six. This is the smallest of the three surfaces and a cell that lists six
+             failures has become the panel in a smaller font; the count in the head says how many
+             more there are, and ▦ is where you go to read them. -->
         <ul class="rows">
-            {#each view.speaking.slice(0, 6) as w}
-                <li class={tone(w)}>
-                    <span class="m">{mark(w)}</span>
-                    <span class="s">{w?.sc?.sentence ?? ''}</span>
-                    {#if w?.sc?.note}<span class="note">{w.sc.note}</span>{/if}
+            {#each view.rows.slice(0, 3) as l (l.key)}
+                <li class={l.tone}>
+                    <span class="m">{l.mark}</span>
+                    <span class="s">{l.sentence}</span>
+                    {#if l.note}<span class="note">{l.note}</span>{/if}
                 </li>
             {/each}
         </ul>
     {:else}
-        <!-- nothing is wrong: the roster size is the only thing worth knowing at rest, and it is the
-             honest answer to "how much is actually being watched" (a big number here is coverage;
-             zero means nothing registered, which the headline says out loud). -->
-        <div class="rest">{view.watches} watching</div>
+        <!-- nothing is amiss — which normally means this cell is not on the glass at all, so this is
+             the show_diag view. The roster size is the only thing worth knowing at rest, and it is
+             the honest answer to "how much is actually being watched" (zero means nothing registered,
+             which the headline says out loud). -->
+        <div class="rest">{view.watches} watching{#if view.loud} · {view.loud} outstanding{/if}</div>
     {/if}
 </div>
 

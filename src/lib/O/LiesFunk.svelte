@@ -2795,6 +2795,12 @@ await M.eatfunc({
                             svgs: cands.length, molds, overlaps,
                             foamereo: el.getAttribute('data-foamereo') ?? null,   // the composer's deck, so a capture can tell "declined" from "never arrived"
                             noroom: el.hasAttribute('data-noroom') ? Number(el.getAttribute('data-noroom')) : null,  // rows with no cell; null on a tab predating it
+                            // the seat regime's readout — null on a tab predating it, which is the
+                            //  distinction that matters when a capture comes back looking like the foam
+                            seat: el.hasAttribute('data-seat') ? Number(el.getAttribute('data-seat')) : null,
+                            seatwait: el.hasAttribute('data-seatwait') ? Number(el.getAttribute('data-seatwait')) : null,
+                            seatbad: el.hasAttribute('data-seatbad') ? Number(el.getAttribute('data-seatbad')) : null,
+                            redeals: el.hasAttribute('data-redeals') ? Number(el.getAttribute('data-redeals')) : null,
                             cands: cands.map(c => `${c.childElementCount}c/${c.querySelectorAll('text').length}t`) }
                     }
                 } else if (op === 'face') {
@@ -2854,7 +2860,7 @@ await M.eatfunc({
                     //        that seals, grants, writes fixtures or moves bytes stays OUT.
                     const POKES: Record<string, string> = {
                         Radio_toggle: 'Radio', Radio_skip: 'Radio', Radio_source_toggle: 'Radio',
-                        Sounditron_diag_toggle: 'w',
+                        Sounditron_diag_toggle: 'w', Sounditron_seat_toggle: 'w',
                     }
                     const verb = String((ask as any).verb ?? '')
                     const kind = POKES[verb]
@@ -2873,7 +2879,7 @@ await M.eatfunc({
                             //    "nothing happened" — the exact ambiguity these ops exist to remove.
                             const snapshot = () => kind === 'Radio'
                                 ? String(rw.o({ Radio: 1 })[0]?.sc?.Radio ?? '')
-                                : `show_diag=${(rw.c as any).show_diag ? 1 : 0}`
+                                : `show_diag=${(rw.c as any).show_diag ? 1 : 0} seat=${(H.top_House().c as any).seat_ui ? 1 : 0}`
                             const before = snapshot()
                             await (H as any)[verb](kind === 'Radio' ? radio : rw)
                             const after = rw.o({ Radio: 1 })[0]?.sc

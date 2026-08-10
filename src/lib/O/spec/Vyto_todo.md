@@ -192,6 +192,99 @@ The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) wh
 
 ## 0. What to get on with next
 
+### ⇢ THE SEAT — a second layout regime beside the foam (2026-08-10, STAGE 2 LANDED, SWITCHABLE, OFF)
+
+*"shall we now do a completely other UI for all these cells... one with way less skittishness, but
+ eating the same model... less failure modes..."* — the owner, and on the landing: *"don't throw away
+  everything we have? is it going to be switchable?"*
+
+**Nothing was thrown away.** The foam cut, `seat_floor`, the repair loop, the frame seat and the
+ vanish floor all stand untouched, and a glass with the regime off is byte-identical. The seat is a
+  THIRD regime beside foam and plain, reached by `foamereo:'seat'`, and no Book commissions it — so no
+   fixture can move. Flip it per-tab with `Sounditron_seat_toggle` (allowlisted on the relay's poke
+    op, beside the diag toggle); the flag is `top_House().c.seat_ui`, runtime, resets on reload.
+
+**The diagnosis.** Every failure we have chased is one bug wearing different clothes: **size is
+ discovered, not assigned.** Express writes an area, solve makes it a radius, a mutual relaxation
+  moves the seeds, the cut tessellates whatever came out, and only THEN do we learn what each cell
+   got. `seat_floor`, the six-try repair, `frame_seat`, the null-poly trapdoor, the vanish floor, the
+    "no room" corner note, the grow-only need floor, `slab_seat` — machinery for *the cell got less
+     than it needed and we found out too late*. The seat ASSIGNS: every row is handed a whole number
+      of grid units, floor one, by largest-remainder apportionment. "No row may be swallowed" stops
+       being a law enforced by repair and becomes arithmetic that cannot fail.
+
+**The number that decided it** (`scratchpad/mono.mjs`): on the foam, nudging one row's dose +25%
+ makes **its own cell SMALLER 13–23% of the time** (monotone 86.7 / 80.5 / 76.5 / 77.5% across
+  calm/busy/heavy/brutal). `seat_floor` caps whoever is taking too much and the cap lands on the row
+   being dragged, so it is clamped straight back while the live dosetip reads the number going up.
+    **The knob lies about one drag in five.** Measured with the pile held still, so that is the LOWER
+     bound. The seat is 100% monotone by construction and it is a gate in `VytoSeat.spec.ts`.
+
+**Measured live, same tab, same 6 organs, minutes apart** (`--svg` captures in the scratchpad):
+
+| | smallest cell | largest | spread | ink |
+|---|---|---|---|---|
+| foam | 4,827px² | 106,089px² | 22× | 71.1% of frame |
+| seat | 21,018px² | 107,631px² | 5× | **98.2%** of frame |
+
+The smallest cell gets **4.4× more room** and the frame is fully used. The cost is in the spread
+ column: quantisation compresses the dynamic range, so **dose expresses less dramatically**. On a
+  6-row glass `grid_for` rules only 66 units (UNITS_PER_ROW 12), and three cells landed on 4 units
+   each — visibly identical boxes for different doses. **UNITS_PER_ROW is the dial to tune first**:
+    finer = truer to the weights and twitchier, coarser = chunkier and calmer.
+
+**THE DEAL — the part that is not obvious, and the fuzz caught it, not review.** A plain treemap is
+ WORSE than the foam. Re-deriving the strip structure from current weights every frame lets rows jump
+  between strips: 39% of cells disturbed by a mean of **33px**. The foam jitters everywhere but
+   tinily; a naive treemap moves few cells but HURLS them, which is far worse when you are reaching
+    for one. So the structure is lifted out and kept: a `Deal` is a SPLIT TREE recording only which
+     rows sit on which side of which cut. Weights recompute where the cuts fall; the tree survives any
+      amount of dose work. Stir on a standing deal: **9–28% disturbed, 1.5–12px**.
+ A re-deal has exactly two causes — membership change, or the standing deal failing to seat everyone
+  (a short box list). Both are events you can name and throttle. **A cut is never quietly turned to
+   the other axis to make the numbers work; turning one IS the teleport**, and the no-jump test
+    caught rows swapping places when an earlier draft did exactly that.
+
+**Two more bugs the tests found that reasoning did not.** The strip form over-covered the frame by 9%
+ (per-strip rounding with the slack shoved onto the last strip — fixed by apportioning heights too,
+  then superseded by the split tree). And scoring a strip by its ROUNDED height picked strips whose
+   real height came out half what was scored, giving full-width 1-unit bars at aspect 14.
+
+**⚠ THE SWITCH IS SLOW AND IT LOOKS BROKEN.** `Sounditron_commission` ends in
+ `SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', …)`, which is DEFERRED — so a toggle followed by an
+  immediate capture reads the PREVIOUS commission and the glass looks unchanged. Two full toggles
+   read as no-ops before the regime appeared. This is the `minted-elvisto-is-not-a-run-elvisto` shape
+    and it wasted the best part of an hour. **Give it 30s+, or force it with a diag toggle, before
+     concluding the flag did nothing.** The honest fix is a `feebly_ponder` on the toggle — not done.
+
+**Where it plugs in, and why so little had to change.** `polyByKey` in Vytui's `layout` is the seam:
+ the emit loop reads polygons by key and cares not at all where they came from, so faces, molds, the
+  dose handle, holds, the decor deck and the whole label ladder draw a rect exactly as they draw a
+   wall. The seat branch produces rect polys and skips the fill economy, the seat floor, the repair
+    loop and the vanish floor — it cannot produce the faults those exist to repair.
+ One free win: `carveable()` is false in the seat regime, so cells fall to **`wave_d`** — the
+  scalloped band struck along the bbox TOP EDGE. Over a ball that was floating furniture (the bug
+   fixed the same morning); **on a rect the bbox top edge IS the top wall**, so the label style that
+    had to be worked around for the foam is native here.
+
+**Still open, in order:**
+- **Stage 3 — the rect spring.** Weights are currently the SPRUNG radius, so motion rides the existing
+   integrator for free, but the box steps by a grid unit instead of gliding. A four-channel lerp to a
+    fixed target (no mutual interaction, so it cannot fail to converge) is the fix.
+- **Stage 4 — `Vyto_solve` writes rect `.c.T`.** Then a Book can witness the layout. A wall's shape
+   never could be — see `books-cannot-witness-wall-shape` — but a rect is four numbers in the tree.
+    This is what would make the seat gateable rather than merely tested.
+- **Aspect.** Mean 1.9, and 12–16% of cells come out past 3:1. Foam's bboxes look better (0.6–4.3%)
+   but that comparison flatters it: a foam cell's bbox is square because the cell is round, and the
+    face only gets the `slab_seat` inside it. The honest comparison is slab-vs-whole-box, not measured.
+- **Deterministic wonk.** Offset each internal wall by a hash of the two row keys it separates —
+   character with no simulation, stable frame to frame. Not started; the boxes are plain rects.
+- Whether the foam is eventually retired, or the two stay as regimes. **Not a decision for today.**
+
+Files: `src/lib/O/vyto_seat.ts` (pure, 11 gates in `scripts/VytoSeat.spec.ts`), the seat branch in
+ `Vytui.svelte`, the readout in `LiesFunk.svelte` + `runner_shot.mjs` (`▤ seat`), the switch in
+  `Sounditron.g`.
+
 ### ⇢ THE ROOM IS THE MEASURE — the wave band was floating furniture (2026-08-10, LANDED)
 
 *"some of the cell labels are not in the wall style … and perhaps you could do some creative thought

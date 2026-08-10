@@ -318,6 +318,10 @@ export function attachRelay(
 	//        closing it needs the §2 precondition (wait for hello_ok) first; refusing it here would
 	//         drop legitimate first frames instead.
 	const IDENTITY_SHAPED = /^[0-9a-fA-F]{16,}$/
+	// Batch presence: one `who` frame asks about up to WHO_MAX addrs at once (the Radios friend
+	//  roster is ~100; the cap is headroom, not a target).  Bounded so a hostile frame can't make
+	//   the relay walk an unbounded list.
+	const WHO_MAX = 512
 
 	function handleControl(ws: WebSocket, msg: any) {
 		if (msg.control === 'become' && typeof msg.role === 'string' && IDENTITY_SHAPED.test(msg.role)) {
@@ -402,6 +406,39 @@ export function attachRelay(
 			unbind(ch, ws)
 			;(ws as any).subs?.delete(ch)
 			relayLog(`📻 unsubscribe ${ch} (subs: ${locals.get(ch)?.size ?? 0})`)
+			return
+		}
+		// who (peer → relay): BATCH presence probe — which of these addrs are online right now?
+		//  Replaces the speculative fan-out (one pulse/swarm_hi per friend, most of them offline,
+		//   with every miss dying silently in warnDrop — the sender can never learn).  One frame up,
+		//    one frame down, O(1) Map lookup per addr against `locals`, which the 15s heartbeat keeps
+		//     honest (a half-open socket is terminated + unbound within ~2 rounds).
+		//  STRICTER than routing, deliberately: an addr counts as online only if some OPEN socket
+		//   was bound to it by a VERIFIED hello ((ws).bound) — the `?addr=` pre-hello door still
+		//    binds into `locals` for routing (load-bearing, ClusterAddressing_todo §6.4), but a
+		//     pre-claiming eavesdropper must not make an identity read as present.
+		//  Leak gate: presence is answered only to a socket that is ITSELF hello-bound, and only
+		//   list-in (asked addrs), never enumerate-out — `locals`' roster stays unlistable (the
+		//    owner's parked "maybe one day", §4a note above).
+		if (msg.control === 'who' && Array.isArray(msg.addrs)) {
+			const asker = (ws as any).bound as Set<string> | undefined
+			if (!asker || !asker.size) {
+				try { ws.send(JSON.stringify({ control: 'who_error', reason: 'not hello-bound — presence answers only to verified identities', corr: msg.corr })) } catch {}
+				relayLog(`✗ who REFUSED — asking socket has no verified hello bind`)
+				return
+			}
+			const asked = msg.addrs.slice(0, WHO_MAX)
+			if (msg.addrs.length > WHO_MAX) relayLog(`⚠ who list truncated ${msg.addrs.length}→${WHO_MAX}`)
+			const online: string[] = []
+			for (const a of asked) {
+				if (typeof a !== 'string') continue
+				const set = locals.get(a)
+				if (!set) continue
+				for (const s of set)
+					if (s.readyState === WebSocket.OPEN && ((s as any).bound as Set<string> | undefined)?.has(a)) { online.push(a); break }
+			}
+			try { ws.send(JSON.stringify({ control: 'who_ok', online, asked: asked.length, corr: msg.corr })) } catch {}
+			relayLog(`👥 who ${asked.length} asked → ${online.length} online (verified binds only)`)
 			return
 		}
 		// ghost_compile_ack (editor → CLI): the verdict-reply for a ghost_compile.  Route it back to

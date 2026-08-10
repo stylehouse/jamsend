@@ -13,7 +13,7 @@ import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return '72dceef8703b044f~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return 'ec45cc89bd979be7~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -333,6 +333,10 @@ Supervisor_unwatch(w, key) {
 //  RE-ARMING IS THE POINT: calling this again restarts the clock (a second invite means we are
 //   hoping again).  A watch that has been given up on is re-armed the same way, so nothing has to
 //    reason about whether the previous hope already expired.
+//  THE ARMING CALLER SHOULD ALSO STAMP `sc.because` AND `sc.advice` — why we are hoping, and what to
+//   tell a listener when we stop.  Both are the registrar's sentences (see Supervisor_line), set on
+//    the returned watch the same way `because` already is; neither is a parameter here because a
+//     seven-argument door is how a registration becomes a puzzle.
 Supervisor_expect(w, key, sentence, fn, subject, secs, stage) {
     if (!w) return null
     let watch = this.Supervisor_watch(w, key, sentence, 'standing', fn, subject, stage)
@@ -412,6 +416,86 @@ Supervisor_waiting(w) {
 Supervisor_outstanding(w) {
     if (!w) return []
     return w.o({ Watch: 1 }).filter(x => x.sc.kind === 'milestone' && !x.sc.met)
+
+},
+// Supervisor_arrival — DECLARE that this watch is THE ARRIVAL: the one milestone whose meeting means
+//  the machine has finished coming up FOR A LISTENER (the owner 2026-08-10: *"the Butler is supposed
+//   to carry you all the way, letting you know what's happening, until the Vyto glass is up and
+//    running AND playing the thing you want"*).
+//  WHY THE FLAG AND NOT A KEY THE FACE KNOWS.  The arrival screen may not name a subsystem any more
+//   than this file may — a Butler that tested for `arrive.playing` would be the hand-written headline
+//    again, one layer up, and a tab that registered a different arrival would hold forever.  So the
+//     REGISTRAR declares which of its own claims is the finish line, and every face asks the model.
+//  MORE THAN ONE IS ALLOWED and means ALL of them: two processes that each own half of what "up"
+//   means should each say so rather than one of them guessing about the other.
+Supervisor_arrival(w, key) {
+    if (!w) return null
+    let watch = w.o({ Watch: key })[0]
+    if (!watch) return null
+    if (!watch.sc.arrival) { watch.sc.arrival = 1; watch.bump() }
+    return watch
+
+},
+// Supervisor_arrived — THE THREE ANSWERS, and the third is the one that matters.
+//   'none'    — nobody declared an arrival.  NOT "no": a Book, a daemon, a half-loaded tab has no
+//                finish line at all, and a face must fall back to its own judgement rather than hold
+//                 forever waiting for a milestone that will never be registered.  This is the
+//                  unknown-is-first-class rule (dial rule 2) applied to the arrival.
+//   'coming'  — declared and not yet met.
+//   'arrived' — every declared arrival is met.
+Supervisor_arrived(w) {
+    if (!w) return 'none'
+    let rows = w.o({ Watch: 1 }).filter(x => x.sc.arrival)
+    if (!rows.length) return 'none'
+    return rows.every(x => x.sc.met || x.sc.verdict === 'ok') ? 'arrived' : 'coming'
+},
+//#endregion
+
+//#region prefs — a listener's own small choice, and it must SURVIVE A RELOAD
+// The owner 2026-08-10 asked the Butler for *"one semi-hidden persistent-state toggle, like we used
+//  to have, quit_fullscreen or so"*.  Two halves, and both are load-bearing:
+//   A PARTICLE, not a component `$state` — a value derived inside a face is used once and thrown away
+//    at the face boundary: it cannot be snapped, asserted by a Book, bumped for another face, or
+//     compared between two tabs (the whole argument the dial region makes at length).
+//   AND STASHED, because the C tree on Mundo does not outlive a reload.  `H.imem(...)` is the repo's
+//    standing persistence (Dexie-backed `H.stashed`) and is exactly what the old `quit_fullscreen`
+//     used (Cytoscape.svelte's `uimem.get('quit_fullscreen')`).  So: the stash is the memory and the
+//      particle is the legible copy of it, minted from the stash the first time it is asked for.
+// OFF COSTS NO ROW.  A pref that is off mints no particle and writes no snap line — a snapped boolean
+//  rides as 1 or ABSENT, and the same discipline keeps the stash free of uninteresting defaults
+//   (`i_actions_to_c` deletes a key that equals its default for this reason).  It also means a Book
+//    that never touches a pref sees no new furniture in its fixture.
+Supervisor_pref(w, key) {
+    if (!w) return 0
+    let pref = w.o({ Pref: key })[0]
+    if (pref) return pref.sc.on ? 1 : 0
+    let mem = this.Supervisor_prefmem()
+    let on = mem ? mem.get(key) : null
+    if (!on) return 0
+    this.Supervisor_pref_set(w, key, 1)
+    return 1
+
+},
+// Supervisor_pref_set — write both halves, particle and stash, in one place so they cannot drift.
+Supervisor_pref_set(w, key, on) {
+    if (!w) return 0
+    let pref = w.oai({ Pref: key })
+    if (pref.c.up !== w) pref.c.up = w
+    if (on && !pref.sc.on) pref.sc.on = 1
+    if (!on && pref.sc.on !== undefined) delete pref.sc.on
+    pref.bump()
+    let mem = this.Supervisor_prefmem()
+    if (mem) mem.set(key, on ? 1 : 0)
+    this.Supervisor_notice(w, (on ? '⚑ ' : '⚐ ') + key + ' — ' + (on ? 'on' : 'off'))
+    return on ? 1 : 0
+
+},
+// Supervisor_prefmem — the stash burrow, on the TOP House because that is the one House that outlives
+//  every run on this tab (the same reason the roster itself stands on Mundo).  Null wherever `imem`
+//   is not there — a headless boot persists nothing and must not throw about it.
+Supervisor_prefmem() {
+    let M = this.top_House ? this.top_House() : null
+    return (M && M.imem) ? M.imem('Supervisor') : null
 },
 //#endregion
 
@@ -556,6 +640,25 @@ Supervisor_speaking(w) {
     return out.sort((a, b) => this.Supervisor_rank(a) - this.Supervisor_rank(b))
 
 },
+// Supervisor_amiss — the watches that are actually WRONG, as against merely NOT YET.  A narrower
+//  reading than Supervisor_speaking, and the distinction earns its keep the moment a surface has to
+//   decide whether to EXIST (2026-08-10, the owner on the Vyto cell: *"perhaps not even there if
+//    nothing is out of line"*).
+//  `speaking` is everything worth SAYING, outstanding milestones included — right for a loading
+//   screen, whose whole subject is work that has not happened yet.  But an unmet milestone is not a
+//    fault: on a tab with no friends, `sound.grant`/`sound.shelf`/`sound.pulled` are unmet forever
+//     and nothing is wrong at all, and a cell keyed on `speaking` would therefore be permanent on
+//      exactly the machine it was supposed to leave alone.
+//  SO: a STANDING watch reading wrong (something is broken now), or ANY watch reading unknown (a
+//   blind spot, which is its own kind of wrong — "I could not look" must never read as fine).  That
+//    is Supervisor_rank's 0 and 3; rank 1, a milestone not yet met, is deliberately not here.
+//  The model draws this line, not a face, for the reason the whole Supervisor_lines header gives:
+//   two copies of one judgement is how a face starts lying.
+Supervisor_amiss(w) {
+    if (!w) return []
+    return this.Supervisor_speaking(w).filter(x => this.Supervisor_rank(x) === 0 || this.Supervisor_rank(x) === 3)
+
+},
 // Supervisor_rank — the order things get said in.  A standing thing that is WRONG outranks
 //  everything: it is happening now, to a user who is presumably staring at it.  Outstanding
 //   milestones come next (work to do), blind spots last (nothing is known to be wrong).
@@ -580,6 +683,12 @@ Supervisor_say(w) {
     //     and they move on exactly the passes this list is worth re-reading.
     row.c.speaking = loud
     row.c.lines = this.Supervisor_lines(w)
+    // ALREADY FLATTENED, MARKED AND TONED, for the cell.  `speaking` above is raw %Watch particles and
+    //  a face reading those has to decide the glyph and the colour itself — which SupervisorFace was
+    //   doing, with its own mark()/tone() pair, while its header claimed to be dumb on purpose.  That
+    //    is the second-opinion drift Supervisor_lines was written to end, sitting in the one surface
+    //     whose whole job is to be trusted at a glance.
+    row.c.amiss_lines = this.Supervisor_amiss(w).map(x => this.Supervisor_line(x))
     // WHAT WE ARE WAITING FOR IS WORTH SAYING (the owner 2026-08-10: *"it should be talking about a
     //  Pier coming online while we're waiting for it"*).  The quiet-when-healthy rule was reading too
     //   broadly: a watch inside its patience is not a FAULT — it stays out of `loud`, so the cell
@@ -594,18 +703,25 @@ Supervisor_say(w) {
     if (all.length && !loud.length) say = 'all ' + all.length + ' well'
     if (waits.length && !loud.length) say = '⋯ ' + waits[0].sc.sentence
     if (loud.length) say = this.Supervisor_mark(loud[0]) + ' ' + loud[0].sc.sentence + (loud[0].sc.note ? ' — ' + loud[0].sc.note : '')
-    this.Supervisor_summary(row, say, '' + all.length, loud.length)
+    this.Supervisor_summary(row, say, '' + all.length, loud.length, this.Supervisor_amiss(w).length)
 
 },
 // Supervisor_summary — the ONE writer of the summary row, so the bump is in one place and cannot be
 //  forgotten by the next branch somebody adds.  Same change-only discipline as Supervisor_stamp: this
 //   runs every tick, and the summary is the most-watched row in the tree.
-Supervisor_summary(row, say, watches, loud) {
+// `amiss` rides beside `loud` rather than replacing it, because they answer different questions and
+//  different surfaces need different ones: `loud` is "how much is worth saying" (the Butler's arc,
+//   the cell's dose) and `amiss` is "is anything actually wrong" (whether a cell should exist at all).
+//   Both snap as a count or ABSENT, never 0 — a snapped boolean rides as 1 or absent, and a count
+//    behaves the same way here so a healthy row carries neither key.
+Supervisor_summary(row, say, watches, loud, amiss) {
     let moved = 0
     if (row.sc.say !== say) { row.sc.say = say; moved = 1 }
     if (row.sc.watches !== watches) { row.sc.watches = watches; moved = 1 }
     if (loud && row.sc.loud !== '' + loud) { row.sc.loud = '' + loud; moved = 1 }
     if (!loud && row.sc.loud !== undefined) { delete row.sc.loud; moved = 1 }
+    if (amiss && row.sc.amiss !== '' + amiss) { row.sc.amiss = '' + amiss; moved = 1 }
+    if (!amiss && row.sc.amiss !== undefined) { delete row.sc.amiss; moved = 1 }
     if (moved) row.bump()
 
 },
@@ -663,9 +779,21 @@ Supervisor_lines(w) {
 // Supervisor_line — one watch, flattened into everything any face could want from it.  `left` is the
 //  live countdown and is deliberately computed HERE rather than snapped: a per-second number in sc
 //   would churn every downstream fixture forever, which is the same law the deadline rides `.c` for.
+//  `advice` is WHAT TO TELL A LISTENER once we have given up on this claim, and it is the registrar's
+//   sentence, never ours (the owner 2026-08-10: the Butler *"should also explain clearly that no
+//    friend is online and you can play local music instead"*).  It rides beside `because` and for the
+//     same reason: only the process that armed the expectation knows what a listener could do
+//      instead, and a Supervisor that guessed would be inventing advice about subsystems it must stay
+//       blind to.  Absent is the common case and means "nothing useful to suggest" — a face shows
+//        nothing rather than filling the silence.
+//  `gaveup` is the ruling a face would otherwise re-derive from patience + the clock, which is the
+//   second-opinion drift Supervisor_lines exists to stop.
 Supervisor_line(watch) {
     let waiting = this.Supervisor_watch_waiting(watch)
     return {
+        gaveup: (!waiting && watch.sc.patience === 'given-up' && watch.sc.verdict !== 'ok') ? 1 : 0,
+        advice: String(watch.sc.advice || ''),
+        arrival: watch.sc.arrival ? 1 : 0,
         key: String(watch.sc.Watch || ''),
         sentence: String(watch.sc.sentence || ''),
         note: String(watch.sc.note || ''),

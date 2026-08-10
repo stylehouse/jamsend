@@ -23,6 +23,16 @@ Companion to `Cluster_spec.md` (§3.2b boot→channel map, §3.3 Brink badges + 
       a spurious re-`ack` on the wire. **This is §4's parked question with a measured cost attached**, so
        decide it there rather than patching §4.5. Do not "fix" it by deduping; the dedup already exists.
 
+- **NEW 2026-08-10 — the open `?addr=` door now costs less: presence reads VERIFIED binds only.**
+   `relay.ts` gained a batch presence probe (`{control:'who', addrs}` → `who_ok`; see
+    `Presence_todo.md`), and because `?addr=<prepub>` is still bindable by anyone (§6.4, load-bearing
+     for the pre-hello window), it answers online ONLY where an OPEN socket holds the addr in the
+      hello-verified `bound` set. So **presence is strictly more trustworthy than delivery**: a
+       pre-claiming eavesdropper can still receive a copy of `to:<prepub>` frames, but can no longer
+        make that identity read as *present*. This does not close §6.4's third door — it just stops
+         the new surface from inheriting it. `who` is also refused to any asker that is not itself
+          hello-bound, and is list-in only, so `locals` stays unenumerable (§4a's parked "maybe one
+           day" is still parked).
 - **`?addr=<role>` is SETTLED — leave it alone** (§2). It is not redundant with `become`; the
    difference is a reconnect race that drops one-shot role-addressed frames. §2 records the
     precondition if anyone revisits it.

@@ -13,6 +13,8 @@
     import { TheC }   from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { power_cells, foam_cells, slab_seat, poly_area, type Pt } from "$lib/O/vyto_geometry"
+    import { deal_rows, seat_on_deal, deal_fits, deal_badness, box_poly,
+             type Deal, type SeatRow } from "$lib/O/vyto_seat"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
     import { lifetell } from "$lib/O/ui/micro/lifetell"   // DIAGNOSTIC — strip with the rest of the remount probes
@@ -255,7 +257,11 @@
     // the WORLD can carve (it has the ball law and the composer didn't pull `wave`); whether a given
     //  cell does is a question about that cell's room.  Split because the fallback differs: a carveable
     //   world falls back to the body, a non-carveable one has no wall law and keeps the wave.
-    function carveable(w: TheC): boolean { return !!(w.c as any).foam && !fo(w, 'wave') }
+    //  A SEATED cell is a rectangle, so the arc band is meaningless on it — and `wave_d`, the
+    //   scalloped band struck along the bbox TOP EDGE, stops being the floating furniture it was over
+    //    a ball (2026-08-10) and becomes exactly right: on a rect the bbox top edge IS the top wall.
+    //     The label style that had to be worked around for the foam is native here.
+    function carveable(w: TheC): boolean { return !!(w.c as any).foam && !seat_on(w) && !fo(w, 'wave') }
     function wall_carve(w: TheC, cell: PaintCell): boolean {
         return carveable(w) && cell.kind === 'poly' && room_of(cell) >= CARVE_ROOM
     }
@@ -867,6 +873,65 @@
     //     `layout` for why it is expressible as a cap on the AGGRESSOR rather than a floor on the victim.
     const SEAT_MIN = 10
     const VANISH_ROOM = 380   // the floor a cell must clear to be drawn at all — law at its use site
+
+    // ── THE SEAT REGIME (`foamereo:'seat'`) ───────────────────────────────────────────────────────
+    //  (the owner 2026-08-10: *"shall we now do a completely other UI for all these cells... one with
+    //   way less skittishness, but eating the same model... less failure modes..."* — and, on the
+    //    landing: *"don't throw away everything we have? is it going to be switchable?"*)
+    //  A THIRD REGIME BESIDE foam AND plain, not a replacement.  It eats the identical model input —
+    //   the solve's radii, which ARE Vyto_express's env_area in another dress — and answers with a
+    //    deterministic partition instead of a relaxation-then-discovery.  The law, the measured case
+    //     against the foam, and the deal are all stated in `vyto_seat.ts`; this is only the wiring.
+    //  ADDITIVE: an unset foamereo returns null from `fo`, so every gate below is byte-invisible and
+    //   the foam's arithmetic is untouched.  No Book commissions `seat`, so no fixture moves.
+    //  WHERE IT PLUGS IN: `polyByKey` — the emit loop downstream reads polygons by key and cares not
+    //   at all where they came from, so faces, molds, the dose handle, holds, the decor deck and the
+    //    whole label ladder draw a rect exactly as they draw a wall.  Nothing is deleted for this.
+    function seat_on(w: TheC): boolean { return fo(w, 'seat') != null }
+    // The standing deal per scope, per world.  `.c`-side only (never encoded) — the deal is derived,
+    //  and stage 4 is where it earns a place in the tree so a Book can witness the layout.
+    const dealMemo = new WeakMap<TheC, Map<string, Deal>>()
+    // WEIGHT = the SPRUNG radius, not the target.  Deliberate, and it is what buys the motion for
+    //  free: the existing integrator already eases every spring's r toward its target and already
+    //   keeps the paint loop alive while it does, so the boxes follow that easing without a second
+    //    animation system.  The cost is that the box steps by a grid unit rather than gliding — the
+    //     rect spring that would smooth it is stage 3, deliberately not smuggled in here.
+    function seat_polys(w: TheC, scopeKey: string, keys: string[], radii: number[],
+                        framePoly: Pt[], gap: number): (Pt[] | null)[] {
+        if (!keys.length) return []
+        let bx = Infinity, by = Infinity, bx1 = -Infinity, by1 = -Infinity
+        for (const p of framePoly) {
+            if (p.x < bx) bx = p.x
+            if (p.x > bx1) bx1 = p.x
+            if (p.y < by) by = p.y
+            if (p.y > by1) by1 = p.y
+        }
+        const frame = { x: bx, y: by, w: Math.max(1, bx1 - bx), h: Math.max(1, by1 - by) }
+        const rows: SeatRow[] = keys.map((k, i) => ({ key: k, weight: Math.PI * radii[i] * radii[i] }))
+        if (!dealMemo.has(w)) dealMemo.set(w, new Map())
+        const dm = dealMemo.get(w) as Map<string, Deal>
+        let deal = dm.get(scopeKey)
+        // RE-DEAL IS AN EVENT, and it has exactly two causes.  Membership: these are not the rows the
+        //  deal was cut for.  Staleness: the standing deal could not seat everyone at these weights,
+        //   which shows up as a short box list (see vyto_seat's strict-axis note — a cut is never
+        //    quietly turned to make the numbers work, because turning one IS the teleport).
+        let boxes = deal && deal_fits(rows, deal) ? seat_on_deal(rows, deal, frame) : null
+        if (!boxes || boxes.length + (deal?.out.length ?? 0) < rows.length) {
+            deal = deal_rows(rows, frame)
+            dm.set(scopeKey, deal)
+            boxes = seat_on_deal(rows, deal, frame)
+            ;(w.c as any).re_deals = (((w.c as any).re_deals as number) || 0) + 1
+        }
+        ;(w.c as any).seat_bad = Math.round(deal_badness(rows, deal as Deal, frame) * 10) / 10
+        ;(w.c as any).seat_wait = (deal as Deal).out.length
+        const byKey = new Map(boxes.map(b => [b.key, b]))
+        return keys.map(k => {
+            const b = byKey.get(k)
+            if (!b) return null
+            const p = box_poly(b, gap)
+            return p.length ? p : null
+        })
+    }
     const OVERHANG = 1.25     // a slab seat may overrun the cell's ends by this factor of its length
     // ⛔ SIDEWAYS IS OUT (the owner 2026-08-09: "ew... very incoherent! forget sidewaysing, I just meant
     //  the box-within-box reality of Component in cell aligned for space efficiency, without tilting
@@ -1620,7 +1685,10 @@
         //    through its own stuffing rather than as a sibling of its children.
         const SELF_KEY = '»self'
         const layout = (nodes: Node[], framePoly: Pt[], gap: number, scopeKey: string, selfOf?: Node): void => {
-            const foam = !!(w.c as any).foam
+            // the seat is its own regime: it never runs the fill economy, the seat floor, the repair
+            //  loop or the vanish floor, because it cannot produce the faults those exist to repair.
+            const seatR = seat_on(w)
+            const foam = !!(w.c as any).foam && !seatR
             const live: Node[] = []
             const seeds: Pt[] = []
             const radii: number[] = []
@@ -1653,7 +1721,9 @@
             //  measurement below cuts a real cell at `seeds[sI]` and would otherwise be measuring the
             //   room left by a body that isn't on screen.  Law and evidence above `frame_seat`.
             //  Counted on `.c` (never encoded) so `--why` can show the glass catching its own rows.
-            const seated = frame_seat(seeds, framePoly, SEAT_MIN)
+            //  A seated glass has no seed to strand — boxes are constructed inside the frame — so it
+            //   skips this too rather than counting phantom rescues.
+            const seated = seatR ? 0 : frame_seat(seeds, framePoly, SEAT_MIN)
             if (seated) (w.c as any).frame_seats = (((w.c as any).frame_seats as number) || 0) + seated
             // THE FOAM REGIME (gated on w.c.foam — the ORCHESTRA OF SPHERES law, Vyto_todo):
             //  coverage is earned by pressure.  The solve's radii are RELATIVE weights tuned for
@@ -1721,7 +1791,11 @@
             const sig = (foam ? 'F' : '') + cut_sig(framePoly, keys, seeds, cutRadii, gap)
             const had = wm.get(scopeKey)
             let polys: (Pt[] | null)[]
-            if (had && had.sig === sig) {
+            if (seatR) {
+                // no wall memo here: the deal IS the memo, and it is keyed on membership rather than
+                //  on a signature of every coordinate, so ordinary dose work never re-cuts it.
+                polys = seat_polys(w, scopeKey, keys, radii, framePoly, gap)
+            } else if (had && had.sig === sig) {
                 polys = had.polys
             } else {
                 polys = foam ? foam_cells(seeds, cutRadii, gap, framePoly)
@@ -3118,8 +3192,15 @@
                 <!-- NO SILENT CAPS.  The corner note is HTML and never reaches a capture, so the rows
                      that have no cell — crowded out, or under the vanish floor — would be invisible to
                      exactly the instrument we use to judge the glass.  Ride the count out on the svg. -->
+                <!-- and the seat's own three numbers, for the same reason: whether the regime is on at
+                     all, how many rows are on its waiting list, and how sour the standing deal has
+                     gone (the re-deal trigger).  A capture that cannot see these cannot judge it. -->
                 <svg class="viewport" data-foamereo={String((w.sc as any)?.foamereo ?? '')}
                      data-noroom={unseated_cells(w).length}
+                     data-seat={seat_on(w) ? '1' : '0'}
+                     data-seatwait={(w.c as any).seat_wait ?? 0}
+                     data-seatbad={(w.c as any).seat_bad ?? 0}
+                     data-redeals={(w.c as any).re_deals ?? 0}
                      viewBox="{cam.x} {cam.y} {cam.w} {cam.h}" preserveAspectRatio="xMidYMid meet">
                     <!-- COPPER (the owner 2026-08-09: "you could use copperannodes.jpg at different
                          scales for texture perhaps").  userSpaceOnUse, so the grain lives in WORLD

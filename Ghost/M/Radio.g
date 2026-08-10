@@ -1022,13 +1022,45 @@ async Radio_dial(radio):
 //     window rather than either re-flashing instantly or — worse — silently staying green forever on
 //      a stale clock.  The probe call here is a PURE READ (Radio_probe_shelf mutates nothing); only
 //       this registering function, never the probe itself, is allowed to arm.
+//  AND IT MUST NOT GIVE UP WHILE THE SCAN IS STILL ADVANCING (2026-08-10, the owner watching a live
+//   boot: *"it's just '⋯' and yellow, then goes failed, then goes OK.  how silly.  that leg of
+//    progress needs more relaxing or micro-satisfying with the progress we are making"*).  Exactly
+//     right, and this file's own doc already contains the rule it was breaking — Supervisor_todo §2:
+//      **elapsed time cannot tell SLOW from STUCK, and the distinguisher is monotonic progress.**  A
+//       flat 15s window asks "has it been long?" when the question is "has anything advanced?", so a
+//        cold walk over a 500-directory share reliably blew the window and then succeeded, which is
+//         the HUD-flapping failure the whole roster exists to avoid — with an extra insult, since it
+//          announced FAILURE about something that was working the whole time.
+//  THE COUNTER: how many directories the wander has actually stood in (Crate's `meander_learn` map,
+//   one key per visited path, climbing on every hop whether or not it found audio).  While that
+//    climbs we are looking, not stuck, so the patience is RE-ARMED — Supervisor_expect restarts its
+//     own clock by design ("re-arming is the point").  When it stops climbing and the shelf is still
+//      empty, the 15s runs out and the give-up is honest: we walked and found nothing.
+//  A share with no disk access never walks at all, so nothing re-arms and the give-up is immediate-
+//   ish, which is also correct — that machine is not slow, it has nowhere to look.
 Radio_watch_shelf(w):
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (!sup) return
     let watch = this.Supervisor_watch(sup, 'radio.shelf', 'there is music in your share — records to play', 'standing', 'Radio_probe_shelf', w, this.Supervisor_stage('share'))
-    if (watch && !watch.c.deadline && this.Radio_probe_shelf(w, sup)?.verdict === 'wrong') {
+    if (!watch) return
+    if (this.Radio_probe_shelf(w, sup)?.verdict !== 'wrong') return
+    let walked = this.Radio_shelf_walked()
+    // a fresh empty read arms; an ADVANCING one re-arms.  Both go through the same door so the clock
+    //  and the grade can never disagree about which state we are in.
+    let fresh = !watch.c.deadline
+    let moving = watch.c.walked != null && walked > watch.c.walked
+    if (fresh || moving) {
         this.Supervisor_expect(sup, 'radio.shelf', watch.sc.sentence, 'Radio_probe_shelf', w, 15, this.Supervisor_stage('share'))
     }
+    watch.c.walked = walked
+
+// Radio_shelf_walked — how many directories the wander has stood in this session.  `.c` on the top
+//  House and NOT persisted, which is right: it measures THIS boot's looking, and a restored census
+//   (Census.svelte folds one in) would make a cold page look like it had already searched.
+Radio_shelf_walked():
+    let TOP = this.top_House ? this.top_House() : null
+    let learn = TOP ? TOP.c.meander_learn : null
+    return learn ? Object.keys(learn).length : 0
 
 // Radio_probe_shelf — how many records the listener's OWN shelf holds.  A pure read: `o()[0]`
 //  throughout, never Ra_home_self, which is an `oai` chain that would MINT the shelf it was asked
@@ -1043,7 +1075,16 @@ Radio_probe_shelf(w, sup):
     let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
     if (!shelf) return { verdict: 'unknown', note: 'no shelf yet — still starting up' }
     let recs = this.Ra_recs(shelf)
-    if (!recs.length) return { verdict: 'wrong', note: 'no music in your share — open a folder with some in it' }
+    // MICRO-SATISFY THE WAIT.  An empty shelf on a cold boot is not one fact, it is two, and a
+    //  listener staring at a spinner deserves the difference: "we have walked 37 folders and not
+    //   found any yet" is a machine working, "no folders walked" is a machine with nowhere to look.
+    //    The SENTENCE stays fixed (it is the stable claim a Book asserts and a face keys on); only
+    //     the note moves, and this roster lives on Mundo so no fixture churns on it.
+    if (!recs.length) {
+        let walked = this.Radio_shelf_walked()
+        if (walked) return { verdict: 'wrong', note: 'still looking — ' + walked + ' folders walked' }
+        return { verdict: 'wrong', note: 'no music in your share — open a folder with some in it' }
+    }
     return { verdict: 'ok', note: recs.length + ' records' }
 
 // Radio_dials — register the radio's OVERALL STATES.  Registered from Stoker_ensure alongside the

@@ -172,6 +172,18 @@ if (svg) {
                 //      svg does not carry it, so grepping the file will never find it.)
                 + `${r.noroom == null ? ' · (no-room: old tab)' : r.noroom ? ` · ${r.noroom} with no room` : ' · 0 with no room'}`
                 + `${r.foamereo != null ? ` · foamereo "${r.foamereo}"` : ''}`)
+            // THE SEAT REGIME's own line, printed only when it is actually on — a foam capture should
+            //  read exactly as it always did.  `bad` is the worst aspect ratio the standing deal is
+            //   producing (the re-deal trigger) and `wait` is rows the grid could not seat one-each;
+            //    both are zero on a healthy glass, and both are invisible in the svg without this.
+            //  AND SAY WHEN THE TAB CANNOT ANSWER.  `seat: null` means the tab is running a build from
+            //   before the regime existed — which looks EXACTLY like "the regime is off" if you only
+            //    print the on case, and that ambiguity is the whole a-no-op-that-answers failure.  It
+            //     is also the first thing to check when a switch appears not to work.
+            if (r.seat == null) console.log('▤ seat  (old tab — no data-seat; it has not picked up the seat build)')
+            else if (r.seat) console.log(`▤ seat  ON · deal badness ${r.seatbad ?? '?'} · waiting ${r.seatwait ?? '?'}`
+                + ` · re-deals ${r.redeals ?? '?'} this session`)
+            else console.log('▤ seat  off (foam regime)')
         }
     }
     if (Array.isArray(r.molds)) {

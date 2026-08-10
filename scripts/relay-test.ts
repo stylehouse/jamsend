@@ -215,6 +215,36 @@ async function main() {
 	check('to:runner broadcasts to runner A', bcastA)
 	check('to:runner broadcasts to runner B', bcastB)
 
+	// ── who: batch presence, verified-binds-only, leak-gated ─────────────────────────────────────
+	//  One frame asks about N addrs; the answer counts only hello-VERIFIED binds (an ?addr= claim
+	//   routes but must not read as presence), and is refused entirely to a non-hello-bound asker.
+	log('\n— who: batch presence probe —')
+	// ALICE is ?addr=-bound only (never sent a hello) → refused.
+	alice.send({ control: 'who', addrs: [carolAddr], corr: 'w0' })
+	const whoRefused = await until(() => alice.ctrl.some((m) => m.control === 'who_error' && m.corr === 'w0'))
+	check('who refused to a non-hello-bound asker (who_error)', whoRefused)
+
+	// CAROL (hello-bound) asks about: two live hello-bound runners, herself, a nobody, and ALICE
+	//  (?addr=-bound only). Expect exactly the verified three; ALICE must NOT read as online.
+	carol.send({ control: 'who', addrs: [rp1, rp2, carolAddr, 'deadbeefdeadbeef', 'ALICE'], corr: 'w1' })
+	const who1 = await until(() => carol.ctrl.some((m) => m.control === 'who_ok' && m.corr === 'w1'))
+	check('who answers a hello-bound asker (who_ok)', who1)
+	const w1 = carol.ctrl.find((m) => m.control === 'who_ok' && m.corr === 'w1')
+	check('who: hello-bound runners read online', !!w1 && w1.online.includes(rp1) && w1.online.includes(rp2))
+	check('who: the asker reads online to itself', !!w1 && w1.online.includes(carolAddr))
+	check('who: an unknown addr reads offline', !!w1 && !w1.online.includes('deadbeefdeadbeef'))
+	check('who: an ?addr=-only claim does NOT read online (verified binds only)', !!w1 && !w1.online.includes('ALICE'))
+	check('who: asked count echoes the list', !!w1 && w1.asked === 5)
+
+	// A closed socket goes offline once the relay unbinds it (presence tracks live sockets).
+	run2.ws.close()
+	await wait(200)
+	carol.send({ control: 'who', addrs: [rp1, rp2], corr: 'w2' })
+	const who2 = await until(() => carol.ctrl.some((m) => m.control === 'who_ok' && m.corr === 'w2'))
+	const w2 = carol.ctrl.find((m) => m.control === 'who_ok' && m.corr === 'w2')
+	check('who: a closed socket reads offline', who2 && !!w2 && !w2.online.includes(rp2))
+	check('who: the still-open runner stays online', !!w2 && w2.online.includes(rp1))
+
 	// Set-once errorific: BOB's server is already 'runner'; asking it to become 'editor' must error.
 	const ctrlBefore = bob.ctrl.length
 	bob.send({ control: 'become', role: 'editor' })
