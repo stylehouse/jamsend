@@ -119,19 +119,57 @@ The whole universe is **16 tracks that BOTH tabs already own** (16/16 id overlap
 It calls `Radio_skip` (which blends rather than cuts, 2026-08-07) and lets the dial's existing friend
  preference choose, rather than growing a second opinion about what to play.
 
-**⚠ THE BOMB, and it is the exhaustion bug below.** `Radio_crossover` gates on `playable`, which does
- NOT consult `heard` — but the `Radio_skip` it fires lands in `Ra_dial_next(… skip_ids: radio.c.heard)`.
-  So on a tab where the friend's records are already in `heard` (and `heard` is keyed by BARE id, so
-   your own listening drains the friend pool and two tabs on one box share ids), the crossover can
-    burn its once-a-sitting latch and land back on your own music. **Not observed — but not excluded
-     either, and the latch means it would cost the whole sitting.** The honest fix is for the
-      crossover to ask for a specific record rather than "the next thing"; it deliberately does not,
-       to avoid a second opinion. Decide which of those two costs is worse before touching it.
+**⚠ THE BOMB — RE-AIMED 2026-08-10 (late). The conclusion was right and the fuse was wrong; the
+ paragraph that stood here would have sent you to the wrong function.** What it said: the crossover
+  gates on `playable` (heard-blind) but fires a `Radio_skip` that lands in
+   `Ra_dial_next(… skip_ids: radio.c.heard)`, so an all-heard friend crate burns the latch back onto
+    your own music. **That mechanism cannot fire**, for two independent reasons, both already in the
+     file it accused:
+- `Radio_dial` reaches `Ra_dial_next` ONLY inside the `radio.sc.own` branch (:917) and the last "mine"
+   rung (:982). The friend path goes lineup → `Radio_dial_pool` (fresh, :928) → **the exhaustion rung
+    `Radio_dial_pool(w, radio, 1)` (:944)**, which drops the heard gate (:1524) and REPLAYS. That rung
+     is the 2026-08-06 "exhaustion is not starvation" fix, and it sits *above* the local rung on
+      purpose. All-heard costs one honest replay (counted in `sc.replays`), never own music.
+- `Radio_pool_census` (:1577) and `Radio_dial_pool` (:1526) apply the SAME `Radio_playable` over the
+   same `MusuThem` crates, so a census that said `playable > 0` cannot be followed by an empty
+    exhaustion pool. And `Radio_lineup_fill` is source-exclusive (:1367/:1375), so the lineup cannot
+     hand back own music either.
 
-**NOT YET SEEN FIRE.** Both player tabs were already past solo when it compiled in, so nothing has
- emitted the `crossover` mark yet. It wants a fresh boot beside a friend with music — grep the supply
-  ring (`runner_ask world`) for `crossover`. Until that has been watched once, treat this as written,
-   not proven ([[mutation-test-every-claim]] applies: a green path nobody has seen run gates nothing).
+**THE REAL FUSE: `Radio_source_toggle` never clears `sc.solo`.** `sc.solo` means one precise thing
+ everywhere it is read — *on my own shelf INVOLUNTARILY* — minted only on the mine rung (:996, which
+  `own` makes unreachable) and retired only in `Radio_open` when a friend's track opens (:695). The
+   source switch (:1293–1308) deletes `sc.note` and **not** `sc.solo`. So boot alone → solo set → flip
+    to "my records" → `own=1 && solo` stands for the rest of the sitting. A friend's first chunk then
+     lands, the crossover's three gates all pass, `crossed` burns, `Radio_skip` fires, and the dial
+      takes the `own` branch at :917 — **your own record, latch spent, and the listener's explicit
+       source choice overridden for nothing.** Second harm, same cause: `Radio_dial_solo` (:1141) reads
+        that stale flag, so the roster says *"listening alone"* over a deliberate own-mode.
+
+**The fix is one line in the toggle, and deliberately NOT in the crossover.** Clear `sc.solo`/`solo_by`
+ where the meaning changes, restoring the invariant at its only breach point; then `own=1 ⇒ solo
+  absent` holds structurally and every consumer is right for free. Rejected: an `sc.own` gate inside
+   `Radio_crossover` (a second copy of one fact, free to drift, and it leaves the roster still lying);
+    a refundable latch (to refund, the crossover must observe what the dial chose — exactly the second
+     opinion about what to play that :1634 exists to refuse). Open, and the owner's call, not a bug:
+      whether `c.crossed` should permit a RE-arrival hours later when a friend leaves and returns.
+
+**SEEN FIRE — TWICE, 2026-08-10 late, on Righto beside Lefto.** Two independent boots, same arc, from
+ `runner_ask world --player=<pub>`:
+
+```
+radio.solo ◐  "listening alone — your own music while we gather"
+   +1382ms / +284ms   crossover   playable=2 of=Lefto
+radio.solo ·  "with a friend"
+```
+
+The solo mark, the cut-in, and solo clearing because `Radio_open` opened a friend's track — the whole
+ designed causality, reproduced. So this is **proven, not written** ([[mutation-test-every-claim]]:
+  still owed its RED half — flip to own, bring friend music in, confirm it does *not* fire and
+   `crossed` is not burned. That negative test is the one that gates the fix above).
+⚠ **Instrument note, paid for once:** `trace` is REFUSED on a `--player` (allowed: ping probe world
+ supervisor state rungos runners socklog dump poke reload snap steps assertions). A `trace … | grep
+  crossover` greps an error message and returns silence that reads exactly like "never fired". Use
+   `world`. [[the-instrument-was-blind-to-the-molds]]
 
 ### 2026-08-09 — "jump to the friend's stream when it comes available" (owner, same session)
 

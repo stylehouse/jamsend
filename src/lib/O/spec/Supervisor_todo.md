@@ -7,16 +7,74 @@
 
 ## 0. Get on with next
 
-> **ONE RELOAD SETTLES THREE THINGS.** Everything landed on 2026-08-10 after the roster fix is written
->  but unwatched: the boot-log Butler has never been RENDERED, `Radio_crossover` has never FIRED, and
->   the new plain-English watch sentences only appear at registration. All three want the same trigger —
->    **one player tab reloaded beside a friend who has music** — and none of them is mine to pull (a
->     music tab is the owner's). So: ask, then watch. `runner_ask supervisor --player=<pub>` for the
->      rows and the boot waterfall, `runner_ask world --player=<pub> | grep crossover` for the cut-in.
+> **THE RELOAD HAPPENED AND ALL THREE ARE PROVEN** (2026-08-10 late — the banner that stood here said
+>  they were written-but-unwatched; they are not any more). On Righto beside Lefto: the watch sentences
+>   render (`swarm.station` *"you are online — friends can reach you"*, `swarm.arrival` *"Lefto"*, 11
+>    watches vs 9), the boot waterfall draws, and **`Radio_crossover` fired TWICE on two independent
+>     boots** — `crossover playable=2 of=Lefto`, solo ◐ → cut-in → solo ·. Details in Radio_todo §0.
+>  **WHAT IS STILL OWED, and it is now the real §0:** (1) the **false-`'playing'` deadlock** — the entry
+>   below; a tab can sit unrecoverable while every probe reads calm, and it is what made an advice
+>    sentence unfollowable. (2) The **`Radio_source_toggle` solo fix** (Radio_todo §0) and its RED half.
+>     (3) **(a)/(b) from the frozen-roster entry** — the Auto stamp, still one electrode short.
 >  **Read `read_ago` in the header before believing any row** — a frozen roster shows its last verdicts
->   and they are usually green. That is what this whole session started as.
+>   and they are usually green. That is what this whole session started as. Corroborated tonight from
+>    the other side: across two HMR re-stands the rosters stayed at 0.3–0.9s while `arrived` correctly
+>     fell back to `coming`. A frozen one would have kept insisting `arrived`. [[a-frozen-roster-reads-green]]
 
-### ⇑ 2026-08-10 (latest) — THE BUTLER IS A BOOT LOG, AND THE FIRST FRIEND TRACK CUTS IN
+### ⇑ 2026-08-10 (latest) — A RADIO THAT SAYS 'playing' WITH NO DEVICE, AND THE ADVICE THAT CANNOT BE TAKEN
+
+*The owner, reading Righto's own give-up sentence off the arrival screen: "the 'carry on in and pick
+ something to hear' is wrong. I think we need to kick something in the Radio causality chain."*
+  They were right, and the chain is four links — each one individually reasonable.
+
+**The state, measured, not inferred.** `runner_ask probe --player=` said
+ `{"state":"suspended","realtime":0,"rms":0}` while `poke Radio_skip` said
+  `{"was":"playing","now":"playing","title":null}`. A radio in `'playing'` with **no record, no audio
+   device and a suspended AudioContext** — and a Supervisor reading `loud:0 amiss:0` over it.
+
+1. **`Radio_go` sets the state BEFORE it earns it** (Radio.g:129–130): `Radio_state(radio,'playing')`
+    then `await this.Sound_gat()`. `Sound_gat` awaits `g.init()` (Sound.g:210–221), whose AC resume
+     needs a user gesture. On a tab that never got one, the await simply never returns.
+2. **The one diagnosis that names this cannot reach it.** `Sounditron_music_why` (Sounditron.g:1391+)
+    already has the sentence — *"stock stands but the press never took (Radio_go awaits Sound_gat,
+     which pends forever on a gestureless tab)"* — and gates it on `s === 'off' || s === 'paused'`
+      (:1407). Link 1 guarantees `s === 'playing'`. **The branch is unreachable in exactly the state it
+       describes**, so the advice falls through to the generic *"nothing has started playing on its own
+        — carry on in and pick something to hear"*.
+3. **The advice is not merely wrong, it is unfollowable.** `Radio_toggle` (:116–122) reads `'playing'`
+    and calls `Radio_pause`. **The play button pauses.** There is nothing on the page a listener can
+     press that starts music.
+4. **And nothing will fix it in the background.** `Radio_nudge`'s pump gate (`!== 'digging'`, :1611)
+    refuses to restart a radio it believes is playing. `Radio_skip` with no `c.gat` re-enters
+     `Radio_go` (:177–179) and re-parks on the same await. The poke above is that loop, observed.
+
+**Why this belongs in THIS file and not just Radio's.** Every probe was honest and the roster was
+ fresh; `loud:0 amiss:0` was *correct* about the rows it had. What no row owned was the composite —
+  a state where the machine is calm, the instruments agree, and the page is dead. `arrive.playing`
+   eventually gave up, which is the give-up ladder working — and then handed over the one sentence
+    that could not be acted on. **A give-up is a promise that the advice is now true**; that is the
+     whole reason §2 lets the model speak at all, and a hardcoded string cannot keep it.
+
+**The fixes, in the order they are worth doing** — none applied yet, all one-liners:
+ (a) move `Radio_state(radio,'playing')` BELOW the `await Sound_gat()` (and set something honest —
+  `'digging'` or a parked state — above it), so the flag follows the device rather than predicting it;
+   (b) widen `Sounditron_music_why`'s gesture branch to test `probe.realtime` regardless of `s`, since
+    a suspended AC is the fact and the state word is not; (c) make `Radio_toggle` not pause a radio
+     with no `c.gat`. (a) is the cause; (b) and (c) are the two places it became invisible and
+      unrecoverable. [[a-red-you-explained-away]] — every reading here was individually reassuring.
+
+**The Butler changed while standing in front of this.** The *carry on* tap is gone (the owner: it was
+ a second door onto an exit ▦ already draws better, and its loud form said "carry on in and pick
+  something to hear" at precisely the moment that is unfollowable). In its place, gated on `gaveup`
+   alone — the model's ruling, never the face's guess — **a reload button**, because the state above is
+    genuinely unrecoverable from inside the page and a reload is the honest remedy. `IMPATIENT_MS`,
+     `impatient` and `carried_on` went with the tap; ▦ (drawn by the page, z-index 999999, every room,
+      unconditional) is now the ONLY dismissal, which is noted in BigSoundland so nobody removes it.
+ Also: `invite a friend` finally wears `.ip-go` instead of the muted `.ip-act` chip (the owner: *"the
+  Invite… needs to look more like a button"*) — the same finding InvitePanel recorded on 2026-08-08 for
+   the two-step door and never applied to the mint half.
+
+### ⇑ 2026-08-10 — THE BUTLER IS A BOOT LOG, AND THE FIRST FRIEND TRACK CUTS IN
 
 *The owner, watching the arrival screen: "must say less junk in the meantime… perhaps just make it
  look like Linux starting up `[ OK ] friend is online: $randompick`". Then: "it should switch to

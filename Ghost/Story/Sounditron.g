@@ -533,6 +533,17 @@ Sounditron_commission(w):
     //    is minting them with nothing to say.
     if (MH && MH.c.humdinger) {
         w.c.focus_commissioned = 1     // the trickle's boot-latch repair checks this — see trickle_look
+        // ── BOTH WAYS OUT, EVEN FROM A HEIST (the owner 2026-08-10: *"from Heist both Radio and Door
+        //  visible"*).  The standing ruling above folds the Radio away while a keep is open — *"the
+        //   Radio and everything else should fold right down"* — and that was right for the FOAM,
+        //    where the player was a big cell competing for the bag.  Under focus a bud costs a
+        //     40-unit disc on the rim and it is the way back to the music, so folding it away leaves
+        //      the heist with one exit instead of two.  Re-added HERE, inside the focus gate, so the
+        //       foam keeps the ruling it was written for.
+        if (anyKeep) {
+            let rrow = w.o({ Radio: 1 })[0]
+            if (rrow && organs.indexOf(rrow) < 0) organs.push(rrow)
+        }
         // ── THE BELLY LADDER (the owner 2026-08-10: *"it's looking at Door first though... should be
         //  Player mostly. then Door almost always I guess, but not if there's something else to
         //   show"*).  Read top to bottom; the first hit is the belly.  THE PLAYER IS THE DEFAULT —
@@ -579,7 +590,24 @@ Sounditron_commission(w):
             // handed the SOURCE particle, so the handler reads its own identity — no closure over
             //  the loop variable, and the same one line works for every bud kind.
             bud.c.press = (s) => this.Sounditron_focus_to(w, Object.keys(s.sc)[0])
+            // EVERY BUD IS GRAPPLED HERE, unconditionally — a bud that is not in `focusOrgans` is not
+            //  in the commission and simply does not exist on the glass.  (It briefly lived inside the
+            //   `if (anyKeep)` loop below by accident, which meant that with NO keep open the Door was
+            //    never grappled at all: the glass drew one cell, the belly, and nothing else.  The tell
+            //     was a poke moving `belly=Door` while the capture stayed byte-identical — the model
+            //      was fine and the Door had no cell to move into.)
             focusOrgans.push(bud)
+        }
+        // ── LEAVING A HEIST IS PRESSING SOMEWHERE ELSE (the owner 2026-08-10: *"get rid of the 'X'
+        //  button and have only the Door and Radio as two other locations to go to, which cancel the
+        //   Heist"*).  The ✕ came off HeistFace; this is where its verb went, so what cancelling MEANS
+        //    is unchanged (`Heist_keep_cancel`, the same call the button made) — only where you say it.
+        //  It has to be a DIFFERENT press from the plain bud one, because the belly ladder puts an open
+        //   keep FIRST: setting `focused` while a keep stands would be obeyed by nothing, so the press
+        //    would silently do nothing at all.  Leaving means the keep goes.
+        if (anyKeep) for (const bud of buds) {
+            let bmk = Object.keys(bud.sc)[0]
+            if (bmk === 'Door' || bmk === 'Radio') bud.c.press = (s) => this.Sounditron_leave_keep(w, Object.keys(s.sc)[0])
         }
         // ── THE POSES (the owner 2026-08-10: *"there are cell positions|poses: Stretched (when Heist
         //  is forming), Big, Small.  Small has only name, maybe the door icon, that's nice"* — and,
@@ -589,12 +617,28 @@ Sounditron_commission(w):
         //    encoded, so no fixture can record a pose.
         //   · `big`   the belly: draw everything you have.
         //   · `small` a bud: name, and an icon if you have one.  Nothing else.
-        //   · `stretched` is left DELIBERATELY THIN because the owner is not sure of it yet — it is
-        //      not invented here.  A cell ASKS for it (`c.pose_want`, the `stage_want` idiom), so
-        //       when the Heist knows what forming means it says so in one line and nothing here
-        //        has to change.
+        //   · `stretched` the heist: TAKE THE ROOM.  The owner, once he saw the belly working
+        //      (2026-08-10): *"for the Heist we want it totally maxed out up in there like the
+        //       STAGED AREA did it before."*  So the third pose is a heist as the subject, and it
+        //        means the renderer stops sizing the component from its content and hands it the
+        //         biggest rectangle in the belly instead (Vytui `fill_rect`).  Big and stretched
+        //          differ in WHO DECIDES THE ASPECT: big lets the face keep its own, stretched takes
+        //           that away too — right for a list, wrong for a player.
+        //  `pose_want` still outranks all of it, so a cell can always ask for something else.
+        // ── STOP THE PLAYER RESPAWNING (the owner 2026-08-10: *"the Radio cell itself seems to
+        //  respawn every time we hit Next track... arrives small and to the side, then it requires
+        //   mousing over the simulation to resize and reposition it properly"*).  Vyto's mirror tok
+        //    is `mainkey:value` + joins, so `Radio:playing|of:48` becomes a DIFFERENT CELL the moment
+        //     the state or the track length moves — a new key, a new spring, the arrive animation and
+        //      a fresh measure, several times per track.  These two are the ones whose mainkey value
+        //       is a STATE rather than a name; a %Heist's is its title and is already stable, so it
+        //        is deliberately left alone (and two heists must stay tellable apart).
+        for (const org of focusOrgans) {
+            let omk = Object.keys(org.sc)[0]
+            if (omk === 'Radio' || omk === 'Door') org.c.vyto_tok = omk
+        }
         for (const bud of buds) bud.c.pose = 'small'
-        if (fmain) fmain.c.pose = fmain.c.pose_want || 'big'
+        if (fmain) fmain.c.pose = fmain.c.pose_want || (anyKeep && fmain === keeps[0] ? 'stretched' : 'big')
         // ── onunmain — the leaving verb (the owner: *"that Door cell has an onunmain handler that
         //  shuts the Invite panel"*).  A cell that stops being the subject should be able to put
         //   itself away; without this the Door would come back as a bud with its QR still unfolded,
@@ -752,6 +796,23 @@ Sounditron_focus_to(w, key):
     this.Sounditron_commission(w)
     this.feebly_ponder()
     return 1
+
+// Sounditron_leave_keep — the way OUT of a heist, which is now simply pressing somewhere else (the
+//  owner 2026-08-10, retiring HeistFace's ✕: *"have only the Door and Radio as two other locations
+//   to go to, which cancel the Heist"*).  The keeps go first — the belly ladder puts an open keep
+//    ahead of everything, so leaving without cancelling would be a press that visibly did nothing —
+//     and then it is an ordinary focus_to.
+//  `Heist_keep_cancel` is exactly what the ✕ called: it drops the %Heist intent and keeps whatever
+//   already landed.  Nothing is deleted here; 🗑 undo in the face is still the only thing that
+//    deletes, and it still arms twice.
+//  ALL of them, not just the belly's: the buds are "leave this heist business", and a second keep
+//   standing behind the first would simply be promoted into the belly and look like nothing happened.
+Sounditron_leave_keep(w, key):
+    let krw = this.top_House().c.radio_w || w
+    let kme = this.Radio_pub ? this.Radio_pub(krw) : null
+    let kshop = kme ? this.Ra_home_shop(krw, kme) : null
+    for (const keep of (kshop ? kshop.o({ Heist: 1 }) : [])) this.Heist_keep_cancel(krw, keep)
+    return this.Sounditron_focus_to(w, key)
 
 // Sounditron_focus_home — the home satellite: back to the DEFAULT, which is now the Player (the
 //  belly ladder decides — home is absence, never a hardcoded name, so it follows the ladder).
@@ -1404,6 +1465,22 @@ Sounditron_music_why(w):
     if (M.Ra_recs && M.Ra_home_self && M.Radio_pub) own = M.Ra_recs(M.Ra_home_self(w, M.Radio_pub(w) || 'me')).length
     if (!friend && !own) return 'nothing to play — no friend preview stood and my own shelf is empty'
     let probe = w.c.audio_probe
+    // THE GESTURE TEST COMES FIRST AND IGNORES `s` (2026-08-10).  It used to live INSIDE the
+    //  off|paused branch below, which made it unreachable in the one state it describes: `Radio_go`
+    //   set 'playing' ABOVE its `await Sound_gat()`, and that await never returns without a gesture —
+    //    so the tab this sentence was written for always read 'playing', fell past this branch, and
+    //     got a generic "nothing has started playing on its own — carry on in and pick something to
+    //      hear".  That advice was unfollowable: `Radio_toggle` read the same 'playing' and paused.
+    //  Radio_go now parks in 'digging' and the toggle checks `c.gat`, so the trap is shut at the
+    //   cause — but this gate stays widened regardless, because **a suspended AudioContext is a FACT
+    //    and the state word is an opinion**, and this function's whole job is to name which of four
+    //     identical-looking failures we are in.  Never re-gate a measurement behind a claim.
+    //  `probe.ok` GATES THE WIDENING, and it has to: an unprobed world (a Book, a headless runner —
+    //   `{ok:0, why:'no probe'}`) has a falsy `realtime` for a reason that is not a missing gesture,
+    //    and now that this runs in EVERY state that would misdiagnose every such world. Inside
+    //     off|paused the old looser test stays, because there `{ok:0, why:'probe timeout — no gesture
+    //      yet'}` really does mean what it says.
+    if (probe && probe.ok && !probe.realtime) return 'stock stands but the AudioContext never ticked — the press is parked on a gesture'
     if (s === 'off' || s === 'paused') {
         if (probe && !probe.realtime) return 'stock stands but the AudioContext never ticked — the press is parked on a gesture'
         return 'stock stands (friend=' + (friend ? 1 : 0) + ' own=' + own + ') but the radio is ' + s + ' — the press never took'

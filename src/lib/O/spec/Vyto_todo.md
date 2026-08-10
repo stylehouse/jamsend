@@ -192,6 +192,81 @@ The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) wh
 
 ## 0. What to get on with next
 
+### ⚠ SCOPE — what the v1.0 arc actually took, and what is still standing (2026-08-10)
+
+The owner, naming the arc honestly: *"Vyto had a lot of constraints and study going into it that
+ didn't seem to get invented|shown now. we are now on another more bastardising arc, to just get an
+  aesthetic done for v1.0, now 1.62 weeks overdue... I hope this isn't for all Vyto but just our
+   parameterisation of it? it might be savable, I just don't have the time, and the bits of this
+    that do work are fantastic!"*
+
+**Mostly yes — but not entirely, and the exceptions are the point of this section.**  This is the
+ unwind list.  §0.0–§0.2 below are the original study and none of it has been deleted.
+
+**FOCUS-ONLY — a parameterisation, reachable and reversible.**  Every one of these is gated on
+ `foamereo:'focus'` (root scope) or on a `.c.pose` that only the Sounditron commission stamps.  Drop
+  `focus` from the foamereo and the glass is byte-identically what it was:
+- the belly/bud layout (`vyto_focus.ts`) and the belly ladder;
+- `BELLY_FIT_MAX`, the small-pose 0.8–1 clamp, the stretch seat + its `.face-scroll.stretch` CSS
+   and its measure skip;
+- posed cells never crushing (`posed_cell`), the pose release in the gauge;
+- the guts spill suppressed, and the label cut to the bare mainkey (*"just say the mainkey in the
+   label"*) — scoped at the CALL SITE, so `ident_of`'s three-part identity (mainkey : serial . name,
+    which exists so four %Heists in one foam are tellable apart) is untouched for every other glass;
+- `DoorFace`/`RadioFace` icon renders (pose-gated inside the faces themselves).
+
+### ⇢ THE PLAYER WAS RESPAWNING EVERY TRACK — a cell's identity was its state (2026-08-10, LANDED)
+
+*"the Radio cell itself seems to respawn every time we hit Next track... it's a bit
+ starting-up-glitchy, arrives small and to the side, then it requires mousing over the simulation to
+  resize and reposition it properly into that space."*  Two independent causes, both worth knowing.
+
+**1. THE TOK IS THE IDENTITY, AND IT CONTAINED THE STATE.**  `Vyto.g`'s mirror tok is
+ `mainkey:value` + a join set `[id, of, pub, page, seq]`, and Vytui keys its springs, its lift and
+  its keyed `{#each}` by it.  So anything in the tok that CHANGES mints a new cell: the old departs,
+   the new arrives at a fresh seed with the arrive animation and re-measures from nothing.  On a
+    %Radio **both halves churn** — the mainkey value IS the state (`Radio:playing` → `Radio:digging`)
+     and **`of` is the track LENGTH, not a pointer** (`of:` is documented as the many:1 reference
+      pointer; on a radio it is seconds).  Measured, not reasoned: the same cell was keyed
+       `Radio:playing|of:48` in one capture and `Radio:playing|of:42` in the next.
+ Fix: a particle may DECLARE a stable identity via `.c.vyto_tok`, honoured at the end of the tok
+  build.  **Purely additive** — nothing that does not set it changes by a byte, so no Book moves.
+   Sounditron stamps it on %Radio and %Door only, the two whose mainkey value is a state; a %Heist's
+    is its title, already stable, and two heists must stay tellable apart.  Live: `data-ukey` is now
+     `Radio` / `Door`, unchanged across track changes.
+ **The wider question is left open on purpose:** the join vocabulary is over-broad for any mainkey
+  where `of`/`id` is a value rather than a pointer.  That is a real Scan identity question (§ the
+   "Scan workingout" the file already promises), not one to answer in passing.
+
+**2. NOTHING RELAID OUT AFTER A FACE WAS MEASURED.**  `paint_tick` only bumps when geometry MOVES,
+ so a freshly-mounted face sat at whatever seat it was given *before anyone knew its size* until
+  something unrelated moved.  **The mouse was doing the relayout** — that is precisely *"requires
+   mousing over"*.  `stamp_box` now `react_soon()`s on any real change to the box (`first`/`grew`/
+    `fell`), not only on a shrink.  Note this bug predates the gauge; grow-only simply never had a
+     path where anyone noticed.
+
+**GLOBAL — these DID change for every regime.  If Vyto gets saved, start here.**
+1. **The gesture strip (2026-08-10, "all that I want GONE!").**  `cell_grab`/`cell_drag`/
+    `cell_release`, the whole dose machinery, the toybox, the junk knob, `bare_toggle`/`seat_toggle`/
+     `view_repaint`, the stage band — **deleted outright, not gated**.  The foam and seat regimes lost
+      their controls too, and this is the largest thing the v1.0 arc took.  Recoverable from git
+       (they were removed in one pass) but it is a revert, not a flag.
+2. **`Vyto.g`'s `.c.vyto_tok` opt-in** — one line, and inert unless a particle sets it.  Global in
+    reach, zero in effect; listed here only so it is not a surprise.
+3. **`stamp_box` relayouts on any box change** (was: never).  Fixes the "mouse over to fix it"
+    behaviour everywhere, not just under focus.  A bug fix, but it is more relayouts than before —
+     folded through the `react_soon` trailing-edge latch, so a burst becomes one adopt.
+4. **The natural-box gauge (`stamp_box` → `vyto_gauge.ts`).**  Runs on every `need_floor` world, so
+    foam and seat feel it as well.  It is a bug fix (see THE GAUGE below — grow-only was a latch),
+     but it is a real behaviour change: a face that genuinely shrinks now shrinks its seat after a
+      200ms confirm, where before nothing ever fell.  `need_area` — the MODEL's floor — is still
+       grow-only and untouched, so nothing the ghosts read has changed.
+
+**Neither of these is a design decision anybody made about the foam.**  #1 was collateral from a
+ ruling about the focus glass; #2 is a defect that had always been there and only became visible
+  under poses.  A reader coming back to save Vyto should treat #1 as "restore, then decide" and #2 as
+   "keep, it was wrong before".
+
 ### ⇢ THE GAUGE — why a demoted cell wore ⤢ forever (2026-08-10 late, LANDED; READ THIS ONE FIRST)
 
 Four complaints in one breath, and **three of the four were the same fault wearing different
@@ -264,9 +339,114 @@ A one-way latch: crushed *because it used to be big*, with no path back to learn
   `Radio 436.6×464.8 fit 2.743`, `Door 44.7×37.2 fit 1.000` (square, its own glyph, both axes honest).
 
 **Next moves here:** the bud is at fit 1.0, i.e. exactly its glyph — if it wants to be bigger that is
- a `font-size` in the face, not a layout change.  And the `stretched` pose is still thin (the owner:
-  *"then what is the other one, not sure"*): a cell asks via `.c.pose_want`, so when the Heist knows
-   what forming means it is one line.
+ a `font-size` in the face, not a layout change.
+
+### ⇢ THE STRETCH — the third pose, and it is the Heist's (2026-08-10, LANDED; live-unverified, see below)
+
+*"for the Heist we want it totally maxed out up in there like the STAGED AREA did it before."*  That
+ answers the question the owner had left open (*"then what is the other one, not sure"*) — the third
+  pose is **a heist as the subject**, and what it means is a size law, not a look.
+
+**The distinction worth keeping:** `big` and `stretched` differ in **who decides the ASPECT**.
+- `big` — the seat starts from the face's natural box and finds the scale at which *that aspect*
+   fits.  Right for a player: it has a considered shape and the room should honour it.
+- `stretched` — the seat asks the opposite question, *how big a rectangle is in this body at all*
+   (`fill_rect`, a sweep over candidate aspects with the same 8-probe ray cast the component seat
+    uses).  Right for a heist: **a list has no natural size worth honouring**, so sizing it from its
+     content leaves the belly full of nothing.  `fit` is exactly 1 — the face is LAID OUT at that
+      size rather than drawn small and magnified — and `.face-scroll.stretch > :global(*)` overrides
+       the face's own `width: max-content` + `max-width` cap, which is written for the fill economy
+        and is exactly wrong when the seat IS the room.
+The regime's law one step on: not just the size assigned, the aspect too.
+
+**The trap this posed, and it is the one from the section above wearing a new hat:** a stretched face
+ fills the box it was handed, so **measuring it reads back the mold** — the `.df-small { height: 100% }`
+  loop again, and worse, because it closes on BOTH axes.  `measure_world` skips stretched cells
+   outright.  That is not a gap in the measurement: there is nothing to learn from a face whose size
+    you assigned.  **Any future "the face fills its box" feature must skip the measure pass too.**
+
+**Gated** in `VytoFocus.spec.ts` (+5): maxed out (>55% of the body — an inscribed rect in an ellipse
+ tops out at 2/π ≈ 63.7%), every corner inside the wall, the aspect follows the BODY not the face
+  (tall body ⇒ tall box), pure, and a degenerate body yields `{0,0}` rather than a lie.
+
+**THE COLUMN CANNOT BE GUESSED — IT IS SEARCHED** (*"Heist is tiny... needs more rounds of
+ measuring."*).  A fixed column was still wrong, and the capture said why: the belly's inscribed
+  rectangle measured **410 units** against a 360 column, so `rect ÷ col` bought a zoom of **1.14 —
+   the floor**.  Narrowing blindly does not fix it either: a narrower column makes the content
+    TALLER, and past some point the height binds and the zoom falls again.
+ The zoom is `min(rect_w/col, rect_h/height)` **and `height` is a function of `col`**, so there is a
+  best column and the only way to find it is to try one, measure what came back, and step.  One step
+   per measured round, in the measure pass: height to spare ⇒ narrow and buy zoom; height binding ⇒
+    widen and give some back.
+ **A stretched face is therefore measured again — on ONE axis.**  Its width is assigned, so reading
+  that back is the mold talking to itself; its height is genuinely intrinsic (what this content comes
+   to WHEN GIVEN THAT COLUMN) and is the one fact the layout cannot compute.
+ **Termination is guaranteed by a cycle guard, NOT by the dead band.**  If the balance point falls
+  between two reachable columns, neither satisfies the band and a fixed multiplicative step
+   ping-pongs forever — each bounce a relayout.  A 2-cycle is the only cycle this step can produce,
+    so one column of memory (`stretch_prev`) sees it and stops.  **If you change the step to
+     anything non-multiplicative, re-derive that.**
+
+**FULLSCREEN SAID THE FIRST CUT WAS WRONG.**  *"the Heist is all tiny when fullscreened... the X
+ button and row is the only spacing out thing... it should be told it is skinnier and zoomed in.
+  everything wants to be round, then we see how big it really is"* — with a capture showing a 1900px
+   belly holding a top-left huddle of 11px text and one flex row stretched across the emptiness.
+ **A wider BOX cannot make a bigger FACE.**  The faces hardcode 9/10/11px, so all the extra width did
+  was let the flex rows drift apart: the room went to the GAPS.  So the face is told it is skinny —
+   laid out in a fixed reading column, `STRETCH_COL` — and the room is spent on ZOOM, which is the
+    only unit that reaches hardcoded px: `fit = rect_w / column`, floored at the owner's 1.3 and
+     capped at `BELLY_FIT_MAX`.  The bigger the belly the bigger the type, which is *"then we see how
+      big it really is"*.  360 is chosen so the CURRENT window lands on 1.3 and fullscreen grows from
+       there — the 130% is not lost, it is the bottom of the range.
+ Height is deliberately NOT forced to 100% (the first cut did): that stretched the vertical rhythm
+  the same way and stranded the content at the top of a tall box.  Natural height, centred.
+
+**And the relayouts are not allowed to become an annoyance** (the owner's own caution).  Three ways:
+ the face's layout WIDTH is a constant, so resizing never reflows its content — only the scale it is
+  composited at; `fit` is quantised to 2dp, so a frame that jitters by a pixel does not re-emit
+   `--fit`; and `fill_rect` (15 aspects × 8 rays × 56 edges) is memoised on the row against the
+    belly's rounded bbox, so the sweep runs when the frame changes SHAPE and not once per adopt.
+
+**130% (the owner, watching it work: *"Heist wants font-size:130% — the rest of it"*).**  Said as
+ `STRETCH_ZOOM`, i.e. as a `fit`, NOT as a font rule — the faces hardcode 9/10/11px in their own
+  stylesheets, so nothing Vytui sets on a font reaches them (that is why `--fit` is a transform in
+   the first place).  The magnifier already does exactly this: lay out in a box divided by `fit`,
+    scale back by `fit`.  So the whole face comes up 30%, *"the rest of it"* included, and still
+     fills the rectangle to the pixel — `100%/1.3` scaled by `1.3` is exact.  **Nothing clamps `fit`
+      after the stretch block** (the three `fitMax` clamps live inside the seat branch above it), so
+       the constant is the whole story; change it there and nowhere else.
+
+**Live-confirmed by the owner, not by a capture.**  He saw it working (*"it's working nice now
+ hey!"*); both players had returned to the Radio belly before I could catch a Heist in a
+  `runner_shot`, and minting a keep myself downloads a track into his crate.  So the geometry is
+   gated, the wiring is read, the owner has seen it — but **no capture of a stretched Heist exists**.
+    Next ⇊, grab one: expect the Heist mold at `fit 1.300` with `mw×mh` ≈ 60% of the frame area.
+
+**LEAVING A HEIST IS PRESSING SOMEWHERE ELSE** (*"get rid of the 'X' button and have only the Door
+ and Radio as two other locations to go to, which cancel the Heist"* / *"from Heist both Radio and
+  Door visible"*).  HeistFace's ✕ (a `DeleteX`, the human's own 2026-08-07 ask) is retired: its whole
+   job was "a way out of here", and under focus the way out is already on screen and already a cell.
+    It was the one control in the belly that had to be AIMED at, in a regime whose point is that you
+     press whole cells.  The verb moved unchanged — the buds call the same `Heist_keep_cancel` — and
+      it had to be a DIFFERENT press from the ordinary bud one, because the ladder puts an open keep
+       first: setting `focused` while a keep stands is obeyed by nothing, so the press would have
+        silently done nothing.  `🗑 undo` stays; it deletes what landed, which is a different act.
+ The Radio is also re-added as a bud while a keep is open.  The standing ruling folds it away —
+  *"the Radio and everything else should fold right down"* — which was right for the FOAM, where the
+   player was a big cell competing for the bag; under focus a bud is a 40-unit disc and it is the way
+    back to the music.  Re-added inside the focus gate, so the foam keeps its ruling.
+ **⚠ OPEN: leaving is now ONE PRESS WITH NO CONFIRM** where the ✕ armed twice.  Pressing the Door to
+  peek at your friends drops the heist setup.  Not raised as a blocker — the owner asked for exactly
+   this — but if it bites, the fix is to make the first press on a bud ARM rather than act, and the
+    two-press idiom is already in `micro/DeleteX` to copy.
+
+**Also:** the guts spill is off under focus (*"the Heist cell, and any of them, don't want the
+ seed,pub,state C\*\* labels printed there"*).  It earns its place in the foam, where a small faceless
+  cell has nothing else to say what it holds; under focus every cell HAS a face, and that face is the
+   considered account of the same particle — the spill beside it is the unconsidered one, in a
+    different typeface.  **The leak is worth remembering: `carveable()` reads `w.c.foam` DIRECTLY, not
+     `layout`'s local `foam` (which focus turns off), so anything gated on `carveable` still fires
+      under focus.**  The name band keeps its carve — a cell still has to say which thing it is.
 
 ### ⇢ THE FOCUS — the belly pivot (2026-08-10, LANDED ON THE LIVE GLASS; supersedes the seat as the live UI)
 

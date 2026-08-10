@@ -38,11 +38,16 @@
     //       patience the REGISTRAR armed on its own milestone — and this screen changes what it says
     //        rather than vanishing, because that is the moment its advice becomes true.
     //
-    //  IT MAY NOT TRAP THE LISTENER — and it does that WITHOUT A CLOCK.  The *carry on* tap is there
-    //   from the first frame and grows (and goes loud the moment the machine settles), and a listener
-    //    who never wants this screen again presses ▦ — which the PAGE draws, fixed in the top-right
-    //     corner at z-index 999999, deliberately over this FaceSucker.  This file only READS that pref
-    //      (see GUTS); it owns no switch of its own.
+    //  IT MAY NOT TRAP THE LISTENER — and it does that WITHOUT A CLOCK and now without a tap of its
+    //   own.  The way out is ▦, which the PAGE draws, fixed in the top-right corner at z-index 999999,
+    //    deliberately over this FaceSucker, on every room and at all times.  This file only READS that
+    //     pref (see GUTS); it owns no switch of its own.
+    //   THE *CARRY ON* TAP IS GONE (the owner 2026-08-10).  It was this file's second door onto an exit
+    //    the page already draws better — always present, differently labelled, and it dismissed the
+    //     screen without doing anything about the state that put it there.  Worse, its loud form said
+    //      *carry on in and pick something to hear* at exactly the moment that advice is unfollowable
+    //       (see RELOAD below).  One door, drawn once, by whoever owns it — the same ruling that took
+    //        the guts switch off this card and the second ▦ out of the peek.
     //     Once it lifts it LATCHES DOWN for the tab — `H.c.butler_done`, the tab and not this
     //      component — because minting an invite mid-session arms an expectation too, and a fullscreen
     //       gate dropping over somebody's music because they showed a friend a QR code would be the
@@ -64,14 +69,18 @@
     // THERE IS NO CLOCK THAT LIFTS THIS. The owner, 2026-08-10, watching it fade with the glass still
     //  coming up: *"has to not de-facesuck UNTIL arrive.playing"*. A 40s ceiling was tried first and it
     //   is exactly the impatience exit this screen was rebuilt to remove — it just fired later. The
-    //    only automatic lift is ARRIVAL; the only other way out is the listener's own tap, which is on
-    //     screen from the first frame and grows at IMPATIENT_MS. That is what keeps "may not trap the
-    //      listener" true without a timer: there is always a way out, and a person chooses it.
-    //  (If a tab can reach a state where arrival never comes and the tap is the only exit, that is a
-    //    BUG IN THE ROSTER worth seeing, not a reason to put the clock back. The give-up ladder this
-    //     doc is named for is about saying so, not about quietly stepping aside.)
-    const IMPATIENT_MS = 12000  // past this we stop pretending the wait is normal: the carry-on tap
-                                //  grows and names itself. Silence is the trap, not duration.
+    //    only automatic lift is ARRIVAL; the only other way out is ▦, which the PAGE draws in every
+    //     room, at all times, above this FaceSucker. That is what keeps "may not trap the listener"
+    //      true without a timer: there is always a way out, and a person chooses it.
+    //  (If a tab can reach a state where arrival never comes and ▦ is the only exit, that is a BUG IN
+    //    THE ROSTER worth seeing, not a reason to put the clock back. The give-up ladder this doc is
+    //     named for is about saying so, not about quietly stepping aside.)
+    // `IMPATIENT_MS` (12s) went with the carry-on tap, and it is worth a headstone beside the four
+    //  clocks above because it was NOT one of them: it never lifted the screen, it only grew a button.
+    //   With the tap gone it had no reader, and a constant that styles a control that no longer exists
+    //    is exactly the "in case" helper this file keeps deleting. What it was for — *stop pretending
+    //     the wait is normal* — is now the MODEL's job and always should have been: `gaveup` says it
+    //      in words, on the registrar's own patience, and the reload offer appears with it.
     // THERE IS NO SECOND CONSTANT ANY MORE, and the one that was here is worth a headstone. `STILL_MS`
     //  lifted the screen after 6s of a roster not changing its mind, as the fallback for a page where
     //   nobody declares an arrival. It was the fourth impatience exit in a row to be wrong, and it was
@@ -108,7 +117,6 @@
     let tick = $state(0)
     let mounted_at = 0
     let done = $state(false)          // the latch — once down, never up again this tab
-    let carried_on = $state(false)
     // …AND THE LATCH IS THE TAB'S, NOT THE COMPONENT'S. A `$state` latch only promises "never up again
     //  for this component instance"; a remount (a view switch that ever wraps this in an `{#if}` or a
     //   `{#key}`) hands back a fresh `false` and the loading screen drops over somebody's music, which
@@ -222,21 +230,36 @@
     //      have read why, which is the difference between being told and being timed out.
     let settled = $derived(view.arrived === 'gaveup')
 
-    // past this we stop looking patient — the tap grows and says what it is for. `settled` forces it:
-    //  once the machine has admitted nothing more is coming, a small quiet dismiss is the wrong size
-    //   of button for the only thing left to do.
-    let impatient = $derived((settled || view.since > IMPATIENT_MS) && !gate.wanted && !landing)
+    // THE RELOAD OFFER — the one control this card draws, and only once the model has given up.
+    //  The owner, 2026-08-10: *"we may give them a page reload button if we think it might be that
+    //   time"*. `gaveup` IS that time, and it is the registrar's ruling rather than this file's guess,
+    //    which is the only reason a face is allowed to draw it at all.
+    //  IT IS OFFERED BECAUSE THE PAGE CAN GENUINELY BE UNRECOVERABLE FROM INSIDE, and that is not a
+    //   hypothetical — it is the state this button was written next to. `Radio_go` sets 'playing'
+    //    BEFORE it awaits `Sound_gat`, which pends forever on a tab that never got its audio gesture:
+    //     the radio then sits in 'playing' with no device, no record and a suspended AudioContext.
+    //      In THAT state `Radio_toggle` reads 'playing' and calls `Radio_pause`, so the play button
+    //       pauses, and `Radio_nudge`'s pump gate refuses to restart for the same reason. There is
+    //        nothing on the page a person can press that starts the music. A reload is the honest
+    //         remedy, so offer it rather than leaving them to find it in a browser menu.
+    //  NOT WHILE A PERMISSION OR AN INVITE IS PENDING (the same two guards the old tap carried): a
+    //   reload would throw away a granted permission's gesture and re-fire an unspent ?Iz, and in both
+    //    cases the thing to do is the thing already on the card.
+    let offer_reload = $derived(settled && !gate.wanted && !landing)
 
     // the exit, evaluated on every poll. An $effect and not a $derived because it LATCHES — the whole
     //  point is that the answer is one-way.
     //  THERE IS EXACTLY ONE AUTOMATIC EXIT AND IT IS ARRIVAL. Everything else on this list is a person
-    //   or a preference: the tap, the guts switch, a machine tab. That is the whole shape of the file
-    //    now, and every line of it was paid for by a version that lifted on a clock instead.
+    //   or a preference: the ▦ guts switch, or a machine tab. That is the whole shape of the file now,
+    //    and every line of it was paid for by a version that lifted on a clock instead.
+    //   (`carried_on` went with the tap. It was the only lift a person could reach from this card, and
+    //     it is now ▦ — one control, drawn by the page, setting a pref that PERSISTS, which the tap
+    //      never did: dismissing the Butler taught the tab nothing and the next reload asked again.)
     $effect(() => {
         void tick
         if (done) return
         if ((H?.c as any)?.butler_done) { done = true; return }    // already lifted earlier this tab
-        if (carried_on || machine_tab || guts) { lift(); return }
+        if (machine_tab || guts) { lift(); return }
         if (gate.wanted) return                                   // a permission is not progress
         if (landing) return                                       // …and neither is an unspent invite
         if (view.arrived === 'arrived') { lift(); return }        // ★ THE ONLY AUTOMATIC EXIT
@@ -244,8 +267,8 @@
         //  the spine is still loading and the Book has not reached its registration beat. It is the
         //   reading of the first seconds of every boot, and treating it as "there will never be one"
         //    is what four separate impatience exits did. We hold. If the board never fills at all the
-        //     machine truly never started, and by then the carry-on tap has grown and named itself —
-        //      silence with a labelled way out beats a gate that lies about being up.
+        //     machine truly never started, and ▦ is on screen the whole time — silence with a way out
+        //      always drawn beats a gate that lies about being up.
         // 'coming' / 'gaveup' — hold too. `gaveup` changes what this screen SAYS (see `settled`), not
         //  whether it is up: the sentence it exists to deliver arrives at exactly that moment.
     })
@@ -411,22 +434,25 @@
                         </div>
                     {/if}
 
-                    {#if !gate.wanted}
-                        <!-- the way out stays on the card even at the door: dismissing it drops the
-                             listener onto the page whose strip carries the SAME panel (the strip's
-                             gate is `!butler_up`), so nobody can be stranded away from their invite
-                             by tapping the one button that is always there. -->
-                        <button class="carry" class:big={impatient} onclick={() => carried_on = true}>
-                            {#if settled}carry on →{:else if impatient}this is taking a while — carry on →{:else}carry on →{/if}
+                    <!-- THE ONE CONTROL THIS CARD DRAWS, and only once the model has given up (see
+                         `offer_reload`). Not a dismiss — a dismiss is ▦, which the page draws above
+                         this FaceSucker at all times and which PERSISTS the choice. This is the
+                         remedy for the state `gaveup` actually describes: a boot that cannot finish
+                         on its own, which on this page can mean a radio wedged in 'playing' with no
+                         audio device, where every control the listener can reach does the wrong
+                         thing. Placed under the advice because the advice is what makes it make
+                         sense; a reload button above the reason is just a scary button. -->
+                    {#if offer_reload}
+                        <button class="reload" onclick={() => location.reload()}
+                                transition:fade={{ duration: 240 }}>
+                            reload the page ↻
                         </button>
-                        <!-- THERE IS NO SWITCH ON THIS CARD ANY MORE (the owner 2026-08-10: *"lose
-                             `show me the guts`"*). The persistent one is ▦, fixed in the page's
-                             top-right corner and drawn ABOVE this FaceSucker, so it is reachable from
-                             here without this file owning a second door onto the same state — which
-                             is `boot_gate`'s lesson, and the old "don't wait for me" was already a
-                             control a person could press without learning where anything went. -->
-
                     {/if}
+                    <!-- THERE IS NO SWITCH ON THIS CARD (the owner 2026-08-10: *"lose `show me the
+                         guts`"*). The persistent one is ▦, fixed in the page's top-right corner and
+                         drawn ABOVE this FaceSucker, so it is reachable from here without this file
+                         owning a second door onto the same state — which is `boot_gate`'s lesson. -->
+
                 </div>
             </div>
         {/snippet}
@@ -564,11 +590,13 @@
               padding: .55em .8em; border-radius: .5rem;
               background: rgba(127, 199, 255, .07); border: 1px solid rgba(127, 199, 255, .14); }
     .advice p { margin: 0; }
-    .carry {
-        margin-top: .3rem; background: none; color: #8fb6d0; cursor: pointer;
-        border: 1px solid #33505f; border-radius: .5rem; padding: .45em 1.1em; font-size: .88rem;
+    /* the reload offer — only ever on screen with the give-up advice above it, so it is sized like
+       the one thing left to do rather than like a dismiss.  (`.carry` and its `.big` variant were
+        here; they went with the tap.) */
+    .reload {
+        margin-top: .3rem; background: none; color: #e8f3ff; cursor: pointer;
+        border: 1px solid #6ea3bf; border-radius: .5rem; padding: .6em 1.4em; font-size: 1rem;
         transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
     }
-    .carry:hover { color: #e8f3ff; border-color: #6ea3bf; background: rgba(255,255,255,.04); }
-    .carry.big { color: #e8f3ff; border-color: #6ea3bf; font-size: 1rem; padding: .6em 1.4em; }
+    .reload:hover { border-color: #9ccbe4; background: rgba(255,255,255,.06); }
 </style>

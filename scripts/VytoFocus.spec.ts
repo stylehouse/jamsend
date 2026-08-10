@@ -6,7 +6,7 @@
 // Run: node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/VytoFocus.spec.ts
 
 import { describe, test, expect } from 'vitest'
-import { focus_polys, type Pt, type Frame, type FocusRole } from '../src/lib/O/vyto_focus'
+import { focus_polys, fill_rect, type Pt, type Frame, type FocusRole } from '../src/lib/O/vyto_focus'
 
 const F: Frame = { x: 0, y: 0, w: 900, h: 520 }
 
@@ -110,5 +110,52 @@ describe('the focus layout', () => {
         const p2 = focus_polys(F, ['a', 's2'], ['belly', 'bud'], 8)
         expect(JSON.stringify(p1[0])).toBe(JSON.stringify(p2[0]))
         expect(JSON.stringify(p1[1])).not.toBe(JSON.stringify(p2[1]))
+    })
+})
+
+// THE STRETCH — *"for the Heist we want it totally maxed out up in there"*.  The claim is a SIZE
+//  claim, so the gates are about area and containment: it must take most of the body, all of it must
+//   be inside the wall, and it must not care what shape the face wanted.
+describe('the stretch — fill_rect', () => {
+    const belly = () => focus_polys(F, ['Heist!0', 'Door!1'], ['belly', 'bud'], 8)[0]
+    function centroid(p: Pt[]): Pt {
+        let x = 0, y = 0
+        for (const q of p) { x += q.x; y += q.y }
+        return { x: x / p.length, y: y / p.length }
+    }
+
+    test('IT IS MAXED OUT — the box takes most of the body it is in', () => {
+        const b = belly(), c = centroid(b)
+        const r = fill_rect(b, c.x, c.y)
+        // an inscribed rectangle in an ellipse tops out at 2/π ≈ 63.7% of it; anything near that is
+        //  "maxed out", and anything much under it is the old content-sized seat leaving room empty.
+        expect(r.w * r.h).toBeGreaterThan(area(b) * 0.55)
+    })
+
+    test('IT STAYS INSIDE THE WALL — every corner of the box is in the body', () => {
+        const b = belly(), c = centroid(b)
+        const r = fill_rect(b, c.x, c.y)
+        for (const [sx, sy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]])
+            expect(inside({ x: c.x + (sx * r.w) / 2, y: c.y + (sy * r.h) / 2 }, b), `corner ${sx},${sy}`).toBe(true)
+    })
+
+    test('THE ASPECT IS ASSIGNED, NOT ASKED FOR — a tall body yields a tall box', () => {
+        const tall = focus_polys({ x: 0, y: 0, w: 300, h: 900 }, ['only'], ['belly'], 8)[0]
+        const wide = focus_polys({ x: 0, y: 0, w: 900, h: 300 }, ['only'], ['belly'], 8)[0]
+        const ct = centroid(tall), cw = centroid(wide)
+        const rt = fill_rect(tall, ct.x, ct.y)
+        const rw = fill_rect(wide, cw.x, cw.y)
+        expect(rt.h).toBeGreaterThan(rt.w)
+        expect(rw.w).toBeGreaterThan(rw.h)
+    })
+
+    test('IT IS A PURE FUNCTION — same body, byte-same box', () => {
+        const b = belly(), c = centroid(b)
+        expect(JSON.stringify(fill_rect(b, c.x, c.y))).toBe(JSON.stringify(fill_rect(b, c.x, c.y)))
+    })
+
+    test('a degenerate body yields nothing rather than a lie', () => {
+        expect(fill_rect([], 0, 0)).toEqual({ w: 0, h: 0 })
+        expect(fill_rect([{ x: 0, y: 0 }, { x: 1, y: 1 }], 0, 0)).toEqual({ w: 0, h: 0 })
     })
 })

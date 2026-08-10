@@ -278,8 +278,11 @@
 <!-- the Butler: the Supervisor's arrival screen, altitude 55 — UNDER BootGate, because a permission
      the listener has to grant outranks news about work in progress.  It lifts on ARRIVAL and on
       nothing else automatic (`Supervisor_arrived`, declared by this page's Book in beat 2 and met when
-       the glass is drawing and music is playing); otherwise a person leaves via the carry-on tap or
-        the guts switch.  It latches down for the tab, so it can never reappear over somebody's music.
+       the glass is drawing and music is playing); otherwise a person leaves via the ▦ guts switch
+        below, which is why that button is drawn unconditionally and above this FaceSucker — since
+         2026-08-10 the Butler has no dismiss tap of its own, so ▦ is the ONLY way off that card and
+          removing it from any room would strand a listener on a boot screen.  It latches down for the
+           tab, so it can never reappear over somebody's music.
          Mounted beside BootGate rather than inside the view switch for the spine_shims reason: a
           persisted `sprawl` must not be able to starve it. -->
 <Butler {H} />

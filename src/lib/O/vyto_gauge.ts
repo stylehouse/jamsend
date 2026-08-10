@@ -84,5 +84,8 @@ export function gauge_pose(c: GaugeBag & Record<string, any>, pose: string): boo
     c.gauge_pose = pose
     delete c.need_w; delete c.need_h; delete c.need_area
     delete c.gauge_w; delete c.gauge_h; delete c.gauge_at
+    // …and the stretch column search, for the same reason: it converged on a column that suited the
+    //  face this cell USED to be drawing.  A cell entering (or leaving) `stretched` searches afresh.
+    delete c.stretch_col; delete c.stretch_h; delete c.stretch_rect; delete c.stretch_prev
     return true
 }

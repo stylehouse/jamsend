@@ -592,7 +592,23 @@
                 <span class="ip-note ip-warn">⚠ this browser can’t open your music folder — to share your own music, open BigSoundland in Chrome</span>
             {/if}
             {#if !url}
-                <button class="ip-act" onclick={mint} title="mint a single-use Music invite and show its QR">invite a friend</button>
+                <!-- THE MINT IS A CALL TO ACTION, NOT A CHIP (the owner 2026-08-10: *"the Invite…
+                     needs to look more like a button"*).  This is the same finding the two-step door
+                     already recorded two blocks up — "the single action the whole page exists to
+                     invite was visually indistinguishable from `copy link`" — and the fix landed
+                     there on `that's me →` and `join X` while the MINT half kept its `.ip-act`.  So
+                     this is not a new opinion about styling, it is the existing one finally applied
+                     to the button it was written about.  Same `.ip-go` accent, deliberately NOT the
+                     join green: green is the terminal act of the landing side, indigo is "start
+                     something", and two greens would flatten a distinction the panel is making.
+                     IT GOES STILL WHEN IT IS NOT THE ACT (see `.ip-still`), because `.ip-go`'s
+                     breath is the panel's only movement and the comment on it is right that it must
+                     not compete with itself: while the name row is up, step 1 is the name and the
+                     namer's own button is already breathing; once you HAVE friends, minting is a
+                     thing you occasionally do rather than the reason you are here.  Both are durable
+                     state, not a clock — the same ruling that dropped `born_today` from the note. -->
+                <button class="ip-go ip-go-mint" class:ip-still={friends.length > 0 || (!named && !iz)}
+                        onclick={mint} title="mint a single-use Music invite and show its QR">invite a friend</button>
                 <!-- NO `born_today` HERE (dropped 2026-08-08, Onboard_todo §0 item 1).  This note explains
                      what the button DOES, and the moment that explanation is worth having is "you have no
                      friends yet" — which is durable state.  `born_today` is a CLOCK bolted onto that, and
@@ -726,6 +742,14 @@
         background: #232338; border-color: #3a3a52; color: #6a6a80;
         cursor: default; animation: none; box-shadow: none;
     }
+    /* the MINT — the primary act of the inviting half, sized between step 1 and step 2: bigger than
+        a chip so it reads as the thing to press, smaller than `join` because nobody has committed to
+         anything yet.  Keeps `.ip-go`'s indigo (see the markup for why it is not the join green). */
+    .ip-go-mint { font-size: 0.95rem; padding: 0.45rem 1.1rem; }
+    /* STILL, but still a button — the loudness is the size and the fill, and only the MOVEMENT is
+        conditional.  Dropping the animation is not a downgrade to `.ip-act`: a person with friends
+         must still be able to find the invite instantly, they just should not be nagged toward it. */
+    .ip-still { animation: none; box-shadow: none; }
     /* step 2 outranks step 1: it is the act itself, and by now the user has committed. */
     .ip-go-join {
         font-size: 1rem; padding: 0.5rem 1.2rem;

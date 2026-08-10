@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '620c94c7e9dc14ca~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '7dd33fab4e495569~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -130,8 +130,21 @@ Radio_trace(radio, entry) {
 //#endregion
 
 //#region controls — what the face's buttons call (sync entries; all real work detaches)
+// NO DEVICE ⇒ THE PRESS NEVER TOOK, SO PRESS (2026-08-10).  Without this line the going-states all
+//  route to Radio_pause, and on a tab whose AudioContext never got its gesture that means THE PLAY
+//   BUTTON PAUSES — the radio is nominally going, nothing is coming out, and the one control the
+//    listener can reach makes it more stopped.  `c.gat` is the honest test because it is set only
+//     after `Sound_gat()` returns a live device (Radio_go:158): no gat ⇒ we never actually started,
+//      whatever the state word says, and pressing play must MEAN play.  Radio_go is idempotent-ish
+//       (it bumps the era and re-awaits), so a second press on a still-pending gat costs nothing and
+//        — crucially — THIS press is a real user gesture, which is exactly what the pending resume
+//         is waiting for.  So the button that looked broken is the one that fixes it.
 Radio_toggle(radio) {
     let s = radio.sc.Radio
+    if (!radio.c.gat) {
+        this.Radio_go(radio, null)
+        return
+    }
     if (s === 'playing' || s === 'digging' || s === 'starved') {
         this.Radio_pause(radio)
     } else {
@@ -144,7 +157,22 @@ Radio_toggle(radio) {
 async Radio_go(radio, opts) {
     let era = (radio.c.era || 0) + 1
     radio.c.era = era
-    this.Radio_state(radio, 'playing')
+    // 'digging', NOT 'playing', UNTIL THE DEVICE IS REAL (2026-08-10).  This line said 'playing'
+    //  above the await, which is a PREDICTION of what the await will achieve — and `Sound_gat`
+    //   awaits an AudioContext resume that needs a user gesture, so on a gestureless tab it never
+    //    returns and the prediction never gets corrected.  Measured on Righto: probe
+    //     `{"state":"suspended","rms":0}` under a radio reading `playing` with `title:null`.
+    //  Three readers trust this word as an OBSERVATION, and all three broke together:
+    //   `Radio_toggle` (:116) saw 'playing' and called Radio_pause — the play button PAUSED;
+    //    `Radio_nudge`'s pump gate (`!== 'digging'`) refused to restart what it thought was going;
+    //     and `Sounditron_music_why`'s gesture branch is gated on off|paused, so the one diagnosis
+    //      that names this exact failure was unreachable in it.  The page was dead, unrecoverable
+    //       from inside, and every instrument read calm (`loud:0 amiss:0`).
+    //  'digging' is the honest word for "the press took, we are getting there" and it is already
+    //   the state the whole pump path expects to be woken from, so nothing downstream needed a new
+    //    case.  Radio_pump sets 'playing' when a track actually opens, which is what that word is
+    //     supposed to mean.
+    this.Radio_state(radio, 'digging')
     let gat = await this.Sound_gat()
     if (radio.c.era !== era) return
     if (!gat) {
@@ -1341,6 +1369,25 @@ Radio_reason(w, radio) {
 // Radio_source_toggle — the RadioFace source switch: flip between the friends' collections
 //  (the default) and your OWN records.  Wipes the lineup (it's full of the old source's cards)
 //   and the note so the next dial fills fresh from the chosen side; the current track finishes.
+// AND IT CLEARS `solo` (2026-08-10), because THIS is the one seam where that flag's meaning changes
+//  underneath it.  `sc.solo` says one precise thing everywhere it is read — *on my own shelf
+//   INVOLUNTARILY, wishing for friends*: minted only on the mine rung (:996, which `own` makes
+//    unreachable) and retired only in Radio_open when a friend's track opens (:695).  Flipping to
+//     "my records" makes own-shelf a CHOICE, and nothing was telling the flag.  So a listener who
+//      booted alone and then flipped sat in `own=1 && solo` for the rest of the sitting, and two
+//       readers believed it:
+//   • `Radio_crossover` (:1637) gates on `sc.solo` and NOT on `sc.own` — deliberately, since with
+//      this line present `own=1 ⇒ solo absent` holds STRUCTURALLY.  Without it, a friend's first
+//       chunk burned the once-a-sitting `crossed` latch into a `Radio_skip` that the dial answered
+//        from the `own` branch (:917) — your own record, latch spent, the listener's explicit source
+//         choice overridden for nothing.  Fixing it HERE rather than adding an `sc.own` gate there is
+//          the point: one fact, one place.  A second copy is free to drift, and it would have left
+//           the second reader lying anyway —
+//   • `Radio_dial_solo` (:1141), which was reporting *"listening alone"* over a deliberate own-mode
+//      to the roster and the face.
+//  Cleared on BOTH directions, and own→friends is not a special case: the next dial re-mints solo
+//   honestly (with its `why` tag) if we really are still alone, which is the only reading that can
+//    be trusted anyway — an inherited one is a memory of a different question.
 Radio_source_toggle(radio) {
     let w = radio.c.w
     if (radio.sc.own) {
@@ -1356,6 +1403,8 @@ Radio_source_toggle(radio) {
         lu.bump()
     }
     delete radio.sc.note
+    delete radio.sc.solo
+    delete radio.sc.solo_by
     radio.bump()
 
 },

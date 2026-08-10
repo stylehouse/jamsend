@@ -15,7 +15,7 @@
     import { power_cells, foam_cells, slab_seat, poly_area, type Pt } from "$lib/O/vyto_geometry"
     import { deal_rows, seat_on_deal, deal_fits, deal_badness, box_poly,
              type Deal, type SeatRow } from "$lib/O/vyto_seat"
-    import { focus_polys, type FocusRole } from "$lib/O/vyto_focus"
+    import { focus_polys, fill_rect, type FocusRole } from "$lib/O/vyto_focus"
     import { gauge_box, gauge_pose, GAUGE_MS } from "$lib/O/vyto_gauge"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
@@ -850,6 +850,35 @@
     //  note at the fit clamp).  Not Infinity: a face IS still laid out at `100%/fit` and scaled back,
     //   so an unbounded blow-up would hand a component a sub-pixel layout box to reflow inside.
     const BELLY_FIT_MAX = 4.5
+    // THE STRETCH IS A COLUMN, NOT A CANVAS (2026-08-10, the owner on the fullscreen capture: *"the
+    //  Heist is all tiny when fullscreened... the X button and row is the only spacing out thing...
+    //   it should be told it is skinnier and zoomed in.  everything wants to be round, then we see
+    //    how big it really is"*).
+    //  The first cut handed the face the whole rectangle and zoomed it 1.3×.  Fullscreen showed why
+    //   that is not "maxed out": a face's type is hardcoded px, so a wider BOX does not make a bigger
+    //    FACE — it only lets the flex rows drift apart, which is exactly the one thing that visibly
+    //     changed (the `start … LOFI … ✕` row spanning 1900px of empty purple).  Room went to the gaps.
+    //  So the face is told it is SKINNY — laid out in a fixed reading column — and the room is spent
+    //   on ZOOM instead, which is the only unit that reaches hardcoded px.  `fit = rect / column`, so
+    //    the bigger the belly the bigger the type, and *"then we see how big it really is"*.
+    //  360 is chosen so the current window lands on the owner's 1.3 and fullscreen grows from there —
+    //   the 130% is not lost, it is the bottom of the range.
+    //  …AND THE COLUMN CANNOT BE GUESSED — IT HAS TO BE SEARCHED (2026-08-10, the owner: *"Heist is
+    //   tiny... needs more rounds of measuring."*).  A fixed column was still too wide: measured live,
+    //    the belly's inscribed rectangle was 410 units and the column 360, so `rect / col` left a zoom
+    //     of 1.14 — the floor — and the face stayed *"tiny"*.  Narrowing the column blindly does not
+    //      fix it either: a narrower column makes the content TALLER, and past some point the height
+    //       binds instead and the zoom falls again.  **The zoom is `min(rect_w/col, rect_h/height)`,
+    //        and `height` is a function of `col`** — so there is a best column, and the only way to
+    //         find it is to try one, measure what came back, and step.  That is the owner's "more
+    //          rounds": the search lives in the measure pass, one step per round, converging in a
+    //           handful and then sitting still inside a dead band.
+    const STRETCH_COL0 = 300        // where the search starts, in viewBox units of layout width
+    const STRETCH_COL_MIN = 150     // skinnier than this and a heist is a column of wrapped fragments
+    const STRETCH_COL_MAX = 520
+    const STRETCH_STEP = 1.18       // one step per round — gentle enough not to ring, big enough to land
+    const STRETCH_BAND = 1.08       // within 8% of balanced, stop: this is what makes it settle
+    const STRETCH_ZOOM_MIN = 1.3    // the owner's 130%, as the floor
     // foam fill targets: what fraction of a scope's area the discs may claim before pressing.
     //  Top cut leaves real margin (the rim curvature + the empty ground ARE information); a nested
     //   bag packs near-full (a membrane holds what it holds).
@@ -1117,6 +1146,26 @@
     //        face, it replaced the icon the pose exists to show.
     function posed_cell(cell: PaintCell): boolean {
         return String(((cell.source as any)?.c?.pose ?? '')) === 'small'
+    }
+    function stretch_cell(cell: PaintCell): boolean {
+        return String(((cell.source as any)?.c?.pose ?? '')) === 'stretched'
+    }
+    // `fill_rect` sweeps 15 aspects × 8 rays against every edge of a 56-vertex belly — fine once, not
+    //  fine every frame of a resize, and `layout` runs on every adopt.  The belly is a PURE function
+    //   of the frame, so its bbox (rounded to the whole unit) identifies the body exactly: same box,
+    //    same answer, and the sweep runs only when the frame actually changed shape.  Cached on the
+    //     mirror row's `.c` — one slot per cell, nothing to grow or evict.
+    //  This is the "don't make the relayouts an annoyance" half: the OTHER half is that the face's
+    //   layout width is a CONSTANT (`STRETCH_COL`), so no amount of resizing reflows its content —
+    //    only the scale it is drawn at changes, which is a composite, not a layout.
+    function fill_rect_memo(row: TheC, poly: Pt[], cx: number, cy: number,
+                            bb: { bx: number, by: number, bw: number, bh: number }): { w: number, h: number } {
+        const c = row.c as any
+        const k = `${Math.round(bb.bx)},${Math.round(bb.by)},${Math.round(bb.bw)},${Math.round(bb.bh)},${poly.length}`
+        if (c.fillrect_k === k && c.fillrect) return c.fillrect
+        const r = fill_rect(poly, cx, cy)
+        c.fillrect_k = k; c.fillrect = r
+        return r
     }
     function mold_seat(cell: PaintCell): string {
         const rot = cell.ang ? ` rotate(${(cell.ang * 180 / Math.PI).toFixed(1)}deg)` : ''
@@ -1821,7 +1870,16 @@
                 const s = sp.get(n.key)
                 if (!s) continue
                 const row = n.row
-                const ident = ident_of(row, w, n.tok)
+                // JUST THE MAINKEY, UNDER FOCUS ONLY (the owner 2026-08-10: *"just say the mainkey in
+                //  the label"*).  `ident_of`'s three-part identity — mainkey : serial . name — answers
+                //   "WHICH of these several am I looking at", and that is a FOAM question: a glass of
+                //    twelve cells can hold four %Heists and they have to be tellable apart at a glance.
+                //     Under focus there is one subject and a bud or two, all of different kinds, so the
+                //      serial and the name answer a question nobody is asking — and the name is where
+                //       `playing` and `of:48` were coming from.
+                //  Scoped to THE REGIME, not to `ident_of`: every other glass keeps the identity it was
+                //   designed with (§0.0), and this stays a parameterisation rather than a deletion.
+                const ident = focusR ? (Object.keys((row.sc as any) ?? {})[0] ?? '?') : ident_of(row, w, n.tok)
                 const lift = liftKey === n.key
                 // heat holds a body SURFACED after the pointer moves on — the attention trail
                 //  stays lit and sinks only as the currency taxes away (heat 0 in every Book,
@@ -1862,7 +1920,9 @@
                 //     i.e. *"sitting in the middle, nowhere near big enough"*.  So the belly's ceiling
                 //      is the room the ray seat actually measured, not a foam-era constant; the bud
                 //       keeps the opposite rule (never magnified — see the small-pose clamp below).
-                const smallPose = String((((row.c as any).source_n) as any)?.c?.pose ?? '') === 'small'
+                const poseNow = String((((row.c as any).source_n) as any)?.c?.pose ?? '')
+                const smallPose = poseNow === 'small'
+                const stretchPose = poseNow === 'stretched'
                 const fitMax = (focusR && !smallPose) ? BELLY_FIT_MAX : FIT_MAX
                 let fit = 1
                 let clipPoly = ''
@@ -2117,6 +2177,44 @@
                         mx = ax - mw / 2; my = ay - mh / 2
                         if (mw <= bb.bw) mx = Math.max(bb.bx, Math.min(bb.bx + bb.bw - mw, mx))
                         if (mh <= bb.bh) my = Math.max(bb.by, Math.min(bb.by + bb.bh - mh, my))
+                    }
+                    // ── THE STRETCH (the owner 2026-08-10: *"for the Heist we want it totally maxed
+                    //  out up in there like the STAGED AREA did it before."*) ───────────────────────
+                    //  Every seat above starts from the face's NATURAL BOX and asks how big that
+                    //   aspect can be.  A heist has no natural size worth honouring — it is a list —
+                    //    so asking its content how much room to take leaves the belly full of nothing.
+                    //  A `stretched` cell asks the other question instead: how big a rectangle is in
+                    //   this body AT ALL (`fill_rect` sweeps the aspects; pure, gated in VytoFocus).
+                    //    The answer IS the box, `fit` is exactly 1 — the face is LAID OUT at that size
+                    //     rather than drawn small and magnified — and the CSS below makes its root fill
+                    //      it.  The regime's law one step on: not just the size assigned, the aspect too.
+                    //  This runs after everything above ON PURPOSE: whatever the natural-box seat
+                    //   concluded is simply not the question being answered here.
+                    if (focusR && stretchPose) {
+                        const fr = fill_rect_memo(row, poly, ax, ay, bb)
+                        if (fr.w > 8 && fr.h > 8) {
+                            // …AND 130% OF IT (the owner, looking at the working stretch: *"Heist wants
+                            //  font-size:130% — the rest of it"*).  NOT a font rule: the faces hardcode
+                            //   9/10/11px in their own stylesheets, so nothing set here would reach
+                            //    them (that is why `--fit` is a transform in the first place).  The
+                            //     magnifier already does exactly this — lay out in a box divided by
+                            //      `fit`, scale back by `fit` — so the whole face comes up, "the rest
+                            //       of it" included, and still fills the rectangle to the pixel.
+                            //  QUANTISED to 2dp so a frame that jitters by a pixel does not re-emit
+                            //   `--fit` and relayout the face underneath the reader — the owner:
+                            //    *"there's relayouts I'm implying you could not make an annoyance of"*.
+                            mw = fr.w; mh = fr.h; ang = 0
+                            // the column the search has arrived at, and the zoom it buys.  Height binds
+                            //  too once the face has been measured at this column — until then only
+                            //   width is known, which is the first round of the search.
+                            const col = +((row.c as any).stretch_col ?? STRETCH_COL0)
+                            const sh = +((row.c as any).stretch_h ?? 0)
+                            let z = fr.w / col
+                            if (sh > 0) z = Math.min(z, fr.h / sh)
+                            fit = +Math.max(STRETCH_ZOOM_MIN, Math.min(BELLY_FIT_MAX, z)).toFixed(2)
+                            ;(row.c as any).stretch_rect = fr        // what the measure pass searches against
+                            mx = ax - mw / 2; my = ay - mh / 2
+                        }
                     }
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident, spike: sp,
                                  x: ax, y: ay, r: s.r, kind: 'poly', d: path_round(sp ? sp.poly : poly), departing: false, lift,
@@ -2583,15 +2681,57 @@
     function stamp_box(w: TheC, row: TheC, nw: number, nh: number) {
         const v = gauge_box(row.c as any, nw, nh, Date.now())
         if (v === 'watching') gauge_again(w)
-        // the box fell with nothing else moving — nothing else would re-lay it out.
-        else if (v === 'fell') react_soon()
+        // ANY CHANGE TO THE BOX MAKES THE SEAT STALE, and nothing else will notice: `paint_tick` only
+        //  bumps when geometry MOVES, so a face that has just been measured sits at whatever seat it
+        //   was given before anyone knew its size — until some unrelated thing moves.  The owner
+        //    watched exactly that: *"arrives small and to the side, then it requires mousing over the
+        //     simulation to resize and reposition it properly into that space"* — the mouse was doing
+        //      the relayout, because a hover is the only thing that reliably bumps the paint.
+        //  `react_soon` is the trailing-edge latch, so a burst of first-measures folds into one adopt.
+        else if (v === 'first' || v === 'grew' || v === 'fell') react_soon()
+    }
+    // ── THE COLUMN SEARCH ──────────────────────────────────────────────────────────────────────
+    //  One step per measured round.  The zoom a stretched face gets is `min(rect_w/col, rect_h/h)`
+    //   where `h` is what the content came to AT THAT COLUMN — so the two terms pull opposite ways
+    //    and the best column is where they meet:
+    //     · height to spare (`zh > zw`) ⇒ the column is too WIDE — narrow it and buy zoom;
+    //     · height binding (`zh < zw`) ⇒ too skinny, the content has grown taller than the room —
+    //        widen it and give some zoom back.
+    //  It settles because of the DEAD BAND, not because of a step count: once the two zooms are
+    //   within `STRETCH_BAND` of each other nothing is written and nothing re-lays out.  The column
+    //    is rounded to a whole unit so a settled search re-emits byte-identical numbers — the same
+    //     "don't make the relayouts an annoyance" discipline as the 2dp `fit`.
+    function stretch_search(w: TheC, cell: PaintCell, mold: Element, sy: number) {
+        const c = cell.row.c as any
+        const child = (mold.querySelector('.face-scroll')?.firstElementChild) as HTMLElement | null
+        if (!child || !(child.offsetHeight > 0)) return
+        const h = child.offsetHeight * sy
+        const prev = +(c.stretch_h ?? 0)
+        if (!(prev > 0) || Math.abs(h - prev) / h > 0.02) { c.stretch_h = h; react_soon() }
+        const fr = c.stretch_rect
+        if (!fr || !(fr.w > 0) || !(fr.h > 0)) return
+        const col = +(c.stretch_col ?? STRETCH_COL0)
+        const zw = fr.w / col, zh = fr.h / h
+        if (zh > zw * STRETCH_BAND || zw > zh * STRETCH_BAND) {
+            const want = Math.round(Math.max(STRETCH_COL_MIN, Math.min(STRETCH_COL_MAX,
+                zh > zw ? col / STRETCH_STEP : col * STRETCH_STEP)))
+            // IT MUST TERMINATE, and the dead band alone does not guarantee that.  If the balance
+            //  point falls BETWEEN two reachable columns, neither satisfies the band and a fixed
+            //   multiplicative step ping-pongs between them forever — each bounce a relayout, which
+            //    is precisely the annoyance the owner warned about.  A 2-cycle is the only cycle this
+            //     step can produce, so remembering one column back is enough to see it and stop: we
+            //      are already at the better of the two (this step would return to the worse one).
+            if (want === col || want === +(c.stretch_prev ?? 0)) return
+            c.stretch_prev = col; c.stretch_col = want; react_soon()
+        }
     }
     function regauge_pose(row: TheC) {
         gauge_pose(row.c as any, String((((row.c as any).source_n) as any)?.c?.pose ?? ''))
     }
     function measure_world(w: TheC) {
         if (!(w.c as any).need_floor) return
-        // NOT WHILE ENGAGED.  The need floor is grow-only, and the honest contract is that a widget's
+        // NOT WHILE ENGAGED.  (`need_area`, the model's floor, is still grow-only — the natural BOX is
+        //  gauged both ways now, see `stamp_box`.)  The honest contract is that a widget's
         //  natural box is measured in ONE viewing condition — the reference pose.  (A zoomed camera makes
         //   faces read smaller in model units, which the grow-only guard would simply discard, so this is
         //    belt and braces rather than a live bug; the point is that the floor must never become a
@@ -2631,6 +2771,14 @@
         for (const m of stage.querySelectorAll('.face-mold')) {
             const cell = byKey.get((m as Element).getAttribute('data-key') ?? '')
             if (!cell || cell.departing) continue
+            // A STRETCHED FACE IS MEASURED ON ONE AXIS ONLY, and searched on the other.
+            //  Its WIDTH is assigned (the column), so reading it back would just be the mold talking
+            //   to itself — the `.df-small { height: 100% }` feedback loop.  Its HEIGHT is genuinely
+            //    intrinsic: it is what this content comes to WHEN GIVEN THAT COLUMN, which is the one
+            //     fact the layout cannot compute and the whole reason a fixed column could not be
+            //      guessed right.  So: measure the height, then step the column toward the balance
+            //       point and ask again — the owner's *"needs more rounds of measuring"*.
+            if (stretch_cell(cell)) { stretch_search(w, cell, m as Element, sy); continue }
             const scroll = (m as Element).querySelector('.face-scroll') as HTMLElement | null
             const child = scroll?.firstElementChild as HTMLElement | null
             if (!scroll || !child || typeof child.offsetWidth !== 'number') continue
@@ -2646,6 +2794,58 @@
         //  where the whole runner lives); reads no tracked state, so no feedback into the effect.
         Promise.resolve().then(() => { for (const w of springs.keys()) measure_world(w) })
     })
+    // ── A FACE CAN CHANGE SIZE WITHOUT ANYTHING MOVING (2026-08-10, the owner: *"the 'Invite...'
+    //  popup opening needs to trigger a size check as well"*) ──────────────────────────────────────
+    //  The pass above rides `paint_tick`, and `paint_tick` only bumps when GEOMETRY MOVES.  Opening
+    //   the invite panel changes what the Door draws and moves nothing, so no size check ever ran and
+    //    the face sat in a seat measured for the folded version of itself.  The 200ms gauge timer does
+    //     not cover it either — that only arms while a SHRINK window is open.
+    //  So: a model bump is also a reason to look.  A face reads the particle, so if the particle
+    //   changed, what the face draws may have changed size — which is exactly why DoorFace's invite
+    //    state was moved onto `.c` and bumped rather than kept in component-local `$state`.
+    //  NOT OFF `H.version` — that was the first cut and it is the trap this file already documents
+    //   two screens up: `adopt` autovivifies Matstyle swatches on `H.ave`, so an effect that READS
+    //    `H.version` and ends (however indirectly) in an adopt is subscribed to its own consequences.
+    //     Measuring feeds `react_soon` feeds `adopt` feeds a bump feeds the effect — a loop paced by
+    //      timers rather than a synchronous one, so it does not blow the effect depth, it just spins
+    //       full adopts forever.  Measured live: the model stayed perfectly healthy (pokes answered,
+    //        `belly=Radio`) while the glass went missing from the DOM — render dead, model fine.
+    //  THE HONEST INSTRUMENT IS A ResizeObserver ON THE FACE ITSELF.  A size check should be
+    //   triggered by a size CHANGING, not by the model ticking: it fires exactly when a face's own
+    //    box moves (the invite panel unfolding is precisely that), it costs nothing when nothing
+    //     changes, and it cannot route back through the reactive graph at all.
+    //  Still trailing-edge — a burst of resizes folds into ONE measure, after the flush, with the
+    //   forced-layout reads well outside any reactive context.
+    let measure_pending: any = 0
+    function measure_soon() {
+        if (measure_pending || typeof setTimeout === 'undefined') return
+        measure_pending = setTimeout(() => {
+            measure_pending = 0
+            for (const w of springs.keys()) measure_world(w)
+        }, 140)
+    }
+    let faceRO: ResizeObserver | null = null
+    // the action rides `.face-scroll`, but what it OBSERVES is the face's own root inside it: the
+    //  scroll's box is handed down from the mold (it changes when WE change it), while the child's
+    //   box is the face's own answer — the thing worth hearing about.  Re-resolved on update and on
+    //    a microtask, because the Face mounts after the action runs.
+    function sizewatch(el: HTMLElement) {
+        if (typeof ResizeObserver === 'undefined') return
+        if (!faceRO) faceRO = new ResizeObserver(() => measure_soon())
+        let kid: Element | null = null
+        const attach = () => {
+            const k = el.firstElementChild
+            if (k === kid) return
+            if (kid) faceRO!.unobserve(kid)
+            kid = k
+            if (kid) faceRO!.observe(kid)
+        }
+        attach(); queueMicrotask(attach)
+        return {
+            update() { attach() },
+            destroy() { if (kid) faceRO?.unobserve(kid); kid = null },
+        }
+    }
 
     // the drive: THE REACTION IS THROWN OUT OF THE EFFECT (a trailing-edge setTimeout latch).
     //  Atime and UItime are NOT as cleanly gated as reactivity_docs implies — H.ave.vers and
@@ -2708,6 +2908,10 @@
         if (raf_id) cancelAnimationFrame(raf_id); raf_id = 0
         if (react_pending) clearTimeout(react_pending); react_pending = 0
         if (fx_sweep) clearTimeout(fx_sweep); fx_sweep = 0
+        if (measure_pending) clearTimeout(measure_pending); measure_pending = 0
+        for (const t of gauge_timers.values()) clearTimeout(t)
+        gauge_timers.clear()
+        faceRO?.disconnect(); faceRO = null
     })
 
     // ── template readers (each reads paint_tick so the snapshot re-pulls) ──────────────────
@@ -3434,7 +3638,19 @@
                         {/each}
                     {/if}
                     {#each viewport_cells(w) as cell (cell.key)}
-                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && wall_carve(w, cell) && !fo(w, 'nohall')}
+                        <!-- NOT UNDER FOCUS (the owner 2026-08-10: *"the Heist cell, and any of them,
+                             don't want the seed,pub,state C** labels printed there"*).  The spill is
+                             the cell's raw `sc` run along its wall — it earns its place in the foam,
+                             where a small faceless cell has nothing else to say what it holds.  Under
+                             focus every cell HAS a face, and that face is the considered account of
+                             the same particle: the spill beside it is the unconsidered one, competing
+                             with it in a different typeface.  Same family as the ⤢ and the toybox —
+                             plumbing wearing the costume of information.
+                             `carveable` is not the gate to use here: it reads `w.c.foam` directly
+                             (not `layout`'s local `foam`, which focus already turns off), which is
+                             exactly how this leaked into a regime it was never meant for.  The NAME
+                             band keeps its carve — a cell still has to say which thing it is. -->
+                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && wall_carve(w, cell) && !fo(w, 'nohall') && !focus_on(w)}
                             {@const sp = spill_of(cell)}
                             {#if sp}
                                 <g class="wallwork" class:sunk={cell.sunk}>
@@ -3501,7 +3717,7 @@
                                  style="left:{((cell.mx - cam.x) / cam.w) * 100}%; top:{((cell.my - cam.y) / cam.h) * 100}%; width:{(cell.mw / cam.w) * 100}%; height:{(cell.mh / cam.h) * 100}%; --fit:{cell.fit};{mold_seat(cell)}"
                                  onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                  onpointerleave={() => on_leave(w, cell.key, cell.tok)}>
-                                <div class="face-scroll">
+                                <div class="face-scroll" class:stretch={stretch_cell(cell)} use:sizewatch>
                                     <svelte:boundary>
                                         <Face n={cell.source} H={H} />
                                         {#snippet failed(error)}
@@ -3867,6 +4083,19 @@
         /* the pool: a sunken face dims + desaturates on this child (the mold's transform stays
            free for the seat); opacity/filter only, so surfacing costs no layout */
         transition: opacity 240ms ease, filter 240ms ease;
+    }
+    /* STRETCHED — the face fills the COLUMN it was assigned, not the room (see the stretch note in
+       `layout`: the room is spent on ZOOM, because a face's type is hardcoded px and a wider box
+       cannot make it bigger — it can only push its rows apart, which was the fullscreen defect).
+       WIDTH is overridden because the face's own `width: max-content` + `max-width` cap is written
+       for the fill economy and is wrong when the box was chosen FOR it.  HEIGHT deliberately is NOT:
+       forcing it stretched the vertical rhythm the same way and stranded the content at the top of a
+       tall box.  Natural height, centred by `.face-scroll`'s own alignment.
+       `:global` because the child is another component's root, which Svelte's scoping cannot reach.
+       Only ever on a cell the commissioner posed `stretched`; every other face is untouched. */
+    .face-scroll.stretch > :global(*) {
+        width: 100%;
+        max-width: none;
     }
     .face-mold.sunk .face-scroll { opacity: 0.35; filter: saturate(0.55) brightness(0.82); }
     .face-err {

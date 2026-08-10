@@ -615,17 +615,20 @@
                             title="drop this AND delete what it already downloaded">🗑 undo</button>
                     {/if}
                 {/if}
-                <!-- the standard delete affordance (the human 2026-08-07: "the 'x' button should use the
-                     standard UI for doing that, like the path bits do") — micro/DeleteX, the same component
-                     every chip's × already is, so dropping a heist looks like dropping anything else.  The
-                     ARM stays (it is DeleteX's own two-press), and `big` gives this one the red orb: a
-                     chip is one typed word, a heist is a minute of filing, so its exit is findable.
-                     CONFIRM SAYS `cancel?`, NOT `delete?` (the owner 2026-08-09: "here we would have
-                     cancel, which everyone's familiar with").  Nothing is deleted by this press — the
-                     files already landed are kept, which is exactly what separates it from 🗑 undo
-                     beside it — so the armed pill must not promise a deletion.  `cancel` is also the
-                     word every dialog in the world uses for abandoning a thing in progress. -->
-                <DeleteX big confirm="cancel?" ondelete={cancel} title="don't keep — drop this heist" />
+                <!-- THE ✕ IS GONE (the owner 2026-08-10: *"perhaps we should get rid of the 'X' button
+                     and have only the Door and Radio as two other locations to go to, which cancel the
+                     Heist"*).  Its whole job was "a way out of here", and under the focus glass the way
+                     out is already on screen and already a cell: the Door and the Player buds.  A
+                     dedicated exit inside the face was a second vocabulary for leaving — and it was the
+                     one control in the belly that had to be aimed at, in a regime whose point is that
+                     you press WHOLE CELLS.
+                     The LEAVING is now the bud's press (`Sounditron_leave_keep`), which cancels with the
+                     same `Heist_keep_cancel` this button called — so nothing about what cancelling MEANS
+                     has changed, only where you say it.  `🗑 undo` stays: that one deletes what landed,
+                     which is a different act and still needs its own two-press arm.
+                     (History, so it is not relitigated blind: this was the human's own 2026-08-07 ask
+                      for a standard DeleteX affordance with a `cancel?` confirm.  It is superseded by
+                       the regime, not by a change of mind about the wording.) -->
             </span>
         </div>
     {/if}

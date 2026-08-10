@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return 'b1b56c0f7d0570c2~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '46caad99abe9528d~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -325,6 +325,20 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen) {
     for (const k of joins) {
         if (n.sc[k] != null) tok = tok + '|' + k + ':' + n.sc[k]
     }
+    // ── AN OPT-IN STABLE IDENTITY (2026-08-10) ────────────────────────────────────────────────
+    //  The tok above is `mainkey:value` plus a join set, and it is the CELL'S IDENTITY all the way
+    //   up: Vytui keys its springs, its lift and its keyed {#each} by it.  So anything in it that
+    //    CHANGES makes a new cell — the old one departs, the new one arrives small at a fresh seed
+    //     and re-measures from nothing.  On a %Radio both halves churn: the mainkey value IS the
+    //      state (`Radio:playing` → `Radio:digging`) and `of` is the TRACK LENGTH, not a pointer.
+    //       Measured on the live glass — the same cell keyed `Radio:playing|of:48` one capture and
+    //        `Radio:playing|of:42` the next.  The owner saw it as the player *"respawning every time
+    //         we hit Next track... a bit starting-up-glitchy, arrives small and to the side"*.
+    //  `of` is documented as the many:1 REFERENCE pointer (`Spin,of:X`); on a radio it is seconds.
+    //   Rather than re-cut the join vocabulary for every mainkey in the tree — which is a real Scan
+    //    question and not one to answer in passing — a particle may simply DECLARE its own stable
+    //     identity.  Purely additive: nothing that does not set it changes by a byte.
+    if (n.c.vyto_tok) tok = String(n.c.vyto_tok)
     // find-or-create by the token on `.c` (a string compare) — NOT an sc query, whose numeric-1
     //  values wildcard ({seq:1} matches any seq) and would merge distinct siblings.
     let row = parentMirror.o().find(r => r.c.tok === tok)
