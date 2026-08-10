@@ -94,6 +94,45 @@ The whole universe is **16 tracks that BOTH tabs already own** (16/16 id overlap
    correct for a library much larger than the room.
 (a) is the recommendation: it is the distinction the code already knows it needs.
 
+### 2026-08-10 — `Radio_crossover` — THE FIRST FRIEND TRACK NOW CUTS IN (the 08-09 ask, landed in part)
+
+*The owner, restating it a third time: "it should switch to playing from the peer's stream when their
+ first track becomes ready."* The two entries below recorded this as design-only. The **first track**
+  half is now implemented in `Radio_nudge`'s playing branch (`Radio_crossover`, Radio.g).
+
+**Why it needed writing at all, given "a playing radio is not deaf" (2026-08-08) already landed.** That
+ fix restaled the LINEUP — and a lineup entry is the NEXT track. So the friend's music was correctly
+  queued and the listener still sat through the rest of a stopgap first. Waiting is right for every
+   later track and wrong for the first, because the first friend track is the moment the app becomes
+    what it is for.
+
+**Four gates, each load-bearing** (the failure mode being avoided is "cuts a track at random"):
+ once a sitting (`radio.c.crossed`, runtime-only so a reload re-arms — this is an ARRIVAL, not a
+  policy) · only out of solo (`sc.solo` set ⇒ we are on our own shelf; cutting a friend's track to
+   start another friend's is just random skipping) · only when `Radio_pool_census().playable` is
+    non-zero (`Radio_playable`'s real test — chunk 0 warm plus the first seconds — not "a card
+     exists"; a cut to a husk is silence) · **throttled 1.5s, and this one is not politeness**:
+      `Radio_nudge` runs PER LANDED CHUNK and its own comment insists on O(1), while
+       `Radio_pool_census` walks every crate and record — this is the exact shape of the 2026-08-06
+        per-chunk burn. After the crossover the latch makes it free forever.
+
+It calls `Radio_skip` (which blends rather than cuts, 2026-08-07) and lets the dial's existing friend
+ preference choose, rather than growing a second opinion about what to play.
+
+**⚠ THE BOMB, and it is the exhaustion bug below.** `Radio_crossover` gates on `playable`, which does
+ NOT consult `heard` — but the `Radio_skip` it fires lands in `Ra_dial_next(… skip_ids: radio.c.heard)`.
+  So on a tab where the friend's records are already in `heard` (and `heard` is keyed by BARE id, so
+   your own listening drains the friend pool and two tabs on one box share ids), the crossover can
+    burn its once-a-sitting latch and land back on your own music. **Not observed — but not excluded
+     either, and the latch means it would cost the whole sitting.** The honest fix is for the
+      crossover to ask for a specific record rather than "the next thing"; it deliberately does not,
+       to avoid a second opinion. Decide which of those two costs is worse before touching it.
+
+**NOT YET SEEN FIRE.** Both player tabs were already past solo when it compiled in, so nothing has
+ emitted the `crossover` mark yet. It wants a fresh boot beside a friend with music — grep the supply
+  ring (`runner_ask world`) for `crossover`. Until that has been watched once, treat this as written,
+   not proven ([[mutation-test-every-claim]] applies: a green path nobody has seen run gates nothing).
+
 ### 2026-08-09 — "jump to the friend's stream when it comes available" (owner, same session)
 
 Restated tighter than the boot-policy ruling below and worth keeping in its own words: *"we need to

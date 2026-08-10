@@ -79,8 +79,23 @@
     //  r=26 circle.  The ring replaces the bar — a round cell wants round furniture.
     const RING_C = 2 * Math.PI * 26
     const ringlen = (frac: number) => (Math.max(0, Math.min(1, frac)) * RING_C).toFixed(1)
+    // ── THE POSE (2026-08-10, the owner: *"the radio should display as a play button (like Door
+    //  becomes only a Door icon)"*).  Same `.c.pose` seam DoorFace reads: the commissioner stamps
+    //   `small` on a bud and `big` on the belly, and a bud renders ONE GLYPH — not a folded player,
+    //    not a player with its chips hidden.  Defaults to `big`, so any glass that does not pose its
+    //     cells gets exactly the face it got before this existed.
+    let pose = $derived.by(() => { void H?.version; void tick; return String(n?.c?.pose ?? 'big') })
+    let small = $derived(pose === 'small')
 </script>
 
+<!-- SMALL IS THE WHOLE FACE, not a folded player (DoorFace's discipline, same reason): one early
+     return, so a bud does not mount the transport, the ring, the friend-pool census or the 1s clock —
+     and a single branch is the only way to be sure of that by reading it.  The glyph reports STATE:
+     ▶ when it is playing (press the cell to come back to it), ▷ when it is not. -->
+{#if small}
+    <div class="rf rf-bud" class:on={face.state === 'playing'}
+         title={face.state === 'playing' ? 'the player — press to come back to it' : 'the player'}>{face.state === 'playing' ? '▶' : '▷'}</div>
+{:else}
 <div class="rf" class:on={face.state === 'playing'}>
     <!-- THE BITSY PLAYER (the owner 2026-08-09: "pop the player visual for something more
          individual bitsy and layoutable").  The old face was a left-aligned text column — the
@@ -151,8 +166,14 @@
         {/if}
     </div>
 </div>
+{/if}
 
 <style>
+    /* SMALL — THE PLAY BUTTON, and nothing else.  Intrinsic box on BOTH axes (no height:100%, which
+       would measure the mold this face is sitting in and hand the layout an aspect that is not a fact
+       about anything — see DoorFace's note, where that was a bug you could see). */
+    .rf.rf-bud { font-size: 30px; line-height: 1; padding: 2px; color: #8d8da8; }
+    .rf.rf-bud.on { color: #cfe8c0; }
     /* THE BITSY LAYOUT — a centred column of individual objects, sized for a round room. */
     .rf {
         pointer-events: none;

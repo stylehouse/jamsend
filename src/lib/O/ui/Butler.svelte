@@ -28,14 +28,21 @@
     //
     //  IT CARRIES YOU ALL THE WAY (the owner 2026-08-10: *"the Butler is supposed to carry you all the
     //   way, letting you know what's happening, until the Vyto glass is up and running AND playing the
-    //    thing you want"*).  So the exit this screen is FOR is ARRIVAL — `Supervisor_arrived`, the
-    //     milestone the commissioner declared — and the clock below is the GIVE-UP, not the success.
-    //      Every earlier cut had it the other way round: three impatience exits and no arrival at all,
-    //       so a listener was handed a half-built machine on a timer and told nothing about it.
+    //    thing you want"*).  So the ONE automatic exit is ARRIVAL — `Supervisor_arrived`, the milestone
+    //     the commissioner declared, whose probe is a positive ladder (a frame · a commission ·
+    //      grapples · mirror cells · nothing missing · and the analyser actually hearing sound).  There
+    //       is no clock in this file that lifts it and there must never be one again: FOUR have been
+    //        tried and removed (1.8s, 6s elapsed, a 40s ceiling, then 6s of roster stillness), and each
+    //         one handed a listener a half-built machine on a timer and told them nothing about it.
+    //      When arrival CANNOT happen, the model says so — `Supervisor_arrived → 'gaveup'`, off the
+    //       patience the REGISTRAR armed on its own milestone — and this screen changes what it says
+    //        rather than vanishing, because that is the moment its advice becomes true.
     //
-    //  IT MAY NOT TRAP THE LISTENER — and it does that WITHOUT A CLOCK (there is no GIVEUP_MS any
-    //   more; see below).  The *carry on* tap is there from the first frame and grows at IMPATIENT_MS,
-    //    and a listener who never wants this screen again has one small persistent switch (see QUIET).
+    //  IT MAY NOT TRAP THE LISTENER — and it does that WITHOUT A CLOCK.  The *carry on* tap is there
+    //   from the first frame and grows (and goes loud the moment the machine settles), and a listener
+    //    who never wants this screen again presses ▦ — which the PAGE draws, fixed in the top-right
+    //     corner at z-index 999999, deliberately over this FaceSucker.  This file only READS that pref
+    //      (see GUTS); it owns no switch of its own.
     //     Once it lifts it LATCHES DOWN for the tab — `H.c.butler_done`, the tab and not this
     //      component — because minting an invite mid-session arms an expectation too, and a fullscreen
     //       gate dropping over somebody's music because they showed a friend a QR code would be the
@@ -65,17 +72,31 @@
     //     doc is named for is about saying so, not about quietly stepping aside.)
     const IMPATIENT_MS = 12000  // past this we stop pretending the wait is normal: the carry-on tap
                                 //  grows and names itself. Silence is the trap, not duration.
-    const STILL_MS     = 6000   // …and this long of NOTHING MOVING before believing "nothing to wait
-                                //  for", which is only ever the NO-ARRIVAL fallback below. Note what it
-                                //   measures: not how long we have been up (that was the bug, twice
-                                //    over — 1.8s, then 6s, both lifting mid-boot because a young roster
-                                //     had nothing outstanding YET), but how long since the roster last
-                                //      changed its mind. §2, in this file: elapsed time cannot tell
-                                //       SLOW from STUCK, only "has anything advanced" can.
-    const QUIET = 'butler.quiet' // the persistent switch (the owner: *"one semi-hidden persistent-state
-                                 //  toggle, like we used to have, quit_fullscreen or so"*). A particle
-                                 //   + the House stash, both owned by Supervisor_pref — NOT a `$state`
-                                 //    here, which would forget itself on the very reload it is for.
+    // THERE IS NO SECOND CONSTANT ANY MORE, and the one that was here is worth a headstone. `STILL_MS`
+    //  lifted the screen after 6s of a roster not changing its mind, as the fallback for a page where
+    //   nobody declares an arrival. It was the fourth impatience exit in a row to be wrong, and it was
+    //    wrong in a way none of the earlier ones were: it measured the right quantity (progress, not
+    //     elapsed time — §2) and still fired mid-boot, because A YOUNG ROSTER IS PERFECTLY STILL. The
+    //      owner, 2026-08-10: *"Butler quits very soon, only one goal is listed"*, then *"it quits
+    //       right after 'friend comes online' which I can only just see as it fades out"*. One goal is
+    //        the whole diagnosis: `Sounditron_supervise` registers all seven watches AND the arrival in
+    //         BEAT 2, and until the Creduler has loaded the spine and the Book has started, the board
+    //          holds only Radio's one row — done, still, and indistinguishable from a finished machine.
+    //  SO THE FALLBACK IS GONE RATHER THAN RETUNED. Every version of it was one question — "is an
+    //   arrival ever coming?" — being answered by a face that is forbidden to know. The model answers
+    //    it now (`Supervisor_arrived → 'gaveup'`, off the patience its registrar armed), and this file
+    //     waits. `none` means NOT YET, in every case this screen can be up for.
+    const GUTS = 'guts'         // THE ONE SEMI-HIDDEN PERSISTENT SWITCH (the owner: *"one semi-hidden
+                                //  persistent-state toggle, like we used to have, quit_fullscreen or
+                                //   so"*, then 2026-08-10: *"we want that button hidden within our app
+                                //    — that and the Butler-overlay-exiting control should be one and
+                                //     the same"*). It means I WANT THE MACHINE, and one control sets it
+                                //      — the page's fixed ▦. This screen stands down, and BigSoundland
+                                //       appears. A listener never sees either. A particle + the House
+                                //        stash, both owned by Supervisor_pref — NOT a `$state` here,
+                                //         which would forget itself on the very reload it is for.
+                                //  It replaced `butler.quiet`, which said only "skip the loading
+                                //   screen" and left the ▦ on a listener's screen with nothing to do.
 
     const gate = boot_gate(H, { proactive: true })
     onMount(gate.start)
@@ -135,13 +156,13 @@
     //   stashed `on` into a particle), and a derived that mutates is a derived that will one day loop.
     //    It stops asking the moment it reads on — there is nothing to un-latch here, the panel is
     //     where it gets turned back off.
-    let quiet = $state(false)
+    let guts = $state(false)
     $effect(() => {
         void tick
-        if (quiet) return
+        if (guts) return
         const w = sup_w()
         if (!w || !H?.Supervisor_pref) return
-        if (H.Supervisor_pref(w, QUIET)) quiet = true
+        if (H.Supervisor_pref(w, GUTS)) guts = true
     })
 
     let view = $derived.by(() => {
@@ -159,13 +180,11 @@
         // THE NOTICE RING — what actually HAPPENED, newest last (the order it happened in, which is
         //  the order a log reads in). This is the log half of "log-looking": the arc says what must
         //   become true, the ring says what turned. Entirely `.c`, so it costs the snap nothing.
-        const notices = (w && H?.Supervisor_noticed) ? H.Supervisor_noticed(w).slice(-6) : []
         return {
             lines,
             waiting,
             unfinished,
             advice,
-            notices,
             arrived: (w && H?.Supervisor_arrived) ? H.Supervisor_arrived(w) : 'none',
             since: mounted_at ? Date.now() - mounted_at : 0,
             holding: !!unfinished.length,
@@ -194,61 +213,41 @@
     let landing_seen = $state(false)
     $effect(() => { if (landing) landing_seen = true })
 
-    // past this we stop looking patient — the tap grows and says what it is for.
-    let impatient = $derived(view.since > IMPATIENT_MS && !gate.wanted && !landing)
+    // HAVE WE SETTLED FOR LESS? The model's ruling, not ours: the declared arrival is unmet and the
+    //  patience its own registrar armed has run out. Nothing more is going to happen on its own.
+    //  IT DOES NOT LIFT THE SCREEN, and that is the point of showing it. Lifting here would delete the
+    //   advice at the instant it became true — and that advice IS the owner's *"it should also explain
+    //    clearly that no friend is online and you can play local music instead"*. So the screen stops
+    //     pretending to load (no spinner) and the way out goes loud instead. A person leaves when they
+    //      have read why, which is the difference between being told and being timed out.
+    let settled = $derived(view.arrived === 'gaveup')
 
-    // HAS ANYTHING ADVANCED? The whole state of the roster in one string — how many claims exist, how
-    //  many have turned, how many things have happened, and whether an arrival is on the board. Any of
-    //   those moving means the machine is still coming up. Deliberately COARSE: a note churning under
-    //    a line ("37 folders walked") must not read as progress here, or nothing would ever be still.
-    let sig = $derived(view.lines.length + '/' + view.lines.filter((l: any) => l.done).length
-                       + '/' + view.notices.length + '/' + view.arrived)
-    let last_sig = ''
-    let still_since = $state(0)
-    $effect(() => {
-        void tick
-        if (sig === last_sig) return
-        last_sig = sig
-        still_since = Date.now()
-    })
+    // past this we stop looking patient — the tap grows and says what it is for. `settled` forces it:
+    //  once the machine has admitted nothing more is coming, a small quiet dismiss is the wrong size
+    //   of button for the only thing left to do.
+    let impatient = $derived((settled || view.since > IMPATIENT_MS) && !gate.wanted && !landing)
 
     // the exit, evaluated on every poll. An $effect and not a $derived because it LATCHES — the whole
     //  point is that the answer is one-way.
-    //  THE ORDER IS THE DESIGN. Arrival is the reason this screen exists; the clock is the apology for
-    //   when arrival never comes. A `none` arrival (no registrar has declared one — a bare tab, a
-    //    half-loaded spine) falls back to the old reading, because holding a listener behind a finish
-    //     line nobody will ever cross is the one failure mode worse than lifting early.
+    //  THERE IS EXACTLY ONE AUTOMATIC EXIT AND IT IS ARRIVAL. Everything else on this list is a person
+    //   or a preference: the tap, the guts switch, a machine tab. That is the whole shape of the file
+    //    now, and every line of it was paid for by a version that lifted on a clock instead.
     $effect(() => {
         void tick
         if (done) return
         if ((H?.c as any)?.butler_done) { done = true; return }    // already lifted earlier this tab
-        if (carried_on || machine_tab || quiet) { lift(); return }
+        if (carried_on || machine_tab || guts) { lift(); return }
         if (gate.wanted) return                                   // a permission is not progress
         if (landing) return                                       // …and neither is an unspent invite
         if (view.arrived === 'arrived') { lift(); return }        // ★ THE ONLY AUTOMATIC EXIT
-        // …and the fallback for a page where NOBODY EVER DECLARES AN ARRIVAL — not a clock, a
-        //  different question. `none` means no registrar has a finish line at all (a host that is not
-        //   BigSoundland, a spine that never loaded Sounditron), and there holding forever would be
-        //    waiting on something that cannot happen. Where an arrival IS declared this never fires,
-        //     however long it takes.
-        //  IT WAITS FOR STILLNESS, NOT FOR TIME. A booting tab reaches this line with a roster that is
-        //   half-registered and momentarily has nothing outstanding — every watch so far ok, the
-        //    arrival not commissioned yet — and any elapsed-time reading lifts right there, which is
-        //     the "bust open at the wrong time" the owner kept seeing. While registrations keep
-        //      landing, watches keep turning or notices keep arriving, this is a machine coming up.
-        //  AND AN EMPTY ROSTER IS NOT "NOTHING TO WAIT FOR" — it is "nobody has spoken YET", which is
-        //   the unknown-is-first-class rule again (the same one that makes a null `H` hold above). A
-        //    still, EMPTY board is the most common shape of the first seconds on this page: the world
-        //     is minted by the registrar itself, so before `Sounditron_machine` reaches its
-        //      registration beat there are no lines, no notices and no arrival — perfectly still, and
-        //       every clock-or-stillness reading lifts right there, mid-spine-load. The fallback is
-        //        for a page whose registrars HAVE spoken and none of them declared a finish line.
-        //   The Butler mounts on one page (`BigSoundland.svelte`) and that page's Book declares an
-        //    arrival in beat 2, so "hold on an empty board" cannot strand anybody who is booting; if
-        //     the board never fills the machine truly never started, and the carry-on tap has grown
-        //      and named itself by then. Silence with a way out beats a gate that lies about being up.
-        if (view.arrived === 'none' && view.lines.length && !view.holding
-            && still_since && Date.now() - still_since > STILL_MS) lift()
+        // 'none' — NOT YET. No registrar has declared a finish line, which on this page always means
+        //  the spine is still loading and the Book has not reached its registration beat. It is the
+        //   reading of the first seconds of every boot, and treating it as "there will never be one"
+        //    is what four separate impatience exits did. We hold. If the board never fills at all the
+        //     machine truly never started, and by then the carry-on tap has grown and named itself —
+        //      silence with a labelled way out beats a gate that lies about being up.
+        // 'coming' / 'gaveup' — hold too. `gaveup` changes what this screen SAYS (see `settled`), not
+        //  whether it is up: the sentence it exists to deliver arrives at exactly that moment.
     })
 
     let up = $derived(!done && !machine_tab)
@@ -264,25 +263,52 @@
 
     // one headline: what we are waiting for, else the next unfinished thing, else the honest nothing —
     //  we are up before the machine is, and saying so beats a blank hold.
+    //  …EXCEPT ONCE THE MODEL HAS GIVEN UP, where the next unfinished sentence would be the arrival
+    //   claim itself — "the glass is up and music is playing" over a card that exists to say it isn't.
+    //    This one sentence is the screen talking about ITSELF, not a second opinion about a row: the
+    //     rows keep their own marks in the arc below, and the registrar's advice says what to do.
     let headline = $derived(
-        view.waiting[0]?.sentence
+        settled ? 'this is as far as it goes on its own'
+        : view.waiting[0]?.sentence
         || view.unfinished[0]?.sentence
         || 'starting up')
     let left = $derived(view.waiting[0]?.left ?? 0)
 
-    // elapsed, log-style: how long ago it turned. Seconds while a boot is still a boot.
-    function ago(at: number) {
-        const s = Math.max(0, Math.round((Date.now() - at) / 1000))
-        return s < 60 ? '+' + s + 's' : '+' + Math.round(s / 60) + 'm'
+    // ms from page start, as a person reads it: sub-10s keeps a decimal (the difference between 1.2s
+    //  and 8.9s is the whole diagnosis), past that it is noise.
+    function secs(ms: number) {
+        const s = ms / 1000
+        return '+' + (s < 10 ? s.toFixed(1) : Math.round(s)) + 's'
     }
 
-    // hush — the switch, written through the model (particle + stash in one place) and taking effect
-    //  at once: a control that only worked NEXT time would look broken the moment it was pressed.
-    function hush() {
-        const w = sup_w()
-        if (w && H?.Supervisor_pref_set) H.Supervisor_pref_set(w, QUIET, 1)
-        quiet = true
+    // (`ago()` went with the notice ring — it had no other reader, and a helper kept "in case" is how
+    //  a file grows a second surface nobody asked for.)
+
+    // THE STATUS BRACKET — the owner 2026-08-10: *"must say less junk in the meantime… perhaps just
+    //  make it look like Linux starting up `[ OK ] friend is online: $randompick`"*.  Everyone who has
+    //   ever watched a machine come up already knows how to read this column, which is the whole
+    //    argument for it: no legend, no glyph to learn, and a listener who does not care can ignore a
+    //     tidy left margin far more easily than a row of symbols.
+    //  IT RE-DECIDES NOTHING.  `tone` is the model's word (Supervisor_tone's six), and this maps word →
+    //   appearance, which is exactly the half a face is allowed to own.  A tone with no case here falls
+    //    to the blank bracket rather than inventing a seventh meaning.
+    //  All six are SIX CHARACTERS between the brackets so the sentences line up in a monospace column;
+    //   a ragged margin is the thing that stops a list reading as a boot log.
+    const BRACKET: Record<string, string> = {
+        good:    '  OK  ',
+        bad:     'FAILED',
+        todo:    '      ',
+        waiting: ' .... ',
+        moot:    ' SKIP ',
+        blind:   '  ??  ',
     }
+    function bracket(tone: string) {
+        return '[' + (BRACKET[tone] ?? '      ') + ']'
+    }
+
+    // NO WRITER HERE. This file only ever READS `guts` — the one control that sets it is ▦, which the
+    //  page fixes in its top-right corner above this FaceSucker. Two writers onto one pref is how a
+    //   state ends up with two meanings, and the previous cut had exactly that.
 </script>
 
 {#if up}
@@ -320,12 +346,20 @@
                         </button>
                         {#if gate.error}<p class="err" transition:fade>{gate.error}</p>{/if}
                     {:else}
-                        <div class="rings" aria-hidden="true"><span></span><span></span></div>
-                        {#key headline}
-                            <h2 in:fly={{ y: 8, duration: 320, easing: quintOut }} out:fade={{ duration: 120 }}>
-                                {headline}{#if left}<span class="secs"> · {left}s</span>{/if}
-                            </h2>
-                        {/key}
+                        <!-- THE SPINNER IS A CLAIM: "something is still happening". Once the model has
+                             given up on the arrival that claim is false, and a spinner over a machine
+                             that has stopped trying is the single most dishonest thing this file could
+                             draw. So it goes, and the advice below carries the card instead. -->
+                        <!-- LESS JUNK IN THE MEANTIME (the owner 2026-08-10). A spinner and a headline
+                             restating the row the log is already showing were two more things moving on
+                             a screen whose whole job is to be read. The log below says what is
+                             happening, line by line, and says it better.
+                             The headline survives for the ONE case the log cannot state, which is the
+                             screen talking about itself: the model has given up and there is no next
+                             line coming. That is not a row and never was. -->
+                        {#if settled}
+                            <h2 in:fly={{ y: 8, duration: 320, easing: quintOut }}>{headline}</h2>
+                        {/if}
                     {/if}
 
                     <!-- THE ARC, in the order it happens — not by severity, which is what put the
@@ -337,7 +371,7 @@
                             {#each view.lines as l, i (l.key)}
                                 <li class={l.tone} class:done={l.done}
                                     in:fly={{ y: 6, duration: 260, delay: i * 40, easing: quintOut }}>
-                                    <span class="m">{l.mark}</span>
+                                    <span class="m">{bracket(l.tone)}</span>
                                     <span class="s">
                                         {l.sentence}
                                         <!-- THE NOTE IS WHAT MAKES THIS MID-COMPLEXITY. The cell has
@@ -346,29 +380,26 @@
                                              records"). §5: attribution before action — a claim with
                                              no evidence under it is a riddle, and the panel should
                                              not be the only place a person can read one. -->
-                                        {#if l.note}<span class="note">{l.note}</span>{/if}
+                                        {#if l.note}<span class="note">: {l.note}</span>{/if}
                                     </span>
-                                    {#if l.waiting && l.left}<span class="secs">{l.left}s</span>{/if}
+                                    <!-- THE WATERFALL. `won` is ms from page start to the moment this
+                                         claim came true — the efficiency ledger, on the listener's own
+                                         screen and on every boot rather than in a profiling session
+                                         somebody has to arrange. A slow leg names itself here. -->
+                                    {#if l.waiting && l.left}<span class="secs">{l.left}s</span>
+                                    {:else if l.won}<span class="won">{secs(l.won)}</span>{/if}
                                 </li>
                             {/each}
                         </ul>
                     {/if}
 
-                    <!-- THE LOG TAIL — the notice ring: every watch or dial that CHANGED ITS MIND,
-                         in the order it happened. The arc above says what must become true; this says
-                         what turned. Together they are the "log-looking" half of this surface, and
-                         neither alone reads as a machine coming up. Last six only — a loading screen
-                         is not a scrollback, and the panel holds the full twelve. -->
-                    {#if view.notices.length && !landing}
-                        <ul class="log">
-                            {#each view.notices as ev (ev.at + ev.sentence)}
-                                <li transition:fade={{ duration: 200 }}>
-                                    <span class="when">{ago(ev.at)}</span>
-                                    <span class="s">{ev.sentence}{#if ev.n > 1} ×{ev.n}{/if}</span>
-                                </li>
-                            {/each}
-                        </ul>
-                    {/if}
+                    <!-- THE NOTICE RING IS GONE FROM THIS SURFACE (2026-08-10, "less junk"). It said
+                         the same things the arc above says, in a different order, under a second set of
+                         timestamps — so a listener read every fact twice and had to work out which list
+                         was which. Two lists is not more information, it is more reading.
+                         Nothing is lost: the ring is `.c` on the model, SupervisorPanel still shows all
+                         twelve, and `runner_ask supervisor` prints it as "what turned, oldest first".
+                         It was always the developer's half of this screen. -->
 
                     <!-- THE GIVE-UP, IN WORDS. A wait that quietly expires tells a listener nothing;
                          this is the whole of the owner's *"it should also explain clearly that no
@@ -386,19 +417,15 @@
                              gate is `!butler_up`), so nobody can be stranded away from their invite
                              by tapping the one button that is always there. -->
                         <button class="carry" class:big={impatient} onclick={() => carried_on = true}>
-                            {impatient ? 'this is taking a while — carry on →' : 'carry on →'}
+                            {#if settled}carry on →{:else if impatient}this is taking a while — carry on →{:else}carry on →{/if}
                         </button>
-                        <!-- THE SEMI-HIDDEN SWITCH. Deliberately the quietest thing on the card: it
-                             costs a listener their arrival screen forever, so it must never be the
-                             easiest thing to hit. It is turned back ON from the Supervisor panel —
-                             the off-switch is where you are annoyed, the on-switch where you are
-                             looking for it. Persistent because it is a particle + the House stash.
-                             NOT AT THE DOOR: "don't wait for me" is an answer to a loading screen,
-                             and offering it to somebody mid-join is offering to hide the join. -->
-                        {#if !landing}
-                            <button class="quiet" title="don't show this arrival screen again — turn it back on in the Supervisor panel"
-                                    onclick={hush}>don't wait for me</button>
-                        {/if}
+                        <!-- THERE IS NO SWITCH ON THIS CARD ANY MORE (the owner 2026-08-10: *"lose
+                             `show me the guts`"*). The persistent one is ▦, fixed in the page's
+                             top-right corner and drawn ABOVE this FaceSucker, so it is reachable from
+                             here without this file owning a second door onto the same state — which
+                             is `boot_gate`'s lesson, and the old "don't wait for me" was already a
+                             control a person could press without learning where anything went. -->
+
                     {/if}
                 </div>
             </div>
@@ -493,55 +520,41 @@
         100%     { background-position: -40% 0; }
     }
     .err { color: #ff8a8a; font-size: .9rem; margin: 0; }
-    .rings {
-        position: relative;
-        width: 2.4rem; height: 2.4rem;
-    }
-    .rings span {
-        position: absolute; inset: 0;
-        border-radius: 50%;
-        border: 2.5px solid transparent;
-    }
-    .rings span:first-child {
-        border-top-color: #7fc7ff; border-right-color: #7fc7ff44;
-        animation: butler-spin 1100ms cubic-bezier(.5,0,.5,1) infinite;
-    }
-    .rings span:last-child {
-        inset: 5px;
-        border-bottom-color: #ffb156; border-left-color: #ffb15644;
-        animation: butler-spin 850ms cubic-bezier(.5,0,.5,1) infinite reverse;
-    }
-    @keyframes butler-spin { to { transform: rotate(360deg); } }
+    /* (the spinner went with the headline — the `[ .... ]` bracket on the row we are actually waiting
+        for says the same thing, in the place the eye is already reading.) */
     @media (prefers-reduced-motion: reduce) {
-        .rings span, .glint, .aurora { animation: none; }
-        .rings span:first-child { opacity: .8; }
+        .glint, .aurora { animation: none; }
     }
     /* LOG-LOOKING: left-aligned, one row per fact, marks and clocks in a fixed gutter so the eye
        scans a column rather than re-reading centred prose. The card is wider for the same reason. */
-    .arc { list-style: none; padding: 0; margin: .3rem 0 0; font-size: .95rem;
-           width: 100%; display: flex; flex-direction: column; gap: .25em; text-align: left; }
+    /* MONOSPACE THROUGHOUT, because the bracket only works as a column. In a proportional font
+       `[  OK  ]` and `[FAILED]` are different widths and the sentences no longer start at the same
+       x — which is precisely the thing that makes a boot log scannable and a list of sentences not. */
+    .arc { list-style: none; padding: 0; margin: .3rem 0 0; font-size: .88rem;
+           width: 100%; display: flex; flex-direction: column; gap: .1em; text-align: left;
+           font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     .arc li { display: flex; gap: .6em; align-items: baseline;
-              padding: .2em .3em; border-radius: .35em; transition: opacity 300ms ease; }
-    .arc .m { width: 1em; flex: 0 0 auto; text-align: center; }
+              padding: .12em .3em; border-radius: .35em; transition: opacity 300ms ease; }
+    .arc .m { flex: 0 0 auto; white-space: pre; letter-spacing: -.02em; }
     .arc .s { flex: 1 1 auto; min-width: 0; }
-    .arc .note { display: block; opacity: .5; font-size: .85em; line-height: 1.35;
-                 font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    /* the note runs ON THE SAME LINE now (": Righto", ": 12 records") — the owner's
+       `[ OK ] friend is online: $randompick`. It was a block, which made every row two rows and
+       turned a nine-line log into an eighteen-line wall. */
+    .arc .note { opacity: .55; }
     .arc li.done    { opacity: .35; }
     .arc li.good    { color: #9fd8a8; }
     .arc li.waiting { color: #ffd08a; background: rgba(255, 208, 138, .06); }
     .arc li.bad     { color: #ff9b8a; }
     .arc li.todo    { color: #cfd8e0; }
     .arc li.blind   { color: #9aa5b5; }
-    /* the log tail — dimmer than the arc on purpose: the arc is what must happen, this is what did */
-    .log { list-style: none; padding: .4em 0 0; margin: .2rem 0 0; width: 100%;
-           border-top: 1px solid rgba(255,255,255,.07); text-align: left;
-           display: flex; flex-direction: column; gap: .1em;
-           font-size: .82rem; opacity: .62;
-           font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .log li { display: flex; gap: .6em; align-items: baseline; }
-    .log .when { flex: 0 0 3em; text-align: right; opacity: .6;
-                 font-variant-numeric: tabular-nums; }
-    .log .s { flex: 1 1 auto; min-width: 0; }
+    /* moot — nobody asked for this, so it is the quietest row on the card.  Dimmer than `blind`:
+       "I could not look" is worth a glance, "nothing is asking" is not. */
+    .arc li.moot    { color: #7b8794; opacity: .55; }
+    /* +3.2s — when this claim came true, measured from page start.  Right-hand gutter, tabular, so a
+       boot reads as a waterfall down the column rather than as prose. */
+    .arc .won { opacity: .45; font-variant-numeric: tabular-nums; font-size: .82em;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    /* (`.log` went with the notice ring.) */
     /* the door — the panel brings its own chrome, so this only gives it the card's full width and
        an honest left edge to read down. Deliberately no `:global` restyling of the panel: it is the
        same door as the strip's and the cell's, and a Butler-only skin would be a fourth opinion. */
@@ -558,12 +571,4 @@
     }
     .carry:hover { color: #e8f3ff; border-color: #6ea3bf; background: rgba(255,255,255,.04); }
     .carry.big { color: #e8f3ff; border-color: #6ea3bf; font-size: 1rem; padding: .6em 1.4em; }
-    /* the semi-hidden one: legible if you look, invisible if you don't */
-    .quiet {
-        margin-top: -.35rem; background: none; border: none; cursor: pointer;
-        color: #6d8496; font-size: .74rem; letter-spacing: .02em; padding: .3em .5em;
-        text-decoration: underline dotted; text-underline-offset: .25em;
-        transition: color 140ms ease;
-    }
-    .quiet:hover { color: #b9cede; }
 </style>

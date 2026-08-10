@@ -48,7 +48,11 @@
     //    $effect, not the derived below, because the first read mirrors the House stash into a
     //     particle — a derived that mutates is a derived that will one day loop.
     const PREFS = [
-        { key: 'butler.quiet', label: 'skip the arrival screen', note: 'the Butler does not hold this tab' },
+        // ONE SWITCH, TWO SURFACES (2026-08-10) — it replaced `butler.quiet`, which turned off the
+        //  arrival screen and left BigSoundland's ▦ standing on a listener's page with nowhere useful
+        //   to go. `guts` is the whole answer to "am I a person or a machine on this tab": the Butler
+        //    stands down AND the ▦ appears. `?` on the page toggles the same pref.
+        { key: 'guts', label: 'the guts', note: 'no arrival screen — and ▦ on the page (? toggles it too)' },
     ]
     let prefs: Record<string, number> = $state({})
     $effect(() => {

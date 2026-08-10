@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '5d7698a01939e0e9~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '9ebddbfedb402428~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1656,12 +1656,48 @@ Radio_nudge(w) {
     if (radio.sc.Radio === 'playing') {
         let lu = w.o({ Mag: 'Lineup' })[0]
         if (lu) lu.c.restale = 1
+        this.Radio_crossover(w, radio)
         return
     }
     if (radio.sc.Radio !== 'digging') return
     let era = (radio.c.era || 0) + 1
     radio.c.era = era
     this.Radio_pump(radio, era)
+
+},
+// Radio_crossover — THE FIRST FRIEND TRACK CUTS IN (the owner 2026-08-10: *"it should switch to
+//  playing from the peer's stream when their first track becomes ready"*).
+//  This is a deliberate, SCOPED reversal of the rule directly above.  "A playing radio is not deaf"
+//   fixed the deafness by restaling the lineup — but a lineup entry is the NEXT track, and while we
+//    are filling with our own music the listener sits through the rest of a stopgap before hearing the
+//     thing they actually opened the app for.  Waiting was right for every later track and wrong for
+//      the first one, because the first one is the moment the app becomes what it is for.
+//  FOUR GATES, and every one of them is what keeps this from being the track-cutting bug it replaces:
+//   • ONCE A SITTING (`c.crossed`, runtime-only so a reload re-arms) — this is an arrival, not a policy.
+//   • ONLY OUT OF SOLO (`sc.solo` is set ⇒ we are on our own shelf; Radio_open deletes it the instant
+//      a friend's track opens).  Cutting a friend's track to start another friend's track is just
+//       skipping someone's music at random, which nobody asked for.
+//   • ONLY WHEN SOMETHING IS ACTUALLY PLAYABLE — `census.playable` is Radio_playable's real test (chunk
+//      0 warm plus the first seconds), not "a card exists".  A cut to a husk is silence.
+//   • THROTTLED, and this one is not politeness, it is the burn this whole function is shaped around.
+//      Radio_nudge runs PER LANDED CHUNK and its comment insists on O(1); `Radio_pool_census` walks
+//       every crate and every record.  1.5s bounds it to a handful of walks across the gathering
+//        window, and after the crossover the `crossed` latch makes it free forever.
+//  It SKIPS rather than opening a chosen record: Radio_skip already blends instead of cutting, and the
+//   dial already prefers the friend pool — so this asks the existing machinery for "the next thing"
+//    the moment the answer changes, rather than growing a second opinion about what to play.
+Radio_crossover(w, radio) {
+    if (radio.c.crossed) return 0
+    if (!radio.sc.solo) return 0
+    let now = Date.now()
+    if (radio.c.cross_at && now - radio.c.cross_at < 1500) return 0
+    radio.c.cross_at = now
+    let c = this.Radio_pool_census(w, radio)
+    if (!c.playable) return 0
+    radio.c.crossed = 1
+    this.Radio_trace(null, { ev: 'crossover', playable: c.playable, of: (c.names[0] || '') })
+    this.Radio_skip(radio)
+    return 1
 },
 //#endregion
 

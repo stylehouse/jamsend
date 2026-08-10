@@ -7,7 +7,208 @@
 
 ## 0. Get on with next
 
-### ⇑ 2026-08-10 (latest) — CLOSED: THE WIRE IS FINE, IT IS JUST SLOW. AND A PROBE OF MINE MINTED
+> **ONE RELOAD SETTLES THREE THINGS.** Everything landed on 2026-08-10 after the roster fix is written
+>  but unwatched: the boot-log Butler has never been RENDERED, `Radio_crossover` has never FIRED, and
+>   the new plain-English watch sentences only appear at registration. All three want the same trigger —
+>    **one player tab reloaded beside a friend who has music** — and none of them is mine to pull (a
+>     music tab is the owner's). So: ask, then watch. `runner_ask supervisor --player=<pub>` for the
+>      rows and the boot waterfall, `runner_ask world --player=<pub> | grep crossover` for the cut-in.
+>  **Read `read_ago` in the header before believing any row** — a frozen roster shows its last verdicts
+>   and they are usually green. That is what this whole session started as.
+
+### ⇑ 2026-08-10 (latest) — THE BUTLER IS A BOOT LOG, AND THE FIRST FRIEND TRACK CUTS IN
+
+*The owner, watching the arrival screen: "must say less junk in the meantime… perhaps just make it
+ look like Linux starting up `[ OK ] friend is online: $randompick`". Then: "it should switch to
+  playing from the peer's stream when their first track becomes ready."*
+
+**The Butler is now a boot log.** One monospace column, the model's six tones rendered as
+ `[  OK  ] [FAILED] [ .... ] [ SKIP ] [  ??  ]` and a blank bracket for not-yet, with the probe's own
+  note on the same line after a colon — `[  OK  ] a friend is online: Righto`. It re-decides nothing:
+   `tone` is `Supervisor_tone`'s word and this file maps word → appearance, which is the only half a
+    face owns. Everybody already knows how to read that left margin; that is the whole argument.
+
+**What went, and why each was junk.** The **spinner** — the `[ .... ]` bracket on the row we are
+ actually waiting for says the same thing in the place the eye is already reading. The **headline** —
+  it restated the row the log was already showing, one line above it (it survives for the one case the
+   log cannot state: the model has given up and there is no next line coming). The **notice ring** —
+    the same facts a second time, in a different order, under a second set of timestamps, so a listener
+     read everything twice and had to work out which list was which. **Two lists is not more
+      information, it is more reading.** Nothing is lost: the ring is still on the model, the panel
+       shows all twelve, and `runner_ask supervisor` prints it.
+
+**And `Radio_crossover`.** "A playing radio is not deaf" (2026-08-08) fixed the deafness by restaling
+ the lineup — but a lineup entry is the NEXT track, so a listener sat through the rest of a stopgap
+  before hearing the thing they opened the app for. Waiting is right for every later track and wrong
+   for the first, because **the first friend track is the moment the app becomes what it is for.**
+    Four gates keep it from being the track-cutting bug it replaces: once a sitting (`c.crossed`), only
+     out of solo (never cut a friend's track to start another friend's), only when something is
+      genuinely playable (`Radio_playable`, not "a card exists"), and throttled to 1.5s — `Radio_nudge`
+       runs PER LANDED CHUNK and `Radio_pool_census` walks every crate, which is the 2026-08-06 burn
+        this function is shaped around. It calls `Radio_skip`, which blends rather than cuts, and lets
+         the dial's existing friend preference choose — rather than growing a second opinion.
+
+**Not yet seen fire.** Both player tabs were already past solo when it landed, so the `crossover`
+ mark wants a fresh boot beside a friend with music. That is the thing to look for next.
+
+*(And a question answered while here: yes, the relay has the bulk presence op the owner remembered —
+ `{control:'who', addrs:[…]}` → `who_ok {online}`, list-in-only, hello-bound askers only, `Presence.g`
+  on the client with a three-valued `Presence_live`. But `sound.live` — the Butler's "a friend is
+   online" — does NOT read it: it reads `pier.c.heard_at`, which is APPLICATION presence, and
+    Presence.g's own contract says the two must stay separate particles. Reading both is the documented
+     shape and would turn that row green a pulse-round sooner. Not done.)*
+
+### ⇑ 2026-08-10 — THE ROSTER WAS A PHOTOGRAPH AGAIN, AND NOTHING SAID SO
+
+**Both of the owner's player tabs had a frozen Supervisor and read all-green.** Asked to look at the
+ live players, the first thing that fell out was two rosters stamped `arrived:arrived`, `loud:0`,
+  `amiss:0` — and stopped dead. `read_ago` said **686s on each, to the same second**.
+
+*What they were still saying while frozen:* `radio.solo` — *"listening alone — your own music while we
+ gather"* — over a friend's **third consecutive track** in 51 seconds (`Radio:playing … by_name:Righto`,
+  `solo` deleted from sc, `played` 10 → 11 → 12). `radio.shelf` — *"8 records"* — against a live
+   `Stoker … stock=16`. `radio.remote` — *"3 playable of 7"* — against a crate holding 16.
+
+**Nothing was lying. Nothing was looking.** That distinction is the whole entry.
+
+**The near-miss worth recording.** The first two hypotheses were both wrong and both fit the evidence:
+ *two same-named worlds* (a re-run leaving the roster pointed at a corpse), and *a Book hijacking the
+  roster onto its own throwaway world*. Killing them cost one field — `Supervisor_where`, which prints
+   the House, mainkey and `self,est` birth stamp of the world each row actually read. Every row on both
+    tabs said `in:H:Sounditron/w:Sounditron#353491`. **One world. Both theories dead in one read.** It
+     stays, because `orphan` only catches "the world is gone" and never "the world is not the one you
+      are looking at", and that gap is invisible from every other angle.
+
+**The real cause: `Supervisor_tick` had exactly one caller — Auto's pass — and Auto rides the belief
+ drive, which is a thing that STOPS.** An HMR wedges it (a `.svelte` save reaches every live tab
+  gesture-free, which is why both tabs froze on the same second and a runner with no Book did not); a
+   throw upstream in the same pass skips everything below it. This is the *same* bug the heartbeat was
+    added to fix six hours earlier, moved out one level — and it hid the same way, because a frozen
+     roster keeps showing whatever it happened to be holding, and what it was holding was green.
+
+**Fixed by giving the heartbeat its own wall clock** (`Supervisor_beat`, a 2s detached chain armed once
+ from `Supervisor_up`). The argument is this file's own, one level further out: it already refuses to
+  live inside the Run House because *"the failure a supervisor most needs to report is the one that
+   kills the House it lives in"* — and **a watcher that rides the drive cannot report a stopped drive.**
+    Cost is one probe pass every 2s on a tab where nothing else is happening; while the drive turns,
+     Auto reaches the tick far more often and the 1s throttle collapses both callers into one read.
+
+**And `read_ago` now rides the reply**, so `runner_ask supervisor` says `(read 0.4s ago)` or shouts
+ `⚠ STALE: last read 686s ago — every row below is a photograph`. Verified live on the claude runner:
+  6s stale before the change, **0.3s and 0.5s after**. *A stale instrument that looks fresh is worse
+   than no instrument* — and this one had already cost an hour of theorising about worlds.
+
+**Both frozen tabs healed on the compile, with no reload** — `read 0.0s` and `read 0.4s`, both playing
+ each other's tracks, 16/16 crates each way, ~40–53 KB/s both directions. Expected them to need one; they
+  did not. **Which means the cause is NOT yet settled**, and the entry above should not be read as if it
+   were: two stories fit every reading taken. Either Auto's pass was wedged 21:18→21:31 and the ghost
+    HMR restarted it (and *that* pass armed the beat), or Auto was turning the whole time and
+     `Supervisor_tick` alone was never reaching its work, with the new beat now bypassing whatever
+      blocked it. **The timing and the runner-vs-player split argue for the first. Nothing observed
+       excludes the second.** The fix is right either way — a watcher wants its own clock regardless —
+        but the *diagnosis* is still one electrode short, so do not quote it as settled.
+
+**Next, in order.** (a) *Was the drive wedged at all?* One stamp on the Auto pass, the same shape as
+ `read_ago`, and both stories separate on sight. Until then this is deduction, not observation — and
+  §2's rule applies to me as much as to a probe. (b) *The Supervisor should WATCH the drive.* It now has
+   a clock the drive cannot stop, which is exactly what is needed to notice Auto has quit — but the
+    claim needs a registrar that owns it (Auto stamps, Supervisor reads), not a probe reaching into
+     someone else's business. (a) is the prerequisite for (b) and they are the same stamp.
+
+### ⇑ 2026-08-10 — THE LAST CLOCK IS OUT OF THE BUTLER, AND ▦ IS BEHIND ONE SWITCH
+
+**The Butler now lifts on ARRIVAL and on nothing else automatic.** The owner, watching it: *"Butler
+ quits very soon, only one goal is listed"*, then *"it quits right after 'friend comes online' which I
+  can only just see as it fades out — we want it to wait until the Vyto is presentable. do we ascertain
+   that time?"*
+
+**Yes, we ascertain it, and we always did.** `Sounditron_probe_arrived` is a positive ladder — a frame ·
+ a commission · grapples it was handed · mirror cells · nothing missing · `Radio_sound` reading `sound`
+  — and it has been the declared arrival all along. The Butler simply never got to wait for it.
+
+**"Only one goal is listed" was the entire diagnosis.** `Sounditron_supervise` registers all seven
+ watches AND the arrival in **beat 2**, so until the Creduler has loaded the spine and the Book has
+  started, the board holds only Radio's one row: done, still, and indistinguishable from a finished
+   machine. The stillness fallback lifted right there.
+
+**So the fallback is deleted, not retuned — the fourth impatience exit removed from this file** (1.8s,
+ 6s elapsed, a 40s ceiling, 6s of roster stillness). The last one measured the *right* quantity
+  (progress, not time — §2) and was still wrong, which is the lesson: **a young roster is perfectly
+   still.** Every version of it was one question — *is an arrival ever coming?* — being answered by a
+    face that is forbidden to know.
+
+**The model answers it now.** `Supervisor_arrived` grew a fourth answer, `'gaveup'`, off a patience the
+ REGISTRAR arms on its own milestone (`Supervisor_patient` — Supervisor_expect's sibling, and it
+  deliberately does NOT re-arm, because it is called from a pass that re-runs every beat and a clock
+   that resets faster than it runs is not a clock). Sounditron arms 90s and stamps the advice. On
+    give-up the Butler **does not lift** — it drops the spinner (a spinner over a machine that has
+     stopped trying is the most dishonest thing it could draw), goes *"this is as far as it goes on its
+      own"*, shows the registrar's advice, and makes the way out loud. Being told beats being timed out.
+
+*Measured live on the owner's own player tab: `arrive.playing` counting `86s` with note "the glass has
+ not drawn a frame yet" → 75s later `arrived:arrived  loud:0  amiss:0`, met and latched, patience
+  disarmed. The whole path, not a claim about it.*
+
+**AND ▦ IS THE ONLY CONTROL NOW.** The owner, in two moves: *"we want that button hidden within our
+ app — that and the Butler-overlay-exiting control should be one and the same"*, then, on seeing the
+  first cut: *"lose `show me the guts` and just have ▦ hidden-ish (opacity:0.2) in the top right corner
+   at all times. z-index above everything!"*
+
+So `butler.quiet` became **`guts`** — one persistent pref meaning *I want the machine* — and one button
+ sets it: `.scape-guts`, **fixed top-right, always rendered, `opacity:.2`, `z-index:999999`**, outside
+  `<main>` so no view switch can hide it and deliberately ABOVE every FaceSucker (BootGate hoists to
+   77000, the Butler to 55000). **A button hidden by the thing it undoes is not a way out** — that hole
+    was in every gated version, and 0.2 opacity costs a listener nothing while costing a stranded
+     person their whole session. `?` does the same thing. The Butler now only READS the pref and owns
+      no switch; two writers onto one state is `boot_gate`'s lesson, and the old *"don't wait for me"*
+       was already a control a person could press without learning where the machine went.
+
+`BigSoundland_sprawl` is **retired** — `sprawl === guts`. Two persisted booleans meaning overlapping
+ things ("show the machine" / "show every UI") is exactly how ▦ ended up on a listener's page.
+
+**One thing to know before touching Sounditron.g:** it did not compile at all until this pass —
+ `for (const o of organs)` in the focus cut mangles to `for (const w.oa({of: 1}) organs)`, because `o`
+  is the find VERB in this dialect. It was the only `const o of` in the whole Ghost tree. Renamed to
+   `org`. Same family as the `%`-after-an-IO-verb peel collision: **a JS keyword sitting next to a verb
+    name.** No regression fixture for either.
+
+**Left for the owner:** the Butler's invite landing path has still never executed (`?Iz=`), and `guts`
+ defaults OFF, which means the arrival screen is back on in that browser — that is what you want for
+  the invite test, but it is a change from yesterday's state.
+
+#### …and in the same pass: a fourth verdict, a boot waterfall, and the sentences in plain English
+
+**`moot` — the claim does not apply, because nothing asked for it.** The owner, reading his own arc:
+ *"says ✓ / sound is actually coming out — the analyser hears it / nothing playing"*. A straight
+  contradiction, and it is the HUD failure this file keeps naming: a row whose mark disagrees with its
+   own note teaches a person to stop believing every other row. The cause is that **`ok` was doing two
+    jobs** — `Sounditron_probe_sound` graded silence `ok` because an idle tab is not a FAULT, which is
+     true and is not the same as the claim being TRUE. That is dial rule 2 with a third case nobody had
+      written down. `moot` marks `–`, tones `moot`, is never loud, never latches a milestone, never
+       counts toward an arrival. `Sounditron_probe_glass`'s vacuous pass ("nothing drawn yet, so
+        nothing can be missing" — an `ok` its own comment spent a paragraph apologising for) is the
+         second taker.
+
+**The boot waterfall.** Two write-once `.c` clocks per watch — `seen` (first read) and `won` (first
+ came true) — against a zero computed as `Date.now() - performance.now()`, i.e. **true page start**, not
+  plan time. That distinction is the whole value: this ghost loads seconds into a cold boot, so a zero
+   taken at plan would silently subtract the slowest leg and make a slow tab look fast. Rendered as
+    `+3.2s` down the Butler's arc, and as a gap-annotated waterfall in `runner_ask supervisor`, where
+     **turn order** (what actually took the time) is deliberately not arc order (what depends on what).
+
+**And the sentences are the listener's now.** *"do we need to say `bytes only flow live`"* / *"should we
+ say 'original bytes'?"* — no. `Repli`, `Music grant`, `original bytes`, `organ`, `analyser`, `pier`,
+  `conveyor` all left the sentences and none left the screen: they live in the `note` the probe writes,
+   which is where evidence belongs and which both faces already render. **The em-dash half was the
+    tell** — where it said WHY a claim matters it stayed ("somebody to play radio with"), where it said
+     HOW WE DO IT it went. Free of charge: the roster stands on Mundo, so no snap holds a sentence and
+      no fixture moves (checked, not assumed).
+
+*Both of the above only appear on a FRESH BOOT — sentences are rewritten at registration and the
+ clocks are stamped at first read, and an already-arrived tab skips met milestones. Reload a music tab
+  before judging either.*
+
+### ⇑ 2026-08-10 — CLOSED: THE WIRE IS FINE, IT IS JUST SLOW. AND A PROBE OF MINE MINTED
 
 **No bug in the share wire.** Three readings, minutes apart, settled every hypothesis below:
  · **The eras do NOT churn.** Lefto's `station_era` moved exactly once — the re-stand after the reload

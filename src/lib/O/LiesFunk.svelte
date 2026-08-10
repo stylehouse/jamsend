@@ -2583,6 +2583,15 @@ await M.eatfunc({
                         stood:   !!sw,
                         arrived: sw ? ((H as any).Supervisor_arrived?.(sw) ?? 'none') : 'none',
                         watches: lines.length,
+                        // WHEN DID THIS ROSTER LAST ACTUALLY LOOK (2026-08-10).  Every field below is
+                        //  what the last read LEFT behind, and nothing said how long ago that was — so a
+                        //   roster frozen at boot+36s and a roster read a moment ago print identically,
+                        //    all green.  Caught on the owner's player tab: three friend tracks played in
+                        //     51s while `radio.solo` still said "your own music while we gather" and
+                        //      `radio.shelf` still said 8 records against a live stock of 16.  A stale
+                        //       instrument that looks fresh is worse than no instrument.
+                        //  -1 means NEVER read, which is a different fault from "read a while ago".
+                        read_ago: (sw && (sw.c as any).read_at) ? Date.now() - +(sw.c as any).read_at : -1,
                         loud:    row ? +(row.sc.loud ?? 0) : 0,
                         amiss:   row ? +(row.sc.amiss ?? 0) : 0,
                         lines,
@@ -2599,9 +2608,9 @@ await M.eatfunc({
                         //   and without it a red reading here is unattributable.
                         humdinger: !!(H.top_House().c as any).humdinger,
                         // THE PREFS, because one of them can switch a whole surface off and it is
-                        //  invisible from every other angle.  `butler.quiet` lives in the House stash,
-                        //   which is Dexie — per ORIGIN, not per tab — so pressing "don't wait for me"
-                        //    once silences the arrival screen in EVERY tab of that browser, for good.
+                        //  invisible from every other angle.  `guts` lives in the House stash, which is
+                        //   Dexie — per ORIGIN, not per tab — so pressing "show me the guts" once
+                        //    silences the arrival screen (and reveals ▦) in EVERY tab of that browser.
                         //     That is the switch working as designed and it is also exactly the state
                         //      that makes a bug report unattributable ("it never shows" and "it lifts
                         //       too early" look identical from outside), so it has to be readable.
@@ -2945,6 +2954,7 @@ await M.eatfunc({
                     const POKES: Record<string, string> = {
                         Radio_toggle: 'Radio', Radio_skip: 'Radio', Radio_source_toggle: 'Radio',
                         Sounditron_diag_toggle: 'w', Sounditron_seat_toggle: 'w',
+                        Sounditron_focus_step: 'w', Sounditron_focus_home: 'w',
                     }
                     const verb = String((ask as any).verb ?? '')
                     const kind = POKES[verb]
@@ -2963,9 +2973,28 @@ await M.eatfunc({
                             //    "nothing happened" — the exact ambiguity these ops exist to remove.
                             const snapshot = () => kind === 'Radio'
                                 ? String(rw.o({ Radio: 1 })[0]?.sc?.Radio ?? '')
+                                // `focused` ABSENT and `focused:'Door'` ARE DIFFERENT STATES and this
+                                //  line used to print both as "Door" — the a-no-op-that-answers trap,
+                                //   and it cost a wrong diagnosis of the belly ladder within minutes
+                                //    of landing.  Absence means "no explicit pick, the ladder decides"
+                                //     (which is the Player); say so.  `belly` is the ladder's actual
+                                //      answer, which is the reading you actually wanted all along.
                                 : `show_diag=${(rw.c as any).show_diag ? 1 : 0} seat=${(H.top_House().c as any).seat_ui ? 1 : 0}`
+                                  + ` focused=${(rw.c as any).focused ? String((rw.c as any).focused) : '(none — ladder decides)'}`
+                                  + ` belly=${(() => { const b: any = (rw.c as any).belly; return b?.sc ? Object.keys(b.sc)[0] : '?' })()}`
                             const before = snapshot()
-                            await (H as any)[verb](kind === 'Radio' ? radio : rw)
+                            // WORLD VERBS RUN ON THE STASHED RUN, NOT ON H (2026-08-10, found by the
+                            //  focus pokes emptying the live glass).  Sounditron's verbs are bound to
+                            //   their own run-House — the junk knob's comment already records the law
+                            //    ("calling it off H would find nothing") — and worse than finding
+                            //     nothing: a mis-bound Sounditron_commission takes `this.up ??
+                            //      this.top_House()` as SH and MINTS A SECOND A:Vyto under Mundo, a
+                            //       stray broken glass beside the real one (the two-glasses trap).
+                            //  The Radio verbs stay on H — they are Radio.g deposits and read their
+                            //   world off the particle they are handed.
+                            const srun: any = (H as any)?.top_House?.()?.c?.sounditron_run
+                            const host: any = (kind === 'Radio' || !verb.startsWith('Sounditron_')) ? H : (srun ?? H)
+                            await host[verb](kind === 'Radio' ? radio : rw)
                             const after = rw.o({ Radio: 1 })[0]?.sc
                             result = { poked: verb, was: before, now: snapshot(),
                                 title: kind === 'Radio' ? (after?.title ?? null) : null,

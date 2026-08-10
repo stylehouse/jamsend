@@ -270,6 +270,12 @@ Sounditron_commission(w):
     let kshop = kme ? this.Ra_home_shop(krw, kme) : null
     let keeps = kshop ? kshop.o({ Heist: 1 }) : []
     let anyKeep = keeps.length > 0
+    // THE DOOR PUTS ITSELF AWAY WHEN IT STOPS BEING THE SUBJECT (the owner 2026-08-10).  Stamped
+    //  here, beside the mint, rather than in the focus cut: it is a property of the Door, not of
+    //   one layout regime, and DoorFace reads the same `.c.inviting` it writes when you press
+    //    "Invite…".  One line, `.c` both ways, so nothing can reach a snap.
+    let doorc = w.o({ Door: 1 })[0]
+    if (doorc) doorc.c.onunmain = (s) => (delete s.c.inviting, s.bump())
     // ALWAYS-ON: the music itself + the dial.  The %Caper FLOW organ (HeistFace) grapples ONLY when no keep
     //  is open — under the NESTED glass a keep turns on (each %Heist tessellates into its HeistBar + track
     //   chips), and the flow organ's constraint/Lead/filing children would draw as stray cells; besides, the
@@ -504,6 +510,108 @@ Sounditron_commission(w):
     //  This is the only honest way to find out what a crowded glass does — the live app has 2 to 4
     //   cells, which is why every layout law so far was tuned against a case that is not the case.
     for (const j of this.Sounditron_junk(w)) organs.push(j)
+    // ── THE FOCUS CUT (the owner 2026-08-10, the pivot: *"lets only feed Vyto one thing at a time,
+    //  so one thing is focused on, and two other things are mostly blank or possibly OK or CANCEL
+    //   buttons, as separate cells ... from the Player is the Door and nothing"* / *"it keeps making
+    //    eg Shuffle larger than Player, it's silly ... strip it right back to just being an artifact
+    //     with a big blob to present stuff in"*).
+    //  Everything above still RUNS — every organ is minted, priced and current, the witness reads
+    //   what it always read.  Only the GRAPPLE LIST is cut down, the same move this file makes for
+    //    the stoker, the zine and the plain glass: the view eats a new data set, the world is
+    //     unchanged.  HUMDINGER-ONLY (the `plain` gate exactly), so no Book ever sees it and every
+    //      fixture stands to the byte.
+    //  WHO IS THE BELLY: an open keep, always — *"STAGING for Heist is important, sometimes is a
+    //   bunch of info in there"* — else whatever `w.c.focused` names, else the Player, else the Door.
+    //  NO EMPTY SATELLITES (the owner 2026-08-10: *"we have two %Sat cells that are nothing? ... we
+    //   can simply leave out the %Sat if we don't have anything else useful to put there"*).  There
+    //    were two: a tuck that stepped a ring and a home that walked back.  Both were REACHABLE
+    //     THINGS TO PRESS rather than things to SEE — and the Door and the Player already press each
+    //      other, so the ring was a second way to do what the buds do, drawn as two blank cells.  A
+    //       cell has to be worth its room; an empty one is furniture.
+    //  The %Sat substrate STAYS (Vytui still draws the role, `Sounditron_focus_step/home` are still
+    //   there for a poke): when an asker needs an OK/CANCEL, it is one `oai` + a press.  What is gone
+    //    is minting them with nothing to say.
+    if (MH && MH.c.humdinger) {
+        w.c.focus_commissioned = 1     // the trickle's boot-latch repair checks this — see trickle_look
+        // ── THE BELLY LADDER (the owner 2026-08-10: *"it's looking at Door first though... should be
+        //  Player mostly. then Door almost always I guess, but not if there's something else to
+        //   show"*).  Read top to bottom; the first hit is the belly.  THE PLAYER IS THE DEFAULT —
+        //    this app is a music player and the thing it is doing is the thing to look at.  Door
+        //     drops to the fallback, and to a BUD (below), which is what "then Door almost always"
+        //      means in practice: it is always THERE, one press from the room, just not the subject.
+        //  "not if there's something else to show" is rungs 1 and 3: an open keep has real form to
+        //   fill in (the standing heist ruling — the heist gets the room), and a sanity cell that has
+        //    gone amiss is by definition the thing worth seeing.  Both are rare and both end, so the
+        //     glass returns to the Player on its own.
+        //  The human's own pick (rung 2) outranks the alarm deliberately: an explicit press is a
+        //   person at the wheel, and the Supervisor still BUDS when amiss, so nothing is hidden —
+        //    it just does not yank the belly out from under a deliberate choice.
+        let fmain = null
+        if (anyKeep) fmain = keeps[0]
+        // `org`, NOT `o` — `o` is the find VERB in this dialect, so `for (const o of organs)` compiles
+        //  to `for (const w.oa({of: 1}) organs)` and the generated module does not parse.  It was the
+        //   only `const o of` in the whole Ghost tree, which is why nothing had hit it before.  Same
+        //    family as the `%`-after-an-IO-verb peel collision: a JS keyword next to a verb name.
+        if (!fmain && w.c.focused) for (const org of organs) if (Object.keys(org.sc)[0] === w.c.focused) { fmain = org; break }
+        if (!fmain && suprow && sup_out_of_line) fmain = suprow
+        if (!fmain) for (const org of organs) if (Object.keys(org.sc)[0] === 'Radio') { fmain = org; break }
+        if (!fmain) for (const org of organs) if (Object.keys(org.sc)[0] === 'Door') { fmain = org; break }
+        let focusOrgans = []
+        if (fmain) focusOrgans.push(fmain)
+        // THE BUDS, AND EVERY ONE OF THEM IS A WAY IN (the owner: *"Door as a smaller thing, that
+        //  becomes main when clicked"*).  This is the OK/CANCEL substrate earning its keep rather
+        //   than waiting for a use: a bud is a real organ wearing a `.c.press`, Vytui already draws
+        //    a pressable cell as a button and runs the handler on click, so "becomes main" is one
+        //     stamp — no new mechanism, no new face, no chrome.
+        //  The BELLY's press is removed, not left stale: pressing the subject to re-select the
+        //   subject is a no-op that still costs a re-commission and a wake.
+        let buds = []
+        if (anyKeep) for (const keep of keeps) if (keep !== fmain) buds.push(keep)
+        // the sanity cell keeps its quiet-when-healthy law: amiss ⇒ it buds onto the belly
+        if (suprow && sup_out_of_line && suprow !== fmain) buds.push(suprow)
+        // THE TWO WAYS IN, BOTH DIRECTIONS (the owner: *"then the Player becomes main when clicked"*).
+        //  Door and Radio swap roles — whichever is not the belly is a bud wearing the press — so the
+        //   pair is a toggle you can work from either side, with no control that is not a cell.
+        for (const org of organs) if (Object.keys(org.sc)[0] === 'Door' && org !== fmain) buds.push(org)
+        for (const org of organs) if (Object.keys(org.sc)[0] === 'Radio' && org !== fmain) buds.push(org)
+        if (fmain && fmain.c.press) delete fmain.c.press
+        for (const bud of buds) {
+            // handed the SOURCE particle, so the handler reads its own identity — no closure over
+            //  the loop variable, and the same one line works for every bud kind.
+            bud.c.press = (s) => this.Sounditron_focus_to(w, Object.keys(s.sc)[0])
+            focusOrgans.push(bud)
+        }
+        // ── THE POSES (the owner 2026-08-10: *"there are cell positions|poses: Stretched (when Heist
+        //  is forming), Big, Small.  Small has only name, maybe the door icon, that's nice"* — and,
+        //   on the third: *"then what is the other one, not sure"*).
+        //  A pose is a claim about HOW MUCH OF ITSELF a cell should draw, and it belongs on the
+        //   particle so the FACE can read it — the same seam `.c.press` uses.  Runtime `.c`, never
+        //    encoded, so no fixture can record a pose.
+        //   · `big`   the belly: draw everything you have.
+        //   · `small` a bud: name, and an icon if you have one.  Nothing else.
+        //   · `stretched` is left DELIBERATELY THIN because the owner is not sure of it yet — it is
+        //      not invented here.  A cell ASKS for it (`c.pose_want`, the `stage_want` idiom), so
+        //       when the Heist knows what forming means it says so in one line and nothing here
+        //        has to change.
+        for (const bud of buds) bud.c.pose = 'small'
+        if (fmain) fmain.c.pose = fmain.c.pose_want || 'big'
+        // ── onunmain — the leaving verb (the owner: *"that Door cell has an onunmain handler that
+        //  shuts the Invite panel"*).  A cell that stops being the subject should be able to put
+        //   itself away; without this the Door would come back as a bud with its QR still unfolded,
+        //    which is exactly the kind of state that outlives its moment.  `.c` like its siblings,
+        //     fired ONCE on the transition, and the belly is remembered on `.c` so the transition
+        //      can be seen at all.
+        let was = w.c.belly
+        if (was && was !== fmain && was.c.onunmain) {
+            try { was.c.onunmain(was) } catch (er) {}
+        }
+        w.c.belly = fmain
+        // …and CULL the ones already standing.  These are `dontSnap` runtime rows, so no fixture
+        //  moves — but a live tab that has been up since before this edit holds them, and a cell
+        //   nobody mints any more is not a cell that leaves on its own.
+        for (const sat of w.o({ Sat: 1 })) w.drop(sat)
+        if (focusOrgans.length) organs = focusOrgans
+    }
     if (!organs.length) return 0
     if (!SH.o({ A: 'Vyto' }).length) SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
     let commission = new TheC({ c: {}, sc: { Scannable: organs[0], client_w: w, grapples: organs } })
@@ -574,6 +682,11 @@ Sounditron_commission(w):
     //     the first landing — the poke reported `seat=1` and the glass stayed foam, with no error
     //      anywhere.  One flag, one place, per tab.
     if (MH && MH.c.seat_ui) commission.sc.foamereo = 'room,seat'
+    // THE FOCUS REGIME, THE LIVE DEFAULT (the owner 2026-08-10, the pivot) — declared last so it
+    //  outranks the seat flag: on a live tab the glass IS the belly now.  Same gate as the focus
+    //   cut above, so a Book's foamereo is exactly what its fixtures recorded.  The geometry lives
+    //    in `vyto_focus.ts`; Vytui reads the word off w.sc.foamereo like every other stop.
+    if (MH && MH.c.humdinger) commission.sc.foamereo = 'room,focus'
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
     return 1
@@ -601,6 +714,51 @@ Sounditron_seat_toggle(w):
         MH.c.seat_ui = 1
     }
     this.Sounditron_commission(w)
+    return 1
+
+// Sounditron_focus_step — the tuck satellite's press: walk the belly round the ring of things worth
+//  looking at (the owner 2026-08-10: the hidden button *"can maybe go to other cells like the 'dial
+//   can reach' thing, which is debug fluff I want tucked out of sight really"*).  The ring is
+//    present-only — a name whose row is not standing is skipped — and Door is home, carried as
+//     ABSENCE (`w.c.focused` deleted, the snapped-boolean law's cousin even off-snap).
+//  Runtime `.c`, resets on reload, same discipline as show_diag.  Ends in a commission, which ends
+//   in a DEFERRED elvisto — so wake the loop, or the press waits out the idle cadence (~12s), the
+//    exact lesson the keep gesture already recorded.
+Sounditron_focus_step(w):
+    // THE PLAYER IS HOME, so it heads the ring and it is the one carried as ABSENCE — stepping onto
+    //  it deletes the key rather than pinning it, which keeps "no explicit pick" and "the Player" the
+    //   same state.  Pin the default instead and the ladder could never promote a keep or an alarm.
+    let ring = ['Radio', 'Door', 'Shuffle']
+    let cur = w.c.focused || 'Radio'
+    let i = ring.indexOf(cur)
+    let next = ring[(i + 1) % ring.length]
+    if (next === 'Radio') {
+        delete w.c.focused
+    } else {
+        w.c.focused = next
+    }
+    this.Sounditron_commission(w)
+    this.feebly_ponder()
+    return 1
+
+// Sounditron_focus_to — make this thing the belly.  The verb behind every bud's press (*"Door as a
+//  smaller thing, that becomes main when clicked"* / *"then the Player becomes main when clicked"*).
+//  Takes a MAINKEY, not a particle: the belly ladder re-resolves it against the live organ list each
+//   commission, so a focused thing that goes away degrades to the ladder instead of stranding a
+//    dangling ref.  Same deferred-elvisto wake as its siblings.
+Sounditron_focus_to(w, key):
+    if (!key) return 0
+    w.c.focused = key
+    this.Sounditron_commission(w)
+    this.feebly_ponder()
+    return 1
+
+// Sounditron_focus_home — the home satellite: back to the DEFAULT, which is now the Player (the
+//  belly ladder decides — home is absence, never a hardcoded name, so it follows the ladder).
+Sounditron_focus_home(w):
+    delete w.c.focused
+    this.Sounditron_commission(w)
+    this.feebly_ponder()
     return 1
 
 // THE POSE — the App↔Vyto wrangler (the human 2026-08-09: "lets rebuild afresh? what we've got seems
@@ -893,6 +1051,17 @@ Sounditron_trickle(w):
 async Sounditron_trickle_look(w, era):
     let M = this.top_House()
     if (M.c.trickle_era !== era) return
+    // THE FOCUS CUT MUST MOVE THE BOOT LATCH (2026-08-10, found on the first cold reload: both
+    //  players came back `foamereo "room"`).  The first commission can run BEFORE Lies%humdinger is
+    //   stamped, so the humdinger-gated cut is skipped and glass_done latches — the exact
+    //    role-gate-vs-boot-latch trap the Lies role gate already recorded.  The trickle is the one
+    //     standing cadence on a live tab, so it owns the repair: ONE re-commission the first time
+    //      the tab turns out to be a humdinger after all.  The cut itself stamps the same flag, so
+    //       a tab that took the focus path at boot never re-commissions for this.
+    if (M.c.humdinger && !w.c.focus_commissioned) {
+        w.c.focus_commissioned = 1
+        this.Sounditron_commission(w)
+    }
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
     if (ident) {
         let tick = (M.c.trickle_n || 0) + 1
@@ -1385,15 +1554,26 @@ Sounditron_supervise(w):
     //    it because the thing they ask about really does belong to this run: its friend rows, its
     //     crates, the glass it commissioned.  Getting this line wrong in either direction is quiet —
     //      too much `w` freezes a watch into a photograph, too little keeps a dead one shouting.
-    this.Supervisor_watch(sup, 'sound.grant',  'a sealed Music grant stands — the door open both ways', 'milestone', 'Sounditron_probe_grant',  null, friend)
-    this.Supervisor_watch(sup, 'sound.live',   'a friend is online — bytes only flow live',             'standing',  'Sounditron_probe_live',   w, friend)
-    this.Supervisor_watch(sup, 'sound.shelf',  'a friend has counted their shelf — records to want',    'milestone', 'Sounditron_probe_shelf',  w, friend)
-    this.Supervisor_watch(sup, 'sound.pulled', 'original bytes crossed over Repli — the pull landed',   'milestone', 'Sounditron_probe_pulled', w, sound)
+    // THE SENTENCE IS THE LISTENER'S, THE NOTE IS THE ENGINEER'S (2026-08-10, the owner reading the
+    //  arc: *"do we need to say `bytes only flow live`"*, then *"should we say 'original bytes'?"* —
+    //   no, and no).  These rows are the ARRIVAL SCREEN: somebody who has just opened a music app is
+    //    reading them, and `Repli`, `Music grant`, `original bytes`, `organ`, `analyser` and `pier`
+    //     are all words about our implementation.  Every one of them is still on screen — in the
+    //      `note` the probe writes underneath, which is where evidence belongs and which both faces
+    //       already render.  Nothing was lost; it moved to the line that is for looking closely.
+    //  THE EM-DASH HALF WAS THE TELL.  Where it explained WHY the claim matters ("somebody to play
+    //   radio with") it stayed; where it explained HOW WE DO IT ("bytes only flow live") it went.
+    //  FREE TO CHANGE — the roster stands on Mundo, so no snap anywhere holds a sentence and no
+    //   fixture moves when one is reworded.  (Checked, not assumed.)
+    this.Supervisor_watch(sup, 'sound.grant',  'you and a friend have opened your music to each other', 'milestone', 'Sounditron_probe_grant',  null, friend)
+    this.Supervisor_watch(sup, 'sound.live',   'a friend is online',                                    'standing',  'Sounditron_probe_live',   w, friend)
+    this.Supervisor_watch(sup, 'sound.shelf',  'a friend has told you what they have',                  'milestone', 'Sounditron_probe_shelf',  w, friend)
+    this.Supervisor_watch(sup, 'sound.pulled', 'music has come across from a friend',                   'milestone', 'Sounditron_probe_pulled', w, sound)
     // THE TWO HEALTH WATCHES — "is this tab working right now", beside the four readiness milestones
     //  above ("can this tab receive music").  Both wrap sensors that landed with NO READER AT ALL and
     //   had therefore never been seen to fire; a sensor nothing consults gates nothing.
-    this.Supervisor_watch(sup, 'sound.glass',  'the glass is drawing every organ it was handed',       'standing',  'Sounditron_probe_glass',  w, sound)
-    this.Supervisor_watch(sup, 'sound.audible','sound is actually coming out — the analyser hears it',  'standing',  'Sounditron_probe_sound',  w, sound)
+    this.Supervisor_watch(sup, 'sound.glass',  'the glass is drawing everything it was handed'  ,       'standing',  'Sounditron_probe_glass',  w, sound)
+    this.Supervisor_watch(sup, 'sound.audible','sound is actually coming out'                       ,  'standing',  'Sounditron_probe_sound',  w, sound)
     // THE ARRIVAL — the finish line, and the only watch on the roster that a face is allowed to wait
     //  for (Supervisor_arrival declares it; Supervisor_arrived is what the Butler asks).  Last rung of
     //   the arc on purpose: `sound + 5` sits inside the gap-of-ten the stage list leaves for exactly
@@ -1406,11 +1586,29 @@ Sounditron_supervise(w):
     //     would sit `wrong` forever, keeping the roster permanently loud about a listener who is not
     //      there.  A finish line nobody can cross is the unplaced-watch trap in a hat.  Same test the
     //       reporter uses (Supervisor_log_tick's `c.humdinger`), for the same reason.
-    //  A runner therefore reads `Supervisor_arrived → 'none'`, which is exactly the answer the Butler's
-    //   fallback is built for — and the Butler is off over a Book anyway.
+    //  A runner therefore reads `Supervisor_arrived → 'none'` and the Butler is off over a Book anyway.
     if (this.top_House().c.humdinger) {
         this.Supervisor_watch(sup, 'arrive.playing', 'the glass is up and music is playing — you have arrived', 'milestone', 'Sounditron_probe_arrived', w, sound + 5)
         this.Supervisor_arrival(sup, 'arrive.playing')
+        // AND A PATIENCE ON IT, because the Butler now holds until this milestone rather than lifting on
+        //  a clock of its own (2026-08-10, the owner: *"it quits right after 'friend comes online'… we
+        //   want it to wait until the Vyto is presentable"*).  Waiting on a finish line is only honest
+        //    if the finish line can be declared unreachable, and NOBODY ELSE CAN DECLARE IT: the arrival
+        //     screen may not name a subsystem, so it cannot know that a tab with no music and no friends
+        //      will never play anything.  We can.  Without this the no-music no-friends boot holds a
+        //       fullscreen spinner forever, which is the opposite failure to the one being fixed and
+        //        just as bad.
+        //  90s is generous ON PURPOSE.  Every earlier cut of this screen died of impatience (1.8s, 6s,
+        //   12s, 40s), and the cost of the two mistakes is not symmetric: lifting early hands somebody a
+        //    half-built machine and says nothing, whereas waiting too long shows a person a spinner they
+        //     already have a labelled button to escape.  A cold first dig alone is allowed 15s of it.
+        //  ARMED ONCE — Supervisor_patient does not restart the clock on re-registration, which matters
+        //   because this whole function re-runs every beat (Supervisor_expect, its sibling, deliberately
+        //    does the opposite).
+        //  THE ADVICE IS OURS TO WRITE for the same reason the patience is: it names what a listener can
+        //   do instead, and only the commissioner knows what this page even offers.  It stays true on the
+        //    tab that has no music AND on the tab whose music simply never started.
+        this.Supervisor_patient(sup, 'arrive.playing', 90, 'nothing has started playing on its own — carry on in and pick something to hear')
     }
     // AND COMPLETE THE PASS HERE, rather than waiting for w:Supervisor's own tick on Mundo.  Registering
     //  and being READ are different events, and the gap between them is a wall clock: the roster would
@@ -1503,7 +1701,11 @@ Sounditron_probe_glass(w, sup):
     //   cell would become furniture on every runner), but the note has to admit that nothing was
     //    judged: "the glass is drawing every organ it was handed ✓ / no frame published yet" reads as
     //     a straight contradiction, which is how a HUD teaches a person to stop believing it.
-    if (!vw.c.vw_frame) return { verdict: 'ok', note: where + ' — nothing drawn yet, so nothing can be missing' }
+    // MOOT — the same vacuous pass, given the verdict it always wanted.  The comment above spent a
+    //  paragraph arguing that `ok` was the least-bad of three wrong answers ("a permanent `unknown`
+    //   would be a blind spot that never clears"); `moot` is the right one, and it clears the moment a
+    //    frame is published because it is re-read every tick like any standing watch.
+    if (!vw.c.vw_frame) return { verdict: 'moot', note: where + ' — nothing drawn yet' }
     let missing = Object.keys(vw.c.normal_said || {})
     if (!missing.length) return { verdict: 'ok', note: where }
     return { verdict: 'wrong', note: where + ': ' + missing.length + ' organ(s) with no cell — ' + missing.slice(0, 3).join(' ') }
@@ -1595,7 +1797,11 @@ Sounditron_probe_sound(w, sup):
     let s = this.Radio_sound(radio)
     if (!s) return { verdict: 'unknown', note: 'no reading' }
     if (s.verdict === 'sound') return { verdict: 'ok' }
-    if (s.verdict === 'quiet') return { verdict: 'ok', note: 'nothing playing' }
+    // MOOT, NOT OK (2026-08-10, the owner reading his own arc: *"says ✓ / sound is actually coming out
+    //  — the analyser hears it / nothing playing"*).  The old `ok` was right that silence is not a
+    //   FAULT and wrong that it is the claim coming true, and the row said both at once.  `moot` is
+    //    the answer that was missing: nobody asked for sound so there is nothing to hear.
+    if (s.verdict === 'quiet') return { verdict: 'moot', note: 'nothing playing' }
     if (s.verdict === 'deaf') return { verdict: 'wrong', note: 'the AudioContext is ' + String(s.ac || '?') + ' — a gesture is owed' }
     if (s.verdict === 'starved') return { verdict: 'wrong', note: 'the radio is starved — nothing to decode' }
     return { verdict: 'wrong', note: 'playing but silent — analyser reads ' + String(s.rms) }

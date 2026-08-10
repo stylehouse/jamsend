@@ -15,6 +15,7 @@
     import { power_cells, foam_cells, slab_seat, poly_area, type Pt } from "$lib/O/vyto_geometry"
     import { deal_rows, seat_on_deal, deal_fits, deal_badness, box_poly,
              type Deal, type SeatRow } from "$lib/O/vyto_seat"
+    import { focus_polys, type FocusRole } from "$lib/O/vyto_focus"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
     import { lifetell } from "$lib/O/ui/micro/lifetell"   // DIAGNOSTIC — strip with the rest of the remount probes
@@ -116,18 +117,14 @@
     //  basically be interacted with").  A posed particle carries `.c.press` (a ref — never encoded,
     //   exactly what .c is for); a cell whose SOURCE wears one is a button, whatever its mainkey.
     //    The handler is handed the source particle so a one-line .g handler can read and write it.
-    //  Falls through to cam_engage for every press-less cell, so nothing that worked changes.
     function cell_click(w: TheC, cell: PaintCell) {
-        // a click that ends a live drag is the HAND OPENING, not a press
-        if (drag_ate_click) { drag_ate_click = false; return }
-        // A PRESS IS REAL ATTENTION — the currency's big coin.  A press on a CRUSHED cell is bigger
-        //  still: the ⤢ it wears is an offer to open it (the owner: *"that we can click to make that
-        //   cell become a normal cell right?"*), and 0.3 of a purse cannot pay that even now that a
-        //    full purse buys ×4.5 area.  So the offer sets its own price — one press, actually open.
-        //  It is also self-taxing on everyone else in proportion (Vyto_attend_walk), so opening this
-        //   one visibly closes the room for the others rather than inflating the whole glass.
-        const crushed = !!cell.face && !cell.hasKids && cell.fit <= 0.34
-        attend(w, cell.tok, crushed ? 0.85 : 0.3)
+        // A CLICK IS A PRESS OR IT IS NOTHING (the owner 2026-08-10, the focus pivot: *"currently we
+        //  can drag cells around ... and click to enlarge them, and click another button to reset
+        //   them all, all that I want GONE!"*).  The attention buy and the camera engage are out —
+        //    a click no longer changes anyone's size or anyone's view.  What stays is the smuggled
+        //     press: a cell whose source wears `.c.press` is a BUTTON (the OK/CANCEL substrate the
+        //      satellites ride), and pressing a button is the one thing a click still means.
+        void w
         const src: any = (cell.row.c as any)?.source_n
         // `.c.press` is the name; `.c.onclick` is the name people reach for (the owner did — "some of
         //  them have click handlers magically (C.c.onclick?)"), and a handler that silently does not
@@ -135,9 +132,7 @@
         const fn = src?.c?.press ?? src?.c?.onclick
         if (typeof fn === 'function') {
             try { fn(src) } catch (e) { console.warn('◈ Vyto press threw', cell.ident, e) }
-            return
         }
-        cam_engage(w, cell)
     }
 
     // A BUTTON HAS TO LOOK LIKE ONE.  Until this, a cell wearing `.c.press` was pixel-identical to a
@@ -150,59 +145,10 @@
         return typeof (src?.c?.press ?? src?.c?.onclick) === 'function'
     }
 
-    // THE A (the owner 2026-08-09: "cells could do with a handle... an A on one corner of it
-    //  somewhere, which can drag up-down to control the intensity|size of that cell").  dose is
-    //   ALREADY the pressure law's loudness input (Vyto_express: env_area = AREA_BASE·(1+dose)),
-    //    so the dial invents nothing — it hands the human the same knob the model reads, and the
-    //     foam re-negotiates around their thumb.  Which is the honest cure for "it gets the wrong
-    //      thing fullfaced sometimes": not a smarter guess — a handle.
-    //  Writes land on the SOURCE particle (the mirror is rebuilt from it every scan, so a mirror
-    //   write would be overwritten next stir); dose is deleted at zero, never set '0' (the
-    //    snapped-boolean law's cousin: absence is the clean off).  Throttled ~90ms — every write
-    //     is a real stir→solve — and the springs glide between writes anyway.
-    //  $state so the drag can show a live readout (the dosetip) — the one render fact here.
-    let dosing: { src: any, w: TheC, y0: number, d0: number, lastT: number } | null = $state(null)
-    function dose_src(cell: PaintCell): any { return (cell.row.c as any)?.source_n ?? cell.source ?? cell.row }
-    function dose_down(e: PointerEvent, w: TheC, cell: PaintCell) {
-        const src = dose_src(cell); if (!src) return
-        dosing = { src, w, y0: e.clientY, d0: Number(src.sc?.dose) || 0, lastT: 0 }
-        ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
-        e.stopPropagation(); e.preventDefault()
-    }
-    function dose_move(e: PointerEvent) {
-        if (!dosing) return
-        const now = performance.now()
-        if (now - dosing.lastT < 90) return
-        dosing.lastT = now
-        dose_write(dosing.src, dosing.w, dosing.d0 + (dosing.y0 - e.clientY) / 56)
-    }
-    function dose_up(e: PointerEvent) {
-        if (!dosing) return
-        dose_write(dosing.src, dosing.w, dosing.d0 + (dosing.y0 - e.clientY) / 56)
-        dosing = null
-    }
-    function dose_key(e: KeyboardEvent, w: TheC, cell: PaintCell) {
-        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
-        e.preventDefault(); e.stopPropagation()
-        const src = dose_src(cell); if (!src) return
-        dose_write(src, w, (Number(src.sc?.dose) || 0) + (e.key === 'ArrowUp' ? 0.2 : -0.2))
-    }
-    function dose_write(src: any, w: TheC, nd: number) {
-        nd = Math.max(0, Math.min(9, Math.round(nd * 10) / 10))
-        const v = nd < 0.05 ? undefined : String(nd)
-        const cur = src.sc?.dose
-        if (v === undefined) { if (cur === undefined) return; delete src.sc.dose }
-        else { if (cur === v) return; src.sc.dose = v }
-        if (src.bump_version) src.bump_version(); else src.bump?.()
-        ;(H as any).Vyto_stir_soon?.(w)
-    }
-    // the third hand on the same knob: a wheel tick over the A nudges dose ±0.1 — drag for a
-    //  sweep, wheel for a trim, arrows for no-pointer.  All three land in dose_write.
-    function dose_wheel(e: WheelEvent, w: TheC, cell: PaintCell) {
-        const src = dose_src(cell); if (!src) return
-        e.preventDefault(); e.stopPropagation()
-        dose_write(src, w, (Number(src.sc?.dose) || 0) + (e.deltaY < 0 ? 0.1 : -0.1))
-    }
+    // THE A IS GONE (2026-08-10, the focus pivot).  It was the honest cure for a foam that guessed
+    //  sizes — a handle on the same knob the model reads.  Under focus, size is ASSIGNED by the
+    //   commission, so the handle came off with the guessing: `dose` remains a model fact the
+    //    commissioner writes (Sounditron prices its organs with it), but no gesture edits it.
 
     // ── THE FOAMEREO (the owner 2026-08-09: "are much of these differences available to the
     //  composer of future machines like this? we'd like to have a lot of options on the foamereo").
@@ -536,29 +482,9 @@
     //    that HAVE them and want them.  A faceless cell already states itself (ident + wall spill) —
     //     that is enough, and it costs the faced cells nothing.  ▢ is the only thing that sets it.
     function bare_on(w: TheC): boolean { void bare_flip; return bare.has(w) }
-    function bare_toggle(w: TheC) {
-        if (bare.has(w)) bare.delete(w)
-        else bare.add(w)
-        bare_flip++
-        ;(H as any).Vyto_stir_soon?.(w)
-        view_repaint(w)
-    }
-    // ── A VIEW SWITCH MUST FORCE ITS OWN REPAINT ──────────────────────────────────────────────────
-    //  (the owner 2026-08-10: *"the 'try it bare' toggle doesn't hide the Components, so the C labels
-    //   are jumbled behind them"*.)  `paint_tick` bumps ONLY when the geometry actually moves — that
-    //    is a deliberate law a few lines below, and it is right for the model.  But a view switch
-    //     changes what a cell IS without moving anything: bare nulls `cell.face`, and the seat swaps
-    //      the whole regime.  Nothing moved, so `changed` stayed false, so `paint_tick` never bumped,
-    //       so `viewport_cells` kept handing the template the PREVIOUS cells with their faces still
-    //        on — while the parts of the template that read `bare_on` directly DID flip.  Result: the
-    //         bare label set drawn on top of Components that were supposed to be gone.
-    //  `Vyto_stir_soon` could not fix it: a stir re-solves the MODEL, and the model is not what
-    //   changed.  So rebuild the picture here and publish it, which is the one thing that was missing.
-    function view_repaint(w: TheC) {
-        paint_world(w)
-        paint_tick++
-        kick(w)
-    }
+    // (bare_toggle, seat_toggle and their shared view_repaint went out with the toybox, 2026-08-10 —
+    //  a view switch must force its own repaint if a toggle ever returns: paint_tick bumps only when
+    //   geometry MOVES, so a regime/face flip needs paint_world + paint_tick++ + kick by hand.)
     // ── THE TWO POSES (2026-08-09, the owner: *"we need some simulation of them competing for
     //  attention… or engaging some pose where they are all fairly equal"*).
     //  ≡ EVEN flattens every price to one base, so the cut states its STRUCTURE alone — pricing is what
@@ -592,71 +518,16 @@
         for (const t of competing.values()) clearInterval(t)
     })
 
-    // ── GRAB A BALL (the fun law, 2026-08-09: "nothing is fun to interact with").  Drag a
-    //  foam cell and the pile renegotiates around your thumb: the drag writes the mirror row's
-    //   seed (solver state) and w.c.drag_tok (the solve pins a grabbed body while the hand
-    //    holds it), poking a stir per ~70ms; release clears the pin and gravity rolls the ball
-    //     back into the press — the toy IS the physics.  A real drag only begins past 6px, so
-    //      clicks stay clicks (drag_ate_click eats the click that follows a live drag).
-    //       Live pages only; a Book never sets drag_tok, so no fixture can feel this. ──
-    let dragging: { w: TheC, cell: PaintCell, x0: number, y0: number, live: boolean, lastT: number } | null = null
-    let drag_ate_click = false
-    function cell_grab(e: PointerEvent, w: TheC, cell: PaintCell) {
-        if (!live_page() || fo(w, 'still') || cell.hasKids || cell.departing) return   // grab balls, not bags
-        dragging = { w, cell, x0: e.clientX, y0: e.clientY, live: false, lastT: 0 }
-        ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
-    }
-    function cell_drag(e: PointerEvent) {
-        if (!dragging) return
-        if (!dragging.live && Math.hypot(e.clientX - dragging.x0, e.clientY - dragging.y0) < 6) return
-        dragging.live = true
-        if (!drag_live) drag_live = 1
-        const now = performance.now()
-        if (now - dragging.lastT < 70) return
-        dragging.lastT = now
-        drag_write(e)
-    }
-    function drag_write(e: PointerEvent) {
-        if (!dragging) return
-        const { w, cell } = dragging
-        const stage = stageEls.get(w); if (!stage) return
-        const svg = stage.querySelector('svg.viewport') as SVGSVGElement | null; if (!svg) return
-        const bb = svg.getBoundingClientRect()
-        if (!(bb.width > 0) || !(bb.height > 0)) return
-        const c = cam_view(w)
-        const px = c.x + ((e.clientX - bb.left) / bb.width) * c.w
-        const py = c.y + ((e.clientY - bb.top) / bb.height) * c.h
-        ;(cell.row.c as any).seed = { x: px, y: py }
-        ;(w.c as any).drag_tok = cell.tok
-        ;(H as any).Vyto_stir_soon?.(w)
-    }
-    // ── THE STAGE BAND (the owner 2026-08-09: "perhaps whatever's on the left of the screen becomes
-    //  larger, and you drag cells over there to become the big ones... whatever was there falls out
-    //   of the way").  The left 40% of the viewport is a DROP TARGET, not a region the solve happens
-    //    to fill: release a dragged cell in it and Vyto_stage deals the frame around that cell.
-    //  Drop the staged cell there again to clear — one gesture, on and off, no second control.
-    const STAGE_BAND = 0.4
-    let drag_live = $state(0)          // 1 while a real drag is in flight — lights the band
-    function in_stage_band(w: TheC, e: PointerEvent): boolean {
-        const stage = stageEls.get(w); if (!stage) return false
-        const svg = stage.querySelector('svg.viewport') as SVGSVGElement | null; if (!svg) return false
-        const bb = svg.getBoundingClientRect()
-        if (!(bb.width > 0)) return false
-        return (e.clientX - bb.left) / bb.width < STAGE_BAND
-    }
+    // ── THE HAND IS OFF THE GLASS (2026-08-10, the focus pivot: *"currently we can drag cells
+    //  around (although it's far too slow to be visually nice) and click to enlarge them, and click
+    //   another button to reset them all, all that I want GONE!"* / *"I guess we still want the
+    //    STAGING a blob to be a programmatic process back there"*.)
+    //  The ball-grab, the drag pin, the stage band drop target, the ⤫ unstage and ⇱ release chips
+    //   all came out together — they were one gesture family, and the family's job (deciding what
+    //    is big) belongs to the COMMISSION now.  `Vyto_stage`/`stage_want` stay model verbs: a
+    //     heist stages itself programmatically ("STAGING for Heist is important"), which is why
+    //      staged_tok below survives — the paint still marks the staged body, no hand required.
     function staged_tok(w: TheC): string | null { void paint_tick; return ((w.c as any).stage_tok ?? null) }
-    // IS THERE ANYTHING TO COME BACK FROM?  Every emphasis verb the glass has is one-way — attend buys
-    //  heat, focus stands a tok, stage deals the frame — and none of them has an undo that means "share
-    //   it out again" (attending something else is a different bias, not a release).  `Vyto_release` is
-    //    that verb; this is the predicate that decides whether to offer it, so the control exists exactly
-    //     as long as there is something for it to do.  Read off the paint — heat already rides `row.c`
-    //      and the cells are already in hand — so offering it costs no extra walk of the model.
-    function emphasised(w: TheC): boolean {
-        void paint_tick
-        if ((w.c as any).stage_tok || (w.c as any).focus_tok) return true
-        for (const c of viewport_cells(w)) if ((((c.row.c as any).heat) ?? 0) > 0.02) return true
-        return false
-    }
     // rows the cut could not seat: a disc cell that is not LOOSE (loose is a choice, unseated is not).
     // ⚠ AND NOT DEPARTING.  A cell on its way out is emitted `kind: 'disc'` too (it has no wall left to
     //  cut), so the old count reported every leaving cell as a row the cut REFUSED — an accusation about
@@ -669,58 +540,9 @@
         return out
     }
 
-    // ── THE CLUTTER KNOB ──────────────────────────────────────────────────────────────────────
-    //  The junk queue is minted by the COMMISSIONER (Sounditron_junk), not by the glass — the glass
-    //   must never invent particles, that is the whole seam.  So the knob writes to the client
-    //    world the commission came from and lets the next trickle re-commission; the count is one
-    //     scalar the fabricator reads, which is why the button can be this small.
-    // THE TOYBOX LATCH — per-tab, runtime, never snapped.  Everything on the rail except ⋯ and the
-    //  walk-out chip hangs off it: those controls are how I look at the glass, not how anyone uses it.
-    const toys = new Set<TheC>()
-    let toys_flip = $state(0)
-    function toys_on(w: TheC): boolean { void toys_flip; return toys.has(w) }
-    function toys_toggle(w: TheC) {
-        if (toys.has(w)) toys.delete(w)
-        else toys.add(w)
-        toys_flip++
-    }
-    let junk_flip = $state(0)
-    function junk_world(w: TheC): any { return (w.c as any)?.commission?.sc?.client_w ?? null }
-    function junk_n(w: TheC): number { void junk_flip; void paint_tick; return Number(junk_world(w)?.c?.junk) || 0 }
-    function junk_cycle(w: TheC) {
-        const cw = junk_world(w); if (!cw) return
-        const now = Number(cw.c.junk) || 0
-        // off → 6 → 12 → 24 → off.  A boolean would answer "does it cope"; a ladder answers "where
-        //  does it stop coping", which is the only version of that question worth asking.
-        const next = now === 0 ? 6 : (now === 6 ? 12 : (now === 12 ? 24 : 0))
-        if (next === 0) delete cw.c.junk
-        if (next !== 0) cw.c.junk = next
-        junk_flip++
-        // RE-COMMISSION THROUGH THE STASHED RUN, not through H.  Sounditron's verbs are bound to its
-        //  own run-House; the top House stashes that binding as `c.sounditron_run` precisely so a
-        //   gesture can re-commission with the correct `this` (the same trick the ⇊ keep gesture
-        //    uses).  Calling it off H would find nothing and the knob would look dead until the next
-        //     trickle happened to come round — which is indistinguishable from a broken button.
-        const run: any = (H as any)?.top_House?.()?.c?.sounditron_run ?? (H as any)?.c?.sounditron_run
-        run?.Sounditron_commission?.(cw)
-        ;(H as any).Vyto_stir_soon?.(w)
-    }
-    function cell_release(e: PointerEvent) {
-        if (!dragging) return
-        if (dragging.live) {
-            const { w, cell } = dragging
-            drag_write(e)
-            ;(w.c as any).drag_tok = null
-            // ORDER MATTERS: clear drag_tok first (it pins the body for the hand), then stage, then
-            //  one stir.  Staging before the clear would leave the cell pinned twice and the stage
-            //   deal fighting the thumb pin for the same seed.
-            if (in_stage_band(w, e)) (H as any).Vyto_stage?.(w, cell.tok)
-            ;(H as any).Vyto_stir_soon?.(w)
-            drag_ate_click = true
-        }
-        dragging = null
-        drag_live = 0
-    }
+    // THE CLUTTER KNOB AND THE TOYBOX ARE GONE WITH THE HAND (2026-08-10: *"forget the other
+    //  buttons. time to slick it all back"*).  The junk fabricator (`Sounditron_junk`) still exists
+    //   model-side for a Book that wants a crowded world; only the button that cycled it left.
 
     function sentence(o: TheC): string {
         const bits = [`reads ${o.sc.reads}`]
@@ -771,10 +593,10 @@
         ['1:1',   800, 800],
         ['9:16',  450, 800],
     ]
-    // 16:9 is the DEFAULT pick (the owner 2026-08-09) — the glass boots into the shape it was designed
-    //  in (800×450 is the model's literal solve frame) instead of whatever letterbox the page happens to
-    //   leave.  'auto' stays in the list as the opt-back-in for measuring the hole.
-    let aspect_pick = $state('16:9')
+    // AUTO is the DEFAULT pick again (the owner 2026-08-10: "set it to aspect-ratio Auto again") —
+    //  measure the hole.  Under the focus regime the belly fits whatever rectangle it is handed, so
+    //   the designed-in 16:9 lost its reason to be the boot shape; the picks stay in the list.
+    let aspect_pick = $state('auto')
     const frame_of = (): Pt[] => [{ x: 0, y: 0 }, { x: vw_w, y: 0 }, { x: vw_w, y: vw_h }, { x: 0, y: vw_h }]
     // THE SOLVE FRAME AND THE CUT FRAME MUST BE THE SAME RECTANGLE (Vyto_todo §0.2(d), 2026-08-08).
     //  `Vyto_solve` cut against a hardcoded [0,0,800,450] while this renderer cuts against
@@ -912,15 +734,7 @@
     //       like a broken switch.  A view preference should never wait on the model's queue.
     //  Per TAB and never snapped, like `bare` and the two poses — a Book must not see which UI a human
     //   left on, or a fixture would record a view preference as world state.
-    const seated_w = new Set<TheC>()
-    let seat_flip = $state(0)
-    function seat_on(w: TheC): boolean { void seat_flip; return seated_w.has(w) || fo(w, 'seat') != null }
-    function seat_toggle(w: TheC) {
-        if (seated_w.has(w)) seated_w.delete(w)
-        else seated_w.add(w)
-        seat_flip++
-        view_repaint(w)
-    }
+    function seat_on(w: TheC): boolean { return fo(w, 'seat') != null }
     // The standing deal per scope, per world.  `.c`-side only (never encoded) — the deal is derived,
     //  and stage 4 is where it earns a place in the tree so a Book can witness the layout.
     const dealMemo = new WeakMap<TheC, Map<string, Deal>>()
@@ -965,6 +779,62 @@
             return p.length ? p : null
         })
     }
+
+    // ── THE FOCUS REGIME (`foamereo:'focus'`) — one belly, a couple of buds ───────────────────────
+    //  (the owner 2026-08-10, the pivot: *"lets only feed Vyto one thing at a time ... the
+    //   one-main-thing should look like a big belly, with a couple of purple somethings coming off
+    //    it ... I don't want it moving at all after it settles"* / *"strip it right back to just
+    //     being an artifact with a big blob to present stuff in"*.)
+    //  The geometry, the law and the gates live in `vyto_focus.ts`; this is only the wiring, and it
+    //   plugs in at the SAME SEAM the seat did — polyByKey — so faces, molds, labels and the carve
+    //    draw a belly exactly as they draw a wall.  ROOT SCOPE ONLY: a nested scope (a heist's
+    //     chips inside the belly) keeps the existing tiling, which is how "STAGING for Heist is
+    //      important, sometimes is a bunch of info in there" is honoured — the heist IS the belly
+    //       and its stuffing tiles inside it.
+    //  WHO IS THE BELLY: the row whose source wears `stage_want` (how a heist asks — the model's
+    //   programmatic staging, no gesture involved), else the biggest non-%Sat ask.  %Sat rows are
+    //    always buds — they are the commission's satellites, never the subject.
+    function focus_on(w: TheC): boolean { return fo(w, 'focus') != null }
+    function sat_row(row: TheC): boolean {
+        const src: any = (row.c as any)?.source_n
+        const sc = src?.sc ?? row.sc
+        return sc ? Object.keys(sc)[0] === 'Sat' : false
+    }
+    function focus_cells(live: Node[], keys: string[], radii: number[],
+                         framePoly: Pt[], gap: number): (Pt[] | null)[] {
+        let bx = Infinity, by = Infinity, bx1 = -Infinity, by1 = -Infinity
+        for (const p of framePoly) {
+            if (p.x < bx) bx = p.x
+            if (p.x > bx1) bx1 = p.x
+            if (p.y < by) by = p.y
+            if (p.y > by1) by1 = p.y
+        }
+        const frame = { x: bx, y: by, w: Math.max(1, bx1 - bx), h: Math.max(1, by1 - by) }
+        // ── THE COMMISSIONER PICKS THE BELLY, NOT THIS FUNCTION ────────────────────────────────────
+        //  (2026-08-10, caught within minutes of the belly ladder landing: the model reported
+        //   `belly=Radio` while the glass drew the Door big, and both were working correctly.)
+        //  The first cut re-decided here — stage_want, else the biggest radius — which is a SECOND
+        //   opinion about the very thing this regime exists to take away from the renderer.  Size is
+        //    assigned by the commissioner; so is subjecthood.  `.c.pose:'big'` is that decision
+        //     arriving, and it is the only rung that should normally fire.
+        //  The two below it are fallbacks for a glass whose commissioner poses nothing (a Book, a
+        //   hand-built world): honour a `stage_want`, else take the biggest ask, else row 0 — so an
+        //    unposed world still gets a sensible belly instead of nothing.
+        let bellyI = -1
+        for (let i = 0; i < live.length; i++)
+            if (String((live[i].row.c as any)?.source_n?.c?.pose ?? '') === 'big') { bellyI = i; break }
+        if (bellyI < 0) for (let i = 0; i < live.length; i++)
+            if (!sat_row(live[i].row) && (live[i].row.c as any)?.source_n?.c?.stage_want) { bellyI = i; break }
+        if (bellyI < 0) {
+            let best = -1
+            for (let i = 0; i < live.length; i++)
+                if (!sat_row(live[i].row) && (best < 0 || radii[i] > radii[best])) best = i
+            bellyI = best < 0 ? 0 : best
+        }
+        const roles: FocusRole[] = keys.map((_, i) => (i === bellyI ? 'belly' : 'bud'))
+        return focus_polys(frame, keys, roles, gap)
+    }
+
     const OVERHANG = 1.25     // a slab seat may overrun the cell's ends by this factor of its length
     // ⛔ SIDEWAYS IS OUT (the owner 2026-08-09: "ew... very incoherent! forget sidewaysing, I just meant
     //  the box-within-box reality of Component in cell aligned for space efficiency, without tilting
@@ -975,6 +845,10 @@
     //       incoherence.
     const MAX_TILT = Math.PI / 6   // 30°
     const FIT_MAX = 1.6
+    // …and the focus belly's ceiling, which is a different question with a different answer (see the
+    //  note at the fit clamp).  Not Infinity: a face IS still laid out at `100%/fit` and scaled back,
+    //   so an unbounded blow-up would hand a component a sub-pixel layout box to reflow inside.
+    const BELLY_FIT_MAX = 4.5
     // foam fill targets: what fraction of a scope's area the discs may claim before pressing.
     //  Top cut leaves real margin (the rim curvature + the empty ground ARE information); a nested
     //   bag packs near-full (a membrane holds what it holds).
@@ -1232,6 +1106,17 @@
     //     viewBox space by ONE uniform scale (the element box always carries the viewBox's aspect —
     //      the .depth width-cap contract), so a CSS rotation lands exactly where the viewBox rotation
     //       would.  Degrees to 1dp: a calm glass re-emits a byte-identical string.
+    // A POSED CELL IS NEVER "CRUSHED" (2026-08-10, the owner: *"Door once demoted to small cell again
+    //  becomes just that damn ⤢ icon, which is now glitch zone I want banished"*).  The crush register
+    //   means ONE thing — "this face is folded, there is more inside than I can show" — and it is the
+    //    honest report of a cell that got less room than its content needed.  A `small` pose is the
+    //     opposite statement: the commissioner ASSIGNED this size and the face has already been told
+    //      to render as an icon, so there is nothing folded away and nothing to promise.  Wearing the
+    //       fold mark there is a lie about the model AND, because the mark comes with an unmounted
+    //        face, it replaced the icon the pose exists to show.
+    function posed_cell(cell: PaintCell): boolean {
+        return String(((cell.source as any)?.c?.pose ?? '')) === 'small'
+    }
     function mold_seat(cell: PaintCell): string {
         const rot = cell.ang ? ` rotate(${(cell.ang * 180 / Math.PI).toFixed(1)}deg)` : ''
         // THE OCCLUSION RANK — build_cells' one sort, expressed in Z.  No `perspective` is set
@@ -1720,8 +1605,11 @@
         const layout = (nodes: Node[], framePoly: Pt[], gap: number, scopeKey: string, selfOf?: Node): void => {
             // the seat is its own regime: it never runs the fill economy, the seat floor, the repair
             //  loop or the vanish floor, because it cannot produce the faults those exist to repair.
-            const seatR = seat_on(w)
-            const foam = !!(w.c as any).foam && !seatR
+            //  The FOCUS regime is stricter still — assigned outright, root scope only (a scope
+            //   INSIDE the belly tiles with the standing machinery) — and it outranks the seat.
+            const focusR = scopeKey === '' && focus_on(w)
+            const seatR = !focusR && seat_on(w)
+            const foam = !!(w.c as any).foam && !seatR && !focusR
             const live: Node[] = []
             const seeds: Pt[] = []
             const radii: number[] = []
@@ -1756,7 +1644,7 @@
             //  Counted on `.c` (never encoded) so `--why` can show the glass catching its own rows.
             //  A seated glass has no seed to strand — boxes are constructed inside the frame — so it
             //   skips this too rather than counting phantom rescues.
-            const seated = seatR ? 0 : frame_seat(seeds, framePoly, SEAT_MIN)
+            const seated = (seatR || focusR) ? 0 : frame_seat(seeds, framePoly, SEAT_MIN)
             if (seated) (w.c as any).frame_seats = (((w.c as any).frame_seats as number) || 0) + seated
             // THE FOAM REGIME (gated on w.c.foam — the ORCHESTRA OF SPHERES law, Vyto_todo):
             //  coverage is earned by pressure.  The solve's radii are RELATIVE weights tuned for
@@ -1824,7 +1712,12 @@
             const sig = (foam ? 'F' : '') + cut_sig(framePoly, keys, seeds, cutRadii, gap)
             const had = wm.get(scopeKey)
             let polys: (Pt[] | null)[]
-            if (seatR) {
+            if (focusR) {
+                // assigned outright — a pure function of (frame, keys, roles), so nothing here can
+                //  move once arrived, and no key can come back null.  No memo needed: it is cheaper
+                //   than the sig it would be memoed under.
+                polys = focus_cells(live, keys, radii, framePoly, gap)
+            } else if (seatR) {
                 // no wall memo here: the deal IS the memo, and it is keyed on membership rather than
                 //  on a signature of every coordinate, so ordinary dose work never re-cuts it.
                 polys = seat_polys(w, scopeKey, keys, radii, framePoly, gap)
@@ -1958,8 +1851,18 @@
                 //  It also gives "things become icons when crushed down" as a CONTINUUM rather than a
                 //   special case: the scale falls smoothly with the seat, and below a legibility floor the
                 //    face is not drawn at all and the cell keeps only its edge label — the icon register.
+                regauge_pose(row)
                 const nw = (row.c as any).need_w as number | undefined
                 const nh = (row.c as any).need_h as number | undefined
+                // THE BUD AND THE BELLY WANT OPPOSITE CEILINGS.  `FIT_MAX` exists to stop a trivial
+                //  widget being magnified until it dominates a foam cell — but under focus DOMINATING
+                //   THE CELL IS THE ENTIRE POINT: the belly is *"a big blob to present stuff in"*, and
+                //    pinned at 1.6 the Radio's 170×169 face drew a 272×271 mold inside an 800px body,
+                //     i.e. *"sitting in the middle, nowhere near big enough"*.  So the belly's ceiling
+                //      is the room the ray seat actually measured, not a foam-era constant; the bud
+                //       keeps the opposite rule (never magnified — see the small-pose clamp below).
+                const smallPose = String((((row.c as any).source_n) as any)?.c?.pose ?? '') === 'small'
+                const fitMax = (focusR && !smallPose) ? BELLY_FIT_MAX : FIT_MAX
                 let fit = 1
                 let clipPoly = ''
                 if (seen) {
@@ -2029,7 +1932,16 @@
                     //  Angle discipline: normalised so text never reads upside down; snapped level
                     //   within 8° — a 3° tilt reads as a bug where a 20° tilt reads as a seat.
                     let mx = bb.bx, my = bb.by, mw = bb.bw, mh = bb.bh, ang = 0
-                    if (!hasKids0 && face && foam && s.r > 8 && nw && nh) {
+                    // A BLOB NEEDS THE INSCRIBED SEAT TOO (2026-08-10, `focusR` added).  This branch
+                    //  ray-casts the mold INSIDE the polygon; the `else` below falls back to a slab
+                    //   or the AABB, which for a round body means a rect inscribed in its BOUNDING
+                    //    BOX — reaching into corners the body does not occupy.  Measured on the live
+                    //     glass: the belly's component box ran into the top-right corner where a bud
+                    //      sits, reporting an overlap between two cells whose walls never touch.
+                    //  The focus belly is exactly as round as a foam ball, so it wants exactly this
+                    //   seat; the `s.r > 8` gate is dropped for it because a focus cell's radius is
+                    //    the spring's, which the assigned layout does not use.
+                    if (!hasKids0 && face && (foam || focusR) && (focusR || s.r > 8) && nw && nh) {
                         // THE FOAM SEAT (2026-08-09, the owner: "things aren't positioned in the
                         //  cells properly").  A foam cell is a BALL, and the ball answers the seat
                         //   question exactly: the largest rectangle of the face's aspect inscribed
@@ -2095,8 +2007,14 @@
                         }
                         let seatx = s.x, seaty = s.y
                         if (Number.isFinite(byray2) && !(byray2 <= byray)) { byray = byray2; seatx = cx2; seaty = cy2 }
+                        // …and under focus the CENTROID IS THE ONLY HONEST CENTRE.  The rays above are
+                        //  cast from the spring as well, and a focus body is not where its spring is
+                        //   (the springs keep relaxing toward foam targets nothing draws), so that
+                        //    candidate measures a different shape in a different place.  Take the
+                        //     centroid's answer outright rather than letting a meaningless one win it.
+                        if (focusR && Number.isFinite(byray2)) { byray = byray2; seatx = cx2; seaty = cy2 }
                         fit = Number.isFinite(byray) ? byray : Math.min(diag / hyp, bb.bw / nw, bb.bh / nh)
-                        fit = Math.max(0.2, Math.min(FIT_MAX, +fit.toFixed(3)))
+                        fit = Math.max(0.2, Math.min(fitMax, +fit.toFixed(3)))
                         mw = nw * fit; mh = nh * fit
                         mx = seatx - mw / 2; my = seaty - mh / 2
                         // the seed of a lobed cell can sit well off its own bbox centre; keep the seat
@@ -2115,7 +2033,7 @@
                         }
                         if (seat && nw && nh) {
                             fit = Math.min((seat.t - SEAT_AIR) / nh, (seat.len * OVERHANG) / nw)
-                            fit = Math.max(0.2, Math.min(FIT_MAX, +fit.toFixed(3)))
+                            fit = Math.max(0.2, Math.min(fitMax, +fit.toFixed(3)))
                             mw = nw * fit; mh = nh * fit
                             mx = seat.cx - mw / 2; my = seat.cy - mh / 2
                             ang = +th.toFixed(3)
@@ -2125,7 +2043,7 @@
                             //  and envelopes DOWN into a crushed one, same rule.
                             if (nw && nh && bb.bw > 0 && bb.bh > 0) {
                                 fit = Math.min(bb.bw / nw, bb.bh / nh)
-                                fit = Math.max(0.2, Math.min(FIT_MAX, +fit.toFixed(3)))
+                                fit = Math.max(0.2, Math.min(fitMax, +fit.toFixed(3)))
                             }
                         }
                     }
@@ -2153,8 +2071,54 @@
                         }
                         if (sp) tails.push(sp.apex)
                     }
+                    // FOCUS CELLS ANCHOR ON THEIR OWN BODY, not the spring.  The polys are assigned
+                    //  and still; the springs keep relaxing underneath — an anchor read off s.x/s.y
+                    //   would slide a label across a cell that is not moving.
+                    let ax = s.x, ay = s.y
+                    if (focusR) {
+                        ax = 0; ay = 0
+                        for (const p of poly) { ax += p.x; ay += p.y }
+                        ax /= poly.length; ay /= poly.length
+                    }
+                    // A SMALL POSE IS NEVER MAGNIFIED.  `FIT_MAX` lets a face be blown UP to fill a
+                    //  roomy cell, which is right for a subject and wrong for a bud: a cell whose
+                    //   whole content is a name and an icon, scaled 1.34×, grows a mold BIGGER than
+                    //    the thing it holds — and on the live glass that box reached back under the
+                    //     belly and put the two components over each other again (`overlapping
+                    //      pairs: 1`), which is the defect the bud placement had just removed.
+                    //  So a `small` cell renders at its natural size or smaller, never larger, and
+                    //   the mold is re-seated on the same anchor so it stays centred in its bud.
+                    //  …AND NEVER SHRUNK TO NOTHING EITHER (the owner 2026-08-10: *"never make the
+                    //   Component too small!"*).  A bud's face is already an icon — it has no fat to
+                    //    give — so the envelope-down that saves a crowded foam cell is exactly wrong
+                    //     here: shrinking it only makes an unreadable glyph.  A small pose therefore
+                    //      draws between 0.8× and 1× and nothing else, and if that still overhangs
+                    //       its bud a little, an icon overhanging by a few px is the right trade for
+                    //        an icon you can see.
+                    if (smallPose && fit !== 1) {
+                        const cxm = mx + mw / 2, cym = my + mh / 2
+                        const f2 = Math.max(0.8, Math.min(1, fit))
+                        mw = (mw / fit) * f2; mh = (mh / fit) * f2
+                        mx = cxm - mw / 2; my = cym - mh / 2
+                        fit = f2
+                    }
+                    // ── A MOLD MUST SIT IN ITS OWN CELL (2026-08-10) ───────────────────────────────
+                    //  Every mold seat above is measured from the SPRING position (or a centroid the
+                    //   spring is compared against).  Under focus the springs are still relaxing
+                    //    toward foam targets that nothing draws, so the seat has no relationship to
+                    //     the assigned polygon — measured live, a bud's component box landed ~60px
+                    //      LEFT of its own cell, back under the belly, reporting `overlapping pairs:
+                    //       1` from two cells whose walls do not touch.
+                    //  So: re-seat on the polygon's own centroid and clamp into its bbox.  This is
+                    //   the same law the label anchor above follows, and it cannot regress the other
+                    //    regimes because it is gated on `focusR`.
+                    if (focusR) {
+                        mx = ax - mw / 2; my = ay - mh / 2
+                        if (mw <= bb.bw) mx = Math.max(bb.bx, Math.min(bb.bx + bb.bw - mw, mx))
+                        if (mh <= bb.bh) my = Math.max(bb.by, Math.min(bb.by + bb.bh - mh, my))
+                    }
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident, spike: sp,
-                                 x: s.x, y: s.y, r: s.r, kind: 'poly', d: path_round(sp ? sp.poly : poly), departing: false, lift,
+                                 x: ax, y: ay, r: s.r, kind: 'poly', d: path_round(sp ? sp.poly : poly), departing: false, lift,
                                  bx: bb.bx, by: bb.by, bw: bb.bw, bh: bb.bh,
                                  mx, my, mw, mh, ang, clip: clipPoly, face, source, row, fx, fxi, fit, sunk, poly,
                                  room: Math.abs(poly_area(poly)) })
@@ -2586,13 +2550,64 @@
     //   the reason the HTML gets cut off, and an area-vs-area "does it fit" test is meaningless for the
     //    same reason.  Keep the measured WIDTH and HEIGHT so the renderer can ask the only question that
     //     matters — does this component fit in this box, and if not by how much.  `.c`, never snapped.
-    function stamp_box(row: TheC, nw: number, nh: number) {
+    // ── AND IT HAS TO BE ABLE TO FALL (2026-08-10) ────────────────────────────────────────────
+    //  Grow-only was a RATCHET WITH NO RELEASE, and a ratchet remembers a size long after it has
+    //   stopped being true.  That is the whole of the demoted-Door defect: as the belly the Door
+    //    measured its entire self, as a bud it renders one icon — but the remembered box still said
+    //     "this face is 300 wide", so the fit fell under the 0.34 icon floor, the face UNMOUNTED,
+    //      and AN UNMOUNTED FACE IS NEVER MEASURED AGAIN.  One-way latch: crushed because it used
+    //       to be big, with no path back to learning that it isn't.  ⤢ forever.
+    //  So the gauge falls as well as rises, on the owner's own prescription (*"gotta gauge that
+    //   size... sensibly... over time... check again 200ms after any layout"*):
+    //    · GROWING is believed at once — a component overflowing its seat is a fault you can see now;
+    //    · a reading within the dead band is no news;
+    //    · SHRINKING opens a window and is only taken if it is STILL TRUE `GAUGE_MS` later.  A face
+    //       mid-mount, mid-font-load or mid-fold measures small for a frame or two, and taking that
+    //        reading would pull the seat out from under a component about to need it.
+    //  The re-check needs its own timer because `paint_tick` only bumps when geometry MOVES — a
+    //   settled glass would otherwise never look a second time, which is the same "no second look"
+    //    that made the ratchet permanent.  Render-side only: `need_w/need_h` never poke the model
+    //     (that is `stamp_need`'s job, still grow-only), so no fixture can move under this.
+    const GAUGE_MS = 200
+    const gauge_timers = new Map<TheC, any>()
+    function gauge_again(w: TheC) {
+        if (typeof setTimeout === 'undefined' || gauge_timers.has(w)) return
+        gauge_timers.set(w, setTimeout(() => { gauge_timers.delete(w); measure_world(w) }, GAUGE_MS + 20))
+    }
+    function stamp_box(w: TheC, row: TheC, nw: number, nh: number) {
         if (!(nw > 0) || !(nh > 0)) return
-        const cw = (row.c as any).need_w as number | undefined
-        const ch = (row.c as any).need_h as number | undefined
-        if (cw != null && ch != null && nw <= cw * 1.02 && nh <= ch * 1.02) return
-        ;(row.c as any).need_w = Math.max(cw ?? 0, nw)
-        ;(row.c as any).need_h = Math.max(ch ?? 0, nh)
+        const c = row.c as any
+        const cw = c.need_w as number | undefined
+        const ch = c.need_h as number | undefined
+        if (cw == null || ch == null) { c.need_w = nw; c.need_h = nh; return }
+        if (nw > cw * 1.02 || nh > ch * 1.02) {
+            c.need_w = Math.max(cw, nw); c.need_h = Math.max(ch, nh); c.gauge_at = 0
+            return
+        }
+        if (nw > cw * 0.94 && nh > ch * 0.94) { c.gauge_at = 0; return }
+        const t = Date.now()
+        if (!c.gauge_at) { c.gauge_at = t; c.gauge_w = nw; c.gauge_h = nh; gauge_again(w); return }
+        // keep the LARGEST reading seen inside the window — the window is there to be sure the face
+        //  has finished becoming what it is, not to catch it at its smallest frame.
+        c.gauge_w = Math.max(c.gauge_w ?? nw, nw); c.gauge_h = Math.max(c.gauge_h ?? nh, nh)
+        if (t - c.gauge_at < GAUGE_MS) { gauge_again(w); return }
+        c.need_w = c.gauge_w; c.need_h = c.gauge_h; c.gauge_at = 0
+        react_soon()   // the box moved with nothing else moving; nothing else would re-lay it out
+    }
+    // A POSE CHANGE DROPS THE GAUGE OUTRIGHT.  The window above cures a box that is merely stale;
+    //  it cannot cure a CRUSHED one, because a crushed cell has no mounted face for the measure pass
+    //   to find — the latch closes before the gauge can open.  A pose change is the declaration
+    //    "this face is now a different thing", so it is exactly the moment the remembered box stops
+    //     being about anything: drop it and let the next paint gauge the cell it actually is.
+    //  Unposed worlds (every regime but focus) set the marker once and never delete anything.
+    function regauge_pose(row: TheC) {
+        const c = row.c as any
+        const pose = String(((row.c as any).source_n)?.c?.pose ?? '')
+        if (c.gauge_pose === pose) return
+        if (c.gauge_pose == null) { c.gauge_pose = pose; if (!pose) return }
+        c.gauge_pose = pose
+        delete c.need_w; delete c.need_h; delete c.need_area
+        delete c.gauge_w; delete c.gauge_h; delete c.gauge_at
     }
     function measure_world(w: TheC) {
         if (!(w.c as any).need_floor) return
@@ -2641,7 +2656,7 @@
             if (!scroll || !child || typeof child.offsetWidth !== 'number') continue
             if (Math.abs(child.offsetWidth - scroll.clientWidth) <= 1) continue   // box-stretched — skip
             const nw = child.offsetWidth * sx, nh = child.offsetHeight * sy
-            stamp_box(cell.row, nw, nh)
+            stamp_box(w, cell.row, nw, nh)
             stamp_need(w, cell.row, nw * nh)
         }
     }
@@ -3099,15 +3114,8 @@
             {@const plug_id = 'vyplug-' + String((w.sc as any)?.w ?? 'w').replace(/[^A-Za-z0-9_-]/g, '')}
             {@const cam = cam_view(w)}
             <div class="stage" use:reg_stage={w} use:lifetell={{ H, what: 'stage', id: String((w.sc as any)?.w ?? '?') }}>
-                <!-- THE STAGE BAND, shown only while a drag is live.  A drop target you cannot see is
-                     not a target, and one you can always see is furniture — so it exists exactly as
-                     long as the gesture that can use it.  pointer-events:none, so it never eats the
-                     drop it is advertising. -->
-                {#if drag_live}
-                    <div class="stageband" style="width:{(STAGE_BAND * 100).toFixed(0)}%">
-                        <span>{staged_tok(w) ? 'drop to swap · drop the staged one to clear' : 'drop here to stage'}</span>
-                    </div>
-                {/if}
+                <!-- THE STAGE BAND IS GONE with the drag it advertised (2026-08-10, the focus
+                     pivot) — staging is the commission's call now, not a drop target's. -->
                 <!-- the one report the deleted markers owed: the rows the cut could not seat.  Said once,
                      in a corner, where it costs nobody their pixels — rather than N times, on top of
                      whatever won the room.  Absent when everything got a seat, which since the SEAT FLOOR
@@ -3145,71 +3153,14 @@
                 {/if}
                 <button class="fs-btn" onclick={(e) => go_fullscreen(e.currentTarget.parentElement)}
                         title="fullscreen the glass">⛶</button>
-                <!-- THE TOYBOX (the owner 2026-08-09: *"we have to put most of this junk behind some
-                     kind of hidden button ... that lets you play with more buttons"*).  Seven
-                     always-on controls is a workbench, not an interface — and every one of them is a
-                     thing I added to look at the glass with, not a thing a listener needs.  So one
-                     nearly-invisible ⋯ opens the lot and nothing else shows by default.  Per-tab
-                     runtime state: a Book never opens it, so no fixture can move on it. -->
-                {#if live_page()}
-                    <button class="fs-btn toy-btn" class:posing={toys_on(w)} onclick={() => toys_toggle(w)}
-                            title={toys_on(w) ? 'hide the layout toys' : 'layout toys'}>⋯</button>
-                    <!-- THE WAY OFF THE STAGE (the owner: *"that should be escapable via some
-                         button"*).  A staged cell is huge and runs off the frame, so the gesture that
-                         made it — drag it back — is the one gesture that is now awkward: there is
-                         nowhere to grab and nowhere to drop it.  A stage you can enter and not leave
-                         is a trap, so the escape is plain, outside the toybox, and shows only while
-                         there is something to escape from. -->
-                    {#if staged_tok(w)}
-                        <button class="fs-btn unstage-btn" onclick={() => (H as any).Vyto_stage?.(w, staged_tok(w))}
-                                title="off the stage — back to the ordinary pile">⤫</button>
-                    {/if}
-                    <!-- BACK TO TOP (the owner 2026-08-09: *"or at least have some back-to-top thing"*).
-                         Deliberately NOT a second unstage: ⤫ above is the precise verb (this one cell,
-                         off the stage, trail intact) and this is the general one — every emphasis
-                         dropped at once, which is what someone who has pressed their way into a corner
-                         actually wants.  They overlap only when the stage is the sole thing standing,
-                         and there the two agree.  Shows only while something stands, so the rail is
-                         unchanged for a reader who has not navigated at all. -->
-                    {#if emphasised(w)}
-                        <button class="fs-btn release-btn" onclick={() => (H as any).Vyto_release?.(w)}
-                                title="share it out again — drop every emphasis and let the pile settle even">⇱</button>
-                    {/if}
-                {/if}
-                {#if live_page() && toys_on(w)}
-                    <button class="fs-btn sim-btn" class:simmering={simmer_on(w)} onclick={() => simmer_toggle(w)}
-                            title="keep running layout — the foam keeps negotiating">∿</button>
-                    <!-- BARE — the glass with no Components at all: just the cellular tree of what is
-                         actually in there, its names, its details along the wall, and whatever a
-                         particle made clickable.  Live pages only: a Book must never see a view
-                         preference, so no fixture can move on whatever a human left toggled. -->
-                    <button class="fs-btn even-btn" class:posing={even_on(w)} onclick={() => even_toggle(w)}
-                            title="equal pose — every cell priced the same, so the structure shows">≡</button>
-                    <button class="fs-btn vie-btn" class:posing={compete_on(w)} onclick={() => compete_toggle(w)}
-                            title="compete for attention — the coin goes round and the foam fights it out">⚔</button>
-                    <button class="fs-btn bare-btn" class:baring={bare_on(w)} onclick={() => bare_toggle(w)}
-                            title={bare_on(w) ? 'components off — cells only (click to bring them back)'
-                                              : 'try it bare — no Components, just the cellular tree'}>▢</button>
-                    <!-- THE REGIME SWITCH — foam ◍ or seat ▦, the two layouts side by side on one page.
-                         Not a replacement: pressing it back gives the foam exactly as it was.  The
-                         seat assigns each row a whole number of grid units instead of discovering what
-                         a relaxation left it, so nothing can be swallowed and the dose knob is
-                         monotone; the cost is a quantised, squarer glass.  Live pages only. -->
-                    <button class="fs-btn seat-btn" class:seating={seat_on(w)} onclick={() => seat_toggle(w)}
-                            title={seat_on(w) ? 'seat layout — every row assigned its room (click for the foam)'
-                                              : 'try the seat — rectangles assigned from the same model, no swallowing'}
-                            >{seat_on(w) ? '▦' : '◍'}</button>
-                    <!-- THE CLUTTER KNOB — fabricate a queue of faceless heist jobs, each holding its
-                         cuts as SUBCELLS, so the crowded regime can actually be looked at.  Cycles
-                         off → 6 → 12 → 24 → off; the real organs keep their faces throughout. -->
-                    <button class="fs-btn junk-btn" class:posing={junk_n(w) > 0} onclick={() => junk_cycle(w)}
-                            title="fabricate a cluttered heist queue (faceless, with subcells) — off · 6 · 12 · 24">⧉{junk_n(w) || ''}</button>
-                    <!-- the LAYOUT HANDS (the owner: "needs more redraw or keep running layout buttons
-                         like cyto had").  ⟳ deals the pile fresh (Vyto_redraw — every unpinned seat
-                         forgets, re-enters round the rim, re-piles, salted per press). -->
-                    <button class="fs-btn re-btn" onclick={() => (H as any).Vyto_redraw?.(w)}
-                            title="redraw — deal the pile fresh">⟳</button>
-                {/if}
+                <!-- THE TOYBOX IS GONE (2026-08-10, the focus pivot: *"forget the other buttons.
+                     time to slick it all back"*).  ⋯ and everything behind it — ∿ simmer, ≡ even,
+                     ⚔ compete, ▢ bare, ▦ seat, ⧉ junk, ⟳ redraw — plus the ⤫ unstage and ⇱ release
+                     chips.  The glass is an artifact with a big blob to present stuff in; the one
+                     control left on the stage is ⛶.  The machinery behind several of those words
+                     still stands model-side (regimes via foamereo, junk via Sounditron_junk,
+                     staging via stage_want) — they are composed now, not pressed. -->
+
                 <!-- the way OUT, shown only while there is somewhere to come out of.  Clicking the
                      engaged cell again does the same thing, but a visible affordance is what makes the
                      navigation discoverable to someone who has not been told it exists. -->
@@ -3273,23 +3224,30 @@
                         {@const g = cell_ground(cell)}
                         {@const cdv = Number((cell.row.sc as any)?.dose) || 0}
                         {#if cell.kind === 'poly'}
-                            <!-- a DOSED wall is a PRESSED wall: stroke weight rides the dose, so the
-                                 A-drag answers under the thumb before the solve even lands. -->
+                            <!-- the hand is off the wall (2026-08-10): no grab, no drag, no focus
+                                 attention buy.  A cell is pressed (the smuggled .c.press) or it is
+                                 looked at.
+                                 THE CELLS ARE DRAWN EXACTLY AS BEFORE (the owner 2026-08-10: *"if
+                                 the cells could be drawn like before that'd be great"*).  A first
+                                 cut hardcoded a purple fill on %Sat rows, which BYPASSED
+                                 `cell_ground` → `matstyle_ground` — i.e. it opted the satellites
+                                 out of the auto-swatch machinery that gives every mainkey its jewel
+                                 tone, so they read as flat paint beside worked metal.  The ground
+                                 comes from Matstyle again for every cell without exception; `sat`
+                                 stays as a CLASS so the purple can be said in CSS as a rim, over
+                                 the swatch rather than instead of it. -->
                             <path class="cell" class:departing={cell.departing} class:lift={cell.lift} class:sunk={cell.sunk}
                                   class:faced={!!cell.face && !cell.hasKids} class:nested={cell.depth > 0} class:scope={cell.hasKids}
-                                  class:crushed={!!cell.face && !cell.hasKids && cell.fit <= 0.34}
-                                  class:breathe={cell.fx === '' && foam_breathes(w)}
+                                  class:crushed={!!cell.face && !cell.hasKids && cell.fit <= 0.34 && !posed_cell(cell)}
+                                  class:breathe={cell.fx === '' && foam_breathes(w) && !focus_on(w)}
                                   class:hot={((cell.row.c as any).heat ?? 0) > 0.25}
                                   class:pressy={pressy(cell)} class:staged={cell.tok === staged_tok(w)}
-                                  class:selfseat={cell.selfseat}
+                                  class:selfseat={cell.selfseat} class:sat={sat_row(cell.row)}
                                   class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} d={cell.d}
                                   style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (cdv > 0 ? ` stroke-width:${(1.2 + Math.min(3, cdv) * 0.55).toFixed(2)};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : ` --bd:-${ci * 430}ms;`)}
                                   onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                   onpointerleave={() => on_leave(w, cell.key, cell.tok)}
-                                  onpointerdown={(e) => cell_grab(e, w, cell)}
-                                  onpointermove={cell_drag} onpointerup={cell_release} onpointercancel={cell_release}
                                   onclick={() => cell_click(w, cell)}
-                                  onfocus={() => attend(w, cell.tok, 0.08)}
                                   role="button" tabindex={0} aria-label={cell.ident}
                                   onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cell_click(w, cell) } }}></path>
                         {:else}
@@ -3374,7 +3332,7 @@
                                  (.cell.crushed) plus this centred glyph says "folded, more inside".
                                  No data-key: the measure pass must never floor a cell to its own
                                  crush mark. -->
-                            {#if cell.fit <= 0.34}
+                            {#if cell.fit <= 0.34 && !posed_cell(cell)}
                                 <!-- THE PEARL (the owner 2026-08-09: "everything should be a cell or a
                                      sub-cell or a label ... we need consistency" — a crushed Door had
                                      shrunk to a sliver, leaving ⤢ + ident floating with no visible
@@ -3550,7 +3508,12 @@
                              bare cell: this gate reads the flag DIRECTLY, so it cannot be outvoted by a
                              stale cell list however the paint got behind.  A view switch must be
                              obeyable from the template alone. -->
-                        {#if cell.face && !bare_on(w) && !cell.departing && !cell.hasKids && cell.fit > 0.34}
+                        <!-- …EXCEPT A POSED ONE, which is never below the floor by accident: a `small`
+                             cell was ASSIGNED its size and its face already renders as an icon, so the
+                             icon register has nothing left to do but hide the icon.  This is also the
+                             half that closes the ratchet's trap door — an unmounted face can never be
+                             re-measured, so "crushed" used to be a state a cell could not leave. -->
+                        {#if cell.face && !bare_on(w) && !cell.departing && !cell.hasKids && (cell.fit > 0.34 || posed_cell(cell))}
                             {@const Face = cell.face}
                             <div class="face-mold" class:lift={cell.lift} class:sunk={cell.sunk}
                                  class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} data-key={cell.key}
@@ -3570,43 +3533,10 @@
                         {/if}
                     {/each}
                 </div>
-                <!-- THE A DIALS (the owner 2026-08-09: "cells could do with a handle... an A on one
-                     corner of it somewhere, which can drag up-down to control the intensity|size of
-                     that cell").  HTML, in a plane translateZ'd above every mold: a handle that a
-                     spilling face could bury would not be a handle.  Fixed PIXEL size on purpose —
-                     the camera zooms the world, but a thumb-target should stay a thumb-target.
-                     Anchored at the head of the cell's hallway; drag maps clientY straight to dose,
-                     so no viewBox math is ever needed mid-gesture. -->
-                <div class="adials">
-                    {#each viewport_cells(w) as cell (cell.key)}
-                        <!-- the SEAL is now the fallback hand: worlds that can't carve (no ball law)
-                             and composers who pulled `seal` on the foamereo get the round HTML thumb;
-                             carved worlds wear the A gate in the wall instead. -->
-                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 18 && cell.bh > 24 && (!wall_carve(w, cell) || fo(w, 'seal'))}
-                            {@const dv = Number((dose_src(cell)?.sc as any)?.dose) || 0}
-                            <!-- on a foam ball the bbox corner is off the disc (a circle never reaches
-                                 its corner — the detached-hall lesson): seat the seal at the 205° wall
-                                 mark instead, where the gate would stand. -->
-                            <!-- `arc_pt` ray-hits the POLYGON, so it lands on the wall of any foam cell,
-                                 carved or not — the bbox corner is only the right seat where the cell
-                                 actually reaches it, which is the non-ball worlds. -->
-                            {@const sp = carveable(w) ? arc_pt(cell, 205) : { x: cell.bx + 8, y: cell.by + 14.5 }}
-                            <div class="dosea" class:doped={dv > 0} class:sunk={cell.sunk} role="slider" tabindex="0"
-                                 aria-label={`intensity of ${cell.ident}`}
-                                 aria-valuenow={dv} aria-valuemin={0} aria-valuemax={9}
-                                 style="left:{((sp.x - cam.x) / cam.w) * 100}%; top:{((sp.y - cam.y) / cam.h) * 100}%;"
-                                 onpointerdown={(e) => dose_down(e, w, cell)}
-                                 onpointermove={dose_move} onpointerup={dose_up} onpointercancel={dose_up}
-                                 onkeydown={(e) => dose_key(e, w, cell)}>
-                                <svg viewBox="-10 -10 20 20" aria-hidden="true">
-                                    <path class="dosea-A" d="M -3.2,3.8 L 0,-4.4 L 3.2,3.8 M -1.9,1.1 L 1.9,1.1"></path>
-                                    <path class="dosea-chev" d="M -2.6,-6.4 L 0,-8.7 L 2.6,-6.4"></path>
-                                    <path class="dosea-chev" d="M -2.6,6.6 L 0,8.9 L 2.6,6.6"></path>
-                                </svg>
-                            </div>
-                        {/if}
-                    {/each}
-                </div>
+                <!-- THE A DIALS ARE GONE (2026-08-10, the focus pivot: size is ASSIGNED by the
+                     commission now, so a per-cell intensity thumb is a handle to nothing — and the
+                     owner's ruling was total: *"all that I want GONE!"*.  `dose` stays a model fact
+                     the commissioner writes; only the hand on it left). -->
                 </div><!-- /.depth -->
             </div>
         {/if}
@@ -3705,41 +3635,9 @@
         font-size: 13px; cursor: pointer;
     }
     .fs-btn:hover { background: #2a2a3e; color: #fff; }
-    /* THE RAIL, left of ⛶ (right:6px).  ⋯ is the only always-on member and it is deliberately faint:
-       a listener should be able to look straight past it, and anyone hunting for controls finds it
-       on the first hover.  Everything after it exists only while the toybox is open. */
-    .toy-btn { right: 38px; opacity: 0.28; }
-    .toy-btn:hover, .toy-btn.posing { opacity: 1; }
-    .toy-btn.posing { color: #c3b0ff; border-color: #6a5ad0; background: #201c34; }
-    .sim-btn { right: 70px; }
-    .sim-btn.simmering { color: #ffd479; border-color: #b89a4a; background: #2c2618; }
-    .even-btn { right: 102px; }
-    .vie-btn  { right: 134px; }
-    .bare-btn { right: 166px; }
-    .seat-btn { right: 198px; }
-    .junk-btn { right: 230px; min-width: 28px; }
-    .re-btn   { right: 268px; }
-    .even-btn.posing, .vie-btn.posing, .junk-btn.posing { color: #c3b0ff; border-color: #6a5ad0; background: #201c34; }
-    .bare-btn.baring { color: #9fe6c8; border-color: #4a8a72; background: #16241f; }
-    /* the seat reads as the ALTERNATIVE, not as an alarm: same chip, its own tone. */
-    .seat-btn.seating { color: #ffc9a0; border-color: #b8794a; background: #2a1d14; }
-    /* the walk-out chip is NAVIGATION, not a toy — it shows whenever there is somewhere to come out
-       of, toybox open or shut, so a human who flew into a cell is never stranded.  It therefore sits
-       at the head of the rail (right of ⋯), where it does not move as toys come and go. */
-    .out-btn { right: 300px; }
-    /* the escape sits at the head of the rail beside ⋯ — it is not a toy, and it must be findable
-       without opening anything, because the stage it undoes covers most of the screen. */
-    .unstage-btn { right: 332px; color: #9fd0ff; border-color: #4a6a8a; }
-    /* back-to-top rides at the head of the rail, past the escape: it is the most general way out and
-       the one that should still be findable when everything else on the rail is hidden. */
-    .release-btn { right: 364px; color: #9fe6c8; border-color: #4a8a72; }
-    @media (pointer: coarse) {
-        .toy-btn { right: 52px; } .sim-btn { right: 98px; }
-        .even-btn { right: 144px; } .vie-btn { right: 190px; } .bare-btn { right: 236px; }
-        .seat-btn { right: 282px; }
-        .junk-btn { right: 328px; } .re-btn { right: 374px; } .out-btn { right: 420px; }
-        .unstage-btn { right: 466px; } .release-btn { right: 512px; }
-    }
+    /* THE RAIL IS DOWN TO ⛶ AND THE WALK-OUT (2026-08-10, the focus pivot — the toybox and its
+       toys went with the gestures).  ⤴ shows only while somewhere to come out of exists. */
+    .out-btn { right: 38px; }
     /* an engaged-able cell should say so under the cursor — the one hint that the glass is navigable.
        The cells are also real keyboard targets (role=button + tabindex): tab to a cell, Enter to fly to
        it, Esc to come back out.  ~5-9 cells on the live glass, so this is a usable tab order rather than
@@ -3814,20 +3712,15 @@
         max-width: 15ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .unseat-chip:hover { color: #fff; background: rgba(52, 52, 74, 0.9); border-color: rgba(190, 190, 235, 0.8); }
-    .stageband {
-        position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; pointer-events: none;
-        border-right: 1px dashed rgba(159, 208, 255, 0.55);
-        background: linear-gradient(90deg, rgba(159, 208, 255, 0.13), rgba(159, 208, 255, 0.03));
-        display: flex; align-items: flex-end; justify-content: center; padding-bottom: 10px;
-    }
-    .stageband span {
-        font: 10px/1 ui-monospace, monospace; letter-spacing: 0.1em; text-transform: uppercase;
-        color: rgba(200, 226, 255, 0.8); background: rgba(10, 12, 20, 0.6); padding: 4px 8px; border-radius: 3px;
-    }
+    /* (.stageband went with the drag, 2026-08-10.) */
     /* THE LOOSE LAYER — drifters off the pile: dim, small, owing no wall.  Rim seats are static
        (tok-hashed) — a stir-clock drift was cut because rest_poll stirs in a loop; renderer-side
        drift waits on a <g> wrapper so a disc and its label revolve together. */
     .cell.disc.loose { opacity: 0.5; fill: #1c1c26; stroke: #33334a; }
+    /* THE SATELLITES' PURPLE, as a RIM not a repaint (2026-08-10) — the "couple of purple somethings
+       coming off it".  Stroke only, so the Matstyle swatch underneath is untouched and a sat is drawn
+       the same way as every other cell, wearing one extra mark that says what it is. */
+    .cell.sat { stroke: #9b6fc9 !important; stroke-width: 2; }
     /* transform-box makes scale animations (breath, dent) pivot each cell about its OWN centre */
     .cell { transform-box: fill-box; transform-origin: center; }
     /* THE BREATH — the orchestra's shared slow pulse, foam glasses on the live page only (the class
@@ -4099,28 +3992,7 @@
     .hall.sunk { opacity: 0.3; }
     .hallway { fill: url(#vy-cop-fine); fill-opacity: 0.13; stroke: #6a6ad0; stroke-width: 0.5; stroke-opacity: 0.3; }
     .hall-rail { fill: none; stroke: #8f8fb4; stroke-width: 0.4; opacity: 0.22; }
-    /* THE A DIALS — the handle layer.  translateZ above every mold's occlusion rank AND the 12px
-       hover lift: a handle that can be buried is not a handle.  The container never catches a
-       pointer; each dial re-arms (same law as the face buttons). */
-    .adials { position: absolute; inset: 0; pointer-events: none; transform: translateZ(30px); }
-    .dosea {
-        position: absolute; width: 19px; height: 19px; transform: translate(-50%, -50%);
-        pointer-events: auto; touch-action: none; cursor: ns-resize;
-        border-radius: 50%;
-        /* the third copper scale — the dial is the smallest worked piece of the same metal */
-        background: #262640 url('/i/copper_anodes.jpg') center / 90px;
-        background-blend-mode: soft-light;
-        box-shadow: inset 0 0 0 1px #8a8ac0, 0 1px 4px rgba(0, 0, 0, 0.45);
-        opacity: 0.55; transition: opacity 120ms ease, box-shadow 120ms ease;
-    }
-    .dosea.sunk { opacity: 0.18; }
-    .dosea:hover, .dosea:focus-visible { opacity: 1; box-shadow: inset 0 0 0 1px #c8c8f4, 0 2px 8px rgba(0, 0, 0, 0.55); }
-    .dosea.doped { opacity: 0.9; box-shadow: inset 0 0 0 1.4px #b8a878, 0 1px 5px rgba(0, 0, 0, 0.5); }
-    .dosea svg { display: block; width: 100%; height: 100%; }
-    .dosea-A { fill: none; stroke: #e6e6f2; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
-    .dosea-chev { fill: none; stroke: #a8a8f0; stroke-width: 1; stroke-linecap: round; opacity: 0; transition: opacity 120ms ease; }
-    .dosea:hover .dosea-chev, .dosea:focus-visible .dosea-chev { opacity: 0.85; }
-    @media (pointer: coarse) { .dosea { width: 26px; height: 26px; } }
+    /* (.adials / .dosea went with the dose gesture, 2026-08-10 — size is assigned now.) */
     .holds { margin-top: 6px; display: flex; flex-direction: column; gap: 1px; }
     .hold { display: flex; gap: 8px; align-items: baseline; color: #a8a8bc; }
     .hold.releasing { color: #77778c; font-style: italic; }

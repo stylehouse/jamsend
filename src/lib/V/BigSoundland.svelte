@@ -20,9 +20,11 @@
     //      it stands up) plus the live House/Creduler state — to scan out what's wrong with the main bit.
     //
     //  THE ▦ SPRAWL — the way OUT of the single glass face: the glass is full-bleed (one Cyto UI), so
-    //   once it draws every OTHER H** UI vanishes.  ▦ (in the header) toggles a sprawl of EVERY House's
+    //   once it draws every OTHER H** UI vanishes.  ▦ toggles a sprawl of EVERY House's
     //    UIs dumped in order down one page (Cyto included) — the gutsy multi-UI interface, twin of
-    //     /BigWordland's ▦.  Persisted in the stash (BigSoundland_sprawl) so the choice sticks.  Note the
+    //     /BigWordland's ▦.  Persisted in the stash (BigSoundland_sprawl) so the choice sticks.
+    //  ▦ IS NOT DRAWN FOR A LISTENER (2026-08-10) — it appears only under the `guts` pref, which the
+    //   Butler's semi-hidden switch and the `?` key set.  See the `guts` note further down.  Note the
     //      SEPARATE fullscreen gate: BootGate's FaceSucker (disk-share / audio tap) — cleared by GRANTING,
     //       not by ▦; if it's covering the screen, open the folder / tap for sound to get past it.
     import Ghost      from "$lib/O/Ghost.svelte"
@@ -150,7 +152,39 @@
     //   dumped in order down the page (Cyto included, as one panel among many), so you can reach
     //    the run controls / Brink / anything the run mounted.  A workspace choice, so it lives in
     //     the stash (reactive $state on the House, like BigWordland's) and survives a reload.
-    let sprawl = $derived(!!H?.stashed?.BigSoundland_sprawl)
+    // ── THE GUTS SWITCH — ▦, and it is the ONLY one ────────────────────────────────────────────
+    // The owner, 2026-08-10, in two moves.  First: *"we want that button hidden within our app —
+    //  that and the Butler-overlay-exiting control should be one and the same"*.  Then, on seeing the
+    //   first cut of that: *"lose `show me the guts` and just have ▦ hidden-ish (opacity:0.2) in the
+    //    top right corner at all times. z-index above everything!"*
+    //  SO THERE IS ONE BUTTON AND ONE STATE.  ▦ lives at `.scape-guts` — fixed, top-right, ALWAYS
+    //   rendered, barely visible until you look for it, and above every FaceSucker on the page.  It
+    //    is the way out of the arrival screen, the way into the sprawl, and the way back, all at once.
+    //     The Butler no longer carries a switch of its own; a second control onto one state is the
+    //      `boot_gate` lesson (two doors onto one permission) and it had already produced a "don't
+    //       wait for me" that a person could press without ever learning where the machine went.
+    //  ALWAYS RENDERED IS THE POINT, not laziness.  Every gated version of this had the same hole: the
+    //   button that reverses a state was hidden BY that state, so the only way back was a keyboard
+    //    shortcut nobody had been told about.  0.2 opacity costs a listener nothing and costs a
+    //     stranded person their whole session.
+    //  SPRAWL *IS* GUTS NOW.  `BigSoundland_sprawl` is retired: two persisted booleans meaning
+    //   overlapping things ("show the machine" / "show every UI") is how the ▦ ended up on a
+    //    listener's page in the first place.  One pref, owned by the model — `Supervisor_pref('guts')`
+    //     is a particle + the House stash, so it snaps, survives a reload, and BOTH faces read the
+    //      same answer instead of each deriving one and throwing it away at the face boundary.
+    //  READ OFF THE STASH, not `Supervisor_pref`: that call MINTS the particle on first read (it
+    //   mirrors the stash into the tree), and a `$derived` that mutates is a `$derived` that will one
+    //    day loop.  `H.stashed` is reactive `$state` and Housemem burrows straight into it, so this is
+    //     the same value by the shorter read-only road — and it works before the Supervisor world
+    //      exists at all, which is most of a boot.
+    let guts = $derived(!!(H?.stashed as any)?.Supervisor?.guts)
+    function toggle_guts() {
+        const M = H?.top_House ? H.top_House() : H
+        const w = M?.o?.({ A: 'Supervisor' })[0]?.o?.({ w: 'Supervisor' })[0]
+        if (!w || !(M as any)?.Supervisor_pref_set) return
+        ;(M as any).Supervisor_pref_set(w, 'guts', guts ? 0 : 1)
+    }
+    let sprawl = $derived(guts)
     // ── THE GLASS IS THE APP (2026-08-09, the owner: "shake out the UI outside of Vyto, ie
     //  fullscreen the latter, with Invite management in there") ────────────────────────────────
     // When the glass is up, the page has NO chrome: no title, no book name, no badge, no strip.
@@ -160,11 +194,6 @@
     //   keep every bit of it, because those are the rooms you enter when something is wrong and
     //    they are worth nothing without their labels.  `.scape-peek` (and ? ) are the way back.
     let glass_full = $derived(!!cyto && !sprawl)
-    function toggle_sprawl() {
-        if (!H?.stashed) return
-        if (H.stashed.BigSoundland_sprawl) delete H.stashed.BigSoundland_sprawl
-        else H.stashed.BigSoundland_sprawl = 1
-    }
     // every UI the run has mounted, GROUPED by House (Cyto and all) — the sprawl's content.
     //  Grouping gives each House one anchor the jump-to-H chips scroll to, plus its own heading in
     //   the dump.  Pantheate-include is DROPPED silently: on a runner these are the Creduler's
@@ -223,10 +252,14 @@
         const t = e.target as HTMLElement | null
         const tag = t?.tagName
         if (t?.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
-        // ? — the way back to the gutsy sprawl once the glass has eaten the page.  Same guard as
-        //  the radio keys above (never steal a typed key), and it works from either side, so a
-        //   chromeless glass is never a room with no door.
-        if (e.key === '?') { e.preventDefault(); toggle_sprawl(); return }
+        // ? — THE WAY IN AND OUT OF THE MACHINE.  It used to toggle the sprawl; it now toggles the
+        //  GUTS switch, because that is the one that can leave you with nothing to press: ▦ is drawn
+        //   only while the guts are on, so with no keyboard route a listener who never presses "show
+        //    me the guts" has no door at all and somebody who does has no way back.  Same guard as the
+        //     radio keys above (never steal a typed key), and it works from either side.
+        //  ▦ still toggles the sprawl.  Two different questions — "do I want the machine" and "which
+        //   machine face" — and collapsing them would cost the glass its own escape hatch.
+        if (e.key === '?') { e.preventDefault(); toggle_guts(); return }
         if (e.key !== ' ' && e.key !== 'Enter') return
         const A: any = H
         const n = radio_of(A)
@@ -242,12 +275,26 @@
 <svelte:window onkeydown={radio_key} />
 
 <BootGate {H} who="the piracy-scape" audio_fullscreen={true} proactive={true} />
-<!-- the Butler: the Supervisor's loading screen, altitude 55 — UNDER BootGate, because a permission
-     the listener has to grant outranks news about work in progress.  It lifts on its own (nothing
-      left to wait for, a 12s cap, or the carry-on tap) and latches down for the tab, so it can never
-       reappear over somebody's music.  Mounted beside BootGate rather than inside the view switch for
-        the spine_shims reason: a persisted `sprawl` must not be able to starve it. -->
+<!-- the Butler: the Supervisor's arrival screen, altitude 55 — UNDER BootGate, because a permission
+     the listener has to grant outranks news about work in progress.  It lifts on ARRIVAL and on
+      nothing else automatic (`Supervisor_arrived`, declared by this page's Book in beat 2 and met when
+       the glass is drawing and music is playing); otherwise a person leaves via the carry-on tap or
+        the guts switch.  It latches down for the tab, so it can never reappear over somebody's music.
+         Mounted beside BootGate rather than inside the view switch for the spine_shims reason: a
+          persisted `sprawl` must not be able to starve it. -->
 <Butler {H} />
+
+<!-- ▦ THE ONE CONTROL, and the only piece of chrome on this page that is ALWAYS on screen (the owner
+     2026-08-10: *"just have ▦ hidden-ish (opacity:0.2) in the top right corner at all times. z-index
+      above everything!"*).  It toggles `guts` — the arrival screen off and every House's UIs on, or
+       back.  Deliberately OUTSIDE `<main>`: it must survive the glass/diag/sprawl view switch, and it
+        must be over the FaceSuckers rather than under them, because the state it reverses is the one
+         that covers the screen.  A button hidden by the thing it undoes is not a way out. -->
+<button class="scape-guts" class:on={guts} onclick={toggle_guts}
+        title={guts
+            ? 'the guts: every House’s UIs, no arrival screen — click (or ?) to go back to the music'
+            : 'the guts — every House’s UIs down one page, and no arrival screen (? does the same)'}
+        aria-label="show the machine">▦</button>
 
 <main class="mound" class:full={glass_full}>
     {#if glass_full}
@@ -257,8 +304,9 @@
         <nav class="scape-peek">
             <span class="scape-glass-badge" class:vy={cyto?.ui.sc.UI === 'Vyto'}
                   title="the glass mounted below (its House: {cyto?.house?.name}) · {book}">{cyto?.ui.sc.UI === 'Vyto' ? '◇ VYTO' : '◈ CYTO'}</span>
-            <button class="scape-sprawl-btn" onclick={toggle_sprawl}
-                    title="sprawl (or press ?) — the way out of the glass: every House’s UIs down one page">▦</button>
+            <!-- ▦ is NOT here any more — it is the fixed `.scape-guts` corner button below, rendered
+                 once for the whole page in every room and above every FaceSucker.  Two copies of one
+                  control is how the peek's ▦ and the header's ▦ drifted apart in the first place. -->
         </nav>
     {:else}
     <header class="scape-top">
@@ -292,11 +340,7 @@
                 {/each}
             </nav>
         {/if}
-        <button class="scape-sprawl-btn" class:on={sprawl}
-                title={sprawl
-                    ? 'sprawl: every House’s UIs dumped in order — click to drop back to the glass'
-                    : 'sprawl — the way out of the glass: dump every House’s UIs down one page'}
-                onclick={toggle_sprawl}>▦</button>
+        <!-- ▦ moved out of the header — see `.scape-guts` below -->
     </header>
     {/if}
 
@@ -528,16 +572,27 @@
     }
     .scape-panel-name { font-size: 0.8rem; color: #cfe0ff; }
     .scape-off { color: #e05a5a; font-size: 0.75em; margin-left: 0.4em; }
-    /* ▦ the way out of the glass — flip to the gutsy sprawl of every House's UIs */
-    .scape-sprawl-btn {
-        margin-left: auto;
-        background: none; border: 1px solid rgba(120, 140, 195, 0.25); border-radius: 6px;
-        cursor: pointer; font-family: inherit; font-size: 0.85rem; line-height: 1;
-        color: rgba(150, 170, 205, 0.7); padding: 0.15rem 0.5rem;
-        transition: color 0.12s, background 0.12s, border-color 0.12s;
+    /* ▦ THE ONE CONTROL — fixed top-right, on screen in every room, over every FaceSucker.
+       z-index: FaceSucker computes `altitude * 1000`, so BootGate (77) sits at 77000 and the Butler
+        (55) at 55000.  999999 is not a magic number picked for luck: it is "above anything that
+         hoists itself", and the reason it has to be is that this button's whole job is to reverse a
+          fullscreen state.  Under them it would be invisible exactly when it is needed.
+       0.2 at rest, full on hover/focus.  A listener never notices it; anyone looking for a way out
+        finds it in the corner every app puts one in.  `-webkit-tap-highlight` and a fat padding keep
+         it pressable on a phone where 0.2 opacity is easy to miss but a corner is easy to hit. */
+    .scape-guts {
+        position: fixed; top: 0; right: 0; z-index: 999999;
+        opacity: 0.2;
+        background: none; border: none; border-radius: 6px;
+        cursor: pointer; font-family: inherit; font-size: 1rem; line-height: 1;
+        color: #cfe0ff; padding: 0.5rem 0.6rem;
+        -webkit-tap-highlight-color: transparent;
+        transition: opacity 0.15s ease, background 0.15s ease;
     }
-    .scape-sprawl-btn:hover { color: #e4ecff; border-color: rgba(150, 190, 240, 0.5); }
-    .scape-sprawl-btn.on { color: #cfe0ff; background: rgba(120, 150, 210, 0.16); border-color: rgba(150, 190, 240, 0.45); }
+    .scape-guts:hover, .scape-guts:focus-visible { opacity: 1; background: rgba(120, 150, 210, 0.18); }
+    .scape-guts.on { opacity: 0.85; background: rgba(120, 150, 210, 0.16); }
+    @media (prefers-reduced-motion: reduce) { .scape-guts { transition: none; } }
+    /* (.scape-sprawl-btn is gone — there were two ▦s in two rooms and now there is one, fixed.) */
     .scape-glass { flex: 1; min-height: 0; position: relative; }
 
     /* the gutsy sprawl — every House's UIs stacked down the page.  DOCUMENT-SCROLLED (no inner

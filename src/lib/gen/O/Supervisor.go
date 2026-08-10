@@ -13,7 +13,7 @@ import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return '5b80cfc6c16a7131~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return '95a749d295d4c4d5~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -85,14 +85,77 @@ Supervisor_plan(w) {
     let uis = this.oai_enroll(this, { watched: 'UIs' })
     uis.oai({ UI: 'Supervisor' }, { component: SupervisorPanel })
     this.Supervisor_log_plan(w)
+    this.Supervisor_zero(w)
     w.c.plan_done = 1
+
+},
+// Supervisor_zero — WHEN THIS PAGE STARTED, as a wall clock, so every turn on the roster can be read
+//  as "+3.2s" instead of a bare timestamp (the owner 2026-08-10: *"it just needs lots of timestamped
+//   tracing and analysis for efficiency enhancement"*).
+//  IT IS NOT `Date.now()` AT PLAN TIME, and that distinction is the whole value of the number.  The
+//   Supervisor world stands whenever the Creduler gets round to loading this ghost, which on a cold
+//    tab is SECONDS in — so a zero taken here would silently subtract the slowest leg of the boot from
+//     every reading and make a slow tab look fast.  `performance.now()` is milliseconds since the
+//      page actually began, so `Date.now() - performance.now()` is the true origin no matter how late
+//       we are to ask.
+//  `.c` ONLY.  A wall clock in sc churns every downstream fixture on every run forever — the same law
+//   the deadline and the notice ring already ride.
+//  ONCE PER WORLD: re-zeroing would make the arc's own history move under a reader.
+Supervisor_zero(w) {
+    if (w.c.t0) return w.c.t0
+    let since = (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0
+    w.c.t0 = Date.now() - Math.round(since)
+    return w.c.t0
+
+},
+// Supervisor_since — ms from page start to `at`, or 0 when either end is unknown.  Zero means "we
+//  cannot say", never "it happened instantly" — a face must show nothing rather than a false 0ms.
+Supervisor_since(w, at) {
+    if (!w || !at || !w.c.t0) return 0
+    return Math.max(0, at - w.c.t0)
 
 },
 // Supervisor_up — stand w:Supervisor on a House (idempotent).  Called from the boot that owns that
 //  House; nothing in here calls it, because the world must not decide where it lives.
 Supervisor_up(H) {
     let A = H.o({ A: 'Supervisor' })[0] || H.i({ A: 'Supervisor' })
-    return A.o({ w: 'Supervisor' })[0] || A.i({ w: 'Supervisor' })
+    let w = A.o({ w: 'Supervisor' })[0] || A.i({ w: 'Supervisor' })
+    this.Supervisor_beat_arm(H, w)
+    return w
+
+},
+// Supervisor_beat — THE HEARTBEAT'S OWN CLOCK, and the reason it needs one is the whole argument this
+//  region already makes, one level further out.  `Supervisor_tick` was called from exactly one place:
+//   Auto's pass.  Auto rides the belief drive — and the drive is a thing that STOPS.  An HMR wedges it
+//    (a `.svelte` save reaches every live tab gesture-free), a throw upstream in the same pass skips
+//     everything below it, and a torn-down run takes its scheduling with it.
+//  MEASURED, not theorised (2026-08-10, the owner's two player tabs).  Both froze at the same second —
+//   `read_ago` said 686s on each — while the radio went on playing three friend tracks in 51s and the
+//    transports kept moving bytes.  Every row on both rosters still read GREEN, because green is what
+//     they happened to be holding when the drive stopped.  `radio.solo` said "your own music while we
+//      gather" over a friend's third consecutive track; `radio.shelf` said 8 records against a live
+//       stock of 16.  Nothing was lying.  Nothing was looking.
+//  This file already refuses to live inside the Run House, for exactly this reason — *"the failure a
+//   supervisor most needs to report is the one that kills the House it lives in"*.  A watcher that
+//    rides the drive cannot report a stopped drive.  So it gets a wall clock of its own.
+//  COST: one probe pass every 2s per tab, and only on tabs where nothing else is happening — while the
+//   drive turns, Auto reaches Supervisor_tick far more often than that and the 1s throttle inside it
+//    already collapses both callers into one read.  This adds load exactly where there was none.
+Supervisor_beat_arm(H, w) {
+    if (!w || w.c.beat_on) return 0
+    if (typeof setTimeout !== 'function') return 0
+    w.c.beat_on = 1
+    this.Supervisor_beat(H, w)
+    return 1
+
+},
+// NEVER THROW INTO THE CHAIN.  A probe that faults must cost one reading, not the heartbeat — the
+//  swallow here is the same never-break-your-host rule the read passes carry, and it matters more
+//   here because there is nothing left to restart this loop if it dies.
+Supervisor_beat(H, w) {
+    if (!w || !w.c.beat_on) return
+    try { this.Supervisor_tick(H) } catch (er) {}
+    setTimeout(() => { this.Supervisor_beat(H, w) }, 2000)
 
 },
 // Supervisor_tick — THE HEARTBEAT, and it had none (found 2026-08-10 with `runner_ask supervisor`).
@@ -116,6 +179,13 @@ Supervisor_tick(H) {
     let now = Date.now()
     if (w.c.read_at && now - w.c.read_at < 1000) return 0
     w.c.read_at = now
+    // ZERO THE CLOCK HERE TOO. `Supervisor_plan` normally sets it, but plan runs on the WORLD'S OWN
+    //  worker and this heartbeat runs off Auto — on a tab where the worker is late (or never turns)
+    //   every timing would silently read 0, which `Supervisor_since` correctly renders as "we cannot
+    //    say" and a reader would correctly read as "the tracing does not work". It is idempotent and
+    //     it is derived from `performance.now()`, so calling it late costs nothing and lies about
+    //      nothing — that is the whole reason the zero is computed backwards from page start.
+    this.Supervisor_zero(w)
     this.Supervisor_read(w)
     this.Supervisor_read_dials(w)
     this.Supervisor_say(w)
@@ -348,11 +418,46 @@ Supervisor_dials(w) {
         stage: d.sc.stage ? +d.sc.stage : 999,
         i: d.c.i || 0,
         fn: String(d.sc.fn || ''),
+        where: this.Supervisor_where(d.c.subject),
     }))
     return rows.sort((a, b) => (a.stage - b.stage) || (a.i - b.i))
 },
 //#endregion
 
+// Supervisor_where — WHICH WORLD a row is actually reading, as a short stable tag.  Found 2026-08-10
+//  on the owner's two player tabs: every friend row read `no friend at all` / `nobody` while the radio
+//   was audibly playing that friend's track and the crate held 17 of their records.  Nothing was
+//    lying — the probes were reading a DIFFERENT world from the one the listener is in, and not one
+//     field on the line said so, so the roster and the dump could disagree flatly and both look right.
+//  `orphan` only catches the coarse case (the world's House is gone).  A world that is merely STALE —
+//   still attached, superseded by a newer one of the same name — is invisible to it, and that is the
+//    case that actually happened.  Two same-named worlds are told apart by their `self,est` stamp.
+//  GENERIC ON PURPOSE, like everything else in this file: House name, the subject's own mainkey, the
+//   birth stamp.  No subsystem is named, and a subject that is null (a claim about the machine rather
+//    than about a run) reads empty rather than inventing a home for itself.
+Supervisor_where(n) {
+    if (!n) return ''
+    let key = this.Supervisor_mainkey(n)
+    let val = key ? String(n.sc[key] || '') : ''
+    let est = n.o ? String(n.o({ self: 1 })[0]?.sc?.est || '') : ''
+    let H = n
+    for (let hops = 0; hops < 64; hops++) {
+        if (!H || H.top_House) break
+        H = H.c ? H.c.up : null
+    }
+    let hk = H ? this.Supervisor_mainkey(H) : ''
+    let hn = hk ? (hk + ':' + String(H.sc[hk] || '')) : '?'
+    return hn + '/' + (key || '?') + (val ? ':' + val : '') + (est ? '#' + est.slice(-6) : '')
+
+},
+// Supervisor_mainkey — a particle's type is the FIRST key of its sc (CLAUDE.md's rule).  Local because
+//  this file may not assume which House helpers a given boot has injected, and a watcher that throws
+//   on a bare House is worse than no watcher.
+Supervisor_mainkey(n) {
+    if (!n || !n.sc) return ''
+    return Object.keys(n.sc)[0] || ''
+
+},
 // Supervisor_unwatch — a process standing down drops its own watch.  Transient scaffolding does not
 //  belong in a snap once it has served: leave behind only the watches whose state is worth SEEING.
 Supervisor_unwatch(w, key) {
@@ -386,6 +491,30 @@ Supervisor_expect(w, key, sentence, fn, subject, secs, stage) {
     watch.sc.wait = '' + secs
     watch.c.deadline = Date.now() + secs * 1000
     watch.sc.patience = 'waiting'
+    return watch
+
+},
+// Supervisor_patient — arm patience on a watch that is ALREADY REGISTERED, of any kind, and stamp the
+//  sentence to say when it expires.  Supervisor_expect's sibling, and the two differ in the one way
+//   that matters at the call site:
+//    `Supervisor_expect` RE-ARMS.  It is called AT AN EVENT ("an invite was just minted"), and calling
+//     it again means hoping again, so restarting the clock is the whole point.
+//    this one DOES NOT.  It is called from a registration pass that re-runs every beat, so re-arming
+//     would push the deadline forward on every tick and the patience would never expire — a clock
+//      that resets faster than it runs is not a clock, and it would fail silently and permanently.
+//  So the deadline is set ONCE and only re-armed after it has been cleared (which Supervisor_patience
+//   does the moment the claim comes true).  `wait` and `advice` are refreshed every call, because
+//    those are the registrar's current words and there is no clock in them.
+//  A MILESTONE IS A FINE SUBJECT and that is deliberate: "this was supposed to have happened by now"
+//   is exactly a milestone's failure mode, and Supervisor_read skips a MET one before grading, so an
+//    arrival that lands early never gets graded against a clock it already beat.
+Supervisor_patient(w, key, secs, advice) {
+    if (!w) return null
+    let watch = w.o({ Watch: key })[0]
+    if (!watch) return null
+    if (watch.sc.wait !== '' + secs) { watch.sc.wait = '' + secs; watch.bump() }
+    if (advice && watch.sc.advice !== advice) { watch.sc.advice = advice; watch.bump() }
+    if (!watch.c.deadline && !watch.sc.met && watch.sc.verdict !== 'ok') watch.c.deadline = Date.now() + secs * 1000
     return watch
 
 },
@@ -475,18 +604,35 @@ Supervisor_arrival(w, key) {
     return watch
 
 },
-// Supervisor_arrived — THE THREE ANSWERS, and the third is the one that matters.
+// Supervisor_arrived — THE FOUR ANSWERS, and the two middle ones are the whole of what an arrival
+//  screen needs to know.
 //   'none'    — nobody declared an arrival.  NOT "no": a Book, a daemon, a half-loaded tab has no
-//                finish line at all, and a face must fall back to its own judgement rather than hold
-//                 forever waiting for a milestone that will never be registered.  This is the
-//                  unknown-is-first-class rule (dial rule 2) applied to the arrival.
-//   'coming'  — declared and not yet met.
+//                finish line at all.  It is also the reading of the FIRST SECONDS OF EVERY BOOT — the
+//                 registrar mints the roster itself, so before it reaches its registration beat there
+//                  is no arrival on the board — and a face that treats `none` as "there will never be
+//                   one" lifts mid-boot.  That is the unknown-is-first-class rule (dial rule 2)
+//                    applied to the arrival, and it has been got wrong three times in this repo.
+//   'coming'  — declared, not yet met, and still inside its patience.  KEEP WAITING.
+//   'gaveup'  — declared, not met, and the patience its registrar armed has run out.  Nothing further
+//                is going to happen on its own.  This is NOT a fault and must not be shown as one: it
+//                 is the machine settling for less (no friend answered; nothing started playing), and
+//                  the row's `advice` is the registrar's sentence about what to do instead.
 //   'arrived' — every declared arrival is met.
+//  WHY GIVE-UP IS THE MODEL'S RULING AND NOT THE FACE'S.  A face that waits on an arrival needs an
+//   answer to "is this ever coming?", and the only alternatives to asking here are a clock in the
+//    face (which cannot tell SLOW from STUCK — §2) or a face that names `arrive.playing` (the
+//     hand-written headline again).  Both were tried.  The registrar armed the patience, so the
+//      registrar's clock is the one with the standing to expire.
 Supervisor_arrived(w) {
     if (!w) return 'none'
     let rows = w.o({ Watch: 1 }).filter(x => x.sc.arrival)
     if (!rows.length) return 'none'
-    return rows.every(x => x.sc.met || x.sc.verdict === 'ok') ? 'arrived' : 'coming'
+    if (rows.every(x => x.sc.met || x.sc.verdict === 'ok')) return 'arrived'
+    // ALL of the unmet ones must have expired.  Two registrars each owning half of "up" (which
+    //  Supervisor_arrival explicitly allows) means one of them still hoping is still hoping.
+    let unmet = rows.filter(x => !(x.sc.met || x.sc.verdict === 'ok'))
+    if (unmet.every(x => x.c.deadline && !this.Supervisor_watch_waiting(x))) return 'gaveup'
+    return 'coming'
 },
 //#endregion
 
@@ -623,10 +769,24 @@ Supervisor_alive(subject) { const H = this;
 //  may return the bare word, or {verdict}, or a plain truthy|falsy for the simple case; anything
 //   unrecognised is `unknown` rather than a guess, so a sloppy probe degrades to "I could not look"
 //    instead of quietly asserting health.
+// THE FOURTH VERDICT — `moot`: the claim does not apply right now, because nobody is asking for the
+//  thing it is about.  Found by the owner 2026-08-10, reading his own arc:
+//      ✓ sound is actually coming out — the analyser hears it
+//        nothing playing
+//   which is a straight contradiction, and it is the HUD failure this file keeps naming: a row whose
+//    mark disagrees with its own note teaches a person to stop believing every other row too.
+//  IT EXISTS BECAUSE ok WAS DOING TWO JOBS.  `Sounditron_probe_sound` graded silence `ok` for a good
+//   reason — an idle tab making no noise is not a FAULT, and grading it `wrong` would make the cell
+//    shout on every quiet page.  But "not a fault" and "true" are different answers, and collapsing
+//     them is dial rule 2 (`no` and `don't know` are different readings) with a third case nobody had
+//      written down: NOTHING WAS ASKED FOR.  Same shape as `Sounditron_probe_glass`'s vacuous pass.
+//  IT IS NOT AMISS AND IT IS NOT DONE.  It stays off `Supervisor_speaking` (nothing is wrong), never
+//   latches a milestone (nothing came true), and never counts toward an arrival.  It is the quietest
+//    thing on the roster, which is exactly what an unasked question deserves.
 Supervisor_verdict(got) {
     if (got === null || got === undefined) return 'unknown'
     let v = (typeof got === 'object') ? got.verdict : got
-    if (v === 'ok' || v === 'wrong' || v === 'unknown') return v
+    if (v === 'ok' || v === 'wrong' || v === 'unknown' || v === 'moot') return v
     if (typeof got === 'object') return 'unknown'
     return v ? 'ok' : 'wrong'
 
@@ -663,6 +823,17 @@ Supervisor_stamp(watch, verdict, note) {
     //  they are re-read every pass and are free to go wrong again, which is the whole distinction.
     if (verdict === 'ok' && watch.sc.kind === 'milestone' && !watch.sc.met) { watch.sc.met = 1; moved = 1 }
     if (moved) watch.bump()
+    // THE WATERFALL, two clocks per watch, both `.c` and both write-once.
+    //  `seen`  — the first time anybody READ this claim.  Not the same as registration: a watch whose
+    //             probe is not loaded yet reads `unknown` for a while, and the gap between the two is
+    //              the spine still arriving.
+    //  `won`   — the first time it came TRUE.  Write-once ON PURPOSE for a standing watch too: we want
+    //             "how long did this machine take to work", not "when did it last flap".  A watch that
+    //              goes wrong again keeps its original win, and the ring already carries the flapping.
+    //  Together they are the efficiency ledger the roster could not produce: which leg of a boot is
+    //   slow, on a real tab, boot after boot.  Reading them costs nothing — they are two integers.
+    if (!watch.c.seen) watch.c.seen = Date.now()
+    if (!watch.c.won && (watch.sc.met || verdict === 'ok')) watch.c.won = Date.now()
     // NOTICE THE TURN, not the state.  This is where "notice any interesting thing happen" gets to be
     //  general instead of a list of call sites somebody has to remember to add to: every registered
     //   watch that CHANGES ITS MIND is interesting, by construction, and nothing has to opt in.  A
@@ -722,6 +893,8 @@ Supervisor_speaking(w) {
     for (const watch of w.o({ Watch: 1 })) {
         if (watch.sc.kind === 'milestone' && watch.sc.met) continue
         if (watch.sc.verdict === 'ok') continue
+        // NOTHING WAS ASKED FOR, so nothing can be wrong — see Supervisor_verdict's `moot`.
+        if (watch.sc.verdict === 'moot') continue
         // AN ORPHAN IS NOT A FAULT — its world was dismantled (see Supervisor_alive).  It stays on the
         //  roster and stays legible in the panel, but it may not be LOUD: shouting about a run that
         //   finished is how the cell became permanent furniture on a tab where nothing is wrong.
@@ -759,6 +932,7 @@ Supervisor_amiss(w) {
 //  everything: it is happening now, to a user who is presumably staring at it.  Outstanding
 //   milestones come next (work to do), blind spots last (nothing is known to be wrong).
 Supervisor_rank(watch) {
+    if (watch.sc.verdict === 'moot') return 4
     if (watch.sc.verdict === 'wrong' && watch.sc.kind !== 'milestone') return 0
     if (watch.sc.verdict === 'wrong') return 1
     if (watch.sc.verdict === 'unknown') return 3
@@ -825,6 +999,9 @@ Supervisor_summary(row, say, watches, loud, amiss) {
 //  ✗ it is broken · ○ it has not happened yet · ? nobody could look.
 Supervisor_mark(watch) {
     if (watch.sc.met || watch.sc.verdict === 'ok') return '✓'
+    // MOOT BEFORE PATIENCE: an unasked question is not a wait, and drawing it as one ("⋯ sound is
+    //  actually coming out") would put a spinner on a row nothing is working towards.
+    if (watch.sc.verdict === 'moot') return '–'
     if (this.Supervisor_watch_waiting(watch)) return '⋯'
     if (watch.sc.verdict === 'wrong' && watch.sc.kind === 'milestone') return '○'
     if (watch.sc.verdict === 'wrong') return '✗'
@@ -836,6 +1013,7 @@ Supervisor_mark(watch) {
 //  words, one per mark, and a face that wants a sixth colour is a face that has started judging.
 Supervisor_tone(watch) {
     if (watch.sc.met || watch.sc.verdict === 'ok') return 'good'
+    if (watch.sc.verdict === 'moot') return 'moot'
     if (this.Supervisor_watch_waiting(watch)) return 'waiting'
     if (watch.sc.verdict === 'wrong' && watch.sc.kind === 'milestone') return 'todo'
     if (watch.sc.verdict === 'wrong') return 'bad'
@@ -886,7 +1064,13 @@ Supervisor_lines(w) {
 //   second-opinion drift Supervisor_lines exists to stop.
 Supervisor_line(watch) {
     let waiting = this.Supervisor_watch_waiting(watch)
+    let w = watch.c.up
     return {
+        // THE TWO CLOCKS, in ms from page start (Supervisor_zero).  `won` is the one to read: it is
+        //  how long this machine took to make this claim true, on this boot, on this tab.  0 means we
+        //   cannot say — never "instant" — so a face shows nothing rather than a false zero.
+        seen: this.Supervisor_since(w, watch.c.seen),
+        won: this.Supervisor_since(w, watch.c.won),
         // `orphan` — the world this watch named has been torn down.  A face that shows it can say so
         //  ("that run has finished") instead of drawing a blank unknown, and the panel can grey it.
         orphan: watch.sc.orphan ? 1 : 0,
@@ -908,6 +1092,9 @@ Supervisor_line(watch) {
         left: waiting ? Math.max(0, Math.ceil((watch.c.deadline - Date.now()) / 1000)) : 0,
         because: String(watch.sc.because || ''),
         fn: String(watch.sc.fn || ''),
+        // WHICH WORLD THIS ROW READ (Supervisor_where).  Beside `orphan`, not instead of it: orphan is
+        //  "the world is gone", `where` is "the world is not the one you are looking at".
+        where: this.Supervisor_where(watch.c.subject),
     }
 
 },

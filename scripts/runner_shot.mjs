@@ -183,6 +183,10 @@ if (svg) {
             if (r.seat == null) console.log('▤ seat  (old tab — no data-seat; it has not picked up the seat build)')
             else if (r.seat) console.log(`▤ seat  ON · deal badness ${r.seatbad ?? '?'} · waiting ${r.seatwait ?? '?'}`
                 + ` · re-deals ${r.redeals ?? '?'} this session`)
+            // the FOCUS regime outranks the seat and the foam both — say which regime is actually
+            //  drawing, off the foamereo the tab itself declared (2026-08-10, the belly pivot).
+            else if (String(r.foamereo ?? '').split(',').indexOf('focus') >= 0)
+                console.log('▤ focus ON (belly regime — one big blob, purple sats; assigned, still)')
             else console.log('▤ seat  off (foam regime)')
         }
     }

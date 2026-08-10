@@ -46,6 +46,10 @@ Presence_c(w):
 //   once the channel is up; re-arming is free.
 Presence_arm(w):
     const H = this
+    // stash the presence world on the top House so readers ELSEWHERE (the radio's note, the door
+    //  face, a Supervisor probe) can reach the answer without being handed the station world —
+    //   see Presence_here.  Set before the early-return so a re-arm re-points it after a restand.
+    this.top_House().c.presence_w = w
     if (w.c.presence_armed) return true
     w.c.on_who = (frame) => H.Presence_take(w, frame)
     w.c.presence_armed = 1
@@ -108,6 +112,23 @@ Presence_live(w, pub):
     let p = w.o({ Presence: 1 })[0]
     if (!p) return null
     return !!p.o({ Seen: 1, pub: String(pub) })[0]
+
+// Presence_here(pub) — Presence_live WITHOUT needing the station world in hand.  The readers that
+//  most want presence (the radio's note, an arrival probe, a door face) run on other worlds and only
+//   know a friend's pub, so making them find the Swarm station world first would put transport
+//    plumbing into every caller.  Same three values, same rule: null means DON'T KNOW — including
+//     "presence was never armed on this machine", which is the case in every Book.
+Presence_here(pub):
+    let w = this.top_House().c.presence_w
+    if (!w) return null
+    return this.Presence_live(w, pub)
+
+// Presence_offline(pub) — the ONE test a caller should use to suppress something: has the relay
+//  positively told us this peer is not there?  Sugar for `=== false`, and it exists because the bare
+//   falsy read (`!Presence_here(x)`) collapses unknown into offline, which is precisely the mistake
+//    the three-valued answer is for.  Naming it makes the safe form the short form.
+Presence_offline(pub):
+    return this.Presence_here(pub) === false
 
 // Presence_online(w) — the online prepubs as a plain list (the roster view, for a face or a census).
 Presence_online(w):

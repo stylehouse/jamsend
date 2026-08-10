@@ -89,6 +89,13 @@
                 })
             }
         } catch { friends = [] }
+        // SORTED BY TIME LAST CONNECTED (the owner 2026-08-10: *"the Pier list should be sorted by
+        //  time last connected"*).  `ago` is seconds since their last pulse (`pier.c.heard_at`), so
+        //   ascending `ago` IS most-recent-first.  A pier that has never been heard has `ago: null`
+        //    — it sorts LAST rather than first, which is the whole point of the ordering: the top of
+        //     the list should be who is actually around.  Ties keep their walk order, which is
+        //      stable, so a quiet list does not shuffle under the reader between ticks.
+        friends.sort((a, b) => (a.ago == null ? Infinity : a.ago) - (b.ago == null ? Infinity : b.ago))
         // MY OWN TIME-ALIVE, folded in beside the peers (the human's §0.9 trim, 2026-08-06: "move
         //  the time-alive/uptime readout INTO the list of Piers — it is networky, it belongs beside
         //   the peers rather than owning a cell").  It reads the SAME `.c.since` the retired
@@ -167,7 +174,27 @@
     //   friends list; the QR only matters in the minute you are actually inviting someone.  Opening
     //    it grows the face, which grows the cell's measured need — the sizing machinery does the
     //     rest, so the room is taken only while it is wanted.
-    let inviting = $state(false)
+    // ── THE POSE (2026-08-10, the owner: *"there are cell positions|poses: Stretched (when Heist is
+    //  forming), Big, Small.  Small has only name, maybe the door icon, that's nice"*).  The
+    //   commissioner stamps `.c.pose` on the source particle — `big` for the belly, `small` for a
+    //    bud — and the face decides how much of itself to draw.  Read live (H.version + the 1s tick
+    //     already drive this component), defaulting to `big` so any glass that does not pose its
+    //      cells gets exactly today's face.
+    let pose = $derived.by(() => { void H?.version; void tick; return String(n?.c?.pose ?? 'big') })
+    let small = $derived(pose === 'small')
+    // ── THE INVITE PANEL'S OPEN STATE LIVES ON THE PARTICLE (2026-08-10, the owner: *"that Door cell
+    //  has an onunmain handler that shuts the Invite panel"*).  It was component-local `$state`,
+    //   which nothing outside the component could reach — so the model could not put the panel away
+    //    when the Door stopped being the subject, and the Door came back as a bud with its QR still
+    //     unfolded.  `.c` (never encoded, so no fixture can record whether a QR was open) plus an
+    //      explicit `bump()` on every write, because `.c` bumps no version by itself.
+    let inviting = $derived.by(() => { void H?.version; void tick; void n?.version; return !!n?.c?.inviting })
+    function invite_set(v: boolean) {
+        if (!n) return
+        if (v) n.c.inviting = 1
+        else delete n.c.inviting
+        n.bump?.()
+    }
     // the pier-list cap ("yay many") — five rows before the +N more toggle takes over.
     const PIERS_SHOWN = 5
     let piers_all = $state(false)
@@ -177,12 +204,20 @@
     let auto_opened = false
     $effect(() => {
         if (auto_opened) return
+        if (small) return                 // a bud never unfolds itself — it has no room to
         if (!face.door?.landed && !(face.prepub && !face.friends.length)) return
         auto_opened = true
-        inviting = true
+        invite_set(true)
     })
 </script>
 
+<!-- SMALL IS THE WHOLE FACE, not a folded version of it (*"Small has only name, maybe the door icon,
+     that's nice"*).  One early return rather than `{#if !small}` sprinkled down the body: a bud must
+     not merely LOOK quiet, it must not mount the friends walk, the QR panel or the 1s work at all —
+     and a single branch is the only way to be sure of that by reading it. -->
+{#if small}
+    <div class="df df-small" title="the front door — press to open it">🚪</div>
+{:else}
 <div class="df">
     <div class="df-title">🚪 {face.name ?? 'standing you up…'}
         {#if face.prepub && !naming}
@@ -191,6 +226,20 @@
         {#if face.prepub}<span class="df-pub">{face.prepub}</span>{/if}
         {#if face.newborn}<span class="df-born">✨ born today</span>{/if}
     </div>
+    <!-- INVITE SITS ABOVE THE PIER LIST (the owner 2026-08-10) — it was at the bottom, under a list
+         that grows, so the one verb a newcomer needs was the one thing that walked off the cell as
+         friends arrived.  The panel is otherwise untouched: same InvitePanel, same `inglass` dress,
+         same fold-by-default (cells are the scarce resource; the QR only matters in the minute you
+         are actually inviting someone). -->
+    {#if face.prepub}
+        <button class="df-open" onclick={() => invite_set(!inviting)}
+            title={inviting ? 'fold the invite door away' : 'invite a friend — mint a QR they scan, or paste an invite you were sent'}>
+            {inviting ? '▾ Invite…' : 'Invite…'}
+        </button>
+    {/if}
+    {#if inviting}
+        <div class="df-panel"><InvitePanel {H} inglass /></div>
+    {/if}
     {#if naming}
         <div class="df-naming">
             <input class="df-input" bind:value={name_draft} placeholder="what do friends call you?"
@@ -258,20 +307,21 @@
         <div class="df-note">{face.newborn ? 'you are new here — the invite QR below is how a friend joins you' : 'no friends yet — the invite QR below is how one arrives'}</div>
     {/if}
 
-    <!-- the door's own verb, at the bottom of the list it grows.  Just "Invite…" (the owner
-         2026-08-09) — the ellipsis is the whole promise: press it and the rest appears. -->
-    {#if face.prepub}
-        <button class="df-open" onclick={() => inviting = !inviting}
-            title={inviting ? 'fold the invite door away' : 'invite a friend — mint a QR they scan, or paste an invite you were sent'}>
-            {inviting ? '▾ Invite…' : 'Invite…'}
-        </button>
-    {/if}
-    {#if inviting}
-        <div class="df-panel"><InvitePanel {H} inglass /></div>
-    {/if}
+    <!-- (the Invite verb + panel moved ABOVE the pier list, 2026-08-10 — see the note up there.) -->
 </div>
+{/if}
 
 <style>
+    /* SMALL — THE ICON, AND LITERALLY NOTHING ELSE (the owner 2026-08-10: *"Door becomes only a Door
+       icon"*).  The name came off with it: a bud is one glyph you recognise, and a nowrap line of text
+       beside it is what made the box wide and flat rather than a thing.
+       NO `height: 100%` HERE — that was a measurement feedback loop, and the owner watched it happen
+       (*"the Door is tiny! its box is a good height but far too narrow"*).  The measure pass reads this
+       element's offset box as the face's NATURAL size; height:100% makes that height THE MOLD'S OWN
+       HEIGHT, so the cell was sized from itself on one axis and from the text on the other — an aspect
+       that is not a fact about anything.  An intrinsic box is the only honest thing to hand a measurer:
+       the glyph's own size, on both axes, which is square and reads as square. */
+    .df.df-small { font-size: 30px; line-height: 1; padding: 2px; }
     .df {
         pointer-events: none;
         width: max-content;

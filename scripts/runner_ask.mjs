@@ -398,9 +398,34 @@ else if (op === 'snap' && reply.result?.got_snap) {
 	const r = reply.result
 	if (!r.stood) { console.log('supervisor: NO ROSTER on this tab — nothing has registered a watch'); }
 	else {
-		console.log(`supervisor: ${r.watches} watch(es) — arrived:${r.arrived}  loud:${r.loud}  amiss:${r.amiss}${r.humdinger ? '  (humdinger — an end-user room, an arrival is declared here)' : '  (not a humdinger — no arrival is declared on this tab, so arrived:none is CORRECT)'}`)
+		// HOW STALE IS ALL OF THIS.  Every row below is what the last read left behind, so without this
+		//  a roster frozen at boot prints exactly like one read a second ago — all green, all lies.
+		const ago = r.read_ago
+		const fresh = ago == null ? ''
+			: ago < 0 ? '  ⚠ NEVER READ — the heartbeat has not run on this tab'
+			// 15s, against a 2s beat: comfortably past a slow pass, nowhere near a wedged drive.
+			: ago > 15000 ? `  ⚠ STALE: last read ${(ago / 1000).toFixed(0)}s ago — every row below is a photograph`
+			: `  (read ${(ago / 1000).toFixed(1)}s ago)`
+		console.log(`supervisor: ${r.watches} watch(es) — arrived:${r.arrived}  loud:${r.loud}  amiss:${r.amiss}${fresh}${r.humdinger ? '  (humdinger — an end-user room, an arrival is declared here)' : '  (not a humdinger — no arrival is declared on this tab, so arrived:none is CORRECT)'}`)
+		// THE BOOT WATERFALL, when there is one — every claim that came true, in the order it came
+		//  true, timed from page start.  This is the efficiency ledger (the owner 2026-08-10: *"it just
+		//   needs lots of timestamped tracing and analysis"*), and reading it in TURN order rather than
+		//    arc order is the point: the arc says what depends on what, this says what actually took
+		//     the time.  Gaps between consecutive rows are the legs worth attacking.
+		const won = r.lines.filter(l => l.won).sort((a, b) => a.won - b.won)
+		if (won.length) {
+			console.log(`  ── boot waterfall (ms from page start) ──`)
+			let prev = 0
+			for (const l of won) {
+				const gap = l.won - prev
+				console.log(`     ${String((l.won / 1000).toFixed(1)).padStart(7)}s  ${gap > 1000 ? `+${(gap / 1000).toFixed(1)}s` : '      '}  ${l.key}`)
+				prev = l.won
+			}
+			console.log('')
+		}
 		for (const l of r.lines) {
-			const clock = l.waiting && l.left ? `  ${l.left}s` : ''
+			const clock = l.waiting && l.left ? `  ${l.left}s`
+				: (l.won ? `  ${(l.won / 1000).toFixed(1)}s` : '')
 			console.log(`  ${l.mark} ${l.arrival ? '⚑ ' : ''}${l.sentence}${clock}`)
 			if (l.note) console.log(`      ${l.note}`)
 			// ADVICE ONLY WHEN WE ACTUALLY GAVE UP — the same gate the Butler applies (`gaveup &&
@@ -409,16 +434,16 @@ else if (op === 'snap' && reply.result?.got_snap) {
 			//    listen to your own music" under a green "a friend came online ✓".  The instrument
 			//     disagreeing with the screen is worse than no instrument.
 			if (l.gaveup && l.advice) console.log(`      ↳ ${l.advice}`)
-			console.log(`      · ${l.key}  kind:${l.kind} stage:${l.stage} verdict-tone:${l.tone}${l.met ? ' met' : ''}${l.gaveup ? ' GAVE-UP' : ''}${l.orphan ? ' ORPHAN (its world was torn down — not a fault)' : ''}  fn:${l.fn}`)
+			console.log(`      · ${l.key}  kind:${l.kind} stage:${l.stage} verdict-tone:${l.tone}${l.met ? ' met' : ''}${l.gaveup ? ' GAVE-UP' : ''}${l.orphan ? ' ORPHAN (its world was torn down — not a fault)' : ''}  fn:${l.fn}${l.where ? `  in:${l.where}` : ''}`)
 		}
 		// the DIALS — the overall states, which is what a face shows when nothing is wrong.  Kept
 		//  under the watches and visually quieter: a dial is never an alarm, it is the readout.
 		for (const d of (r.dials ?? [])) {
 			console.log(`  ${d.mark} ${d.label}${d.reading ? ' — ' + d.reading : ''}`)
-			console.log(`      · ${d.key}  state:${d.state} stage:${d.stage}${d.orphan ? ' ORPHAN (its world was torn down — not a fault)' : ''}  fn:${d.fn}`)
+			console.log(`      · ${d.key}  state:${d.state} stage:${d.stage}${d.orphan ? ' ORPHAN (its world was torn down — not a fault)' : ''}  fn:${d.fn}${d.where ? `  in:${d.where}` : ''}`)
 		}
 		// the prefs FIRST when one is on: a silenced surface explains a report better than any row below
-		//  it, and `butler.quiet` is per-origin (the House stash is Dexie), so it silences every tab.
+		//  it, and `guts` is per-origin (the House stash is Dexie), so it changes every tab at once.
 		for (const p of (r.prefs ?? [])) {
 			if (p.on) console.log(`  ⚑ pref ${p.key} is ON — per-browser, not per-tab; turn it off in the Supervisor panel (▦)`)
 		}

@@ -192,7 +192,171 @@ The model solves against a **hardcoded `[0,0,800,450]`** frame (`Vyto.g:814`) wh
 
 ## 0. What to get on with next
 
-### ⇢ THE SEAT — a second layout regime beside the foam (2026-08-10, STAGE 2 LANDED, SWITCHABLE, OFF)
+### ⇢ THE FOCUS — the belly pivot (2026-08-10, LANDED ON THE LIVE GLASS; supersedes the seat as the live UI)
+
+The owner, pivoting off both older regimes in one afternoon: *"it keeps making eg Shuffle larger
+ than Player, it's silly ... I can't ship it as is. so we're gunna strip it right back to just being
+  an artifact with a big blob to present stuff in"* — and the shape of the replacement: *"lets only
+   feed Vyto one thing at a time, so one thing is focused on, and two other things are mostly blank
+    or possibly OK or CANCEL buttons, as separate cells ... from the Player is the Door and nothing
+     ... the one-main-thing should look like a big belly, with a couple of purple somethings coming
+      off it ... I don't want it moving at all after it settles"*.  And on gestures: *"currently we
+       can drag cells around ... and click to enlarge them, and click another button to reset them
+        all, all that I want GONE!"* / *"I guess we still want the STAGING a blob to be a
+         programmatic process back there ... STAGING for Heist is important"*.
+
+**What landed:**
+- **`vyto_focus.ts`** — one belly + buds, a PURE FUNCTION of (frame, keys, roles): no springs, no
+   clock, no randomness.  Stillness is the type signature, not a damping constant.  Gates in
+    `scripts/VytoFocus.spec.ts` (9): nobody swallowed, purity, belly ≥ big, buds small + attached +
+     on-plate, degradation.  Deterministic wobble per key, gentle harmonics ⇒ stays convex-ish, so
+      the nested cut inside a belly (a heist's chips) is safe.
+- **Vytui**: `foamereo:'focus'` regime at the ROOT scope only (nested scopes keep the standing
+   tiling — the heist IS the belly and its stuffing tiles inside it).  Belly pick: `stage_want`
+    first (how a heist asks — programmatic staging), else biggest non-%Sat.  %Sat rows draw purple.
+     Focus cells anchor labels on the polygon, not the spring.  No breath under focus.
+- **Gestures GONE** (Vytui): ball-grab/drag, stage band + ⤫ + ⇱, click-to-enlarge (the attend buy
+   AND the camera engage), the whole toybox (∿ ≡ ⚔ ▢ ▦ ⧉ ⟳), the A dials.  A click is a `.c.press`
+    or it is nothing — the smuggled press stays, and it is the OK/CANCEL substrate.  Model verbs
+     (Vyto_stage, Vyto_attend, dose, junk, the seat) all stand, composed rather than pressed.
+- **Sounditron.g, THE FOCUS CUT**: humdinger-only (the `plain` gate exactly — no Book sees it, all
+   fixtures stand to the byte).  Grapples become: belly = open keep, else `w.c.focused`, else Door;
+    plus %Sat 'next' (steps the ring Door→Radio→Shuffle) and %Sat 'home'; plus the Supervisor when
+     amiss (quiet-when-healthy, as a bud).  `foamereo:'room,focus'` declared last, outranks seat_ui.
+      Pokes: `Sounditron_focus_step` / `Sounditron_focus_home` (LiesFunk allowlist).
+- aspect default back to `auto` (owner's ask — the belly fits whatever hole it is handed).
+
+⚠ **`for (const o of …)` DOES NOT COMPILE in .g** — `o` is the find verb; the peel eats it.  Use
+ any other name (`org`).  Found the hard way mid-landing; the .g now carries the warning inline.
+
+**ROUND 2, same day — the Player is the subject, and every bud is a way in.** The owner on seeing
+ it: *"it's looking at Door first though... should be Player mostly. then Door almost always I
+  guess, but not if there's something else to show"* / *"Door as a smaller thing, that becomes main
+   when clicked"* / *"then the Player becomes main when clicked, and that Door cell has an onunmain
+    handler that shuts the Invite panel"* / *"there are cell positions|poses: Stretched (when Heist
+     is forming), Big, Small. Small has only name, maybe the door icon"* / *"if the cells could be
+      drawn like before that'd be great"*.
+
+- **THE BELLY LADDER** (`Sounditron_commission`), first hit wins: open keep → the human's explicit
+   pick → Supervisor amiss → **Radio (the Player, the default)** → Door. "Not if there's something
+    else to show" is rungs 1 and 3, both rare and both self-ending. The human's pick outranks the
+     alarm deliberately — the Supervisor still *buds* when amiss, so nothing is hidden, it just does
+      not yank the belly from under a deliberate choice. Home is **absence**, never a name, so the
+       ladder stays free to promote.
+- **Door and Radio swap**: whichever is not the belly is a bud wearing `.c.press` →
+   `Sounditron_focus_to(w, mainkey)`. A toggle workable from either side, with no control that is
+    not a cell. The belly's own press is *deleted*, not left stale.
+- **POSES** on `.c.pose` (runtime, never encoded — the `.c.press` seam): `big` the belly, `small` a
+   bud. DoorFace reads it and `small` is an **early return** to name + 🚪 — a bud must not merely
+    look quiet, it must not mount the friends walk or the QR at all. **`stretched` is deliberately
+     thin** — the owner is unsure of it (*"then what is the other one, not sure"*), so it is not
+      invented here: a cell ASKS via `.c.pose_want` (the `stage_want` idiom) and nothing else changes.
+- **`.c.onunmain`** — the leaving verb, fired once on the transition (the belly is remembered on
+   `w.c.belly` so the transition can be seen). Door's shuts the Invite panel, which meant moving the
+    panel's open state off component-local `$state` onto `n.c.inviting` + an explicit `bump()`.
+- **DoorFace**: Invite moved **above** the pier list (it was under a list that grows, so the one verb
+   a newcomer needs walked off the cell as friends arrived); piers **sorted by last connected**
+    (`ago` ascending, never-heard sorts last).
+- **Drawn like before**: the first cut hardcoded a purple fill on `%Sat`, which bypassed
+   `cell_ground → matstyle_ground` — i.e. it opted the satellites out of the auto-swatch machinery
+    and they read as flat paint beside worked metal. Ground comes from Matstyle for every cell again;
+     the purple is a CSS **rim** over the swatch, not instead of it.
+
+**⚠ ROUND 2'S BOMB — TWO BELLY PICKERS.** The model reported `belly=Radio` and the glass drew the
+ Door big, *and both were working correctly*: `focus_cells` re-decided the belly by biggest radius.
+  That is a second opinion about the one thing this regime exists to take away from the renderer.
+   `focus_cells` now reads `.c.pose === 'big'` first, with stage_want/biggest kept only as fallbacks
+    for an unposed world (a Book, a hand-built glass). **If the glass and the model ever disagree
+     about the subject again, this is the shape to suspect.**
+Two instruments were fixed before the diagnosis, both the same a-no-op-that-answers trap: the poke
+ readout printed absent `focused` and literal `'Door'` identically (now `(none — ladder decides)`,
+  plus it reports `belly=` — the reading actually wanted), and `runner_shot` gained the `▤ focus ON`
+   line so a capture can say which regime drew it.
+**THE SPILL TOOK THREE FIXES, not one** — *"spilling the Door into the Shuffle Component"* is a
+ MOLD story, and the walls were innocent throughout. Each was found by measuring, and each was still
+  wrong afterwards, which is why they are all written down:
+ 1. **Bud placement.** Buds sat at angles *around the rim*, so they lay over the belly's body
+     wherever the ellipse is wide. They now ride the right margin `focus_polys` already reserves,
+      left edge on the rim. Gated: `A BUD SITS BESIDE THE BELLY, NEVER ON IT` (10/10).
+ 2. **A small pose is never magnified.** `FIT_MAX` blew a name-and-icon bud up 1.34×, growing a mold
+     bigger than the thing it held, which reached back under the belly. A `small` cell now renders at
+      natural size or less.
+ 3. **The mold was seated off the SPRING, and sized against the BBOX.** Under focus the springs keep
+     relaxing toward foam targets nothing draws, so the seat measured a different shape in a
+      different place — a bud's box landed ~60px outside its own cell. And the belly took the
+       `slab_seat`/AABB branch, i.e. a rect inscribed in its BOUNDING BOX, so the subject's component
+        ran into the corner a bud occupies. The focus belly is exactly as round as a foam ball and
+         now takes the same **ray-cast inscribed seat**, cast from the centroid only.
+ Result on the live glass: `overlapping pairs` 1 → **0**, both components inside their own cells,
+  and two captures 20s apart identical to 0.1px — which is also the stillness claim measured rather
+   than argued.
+ ⚠ **The residual risk to watch**: a face measures its natural box *inside the mold it was given*,
+  so shrinking a mold shrinks the measurement — a feedback loop that could spiral. Measured stable
+   here (the belly sits pinned at `FIT_MAX`, i.e. it wants more room than the seat, so it grows to
+    the seat rather than chasing it down). If a belly ever looks like it is slowly deflating, this
+     is the loop.
+
+**THE DESTINATION** (why this is not just another regime). The three regimes are three answers to
+ one question — *who decides how big a thing is*. Foam: **discovered** (relax, cut, find out;
+  every skittish failure lived in that gap). Seat: **apportioned** (arithmetic, monotone, but still
+   the model bidding against itself — which is how Shuffle out-grew the Player). Focus: **assigned
+    by the commissioner** — Sounditron says *this one thing, these buds*, and the renderer has no
+     opinion left to have. The glass stops being a map of the model and becomes a **stage for one
+      thing at a time**. That is the direction of travel: pressure to arithmetic to authorship.
+
+**VERIFIED, and how.** Both live players (`96d0cf88…` Lefto, `f5da6599…` Righto) captured after a
+ cold reload: `foamereo "room,focus"`, 3 cells, 0 crushed, **0 with no room**, belly at 86%×96% of
+  the bag, `▤ focus ON` on the new `runner_shot` line. Ring exercised end-to-end on Lefto —
+   `poke Sounditron_focus_step` → belly becomes `Radio:playing` at **fit 1.000** (its full natural
+    box, the thing the foam could never give it), `focus_home` → back to `Door:open` at fit 1.000.
+     Unit gates 20/20 (`VytoFocus` 9 + `VytoSeat` 11). `svelte-check` clean on the edited files bar
+      the standing `Vytui:110 Vyto_omark` noise. Four dirty `wormhole/*.snap` inspected: TimeSpool
+       timing samples, a dirlist walk, ghost-include diges — **no fixture claim moved**.
+
+**⚠ THE TWO BOMBS** (both cost real time; both will bite the next person otherwise):
+1. **`for (const o of …)` DOES NOT COMPILE in .g.** `o` is the find verb, so the peel rewrites the
+    binding and the produced `.go` will not parse. Use `org`/`row`. It was the only `const o of` in
+     the whole Ghost tree, which is why nothing had hit it before. Tell: LocalGen fails at
+      *"has a gen_path"* with no syntax error in sight. The `.g` now carries the warning inline.
+2. **A relay `poke` of a `Sounditron_*` verb must run on `top_House().c.sounditron_run`, not `H`.**
+    Bound to the wrong House, a re-commission takes `this.up ?? this.top_House()` as SH and **mints
+     a second `A:Vyto` under Mundo** — a stray broken glass beside the real one. The symptom is the
+      cruel part: the poke reports its state flip perfectly (`focused=Door → Radio`) while the
+       capture says *"no populated glass"*. Fixed in LiesFunk; the junk knob had recorded this law
+        for gestures years-equivalent ago and the poke lane never got it. Suspect this was also
+         half of yesterday's *"the seat switch does nothing"* hour.
+3. (the same-day sibling) **The focus cut is humdinger-gated, and the first commission can beat the
+    `humdinger` stamp** — so a cold reload latched `glass_done` on the OLD glass and both players
+     came back `foamereo "room"`. `Sounditron_trickle_look` now re-commissions ONCE on
+      `w.c.focus_commissioned`. Exactly the shape of *a role gate must move the boot latch*.
+
+**THE NEXT MOVE, in order:**
+1. **Attribute the red Sounditron Book** — it failed 3 friend-streaming assertions (`granted`,
+    `a-friend-counted-their`, `music-from-a-friend`) on the runner. My diff is humdinger-gated so it
+     *argues* it cannot reach a Book, but that is an argument, not a measurement, and *a red you
+      explained away* is a standing tax here. Settle it with a controlled revert (Books are
+       deterministic) or by checking the friendship environment once, deliberately.
+2. **Run the Vyto\* fleet.** I did not. The reasoning that they are untouched is sound (no Book sets
+    `foamereo:'focus'`; `fit_frame` returns early off-humdinger; a fixture is a dige of the C tree
+     and no gesture removal touches it) — but it is unrun. Note `VytoOrchestra` is red at baseline
+      and four Vyto Books are hollow, so read them against that, not against zero.
+3. **The dead-code sweep the strip left.** `cam_engage`, `even_toggle`/`even_on`,
+    `compete_toggle`/`compete_on` are defined and never called; the `bare` Set can no longer be
+     filled (no toggle), so `bare_on` is permanently false; `attend` survives only for the no-room
+      chip, which under focus can never appear. Left deliberately — ripping more out mid-pivot risks
+       a regime we may want back — but it should go once focus is settled.
+
+**Open by design:** OK/CANCEL sats are **substrate only** — the shape is proven (a `%Sat` wearing a
+ `.c.press`, drawn purple, one press from the belly), but no asker mints one yet; that is the next
+  real UI to build on this. The seat regime is dormant, reachable via `foamereo:'seat'`, button
+   gone. The ring is a hardcoded `['Door','Radio','Shuffle']` with a present-only lookup but no
+    skip for absent names (harmless — an absent name shows the Door).
+
+**"NO ROOM shouldn't happen anymore"** — under focus it is *structurally impossible*, not merely
+ rare: every key is handed a polygon before anything is drawn, and `VytoFocus.spec` gates it for
+  1..6 rows. The corner note and its chips survive for the two dormant regimes only.
+
+### ⇢ THE SEAT — a second layout regime beside the foam (2026-08-10, STAGE 2 LANDED; now DORMANT — the focus outranks it on live tabs, the ▦ button is gone, the regime remains reachable via `foamereo:'seat'`)
 
 *"shall we now do a completely other UI for all these cells... one with way less skittishness, but
  eating the same model... less failure modes..."* — the owner, and on the landing: *"don't throw away

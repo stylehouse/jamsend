@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '612689740d33aaf8~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '8dc2b2e26f3d6eaf~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -369,7 +369,7 @@ async Swarm_invite_url(w, ident, feature, nonce, base) {
 Swarm_expect_arrival(w) {
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (!sup) return
-    let watch = this.Supervisor_expect(sup, 'swarm.arrival', 'someone answered the invite — a pier came online', 'Swarm_probe_arrival', null, 5, this.Supervisor_stage('friend'))
+    let watch = this.Supervisor_expect(sup, 'swarm.arrival', 'someone answered your invite', 'Swarm_probe_arrival', null, 5, this.Supervisor_stage('friend'))
     // WHY we are hoping, carried for whoever has to explain the give-up.  Without it the radio's
     //  bottom rung says "nobody answered your invite" on a boot where no invite was ever minted.
     // AND WHAT TO DO ABOUT IT — the sentence a listener gets when the five seconds run out.  Its
@@ -419,7 +419,7 @@ Swarm_expect_friends(w, ident) {
 Swarm_watch_station(w) {
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (!sup) return
-    this.Supervisor_watch(sup, 'swarm.station', 'this machine is on the relay — friends can reach you', 'milestone', 'Swarm_probe_station', null, this.Supervisor_stage('door'))
+    this.Supervisor_watch(sup, 'swarm.station', 'you are online — friends can reach you', 'milestone', 'Swarm_probe_station', null, this.Supervisor_stage('door'))
     this.Supervisor_dial(sup, 'swarm.piers', 'friends', 'Swarm_dial_piers', null, this.Supervisor_stage('friend'))
 
 },
@@ -2334,7 +2334,7 @@ Swarm_watch_look(w) {
     //   console nobody has open.  Registering is idempotent, so doing it from inside the loop keeps
     //    the watch alive across a Supervisor that stood up after this loop did.
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
-    if (sup) this.Supervisor_watch(sup, 'swarm.beat', 'the share beat is advancing — the conveyor turns', 'standing', 'Swarm_probe_beat', w, this.Supervisor_stage('share'))
+    if (sup) this.Supervisor_watch(sup, 'swarm.beat', 'your share is keeping itself up to date', 'standing', 'Swarm_probe_beat', w, this.Supervisor_stage('share'))
     if (now === (w.c.watch_said || '')) return
     w.c.watch_said = now
     if (!now) return

@@ -149,6 +149,17 @@ test('Presence: a real relay answers `who`, and the ghost absorbs it three-value
     expect(H.Presence_live(fresh, A.addr), 'never-asked world knows nothing').toBe(null)
     expect(H.Presence_worth_sending(fresh, A.addr), 'UNKNOWN still sends — no presence, no change in behaviour').toBe(true)
 
+    // ── the GLOBAL readers: presence without the station world in hand ───────────────────────────
+    //  Radio_alone_why / Swarm_probe_arrival / Swarm_dial_piers run on other worlds and know only a
+    //   pub, so they read through Presence_here (three-valued) and Presence_offline (the safe `===
+    //    false` sugar). Presence_arm stashed the world on the top House for them.
+    expect(H.top_House().c.presence_w, 'arm stashed the presence world for global readers').toBe(w)
+    expect(H.Presence_here(A.addr), 'Presence_here sees online without being handed w').toBe(true)
+    expect(H.Presence_here(gone), 'and offline').toBe(false)
+    expect(H.Presence_offline(gone), 'Presence_offline is true only for a positive offline').toBe(true)
+    expect(H.Presence_offline(A.addr), 'never for someone online').toBe(false)
+    expect(H.Presence_offline('neverheardofthem'), 'and never for an addr we did not ask about').toBe(false)
+
     // ── staleness degrades to UNKNOWN, never to offline ──────────────────────────────────────────
     //  Read with a tiny window to simulate an answer that has aged out, without waiting 30s.
     expect(H.Presence_fresh(w, 1), 'a 1ms window makes the answer stale').toBe(false)
@@ -159,6 +170,10 @@ test('Presence: a real relay answers `who`, and the ghost absorbs it three-value
     expect(H.Presence_online(w), 'a stale roster reads empty rather than lying').toEqual([])
     expect(H.Presence_note(w), 'and it says STALE in words').toMatch(/STALE/)
     expect(H.Presence_worth_sending(w, gone), 'a stale answer must NOT keep suppressing sends').toBe(true)
+    // and the global sugar degrades the same way — this is the one that gates the radio's note, so a
+    //  stale answer must stop suppressing "gathering" rather than freeze the listener on "offline"
+    expect(H.Presence_here(gone), 'stale ⇒ unknown through the global reader too').toBe(null)
+    expect(H.Presence_offline(gone), 'so nothing is suppressed on stale evidence').toBe(false)
     pp.c.answered_at = realAt
 
     // ── the roster ask: ONE frame for the whole friend list, our own pub excluded ────────────────

@@ -8,6 +8,23 @@ The one living doc for the Sounditron thread: /BigSoundland's resident Book that
 
 ## 0. What to get on with next
 
+### ⇢ THE COMMISSION NOW CUTS TO ONE THING (2026-08-10) — read `Vyto_todo.md` §0 THE FOCUS first
+
+`Sounditron_commission` gained **the focus cut**: on a humdinger tab the grapple list is reduced to
+ ONE belly (an open keep, else `w.c.focused`, else the Door) plus two `%Sat` satellites, and the
+  commission declares `foamereo:'room,focus'`. Everything above the cut still runs — every organ is
+   minted, priced and current, the witness reads what it always read — only the grapple list is cut,
+    the same move this file already makes for the stoker, the zine and the plain glass. Gated
+     humdinger-only, so no Book sees it and every fixture stands to the byte.
+
+New verbs: `Sounditron_focus_step` (walks the ring Door→Radio→Shuffle) and `Sounditron_focus_home`,
+ both allowlisted on the relay poke op. **A poke of either must run on `top_House().c.sounditron_run`
+  — bound to `H` it mints a stray second `A:Vyto` and the glass goes empty while the poke reports
+   success** (fixed in LiesFunk; see Vyto_todo §0 bomb 2). Also: `Sounditron_trickle_look` now
+    re-commissions once on `w.c.focus_commissioned`, because the first commission can beat the
+     `humdinger` stamp and latch `glass_done` on the old glass — a cold reload came back
+      `foamereo "room"` until this landed.
+
 ### ★ LANDED (2026-08-08) — the beat exists, and the FIRST thing it caught is a real bug
 
 The plan below is **implemented and run live** (`Ghost/Story/Sounditron.g` @ `71478763b6fd7514`, three
