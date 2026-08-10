@@ -13,7 +13,7 @@ import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return 'ec45cc89bd979be7~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return '5b80cfc6c16a7131~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -93,6 +93,33 @@ Supervisor_plan(w) {
 Supervisor_up(H) {
     let A = H.o({ A: 'Supervisor' })[0] || H.i({ A: 'Supervisor' })
     return A.o({ w: 'Supervisor' })[0] || A.i({ w: 'Supervisor' })
+
+},
+// Supervisor_tick — THE HEARTBEAT, and it had none (found 2026-08-10 with `runner_ask supervisor`).
+//  `Supervisor_read` / `_read_dials` / `_say` were called from exactly ONE place in the whole repo:
+//   `Sounditron_supervise`, inside a Book beat.  So the entire roster was only alive WHILE A BOOK WAS
+//    RUNNING — on a listener's tab the resident Book finishes a few seconds after boot and every
+//     watch and every dial freezes at its last reading, for the life of the tab.  A "standing" watch
+//      that only stands during a run is a photograph of the machine, which is the exact failure this
+//       whole region was built to replace, and it hid in plain sight because the readings it froze at
+//        were mostly GREEN.  (It is also why the Butler works: the Book is running during the boot,
+//         which is the only window the Butler is up for.  The cell and the panel had no such luck.)
+//  ONE PLACE READS, MANY PLACES REGISTER — the registration slope, completed.  A registrar hands over
+//   a claim and forgets it; the Supervisor is the thing that keeps asking.  Any process that wants a
+//    faster answer can still call Supervisor_read itself, as the Book does at the beat it swears in.
+//  THROTTLED, because Auto's tick is a hot path and a probe walks real structure (crates, piers,
+//   Houses).  A wall clock on `.c` — never sc, which would churn every downstream fixture with a
+//    timestamp — and one second is far finer than any of these claims can meaningfully move.
+Supervisor_tick(H) {
+    let w = this.Supervisor_w(H)
+    if (!w) return 0
+    let now = Date.now()
+    if (w.c.read_at && now - w.c.read_at < 1000) return 0
+    w.c.read_at = now
+    this.Supervisor_read(w)
+    this.Supervisor_read_dials(w)
+    this.Supervisor_say(w)
+    return 1
 
 },
 // Supervisor_w — find the standing world from anywhere.  Returns null when no Supervisor is up, and
@@ -249,6 +276,17 @@ Supervisor_dial(w, key, label, fn, subject, stage) {
 //    lie rule 2 is about.
 Supervisor_read_dials(w) {
     for (const dial of w.o({ Dial: 1 })) {
+        // THE SAME CORPSE RULE THE WATCHES GOT (Supervisor_alive).  Leaving it off here would be the
+        //  worse half of an asymmetry, not a smaller version of it: a torn-down run would fall silent
+        //   in the watch list and go on announcing "listening alone" and "no remote music" from the
+        //    dials, which are the rows a face shows when everything is FINE.  A dial is the state of a
+        //     thing, and the state of a thing that no longer exists is not `no`, it is unknown.
+        if (dial.c.subject && !this.Supervisor_alive(dial.c.subject)) {
+            this.Supervisor_dial_stamp(dial, 'unknown', 'the world it read is gone — that run was torn down')
+            if (!dial.sc.orphan) { dial.sc.orphan = 1; dial.bump() }
+            continue
+        }
+        if (dial.sc.orphan) { delete dial.sc.orphan; dial.bump() }
         let fn = dial.sc.fn
         let probe = (fn && this[fn]) ? this[fn] : null
         if (!probe) { this.Supervisor_dial_stamp(dial, 'unknown', 'no probe named ' + (fn || '?')); continue }
@@ -305,6 +343,7 @@ Supervisor_dials(w) {
         label: String(d.sc.label || ''),
         reading: String(d.sc.reading || ''),
         state: String(d.sc.state || 'unknown'),
+        orphan: d.sc.orphan ? 1 : 0,
         mark: this.Supervisor_dial_mark(String(d.sc.state || 'unknown')),
         stage: d.sc.stage ? +d.sc.stage : 999,
         i: d.c.i || 0,
@@ -512,6 +551,26 @@ Supervisor_read(w) {
         // a met milestone is DONE — never re-read.  This is the once-noticed latch, and it is also
         //  what keeps the pass cheap as the roster grows: finished work costs nothing.
         if (watch.sc.kind === 'milestone' && watch.sc.met) continue
+        // …AND A WATCH WHOSE WORLD HAS BEEN DISMANTLED SAYS SO, rather than reporting the absence of
+        //  that world as a fault (2026-08-10, measured on a live runner: `release` tears H:Story down
+        //   and `sound.glass` flipped ✓ → "no A:Vyto in any of 1 House(s)", amiss 0 → 1).  The roster
+        //    stands on MUNDO and OUTLIVES the Book that filled it — that is the whole reason it can
+        //     say "the run died" — but the same property means every Book watch keeps being re-read
+        //      against a corpse afterwards, and each probe dutifully reports what it cannot find.  On
+        //       a listener's tab that is the diagnostic cell appearing over their music to announce
+        //        that the glass is missing, because a run they never asked about finished.
+        //  UNKNOWN, NOT WRONG, and skipped by Supervisor_speaking: nothing here is faulty, we have
+        //   simply lost our vantage.  It is the unknown-is-first-class rule at the level of the
+        //    subject rather than the reading.
+        //  THIS IS NOT THE PERSISTENCE RULING.  Whether a torn-down Book's watches should be DROPPED
+        //   (the `eternal` flag + a Supervisor_teardown hook) is the owner's call and is untouched;
+        //    this only stops the roster stating facts about a world that is gone.
+        if (watch.c.subject && !this.Supervisor_alive(watch.c.subject)) {
+            this.Supervisor_stamp(watch, 'unknown', 'the world it watched is gone — that run was torn down')
+            if (!watch.sc.orphan) { watch.sc.orphan = 1; watch.bump() }
+            continue
+        }
+        if (watch.sc.orphan) { delete watch.sc.orphan; watch.bump() }
         let fn = watch.sc.fn
         let probe = (fn && this[fn]) ? this[fn] : null
         if (!probe) {
@@ -525,6 +584,39 @@ Supervisor_read(w) {
         this.Supervisor_stamp(watch, this.Supervisor_verdict(got), this.Supervisor_note(got))
         this.Supervisor_patience(watch)
     }
+
+},
+// Supervisor_alive — is a watch's SUBJECT still part of the LIVE House tree, or is it a corpse?
+//  `auto_teardown_story` ends a run with `H.drop(existing)` — the Story House leaves Mundo and every
+//   world under it goes with it, while the watches that named those worlds carry on standing on Mundo
+//    holding refs to them.  A ref does not know it has been detached, which is exactly why nothing
+//     noticed this for as long as it has existed.
+//  IT WALKS UP AND ASKS THE TREE, rather than trusting `top_House()` on the way: a dropped House can
+//   still answer that question from a stale link, and the only authority on what is attached is what
+//    Mundo can actually SEE.  Two levels of nesting is what the repo has (H:Story, H:LeafFarm & co.
+//     sit directly under Mundo) and one spare level is cheap insurance.
+//  IT FAILS SAFE, and that is the load-bearing property.  The only answer that accuses is "I climbed
+//   to a House and that House is not in the live tree".  A chain that ends without reaching a House
+//    at all, a missing top House, an unfamiliar topology — every one of those reads ALIVE, exactly as
+//     today.  Getting this wrong in the other direction would orphan the whole roster in one tick and
+//      silence every watch on the machine, which is a far worse failure than the one it fixes.
+Supervisor_alive(subject) { const H = this;
+    if (!subject) return 1
+    let M = this.top_House ? this.top_House() : null
+    if (!M) return 1
+    let live = [M]
+    for (const H1 of M.o({ H: 1 }) ?? []) {
+        live.push(H1)
+        for (const H2 of H1.o({ H: 1 }) ?? []) live.push(H2)
+    }
+    let n = subject
+    for (let hops = 0; hops < 64; hops++) {
+        if (!n) return 1
+        for (const H of live) { if (n === H) return 1 }
+        if (n.top_House) return 0
+        n = n.c ? n.c.up : null
+    }
+    return 1
 
 },
 // Supervisor_verdict — normalise whatever a probe handed back to one of the three words.  A probe
@@ -630,6 +722,10 @@ Supervisor_speaking(w) {
     for (const watch of w.o({ Watch: 1 })) {
         if (watch.sc.kind === 'milestone' && watch.sc.met) continue
         if (watch.sc.verdict === 'ok') continue
+        // AN ORPHAN IS NOT A FAULT — its world was dismantled (see Supervisor_alive).  It stays on the
+        //  roster and stays legible in the panel, but it may not be LOUD: shouting about a run that
+        //   finished is how the cell became permanent furniture on a tab where nothing is wrong.
+        if (watch.sc.orphan) continue
         // STILL HOPING IS NOT YET A FAULT.  An armed expectation inside its patience is the normal
         //  middle of an arc someone just started — the invite QR is on screen and we are counting to
         //   five.  Speaking here would make the cell shout during the exact seconds the thing is
@@ -791,6 +887,9 @@ Supervisor_lines(w) {
 Supervisor_line(watch) {
     let waiting = this.Supervisor_watch_waiting(watch)
     return {
+        // `orphan` — the world this watch named has been torn down.  A face that shows it can say so
+        //  ("that run has finished") instead of drawing a blank unknown, and the panel can grey it.
+        orphan: watch.sc.orphan ? 1 : 0,
         gaveup: (!waiting && watch.sc.patience === 'given-up' && watch.sc.verdict !== 'ok') ? 1 : 0,
         advice: String(watch.sc.advice || ''),
         arrival: watch.sc.arrival ? 1 : 0,

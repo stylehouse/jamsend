@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '1398b5aa75e26f61~g1' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return '6dbbbb58bf1fbc50~g1' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -83,6 +83,7 @@ async Socket_real(w) {
     //    hook re-sends `become`, so the channel self-heals. ws is reassigned each reconnect — wire/send
     //     read it live; port.ws tracks the current socket for direct readers (Lies_send_gen_write).
     let pending = []
+    let last_who = null   // the last presence answer's signature — who_ok is noted on CHANGE only
     let ws = null
     let intentional = false   // port.close() was called — stay down, do not re-dial
     let tries = 0             // reconnect attempt counter (drives the backoff)
@@ -249,8 +250,16 @@ async Socket_real(w) {
             // who_ok|who_error — the presence answer, handed to the consumer's w.c.on_who hook right
             //  here (inline, like every control frame). The hook is a plain function on .c (transport
             //   seam); absent hook → the note alone, which is still a live diagnostic.
+            // who_ok|who_error — the presence answer.  NOTED ON CHANGE ONLY: the ask rides the ~10s
+            //  pulse round forever, so noting each answer is the same firehose the `ambient` filter
+            //   exists to stop (and note() also rings relay_log, so it would evict real events at 6/min).
+            //    A friend arriving or leaving is the event; a steady answer is wallpaper.
             if (frame.control === 'who_ok' || frame.control === 'who_error') {
-                note(`👥 ws RECV ${frame.control}${frame.online ? ' ' + frame.online.length + '/' + frame.asked + ' online' : ''}${frame.reason ? ' — ' + frame.reason : ''}${frame.corr ? ' corr=' + frame.corr : ''}`)
+                let sig = frame.control + ':' + ((frame.online || []).join(',')) + ':' + (frame.reason || '')
+                if (sig !== last_who) {
+                    last_who = sig
+                    note(`👥 ws RECV ${frame.control}${frame.online ? ' ' + frame.online.length + '/' + frame.asked + ' online' : ''}${frame.reason ? ' — ' + frame.reason : ''}`)
+                }
                 if (w.c && w.c.on_who) { try { w.c.on_who(frame) } catch (e) { console.log('👥☠ on_who threw', e) } }
                 return
             }

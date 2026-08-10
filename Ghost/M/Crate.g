@@ -522,6 +522,14 @@ async Crate_nav_meander(nav, base, want, skip):
         //   It lives on the .c-only learn map beside audio/open/subs, so it costs nothing at encode
         //    and dies with the page — a cursor that can never wear a track out, because it indexes
         //     BRANCHES at one directory, never tracks, and the track pick below stays a fresh draw.
+        // HOW MANY DIRECTORIES THIS PAGE HAS ACTUALLY STOOD IN.  O(1), counted at the one place a
+        //  visit happens, and deliberately counting REVISITS too: its consumers ask "has anything
+        //   advanced since I last looked" (Radio_watch_shelf's patience, Supervisor_todo §2), and a
+        //    wander re-treading known ground is still a wander working.  It exists because the
+        //     obvious reading — `Object.keys(meander_learn).length` — is now a LIE about looking:
+        //      Census.svelte restores thousands of entries at boot, so a warm page would claim to
+        //       have walked its whole share in the first tick.  Not persisted, by the same logic.
+        TOP.c.meander_stood = (+(TOP.c.meander_stood || 0)) + 1
         let node = learn ? learn[here] : null
         // THE CAP WAS BELOW THE COLLECTION (2026-08-08, the owner: "we should be able to remember
         //  where 10000 tracks are by remembering how many are in each of 7000 directories").  4096

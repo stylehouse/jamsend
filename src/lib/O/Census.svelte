@@ -150,6 +150,16 @@
             //         turns an O(map)-per-call scan into a single pass, once, after the restore lands.
             if (r.installed) Hh.c.meander_fold_due = 1
             Hh.c.census_restored = r.installed
+            // HOW MANY OF THEM HOLD MUSIC — counted here because this is the one moment the whole
+            //  restored working set is in hand, and its consumer (Radio_probe_shelf's note, via
+            //   Radio_shelf_memory) is polled every Supervisor tick and must be O(1). It is what
+            //    lets an empty shelf on a WARM page say "fetching — 412 folders of music remembered
+            //     here" instead of "no music in your share", which is the same wait wearing an
+            //      accusation. Off `working`, not the store: it must describe what this page can
+            //       actually steer at.
+            let music = 0
+            for (const k in working) if ((working[k] as any)?.audio > 0) music++
+            Hh.c.census_music = music
             Hh.c.census_sig = census_signature(live)
             Hh.c.census_phase = 'ready'
             if (r.installed && Hh.tlog) Hh.tlog(`🗺 census restored — ${r.installed} directories of ${Object.keys(map).length} remembered`)

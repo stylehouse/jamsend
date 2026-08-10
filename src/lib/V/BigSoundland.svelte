@@ -59,6 +59,12 @@
     //  RETIRED (2026-07-27): a world chooses its own glass (Sounditron commissions Vyto; another Book
     //   may still commission Cyto) and the page just reflects that choice.  The badge reports which
     //    actually stood.  Vyto wins across ALL houses before any Cyto fallback is taken.
+    // is the Butler holding the screen? `H.c.butler_up` is plain `.c` (a per-tab UI fact that must
+    //  never reach a snap), so it announces nothing — read it off `H.version`, which bumps constantly
+    //   through a boot, exactly as BootGate reads the same flag off its own poll. Its only consumer is
+    //    the invite strip below: whoever owns the screen owns the door.
+    let butler_up = $derived.by(() => { void H?.version; return !!(H as any)?.c?.butler_up })
+
     let cyto = $derived.by(() => {
         let fallback
         for (const house of houses) {
@@ -301,7 +307,14 @@
             diagnostic is the room they are standing in.  If the only join button lived in a
              cell, the entire invite funnel would depend on a successful boot — exactly the
               thing an invite is most likely to be arriving in the middle of. -->
-    {#if H && !glass_full}
+    <!-- …AND EXACTLY ONE OF THEM MAY BE LIVE AT A TIME (2026-08-10).  The Butler now mounts this same
+         panel while it holds the screen — it had to, because an arrival screen that waits for the glass
+          covers this strip, and hiding the join door behind news about a booting machine is the funnel
+           failing at the one moment it matters.  But TWO mounted instances both auto-join a scan
+            landing (`landed_url && !auto_fired`, latched per instance), and a single-use ?Iz redeemed
+             twice comes back a rebuff — the invite refusing itself.  So the strip stands down while the
+              Butler is up, the same `butler_up` handshake BootGate already makes. -->
+    {#if H && !glass_full && !butler_up}
         <div class="scape-strip">
             <InvitePanel {H} />
         </div>

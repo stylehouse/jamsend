@@ -9,15 +9,13 @@ Companion to `Cluster_spec.md` (the blessed statement) and `ClusterAddressing_to
 
 ## 0. What to get on with next
 
-- **The live browser leg is UNVERIFIED — close that first.** Everything from the relay down is
-   gated by real tests (below), but the one hop nothing has exercised is the actual browser path:
-    `Socket_real.who()` → relay → `Tribunal.g on_message` → `w.c.on_who` → `Presence_take`. The
-     Presence spec stubs exactly that hop (it calls the hook the way Tribunal does), so **if those
-      three lines in `Tribunal.g` are wrong, every test still passes.** To close it: reload a music
-       tab that has friends, then `runner_ask socklog on --player=<id>` + `dump` and look for the
-        `who`/`who_ok` control frames. It could not be done on 2026-08-10 because the only free
-         runner had **0 piers** (nothing to ask about) and the two tabs that DO have friends are the
-          human's players — reloading them is their call, not mine.
+- **The live browser leg is CONFIRMED WORKING (2026-08-10).** The owner's dev-server log showed
+   `👥 who 1 asked → 1 online (verified binds only)` from real music tabs, which is the one hop the
+    tests cannot reach: `Socket_real.who()` → relay → `Tribunal.g on_message` → `w.c.on_who` →
+     `Presence_take`. Worth knowing that the Presence spec still STUBS that hop (it calls the hook
+      the way Tribunal does), so **if those three lines in `Tribunal.g` regress, every test still
+       passes** — the evidence is the live log, not the suite. Re-check with `runner_ask socklog on
+        --player=<id>` + `dump` after touching them.
 - **Seam D is not wired: the three readers that fake presence with a grant check.** `Radio_alone_why`
    (`Radio.g:1110`), `Swarm_probe_arrival` (`Swarm.g:444`) and `Swarm_dial_piers` (`Swarm.g:406`) all
     call `Swarm_pier_live`, which is a **grant** check — "is a friend at all", not "is here". So the
@@ -94,6 +92,31 @@ Conflating the first two is the mistake this layer exists to avoid: a socket can
 - **`SwarmShare` attributed by controlled revert**: 9/9 steps, diges **byte-identical** with my edits
    in and reverted out. Its 8 caveats are PRE-EXISTING — the fixtures date to 2026-08-07 and `Swarm.g`
     has several commits since. Do not attribute them to presence.
+
+## 3.5 The log is a rate now, not a transcript (2026-08-10, the owner)
+
+Presence made an existing problem visible rather than causing it: the relay printed a line per
+ successful route, and each line costs a `JSON.stringify` + a send to the editor socket (relayLog
+  broadcasts as `control:log`). During a heist that is a 32KB `repli_page` every few ms per
+   listener — the log was unreadable AND a per-frame tax on the busiest path in the app.
+
+- **Successful routes are TALLIED**, and a 10s timer prints one line per `(addr, type, lane)`,
+   busiest first: `📊 96d0cf88… repli_page ×64 2.0MB (local, 10s)`. Two tabs pulling music went from
+    hundreds of lines per window to about eight. Silent when nothing routed.
+- **This subsumed the old `NOISY` set** (ping/pong/ack, previously suppressed outright). They are now
+   *counted* instead of hidden — the heartbeat reads as a rate rather than as nothing.
+- **`who` and its refusal log on CHANGE only** (per socket), on both the relay and the browser side —
+   the ask rides every tab's ~10s pulse round forever, so a friend arriving or leaving is the event
+    and a steady answer is wallpaper.
+- **Drops and lifecycle events still print immediately.** `warnDrop` escalates as before, and hello /
+   become / claim / bridge up-down / gen_write are events, not rates. *Rate belongs in a tally;
+    events belong in the log.*
+
+The risk this shape creates is quieting the ANSWER along with the log, so both are gated: the tally
+ test asserts all 12 frames still deliver, that no per-frame line was printed, and that the dump
+  reports the true count — and the "no per-frame line" assertion was **mutation-tested** (re-adding
+   the per-frame `relayLog` turns it red). Likewise an unchanged `who` still replies every time, each
+    with its own corr, even though only the first prints.
 
 ## 4. Known limits — say them rather than discover them twice
 

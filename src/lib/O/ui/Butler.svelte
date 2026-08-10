@@ -33,15 +33,19 @@
     //      Every earlier cut had it the other way round: three impatience exits and no arrival at all,
     //       so a listener was handed a half-built machine on a timer and told nothing about it.
     //
-    //  IT MAY NOT TRAP THE LISTENER.  Progress is held for at most GIVEUP_MS, the *carry on* tap is
-    //   there from the first frame, and a listener who never wants this screen again has one small
-    //    persistent switch (see QUIET).  Once it lifts it LATCHES DOWN for the tab: minting an invite
-    //     mid-session arms an expectation too, and a fullscreen gate dropping over somebody's music
-    //      because they showed a friend a QR code would be the worst bug in this file.
-    //   THE ONE THING THAT IS NOT CAPPED is a pending PERMISSION.  A share or an audio gesture is not
-    //    news about progress, it is the thing blocking everything, and timing out of it would just
-    //     hand the screen back to BootGate — two gates in a row, in the other order.
+    //  IT MAY NOT TRAP THE LISTENER — and it does that WITHOUT A CLOCK (there is no GIVEUP_MS any
+    //   more; see below).  The *carry on* tap is there from the first frame and grows at IMPATIENT_MS,
+    //    and a listener who never wants this screen again has one small persistent switch (see QUIET).
+    //     Once it lifts it LATCHES DOWN for the tab — `H.c.butler_done`, the tab and not this
+    //      component — because minting an invite mid-session arms an expectation too, and a fullscreen
+    //       gate dropping over somebody's music because they showed a friend a QR code would be the
+    //        worst bug in this file.
+    //   WHAT IS NOT NEWS ABOUT PROGRESS is a pending PERMISSION or an unspent INVITE.  Neither is
+    //    something to wait out: they are the thing blocking everything, and lifting off them would
+    //     just hand the screen back to BootGate (two gates in a row, in the other order) or hide the
+    //      join door behind a boot log.
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
+    import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
     import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     import { boot_param } from "$lib/boot"
     import { onMount } from "svelte"
@@ -61,12 +65,13 @@
     //     doc is named for is about saying so, not about quietly stepping aside.)
     const IMPATIENT_MS = 12000  // past this we stop pretending the wait is normal: the carry-on tap
                                 //  grows and names itself. Silence is the trap, not duration.
-    const GRACE_MS     = 6000   // …and this long before believing "nothing to wait for", which is only
-                                //  ever the NO-ARRIVAL fallback below. It was 1.8s — enough for the
-                                //   station to arm its expectation, and NOT enough for the resident
-                                //    Book to reach the beat where the arrival gets declared. A warm tab
-                                //     whose first two watches both read ok would lift before the finish
-                                //      line existed, which is the impatience exit wearing the new code.
+    const STILL_MS     = 6000   // …and this long of NOTHING MOVING before believing "nothing to wait
+                                //  for", which is only ever the NO-ARRIVAL fallback below. Note what it
+                                //   measures: not how long we have been up (that was the bug, twice
+                                //    over — 1.8s, then 6s, both lifting mid-boot because a young roster
+                                //     had nothing outstanding YET), but how long since the roster last
+                                //      changed its mind. §2, in this file: elapsed time cannot tell
+                                //       SLOW from STUCK, only "has anything advanced" can.
     const QUIET = 'butler.quiet' // the persistent switch (the owner: *"one semi-hidden persistent-state
                                  //  toggle, like we used to have, quit_fullscreen or so"*). A particle
                                  //   + the House stash, both owned by Supervisor_pref — NOT a `$state`
@@ -83,6 +88,15 @@
     let mounted_at = 0
     let done = $state(false)          // the latch — once down, never up again this tab
     let carried_on = $state(false)
+    // …AND THE LATCH IS THE TAB'S, NOT THE COMPONENT'S. A `$state` latch only promises "never up again
+    //  for this component instance"; a remount (a view switch that ever wraps this in an `{#if}` or a
+    //   `{#key}`) hands back a fresh `false` and the loading screen drops over somebody's music, which
+    //    this file calls its own worst bug. `H.c` is the tab: new on every reload, shared by every
+    //     mount within one. Plain `.c` — nothing reacts to it, and it must never reach a snap.
+    function lift() {
+        done = true
+        if (H?.c) (H.c as any).butler_done = 1
+    }
     onMount(() => {
         mounted_at = Date.now()
         const iv = setInterval(() => { tick++ }, 250)
@@ -158,8 +172,45 @@
         }
     })
 
+    // ── THE LANDING — somebody opened this tab from a scanned invite ──────────────────────────────
+    //  (the owner 2026-08-10: *"is this going to contain all the Invite onboarding UI as well? it'll
+    //   focus the UX of entering their username and hitting join."*  Yes — and it had become a real
+    //    bug rather than a feature the moment this screen started holding until arrival: the join door
+    //     lives in `BigSoundland.svelte`'s strip, and a fullscreen arrival screen over it hides the
+    //      invite funnel behind news about a machine the person has no reason to care about yet.)
+    //  IT MOUNTS THE EXISTING PANEL. `InvitePanel` is the ONE implementation of mint→parse→seal→spent
+    //   (Book SwarmInvite proves that arc); a second join button written here would be `boot_gate`'s
+    //    lesson repeated — two doors onto one permission, with the gesture rules to get wrong twice.
+    //  THE TOKEN IS THE STATE, and it is in the URL: `?Iz=` is single-use and `strip_iz()` removes it
+    //   the moment it is redeemed or refused, so `boot_param` (which reads `location` live) tells us
+    //    "still to do" with no subsystem knowledge and no second copy of the panel's state machine.
+    //  AND ONLY ONE PANEL MAY BE MOUNTED AT A TIME — see the strip's `!butler_up` gate. Two live
+    //   instances both auto-join a scan-landing (`landed_url && !auto_fired`, latched per instance),
+    //    and a single-use token redeemed twice comes back as a rebuff: the invite would refuse itself.
+    let landing = $derived.by(() => { void tick; return !!boot_param('Iz') })
+    // …and once shown it STAYS shown for the life of this screen, even after the token is spent: the
+    //  panel is mid-`join()` when that happens ("… hello delivered — waiting for the seal"), and
+    //   unmounting it there would delete the only report of whether the friendship sealed.
+    let landing_seen = $state(false)
+    $effect(() => { if (landing) landing_seen = true })
+
     // past this we stop looking patient — the tap grows and says what it is for.
-    let impatient = $derived(view.since > IMPATIENT_MS && !gate.wanted)
+    let impatient = $derived(view.since > IMPATIENT_MS && !gate.wanted && !landing)
+
+    // HAS ANYTHING ADVANCED? The whole state of the roster in one string — how many claims exist, how
+    //  many have turned, how many things have happened, and whether an arrival is on the board. Any of
+    //   those moving means the machine is still coming up. Deliberately COARSE: a note churning under
+    //    a line ("37 folders walked") must not read as progress here, or nothing would ever be still.
+    let sig = $derived(view.lines.length + '/' + view.lines.filter((l: any) => l.done).length
+                       + '/' + view.notices.length + '/' + view.arrived)
+    let last_sig = ''
+    let still_since = $state(0)
+    $effect(() => {
+        void tick
+        if (sig === last_sig) return
+        last_sig = sig
+        still_since = Date.now()
+    })
 
     // the exit, evaluated on every poll. An $effect and not a $derived because it LATCHES — the whole
     //  point is that the answer is one-way.
@@ -170,15 +221,34 @@
     $effect(() => {
         void tick
         if (done) return
-        if (carried_on || machine_tab || quiet) { done = true; return }
+        if ((H?.c as any)?.butler_done) { done = true; return }    // already lifted earlier this tab
+        if (carried_on || machine_tab || quiet) { lift(); return }
         if (gate.wanted) return                                   // a permission is not progress
-        if (view.arrived === 'arrived') { done = true; return }   // ★ THE ONLY AUTOMATIC EXIT
+        if (landing) return                                       // …and neither is an unspent invite
+        if (view.arrived === 'arrived') { lift(); return }        // ★ THE ONLY AUTOMATIC EXIT
         // …and the fallback for a page where NOBODY EVER DECLARES AN ARRIVAL — not a clock, a
         //  different question. `none` means no registrar has a finish line at all (a host that is not
         //   BigSoundland, a spine that never loaded Sounditron), and there holding forever would be
         //    waiting on something that cannot happen. Where an arrival IS declared this never fires,
         //     however long it takes.
-        if (view.arrived === 'none' && view.since > GRACE_MS && !view.holding) done = true
+        //  IT WAITS FOR STILLNESS, NOT FOR TIME. A booting tab reaches this line with a roster that is
+        //   half-registered and momentarily has nothing outstanding — every watch so far ok, the
+        //    arrival not commissioned yet — and any elapsed-time reading lifts right there, which is
+        //     the "bust open at the wrong time" the owner kept seeing. While registrations keep
+        //      landing, watches keep turning or notices keep arriving, this is a machine coming up.
+        //  AND AN EMPTY ROSTER IS NOT "NOTHING TO WAIT FOR" — it is "nobody has spoken YET", which is
+        //   the unknown-is-first-class rule again (the same one that makes a null `H` hold above). A
+        //    still, EMPTY board is the most common shape of the first seconds on this page: the world
+        //     is minted by the registrar itself, so before `Sounditron_machine` reaches its
+        //      registration beat there are no lines, no notices and no arrival — perfectly still, and
+        //       every clock-or-stillness reading lifts right there, mid-spine-load. The fallback is
+        //        for a page whose registrars HAVE spoken and none of them declared a finish line.
+        //   The Butler mounts on one page (`BigSoundland.svelte`) and that page's Book declares an
+        //    arrival in beat 2, so "hold on an empty board" cannot strand anybody who is booting; if
+        //     the board never fills the machine truly never started, and the carry-on tap has grown
+        //      and named itself by then. Silence with a way out beats a gate that lies about being up.
+        if (view.arrived === 'none' && view.lines.length && !view.holding
+            && still_since && Date.now() - still_since > STILL_MS) lift()
     })
 
     let up = $derived(!done && !machine_tab)
@@ -223,7 +293,21 @@
             <div class="butler" out:fade={{ duration: 420 }}>
                 <div class="aurora" aria-hidden="true"></div>
                 <div class="card" in:fly={{ y: 14, duration: 480, easing: quintOut }}>
-                    {#if gate.wanted}
+                    <!-- THE DOOR. While the token is UNSPENT it is the only thing on this card: a
+                         person who followed a friend's QR is here to type their name and hit join, and
+                         a boot log underneath it is this screen talking over the one thing it is
+                         supposed to be helping with. Once the token is spent the panel STAYS — it is
+                         mid-`join()` at that moment and holds the only report of whether the
+                         friendship sealed — and the news comes back underneath it, which is also the
+                         first thing that person has any reason to read: what happens next. -->
+                    {#if landing_seen}
+                        {#if landing}<h2 class="ask">you were invited</h2>{/if}
+                        <div class="door"><InvitePanel {H} /></div>
+                    {/if}
+
+                    {#if landing}
+                        <!-- nothing else while they are at the door -->
+                    {:else if gate.wanted}
                         <!-- THE TAP. One big orange button and one plain word for what it does (the
                              owner: *"I actually want it to just say 'open share' and be one big
                              orange button, like we had in the prototype"*). No situation talk — it is
@@ -248,7 +332,7 @@
                          finished first step at the bottom. Done rows STAY, dimmed and ticked: the
                          list is a story of the machine coming up, and a story that deletes its first
                          line reads as a machine that never did anything. -->
-                    {#if view.lines.length}
+                    {#if view.lines.length && !landing}
                         <ul class="arc">
                             {#each view.lines as l, i (l.key)}
                                 <li class={l.tone} class:done={l.done}
@@ -275,7 +359,7 @@
                          what turned. Together they are the "log-looking" half of this surface, and
                          neither alone reads as a machine coming up. Last six only — a loading screen
                          is not a scrollback, and the panel holds the full twelve. -->
-                    {#if view.notices.length}
+                    {#if view.notices.length && !landing}
                         <ul class="log">
                             {#each view.notices as ev (ev.at + ev.sentence)}
                                 <li transition:fade={{ duration: 200 }}>
@@ -290,13 +374,17 @@
                          this is the whole of the owner's *"it should also explain clearly that no
                          friend is online and you can play local music instead"*. Calm, not red — it
                          is not a fault, it is the machine being honest about what it settled for. -->
-                    {#if view.advice.length}
+                    {#if view.advice.length && !landing}
                         <div class="advice" transition:fade={{ duration: 240 }}>
                             {#each view.advice as a}<p>{a}</p>{/each}
                         </div>
                     {/if}
 
                     {#if !gate.wanted}
+                        <!-- the way out stays on the card even at the door: dismissing it drops the
+                             listener onto the page whose strip carries the SAME panel (the strip's
+                             gate is `!butler_up`), so nobody can be stranded away from their invite
+                             by tapping the one button that is always there. -->
                         <button class="carry" class:big={impatient} onclick={() => carried_on = true}>
                             {impatient ? 'this is taking a while — carry on →' : 'carry on →'}
                         </button>
@@ -304,9 +392,13 @@
                              costs a listener their arrival screen forever, so it must never be the
                              easiest thing to hit. It is turned back ON from the Supervisor panel —
                              the off-switch is where you are annoyed, the on-switch where you are
-                             looking for it. Persistent because it is a particle + the House stash. -->
-                        <button class="quiet" title="don't show this arrival screen again — turn it back on in the Supervisor panel"
-                                onclick={hush}>don't wait for me</button>
+                             looking for it. Persistent because it is a particle + the House stash.
+                             NOT AT THE DOOR: "don't wait for me" is an answer to a loading screen,
+                             and offering it to somebody mid-join is offering to hide the join. -->
+                        {#if !landing}
+                            <button class="quiet" title="don't show this arrival screen again — turn it back on in the Supervisor panel"
+                                    onclick={hush}>don't wait for me</button>
+                        {/if}
                     {/if}
                 </div>
             </div>
@@ -450,6 +542,10 @@
     .log .when { flex: 0 0 3em; text-align: right; opacity: .6;
                  font-variant-numeric: tabular-nums; }
     .log .s { flex: 1 1 auto; min-width: 0; }
+    /* the door — the panel brings its own chrome, so this only gives it the card's full width and
+       an honest left edge to read down. Deliberately no `:global` restyling of the panel: it is the
+       same door as the strip's and the cell's, and a Butler-only skin would be a fourth opinion. */
+    .door { width: 100%; text-align: left; }
     .advice { margin: .1rem 0 0; display: flex; flex-direction: column; gap: .25em;
               max-width: 24em; color: #cfe0ee; font-size: .95rem; line-height: 1.45;
               padding: .55em .8em; border-radius: .5rem;

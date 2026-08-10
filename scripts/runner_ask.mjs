@@ -20,6 +20,13 @@
 //                                                            #    (our-lease ▸ free ▸ first ack) — never the raw
 //                                                             #     role broadcast that double-dispatched a run
 //                                                              #      onto every open runner tab
+//    node scripts/runner_ask.mjs supervisor              # THE SUPERVISOR'S SCREEN, on a terminal: every
+//                                                          #  registered watch with its mark, note, patience,
+//                                                           #   advice and probe method, plus arrived: and the
+//                                                            #    notice ring.  The roster stands on MUNDO, so
+//                                                             #     no `snap` can reach it — this is the read.
+//                                                              #      Works with --player= too: it is the only
+//                                                               #       way to see what a listener's Butler says
 //    node scripts/runner_ask.mjs state [--watch]         # verdict + phase/n/total
 //    node scripts/runner_ask.mjs steps                   # per-Step ok/caveat/dige
 //    node scripts/runner_ask.mjs snap 3                  # one Step's got_snap (the live world serialisation)
@@ -54,7 +61,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 //  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
 import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs'
 
-const OPS = ['ping', 'probe', 'world', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke']
+const OPS = ['ping', 'probe', 'world', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -144,7 +151,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|poke <verb>> [@uid] [--runner=<id>] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|poke <verb>> [@uid] [--runner=<id>] [--watch]')
 	process.exit(2)
 }
 // `runners` — list the Waft:Cluster registry, PROVED (2026-08-09, the owner chasing a dead ★claude row:
@@ -216,7 +223,7 @@ if (runnerSel !== undefined) {
 //     one-sided reload) and it costs the human a moment of music, not a hijacked tab.
 if (playerSel !== undefined) {
 	if (runnerSel !== undefined) { console.error('✗ pass --runner= or --player=, not both'); process.exit(2) }
-	const PLAYER_OPS = ['ping', 'probe', 'world', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions']
+	const PLAYER_OPS = ['ping', 'probe', 'world', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions']
 	if (!PLAYER_OPS.includes(op)) { console.error(`✗ '${op}' is not allowed on a --player (someone's music page). Allowed: ${PLAYER_OPS.join(' ')}`); process.exit(2) }
 	const pub = resolvePlayer(playerSel)
 	if (!pub) { console.error(`✗ --player=${playerSel || '(none given)'}: no matching role:'player' row in wormhole/Cluster/toc.snap — try \`runners\``); process.exit(2) }
@@ -382,6 +389,44 @@ if (reply.control !== 'runner_ack') { console.error(`✗ ${op}: ${reply.error ??
 else if (op === 'snap' && reply.result?.got_snap) {
 	console.error(`snap: Step ${reply.result.n} ok=${reply.result.ok} dige=${reply.result.dige}`)
 	process.stdout.write(reply.result.got_snap.endsWith('\n') ? reply.result.got_snap : reply.result.got_snap + '\n')
+} else if (op === 'supervisor' && reply.result?.stood != null) {
+	// THE SUPERVISOR'S OWN SCREEN, on a terminal.  Same rows, same order, same marks the Butler and
+	//  the cell draw — the model judged them (Supervisor_lines) and nothing here re-decides.  The one
+	//   thing added is `fn`, the probe method: a face may never show it (that would make the Butler
+	//    the panel), and this IS the panel's audience, so it is the first thing you want when a row
+	//     reads `unknown`.
+	const r = reply.result
+	if (!r.stood) { console.log('supervisor: NO ROSTER on this tab — nothing has registered a watch'); }
+	else {
+		console.log(`supervisor: ${r.watches} watch(es) — arrived:${r.arrived}  loud:${r.loud}  amiss:${r.amiss}${r.humdinger ? '  (humdinger — an end-user room, an arrival is declared here)' : '  (not a humdinger — no arrival is declared on this tab, so arrived:none is CORRECT)'}`)
+		for (const l of r.lines) {
+			const clock = l.waiting && l.left ? `  ${l.left}s` : ''
+			console.log(`  ${l.mark} ${l.arrival ? '⚑ ' : ''}${l.sentence}${clock}`)
+			if (l.note) console.log(`      ${l.note}`)
+			// ADVICE ONLY WHEN WE ACTUALLY GAVE UP — the same gate the Butler applies (`gaveup &&
+			//  advice`).  `advice` is stamped when an expectation is ARMED and is never cleared when the
+			//   claim comes good, so printing it unconditionally put "no friend is online — you can
+			//    listen to your own music" under a green "a friend came online ✓".  The instrument
+			//     disagreeing with the screen is worse than no instrument.
+			if (l.gaveup && l.advice) console.log(`      ↳ ${l.advice}`)
+			console.log(`      · ${l.key}  kind:${l.kind} stage:${l.stage} verdict-tone:${l.tone}${l.met ? ' met' : ''}${l.gaveup ? ' GAVE-UP' : ''}${l.orphan ? ' ORPHAN (its world was torn down — not a fault)' : ''}  fn:${l.fn}`)
+		}
+		// the DIALS — the overall states, which is what a face shows when nothing is wrong.  Kept
+		//  under the watches and visually quieter: a dial is never an alarm, it is the readout.
+		for (const d of (r.dials ?? [])) {
+			console.log(`  ${d.mark} ${d.label}${d.reading ? ' — ' + d.reading : ''}`)
+			console.log(`      · ${d.key}  state:${d.state} stage:${d.stage}${d.orphan ? ' ORPHAN (its world was torn down — not a fault)' : ''}  fn:${d.fn}`)
+		}
+		// the prefs FIRST when one is on: a silenced surface explains a report better than any row below
+		//  it, and `butler.quiet` is per-origin (the House stash is Dexie), so it silences every tab.
+		for (const p of (r.prefs ?? [])) {
+			if (p.on) console.log(`  ⚑ pref ${p.key} is ON — per-browser, not per-tab; turn it off in the Supervisor panel (▦)`)
+		}
+		if (r.notices.length) {
+			console.log(`  — what turned, oldest first:`)
+			for (const ev of r.notices) console.log(`      ${ev.sentence}${ev.n > 1 ? ` ×${ev.n}` : ''}`)
+		}
+	}
 } else if (op === 'assertions' && reply.result?.contract) {
 	// the contract vs the evidence (never "roster" — that word is the Cluster runners'): each
 	//  declared %Assertion against the Assertioning shelf, then the UNDECLARED sworn (not ok —
@@ -404,7 +449,25 @@ else if (op === 'snap' && reply.result?.got_snap) {
 	//  depth-bounded world snap to a file so it greps without flooding the terminal.
 	const r = reply.result
 	console.log(`world: self ${r.self} — ${r.piers.length} pier${r.piers.length === 1 ? '' : 's'}, ${r.sealed_piers} mutually sealed`)
-	for (const p of r.piers) console.log(`  ${p.mutual ? '⇄ MUTUAL' : '→ one-way (half-seal)'}  ${p.friendly ? p.friendly + ' ' : ''}${p.pub}  grants:[${p.grants.map(g => `${g.by}→${g.to}`).join(', ')}]`)
+	for (const p of r.piers) {
+		console.log(`  ${p.mutual ? '⇄ MUTUAL' : '→ one-way (half-seal)'}  ${p.friendly ? p.friendly + ' ' : ''}${p.pub}  grants:[${p.grants.map(g => `${g.by}→${g.to}`).join(', ')}]`)
+		// the offer ledger — why music is or is not moving over a seal that looks perfect.
+		//  `no transport route` is the loud one: the friendship survived a reload and the link did not.
+		// ABSENT ≠ NULL, and the difference matters more than the reading.  A tab still running an
+		//  older Lies answers without the field at all (JSON drops `undefined`), and printing "no
+		//   transport route" for that would be the instrument inventing the very bug it was built to
+		//    find.  `null` is the tab SAYING there is no route; missing is the tab not knowing the
+		//     question.
+		const rt = p.route
+		if (rt === undefined) console.log(`      (this tab predates the offer ledger — reload it to read one)`)
+		else if (rt === null) console.log(`      ⚠ no transport route — sealed but unspeakable (Swarm_station_routes never re-minted it)`)
+		else {
+			const s = ms => ms == null ? 'never' : (ms < 1000 ? 'now' : Math.round(ms / 1000) + 's ago')
+			const gate = rt.heard_ago == null || rt.heard_ago >= 20000 ? '  ⚠ PRESENCE GATE SHUT (offers skipped)' : ''
+			console.log(`      heard ${s(rt.heard_ago)}${gate} · offered ${s(rt.offered_ago)} · caster:${rt.caster} rx:${rt.rx} peer_era:${rt.peer_era ?? '—'}`)
+			if (rt.offered_mark) console.log(`      mark ${rt.offered_mark}   (station_era:peer_era:stock:tour)`)
+		}
+	}
 	if (!r.piers.length) console.log('  (no Piers — this tab knows no friends: nothing to play, shows "nobody online")')
 	// the SUPPLY PIPELINE timeline (the human's "socklog for supply"): each stage mark with the
 	//  delta from the previous mark, so a 20s gap between two marks names exactly what's slow.

@@ -796,6 +796,14 @@
         //     until it does, and Supervisor_up is idempotent, so the world simply appears the first
         //      tick the ghost is live and nothing has to sequence it.
         if ((H as any).Supervisor_up) (H as any).Supervisor_up(H)
+        //   …AND THEN READ IT (2026-08-10).  Standing the world was only half the job: until this line,
+        //    the roster was read from ONE place in the repo — a Sounditron beat — so every watch and
+        //     dial froze the moment the resident Book finished, and a tab spent its whole life showing
+        //      the boot's last answer.  Found with `runner_ask supervisor`; the tell was a probe edit
+        //       that could not take effect on a live tab because nothing was re-reading.
+        //    Here for the same reason Supervisor_up is here: this is the tick that survives the run.
+        //     Self-throttled to 1s inside Supervisor_tick, so Auto's cadence is not the contract.
+        if ((H as any).Supervisor_tick) (H as any).Supervisor_tick(H)
 
         // ── audio keep-awake (both roles) ─────────────────────────────────────
         //   Keep the tab flagged "playing media" so the browser spares it the background throttle/discard

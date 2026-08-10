@@ -1054,13 +1054,26 @@ Radio_watch_shelf(w):
     }
     watch.c.walked = walked
 
-// Radio_shelf_walked — how many directories the wander has stood in this session.  `.c` on the top
-//  House and NOT persisted, which is right: it measures THIS boot's looking, and a restored census
-//   (Census.svelte folds one in) would make a cold page look like it had already searched.
+// Radio_shelf_walked — how many directories the wander has stood in THIS session.  A counter Crate.g
+//  bumps at the visit itself (`meander_stood`), not `Object.keys(meander_learn).length` — which was
+//   the first cut and was wrong twice over.  The map is RESTORED at boot (Census.svelte), so on a warm
+//    page it reads in the thousands from the first tick: the note would claim we had walked the whole
+//     share before we had walked anything, and `moving` would never see it climb because a revisit
+//      adds no key.  The very memory that makes the search fast would have made the progress bar lie
+//       about it.  O(1) here, and not persisted — it measures this boot's looking, nothing else.
 Radio_shelf_walked():
     let TOP = this.top_House ? this.top_House() : null
-    let learn = TOP ? TOP.c.meander_learn : null
-    return learn ? Object.keys(learn).length : 0
+    return TOP ? (+(TOP.c.meander_stood || 0)) : 0
+
+// Radio_shelf_memory — how many music-bearing directories this share is REMEMBERED to have, from the
+//  census restored off disk (Census.svelte stamps the count once, at restore).  This is the owner's
+//   *"we can insta-remember where it is aye?"*: the map that steers the wander straight at the music
+//    also knows, before a single listing, that the music is there.  It cannot say a RECORD is ready
+//     — that still takes a walk and a mint — so it never moves the verdict, only the note.  0 is the
+//      honest answer on a first-ever boot and on a page whose census has not landed yet.
+Radio_shelf_memory():
+    let TOP = this.top_House ? this.top_House() : null
+    return TOP ? (+(TOP.c.census_music || 0)) : 0
 
 // Radio_probe_shelf — how many records the listener's OWN shelf holds.  A pure read: `o()[0]`
 //  throughout, never Ra_home_self, which is an `oai` chain that would MINT the shelf it was asked
@@ -1082,7 +1095,12 @@ Radio_probe_shelf(w, sup):
     //     the note moves, and this roster lives on Mundo so no fixture churns on it.
     if (!recs.length) {
         let walked = this.Radio_shelf_walked()
+        let memo = this.Radio_shelf_memory()
+        // WHAT WE REMEMBER IS PART OF THE MICRO-SATISFACTION, and it is the difference between "this
+        //  might be an empty share" and "we know there is music here, we are fetching it".
+        if (walked && memo) return { verdict: 'wrong', note: 'fetching — ' + memo + ' folders of music remembered here, ' + walked + ' walked' }
         if (walked) return { verdict: 'wrong', note: 'still looking — ' + walked + ' folders walked' }
+        if (memo) return { verdict: 'wrong', note: memo + ' folders of music remembered here — getting to them' }
         return { verdict: 'wrong', note: 'no music in your share — open a folder with some in it' }
     }
     return { verdict: 'ok', note: recs.length + ' records' }
@@ -1128,6 +1146,14 @@ Radio_dial_solo(w, sup):
     if (!radio.sc.solo) return { state: 'no', reading: radio.sc.aim_by ? ('with ' + radio.sc.aim_by) : 'with a friend' }
     let why = String(radio.sc.solo)
     let by = radio.sc.solo_by ? (' — ' + radio.sc.solo_by) : ''
+    // GATHERING IS NOT ALONE — it is `part`, and rounding it to yes is exactly the thing the dial
+    //  region forbids (*"`part` is not a convenience: it is rule 3 made unfakeable, so a face showing
+    //   a half-seal cannot round it to yes or no"*).  Seen on the owner's live tab reading
+    //    `✓ listening alone — your own music (gathering) — Righto` beside `✓ remote music — 3 playable
+    //     from Righto`: two dials flatly contradicting each other, because a friend WAS there and we
+    //      were fetching from them.  `alone` and `offline` are genuine solitude and stay yes; `gaveup`
+    //       too — we stopped waiting, which is a decision, not a wait.
+    if (why === 'gathering') return { state: 'part', reading: 'your own music while we gather' + by }
     return { state: 'yes', reading: 'your own music (' + why + ')' + by }
 
 // Radio_dial_fresh — HAVE WE STARTED GOING ROUND AGAIN (the owner: *"there's a state of running out of

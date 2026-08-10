@@ -7,7 +7,339 @@
 
 ## 0. Get on with next
 
-### ⇑ 2026-08-10 (latest) — THE BUTLER HAD NEVER RUN, AND THE THREE SURFACES ARE RE-AIMED
+### ⇑ 2026-08-10 (latest) — CLOSED: THE WIRE IS FINE, IT IS JUST SLOW. AND A PROBE OF MINE MINTED
+
+**No bug in the share wire.** Three readings, minutes apart, settled every hypothesis below:
+ · **The eras do NOT churn.** Lefto's `station_era` moved exactly once — the re-stand after the reload
+    I caused — and has held since; Righto's never moved. The churn theory is dead.
+ · **Both sides offer continuously**, caster and rx registered, presence gate open, mark changing every
+    beat (the `tour` counter rides it, so it re-offers far more often than the 60s floor).
+ · **The crates fill.** Lefto went `nobody` → `2 playable of 17` → **`16 playable of 16`**. Righto
+    followed: `nobody` → `knows of 7 · none ready`. Both were mid-rebuild every time I looked.
+
+**So the whole alarm was a snapshot of a recovering machine, read twice as a settled one.** The real
+ residual question is modest and worth the owner's judgement: **a reloaded tab takes MINUTES, not one
+  60s floor interval, to get its friend's music back** — and the last leg is the warm window, not the
+   offer (`knows of 7 · none ready` is records known but chunk 0 not warm). Whether that is acceptable
+    is a product call, not a defect I can name.
+
+*The lesson is the honest one and it is about me, not the code: I read a mid-flight state three times
+ and each time reached for a structural explanation. `a-red-you-explained-away` was the right memory
+  to write, but its twin is **a-green-you-panicked-at** — a system recovering looks exactly like a
+   system broken if you only ever sample it once.*
+
+**AND THE HEARTBEAT MADE A LATENT TRAP SHARP.** `Sounditron_pulled` and my own new
+ `Sounditron_probe_shelf` fallback both called `Ra_home_them`, which is `oai` down to the `stock`
+  shelf (Ra.g:657) — **a probe that mints**. Harmless-ish at one call per Book beat; once the
+   Supervisor got a 1s heartbeat it became a write on every tick of every tab. Both now read
+    `home.o({stock:1, pub})[0]`, the shape `Radio_pool_census` already uses and documents as *"A PURE
+     READ: `o()[0]`-style throughout, no minting, nothing written."* **Anything reachable from a probe
+      must be re-audited for purity now that the roster ticks** — that is the cost of the heartbeat and
+       it is worth paying, but it is not free.
+
+### ⇑ 2026-08-10 — CORRECTION, AND AN OFFER LEDGER TO READ IT WITH
+
+**The entry below overstates its case and the correction matters.** "No music is crossing" was a
+ snapshot, not a settled state: 30 minutes later Lefto reads `remote music — 2 playable of 17 from 1
+  (Righto)` and `original bytes crossed over Repli` is **met**. So music DOES cross — the defect is
+   that it took tens of minutes to rebuild after a reload, against a 60s unconditional re-offer floor,
+    and that the two sides recover at wildly different rates (Righto still read `nobody` at the same
+     moment). *Slow and asymmetric, not broken.* The `music-from-a-friend` assertion is still worth
+      re-examining, but "a red I explained away" is the honest lesson, not "nothing works".
+
+**THE OFFER LEDGER** — `runner_ask world` now prints, per friend, the four things that decide whether
+ music moves, all of which lived on the station route's `.c` and were invisible from outside:
+
+    ⇄ MUTUAL  Righto f5da6599b8505881  grants:[…]
+        heard now · offered 9s ago · caster:1 rx:1 peer_era:1786348879600
+        mark 1786348878880:1786348879600:17:11   (station_era:peer_era:stock:tour)
+
+ It answers the question the previous entry could not: **both sides ARE offering, every ~10s, with
+  caster and rx registered.** So the failure is downstream of the offer — the mirror/crate step —
+   not the presence gate, not the floor, not a missing route.
+
+**⚠ AND THE ERAS ARE FRESH — the next thing to measure.** Both `station_era`s were stamped ~2 minutes
+ before the read. `Swarm_station_routes` re-mints "at standup and on every socket (re)open", and the
+  offer mark is keyed `station_era:peer_era:…` — so if the sockets churn, every reopen reads as a
+   REBIRTH on both sides, resets the stream state, and the crates rebuild from nothing. That would
+    explain the slow rebuild, the asymmetry, and why a snapshot can catch either tab empty. **Test:
+     read the era twice, minutes apart, and see whether it moves.** If it does, the bug is socket
+      churn, not the share beat — and every "crate is empty" reading is a symptom of it.
+
+*Two instrument errors caught in one hour, both by checking a claim against something already known
+ to be true: a narrow grep that hid `boast-heard`/`tour`/`dial`, and an offer ledger that read the
+  LIES world for routes that hang off `A:Clustation > w:Swarm` — it reported "no transport route" for
+   a tab that was audibly receiving music. An instrument inventing the exact bug it was built to find
+    is the worst failure available to one, and neither would have been caught by the code compiling.*
+
+### ⇑ 2026-08-10 — THE FIRST THING THE LIVE ROSTER SAW: NO MUSIC IS CROSSING *(overstated — see above)*
+
+One tick after the heartbeat landed, the roster said something no fixture has ever said. Both of the
+ owner's music tabs, read live:
+
+    Lefto  96d0cf88 — · remote music — nobody   ◐ listening alone — while we gather — Righto
+    Righto f5da6599 — · remote music — nobody   ◐ listening alone — while we gather — Lefto
+    both:  ○ original bytes crossed over Repli — the pull landed   (unmet)
+
+**They are mutually sealed, both online, and each hears the other's boasts** — `boast-heard of=…`
+ appears on both supply rings, both tour, both dial, both play their own music. What is missing on
+  both sides is the CRATE: `Radio_pool_census` counts `w.o({MusuThem:1})` and gets **zero**, so there
+   is no friend pool, nothing playable, nothing to pull. The seal is perfect and the music does not
+    move — which is the entire point of the app.
+
+**This is the same fact as the Book's `music-from-a-friend` assertion**, which has been ABSENT on
+ every Sounditron run today and which I attributed each time to "the friend tab isn't online". It
+  isn't that. Both tabs are up, sealed and talking. *An assertion dismissed as environmental for a
+   whole day was reporting a real defect — the thing `mutation-test-every-claim` warns about, in the
+    other direction: a red you have explained away is as dangerous as a green you never tested.*
+
+**Where it is NOT.** Ruled out by measurement, not reasoning: the seal (`world` shows MUTUAL with
+ grants both ways), liveness (`swarm.piers` = 1 sealed · 1 online on both), the boast (heard on both
+  rings, `records=16`), the wander (`tour` marks on both), audio (both playing). What is absent from
+   both rings is any `crate-born` / `mirror-merge` — the offer→mirror step between "I know you have
+    16 records" and "I hold cards for them".
+
+**The next probe, not a fix.** `Swarm_share_beat`'s offer loop is presence-gated
+ (`heard_at` within 20s), change-marked (`station_era:peer_era:n:tour`) with a 60s unconditional
+  re-offer floor under it. All three of those should be satisfied here, so the question is whether
+   `Ra_offer_stock` is being CALLED and failing, or not being reached. **Do not fix this blind** — it
+    is the app's core wire and the diagnosis is one measurement short. Reproduce with:
+
+    node scripts/runner_ask.mjs supervisor --player=96d0cf8852651a73   # the dials
+    node scripts/runner_ask.mjs world      --player=f5da6599b8505881   # the other side's ring
+
+*Instrument note, my own error: grepping `world` output for a narrow pattern hid `boast-heard`, `tour`
+ and `dial` and led me to call one tab deaf when it was not. Read the whole ring, then filter.*
+
+### ⇑ 2026-08-10 — **THE SUPERVISOR HAD NO HEARTBEAT.** IT ONLY LIVED INSIDE A BOOK BEAT
+
+The biggest thing found this week, and it was found by an edit that *refused to take effect*: I changed
+ `Radio_dial_solo`, compiled it, watched it HMR into the owner's live tab — and the dial kept printing
+  the old reading. Nothing was re-reading it.
+
+**`Supervisor_read` / `_read_dials` / `_say` were called from exactly ONE place in the repo** —
+ `Sounditron_supervise`, inside Book beat 2. Grep it: there is no other caller. So the whole roster
+  was only alive **while a Book was running**. On a listener's tab the resident Book finishes a few
+   seconds after boot, and from that moment every watch and every dial is frozen at its last reading
+    for the life of the tab. **A "standing" watch that only stands during a run is a photograph**, which
+     is precisely the failure this region exists to replace — and it hid because the readings it froze
+      at were mostly GREEN. It is also why the Butler appeared to work: the Book is running during the
+       boot, which is the only window the Butler is up for. The cell and the panel had no such luck.
+ *This doc asserted the opposite as recently as the mutation-test entry below — "`Supervisor_read_dials`,
+  which runs on Mundo's own tick". There was no such tick. A comment is not a measurement.*
+
+**`Supervisor_tick(H)`**, called from `Auto.svelte` on the line after `Supervisor_up(H)` — the tick
+ that survives the run, standing where the world it reads already stands. Self-throttled to 1s on a
+  `.c` wall clock (never sc — a timestamp there would churn every downstream fixture), because Auto's
+   tick is a hot path and a probe walks real structure. One place reads, many places register: the
+    registration slope, finally completed. A Book that wants an answer at a particular beat still calls
+     `Supervisor_read` itself, as Sounditron does where it swears.
+ **Proof, on the owner's live tab, no Book running:** `radio.solo` moved to its new reading and
+  `radio.remote` went `yes → no` as the pool emptied after a reboot. Those numbers could not move
+   before this change.
+
+**And the dial it exposed was itself lying.** `radio.solo` read `✓ listening alone — your own music
+ (gathering) — Righto` beside `✓ remote music — 3 playable from Righto`: two dials flatly
+  contradicting each other. `gathering` is not solitude, it is *waiting for their bytes* — so it is
+   `part`, and rounding it to `yes` is the exact thing the dial region forbids (*"`part` is not a
+    convenience: it is rule 3 made unfakeable"*). `alone`, `offline` and `gaveup` stay `yes`.
+
+**Orphaning now covers dials too.** Leaving it off would have been the worse half of an asymmetry: a
+ torn-down run would fall silent in the watch list while the dials went on announcing "listening
+  alone" and "no remote music" — the rows a face shows when everything is FINE. The CLI shows dials
+   now as well, which is how the contradiction above became visible in the first place.
+
+**⚠ The CLI's default target can resolve to a PLAYER — someone's music page.** It did here, and
+ `reload` on it interrupted the owner's music (it came back). `runners` labels them `♪player`, but the
+  no-flag default picks the latest row regardless. **Pin `--runner=` for anything with a side effect.**
+
+### ⇑ 2026-08-10 — THE LISTENER'S OWN TAB, READ AT LAST
+
+`runner_ask supervisor --player=<pub>` reaches a MUSIC TAB. The Cluster registry lists end-user rooms
+ as `role:'player'` — addressable, never dispatchable — and the `supervisor` op is in `PLAYER_OPS`, so
+  for the first time there is a way to see what a listener's Butler is actually looking at instead of
+   asking them. What the owner's tab says:
+
+    supervisor: 11 watch(es) — arrived:arrived  loud:0  amiss:0  (humdinger)
+      ✓ ⚑ the glass is up and music is playing — you have arrived
+          3 cells and music playing
+
+**THE ARRIVAL LADDER WORKS.** `arrive.playing` is met, with the positive rungs reporting real cells
+ and real sound — on a real listener tab, which is the one place it could never be tested from a Book.
+  All 11 watches green. **And `butler.quiet` is ON there.** So the arrival screen has been switched
+   off in that browser for some time: every reload since has had NO Butler at all. Anything judged
+    about it since then was judged about a screen that was not running — the same shape as the
+     `for_a_book` discovery, one layer up. **Ask the owner to turn it back on in ▦ before the next
+      round of Butler feedback.**
+
+**Three probe fixes, all found by looking rather than reasoning:**
+ · **`sound.grant` read a photograph.** It counted `w.o({Friend:1})` — rows the Book mints in a beat
+    and never refreshes — while the Book's own `granted` assertion reads `Sounditron_grants` (the
+     identity's %Piers and %Grants in storage). Two accessors for one fact, and they disagreed: the
+      watch said *"no friend yet"* while `world` showed a mutual seal. Now it reads storage, and it is
+       registered with a **null subject** because grants are machine state, not this run's fact.
+ · **`sound.shelf` had the same disease**, softened rather than replaced: the %Friend row first (it
+    carries the friendly name), the friend's CRATE as the fallback, so a stale row can no longer
+     report "no shelf counted" while we demonstrably hold their records. Can only latch earlier or
+      where the row went stale — never later, so nothing that latched before stops latching.
+ · **`sound.glass` contradicted itself** — ✓ beside *"no frame published yet"*. The verdict stays `ok`
+    (a permanent `unknown` counts as amiss and would make the cell furniture on every runner) but the
+     note now admits the pass is vacuous: *"nothing drawn yet, so nothing can be missing"*.
+
+**And the instrument disagreed with the screen once, which is the thing an instrument may never do.**
+ `advice` is stamped when an expectation is ARMED and never cleared when the claim comes good, so the
+  CLI printed *"no friend is online — you can listen to your own music"* under a green *"a friend came
+   online ✓"*. The Butler gates advice on `gaveup`; the printer now applies the identical gate.
+
+**Next:** `sound.live` and `sound.pulled` still read this-run worlds — check whether they freeze the
+ same way once the resident Book finishes, using `--player=` twice a few minutes apart.
+
+### ⇑ 2026-08-10 — THE ROSTER HAD NO INSTRUMENT, AND BOMB #1 IS NOW MEASURED
+
+**`node scripts/runner_ask.mjs supervisor` — the Supervisor's screen, on a terminal.** This whole
+ subsystem had three faces and NO READER outside the tab, and that is why every Butler bug this week
+  was found by a human's eye and nothing else: the roster stands on MUNDO (deliberately — a supervisor
+   inside the House it reports on cannot say "the run died"), and `snap <n>` serves the RUN House, so
+    no CLI read could reach it. The op is one call to `Supervisor_lines` — same rows, same order, same
+     marks the Butler draws, nothing re-decided — plus `arrived:`, the notice ring, the probe method
+      name per row, and the prefs. It works with `--player=` too, which is the only way to see what a
+       listener's Butler is saying. Handler: `Lies_runner_ask_recv` op `supervisor` (LiesFunk).
+ *It is named `supervisor`, not `roster`: in `runner_ask` "roster" already means the Cluster runner
+  registry, and that file says so out loud.*
+
+**It paid for itself in the first two calls.**
+ 1. **`butler.quiet` is ON in this browser's stash** — the arrival screen has been switched off, and
+    since the stash is Dexie (per ORIGIN, not per tab) pressing "don't wait for me" once silences the
+     Butler in EVERY tab of that browser, permanently, with the only way back in the ▦ panel. From
+      outside, "it never shows" and "it lifts too early" look identical — so the op prints prefs first.
+ 2. **BOMB #1, measured rather than argued.** `release` tears H:Story down; `sound.glass` flipped
+    ✓ → `? no A:Vyto in any of 1 House(s)` and `amiss` went 0 → 1. Every Book watch keeps being
+     re-read against a corpse after its run ends, and each probe dutifully reports what it can no
+      longer find. On a listener's tab that is the diagnostic cell appearing over their music to
+       announce the glass is missing, because a run they never asked about finished.
+
+**THE FIX, and what it deliberately is NOT.** `Supervisor_alive(subject)` walks the subject's `.c.up`
+ chain and asks MUNDO whether the House it lands on is still attached — never `top_House()`, which a
+  dropped House can still answer from a stale link. A detached subject stamps `unknown` + *"the world
+   it watched is gone — that run was torn down"*, sets `sc.orphan`, and `Supervisor_speaking` skips it:
+    an orphan is legible in the panel and on the CLI, and never loud. **It fails safe** — the only
+     answer that accuses is "I climbed to a House and that House is not in the live tree"; an
+      unfamiliar topology, a missing top House, a chain that never reaches a House all read ALIVE.
+       Orphaning the whole roster in one tick would be a far worse bug than the one being fixed.
+ **This is not the persistence ruling.** Whether a torn-down Book's watches should be DROPPED (the
+  `eternal` flag + a `Supervisor_teardown` hook off `auto_teardown_story`) is still the owner's call
+   and is untouched. This only stops the roster stating facts about a world that is gone.
+ **Verified live:** before a teardown, 8 watches, `loud:3 amiss:0`, no orphans — so no false positives
+  during a run. After it, six watches ORPHAN and the roster reads `loud:0 amiss:0` — honestly quiet
+   instead of shouting. `the-supervisor-stood` and `every-registered-watch-found` both still green.
+
+**Two things the instrument showed that are NOT fixed, on purpose:**
+ · `sound.glass` answers **ok** with the note *"no frame published yet"* — a ✓ beside a note saying
+    nothing was judged. It is a deliberate trade (`unknown` counts as amiss, so a permanent unknown on
+     a runner would make the cell permanent furniture) and it is documented at the probe, but the
+      sentence and its note contradict each other and that is worth the owner's eye.
+ · `sound.grant` reads *"no friend yet"* off `%Friend` rows in the RUN world while the identity's
+    piers say otherwise — two different accessors for one fact (`Sounditron_grants` vs `w.o({Friend})`).
+
+*Also re-confirmed the hard way: **the default runner address switches tabs.** Mid-sweep it moved
+ `96d0cf88` → `58517b48` and three friend-dependent assertions went ABSENT with nothing having
+  changed. Check `world`'s `self` before attributing any red.*
+
+### ⇑ 2026-08-10 — AN EMPTY BOARD IS NOT AN ANSWER, AND THE DOOR MOVED IN
+
+Three things landed after the stillness fix below, all of them the same shape: *something that did not
+ know yet was being read as something that had answered.*
+
+**The stillness fallback still busted open on a cold boot — because an EMPTY roster is perfectly
+ still.** `still_since` measures "has anything advanced", which is right, but on this page the
+  Supervisor world is minted BY its registrar: before `Sounditron_machine` reaches its registration
+   beat there are no lines, no notices and no arrival at all. A board with nothing on it never changes,
+    so six seconds of spine-loading read as six seconds of nothing-to-wait-for and the screen lifted
+     mid-boot for the third time. The fallback now also requires `view.lines.length` — *somebody has
+      spoken and none of them declared a finish line* — which is what it always meant. Holding on an
+       empty board cannot strand anybody who is booting: the Butler mounts on exactly one page and that
+        page's Book declares an arrival in beat 2, and if the board never fills the machine never
+         started, which the grown carry-on tap says out loud by then.
+
+**The latch was the component's, not the tab's.** `done` was a `$state`, so it promised "never up again
+ for this component instance". Any future `{#if}`/`{#key}` around the mount hands back a fresh `false`
+  and the loading screen drops over somebody's music — the thing this file's own header calls its worst
+   bug. It now stamps `H.c.butler_done`: new on every reload, shared by every mount within one tab.
+
+**THE INVITE DOOR IS IN THE BUTLER NOW** — the owner: *"is this going to contain all the Invite
+ onboarding UI as well? it'll focus the UX of entering their username and hitting join."* Yes, and it
+  stopped being a feature question the moment this screen started holding until arrival: the join door
+   lives in `BigSoundland.svelte`'s strip, and a fullscreen arrival screen over it **hides the invite
+    funnel behind news about a machine the person has not met yet.** The strip's own comment already
+     argued the funnel must not depend on a successful boot; the Butler had quietly made it depend on
+      one. So: `?Iz=` present ⇒ the Butler mounts the EXISTING `InvitePanel` (never a second join door —
+       the `boot_gate` lesson), it is the only thing on the card while it is open (the arc is noise to
+        somebody typing their name), and it is permission-shaped: **no automatic lift while the token is
+         unspent.** `boot_param('Iz')` reads `location` live and `strip_iz()` removes the token when it
+          is redeemed or refused, so the URL *is* the state and nothing here copies the panel's machine.
+ **The trap this rests on:** two mounted `InvitePanel`s both auto-join a scan landing (`landed_url &&
+  !auto_fired`, latched per instance) and a single-use `?Iz` redeemed twice comes back a rebuff — *the
+   invite refusing itself.* So the strip now stands down while `butler_up`, the same handshake BootGate
+    already makes. `DoorFace`'s in-glass panel is behind an `inviting` toggle a human must press, so it
+     cannot join the race by itself — but it is the third mount, and anything that ever opens it
+      automatically inherits this problem.
+
+**Next:** none of the above is witnessed by a Book — the Butler is a face and its inputs are `.c` and
+ the URL. The honest gate for it is a `%see` on the model side: `Supervisor_arrived` returning
+  `coming` while the glass is bare, and `arrived` only once cells and sound stand. That is one step in
+   `Sounditron` and it would have caught two of the three lifts above.
+
+### ⇑ 2026-08-10 — §2 WAS BEING BROKEN BY §2's OWN FILES, IN THREE PLACES
+
+The owner, after the "hold until arrival" change: ***"bust open at the wrong time still."*** It was
+ still lifting mid-boot, and the reason is the one this doc is named for, wearing a third disguise.
+
+**The exit had one clock left in it.** The no-arrival fallback read `view.since > GRACE_MS &&
+ !view.holding` — elapsed time since mount. A booting tab passes through a moment where the roster is
+  *half-registered*: every watch that has arrived so far reads ok, the arrival milestone is not
+   commissioned yet (`Sounditron_supervise` gets there on a later beat), so `arrived === 'none'` and
+    `holding` is false — **and any elapsed-time reading lifts right there.** 1.8s did it, 6s did it;
+     60s would have done it on a cold disk. The fix is §2 applied to the Butler itself: a coarse
+      signature of the roster (`lines / done / notices / arrived`), a `still_since` stamp when it
+       changes, and a lift only after `STILL_MS` of **nothing moving**. While registrations land,
+        watches turn or notices arrive, this is a machine coming up, whatever the clock says.
+ *The signature is deliberately COARSE — a note churning under a line ("37 folders walked") must not
+  count as progress, or nothing would ever be still and the fallback would never fire at all.*
+
+**And the progress counter I had just built was itself a lie on a warm page.** `Radio_shelf_walked`
+ read `Object.keys(meander_learn).length` — but **Census.svelte RESTORES that map at boot**, thousands
+  of entries off disk. So a warm tab claimed to have walked its whole share in the first tick, and
+   `moving` could never see it climb (a revisit adds no key), so the patience never re-armed. The very
+    memory that makes the search fast made the progress bar lie about it. Crate.g now bumps
+     `TOP.c.meander_stood` at the visit itself — O(1), counts revisits (which is right: re-treading
+      known ground is still a wander working), not persisted.
+
+**"We can insta-remember where it is aye?" — yes, and most of it was already built.** The census
+ (`Census.svelte` + `census_codec.ts`) persists `{audio, open, subs, z, n}` per directory to a Berth
+  Waft under the share, restores up to 24000 of them, and Crate.g folds them into `meander_stat` so
+   the wander is steered at the music from the first hop (measured: 22.4 vs 3.2 tracks in 20 tours).
+    What was missing was *saying so*. `Hh.c.census_music` is now stamped at restore (count of restored
+     directories holding audio) and `Radio_probe_shelf` reads it: an empty shelf on a warm page says
+      **"fetching — 412 folders of music remembered here, 9 walked"** instead of "no music in your
+       share", which is the same wait wearing an accusation.
+ **Still true and not yet built:** we remember *where* the music is, never *which tracks* — every boot
+  re-lists and re-mints the Records. Remembering those is a real design decision (a second Berth
+   beside Newlyadded), not a tweak; nobody has asked for it yet.
+
+**`.git` / `.jamsend` — already safe, all three walks.** `Crate_nav_ls` (Crate.g:210), `Crate_nav_meander`
+ (Crate.g:486) and `Riffle_deal_dir` (Radio.g:2714) each skip `nm[0] === '.' || nm === 'node_modules'`.
+  Crate.g:210 names the reason: `.jamsend` holds owner-private account snaps carrying the identity key
+   in the clear. This is the enforced half of the .jamsend law, not tidiness.
+
+**Next:** the Invite onboarding question is still open — the owner: *"is this going to contain all the
+ Invite onboarding UI as well? it'll focus the UX of entering their username and hitting join."* The
+  Butler is the right home (it is the only surface that owns the screen before the machine is up, and
+   `BigSoundland.svelte` already records why the invite funnel cannot live in a cell), **on the
+    condition it mounts the existing `InvitePanel` rather than growing a second join door** — the
+     `boot_gate` lesson — and that a pending join is treated like `gate.wanted`: uncapped, above the
+      progress news, because it is the thing blocking everything rather than news about it.
+
+### ⇑ 2026-08-10 — THE BUTLER HAD NEVER RUN, AND THE THREE SURFACES ARE RE-AIMED
 
 **THE BUTLER HAS NEVER ONCE DONE ITS JOB — since it was written.** The owner, watching a reload:
  *"the Butler closes when the interface is still at 'nothing mounted yet'"*. Root cause found and it

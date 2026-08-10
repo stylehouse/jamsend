@@ -10,7 +10,7 @@ import { boot_param } from "$lib/boot"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'fe81e96b8b5e46a4~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '709af4b4eb0f2efe~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -1430,7 +1430,13 @@ Sounditron_supervise(w) {
     //    Supervisor_stage's words, not numbers invented here.
     let friend = this.Supervisor_stage('friend')
     let sound = this.Supervisor_stage('sound')
-    this.Supervisor_watch(sup, 'sound.grant',  'a sealed Music grant stands — the door open both ways', 'milestone', 'Sounditron_probe_grant',  w, friend)
+    // A NULL SUBJECT MEANS "THIS IS NOT THE RUN'S FACT".  Grants live in storage and a live peer is a
+    //  property of the machine's own transport — neither is inside the Book's world, so neither may be
+    //   orphaned when that world is torn down (Supervisor_alive).  The rows below that DO name `w` name
+    //    it because the thing they ask about really does belong to this run: its friend rows, its
+    //     crates, the glass it commissioned.  Getting this line wrong in either direction is quiet —
+    //      too much `w` freezes a watch into a photograph, too little keeps a dead one shouting.
+    this.Supervisor_watch(sup, 'sound.grant',  'a sealed Music grant stands — the door open both ways', 'milestone', 'Sounditron_probe_grant',  null, friend)
     this.Supervisor_watch(sup, 'sound.live',   'a friend is online — bytes only flow live',             'standing',  'Sounditron_probe_live',   w, friend)
     this.Supervisor_watch(sup, 'sound.shelf',  'a friend has counted their shelf — records to want',    'milestone', 'Sounditron_probe_shelf',  w, friend)
     this.Supervisor_watch(sup, 'sound.pulled', 'original bytes crossed over Repli — the pull landed',   'milestone', 'Sounditron_probe_pulled', w, sound)
@@ -1546,7 +1552,12 @@ Sounditron_probe_glass(w, sup) {
     //  only "I could not find it" costs a person the whole diagnosis, which is this doc's §5 in one
     //   line: attribution before action.
     if (!vw) return { verdict: 'unknown', note: 'no A:Vyto in any of ' + this.Sounditron_houses().length + ' House(s)' }
-    if (!vw.c.vw_frame) return { verdict: 'ok', note: where + ' — no frame published yet' }
+    // A VACUOUS PASS MUST SAY THAT IT IS ONE.  The verdict stays `ok` on purpose (a permanent
+    //  `unknown` here would be a blind spot that never clears, and `unknown` counts as amiss — the
+    //   cell would become furniture on every runner), but the note has to admit that nothing was
+    //    judged: "the glass is drawing every organ it was handed ✓ / no frame published yet" reads as
+    //     a straight contradiction, which is how a HUD teaches a person to stop believing it.
+    if (!vw.c.vw_frame) return { verdict: 'ok', note: where + ' — nothing drawn yet, so nothing can be missing' }
     let missing = Object.keys(vw.c.normal_said || {})
     if (!missing.length) return { verdict: 'ok', note: where }
     return { verdict: 'wrong', note: where + ': ' + missing.length + ' organ(s) with no cell — ' + missing.slice(0, 3).join(' ') }
@@ -1649,11 +1660,23 @@ Sounditron_probe_sound(w, sup) {
 
 },
 // Sounditron_probe_grant — is the door open both ways?  A friend's %Music grant is the seal.
+//  IT READS STORAGE, NOT THIS RUN'S COPY OF IT (2026-08-10, caught by `runner_ask supervisor`).  The
+//   first cut read `w.o({Friend:1})` — rows THIS BOOK mints in its own world during beat 5 — and that
+//    is two accessors for one fact: the Book's `granted` assertion reads `Sounditron_grants` (the
+//     identity's %Piers and their %Grants), so the watch and the assertion could disagree about the
+//      same seal, and did.  The live runner said *"no friend yet"* while `runner_ask world` showed a
+//       MUTUAL seal with grants in both directions.
+//  AND A BOOK-MINTED ROW IS A PHOTOGRAPH.  Those %Friend rows are only refreshed while the Book is
+//   running its beats; the roster is re-read for the life of the TAB.  So a watch reading them freezes
+//    at whatever the last beat saw and then reports that frozen answer forever — the HUD showing a
+//     picture of the machine instead of the machine.  Grants are machine state and live in storage, so
+//      read them there and the watch stays true long after the run that registered it.
+//  Registered with a NULL subject for the same reason (see Sounditron_supervise): nothing here belongs
+//   to the run, so tearing the run down must not orphan it.
 Sounditron_probe_grant(w, sup) {
-    let f = w.o({ Friend: 1 })[0]
-    if (!f) return { verdict: 'wrong', note: 'no friend yet' }
-    if (!f.sc.music) return { verdict: 'wrong', note: 'no Music grant from ' + f.sc.Friend }
-    return { verdict: 'ok' }
+    let piers = this.Sounditron_grants(null)
+    if (!piers.length) return { verdict: 'wrong', note: 'no Music grant in storage — nobody has sealed with you' }
+    return { verdict: 'ok', note: piers.length + ' sealed pier(s)' }
 
 },
 // Sounditron_probe_live — is anyone actually reachable RIGHT NOW?  Standing, so it reads afresh
@@ -1665,9 +1688,30 @@ Sounditron_probe_live(w, sup) {
 },
 // Sounditron_probe_shelf — has a friend told us what they have?  Nothing can be wanted until a
 //  shelf has been counted.
+//  IT ALSO LOOKS AT THE CRATES, not only at this Book's %Friend row.  That row is minted in a beat and
+//   never refreshed afterwards, so a watch reading only it reports the last beat's answer for the life
+//    of the tab — the same photograph trap `Sounditron_probe_grant` fell into.  The cards in a friend's
+//     crate are what their count actually PRODUCED, and the radio keeps them current with no Book
+//      running, so they are the live half of the same fact.  Row first (it carries the friendly name),
+//       crates as the fallback: this can only ever find the shelf EARLIER or when the row has gone
+//        stale, never later, so nothing that used to latch stops latching.
 Sounditron_probe_shelf(w, sup) {
     let f = w.o({ Friend: 1 }).find(x => Number(x.sc.records) > 0)
     if (f) return { verdict: 'ok', note: f.sc.Friend + ' · ' + f.sc.records + ' records' }
+    //  READ THE SHELF PURELY.  `Ra_home_them` is `oai` all the way down (Ra.g:657) and mints both the
+    //   %MusuThem home and its `stock` shelf — a probe calling it is the probe-that-collects trap, and
+    //    it got sharper the moment the Supervisor grew a 1s heartbeat: what used to run once a Book
+    //     beat now runs on every tick, on every tab.  `Radio_pool_census` does this correctly and is
+    //      the shape to copy — `o()[0]` throughout, nothing written.
+    let M = this.top_House()
+    if (M.Ra_recs) {
+        for (const home of w.o({ MusuThem: 1 })) {
+            if (!home.sc.pub) continue
+            let shelf = home.o({ stock: 1, pub: String(home.sc.pub) })[0]
+            let n = shelf ? M.Ra_recs(shelf).length : 0
+            if (n) return { verdict: 'ok', note: String(home.sc.pub).slice(0, 8) + ' · ' + n + ' records in their crate' }
+        }
+    }
     return { verdict: 'wrong', note: 'no shelf counted' }
 
 },
@@ -1681,11 +1725,18 @@ Sounditron_probe_pulled(w, sup) {
 // Sounditron_pulled — did real bytes actually cross?  Any friend record whose first chunk stands
 //  (Ra_chunk_map[0] present) — the husk→previewed transition IS the pull landing.
 Sounditron_pulled(w) {
+    //  PURE, for the reason Sounditron_probe_shelf now carries at length: `Ra_home_them` MINTS (it is
+    //   `oai` down to the `stock` shelf), and this is called from a probe — which since the Supervisor
+    //    got its 1s heartbeat means on every tick of every tab, not once a Book beat.  The home is
+    //     already in hand from the walk above; ask it for its shelf instead of asking the world to
+    //      home it again.
     let M = this.top_House()
-    if (!M.Ra_recs || !M.Ra_home_them || !M.Repli_chunk_at) return 0
+    if (!M.Ra_recs || !M.Repli_chunk_at) return 0
     for (const home of w.o({ MusuThem: 1 })) {
         if (!home.sc.pub) continue
-        for (const rec of M.Ra_recs(M.Ra_home_them(w, String(home.sc.pub)))) {
+        let shelf = home.o({ stock: 1, pub: String(home.sc.pub) })[0]
+        if (!shelf) continue
+        for (const rec of M.Ra_recs(shelf)) {
             // presence, not materialisation — this belief polls, so the copy was per-poll per-record.
             if (M.Repli_chunk_at(rec, 0) != null) return 1
         }

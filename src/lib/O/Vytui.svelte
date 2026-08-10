@@ -541,6 +541,23 @@
         else bare.add(w)
         bare_flip++
         ;(H as any).Vyto_stir_soon?.(w)
+        view_repaint(w)
+    }
+    // ── A VIEW SWITCH MUST FORCE ITS OWN REPAINT ──────────────────────────────────────────────────
+    //  (the owner 2026-08-10: *"the 'try it bare' toggle doesn't hide the Components, so the C labels
+    //   are jumbled behind them"*.)  `paint_tick` bumps ONLY when the geometry actually moves — that
+    //    is a deliberate law a few lines below, and it is right for the model.  But a view switch
+    //     changes what a cell IS without moving anything: bare nulls `cell.face`, and the seat swaps
+    //      the whole regime.  Nothing moved, so `changed` stayed false, so `paint_tick` never bumped,
+    //       so `viewport_cells` kept handing the template the PREVIOUS cells with their faces still
+    //        on — while the parts of the template that read `bare_on` directly DID flip.  Result: the
+    //         bare label set drawn on top of Components that were supposed to be gone.
+    //  `Vyto_stir_soon` could not fix it: a stir re-solves the MODEL, and the model is not what
+    //   changed.  So rebuild the picture here and publish it, which is the one thing that was missing.
+    function view_repaint(w: TheC) {
+        paint_world(w)
+        paint_tick++
+        kick(w)
     }
     // ── THE TWO POSES (2026-08-09, the owner: *"we need some simulation of them competing for
     //  attention… or engaging some pose where they are all fairly equal"*).
@@ -887,7 +904,23 @@
     //  WHERE IT PLUGS IN: `polyByKey` — the emit loop downstream reads polygons by key and cares not
     //   at all where they came from, so faces, molds, the dose handle, holds, the decor deck and the
     //    whole label ladder draw a rect exactly as they draw a wall.  Nothing is deleted for this.
-    function seat_on(w: TheC): boolean { return fo(w, 'seat') != null }
+    //  TWO WAYS IN, and the local one is the one a human uses.  A composer DECLARES the regime on the
+    //   commission (`foamereo:'seat'`) and that is what a Book or a saved glass would carry; a person
+    //    presses ▦ and it changes NOW.  The local flip exists because the declared route goes through
+    //     `Sounditron_commission` → `i_elvisto` → `Vyto_commission`, which is DEFERRED: on the first
+    //      landing two full toggles read as no-ops before the regime appeared, and it looked exactly
+    //       like a broken switch.  A view preference should never wait on the model's queue.
+    //  Per TAB and never snapped, like `bare` and the two poses — a Book must not see which UI a human
+    //   left on, or a fixture would record a view preference as world state.
+    const seated_w = new Set<TheC>()
+    let seat_flip = $state(0)
+    function seat_on(w: TheC): boolean { void seat_flip; return seated_w.has(w) || fo(w, 'seat') != null }
+    function seat_toggle(w: TheC) {
+        if (seated_w.has(w)) seated_w.delete(w)
+        else seated_w.add(w)
+        seat_flip++
+        view_repaint(w)
+    }
     // The standing deal per scope, per world.  `.c`-side only (never encoded) — the deal is derived,
     //  and stage 4 is where it earns a place in the tree so a Book can witness the layout.
     const dealMemo = new WeakMap<TheC, Map<string, Deal>>()
@@ -3157,6 +3190,15 @@
                     <button class="fs-btn bare-btn" class:baring={bare_on(w)} onclick={() => bare_toggle(w)}
                             title={bare_on(w) ? 'components off — cells only (click to bring them back)'
                                               : 'try it bare — no Components, just the cellular tree'}>▢</button>
+                    <!-- THE REGIME SWITCH — foam ◍ or seat ▦, the two layouts side by side on one page.
+                         Not a replacement: pressing it back gives the foam exactly as it was.  The
+                         seat assigns each row a whole number of grid units instead of discovering what
+                         a relaxation left it, so nothing can be swallowed and the dose knob is
+                         monotone; the cost is a quantised, squarer glass.  Live pages only. -->
+                    <button class="fs-btn seat-btn" class:seating={seat_on(w)} onclick={() => seat_toggle(w)}
+                            title={seat_on(w) ? 'seat layout — every row assigned its room (click for the foam)'
+                                              : 'try the seat — rectangles assigned from the same model, no swallowing'}
+                            >{seat_on(w) ? '▦' : '◍'}</button>
                     <!-- THE CLUTTER KNOB — fabricate a queue of faceless heist jobs, each holding its
                          cuts as SUBCELLS, so the crowded regime can actually be looked at.  Cycles
                          off → 6 → 12 → 24 → off; the real organs keep their faces throughout. -->
@@ -3504,7 +3546,11 @@
                         <!-- THE ICON REGISTER: below the legibility floor a face is not drawn at all —
                              the cell keeps its edge label and nothing else.  "things become icons when
                              crushed down", as the continuum's bottom step rather than a special case. -->
-                        {#if cell.face && !cell.departing && !cell.hasKids && cell.fit > 0.34}
+                        <!-- `!bare_on(w)` is belt AND braces beside the null face `build_cells` gives a
+                             bare cell: this gate reads the flag DIRECTLY, so it cannot be outvoted by a
+                             stale cell list however the paint got behind.  A view switch must be
+                             obeyable from the template alone. -->
+                        {#if cell.face && !bare_on(w) && !cell.departing && !cell.hasKids && cell.fit > 0.34}
                             {@const Face = cell.face}
                             <div class="face-mold" class:lift={cell.lift} class:sunk={cell.sunk}
                                  class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} data-key={cell.key}
@@ -3670,25 +3716,29 @@
     .even-btn { right: 102px; }
     .vie-btn  { right: 134px; }
     .bare-btn { right: 166px; }
-    .junk-btn { right: 198px; min-width: 28px; }
-    .re-btn   { right: 236px; }
+    .seat-btn { right: 198px; }
+    .junk-btn { right: 230px; min-width: 28px; }
+    .re-btn   { right: 268px; }
     .even-btn.posing, .vie-btn.posing, .junk-btn.posing { color: #c3b0ff; border-color: #6a5ad0; background: #201c34; }
     .bare-btn.baring { color: #9fe6c8; border-color: #4a8a72; background: #16241f; }
+    /* the seat reads as the ALTERNATIVE, not as an alarm: same chip, its own tone. */
+    .seat-btn.seating { color: #ffc9a0; border-color: #b8794a; background: #2a1d14; }
     /* the walk-out chip is NAVIGATION, not a toy — it shows whenever there is somewhere to come out
        of, toybox open or shut, so a human who flew into a cell is never stranded.  It therefore sits
        at the head of the rail (right of ⋯), where it does not move as toys come and go. */
-    .out-btn { right: 268px; }
+    .out-btn { right: 300px; }
     /* the escape sits at the head of the rail beside ⋯ — it is not a toy, and it must be findable
        without opening anything, because the stage it undoes covers most of the screen. */
-    .unstage-btn { right: 300px; color: #9fd0ff; border-color: #4a6a8a; }
+    .unstage-btn { right: 332px; color: #9fd0ff; border-color: #4a6a8a; }
     /* back-to-top rides at the head of the rail, past the escape: it is the most general way out and
        the one that should still be findable when everything else on the rail is hidden. */
-    .release-btn { right: 332px; color: #9fe6c8; border-color: #4a8a72; }
+    .release-btn { right: 364px; color: #9fe6c8; border-color: #4a8a72; }
     @media (pointer: coarse) {
         .toy-btn { right: 52px; } .sim-btn { right: 98px; }
         .even-btn { right: 144px; } .vie-btn { right: 190px; } .bare-btn { right: 236px; }
-        .junk-btn { right: 282px; } .re-btn { right: 328px; } .out-btn { right: 374px; }
-        .unstage-btn { right: 420px; } .release-btn { right: 466px; }
+        .seat-btn { right: 282px; }
+        .junk-btn { right: 328px; } .re-btn { right: 374px; } .out-btn { right: 420px; }
+        .unstage-btn { right: 466px; } .release-btn { right: 512px; }
     }
     /* an engaged-able cell should say so under the cursor — the one hint that the glass is navigable.
        The cells are also real keyboard targets (role=button + tabindex): tab to a cell, Enter to fly to

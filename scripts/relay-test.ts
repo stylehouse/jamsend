@@ -236,6 +236,17 @@ async function main() {
 	check('who: an ?addr=-only claim does NOT read online (verified binds only)', !!w1 && !w1.online.includes('ALICE'))
 	check('who: asked count echoes the list', !!w1 && w1.asked === 5)
 
+	// Logging is transition-only (who rides every tab's ~10s pulse round), and the risk that creates
+	//  is quieting the ANSWER along with the log.  Ask the same thing three times: every one must
+	//   still reply, even though only the first prints.
+	const beforeRepeat = carol.ctrl.filter((m) => m.control === 'who_ok').length
+	carol.send({ control: 'who', addrs: [rp1], corr: 'r1' })
+	carol.send({ control: 'who', addrs: [rp1], corr: 'r2' })
+	carol.send({ control: 'who', addrs: [rp1], corr: 'r3' })
+	const allThree = await until(() => carol.ctrl.filter((m) => m.control === 'who_ok').length >= beforeRepeat + 3)
+	check('an unchanged who still ANSWERS every time (only the log is quiet)', allThree)
+	check('and each reply carries its own corr', ['r1', 'r2', 'r3'].every((c) => carol.ctrl.some((m) => m.control === 'who_ok' && m.corr === c)))
+
 	// A closed socket goes offline once the relay unbinds it (presence tracks live sockets).
 	run2.ws.close()
 	await wait(200)
@@ -260,6 +271,28 @@ async function main() {
 	// No frame should ever loop back to its own sender.
 	check('no loopback to sender ALICE', !alice.got.some((m) => m.header?.from === 'ALICE'))
 	check('no loopback to sender BOB', !bob.got.some((m) => m.header?.from === 'BOB'))
+
+	// ── the routing TALLY: rate in the log, not one line per frame ───────────────────────────────
+	//  A successful route no longer prints; it is counted, and a 10s timer dumps one line per
+	//   (addr, type, lane).  The risk this creates is the same one the who-log quieting creates —
+	//    silencing the LOG must never silence the DELIVERY — so assert both halves: every frame
+	//     arrives, no per-frame line was printed, and the dump reports the true count.
+	log('\n— routing tally (one line per addr+type per 10s) —')
+	const printed: string[] = []
+	const realLog = console.log
+	console.log = (...a: any[]) => { printed.push(a.join(' ')); realLog(...a) }
+	const tallyBefore = alice2.got.length
+	for (let i = 0; i < 12; i++) alice.frame('ALICE2', 'repli_page', 900 + i)
+	const allArrived = await until(() => alice2.got.length >= tallyBefore + 12)
+	check('every tallied frame still DELIVERS (12/12)', allArrived)
+	check('and none of them printed a per-frame routing line', !printed.some((l) => /→ ALICE2 repli_page/.test(l)))
+	// the dump lands on the 10s boundary; wait one window plus slack
+	const dumped = await until(() => printed.some((l) => /📊 ALICE2 repli_page/.test(l)), 13000)
+	check('the 10s tally dump prints one line for ALICE2/repli_page', dumped)
+	const row = printed.find((l) => /📊 ALICE2 repli_page/.test(l)) ?? ''
+	check(`the tally counts all 12 (got: ${row.trim().slice(0, 80)})`, /×12\b/.test(row))
+	check('and reports a byte total + lane', /local/.test(row) && /\d+(\.\d+)?(B|KB|MB)/.test(row))
+	console.log = realLog
 
 	// ── r2r AUTO-RECONNECT — the editor/staging end restarts while the runner's browser (BOB) stays
 	//  connected.  The runner must re-dial the bridge ON ITS OWN (no browser reload, no manual restart)

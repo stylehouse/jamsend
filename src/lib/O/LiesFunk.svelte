@@ -2419,6 +2419,42 @@ await M.eatfunc({
                             friendly: (p.sc.friendly as string) ?? null,
                             grants: gs.map((g: TheC) => ({ to: String(g.sc.Grant ?? '').slice(0, 12), by: String(g.sc.by ?? '').slice(0, 12) })),
                             mutual: gs.length >= 2 ? 1 : 0,
+                            // THE OFFER LEDGER, per friend (2026-08-10).  Two sealed, online, boasting
+                            //  tabs sat with EMPTY crates — the seal perfect and no music moving — and
+                            //   nothing outside the tab could see which half of `Swarm_share_beat`'s
+                            //    offer loop had refused: the presence gate (`heard_at` within 20s), the
+                            //     change mark, the 60s re-offer floor, or the caster registration. All
+                            //      four live on the station route's `.c` and were invisible.
+                            //  READ PURELY — `Swarm_station_pier` is `oai` all the way down and would
+                            //   MINT the route it was asked about (the probe-that-collects trap), so
+                            //    this walks `o()` and reports null when there is no route, which is
+                            //     itself the answer worth having: a friendship whose transport route
+                            //      never got re-minted is exactly the reload bug `Swarm_station_routes`
+                            //       was written for.
+                            route: (() => {
+                                // THE STATION WORLD, NOT THIS ONE.  `w` here is the Lies world; the
+                                //  routes hang off `A:Clustation > w:Swarm`.  The first cut read `w`
+                                //   and reported "no transport route" for a tab that was audibly
+                                //    receiving music — an instrument inventing the exact bug it was
+                                //     built to find.  Caught only because the claim was checked against
+                                //      a fact already known to be true.  `Swarm_station_world()` is
+                                //       `oai` and would mint, so walk to it purely and give up quietly.
+                                const cl = (H.top_House().o({ A: 'Clustation' })[0] as TheC | undefined)
+                                const sw = cl ? (cl.o({ w: 'Swarm' })[0] as TheC | undefined) : undefined
+                                if (!sw) return undefined
+                                const st = (sw.o({ Peering: 1 }) as TheC[]).find(x => x.sc.name === ident?.sc?.prepub)
+                                const rt = st ? (st.o({ Pier: 1, pub: String(p.sc.pub ?? '') })[0] as TheC | undefined) : undefined
+                                if (!rt) return null
+                                const ago = (t: any) => (t ? Date.now() - (+t) : null)
+                                return {
+                                    heard_ago:   ago((p.c as any).heard_at),      // presence gate: <20000 offers
+                                    offered_ago: ago((rt.c as any).offered_at),   // re-offer floor: >60000 forces
+                                    offered_mark: ((rt.c as any).offered_mark as string) ?? null,
+                                    caster: (rt.c as any).repli_src ? 1 : 0,      // Repli_register_caster ran
+                                    rx:     (rt.c as any).repli_rx ? 1 : 0,       // Repli_register_rx ran
+                                    peer_era: ((rt.c as any).peer_era as any) ?? null,
+                                }
+                            })(),
                         }
                     })) : []
                     const stW = H.Lies_runner_story_w()
@@ -2524,6 +2560,54 @@ await M.eatfunc({
                             const rf = w.o({ Refused_Book: 1 })[0] as TheC | undefined
                             return rf ? { book: rf.sc.Refused_Book, why: rf.sc.why, at: +rf.sc.at } : null
                         })(),
+                    }
+                } else if (op === 'supervisor') {
+                    // THE SUPERVISOR'S READING, from outside the tab (2026-08-10).  It had NO reader out
+                    //  here at all, and that is why every Butler bug this week was invisible to anything
+                    //   but a human's eye: the roster stands on MUNDO (deliberately — a supervisor inside
+                    //    the House it reports on cannot say "the run died"), and `snap <n>` serves the RUN
+                    //     House, so no CLI read could ever reach it.  A whole subsystem with three faces
+                    //      and no instrument.
+                    //  IT RE-DECIDES NOTHING.  `Supervisor_lines` is the single judging authority and this
+                    //   is one call to it — same rows, same order, same marks the Butler and the cell
+                    //    render.  A CLI that filtered or re-ranked would be the fourth opinion the whole
+                    //     region exists to prevent, and the first place a diagnosis would go wrong is the
+                    //      instrument disagreeing with the screen.
+                    //  READ-ONLY and probe-free: it reports what the last read LEFT on the rows, and never
+                    //   runs a probe itself.  A reader that collected would be `Ra_stock_standing` again —
+                    //    an instrument whose observation moves the thing observed.
+                    const sw = (H as any).Supervisor_w?.(H)
+                    const lines = sw ? ((H as any).Supervisor_lines?.(sw) ?? []) : []
+                    const row = sw ? (sw.o({ Supervisor: 1 })[0] as TheC | undefined) : undefined
+                    result = {
+                        stood:   !!sw,
+                        arrived: sw ? ((H as any).Supervisor_arrived?.(sw) ?? 'none') : 'none',
+                        watches: lines.length,
+                        loud:    row ? +(row.sc.loud ?? 0) : 0,
+                        amiss:   row ? +(row.sc.amiss ?? 0) : 0,
+                        lines,
+                        // the DIALS beside the watches, because they are the other half of the same
+                        //  screen: a watch answers "is this ok", a dial answers "what is the state",
+                        //   and a reader that saw only the first would think a quiet machine had
+                        //    nothing to say about itself.
+                        dials: sw ? ((H as any).Supervisor_dials?.(sw) ?? []) : [],
+                        // the notice ring — what CHANGED ITS MIND, oldest first, the log half of the
+                        //  Butler.  `.c` only, so this is the one place it is legible from a script.
+                        notices: sw ? ((H as any).Supervisor_noticed?.(sw) ?? []).slice(-12) : [],
+                        // and whether this tab is even a room where an arrival gets declared — the
+                        //  humdinger gate is why a runner reads `arrived:'none'` and a listener does not,
+                        //   and without it a red reading here is unattributable.
+                        humdinger: !!(H.top_House().c as any).humdinger,
+                        // THE PREFS, because one of them can switch a whole surface off and it is
+                        //  invisible from every other angle.  `butler.quiet` lives in the House stash,
+                        //   which is Dexie — per ORIGIN, not per tab — so pressing "don't wait for me"
+                        //    once silences the arrival screen in EVERY tab of that browser, for good.
+                        //     That is the switch working as designed and it is also exactly the state
+                        //      that makes a bug report unattributable ("it never shows" and "it lifts
+                        //       too early" look identical from outside), so it has to be readable.
+                        prefs: sw ? (sw.o({ Pref: 1 }) as TheC[]).map((p: TheC) => ({
+                            key: String(p.sc.Pref ?? ''), on: p.sc.on ? 1 : 0,
+                        })) : [],
                     }
                 } else if (op === 'rungos') {
                     // the runs the runner is "hanging in there" with — each addressable by uid.  pinned =
