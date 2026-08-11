@@ -576,6 +576,20 @@ async Radio_pump_tick(radio, era):
 //    point.  So this costs the wire NOTHING and always leaves runway ahead of the playhead.
 //  The pump already supports a non-zero entry — `else if (!radio.c.dec)` is the mid-encode resume
 //   path, convergence-dirty for about a packet and documented there as honest.
+//  ONCE A SITTING — the switch-on, and nothing after it (the owner 2026-08-11: "finishing one track
+//   causes the next to start from the start").  The rationale above is precisely a rationale about
+//    SWITCHING ON: the radio was already playing before you walked in.  It says nothing about the
+//     track after that, and a listener who has sat through one whole track being dropped into the
+//      middle of the next reads as a fault, not a broadcast.  So `c.tuned` latches at the first
+//       Radio_open and every later needle lands at 0.
+//  .c, so a reload re-arms the tune-in feel — it is an ARRIVAL, not a policy (same shape as
+//   `c.crossed`).  A pause|resume keeps its record (Radio_pause rewinds c.seq, it does not drop
+//    c.rec), so resuming is not a re-tune-in and does not re-arm.
+//  THE LATCH IS WHAT MAKES `Radio_prime` SPENDABLE, and that is not a side benefit.  Priming fixes
+//   the start seq while the PREVIOUS track is still playing (:608), before anyone can know whether
+//    the next transition will be a finish or a skip.  With this latch both answers are 0, so the
+//     primed track is always the track we open.  Make the rule finish-only and the two disagree on
+//      every skip — the one path prime exists for ("the lag between click and sound").
 //  HUMDINGER-GATED: an end-user page tunes in, a Book keeps the 0 it recorded, so no fixture moves.
 //   Ra_rand (not prandle) so a Book that DID want this could still pin it.
 // Radio_peek_next — WHICH RECORD THE DIAL WILL PICK, without picking it.  Radio_dial consumes the
@@ -646,6 +660,7 @@ async Radio_prime(radio, era):
 
 Radio_start_seq(radio, rec):
     if (!this.top_House().c.humdinger) return 0
+    if (radio.c.tuned) return 0
     let total = +(rec.sc.total || 0)
     let m = this.Radio_map(rec)
     // the contiguous run held from 0 — a hole is where the pump would splice, so never start past one
@@ -670,6 +685,11 @@ Radio_open(radio, rec):
     radio.c.ready = null
     if (ready && ready.id !== String(rec.sc.id)) ready = null
     let start = ready ? ready.start : this.Radio_start_seq(radio, rec)
+    // TUNE-IN SPENT.  Set AFTER the read and in the opener, not inside Radio_start_seq: the prime
+    //  calls that function too, and burning the latch there would make "have we tuned in yet" depend
+    //   on whether a prime happened to run first.  Here it means exactly one thing — a needle has
+    //    landed this sitting — so the next open is a continuation and starts at 0.
+    radio.c.tuned = 1
     radio.c.seq = ready ? ready.seq : start
     // the true position in the track, which Radio_face_tick adds to the scheduled-sample count and
     //  Swarm_share_beat reads to aim its want-ahead window.  Zero unless we tuned in late.

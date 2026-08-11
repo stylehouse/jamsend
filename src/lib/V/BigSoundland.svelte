@@ -301,16 +301,18 @@
 
 <main class="mound" class:full={glass_full}>
     {#if glass_full}
-        <!-- THE PEEK — all that survives of the header on the resident glass.  Nearly invisible at
-             rest (the glass must be able to be the only thing on the screen), full strength on hover
-              or keyboard focus.  Top-LEFT deliberately: Vyto's own ⛶ rides the top-right. -->
-        <nav class="scape-peek">
-            <span class="scape-glass-badge" class:vy={cyto?.ui.sc.UI === 'Vyto'}
-                  title="the glass mounted below (its House: {cyto?.house?.name}) · {book}">{cyto?.ui.sc.UI === 'Vyto' ? '◇ VYTO' : '◈ CYTO'}</span>
-            <!-- ▦ is NOT here any more — it is the fixed `.scape-guts` corner button below, rendered
-                 once for the whole page in every room and above every FaceSucker.  Two copies of one
-                  control is how the peek's ▦ and the header's ▦ drifted apart in the first place. -->
-        </nav>
+        <!-- THE PEEK IS GONE, AND WITH IT THE LAST CHROME ON THE RESIDENT GLASS (2026-08-11, the
+             owner: *"`◇ VYTO` <- time to get rid of this pointless thing too"*).  The badge existed
+              to answer "which stained glass actually mounted" back when ?VY=1 was a coin-toss between
+               two look-alike voronoi glasses — a question that stopped existing when the flag was
+                retired and every tab got a commissioned Vyto.  It had already outlived its ▦, which
+                 moved to the fixed `.scape-guts` corner button; removing the badge empties the peek
+                  entirely, so the <nav> goes with it rather than lingering as a hover target for
+                   nothing.  The page is now the glass and NOTHING else, which is the whole point.
+             STILL THERE WHERE IT EARNS ITS PLACE: the sprawl/diagnostic header below keeps the badge
+              (and its `no glass yet` case, which is the first thing you read when the glass never
+               stood up).  That is the room you enter when something is wrong, and it is worth
+                nothing without its labels — `?` / ▦ is the way in. -->
     {:else}
     <header class="scape-top">
         <span class="scape-name" title="BigSoundland — the music scape: Voronoi stained glass graphs of music (the /BigSoundland route)">◈ BigSoundland</span>
@@ -490,17 +492,8 @@
        to scroll.  (The other rooms keep .mound's min-height:100vh and document scrolling.) */
     .mound.full { height: 100vh; min-height: 0; overflow: hidden; }
 
-    /* the peek — the header, reduced to what a listener could ever need from it, and hidden until
-       looked for.  Barely-there at rest so the glass owns the screen; a hover or a tab-focus brings
-        it up.  Fixed, above the glass, and it never takes pointer events it isn't using. */
-    .scape-peek {
-        position: fixed; top: 0.5rem; left: 0.6rem; z-index: 70;
-        display: flex; align-items: center; gap: 0.4rem;
-        opacity: 0.14; transition: opacity 0.18s;
-    }
-    .scape-peek:hover, .scape-peek:focus-within { opacity: 1; }
-    /* a user who has asked for less motion has also asked not to have things fade at them */
-    @media (prefers-reduced-motion: reduce) { .scape-peek { transition: none; } }
+    /* (.scape-peek went with the ◇ VYTO badge it existed to hold — 2026-08-11.  Nothing is fixed over
+       the resident glass now except `.scape-guts`, the ▦ way out.) */
     /* the top bar — STICKY so it stays put while the sprawl scrolls the document beneath it
        (the glass/diag modes fit the viewport, so nothing scrolls there and sticky is inert) */
     .scape-top {

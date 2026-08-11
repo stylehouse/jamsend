@@ -999,7 +999,24 @@ async req_unemit(req):
             //      feared) and send a no_protocol complaint naming the type + seq, so the sender LEARNS
             //       instead of losing silently. no_protocol is a control frame (handled inline above,
             //        never inboxed, never itself complained about).
-            if (!H.Peeroleum_peer_ready(pier)) { ok = false; reason = 'startup-hold' } else {
+            // …EXCEPT repli_lines, WHICH HAS NO RETRY TO WAIT FOR (2026-08-11, Radio_todo §0).  The hold
+            //  above is sound only while "the sender's ack-gated retry re-delivers" is TRUE.  It stopped
+            //   being true for repli_lines on 2026-07-29, when the reliability policy at the top of this
+            //    file made it ephemeral — correctly, for the PULL RESPONSE it usually is (the sink re-asks
+            //     every un-merged offset every 4s).  But the SAME frame type also carries the PUSHED
+            //      catalog offer (Repli_offer ← Ra_offer_stock ← the share beat), which has no re-ask
+            //       behind it at all: a peer cannot re-ask for a catalog it does not know exists.  So a
+            //        come-back offer — fired the instant the returning friend's era lands, +6.1s measured,
+            //         squarely inside their startup window — is held for a retry that no longer exists and
+            //          is silently lost, leaving the 60s re-offer floor as the only thing that has ever
+            //           delivered one (measured: offer +5.8s, crate +62.9s).  Neither policy is wrong; the
+            //            seam between them is, and it is invisible from inside either file.
+            //  Complain instead of holding: no_protocol names the type, the sender un-spends its offer mark
+            //   (Swarm_offer_lost) and re-offers on the ordinary 600ms beat.  Safe for the pull-response
+            //    use too — that one is self-re-asking, so a complaint costs it nothing.
+            //  THE STRUCTURAL FIX, when someone wants it: one frame type must not carry two reliability
+            //   classes.  Split the push into its own `repli_offer` and this branch stops being special.
+            if (!H.Peeroleum_peer_ready(pier) && h.type !== 'repli_lines') { ok = false; reason = 'startup-hold' } else {
                 let me = pier.c.up%name
                 H.Peeroleum_send(w, {header: {type: 'no_protocol', from: me, to: pier%pub, about: h.type, re_seq: h.seq}})
                 console.log(`🛰⚠ Peeroleum: no handler for '${h.type}' from ${h.from} — sent no_protocol back (unsupported protocol) instead of losing it silently.`)

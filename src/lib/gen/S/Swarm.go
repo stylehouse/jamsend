@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '42d451506960a640~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '20ad333e7ffc1745~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -401,7 +401,12 @@ Swarm_expect_friends(w, ident) {
     let me = String(ident?.sc?.prepub || '')
     let piers = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).filter(p => p.sc.pub && String(p.sc.pub) !== me)
     if (!piers.length) return
-    let watch = this.Supervisor_expect(sup, 'swarm.arrival', 'a friend came online — somebody to play radio with', 'Swarm_probe_arrival', null, 5, this.Supervisor_stage('friend'))
+    // SHORT FORM (owner, 2026-08-11: *"lets get Butler to just say … friend is online vs friend came
+    //  online"*).  This DELIBERATELY overrides the em-dash rule in Sounditron_supervise, which keeps a
+    //   tail that says WHY the claim matters — "somebody to play radio with" was exactly such a tail.
+    //    The reason it goes anyway: this row sits one line under `a friend is online`, and the pair is
+    //     only legible if the difference between them is the whole sentence.  Do not restore it.
+    let watch = this.Supervisor_expect(sup, 'swarm.arrival', 'a friend came online', 'Swarm_probe_arrival', null, 5, this.Supervisor_stage('friend'))
     // THE SENTENCE THE OWNER ASKED FOR, verbatim in intent (2026-08-10): *"it should also explain
     //  clearly that no friend is online and you can play local music instead… it doesn't DO anything
     //   with your local music yet, but you can listen to it of course, as its what this machine
@@ -419,7 +424,18 @@ Swarm_expect_friends(w, ident) {
 Swarm_watch_station(w) {
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (!sup) return
-    this.Supervisor_watch(sup, 'swarm.station', 'you are online — friends can reach you', 'milestone', 'Swarm_probe_station', null, this.Supervisor_stage('door'))
+    // SHORT FORM (owner, 2026-08-11) — same ruling as the arrival row above; "friends can reach you"
+    //  was a why-tail and goes anyway, so the three presence sentences read as one set.
+    // ⚠ THE ONE HONEST WORRY ABOUT THIS SENTENCE, now that it is bare present tense: it is a
+    //  MILESTONE, and `w.c.station_up` is set once at the bottom of Swarm_station_up and **never
+    //   cleared anywhere in this file** (checked).  So "you are online" cannot go false — if the
+    //    relay drops under a live tab, this row keeps saying yes.  Fine on the Butler, which is gone
+    //     by then; NOT fine on SupervisorFace, which is the after-boot surface and the one place a
+    //      latched presence claim can lie to somebody.  Making it `standing` alone would not help —
+    //       the probe would still read the same latch.  It needs a LIVE read (Peeroleum_carrier, the
+    //        check Swarm_deliver already makes at :565) before the tense is earned.  Not done here:
+    //         that is a behaviour change to the loudest row on the roster and wants its own measurement.
+    this.Supervisor_watch(sup, 'swarm.station', 'you are online', 'milestone', 'Swarm_probe_station', null, this.Supervisor_stage('door'))
     this.Supervisor_dial(sup, 'swarm.piers', 'friends', 'Swarm_dial_piers', null, this.Supervisor_stage('friend'))
 
 },
@@ -2102,6 +2118,37 @@ Swarm_share_present(from, w) {
     return true
 
 },
+// Swarm_offer_lost — THE CATALOG OFFER'S LOST-FRAME BACK-SIGNAL (2026-08-11, Radio_todo §0).
+//  The come-back offer fires the instant a returning friend's era lands — measured at +6.1s over
+//   three trials, and that friend cannot answer a ping until +7.0s, because it has not yet run its
+//    OWN Swarm_share_up and so Repli_arm has registered no `repli_lines` handler.  The catalog frame
+//     reaches their dispatch and dies there.  The offer loop below then stamps `offered_mark`
+//      OPTIMISTICALLY — the change-trigger is spent on nothing — leaving the 60s re-offer floor as
+//       the only thing that has ever delivered a come-back catalog (measured: offer +5.8s, crate
+//        +62.9s, every intervening 2.5s sample crates=0).
+//  They were already telling us.  Peeroleum answers an unhandled type with `no_protocol` naming
+//   `about` + `re_seq`, expressly "so the sender LEARNS instead of losing silently" (Peeroleum.g:1004)
+//    — and nothing anywhere registered `w.c.on.no_protocol`, making the complaint the one frame in
+//     the system with a guaranteed listener of zero.  Listening costs one handler: un-spend the mark
+//      and the ordinary 600ms beat re-offers.  No timer, no retry counter, no new frame type, and no
+//       guess about the far side's readiness — the far side says when it wasn't ready.
+//  Floored at 1500ms so a friend who stays handler-less for a few seconds gets a re-offer cadence
+//   rather than one per beat; the 60s floor still backstops everything underneath.
+Swarm_offer_lost(w, ident, frame) {
+    let h = frame && frame.header
+    if (!h || h.about !== 'repli_lines' || !h.from) return 0
+    let route = this.Swarm_station_pier(w, ident, String(h.from))
+    if (!route) return 0
+    if (route.c.offer_lost_at && (Date.now() - route.c.offer_lost_at) < 1500) return 0
+    route.c.offer_lost_at = Date.now()
+    route.c.offered_mark = null
+    route.c.offered_at = 0
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'offer-lost', of: String(h.from).slice(0, 8), re_seq: +(h.re_seq || 0) }) } catch (er) {}
+    }
+    return 1
+
+},
 // Swarm_share_up — idempotent: arm Repli on the station world, wire the grant gate + the
 //  mirror conventions, and start the pump.  Needs the radio world standing (top.c.radio_w —
 //   Stoker_ensure stamps it) for the shelves; returns false until it is, callers just re-ask.
@@ -2112,6 +2159,7 @@ Swarm_share_up(w, ident) {
     if (!rw) return this.Swarm_share_no(w, 'radio world not standing yet')
     if (typeof this.Repli_arm !== 'function') return this.Swarm_share_no(w, 'Repli verbs not deposited')
     this.Repli_arm(w)
+    this.Peeroleum_on(w, 'no_protocol', (cw, pier, frame) => { this.Swarm_offer_lost(w, ident, frame); return true })
     w.c.repli_mirror_pier = String(ident.sc.prepub)   // my addr — the pull's from-address (Ra_restock_beat)
     w.c.repli_mirror_by_from = 1                       // per-friend crates, keyed by the caster
     w.c.repli_mirror_w = rw                            // crates mint in the radio world — the glass sees them

@@ -167,7 +167,14 @@
                 {#if face.skip > 0}<span class="rf-skiptime">{mmss(face.skip)} +</span> {mmss(face.at)} / {mmss(face.skip + face.of)}{:else}{mmss(face.at)} / {mmss(face.of)}{/if}
             </span>
             -->
+            <!-- AND THE DROPS CHIP IS GONE TOO (the owner 2026-08-11: *"I don't need the Radio to say
+                 '5 drops'"*) — the third and last of the ledger chips, going the same way as "N played"
+                  and "⚯ N on the dial" for the same reason: a count of lost packets is something the
+                   listener can neither act on nor want, and the audio itself already reports a drop
+                    better than a number can.  `face.drops` stays computed (it is a real fact, and the
+                     diagnostics still read it); only the chip left.
             {#if face.drops > 0}<span class="rf-chip">{face.drops} drops</span>{/if}
+            -->
         {:else if face.state === 'digging' && !face.note}
             <span class="rf-chip">{face.own ? 'digging your crates…' : 'looking for a friend to play…'}</span>
         {:else if face.first}

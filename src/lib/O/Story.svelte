@@ -1545,7 +1545,10 @@
         //    with the toc decoded — see there.
 
         let total = 1   // user builds up the test step-by-step via Resume
-        return w.i({ run: book, done: 0, total, paused: false, mode: 'new' })
+        // No `paused:` key at mint — absent IS not-paused.  A snapped boolean must ride as
+        //  1|absent (Text.svelte:788 THROWS on `=false`), and every other writer here uses
+        //   0 (running) | 2 (hard pause); readers only test truthiness and `!== 2`.
+        return w.i({ run: book, done: 0, total, mode: 'new' })
     },
 
     Story_settingoff(w: TheC, Run: House, run: TheC) {

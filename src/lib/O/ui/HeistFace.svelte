@@ -376,6 +376,11 @@
     // the lofi explainer — an inline popover, not a title= tooltip: a tooltip cannot be read on a phone,
     //  which is the exact device lofi exists for.
     let lofiWhy = $state(false)
+    // the SECTION explainer, same shape as lofi's (the owner 2026-08-11: *"lets add a tiny blurb about
+    //  what is a section in a '?' button like the other one"*).  It answers the one question this face
+    //   cannot answer by being looked at: `section` and `directories` are two breadcrumb rows that look
+    //    identical and mean opposite things — one is yours, one is theirs — and nothing on screen says so.
+    let catWhy = $state(false)
     function scrub() {
         scrubArmed = false
         press_probe('scrub', () => { A?.Heist_keep_scrub?.(A?.top_House?.()?.c?.radio_w, n) })
@@ -491,7 +496,8 @@
              gap-input nobody wanted.  Inline, the label is simply the first thing in the run, and the
              hanging indent (.kf-row) keeps wrapped lines clear of it. -->
         <div class="kf-row">
-            <span class="kf-stair-lbl">section</span>
+            <span class="kf-stair-lbl">section</span><button class="kf-q lbl" onclick={() => (catWhy = !catWhy)}
+                    title="what is a section?">?</button>
             <!-- THE LEADING GAP IS LOAD-BEARING (the human 2026-08-07: "the leading ' + ' button is gone!
                  it should be there, to unshift a toplevel classification").  Going inline, I read "we can
                  get that first ' + ' button with something else" as "drop it" — it meant the LABEL takes
@@ -516,6 +522,16 @@
                     onkeydown={(e) => { if (e.key === 'Enter') catInsertAt(i + 1) }} />
             {/each}
         </div>
+        {#if catWhy}
+            <!-- inline, not a title= tooltip, for the same reason lofi's is: a phone has no hover. -->
+            <div class="kf-why">
+                A <strong>section</strong> is YOURS — the shelf these tracks land on in your collection.
+                Nest as many levels as you like; it is remembered for your next heist.
+                <strong>directories</strong> below is THEIRS — the folder names the tracks already have,
+                which you can trim but did not choose.
+                <button class="kf-why-x" onclick={() => (catWhy = false)} title="close">✕</button>
+            </div>
+        {/if}
 
         <!-- DIRECTORIES — theirs: the shared source prefix, same chip+gap editing, different accent, never
              a box around the track list (that's what "spilled out" below is for). -->
@@ -831,6 +847,11 @@
         color: #b89ab0; font-size: 9px; line-height: 1; font-family: inherit;
     }
     .kf-q:hover { border-color: #7fe8bf; color: #7fe8bf; }
+    /* the label's own "?" — same button, riding a text row rather than the footer's flex group, so it
+       needs the row's baseline treatment and to sit tight against the word it explains. */
+    /* the negative left margin eats most of the label's own trailing gap: the "?" belongs to the word,
+       not to the row (the 2026-08-07 ruling that put lofi's "?" inside its group). */
+    .kf-q.lbl { vertical-align: middle; margin-left: -3px; margin-right: 5px; }
     .kf-why {
         position: relative; margin-top: 7px; padding: 7px 20px 7px 8px;
         background: rgba(127, 232, 191, 0.07); border: 1px solid rgba(127, 232, 191, 0.22);

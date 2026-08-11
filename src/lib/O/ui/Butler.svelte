@@ -218,7 +218,44 @@
     //  AND ONLY ONE PANEL MAY BE MOUNTED AT A TIME — see the strip's `!butler_up` gate. Two live
     //   instances both auto-join a scan-landing (`landed_url && !auto_fired`, latched per instance),
     //    and a single-use token redeemed twice comes back as a rebuff: the invite would refuse itself.
-    let landing = $derived.by(() => { void tick; return !!boot_param('Iz') })
+    //  LANDING MEANS *UNRESOLVED*, NOT *PRESENT* (2026-08-11, the owner: *"I have a `✓ joined — … is a
+    //   music Pier now` situation that isn't Butlering any further than `[ OK ] you are online`"*).
+    //   The token in the bar was standing in for "there is still an invite to deal with", and it is a
+    //    poor proxy: `strip_iz` only fires on the three paths that REACH a terminal state (dead token ·
+    //     refused redeem · successful redeem), and `join()` has two early returns that do not — the
+    //      ghosts-still-booting bail and the relay-did-not-answer bail — plus an older identity keeps a
+    //       deliberate JOIN button that may simply never be pressed. In every one of those the `?Iz`
+    //        stays in the URL, `landing` stays true, and the lift effect below returns early FOREVER.
+    //        A fullscreen screen with no timer and a hold that can never clear is the trap this file
+    //         exists to not be, arrived at through the one door nobody re-checked.
+    //  SO ASK THE PANEL, NOT THE BAR. `InvitePanel` already publishes its own state to `H.c.door` every
+    //   pass, and its `note` is the same sentence the listener is reading; a ✓ or ✗ in it is the panel
+    //    saying it is DONE. That is a report from the one thing that owns the join, which is the same
+    //     ruling as "the model decides, the face shows" applied to the door instead of the roster.
+    //  THE TOKEN STILL GATES THE MOUNT — `landing_seen` latches on the first true, so the panel and its
+    //   report stay on screen after this goes false. Nothing is hidden by resolving; the screen just
+    //    stops being welded shut by it.
+    //
+    //  ⚠ THIS IS AN INTERIM, AND THE OWNER HAS ALREADY RULED PAST IT (2026-08-11): *"the Butler should
+    //   stay on every Invite it discovers until it is fulfilled, leaving them in the URL until then…
+    //    certainly not letting you into the app until you have sorted that out."*  So the END STATE is
+    //     stricter than this: hold on ✓ ONLY (fulfilled = SEALED, not merely redeemed), keep holding on
+    //      ✗, and move `strip_iz` from redeem-time to seal-time so the token really is the state.
+    //  WHY IT IS NOT WRITTEN THAT WAY YET, and this is a sequencing rule rather than a hedge: holding on
+    //   ✗ with no way to dismiss is a permanent trap, and it is the SAME trap this derived was just
+    //    written to remove — a dead single-use token that can never seal, on a screen with no timer.
+    //     `strip_iz` moving to seal-time also re-introduces the exact stranding its own comment says it
+    //      was changed to fix ("gating the swap on an 8s seal window stranded ?Iz whenever the seal ran
+    //       late").  **The explicit per-invite dismissal must exist BEFORE the stricter hold ships.**
+    //        Until then this releases on either terminal, which can be wrong but can never trap.
+    //  See Supervisor_todo §0 for the full flow, including the plural — "every Invite it DISCOVERS" is
+    //   more than the URL's one (a pasted token is a second, and a discovered-but-unspent one a third).
+    let landing = $derived.by(() => {
+        void tick
+        if (!boot_param('Iz')) return false
+        const note = String(H?.c?.door?.note || '')
+        return !(note.startsWith('✓') || note.startsWith('✗'))
+    })
     // …and once shown it STAYS shown for the life of this screen, even after the token is spent: the
     //  panel is mid-`join()` when that happens ("… hello delivered — waiting for the seal"), and
     //   unmounting it there would delete the only report of whether the friendship sealed.

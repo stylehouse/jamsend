@@ -252,3 +252,75 @@ describe('the swell — a belly bigger than its plate', () => {
         expect(clip_frame(swelled()[0], away)).toEqual([])
     })
 })
+
+// ── INCUMBENCY: the seat must not teleport ─────────────────────────────────────────────────────
+//  The bug these gate (2026-08-11, the owner: *"Heist is flitting rapidly up and down"*): the seat
+//   is an argmax over 81 lattice centres, the area landscape over a blob has broad near-equal peaks,
+//    and the belly breathes continuously because the radio stirs the model.  So the winner flipped
+//     between two rows on a sub-pixel difference and the Component jumped, several times a second.
+//  The fix is incumbency, and what has to be true of it is a pair, not a single property: it must
+//   HOLD a seat that is merely tied, and it must YIELD one that is genuinely beaten.  A gate for
+//    only the first would pass just as happily on a seat that is welded in place.
+describe('incumbency — a seat holds its ground but does not squat', () => {
+    const ks = ['Heist!0', 'Door!1']
+    const rs: FocusRole[] = ['belly', 'bud']
+    const belly = () => focus_polys(F, ks, rs, 8, BELLY_SWELL)[0]
+
+    test('NO KEEP IS THE OLD SWEEP — incumbency is opt-in, so every prior gate still means what it did', () => {
+        const b = belly()
+        expect(fill_body(b, F)).toEqual(fill_body(b, F, 3, null))
+    })
+
+    test('A TIED SEAT HOLDS — a centre a whisker off the winner keeps the seat instead of jumping to it', () => {
+        const b = belly()
+        const won = fill_body(b, F)
+        // one unit off the winning centre: a different lattice answer, an all-but-identical area
+        const near = { x: won.x + 1, y: won.y + 1 }
+        const held = fill_body(b, F, 3, near)
+        expect(held.x).toBe(near.x)
+        expect(held.y).toBe(near.y)
+        // and it is not a bad seat — holding still cost us almost nothing
+        expect(held.w * held.h).toBeGreaterThan(won.w * won.h * 0.9)
+    })
+
+    // ⚠ THIS TEST FINDS ITS OWN INCUMBENT, and that is the whole point of it.  The obvious version —
+    //  plant the seat hard against a wall and watch it move — passes with the handicap set to TWENTY:
+    //   a corner seat is so bad that any margin short of absurd still lets a challenger take it, so
+    //    the gate discriminates nothing and is theatre.  What has to be pinned is the MIDDLE of the
+    //     range: a seat that is genuinely worse but not laughably so must still yield.  So sweep for a
+    //      centre scoring 30–70% of the best and use that; it goes red the moment the handicap grows
+    //       enough to let a half-price seat squat, which is the failure incumbency could actually
+    //        introduce.
+    test('A BEATEN SEAT YIELDS — a half-price seat is not allowed to squat', () => {
+        const b = belly()
+        const won = fill_body(b, F)
+        const bA = won.w * won.h
+        // sweep the CLIPPED body — the same polygon `fill_body` scores against.  Sweeping the raw
+        //  belly instead was the first version of this test and it was worthless: off the plate the
+        //   areas are wildly bigger, so "half price" there is a near-tie here and the gate passed
+        //    under every margin.  Measure in the units the function decides in.
+        const body = clip_frame(b, F)
+        let mid: Pt | null = null
+        for (let i = 1; i <= 15 && !mid; i++) for (let j = 1; j <= 15 && !mid; j++) {
+            const cx = F.x + (F.w * i) / 16, cy = F.y + (F.h * j) / 16
+            const r = fill_rect(body, cx, cy, 3)
+            const a = r.w * r.h
+            if (a > bA * 0.3 && a < bA * 0.7) mid = { x: cx, y: cy }
+        }
+        expect(mid).not.toBeNull()
+        const moved = fill_body(b, F, 3, mid)
+        expect(moved.x === mid!.x && moved.y === mid!.y).toBe(false)
+        expect(moved.w * moved.h).toBeGreaterThan(bA * 0.9)
+    })
+
+    test('A KEEP THE BODY NO LONGER HOLDS IS IGNORED, not honoured into a zero seat', () => {
+        const b = belly()
+        const gone = fill_body(b, F, 3, { x: -9999, y: -9999 })
+        expect(gone).toEqual(fill_body(b, F))
+    })
+
+    test('IT IS STILL PURE — same body, same keep, byte-same seat', () => {
+        const b = belly(), k = { x: F.x + F.w / 2, y: F.y + F.h / 2 }
+        expect(JSON.stringify(fill_body(b, F, 3, k))).toBe(JSON.stringify(fill_body(b, F, 3, k)))
+    })
+})

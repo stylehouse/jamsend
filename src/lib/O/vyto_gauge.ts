@@ -87,5 +87,13 @@ export function gauge_pose(c: GaugeBag & Record<string, any>, pose: string): boo
     // …and the stretch column search, for the same reason: it converged on a column that suited the
     //  face this cell USED to be drawing.  A cell entering (or leaving) `stretched` searches afresh.
     delete c.stretch_col; delete c.stretch_h; delete c.stretch_rect; delete c.stretch_prev
+    // …AND THE SEAT ITSELF (2026-08-11).  Since the seat became INCUMBENT — the standing centre
+    //  re-competes carrying a handicap, which is what stopped it teleporting — a stale seat is no
+    //   longer merely stale, it actively DEFENDS itself.  And a pose change is exactly when the body
+    //    underneath it changes shape most: entering `stretched` swells the belly past the plate, so
+    //     the seat chosen for the small inscribed body would sit in the new one and hold a place it
+    //      was never measured for.  Incumbency has to be EARNED by a seat that is still about this
+    //       body; a newborn one has no standing at all.
+    delete c.fillrect; delete c.fillrect_k
     return true
 }

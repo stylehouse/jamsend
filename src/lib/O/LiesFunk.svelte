@@ -2831,7 +2831,9 @@ await M.eatfunc({
                         const srect = el.getBoundingClientRect()
                         const vbn = vb.trim().split(/[\s,]+/).map(Number)
                         const molds: { key: string, x: number, y: number, w: number, h: number,
-                                       fit: number, nw: number, nh: number }[] = []
+                                       fit: number, nw: number, nh: number,
+                                       col?: number, ovx?: number, ovy?: number,
+                                       slx?: number, sly?: number, lay?: number }[] = []
                         let overlaps = 0
                         let moldg = ''
                         if (vbn.length === 4 && srect.width > 0 && srect.height > 0) {
@@ -2855,10 +2857,47 @@ await M.eatfunc({
                                 //   map states both what the face wanted and what it was given.
                                 const fitv = +((m as HTMLElement).style.getPropertyValue('--fit') || 1) || 1
                                 const mw = +(b.x - a.x).toFixed(1), mh = +(b.y - a.y).toFixed(1)
+                                // ── DOES THE FACE FIT THE BOX IT WAS GIVEN? (2026-08-11, the owner: *"I need
+                                //  the Heist given more measurements to check it's fitting into the cell
+                                //   good"*).  `fit` above answers a DIFFERENT question — how much of the size
+                                //    it asked for the mold got — and a face can score fit 1.000 while its
+                                //     content is cut off at the bottom, or while it uses two thirds of the box
+                                //      and leaves the rest as air.  Neither is visible in a size column.
+                                //  Two dimensionless ratios, read off the box the face actually lays out in
+                                //   (`.face-scroll`, which is sized `100%/--fit` and transform-scaled back, so
+                                //    its own client/scroll/child boxes are all in the SAME unscaled units and
+                                //     the ratios need no conversion at all):
+                                //   • ovx/ovy = scroll ÷ client.  >1 means the content is BIGGER than its box
+                                //      — the face is cut off, by exactly that factor.  1.000 is clean.
+                                //   • slx/sly = 1 − child ÷ client.  The share of the box the face declines to
+                                //      use — air.  ~0 is a face filling its mold; 0.4 is a face rattling in it.
+                                //  `col` is the layout column in CSS px — the number stretch_search solves for,
+                                //   and the first thing to look at when a stretched face reads wrong.  It is
+                                //    the CHILD's width, not the scroll box's: since the flitting fix a
+                                //     stretched face's column is assigned on the child (`--lay × --fit`, which
+                                //      cancels the zoom) and the box around it is the room, so the box would
+                                //       report the room and call it the column.
+                                const lay = +((m as HTMLElement).style.getPropertyValue('--lay') || 0) || 0
+                                const sc = (m as Element).querySelector('.face-scroll') as HTMLElement | null
+                                const kid = sc?.firstElementChild as HTMLElement | null
+                                const cw = sc?.clientWidth ?? 0, ch = sc?.clientHeight ?? 0
                                 molds.push({ key: (m as Element).getAttribute('data-key') ?? '?',
                                              x: +a.x.toFixed(1), y: +a.y.toFixed(1),
                                              w: mw, h: mh, fit: +fitv.toFixed(3),
-                                             nw: +(mw / fitv).toFixed(1), nh: +(mh / fitv).toFixed(1) })
+                                             nw: +(mw / fitv).toFixed(1), nh: +(mh / fitv).toFixed(1),
+                                             // `lay` is present ONLY on a stretched face (mold_seat emits it),
+                                             //  and it is what tells a reader whether over-the-box is a FAULT
+                                             //   or the design: a stretched face was handed its box, so content
+                                             //    past it is cut; every other face lays out at its natural size
+                                             //     under `overflow: visible` and SPILLS by the spill law.
+                                             ...(lay ? { lay: +lay.toFixed(3) } : {}),
+                                             ...(cw > 0 && ch > 0 ? {
+                                                 col: Math.round(kid?.offsetWidth || cw),
+                                                 ovx: +((sc!.scrollWidth) / cw).toFixed(3),
+                                                 ovy: +((sc!.scrollHeight) / ch).toFixed(3),
+                                                 ...(kid ? { slx: +(1 - kid.offsetWidth / cw).toFixed(3),
+                                                             sly: +(1 - kid.offsetHeight / ch).toFixed(3) } : {}),
+                                             } : {}) })
                             }
                             for (let i = 0; i < molds.length; i++) for (let j = i + 1; j < molds.length; j++) {
                                 const A = molds[i], B = molds[j]

@@ -192,6 +192,41 @@ if (svg) {
     }
     if (Array.isArray(r.molds)) {
         console.log(`▣ molds: ${r.molds.length} · overlapping pairs: ${r.overlaps}`)
+        // ── THE CELL JOIN (2026-08-11, the owner: *"I need the Heist given more measurements to check
+        //  it's fitting into the cell good"*).  A mold's own numbers can only ever say what the FACE did
+        //   with its box; the question is about the box's relationship to the WALL it sits in, and until
+        //    the cell paths carried `data-key` the two layers could not be joined at all.  Now they can,
+        //     so do the arithmetic here rather than ship more numbers over the wire:
+        //      · the cell's polygon area (shoelace over the path's points — the Q control points ARE the
+        //         original corners, so including them measures the un-rounded cell, which is the honest
+        //          one: corner rounding is decoration, not room),
+        //      · what share of it the mold covers — the "am I using my cell" number,
+        //      · and how many of the mold's four corners are actually INSIDE the wall.  <4 is the fault
+        //         that matters: a face hanging out of its own cell, which no size or fit column can show.
+        const cellPolys = new Map()
+        for (const mm of r.svg.matchAll(/<path[^>]*class="cell[^"]*"[^>]*>/g)) {
+            const tag = mm[0]
+            const key = (tag.match(/data-key="([^"]*)"/) ?? [])[1]
+            const d = (tag.match(/\sd="([^"]+)"/) ?? [])[1]
+            if (!key || !d) continue
+            const n = d.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? []
+            const pts = []
+            for (let k = 0; k + 1 < n.length; k += 2) pts.push([n[k], n[k + 1]])
+            if (pts.length >= 3) cellPolys.set(key, pts)
+        }
+        const area_of = (p) => {
+            let a = 0
+            for (let i = 0, j = p.length - 1; i < p.length; j = i++) a += p[j][0] * p[i][1] - p[i][0] * p[j][1]
+            return Math.abs(a) / 2
+        }
+        const inside = (x, y, p) => {
+            let win = false
+            for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+                const [xi, yi] = p[i], [xj, yj] = p[j]
+                if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) win = !win
+            }
+            return win
+        }
         // `fit` is the whole point of this map (2026-08-10): a mold's SIZE cannot say whether the face
         //  got what it asked for.  Print it beside the natural box, and flag anything under 0.95 —
         //   `fit` is an area penalty squared, so 0.70 is a face at 49%, which is what an aspect-ratio
@@ -203,6 +238,32 @@ if (svg) {
             const pct = Math.round(m.fit * m.fit * 100)
             const mark = m.fit < 0.95 ? `  ⟵ ${pct}% of its natural area` : ''
             console.log(`    ${String(m.key).padEnd(28)} ${String(m.x).padStart(7)},${String(m.y).padStart(7)}  ${size.padEnd(14)} fit ${m.fit.toFixed(3)} of ${m.nw}×${m.nh}${mark}`)
+            // ── the fit-into-the-cell lines, one indent deeper, printed only when the tab sent them
+            //  (a tab predating this build says so once rather than printing confident blanks).
+            if (m.ovx == null) { console.log(`      ↳ (box: old tab — no ovx/sl; reload the runner)`) }
+            else {
+                // OVER THE BOX IS ONLY A FAULT FOR A FACE THAT WAS HANDED ITS BOX.  A stretched face
+                //  (`lay` present) is laid out at an ASSIGNED column inside an assigned rectangle, so
+                //   content past it really is cut.  Every other face lays out at its natural size under
+                //    `overflow: visible` and spills UNDER its smaller neighbours on purpose — the spill
+                //     law.  Printing "CUT OFF" at that is the instrument crying wolf at the design.
+                const over = m.ovx > 1.01 || m.ovy > 1.01
+                const air = (m.slx ?? 0) > 0.15 || (m.sly ?? 0) > 0.15
+                const pct = Math.round((Math.max(m.ovx, m.ovy) - 1) * 100)
+                console.log(`      ↳ box: ${m.lay ? `stretched · lay ${m.lay} · ` : ''}col ${m.col}px`
+                    + ` · content ${m.ovx.toFixed(2)}×${m.ovy.toFixed(2)} of its box`
+                    + (m.slx == null ? '' : ` · air ${(m.slx * 100).toFixed(0)}%×${(m.sly * 100).toFixed(0)}%`)
+                    + (over ? (m.lay ? `  ⟵ CUT OFF (${pct}% over)` : `  ⟵ spilling ${pct}% (visible — the spill law)`) : '')
+                    + (!over && air ? `  ⟵ rattling (air on ${(m.slx ?? 0) > 0.15 ? 'x' : ''}${(m.sly ?? 0) > 0.15 ? 'y' : ''})` : ''))
+            }
+            const poly = cellPolys.get(m.key)
+            if (!poly) { console.log(`      ↳ cell: (no wall keyed ${m.key} — a disc/loose cell, or an old tab)`); continue }
+            const ca = area_of(poly), ma = m.w * m.h
+            const corners = [[m.x, m.y], [m.x + m.w, m.y], [m.x, m.y + m.h], [m.x + m.w, m.y + m.h]]
+            const inn = corners.filter(([x, y]) => inside(x, y, poly)).length
+            console.log(`      ↳ cell: area ${Math.round(ca)} · mold ${Math.round(ma)} = ${(ma / ca * 100).toFixed(0)}% of the wall`
+                + ` · corners inside ${inn}/4`
+                + (inn < 4 ? `  ⟵ HANGING OUT of its own cell` : ''))
         }
     }
     process.exit(0)

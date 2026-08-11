@@ -107,12 +107,8 @@
     // a bar press: `o` is an ACT (o-mark the newest moment); every other word is a toggle —
     //  on rides as 1-or-absent, deleted not zeroed (the snapped-boolean law, kept as habit
     //   even in an off-snap world).
-    function press(w: TheC, b: TheC) {
-        if (b.sc.kind === 'act') { (H as House).Vyto_omark?.(w); return }
-        if (b.sc.on) delete b.sc.on
-        else b.sc.on = 1
-        b.bump_version()
-    }
+    // (the bar press went with the bar — 2026-08-11.  `Vyto_omark` and every %Bar doctrine still
+    //  stand model-side; nothing in this component toggles them any more.)
 
     // THE SMUGGLED PRESS (the owner 2026-08-09: "with click handlers smuggled in, so anything can
     //  basically be interacted with").  A posed particle carries `.c.press` (a ref — never encoded,
@@ -545,12 +541,7 @@
     //  buttons. time to slick it all back"*).  The junk fabricator (`Sounditron_junk`) still exists
     //   model-side for a Book that wants a crowded world; only the button that cycled it left.
 
-    function sentence(o: TheC): string {
-        const bits = [`reads ${o.sc.reads}`]
-        if (o.sc.decides) bits.push(`decides ${o.sc.decides}`)
-        if (o.sc.writes)  bits.push(`writes ${o.sc.writes}`)
-        return bits.join(' — ')
-    }
+    // (`sentence` — the organ row's reads/decides/writes line — went with the organ panel, 2026-08-11.)
 
     // ── the viewport: one root scope, the fixed frame Vyto_solve cuts against ──────────────
     //  Everything below is UItime render matter: springs are plain JS (not $state — they churn
@@ -569,35 +560,21 @@
     //     (humdinger), and every Book cuts the same rectangle it always did: no fixture can move.
     const FRAME_LONG = 800, FRAME_SHORT = 450
     let vw_w = $state(FRAME_LONG), vw_h = $state(FRAME_SHORT)
-    // THE ASPECT PICK (the human 2026-08-08: "lets have some aspect ratios to flip through (dropdown)
-    //  in Vytui to enforce some kind of min-height").  The measured `auto` path below kept landing on
-    //   ratio 0.35 — the hard clamp FLOOR — on the live page: the first pixels ever taken of a live
-    //    glass came back 800×280, the letterbox strip the phone-first work was supposed to end.  So
-    //     give the shape a CHOICE beside the measurement, and let the picked ratio BE the min-height:
-    //      the svg is `width:100%; height:auto`, so a 4:3 viewBox renders 0.75×width tall by
-    //       construction.  (A pixel `min-height` would be the wrong fix — it letterboxes gutters
-    //        AROUND an unchanged cut, and "the cut must follow the hole" is the whole §0.2(d) lesson.)
-    //  A THIRD WRITER OF THE FRAME, ROUTED THROUGH THE SAME CHOKEPOINT.  fit_frame is the only place
-    //   vw_w/vw_h are written, publish_frame the only place the model hears about it — the pick adds a
-    //    branch inside fit_frame and NO new path, which is what keeps the Book guarantee intact: the
-    //     humdinger gate at the top of fit_frame still returns first on every runner, so a driven world
-    //      is never stamped and Vyto_solve cuts the same literal 800×450 it always did.
-    //  Long edge stays 800 so the model's absolute AREA_BASE algebra keeps its range (a 9:16 pick is
-    //   450×800, portrait, same long edge).  Tall picks are capped in CSS (.viewport max-height) and
-    //    the measure pass converts through the 'meet' scale, so a letterboxed svg stays honest.
-    const ASPECTS: [string, number, number][] = [
-        ['auto',  0,   0  ],   // measure the hole — today's behaviour, byte-identical
-        ['21:9',  800, 343],
-        ['16:9',  800, 450],
-        ['3:2',   800, 533],
-        ['4:3',   800, 600],
-        ['1:1',   800, 800],
-        ['9:16',  450, 800],
-    ]
-    // AUTO is the DEFAULT pick again (the owner 2026-08-10: "set it to aspect-ratio Auto again") —
-    //  measure the hole.  Under the focus regime the belly fits whatever rectangle it is handed, so
-    //   the designed-in 16:9 lost its reason to be the boot shape; the picks stay in the list.
-    let aspect_pick = $state('auto')
+    // THE ASPECT PICK IS GONE, AND MEASURING IS THE ONLY WAY THE FRAME IS SET (2026-08-11, the owner:
+    //  *"no aspect ratio"*).  It arrived 2026-08-08 to enforce a min-height, back when the measured
+    //   path kept landing on the 0.35 clamp FLOOR and the first pixels of a live glass came back
+    //    800×280 — a letterbox strip.  That fault was in the MEASURE (it read the stage's own height,
+    //     which is the aspect it had just set — a fixed point at whatever it started as), and fixing
+    //      it to take the width from the stage and the height from the screen below it is what made
+    //       `auto` right; the dropdown had already been defaulted back to `auto` on 2026-08-10 and
+    //        every other option could then only make the glass WORSE than the hole it lives in.
+    //  The min-height it was hired for now rides where it belongs — the ratio floor in fit_frame and
+    //   `.depth`'s vh cap in the CSS — neither of which is a thing anyone has to press.
+    //  The chokepoint is UNCHANGED and is the whole Book guarantee: fit_frame is the only writer of
+    //   vw_w/vw_h, publish_frame the only place the model hears about it, and the humdinger gate at
+    //    the top of fit_frame still returns first on every runner — so a driven world is never
+    //     stamped and Vyto_solve cuts the same literal 800×450 it always did.  Long edge stays 800 so
+    //      the model's absolute AREA_BASE algebra keeps its range.
     const frame_of = (): Pt[] => [{ x: 0, y: 0 }, { x: vw_w, y: 0 }, { x: vw_w, y: vw_h }, { x: 0, y: vw_h }]
     // THE SOLVE FRAME AND THE CUT FRAME MUST BE THE SAME RECTANGLE (Vyto_todo §0.2(d), 2026-08-08).
     //  `Vyto_solve` cut against a hardcoded [0,0,800,450] while this renderer cuts against
@@ -644,21 +621,21 @@
         //       by CSS, so its own box is already independent and honest.
         const full = typeof document !== 'undefined' && !!document.fullscreenElement
         let nw: number, nh: number
-        // FULLSCREEN BEATS THE PICK.  Fullscreen means "fill THIS screen" and the stage's own box is
-        //  honest there (CSS sizes it 100vw/100vh), so measuring is strictly better than any ratio a
-        //   dropdown could name — and the ResizeObserver restores the pick on the way back out.  The
-        //    pick governs the in-page stage, which is the shape that was starving.
-        const picked = aspect_pick !== 'auto' && !full
-            ? ASPECTS.find(a => a[0] === aspect_pick)
-            : undefined
-        if (picked) {
-            nw = picked[1]; nh = picked[2]
-        } else {
+        {
             const availW = r.width
             const availH = full ? r.height : Math.max(120, (window.innerHeight || 0) - r.top - 8)
             if (!(availH > 0)) return
             const portrait = availH > availW
-            const ratio = Math.min(1, Math.max(0.35, portrait ? availW / availH : availH / availW))
+            // THE FLOOR *IS* THE MIN-HEIGHT (2026-08-11, the owner: *"when not FaceSucking the Vytui
+            //  wants a min-height a bit bigger than it is now"*).  The svg is `width:100%; height:auto`,
+            //   so the viewBox ratio renders as height by construction and a pixel min-height would be
+            //    the wrong tool — it letterboxes gutters AROUND an unchanged cut (§0.2(d): the cut must
+            //     follow the hole).  0.35 dates from when this clamp was all that stood between the
+            //      glass and a letterbox strip; 0.5 says a glass is never flatter than 2:1, which on a
+            //       short wide window costs a sliver of overflow and buys back a shape you can put a
+            //        belly in.  It binds ONLY on wide-and-short; on the resident full-page glass the
+            //         measurement is well above it and this line is inert.
+            const ratio = Math.min(1, Math.max(0.5, portrait ? availW / availH : availH / availW))
             const long = FRAME_LONG, short = Math.max(200, Math.round(long * ratio))
             nw = portrait ? short : long; nh = portrait ? long : short
         }
@@ -671,16 +648,8 @@
         if (engaged.size) { for (const ww of [...engaged.keys()]) { engaged.delete(ww); kick(ww) } ; paint_tick++ }
         publish_frame(w)
     }
-    // the pick changed: re-run the ONE writer against every mounted stage.  `stageEls` is the registry
-    //  reg_stage already keeps for the measure pass (declared further down; this only ever runs from an
-    //   event handler, long after init).  fit_frame does the rest — the 2% guard, the vw_w/vw_h write,
-    //    publish_frame's stamp and its Vyto_stir_soon poke, so the model re-cuts against the new
-    //     rectangle and clamps any seed the reshape stranded outside it.  Flipping the dropdown IS the
-    //      first effect: the whole glass visibly re-flows into the new shape.
-    function repick_aspect(v: string) {
-        aspect_pick = v
-        for (const [w, el] of stageEls) fit_frame(el, w)
-    }
+    // (`repick_aspect` went with the dropdown — 2026-08-11.  Nothing re-runs fit_frame by hand any
+    //  more: the ResizeObserver in reg_stage is the only trigger, which is the honest one.)
     // THE KNIFE-EDGE, resolved (Vyto_todo §0.2(a), decided 2026-08-08).  This floor and the model's
     //  rewrite tolerance (`EPS = 0.5`, Vyto.g Solve law 1) were THE SAME NUMBER, so every target
     //   rewrite was by construction ≥ the not-calm threshold: one sub-pixel solve wriggle bought a
@@ -877,12 +846,25 @@
     //       binds instead and the zoom falls again.  **The zoom is `min(rect_w/col, rect_h/height)`,
     //        and `height` is a function of `col`** — so there is a best column, and the only way to
     //         find it is to try one, measure what came back, and step.  That is the owner's "more
-    //          rounds": the search lives in the measure pass, one step per round, converging in a
-    //           handful and then sitting still inside a dead band.
+    //          rounds": the search lives in the measure pass, and it sits still inside a dead band.
+    //  …AND IT STEPPED WHERE IT COULD HAVE SOLVED (2026-08-11, the owner: *"can we size the Heist
+    //   Component slightly smoother than it does now"*).  A fixed ±18% step is a STAIRCASE: every round
+    //    is a real relayout at a visibly different column and zoom, so a heist settles through three to
+    //     six sizes on its way in, and every content change walks the staircase again.  That is the
+    //      unsmoothness — not the final size, the parade of sizes before it.
+    //  But the column is not an unknown to be hunted, it is an unknown to be SOLVED.  Wrapped content
+    //   holds its area roughly constant (`h ≈ A/col`), so one measurement gives A, and balancing
+    //    `rect_w/col` against `rect_h/h` is then a quadratic with one positive root:
+    //     **`col* = √(rect_w · col · h / rect_h)`**.  One measured round lands on it or very near it,
+    //      and what follows is a small correction rather than another step of the same size.
+    //  The model is only approximately true (a heist has fixed-height rows that do not reflow), so the
+    //   safeties stay: the leap is bounded, the result is clamped, a correction under NUDGE is not
+    //    worth a relayout at all, and the 2-cycle guard is untouched.
     const STRETCH_COL0 = 300        // where the search starts, in viewBox units of layout width
     const STRETCH_COL_MIN = 150     // skinnier than this and a heist is a column of wrapped fragments
     const STRETCH_COL_MAX = 520
-    const STRETCH_STEP = 1.18       // one step per round — gentle enough not to ring, big enough to land
+    const STRETCH_LEAP = 2          // no round may change the column by more than this factor
+    const STRETCH_NUDGE = 0.04      // a correction smaller than 4% is not worth the relayout it costs
     const STRETCH_BAND = 1.08       // within 8% of balanced, stop: this is what makes it settle
     const STRETCH_ZOOM_MIN = 1.3    // the owner's 130%, as the floor
     // foam fill targets: what fraction of a scope's area the discs may claim before pressing.
@@ -1166,15 +1148,43 @@
     //    only the scale it is drawn at changes, which is a composite, not a layout.
     //  The body is keyed by its own bbox AND the plate's, because a swelled belly is cut by the plate
     //   — the same body in a different frame is a different room.
+    //  THREE GUARDS AGAINST A FLITTING SEAT (2026-08-11 — *"Heist is flitting rapidly up and down"*).
+    //   The belly breathes: the radio stirs the model continuously and express nudges the cell's
+    //    radius, so this memo was being MISSED several times a second and re-solving an argmax that
+    //     can teleport between near-equal peaks (see `fill_body`'s incumbency note).  In order of
+    //      how much each one buys:
+    //   1. INCUMBENCY (in `fill_body`): the standing centre re-competes with a handicap, so a
+    //       challenger must be meaningfully better to take the seat.  This is the real fix; the other
+    //        two are hygiene that stop us asking the question so often in the first place.
+    //   2. A COARSE KEY.  Rounding the bbox to the whole unit means a one-pixel breath is a new room.
+    //       `QUANT` units is the grid instead — a body that has genuinely changed shape still misses,
+    //        a body that is merely alive does not.
+    //   3. A QUANTISED ANSWER.  mx/my/mw/mh go straight into a style string, so an answer that moves
+    //       by a third of a unit relayouts the face for nothing.  Whole units out, and if the fresh
+    //        answer is within `STILL` of the standing one on every side, hand back the STANDING
+    //         OBJECT — identical numbers, so Svelte never touches the attribute.
+    const SEAT_QUANT = 6      // bbox grid for the memo key, in viewBox units
+    const SEAT_STILL = 2      // a new seat within this of the old one is the old one
     function fill_body_memo(row: TheC, poly: Pt[], frame: { x: number, y: number, w: number, h: number },
                             bb: { bx: number, by: number, bw: number, bh: number },
                            ): { x: number, y: number, w: number, h: number } {
         const c = row.c as any
-        const k = `${Math.round(bb.bx)},${Math.round(bb.by)},${Math.round(bb.bw)},${Math.round(bb.bh)},${poly.length}`
-              + `|${Math.round(frame.x)},${Math.round(frame.y)},${Math.round(frame.w)},${Math.round(frame.h)}`
+        const q = (v: number) => Math.round(v / SEAT_QUANT)
+        const k = `${q(bb.bx)},${q(bb.by)},${q(bb.bw)},${q(bb.bh)},${poly.length}`
+              + `|${q(frame.x)},${q(frame.y)},${q(frame.w)},${q(frame.h)}`
         if (c.fillrect_k === k && c.fillrect) return c.fillrect
-        const r = fill_body(poly, frame)
-        c.fillrect_k = k; c.fillrect = r
+        // …UNLESS THE FACE IS STILL ARRIVING.  Inside the settling window both guards stand down —
+        //  no incumbency, no still-band — so the seat follows a Heist that is still filling up
+        //   instead of defending the shape of an empty one.  See `regauge_pose`.
+        const loose = settling(row)
+        const held = c.fillrect as { x: number, y: number, w: number, h: number } | undefined
+        const keep = !loose && held && held.w > 0 ? { x: held.x, y: held.y } : null
+        const raw = fill_body(poly, frame, 3, keep)
+        const r = { x: Math.round(raw.x), y: Math.round(raw.y), w: Math.round(raw.w), h: Math.round(raw.h) }
+        c.fillrect_k = k
+        if (!loose && held && Math.abs(held.x - r.x) <= SEAT_STILL && Math.abs(held.y - r.y) <= SEAT_STILL
+                          && Math.abs(held.w - r.w) <= SEAT_STILL && Math.abs(held.h - r.h) <= SEAT_STILL) return held
+        c.fillrect = r
         return r
     }
     function mold_seat(cell: PaintCell): string {
@@ -1184,7 +1194,31 @@
         //   ONLY (never size): 0.02px per rank keeps molds in the same big-under-small order as
         //    their SVG cells, and the 12px hover lift outranks every rank step by construction.
         const z = cell.lift ? ' translateZ(12px)' : ` translateZ(${((cell.zi ?? 0) * 0.02).toFixed(2)}px)`
-        return ` transform:${rot}${z};`
+        // ── THE LAYOUT WIDTH AND THE ZOOM MUST NOT BE THE SAME VARIABLE ────────────────────────────
+        //  `.face-scroll` lays out at `100% / --fit` and scales back by `--fit`, which is exactly right
+        //   for the magnifier: the box it lays out in and the box it lands in are the same box.  For a
+        //    STRETCHED face it is a feedback loop, and the second half of the flitting the owner saw.
+        //  Follow it round once.  `fit = min(W/col, H/h)`.  When the HEIGHT term binds, the laid-out
+        //   column is no longer `col` — it is `W/fit = W·h/H`, wider.  Wrapped content holds its area,
+        //    so at that wider column the content comes back SHORTER: h' ≈ A/(W·h/H) = A·H/(W·h).  That
+        //     map is `h → k/h`, an involution: it does not converge on the balance point, it BOUNCES
+        //      between two heights forever, one relayout each way, which on screen is a face pulsing
+        //       up and down about its own centre several times a second.  Nothing downstream can damp
+        //        it, because both states are self-consistent.
+        //  `--lay` breaks the loop by assigning the layout width outright: the column is `col` whatever
+        //   the zoom does, so the face is measured at the column the search actually chose and the
+        //    search becomes a plain 1-D fixed point (which the solve + dead band already handle).
+        //     `--fit` goes back to being a pure OUTPUT — a scale, never a layout.
+        //  The price, and it is the honest one: when the two terms disagree the face is narrower than
+        //   its rectangle instead of overflowing it.  That air is exactly what the capture's `slx`
+        //    reports, and it is what the next search round closes.  At the balance point lay×fit = 1
+        //     and the face fills the rectangle on both axes, which is where it comes to rest.
+        const rc: any = cell.row.c
+        const fr = rc?.stretch_rect
+        const lay = stretch_cell(cell) && fr && fr.w > 0
+            ? ` --lay:${Math.max(0.05, Math.min(4, (+(rc.stretch_col ?? STRETCH_COL0)) / fr.w)).toFixed(3)};`
+            : ''
+        return ` transform:${rot}${z};${lay}`
     }
 
     // per-cell colour from Matstyle (the human: "colour each of them somehow"): mainkey → a jewel
@@ -1396,9 +1430,7 @@
     let paint_tick = $state(0)     // the template reads this to re-pull paintMap
     let raf_id = 0                 // 0 = loop stopped
     let last_ts = 0
-    // local UItime chrome state (never snapped): the organ panel is DEV/inspection readout —
-    //  collapsed by default, revealed by the bar toggle.  Room to grow into real layout controls.
-    let show_organs = $state(false)
+    // (`show_organs` went with the organ panel — 2026-08-11, the chrome cull.)
 
     const grawave = (w: TheC) => Number((w.sc as any).grawave_duration) || 0.4
     const commissioned = (w: TheC) => !!(w.c as any).commission
@@ -1920,7 +1952,7 @@
                 //  It also gives "things become icons when crushed down" as a CONTINUUM rather than a
                 //   special case: the scale falls smoothly with the seat, and below a legibility floor the
                 //    face is not drawn at all and the cell keeps only its edge label — the icon register.
-                regauge_pose(row)
+                regauge_pose(row, w)
                 const nw = (row.c as any).need_w as number | undefined
                 const nh = (row.c as any).need_h as number | undefined
                 // THE BUD AND THE BELLY WANT OPPOSITE CEILINGS.  `FIT_MAX` exists to stop a trivial
@@ -2657,17 +2689,9 @@
         }
         return { destroy() { ro?.disconnect(); if (stageEls.get(w) === el) stageEls.delete(w) } }
     }
-    // fullscreen the stage (the human 2026-08-07: "so that Vyto can be fullscreened").  Toggles, and
-    //  leans on the ResizeObserver above to re-cut the frame to whatever shape the screen turns out to
-    //   be — so entering fullscreen on a portrait phone reshapes the cut, it does not just zoom it.
-    //  Best-effort by design: the API rejects when the gesture isn't trusted or the browser forbids it
-    //   (iOS Safari has no element fullscreen), and a refused fullscreen must not throw into the render.
-    async function go_fullscreen(el: Element | null) {
-        try {
-            if (document.fullscreenElement) { await document.exitFullscreen(); return }
-            await (el as any)?.requestFullscreen?.()
-        } catch (e) { console.log('◈ Vyto fullscreen refused —', String((e as any)?.message ?? e)) }
-    }
+    // (`go_fullscreen` went with the ⛶ — 2026-08-11.  The ResizeObserver above still re-cuts the frame
+    //  for a browser-driven fullscreen, and fit_frame still lets `document.fullscreenElement` beat the
+    //   pick, so the PATH is intact; there is simply no longer a button in the glass that asks for it.)
     function stamp_need(w: TheC, row: TheC, area: number) {
         if (!(area > 0)) return
         const cur = (row.c as any).need_area as number | undefined
@@ -2741,23 +2765,67 @@
         if (!(prev > 0) || Math.abs(h - prev) / h > 0.02) { c.stretch_h = h; react_soon() }
         const fr = c.stretch_rect
         if (!fr || !(fr.w > 0) || !(fr.h > 0)) return
-        const col = +(c.stretch_col ?? STRETCH_COL0)
+        // MEASURE THE COLUMN, DO NOT ASSUME IT.  `h` is whatever the content came to in the box it was
+        //  ACTUALLY given, so the `col` it is paired with has to be that same box or the solve is
+        //   comparing a height from one layout against a width from another — which is how a search
+        //    that looks correct on paper ends up chasing its own tail.  Since `--lay` these agree, and
+        //     that is the point: reading the DOM keeps them agreeing even if some future rule changes
+        //      the box again, instead of failing silently the way the coupled version did.
+        const col = child.offsetWidth > 0 ? child.offsetWidth * sy : +(c.stretch_col ?? STRETCH_COL0)
         const zw = fr.w / col, zh = fr.h / h
         if (zh > zw * STRETCH_BAND || zw > zh * STRETCH_BAND) {
-            const want = Math.round(Math.max(STRETCH_COL_MIN, Math.min(STRETCH_COL_MAX,
-                zh > zw ? col / STRETCH_STEP : col * STRETCH_STEP)))
+            // the solve (see STRETCH_LEAP above), then the safeties: bound the leap, clamp to the legal
+            //  range, round to a whole unit so a settled search re-emits identical numbers — and drop a
+            //   correction too small to be worth the relayout, which is where the smoothness comes from.
+            const solved = Math.sqrt((fr.w * col * h) / fr.h)
+            const leapt = Math.max(col / STRETCH_LEAP, Math.min(col * STRETCH_LEAP, solved))
+            const want = Math.round(Math.max(STRETCH_COL_MIN, Math.min(STRETCH_COL_MAX, leapt)))
+            // the nudge floor exists so a 3% correction does not relayout the type under the reader —
+            //  but while the face is still arriving a 3% correction is not noise, it is the content
+            //   landing.  A quarter of the floor inside the settling window.
+            const nudge = settling(cell.row) ? STRETCH_NUDGE / 4 : STRETCH_NUDGE
+            if (Math.abs(want - col) < col * nudge) return
             // IT MUST TERMINATE, and the dead band alone does not guarantee that.  If the balance
             //  point falls BETWEEN two reachable columns, neither satisfies the band and a fixed
             //   multiplicative step ping-pongs between them forever — each bounce a relayout, which
             //    is precisely the annoyance the owner warned about.  A 2-cycle is the only cycle this
             //     step can produce, so remembering one column back is enough to see it and stop: we
             //      are already at the better of the two (this step would return to the worse one).
-            if (want === col || want === +(c.stretch_prev ?? 0)) return
-            c.stretch_prev = col; c.stretch_col = want; react_soon()
+            //  `col` is now MEASURED, so it is a float; the cycle memory has to be rounded the same way
+            //   `want` is or it can never match and the guard silently stops guarding.
+            const here = Math.round(col)
+            if (want === here || want === +(c.stretch_prev ?? 0)) return
+            c.stretch_prev = here; c.stretch_col = want; react_soon()
         }
     }
-    function regauge_pose(row: TheC) {
-        gauge_pose(row.c as any, String((((row.c as any).source_n) as any)?.c?.pose ?? ''))
+    // ── THE SETTLING WINDOW (2026-08-11, the owner: *"it needs to layout a bit more, at occasions
+    //  near but perhaps not exactly Heist starting..."*) ────────────────────────────────────────────
+    //  Read the "perhaps not exactly" literally, because it is the whole diagnosis: the trouble is
+    //   not AT the pose change, it is in the second or two AFTER it.  A Heist that has just started
+    //    is a nearly-empty list; its rows arrive over the following beats.  Every guard added to stop
+    //     the flitting — incumbency, the still-band, the 4% nudge floor — is a reason NOT to move,
+    //      and they were all in force while the face was still becoming what it is.  So the layout
+    //       settled on the shape of an empty Heist and then defended it.
+    //  Stickiness therefore has to be EARNED, not granted at birth.  For `SETTLE_MS` after a pose
+    //   change the seat carries no handicap, the still-band is off and the nudge floor is a quarter
+    //    of its size — the layout is as free as it was before the flitting fix.  After that the
+    //     guards come back and the glass goes still, which is the state it spends its life in.
+    //  The LADDER is the other half, and `gauge_again` already proved why it is not optional: a
+    //   settled glass never bumps `paint_tick`, so nothing would look a second time on its own.  Four
+    //    re-measures across the window catch the content wherever it happens to land.
+    const SETTLE_MS = 2200
+    const SETTLE_LADDER = [180, 520, 1200, 2000]
+    const settle_timers = new Map<TheC, any[]>()
+    function settling(row: TheC): boolean {
+        const at = +((row.c as any).settle_at ?? 0)
+        return at > 0 && Date.now() - at < SETTLE_MS
+    }
+    function regauge_pose(row: TheC, w: TheC) {
+        if (!gauge_pose(row.c as any, String((((row.c as any).source_n) as any)?.c?.pose ?? ''))) return
+        ;(row.c as any).settle_at = Date.now()
+        if (typeof setTimeout === 'undefined') return
+        for (const t of settle_timers.get(w) ?? []) clearTimeout(t)
+        settle_timers.set(w, SETTLE_LADDER.map(ms => setTimeout(() => { measure_world(w); react_soon() }, ms)))
     }
     function measure_world(w: TheC) {
         if (!(w.c as any).need_floor) return
@@ -3282,47 +3350,26 @@
          proven stable, which is the half the value-comparison probes can't report.  See
          ui/micro/lifetell.ts for the ladder, and read it with `tracelog.mjs --watch --life`. -->
     <div class="vyto" use:lifetell={{ H, what: 'world', id: String((w.sc as any)?.w ?? '?') }}>
-        <div class="bar">
-            <span class="crest">Vyto</span>
-            {#each w.ob({ Bar: 1 }) as b (b.sc.Bar)}
-                <button class="word" class:on={!!b.sc.on} class:act={b.sc.kind === 'act'}
-                        title={b.sc.doctrine} onclick={() => press(w, b)}>{b.sc.Bar}</button>
-            {/each}
-            <button class="word organs-btn" class:on={show_organs}
-                    title="the organ panel — reads/decides/writes per station (dev; layout controls to come)"
-                    onclick={() => (show_organs = !show_organs)}>organs</button>
-            <!-- THE ASPECT PICK — the layout control the organs title has been promising.  LIVE PAGE
-                 ONLY: a runner tab must never grow chrome that moves geometry (fit_frame's own
-                 humdinger gate makes it harmless even if pressed, but absent is better than
-                 harmless).  `auto` is the measured path, i.e. exactly today. -->
-            {#if live_page()}
-                <select class="word aspect-sel" title="the shape of the glass — auto measures the hole; a pick sets the min-height"
-                        value={aspect_pick} onchange={(e) => repick_aspect(e.currentTarget.value)}>
-                    {#each ASPECTS as a (a[0])}
-                        <option value={a[0]}>{a[0]}</option>
-                    {/each}
-                </select>
-            {/if}
-        </div>
-        {#if show_organs}
-            <div class="panel">
-                {#each w.ob({ Organ: 1 }) as o (o.sc.Organ)}
-                    <div class="organ">
-                        <span class="name">{o.sc.Organ}</span>
-                        <span class="family">{o.sc.family}</span>
-                        <span class="guts">{sentence(o)}</span>
-                        <span class="status">{o.sc.status}</span>
-                    </div>
-                {/each}
-            </div>
-        {/if}
-        <div class="strip">
-            {#each w.ob({ Moment: 1 }) as m (m.sc.Moment)}
-                <span class="tick" class:o={!!m.sc.o} class:blessed={!!m.sc.bless}
-                      class:step={m.sc.step_n != null}
-                      title={`yore ${m.sc.Moment}` + (m.sc.step_n != null ? ` — step ${m.sc.step_n}` : '')}></span>
-            {/each}
-        </div>
+        <!-- THE BAR, THE ORGAN PANEL AND THE MOMENT STRIP ARE GONE (2026-08-11, the owner: *"all the
+             Vyto options, live|depths|flows I never found out what any of that did anyway. no aspect
+              ratio or list of dots representing some other timeline than Story steps... so the whole
+               page is just full-view Vyto glass"*).  Four bits of chrome, one verdict — the page IS
+                the glass, and everything that sat above it was developer furniture charged to the
+                 listener in screen height.
+             WHAT WENT, and what is still there without it:
+               • the seven bar words (live · depths · flows · frames · holds · pelt · o).  The %Bar
+                 particles STAY minted in Vyto.g — they are the doctrine, and Books snap them — so
+                  `bar_on` still reads them and `live` is still on by default; only the buttons left.
+                   `holds` therefore never paints now, which is correct: it is an inspection overlay
+                    and there is no longer an inspector on this page.
+               • `organs` + its panel — a dev listing of the eleven stations, all still `status:stub`.
+               • the aspect <select>.  `auto` was already the default and the only pick anyone kept,
+                  and "measure the hole" is the law the whole §0.2(d) frame work landed on; a dropdown
+                   that can only make the glass WORSE than the measurement is not a control.
+               • the %Moment tick strip — a second timeline running beside Story's steps, which is
+                  exactly the confusion the owner names.  Moments are still spooled model-side.
+             The height this frees is not left as air: `.stage` loses its top margin and `.depth`'s
+              cap goes up (see the CSS), so the glass takes the room the chrome was holding. -->
         {#if show_viewport(w)}
             {@const plug = plug_of(w, viewport_cells(w))}
             {@const ants = plug ? ants_of() : null}
@@ -3366,8 +3413,12 @@
                 {#if live_page() && !parked(w) && viewport_cells(w).length === 0}
                     <div class="await-spin" title="waiting for the world to arrive"></div>
                 {/if}
-                <button class="fs-btn" onclick={(e) => go_fullscreen(e.currentTarget.parentElement)}
-                        title="fullscreen the glass">⛶</button>
+                <!-- ⛶ IS GONE TOO (same breath: *"no fullscreen button in the Vyto glass either,
+                     it'll just how it is"*).  It made sense when the glass was a panel among panels;
+                      the page is the glass now, so the button's whole offer — "make this bigger" —
+                       is already the resting state.  The fullscreen PATH stays live in fit_frame
+                        (`document.fullscreenElement` still beats the measure) so an F11 or a browser
+                         menu is still measured honestly; only the chrome that asked for it left. -->
                 <!-- THE TOYBOX IS GONE (2026-08-10, the focus pivot: *"forget the other buttons.
                      time to slick it all back"*).  ⋯ and everything behind it — ∿ simmer, ≡ even,
                      ⚔ compete, ▢ bare, ▦ seat, ⧉ junk, ⟳ redraw — plus the ⤫ unstage and ⇱ release
@@ -3451,6 +3502,14 @@
                                  comes from Matstyle again for every cell without exception; `sat`
                                  stays as a CLASS so the purple can be said in CSS as a rim, over
                                  the swatch rather than instead of it. -->
+                            <!-- `data-key` ON THE WALL (2026-08-11, the owner: *"I need the Heist given more
+                                 measurements to check it's fitting into the cell good"*).  The mold map already
+                                  carried every face's box keyed by cell.key, but the CELL — the thing it has to
+                                   fit inside — was an anonymous <path>, so a capture could say how big the face
+                                    was and never whether it was inside its own wall.  One attribute joins the two
+                                     layers, and runner_shot does the arithmetic (area, coverage, corners-inside).
+                                 Inert for the measure pass: that selects `text.ident` and `.face-mold`, never a
+                                  path, so nothing can now floor a cell to its own wall. -->
                             <path class="cell" class:departing={cell.departing} class:lift={cell.lift} class:sunk={cell.sunk}
                                   class:faced={!!cell.face && !cell.hasKids} class:nested={cell.depth > 0} class:scope={cell.hasKids}
                                   class:crushed={!!cell.face && !cell.hasKids && cell.fit <= 0.34 && !posed_cell(cell)}
@@ -3459,6 +3518,7 @@
                                   class:pressy={pressy(cell)} class:staged={cell.tok === staged_tok(w)}
                                   class:selfseat={cell.selfseat} class:sat={sat_row(cell.row)}
                                   class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} d={cell.d}
+                                  data-key={cell.key}
                                   style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (cdv > 0 ? ` stroke-width:${(1.2 + Math.min(3, cdv) * 0.55).toFixed(2)};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : ` --bd:-${ci * 430}ms;`)}
                                   onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                   onpointerleave={() => on_leave(w, cell.key, cell.tok)}
@@ -3783,40 +3843,52 @@
 {/each}
 
 <style>
+    /* FULL BLEED, AND THE COPPER RUNS TO THE EDGE (2026-08-11, the owner: *"there's gaps around the
+       Vyto glass we don't need"* / *"should be copperannodes background to the edge of the page"*).
+       Four separate gaps were stacked here, each individually defensible and collectively a frame
+       around a page that is supposed to BE the glass: a 4px margin, 6/8px of padding, a 1px border
+       with a 6px radius, and a 68em max-width that gutter-boxed the whole thing on a wide screen.
+       All four go.
+       The copper is the same `/i/copper_anodes.jpg` the svg lays down as its `vy-cop-coarse` ground,
+       at the same 520 scale, so the sheet the glass sits on and the ground inside it are one
+       material.  That matters because the svg CANNOT reach all four edges by construction — it holds
+       its viewBox aspect exactly (the `.depth` contract every mold percentage depends on), so any
+       mismatch between the cut's aspect and the window's shows as a gutter.  Painting the same metal
+       underneath turns that gutter from a hole in the page into more of the sheet. */
     .vyto {
         font: 12px/1.5 system-ui, sans-serif;
-        background: #1b1b22; color: #cfcfd8;
-        border: 1px solid #33333f; border-radius: 6px;
-        padding: 6px 8px; margin: 4px; max-width: 68em;
+        color: #cfcfd8;
+        /* …COOLED DOWN (the owner, on the first full-strength version: *"doesn't look sophisticated
+           enough, needs cooling down"*).  A whole page of bright copper is a WALL — it competes with
+           the glass instead of holding it, and at 520px the grain reads as blotchy pattern rather
+           than as metal.  Three moves, none of which throws the material away:
+             · the grain goes FINER (300px) — texture you read as surface, not as a repeat;
+             · a cool near-black veil over it, so what survives is a warm GLINT rather than a hue;
+             · a vignette, lighter under the belly and darkest at the corners, so the sheet recedes
+                at the edges of the page and the lit thing in the middle is the glass.
+           The dial is the two rgba alphas: lower them for more copper, raise them for less. */
+        background-color: #6e4e2e;
+        background-image:
+            radial-gradient(135% 120% at 50% 42%, rgba(12, 15, 26, 0.82), rgba(4, 5, 10, 0.96) 72%),
+            url(/i/copper_anodes.jpg);
+        background-size: auto, 300px 300px;
+        background-position: center, center;
+        /* fill the hole the page gives us, and hold the glass in the middle of it.  `min-height`
+           rather than `height` on purpose: against `.scape-glass` (a flex item with a definite
+           height) it resolves and the sheet reaches the bottom of the page; in the sprawl the parent
+           height is indefinite, so it computes to auto and that room is untouched. */
+        min-height: 100%;
+        display: flex; flex-direction: column; justify-content: center;
     }
-    .bar { display: flex; gap: 4px; align-items: baseline; }
-    .crest { color: #8a8aa0; font-weight: 600; margin-right: 4px; }
-    .word {
-        font: inherit; color: #9a9ab0; background: none;
-        border: 1px solid #3a3a48; border-radius: 4px;
-        padding: 1px 8px; cursor: pointer;
-    }
-    .word.on  { color: #e8e8f2; border-color: #7a7ad0; background: #26263a; }
-    .word.act { border-style: dashed; }
-    .organs-btn { margin-left: auto; }   /* chrome control — sits at the far end of the bar */
-    .panel { margin-top: 6px; }
-    .organ { display: flex; gap: 8px; align-items: baseline; padding: 1px 0; }
-    .organ .name   { width: 4.5em; font-weight: 600; color: #d8d8e8; }
-    .organ .family { width: 6em; color: #77778c; font-style: italic; }
-    .organ .guts   { flex: 1; color: #a8a8bc; }
-    .organ .status { color: #66667a; }
-    .strip { margin-top: 6px; display: flex; gap: 3px; flex-wrap: wrap; }
-    .tick {
-        width: 7px; height: 7px; border-radius: 50%;
-        background: #44445a; display: inline-block;
-    }
-    .tick.step    { background: #6a6ad0; }
-    .tick.o       { background: #d0a94a; }
-    .tick.blessed { background: #4ad07a; border-radius: 2px; }
+    /* (.bar/.crest/.word/.organs-btn/.panel/.organ/.strip/.tick/.aspect-sel all went with the chrome
+       they styled — 2026-08-11.  `.fs-btn` STAYS: ⛶ left but `.out-btn` wears the same class, and the
+       walk-out ⤴ is navigation, not chrome.) */
 
     /* the viewport — the root scope, one cell per mirror row.  The frame follows the stage's aspect
-       (fit_frame), so this is free to be any shape; fullscreen is just the biggest such shape. */
-    .stage { position: relative; margin-top: 6px; }
+       (fit_frame), so this is free to be any shape; fullscreen is just the biggest such shape.
+       margin-top: 0 — there is nothing above the stage any more, and a 6px gap to nothing is 6px of
+       the listener's screen. */
+    .stage { position: relative; }
     /* THE BODY THE CAMERA LOOKS AT — svg + faces move as one, so mold↔cell registration cannot tear.
        `preserve-3d` is what lets each mold hold its own Z (the seating tilt + the hover pop); its price
        is that Z-ORDER STOPS OBEYING z-index inside here, which is why the lift moved to translateZ.
@@ -3835,16 +3907,25 @@
            while the molds are still positioned in percentages of the FULL box — mold↔cell registration
            tears, silently, only on tall picks.  Capping the WIDTH instead keeps `width:100%; height:auto`
            exact: the element box always has the viewBox's aspect, so no letterbox can ever occur and the
-           percentage mold contract holds by construction.  --fw/--fh are stamped from vw_w/vw_h. */
-        max-width: calc(82vh * var(--fw, 800) / var(--fh, 450));
+           percentage mold contract holds by construction.  --fw/--fh are stamped from vw_w/vw_h.
+           THE CAP IS ALSO THE HEIGHT (2026-08-11): because the box holds the viewBox aspect exactly, this
+           width limit is what decides how tall the glass renders — so it, not any `min-height`, is the
+           dial the owner reached for.  82vh was sized to leave room for the bar, the moment strip and
+           the organ panel; all three are gone, so the glass takes what they were holding.  Not 100vh:
+           `.vyto` still had padding and a border, and a glass that touched the exact bottom of the
+           viewport read as cut off rather than as full.  BOTH OF THOSE ARE NOW GONE (the full-bleed
+           rule above), so the reason for holding 6vh back went with them: 100vh.  The cap has not
+           become decorative — with the aspect floor at 0.5, a very wide window still asks for a frame
+           taller than its hole, and this is what keeps that from overflowing. */
+        max-width: calc(100vh * var(--fw, 800) / var(--fh, 450));
         margin-inline: auto;
     }
+    /* no border, no radius, no ground colour of its own: the copper sheet behind it is the ground now,
+       and a rounded 1px rule around the glass was the fourth of the gaps (it drew a card edge where
+       the page is meant to run straight off the screen). */
     .viewport {
         display: block; width: 100%; height: auto;
-        background: #16161c; border: 1px solid #2a2a35; border-radius: 4px;
     }
-    /* the aspect pick — a <select> wearing the .word chrome so it reads as one of the bar's controls */
-    .aspect-sel { font: inherit; padding: 1px 4px; cursor: pointer; }
     /* FULLSCREEN — the stage becomes the whole screen and the glass fills it edge to edge.  height:100%
        on the svg (not auto) is what lets a portrait phone use its whole height instead of letterboxing;
        the frame has already been re-cut to that aspect, so nothing is stretched. */
@@ -4079,14 +4160,23 @@
         overflow: visible;
         /* CHROME OFF (the owner: "centering the Player things is going to make it look better, and lose
            the border").  The seat ring + cast shadow made every face read as a bordered card in a cell;
-           a centered, chromeless face reads as the cell's OWN body instead.  The lift keeps its glow —
-           that one is information (hover top-mostity), not upholstery. */
+           a centered, chromeless face reads as the cell's OWN body instead.  The lift used to keep a
+           glow as the one exception — 2026-08-11 took that away too, so there is now no state in which
+           a mold draws its own rectangle, and nothing left to transition. */
         transform-style: preserve-3d;
-        transition: box-shadow 140ms ease-out;
     }
     /* the lift's Z lives in mold_seat (z-index does not order inside a preserve-3d context); z-index is
        kept for browsers that flatten the 3D context, where it is still the only thing that can order. */
-    .face-mold.lift { box-shadow: inset 0 0 0 1px #a8a8f0, 0 10px 26px rgba(0,0,0,0.6); z-index: 5; }
+    /* NO CHROME ON THE MOLD AT ALL (the owner 2026-08-11: *"lets get rid of the sometimes-visible
+       lavendar border that the components have when pointer is in them"*, then — of the cast shadow that
+       was left — *"lose the shadow too - I want it to just be there"*).  It was an `inset 0 0 0 1px
+       #a8a8f0` plus a drop shadow, and BOTH drew the MOLD's rectangle, which is not a shape the reader
+       has any other evidence of: the cell is a blob and the face is chromeless inside it, so a hover
+       produced a hard box agreeing with neither.  "Sometimes-visible" is exactly that mismatch, and the
+       shadow had it too — softer, same rectangle.  The lift now changes NOTHING about the face; it is
+       purely an ordering fact.  The hover is still said on the WALL (`.cell.lift`), which is the
+       affordance in a C** glass (see `.cell.pressy`) and is a shape that actually exists. */
+    .face-mold.lift { z-index: 5; }
     /* THE MAGNIFIER.  Lay the face out in a box divided by the camera's zoom, then scale it back up by
        the same factor: the component fills the same visible area but every glyph, button and graph in it
        is `--vyz` times bigger.  This is what makes flying into a cell reveal the thing rather than just
@@ -4125,8 +4215,23 @@
        `:global` because the child is another component's root, which Svelte's scoping cannot reach.
        Only ever on a cell the commissioner posed `stretched`; every other face is untouched. */
     .face-scroll.stretch > :global(*) {
-        width: 100%;
+        /* THE COLUMN IS ASSIGNED HERE, AND `--fit` CANCELS OUT OF IT (2026-08-11 — the flitting fix;
+           the reasoning is at `mold_seat`'s --lay note).  This box lays out inside `.face-scroll`,
+           which is `100% / --fit` wide, so a child at `--lay × --fit` of it is `--lay` of the MOLD in
+           real units whatever the zoom does: fit cancels, and the face is finally measured at the
+           column the search chose instead of at one the zoom moved underneath it.
+           It stays a child width rather than a width on `.face-scroll` itself so the flex centring
+           above still holds — a face narrower than its room sits in the middle of it, not against the
+           left wall.  `--lay` is absent for every non-stretched face, so this is `100%` exactly as it
+           was for them. */
+        width: calc(100% * var(--lay, 1) * var(--fit, 1));
         max-width: none;
+        /* NO SHADOW, SECOND AND LAST TIME (asked for 2026-08-11 — *"maybe the border could have a
+           slight dropshadow, but very subtle"* — and withdrawn the same day: *"remove the Heist
+           component dropshadow again"*).  The verdict either side of the experiment is the earlier
+           one: *"I want it to just be there."*  A shadow is a claim that the face is floating above
+           the cell, and it is not — it is seated IN it.  Left as a note rather than a line, so the
+           next person reads that this was tried and rejected, not that it was never thought of. */
     }
     .face-mold.sunk .face-scroll { opacity: 0.35; filter: saturate(0.55) brightness(0.82); }
     .face-err {

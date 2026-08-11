@@ -1,6 +1,6 @@
 Credulation,of_Book:Sounditron
-  run=0,at=1786369086.856,ok=0,ok_pct=0,mode:check
-    uses:Ghost_N_Peeroleum,dige:18cb029750287c38~g1
+  run=0,at=1786436180.552,ok=0,ok_pct=0.63,mode:check
+    uses:Ghost_N_Peeroleum,dige:70cdc52aabdfc8c9~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:6dbbbb58bf1fbc50~g1
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
@@ -17,13 +17,13 @@ Credulation,of_Book:Sounditron
     uses:Ghost_M_Heist,dige:55fd854162290581~g1
     uses:Ghost_M_Jam,dige:8ec971adc53abeb1~g1
     uses:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
-    uses:Ghost_M_Radio,dige:9988c75f2b4116f2~g1
+    uses:Ghost_M_Radio,dige:d3e61e19ee01f0d0~g1
     uses:Ghost_Story_Musuation,dige:0d2936b7422f55a8~g1
     uses:Ghost_Story_Radiation,dige:68c7f05fb8bb317d~g1
     uses:Ghost_Story_Heistation,dige:319fd12ab7541232~g1
     uses:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
     uses:Ghost_Story_Errchannelation,dige:5a56eb7fcd0eff11~g1
-    uses:Ghost_S_Swarm,dige:42d451506960a640~g1
+    uses:Ghost_S_Swarm,dige:20ad333e7ffc1745~g1
     uses:Ghost_Story_Swarmation,dige:f4060302563099af~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_V_Vyto,dige:46caad99abe9528d~g1

@@ -7,6 +7,143 @@
 
 ## 0. Get on with next
 
+> ### ⇒ THE NEXT PIECE OF WORK: **THE BUTLER HAS NEVER INTRODUCED A NEW USER** (2026-08-11)
+>
+> *The owner, watching a freshly-invited tab: "there's nothing there in the Butler… why no action?
+>  there's a bunch of Butler that has to UX the Invite process for them too. it was all in
+>   Tyranny.svelte before." Then: "it just seems like we never thought of having the Butler introduce
+>    a new user. lets work that flow out now."*
+>
+> **THE BOMB, and nothing about this flow can be designed without it: the Butler's ONLY content source
+>  is the Supervisor roster, and the roster does not exist yet during onboarding.** `Supervisor_up` is
+>   called from `Auto.svelte:798` guarded `if ((H as any).Supervisor_up)` — it is a GHOST method, so the
+>    world only stands once the Creduler has loaded the spine. The spine loads off the wormhole. The
+>     wormhole needs a share. A new user has no share. So the whole chain
+>      **no share → no wormhole → no ghosts → no `w:Supervisor` → no watches → no Story → no arrival**
+>       runs to completion before the Butler has one row to draw, and `Supervisor_watch` is documented
+>        to be a silent no-op when there is no Supervisor. **Every onboarding state is pre-roster.**
+>  Do not try to model this flow as watches. It has to come from what exists BEFORE the ghosts:
+>   `boot_gate` (`H.c.disk_gated` + the gats), `H.c.door` (InvitePanel's own published state), and the
+>    URL. That is the entire vocabulary available, and it is enough.
+>
+> **THREE DEFECTS FOUND WHILE PROVING IT.** All three fire on the same tab, which is why it looked like
+>  one mystery:
+>  1. **NO OPEN-SHARE BUTTON REACHES THE NEW USER — but NOT for the reason first written here.**
+>      ⚠ **CORRECTION (same session).** The first diagnosis said `disk_gated` is only raised under
+>       `?E=`/`?B=` and that a music room therefore never asks. **That is false and any fix built on it
+>        is a no-op.** `/BigSoundland` boots through `boot_qualand({role:'sound'})`, which sets
+>         `h.c.boot_role = 'runner'` (`BigQualand.svelte.ts:60`) — so `boot_role` IS set, the
+>          `Housing.svelte.ts:2093` branch IS reachable, and `disk_gated` WOULD rise. A proposed
+>           `if (boot_role || humdinger)` changes nothing. Recorded because the wrong version was
+>            written down confidently and would waste the next session's first hour.
+>      **What is actually true:** the button is drawn off `gate.wanted`, i.e. `H.c.disk_gated`, and on
+>       the stuck tab it is falsy — otherwise the orange tap would be on screen. So the wormhole step
+>        RETURNED BEFORE :2105, and there are exactly two ways out above it:
+>        · **:2065** `fsh.started && fsh.list` — a handle was RESTORED (the FSA store is per-ORIGIN, not
+>           per-identity, so a brand-new identity in the same browser profile inherits whatever
+>            directory the other tabs granted) → sets `disk_gated = false` and reports a share is open.
+>        · **:2099** `remote_wormhole && boot_role === 'runner'` — waiting on an editor to proxy the
+>           tree; raises nothing by design.
+>      **The leading candidate is :2065, and it is the SAME fact as defect 4 below**: the tab believes
+>       it has a share, so it never asks — and the share it has does not contain `wormhole/`.
+>      **THE ONE-LINE CHECK that settles it**, in that tab's console:
+>       `H.c.disk_gated, H.c.remote_wormhole, H.o({A:'Wormhole'})[0]?.c?.fsh?.list?.name`
+>       — a directory NAME that is not the repo checkout convicts :2065 and defect 4 in one read.
+>  2. **THE CARD CAN RENDER COMPLETELY BLANK, and does.** The markup is a pile of INDEPENDENT `{#if}`s
+>      — door · tap · headline · arc · advice — and on a reloaded invited tab every one of them is
+>       false at once: `?Iz` was stripped to `?I=` so `landing_seen` never latched; `disk_gated` is
+>        false (defect 1); `settled` is false because `arrived` is `'none'` not `'gaveup'`; the roster
+>         is empty so there is no arc and no advice. **There is no floor state.** The fix is structural,
+>          not another `{#if}`: one `stage` derived that always returns exactly one of
+>           `door | sealed | tap | arc | dark`, every branch rendering something, `dark` being the
+>            honest "we are up before the machine is" that the headline comment already promises and
+>             the markup does not deliver.
+>  3. **`landing` MEANT *PRESENT*, NOT *UNRESOLVED*** — fixed today, in the tree. It was
+>      `!!boot_param('Iz')`, and the lift effect does `if (landing) return`. `strip_iz` only fires on
+>       the three paths that REACH a terminal state; `join()` has two early returns that do not (the
+>        ghosts-still-booting bail, the relay-did-not-answer bail) and an older identity keeps a
+>         deliberate JOIN button that may never be pressed. In all of those the token stays and the
+>          screen is **welded shut with no timer** — the exact trap this file exists not to be, reached
+>           through the one door nobody re-checked. It now reads `H.c.door.note` for a ✓/✗ terminal.
+>
+>  4. **A REAL USER'S SHARE IS THEIR MUSIC, AND IT HAS NO `wormhole/` IN IT.** *(The owner: "we're
+>      going to need some kind of wormhole/backend virtualiser for providing Story/Sounditron etc that
+>       random users don't have on disk — they point the share at their music collections.")* This is
+>        the deepest of the four and it is an ARCHITECTURE item, not a bug.
+>      `A.c.nav` is ONE nav, and granting a directory **replaces** it — `Housing.svelte.ts:2081-2083`,
+>       `A.c.nav = null` with the comment *"a granted local dir overrides the cloud"*. So the moment a
+>        person points the picker at `~/Music`, the wormhole is rooted at `~/Music`, which contains no
+>         `wormhole/Story/Sounditron/toc.snap`, no Books, no spine. Story cannot start, no watch
+>          registers, no arrival is declared — **the whole chain in the bomb above, arrived at from the
+>           other end.** Everything works today only because the developer's share IS the repo
+>            [[the-share-is-the-repo-itself]], which is a dev accident, never a user fact.
+>      **HALF THE MECHANISM ALREADY EXISTS.** The OPFS-from-github cloud (`is_opfs_github`) is exactly
+>       "the app's own tree, seeded from github, with no directory picker" — the file calls it *"a
+>        github-seeded shadow disk, honest for a param-less Auto demo out in the world"*. What is
+>         missing is not a backend, it is **COMPOSITION**: one namespace over two roots — `wormhole/`
+>          from the seeded cloud (app assets, read-only, versioned with the build) and the user's
+>           granted directory for music (read-write, theirs). Today they are alternatives; they need to
+>            be layers.
+>      **The design questions to settle before writing any of it**, in order: (a) does the user's music
+>       mount UNDER the virtual tree at a fixed point (the repo's own `/music` convention) or beside
+>        it; (b) which root wins on a path collision, and is that fixed or per-prefix; (c) what writes
+>         go where — a Story snap, a Heist keep and a radiostock card have three different homes and
+>          only one of them is the user's; (d) how the cloud layer VERSIONS, since a stale seeded
+>           `wormhole/` against a newer build is the same fixture-drift problem one level down.
+>      ⚠ **THIS AND DEFECT 1 MUST LAND TOGETHER.** Making the open-share tap appear for a real user,
+>       on its own, converts a blank Butler into a blank Butler with one extra tap — because the
+>        directory they choose will not contain the app. Shipping half of this is worse than shipping
+>         neither, since the tap teaches them the app is broken rather than unstarted.
+>
+> **WHAT THE FLOW ACTUALLY IS**, six steps, of which the app today implements 1–3 and 5–6:
+>  `land (?Iz, "you were invited by X") → name + JOIN → sealed → ***open your music*** → spine + Story
+>   → arrive`. **Step 4 does not exist**, and steps 1–3 vanish on any reload because they are keyed to a
+>    single-use token that deletes itself. A person who scans, joins, and reloads gets a black card.
+>
+> **THE OWNER'S RULING ON WHAT "DONE WITH AN INVITE" MEANS** (2026-08-11): *"the Butler should stay on
+>  every Invite it discovers until it is fulfilled, leaving them in the URL until then… certainly not
+>   letting you into the app until you have sorted that out."*  Three things fall out of that sentence
+>    and each is a change:
+>   · **FULFILLED = SEALED, not redeemed.** `strip_iz` fires immediately after `Swarm_redeem` returns a
+>      claim, BEFORE the seal watch, and `join()` has early returns that never strip at all. Moving it
+>       to seal-time is what "leaving them in the URL until then" asks for — and it deliberately
+>        re-introduces the stranding its own comment says it was moved to fix (*"gating the swap on an
+>         8s seal window stranded ?Iz whenever the seal ran late"*). That tension is real and is
+>          resolved by the dismissal below, not by picking a side.
+>   · **EVERY invite it DISCOVERS — the plural is load-bearing.** The URL's `?Iz` is one. A pasted token
+>      is a second. A discovered-but-unspent one is a third. Today `landing` is a single boolean over
+>       `boot_param('Iz')`; the end state is a LIST the Butler holds until each entry is fulfilled or
+>        explicitly given up on, which is a different data shape and should be built as one.
+>   · ⚠ **THE DISMISSAL IS A PREREQUISITE, NOT A FOLLOW-UP.** Holding on a ✗ with no way out is a
+>      permanent trap on a screen that has no timer by design — the same trap the `landing` fix landed
+>       today was written to remove. **Do not ship the stricter hold before an explicit per-invite
+>        "give up on this one" exists.** The interim in `Butler.svelte` releases on either terminal
+>         (✓ or ✗): sometimes too lenient, never a trap. That ordering is the whole ruling.
+>
+> **THE ONE DESIGN DECISION TO MAKE FIRST** (do not build past it): should the Butler show the door
+>  whenever the person **has no friends yet** — not merely when a token is in the bar? That single
+>   change makes onboarding survive a reload, gives a friendless tab the one action worth offering, and
+>    removes the "blank card" case at its root. It needs InvitePanel to publish its friend count on
+>     `H.c.door` (it already computes `friends`, :90, and already publishes the door object, :386) so
+>      the Butler can ask the door instead of reaching for `Swarm_*` — which it may not do, by its own
+>       standing rule that it names no subsystem.
+>
+> **DO NOT PORT Tyranny.svelte.** It is the PREVIOUS generation's trust machine (Idzeug/Tyrant/invitee,
+>  978 lines, mostly logic). `InvitePanel` is the current implementation of mint→parse→seal→spent and
+>   is Book-proven by SwarmInvite. This is a WIRING problem — the panel is fine and is simply not
+>    mounted when the new user needs it.
+>
+> **The transport is innocent and was checked** — Lefto pulses straight to the stuck tab with a signed
+>  voucher and `saw:` set, so the station bound and the era crossed both ways. Everything failing here
+>   is above the wire. Do not go looking at the relay.
+>
+> **In the working tree, unfinished, mine (2026-08-11):** `Ghost/S/Swarm.g` has `Swarm_recap_ask` /
+>  `Swarm_recap_serve` / `Swarm_offer_reset` **written but neither wired nor compiled** — the come-back
+>   fix from Radio_todo §0; they are inert until something calls them, and a compile lands them
+>    harmlessly. `Ghost/N/Peeroleum.g` + `Ghost/S/Swarm.g`'s `Swarm_offer_lost` ARE compiled and are a
+>     **measured no-op** — keep as instrumentation or revert, see Radio_todo §0. `Butler.svelte` carries
+>      defect 3's fix. Several Vyto files in the tree belong to a concurrent agent, not this work.
+
 > **THE RELOAD HAPPENED AND ALL THREE ARE PROVEN** (2026-08-10 late — the banner that stood here said
 >  they were written-but-unwatched; they are not any more). On Righto beside Lefto: the watch sentences
 >   render (`swarm.station` *"you are online — friends can reach you"*, `swarm.arrival` *"Lefto"*, 11

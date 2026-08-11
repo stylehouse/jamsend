@@ -218,6 +218,201 @@ The owner, naming the arc honestly: *"Vyto had a lot of constraints and study go
     which exists so four %Heists in one foam are tellable apart) is untouched for every other glass;
 - `DoorFace`/`RadioFace` icon renders (pose-gated inside the faces themselves).
 
+### ⇢ THE FLITTING — two feedback loops under one symptom (2026-08-11, LANDED, live-verified)
+
+*"need you to robusticise the component placement some more... Heist is flitting rapidly up and
+ down, as if there was a hover style that took the thing out of the cursor's point so comes off,
+  moves back to the point and comes on, moves off, comes off, comes back, comes on etc."*
+
+The hover reading is the right shape and the wrong culprit: hover changes no geometry at all here
+ (`mold_seat`'s translateZ is a stacking trick — no `perspective` is set anywhere, so it cannot
+  resize or move anything, and `.face-mold.lift` is now bare `z-index`).  The pointer was a
+   PASSENGER — the face was moving under a still cursor, which enters and leaves all by itself.
+ There were **two independent oscillators**, and either alone reproduces the symptom:
+
+**1. The seat teleports, because an argmax is discontinuous.**  `fill_body` picks the best of 81
+ lattice centres, and the area landscape over a blob has broad, nearly-equal peaks — two candidates
+  a third of the body apart routinely score within a fraction of a percent.  Meanwhile the belly
+   *breathes*: the radio stirs the model continuously and express nudges the cell's radius, so the
+    body's bbox moved a unit several times a second and the winner flipped between two lattice ROWS.
+     The seat did not drift, it JUMPED, and no downstream smoothing can fix that because the
+      function itself is discontinuous.
+ Fixed by **incumbency, not damping**: the standing centre re-competes from where it already is,
+  carrying a 12% handicap in its favour, so a challenger must be meaningfully better rather than
+   luckier.  Ties go to standing still.  Plus two hygiene guards so the question is asked far less
+    often: the memo key is quantised to a 6-unit grid (a body that is merely alive is the same room)
+     and the answer is rounded to whole units, returning the STANDING OBJECT when the new seat is
+      within 2 units on every side — identical numbers, so Svelte never touches the attribute.
+
+**2. The zoom and the layout column were the same variable, and that map is an involution.**
+ `.face-scroll` lays out at `100% / --fit` and scales back by `--fit` — exactly right for the
+  magnifier, a loop for a stretched face.  Follow it round: `fit = min(W/col, H/h)`.  When the
+   HEIGHT term binds, the laid-out column is no longer `col`, it is `W/fit = W·h/H`, wider.  Wrapped
+    content holds its area, so at that wider column the content comes back shorter: `h' ≈ A·H/(W·h)`.
+     That is `h → k/h` — it does not converge on the balance point, it **bounces between two heights
+      forever**, one relayout each way, which on screen is a face pulsing up and down about its own
+       centre several times a second.  Both states are self-consistent, so nothing downstream can
+        damp it either.
+ Fixed by **assigning the column outright**: `--lay` (= `col / rect_w`) goes on the mold, and the
+  stretched face's CHILD takes `width: calc(100% * var(--lay) * var(--fit))` — inside a box that is
+   `100%/--fit` wide, so **`fit` cancels** and the real column is `col` whatever the zoom does.  It
+    is a child width rather than a width on `.face-scroll` so the flex centring survives.  `--fit`
+     goes back to being a pure OUTPUT.  The search now measures the child (the column it actually
+      got) instead of trusting `stretch_col`, and its cycle memory rounds to match.
+ The price is the honest one: when the two terms disagree the face is *narrower* than its rectangle
+  instead of overflowing it — which is exactly the `slx` air the capture reports, and what the next
+   search round closes.  At the balance point `lay × fit = 1` and it fills the rectangle both ways.
+
+**3. …and then the guards were too good: STICKINESS HAS TO BE EARNED.**  *"it needs to layout a bit
+ more, at occasions near but perhaps not exactly Heist starting..."*  Read the "perhaps not exactly"
+  literally — it is the diagnosis.  The trouble is not AT the pose change, it is in the second or two
+   AFTER it: a Heist that has just started is a nearly-empty list and its rows arrive over the
+    following beats, while incumbency, the still-band and the 4% nudge floor — every one of them a
+     reason NOT to move — were already in force.  So the layout settled on the shape of an empty
+      Heist and then defended it.
+ Two halves:
+ - **the release takes the seat with it.**  `gauge_pose` already dropped `need_*` and the whole
+    stretch search on a pose change; it now drops `fillrect`/`fillrect_k` too.  Since the seat became
+     incumbent a stale one no longer merely sits there, it DEFENDS itself — and entering `stretched`
+      is exactly when the body changes most (the swell).  A newborn seat has no standing.
+ - **a settling window.**  For `SETTLE_MS` (2200) after a pose change the seat carries no handicap,
+    the still-band is off and the nudge floor is a quarter of its size: the layout is as free as it
+     was before the flitting fix.  Then the guards come back and the glass goes still, which is the
+      state it spends its life in.  Plus a **ladder** — re-measures at 180/520/1200/2000ms — because
+       `gauge_again` already proved a settled glass never bumps `paint_tick` and so would never look
+        a second time on its own.
+
+**Gated, and mutation-tested both ways** (a green gate proves nothing until it has been seen to go
+ red).  `VytoGauge.spec.ts` gains *the pose release drops the seat too* (red when the delete is
+  commented out) plus its converse — an unchanged pose KEEPS its seat, so the release is not a
+   per-paint wipe.  `VytoFocus.spec.ts` grew an `incumbency` block, 28 tests total:
+ - *A TIED SEAT HOLDS* — goes red with the handicap at 0;
+ - *A BEATEN SEAT YIELDS* — goes red with the handicap at 20.  ⚠ Its first version planted the
+    incumbent hard against a wall, and that passed at handicap 20 too: a corner seat is so bad that
+     any margin short of absurd still loses it, so the gate discriminated nothing.  It now sweeps
+      **the clipped body** for a centre scoring 30–70% of the best and pins that.  Sweeping the raw
+       belly was the same mistake one layer down — off the plate the areas are much bigger, so "half
+        price" there is a near-tie here.  *Measure in the units the function decides in.*
+ - plus: no-keep is byte-identical to the old sweep, a keep outside the body is ignored rather than
+    honoured into a zero seat, and purity holds with a keep.
+
+**Live**: three consecutive captures byte-identical (`Radio 132.5,150 · 466.3×442 · fit 2.921`),
+ 0 crushed, 0 overlapping pairs, no air, no overflow, **60% of the wall, corners 4/4**.  Still not
+  witnessed on a STRETCHED Heist — that needs a keep open.
+
+**A note on the instrument itself**: it first reported the (unstretched) Radio as `⟵ CUT OFF`, which
+ was the instrument crying wolf at the design — a natural-size face under `overflow: visible`
+  SPILLS under its smaller neighbours on purpose.  The mold map now carries `lay`, so over-the-box
+   reads as a fault only for a face that was handed its box, and as "spilling (visible — the spill
+    law)" for one that was not.
+
+### ⇢ THE CHROME CULL — the page IS the glass (2026-08-11, LANDED, live-verified)
+
+*"I don't need the Radio to say '5 drops', and what else do we tidy up now... all the Vyto options,
+ live|depths|flows I never found out what any of that did anyway.  no aspect ratio or list of dots
+  representing some other timeline than Story steps, no fullscreen button in the Vyto glass either,
+   it'll just how it is.  so the whole page is just full-view Vyto glass.  when not FaceSucking the
+    Vytui wants a min-height a bit bigger than it is now..."*
+
+Six removals and one grow, all of them the same judgement: **every one of those controls was
+ developer furniture, and the listener was paying for it in screen height.**  What went, and what
+  survives it:
+
+| gone | still there |
+|---|---|
+| the seven bar words (`live·depths·flows·frames·holds·pelt·o`) | the `%Bar` particles in `Vyto.g` — doctrine, and Books snap them.  `bar_on` still reads them; `live` is still on |
+| `organs` + its panel | the eleven `%Organ` rows, all still `status:stub` |
+| the aspect `<select>` | `auto`, which was already the default and the only honest option — "the cut follows the hole" |
+| the `%Moment` tick strip | Moments, still spooled model-side |
+| ⛶ | the fullscreen PATH — `fit_frame` still lets `document.fullscreenElement` beat the measure |
+| RadioFace's `N drops` chip | `face.drops`, still computed; the diagnostics read it |
+
+**The min-height is two dials, neither of them a `min-height`.**  A pixel min-height is the wrong
+ tool here and always has been (§0.2(d)): the svg is `width:100%; height:auto`, so a pixel floor
+  letterboxes gutters AROUND an unchanged cut instead of cutting a taller rectangle.  The two that
+   actually govern the rendered height are
+ - `fit_frame`'s **ratio floor**, 0.35 → **0.5** — "a glass is never flatter than 2:1".  It binds
+    only on a wide-and-short window; on the resident full-page glass the measurement is well above
+     it and the line is inert;
+ - `.depth`'s **vh cap**, 82vh → **94vh** — and this is the one that was actually holding the glass
+    down.  Because the box holds the viewBox aspect exactly, a *width* cap decides the *height*;
+     82vh was sized to leave room for the bar, the strip and the organ panel.  All three are gone,
+      so the glass takes what they were holding.  Not 100vh — `.vyto` still has padding and a
+       border, and a glass touching the exact bottom of the viewport reads as cut off, not as full.
+
+Measured live on `96d0cf8852651a73`, same tab either side: **703×754 → 766×850**, 0 crushed, 0
+ overlapping pairs.
+
+**…and then the last of it went too** (*"`◇ VYTO` <- time to get rid of this pointless thing too"* /
+ *"there's gaps around the Vyto glass we don't need"* / *"should be copperannodes background to the
+  edge of the page"*).
+- the **peek** — the fixed top-left nav holding the `◇ VYTO` badge — is gone entire.  The badge
+   answered "which of the two look-alike voronoi glasses mounted", a question that stopped existing
+    when `?VY=1` was retired and every tab got a commissioned Vyto; it had already outlived its ▦.
+     Removing it emptied the nav, so the nav went with it rather than lingering as a hover target for
+      nothing.  **Kept in the sprawl/diagnostic header**, including its `no glass yet` case — that is
+       the room you enter when something is wrong and it is worth nothing without its labels.
+- **four stacked gaps** on `.vyto`, each individually defensible and collectively a frame around a
+   page that is supposed to BE the glass: a 4px margin, 6/8px padding, a 1px border with a 6px
+    radius, and a 68em max-width that gutter-boxed it on a wide screen.  All four out, plus
+     `.viewport`'s own border+radius+ground.  `.depth`'s cap goes 94vh → **100vh** (the reasons for
+      holding 6vh back were the padding and border that just left; the cap still earns its place
+       because the 0.5 aspect floor can ask for a frame taller than a very wide window's hole).
+- **the copper reaches the edge.**  The svg cannot do this by construction — it holds its viewBox
+   aspect exactly (the `.depth` contract every mold percentage depends on), so any mismatch with the
+    window's shape shows as a gutter.  So the same `/i/copper_anodes.jpg` the svg lays as its
+     `vy-cop-coarse` ground goes on `.vyto` as a CSS sheet: the gutter stops being a hole in the page
+      and becomes more of the material.  `min-height:100%` (not `height`) so it fills `.scape-glass`,
+       which has a definite height, and computes to auto in the sprawl, which does not.
+- **cooled down** (*"doesn't look sophisticated enough, needs cooling down"*).  Full-strength copper
+   across a page is a WALL — it competes with the glass instead of holding it, and at 520px the grain
+    reads as blotchy repeat rather than metal.  Finer grain (300px), a cool near-black veil so what
+     survives is a warm GLINT rather than a hue, and a vignette that darkens toward the corners so
+      the lit thing in the middle is the glass.  **The dial is the two rgba alphas** in that
+       gradient — lower for more copper, raise for less.
+
+### ⇢ MORE MEASUREMENTS — does the face fit its CELL? (2026-08-11, LANDED, live-verified)
+
+*"I need the Heist given more measurements to check it's fitting into the cell good."*
+
+The mold map could say how big a face was and, since 2026-08-10, what share of the size it ASKED
+ for it got (`fit`).  Neither answers the question in that sentence, and a face can score `fit
+  1.000` while its content is cut off at the bottom, or while it rattles in a box half again its
+   size.  **And the cell — the thing it has to fit inside — was an anonymous `<path>`**, so the two
+    layers could not be joined at all.  Three additions, one attribute of new state:
+
+- `path.cell` now carries **`data-key`** (Vytui).  Inert for the measure pass, which selects
+   `text.ident` and `.face-mold` and never a path — so nothing can now floor a cell to its own wall.
+- the runner's `op:'svg'` sends, per mold, three dimensionless ratios read off `.face-scroll` —
+   whose client/scroll/child boxes are all in the SAME unscaled units (it lays out at `100%/--fit`
+    and is transform-scaled back), so they need no conversion:
+   **`ovx/ovy`** = scroll ÷ client (>1 ⇒ the face is CUT OFF, by that factor), **`slx/sly`** =
+    1 − child ÷ client (the share of the box the face declines to use — air), and **`col`**, the
+     layout column in CSS px, which is the number `stretch_search` solves for.
+- `runner_shot --svg` does the cell arithmetic itself rather than shipping more numbers: shoelace
+   **area** of the wall (the Q control points ARE the original corners, so it measures the
+    un-rounded cell — corner rounding is decoration, not room), the mold's **share** of it, and how
+     many of the mold's four **corners are inside** the wall.  <4 is the fault no size or fit
+      column can show: a face hanging out of its own cell.
+
+First live reading, belly posed `big` (no keep open, so this is NOT the stretched path):
+
+```
+    Radio        92.2, 220.4   470×359.2   fit 2.771 of 169.6×129.6
+      ↳ box: col 181px · content 1.00×1.00 of its box · air 19%×0%  ⟵ rattling (air on x)
+      ↳ cell: area 328692 · mold 168824 = 51% of the wall · corners inside 4/4
+    Door        605.1, 429.9   38.4×31.9   fit 1.000 of 38.4×31.9
+      ↳ box: col 41px · content 1.00×1.00 of its box · air 0%×0%
+      ↳ cell: area 11976 · mold 1225 = 10% of the wall · corners inside 4/4
+```
+
+**Two facts that were invisible before this and are worth chasing.**  (a) The Radio's mold is
+ **19% wider than the face inside it** — nothing is cut off, but the seat's aspect and the face's
+  aspect disagree, and that air is room the belly could have kept.  (b) A mold takes **51% of its
+   wall**; the seat is inscribed in the visible body, so the other half is the round-vs-rectangle
+    loss the swell was aimed at — which is the number to watch when per-side growth lands.
+ Neither has been read on a STRETCHED Heist yet; that still needs a keep open.
+
 ### ⇢ THE SWELL — the belly is now BIGGER THAN THE PLATE (2026-08-11, LANDED, live-unverified)
 
 *"lets make the Heist one even bigger though, the cell going off the screen top left and bottom, and
@@ -230,7 +425,7 @@ The owner, naming the arc honestly: *"Vyto had a lot of constraints and study go
   inscribed rectangle in an inscribed belly is **30.5% of the plate** and no tuning of radii, aspects
    or air moves that much.  The answer is to stop inscribing: grow the belly PAST the plate and let
     the viewport cut it.  The visible body is then a rounded slab with the screen's own straight
-     edges, and a rectangle takes nearly all of it — **48.1%**, a 1.6× jump, same plate, same face.
+     edges, and a rectangle takes nearly all of it — **61.0%**, a 2× jump, same plate, same face.
 
 - `focus_polys(frame, keys, roles, gap, swell)` — `swell` defaults to 1, so an unswelled belly is
    byte-identical to what it always was (gated: *SWELL 1 IS THE IDENTITY*).  `BELLY_SWELL = 1.6`.
@@ -253,11 +448,48 @@ The owner, naming the arc honestly: *"Vyto had a lot of constraints and study go
     fit are all struck off `bx/by`, and a swelled belly's true bbox starts ~290 units off-screen,
      i.e. a name drawn where the viewport already cut it away.
 
-**The dial, with numbers, if the owner wants more or less potato** (measured, 771×800 plate):
+**…and the centre lattice was worth as much as the swell** (2026-08-11, same evening, the owner:
+ *"when it's full-on'd like Heist is, we can put the Component more against the edges of the page than
+  it is"* / *"left-top, etc."*).  The rectangle is centre-symmetric by construction, so WHERE the
+   centre sits decides which edges it can reach — and the first 3×3 lattice put the winner 116 units
+    off the left edge, from which no box could reach the page at all.  Nine steps per axis (81
+     candidates) lands it **3 units off the left, 34 off the top and bottom**: 48.1% → **61.0%**, for
+      one memoised ~25ms computation.  If it ever needs more, the next gain is per-side growth (the
+       box is symmetric, the room is not) — worth ~2.5%, and not worth the code yet.
+
+**The dial, with numbers, if the owner wants more or less potato** (measured, 771×800 plate, 3×3
+ lattice — the shape of the curve is what matters, every figure is ~12 points higher at 9×9):
  swell 1 → 30.5% · 1.3 → 43.1% · **1.6 → 48.1%** · 2.0 → 53.8% · 2.5 → 59.1% · 3.0 → 60.0%.
  It flattens after ~2.5 and the cost is the character: the bigger the swell the flatter the visible
   wall, until the potato reads as a straight vertical edge.  1.6 keeps a ~120-unit bulge across the
    frame's height — still visibly a body.  **This is one constant (`BELLY_SWELL`) and nothing else.**
+
+**THE COLUMN SEARCH SOLVES NOW INSTEAD OF STEPPING** (the owner: *"can we size the Heist Component
+ slightly smoother than it does now"*).  The unsmoothness was never the final size — it was the
+  parade of sizes before it: a fixed ±18% step is a staircase, every rung a real relayout at a
+   visibly different column and zoom, three to six of them on the way in and again on every content
+    change.  But the column is not an unknown to be hunted; wrapped content holds its area roughly
+     constant (`h ≈ A/col`), so one measurement gives A and balancing `rect_w/col` against `rect_h/h`
+      has one positive root: **`col* = √(rect_w · col · h / rect_h)`**.  One round lands on it; what
+       follows is a correction, not another rung.  The model is only approximately true (a heist has
+        fixed-height rows), so the safeties stay: `STRETCH_LEAP` bounds a round to 2×, the clamps and
+         the 2-cycle guard are untouched, and `STRETCH_NUDGE` drops any correction under 4% — a
+          relayout that moves the type by 3% is a flicker, not an improvement.
+
+**The mold wears no chrome at all now** (*"lets get rid of the sometimes-visible lavendar border that
+ the components have when pointer is in them"*, then *"lose the shadow too - I want it to just be
+  there"*, then — of the full-on face — *"maybe the border could have a slight dropshadow, but very
+   subtle"*).  Both the old `inset 0 0 0 1px #a8a8f0` ring and the drop shadow drew the MOLD's
+    rectangle, and that rectangle is a shape the reader has no other evidence of: the cell is a blob,
+     the face inside it is chromeless, so a hover produced a hard box agreeing with neither — which is
+      exactly what "sometimes-visible" describes.  The lift is now purely an ordering fact.
+**The subtle shadow was tried and withdrawn the same day** (*"remove the Heist component dropshadow
+ again"*), so the verdict either side of the experiment is the earlier one: *"I want it to just be
+  there."*  It had been put on the **face's own child** rather than the mold — following the real
+   visible edge and its border-radius, scoped to `.face-scroll.stretch` — which was the right place
+    for it if it were wanted at all; it isn't, because a shadow claims the face is floating above
+     the cell and it is not, it is seated IN it.  Left as a note in the CSS rather than a live line,
+      so the next person reads that it was tried, not that nobody thought of it.
 
 **Unverified live**: both player tabs were unreachable (no ping, dev server healthy — they were
  closed, not broken) when this landed, and a stretched belly needs a real keep open to see.  The

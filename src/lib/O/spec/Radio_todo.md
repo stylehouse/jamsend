@@ -19,6 +19,151 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ## 0. Latest handover — fold into the sections below as it's absorbed
 
+### 2026-08-11 — TUNING IN IS ONCE A SITTING: EVERY TRACK AFTER THE FIRST STARTS AT 0:00
+
+*The owner: "how about finishing one track causes the next to start from the start?"* Applied in
+ `Radio.g` — `Radio_start_seq` returns 0 once `radio.c.tuned` is set, and `Radio_open` sets it the
+  moment a needle lands.
+
+**Why the latch is per-SITTING and not per-FINISH, which is a wider rule than the ask.** The
+ 2026-08-07 mid-track entry is justified by one sentence — *"a radio you switch on is already
+  mid-song"* — and that is an argument about SWITCHING ON. It says nothing about the track after,
+   and a listener who sat through a whole track only to be dropped into the middle of the next reads
+    it as a fault. So the mid-track start is now the tune-in and nothing else: finish, skip and
+     riffle-audition all open at 0.
+ The technical half, and it is what decides it: **`Radio_prime` fixes the start seq while the
+  PREVIOUS track is still playing** (:608, "prime and open cannot disagree about where the needle
+   lands") — before anyone can know whether the next transition will be a finish or a skip. Under
+    "finish-only" those two answers differ, so every skip would have to throw its prime away — and
+     the skip is the exact path prime was built for ("the lag between click and sound"). One rule for
+      both transitions keeps the prime spendable. If the owner wants the scanning feel back on skip,
+       that is the cost to pay, knowingly.
+ `.c`, so a reload re-arms the tune-in — an ARRIVAL, not a policy, the same shape as `c.crossed`. A
+  pause|resume is not a re-tune-in (`Radio_pause` rewinds `c.seq`, it never drops `c.rec`).
+ Still humdinger-gated, so **no fixture moves**; a Book keeps the 0 it recorded.
+
+**Seen live, and the RED half is owed.** Four consecutive opens on player `96d0cf88` (`poke
+ Radio_skip`, `world` after each) all landed `at=0`, on records of `total=24` and `total=20` chunks —
+  where the old ladder would have drawn `Ra_rand(12)` / `Ra_rand(10)`, so four zeros in a row is
+   ~1e-4 if the tab held those chunks contiguously (unverified: `have` was not read per record, and
+    a shallow hold makes `room < 1` and returns 0 by the old path too — that is the loophole in this
+     evidence). **The decisive test is the other half** ([[mutation-test-every-claim]]): the FIRST
+      open of a fresh sitting must still land mid-track. It needs a tab reload, which costs the human
+       the 60s come-back above, so it was not taken — take it the next time a player is reloaded
+        anyway, and read `at` on the very first `Radio:playing`.
+
+### 2026-08-11 — COMING BACK ALWAYS COSTS ONE RE-OFFER FLOOR: THE FIRST OFFER IS THROWN AWAY
+
+**⚠ This entry replaces an earlier one that blamed the boast.** That read was wrong and the wrong fix
+ was nearly built — see *"what the boast has to do with it"* at the bottom. The boast is innocent.
+
+**Measured directly, not off the ring** (the supply ring rolls at ~120 marks, so ring-relative
+ arithmetic across a boot silently lies — poll `crates:` and A's `offered Ns ago` instead;
+  `scratchpad/whenland.mjs`). B reloaded beside a serving A:
+
+```
++5.8s   A OFFER #1   (change-triggered: B's era flipped, mark changed)   B.crates=0
+        … 57 seconds, B.crates=0 at every 2.5s sample …
++62.9s  A.offered resets — THE 60s RE-OFFER FLOOR                        B.crates=1  ← landed
+```
+
+Then everything downstream is instant: `mirror-merge` +1ms, all 8 `want-first`/`page-first` pairs
+ inside ~2s, music shortly after. **The come-back is one floor interval and nothing else.**
+
+**Why the first offer is structurally guaranteed to be wasted.** A's offer loop (Swarm.g:2428-2470)
+ fires the moment `route.c.peer_era` flips — i.e. the instant B's hi crosses. Timed on three trials,
+  that is **+6.1s**, and B does not answer a ping until **+7.0s**. A offers ~1s BEFORE B's page is
+   even up, long before B has registered its `repli_lines` handler (`Repli_register_rx`, Repli.g:1283).
+    The frame lands on nothing. A then stamps `route.c.offered_mark` and `route.c.offered_at`
+     **optimistically** — it believes it delivered — so the change-trigger is spent, and the only
+      remaining path is the 60s floor. Every time. Deterministically.
+
+The offer loop's own comment already names this class of bug — *"a mark that is wrong-but-stable …
+ is a silent permanent hole with no self-heal at all. A floor turns any such hole into a delay of at
+  most one interval"* — it just never suspected the mark could be spent on a dropped frame.
+
+**WHY the frame dies, exactly — and it is a seam between two locally-correct policies.**
+ Peeroleum.g:996 holds an unregistered type during the peer's startup window: *"HOLD it: not-ok → no
+  ack, so the sender's ack-gated retry re-delivers once our consumer attaches its handler."* That is
+   sound only while such a retry exists. It stopped existing for `repli_lines` on 2026-07-29, when the
+    reliability policy (Peeroleum.g:426) made it **ephemeral** — correctly, for the PULL RESPONSE it
+     usually is (the sink re-asks every un-merged offset every 4s). But the same frame type also
+      carries the **pushed catalog offer**, which has no re-ask behind it: *you cannot re-ask for a
+       catalog you do not know exists*. So the come-back offer is held for a retry that was deleted,
+        and lost in silence. **One frame type carrying two reliability classes is the root defect.**
+         Neither comment is wrong; neither file can see the other. (`[[nobody-owns-the-seam]]`.)
+
+**THE DOMINANT TERM IS THE RECEIVER'S OWN STANDUP, and it is not the wire.** `Swarm_share_up` — which
+ calls `Repli_arm` and is therefore the instant B can receive a catalog at all — runs at **+16.4s**,
+  measured to a tenth over three consecutive reloads (16.6 / 16.4 / 16.4). No sender-side cleverness
+   can beat that number. **Anything that shaves the come-back below ~17s is work on B's boot, not on
+    the offer.**
+
+**A NEGATIVE RESULT, recorded so nobody rebuilds it.** Two changes were made and measured and they do
+ **not** fix the come-back — both are still in the tree as instrumentation, and both can be reverted:
+  - `Peeroleum.g` — exempt `repli_lines` from the startup-hold so the peer COMPLAINS (`no_protocol`)
+     instead of silently swallowing it.
+  - `Swarm.g` — `Swarm_offer_lost`, the first-ever listener for `w.c.on.no_protocol`: on a complaint
+     about `repli_lines`, un-spend `offered_mark` so the ordinary 600ms beat re-offers.
+
+ The complaint **does** cross and is now visible (`offer-lost of=96d0cf88 re_seq=379` on the sender's
+  ring — the diagnosis is confirmed end to end). But the come-back stayed at **65.2s / 65.3s**, still
+   the 60s floor, because the mechanism is **structurally one step behind readiness**: B complains
+    only while it CANNOT receive, and stops complaining at the exact moment it can. Every
+     complaint-driven re-offer therefore lands in the dead window too, and the last one is spent just
+      before B arms. A back-signal that ceases on success can never carry the success.
+
+**THE FIX THIS LEAVES, and it is the ask — hung on the right trigger.** B knows, at `Swarm_share_up`
+ and nowhere else, both halves at once: *I can now receive* and *I hold no `%MusuThem` crate for this
+  mutually-sealed friend*. That one instant is the whole answer. Ask there: once per boot, per
+   crateless sealed friend, receiver-initiated. It collapses the 48.8s tail to ~0.2s and leaves the
+    come-back equal to B's standup plus ~2s. Needs one small new frame type (a re-offer request) —
+     `repli_want` is per-record-page and cannot express it.
+  This is the edge the earlier entry wanted. **The instinct was right and the trigger was wrong:**
+   off the boast it makes gossip actionable, lets a peer set our outbound schedule, and fires when we
+    still cannot receive; off our own `share-up` it is a statement about our own readiness, bounded by
+     "I have no crate", and unable to storm. Not applied — a new frame type is the owner's call.
+
+Blunt non-fixes to resist: shortening the floor (pays wire forever for a once-per-boot problem) and
+ delaying A's era-change offer by a magic number (guesses at B's readiness from the wrong side).
+ Also resist "make the offer reliable": there is no live retx sweep (`Peeroleum_arm_whittle` is
+  Book-only), so a reliable emit would be retransmitted by nothing and would only pile the `%outbox`.
+
+**Instruments** (scratchpad, worth rebuilding if lost): `whenland.mjs` polls the receiver's `crates:`
+ against the sender's `offered Ns ago` — the only honest way to date a delivery; `whenready.mjs`
+  times `share-up` against the crate. **Never date a boot from the supply ring** — it rolls at ~120
+   marks, so ring-relative arithmetic across a come-back silently lies, which is how the first
+    version of this entry got written.
+
+**What the boast has to do with it: nothing.** The earlier entry timed `boast-heard → crate-born` at
+ 42s and concluded the boast handler should ask for lines. `Swarm_boast_recv` really does write two
+  `%IveGot` facts and return, and Swarm.g:1859 really does say *"boast is advisory — nothing grants
+   off it"* — but the 42s was the floor, and the boasts were bystanders that happened to be in frame.
+    Hanging the ask on the boast would have made gossip actionable (breaking *"gossip never opens a
+     door"*, :1931), let a peer set our outbound schedule, and permanently masked the dropped offer.
+      **A backstop built over a broken primary makes the primary untestable** — and the primary here
+       is not merely broken, it is broken on every single reconnect.
+
+**And `sound.shelf` is green through all of it.** *"a friend has told you what they have · Lefto · 8
+ records"* is satisfied by `w.o({Friend:1})` with `records > 0` (`Sounditron_probe_shelf`:2021) — the
+  ADVERTISEMENT, never the goods. Two probes read two different things and only one of them is what a
+   listener means. Same shape as `arrive.playing` below.
+
+**`arrive.playing` over-claims by ~54s.** Measured twice on both tabs: `arrived` declared at 10.7s
+ while `radio.solo` read ◐ *"your own music while we gather"* until ~69s. Arrival is met by ANY music,
+  including the solo fallback — so the milestone that lifts the Butler and declares the app ready fires
+   while you are still alone. **"Arrived" and "fully functioning" are two claims and only one is
+    declared.** The rows that knew — `radio.solo` ◐ and `sound.pulled` ○ — were saying so the whole time.
+
+**What was ruled out, by measurement not argument:** slow wire (8 records go playable in 9s once
+ started) · the 600ms share beat (`Ra_mag_warm` is ungated and runs throughout) · `radio_w` stamped
+  late (Radio.g:1753 stamps it at radio setup and arms the share inline) · the disk cache (cached
+   records open `wire=0`; radiostock is consulted and works).
+⚠ **A correction worth keeping:** an earlier pass here claimed the come-back *re-downloads bytes
+ already on disk*. It does not — that read a wire cost into a mirror-structure measurement. What IS
+  true is that the in-memory mirror is wiped by a reload (128 previews → 0) and nothing is persisted
+   while it rebuilds, so the cost recurs on every reload.
+
 ### 2026-08-11 — THE RADIO STOPS BEFORE IT STARTS, AND A SKIP ALWAYS FIXES IT
 
 **The night's actual headline, seen three times on live tabs and still not explained.** A booted

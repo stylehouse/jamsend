@@ -110,3 +110,31 @@ describe('the pose release', () => {
         expect(c.need_area).toBe(22500)
     })
 })
+
+// ── THE SEAT GOES WITH THE POSE ────────────────────────────────────────────────────────────────
+//  Added 2026-08-11, with the settling window (*"it needs to layout a bit more, at occasions near
+//   but perhaps not exactly Heist starting"*).  Since the seat became INCUMBENT — the standing
+//    centre re-competes carrying a handicap — a seat that outlives its pose is not merely stale, it
+//     DEFENDS itself.  And the pose change is precisely when the body it was measured in changes
+//      most: entering `stretched` swells the belly past the plate.  So the release has to take the
+//       seat memo with everything else, or the first thing a newly-opened Heist does is inherit the
+//        seat of the cell it used to be.
+describe('the pose release drops the seat too', () => {
+    test('a pose change drops the memoised seat, so incumbency is never inherited', () => {
+        const c: GaugeBag & Record<string, any> = {}
+        gauge_pose(c, 'big')
+        c.fillrect = { x: 100, y: 100, w: 200, h: 150 }
+        c.fillrect_k = '16,16,80,80,56|0,0,133,133'
+        expect(gauge_pose(c, 'stretched')).toBe(true)
+        expect(c.fillrect).toBeUndefined()
+        expect(c.fillrect_k).toBeUndefined()
+    })
+
+    test('a cell that has not changed pose KEEPS its seat — the release is not a per-paint wipe', () => {
+        const c: GaugeBag & Record<string, any> = {}
+        gauge_pose(c, 'stretched')
+        c.fillrect = { x: 100, y: 100, w: 200, h: 150 }
+        expect(gauge_pose(c, 'stretched')).toBe(false)
+        expect(c.fillrect).toEqual({ x: 100, y: 100, w: 200, h: 150 })
+    })
+})
