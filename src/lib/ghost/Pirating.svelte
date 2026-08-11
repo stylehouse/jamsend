@@ -1001,7 +1001,7 @@
             }
             // < rename to collategories. collections aka categories
             if (pl.sc.collection && !soft_disbelieve_categories) {
-                pl.sc.use_collection ??= true // leaves false
+                pl.sc.use_collection ??= 1 // leaves an explicit 0
                 if (pl.sc.use_collection) {
                     // is /^- \w+/
                     path.push(pl.sc.bit)

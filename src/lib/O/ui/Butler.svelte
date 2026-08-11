@@ -107,7 +107,9 @@
                                 //  It replaced `butler.quiet`, which said only "skip the loading
                                 //   screen" and left the ▦ on a listener's screen with nothing to do.
 
-    const gate = boot_gate(H, { proactive: true })
+    // a GETTER, not the value: this mounts with H null on a qualand page, and a captured value
+    //  binds the gate to null forever — the tap then can never appear (boot_gate's header note).
+    const gate = boot_gate(() => H, { proactive: true })
     onMount(gate.start)
 
     // Everything below rides one 250ms poll. Deliberate, and the same trade BootGate always made:
@@ -262,6 +264,44 @@
     let landing_seen = $state(false)
     $effect(() => { if (landing) landing_seen = true })
 
+    // ── THE FRIENDLESS DOOR (Supervisor_todo §0's "one design decision", taken 2026-08-11) ──────
+    //  The Butler shows the door whenever the person HAS NO FRIENDS YET — not merely when a token
+    //   is in the bar.  That is what lets onboarding survive a reload (steps 1–3 of the flow are
+    //    keyed to a single-use token that deletes itself) and gives a friendless tab the one action
+    //     worth offering.  The count comes from `H.c.door_friends`, stamped by the door's STANDUP
+    //      (SwarmStandup — always mounted, outside the view switch); this file still names no
+    //       subsystem.  ABSENT ≠ ZERO: absent means the machine cannot count yet (ghosts still
+    //        depositing), and only a COUNTED zero opens the door — a pre-ghost zero would flash the
+    //         join offer at every established user on every boot.
+    //  THE FRIENDLESS DOOR IS AN OFFER, NOT A GATE: it never blocks the arrival lift (a deliberate
+    //   solo listener arrives and the Butler goes), and it never holds the screen the way an
+    //    unresolved token does.  The owner's "not letting you into the app until you have sorted
+    //     that out" is a ruling about a DISCOVERED INVITE, and only `landing` carries that hold.
+    let friendless = $derived.by(() => {
+        void tick
+        return (H?.c as any)?.door_friends === 0
+    })
+
+    // ── THE STAGE — exactly one thing on the card, always (Supervisor_todo §0 defect 2) ─────────
+    //  The old markup was a pile of INDEPENDENT `{#if}`s — door · tap · headline · arc · advice —
+    //   and on a reloaded invited tab every one of them was false at once: a COMPLETELY BLANK CARD,
+    //    fullscreen, with no timer.  There is a floor state now (`dark`), so every reachable
+    //     combination renders something.  The ladder is the six-step flow's order:
+    //      door — an unresolved invite (the hold), or a counted-zero friend count (the offer)
+    //      tap  — the machine wants the music share opened (boot_gate)
+    //      arc  — the roster has spoken: the boot log, the advice, the give-up controls
+    //      dark — nothing has spoken yet: the honest "we are up before the machine is"
+    //     (`sealed` from the sketch is SUBSUMED: the panel's own ✓ report is the sealed surface,
+    //      and the seal flips the friend count, which advances this ladder to `tap` — step 4 of
+    //       the flow — by itself.)
+    let stage = $derived.by(() => {
+        if (landing) return 'door'
+        if (gate.wanted) return 'tap'
+        if (friendless) return 'door'
+        if (view.lines.length) return 'arc'
+        return 'dark'
+    })
+
     // HAVE WE SETTLED FOR LESS? The model's ruling, not ours: the declared arrival is unmet and the
     //  patience its own registrar armed has run out. Nothing more is going to happen on its own.
     //  IT DOES NOT LIFT THE SCREEN, and that is the point of showing it. Lifting here would delete the
@@ -390,25 +430,43 @@
                          mid-`join()` at that moment and holds the only report of whether the
                          friendship sealed — and the news comes back underneath it, which is also the
                          first thing that person has any reason to read: what happens next. -->
-                    {#if landing_seen}
-                        {#if landing}<h2 class="ask">you were invited</h2>{/if}
+                    <!-- THE DOOR mounts for an invite landing (and STAYS — mid-`join()` it holds the
+                         only report of whether the friendship sealed), and for a counted-zero
+                         friend count: the reload-surviving half of onboarding, since steps 1–3 of
+                         the flow are keyed to a token that deletes itself.  A pasted invite and the
+                         mint QR both live in the panel, so the friendless card offers a real action
+                         rather than news about a machine with nobody on it. -->
+                    {#if landing_seen || stage === 'door'}
+                        {#if landing}<h2 class="ask">you were invited</h2>
+                        {:else if stage === 'door'}<h2 class="ask">music here is shared with friends</h2>{/if}
                         <div class="door"><InvitePanel {H} /></div>
                     {/if}
 
-                    {#if landing}
+                    {#if stage === 'door'}
                         <!-- nothing else while they are at the door -->
-                    {:else if gate.wanted}
+                    {:else if stage === 'tap'}
                         <!-- THE TAP. One big orange button and one plain word for what it does (the
                              owner: *"I actually want it to just say 'open share' and be one big
                              orange button, like we had in the prototype"*). No situation talk — it is
                              either needFSA or needAC and naming either is noise (the 2026-07-19
-                             ruling, still true). -->
-                        <h2 class="ask">open your music</h2>
+                             ruling, still true).  The "open your music" headline went the same way
+                             (the owner 2026-08-11: *"still says 'open your music' and all when we
+                             just are courting for AudioContext right? lets lose the extra text"*) —
+                             the tap can be a bare AC courtship, and a headline about music-opening
+                             over it is exactly the situation talk the ruling forbids.  The button
+                             alone is the whole ask. -->
                         <button class="orange" onclick={gate.open_share} disabled={gate.opening}>
                             <span class="glint" aria-hidden="true"></span>
                             {gate.opening ? 'opening…' : 'open share'}
                         </button>
                         {#if gate.error}<p class="err" transition:fade>{gate.error}</p>{/if}
+                    {:else if stage === 'dark'}
+                        <!-- THE FLOOR. Nothing has spoken — no token, no counted friends, no gate ask,
+                             no roster line. Before this existed the card rendered COMPLETELY BLANK
+                             here (Supervisor_todo §0 defect 2). `headline` falls through to
+                             'starting up', which is the honest "we are up before the machine is"
+                             the file's own comments always promised. -->
+                        <h2 class="dark">{headline}</h2>
                     {:else}
                         <!-- THE SPINNER IS A CLAIM: "something is still happening". Once the model has
                              given up on the arrival that claim is false, and a spinner over a machine
@@ -430,7 +488,11 @@
                          finished first step at the bottom. Done rows STAY, dimmed and ticked: the
                          list is a story of the machine coming up, and a story that deletes its first
                          line reads as a machine that never did anything. -->
-                    {#if view.lines.length && !landing}
+                    <!-- ONE STAGE AT A TIME (defect 2's whole fix): the arc renders only in its own
+                         stage now — not under the tap, not under the door. The rows are never lost:
+                         the panel shows all of them and `runner_ask supervisor` prints them; this
+                         card focuses on the one action or the one story, never both. -->
+                    {#if stage === 'arc'}
                         <ul class="arc">
                             {#each view.lines as l, i (l.key)}
                                 <li class={l.tone} class:done={l.done}
@@ -469,6 +531,12 @@
                          this is the whole of the owner's *"it should also explain clearly that no
                          friend is online and you can play local music instead"*. Calm, not red — it
                          is not a fault, it is the machine being honest about what it settled for. -->
+                    <!-- ADVICE AND THE REMEDY OUTRANK THE STAGE (everything below is `settled`-gated,
+                         i.e. the model's own give-up ruling): a friendless tab whose radio parked on
+                         a gesture still needs "▶ start the music" reachable UNDER the door, or the
+                         one press that cures the page is hidden by the offer to make a friend. Only
+                         an unresolved token (`landing`) suppresses them — that hold is the owner's
+                         ruling and the invite is the one thing to do at that moment. -->
                     {#if view.advice.length && !landing}
                         <div class="advice" transition:fade={{ duration: 240 }}>
                             {#each view.advice as a}<p>{a}</p>{/each}
@@ -567,6 +635,9 @@
     h2 { font-weight: 400; font-size: 1.35rem; margin: 0; max-width: 22em; line-height: 1.4;
          letter-spacing: .01em; }
     h2.ask { font-size: 1.7rem; font-weight: 300; }
+    /* the floor state — quiet on purpose: it is the card admitting the machine has not spoken yet,
+       and it must never read louder than a row of real news. */
+    h2.dark { opacity: .55; font-weight: 300; }
     .secs { opacity: .5; font-variant-numeric: tabular-nums; }
     .orange {
         position: relative;

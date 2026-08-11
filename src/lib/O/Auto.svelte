@@ -931,9 +931,13 @@
                 // Seed defaults if the file existed but was empty.
                 if (!Li_new.o({ Book: 1 }).length) {
                     for (const name of DEFAULT_BOOKS)
-                        Li_new.i({ Book: name, ok_pct: null, last_run_ms: null, active: false })
+                        // Bare mint: no `active:false` (enLine THROWS on a false sc value), and no
+                        //  null ok_pct/last_run_ms — a null is neither number nor string, so
+                        //   encode_stringies bails to the JSON-blob fallback for the WHOLE line.
+                        //    Every reader tests `!= null`, so absent reads the same as null.
+                        Li_new.i({ Book: name })
                     const first = Li_new.o({ Book: 1 })[0] as TheC | undefined
-                    if (first) first.sc.active = true
+                    if (first) first.sc.active = 1
                 }
 
                 // Place Li into w and into ave for reactivity.

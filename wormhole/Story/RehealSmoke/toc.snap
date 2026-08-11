@@ -1,0 +1,11 @@
+story:RehealSmoke
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.002
+      sample=0.002,at=1786439127
+    TimeTotal:step,avg=0.002
+      sample=0.002,at=1786439127
+  step,dige:e69951575ede1697

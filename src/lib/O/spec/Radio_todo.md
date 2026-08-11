@@ -52,6 +52,98 @@ This file is the destination + the bombs + the next move. Keep it current; it is
        the 60s come-back above, so it was not taken — take it the next time a player is reloaded
         anyway, and read `at` on the very first `Radio:playing`.
 
+**…AND IT %STREAMS IT ALL (2026-08-11, later — the owner: "it's got to %Stream it all", measured on
+ the come-back-fix reload).** Four consecutive wire tracks on the freshly-booted `96d0cf88`, every
+  open `primed start=0`, and each played its FULL length — inter-mark deltas sum to 48.2s / 36.3s /
+   41.9s against `total=24/18/21` chunks × 2s, with ZERO `starve` marks. The past-preview leg is
+    visible working on the same ring: `serve-park off=16 waiting=2` → `pcm-decode-done secs=64` →
+     `stream-first-chunk seq=16` — the serving side decodes the source and mints %Stream chunks on
+      demand, and the puller's head+16 keeps them landing ahead of the needle. `Radio_supply_go`'s
+       never-cap-a-wire-record rule is what makes 0:00 starts safe at all; nothing needed changing.
+  **The RED half is STILL owed**: this boot's first open drew a 1-chunk record (`total=1`), which
+   can never tune in mid-track by construction — the loophole stands, take it on a boot whose first
+    record is deep.
+
+### 2026-08-11 (night) — GRANT ACTIVATION: `repli_ready`, THE CONSENT-SHAPED COME-BACK FIX
+
+The owner's reframe, verbatim: *"sounds like Lefto needs to get consent to send repli_lines,
+ everything needs to hang off the Grant being established and perhaps activated... this is time to
+  mature things."* That supersedes every frame-reliability patch tried below — and they are all
+   REVERTED now: the Peeroleum `repli_lines` exemption (measured no-op, was spamming the console),
+    `Swarm_offer_lost`/`Swarm_offer_reset`, and the unwired recap pair. The negative result stays
+     recorded in a comment above `Swarm_share_up` and at Peeroleum.g's startup-hold.
+
+**What landed instead — `repli_ready`, the activation half of a grant lifecycle.** A grant on file
+ says a peer MAY receive our catalog (established); it says nothing about whether their rx is armed
+  THIS boot (active). So the newly-armed side now announces: at the bottom of `Swarm_share_up`
+   (rx armed as of that line), it sends `repli_ready` to every sealed pier — live station only, so
+    no fixture sees it. The frame lands in a MATURE tab by construction (the peer that wants to
+     offer has been up all along), so it has no startup window of its own — the flaw every
+      back-signal variant died of. The receiving handler (`Swarm_repli_ready`, voucher-gated via
+       the swarm envelope) stamps `route.c.rx_ready` and un-spends `offered_mark`/`offered_at`;
+        the ordinary beat re-offers through every gate it always used.
+ **Today an ACCELERATOR, not yet a gate**: routes never stamped keep the 60s-floor behaviour, so an
+  old peer loses nothing. The maturation — offers HELD until the grant is ACTIVE, `rx_ready` as a
+   real consent state on the grant, possibly its own particle — is the next step and should be
+    taken deliberately, with the owner.
+
+**Verification CLOSED 2026-08-11 (later): the come-back is ~13.6s, twice measured — B's own boot
+ plus ~1s.** The mark-reset alone was NOT enough (suspect 2 was right in spirit): two earlier
+  trials still landed at ~65–74s because an un-spent mark only accelerates whenever A's offer
+   loop next actually RUNS, and the beat's phases are minute-scale under a slow tour/cull. The
+    ask now gets an ANSWER instead of a note-to-self: `Swarm_repli_ready` fires
+     `Swarm_offer_now` right in the handler — the same gates and mark discipline as the beat's
+      offer loop (pier_live Music, register caster, stamp `offered_mark` BEFORE the send), so the
+       beat sees a spent mark and cannot double-offer. The reset stays as the backstop: if the
+        immediate offer throws, the mark is null and the beat + floor behave exactly as before.
+  **And the reply race is closed at B**: the immediate offer comes back within one round trip,
+   but B's per-route `repli_rx` used to be registered by B's own FIRST share beat — so the reply
+    would have died in the same dead window. `Swarm_share_up` now registers the rx on every
+     sealed route BEFORE sending `repli_ready` (arm the door, then knock).
+  Measured (scratchpad `whenland3.mjs`, per-route grep — suspect 1 honoured): reload B beside a
+   serving A → B `share-up` ~+12s, A's ring `repli-ready` + `offer-now`, `offered 1–2s ago` on
+    B's OWN route block, B `crates: 1 %MusuThem` at **13.6s / 13.7s**; then `crossover
+     playable=3 of=Righto` and ~211 KB/s flowing. Books: SwarmInvite 5/5 green, SwarmShare
+      exactly its 8-caveat baseline. The residual come-back IS B's standup — any further shaving
+       is work on B's boot, as the entry below already concluded.
+
+**And shaved (2026-08-11, later still — the owner's "kinda jammed" reload): the come-back is now
+ ~3.5–5s, and the ~30s jam shape is structurally gone.** The 13.6s above was mostly the SHARE-ARM
+  queueing behind the arrival Book, and on a bad boot it stacked to ~33s. Ring-instrumented
+   diagnosis (marks `glass-ensure`/`radio-w-stood`/`share-armed-by`/`share-ask` are still in, and
+    cheap enough to keep):
+  - `radio_w` stands at the glass's beat 1 (~3s) — but `Swarm_share_up` was only being asked by
+    `SwarmStandup.svelte`'s `$effect`, which rides Mundo `version` bumps, **and Mundo holds still
+     for ~10s stretches while the arrival Book steps in its own House** (measured: asks n=1..16 in
+      the first 1.6s, then silence until the Book's completion bumped Mundo at step 9). So the
+       share armed at Book-end: ~13s on a good boot, ~33s when `music_wait` burned its 20s first —
+        which it did precisely BECAUSE the share hadn't armed (no friend crate at beat 6, so the
+         auto-start had nothing; the two delays compounded, that was the jam).
+  - `Stoker_ensure`'s arm-at-the-seam path (the 2026-08-06 cure, entry below) was DEAD on
+    humdingers: its `!w.sc.w` prod gate reads the end-user room's radio world (the arrival Book's
+     `w:Sounditron`) as a driven Book. Fixed: the gate is now `!w.sc.w || top.c.humdinger` — a
+      humdinger IS prod; driven Books on machine tabs stay gated exactly as before.
+  - `SwarmStandup` grew a 750ms wall-clock tick that all its effects ride alongside `version` —
+    a standup must not trust the world it is standing up to keep waking it. (Its old comment
+     claimed the belief loop's idle cadence would; measured false during a Book run.)
+  Verified both directions: reload → `radio-w-stood` → `share-up` + `share-armed-by w=Sounditron`
+   **+0ms** → `crate-born` + `mirror-merge recs=8` within ~70ms, all before the arrival Book's
+    step 2; music running by step 7 with `ms=0`. Canaries after: SwarmShare 9/9 at its 8-caveat
+     baseline, SwarmInvite settled green. Residual mystery, harmless now: one observed boot had
+      multi-second gaps mid-ring (9.9s, 5.1s) — background-tab timer throttling is the suspect;
+       under the seam arm a late glass just arms late-with-the-glass instead of at Book-end.
+
+**Also landed, same night (the Invite flow):**
+- `Swarm_expect_joining` — the INVITEE's half of "an invite means come here": armed at
+  `Swarm_redeem` (the hello is on the wire), `because='joining'`, 15s (join carries 8s+8s waits).
+- `Radio_dial` holds EVERY rung while `because='joining'` hopes — a tab that scanned a QR is here
+  to hear THAT friend, not whoever else is live. The inviter's `'invite'` keeps the bottom-rung
+  hold only (minting a QR mid-session must never stop playing music).
+- The favour: `Swarm_accept` (always the redeemer/deliberate-join side) stashes
+  `top.c.aim_wish = inviter`; `Radio_dial` consumes it into `radio.sc.aim`, so the aimed pool
+  prefers the inviter as soon as their records land. First-shot, not a lock — an empty crate
+  falls through, per the existing "falling back is never a downgrade" rule.
+
 ### 2026-08-11 — COMING BACK ALWAYS COSTS ONE RE-OFFER FLOOR: THE FIRST OFFER IS THROWN AWAY
 
 **⚠ This entry replaces an earlier one that blamed the boast.** That read was wrong and the wrong fix

@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '20ad333e7ffc1745~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '449d578b23dc7154~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -380,6 +380,27 @@ Swarm_expect_arrival(w) {
     if (watch) { watch.sc.because = 'invite'; watch.sc.advice = 'nobody has answered your invite yet — your own music plays in the meantime'; watch.bump() }
 
 },
+// Swarm_expect_joining — THE INVITEE'S HALF of "an invite means come here" (2026-08-11, the owner:
+//  *"we need some way to stop the Radio starting until we finish the Invite... otherwise it starts
+//   playing some other Pier who is online"*).  Swarm_expect_arrival arms the INVITER at mint; a tab
+//    that LANDS on an invite armed nothing — Swarm_expect_friends bails on a newborn ("NO PIERS, NO
+//     HOPE", correct for its own case), so between redeem and seal the radio was free to start on
+//      whoever else happened to be live.  Armed at Swarm_redeem, the ghost-side moment a landed
+//       invite is actually being spent — not at ?Iz parse (a landed token someone never joins must
+//        not hold anything).
+//  SAME watch key, SAME probe: the arrival IS the inviter appearing as a live pier, so the seal
+//   meets it naturally.  because='joining' is what Radio_dial reads to hold EVERY rung for the
+//    invitee (the inviter's 'invite' holds only the own-shelf rung — minting a QR mid-session must
+//     never stop music already playing).
+//  FIFTEEN seconds, not the mint-side five: join() carries an 8s relay wait and an 8s seal wait,
+//   and giving up while the seal is still legal hands the radio to a stranger at the worst moment.
+Swarm_expect_joining(w, prepub) {
+    let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (!sup) return
+    let watch = this.Supervisor_expect(sup, 'swarm.arrival', 'your inviter came online', 'Swarm_probe_arrival', null, 15, this.Supervisor_stage('friend'))
+    if (watch) { watch.sc.because = 'joining'; watch.sc.advice = 'the invite did not finish — ask your friend for a fresh QR'; watch.bump() }
+
+},
 // Swarm_expect_friends — THE OTHER EVENT THAT MAKES US EXPECT SOMEBODY: our own standup, on a machine
 //  that already has friends (the owner 2026-08-10, having killed Lefto to produce the case: *"this is
 //   that start-playing-our-own-music situation… which happens anyway, I actually want it to WAIT, and
@@ -722,9 +743,10 @@ async Swarm_arm(w) {
         if (frame.header.type === 'swarm_hi') this.Swarm_heard_hi(w2, ident, frame)
         if (frame.header.type === 'suggest') this.Swarm_suggested(w2, ident, frame.swarm)
         if (frame.header.type === 'suggest_got') this.Swarm_suggest_got(w2, ident, frame.swarm)
+        if (frame.header.type === 'repli_ready') this.Swarm_repli_ready(w2, ident, frame.swarm)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready']) w.c.on[kind] = hear
 
 },
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
@@ -1211,6 +1233,9 @@ async Swarm_redeem(w, ident, iz) {
         this.Swarm_rebuff(ident, 'offline', t.prepub)
         return null
     }
+    // the hello is on the wire — WE are now joining somebody, and the radio must wait for them
+    //  rather than starting on whoever else is live (Swarm_expect_joining, the invitee's arm).
+    this.Swarm_expect_joining(w, t.prepub)
     // ELECTRODE (2026-08-06) — a pairing STARTING, which brackets the `seal` mark at the other end.
     //  Both failure arms above already funnel through Swarm_rebuff (traced), so the three outcomes of
     //   a redeem are now all in the file: forged, offline, or this.  A `redeem` with no `seal` after
@@ -1302,6 +1327,14 @@ async Swarm_accept(w, ident, frame) {
     }
     let mine = await mint_grant(ident.c.keys, frame.page.pub, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
     let pier = this.Swarm_seal(w, ident, frame.page, frame.grant, mine)
+    // FAVOUR THE INVITE'S ORIGIN (2026-08-11, the owner: *"would favour the Invite's origin when
+    //  the Invite works out right"*).  Swarm_accept is ALWAYS the redeemer hearing the inviter's
+    //   accept — the deliberate-join side — so the person to hear first is exactly frame.page.
+    //    Stashed as a WISH on the top House, not written into radio.sc.aim here: the radio world
+    //     may not be standing yet on a fresh tab, and their crate is certainly still empty — the
+    //      dial consumes the wish into its own aim (Radio_dial), which the aimed pool then
+    //       prefers the moment any of their records land.  `.c`, one-shot, never snapped.
+    this.top_House().c.aim_wish = String(frame.page.prepub)
     this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_confirm', grant: mine, page: this.Swarm_page(ident) })
     return pier
 
@@ -2118,33 +2151,81 @@ Swarm_share_present(from, w) {
     return true
 
 },
-// Swarm_offer_lost — THE CATALOG OFFER'S LOST-FRAME BACK-SIGNAL (2026-08-11, Radio_todo §0).
-//  The come-back offer fires the instant a returning friend's era lands — measured at +6.1s over
-//   three trials, and that friend cannot answer a ping until +7.0s, because it has not yet run its
-//    OWN Swarm_share_up and so Repli_arm has registered no `repli_lines` handler.  The catalog frame
-//     reaches their dispatch and dies there.  The offer loop below then stamps `offered_mark`
-//      OPTIMISTICALLY — the change-trigger is spent on nothing — leaving the 60s re-offer floor as
-//       the only thing that has ever delivered a come-back catalog (measured: offer +5.8s, crate
-//        +62.9s, every intervening 2.5s sample crates=0).
-//  They were already telling us.  Peeroleum answers an unhandled type with `no_protocol` naming
-//   `about` + `re_seq`, expressly "so the sender LEARNS instead of losing silently" (Peeroleum.g:1004)
-//    — and nothing anywhere registered `w.c.on.no_protocol`, making the complaint the one frame in
-//     the system with a guaranteed listener of zero.  Listening costs one handler: un-spend the mark
-//      and the ordinary 600ms beat re-offers.  No timer, no retry counter, no new frame type, and no
-//       guess about the far side's readiness — the far side says when it wasn't ready.
-//  Floored at 1500ms so a friend who stays handler-less for a few seconds gets a re-offer cadence
-//   rather than one per beat; the 60s floor still backstops everything underneath.
-Swarm_offer_lost(w, ident, frame) {
-    let h = frame && frame.header
-    if (!h || h.about !== 'repli_lines' || !h.from) return 0
-    let route = this.Swarm_station_pier(w, ident, String(h.from))
+// COME-BACK CATALOG, THE NEGATIVE RESULT (2026-08-11, Radio_todo §0): a pushed catalog into a
+//  returning friend's startup window is lost (their Repli_arm hasn't run), and every back-signal
+//   tried here — no_protocol complaints, offer-mark resets, a recap ask — measured a no-op,
+//    because each ceases or fires before the one moment that matters (the peer BECOMING ready).
+//     The mature fix is consent-shaped: don't push repli_lines until the peer's Grant is ACTIVE —
+//      i.e. the receiving side says "my rx is armed, send" as part of the grant lifecycle, not as
+//       frame-level reliability.  Design in Radio_todo §0 (Grant activation).
+
+// Swarm_repli_ready — GRANT ACTIVATION, the receiving half.  A sealed friend announces its Repli rx
+//  is ARMED — sent once from the bottom of ITS Swarm_share_up, i.e. from the side that KNOWS, at the
+//   moment it becomes true.  This is the signal every back-channel above tried to synthesise and
+//    could not: they all fired before or after the ready moment; this IS the ready moment.
+//  AUTHENTICATED: it rides the swarm envelope with a page in the body, so the hear funnel's voucher
+//   gate has already proven the sender is the sealed pier it claims — activation is a consent fact
+//    and must not be forgeable.  Then: stamp the route ACTIVE and un-spend the offer mark, and the
+//     ordinary 600ms beat re-offers through every gate it always used — landing, because the rx it
+//      aims at is armed by definition (measured shape: come-back catalog ~at the peer's share_up,
+//       not at the 60s floor).
+//  TODAY AN ACCELERATOR, NOT YET A GATE: a route never stamped rx_ready keeps the floor-backstopped
+//   behaviour, so an old peer that never announces loses nothing.  The maturation — offers HELD
+//    until the grant is ACTIVE, the full consent reading — is Radio_todo §0 (Grant activation).
+//  THE ASK IS ANSWERED HERE, NOT LEFT TO THE BEAT (2026-08-11, the owner: "a newly arrived peer
+//   must ask for some Mag").  The first cut only un-spent the offer mark and trusted the 600ms
+//    beat to re-offer — and two live trials still measured the come-back at the 60s floor: the
+//     beat's cadence is nominal, its PHASES are minute-scale under a wedged tour/cull, so a mark
+//      reset waits on whenever the offer loop next actually runs.  A request deserves a reply, so
+//       the offer fires RIGHT HERE, detached (the funnel dispatch does not await this handler),
+//        through the same gates and mark discipline the beat uses (Swarm_offer_now).  The reset
+//         stays: if the immediate offer throws, the mark is still null and the beat + floor
+//          backstop exactly as before.
+Swarm_repli_ready(w, ident, frame) {
+    let from = String(frame?.page?.prepub || '')
+    if (!from) return 0
+    let sealed = this.Swarm_peering(ident)?.o({ Pier: 1, pub: from })[0]
+    if (!sealed) return 0
+    let route = this.Swarm_station_pier(w, ident, from)
     if (!route) return 0
-    if (route.c.offer_lost_at && (Date.now() - route.c.offer_lost_at) < 1500) return 0
-    route.c.offer_lost_at = Date.now()
+    route.c.rx_ready = Date.now()
     route.c.offered_mark = null
     route.c.offered_at = 0
     if (typeof this.Radio_trace === 'function') {
-        try { this.Radio_trace(null, { ev: 'offer-lost', of: String(h.from).slice(0, 8), re_seq: +(h.re_seq || 0) }) } catch (er) {}
+        try { this.Radio_trace(null, { ev: 'repli-ready', of: from.slice(0, 8) }) } catch (er) {}
+    }
+    if (w.c.station_up) this.Swarm_offer_now(w, ident, from).catch((er) => console.error('⨳ offer-now threw —', (er && er.message) || er))
+    return 1
+
+},
+// Swarm_offer_now — one friend's Mag, offered NOW: the reply half of repli_ready's ask.  The same
+//  gates and the same mark discipline as the beat's offer loop (pier_live Music, register caster,
+//   stamp offered_mark/offered_at BEFORE the send) so the beat sees a spent mark and does not
+//    double-offer — Repli_merge dedups the far side anyway, so a race costs one husk, never a wound.
+//     No presence check: the caller holds a frame that just crossed the voucher gate, which is
+//      presence.  LIVE ONLY by the caller's station_up gate — a Book world never reaches this, so
+//       no fixture can grow %frame husks from it.  Returns 1 iff the offer was sent.
+async Swarm_offer_now(w, ident, pub) {
+    if (!w || !w.c.share_up) return 0
+    let rw = this.top_House().c.radio_w
+    if (!rw) return 0
+    let me = String(ident.sc.prepub)
+    let them = String(pub)
+    if (them === me) return 0
+    let p = this.Swarm_peering(ident)?.o({ Pier: 1, pub: them })[0]
+    if (!p || !this.Swarm_pier_live(p, 'Music')) return 0
+    let route = this.Swarm_station_pier(w, ident, them)
+    if (!route) return 0
+    let stock = this.Ra_home_self(rw, me)
+    if (!route.c.repli_src) this.Repli_register_caster(w, route, stock)
+    let n = this.Ra_recs(stock).length
+    let tour = String(rw.o({ Stoker: 1 })[0]?.sc?.toured || 0)
+    let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n + ':' + tour
+    route.c.offered_mark = mark
+    route.c.offered_at = Date.now()
+    await this.Ra_offer_stock(w, route, me, them, stock)
+    if (typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'offer-now', of: them.slice(0, 8), n: n }) } catch (er) {}
     }
     return 1
 
@@ -2159,7 +2240,6 @@ Swarm_share_up(w, ident) {
     if (!rw) return this.Swarm_share_no(w, 'radio world not standing yet')
     if (typeof this.Repli_arm !== 'function') return this.Swarm_share_no(w, 'Repli verbs not deposited')
     this.Repli_arm(w)
-    this.Peeroleum_on(w, 'no_protocol', (cw, pier, frame) => { this.Swarm_offer_lost(w, ident, frame); return true })
     w.c.repli_mirror_pier = String(ident.sc.prepub)   // my addr — the pull's from-address (Ra_restock_beat)
     w.c.repli_mirror_by_from = 1                       // per-friend crates, keyed by the caster
     w.c.repli_mirror_w = rw                            // crates mint in the radio world — the glass sees them
@@ -2169,6 +2249,30 @@ Swarm_share_up(w, ident) {
     w.c.share_up = 1
     if (typeof this.Radio_trace === 'function') {
         try { this.Radio_trace(null, { ev: 'share-up' }) } catch (er) {}
+    }
+    // GRANT ACTIVATION, the announcing half (2026-08-11, the owner: *"everything needs to hang off
+    //  the Grant being established and perhaps activated"*).  Our Repli rx is armed AS OF THIS LINE
+    //   — Repli_arm ran nine lines up — so tell every sealed friend.  Their change-triggered offer
+    //    fired into our startup window and died there (the measured 65s come-back, the negative-
+    //     result note above Swarm_share_up); this frame is the one signal that fires AT the ready
+    //      moment, FROM the side that knows.  It lands in a MATURE tab by construction — the peer
+    //       that wants to offer has been up all along — so it has no startup window of its own.
+    //  Fire-and-forget: an offline friend misses nothing (their next offer meets our armed rx
+    //   anyway), and Swarm_deliver quietly returns false when a route is not ready.
+    //  LIVE STATION ONLY — Books never set station_up, and in a Book world Swarm_deliver falls to
+    //   the in-process %mail drop, which leaves %frame husks in every share fixture.  The startup
+    //    window this heals is a live-relay fact; a fixture has no startup window to lose frames in.
+    if (w.c.station_up) {
+        for (const p of (this.Swarm_peering(ident)?.o({ Pier: 1 }) || [])) {
+            if (!p.sc.pub) continue
+            // ARM THE DOOR BEFORE KNOCKING: the reply (Swarm_offer_now at the friend) comes back
+            //  within one round trip, but our per-route rx registration used to wait for our own
+            //   first share beat — so the immediate reply would die in the exact dead window this
+            //    announce exists to close.  Register the rx here, then speak.
+            let route = this.Swarm_station_pier(w, ident, String(p.sc.pub))
+            if (route && !route.c.repli_rx) this.Repli_register_rx(w, route)
+            this.Swarm_deliver(w, ident, String(p.sc.pub), { kind: 'repli_ready', page: this.Swarm_page(ident) })
+        }
     }
     this.Swarm_share_loop(w, ident)
     // the SoundSupervisor rides alongside, on its own timer, deliberately NOT inside the beat it

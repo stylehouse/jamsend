@@ -22,6 +22,11 @@ Story session state in it, the illegal `= false` bites.
 **The four writes (Story.svelte):** `unrun` (2365), `checking` (1885), `ok` (2401/2502), `disk_ok` (1880).
 - `unrun` — DEAD (no reader, no truthy setter) → `delete` FIXED.
 - `checking` — simple 1-or-absent gate (only reader 2500 tests truthiness) → `delete` FIXED.
+- **2026-08-11 UPDATE — `ok`/`disk_ok` are FIXED too; the paragraph below is history.** The tri-state
+  moved onto a second key: `set_disk_ok(step, ok)` stamps `disk_checked = 1` always and `disk_ok = 1`
+  only on pass (Story.svelte:770-782), and `disk_bad(step)` (`disk_checked && !disk_ok`) is the read-side
+  replacement for `disk_ok === false`. Grep now finds NO `sc.X === false` / `!== false` reader anywhere in
+  src|Ghost and no `.sc.X = false` writer either — the latent traps are gone, not merely dormant.
 - `ok` / `disk_ok` — **THREE-STATE, do NOT delete.** Readers test `=== false` explicitly (803, 847, 1851
   `ok===false`, 2382 `disk_ok!==false`, 2501 `disk_ok===false`) — an explicit `false` means "fixture DRIFTED
   / step FAILED", distinct from absent. Deleting erases the drift signal and breaks Accept. These stay as

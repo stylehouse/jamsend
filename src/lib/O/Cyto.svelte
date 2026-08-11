@@ -602,7 +602,9 @@
 
             traced_fn: async (D: TheD, bD: TheD | undefined, n: TheC, T: Travel) => {
                 if (T.sc.C && bD) {
-                    T.sc.C.sc.ref_stable = !!(bD && T.sc.n === bD.c.T?.sc.n)
+                    // 1-or-absent: T.sc.C is a real particle, and `= false` throws at enLine.
+                    if (bD && T.sc.n === bD.c.T?.sc.n) T.sc.C.sc.ref_stable = 1
+                    else delete T.sc.C.sc.ref_stable
                 }
             },
 

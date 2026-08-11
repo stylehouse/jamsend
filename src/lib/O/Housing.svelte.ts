@@ -2039,11 +2039,17 @@ export class House extends StorableHousing {
                     try {
                         const perm = await row.handle.queryPermission({ mode: 'readwrite' })
                         if (perm === 'granted') return row.handle
-                        if (perm === 'prompt') {
+                        // 'prompt' — the handle is REMEMBERED but needs re-asking, and requestPermission
+                        //  outside a user gesture THROWS.  This used to run unconditionally at boot, land
+                        //   in the catch, and DELETE the stored handle — so every browser restart cost the
+                        //    listener their remembered share and the tap could only re-open the full
+                        //     picker.  Only re-ask inside a real gesture (open_dir re-runs start() in one);
+                        //      at boot, a 'prompt' handle is simply "not yet", never "gone".
+                        if (perm === 'prompt' && (navigator as any).userActivation?.isActive) {
                             const got = await row.handle.requestPermission({ mode: 'readwrite' })
                             if (got === 'granted') return row.handle
                         }
-                    } catch { await db.Handle.delete(key) }
+                    } catch { await db.Handle.delete(key) }   // queryPermission threw: the handle itself is dead
                     return null
                 },
             })
@@ -2078,7 +2084,19 @@ export class House extends StorableHousing {
             wa.oai({ action: 1, role: 'open_dir' }, {
                 label: 'Open directory', icon: '📂', cls: 'big',
                 fn: async () => {
-                    await fsh.requestDirectoryAccess()
+                    // inside the tap's gesture, a REMEMBERED handle can be re-granted without the
+                    //  picker: start() retries restore, and restoreDirectoryHandle's requestPermission
+                    //   is allowed to run now (userActivation).  Only a listener with no stored share
+                    //    — or a dead handle — sees the picker.
+                    if (!fsh.started) await fsh.start()
+                    if (!fsh.started) await fsh.requestDirectoryAccess()
+                    // A GRANT RESTARTS THE WALK COUNT.  `meander_stood` is per-SESSION and the wander
+                    //  is about to begin again over a DIFFERENT tree — left alone, the count carries
+                    //   the previous nav's hundreds into the new share's first probe read, the shelf
+                    //    watch can never reach its honest "no music in your share" branch (that needs
+                    //     walked==0), and its 15s patience grades the NEW share against the OLD
+                    //      share's stalled progress (the empty-share fail-noise, Supervisor_todo §0).
+                    H.top_House().c.meander_stood = 0
                     A.c.nav = null                 // a granted local dir overrides the cloud
                     await w.r({ wants_directory: 1 }, {})
                     H.i_elvisto(H, 'think')
@@ -2086,12 +2104,19 @@ export class House extends StorableHousing {
             })
         }
 
-        // ── developing (?E= editor | ?B= runner): the OPFS-from-github cloud is illegal.
-        //   That cloud is a github-seeded shadow disk — honest for a param-less Auto demo out
-        //    in the world, but a lie under a dev boot, which must read|write the REAL project
-        //     tree.  So we never mount it here: we raise %disk_gated, Otro throws up a fullscreen
-        //      FaceSucker demanding a share, and the open_dir action above (the only way in) is
-        //       what dismisses it.  boot_role is set only for E|B, so a plain demo is unaffected.
+        // ── under a boot_role the OPFS-from-github cloud is illegal.  That cloud is a
+        //   github-seeded shadow disk — honest for a param-less Auto demo out in the world, but a
+        //    lie under a dev boot, which must read|write the REAL project tree.  So we never mount
+        //     it here: we raise %disk_gated, the Butler/BootGate tap ("open share") is what
+        //      dismisses it, and the open_dir action above is the only way in.
+        //  ⚠ boot_role is NO LONGER only ?E=/?B=: BigQualand stamps one on EVERY Big*land page
+        //   (sound→runner, word→editor), so this branch is also the END-USER FSA ask — a listener
+        //    with no share lands here and must be offered the tap (which is correct: their share
+        //     is their music).  What a listener does NOT get this way is the app's own wormhole
+        //      (Story/Sounditron toc.snaps live in the repo, not in anyone's music folder) — that
+        //       needs the cloud COMPOSED UNDER their grant, not replaced by it.  The virtualiser
+        //        design lives in Supervisor_todo §0; until it lands, a non-dev listener runs with
+        //         ghosts from the bundle and no Books, which the Supervisor should say out loud.
         if (H.top_House().c.boot_role) {
             // &remoteWormhole=1 runner: NO FaceSucker — the real tree arrives over the channel from a trusted
             //  editor (method:remoteWormhole).  w:Lies drives the beg→grant→install (Lies_remote_wormhole_step

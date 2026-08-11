@@ -7,6 +7,139 @@
 
 ## 0. Get on with next
 
+> ### 2026-08-11 (night) — WHAT LANDED, WHAT WAS DISPROVEN, WHAT'S NEXT
+>
+> **DEFECT 1 IS SOLVED, and the answer supersedes the ":2065 leading candidate" below.** The
+>  open-share tap could never appear on ANY BigQualand page, regardless of `disk_gated`:
+>   `boot_gate(H, …)` captured the `H` PROP BY VALUE at component init, and on a qualand page the
+>    House is assigned inside an `$effect` (the OOM-trap pattern), so both `Butler` and `BootGate`
+>     mounted with `H` null and the gate polled `null?.c?.disk_gated` for the life of the tab — no
+>      disk tap, no musu_gat, no AC tap. Otro constructs `H` before render, which is why the same
+>       gate looked healthy on dev pages. **Fixed: `boot_gate` takes a getter** (`() => H`), both
+>        call sites updated; header note in `boot_gate.svelte.ts` records the trap. VERIFIED LIVE by
+>         the owner hitting the tap and granting an (empty) folder minutes later.
+> **Also fixed on the same path**: `restoreDirectoryHandle` used to call `requestPermission` at BOOT
+>  (no gesture → throws → the catch DELETED the stored handle — every browser restart cost the
+>   remembered share). Now it re-asks only under `navigator.userActivation.isActive`, and the
+>    `open_dir` action retries `fsh.start()` inside the tap's gesture first — a remembered handle
+>     re-grants WITHOUT the picker; only a new user or a dead handle sees the picker.
+>
+> **NEW, seen live minutes after the tap went in — THE EMPTY-SHARE FAIL-NOISE.** The owner granted
+>  an empty folder: `[FAILED] there is music in your share … still looking — 336 folders walked`.
+>   Diagnosis (code-read, high confidence): `Radio_shelf_walked` reads `TOP.c.meander_stood`, a
+>    per-SESSION counter that never resets on a mid-session share swap — the 336 belongs to the
+>     PREVIOUS nav's walk. Consequences: the probe can never reach its honest empty-share branch
+>      (`no music in your share — open a folder with some in it` requires walked==0), and once the
+>       count stops climbing the 15s patience trips → FAILED beside a "still looking" note that is
+>        no longer true. **FIXED 2026-08-11 (later), both halves as sketched**: `open_dir`'s
+>         fn resets `meander_stood` on a grant (Housing.svelte.ts — the full-reload was taken while
+>          the owner was away; both players re-crated in seconds via the new come-back path); the
+>           registrar stamps `watch.sc.advice` and `Radio_probe_shelf`'s empty branch returns that
+>            same give-up sentence ("no music found here — add some, or open a different folder") as
+>             its note once `Supervisor_given_up('radio.shelf')` says so — the patience re-arms while
+>              the walk advances, so an expired clock genuinely means the looking has stopped. The
+>               roster lives on Mundo, so no fixture moves. NOT yet seen live (needs an empty-share
+>                grant to trip it).
+>
+> **THE PROSTHETIC WORMHOLE is now an explicit directive** (the owner, same night): *"we still need
+>  a prosthetic wormhole/ for the Invitee — and any normal user that won't be pointing this at the
+>   git repo, needs to have wormhole/ remounted into .jamsend/... or something."* Shape options,
+>    both rooted at the DirectoryOpener seam (`Housing.svelte.ts` w:Wormhole):
+>    · **Materialise**: seed `wormhole/` INTO `<share>/.jamsend/wormhole/` from the app (the
+>       OPFS-github cloud already knows how to fetch the tree), and teach the nav to serve
+>        `wormhole/` from there when the share has none. Real files, everything downstream works;
+>         needs a staleness story (app updates vs the copy).
+>    · **Compose**: a composite nav — `wormhole/` prefix → the OPFS cloud, everything else → the
+>       granted dir. No writes into their music; always current; needs a new nav class honouring
+>        `WormholeNav`'s interface (`Housing.svelte.ts:2508`; `RemoteWormholeNav.svelte.ts` proves
+>         a second implementation already exists, `is_remote` is the recognition idiom).
+>    The `.jamsend/` remount wording suggests the owner leans MATERIALISE. Either way the empty
+>     `A.c.nav = null` on grant (a granted dir REPLACES the cloud) is the line that must change —
+>      see memory `a-granted-directory-replaces-the-app`.
+>
+> **Swarm/Radio landings tonight** (details in Radio_todo §0): the frame-reliability no-ops are
+>  reverted; `repli_ready` (grant ACTIVATION, accelerator-not-gate) landed with verification OPEN;
+>   `Swarm_expect_joining` + the every-rung Radio hold for `because='joining'` + the seal-time
+>    `aim_wish` favour landed (SwarmInvite 5/5 green, SwarmShare exactly its 8-caveat baseline).
+>
+> ### 2026-08-11 (owner, in passing, away) — THE STASH: A SECOND FSA FOR THE ACCOUNT, AND THE TAP SHOWS TOO OFTEN
+>
+> **Two directives arrived mid-session, verbatim-close, neither built yet — both belong to this flow.**
+>
+> **1. THE STASH — "open share" AND "open stash".** *"if they want their .jamsend credentials stored
+>  somewhere more private than their music collection, they need to open a second FSA … have an 'open
+>   share' AND an 'open stash', the latter with explanation that other ways to share your music can
+>    leak your jamsend account data. you have to create a MyJamsendData directory somewhere… that's a
+>     bit of a naff design, yes, requiring the user to create a directory for us to own… it's also how
+>      to recover your account on a new browser, from disk."*  What grounds it in the tree already:
+>  · The leak is REAL and locatable: the account snap lives at `<share>/.jamsend/account/<prepub>`
+>     (Swarm.g:2875) — keypair INLINE by design (the backup must be self-sufficient, Swarm.g's
+>      portability header) — so anyone who syncs/shares their music folder ships their signing key.
+>  · The export/import machinery EXISTS: `Swarm_export` (account C-snap, one blob) / `Swarm_import` /
+>     `Swarm_boot_seed` (disk-seeded account → graft) — the stash is a WHERE, not a new mechanism.
+>  · The handle store already keys by name (Dexie `Handle`, per-origin), so a second FSA handle under
+>     a `stash` key is the same restore machinery run twice.
+>  **The decisions this needs (owner)**: (a) the MODE — "hopefully we just switch them to that mode
+>   (where? site wide but persisted…)": a pref must survive a new browser, where there is no Dexie
+>    yet — so recovery order is Butler-door-first ("open stash" → `Swarm_boot_seed` from it), and the
+>     mode itself can only be persisted per-origin AFTER first contact; (b) whether stash-mode STOPS
+>      writing `.jamsend/account` into the share (the point of the mode) and what migrates the
+>       already-written one out; (c) how this composes with the prosthetic-wormhole write-routing
+>        question (design question (c) below — the stash answers its "identity" third, and is a
+>         natural home for radiostock/keeps if the share goes read-only…); (d) the naff-but-honest
+>          MyJamsendData creation UX.  **Fold into the six-step flow as an optional step 4b.**
+>
+> **2. "THE 'open share' BUTTON SHOWS UP TOO OFTEN, when we do in fact have FSA granted."**  Not
+>  reproducible from this container; the diagnosis is one console read on a tab showing the tap:
+>   the stored handle's `queryPermission({mode:'readwrite'})`.  The fork:
+>   · **'prompt'** → browser policy, not our bug: Chromium downgrades FSA grants at browser restart
+>      unless "allow on every visit" was ticked on a re-prompt.  Our restore already re-grants
+>       picker-free inside the tap's gesture (the 2026-08-11 fix); making it ZERO-tap needs the
+>        persistent-permission checkbox (it rides `requestPermission`'s own dialog), PWA install, or
+>         possibly `navigator.storage.persist()` — measure before building.  A cheap honesty win
+>          either way: when a REMEMBERED handle exists the tap should say *resume 〈dirname〉*, not
+>           *open share* — same gesture, honest promise (no picker coming).
+>   · **'granted'** → a real restore-ordering bug in the wormhole step (fsh created but start() not
+>      reached before `disk_gated` rises?) — instrument the step's branches before touching them.
+>   Note the picker and the query BOTH use `readwrite` (Directory.svelte.ts:448, Housing:2040), so a
+>    read/readwrite mode mismatch is ruled out by code-read.
+>
+> ### 2026-08-11 (later) — THE DESIGN DECISION IS TAKEN AND THE BLANK CARD IS DEAD (landed, verification part-owed)
+>
+> **The one design decision below is taken: YES — the Butler shows the door whenever the person has
+>  no friends yet.** The doc's own argument carried it (survives reload, the one action worth
+>   offering, kills the blank card at its root); the owner was away and can reverse one line.
+>    What landed, all three within the pre-roster vocabulary rule:
+>  · **`H.c.door_friends`** — the friend count, stamped by **SwarmStandup** (NOT InvitePanel as first
+>     sketched: the panel is a sometimes-mounted FACE now, its own header says so, and a fact the
+>      Butler needs before any door is drawn cannot ride a component that mounts after it). Its own
+>       key, not a field on `H.c.door` — the panel replaces that object wholesale every pass, and two
+>        writers onto one state is boot_gate's lesson. **ABSENT ≠ ZERO**: stamped only once a self
+>         stands and `Swarm_peering` exists, so a pre-ghost tab reads unknown and only a COUNTED zero
+>          opens a door — no join-offer flash on established boots.
+>  · **`stage` in Butler.svelte** — exactly one of `door | tap | arc | dark`, defect 2's fix as
+>     sketched. Ladder order is the six-step flow's: unresolved token → door (the HOLD); gate.wanted
+>      → tap; counted-zero friends → door (the OFFER, never a hold — it does not block the arrival
+>       lift, a deliberate solo listener still arrives and the Butler goes); roster lines → arc;
+>        else **dark**, the honest floor ("starting up") that makes a blank card unreachable.
+>         `sealed` from the sketch is SUBSUMED: the panel's ✓ report is the sealed surface and the
+>          seal flips the friend count, which advances the ladder to `tap` — step 4 of the flow now
+>           exists, reached by state rather than by a screen nobody wrote.
+>  · **Advice + remedy outrank the stage** (except under a landing hold): a friendless tab whose
+>     radio parked on a gesture keeps "▶ start the music" reachable under the door — the one press
+>      that cures the page must never hide behind the offer to make a friend.
+>  **Deliberate change riding along**: the arc no longer renders under the tap (one stage at a time,
+>   per the sketch). The rows are never lost — panel + `runner_ask supervisor` keep them.
+>  **VERIFICATION OWED**: svelte-check clean on both files, live tabs took the HMR unharmed (both
+>   players still streaming, door_friends 3/1 there is >0 so nothing changed for them) — but the
+>    FRIENDLESS cases (dark floor → door offer on a fresh identity; door hold surviving a reload)
+>     need a fresh-identity tab, and this container cannot launch chromium (pw_drive.mjs mode B
+>      needs the host; mode A needs your CDP bridge). **Owner: one look at a fresh ?I= tab, or
+>       expose CDP and any session can drive it.**
+>  **NOT touched, still yours**: the prosthetic wormhole (defect 4 + defect 1 must land together —
+>   design questions (a)–(d) below are unanswered and I did not guess); the per-invite dismissal
+>    that must precede the stricter fulfilled=SEALED hold; the `:2065` one-line console check.
+>
 > ### ⇒ THE NEXT PIECE OF WORK: **THE BUTLER HAS NEVER INTRODUCED A NEW USER** (2026-08-11)
 >
 > *The owner, watching a freshly-invited tab: "there's nothing there in the Butler… why no action?
@@ -137,12 +270,19 @@
 >  voucher and `saw:` set, so the station bound and the era crossed both ways. Everything failing here
 >   is above the wire. Do not go looking at the relay.
 >
-> **In the working tree, unfinished, mine (2026-08-11):** `Ghost/S/Swarm.g` has `Swarm_recap_ask` /
->  `Swarm_recap_serve` / `Swarm_offer_reset` **written but neither wired nor compiled** — the come-back
->   fix from Radio_todo §0; they are inert until something calls them, and a compile lands them
->    harmlessly. `Ghost/N/Peeroleum.g` + `Ghost/S/Swarm.g`'s `Swarm_offer_lost` ARE compiled and are a
->     **measured no-op** — keep as instrumentation or revert, see Radio_todo §0. `Butler.svelte` carries
+> **In the working tree (2026-08-11, corrected later the same night):** the recap trio
+>  (`Swarm_recap_ask`/`_serve`/`_offer_reset`) was REVERTED with the other frame-reliability patches
+>   — the stale claim that it sat unwired in the tree cost a re-read; the tree's come-back machinery
+>    is `repli_ready` + **`Swarm_offer_now`** (the immediate-offer reply, landed and verified —
+>     come-back 13.6s from 65–74s, Radio_todo §0 has the closure). `Butler.svelte` carries
 >      defect 3's fix. Several Vyto files in the tree belong to a concurrent agent, not this work.
+>  **Added later the same night (the owner's "kinda jammed" reload):** the share-arm was queued
+>   behind the WHOLE arrival Book (~13s good / ~33s jammed) — `Stoker_ensure`'s prod gate now
+>    treats `top.c.humdinger` as prod so the seam arm fires at the `radio_w` stamp (beat 1, ~3s),
+>     and `SwarmStandup.svelte` gained a 750ms wall-clock tick because Mundo's version holds still
+>      ~10s at a stretch during the Book (its arming effects starved — measured). Come-back now
+>       ~3.5–5s both directions; ring keeps marks `glass-ensure`/`radio-w-stood`/`share-armed-by`/
+>        `share-ask`. Radio_todo §0 has the full diagnosis.
 
 > **THE RELOAD HAPPENED AND ALL THREE ARE PROVEN** (2026-08-10 late — the banner that stood here said
 >  they were written-but-unwatched; they are not any more). On Righto beside Lefto: the watch sentences

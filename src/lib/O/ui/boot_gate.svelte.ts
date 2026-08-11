@@ -16,7 +16,17 @@
 //
 // `disk_gated` / the gats live on plain `.c`, not $state, so this POLLS (400ms) rather than deriving
 //  — the same trade BootGate always made, and ample for a one-time gate.
-export function boot_gate(H: any, opts: { proactive?: boolean } = {}) {
+//
+// H IS A GETTER, AND MUST BE (2026-08-11).  On a BigQualand page the House is assigned inside an
+//  $effect (the OOM-trap pattern), so the component mounts with its `H` prop still null — and a
+//   VALUE passed here is captured once, at that moment, forever.  That bound this whole gate to
+//    null on every /BigSoundland and /BigWordland tab: `null?.c?.disk_gated` polled false for the
+//     life of the page, no musu_gat was ever minted, and the share/audio tap could not appear —
+//      the "nobody asked for the FSA" a freshly-invited listener actually hit.  (Otro constructs H
+//       before render, which is why the same gate looked healthy on dev pages.)  A plain value is
+//        still accepted for that synchronous case.
+export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
+    const H = typeof H_in === 'function' ? H_in : () => H_in
     let poll = $state(0)
     let ac_poll = $state(0)
     let pending_gats: any[] = []
@@ -32,8 +42,8 @@ export function boot_gate(H: any, opts: { proactive?: boolean } = {}) {
             //  front, so the gate stands until the AC is granted. The gat is created cold here
             //   (keep_awake_gat never starts audio); the tap wakes it inside the gesture.
             if (opts.proactive) {
-                if (!H?.c?.musu_gat) { try { H?.keep_awake_gat?.() } catch {} }
-                const g = H?.c?.musu_gat
+                if (!H()?.c?.musu_gat) { try { H()?.keep_awake_gat?.() } catch {} }
+                const g = H()?.c?.musu_gat
                 if (g && !g.AC_ready && !pending_gats.includes(g)) { pending_gats.push(g); ac_poll++ }
             }
         }, 400)
@@ -58,16 +68,16 @@ export function boot_gate(H: any, opts: { proactive?: boolean } = {}) {
         opening = true
         const wakes = pending_gats.map(wake_gat)          // AC resume|init — within the gesture
         let disk_p: Promise<any> | null = null
-        if (H?.c?.disk_gated) {
+        if (H()?.c?.disk_gated) {
             // reuses DirectoryOpener's own open_dir action so the disk path can't drift from the
             //  data layer's wiring — the reason this was never inlined as a raw showDirectoryPicker.
-            const act = H?.o({ watched: 'actions' })[0]?.o({ action: 1, role: 'open_dir' })[0]
+            const act = H()?.o({ watched: 'actions' })[0]?.o({ action: 1, role: 'open_dir' })[0]
             if (!act?.sc.fn) { error = 'wormhole not ready yet — a moment'; opening = false; return }
             disk_p = act.sc.fn()                          // requestDirectoryAccess() — same gesture
         }
         // the full keep-awake pin rides the same gesture (resume + silent source + re-advertise) —
         //  harmless when the AC is already up, exactly right when this tap is the grant.
-        try { H?.keep_awake_acquire?.() } catch {}
+        try { H()?.keep_awake_acquire?.() } catch {}
         try {
             await Promise.all(wakes)
             if (disk_p) await disk_p
@@ -83,11 +93,11 @@ export function boot_gate(H: any, opts: { proactive?: boolean } = {}) {
         start,
         open_share,
         get poll()       { return poll },
-        get disk_gated() { poll; return !!H?.c?.disk_gated },
+        get disk_gated() { poll; return !!H()?.c?.disk_gated },
         get ac_wanted()  { poll; ac_poll; return pending_gats.some(g => !g?.AC_ready) },
         // WANTED = there is a permission to ask for. The one question a host needs in order to decide
         //  whether to show a button, so neither host re-derives it from the two halves.
-        get wanted()     { poll; ac_poll; return !!H?.c?.disk_gated || pending_gats.some(g => !g?.AC_ready) },
+        get wanted()     { poll; ac_poll; return !!H()?.c?.disk_gated || pending_gats.some(g => !g?.AC_ready) },
         get opening()    { return opening },
         get error()      { return error },
     }

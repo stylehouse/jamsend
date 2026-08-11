@@ -1,0 +1,6 @@
+Snap:H
+  H:RehealSmoke,Run
+    A:RehealSmoke
+      self,round	{"mung":["age"]}
+      w:RehealSmoke
+        self,round	{"mung":["age"]}

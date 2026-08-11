@@ -118,7 +118,9 @@ test(`CredRunner: ${BOOK} runs headless (acquire → drive → pile)`, async () 
         for (const st of (w.c.This?.o({ Step: 1 }) ?? []) as any[]) {
             if (!st.sc.got_snap) continue
             const n = st.sc.Step as number
-            st.sc.accepted = true; st.sc.ok = true; st.sc.saved = false
+            // 1-or-absent, never false: enLine throws on a false sc value, and `saved`
+            //  is a plain truthiness gate (Story.svelte:3008), so delete = "re-save me".
+            st.sc.accepted = 1; st.sc.ok = 1; delete st.sc.saved
             S.The_step(w, n).sc.dige = st.sc.dige
             accepted.push(n)
         }

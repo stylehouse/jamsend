@@ -929,6 +929,34 @@ async Radio_dial(radio):
     let pub = this.Radio_pub(w) || 'me'
     let shelf = this.Ra_home_self(w, pub)
     let stoker = this.Stoker_ensure(w)
+    // A JOIN IN FLIGHT OUTRANKS EVERY RUNG (2026-08-11, the owner: *"we need some way to stop the
+    //  Radio starting until we finish the Invite... otherwise it starts playing some other Pier who
+    //   is online"*).  because='joining' is the INVITEE mid-join (Swarm_expect_joining arms it at
+    //    redeem-time): a tab that scanned a QR is here to hear THAT friend, and the lineup/pool
+    //     rungs below would happily start whoever else is live in the meantime.  So hold everything
+    //      until the seal lands (the arrival probe meets and hoping stops) or the 15s patience gives
+    //       up — then every rung behaves exactly as before.  The INVITER's because='invite' keeps
+    //        only the bottom-rung hold further down: minting a QR mid-session must never stop the
+    //         music already playing.
+    let supj = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
+    if (supj && this.Supervisor_hoping(supj, 'swarm.arrival') && this.Supervisor_because(supj, 'swarm.arrival') === 'joining') {
+        let jnote = 'joining your friend — one moment'
+        if (radio.sc.note !== jnote) { radio.sc.note = jnote; radio.bump() }
+        return null
+    }
+    // THE AIM WISH — a just-sealed join names who to listen with (Swarm_accept stashes it; the
+    //  radio may not even have been standing at seal-time).  Consumed into the ordinary aim lock,
+    //   which the dial's aimed pool prefers as soon as any of their records land; until then every
+    //    pick falls through exactly as before (an aim over an empty crate narrows nothing).
+    let wish = this.top_House().c.aim_wish
+    if (wish) {
+        delete this.top_House().c.aim_wish
+        radio.sc.aim = String(wish)
+        let wname = this.Radio_friendly ? this.Radio_friendly(w, String(wish)) : ''
+        if (wname) radio.sc.aim_by = wname
+        if (!wname) delete radio.sc.aim_by
+        radio.bump()
+    }
     // THE LINEUP first (the standing programme, the human 2026-07-19: "constantly producing
     //  Mag, up to 20 tracks further than the listened-to cursor"): consume its head card —
     //   the fill keeps it deep and every contributor represented.  Playing IS the cursor:
@@ -1100,6 +1128,15 @@ Radio_watch_shelf(w):
     if (fresh || moving) {
         this.Supervisor_expect(sup, 'radio.shelf', watch.sc.sentence, 'Radio_probe_shelf', w, 15, this.Supervisor_stage('share'))
     }
+    // THE GIVE-UP SENTENCE, stamped by the registrar (Supervisor_expect's own header: "the arming
+    //  caller should also stamp sc.advice").  Shown only at gaveup, so stamping it every pass is
+    //   just keeping the registrar's current words fresh.  This is what the Butler says INSTEAD of
+    //    a progress claim once the patience is spent — the empty-share fail-noise fix
+    //     (Supervisor_todo §0, the owner's granted-empty-folder trial).
+    if (watch.sc.advice !== 'no music found here — add some, or open a different folder') {
+        watch.sc.advice = 'no music found here — add some, or open a different folder'
+        watch.bump()
+    }
     watch.c.walked = walked
 
 // Radio_shelf_walked — how many directories the wander has stood in THIS session.  A counter Crate.g
@@ -1144,6 +1181,16 @@ Radio_probe_shelf(w, sup):
     if (!recs.length) {
         let walked = this.Radio_shelf_walked()
         let memo = this.Radio_shelf_memory()
+        // A GIVE-UP IS A PROMISE THAT THE ADVICE IS NOW TRUE — and a progress claim beside a FAILED
+        //  bracket is the opposite (the owner's granted-empty-folder trial: `[FAILED] there is music
+        //   in your share … still looking — 336 folders walked`, a sentence no longer true).  The
+        //    patience re-arms while the walk ADVANCES (the registrar's `moving` gate), so an expired
+        //     clock here means the looking has genuinely stopped — say what a person should DO, not
+        //      what the machine used to be doing.  Same words as the registrar's advice: one message,
+        //       two surfaces, no second opinion.
+        if (this.Supervisor_given_up && sup && this.Supervisor_given_up(sup, 'radio.shelf')) {
+            return { verdict: 'wrong', note: 'no music found here — add some, or open a different folder' }
+        }
         // WHAT WE REMEMBER IS PART OF THE MICRO-SATISFACTION, and it is the difference between "this
         //  might be an empty share" and "we know there is music here, we are fetching it".
         if (walked && memo) return { verdict: 'wrong', note: 'fetching — ' + memo + ' folders of music remembered here, ' + walked + ' walked' }
@@ -1770,6 +1817,11 @@ Stoker_ensure(w):
     st.c.w = w
     // the RADIO WORLD beacon (runtime .c on the top House): the live share (Swarm_share_up)
     //  needs the world where the stoker actually shelves — stock served out, mirrors minted in.
+    // TRACED on first stand: the share (and so the whole friend re-crate) queues behind this
+    //  stamp, and a reload where it lands late reads as a jammed tab — the ring must date it.
+    if (this.top_House().c.radio_w !== w && typeof this.Radio_trace === 'function') {
+        try { this.Radio_trace(null, { ev: 'radio-w-stood', w: String(w.sc.w || 'prod') }) } catch (er) {}
+    }
     this.top_House().c.radio_w = w
     // ARM THE SHARE HERE (2026-08-06) — at the moment its precondition becomes true, rather than
     //  leaving a UI component to poll for it.  The line above is the ONLY place radio_w is stamped,
@@ -1786,11 +1838,28 @@ Stoker_ensure(w):
     //  BOOK-GATED by w.sc.w, the same prod test Radio_prod_seed uses six lines up, and for a sharper
     //   reason: Swarm_share_up starts a wall-clock setTimeout pump, which Swarmation.g:1000 names as
     //    a thing a Book must NEVER do.  A named Book run-world wears w.sc.w; only prod arms.
-    if (!w.sc.w && typeof this.Swarm_share_up === 'function') {
+    //  …AND A HUMDINGER IS PROD (2026-08-11).  An end-user room's radio world IS a named Book world
+    //   (the arrival Book, w:Sounditron), so the bare !w.sc.w test read the live listener's tab as a
+    //    Book and skipped the arm — leaving SwarmStandup's $effect as the only arming path, riding
+    //     Mundo version bumps that the arrival run holds STILL for ~10s stretches (measured: asks
+    //      n=1..16 in the first 1.6s, then nothing until the Book's completion bumped Mundo at step
+    //       9 — share-up at ~13s on a good boot, ~33s when music_wait burned its 20s first, the
+    //        owner's "kinda jammed" reload).  The humdinger flag is the same prod test Radio_prod_seed
+    //         uses; driven Books on machine tabs stay gated exactly as before.
+    if ((!w.sc.w || this.top_House().c.humdinger) && typeof this.Swarm_share_up === 'function') {
         try {
             let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
             let sw = (ident && this.Swarm_station_world) ? this.Swarm_station_world() : null
-            if (sw && ident) this.Swarm_share_up(sw, ident)
+            // TRACE the TRANSITION only (share_up latches, so `was` guards the flood): which
+            //  Stoker_ensure call, holding which world, actually armed the share — the share-up
+            //   mark alone cannot say, and the arm's lateness is the whole reload-jam question.
+            if (sw && ident) {
+                let was = sw.c.share_up
+                this.Swarm_share_up(sw, ident)
+                if (!was && sw.c.share_up && typeof this.Radio_trace === 'function') {
+                    try { this.Radio_trace(null, { ev: 'share-armed-by', w: String(w.sc.w || 'prod') }) } catch (er) {}
+                }
+            }
         } catch (er) {}
     }
     return st

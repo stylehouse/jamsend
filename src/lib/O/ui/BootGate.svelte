@@ -28,7 +28,9 @@
     let { H, who, audio_fullscreen = false, proactive = false }: {
         H: House | null, who?: string, audio_fullscreen?: boolean, proactive?: boolean } = $props()
 
-    const gate = boot_gate(H, { proactive })
+    // a GETTER, not the value: on a qualand page this mounts with H still null, and a captured
+    //  value binds the gate to null forever — the tap then can never appear (boot_gate's header note).
+    const gate = boot_gate(() => H, { proactive })
     onMount(gate.start)
 
     let disk_gated   = $derived(gate.disk_gated)

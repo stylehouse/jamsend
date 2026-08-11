@@ -174,6 +174,13 @@ Sounditron_glass(w):
     //    there and the world starts sounding.  Via top_House: ghost methods deposit on Mundo,
     //     never this run House (the M. convention, re-learned twice tonight).
     let MR = this.top_House()
+    // TRACE which ensures are actually PRESENT at each call — every `if (MR.X_ensure)` below is
+    //  a no-op that answers (a ghost not yet deposited skips silently), and a reload where the
+    //   Radio verbs land late defers the stoker, the share, and the whole friend re-crate behind
+    //    a gate nothing names.  One mark per call; the glass runs at beats 1+2 only.
+    if (typeof MR.Radio_trace === 'function') {
+        try { MR.Radio_trace(null, { ev: 'glass-ensure', radio: MR.Radio_ensure ? 1 : 0, stoker: MR.Stoker_ensure ? 1 : 0, w: String(w.sc.w || 'prod') }) } catch (er) {}
+    }
     if (MR.Radio_ensure) MR.Radio_ensure(w)
     // its two housemates: the STOKER (the provisioning organ — Radio.g, crew:'Radio' groups
     //  it with the radio's cell) and the TUNER (the glass's own dial — Cyto.svelte; which
