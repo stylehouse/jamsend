@@ -137,4 +137,30 @@ describe('the pose release drops the seat too', () => {
         expect(gauge_pose(c, 'stretched')).toBe(false)
         expect(c.fillrect).toEqual({ x: 100, y: 100, w: 200, h: 150 })
     })
+
+    // 2026-08-12: the seat memo grew two more slots when the size stopped breathing — the throttle's
+    //  timestamp, and the ORDINARY mold's held rect (the belly's non-stretched seat, which had no
+    //   dead band at all until then).  Both hold a value across paints, so both are things a pose
+    //    change must let go of; a release that frees only what it knew about on the day is how the
+    //     original ratchet came back one field at a time.
+    test('the release takes the throttle stamp and the ordinary mold hold as well', () => {
+        const c: GaugeBag & Record<string, any> = {}
+        gauge_pose(c, 'big')
+        c.fillrect = { x: 100, y: 100, w: 200, h: 150 }
+        c.fillrect_at = 1_700_000_000_000
+        c.mold_hold = { x: 10, y: 20, w: 300, h: 200, fit: 2.5 }
+        expect(gauge_pose(c, 'stretched')).toBe(true)
+        expect(c.fillrect_at).toBeUndefined()
+        expect(c.mold_hold).toBeUndefined()
+    })
+
+    test('…and an unchanged pose keeps them, so a held seat survives an ordinary paint', () => {
+        const c: GaugeBag & Record<string, any> = {}
+        gauge_pose(c, 'big')
+        c.fillrect_at = 1_700_000_000_000
+        c.mold_hold = { x: 10, y: 20, w: 300, h: 200, fit: 2.5 }
+        expect(gauge_pose(c, 'big')).toBe(false)
+        expect(c.fillrect_at).toBe(1_700_000_000_000)
+        expect(c.mold_hold).toEqual({ x: 10, y: 20, w: 300, h: 200, fit: 2.5 })
+    })
 })

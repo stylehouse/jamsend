@@ -1163,8 +1163,38 @@
     //       by a third of a unit relayouts the face for nothing.  Whole units out, and if the fresh
     //        answer is within `STILL` of the standing one on every side, hand back the STANDING
     //         OBJECT — identical numbers, so Svelte never touches the attribute.
+    // ── …AND THE SIZE WAS STILL BREATHING (2026-08-12, the owner: *"it's still doing it. the rapid
+    //  jitterbugging of size or something, maybe a throttle() would help?"*) ──────────────────────
+    //  Incumbency fixed WHERE the seat is; it never touched HOW BIG it is.  The incumbent re-competes
+    //   from its own centre, but the rectangle it defends with is `fill_rect` solved afresh against a
+    //    body that is moving — so `x,y` held and `w,h` tracked the breath, unit by unit, several times
+    //     a second.  A mold that changes size is a face that re-scales and re-wraps: the same flitting,
+    //      one axis over.
+    //  The old still-band could not absorb it because it was ABSOLUTE — 2 units on a ~460-unit seat is
+    //   half a percent, which a stirring belly clears without trying.  A dead band has to be in the
+    //    units of the thing it is judging, so it is proportional now.
+    //  ⚠ AND A DEAD BAND IS LEGITIMATE HERE, where damping was not legitimate for the centre.  The two
+    //   look like the same medicine and are not: `fill_body`'s centre choice is an ARGMAX, discontinuous,
+    //    so no amount of smoothing helps — the input barely moves and the output jumps across the belly.
+    //     `fill_rect` about a FIXED centre is continuous in the body: a body that breathes by half a
+    //      percent returns a rectangle that differs by half a percent.  Continuous inputs are exactly
+    //       what a dead band is for.  Read the two notes together before touching either.
+    //  THE COOLDOWN is the owner's `throttle()`, and it is the second half rather than the first: it
+    //   bounds how OFTEN the seat may move, which is what turns a residue of jitter into something that
+    //    reads as settling.  A big change (`SEAT_LEAP`) ignores it — a genuinely different room should
+    //     be taken at once, and waiting out a cooldown to show it would be its own annoyance.
     const SEAT_QUANT = 6      // bbox grid for the memo key, in viewBox units
-    const SEAT_STILL = 2      // a new seat within this of the old one is the old one
+    const SEAT_STILL = 0.025  // a new seat within 2.5% of the standing one IS the standing one
+    const SEAT_FLOOR = 2      // …but never a tighter band than this, so a tiny seat can still settle
+    const SEAT_HOLD_MS = 900  // having just moved, hold — the owner's throttle
+    const SEAT_LEAP = 0.25    // …unless the room changed by a quarter, which is a different room
+    // every side within the band, and the band is a fraction of the seat's own short side.
+    function seat_still(a: { x: number, y: number, w: number, h: number },
+                        b: { x: number, y: number, w: number, h: number }): boolean {
+        const tol = Math.max(SEAT_FLOOR, Math.min(a.w, a.h) * SEAT_STILL)
+        return Math.abs(a.x - b.x) <= tol && Math.abs(a.y - b.y) <= tol
+            && Math.abs(a.w - b.w) <= tol && Math.abs(a.h - b.h) <= tol
+    }
     function fill_body_memo(row: TheC, poly: Pt[], frame: { x: number, y: number, w: number, h: number },
                             bb: { bx: number, by: number, bw: number, bh: number },
                            ): { x: number, y: number, w: number, h: number } {
@@ -1182,9 +1212,17 @@
         const raw = fill_body(poly, frame, 3, keep)
         const r = { x: Math.round(raw.x), y: Math.round(raw.y), w: Math.round(raw.w), h: Math.round(raw.h) }
         c.fillrect_k = k
-        if (!loose && held && Math.abs(held.x - r.x) <= SEAT_STILL && Math.abs(held.y - r.y) <= SEAT_STILL
-                          && Math.abs(held.w - r.w) <= SEAT_STILL && Math.abs(held.h - r.h) <= SEAT_STILL) return held
+        if (!loose && held && held.w > 0) {
+            if (seat_still(held, r)) return held
+            // the throttle, and the exemption from it.  Area either way: a room that HALVED is as much
+            //  a different room as one that doubled, and both should be taken while the reader is still
+            //   looking at the change that caused them.
+            const a0 = held.w * held.h, a1 = r.w * r.h
+            const leapt = a1 > a0 * (1 + SEAT_LEAP) || a1 < a0 * (1 - SEAT_LEAP)
+            if (!leapt && Date.now() - +(c.fillrect_at ?? 0) < SEAT_HOLD_MS) return held
+        }
         c.fillrect = r
+        c.fillrect_at = Date.now()
         return r
     }
     function mold_seat(cell: PaintCell): string {
@@ -2279,6 +2317,26 @@
                         const x1 = Math.min(vx + vw, f.bx + f.bw), y1 = Math.min(vy + vh, f.by + f.bh)
                         if (x1 > x0 && y1 > y0) { vx = x0; vy = y0; vw = x1 - x0; vh = y1 - y0 }
                     }
+                    // ── THE SAME DEAD BAND, ON THE SEAT THAT IS NOT THE STRETCH ONE ────────────────
+                    //  `fill_body_memo` holds the STRETCHED seat still, and only that one.  The belly's
+                    //   ordinary seat is struck fresh every adopt from the polygon's centroid and eight
+                    //    rays — both continuous in a body that the radio is stirring — and `fit` is
+                    //     carried to three decimals, so a cell breathing by a unit re-emits a different
+                    //      width, height AND scale.  That is a face resizing several times a second
+                    //       under a reader who never asked it to: the owner's *"jitterbugging of size"*
+                    //        on the path that was never covered.
+                    //  Focus only.  Under foam the molds RIDE the springs, and holding one still there
+                    //   would peel it off the cell it belongs to — the motion is the point in that
+                    //    regime, and it is not the point in this one (*"assigned, still"*).
+                    if (focusR && face) {
+                        const st = row.c as any
+                        const prev = st.mold_hold as { x: number, y: number, w: number, h: number, fit: number } | undefined
+                        const now = { x: mx, y: my, w: mw, h: mh, fit }
+                        if (prev && !settling(row) && seat_still(prev, now)
+                            && Math.abs(prev.fit - fit) <= Math.max(0.01, prev.fit * SEAT_STILL)) {
+                            mx = prev.x; my = prev.y; mw = prev.w; mh = prev.h; fit = prev.fit
+                        } else st.mold_hold = now
+                    }
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident, spike: sp,
                                  x: ax, y: ay, r: s.r, kind: 'poly', d: path_round(sp ? sp.poly : poly), departing: false, lift,
                                  bx: vx, by: vy, bw: vw, bh: vh,
@@ -2743,7 +2801,23 @@
         //     simulation to resize and reposition it properly into that space"* — the mouse was doing
         //      the relayout, because a hover is the only thing that reliably bumps the paint.
         //  `react_soon` is the trailing-edge latch, so a burst of first-measures folds into one adopt.
-        else if (v === 'first' || v === 'grew' || v === 'fell') react_soon()
+        else if (v === 'first' || v === 'grew' || v === 'fell') {
+            react_soon()
+            // ── A GROW IS THE READING MOST LIKELY TO BE WRONG (2026-08-12) ────────────────────────
+            //  Growing is believed AT ONCE, on purpose — a component overflowing its seat is a fault
+            //   you can see now.  But "believed at once" and "never checked again" are different
+            //    promises, and only the first one was ever meant: a face measured mid-mount, mid-font-
+            //     load or mid-HMR lays out unconstrained for a frame or two and reads far too wide, and
+            //      once that reading is taken the geometry STOPS MOVING — so `paint_tick` never bumps,
+            //       nothing measures again, and the mold sits permanently too big with the face
+            //        rattling inside it.  Caught live: one player tab held a natural width 20% over the
+            //         truth with 17% air beside the face, while the other tab, from the identical
+            //          reload, sat at the right number.  The shrink window cannot rescue that on its
+            //           own — a window that nobody opens is just a closed door.
+            //  So a grow keeps its instant belief AND arms the ladder.  The window walks it back a beat
+            //   later if the grow was a frame's accident, and costs nothing if it was real.
+            if (v === 'grew' || v === 'first') settle_ladder(w)
+        }
     }
     // ── THE COLUMN SEARCH ──────────────────────────────────────────────────────────────────────
     //  One step per measured round.  The zoom a stretched face gets is `min(rect_w/col, rect_h/h)`
@@ -2814,18 +2888,43 @@
     //   settled glass never bumps `paint_tick`, so nothing would look a second time on its own.  Four
     //    re-measures across the window catch the content wherever it happens to land.
     const SETTLE_MS = 2200
-    const SETTLE_LADDER = [180, 520, 1200, 2000]
+    const SETTLE_LADDER = [180, 520, 1200, 2000, 3200]
     const settle_timers = new Map<TheC, any[]>()
     function settling(row: TheC): boolean {
         const at = +((row.c as any).settle_at ?? 0)
         return at > 0 && Date.now() - at < SETTLE_MS
     }
-    function regauge_pose(row: TheC, w: TheC) {
-        if (!gauge_pose(row.c as any, String((((row.c as any).source_n) as any)?.c?.pose ?? ''))) return
-        ;(row.c as any).settle_at = Date.now()
+    // the re-measure ladder itself, shared by the two things that need one.  World-level because every
+    //  rung is a whole `measure_world`; re-arming clears the outstanding rungs so a burst of reasons to
+    //   look again is still one ladder, not N overlapping ones.
+    function settle_ladder(w: TheC) {
         if (typeof setTimeout === 'undefined') return
         for (const t of settle_timers.get(w) ?? []) clearTimeout(t)
         settle_timers.set(w, SETTLE_LADDER.map(ms => setTimeout(() => { measure_world(w); react_soon() }, ms)))
+    }
+    function regauge_pose(row: TheC, w: TheC) {
+        if (!gauge_pose(row.c as any, String((((row.c as any).source_n) as any)?.c?.pose ?? ''))) return
+        ;(row.c as any).settle_at = Date.now()
+        settle_ladder(w)
+    }
+    // ── AND A GLASS ARRIVES, TOO (2026-08-12, the owner: *"initially Radio has its component face way
+    //  off to the side and tidy. a bit more trying to get that jiggled out?"*) ──────────────────────
+    //  The ladder above is armed by a POSE CHANGE, and the arrival of the glass itself is not one: the
+    //   first pose a row is ever seen wearing arms it, but only from the paint that carried a mounted
+    //    face — and everything that makes the first seat wrong lands in the second after that.  On the
+    //     first paint nothing has been measured, so the mold is sized and seated from a natural box
+    //      nobody knows yet; the springs are still relaxing toward targets the focus regime does not
+    //       draw; the face's own content (a track name, a chunk count) is still arriving.  Every one of
+    //        those resolves within a beat or two — but ONLY IF SOMEBODY LOOKS AGAIN, and `paint_tick`
+    //         bumps when geometry MOVES, so a glass that has gone still will not look on its own.  That
+    //          is the whole of *"it requires mousing over the simulation"*: the mouse was the ladder.
+    //  So the first time a world is successfully measured, arm one.  Once per world (`settled_in`), so
+    //   this costs five measures at boot and nothing ever again.
+    function settle_arrival(w: TheC) {
+        const c = w.c as any
+        if (c.settled_in) return
+        c.settled_in = 1
+        settle_ladder(w)
     }
     function measure_world(w: TheC) {
         if (!(w.c as any).need_floor) return
@@ -2867,9 +2966,11 @@
                 stamp_need(w, cell.row, bb.width * bb.height)
             } catch { /* an unrendered node has no box — skip */ }
         }
+        let seen = 0
         for (const m of stage.querySelectorAll('.face-mold')) {
             const cell = byKey.get((m as Element).getAttribute('data-key') ?? '')
             if (!cell || cell.departing) continue
+            seen++
             // A STRETCHED FACE IS MEASURED ON ONE AXIS ONLY, and searched on the other.
             //  Its WIDTH is assigned (the column), so reading it back would just be the mold talking
             //   to itself — the `.df-small { height: 100% }` feedback loop.  Its HEIGHT is genuinely
@@ -2886,6 +2987,9 @@
             stamp_box(w, cell.row, nw, nh)
             stamp_need(w, cell.row, nw * nh)
         }
+        // a paint that carried no face has measured nothing, so it is not the arrival — wait for one
+        //  that did, or the ladder is spent on an empty stage.
+        if (seen) settle_arrival(w)
     }
     $effect(() => {
         void paint_tick

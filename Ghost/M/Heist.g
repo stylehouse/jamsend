@@ -3258,6 +3258,23 @@ async Heist_newlyadded_note(nav, mardir, entry):
     let card = waft.i({ Probation: 1, of: entry, seq: String(waft.o({ Probation: 1 }).length + 1) })
     card.c.up = waft
     card.sc.feeling = 'fresh'
+    // WHEN IT LANDED (the owner 2026-08-11: *"we want to keep list of things we downloaded… just the
+    //  destination directory and when, not who it came from"*).  The other two thirds of that ledger
+    //   already existed — `of` is the landed path and `dir` (below) is the folder it went into — and the
+    //    "not who" half is this file's standing design (see the header: the newlyadded log never names
+    //     where music came from).  So the whole ask was one field.
+    //  Epoch SECONDS, matching the `at=` convention TimeSpool already uses; a reader formats it.
+    //  Stamped exactly ONCE per path, because the idempotent guard above returns before this on a replay
+    //   — so `at` means "when this first landed", never "when we last re-verified it", which is the only
+    //    reading a download list wants.
+    //  SAFE FOR FIXTURES, checked not assumed: no snap under wormhole/ holds a %Probation card (they live
+    //   in the on-disk newlyadded Berth, not in a snapped world), so this wall-clock value cannot make a
+    //    Book flap the way a live-presence line once did.  If a Book ever comes to snap these, this field
+    //     is the one to strip with an omit_sc — not to delete.
+    //  NO FACE, deliberately (the owner, same breath): *"I don't want to see the %Probation yet though,
+    //   it's beyond v1"*.  The record is kept now so the history exists when there is somewhere to show
+    //    it; nothing renders it today.
+    card.sc.at = String(Math.floor(Date.now() / 1000))
     // ALBUM GROUPING (the human — newlyadded should read per-album when a whole album landed, per-track
     //  only for a genuine loose file): stays PER-FILE here on purpose — `of:` is still the one exact path
     //   Heist_feel's drop deletes, so that destructive path is untouched.  `dir` just tags which folder

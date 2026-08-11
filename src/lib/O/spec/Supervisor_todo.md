@@ -7,6 +7,12 @@
 
 ## 0. Get on with next
 
+> ⚠ **This section is 1,703 lines of diary holding ~28 open decisions.** For *what is actually
+>  open, what is cut, and what needs the owner's word*, read **`V1_cut_todo.md`** first — five
+>   questions and a ship-blocker list, built from this section on 2026-08-11. What follows stays
+>    authoritative for HOW each thing landed, and is due the same brief-not-a-log treatment
+>     (diary → `spec/history/Supervisor_buildlog.md`).
+
 > ### 2026-08-11 (night) — WHAT LANDED, WHAT WAS DISPROVEN, WHAT'S NEXT
 >
 > **DEFECT 1 IS SOLVED, and the answer supersedes the ":2065 leading candidate" below.** The

@@ -218,6 +218,64 @@ The owner, naming the arc honestly: *"Vyto had a lot of constraints and study go
     which exists so four %Heists in one foam are tellable apart) is untouched for every other glass;
 - `DoorFace`/`RadioFace` icon renders (pose-gated inside the faces themselves).
 
+### ⇢ THE FLITTING, ROUND TWO — the SIZE was still breathing (2026-08-12, LANDED)
+
+The owner, on the round below: *"oop, it's still doing it. the rapid jitterbugging of size or
+ something, maybe a throttle() would help? and initially Radio has its component face way off to the
+  side and tidy. a bit more trying to get that jiggled out?"*
+
+Two faults, and the first sentence names the axis the previous round missed.
+
+**1. Incumbency fixed WHERE the seat is; nothing ever fixed HOW BIG it is.**  The incumbent
+ re-competes from its own centre, but the rectangle it defends with is `fill_rect` solved afresh
+  against a body the radio is stirring — so `x,y` held and `w,h` tracked the breath, unit by unit,
+   several times a second.  A mold that changes size is a face that re-scales and re-wraps: the same
+    flitting, one axis over.  The old still-band could not absorb it because it was **absolute** — 2
+     units on a ~460-unit seat is half a percent, which a stirring belly clears without trying.
+- `SEAT_STILL` is now a **fraction** (2.5% of the seat's own short side, floor 2 units), and
+   `seat_still()` is the shared test.
+- `SEAT_HOLD_MS` (900ms) is the owner's `throttle()`: having just moved, the seat holds.  `SEAT_LEAP`
+   (±25% of area) exempts a genuinely different room, which should be taken while the reader is still
+    looking at the change that caused it.
+- **And the ordinary mold got a band at all**, which it never had.  `fill_body_memo` only ever held
+   the *stretched* seat still; the belly's non-stretched seat is struck fresh every adopt from the
+    polygon's centroid + eight rays (both continuous in a breathing body) with `fit` carried to three
+     decimals.  `mold_hold` on the row's `.c`, **focus only** — under foam the molds ride the springs
+      and holding one still would peel it off its cell.
+
+> ⚠ **A dead band is legitimate here and was NOT legitimate for the centre.**  They look like the same
+>  medicine.  `fill_body`'s centre choice is an **argmax** — discontinuous, so no smoothing helps.
+>   `fill_rect` about a **fixed** centre is continuous in the body: half a percent in, half a percent
+>    out.  Continuous inputs are exactly what a dead band is for.  Read both notes before touching
+>     either.
+
+**2. "Way off to the side and tidy" — nobody was looking a second time.**  On the first paint nothing
+ has been measured, so the mold is sized and seated from a natural box nobody knows yet; the springs
+  are still relaxing; the face's own content is still arriving.  All of it resolves within a beat —
+   *only if somebody looks again*, and `paint_tick` bumps when geometry MOVES, so a glass that has
+    gone still never will.  That is the whole of the old *"it requires mousing over the simulation"*:
+     **the mouse was the ladder.**  The 2026-08-11 ladder was armed by a POSE CHANGE only.
+- `settle_ladder(w)` is now shared, and `settle_arrival(w)` arms one the first time a world is
+   measured with a face mounted (once per world — five measures at boot, nothing after).
+- **A grow arms one too**, which is the load-bearing half.  Growing is believed at once on purpose,
+   but *"believed at once"* and *"never checked again"* are different promises and only the first was
+    ever meant.  A face measured mid-mount / mid-font-load / mid-HMR lays out unconstrained for a
+     frame and reads far too wide; the reading is taken, the geometry stops moving, and the mold sits
+      permanently too big with the face rattling inside it.
+- Ladder now `[180, 520, 1200, 2000, 3200]`.
+- `gauge_pose`'s release also drops `fillrect_at` and `mold_hold` — a release that frees only what it
+   knew about on the day is how the original ratchet came back one field at a time.
+
+**Caught live, and that is the gate.**  One player tab was holding a natural width of **179.5 with
+ 17% air** beside the face while the other tab, from the identical reload, sat at **149.7 with 0%** —
+  the shrink window could not rescue it because nothing opened one.  After the grow-ladder landed the
+   stuck tab corrected to 149.7 (mold 497×391.9 → 458.5×433.4), and two further forced HMR cycles both
+    landed on that identical number.  Unit side: `VytoGauge.spec` 14 tests (two new, mutation-tested
+     red in both directions), `VytoFocus.spec` 28, svelte-check clean on all three files.
+
+**Still unwitnessed by me:** the stretched (Heist) path.  Everything above is verified on the belly
+ path and by pure-geometry gates; a stretched belly needs a real keep open.
+
 ### ⇢ THE FLITTING — two feedback loops under one symptom (2026-08-11, LANDED, live-verified)
 
 *"need you to robusticise the component placement some more... Heist is flitting rapidly up and

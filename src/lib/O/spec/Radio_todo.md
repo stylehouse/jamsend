@@ -19,7 +19,63 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ## 0. Latest handover — fold into the sections below as it's absorbed
 
-### 2026-08-11 — TUNING IN IS ONCE A SITTING: EVERY TRACK AFTER THE FIRST STARTS AT 0:00
+### 2026-08-12 — THE HEAD OF A TRACK DOES NOT EXIST, SO "FROM THE START" CANNOT BE ASKED FOR
+
+*The owner, after checking the live tab: "the next track still plays from the middle somewhere the
+ %Preview as usual. it's supposed to request a Stream that goes from the start. can it do that or is
+  there a bunch missing?"* **There is a bunch missing, and it is not a request flag — it is a missing
+   producer plus a coordinate system that cannot name the thing.**
+
+**Two different mid-track offsets were being confused, and only the small one got fixed.**
+- `Radio_start_seq` — a RANDOM extra offset inside the chunks we already hold. That is the one the
+   `c.tuned` entry below removed. Real, but it was only ever the garnish.
+- **`pv_off` — the preview cut, 30–70% into the track** (`Ra_preview_offset`, Ra.g:87/1535). This is
+   the offset the owner is hearing, it is on EVERY offered record, and it survives `seq = 0` because
+    **seq 0 *is* the cut**: `Ra_stock_render` mints `total = segs - OFF, pv_off: OFF` (Ra.g:1599), so
+     the record's whole chunk universe starts at the cut. `Radio_open` already stamps this honestly as
+      `radio.sc.skip` (:727) — `skip=24` and `skip=20` were sitting in the live snap the whole time.
+
+**The bytes are not merely unrequested — nobody has ever made them.** `Orig.g:296-299` states it
+ outright: *"only the preview window plus whatever was streamed exists at all — the head segments
+  `[0, pv_off)` are never encoded by anyone."* And the continuation confirms it from the other side:
+   `Ra_stream` seeks to `from = (pv_off + P) * SEG` (Ra.g:2217) — it extends the preview FORWARD and
+    has no backfill mode. So a want for the head has no producer on any shelf, including your own.
+
+**What "request a Stream from the start" actually costs — three pieces, only the first is small.**
+1. **A head encode at the owner.** `Ra_stream` is already an ffmpeg seek-and-encode; the head is the
+    same call with `from = 0` and a length of `pv_off` segments. Genuinely small.
+2. **A chunk coordinate system that can name the head — the big one, and it is protocol-visible.**
+    Today `seq` is preview-relative (`seq 0` ≡ source segment `pv_off`), so there is no index for a
+     head chunk to be wanted, served, stocked or acked under. The clean answer is to re-base records
+      to SOURCE coordinates (`seq 0` ≡ sample 0, `total = segs`, the preview occupying
+       `[pv_off, pv_off+P)` and the head an ordinary HOLE the pump already knows how to splice). That
+        touches want/serve, `Radio_map`, `at0`, `sc.of`/`sc.skip`, Swarm's want-ahead aiming, and
+         every recorded fixture. Do NOT bolt on negative indices — a second coordinate system for one
+          case is the shape this codebase keeps ruling against.
+3. **Lead time.** Unlike the preview, head bytes are NOT pre-cached — they must be encoded on demand
+    and cross the wire. The hook exists: `Radio_peek_next`/`Radio_prime` already know the next record
+     roughly a track early. Needs an explicit policy for the seam: if the head has not landed in time,
+      does the track wait, or open at the cut and say so? (The honest default is open at the cut —
+       silence is worse — but that must be a decision, not an accident.)
+
+**Do not "fix" this by shrinking or zeroing `Ra_preview_offset`.** The mid-track cut is load-bearing
+ elsewhere: it is why a shuffle does not open every track at 0:00, and `Ra_stock_render` caches
+  exactly one window per track. Zeroing it makes every record start at the start by deleting the
+   feature rather than building the head — and re-cuts every card on every shelf once (Ra.g:1474-1481).
+
+> ⚠ **This section is 1,565 lines of diary and nobody can read it as an ask.** For *what is
+>  actually open, what is cut, and what needs the owner's word*, read **`V1_cut_todo.md`** first —
+>   five questions and a ship-blocker list, built from this section on 2026-08-11. What follows
+>    stays authoritative for HOW each thing landed. It is also due the human's own 2026-07-12
+>     ruling — *§0 stays a brief, not a log* — with the diary moving to
+>      `spec/history/Radio_buildlog.md`, which already exists for exactly this.
+
+### 2026-08-11 — TUNING IN IS ONCE A SITTING (a real fix — but NOT the ask, see the entry below it)
+
+⚠ **This entry does not deliver "the next track starts from the start".** It removes a SECOND,
+ smaller offset that sat on top of the real one. The owner checked the live tab and said so: *"I don't
+  believe your fix worked, the next track still plays from the middle somewhere the %Preview as
+   usual."* Right — read `THE HEAD OF A TRACK DOES NOT EXIST` below before touching this again.
 
 *The owner: "how about finishing one track causes the next to start from the start?"* Applied in
  `Radio.g` — `Radio_start_seq` returns 0 once `radio.c.tuned` is set, and `Radio_open` sets it the

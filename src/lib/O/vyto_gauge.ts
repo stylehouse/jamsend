@@ -94,6 +94,10 @@ export function gauge_pose(c: GaugeBag & Record<string, any>, pose: string): boo
     //     the seat chosen for the small inscribed body would sit in the new one and hold a place it
     //      was never measured for.  Incumbency has to be EARNED by a seat that is still about this
     //       body; a newborn one has no standing at all.
-    delete c.fillrect; delete c.fillrect_k
+    delete c.fillrect; delete c.fillrect_k; delete c.fillrect_at
+    // …and the ordinary mold's held seat, for exactly the same reason (2026-08-12).  It is a dead band
+    //  rather than an incumbency, but a band still HOLDS, and holding the seat a demoted face used to
+    //   need is the same defect one path over.
+    delete c.mold_hold
     return true
 }
