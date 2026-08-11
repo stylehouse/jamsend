@@ -1,0 +1,14 @@
+Snap:H
+  H:VytoNeed,Run
+    A:VytoNeed
+      self,round=6	{"mung":["age"]}
+      w:VytoNeed
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:the-grand-orchestrion-of-unreasonable-length-and-splendour,of:root
+        Cog:b,of:root
+        Cog:c,of:root
+        req:floor_wait,finished
+        req:plain_wait,finished
+        see:the wide label cell grew to hold its measured content — the need floor is honored
+        see:with the floor unarmed the same label keeps its plain dose box — the gate is additive

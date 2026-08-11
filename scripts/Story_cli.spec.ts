@@ -141,8 +141,9 @@ test(`Story_cli: run + dump Book:${BOOK}`, async () => {
         for (const st of (w.c.This?.o({ Step: 1 }) ?? []) as any[]) {
             if (!st.sc.got_snap) continue
             const n = st.sc.Step as number
-            // 1-or-absent, never false: enLine throws on a false sc value, and `saved`
-            //  is a plain truthiness gate (Story.svelte:3008), so delete = "re-save me".
+            // 1-or-absent, never true|false: enLine THROWS on a false sc value, and this
+            //  runs right before story_save() encodes.  `saved` is a truthiness gate
+            //   (Story.svelte:3008), so deleting it is what says "re-save me".
             st.sc.accepted = 1; st.sc.ok = 1; delete st.sc.saved
             S.The_step(w, n).sc.dige = st.sc.dige
             accepted.push(n)

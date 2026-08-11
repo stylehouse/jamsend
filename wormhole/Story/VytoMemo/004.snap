@@ -1,0 +1,18 @@
+Snap:H
+  H:VytoMemo,Run
+    A:VytoMemo
+      self,round=5	{"mung":["age"]}
+      w:VytoMemo
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Rig:main
+          Cog:A,of:main,dose:3
+            Cog:A1,of:A,dose:1
+            Cog:A2,of:A,dose:1
+          Cog:B,of:main,dose:1
+          Cog:C,of:main,dose:2
+        req:nest_wait,finished
+        req:memo_wait
+          ttlilt	{"mung":["until_ts"]}
+        see:the wall counter is alive — the drive to rest cut real walls before the hold began
+    ttlilt,of_w:VytoMemo	{"ref":{"req":"%req:memo_wait"},"mung":["until_ts"]}

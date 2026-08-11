@@ -1,0 +1,10 @@
+Snap:H
+  H:VytoNeed,Run
+    A:VytoNeed
+      self,round=2	{"mung":["age"]}
+      w:VytoNeed
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:the-grand-orchestrion-of-unreasonable-length-and-splendour,of:root
+        Cog:b,of:root
+        Cog:c,of:root

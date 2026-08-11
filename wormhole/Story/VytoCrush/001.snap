@@ -1,0 +1,7 @@
+Snap:H
+  H:VytoCrush,Run
+    A:VytoCrush
+      self,round	{"mung":["age"]}
+      w:VytoCrush
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

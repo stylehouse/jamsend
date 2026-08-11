@@ -420,6 +420,38 @@ Swarm_watch_station(w):
     this.Supervisor_watch(sup, 'swarm.station', 'you are online', 'milestone', 'Swarm_probe_station', null, this.Supervisor_stage('door'))
     this.Supervisor_dial(sup, 'swarm.piers', 'friends', 'Swarm_dial_piers', null, this.Supervisor_stage('friend'))
 
+// Swarm_watch_repair — RE-REGISTER THE TWO STANDUP-TIME WATCHES IF THE RACE ATE THEM.
+//
+//  MEASURED 2026-08-12 on both live players: `arrived:arrived`, every downstream row green — and
+//   `swarm.station` and `swarm.arrival` MISSING ENTIRELY (9 watches where there had been 11). The
+//    station was plainly up; only its watch was gone.
+//  Both register exactly once, from inside standup: `Swarm_watch_station` at the top of
+//   `Swarm_station_up`, `Swarm_expect_friends` at the bottom of it. Both open with
+//    `if (!sup) return` — so if the Supervisor world is not yet on Mundo at that instant, they
+//     register NOTHING and are never called again, because SwarmStandup stops re-entering
+//      `Swarm_station_up` once the station stands. Silent, permanent, and invisible from inside:
+//       every claim those rows would have made is true, so nothing else looks wrong.
+//  WHAT TIPPED IT: the come-back work of 2026-08-11 moved the share-arm to the `radio_w` stamp at
+//   beat 1 (~3s) and gave SwarmStandup a 750ms wall-clock tick, so standup now finishes EARLIER and
+//    started winning the race against the Supervisor world's creation. A fix upstream turned a
+//     latent ordering assumption into a live one — which is the tell to look for after any change
+//      that makes something happen sooner.
+//  THE PATTERN IS ALREADY IN THIS FILE: `swarm.beat` registers from inside the watch loop precisely
+//   so it "keeps the watch alive across a Supervisor that stood up after this loop did". These two
+//    lacked that, and now borrow the same loop.
+//  ⚠ GUARDED ON ABSENCE, NOT CALLED BLIND, and that is load-bearing for the arrival one.
+//   `Supervisor_expect` RE-ARMS its deadline by design (it is meant for event call sites), so calling
+//    it from a pass that re-runs every beat would push the deadline forward forever and the patience
+//     could never expire — "a clock that resets faster than it runs is not a clock", the exact
+//      failure `Supervisor_patient` exists to avoid. Asking `oa` first means the clock is armed once.
+//   A tab with no piers registers nothing and re-probes each beat; that is a lookup and a filter,
+//    and it is correct — the expectation only means something once there is somebody to expect.
+Swarm_watch_repair(w, sup):
+    if (!sup.oa({ Watch: 'swarm.station' })) this.Swarm_watch_station(w)
+    if (sup.oa({ Watch: 'swarm.arrival' })) return
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (ident) this.Swarm_expect_friends(w, ident)
+
 // Swarm_dial_piers — WE HAVE PIER, with its parts.  This reading was computed inside DoorFace and
 //  thrown away at the face boundary, which is why nothing else on the machine could see it and no
 //   Book could assert it.
@@ -2380,6 +2412,9 @@ Swarm_watch_look(w):
     //    the watch alive across a Supervisor that stood up after this loop did.
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (sup) this.Supervisor_watch(sup, 'swarm.beat', 'your share is keeping itself up to date', 'standing', 'Swarm_probe_beat', w, this.Supervisor_stage('share'))
+    // …and the same courtesy for the two watches that only ever register at standup — see
+    //  Swarm_watch_repair for why they go missing and why this is guarded rather than blind.
+    if (sup) this.Swarm_watch_repair(w, sup)
     if (now === (w.c.watch_said || '')) return
     w.c.watch_said = now
     if (!now) return

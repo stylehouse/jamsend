@@ -120,22 +120,15 @@
         M.i_elvis(w, "nab_specifically", { req,pl });
 
     }
-    // A checkbox hands back a JS boolean; sc takes 1|0 (enLine THROWS on false, which
-    //  would decode back as the truthy string "false" and INVERT the flag).  0 rather
-    //   than delete because off is MEANINGFUL here: Pirating.svelte:999 reads
-    //    `pl.sc.lets_rename != null` to tell "explicitly off" from "never toggled".
-    function tog_sc(pl,k,on) {
-        pl.sc[k] = on ? 1 : 0
-    }
     function togglific_default(pl,k,checked) {
         // console.log(`Toggly heist default: ${k} -> ${checked}`)
-        tog_sc(pl,k,checked)
+        pl.sc[k] = checked
     }
     function togglific(pl,k,e) {
         let is = e.target.checked
         // console.log(`togglific ${keyser(pl)} -> ${is}`)
         // console.log(`Toggly heist is: ${k} -> ${is}`)
-        tog_sc(pl,k,is)
+        pl.sc[k] = is
     }
     // set default checkbox states, some persist forever as user prefs
     let checkbox_defaults = mem.get('checkbox_defaults') || {}

@@ -4,13 +4,29 @@ story:VytoNeed
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.02
-      sample=0.02,at=1786232400
+    TimeTotal:beliefs,avg=0.018
       sample=0.019,at=1786232422
-    TimeTotal:step,avg=0.005
-      sample=0.005,at=1786232400
+      sample=0.016,at=1786459408
+      sample=0.017,at=1786459417
+      sample=0.01,at=1786459526
+      sample=0.01,at=1786459527
+      sample=0.017,at=1786459541
+      sample=0.02,at=1786460014
+      sample=0.014,at=1786466518
+      sample=0.042,at=1786471311
+      sample=0.012,at=1786471731
+    TimeTotal:step,avg=0.004
       sample=0.005,at=1786232422
-  step,dige:lie
-  step=2,dige:lie,desc:seed three doseless cogs — one wearing a preposterously long name
-  step=3,dige:lie,desc:commission the glass need-floored — the measured label must lift its cell
-  step=4,dige:lie,desc:re-commission plain — the same fat label keeps the bare dose box
+      sample=0.004,at=1786459408
+      sample=0.004,at=1786459417
+      sample=0.002,at=1786459526
+      sample=0.002,at=1786459527
+      sample=0.004,at=1786459541
+      sample=0.005,at=1786460014
+      sample=0.003,at=1786466518
+      sample=0.011,at=1786471311
+      sample=0.003,at=1786471731
+  step,dige:dc40af5f4c50fba5
+  step=2,dige:fde1716fa9281cda,desc:seed three doseless cogs — one wearing a preposterously long name
+  step=3,dige:8f2823aaf4ed6115,desc:commission the glass need-floored — the measured label must lift its cell
+  step=4,dige:aa2c646c58880e84,desc:re-commission plain — the same fat label keeps the bare dose box

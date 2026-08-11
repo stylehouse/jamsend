@@ -1,0 +1,17 @@
+Snap:H
+  H:VytoDepth,Run
+    A:VytoDepth
+      self,round=2	{"mung":["age"]}
+      w:VytoDepth
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Rig:main
+          Cog:A,of:main,dose:1
+            Cog:A1,of:A
+            Cog:A2,of:A
+            Cog:A3,of:A
+            Cog:A4,of:A
+            Cog:A5,of:A
+            Cog:A6,of:A
+          Cog:B,of:main,dose:6
+          Cog:C,of:main,dose:2

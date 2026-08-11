@@ -1,0 +1,29 @@
+Snap:H
+  H:VytoCrush,Run
+    A:VytoCrush
+      self,round=4	{"mung":["age"]}
+      w:VytoCrush
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:oak1,of:main,genus:oak
+        Cog:oak2,of:main,genus:oak
+        Cog:oak3,of:main,genus:oak
+        Cog:oak4,of:main,genus:oak
+        Cog:oak5,of:main,genus:oak
+        Cog:oak6,of:main,genus:oak
+        Cog:oak7,of:main,genus:oak
+        Cog:oak8,of:main,genus:oak
+        Cog:pine1,of:main,genus:pine
+        Cog:pine2,of:main,genus:pine
+        Cog:pine3,of:main,genus:pine
+        Cog:pine4,of:main,genus:pine
+        Cog:pine5,of:main,genus:pine
+        Cog:pine6,of:main,genus:pine
+        Cog:pine7,of:main,genus:pine
+        Cog:birch1,of:main,genus:birch
+        Cog:birch2,of:main,genus:birch
+        Cog:birch3,of:main,genus:birch
+        Cog:birch4,of:main,genus:birch
+        Cog:birch5,of:main,genus:birch
+        req:fold_wait,finished
+        see:the glass was commissioned folded on twenty cogs and stood its board

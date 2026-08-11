@@ -232,6 +232,13 @@ export async function seed_from_github(
     opts: { force?: boolean, onProgress?: SeedProgress } = {},
 ): Promise<{ seeded: boolean, files: number }> {
     const subpaths = src.subpaths ?? DEFAULT_SUBPATHS
+    // ⚠ THIS MARKER IS REF-KEYED, AND THE REF IN USE IS `main` — a moving target, so this key never
+    //  changes as main advances and a browser profile that seeded once NEVER re-seeds.  New Books
+    //   added after someone's first visit are invisible to them, silently and permanently.
+    //  `LazyGithubNav.manifest` resolves the ref to a commit sha to close exactly this (see
+    //   `head_sha` there).  Left alone here deliberately — this is the no-share cloud path, it is
+    //    hundreds of blobs, and re-seeding it on every push is a different (and worse) trade than
+    //     re-indexing a manifest.  It wants an incremental update keyed on the sha, not a flag flip.
     const want = `${src.ref} :: ${subpaths.join(',')}`
     if (!opts.force && (await read_marker(seed)) === want) return { seeded: false, files: 0 }
 
@@ -277,6 +284,206 @@ export async function mount_opfs_github_nav(
     const { seed, scratch } = await opfs_roots(src)
     await seed_from_github(seed, src, opts)
     return new OpfsOverlayNav(seed, scratch, `${src.owner}/${src.repo}@${src.ref}`)
+}
+
+// ── LazyGithubNav — the app's own tree, fetched a file at a time ─────────────────
+//
+//  The owner, 2026-08-12: *"just the Sounditron toc.snap needs downloading initially, each step may
+//   only download if it wants diffing."*
+//
+//  `seed_from_github` above hydrates the WHOLE subpath set up front — hundreds of blobs before the
+//   first read. That is right for the no-share cloud demo (it is going to read most of it), and
+//    wrong for a listener who granted their music folder and needs the app tree MOUNTED under it:
+//     there, the app reads one `toc.snap` to start, and an `NNN.snap` only when a step actually
+//      wants to diff against it. Most of the tree is never touched at all.
+//
+//  So: **one index, N lazy blobs.** A single git Trees call lists the repo (that is 1 request
+//   against the 60/hr API budget, not N), and it is persisted, so a return visit costs nothing. Path
+//    LISTING is answered entirely from that manifest — `dir()` never touches the network, which is
+//     what keeps a Story walk cheap. Only an actual `read_file`/`bin_read` of a path materialises
+//      that one blob, from the raw CDN (not the API), into the OPFS seed where it stays.
+//
+//  Writes go to the OPFS scratch layer through the same `OpfsOverlayNav` that backs the eager
+//   version, so scratch shadows seed exactly as before and a written file is never re-fetched.
+//  Blobs are stored as BYTES (`arrayBuffer`), not `.text()` as the eager seeder does — text is
+//   lossy for anything binary, and this path is reachable for any file in the tree.
+export class LazyGithubNav {
+    opfs: OpfsOverlayNav
+    src: GithubSource
+    seed: FileSystemDirectoryHandle
+    is_opfs_github = true          // the DirectoryOpener seam recognises this
+    is_lazy_github = true          // …and this says listings are free but reads may block
+    label: string
+    fetched = 0                    // blobs materialised this session — the honest progress number
+    _files: Set<string> | null = null
+    _inflight = new Map<string, Promise<boolean>>()
+
+    constructor(opfs: OpfsOverlayNav, src: GithubSource, seed: FileSystemDirectoryHandle) {
+        this.opfs = opfs
+        this.src = src
+        this.seed = seed
+        this.label = `${src.owner}/${src.repo}@${src.ref} (lazy)`
+    }
+
+    // head_sha — what `ref` points at RIGHT NOW.  One cheap API call, and the whole staleness story.
+    //
+    //  ⚠ WHY THIS EXISTS AT ALL: the obvious cache key is `ref + subpaths`, and it is WRONG, because
+    //   the ref in use is `main` — a MOVING target.  Keyed that way the key never changes as main
+    //    advances, so a listener who indexed once keeps that manifest for the life of the browser
+    //     profile and never sees a Book added after their first visit.  Silent, permanent, and
+    //      invisible in testing, because a fresh profile always looks right.  (The eager
+    //       `seed_from_github` marker has the same shape — see the note on it below.)
+    //  Resolving the ref to a commit sha makes the key CONTENT-ADDRESSED, so it changes exactly when
+    //   the tree does.  Steady state is one request per boot; a push costs one more.
+    //  FAILS SOFT ON PURPOSE: offline, or rate-limited (this is the 60/hr API, unlike the raw CDN),
+    //   returns null and the caller keeps whatever manifest it already had.  A listener who cannot
+    //    reach github must still get the Books they indexed yesterday — a freshness check that can
+    //     take the tree AWAY is worse than a stale one.
+    async head_sha(): Promise<string | null> {
+        try {
+            const u = `https://api.github.com/repos/${this.src.owner}/${this.src.repo}/commits/${encodeURIComponent(this.src.ref)}`
+            const r = await fetch(u, { headers: { Accept: 'application/vnd.github+json' } })
+            if (!r.ok) return null
+            return (await r.json())?.sha ?? null
+        } catch { return null }
+    }
+
+    // the manifest: repo-relative blob paths inside the wanted subpaths.  Cached in memory, then in
+    //  OPFS keyed by the resolved COMMIT + subpaths (see head_sha above for why not the ref).
+    async manifest(): Promise<Set<string>> {
+        if (this._files) return this._files
+        const subpaths = this.src.subpaths ?? DEFAULT_SUBPATHS
+        const at = await this.head_sha()
+        const want = `${at ?? this.src.ref} :: ${subpaths.join(',')}`
+        try {
+            const fh = await this.seed.getFileHandle(TREE_CACHE)
+            const cached = JSON.parse(await (await fh.getFile()).text()) as { want: string, paths: string[] }
+            // `!at` = we could not ask (offline / rate-limited): take the cache whatever it says.
+            if (cached?.paths && (!at || cached.want === want)) { this._files = new Set(cached.paths); return this._files }
+        } catch { /* no cache, or unreadable — fall through and re-index */ }
+
+        const treeUrl = `https://api.github.com/repos/${this.src.owner}/${this.src.repo}/git/trees/${encodeURIComponent(this.src.ref)}?recursive=1`
+        const res = await fetch(treeUrl, { headers: { Accept: 'application/vnd.github+json' } })
+        if (!res.ok) throw new Error(`github tree ${res.status} ${res.statusText} for ${treeUrl}`)
+        const body = await res.json() as { tree: { path: string, type: string }[], truncated?: boolean }
+        if (body.truncated) console.warn('LazyGithubNav: github tree truncated — seed a narrower subpath set')
+        const paths = body.tree
+            .filter(e => e.type === 'blob' && subpaths.some(s => e.path === s || e.path.startsWith(s + '/')))
+            .map(e => e.path)
+        this._files = new Set(paths)
+        try {
+            const fh = await this.seed.getFileHandle(TREE_CACHE, { create: true })
+            const w = await fh.createWritable(); await w.write(JSON.stringify({ want, paths })); await w.close()
+        } catch { /* index still usable in memory this session */ }
+        return this._files
+    }
+
+    // materialise ONE blob into the seed if it is not already there.  Concurrent asks for the same
+    //  path share one fetch — a Story step and a probe racing for the same toc.snap must not both pull.
+    async _ensure(path: string): Promise<boolean> {
+        const parts = path.split('/').filter(Boolean)
+        const file = parts.pop()
+        if (!file) return false
+        // already present in either layer?  scratch first — a local write must never be re-fetched.
+        for (const root of [this.opfs.scratch, this.seed]) {
+            const d = await walk(root, parts, false)
+            if (!d) continue
+            try { await d.getFileHandle(file); return true } catch { /* not this layer */ }
+        }
+        const running = this._inflight.get(path)
+        if (running) return running
+        const job = (async () => {
+            const files = await this.manifest()
+            if (!files.has(path)) return false          // not in the tree: an honest miss, no request
+            const raw = `https://raw.githubusercontent.com/${this.src.owner}/${this.src.repo}/${encodeURIComponent(this.src.ref)}/${path.split('/').map(encodeURIComponent).join('/')}`
+            const r = await fetch(raw)
+            if (!r.ok) throw new Error(`github raw ${r.status} for ${path}`)
+            const bytes = await r.arrayBuffer()
+            const dir = await walk(this.seed, parts, true)
+            const fh = await dir!.getFileHandle(file, { create: true })
+            const w = await fh.createWritable(); await w.write(bytes); await w.close()
+            this.fetched++
+            return true
+        })().finally(() => { this._inflight.delete(path) })
+        this._inflight.set(path, job)
+        return job
+    }
+
+    _join(dir_path: string, filename: string): string {
+        return [...String(dir_path ?? '').split('/').filter(Boolean), filename].join('/')
+    }
+
+    // ── the nav surface: ensure the one file, then let the OPFS overlay answer ────────────────────
+    async read_file(dir_path: string, filename: string): Promise<string | null> {
+        await this._ensure(this._join(dir_path, filename)).catch(() => false)
+        return this.opfs.read_file(dir_path, filename)
+    }
+    async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {
+        await this._ensure(this._join(dir_path, filename)).catch(() => false)
+        return this.opfs.bin_read(dir_path, filename)
+    }
+    async read_range(dir_path: string, filename: string, offset: number, len?: number) {
+        await this._ensure(this._join(dir_path, filename)).catch(() => false)
+        return this.opfs.read_range(dir_path, filename, offset, len)
+    }
+
+    // writes never consult github — they land in scratch, which shadows the seed from then on
+    async write_file(dir_path: string, filename: string, content: string): Promise<void> { return this.opfs.write_file(dir_path, filename, content) }
+    async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> { return this.opfs.bin_write(dir_path, filename, bytes) }
+    async bin_append(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> { return this.opfs.bin_append(dir_path, filename, bytes) }
+    async bin_writer(dir_path: string, filename: string) { return this.opfs.bin_writer(dir_path, filename) }
+
+    async dir_at(path: string) { return this.dir(...path.split('/').filter(Boolean)) }
+
+    // LISTING IS FREE — answered from the manifest, merged with whatever scratch has written.  This
+    //  is the property that makes lazy viable: a Story walk enumerates the tree without pulling any
+    //   of it, and only the files it then READS cost a request.
+    async dir(...parts: string[]): Promise<{ name: string, directories: { name: string }[], files: { name: string }[], expand(): Promise<void> } | null> {
+        const files = await this.manifest()
+        const prefix = parts.length ? parts.join('/') + '/' : ''
+        const dirs = new Set<string>()
+        const names = new Set<string>()
+        let exists = !parts.length
+        for (const p of files) {
+            if (prefix && !p.startsWith(prefix)) continue
+            exists = true
+            const rest = p.slice(prefix.length).split('/')
+            if (rest.length === 1) names.add(rest[0])
+            else dirs.add(rest[0])
+        }
+        // scratch can hold files github never had (anything this app wrote) — merge them in.
+        //  ⚠ `expand()` is REQUIRED: OpfsOverlayNav.dir hands back a listing whose directories/files
+        //   are EMPTY until expanded (it re-reads per call so a listing taken after a write is not
+        //    stale).  Reading `.files` without it silently merges nothing, and a file this app wrote
+        //     goes missing from every listing — caught by scripts/LazyGithubNav.spec.ts.
+        const live = await this.opfs.dir(...parts)
+        if (live) {
+            await live.expand()
+            exists = true
+            for (const d of live.directories) dirs.add(d.name)
+            for (const f of live.files) if (!f.name.startsWith('.')) names.add(f.name)
+        }
+        if (!exists) return null
+        return {
+            name: parts.length ? parts[parts.length - 1] : '/',
+            directories: [...dirs].sort().map(name => ({ name })),
+            files: [...names].filter(n => n !== TREE_CACHE && n !== MARKER).sort().map(name => ({ name })),
+            async expand() { /* already whole — the manifest is the listing */ },
+        }
+    }
+}
+
+const TREE_CACHE = '.tree_index.json'   // the persisted git-tree manifest, beside the seed marker
+
+// mount_lazy_github_nav — the lazy twin of mount_opfs_github_nav.  Returns immediately after ONE
+//  Trees call; nothing else is fetched until something reads it.
+export async function mount_lazy_github_nav(src: GithubSource): Promise<LazyGithubNav> {
+    const bad = opfs_unavailable()
+    if (bad) throw new Error(bad)
+    const { seed, scratch } = await opfs_roots(src)
+    const nav = new LazyGithubNav(new OpfsOverlayNav(seed, scratch, `${src.owner}/${src.repo}@${src.ref}`), src, seed)
+    await nav.manifest()          // fail loudly here if the repo/ref is wrong, not on the first read
+    return nav
 }
 
 // cheap return-visit probe: was this repo+ref already hydrated into OPFS?  Lets the

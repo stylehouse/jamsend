@@ -4,7 +4,8 @@ import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.
 import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
 import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 import { grap, grep, tex, throttle } from "$lib/Y.svelte"
-import { mount_opfs_github_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
+import { mount_opfs_github_nav, mount_lazy_github_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
+import { MountNav, app_tree_decision } from "./MountNav.svelte.ts";
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 // concat_chunks — join a file's reader chunks into ONE ArrayBuffer in a single linear pass.
@@ -2058,6 +2059,45 @@ export class House extends StorableHousing {
             A.oai({ FileSystemHandler: 1, name: key })
         }
 
+        // ── the CREDENTIALS share: a second, optional directory that holds only the keyed material ──
+        //  The owner, 2026-08-11: *".jamsend defaults to in the music share, but we could put it in a
+        //   credentials store location… it's not inside the root of the music share, which is often
+        //    shared via other systems, so we should have a way to keep credentials and other crap out."*
+        //  The leak is real and cleartext: `Swarm_account_save` (Swarm.g:2889) writes the whole account
+        //   — keypair embedded — to `.jamsend/account/<prepub>/toc.snap`, and a music folder is exactly
+        //    the thing people sync to a NAS, a phone, a Dropbox, or hand to a friend on a drive.
+        //  Note what is and is NOT relocated.  Only `.jamsend/account` and `.jamsend/identities` carry
+        //   keys (Swarm.g:2875, 2877).  `.jamsend/radiostock` is multi-GB decoded audio cache and
+        //    `.jamsend/berth` is landed downloads — those BELONG beside the music and would be absurd in
+        //     a credentials folder, so they stay on the base share.  Longest-prefix mounting is what
+        //      lets those two verdicts coexist under one `.jamsend/`.
+        //  A SECOND handle, not a second app: the same Dexie handle table, a different key.  Restore is
+        //   silent and picker-free at boot; only the action below can ever open a picker, because
+        //    showDirectoryPicker needs a real user gesture.
+        if (!A.c.fsh_creds) {
+            const ckey = `${key}:creds`
+            A.c.fsh_creds = new FileSystemHandler({
+                share: { name: ckey },
+                storeDirectoryHandle: async (handle) => { await db.Handle.put({ name: ckey, handle }) },
+                restoreDirectoryHandle: async () => {
+                    const row = await db.Handle.get(ckey)
+                    if (!row) return null
+                    try {
+                        // same 'prompt' ≠ 'gone' care as the main share above: a browser restart must
+                        //  not cost someone the folder their identity lives in.
+                        const perm = await row.handle.queryPermission({ mode: 'readwrite' })
+                        if (perm === 'granted') return row.handle
+                        if (perm === 'prompt' && (navigator as any).userActivation?.isActive) {
+                            const got = await row.handle.requestPermission({ mode: 'readwrite' })
+                            if (got === 'granted') return row.handle
+                        }
+                    } catch { await db.Handle.delete(ckey) }
+                    return null
+                },
+            })
+            await A.c.fsh_creds.start()
+        }
+
         const fsh = A.c.fsh as FileSystemHandler
 
         // ── if directory is open: expose DL, ensure it's expanded ────────
@@ -2098,7 +2138,31 @@ export class House extends StorableHousing {
                     //      share's stalled progress (the empty-share fail-noise, Supervisor_todo §0).
                     H.top_House().c.meander_stood = 0
                     A.c.nav = null                 // a granted local dir overrides the cloud
+                    // …and the app-tree verdict was about the OLD share.  Someone who grants the repo
+                    //  and then grants their music folder must be re-decided, or they keep a 'share'
+                    //   verdict earned by a tree they no longer have and silently get no Books.
+                    A.c.app_tree_checked = null; A.c.app_tree = null
                     await w.r({ wants_directory: 1 }, {})
+                    H.i_elvisto(H, 'think')
+                },
+            })
+        }
+
+        // "give us a directory to put credentials in — create it just for this app" (the owner).  An
+        //  ACTION rather than a face because that is what this seam already speaks, and because the FSA
+        //   picker must be inside a real gesture; a tap is the only place that is true.
+        //  Offered always, and harmless until used: with no credentials folder granted, `.jamsend` stays
+        //   in the share exactly as it does today.  Re-tapping it re-points the mount (MountNav.mount
+        //    replaces a point rather than stacking), which is how someone MOVES their credentials.
+        //  ⚠ STILL OWED, and deliberately not done unattended: granting a new folder does not remove the
+        //   account snap already sitting in the music share.  Sweeping the old copy is deleting key
+        //    material — it needs the person's explicit yes, and a face to ask it in.
+        if (!(wa.o({ action: 1, role: 'creds_dir' }) as TheC[]).length) {
+            wa.oai({ action: 1, role: 'creds_dir' }, {
+                label: 'Credentials folder', icon: '🔑', cls: '',
+                fn: async () => {
+                    await A.c.fsh_creds.requestDirectoryAccess()
+                    A.c.creds_mounted = null          // re-mount on the next Wormhole() tick
                     H.i_elvisto(H, 'think')
                 },
             })
@@ -2287,13 +2351,93 @@ export class House extends StorableHousing {
         })
     }
 
+    // Wormhole_compose_app_tree — give a LISTENER's share the app's own tree.
+    //
+    //  The problem is stated in full at the boot_role branch above: a real person grants their MUSIC
+    //   folder, which carries no `wormhole/Story/Sounditron/toc.snap`, so they get no Books, no spine
+    //    and no arrival.  The app has only ever worked because the developer's share IS the repo.
+    //  So: keep their share as the base — it is their music, and it must stay the thing every read of
+    //   an album goes to — and MOUNT the app's own tree at `wormhole/`, served by the OPFS-from-github
+    //    backend that already exists for the no-share case.  Composed UNDER the grant, not replacing it.
+    //
+    //  Once per grant, and never on evidence we do not have: `app_tree_decision` believes an absence
+    //   only from a successfully expanded root that listed directories and had no `wormhole` among
+    //    them.  On a developer's checkout that is a 'share' verdict and NOTHING here fires — which is
+    //     also why installing this is safe ahead of anyone testing it on a music-only folder.
+    //  The seed is fire-and-forget OFF the tick mutex for the same reason the no-share cloud mount is
+    //   (hundreds of github fetches would freeze ticks); progress rides A.c.*, which are runtime refs.
+    Wormhole_compose_app_tree(A: TheC, DL: DirectoryListing) {
+        const H = this as House
+        if (A.c.app_tree_checked) return
+        const mn = A.c.nav as any
+        if (!mn?.is_mounted) return
+        const verdict = app_tree_decision({
+            expanded: !!DL.expanded,
+            names: (DL.directories ?? []).map((d: any) => d.name),
+            boot_role: H.top_House().c.boot_role as string | null,
+        })
+        A.c.app_tree = verdict
+        // 'unknown' is the one verdict we do NOT latch: it means we had no evidence yet (an unexpanded
+        //  or empty listing), so a later tick with a walked root gets to decide properly.
+        if (verdict === 'unknown') return
+        A.c.app_tree_checked = true
+        if (verdict !== 'mount') return
+
+        A.c.app_tree = 'mounting'
+        // LAZY, not the eager seed (the owner, 2026-08-12): *"just the Sounditron toc.snap needs
+        //  downloading initially, each step may only download if it wants diffing."*  One git Trees
+        //   call indexes the repo and then listing is free; a blob is fetched only when something
+        //    actually reads it.  So this resolves in one request instead of several hundred, and a
+        //     Story walk that never opens a step never pays for it.
+        mount_lazy_github_nav(JAMSEND_SOURCE)
+            .then(nav => {
+                // `inner:'wormhole'` because the seeded tree is a checkout of the repo — its books live
+                //  at `wormhole/Story/…` INSIDE it, so the mount maps the path onto itself, through a
+                //   different disk.  Without it every Book read would ask the cloud for `Story/…`.
+                mn.mount('wormhole', nav, { inner: 'wormhole', label: 'app tree (cloud)' })
+                A.c.app_tree = 'mounted'
+                H.main(true)
+            })
+            .catch(err => {
+                // a failed seed leaves the share exactly as it was: no Books, but nothing broken, and
+                //  the person still has their music.  Say it out loud rather than retry blindly.
+                A.c.app_tree = 'failed'; A.c.app_tree_error = String(err); H.main(true)
+            })
+    }
+
+    // Wormhole_mount_creds — point the two keyed paths at the credentials folder, if one was granted.
+    //  Idempotent and cheap: one latch check per tick.  `.jamsend/radiostock` and `.jamsend/berth` are
+    //   deliberately NOT mounted — they are cache and downloads, they belong beside the music, and
+    //    longest-prefix resolution keeps them on the base while their siblings move.
+    //  `inner` strips the `.jamsend/` prefix, so the chosen folder holds a bare `account/` and
+    //   `identities/` — a directory made just for this app, as the owner asked, not a hidden dot-dir
+    //    buried inside one.
+    Wormhole_mount_creds(A: TheC) {
+        if (A.c.creds_mounted) return
+        const mn = A.c.nav as any
+        const list = A.c.fsh_creds?.list
+        if (!mn?.is_mounted || !list) return
+        const creds = new WormholeNav(list)
+        mn.mount('.jamsend/account', creds, { inner: 'account', label: 'credentials folder' })
+        mn.mount('.jamsend/identities', creds, { inner: 'identities', label: 'credentials folder' })
+        A.c.creds_mounted = list.name || 1
+        this.diag(`Wormhole credentials mounted at "${list.name}" — account + identities leave the share`)
+    }
+
     async Wormhole(A: TheC, w: TheC, e: TheC, AT: TheC, wT: TheC) {
-        this.diag(`Wormhole() ticked on House=${(this as House).name} DL=${!!A.c.DL} nav=${!!A.c.nav}`)
+        this.diag(`Wormhole() ticked on House=${(this as House).name} DL=${!!A.c.DL} nav=${!!A.c.nav} app_tree=${A.c.app_tree ?? '—'}`)
         if (!A.c.nav && A.c.DL) {
             const DL = A.c.DL
             if (!DL.expanded) await DL.expand()
-            A.c.nav = new WormholeNav(DL)
+            // wrapped in a MountNav from the start.  With no mounts installed this is a pass-through to
+            //  the WormholeNav it wraps (scripts/MountNav.spec.ts asserts exactly that, and the optional
+            //   streaming capabilities are narrowed to the honest intersection so Heist's path-blind
+            //    `typeof nav.bin_append` probe cannot be lied to).  So on a share that already carries
+            //     the app tree, this whole mechanism is inert.
+            A.c.nav = new MountNav(new WormholeNav(DL), 'share')
         }
+        if (A.c.DL) this.Wormhole_compose_app_tree(A, A.c.DL)
+        this.Wormhole_mount_creds(A)
         const H  = this as House
 
 

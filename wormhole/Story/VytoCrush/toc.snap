@@ -4,27 +4,33 @@ story:VytoCrush
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.215
-      sample=1.303,at=1785133406
-      sample=0.018,at=1785379372
-      sample=0.023,at=1786189870
-      sample=0.024,at=1786232001
-      sample=0.101,at=1786232034
-      sample=0.027,at=1786232226
-      sample=0.011,at=1786232262
-    TimeTotal:step,avg=0.054
-      sample=0.326,at=1785133406
-      sample=0.004,at=1785379372
-      sample=0.006,at=1786189870
-      sample=0.006,at=1786232001
-      sample=0.025,at=1786232034
-      sample=0.007,at=1786232226
-      sample=0.003,at=1786232262
-  step,dige:lie
-  step=2,dige:lie,desc:seed twenty cogs across three genera — eight oak seven pine five birch
-  step=3,dige:lie,desc:commission the glass folded on the twenty cogs — the crowd crushes to its crests
+    TimeTotal:beliefs,avg=0.678
+      sample=0.008,at=1786459504
+      sample=0.045,at=1786459564
+      sample=0.045,at=1786459566
+      sample=0.051,at=1786459595
+      sample=0.02,at=1786461371
+      sample=0.036,at=1786463087
+      sample=0.069,at=1786469536
+      sample=3.216,at=1786471299
+      sample=3.245,at=1786471341
+      sample=0.044,at=1786471754
+    TimeTotal:step,avg=0.169
+      sample=0.002,at=1786459504
+      sample=0.011,at=1786459564
+      sample=0.011,at=1786459566
+      sample=0.013,at=1786459595
+      sample=0.005,at=1786461371
+      sample=0.009,at=1786463087
+      sample=0.017,at=1786469536
+      sample=0.804,at=1786471299
+      sample=0.811,at=1786471341
+      sample=0.011,at=1786471754
+  step,dige:b155a089dc38d90f
+  step=2,dige:3d6a1a2c3d4e737c,desc:seed twenty cogs across three genera — eight oak seven pine five birch
+  step=3,dige:6857b6aef3d601f9,desc:commission the glass folded on the twenty cogs — the crowd crushes to its crests
     Assertion:board-folded,sentence:the glass was commissioned folded on twenty cogs and stood its board
     Assertion:crushed,sentence:a crowded scope self-distils — twenty cogs crush to three crest cells one per genus and every source cog is folded away behind them
     Assertion:crest-counts,sentence:each crest carries its true subsumed count — the oak crest speaks for eight the pine for seven and the birch for five
-  step=4,dige:lie,desc:re-commission the same cogs plain — no fold so twenty cells stand and no crest is minted
+  step=4,dige:2761b2c31a988c0a,desc:re-commission the same cogs plain — no fold so twenty cells stand and no crest is minted
     Assertion:crush-load-bearing,sentence:the crush is load-bearing — commissioned plain the same twenty cogs draw twenty cells and no crest is minted
