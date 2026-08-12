@@ -200,6 +200,65 @@ Repli_chunk_at(rec, s):
     }
     return null
 
+// Repli_head_at — the HEAD run's twin of Repli_chunk_at, on `hseq`.  A separate key rather than a
+//  mainkey test because both of these walks are deliberately mainkey-blind (%Preview and %Stream
+//   share one seq space), so the head could not have used `seq` without colliding with the offer's
+//    chunks 0..pv_off-1 and quietly serving the wrong audio for them.
+Repli_head_at(rec, s):
+    for (const c of rec.o({ hseq: '' + s })) {
+        if (this.Repli_chunk_bytes(c) != null) return c
+    }
+    return null
+
+// Repli_serve_head — serve %Prehead pages: source segments [0, pv_off), the run that lets a listener
+//  open a track at the BEGINNING of the song rather than at the offer's mid-track cut point.
+//  ONLY THE HOLDER CAN MAKE THESE.  The head is encoded from the source file, so a mirror can never
+//   produce its own — which is exactly why it has to cross the wire, and why this function ensures
+//    before it serves: the asker's want IS the trigger for the encode, the same way a want past the
+//     preview triggers Ra_transcode_ensure.  Optional-by-typeof like every other Ra call in this
+//      file (Repli never imports Ra; a world with no Ra is unchanged).
+//  PARKS rather than fails when the run is not made yet — the encode is seconds of ffmpeg/WebCodecs
+//   and Repli_serve_parked already exists to answer a want once the frontier passes.  A miss here
+//    would have the sink re-asking on the ladder forever for something that was merely not ready.
+async Repli_serve_head(w, pier, h, rec):
+    let off = +(rec.sc.pv_off || 0)
+    if (!(off > 0)) { this.Repli_serve_miss(w, h, 'no cut point — the offer already starts at the song'); return }
+    if (typeof this.Ra_head_ensure === 'function' && !this.Ra_head_whole(rec)) {
+        try { await this.Ra_head_ensure(w, rec) } catch (er) {}
+    }
+    let from = +(h.from_idx || 0)
+    if (from >= off) return
+    let PAGE = +(w.c.repli_page || 2)
+    let end = Math.min(from + PAGE, off)
+    let s = from
+    let miss = 0
+    while (s < end) {
+        if (!this.Repli_head_at(rec, s)) miss = miss + 1
+        s = s + 1
+    }
+    // NOT PARKED, deliberately, and this is the one place the head departs from the chunk path.
+    //  Repli_serve_parked gates its retry on `Repli_page_ready` — the OFFER's seq space — which for
+    //   from_idx 0 is ready the moment the preview exists.  A parked head want would therefore be
+    //    unparked immediately, find its run still un-encoded, and park again: a spin that climbs the
+    //     `waiting` count without ever making progress (measured: waiting=6,7,8 in consecutive marks).
+    //  The sink re-asks on its own 4s ladder, so silence here costs one ladder step and the encode
+    //   kicked above gets its time.  Dispatch is safe either way — serve_parked passes `stream`
+    //    through, so a parked head could never have been answered with offer chunks — but a retry
+    //     gated on the wrong readiness is still the wrong retry.
+    if (miss) {
+        this.Radio_trace(null, { ev: 'head-serve-wait', id: String(rec.sc.id || '').slice(0, 8), at: from, miss: miss, off: off })
+        return
+    }
+    let out = []
+    let bufmap = { list: [], tx: pier }
+    out.push(this.enL({ d: 0, stringies: { Record: 1, id: rec.sc.id }, objecties: { loc: ['Record', 'id'] } }))
+    s = from
+    while (s < end) {
+        this.Repli_lines_of(this.Repli_head_at(rec, s), 1, out, bufmap)
+        s = s + 1
+    }
+    await this.Repli_send_lines(w, pier, h.to, h.from, out.join('\n'), bufmap)
+
 // Repli_lines_of — recurse a subtree, one enL line per particle.  objecties.loc names the locatory keys;
 //  objecties.op carries a non-default change intent (dupe|delete) off .c.repli_op.  TWO buffer-leaf forms:
 //   bytes staged on .c.page_bytes (the Float32-page path — MusuReplica/MusuReco's PCM chunks), and a binary
@@ -818,6 +877,11 @@ async Repli_serve_want(w, pier, frame):
     // last-wanted stamp (Evening 5 A2): the release-after-serve sweep frees a rec's bytes only once its wants
     //  have gone idle, so an actively-asking sink (serve OR park) keeps its bytes held.  .c-only, inert for opus.
     rec.c.want_ts = Date.now()
+    // THE HEAD RUN rides the existing want as its own `stream` kind, which is why this protocol did
+    //  not need a new frame type: `repli_want` already carries {id, stream, from_idx}, and the head
+    //   is simply a different run of the same record indexed from 0.  Unknown kinds fall through to
+    //    the ordinary chunk path exactly as before, so an old peer asking 'opus' is unaffected.
+    if (h.stream === 'opus_head') { await this.Repli_serve_head(w, pier, h, rec); return }
     if (!rec.c.chunks) { await this.Repli_serve_chunks(w, pier, h, rec); return }
     let chunks = rec.c.chunks || []
     let from = +(h.from_idx || 0)

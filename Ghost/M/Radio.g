@@ -424,9 +424,21 @@ async Radio_pump_tick(radio, era):
         this.Radio_supply_go(radio, era, rec)
         if (radio.sc.Radio !== 'playing') this.Radio_state(radio, 'playing')
     }
-    let m = this.Radio_map(rec)
-    let total = +(rec.sc.total || 0)
-    if (radio.c.cap && radio.c.cap < total) total = radio.c.cap
+    // the played timeline is head-then-offer, so both the map and its length carry the head chunks.
+    //  `cap` stays an OFFER count (Radio_supply sets it from total/preview) and is shifted to match.
+    let hbase = +(radio.c.hbase || 0)
+    let m = this.Radio_map(rec, hbase)
+    let total = hbase + (+(rec.sc.total || 0))
+    if (radio.c.cap && (hbase + radio.c.cap) < total) total = hbase + radio.c.cap
+    // MAKE THE NEXT TRACK'S HEAD HERE, not in Radio_prime.  Prime looked like the natural seam — it
+    //  is already "the next record, while there is slack" — but it sits at the BOTTOM of this pump,
+    //   past the starve and advance branches that `return`, and on short tracks the pump takes one
+    //    of those nearly every pass: measured on the live tab, `prime-look` never fired once while
+    //     tracks advanced normally.  This line runs every pass, before any of them.
+    //  Cheap when there is nothing to do: Ra_head_ensure is two reads once the head is whole, and
+    //   single-flights on rec.c.head_making while it is not.  Detached, so an encode never blocks a
+    //    feed — the head is wanted at the NEXT open, not this one.
+    if (radio.c.tuned && this.Ra_head_ensure) this.Radio_head_ahead(radio)
     let now = AC.currentTime
     let fed = 0
     while (((radio.c.end || now) - now) < 8 && fed < 4 && radio.c.seq < total && m.bytes[radio.c.seq] != null) {
@@ -633,8 +645,11 @@ async Radio_prime(radio, era):
     if (radio.c.priming || radio.c.ready) return
     let rec = this.Radio_peek_next(radio)
     if (!rec || !rec.sc.id) return
-    let m = this.Radio_map(rec)
-    let start = this.Radio_start_seq(radio, rec)
+    let hbase = this.Radio_hbase(radio, rec)
+    let m = this.Radio_map(rec, hbase)
+    // prime and open must agree about where the needle lands, so the hbase decision is fixed here
+    //  and carried on `ready` — exactly as `start` already is.
+    let start = hbase ? 0 : this.Radio_start_seq(radio, rec)
     if (m.bytes[start] == null) return
     let nch = Math.min(2, +(rec.sc.nch || 1))
     let dec = this.Radio_dec_open(nch)
@@ -654,7 +669,7 @@ async Radio_prime(radio, era):
     radio.c.priming = 0
     if (radio.c.era !== era) return
     if (!got || !(got.n > 0)) return
-    radio.c.ready = { id: String(rec.sc.id), start: start, seq: s, nch: nch,
+    radio.c.ready = { id: String(rec.sc.id), start: start, seq: s, nch: nch, hbase: hbase,
         pre: +(m.heads[start] || 0), at0: start * (+(rec.sc.seg_secs || 2)), got: got }
     this.Radio_trace(radio, { ev: 'primed', id: String(rec.sc.id).slice(0, 8), start: start, chunks: fed })
 
@@ -684,7 +699,12 @@ Radio_open(radio, rec):
     let ready = radio.c.ready
     radio.c.ready = null
     if (ready && ready.id !== String(rec.sc.id)) ready = null
-    let start = ready ? ready.start : this.Radio_start_seq(radio, rec)
+    // HOW MANY HEAD CHUNKS RIDE IN FRONT (Radio_hbase) — read BEFORE the tuned latch below, because
+    //  "is this a continuation" IS the previous value of that latch.  A primed open carries the
+    //   decision it primed with, so prime and open cannot disagree about the timeline either.
+    let hbase = ready ? +(ready.hbase || 0) : this.Radio_hbase(radio, rec)
+    radio.c.hbase = hbase
+    let start = ready ? ready.start : (hbase ? 0 : this.Radio_start_seq(radio, rec))
     // TUNE-IN SPENT.  Set AFTER the read and in the opener, not inside Radio_start_seq: the prime
     //  calls that function too, and burning the latch there would make "have we tuned in yet" depend
     //   on whether a prime happened to run first.  Here it means exactly one thing — a needle has
@@ -704,7 +724,10 @@ Radio_open(radio, rec):
     radio.c.starved_at = 0
     radio.c.first_feed = 0
     radio.c.first_sound = 0
-    this.Radio_trace(radio, { ev: 'open', total: +(rec.sc.total || 0), preview: +(rec.sc.preview || 0), wire: rec.c.from ? 1 : 0 })
+    // `hbase` on the open mark is the ONLY place this is visible: a from-the-start open and a
+    //  mid-song one produce identical audio bookkeeping otherwise, and pixels|sound never reach a
+    //   snap.  hbase>0 means "this track opened at the beginning of the song".
+    this.Radio_trace(radio, { ev: 'open', total: +(rec.sc.total || 0), preview: +(rec.sc.preview || 0), hbase: hbase, pv_off: +(rec.sc.pv_off || 0), wire: rec.c.from ? 1 : 0 })
     radio.c.nch = Math.min(2, +(rec.sc.nch || 1))
     radio.sc.title = this.Radio_clean(rec.sc.title || rec.sc.id || 'unknown')
     let artist = this.Radio_clean(rec.sc.artist || '')
@@ -713,10 +736,16 @@ Radio_open(radio, rec):
     } else {
         delete radio.sc.artist
     }
-    // the OFFER's length, not the file's: a mid-track cut (Ra_preview_offset) means the playable thing
-    //  starts at pv_off, so a bar drawn against the whole file's duration could never reach its end.
-    //   pv_off absent ⇒ the old number exactly.
-    radio.sc.of = Math.round(Math.max(0, +(rec.sc.seconds || 0) - (+(rec.sc.pv_off || 0) * this.Ra_seg_secs())))
+    // WHAT THE BAR IS DRAWN AGAINST — the length of the thing we are ACTUALLY PLAYING, which is not
+    //  always the offer.  A mid-track cut (Ra_preview_offset) means the offer starts at pv_off, so a
+    //   bar against the whole file could never reach its end; but when a HEAD run rides in front
+    //    (hbase, Radio_hbase) we play the whole track, and a bar against the offer reaches 100% with
+    //     pv_off × seg_secs still to go — 20–30s of a bar pegged at the end while music kept playing.
+    //      The owner saw exactly that and read it as a stall before the next track (2026-08-12).
+    //  So: head ⇒ the file's duration; no head ⇒ the offer's, the old number exactly.
+    radio.sc.of = (+(radio.c.hbase || 0) > 0)
+        ? Math.round(Math.max(0, +(rec.sc.seconds || 0)))
+        : Math.round(Math.max(0, +(rec.sc.seconds || 0) - (+(rec.sc.pv_off || 0) * this.Ra_seg_secs())))
     radio.sc.at = Math.round(+(radio.c.at0 || 0))
     // ...AND SAY THE CUT OUT LOUD (the human 2026-08-08: "indicate the portion the Record has skipped
     //  past ... 0:40 + 0:04 / 2:45").  `of` above already SUBTRACTS the skipped head, which keeps the
@@ -724,7 +753,10 @@ Radio_open(radio, rec):
     //    0:40.  `skip` is that head in seconds, so the face can render skip + elapsed / full-length.
     //     Absent-when-zero (a from-the-start cut stamps nothing), and DELETED on the else branch, not
     //      set 0 — a stale skip surviving from the previous track would shift the next clock by a lie.
-    let skip = Math.round((+(rec.sc.pv_off || 0)) * this.Ra_seg_secs())
+    //  AND ZERO WHEN A HEAD RIDES: `skip` is what the offer's cut threw away, so a track opened at
+    //   its beginning has skipped NOTHING.  Leaving it set would have the face draw "0:32 + elapsed /
+    //    2:45" over a play that started at 0:00 — the same lie as the bar above, in words.
+    let skip = (+(radio.c.hbase || 0) > 0) ? 0 : Math.round((+(rec.sc.pv_off || 0)) * this.Ra_seg_secs())
     if (skip > 0) {
         radio.sc.skip = skip
     } else {
@@ -3135,15 +3167,105 @@ Radio_pop_glass():
 //  (Ra_decode_packets decodes a whole run at once; the radio needs the STREAMING twin — feed
 //   packets as the playhead wants them, harvest whatever frames have landed, never reset
 //    mid-encode.  flush() only at a run's end: in WebCodecs a flush RESETS decoder state.)
-Radio_map(rec):
+// Radio_map(rec, hbase) — the record's chunks as ONE playable timeline.
+//  `hbase` > 0 CONCATENATES the head run (%Prehead, source segments [0, pv_off), its own 0-based
+//   `hseq`) in front of the offer, so index i < hbase is head chunk i and index hbase+j is offer
+//    chunk j.  That is the whole trick for "the next track starts at the beginning of the song":
+//     the pump keeps ONE cursor over ONE array and needs no new state, and the seam at index hbase
+//      is just another `heads[]` entry — the drain-and-reopen the %Preview→%Stream seam already
+//       does, with that encode's own preskip.
+//  hbase 0 (the default, and every caller that thinks in OFFER seqs — the supply loop, the tune-in
+//   scan) gets exactly the array this function always returned.
+Radio_map(rec, hbase):
     let bytes = []
     let heads = {}
+    let H = +(hbase || 0)
+    if (H > 0) {
+        for (const ch of rec.o({ hseq: 1 })) {
+            let hb = this.Repli_chunk_bytes(ch)
+            if (hb != null) bytes[+ch.sc.hseq] = (hb instanceof Uint8Array) ? hb : new Uint8Array(hb)
+            if (ch.sc.head) heads[+ch.sc.hseq] = +(ch.sc.preskip || 312)
+        }
+    }
     for (const ch of rec.o({ seq: 1 })) {
         let b = this.Repli_chunk_bytes(ch)
-        if (b != null) bytes[+ch.sc.seq] = (b instanceof Uint8Array) ? b : new Uint8Array(b)
-        if (ch.sc.head) heads[+ch.sc.seq] = +(ch.sc.preskip || 312)
+        if (b != null) bytes[H + (+ch.sc.seq)] = (b instanceof Uint8Array) ? b : new Uint8Array(b)
+        if (ch.sc.head) heads[H + (+ch.sc.seq)] = +(ch.sc.preskip || 312)
     }
     return { bytes: bytes, heads: heads }
+
+// Radio_hbase — how many head chunks ride in front of THIS open, and the one place the policy lives.
+//  A TUNE-IN still drops the needle 30–70% in: that is the radio feel the owner asked for and it is
+//   deliberately untouched (`!radio.c.tuned` ⇒ 0).  A CONTINUATION — the track after one that played
+//    out — is the case the owner named, and it opens at the song's start whenever the whole head is
+//     held.  Partial is 0 (Ra_head_whole is all-or-nothing): starving three chunks into the first
+//      verse is worse than the mid-song open this replaces.
+//  Books get 0 for free — pv_off is only ever cut on a humdinger, so a driven world has no head.
+// Radio_head_ahead — keep the LINEUP's heads made, one encode at a time.
+//  THE SEAM COST ME TWO WRONG GUESSES, so it is worth saying which and why.  Radio_prime looked
+//   right ("the next track, while there is slack") and Radio_peek_next looked right ("which record
+//    the dial will pick") — both ask peek_next, which SKIPS already-heard cards and so answers
+//     `none` outright once a small catalog has been played through.  Measured on the live tab:
+//      `next=none` every pass while tracks advanced perfectly normally.  Ra_restock_beat was the
+//       third wrong guess — it walks the MIRROR, so every record it sees is somebody else's.
+//  The LINEUP is the honest set: it is the programme, it holds local and mirrored cards alike, and
+//   unlike peek_next it does not care what has already been heard — which is exactly right here,
+//    because a head outlives the play that wanted it.
+//  LOCAL ONLY for now: a mirrored record has no source on this machine to encode from, so its head
+//   has to be asked for over the wire like any other chunk.  Until that exists, `rec.c.from` records
+//    keep today's mid-song continuation rather than pretending.
+//  ONE AT A TIME.  Ra_head_ensure single-flights per record, but the lineup would otherwise start
+//   an encode for every card in one pass — concurrent encodes competing with the track playing now,
+//    which is the very thing Radio_prime refuses to risk.
+Radio_head_ahead(radio):
+    let w = radio.c.w
+    if (!w || !this.Ra_home_self) return
+    // THE OWN STOCK SHELF, and it took three wrong seams to get here — worth naming them, because
+    //  each looked more obviously right than this one:
+    //   · Radio_prime / Radio_peek_next — both walk `Mag:Lineup`, which on a live tab has ZERO Card
+    //      children (measured: `lu=1 cards=0`).  peek_next therefore always answers `none`, the dial
+    //       falls through to its direct ladder, and Radio_prime has consequently never primed here.
+    //   · Ra_restock_beat — walks the MIRROR, so every record it sees is somebody else's.
+    //  The own shelf is the only place records we can actually ENCODE from live, which is the whole
+    //   requirement: a head is made from the source file, and we only hold our own.
+    // A PURE READ, and the fourth thing this function got wrong.  `Ra_home_self` is an `oai` — a
+    //  find-or-CREATE — so calling it from the pump minted a fresh empty `MusuSelf,pub:'me'` home
+    //   every pass whenever Radio_pub was not yet answering, and then faithfully reported that the
+    //    shelf it had just created held no records.  A probe that collects: o() only in here.
+    let pub = (this.Radio_pub ? this.Radio_pub(w) : '') || ''
+    if (!pub) return
+    let home = w.o({ MusuSelf: 1, pub: pub })[0]
+    let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
+    let recs = shelf ? this.Ra_recs(shelf) : []
+    let cut = 0
+    let looked = 0
+    for (const rec of recs) {
+        if (looked >= 12) break
+        looked = looked + 1
+        if (!(+(rec.sc.pv_off || 0) > 0)) continue
+        cut = cut + 1
+        if (this.Ra_head_whole(rec)) continue
+        this.Ra_head_ensure(w, rec).catch((er) => {})
+        this.Radio_head_note(radio, { lu: 1, cards: recs.length, looked: looked, local: recs.length, cut: cut, go: 1 })
+        return
+    }
+    this.Radio_head_note(radio, { lu: shelf ? 1 : 0, cards: recs.length, looked: looked, local: recs.length, cut: cut, go: 0 })
+
+// Radio_head_note — the head-ahead census, emitted ONLY WHEN THE ANSWER CHANGES and never on a
+//  timer.  The pump runs at ~400ms against a 1200-mark ring, so even a 5s re-emit would quietly
+//   evict every other electrode over a long sit — a diagnostic that erases the evidence around it
+//    has stopped being one.  Steady state here is silence; a change is the whole signal.
+Radio_head_note(radio, o):
+    let k = o.lu + ':' + o.cards + ':' + o.looked + ':' + o.local + ':' + o.cut + ':' + o.go
+    if (radio.c.head_note === k) return
+    radio.c.head_note = k
+    this.Radio_trace(radio, { ev: 'head-ahead', lu: o.lu, cards: o.cards, looked: o.looked, local: o.local, cut: o.cut, go: o.go })
+
+Radio_hbase(radio, rec):
+    if (!radio.c.tuned) return 0
+    if (!this.Ra_head_whole) return 0
+    if (!this.Ra_head_whole(rec)) return 0
+    return +(rec.sc.pv_off || 0)
 
 Radio_dec_open(nch):
     if (typeof AudioDecoder === 'undefined') return null

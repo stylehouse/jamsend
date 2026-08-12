@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '3b84725f655a8708~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'e8004236a1bb65ff~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -512,6 +512,7 @@ Swarm_dial_piers(subject, sup) {
     let sealed = 0
     let half = 0
     let live = 0
+    let unsure = 0
     let names = []
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!p.sc.pub) continue
@@ -523,11 +524,22 @@ Swarm_dial_piers(subject, sup) {
         let theirs_ok = has(them)
         if (mine_ok && theirs_ok) sealed = sealed + 1
         if (mine_ok !== theirs_ok) half = half + 1
-        // "online" here means ONLINE, not "granted" — the relay's answer subtracts from the grant
-        //  check (Presence.g).  Deliberately gating only the LIVE tally: sealed|half are facts about
-        //   the friendship and must not move because somebody closed their laptop.
-        let here = !this.Presence_offline || !this.Presence_offline(them)
-        if (here && this.Swarm_pier_live && this.Swarm_pier_live(p, 'Music')) { live = live + 1; names.push(p.sc.friendly ? String(p.sc.friendly) : them.slice(0, 8)) }
+        // "online" here means ONLINE, not "granted" — and until 2026-08-12 this line said the
+        //  opposite of what it claimed.  `Swarm_pier_live` is a GRANT check (a %Grant present, no
+        //   %NotGrant over it) despite the name, so it was the only POSITIVE evidence here; the
+        //    presence term could merely SUBTRACT, and only on a positive "they are absent".
+        //     Presence is three-valued on purpose, so `null` (nobody asked / the answer went stale /
+        //      presence never armed on this machine) sailed through and every granted pier read as
+        //       online.  The owner's two long-closed incognito tabs sat in this roster as friends
+        //        who were here, while the offer path on the SAME tab had them as `heard never`.
+        //  So: LIVE needs a positive `=== true`, and unknown is now COUNTED AND SAID rather than
+        //   folded into either side — "1 online · 2 unknown" is the honest sentence, and the one
+        //    that tells you to go look at why nobody asked.  sealed|half stay facts about the
+        //     friendship and still must not move because somebody closed their laptop.
+        if (!(this.Swarm_pier_live && this.Swarm_pier_live(p, 'Music'))) continue
+        let seen = this.Presence_here ? this.Presence_here(them) : null
+        if (seen === true) { live = live + 1; names.push(p.sc.friendly ? String(p.sc.friendly) : them.slice(0, 8)) }
+        if (seen == null) unsure = unsure + 1
     }
     if (!sealed && !half) return { state: 'no', reading: 'nobody' }
     let parts = []
@@ -535,10 +547,25 @@ Swarm_dial_piers(subject, sup) {
     if (half) parts.push(half + ' sealing')
     if (live) parts.push(live + ' online (' + names.join(' + ') + ')')
     if (!live) parts.push('none online')
+    // WHY THE UNKNOWNS GET A REASON.  `Presence_note` has existed since presence landed and was
+    //  called by nothing but its own spec — it is the one line that separates "the relay says
+    //   nobody is there" from "nobody ever asked", which is exactly the question an unknown raises.
+    //    Unwired, the distinction was unobservable on a live tab; that is how this bug survived.
+    if (unsure) parts.push(unsure + ' unknown (' + this.Swarm_presence_note() + ')')
     let reading = parts.join(' · ')
     if (half && !sealed) return { state: 'part', reading: reading }
     if (!live) return { state: 'part', reading: reading }
     return { state: 'yes', reading: reading }
+
+},
+// Swarm_presence_note — Presence_note against the station world the presence family already uses,
+//  with a plain answer when Presence is not on this build at all.  A helper because the dial must
+//   stay a pure read and must never care where that world lives.
+Swarm_presence_note() {
+    let w = this.top_House().c.presence_w
+    if (!w) return 'presence never armed'
+    if (!this.Presence_note) return 'no presence'
+    return this.Presence_note(w)
 
 },
 // Swarm_probe_station — a pure read of the standup's own latch.  Reports the STAGE it is stuck at

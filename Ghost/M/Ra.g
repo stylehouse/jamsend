@@ -2098,6 +2098,151 @@ Ra_chunk_mint(rec, seq, buf, preskip):
     ch.sc.cid = sha256_hex(buf)
     ch.bump()
 
+//#region the HEAD run — source segments [0, pv_off), the bytes nobody used to make ────────────────
+// THE PROBLEM, stated once (the owner 2026-08-12: "we don't play the track after a completed track
+//  from the beginning").  Ra_preview_offset cuts every live offer 30–70% into the track and REBASES
+//   the timeline, so `seq 0` is source segment `pv_off`, not the start of the song.  Asking for an
+//    earlier seq cannot help, because there is no earlier seq AND no earlier audio: Orig.g:296 says
+//     it outright — "the head segments [0, pv_off) are never encoded by anyone".  Both producers only
+//      ever run FORWARD from the preview window (Ra_transcode_ensure parks next:P, Ra_native_
+//       continuation seeks from (pv_off+P)).  So a continuation opening at seq 0 opens mid-song, and
+//        always has.
+//
+// WHY A SEPARATE MAINKEY RATHER THAN A REBASE.  The tidy-looking fix is to make seq source-absolute
+//  (seq 0 == source 0 everywhere).  It is the wrong trade here: it re-stocks every card on every
+//   shelf, desynchronises every mirror mid-flight (a peer asking (id, seq) would get different audio
+//    for the same pair — the exact hazard Ra_preview_offset's header exists to prevent), and moves
+//     nine sites in the pipeline that makes sound.  The head is ALSO not the offer: it is a second
+//      thing about the same record, so by this codebase's own rule it wears its OWN mainkey and does
+//       not impersonate %Preview.  Additive: a %Record with no %Prehead behaves exactly as it did.
+//
+// AND NOT `seq`.  Ra_chunk_map walks `rec.o({ seq: 1 })` — MAINKEY-BLIND, by design, so %Preview and
+//  %Stream share one seq space.  A head run keyed `seq` would land in that same map and silently
+//   overwrite preview chunks 0..pv_off-1 with different audio.  It rides `hseq` for that reason
+//    alone, and the separate key is what keeps the two runs addressable side by side.
+//
+// ITS OWN ENCODE, ITS OWN PRESKIP.  The head is a third continuous encode (preview and continuation
+//  are the other two), so chunk hseq 0 carries this run's head+preskip exactly as seq 0 carries the
+//   preview's.  The seam into the offer is convergence-dirty for about a packet, which is what the
+//    preview→continuation seam already is and is documented as honest there.
+
+// Ra_head_map / Ra_head_have — the head run's chunks, byte-materialising and presence-only, the same
+//  split (and the same reason) as Ra_chunk_map / Ra_chunk_have: the "have I got it yet" callers must
+//   not memcpy the run to answer a question about presence.
+Ra_head_map(rec):
+    let map = []
+    for (const ch of rec.o({ hseq: 1 })) {
+        let b = this.Repli_chunk_bytes(ch)
+        if (b != null) map[+ch.sc.hseq] = (b instanceof Uint8Array) ? b : new Uint8Array(b)
+    }
+    return map
+
+Ra_head_have(rec):
+    let map = []
+    for (const ch of rec.o({ hseq: 1 })) map[+ch.sc.hseq] = 1
+    return map
+
+// Ra_head_whole — is the ENTIRE head held?  A partial head is useless to the caller: opening at
+//  hseq 0 and starving at hseq 3 is a hole in the middle of the song's first minute, which is worse
+//   than the mid-song open it was meant to cure.  So this is all-or-nothing on purpose, and the
+//    radio falls back to the offer when it says no.
+Ra_head_whole(rec):
+    let off = +(rec.sc.pv_off || 0)
+    if (!(off > 0)) return 0
+    let have = this.Ra_head_have(rec)
+    let s = 0
+    while (s < off) {
+        if (have[s] == null) return 0
+        s = s + 1
+    }
+    return 1
+
+// Ra_head_ensure — MAKE the head run, once, for a record that has a cut point.  Returns 1 when the
+//  head is whole (already, or by the end of this call), 0 otherwise — never throws, because every
+//   caller is a pacing decision and a head that cannot be made must degrade to today's behaviour
+//    rather than take the music down.
+//  Detached-kick shaped like Ra_transcode_ensure's: no PCM yet ⇒ ask for it and answer 0 now.  It
+//   shares the SAME backoff ladder for the same reason that one gives — a source that can never
+//    encode must cost one attempt a minute, not one per beat.
+async Ra_head_ensure(w, rec):
+    let off = +(rec.sc.pv_off || 0)
+    if (!(off > 0)) return 0
+    if (this.Ra_head_whole(rec)) return 1
+    if (rec.c.head_making) return 0
+    let SEGS = this.Ra_seg_secs()
+    let SEG = SEGS * 48000
+    let bufs = null
+    // the run's own preskip, carried out of whichever producer made it and stamped on hseq 0 below.
+    let pre = 312
+    let nat = this.Ra_native()
+    if (nat) {
+        let card = await this.Ra_card(w, rec)
+        if (!card || !card.path) return 0
+        rec.c.head_making = 1
+        // ONE pass over [0, pv_off) — the same shape and the same reason as Ra_native_continuation:
+        //  a process per chunk would be an encoder per chunk, hence a convergence ramp every 2s.
+        //   The surplus grid step is that function's trick too, for ffmpeg's padded final frame.
+        let enc = await nat.encode(card.base, card.path, 0, (off * SEGS) + SEGS, +(card.gain || 0), +(rec.sc.nch || card.nch || 2), +(rec.sc.br || this.Ra_bitrate())).catch(er => null)
+        rec.c.head_making = 0
+        if (!enc || !enc.packets || !enc.packets.length) { this.Ra_pcm_backoff(rec); return 0 }
+        if (+(enc.preskip || 0) > 0) pre = +enc.preskip
+        bufs = this.Ra_chunk_cut({ packets: enc.packets, acc: [], accs: 0 }, 1)
+    } else {
+        if (!rec.c.pcm || !rec.c.pcm[0]) {
+            this.Radio_trace(null, { ev: 'head-wait-pcm', id: String(rec.sc.id || '').slice(0, 8), off: off, pending: rec.c.pcm_pending ? 1 : 0, backoff: (rec.c.pcm_retry_at > Date.now()) ? 1 : 0 })
+            // the same detached kick Ra_transcode_ensure uses — never awaited under the beat.
+            if (!rec.c.pcm_pending && !(rec.c.pcm_retry_at > Date.now())) {
+                rec.c.pcm_pending = 1
+                this.Ra_source_pcm(w, rec).then((p) => { rec.c.pcm_pending = 0; if (p) { rec.c.pcm_tries = 0; rec.c.pcm_retry_at = 0 } if (!p) this.Ra_pcm_backoff(rec) }).catch((er) => { rec.c.pcm_pending = 0; this.Ra_pcm_backoff(rec) })
+            }
+            return 0
+        }
+        rec.c.pcm_ts = Date.now()
+        let st = this.Ra_encode_open(+(rec.sc.nch || 1), +(rec.sc.br || this.Ra_bitrate()))
+        if (!st) return 0
+        rec.c.head_making = 1
+        let end = Math.min(rec.c.pcm[0].length, off * SEG)
+        // ONE SEGMENT AT A TIME, as Ra_encode_feed's own header asks ("callers feed ~2s at a time —
+        //  gentle AudioData sizes").  A single AudioData spanning the whole head is tens of seconds
+        //   of interleaved Float32 in one allocation.
+        let at = 0
+        while (at < end) {
+            let to = Math.min(end, at + SEG)
+            this.Ra_encode_feed(st, rec.c.pcm, at, to)
+            at = to
+        }
+        // DRAIN, THEN close.  Ra_encode_close only closes the encoder — the packets come out of
+        //  Ra_encode_drain's `flush()`.  Closing without draining left st.packets EMPTY, so the cut
+        //   returned nothing and the head reported `head-empty` forever while the PCM was right there.
+        await this.Ra_encode_drain(st)
+        this.Ra_encode_close(st)
+        rec.c.head_making = 0
+        // Ra_encode_open learns the real preskip off the decoder config on the first output packet.
+        if (+(st.preskip || 0) > 0) pre = +st.preskip
+        bufs = this.Ra_chunk_cut(st, 1)
+    }
+    if (!bufs || !bufs.length) { this.Radio_trace(null, { ev: 'head-empty', id: String(rec.sc.id || '').slice(0, 8), off: off }); return 0 }
+    if (bufs.length > off) bufs = bufs.slice(0, off)
+    this.Radio_trace(null, { ev: 'head-made', id: String(rec.sc.id || '').slice(0, 8), off: off, chunks: bufs.length, nat: nat ? 1 : 0 })
+    let s = 0
+    while (s < bufs.length) {
+        let ch = rec.oai({ Prehead: 1, hseq: '' + s })
+        ch.c.up = rec
+        // hseq 0 opens THIS encode, so it carries the run's head+preskip — the same stamp seq 0
+        //  carries for the preview run.
+        if (s === 0) {
+            ch.sc.head = 1
+            ch.sc.preskip = pre
+        }
+        ch.sc.buf = (bufs[s] instanceof Uint8Array) ? bufs[s] : new Uint8Array(bufs[s])
+        ch.sc.cid = sha256_hex(ch.sc.buf)
+        ch.bump()
+        s = s + 1
+    }
+    rec.bump()
+    return this.Ra_head_whole(rec)
+//#endregion
+
 // Ra_transcode_ensure — stand the demand-driven stream encode for a Record (rec.c.ra), or null:
 //  no continuation (total <= preview), no card, or NO SOURCE ⇒ no stream.  Opens the SECOND encode
 //   (its own head, its own preskip) at the boundary sample.
@@ -2898,6 +3043,7 @@ async Ra_restock_beat(w, mirror, budget):
     let warm = 0
     let want = 0
     let considered = 0
+    let heads_made = 0
     let k = 0
     while (k < recs.length && considered < K) {
         let idx = (at + k) % recs.length
@@ -2967,6 +3113,39 @@ async Ra_restock_beat(w, mirror, budget):
         // (the per-seq re-check that used to stand here is gone: the page loop above now covers every
         //  seq in [0,P) — the pages tile it exactly, Ra_page_hole clamping the last one to P.)
         if (whole) warm = warm + 1
+        // THE HEAD RUN GETS MADE WHERE THE PREVIEWS GET WARMED, and this is the seam because it is
+        //  the only one that knows which records are about to be DIALLED.  The obvious-looking places
+        //   both fail: Radio_prime and the pump ask Radio_peek_next, which walks the lineup skipping
+        //    already-heard cards and answers `none` outright once a small catalog has been played
+        //     through — measured live, not reasoned.  This loop instead steps a window around the
+        //      playhead across the whole catalog, which is exactly the set whose heads will be wanted.
+        //  LOCAL ONLY.  A mirrored record has no source here to encode from, so its head must be
+        //   asked for over the wire like every other chunk (the %Prehead want) — until that lands,
+        //    `rec.c.from` records simply keep today's mid-song continuation.
+        //  ONE PER BEAT.  Ra_head_ensure single-flights per record, but K of them starting an encode
+        //   in the same beat would be K concurrent encodes competing with the track playing now —
+        //    the same reason Radio_prime refuses to run without slack.
+        if (!heads_made && !rec.c.from && +(rec.sc.pv_off || 0) > 0 && this.Ra_head_ensure && !this.Ra_head_whole(rec)) {
+            heads_made = 1
+            this.Ra_head_ensure(w, rec).catch((er) => {})
+        }
+        // …AND ASK FOR IT when the record is somebody else's.  This is the half that matters live:
+        //  two tabs listening to each other play only wire records, so a head that can only be made
+        //   locally is a feature nobody ever hears.  Same want frame, different `stream` kind; the
+        //    holder encodes on demand and parks us until it is cut.
+        //  Deliberately OUTSIDE the `want < B` preview budget: a head is wanted once per record, ever,
+        //   and must not lose its slot to the preview pages that are re-asked every ladder step.
+        if (rec.c.from && +(rec.sc.pv_off || 0) > 0 && rec.c.rx && w.c.repli_mirror_pier && this.Ra_head_whole && !this.Ra_head_whole(rec)) {
+            let hoff = 0
+            let hhave = this.Ra_head_have(rec)
+            while (hoff < +(rec.sc.pv_off || 0) && hhave[hoff] != null) hoff = hoff + PAGE
+            let hkey = rec.sc.id + ':h' + hoff
+            let hasked = w.c.ra_want_ts[hkey] || 0
+            if (nowms - hasked >= 4000) {
+                w.c.ra_want_ts[hkey] = nowms
+                await this.Repli_want_next(w, rec.c.rx, w.c.repli_mirror_pier, rec.c.from, rec.sc.id, 'opus_head', hoff)
+            }
+        }
         this.Ra_stage(w, rec)
     }
     return { warm: warm, want: want, of: considered }
