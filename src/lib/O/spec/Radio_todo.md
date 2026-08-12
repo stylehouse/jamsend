@@ -19,6 +19,112 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ## 0. Latest handover — fold into the sections below as it's absorbed
 
+### 2026-08-12 (later) — THE HEAD LANDED AND IT WORKS, AND IT IS A HACK. THE v2 SHAPE IS NAMED.
+
+**It works.** The owner, on the live tab: *"oh yeah it is working now!"* A track that plays out is
+ followed by one that opens at 0:00 — over the wire, from a friend's shelf. What that took, in the
+  order it has to happen: a producer (`Ra_head_ensure`), a playback concatenation (`Radio_map` +
+   `Radio_hbase`), a wire kind (`opus_head` / `Repli_serve_head`), and a duration fix
+    (`radio.sc.of` / `sc.skip` branching on `hbase`) — that last one is what the owner saw as *"it
+     stalls out at the end of the track"*: the bar was measured against the OFFER while the head made
+      us play the whole track, so it pegged at 100% with `pv_off × 2s` still to run.
+
+**And it is a hack. Naming it, because it will not name itself later.** The tells, in the order they
+ will bite:
+- **`hseq` exists only to dodge a collision.** Its entire reason for being is that the chunk walks
+   below are mainkey-BLIND (`rec.o({ seq: 1 })`), so a head keyed `seq` would silently overwrite
+    preview chunks `0…pv_off-1` with different audio. A key named after another key is not a name.
+- **One shape under three mainkeys.** `%Preview`, `%Stream`, `%Prehead` all carry exactly
+   `buf`/`cid`/`head`/`preskip` and differ only in which source segments they cover. CLAUDE.md's rule
+    catches the inverse ("two DIFFERENT shapes under one mainkey"); this is its mirror image and it is
+     just as much a modelling failure.
+- **`hbase` is a rebase applied at PLAY time, and it propagates.** `Radio_map` needed it, then
+   `Radio_open`, then `Radio_prime`'s `ready`, then `sc.of` and `sc.skip`. Four sites in two days.
+    A hack is a thing you keep having to remember; this one has asked four times.
+- **`opus_head` needed its own no-park rule** (`Repli_serve_head` deliberately does not park), because
+   `Repli_serve_parked`'s retry gate is written against the OFFER's seq space and unparks instantly on
+    an index that is always ready. A special case inside a special case.
+- **NOT my invention, and this is the honest part:** `pv_off` rebasing the record so `seq 0` ≢ the
+   start of the track is pre-existing, it is the real debt, and `%Prehead` is a faithful patch on top
+    of it rather than a fresh kludge. See the 2026-08-12 entry below for how that came to be.
+
+#### NEGATIVE RESULT — the "%Stream ORDER" is NOT needed. Do not build it.
+
+Planned, then measured, then dropped. Worth the space because it looked obviously right: the prototype
+ ordered its stream explicitly (`w.c.ostream` → `%streamable,re,enid`), delivery here is a passive
+  restock fan-out, and the owner named the gap — *"before the end of the first track we need to order
+   the %Stream, right?"* So the plan was an explicit order at `Radio_open` of the CURRENT track, a
+    full track of lead time. **The live tab says the passive path already wins.**
+
+Measured on player `96d0cf88` (`socklog on` → `dump` → `wormhole/_trace/`, plus the resident snap):
+- **Every record is head-whole. 16 of 16, exact.** Per-record `pv_off` against `%Prehead` count:
+   `16/16, 14/14, 12/12, 10/10, 14/14, 16/16, 12/12, 14/14, 14/14, 12/12, 14/14, 14/14, 16/16,
+    16/16, 10/10, 12/12` — and it spans BOTH shelves, 8 `MusuSelf` + 8 `MusuThem`. The fan-out
+     converges completely, not partially.
+- **Production is ~1–3s, not minutes.** The trace's own sequence per record is
+   `head-wait-pcm pending=0` (kicks the PCM load) → `pending=1` → `head-made chunks=N`. Four heads
+    made in the seven seconds `1786496702→708`. `head-wait-pcm` is the dominant mark (20) and it is
+     NOT a fault — it is that handshake, one line per poll while the source PCM loads.
+- **So the ask-to-head latency is ~4–6s** (`head-serve-wait miss=2` → the sink's 4s ladder re-asks →
+   served), against a ~40s track. Any ask placed anywhere in the previous track lands in time. An
+    order buys nothing an already-converged catalog needs.
+
+**What the `hbase=0` opens actually were: the BOOT WINDOW, and nothing else.** A tab that has just
+ come up has not fan-outed yet, so its first continuation or two open at the cut. That is a
+  transient, it self-heals within a track or two, and `Radio_hbase`'s all-or-nothing rule already
+   makes the fallback honest (open at the cut rather than starve three chunks into the first verse).
+ **If it is ever worth improving, the cheap lever is ordering, not architecture:** walk the AIMED
+  friend's records first in `Ra_restock_beat`'s rotation, since the dial's pool is aim-narrowed. Tuning,
+   not a mechanism. Measure the boot window before spending anything on it.
+ The pool is also small — this tab: 1 `%MusuThem` home, `records=8`. A rotation covers 8 records fast.
+  Re-measure before assuming this holds for a 500-record crate; that is the one thing that would
+   revive the order.
+
+#### v2 — MULTIPLE SEQ SPACES IN ONE `%Record`, DIFFERENTIATED BY MAINKEY
+
+The owner's shape, verbatim: *"we need multiple seq in the same C/\*, differentiating \* by mainkey
+ into streams of Preview|Stream|Headstream."* That is the elegant version and it supersedes the
+  "re-base everything to SOURCE coordinates" answer written in the entry below — which is a bigger,
+   more protocol-visible change for the same benefit.
+
+```
+%Record,id                     sc: id path seconds seg_secs nch br pv_off total …
+  %Preview,seq:0…P-1           the mid-song teaser — its OWN space
+  %Stream,seq:0…              the continuation past the teaser — its OWN space
+  %Headstream,seq:0…pv_off-1   the song's opening — its OWN space
+```
+
+Three runs, three independent `seq` spaces, one record. A run's mainkey says WHICH stream and `seq`
+ says where in it — so nothing is ever named after what it is trying not to collide with, and adding a
+  fourth kind of run later costs a mainkey and nothing else.
+
+**What that actually changes — the whole inventory, so the next fork does not have to re-derive it.**
+1. **The mainkey-blind walks become mainkey-AWARE.** Every one of these takes a run kind:
+    `Ra_chunk_map` (Ra.g:2625), `Ra_chunk_have` (Ra.g:2642), `Ra_chunk_heads` (Ra.g:2706),
+     `Radio_map` (Radio.g:3190), `Repli_chunk_at` (Repli.g:198), plus the incidental counters
+      `Jam.g:93`, `Radio.g:1391`, `Swarm.g:2549`, `Heistation.g:2632`.
+2. **A `run` argument replaces `hbase` arithmetic.** `Radio_map` stops concatenating with an offset
+    and instead returns an ORDERED CONCATENATION OF RUNS — `[Headstream, Preview, Stream]` for a
+     continuation, `[Preview, Stream]` for a tune-in. The playback timeline is then a property of the
+      run list, not a magic number threaded through five call sites.
+3. **`sc.of` / `sc.skip` fall out for free** — they become "sum the run lengths we are actually
+    playing", with no branch. The bug the owner felt cannot recur in that shape.
+4. **The wire kind collapses.** `repli_want` already carries `{id, stream, from_idx}`; `stream`
+    becomes the RUN MAINKEY instead of the ad-hoc `'opus'` / `'opus_head'` pair, and
+     `Repli_serve_head` merges back into `Repli_serve_chunks`. The parking gate is then written
+      against the run being served, which is what removes the no-park special case.
+5. **`%Stream` re-numbers.** Today `%Stream,seq` continues the preview's space (`seq P…total-1`); in
+    v2 it starts at its own 0. This is the only on-disk change and it is a one-time re-index of every
+     mirror. **Price it before doing it:** Book scores lean on standing radiostock
+      ([[books-lean-on-standing-radiostock]]) — wiping it drops them ~5×, so re-baseline after.
+6. **Migration is readable, not clever:** the `hseq` key is `%Prehead`'s only distinguishing mark, so
+    `%Prehead,hseq:N` → `%Headstream,seq:N` is a rename, and `%Stream,seq:N` → `seq:N-P` is a
+     subtraction. Both are one pass over a shelf. Do them in ONE diff so a red Book has one suspect
+      ([[controlled-revert-to-attribute-a-red-book]]).
+
+**Do this as its own diff, after the current one is committed.** It touches nine walk sites and every
+ mirror; landing it on top of an uncommitted feature makes any red un-attributable.
+
 ### 2026-08-12 — THE HEAD OF A TRACK DOES NOT EXIST, SO "FROM THE START" CANNOT BE ASKED FOR
 
 *The owner, after checking the live tab: "the next track still plays from the middle somewhere the

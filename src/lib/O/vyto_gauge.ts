@@ -98,6 +98,6 @@ export function gauge_pose(c: GaugeBag & Record<string, any>, pose: string): boo
     // …and the ordinary mold's held seat, for exactly the same reason (2026-08-12).  It is a dead band
     //  rather than an incumbency, but a band still HOLDS, and holding the seat a demoted face used to
     //   need is the same defect one path over.
-    delete c.mold_hold
+    delete c.mold_hold; delete c.mold_back; delete c.mold_at
     return true
 }

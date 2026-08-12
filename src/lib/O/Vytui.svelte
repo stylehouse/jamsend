@@ -1188,6 +1188,7 @@
     const SEAT_FLOOR = 2      // …but never a tighter band than this, so a tiny seat can still settle
     const SEAT_HOLD_MS = 900  // having just moved, hold — the owner's throttle
     const SEAT_LEAP = 0.25    // …unless the room changed by a quarter, which is a different room
+    const MOLD_CYCLE_MS = 1200 // "the seat we just left" only counts as a 2-cycle if we left it JUST now
     // every side within the band, and the band is a fraction of the seat's own short side.
     function seat_still(a: { x: number, y: number, w: number, h: number },
                         b: { x: number, y: number, w: number, h: number }): boolean {
@@ -2299,8 +2300,9 @@
                             let z = fr.w / col
                             if (sh > 0) z = Math.min(z, fr.h / sh)
                             fit = +Math.max(STRETCH_ZOOM_MIN, Math.min(BELLY_FIT_MAX, z)).toFixed(2)
-                            ;(row.c as any).stretch_rect = fr        // what the measure pass searches against
                             mx = fr.x - mw / 2; my = fr.y - mh / 2
+                            // `stretch_rect` is NOT written here — see below.  It must be the mold this
+                            //  face is actually laid out in, and the dead band may still overrule `fr`.
                         }
                     }
                     // ── FURNITURE READS THE VISIBLE BODY ───────────────────────────────────────────
@@ -2328,14 +2330,51 @@
                     //  Focus only.  Under foam the molds RIDE the springs, and holding one still there
                     //   would peel it off the cell it belongs to — the motion is the point in that
                     //    regime, and it is not the point in this one (*"assigned, still"*).
+                    //  ⚠ AND A DEAD BAND CANNOT STOP A 2-CYCLE (2026-08-12).  If the value alternates
+                    //   between two seats FURTHER apart than the band, every round is "not still", the
+                    //    band never fires and the mold flips at paint rate — the owner: *"jitterbugging
+                    //     between two positions, a measurement+position feedback loop"*.  Nor can a
+                    //      throttle fix it: it bounds how OFTEN the flip happens, so a fast buzz becomes
+                    //       a slow one, forever, because both states are self-consistent (the `--lay`
+                    //        note above says exactly this about the height involution).  What ends a
+                    //         2-cycle is REFUSING TO RETURN: remember one seat back, and if the "new"
+                    //          seat is the one we just left, stay put.  `stretch_search` has carried the
+                    //           same guard for its column since the day it was written; this is that
+                    //            idiom, one quantity over.
                     if (focusR && face) {
                         const st = row.c as any
-                        const prev = st.mold_hold as { x: number, y: number, w: number, h: number, fit: number } | undefined
+                        type Held = { x: number, y: number, w: number, h: number, fit: number }
+                        const prev = st.mold_hold as Held | undefined
+                        const back = st.mold_back as Held | undefined
                         const now = { x: mx, y: my, w: mw, h: mh, fit }
-                        if (prev && !settling(row) && seat_still(prev, now)
-                            && Math.abs(prev.fit - fit) <= Math.max(0.01, prev.fit * SEAT_STILL)) {
+                        const same = (a: Held | undefined, b: Held) => !!a && seat_still(a, b)
+                            && Math.abs(a.fit - b.fit) <= Math.max(0.01, a.fit * SEAT_STILL)
+                        //  …AND THE CYCLE MEMORY IS ON A CLOCK (the owner, on the first cut of it:
+                        //   *"it wasn't properly positioned for a while, and was harder to get to
+                        //    reposition than usual"*).  A 2-cycle is a FAST alternation — it flips every
+                        //     paint, so both legs land inside `MOLD_CYCLE_MS`.  Without the clock the
+                        //      remembered seat never expires, so a seat left minutes ago goes on vetoing
+                        //       a perfectly legitimate move back to it, and the face is pinned somewhere
+                        //        wrong with no way to talk it out.  A guard against oscillation must not
+                        //         become a guard against MOVING; that is the settling-window lesson
+                        //          arriving a third time.
+                        const cycling = same(back, now) && Date.now() - +(st.mold_at ?? 0) < MOLD_CYCLE_MS
+                        if (prev && !settling(row) && (same(prev, now) || cycling)) {
                             mx = prev.x; my = prev.y; mw = prev.w; mh = prev.h; fit = prev.fit
-                        } else st.mold_hold = now
+                        } else { st.mold_back = prev; st.mold_hold = now; st.mold_at = Date.now() }
+                    }
+                    // ── AND `stretch_rect` IS THE MOLD ASSIGNED, NEVER THE ONE SOLVED FOR ──────────
+                    //  This used to be written up in the stretch block off `fr`, before the band above
+                    //   had had its say — so whenever the band held the mold at its standing size,
+                    //    `--lay` (= col / stretch_rect.w) was struck against a DIFFERENT rectangle than
+                    //     the face was laid out in, and the column actually rendered came to
+                    //      `col × mw_held / fr.w`: breathing with the body again, which is precisely the
+                    //       coupling `--lay` exists to remove.  Measure at one column, solve at another,
+                    //        and the involution is back — a dead band on the mold reintroduced it
+                    //         (2026-08-11 → 2026-08-12).  Write what was ASSIGNED and the two agree
+                    //          again whether the band fired or not.
+                    if (focusR && stretchPose && mw > 8 && mh > 8) {
+                        (row.c as any).stretch_rect = { x: mx + mw / 2, y: my + mh / 2, w: mw, h: mh }
                     }
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident, spike: sp,
                                  x: ax, y: ay, r: s.r, kind: 'poly', d: path_round(sp ? sp.poly : poly), departing: false, lift,

@@ -149,9 +149,16 @@ describe('the pose release drops the seat too', () => {
         c.fillrect = { x: 100, y: 100, w: 200, h: 150 }
         c.fillrect_at = 1_700_000_000_000
         c.mold_hold = { x: 10, y: 20, w: 300, h: 200, fit: 2.5 }
+        c.mold_back = { x: 11, y: 21, w: 260, h: 210, fit: 2.9 }
+        c.mold_at = 1_700_000_000_000
         expect(gauge_pose(c, 'stretched')).toBe(true)
         expect(c.fillrect_at).toBeUndefined()
         expect(c.mold_hold).toBeUndefined()
+        expect(c.mold_at).toBeUndefined()
+        // the CYCLE MEMORY goes with it.  A remembered "seat we just left" from the previous pose is a
+        //  seat this face was never in — keeping it would make the 2-cycle guard refuse a legitimate
+        //   move to a rectangle it has never actually occupied.
+        expect(c.mold_back).toBeUndefined()
     })
 
     test('…and an unchanged pose keeps them, so a held seat survives an ordinary paint', () => {

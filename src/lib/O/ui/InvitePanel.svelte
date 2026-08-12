@@ -24,7 +24,20 @@
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
     import { boot_param } from "$lib/boot"
 
-    let { H, inglass = false }: { H: any, inglass?: boolean } = $props()
+    //  ARRIVAL (2026-08-12) — the THIRD dress, and a display mode for the same reason `inglass` is one
+    //   (the owner asked for "a new component just for this purpose"; this file's own rule above says
+    //    otherwise, and it is the right rule — a second copy of mint→URL→parse→seal→spent is a second
+    //     thing to keep green against Book SwarmInvite).  It is what the Butler mounts while an invite
+    //      is being worked through, and it suppresses everything that is ABOUT YOU rather than about
+    //       the friend on screen: the identity title, the identity chips + `＋ new identity`, the
+    //        `invite a friend` mint, and the friends list.  The owner: *"we shouldn't show them the
+    //         `⨳ dawn-kazoo 5a1ff221 ✎` and `+new identity` and `invite a friend` UI stuff there"*.
+    //  WHY A PROP AND NOT `{#if invite}` — the panel cannot see the difference on its own.  `invite`
+    //   STAYS set after a successful join (only a refusal calls `strip_iz`), so keying off it would
+    //    hide the mint for the rest of the tab's life; and the Butler ALSO opens this door for a
+    //     friendless person with no token at all, where `invite a friend` is the only thing to do.
+    //      The caller knows which of the two it is (`landing_seen`); the panel does not.
+    let { H, inglass = false, arrival = false }: { H: any, inglass?: boolean, arrival?: boolean } = $props()
 
     // PORTAL — the fullscreen QR must escape the cell.  `.ip-overlay` is `position: fixed`, and a
     //  fixed element is positioned against the VIEWPORT only while no ancestor carries a transform;
@@ -560,7 +573,7 @@
         <div class="ip-mint">
             <!-- IN-GLASS the identity line is DoorFace's own title (name · prepub · ✎ · ✨), so this
                  one stands down rather than saying it a second time three pixels away. -->
-            {#if !inglass}
+            {#if !inglass && !arrival}
             <span class="ip-title">
                 ⨳ <b>{self.sc.friendly || self.sc.nick || self.sc.prepub}</b>
                 <span class="ip-pub" title="your address (prepub) — this is who you are on the wire">{String(self.sc.prepub ?? '').slice(0, 8)}</span>
@@ -583,7 +596,7 @@
                   tab or offer '+ new identity', leave that under the hood"*) — identity juggling is
                    a tester's move, not a listener's; the ?I= machinery stays, only this dress hides
                     the chips.  The strip-above-the-glass form keeps them. -->
-            {#if !inglass}
+            {#if !inglass && !arrival}
             <span class="ip-row ip-ids">
                 {#each roster.filter(r => !r.active) as r}
                     <button class="ip-idchip" onclick={() => go_identity(r.prepub)}
@@ -603,7 +616,13 @@
             {#if no_fsa}
                 <span class="ip-note ip-warn">⚠ this browser can’t open your music folder — to share your own music, open BigSoundland in Chrome</span>
             {/if}
-            {#if !url}
+            {#if arrival}
+                <!-- ARRIVAL — no mint half at all.  Not "the button is hidden": the whole
+                     mint→show→refresh block is out, because on this screen the person's job is to
+                     finish joining the friend who invited them.  Offering them a QR of their OWN to
+                     hand to someone else, three lines under `⨝ join Lefto`, is a second call to
+                     action competing with the one the screen exists for. -->
+            {:else if !url}
                 <!-- THE MINT IS A CALL TO ACTION, NOT A CHIP (the owner 2026-08-10: *"the Invite…
                      needs to look more like a button"*).  This is the same finding the two-step door
                      already recorded two blocks up — "the single action the whole page exists to
@@ -667,7 +686,7 @@
     {:else}
         <span class="ip-note">⏳ identity…</span>
     {/if}
-    {#if friends.length && !inglass}
+    {#if friends.length && !inglass && !arrival}
         <!-- the sealed friendships — each a %Pier under our page, its Music grant the proof;
              the ♪ count is their last boast (%IveGot), the tally the sum of every counted shelf.
              IN-GLASS this is DoorFace's friends list — which says strictly more (the pulse rung,

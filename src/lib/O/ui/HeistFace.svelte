@@ -8,8 +8,15 @@
     //
     // TWO SEPARATE HIERARCHIES (the human 2026-07-30), never merged, never enclosing the track list they
     //  describe (that would duplicate the folder names the tree below already shows):
-    //   · section    — MINE: an optional, nestable `- <name>` category (the marker is stamped automatically,
-    //      never typed).  Defaults from — and updates — the GLOBAL remembered Heist setting.
+    //   · section    — THEIRS TOO, since 2026-08-07: an optional, nestable `- <name>` category (the marker
+    //      is stamped automatically, never typed), defaulting to THE SOURCE'S OWN leading section run
+    //       (Heist_keep_default_section reads it straight off the path).
+    //      ⚠ this line used to say "defaults from — and updates — the GLOBAL remembered Heist setting",
+    //       and that has been FALSE since 2026-08-07, when the owner ruled *"the section is not definite
+    //        like that though"* and the feed to Heist_defaults_set was removed.  Only `lofi` persists
+    //         globally now (it belongs to YOU — your phone, your disk); a section belongs to the MUSIC,
+    //          so it is per-folder and re-derived every time.  The stale sentence is what makes a reader
+    //           believe the setup "recycles our last sections", which it has not done for five days.
     //   · directories — THEIRS: the shared source-folder prefix across every track in this keep (Fourier
     //      Four/Tagged Truth, say).  Per-disc divergence below that (CD1 vs CD2) stays in the track tree,
     //       never repeated up here.
@@ -177,9 +184,26 @@
         const seed = String(sc.seed || '')
         const at = String(sc.pub || sc.at || '')   // `pub` since 2026-08-05; `at` fallback for a particle minted pre-rename
         const rw = A?.top_House?.()?.c?.radio_w
-        const mir = (rw && at) ? A?.Ra_home_them?.(rw, at) : null
-        const me = rw ? (A?.Radio_pub?.(rw) || 'me') : 'me'
-        const own = rw ? A?.Ra_home_self?.(rw, me) : null
+        // A PROBE THAT COLLECTS — the reason this reads the shelves by hand instead of asking
+        //  `Ra_home_them` / `Ra_home_self`.  BOTH of those are `oai`, find-or-CREATE
+        //   (`w.oai({MusuThem:1,pub})` → `home.oai({stock:1,pub})`), and this is a $derived that
+        //    re-runs on every `H.version` bump.  Two consequences, and the second is the bug:
+        //     · `me` falls back to the literal string `'me'` whenever `Radio_pub` is not answering
+        //        yet — which on a fresh|incognito tab is every early render — so the face MINTED a
+        //         `%MusuSelf,pub:'me'` home and a stock shelf under it, then read zero records off
+        //          the shelf it had just created.  Exactly the fault `Radio_head_ahead` was carrying
+        //           on 2026-08-12; this is the same defect in a second place, and worse here because
+        //            a render path re-runs far more often than a pump.
+        //     · if the keep's `sc.pub` is not EXACTLY the pub the mirror landed under, `Ra_home_them`
+        //        silently mints a fresh empty `%MusuThem,pub:<at>` rather than missing — so `husks`
+        //         comes back empty, `dirsAuto` computes over nothing, and DIRECTORIES renders blank
+        //          while the rest of the setup (which reads `%Pick`, a different source) still looks
+        //           populated.  A missing shelf must read as ABSENT here, never as freshly-empty.
+        //  `o()` only, and `?? null` so an absent home stays absent.  Mirrors Ra_home_shelf's shape.
+        const shelf_of = (home: any, pub: string) => home?.o?.({ stock: 1, pub })?.[0] ?? null
+        const mir = (rw && at) ? shelf_of(rw.o({ MusuThem: 1, pub: at })[0], at) : null
+        const me = rw ? String(A?.Radio_pub?.(rw) || '') : ''
+        const own = (rw && me) ? shelf_of(rw.o({ MusuSelf: 1, pub: me })[0], me) : null
 
         const husks = (mir && A?.Heist_rummage_recs) ? A.Heist_rummage_recs(mir, seed) : []
         const picks = n?.ob?.({ Pick: 1 }) ?? []
@@ -525,10 +549,8 @@
         {#if catWhy}
             <!-- inline, not a title= tooltip, for the same reason lofi's is: a phone has no hover. -->
             <div class="kf-why">
-                A <strong>section</strong> is YOURS — the shelf these tracks land on in your collection.
-                Nest as many levels as you like; it is remembered for your next heist.
-                <strong>directories</strong> below is THEIRS — the folder names the tracks already have,
-                which you can trim but did not choose.
+                A <strong>section</strong> is a directory starting with <code>'0 '</code>, to mark it as such.
+                Defaults to whatever they had. Partitions your collection into genres or something.
                 <button class="kf-why-x" onclick={() => (catWhy = false)} title="close">✕</button>
             </div>
         {/if}

@@ -218,6 +218,46 @@ The owner, naming the arc honestly: *"Vyto had a lot of constraints and study go
     which exists so four %Heists in one foam are tellable apart) is untouched for every other glass;
 - `DoorFace`/`RadioFace` icon renders (pose-gated inside the faces themselves).
 
+### ⇢ THE FLITTING, ROUND THREE — the dead band re-coupled the column (2026-08-12, LANDED, unwitnessed)
+
+The owner: *"the resize|reposition of the Heist component can still be a bit buzzy"* … *"can we simply
+ throttle() it?"* … *"like jitterbugging between two positions, a measurement+position feedback loop"*.
+
+**The last sentence is the diagnosis, and it names a 2-cycle.** The Heist is the STRETCHED path, the one
+ round two never witnessed — and the cause turned out to be round two's own fix.
+
+`--lay` exists to break the height involution documented at `Vytui.svelte:1240`: lay out at `col`
+ whatever the zoom does, so the face is measured at the column the search actually chose. It is struck
+  as `col / stretch_rect.w`. Round two then put a dead band on the mold (`mold_hold`) — but
+   `stretch_rect` was still being written from `fr`, the freshly-SOLVED seat, up in the stretch block.
+    So whenever the band held the mold at its standing size, the two disagreed and the column actually
+     rendered came to **`col × mw_held / fr.w`** — breathing with the body again, which is exactly the
+      coupling `--lay` was written to remove. Measure at one column, solve at another, and the
+       involution is back. **A hold placed downstream of a decoupling re-couples it.**
+
+Landed:
+- **`stretch_rect` is now the mold ASSIGNED, not the one solved for** — written after the dead band has
+   had its say, from the final `mx,my,mw,mh`. The two agree again whether the band fired or not. This
+    is the fix; the rest is belt.
+- **`mold_hold` gained cycle memory** (`mold_back`, released with the pose). A dead band cannot stop a
+   2-cycle whose amplitude exceeds the band — every round reads "not still", so the band never fires.
+    Remember one seat back and refuse to return to it. `stretch_search` has carried this same guard for
+     its column since the day it was written; this is that idiom one quantity over.
+
+**On the owner's `throttle()`, asked twice and answered honestly: a throttle cannot fix a 2-cycle.** It
+ bounds how OFTEN the flip happens, so a fast buzz becomes a slow buzz — forever, because *both states
+  are self-consistent* (the `--lay` note says precisely this). The 900ms cooldown from round two is
+   real and stays; it is the right medicine for a continuous quantity drifting under a stirring body,
+    and the wrong medicine for an alternation. Three jitters now, three different cures: **argmax →
+     incumbency; continuous drift → dead band + throttle; 2-cycle → refuse to return.** Reaching for
+      the wrong one has cost a round each time.
+
+**Not witnessed by me.** 42 unit tests green, the release gate mutation-tested red, svelte-check clean
+ on all three files, and the belly path re-captured byte-identical after the edit (`469.8×444 fit
+  3.302`) — but a stretched belly needs a keep actually open. The tell to look for in
+   `runner_shot --svg` on a Heist mold: `box: col Npx` should equal `stretch_col`, and `air` should
+    close toward 0%×0% rather than sitting open.
+
 ### ⇢ THE FLITTING, ROUND TWO — the SIZE was still breathing (2026-08-12, LANDED)
 
 The owner, on the round below: *"oop, it's still doing it. the rapid jitterbugging of size or

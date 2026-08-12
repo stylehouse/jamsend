@@ -1684,6 +1684,20 @@ Sounditron_supervise(w):
     //   had therefore never been seen to fire; a sensor nothing consults gates nothing.
     this.Supervisor_watch(sup, 'sound.glass',  'the glass is drawing everything it was handed'  ,       'standing',  'Sounditron_probe_glass',  w, sound)
     this.Supervisor_watch(sup, 'sound.audible','sound is actually coming out'                       ,  'standing',  'Sounditron_probe_sound',  w, sound)
+    // A GRACE ON THE AUDIBLE WATCH (2026-08-12, the owner: *"we're still tripping the `FAIL sound is
+    //  coming out` moment on normal runs. that should wait longer"*).  Every `wrong` this probe can
+    //   return has a NORMAL transient form: `starved` between tracks, `playing but silent` in the second
+    //    before the first decoded frames reach the analyser, `deaf` until the tab has been tapped once.
+    //     Declaring a fault on the first bad reading turns all three into a red row during the seconds
+    //      the machine is working — the HUD failure this roster exists to avoid.
+    //  20s is chosen against the transients, not plucked: a track transition settles in ~2–5s (measured
+    //   on the head work — ask-to-audio is ~4–6s at worst), so 20s clears them several times over while
+    //    still naming a genuinely dead tab well inside a listener's patience.  A gesture-owed `deaf` does
+    //     eventually go loud, which is right — the tap-for-sound beg is a real thing to say.
+    //  RE-ARMS, because Supervisor_patient only sets a deadline when there is none and Supervisor_patience
+    //   now clears it on `ok` AND `moot`.  This function re-runs every beat, so each return to silence
+    //    hands the next bad patch a fresh 20s rather than one grace for the life of the tab.
+    this.Supervisor_patient(sup, 'sound.audible', 20, 'if it stays quiet — tap the page once, browsers hold sound until you do')
     // THE ARRIVAL — the finish line, and the only watch on the roster that a face is allowed to wait
     //  for (Supervisor_arrival declares it; Supervisor_arrived is what the Butler asks).  Last rung of
     //   the arc on purpose: `sound + 5` sits inside the gap-of-ten the stage list leaves for exactly

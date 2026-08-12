@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'faf1a1420d2140e6~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '15209e810fbdf5bd~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -368,8 +368,19 @@ async Ra_encode_drain(st) {
 
 },
 // Ra_encode_close — done with the encoder (the packets/acc state stays for a final cut).
+//  IDEMPOTENT, BY ASKING RATHER THAN BY THROWING (2026-08-12).  This used to be a bare
+//   `try { st.enc.close() } catch (er) {}`, and the catch was not a belt — it was load-bearing on the
+//    ORDINARY path.  Every seam that sets `ra.done` already closes the encoder, so by the time the
+//     sweep or the lead-list trim reaches a finished transcode the codec is closed and WebCodecs
+//      throws `InvalidStateError: Cannot call 'close' on a closed codec` — once per finished track,
+//       forever, straight past the debugger's "pause on caught exceptions".  The native continuation
+//        path is worse: a `nat` ra has no `st` at all (Ra_native_continuation mints
+//         `{nat:1,bufs,…}`), so the same call threw a TypeError on `undefined.enc` instead.
+//  A codec knows its own state.  Two questions cost nothing and mean the throw never happens; what is
+//   left of the catch reports rather than swallows, because a close that STILL throws is news.
 Ra_encode_close(st) {
-    try { st.enc.close() } catch (er) {}
+    if (!st || !st.enc || st.enc.state === 'closed') return
+    try { st.enc.close() } catch (er) { this.Radio_trace(null, { ev: 'enc-close-threw', why: String((er && er.name) || er).slice(0, 24) }) }
 
 },
 // Ra_chunk_pack — frame a run of raw opus packets as ONE chunk buf: each packet length-prefixed
@@ -2111,6 +2122,22 @@ Ra_pcm_bytes(rec) {
     return p.length * p[0].length * 4
 
 },
+// Ra_pcm_drop — THE one way a record lets go: close whatever encode was riding the bytes, drop both
+//  refs, and MARK it.  Three hand-copies of this existed (sweep-idle, sweep-belt, the lead-list trim),
+//   each re-deriving the megabytes and each wrapping the close in its own redundant try/catch — and
+//    they had already drifted: the trim freed the same ~92MB as the other two and traced NOTHING, so
+//     the one eviction driven by DEMAND rather than by a bound was the one invisible in the ring.
+//  Returns the megabytes released, so a caller keeping a running total says it once.
+Ra_pcm_drop(rec, why) {
+    if (!rec) return 0
+    let mb = Math.round(this.Ra_pcm_bytes(rec) / 1048576)
+    if (rec.c.ra) this.Ra_encode_close(rec.c.ra.st)
+    rec.c.ra = null
+    rec.c.pcm = null
+    this.Radio_trace(null, { ev: 'pcm-free', id: String(rec.sc.id || '').slice(0, 8), mb: mb, why: why })
+    return mb
+
+},
 // the sweep: free the PCM of any registered record that (a) still holds it, (b) has no OPEN encode
 //  running off it, and (c) nothing has asked about for PCM_IDLE.  An open+un-done `ra` is an absolute
 //   veto — Ra_transcode_advance reads rec.c.pcm[0] every call, so freeing under a live encode would
@@ -2133,11 +2160,7 @@ Ra_pcm_sweep() {
         let ra = rec.c.ra
         if (ra && !ra.done) { live.push(rec); held = held + this.Ra_pcm_bytes(rec); continue }
         if (now - (rec.c.pcm_ts || 0) > IDLE) {
-            let mb = Math.round(this.Ra_pcm_bytes(rec) / 1048576)
-            if (ra) { try { this.Ra_encode_close(ra.st) } catch (er) {} }
-            rec.c.ra = null
-            rec.c.pcm = null
-            this.Radio_trace(null, { ev: 'pcm-free', id: String(rec.sc.id || '').slice(0, 8), mb: mb, why: 'idle' })
+            this.Ra_pcm_drop(rec, 'idle')
             continue
         }
         live.push(rec)
@@ -2150,12 +2173,8 @@ Ra_pcm_sweep() {
         let i = 0
         while (held > CAP && i < live.length) {
             let rec = live[i]
-            let mb = Math.round(this.Ra_pcm_bytes(rec) / 1048576)
             held = held - this.Ra_pcm_bytes(rec)
-            if (rec.c.ra) { try { this.Ra_encode_close(rec.c.ra.st) } catch (er) {} }
-            rec.c.ra = null
-            rec.c.pcm = null
-            this.Radio_trace(null, { ev: 'pcm-free', id: String(rec.sc.id || '').slice(0, 8), mb: mb, why: 'cap' })
+            this.Ra_pcm_drop(rec, 'cap')
             live[i] = null
             i = i + 1
         }
@@ -2532,7 +2551,7 @@ async Ra_transcode_advance(w, rec) {
     //     from scratch instead of a caller seeing a TypeError out of the middle of the pump.
     if (!rec.c.pcm || !rec.c.pcm[0]) {
         ra.done = 1
-        try { this.Ra_encode_close(ra.st) } catch (er) {}
+        this.Ra_encode_close(ra.st)
         return 0
     }
     rec.c.pcm_ts = Date.now()
@@ -2705,8 +2724,7 @@ async Ra_transcode_pump(w) {
         //  pcm forever.  Keep the most-recent few (the playing + next); free the rest (encoder + the big pcm).
         while (still.length > 4) {
             let old = still.shift()
-            if (old && old.c.ra) { try { this.Ra_encode_close(old.c.ra.st) } catch (er) {} }
-            if (old) { old.c.ra = null; old.c.pcm = null }
+            if (old) this.Ra_pcm_drop(old, 'cold')
         }
         w.c.ra_hot = still
         for (const pier of piers) await this.Repli_serve_parked(w, pier)

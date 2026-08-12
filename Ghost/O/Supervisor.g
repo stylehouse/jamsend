@@ -507,9 +507,17 @@ Supervisor_given_up(w, key):
 //  snap and the face stay current; the rulings above never wait for it.
 //  An expectation that comes TRUE disarms itself — deadline cleared, grade gone — so the row falls
 //   quiet and a later re-arm starts from nothing rather than from a stale clock.
+//  MOOT DISARMS TOO, and leaving it out made patience a ONE-SHOT on any standing health watch.  `moot`
+//   is "nobody asked for this" (Supervisor_verdict) — a claim nobody asked for cannot be running out of
+//    time, and the loud pass already skips it (:842).  But the deadline kept counting underneath, so the
+//     sequence a listener actually produces — plays (ok) → track ends (moot) → next track starts and the
+//      analyser is briefly behind (wrong) — arrived at that last step with a STALE `given-up` already
+//       stamped, and the row went loud on the first bad reading with no grace at all.  That is the
+//        `FAIL sound is coming out` the owner kept seeing on normal runs.  Disarming here means every
+//         quiet stretch resets the hope clock, so the grace is real on every re-arm and not just the first.
 Supervisor_patience(watch):
     if (!watch.sc.wait) return
-    if (watch.sc.verdict === 'ok') {
+    if (watch.sc.verdict === 'ok' || watch.sc.verdict === 'moot') {
         watch.c.deadline = null
         if (watch.sc.patience) { delete watch.sc.patience; watch.bump() }
         return

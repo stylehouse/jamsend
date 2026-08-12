@@ -33,7 +33,13 @@
     let copied = $state(false)
     let timer: ReturnType<typeof setTimeout> | undefined
 
-    async function copy() {
+    // STOP THE CLICK HERE.  The fullscreen face (InvitePanel `.ip-overlay`) closes on ANY click by
+    //  design — the QR fills the viewport, so a stopPropagation on it left no escapable margin.  This
+    //   button is not part of that: letting it bubble copied the link AND tore the face down in the
+    //    same tick, so the `✓ copied` it sets is never seen and the user cannot tell it worked.  Same
+    //     carve-out the blotter chip already takes beside it.
+    async function copy(e: MouseEvent) {
+        e.stopPropagation()
         try { await navigator.clipboard.writeText(url) } catch { /* no clipboard — the link is still visible below */ }
         copied = true
         if (timer) clearTimeout(timer)
@@ -63,10 +69,17 @@
     /* svelte-qrcode renders an <img>; keep its box crisp and white so a camera reads it */
     .iq-qr { line-height: 0; }
     .iq-cap { margin: 0; font-size: 0.72rem; color: #556; text-align: center; max-width: 15rem; }
+    /* THE SECOND DOOR, and it is the one a laptop uses — a phone scans the QR, everyone else copies
+        the link.  It sat at caption size (0.72rem, hairline border) reading as a footnote to the
+         image; the owner asked for it bigger.  Sized as a real target now: ~44px tall, which is the
+          touch minimum, and wide enough to hit without aiming. */
     .iq-link {
-        background: none; border: 1px solid #ccd; color: #445;
-        cursor: pointer; font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 4px;
+        background: none; border: 2px solid #99a; color: #334;
+        cursor: pointer; font-size: 1rem; font-weight: 600; letter-spacing: 0.01em;
+        padding: 0.6rem 1.4rem; border-radius: 8px; min-height: 2.75rem;
+        margin-top: 0.2rem;
     }
-    .iq-link:hover { border-color: #99a; color: #223; }
+    .iq-link:hover { border-color: #556; color: #112; background: rgba(0, 0, 0, 0.05); }
+    .iq-link:active { transform: translateY(1px); }
     .iq-empty { margin: 0; font-size: 0.72rem; color: #99a; }
 </style>

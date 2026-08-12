@@ -439,7 +439,11 @@
                     {#if landing_seen || stage === 'door'}
                         {#if landing}<h2 class="ask">you were invited</h2>
                         {:else if stage === 'door'}<h2 class="ask">music here is shared with friends</h2>{/if}
-                        <div class="door"><InvitePanel {H} /></div>
+                        <!-- `arrival` ONLY while an invite is actually being worked through
+                             (`landing_seen`), never for the friendless door below it: that door's
+                             whole offer IS `invite a friend`, and passing the dress unconditionally
+                             would leave a friendless person a card with nothing to press. -->
+                        <div class="door"><InvitePanel {H} arrival={landing_seen} /></div>
                     {/if}
 
                     {#if stage === 'door'}

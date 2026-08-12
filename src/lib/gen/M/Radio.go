@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '5d5d3277ec5c25bd~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '46a337c8d4864864~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -3428,13 +3428,22 @@ Radio_dec_harvest(st) {
 },
 async Radio_dec_drain(st) {
     if (!st) return null
-    try { await st.dec.flush() } catch (er) {}
+    // don't flush a corpse.  WebCodecs closes the decoder itself on a decode error (see
+    //  Radio_dec_dead just below), and `flush()` on a closed codec REJECTS — a guaranteed throw
+    //   on the exact path that matters, swallowed.  The catch stays for a live decoder dying
+    //    mid-flush, which is a real thing and genuinely exceptional; harvest whatever landed either way.
+    if (st.dec && st.dec.state !== 'closed') { try { await st.dec.flush() } catch (er) {} }
     return this.Radio_dec_harvest(st)
 
 },
+// ASK, DON'T THROW (2026-08-12 — the twin of Ra_encode_close).  `close()` on an already-closed codec
+//  throws `InvalidStateError: Cannot call 'close' on a closed codec`, and this fires on the ORDINARY
+//   path: the decoder that errored closed ITSELF, then a pause/skip/teardown closes it again.  The
+//    file already knew — Radio_dec_dead three lines down reads exactly this state — so the catch was
+//     hiding a question that was already being asked next door.
 Radio_dec_close(st) {
-    if (!st) return
-    try { st.dec.close() } catch (er) {}
+    if (!st || !st.dec || st.dec.state === 'closed') return
+    try { st.dec.close() } catch (er) { this.Radio_trace(null, { ev: 'dec-close-threw', why: String((er && er.name) || er).slice(0, 24) }) }
 
 },
 // Is this decoder a CORPSE?  WebCodecs closes an AudioDecoder ITSELF when a decode errors — the
