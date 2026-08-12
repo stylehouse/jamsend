@@ -856,7 +856,21 @@
         animation: kf-spin 0.9s linear infinite;
     }
     @keyframes kf-spin { to { transform: rotate(360deg) } }
-    .kf-wtitle { font-size: 12px; color: #f3e8ef; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+    /* A TITLE IS ONE THING (the owner 2026-08-12: *"keeps wrapping in 'Middle A'"* … *"text line
+        breaking before A"*).  `overflow-wrap: anywhere` let the line break INSIDE the title, so at the
+         narrow columns a stretched heist actually gets — the search settles near STRETCH_COL_MIN,
+          ~150 units — "Middle A" came apart into "Middle" / "A" and read as two fields.  The wrap
+           itself is fine; wrapping mid-title is not.
+       nowrap + ellipsis is this file's OWN idiom for a title (`.kf-title`, the queued view) — this
+        span was simply the one that missed it.  `min-width: 0` stays and the overflow is hidden, so
+         the span still demands NO width from the layout: a long title ellipses instead of forcing
+          the column wider, which would be a size demand the belly has to pay for. */
+    /* inline-block, not inline: `overflow` has NO effect on an inline box, so on the plain span the
+        ellipsis half of the idiom would have been dead code and a long title would simply have run off
+         the line.  `max-width: 100%` is what keeps it from becoming that size demand. */
+    .kf-wtitle { font-size: 12px; color: #f3e8ef; font-weight: 600; min-width: 0;
+                 display: inline-block; max-width: 100%; vertical-align: bottom;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .kf-wartist { font-size: 10px; color: #b89ab0; }
 
     /* the lofi explainer — a real panel, because a phone cannot hover a tooltip */

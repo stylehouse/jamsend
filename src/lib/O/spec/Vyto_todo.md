@@ -243,6 +243,13 @@ Landed:
    2-cycle whose amplitude exceeds the band — every round reads "not still", so the band never fires.
     Remember one seat back and refuse to return to it. `stretch_search` has carried this same guard for
      its column since the day it was written; this is that idiom one quantity over.
+- **…AND THAT MEMORY IS ON A CLOCK** (`MOLD_CYCLE_MS = 1200`, stamped by `mold_at`). The first cut had
+   none, and the owner had it within the minute: *"it wasn't properly positioned for a while, and was
+    harder to get to reposition than usual"*. A 2-cycle flips every paint, so both legs land inside a
+     second; a seat left minutes ago is not a cycle, it is history — and vetoing a move back to it pins
+      the face somewhere wrong with no way to talk it out. **A guard against oscillation must not become
+       a guard against moving.** That is the settling-window lesson arriving for the third time, and it
+        is the standing risk with every guard on this list: each one is a reason NOT to move.
 
 **On the owner's `throttle()`, asked twice and answered honestly: a throttle cannot fix a 2-cycle.** It
  bounds how OFTEN the flip happens, so a fast buzz becomes a slow buzz — forever, because *both states
@@ -252,11 +259,38 @@ Landed:
      incumbency; continuous drift → dead band + throttle; 2-cycle → refuse to return.** Reaching for
       the wrong one has cost a round each time.
 
-**Not witnessed by me.** 42 unit tests green, the release gate mutation-tested red, svelte-check clean
- on all three files, and the belly path re-captured byte-identical after the edit (`469.8×444 fit
-  3.302`) — but a stretched belly needs a keep actually open. The tell to look for in
-   `runner_shot --svg` on a Heist mold: `box: col Npx` should equal `stretch_col`, and `air` should
-    close toward 0%×0% rather than sitting open.
+**WITNESSED, and it holds.** The owner opened a keep. Six consecutive `runner_shot --svg` captures of
+ the Heist mold came back byte-identical — `523×745 fit 3.490 · lay 0.287 · col 154px` — with the two
+  zoom terms converged on each other (523/149.9 = 3.489, 745/213.5 = 3.489), which is exactly the
+   resting state the `--lay` note describes. **The buzz is gone.**
+
+#### …and the same capture found two things the buzz had been hiding
+
+**1. A symmetric band on a one-sided consequence prints its own width as damage.** The capture read
+ `content 1.00×1.02 of its box · air 0%×-4% ⟵ CUT OFF (2% over)`. `fit` is struck from the remembered
+  `stretch_h`, and `stretch_search` wrote that memory through a **symmetric** 2% band — so content up
+   to 2% taller than the memory is never recorded, and the mold is sized for a face shorter than the
+    one it holds. Measured: remembered 213.5, actual 217.8, **1.96% over — just inside the band**. The
+     bottom of the heist was clipped by precisely the tolerance, permanently, behind a search whose
+      own numbers said it had converged perfectly. Fixed by making it asymmetric — a GROW is believed
+       at once, only a SHRINK is banded — which is the same rule `gauge_box` already applies to the
+        natural box, and for the same reason: overflowing is a fault you can see now, an over-large
+         memory only costs a little air. **Look for a symmetric tolerance wherever the two directions
+          have different costs.**
+
+**2. The title was breaking mid-title** (*"keeps wrapping in 'Middle A'"* … *"text line breaking
+ before A"*). A settled stretch sits near `STRETCH_COL_MIN` (~150 units) — the constant whose own
+  comment says "skinnier than this and a heist is a column of wrapped fragments" — and at that column
+   `.kf-wtitle`'s `overflow-wrap: anywhere` let "Middle A" come apart into "Middle" / "A", reading as
+    two fields. The wrap is fine; wrapping *inside* the title is not. `.kf-wtitle` now uses this
+     file's own title idiom (`.kf-title`, the queued view): nowrap + ellipsis — as `inline-block` with
+      `max-width: 100%`, because **`overflow` has no effect on an inline box**, so on the bare span the
+       ellipsis half would have been dead code and a long title would have run off the line. `min-width:
+        0` + hidden overflow keep it from becoming a size demand the belly has to pay for.
+
+**Unwitnessed:** both of the above. Editing `HeistFace.svelte` reloaded the owner's tab and dropped the
+ keep before I could re-capture — capture everything BEFORE editing when someone has set up live state
+  for you.
 
 ### ⇢ THE FLITTING, ROUND TWO — the SIZE was still breathing (2026-08-12, LANDED)
 

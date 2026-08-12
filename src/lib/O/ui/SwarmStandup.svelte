@@ -136,4 +136,31 @@
         if (!zero_since) { zero_since = Date.now(); return }
         if (Date.now() - zero_since >= 5000) (H.c as any).door_friends = 0
     })
+
+    // …AND WHETHER THE OLD GARDEN SENT THEM, published the same way and for the same reason
+    //  (2026-08-12, the owner asking whether the Invite is *"totally robust"* — this was the hole).
+    //  A relic invite is `#<pad><prepub>-<advice>-<sign>` in the URL FRAGMENT, so `boot_param`
+    //   cannot see it and the Butler's `landing` — which reads `?Iz=` — is false for one.  A
+    //    brand-new person got the door anyway, by the accident of having no friends; anyone who
+    //     ALREADY had a friend and followed an old link landed on nothing at all.  No door, no
+    //      notice, not even the name of whoever sent it.  The app simply said nothing.
+    //  IT IS AN OFFER, NEVER A HOLD, and the distinction is load-bearing.  `landing` holds the
+    //   screen until the token resolves; a relic CANNOT resolve here yet (rung 1 parses it, but the
+    //    old key and spend ledger are still in the old garden's Dexie), so holding on one would be a
+    //     trap with no exit — the exact permanent-trap shape the door's own notes keep warning about.
+    //      The Butler therefore reads this at the `friendless` rung, where the door is an offer the
+    //       arrival lift can still walk past.
+    //  STAMPED ONCE: the URL does not change under us and the parse is pure, so the first pass that
+    //   can see the verb settles it forever.  Absent still means CANNOT KNOW YET (Swarm not
+    //    deposited), which is the same three-valued reading `door_friends` uses above.
+    $effect(() => {
+        void H?.version
+        if (!H?.c) return
+        const c = H.c as any
+        if (c.door_relic !== undefined) return
+        if (typeof location === 'undefined' || typeof H?.Swarm_legacy_of_url !== 'function') return
+        let r: any = null
+        try { r = H.Swarm_legacy_of_url(location.href) } catch { r = null }
+        c.door_relic = r ? 1 : 0
+    })
 </script>

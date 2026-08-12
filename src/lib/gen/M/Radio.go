@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '46a337c8d4864864~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '16e1f79bcaa1e183~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -234,6 +234,11 @@ Radio_skip(radio) {
     }
     radio.c.rec = null
     radio.c.end = 0
+    // HOW THIS TRACK ENDED, for the next open to read (Radio_hbase).  A turn of the dial is a TUNE-IN
+    //  again — the next track drops the needle mid-song — while playing one out earns the next its
+    //   beginning.  Set here rather than inferred at the open, because by then the only evidence left
+    //    is that `c.rec` is null, and both routes produce exactly that.
+    radio.c.went = 'skip'
     // BLEND, DON'T CUT (the owner 2026-08-07: "it should be very effective at rapidly skipping tracks.
     //  getting them to blend together a little even").  The old skip closed the voice on the spot, which
     //   severs a graph mid-sample — a click, and on a fast run of skips a burst of them.  The outgoing
@@ -591,6 +596,11 @@ async Radio_pump_tick(radio, era) {
         //    Gapless, and the first bit is standing before it is due — never a 400ms hole.
         if (now >= (radio.c.end || 0) - 2.0) {
             radio.sc.played = (+(radio.sc.played || 0)) + 1
+            // PLAYED ALL THE WAY THROUGH — the one transition that earns the next track its beginning
+            //  (Radio_hbase).  Its twin is `went = 'skip'` in Radio_skip; between them every route that
+            //   drops `c.rec` says which it was, and an open that arrives with neither said gets the
+            //    conservative answer (mid-song).
+            radio.c.went = 'finish'
             radio.c.rec = null
             radio.c.drained = 0
             w.c.play = null
@@ -623,14 +633,20 @@ async Radio_pump_tick(radio, era) {
 //     track after that, and a listener who has sat through one whole track being dropped into the
 //      middle of the next reads as a fault, not a broadcast.  So `c.tuned` latches at the first
 //       Radio_open and every later needle lands at 0.
+//  THIS FUNCTION IS NOT WHERE "FROM THE START" LIVES, and the distinction is easy to lose because
+//   both answers are the number 0.  Here 0 means the first chunk OF THE OFFER, and the offer was cut
+//    30–70% into the song (Ra_preview_offset) — so a skipped-to track landing at 0 is landing in the
+//     middle, which is the radio feel, not a departure from it.  Opening at the song's actual
+//      beginning is a different mechanism entirely: a head run concatenated in FRONT of the offer,
+//       decided by Radio_hbase off how the last track ended.  Keep the two apart when editing.
 //  .c, so a reload re-arms the tune-in feel — it is an ARRIVAL, not a policy (same shape as
 //   `c.crossed`).  A pause|resume keeps its record (Radio_pause rewinds c.seq, it does not drop
 //    c.rec), so resuming is not a re-tune-in and does not re-arm.
-//  THE LATCH IS WHAT MAKES `Radio_prime` SPENDABLE, and that is not a side benefit.  Priming fixes
-//   the start seq while the PREVIOUS track is still playing (:608), before anyone can know whether
-//    the next transition will be a finish or a skip.  With this latch both answers are 0, so the
-//     primed track is always the track we open.  Make the rule finish-only and the two disagree on
-//      every skip — the one path prime exists for ("the lag between click and sound").
+//  THE LATCH IS ALSO WHAT KEEPS `Radio_prime` SPENDABLE.  Priming fixes the start seq while the
+//   PREVIOUS track is still playing, before anyone can know whether the coming transition will be a
+//    finish or a skip — so anything RANDOM here would make prime a coin-flip it could not win.  It
+//     is not random after the first open, and that is the whole reason prime can bet on the skip
+//      shape and be exactly right whenever the bet comes in (see Radio_prime).
 //  HUMDINGER-GATED: an end-user page tunes in, a Book keeps the 0 it recorded, so no fixture moves.
 //   Ra_rand (not prandle) so a Book that DID want this could still pin it.
 // Radio_peek_next — WHICH RECORD THE DIAL WILL PICK, without picking it.  Radio_dial consumes the
@@ -675,11 +691,24 @@ async Radio_prime(radio, era) {
     if (radio.c.priming || radio.c.ready) return
     let rec = this.Radio_peek_next(radio)
     if (!rec || !rec.sc.id) return
-    let hbase = this.Radio_hbase(radio, rec)
+    // ALWAYS PRIME THE SKIP SHAPE — never the head (2026-08-12, when the rule became finish-only).
+    //  Prime runs while the PREVIOUS track is still playing, so it cannot know whether the coming
+    //   transition will be a finish or a skip, and the two now want different first bytes: a finish
+    //    opens at head chunk 0, a skip at offer chunk 0.  It has to bet, and the bet is not close.
+    //  A FINISH HAS SLACK; A SKIP HAS NONE.  The advance branch turns the dial ~2s BEFORE the audio
+    //   frontier (:564) precisely so the next track opens while this one plays out — a cold decode
+    //    there lands well ahead of when it is due, and nobody hears it.  A skip is a keypress with
+    //     the voice already cut, which is the entire lag prime was built for ("there's a lag between
+    //      click and sound coming out").  So the wasted prime, when it is wasted, is wasted on the
+    //       path that can afford it.
+    //  AND IT IS DETERMINISTIC, which is what the old all-zero rule was really buying.  With hbase 0
+    //   the start is Radio_start_seq, and that is 0 for every open after the first — so prime and a
+    //    skipped open agree exactly, with no shared latch to keep in step.  Radio_open re-decides
+    //     from policy and DROPS a prime whose hbase disagrees, so a finish can never be handed the
+    //      mid-song PCM by accident.
+    let hbase = 0
     let m = this.Radio_map(rec, hbase)
-    // prime and open must agree about where the needle lands, so the hbase decision is fixed here
-    //  and carried on `ready` — exactly as `start` already is.
-    let start = hbase ? 0 : this.Radio_start_seq(radio, rec)
+    let start = this.Radio_start_seq(radio, rec)
     if (m.bytes[start] == null) return
     let nch = Math.min(2, +(rec.sc.nch || 1))
     let dec = this.Radio_dec_open(nch)
@@ -731,10 +760,25 @@ Radio_open(radio, rec) {
     let ready = radio.c.ready
     radio.c.ready = null
     if (ready && ready.id !== String(rec.sc.id)) ready = null
-    // HOW MANY HEAD CHUNKS RIDE IN FRONT (Radio_hbase) — read BEFORE the tuned latch below, because
-    //  "is this a continuation" IS the previous value of that latch.  A primed open carries the
-    //   decision it primed with, so prime and open cannot disagree about the timeline either.
-    let hbase = ready ? +(ready.hbase || 0) : this.Radio_hbase(radio, rec)
+    // HOW MANY HEAD CHUNKS RIDE IN FRONT (Radio_hbase).  POLICY DECIDES, THEN THE PRIME IS CHECKED
+    //  AGAINST IT — the inverse of how this read until 2026-08-12, and the inversion is the point.
+    //   While every open after the first wanted the head, a prime could not be wrong and so was
+    //    allowed to carry its own answer.  Now the answer depends on how the LAST track ended, which
+    //     prime cannot know when it runs, so a prime is a GUESS about the timeline and a guess must
+    //      be checkable.  Same shape as the id check one line up: a prime for the wrong thing is
+    //       simply dropped.  Dropping costs a cold decode, and see Radio_prime for why the path that
+    //        pays it is the path with two seconds of runway.
+    let went = String(radio.c.went || '')
+    let hbase = this.Radio_hbase(radio, rec)
+    // …and the verdict is CONSUMED here, so it can never be spent twice.  Any route that drops
+    //  `c.rec` without saying how (an error, a re-gate, a tuned pick) then falls to the conservative
+    //   answer rather than inheriting a stale `finish` and opening some later track at its beginning
+    //    for no reason anyone could trace.
+    delete radio.c.went
+    if (ready && +(ready.hbase || 0) !== hbase) {
+        this.Radio_trace(radio, { ev: 'prime-drop', want: hbase, had: +(ready.hbase || 0) })
+        ready = null
+    }
     radio.c.hbase = hbase
     let start = ready ? ready.start : (hbase ? 0 : this.Radio_start_seq(radio, rec))
     // TUNE-IN SPENT.  Set AFTER the read and in the opener, not inside Radio_start_seq: the prime
@@ -759,7 +803,10 @@ Radio_open(radio, rec) {
     // `hbase` on the open mark is the ONLY place this is visible: a from-the-start open and a
     //  mid-song one produce identical audio bookkeeping otherwise, and pixels|sound never reach a
     //   snap.  hbase>0 means "this track opened at the beginning of the song".
-    this.Radio_trace(radio, { ev: 'open', total: +(rec.sc.total || 0), preview: +(rec.sc.preview || 0), hbase: hbase, pv_off: +(rec.sc.pv_off || 0), wire: rec.c.from ? 1 : 0 })
+    //  `went` rides beside it because hbase alone cannot tell a refused head from an absent one: a
+    //   skip and a finish-onto-a-headless-record both stamp 0, and only one of those is a policy
+    //    decision.  Without it, "why did this open mid-song" is unanswerable from the ring.
+    this.Radio_trace(radio, { ev: 'open', total: +(rec.sc.total || 0), preview: +(rec.sc.preview || 0), hbase: hbase, went: went || 'none', pv_off: +(rec.sc.pv_off || 0), wire: rec.c.from ? 1 : 0 })
     radio.c.nch = Math.min(2, +(rec.sc.nch || 1))
     radio.sc.title = this.Radio_clean(rec.sc.title || rec.sc.id || 'unknown')
     let artist = this.Radio_clean(rec.sc.artist || '')
@@ -3294,11 +3341,20 @@ Radio_map(rec, hbase) {
 
 },
 // Radio_hbase — how many head chunks ride in front of THIS open, and the one place the policy lives.
-//  A TUNE-IN still drops the needle 30–70% in: that is the radio feel the owner asked for and it is
-//   deliberately untouched (`!radio.c.tuned` ⇒ 0).  A CONTINUATION — the track after one that played
-//    out — is the case the owner named, and it opens at the song's start whenever the whole head is
-//     held.  Partial is 0 (Ra_head_whole is all-or-nothing): starving three chunks into the first
-//      verse is worse than the mid-song open this replaces.
+//  IT IS KEYED ON HOW THE LAST TRACK ENDED, not on whether we have tuned in (the owner 2026-08-12:
+//   *"I want them to start from the middle when next-track is clicked, but go end-to-start when they
+//    play all the way through"*).  Sitting through a whole track is the thing that earns the next one
+//     its beginning; turning the dial is re-tuning the radio, and a radio you retune lands mid-song.
+//  THE FIRST READING WAS `!radio.c.tuned`, and it was too generous by exactly one case: it read
+//   "every open after the first" as "continuation", which swept skips in with finishes.  With a full
+//    catalog of whole heads that meant EVERY track opening at 0:00 — the owner's report ("seems like
+//     all the Records are starting from the start now?") is that generosity, seen from the outside.
+//  `went` is CONSUMED by Radio_open, so the absence of a verdict means mid-song.  That default is the
+//   safe direction: the failure it produces is one track that could have opened at its beginning and
+//    didn't, against a stale `finish` opening some unrelated later track at 0:00 with nothing in the
+//     trace to explain why.
+//  Partial is 0 (Ra_head_whole is all-or-nothing): starving three chunks into the first verse is
+//   worse than the mid-song open this replaces.
 //  Books get 0 for free — pv_off is only ever cut on a humdinger, so a driven world has no head.
 // Radio_head_ahead — keep the LINEUP's heads made, one encode at a time.
 //  THE SEAM COST ME TWO WRONG GUESSES, so it is worth saying which and why.  Radio_prime looked
@@ -3363,7 +3419,7 @@ Radio_head_note(radio, o) {
 
 },
 Radio_hbase(radio, rec) {
-    if (!radio.c.tuned) return 0
+    if (radio.c.went !== 'finish') return 0
     if (!this.Ra_head_whole) return 0
     if (!this.Ra_head_whole(rec)) return 0
     return +(rec.sc.pv_off || 0)

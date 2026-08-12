@@ -278,13 +278,24 @@
     //  Parse-only: the old ledger and key live in the old garden's Dexie until the rung-2
     //   migrator, so the door is HONEST — it names the inviter and says the link cannot verify
     //    here yet, rather than dialing into a deny('unknown').
-    let relic = $derived.by(() => {
-        void H?.version
+    function legacy_of(href: string) {
         try {
-            if (typeof location === 'undefined' || typeof H?.Swarm_legacy_of_url !== 'function') return null
-            return H.Swarm_legacy_of_url(location.href)
+            if (typeof H?.Swarm_legacy_of_url !== 'function') return null
+            return H.Swarm_legacy_of_url(href)
         } catch { return null }
+    }
+    let landed_relic = $derived.by(() => {
+        void H?.version
+        if (typeof location === 'undefined') return null
+        return legacy_of(location.href)
     })
+    // …AND ONE THAT WAS PASTED RATHER THAN OPENED (2026-08-12).  The two sources deserve the same
+    //  answer and were not getting it: `Swarm_token_parse` refuses an old link, so pasting one said
+    //   *"that link's invite did not parse — ask for a fresh one"* — which reads as "you mistyped it"
+    //    about a link that is perfectly well formed and was simply minted by the old garden.  The
+    //     right report already existed three lines down; it was only ever wired to `location`.
+    let paste_relic: any = $state(null)
+    let relic = $derived(landed_relic || paste_relic)
 
     // ── NAME FIRST — an identity is GENERATED nameless; asking the name is the door's FIRST
     //  move, before a scanned ?Iz gets handled: the hello should carry who you are, and the
@@ -491,7 +502,11 @@
         const tok = iz_from(paste)
         if (!tok) return
         const t = H?.Swarm_token_parse?.(tok)
-        if (!t) return
+        // A RELIC IS NOT A PREFIX, so the quiet twin may act on one.  The silence contract is about
+        //  half-typed links — but `Swarm_legacy_of_url` demands a whole shape (16 hex, three
+        //   dash-parts, a decodable advice), which no prefix of a modern link can wear by accident.
+        if (!t) { const old = legacy_of(paste); if (old) paste_relic = old; return }
+        paste_relic = null
         iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
     }
     function paste_load() {
@@ -499,7 +514,16 @@
         const tok = iz_from(paste)
         if (!tok) { paste_err = 'paste an invite link (or its ?Iz token)'; return }
         const t = H?.Swarm_token_parse?.(tok)
-        if (!t) { paste_err = 'that link’s invite did not parse — ask for a fresh one'; return }
+        if (!t) {
+            // OLD GARDEN FIRST, then the generic refusal — an old link IS an invite, just not one
+            //  this door can honour yet, and telling its holder to "ask for a fresh one" without
+            //   naming who sent it or why is the least useful true thing we could say.
+            const old = legacy_of(paste)
+            if (old) { paste_relic = old; return }
+            paste_err = 'that link’s invite did not parse — ask for a fresh one'
+            return
+        }
+        paste_relic = null
         // a NEW pasted invite re-arms the door: without clearing join_over, a second link after a
         //  spent first one lands on a panel with no join button at all.
         iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
@@ -542,7 +566,17 @@
             {#if invite}
                 <span class="ip-title">📨 an invite from <b>{invite.friendly || invite.prepub}</b> — {invite.to}</span>
                 {#if !named}
-                    {@render namer(`what do friends call you? ${invite.friendly || 'your friend'} will see this name${born_today ? ' — then you join by yourself' : ''}`)}
+                    <!-- THE HINT IS ONE SHORT SENTENCE (the owner 2026-08-12: *"just say 'your
+                         friends will see this name' under it"*).  What was here read *"what do
+                         friends call you? f5da6599b8505881 will see this name — then you join by
+                         yourself"* — it asked the question the placeholder already asks, repeated
+                         the inviter's raw hex pub back at someone who has no idea what a pub is,
+                         and then announced a mechanism (the auto-join) that announces itself
+                         perfectly well when it fires.  Three jobs in one line, under a text box.
+                         The plural is deliberate: this name outlives THIS invite and every friend
+                         after it sees it, so "your friends" is the truer promise than naming the
+                         one person who happens to be at the door. -->
+                    {@render namer('your friends will see this name')}
                 {/if}
                 {#if named || !born_today}
                     <!-- STEP 2, the terminal act — the biggest thing on the panel, and it NAMES the
@@ -638,8 +672,26 @@
                      namer's own button is already breathing; once you HAVE friends, minting is a
                      thing you occasionally do rather than the reason you are here.  Both are durable
                      state, not a clock — the same ruling that dropped `born_today` from the note. -->
-                <button class="ip-go ip-go-mint" class:ip-still={friends.length > 0 || (!named && !iz)}
-                        onclick={mint} title="mint a single-use Music invite and show its QR">invite a friend</button>
+                <!-- …AND, BESIDE IT, THE ONE LINK OFF THIS PAGE (the owner 2026-08-12: *"we need to
+                     link to the github README on the Door… next to the Invite button"*).  It rides
+                     HERE and nowhere else on purpose:
+                       · not on the `arrival` screen — that person is three lines from `⨝ join Lefto`
+                          and a link that navigates away mid-join is the same competing-action
+                          mistake the block above already rules out for the mint button itself;
+                       · not once a QR is up — that state has its own two buttons and a phone
+                          pointed at the screen, and a third control that leaves the page is the
+                          worst possible moment for it.
+                     So its audience is exactly the friendless door: someone looking at a button
+                      whose whole promise is social, with no way to find out what the thing IS.
+                     Quiet by construction — `.ip-readme` is a text link, not a `.ip-act`: the mint
+                      is the act, and this must not read as a second one. -->
+                <span class="ip-row ip-mintrow">
+                    <button class="ip-go ip-go-mint" class:ip-still={friends.length > 0 || (!named && !iz)}
+                            onclick={mint} title="mint a single-use Music invite and show its QR">invite a friend</button>
+                    <a class="ip-readme" href="https://github.com/stylehouse/jamsend#readme"
+                       target="_blank" rel="noopener noreferrer"
+                       title="what BigSoundland is, on github">what is this? ↗</a>
+                </span>
                 <!-- NO `born_today` HERE (dropped 2026-08-08, Onboard_todo §0 item 1).  This note explains
                      what the button DOES, and the moment that explanation is worth having is "you have no
                      friends yet" — which is durable state.  `born_today` is a CLOCK bolted onto that, and
@@ -755,6 +807,20 @@
     .ip.inglass .ip-name { width: 9rem; }
     .ip-mint, .ip-land { display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem; }
     .ip-title { white-space: nowrap; }
+    /* THE LANDING HEADLINE IS THE BIGGEST THING ON THE PANEL (the owner 2026-08-12: *"this entire
+       thing should be bigger font size"*).  It had been sharing `.ip-title` with the identity line —
+       a chip that names which self this tab is — and those two are not the same weight at all: one
+       is furniture, the other is the single sentence explaining why this screen exists.  Only the
+       landing face is scaled, so the mint side's `⨳ name · pub · ✎` stays the quiet chip it should be.
+       `nowrap` is dropped here: an inviter with a long name (or a raw 16-hex pub, which is the common
+       case until they name themselves) must wrap rather than push the card wide. */
+    .ip-land > .ip-title {
+        font-size: 1.35rem; font-weight: 600; line-height: 1.25;
+        white-space: normal; margin-bottom: 0.1rem;
+    }
+    /* in the glass the panel is a narrow column beside the music, not a fullscreen welcome — the
+       same sentence, sized for the room it is standing in (matching `.ip.inglass .ip-note`). */
+    .ip.inglass .ip-land > .ip-title { font-size: 1.05rem; }
     .ip-act {
         background: #232338; border: 1px solid #44446a; color: #ccd;
         cursor: pointer; font-size: 0.78rem; padding: 0.15rem 0.6rem; border-radius: 5px;
@@ -816,6 +882,18 @@
        this.  Red would read as an error to be fixed on the spot and would sour a welcome screen. */
     .ip-warn { color: #e0a45c; }
     .ip-row { display: flex; gap: 0.4rem; }
+    /* the mint row: the button sets the height, the link sits on its centre line rather than
+       stretching to it — a full-height link would read as a second button. */
+    .ip-mintrow { align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+    /* deliberately the QUIETEST thing in the block — dimmer than `.ip-note`'s siblings are loud,
+       underlined only on hover, so it is findable by someone looking for it and invisible to
+       someone getting on with the invite. */
+    .ip-readme {
+        color: #7a7aa8; font-size: 0.75rem; text-decoration: none;
+        border-bottom: 1px dotted #4a4a6a; padding-bottom: 1px; white-space: nowrap;
+    }
+    .ip-readme:hover { color: #aeaee6; border-bottom-color: #7a7aa8; }
+    .ip-readme:focus-visible { outline: 2px solid #6a6aff; outline-offset: 2px; border-radius: 2px; }
     .ip-name {
         background: #1a1a26; border: 1px solid #44446a; color: #dde;
         border-radius: 5px; font-size: 0.78rem; padding: 0.15rem 0.5rem; width: 11rem;

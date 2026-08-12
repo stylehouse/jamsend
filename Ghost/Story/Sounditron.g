@@ -1748,7 +1748,7 @@ Sounditron_supervise(w):
         //  `remedy` rides beside it as a one-word REMEDY KIND, not a sentence: the arrival screen must
         //   choose a control, and parsing English to pick a button is the second opinion this file
         //    keeps refusing to grow.  'gesture' means a tap — any tap — is the whole cure.
-        let pw = this.Supervisor_patient(sup, 'arrive.playing', 90, 'nothing has started playing on its own — carry on in and pick something to hear')
+        let pw = this.Supervisor_patient(sup, 'arrive.playing', 90, 'nothing has started playing...')
         if (pw && pw.c.deadline && Date.now() > pw.c.deadline - 5000) {
             let probe = w.c.audio_probe
             if (probe && probe.ok && !probe.realtime) {

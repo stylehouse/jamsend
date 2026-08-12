@@ -1273,6 +1273,23 @@
         } catch { return null }
     }
 
+    // WALLPAPERED — which cells wear a picture instead of their Matstyle jewel.  Keyed off the
+    //  MAINKEY, exactly like cell_ground, and never off cell.key/tok: a tok is `Mainkey:value` and
+    //   the radio's value half is its STATE ('Radio:playing'), so a tok test would peel the paper
+    //    off every time the track changed.  Appended AFTER the ground in the inline style, so it
+    //     wins the fill and leaves the Matstyle border alone.
+    const WALLPAPER: Record<string, string> = { Radio: 'vy-sea' }
+    // the tint the paper is multiplied by — the SAME ground the cell would have worn without it,
+    //  so the wallpaper never costs the organ its colour.  Guarded like cell_ground: no Matstyle
+    //   yet ⇒ the .cell.faced default, which is what the cell would have shown anyway.
+    const wall_tint = (mk: string): string => (H as any)?.matstyle_ground?.(mk)?.bg ?? '#17171f'
+    const wallpaper_of = (cell: any): string | null => {
+        try {
+            const sc = cell?.source?.sc
+            return sc ? (WALLPAPER[Object.keys(sc)[0]] ?? null) : null
+        } catch { return null }
+    }
+
     // per-world render state, keyed by the world C — plain, not reactive.
     const springs      = new Map<TheC, Map<string, Spring>>()   // tok → sprung scalars
     const prevWalls    = new Map<TheC, Map<string, Pt[]>>()      // last frame's polys, for drift
@@ -2874,8 +2891,19 @@
         const child = (mold.querySelector('.face-scroll')?.firstElementChild) as HTMLElement | null
         if (!child || !(child.offsetHeight > 0)) return
         const h = child.offsetHeight * sy
+        // ── A GROW IS BELIEVED AT ONCE; ONLY A SHRINK IS BANDED (2026-08-12) ──────────────────────
+        //  This was a symmetric 2% band, and a symmetric band on a one-sided consequence PRINTS ITS
+        //   OWN WIDTH AS DAMAGE.  `fit` is struck from the remembered `stretch_h`, so content taller
+        //    than the memory is content taller than its box — CUT OFF.  Measured on the owner's glass:
+        //     mold 523×745, remembered 213.5, actual 217.8 — 1.96% over, sitting just inside the band,
+        //      so the bottom of the heist was clipped by exactly the tolerance, permanently and
+        //       invisibly (both zoom terms read 3.489: a PERFECTLY converged search, quietly wrong).
+        //  The two directions have different costs, so they get different evidence bars — the same
+        //   asymmetry `gauge_box` already encodes for the natural box, and for the same reason: overflowing
+        //    is a fault you can see now, while an over-large memory only costs a little air.
         const prev = +(c.stretch_h ?? 0)
-        if (!(prev > 0) || Math.abs(h - prev) / h > 0.02) { c.stretch_h = h; react_soon() }
+        const grew = h > prev * 1.002
+        if (!(prev > 0) || grew || (prev - h) / h > 0.02) { c.stretch_h = h; react_soon() }
         const fr = c.stretch_rect
         if (!fr || !(fr.w > 0) || !(fr.h > 0)) return
         // MEASURE THE COLUMN, DO NOT ASSUME IT.  `h` is whatever the content came to in the box it was
@@ -3620,6 +3648,26 @@
                         <pattern id="vy-cop-fine" patternUnits="userSpaceOnUse" width="130" height="130">
                             <image href="/i/copper_anodes.jpg" width="130" height="130" preserveAspectRatio="xMidYMid slice"></image>
                         </pattern>
+                        <!-- THE SEAPIANO (the owner 2026-08-12: "the seapiano wallpapered into the
+                             Radio cell").  objectBoundingBox, NOT userSpaceOnUse like the copper:
+                             the copper is GROUND and must hold still in world units under a moving
+                             camera, but this is one cell's wallpaper — the tile belongs to the cell,
+                             so it fills whatever polygon the foam hands the radio, at any zoom and
+                             through every re-tessellation.  Same static-in-every-svg discipline as
+                             the copper defs above, so a runner_shot --svg capture stays standalone. -->
+                        <!-- BLENDED, not pasted (the owner 2026-08-12: "blended in a bit more").  A path
+                             has ONE fill, so the jewel and the paper cannot be layered on the cell without
+                             a second element — and a second element per cell is exactly what the pixel
+                             witness counts.  So the blend happens INSIDE the pattern: the photo, then the
+                             cell's own Matstyle ground multiplied over it.  Same colour the cell would
+                             have worn plain, so the radio still reads as its own organ, wearing a texture
+                             rather than a picture. -->
+                        <pattern id="vy-sea" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox"
+                                 width="1" height="1">
+                            <image href="/seapiano.webp" width="1" height="1" preserveAspectRatio="xMidYMid slice"></image>
+                            <rect width="1" height="1" fill={wall_tint('Radio')} opacity="0.62"
+                                  style="mix-blend-mode: multiply;"></rect>
+                        </pattern>
                     </defs>
                     {#if !fo(w, 'copperless')}
                         <rect class="ground-tex" x={cam.x} y={cam.y} width={cam.w} height={cam.h} fill="url(#vy-cop-coarse)"></rect>
@@ -3662,7 +3710,7 @@
                                   class:selfseat={cell.selfseat} class:sat={sat_row(cell.row)}
                                   class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} d={cell.d}
                                   data-key={cell.key}
-                                  style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (cdv > 0 ? ` stroke-width:${(1.2 + Math.min(3, cdv) * 0.55).toFixed(2)};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : ` --bd:-${ci * 430}ms;`)}
+                                  style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (wallpaper_of(cell) ? ` fill:url(#${wallpaper_of(cell)});` : '') + (cdv > 0 ? ` stroke-width:${(1.2 + Math.min(3, cdv) * 0.55).toFixed(2)};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : ` --bd:-${ci * 430}ms;`)}
                                   onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                   onpointerleave={() => on_leave(w, cell.key, cell.tok)}
                                   onclick={() => cell_click(w, cell)}

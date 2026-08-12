@@ -19,6 +19,32 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ## 0. Latest handover — fold into the sections below as it's absorbed
 
+### 2026-08-12 (latest) — THE HEAD IS EARNED BY FINISHING, NOT BY HAVING TUNED IN
+
+The owner, watching it run: *"seems like all the Records are starting from the start now?"* — then the
+ rule they actually wanted: *"start from the middle when next-track is clicked, but go end-to-start
+  when they play all the way through"*.
+
+`Radio_hbase`'s first reading was `!radio.c.tuned` — "every open after the first is a continuation".
+ That is one case too generous: it swept SKIPS in with finishes, and once every record held a whole
+  head (measured 16/16) it meant every track opened at 0:00. The radio feel was gone. Now it keys on
+   `radio.c.went` — `'finish'` stamped by the advance branch, `'skip'` by `Radio_skip`, consumed by
+    `Radio_open` so an unattributed open falls back to mid-song.
+
+**The bomb this defuses, because the old comment said it could not be done.** `Radio_prime` runs while
+ the PREVIOUS track still plays, so it cannot know which transition is coming, and the two now want
+  different first bytes (head chunk 0 vs offer chunk 0). The old note concluded "make the rule
+   finish-only and the two disagree on every skip — the one path prime exists for". The way through is
+    that **the finish path has ~2s of slack and the skip path has none**: the advance branch turns the
+     dial 2s before the audio frontier on purpose, so a cold decode there is inaudible, while a skip is
+      a keypress with the voice already cut. So prime always bets on the skip shape, and `Radio_open`
+       re-decides from policy and DROPS a prime whose `hbase` disagrees. Watch `prime-drop` in the ring
+        if a finish ever feels laggy.
+
+**Two different zeros, and the trap is that they look identical.** `Radio_start_seq`'s 0 is the first
+ chunk of the OFFER, which is already 30–70% into the song — landing there IS the mid-song feel.
+  Opening at the song's real beginning is the head run concatenated in front. Do not merge them.
+
 ### 2026-08-12 (later) — THE HEAD LANDED AND IT WORKS, AND IT IS A HACK. THE v2 SHAPE IS NAMED.
 
 **It works.** The owner, on the live tab: *"oh yeah it is working now!"* A track that plays out is

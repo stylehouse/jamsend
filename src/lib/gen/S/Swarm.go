@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'e8004236a1bb65ff~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'b2580d0d8bf47d69~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -605,11 +605,22 @@ Swarm_probe_arrival(subject, sup) {
 // Swarm_iz_of_url — the boot handler's core, isolated pure: pull the ?Iz= token back out of a
 //  scanned URL. encodeURIComponent above ↔ URLSearchParams here — the token's *|~|- survive the
 //   round trip untouched (none decodes as a space).
+//  THE FRAGMENT IS CUT FIRST, and that is not decoration.  This was `indexOf('?')` on the raw href,
+//   which gets two shapes wrong that a real link wears: `…?Iz=<token>#anything` handed the token
+//    back with the fragment glued to its tail (chat apps and readers append them), and
+//     `…#frag?Iz=x` read a `?Iz=` that lives INSIDE a fragment as though it were a query param.
+//      `location.search` — what the live door reads through `boot_param` — has neither problem, so
+//       this function was the only one carrying them, while its own comment called it "the boot
+//        handler's core".  Cutting at the first '#' makes that claim true.  Safe by the token's own
+//         alphabet: encodeURIComponent percent-encodes '#', so a raw one is never part of a token.
 Swarm_iz_of_url(href) {
     if (!href) return null
-    let at = href.indexOf('?')
+    let s = String(href)
+    let hash = s.indexOf('#')
+    if (hash >= 0) s = s.slice(0, hash)
+    let at = s.indexOf('?')
     if (at < 0) return null
-    return new URLSearchParams(href.slice(at + 1)).get('Iz')
+    return new URLSearchParams(s.slice(at + 1)).get('Iz')
 },
 //#endregion
 

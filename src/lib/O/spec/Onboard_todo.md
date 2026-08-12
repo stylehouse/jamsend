@@ -16,6 +16,59 @@ The one living doc for the first-run funnel (commissioned 2026-07-22). When a NE
 
 ## 0. Get on with next
 
+### 2026-08-12 — "IS THE INVITE TOTALLY ROBUST?" — the audit, and the two holes it found
+
+The owner asked. The honest answer is **the happy path is proven and the edges were not** — three
+ defects, all in the same shape: *a real invite that the door failed to recognise as one*.
+
+**Fixed today.**
+1. **A relic was invisible to anyone who already had a friend.** An old-garden invite lives in the URL
+    *fragment*, so `boot_param` cannot see it and `landing` (which reads `?Iz=`) is false for one. A
+     brand-new person got the door anyway — by the accident of being friendless. Everyone else followed
+      an old link and the app said *nothing at all*. `SwarmStandup` now stamps `door_relic` (same
+       publisher as `door_friends`, so the Butler still names no subsystem) and the Butler shows the
+        door at the **offer** rung.
+    - **Never at `landing`'s hold rung**, and this is the load-bearing bit: a relic *cannot* resolve
+       here yet, so a hold on one would never end. Offer, not gate.
+2. **Pasting an old link said "that link's invite did not parse — ask for a fresh one"** — which reads
+    as "you mistyped it" about a perfectly well-formed link. `paste_load`/`paste_try` now fall through
+     to the legacy parser and name the sender.
+3. **`Swarm_iz_of_url` got two real link shapes wrong**: `…?Iz=<tok>#anything` returned the token with
+    the fragment glued on (messengers append them), and `…#frag?Iz=x` read a `?Iz=` living *inside* a
+     fragment as a query param. `location.search` — what the live door reads — has neither problem, so
+      this function carried both alone while its own comment called it "the boot handler's core".
+
+**What is now proven, and by what.** SwarmInvite 5/5 and SwarmPolicy 6/6 green on a live runner
+ (`caveat:0`) — the mint→scan→redeem→seal arc and the door policy including the legacy parse. The
+  README's own demo link was checked against the real regex and parses: `prepub=7950f300faa8a4f9`,
+   `advice=ope.n~0`, `sign=729547c09f15f29f`.
+
+**What is NOT proven, and say so rather than imply otherwise.** The **render** of the new relic door
+ and of the dismissal control has been reasoned about, not seen. This container has no browser libs
+  (`pw_drive` mode B dies on `libglib-2.0.so.0`), so UI verification needs the human or a CDP bridge.
+   The dismissal's *logic* is exercised (12 cases, including "a second invite still holds" and
+    corrupt-store recovery); its *pixels* are not.
+
+**The per-invite dismissal has landed, alone and on purpose.** `dismiss_invite`/`invite_dismissed` in
+ `boot.ts`, keyed by token, localStorage, bounded at 20. It is the prerequisite `Butler.svelte:246`
+  names as blocking the owner's stricter hold (*"stay on every Invite it discovers until it is
+   fulfilled"*). **The stricter hold is still NOT shipped** — that remains the next move, and it may
+    only ship once the dismissal has been seen working in a real tab.
+
+- **It is offered ONLY to someone who already has friends** (the owner, on the first version:
+   *"shouldn't offer them that if they have no other friends, are a new account"*). For a friendless
+    person this invite is not one demand among several, it is the only thing they have, and a way past
+     it is a way to an empty app. They still have ▦ — the difference is that ▦ is an exit they choose
+      rather than one we suggest.
+- **"To the side" is literal, not a euphemism.** Dismissing releases the *fullscreen* hold; the invite
+   stays on the page's own glass door (`DoorFace` mounts the same panel) with its JOIN button intact.
+    Had it actually discarded the token, the control would have been the worst thing on the card.
+
+**What the private key unblocks — legacy rung 2.** Today the old door is parse-only: `granted:'ftp'`,
+ never a Music Feature, no verification, because the signing key and spend ledger are still in the old
+  garden's Dexie. Rung 2 is lifting them into `%Idzeug` records so an old link can actually be
+   *honoured* rather than merely named. Until then every relic honestly ends at "ask for a fresh QR".
+
 The recon (2026-07-22) found the funnel is ~80% already built as components — the job is to make the
  new-here flow UNIVERSAL (fire invite-or-not) and fold in open-share + the FSA/Chrome warning. Order:
 1. **LANDED 2026-08-08 — and the clock is gone.** The cold trigger already existed: `namer` renders on

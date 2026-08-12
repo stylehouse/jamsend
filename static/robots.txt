@@ -1,0 +1,7 @@
+# jamsend is a private thing between friends — there is nothing here for an index.
+# Written 2026-08-12, when `/` stopped 404ing and became the music scape itself: the old
+#  root threw a cheap 404 at every crawler, and mounting the app there gave that away.
+# Disallow everything, including the invite paths — an invite URL carries a single-use token
+#  in its query, and a crawler following one would spend it on nobody.
+User-agent: *
+Disallow: /

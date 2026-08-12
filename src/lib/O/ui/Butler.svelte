@@ -59,7 +59,7 @@
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
     import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
     import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
-    import { boot_param } from "$lib/boot"
+    import { boot_param, invite_dismissed, dismiss_invite } from "$lib/boot"
     import { onMount } from "svelte"
     import { fly, fade } from "svelte/transition"
     import { quintOut } from "svelte/easing"
@@ -252,9 +252,22 @@
     //        Until then this releases on either terminal, which can be wrong but can never trap.
     //  See Supervisor_todo §0 for the full flow, including the plural — "every Invite it DISCOVERS" is
     //   more than the URL's one (a pasted token is a second, and a discovered-but-unspent one a third).
+    //  THE PER-INVITE DISMISSAL LANDS HERE FIRST, ALONE (2026-08-12) — the prerequisite the paragraph
+    //   above names, shipped ahead of the stricter hold it unblocks rather than alongside it.  Today
+    //    it can only RELEASE a screen that the terminal-note rule was already going to release; its
+    //     reason for existing is that it must be in place, and proven, before `landing` may start
+    //      holding on ✗ and on the two `join()` bails that reach no terminal at all.  Sequencing, not
+    //       hedging: the release must exist before the hold, or the first dead token traps someone.
+    //  `dismissed` is read through the SAME `tick` as everything else in this file, so the click that
+    //   writes it re-renders the ladder on the next beat with no extra plumbing.
+    let dismissed = $derived.by(() => {
+        void tick
+        return invite_dismissed(boot_param('Iz'))
+    })
     let landing = $derived.by(() => {
         void tick
         if (!boot_param('Iz')) return false
+        if (dismissed) return false
         const note = String(H?.c?.door?.note || '')
         return !(note.startsWith('✓') || note.startsWith('✗'))
     })
@@ -281,6 +294,14 @@
         void tick
         return (H?.c as any)?.door_friends === 0
     })
+    // ── …AND AN OLD GARDEN LINK, which is the same offer for a different reason ─────────────────
+    //  Stamped by the same STANDUP, so this file still names no subsystem.  It sits at the OFFER
+    //   rung below and never at `landing`'s: an old link cannot be resolved here yet, so a hold on
+    //    one would never end.  See SwarmStandup for the whole argument.
+    let relic = $derived.by(() => {
+        void tick
+        return (H?.c as any)?.door_relic === 1
+    })
 
     // ── THE STAGE — exactly one thing on the card, always (Supervisor_todo §0 defect 2) ─────────
     //  The old markup was a pile of INDEPENDENT `{#if}`s — door · tap · headline · arc · advice —
@@ -297,7 +318,7 @@
     let stage = $derived.by(() => {
         if (landing) return 'door'
         if (gate.wanted) return 'tap'
-        if (friendless) return 'door'
+        if (friendless || relic) return 'door'
         if (view.lines.length) return 'arc'
         return 'dark'
     })
@@ -444,6 +465,30 @@
                              whole offer IS `invite a friend`, and passing the dress unconditionally
                              would leave a friendless person a card with nothing to press. -->
                         <div class="door"><InvitePanel {H} arrival={landing_seen} /></div>
+                        <!-- THE PER-INVITE RELEASE — and `!friendless` is the whole of its ethics
+                             (the owner 2026-08-12: *"shouldn't offer them that if they have no other
+                             friends, are a new account"*).  Right, and the first version was wrong to.
+                             For someone with no friends this invite is not one demand among several,
+                             it is THE ONLY THING THEY HAVE; offering a way past it is offering to
+                             take them to an empty app.  Whoever already has friends is the only
+                             person for whom "let me get on with what I came for" is even a coherent
+                             wish, so they are the only person offered it.  A friendless person who
+                             genuinely cannot proceed still has ▦, which the page draws at all times
+                             — the difference is that ▦ is an exit they choose, not one we suggest.
+                             THE INVITE IS NOT DISCARDED, and that is what makes the offer honest
+                             rather than a "close".  It moves from this fullscreen hold to the page's
+                             own glass door (DoorFace mounts the same panel), where it keeps its JOIN
+                             button.  So this really is "put it to the side", not "throw it away" —
+                             and the note under it says so, because a control that silently dropped an
+                             invite while promising later would be the worst thing on this card.
+                             Drawn only while one is actually pending: after a ✓ or ✗ there is nothing
+                             to release and the verb would be wrong. -->
+                        {#if landing && !friendless}
+                            <button class="later" onclick={() => { dismiss_invite(boot_param('Iz')); tick++ }}
+                                title="stop holding the whole screen for THIS invite — it stays on the page’s own door with its join button, and a different invite would still stop you">
+                                ✕ put this to the side
+                            </button>
+                        {/if}
                     {/if}
 
                     {#if stage === 'door'}
@@ -717,6 +762,18 @@
        an honest left edge to read down. Deliberately no `:global` restyling of the panel: it is the
        same door as the strip's and the cell's, and a Butler-only skin would be a fourth opinion. */
     .door { width: 100%; text-align: left; }
+    /* the per-invite release — dim, borderless, small, and it should stay that way.  Every other
+       control on this card is an action someone came here to take; this one is an admission that
+       they can't, and a button that competes with `join` for attention would be inviting the
+       failure instead of allowing it.  Underline on hover only, so it is findable by someone
+       looking for a way out and invisible to someone getting on with the invite. */
+    .later {
+        background: none; border: none; color: #7f92a6; cursor: pointer;
+        font: inherit; font-size: .8rem; padding: .3rem .1rem; margin-top: .15rem;
+        align-self: flex-start;
+    }
+    .later:hover { color: #cfe0ee; text-decoration: underline; }
+    .later:focus-visible { outline: 2px solid #7fc7ff; outline-offset: 2px; border-radius: 3px; }
     .advice { margin: .1rem 0 0; display: flex; flex-direction: column; gap: .25em;
               max-width: 24em; color: #cfe0ee; font-size: .95rem; line-height: 1.45;
               padding: .55em .8em; border-radius: .5rem;
