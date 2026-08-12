@@ -107,58 +107,25 @@ services:
 
 
 
-  coturn:
-    image: coturn/coturn:latest
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM coturn/coturn:latest
-        USER root
-        RUN apt-get update -qq && apt-get install -y -qq curl iproute2
-        COPY coturn-entrypoint.sh /entrypoint.sh
-        RUN chmod +x /entrypoint.sh
-        ENTRYPOINT ["/entrypoint.sh"]
-    container_name: jamsend-prod-coturn
-    user: "0:0"
-    network_mode: host
-    volumes:
-      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
-    environment:
-      - TLS_CERT=${TLS_CERT}
-      - TLS_KEY=${TLS_KEY}
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-  
-  upnp-forwarder:
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM alpine:3.19
-        RUN apk add --no-cache miniupnpc
-        COPY ty/upnp-loop.sh /usr/local/bin/upnp-loop.sh
-        RUN chmod +x /usr/local/bin/upnp-loop.sh
-        CMD ["/usr/local/bin/upnp-loop.sh"]
-    container_name: jamsend-prod-upnp
-    network_mode: host
-    restart: always
-    
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
-        reservations:
-          cpus: '0.1'
-          memory: 32M
+  # COTURN IS GONE (2026-08-12).  TURN is abandoned — the transport is the websocket
+  #  relay now, so there is no STUN/TURN server to run, no TLS cert to lift out of
+  #   leproxy's Caddy, and no relay port range to forward.  ty/turnserver.conf and
+  #    ty/coturn-entrypoint.sh are left on disk as the record of what it was.
+  #  Its config carried a live hazard that only made sense on the jump server: the
+  #   denied-peer-ip lines for 10/8, 172.16/12 and 192.168/16 were commented out
+  #    because "much less dangerous on a cloud VPS with no LAN behind it".  Direct
+  #     mode puts it on the home LAN, so if TURN ever comes back it comes back with
+  #      those three lines UNCOMMENTED and a credential that isn't in the repo.
 
+  # UPNP-FORWARDER MOVED TO LEPROXY (2026-08-12).  It asked the router to open 9999 —
+  #  Caddy's port, not one of ours: every service here publishes to 172.17.0.1 only.
+  #   Forwarding is a per-HOST singleton (one router, one WAN ip, ~32 mapping slots),
+  #    so it belongs beside the component that decides what faces the internet, the way
+  #     duckdns-updater already does.  leproxy generates it from the same list it gives
+  #      Caddy's `ports:`, and only in direct mode — which is why prod.sh no longer
+  #       strips anything, and no longer reads leproxy's .env to decide.
+  #  See leproxy/upnp_forward.sh (was ty/upnp-loop.sh).
 
-volumes:
-  leproxy_caddy_data:
-    external: true  # This tells docker to use existing volume, not create new one
+# No `volumes:` block: leproxy_caddy_data was declared external for coturn's TLS certs
+#  and mounted by nothing even then.  An `external: true` volume that must pre-exist is
+#   a stand-up failure waiting to happen, so it goes with coturn.

@@ -16,7 +16,59 @@ The one living doc for the first-run funnel (commissioned 2026-07-22). When a NE
 
 ## 0. Get on with next
 
-### 2026-08-12 (latest) — %Idzeug BECOMES THE ISSUER, and one invite stops being one particle
+### 2026-08-12 (latest) — THE OLD GARDEN'S LINKS WORK AGAIN (§6.2 rung 2)
+
+The owner handed over the old music-server account — the pre-Swarm `Trust`/`Tyranny` garden's keypair
+ — and asked for it *"migrated into the data store"*, with **its Idzeug serial starting at 22,222,
+  because I already made lots of them**. That number is the whole story: the old design and this one
+   are the **same design**. Tyranny kept an `Upper_Number` it wound forward (`IdzeugNumberLeap` added
+    800 at a time) and, in its own words, *"we only need to remember they need $n between some range
+     and not be in the answered set"* — which is `next` and `claimed`, written five years earlier.
+
+**So the migration is one file and no code.** `.jamsend/account/7950f300faa8a4f9/toc.snap`:
+
+```
+Identity:<prepub>,prepub:<prepub>,born:2026-02-06,nick:calm-eel,pub:…,key:…
+  Peering,name:<prepub>
+    Idzeug:1,to:Music,next:22222
+```
+
+One issuer stands for **every link the old garden ever posted**. An old serial then resolves through
+ `Swarm_iz_find` untouched (`i < next`), so there is no legacy ledger, no import of the old Dexie, and
+  no second spend-state to keep true. Boot it with `?I=<prepub>` — Dexie misses, `Swarm_boot_seed`
+   reads the account off the share, and the key is live. (`main`/`Welcome`/`Idvoyage` do not migrate:
+    `Idvoyage` is **tyrant**-signed, and there is no tyrant any more. Kept verbatim in `legacy.json`
+     beside the account.)
+
+**What actually differs is only the MAC**, and it is the same *kind* of MAC. Old:
+ `ed25519(`<prepub>-<advice>`)` truncated to 16. New: `signHeader` over sorted-key JSON, truncated to
+  16. Same curve, same key encoding, same *regeneration IS the check* regime — so `Swarm_hello` grew
+   one branch (`Swarm_legacy_presig`) and **nothing** about the spend, the grant mint or the seal
+    moved. A relic is rendered as an ordinary token by `Swarm_legacy_token` and rides the ordinary
+     `Swarm_redeem`, with the raw advice alongside as the re-signing domain.
+
+**⚠ THE TOOTH: the advice must name the serial it arrived with.** A relic's `{advice, sign}` pair
+ verifies *on its own*, so without binding `advice.n === token.serial` one genuine old link is an
+  **unlimited pass** — its holder offers it beside serial 9, then 8, then 7, and ticks off every
+   unclaimed number in the issuer's space. This is not theoretical: with the binding line removed the
+    Book records `claimed:7~9` and a sealed friendship on a signature made for number 7. Mutation-
+     tested both ways; do not "simplify" that comparison away.
+
+*What the old link `granted` stays `ftp` on the parse* — that is what the old garden honestly
+ promised — while a redemption mints whatever **our** issuer says, today `Music` (the owner: *"all
+  Invites are just for the entire Music thing"*). §10.1: the maker's own record is the law.
+
+**LANDED.** `Swarm_legacy_presig`, `Swarm_legacy_token`, `advice` on `Swarm_legacy_of_url`, the
+ `frame.relic` branch in `Swarm_hello`, `Swarm_redeem`'s 4th argument; InvitePanel arms a relic as a
+  real offer (opened *or* pasted) and the 🕰 note now says it works. SwarmPolicy beats 7–8 prove the
+   seal and both teeth — `ok_pct 1, caveat 0, 8 steps`, steps 1–6 diges byte-identical.
+
+**STILL OPEN.** Relic links live on the OLD origin (`…:9999/#…`), so in practice they arrive by
+ **paste**, not by click — the paste path is wired and is the one to demo. And the old garden may have
+  minted from more than one `%Idzeug`; if a second name shows up, its `n` space overlaps `Idzeug:1`'s
+   and it needs its own issuer with the serial written `<z>.<i>`.
+
+### 2026-08-12 — %Idzeug BECOMES THE ISSUER, and one invite stops being one particle
 
 The owner, reading his own `.jamsend/account/f5da6599b8505881/toc.snap` and finding **279 `%Idzeug`
  rows** in it: *"issuing an Invite just winds up a number of the Idzeug that issued the invite"*, and

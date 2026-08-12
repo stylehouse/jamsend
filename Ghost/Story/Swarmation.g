@@ -908,6 +908,8 @@ async SwarmPolicy_drive(w, req):
         if (n === 4) await this.SwarmPolicy_second(w)
         if (n === 5) await this.SwarmPolicy_leap(w)
         if (n === 6) await this.SwarmPolicy_relics(w)
+        if (n === 7) await this.SwarmPolicy_relic_redeem(w)
+        if (n === 8) await this.SwarmPolicy_relic_teeth(w)
     }
     await this.SwarmStaple_pump(w)
     await this.SwarmPolicy_order(w)
@@ -949,6 +951,40 @@ async SwarmPolicy_leap(w):
 async SwarmPolicy_relics(w):
     w.sc.now = 1751920130
 
+// SwarmPolicy_relic_url — mint an OLD GARDEN link the way Tyranny.svelte minted them: the advice
+//  signed raw as `<prepub>-<advice>` and truncated to 16, hung off a 13-hash fragment. Signed with
+//   the SAME key the door will re-sign with, which is the whole of the old scheme.
+async SwarmPolicy_relic_url(w, ident, advice):
+    let sign = await this.Swarm_legacy_presig(ident.c.keys, ident.sc.prepub, advice)
+    return 'https://jam.example/BigSoundland#############' + ident.sc.prepub + '-' + advice + '-' + sign
+
+// beat 7 — RUNG 2: an old garden link is REDEEMED, not merely read. Vera stands in for the migrated
+//  garden — one %Idzeug issuer whose `next` sits above the old high water, which is exactly what the
+//   real migration wrote — so every number the old garden ever signed resolves as an ordinary serial
+//    and needs no legacy ledger at all. Pia holds a relic and it seals through the SAME door as a QR.
+async SwarmPolicy_relic_redeem(w):
+    w.sc.now = 1751920140
+    let vera = this.SwarmStaple_ident(w, 'Vera')
+    let pia = await this.SwarmStaple_person(w, 'Pia')
+    this.Swarm_online(pia, true)
+    let iz = this.Swarm_iz_issuer(vera, { Music: 1 })
+    this.Swarm_iz_mark(vera, iz, { next: '50' })
+    w.c.relic = this.Swarm_legacy_of_url(await this.SwarmPolicy_relic_url(w, vera, 'garden.n~7'))
+    await this.Swarm_redeem(w, pia, this.Swarm_legacy_token(w.c.relic), w.c.relic.advice)
+
+// beat 8 — the two teeth. A REPLAY of the same relic is refused because its number is claimed; and
+//  the SERIAL SWAP — the same advice and the same genuine signature offered beside a DIFFERENT
+//   number — is refused as forged. The second tooth is the one that matters: without the door
+//    binding advice.n to the carried serial, ONE real old link would let its holder tick off every
+//     unclaimed number in the issuer's space, and single-use would mean nothing for the whole era.
+async SwarmPolicy_relic_teeth(w):
+    w.sc.now = 1751920150
+    let quin = await this.SwarmStaple_person(w, 'Quin')
+    this.Swarm_online(quin, true)
+    let relic = w.c.relic
+    await this.Swarm_redeem(w, quin, this.Swarm_legacy_token(relic), relic.advice)
+    await this.Swarm_redeem(w, quin, this.Swarm_token(relic.prepub, '9', 'Music', relic.sign), relic.advice)
+
 // ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
 SwarmPolicy_witness(w):
     let n = (this.c.run)?.c.step_n
@@ -976,6 +1012,19 @@ SwarmPolicy_witness(w):
     if (n === 6 && relicOk && !(oa %see:'the old garden link parses at the new door — prepub and name and count lifted from the fragment')) i %see:'the old garden link parses at the new door — prepub and name and count lifted from the fragment'
     let dead = !this.Swarm_legacy_of_url('https://jam.example/BigSoundland#garbage') && !this.Swarm_legacy_of_url('https://jam.example/BigSoundland?Iz=abcdef') && !this.Swarm_legacy_of_url(null) && !this.Swarm_legacy_of_url('https://jam.example/#############nothexadecimal-Name.n~1-signsignsignsign')
     if (n === 6 && dead && !(oa %see:'a mangled relic and a modern link both refuse cleanly — null never a crash')) i %see:'a mangled relic and a modern link both refuse cleanly — null never a crash'
+    // beat 7: rung 2 — the old link SEALS. Both halves of the friendship, and the number ticked off
+    //  the migrated issuer, which is the ledger entry that makes it single-use from here on.
+    let iz1 = this.Swarm_peering(vera)?.o({ Idzeug: '1', next: 1 })[0]
+    let pia = this.SwarmStaple_ident(w, 'Pia')
+    let pVera = pia && this.Swarm_peering(pia)?.o({ Pier: 1, pub: vera.sc.prepub })[0]
+    let vPia = pia && this.Swarm_peering(vera)?.o({ Pier: 1, pub: pia.sc.prepub })[0]
+    let took7 = this.Swarm_claimed_has(iz1?.sc?.claimed, 7)
+    if (n === 7 && pVera && vPia && took7 && !(oa %see:'an old garden link seals a real friendship at the new door — its number ticks off the migrated issuer')) i %see:'an old garden link seals a real friendship at the new door — its number ticks off the migrated issuer'
+    // beat 8: the teeth. Quin gets nothing from either attempt, and number 9 — the one the swap
+    //  aimed at with a genuine signature for number 7 — is still unclaimed.
+    let quin = this.SwarmStaple_ident(w, 'Quin')
+    let noQuin = quin && !(this.Swarm_peering(vera)?.o({ Pier: 1, pub: quin.sc.prepub }).length)
+    if (n === 8 && noQuin && took7 && !this.Swarm_claimed_has(iz1?.sc?.claimed, 9) && !(oa %see:'a relic cannot be torn twice nor re-aimed at another number — the replay and the serial swap both seal nothing')) i %see:'a relic cannot be torn twice nor re-aimed at another number — the replay and the serial swap both seal nothing'
 
 // SwarmPolicy_order — float A:SwarmPolicy to the front of H/* so the Run snap stays readable.
 async SwarmPolicy_order(w):

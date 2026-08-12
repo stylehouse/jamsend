@@ -4,8 +4,7 @@ story:SwarmDisk
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.061
-      sample=0.102,at=1785837242
+    TimeTotal:beliefs,avg=0.057
       sample=0.053,at=1785839001
       sample=0.041,at=1785839016
       sample=0.047,at=1785853986
@@ -15,8 +14,8 @@ story:SwarmDisk
       sample=0.06,at=1786113299
       sample=0.054,at=1786518169
       sample=0.106,at=1786519023
-    TimeTotal:step,avg=0.009
-      sample=0.015,at=1785837242
+      sample=0.064,at=1786521329
+    TimeTotal:step,avg=0.008
       sample=0.008,at=1785839001
       sample=0.006,at=1785839016
       sample=0.007,at=1785853986
@@ -26,6 +25,7 @@ story:SwarmDisk
       sample=0.009,at=1786113299
       sample=0.008,at=1786518169
       sample=0.015,at=1786519023
+      sample=0.009,at=1786521329
   step,dige:46ec288dbaeec02c
   step=2,dige:47cf9713e36761ff
   step=3,dige:ed2731e9668212f6

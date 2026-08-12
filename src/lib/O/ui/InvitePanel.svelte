@@ -371,6 +371,31 @@
         if (t) invite = t
         else iz_err = 'the invite did not parse — ask for a fresh QR'
     })
+    // ── …AND A RELIC BECOMES AN ORDINARY OFFER (rung 2, 2026-08-12) ──────────────────────────────
+    //  Until today an old link could only be NAMED.  Now that the old garden's account has been
+    //   migrated onto this door — one `%Idzeug:1,to:Music,next:<old high water>` standing for every
+    //    link it ever posted — an old serial resolves exactly like a new one, so the honest move is to
+    //     stop treating a relic as a special case in the UI at all: render it as the token it is and
+    //      let the SAME landing face, the same name-ask, and the same JOIN carry it.
+    //  THE ADVICE IS KEPT ASIDE because it is the re-signing domain, and only the raw string will do
+    //   — a reconstructed one would differ in key order and re-sign to a different MAC.  It rides the
+    //    hello beside the token (Swarm_redeem's 4th argument) and nowhere else.
+    //  ARMED EVEN WHEN IT CANNOT WIN: a relic from some OTHER garden parses the same and arms the same,
+    //   and its refusal ('not_ours' / 'forged') then reads back through the ordinary join report. That
+    //    is better than guessing here — this panel cannot know which gardens the door holds keys for,
+    //     and a button that fails with a reason beats a dead end that pre-judges.
+    let relic_advice = $state<string>('')
+    $effect(() => {
+        void H?.version
+        if (!relic || invite || iz_err || typeof H?.Swarm_legacy_token !== 'function') return
+        const tok = H.Swarm_legacy_token(relic)
+        if (!tok) return                      // shapeless relic (no n, a short sign) — the note below still names it
+        const t = H.Swarm_token_parse?.(tok)
+        if (!t) return
+        relic_advice = String(relic.advice || '')
+        iz = tok
+        invite = { ...t, friendly: relic.friendly }
+    })
     // AUTO-JOIN — a self BORN TODAY landing on a scanned invite joins by itself: the scan was
     //  the intent, and a brand-new visitor has no reason to hesitate at a button.  An older
     //   identity keeps the deliberate JOIN (maybe they don't want this friendship on this key).
@@ -420,8 +445,16 @@
     function strip_iz(pin_prepub?: string) {
         if (typeof window === 'undefined' || !window.history?.replaceState) return
         const u = new URL(window.location.href)
-        if (!u.searchParams.has('Iz')) return
+        // A RELIC LIVES IN THE FRAGMENT (rung 2), and the `?Iz` early-return below used to leave one
+        //  in the bar forever: an old link spent on its first visit re-armed on every reload and then
+        //   failed 'spent' — precisely the dead-blob loop this function exists to break, and it also
+        //    meant a relic join never got its `?I=` pin, so the reload minted a stranger and left the
+        //     new friendship on the old key. Only ever clears a fragment we PARSED as a relic; a
+        //      plain #anchor belongs to somebody else and stays.
+        const had_relic = !!landed_relic && !!u.hash
+        if (!u.searchParams.has('Iz') && !had_relic) return
         u.searchParams.delete('Iz')
+        if (had_relic) u.hash = ''
         if (pin_prepub) u.searchParams.set('I', pin_prepub)
         window.history.replaceState(null, '', u.toString())
     }
@@ -455,7 +488,9 @@
             return
         }
         await sleep(400)   // one beat for the signed hello-bind to land at the relay
-        const claim = await H.Swarm_redeem(w, self, iz)
+        // `relic_advice` is '' for every modern token, so this call is unchanged for them; for an old
+        //  garden link it carries the raw advice the door re-signs to verify (Swarm_legacy_presig).
+        const claim = await H.Swarm_redeem(w, self, iz, relic_advice)
         // SPENT even on refusal: a single-use ?Iz is consumed by the attempt, so drop it either way
         //  — a lingering dead blob only re-fails on reload.
         if (!claim) { strip_iz(); joined = '✗ the inviter refused or is unreachable — the rebuff rides the identity'; return }
@@ -556,10 +591,16 @@
 {/snippet}
 <div class="ip" class:inglass>
     {#if relic}
-        <!-- the old garden's invite: recognized, named, and honestly un-honourable (rung 1) -->
+        <!-- the old garden's invite: recognized, named, and — since the migration — redeemable.
+             The note only carries what the LANDING FACE below cannot: that this is an old link, so
+             nobody is surprised when it works, or when a foreign one doesn't. -->
         <div class="ip-land">
             <span class="ip-title">🕰 an old garden invite — from <b>{relic.friendly}</b></span>
-            <span class="ip-note">it granted the old {relic.granted} trust and its key has not moved into this door yet — ask {relic.friendly} for a fresh QR</span>
+            {#if invite}
+                <span class="ip-note">the old garden's key lives on this door now, so this link still works — joining grants {invite.to}, not the old {relic.granted} trust</span>
+            {:else}
+                <span class="ip-note">it granted the old {relic.granted} trust and this door cannot read its number — ask {relic.friendly} for a fresh QR</span>
+            {/if}
         </div>
     {/if}
     {#if invite || iz_err}

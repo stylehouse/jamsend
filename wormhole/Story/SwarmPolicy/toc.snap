@@ -4,31 +4,33 @@ story:SwarmPolicy
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.046
-      sample=0.034,at=1783420375
-      sample=0.144,at=1783713027
-      sample=0.054,at=1783855456
-      sample=0.021,at=1785075652
-      sample=0.021,at=1785075663
+    TimeTotal:beliefs,avg=0.051
       sample=0.021,at=1785075672
       sample=0.025,at=1785075690
       sample=0.069,at=1786506254
       sample=0.034,at=1786518144
       sample=0.034,at=1786519017
-    TimeTotal:step,avg=0.008
-      sample=0.006,at=1783420375
-      sample=0.024,at=1783713027
-      sample=0.009,at=1783855456
-      sample=0.004,at=1785075652
-      sample=0.004,at=1785075663
+      sample=0.087,at=1786521010
+      sample=0.071,at=1786521068
+      sample=0.063,at=1786521246
+      sample=0.063,at=1786521260
+      sample=0.039,at=1786521273
+    TimeTotal:step,avg=0.007
       sample=0.004,at=1785075672
       sample=0.004,at=1785075690
       sample=0.011,at=1786506254
       sample=0.006,at=1786518144
       sample=0.006,at=1786519017
+      sample=0.011,at=1786521010
+      sample=0.009,at=1786521068
+      sample=0.008,at=1786521246
+      sample=0.008,at=1786521260
+      sample=0.005,at=1786521273
   step,dige:e5c5f344a350825c
   step=2,dige:5a6d64f986b731f7
   step=3,dige:eafff74fbade34aa
   step=4,dige:53f81ff993a47fb3
   step=5,dige:c4e78614b84a059d
   step=6,dige:e3c38b6d0e4d4978
+  step=7,dige:626f055367a7f1d3
+  step=8,dige:76b64ca9964be9ae

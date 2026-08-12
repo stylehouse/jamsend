@@ -4,8 +4,7 @@ story:SwarmChain
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.071
-      sample=0.07,at=1784714619
+    TimeTotal:beliefs,avg=0.078
       sample=0.053,at=1785075771
       sample=0.053,at=1785075783
       sample=0.067,at=1785075791
@@ -15,8 +14,8 @@ story:SwarmChain
       sample=0.077,at=1786516701
       sample=0.093,at=1786518149
       sample=0.084,at=1786519011
-    TimeTotal:step,avg=0.014
-      sample=0.014,at=1784714619
+      sample=0.137,at=1786521323
+    TimeTotal:step,avg=0.016
       sample=0.011,at=1785075771
       sample=0.011,at=1785075783
       sample=0.013,at=1785075791
@@ -26,6 +25,7 @@ story:SwarmChain
       sample=0.015,at=1786516701
       sample=0.019,at=1786518149
       sample=0.017,at=1786519011
+      sample=0.027,at=1786521323
   step,dige:3f54c9d90c03365b
   step=2,dige:e9c5e4013999dd0a
     Assertion:four-selves-stand-up,sentence:four selves stand up online — an issuer a first tip and two newcomers waiting to chain in

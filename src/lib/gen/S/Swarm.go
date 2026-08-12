@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '9a69e052993a99a7~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'b22791431c0c8458~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -822,7 +822,7 @@ Swarm_legacy_of_url(href) {
     try { c = this.Swarm_legacy_advice(parts[1]) }
     catch (er) { return null }
     if (!c || !c.name) return null
-    let out = { legacy: 1, prepub: parts[0], friendly: c.name, sign: parts[2], granted: 'ftp' }
+    let out = { legacy: 1, prepub: parts[0], advice: parts[1], friendly: c.name, sign: parts[2], granted: 'ftp' }
     if (c.n != null) out.n = Number(c.n)
     return out
 
@@ -843,6 +843,49 @@ Swarm_legacy_advice(advice) {
         if (k !== name) out[k] = c[k]
     }
     return out
+
+},
+// ── rung 2: REDEEMING one (2026-08-12, the migration that made it possible) ──────────────────────
+//  Rung 1 could only ever parse, because the old garden's signing key lived in ITS Dexie and nothing
+//   here held it.  The owner migrated that account onto this door — `.jamsend/account/<prepub>/toc.snap`
+//    carrying the old keypair, with ONE issuer `%Idzeug:1,to:Music,next:<high water>` standing for every
+//     link the old garden ever posted.  That is the whole trick: the old design and this one are the SAME
+//      design (Tyranny's `Upper_Number` + "not in the answered set" IS `next` + `claimed`), so an old
+//       serial resolves through `Swarm_iz_find` untouched — `i < next` — and needs no legacy ledger at all.
+//  What differs is ONLY the MAC.  New: signHeader over sorted-key JSON. Old: a raw ed25519 over
+//   `<prepub>-<advice>`, truncated to 16 (Tyranny's Idzeug_i_Idzeugi). Same curve, same key encoding,
+//    same "regeneration IS the check" regime — so one branch at the door covers both, and nothing about
+//     the spend ledger, the grant mint or the seal moves.
+
+// Swarm_legacy_presig — regenerate the OLD garden's MAC for `advice` and hand back its 16-hex prefix.
+//  Only OUR key can make it, exactly as with Swarm_presig, so this verifies without storing anything.
+//  THE ALPHABET GUARD IS A SECURITY BOUNDARY, not tidiness.  The caller hands us a string that becomes
+//   a SIGNING DOMAIN, and we hold a second domain (signHeader's canonical JSON) signed by the same key.
+//    Keeping the two disjoint is what stops a presig minted in one being replayed as the other: the old
+//     encoder's own alphabet (`encode_Idzeugi_advice` threw on anything outside it) contains no `{`, `"`
+//      or `:`, so a JSON domain can never be spelled as an advice.  Null on anything else — never sign it.
+async Swarm_legacy_presig(keys, prepub, advice) {
+    let s = String(advice == null ? '' : advice)
+    if (!s || !/^[\w.~+\-]+$/.test(s)) return null
+    if (!keys?.key) return null
+    let ido = new Idento()
+    ido.thaw({ pub: keys.pub, key: keys.key })
+    let sig = await ido.sig(String(prepub) + '-' + s)
+    return String(sig).slice(0, 16)
+
+},
+// Swarm_legacy_token — render a parsed relic as a MODERN token so exactly one door serves both eras.
+//  `<prepub>*<n>*Music*<sign16>`: the serial is the old `n` (which IS a serial in the issuer's space —
+//   that is why the migration set `next` above the old high water), and the `n` slot carries `Music`
+//    only to satisfy the codec — the door reads the Feature off its OWN record (§10.1), never off this.
+//  The old link's `granted:'ftp'` stays on the RELIC, where it honestly describes what the old garden
+//   promised; what a redemption actually mints is whatever our issuer says, which today is Music
+//    (the owner 2026-08-12: *"all Invites are just for the entire Music thing"*).
+Swarm_legacy_token(relic) {
+    if (!relic || !relic.prepub || relic.n == null || !relic.sign) return null
+    if (!/^[0-9a-f]{16}$/.test(String(relic.sign))) return null
+    if (!(Number(relic.n) >= 1)) return null
+    return this.Swarm_token(relic.prepub, String(Number(relic.n)), 'Music', String(relic.sign))
 },
 //#endregion
 
@@ -1500,13 +1543,17 @@ Swarm_heard_hi(w, ident, frame) {
 //     pier_confirm — THREE frames seal the friendship (§6.3, the ReInvite honour→seal shape).
 //      The issuer offline → the redeem simply FAILS (%rebuff,offline): the token proves receipt,
 //       it does not stand in for an absent party.
-async Swarm_redeem(w, ident, iz) {
+//  `advice` rides only for an OLD GARDEN link (rung 2): the relic's raw advice string, which is the
+//   re-signing domain its 16-hex presig was made over. Absent for every modern token, so the door's
+//    branch is driven by what the CLAIM carries, and a modern redeem is byte-for-byte what it was.
+async Swarm_redeem(w, ident, iz, advice) {
     let t = this.Swarm_token_parse(iz)
     if (!t) {
         this.Swarm_rebuff(ident, 'forged', iz)
         return null
     }
     let hello = { kind: 'pier_hello', iz: iz, page: this.Swarm_page(ident) }
+    if (advice) hello.relic = String(advice)
     if (!this.Swarm_deliver(w, ident, t.prepub, hello)) {
         this.Swarm_rebuff(ident, 'offline', t.prepub)
         return null
@@ -1553,8 +1600,27 @@ async Swarm_hello(w, ident, frame) {
     if (!f) return refuse('unknown')
     let record = f.record
     let n = this.Swarm_token_n(f.to, f.params)
-    let presig = await this.Swarm_presig(ident.c.keys, ident.sc.prepub, f.canon, n)
-    if (presig !== t.presig) return refuse('forged')
+    // TWO ERAS, ONE DOOR (§6.2 rung 2). A relic carries its raw `advice`; everything else regenerates
+    //  the modern MAC. Both are "re-sign our own domain and prefix-match", so past this point the
+    //   spend, the grant mint and the seal are IDENTICAL — an old link becomes an ordinary claim.
+    //  THE ADVICE MUST NAME THE SERIAL IT CAME WITH, and that check is the whole tooth. Without it one
+    //   genuine relic is an unlimited pass: its {advice, sign} pair verifies on its own, so a holder
+    //    could send it beside serial 9999, then 9998… and tick off every unclaimed number in the
+    //     issuer's space from a single link. Binding advice.n === t.serial pins a relic to exactly the
+    //      one number the old garden signed it for — which is what makes single-use mean anything here.
+    //  SERIAL-FORM ONLY: a relic claims a NUMBER off the issuer. A legacy 12-hex per-invite row is a
+    //   record of THIS era and has no advice to verify, so it may never be reached down this branch.
+    let presig
+    if (frame.relic) {
+        if (f.kind !== 'serial') return refuse('forged')
+        let c = null
+        try { c = this.Swarm_legacy_advice(String(frame.relic)) } catch (er) { c = null }
+        if (!c || c.n == null || String(Number(c.n)) !== String(t.serial)) return refuse('forged')
+        presig = await this.Swarm_legacy_presig(ident.c.keys, ident.sc.prepub, frame.relic)
+    } else {
+        presig = await this.Swarm_presig(ident.c.keys, ident.sc.prepub, f.canon, n)
+    }
+    if (!presig || presig !== t.presig) return refuse('forged')
     // proven: OUR invite, on a bound page — a real redeemer. NOW promote the return route (the
     //  pier_accept and every reason below ride it), and answer with denials the honest redeemer can act on.
     this.Swarm_station_pier(w, ident, frame.page?.prepub)

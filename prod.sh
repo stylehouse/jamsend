@@ -59,26 +59,12 @@ cp docker-compose.prod.yml docker-compose.yml
 cp svelte.config.prod.js svelte.config.js
 mkdir -p build
 
-if [[ "${TUNNEL_MODE}" == "true" ]]; then
-    echo "  Tunnel mode: stripping coturn and upnp-forwarder from docker-compose.yml"
-    echo "  (those run on the jump server at ${LEPROXY_PUBLIC_IP})"
-
-    # Remove service blocks for coturn and upnp-forwarder.
-    # Each block: 2-space-indented service name, then all more-deeply-indented
-    #   or blank lines, stopping before the next 2-space-indented key or top-level key.
-    perl -0777 -i -pe '
-      # Each block: service line, then any lines that are blank or start with whitespace
-      s/\n  (?:upnp-forwarder|coturn):(?:\n(?:[ \t]+[^\n]*|))*//g;
-      # Remove the external volume entry the same way
-      s/\n  leproxy_caddy_data:(?:\n(?:[ \t]+[^\n]*|))*//g;
-      # Remove volumes: if it ends up empty (nothing but optional whitespace after it)
-      s/\nvolumes:\s*$//;
-    ' docker-compose.yml
-    # coturn was the only consumer of leproxy_caddy_data; remove that volume entry too
-    perl -0777 -i -pe '
-      s/\n  leproxy_caddy_data:\n    external: true\n//g
-    ' docker-compose.yml
-fi
+# NOTHING IS STRIPPED HERE ANY MORE (2026-08-12).  This block used to remove coturn,
+#  upnp-forwarder and the leproxy_caddy_data volume in tunnel mode.  coturn is gone
+#   (TURN abandoned), and the router forwarding moved to leproxy, which owns the public
+#    ports and already branches on TUNNEL_MODE when it generates its own compose.  So
+#     prod.sh no longer edits the compose it just copied, and no longer needs to know
+#      what the front door looks like.
 
 # Build new Docker images and start the services
 echo ""
@@ -104,7 +90,13 @@ fi
 
 # ── Jump server staging (tunnel mode only) ────────────────────────────────────
 # leproxy/install.sh generated there/ with ssh-tunnel-destiny.
-# We add coturn, extract TLS certs from the running leproxy Caddy, and rsync.
+# We copy it beside the app and hand back the rsync line; the jump server holds nothing else.
+# COTURN IS GONE (2026-08-12): TURN is abandoned, the transport is the websocket relay.
+#  What used to live here — copying ty/turnserver.conf into there/, lifting the TLS cert
+#   out of leproxy's RUNNING Caddy into there/.env, and appending a coturn service to
+#    there/docker-compose.yml — is removed with it.  That is also why prod.sh no longer
+#     needs Caddy to be up before it can finish, and why LEPROXY_DUCKDNS_NAMES (read at
+#      the top only to build the cert path) is now unused.
 if [[ "${TUNNEL_MODE}" == "true" ]]; then
     echo ""
     echo "Step 6b: Staging jump server deployment (there/)..."
@@ -119,91 +111,6 @@ if [[ "${TUNNEL_MODE}" == "true" ]]; then
     echo "  Copied leproxy/there/ → ./there/"
     rm there/ssh_config
 
-    # turnserver.conf lives in this repo; copy it into there/ for the jump server
-    if [[ -f ty/turnserver.conf ]]; then
-        cp ty/coturn-entrypoint.sh there/coturn-entrypoint.sh
-        cp ty/turnserver.conf there/turnserver.conf
-        echo "  Copied ty/turnserver.conf & coturn-entrypoint.sh → there"
-    else
-        echo "  Warning: ty/turnserver.conf not found. coturn on the jump server won't start."
-    fi
-
-    # ── Extract TLS certs from running leproxy Caddy ─────────────────────────
-    # coturn on the jump server needs the domain cert for TURNS.
-    # Caddy stores certs in its data volume; we pull them out and store base64
-    #   in there/.env so the coturn entrypoint can decode them to files.
-    # This is why prod.sh (not install.sh) does this: Caddy must already be up
-    #   and have issued a cert. Re-run prod.sh if cert isn't ready yet.
-    FIRST_DOMAIN=$(echo "$LEPROXY_DUCKDNS_NAMES" | cut -d, -f1)
-    CERT_DIR="/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/${FIRST_DOMAIN}.duckdns.org"
-
-    echo "  Extracting TLS cert from leproxy Caddy for ${FIRST_DOMAIN}.duckdns.org..."
-    pushd "$LEPROXY_DIR" > /dev/null
-
-    if docker compose ps caddy 2>/dev/null | grep -q " Up "; then
-        CERT_FILE="${CERT_DIR}/${FIRST_DOMAIN}.duckdns.org.crt"
-        KEY_FILE="${CERT_DIR}/${FIRST_DOMAIN}.duckdns.org.key"
-        if docker compose exec -T caddy test -f "$CERT_FILE" 2>/dev/null; then
-            TLS_CERT=$(docker compose exec -T caddy cat "$CERT_FILE")
-            TLS_KEY=$( docker compose exec -T caddy cat "$KEY_FILE")
-            # PEM files contain newlines; store as single base64 lines in .env
-            {
-                printf 'TLS_CERT="%s"\n' "$(echo "$TLS_CERT" | base64 -w0)"
-                printf 'TLS_KEY="%s"\n'  "$(echo "$TLS_KEY"  | base64 -w0)"
-            } >> "${OLDPWD}/there/.env"
-            echo "  TLS cert/key exported to there/.env."
-        else
-            echo "  Warning: cert not yet issued at ${CERT_FILE}"
-            echo "  coturn will start without TLS. Re-run prod.sh after Caddy issues the cert."
-        fi
-    else
-        echo "  Warning: leproxy Caddy is not running. Start it with: cd ${LEPROXY_DIR} && docker compose up -d"
-        echo "  coturn will start without TLS. Re-run prod.sh after Caddy is up."
-    fi
-
-    popd > /dev/null
-
-    # Append coturn to there/docker-compose.yml.
-    # TLS_CERT/TLS_KEY come from there/.env (written above).
-    # network_mode: host lets coturn bind the full UDP relay range without NAT.
-    # entrypoint decodes certs from env, patches external-ip, then starts turnserver.
-    cat >> there/docker-compose.yml << 'COTURN_EOF'
-
-  # TURN/STUN for WebRTC NAT traversal. Runs on the jump server with
-  #   network_mode: host to bind the full UDP relay range without Docker NAT.
-  # TLS_CERT / TLS_KEY: base64-encoded PEM blobs from there/.env,
-  #   extracted from leproxy's running Caddy by prod.sh.
-  coturn:
-    image: coturn/coturn:latest
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM coturn/coturn:latest
-        USER root
-        RUN apt-get update -qq && apt-get install -y -qq curl iproute2
-        COPY coturn-entrypoint.sh /entrypoint.sh
-        RUN chmod +x /entrypoint.sh
-        ENTRYPOINT ["/entrypoint.sh"]
-    container_name: jamsend-prod-coturn
-    user: "0:0"
-    network_mode: host
-    volumes:
-      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
-    environment:
-      - TLS_CERT=${TLS_CERT}
-      - TLS_KEY=${TLS_KEY}
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-COTURN_EOF
-
-    echo "  Appended coturn to there/docker-compose.yml."
 fi
 
 # Tag the commit in the origin repo
