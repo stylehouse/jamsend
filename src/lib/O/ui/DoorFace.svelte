@@ -293,7 +293,7 @@
         </button>
     {/if}
     {#if !face.friends.length && !face.door?.landed}
-        <div class="df-note">{face.newborn ? 'you are new here — the invite QR below is how a friend joins you' : 'no friends yet — the invite QR below is how one arrives'}</div>
+        <div class="df-note">{face.newborn ? 'you are new here — the invite is how a friend joins you' : 'no friends yet — the invite is how one arrives'}</div>
     {/if}
 
     <!-- (the Invite verb + panel moved ABOVE the pier list, 2026-08-10 — see the note up there.) -->

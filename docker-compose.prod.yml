@@ -18,6 +18,18 @@ services:
       - "172.17.0.1:19091:19091"
     environment:
       - NODE_ENV=production
+    env_file:
+      # ALLOWED_HOSTS — vite.config.ts reads it off process.env and refuses any other Host
+      #  header, so WITHOUT this the public names get "Blocked request. This host is not
+      #   allowed." while 172.17.0.1 keeps working: it looks like Caddy is broken, and it
+      #    isn't.  Dev has carried this env_file since allowedHosts landed; prod never did.
+      #  The names belong in the untracked .env.local, not in this tracked file — for this
+      #   deployment that is the duckdns names whose NAMES_PORTS entry is 19091 (the ones
+      #    pointing at 9091 are the DEV server and belong in dev's own .env.local):
+      #      ALLOWED_HOSTS=jamsend.duckdns.org,voulais.duckdns.org
+      #  required:false so a fresh clone still comes up (localhost-only, the safe default).
+      - path: .env.local
+        required: false
     command: npx vite --host 0.0.0.0 --port 19091
     tty: true
     stdin_open: true
