@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'b2580d0d8bf47d69~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '9a69e052993a99a7~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -197,17 +197,186 @@ Swarm_iz_params(claim) {
 Swarm_record_params(record) {
     let params = {}
     for (const k of Object.keys(record.sc)) {
-        if (!['Idzeug', 'to', 'ttl', 'chain', 'holder', 'spent', 'blotter'].includes(k)) params[k] = String(record.sc[k])
+        if (!['Idzeug', 'to', 'ttl', 'chain', 'holder', 'spent', 'blotter', 'next', 'claimed'].includes(k)) params[k] = String(record.sc[k])
     }
     return params
 
 },
-// Swarm_mint_idzeug — the inviter remembers the offer's serial (single-use) as an %Idzeug under
-//  their %Peering; returns the COMPACT token (§6.2). feature = { Music: 1, genre: 'Classical' } —
-//   a mainkey with params, never a bare flag. The record keeps the FULL signed atom on .c.iz —
-//    the chain's lineage (§6.3a third-party verify) — while the QR wears only the token; both
-//     ride .c (re-derivable — ed25519 is deterministic). The serial record is what must survive:
-//      it is the spend ledger.
+// ── %Idzeug AS THE ISSUER (2026-08-12) ─────────────────────────────────────────────────────────
+//  An %Idzeug is not an invite.  It is THE SCHEME BEHIND ONE — its class (the owner's word).  An
+//   Invite is an INSTANCE: a serial drawn off an issuer, which wanders off into the world carrying
+//    nothing but its number and a MAC.  Issuing winds `next`; claiming ticks a number off `claimed`.
+//  This is free CRYPTOGRAPHICALLY because Swarm_presig is a deterministic MAC, not a third-party
+//   signature — only the issuer's key makes it and regenerating it IS the door's check, so nothing
+//    is stored in order to VERIFY.  The per-invite row was only ever doing three jobs, and the
+//     issuer does all three without a row each: existence ("we issued this") becomes `i < next`;
+//      the presig/grant params come off the issuer; the spend ledger is `claimed`.
+//  ⚠ WHY THE RUN-LIST JOINS ON `~` AND NEVER `,`.  encode_stringies (Text.svelte:606) drops the
+//   WHOLE line to a JSON blob if any value holds `, \t \n`.  `claimed:3-5,9,14` would snap as
+//    {"Idzeug":"1","to":"Music","claimed":"3-5,9,14"} — legal, and it defeats the entire point of
+//     this change, which is that an account file becomes readable by eye again.
+//  `next` IS THE ISSUER TELL — there is no marker key.  An issuer always carries `next` (it is the
+//   wound-up number, the whole point of it) and no legacy row ever can: a per-invite record wears
+//    only `to`/`ttl`/`chain`/`holder`/`spent`/`blotter` + Feature params, and no Feature has a
+//     `next` param.  A first cut did stamp a separate `scheme:1`, which was a marker asserting what
+//      the real data already said — and it landed in every production account file for nothing.
+//  Do NOT instead infer it from "the mainkey looks like a small integer": a legacy 12-hex nonce is
+//   all-digits about 0.5% of the time, which across a few hundred rows is a coin-flip.  Every legacy
+//    iteration filters `!sc.next`.
+
+// Swarm_iz_issuer — find-or-create THE issuer for a Feature.  One per distinct feature+params, so a
+//  plain { Music: 1 } account holds exactly one and every invite it ever issues is a number off it.
+// Swarm_iz_issuer_of — the READ half: find the issuer for a Feature, or null. Split out because
+//  Swarm_iz_issuer is find-or-CREATE, and a read path that calls it MINTS ONE BY ASKING. That is
+//   not hypothetical: `Swarm_issued` called it, the SwarmBlotter witness calls `Swarm_issued` on
+//    every pass, and an `Idzeug:1,next:1` duly appeared at beat 2 — before the sheet was
+//     printed, in a Book whose whole point is when issuing happens. Read with THIS one.
+Swarm_iz_issuer_of(ident, feature) {
+    let mainkey = Object.keys(feature)[0]
+    let params = { ...feature }
+    delete params[mainkey]
+    let peering = this.Swarm_peering(ident)
+    if (!peering) return null
+    return peering.o({ Idzeug: 1, next: 1, to: mainkey, ...params })[0] || null
+
+},
+Swarm_iz_issuer(ident, feature) {
+    let mainkey = Object.keys(feature)[0]
+    let params = { ...feature }
+    delete params[mainkey]
+    let peering = this.Swarm_peering(ident)
+    let found = peering.o({ Idzeug: 1, next: 1, to: mainkey, ...params })[0]
+    if (found) return found
+    let z = 1
+    for (const s of peering.o({ Idzeug: 1, next: 1 })) {
+        let v = +(s.sc.Idzeug || 0)
+        if (v >= z) z = v + 1
+    }
+    let iz = peering.i({ Idzeug: String(z), to: mainkey, ...params })
+    iz.c.up = peering
+    iz.sc.next = '1'
+    // the durable twin is born WITH its `next` — Swarm_iz_rehydrate keys off `c.next` to know an
+    //  issuer from a legacy row, so an issuer stashed without it would rehydrate as a one-shot
+    //   invite and every serial ever drawn off it would refuse `unknown` after a reload.
+    this.Swarm_iz_stash(ident, String(z), { to: mainkey, ...params, next: '1' })
+    return iz
+
+},
+// Swarm_iz_wire / Swarm_iz_find — the two spellings of a serial.  THE PRESIG SIGNS THE CANONICAL
+//  `z.i` ALWAYS; the wire omits a leading `1.` because issuer 1 is the overwhelming case and a QR
+//   is smaller for it.  Sign the WIRE form instead and the day some path emits the long form for
+//    z=1, every such invite dies `forged` — one crypto domain, one spelling.
+Swarm_iz_wire(z, i) {
+    if (+z === 1) return String(i)
+    return String(z) + '.' + String(i)
+
+},
+// Swarm_iz_find — resolve a carried serial to what the door needs: { canon, to, params } plus either
+//  the legacy `record` or the `iz` issuer + its `i`.  Null = we never issued this.
+//  ⚠ LEGACY IS TRIED FIRST, and that order is load-bearing.  An old 12-hex nonce can be all digits,
+//   which would otherwise parse as serial-form `i=123456789012`, miss the issuer's `next`, and
+//    refuse an invite we really did issue.  An existing row always wins; only an unmatched serial
+//     falls through to the issuer arithmetic.  277 of the owner's 279 legacy rows are still
+//      outstanding in the world, so this path is not a transitional courtesy — it is the door.
+Swarm_iz_find(ident, serial) {
+    let peering = this.Swarm_peering(ident)
+    let s = String(serial)
+    let legacy = peering.o({ Idzeug: s })[0]
+    if (legacy && !legacy.sc.next) {
+        return { kind: 'legacy', record: legacy, canon: s, to: String(legacy.sc.to), params: this.Swarm_record_params(legacy) }
+    }
+    if (!/^(\d+\.)?\d+$/.test(s)) return null
+    let dot = s.indexOf('.')
+    let z = dot < 0 ? 1 : +s.slice(0, dot)
+    let i = dot < 0 ? +s : +s.slice(dot + 1)
+    if (!(i >= 1)) return null
+    let iz = peering.o({ Idzeug: String(z), next: 1 })[0]
+    if (!iz) return null
+    if (i >= +(iz.sc.next || 1)) return null
+    return { kind: 'serial', iz: iz, i: i, canon: String(z) + '.' + String(i), to: String(iz.sc.to), params: this.Swarm_record_params(iz) }
+
+},
+// Swarm_claimed_has / Swarm_claimed_add — the run-list codec.  "3-5~9~14" means 3,4,5,9,14 claimed.
+//  Expansion is bounded by invites actually issued, so the naive walk is fine and stays legible.
+Swarm_claimed_has(runs, i) {
+    if (!runs) return 0
+    for (const part of String(runs).split('~')) {
+        let dash = part.indexOf('-')
+        let lo = dash < 0 ? +part : +part.slice(0, dash)
+        let hi = dash < 0 ? lo : +part.slice(dash + 1)
+        if (i >= lo && i <= hi) return 1
+    }
+    return 0
+
+},
+Swarm_claimed_add(runs, i) {
+    let seen = {}
+    let nums = []
+    let take = (v) => { if (!seen[v]) { seen[v] = 1; nums.push(v) } }
+    if (runs) {
+        for (const part of String(runs).split('~')) {
+            let dash = part.indexOf('-')
+            let lo = dash < 0 ? +part : +part.slice(0, dash)
+            let hi = dash < 0 ? lo : +part.slice(dash + 1)
+            let k = lo
+            while (k <= hi) { take(k); k = k + 1 }
+        }
+    }
+    take(i)
+    nums.sort((a, b) => a - b)
+    let out = []
+    let j = 0
+    while (j < nums.length) {
+        let lo = nums[j]
+        let hi = lo
+        while (j + 1 < nums.length && nums[j + 1] === hi + 1) { j = j + 1; hi = nums[j] }
+        out.push(lo === hi ? String(lo) : (String(lo) + '-' + String(hi)))
+        j = j + 1
+    }
+    return out.join('~')
+
+},
+// Swarm_iz_spent / Swarm_iz_claim — one claim, whichever shape carries it.  A legacy row spends its
+//  own `spent` flag exactly as it always did; a drawn serial ticks its number off the issuer.  Both
+//   land through Swarm_iz_mark, so both reach sc, Dexie AND the disk mirror.
+Swarm_iz_spent(f) {
+    if (f.kind === 'legacy') return f.record.sc.spent ? 1 : 0
+    return this.Swarm_claimed_has(f.iz.sc.claimed, f.i)
+
+},
+Swarm_iz_claim(ident, f) {
+    if (f.kind === 'legacy') return this.Swarm_iz_mark(ident, f.record, { spent: 1 })
+    return this.Swarm_iz_mark(ident, f.iz, { claimed: this.Swarm_claimed_add(f.iz.sc.claimed, f.i) })
+
+},
+// Swarm_mint_invite — ISSUE ONE.  Wind the issuer's number, hand back the token; no particle is
+//  born.  This is the shipping mint: the "invite a friend" button, and every serial on a sheet.
+//   (Swarm_mint_idzeug below still mints a per-invite record — it is now the CHAIN mint only, plus
+//    the Books that name their own nonces.)
+async Swarm_mint_invite(w, ident, feature) {
+    let iz = this.Swarm_iz_issuer(ident, feature)
+    let z = +(iz.sc.Idzeug || 1)
+    let i = +(iz.sc.next || 1)
+    let page = this.Swarm_page(ident)
+    let mainkey = String(iz.sc.to)
+    let params = this.Swarm_record_params(iz)
+    let n = this.Swarm_token_n(mainkey, params)
+    let canon = String(z) + '.' + String(i)
+    let presig = await this.Swarm_presig(ident.c.keys, page.prepub, canon, n)
+    this.Swarm_iz_mark(ident, iz, { next: String(i + 1) })
+    return this.Swarm_token(page.prepub, this.Swarm_iz_wire(z, i), n, presig)
+
+},
+// Swarm_mint_idzeug — mint ONE invite that wears its OWN per-invite record, under a caller-named
+//  nonce. Since 2026-08-12 this is NO LONGER the shipping mint (that is Swarm_mint_invite, which
+//   draws a number off an issuer and creates no particle). Two callers remain, and both need a row:
+//    • a CHAIN invite (chain:1) — its moving `holder` is the one piece of invite state a counter
+//       cannot represent, so a chain always wears a record (§6.3a);
+//    • the Books — fourteen of them pin a named nonce ('pol_2', 'chain_1', 'spoof_1'…) so their
+//       fixtures read as prose. Deterministic names, deterministic snaps.
+//  feature = { Music: 1, genre: 'Classical' } — a mainkey with params, never a bare flag. The record
+//   keeps the FULL signed atom on .c.iz — the chain's lineage (§6.3a third-party verify) — while the
+//    QR wears only the token; both ride .c (re-derivable — ed25519 is deterministic).
 async Swarm_mint_idzeug(w, ident, feature, nonce, chain) {
     let mainkey = Object.keys(feature)[0]
     let params = { ...feature }
@@ -241,46 +410,43 @@ async Swarm_verify_idzeug(iz) {
 //#endregion
 
 //#region blotter — a printed SHEET of one-time serials (§6.2)
-//  A blotter is a BATCH of plain single-use Idzeugs minted in one act and grouped under a %Blotter
-//   sheet — the "tear-off numbered tickets" face (the A4 page of QR cells, Vyto's display). Each
-//    serial spends INDEPENDENTLY through the exact same single-use door (Swarm_hello spends its
-//     nonce, refuses a replay), so a torn ticket is a one-timer remembered spent by its OWN nonce;
-//      the sheet only GROUPS them so the maker sees the claimed count. NOTHING here is a chain
-//       (§6.3a): the SHARE QR mints chain:1, a blotter never does — the two invite kinds part HERE.
+//  A blotter is now a RANGE MINT, not a batch of particles: wind the issuer's number past `count`
+//   and hand out `count` tokens. NOTHING records the group (the owner 2026-08-12: *"the %Blotter
+//    doesn't hang around at all, the Serial is simply wound past them all, and their Invites wander
+//     off into the world. we have no idea they're a group, ongoingly"*). Each serial still spends
+//      INDEPENDENTLY through the exact same door — a torn ticket is a one-timer ticked off `claimed`.
+//  Labelling a group so a maker could still count a sheet: the owner looked at it and said *"almost
+//   but not quite for v1.0"*. When it comes it is a LABEL ON A RANGE, never a resurrected %Blotter
+//    with 126 members. NOTHING here is a chain (§6.3a) — a chain wears its own record, and a blotter
+//     never draws one.
 
-// Swarm_mint_blotter — mint `count` serials <tag>-1..<tag>-count off the SAME Feature, each a plain
-//  (never chain) Idzeug through the proven single-use mint, tagged with the sheet so the maker can
-//   group + count them. Returns the SHEET: the ordered ?Iz= blobs the printed page's QR cells carry.
-//    The %Blotter record holds the sheet SIZE (durable mint data); the CLAIMED count is DERIVED from
-//     the members' spend flags (never a snapped counter — the ledger is each serial's own spend).
-async Swarm_mint_blotter(w, ident, feature, count, tag) {
-    let peering = this.Swarm_peering(ident)
-    let sheet = peering.oai({ Blotter: tag })
-    sheet.c.up = peering
-    sheet.sc.count = String(count)
+// Swarm_mint_blotter — issue `count` invites off the one Feature. Returns the SHEET: the ordered
+//  ?Iz= tokens the printed page's QR cells carry, in serial order.
+async Swarm_mint_blotter(w, ident, feature, count) {
     let izzes = []
     let i = 0
     while (i < count) {
         i = i + 1
-        let nonce = String(tag) + '-' + i
-        let iz = await this.Swarm_mint_idzeug(w, ident, feature, nonce)
-        let record = peering.o({ Idzeug: nonce })[0]
-        if (record) record.sc.blotter = tag
-        this.Swarm_iz_stash(ident, nonce, { blotter: tag })
-        izzes.push(iz)
+        izzes.push(await this.Swarm_mint_invite(w, ident, feature))
     }
     return izzes
 
 },
-// Swarm_blotter_claimed — read a sheet's state: how many serials it holds, how many are spent
-//  (claimed). Members are the %Idzeug records tagged with this sheet; a serial counts claimed once
-//   its own single-use door spent it. Pure read — the maker's panel and the witness both call it,
-//    and it survives reload without a snapped counter (the members + their spend flags rehydrate).
-Swarm_blotter_claimed(ident, tag) {
-    let peering = this.Swarm_peering(ident)
-    let members = peering.o({ Idzeug: 1, blotter: tag })
-    let claimed = members.filter(m => m.sc.spent).length
-    return { count: members.length, claimed: claimed }
+// Swarm_issued — what an issuer has done, for the maker's panel: how many invites it has ever put
+//  into the world and how many of those came back. NOT per-sheet — no sheet survives issuing, so
+//   this is the whole account's tally for that Feature, which is the only group that still exists.
+Swarm_issued(ident, feature) {
+    let iz = this.Swarm_iz_issuer_of(ident, feature)
+    if (!iz) return { count: 0, claimed: 0 }
+    let issued = +(iz.sc.next || 1) - 1
+    let claimed = 0
+    if (iz.sc.claimed) {
+        for (const part of String(iz.sc.claimed).split('~')) {
+            let dash = part.indexOf('-')
+            claimed = claimed + (dash < 0 ? 1 : (+part.slice(dash + 1) - +part.slice(0, dash) + 1))
+        }
+    }
+    return { count: issued, claimed: claimed }
 },
 //#endregion
 
@@ -341,11 +507,14 @@ Swarm_live_self() {
     return this.Swarm_active_ident(A)
 
 },
-// Swarm_invite_url — the front door itself: mint the single-use Idzeug from `ident` and dress it as
+// Swarm_invite_url — the front door itself: ISSUE one invite off `ident`'s Idzeug and dress it as
 //  the URL the QR carries — <base>?Iz=<token>. Live, base = location.origin + the toplevel path (the
 //   scanning phone lands on the SAME app); a Book pins it. The URL is the whole invite.
-async Swarm_invite_url(w, ident, feature, nonce, base) {
-    let iz = await this.Swarm_mint_idzeug(w, ident, feature, nonce)
+//  No `nonce` parameter any more: the issuer assigns the number (§0 2026-08-12). A caller that wants
+//   a NAMED serial with its own record wants Swarm_mint_idzeug — that is now the chain mint and the
+//    Books' fixture mint, not the shipping one.
+async Swarm_invite_url(w, ident, feature, base) {
+    let iz = await this.Swarm_mint_invite(w, ident, feature)
     this.Swarm_expect_arrival(w)
     return base + '?Iz=' + encodeURIComponent(iz)
 
@@ -913,6 +1082,26 @@ Swarm_iz_stash(ident, nonce, c) {
     mine[nonce] = { ...(mine[nonce] || {}), ...c }
 
 },
+// Swarm_iz_mark — THE one way a live claim lands on a record.  Three homes, never two:
+//  the record's sc (the door's law), the Dexie twin (survives reload), and a VERSION BUMP.
+//  The bump is not decoration.  `Clustation_mirror_account` (Auto.svelte) decides whether to
+//   re-write `.jamsend/account/<prepub>/toc.snap` from the mark `prepub:ident.version:peering.version`,
+//    and confesses its own gap: *"a mutation that bumps NEITHER would not re-mirror until the next
+//     boot."*  A spend is a bare `sc` write, and `bump()` is LOCAL (Stuff.svelte.ts — it moves this
+//      particle's serial, never its parent's), so before this helper a claim moved no version and
+//       reached disk only by luck: `Swarm_seal` creates a %Pier straight after, and creation bumps
+//        the Peering.  Luck runs out on the paths with no seal behind them — a RE-seal finds rather
+//         than creates, and both chain-holder moves never seal at all.  Losing a spend mark to disk
+//          un-spends an invite on the next disk-seeded boot, which is a security fact, not a nicety.
+//  It is also what makes the maker's panel move: only `version` is reactive, never `sc`.
+Swarm_iz_mark(ident, record, patch) {
+    for (const k of Object.keys(patch)) record.sc[k] = patch[k]
+    this.Swarm_iz_stash(ident, String(record.sc.Idzeug), patch)
+    record.bump()
+    let peering = this.Swarm_peering(ident)
+    if (peering) peering.bump()
+
+},
 Swarm_iz_rehydrate(w, ident) {
     let st = this.top_House().stashed
     let mine = st?.Swarm_izzes?.[ident.sc.prepub]
@@ -920,6 +1109,23 @@ Swarm_iz_rehydrate(w, ident) {
     let peering = this.Swarm_peering(ident)
     for (const nonce of Object.keys(mine)) {
         let c = mine[nonce]
+        // AN ISSUER REHYDRATES AS AN ISSUER.  Its `next` is what makes every outstanding serial
+        //  redeemable (`i < next`), and its `claimed` is the whole spend ledger for them — lose
+        //   either to a reload and the door forgets invites it really issued, or un-spends ones it
+        //    already honoured.  Same stash rail, same key (the issuer's own number).
+        if (c.next) {
+            let iz = peering.o({ Idzeug: nonce, next: 1 })[0]
+            if (!iz) {
+                iz = peering.i({ Idzeug: nonce, to: c.to })
+                iz.c.up = peering
+                for (const k of Object.keys(c)) {
+                    if (!['to', 'next', 'claimed'].includes(k)) iz.sc[k] = String(c[k])
+                }
+            }
+            if (c.next) iz.sc.next = String(c.next)
+            if (c.claimed) iz.sc.claimed = String(c.claimed)
+            continue
+        }
         let record = peering.o({ Idzeug: nonce })[0]
         if (!record) {
             record = peering.i({ Idzeug: nonce, to: c.to })
@@ -937,8 +1143,9 @@ Swarm_iz_rehydrate(w, ident) {
         //  door would re-admit the link as a fresh first claim (§6.3a).
         if (c.chain) record.sc.chain = 1
         if (c.holder) record.sc.holder = c.holder
-        // blotter membership survives reload — the sheet record re-derives its count from members,
-        //  so no snapped counter to drift; the serial just re-declares which sheet it was torn from.
+        // LEGACY blotter membership still rehydrates — a sheet minted before 2026-08-12 left 126
+        //  real records and a %Blotter, and those tickets are outstanding in the world. New sheets
+        //   are range mints that record no group at all, so nothing here is ever written again.
         if (c.blotter) {
             record.sc.blotter = c.blotter
             let sheet = peering.oai({ Blotter: c.blotter })
@@ -1339,10 +1546,14 @@ async Swarm_hello(w, ident, frame) {
     if (!t) return refuse('forged')
     if (t.prepub !== ident.sc.prepub) return refuse('not_ours')
     if (!this.Swarm_page_bound(frame.page)) return refuse('spoofed')
-    let record = this.Swarm_peering(ident).o({ Idzeug: t.serial })[0]
-    if (!record) return refuse('unknown')
-    let n = this.Swarm_token_n(String(record.sc.to), this.Swarm_record_params(record))
-    let presig = await this.Swarm_presig(ident.c.keys, ident.sc.prepub, t.serial, n)
+    // Swarm_iz_find resolves BOTH shapes — a legacy per-invite row, or a serial drawn off an issuer
+    //  (`i < next`). Either way it hands back the canonical presig domain, so the regeneration below
+    //   is unchanged: it is still the maker's own state that decides, never the carried $n (§10.1).
+    let f = this.Swarm_iz_find(ident, t.serial)
+    if (!f) return refuse('unknown')
+    let record = f.record
+    let n = this.Swarm_token_n(f.to, f.params)
+    let presig = await this.Swarm_presig(ident.c.keys, ident.sc.prepub, f.canon, n)
     if (presig !== t.presig) return refuse('forged')
     // proven: OUR invite, on a bound page — a real redeemer. NOW promote the return route (the
     //  pier_accept and every reason below ride it), and answer with denials the honest redeemer can act on.
@@ -1352,25 +1563,26 @@ async Swarm_hello(w, ident, frame) {
         this.Swarm_deliver(w, ident, frame.page?.prepub, { kind: 'pier_reject', why: why, prepub: ident.sc.prepub })
         return null
     }
-    if (record.sc.spent) return deny('spent')
+    if (this.Swarm_iz_spent(f)) return deny('spent')
     // chain policy (§6.3a): a chain invite is not spent on first claim — its first claimant becomes
     //  the tracked HOLDER (the tip), sealed as a normal friend below. A LATER redeem by a NON-holder
     //   is the chain GROWING: the newcomer holds the link the tip passed them, so mint a ReInvite and
     //    let the newcomer carry it to the tip (§6.3a) — the tip, not us, grants + befriends them. The
     //     tip re-redeeming its OWN link is a benign no-op (deny('held')).
-    if (record.sc.chain && record.sc.holder) {
+    //  A chain ALWAYS wears a per-invite record: a moving holder is the one piece of invite state a
+    //   counter genuinely cannot represent, so `chain` never draws a serial (§0 2026-08-12).
+    if (record && record.sc.chain && record.sc.holder) {
         if (frame.page.prepub === record.sc.holder) return deny('held')
         return await this.Swarm_reinvite_begin(w, ident, record, frame)
     }
-    // a plain invite SPENDS; a chain invite records its first holder (the tip the chain grows from)
-    if (record.sc.chain) {
-        record.sc.holder = frame.page.prepub
-        this.Swarm_iz_stash(ident, t.serial, { holder: frame.page.prepub })
+    // a plain invite SPENDS (a legacy row's flag, or a number ticked off its issuer); a chain invite
+    //  records its first holder instead — the tip the chain grows from.
+    if (record && record.sc.chain) {
+        this.Swarm_iz_mark(ident, record, { holder: frame.page.prepub })
     } else {
-        record.sc.spent = 1
-        this.Swarm_iz_stash(ident, t.serial, { spent: 1 })
+        this.Swarm_iz_claim(ident, f)
     }
-    let mine = await mint_grant(ident.c.keys, frame.page.pub, String(record.sc.to), this.Swarm_record_params(record), this.Swarm_now(w))
+    let mine = await mint_grant(ident.c.keys, frame.page.pub, f.to, f.params, this.Swarm_now(w))
     let pier = this.Swarm_seal(w, ident, frame.page, null, mine)
     this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', grant: mine, page: this.Swarm_page(ident) })
     return pier
@@ -1579,9 +1791,8 @@ async Swarm_reinvite_ok(w, ident, frame) {
     let pend = record.c.pending ? record.c.pending[ok.rnonce] : null
     if (!pend) return null
     if (pend.newcomer !== ok.newcomer) return null
-    record.sc.holder = pend.newcomer
+    this.Swarm_iz_mark(ident, record, { holder: pend.newcomer })
     delete record.c.pending[ok.rnonce]
-    this.Swarm_iz_stash(ident, ok.nonce, { holder: pend.newcomer })
     return null
 
 },

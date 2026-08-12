@@ -11,7 +11,7 @@ Snap:H
             Peering,name:9ff272fbf4b59795
           Identity:5c4b63609cd01594,prepub:5c4b63609cd01594,nick:lone-sail,active
             Peering,name:5c4b63609cd01594,online
-              Idzeug:invite_1,to:Music,spent
+              Idzeug:1,to:Music,next:2,claimed:1
               Pier,pub:0bd16fbd60d7b3bb,friendly:Phone,since:1751800020
                 Peering,name:0bd16fbd60d7b3bb,friendly:Phone,pub:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e
                 Grant:Music,by:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799,for:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e,time:1751800020,sign:75dafed71fa18673acdabf9fc69ac3f31a6a82a0043e2927802d107b3c3784e5a4594476bab8b54ab31657612a22e8fb13e5d708e7ace0b60a37bc8d7724eb0e
@@ -33,6 +33,6 @@ Snap:H
               Edge,a:0bd16fbd60d7b3bb,b:5c4b63609cd01594,at:1751800020
         req:witness,eternal,ok
         reached:step_3
-        minted:parsed,to:Music,of:5c4b63609cd01594,nonce:invite_1,chars:48
+        minted:parsed,to:Music,of:5c4b63609cd01594,nonce:1,chars:41
         reached:step_4
         see:the phone scans the URL and gains a Pier — a Music grant signed by the machine rides it both ways

@@ -5,8 +5,6 @@ story:SwarmPolicy
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.046
-      sample=0.026,at=1783369810
-      sample=0.041,at=1783392451
       sample=0.034,at=1783420375
       sample=0.144,at=1783713027
       sample=0.054,at=1783855456
@@ -15,9 +13,9 @@ story:SwarmPolicy
       sample=0.021,at=1785075672
       sample=0.025,at=1785075690
       sample=0.069,at=1786506254
+      sample=0.034,at=1786518144
+      sample=0.034,at=1786519017
     TimeTotal:step,avg=0.008
-      sample=0.004,at=1783369810
-      sample=0.007,at=1783392451
       sample=0.006,at=1783420375
       sample=0.024,at=1783713027
       sample=0.009,at=1783855456
@@ -26,6 +24,8 @@ story:SwarmPolicy
       sample=0.004,at=1785075672
       sample=0.004,at=1785075690
       sample=0.011,at=1786506254
+      sample=0.006,at=1786518144
+      sample=0.006,at=1786519017
   step,dige:e5c5f344a350825c
   step=2,dige:5a6d64f986b731f7
   step=3,dige:eafff74fbade34aa

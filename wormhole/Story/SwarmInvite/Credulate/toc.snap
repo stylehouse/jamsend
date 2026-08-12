@@ -22,15 +22,15 @@ Credulate,of_Book:SwarmInvite
   GhostInclude:Ghost_Story_Heistation,dige:319fd12ab7541232~g1
   GhostInclude:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
   GhostInclude:Ghost_Story_Errchannelation,dige:5a56eb7fcd0eff11~g1
-  GhostInclude:Ghost_S_Swarm,dige:b2580d0d8bf47d69~g1
-  GhostInclude:Ghost_Story_Swarmation,dige:f4060302563099af~g1
+  GhostInclude:Ghost_S_Swarm,dige:9a69e052993a99a7~g1
+  GhostInclude:Ghost_Story_Swarmation,dige:4e1ca27e2999d22f~g1
   GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
   GhostInclude:Ghost_V_Vyto,dige:46caad99abe9528d~g1
   GhostInclude:Ghost_V_Vytonation,dige:4b115424532783d7~g1
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
   GhostInclude:Ghost_Story_Sounditron,dige:bc7503c37c40d85b~g1
   GhostInclude:Ghost_O_Supervisor,dige:06391bdec75e794b~g1
-  last_ok,at=1786506241.216,ok_pct
+  last_ok,at=1786518989.227,ok_pct
     uses:Ghost_N_Peeroleum,dige:7d6d293338930070~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:6dbbbb58bf1fbc50~g1
@@ -54,8 +54,8 @@ Credulate,of_Book:SwarmInvite
     uses:Ghost_Story_Heistation,dige:319fd12ab7541232~g1
     uses:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
     uses:Ghost_Story_Errchannelation,dige:5a56eb7fcd0eff11~g1
-    uses:Ghost_S_Swarm,dige:b2580d0d8bf47d69~g1
-    uses:Ghost_Story_Swarmation,dige:f4060302563099af~g1
+    uses:Ghost_S_Swarm,dige:9a69e052993a99a7~g1
+    uses:Ghost_Story_Swarmation,dige:4e1ca27e2999d22f~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_V_Vyto,dige:46caad99abe9528d~g1
     uses:Ghost_V_Vytonation,dige:4b115424532783d7~g1

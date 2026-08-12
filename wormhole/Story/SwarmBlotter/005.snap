@@ -9,10 +9,7 @@ Snap:H
         Account,of:Host
           Identity:8e0b046f67fbbf1c,prepub:8e0b046f67fbbf1c,friendly:Host
             Peering,name:8e0b046f67fbbf1c,friendly:Host,online
-              Blotter:sheet_a,count:3
-              Idzeug:sheet_a-1,to:Music,genre:Jazz,blotter:sheet_a,spent
-              Idzeug:sheet_a-2,to:Music,genre:Jazz,blotter:sheet_a,spent
-              Idzeug:sheet_a-3,to:Music,genre:Jazz,blotter:sheet_a,spent
+              Idzeug:1,to:Music,genre:Jazz,next:4,claimed:1-3
               Pier,pub:977d35e0a8e0cd0e,friendly:Uno,since:1751800010
                 Peering,name:977d35e0a8e0cd0e,friendly:Uno,pub:977d35e0a8e0cd0e54748ee7c5147940207e4039fa498fa3d5a9e5fc9fc636a8
                 Grant:Music,by:8e0b046f67fbbf1cc1b105f417142e0f1b66ff055c4a57173d986729fca3a354,for:977d35e0a8e0cd0e54748ee7c5147940207e4039fa498fa3d5a9e5fc9fc636a8,time:1751800010,sign:3a53e97cce0da9158d991a239ff0810c6e0f43a6d19c912f02b4e1e9511ccd9a487cf8951421acad64472934ea8214e5b37abd40a9c2997f392fd9015cc0ff00,genre:Jazz

@@ -505,7 +505,7 @@ async SwarmInvite_mint(w):
     let acct = w.o({ Account: 1, of: 'Machine' })[0]
     let ident = this.Swarm_active_ident(acct)
     this.Swarm_online(ident, true)
-    w.c.url = await this.Swarm_invite_url(w, ident, { Music: 1 }, 'invite_1', 'https://jamsend.example/BigSoundland')
+    w.c.url = await this.Swarm_invite_url(w, ident, { Music: 1 }, 'https://jamsend.example/BigSoundland')
     let back = this.Swarm_iz_of_url(w.c.url)
     let t = this.Swarm_token_parse(back)
     if (t) w.i({ minted: 'parsed', to: t.to, of: t.prepub, nonce: t.serial, chars: String(back.length) })
@@ -1333,14 +1333,16 @@ async SwarmChain_order(w):
 //  The counterpart to SwarmChain. SwarmChain proves the RE-ASSIGNABLE invite (the SHARE QR — one
 //   link threads a chain, tracking a moving tip). SwarmBlotter proves the OTHER kind: a printed
 //    BLOTTER of numbered tickets, each a plain ONE-TIMER. The two invite kinds part at the mint —
-//     Swarm_mint_blotter mints plain serials (never chain:1), and each spends through the exact
-//      single-use door: torn once, remembered spent by its own nonce, a replay refused. The legacy
-//       ###### link is the same species (a one-timer, granting the old ftp atom — never a Feature),
-//        so this Book pins its door-parse too. Mail wire, in-process, five fixed selves; own world.
+//     a chain wears its own record because its holder MOVES, while a blotter is a RANGE MINT that
+//      records no group at all: wind the issuer's number past three and three tokens wander off.
+//       Each still spends through the exact single-use door: torn once, its number ticked off
+//        `claimed`, a replay refused. The legacy ###### link is the same species (a one-timer,
+//         granting the old ftp atom — never a Feature), so this Book pins its door-parse too.
+//          Mail wire, in-process, five fixed selves; own world.
 //   beat 2  five selves online — a sheet issuer (Host) three serial claimants (Uno Dos Tres) a replayer (Qua)
-//   beat 3  Host prints a sheet of THREE serials; Uno tears serial 1 — a friendship seals spending only it
-//   beat 4  Dos tears serial 2 and Tres serial 3 — three independent friendships the whole sheet claimed
-//   beat 5  Qua replays Uno's spent serial — REFUSED no friendship; and the legacy link still parses at the door
+//   beat 3  Host winds THREE numbers off one issuer; Uno tears serial 1 — a friendship seals ticking only it
+//   beat 4  Dos tears 2 and Tres tears 3 — three independent friendships and one unbroken claimed run
+//   beat 5  Qua replays Uno's claimed number — REFUSED no friendship; and the legacy link still parses at the door
 
 SwarmBlotter(A,w):
     w oai %req:wrangle,eternal
@@ -1411,7 +1413,7 @@ async SwarmBlotter_sheet(w):
     w i reached:step_3
     w.sc.now = 1751800010
     let host = this.SwarmBlotter_ident(w, 'Host')
-    w.c.sheet = await this.Swarm_mint_blotter(w, host, { Music: 1, genre: 'Jazz' }, 3, 'sheet_a')
+    w.c.sheet = await this.Swarm_mint_blotter(w, host, { Music: 1, genre: 'Jazz' }, 3)
     await this.Swarm_redeem(w, this.SwarmBlotter_ident(w, 'Uno'), w.c.sheet[0])
 
 // beat 4 — the sheet fills: Dos tears serial 2 and Tres serial 3. Each serial admits its OWN claimant
@@ -1444,30 +1446,33 @@ SwarmBlotter_witness(w):
     // beat 2: five online selves.
     if (n === 2 && [host, uno, dos, tres, qua].every(i => this.Swarm_peering(i)?.sc?.online)) this.story_swear(w, 'five selves stand up online — a sheet issuer three serial claimants and a replayer of a torn ticket')
     let peer = this.Swarm_peering(host)
-    let sheet = peer?.o({ Blotter: 'sheet_a' })[0]
-    let members = peer?.o({ Idzeug: 1, blotter: 'sheet_a' }) ?? []
-    let s1 = peer?.o({ Idzeug: 'sheet_a-1' })[0]
-    let s2 = peer?.o({ Idzeug: 'sheet_a-2' })[0]
-    let s3 = peer?.o({ Idzeug: 'sheet_a-3' })[0]
+    // THE SHEET LEAVES NO GROUP BEHIND (2026-08-12). There is no %Blotter and no record per serial —
+    //  only the ISSUER, whose number was wound past all three. So the witness reads the issuer: how
+    //   far it wound (`next`), and which numbers came back (`claimed`).
+    let iz = peer?.o({ Idzeug: 1, next: 1, to: 'Music', genre: 'Jazz' })[0]
+    let rows = peer?.o({ Idzeug: 1 }).filter(r => !r.sc.next) ?? []
     let hostUno = peer?.o({ Pier: 1, pub: uno.sc.prepub })[0]?.o({ Grant: 'Music', by: uno.c.keys?.pub })[0]
     let unoHost = this.Swarm_peering(uno)?.o({ Pier: 1, pub: host.sc.prepub })[0]?.o({ Grant: 'Music', by: host.c.keys?.pub })[0]
-    // beat 3: a sheet of three plain one-time serials under one blotter; the first torn seals only itself.
-    if (n === 3 && sheet && members.length === 3 && members.every(m => !m.sc.chain)) this.story_swear(w, 'a printed sheet mints three one-time serials under one blotter — each a single-use ticket never a chain')
-    let claimed3 = this.Swarm_blotter_claimed(host, 'sheet_a')
-    if (n === 3 && hostUno && unoHost && s1?.sc?.spent && !s2?.sc?.spent && !s3?.sc?.spent && claimed3.claimed === 1) this.story_swear(w, 'the first torn serial seals a real friendship and spends only itself — its siblings on the sheet stay unclaimed')
+    // beat 3: three tickets issued off ONE issuer and not one particle minted for them; the first torn
+    //  spends only its own number.
+    if (n === 3 && iz && w.c.sheet?.length === 3 && +iz.sc.next === 4 && !rows.length) this.story_swear(w, 'a printed sheet is three numbers wound off one issuer — no particle is born for a ticket that has yet to come home')
+    let claimed3 = this.Swarm_issued(host, { Music: 1, genre: 'Jazz' })
+    if (n === 3 && hostUno && unoHost && this.Swarm_claimed_has(iz?.sc?.claimed, 1) && !this.Swarm_claimed_has(iz?.sc?.claimed, 2) && !this.Swarm_claimed_has(iz?.sc?.claimed, 3) && claimed3.claimed === 1) this.story_swear(w, 'the first torn serial seals a real friendship and ticks off only itself — its siblings on the sheet stay unclaimed')
     // beat 4: each serial admits its own claimant — three independent friendships and a fully claimed sheet.
     let hostDos = peer?.o({ Pier: 1, pub: dos.sc.prepub })[0]?.o({ Grant: 'Music', by: dos.c.keys?.pub })[0]
     let hostTres = peer?.o({ Pier: 1, pub: tres.sc.prepub })[0]?.o({ Grant: 'Music', by: tres.c.keys?.pub })[0]
     let dosHost = this.Swarm_peering(dos)?.o({ Pier: 1, pub: host.sc.prepub })[0]?.o({ Grant: 'Music', by: host.c.keys?.pub })[0]
     let tresHost = this.Swarm_peering(tres)?.o({ Pier: 1, pub: host.sc.prepub })[0]?.o({ Grant: 'Music', by: host.c.keys?.pub })[0]
-    let claimed4 = this.Swarm_blotter_claimed(host, 'sheet_a')
-    if (n === 4 && hostDos && hostTres && dosHost && tresHost && s1?.sc?.spent && s2?.sc?.spent && s3?.sc?.spent && claimed4.claimed === 3 && claimed4.count === 3) this.story_swear(w, 'each serial admits its own claimant — three torn tickets seal three independent friendships and the whole sheet reads fully claimed')
+    let claimed4 = this.Swarm_issued(host, { Music: 1, genre: 'Jazz' })
+    // the run-list COALESCES: three separate claims arriving in order leave `1-3`, one run, not three
+    //  entries — the compaction that makes an account file readable is a happened-fact here.
+    if (n === 4 && hostDos && hostTres && dosHost && tresHost && iz?.sc?.claimed === '1-3' && claimed4.claimed === 3 && claimed4.count === 3) this.story_swear(w, 'each number admits its own claimant — three torn tickets seal three independent friendships and the issuer reads back one unbroken claimed run')
     // beat 5: the one-timer refuses a second tear; the legacy link still parses granting ftp not Music.
     let quaRebuff = qua.o({ rebuff: 'rejected_spent' })[0]
     let hostNoQua = !(peer?.o({ Pier: 1, pub: qua.sc.prepub }).length)
     let quaNoHost = !(this.Swarm_peering(qua)?.o({ Pier: 1, pub: host.sc.prepub }).length)
-    let claimed5 = this.Swarm_blotter_claimed(host, 'sheet_a')
-    if (n === 5 && quaRebuff && hostNoQua && quaNoHost && claimed5.claimed === 3) this.story_swear(w, 'a torn ticket cannot be torn twice — replaying a spent serial is refused and seals no friendship')
+    let claimed5 = this.Swarm_issued(host, { Music: 1, genre: 'Jazz' })
+    if (n === 5 && quaRebuff && hostNoQua && quaNoHost && claimed5.claimed === 3) this.story_swear(w, 'a torn ticket cannot be torn twice — replaying a claimed number is refused and seals no friendship')
     let leg = this.Swarm_legacy_of_url('https://jam/#0123456789abcdef-Alice-cafef00d')
     if (n === 5 && leg && leg.legacy && leg.granted === 'ftp' && leg.granted !== 'Music') this.story_swear(w, 'the old garden link still parses at the door — its hash-fragment shape grants the legacy trust atom never a Music Feature')
 

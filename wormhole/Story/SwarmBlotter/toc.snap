@@ -4,36 +4,36 @@ story:SwarmBlotter
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.044
-      sample=0.041,at=1784682278
-      sample=0.033,at=1784682290
-      sample=0.046,at=1784703553
-      sample=0.066,at=1784703563
-      sample=0.067,at=1784714598
-      sample=0.035,at=1785075812
-      sample=0.035,at=1785075820
-      sample=0.044,at=1785075828
-      sample=0.027,at=1785075837
+    TimeTotal:beliefs,avg=0.058
       sample=0.05,at=1785834810
-    TimeTotal:step,avg=0.009
-      sample=0.008,at=1784682278
-      sample=0.007,at=1784682290
-      sample=0.009,at=1784703553
-      sample=0.013,at=1784703563
-      sample=0.013,at=1784714598
-      sample=0.007,at=1785075812
-      sample=0.007,at=1785075820
-      sample=0.009,at=1785075828
-      sample=0.005,at=1785075837
+      sample=0.036,at=1786516694
+      sample=0.049,at=1786517906
+      sample=0.041,at=1786517954
+      sample=0.041,at=1786518028
+      sample=0.1,at=1786518036
+      sample=0.043,at=1786518072
+      sample=0.069,at=1786518958
+      sample=0.069,at=1786518971
+      sample=0.085,at=1786518977
+    TimeTotal:step,avg=0.012
       sample=0.01,at=1785834810
+      sample=0.007,at=1786516694
+      sample=0.01,at=1786517906
+      sample=0.008,at=1786517954
+      sample=0.008,at=1786518028
+      sample=0.02,at=1786518036
+      sample=0.009,at=1786518072
+      sample=0.014,at=1786518958
+      sample=0.014,at=1786518971
+      sample=0.017,at=1786518977
   step,dige:6119c6d27e4e8905
   step=2,dige:1c0d25054543261a
     Assertion:five-selves-stand-up,sentence:five selves stand up online — a sheet issuer three serial claimants and a replayer of a torn ticket
-  step=3,dige:29fa94f312a3ab81
-    Assertion:a-printed-sheet-mints,sentence:a printed sheet mints three one-time serials under one blotter — each a single-use ticket never a chain
-    Assertion:the-first-torn-serial,sentence:the first torn serial seals a real friendship and spends only itself — its siblings on the sheet stay unclaimed
-  step=4,dige:b8ea093a0865946c
-    Assertion:each-serial-admits-its,sentence:each serial admits its own claimant — three torn tickets seal three independent friendships and the whole sheet reads fully claimed
-  step=5,dige:a873d2e99580597a
-    Assertion:a-torn-ticket-cannot,sentence:a torn ticket cannot be torn twice — replaying a spent serial is refused and seals no friendship
+  step=3,dige:a56ada91c585d1df
+    Assertion:a-printed-sheet-is,sentence:a printed sheet is three numbers wound off one issuer — no particle is born for a ticket that has yet to come home
+    Assertion:the-first-torn-serial-2,sentence:the first torn serial seals a real friendship and ticks off only itself — its siblings on the sheet stay unclaimed
+  step=4,dige:a01eb1c53e9365bc
+    Assertion:each-number-admits-its,sentence:each number admits its own claimant — three torn tickets seal three independent friendships and the issuer reads back one unbroken claimed run
+  step=5,dige:982cd46792f60b8e
     Assertion:the-old-garden-link,sentence:the old garden link still parses at the door — its hash-fragment shape grants the legacy trust atom never a Music Feature
+    Assertion:a-torn-ticket-cannot-2,sentence:a torn ticket cannot be torn twice — replaying a claimed number is refused and seals no friendship

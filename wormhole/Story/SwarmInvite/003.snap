@@ -11,11 +11,11 @@ Snap:H
             Peering,name:9ff272fbf4b59795
           Identity:5c4b63609cd01594,prepub:5c4b63609cd01594,nick:lone-sail,active
             Peering,name:5c4b63609cd01594,online
-              Idzeug:invite_1,to:Music
+              Idzeug:1,to:Music,next:2
         Account,of:Phone
           Identity:0bd16fbd60d7b3bb,prepub:0bd16fbd60d7b3bb,friendly:Phone
             Peering,name:0bd16fbd60d7b3bb,friendly:Phone
         req:witness,eternal,ok
         reached:step_3
-        minted:parsed,to:Music,of:5c4b63609cd01594,nonce:invite_1,chars:48
+        minted:parsed,to:Music,of:5c4b63609cd01594,nonce:1,chars:41
         see:the invite is a URL — the compact token inside parses back to a Music offer under sixty characters

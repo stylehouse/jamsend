@@ -145,16 +145,18 @@
             //  (idempotent; the $effect usually beat us to it)
             const w = H.Swarm_station_world?.()
             if (w && typeof H.Swarm_station_up === 'function' && H.Swarm_station_up(w, self)) stood = true
-            // nonce: random hex live (a Book pins its own); the spend ledger rides the %Peering
-            const nonce = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => b.toString(16).padStart(2, '0')).join('')
-            url = await H.Swarm_invite_url(null, self, { Music: 1 }, nonce, location.origin + location.pathname)
+            // no nonce any more: the %Idzeug IS the issuer and assigns the number (Onboard_todo §0
+            //  2026-08-12).  Minting no longer plants a particle per invite — it winds one counter.
+            url = await H.Swarm_invite_url(null, self, { Music: 1 }, location.origin + location.pathname)
             open_big()
         } catch (e) { err = String(e) }
     }
 
     // ── BLOTTER — the printed SHEET, and it is A GRID OF QR CODES AND NOTHING ELSE ────────────
-    //  Swarm_spec §6.2's second invite kind, finally given the face `Swarm_mint_blotter` (+ `%Blotter`,
-    //   Book SwarmBlotter green ×2) has been waiting for since it landed.
+    //  Swarm_spec §6.2's second invite kind, given the face `Swarm_mint_blotter` (Book SwarmBlotter)
+    //   has been waiting for since it landed.  Since 2026-08-12 it is a RANGE MINT: printing winds
+    //    the issuer's number past 126 and no `%Blotter` — nor any per-serial particle — survives it.
+    //     The sheet is a physical object once it leaves here; the app only remembers the numbers.
     //  ⚠ THE LAYOUT IS THE OLD GARDEN'S, VERBATIM — `p2p/ui/ShareButton.svelte` `createComposite()`,
     //   whose numbers (`margin 400`, `PADDING 130`, `OVERLAP_PERCENT -0.18`, the `ceil(sqrt(n·0.77))-1`
     //    grid) were TUNED BY HAND until 126 cells fell exactly onto the page.  They are not a
@@ -213,12 +215,12 @@
         try {
             const w = H.Swarm_station_world?.()
             if (w && typeof H.Swarm_station_up === 'function' && H.Swarm_station_up(w, self)) stood = true
-            // the tag names the SHEET; its serials are <tag>-1..<tag>-126 and each spends through the
-            //  very same single-use door as the one-off QR above.  Random tag, not a counter: two
-            //   sheets minted in one session must not collide on a serial.
-            const tag = 'sheet' + Array.from(crypto.getRandomValues(new Uint8Array(3)), b => b.toString(16).padStart(2, '0')).join('')
+            // no tag, because THE SHEET DOES NOT SURVIVE ITS OWN PRINTING (the owner 2026-08-12:
+            //  *"their Invites wander off into the world. we have no idea they're a group,
+            //   ongoingly"*).  Minting winds the issuer's number past 126 and hands back 126 tokens;
+            //    two sheets in one session simply take the next 126 numbers, so nothing can collide.
             const base = location.origin + location.pathname
-            const izzes = await H.Swarm_mint_blotter(w ?? null, self, { Music: 1 }, SHEET_N, tag)
+            const izzes = await H.Swarm_mint_blotter(w ?? null, self, { Music: 1 }, SHEET_N)
             // closed mid-mint: drop out rather than leave the button disabled forever (the serials
             //  themselves are minted and remain perfectly good in the ledger).
             if (era !== sheet_era) return
