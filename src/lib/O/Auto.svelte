@@ -550,8 +550,16 @@
         if (c.account_mirror_timer) return
         c.account_mirror_timer = setTimeout(async () => {
             delete c.account_mirror_timer
-            if (c.account_mirror_flying) { (H as any).Clustation_mirror_nudge?.(H); return }
-            c.account_mirror_flying = 1
+            if (c.account_mirror_flying) {
+                // STALE-FLIGHT BREAKER (2026-08-13, the latch audit): a HUNG (not thrown) FSA write
+                //  never reaches its finally — flying stayed truthy, this branch re-armed every 500ms
+                //   forever, and the mark (stamped before the await) kept claiming the write landed.
+                //    Same contract as Swarm_latch_stale: past 60s, say it, drop the lying mark, go.
+                if (Date.now() - (+c.account_mirror_flying || 0) < 60000) { (H as any).Clustation_mirror_nudge?.(H); return }
+                console.warn('🪪⚠ account mirror write hung >60s — latch broken, mark dropped, rewriting')
+                delete (top.c as any).account_mirror_mark
+            }
+            c.account_mirror_flying = Date.now()
             try { await (H as any).Clustation_mirror_account?.(H) }
             finally { delete c.account_mirror_flying }
         }, 500)

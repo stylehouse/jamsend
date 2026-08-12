@@ -9,7 +9,7 @@ Waft:Keep,equip:Keep,isx_show_cold,lte_expanded
   WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1786541723061
   WaftTimes,of_Waft:Keep,minimised
   WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1786541723094,minimised
-  DocScroll,of_Doc:Ghost/N/Peeroleum.g,scroll_line=25
+  DocScroll,of_Doc:Ghost/N/Peeroleum.g,scroll_line=16
   DocScroll,of_Doc:Ghost/N/Tyrant.g
   DocScroll,of_Doc:Ghost/M/Radiola.g,scroll_line=106
   DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2608

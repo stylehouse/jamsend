@@ -261,6 +261,24 @@ Ra_bake(channels, linear):
             i = i + 1
         }
     }
+
+// Ra_bake_gentle — the whole-file variant (2026-08-13, the 14.8s-frame audit): baking a full track is
+//  tens of millions of float multiplies, and doing it synchronously on the main thread was the single
+//   biggest frame measured (max=14825ms inside the inbound drain's mutex hold).  Slices of ~4M samples
+//    with a macrotask yield between; a no-op gain (±0.01dB of unity) skips entirely.
+async Ra_bake_gentle(channels, linear):
+    if (!channels || !channels.length || Math.abs((+linear || 1) - 1) < 0.0012) return
+    let SLICE = 4194304
+    for (const chan of channels) {
+        let i = 0
+        while (i < chan.length) {
+            let end = Math.min(chan.length, i + SLICE)
+            let j = i
+            while (j < end) { chan[j] = chan[j] * linear; j = j + 1 }
+            i = end
+            if (i < chan.length) await new Promise((res) => setTimeout(res, 0))
+        }
+    }
 //#endregion
 
 //#region encode — ONE WebCodecs Opus encode per side, sliced into packet-framed transport chunks
@@ -1901,10 +1919,14 @@ async Ra_source_pcm(w, rec):
     let channels = []
     let ch = 0
     while (ch < nch) {
-        channels.push(decoded.getChannelData(ch))
+        // COPY, never the view (2026-08-13 audit #6): getChannelData returns a VIEW into the
+        //  AudioBuffer's storage, so retaining two views retained EVERY channel of the decode — a 5.1
+        //   source pinned 3× what Ra_pcm_bytes reported, invisibly.  The copy frees the AudioBuffer
+        //    the moment it goes out of scope; one transient Float32Array per channel is the price.
+        channels.push(new Float32Array(decoded.getChannelData(ch)))
         ch = ch + 1
     }
-    this.Ra_bake(channels, Math.pow(10, (+card.gain || 0) / 20))
+    await this.Ra_bake_gentle(channels, Math.pow(10, (+card.gain || 0) / 20))
     rec.c.pcm = channels
     // JOIN THE PCM REGISTRY AT ACQUISITION, not at encoder-open (2026-08-07 — the 11GB tab).  See
     //  Ra_pcm_sweep for why this line and not `ra_hot` is what makes the bytes freeable.
@@ -1955,6 +1977,14 @@ Ra_pcm_hold(rec):
     M.c.ra_pcm = M.c.ra_pcm || []
     rec.c.pcm_ts = Date.now()
     if (!M.c.ra_pcm.includes(rec)) M.c.ra_pcm.push(rec)
+    // THE BELT GETS ITS OWN CLOCK (2026-08-13, the 68s-mutex audit's #2): the sweep's only carrier was
+    //  Ra_transcode_pump — inside the very beliefs mutex that long serves monopolise — so the ONE memory
+    //   bound in the system was unenforceable precisely while the system was in trouble (measured: zero
+    //    frees across a 68s stall, held→4072MB = 10×CAP, then 3.4GB freed in one burst on release).  An
+    //     ambient interval (the retransmit-clock idiom: a wall clock, never a ttlilt) cannot be starved
+    //      by the mutex — setInterval fires between holds, and the sweep itself takes no lock.  Armed
+    //       once per page life, first time any PCM is held; idles at one cheap length-check per 5s.
+    if (!M.c.ra_pcm_tick) M.c.ra_pcm_tick = setInterval(() => this.Ra_pcm_sweep(), 5000)
 
 // ── ADMISSION CONTROL (2026-08-08) — the belt above is EVICTION, and eviction alone LIVELOCKS ──
 //  MEASURED on the human's tab: EIGHT records parked at from_idx=16, waiting 22s → 724s, **not one
@@ -2008,6 +2038,27 @@ Ra_pcm_admit(w, rec):
     for (const r of M.c.ra_pcm_fly) { if (r && r.c.pcm_pending && r !== rec) { fly.push(r); flight = flight + this.Ra_pcm_est(r) } }
     M.c.ra_pcm_fly = fly
     let want = this.Ra_pcm_est(rec)
+    // THE CONCURRENCY AXIS (2026-08-13 audit #5): every bound here was BYTES, and every override was a
+    //  byte-axis escape — so N demanded records meant N simultaneous decodeAudioData calls (measured 13
+    //   overlapping, 59s CPU in a 37s window).  This one bound sits ABOVE all overrides on purpose:
+    //    priority answers who goes FIRST, never how many go AT ONCE.  A refused decode just waits a
+    //     pass; the fly list is exactly the in-flight set.  (`== null ?`, not `||` — zero must mean 0.)
+    let MAXFLY = M.c.ra_pcm_maxfly == null ? 2 : +M.c.ra_pcm_maxfly
+    if (fly.length >= MAXFLY) {
+        // THE RESERVE SLOT (2026-08-13, dawn — "f469 is off the tape" with nine candidate heads queued):
+        //  the bound is right, the equality of everything behind it was not.  A record whose parked
+        //   CONTINUATION want is starving (cont_starving_ts — someone's silence RIGHT NOW) may take one
+        //    slot past the cap; head demand never can.  fly is bounded at MAXFLY+1 absolutely.
+        let cont = rec.c.cont_starving_ts && (Date.now() - (+rec.c.cont_starving_ts)) < 30000
+        if (!cont || fly.length >= MAXFLY + 1) {
+            let nowfly = Date.now()
+            if (nowfly - (+(rec.c.pcm_wait_ts || 0)) > 5000) {
+                rec.c.pcm_wait_ts = nowfly
+                this.Radio_trace(null, { ev: 'pcm-wait', id: String(rec.sc.id || '').slice(0, 8), why: cont ? 'maxfly+1' : 'maxfly', fly: fly.length, held: Math.round(held / 1048576) })
+            }
+            return 0
+        }
+    }
     if (held + flight + want <= CAP) return this.Ra_pcm_fly_add(M, rec)
     if (rec === this.Ra_pcm_playing(M)) return this.Ra_pcm_fly_add(M, rec)
     // THE PIER-DEMAND OVERRIDE — the playing-record override's twin, for the SERVE side.  A record a
@@ -2038,6 +2089,20 @@ Ra_pcm_admit(w, rec):
         rec.c.pcm_wait_ts = nowms
         this.Radio_trace(null, { ev: 'pcm-wait', id: String(rec.sc.id || '').slice(0, 8), held: Math.round(held / 1048576), fly: Math.round(flight / 1048576), want: Math.round(want / 1048576), cap: Math.round(CAP / 1048576) })
     }
+    return 0
+
+// Ra_pending_stale — the pcm_pending|nat_pending stale breaker (2026-08-13, the latch audit): both
+//  latches assumed their promise settles, but a hung FSA read or a decodeAudioData that never returns
+//   left the record UNDECODABLE for the life of the tab — no error, every kick path politely deferring
+//    to a flight that no longer exists.  The stamps are Date.now() now (truthiness unchanged); past
+//     120s the latch is declared dead, out loud, and the next kick may try again.
+Ra_pending_stale(rec):
+    let nowp = Date.now()
+    if (rec.c.pcm_pending && rec.c.pcm_pending !== 1 && nowp - (+rec.c.pcm_pending) > 120000) {
+        console.warn(`♪⚠ pcm decode pending ${Math.round((nowp - (+rec.c.pcm_pending)) / 1000)}s for ${String(rec.sc.id || '').slice(0, 8)} — latch broken, re-kickable`)
+        rec.c.pcm_pending = 0
+    }
+    if (rec.c.nat_pending && rec.c.nat_pending !== 1 && nowp - (+rec.c.nat_pending) > 120000) rec.c.nat_pending = 0
     return 0
 
 Ra_pcm_fly_add(M, rec):
@@ -2130,15 +2195,33 @@ Ra_pcm_sweep():
         held = 0
         for (const r of live) held = held + this.Ra_pcm_bytes(r)
         if (held > CAP * 2) {
+            // THE CEILING KEEPS THE COURTESIES UNTIL 3×CAP (2026-08-13, seen live the same night it
+            //  shipped): shedding with no grace and no open-encode check re-armed the admit-shed-admit
+            //   livelock one layer up — 8 records decoded 12-17s each, ceiling-freed as a block, and
+            //    re-decoded (their wants still parked = still demand).  Pass one sheds only what the
+            //     cap belt would (idle-enough, no open encode); only past 3×CAP — a genuine runaway,
+            //      not a busy night — does the bound outrank everything.
             let j = 0
             while (held > CAP && j < live.length) {
                 let rec = live[j]
+                if ((rec.c.ra && !rec.c.ra.done) || (now - (+(rec.c.pcm_ts || 0)) < 10000)) { j = j + 1; continue }
                 held = held - this.Ra_pcm_bytes(rec)
                 this.Ra_pcm_drop(rec, 'ceiling')
                 live[j] = null
                 j = j + 1
             }
             live = live.filter((r) => r)
+            if (held > CAP * 3) {
+                let k = 0
+                while (held > CAP && k < live.length) {
+                    let rec = live[k]
+                    held = held - this.Ra_pcm_bytes(rec)
+                    this.Ra_pcm_drop(rec, 'ceiling')
+                    live[k] = null
+                    k = k + 1
+                }
+                live = live.filter((r) => r)
+            }
         }
     }
     M.c.ra_pcm = live
@@ -2251,9 +2334,11 @@ async Ra_head_ensure(w, rec):
     let pre = 312
     let nat = this.Ra_native()
     if (nat) {
-        let card = await this.Ra_card(w, rec)
-        if (!card || !card.path) return 0
+        // latch BEFORE the first await (single-flight audit): two concurrent callers both passed the
+        //  head_making check during the Ra_card await and ran a doubled ffmpeg head pass on the daemon.
         rec.c.head_making = 1
+        let card = await this.Ra_card(w, rec)
+        if (!card || !card.path) { rec.c.head_making = 0; return 0 }
         // ONE pass over [0, pv_off) — the same shape and the same reason as Ra_native_continuation:
         //  a process per chunk would be an encoder per chunk, hence a convergence ramp every 2s.
         //   The surplus grid step is that function's trick too, for ffmpeg's padded final frame.
@@ -2274,8 +2359,9 @@ async Ra_head_ensure(w, rec):
             //       head-wait-pcm → re-decode, 2-7s of CPU per lap, which is the "jams briefly then
             //        recovers" the serving tab shows.  Refusal is not failure: no backoff is climbed,
             //         the want stays parked, and admit lets it through as in-flight bytes free up.
+            this.Ra_pending_stale(rec)
             if (!rec.c.pcm_pending && !(rec.c.pcm_retry_at > Date.now()) && this.Ra_pcm_admit(w, rec)) {
-                rec.c.pcm_pending = 1
+                rec.c.pcm_pending = Date.now()
                 this.Ra_source_pcm(w, rec).then((p) => { rec.c.pcm_pending = 0; if (p) { rec.c.pcm_tries = 0; rec.c.pcm_retry_at = 0 } if (!p) this.Ra_pcm_backoff(rec) }).catch((er) => { rec.c.pcm_pending = 0; this.Ra_pcm_backoff(rec) })
             }
             return 0
@@ -2283,23 +2369,34 @@ async Ra_head_ensure(w, rec):
         rec.c.pcm_ts = Date.now()
         let st = this.Ra_encode_open(+(rec.sc.nch || 1), +(rec.sc.br || this.Ra_bitrate()))
         if (!st) return 0
+        // try/finally on the latch (audit: a throw in drain|close latched head_making forever and the
+        //  guard at the top then refused this record's head for the life of the tab)
         rec.c.head_making = 1
+        try {
         let end = Math.min(rec.c.pcm[0].length, off * SEG)
         // ONE SEGMENT AT A TIME, as Ra_encode_feed's own header asks ("callers feed ~2s at a time —
         //  gentle AudioData sizes").  A single AudioData spanning the whole head is tens of seconds
         //   of interleaved Float32 in one allocation.
+        // …AND YIELD BETWEEN THEM (2026-08-13, the 68s-mutex audit): gentle allocation sizes were only
+        //  half the courtesy — the loop itself was synchronous, so a 234-chunk head owned the main
+        //   thread (and whatever mutex the caller held) for the WHOLE encode.  A microtask break every
+        //    few segments lets the drive, the sweep, and the audio callback breathe mid-head; the
+        //     encoder is async under the hood anyway, so this costs nothing but fairness.
         let at = 0
+        let fed = 0
         while (at < end) {
             let to = Math.min(end, at + SEG)
             this.Ra_encode_feed(st, rec.c.pcm, at, to)
             at = to
+            fed = fed + 1
+            if (fed % 8 === 0) await new Promise((res) => setTimeout(res, 0))
         }
         // DRAIN, THEN close.  Ra_encode_close only closes the encoder — the packets come out of
         //  Ra_encode_drain's `flush()`.  Closing without draining left st.packets EMPTY, so the cut
         //   returned nothing and the head reported `head-empty` forever while the PCM was right there.
         await this.Ra_encode_drain(st)
         this.Ra_encode_close(st)
-        rec.c.head_making = 0
+        } finally { rec.c.head_making = 0 }
         // Ra_encode_open learns the real preskip off the decoder config on the first output packet.
         if (+(st.preskip || 0) > 0) pre = +st.preskip
         bufs = this.Ra_chunk_cut(st, 1)
@@ -2307,6 +2404,9 @@ async Ra_head_ensure(w, rec):
     if (!bufs || !bufs.length) { this.Radio_trace(null, { ev: 'head-empty', id: String(rec.sc.id || '').slice(0, 8), off: off }); return 0 }
     if (bufs.length > off) bufs = bufs.slice(0, off)
     this.Radio_trace(null, { ev: 'head-made', id: String(rec.sc.id || '').slice(0, 8), off: off, chunks: bufs.length, nat: nat ? 1 : 0 })
+    // the demand stamp has SERVED — clear it (audit #10: never cleared, and the pump re-stamped it
+    //  while any want stayed parked, so "head asked" became a permanent CAP bypass for the rec).
+    if (rec.c.head_asked_ts) rec.c.head_asked_ts = 0
     let s = 0
     while (s < bufs.length) {
         let ch = rec.oai({ Prehead: 1, hseq: '' + s })
@@ -2360,7 +2460,7 @@ async Ra_transcode_ensure(w, rec):
     let nat = this.Ra_native()
     if (nat) {
         if (!rec.c.nat_pending && Date.now() >= +(rec.c.pcm_retry_at || 0)) {
-            rec.c.nat_pending = 1
+            rec.c.nat_pending = Date.now()
             this.Radio_trace(null, { ev: 'nat-cont-start', id: String(rec.sc.id || '').slice(0, 8), from: P })
             this.Ra_native_continuation(w, rec, nat).then((r) => { rec.c.nat_pending = 0; if (!r) this.Ra_pcm_backoff(rec) }).catch((er) => { rec.c.nat_pending = 0; rec.c.pcm_why = '' + (er && er.message || er); this.Ra_pcm_backoff(rec) })
         }
@@ -2390,9 +2490,10 @@ async Ra_transcode_ensure(w, rec):
         //  memory bound, not a rate bound, and eviction alone livelocked every record at chunk 16.
         //   Refusal is not failure — no backoff is climbed, the want stays parked, and this record is
         //    admitted the moment an in-flight decode frees its bytes.  The PLAYING record overrides.
+        this.Ra_pending_stale(rec)
         if (!rec.c.pcm_pending && now_try >= +(rec.c.pcm_retry_at || 0) && !this.Ra_pcm_admit(w, rec)) return null
         if (!rec.c.pcm_pending && now_try >= +(rec.c.pcm_retry_at || 0)) {
-            rec.c.pcm_pending = 1
+            rec.c.pcm_pending = Date.now()
             // the SOURCE-SIDE timeline the live diagnosis reads (the human 2026-07-28 "figure out the %Stream
             //  thing ... debug that remotely"): mark the decode kick-off so the `world` op's inter-event deltas
             //   show whether the "takes a minute" is the whole-file decode (start→done gap) or the pump cadence
@@ -2610,7 +2711,12 @@ async Ra_transcode_pump(w):
     for (const pier of piers) {
         let lib = this.Repli_src_for(w, pier)
         let seen = {}
-        for (const p of pier.o({ parked_want: 1 })) {
+        // STARVING FIRST (2026-08-13, dawn — the 41s continuation stall behind nine fresh heads): the
+        //  walk was shelf-order, so a just-parked head want could spend this beat's budget while the
+        //   playing track's long-starved continuation sat later in the list.  Oldest-parked first;
+        //    a want not yet stamped parked_at is the freshest of all and goes last.
+        let wants = pier.o({ parked_want: 1 }).slice().sort((a, b) => (+(a.c.parked_at || Infinity)) - (+(b.c.parked_at || Infinity)))
+        for (const p of wants) {
             let id = p.sc.id
             if (seen[id]) continue
             seen[id] = 1
@@ -2667,7 +2773,15 @@ async Ra_transcode_pump(w):
             //         demand override included) — a re-ranking, never an unbounding.
             let starving = p.c.parked_at && (Date.now() - p.c.parked_at) > 10000
             if (starving) rec.c.head_asked_ts = Date.now()
+            // the CONTINUATION-STARVING stamp, distinct from head demand (2026-08-13, dawn): after a
+            //  double reboot the radio asks for ~9 candidate HEADS at once and every one is "demand" —
+            //   under maxfly=2 they serialize, and the PLAYING track's continuation waited its turn in
+            //    that same queue: off the tape while the source politely decoded previews.  This stamp
+            //     is what buys the reserve slot in Ra_pcm_admit's maxfly gate — someone's actual
+            //      silence outranks everyone's next track.
+            if (starving) rec.c.cont_starving_ts = Date.now()
             if (!rec.c.pcm && !rec.c.ra) {
+                this.Ra_pending_stale(rec)
                 if (rec.c.pcm_pending || rec.c.nat_pending) { admit_spent = admit_spent + ADMIT_CAP / 4; continue }
                 if (!starving && admit_spent + ADMIT_CAP / 4 > ADMIT_CAP / 2) continue
                 admit_spent = admit_spent + ADMIT_CAP / 4
@@ -2963,7 +3077,12 @@ async Ra_pull_beat(w, rx, mine, theirs, rec):
             let parked = parkedAt && (nowms - parkedAt < PARK_CEIL)
             let asked_at = w.c.ra_want_ts[key] || 0
             let tries = w.c.ra_tries[key] || 0
-            let wait = RTO * Math.pow(2, Math.min(tries, 3))
+            // CAPPED AGAINST THE BUFFER, not just the RTT guess (2026-08-13 audit #8): RTO defaults to
+            //  4s on an unmeasured path, so tries=3+ meant a 32s re-ask silence for ONE page — 4s of
+            //   audio — on top of a 20s park.  A loss burst pinned tries at the ceiling (they clear
+            //    only on land), so one bad spell taxed every later page.  8s is still 2× the honest
+            //     default RTO; the ladder keeps its shape below the cap.
+            let wait = Math.min(8000, RTO * Math.pow(2, Math.min(tries, 3)))
             if (!parked && nowms - asked_at > wait) {
                 // KARN'S RULE bookkeeping: this is a RE-ask (a stamp was already standing), so the page
                 //  that eventually lands cannot be attributed to either ask — mark the key and the

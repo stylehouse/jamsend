@@ -365,12 +365,90 @@ if (op === 'runners') {
 //  is a PLACEHOLDER the auto-court below (post-connect) resolves to one prepub — the raw role broadcast
 //   never carries a real ask any more (the relay fans it to every tab: the double-dispatch bug).
 let TARGET = 'runner'
+// ── probeLive — ADDRESSED live resolution (2026-08-13) ──────────────────────────────────────
+//  The census is a BROADCAST rotation and the relay spends each round's corr on the FIRST
+//   runner_ack (relay.ts `ackBack`, deleted on receipt) — so a NAMED tab that keeps losing that
+//    race is never enumerated, and an explicit --player=<addr> exits 2 while the tab's own console
+//     shows it answering every ping (measured 2026-08-13: f469a1ec50f5a878 answered every census
+//      broadcast, lost every round to three faster tabs, and the relay dropped each ack with
+//       "no asking socket (gone)").  An ADDRESSED frame never races: to:<addr> routes point-to-
+//        point and the single ack is corr-routed home.  So when the caller NAMES a tab, ask it BY
+//         NAME; the census stays as the no-id discovery path and the last-resort fallback.
+//  Classification is the census's own law, unchanged: the ping ack's role is the MACHINE role (a
+//   Sounditron acks 'runner'), so `supervisor`'s humdinger decides player-vs-runner, and a tab
+//    that won't say is 'unknown' and matches neither — fail closed, never guess.
+//  Returns: a pub string (verified match) · {wrong,role} (answered by address but is the other
+//   kind — a precise refusal beats a census that would mis-file it) · null (no addressed ack).
+async function probeLive(id, want) {
+	// candidate FULL addrs — an addressed frame needs the whole prepub: the literal id when it is
+	//  one, plus (LOCAL relay only) registry prefix expansions.  A remote host's tabs are not in
+	//   OUR registry (the whole point of --live), so a remote prefix can only go to the census.
+	const cands = []
+	if (/^[0-9a-fA-F]{16}$/.test(id)) cands.push(id)
+	if (localHost) {
+		const rs = clusterRunners()   // (re)parses the registry; also (re)fills `players`
+		for (const row of [...players, ...rs]) if (row.pub.startsWith(id) && !cands.includes(row.pub)) cands.push(row.pub)
+	}
+	if (!cands.length) return null
+	const addr = `runcli-${Date.now()}-pb`
+	const w2   = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(addr)}`)
+	const up = await new Promise((res) => {
+		const t = setTimeout(() => res(false), 5000)
+		w2.on('open', () => { clearTimeout(t); res(true) })
+		w2.on('error', () => { clearTimeout(t); res(false) })
+	})
+	if (!up) { try { w2.close() } catch {}; return null }   // relay unreachable — the census path words it
+	const askOne = (to, theAsk, ms) => new Promise((res) => {
+		const corr = `ra-pb-${Date.now()}-${censusSeq++}`
+		const onMsg = (d) => {
+			let m; try { m = JSON.parse(String(d)) } catch { return }
+			if (m.corr !== corr) return
+			w2.off('message', onMsg); clearTimeout(t); res(m)
+		}
+		const t = setTimeout(() => { w2.off('message', onMsg); res(null) }, ms)
+		w2.on('message', onMsg)
+		w2.send(JSON.stringify({ header: { type: 'runner_ask', from: addr, to, seq: Date.now(), corr }, ask: theAsk, corr }))
+	})
+	let wrong = null
+	try {
+		for (const pub of cands) {
+			// 3 addressed tries: a busy tab can miss one 4s window; an unbound addr answers fast
+			//  (the relay's own `undeliverable`), so a dead candidate costs one round, not three.
+			let a = null
+			for (let t = 0; t < 3 && a?.control !== 'runner_ack'; t++) {
+				a = await askOne(pub, { op: 'ping' }, 4000)
+				if (a?.control === 'undeliverable') break
+			}
+			if (a?.control !== 'runner_ack') continue
+			const s = await askOne(pub, { op: 'supervisor' }, 8000)
+			const h = s?.control === 'runner_ack' && s.ok !== false ? s.result?.humdinger : undefined
+			const role = h === true ? 'player'
+				: h === false ? (a.result?.role === 'runner' ? 'runner' : String(a.result?.role ?? 'unknown'))
+				: 'unknown'
+			if (role === want) return pub
+			wrong = { wrong: pub, role }
+		}
+	} finally { try { w2.close() } catch {} }
+	return wrong
+}
 // LIVE resolution — the same selector, answered by the RELAY instead of the local file.  Used when
 //  --live is given, and as an automatic fallback when the registry can say nothing (a remote node's
 //   registry is on ITS disk, not ours).  `want` is the role the census must agree on: a tab that will
 //    not say what it is ('unknown') matches neither, so a silent/old tab is never mistaken for the
 //     other kind.  No id ⇒ the last one found, mirroring the file resolver's "latest".
+//  A GIVEN id goes ADDRESSED first (probeLive above) — the census cannot be trusted to reach a
+//   specific tab (its broadcast corr is spent on the first ack), only to discover *some* tabs.
 async function resolveLive(id, want) {
+	if (id) {
+		const hit = await probeLive(id, want)
+		if (typeof hit === 'string') return hit
+		if (hit?.wrong) {
+			console.error(`✗ --${want}=${id}: ${hit.wrong.slice(0, 8)} answered its addressed ping but is role:'${hit.role}', not '${want}'${
+				hit.role === 'player' ? ' — a Sounditron; address it with --player=' : hit.role === 'runner' ? ' — a test runner; address it with --runner=' : " (it won't say what it is — old code? reload it)"}`)
+			process.exit(2)
+		}
+		console.error(`⇢ --${want}=${id}: no addressed ack — sweeping ${WS_URL} instead (census; slower and can under-report)`)
+	}
 	const found = await census({})
 	if (found == null) { console.error(`✗ relay ${WS_URL}: unreachable — cannot resolve --${want}=${id || ''} live`); process.exit(2) }
 	const rs = found.filter(f => f.role === want)
@@ -583,9 +661,11 @@ if (TARGET === 'runner') {
 if (TARGET !== 'runner') { try { writeFileSync(STICKY_PATH, TARGET + '\n') } catch { /* stash is best-effort */ } }
 
 let exitCode = 0
-// INSIST: when courting a named runner (--runner=), DON'T failover — retry the SAME target on a busy refusal
-//  or silence (an occupied or half-open runner), up to RUNNER_INSIST_TRIES.  The role broadcast stays single-shot.
-const INSIST = runnerSel !== undefined ? Number(process.env.RUNNER_INSIST_TRIES || 5) : 1
+// INSIST: when courting a NAMED tab (--runner= or --player=), DON'T failover — retry the SAME target on a
+//  busy refusal or silence (an occupied or half-open tab), up to RUNNER_INSIST_TRIES.  The role broadcast
+//   stays single-shot.  --player joined 2026-08-13: its verbs are read-only by construction (PLAYER_OPS),
+//    so insisting is harmless, and a listening tab mid-decode legitimately misses a single 12s window.
+const INSIST = (runnerSel !== undefined || playerSel !== undefined) ? Number(process.env.RUNNER_INSIST_TRIES || 5) : 1
 let reply
 for (let attempt = 1; ; attempt++) {
 	reply = await sendAsk(ws, ask)

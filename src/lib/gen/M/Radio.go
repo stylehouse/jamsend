@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '16e1f79bcaa1e183~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '6c9b393bc254d232~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -3394,13 +3394,26 @@ Radio_head_ahead(radio) {
     let recs = shelf ? this.Ra_recs(shelf) : []
     let cut = 0
     let looked = 0
+    // DISCRETIONARY, SO IT STANDS DOWN UNDER LOAD (2026-08-13 audit #4): this is the second warm-head
+    //  loop, and it missed the Ra_piers_pulling gate its twin got — so it kept spending whole-file
+    //   decodes on nobody's demand while listeners starved.  Same gate, same reason.
+    if (typeof this.Ra_piers_pulling === 'function' && this.Ra_piers_pulling(w)) {
+        this.Radio_head_note(radio, { lu: shelf ? 1 : 0, cards: recs.length, looked: 0, local: recs.length, cut: 0, go: 0 })
+        return
+    }
     for (const rec of recs) {
         if (looked >= 12) break
         looked = looked + 1
         if (!(+(rec.sc.pv_off || 0) > 0)) continue
         cut = cut + 1
         if (this.Ra_head_whole(rec)) continue
-        this.Ra_head_ensure(w, rec).catch((er) => {})
+        // CONTINUE past a refused kick, never return (audit #4b): the first unadmittable record used to
+        //  head-of-line block the whole warm loop — 60 head-wait-pcm marks at 2.5/s spinning on a record
+        //   the admission gate will never pass while a warmable sibling sat right behind it.
+        let went = 0
+        this.Ra_head_ensure(w, rec).then((r) => 0).catch((er) => 0)
+        if (rec.c.head_making || rec.c.pcm_pending) went = 1
+        if (!went) continue
         this.Radio_head_note(radio, { lu: 1, cards: recs.length, looked: looked, local: recs.length, cut: cut, go: 1 })
         return
     }

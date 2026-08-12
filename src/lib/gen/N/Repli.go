@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '636ce5e95573049c~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'f774ee79ce9eca7d~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -254,7 +254,14 @@ async Repli_serve_head(w, pier, h, rec) {
         //    134MB head decode was refused every beat for minutes (296+134 > cap 384) — the sink ran
         //     off the tape against a source that was healthy but too polite to interrupt itself.
         rec.c.head_asked_ts = Date.now()
-        try { await this.Ra_head_ensure(w, rec) } catch (er) {}
+        // KICKED, NEVER AWAITED (2026-08-13, the 68s-mutex audit).  This await was the off-the-tape:
+        //  Repli_serve_want runs inside the inbound drain's single post_do — ONE beliefs-mutex hold for
+        //   the whole ws batch — and Ra_head_ensure feeds a whole head (measured off=234 ⇒ 468s of audio)
+        //    through WebCodecs synchronously.  Nine heads in one window summed to a 68-SECOND mutex hold:
+        //     radio drive, share beat, and the pcm sweep (the only memory bound) all frozen behind it,
+        //      held climbing to 4GB.  The miss path below already returns-and-lets-the-ladder-retry; the
+        //       encode losing its awaiter changes nothing the sink can observe except that the tab lives.
+        this.Ra_head_ensure(w, rec).catch((er) => 0)
     }
     let from = +(h.from_idx || 0)
     if (from >= off) return
@@ -899,6 +906,21 @@ Repli_xfer_get() {
 async Repli_serve_want(w, pier, frame) {
     let h = frame.header
     let lib = this.Repli_src_for(w, pier)
+    // SELF-HEAL AT THE REFUSAL (2026-08-13 audit #4): repli_src is registered only inside the share
+    //  beat's peers phase — behind the grant gate, under the beliefs mutex — so a beat that a mutex jam
+    //   (or a reload) kept from reaching that line left every arriving want refused with this exact
+    //    string while the sink re-asked forever.  The refusal site knows everything registration needs;
+    //     heal here and serve THIS want.  Consent is still checked right below — nothing is widened.
+    if (!lib && typeof this.Ra_home_self === 'function' && typeof this.Repli_register_caster === 'function') {
+        let M0 = this.top_House ? this.top_House() : null
+        let rw0 = M0 && M0.c.radio_w
+        let me0 = rw0 && this.Radio_pub ? this.Radio_pub(rw0) : ''
+        if (rw0 && me0) {
+            this.Repli_register_caster(w, pier, this.Ra_home_self(rw0, me0))
+            lib = this.Repli_src_for(w, pier)
+            if (lib) console.log(`◈⟲ serve source self-healed for ${String(h.from || '').slice(0, 8)} — the beat hadn't registered it yet`)
+        }
+    }
     if (!lib) { this.Repli_serve_miss(w, h, 'no serve source for this pier'); return }
     if (!this.Repli_allowed(w, h.from, h.to)) { this.Repli_serve_miss(w, h, 'consent refused — grant revoked or wrong peer'); return }
     let rec = this.Repli_find_record(w, h.id, lib)

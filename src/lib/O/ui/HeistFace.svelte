@@ -311,6 +311,9 @@
             //   pulling branch), already built and already driving HeistBarFace's nested variant; this is
             //    that same bar wired into the flat HeistFace everyone actually sees today.
             flow: Math.max(0, Math.min(100, +(n?.c?.flow ?? 0))),
+            // the ghost stamps no_route_ts while the source is off the relay (Heist_keep_step's bow-out) —
+            //  a frozen 0/N with a REASON is a wait; without one it reads as the app being broken.
+            waiting: !!(n?.c?.no_route_ts),
             trackPct: (+(sc.total_n || 0) > 0) ? Math.min(100, Math.round(+(sc.landed_n || 0) / +(sc.total_n || 1) * 100)) : 0,
             describing: state === 'primed' || state === 'wanted' || state === 'asking',
             folded: state === 'pulling' || state === 'committing' || state === 'done',
@@ -514,7 +517,7 @@
              ✕ stops asking for more and KEEPS what already landed (a half album you decided is enough);
              🗑 stops AND takes back every file this heist wrote, which is the one you want when testing. -->
         <div class="kf-foot">
-            <span class="kf-dim">{face.landed_n ? `${face.landed_n} track${face.landed_n === 1 ? '' : 's'} already on disk` : 'nothing landed yet'}</span>
+            <span class="kf-dim">{face.waiting ? `waiting for ${face.from} to come back — resumes on its own` : face.landed_n ? `${face.landed_n} track${face.landed_n === 1 ? '' : 's'} already on disk` : 'nothing landed yet'}</span>
             <span class="kf-exits">
                 <button class="kf-x" onclick={cancel} title="stop this heist — keep the tracks that already landed">✕ stop</button>
                 {#if face.landed_n}

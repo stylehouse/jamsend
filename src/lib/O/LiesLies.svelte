@@ -1046,19 +1046,44 @@
             //    those stamps while frames pour in fine, and the keepalive watchdog then declares a
             //     healthy channel DEAD and re-dials it every throttle-tick.  This stamp can't starve.
             w.c.socket_heard = Date.now()
+            // …and a GLOBAL copy on the top House (2026-08-13): the presence gate lives in Swarm and has
+            //  no path to this w — one stamp any ghost can read as "the wire itself is alive right now".
+            try { (((this as House).top_House?.() ?? (this as any)) as any).c.socket_heard = Date.now() } catch {}
             ;((w.c.inbound_batch ??= []) as any[]).push(frame)
             if (w.c.inbound_draining) return
             w.c.inbound_draining = 1
-            H.post_do(async () => {
-                const batch = (w.c.inbound_batch ?? []) as any[]
-                w.c.inbound_batch = []
-                w.c.inbound_draining = 0   // cleared right after the snapshot (sync, atomic) so a frame arriving
-                                           //  DURING the drain lands in a fresh batch and queues its own post_do
-                for (const frame of batch) {
-                    try { await H.Peeroleum_deliver(w, frame) }
-                    catch (e) { console.warn('🛰 handle_inbound: deliver threw', e) }
-                }
-            }, { see: 'handle_inbound' })
+            H.post_do(() => (H as any).Lies_drain_inbound(w), { see: 'handle_inbound' })
+        },
+
+        // Lies_drain_inbound — the batch drain, now LANED (2026-08-13, the 68s-mutex audit #2): outbound
+        //  has had an express/bulk split since the Tribunal bulk lane, but inbound drained chunk bytes and
+        //   control traffic in one FIFO under ONE mutex hold — 500 queued repli_page frames ahead of a
+        //    friend's seal/pulse/rummage-answer, measured at a 15s hold (max frame 14.8s) that starved the
+        //     share beat and shut the presence gate on healthy friends.  Express (everything that is not a
+        //      chunk page) drains first and fully; bulk drains a bounded slice, and the overflow goes back
+        //       on the batch behind a fresh post_do — so the beliefs mutex is RELEASED between slices and
+        //        queued think/beat work interleaves.  Order within each lane stays FIFO.
+        async Lies_drain_inbound(w: TheC) {
+            const H = this as House
+            const batch = (w.c.inbound_batch ?? []) as any[]
+            w.c.inbound_batch = []
+            w.c.inbound_draining = 0   // cleared right after the snapshot (sync, atomic) so a frame arriving
+                                       //  DURING the drain lands in a fresh batch and queues its own post_do
+            const express: any[] = []
+            const bulk: any[] = []
+            for (const f of batch) (((f as any)?.header?.type === 'repli_page') ? bulk : express).push(f)
+            const BULK_SLICE = (w.c as any).inbound_bulk_slice == null ? 24 : +(w.c as any).inbound_bulk_slice
+            const work = express.concat(bulk.slice(0, BULK_SLICE))
+            const rest = bulk.slice(BULK_SLICE)
+            if (rest.length) {
+                w.c.inbound_batch = rest.concat((w.c.inbound_batch ?? []) as any[])
+                w.c.inbound_draining = 1
+                H.post_do(() => (H as any).Lies_drain_inbound(w), { see: 'handle_inbound bulk' })
+            }
+            for (const frame of work) {
+                try { await H.Peeroleum_deliver(w, frame) }
+                catch (e) { console.warn('🛰 handle_inbound: deliver threw', e) }
+            }
         },
 
         // req:rungo,seq — the parked run authority.  do_fn on w:Lies (runner): check every

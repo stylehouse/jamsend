@@ -33,6 +33,41 @@ Fixed by moving the blocker rather than the blocked:
 
 ## 0. Next move (read first)
 
+0Y. **⇑ 2026-08-13 (deep night) — the persistence audit: a Berth Heist was a SHADOW; it now carries its
+    substance.** The owner ("f469 seems to have forgotten its Heist… is it all a bit fake there?") had it
+     right — an adversarial audit found the persisted %HeistSeed was a resumable *gesture* (opaque
+      refs + tag titles) whose resolution leaned entirely on SOURCE runtime state, and the durable
+       KeepMemo rail was never consulted from the one path a resumed heist exercises. Landed (all in
+        Heist.g/Repli.g, compiled):
+    - **Picks carry substance now**: `path`/`ext`/`bytes` at every mint door (adoption, toggle, commit),
+       `body_hash` stamped at land — and all of it persists per-%Pick and replays on rehydrate.
+    - **Self-certifying wants**: a materialise ask carries its pick's `path`; the source re-derives
+       `sha256(pub|base|path)` and serves iff it equals the asked ref (`Heist_want_path_ok` hard-gates
+        shape: audio ext only, no dot-segments/`..`). A reloaded source needs NO memory beyond its files.
+    - **`Heist_materialise_one` now consults `Heist_reheal_id`** (the durable rail, audit F1) before the
+       stock fallback; an unresolvable want tells the sink (`Repli_tell_miss`) instead of silence.
+    - **Persist on mutations** (`Heist_keep_persist_nudge`, 1.5s debounce, started-states only): pick
+       toggles, genre/dirs/lofi edits, late-husk adoption — the "resumed a 1-track shadow of a 10-track
+        intent then forgot the other nine" hole.
+    - **resume_sync** no longer burns its latch against a boot-empty mirror, verifies from the picks' own
+       substance, and skips the boundary digest when no hash was ever promised.
+    - **Waiting is a state**: the route-gate bow-out stamps `no_route_ts` + throttled shout + trace mark;
+       HeistFace's folded strip says "waiting for S to come back — resumes on its own". `landed_n/total_n`
+        are derived at rehydrate so a resumed heist never renders 0/N over real landings.
+    - **The lost-heist mechanism itself**: the keep detach's single-flight latch had no stale breaker — a
+       hung first beat (FSA/Berth await) silently retired the WHOLE heist machinery for the tab life.
+        `Swarm_latch_stale` (cap 120s + epoch guard + hang cursor `keep_beat_at`) now covers cull|tour|keep.
+    Same night, the serve side (separate audits, landed): head serves detached from the beliefs mutex
+     (a 68s hold measured), the PCM sweep got its own ambient clock, a decode concurrency bound
+      (`ra_pcm_maxfly`, default 2), the ceiling keeps grace till 3×CAP, Radio_head_ahead gated +
+       de-head-of-lined, `Repli_serve_want` self-heals a missing serve source, and the beat skip line
+        forks QUEUED-behind-the-mutex from genuinely running. **Not yet built (next):** inbound
+         express/bulk lanes (chunk bytes and control share one FIFO under one mutex hold — the 15s
+          freezes), presence `heard_at` stamped at socket receipt (the 20s gate shuts on healthy
+           friends), `Ra_bake`'s synchronous per-sample loop (14.8s single frames), pcm refcount
+            (head + continuation share `rec.c.pcm` with no shared lifetime), demand-as-reranking in
+             admit, and the account-mirror mark stamped before its await.
+
 0Z. **⇑ 2026-08-13 (late) — live-heist night: three defects fixed in the flow, and the ZOOMIER thread.**
    Fixed live while the owner heisted between two dev tabs (all compiled, in gen/):
    - **"10 tracks in setup, 1 in the running bit"** — the describe STREAMS, and `Heist_keep_default_pick`'s

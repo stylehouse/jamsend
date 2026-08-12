@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'de033ee38469201d~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'fe19421e68059509~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -1332,7 +1332,15 @@ async Heist_census_heads(w, lib, nav, walkdir, base, me, prefix, seedName, seed)
 //   the asker's ordinary landing writes `<name>.ogg` and verifies it against the right hash without
 //    knowing anything about grades.  A failed transcode (no AudioEncoder, an undecodable source) falls
 //     through to the ORIGINAL rather than failing the keep — the human still gets their music.
-async Heist_materialise_one(w, nav, me, ref, lofi) {
+// `hintPath` (optional, 2026-08-13 — the persistence audit's self-certify fix): the ASKER's memory of the
+//  source-relative path this keep-id was minted from (persisted per-%Pick now, so a resumed heist still
+//   knows it).  NEVER trusted as-is: it only resolves if sha256(pub|base|path) RE-DERIVES the very ref
+//    being asked for (over this source's known bases) — the id then certifies the (source,base,path)
+//     triple, and a forged or drifted path simply fails the equation.  Path shape is gated hard first
+//      (audio extension, no dot-segments, no '..' — Heist_want_path_ok) so the serve surface stays exactly
+//       what a describe would have exposed anyway.  With this, a reloaded source with NO memory beyond its
+//        own files can serve a resumed heist — the id self-certifies instead of leaning on runtime maps.
+async Heist_materialise_one(w, nav, me, ref, lofi, hintPath) {
     if (!nav || !ref) return null
     let rec = null
     let base = null
@@ -1340,6 +1348,36 @@ async Heist_materialise_one(w, nav, me, ref, lofi) {
     for (const rl of (w.c.rummage_libs || [])) {
         let hit = this.Ra_rec_find(rl, { Record: 1, id: ref })
         if (hit) { rec = hit; path = hit.sc.path; base = rl.c.base || ''; break }
+    }
+    // THE DURABLE RAIL, FINALLY ON THIS PATH (2026-08-13 audit F1): a resumed sink can only send want-ASKS
+    //  (its mirror rec has no `total`, so no Repli chunk-want ever fires), and this verb never consulted
+    //   keep_memo — so a reloaded source sat on faithfully-persisted %Keepsake recipes it was never asked
+    //    to read.  Reheal is synchronous and re-mints lib+promise-rec; the read below then fills it.
+    if (!rec && typeof this.Heist_reheal_id === 'function') {
+        let healed = this.Heist_reheal_id(w, String(ref))
+        if (healed && healed.sc.path) { rec = healed; path = healed.sc.path; base = (healed.c.up && healed.c.up.c && healed.c.up.c.base) || '' }
+    }
+    // SELF-CERTIFY (audit F2): no lib, no memo, no stock — but the asker carried the path it learned from
+    //  our own earlier census.  If the id re-derives from it, that IS the proof it was ours to serve.
+    if (!rec && hintPath && this.Heist_want_path_ok(hintPath)) {
+        let hp = String(hintPath)
+        let bases = ['']
+        for (const rl of (w.c.rummage_libs || [])) { if (rl && rl.c && rl.c.base && !bases.includes(rl.c.base)) bases.push(rl.c.base) }
+        for (const b of bases) {
+            if (this.Heist_keep_id(me, b, hp) === String(ref)) { base = b; path = hp; break }
+        }
+        if (path != null) {
+            let lib2 = w.oai({ RummageLib: String(ref), dontSnap: 1 })
+            lib2.c.up = w
+            lib2.c.base = base
+            this.Heist_register_serve_lib(w, lib2)
+            rec = this.Ra_rec_home(lib2, String(ref))
+            rec.sc.path = path
+            let pm2 = this.Crate_meta_from_path(path)
+            rec.sc.title = pm2.title
+            rec.sc.artist = pm2.artist
+            console.log(`⇊✓ want self-certified by path — ${path} (no lib, no memo needed)`)
+        }
     }
     if (!rec) {
         let stocked = (await this.Ra_stock_ls(nav, me)).find((p) => p.enid === ref)
@@ -1496,6 +1534,23 @@ Heist_keep_remember(w, rec, base) {
     let keys = Object.keys(memo)
     let CAP = +(w.c.keep_memo_cap || 2000)
     if (keys.length > CAP) { for (const k of keys.slice(0, keys.length - CAP)) delete memo[k] }
+
+},
+// Heist_want_path_ok — the HARD GATE on an asker-supplied path hint (Heist_materialise_one's self-certify).
+//  The hash equation is the authorization; this is the blast-radius bound around it: audio files only, no
+//   dotfile segment anywhere (`.jamsend` and the key material live under dot-dirs in the share), no '..',
+//    no NULs, bounded length.  Anything it rejects simply falls back to the census ladder — never an error.
+Heist_want_path_ok(path) {
+    let p = String(path || '')
+    if (!p || p.length > 1024 || p.indexOf('\x00') >= 0 || p[0] === '/') return 0
+    let segs = p.split('/').filter(Boolean)
+    if (!segs.length) return 0
+    if (segs.some((s) => s === '..' || s[0] === '.')) return 0
+    let dot = p.lastIndexOf('.')
+    let ext = dot >= 0 ? p.slice(dot + 1).toLowerCase() : ''
+    let AUDIO = ['mp3', 'flac', 'ogg', 'opus', 'm4a', 'aac', 'wav', 'wma', 'aiff', 'aif', 'ape', 'mpc', 'wv', 'oga', 'webm']
+    if (!AUDIO.includes(ext)) return 0
+    return 1
 
 },
 // Heist_reheal_id — a want arrived for a keep-id whose serve lib is gone: rebuild the husk from the
@@ -1803,7 +1858,10 @@ Heist_rummage_recs(mir, seed) {
 //  path (Orig_ogg_from_source).  It rides as a plain prop, NOT a loc key, so a lofi ask and a plain ask for
 //   the same ref are the SAME particle: a keep picks one mode at commit and never both, and making them two
 //    particles would leave a stale twin asking for the other artifact forever.
-async Heist_rummage_ask(w, tx, me, them, seed, want, lofi) {
+// `hintPath` (optional, want-asks only, 2026-08-13): the source-relative path the asker knows this ref by
+//  (persisted per-%Pick) — rides the ask so a reloaded source can SELF-CERTIFY the id from the path alone
+//   (Heist_materialise_one) instead of leaning on runtime maps + the re-census ladder.  Guarded stamp.
+async Heist_rummage_ask(w, tx, me, them, seed, want, lofi, hintPath) {
     let bay = this.Ra_home_bay(w, me, them)
     let key = want ? { Rummage: 1, want: String(want), pier: them } : { Rummage: 1, seed: seed, pier: them }
     let ask = bay.o(key)[0]
@@ -1814,6 +1872,7 @@ async Heist_rummage_ask(w, tx, me, them, seed, want, lofi) {
         //  first at the mirror (a bare value is not id-ish to Repli_loc_keys); a runtime hint, never snapped.
         ask.c.repli_loc = want ? ['Rummage', 'want', 'pier'] : ['Rummage', 'seed', 'pier']
     }
+    if (want && hintPath) ask.sc.path = String(hintPath)
     // ASK EPISODE (2026-08-06) — a monotonic attempt number, so the SOURCE can tell a genuinely fresh
     //  ask from the identical particle it already answered.  It cannot otherwise: this ask is idempotent
     //   by key (bay.o(key)[0] above), it rides `repli_loc` so the landing UPSERTS onto the same mirror
@@ -1843,8 +1902,14 @@ async Heist_rummage_answer(w, tx, me, asker, rummageMirror, nav) {
         // `lofi` — serve the ogg128 rendition instead of the original (the phone path).  The DECISION is
         //  the asker's and the WORK is the source's, which is the whole point: the small artifact is what
         //   crosses the wire, rather than shipping 30MB and shrinking it at the far end.
-        let rec = await this.Heist_materialise_one(w, nav, me, String(rummageMirror.sc.want), !!rummageMirror.sc.lofi)
-        if (!rec) return 0
+        let rec = await this.Heist_materialise_one(w, nav, me, String(rummageMirror.sc.want), !!rummageMirror.sc.lofi, rummageMirror.sc.path)
+        // A WANT THE SOURCE CANNOT RESOLVE NOW SAYS SO (audit F6): the `ra_missed` fast path existed but
+        //  only Repli_serve_want fed it — a lane a resumed sink never reaches — so every resume paid the
+        //   blind 3×4s + 20s ladder.  Same advisory-and-lossy contract as the serve-want tell.
+        if (!rec) {
+            if (typeof this.Repli_tell_miss === 'function') { try { await this.Repli_tell_miss(w, tx, { to: me, from: asker, id: String(rummageMirror.sc.want) }) } catch (er) {} }
+            return 0
+        }
         return (await this.Repli_offer(w, tx, me, asker, rec)) ? 1 : 0
     }
     // DESCRIBE: the folder's metadata heads (Heist_census_heads — no reads).
@@ -1974,6 +2039,9 @@ async Heist_keep_beat(w, ident) {
         }
     }
     // SERVE: a %Rummage that landed in my mirror-of-a-friend is their "describe the folder track X came from".
+    // (the keep_beat_at stamps are the hang CURSOR for Swarm_latch_stale — when the detached latch breaks,
+    //  the stamp names which await ate the beat.  Cheap: one .c write per phase.)
+    w.c.keep_beat_at = 'serve'
     for (const home of rw.o({ MusuThem: 1 })) {
         if (!home.sc.pub) continue
         let asker = String(home.sc.pub)
@@ -2010,6 +2078,7 @@ async Heist_keep_beat(w, ident) {
     }
     // GO: carry each of my %Heists one step.  REHYDRATE first — a Berth-persisted heist with no live %Heist
     //  standing (a fresh boot|reload) gets rebuilt here so it joins the very same loop below.
+    w.c.keep_beat_at = 'rehydrate'
     let shop = this.Ra_home_shop(rw, me)
     // the catch is bounded, NOT a latch: a throw from inside rehydrate used to permanently disable resume
     //  for the page life, turning any transient boot-order hiccup into "it never resumed" (same 2026-08-05
@@ -2019,10 +2088,12 @@ async Heist_keep_beat(w, ident) {
         rw.c.heist_rehydrate_tries = (rw.c.heist_rehydrate_tries || 0) + 1
         if (rw.c.heist_rehydrate_tries >= 10) rw.c.heist_rehydrated = 1
     }
+    w.c.keep_beat_at = 'defaults'
     try { await this.Heist_defaults_rehydrate(nav, ident) } catch (er) {}
     // the SOURCE side's own reload recovery: read the durable keep-memo back once, and mirror out whatever
     //  this beat's materialises learned.  Its own gate (humdinger, nav, strikes) is inside; it is put here,
     //   beside the two rehydrates, because this is the one place per beat that already holds nav + me.
+    w.c.keep_beat_at = 'memo'
     await this.Heist_keep_memo_beat(w, nav, me)
     // THE CAP IS GLOBAL, NOT PER-HAUL (the human 2026-08-06: "are there any complications like overlapping
     //  downloads we can switch off while sorting this out?" — and the honest answer was that turning the knob
@@ -2038,9 +2109,11 @@ async Heist_keep_beat(w, ident) {
     let GLOBAL = +(w.c.heist_inflight_total || w.c.heist_inflight || 1)
     rw.c.heist_budget = GLOBAL
     for (const keep of shop.o({ Heist: 1 })) {
+        w.c.keep_beat_at = 'step:' + String(keep.sc.Heist || keep.sc.seed || '?').slice(0, 24)
         try { await this.Heist_keep_step(w, rw, ident, me, nav, keep, shop) }
         catch (er) { keep.c.last_why = '' + (er && er.message || er) }
     }
+    w.c.keep_beat_at = 'idle'
 
 },
 // Heist_keep_step — one %Heist, one edge (the human 2026-07-28: "I DO want the Heist UI ... it can be left to
@@ -2076,7 +2149,21 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
     let seed = String(keep.sc.seed)
     let at = String(keep.sc.pub)
     let route = this.Swarm_station_pier(w, ident, at)
-    if (!route) return
+    if (!route) {
+        // WAITING FOR THE FRIEND IS A STATE, NOT SILENCE (2026-08-13 audit F5): this bow-out sits ABOVE
+        //  the pulling branch, so a resumed heist whose source was off the relay produced zero telemetry —
+        //   no watchdog, no asks, a frozen 0/N — for as long as the friend stayed away.  The owner's exact
+        //    stuck-at-0/10 tonight.  Stamp it, say it every 30s, trace it; the face reads no_route_ts.
+        if (!keep.c.no_route_ts) keep.c.no_route_ts = Date.now()
+        if (Date.now() - (+(keep.c.no_route_warn || 0)) > 30000) {
+            keep.c.no_route_warn = Date.now()
+            let waitsecs = Math.round((Date.now() - keep.c.no_route_ts) / 1000)
+            console.log(`⇊⏸ heist "${keep.sc.Heist || seed}" waiting ${waitsecs}s — ${keep.sc.from_name || at.slice(0, 8)} is not on the relay; it resumes the moment they return`)
+            if (typeof this.Radio_trace === 'function') this.Radio_trace(null, { ev: 'heist-noroute', at: at.slice(0, 8), secs: waitsecs })
+        }
+        return
+    }
+    if (keep.c.no_route_ts) { keep.c.no_route_ts = 0; keep.c.no_route_warn = 0 }
     if (!route.c.repli_src) this.Repli_register_caster(w, route, this.Ra_home_self(rw, me))
     if (!route.c.repli_rx) this.Repli_register_rx(w, route)
     let srcmir = this.Ra_home_them(rw, at)
@@ -2265,7 +2352,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                         console.log(`⇊⟲ ${pick.c.asks_out} unanswered materialise asks — re-censusing the source folder (its keep-id map is runtime-only and a reload wipes it)`)
                         await this.Heist_rummage_ask(w, route, me, at, seed)
                     }
-                    await this.Heist_rummage_ask(w, route, me, at, seed, ref, !!keep.sc.lofi)
+                    await this.Heist_rummage_ask(w, route, me, at, seed, ref, !!keep.sc.lofi, pick.sc.path)
                 }
                 drove_any = 1                                // this pick IS in flight (awaiting the source's read)
                 inflight = INFLIGHT                          // a pending materialise closes the window (one read)
@@ -2351,6 +2438,10 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                                 //    mardir, so it survives a mardir change.  Without it, cancelling could
                                 //     only guess at paths, and guessing at a delete is unthinkable.
                                 pick.sc.landed_at = this.Heist_rel_for(job, rec)
+                                // the landing's own proof rides the pick (audit F3): resume-sync can then
+                                //  verify this file after any reload with no mirror standing.  Guarded.
+                                if (rec.sc.body_hash) pick.sc.body_hash = rec.sc.body_hash
+                                if (rec.sc.bytes) pick.sc.bytes = rec.sc.bytes
                                 pick.bump()
                                 pick.c.bench_held = 0
                                 pick.c.bench_ts = 0
@@ -2545,9 +2636,20 @@ Heist_keep_default_pick(keep, srcmir, seed) {
         pick.c.up = keep
         if (h.sc.title) pick.sc.title = h.sc.title
         if (h.sc.artist) pick.sc.artist = h.sc.artist
+        // SUBSTANCE RIDES THE PICK (2026-08-13 audit F7): the husk dies with the mirror on reload, and a
+        //  pick that carried only ref+title was an opaque pointer no resumed heist could resolve without
+        //   the source remembering.  path feeds the self-certifying want; ext/bytes make the resumed UI
+        //    honest.  All guarded — never stamp a maybe-undefined.
+        if (h.sc.path) pick.sc.path = h.sc.path
+        if (h.sc.ext) pick.sc.ext = h.sc.ext
+        if (h.sc.bytes) pick.sc.bytes = h.sc.bytes
         added = 1
     }
     if (added) keep.bump()
+    // a fast ▶ keeps adopting late husks with no persist (audit F4's worst case: the Berth resumed a
+    //  1-track shadow of a 10-track intent, finished, and FORGOT the other nine).  Debounced, and the
+    //   nudge itself gates on a started state, so a primed setup never persists early.
+    if (added && this.Heist_keep_persist_nudge) this.Heist_keep_persist_nudge(keep)
 
 },
 // Heist_keep_default_section — THE SECTION THE SOURCE ALREADY CHOSE, offered back as the default category
@@ -2682,12 +2784,38 @@ async Heist_keep_persist(keep) {
         if (p.sc.artist) pe.sc.artist = p.sc.artist
         if (p.sc.title) pe.sc.title = p.sc.title
         if (p.sc.genre) pe.sc.genre = p.sc.genre
+        // THE SUBSTANCE (2026-08-13 audit F7): path/ext/bytes make the persisted pick self-sufficient —
+        //  path feeds the self-certifying want (a reloaded source needs no memory), ext/bytes make the
+        //   resumed UI honest, body_hash lets resume-sync verify a landed file with no mirror.  Guarded.
+        if (p.sc.path) pe.sc.path = String(p.sc.path)
+        if (p.sc.ext) pe.sc.ext = String(p.sc.ext)
+        if (p.sc.bytes) pe.sc.bytes = p.sc.bytes
+        if (p.sc.body_hash) pe.sc.body_hash = String(p.sc.body_hash)
         if (p.sc.landed) pe.sc.landed = 1
         else if (pe.sc.landed) delete pe.sc.landed
         // the landing path rides to disk too: a cancel AFTER a reload must still know what to take back
         if (p.sc.landed_at) pe.sc.landed_at = String(p.sc.landed_at)
     }
     await this.Berth_save(nav, waft)
+
+},
+// Heist_keep_persist_nudge — DEBOUNCED persist for intent mutations (2026-08-13 audit F4: persist fired
+//  only at ▶ start and per landing, so pick toggles, genre|dirs|lofi edits and the post-▶ husk adoption
+//   all drifted from the durable copy — worst case the Berth resumed a 1-track shadow of a 10-track
+//    intent, finished it, and FORGOT the other nine).  1.5s trailing, single-flight; gated on a STARTED
+//     state so a primed setup never persists early (a persisted entry rehydrates straight into 'pulling',
+//      which must remain a thing only ▶ can have said).  Best-effort like persist itself.
+Heist_keep_persist_nudge(keep) {
+    if (!keep) return
+    let s = keep.sc.state || 'primed'
+    if (s !== 'pulling' && s !== 'committing') return
+    if (keep.c.persist_timer) return
+    keep.c.persist_timer = setTimeout(() => this.Heist_keep_persist_fire(keep), 1500)
+
+},
+async Heist_keep_persist_fire(keep) {
+    keep.c.persist_timer = 0
+    try { await this.Heist_keep_persist(keep) } catch (er) {}
 
 },
 // Heist_keep_forget — drop a keep's Berth-persisted intent once it's done or cancelled, so a later reload
@@ -2781,6 +2909,7 @@ async Heist_keep_rehydrate(rw, me, nav, shop) {
         if (entry.sc.dirs_auto) keep.sc.dirs_auto = entry.sc.dirs_auto
         if (entry.sc.lofi) keep.sc.lofi = 1   // the resumed heist must ask for the SAME artifact it was asking for
         keep.sc.defaulted = 1
+        let landed_n = 0
         for (const pe of persisted) {
             if (!pe.sc.ref) continue
             let pick = keep.i({ Pick: 1, ref: String(pe.sc.ref) })
@@ -2788,9 +2917,18 @@ async Heist_keep_rehydrate(rw, me, nav, shop) {
             if (pe.sc.artist) pick.sc.artist = pe.sc.artist
             if (pe.sc.title) pick.sc.title = pe.sc.title
             if (pe.sc.genre) pick.sc.genre = pe.sc.genre
-            if (pe.sc.landed) pick.sc.landed = 1   // carry the finished picks forward — resume-sync must not re-log them
+            if (pe.sc.path) pick.sc.path = String(pe.sc.path)
+            if (pe.sc.ext) pick.sc.ext = String(pe.sc.ext)
+            if (pe.sc.bytes) pick.sc.bytes = pe.sc.bytes
+            if (pe.sc.body_hash) pick.sc.body_hash = String(pe.sc.body_hash)
+            if (pe.sc.landed) { pick.sc.landed = 1; landed_n = landed_n + 1 }   // carry the finished picks forward — resume-sync must not re-log them
             if (pe.sc.landed_at) pick.sc.landed_at = String(pe.sc.landed_at)
         }
+        // HONEST COUNTERS FROM BIRTH (audit F5): landed_n/total_n were left 0/0 until the pulling branch's
+        //  recompute — which sits BELOW the route gate, so a resumed heist whose friend was off the relay
+        //   rendered "0/N" over genuinely-landed tracks for as long as the friend stayed away.
+        keep.sc.landed_n = landed_n
+        keep.sc.total_n = persisted.length
         keep.bump()
         n = n + 1
     }
@@ -2937,7 +3075,7 @@ Heist_keep_pick_toggle(keep, ref) {
     // the human touched the picks — default adoption (Heist_keep_default_pick) stands down for good
     keep.sc.pick_edited = 1
     let have = keep.o({ Pick: 1, ref: String(ref) })[0]
-    if (have) { keep.drop(have); keep.bump(); return }
+    if (have) { keep.drop(have); keep.bump(); this.Heist_keep_persist_nudge(keep); return }
     let rw = this.top_House().c.radio_w
     let srcmir = (rw && keep.sc.pub) ? this.Ra_home_them(rw, String(keep.sc.pub)) : null
     let hit = srcmir ? this.Ra_rec_find(srcmir, { Record: 1, id: String(ref) }) : null
@@ -2945,7 +3083,11 @@ Heist_keep_pick_toggle(keep, ref) {
     pick.c.up = keep
     if (hit && hit.sc.title) pick.sc.title = hit.sc.title
     if (hit && hit.sc.artist) pick.sc.artist = hit.sc.artist
+    if (hit && hit.sc.path) pick.sc.path = hit.sc.path
+    if (hit && hit.sc.ext) pick.sc.ext = hit.sc.ext
+    if (hit && hit.sc.bytes) pick.sc.bytes = hit.sc.bytes
     keep.bump()
+    if (this.Heist_keep_persist_nudge) this.Heist_keep_persist_nudge(keep)
 
 },
 // Heist_keep_pick_all — TAKE THE LOT, or put it back (the owner 2026-08-09: *"we can have another
@@ -2978,6 +3120,7 @@ Heist_keep_pick_all(keep, refs, on) {
         }
     }
     if (changed) keep.bump()
+    if (changed) this.Heist_keep_persist_nudge(keep)
     return changed
 
 },
@@ -3004,6 +3147,7 @@ Heist_keep_set_genre(keep, v) {
     keep.c.last_touch = Date.now()
     keep.sc.genre = this.Heist_genre_norm(v)
     keep.bump()
+    this.Heist_keep_persist_nudge(keep)
 
 },
 // Heist_genre_norm — THE category normaliser, extracted 2026-08-07 because the comment above was WRONG.
@@ -3081,6 +3225,7 @@ Heist_keep_set_lofi(keep, on) {
     keep.c.last_touch = Date.now()
     if (on) { keep.sc.lofi = 1 } else { delete keep.sc.lofi }
     keep.bump()
+    this.Heist_keep_persist_nudge(keep)
     this.Heist_defaults_set({ lofi: on ? '1' : '' })
 
 },
@@ -3109,6 +3254,7 @@ Heist_keep_set_dirs(keep, v, auto) {
     if (!clean) keep.sc.dirs_none = 1
     if (auto) keep.sc.dirs_auto = auto
     keep.bump()
+    this.Heist_keep_persist_nudge(keep)
 
 },
 // Heist_resume_sync — RESUME AT THE LIST LEVEL, never inside a file (the human 2026-07-30: "a resuming
@@ -3134,6 +3280,15 @@ async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir, keep) {
     //       FIRST and spend the gate only once the work can actually be attempted; a nav that arrives late
     //        (or is swapped for one that can stat) then still gets its turn, at a cost of one typeof per beat.
     if (!nav || typeof nav.read_range !== 'function') return   // no cheap stat yet — skip, not guess, not spend
+    // DON'T SPEND THE SHOT AGAINST AN EMPTY MIRROR (2026-08-13 audit F3): after a reload nav is present
+    //  by construction (rehydrate needed it) while the mirror is empty by construction (no describe answer
+    //   yet) — so this latch burnt on beat one having verified nothing, every time, and the disk check
+    //    could never run in the one scenario it was written for.  Wait for either husks or picks that
+    //     carry their own substance (path+bytes ride each %Pick since tonight).
+    let husky = 0
+    for (const pick of picks) { let ref0 = String(pick.sc.ref || pick.sc.id); if (this.Ra_rec_find(mir, { Record: 1, id: ref0 }) || this.Ra_rec_find(mir, { Record: 1, re: ref0 })) { husky = 1; break } }
+    let selfsuff = picks.some((p) => p.sc.path && +(p.sc.bytes || 0) > 0)
+    if (!husky && !selfsuff) return
     job.c.resume_synced = 1
     let candidates = []
     for (const pick of picks) {
@@ -3161,6 +3316,10 @@ async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir, keep) {
         let ref = String(pick.sc.ref || pick.sc.id)
         let rec = this.Ra_rec_find(mir, { Record: 1, id: ref })
         if (!rec) rec = this.Ra_rec_find(mir, { Record: 1, re: ref })
+        // the PICK ITSELF is now a candidate source (audit F3+F7): path+bytes persist per pick, so a
+        //  reload can verify what's on disk before any describe answer exists.  Heist_rel_for and the
+        //   stat below read only sc fields the pick carries.
+        if ((!rec || !(+(rec.sc.bytes || 0) > 0)) && pick.sc.path && +(pick.sc.bytes || 0) > 0) rec = pick
         if (!rec || !(+(rec.sc.bytes || 0) > 0)) continue
         let rel = this.Heist_rel_for(job, rec)
         let relparts = rel.split('/').filter(Boolean)
@@ -3174,10 +3333,15 @@ async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir, keep) {
     // the boundary check: digest ONLY the last size-matched candidate (cheap for a whole album — hashing
     //  every already-present file would be the very cost this design avoids); a miss drops just that one.
     let last = candidates[candidates.length - 1]
-    let full = null
-    try { full = await nav.read_range(last.dir, last.filename, 0) } catch (er) { full = null }
-    let hash = full ? await this.Heist_hash(new Uint8Array(full.buffer)) : null
-    if (hash !== last.rec.sc.body_hash) candidates.pop()
+    // digest only when there is a promise to hold it against — a pick-based candidate may carry no
+    //  body_hash (pre-tonight landings), and comparing a real hash to undefined always popped a file
+    //   that size-matched a byte-verified landing (audit F3's second half).  Size stands alone there.
+    if (last.rec.sc.body_hash) {
+        let full = null
+        try { full = await nav.read_range(last.dir, last.filename, 0) } catch (er) { full = null }
+        let hash = full ? await this.Heist_hash(new Uint8Array(full.buffer)) : null
+        if (hash !== last.rec.sc.body_hash) candidates.pop()
+    }
     for (const c of candidates) {
         await this.Heist_catalog_land(nav, mardir, job, own_lib, mir, c.rec, c.rel, c.size)
         c.pick.sc.landed = 1
@@ -3259,6 +3423,8 @@ Heist_keep_filings(keep) {
 Heist_keep_commit(w, keep, choices, lofi) {
     if (!keep) return false
     for (const p of keep.o({ Pick: 1 })) keep.drop(p)
+    let rwC = this.top_House().c.radio_w
+    let mirC = (rwC && keep.sc.pub) ? this.Ra_home_them(rwC, String(keep.sc.pub)) : null
     let n = 0
     for (const c of (choices || [])) {
         if (!c || !c.keep) continue
@@ -3266,6 +3432,11 @@ Heist_keep_commit(w, keep, choices, lofi) {
         pick.c.up = keep
         pick.sc.artist = c.artist || 'misc'
         if (c.title) pick.sc.title = c.title
+        // substance rides every mint door the same way (audit F7) — this dormant panel path included
+        let hitC = mirC ? this.Ra_rec_find(mirC, { Record: 1, id: String(c.id) }) : null
+        if (hitC && hitC.sc.path) pick.sc.path = hitC.sc.path
+        if (hitC && hitC.sc.ext) pick.sc.ext = hitC.sc.ext
+        if (hitC && hitC.sc.bytes) pick.sc.bytes = hitC.sc.bytes
         // NO 'Unfiled' SHIM (the human 2026-08-07, on the chooser saying `music/Unfiled/`).  This default
         //  did not merely mislabel the destination, it CREATED it: an unpinned artist committed the literal
         //   string 'Unfiled', Heist_filing_for then returned it as a real category, and Heist_rel_for
@@ -3288,6 +3459,7 @@ Heist_keep_commit(w, keep, choices, lofi) {
     if (lofi) { keep.sc.lofi = 1 } else { delete keep.sc.lofi }
     keep.sc.state = 'committing'
     keep.bump()
+    this.Heist_keep_persist_nudge(keep)
     return n
 
 },

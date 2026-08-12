@@ -2382,10 +2382,25 @@ Swarm_share_granted(peer):
 //   serve us, so it can only rule a source OUT (the relay says their socket is gone ⇒ the want is a
 //    guaranteed hole), never in.  heard_at — an actual voucher-checked frame from them — stays the
 //     positive evidence.  Unknown presence leaves the gate exactly as it was.
+// Swarm_socket_fresh — "has the WIRE said anything lately?"  Reads the global socket_heard stamped at
+//  raw ws receipt (Lies_deliver_soon — off-think, cannot be starved by a mutex hold).  Coarse on
+//   purpose: it is only ever used to HOLD a subtractive gate open while the per-pier stamp catches up,
+//    never as positive per-pier evidence.
+Swarm_socket_fresh(p, ms):
+    let M = this.top_House ? this.top_House() : null
+    return !!(M && M.c.socket_heard && (Date.now() - M.c.socket_heard) < (+ms || 20000))
+
 Swarm_share_present(from, w):
     let me = this.Swarm_live_self ? this.Swarm_live_self() : null
     let p = me ? this.Swarm_peering(me)?.o({ Pier: 1, pub: String(from) })[0] : null
-    if (!(p && p.c.heard_at && (Date.now() - p.c.heard_at) < 20000)) return false
+    // heard_at is stamped in the hear funnel UNDER THE BELIEFS MUTEX (2026-08-13 audit #3), so a long
+    //  hold starves the stamp while frames pour in fine — the gate then shut on a provably-live friend
+    //   and SELF-LOCKED (shut → fewer frames → staler stamp).  Two repairs, both here: the window is
+    //    ≥4× the ~5s pulse cadence (was exactly 4 missed drains from shutting), and a RECENTLY-HEARD
+    //     SOCKET holds the gate open — undrained frames in the batch are presence the stamp hasn't
+    //      caught up to, not silence.  Presence still only ever subtracts.
+    let sockFresh = this.Swarm_socket_fresh(p, 20000)
+    if (!(p && p.c.heard_at && ((Date.now() - p.c.heard_at) < 40000 || sockFresh))) return false
     if (w && typeof this.Presence_live === 'function' && this.Presence_live(w, from) === false) return false
     return true
 
@@ -2552,17 +2567,39 @@ Swarm_share_no(w, why):
 //  It still REPORTS — `cull_bg_ms` is the last completed sweep's duration and rides the split as
 //   `cull_bg`.  Detaching a slow thing while also making it invisible would just move the mystery.
 Swarm_cull_detached(w, rw, stock):
-    if (w.c.cull_flying) return 0
+    if (w.c.cull_flying && !this.Swarm_latch_stale(w, 'cull', w.c.cull_flying)) return 0
     if (typeof this.Ra_shuffle_cull !== 'function') return 0
+    let epoch = (w.c.cull_epoch = (+(w.c.cull_epoch || 0)) + 1)
     w.c.cull_flying = Date.now()
-    this.Ra_shuffle_cull(rw, stock).then(() => this.Swarm_cull_done(w)).catch(() => this.Swarm_cull_done(w))
+    this.Ra_shuffle_cull(rw, stock).then(() => this.Swarm_cull_done(w, epoch)).catch(() => this.Swarm_cull_done(w, epoch))
     return 1
 
 // Swarm_cull_done — one line, two callers (settle and throw), so a cull that FAILS still clears the
 //  single-flight latch.  A latch left standing would silently retire the cull for the life of the tab.
-Swarm_cull_done(w):
+Swarm_cull_done(w, epoch):
+    if (epoch && epoch !== w.c.cull_epoch) return
     w.c.cull_bg_ms = Date.now() - (+(w.c.cull_flying || Date.now()))
     w.c.cull_flying = 0
+
+// Swarm_latch_stale — THE STALE-LATCH BREAKER (2026-08-13, the lost-heist night).  The detached trio's
+//  single-flight latches assumed their promise always SETTLES; a hung await inside (an FSA/Berth read
+//   that never answers, a wedged elvisto) held the latch forever, and every later beat then skipped the
+//    whole subsystem SILENTLY — for keep, that is "no rehydrate, no pulls, no watchdog": the owner's
+//     lost Heist.  A hold downstream of a decoupling re-couples it — worse, invisibly.
+//  Two parts, both needed:
+//   · the breaker here: past LATCH_CAP the latch is declared dead, said OUT LOUD, and the op relaunches.
+//      120s is far beyond any honest run of the three (cull's 70s crate sweep is the ceiling that set it).
+//   · the epoch in each done(): the broken flight's orphan promise may STILL settle later — without the
+//      epoch check it would clear the NEW flight's latch, and the one-writer law dies quietly.
+Swarm_latch_stale(w, name, since):
+    let LATCH_CAP = +(w.c.detached_latch_cap || 120000)
+    let held = Date.now() - (+since || Date.now())
+    if (held < LATCH_CAP) return 0
+    let why = name + ' detached op hung ' + Math.round(held / 1000) + 's — latch broken, relaunching'
+    if (name === 'keep') { why = why + (w.c.keep_beat_at ? ' (hung at: ' + w.c.keep_beat_at + ')' : ''); w.c.heist_beat_why = why }
+    console.warn('⏳⚠ ' + why)
+    if (typeof this.Radio_trace === 'function') this.Radio_trace(null, { ev: 'latch-break', op: name, held_s: Math.round(held / 1000) })
+    return 1
 
 // Swarm_tour_detached / Swarm_tour_done — the cull's twin, for the collection conveyor.  Deliberately
 //  a SEPARATE pair rather than a shared generic: `Swarm_cull_detached`/`cull_bg_ms` are already named
@@ -2578,25 +2615,29 @@ Swarm_cull_done(w):
 //     `keep_bg`, latch cleared on BOTH settle and throw.  The error note keeps its old home
 //      (heist_beat_why), so nothing that read it moves.
 Swarm_keep_detached(w, ident):
-    if (w.c.keep_flying) return 0
+    if (w.c.keep_flying && !this.Swarm_latch_stale(w, 'keep', w.c.keep_flying)) return 0
     if (typeof this.Heist_keep_beat !== 'function') return 0
+    let epoch = (w.c.keep_epoch = (+(w.c.keep_epoch || 0)) + 1)
     w.c.keep_flying = Date.now()
-    this.Heist_keep_beat(w, ident).then(() => this.Swarm_keep_done(w)).catch((er) => this.Swarm_keep_done(w, er))
+    this.Heist_keep_beat(w, ident).then(() => this.Swarm_keep_done(w, null, epoch)).catch((er) => this.Swarm_keep_done(w, er, epoch))
     return 1
 
-Swarm_keep_done(w, er):
+Swarm_keep_done(w, er, epoch):
+    if (epoch && epoch !== w.c.keep_epoch) return
     if (er) w.c.heist_beat_why = '' + (er && er.message || er)
     w.c.keep_bg_ms = Date.now() - (+(w.c.keep_flying || Date.now()))
     w.c.keep_flying = 0
 
 Swarm_tour_detached(w, rw, stock):
-    if (w.c.tour_flying) return 0
+    if (w.c.tour_flying && !this.Swarm_latch_stale(w, 'tour', w.c.tour_flying)) return 0
     if (typeof this.Stoker_tour !== 'function') return 0
+    let epoch = (w.c.tour_epoch = (+(w.c.tour_epoch || 0)) + 1)
     w.c.tour_flying = Date.now()
-    this.Stoker_tour(rw, stock).then(() => this.Swarm_tour_done(w)).catch(() => this.Swarm_tour_done(w))
+    this.Stoker_tour(rw, stock).then(() => this.Swarm_tour_done(w, epoch)).catch(() => this.Swarm_tour_done(w, epoch))
     return 1
 
-Swarm_tour_done(w):
+Swarm_tour_done(w, epoch):
+    if (epoch && epoch !== w.c.tour_epoch) return
     w.c.tour_bg_ms = Date.now() - (+(w.c.tour_flying || Date.now()))
     w.c.tour_flying = 0
 
@@ -2773,12 +2814,25 @@ Swarm_share_loop(w, ident):
                 // READ THIS AS A PROGRESS BAR, NOT A COST TABLE.  beat_split is zeroed at the top of
                 //  each beat and each phase stamped only on completion, so the LAST NON-ZERO field is
                 //   where the in-flight beat got to — an all-zero line means it never finished phase 1.
-                console.log(`⏳ Swarm_share_beat still running past 600ms — skipping this tick (×${w.c.share_beat_skipped} so far) — the last non-zero field below is how FAR the stuck beat got · cull=${+(sp.cull || 0)} tour=${+(sp.tour || 0)} flush=${+(sp.flush || 0)} peers=${+(sp.peers || 0)} (pump=${+(sp.pump || 0)} warm=${+(sp.warm || 0)}) keep=${+(sp.keep || 0)} · detached: cull_bg=${+(sp.cull_bg || 0)}${w.c.cull_flying ? '(flying)' : ''} tour_bg=${+(sp.tour_bg || 0)}${w.c.tour_flying ? '(flying)' : ''} keep_bg=${+(sp.keep_bg || 0)}${w.c.keep_flying ? '(flying)' : ''} · lead=${+(w.c.lead_s || 0)}s restock_held=${+(w.c.restock_held || 0)} (ms)`)
+                // QUEUED vs RUNNING is the first fork (audit #1): a beat posted but never entered is a
+                //  MUTEX jam (read the drain-lag marks for who holds it), not a stuck phase — and the
+                //   split below describes the PREVIOUS beat in that case, not this one.
+                let bstate = (!w.c.beat_entered_at && w.c.beat_posted_at) ? `QUEUED ${Math.round((Date.now() - w.c.beat_posted_at) / 1000)}s behind the beliefs mutex (split below is the PREVIOUS beat)` : `running ${w.c.beat_entered_at ? Math.round((Date.now() - w.c.beat_entered_at) / 1000) : '?'}s`
+                console.log(`⏳ Swarm_share_beat busy past 600ms — ${bstate} — skipping this tick (×${w.c.share_beat_skipped} so far) · cull=${+(sp.cull || 0)} tour=${+(sp.tour || 0)} flush=${+(sp.flush || 0)} peers=${+(sp.peers || 0)} (pump=${+(sp.pump || 0)} warm=${+(sp.warm || 0)}) keep=${+(sp.keep || 0)} · detached: cull_bg=${+(sp.cull_bg || 0)}${w.c.cull_flying ? '(flying)' : ''} tour_bg=${+(sp.tour_bg || 0)}${w.c.tour_flying ? '(flying)' : ''} keep_bg=${+(sp.keep_bg || 0)}${w.c.keep_flying ? '(flying)' : ''} · lead=${+(w.c.lead_s || 0)}s restock_held=${+(w.c.restock_held || 0)} (ms)`)
             }
         } else {
             w.c.share_beat_running = true
+            // POSTED ≠ ENTERED (2026-08-13 audit #1): the guard is latched HERE, but post_do only queues —
+            //  under a long beliefs-mutex hold the callback sits in H.todo while every tick logs "still
+            //   running", and the split (zeroed at beat top) shows the PREVIOUS beat's numbers or all
+            //    zeros.  The all-zeros "wedge" that misled tonight's debugging was this: a beat that had
+            //     never ENTERED, blamed as one stuck in phase 1.  beat_posted_at forks the two states so
+            //      the skip line can say which; entered_at is stamped first thing inside.
+            w.c.beat_posted_at = Date.now()
+            w.c.beat_entered_at = 0
             this.post_do(async () => {
                 if (era !== w.c.share_era) { w.c.share_beat_running = false; return }
+                w.c.beat_entered_at = Date.now()
                 let t0 = Date.now()
                 try { await this.Swarm_share_beat(w, ident) } catch (er) { this.Swarm_share_why(w, er) }
                 // RELEASE THE GUARD FIRST, ALWAYS.  Anything that runs between the beat and this line is a
@@ -2951,7 +3005,7 @@ async Swarm_share_beat(w, ident):
         //   so a re-offer after rebirth is safe, just not free.  The unit is the MAG (the wire
         //    cut, Mag_todo §4.1): the whole shuffle Mag crosses as ONE husk fragment, so the
         //     friend's mirror wears the same paged shape — a collection arrives as its rooms.
-        if (!p.c.heard_at || (Date.now() - p.c.heard_at) >= 20000) continue
+        if (!p.c.heard_at || ((Date.now() - p.c.heard_at) >= 40000 && !this.Swarm_socket_fresh(p, 20000))) continue
         let n = this.Ra_recs(stock).length
         // the tour count rides the mark because the count ALONE cannot see a rotation: a turn of the
         //  wheel that adds one and drops one leaves `n` identical, so a pure-count mark would call a
