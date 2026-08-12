@@ -12,7 +12,7 @@ import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'b22791431c0c8458~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '57fa0d4d09f771d6~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1143,6 +1143,11 @@ Swarm_iz_mark(ident, record, patch) {
     record.bump()
     let peering = this.Swarm_peering(ident)
     if (peering) peering.bump()
+    // …and NUDGE the disk mirror (Clustation_mirror_nudge, Auto.svelte — debounced, single-flight).
+    //  The bumps above move the mirror's mark, but a mint is a plain click handler: nothing about it
+    //   ticks the beliefs drive, so without this the account write waits for the next unrelated tick
+    //    (measured 2026-08-13: invites reached disk only at "the next time around to openshare").
+    if (this.Clustation_mirror_nudge) this.Clustation_mirror_nudge()
 
 },
 Swarm_iz_rehydrate(w, ident) {
@@ -2687,6 +2692,26 @@ Swarm_cull_done(w) {
 //  Same contract: single-flight on a start stamp, duration reported as `tour_bg`, latch cleared on
 //   BOTH settle and throw (a stuck latch would retire the conveyor for the life of the tab, and a
 //    collection that stops touring stops growing — silently, which is this page's whole failure mode).
+// Swarm_keep_detached / Swarm_keep_done — the cull|tour pair's third sibling, for the heist keep
+//  driver (2026-08-13: keep=2602ms beats, 280 skips, the folder-describe crawling behind it).  Same
+//   contract: single-flight on a start stamp (the one-writer law — the "spastic as fuck" double-write
+//    of 2026-07-30 stays impossible, now by THIS latch instead of the beat's), duration reported as
+//     `keep_bg`, latch cleared on BOTH settle and throw.  The error note keeps its old home
+//      (heist_beat_why), so nothing that read it moves.
+Swarm_keep_detached(w, ident) {
+    if (w.c.keep_flying) return 0
+    if (typeof this.Heist_keep_beat !== 'function') return 0
+    w.c.keep_flying = Date.now()
+    this.Heist_keep_beat(w, ident).then(() => this.Swarm_keep_done(w)).catch((er) => this.Swarm_keep_done(w, er))
+    return 1
+
+},
+Swarm_keep_done(w, er) {
+    if (er) w.c.heist_beat_why = '' + (er && er.message || er)
+    w.c.keep_bg_ms = Date.now() - (+(w.c.keep_flying || Date.now()))
+    w.c.keep_flying = 0
+
+},
 Swarm_tour_detached(w, rw, stock) {
     if (w.c.tour_flying) return 0
     if (typeof this.Stoker_tour !== 'function') return 0
@@ -2856,7 +2881,7 @@ Swarm_watch_look(w) {
 },
 Swarm_detached_health(w) {
     let out = []
-    for (const it of [{ k: 'cull', fly: w.c.cull_flying, bg: w.c.cull_bg_ms }, { k: 'tour', fly: w.c.tour_flying, bg: w.c.tour_bg_ms }]) {
+    for (const it of [{ k: 'cull', fly: w.c.cull_flying, bg: w.c.cull_bg_ms }, { k: 'tour', fly: w.c.tour_flying, bg: w.c.tour_bg_ms }, { k: 'keep', fly: w.c.keep_flying, bg: w.c.keep_bg_ms }]) {
         if (!it.fly) continue
         let since = Date.now() - (+(it.fly || Date.now()))
         let bar = Math.max((w.c.detached_stuck_floor_ms == null ? 180000 : +w.c.detached_stuck_floor_ms), (+(it.bg || 0)) * 4)
@@ -2880,7 +2905,7 @@ async Swarm_share_loop(w, ident) {
                 // READ THIS AS A PROGRESS BAR, NOT A COST TABLE.  beat_split is zeroed at the top of
                 //  each beat and each phase stamped only on completion, so the LAST NON-ZERO field is
                 //   where the in-flight beat got to — an all-zero line means it never finished phase 1.
-                console.log(`⏳ Swarm_share_beat still running past 600ms — skipping this tick (×${w.c.share_beat_skipped} so far) — the last non-zero field below is how FAR the stuck beat got · cull=${+(sp.cull || 0)} tour=${+(sp.tour || 0)} flush=${+(sp.flush || 0)} peers=${+(sp.peers || 0)} (pump=${+(sp.pump || 0)} warm=${+(sp.warm || 0)}) keep=${+(sp.keep || 0)} · detached: cull_bg=${+(sp.cull_bg || 0)}${w.c.cull_flying ? '(flying)' : ''} tour_bg=${+(sp.tour_bg || 0)}${w.c.tour_flying ? '(flying)' : ''} · lead=${+(w.c.lead_s || 0)}s restock_held=${+(w.c.restock_held || 0)} (ms)`)
+                console.log(`⏳ Swarm_share_beat still running past 600ms — skipping this tick (×${w.c.share_beat_skipped} so far) — the last non-zero field below is how FAR the stuck beat got · cull=${+(sp.cull || 0)} tour=${+(sp.tour || 0)} flush=${+(sp.flush || 0)} peers=${+(sp.peers || 0)} (pump=${+(sp.pump || 0)} warm=${+(sp.warm || 0)}) keep=${+(sp.keep || 0)} · detached: cull_bg=${+(sp.cull_bg || 0)}${w.c.cull_flying ? '(flying)' : ''} tour_bg=${+(sp.tour_bg || 0)}${w.c.tour_flying ? '(flying)' : ''} keep_bg=${+(sp.keep_bg || 0)}${w.c.keep_flying ? '(flying)' : ''} · lead=${+(w.c.lead_s || 0)}s restock_held=${+(w.c.restock_held || 0)} (ms)`)
             }
         } else {
             w.c.share_beat_running = true
@@ -2909,7 +2934,7 @@ async Swarm_share_loop(w, ident) {
                 let ms = Date.now() - t0
                 if (ms > 600 && typeof this.Radio_trace === 'function') {
                     let sp = w.c.beat_split || {}
-                    try { this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0), cull: +(sp.cull || 0), tour: +(sp.tour || 0), peers: +(sp.peers || 0), pump: +(sp.pump || 0), warm: +(sp.warm || 0), keep: +(sp.keep || 0), cull_bg: +(sp.cull_bg || 0) }) } catch (er) {}
+                    try { this.Radio_trace(null, { ev: 'beat', ms: ms, skips: +(w.c.share_beat_skipped || 0), cull: +(sp.cull || 0), tour: +(sp.tour || 0), peers: +(sp.peers || 0), pump: +(sp.pump || 0), warm: +(sp.warm || 0), keep: +(sp.keep || 0), cull_bg: +(sp.cull_bg || 0), keep_bg: +(sp.keep_bg || 0) }) } catch (er) {}
                 }
             }, { see: 'swarm_share_beat' })
         }
@@ -2987,7 +3012,7 @@ async Swarm_share_beat(w, ident) {
     //  Four numbers cost four Date.now() calls per beat and turn the next paste into an answer instead of
     //   a suspicion.  Written to `.c` (runtime, never encoded) and read by the loop's electrode + skip log.
     let tmark = Date.now()
-    w.c.beat_split = { cull: 0, tour: 0, flush: 0, peers: 0, keep: 0, cull_bg: +(w.c.cull_bg_ms || 0), tour_bg: +(w.c.tour_bg_ms || 0) }
+    w.c.beat_split = { cull: 0, tour: 0, flush: 0, peers: 0, keep: 0, cull_bg: +(w.c.cull_bg_ms || 0), tour_bg: +(w.c.tour_bg_ms || 0), keep_bg: +(w.c.keep_bg_ms || 0) }
     // ── THE CULL FLIES DETACHED (2026-08-08) — the split's first verdict, and it was the cull ──
     //  Measured on the human's tab: `cull=8475`, `cull=12327`, `cull=29671` with tour/peers/keep all 0.
     //   So the ×221 skipped ticks were ONE phase, and not the one I suspected (I had written the heist
@@ -3210,9 +3235,15 @@ async Swarm_share_beat(w, ident) {
     //    share beat — the keep driver is additive follow-through, never a dependency of the share itself.
     w.c.beat_split.peers = Date.now() - tmark
     tmark = Date.now()
-    if (typeof this.Heist_keep_beat === 'function') {
-        try { await this.Heist_keep_beat(w, ident) } catch (er) { w.c.heist_beat_why = '' + (er && er.message || er) }
-    }
+    // ── AND THE KEEP FLIES DETACHED TOO (2026-08-13, the cull|tour disease two organs along) ──
+    //  Measured live: keep=2602ms/958/1249 per beat with 280 skips while a heist pulled — the beat
+    //   mutex held 1-3s by swarm_share_beat, the folder-describe answer crawling ("asking S for the
+    //    folder takes aaages"), the pump and warm starved behind it.  Same shape, same cure: kick and
+    //     bow out.  Nothing downstream reads keep's return (it is the LAST phase), and the one-writer
+    //      law the beat's single-flight used to carry moves INTO the latch — `keep_flying` means at
+    //       most one Heist_keep_beat ever runs, which is STRICTER than before (beats now tick on
+    //        while a slow keep streams, but a second keep can never start on top of the first).
+    this.Swarm_keep_detached(w, ident)
     w.c.beat_split.keep = Date.now() - tmark
 },
 //#endregion

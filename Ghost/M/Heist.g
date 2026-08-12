@@ -530,6 +530,20 @@ Heist_rel_for(job, rec):
     if (!root && !job.o({ filing: 1 }).some((f) => f.sc.genre)) {
         root = this.Heist_cat_path(this.Heist_sections_of(rec.sc.path))
     }
+    // ARTIST DRIFT MUST NOT SHED THE SECTION (2026-08-13: "the section '- r&b' was there, but ignored
+    //  when the Heist ran and saves without it").  The filings are keyed by the PICK's artist, frozen
+    //   at pick time — but `rec.sc.artist` here is the MIRROR record's artist NOW, and those moved
+    //    overnight (the meta-from-tags re-stock re-boasts every card; a filename-derived "7" became a
+    //     tag-derived "Grace Jones").  The lookup above then misses, and the some(genre) guard —
+    //      right about "the human has spoken" — skipped the source fallback too, so the track landed
+    //       NAKED at the music root.  When the job's pinned filings all agree on ONE category (the
+    //        whole-keep section is exactly this shape — Heist_keep_filings stamps keep.sc.genre onto
+    //         every artist), what the human said is unambiguous: use it.  Filings that DISAGREE stay
+    //          conservative — a missing artist files under '' as before, never a guess.
+    if (!root) {
+        let fls = job.o({ filing: 1 }).filter((f) => f.sc.genre)
+        if (fls.length && fls.every((f) => f.sc.genre === fls[0].sc.genre)) root = this.Heist_cat_path(fls[0].sc.genre)
+    }
     let cp = this.Heist_cp_path(rec)
     if ((job.sc.dirs || job.sc.dirs_none) && job.sc.dirs_auto) {
         let auto = job.sc.dirs_auto
@@ -2428,18 +2442,38 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
 //  is described, keep EVERY track in it.  Runs ONCE (keep.sc.defaulted, snapped so it survives reload) — after
 //   that the human's un/keep edits + select-all/none stand.
 Heist_keep_default_pick(keep, srcmir, seed):
-    if (keep.sc.defaulted) return
+    // ADOPT THE WHOLE DESCRIBE, HOWEVER LATE IT LANDS (2026-08-13: "lists 10 tracks in the heist
+    //  setup, only 1 in the Heist runningbit").  The describe STREAMS: the seed's own husk is in the
+    //   mirror instantly, the siblings arrive as the (slow — see the keep-phase beat cost) answer
+    //    lands.  The old `defaulted` latch fired on the first beat, picked the one husk it could see,
+    //     and never looked again — while HeistFace listed all ten straight off the mirror.  So while
+    //      the keep is still in SETUP and the human has not touched a pick (pick_edited — the toggle
+    //       and pick_all stamp it), every newly described husk gets adopted.  The edits stand, as
+    //        ruled; a running or Berth-rehydrated keep keeps its confirmed picks (states beyond setup
+    //         adopt only the empty-picks safety net, which is what rehydrate's `defaulted` note asks).
+    let picks = keep.o({ Pick: 1 })
+    let state = keep.sc.state || 'primed'
+    let setup = state === 'primed' || state === 'wanted' || state === 'asking' || state === 'choosing'
+    // `adopting` rides .c, DELIBERATELY runtime-only: a keep that was in setup THIS session keeps
+    //  adopting late husks even after a fast ▶ (the human should not have to wait out the describe
+    //   before starting — "setting up multiple Heists without waiting"), while a Berth-rehydrated
+    //    keep (state 'pulling' from birth, .c empty) replays its confirmed picks and adopts nothing,
+    //     which is what its `defaulted` note demands.
+    if (setup) keep.c.adopting = 1
+    if (picks.length && (keep.sc.pick_edited || (!setup && !keep.c.adopting))) return
     let husks = srcmir ? this.Heist_rummage_recs(srcmir, String(seed)) : []
     if (!husks.length) return
     keep.sc.defaulted = 1
+    let added = 0
     for (const h of husks) {
         if (keep.o({ Pick: 1, ref: String(h.sc.id) })[0]) continue
         let pick = keep.i({ Pick: 1, ref: String(h.sc.id) })
         pick.c.up = keep
         if (h.sc.title) pick.sc.title = h.sc.title
         if (h.sc.artist) pick.sc.artist = h.sc.artist
+        added = 1
     }
-    keep.bump()
+    if (added) keep.bump()
 
 // Heist_keep_default_section — THE SECTION THE SOURCE ALREADY CHOSE, offered back as the default category
 //  (the human 2026-08-07: "it still isn't noticing the '0 spawn' and '0 folks' are sections").  Runs beside
@@ -2813,6 +2847,8 @@ Heist_keep_touch(keep):
 //  it; absent ⇒ add it, lifting title/artist off the described husk.
 Heist_keep_pick_toggle(keep, ref):
     keep.c.last_touch = Date.now()
+    // the human touched the picks — default adoption (Heist_keep_default_pick) stands down for good
+    keep.sc.pick_edited = 1
     let have = keep.o({ Pick: 1, ref: String(ref) })[0]
     if (have) { keep.drop(have); keep.bump(); return }
     let rw = this.top_House().c.radio_w
@@ -2834,6 +2870,7 @@ Heist_keep_pick_toggle(keep, ref):
 //   every pick EXCEPT the seed — unkeeping the track you are listening to is never what "none" means.
 Heist_keep_pick_all(keep, refs, on):
     keep.c.last_touch = Date.now()
+    keep.sc.pick_edited = 1
     let seed = keep.sc.seed != null ? String(keep.sc.seed) : null
     let changed = 0
     if (!on) {

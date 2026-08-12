@@ -456,8 +456,6 @@
             ident = Ac && (Ac.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
         }
         if (!ident?.c?.keys?.key) return false
-        const nav = (H as any).Crate_nav()
-        if (!nav || (nav as any).atime_async) return false
         // THE CANONICAL ADDRESS IS THE WRITE LOCK (§7.4f / §6.6). Landing the write side is what gives
         //  the two-writers problem teeth: an always-up daemon and a tab that renames itself both mirror
         //   `.jamsend/account/<prepub>/`, there is no merge, and divergence is last-write-wins — so one
@@ -480,8 +478,40 @@
             return false
         }
         const peering = (ident.o({ Peering: 1 }) as TheC[])[0]
-        const mark = `${ident.sc.prepub}:${ident.version}:${peering?.version ?? 0}`
+        // FOLD THE PEERING'S CHILDREN IN, not just the Peering itself — the tightening the comment
+        //  above asks for ("a heuristic, not a proof … worth tightening if a case shows up").  A case
+        //   showed up, 2026-08-13: a tab moved origin carrying the same ?I= and the same FSA folder,
+        //    restored its identity and all 40 records, and came up `piers=0` — the Pier was never on
+        //     disk to restore.  `bump()` is LOCAL (Stuff.svelte.ts — it moves this particle's serial,
+        //      never its parent's), so any direct-child mutation that does NOT route through
+        //       Swarm_iz_mark (which has bumped the %Peering itself since "redeeming compat",
+        //        21c2ad6b) moves no version this mark could see.  The kin fold is the wider net:
+        //         any bump on a DIRECT child of the Peering — %Pier or %Idzeug — moves the mark,
+        //          however it got there.  A GRANDCHILD that bumps nothing above it is still missed —
+        //           smaller than the hole this closes, but a hole, so say so.
+        //  Cost is one walk of a handful of particles per evaluation — no enWaft, so the "NEVER PER
+        //   TICK" ruling above still holds: this decides whether to encode, it does not encode.
+        const kin = peering ? (peering.o() as TheC[]) : []
+        let kinmark = 0
+        for (const k of kin) kinmark += (+k.version || 0)
+        const mark = `${ident.sc.prepub}:${ident.version}:${peering?.version ?? 0}:${kin.length}:${kinmark}`
         if ((top.c as any).account_mirror_mark === mark) return false
+        // THE NAV GUARD COMES AFTER THE MARK, AND IT IS LOUD.  A:Wormhole/c.nav is runtime-only —
+        //  wiped by every reload, absent until the FSA gesture — so before openshare NOTHING can
+        //   reach `.jamsend/account/`.  That used to be a silent `return false`, which made a real
+        //    durability hole invisible: Piers have no Dexie home (the identities Thang stores only
+        //     {pub,key,prepub,born,friendly}; iz marks at least have the Swarm_iz_stash twin), so a
+        //      tab closed before its first openshare takes its Peering to the grave.  We cannot
+        //       write without a handle — but we CAN say the write is owed, once per owed state.
+        const nav = (H as any).Crate_nav()
+        if (!nav || (nav as any).atime_async) {
+            if ((top.c as any).account_mirror_owed !== mark) {
+                ;(top.c as any).account_mirror_owed = mark
+                console.warn(`🪪 account write OWED — Peering state moved but no share is open (no nav); it lands at the next openshare. Until then Piers/invite-serials exist only in this tab.`)
+            }
+            return false
+        }
+        delete (top.c as any).account_mirror_owed
         // STAMP BEFORE THE AWAIT, not after: the boot tick is async and re-enters, so a mark written
         //  on the far side of the write would let a second pass start the same enWaft concurrently.
         ;(top.c as any).account_mirror_mark = mark
@@ -496,6 +526,35 @@
             console.warn(`🪪 account mirror failed — ${String(er).slice(0, 120)}`)
             return false
         }
+    },
+
+    // Clustation_mirror_nudge — the EVENT edge of the mirror above.  The mirror is evaluated by the
+    //  Auto() pass, and Auto() runs only when the beliefs drive ticks — but the mutation that matters
+    //   most is a plain click handler (InvitePanel.mint → Swarm_invite_url → Swarm_iz_mark; no elvis,
+    //    no req), which never wakes the drive.  So "calling it every tick is the intended use" (above)
+    //     presumed ticks a quiet Library page does not have.  Measured 2026-08-13: mint invites,
+    //      nothing reaches disk until the next openshare — the gesture that happens to both supply
+    //       the nav AND tick the drive.  The mutation seam (Swarm_iz_mark) now calls THIS instead of
+    //        waiting to be noticed.
+    //  Debounced + single-flight, because the seam can fire in a tight loop: a blotter winds the
+    //   counter 126 times, and 126 concurrent enWafts of one file is exactly the overlapping-writers
+    //    corruption Swarm_share_beat's single-flight exists to prevent.  One trailing timer → one
+    //     write of whatever the tree says when it fires; a nudge landing mid-write re-arms behind the
+    //      flight rather than overlapping it.  The timer id rides top.c — runtime-only, never
+    //       encoded, dies with the tab, and that is correct: an unfired nudge is re-owed by the MARK
+    //        comparison on the next evaluation, never by the timer surviving.
+    Clustation_mirror_nudge(this: House, H?: House): void {
+        H = (H ?? this) as House
+        const top = ((H as any).top_House?.() ?? H) as House
+        const c = top.c as any
+        if (c.account_mirror_timer) return
+        c.account_mirror_timer = setTimeout(async () => {
+            delete c.account_mirror_timer
+            if (c.account_mirror_flying) { (H as any).Clustation_mirror_nudge?.(H); return }
+            c.account_mirror_flying = 1
+            try { await (H as any).Clustation_mirror_account?.(H) }
+            finally { delete c.account_mirror_flying }
+        }, 500)
     },
 
     // Clustation_adopt — take an EXTERNAL keypair (a pasted .env.cluster-<role> — IdHatch) and make

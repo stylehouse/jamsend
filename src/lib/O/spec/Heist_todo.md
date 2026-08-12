@@ -33,6 +33,32 @@ Fixed by moving the blocker rather than the blocked:
 
 ## 0. Next move (read first)
 
+0Z. **⇑ 2026-08-13 (late) — live-heist night: three defects fixed in the flow, and the ZOOMIER thread.**
+   Fixed live while the owner heisted between two dev tabs (all compiled, in gen/):
+   - **"10 tracks in setup, 1 in the running bit"** — the describe STREAMS, and `Heist_keep_default_pick`'s
+      `defaulted` latch fired on the first husk (the seed's own) and never looked again. Adoption is now
+       continuous: all of setup, and past a fast ▶ for a keep set up this session (`keep.c.adopting`,
+        runtime-only so a Berth-rehydrate still never re-derives). The human's first pick-touch stamps
+         `keep.sc.pick_edited` and adoption stands down for good.
+   - **Section shed on landing** ("'- r&b' was there, but ignored… saves without it") — filings are keyed by
+      the PICK's artist, frozen at pick time; the meta-from-tags re-stock (a34b4086) moved `rec.sc.artist`
+       overnight, the lookup missed, and the some(genre) guard skipped the source fallback too → naked at
+        the root. `Heist_rel_for` now borrows the job's category when every pinned filing agrees on one.
+   - **`keep` detached from the share beat** (`Swarm_keep_detached`, the cull|tour pair's third sibling) —
+      keep=2602ms beats with 280 skips were why "asking S for the folder takes aaages"; the one-writer law
+       moved into the `keep_flying` latch (stricter than before). `keep_bg` rides the split + beat trace.
+   **The ZOOMIER thread (the owner, same night — direction, not yet built):**
+   - *"setting up multiple Heists without waiting for each one to land"* — mostly unblocked by the detach
+      (the driver already walks every standing keep per beat; the wedged beat made them FEEL serial). Watch.
+   - *"begin Heisting the one track we know the full filename of super quick"* — the seed pick exists from
+      beat one now; a true speculative pre-stage (the seed is already streaming — its chunks are in hand)
+       is the unbuilt half.
+   - *"perhaps we move back to a 2/3 Heist 1/3 Radio interface at the point, to promote drifting back over
+      there interactively"* — layout direction for daylight.
+   - *"the path structure leading into the music might have a lot of interesting info in it"* — path mining
+      beyond sections (years, editions, disc numbers, `[FLAC]` tags). Tags stay the artist|title truth
+       (the 2026-07-28 ruling); this is about the REST of what the path knows.
+
 00. **⇑ SESSION CLOSE 2026-08-07 — four live defects found, two fixed, and ONE THING BLOCKS A GREEN GATE.**
 
   **A known, DEFERRED redness: 8 Books disagree with the code and that is the fixtures working.**

@@ -2801,7 +2801,39 @@
             ro = new ResizeObserver(() => fit_frame(el, w))
             ro.observe(el)
         }
-        return { destroy() { ro?.disconnect(); if (stageEls.get(w) === el) stageEls.delete(w) } }
+        // THE OVERFLOW TELL (the human 2026-08-13: "cheap to tell if top|bottom is outside the
+        //  viewport and by how much, aye?").  fit_frame cuts its height from `innerHeight - r.top`,
+        //   but its ONLY re-trigger is the ResizeObserver above — which fires on the stage's own BOX,
+        //    never its POSITION.  Content above the stage growing/shrinking moves r.top with the
+        //     width unchanged: the observer stays silent and the stale bottom pokes out of the
+        //      viewport for good.  So ask the question directly, slowly (one getBoundingClientRect
+        //       per 1.5s): top above / bottom past the viewport beyond a 12px dead band → re-run
+        //        fit_frame, which re-reads the fresh r.top and self-corrects.  Scroll-aware: a
+        //         scrolled page puts the top outside legitimately, so only judge at scrollY≈0.
+        //  The log is throttled to one per 10s per stage and carries the measured px — a mis-fit
+        //   fit_frame CANNOT fix (the 0.5 ratio clamp's documented "sliver of overflow" on short-wide
+        //    windows) then reads as a steady labelled number instead of a mystery.
+        let ovt: ReturnType<typeof setInterval> | null = null
+        let ov_warned = 0
+        if (typeof setInterval !== 'undefined') {
+            ovt = setInterval(() => {
+                if (!(H as any)?.top_House?.()?.c?.humdinger) return
+                if (typeof document !== 'undefined' && document.fullscreenElement) return
+                if ((window.scrollY || 0) > 1) return
+                const r = el.getBoundingClientRect()
+                if (!(r.width > 0)) return
+                const over_top = Math.max(0, -r.top)
+                const over_bot = Math.max(0, r.bottom - (window.innerHeight || 0))
+                if (over_top > 12 || over_bot > 12) {
+                    if (Date.now() - ov_warned > 10000) {
+                        ov_warned = Date.now()
+                        console.log(`⧉ vyto stage outside viewport — top ${Math.round(over_top)}px above, bottom ${Math.round(over_bot)}px past; re-fitting`)
+                    }
+                    fit_frame(el, w)
+                }
+            }, 1500)
+        }
+        return { destroy() { ro?.disconnect(); if (ovt) clearInterval(ovt); if (stageEls.get(w) === el) stageEls.delete(w) } }
     }
     // (`go_fullscreen` went with the ⛶ — 2026-08-11.  The ResizeObserver above still re-cuts the frame
     //  for a browser-driven fullscreen, and fit_frame still lets `document.fullscreenElement` beat the

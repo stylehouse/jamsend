@@ -31,6 +31,24 @@
     let tick = $state(0)
     $effect(() => { const iv = setInterval(() => { tick++ }, 500); return () => clearInterval(iv) })
 
+    // ── the ASKING wait, made honest (the owner 2026-08-13: "asking for the folder takes aaages…
+    //  I definitely want this step smoothed out") — three UI-only moves, no protocol change:
+    //   · elapsed seconds tick beside the sentence (anchor on n.c so the face's own remounts — the
+    //      known cell-flap — don't reset the clock; a tab reload legitimately does).
+    //   · past SLOW_S the line says WHY it can be slow (the source is usually mid-serve) instead of
+    //      leaving a bare spinner to read as "broken".  The ask itself already re-fires every ~4s
+    //      (sc.asks counts it), so showing the count doubles as proof the machine is still trying.
+    //   · once husks start landing the count line keeps a small ring while the number is still
+    //      MOVING (arrivals within the last 3s) — the folder fills in visibly instead of popping.
+    const SLOW_S = 12
+    let huskSeen = $state(0)
+    let huskMovedTs = $state(0)
+    $effect(() => {
+        const nTracks = face.nTracks
+        if (face.describing && !nTracks && n?.c && !n.c.desc_t0) n.c.desc_t0 = Date.now()
+        if (nTracks !== huskSeen) { huskSeen = nTracks; huskMovedTs = Date.now() }
+    })
+
     // ── THE PRESS ELECTRODE (Vyto_todo §0.1 item 1 — the human: "the heist setup 'X' button, and various
     //  buttons really... do not respond quickly enough to clicking") ─────────────────────────────────
     //  The doc's law on this is explicit — INSTRUMENT, do not guess between the four candidates — so this
@@ -281,6 +299,9 @@
             catRaw, catSegs,
             dirsRaw, dirsSegs, dirsKnown, dirsAuto,
             nTracks: husks.length,
+            // the wait clock + the still-arriving tell (void tick above keeps these live at 500ms)
+            askSecs: n?.c?.desc_t0 ? Math.floor((Date.now() - +n.c.desc_t0) / 1000) : 0,
+            counting: husks.length > 0 && huskMovedTs > 0 && (Date.now() - huskMovedTs) < 3000,
             totBytes, totSecs,
             picked: pickedRefs.size,
             landed_n: +(sc.landed_n || 0),
@@ -600,12 +621,17 @@
              well") — honest now, unlike the banned 2026-08-07 skeleton: the ask is real, counted
              (`sc.asks`) and re-healed on silence. -->
         {#if !face.nTracks}
-            <div class="kf-sum kf-wait"><span class="kf-spin"></span> asking {face.from} for the folder…</div>
+            <div class="kf-sum kf-wait"><span class="kf-spin"></span> asking {face.from} for the folder…{#if face.askSecs >= 3}<span class="kf-dim">&nbsp;{face.askSecs}s{#if face.asks > 1} · asked {face.asks}×{/if}</span>{/if}</div>
+            {#if face.askSecs >= SLOW_S}
+                <!-- past the honest threshold, say WHY: the source is usually mid-serve (one core,
+                     whole-file decodes) — the ask repeats on its own, so slow ≠ stuck. -->
+                <div class="kf-slowwhy">{face.from} is slow to answer — probably busy serving. The ask repeats itself; the folder appears the moment they breathe.</div>
+            {/if}
         {:else}
             <div class="kf-sum">
                 <!-- ☑ lofi flips the size and that is the whole story (the owner: "change the
                      quantity, don't explain it") — no suffix, no tooltip. -->
-                {face.nTracks} track{face.nTracks === 1 ? '' : 's'}{#if face.totSecs}&nbsp;· ~{fmtT(face.totSecs)}{/if}{#if face.lofi && face.totSecs}&nbsp;· ~{fmtB(face.totSecs * 16000)}{:else if face.totBytes}&nbsp;· {fmtB(face.totBytes)}{/if}
+                {face.nTracks} track{face.nTracks === 1 ? '' : 's'}{#if face.totSecs}&nbsp;· ~{fmtT(face.totSecs)}{/if}{#if face.lofi && face.totSecs}&nbsp;· ~{fmtB(face.totSecs * 16000)}{:else if face.totBytes}&nbsp;· {fmtB(face.totBytes)}{/if}{#if face.counting}&nbsp;<span class="kf-spin sm" title="still counting — the folder is arriving"></span>{/if}
             </div>
         {/if}
         <div class="kf-what">
@@ -856,6 +882,11 @@
         animation: kf-spin 0.9s linear infinite;
     }
     @keyframes kf-spin { to { transform: rotate(360deg) } }
+    /* the still-arriving ring beside a MOVING track count — smaller and inline, gone 3s after
+       the last husk lands so a settled count reads as settled */
+    .kf-spin.sm { display: inline-block; width: 7px; height: 7px; border-width: 1.2px; vertical-align: -1px; }
+    /* the past-12s honesty line — quiet, unpanicked: slow ≠ stuck */
+    .kf-slowwhy { font-size: 9px; opacity: 0.55; font-style: italic; margin-top: 2px; max-width: 300px; }
     /* A TITLE IS ONE THING (the owner 2026-08-12: *"keeps wrapping in 'Middle A'"* … *"text line
         breaking before A"*).  `overflow-wrap: anywhere` let the line break INSIDE the title, so at the
          narrow columns a stretched heist actually gets — the search settles near STRETCH_COL_MIN,

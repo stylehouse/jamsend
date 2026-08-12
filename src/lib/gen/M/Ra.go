@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '85a6cdaef32a4f76~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '4565ad48fdbddb63~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -2102,6 +2102,14 @@ Ra_pcm_admit(w, rec) {
     let want = this.Ra_pcm_est(rec)
     if (held + flight + want <= CAP) return this.Ra_pcm_fly_add(M, rec)
     if (rec === this.Ra_pcm_playing(M)) return this.Ra_pcm_fly_add(M, rec)
+    // THE PIER-DEMAND OVERRIDE — the playing-record override's twin, for the SERVE side.  A record a
+    //  pier is waiting on RIGHT NOW (Repli's head serve stamps head_asked_ts on every un-whole ask)
+    //   outranks the bytes that background continuations hold: those are building 48s of lead for
+    //    tracks already flowing, while this one is somebody's silence.  Measured 2026-08-13 ("My
+    //     Love", 134MB, refused every beat against 296MB of busy Grace Jones continuations — the sink
+    //      off the tape while the source was healthy).  Bounded by real listeners: one live head ask
+    //       per pier at a time, the stamp ages out in 30s, and the belt still reclaims at done|idle.
+    if (rec.c.head_asked_ts && (Date.now() - (+rec.c.head_asked_ts)) < 30000) return this.Ra_pcm_fly_add(M, rec)
     // THE LONE-CANDIDATE FLOOR — an admission gate must never refuse the ONLY applicant.
     //  `want` alone can exceed CAP for a long enough recording: at 48kHz stereo Float32 the estimate
     //   passes 384MB somewhere past ~17.5 minutes, so a DJ set, an album side or a podcast would be
@@ -2180,19 +2188,54 @@ Ra_pcm_sweep() {
         live.push(rec)
         held = held + this.Ra_pcm_bytes(rec)
     }
-    // BELT: oldest-touched first, and an open encode is shed LAST (shedding it strands a listener
-    //  mid-track), but it is never vetoed outright — a belt that can be vetoed is not a belt.
+    // BELT: oldest-touched first.  Two records it must NOT shed, and both by this page's own text:
+    //  an OPEN UN-DONE encode ("freeing under a live encode would throw rather than save memory" —
+    //   the idle branch's absolute veto, which this loop contradicted), and JUST-LANDED PCM inside a
+    //    consumption GRACE.  The grace is the measured bug (2026-08-13, the 143MB/80-minute FLAC):
+    //     the lone-candidate floor admits ONE over-cap decode on purpose ("the belt reclaims it the
+    //      moment it goes idle") — but this loop reclaimed it the moment it LANDED, before the
+    //       one-per-beat consumer could open its encode, so the monster decoded 1.3GB, lost it, and
+    //        re-kicked forever, its in-flight estimate starving every other admission meanwhile.
+    //  The bound survives: Ra_pcm_admit now gates BOTH kick paths, so what the belt may skip is at
+    //   most the under-cap herd plus the one lone-floor admit — the exact price the floor already
+    //    accepted.  Grace expires (10s, and pcm_ts refreshes only while consumers touch it), an
+    //     encode ends, and then the belt is a belt again.
     if (held > CAP && live.length) {
         live.sort((a, b) => ((a.c.ra && !a.c.ra.done) ? 1 : 0) - ((b.c.ra && !b.c.ra.done) ? 1 : 0) || (+(a.c.pcm_ts || 0)) - (+(b.c.pcm_ts || 0)))
         let i = 0
         while (held > CAP && i < live.length) {
             let rec = live[i]
+            if ((rec.c.ra && !rec.c.ra.done) || (now - (+(rec.c.pcm_ts || 0)) < 10000)) {
+                i = i + 1
+                continue
+            }
             held = held - this.Ra_pcm_bytes(rec)
             this.Ra_pcm_drop(rec, 'cap')
             live[i] = null
             i = i + 1
         }
         live = live.filter((r) => r)
+        // HARD CEILING (2026-08-13, the 5GB tab — same day as the skips above, hours apart).  The
+        //  grace + open-encode courtesies are how a STUCK encode's PCM survives forever: a parked
+        //   continuation that never advances keeps its `ra` open and its `pcm_ts` freshly polled, so
+        //    neither the idle sweep nor the pass above can ever free it, and the pinned set only
+        //     grows — measured at 5GB on the serving tab.  Above 2×CAP the bound outranks every
+        //      courtesy: shed oldest-first regardless (the sort already ranks open encodes last, so
+        //       healthy actives go last), closing whatever encode rides the bytes.  A stranded
+        //        listener re-asks; an OOM-killed tab cannot.
+        held = 0
+        for (const r of live) held = held + this.Ra_pcm_bytes(r)
+        if (held > CAP * 2) {
+            let j = 0
+            while (held > CAP && j < live.length) {
+                let rec = live[j]
+                held = held - this.Ra_pcm_bytes(rec)
+                this.Ra_pcm_drop(rec, 'ceiling')
+                live[j] = null
+                j = j + 1
+            }
+            live = live.filter((r) => r)
+        }
     }
     M.c.ra_pcm = live
 
@@ -2324,7 +2367,15 @@ async Ra_head_ensure(w, rec) {
         if (!rec.c.pcm || !rec.c.pcm[0]) {
             this.Radio_trace(null, { ev: 'head-wait-pcm', id: String(rec.sc.id || '').slice(0, 8), off: off, pending: rec.c.pcm_pending ? 1 : 0, backoff: (rec.c.pcm_retry_at > Date.now()) ? 1 : 0 })
             // the same detached kick Ra_transcode_ensure uses — never awaited under the beat.
-            if (!rec.c.pcm_pending && !(rec.c.pcm_retry_at > Date.now())) {
+            //  AND THE SAME ADMISSION GATE (2026-08-08's "eviction alone livelocked every record at
+            //   chunk 16", reintroduced here by omission and measured live 2026-08-13): this kick had
+            //    no Ra_pcm_admit, so a pier pulling K tracks kicked K whole-file decodes, held blew
+            //     past the belt's CAP, and the belt freed each track's PCM in the gap between its
+            //      decode landing and the one-per-beat head-make consuming it — decode → cap-free →
+            //       head-wait-pcm → re-decode, 2-7s of CPU per lap, which is the "jams briefly then
+            //        recovers" the serving tab shows.  Refusal is not failure: no backoff is climbed,
+            //         the want stays parked, and admit lets it through as in-flight bytes free up.
+            if (!rec.c.pcm_pending && !(rec.c.pcm_retry_at > Date.now()) && this.Ra_pcm_admit(w, rec)) {
                 rec.c.pcm_pending = 1
                 this.Ra_source_pcm(w, rec).then((p) => { rec.c.pcm_pending = 0; if (p) { rec.c.pcm_tries = 0; rec.c.pcm_retry_at = 0 } if (!p) this.Ra_pcm_backoff(rec) }).catch((er) => { rec.c.pcm_pending = 0; this.Ra_pcm_backoff(rec) })
             }
@@ -2613,6 +2664,17 @@ async Ra_transcode_advance(w, rec) {
     return made
 
 },
+// Ra_piers_pulling — is ANY pier mid-pull right now (a %parked_want standing)?  The one question the
+//  DISCRETIONARY decode spenders (the warm-head loop) ask before burning a whole-file decode: under
+//   load every decode byte is contended, and a head nobody asked for can always wait a quiet beat.
+Ra_piers_pulling(w) {
+    if (w.c.tx && w.c.tx.o({ parked_want: 1 }).length) return 1
+    for (const cp of (w.c.repli_casters || [])) {
+        if (cp && cp.o && cp.o({ parked_want: 1 }).length) return 1
+    }
+    return 0
+
+},
 // Ra_transcode_pump — the demand loop the caster runs each pass: every Record a %parked_want waits on
 //  gets its stream encode ensured + advanced, then Repli_serve_parked releases whatever the frontier
 //   now covers.  The whole economy falls out of park/serve: preview chunks pre-exist (never park);
@@ -2700,9 +2762,20 @@ async Ra_transcode_pump(w) {
             // the admission gate (header above): a rec with no pcm and no open ra is a NEW whole-file
             //  decode.  One already in flight is charged its estimate; a fresh one is only admitted
             //   while the budget holds, and is charged the same estimate the moment it is.
+            // …EXCEPT A WANT THAT HAS SAT PARKED — that IS pier demand (2026-08-13, the off-tape at
+            //  `park-stall off=16 secs=41`).  The head serve's pier-demand override lets HEAD decodes
+            //   jump the byte queue, and their held PCM then exhausted THIS flat budget — so the
+            //    continuation of the track a listener was mid-play on was skipped HERE, before
+            //     Ra_pcm_admit (which holds the overrides that would admit it) ever saw it.  Heads
+            //      jumping ahead of the playing track's own continuation is priority inversion in the
+            //       mirror.  A want parked >10s stamps the same demand mark the head serve stamps and
+            //        bypasses the flat budget; Ra_pcm_admit still bounds it (held+fly+want vs CAP,
+            //         demand override included) — a re-ranking, never an unbounding.
+            let starving = p.c.parked_at && (Date.now() - p.c.parked_at) > 10000
+            if (starving) rec.c.head_asked_ts = Date.now()
             if (!rec.c.pcm && !rec.c.ra) {
                 if (rec.c.pcm_pending || rec.c.nat_pending) { admit_spent = admit_spent + ADMIT_CAP / 4; continue }
-                if (admit_spent + ADMIT_CAP / 4 > ADMIT_CAP / 2) continue
+                if (!starving && admit_spent + ADMIT_CAP / 4 > ADMIT_CAP / 2) continue
                 admit_spent = admit_spent + ADMIT_CAP / 4
             }
             let ra = await this.Ra_transcode_ensure(w, rec)
@@ -3268,7 +3341,14 @@ async Ra_restock_beat(w, mirror, budget) {
         //  ONE PER BEAT.  Ra_head_ensure single-flights per record, but K of them starting an encode
         //   in the same beat would be K concurrent encodes competing with the track playing now —
         //    the same reason Radio_prime refuses to run without slack.
-        if (!heads_made && !rec.c.from && +(rec.sc.pv_off || 0) > 0 && this.Ra_head_ensure && !this.Ra_head_whole(rec)) {
+        if (!heads_made && !rec.c.from && +(rec.sc.pv_off || 0) > 0 && this.Ra_head_ensure && !this.Ra_head_whole(rec) && !this.Ra_piers_pulling(w)) {
+            // …AND ONLY ON A QUIET BEAT (2026-08-13, both tabs off the tape at once): this warm loop is
+            //  the one DISCRETIONARY whole-file-decode spender — heads for tracks nobody asked for yet.
+            //   Under load every decode byte is contended (the playing continuation and the pier-asked
+            //    heads were starving each other while this loop head-cut the catalog window at one per
+            //     beat, ~130-300MB of PCM each).  A pier mid-pull (any %parked_want standing) means the
+            //      system is under demand — the warm resumes the moment the pulls go quiet.  Demand-side
+            //       heads never come here: they ride Repli's head serve + the admit override.
             heads_made = 1
             this.Ra_head_ensure(w, rec).catch((er) => {})
         }

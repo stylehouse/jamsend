@@ -110,6 +110,12 @@ Repli_identity_keys(mainkey):
         //  `Stream,seq,cid` — one opus packet, a MEMBER, many per Record (minted Ra.g).  The
         //   Float32-page fill counter that squatted under this mainkey is now %Fill (below).
         Stream: ['seq'],
+        // %Prehead — the head run's chunks (Ra_head_ensure mints `rec.oai({Prehead:1, hseq})`), one
+        //  per head segment, many per Record — the same shape %Stream wears one row up.  Crossed the
+        //   wire unlisted the night the head serve went live (2026-08-13, the sink's console:
+        //    "no identity declared for mainkey %Prehead … falling back to ALL keys, which SPLITS"),
+        //     so every re-offer minted a fresh copy of every head chunk at the mirror.
+        Prehead: ['hseq'],
         // %Fill — the Float32-page path's fill counter, one per Record (minted Crate.g's
         //  transcode-begin + the Book stocks; sent hand-built in Repli_serve_want, which is why
         //   this row is belt-and-braces).  Named for what it is: the fill state of a pour of
@@ -224,6 +230,12 @@ async Repli_serve_head(w, pier, h, rec):
     let off = +(rec.sc.pv_off || 0)
     if (!(off > 0)) { this.Repli_serve_miss(w, h, 'no cut point — the offer already starts at the song'); return }
     if (typeof this.Ra_head_ensure === 'function' && !this.Ra_head_whole(rec)) {
+        // A PIER IS WAITING ON THIS HEAD RIGHT NOW — stamp the demand so Ra_pcm_admit can rank it
+        //  above background work (the lead pass building buffer for tracks already playing).  Measured
+        //   2026-08-13: two busy continuations held ~296MB, the listener dialled a fresh track, and its
+        //    134MB head decode was refused every beat for minutes (296+134 > cap 384) — the sink ran
+        //     off the tape against a source that was healthy but too polite to interrupt itself.
+        rec.c.head_asked_ts = Date.now()
         try { await this.Ra_head_ensure(w, rec) } catch (er) {}
     }
     let from = +(h.from_idx || 0)
