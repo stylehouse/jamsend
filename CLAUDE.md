@@ -266,6 +266,16 @@ Verify a Book by asking a LIVE runner to run it — not a headless boot.
   - `node scripts/runner_ask.mjs rungos`             — held runs, each addressable `@uid`
  Exit 1 when a `--watch` run finishes red, so it scripts. `story_repl.mjs` is the
   interactive twin (`@uid` addresses a held run).
+ **A REMOTE NODE** (another host's server) works the same way, with discovery off the wire
+  instead of the local registry: `RUNNER_URL=https://box:9999 node scripts/runner_ask.mjs
+   runners --live` (an https origin becomes `wss://…/relay`). `--live` is implied whenever
+    RUNNER_URL names a foreign HOST — `wormhole/Cluster/toc.snap` is a file on THIS box and
+     describes only this box's relay. The census broadcasts pings and sweeps: the relay spends
+      an addr-less asker's `corr` on the FIRST ack, so one broadcast finds exactly one tab and
+       only repeated rounds enumerate the flock (it can miss a wedged tab; it never invents one).
+ A tab's ping ack says `role:'runner'` even when it is someone's music page — a Sounditron is
+  machine-role runner. The live tell is `supervisor`'s `humdinger`, so that is what decides
+   player-vs-runner off the wire, and a courted humdinger is now re-courted rather than run on.
  `scripts/runner_shot.mjs` rides the same rails to SEE the render, the one thing a snap can't carry
   (pixels never round-trip a fixture): `shot <file.png>` = `cy.png()` of the live Cyto canvas; `--svg`
    = the voronoi glass as standalone greppable SVG; `--why` = the render telemetry film strip

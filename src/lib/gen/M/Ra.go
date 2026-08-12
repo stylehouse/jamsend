@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '15209e810fbdf5bd~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '85a6cdaef32a4f76~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1575,6 +1575,21 @@ async Ra_stock_one(w, lib, nav, src_base, path) {
             return { stood: 1, id: enid }
         }
     }
+    // — CATALOG IDENTITY, read HERE and not at the card build below, because `raw` does not survive
+    //    the decode: OfflineAudioContext's decodeAudioData DETACHES the ArrayBuffer it is handed, so
+    //     by the time the card is assembled there are no bytes left to parse.  Read the header tag
+    //      while the file is still whole.  (After the resurrect check above — a card that stands
+    //       already carries its meta, and must not pay a parse to be handed straight back.)
+    //  Was `Crate_meta_from_path` at the card build: filename-only, `artist = stem.split(' - ')[0]`.
+    //   For a collection filed as "NN - Title" / "A - Title" / "NN Artist - Title" that stamps the
+    //    TRACK NUMBER or the vinyl SIDE LETTER as the artist — a live shelf read 13 empty artists,
+    //     6 bare numbers ("11", "06", "25") and a run of "14 Gergely Boganyi" out of 38 records, and
+    //      the wrong value BAKES INTO the .jam header, so it travels to every peer that heists it.
+    //  The files were never the problem (210 of 212 in the test share carry a real ARTIST tag); this
+    //   was the one minting path that never looked.  Heist_census and Crate_nav_payload already read
+    //    tags via Crate_meta_from_tags — which falls back FIELD-BY-FIELD to the path anyway, so a
+    //     genuinely untagged file lands exactly where it used to and nothing regresses. —
+    let meta = await this.Crate_meta_from_tags(raw, path)
     // — THE NATIVE FORK (Daemon_todo §2.1).  Exactly three steps in this function are browser
     //    primitives, and nothing else here is: the decode (OfflineAudioContext), the loudness (the
     //     needles worker) and the encode (WebCodecs).  Headless every one of them throws, so a daemon
@@ -1687,7 +1702,6 @@ async Ra_stock_one(w, lib, nav, src_base, path) {
     if (bufs.length !== P) return null
     // — build the card (Ra_pack fills its sizes[] from the chunks) and write the ONE .jam in a single
     //    shot.  segs = what THIS file holds (the preview); total = the whole track's chunk count —
-    let meta = this.Crate_meta_from_path(path)
     let info = { fmt: 'pkt', id: enid, path: path, base: src_base, col: 1, src_size: src_size, title: meta.title, artist: meta.artist, album: meta.album, seconds: +seconds.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: P, total: segs - OFF, pv_off: OFF, preview_secs: this.Ra_preview_secs(), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), nch: nch, preskip: preskip, target: this.Ra_target_lufs(w) }
     // — Seam A (rung 7): if this shelf owns a signing identity, stamp `by`+`sig` over the cids manifest
     //    onto the header before pack.  lib.c.signer is a keyed Idento a Book|app sets; absent → the header

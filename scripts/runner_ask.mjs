@@ -55,6 +55,15 @@
 //  RUNNER_URL overrides the relay origin (default http://172.17.0.1:9091 — the runner dev server as seen
 //   from the claude container; use http://localhost:9091 if running on the host).  Exit 1 when a --watch
 //    run finishes red (outcome not ok) or the request errors, else 0 — so it scripts.
+//
+//  A REMOTE NODE — another host's dev|prod server — needs `--live` beside RUNNER_URL:
+//    RUNNER_URL=https://box.example:9999 node scripts/runner_ask.mjs runners --live
+//    RUNNER_URL=https://box.example:9999 node scripts/runner_ask.mjs ping --player=96d0cf88 --live
+//   The SOCKET could always point anywhere (an https origin becomes wss://…/relay), but DISCOVERY
+//    could not: `runners` and --runner=/--player= all read the LOCAL wormhole/Cluster/toc.snap, which
+//     is OUR relay's registry and names nobody on theirs.  `--live` learns the flock FROM THE RELAY
+//      instead (see liveCensus below) and never opens the file.  It is also the honest way to ask
+//       about our own relay — the registry is durable and remembers the long-dead; the wire cannot.
 import { WebSocket } from 'ws'
 import { readFileSync, writeFileSync } from 'node:fs'
 // the SHARED liveness thresholds + verdict — the same numbers the ghost (LiesLies.svelte) reads,
@@ -155,9 +164,132 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|poke <verb>> [@uid] [--runner=<id>] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|poke <verb>> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
+
+// ── the relay origin ────────────────────────────────────────────────────────────────────────
+//  ONE derivation, read by the census, the resolvers and the main socket alike (it used to be
+//   written out twice — the `runners` branch had its own copy, which is exactly how a remote
+//    origin gets honoured by one path and not the other).
+//  http→ws and https→wss both fall out of the same replace: `^http` → `ws` leaves the `s://`
+//   in place, so `https://box:9999` becomes `wss://box:9999/relay`.  (Checked, not assumed.)
+const HTTP       = process.env.RUNNER_URL || 'http://172.17.0.1:9091'
+const WS_URL     = HTTP.replace(/^http/, 'ws').replace(/\/$/, '') + '/relay'
+// a single request waits just PAST sluggish before giving up — the old 8s was BELOW sluggish
+//  (9s), so a busy-but-alive tab read as no-reply.  The `--watch` loop below then budgets a whole
+//   DEAD_MS of accumulated silence (across polls) before it calls the runner dead.
+const TIMEOUT_MS = Number(process.env.RUNNER_ASK_TIMEOUT_MS || (SLUGGISH_MS + 3000))
+const WATCH_MS   = Number(process.env.RUNNER_WATCH_MS || 120000)
+const stamp      = Date.now()
+const cliAddr    = `runcli-${stamp}`   // ephemeral addr — relay LOGS the connect/disconnect; reply is corr-routed
+
+// --live — discover from the RELAY, never from wormhole/Cluster/toc.snap.
+//  A RUNNER_URL on ANOTHER HOST *implies* it, and must: the registry is a file on THIS box describing
+//   the tabs on THIS box's relay.  A different PORT is still this disk (staging :9092 shares /app, so
+//    the same registry describes it), but a different HOST is a different wormhole entirely — and
+//     without this, `runners` against a remote node would confidently list OUR rows and mark every one
+//      of them "✗ not answering", which is an instrument lying rather than declining.
+const localHost = (() => { try { return /^(172\.17\.0\.1|localhost|127\.0\.0\.1|\[::1\]|::1)$/.test(new URL(HTTP).hostname) } catch { return true } })()
+const live  = flags.has('--live') || !localHost
+
+// READ-ONLY verbs — the only ones that may target a role:'player' tab (someone's actual music page).
+//  Module-scope because it now gates TWO doors: explicit --player= targeting (below), and the
+//   auto-court's humdinger veto (a player can answer a to:'runner' broadcast — see the veto).
+const PLAYER_OPS = ['ping', 'probe', 'world', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions']
+
+// ── liveCensus — learn who is on THIS relay, FROM the relay ─────────────────────────────────
+//  clusterRunners() above reads a LOCAL FILE.  Point RUNNER_URL at another host and that file is
+//   still ours: it lists tabs on OUR relay and knows nothing about theirs, so --runner=/--player=/
+//    `runners` were dead against a remote node even though the socket connected fine.  Here the
+//     discovery comes off the wire instead: A TAB THAT ANSWERS IS THE DISCOVERY.
+//
+//  WHY A SWEEP AND NOT ONE BROADCAST.  The relay remembers an addr-less asker BY CORR (relay.ts
+//   `ackBack`) and DELETES that mapping the instant the first runner_ack routes back — so a single
+//    broadcast to:'runner' yields exactly ONE ack however many tabs answered; the rest are dropped
+//     at the relay ("no asking socket (gone)").  Measured on two live tabs: one ack.  The relay has
+//      no directory frame to ask instead — `who` is list-in only (and refuses a socket with no
+//       verified hello), and enumerating `locals` is deliberately NOT built ("the roster stays
+//        unlistable", relay.ts §4a).  BUT the winner ROTATES between rounds (the tab that just
+//         answered is busy for a beat and loses the next race), so repeated broadcasts on FRESH
+//          corrs enumerate the flock by attrition.  Measured over 20 rounds against four tabs:
+//           f5da@0 a67a@1 96d0@3 58517@4 — all four inside five rounds, but arriving in a
+//            stochastic order with idle rounds between them, which is why the stop condition is
+//             `idle` CONSECUTIVE empty rounds and not "one quiet round".
+//  ITS ONE HONEST LIMIT: a tab that is consistently slower than the flock may never win a round, so
+//   a census can UNDER-report.  Measured over four sweeps of a four-tab relay: three listed all four,
+//    and the one that listed three missed the tab that was mid-ghost_compile — i.e. the miss is a
+//     genuinely wedged tab, which is also the tab an addressed ping still finds.  It can MISS a tab;
+//      it never invents one.  Know the prepub already?  `--runner=<pub>` is addressed and never races.
+//
+//  ROLE, HONESTLY.  The ping ack's `role` is the tab's MACHINE role: Lies_runner_ask_recv answers
+//   `Lies_is_runner(w) ? 'runner' : 'editor'`, and a Sounditron IS machine-role runner — both live
+//    tabs here are `role:player` in the registry and both ack 'runner'.  Trusting that field would
+//     put a Book on someone's music page, which is the one thing the --player split exists to
+//      prevent.  So the census asks each discovered tab for `supervisor`, whose `humdinger` is the
+//       "this is an end-user room" fact, and calls a humdinger a player.  `supervisor` is read-only
+//        and already allowed on a player.  A tab that won't say (old code, no answer) is 'unknown'
+//         and is refused for BOTH --runner= and --player= — fail closed, never guess.
+//  The census carries no `client`, so Lies_engage_touch sees only an ephemeral addr: a listing
+//   never touches anyone's engagement lease.
+let censusSeq = 0
+async function liveCensus({ classify = true,
+	rounds = Number(process.env.RUNNER_CENSUS_ROUNDS || 24),      // hard cap on broadcast rounds
+	min    = Number(process.env.RUNNER_CENSUS_MIN   || 8),        // …but never fewer than this many
+	idle   = Number(process.env.RUNNER_CENSUS_IDLE   || 5),       // stop after this many rounds add nobody
+	gapMs  = Number(process.env.RUNNER_CENSUS_GAP_MS || 300) } = {}) {
+	const addr = `runcli-${Date.now()}-cs`
+	const w2   = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(addr)}`)
+	const up = await new Promise((res) => {
+		const t = setTimeout(() => res(false), 5000)
+		w2.on('open', () => { clearTimeout(t); res(true) })
+		w2.on('error', () => { clearTimeout(t); res(false) })
+	})
+	if (!up) { try { w2.close() } catch {}; return null }   // relay unreachable — the caller words it
+	const askOne = (to, theAsk, ms) => new Promise((res) => {
+		const corr = `ra-cs-${Date.now()}-${censusSeq++}`
+		const onMsg = (d) => {
+			let m; try { m = JSON.parse(String(d)) } catch { return }
+			if (m.corr !== corr) return
+			w2.off('message', onMsg); clearTimeout(t); res(m)
+		}
+		const t = setTimeout(() => { w2.off('message', onMsg); res(null) }, ms)
+		w2.on('message', onMsg)
+		w2.send(JSON.stringify({ header: { type: 'runner_ask', from: addr, to, seq: Date.now(), corr }, ask: theAsk, corr }))
+	})
+	const found = new Map()
+	let quiet = 0
+	// `r < min` keeps the sweep going past its first quiet patch: the rotation is stochastic, so an
+	//  early-stopping census under-reports (a 4-tab relay listed 3 twice out of three tries at idle-5
+	//   alone).  A floor of `min` rounds costs ~2s and is the difference between a listing and a guess.
+	for (let r = 0; r < rounds && (r < min || quiet < idle); r++) {
+		const a = await askOne('runner', { op: 'ping' }, 3500)
+		const pub = a?.control === 'runner_ack' ? a.result?.self : null
+		if (pub && !found.has(pub)) { found.set(pub, { pub, ack: a.result ?? {}, role: 'unknown' }); quiet = 0 }
+		else quiet++
+		if (!found.size && r >= 1) break        // two silent rounds ⇒ nobody home; don't burn the cap
+		await new Promise(res => setTimeout(res, gapMs))
+	}
+	if (classify && found.size) {
+		await Promise.all([...found.values()].map(async (f) => {
+			const s = await askOne(f.pub, { op: 'supervisor' }, 8000)
+			const h = s?.control === 'runner_ack' && s.ok !== false ? s.result?.humdinger : undefined
+			f.role = h === true ? 'player'
+				: h === false ? (f.ack.role === 'runner' ? 'runner' : String(f.ack.role ?? 'unknown'))
+				: 'unknown'
+		}))
+	}
+	try { w2.close() } catch {}
+	return [...found.values()]
+}
+// The census, run at most once per invocation (the resolvers and `runners` may both want it).
+//  Says so when --live was IMPLIED rather than asked for, so a remote reader knows which authority
+//   answered them — the wire, not the file they might otherwise assume.
+let censusOnce
+const census = async (opts) => (censusOnce ??= (() => {
+	if (!localHost && !flags.has('--live')) console.error(`⇢ ${HTTP} is another host — discovering off ITS relay (our wormhole/Cluster registry describes this box only)`)
+	return liveCensus(opts)
+})())
 // `runners` — list the Waft:Cluster registry, PROVED (2026-08-09, the owner chasing a dead ★claude row:
 //  "--runner=49dee91d61a9de64 is long gone, are we not culling old hosts from Cluster?").  The registry
 //   is durable BY DESIGN — Lies_runner_roster's GC (LiesLies.svelte ~1713) reaps only ANONYMOUS silent
@@ -168,14 +300,32 @@ if (!op || !OPS.includes(op)) {
 //  Self-contained on purpose: the shared ws/collectAcks machinery is declared BELOW this early-exit
 //   branch (TDZ), and a listing must not court, stash a sticky, or touch anyone's lease — the ping here
 //    carries no `client`, so Lies_engage_touch sees only the ephemeral addr.
+//  `--live` (and a registry that can say nothing — no file, no rows, e.g. a REMOTE relay) skips the
+//   file entirely and lists what the wire says instead; see liveCensus.
 if (op === 'runners') {
-	const rs = clusterRunners()
-	if (!rs.length) { console.error('no runners in wormhole/Cluster/toc.snap (none advertised yet, or the editor never wrote it)'); process.exit(1) }
+	const rs = live ? [] : clusterRunners()
+	if (live || !rs.length) {
+		const found = await census({})
+		if (found == null) { console.error(`✗ relay ${WS_URL}: unreachable — no registry read (--live), so there is nothing to fall back on`); process.exit(1) }
+		if (!found.length) {
+			console.error(`no tab answered a to:'runner' broadcast on ${WS_URL} — nothing is booted there (a runner is ?B=<Book>; a player must be diagnostic-armed to be addressable at all)`)
+			if (!live) console.error('  (and wormhole/Cluster/toc.snap named no runner either)')
+			process.exit(1)
+		}
+		console.error(`⇢ LIVE census off ${WS_URL} — ${found.length} tab(s) answered; wormhole/Cluster/toc.snap was NOT read`)
+		for (const f of found) {
+			const tag = f.role === 'player' ? `  ♪player (someone's music page — --player= to address)`
+				: f.role === 'runner' ? '' : `  ⚠ role UNKNOWN (this tab won't say — refused for --runner=/--player=)`
+			const busy = f.ack?.running?.book ? `  running:${f.ack.running.book}/${f.ack.running.phase}` : ''
+			const lease = f.ack?.engagement?.status === 'active' ? `  lease:${String(f.ack.engagement.client).slice(0, 8)}` : ''
+			console.log(`${f.pub}${f.ack?.favourite_client ? `  ★${String(f.ack.favourite_client).slice(0, 8)}` : ''}${tag}${busy}${lease}  ✓ live`)
+		}
+		process.exit(0)
+	}
 	let alive = null   // null ⇒ relay unreachable (liveness unknown); else the Set of prepubs that acked
 	try {
-		const url  = (process.env.RUNNER_URL || 'http://172.17.0.1:9091').replace(/^http/, 'ws').replace(/\/$/, '') + '/relay'
 		const addr = `runcli-${Date.now()}-ls`
-		const w2   = new WebSocket(`${url}?addr=${encodeURIComponent(addr)}`)
+		const w2   = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(addr)}`)
 		const up   = await new Promise((res) => { const t = setTimeout(() => res(false), 3000); w2.on('open', () => { clearTimeout(t); res(true) }); w2.on('error', () => { clearTimeout(t); res(false) }) })
 		if (up) {
 			// ADDRESSED pings, one per registry row, in parallel — NOT a role broadcast: the court's own
@@ -215,9 +365,28 @@ if (op === 'runners') {
 //  is a PLACEHOLDER the auto-court below (post-connect) resolves to one prepub — the raw role broadcast
 //   never carries a real ask any more (the relay fans it to every tab: the double-dispatch bug).
 let TARGET = 'runner'
+// LIVE resolution — the same selector, answered by the RELAY instead of the local file.  Used when
+//  --live is given, and as an automatic fallback when the registry can say nothing (a remote node's
+//   registry is on ITS disk, not ours).  `want` is the role the census must agree on: a tab that will
+//    not say what it is ('unknown') matches neither, so a silent/old tab is never mistaken for the
+//     other kind.  No id ⇒ the last one found, mirroring the file resolver's "latest".
+async function resolveLive(id, want) {
+	const found = await census({})
+	if (found == null) { console.error(`✗ relay ${WS_URL}: unreachable — cannot resolve --${want}=${id || ''} live`); process.exit(2) }
+	const rs = found.filter(f => f.role === want)
+	const hit = id ? (rs.find(f => f.pub === id) ?? rs.find(f => f.pub.startsWith(id))) : rs[rs.length - 1]
+	if (!hit) {
+		const shy = found.filter(f => f.role === 'unknown').length
+		console.error(`✗ --${want}=${id || '(latest)'}: no live role:'${want}' tab on ${WS_URL} answered${found.length ? ` (${found.length} tab(s) did: ${found.map(f => `${f.pub.slice(0, 8)}=${f.role}`).join(' ')})` : ''}${shy ? ` — ${shy} would not say what they are (old code? ask \`runners --live\`)` : ''}`)
+		process.exit(2)
+	}
+	return hit.pub
+}
 if (runnerSel !== undefined) {
-	const pub = resolveRunner(runnerSel)
-	if (!pub) { console.error(`✗ --runner=${runnerSel || '(latest)'}: no matching runner in wormhole/Cluster/toc.snap — try \`runners\``); process.exit(2) }
+	const pub = live ? await resolveLive(runnerSel, 'runner') : (resolveRunner(runnerSel) ?? await (async () => {
+		console.error(`⇢ --runner=${runnerSel || '(latest)'} not in wormhole/Cluster/toc.snap — asking the relay instead (--live)`)
+		return resolveLive(runnerSel, 'runner')
+	})())
 	TARGET = pub
 }
 // --player=<id> — address a Sounditron (role:'player').  READ-ONLY VERBS ONLY, refused loudly otherwise:
@@ -227,10 +396,14 @@ if (runnerSel !== undefined) {
 //     one-sided reload) and it costs the human a moment of music, not a hijacked tab.
 if (playerSel !== undefined) {
 	if (runnerSel !== undefined) { console.error('✗ pass --runner= or --player=, not both'); process.exit(2) }
-	const PLAYER_OPS = ['ping', 'probe', 'world', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions']
 	if (!PLAYER_OPS.includes(op)) { console.error(`✗ '${op}' is not allowed on a --player (someone's music page). Allowed: ${PLAYER_OPS.join(' ')}`); process.exit(2) }
-	const pub = resolvePlayer(playerSel)
-	if (!pub) { console.error(`✗ --player=${playerSel || '(none given)'}: no matching role:'player' row in wormhole/Cluster/toc.snap — try \`runners\``); process.exit(2) }
+	// EXPLICIT ONLY stays explicit live too: resolveLive(want:'player') matches a tab only when its own
+	//  `supervisor` says humdinger — never on the ping ack's role, which reads 'runner' for a Sounditron.
+	if (!playerSel) { console.error('✗ --player needs an id (no bare form, no "latest player" — picking someone\'s music tab by accident is what this shape prevents)'); process.exit(2) }
+	const pub = live ? await resolveLive(playerSel, 'player') : (resolvePlayer(playerSel) ?? await (async () => {
+		console.error(`⇢ --player=${playerSel} not in wormhole/Cluster/toc.snap — asking the relay instead (--live)`)
+		return resolveLive(playerSel, 'player')
+	})())
 	TARGET = pub
 }
 if (op === 'run' && !arg)  { console.error('run needs a Book: node scripts/runner_ask.mjs run <Book>'); process.exit(2) }
@@ -264,15 +437,8 @@ if (op === 'poke') ask.verb = arg          // allowlisted UI verb (runner-side a
 if (op === 'retain') ask.on = arg === 'off' ? false : true   // keep every step's got_snap, not just the last 5
 if (uid) ask.uid = uid
 
-const HTTP       = process.env.RUNNER_URL || 'http://172.17.0.1:9091'
-const WS_URL     = HTTP.replace(/^http/, 'ws').replace(/\/$/, '') + '/relay'
-// a single request waits just PAST sluggish before giving up — the old 8s was BELOW sluggish
-//  (9s), so a busy-but-alive tab read as no-reply.  The `--watch` loop below then budgets a whole
-//   DEAD_MS of accumulated silence (across polls) before it calls the runner dead.
-const TIMEOUT_MS = Number(process.env.RUNNER_ASK_TIMEOUT_MS || (SLUGGISH_MS + 3000))
-const WATCH_MS   = Number(process.env.RUNNER_WATCH_MS || 120000)
-const stamp      = Date.now()
-const cliAddr    = `runcli-${stamp}`   // ephemeral addr — relay LOGS the connect/disconnect; reply is corr-routed
+// (HTTP / WS_URL / TIMEOUT_MS / WATCH_MS / stamp / cliAddr are declared with the origin block near
+//  the top — the census and the resolvers run BEFORE this point and need them.)
 
 let corrSeq = 0
 // sendAsk — one runner_ask, settled on the FIRST of: a corr-matched runner_ack, a relay `undeliverable`
@@ -331,7 +497,10 @@ if (!opened) { console.error(`✗ relay ${WS_URL}: connect timeout (5s) — is t
 //      used, even when a broadcast-era double-stamp left OUR lease on several tabs) ▸ the runner holding
 //       our lease ▸ for `run` a free one ▸ first to ack — and pin TARGET to its prepub for this whole
 //        invocation (`run --watch` polls included).
-const STICKY_PATH = '/tmp/runner_ask.target'
+//  PER ORIGIN, since RUNNER_URL can now point at another node: a prepub courted on OUR relay means
+//   nothing on theirs, and a cross-node sticky just costs a wasted addressed ping before the court
+//    falls through.  The default origin keeps the historic path, so an existing stash still counts.
+const STICKY_PATH = `/tmp/runner_ask.target${HTTP === 'http://172.17.0.1:9091' ? '' : '.' + HTTP.replace(/[^A-Za-z0-9]+/g, '_')}`
 const eng    = (a) => a.result?.engagement
 const isMine = (a) => eng(a)?.client === CLIENT && eng(a)?.status === 'active' && !eng(a)?.stale
 const isFree = (a) => { const e = eng(a); return !e || e.status !== 'active' || e.stale || e.client === CLIENT }
@@ -345,6 +514,13 @@ const isFree = (a) => { const e = eng(a); return !e || e.status !== 'active' || 
 //   only one that was never read.  Filter on it, and DO NOT fall back to a player when no runner
 //    answers: silence is the correct outcome there.  Putting a Book on a listener's page is not a
 //     degraded success, it is the failure the whole role split exists to prevent.
+//  …AND THE ACK'S `role` IS NOT ENOUGH (2026-08-12).  Lies_runner_ask_recv answers `role` from
+//   `Lies_is_runner(w)`, which is the tab's MACHINE role — and a Sounditron IS machine-role runner
+//    (Auto boots a Big*land room with boot_role 'runner' + humdinger).  Measured: both live tabs on
+//     :9091 are `role:player` in the registry and BOTH ack `role:'runner'`, so this filter shoos
+//      away nobody and the door the comment above declares shut is still open.  The registry knew
+//       the difference and the wire did not — which is precisely the gap a remote node lives in.
+//        The veto below closes it with the one live fact that CAN tell them apart.
 const isRunner = (a) => a.result?.role === 'runner'
 if (TARGET === 'runner') {
 	// 1. STICKY — the prepub the last invocation used (/tmp stash).  Pinged DIRECTLY: the role broadcast
@@ -375,6 +551,34 @@ if (TARGET === 'runner') {
 		}
 	}
 	// still 'runner' ⇒ zero acks — let the real ask surface the usual no-reply/undeliverable error
+	// THE HUMDINGER VETO — the last gate before a non-read op lands on a tab nobody named.  A courted
+	//  tab arrived by ANSWERING a broadcast, and its ack cannot say whether it is a test runner or
+	//   somebody's music page (see isRunner above), so ask the tab itself: `supervisor` carries
+	//    `humdinger`, "this is an end-user room".  Gated by the SAME list that gates explicit --player=
+	//     targeting, so the accidental door and the deliberate one now agree on what a player may take.
+	//  Only a POSITIVE humdinger refuses: a tab that doesn't answer (older code, busy) is left exactly
+	//   as permitted as it is today — this can only ever refuse more than before, never less.
+	//  And a refusal RE-COURTS rather than dead-ending: the broadcast hands back ONE tab (the relay
+	//   spends the corr on the first ack), so "the tab that answered is a music page" says nothing
+	//    about the flock — a real runner may be sitting right beside it, and a stale player sticky
+	//     would otherwise refuse every run forever.  So sweep properly (liveCensus, which classifies)
+	//      and pick a role:'runner' tab; only an all-player relay is a refusal.
+	if (TARGET !== 'runner' && !PLAYER_OPS.includes(op)) {
+		const s = await sendAsk(ws, { op: 'supervisor' }, TARGET, 8000)
+		if (s.control === 'runner_ack' && s.result?.humdinger === true) {
+			console.error(`⇢ courted ${TARGET.slice(0, 8)} is a HUMDINGER (an end-user music room) — not putting '${op}' on it; sweeping ${WS_URL} for a real runner`)
+			const rs = ((await census({})) ?? []).filter(f => f.role === 'runner')
+			const engOf = (f) => f.ack?.engagement
+			const pick = rs.find(f => engOf(f)?.client === CLIENT && engOf(f)?.status === 'active' && !engOf(f)?.stale)
+				?? (op === 'run' ? (rs.find(f => { const e = engOf(f); return !e || e.status !== 'active' || e.stale || e.client === CLIENT }) ?? rs[0]) : rs[0])
+			if (!pick) {
+				console.error(`✗ no role:'runner' tab on ${WS_URL} — every tab that answered is someone's music page.  Boot a runner (?B=<Book>); refusing to put '${op}' on a listener's page.  Read-only on that tab: --player=${TARGET}`)
+				process.exit(3)
+			}
+			TARGET = pick.pub
+			console.error(`⇢ courting ${TARGET.slice(0, 8)} instead — a real runner (the music tab stays untouched)`)
+		}
+	}
 }
 if (TARGET !== 'runner') { try { writeFileSync(STICKY_PATH, TARGET + '\n') } catch { /* stash is best-effort */ } }
 
