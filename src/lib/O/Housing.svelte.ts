@@ -2100,36 +2100,77 @@ export class House extends StorableHousing {
 
         const fsh = A.c.fsh as FileSystemHandler
 
-        // ── if directory is open: expose DL, ensure it's expanded ────────
-        if (fsh.started && fsh.list) {
-            // this is a DL:
-            A.c.DL = fsh.list
-            if (!fsh.list.expanded) {
-                await fsh.list.expand()
-                this.main()
-            }
-            H.top_House().c.disk_gated = false   // a real share is open — drop any FaceSucker gate
-            w.i({ see: `📁 ${fsh.list.name} (${fsh.list.files.length} files)` })
-            return
-        }
-
-        // ── no local share → fall back to the cloud (OPFS seeded from github),
-        //     which is what lets Story run out on the web with no directory picker.
-
-        // Always offer a local directory as an override (idempotent enroll); granting
-        //  one clears A.c.nav so the worker rebuilds WormholeNav(DL) over it.
+        // ── THE WAY BACK IN IS ENROLLED FIRST, ALWAYS (2026-08-13) ─────────────────────────────────
+        //  This block used to sit BELOW the early return, on the "no local share" path — so the ONLY
+        //   enroller of `open_dir` never ran on a tab whose share restored at boot.  Such a tab took the
+        //    early return on its very first tick and spent the rest of its life with no way to open a
+        //     directory at all: no button, and `boot_gate.svelte.ts` (which calls this same action's
+        //      `fn`) with nothing to call.
+        //  That is only cosmetic until `fsh.started` is WRONG, and `started` is a ONE-WAY LATCH:
+        //   FileSystemHandler.start() sets it from the handle merely EXISTING, and the permission is
+        //    queried exactly once, inside restoreDirectoryHandle, at boot.  Revoke or reset the grant on
+        //     a LIVE tab — the browser lets you, from site settings — and nothing re-queries: the tab
+        //      keeps `started === true`, keeps taking the early return, and can never be told otherwise.
+        //       The owner, 2026-08-13: *"I reset|forgot the FSA handler on this tab and it seems not to
+        //        be acquiring another."*  There was nothing left to acquire WITH.
+        //  Enrolling first costs one idempotent particle on a path that already ran every tick, and the
+        //   button is worth having anyway: switching folders is a thing people do, and this is the door.
         const wa = H.oai({ watched: 'actions' })
         if (!(wa.o({ action: 1, role: 'open_dir' }) as TheC[]).length) {
             H.enroll_watched()
             wa.oai({ action: 1, role: 'open_dir' }, {
                 label: 'Open directory', icon: '📂', cls: 'big',
                 fn: async () => {
+                    // ⚠ A STALE `started` IS THE CASE THIS BUTTON NOW HAS TO SURVIVE.  With the latch
+                    //  wrongly true both guards below are skipped and the tap is a silent no-op — the
+                    //   button exists and does nothing, which is worse than no button.  A click IS a
+                    //    user gesture, so this is the one place allowed to ask the browser the question
+                    //     nobody else asks: is this handle still ours?  If not, forget it locally and
+                    //      fall through to the ordinary re-acquire below.
+                    const before = fsh.handle
+                    let recovered = false
+                    if (fsh.started && fsh.handle) {
+                        let held = false
+                        try {
+                            held = (await (fsh.handle as any).queryPermission({ mode: 'readwrite' })) === 'granted'
+                            if (!held) held = (await (fsh.handle as any).requestPermission({ mode: 'readwrite' })) === 'granted'
+                        } catch { held = false }   // a dead handle throws — that is an answer, not an error
+                        if (!held) {
+                            // stop() clears handle, list, file_handles and the `started` latch — but it
+                            //  does NOT delete the stored Dexie row, deliberately: start() below re-tries
+                            //   the remembered handle under this same gesture, and only a handle that is
+                            //    genuinely gone falls through to the picker.
+                            await fsh.stop()
+                            A.c.DL = null; A.c.nav = null
+                        }
+                    }
                     // inside the tap's gesture, a REMEMBERED handle can be re-granted without the
                     //  picker: start() retries restore, and restoreDirectoryHandle's requestPermission
                     //   is allowed to run now (userActivation).  Only a listener with no stored share
                     //    — or a dead handle — sees the picker.
                     if (!fsh.started) await fsh.start()
-                    if (!fsh.started) await fsh.requestDirectoryAccess()
+                    if (fsh.started && before && fsh.handle === before) recovered = true
+                    // ── AND ON A HEALTHY SHARE IT IS THE SWITCH-FOLDERS DOOR ────────────────────────
+                    //  Both guards above are skipped when the share is fine, so this tap used to be a
+                    //   silent no-op that still nulled `nav` and `meander_stood` on the way out — a
+                    //    button that does nothing but wobble, which is worse than no button, and it made
+                    //     this action's own "switching folders is a thing people do" comment false.
+                    //  `recovered` is the one case that must NOT re-ask: a dead grant we just healed
+                    //   silently should end there, not walk the person into a picker they did not want.
+                    //  A CANCELLED PICKER IS A NO-OP, NOT AN ERROR. `requestDirectoryAccess` throws on
+                    //   dismiss; letting that escape would abort before the resets and, worse, leave a
+                    //    half-torn share on the recovery path. Swallow it and fall to the no-change exit.
+                    if (fsh.started && !recovered) {
+                        try { await fsh.requestDirectoryAccess() } catch { /* dismissed */ }
+                    }
+                    if (!fsh.started) {
+                        try { await fsh.requestDirectoryAccess() } catch { /* dismissed */ }
+                    }
+                    // NOTHING CHANGED ⇒ CHANGE NOTHING.  Tapping and dismissing, or re-granting the same
+                    //  folder, must not restart the wander or tear the nav down: those resets exist for a
+                    //   DIFFERENT tree, and firing them on an unchanged one costs a full re-walk and a
+                    //    re-decided app-tree verdict for no reason.
+                    if (fsh.handle === before && fsh.started) return
                     // A GRANT RESTARTS THE WALK COUNT.  `meander_stood` is per-SESSION and the wander
                     //  is about to begin again over a DIFFERENT tree — left alone, the count carries
                     //   the previous nav's hundreds into the new share's first probe read, the shelf
@@ -2167,6 +2208,28 @@ export class House extends StorableHousing {
                 },
             })
         }
+
+        // ── if directory is open: expose DL, ensure it's expanded ────────
+        //  ⚠ THE RETURN MOVED DOWN HERE (2026-08-13), below BOTH action enrollments — it used to sit
+        //   above them, and this whole function's remaining body is the no-share fallback.  `creds_dir`
+        //    had the same defect as `open_dir` and a sharper version of it: its entire purpose is to move
+        //     keys OUT of a music share, so the only tab that ever wants it is one that HAS a share —
+        //      exactly the tab that returned before reaching it.  A control unreachable from the state
+        //       that needs it is not a control.
+        if (fsh.started && fsh.list) {
+            // this is a DL:
+            A.c.DL = fsh.list
+            if (!fsh.list.expanded) {
+                await fsh.list.expand()
+                this.main()
+            }
+            H.top_House().c.disk_gated = false   // a real share is open — drop any FaceSucker gate
+            w.i({ see: `📁 ${fsh.list.name} (${fsh.list.files.length} files)` })
+            return
+        }
+
+        // ── no local share → fall back to the cloud (OPFS seeded from github),
+        //     which is what lets Story run out on the web with no directory picker.
 
         // ── under a boot_role the OPFS-from-github cloud is illegal.  That cloud is a
         //   github-seeded shadow disk — honest for a param-less Auto demo out in the world, but a

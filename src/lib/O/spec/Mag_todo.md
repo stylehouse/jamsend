@@ -1306,5 +1306,117 @@ The human floated it, then blessed it ("pat and say good"): **instead of `%Recor
 
 ---
 
+## 11. A LEDGER IS NOT A MAG — the join key and the thing that must outlive it (2026-08-13)
+
+**Park this here for the doc-swamp drain** (the owner, asking for it to be written down for later).
+ It is one paragraph of principle with a lot of consequence, and it was arrived at by getting it
+  wrong first.
+
+### 11.1 What was noticed
+
+`Heist_catalog_land` is the shared tail of every successful landing, and it does this:
+
+```js
+await this.Heist_newlyadded_note(nav, mardir, rel)   // writes  of:"0 Latin/va - …/01 Loving Tonight.ogg"
+…
+let card = this.Ra_rec_home(own_lib, rec.sc.id)      // ← the HOLDING, three lines later
+card.sc.path = rel                                   // ← the identical string, stored again
+```
+
+The ledger writes a ~100-character path, and the **holding is minted immediately underneath it**,
+ carrying that same path plus artist, title, album, bytes, `body_hash` — and a 16-character `id`.
+  The join key Mag prescribes is *in hand at the moment the ledger declines to use it*.
+
+And the duplication is doubled, because each card carries **both**:
+
+```
+  of:  0 Latin/va - Evolution Of Dub/Vol.6 - …/Disk 4/01 Loving Tonight.ogg
+  dir: 0 Latin/va - Evolution Of Dub/Vol.6 - …/Disk 4
+       └── the same ~70 characters, twice per card, × 14 cards = 28 copies of one folder name
+```
+
+Measured (2026-08-08, the append door's own note): **43,395 B over 177 cards, ~245 B/line.**
+
+### 11.2 The wrong fix, and why it was wrong
+
+The first proposal was `%Landing,dir:<folder>,n:14` — a row per folder with a **count**. The owner
+ killed it in one line: *"don't `just shortens the string`, you have this terrible will to lose
+  data sometimes."* Right. It collapsed 14 per-track facts into one integer and called that tidying.
+
+The saving must come from **not retyping the prefix**, never from dropping a fact. Same total
+ information, fewer bytes — or it is not a saving, it is a deletion.
+
+### 11.3 THE PRINCIPLE — two rules, different questions, both true
+
+This is the part worth keeping.
+
+> **Mag's identity rule — "refer to the holding by `id`" — is a rule about LIVE things.**
+> **A ledger records that something HAPPENED, so it must outlive its subject.**
+
+A `%Card` in a collection points at a `%Record`; if the track leaves, the card is meaningless and
+ should die with it. Dangle-and-die is *correct* there.
+
+A ledger row must not. Delete the track tomorrow and the holding vanishes — a **pure id join would
+ lose "I downloaded this"**, which is one level subtler than the data loss the owner had just caught.
+  So a ledger row wants **both**, and each earns its place:
+
+| field | kind | what it buys | what happens when the holding dies |
+|---|---|---|---|
+| `id:<record id>` | the **live join** (Mag's rule) | artist, title, album, bytes, `body_hash` — always current, never a stale copy | goes dangling, correctly — the row stops being able to *play* |
+| `name:<basename>` | the **durable fact** | ~30 chars; `dir` + `/` + `name` reconstructs the exact path, character for character | survives — the row still says *this landed, here, then* |
+
+Mag-nativity and ledger durability are not in tension. They answer different questions and the row
+ carries an answer to each. **Neither rule generalises to the other's case**, and that — not the
+  byte count — is the reusable lesson.
+
+### 11.4 The shape this argues for
+
+```
+  Landing,dir:0 Latin/va - Evolution Of Dub/Vol.6 - …/Disk 4,at:1786613405
+    Got,id:9f3a2c1e88b04d17,name:01 Loving Tonight.ogg
+    Got,id:4b1d77a0e2c39f56,name:02 Reggae Style.ogg
+    …one per track, still
+```
+
+Every fact retained: `of:` becomes `dir`+`/`+`name`; per-card `dir` becomes the container's, once;
+ `seq` becomes position under the container beside `at`; **and the id join is new.** Off the measured
+  245 B/line a 14-track album goes ~3.4 KB → ~0.8 KB *while carrying more*.
+
+### 11.5 ⚠ WHY IT IS NOT BUILT YET — the append door prices it
+
+`Berth_append` writes each part **standalone**, and `Berth_fold` re-applies parts onto the base with
+ `base.i(row)` — which **creates**, it does not find-or-create. So:
+
+- With `ident:dir` on the part, each append must re-carry the whole album's `%Got` children to
+   supersede correctly — 68 tracks ⇒ 1+2+…+68 rows written. Quadratic per album. Worse than today.
+- Without `ident`, duplicate `%Landing,dir:X` containers accumulate, one per track, each repeating
+   the folder — **zero saving**, plus a reader that must merge them.
+
+**The way through, when it is built:** keep the parts dumb (a part may repeat the folder — parts are
+ small and transient), and make **compaction** (`Berth_save`, every 64 parts) the thing that merges
+  duplicate `%Landing` containers. The 43 KB `toc.snap` is exactly where the duplication hurt, and
+   compaction is exactly where it can be paid off once. The reader must fold duplicate containers
+    anyway, so it is the same code doing the work in both places.
+
+**Not landed 2026-08-13**, deliberately: it rewrites the on-disk ledger of a real collection with
+ 177+ live cards, with no runner available to verify, the night before a production push. What DID
+  land is the additive half — `id:` on the row (§11.3's live join, zero migration risk) — and the
+   removal of `feeling` (§11.6). The reshape is a designed, costed next move, not an open question.
+
+### 11.6 `feeling` is gone — and what that says about vocabulary
+
+`%Probation,…,feeling:fresh|love|drop` was the "first week or two decides" idea. The owner, plainly:
+ *"I never signed off on holding feelings for each track… I'm just looking for the MVP right now."*
+  Checked before cutting: **`feeling` had no user-reachable writer** — the only caller of `Heist_feel`
+   anywhere was `MusuHeist_deny`, a Book step (*"dont care, never heard of it"*). A field the app
+    could never set was being tested, grouped on, mirrored into `%Hauls`, and rendered.
+
+The mainkey went with it. **`%Probation` names the feeling, not the thing** — with feelings gone it
+ asserts a lifecycle that no longer exists. It is now `%Got`, and the reader folds legacy
+  `%Probation` rows in permanently rather than migrating them, because a ledger you rewrite to
+   change your mind about vocabulary is a ledger you can lose.
+
+---
+
 *This is a `_todo`: the arc and the open threads are meant to move. When the shape holds and the
  human has preened §1–§7, promote to `Mag_spec.md` and retire the todo half.*

@@ -217,3 +217,24 @@ test('a capped bag says how many there really are, not how many it kept', async 
     expect(el2.querySelector('.hf-mkv')!.textContent).toBe(':3')
     expect(el2.querySelector('.hf-more')).toBe(null)
 })
+
+test('"new" is now a clock, not an opinion — today is highlighted and last week is not', async () => {
+    const H = await ghost_house()
+    const { bag } = scene(H, [])
+    const now = Math.floor(Date.now() / 1000)
+    // WHY THIS CHANGED (2026-08-13). The highlight read `feeling === 'fresh'`, and `feeling` had no
+    //  user-reachable writer anywhere in the app — so in practice EVERY landed row was highlighted for
+    //   ever, which is indistinguishable from no highlight at all. A row that is always emphasised
+    //    emphasises nothing. The owner cut feelings; a download list's honest "new" is "arrived today",
+    //     which `at` already knows and nobody has to maintain.
+    const today = bag.i({ Haul: 1, dir: 'Today' }); today.sc.name = 'Today'; today.sc.tracks = '4'; today.sc.at = String(now - 3600)
+    const older = bag.i({ Haul: 1, dir: 'Older' }); older.sc.name = 'Older'; older.sc.tracks = '4'; older.sc.at = String(now - 7 * 86400)
+    const el = draw(H, bag)
+
+    const rows = Array.from(el.querySelectorAll('.hf-row')) as HTMLElement[]
+    const fresh = rows.filter((r) => r.classList.contains('fresh'))
+    expect(rows.length).toBe(2)
+    // exactly one, and it is the recent one — not both (the old always-on bug) and not neither.
+    expect(fresh.length).toBe(1)
+    expect(fresh[0].textContent).toContain('Today')
+})

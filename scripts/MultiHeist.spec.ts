@@ -397,15 +397,18 @@ test('a note handed an open ledger does NOT re-open it — the read is the cost,
     expect(opens).toBe(0)
     // …and it noted into the ledger it was GIVEN, not into one of its own — otherwise the hoist would be
     //  a silent no-op that writes the card somewhere nobody reads.
-    expect(waft.o({ Probation: 1, of: 'Artist/Album/1.flac' }).length).toBe(1)
+    // ⚠ `%Got` was `%Probation` until 2026-08-13 (Mag_todo §11.6): the mainkey named the FEELING, and the
+    //  feelings are gone. The claim this test makes — no re-open, and the card lands on the handed waft —
+    //   is untouched by the rename; only the shape it looks for moved. Newlyadded.spec.ts owns the rename
+    //    itself, including the legacy rows this one has none of.
+    expect(waft.o({ Got: 1, of: 'Artist/Album/1.flac' }).length).toBe(1)
     expect(appended.length).toBe(1)
-    expect(appended[0].sc.feeling).toBe('fresh')
     expect(appended[0].sc.dir).toBe('Artist/Album')
 
     // the idempotent guard still holds ACROSS the shared waft — which is the whole reason one ledger can
     //  serve a whole loop. If it did not, the backfill would mint a duplicate per already-noted track.
     await H.Heist_newlyadded_note(nav, 'mar', 'Artist/Album/1.flac', waft)
-    expect(waft.o({ Probation: 1, of: 'Artist/Album/1.flac' }).length).toBe(1)
+    expect(waft.o({ Got: 1, of: 'Artist/Album/1.flac' }).length).toBe(1)
     expect(appended.length).toBe(1)
     expect(opens).toBe(0)
 

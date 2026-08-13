@@ -5,7 +5,7 @@
     // WHERE THE DATA COMES FROM, AND WHY THERE IS NO SECOND LEDGER.  Heist_todo's vocabulary table
     //  reserves `%Haul` for "the What Heisted ledger" and states *"The ledger is not built yet"* — which
     //   is stale.  The newlyadded log has recorded every landed file durably for weeks (`of` the path,
-    //    `dir` the folder, `at` when it first landed, `feeling` its probation), and
+    //    `dir` the folder, `at` when it first landed, `id` the Mag join to the holding), and
     //     `Heist_newlyadded_grouped` already folds it per ALBUM, which is the unit this list wants.  What
     //      was missing was a surface, not a store.  `Heist_haul_look` mirrors that ledger onto a dontSnap
     //       `%Hauls` bag on a slow beat; this face reads the bag.  Two stores for one fact would be the
@@ -75,7 +75,12 @@
             tracks: +(r.sc.tracks || 0),
             at: +(r.sc.at || 0),
             when: ago(+(r.sc.at || 0)),
-            fresh: String(r.sc.feeling || '') === 'fresh',
+            // FRESH IS NOW A CLOCK, NOT AN OPINION (2026-08-13).  It read `feeling === 'fresh'` — a field
+            //  the app had no writer for, so in practice EVERY landed row was green forever, which is the
+            //   same as no highlight at all.  The owner cut feelings (*"I never signed off on holding
+            //    feelings for each track"*).  A download list's honest "new" is "arrived today", which the
+            //     ledger's `at` already knows and nobody has to maintain.
+            fresh: +(r.sc.at || 0) >= Math.floor(Date.now() / 1000) - 86400,
         }))
         let tracks = 0
         for (const a of albums) tracks += a.tracks
@@ -297,8 +302,8 @@
        gain of a few characters — not a trade to make blind. */
     .hf-above { color: rgba(150, 170, 200, 0.55); }
     .hf-when { font-size: 9px; color: rgba(150, 170, 200, 0.6); white-space: nowrap; }
-    /* still on probation — it landed but you have not said whether you want it.  Quiet: this is a
-       tint, not an alarm; the probation verdict UI is a separate thread the owner has parked. */
+    /* it landed today.  Quiet: this is a tint, not an alarm.  (Was "still on probation" while the row
+       carried a `feeling`; that field had no writer and is gone — see the `fresh` derive above.) */
     .hf-row.fresh .hf-n { color: #6fd08a; }
     /* the overflow line starts where the NAMES start (the count column + its gap), not at a guessed
        indent — it is the twelfth row's continuation, so it reads as one column with them. */

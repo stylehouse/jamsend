@@ -45,11 +45,11 @@ Snap:H
           mag_pub:held,cards=9
           see:Uno published its whole collection as a magazine — every landed track rode in as a record keeping its own path and hash
           reached:logs
-          newlyadded_shape,uno=3,duo=6,unsourced
-          see:newlyadded logs each arrival with a fresh feeling — and never a word about the source
+          newlyadded_shape,uno=3,duo=6,unsourced,joined
+          see:newlyadded logs each arrival joined to the holding it landed — and never a word about the source
           reached:deny
-          denied,gone,carded_off,log_dropped
-          see:a denied track left the collection — the file gone and the log honest about the drop
+          denied,gone,carded_off,log_kept,join_dangled
+          see:a scrubbed track left the collection — the file gone and the catalog card retired while the ledger still says it landed
           mag_pub:recast,cards=8
           see:a republish recast the real magazine in step with the collection — the denied track left the magazine too and no orphan stayed behind
           reached:flat

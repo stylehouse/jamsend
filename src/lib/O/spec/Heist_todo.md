@@ -37,12 +37,22 @@ Fixed by moving the blocker rather than the blocked:
 
 ## 0. Next move (read first)
 
-### START HERE — the state of it as of 2026-08-13, late
+### START HERE — the state of it as of 2026-08-13, overnight
 
-**Nothing is verified on a live runner.** Every change below is unit-tested and compiled; none of it has
+**⇒ UPDATED, and the sentence below is no longer true.** A runner came back late (idle, advertising, so
+ a real runner tab and not a humdinger) and **MusuHeist ran GREEN, 22/22, `ok_pct 1.0`, caveat 12 —
+  exactly its documented baseline**, three runs, the third to prove the caveat count had settled. So the
+   landing path, the filing, the byte-faithful read-back, the manifest, the magazine recast AND the
+    2026-08-13 ledger work are all seen working on a live runner. `wormhole/Story/MusuHeist/017–022.snap`
+     were re-recorded through `runner_ask accept` (which took exactly the 6 red steps, not the caveats).
+
+~~**Nothing is verified on a live runner.** Every change below is unit-tested and compiled; none of it has
  been seen working. The owner's tabs went down at the end of the session and no Book has been run since
-  the morning. **The first move of the next session is to look at it, not to write anything.** Specifically:
-   open a heist, open a second one while the first runs, and check the Haul cell lists both and opens each.
+  the morning.~~ **What is STILL unseen is the part no Book can reach: the UI.** A Book has no pointer.
+   So the first move remains *look at it*: open a heist, open a second one while the first runs, and check
+    the Haul cell lists both and opens each. And the ledger's legacy-row path (a real collection with
+     `%Probation` rows in it) is unit-tested only — a Book sweeps its marrauding root, so it never meets
+      one; `scripts/Newlyadded.spec.ts` is the only thing that has ever exercised it.
 
 **What changed about how this can be checked, and it is the session's most reusable finding.** "No browser
  in the claude container" had been read for weeks as "no face can be tested". That was never true — a

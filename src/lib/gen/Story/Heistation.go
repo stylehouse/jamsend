@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '319fd12ab7541232~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '13833d8862172583~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -459,23 +459,36 @@ async MusuHeist_flow(w) {
     return true
 
 },
-// the probation ledger read back: every %Probation card carries a real feeling + a numbered arrival, and
-//  NEVER a source — neither prepub appears anywhere in either collection's cards.  Shape breaches stamp
+// the download ledger read back: every %Got card carries a numbered arrival and a Mag join that RESOLVES,
+//  and NEVER a source — neither prepub appears anywhere in either collection's cards.  Shape breaches stamp
 //   loudly (in %testing) instead of passing silently.  (Mag-native rebuild 2026-07-30 — the human: "this
 //    music/newlyadded thing is supposed to be a Mag… I want it coded nicer, with Mag nativity where
-//     possible" — was a hand-rolled text line before, now Berth-persisted %Probation,of: cards.)
+//     possible" — was a hand-rolled text line before, now Berth-persisted `of:` cards.)
+//  ⚠ WAS A FEELINGS CHECK (2026-08-13).  It asserted `feeling ∈ {fresh,love,drop}` — a field the app had no
+//   writer for, so the assertion could only ever have caught this Book's own `Heist_feel` calls.  Feelings
+//    are gone; what replaces the check is `joined`, and it is a much better one because it tests something
+//     the PRODUCT does: `id` is the Mag join stamped by Heist_catalog_land, and it must resolve to the very
+//      holding whose `path` is this row's `of`.  Two independent facts agreeing is a real gate; a
+//       vocabulary check on a dead field was not.
 async MusuHeist_logs(w) {
     this.MusuHeist_note(w, { reached: 'logs' })
-    let FEELINGS = { fresh: 1, love: 1, drop: 1 }
     let clean = 1
+    let joined = 1
     let counts = {}
     for (const side of [{ nick: 'uno', mar: w.c.mar_uno, own: w.c.uno_lib }, { nick: 'duo', mar: w.c.mar_duo, own: w.c.duo_lib }]) {
         let cards = await this.Heist_newlyadded_list(w.c.nav, side.mar)
         counts[side.nick] = cards.length
         for (const card of cards) {
             let entry = String(card.sc.of || '')
-            if (!FEELINGS[card.sc.feeling]) clean = 0
             if (!(+card.sc.seq > 0)) clean = 0
+            // the Mag join, both directions: the row names an id, that id is a real holding, and that
+            //  holding sits at exactly this row's path.  An id that resolves to a DIFFERENT path is the
+            //   failure worth catching — a join key stamped off the wrong record would look fine until
+            //    something followed it.
+            let by_id = this.Ra_recs(side.own).find((r) => String(r.sc.id || '') === String(card.sc.id || ''))
+            if (!card.sc.id) joined = 0
+            if (card.sc.id && !by_id) joined = 0
+            if (by_id && String(by_id.sc.path || '') !== entry) joined = 0
             if (entry.includes(w.c.uno_pre) || entry.includes(w.c.duo_pre)) clean = 0
             // POSITIVE provenance guard (audit #8): the old check only forbade the two run-specific prepub
             //  strings — a leak in ANY other form (a nick, a source path, an appended `from:` field) passed.
@@ -487,20 +500,28 @@ async MusuHeist_logs(w) {
     }
     let row = { newlyadded_shape: 1, uno: counts.uno, duo: counts.duo }
     if (clean) row.unsourced = 1
+    if (joined) row.joined = 1
     this.MusuHeist_note(w, row)
 
 },
-// the probation verdict: Uno LOVES its first arrival (graduates in place) and DROPS the second — deny is
-//  delete-from-the-collection: the file leaves the disk (DESIGN), the catalog card retires, the log line
-//   stays honest about the drop.  The verdict observation goes to %testing.
+// TAKING ONE BACK OFF THE DISK: Uno scrubs its second arrival — the file leaves the disk (DESIGN), the
+//  catalog card retires, and THE LEDGER ROW STAYS.  The verdict observation goes to %testing.
+//  ⚠ WAS `Heist_feel(…, 'love') / (…, 'drop')` (2026-08-13).  That verb is deleted — it had no writer
+//   outside this step, so this Book was the feature's only user (the owner: *"MusuHeist_deny dont care,
+//    never heard of it"*).  The STEP survives, rewired to `Heist_scrub_one`, for two reasons: scrubbing is
+//     the surviving destructive capability and is genuinely reachable (Heist_keep_cancel calls it), and the
+//      v2-recast assertion further down NEEDS a track to have left the collection or it proves nothing.
+//  AND THE ASSERTION GOT BETTER.  It used to check the ledger row flipped to `drop` — a field checking
+//   itself.  Now it checks the row is STILL THERE with its path intact after the file is gone, which is
+//    exactly the durability rule the ledger exists for (Mag_todo §11.3): the id join may dangle, the
+//     record that it happened may not.  Same step, and now it tests a principle instead of a spelling.
 async MusuHeist_deny(w) {
     this.MusuHeist_note(w, { reached: 'deny' })
     let cards = await this.Heist_newlyadded_list(w.c.nav, w.c.mar_uno)
     if (cards.length < 2) { this.MusuHeist_note(w, { deny_starved: 1 }); return }
-    let love = String(cards[0].sc.of || '')
     let drop = String(cards[1].sc.of || '')
-    await this.Heist_feel(w, w.c.nav, w.c.uno_lib, w.c.mar_uno, love, 'love')
-    await this.Heist_feel(w, w.c.nav, w.c.uno_lib, w.c.mar_uno, drop, 'drop')
+    let had_id = String(cards[1].sc.id || '')
+    await this.Heist_scrub_one(w.c.nav, w.c.uno_lib, w.c.mar_uno, drop)
     let cut = drop.split('/')
     let filename = cut.pop()
     let raw = null
@@ -510,11 +531,13 @@ async MusuHeist_deny(w) {
     let row = { denied: 1 }
     if (!raw || !raw.byteLength) row.gone = 1
     if (!this.Ra_recs(w.c.uno_lib).find((r) => r.sc.path === drop)) row.carded_off = 1
-    // the log stayed HONEST about the drop — the dropped entry's probation card now reads `drop`, not a
-    //  lie left behind as `fresh`.  Without this the sentence's "log honest" half rode on nothing.
+    // THE LEDGER OUTLIVES ITS SUBJECT — re-read off disk, not off the live tree, so this is the durable
+    //  fact and not a leftover in memory.  The row must still name the same path; its `id` may now point
+    //   at nothing, and that is the design, not a leak.
     let post = await this.Heist_newlyadded_list(w.c.nav, w.c.mar_uno)
     let dcard = post.find((c) => String(c.sc.of || '') === drop)
-    if (dcard && dcard.sc.feeling === 'drop') row.log_dropped = 1
+    if (dcard) row.log_kept = 1
+    if (dcard && had_id && !this.Ra_recs(w.c.uno_lib).find((r) => String(r.sc.id || '') === had_id)) row.join_dangled = 1
     this.MusuHeist_note(w, row)
 
 },
@@ -658,12 +681,13 @@ MusuHeist_witness(w) {
     //  (3 originals + the 6 it heisted), and Uno already holds all 9 identities: the strongest dedup read.
     let hr = T.o({ heisted: 'reuno' })[0]
     if (hr && +(hr.sc.skipped || 0) === 9 && !hr.sc.landed && !T.oa({ see: 'a second heist found nothing new — the catalog identity of every offer was already held' })) this.MusuHeist_note(w, { see: 'a second heist found nothing new — the catalog identity of every offer was already held' })
-    // the probation ledger: every arrival logged fresh and NEVER a source in the file.
+    // the download ledger: every arrival numbered and joined to its holding — and NEVER a source in the file.
     let ns = T.o({ newlyadded_shape: 1 })[0]
-    if (ns && ns.sc.unsourced && +(ns.sc.uno || 0) === 3 && +(ns.sc.duo || 0) === 6 && !T.oa({ see: 'newlyadded logs each arrival with a fresh feeling — and never a word about the source' })) this.MusuHeist_note(w, { see: 'newlyadded logs each arrival with a fresh feeling — and never a word about the source' })
-    // deny = delete from the collection: the file left the disk and the catalog with the log honest.
+    if (ns && ns.sc.unsourced && ns.sc.joined && +(ns.sc.uno || 0) === 3 && +(ns.sc.duo || 0) === 6 && !T.oa({ see: 'newlyadded logs each arrival joined to the holding it landed — and never a word about the source' })) this.MusuHeist_note(w, { see: 'newlyadded logs each arrival joined to the holding it landed — and never a word about the source' })
+    // scrub = delete from the collection: the file left the disk and the catalog, and the ledger did NOT
+    //  leave with it — the join dangles and the record of the arrival stands (Mag_todo §11.3).
     let dn = T.o({ denied: 1 })[0]
-    if (dn && dn.sc.gone && dn.sc.carded_off && dn.sc.log_dropped && !T.oa({ see: 'a denied track left the collection — the file gone and the log honest about the drop' })) this.MusuHeist_note(w, { see: 'a denied track left the collection — the file gone and the log honest about the drop' })
+    if (dn && dn.sc.gone && dn.sc.carded_off && dn.sc.log_kept && dn.sc.join_dangled && !T.oa({ see: 'a scrubbed track left the collection — the file gone and the catalog card retired while the ledger still says it landed' })) this.MusuHeist_note(w, { see: 'a scrubbed track left the collection — the file gone and the catalog card retired while the ledger still says it landed' })
     // the manifest named every verdict BEFORE a byte moved.  Two poles prove it: the uno heist's manifest
     //  read all-new (fresh=3, nothing held — the collection was empty), and the reuno heist's read all-held
     //   (holds=9, nothing fresh — every identity was already in the collection).  Both poles must hold, so a

@@ -45,8 +45,8 @@ Snap:H
           mag_pub:held,cards=9
           see:Uno published its whole collection as a magazine — every landed track rode in as a record keeping its own path and hash
           reached:logs
-          newlyadded_shape,uno=3,duo=6,unsourced
-          see:newlyadded logs each arrival with a fresh feeling — and never a word about the source
+          newlyadded_shape,uno=3,duo=6,unsourced,joined
+          see:newlyadded logs each arrival joined to the holding it landed — and never a word about the source
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno

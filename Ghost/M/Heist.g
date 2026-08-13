@@ -912,8 +912,23 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
 //   fresh-pull success path and `Heist_resume_sync`'s accept path (a file already correctly on disk from a
 //    prior attempt earns the exact same bookkeeping as one just streamed — the human 2026-07-30 "a resuming
 //     heist must happen").
-async Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size):
-    await this.Heist_newlyadded_note(nav, mardir, rel)
+async Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size, held):
+    // ⚠ `rec.sc.id || rec.sc.ref` — THE FALLBACK IS NOT DEFENSIVE, IT IS THE PICK-ADOPTION PATH.
+    //  `Heist_resume_sync` adopts the %Pick ITSELF as `rec` when no mirror record survived the reload
+    //   (`if ((!rec || !bytes) && pick.sc.path && pick.sc.bytes) rec = pick`), and a pick carries `ref:`,
+    //    never `id:`.  So `rec.sc.id` was undefined here — and `Ra_rec_home(own_lib, undefined)` mints
+    //     `{Record:1, id:undefined}` INTO THE COLLECTION, the exact `{"undef":["id"]}` mint bug CLAUDE.md
+    //      names, on a holding rather than a log line.  A ledger guard alone (2026-08-13) closed one exit
+    //       of this hole and left the other; one variable closes both, because `ref` IS the content-id —
+    //        `Heist_resume_sync` already looks records up with `Ra_rec_find(mir, {Record:1, id: ref})`.
+    //  Read, never written back: the pick is persisted state and stamping it here would rewrite the keep.
+    let rid = rec.sc.id || rec.sc.ref
+    // the Mag join, in hand RIGHT HERE — the holding it identifies is minted a few lines down, out of the
+    //  same id, with the same `rel` on it.  The ledger used to store a ~100-char path where a 16-char id
+    //   was already sitting on the stack; now it carries both, because the id is the live join and the
+    //    path is the fact that must outlive the holding (Mag_todo §11.3).
+    //  `held` (optional) — an already-open ledger, for a caller in a LOOP.  See Heist_newlyadded_note.
+    await this.Heist_newlyadded_note(nav, mardir, rel, held || null, rid)
     // the landed card at ITS OWN path (never the source's) — sc.path IS `rel`, the same string the newlyadded
     //  log carries and the disk holds, so the next heist's dedup + the read-back monitor find it exactly.  Album
     //   rides across when the meta had one, so a re-census of this collection reproduces the same shelf.
@@ -3672,8 +3687,19 @@ async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir, keep):
         let hash = full ? await this.Heist_hash(new Uint8Array(full.buffer)) : null
         if (hash !== last.rec.sc.body_hash) candidates.pop()
     }
+    // ONE LEDGER OPEN FOR THE WHOLE ACCEPT LOOP (2026-08-14 review).  The hoist was applied to the
+    //  BACKFILL arm below and not to this one, though this is the arm with the loop: N size-matched
+    //   candidates meant N full Berth_opens — toc plus every part, re-read and re-deWafted per track, on
+    //    one beat, on reload.  That is the exact shape Heist_newlyadded_note's own header calls
+    //     "quadratic, on reload, silently", and its lesson — idempotence is about what a repeat WRITES,
+    //      this cost is entirely in the READ that precedes the decision not to write.  Best-effort: a
+    //       failed open leaves it null and each land opens its own, exactly as before.
+    //  NAMED `acceptwaft`, not `nawaft`: the backfill arm further down already holds a `nawaft` in THIS
+    //   same function scope, and a second `let nawaft` is a hard parse error in the generated .go.
+    let acceptwaft = null
+    try { acceptwaft = await this.Heist_newlyadded_waft(nav, mardir) } catch (er) { acceptwaft = null }
     for (const c of candidates) {
-        await this.Heist_catalog_land(nav, mardir, job, own_lib, mir, c.rec, c.rel, c.size)
+        await this.Heist_catalog_land(nav, mardir, job, own_lib, mir, c.rec, c.rel, c.size, acceptwaft)
         c.pick.sc.landed = 1
         c.pick.sc.landed_at = c.rel   // what is on disk, so a cancel can take it back
         c.pick.bump()
@@ -3899,19 +3925,53 @@ async Heist_keep_reset_all(w):
     return keeps.length
 //#endregion
 
-//#region newlyadded — probation as metadata: the log that shuffles new music into the listening diet
-// A %Probation,of:<path> per arrival — MANY:1 (many probation events can exist for one track path over
-//  its lifetime: love, drop, then a later re-download starts a fresh probation), the project's own
-//   referring-particle rule for that shape (an `of:` pointer, never a second mainkey wearing the
-//    holding's shape).  Persisted the SAME way as every other Pier document — Berth's Waft/enWaft/
-//     toc.snap (the human 2026-07-30: "it's got to be snap|enWaft… you can't just make up formats" —
-//      the old shape was a hand-rolled `<seq> <feeling> <category/filename…>` text line, pre-existing
-//       from 2026-07-12, not this session's doing, but real all the same).  Collection-scoped, no
-//        prepub — many friends' heists land in ONE shared newlyadded, never split by who gave what
-//         (the same "never a source" rule the old text log kept).  Feelings start 'fresh'; the first
-//          week or two decides — grow to love it (→ the koha list) or drop it completely.  seq is a
-//           per-arrival ordinal, not a wall clock — the log orders arrivals without smuggling a
-//            timestamp a fixture would churn on.
+//#region newlyadded — the download ledger: what landed, where it went, and when
+// A %Got,of:<path> — ONE ROW PER PATH, for the life of the collection.  It wears an `of:` pointer
+//  because it REFERS to something rather than being it (the project's referring-particle rule: never a
+//   second mainkey wearing the holding's shape), not because many rows share a path.
+//  ⚠ THIS HEADER SAID "MANY:1 — a scrub, then a later re-download, is a second arrival" UNTIL
+//   2026-08-14, AND THE CODE HAD STOPPED AGREEING.  That was true while the guard was qualified by
+//    `feeling:'fresh'`: a 'drop'd path coming back was genuinely a new probation. Feelings went
+//     (2026-08-13) and the guard became an unqualified "have we logged this path", so a re-landing is
+//      now a REPLAY, not an arrival — it returns before stamping anything.  A doc comment describing
+//       behaviour the code forbids is worse than no comment, because it is the thing a reader trusts
+//        instead of reading.  Consequence worth knowing and deliberate: `at` stays "when this FIRST
+//         landed" (which is the only reading a download list wants), so a scrubbed-and-re-heisted album
+//          does not re-surface as today's news in HaulFace.  If that ever needs to change, change it
+//           HERE and say so, rather than by loosening the guard and getting duplicate rows for free.
+//  Persisted the SAME way as every other Pier document — Berth's Waft/enWaft/toc.snap
+//     (the human 2026-07-30: "it's got to be snap|enWaft… you can't just make up formats" — the old
+//      shape was a hand-rolled `<seq> <feeling> <category/filename…>` text line, pre-existing from
+//       2026-07-12, not this session's doing, but real all the same).  Collection-scoped, no prepub —
+//        many friends' heists land in ONE shared newlyadded, never split by who gave what (the same
+//         "never a source" rule the old text log kept).  seq is a per-arrival ordinal, not a wall
+//          clock — the log orders arrivals without smuggling a timestamp a fixture would churn on.
+//
+// ── WAS %Probation, AND WAS ABOUT FEELINGS (2026-08-13) ──────────────────────────────────────────
+// The row carried `feeling:fresh|love|drop` — "the first week or two decides".  The owner:
+//  *"I never signed off on holding feelings for each track… I'm just looking for the MVP right now,
+//   no ongoing nice place to enjoy music beyond working out how to glue what you immediately like
+//    into your collection"*.  Checked before cutting, not assumed: `feeling` had **no user-reachable
+//     writer** — the only caller of `Heist_feel` anywhere in the tree was `MusuHeist_deny`, a Book
+//      step.  A field the app could never set was being asserted on, grouped by, mirrored into
+//       `%Hauls` and rendered.
+//  The MAINKEY went with it, because %Probation names the *feeling*, not the thing: with feelings
+//   gone it asserts a lifecycle that no longer exists.  `%Got` is what it always was.
+//  ⚠ THE READER FOLDS LEGACY %Probation ROWS IN, PERMANENTLY — see Heist_newlyadded_list.  There are
+//   177+ real cards on the owner's disk under the old mainkey and a ledger you REWRITE to change your
+//    mind about vocabulary is a ledger you can lose.  Read both, write one; the cost is one extra
+//     o() per read, forever, and that is the correct price.
+//
+// ── THE MAG JOIN (2026-08-13, Mag_todo §11) ─────────────────────────────────────────────────────
+// `id:` is the landed %Record's id — the same 16-char content-id the holding is keyed by in the
+//  collection, which `Heist_catalog_land` has in hand on the line AFTER it calls this.  It is the
+//   LIVE join: while the holding exists, artist/title/album/bytes/body_hash are reachable through it
+//    and always current, never a stale copy.  `of` stays because it is the DURABLE fact — delete the
+//     track and the id dangles (correctly), but "this landed, here, then" must survive its subject.
+//      A ledger is not a Mag: Mag's refer-by-id rule is about LIVE things, and both rules are right
+//       about their own question.  Mag_todo §11.3 is the argument; do not re-derive it.
+//  OPTIONAL by signature and by intent: a caller without a record in hand (Heist_resume_sync's
+//   backfill, replaying paths off disk) still writes a truthful row, just an unjoined one.
 async Heist_newlyadded_waft(nav, mardir):
     return await this.Berth_open(nav, mardir, '', 'Newlyadded')
 
@@ -3927,7 +3987,7 @@ async Heist_newlyadded_waft(nav, mardir):
 //  Passing the waft rather than caching it on `.c` deliberately: a cache would have to guess a TTL and
 //   would widen the window in which ANOTHER tab appends a part we do not know about and our next append
 //    overwrites it.  A hoisted open is scoped to exactly the loop that needs it and adds no such window.
-async Heist_newlyadded_note(nav, mardir, entry, held):
+async Heist_newlyadded_note(nav, mardir, entry, held, id):
     // THE LEDGER MOVED — say so, so nothing has to POLL to find out (2026-08-13).  `Heist_haul_look`
     //  reads this whole waft off disk to build the What-Heisted list; without a tell it would have to
     //   re-read on a timer for ever, on a collection that changes a few times an hour at most.  One
@@ -3937,15 +3997,37 @@ async Heist_newlyadded_note(nav, mardir, entry, held):
     let MHn = this.top_House ? this.top_House() : null
     if (MHn) MHn.c.newly_seq = +(MHn.c.newly_seq || 0) + 1
     let waft = held || await this.Heist_newlyadded_waft(nav, mardir)
-    // IDEMPOTENT-APPEND (the human 2026-07-30, spotting the same track logged 'fresh' seven times over
-    //  as many reloads): a still-'fresh' card for this exact path is a REPLAY of Heist_resume_sync's
-    //   accept path re-verifying an already-landed pick, never a new arrival — skip.  A 'love'd or
-    //    'drop'd path reappearing (a re-download after a drop) IS new — mints a fresh card.  Belt-and-
-    //     suspenders on top of the real fix (Heist_keep_persist now carries `landed` through a reload).
-    if (waft.o({ Probation: 1, of: entry, feeling: 'fresh' })[0]) return
-    let card = waft.i({ Probation: 1, of: entry, seq: String(waft.o({ Probation: 1 }).length + 1) })
+    // IDEMPOTENT-APPEND (the human 2026-07-30, spotting the same track logged seven times over as many
+    //  reloads): a card for this exact path is a REPLAY of Heist_resume_sync's accept path re-verifying
+    //   an already-landed pick, never a new arrival — skip.  Belt-and-suspenders on top of the real fix
+    //    (Heist_keep_persist now carries `landed` through a reload).
+    //  ⚠ THE LEGACY HALF IS LOAD-BEARING, not tidiness.  Without the %Probation arm every one of the 177+
+    //   cards already on the owner's disk would be re-logged as a %Got the first time its path came past
+    //    again — a rename silently doubling the ledger.  Was `feeling:'fresh'`-qualified before, because
+    //     a 'drop'd path re-downloaded was a genuinely new probation; with feelings gone there is no such
+    //      distinction and the guard is simply "have we already logged this path".
+    // …AND A REPLAY IS THE ONE CHANCE TO HEAL AN UNJOINED ROW (2026-08-14 review).  Every legacy
+    //  %Probation row predates `id:` entirely, and a %Got row written by a caller with no record in hand
+    //   (the resume backfill) has none either.  Returning flat means such a row can NEVER gain the Mag
+    //    join — it would sit unjoinable for the life of the collection while the very landing that could
+    //     supply the id walks past it.  So: same row, no duplicate, no `at` disturbed (that still means
+    //      "when this FIRST landed"), just the missing join filled in — and appended so it reaches disk,
+    //       keyed by `of` so the fold supersedes rather than adding a line.
+    let seen = waft.o({ Got: 1, of: entry })[0] || waft.o({ Probation: 1, of: entry })[0]
+    if (seen) {
+        if (id && !seen.sc.id) {
+            seen.sc.id = String(id)
+            seen.bump()
+            await this.Berth_append(nav, waft, [seen], 'of')
+        }
+        return
+    }
+    let card = waft.i({ Got: 1, of: entry, seq: String(this.Heist_newlyadded_rows(waft).length + 1) })
     card.c.up = waft
-    card.sc.feeling = 'fresh'
+    // the Mag join — see this region's header.  Guarded, never stamped blind: `i({id: rec.sc.id})` on a
+    //  record without one writes `undefined` into sc and the encoder brands the line `{"undef":["id"]}`,
+    //   an honest marker of a sloppy mint (CLAUDE.md's rule; an undef in a snap is a MINT bug).
+    if (id) card.sc.id = String(id)
     // WHEN IT LANDED (the owner 2026-08-11: *"we want to keep list of things we downloaded… just the
     //  destination directory and when, not who it came from"*).  The other two thirds of that ledger
     //   already existed — `of` is the landed path and `dir` (below) is the folder it went into — and the
@@ -3965,7 +4047,7 @@ async Heist_newlyadded_note(nav, mardir, entry, held):
     card.sc.at = String(Math.floor(Date.now() / 1000))
     // ALBUM GROUPING (the human — newlyadded should read per-album when a whole album landed, per-track
     //  only for a genuine loose file): stays PER-FILE here on purpose — `of:` is still the one exact path
-    //   Heist_feel's drop deletes, so that destructive path is untouched.  `dir` just tags which folder
+    //   Heist_scrub_one deletes, so that destructive path is untouched.  `dir` just tags which folder
     //    this file landed under (empty = loose, straight under mardir); Heist_newlyadded_grouped folds
     //     same-dir cards together for a reader/UI, without changing what a single card mints or deletes.
     let dirpart = entry.split('/'); dirpart.pop()
@@ -3976,31 +4058,49 @@ async Heist_newlyadded_note(nav, mardir, entry, held):
     //   supersedes rather than duplicating.
     await this.Berth_append(nav, waft, [card], 'of')
 
-// Heist_newlyadded_list — every probation card, oldest arrival first (seq is stamped in mint order
-//  already, but o() promises no ordering — sort explicitly so a reader can trust arrival order).
+// Heist_newlyadded_rows — BOTH mainkeys, unsorted: the live `%Got` shape and the legacy `%Probation`
+//  cards written before 2026-08-13.  One place, so the rename has exactly one seam and the writer's
+//   idempotence guard, the reader and the seq counter can never disagree about what "already logged"
+//    means.  Sync, and takes the open waft: every caller here already holds one, and opening is not free
+//     ([[a-read-helper-inherits-creation]] — this mints nothing, it only asks).
+Heist_newlyadded_rows(waft):
+    if (!waft) return []
+    return waft.o({ Got: 1 }).concat(waft.o({ Probation: 1 }))
+
+// Heist_newlyadded_list — every arrival card, oldest first (seq is stamped in mint order already, but
+//  o() promises no ordering — sort explicitly so a reader can trust arrival order).
 async Heist_newlyadded_list(nav, mardir):
     let waft = await this.Heist_newlyadded_waft(nav, mardir)
-    return waft.o({ Probation: 1 }).sort((a, b) => (+a.sc.seq || 0) - (+b.sc.seq || 0))
+    return this.Heist_newlyadded_rows(waft).sort((a, b) => (+a.sc.seq || 0) - (+b.sc.seq || 0))
 
 // Heist_newlyadded_grouped — the album-level READ of the same per-file cards: every card sharing a `dir`
-//  folds into one row {dir, cards, feeling} (feeling = 'fresh' if ANY card in the group still is, since
-//   one track loved/dropped out of an album doesn't retire the whole album's freshness); a dir-less
-//    (loose) card stays its own row.  Pure aggregation — mints nothing, deletes nothing, so a UI can show
-//     "Fourier Four — Tagged Truth (12 tracks)" as one entry while Heist_feel keeps working per-file
-//      underneath if the human drops one bad track out of an otherwise-kept album.
+//  folds into one row {dir, cards}; a dir-less (loose) card stays its own row.  Pure aggregation — mints
+//   nothing, deletes nothing, so a UI can show "Fourier Four — Tagged Truth (12 tracks)" as one entry
+//    while Heist_scrub_one keeps working per-file underneath.
+//  This is ALREADY the directory-grained read the owner asked for (*"and just the whole directory of what
+//   we got"*) — the folder is the unit here and has been for weeks.  What is still per-card on DISK is the
+//    folder STRING, stored once per row rather than once per folder; Mag_todo §11.5 costs that reshape and
+//     says why the append door prices it at compaction time.  The reader does not change when it lands.
+//  ⚠ `groups` IS A Map, NOT AN OBJECT LITERAL, AND THAT IS LOAD-BEARING (2026-08-14 review).  The keys
+//   here are FOLDER NAMES off a friend's disk — `Heist_rel_for` sanitises `..` traversal and nothing
+//    else — so a folder called `__proto__` or `constructor` makes `if (!groups[dir])` read
+//     `Object.prototype`, which is truthy: the init is skipped and `groups[dir].cards.push` throws.
+//      One such folder POISONS THE LEDGER PERMANENTLY — the row is on disk, so every slow-beat
+//       `Heist_haul_look`, every list read and every reload re-throws on the same card, and the What-
+//        Heisted list simply stops. A hostile name is not even needed; `__proto__` is a plausible thing
+//         to find in a music tree. A Map has no prototype keys to collide with.
 async Heist_newlyadded_grouped(nav, mardir):
     let cards = await this.Heist_newlyadded_list(nav, mardir)
-    let groups = {}
+    let groups = new Map()
     let order = []
     let out = []
     for (const card of cards) {
         let dir = String(card.sc.dir || '')
-        if (!dir) { out.push({ dir: '', cards: [card], feeling: card.sc.feeling, seq: +(card.sc.seq || 0) }); continue }
-        if (!groups[dir]) { groups[dir] = { dir, cards: [], feeling: card.sc.feeling, seq: +(card.sc.seq || 0) }; order.push(dir) }
-        groups[dir].cards.push(card)
-        if (card.sc.feeling === 'fresh') groups[dir].feeling = 'fresh'
+        if (!dir) { out.push({ dir: '', cards: [card], seq: +(card.sc.seq || 0) }); continue }
+        if (!groups.has(dir)) { groups.set(dir, { dir, cards: [], seq: +(card.sc.seq || 0) }); order.push(dir) }
+        groups.get(dir).cards.push(card)
     }
-    for (const dir of order) out.push(groups[dir])
+    for (const dir of order) out.push(groups.get(dir))
     return out.sort((a, b) => a.seq - b.seq)
 
 // Heist_haul_look — WHAT YOU HEISTED, made visible (the owner 2026-08-13: *"yeah build something aye"*,
@@ -4008,7 +4108,8 @@ async Heist_newlyadded_grouped(nav, mardir):
 //  ⚠ READ THIS BEFORE BUILDING A SECOND STORE.  The doc's vocabulary table reserves `%Haul` for "the
 //   larger collective, the What Heisted ledger" and says flatly *"The ledger is not built yet"*.  That is
 //    stale: the NEWLYADDED log already records every landed file durably — `of` (the landed path), `dir`
-//     (the folder), `at` (when it first landed), `feeling` — and `Heist_newlyadded_grouped` already folds
+//     (the folder), `at` (when it first landed), `id` (the Mag join to the holding) — and
+//      `Heist_newlyadded_grouped` already folds
 //      it per ALBUM, which is the unit a What-Heisted list wants.  What was missing was never the data.
 //       It was a surface.  Minting a parallel `%Haul` store beside it would be two ledgers for one fact —
 //        the exact "there's only one of anything" tell CLAUDE.md warns about — so this reads the ledger
@@ -4064,7 +4165,6 @@ async Heist_haul_look(w, nav, mardir):
         if (at && row.sc.at !== String(at)) { row.sc.at = String(at); row.bump() }
         if (row.sc.name !== name) { row.sc.name = name; row.bump() }
         if (above && row.sc.above !== above) { row.sc.above = above; row.bump() }
-        if (g.feeling && row.sc.feeling !== String(g.feeling)) { row.sc.feeling = String(g.feeling); row.bump() }
         n = n + 1
     }
     // a dropped album leaves the list — the ledger is the truth, this bag only mirrors it
@@ -4135,27 +4235,22 @@ Heist_keep_gist(keep):
     if (keep.c.queued_ts) { g.word = 'waiting its turn'; return g }
     return g
 
-// Heist_feel — the listener's verdict on a probation entry.  'love' graduates in place; 'drop' is
-//  DENY: the file leaves the collection (deleted off the disk) and its catalog card retires.  The drop
-//   leaves NO durable trace beyond this one probation card (the %Tombstone was condemned 2026-07-13): a
-//    later heist re-offering the same identity finds it no longer held and may re-download it —
-//     accepted, a wrong re-download costs one delete, not a ledger.  The probation card stays — honest
-//      about the drop, same as the old log line used to.
-async Heist_feel(w, nav, own_lib, mardir, entry, feeling):
-    let waft = await this.Heist_newlyadded_waft(nav, mardir)
-    let card = waft.o({ Probation: 1, of: entry, feeling: 'fresh' })[0] || waft.o({ Probation: 1, of: entry })[0]
-    if (!card) return
-    card.sc.feeling = feeling
-    if (feeling === 'drop') await this.Heist_scrub_one(nav, own_lib, mardir, entry)
-    // a MUTATION riding the same log: same `of`, so the fold replaces the earlier line rather than
-    //  leaving two cards for one path.  This is why append needed supersede and not just append.
-    await this.Berth_append(nav, waft, [card], 'of')
+// ⚠ Heist_feel IS GONE (2026-08-13) — do not re-add it without a writer.
+//  It set `%Probation%feeling` to love|drop and, on drop, scrubbed the file.  The owner: *"I never signed
+//   off on holding feelings for each track… I'm just looking for the MVP right now"*.  The deciding fact
+//    was not the opinion, though — it was that a grep for callers found exactly ONE, `MusuHeist_deny`, a
+//     Book step (*"MusuHeist_deny dont care, never heard of it"*).  No face, no control, no beat ever
+//      called it: the feature's only user was its own test.  Cutting it removes no reachable behaviour.
+//  ITS DESTRUCTIVE HALF SURVIVES on purpose, as Heist_scrub_one below, which cancelling a heist really
+//   does call (Heist_keep_cancel → the quarantine sweep).  Deleting a file is a capability worth keeping;
+//    having an opinion about a track was not.
 
 // Heist_scrub_one — TAKE ONE LANDED TRACK BACK OFF THE DISK: delete the file and retire its catalog card,
 //  so the collection is exactly as it was before that landing.  Extracted from Heist_feel's 'drop' branch
 //   (2026-08-05) because CANCELLING A HEIST wants the identical effect per track, and a second delete path
-//    would be a second thing to get wrong.  `entry` is the landing path RELATIVE TO mardir — the same
-//     string a %Probation card is keyed by and the same one Heist_land computed as `rel`.
+//    would be a second thing to get wrong — and when Heist_feel went (2026-08-13) that extraction is why
+//     the cancel path did not go with it.  `entry` is the landing path RELATIVE TO mardir — the same
+//      string an arrival card is keyed by and the same one Heist_land computed as `rel`.
 //  No %Tombstone (condemned 2026-07-13): nothing durable remembers the removal, so a later heist offering
 //   the same identity finds it no longer held and may re-download it.  Accepted — a wrong re-download costs
 //    one delete, not a ledger.  BEST-EFFORT: a missing file or a stale dir handle must never abort a scrub
@@ -4235,9 +4330,15 @@ Berth_dir(root, prepub, name):
 //   rewrite still happens — it is just no longer per arrival, it is COMPACTION, and `Berth_save` is it.
 //  SUPERSEDE, NOT JUST APPEND.  A part's root carries `ident:<key>` (or `k1+k2`), naming the sc fields
 //   that identify a particle within its mainkey; on fold a later line REPLACES the earlier one with the
-//    same identity.  That is what lets a MUTATION ride the same log as an arrival — `Heist_feel` flipping
-//     a card's feeling to 'love' appends one line rather than rewriting the shelf.  No `ident` ⇒ a pure
-//      log where every line stands, which is the honest default for something that only ever grows.
+//    same identity.  No `ident` ⇒ a pure log where every line stands, which is the honest default for
+//     something that only ever grows.
+//  ⚠ ITS ORIGINAL JUSTIFICATION IS GONE, ITS JOB IS NOT (2026-08-13).  Supersede was built so a MUTATION
+//   could ride the same log as an arrival — `Heist_feel` flipping a card's feeling to 'love' appended one
+//    line rather than rewriting the shelf.  Nothing mutates a ledger row any more (Heist_feel is deleted).
+//     `ident` still earns its keep for a different reason: it makes a REPLAYED append idempotent at FOLD
+//      time, so a part written twice (a crash between write and part-counter bump, two tabs racing) folds
+//       to one row instead of two.  Same mechanism, a durability reason rather than a mutability one —
+//        worth stating, because "the feature that needed this is gone" is how a live guard gets removed.
 Berth_part_name(n):
     return String(n).padStart(3, '0') + '.snap'
 

@@ -169,6 +169,57 @@ The engine verbs it would call all **exist**; three things must be **written**, 
 
 ---
 
+## The three id spaces — read this before touching anything that says `id`
+
+Written 2026-08-13 because the owner said the quiet part: *"it's suspicious that it's not easy to
+ explain how Heist works and what these ids do."* It is not hard, but three different 16-hex strings
+  are in play and nothing said which was which. **They are not interchangeable and none derives from
+   another** (except #2 from #1, which is exactly the confusing one).
+
+| | what it answers | how it is made | who holds it | lives where |
+|---|---|---|---|---|
+| **`body_hash`** | *are these the same BYTES?* | `Heist_hash` → full **sha256 hex, 64 chars**, of the raw file | both ends of a transfer | `%Record%body_hash`, `%Keepsake%body_hash` |
+| **content-id** (`id`, `enid`) | *WHICH TRACK is this?* | `Ra_enid` → **first 8 bytes / 16 hex** of that same sha256 | everyone, identically | `%Record%id`, `%Card%id`, and now the ledger's `%Got%id` |
+| **keep-id** | *WHOSE FILE, at WHAT PATH?* | `Heist_keep_id(me, base, path)` = `sha256(me + '\|' + base + '/' + path)[:16]` | the **serving** peer | `%Keepsake%id`, `w.c.keep_memo`, the wire's `ref` |
+
+### The three things worth actually knowing
+
+**1. content-id is a PREFIX of body_hash, and that is deliberate.** Same bytes ⇒ same 16 hex, on every
+ machine, with no coordination — which is what lets dedup work across peers who have never spoken. The
+  64-char `body_hash` is the *promise* the transfer is checked against; the 16-char slice is the *shelf
+   key*. One is a proof, the other is a filing decision, and truncating is safe for filing precisely
+    because it is never the proof.
+
+**2. keep-id shares NOTHING with the other two.** It hashes an identity and a path, not a byte of
+ audio. This is on purpose (`Heist_keep_id`'s own note): a materialised ORIGINAL must land as its own
+  mirror record and never upsert onto the seed's opus-chunk record, and that collision was a real
+   blocker once. Two peers holding byte-identical files have the **same** content-id and **different**
+    keep-ids — correctly, because the question "whose file, where" has two different answers.
+
+**3. keep-id is deterministic but not INVERTIBLE — and that distinction cost a wrong answer.**
+ Everything here is deterministic; that is not the issue. You cannot go id → path because sha256 is
+  one-way. It does not matter, because **the asker holds the preimage**: it knows the path it wants, so
+   it can re-derive the id and prove it (`hintPath` self-certify — the source accepts a supplied path
+    only if `sha256(me|base/path)` equals the ref it was asked for, gated by `Heist_want_path_ok`).
+ **⚠ Which is why `berth/<prepub>/KeepMemo` is NOT redundant, and must not be deleted.** Self-certify
+  reaches only one of the two callers — `Repli_serve_want`'s frame is `{type, from, to, id, stream,
+   from_idx, seq, body_hash, body_len}` with no path field and nowhere to put one. And more
+    fundamentally the memo carries the **promise** (`total` + `body_hash`), which self-certify cannot
+     supply without a blocking whole-file re-read. That is the 2026-08-07 daemon-restart incident:
+      restart wipes the runtime map, and a source sits on ids it served a minute ago answering "no
+       record" while both ends look healthy. The runtime map `w.c.keep_memo` is written
+        unconditionally; only the **disk mirror** is `humdinger`-gated, and the disk mirror is what buys
+         recovery across a reload or a process restart specifically.
+
+### And a fourth string that is not an id at all
+
+`%Got%of` in the download ledger is a **path**, and it stays a path even now that the row also carries
+ a content-id. A ledger must outlive its subject: delete the track and the id join dangles (correctly),
+  but "this landed, here, then" must survive. See `Mag_todo.md §11` for the argument and for the shape
+   the ledger is heading toward — that section is the one to read before reshaping it.
+
+---
+
 ## Where the design content lived (provenance)
 
 - `src/lib/ghost/Pirating.svelte` + `lib/mostly/Pirate.svelte` — **the legacy directory-heist** (the

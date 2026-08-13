@@ -5,28 +5,28 @@ story:MusuHeist
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=7.315
-      sample=5.868,at=1786261967
-      sample=5.868,at=1786262017
-      sample=5.868,at=1786262022
-      sample=5.868,at=1786262023
-      sample=5.868,at=1786262023
-      sample=5.868,at=1786262024
-      sample=5.868,at=1786262025
-      sample=7.264,at=1786262056
+    TimeTotal:beliefs,avg=11.749
       sample=12.254,at=1786279059
       sample=12.559,at=1786279129
-    TimeTotal:step,avg=0.333
-      sample=0.267,at=1786261967
-      sample=0.267,at=1786262017
-      sample=0.267,at=1786262022
-      sample=0.267,at=1786262023
-      sample=0.267,at=1786262023
-      sample=0.267,at=1786262024
-      sample=0.267,at=1786262025
-      sample=0.33,at=1786262056
+      sample=13.774,at=1786620591
+      sample=13.774,at=1786620684
+      sample=13.774,at=1786620687
+      sample=13.774,at=1786620688
+      sample=13.774,at=1786620689
+      sample=5.694,at=1786620713
+      sample=8.964,at=1786620752
+      sample=9.149,at=1786623178
+    TimeTotal:step,avg=0.534
       sample=0.557,at=1786279059
       sample=0.571,at=1786279129
+      sample=0.626,at=1786620591
+      sample=0.626,at=1786620684
+      sample=0.626,at=1786620687
+      sample=0.626,at=1786620688
+      sample=0.626,at=1786620689
+      sample=0.259,at=1786620713
+      sample=0.407,at=1786620752
+      sample=0.416,at=1786623178
   step,dige:d2effa20514897c8
   step=2,dige:847d949aeba33ef8
   step=3,dige:13f7d5a94d5720be
@@ -43,9 +43,9 @@ story:MusuHeist
   step=14,dige:d9f16b2f65c88706
   step=15,dige:19c9445d53ff53c0
   step=16,dige:7ea3664bdd315d2d
-  step=17,dige:ef85eaf32658d515
-  step=18,dige:ba299f127ebb6ece
-  step=19,dige:a897226cfe4db2eb
-  step=20,dige:f69162311241698e
-  step=21,dige:025612997dc14989
-  step=22,dige:bd3842732d932b33
+  step=17,dige:bdb713d601d61642
+  step=18,dige:f2412391bd95fe3b
+  step=19,dige:3da4f61ca5f0c394
+  step=20,dige:db8b49526571988c
+  step=21,dige:3c1a5b18b54d6e68
+  step=22,dige:1e68e64856e5c84d

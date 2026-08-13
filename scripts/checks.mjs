@@ -38,8 +38,17 @@ import { spawn } from 'node:child_process'
 //  are pure functions of `.c` state, so they unit-test cleanly — and they are exactly the kind of
 //   thing no Book covers, because a Book quiesces and never sits in the half-loaded state the owner
 //    reads a red bracket in.  Both bugs it pins were reported off a screenshot, not a fixture.
+// Newlyadded.spec.ts covers the one claim NO Book can: a Book sweeps its marrauding root every run, so it
+//  never meets a legacy `%Probation` row. The old shape and the new shape only ever meet in a real
+//   collection — the owner's, with 177+ rows in it — and in that file.
 const VITEST = ['scripts/HeistUnity.spec.ts', 'scripts/MultiHeist.spec.ts', 'scripts/HaulFace.spec.ts',
-    'scripts/HeistCostLine.spec.ts', 'scripts/KeepMemoDurable.spec.ts', 'scripts/ButlerPatience.spec.ts']
+    'scripts/HeistCostLine.spec.ts', 'scripts/KeepMemoDurable.spec.ts', 'scripts/ButlerPatience.spec.ts',
+    'scripts/Newlyadded.spec.ts',
+    // RehealSmoke is the IMPORT gate — it proves the written .go files PARSE and MOUNT, which neither
+    //  LocalGen's CHECK=1 nor any logic spec does. It earned a place here on 2026-08-14: a hand-compiled
+    //   Heist.go with a duplicate `let` sailed past CHECK=1 and past RehealSmoke itself (which did not
+    //    import Heist), and was caught only by luck. Both holes are closed; this keeps the gate run.
+    'scripts/RehealSmoke.spec.ts']
 
 const jobs = [
     {
