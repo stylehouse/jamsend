@@ -414,3 +414,50 @@ test('a note handed an open ledger does NOT re-open it — the read is the cost,
     await H.Heist_newlyadded_note(nav, 'mar', 'Artist/Album/2.flac').catch(() => {})
     expect(opens).toBe(1)
 })
+
+// ── THE CONSEQUENCE THE RE-KEY WAS ABOUT ───────────────────────────────────────────────────────────
+//  The two tests above pin the job's IDENTITY and its teardown. Neither pins the thing that actually hurt
+//   the owner, which is where the FILES WENT — and a fix is only tested when the pain is.
+//  The owner, reading a real newlyadded ledger off disk 2026-08-13: *"do they atomise properly while being
+//   set up, so the next one doesn't change the previous' section?"* — the exact question, asked from the
+//    fossil record: one album landed 8 tracks under `0 Latin/` and its last 2 under `0 Dub/`, another split
+//     3-under-`0 Dub/` and 9-under-`0 Reggae/`. Both changed MID-ALBUM at an arbitrary track, which is a
+//      time-shaped cause, not a content-shaped one — setup #2 mutating the shared particle #1 was landing
+//       through. `Heist_rel_for(job, rec)` is that one door, so this asks it directly.
+test('setting up a SECOND heist cannot move where the FIRST one lands', async () => {
+    const H = await stub_house()
+    const w = world()
+    const { shop, keeps } = shopWith('A', 'B')
+    const [a, b] = keeps
+    // one friend, two albums, two different sections chosen — the owner's Latin-then-Dub evening
+    a.sc.genre = '0 Latin'
+    b.sc.genre = '0 Dub'
+    for (const [k, artist] of [[a, 'va - Evolution Of Dub'], [b, 'Various Artists']] as any[]) {
+        const p = k.i({ Pick: 1, ref: 'p1' }); p.c.up = k; p.sc.artist = artist
+    }
+    const recA: any = new TheC({ c: {}, sc: { Record: 1, id: 'ra' } })
+    recA.sc.artist = 'va - Evolution Of Dub'
+    recA.sc.path = 'va - Evolution Of Dub/Vol.6/Disk 4/01 Loving Tonight.ogg'
+
+    // heist A is set up and its landing decided…
+    const ja = H.Heist_job(w, a.sc.pub, H.Heist_keep_filings(a), { home: shop, seed: a.sc.seed })
+    const before = H.Heist_rel_for(ja, recA)
+    expect(before).toContain('0 Latin/')
+
+    // …now the human sets up heist B, under a different section, while A is still pulling. THIS is the
+    //  moment that used to re-stamp the one shared %Caper and silently re-aim A's remaining tracks.
+    const jb = H.Heist_job(w, b.sc.pub, H.Heist_keep_filings(b), { home: shop, seed: b.sc.seed })
+    expect(jb).not.toBe(ja)
+
+    const after = H.Heist_rel_for(H.Heist_job_of(shop, a), recA)
+    expect(after).toBe(before)                       // A's tracks still land where A said
+    expect(after).not.toContain('0 Dub/')            // …and never follow B's section
+
+    // and the reverse must hold too, or "atomised" only means "A won the race"
+    const recB: any = new TheC({ c: {}, sc: { Record: 1, id: 'rb' } })
+    recB.sc.artist = 'Various Artists'
+    recB.sc.path = 'Various Artists - 1993/101 Gangsters.ogg'
+    const relB = H.Heist_rel_for(H.Heist_job_of(shop, b), recB)
+    expect(relB).toContain('0 Dub/')
+    expect(relB).not.toContain('0 Latin/')
+})

@@ -371,7 +371,18 @@
             sizeEst: !edited && unTracks > husks.length && !(unTracks >= husks.length && sc.un_d) && !!husks.length,
             // …and while the listing trails the unity, it is still filling in. Purely a progress tell,
             //  and silent once the human has chosen for themselves — they are not waiting on it then.
-            listing: !edited && unTracks > husks.length,
+            // ⚠ AND SILENT ONCE THE TOTAL IS ATTESTED, which is the case this session's unity created and
+            //  then annoyed the owner with (*"yet another annoying spinner… we just don't need to resolve
+            //   that before accepting the Heist as a go"*, 2026-08-13).  Before the unity, `un_n` WAS the
+            //    husk count, so this clause was a brief flicker.  Now `un_n` is the folder's real 68 while
+            //     the husks are the 3 the source has named so far — and those two only converge if the
+            //      source lists the whole folder, which it has no reason to do and often never will.  A
+            //       spinner that cannot finish is not a progress tell, it is a demand: it reads as "wait,
+            //        this isn't ready", in front of a decision that is completely ready to take.
+            //  `un_d` is the fork, and it is the same attestation the size line uses: WE COUNTED THE DISK,
+            //   so the number beside it is final and there is nothing left to learn before saying yes.
+            //    Without attestation the total is itself a guess and a "still naming them" is honest.
+            listing: !edited && unTracks > husks.length && !sc.un_d,
             // the wait clock + the still-arriving tell (void tick above keeps these live at 500ms)
             askSecs: n?.c?.desc_t0 ? Math.floor((Date.now() - +n.c.desc_t0) / 1000) : 0,
             counting: husks.length > 0 && huskMovedTs > 0 && (Date.now() - huskMovedTs) < 3000,
@@ -783,7 +794,11 @@
                      that's ridiculous"*.  Asking someone to eyeball whether a listing is complete is the
                      app declining to do its own job, and with the unity in hand it does not have to.) -->
                 {#if face.listing}
-                    <span class="kf-short"><span class="kf-spin sm"></span>&nbsp;naming them — {face.nTracks} of {face.nAll} so far</span>
+                    <!-- NO SPINNER.  A spinner is a request to wait, and nothing here is worth waiting
+                         for — the count and the size above are already the truth about the folder, and
+                         the ⇊ is live the whole time.  Plain dim text says the same fact without
+                         standing in front of the decision. -->
+                    <span class="kf-short">naming them — {face.nTracks} of {face.nAll} so far</span>
                 {/if}
             </div>
         {/if}

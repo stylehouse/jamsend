@@ -580,6 +580,7 @@ async Radio_pump_tick(radio, era):
         }
     }
     this.Radio_face_tick(radio, AC)
+    this.Radio_render_note(radio, gat)
     // KEEP ONE READY.  Only while the timeline is comfortable (>4s decoded ahead), so priming never
     //  competes for CPU with the track actually playing — the next track's readiness must never be
     //   the reason this one stutters.  Cheap when already primed: two property reads.
@@ -985,6 +986,28 @@ Radio_face_tick(radio, AC):
     let left = Math.max(0, (radio.c.end || 0) - AC.currentTime)
     let at = Math.max(0, Math.round((+(radio.c.at0 || 0)) + ((radio.c.sched || 0) / 48000) - left))
     if (radio.sc.at !== at) radio.sc.at = at
+
+// Radio_render_note — THE OTHER KIND OF STUTTER, the one 'gap' is structurally blind to (2026-08-13).
+//  A 'gap' mark means we failed to SUPPLY: wall clock overtook the end of scheduled audio.  This mark
+//   means the supply was fine and the DEVICE dropped it anyway — the audio callback missed its render
+//    deadline while this main thread was busy with the Cyto|Vyto render, the WebCodecs callbacks and the
+//     relay.  Through that entire fault `end` sits 8s ahead of `now` and sc.gaps never moves, which is
+//      why the stutter the owner reported went un-instrumented for so long: the only counter we had
+//       could not have seen it.  SoundSystem.render_watch collects (Audio.svelte.ts); this judges.
+//  `under` is underruns per 1000 render quanta, `peak`|`load` are percent — integers, so a snap line
+//   stays scalar and a reader can compare two marks without decoding floats.
+//  ONLY ON CHANGE (the Radio_head_note doctrine): steady state is silence, a change is the whole signal.
+//   A zero reading never traces at all, so a healthy sit costs the ring nothing.
+Radio_render_note(radio, gat):
+    if (!gat || !gat.render) return
+    let r = gat.render
+    let under = Math.round((+(r.under || 0)) * 1000)
+    if (!(under > 0)) return
+    let peak = Math.round((+(r.peak || 0)) * 100)
+    let k = under + ':' + peak
+    if (radio.c.render_note === k) return
+    radio.c.render_note = k
+    this.Radio_trace(radio, { ev: 'glitch', under: under, peak: peak, load: Math.round((+(r.load || 0)) * 100), worst: Math.round((+(r.worst || 0)) * 1000) })
 //#endregion
 
 //#region dial — pick the next record off the shelf, FRESH first (the stoker keeps it stocked)
@@ -1203,23 +1226,45 @@ Radio_watch_shelf(w):
     //  folders is a wander working, but it is not a search that can still succeed, and only the
     //   latter earns more patience.
     let walked = this.Radio_shelf_fresh()
-    // a fresh empty read arms; an ADVANCING one re-arms.  Both go through the same door so the clock
-    //  and the grade can never disagree about which state we are in.
+    // REMEMBERING IS ADVANCE TOO, and leaving it out is what put a FAILED under a warm boot (the
+    //  owner, 2026-08-13: *"also goes FAILED sometimes when 1000 directories remembered"*).  On a warm
+    //   page the census restore is a Berth_open over the whole stored map and it is SLOW in proportion
+    //    to how much we remember — 1465 directories landed at t+49s on the tab that produced the
+    //     report, while this clock started at t+2s with 15s of patience.  Nothing walks during that
+    //      read, so `moving` was false the whole way, and the watch gave up ~30s BEFORE the very
+    //       memory that answers it arrived.  The bigger the share, the more certainly it failed —
+    //        a progress bar that runs out faster the more progress there is to make.
+    //  The doctrine was already in this file's header (elapsed cannot tell SLOW from STUCK; the
+    //   distinguisher is monotonic progress); the restore was simply not counted as progress.  Two
+    //    gates below, and both are advance, not clemency: `remembering` is the read in flight, and
+    //     `learned` is the one-shot the moment the memory lands.
+    let memo = this.Radio_shelf_memory()
     let fresh = !watch.c.deadline
     let moving = watch.c.walked != null && walked > watch.c.walked
-    if (fresh || moving) {
-        this.Supervisor_expect(sup, 'radio.shelf', watch.sc.sentence, 'Radio_probe_shelf', w, 15, this.Supervisor_stage('share'))
+    let remembering = this.Radio_shelf_remembering()
+    let learned = watch.c.memo != null && memo > watch.c.memo
+    // MEMORY BUYS TIME, IT DOES NOT BUY FOREVER.  A share we have seen music in is not a share with
+    //  nowhere to look, so it earns a longer window — but a remembered folder can be revoked, moved
+    //   or emptied since, so the clock must still be able to run out and say something true.
+    if (fresh || moving || remembering || learned) {
+        this.Supervisor_expect(sup, 'radio.shelf', watch.sc.sentence, 'Radio_probe_shelf', w, memo ? 60 : 15, this.Supervisor_stage('share'))
     }
     // THE GIVE-UP SENTENCE, stamped by the registrar (Supervisor_expect's own header: "the arming
     //  caller should also stamp sc.advice").  Shown only at gaveup, so stamping it every pass is
     //   just keeping the registrar's current words fresh.  This is what the Butler says INSTEAD of
     //    a progress claim once the patience is spent — the empty-share fail-noise fix
     //     (Supervisor_todo §0, the owner's granted-empty-folder trial).
-    if (watch.sc.advice !== 'no music found here — add some, or open a different folder') {
-        watch.sc.advice = 'no music found here — add some, or open a different folder'
+    //  IT MUST NOT ACCUSE WHAT WE REMEMBER.  "no music found here — add some" is a FALSE sentence on a
+    //   share whose own census says 1465 folders of it, and telling an owner to add music they already
+    //    have is worse than saying nothing: it sends them to fix the one thing that is not broken.
+    //     With memory the failure is reachability, never absence, so the advice names the door.
+    let advice = memo ? 'we remember music here but cannot reach it — the folder may need opening again' : 'no music found here — add some, or open a different folder'
+    if (watch.sc.advice !== advice) {
+        watch.sc.advice = advice
         watch.bump()
     }
     watch.c.walked = walked
+    watch.c.memo = memo
 
 // Radio_shelf_walked — how many directories the wander has stood in THIS session.  A counter Crate.g
 //  bumps at the visit itself (`meander_stood`), not `Object.keys(meander_learn).length` — which was
@@ -1252,6 +1297,31 @@ Radio_shelf_memory():
     let TOP = this.top_House ? this.top_House() : null
     return TOP ? (+(TOP.c.census_music || 0)) : 0
 
+// Radio_shelf_remembering — is the census restore IN FLIGHT?  The one stretch of a warm boot where the
+//  share is making real progress toward the answer while standing perfectly still: Berth_open is
+//   reading the stored map off .jamsend and nothing walks until it lands.
+//  IT READS 'restoring' AND NOT "not ready", which is the whole care in this verb.  Census.svelte
+//   claims the phase only AFTER it has a nav (a null nav returns without claiming, by design), so an
+//    UNSET phase is the no-disk-access share — the one case the shelf watch's header insists must give
+//     up promptly, because that machine is not slow, it has nowhere to look.  Reading "not ready" as
+//      remembering would have handed infinite patience to exactly the share that deserves none.
+//  BOUNDED, for the same reason the memory below only buys 60s: a Berth_open that never settles would
+//   otherwise re-arm the clock forever and the row would wait politely until the tab closed, which is
+//    the flap's mirror image and just as useless to look at.
+Radio_shelf_remembering():
+    let TOP = this.top_House ? this.top_House() : null
+    if (!TOP || TOP.c.census_phase !== 'restoring') return 0
+    let at = +(TOP.c.census_phase_at || 0)
+    if (!at) return 1
+    return (Date.now() - at) < this.Radio_remember_ms() ? 1 : 0
+
+// Radio_remember_ms — how long a census restore is allowed to count as progress.  A dial, not a
+//  constant, so a share far bigger than the owner's can be given room without a recompile.
+Radio_remember_ms():
+    let TOP = this.top_House ? this.top_House() : null
+    let v = TOP ? TOP.c.census_remember_ms : null
+    return v == null ? 180000 : +v
+
 // Radio_probe_shelf — how many records the listener's OWN shelf holds.  A pure read: `o()[0]`
 //  throughout, never Ra_home_self, which is an `oai` chain that would MINT the shelf it was asked
 //   about on every Supervisor tick (the "a probe that collects" trap the Supervisor header names).
@@ -1283,6 +1353,9 @@ Radio_probe_shelf(w, sup):
         //      what the machine used to be doing.  Same words as the registrar's advice: one message,
         //       two surfaces, no second opinion.
         if (this.Supervisor_given_up && sup && this.Supervisor_given_up(sup, 'radio.shelf')) {
+            // ONE MESSAGE, TWO SURFACES — and it must fork the same way the registrar's advice does, or
+            //  the give-up contradicts the census sitting right next to it.  See Radio_watch_shelf.
+            if (memo) return { verdict: 'wrong', note: 'we remember ' + memo + ' folders of music here but cannot reach them — the folder may need opening again' }
             return { verdict: 'wrong', note: 'no music found here — add some, or open a different folder' }
         }
         // WHAT WE REMEMBER IS PART OF THE MICRO-SATISFACTION, and it is the difference between "this

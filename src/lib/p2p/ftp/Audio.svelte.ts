@@ -27,6 +27,7 @@ export class SoundSystem {
     }
     close() {
         this.keep_awake_stop()
+        this.render_stop()
         if (this.AC) {
             // Close the AudioContext
             this.AC.close().catch(console.error);
@@ -74,20 +75,26 @@ export class SoundSystem {
     async init() {
         try {
             // NOT A TOY — the two options that were never passed (2026-08-13).  A bare `new AudioContext()`
-            //  takes the UA defaults, and BOTH of them are wrong for a radio:
-            //  `sampleRate` — the whole pipeline is 48000 end to end (the opus decoder configures 48000 at
-            //   Radio.g's Radio_dec_open, Radio_place builds every buffer at AC.createBuffer(…, 48000), and
-            //    pcm_buffer defaults to it).  A context left at the DEVICE default is 44100 on plenty of
-            //     hardware (macOS/Windows, and near-universally over Bluetooth), and then each ~2s buffer is
-            //      resampled INDEPENDENTLY, per source node: the resampler state resets and the start time
-            //       rounds to a context frame at every seam, so a discontinuity lands roughly every 2 seconds.
-            //        That is device-dependent, which is exactly why it reads as "might be my system".  Pinning
-            //         48000 moves the one resample to the device boundary, where the UA does it continuously.
-            //  `latencyHint` — defaults to 'interactive', the smallest output buffer the UA will give.  Right
-            //   for a synth answering a keypress, wrong for a stream: this main thread also runs the Cyto|Vyto
-            //    render, the WebCodecs callbacks and the relay, and a small device buffer is the most
-            //     glitch-prone thing you can hand that.  'playback' asks for a roomy one — we are scheduling
-            //      8s ahead of the playhead (Radio_pump_tick), so output latency costs us nothing we can hear.
+            //  takes the UA defaults, and for a radio the latency default is actively wrong.
+            //
+            //  `latencyHint` IS THE ONE THAT FIXED THE STUTTER — measured, not reasoned.  It defaults to
+            //   'interactive', the smallest output buffer the UA will give: right for a synth answering a
+            //    keypress, wrong for a stream.  This main thread also runs the Cyto|Vyto render, the WebCodecs
+            //     decode callbacks and the relay, and a small device buffer is the most glitch-prone thing you
+            //      can hand that — the audio callback misses its deadline and the DEVICE drops samples.
+            //       'playback' asks for a roomy one.  We schedule 8s ahead of the playhead (Radio_pump_tick),
+            //        so output latency costs us nothing anyone can hear.  The owner's long-standing "kinda
+            //         stuttering" went away on this line alone.
+            //
+            //  `sampleRate` WAS A NO-OP HERE, and is kept for OTHER people's hardware.  The pipeline is 48000
+            //   end to end (Radio.g's Radio_dec_open configures the opus decoder at 48000, Radio_place builds
+            //    every buffer at AC.createBuffer(…, 48000), pcm_buffer defaults to it), and a context left at
+            //     the DEVICE default is 44100 on plenty of hardware (macOS/Windows, near-universally over
+            //      Bluetooth) — where each ~2s buffer would be resampled INDEPENDENTLY, per source node, the
+            //       resampler state resetting at every seam.  Pinning 48000 moves the one resample to the
+            //        device boundary, where the UA does it continuously.  The owner's box was ALREADY 48000
+            //         (measured 2026-08-13), so on that machine this line changed nothing.  It was the
+            //          headline suspect and it was the wrong one; the note stays so nobody re-derives it.
             //  FALL BACK RATHER THAN GO SILENT.  A UA that cannot give the asked-for rate THROWS
             //   (NotSupportedError — older Safari, for a rate the device won't do), and this is the single
             //    chokepoint for all audio on the tab: a throw here means AC_ready never sets, so there is no
@@ -105,6 +112,7 @@ export class SoundSystem {
             if (await this.AC_OK()) {
                 console.log("AudioContext initialized");
                 this.beginable();
+                this.render_watch();
                 return true;
             }
         } catch (er) {
@@ -127,6 +135,45 @@ export class SoundSystem {
     }
     beginable() {
         // < this.M.beginable()?
+    }
+
+    // ── render-thread telemetry: the glitch the gap counter CANNOT see ────────────────────────────
+    //  2026-08-13, out of the stutter hunt.  Radio_place counts a "gap" as `now > end + 0.02` — wall
+    //   clock overtaking the end of SCHEDULED audio, i.e. we failed to supply in time.  A device-side
+    //    glitch is downstream of all of that: the 8s of buffers are queued perfectly contiguously, `end`
+    //     stays miles ahead of `now`, AC.currentTime keeps ticking, and the audio callback misses its
+    //      deadline anyway.  sc.gaps reads ZERO through the entire fault — which is exactly what happened
+    //       to the stutter that `latencyHint:'playback'` above turned out to fix.  Two fault classes, and
+    //        the repo could only see one of them.
+    //  `underrunRatio` IS the missing number: the fraction of render quanta that missed the deadline.
+    //   Chromium-only (no Firefox/Safari) — absent elsewhere, so this whole thing no-ops rather than
+    //    throwing.  Collected here because SoundSystem owns the context; JUDGED in Radio.g
+    //     (Radio_render_note), which owns the trace ring and the "steady state is silence" doctrine.
+    render: { load: number, peak: number, under: number, worst: number } | null = null
+    render_on = false
+    render_watch() {
+        const rc = (this.AC as any)?.renderCapacity
+        if (!rc || this.render_on) return
+        try {
+            rc.addEventListener('update', (e: any) => this.render_note(e))
+            rc.start({ updateInterval: 1 })       // seconds; one reading a second is plenty for a radio
+            this.render_on = true
+        } catch (er) { /* no renderCapacity here — stay blind rather than break audio */ }
+    }
+    render_note(e: any) {
+        const under = +(e?.underrunRatio || 0)
+        this.render = {
+            load:  +(e?.averageLoad || 0),
+            peak:  +(e?.peakLoad || 0),
+            under,
+            // WORST IS A HIGH-WATER MARK and never decays: a glitch that happened once during a long sit
+            //  is the whole evidence, and a rolling average would erase it by the time anyone looked.
+            worst: Math.max(under, this.render?.worst ?? 0),
+        }
+    }
+    render_stop() {
+        try { (this.AC as any)?.renderCapacity?.stop() } catch (er) { /* already down */ }
+        this.render_on = false
     }
 
 

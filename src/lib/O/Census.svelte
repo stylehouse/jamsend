@@ -129,6 +129,9 @@
         const nv = nav()
         if (!nv) return
         Hh.c.census_phase = 'restoring'
+        // WHEN the read started, because the shelf watch counts this stretch as progress and a clock
+        //  that can only be re-armed and never expired is not a clock (Radio_shelf_remembering).
+        Hh.c.census_phase_at = Date.now()
         try {
             const waft = await (Hh as any).Berth_open(nv, '', '', CENSUS_WAFT)
             Hh.c.census_waft = waft

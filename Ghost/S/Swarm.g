@@ -2717,6 +2717,24 @@ Swarm_beat_health(w):
     let K = +(w.c.beat_stuck_k || 20)
     let floor_ms = (w.c.beat_stuck_floor_ms == null ? 30000 : +w.c.beat_stuck_floor_ms)
     let bar = Math.max(floor_ms, typical * K)
+    // POSTED ≠ ENTERED, AND THE BUTLER WAS TELLING THE WRONG STORY (2026-08-13, the owner's stuck tab:
+    //  `[FAILED] your share is keeping itself up to date : keep has not completed in 50s (typical 0ms)`
+    //   on a tab whose beat had never started at all).  Swarm_share_loop latches `share_beat_running`
+    //    when it POSTS the beat, then post_do queues the callback; under a long belief-pass hold the
+    //     callback sits in H.todo and nothing inside the beat ever runs.  Everything below reads the
+    //      PHASE CURSOR, which describes the PREVIOUS beat — so the probe named `keep`, sending a reader
+    //       into the heist driver, when the heist driver had not been called.  `typical 0ms` was the
+    //        tell nobody could read: a phase with no learned duration is one that has never completed.
+    //  The log line already forks these two states (Swarm_share_loop's `bstate`, same-day audit #1) and
+    //   the Butler did not.  One surface short is how a fixed diagnosis stays unfixed for the person
+    //    actually looking at the screen.  A queued beat is graded on its OWN clock — how long it has
+    //     waited to start — and says who to suspect, which is never the phase.
+    if (!w.c.beat_entered_at && w.c.beat_posted_at) {
+        let queued = Date.now() - (+w.c.beat_posted_at)
+        if (queued > floor_ms) return { state: 'stuck', phase: 'queued', for_ms: queued, why: `the beat has waited ${Math.round(queued / 1000)}s to start — something else is holding the belief pass` }
+        if (queued > floor_ms / 3) return { state: 'slow', phase: 'queued', for_ms: queued, why: 'the beat is waiting its turn to start' }
+        return { state: 'ok', phase: 'queued', for_ms: queued, why: '' }
+    }
     if (since > bar) return { state: 'stuck', phase: next, for_ms: since, why: `${next} has not completed in ${Math.round(since / 1000)}s (typical ${typical}ms)` }
     if (since > bar / 3) return { state: 'slow', phase: next, for_ms: since, why: `${next} running long (typical ${typical}ms)` }
     return { state: 'ok', phase: next, for_ms: since, why: '' }

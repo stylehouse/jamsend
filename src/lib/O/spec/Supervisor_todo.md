@@ -20,6 +20,54 @@ A tab should know, out loud, whether it is **arriving**, **stuck**, or **finishe
   each hold a sentence in plain English, a give-up ladder that only fires when the advice it is
    about to give is actually true, and a roster a human (or `runner_ask supervisor`) can read.
 
+### Two false sentences, fixed 2026-08-13 — and both were the same rule, unapplied
+
+Reported off a screenshot of a stuck tab, not off a fixture. Neither could have been caught by a Book:
+ a Book quiesces, and both of these live in the half-loaded state a person actually reads a red bracket
+  in. `scripts/ButlerPatience.spec.ts` (11 tests, 9 mutants, in `npm run checks`) is what stands in.
+
+**§2's rule is the whole story both times — elapsed time cannot tell SLOW from STUCK, and the
+ distinguisher is monotonic progress.** Neither fix is a new idea; both are a place the idea had not
+  reached yet. When a watch goes red, the first question is not "is the bar too tight" but **"what is
+   advancing that this watch cannot see?"**
+
+**1. `swarm.beat` named a phase that had not been called.** `[FAILED] your share is keeping itself up
+ to date : keep has not completed in 50s (typical 0ms)` — on a tab whose beat had never *started*.
+  `Swarm_share_loop` latches `share_beat_running` when it POSTS the beat; `post_do` then queues the
+   callback, and under a long belief-pass hold it sits in `H.todo` while nothing inside the beat runs.
+    `Swarm_beat_health` read the phase CURSOR, which describes the PREVIOUS beat — so it accused
+     `keep`, sending a reader into the heist driver, which had not been called. `typical 0ms` was the
+      tell nobody could read: a phase with no learned duration has never completed.
+  **The sharp part: the log line already forked posted-vs-entered** — same file, same day, audit #1,
+   with a comment explaining the distinction at length. The Butler did not. *One surface short is how a
+    fixed diagnosis stays unfixed for the person looking at the screen.* A queued beat is now graded on
+     its own clock and says *"the beat has waited 50s to start — something else is holding the belief
+      pass"*, which names a suspect instead of an innocent.
+
+**2. `radio.shelf` gave up faster the more it remembered.** The owner: *"also goes FAILED sometimes when
+ 1000 directories remembered"*. On a warm page the census restore is a `Berth_open` over the stored map,
+  slow in proportion to how much is stored — 1465 directories landed at **t+49s**, against 15s of
+   patience armed at t+2s. **Nothing walks during that read**, so the advance gate (`meander_fresh`)
+    never re-armed and the watch failed ~30s before the memory that answers it arrived. A progress bar
+     that runs out faster the more progress there is to make.
+  Fixed by counting the restore as what it is — advance. `Radio_shelf_remembering()` re-arms while the
+   read is in flight, and `learned` re-arms the moment the count lands. **Both are evidence, not
+    clemency**, and the asymmetry is load-bearing: it reads `census_phase === 'restoring'` and *not*
+     "not ready", because Census.svelte declines to claim the phase when there is no nav — so the
+      no-disk share still gives up promptly, which is correct. That machine is not slow, it has
+       nowhere to look. Bounded at 180s (`census_remember_ms`), or it is not a clock.
+
+**And a give-up must never contradict the evidence sitting next to it.** `no music found here — add
+ some` is a FALSE sentence on a share whose own census names 1465 folders of it, and it is worse than
+  silence: it sends an owner to fix the one thing that is not broken. With memory the failure is
+   **reachability, never absence** — *"we remember 1465 folders of music here but cannot reach them —
+    the folder may need opening again"*. The registrar's `advice` and the probe's give-up note fork the
+     same way, because one message on two surfaces is the rule and a second opinion is the bug.
+  Memory buys 60s instead of 15, and never buys forever: a remembered folder can be revoked, moved or
+   emptied since. Every test that grants patience has a twin that withholds it.
+
+**Unverified live.** Both are compiled and unit-green; neither has been seen on a tab.
+
 ### What is true right now (2026-08-12)
 
 - **The roster stands and is instrumented.** 11 watches, a boot waterfall, four verdicts, and a

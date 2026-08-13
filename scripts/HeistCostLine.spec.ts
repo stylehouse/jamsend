@@ -224,3 +224,35 @@ test('an UNATTESTED size is never quoted, even when its count outranks the husks
     expect(s2).toContain('30.0 MB')
     expect(s2).not.toContain('~30.0 MB')
 })
+
+test('an ATTESTED total never asks you to wait for the names', async () => {
+    const H = await ghost_house()
+    // THE OWNER, 2026-08-13: *"the 'naming them — 2 of 11 so far' this is bullshit… why do we demand all
+    //  their names already? we can start with the one we know and by the time that's done the names will
+    //   be given to us right?"* — and the machine already agrees with them. `Heist_keep_default_pick`
+    //    ADOPTS late husks for the whole time a keep was in setup this session (`keep.c.adopting`), and
+    //     the 'pulling' branch calls it every beat, so pressing ▶ at 2-of-11 pulls all 11 as the names
+    //      land. Nothing was ever waiting. The spinner was the only thing claiming otherwise.
+    //  So this is a test about a SENTENCE, and it is worth as much as the mechanism: a progress tell that
+    //   cannot finish is a demand, and it made a working system look broken in front of a ready decision.
+    //    The husks and the unity only converge if the source lists the whole folder, which it has no
+    //     reason to do — before this session's unity `un_n` WAS the husk count, so the clause was a
+    //      flicker; the moment `un_n` became the folder's real 68 it became permanent.
+    const { keep } = scene(H, { husks: 2, unN: '11', unSize: String(77 * 1000 * 1000), unD: 1 })
+    const el = draw(H, keep)
+
+    expect(sum(el)).toMatch(/^11 tracks/)              // the truth about the folder is already on screen
+    expect(el.querySelector('.kf-short')).toBe(null)   // …and nothing asks you to wait for the rest
+    await settle()
+    expect(el.querySelector('.kf-short')).toBe(null)
+
+    // THE TWIN, and it is the honest half: with no attestation the total is itself a guess, so "still
+    //  naming them" is a true thing to say and must survive. And even then it is plain text — never a
+    //   spinner, which is a request to wait in front of a decision that is ready to take.
+    const { keep: k2 } = scene(H, { husks: 2, unN: '11', unSize: String(77 * 1000 * 1000) })
+    const el2 = draw(H, k2)
+    const short = el2.querySelector('.kf-short')
+    expect(short).toBeTruthy()
+    expect(short!.textContent).toMatch(/naming them — 2 of 11 so far/)
+    expect(short!.querySelector('.kf-spin')).toBe(null)
+})

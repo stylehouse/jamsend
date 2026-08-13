@@ -34,8 +34,12 @@ import { spawn } from 'node:child_process'
 // HaulFace.spec.ts is a FACE, not a ghost — mounted in jsdom.  It earns its place here because Sounditron
 //  stopped budding heists individually, which makes that one cell the only way into a running heist: an
 //   empty live list is now a lost download, not a cosmetic bug, and there is no browser here to look with.
+// ButlerPatience.spec.ts guards the two SENTENCES the Butler says while it is still working.  Those
+//  are pure functions of `.c` state, so they unit-test cleanly — and they are exactly the kind of
+//   thing no Book covers, because a Book quiesces and never sits in the half-loaded state the owner
+//    reads a red bracket in.  Both bugs it pins were reported off a screenshot, not a fixture.
 const VITEST = ['scripts/HeistUnity.spec.ts', 'scripts/MultiHeist.spec.ts', 'scripts/HaulFace.spec.ts',
-    'scripts/HeistCostLine.spec.ts', 'scripts/KeepMemoDurable.spec.ts']
+    'scripts/HeistCostLine.spec.ts', 'scripts/KeepMemoDurable.spec.ts', 'scripts/ButlerPatience.spec.ts']
 
 const jobs = [
     {
