@@ -37,6 +37,172 @@ Fixed by moving the blocker rather than the blocked:
 
 ## 0. Next move (read first)
 
+### START HERE — the state of it as of 2026-08-13, late
+
+**Nothing is verified on a live runner.** Every change below is unit-tested and compiled; none of it has
+ been seen working. The owner's tabs went down at the end of the session and no Book has been run since
+  the morning. **The first move of the next session is to look at it, not to write anything.** Specifically:
+   open a heist, open a second one while the first runs, and check the Haul cell lists both and opens each.
+
+**What changed about how this can be checked, and it is the session's most reusable finding.** "No browser
+ in the claude container" had been read for weeks as "no face can be tested". That was never true — a
+  Svelte face is a component, and `mount(Face, {target, props:{n, H}})` in jsdom, beside a compiled `.go`
+   mounted for its real verbs, renders it and runs its handlers. `scripts/HaulFace.spec.ts` and
+    `scripts/HeistCostLine.spec.ts` are that; the second one pins the owner's own *"it was short, only
+     showing 1 track"* to a DOM assertion. **Any face-level report can now be reproduced without a runner**,
+      which is the gap that cost a day earlier. Both are in `npm run checks`.
+
+**The three questions that decide what comes next**, in the order they will actually bite:
+ 1. **Does the Haul list feel like the right home for the queue?** It is now the *only* way into a running
+     heist. If it reads as a control panel rather than a way through, the fix is to take verbs off the row,
+      not to bring the individual heist buds back.
+ 2. **Does the setup form really take the left side now?** Four precedence bugs were fixed blind. If it
+     still seats wrong, `BELLY_SWELL` (`vyto_focus.ts`, currently 1.6) is the dial — the pick itself is now
+      one tested function, so a wrong *position* and a wrong *choice* are separately diagnosable.
+ 3. **Is `un_n`/`un_size` actually populated on a friend's records — and is it now the FOLDER's number?**
+     The whole cost line leans on it, it is humdinger-gated so no Book covers it, and it now does disk IO on
+      the share beat. Two things to look at on a live tab: the cost line before anyone has been asked (it
+       should already say 68, not 2), and the beat's own cadence (`Ra_unity_look` is capped at 4 folder
+        listings a beat with a 10-minute TTL, so a settled shelf should cost nothing — if the beat gets
+         sticky, that cap is the dial). A3 below is still the only thing that can put it in a fixture.
+
+**Then the backlog, unchanged: A2/A3 (the owed Books and un-gating the unity), then Track B.**
+
+### THE DATA-RESIDING PASS, 2026-08-13 late — what was audited and what it turned up
+
+Asked for a sweep over "the data residing side". Three findings, all landed; recorded here mostly so the
+ next pass does not re-walk the same ground.
+
+ 1. **`un_n` priced from a cache** — §(1) below. The big one.
+ 2. **Idempotent is not cheap.** `Heist_resume_sync`'s backfill loop called `Heist_newlyadded_note` once per
+     landed pick on a single beat, above a comment reading *"Cheap: Heist_newlyadded_note is already
+      idempotent"*. Two different properties under one word: idempotence bounds what a repeat **writes**,
+       while the entire cost here is the **read** that precedes the decision not to write — every call
+        re-opened the whole newlyadded document (`toc.snap` plus every part up to the first gap, all
+         deWafted). A resumed 68-track heist read the growing ledger 68 times on one reload beat, each open
+          folding one more part than the last. Quadratic, silent, and worse as the collection grows.
+       *Fixed* by letting the note take an already-open ledger and hoisting the open out of the loop —
+        lazily, so the common resume (nothing to repair) still never touches it. **Deliberately not a `.c`
+         cache**: a cache would have to guess a TTL and would widen the window in which another tab appends
+          a part we do not know about and our next append overwrites it. Pinned + mutation-tested in
+           `MultiHeist.spec.ts`.
+ 3. **A silent cap reads as completeness.** `Heist_haul_look` whittles the `%Hauls` bag to the newest 40 and
+     stamps the true total as `n_all`, but `HaulFace` still counted its own truncated list — so a human with
+      317 landed albums would be told they had 40, and the overflow line would sit at "…and 28 more" for
+       ever. Both now read `n_all`. Wrong in the one direction that never looks wrong, which is the general
+        lesson: **whenever a cap exists, something on screen has to know the uncapped number.**
+
+*Checked and found sound* (recorded so it is not re-derived): no `{"undef"}` markers anywhere under
+ `wormhole/` — the guard-before-stamp idiom is holding; the `%Probation` `seq` ordinal cannot collide,
+  because a `drop` flips `feeling` and never deletes the card, so the count it derives from is monotonic;
+   `Berth_open`/`Berth_append`/`Berth_save` are properly bounded, with `Berth_parts_max` (64) triggering a
+    compaction that unlinks the parts it folded.
+
+### TWO BUGS THE OWNER READ OFF A LIVE TAB, 2026-08-13 late — DIAGNOSED, ONE FIXED
+
+**(1) `un_n` counted the warm cache, not the folder. ROOT CAUSE FIXED 2026-08-13, UNVERIFIED LIVE.**
+ *"un_n seems always to be 2, and the MB size is for only 2 (44MB, 2 original flacs), unless I check LOFI
+  then it turns into ~236MB which is about right for this 68 tracks in one directory four disc album"* —
+   then, decisively: *"once I start that supposedly 2 track Heist, it's immediately showing as un_n=68"*.
+
+`Ra_unity_stamp` groups the source's shelf by dirname and counts. **But radiostock is a ~100-file working
+ cache with chronological eviction (`Ra_stock_cap`), not the archive** — so it was never measuring "how big
+  is this folder", it was measuring "how many of this folder happen to be hot right now", which is 1–3. It
+   self-heals to 68 the moment the heist starts, because answering the rummage walks the folder on disk and
+    stocks the rest — i.e. it becomes correct exactly when it is no longer needed. **The whole point of the
+     unity was to know the folder BEFORE anyone is asked.** Same family as the evening's other four: the
+      right computation over the wrong population.
+ *The excuse was disprovable, and the owner disproved it in one sentence.* The verb's own comment defended
+  counting the shelf on the grounds that *"an unstocked file cannot be pulled"*. It can:
+   `Heist_rummage_folder` resolves the seed to its folder and hands it to `Heist_census_heads`, which walks
+    that folder **on disk** — which is precisely why it jumps to 68 the moment the heist starts. A comment
+     asserting an unmeasured property, again; the tell was that the app already knew the right number one
+      beat later. **Nor was it a conservative floor.** A number that is 3% of the truth and arrives *before*
+       the describe answers is the number the human reads while deciding — worse than no number, because it
+        is believed.
+
+ *The fix, landed.* Three new verbs in `Ra.g`, and the stamp takes an optional census:
+  - **`Ra_unity_census(ls)`** — pure: a `Crate_nav_ls`-shaped listing → `{dir:{n,size,unknown}}`.
+  - **`Ra_unity_dirs(shelf)`** — pure: the distinct folders the shelf sits in. *This is why it is affordable*
+     — ~44 standing records collapse to a handful of folders.
+  - **`Ra_unity_look(shelf, nav, cap)`** — one `dir_at` + `expand()` per folder (a **stat**, not a read — the
+     same zero-file-reads law `Crate_nav_ls` keeps), bounded three ways: by that folder count, by `cap` (4 on
+      the share beat), and by a 10-minute TTL per folder cached on `.c`. **Never** a whole-crate walk —
+       `Crate_nav_meander`'s no-enumeration law forbids that on a 200k-track share, and this respects it.
+  `Ra_unity_stamp(shelf, cap, census)` prefers the census and falls back to the shelf count per-folder, so
+   every Book and every un-walked folder behaves exactly as before. **A folder that would not list is left
+    out of the cache entirely** — caching `{n:0}` and letting the TTL defend it would turn a permission blip
+     into a durable "this album is empty". A partly-known folder gets a count but **no size**, because
+      summing the sizes a backend happened to know is a confident understatement, which is this bug again.
+
+ *The one thing worth knowing about the wiring.* `Ra_stock` — the whole-crate stocking pass that used to
+  stamp at the end — **is called only by Books** (grep it: every caller is under `Ghost/Story/`). So
+   `Heist_keep_beat` is the *only* live stamper, which is why the shelf-only count was never going to be
+    corrected by anything downstream. It now looks before it stamps.
+
+ *And a friend is not fixed by fixing us — the number is stamped by the SOURCE.* `un_n`/`un_size` are
+  computed on the owning peer's box by the owning peer's build and ride the card over the wire. Fixing
+   `Ra_unity_stamp` here changes what **your** tab tells your friends; it does nothing to what a friend on
+    an older build tells you. So the record carries an attestation: **`un_d:1` = "I counted my disk"**.
+ **⚠ THE POLARITY IS THE WHOLE POINT, and the first cut had it backwards.** It originally marked the *guess*
+  (`un_lo:1`) — which is unstampable by exactly the builds that most need catching: a peer on yesterday's
+   code sends a shelf-derived 2 with no flag at all, and a reader distrusting only the flag trusts it
+    completely. **Absence has to mean the conservative thing**, so the mark names the good case. A new
+     capability announces itself; old code cannot announce anything. (Found by the owner asking what
+      *"fixing us doesn't fix a friend"* meant — the sentence was true and the code did not implement it.)
+ `HeistFace` believes an unattested **count** (a genuine lower bound) but refuses its **size**, because a
+  shelf-derived count can legitimately exceed the husks listed so far while its size still describes only
+   the two files that were hot — a gap `max` cannot see. Snapped 1-or-absent, deleted rather than zeroed.
+ *And the fallback EXTRAPOLATES rather than quoting the husks flat*, which would pair "12 tracks" with the
+  weight of the 3 we hold — the same mismatched-population bug pointing the other way. It scales what we
+   know up to the count (the owner's own method, and what `secsAll` already did) and wears a `~`.
+ *Ten claims mutation-tested* across `HeistUnity.spec.ts` (census ignored / partial size summed / blip
+  cached as zero / attestation never stamped / never cleared / **polarity flipped** / TTL + cap ignored) and
+   `HeistCostLine.spec.ts` (unattested size trusted / flat fallback / missing `~`). **Unverified live** — it
+    is disk IO on the share beat and wants a real tab.
+
+ *Landed earlier the same day:* **the unity is a FLOOR, never a ceiling.** `HeistFace` read `unTracks || husks.length`
+  — the stamp OUTRANKING the census — so a keep holding 68 real husks announced "2 tracks · 44 MB". That is
+   the original *"it was short, only showing 1 track"* defect wearing a new number, and worse, because 68
+    husks is knowledge in hand. Now `Math.max(unTracks, husks.length)`, with `un_size` trusted only while it
+     describes at least as many tracks as we hold. Pinned in `HeistCostLine.spec.ts`, both halves mutation-
+      tested. **Keep this guard after the root cause is fixed** — it makes the symptom unrepresentable.
+
+**(2) ⚠ THE SECTION WANDERS BECAUSE `%Caper` IS KEYED PER FRIEND, NOT PER HEIST. — FIXED, UNVERIFIED LIVE.**
+ *Landed 2026-08-13 late.* `Heist_job` now mints `{Caper:1, at:<pier>, seed:<seed>}` when handed a seed, and
+  the five hand-written call sites became two verbs: **`Heist_job_of(shop, keep)`** (one find, seed-aware,
+   and it ADOPTS a pre-re-key seedless job rather than minting a second beside it — but only while that is
+    unambiguous, since with two seedless jobs for one friend nothing can say whose is whose) and
+     **`Heist_job_drop(shop, keep)`**, which drops the PARTICLE. That second point is the sibling-destroyer's
+      actual cure: `rm({Caper:1, at:<pub>})` is a QUERY and matches every job that friend has, and a query
+       narrowed by a maybe-absent `seed` would silently widen back to all of them. Two new tests, both
+        mutation-tested (re-key by friend → red; teardown by query → red). **Still wants a live run**: it
+         decides where files land in the real collection, and no runner has seen it. The diagnosis it was
+          built from is below, kept because it is the reasoning, not the changelog.
+
+
+ The owner's listing shows one album split across two sections: 9 tracks of `va - Evolution Of Dub/Vol.6…/
+  Disk 4` under `Transient/0 Latin` (beside the *Tito Puente* album that section belongs to) and exactly one
+   — `10 Rise Up.ogg` — under `Transient/0 Dub`, where the whole album was meant to go.
+
+`Heist_job` mints `home.i({ Caper: 1, at: at })` — **find-or-create by SOURCE PIER**. Every lookup matches
+ (`keep.c.job || shop.o({ Caper: 1, at: keep.sc.pub })[0]`, :2471, :3653). So **two heists from the same
+  friend share one job**, and the job is what carries the `%filing` children (artist → section), `dirs`,
+   `dirs_auto`/`dirs_none` and the manifest. `Heist_rel_for(job, rec)` reads that shared job to decide where
+    every file lands. Heist #2's tracks land under heist #1's section until the shared particle is re-stamped
+     — which is the 9-then-1 split exactly.
+
+**It is worse than misfiling.** Two more consequences fall out of the same key:
+ - `Heist_keep_cancel` does `shop.rm({ Caper: 1, at: keep.sc.pub })` (:3753) — **calling off one heist
+    destroys a sibling's in-flight job** when they share a friend.
+ - the `done` path does the same (:2874), so **heist #1 finishing tears down heist #2's job mid-pull**.
+
+This is the deepest of the multiple-heists defects and it predates tonight — it was simply unreachable while
+ only one heist could stand. **The fix is to key the Caper by the heist, not the pier** (`{Caper:1, seed:…}`,
+  or `at` + `seed`), and to make both teardown paths name the seed. Every call site above must move together;
+   `Heist_soft`/`Heist_wish` mint the same particle from the other direction and need checking too. Do it
+    with a runner available — it decides where files land, and a wrong key writes into the real collection.
+
 ### THE ARC — where this is going, in one page (2026-08-13 evening, written to be steered)
 
 **The destination.** A heist stops being an event you supervise and becomes a *standing appetite*: you
@@ -56,8 +222,69 @@ Fixed by moving the blocker rather than the blocked:
    A3. **Un-gate the unity** (`src_size`/`un_n`/`un_size` are humdinger-only so today's fixtures could
         not move) and re-record the affected Books in one attended sitting. Until then **no Book can
          cover the unity at all** — the unit specs are standing in for it.
-   A4. **One command that runs everything a commit can break**: the three vitest specs *and*
-        `relay-test.ts`. The relay test is not wired to anything, which is exactly why it went unread.
+   A4. ~~**One command that runs everything a commit can break**~~ — **DONE**: `npm run checks`
+        (`scripts/checks.mjs`), the curated vitest specs *plus* `relay-test.ts`, green in ~25s.
+
+### THE PRECEDENCE BUGS — four in one evening, all the same shape (2026-08-13, late)
+
+The owner: *"I want to set up another Heist after the first, and that setup UI comes in as one of four
+ small cells to the right of the Heist-in-progress cell... Heist setup must always claim the full left
+  side of the stage"*. One report, four defects underneath it, and **every one of them was invisible with
+   a single heist standing**:
+
+  1. **Vytui's belly rung enumerated one pose word.** The commissioner poses a heist *form* `stretched`
+      and everything else `big`; the rung tested `=== 'big'`, so the one cell whose entire purpose is to
+       take the room was the one cell that rung could not see. It fell through to a fallback…
+  2. **…and `stage_want` was handed out in mint order** (`keeps[0]`), i.e. to the heist already *running*.
+      So the fallback put the progress bar in the belly and the form on the rim.
+  3. **The pin was a fallback, not a competitor.** `focused_keep` sat below "any standing form", so with a
+      form open, pressing a running heist's bud set the pin, re-commissioned, and changed nothing.
+  4. **Leaving started only the belly's own form** — so with three set up, pressing Radio started one and
+      the ladder handed you the next form; you could not reach the music until you had submitted them all.
+
+**The generalisation, and it is the useful part.** With one of a thing, every rung agrees *by accident* —
+ the mint-order pick, the pose test and the ladder all name the same particle, and a wrong precedence rule
+  is indistinguishable from a right one. The bugs are born the day a second one exists, which is a day the
+   author is never in the room for. So: **when a rule picks one of N, exercise it at N=2 before believing
+    it**, and prefer one function two callers *call* over one decision two callers *re-write* —
+     `Sounditron_belly_keep` is now that function, and it is pure precisely so a unit test can reach it.
+
+Landed: `Vytui.svelte` (any belly pose, not one word), `Sounditron.g` (`Sounditron_belly_keep`; the stage
+ follows it; the pin competes; leaving starts every standing form, sparing only a `choosing` one that is
+  still waiting on you). Covered by 4 new assertions in `scripts/MultiHeist.spec.ts`, each mutation-tested.
+
+### THE HAUL IS BOTH TENSES NOW (2026-08-13, late — the evening's second move)
+
+The owner: *"hmm I thought Haul was all Heists we were currently working on... I suppose this multiplying
+ thing... think about presenting them all on Haul, such that we can click into them through there, where
+  you can cancel them. **building the ways through the UI to the objects**"*.
+
+This doc reserved `%Haul` for "the larger collective" and the first surface read that as **the past** —
+ albums that landed. The owner reads it as **the present** — every nab in flight. Both are the whole take,
+  and the half the cell hid was the half with verbs on it. So the cell now has two sections: what is still
+   coming (openable, promotable, pausable, cancellable) above what has landed.
+
+**Still no second store.** A standing heist is a `%Heist` under `Ra_home_shop`, exactly where the beat
+ walks it. `Heist_shop_find` / `Heist_live_rows` FIND those particles; nothing mints a `%Haul` for an
+  in-flight nab. `Heist_queue_order` is now the single definition of the running order, called by the beat,
+   by `Heist_keep_first` and by the list — **a surface that computed its own order would claim a running
+    order the machine does not have, and be believed.** `Heist_keep_gist` is the row's three words, decided
+     beside the state machine because "which three" is a fact about states, not about styling.
+
+**⚠ THE ONE THING THAT DETONATES.** Sounditron no longer buds heists individually *when the Haul cell is on
+ the rim to speak for them* — a ring of pink discs has no order, and the order is the thing you want with
+  four queued. That makes **HaulFace the only way into a running heist**, so its live list must never be
+   silently empty. Two guards exist and both matter: (a) no `%Hauls` bag ⇒ every keep buds exactly as
+    before, so there is no state with no way in; (b) `HaulFace`'s world is `n.c.up ?? H.c.radio_w`, because
+     `c.up` is `.c` and is only re-stamped on the ~20s slow beat — after a reload the fallback is what
+      carries it. **If you ever see running heists with no cell anywhere, look at those two lines first.**
+
+**One re-record risk, stated so it is not a surprise.** `stage_want` is `.c`, so no snap can record it —
+ but it exempts a body from foam normalisation, and the foam path is the one every Book uses (the focus
+  cut is humdinger-only). So a Book standing **two or more keeps** with different `c.last_touch` can draw
+   a different geometry than it did. That is a *correction*, not a regression — at N≥2 the old pick was
+    the wrong keep by construction — but it is the one place today's glass work can move a Vyto fixture.
+     With 0 or 1 keeps the two picks are provably the same particle, which is every other Book.
 
 **Track B — finish the heist experience.** Each is self-contained and none blocks another.
    B1. **Speculative pre-stage of the seed** — you press ⇊ on a track that is *already streaming*, yet

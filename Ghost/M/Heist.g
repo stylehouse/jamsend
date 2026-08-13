@@ -316,9 +316,23 @@ async Heist_writer_drop(writer):
 //     pull lives while in motion.  Given, the job mints UNDER it; absent, it falls back flat-on-w (the
 //      compat leg during migration).  The seam mirrors Heist_wish's `home` param — the soft and hard
 //       Heist home the same way.  Readers resolve against the same shelf they were minted under.
+// ⚠ AND IT IS KEYED BY THE HEIST, NOT BY THE FRIEND (2026-08-13 — the owner, reading a real landing off
+//  disk: *"the section seems to have wandered in here"*, with one album split across two sections and its
+//   9-vs-1 track split visible in the folder listing).  This minted `{Caper:1, at:<pier>}` — find-or-create
+//    by SOURCE PIER — so two heists from the same friend SHARED ONE JOB.  The job is what carries the
+//     `%filing` children (artist → section), `dirs`/`dirs_auto`/`dirs_none` and the manifest, and
+//      `Heist_rel_for(job, rec)` reads it to decide where every single file lands.  So heist #2's tracks
+//       landed under heist #1's section until the shared particle happened to be re-stamped.
+//  Three faults, one key.  Besides the misfiling: `Heist_keep_cancel` removed `{Caper:1, at:<pub>}`, so
+//   calling off one heist DESTROYED A SIBLING'S IN-FLIGHT JOB; and the `done` path did the same, so heist
+//    #1 finishing tore down heist #2's job mid-pull.  All three were unreachable while only one heist could
+//     stand, which is why this is older than the multiple-heists work and never showed.
+//  `seed` is the heist's own identity (the %Record id it was ⇊'d from) and is already on every keep.  It is
+//   stamped only when given, so the soft `%Caper,wish` phase and any pre-seed caller keep their shape.
 Heist_job(w, at, filings, opts):
     let home = (opts && opts.home) ? opts.home : w
-    let job = home.i({ Caper: 1, at: at })
+    let seedv = (opts && opts.seed) ? String(opts.seed) : ''
+    let job = seedv ? home.i({ Caper: 1, at: at, seed: seedv }) : home.i({ Caper: 1, at: at })
     job.c.up = home
     // OPTIONAL IDENT (§2.4): the hard job carries `hid` the same way the soft wish does — stamped ONLY when
     //  supplied (an undefined would brand the snap {"undef":["hid"]}); a %Caperlet,of:<hid> refers by it.
@@ -955,7 +969,7 @@ async Heist_flatten(w, job, mir):
     if (mir) {
         for (const rec of mir.o({ Record: 1 })) await mir.rm({ Record: 1, id: rec.sc.id })
     }
-    if (job) await (job.c.up || w).rm({ Caper: 1, at: job.sc.at })
+    if (job) (job.c.up || w).drop(job)
 //#endregion
 
 //#region soft — the %Caper starts SOFT and CONDENSES: wish → ask → %Lead → choose → the built pull (§2.4)
@@ -1803,7 +1817,12 @@ Heist_unity_of(mir, seed):
     if (!mir || !seed) return { n: 0, size: 0 }
     let card = this.Ra_rec_find(mir, { Record: 1, id: String(seed) })
     if (!card) return { n: 0, size: 0 }
-    return { n: +(card.sc.un_n || 0), size: +(card.sc.un_size || 0) }
+    // `d` — they COUNTED the folder off their disk ([[Ra_unity_stamp]]'s `un_d`).  Absent means either a
+    //  shelf-derived lower bound (which can be an order of magnitude short) or a peer on a build that
+    //   never priced folders at all — and the reader must treat those the same, which is exactly why the
+    //    flag marks the good case rather than the bad one.  Carried through so the form can hedge an
+    //     unattested number instead of quoting it in the same typeface as a measurement.
+    return { n: +(card.sc.un_n || 0), size: +(card.sc.un_size || 0), d: card.sc.un_d ? 1 : 0 }
 
 // Heist_blag_folder — THE FOLDER, WITHOUT ASKING.  A friend's %MusuThem mirror already holds a %Record card
 //  per track they share, and since the crate-root-relative path landed (`Ra.g`, 4938d5f5) every card carries
@@ -1948,7 +1967,7 @@ Heist_keep_first(keep):
     if (!keep) return 0
     let shop = keep.c.up || null
     if (!shop) return 0
-    let queue = shop.o({ Heist: 1 }).slice().sort((a, b) => (+(a.sc.pri || 0)) - (+(b.sc.pri || 0)))
+    let queue = this.Heist_queue_order(shop)
     let ordered = [keep].concat(queue.filter((k) => k !== keep))
     let i = 0
     for (const k of ordered) {
@@ -2263,22 +2282,34 @@ async Heist_keep_beat(w, ident):
         w.c.keep_beat_at = 'hauls'
         try { await this.Heist_haul_look(rw, nav, this.Heist_mardir(w)) } catch (er) {}
     }
-    // PRICE MY OWN SHELF so my friends' forms can price a nab of it ([[Ra_unity_stamp]]).  Ra_stock stamps
-    //  at the end of its pass, but every shelf standing today was stocked before the stamp existed and a
-    //   re-stock is not something to make anyone do — so re-derive here, off the record census alone (no
-    //    disk, no nav), whenever the shelf's size has moved.  A settled shelf costs one walk of an array
-    //     we already hold and writes nothing.  Humdinger gate is inside Ra_unity_stamp.
+    // PRICE MY OWN SHELF so my friends' forms can price a nab of it ([[Ra_unity_stamp]]).  This is the
+    //  ONLY live caller — `Ra_stock`'s whole-crate pass is Book-only (grep it: every caller is a .g under
+    //   Ghost/Story), so what this beat computes IS what every friend's setup form quotes.  That is why
+    //    the shelf-only version was not a harmless approximation: nothing else was ever going to correct it.
+    //  IT NOW ASKS THE DISK, a few folders per beat ([[Ra_unity_look]]).  One `dir_at` + `expand()` per
+    //   NEW folder — a stat, no file reads — bounded by cap 4 here and by a 10-minute TTL per folder, so
+    //    a settled shelf costs nothing and a rotating one prices each new album once.  The look is inside
+    //     the same nav+humdinger seam as the memo and the haul look above; a Book has no nav and gets {},
+    //      which falls the stamp straight back to its old shelf-count behaviour.
     //  A CAP OF 40 PER BEAT, and the `unity_more` latch to come back for the rest: an uncapped first pass
     //   over a standing shelf bumps every record, and a bumped record is re-cast to every friend — a few
     //    hundred card re-casts in one beat, on a live tab, for a field nobody is waiting on.  Spread it.
+    //  THE STALE-GUARD IS `unity_more` OR A MOVED SHELF SIZE — plus `unity_look_ts`, because the census can
+    //   now change while the shelf does not (a folder's TTL lapses, or a heist lands new files INTO a folder
+    //    the shelf already sits in).  Without that third trigger a settled shelf would freeze the first
+    //     price it ever computed, which is the same class of bug as the shelf-only count it replaces.
     if (typeof this.Ra_unity_stamp === 'function' && typeof this.Ra_home_self === 'function') {
         let mine = this.Ra_home_self(rw, me)
         let mineN = mine ? this.Ra_recs(mine).length : 0
-        if (mineN && (rw.c.unity_more || +(rw.c.unity_n || -1) !== mineN)) {
+        let ulapse = Date.now() - (+(rw.c.unity_look_ts || 0)) > this.Ra_unity_ttl()
+        if (mineN && (rw.c.unity_more || ulapse || +(rw.c.unity_n || -1) !== mineN)) {
             rw.c.unity_n = mineN
             w.c.keep_beat_at = 'unity'
+            let census = {}
+            try { census = await this.Ra_unity_look(mine, nav, 4) } catch (er) { census = {} }
+            rw.c.unity_look_ts = Date.now()
             let moved = 0
-            try { moved = this.Ra_unity_stamp(mine, 40) } catch (er) {}
+            try { moved = this.Ra_unity_stamp(mine, 40, census) } catch (er) {}
             rw.c.unity_more = (moved >= 40) ? 1 : 0
         }
     }
@@ -2299,9 +2330,12 @@ async Heist_keep_beat(w, ident):
     //     the one place the order exists, and Heist_keep_first renumbers.  The sort is STABLE, so keeps
     //      that share a pri — every keep, until someone promotes one — keep their z-order exactly, and a
     //       world where nobody touches the queue behaves byte-for-byte as it did.
+    //  …AND IT IS `Heist_queue_order` NOW, not a sort written here: the same order is needed by
+    //   Heist_keep_first (which renumbers it) and by the Haul list (which shows it), and a surface that
+    //    disagreed with THIS loop about what runs next would be worse than no surface — it would be believed.
     let GLOBAL = +(w.c.heist_inflight_total || w.c.heist_inflight || 1)
     rw.c.heist_budget = GLOBAL
-    let queue = shop.o({ Heist: 1 }).slice().sort((a, b) => (+(a.sc.pri || 0)) - (+(b.sc.pri || 0)))
+    let queue = this.Heist_queue_order(shop)
     for (const keep of queue) {
         // PAUSED IS A FLAG, NOT A STATE (§0U.3).  With several queued, "not now" is a natural verb and the
         //  only way to say it was ✕, which loses the whole setup.  A flag rather than a `state` because
@@ -2425,6 +2459,8 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         let unity = this.Heist_unity_of(srcmir, seed)
         if (unity.n && +(keep.sc.un_n || 0) !== unity.n) { keep.sc.un_n = unity.n; keep.bump() }
         if (unity.size && +(keep.sc.un_size || 0) !== unity.size) { keep.sc.un_size = unity.size; keep.bump() }
+        if (unity.n && unity.d && !keep.sc.un_d) { keep.sc.un_d = 1; keep.bump() }
+        if (unity.n && !unity.d && keep.sc.un_d) { delete keep.sc.un_d; keep.bump() }
         // ASK THEM ANYWAY — and gate on the WIRE census, never on the blended list.  The first cut of the
         //  blag gated here on `Heist_rummage_recs`, which the blag itself fills, so ONE husk we happened to
         //   hold counted as a complete answer: the describe-ask never went out, and the form sat on
@@ -2465,8 +2501,8 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         this.Heist_keep_default_pick(keep, srcmir, seed)         // ensure at least the heard track is kept
         let picks = keep.o({ Pick: 1 })
         let own = this.Ra_home_self(rw, me)
-        let job = keep.c.job || shop.o({ Caper: 1, at: keep.sc.pub })[0]
-        if (!job) job = this.Heist_job(w, keep.sc.pub, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_none: keep.sc.dirs_none, dirs_auto: keep.sc.dirs_auto })
+        let job = this.Heist_job_of(shop, keep)
+        if (!job) job = this.Heist_job(w, keep.sc.pub, this.Heist_keep_filings(keep), { home: shop, seed: keep.sc.seed, dirs: keep.sc.dirs, dirs_none: keep.sc.dirs_none, dirs_auto: keep.sc.dirs_auto })
         keep.c.job = job
         // RESUME (the human 2026-07-30 — the Sounditron pages auto-reload every ~10min, no persisted
         //  %Heist/%Pick state yet survives that, so every reload used to mean pulling every track again
@@ -2868,7 +2904,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         if (!left && picks.length) {
             keep.sc.state = 'done'
             keep.bump()
-            try { (job.c.up || shop).rm({ Caper: 1, at: keep.sc.pub }) } catch (er) {}
+            try { this.Heist_job_drop(shop, keep) } catch (er) {}
         }
         return
     }
@@ -3573,6 +3609,9 @@ async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir, keep):
     let selfsuff = picks.some((p) => p.sc.path && +(p.sc.bytes || 0) > 0)
     if (!husky && !selfsuff) return
     job.c.resume_synced = 1
+    // OPENED LAZILY, ONCE, for the whole backfill loop below — lazily because the overwhelmingly common
+    //  resume has nothing to repair and must not touch the ledger at all.
+    let nawaft = null
     let candidates = []
     for (const pick of picks) {
         if (pick.sc.landed) {
@@ -3581,11 +3620,19 @@ async Heist_resume_sync(w, nav, job, own_lib, mir, picks, mardir, keep):
             //   having"). A pick's `landed` flag rides forward across every reload once persisted, but
             //    nothing else ever re-checks an already-landed pick — if its ORIGINAL Heist_catalog_land
             //     call predates this session's Probation-card rewrite (or hit an earlier bug), the two drift
-            //      apart silently forever. Cheap: Heist_newlyadded_note is already idempotent (skips a
-            //       duplicate 'fresh' card), so this is a no-op the common case, a silent repair the rare one.
+            //      apart silently forever. Heist_newlyadded_note is idempotent (skips a duplicate 'fresh'
+            //       card), so this is a no-op the common case, a silent repair the rare one.
+            //  IT IS NOT, HOWEVER, CHEAP — which is what this comment used to claim (2026-08-13). Idempotence
+            //   bounds what a repeat WRITES; every call still READS the whole ledger back off disk first, and
+            //    this is a loop over every landed pick on one beat. A resumed 68-track heist opened the whole
+            //     newlyadded document 68 times, each open folding one more part than the last. So the ledger
+            //      is opened ONCE, above, and passed in — the reads go from O(picks²) to one.
             if (pick.sc.artist || pick.sc.title) {
                 let held = this.Ra_recs(own_lib).find((r) => r.sc.artist === pick.sc.artist && r.sc.title === pick.sc.title)
-                if (held && held.sc.path) { try { await this.Heist_newlyadded_note(nav, mardir, held.sc.path) } catch (er) {} }
+                if (held && held.sc.path) {
+                    if (!nawaft) { try { nawaft = await this.Heist_newlyadded_waft(nav, mardir) } catch (er) { nawaft = null } }
+                    if (nawaft) { try { await this.Heist_newlyadded_note(nav, mardir, held.sc.path, nawaft) } catch (er) {} }
+                }
             }
             continue
         }
@@ -3647,8 +3694,8 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route):
     if (!picks.length) { keep.sc.state = 'choosing'; keep.bump(); return }
     // FIND-or-create the job (the review's reload finding): keep.c.job is runtime-only, so after a reload
     //  with state:'committing' persisted a bare create would mint a SECOND %Caper beside the orphaned first.
-    let job = keep.c.job || shop.o({ Caper: 1, at: keep.sc.pub })[0]
-    if (!job) job = this.Heist_job(w, keep.sc.pub, this.Heist_keep_filings(keep), { home: shop, dirs: keep.sc.dirs, dirs_none: keep.sc.dirs_none, dirs_auto: keep.sc.dirs_auto })
+    let job = this.Heist_job_of(shop, keep)
+    if (!job) job = this.Heist_job(w, keep.sc.pub, this.Heist_keep_filings(keep), { home: shop, seed: keep.sc.seed, dirs: keep.sc.dirs, dirs_none: keep.sc.dirs_none, dirs_auto: keep.sc.dirs_auto })
     keep.c.job = job
     let own = this.Ra_home_self(rw, me)
     await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, this.Heist_mardir(w), keep)
@@ -3681,8 +3728,40 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route):
     if (!left) {
         keep.sc.state = 'done'
         keep.bump()
-        try { if (job) await (job.c.up || shop).rm({ Caper: 1, at: keep.sc.pub }) } catch (er) {}
+        try { this.Heist_job_drop(shop, keep) } catch (er) {}
     }
+
+// ── ONE FIND, ONE DROP, FOR THE KEEP'S OWN JOB (2026-08-13, with the per-heist re-key above).  Every call
+//  site used to write the lookup by hand — `keep.c.job || shop.o({ Caper: 1, at: keep.sc.pub })[0]` in two
+//   places, and three different `rm({Caper:1, at: …})` teardowns.  Five copies of one decision is how the
+//    wrong key survived: re-keying meant finding all five, and missing one would leave a heist unable to
+//     find the job it just minted.  Both verbs below take the KEEP, so the seed cannot be forgotten.
+//  ⚠ THE DROP TAKES THE PARTICLE, never a query.  `rm({Caper:1, at:<pub>})` matches every job for that
+//   friend — which is exactly the sibling-destroying bug — and a query narrowed with a maybe-absent `seed`
+//    would silently widen again to all of them the moment the key was missing.  `drop(job)` removes that
+//     one particle and cannot over-match, whatever its shape.
+Heist_job_of(shop, keep):
+    if (!keep) return null
+    if (keep.c.job) return keep.c.job
+    if (!shop) return null
+    let seedv = String(keep.sc.seed || '')
+    let hit = seedv ? shop.o({ Caper: 1, at: keep.sc.pub, seed: seedv })[0] : null
+    // a job minted before the re-key wears no `seed` — adopt it rather than mint a second beside it, and
+    //  only when this friend has exactly ONE such job, since with two we cannot tell whose it was.
+    if (!hit && seedv) {
+        let old = shop.o({ Caper: 1, at: keep.sc.pub }).filter((j) => !j.sc.seed)
+        if (old.length === 1) hit = old[0]
+    }
+    if (!hit && !seedv) hit = shop.o({ Caper: 1, at: keep.sc.pub })[0]
+    return hit || null
+
+Heist_job_drop(shop, keep):
+    let job = this.Heist_job_of(shop, keep)
+    if (!job) return 0
+    let home = job.c.up || shop
+    if (home) home.drop(job)
+    if (keep && keep.c.job) delete keep.c.job
+    return 1
 
 // Heist_keep_filings — the per-artist filing decisions the picks name (dedup by artist, first genre wins):
 //  the [{artist,genre}] Heist_job pins and Heist_filing_for → Heist_rel_for read at land time.
@@ -3747,7 +3826,7 @@ async Heist_keep_cancel(w, keep):
     if (!keep) return
     let shop = keep.c.up || this.Ra_home_shop(w, this.Radio_pub(w) || 'me')
     // drop any in-flight job too (an abandon from 'committing' must not leave a live %Caper pulling).
-    if (keep.sc.pub) { try { shop.rm({ Caper: 1, at: keep.sc.pub }) } catch (er) {} }
+    if (keep.sc.pub) { try { this.Heist_job_drop(shop, keep) } catch (er) {} }
     // THE CLOSE IS THE FIRST MOVE, NOT THE LAST (the owner 2026-08-09: "close the Haul faster after I
     //  click the double-check X").  `Heist_keep_forget` is TWO disk round-trips — Berth_open READS the
     //   persisted Heists waft off the share, Berth_save WRITES it back — and this awaited BOTH before the
@@ -3836,7 +3915,19 @@ async Heist_keep_reset_all(w):
 async Heist_newlyadded_waft(nav, mardir):
     return await this.Berth_open(nav, mardir, '', 'Newlyadded')
 
-async Heist_newlyadded_note(nav, mardir, entry):
+// `held` (optional) — an ALREADY-OPEN ledger to note into, for a caller in a LOOP.  Opening is not free:
+//  [[Berth_open]] reads `toc.snap` plus every part up to the first gap and deWafts the lot, and this
+//   document grows for the life of the collection.  Per landed track that is fine — a download is orders
+//    of magnitude dearer than a read.  Inside `Heist_resume_sync`'s backfill it is not: that loop calls
+//     this once per landed pick on a single beat, so a resumed 68-track heist opened the whole ledger 68
+//      times, each open reading one more part than the last.  Quadratic, on reload, silently.
+//  The comment there said *"Cheap: Heist_newlyadded_note is already idempotent"* — and idempotent is not
+//   cheap.  Idempotence is about what a repeat WRITES; this cost is entirely in the READ that precedes the
+//    decision not to write.  Two different properties, one word.
+//  Passing the waft rather than caching it on `.c` deliberately: a cache would have to guess a TTL and
+//   would widen the window in which ANOTHER tab appends a part we do not know about and our next append
+//    overwrites it.  A hoisted open is scoped to exactly the loop that needs it and adds no such window.
+async Heist_newlyadded_note(nav, mardir, entry, held):
     // THE LEDGER MOVED — say so, so nothing has to POLL to find out (2026-08-13).  `Heist_haul_look`
     //  reads this whole waft off disk to build the What-Heisted list; without a tell it would have to
     //   re-read on a timer for ever, on a collection that changes a few times an hour at most.  One
@@ -3845,7 +3936,7 @@ async Heist_newlyadded_note(nav, mardir, entry):
     //      a list that is silently stale, and those are not the same size of mistake.
     let MHn = this.top_House ? this.top_House() : null
     if (MHn) MHn.c.newly_seq = +(MHn.c.newly_seq || 0) + 1
-    let waft = await this.Heist_newlyadded_waft(nav, mardir)
+    let waft = held || await this.Heist_newlyadded_waft(nav, mardir)
     // IDEMPOTENT-APPEND (the human 2026-07-30, spotting the same track logged 'fresh' seven times over
     //  as many reloads): a still-'fresh' card for this exact path is a REPLAY of Heist_resume_sync's
     //   accept path re-verifying an already-landed pick, never a new arrival — skip.  A 'love'd or
@@ -3931,11 +4022,28 @@ async Heist_newlyadded_grouped(nav, mardir):
 //     gained a track today is today's news); `title`/`artist` come off the folder name, which is the only
 //      thing a path-derived ledger honestly knows.
 //  Returns how many albums the ledger came to.
+// ── AND IT IS WHITTLED, BECAUSE THE PERMANENT RECORD IS ELSEWHERE (the owner 2026-08-13: *"Landed needs
+//  to whittle_N() I guess... there's a permanent record isn't there?"* — there is: the newlyadded log on
+//   disk, which has every landed file with its folder and its arrival time and is never truncated).  This
+//    bag is a MIRROR for a cell to read synchronously, so holding a row per album since installation is
+//     pure carrying cost: memory, a longer walk every slow beat, and a list nobody scrolls.
+//  ⚠ WHITTLE AT THE SOURCE, NOT AT THE BAG.  The obvious shape — mint every group, then drop all but the
+//   newest N — churns forever: this runs every slow beat, so it would re-mint the same hundreds and
+//    re-drop them, every pass, for as long as the tab is up.  Taking the newest N off the LEDGER first
+//     means the same N are found-or-created each pass (idempotent, no bumps) and the prune below drops the
+//      tail exactly once.  Same lesson as `whittle_N`'s own "from the front (oldest)", one layer earlier.
+//  `n_all` carries the TRUE count onto the bag so the face can say "…and 143 more" honestly rather than
+//   quoting a number bounded by this cap — a silent cap reads as "that is all of it", which it is not.
+Heist_haul_keep():
+    return 40
 async Heist_haul_look(w, nav, mardir):
     if (!w || !nav) return 0
-    let groups = await this.Heist_newlyadded_grouped(nav, mardir)
+    let all = await this.Heist_newlyadded_grouped(nav, mardir)
+    let at_of = (g) => { let t = 0; for (const card of g.cards) { let v = +(card.sc.at || 0); if (v > t) t = v } return t }
+    let groups = all.slice().sort((a, b) => at_of(b) - at_of(a)).slice(0, this.Heist_haul_keep())
     let bag = w.oai({ Hauls: 1, dontSnap: 1 })
     bag.c.up = w
+    if (bag.sc.n_all !== String(all.length)) { bag.sc.n_all = String(all.length); bag.bump() }
     let live = new Set()
     let n = 0
     for (const g of groups) {
@@ -3969,6 +4077,63 @@ Heist_haul_rows(w):
     let bag = w ? w.o({ Hauls: 1 })[0] : null
     if (!bag) return []
     return bag.o({ Haul: 1 }).sort((a, b) => (+b.sc.at || 0) - (+a.sc.at || 0))
+
+// ── THE OTHER HALF OF THE HAUL: WHAT IS STILL COMING ───────────────────────────────────────────────
+//  (the owner 2026-08-13: *"hmm I thought Haul was all Heists we were currently working on... I suppose
+//   this multiplying thing... think about presenting them all on Haul, such that we can click into them
+//    through there, where you can cancel them.  building the ways through the UI to the objects"*.)
+//  The doc reserved `%Haul` for "the larger collective" and the first surface read that as THE PAST —
+//   albums that landed.  The owner read it as THE PRESENT — every nab in flight.  Both are the whole
+//    take; the cell was only showing half of it, and the half it hid was the half with verbs on it.
+//  ⚠ AND STILL NO SECOND STORE.  A standing heist is a `%Heist` under `Ra_home_shop`, which is where the
+//   beat walks it — these verbs FIND those particles and hand them over.  Nothing here mints a `%Haul`
+//    for an in-flight nab; that would be the two-ledgers mistake wearing a new hat.
+//
+// Heist_queue_order — THE RUNNING ORDER, in one place.  `sc.pri` ascending, absent = 0, and the sort is
+//  STABLE so keeps that share a pri (every keep, until someone promotes one) hold their z-order exactly.
+//  Three callers need this answer — the beat that spends the global allowance, `Heist_keep_first` that
+//   renumbers, and the Haul list that shows you the queue — and they must not be three copies of it: a
+//    list that disagrees with the beat about what runs next is worse than no list, because it is believed.
+//     (Earned the hard way the same evening; see [[at-n-equals-one-every-rung-agrees]].)
+Heist_queue_order(shop):
+    if (!shop) return []
+    return shop.o({ Heist: 1 }).slice().sort((a, b) => (+(a.sc.pri || 0)) - (+(b.sc.pri || 0)))
+
+// Heist_shop_find — the loading-zone shelf, FOUND, never minted.  `Ra_home_shop` is find-or-create and a
+//  face polls, so calling it from a render would conjure the very shelf it is reporting on (the
+//   [[a-read-helper-inherits-creation]] shape).  Same walk, `o` throughout: absent shelf ⇒ no heists ⇒ [].
+Heist_shop_find(w):
+    if (!w) return null
+    let me = (typeof this.Radio_pub === 'function') ? this.Radio_pub(w) : null
+    if (!me) return null
+    let home = w.o({ MusuSelf: 1, pub: me })[0]
+    if (!home) return null
+    return home.o({ shop: 1, pub: me })[0] || null
+
+// Heist_live_rows — every heist you are currently working on, in the order the beat will actually run
+//  them.  Pure: a face may call this every poll forever.
+Heist_live_rows(w):
+    return this.Heist_queue_order(this.Heist_shop_find(w))
+
+// Heist_keep_gist — a keep's state as the ONE SHORT PHRASE a list row can carry, decided here rather than
+//  in the face.  HeistFace writes a full sentence because it is the cell you opened; a row in a list of
+//   five wants three words, and "which three" is a fact about the state machine, not about styling — so it
+//    lives beside the state machine, where it is unit-testable without a browser.
+//  Ordered most-decisive first: `paused` is a FLAG over any state (§0U.3) so it must be read before the
+//   state at all, and `done` before that because a done keep is about to drop itself and is not "paused"
+//    in any sense worth saying.  `queued`/`no_route` are `.c` marks the beat leaves as it passes.
+Heist_keep_gist(keep):
+    if (!keep) return { word: '', live: 0, form: 0, landed: 0, total: 0 }
+    let st = String(keep.sc.state || 'primed')
+    let g = { word: 'running', st: st, live: 1, form: 0, landed: +(keep.sc.landed_n || 0), total: +(keep.sc.total_n || 0) }
+    if (st === 'done') { g.word = 'done'; g.live = 0; return g }
+    if (keep.sc.paused) { g.word = 'paused'; g.form = (st === 'pulling' || st === 'committing') ? 0 : 1; return g }
+    if (st === 'committing') { g.word = 'finishing'; return g }
+    if (st === 'choosing') { g.word = 'nothing picked yet'; g.form = 1; return g }
+    if (st === 'primed' || st === 'wanted' || st === 'asking') { g.word = 'setting up'; g.form = 1; return g }
+    if (keep.c.no_route_ts) { g.word = 'waiting for ' + String(keep.sc.from_name || 'them'); return g }
+    if (keep.c.queued_ts) { g.word = 'waiting its turn'; return g }
+    return g
 
 // Heist_feel — the listener's verdict on a probation entry.  'love' graduates in place; 'drop' is
 //  DENY: the file leaves the collection (deleted off the disk) and its catalog card retires.  The drop

@@ -360,9 +360,23 @@ Sounditron_commission(w):
     //   Run House — and that is fine and deliberate: a grapple is a `.c` ref, so the cross-House reach
     //    costs nothing, and the supervisor OUTLIVES this run rather than dying with the thing it
     //     reports on.  A missing Supervisor is simply no cell (a bare Book may have none).
+    // ── …AND IT IS OFF THE GLASS NOW (the owner 2026-08-13: *"lets get rid of the Supervisor cell, which
+    //  never says anything important of coherent"*).  The quiet-when-healthy law above was the right shape
+    //   and it did not save the cell: the complaint is about the LOUD case too, which is the only case that
+    //    law ever let through.  A sanity cell that cannot say anything a person can act on is not a sanity
+    //     cell, it is an alarm nobody reads — and this glass has spent the whole month getting smaller.
+    //  THE SAME CUT %Tuner AND %Diag TOOK, and for the same reason: the WORLD is untouched.  Supervisor.g
+    //   still watches, `%Watch`/`%Dial` still stand, `runner_ask supervisor` still reads the roster off the
+    //    wire ([[supervisor-roster-has-a-cli-now]]), and the witness reads exactly what it always read.
+    //     Only the GRAPPLE LIST loses it.  Kept under `show_diag` — the one branch where a cell costs no
+    //      fixture, since no Book turns it on — so a developer can still put it back with a toggle, which
+    //       is the difference between retiring a cell and deleting the machinery behind it.
+    //  `amiss` DELIBERATELY NO LONGER RAISES IT.  If the supervisor needs to interrupt a human again, the
+    //   answer is a sentence somewhere they are already looking, not a cell that reappears — the Haul cell
+    //    is the precedent (it buds when there is news and goes away on its own).
     let supw = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     let suprow = supw ? supw.o({ Supervisor: 1 })[0] : null
-    let sup_out_of_line = suprow ? (Number(suprow.sc.amiss || 0) > 0 || w.c.show_diag) : 0
+    let sup_out_of_line = (suprow && w.c.show_diag) ? 1 : 0
     if (suprow && sup_out_of_line) organs.push(suprow)
     // ITS SIZE IS ITS VOLUME — quiet when healthy made SPATIAL, not just textual.  A calm supervisor
     //  takes a small readable seat; a loud one grows until it rivals the music (%Now is dose 1.6, and
@@ -494,13 +508,22 @@ Sounditron_commission(w):
     //   with real form to fill in — choosers, a track list, a phase — and it was being handed the
     //    same seat as a status pip.  `.c.stage_want` is a request, not a command: Vyto_stage_tok
     //     reads it only when the human has not staged something themselves, so a drag still wins.
-    //  Only the FIRST keep asks; two keeps both demanding the stage would just flap between them,
+    //  Only ONE keep asks; two keeps both demanding the stage would just flap between them,
     //   and the second one is exactly the case the human should resolve by dragging.
-    let wanted = 0
+    // ── AND THE ONE THAT ASKS IS THE FORM, NOT THE FIRST-MINTED (2026-08-13 — the owner: *"I want to
+    //  set up another Heist after the first, and that setup UI comes in as one of four small cells to
+    //   the right of the Heist-in-progress cell"*).  This was `keeps[0]` — mint order — which with one
+    //    keep is trivially the right keep and with two is reliably the WRONG one: the older, already-
+    //     running heist held the ask while the form you had just opened did not.  Vytui's belly rungs
+    //      then had to break the tie and put the progress bar in the belly.
+    //  Same pick as the belly ladder, deliberately, and by CALLING it rather than by re-writing it: the
+    //   commissioner must not be able to name one belly and ask the stage for another.  This was two
+    //    copies of one decision for about ten minutes, which is exactly long enough to prove the point.
+    let pin = (w.c.focused_keep && keeps.indexOf(w.c.focused_keep) >= 0) ? w.c.focused_keep : null
+    let stager = this.Sounditron_belly_keep(setups, pin) || (keeps.length ? keeps[0] : null)
     for (const keep of keeps) {
-        if (!wanted) keep.c.stage_want = 1
-        if (wanted && keep.c.stage_want) delete keep.c.stage_want
-        wanted = 1
+        if (keep === stager) keep.c.stage_want = 1
+        if (keep !== stager && keep.c.stage_want) delete keep.c.stage_want
         organs.push(keep)
     }
     // THE POSE PARTS — the App↔Vyto seam (the human 2026-08-09: "make the toplevel model we push to it
@@ -580,24 +603,41 @@ Sounditron_commission(w):
         //  The human's own pick (rung 2) outranks the alarm deliberately: an explicit press is a
         //   person at the wheel, and the Supervisor still BUDS when amiss, so nothing is hidden —
         //    it just does not yank the belly out from under a deliberate choice.
-        let fmain = null
-        // RUNG 1 IS A KEEP YOU ARE STILL FILLING IN, not merely a keep (see the setups split up top).
-        //  Among several forms the belly goes to the one you TOUCHED LAST — `c.last_touch` is the same
-        //   cursor Heist_keep_step's dose focus already reads and every interaction already bumps, so
-        //    pressing a queued heist's row promotes it here with no new mechanism.
-        for (const k of setups) if (!fmain || +(k.c.last_touch || 0) > +(fmain.c.last_touch || 0)) fmain = k
-        // RUNG 1b — A RUNNING HEIST YOU ASKED TO SEE.  Every keep wears the SAME mainkey, so `w.c.focused`
-        //  (a mainkey string) cannot name one of three; pressing a heist bud pins the particle itself on
-        //   `w.c.focused_keep` instead.  Cleared by Sounditron_focus_to, so pressing Radio|Door lets go of
-        //    it — and dropped here if the keep has since finished and left the shop.
+        // ── WHAT HEISTED — DISCOVERED HERE, BEFORE THE LADDER RUNS (2026-08-13; moved up the same day,
+        //  the owner: *"Haul is there but I can't click into it"*).  It was found down in the buds block
+        //   and pushed into `organs` there — THIRTY LINES AFTER rung 2 scans `organs` for `w.c.focused`.
+        //    So the bud rendered, its press set `focused:'Hauls'`, the next commission looked for a
+        //     `Hauls` organ, did not find one yet, and fell through to the Radio: a cell you could see
+        //      and could not enter.  An organ has to EXIST before the ladder can choose it.
+        //  Kept in `organs` while it is fresh OR while you are in it — otherwise reading yesterday's
+        //   list would eject you the moment the 24h window rolled past the last arrival.
+        // ── …AND WHILE ANYTHING IS STILL COMING (the owner 2026-08-13: *"I thought Haul was all Heists we
+        //  were currently working on... think about presenting them all on Haul, such that we can click
+        //   into them through there, where you can cancel them"*).  The cell showed only the PAST; the
+        //    owner reads `%Haul` as the whole take, present tense included.  So it stands whenever a heist
+        //     stands, which is exactly when you want a way to reach one.
+        let hbag = krw ? krw.o({ Hauls: 1 })[0] : null
+        let hbag_fresh = 0
+        if (hbag) {
+            let dayAgo = Math.floor(Date.now() / 1000) - 86400
+            for (const row of hbag.o({ Haul: 1 })) { if (+(row.sc.at || 0) >= dayAgo) hbag_fresh = hbag_fresh + 1 }
+            if ((hbag_fresh || anyKeep || w.c.focused === 'Hauls') && organs.indexOf(hbag) < 0) organs.push(hbag)
+        }
+        // RUNGS 1 + 1b — A KEEP YOU ARE STILL FILLING IN, or one you explicitly asked to see.  Both live
+        //  in `Sounditron_belly_keep`; see its header for why they are one comparison and not two rungs.
+        //   The stale pin is dropped here (the keep finished and left the shop) as well as guarded there,
+        //    because this is the only place that can actually forget it.
         if (w.c.focused_keep && keeps.indexOf(w.c.focused_keep) < 0) delete w.c.focused_keep
-        if (!fmain && w.c.focused_keep) fmain = w.c.focused_keep
+        let fmain = this.Sounditron_belly_keep(setups, pin)
         // `org`, NOT `o` — `o` is the find VERB in this dialect, so `for (const o of organs)` compiles
         //  to `for (const w.oa({of: 1}) organs)` and the generated module does not parse.  It was the
         //   only `const o of` in the whole Ghost tree, which is why nothing had hit it before.  Same
         //    family as the `%`-after-an-IO-verb peel collision: a JS keyword next to a verb name.
         if (!fmain && w.c.focused) for (const org of organs) if (Object.keys(org.sc)[0] === w.c.focused) { fmain = org; break }
-        if (!fmain && suprow && sup_out_of_line) fmain = suprow
+        // (the sanity rung is GONE — 2026-08-13, with the cell.  It said "a cell that has gone amiss is by
+        //  definition the thing worth seeing", which was true of the rung and false of the cell: what it
+        //   then showed you was not actionable.  A diag-only cell must never take the belly anyway, or
+        //    flipping `show_diag` on would yank the room out from under whatever you were doing.)
         if (!fmain) for (const org of organs) if (Object.keys(org.sc)[0] === 'Radio') { fmain = org; break }
         if (!fmain) for (const org of organs) if (Object.keys(org.sc)[0] === 'Door') { fmain = org; break }
         let focusOrgans = []
@@ -610,8 +650,30 @@ Sounditron_commission(w):
         //  The BELLY's press is removed, not left stale: pressing the subject to re-select the
         //   subject is a no-op that still costs a re-commission and a wake.
         let buds = []
-        if (anyKeep) for (const keep of keeps) if (keep !== fmain) buds.push(keep)
+        // ── ONE COLLECTIVE CELL, NOT N INDIVIDUAL ONES (the owner 2026-08-13: *"think about presenting
+        //  them ALL on Haul, such that we can click into them through there"*).  Every standing heist used
+        //   to bud on its own, which was right when there was one and wrong the moment there were four: the
+        //    rim filled with pink discs each showing a name and a fraction, the room the belly needed went
+        //     to them, and the ORDER — the one thing you actually want when several are queued — was
+        //      unrepresentable, because a ring of buds has no order.  The Haul cell says all of it in a
+        //       list, with the running order the beat actually uses, and it carries the verbs a bud cannot
+        //        (promote, pause, call off).  So heists bud only when Haul is NOT there to speak for them.
+        //  …AND IT IS NOT A TIE-BREAK, IT IS THE RULE (the owner 2026-08-13, after seeing the first cut:
+        //   *"we never want to list Heist as cells, we only avail them through Haul, but click on things"*).
+        //    The first version budded heists whenever Haul was not itself budding — which still put four
+        //     pink discs on the rim the moment you pressed INTO Haul, the one place you had just gone to
+        //      get away from them.  A heist is reached by clicking a row, full stop.  It can still be the
+        //       BELLY (that is what clicking a row does, and a setup form takes the room by its own rung);
+        //        it is never one of the little ones.
+        //  Deliberately a rule about the SURFACE, not about the heists: no bag at all (nothing has ever
+        //   landed and the slow beat has not minted it) ⇒ every keep buds exactly as before, so there is no
+        //    state in which a running heist has no way in.  That is the invariant, and it is the only `if`.
+        let hbag_bud = hbag && (hbag_fresh || anyKeep) && hbag !== fmain
+        if (hbag_bud) buds.push(hbag)
+        if (anyKeep && !hbag) for (const keep of keeps) if (keep !== fmain) buds.push(keep)
         // the sanity cell keeps its quiet-when-healthy law: amiss ⇒ it buds onto the belly
+        // the sanity cell buds only under `show_diag` now (see the cut at its mint) — its quiet-when-healthy
+        //  law survives as "quiet always, unless you asked for the machinery".
         if (suprow && sup_out_of_line && suprow !== fmain) buds.push(suprow)
         // ── WHAT HEISTED, AND ONLY WHILE IT IS NEWS (2026-08-13 — the owner: *"yeah build something
         //  aye"*, on the What Heisted list).  It follows the sanity cell's law rather than the Door's:
@@ -621,13 +683,7 @@ Sounditron_commission(w):
         //      something has to be able to tell you they landed.  So it buds when an album arrived in
         //       the last 24h, and goes away again on its own.  Bud, never belly: it is a thing to
         //        GLANCE at, and pressing it makes it the subject like every other bud.
-        let hbag = krw ? krw.o({ Hauls: 1 })[0] : null
-        if (hbag) {
-            let dayAgo = Math.floor(Date.now() / 1000) - 86400
-            let fresh = 0
-            for (const row of hbag.o({ Haul: 1 })) { if (+(row.sc.at || 0) >= dayAgo) fresh = fresh + 1 }
-            if (fresh && hbag !== fmain) { if (organs.indexOf(hbag) < 0) organs.push(hbag); buds.push(hbag) }
-        }
+        //  (Pushed up top now, because it also stands in for the individual heist buds — see there.)
         // THE TWO WAYS IN, BOTH DIRECTIONS (the owner: *"then the Player becomes main when clicked"*).
         //  Door and Radio swap roles — whichever is not the belly is a bud wearing the press — so the
         //   pair is a toggle you can work from either side, with no control that is not a cell.
@@ -663,13 +719,23 @@ Sounditron_commission(w):
         //     only mean "abandon this".  Now a STARTED heist is a bud and the Radio can be the belly while
         //      it runs, so pressing the Radio means go back to the music — and the owner's whole ask is to
         //       set several up and wander off, which makes wandering off CONSENT.  So the press starts the
-        //        belly's own form and nothing else: other queued forms stay queued, started heists carry
-        //         on, and saying "don't" is now the ✕ this ruling put back at the front of the face.
+        //        standing forms — see Sounditron_leave_keep for why it is all of them and not just the
+        //         belly's — while started heists carry on, and saying "don't" is the ✕ this ruling put
+        //          back at the front of the face.
         let bellyKeep = (fmain && Object.keys(fmain.sc)[0] === 'Heist') ? fmain : null
         let bellyForm = bellyKeep && setups.indexOf(bellyKeep) >= 0 ? bellyKeep : null
-        if (bellyForm) for (const bud of buds) {
+        // ⚠ ARMED BY "A FORM EXISTS", NOT BY "A FORM IS THE BELLY" (2026-08-13, caught minutes after the
+        //  pin was allowed to outrank a form).  This read `if (bellyForm)`, which was the same condition
+        //   under both — until the pin could put a RUNNING heist in the belly with forms still on the rim.
+        //    Then pressing Radio took the plain focus_to path and started nothing, so whether your queued
+        //     forms ever ran depended on which cell happened to be the belly when you pressed.  That is the
+        //      "fussy" failure exactly: same gesture, same screen, two outcomes, no way to tell which.
+        //  `only` is really the handle to the SHOP — leave_keep gathers the forms itself off `.c.up` — so
+        //   any standing form serves, and `bellyForm` stays first purely so the common case reads plainly.
+        let leaveVia = bellyForm || (setups.length ? setups[0] : null)
+        if (leaveVia) for (const bud of buds) {
             let bmk = Object.keys(bud.sc)[0]
-            if (bmk === 'Door' || bmk === 'Radio') bud.c.press = (s) => this.Sounditron_leave_keep(w, Object.keys(s.sc)[0], bellyForm)
+            if (bmk === 'Door' || bmk === 'Radio') bud.c.press = (s) => this.Sounditron_leave_keep(w, Object.keys(s.sc)[0], leaveVia)
         }
         // ── THE POSES (the owner 2026-08-10: *"there are cell positions|poses: Stretched (when Heist
         //  is forming), Big, Small.  Small has only name, maybe the door icon, that's nice"* — and,
@@ -868,6 +934,29 @@ Sounditron_focus_to(w, key):
     this.feebly_ponder()
     return 1
 
+// Sounditron_belly_keep — WHICH HEIST IS THE SUBJECT, as ONE function (2026-08-13).  Two callers need
+//  this answer — the belly ladder's rungs 1|1b, and the `stage_want` the keep-grapple loop hands out —
+//   and for one afternoon they were two hand-written copies of it.  They disagreed within the hour, and
+//    the disagreement was invisible until a second heist existed (see the pose fix in Vytui: with one
+//     keep every rung agrees by accident, which is how a layout bug survives days of use).
+//  THE COMPARISON, and why it is a comparison rather than a ladder:
+//   · a FORM outranks a run — it has fields to fill in, a run is a progress bar.  Among several forms,
+//      the one you TOUCHED LAST (`c.last_touch`, the same cursor Heist_keep_step's dose focus reads).
+//   · the PIN (`w.c.focused_keep`) is you pressing a bud, and it must be able to beat a form — otherwise
+//      pressing a running heist while any form stands sets the pin, re-commissions, and changes nothing.
+//       A bud that visibly does nothing when pressed has now been reported twice in one day.
+//   · which is why they meet in ONE max instead of one-above-the-other: `Sounditron_focus_keep` touches
+//      what it pins and `Radio_heist_now` touches what it mints, so `last_touch` already records WHICH
+//       OF THESE YOU DID LAST.  Pressing a run beats a form opened earlier; ⇊ing a new form beats the
+//        pin.  No "clear the pin on mint" line anywhere, and nothing to keep in sync.
+//  `>=` gives the tie to the pin: an explicit press must beat an untouched form (last_touch absent, 0).
+//  Pure — no world, no writes, no clock — so it is testable without a browser, which the ladder is not.
+Sounditron_belly_keep(setups, pin):
+    let pick = null
+    for (const k of (setups || [])) if (!pick || +(k.c.last_touch || 0) > +(pick.c.last_touch || 0)) pick = k
+    if (pin && (!pick || +(pin.c.last_touch || 0) >= +(pick.c.last_touch || 0))) pick = pin
+    return pick
+
 // Sounditron_focus_keep — a heist bud's press.  Every %Heist wears the same mainkey, so the belly can
 //  only be pointed at ONE of them by the particle itself; `w.c.focused_keep` is that pin, and it is
 //   runtime `.c` like every other focus state here (reload forgets it, no snap can record it).
@@ -898,13 +987,29 @@ Sounditron_focus_keep(w, keep):
 //       somewhere else rather than the seed's track ending (which fired when a Radio skip nulled the
 //        playhead, skipping the form under you).  Cancelling is a thing you SAY now, on the ✕ that this
 //         ruling puts back at the front of the form, never a thing you do by looking elsewhere.
-//  ONE KEEP, THE BELLY'S OWN.  It used to cancel ALL of them, on the reasoning that a second keep would
-//   just be promoted into the belly and the press would look like it did nothing.  That reasoning held
-//    only while EVERY open keep owned the screen; now a started heist is a bud and the Radio can be the
-//     belly beside it, so leaving must not reach past the form you are actually looking at.  With no
-//      `only` this starts nothing — the caller (the focus cut) decides, and hands the particle in.
+//  EVERY STANDING FORM, NOT JUST THE BELLY'S (2026-08-13, reverting a narrowing made hours earlier the
+//   same day).  That edit cut this to `only` — the one form you were looking at — on the reasoning that
+//    "a started heist is a bud now, so leaving must not reach past the form in front of you".  The
+//     reasoning was half right and the half it missed is fatal: a STARTED heist becomes a bud, but a
+//      second FORM does not — rung 1 promotes it straight into the belly.  So with three set up, pressing
+//       Radio started one, and the glass answered by handing you the next form.  You could not reach the
+//        music at all until you had submitted every one, and each press read as broken.
+//  That is the very failure mode the narrowing's own comment described and believed it had escaped, and
+//   it is the owner's ruling read literally: *"auto-Start them when wandered away from"* — them, plural.
+//    Wandering away is consent, and it is consent to the whole bench, because the whole bench is what
+//     "I can't be hanging around waiting for each one" is asking for.
+//  Gathered HERE from the shop rather than handed in, so it cannot be a stale list, and filtered to the
+//   states `Heist_keep_start` actually acts on — a `choosing` form (nothing ticked) is NOT startable and
+//    deliberately keeps the belly, because it is still waiting on an answer only you have.
 Sounditron_leave_keep(w, key, only):
-    if (only) this.Heist_keep_start(only)
+    if (only) {
+        let shop = only.c.up || null
+        let forms = shop ? shop.o({ Heist: 1 }) : [only]
+        for (const f of forms) {
+            let s = f.sc.state || 'primed'
+            if (s === 'primed' || s === 'wanted' || s === 'asking') this.Heist_keep_start(f)
+        }
+    }
     return this.Sounditron_focus_to(w, key)
 
 // Sounditron_focus_home — the home satellite: back to the DEFAULT, which is now the Player (the

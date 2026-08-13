@@ -327,11 +327,48 @@
             //  `secsAll` extrapolates the same way the cost line always has (the owner's "assume they're
             //   all one format|bitrate") — the known husks' seconds scaled up to the unity's track count —
             //    because length is the one number no card carries for a folder.  It keeps its `~`.
-            nAll: edited ? pickedRefs.size : (unTracks || husks.length),
-            sizeAll: edited ? pickBytes : ((+(sc.un_size || 0)) || totBytes),
+            // ⚠ THE UNITY IS A FLOOR, NEVER A CEILING (2026-08-13, the owner: *"un_n seems always to be
+            //  2, and the MB size is for only 2 (44MB, 2 original flacs) ... unless I check LOFI then it
+            //   turns into ~236MB which is about right for this 68 tracks"*).  It read `unTracks ||
+            //    husks.length` — the unity OUTRANKING the census — so a keep holding 68 real husks
+            //     announced "2 tracks · 44 MB" because the source's stamp said 2.  That is the SAME defect
+            //      the unity was built to cure (*"it was short, only showing 1 track"*), wearing a
+            //       different number, and it is worse than the original: 68 husks is knowledge in hand.
+            //  ROOT CAUSE — FIXED UPSTREAM 2026-08-13, and this guard STAYS.  `Ra_unity_stamp` was counting
+            //   the records on the source's WARM SHELF (radiostock is a ~100-file working cache with
+            //    chronological eviction, never the archive), so it priced "how many of this folder happen to
+            //     be hot" — 1–3.  It now lists the folder off disk (Ra_unity_look, a stat per folder, capped
+            //      and TTL'd on the share beat).  The guard stays because a fixed source does not fix a
+            //       FRIEND: every number here arrives over the wire from a peer who may be on any build.
+            //  `max`, not a preference: whichever source knows about MORE tracks is the one that has seen
+            //   more of the folder.  A pre-ask unity legitimately beats zero husks; 68 husks beat a stale 2.
+            nAll: edited ? pickedRefs.size : Math.max(unTracks, husks.length),
+            // …and the size must follow the SAME population as the count beside it, or the line quotes 68
+            //  tracks at two flacs' weight.  TWO conditions to quote `un_size`: it must describe at least
+            //   as many tracks as we hold (`max` above), AND the source must have said it COUNTED the
+            //    folder (`un_d`).  The second is not the first: a shelf-derived count can legitimately
+            //     exceed the husks listed so far while its size still describes only the two files that
+            //      happened to be hot, and `max` cannot see that.
+            //  ⚠ WHY THE FLAG IS POSITIVE.  This number crossed the wire from a peer running their own
+            //   build.  A flag marking the GUESS would be absent on exactly the builds that most need
+            //    catching — an older friend sends a shelf-derived 2 and no flag at all.  Absence must mean
+            //     "unattested", so only `un_d` present may be trusted.  (See Ra_unity_stamp; the first cut
+            //      had this backwards, and the owner's *"am I missing something?"* is what found it.)
+            //  UNATTESTED FALLS BACK TO AN EXTRAPOLATION, not to `totBytes` flat.  Flat would pair "68
+            //   tracks" with the weight of the 3 husks we happen to hold — the same mismatched-population
+            //    bug in the other direction.  Scaling the husks we DO know up to the unity's count is the
+            //     owner's own method for length (*"extrapolate from filesizes"*), it is what `secsAll`
+            //      below already does, and it carries the `~` that says so.
+            sizeAll: edited
+                ? pickBytes
+                : ((unTracks >= husks.length && sc.un_d ? +(sc.un_size || 0) : 0)
+                    || ((unTracks > husks.length && husks.length) ? totBytes * (unTracks / husks.length) : totBytes)),
             secsAll: edited
                 ? (husks.length ? totSecs * (pickedRefs.size / husks.length) : 0)
                 : ((unTracks > husks.length && husks.length) ? totSecs * (unTracks / husks.length) : totSecs),
+            // is the weight a MEASUREMENT or an extrapolation?  The `~` the line already wears for length
+            //  belongs on the size too whenever we scaled it — see the estimate rules in the markup.
+            sizeEst: !edited && unTracks > husks.length && !(unTracks >= husks.length && sc.un_d) && !!husks.length,
             // …and while the listing trails the unity, it is still filling in. Purely a progress tell,
             //  and silent once the human has chosen for themselves — they are not waiting on it then.
             listing: !edited && unTracks > husks.length,
@@ -738,7 +775,7 @@
             <div class="kf-sum">
                 <!-- ☑ lofi flips the size and that is the whole story (the owner: "change the
                      quantity, don't explain it") — no suffix, no tooltip. -->
-                {face.nAll} track{face.nAll === 1 ? '' : 's'}{#if face.secsAll}&nbsp;· ~{fmtT(face.secsAll)}{/if}{#if face.lofi && face.secsAll}&nbsp;· ~{fmtB(face.secsAll * 16000)}{:else if face.sizeAll}&nbsp;· {fmtB(face.sizeAll)}{:else}&nbsp;· <span class="kf-dim">size unknown</span>{/if}{#if face.counting}&nbsp;<span class="kf-spin sm" title="still counting — the folder is arriving"></span>{/if}
+                {face.nAll} track{face.nAll === 1 ? '' : 's'}{#if face.secsAll}&nbsp;· ~{fmtT(face.secsAll)}{/if}{#if face.lofi && face.secsAll}&nbsp;· ~{fmtB(face.secsAll * 16000)}{:else if face.sizeAll}&nbsp;· {face.sizeEst ? '~' : ''}{fmtB(face.sizeAll)}{:else}&nbsp;· <span class="kf-dim">size unknown</span>{/if}{#if face.counting}&nbsp;<span class="kf-spin sm" title="still counting — the folder is arriving"></span>{/if}
                 <!-- THE LISTING CATCHING UP is a progress clause, never a question put to the human.  The
                      count and the size above are already the truth about the folder; this only says which
                      of its tracks we can name yet, and it vanishes on its own when the source answers.

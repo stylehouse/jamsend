@@ -785,14 +785,27 @@
         //   `belly=Radio` while the glass drew the Door big, and both were working correctly.)
         //  The first cut re-decided here — stage_want, else the biggest radius — which is a SECOND
         //   opinion about the very thing this regime exists to take away from the renderer.  Size is
-        //    assigned by the commissioner; so is subjecthood.  `.c.pose:'big'` is that decision
+        //    assigned by the commissioner; so is subjecthood.  A BELLY POSE is that decision
         //     arriving, and it is the only rung that should normally fire.
         //  The two below it are fallbacks for a glass whose commissioner poses nothing (a Book, a
         //   hand-built world): honour a `stage_want`, else take the biggest ask, else row 0 — so an
         //    unposed world still gets a sensible belly instead of nothing.
+        // ⚠ `stretched` IS A BELLY POSE TOO (2026-08-13 — the owner: *"I want to set up another Heist
+        //  after the first, and that setup UI comes in as one of four small cells to the right of the
+        //   Heist-in-progress cell"*).  This rung read `'big'` ALONE, but the commissioner poses a heist
+        //    FORM `stretched` (Sounditron: `bellyForm ? 'stretched' : 'big'`) — so the one cell whose
+        //     whole point is to take the room was the one cell this rung could not see.  It fell through
+        //      to the `stage_want` fallback, which Sounditron handed to the first keep in MINT ORDER,
+        //       i.e. the heist already RUNNING: the progress bar took the belly and the form you had just
+        //        opened became a bud.  With one keep the two rungs accidentally agreed, which is why it
+        //         stood for days and surfaced the moment a second heist existed.
+        //  The lesson is the header's own: a renderer that enumerates the commissioner's vocabulary will
+        //   silently disagree with it the day that vocabulary grows.  Ask "did the commissioner name a
+        //    belly", never "did it say this particular word".
+        const BELLY_POSES = ['big', 'stretched']
         let bellyI = -1
         for (let i = 0; i < live.length; i++)
-            if (String((live[i].row.c as any)?.source_n?.c?.pose ?? '') === 'big') { bellyI = i; break }
+            if (BELLY_POSES.includes(String((live[i].row.c as any)?.source_n?.c?.pose ?? ''))) { bellyI = i; break }
         if (bellyI < 0) for (let i = 0; i < live.length; i++)
             if (!sat_row(live[i].row) && (live[i].row.c as any)?.source_n?.c?.stage_want) { bellyI = i; break }
         if (bellyI < 0) {

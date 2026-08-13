@@ -3465,7 +3465,16 @@ Radio_place(radio, got):
     let now = AC.currentTime
     let at = Math.max(radio.c.end || 0, now)
     if ((radio.c.end || 0) > 0 && (radio.c.sched || 0) > 0 && at > (radio.c.end || 0) + 0.02) {
+        // A WRITE-ONLY COUNTER IS NOT AN INSTRUMENT (2026-08-13).  sc.gaps was incremented HERE and read
+        //  NOWHERE — not RadioFace (which computes drops and, per the owner, renders no ledger chip), not a
+        //   Book, not the CLI — and the increment carries no bump(), so sc being non-reactive meant it could
+        //    never have reached a face anyway.  It is the one number that separates "our buffering underran"
+        //     from "their audio device is glitching", and nobody could see it.  So mark the TRACE ring
+        //      instead of a chip: `world` already surfaces it with inter-event deltas, it costs a tiny object
+        //       on a real gap only, and it says HOW BIG — a 30ms seam artefact and a 2s starve hole are not
+        //        the same fault and must never again be one undifferentiated tally.
         radio.sc.gaps = (+(radio.sc.gaps || 0)) + 1
+        this.Radio_trace(radio, { ev: 'gap', ms: Math.round((at - (radio.c.end || 0)) * 1000), seq: radio.c.seq, n: radio.sc.gaps })
     }
     radio.c.end = aud.schedule(buf, at, 1)
     radio.c.sched = (radio.c.sched || 0) + n

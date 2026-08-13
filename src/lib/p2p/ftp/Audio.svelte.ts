@@ -73,7 +73,34 @@ export class SoundSystem {
     AC_ready = $state(false)
     async init() {
         try {
-            this.AC = new AudioContext();
+            // NOT A TOY — the two options that were never passed (2026-08-13).  A bare `new AudioContext()`
+            //  takes the UA defaults, and BOTH of them are wrong for a radio:
+            //  `sampleRate` — the whole pipeline is 48000 end to end (the opus decoder configures 48000 at
+            //   Radio.g's Radio_dec_open, Radio_place builds every buffer at AC.createBuffer(…, 48000), and
+            //    pcm_buffer defaults to it).  A context left at the DEVICE default is 44100 on plenty of
+            //     hardware (macOS/Windows, and near-universally over Bluetooth), and then each ~2s buffer is
+            //      resampled INDEPENDENTLY, per source node: the resampler state resets and the start time
+            //       rounds to a context frame at every seam, so a discontinuity lands roughly every 2 seconds.
+            //        That is device-dependent, which is exactly why it reads as "might be my system".  Pinning
+            //         48000 moves the one resample to the device boundary, where the UA does it continuously.
+            //  `latencyHint` — defaults to 'interactive', the smallest output buffer the UA will give.  Right
+            //   for a synth answering a keypress, wrong for a stream: this main thread also runs the Cyto|Vyto
+            //    render, the WebCodecs callbacks and the relay, and a small device buffer is the most
+            //     glitch-prone thing you can hand that.  'playback' asks for a roomy one — we are scheduling
+            //      8s ahead of the playhead (Radio_pump_tick), so output latency costs us nothing we can hear.
+            //  FALL BACK RATHER THAN GO SILENT.  A UA that cannot give the asked-for rate THROWS
+            //   (NotSupportedError — older Safari, for a rate the device won't do), and this is the single
+            //    chokepoint for all audio on the tab: a throw here means AC_ready never sets, so there is no
+            //     sound AND the `ac` facet never advertises (LiesLies RUNNER_FACETS reads AC_ready off this
+            //      very object).  A resampled seam is a blemish; no audio is the app not working.  So ask,
+            //       and take the plain context if asking fails.
+            try {
+                this.AC = new AudioContext({ sampleRate: 48000, latencyHint: 'playback' });
+            } catch (er) {
+                console.warn("AudioContext refused {sampleRate:48000, latencyHint:'playback'} — falling back to device defaults (expect a seam artefact every ~2s if this device is not 48kHz):", er);
+                this.AC = new AudioContext();
+            }
+            if (this.AC.sampleRate !== 48000) console.warn(`AudioContext is ${this.AC.sampleRate}Hz, not the pipeline's 48000 — every chunk will be resampled per source node`);
 
             if (await this.AC_OK()) {
                 console.log("AudioContext initialized");

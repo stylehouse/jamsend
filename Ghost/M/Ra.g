@@ -1481,9 +1481,31 @@ Ra_record_from(lib, info, bufs):
 //    listing KNOW it is short ([[Heist_blag_folder]]) instead of quietly showing 1 of 12 — the exact
 //     "short, only showing 1 track" the owner hit — and what lets the setup form price a nab before it
 //      starts.
-//  WHAT IT COUNTS is what is STOCKED — what they can actually serve — not what sits on their disk.  That
-//   is the honest number for a heist (an unstocked file cannot be pulled) and it is deliberately a FLOOR:
-//    a wire describe may come back with more, and supersedes.
+//  ⚠ WHAT IT COUNTS — and the thing that was WRONG about it (the owner 2026-08-13: *"un_n seems always
+//   to be 2, the MB size is for only 2 (44MB, 2 original flacs)… ~236MB which is about right for this 68
+//    tracks"*, then *"once I start that supposedly 2 track Heist, it's immediately showing as un_n=68"*).
+//  This used to count only what was STOCKED, on the stated reasoning that *"an unstocked file cannot be
+//   pulled"* — so a shelf holding 2 of a 68-track album priced the album at 2 tracks and 44MB.  That
+//    reasoning is FALSE, and the owner's second sentence is the disproof: the moment the heist starts it
+//     says 68.  [[Heist_rummage_folder]] resolves the seed to its folder and hands it to
+//      [[Heist_census_heads]], which walks that folder ON DISK — so the heistable set is every audio file
+//       in the folder, stocked or not.  The radiostock shelf is a bounded rotating CACHE (Ra_stock_cap,
+//        chronological eviction), never a manifest of what is servable; pricing a folder from it is
+//         pricing a library by what happens to be on the returns trolley.
+//  It was not even a conservative floor.  A floor that is 3% of the true number and arrives BEFORE the
+//   describe answers is the number the setup form shows the human while they decide — a 10× understated
+//    cost is a worse failure than no number at all, because it is believed.
+//  SO: `census` (optional) is the DISK truth — `{dir: {n, size, unknown}}` from [[Ra_unity_look]] — and
+//   any dir it names wins.  A dir it does not name falls back to the shelf count exactly as before, which
+//    is what keeps every Book and every un-walked folder behaving as it always did.
+//  ⚠ AND THE FLAG IS POSITIVE, `un_d:1` = "I counted my DISK" — not a `un_lo:1` marking the guess.  This
+//   number is stamped by the SOURCE and rides the card to whoever asks, so the reader is always on a
+//    different machine running a different build.  A flag that marks the BAD case is unstampable by the
+//     builds that most need to be caught: a peer on yesterday's code sends a shelf-derived 2 and no flag
+//      at all, which a reader distrusting only the flag would trust completely.  Absence has to mean the
+//       conservative thing, and only a POSITIVE mark can make it so — a new capability announces itself,
+//        because old code cannot announce anything.  (Caught by the owner asking what "fixing us doesn't
+//         fix a friend" meant; the first cut had it the wrong way round.)
 //  Writes only on CHANGE, so a settled shelf costs one walk and no bump.  Humdinger-only, for the fixture
 //   reason in [[Ra_record_from]] — in a Book `un_n` is simply absent and every reader falls back.
 //  CAPPED PER PASS, and that is not a detail.  Every stamp bumps its %Record, and a bumped record is
@@ -1492,7 +1514,7 @@ Ra_record_from(lib, info, bufs):
 //     caller re-runs while there is more to do (`moved === cap` is the tell), which spreads the same
 //      work over a few seconds of ordinary beats and is invisible.  cap 0 = unbounded (the stock pass,
 //       already heavy and not competing with anything).
-Ra_unity_stamp(shelf, cap):
+Ra_unity_stamp(shelf, cap, census):
     if (!shelf) return 0
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c.humdinger) return 0
@@ -1506,20 +1528,128 @@ Ra_unity_stamp(shelf, cap):
         ns[dir] = (ns[dir] || 0) + 1
         szs[dir] = (szs[dir] || 0) + (+(rec.sc.src_size || 0))
     }
+    let cen = census || {}
     let moved = 0
     for (const rec of recs) {
         if (!rec.sc.path) continue
         let dir = this.Ra_dir_of(rec.sc.path)
-        let un = ns[dir] || 0
-        let us = szs[dir] || 0
-        if (+(rec.sc.un_n || 0) === un && +(rec.sc.un_size || 0) === us) continue
+        let seen = cen[dir] || null
+        let un = seen ? +seen.n : (ns[dir] || 0)
+        // A PARTLY-KNOWN FOLDER GETS NO SIZE, not a short one.  `bytes` is null on a backend whose
+        //  listing maps bare names (RemoteWormholeNav), and summing the known ones would produce a
+        //   confident understatement — which is the exact bug this verb is being fixed for.  Absent,
+        //    every reader already falls back; short, they believe it.
+        let us = seen ? (seen.unknown ? 0 : +seen.size) : (szs[dir] || 0)
+        let dk = seen ? 1 : 0
+        if (+(rec.sc.un_n || 0) === un && +(rec.sc.un_size || 0) === us && +(rec.sc.un_d || 0) === dk) continue
         rec.sc.un_n = un
         if (us > 0) rec.sc.un_size = us
+        // `un_d` — "this folder was COUNTED, off my disk".  A snapped boolean rides as 1 or ABSENT, so the
+        //  guessed case DELETES rather than writing 0 (CLAUDE.md's flat rule; a `0` would munge
+        //   differently between snaps).  Positive polarity is load-bearing, not style — see the header.
+        if (dk) rec.sc.un_d = 1
+        if (!dk) delete rec.sc.un_d
         rec.bump()
         moved = moved + 1
         if (lim > 0 && moved >= lim) return moved
     }
     return moved
+
+// Ra_unity_census — group a [[Crate_nav_ls]] listing into {dir: {n, size, unknown}}.  Pure, so the
+//  grouping rule is testable without a nav, and so the stock pass (which already holds a whole-crate
+//   listing) and the beat (which lists a handful of folders) can share one definition of "a folder".
+//  `unknown` counts entries whose backend did not give a size — carried rather than silently dropped,
+//   because it is what decides between "84 MB" and saying nothing at all.
+Ra_unity_census(ls):
+    let out = {}
+    for (const e of (ls || [])) {
+        let dir = this.Ra_dir_of(e.path)
+        if (!out[dir]) out[dir] = { n: 0, size: 0, unknown: 0 }
+        out[dir].n = out[dir].n + 1
+        if (e.bytes == null) out[dir].unknown = out[dir].unknown + 1
+        out[dir].size = out[dir].size + (+(e.bytes || 0))
+    }
+    return out
+
+// Ra_unity_dirs — the distinct folders the shelf's records live in, in first-seen order.  This is the
+//  WORK LIST for [[Ra_unity_look]], and its size is why the fix is affordable: ~44 standing records
+//   collapse to a handful of folders, so pricing them is a handful of directory listings — never the
+//    breadth-first walk of the whole crate that [[Crate_nav_meander]]'s no-enumeration law forbids on
+//     a 200k-track share.
+Ra_unity_dirs(shelf):
+    let out = []
+    if (!shelf) return out
+    for (const rec of this.Ra_recs(shelf)) {
+        if (!rec.sc.path) continue
+        let dir = this.Ra_dir_of(rec.sc.path)
+        if (out.indexOf(dir) < 0) out.push(dir)
+    }
+    return out
+
+// Ra_unity_ttl — how long a folder's census is believed.  Ten minutes: a music folder gains a file when
+//  a heist lands in it or the human drops one in, neither of which is a per-beat event, and a stale
+//   count is cosmetic while a re-listing is disk work on every beat forever.
+Ra_unity_ttl():
+    return 600000
+
+// Ra_unity_look — PRICE THE FOLDERS THE SHELF SITS IN, off the disk, a few at a time.  One `dir_at` +
+//  `expand()` per folder — a STAT, not a read: the same zero-file-reads census law [[Crate_nav_ls]]
+//   keeps, and the same call [[Crate_nav_meander]] makes once per hop.
+//  BOUNDED THREE WAYS, because this runs on the share beat: by the shelf's folder count (a handful),
+//   by `cap` (how many NEW folders one beat may list), and by a TTL per folder.  The cache lives on the
+//    top House's `.c` — runtime apparatus, never snapped, and a reload re-walks, which is correct: the
+//     folders are cheap and the crate may have changed while the tab was shut.
+//  Returns the whole census (every folder still fresh in the cache), so a beat that listed nothing new
+//   still stamps from what it already knows.
+async Ra_unity_look(shelf, nav, cap):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !nav) return {}
+    // THE AUDIO FILTER IS CRATE'S, and must be — it is the same gate [[Crate_nav_ls]] applies and the same
+    //  one [[Heist_census_heads]] applies on the source side when it decides what a folder actually offers.
+    //   A second list here would drift, and a drifted filter shows up as a unity that counts the cover art.
+    //  Ra already leans on Crate for the stock pass (Crate_nav_paths), so this is no new coupling — but a
+    //   world mounted without Crate falls back to the shelf count rather than throwing per folder per beat.
+    if (typeof this.Crate_is_audio !== 'function') return {}
+    if (!top.c.unity_dirs) top.c.unity_dirs = {}
+    let cache = top.c.unity_dirs
+    let now = Date.now()
+    let ttl = this.Ra_unity_ttl()
+    let lim = +(cap || 0)
+    let did = 0
+    for (const dir of this.Ra_unity_dirs(shelf)) {
+        let have = cache[dir]
+        if (have && now - (+have.at || 0) < ttl) continue
+        if (lim > 0 && did >= lim) break
+        did = did + 1
+        let ls = []
+        try {
+            let dl = await nav.dir_at(dir)
+            if (dl) {
+                await dl.expand()
+                for (const f of dl.files) {
+                    if (this.Crate_is_audio(this.Crate_ext(f.name))) ls.push({ path: dir ? (dir + '/' + f.name) : f.name, bytes: f.size != null ? +f.size : null })
+                }
+            }
+        } catch (er) { ls = null }
+        // A FOLDER THAT WOULD NOT LIST IS NOT AN EMPTY FOLDER.  Leave it out of the cache entirely so
+        //  the stamp falls back to the shelf count, rather than caching {n:0} and pricing the album at
+        //   nothing — a permission blip must not become a durable zero that the TTL then defends.
+        //  ⚠ `!got` IS THE GUARD, not the `!ls.length` early-out beside it: a census of an empty list is
+        //   `{}`, so the dir is absent either way.  Mutating the length check alone left every test green
+        //    (2026-08-13); only cutting BOTH goes red.  Said plainly because the wrong one reads
+        //     load-bearing, and the next person to "simplify" this needs to know which line to keep.
+        if (!ls || !ls.length) continue
+        let one = this.Ra_unity_census(ls)
+        let got = one[dir] || null
+        if (!got) continue
+        got.at = now
+        cache[dir] = got
+    }
+    let out = {}
+    for (const dir of Object.keys(cache)) {
+        if (now - (+cache[dir].at || 0) < ttl) out[dir] = cache[dir]
+    }
+    return out
 
 // Ra_dir_of — the folder part of a crate-relative path, '' for a bare filename.  Deliberately a local
 //  twin of Heist_dir_of rather than a call into it: Ra must stand alone in the Books that run with no
@@ -1799,7 +1929,15 @@ async Ra_stock(w, lib, nav, src_base, take, from):
             if (legacy.length) await dl.expand()
         }
     }
-    let paths = await this.Crate_nav_paths(nav, src_base)
+    // THE WHOLE LISTING, WITH SIZES — `Crate_nav_paths` is just this mapped to `.path`, and the sizes are
+    //  already paid for by the same `expand()` (Crate_nav_ls's own note).  Kept UNSLICED for the census
+    //   below: `take`/`from` say how much to stock this pass, never how big the folders are.
+    let ls = await this.Crate_nav_ls(nav, src_base)
+    // base-relative → the crate-root-relative shape [[Ra_record_from]] stamps into `rec.sc.path`, so the
+    //  census keys and [[Ra_dir_of]]'s reading of a record agree exactly.  They must: a mismatch here is
+    //   silent, and shows up only as every folder falling back to the shelf count.
+    let full = ls.map((e) => ({ path: (src_base ? src_base + '/' : '') + e.path, bytes: e.bytes }))
+    let paths = ls.map((e) => e.path)
     if (from > 0) paths = paths.slice(from)
     if (take > 0) paths = paths.slice(0, take)
     lib.sc.stocking = paths.length
@@ -1815,7 +1953,9 @@ async Ra_stock(w, lib, nav, src_base, take, from):
     delete lib.sc.stocking
     // price every folder we just stocked, once, at the end of the pass — the cards are all standing by
     //  now, so one walk gets every unity right (doing it per-track would restamp the folder N times).
-    this.Ra_unity_stamp(lib)
+    //  Off the DISK listing this pass already holds, not off the shelf: stocking 2 of a 68-track album
+    //   must price the album at 68, and this is the one caller that can prove it for free.
+    this.Ra_unity_stamp(lib, 0, this.Ra_unity_census(full))
     lib.bump()
     return { built: built, stood: stood, skipped: skipped, of: paths.length }
 

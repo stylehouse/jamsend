@@ -30,6 +30,7 @@ import { mount } from 'svelte'
 import { TheC } from '../src/lib/data/Stuff.svelte'
 import Ra from '../src/lib/gen/M/Ra.go'
 import Heist from '../src/lib/gen/M/Heist.go'
+import Crate from '../src/lib/gen/M/Crate.go'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
@@ -46,12 +47,33 @@ async function stub_house(humdinger = true) {
     //  Same one-line definition the House carries (CLAUDE.md: a particle's type is the FIRST key of sc).
     H.mainkey = (n: any) => Object.keys(n.sc)[0]
     H.c.humdinger = humdinger ? 1 : 0
-    for (const Ghost of [Ra, Heist]) mount(Ghost, { target: document.body, props: { H } })
+    // CRATE IS MOUNTED FOR REAL, not stubbed: `Ra_unity_look` decides what counts as a track with
+    //  `Crate_is_audio`, and that is the whole point of the coupling — the unity must count exactly what
+    //   the source's own folder census would offer. A stub here would let the two drift and still be green.
+    for (const Ghost of [Ra, Heist, Crate]) mount(Ghost, { target: document.body, props: { H } })
     for (let i = 0; i < 80 && !(typeof H.Ra_unity_stamp === 'function'
         && typeof H.Heist_blag_folder === 'function'
         && typeof H.Heist_wire_supersede === 'function'
+        && typeof H.Crate_is_audio === 'function'
         && typeof H.Heist_keep_first === 'function'); i++) await sleep(25)
     return H
+}
+
+// A NAV THAT ONLY LISTS. `dir_at` → {expand, files:[{name,size}]} is the whole surface Ra_unity_look
+//  touches, which is itself the claim: pricing a folder is a STAT, never a read. `asked` records every
+//   directory listed so the cap and the TTL are testable as the disk work they are meant to bound.
+function fake_nav(tree: Record<string, Array<{ name: string, size?: number | null }>>, opts: any = {}) {
+    const asked: string[] = []
+    return {
+        asked,
+        dir_at: async (dir: string) => {
+            asked.push(dir)
+            if (opts.fail && opts.fail(dir)) throw new Error('no permission')
+            const files = tree[dir]
+            if (!files) return null
+            return { expand: async () => {}, files: files.map((f) => ({ name: f.name, size: f.size === undefined ? 1 : f.size })) }
+        },
+    }
 }
 
 const shelf = (name = 'stock') => new TheC({ c: {}, sc: { [name]: 1 } }) as any
@@ -128,6 +150,148 @@ test('the humdinger gate and the per-pass cap both hold', async () => {
 
 function H_first_rec(H: any, s: any) { return H.Ra_recs(s)[0] }
 
+// ── THE UNITY, PRICED OFF THE DISK ─────────────────────────────────────────────────────────────────
+//  THE BUG THESE PIN, in the owner's own words: *"un_n seems always to be 2, the MB size is for only 2
+//   (44MB, 2 original flacs)… which is about right for this 68 tracks in one directory four disc album"*,
+//    and then the disproof of the old design's whole excuse: *"once I start that supposedly 2 track
+//     Heist, it's immediately showing as un_n=68"*.
+//  The old `Ra_unity_stamp` counted the radiostock SHELF, on the stated reasoning that an unstocked file
+//   cannot be pulled. It can: `Heist_rummage_folder` hands the seed's folder to `Heist_census_heads`,
+//    which walks it on disk. So the shelf — a bounded rotating cache with chronological eviction — was
+//     being read as a manifest of what is servable, and priced a 476MB album at 44MB. Not a conservative
+//      floor: a 10× understatement that arrives BEFORE the describe answers is the number the human sees
+//       while deciding, and it is believed precisely because it looks like a measurement.
+const dir68 = (n: number, mb: number) =>
+    Array.from({ length: n }, (_, i) => ({ name: `${String(i + 1).padStart(2, '0')} Track.flac`, size: mb * 1024 * 1024 }))
+
+test('THE OWNER\'S NUMBER: 2 stocked of a 68-track folder prices the FOLDER, not the shelf', async () => {
+    const H = await stub_house()
+    const s = shelf()
+    // exactly the reported shape: two originals warm on the shelf, 22MB each, out of a 68-track album.
+    rec(s, 'k1', 'Transient/0 Latin/Evolution Of Dub/Disk 4/01 Track.flac', { src_size: 22 * 1024 * 1024 })
+    rec(s, 'k2', 'Transient/0 Latin/Evolution Of Dub/Disk 4/02 Track.flac', { src_size: 22 * 1024 * 1024 })
+    const nav = fake_nav({ 'Transient/0 Latin/Evolution Of Dub/Disk 4': dir68(68, 7) })
+
+    const census = await H.Ra_unity_look(s, nav, 4)
+    expect(H.Ra_unity_stamp(s, 0, census)).toBe(2)
+    const r = H_first_rec(H, s)
+    expect(+r.sc.un_n).toBe(68)                       // was 2 — the whole report
+    expect(+r.sc.un_size).toBe(68 * 7 * 1024 * 1024)  // was 44MB for a 476MB album
+    // …and it says so: `un_d` is the POSITIVE mark, "I counted my disk". See the next test for why the
+    //  flag has to name the good case rather than the bad one.
+    expect(r.sc.un_d).toBe(1)
+})
+
+test('the ATTESTATION is positive — absence must mean unattested, not "fine"', async () => {
+    const H = await stub_house()
+    const s = shelf()
+    rec(s, 'p1', 'Priced/Album/1.flac', { src_size: 100 })
+    rec(s, 'g1', 'Guessed/Album/1.flac', { src_size: 100 })
+    // one folder lists, the other refuses (a permission blip, an unmounted drive, a rename mid-beat).
+    const nav = fake_nav({ 'Priced/Album': dir68(5, 1) }, { fail: (d: string) => d === 'Guessed/Album' })
+
+    const census = await H.Ra_unity_look(s, nav, 8)
+    H.Ra_unity_stamp(s, 0, census)
+    const by = Object.fromEntries(H.Ra_recs(s).map((r: any) => [r.sc.id, r]))
+    expect(+by.p1.sc.un_n).toBe(5)
+    expect(by.p1.sc.un_d).toBe(1)             // counted
+    // THE FALLBACK MUST NOT BE A ZERO. Caching {n:0} for a folder that would not list, and then letting a
+    //  10-minute TTL defend it, turns a momentary blip into a durable "this album is empty".
+    expect(+by.g1.sc.un_n).toBe(1)
+    // …and it carries NO attestation. THIS IS THE POLARITY CLAIM, and it is the whole reason the flag
+    //  exists: these numbers are stamped by the SOURCE and ride the card to a reader on another machine
+    //   running another build. A flag marking the GUESS would be absent on exactly the builds that most
+    //    need catching — a peer on yesterday's code sends a shelf-derived 2 and no flag at all, and a
+    //     reader distrusting only the flag would trust it completely. So the mark names the GOOD case,
+    //      and absence means unattested. A new capability announces itself; old code cannot announce.
+    expect('un_d' in by.g1.sc).toBe(false)
+    // and once the disk does answer, the mark goes ON — 1-or-absent, never a snapped 0.
+    const nav2 = fake_nav({ 'Priced/Album': dir68(5, 1), 'Guessed/Album': dir68(9, 1) })
+    H.Ra_unity_stamp(s, 0, await H.Ra_unity_look(s, nav2, 8))
+    expect(+by.g1.sc.un_n).toBe(9)
+    expect(by.g1.sc.un_d).toBe(1)
+})
+
+test('a folder is a STAT per folder, capped per pass and believed for a TTL', async () => {
+    const H = await stub_house()
+    const s = shelf()
+    const tree: any = {}
+    for (let i = 0; i < 6; i++) {
+        rec(s, 'd' + i, `D${i}/1.flac`, { src_size: 10 })
+        tree[`D${i}`] = dir68(3, 1)
+    }
+    const nav = fake_nav(tree)
+
+    // ONE LISTING PER FOLDER, never per record, and never the breadth-first walk of the whole crate that
+    //  Crate_nav_meander's no-enumeration law forbids on a 200k-track share. The cap bounds a beat.
+    await H.Ra_unity_look(s, nav, 2)
+    expect(nav.asked.length).toBe(2)
+    await H.Ra_unity_look(s, nav, 2)
+    expect(nav.asked.length).toBe(4)
+    const census = await H.Ra_unity_look(s, nav, 2)
+    expect(nav.asked.length).toBe(6)
+    expect(Object.keys(census).length).toBe(6)
+    // …and a settled shelf then costs NOTHING: the TTL is what keeps this off the disk every beat forever.
+    await H.Ra_unity_look(s, nav, 2)
+    expect(nav.asked.length).toBe(6)
+    // a capped pass still stamps what it already knows — it does not wait for the whole shelf to be priced.
+    expect(H.Ra_unity_stamp(s, 0, census)).toBe(6)
+    expect(H.Ra_recs(s).every((r: any) => +r.sc.un_n === 3)).toBe(true)
+})
+
+test('the census counts what a heist could actually take — audio only, sizes only when all are known', async () => {
+    const H = await stub_house()
+    // COVER ART IS NOT A TRACK. The filter is Crate's, the same one the source's own census applies, so a
+    //  unity of 12 and a folder offering 12 are the same 12. Counting the folder.jpg would inflate every
+    //   album by one and price it with an image's bytes.
+    const c = H.Ra_unity_census([
+        { path: 'A/1.flac', bytes: 10 },
+        { path: 'A/2.flac', bytes: 20 },
+        { path: 'B/1.flac', bytes: 5 },
+    ])
+    expect(c['A']).toEqual({ n: 2, size: 30, unknown: 0 })
+    expect(c['B'].n).toBe(1)
+
+    const H2 = await stub_house()
+    const s = shelf()
+    rec(s, 'm1', 'Mixed/Album/1.flac', { src_size: 100 })
+    const nav = fake_nav({ 'Mixed/Album': [
+        { name: '01.flac', size: 1000 },
+        { name: '02.flac', size: 2000 },
+        { name: 'folder.jpg', size: 999999 },
+        { name: 'notes.txt', size: 50 },
+    ] })
+    H2.Ra_unity_stamp(s, 0, await H2.Ra_unity_look(s, nav, 4))
+    expect(+H_first_rec(H2, s).sc.un_n).toBe(2)
+    expect(+H_first_rec(H2, s).sc.un_size).toBe(3000)
+
+    // A PARTLY-KNOWN FOLDER GETS NO SIZE AT ALL. A backend that maps bare names (RemoteWormholeNav) hands
+    //  back nulls; summing the ones it did know would produce a confident understatement, which is the
+    //   exact failure this whole change exists to remove. Absent, readers fall back; short, they believe it.
+    const H3 = await stub_house()
+    const s3 = shelf()
+    rec(s3, 'u1', 'Unknown/Album/1.flac', { src_size: 100 })
+    const nav3 = fake_nav({ 'Unknown/Album': [
+        { name: '01.flac', size: 1000 },
+        { name: '02.flac', size: null },
+    ] })
+    H3.Ra_unity_stamp(s3, 0, await H3.Ra_unity_look(s3, nav3, 4))
+    expect(+H_first_rec(H3, s3).sc.un_n).toBe(2)
+    expect('un_size' in H_first_rec(H3, s3).sc).toBe(false)
+})
+
+test('Ra_unity_dirs is the work list — distinct folders, not records', async () => {
+    const H = await stub_house()
+    const s = shelf()
+    rec(s, 'a', 'One/Album/1.flac')
+    rec(s, 'b', 'One/Album/2.flac')
+    rec(s, 'c', 'One/Album/3.flac')
+    rec(s, 'd', 'Two/Album/1.flac')
+    rec(s, 'e', 'loose.flac')
+    // 5 records, 3 folders: this collapse is why pricing off the disk is affordable on a share beat at all.
+    expect(H.Ra_unity_dirs(s)).toEqual(['One/Album', 'Two/Album', ''])
+})
+
 // ── THE BLAG ───────────────────────────────────────────────────────────────────────────────────────
 test('the blag derives the seed\'s folder from cards we already hold, and prices it from src_size', async () => {
     const H = await stub_house()
@@ -151,7 +315,9 @@ test('the blag derives the seed\'s folder from cards we already hold, and prices
     expect(seedHusk.sc.re).toBe('SEED')
 
     // …and the unity read off the SEED's own card is the number that lets a short listing know it is short.
-    expect(H.Heist_unity_of(mir, 'SEED')).toEqual({ n: 3, size: 21_000_000 })
+    //  `d` rides with it: this card was stamped by a friend, and whether THEY counted their disk or just
+    //   guessed it from their shelf is not something we can re-derive here — it has to travel with the number.
+    expect(H.Heist_unity_of(mir, 'SEED')).toEqual({ n: 3, size: 21_000_000, d: 0 })
     expect(H.Heist_unity_of(mir, 'nosuch')).toEqual({ n: 0, size: 0 })
 
     H.Heist_blag_drop('SEED')
