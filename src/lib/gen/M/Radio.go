@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '6c9b393bc254d232~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '4b5957d0f6620b31~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1240,7 +1240,10 @@ Radio_watch_shelf(w) {
     let watch = this.Supervisor_watch(sup, 'radio.shelf', 'there is music in your share — records to play', 'standing', 'Radio_probe_shelf', w, this.Supervisor_stage('share'))
     if (!watch) return
     if (this.Radio_probe_shelf(w, sup)?.verdict !== 'wrong') return
-    let walked = this.Radio_shelf_walked()
+    // ADVANCE IS NEW GROUND, not footsteps — see Radio_shelf_fresh.  Re-treading the same five
+    //  folders is a wander working, but it is not a search that can still succeed, and only the
+    //   latter earns more patience.
+    let walked = this.Radio_shelf_fresh()
     // a fresh empty read arms; an ADVANCING one re-arms.  Both go through the same door so the clock
     //  and the grade can never disagree about which state we are in.
     let fresh = !watch.c.deadline
@@ -1270,6 +1273,17 @@ Radio_watch_shelf(w) {
 Radio_shelf_walked() {
     let TOP = this.top_House ? this.top_House() : null
     return TOP ? (+(TOP.c.meander_stood || 0)) : 0
+
+},
+// Radio_shelf_fresh — DISTINCT directories stood in this session (Crate.g's `meander_fresh`).  The
+//  patience gate must read this, never `walked`: a wander re-treading five empty folders bumps
+//   `walked` forever, so `moving` re-armed forever and the give-up could never fire — an empty share
+//    said `still looking — 240 folders walked` until the tab closed (the owner, 2026-08-13).  It is
+//     also the honest number for the SENTENCE: "240 folders walked" on a five-folder share is a
+//      counter wearing a claim it cannot support.
+Radio_shelf_fresh() {
+    let TOP = this.top_House ? this.top_House() : null
+    return TOP ? (+(TOP.c.meander_fresh || 0)) : 0
 
 },
 // Radio_shelf_memory — how many music-bearing directories this share is REMEMBERED to have, from the
@@ -1302,7 +1316,9 @@ Radio_probe_shelf(w, sup) {
     //    The SENTENCE stays fixed (it is the stable claim a Book asserts and a face keys on); only
     //     the note moves, and this roster lives on Mundo so no fixture churns on it.
     if (!recs.length) {
-        let walked = this.Radio_shelf_walked()
+        // the DISTINCT count, for the same reason the patience uses it: "240 folders walked" on a
+        //  five-folder share is a visit counter wearing a claim about ground covered.
+        let walked = this.Radio_shelf_fresh()
         let memo = this.Radio_shelf_memory()
         // A GIVE-UP IS A PROMISE THAT THE ADVICE IS NOW TRUE — and a progress claim beside a FAILED
         //  bracket is the opposite (the owner's granted-empty-folder trial: `[FAILED] there is music

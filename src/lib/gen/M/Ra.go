@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '8f18b6aa7aae9133~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '977d14dd883d802a~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1912,7 +1912,17 @@ async Ra_card(w, rec) {
 //   source is gone: no source, no stream — and the DEAD-SOURCE RULE (owner, 2026-07-10): a radiostock
 //    whose source can no longer be found can never make up its %Stream, so it is not stock anymore, it
 //     is litter — drop the file; a later pass re-stocks whatever the collection now holds.
-async Ra_source_pcm(w, rec) {
+// `need_secs` (optional, 2026-08-13 — the owner: "chop encoded data in half and only decode|Preview the
+//  first half... avoid entirely decoding anything they don't listen to for 15s"): a HEAD only needs
+//   [0, pv_off) seconds, and we were decoding whole 5-minute files (~130-300MB PCM, 2-7s CPU) to encode
+//    60-second previews.  With need_secs the read is bounded to the proportional byte prefix (×1.35 VBR
+//     margin; duration off the card, else plain half the file) and the truncated buffer is decoded —
+//      lossy tail frames are fine for a preview.  The result is marked `rec.c.pcm_partial = <secs
+//       covered>`; a CONTINUATION must never encode from a partial (its promised total would lie), so
+//        Ra_transcode_ensure drops a partial before its own full-decode kick.  decodeAudioData refusing
+//         a truncated container (some m4a) falls back to the whole file — correctness never depends on
+//          the optimisation.
+async Ra_source_pcm(w, rec, need_secs) {
     if (rec.c.pcm) return rec.c.pcm
     let t0 = Date.now()
     let tid = String(rec.sc.id || '').slice(0, 8)
@@ -1956,9 +1966,32 @@ async Ra_source_pcm(w, rec) {
         //    track starved right at its preview boundary (seq=16), which re-armed the want-storm: a feedback
         //     loop.  read_range is the seekable native twin already used for big assets (Ra_stock_peek;
         //      its contract: "a 1.4GB asset never crosses whole").  bin_read stays the fallback.
+        // the bounded prefix read (need_secs): proportional when the duration is known, plain half
+        //  otherwise — either way strictly less disk AND a strictly smaller decode.
+        // …and never re-clip a record whose clip already came up short (pcm_clip_bust, stamped at the
+        //  partial-short drop): without the brand the retry recomputes the SAME clip — same short
+        //   partial, same drop — and the record decode-churns forever (seen live 2026-08-13 dawn,
+        //    4 laps on one testsound: duration unknown → blind half < the head's need, every time).
+        // …and size the clip from the ACTUAL FILE, never the card: `sc.bytes` often describes a
+        //  DIFFERENT rendition than the file at `path` (the two-path-shapes radiostock), and clips
+        //   computed from it came out 25-70× short — every such record burned a bust lap.  A 1-byte
+        //    read_range probe returns `size` (the true file.size) for the cost of a stat; the
+        //     duration is safe to trust from the card — same song, same seconds, whatever the bytes.
+        let clip = 0
+        if (need_secs > 0 && nav.read_range && !rec.c.pcm_clip_bust) {
+            let probe = await nav.read_range(parts.join('/'), fname, 0, 1)
+            let truesize = probe ? +(probe.size || 0) : 0
+            let knownSecs = +(rec.sc.seconds || card.seconds || 0)
+            if (truesize > 0) {
+                if (knownSecs > 0 && need_secs < knownSecs * 0.7) clip = Math.ceil(truesize * (need_secs / knownSecs) * 1.35)
+                if (!clip && !(knownSecs > 0)) clip = Math.ceil(truesize / 2)
+                if (clip >= truesize * 0.9) clip = 0
+            }
+        }
         if (nav.read_range) {
-            let got = await nav.read_range(parts.join('/'), fname, 0)
+            let got = clip ? await nav.read_range(parts.join('/'), fname, 0, clip) : await nav.read_range(parts.join('/'), fname, 0)
             raw = got ? got.buffer : null
+            if (raw && clip) rec.c.pcm_clip = clip
         } else {
             raw = await nav.bin_read(parts.join('/'), fname)
         }
@@ -2000,9 +2033,26 @@ async Ra_source_pcm(w, rec) {
     try {
         decoded = await ctx.decodeAudioData(raw)
     } catch (er) {
-        this.Radio_trace(null, { ev: 'pcm-decode-fail', id: tid, why: '' + (er && er.message || er) })
-        return null
+        // a clipped container some decoder refuses (m4a's moov, an unlucky frame cut) falls back to
+        //  the WHOLE file once — the optimisation may never cost correctness.
+        if (rec.c.pcm_clip) {
+            rec.c.pcm_clip = 0
+            let full = null
+            try {
+                let got2 = await nav.read_range(parts.join('/'), fname, 0)
+                full = got2 ? got2.buffer : null
+                decoded = full ? await new OfflineAudioContext(1, 1, 48000).decodeAudioData(full) : null
+            } catch (er2) { decoded = null }
+        }
+        if (!decoded) {
+            this.Radio_trace(null, { ev: 'pcm-decode-fail', id: tid, why: '' + (er && er.message || er) })
+            return null
+        }
     }
+    // the partial mark: seconds actually covered when clipped, cleared on a full decode — the head
+    //  checks sufficiency against it, the continuation refuses to encode from it.
+    rec.c.pcm_partial = rec.c.pcm_clip ? +(decoded.duration || 0) : 0
+    rec.c.pcm_clip = 0
     let nch = Math.min(2, decoded.numberOfChannels)
     let channels = []
     let ch = 0
@@ -2223,6 +2273,7 @@ Ra_pcm_drop(rec, why) {
     if (rec.c.ra) this.Ra_encode_close(rec.c.ra.st)
     rec.c.ra = null
     rec.c.pcm = null
+    rec.c.pcm_partial = 0
     this.Radio_trace(null, { ev: 'pcm-free', id: String(rec.sc.id || '').slice(0, 8), mb: mb, why: why })
     return mb
 
@@ -2465,8 +2516,18 @@ async Ra_head_ensure(w, rec) {
             this.Ra_pending_stale(rec)
             if (!rec.c.pcm_pending && !(rec.c.pcm_retry_at > Date.now()) && this.Ra_pcm_admit(w, rec)) {
                 rec.c.pcm_pending = Date.now()
-                this.Ra_source_pcm(w, rec).then((p) => { rec.c.pcm_pending = 0; if (p) { rec.c.pcm_tries = 0; rec.c.pcm_retry_at = 0 } if (!p) this.Ra_pcm_backoff(rec) }).catch((er) => { rec.c.pcm_pending = 0; this.Ra_pcm_backoff(rec) })
+                // HEAD-ONLY NEED: decode just [0, pv_off) + margin, not the whole song (the owner's
+                //  "chop it in half" — most previews are ~60s of a ~300s track, so this is a 3-5×
+                //   cut in decode CPU + PCM bytes for the browse-y case).
+                this.Ra_source_pcm(w, rec, (off * SEGS) + 10).then((p) => { rec.c.pcm_pending = 0; if (p) { rec.c.pcm_tries = 0; rec.c.pcm_retry_at = 0 } if (!p) this.Ra_pcm_backoff(rec) }).catch((er) => { rec.c.pcm_pending = 0; this.Ra_pcm_backoff(rec) })
             }
+            return 0
+        }
+        // a standing partial that does not COVER this head is dropped and re-fetched at the right
+        //  size (one pass of latency, never a wrong preview).
+        if (rec.c.pcm_partial && rec.c.pcm_partial < (off * SEGS) - 0.5) {
+            rec.c.pcm_clip_bust = 1
+            this.Ra_pcm_drop(rec, 'partial-short')
             return 0
         }
         rec.c.pcm_ts = Date.now()
@@ -2576,6 +2637,11 @@ async Ra_transcode_ensure(w, rec) {
     //    (the same bug class as the just-fixed heist census storm).  Kick the decode off DETACHED (never
     //     awaited under the beat) and bow out this beat; a later pump finds rec.c.pcm ready and opens the
     //      encoder.  The pcm_pending latch stops a second beat re-firing the decode (the await-gap race).
+    // A PARTIAL NEVER SEEDS A CONTINUATION (2026-08-13, the half-decode): a head-only prefix decode
+    //  covers pv_off seconds; opening the stream encoder on it would promise a total the PCM cannot
+    //   deliver.  Drop it (unless an encode is somehow already riding it) and fall through to the
+    //    ordinary full-decode kick below — the head it served is already cut and unaffected.
+    if (rec.c.pcm && rec.c.pcm_partial && !(rec.c.ra && !rec.c.ra.done)) this.Ra_pcm_drop(rec, 'partial')
     if (!rec.c.pcm) {
         // BACK OFF A DECODE THAT KEEPS FAILING (2026-08-07 — the measured storm).  `pcm_pending` is cleared
         //  UNCONDITIONALLY when Ra_source_pcm settles, including when it returned null, so a record whose
@@ -3380,6 +3446,13 @@ async Ra_restock_beat(w, mirror, budget) {
     let warm = 0
     let want = 0
     let considered = 0
+    // FOUR FRESH HEADS AT A TIME (the owner, 2026-08-13 dawn: "limit to four fresh heads at a time?"):
+    //  the remote-head branch below asked for EVERY un-whole head in the warm window at once — nine
+    //   concurrent head asks after a double reboot, which is the storm that starved the playing
+    //    track's continuation on the source.  In-flight asks (asked <4s ago) count toward the budget,
+    //     so outstanding stays ≈ the cap rather than growing a window per pass.
+    let head_asks = 0
+    let HEAD_ASK_CAP = w.c.ra_head_ask_cap == null ? 4 : +w.c.ra_head_ask_cap
     let heads_made = 0
     let k = 0
     while (k < recs.length && considered < K) {
@@ -3485,7 +3558,10 @@ async Ra_restock_beat(w, mirror, budget) {
             while (hoff < +(rec.sc.pv_off || 0) && hhave[hoff] != null) hoff = hoff + PAGE
             let hkey = rec.sc.id + ':h' + hoff
             let hasked = w.c.ra_want_ts[hkey] || 0
-            if (nowms - hasked >= 4000) {
+            if (nowms - hasked < 4000) {
+                head_asks = head_asks + 1
+            } else if (head_asks < HEAD_ASK_CAP) {
+                head_asks = head_asks + 1
                 w.c.ra_want_ts[hkey] = nowms
                 await this.Repli_want_next(w, rec.c.rx, w.c.repli_mirror_pier, rec.c.from, rec.sc.id, 'opus_head', hoff)
             }

@@ -19,7 +19,25 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ## 0. Latest handover — fold into the sections below as it's absorbed
 
-### 2026-08-12 (latest) — THE HEAD IS EARNED BY FINISHING, NOT BY HAVING TUNED IN
+### 2026-08-13 dawn — partial decode landed; the clip estimate distrusts `sc.bytes` (daylight item)
+
+The owner's "chop encoded data in half and only decode|Preview the first half" is in (`Ra_source_pcm`'s
+ `need_secs` → byte-clipped `read_range` → `pcm_partial` mark; heads pass `(off*SEGS)+10`; a
+  continuation never encodes from a partial). Two guard rails learned live the same hour:
+- **A short partial must escalate, not retry.** The first cut re-clipped identically forever
+   (4 decode laps on one record before it was caught). `partial-short` now brands
+    `rec.c.pcm_clip_bust` and a busted record always decodes full. One wasted ~50ms lap max.
+- **Daylight refinement: the clip is computed from `rec.sc.bytes`/`card.bytes`, and for many records
+   that number describes a DIFFERENT rendition than the file at `path`** (the two-path-shapes
+    radiostock issue) — clips came out 25–70× short (5s decoded of a 273s track), so those records
+     always bust and the optimisation is a no-op for them. The honest size is the actual file's: ask
+      the nav (stat, or read_range's own knowledge) instead of the card. Until then the bust brand
+       keeps it correct, merely unoptimised.
+Sibling dawn work in Ra.g, same session: decode concurrency `maxfly=2` with a reserve slot for a
+ starving continuation (`cont_starving_ts`), starving-first want order in the pump, and a sink-side
+  `HEAD_ASK_CAP=4` on fresh remote-head asks — the boot-storm "off the tape" chain.
+
+### 2026-08-12 — THE HEAD IS EARNED BY FINISHING, NOT BY HAVING TUNED IN
 
 The owner, watching it run: *"seems like all the Records are starting from the start now?"* — then the
  rule they actually wanted: *"start from the middle when next-track is clicked, but go end-to-start

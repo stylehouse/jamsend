@@ -9,7 +9,7 @@ import { parseBuffer } from "music-metadata"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '37395d9eb03af426~g1' },
+    Ghostmeta_Ghost_M_Crate(): string { return '23184bd7b97119a6~g1' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -553,6 +553,18 @@ async Crate_nav_meander(nav, base, want, skip) {
         //      Census.svelte restores thousands of entries at boot, so a warm page would claim to
         //       have walked its whole share in the first tick.  Not persisted, by the same logic.
         TOP.c.meander_stood = (+(TOP.c.meander_stood || 0)) + 1
+        // …AND HOW MANY DISTINCT ONES (2026-08-13, the owner's almost-empty share: `still looking —
+        //  240 folders walked` while standing in about five).  Visits are the right measure for "is
+        //   the wander alive"; they are the WRONG measure for "is it finding new ground", and
+        //    Radio_watch_shelf's patience was using visits — so on a small share the counter climbed
+        //     forever, `moving` re-armed forever, and the give-up that says the useful thing ("no
+        //      music found here — add some, or open a different folder") could never fire.  A share
+        //       with nothing in it looked like a machine still working, permanently.
+        //  Session-local like its sibling, and for the same reason: the restored census must not let
+        //   a warm page claim it has already walked everywhere.  A Set, not the learn map's keys —
+        //    that map is restored at boot, this one is only what THIS boot has actually stood in.
+        if (!TOP.c.meander_seen) TOP.c.meander_seen = new Set()
+        if (!TOP.c.meander_seen.has(here)) { TOP.c.meander_seen.add(here); TOP.c.meander_fresh = (+(TOP.c.meander_fresh || 0)) + 1 }
         let node = learn ? learn[here] : null
         // THE CAP WAS BELOW THE COLLECTION (2026-08-08, the owner: "we should be able to remember
         //  where 10000 tracks are by remembering how many are in each of 7000 directories").  4096

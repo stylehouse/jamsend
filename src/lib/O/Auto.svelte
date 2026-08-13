@@ -1296,7 +1296,16 @@
     //   green (their %ok is true) but ride back tagged so the editor can show "passed, N forgiven".
     //  gaps = contract %Assertions whose %sworn never latched — a run with any gap is
     //   RED even at 100% steps: a labeled proof went missing, and no entropy span can forgive that.
-    Cred_run_outcome(): { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: { slug: string, sentence: string, n: number }[] } | null {
+    //  A RECORDING RUN HAS NOTHING TO PASS (2026-08-13 — the owner reading a wild report: *"doesn't
+    //   seem like a good description of state"*).  `Step%ok` is the FIXTURE axis: did this run's snap
+    //    match the recorded one.  In `mode:'new'` there IS no recorded one — the run is laying the
+    //     fixture down — so every step is !ok structurally, and the old line reported `ok_pct:0` on a
+    //      tab where eleven claims had latched including "the music played".  A first boot on a fresh
+    //       identity is exactly when someone reads these logs, and it described a working app as
+    //        totally broken.  So carry `mode`, and in 'new' let the CLAIM axis (sworn vs gaps) be the
+    //         verdict — it is the only axis that means anything on an unrecorded run.  ok_pct goes
+    //          null rather than 0: absent is honest, zero is a measurement nobody took.
+    Cred_run_outcome(): { ok: boolean, ok_pct: number | null, done: number, caveat: number, mode: string, gaps?: { slug: string, sentence: string, n: number }[] } | null {
         const H = this as House
         const story = H.o({ H: 'Story' })[0] as House | undefined
         const stW   = story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
@@ -1308,7 +1317,14 @@
         const ok     = steps.filter(s => s.sc.ok).length
         const caveat = steps.filter(s => s.sc.ok && s.sc.caveat).length
         const gaps   = (H as any).Cred_assertion_gaps(stW) as { slug: string, sentence: string, n: number }[]
-        return { ok: ok === done && !gaps.length, ok_pct: Math.round((ok / done) * 100) / 100, done, caveat, gaps: gaps.length ? gaps : undefined }
+        const mode   = String((stW?.o({ run: 1 })[0] as TheC | undefined)?.sc.mode ?? 'check')
+        const fresh  = mode === 'new'
+        return {
+            ok: fresh ? !gaps.length : (ok === done && !gaps.length),
+            ok_pct: fresh ? null : Math.round((ok / done) * 100) / 100,
+            done, caveat, mode,
+            gaps: gaps.length ? gaps : undefined,
+        }
     },
 
     // Cred_report_wild — the reporting-test-probe leg (Sounditron; Tyranny's /log rails): a Book
@@ -1318,7 +1334,7 @@
     //     — and on a red|gapped run the per-step bundle too (+%desc, +the latched %sworn set read
     //      off the Assertioning shelf, the same entropy-proof source Cred_assertion_gaps uses).
     //       Fire-and-forget; a dev server without /log just warns (Tyranny's dev posture).
-    Cred_report_wild(book: string, outcome: { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: any[] } | null) {
+    Cred_report_wild(book: string, outcome: { ok: boolean, ok_pct: number | null, done: number, caveat: number, mode?: string, gaps?: any[] } | null) {
         const H = this as House
         if (!outcome || typeof fetch !== 'function') return
         // localhost has no /log (it's leproxy's handle_path in front of the perl logger, prod
@@ -1333,11 +1349,19 @@
         const steps = ((stW?.c.This as TheC | undefined)?.o({ Step: 1 }) ?? []) as TheC[]
         const shelf = (stW?.c.ave as TheC | undefined)?.o({ Assertioning: 1, Story: book })[0] as TheC | undefined
         const sworn = ((shelf?.o({ sworn: 1 }) ?? []) as TheC[]).map(s => String(s.sc.sworn))
-        const lines: any[] = [{ kind: 'outcome', book, at: now_in_seconds_with_ms(), ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, caveat: outcome.caveat, gaps: outcome.gaps, sworn }]
+        // `sworn_n` beside the gaps: a reader scanning a wall of these needs the SHAPE of the run in
+        //  the first line — "9 held, 4 missing" is a state, "ok:false" is a mood.  The sentences
+        //   themselves already travel; counting them costs nothing and stops the eye from having to.
+        const fresh = outcome.mode === 'new'
+        const lines: any[] = [{ kind: 'outcome', book, at: now_in_seconds_with_ms(), ok: outcome.ok, ok_pct: outcome.ok_pct, mode: outcome.mode, done: outcome.done, caveat: outcome.caveat, sworn_n: sworn.length, gaps_n: (outcome.gaps ?? []).length, gaps: outcome.gaps, sworn }]
         if (!outcome.ok) {
             const the_steps = (The?.o({ step: 1 }) ?? []) as TheC[]
             const desc_of = (n: number) => the_steps.find(s => s.sc.step === n)?.sc.desc
-            for (const s of steps) lines.push({ kind: 'step', n: s.sc.Step, ok: !!s.sc.ok, caveat: s.sc.caveat ? 1 : undefined, untried: s.sc.untried ? 1 : undefined, error: s.sc.error, desc: desc_of(s.sc.Step as number) })
+            // On a recording run `ok` is not a verdict — say `unrecorded` instead of stamping a
+            //  false `ok:false` on eight steps that were never compared to anything.
+            for (const s of steps) lines.push(fresh
+                ? { kind: 'step', n: s.sc.Step, unrecorded: 1, untried: s.sc.untried ? 1 : undefined, error: s.sc.error, desc: desc_of(s.sc.Step as number) }
+                : { kind: 'step', n: s.sc.Step, ok: !!s.sc.ok, caveat: s.sc.caveat ? 1 : undefined, untried: s.sc.untried ? 1 : undefined, error: s.sc.error, desc: desc_of(s.sc.Step as number) })
         }
         fetch(`/log?stream=Startup-${self8}`, { method: 'POST', body: lines.map(l => JSON.stringify(l)).join('\n') })
             .catch(er => console.warn('Cred_report_wild upload', er))
@@ -1347,7 +1371,7 @@
     //  per Book) and persist that Book's HEAD + trail INTO the Book's own Story directory.
     Cred_spool(w: TheC, book: string, mode: string) {
         const H = this as House
-        const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number, caveat: number, gaps?: any[] } | null
+        const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number | null, done: number, caveat: number, mode?: string, gaps?: any[] } | null
         if (!outcome) return
         ;(H as any).Cred_report_wild(book, outcome)
         const versions = (H as any).Cred_ghost_versions() as { name: string, dige: string }[]
@@ -1363,7 +1387,10 @@
         if (bk.runs.length > 20) bk.runs.splice(0, bk.runs.length - 20)
         // last-OK tagged to the versions it used (the credible HEAD)
         if (outcome.ok) bk.last_ok = { at, ok_pct: outcome.ok_pct, uses }
-        console.log(`🧪 Cred spool: ${book} ${outcome.ok ? 'OK' : Math.round(outcome.ok_pct * 100) + '%'} — ${versions.length} ghosts, ${bk.runs.length} runs`)
+        // `ok_pct` is null on a recording run (nothing to compare against) — `NaN%` is what the old
+        //  template printed there, so say `recording` and keep the percentage for real check runs.
+        const grade = outcome.ok ? 'OK' : outcome.ok_pct == null ? 'recording' : Math.round(outcome.ok_pct * 100) + '%'
+        console.log(`🧪 Cred spool: ${book} ${grade} — ${versions.length} ghosts, ${bk.runs.length} runs`)
         H.Cred_persist(w, `wormhole/Story/${book}/Credulate/toc.snap`,   H.Cred_head_C(book, versions, bk))
         H.Cred_persist(w, `wormhole/Story/${book}/Credulation/toc.snap`, H.Cred_trail_C(book, bk))
     },
