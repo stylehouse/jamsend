@@ -273,6 +273,16 @@
             totSecs += +(h.sc.seconds || 0) > 0 ? +h.sc.seconds : (spb && bytes ? bytes * spb : 0)
         }
 
+        // …and once the human has UNTICKED something, the folder stops being the answer: the two
+        //  questions become "how many am I taking" and "how big is that", and the picks can price
+        //   themselves now that they carry `src_size` (Heist_keep_default_pick).  Only when they have
+        //    actually edited — an untouched keep takes the whole folder, listed or not, and the unity
+        //     is the better number for it.  `bytes` is the fallback for a pick minted before src_size.
+        let pickBytes = 0
+        for (const p of picks) pickBytes += +(p.sc.src_size || p.sc.bytes || 0)
+        const unTracks = +(sc.un_n || 0)
+        const edited = !!sc.pick_edited && pickedRefs.size < (unTracks || husks.length)
+
         // THE TRACK UNDER THE NEEDLE, for the running strip (the human 2026-08-07: "put the most recent
         //  track downloading at the end").  Heist_land walks picks IN ORDER with at most `heist_inflight`
         //   live, so the first un-landed pick IS the one moving; once they're all landed the last one is
@@ -299,6 +309,32 @@
             catRaw, catSegs,
             dirsRaw, dirsSegs, dirsKnown, dirsAuto,
             nTracks: husks.length,
+            // ── THE UNITY: what the SOURCE says this folder is (2026-08-13, the owner: "so every
+            //  track|Record knows how many MB its surrounding heistable unity is?").  Ra_unity_stamp
+            //   prices every folder on their shelf and the number rides the %Record to our mirror, so
+            //    this is known on the same beat as the ⇊ press — before anyone has been asked anything.
+            //  It exists to stop a partial listing POSING AS A WHOLE ALBUM, which is exactly what the
+            //   owner hit ("it was short, only showing 1 track"): 1 husk is a fact, "1 of 12" is the
+            //    truth, and only the source can tell us the 12.  Zero = a friend on an older build, and
+            //     every line below falls back to counting what we hold, as it did before.
+            unN: +(sc.un_n || 0),
+            unSize: +(sc.un_size || 0),
+            // ── HOW MANY, AND HOW BIG — answered off the UNITY first and the husks only as a fallback.
+            //  The owner's ask is about the folder ("how many tracks are involved and how big they all
+            //   are"), and the folder does not change size while its listing arrives.  Reading these off
+            //    the husks made both numbers a function of network timing: 1 track / 8MB one second,
+            //     12 tracks / 84MB the next, with nothing on screen admitting the first was provisional.
+            //  `secsAll` extrapolates the same way the cost line always has (the owner's "assume they're
+            //   all one format|bitrate") — the known husks' seconds scaled up to the unity's track count —
+            //    because length is the one number no card carries for a folder.  It keeps its `~`.
+            nAll: edited ? pickedRefs.size : (unTracks || husks.length),
+            sizeAll: edited ? pickBytes : ((+(sc.un_size || 0)) || totBytes),
+            secsAll: edited
+                ? (husks.length ? totSecs * (pickedRefs.size / husks.length) : 0)
+                : ((unTracks > husks.length && husks.length) ? totSecs * (unTracks / husks.length) : totSecs),
+            // …and while the listing trails the unity, it is still filling in. Purely a progress tell,
+            //  and silent once the human has chosen for themselves — they are not waiting on it then.
+            listing: !edited && unTracks > husks.length,
             // the wait clock + the still-arriving tell (void tick above keeps these live at 500ms)
             askSecs: n?.c?.desc_t0 ? Math.floor((Date.now() - +n.c.desc_t0) / 1000) : 0,
             counting: husks.length > 0 && huskMovedTs > 0 && (Date.now() - huskMovedTs) < 3000,
@@ -314,6 +350,24 @@
             // the ghost stamps no_route_ts while the source is off the relay (Heist_keep_step's bow-out) —
             //  a frozen 0/N with a REASON is a wait; without one it reads as the app being broken.
             waiting: !!(n?.c?.no_route_ts),
+            // …and the OTHER honest zero: the track allowance is global and z-ordered, so a second heist
+            //  genuinely waits for the first (Heist.g stamps queued_ts while its allowance is 0).  Without
+            //   this the strip reads "nothing landed yet" for ten minutes and looks broken.
+            queued: !!(n?.c?.queued_ts),
+            // ── THE QUEUE, MADE SAYABLE (2026-08-13, §0U.2/3).  The running order has always been real —
+            //  the track allowance is global and the beat walks the keeps in order — but it was invisible
+            //   and unchangeable, so "waiting its turn" could not say WHICH turn and you could not say
+            //    "that one first".  Both answers live on the shop, so the face reads its siblings: the
+            //     same `sc.pri` sort the beat loop uses, minus the finished ones.
+            //  `ahead` is a count, not an index — "3 ahead of it" is what you glance at a rim cell for.
+            paused: !!sc.paused,
+            ahead: (() => {
+                const sibs = (n?.c?.up?.ob?.({ Heist: 1 }) ?? []) as any[]
+                const live = [...sibs].sort((a, b) => (+(a.sc.pri || 0)) - (+(b.sc.pri || 0)))
+                    .filter((k: any) => String(k.sc.state || 'primed') !== 'done' && !k.sc.paused)
+                const i = live.indexOf(n)
+                return i < 0 ? 0 : i
+            })(),
             trackPct: (+(sc.total_n || 0) > 0) ? Math.min(100, Math.round(+(sc.landed_n || 0) / +(sc.total_n || 1) * 100)) : 0,
             describing: state === 'primed' || state === 'wanted' || state === 'asking',
             folded: state === 'pulling' || state === 'committing' || state === 'done',
@@ -321,6 +375,16 @@
             //  already decided this — dose only rides on the one sibling most recently touched. A single
             //  keep is trivially its own focus, so this is false whenever there's nothing to compete with.
             unfocused: (state === 'primed' || state === 'wanted' || state === 'asking') && sc.dose !== '2',
+            // ── BUD: this heist is on the RIM, not the subject (2026-08-13, the multiple-heists cut).
+            //  Sounditron's focus cut hands a started heist `.c.pose = 'small'` and gives the belly back
+            //   to the Radio, so several heists can run while you go and find the next track.  A bud has
+            //    to say the ONE thing you glance at it for — which track, how far — and nothing else: its
+            //     destination breadcrumb, its stop/undo exits and its "already on disk" line all belong to
+            //      the cell you get by pressing it.  Reading `.c` is safe here because `.c` never bumps
+            //       and the 500ms tick above is what keeps this whole derive live (same as flow/waiting).
+            //  Deliberately NOT tied to `folded`: a heist you pressed to inspect is the belly and draws in
+            //   full even though it is running, which is the entire point of being able to press it.
+            bud: String(n?.c?.pose ?? '') === 'small',
         }
     })
 
@@ -454,9 +518,13 @@
         press_probe('lofi', () => { A?.Heist_keep_set_lofi?.(n, want) })
     }
     function focus() { press_probe('focus', () => { A?.Heist_keep_touch?.(n) }) }
+    // "not now" and "that one first" — the two things a QUEUE needs that a single heist never did.
+    function pause() { press_probe('pause', () => { A?.Heist_keep_pause?.(n) }) }
+    function resume() { press_probe('resume', () => { A?.Heist_keep_resume?.(n) }) }
+    function goFirst() { press_probe('first', () => { A?.Heist_keep_first?.(n) }) }
 </script>
 
-<div class="kf" class:folded={face.folded || face.unfocused}>
+<div class="kf" class:folded={face.folded || face.unfocused} class:bud={face.bud}>
     <!-- THE HEAD IS THE PARTICLE (the human 2026-08-07: "better than opening the x8 tracks thing is to
          heading it as a Heist:$n (or whatever key we use there)").  The key is `Heist` — this cell IS one
          %Heist — so the head reads `Heist:8` and the count stops being a thing you open a disclosure to
@@ -469,7 +537,7 @@
             <span class="kf-title" title={face.title}>{face.title}</span>
             {#if face.artist}<span class="kf-artist">{face.artist}</span>{/if}
         {:else}
-            <span class="kf-mk">Heist{#if face.nTracks}<span class="kf-mkv">:{face.nTracks}</span>{/if}</span>
+            <span class="kf-mk">Heist{#if face.nAll}<span class="kf-mkv">:{face.nAll}</span>{/if}</span>
         {/if}
         <span class="kf-from">from {face.from}</span>
     </div>
@@ -478,7 +546,7 @@
         <!-- QUEUED, not the one you're touching right now — several keeps read as a compact list instead
              of everyone fighting for the same room.  Click to bring this one into focus. -->
         <button class="kf-queued" onclick={focus} title="click to work on this one">
-            queued — {face.nTracks ? `${face.picked} of ${face.nTracks} tracks` : 'finding the folder…'}
+            queued — {face.nAll ? `${face.picked} of ${face.nAll} tracks` : `finding the folder…`}
         </button>
     {:else if face.folded}
         <!-- FOLDED: it started — a compact progress strip, no browsing -->
@@ -493,11 +561,13 @@
             <span class="kf-count" class:done={face.state === 'done'}>
                 {face.landed_n}<span class="kf-count-of">/{face.total_n || '?'}</span>
             </span>
-            <span class="kf-dest-bits">
-                {#each face.catSegs as seg}<span class="seg cat">{seg}</span><span class="sl">/</span>{/each}
-                {#each face.dirsSegs as seg}<span class="seg dirs">{deshell(seg)}</span><span class="sl">/</span>{/each}
-                {#if !face.catSegs.length && !face.dirsSegs.length}<span class="kf-dim">your collection</span>{/if}
-            </span>
+            {#if !face.bud}
+                <span class="kf-dest-bits">
+                    {#each face.catSegs as seg}<span class="seg cat">{seg}</span><span class="sl">/</span>{/each}
+                    {#each face.dirsSegs as seg}<span class="seg dirs">{deshell(seg)}</span><span class="sl">/</span>{/each}
+                    {#if !face.catSegs.length && !face.dirsSegs.length}<span class="kf-dim">your collection</span>{/if}
+                </span>
+            {/if}
             {#if face.nowTrack}
                 <span class="kf-nowtrack" class:done={face.nowDone}>{face.nowTrack}</span>
             {/if}
@@ -515,10 +585,36 @@
              lived only in the primed footer below, so once it folded down your only options were to let it
              finish or reload.  Two distinct exits, because they are genuinely different intentions:
              ✕ stops asking for more and KEEPS what already landed (a half album you decided is enough);
-             🗑 stops AND takes back every file this heist wrote, which is the one you want when testing. -->
+             🗑 stops AND takes back every file this heist wrote, which is the one you want when testing.
+             OFF A BUD (2026-08-13): a rim cell is a glance, not a control panel, and a ✕ that small next
+             to a 🗑 is a misclick waiting to happen.  Press the bud, get the cell, then stop it. -->
+        <!-- A BUD SAYS ITS PLACE, and offers the one control that place implies (2026-08-13, §0U.2): if
+             something is ahead of it, "↑ first" is the only thing you could possibly want from the rim.
+             Everything else still needs the cell — a ✕ that small beside a 🗑 is a misclick waiting. -->
+        {#if face.bud}
+            <div class="kf-foot">
+                <span class="kf-dim">{face.paused ? 'paused' : face.waiting ? `waiting for ${face.from}` : face.queued ? (face.ahead ? `${face.ahead} ahead of it` : 'waiting its turn') : 'running — press to open'}</span>
+                {#if face.paused}
+                    <button class="kf-q" onclick={resume} title="start this one going again">▶</button>
+                {:else if face.queued && face.ahead}
+                    <button class="kf-q" onclick={goFirst} title="run this heist before the {face.ahead} ahead of it">↑ first</button>
+                {/if}
+            </div>
+        {:else}
         <div class="kf-foot">
-            <span class="kf-dim">{face.waiting ? `waiting for ${face.from} to come back — resumes on its own` : face.landed_n ? `${face.landed_n} track${face.landed_n === 1 ? '' : 's'} already on disk` : 'nothing landed yet'}</span>
+            <span class="kf-dim">{face.paused ? 'paused — it keeps its place and everything you set up' : face.waiting ? `waiting for ${face.from} to come back — resumes on its own` : face.queued ? `waiting its turn — one track downloads at a time${face.ahead ? `, ${face.ahead} ahead of it` : ''}${face.landed_n ? `, ${face.landed_n} already on disk` : ''}` : face.landed_n ? `${face.landed_n} track${face.landed_n === 1 ? '' : 's'} already on disk` : 'nothing landed yet'}</span>
             <span class="kf-exits">
+                <!-- PAUSE SITS LEFT OF ✕ AND IS THE SOFTER TWIN OF IT (§0U.3): until today the only way to
+                     say "not now" was ✕, which throws away the category, the destination and the picks.
+                     Deliberately quieter than the exits — the common press here is still stop. -->
+                {#if face.paused}
+                    <button class="kf-q" onclick={resume} title="carry on with this heist">▶ resume</button>
+                {:else}
+                    <button class="kf-q" onclick={pause} title="stop for now and keep everything — it holds its place in the queue">⏸ pause</button>
+                {/if}
+                {#if !face.paused && face.queued && face.ahead}
+                    <button class="kf-q" onclick={goFirst} title="run this heist before the {face.ahead} ahead of it">↑ first</button>
+                {/if}
                 <button class="kf-x" onclick={cancel} title="stop this heist — keep the tracks that already landed">✕ stop</button>
                 {#if face.landed_n}
                     {#if scrubArmed}
@@ -532,6 +628,7 @@
                 {/if}
             </span>
         </div>
+        {/if}
     {:else}
         <!-- PRIMED: sits in the clutter, tweakable, until you press ▶ start (no auto-start) -->
 
@@ -623,7 +720,14 @@
              derive.  BEFORE THE FOLDER LANDS, THE SPINNER ("it also needs a spinner on that as
              well") — honest now, unlike the banned 2026-08-07 skeleton: the ask is real, counted
              (`sc.asks`) and re-healed on silence. -->
-        {#if !face.nTracks}
+        <!-- TWO QUESTIONS, ALWAYS ANSWERED (the owner 2026-08-13: *"I want to know how many tracks are
+             involved and how big they all are"*).  HOW MANY and HOW BIG are properties of the FOLDER, not
+             of however much of its listing has reached us — the unity knows both from the seed's own card
+             ([[Ra_unity_stamp]]), so this line stands up on the ⇊ beat and never changes its mind
+             afterwards.  Only when no unity rode in (a friend on an older build) does it fall back to
+             counting husks, and then it says outright that it does not know a size rather than omitting
+             the clause and letting the absence read as free. -->
+        {#if !face.nTracks && !face.unN}
             <div class="kf-sum kf-wait"><span class="kf-spin"></span> asking {face.from} for the folder…{#if face.askSecs >= 3}<span class="kf-dim">&nbsp;{face.askSecs}s{#if face.asks > 1} · asked {face.asks}×{/if}</span>{/if}</div>
             {#if face.askSecs >= SLOW_S}
                 <!-- past the honest threshold, say WHY: the source is usually mid-serve (one core,
@@ -634,7 +738,16 @@
             <div class="kf-sum">
                 <!-- ☑ lofi flips the size and that is the whole story (the owner: "change the
                      quantity, don't explain it") — no suffix, no tooltip. -->
-                {face.nTracks} track{face.nTracks === 1 ? '' : 's'}{#if face.totSecs}&nbsp;· ~{fmtT(face.totSecs)}{/if}{#if face.lofi && face.totSecs}&nbsp;· ~{fmtB(face.totSecs * 16000)}{:else if face.totBytes}&nbsp;· {fmtB(face.totBytes)}{/if}{#if face.counting}&nbsp;<span class="kf-spin sm" title="still counting — the folder is arriving"></span>{/if}
+                {face.nAll} track{face.nAll === 1 ? '' : 's'}{#if face.secsAll}&nbsp;· ~{fmtT(face.secsAll)}{/if}{#if face.lofi && face.secsAll}&nbsp;· ~{fmtB(face.secsAll * 16000)}{:else if face.sizeAll}&nbsp;· {fmtB(face.sizeAll)}{:else}&nbsp;· <span class="kf-dim">size unknown</span>{/if}{#if face.counting}&nbsp;<span class="kf-spin sm" title="still counting — the folder is arriving"></span>{/if}
+                <!-- THE LISTING CATCHING UP is a progress clause, never a question put to the human.  The
+                     count and the size above are already the truth about the folder; this only says which
+                     of its tracks we can name yet, and it vanishes on its own when the source answers.
+                     (It replaces a "looks short?" button — the owner, 2026-08-13: *"banish `looks short?`
+                     that's ridiculous"*.  Asking someone to eyeball whether a listing is complete is the
+                     app declining to do its own job, and with the unity in hand it does not have to.) -->
+                {#if face.listing}
+                    <span class="kf-short"><span class="kf-spin sm"></span>&nbsp;naming them — {face.nTracks} of {face.nAll} so far</span>
+                {/if}
             </div>
         {/if}
         <div class="kf-what">
@@ -672,20 +785,22 @@
                             title="drop this AND delete what it already downloaded">🗑 undo</button>
                     {/if}
                 {/if}
-                <!-- THE ✕ IS GONE (the owner 2026-08-10: *"perhaps we should get rid of the 'X' button
-                     and have only the Door and Radio as two other locations to go to, which cancel the
-                     Heist"*).  Its whole job was "a way out of here", and under the focus glass the way
-                     out is already on screen and already a cell: the Door and the Player buds.  A
-                     dedicated exit inside the face was a second vocabulary for leaving — and it was the
-                     one control in the belly that had to be aimed at, in a regime whose point is that
-                     you press WHOLE CELLS.
-                     The LEAVING is now the bud's press (`Sounditron_leave_keep`), which cancels with the
-                     same `Heist_keep_cancel` this button called — so nothing about what cancelling MEANS
-                     has changed, only where you say it.  `🗑 undo` stays: that one deletes what landed,
-                     which is a different act and still needs its own two-press arm.
-                     (History, so it is not relitigated blind: this was the human's own 2026-08-07 ask
-                      for a standard DeleteX affordance with a `cancel?` confirm.  It is superseded by
-                       the regime, not by a change of mind about the wording.) -->
+                <!-- ✕ CANCEL IS BACK, AND PROMINENT (the owner 2026-08-13: *"nah I think we make the
+                     Cancel prominent, and auto-Start them when wandered away from"*).
+                     It was removed 2026-08-10 (*"get rid of the 'X' button and have only the Door and
+                      Radio as two other locations to go to, which cancel the Heist"*) on the reasoning
+                       that the way out was already on screen as a cell, so a dedicated exit inside the
+                        face was a second vocabulary for leaving.  That reasoning DEPENDED on leaving
+                         meaning cancelling — and as of today it does not: wandering away STARTS the
+                          heist (`Sounditron_leave_keep` → `Heist_keep_start`), because the owner wants
+                           to set several up and go.  With leaving reassigned there is no way to say
+                            "don't" left on the face at all, so the ✕ is not a regression to the old
+                             regime, it is the control the new one needs.  Prominent, and it says the
+                              word: an icon alone would be ambiguous now that ▶ is not the only way out.
+                     `🗑 undo` stays beside it: deleting what already landed is a different act and
+                      still needs its own two-press arm. -->
+                <button class="kf-cancel" onclick={cancel}
+                        title="don't keep this — drop the heist (nothing downloaded is deleted)">✕ cancel</button>
             </span>
         </div>
     {/if}
@@ -708,6 +823,17 @@
         text-align: left;
     }
     .kf.folded { max-width: 280px; opacity: 0.92; }
+    /* A BUD ASKS FOR LESS ROOM, AND THAT IS THE WHOLE MECHANISM (2026-08-13).  Vytui measures each
+       face's natural box and Vyto_express floors the seat at need × 1.15, so "a running heist should
+       not crowd the music" is not a layout rule to write — it is this max-width.  Narrow enough to
+       read as a rim cell, wide enough for `Title  3/10`. */
+    .kf.bud { max-width: 190px; }
+    /* A BUD IS 190px AND NOW HAS A CONTROL IN ITS FOOT ("↑ first" / "▶").  A flex item's default
+       min-width is auto, so the status text would refuse to shrink and shove the button out of the
+       cell rather than eliding — the classic overflow that reads as a missing button, not a tight one.
+       The label gives way; the control is what you came to press. */
+    .kf.bud .kf-foot > .kf-dim { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kf.bud .kf-q { flex: none; padding: 1px 5px; font-size: 9px; }
     .kf-head { display: flex; align-items: baseline; gap: 6px; }
     .kf-badge { font-size: 12px; color: #7fe8bf; }
     .kf-title { font-size: 12px; font-weight: 700; color: #e8a9c0; max-width: 290px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -815,6 +941,16 @@
         transition: none;
     }
     .kf-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+    /* the QUEUE controls (⏸ / ▶ / ↑ first) — plain and unboxed, a step quieter than the exits they sit
+       beside, because none of them destroys anything.  The exits stay the loud ones. */
+    .kf-q {
+        pointer-events: auto; cursor: pointer;
+        background: none; border: 1px solid rgba(150, 175, 215, 0.28); border-radius: 4px;
+        padding: 2px 7px; font-size: 10px; font-family: inherit; white-space: nowrap;
+        color: rgba(178, 200, 230, 0.85);
+    }
+    .kf-q:hover { border-color: rgba(150, 175, 215, 0.6); color: #d7e6f7; }
+    .kf-q:active { transform: translateY(1px); }
     .kf-start {
         pointer-events: auto; cursor: pointer;
         background: #1f3a2a; color: #9fe8bf; border: 1px solid #3f9a6a; border-radius: 8px;
@@ -834,6 +970,28 @@
         flex: none;
     }
     .kf-x:hover { background: #d94f7a; color: #1a0810; }
+    /* ✕ CANCEL — sized to sit opposite ▶ start, because they are the two answers to the same question
+       ("do I want this?") and the owner asked for the negative one to be PROMINENT.  Same 11px/padding
+       as .kf-start, the same border weight, and the rose palette the exits already speak in — loud
+       enough to find without aiming, not so loud it competes with the green. */
+    .kf-cancel {
+        pointer-events: auto;
+        cursor: pointer;
+        background: #38141f;
+        color: #f0b8cc;
+        border: 1px solid #a03f5a;
+        border-radius: 7px;
+        font-size: 11px;
+        padding: 3px 10px;
+        font-weight: 600;
+        white-space: nowrap;
+        flex: none;
+    }
+    /* the listing-catching-up tell — a progress clause, deliberately quieter than the count it trails
+       and in the same dim the wait line speaks in.  Not a warning: it fills itself in and goes away. */
+    .kf-short { color: #7f93a6; font-size: 0.86em; white-space: nowrap; }
+    .kf-cancel:hover { background: #d94f7a; color: #1a0810; }
+    .kf-cancel:active { transform: translateY(1px); }
     /* the two exits sit together at the right of the footer — stop (keep the files) beside undo (delete
        them).  `undo` stays quiet until armed, then goes loud: a destructive verb should look like one
        only once it is actually one click from happening. */

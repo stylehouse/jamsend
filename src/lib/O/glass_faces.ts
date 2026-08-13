@@ -23,6 +23,14 @@ export const FACE_MAINKEYS: Record<string, string> = {
     //   controls cell + one %Pick chip per kept track.  A flat (non-nested) %Heist still wears Heist above.
     HeistBar: 'HeistBar',   // the heist's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
     Pick: 'Pick',         // one kept track in the nested keep — ✓/♪/⇊, click un-keeps
+    // WHAT HEISTED, at last (2026-08-13 — the owner: *"yeah build something aye"*).  Note what this is
+    //  NOT: it is not a `%Haul` store.  The note above reserves that name for "the ledger a finished
+    //   %Heist graduates into rather than being flattened away" — and while nobody was looking, the
+    //    newlyadded log had been that ledger for weeks (every landed file, its folder, and when), with
+    //     `Heist_newlyadded_grouped` already folding it per album.  So `%Hauls` is a dontSnap MIRROR of
+    //      that ledger for the glass to read, not a second copy of the truth.  The `%Haul` name stays
+    //       free for whatever genuinely needs to be a stored collective.
+    Hauls: 'Hauls',       // the albums that actually landed — newest first, with when
     Diag: 'Diag',         // the diagnostics toggle cell (imposed by mainkey)
     Errlog: 'Errlog',     // the Story error channel (spec/Error_channel_todo.md) — lazy-minted, so this cell
                           //  only ever appears when a run captured a throw; loud-when-broken, no snap byte to dress it

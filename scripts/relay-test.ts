@@ -215,6 +215,39 @@ async function main() {
 	check('to:runner broadcasts to runner A', bcastA)
 	check('to:runner broadcasts to runner B', bcastB)
 
+	// ── ONE DELIVERY DOOR: a tab with TWO sockets gets each frame ONCE ───────────────────────────
+	//  The other half of the individuation contract, and the one that had no test until it broke
+	//   something (2026-08-13).  A live tab opens TWO sockets that both hello-bind the SAME identity:
+	//    its station (`?addr=<prepub>`, Swarm_station_up) and its Lies channel (`?addr=runner`).  `bind`
+	//     is additive, so `to:<prepub>` fanned to BOTH and every swarm frame and MUSIC CHUNK arrived
+	//      twice — the phantom copy landing in w:Lies, where no repli handler is armed to finish it, so
+	//       the inbox climbs to its 2000 cap and every per-frame query is O(depth).  The tab gets slower
+	//        as it fills: a runaway that reads as "the app is broken".
+	//  The first fix stopped the role socket binding at all, which silently cost the `to:<pubA>` case
+	//   directly above (a `?B=`/`?I=` runner has NO station socket — the role channel is its only door)
+	//    and `who` presence with it.  Both halves now hold at once because the de-duplication is at
+	//     DELIVERY: prefer an address's own station socket when one is bound, else deliver to all.
+	//  Assert BOTH directions here, forever: the frame lands exactly once, and it lands on the RIGHT one.
+	log('\n— one delivery door: a two-socket tab receives each frame once —')
+	const dk = await mint()
+	const dp = prepubOf(dk.pubHex)
+	const station = browser(editorPort, dp)          // the station socket: ?addr=<prepub>
+	const channel = browser(editorPort, 'runner')    // the Lies channel: same identity, role addr
+	await Promise.all([station.open, channel.open])
+	for (const sock of [station, channel]) {
+		const ts = Date.now()
+		sock.send({ control: 'hello', from: dp, pub: dk.pubHex, ts, sign: await signHeader({ control: 'hello', from: dp, pub: dk.pubHex, ts }, dk.privHex) })
+	}
+	await until(() => station.ctrl.some((m) => m.control === 'hello_ok') && channel.ctrl.some((m) => m.control === 'hello_ok'))
+	const chanBefore = channel.got.length
+	alice.frame(dp, 'repli_page', 40)
+	const onStation = await until(() => station.got.some((m) => m.header?.seq === 40))
+	check('a music frame reaches the tab\'s STATION socket', onStation)
+	await wait(120)
+	check('…and NOT its role channel (no phantom copy into w:Lies)', channel.got.length === chanBefore)
+	check('…exactly once on the station socket', station.got.filter((m) => m.header?.seq === 40).length === 1)
+	station.ws.close(); channel.ws.close()
+
 	// ── who: batch presence, verified-binds-only, leak-gated ─────────────────────────────────────
 	//  One frame asks about N addrs; the answer counts only hello-VERIFIED binds (an ?addr= claim
 	//   routes but must not read as presence), and is refused entirely to a non-hello-bound asker.

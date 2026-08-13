@@ -13,6 +13,7 @@ import TunerFace from './ui/TunerFace.svelte'
 import CaperFace from './ui/CaperFace.svelte'
 import HeistFace from './ui/HeistFace.svelte'
 import HeistBarFace from './ui/HeistBarFace.svelte'
+import HaulFace from './ui/HaulFace.svelte'
 import PickFace from './ui/PickFace.svelte'
 import DiagFace from './ui/DiagFace.svelte'
 import ErrlogFace from './ui/ErrlogFace.svelte'
@@ -39,6 +40,7 @@ export const GLASS_KINDS: Record<string, any> = {
     Heist: HeistFace,     // ONE NAB OF AN ALBUM — the ⇊ keep cell: folder nodes, tweak genre, folds down on start
     HeistBar: HeistBarFace, // a NESTED heist's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
     Pick: PickFace,       // one kept track chip in a nested keep — ✓/♪/⇊, click un-keeps
+    Hauls: HaulFace,      // WHAT HEISTED — the albums that actually landed, newest first (reads the newlyadded ledger)
     Diag: DiagFace,       // the diagnostics toggle — reveals/hides beat·uptime·door; grabs attention when open
     Errlog: ErrlogFace,   // the Story error channel — calm ✓ green empty, RED w/ count+latest lines when a throw landed
     Supervisor: SupervisorFace, // the ONE sanity cell — quiet when healthy, loud with the worst thing when not

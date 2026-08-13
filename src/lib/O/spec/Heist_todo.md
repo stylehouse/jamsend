@@ -25,13 +25,285 @@ Fixed by moving the blocker rather than the blocked:
  stamped) are the same particle in two phases, never two kinds. Method names stay `Heist_keep_*` —
   and they now MATCH the particle they drive, which they never did while it was called `%Haul`.
    `Heist_job`/`Heist_wish` still mint what is now a `%Caper`; renaming ~50 methods and their elvisto
-    call sites is a churn with no reader benefit, so it was left. **The ledger is not built yet** —
+    call sites is a churn with no reader benefit, so it was left. ~~**The ledger is not built yet** —
      `Heist_flatten` still deletes a finished operation, so nothing accumulates into `%Haul`. That is
-      the next move, and it is what "a list of What Heisted" means.
+      the next move, and it is what "a list of What Heisted" means.~~
+   **⇒ CORRECTED 2026-08-13 (see §0V): the ledger WAS built, under another name.** The newlyadded log has
+    recorded every landed file durably for weeks — `of` the path, `dir` the folder, `at` when it first
+     landed — and `Heist_newlyadded_grouped` folds it per album. What was missing was a surface, not a
+      store, and the sentence above sent two readers looking for the wrong thing. `%Haul` stays free.
 
 ---
 
 ## 0. Next move (read first)
+
+### THE ARC — where this is going, in one page (2026-08-13 evening, written to be steered)
+
+**The destination.** A heist stops being an event you supervise and becomes a *standing appetite*: you
+ hear something, press ⇊, and walk off. The app knows what a folder IS before it asks anyone, queues as
+  many as you like, runs them in an order you can say out loud, and tells you afterwards what arrived.
+   Today closed most of the gap. What is left splits into three tracks, ordered by what actually
+    threatens the work.
+
+**Track A — make the machine trustworthy again. Do this first, and it is mostly the owner's half.**
+ Today's real lesson was not about heists: *the verification path was broken for hours and nothing said
+  so*. Every runner read as dead, the whole flock was actually alive, and `relay-test.ts` had been red
+   the entire time with nobody running it. Concretely:
+   A1. **Restart the dev server** (the relay fix is server-side; `attachRelay`'s double-attach guard
+        means an HMR will not re-attach it). Then `runner_ask runners` should list real roles again.
+   A2. **Run the owed Books** — Heistation, Sounditron — and **re-record MusuHeist**, which the blag
+        genuinely changes (no describe-ask on the first beat, picks refed by content-id, `blag:1`).
+   A3. **Un-gate the unity** (`src_size`/`un_n`/`un_size` are humdinger-only so today's fixtures could
+        not move) and re-record the affected Books in one attended sitting. Until then **no Book can
+         cover the unity at all** — the unit specs are standing in for it.
+   A4. **One command that runs everything a commit can break**: the three vitest specs *and*
+        `relay-test.ts`. The relay test is not wired to anything, which is exactly why it went unread.
+
+**Track B — finish the heist experience.** Each is self-contained and none blocks another.
+   B1. **Speculative pre-stage of the seed** — you press ⇊ on a track that is *already streaming*, yet
+        the seed re-materialises from nothing like any sibling. Pre-warm at the press; land nothing
+         until ▶ (the "no transfer before consent" ruling stands).
+   B2. **A disk-space floor** — now finally possible, because the unity knows the MB *before* you start.
+        Needs an honest free-space source; `navigator.storage.estimate()` may be all there is, and if it
+         cannot see the granted directory then say so rather than guess.
+   B3. **Path mining beyond sections** — years, editions, disc numbers, `[FLAC]` tags. Tags stay the
+        artist|title truth (2026-07-28 ruling); this is about the rest of what a path knows.
+   B4. **The queue's next rung** — one place that shows every heist at once, and "pause all". `sc.pri`
+        and `sc.paused` already exist; this is a surface, not a mechanism.
+
+**Track C — what the unity unlocks past heists** (speculative; worth a conversation before any code).
+ `un_n`/`un_size` is a general fact that now rides every %Record over the wire: *this track belongs to a
+  12-track, 84MB folder*. Nothing but the heist form reads it yet. It would let the radio offer "the rest
+   of this album" as one gesture, let a friend's crate be browsed in albums with real weights, and let
+    shelf eviction reason in albums rather than tracks — [[window-shelf-fairness-lives-in-eviction]]
+     is about exactly the unit problem this fixes.
+
+**The through-line, and the thing to hold on to:** every item above is the same move that made today
+ work — *get the app the missing fact, rather than putting the uncertainty on screen as a question*.
+
+0Z-verify. **⇑ 2026-08-13 (evening) — THE WHOLE DAY IS NOW UNIT-COVERED, since no runner would answer.**
+    `scripts/HeistUnity.spec.ts` (9) + `scripts/MultiHeist.spec.ts` (5), beside the existing
+     `KeepMemoDurable.spec.ts` (8) — **22 green**, and **nine mutants, every one caught**. Run all three:
+     `node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/{HeistUnity,MultiHeist,KeepMemoDurable}.spec.ts`
+   **Why unit tests and not a Book.** No runner answered all day (two dead registry rows; three of the
+    owner's music tabs, which must never be Booked) and Playwright cannot stand one up from here — the
+     claude container is non-root with no `libglib-2.0.so.0`, so its bundled chromium will not launch, as
+      `pw_drive.mjs` §B already says. But this day's work is almost all pure C-tree logic, and
+       `KeepMemoDurable`'s harness — mount a compiled `.go` on a stub House and get the REAL verbs bound
+        to it — reaches it directly. Two things it needs that the original did not: a real `TheC` as the
+         House (the blag mints `%BlagLib` on `top_House()`), and `mainkey` bolted on (it is House's own,
+          nothing in `M/` provides it, and `Ra_recs_deep` throws without it).
+   **Mutate on a COPY, never in place** — `scripts/.mutant-*.go` plus a throwaway spec that imports it. A
+    `.g` compile and a `.go` edit both HMR straight into the owner's live music tabs, so a deliberately
+     broken build reaches a real listener mid-song.
+   **What no unit test can reach**: that any of it is CALLED. The beat wiring — the 40-per-pass unity
+    re-stamp, the ask now running beside the blag, the loop skipping a paused keep, the gesture-path
+     re-commission — is `Heist_keep_beat`'s and `Sounditron_commission`'s, and only a live runner proves
+      it. **Still owed: Heistation, Sounditron, and a MusuHeist re-record** (the blag genuinely changes
+       what MusuHeist does — no describe-ask on the first beat, picks refed by content-id, `blag:1` in
+        the snap), plus the dev-server restart for the relay duplicate-fanout fix.
+
+0Y. **⇑ 2026-08-13 (evening) — THE UNITY: every %Record now knows how big its folder is, and the blag
+    stopped pretending to be an answer.** The owner ran §0W live and it was bad: *"it was short, only
+     showing 1 track, etc etc. seemed fussy and crappy."*
+   **Two faults, one of them mine from that morning.**
+   1. **The ask was suppressed, not merely beaten.** §0W gated the describe-ask on `Heist_rummage_recs`
+       — the blended list, which the blag itself fills — so ONE husk we happened to hold counted as a
+        complete answer and the wire ask never went out at all. The blag was only ever meant to kill the
+         WAIT, not the question. The gate is now `Heist_rummage_wire` (the wire census alone), so both
+          run: form populated on the ⇊ beat, ask in flight behind it, answer supersedes.
+   2. **A blagged folder was priced from the wrong number.** A husk's `bytes` means *the file* (the wire
+       census stat-stamps it), but a %Record's `bytes` is the sum of its PREVIEW's opus chunks — tens of
+        times smaller. The blag copied it straight across, so the cost line understated a folder by
+         25–70× and called it a total.
+   **The fix the owner named:** *"so every track|Record knows how many MB its surrounding heistable unity
+    is?"* — exactly right, and it turned out to be nearly free. `info.src_size` (the true file byteLength)
+     has been written into every radiostock card since the format existed and was the one field that never
+      reached the %Record. Stamp it (`Ra_record_from`), then group a shelf by dirname and stamp each record
+       with its folder's census — `un_n` tracks, `un_size` bytes (`Ra_unity_stamp`). Because it rides the
+        %Record it **crosses to a friend's mirror for free**: their track arrives already knowing it belongs
+         to a 12-track 84MB folder. So a listing can KNOW it is short, on the ⇊ beat, before anyone is asked.
+   **What it changed on screen** *(revised the same evening, and the revision is the point — the owner:
+    "I want to know how many tracks are involved and how big they all are, banish `looks short?` that's
+     ridiculous")*. **How many** and **how big** are properties of the FOLDER, not of however much of its
+      listing has arrived, so the count line is now driven by the unity and stands up on the ⇊ beat without
+       changing its mind afterwards: `12 tracks · ~48m · 84 MB`. Reading them off the husks had made both
+        numbers a function of network timing — 1 track / 8 MB one second, 12 / 84 MB the next, with nothing
+         admitting the first was provisional. While the two disagree a quiet `naming them — 1 of 12 so far`
+          trails the line and then vanishes. When no unity rode in (an older friend) it falls back to
+           counting husks and says **`size unknown`** outright rather than omitting the clause, because an
+            absent size reads as free.
+   **`looks short?` is banished, and `Heist_keep_reask` with it** — hours after being built, correctly.
+    Asking a human to eyeball whether a file listing is complete is the app declining to do its own job,
+     and it is not even answerable: the only thing on screen was the very list whose completeness was in
+      question. The two facts that replaced it are ones the app can hold itself (the ask is no longer
+       suppressed; the unity says how many there are), and both land with no control at all. A headstone
+        comment stands where the verb was, so the next person to hit a partial listing finds out a button
+         was tried here and why it was wrong instead of inventing it again.
+   **`Heist_wire_supersede` is the new load-bearing seam.** When the real census lands mid-form, the human's
+    ticks have to survive it — and the two censuses cannot share ids (source keep-id vs friend content-id).
+     **PATH is the join.** Every blagged pick is re-pointed at its wire twin and drops its `blag` mark; one
+      with no twin is dropped, because the source has just said that file is not there.
+   **VERIFIED — `scripts/HeistUnity.spec.ts`, 9 green, and every load-bearing claim seen to go red.** No
+    runner answered all day (two dead registry rows, three of the owner's music tabs, which must not be
+     Booked) and Playwright cannot help: the claude container is non-root with no `libglib-2.0.so.0`, so
+      its bundled chromium will not launch — exactly as `pw_drive.mjs` §B documents. But all of this is
+       pure C-tree work, so it is unit-testable, and `KeepMemoDurable.spec.ts`'s mount-a-.go-on-a-stub
+        harness reaches it directly (with a real `TheC` as the House, since the blag homes `%BlagLib` on
+         `top_House()`). **Four mutants, each caught:** copying a %Record's preview `bytes` onto a husk
+          (reproduces the original 25–70× underpricing exactly — `40000` where `7000000` is owed); joining
+           the supersede on `ref` instead of `path` (drops all three picks instead of re-pointing one);
+            letting `Heist_rummage_wire` fall back to the blag (the conflation that suppressed the ask);
+             and removing the humdinger gate. **What this does NOT prove: that any of it is CALLED** — the
+              beat wiring (the 40-per-pass unity re-stamp, the ask running beside the blag, the loop
+               skipping a paused keep) is `Heist_keep_beat`'s, and only a live runner proves that.
+   **Owed.** `src_size`/`un_n`/`un_size` are **humdinger-gated**: a new %Record sc key moves every Book
+    fixture that snaps a record, and no runner has answered all day. That is a holdback, not a design —
+     un-gate + re-record in one attended sitting, the same shape as Repli.g's `sc.from` twin. Until then
+      the unity does not exist inside a Book, so no Book can gate it. Still unverified live.
+
+0U. **⇑ 2026-08-13 — the owner asked *"any other features you can think through that we might want?"*.
+    Thought through, ranked, none of them started.** Ordered by "what does the app now need that it did
+     not need yesterday", because §0W/§0X/§0V changed what the app IS: heists run in the background now,
+      several at once, and the folder arrives instantly. That moves the weak points.
+   1. ~~**"Ask them properly" — the blag's escape hatch.**~~ **BUILT, then BANISHED the same day.** The
+       problem was real (a half-mirrored folder reading as half an album, silently); a **control** was the
+        wrong answer to it, and the owner said so within hours — *"banish `looks short?` that's
+         ridiculous"*. The silence deserved a FACT, not a button. See §0Y for what replaced it and why the
+          distinction is worth keeping in mind for the rest of this list: when a subsystem cannot tell the
+           truth, get it the missing fact — do not put the uncertainty on screen as a question.
+   2. ~~**A queue you can reorder.**~~ **BUILT 2026-08-13 evening.** `sc.pri` (lower first, absent = 0) is
+       read at the one place the order exists — `Heist_keep_beat`'s loop — with a **stable** sort, so a
+        world where nobody touches the queue behaves exactly as it did. `Heist_keep_first` renumbers the
+         shop 0..n-1 rather than handing out ever-smaller numbers: total ordering, small legible values,
+          no drift to bound. The face counts its live siblings and says **"3 ahead of it"**, offering
+           **↑ first** — the only control a rim cell's position implies.
+   3. ~~**Pause, not just cancel.**~~ **BUILT 2026-08-13 evening**, as a **flag, not a state**: a paused
+       keep must resume into exactly the state it left, and a `paused` state would have to remember which
+        one that was. The beat loop simply does not step it — which is also what makes a paused heist
+         hand its turn on instead of idling in front of the queue, since it never spends the global
+          allowance. It refreshes `pull_progress_ts` on the way past, or the stall watchdog would bark
+           "the SOURCE may have crashed" about a heist you deliberately stopped. Snapped `1`-or-absent so
+            a heist you paused and walked away from does not restart itself on a Berth resume.
+      **Neither touches a Book**: `pri` and `paused` are only ever written by a human press.
+   4. **Speculative pre-stage of the seed** *(named in §0Z, still unbuilt)*: you pressed ⇊ on a track
+       that is ALREADY STREAMING — its chunks are in hand — yet the seed re-materialises from nothing
+        like any sibling. *"begin Heisting the one track we know the full filename of super quick."*
+   5. **Path mining beyond sections** *(§0Z)*: years, editions, disc numbers, `[FLAC]` tags. Tags stay
+       the artist|title truth (2026-07-28 ruling); this is about the REST of what the path knows.
+   6. **A disk-space floor.** Unattended background heisting can fill a disk and nothing checks. Under
+       FSA the real free space is not visible, so this is honest-estimate-and-warn, not a hard gate —
+        which is why it is low, not because filling the disk is a small problem.
+   **Considered and rejected:** a second "recently added" surface (it is §0V's list, already built); a
+    notification when a haul lands (that IS the `%Hauls` bud — a second channel would be noise);
+     raising heist concurrency (the serial bound is hard-won, and queueing is what was actually asked
+      for); klepto (parked by ruling, 2026-07-27).
+
+0V. **⇑ 2026-08-13 (day) — WHAT HEISTED, at last — and the ledger turned out to already exist.**
+   The owner, asked whether to build it: *"yeah build something aye"*. **The finding matters more than the
+    feature: this doc has said "the ledger is not built yet" for a week and it was wrong.** The newlyadded
+     log records every landed file durably (`of` the path, `dir` the folder, `at` when it first landed,
+      `feeling` its probation) and `Heist_newlyadded_grouped` already folds it per ALBUM — which is exactly
+       the unit "a list of What Heisted" wants. What was missing was a **surface**, not a store. Minting a
+        parallel `%Haul` store beside it would have been two ledgers for one fact — the "there's only one
+         of anything" mistake this project keeps having to un-make. `%Haul` stays free.
+   **Landed:** `Heist_haul_look` mirrors the ledger onto a dontSnap `%Hauls` bag on the radio world, on a
+    20s beat inside `Heist_keep_beat` (the one place per beat already holding `nav`; humdinger-gated — a
+     Book has no business reading a collection ledger off a timer). `HaulFace.svelte` reads the bag:
+      albums newest first, track count, folder, "2h ago", registered in `glass_kinds`/`glass_faces`.
+   **It buds, and only while it is news** — the sanity cell's law, not the Door's. A permanent "things you
+    downloaded" cell is furniture within a day, and the glass has spent this month getting smaller. But the
+     reason it exists is the same reason heists now run in the background (§0X): you set three going and
+      wandered off, so something has to say they landed. So it appears when an album arrived in the last
+       24h and goes away on its own.
+   **It cannot say who gave it to you, and that is a ruling** — the newlyadded log deliberately never
+    records a source (its header states it; the owner restated it 2026-08-11: *"just the destination
+     directory and when, not who it came from"*). A heist-scoped ledger that DID know the friend would be
+      a different thing and needs asking for.
+   **Owed:** unverified — no runner (see §0X). The probation verdict (love/drop) is reachable from
+    `Heist_feel` but this face does not offer it; the owner parked that UI 2026-08-11 (*"I don't want to
+     see the %Probation yet"*) and this respects it — the `fresh` tint is the only nod.
+
+0W. **⇑ 2026-08-13 (day) — THE BLAG: the folder comes from the %Records we already hold. No describe-ask.**
+   The owner, and he had said it the night before: *"stop having to be 'asking S for the folder', know that
+    already from the %Record, like we used to. we used to have the file listing as well, we can blag that."*
+   **Why it sat unbuilt is a lesson worth keeping.** The comment at `Heist_rummage_ask` states flatly that
+    the folder *"can ONLY be resolved by the SOURCE, off its own radiostock card"* — and that was TRUE when
+     it was written, because the asker's mirrored heads carried no path. Since `rec.sc.path` started
+      carrying the crate-root-relative path (`Ra.g`, build `4938d5f5`) it has been false. Nobody re-read the
+       comment against the data. **A friend's `%MusuThem` mirror card carries `path`, `title`, `artist`,
+        `ext` and a stat'd `bytes` — that IS a file listing** (see any MusuBay fixture, line `Record,id:…,
+         title:…,path:Fourier Four - Echo E.wav,ext:wav,bytes=960104`).
+   **Landed** (`Heist.g`, compiled): `Heist_blag_folder` takes the seed's own mirror card, takes
+    `dirname(path)`, and mints one husk per mirror card sharing that directory into a dontSnap
+     `%BlagLib,<seed>` on Mundo. `Heist_rummage_recs` unions it in **behind** the wire set — a wire answer,
+      whenever it arrives, supersedes the guess completely — so all five call sites (three faces, both
+       defaulters) got it with no signature change. Runs once per keep, on the first beat after ⇊; the
+        describe-ask now fires **only when the blag comes up empty**.
+   - **Ids are content-ids, not keep-ids** — we cannot mint the source's keep-id (it hashes THEIR crate
+      base, which no card carries) and we do not need to: `Heist_materialise_one`'s stocked-content-id
+       branch already resolves id → card → base+path and serves the original under a fresh keep-id wearing
+        `re:<content-id>`. **The trap that costs bytes:** the opus stream we heard is sitting in the mirror
+         under that very content-id, already full — so a blagged pick binding by `{id: ref}` would sail past
+          the materialise ask and land a *lofi radio preview* under the original's filename, against a hash
+           that never matches. Hence `pick.sc.blag` (snapped, so it survives the Berth) and a `re`-only
+            lookup for those picks. Wire picks take the old path unchanged.
+   - **What the blag cannot do:** it sees only tracks the friend has actually cast to us, so a folder we
+      hold half of reads as half a folder. The wire census walks their disk and cannot be short. If a
+       listing ever looks short, the fix is a "ask them properly" press wiring the existing
+        `Heist_rummage_ask` — **not built; the obvious next move on this thread.**
+   ⚠ **MusuHeist WILL be red and that is the change, not a regression.** Its mirror cards carry paths, so
+    the Book now takes the blag route: no describe-ask, picks refed by content-id, `blag:1` in the snap.
+     It needs re-recording on a live runner, and once re-recorded **it is the gate for this feature**.
+      Unverified here — no runner was answering (see 0X).
+
+0X. **⇑ 2026-08-13 (day) — SEVERAL HEISTS AT ONCE. The engine already did it; the glass forbade it.**
+   The owner: *"we also need to make multiple Heists doable, I can't be hanging around waiting for each one
+    in fullscreen"*. Measured before touching anything, and the ENGINE was never the blocker —
+     `Heist_keep_beat` has walked every standing keep per beat since the start, and since 2026-08-06 the
+      track allowance is GLOBAL and z-ordered (`rw.c.heist_budget`, one track in flight across all keeps,
+       oldest first). Two heists have always drained correctly, serially. **The glass was the blocker, in
+        two places, and both were right when they were written:**
+   - **The belly ladder promoted ANY open keep** (`if (anyKeep) fmain = keeps[0]`), so a heist that had
+      nothing left to ask you still owned the screen until it finished.
+   - **Pressing Radio or Door called `Sounditron_leave_keep` → `Heist_keep_cancel` on EVERY keep.** Going
+      back to the music to find the next track killed the download. That ruling (2026-08-10, *"only the
+       Door and Radio as two other locations to go to, which cancel the Heist"*) was correct while every
+        open keep owned the screen — "somewhere else" could then only mean "abandon this".
+   **The cut (all landed, compiled):** a keep owns the belly only while it is a FORM
+    (`primed|wanted|asking|choosing` — the `setups` split, computed once beside `keeps`). Press ▶ and it
+     becomes a bud; the Radio takes the belly back on the gesture (`Heist_keep_start` now fires the
+      `Sounditron_keeps_look` twin `Heist_keep_cancel` has had since 2026-08-09, and the keep fingerprint
+       gained the setup count — a role change IS a re-commission). Radio/Door press cancels **only the
+        belly's own unstarted form**, nothing else; started heists carry on and other queued forms stay
+         queued. Cancel stays reachable on the running strip (✕ stop / 🗑 undo) and on HeistBarFace.
+   - **A heist bud is a place, not a mainkey.** Every %Heist wears the same mainkey, so `w.c.focused`
+      cannot name one of three; a keep bud pins the particle on `w.c.focused_keep`, which sits above
+       `focused` on the ladder and is released by `Sounditron_focus_to`. Press a running heist to inspect
+        it in full (pose `big`, not `stretched` — stretched takes the aspect away from the face, right for
+         a folder tree, wrong for a one-line progress strip).
+   - **HeistFace reads `.c.pose`.** A bud draws title · N/M · flow bar and nothing else — no destination
+      breadcrumb, no exits (a ✕ beside a 🗑 at rim size is a misclick waiting to happen). `.kf.bud`'s
+       max-width IS the layout rule: Vytui measures the natural box and floors the seat at need × 1.15.
+   - **Waiting your turn is not a stall.** A keep stepped after the global budget is spent reads
+      `INFLIGHT === 0`; the watchdog only asks whether `landed` moved, so a correctly-queued heist would
+       have barked `⇊☠ heist NO PROGRESS — the SOURCE may have crashed/gone` every 10s, once per queued
+        heist, for as long as the first ran. A shout that fires when the machine is working as designed
+         teaches you to ignore the real one. `keep.c.queued_ts` holds the progress clock fresh and the
+          face says *"waiting its turn — one track downloads at a time"*.
+   **NOT VERIFIED ON A RUNNER.** No runner was answering (★claude 58517b48 down; the other three rows are
+    the owner's live music tabs and must not be Booked). The `.g` side HMR'd into the live tabs; the
+     HeistFace change is `.svelte` and needs a reload before it exists anywhere. **Heistation + Sounditron
+      are owed a run.** Both new gates are humdinger-only (the focus cut, the fingerprint's setup count,
+       the start nudge) precisely so no Book should see any of it — that is the claim to test, not assume.
+   **RULED, same day:** *"nah I think we make the Cancel prominent, and auto-Start them when wandered away
+    from"*. So `Sounditron_leave_keep` → `Heist_keep_start`, not `Heist_keep_cancel`: wandering off is
+     CONSENT. That restores the 2026-07-28 instinct (*"you don't have to click start, it'll assume that at
+      some point"*) without the bug it was withdrawn for — the trigger is a deliberate press elsewhere, not
+       the seed's track ending, which used to fire on a Radio skip and skip the form under you. And with
+        leaving reassigned there was no way left to say "don't", so **✕ cancel is back on the form**,
+         prominent, sized against ▶ start (`.kf-cancel`). It is not a return to the old regime; it is the
+          control the new one needs.
 
 0Y. **⇑ 2026-08-13 (deep night) — the persistence audit: a Berth Heist was a SHADOW; it now carries its
     substance.** The owner ("f469 seems to have forgotten its Heist… is it all a bit fake there?") had it

@@ -1437,6 +1437,19 @@ Ra_record_from(lib, info, bufs):
         for (const sz of info.sizes) bytes = bytes + (+sz || 0)
     }
     if (bytes) rec.sc.bytes = bytes
+    // THE TRUE FILE WEIGHT (2026-08-13, the owner: *"so every track|Record knows how many MB its
+    //  surrounding heistable unity is"*).  `info.src_size` — the source file's byteLength — has been
+    //   written into every radiostock card since the format was minted, and was the one number that
+    //    never made it onto the %Record.  `sc.bytes` above is NOT it: that is the sum of the PREVIEW's
+    //     opus chunk sizes, 25–70× smaller, and the clip math learned the hard way not to trust it for
+    //      anything file-shaped (:1887).  A heist copies the ORIGINAL file, so this is the only honest
+    //       weight to show before one starts — and because it rides the %Record it crosses to a friend's
+    //        mirror for free, which is what lets [[Ra_unity_stamp]] price a whole folder over the wire.
+    //  HUMDINGER-GATED: a new %Record sc key moves every Book fixture that snaps a record and no runner
+    //   is answering to re-record them.  Un-gate + re-record in one attended sitting — the same holdback
+    //    Repli.g's `sc.from` twin sits under, for the same reason.
+    let topR = this.top_House ? this.top_House() : null
+    if (+(info.src_size || 0) > 0 && topR && topR.c.humdinger) rec.sc.src_size = +info.src_size
     // the preview CHUNK PARTICLES — the cached part, standing as children you can SEE (and Cyto can
     //  crush).  seq rides as a string (the {k:1} wildcard rule); head+preskip on seq 0, where the
     //   preview decoder opens.
@@ -1457,6 +1470,64 @@ Ra_record_from(lib, info, bufs):
     }
     rec.bump()
     return rec
+
+// Ra_unity_stamp — THE HEISTABLE UNITY, PRICED (2026-08-13, the owner: *"so every track|Record knows
+//  how many MB its surrounding heistable unity is?"*).  Nobody heists a track alone — it comes with its
+//   FOLDER — and until now nothing anywhere knew how big that folder was until the source had been asked
+//    and had answered.  This groups a shelf's records by dirname and stamps each one with its folder's
+//     census: `un_n` tracks, `un_size` bytes.
+//  IT RIDES THE %Record, so it crosses the wire for free with the card: a friend's mirrored track arrives
+//   already knowing *"I belong to a 12-track, 84MB folder"*.  That single fact is what lets a blagged
+//    listing KNOW it is short ([[Heist_blag_folder]]) instead of quietly showing 1 of 12 — the exact
+//     "short, only showing 1 track" the owner hit — and what lets the setup form price a nab before it
+//      starts.
+//  WHAT IT COUNTS is what is STOCKED — what they can actually serve — not what sits on their disk.  That
+//   is the honest number for a heist (an unstocked file cannot be pulled) and it is deliberately a FLOOR:
+//    a wire describe may come back with more, and supersedes.
+//  Writes only on CHANGE, so a settled shelf costs one walk and no bump.  Humdinger-only, for the fixture
+//   reason in [[Ra_record_from]] — in a Book `un_n` is simply absent and every reader falls back.
+//  CAPPED PER PASS, and that is not a detail.  Every stamp bumps its %Record, and a bumped record is
+//   RE-CAST to every friend — so the first pass over a standing shelf would have bumped all of it at
+//    once and fired a few hundred card re-casts in one beat, on a live tab, for a cosmetic field.  The
+//     caller re-runs while there is more to do (`moved === cap` is the tell), which spreads the same
+//      work over a few seconds of ordinary beats and is invisible.  cap 0 = unbounded (the stock pass,
+//       already heavy and not competing with anything).
+Ra_unity_stamp(shelf, cap):
+    if (!shelf) return 0
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c.humdinger) return 0
+    let lim = +(cap || 0)
+    let recs = this.Ra_recs(shelf)
+    let ns = {}
+    let szs = {}
+    for (const rec of recs) {
+        if (!rec.sc.path) continue
+        let dir = this.Ra_dir_of(rec.sc.path)
+        ns[dir] = (ns[dir] || 0) + 1
+        szs[dir] = (szs[dir] || 0) + (+(rec.sc.src_size || 0))
+    }
+    let moved = 0
+    for (const rec of recs) {
+        if (!rec.sc.path) continue
+        let dir = this.Ra_dir_of(rec.sc.path)
+        let un = ns[dir] || 0
+        let us = szs[dir] || 0
+        if (+(rec.sc.un_n || 0) === un && +(rec.sc.un_size || 0) === us) continue
+        rec.sc.un_n = un
+        if (us > 0) rec.sc.un_size = us
+        rec.bump()
+        moved = moved + 1
+        if (lim > 0 && moved >= lim) return moved
+    }
+    return moved
+
+// Ra_dir_of — the folder part of a crate-relative path, '' for a bare filename.  Deliberately a local
+//  twin of Heist_dir_of rather than a call into it: Ra must stand alone in the Books that run with no
+//   Heist ghost at all, and the two must agree exactly or a unity and a blag describe different folders.
+Ra_dir_of(path):
+    let parts = String(path || '').split('/').filter(Boolean)
+    parts.pop()
+    return parts.join('/')
 
 // Ra_native — the headless audio provider, or null.  A daemon parks it on the top House's `.c` at
 //  boot (`scripts/daemon/ra_native.ts`); a browser never has one, so `Ra_native()` reads null there
@@ -1742,6 +1813,9 @@ async Ra_stock(w, lib, nav, src_base, take, from):
         if (!res) skipped = skipped + 1
     }
     delete lib.sc.stocking
+    // price every folder we just stocked, once, at the end of the pass — the cards are all standing by
+    //  now, so one walk gets every unity right (doing it per-track would restamp the folder N times).
+    this.Ra_unity_stamp(lib)
     lib.bump()
     return { built: built, stood: stood, skipped: skipped, of: paths.length }
 

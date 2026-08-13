@@ -1765,14 +1765,237 @@ async Heist_rummage_folder(w, nav, me, seed):
 // Heist_rummage_recs — the folder husks tagged for THIS seed, read the PAGED-aware way (Ra_recs walks the
 //  Mag model, not a flat o() which misses records that merged onto the friend's paged radio mirror — the
 //   review's finding).  The tag is multi-valued, so match by membership.
+// …AND THE BLAG (2026-08-13, the owner: *"stop having to be 'asking S for the folder', know that already
+//  from the %Record, like we used to. we used to have the file listing as well, we can blag that"*).  The
+//   WIRE answer wins whenever it is here — it walked the source's actual disk — but when it is not, the
+//    locally-derived folder stands in its place, and to every caller the two are the same list.  No
+//     signature change: the three faces and the two defaulters all get it without knowing.
 Heist_rummage_recs(mir, seed):
+    let out = this.Heist_rummage_wire(mir, seed)
+    if (out.length) return out
+    let M = this.top_House ? this.top_House() : null
+    let blag = M ? M.o({ BlagLib: String(seed) })[0] : null
+    return blag ? this.Ra_recs(blag) : out
+
+// Heist_rummage_wire — the WIRE census alone, with no blag fallback: the tracks the source itself named
+//  when it walked its own disk.  Split out of [[Heist_rummage_recs]] 2026-08-13 because "do we have a
+//   listing at all" and "have they ANSWERED yet" stopped being the same question the moment the blag
+//    could answer the first one on the same beat as the ⇊ press.  The ask loop must gate on THIS: gating
+//     on the blended list meant one blagged husk read as a complete answer, so the describe-ask never
+//      went out and the form stayed at whatever the mirror happened to hold — the owner's *"it was short,
+//       only showing 1 track… fussy and crappy"*.
+Heist_rummage_wire(mir, seed):
     let out = []
-    if (!mir) return out
-    for (const rec of this.Ra_recs(mir)) {
-        let tag = rec.sc.rummage
-        if (tag && String(tag).split(',').includes(String(seed))) out.push(rec)
+    if (mir) {
+        for (const rec of this.Ra_recs(mir)) {
+            let tag = rec.sc.rummage
+            if (tag && String(tag).split(',').includes(String(seed))) out.push(rec)
+        }
     }
     return out
+
+// Heist_unity_of — WHAT THE SOURCE SAYS THE FOLDER IS: {n, size} off the seed's own mirrored card, stamped
+//  there by [[Ra_unity_stamp]] on their side and carried to us with the card.  This is the number that
+//   makes a short blag VISIBLE — hold 1 husk against `n:12` and the form can say "1 of 12, asking S for
+//    the rest" instead of presenting one track as the album.  {n:0} = they are on a build that does not
+//     stamp it (or a Book), and every reader falls back to counting what it holds, exactly as before.
+Heist_unity_of(mir, seed):
+    if (!mir || !seed) return { n: 0, size: 0 }
+    let card = this.Ra_rec_find(mir, { Record: 1, id: String(seed) })
+    if (!card) return { n: 0, size: 0 }
+    return { n: +(card.sc.un_n || 0), size: +(card.sc.un_size || 0) }
+
+// Heist_blag_folder — THE FOLDER, WITHOUT ASKING.  A friend's %MusuThem mirror already holds a %Record card
+//  per track they share, and since the crate-root-relative path landed (`Ra.g`, 4938d5f5) every card carries
+//   `path` — plus `title`, `artist`, `ext` and a stat'd `bytes`.  That is a file listing.  The heard track's
+//    own card gives the directory; every card sharing that directory IS the rest of the folder.  So the
+//     "what else is in this folder" question, which has been a wire round-trip since the census rewrite, is
+//      answerable from memory in one pass over the mirror — instantly, off a shelf we already paid for.
+//  WHY IT WAS A ROUND-TRIP.  The comment at [[Heist_rummage_ask]] says the folder "can ONLY be resolved by
+//   the SOURCE, off its own radiostock card" — true when it was written, because the asker's mirrored heads
+//    did not carry a path.  They do now.  The reasoning outlived the fact, which is why this sat unbuilt.
+//  WHAT IT COSTS.  Completeness: the blag can only see the tracks the friend has actually cast to us, so a
+//   folder we have half of reads as half a folder.  The wire census walks their disk and cannot be short.
+//    Hence the ORDER — blag first because it is instant, wire ask ONLY when the blag finds nothing — and
+//     hence `Heist_rummage_recs` preferring the wire set whenever one exists: an answer that arrives later
+//      by any route supersedes the guess, silently and completely.
+//  THE HUSKS ARE THEIR OWN LIB, NOT TAGS ON THE MIRROR CARDS.  Tagging the cards in place would be fewer
+//   lines and would put `rummage:` into every recorded MusuHeist/MusuBay fixture that mirrors a friend —
+//    snapped churn across eight Books to save a container.  `%BlagLib,<seed>` is dontSnap.
+//  IT HOMES ON MUNDO, not on the radio world, and that is deliberate: `rw` is `radio_w || w`, so in a world
+//   with no radio world the minter and a (mir, seed)-only reader would disagree about where to look and the
+//    blag would vanish silently.  `top_House()` is the one address both sides can always name.
+//  IDS ARE CONTENT-IDS HERE, not keep-ids: we cannot mint the source's keep-id (it hashes THEIR crate base,
+//   which no card carries).  We do not need to — `Heist_materialise_one`'s stocked-content-id branch already
+//    resolves a shared track's id → card → base+path and serves the ORIGINAL under a fresh keep-id wearing
+//     `re:<content-id>`.  Every blag husk is stamped `blag:1` so the pull loop knows to bind by that `re`
+//      and never mistake the opus stream sitting under the same id for the original file.
+//  Returns how many husks the folder came to (0 = seed card unknown here, or it carries no path).
+Heist_blag_folder(srcmir, seed):
+    let M = this.top_House ? this.top_House() : null
+    if (!M || !srcmir || !seed) return 0
+    let sid = String(seed)
+    let cards = this.Ra_recs(srcmir)
+    let seedRec = null
+    for (const rec of cards) { if (String(rec.sc.id || '') === sid) { seedRec = rec; break } }
+    if (!seedRec || !seedRec.sc.path) return 0
+    let dir = this.Heist_dir_of(seedRec.sc.path)
+    let blag = M.oai({ BlagLib: sid, dontSnap: 1 })
+    blag.c.up = M
+    let n = 0
+    for (const rec of cards) {
+        if (!rec.sc.path) continue
+        if (this.Heist_dir_of(rec.sc.path) !== dir) continue
+        let id = String(rec.sc.id || '')
+        if (!id) continue
+        let husk = this.Ra_rec_home(blag, id)
+        husk.sc.path = String(rec.sc.path)
+        // guarded every one — a mirror card missing a field must not brand the husk `{"undef":[…]}`
+        if (rec.sc.title) husk.sc.title = rec.sc.title
+        if (rec.sc.artist) husk.sc.artist = rec.sc.artist
+        if (rec.sc.ext) husk.sc.ext = rec.sc.ext
+        if (rec.sc.seconds) husk.sc.seconds = rec.sc.seconds
+        // WEIGHT: `bytes` ON A HUSK MEANS THE FILE, and on a %Record it does not.  The wire census
+        //  stat-stamps the real file size into `bytes`, and HeistFace's cost line adds those up — but a
+        //   mirrored %Record's `bytes` is the sum of its PREVIEW's opus chunks ([[Ra_record_from]]), tens
+        //    of times smaller.  Copying it across (the first cut of this did) priced a blagged folder at a
+        //     fraction of its real size and called it a total.  Take `src_size`, the true file weight, or
+        //      stamp NOTHING and let the form say it does not know — a missing number is honest, a wrong
+        //       one is not.
+        if (rec.sc.src_size) husk.sc.bytes = rec.sc.src_size
+        if (rec.sc.src_size) husk.sc.src_size = rec.sc.src_size
+        husk.sc.rummage = sid
+        // the heard track marks itself, exactly as the wire census does, so Heist_keep_default_pick
+        //  spots + default-keeps it among the siblings without knowing which route built the list.
+        if (id === sid) husk.sc.re = sid
+        husk.sc.blag = 1
+        n = n + 1
+    }
+    return n
+
+// Heist_wire_supersede — THE ANSWER ARRIVES AND THE GUESS STANDS DOWN.  The blag is provisional by
+//  construction, so the interesting moment is not the guess but the HANDOVER: the source's own census
+//   lands mid-form, and whatever the human has already ticked has to survive it.
+//  PATH IS THE JOIN.  The two censuses cannot share ids — a wire husk wears a source-minted keep-id, a
+//   blagged one wears the friend's content-id ([[Heist_blag_folder]]) — but both carry `sc.path`, and a
+//    path names the same file in both worlds.  So every blagged pick is re-pointed at its wire twin and
+//     loses its `blag` mark (it is now an ordinary wire pick and pulls by id); a blagged pick with no
+//      twin is dropped, because the source has just told us that file is not there.
+//  Once per keep (`.c.superseded`): the wire census only lands once, and re-running would re-point picks
+//   that are already wire picks.  Runs BEFORE the defaulters on the same beat, so a still-adopting keep
+//    picks up any track the wire knows and the blag did not — the half-album healing itself in place.
+Heist_wire_supersede(keep, srcmir, seed):
+    if (!keep || keep.c.superseded) return 0
+    keep.c.superseded = 1
+    let wire = this.Heist_rummage_wire(srcmir, String(seed))
+    let byPath = {}
+    for (const h of wire) { if (h.sc.path) byPath[String(h.sc.path)] = h }
+    let moved = 0
+    let lost = 0
+    for (const p of keep.o({ Pick: 1 })) {
+        if (!p.sc.blag) continue
+        let hit = p.sc.path ? byPath[String(p.sc.path)] : null
+        let ref = hit ? String(hit.sc.id || '') : ''
+        // no twin, or a wire pick for it already exists (the defaulters may have run first on a keep
+        //  the human never touched) — either way this pick is redundant, not merely stale.
+        if (!ref || keep.o({ Pick: 1, ref: ref })[0]) { keep.drop(p); lost = lost + 1; continue }
+        p.sc.ref = ref
+        delete p.sc.blag
+        if (hit.sc.src_size) p.sc.src_size = hit.sc.src_size
+        moved = moved + 1
+    }
+    this.Heist_blag_drop(seed)
+    // SPEND the blag rather than clearing it: `blagged = 0` (the first cut) re-opened the mint gate
+    //  above, so the very next beat re-derived the guess we had just superseded and re-minted the
+    //   %BlagLib we had just dropped, every beat until the 3-try ceiling caught it.  A blag that has
+    //    been answered is finished, not untried.
+    keep.c.blag_tries = 9
+    keep.bump()
+    if (moved || lost) console.log(`⇊✓ ${String(keep.sc.from_name || keep.sc.pub || '').slice(0, 8)} answered with ${wire.length} track${wire.length === 1 ? '' : 's'} — ${moved} kept, ${lost} dropped, the blag stands down`)
+    return moved
+
+// Heist_keep_pause / Heist_keep_resume — NOT NOW, without losing the setup (2026-08-13, §0U.3).  Once
+//  several heists can stand at once, "not now" is a thing a human wants to say, and until today the only
+//   way to say it was ✕ — which throws away the category, the destination, the picks and the lofi choice.
+//  Snapped as `1`-or-absent (the snapped-boolean rule) so it survives a Berth resume: a heist you paused
+//   and walked away from must not quietly start itself when the tab comes back.  The beat loop does the
+//    rest by simply not stepping it, which is also why a paused heist stops consuming the global track
+//     allowance instead of idling in front of the queue.
+Heist_keep_pause(keep):
+    if (!keep || keep.sc.paused) return 0
+    keep.sc.paused = 1
+    keep.c.last_touch = Date.now()
+    keep.bump()
+    console.log(`⇊⏸ paused "${keep.sc.Heist || keep.sc.seed}" — it keeps its place and everything you set up`)
+    return 1
+
+Heist_keep_resume(keep):
+    if (!keep || !keep.sc.paused) return 0
+    delete keep.sc.paused
+    keep.c.last_touch = Date.now()
+    // a paused heist's progress stamp has been held at "now" every beat, so nothing thinks it stalled —
+    //  but the stall clock should still start from the resume, not from whenever it last really moved.
+    keep.c.pull_progress_ts = Date.now()
+    keep.bump()
+    console.log(`⇊▶ resumed "${keep.sc.Heist || keep.sc.seed}"`)
+    return 1
+
+// Heist_keep_first — THAT ONE FIRST (2026-08-13, §0U.2).  Renumbers the whole shop 0..n-1 with this keep
+//  at 0, rather than handing it an ever-decreasing `pri`: the numbers stay small and legible in a snap,
+//   the ordering is total instead of relative, and there is no drift to bound.  Everything else keeps its
+//    relative order, so promoting one heist never silently reshuffles the rest.
+Heist_keep_first(keep):
+    if (!keep) return 0
+    let shop = keep.c.up || null
+    if (!shop) return 0
+    let queue = shop.o({ Heist: 1 }).slice().sort((a, b) => (+(a.sc.pri || 0)) - (+(b.sc.pri || 0)))
+    let ordered = [keep].concat(queue.filter((k) => k !== keep))
+    let i = 0
+    for (const k of ordered) {
+        // 0 IS WRITTEN AS ABSENT (the snapped-boolean rule's cousin, as `pv_off` already does): the
+        //  default IS zero, so a keep at the head of the queue carries no `pri` at all and a shop
+        //   nobody has reordered snaps exactly as it did before this existed.  Only the keeps actually
+        //    displaced grow a key.
+        if (i === 0) {
+            if (k.sc.pri != null) { delete k.sc.pri; k.bump() }
+        } else if (+(k.sc.pri || 0) !== i) {
+            k.sc.pri = i
+            k.bump()
+        }
+        i = i + 1
+    }
+    keep.c.last_touch = Date.now()
+    console.log(`⇊↑ "${keep.sc.Heist || keep.sc.seed}" goes first`)
+    return 1
+
+// Heist_keep_reask — DELETED 2026-08-13, hours after it was written (the owner: *"banish `looks short?`
+//  that's ridiculous"*).  It was a manual re-ask behind a button in the count line, built as the blag's
+//   escape hatch: the blag could be short and nothing said so, so the human was offered a control to
+//    throw the guess away and make the source read its own disk.
+//  It was the wrong shape and the objection is the right one.  Asking a human to eyeball whether a file
+//   listing is complete is the app declining to do its own job — and it cannot be done: the ONLY thing
+//    on screen was the very list whose completeness was in question.  The real fix was two facts the app
+//     can hold itself: the ask is no longer suppressed by the blag ([[Heist_rummage_wire]] gates it), and
+//      the unity says how many tracks there are ([[Heist_unity_of]]), so short is now something the app
+//       KNOWS rather than something it asks about.  Both land without a control.
+//  Kept as a headstone, not a stub: the next person to hit a partial listing should find out that a
+//   button was tried here and why it was wrong, rather than inventing it again.
+
+// Heist_blag_drop — the blag is SCAFFOLDING, NOT LEDGER (CLAUDE.md's law, and one %BlagLib is a whole
+//  folder's worth of %Records).  One is minted per ⇊ and nothing else would ever collect them, so both
+//   ends of a keep's life — cancel, and the done-drop — say so here.  Idempotent, and safe on a seed
+//    that never blagged (the source answered first): rm of an absent child is a no-op.
+Heist_blag_drop(seed):
+    let M = this.top_House ? this.top_House() : null
+    if (!M || !seed) return
+    try { M.rm({ BlagLib: String(seed) }) } catch (er) {}
+
+// Heist_dir_of — the directory part of a crate-relative path ('' for a file at the root).  Its own verb
+//  because the blag compares dirnames twice per card and a mismatched split is a silently empty folder.
+Heist_dir_of(path):
+    let parts = String(path || '').split('/').filter(Boolean)
+    parts.pop()
+    return parts.join('/')
 
 // Heist_rummage_ask — the ASKER mints the travelling folder-describe ask in the source pier's bay and
 //  Repli_offers it across the granted wire (the %Caperlet pattern, Heist_let_mint/ask — a chunkless husk,
@@ -2022,6 +2245,43 @@ async Heist_keep_beat(w, ident):
     //   beside the two rehydrates, because this is the one place per beat that already holds nav + me.
     w.c.keep_beat_at = 'memo'
     await this.Heist_keep_memo_beat(w, nav, me)
+    // THE WHAT-HEISTED LIST, refreshed on a SLOW beat (2026-08-13).  Here for the same reason the memo is:
+    //  this is the one place per beat already holding nav.  20s because the ledger only moves when a track
+    //   lands, and it is a disk read of a whole Berth waft — the exact cost the newlyadded log's own
+    //    `Berth_append` fix was about.  Humdinger-gated: it mints a dontSnap bag so no snap can move, but a
+    //     Book has no business reading a collection ledger off disk on a timer.
+    //  AND ONLY WHEN THE LEDGER ACTUALLY MOVED.  A 20s disk poll that re-reads a whole Berth waft for
+    //   ever is how a share beat quietly gets slow; `newly_seq` (stamped by Heist_newlyadded_note) makes
+    //    it event-driven, with the 20s as a floor rather than a metronome.  The `== null` check is what
+    //     makes the FIRST look happen — seq 0 and an unset cursor must not compare equal.
+    let MH0 = this.top_House ? this.top_House() : null
+    let nseq = MH0 ? +(MH0.c.newly_seq || 0) : 0
+    let hstale = rw.c.haul_seq == null || +rw.c.haul_seq !== nseq
+    if (MH0 && MH0.c.humdinger && hstale && Date.now() - (+(rw.c.haul_look_ts || 0)) > 20000) {
+        rw.c.haul_look_ts = Date.now()
+        rw.c.haul_seq = nseq
+        w.c.keep_beat_at = 'hauls'
+        try { await this.Heist_haul_look(rw, nav, this.Heist_mardir(w)) } catch (er) {}
+    }
+    // PRICE MY OWN SHELF so my friends' forms can price a nab of it ([[Ra_unity_stamp]]).  Ra_stock stamps
+    //  at the end of its pass, but every shelf standing today was stocked before the stamp existed and a
+    //   re-stock is not something to make anyone do — so re-derive here, off the record census alone (no
+    //    disk, no nav), whenever the shelf's size has moved.  A settled shelf costs one walk of an array
+    //     we already hold and writes nothing.  Humdinger gate is inside Ra_unity_stamp.
+    //  A CAP OF 40 PER BEAT, and the `unity_more` latch to come back for the rest: an uncapped first pass
+    //   over a standing shelf bumps every record, and a bumped record is re-cast to every friend — a few
+    //    hundred card re-casts in one beat, on a live tab, for a field nobody is waiting on.  Spread it.
+    if (typeof this.Ra_unity_stamp === 'function' && typeof this.Ra_home_self === 'function') {
+        let mine = this.Ra_home_self(rw, me)
+        let mineN = mine ? this.Ra_recs(mine).length : 0
+        if (mineN && (rw.c.unity_more || +(rw.c.unity_n || -1) !== mineN)) {
+            rw.c.unity_n = mineN
+            w.c.keep_beat_at = 'unity'
+            let moved = 0
+            try { moved = this.Ra_unity_stamp(mine, 40) } catch (er) {}
+            rw.c.unity_more = (moved >= 40) ? 1 : 0
+        }
+    }
     // THE CAP IS GLOBAL, NOT PER-HAUL (the human 2026-08-06: "are there any complications like overlapping
     //  downloads we can switch off while sorting this out?" — and the honest answer was that turning the knob
     //   down did not turn the overlap off).  `heist_inflight` is enforced INSIDE Heist_keep_step, so it bounds
@@ -2033,9 +2293,29 @@ async Heist_keep_beat(w, ident):
     //   allowance is spent the remaining Heists are stepped with zero allowance — they still run (rehydrate,
     //    census, land continuations, cancel, the state machine) but start no new pull. Order is z-order, so
     //     the oldest Heist keeps priority instead of the newest starving it.
+    //  …AND THE ORDER IS NOW SAYABLE (2026-08-13, §0U.2).  Z-order alone made the running order real,
+    //   invisible and unchangeable: with three heists standing you could see that two were waiting and
+    //    had no way to say "that one first".  `sc.pri` (lower runs sooner, absent = 0) is read HERE, at
+    //     the one place the order exists, and Heist_keep_first renumbers.  The sort is STABLE, so keeps
+    //      that share a pri — every keep, until someone promotes one — keep their z-order exactly, and a
+    //       world where nobody touches the queue behaves byte-for-byte as it did.
     let GLOBAL = +(w.c.heist_inflight_total || w.c.heist_inflight || 1)
     rw.c.heist_budget = GLOBAL
-    for (const keep of shop.o({ Heist: 1 })) {
+    let queue = shop.o({ Heist: 1 }).slice().sort((a, b) => (+(a.sc.pri || 0)) - (+(b.sc.pri || 0)))
+    for (const keep of queue) {
+        // PAUSED IS A FLAG, NOT A STATE (§0U.3).  With several queued, "not now" is a natural verb and the
+        //  only way to say it was ✕, which loses the whole setup.  A flag rather than a `state` because
+        //   the state machine is the durable thing — a paused keep must resume into EXACTLY the state it
+        //    left, and a `paused` state would have to remember which one that was.  Skipping the step is
+        //     the entire mechanism: no new pull starts, and the global allowance is never spent, so a
+        //      paused heist genuinely hands its turn to the next one rather than idling in front of it.
+        //  Refresh the progress stamp on the way past, or the stall watchdog inside the step would bark
+        //   "NO PROGRESS — the SOURCE may have crashed" about a heist the human deliberately stopped.
+        if (keep.sc.paused) {
+            keep.c.pull_progress_ts = Date.now()
+            keep.c.pull_stall_warned = 0
+            continue
+        }
         w.c.keep_beat_at = 'step:' + String(keep.sc.Heist || keep.sc.seed || '?').slice(0, 24)
         try { await this.Heist_keep_step(w, rw, ident, me, nav, keep, shop) }
         catch (er) { keep.c.last_why = '' + (er && er.message || er) }
@@ -2069,6 +2349,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         }
         if (Date.now() - keep.c.done_ts > 8000) {
             try { (keep.c.up || shop).rm({ Heist: 1, seed: keep.sc.seed }) } catch (er) {}
+            this.Heist_blag_drop(keep.sc.seed)
         }
         return
     }
@@ -2113,7 +2394,46 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
         }
         // DESCRIBE the folder (metadata heads only — cheap, no reads) so HeistFace shows the node tree to tweak.
         //  Throttled.  Once described, default-keep the heard track (its own husk wears re:<seed content-id>).
-        if (!this.Heist_rummage_recs(srcmir, seed).length) {
+        // ⇊ BLAG IT FIRST (2026-08-13, the owner: *"stop having to be 'asking S for the folder', know that
+        //  already from the %Record, like we used to"*).  The friend's mirror already holds a card per track
+        //   they share, path and all, so the folder is derivable HERE, in one pass, with no wire and no wait.
+        //    Try it once per keep before ever asking: if it yields a folder the setup form is populated on the
+        //     SAME beat as the ⇊ press, and the "asking S for the folder…" spinner — the owner's *"takes
+        //      aaages"* — simply never appears.  It only falls through to the ask when the blag comes up empty
+        //       (we hold no card for the seed, or the card predates `path`), which is also the one case where
+        //        the source genuinely knows something we do not.
+        //  Once per keep, on `.c`: the mirror does not grow a folder between beats, and re-deriving every 600ms
+        //   would walk the whole shelf for nothing.  A later wire answer still supersedes it (see
+        //    [[Heist_rummage_recs]]), so this is a head start, never a ceiling.
+        //  LATCH ON SUCCESS, not on the attempt (with a 3-try ceiling so a folder we genuinely cannot
+        //   derive stops costing a shelf walk every beat).  The seed's own card can be a beat or two
+        //    behind the ⇊ press, and latching on the first attempt would spend the whole feature on a
+        //     race — falling back to the ask when the answer was about to be in our hand.
+        if (!keep.c.blagged && +(keep.c.blag_tries || 0) < 3) {
+            keep.c.blag_tries = +(keep.c.blag_tries || 0) + 1
+            let blagN = this.Heist_blag_folder(srcmir, seed)
+            if (blagN) {
+                keep.c.blagged = 1
+                console.log(`⇊⚡ folder blagged from ${blagN} card${blagN === 1 ? '' : 's'} we already hold — showing it now, asking ${String(keep.sc.from_name || at).slice(0, 8)} properly in the background`)
+            }
+        }
+        // WHAT THEY SAY THE FOLDER IS ([[Ra_unity_stamp]] → [[Heist_unity_of]]) — carried on the seed's own
+        //  card, so it is known on the same beat as the ⇊ press, before anyone has been asked anything.  On
+        //   the keep (snapped) because the form reads it to hold its own list against the truth: 1 husk
+        //    against `un_n:12` is "1 of 12, asking…", not an album.  Absent = a source that does not stamp
+        //     it, and every reader falls back to counting what it holds.
+        let unity = this.Heist_unity_of(srcmir, seed)
+        if (unity.n && +(keep.sc.un_n || 0) !== unity.n) { keep.sc.un_n = unity.n; keep.bump() }
+        if (unity.size && +(keep.sc.un_size || 0) !== unity.size) { keep.sc.un_size = unity.size; keep.bump() }
+        // ASK THEM ANYWAY — and gate on the WIRE census, never on the blended list.  The first cut of the
+        //  blag gated here on `Heist_rummage_recs`, which the blag itself fills, so ONE husk we happened to
+        //   hold counted as a complete answer: the describe-ask never went out, and the form sat on
+        //    whatever the mirror had (the owner, live: *"it was short, only showing 1 track… seemed fussy
+        //     and crappy"*).  The blag was only ever meant to kill the WAIT, not the question.  So both
+        //      run: the form is populated on the ⇊ beat, the ask goes out behind it, and the answer
+        //       supersedes ([[Heist_wire_supersede]]).  4s throttle, never giving up, exactly as before.
+        let wire = this.Heist_rummage_wire(srcmir, seed)
+        if (!wire.length) {
             let last = keep.c.desc_ts || 0
             if (Date.now() - last > 4000) {
                 keep.c.desc_ts = Date.now()
@@ -2121,7 +2441,13 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
                 keep.bump()
                 await this.Heist_rummage_ask(w, route, me, at, seed)
             }
-        } else {
+        }
+        // …and gate the handover on the PICKS, not only on `.c.blagged`.  `.c` dies with the process
+        //  while `pick.sc.blag` is snapped and survives a Berth resume, so a keep that reloads mid-setup
+        //   would carry content-id picks into a world where the wire census had since landed — nothing
+        //    left to say they needed re-pointing.  The picks themselves are the durable evidence.
+        if (wire.length && (keep.c.blagged || keep.o({ Pick: 1, blag: 1 })[0])) this.Heist_wire_supersede(keep, srcmir, seed)
+        if (this.Heist_rummage_recs(srcmir, seed).length) {
             this.Heist_keep_default_pick(keep, srcmir, seed)
             this.Heist_keep_default_section(keep, srcmir, seed)
         }
@@ -2218,8 +2544,14 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
             if (inflight >= INFLIGHT) { if (!shut) shut = 'cap'; left = left + 1; continue }
             // the ORIGINAL materialised under this keep-id (Heist_materialise_one, upserted onto the husk with
             //  total).  Not full yet ⇒ (re)ask the source to materialise it (throttled 4s, the lost-frame heal).
-            let rec = this.Ra_rec_find(srcmir, { Record: 1, id: ref })
-            if (!rec) rec = this.Ra_rec_find(srcmir, { Record: 1, re: ref })
+            // A BLAGGED PICK BINDS BY `re`, AND ONLY BY `re` (2026-08-13).  Its ref is the friend's
+            //  content-id, so `{id: ref}` would find the OPUS STREAM we heard — full, `total` set, and
+            //   entirely the wrong bytes: the pull would sail past the materialise ask and land a lofi
+            //    radio preview under the original's filename, verifying against a hash that never
+            //     matches.  The original arrives as its own rec wearing `re:<content-id>`
+            //      (Heist_materialise_one's stocked branch), which is the only rec this pick means.
+            let rec = pick.sc.blag ? this.Ra_rec_find(srcmir, { Record: 1, re: ref }) : this.Ra_rec_find(srcmir, { Record: 1, id: ref })
+            if (!rec && !pick.sc.blag) rec = this.Ra_rec_find(srcmir, { Record: 1, re: ref })
             if (!rec || !(+(rec.sc.total || 0) > 0)) {
                 let plast = pick.c.ask_ts || 0
                 if (Date.now() - plast > 4000) {
@@ -2477,6 +2809,25 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop):
             if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-start', at: String(keep.sc.pub || '').slice(0, 8), of: picks.length })
             console.log(`⇊ heist STARTED — ${picks.length} track${picks.length === 1 ? '' : 's'} from ${String(keep.sc.from_name || keep.sc.pub || '').slice(0, 8)}`)
         }
+        // ── WAITING YOUR TURN IS NOT A STALL (2026-08-13 — the owner: *"we also need to make multiple
+        //  Heists doable"*).  The allowance is GLOBAL and z-ordered (see Heist_keep_beat), so the moment
+        //   a second heist stands, every keep stepped after the budget is spent reads `INFLIGHT === 0`
+        //    and starts no pull — deliberately.  The watchdog below cannot tell that apart from a dead
+        //     source: it only asks whether `landed` moved, so a correctly-queued heist would bark
+        //      "⇊☠ heist NO PROGRESS — the SOURCE may have crashed/gone" every 10 seconds, once per
+        //       queued heist, for as long as the first one ran.  A shout that fires when the machine is
+        //        working exactly as designed is worse than no shout: it teaches you to ignore the real
+        //         one.  So a zero allowance holds the progress clock fresh and stamps its own state, and
+        //          the face says which it is ("waiting its turn") rather than counting up a fake stall.
+        //  `.c` only, cleared the moment allowance arrives, so nothing reaches a snap and no Book sees it.
+        let queued = (INFLIGHT === 0) && left > 0
+        if (queued) {
+            if (!keep.c.queued_ts) keep.c.queued_ts = tnow
+            keep.c.pull_progress_ts = tnow
+            keep.c.pull_stall_warned = 0
+        } else if (keep.c.queued_ts) {
+            keep.c.queued_ts = 0
+        }
         // PROGRESS = a whole track landed OR the summed held frontier climbed (Evening 5 A1): serialized, a big
         //  track lands slower than the 15s bark, so counting only whole-track landings would false-alarm every
         //   long track.  Chunks arriving IS progress; the shout only fires when NOTHING moves — a truly dead source.
@@ -2568,6 +2919,15 @@ Heist_keep_default_pick(keep, srcmir, seed):
         if (h.sc.path) pick.sc.path = h.sc.path
         if (h.sc.ext) pick.sc.ext = h.sc.ext
         if (h.sc.bytes) pick.sc.bytes = h.sc.bytes
+        // the ORIGINAL file's weight, not the preview's ([[Ra_record_from]]) — what the form adds up to
+        //  answer "how big is this nab" before the human commits to it.
+        if (h.sc.src_size) pick.sc.src_size = h.sc.src_size
+        // WHICH KIND OF REF THIS IS (2026-08-13, the blag).  A wire husk's id is a source-minted KEEP-ID
+        //  and nothing else in the mirror wears it.  A blagged husk's id is the friend's CONTENT-ID — and
+        //   the opus stream we heard is sitting in the mirror under that very id, already full.  The pull
+        //    loop must not mistake one for the other, so the pick says which it is and the lookup obeys.
+        //     Snapped (not `.c`) because it must survive the Berth: a resumed heist re-runs the same pull.
+        if (h.sc.blag) pick.sc.blag = 1
         added = 1
     }
     if (added) keep.bump()
@@ -2649,6 +3009,19 @@ async Heist_keep_start(keep):
     if (s === 'primed' || s === 'wanted' || s === 'asking') {
         keep.sc.state = 'pulling'
         keep.bump()
+        // …AND HAND THE ROOM BACK, ON THE GESTURE (2026-08-13 — the owner: *"I can't be hanging around
+        //  waiting for each one in fullscreen"*).  Submitting the form is now a ROLE CHANGE on the glass:
+        //   this keep stops being the belly and becomes a bud, and the Radio comes back behind it, so it
+        //    needs the same gesture-path re-commission Heist_keep_cancel has (the leaving direction's
+        //     twin — the stashed run House owns the commission binding, a cross-ghost `this.` could not
+        //      get the right `this`).  fp-gated inside, so the poll's next pass sees nothing to do, and a
+        //       Book|headless context with no resident run falls back to that poll exactly as before.
+        //  Humdinger-gated: the role change only exists under the focus cut, which is humdinger-only, and
+        //   an unasked-for commission inside a Book is how a fixture moves for no explicable reason.
+        let M = this.top_House ? this.top_House() : null
+        let run = M ? M.c.sounditron_run : null
+        let rw = (M && M.c.radio_w) || null
+        if (M && M.c.humdinger && run && rw && typeof run.Sounditron_keeps_look === 'function') { try { run.Sounditron_keeps_look(rw) } catch (er) {} }
         try { await this.Heist_keep_persist(keep) } catch (er) {}
     }
 
@@ -2988,7 +3361,15 @@ Heist_keep_pick_toggle(keep, ref):
     if (have) { keep.drop(have); keep.bump(); this.Heist_keep_persist_nudge(keep); return }
     let rw = this.top_House().c.radio_w
     let srcmir = (rw && keep.sc.pub) ? this.Ra_home_them(rw, String(keep.sc.pub)) : null
-    let hit = srcmir ? this.Ra_rec_find(srcmir, { Record: 1, id: String(ref) }) : null
+    // LIFT THE SUBSTANCE OFF THE HUSK THE FACE ACTUALLY SHOWED, whichever route built it (2026-08-13).
+    //  This read the mirror directly by id, which is right for a wire husk and WRONG for a blagged one:
+    //   the blag's husks live in their own %BlagLib, and the mirror card sharing that id is the opus
+    //    stream — same title, same path, but no `blag` mark, so the pick would bind by `id` at pull and
+    //     land the radio preview.  Ask the same reader the face asked; fall back to the mirror only if
+    //      this ref is not in the described folder at all.
+    let hit = null
+    for (const h of this.Heist_rummage_recs(srcmir, String(keep.sc.seed || ''))) { if (String(h.sc.id || '') === String(ref)) { hit = h; break } }
+    if (!hit && srcmir) hit = this.Ra_rec_find(srcmir, { Record: 1, id: String(ref) })
     let pick = keep.i({ Pick: 1, ref: String(ref) })
     pick.c.up = keep
     if (hit && hit.sc.title) pick.sc.title = hit.sc.title
@@ -2996,6 +3377,7 @@ Heist_keep_pick_toggle(keep, ref):
     if (hit && hit.sc.path) pick.sc.path = hit.sc.path
     if (hit && hit.sc.ext) pick.sc.ext = hit.sc.ext
     if (hit && hit.sc.bytes) pick.sc.bytes = hit.sc.bytes
+    if (hit && hit.sc.blag) pick.sc.blag = 1
     keep.bump()
     if (this.Heist_keep_persist_nudge) this.Heist_keep_persist_nudge(keep)
 
@@ -3376,6 +3758,7 @@ async Heist_keep_cancel(w, keep):
     //   here, so the forget below still reads `keep.sc.seed` exactly as it did.  And the forget is keyed
     //    on that seed in the Berth, not on the %Heist standing — dropping first cannot orphan it.
     shop.rm({ Heist: 1, seed: keep.sc.seed })
+    this.Heist_blag_drop(keep.sc.seed)
     // THE GLASS REACTS ON THE GESTURE, NOT ON THE POLL (the owner 2026-08-09: "make the cell layout
     //  react to that being clicked more immediately").  The rm above changes the keep set, but the
     //   only thing watching the keep set was the trickle's ≤2.5s poll — so a confirmed cancel dropped
@@ -3454,6 +3837,14 @@ async Heist_newlyadded_waft(nav, mardir):
     return await this.Berth_open(nav, mardir, '', 'Newlyadded')
 
 async Heist_newlyadded_note(nav, mardir, entry):
+    // THE LEDGER MOVED — say so, so nothing has to POLL to find out (2026-08-13).  `Heist_haul_look`
+    //  reads this whole waft off disk to build the What-Heisted list; without a tell it would have to
+    //   re-read on a timer for ever, on a collection that changes a few times an hour at most.  One
+    //    integer on Mundo's `.c` turns that into "read when something actually landed".  Stamped before
+    //     the idempotent guard below deliberately: a replay costs one extra read, a missed landing costs
+    //      a list that is silently stale, and those are not the same size of mistake.
+    let MHn = this.top_House ? this.top_House() : null
+    if (MHn) MHn.c.newly_seq = +(MHn.c.newly_seq || 0) + 1
     let waft = await this.Heist_newlyadded_waft(nav, mardir)
     // IDEMPOTENT-APPEND (the human 2026-07-30, spotting the same track logged 'fresh' seven times over
     //  as many reloads): a still-'fresh' card for this exact path is a REPLAY of Heist_resume_sync's
@@ -3520,6 +3911,64 @@ async Heist_newlyadded_grouped(nav, mardir):
     }
     for (const dir of order) out.push(groups[dir])
     return out.sort((a, b) => a.seq - b.seq)
+
+// Heist_haul_look — WHAT YOU HEISTED, made visible (the owner 2026-08-13: *"yeah build something aye"*,
+//  answering whether to build the %Haul ledger — *"a list of What Heisted"*).
+//  ⚠ READ THIS BEFORE BUILDING A SECOND STORE.  The doc's vocabulary table reserves `%Haul` for "the
+//   larger collective, the What Heisted ledger" and says flatly *"The ledger is not built yet"*.  That is
+//    stale: the NEWLYADDED log already records every landed file durably — `of` (the landed path), `dir`
+//     (the folder), `at` (when it first landed), `feeling` — and `Heist_newlyadded_grouped` already folds
+//      it per ALBUM, which is the unit a What-Heisted list wants.  What was missing was never the data.
+//       It was a surface.  Minting a parallel `%Haul` store beside it would be two ledgers for one fact —
+//        the exact "there's only one of anything" tell CLAUDE.md warns about — so this reads the ledger
+//         that exists rather than starting a rival.
+//  The one thing the newlyadded log deliberately does NOT keep is WHO gave it to you (its header states
+//   the rule, and the owner restated it 2026-08-11: *"just the destination directory and when, not who it
+//    came from"*).  So this list cannot say "from S", and that is a ruling, not an omission.
+//  Shape: a dontSnap `%Hauls` bag on the radio world holding one `%Haul,dir:<folder>` per album, so a face
+//   reads it synchronously off `.sc` on its own poll — the disk read happens HERE, on a slow beat, never
+//    in a render.  `tracks` counts the files; `at` is the newest arrival in that folder (a folder that
+//     gained a track today is today's news); `title`/`artist` come off the folder name, which is the only
+//      thing a path-derived ledger honestly knows.
+//  Returns how many albums the ledger came to.
+async Heist_haul_look(w, nav, mardir):
+    if (!w || !nav) return 0
+    let groups = await this.Heist_newlyadded_grouped(nav, mardir)
+    let bag = w.oai({ Hauls: 1, dontSnap: 1 })
+    bag.c.up = w
+    let live = new Set()
+    let n = 0
+    for (const g of groups) {
+        let dir = String(g.dir || '')
+        // a loose file (no dir) is its own row, keyed by its path so two loose files stay two rows
+        let key = dir || String((g.cards[0] && g.cards[0].sc.of) || '')
+        if (!key) continue
+        live.add(key)
+        let row = bag.oai({ Haul: 1, dir: key })
+        row.c.up = bag
+        let at = 0
+        for (const card of g.cards) { let t = +(card.sc.at || 0); if (t > at) at = t }
+        let parts = key.split('/').filter(Boolean)
+        let name = parts.length ? parts[parts.length - 1] : key
+        let above = parts.length > 1 ? parts[parts.length - 2] : ''
+        // written only on CHANGE: this runs on a slow beat and a bump per pass would re-stir the glass
+        if (row.sc.tracks !== String(g.cards.length)) { row.sc.tracks = String(g.cards.length); row.bump() }
+        if (at && row.sc.at !== String(at)) { row.sc.at = String(at); row.bump() }
+        if (row.sc.name !== name) { row.sc.name = name; row.bump() }
+        if (above && row.sc.above !== above) { row.sc.above = above; row.bump() }
+        if (g.feeling && row.sc.feeling !== String(g.feeling)) { row.sc.feeling = String(g.feeling); row.bump() }
+        n = n + 1
+    }
+    // a dropped album leaves the list — the ledger is the truth, this bag only mirrors it
+    for (const row of bag.o({ Haul: 1 })) { if (!live.has(String(row.sc.dir || ''))) bag.drop(row) }
+    return n
+
+// Heist_haul_rows — the bag, newest first, for a face.  Pure read: it mints NOTHING, because a reader
+//  built on `oai` mints by being asked and a face asks every poll.
+Heist_haul_rows(w):
+    let bag = w ? w.o({ Hauls: 1 })[0] : null
+    if (!bag) return []
+    return bag.o({ Haul: 1 }).sort((a, b) => (+b.sc.at || 0) - (+a.sc.at || 0))
 
 // Heist_feel — the listener's verdict on a probation entry.  'love' graduates in place; 'drop' is
 //  DENY: the file leaves the collection (deleted off the disk) and its catalog card retires.  The drop
