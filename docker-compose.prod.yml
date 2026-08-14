@@ -26,7 +26,7 @@ services:
       #  The names belong in the untracked .env.local, not in this tracked file — for this
       #   deployment that is the duckdns names whose NAMES_PORTS entry is 19091 (the ones
       #    pointing at 9091 are the DEV server and belong in dev's own .env.local):
-      #      ALLOWED_HOSTS=jamsend.duckdns.org,voulais.duckdns.org
+      #      ALLOWED_HOSTS=you.duckdns.org,other-you.duckdns.org
       #  required:false so a fresh clone still comes up (localhost-only, the safe default).
       - path: .env.local
         required: false

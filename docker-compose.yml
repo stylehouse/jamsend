@@ -225,6 +225,26 @@ services:
     #     /var/lib/jamserve and /app/node_modules to node so the volumes below inherit that.
     user: "1000:1000"
 
+    # ── THE HOST'S /etc/hosts DOES NOT REACH IN HERE (2026-08-14) ──────────────────────────────────
+    # The public names resolve to this site's WAN address, and a packet sent from the docker bridge to
+    #  your own WAN address does not come back — consumer routers do not hairpin.  The HOST works around
+    #   that with an /etc/hosts entry pointing the names at the LAN box; a container gets its OWN
+    #    /etc/hosts and asks Docker's resolver, so it learns the public A record and dies on a 10s
+    #     `ConnectTimeoutError`, with every frame piling up behind `ws SEND buffered (socket not open)`.
+    #      Measured from a sibling container: the public name resolved to the WAN address, not the box.
+    #  This is the host's hack, applied where the container can see it.  The names/IP live in .env
+    #   (gitignored) as PROD_DOMAIN / PROD_DOMAIN2 / PROD_LAN_IP — this repo commits no site's domain.
+    #    Unset, the defaults below map two .invalid names at localhost: inert, and compose stays happy.
+    #  ⚠ DO NOT "FIX" THIS BY PUTTING THE LAN IP IN JAMSERVE_ORIGIN.  ORIGIN becomes the daemon's
+    #   `location.host`, so it is both the TLS server name and the `Host:` header prod's vite checks —
+    #    an IP literal fails cert validation AND is not in prod's ALLOWED_HOSTS ("Blocked request. This
+    #     host is not allowed."), which reads like a broken proxy.  Keep the NAME in ORIGIN; change only
+    #      where the name points, which is exactly what this does.
+    #  Baked in at container CREATION, so it needs `up -d`, never `start`.
+    extra_hosts:
+      - "${PROD_DOMAIN:-prod-domain-unset.invalid}:${PROD_LAN_IP:-127.0.0.1}"
+      - "${PROD_DOMAIN2:-prod-domain2-unset.invalid}:${PROD_LAN_IP:-127.0.0.1}"
+
     volumes:
       # THE MACHINE: the jamsend source it boots out of — wormhole/ fixtures, GhostList, Ghost/*.g,
       #  src/lib/gen/*.go.  A different tree from the collection, which is why one mount is not enough.

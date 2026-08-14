@@ -1,6 +1,15 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig, type PluginOption } from 'vite';
+import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import { attachRelay } from './src/lib/server/relay';
+
+// Root .env/.env.local, merged under process.env (env_file injection wins).  This is how
+//  site-specific names/creds stay OUT of tracked files: PROD_DOMAIN &c. live in the
+//   gitignored .env and get baked below.  (A comment further down used to claim /app/.env
+//    is a directory here and loadEnv would trip — measured 2026-08-14: it is a plain file;
+//     the try/catch keeps a broken .env from taking the whole config down regardless.)
+let dotenv: Record<string, string> = {};
+try { dotenv = loadEnv(process.env.NODE_ENV === 'production' ? 'production' : 'development', process.cwd(), ''); } catch {}
+const env = (k: string) => process.env[k] ?? dotenv[k] ?? '';
 
 // Peeroleum's real websocket transport (heading 10): attach the /relay endpoint to the dev
 //  server's http server.  configureServer runs only under `vite dev` (not build), so this is
@@ -19,8 +28,8 @@ function relayPlugin(): PluginOption {
 //  (.env.local) — so the public domains live in an untracked .env, not in this tracked
 //  file, and can be phased out by editing one line with no code change.  Empty default =
 //  localhost-only, the secure posture: a stray public hostname is refused, not served.
-//  (Read straight off process.env, not Vite's loadEnv, because /app/.env is a directory
-//   here and loadEnv would trip over it.)
+//  (Reads process.env first — env_file injection — falling back to the root .env via the
+//   loadEnv merge at the top of this file.)
 //  host.docker.internal is ALWAYS allowed on top of the env list: it's how a flock runner
 //  container reaches the host dev server (dockers/flock TARGET_BASE). It's a Docker-internal
 //  alias — functionally localhost-from-a-container, not a public domain — so it widens no
@@ -28,7 +37,7 @@ function relayPlugin(): PluginOption {
 //  no allowlist entry; Vite always serves those.
 const allowedHosts = [
 	'host.docker.internal',
-	...(process.env.ALLOWED_HOSTS ?? '').split(',').map(h => h.trim()).filter(Boolean),
+	...env('ALLOWED_HOSTS').split(',').map(h => h.trim()).filter(Boolean),
 ];
 
 export default defineConfig({
@@ -43,6 +52,15 @@ export default defineConfig({
 	define: {
 		'import.meta.env.VITE_CLUSTER_TRUSTED_PUBS': JSON.stringify(process.env.CLUSTER_TRUSTED_PUBS ?? ''),
 		'import.meta.env.VITE_CLUSTER_ROLE':         JSON.stringify(process.env.CLUSTER_ROLE ?? ''),
+		// This site's public name + TURN credentials, baked for the client's ICE config
+		//  (Peerily's Peer_OPTIONS + the /ice probe page).  From the gitignored .env — no
+		//   deployment's domain or TURN cred is committed.  Unset ⇒ '' ⇒ the own-infra ICE
+		//    entries are simply omitted and the public STUN list carries a fresh clone.
+		//     (TURN creds are inherently client-visible — every browser gets them — so
+		//      baking them into the bundle leaks nothing the TURN protocol doesn't.)
+		'import.meta.env.VITE_PROD_DOMAIN': JSON.stringify(env('PROD_DOMAIN')),
+		'import.meta.env.VITE_TURN_USER':   JSON.stringify(env('TURN_USER')),
+		'import.meta.env.VITE_TURN_CRED':   JSON.stringify(env('TURN_CRED')),
 	},
 
 	build: {

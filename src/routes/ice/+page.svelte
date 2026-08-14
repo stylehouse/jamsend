@@ -2,11 +2,13 @@
     import { onMount, tick } from 'svelte'
 
     // ── Config (edit these or override in the UI) ─────────────────────────────
-    let host       = 'jamsend.duckdns.org'
+    //  Defaults baked from the gitignored .env (PROD_DOMAIN / TURN_USER / TURN_CRED via
+    //   vite.config.ts define) so this committed file names no deployment's infra.
+    let host       = import.meta.env.VITE_PROD_DOMAIN || ''
     let turnsPort  = 5349
     let turnPort   = 3478
-    let username   = 'jamsend'
-    let credential = 'Eiru7gahneeD2che'
+    let username   = import.meta.env.VITE_TURN_USER || ''
+    let credential = import.meta.env.VITE_TURN_CRED || ''
 
     // ── State ─────────────────────────────────────────────────────────────────
     let running   = false

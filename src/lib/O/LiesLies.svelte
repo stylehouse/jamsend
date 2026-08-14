@@ -1318,7 +1318,18 @@
             //   Chrome timer throttling) read as silent and got its LIVE socket re-dialed every ~30-90s.
             //    A frame that reached the ws IS the carrier working — never re-dial over think starvation.
             const heard = Math.max(last, Number(cp?.sc.last_heard ?? 0), Number(w.c.socket_heard ?? 0))
-            if (heard && now - heard > DEAD_MS) {   // DEAD_MS/SLUGGISH_MS imported from runner_liveness.mjs
+            // A peer that has NEVER ponged cannot go DEAD (2026-08-14).  On a prod page there is no
+            //  editor at all — every Big*land tab wears machine-role runner and dials a channel to
+            //   `editor`, and the only inbound it ever sees is the relay's own connect acks
+            //    (role/hello_ok), which stamp socket_heard/last_heard and so ARMED this death-watch.
+            //     20s later: DEAD → port.reconnect() → the WHOLE websocket torn, and the identity
+            //      binding riding it went with it (two sockets, one prepub) — peering died every
+            //       ~20s, which read as "the daemon is offline" on every prod tab.  `last` is the
+            //        one stamp only a real pong writes, so it is the proof a channel ever EXISTED
+            //         this page-life; without it there is nothing to resurrect, silence is the
+            //          steady state, and the re-dial only destroys.  Hard socket closes still
+            //           reconnect via the ws close path — this gates only the silence watchdog.
+            if (last && heard && now - heard > DEAD_MS) {   // DEAD_MS/SLUGGISH_MS imported from runner_liveness.mjs
                 if (!w.c.last_reconnect || now - (w.c.last_reconnect as number) > DEAD_MS) {
                     const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
                     if (port?.reconnect) {

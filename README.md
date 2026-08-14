@@ -4,7 +4,7 @@ modern music piracy in the browser
 
 ![at sea](static/screenshot.webp)
 
-[Demo serves an album of mine](https://jamsend.duckdns.org:9999/#############7950f300faa8a4f9-ope.n~0-729547c09f15f29f) in ogg or flac. That invite gets you the ability to invite other peers. Ideally you and your peer are present somewhere you have wifi, with your phones, to begin with...
+An invite gets you the ability to invite other peers. Ideally you and your peer are present somewhere you have wifi, with your phones, to begin with...
 
 # the particle graph
 
@@ -58,6 +58,75 @@ Identities (an OurPeering) can be copied out of and into the UI somewhere, if yo
 ## prod
 
 To use *prod.sh*, see *Peer_OPTIONS*. I would ./install.sh then scp (clone) the entire leproxy repo to the server at ~/src/leproxy, then run ~/src/prod-jamsend/prod.sh (that repo is git cloned from my machine, this pulls), then that produces a there/ to scp to your proxy host. See also *ty/* to run a flock of chrome instances with your identities.
+
+### ⚠ hosting on your own router — the gotcha that only bites from inside
+
+If you run jamsend at home behind a **UPnP/port-forward plus a dynamic-DNS name** — the setup this
+ project suggests — then your public name resolves to your **router's external address**. That is
+  correct for the rest of the world and quietly broken for everything on your own LAN, because most
+   consumer routers will not send a packet from the inside back to their own outside address. There
+    is a name for this and it is worth knowing when you go searching: **NAT hairpin** (a.k.a. NAT
+     loopback).
+
+```
+   friend on the internet          you, at home
+        │                               │
+        ▼                               ▼
+   you.duckdns.org ──► 203.0.113.7 (your WAN)  ◄── ✗ never comes back
+                             │
+                     your router forwards :9999
+                             ▼
+                       192.168.1.10 (the box)
+```
+
+**On your desktop you will not notice**, because the usual fix is a line in `/etc/hosts`:
+
+```
+192.168.1.10    you.duckdns.org
+```
+
+Browsers pick that up, the site loads over the LAN, everything looks fine.
+
+**A container does not.** It gets its *own* `/etc/hosts` and asks Docker's resolver, which does real
+ DNS and learns the public address. So `jamserve` — or any container that has to talk to your own
+  frontend — dials your WAN address, the router drops it, and you get:
+
+```
+Cred_report_wild upload TypeError: fetch failed
+  [cause]: ConnectTimeoutError: attempted address: you.duckdns.org:9999, timeout: 10000ms
+🛰 ws SEND buffered (socket not open): undefined      ← and this, forever
+```
+
+Which reads like the relay is broken. It isn't; TCP never opened. **Diagnose it by resolving the name
+ from inside the container** — if you get your WAN address rather than your LAN one, this is it:
+
+```bash
+docker compose exec jamserve node -e "require('dns').promises.lookup('you.duckdns.org').then(console.log)"
+```
+
+**The fix is to apply the same hack where the container can see it** — `extra_hosts:` on the
+ `jamserve` service in *docker-compose.yml* already does this, fed from three gitignored `.env`
+  variables so no site's names are committed (copy the pattern to any other container that needs
+   to reach your frontend):
+
+```bash
+# .env
+PROD_DOMAIN=you.duckdns.org
+PROD_DOMAIN2=other-you.duckdns.org   # a second name if you serve one; else leave unset
+PROD_LAN_IP=192.168.1.10
+```
+
+It is baked in when the container is **created**, so it needs `docker compose up -d <service>` —
+ a plain `start` keeps the old one.
+
+> **Do not "fix" it by putting the LAN IP in the URL instead.** It is the obvious move and it fails
+>  twice over: your TLS certificate is issued for the *name*, so an IP literal fails validation; and
+>   vite checks the `Host:` header against `ALLOWED_HOSTS`, where an IP is not listed, so you get
+>    *"Blocked request. This host is not allowed."* — which looks like a broken reverse proxy and
+>     sends you off debugging Caddy. **Keep the name; change only where the name points.**
+
+The same reasoning applies to anything else on the box that speaks to your frontend by name — the
+ daemon is just the first thing that does it.
 
 ## objects, data layer
 
@@ -162,6 +231,29 @@ A browser tab is a bad place to keep a peer: it closes, it sleeps, it forgets. *
   standing there when someone finally redeems an Invite you handed out weeks ago. A third thing
    alongside dev (`docker compose up`) and prod (*prod.sh*) — it shares their compose file but sits
     behind a profile, so it only ever starts when you name it.
+
+### UserDaemon — it takes over your identity
+
+Run jamserve as *yourself* and it **is** you on the network: same prepub, same friends, same invites.
+ That is the point, and it is also the whole risk.
+
+⚠ **Do not run the same identity in a browser tab and in jamserve at the same time.** Two sockets
+ claiming one prepub both receive every frame, and the failure does not look like a conflict — it
+  looks like your peers going quiet. Pick one home for an identity, or give the daemon its own.
+
+Four knobs, all set in **`.env`** at the repo root (gitignored). They are compose *substitutions*, so
+ they must be in `.env` or your shell — **`.env.local` does not work for these**, and putting them
+  there fails silently, leaving you on the defaults:
+
+| in `.env` | is | default if unset |
+|---|---|---|
+| `MUSIC_PATH` | the collection, mounted read-write at `/music` | the path in *docker-compose.yml* |
+| `JAMSERVE_ID` | which prepub to boot as — see below | mints a throwaway |
+| `JAMSERVE_ORIGIN` | which server's `/relay` it joins | `http://172.17.0.1:9091`, the dev server |
+| `JAMSERVE_TOKEN` | password for the daemon's own control port (`/stop`, `/c`, `/restock` on `:9099`, bound to the docker bridge) | a literal committed to this repo — **set it** |
+
+Then `docker compose up -d --build jamserve`, and check the boot log says it *resumed* your prepub
+ rather than minting. Point it at your dev server first; move `JAMSERVE_ORIGIN` once that works.
 
 ### your identity lives in your music folder
 

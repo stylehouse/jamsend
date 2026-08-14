@@ -26,22 +26,28 @@ function Peer_OPTIONS() {
     // this gets a path intercepted by Caddy in stylehouse/leproxy
     let [host,port] = location.host.split(':')
     port ||= 443
+    // own STUN/TURN rides the site's name + creds, baked from the gitignored .env by
+    //  vite.config.ts `define` (exact literals — define is textual replacement).  Unset ⇒
+    //   the own-infra block is omitted and the public STUN list below carries the day.
+    const ice_host = import.meta.env.VITE_PROD_DOMAIN
     let turncred = {
-        username: 'jamsend',
-        credential: 'Eiru7gahneeD2che',
+        username: import.meta.env.VITE_TURN_USER,
+        credential: import.meta.env.VITE_TURN_CRED,
     }
-    
+
     const iceServers = [
         // own infra
-        { urls: 'stun:jamsend.duckdns.org:3478' },
-        {
-            urls: 'turns:jamsend.duckdns.org:5349',
-            ...turncred
-        },
-        {
-            urls: 'turn:jamsend.duckdns.org:3478',
-            ...turncred
-        },
+        ...(ice_host ? [
+            { urls: `stun:${ice_host}:3478` },
+            {
+                urls: `turns:${ice_host}:5349`,
+                ...turncred
+            },
+            {
+                urls: `turn:${ice_host}:3478`,
+                ...turncred
+            },
+        ] : []),
 
         // public infra
         { urls: 'stun:stun.l.google.com:19302' },
