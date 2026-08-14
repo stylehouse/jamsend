@@ -1293,7 +1293,48 @@ async Swarm_reaccept_incomplete(w, ident):
         if (String(theirPub) === String(me)) continue                  // never re-drive the self-pier
         let mineC = pier.o({ Grant: 1, by: String(me) })[0]
         let theirsC = pier.o({ Grant: 1, by: String(theirPub) })[0]
-        if (mineC && theirsC) continue                                  // WHOLE — nothing to heal
+        // rung 3 — THE FORGOTTEN PIER (2026-08-14).  Rungs 1-2 heal a HALF-seal: a %Pier that exists
+        //  and is missing a grant.  They cannot help the case where the far side lost the %Pier
+        //   ENTIRELY, because every healing path — this one included — iterates existing %Piers, so
+        //    the side with none has nothing to iterate and is invisible to all of it (the note at the
+        //     top of this comment block already said so; this is the rung that answers it).
+        //  MEASURED between the prod daemon 7950f300 ("S") and a live tab d101899a ("Agug"): the tab
+        //   held a WHOLE pier — including `Grant:Music,by:<daemon>,for:<tab>`, the daemon's OWN
+        //    signature — while the daemon held only an older pier to a third party.  It had made that
+        //     seal and lost it.  Every tab boast was answered `🚪 rebuff %ive_got_stranger`, forever:
+        //      gossip never opens a door (Swarm_ive_got), the rebuff never reaches the wire
+        //       (Swarm_rebuff is local), and our side stays silent because WE are whole.  Deadlock —
+        //        two peers reaching each other fine and behaving as though they had never met.
+        //  THE CURE IS ALREADY LEGAL.  Swarm_accept does NOT require a pre-existing %Pier: it verifies
+        //   the grant is really signed by us and really FOR them, checks page_bound, then seals and
+        //    answers pier_confirm.  (Contrast Swarm_confirmed, which DOES demand one and denies
+        //     'unexpected' — that asymmetry is deliberate and is what makes this safe.)  So re-sending
+        //      our ALREADY-SIGNED grant is enough to be re-believed; no re-mint, no re-sign, no new
+        //       frame kind, no invite, and nothing to restart on their side.
+        //  GATED HARD, because a re-offer is not free: Swarm_accept stamps `aim_wish` on the far end,
+        //   which steers their radio.  So this must fire only on real evidence of being forgotten,
+        //    never as boot chatter:
+        //   · whole only — we hold BOTH grants, so this re-asserts a relationship, never opens one.
+        //   · station up — no point shouting down a dead link.
+        //   · a grace from FIRST SIGHT of the pier, not from boot: `heard_at` is `.c` and so is empty
+        //      after every reload, which would otherwise make every friend look forgotten at standup
+        //       and fire a burst ([[a-newborn-cell-is-born-under-every-floor]] in another costume).
+        //   · silence well past every normal cadence — the pulse trickle is ~5s and the liveness
+        //      window 30s, so 120s of nothing is not a quiet patch, it is absence.
+        //   · once per 10 min per pier, so a peer that is simply gone costs 6 frames an hour.
+        if (mineC && theirsC) {
+            if (!w.c.station_up) continue
+            if (!pier.c.reoffer_seen) { pier.c.reoffer_seen = Date.now(); continue }
+            let heard = pier.c.heard_at || 0
+            let since = Date.now() - (heard || pier.c.reoffer_seen)
+            if (since < 120000) continue
+            if (pier.c.reoffer_at && (Date.now() - pier.c.reoffer_at) < 600000) continue
+            pier.c.reoffer_at = Date.now()
+            this.Swarm_deliver(w, ident, String(pier.sc.pub), { kind: 'pier_accept', grant: grant_of_C(mineC), page: this.Swarm_page(ident) })
+            console.log(`⨳⟲ pier heal: re-offered my standing grant to ${String(pier.sc.pub).slice(0, 8)} — whole here, ${heard ? 'silent ' + Math.round(since / 1000) + 's' : 'never heard'} (§9 rung 3, the forgotten pier)`)
+            n = n + 1
+            continue
+        }
         if (!mineC) {
             // rung 1 — the local re-mint.  Their page rides the pier (Swarm_seal stored it); page_bound
             //  is re-checked inside Swarm_seal, so a corrupt stash fails closed, never plants a forgery.
@@ -2182,6 +2223,15 @@ Swarm_pulse_all(w, ident):
     //     loop waits on.  A first-ever round therefore has no answer yet and pulses everybody, which
     //      is exactly the old behaviour.
     if (typeof this.Presence_ask_roster === 'function') this.Presence_ask_roster(w, ident)
+    // RUNG 3 NEEDS A CADENCE (2026-08-14).  Swarm_reaccept_incomplete runs from Swarm_station_routes
+    //  — standup and socket (re)open — which is enough for rungs 1-2 (a half-seal is a fact about
+    //   durable state and does not change while we sit still).  Rung 3's evidence is SILENCE, which
+    //    only accrues with time, and its grace anchor `pier.c.reoffer_seen` is `.c` and so is reborn
+    //     on every reload: driven from standup alone the grace could never mature and the rung would
+    //      never once fire.  So it also rides the pulse trickle, which is the clock that measures the
+    //       very silence it reasons about.  Slow (60s) because the rung is itself throttled to one
+    //        re-offer per pier per 10 min — this only has to be more frequent than that, not fast.
+    if (!w.c.heal_look_at || (Date.now() - w.c.heal_look_at) > 60000) { w.c.heal_look_at = Date.now(); this.Swarm_reaccept_incomplete(w, ident).catch((er) => console.log(`⨳⚠ pier heal failed: ${er && er.message || er}`)) }
     for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (typeof this.Presence_worth_sending === 'function' && !this.Presence_worth_sending(w, pier.sc.pub)) continue
         if (this.Swarm_deliver(w, ident, pier.sc.pub, { kind: 'pulse', page: this.Swarm_page(ident) })) sent = sent + 1
