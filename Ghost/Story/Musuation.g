@@ -3385,4 +3385,89 @@ async RepliShadow_control(w):
     if (mir.o({ widget: 1 }).length === 2) {
         this.story_swear(w, 'the same change without the seem split into a twin — the shadow is what carried the identity')
     }
-// (end of the repli protocol Books — RepliUpsert / RepliSplit / RepliShadow)
+
+// ParkCull — THE ASK IS THE LEASE (2026-08-15, converted from scripts/ParkCull.spec.ts; the story is
+//  Daemon_todo §11).  A %parked_want used to be removed ONLY by being served; on the daemon — the
+//   first process with no page lifetime — four abandoned wants barked the L3 stall every 10s for six
+//    hours.  Now every re-ask restamps asked_at in Repli_park_want, and Ra_transcode_pump culls a
+//     want whose lease lapsed.  Hand-cranked like the other repli Books: a bare pier-shaped holder
+//      on the world, wants minted with backdated stamps — abandonment is MANUFACTURED, which is why
+//       this can be a Book at all (a live pier never abandons anything on cue).
+//  The pier is a plain child; w.c.tx points the pump at it exactly as the legacy single-caster path
+//   does.  Repli_find_record finds nothing (no shelf) so every beat exercises ONLY the cull seam —
+//    the transcode machinery stays untouched, same posture as RepliBooks_pump's bareness.
+
+// ParkCull_want — mint a want directly with its lease stamps, the hand-crank (the real minter is
+//  Repli_park_want; beat 4 goes through it to prove the restamp).  told_at is pre-stamped NOW so a
+//   later Repli_park_want call skips its park-reply send — no Peeroleum frame leaves this Book.
+ParkCull_want(pier, id, from_idx, age_ms):
+    let p = pier.oai({ parked_want: 1, id: id, stream: 'radio', from_idx: '' + from_idx })
+    p.c.up = pier
+    p.c.counted = 1
+    p.c.told_at = Date.now()
+    p.c.parked_at = Date.now() - age_ms
+    p.c.asked_at = Date.now() - age_ms
+    return p
+
+ParkCull(A,w):
+    w oai %req:wrangle,eternal
+        await &ParkCull_drive,w,req
+        req%ok = 1
+
+async ParkCull_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.ParkCull_lapsed(w)
+        if (n === 3) await this.ParkCull_offsets(w)
+        if (n === 4) await this.ParkCull_reask(w)
+        if (n === 5) await this.ParkCull_zeroleash(w)
+    }
+    await this.Musu_float(w)
+
+// beat 2 — a want whose lease lapsed is culled by the pump; a fresh want beside it survives.
+async ParkCull_lapsed(w):
+    let pier = w.i({ Pier: 1, pub: 'sinkpub' })
+    w.c.tx = pier
+    this.ParkCull_want(pier, 'dead1', 64, 100000)
+    this.ParkCull_want(pier, 'alive', 12, 1000)
+    await this.Ra_transcode_pump(w)
+    let left = pier.o({ parked_want: 1 })
+    if (left.length === 1 && left[0].sc.id === 'alive') {
+        this.story_swear(w, 'the pump culled the want nobody had asked about and kept the fresh one beside it')
+    }
+
+// beat 3 — EVERY abandoned offset of one id goes — the cull runs before the per-id seen dedup.
+async ParkCull_offsets(w):
+    let pier = w.o({ Pier: 1 })[0]
+    this.ParkCull_want(pier, 'same', 10, 100000)
+    this.ParkCull_want(pier, 'same', 12, 100000)
+    await this.Ra_transcode_pump(w)
+    if (pier.o({ parked_want: 1, id: 'same' }).length === 0) {
+        this.story_swear(w, 'both abandoned offsets of one id were culled — the lease check runs ahead of the seen dedup')
+    }
+
+// beat 4 — a re-ask through the REAL minter restamps the lease OUTSIDE the counted latch: a lapsed
+//  want that gets asked again survives the pump.
+async ParkCull_reask(w):
+    let pier = w.o({ Pier: 1 })[0]
+    let p = this.ParkCull_want(pier, 'track', 30, 100000)
+    await this.Repli_park_want(w, pier, { id: 'track', stream: 'radio', from_idx: 30, from: 'sinkaddr', to: 'mypub' })
+    await this.Ra_transcode_pump(w)
+    let held = pier.o({ parked_want: 1, id: 'track' })
+    if (held.length === 1 && held[0] === p) {
+        this.story_swear(w, 'a re-ask restamped the lease on the one standing particle and the pump kept it')
+    }
+
+// beat 5 — a configured leash of 0 is honoured (the == null idiom; a || default would bury it).
+async ParkCull_zeroleash(w):
+    let pier = w.o({ Pier: 1 })[0]
+    w.c.repli_want_leash = 0
+    this.ParkCull_want(pier, 'snappy', 5, 1000)
+    await this.Ra_transcode_pump(w)
+    let gone = pier.o({ parked_want: 1, id: 'snappy' }).length === 0
+    delete w.c.repli_want_leash
+    if (gone) {
+        this.story_swear(w, 'a leash configured to zero culled what the ninety second default would have kept')
+    }
+// (end of the repli protocol Books — RepliUpsert / RepliSplit / RepliShadow / ParkCull)

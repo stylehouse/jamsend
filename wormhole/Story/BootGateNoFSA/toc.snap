@@ -1,0 +1,23 @@
+story:BootGateNoFSA
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.011
+      sample=0.013,at=1786757147
+      sample=0.013,at=1786757160
+      sample=0.013,at=1786757165
+      sample=0.005,at=1786757169
+    TimeTotal:step,avg=0.003
+      sample=0.003,at=1786757147
+      sample=0.003,at=1786757160
+      sample=0.003,at=1786757165
+      sample=0.001,at=1786757169
+  step,dige:1c8e36003da56342
+  step=2,dige:6cca2f20f9e2edc1
+    Assertion:with-no-picker-the,sentence:with no picker the gate knew up front and held a sentence naming Chrome
+  step=3,dige:94ea6161c9b72950
+    Assertion:a-doomed-tap-answered,sentence:a doomed tap answered with the advice sentence instead of a swallowed TypeError
+  step=4,dige:51e9324f08f8bf00
+    Assertion:an-fsa-capable-browser,sentence:an FSA capable browser read capable — the sentence stayed empty and the tap stayed a real door

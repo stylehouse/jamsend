@@ -1,0 +1,7 @@
+Snap:H
+  H:ParkCull,Run
+    A:ParkCull
+      self,round	{"mung":["age"]}
+      w:ParkCull
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

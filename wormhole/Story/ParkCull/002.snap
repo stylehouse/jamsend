@@ -1,0 +1,9 @@
+Snap:H
+  H:ParkCull,Run
+    A:ParkCull
+      self,round=2	{"mung":["age"]}
+      w:ParkCull
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Pier,pub:sinkpub
+          parked_want,id:alive,stream:radio,from_idx:12

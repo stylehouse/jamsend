@@ -2996,8 +2996,28 @@ async Ra_transcode_pump(w):
         //   playing track's long-starved continuation sat later in the list.  Oldest-parked first;
         //    a want not yet stamped parked_at is the freshest of all and goes last.
         let wants = pier.o({ parked_want: 1 }).slice().sort((a, b) => (+(a.c.parked_at || Infinity)) - (+(b.c.parked_at || Infinity)))
+        // THE ASK IS THE LEASE (2026-08-14, Daemon_todo §11 — the immortal wants).  A live sink
+        //  re-asks forever (its 4s ladder; park suspension bounded at PARK_CEIL=20s), and every
+        //   re-ask restamps asked_at in Repli_park_want — so a want unasked for ~4 ceilings is
+        //    ABANDONED: the listener dialed away, the tab left, or the rec fell off the shelf and
+        //     can never serve (`!rec` → continue was one of the immortality paths).  On a tab a
+        //      reload bounded these; the daemon has no lifetime, and four such wants barked the
+        //       L3 stall every 10s for six hours while costing real pump/admission work per pass.
+        //  Cull BEFORE the seen-dedup so every abandoned offset goes, and before the stall bark so
+        //   a corpse doesn't shout.  A sink that returns re-parks in one ask; leash=0 culls
+        //    immediately (the == null idiom keeps a configured 0 honest).
+        let leash = (w.c.repli_want_leash == null ? 90000 : +w.c.repli_want_leash)
         for (const p of wants) {
             let id = p.sc.id
+            let asked = +(p.c.asked_at || p.c.parked_at || 0)
+            if (asked && Date.now() - asked > leash) {
+                console.log(`◈ parked want ABANDONED — id=${id} from_idx=${p.sc.from_idx} unasked ${Math.round((Date.now() - asked) / 1000)}s — culled`)
+                if (typeof this.Radio_trace === 'function') {
+                    this.Radio_trace(null, { ev: 'park-cull', id: String(id || '').slice(0, 8), off: +(p.sc.from_idx || 0) })
+                }
+                await pier.rm({ parked_want: 1, id: p.sc.id, from_idx: '' + (+(p.sc.from_idx)) })
+                continue
+            }
             if (seen[id]) continue
             seen[id] = 1
             // L3 — the source-side twin of Heist's sink watchdog (L1, Heist.g pulling branch): a

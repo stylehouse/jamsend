@@ -856,13 +856,33 @@ process.on('SIGTERM', () => { say('SIGTERM — stopping'); stopping = true })
 //        "editor lost its crypto again!?" with the cause in plain sight.
 //  The daemon calls it itself. Not as a fix for the app — that is shared ground — but because it is
 //   the only way to prove the seam end-to-end here, and because a daemon of all things must not keep
-//    its sole copy of its key in a cache. Once per identity per boot (a version-bump throttle is what
-//     the app wants; a daemon's identity does not churn). ACCOUNT=0 opts out.
+//    its sole copy of its key in a cache. ACCOUNT=0 opts out.
 //  Cheap and worth saying: this makes `I=<prepub>` work headlessly. The account dir IS the resume —
 //   Swarm_boot_seed enumerates `.jamsend/account/*` and loads the wanted prepub, keys thawed. So the
 //    daemon's identity becomes portable: copy the dir to another box, boot with I=<prepub>, same peer.
+//
+// ⚠ THIS USED TO BE ONCE PER IDENTITY PER BOOT, and that is the bug (2026-08-14).  The premise was
+//  "a daemon's identity does not churn" — true of the KEY, false of the PIER SET, which rides the
+//   very same snap (Swarm_export walks %Identity → %Peering → %Pier → %Grant).  So every friend
+//    sealed AFTER boot lived in RAM only: the mirror had already latched, and nothing ever wrote
+//     them down.  Measured on the live daemon: `.jamsend/account/7950f300faa8a4f9/toc.snap` was two
+//      days and EIGHT restarts stale, holding one Pier while the daemon was serving two, and all
+//       eight boots logged "remembers 1 friend(s)".  That is the whole of "it fuckin forgot?" — the
+//        seal was made correctly and simply never reached disk.  Swarm_reaccept_incomplete's rung 3
+//         re-heals it about 3 minutes into each boot, which is exactly why a RESTART TIMER would be
+//          the wrong medicine: each restart buys another blind window.  Cf. [[a-grow-only-cache-is-
+//           a-one-way-latch]] — the latch suppressed the write that would have refreshed it.
+//  So: fingerprint the CONTENT, not the identity.  Swarm_export is the exact bytes account_save
+//   writes, and it is stable to compare because Swarm_protocol omits every session key
+//    (online/active/created_at/new/not_found/stolen/address/role) and `.c` never encodes at all —
+//     so an unchanged account exports byte-identical and costs one write, ever.  Throttled because
+//      persist_account() runs EVERY TICK (~2/s) and this blob carries the private key: fingerprint
+//       at most every MIRROR_MS, write only on a real change.
 const ACCOUNT = process.env.ACCOUNT !== '0'
-const persisted = new Set<string>()
+const MIRROR_MS = 20_000
+const NO_FINGERPRINT = ' no-fingerprint'   // sentinel: mirrored, but we cannot tell if it changed
+let mirrored_snap = ''
+let mirror_at = 0
 // Say WHY it isn't mirroring, once per distinct reason.  A silent early-return here would read as
 //  "the mirror is fine" while the daemon's only key sat in a cache — the exact failure this exists to
 //   prevent, so the not-yet path has to be as legible as the done path.
@@ -876,13 +896,29 @@ const persist_account = async (): Promise<void> => {
     if (!ident) { blocked('no active %Identity'); return }
     if (!ident.c?.keys) { blocked(`%Identity ${ident.sc.prepub} has no .c.keys`); return }
     if (!ident.sc.prepub) { blocked('active %Identity has no prepub'); return }
-    if (persisted.has(ident.sc.prepub)) return
-    persisted.add(ident.sc.prepub)
+    if (Date.now() - mirror_at < MIRROR_MS) return
+    mirror_at = Date.now()
+    // The fingerprint is the export itself, so "did anything worth writing change?" is asked of the
+    //  bytes rather than of a proxy that can drift from them.
+    // NO FINGERPRINT ⇒ FALL BACK TO WRITE-ONCE, never to write-always.  Swarm_export ships from the
+    //  same ghost as Swarm_persist (guarded above), so this is near-dead — but the blob carries the
+    //   PRIVATE KEY, and an unfingerprintable account rewriting it to the share every 20s forever is
+    //    a worse failure than the once-per-boot staleness this replaced.  Degrade to the old
+    //     behaviour and say so, rather than degrade to a key-spraying loop.
+    let snap = ''
+    try { snap = String((await (H as any).Swarm_export?.(ident)) ?? '') } catch { snap = '' }
+    if (!snap) {
+        if (mirrored_snap === NO_FINGERPRINT) return
+        blocked('cannot fingerprint the account (no Swarm_export) — mirroring once, as before')
+    } else if (snap === mirrored_snap) return
+    const again = !!mirrored_snap && mirrored_snap !== NO_FINGERPRINT
     try {
         await (H as any).Swarm_persist(nav, '', ident)
-        say(`🪪 account mirrored → .jamsend/account/${ident.sc.prepub}/toc.snap (resume with I=${ident.sc.prepub})`)
+        mirrored_snap = snap || NO_FINGERPRINT
+        if (again) say(`🪪 account re-mirrored — the friend list on disk changed`)
+        else say(`🪪 account mirrored → .jamsend/account/${ident.sc.prepub}/toc.snap (resume with I=${ident.sc.prepub})`)
     } catch (e: any) {
-        persisted.delete(ident.sc.prepub)
+        mirrored_snap = ''
         say(`⚠ account mirror failed: ${e?.message}`)
     }
 }

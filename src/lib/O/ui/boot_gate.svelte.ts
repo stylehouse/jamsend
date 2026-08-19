@@ -33,6 +33,22 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
     let error = $state('')
     let opening = $state(false)
 
+    // THE CAPABILITY, PROBED UP FRONT (2026-08-14, field report: "OPEN SHARE just sits there").
+    //  Firefox, Safari, Brave-by-default and EVERY mobile browser have no window.showDirectoryPicker,
+    //   so the picker branch below threw a TypeError that the callers read as a cancelled picker —
+    //    the tap sat there doing nothing, forever, with no word why.  A capability the browser lacks
+    //     is not an error the user caused; it is a fact to say out loud, once, in the gate's own face
+    //      (both hosts render fsa_advice so the sentence can't drift).  There is NO open-in-chrome
+    //       URL to offer instead: desktop has no such scheme, and mobile Chrome lacks the directory
+    //        picker anyway — the honest advice is a desktop Chromium, said plainly.  This tempers,
+    //         not repeals, the 2026-07-19 "no situation talk" ruling: that ruling assumed the tap
+    //          WORKS, and a button that cannot ever succeed is worse noise than one sentence.
+    const no_fsa = typeof window !== 'undefined' && typeof (window as any).showDirectoryPicker !== 'function'
+    const braveish = typeof navigator !== 'undefined' && !!(navigator as any).brave
+    const fsa_advice = !no_fsa ? '' : braveish
+        ? 'Brave blocks folder access — enable brave://flags → "File System Access API", or use Chrome on a computer'
+        : 'this browser can’t open a music folder — use Chrome (or Edge) on a computer'
+
     // called from an $effect in the host component, so the interval belongs to that component's
     //  lifecycle — this module owns no timers of its own.
     function start() {
@@ -69,11 +85,17 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
         const wakes = pending_gats.map(wake_gat)          // AC resume|init — within the gesture
         let disk_p: Promise<any> | null = null
         if (H()?.c?.disk_gated) {
-            // reuses DirectoryOpener's own open_dir action so the disk path can't drift from the
-            //  data layer's wiring — the reason this was never inlined as a raw showDirectoryPicker.
-            const act = H()?.o({ watched: 'actions' })[0]?.o({ action: 1, role: 'open_dir' })[0]
-            if (!act?.sc.fn) { error = 'wormhole not ready yet — a moment'; opening = false; return }
-            disk_p = act.sc.fn()                          // requestDirectoryAccess() — same gesture
+            // a browser with no picker gets the sentence, not a TypeError dressed as a cancel —
+            //  and NOT an early return: the AC wakes above already rode this same gesture and must
+            //   still be awaited below, so a Brave listener's tap still grants the audio half.
+            if (no_fsa) { error = fsa_advice }
+            else {
+                // reuses DirectoryOpener's own open_dir action so the disk path can't drift from the
+                //  data layer's wiring — the reason this was never inlined as a raw showDirectoryPicker.
+                const act = H()?.o({ watched: 'actions' })[0]?.o({ action: 1, role: 'open_dir' })[0]
+                if (!act?.sc.fn) { error = 'wormhole not ready yet — a moment'; opening = false; return }
+                disk_p = act.sc.fn()                      // requestDirectoryAccess() — same gesture
+            }
         }
         // the full keep-awake pin rides the same gesture (resume + silent source + re-advertise) —
         //  harmless when the AC is already up, exactly right when this tap is the grant.
@@ -100,5 +122,9 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
         get wanted()     { poll; ac_poll; return !!H()?.c?.disk_gated || pending_gats.some(g => !g?.AC_ready) },
         get opening()    { return opening },
         get error()      { return error },
+        // the no-picker fact + the one sentence both faces render for it (empty when capable) —
+        //  shown WITHOUT waiting for a doomed tap, so the button never has to lie first.
+        get fsa_missing() { return no_fsa },
+        get fsa_advice()  { return fsa_advice },
     }
 }

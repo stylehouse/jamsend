@@ -2253,6 +2253,25 @@ export class House extends StorableHousing {
                 const installed = (A.c.nav as any)?.is_remote
                 return w.i({ see: installed ? '🛰️ remote Wormhole (editor-proxied)' : '🛰️ begging editor for Wormhole access…' })
             }
+            // 🎧 LISTENING-ONLY (2026-08-15, MobilenoFSA_todo).  A plain Big*land visitor whose
+            //  browser HAS no directory picker — every phone, Brave-by-default, Firefox, Safari —
+            //   can NEVER dismiss this gate: until 83244ad6 (2026-08-11) they fell through to the
+            //    OPFS cloud and listened fine; after it they were locked out entirely, first field
+            //     day's finding.  Standing the gate DOWN keeps that commit's actual guard (it is
+            //      against mounting the github-seeded OPFS shadow disk as user data — we return
+            //       WITHOUT mounting anything): identity rides Dexie (Swarm_boot_seed's first
+            //        look), audio needs only the AC half of the tap, and rw-ops stay "nav not
+            //         ready" exactly as the gated path leaves them.  A dev/book boot (?E=/?B=,
+            //          the daemon, CredRunner) carries c.book and KEEPS the gate — it needs the
+            //           real tree, and its jsdom also lacks the picker, which is why capability
+            //            alone is not the test.  disk_gated is cleared, not just left unset: this
+            //             runs every Wormhole tick and an earlier pass may have raised it.
+            if (!H.top_House().c.book
+                && typeof window !== 'undefined' && typeof (window as any).showDirectoryPicker !== 'function') {
+                H.top_House().c.disk_gated = false
+                H.top_House().c.listen_only = true
+                return w.i({ see: '🎧 listening only — this browser cannot open a folder' })
+            }
             H.top_House().c.disk_gated = true
             return w.i({ see: `📁 open a share — OPFS disabled under ?${H.top_House().c.boot_role === 'editor' ? 'E' : 'B'}=` })
         }

@@ -2072,3 +2072,40 @@ The human, testing on a 12-year-old phone: *"even though the originals are opus,
 **Unverified:** no ffmpeg in the claude container, so this was fixed by reading and lands on the
  daemon's next 900s restart. The tell that it worked is `⇊♪ lofi: … → ogg128` where the `⇊⚠` used to
   be, and `failed=` in the heartbeat's ffmpeg counters going flat.
+
+## 11. The GC debt — tab-lifetime state hygiene in a process with no lifetime (2026-08-14)
+
+**The arc.** This codebase's garbage collector was the page reload. `.c` "dies on reload" was never
+ just a serialization rule — it was the cleanup strategy: every leaked ref, stale want and grow-only
+  cache had a bounded life because a human closes the tab by evening. The daemon is the first process
+   here with **no lifetime**, and it inherits every mint that assumed one. Worse, the squeeze: the
+    one remaining amnesty (restart) is both expensive (~46s standup through vite middleware, §5.3)
+     and lossy (keep-ids wiped, live listeners dropped) — so the tool that used to bound every leak
+      is now the tool to avoid.
+
+**Measured, 2026-08-14.** Four `%parked_want`s parked 5–15min after boot — during that morning's
+ keepalive flap window (every prod tab tore its socket every 20s until the same-day `LiesLies.svelte`
+  fix) — then barked `◈⚠ transcode STALLED` every 10s for six hours: ~7,500 log lines about four
+   immortal particles. A want is removed only by being served (`Repli_serve_parked`); nothing culls
+    one whose transcode wedged or whose asker left. `w.c.repli_casters` is append-only
+     (`Repli.g:502`). The state doesn't multiply — it *resonates*: tiny particles, unbounded noise,
+      plus real pump/admission work spent on ghosts every pass.
+
+**What is already bounded — don't over-panic this list.** Swarm Piers are `oai` by prepub (one per
+ unique friend, reconnects reuse). The editor-side roster GC is real (beacons consumed, ephemeral
+  runners forgotten, transport Piers reaped at PIER_CULL — `LiesLies.svelte` roster fold) but it is
+   editor machinery and never runs on the daemon. The pcm belt is capped with an admission budget,
+    `ra_hot` caps at 4, trace rings at 300, Berth compacts at 64 parts, and docker rotates jamserve's
+     log at 5m×2. And the whole **consumer half never runs here** — the conveyor never turns
+      (jamserve wears `w.sc.w`), there is no AudioContext, so radiostock draws, spins and
+       listening-side pcm simply don't accrue. Serve-only by *incapacity*, though — the §5.2
+        declaration ("don't feed me radio") is still owed, so a peer can still waste bandwidth
+         aiming a radio at it.
+
+**The rule to build toward, one sentence:** anything minted on behalf of a peer carries that peer's
+ lease, and a sweep evicts what outlives its lease — piers, wants, caster registrations, beacons.
+  First concrete target: cull a `%parked_want` (and the `repli_casters` entry) whose pier has been
+   silent past a window, the serve-side twin of the roster fold's transport reaper. Second: decay the
+    L3 bark (10s → ~60s after ten minutes) so a genuinely wedged encoder stays legible without
+     flooding. Watchdogs here bark but nothing reaps — in a tab the human is the reaper; the daemon
+      needs the next rung of the ladder to act, not report.

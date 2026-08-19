@@ -509,6 +509,13 @@
                             {gate.opening ? 'opening…' : 'open share'}
                         </button>
                         {#if gate.error}<p class="err" transition:fade>{gate.error}</p>{/if}
+                        <!-- the ONE exception to "no situation talk" (boot_gate's fsa_advice comment):
+                             a browser with no directory picker makes the share half of this tap
+                             impossible, and a big orange button that can never succeed is the worse
+                             noise. Said up front, not after a doomed click. -->
+                        {#if gate.disk_gated && gate.fsa_advice && !gate.error}
+                            <p class="err">{gate.fsa_advice}</p>
+                        {/if}
                     {:else if stage === 'dark'}
                         <!-- THE FLOOR. Nothing has spoken — no token, no counted friends, no gate ask,
                              no roster line. Before this existed the card rendered COMPLETELY BLANK

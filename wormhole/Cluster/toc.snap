@@ -11,4 +11,5 @@ Waft:Cluster,equip:Cluster
   HostedIdentity:f5da6599b8505881,role:player,pub:f5da6599b850588119dea85ea0a099ab4fa7a19cbecee6fdded35198fb397e3b
   HostedIdentity:58517b484a8e896d,role:runner,pub:58517b484a8e896d22ca45ec8447b5011e7ba9605b40055afca75404082d2def,favourite_client:claude
   HostedIdentity:7950f300faa8a4f9,role:player,pub:7950f300faa8a4f9aa9cac488f5e8154a645c3befa88524297d097eee3efab6d
-  HostedIdentity:a67a5d04a04fd334,role:runner
+  HostedIdentity:07baa4e699978e52,role:editor
+  HostedIdentity:e747cbed6a9ca919,role:runner,pub:e747cbed6a9ca919f72c9ee1f3e8436cc8c2b40882831c46894e4500bb5552bd

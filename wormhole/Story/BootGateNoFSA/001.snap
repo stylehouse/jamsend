@@ -1,0 +1,7 @@
+Snap:H
+  H:BootGateNoFSA,Run
+    A:BootGateNoFSA
+      self,round	{"mung":["age"]}
+      w:BootGateNoFSA
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

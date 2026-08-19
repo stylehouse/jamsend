@@ -19,6 +19,11 @@ import Vyto from '../src/lib/gen/V/Vyto.go'
 //     import Heist.go. Only an unrelated spec that happened to import it caught the break. A gate that
 //      names four ghosts is a gate for four ghosts; the fifth was the one being edited.
 import Heist from '../src/lib/gen/M/Heist.go'
+// The two STORY ghosts that carry hand-compiled Books (ParkCull in Musuation, BootGateNoFSA in
+//  Sounditron, 2026-08-15) — same lesson as Heist above: the file being edited is the one most
+//   likely to be missing from this gate, and Story ghosts are compiled by LocalGen too.
+import Musuation from '../src/lib/gen/Story/Musuation.go'
+import Sounditron from '../src/lib/gen/Story/Sounditron.go'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
@@ -29,9 +34,14 @@ test('gen Ra.go + Repli.go mount and deposit the reheal seam', async () => {
     mount(Radio, { target: document.body, props: { H } })
     mount(Vyto, { target: document.body, props: { H } })
     mount(Heist, { target: document.body, props: { H } })
+    mount(Musuation, { target: document.body, props: { H } })
+    mount(Sounditron, { target: document.body, props: { H } })
     for (let i = 0; i < 40 && !(typeof H.Ra_reheal_id === 'function' && typeof H.Repli_serve_want === 'function'
         && typeof H.Stoker_cull === 'function' && typeof H.Vyto_strength_now === 'function'
-        && typeof H.Heist_newlyadded_note === 'function'); i++) await sleep(50)
+        && typeof H.Heist_newlyadded_note === 'function' && typeof H.ParkCull_drive === 'function'
+        && typeof H.BootGateNoFSA_drive === 'function'); i++) await sleep(50)
+    expect(typeof H.ParkCull_drive, 'ParkCull Book deposited (Musuation.go imports)').toBe('function')
+    expect(typeof H.BootGateNoFSA_drive, 'BootGateNoFSA Book deposited (Sounditron.go imports)').toBe('function')
     // the import itself is the assertion — a .go that will not parse throws before this line. The verb
     //  check just proves the mount actually eatfunc'd, rather than silently mounting an empty component.
     expect(typeof H.Heist_newlyadded_note, 'Heist_newlyadded_note deposited (Heist.go imports)').toBe('function')

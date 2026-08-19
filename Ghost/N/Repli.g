@@ -610,6 +610,10 @@ Repli_page_ready(rec, from, PAGE):
 async Repli_park_want(w, pier, h):
     let p = pier.oai({ parked_want: 1, id: h.id, stream: h.stream, from_idx: '' + (+(h.from_idx || 0)) })
     p.c.up = pier
+    // THE ASK IS THE LEASE (2026-08-14).  Every re-ask lands here (oai, same particle) — so this
+    //  stamp, OUTSIDE the !counted latch below, is the proof someone still wants these bytes.
+    //   Ra_transcode_pump culls a want whose lease has lapsed; see the cull there for the story.
+    p.c.asked_at = Date.now()
     if (!p.c.counted) {
         p.c.counted = 1
         p.c.reply_to = h.from

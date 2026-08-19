@@ -57,6 +57,11 @@
                     {opening_share ? 'opening…' : '▶ open'}
                 </button>
                 {#if share_error}<p class="gate-err">{share_error}</p>{/if}
+                <!-- no-picker browser: the share half of this tap cannot ever succeed — say so up
+                     front (boot_gate.fsa_advice, the one sentence both faces share). -->
+                {#if disk_gated && gate.fsa_advice && !share_error}
+                    <p class="gate-err">{gate.fsa_advice}</p>
+                {/if}
             </div>
         {/snippet}
     </FaceSucker>

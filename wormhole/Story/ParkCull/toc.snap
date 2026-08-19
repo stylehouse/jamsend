@@ -1,0 +1,33 @@
+story:ParkCull
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.037
+      sample=0.04,at=1786757048
+      sample=0.04,at=1786757078
+      sample=0.04,at=1786757080
+      sample=0.04,at=1786757081
+      sample=0.04,at=1786757081
+      sample=0.04,at=1786757082
+      sample=0.04,at=1786757083
+      sample=0.014,at=1786757090
+    TimeTotal:step,avg=0.007
+      sample=0.008,at=1786757048
+      sample=0.008,at=1786757078
+      sample=0.008,at=1786757080
+      sample=0.008,at=1786757081
+      sample=0.008,at=1786757081
+      sample=0.008,at=1786757082
+      sample=0.008,at=1786757083
+      sample=0.003,at=1786757090
+  step,dige:e0065df38451e18e
+  step=2,dige:585211b646c2fce7
+    Assertion:the-pump-culled-the,sentence:the pump culled the want nobody had asked about and kept the fresh one beside it
+  step=3,dige:f4551438511444bb
+    Assertion:both-abandoned-offsets-of,sentence:both abandoned offsets of one id were culled — the lease check runs ahead of the seen dedup
+  step=4,dige:1653870b88ad149a
+    Assertion:a-re-ask-restamped,sentence:a re-ask restamped the lease on the one standing particle and the pump kept it
+  step=5,dige:98ea2428407707be
+    Assertion:a-leash-configured-to,sentence:a leash configured to zero culled what the ninety second default would have kept

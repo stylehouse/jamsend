@@ -32,6 +32,7 @@
 
 IMPORT()
     import { boot_param } from "$lib/boot"
+    import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
 
 Sounditron(A,w):
     w oai %req:wrangle,eternal
@@ -2447,3 +2448,71 @@ Sounditron_witness(w):
     if (sess && !sess.sc.played && this.Sounditron_music_running(w)) sess.sc.played = 1
     if (sess && !sess.sc.connected && this.Sounditron_peer_live(w)) sess.sc.connected = 1
     if (sess && this.Sounditron_report_filled(w, sess)) this.story_swear(w, 'the session summed itself — a report stands ready to travel', sess)
+
+//#region BootGateNoFSA — the no-picker browser gets a sentence, not a dead button
+// Converted from scripts/BootGateNoFSA.spec.ts (2026-08-15; the field report was "OPEN SHARE just
+//  sits there" on Brave — likewise Firefox and Safari and every mobile browser).  It lives HERE
+//   because the boot gate is /BigSoundland's arrival machinery — Sounditron's own turf — though it
+//    probes a MODULE (boot_gate) rather than the world: the .g imports it directly (the IMPORT()
+//     block), the one Book that exercises UI wiring below the face.
+//  THE INVERSION TRICK: a live runner IS an FSA-capable Chrome, so each beat shadows
+//   window.showDirectoryPicker with undefined for its own duration and restores in a finally —
+//    assignment-then-delete handles the property living on the prototype (a bare `delete` of an
+//     inherited property removes nothing).  The runner tab's own granted handle is untouched — the
+//      probe only guards NEW picker calls, and none happen inside the shadow.
+//  Beat 4 is the negative control and reads the REAL environment: on a live Chrome runner the
+//   capability is present and the sentence stays empty.  A headless jsdom boot cannot latch it —
+//    which is fine and usual: fixtures come from the live runner (CLAUDE.md's rule).
+
+BootGateNoFSA(A,w):
+    w oai %req:wrangle,eternal
+        await &BootGateNoFSA_drive,w,req
+        req%ok = 1
+
+async BootGateNoFSA_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.BootGateNoFSA_probe(w)
+        if (n === 3) await this.BootGateNoFSA_tap(w)
+        if (n === 4) await this.BootGateNoFSA_capable(w)
+    }
+
+// beat 2 — with the picker shadowed the gate KNOWS up front: fsa_missing and a sentence naming Chrome.
+async BootGateNoFSA_probe(w):
+    let saved = window.showDirectoryPicker
+    window.showDirectoryPicker = undefined
+    try {
+        let gate = boot_gate(() => ({ c: { disk_gated: true }, o: () => [] }))
+        if (gate.fsa_missing && gate.fsa_advice.indexOf('Chrome') >= 0) {
+            this.story_swear(w, 'with no picker the gate knew up front and held a sentence naming Chrome')
+        }
+    } finally {
+        delete window.showDirectoryPicker
+        if (typeof window.showDirectoryPicker !== 'function' && saved) window.showDirectoryPicker = saved
+    }
+
+// beat 3 — a disk-gated tap answers with the advice as its error instead of a swallowed TypeError —
+//  and resolves cleanly so the audio half of the gesture is never lost.
+async BootGateNoFSA_tap(w):
+    let saved = window.showDirectoryPicker
+    window.showDirectoryPicker = undefined
+    try {
+        let gate = boot_gate(() => ({ c: { disk_gated: true }, o: () => [] }))
+        await gate.open_share()
+        if (gate.error === gate.fsa_advice && gate.error.length > 0 && !gate.opening) {
+            this.story_swear(w, 'a doomed tap answered with the advice sentence instead of a swallowed TypeError')
+        }
+    } finally {
+        delete window.showDirectoryPicker
+        if (typeof window.showDirectoryPicker !== 'function' && saved) window.showDirectoryPicker = saved
+    }
+
+// beat 4 — the negative control off the REAL environment: a live Chrome runner reads capable and the
+//  sentence stays empty — proving the probe measures the browser and not itself.
+async BootGateNoFSA_capable(w):
+    let gate = boot_gate(() => ({ c: {}, o: () => [] }))
+    if (typeof window.showDirectoryPicker === 'function' && !gate.fsa_missing && gate.fsa_advice === '') {
+        this.story_swear(w, 'an FSA capable browser read capable — the sentence stayed empty and the tap stayed a real door')
+    }
+//#endregion

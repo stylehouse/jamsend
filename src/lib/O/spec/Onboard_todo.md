@@ -16,7 +16,20 @@ The one living doc for the first-run funnel (commissioned 2026-07-22). When a NE
 
 ## 0. Get on with next
 
-### 2026-08-12 (latest) — THE OLD GARDEN'S LINKS WORK AGAIN (§6.2 rung 2)
+### 2026-08-14 (latest) — PHONES CAN NEVER SHARE; the phone arc is designed below
+
+First real field day: `showDirectoryPicker` is desktop-Chromium-only — never mobile, no flag — so
+ "OPEN SHARE just sat there" for every phone/Brave/Firefox visitor. The gate now at least SAYS why
+  (`boot_gate.fsa_advice`, both faces, BootGateNoFSA.spec.ts). The owner's ruling: *"we need
+   listening only mode, and some way to transport the user's Identity to their desktop chrome…
+    can we fit it all in Door?"* — design now in **`MobilenoFSA_todo.md`** (split 2026-08-15,
+     listening-only wire half landed the same day). Both open questions RESOLVED
+    same day: multi-device is embraced via **LinkDevice**, a live self-Invite ceremony (owner's
+     ruling, in the section); and `83244ad6`'s intent is recovered from its own diff — it guards the
+      github OPFS shadow disk, which listening-only mode never mounts, so the gate can stand down
+       for listeners without touching what that commit was for.
+
+### 2026-08-12 — THE OLD GARDEN'S LINKS WORK AGAIN (§6.2 rung 2)
 
 The owner handed over the old music-server account — the pre-Swarm `Trust`/`Tyranny` garden's keypair
  — and asked for it *"migrated into the data store"*, with **its Idzeug serial starting at 22,222,
@@ -299,6 +312,14 @@ Nothing new needs minting for the happy path — the identity, the username stor
    with the FSA caveat, wrapping the currently-bare FSA prompt. That's presentation glue.
 
 ---
+
+## The phone arc — MOVED to `MobilenoFSA_todo.md` (2026-08-15)
+
+The whole arc — listening-only mode (wire half LANDED same day, `Housing.svelte.ts` 🎧 branch),
+ the %Like record ("what would be Heisted"), LinkDevice (the self-Invite ceremony), and the
+  phone-commands-station posture — now lives in **`MobilenoFSA_todo.md`**, per the owner's split.
+   Onboard keeps only the first-run funnel; the two docs meet at the Door, where the namer
+    bubble (here) and the 🎧 badge + LinkDevice verbs (there) share the self line.
 
 ## What already exists (recon map — don't rebuild; verify line #s on contact)
 
