@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '018b401f8d9fb67a~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '410e6c99586092d3~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -3253,7 +3253,21 @@ async Heist_keep_persist(keep) {
         // the landing path rides to disk too: a cancel AFTER a reload must still know what to take back
         if (p.sc.landed_at) pe.sc.landed_at = String(p.sc.landed_at)
     }
+    // CONTENT GATE (2026-08-21 churn audit, HIGH): this fired per LANDING and per UI nudge with no
+    //  change test — a 10-track heist paid 10 whole-shelf rewrites, most byte-identical.  The print
+    //   is the FULL sc of every seed + pick (JSON.stringify of sc whole, not a field whitelist, so a
+    //    future field participates automatically — the audit's caution: a print that missed a field
+    //     would silently stop persisting it).  It lives on the top house because this waft is
+    //      re-opened per call; first call after a boot always writes once, which is correct — we
+    //       cannot know the disk matches until we have written it or read it whole.
+    let print = ''
+    for (const e of waft.o({ HeistSeed: 1 })) {
+        print += JSON.stringify(e.sc)
+        for (const pp of e.o({ Pick: 1 })) print += JSON.stringify(pp.sc)
+    }
+    if (M.c && M.c.heists_print === print) return
     await this.Berth_save(nav, waft)
+    if (M.c) M.c.heists_print = print
 
 },
 // Heist_keep_persist_nudge — DEBOUNCED persist for intent mutations (2026-08-13 audit F4: persist fired

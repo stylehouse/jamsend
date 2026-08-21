@@ -494,7 +494,28 @@
         const kin = peering ? (peering.o() as TheC[]) : []
         let kinmark = 0
         for (const k of kin) kinmark += (+k.version || 0)
-        const mark = `${ident.sc.prepub}:${ident.version}:${peering?.version ?? 0}:${kin.length}:${kinmark}`
+        // THE LEDGER PRINT (Phase 2, Persistence_todo §5.2) — the tightening that retires the
+        //  heuristic's admitted hole ("a mutation that bumps NEITHER would not re-mirror until the
+        //   next boot").  Versions are a PROXY for the durable ledgers; the stash IS them —
+        //    Swarm_izzes (serials + claimed), Swarm_piers (seals + grants), Swarm_roots — and every
+        //     _stash verb writes it, so hashing its content makes the mark a proof over the facts
+        //      the snap exists to carry.  A grandchild mutation that bumps nothing above it still
+        //       moves this print, and a settle nudge can no longer be swallowed by a stale mark.
+        //  djb2 over one JSON.stringify of a few small objects — the same stretch the stashed
+        //   deep-watch $effect already walks every change, so this adds no new cost class.  The
+        //    stash spans all identities held here; a foreign identity's change re-mirrors this one
+        //     spuriously at worst — one idempotent write-through, not a correctness cost.
+        let ledger = ''
+        try {
+            const st = (top as any).stashed
+            if (st) {
+                const j = JSON.stringify([st.Swarm_izzes ?? 0, st.Swarm_piers ?? 0, st.Swarm_roots ?? 0])
+                let h = 5381
+                for (let i = 0; i < j.length; i++) h = ((h * 33) ^ j.charCodeAt(i)) >>> 0
+                ledger = h.toString(36)
+            }
+        } catch { /* an unreadable stash prints as '' — the mark falls back to exactly the old heuristic */ }
+        const mark = `${ident.sc.prepub}:${ident.version}:${peering?.version ?? 0}:${kin.length}:${kinmark}:${ledger}`
         if ((top.c as any).account_mirror_mark === mark) return false
         // THE NAV GUARD COMES AFTER THE MARK, AND IT IS LOUD.  A:Wormhole/c.nav is runtime-only —
         //  wiped by every reload, absent until the FSA gesture — so before openshare NOTHING can

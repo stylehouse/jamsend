@@ -3164,7 +3164,21 @@ async Heist_keep_persist(keep):
         // the landing path rides to disk too: a cancel AFTER a reload must still know what to take back
         if (p.sc.landed_at) pe.sc.landed_at = String(p.sc.landed_at)
     }
+    // CONTENT GATE (2026-08-21 churn audit, HIGH): this fired per LANDING and per UI nudge with no
+    //  change test — a 10-track heist paid 10 whole-shelf rewrites, most byte-identical.  The print
+    //   is the FULL sc of every seed + pick (JSON.stringify of sc whole, not a field whitelist, so a
+    //    future field participates automatically — the audit's caution: a print that missed a field
+    //     would silently stop persisting it).  It lives on the top house because this waft is
+    //      re-opened per call; first call after a boot always writes once, which is correct — we
+    //       cannot know the disk matches until we have written it or read it whole.
+    let print = ''
+    for (const e of waft.o({ HeistSeed: 1 })) {
+        print += JSON.stringify(e.sc)
+        for (const pp of e.o({ Pick: 1 })) print += JSON.stringify(pp.sc)
+    }
+    if (M.c && M.c.heists_print === print) return
     await this.Berth_save(nav, waft)
+    if (M.c) M.c.heists_print = print
 
 // Heist_keep_persist_nudge — DEBOUNCED persist for intent mutations (2026-08-13 audit F4: persist fired
 //  only at ▶ start and per landing, so pick toggles, genre|dirs|lofi edits and the post-▶ husk adoption

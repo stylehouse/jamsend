@@ -2090,6 +2090,13 @@ Swarm_account_settle(ident, why):
     if (!live || live !== ident) return null
     let r = this.Swarm_restash_all(ident)
     if (this.Clustation_mirror_nudge) this.Clustation_mirror_nudge()
+    // …and stamp the OWED flag (Phase 2, Persistence_todo §5.2) for mirror loops that poll rather
+    //  than listen: the daemon's persist_account fingerprints at most every 20s, and a seal landing
+    //   just inside that window sat un-mirrored for the rest of it — the flag lets ONE off-cycle
+    //    fingerprint through, and the fingerprint itself still decides whether bytes move.  Runtime
+    //     `.c` only: never encoded, dies with the process, re-owed by the next settle.
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c) top.c.account_settle_owed = Date.now()
     return r
 
 //#region suggestion — "you'd love this": durable, store-and-forward, async to their being online
@@ -3452,6 +3459,10 @@ async Swarm_roster_open(nav, root):
     }
     if (!waft) waft = new TheC({ c: {}, sc: { Waft: 'identities' } })
     waft.c.roster_dir = dir
+    // keep the bytes we just read: roster_save compares its re-encode against THIS, so an upsert
+    //  that changes nothing costs no write (the churn audit's finding — every account mirror pass
+    //   rewrote this file byte-identical).  `.c` only, dies with the call chain, exactly its scope.
+    waft.c.roster_snap_was = snap || ''
     return waft
 
 // Swarm_roster_save — upsert one owner's recognition row and write the roster whole.  Pub-only by
@@ -3467,6 +3478,10 @@ async Swarm_roster_save(nav, root, ident):
     if (peering?.sc?.friendly) row.sc.friendly = peering.sc.friendly
     if (ident.sc.born) row.sc.born = ident.sc.born
     let enc = await this.enWaft(waft)
+    // byte-identical to what we read a moment ago ⇒ the upsert changed nothing ⇒ no write.  The
+    //  compare is against the actual bytes on disk (not a proxy), so it can never suppress a real
+    //   change; and the roster is pub-only, so even a false write here was waste, never danger.
+    if (enc.snap === waft.c.roster_snap_was) return waft
     await nav.write_file(waft.c.roster_dir, 'toc.snap', enc.snap)
     return waft
 

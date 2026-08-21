@@ -4,7 +4,18 @@
 
 **All three layers landed 2026-08-08** (§3 the base ladder, §6 census persistence, §7 the
  estimator). §2 is kept as written because it is the diagnosis, not the state — read it for *why*,
-  then §6/§7 for what was done. The live candidates now:
+  then §6/§7 for what was done.
+
+**2026-08-21 — the census save gained a MATERIALITY GATE** (Census.svelte). The exact field-compare
+ found "moved" keys in every 30 s window (the aggregate rows — the root tally above all — drift a
+  few files per wander pass), so `berth/Census` grew a part file per minute and force-compacted the
+   whole toc every 64th. Now: a `census_disk` baseline holds what the shelf actually carries, updated
+    only when a row is written; structural truth (audio/open/subs count) always lands; pure z|n drift
+     lands once it crosses |Δ|≥4 AND ≥5% vs the baseline — accumulating, so a slow creep persists
+      once instead of never or always. Adversarially reviewed (stub→real, subs-count convergence,
+       oscillation, eviction reset — all confirmed sound).
+
+The live candidates now:
 
 - **Run it in a real browser, before anything else.** This is the one gap both agents declared and
    neither could close: every number in §6 and §7 is node against synthetic shapes, and **no Book

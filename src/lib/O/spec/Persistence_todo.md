@@ -19,8 +19,40 @@ Written 2026-08-21 out of the eed831f1 debug (a daemon that served music but cou
         account snap only by coincidental version bump). Verified live-runner green, repeatedly:
          Swarmation ×2, SwarmInvite 5/5, SwarmDisk 7/7, SwarmChain 5/5 — fixtures unmoved (the
           live-self guard makes settle a no-op under Book puppets, by design).
- **Next:** prove it on the real seam — the two-tab fingers-test + a daemon rebuild/restart (the
-  running jamserve predates this code), then decide Phases 2-4 (§5).
+ **Phase 1 PROVEN on the real seam 2026-08-21:** the rebuilt daemon minted eed831f1's invite from
+  its own ledger via `/invite` and the seal held across the wire — the original wound is closed.
+
+**Phase 2 LANDED 2026-08-21 (working tree).** Not the doc's original "delete the version-bump
+ trigger" — the double-check found the trigger machinery worth keeping (the canonical-address
+  write-lock, the owed-write loudness, the single-flight nudge are all load-bearing) and the rot
+   confined to the MARK being a version-bump heuristic. Three edits make the snap a projection of
+    ledger TRUTH instead of bump-luck:
+ - **Auto.svelte `Clustation_mirror_account`**: the mark now folds in a **ledger print** — a djb2
+    hash over `stashed.Swarm_izzes/Swarm_piers/Swarm_roots` content — so the admitted hole ("a
+     mutation that bumps NEITHER would not re-mirror until the next boot") is closed, and a settle
+      nudge can never be swallowed by a stale mark.
+ - **Swarm.g `Swarm_account_settle`**: stamps `account_settle_owed` (runtime `.c`) on the top house.
+ - **daemon main.ts `persist_account`**: the owed flag lets ONE fingerprint through the 20s throttle
+    off-cycle — a settled seal reaches the daemon's disk in ~one tick instead of "within 20s unless
+     we die first". The content fingerprint still gates the actual write (no key-spraying).
+ Verified: Swarmation/SwarmInvite/SwarmDisk/SwarmChain all ok_pct 1 live; adversarial subagent
+  review found no defects. **Needs a jamserve rebuild to reach the daemon.**
+ **Next:** decide Phase 3 (§5.3 durability ack + atomic check-off) and Phase 4 (§5.4 write-lease).
+
+**2026-08-21 also: a WRITE-CHURN AUDIT swept every durable-write site** (subagent, full table in the
+ session; verdicts CHURNS/GATED/RARE). Four churn sites found and all four fixed the same day:
+ - `Heist_keep_memo_flush` — re-appended a recipe whose only change was `ts` (→ `Heist_keep_memo_same`).
+ - `Census.svelte` — appended a part per minute on sub-1% estimator drift (→ materiality gate, see
+    `Wander_todo` §0).
+ - `Heist_keep_persist` — a whole-shelf `Berth_save` per track landing with no change test (→ a
+    full-content print on the top house; JSON of every seed+pick sc, not a field whitelist).
+ - `Swarm_roster_save` — rewrote `identities/toc.snap` byte-identical on every account-mirror pass
+    (→ compares the re-encode against the bytes `roster_open` just read; can never suppress a real
+     change).
+ Everything else came back GATED (real content gates: the stashed `$effect`'s `_last_written`, the
+  mirror mark, the daemon fingerprint, Thangs `_last_json`, stemdex diges) or RARE (gesture/event-
+   driven). The through-line for future writers: **every durable write wants a content gate at the
+    write seam itself** — an upstream trigger heuristic is not one.
  The immediate live wound (eed can't befriend the daemon) is NOT fixed by this doc — it's the
   `/invite` route + one-body-per-identity discipline in `Daemon_todo` §0. This doc is the durable
    fix behind that incident.

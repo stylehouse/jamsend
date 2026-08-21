@@ -915,7 +915,7 @@ process.on('SIGTERM', () => { say('SIGTERM — stopping'); stopping = true })
 //       at most every MIRROR_MS, write only on a real change.
 const ACCOUNT = process.env.ACCOUNT !== '0'
 const MIRROR_MS = 20_000
-const NO_FINGERPRINT = ' no-fingerprint'   // sentinel: mirrored, but we cannot tell if it changed
+const NO_FINGERPRINT = String.fromCharCode(0) + 'no-fingerprint'   // sentinel: mirrored, but we cannot tell if it changed
 let mirrored_snap = ''
 let mirror_at = 0
 // Say WHY it isn't mirroring, once per distinct reason.  A silent early-return here would read as
@@ -931,7 +931,16 @@ const persist_account = async (): Promise<void> => {
     if (!ident) { blocked('no active %Identity'); return }
     if (!ident.c?.keys) { blocked(`%Identity ${ident.sc.prepub} has no .c.keys`); return }
     if (!ident.sc.prepub) { blocked('active %Identity has no prepub'); return }
-    if (Date.now() - mirror_at < MIRROR_MS) return
+    // THE OWED FLAG COLLAPSES THE BLIND WINDOW (Phase 2, Persistence_todo §5.2).  Swarm_account_settle
+    //  stamps `account_settle_owed` on the top house the moment a ledger fact lands (a seal, a claim,
+    //   a revoke), and that lets ONE fingerprint through the 20s throttle off-cycle — so a settled
+    //    invite reaches this disk within a tick (~500ms) instead of "sometime in the next 20s, unless
+    //     we die first".  The fingerprint below still decides whether bytes actually move, so this
+    //      cannot become the key-spraying loop the throttle exists to prevent: worst case is one
+    //       extra Swarm_export per settle, and settles are handshake-rate, not tick-rate.
+    const owed_at = +(((H as any).top_House?.() ?? H)?.c?.account_settle_owed || 0)
+    if (Date.now() - mirror_at < MIRROR_MS && !owed_at) return
+    if (owed_at) { try { delete ((H as any).top_House?.() ?? H).c.account_settle_owed } catch {} }
     mirror_at = Date.now()
     // The fingerprint is the export itself, so "did anything worth writing change?" is asked of the
     //  bytes rather than of a proxy that can drift from them.

@@ -40,6 +40,16 @@
 
     const TICK_MS = 5000        // how often we LOOK; a look is one O(entries) signature, ~1.5 ms
     const SAVE_MS = 30000       // the floor between writes; encode is ~20 ms at 6700 entries
+    // MATERIALITY (2026-08-21) — what earns a disk line at all.  The aggregate rows (the root tally
+    //  above all) drift by a handful of files on every wander pass, so an exact field-compare found
+    //   "moved" keys in every 30 s window: a part file per minute whose news was n:49963→49997, and a
+    //    whole-toc compaction every 64th (the berth/Census churn).  The census is an ESTIMATOR — its
+    //     own restore caps z so memory can't outrank observation — so sub-5% drift in z|n is noise it
+    //      never acts on and disk doesn't need.  Structural truth (audio, open, subs) always lands.
+    //   Drift accumulates against the DISK baseline, not the merge base, so a slow creep still crosses
+    //    the line and persists once — bounded staleness, not lost truth.
+    const DRIFT_REL = 0.05      // z|n must move 5%…
+    const DRIFT_ABS = 4         //  …and by at least this many units, so tiny dirs don't spam either
 
     let timer: any = null
 
@@ -139,6 +149,11 @@
             // the store is kept in memory as the ACCRETION BASE: every later save merges the live
             //  map onto it, so directories this session's budget could not carry are not lost.
             Hh.c.census_store = map
+            // …and the DISK BASELINE: what is actually on the shelf, per key, updated only when a row
+            //  is written.  `moved` compares against THIS, not the store — the store re-merges every
+            //   save, so measuring drift against it would reset the ruler each pass and a slow creep
+            //    would never cross the materiality line.
+            Hh.c.census_disk = disk_base(map)
             const working = census_select(map, CENSUS_RESTORE_MAX)
             const live: Census = Hh.c.meander_learn || (Hh.c.meander_learn = {})
             const r = census_restore_into(live, working)
@@ -174,6 +189,32 @@
         }
     }
 
+    // ── materiality ──────────────────────────────────────────────────────────────────────────
+    // disk_base — the per-key facts the shelf actually holds, in the shape the compare reads.  subs
+    //  rides as a COUNT: the edges are derived from the keys on the way back in, so their number is
+    //   the only fact a write can change.
+    function disk_base(map: Census): Record<string, { audio: number, open: number, z: number, n: number, subs: number }> {
+        const out: Record<string, any> = {}
+        for (const k of Object.keys(map)) {
+            const e = map[k] as any
+            out[k] = { audio: +(e.audio ?? 0), open: +(e.open ?? e.audio ?? 0), z: +(e.z ?? 0), n: Math.round(+(e.n ?? 0)), subs: e.subs?.length ?? 0 }
+        }
+        return out
+    }
+
+    // drifted — has an estimator stat moved enough to be worth a line?  Relative AND absolute, so the
+    //  root tally's 0.07% wobble stays in memory and a 3-file dir's 1-file jitter does too.
+    const drifted = (a: number, b: number) => Math.abs(a - b) >= DRIFT_ABS && Math.abs(a - b) >= DRIFT_REL * Math.max(1, Math.abs(b))
+
+    // moved_key — structural truth always lands; pure z|n drift lands once it is material.
+    function moved_key(a: any, d: any): boolean {
+        if (!d) return true                                            // never on disk — a discovery
+        if (+(a.audio ?? 0) !== d.audio) return true
+        if (+(a.open ?? a.audio ?? 0) !== d.open) return true
+        if ((a.subs?.length ?? 0) !== d.subs) return true
+        return drifted(+(a.z ?? 0), d.z) || drifted(Math.round(+(a.n ?? 0)), d.n)
+    }
+
     // ── save ─────────────────────────────────────────────────────────────────────────────────
     async function save(force = false) {
         const Hh = top()
@@ -194,13 +235,13 @@
             // WHICH KEYS ACTUALLY MOVED — the whole reason this is an append and not a rewrite.  A
             //  wander touches a handful of directories in 30 s against a store of thousands, so the
             //   delta is the honest unit of work.  Compared field by field rather than by a digest,
-            //    because a digest that missed a field would silently stop persisting it.
+            //    because a digest that missed a field would silently stop persisting it — and against
+            //     the DISK baseline through the materiality gate, so estimator wobble stays in memory
+            //      (the part-per-minute churn, 2026-08-21) while structural truth still lands at once.
+            const disk: Record<string, any> = Hh.c.census_disk || (Hh.c.census_disk = {})
             const moved: string[] = []
             for (const k of Object.keys(live)) {
-                const a = live[k] as any, b = store[k] as any
-                if (!b || b.audio !== a.audio || b.open !== a.open || b.z !== a.z
-                    || Math.round(b.n ?? 0) !== Math.round(a.n ?? 0)
-                    || (b.subs?.length ?? 0) !== (a.subs?.length ?? 0)) moved.push(k)
+                if (moved_key(live[k] as any, disk[k])) moved.push(k)
             }
             const merged = census_merge(store, live, day)
             const ev = census_evict(merged, day)
@@ -213,8 +254,10 @@
                 for (const r of waft.o({ Dirtally: 1 }) as any[]) waft.drop(r)
                 rows_for(waft, ev.map, Object.keys(ev.map))
                 await (Hh as any).Berth_save(nv, waft)
+                Hh.c.census_disk = disk_base(ev.map)                   // the rewrite IS the new shelf
             } else if (moved.length) {
                 await (Hh as any).Berth_append(nv, waft, rows_for(waft, merged, moved), 'of')
+                for (const k of moved) if (merged[k]) disk[k] = disk_base({ [k]: merged[k] } as Census)[k]
             }
             Hh.c.census_store = ev.map
             Hh.c.census_sig = sig

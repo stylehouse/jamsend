@@ -80,6 +80,10 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
 >    `MIRROR_MS=20s` and fingerprints — a friend sealed then a crash <20s later is lost; and the izzes
 >     stash's durability under `DAEMON_STATE` deserves the same "settled ⇒ on disk" guarantee the human
 >      is asking for. Neither is eed's bug, but both are the reliability itch behind it.
+>   ✅ 2026-08-21: the 20s window is CLOSED (Persistence_todo Phase 2) — `Swarm_account_settle` stamps
+>    `account_settle_owed` and `persist_account` lets that flag through the throttle off-cycle, so a
+>     settled seal reaches disk in ~one tick; the content fingerprint still gates the bytes. (Needs the
+>      next jamserve rebuild.) The izzes-stash durability ack remains open — that is Phase 3.
 
 The daemon **boots, thinks, reads the wormhole, runs a Story Book to settle, and keeps a stable
  identity across restarts and across losing its keyfile** — all proven below, on 2026-08-07.

@@ -50,3 +50,4 @@ wormhole/_trace/
 # jamserve's runtime log — bind-mounted so sibling containers can read it
 jamserve/run.log
 jamserve/*.log
+jamsend-appcache
