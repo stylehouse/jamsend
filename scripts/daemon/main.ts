@@ -712,6 +712,9 @@ const stats = () => {
         serve: serve_state(),
         vyto: vyto_state(),
         identity: identity_state(),
+        // the persistence health card (Persistence_todo §5.3) — the same read DoorFace derives its
+        //  settled ✓ from, so "did the seal reach disk?" is answerable over HTTP without grepping logs.
+        persist: (() => { try { return (H as any).Swarm_persist_diag?.() ?? null } catch { return null } })(),
         ttlilts: liveTtlilts(H).count,
         ghosts: Object.keys(H).filter(k => typeof (H as any)[k] === 'function').length,
         boot,
@@ -931,6 +934,13 @@ const persist_account = async (): Promise<void> => {
     if (!ident) { blocked('no active %Identity'); return }
     if (!ident.c?.keys) { blocked(`%Identity ${ident.sc.prepub} has no .c.keys`); return }
     if (!ident.sc.prepub) { blocked('active %Identity has no prepub'); return }
+    // THE §7.4f WRITE-LOCK, daemon side (Phase 4): only the place holding the BARE prepub may write
+    //  the account dir.  The browser mirror has carried this guard since the lock landed; the daemon
+    //   never had it — harmless today (its address never moves), teeth the moment a Steal Back or
+    //    reinstate ever runs here.  Same for the reinstate stale-hold: disk wins until re-read.
+    const held = (H as any).Swarm_address?.(ident)
+    if (held && held !== ident.sc.prepub) { blocked(`address held is ${held}, not the canonical ${ident.sc.prepub} — the bare-name holder owns the write`); return }
+    if (((H as any).top_House?.() ?? H)?.c?.account_mirror_stale) { blocked('reinstated at the bare name but the live tree predates the borrow — re-read the account dir (disk wins, §7.4f) then clear account_mirror_stale'); return }
     // THE OWED FLAG COLLAPSES THE BLIND WINDOW (Phase 2, Persistence_todo §5.2).  Swarm_account_settle
     //  stamps `account_settle_owed` on the top house the moment a ledger fact lands (a seal, a claim,
     //   a revoke), and that lets ONE fingerprint through the 20s throttle off-cycle — so a settled
@@ -940,6 +950,7 @@ const persist_account = async (): Promise<void> => {
     //       extra Swarm_export per settle, and settles are handshake-rate, not tick-rate.
     const owed_at = +(((H as any).top_House?.() ?? H)?.c?.account_settle_owed || 0)
     if (Date.now() - mirror_at < MIRROR_MS && !owed_at) return
+    const owed_why = owed_at ? String(((H as any).top_House?.() ?? H)?.c?.account_settle_why || '') : ''
     if (owed_at) { try { delete ((H as any).top_House?.() ?? H).c.account_settle_owed } catch {} }
     mirror_at = Date.now()
     // The fingerprint is the export itself, so "did anything worth writing change?" is asked of the
@@ -959,7 +970,9 @@ const persist_account = async (): Promise<void> => {
     try {
         await (H as any).Swarm_persist(nav, '', ident)
         mirrored_snap = snap || NO_FINGERPRINT
-        if (again) say(`🪪 account re-mirrored — the friend list on disk changed`)
+        // the ack edge, same as the browser mirror's: /status's persist card reads this stamp.
+        try { (((H as any).top_House?.() ?? H) as any).c.account_mirror_at = Date.now() } catch {}
+        if (again) say(`🪪 account re-mirrored — the friend list on disk changed${owed_why ? ` (settled: ${owed_why})` : ''}`)
         else say(`🪪 account mirrored → .jamsend/account/${ident.sc.prepub}/toc.snap (resume with I=${ident.sc.prepub})`)
     } catch (e: any) {
         mirrored_snap = ''

@@ -4474,8 +4474,17 @@ async Berth_save(nav, waft):
     let i = 1
     while (i <= n) {
         try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i)) } catch (er) {}
+        // …and the FSA swap-file corpses beside them (`NNN.snap.crswap`, `NNN.snap.1.crswap`) —
+        //  Chrome mints these during createWritable and normally removes them on close, so any
+        //   still standing is a crashed write's leftover (a 0-byte one sat in berth/Census for
+        //    12 days).  Compaction is the one moment we KNOW no write is in flight (single-flight,
+        //     and the toc just landed), so it is the safe sweep seam.  Blind best-effort unlinks:
+        //      a NotFound throw per absent name, at compaction rate, is the whole cost.
+        try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.crswap') } catch (er) {}
+        try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.1.crswap') } catch (er) {}
         i = i + 1
     }
+    try { await this.Heist_unlink(nav, dir, 'toc.snap.crswap') } catch (er) {}
     waft.c.berth_parts = 0
 
 // Berth_reset — forget a Pier's Waft(s).  With a name, drop that ONE Waft's toc.snap AND its parts (a
@@ -4490,8 +4499,11 @@ async Berth_reset(nav, root, prepub, name):
         let i = 1
         while (i <= this.Berth_parts_max()) {
             try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i)) } catch (er) {}
+            try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.crswap') } catch (er) {}
+            try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.1.crswap') } catch (er) {}
             i = i + 1
         }
+        try { await this.Heist_unlink(nav, dir, 'toc.snap.crswap') } catch (er) {}
         return
     }
     await this.Heist_sweep(nav, root + '/.jamsend/berth/' + prepub)

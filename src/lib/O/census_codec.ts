@@ -232,16 +232,29 @@ export function census_decode(txt: string): { day: number, map: Census } {
 
 // ── merge ────────────────────────────────────────────────────────────────────────────────────
 /** Overlay the LIVE map onto the stored one.  Live always wins for a key it holds (it was observed
- *  this session); stored keys the live map never reached survive untouched — that survival is what
- *   lets the store hold more than one session can carry, and is the only reason a restore budget
- *    smaller than the share is not simply lossy.  `t` is re-stamped only when the counts actually
- *     changed, so a directory that keeps reading the same never looks fresher than it is. */
+ *  this session) — with ONE exception: a pristine unconfirmed restore is memory, not observation,
+ *   and never overwrites its own stored row (see below).  Stored keys the live map never reached
+ *    survive untouched — that survival is what lets the store hold more than one session can carry,
+ *     and is the only reason a restore budget smaller than the share is not simply lossy.  `t` is
+ *      re-stamped only when the counts actually changed, so a directory that keeps reading the same
+ *       never looks fresher than it is. */
 export function census_merge(store: Census, live: Census, day: number = census_day()): Census {
     const out: Census = {}
     for (const k of Object.keys(store)) out[k] = store[k]
     for (const k of Object.keys(live)) {
         const e = live[k]
         if (!e || typeof e !== 'object') continue
+        // A PRISTINE RESTORE IS MEMORY, NOT OBSERVATION — DON'T LET IT OVERWRITE THE STORE.
+        //  census_restore_into CAPS a restored barren dir's z at 1 so memory can't outrank a live
+        //   dead() verdict; but that capped value must never travel BACK to the store, or an
+        //    unvisited restored dir knocks its own stored z (say 5) down to 1 — the save path's
+        //     drift gate fires on |1−5| and persists the degraded value, quietly forgetting last
+        //      session's confirmed-barren evidence for a dir nobody re-checked.  The tell that this
+        //       entry is still only memory is the one census_confidence calls "unconfirmed": it
+        //        carries _cr and its cursor n has not moved off _cn since restore (Crate.g steps n
+        //         on every visit, monotone, so n !== _cn is a hook-free proof of a live visit).
+        //          A live-only discovery (no store row) still installs normally.
+        if (out[k] && e._cr && Math.round(num(e.n)) === num(e._cn)) continue
         const packed = census_pack(e)
         const was = out[k]
         const changed = !was || census_pack(was) !== packed

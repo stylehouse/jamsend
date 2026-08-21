@@ -430,13 +430,21 @@ abstract class StorableHousing extends Housing {
             if (!Object.keys(this.stashed).length) return
             if (this._saving) return
             const json = JSON.stringify(this.stashed)
-            if (json === this._last_written) return
+            // THE DURABILITY ACK (Persistence_todo §5.3, 2026-08-21): `stash_durable_at` is the
+            //  moment the stash content was last KNOWN to be on disk — stamped after a landed put,
+            //   and on the dedup path too (content identical to the last write IS durable; saying
+            //    otherwise would leave the ack lying "settling…" after an idempotent settle).
+            //  Runtime `.c` only — the ack describes THIS process's knowledge and dies with it.
+            if (json === this._last_written) { (this.c as any).stash_durable_at = Date.now(); return }
             this._saving = true
+            ;(this.c as any).stash_saving = 1
             this._last_written = json
             try {
                 await this._table.put({ name: this.name, json })
+                ;(this.c as any).stash_durable_at = Date.now()
             } finally {
                 this._saving = false
+                delete (this.c as any).stash_saving
             }
         }, AMBIENT_MAIN_TICK_MS)
 

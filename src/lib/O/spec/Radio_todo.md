@@ -19,7 +19,53 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ## 0. Latest handover — fold into the sections below as it's absorbed
 
-### 2026-08-13 dawn — partial decode landed; the clip estimate distrusts `sc.bytes` (daylight item)
+### 2026-08-22 — THE SEAM: tape-out endgame + `%Mag:'Streams'` (the whole-Record order) — ⚠ .go NOT YET COMPILED
+
+The owner's asks, one sitting: *"at the very end of each track we say 'ran out of tape'… this
+ message should just be '!tape', and in this case which we know is coming, get the next track really
+  ready"* · *"next-track-after-finished should be from the start — ordinary sequential listening;
+   only surfing jumps into the middle"* · *"we could order the whole-Record on a special streams
+    Mag? keep elegant, within the design."*  All landed in `Ghost/M/Radio.g` ON DISK, **but the .go
+     is still the 2026-08-13 build**: `ghost-compile` (via the 9091 relay — 9092 was dark) acks
+      `done @ 4120f96e` yet the served/disk .go keeps meta `40ba61ce` — the editor's Radio dock
+       almost certainly holds a diverging buffer and the %Good merge needs the human's hand.
+        **First move next session: get Radio.g truly compiled, then re-run the Musu* fleet.**
+
+What the .g now says (grep the marks):
+- **`tape-out`** (pump, starve branch): when the missing run at `seq` reaches the END of the track
+   (no later chunk stands), the 6s grace is spent on bytes that are not coming — a 1.5s grace, then
+    `seq = total` and the same look drains + advances.  Humdinger-gated; a Book keeps the splice
+     cadence to the byte.  Mid-track holes keep the full 6s (one late chunk landing restores it).
+- **`%Mag:'Streams'`** — the standing ORDER, the owner's shape: `Radio_peek_next` now falls through
+   the lineup (measured `lu=1 cards=0` live, so peek was a dead letter and prime NEVER primed on a
+    live tab — the scar in `Radio_head_ahead` said so all along) to the dial's own pool, draws ONCE
+     (`Radio_dial_pool(w, radio, all, peek)` — peek skips the aim lock), and mints
+      `%Card,id` (+`sc.by`, `sc.own` 1-or-absent) via `Radio_stream_order`.  `Radio_dial` consumes
+       the order as its first fallback rung (below the joining hold, above the lineup walk), aiming
+        at consume time.  `Radio_stream_ahead` fulfils it behind the same >4s comfort gate as prime:
+         local → `Ra_head_ensure` + one `Ra_transcode_ensure|advance` step per pass (the
+          `Radio_supply_go` producers, aimed one track early); wire → head rides the restock beat's
+           `opus_head` ask, **tail-ahead-of-play want driver still does not exist** — that is the
+            priced piece in the "§%Stream ORDER" negative result below, now re-opened by the owner's
+             direction for the wire side.  Books never grow the Mag (peek is prime-gated).
+- **`primed-fin` / `primed-fin-use`** — the two-shape prime: the skip bet stands (2026-08-12
+   doctrine intact), and within ~12s of the frontier prime ALSO decodes the finish shape (head
+    chunk 0, `hbase = Ra_head_whole ? pv_off : 0`) onto `radio.c.ready_fin`.  `Radio_open` spends
+     whichever shape matches policy; `prime-drop` now means BOTH missed (ring carries `had`/`had_fin`).
+     This is what makes finish→from-the-start actually gapless: the old path prime-dropped on every
+      finish and paid a cold decode exactly when the tape-out grind had already eaten the slack.
+- `Radio_source_toggle` clears the Streams Mag + both primes with the lineup (stale-side pick).
+
+Also landed, live already (plain HMR, not .g): RadioFace's starve note is now literally `!tape`;
+ Vytui measures faces at +0/+100ms off the `react_soon` latch (content-only changes — a next-track
+  title swap — never bumped `paint_tick`, so the Radio face sat tiny until a hover moved geometry;
+   the measure now rides the same out-of-reactive-context timer as adopt, dead-band damped).
+
+Verify (after the compile lands): watch the ring for `tape-out` (left=N), `primed`, `primed-fin`,
+ `primed-fin-use` at a finish, `open … hbase>0 went=finish` on the track after a full play-through;
+  the seam should carry no starve.  Then `runner_ask run` the Musu* Books several times each
+   (re-run rule) — every new mechanism is humdinger-gated or Mag-absent in Books, so any red is a
+    translator/typo, not a policy leak.
 
 The owner's "chop encoded data in half and only decode|Preview the first half" is in (`Ra_source_pcm`'s
  `need_secs` → byte-clipped `read_range` → `pcm_partial` mark; heads pass `(off*SEGS)+10`; a

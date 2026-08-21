@@ -39,6 +39,50 @@ Written 2026-08-21 out of the eed831f1 debug (a daemon that served music but cou
   review found no defects. **Needs a jamserve rebuild to reach the daemon.**
  **Next:** decide Phase 3 (§5.3 durability ack + atomic check-off) and Phase 4 (§5.4 write-lease).
 
+**Phase 3 (the ACK half) LANDED 2026-08-21 (working tree).** "Settled ⇒ on disk, OBSERVABLY" — the
+ §3.1 invariant made visible, five small stamps and one card:
+ - **Housing.svelte.ts** stash save: `stash_durable_at` stamped after a landed Dexie put AND on the
+    dedup path (content identical to the last write IS durable — anything else leaves the ack lying);
+     `stash_saving` marks the in-flight stretch.
+ - **Auto.svelte mirror**: `account_mirror_at` stamped on a landed write; the settle-owed flag is
+    consumed on success AND on a matching mark (an idempotent settle is satisfied, not pending).
+ - **Swarm.g**: settle stamps `account_settle_why`; new **`Swarm_persist_diag()`** — the persistence
+    health card (every ack/owed flag in one read).
+ - **DoorFace**: `⛁ settled ✓ / ⛁ settling… / ⛁ write owed` beside the self line, derived from the
+    card on the 1s tick; hidden when muted (a borrowed body doesn't own the write).
+ - **daemon**: `/status` carries `persist:` (the same card); the re-mirror log names the settle why.
+ The CHECK-OFF half of §5.3 was **retired by the earlier correction** (§2.B): direct redeems already
+  tick `claimed` via iz_mark, chain redeems mark `holder` by design — there is no missing atomic
+   co-fact on the live paths.
+
+**Phase 4 RUNG 1 LANDED 2026-08-22 (working tree).** Not the full borrow protocol (Identity_persist
+ §7.4c lists 8 pieces; relay address-exclusivity, address dialing and the cross-machine sibling
+  roster stay open) — the rung that makes the dormant machinery load-bearing, inside the §7.4h
+   rulings (NO auto-yield; DoorFace is the surface; resolution is the human's):
+ - **Detection** (the piece with zero app callers since the machinery was built): the hear funnel
+    now catches a standing-body frame (`pier_hello`/`swarm_hi`/`pulse`) whose signed page prepub IS
+     the recipient's own — a second live body, the eed831f1 disease seen from inside.  It calls
+      `Swarm_note_theft` (a registered %Sibling stays cooperative) and DROPS the frame; the log
+       says who and that this body keeps the write.  `Swarm_stolen`'s banner gate is live for the
+        first time.
+ - **Teeth**: the daemon's `persist_account` gains the §7.4f bare-address gate the browser mirror
+    already had (harmless today, teeth if an address ever moves there).
+ - **`Swarm_reinstate`** exists at last (the doc's one genuinely missing primitive): drops the
+    session suffix AND stamps `account_mirror_stale` — both mirrors HOLD while it stands ("disk
+     wins": the reinstating body must re-read the account dir and clear the flag before it may
+      write).  Nothing calls it yet; the hold makes it safe to wire incrementally.
+ - **Surface**: `👥 two of you` on DoorFace (outranks the settle chip — "settled ✓" would be a lie
+    twice over under two writers); `stolen` + `mirror_stale` ride `Swarm_persist_diag` and the
+     daemon's `/status.persist`.
+ **Still open for full Phase 4:** relay-level address exclusivity on signed hello, `Swarm_address`
+  actually dialed by Socket_real, the cross-machine %Sibling roster fed from verified hellos, and
+   the §7.4i bound (two boxes with no shared filesystem need a real sync protocol — out of scope).
+
+**Also 2026-08-21:** the census restore-z leak is FIXED at the codec (census_merge declines to let a
+ pristine unconfirmed restore — `_cr` && n===_cn — overwrite its own stored row; a capped memory
+  value no longer erases last session's confirmed-barren evidence; opus-agent traced + verified),
+   and Berth_save/Berth_reset now sweep stale FSA `.crswap` corpses at the compaction seam.
+
 **2026-08-21 also: a WRITE-CHURN AUDIT swept every durable-write site** (subagent, full table in the
  session; verdicts CHURNS/GATED/RARE). Four churn sites found and all four fixed the same day:
  - `Heist_keep_memo_flush` — re-appended a recipe whose only change was `ts` (→ `Heist_keep_memo_same`).

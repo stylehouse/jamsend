@@ -34,6 +34,12 @@ Nothing is built and nothing should be built big. The fronts, smallest first:
 First loose end to actually decide by running, not designing: whether `res.c.to` + `tgt.vers` is
  enough subscription for a standing pluck, or re-resolution needs its own beat.
 
+**Cave finding that reshapes front 1 (2026-08-21, §4.1):** the crust already exists — `snap_H`'s
+ persistent `snap_Se` retains a D-tree of encoded lines and diffs it across runs, with per-home
+  baselines (per-gaze in miniature). So the cheapest wall may not be a fresh structure beside
+   `H.ave` but **snap_Se promoted**: give the toy Book's wall a snap_Se home of its own and read
+    figs off its D-tree. Decide by trying both in the Book; whichever needs less code wins.
+
 ---
 
 ## 1. The dialogue (the readable spine — start here)
@@ -118,6 +124,16 @@ First loose end to actually decide by running, not designing: whether `res.c.to`
 **builder:** The smallest gaze: one Book, one toy world, one pluck, snap-gated. Then the daemon's
  `/c`, because it's a second observer with no Svelte in it. The toplevel last — it's the payoff,
   not the proof.
+
+**owner:** At the wall ~~ via snap? Seems everything might encode, and helping it would be central.
+
+**builder:** That's the deepest cut yet, and the cave confirms it (§4.1): the wall already exists
+ in embryo at `snap_H` — a *persistent* Selection held on the Run, whose traced_fn diffs encoded
+  lines across runs and stamps `changed`/`is_new`. First-sight IS first encode; the crust's unit
+   is the line; encodability is the criterion of observability. So the central organ isn't a new
+    data structure — it's **helping everything encode well**: per-kind encode rules, encode
+     trouble surfaced as residue instead of fatals and silent cuts. The vocabulary gate being
+      parked ("relaxed about mainkeys so any tree encodes") was step one of exactly that.
 
 ---
 
@@ -218,6 +234,50 @@ What the wall owns: the **crust** (cooled tree, oai-merged in place — never ro
   the **want-bag** (inbound gestures accumulated for the beat — the `o_elvis`-should-sum ⛑️
    closed).
 
+### 4.1 The wall speaks snap — what the cave found (2026-08-21)
+
+The owner: *"at the wall ~~ via snap? seems everything might encode, and helping it would be
+ central."* Read against the code, this is not an analogy — the wall already exists in embryo,
+  and its substance is the encode:
+
+- **The crust is already built and already persists.** `Story.svelte` `snap_H`:
+   `Se_at.c.snap_Se ??= new Selection()` — the snap's Selection is held on the Run ACROSS snaps,
+    not rebuilt. Its `traced_fn` compares `D.sc.snap_line !== bD.sc.snap_line` across runs and
+     stamps `changed` / `is_new`. A retained D-tree, one encoded line per node, diffed against
+      the previous walk: that IS the living snap. The work is promotion (between-steps →
+       always-on, beat-cooled), not invention.
+- **Per-gaze already runs, twice.** snap_H's own comment: a second customer (a Vyto moment
+   capture) *"brings its own home so its trace never advances Story's changed/is_new baseline."*
+    Two observers, two Se homes, independent baselines — §5's per-gaze destination in miniature.
+- **Identity marks are already conferred at the wall.** `trace_fn` mints
+   `uD.i({snap_node:1, the_k:…})` — the D%\* resolvable marks, stamped at first sight. The
+    res-sphere design (§1) lands *on top of* this, not beside it.
+- **The wall's taste is already legislated at encode.** `%boring` (vanish entirely), `%dontSnap`
+   (line but no subtree), the EntropyArrest spay (a noisy value replaced by a content-impossible
+    marker, `‼` on blowout) — "what is worth re-emitting" and "what counts as the same" are
+     solved for fixtures and generalise to UI repaint and merge unchanged.
+- **Change has a wire format already.** The Dif codec (`Text.svelte`): diffs encode as C-matter —
+   `Dif:same | change | prev | + | - | unchanged count:N`. A remote gaze can be fed Dif-frames;
+    delta-replication and the merge organ (§6) get their transport for free.
+
+**First-sight = first encode. The crust's unit is the line. Encodability is the criterion of
+ observability** — a particle that cannot encode cannot be seen, wanted-at, or merged. Which
+  makes "helping everything encode" the central organ, and names its parts:
+
+1. the parked vocabulary gate (`all_knowing` true — *"relaxed about mainkeys so any tree
+    encodes"*) was step one, already taken;
+2. **encode trouble becomes residue at the wall**, not a fatal or a silence: the `undef` brand,
+    mung skips, object-in-`.sc`, `max_child_depth`'s silent cut — each surfaces as a mark an
+     observer (and a Book) can see. The object-in-sc *law* stays (refs belong in `.c`); what
+      changes is that breaking it becomes legible at the boundary instead of exploding there;
+3. **per-mainkey encode rules, autovivified** — omit_sc, BQ keys, spay bands, depth — the way
+    Matstyle autovivifies a `matstyle:<key>` per mainkey. A new kind arrives; the wall grows it
+     an encode profile; a human preens it later. Helping-it-encode as an organ, not a chore.
+
+And the unification underneath: **wax figurines are decoded lines.** A fig (`{name,k,rev,...sc}`)
+ is `deL` of a crust line; the fixture reads the raw lines; `/c` ships them over a socket; a
+  remote Seem ships Dif-frames. One boundary language, every gaze.
+
 ---
 
 ## 5. Option menus (condensed; ★ = current lean, all loose)
@@ -260,6 +320,11 @@ The recording-wax commit is the local, single-user case. The same organ then ser
 
 Rule worth carrying from day one: prefer **append-only events over mutable flags** anywhere a
  kind might someday merge — a mutable `liked:yes/no` cannot merge; `%Like,at,device` always can.
+
+And the transport exists (§4.1): the **Dif codec** encodes change itself as C-matter. A
+ line-based three-way merge over crust lines, with D-identity pairing the sides instead of git's
+  positional heuristics, is the merge organ's natural first form — and a Dif-frame is what a
+   remote gaze receives, so merge-input and replication-delta are one format.
 
 ---
 
@@ -325,3 +390,8 @@ Deliberately not decided: where `k` comes from when a particle has no natural id
     instead of drained).
 - **`MobilenoFSA_todo.md` §2, `Identity_persist_todo.md` §7.4, `Repli_design.md`** — the three
    merge fronts that will borrow §6's organ.
+- **`Text.svelte` (enLine/enWaft, the Dif codec) + `EntropyArrest.md` (spay)** — the boundary
+   language and the wall's noise-taste; §4.1 is why they are platform pieces now, not just
+    fixture plumbing.
+- **`Story.svelte` `snap_H` / `snap_Se`** — the wall in embryo: the persistent D-tree crust,
+   cross-run line diffing, per-home baselines, `the_*` identity marks.

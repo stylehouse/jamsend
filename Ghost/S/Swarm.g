@@ -920,6 +920,20 @@ Swarm_arm(w):
         let ident = this.Swarm_account_of(w2, frame.header.to)
         if (!ident) return false
         let from = frame.swarm?.page?.prepub
+        // A CLAIM IN MY OWN NAME (Phase 4 rung 1 — Persistence_todo §5.4, Identity_persist §7.4):
+        //  a standing-body frame whose signed page prepub IS the recipient's own means a SECOND live
+        //   body of this identity is on the wire (the eed831f1 disease: a browser body and a daemon
+        //    body of one prepub, each mirroring blind, invisible to each other until this moment).
+        //     Note it — a registered %Sibling stays cooperative, note_theft returns false and no
+        //      alarm rises — and DROP the frame: a body must never process itself as a peer.
+        //  NO AUTO-YIELD (§7.4h ruling): the incumbent keeps the name and the write; the alarm is a
+        //   DoorFace banner + a diag fact, and Steal Back stays a human move.  Standing kinds only —
+        //    a multicast gossip echo must never raise a theft alarm.
+        if (from && from === ident.sc.prepub && ['pier_hello', 'swarm_hi', 'pulse'].includes(frame.header.type)) {
+            let by = String(frame.header.from || 'unknown_place')
+            if (this.Swarm_note_theft(ident, by, null)) console.log('👥⚠ another live body of ' + String(ident.sc.prepub).slice(0, 8) + ' is on the wire (' + by + ') — name contested. This body keeps the write; resolution is the human\'s (close one body, or Steal Back).')
+            return false
+        }
         let sealed = from ? this.Swarm_peering(ident)?.o({ Pier: 1, pub: from })[0] : null
         // THE VOUCHER GATE — the relay routes on header.to only and never checks header.from,
         //  so on a LIVE station any socket could forge a sealed friend's prepub.  A frame from a
@@ -2096,8 +2110,31 @@ Swarm_account_settle(ident, why):
     //    fingerprint through, and the fingerprint itself still decides whether bytes move.  Runtime
     //     `.c` only: never encoded, dies with the process, re-owed by the next settle.
     let top = this.top_House ? this.top_House() : null
-    if (top && top.c) top.c.account_settle_owed = Date.now()
+    if (top && top.c) {
+        top.c.account_settle_owed = Date.now()
+        top.c.account_settle_why = String(why || '')
+    }
     return r
+
+// Swarm_persist_diag — the persistence health card (Persistence_todo §5.3): every ack and owed
+//  flag the settle/mirror machinery keeps, in one read.  DoorFace derives its settled ✓/settling…
+//   from this, the daemon rides it into /status, and a debugging session asks it instead of
+//    grepping four `.c` keys.  Read-only, `.c` only, no encode cost — a card, not a ledger.
+Swarm_persist_diag():
+    let top = this.top_House ? this.top_House() : null
+    let c = (top && top.c) ? top.c : {}
+    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
+    return {
+        stash_durable_at: +(c.stash_durable_at || 0),
+        stash_saving: c.stash_saving ? 1 : 0,
+        mirror_at: +(c.account_mirror_at || 0),
+        mirror_owed: c.account_mirror_owed ? 1 : 0,
+        mirror_muted: c.account_mirror_muted ? 1 : 0,
+        mirror_stale: +(c.account_mirror_stale || 0),
+        settle_owed: +(c.account_settle_owed || 0),
+        settle_why: String(c.account_settle_why || ''),
+        stolen: (live && this.Swarm_stolen && this.Swarm_stolen(live)) ? 1 : 0,
+    }
 
 //#region suggestion — "you'd love this": durable, store-and-forward, async to their being online
 //  A %Suggest is a REFERRING particle (enid + display scalars + note — never a second %Record)
@@ -3597,6 +3634,22 @@ Swarm_steal_back(ident, taken):
     delete peering.sc.stolen
     peering.bump()
     return addr
+
+// Swarm_reinstate — the backwards move Steal Back never had (Identity_persist §7.4f, the missing
+//  primitive): drop the session suffix and stand at the canonical bare name again.  The §7.4f
+//   condition rides as a HOLD, not a hope: a reinstating body's live tree is stale by whatever the
+//    borrower wrote, so DISK WINS — this verb stamps `account_mirror_stale`, and the account mirror
+//     REFUSES to write while it stands.  The caller's contract: re-read the account dir off disk
+//      (the Swarm_boot_seed shape) into the live tree, then clear the flag; only then may this body
+//       Swarm_persist again.  Enforcing the half we can see beats documenting the whole.
+Swarm_reinstate(ident):
+    let peering = this.Swarm_peering(ident)
+    if (!peering) return null
+    delete peering.sc.address
+    peering.bump()
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c) top.c.account_mirror_stale = Date.now()
+    return this.Swarm_address(ident)
 //#endregion
 
 //#region diag — "what is actually wrong right now?", answered once, for the glass

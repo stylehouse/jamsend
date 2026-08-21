@@ -477,6 +477,17 @@
             }
             return false
         }
+        // THE REINSTATE HOLD (§7.4f "disk wins"): Swarm_reinstate stamps this the moment a body
+        //  takes the bare name back — its live tree is stale by whatever the borrower wrote, and
+        //   writing it now would clobber the fresher disk.  Held until the caller re-reads the
+        //    account dir and clears the flag; loud once, because a silent hold reads as "mirrored".
+        if ((top.c as any).account_mirror_stale) {
+            if (!(top.c as any).account_mirror_stale_said) {
+                ;(top.c as any).account_mirror_stale_said = 1
+                console.warn(`🪪 account mirror held — reinstated at the bare name but the live tree predates the borrow; re-read .jamsend/account/${ident.sc.prepub}/ (disk wins, §7.4f) then clear account_mirror_stale.`)
+            }
+            return false
+        }
         const peering = (ident.o({ Peering: 1 }) as TheC[])[0]
         // FOLD THE PEERING'S CHILDREN IN, not just the Peering itself — the tightening the comment
         //  above asks for ("a heuristic, not a proof … worth tightening if a case shows up").  A case
@@ -516,7 +527,10 @@
             }
         } catch { /* an unreadable stash prints as '' — the mark falls back to exactly the old heuristic */ }
         const mark = `${ident.sc.prepub}:${ident.version}:${peering?.version ?? 0}:${kin.length}:${kinmark}:${ledger}`
-        if ((top.c as any).account_mirror_mark === mark) return false
+        // a matching mark means the disk already says all of this — an idempotent settle's owed
+        //  flag is therefore SATISFIED here, not pending; leaving it set would show "settling…"
+        //   forever after a repeat handshake that changed nothing.
+        if ((top.c as any).account_mirror_mark === mark) { delete (top.c as any).account_settle_owed; return false }
         // THE NAV GUARD COMES AFTER THE MARK, AND IT IS LOUD.  A:Wormhole/c.nav is runtime-only —
         //  wiped by every reload, absent until the FSA gesture — so before openshare NOTHING can
         //   reach `.jamsend/account/`.  That used to be a silent `return false`, which made a real
@@ -538,6 +552,11 @@
         ;(top.c as any).account_mirror_mark = mark
         try {
             await (H as any).Swarm_persist(nav, '', ident)
+            // THE ACK EDGE (Persistence_todo §5.3): stamp when the mirror last LANDED and consume
+            //  the settle-owed flag — the browser's counterpart of the daemon's persist_account
+            //   consuming it.  DoorFace derives "settling… / settled ✓" from exactly these.
+            ;(top.c as any).account_mirror_at = Date.now()
+            delete (top.c as any).account_settle_owed
             console.log(`🪪 account mirrored → .jamsend/account/${ident.sc.prepub}/toc.snap`)
             return true
         } catch (er) {

@@ -150,7 +150,10 @@
         <div class="rf-src rf-src-local">♪ LOCAL — your own record</div>
     {/if}
     {#if face.note}<div class="rf-note">{face.note}</div>{/if}
-    {#if face.state === 'starved'}<div class="rf-note">off the tape — holding the line, it'll resume itself</div>{/if}
+    <!-- terse on purpose (the owner 2026-08-21: "I'd like this message to just be '!tape'") — the
+         endgame advance in Radio_pump_tick means a starve you actually SEE is now the rare mid-track
+         kind, and a two-character bang reads faster than a sentence ever did. -->
+    {#if face.state === 'starved'}<div class="rf-note">!tape</div>{/if}
     <!-- the small facts, each its own chip: the moving clock, then drops.  "N played" and
          "⚯ N on the dial" are GONE (the owner 2026-08-09: *"remove the '9 played' and '24 on the
           dial' from the %Radio cell, I don't care"*) — bookkeeping the listener never asked for.

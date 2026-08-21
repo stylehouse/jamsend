@@ -2,6 +2,22 @@
 
 ## 0. Next
 
+**OPEN 2026-08-22 — the compile ack lies, and this round the write never landed at all.**
+ `ghost_compile.ts` tickets for `Radio.g` / `Mesh.g` / `LakeTiles.g`: the editor acked
+  `✓ compiled @ <the correct NEW dige>` on TWO separate rounds, and the `.go` on disk (and as
+   served by :9091 vite) kept the OLD Ghostmeta — mtimes untouched 10+ minutes later. So the
+    editor ran the compile (it knows the new dige) and the WRITE was silently lost: parked in a
+     LiesStore phase that never settles, routed through a nav that isn't the repo disk, or
+      erroring post-ack with nothing threading back. Two fixes owed, one diagnosis first:
+  - **diagnose**: hand-save a dock in the editor and watch the `.go` mtime — does ANY `.go`
+     write land right now? Then find where the ticket-driven write parks (the LiesStore write
+      req for the gen path).
+  - **fix A (editor)**: ack `done` only after the write is READ BACK (Ghostmeta flipped on its
+     own nav) — "compiled" and "landed" are two facts and the ack currently conflates them.
+  - **fix B (script)**: `ghost_compile.ts` settles a ticket on the FIRST of ack|dige-flip — an
+     ack should never settle a ticket alone; demote it to narration and let only the dige-flip
+      poll (or timeout) close. (Claude memory `ghost-compile-verify-by-go-dige`, 2026-08-22.)
+
 The arc: a runner must acquire the editor's freshly-compiled `.go` **live, via Vite HMR** —
  never by a manual tab refresh (the current reality, which is absurdly broken). No new push
   machinery: the pushes that already exist (rungo demands, GhostLedger pins) become the

@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '410e6c99586092d3~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'f42cd945039b183c~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -4612,8 +4612,17 @@ async Berth_save(nav, waft) {
     let i = 1
     while (i <= n) {
         try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i)) } catch (er) {}
+        // …and the FSA swap-file corpses beside them (`NNN.snap.crswap`, `NNN.snap.1.crswap`) —
+        //  Chrome mints these during createWritable and normally removes them on close, so any
+        //   still standing is a crashed write's leftover (a 0-byte one sat in berth/Census for
+        //    12 days).  Compaction is the one moment we KNOW no write is in flight (single-flight,
+        //     and the toc just landed), so it is the safe sweep seam.  Blind best-effort unlinks:
+        //      a NotFound throw per absent name, at compaction rate, is the whole cost.
+        try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.crswap') } catch (er) {}
+        try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.1.crswap') } catch (er) {}
         i = i + 1
     }
+    try { await this.Heist_unlink(nav, dir, 'toc.snap.crswap') } catch (er) {}
     waft.c.berth_parts = 0
 
 },
@@ -4629,8 +4638,11 @@ async Berth_reset(nav, root, prepub, name) {
         let i = 1
         while (i <= this.Berth_parts_max()) {
             try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i)) } catch (er) {}
+            try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.crswap') } catch (er) {}
+            try { await this.Heist_unlink(nav, dir, this.Berth_part_name(i) + '.1.crswap') } catch (er) {}
             i = i + 1
         }
+        try { await this.Heist_unlink(nav, dir, 'toc.snap.crswap') } catch (er) {}
         return
     }
     await this.Heist_sweep(nav, root + '/.jamsend/berth/' + prepub)

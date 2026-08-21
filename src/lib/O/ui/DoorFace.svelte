@@ -129,6 +129,29 @@
         }
     })
 
+    // ── THE PERSISTENCE ACK (Persistence_todo §5.3) — "an Invite should not be half-done and get
+    //  lost": one glyph that says whether everything settled is actually ON DISK.  Reads the health
+    //   card (Swarm_persist_diag), re-derived on the 1s tick so "settling…" resolves before your
+    //    eyes.  Null (no glyph at all) when there's nothing to say: no identity yet, or a borrowed
+    //     body that doesn't own the write (mirror_muted — the bare-name holder answers for disk).
+    let settle = $derived.by(() => {
+        void tick
+        try {
+            const d = (H as any)?.Swarm_persist_diag?.()
+            if (!d) return null
+            // the contested name outranks everything — it is the one state where "settled ✓" would
+            //  be a lie twice over (two writers, either one clobbering the other).  §7.4h: DoorFace
+            //   is the ruled surface for this warning, and resolution stays the human's.
+            if (d.stolen) return { state: 'stolen' as const, why: d.settle_why }
+            if (d.mirror_muted) return null
+            if (d.mirror_owed) return { state: 'owed' as const, why: d.settle_why }
+            if (d.settle_owed || d.stash_saving) return { state: 'settling' as const, why: d.settle_why }
+            const at = Math.max(+d.mirror_at || 0, +d.stash_durable_at || 0)
+            if (at) return { state: 'settled' as const, at, why: d.settle_why }
+            return null
+        } catch { return null }
+    })
+
     // ── NAME YOURSELF — the first-time move: the chosen name (friendly) is what invites carry
     //  and what friends see; the auto-nick is only a stand-in.  Persists via Clustation_friendly.
     let naming = $state(false)
@@ -220,6 +243,14 @@
         {#if face.newborn}<span class="df-born">✨ born today</span>{/if}
         {#if face.listen_only}<span class="df-listen"
             title="listening only — this browser can't open a music folder, so you're a radio terminal. Your identity lives only in this browser: clearing site data forgets you (linked devices will fix that).">🎧 listening only</span>{/if}
+        {#if settle?.state === 'stolen'}<span class="df-settle stolen"
+            title="another live body of your identity is on the wire — two writers means either can clobber the other's ledger. This body keeps writing; close the other one (or Steal Back to a new address here).">👥 two of you</span>
+        {:else if settle?.state === 'settled'}<span class="df-settle ok"
+            title={`your ledger is on disk — last confirmed ${new Date(settle.at).toLocaleTimeString()}${settle.why ? ` (after ${settle.why})` : ''}`}>⛁ settled ✓</span>
+        {:else if settle?.state === 'settling'}<span class="df-settle busy"
+            title={`writing your ledger to disk now${settle.why ? ` (${settle.why})` : ''}…`}>⛁ settling…</span>
+        {:else if settle?.state === 'owed'}<span class="df-settle owed"
+            title="your ledger changed but no share folder is open to write it to — it lives only in this tab until you open one.">⛁ write owed</span>{/if}
     </div>
     <!-- INVITE SITS ABOVE THE PIER LIST (the owner 2026-08-10) — it was at the bottom, under a list
          that grows, so the one verb a newcomer needs was the one thing that walked off the cell as
@@ -379,6 +410,11 @@
     /* 🎧 the listening-only badge — a quiet, honest tag on the self line, not an alarm: the mode
        works, it just can't hold a share, and hover carries the mortal-identity whisper. */
     .df-listen { font-size: 9px; color: #8fd0e8; margin-left: 5px; cursor: help; pointer-events: auto; }
+    .df-settle { font-size: 9px; margin-left: 5px; cursor: help; pointer-events: auto; }
+    .df-settle.ok { color: #7fc98a; }
+    .df-settle.busy { color: #d8c56b; }
+    .df-settle.owed { color: #e0965e; }
+    .df-settle.stolen { color: #e06a6a; font-weight: 600; }
     .df-invite { font-size: 10px; margin-top: 3px; }
     .df-note { font-size: 9px; opacity: 0.7; font-style: italic; margin-top: 2px; }
     /* the friends ARE the app — they read at full size, not as a footnote ("friends list is

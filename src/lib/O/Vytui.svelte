@@ -3185,15 +3185,34 @@
     let react_micro = false
     let react_alive = true
     const REACT_MS = 120
+    // ── MEASURE AT THE INTERESTING MOMENTS (2026-08-21, the owner: *"measured better... at and 100ms
+    //  after interesting points in time"* — space-bar next-track left the Radio face tiny in its cell
+    //   until a hover happened to move geometry).  A content-only change (new title, digging→playing)
+    //    bumps the model but moves nothing, so `paint_tick` never fires and the ResizeObserver above
+    //     can miss it; every such moment DOES land in react_soon.  So measure from the same latch the
+    //      adopt rides — already OUTSIDE the reactive context, so this cannot re-subscribe the drive
+    //       effect (the H.version trap documented above stays defused).  Two looks: one now (the flush
+    //        carrying the face's new content has usually happened by the time the REACT_MS latch
+    //         fires), one at +100ms for what arrives a beat later.  The gauge dead-band damps it: a
+    //          face whose box did not change stamps 'same' and nothing recurses.
+    let measure_pair_t: any = 0
+    function measure_pair() {
+        Promise.resolve().then(() => { if (react_alive) for (const w of springs.keys()) measure_world(w) })
+        if (measure_pair_t || typeof setTimeout === 'undefined') return
+        measure_pair_t = setTimeout(() => {
+            measure_pair_t = 0
+            if (react_alive) for (const w of springs.keys()) measure_world(w)
+        }, 100)
+    }
     function react_soon() {
         if (typeof document !== 'undefined' && document.hidden) {
             if (react_micro) return
             react_micro = true
-            queueMicrotask(() => { react_micro = false; if (react_alive) adopt(vyto_worlds()) })
+            queueMicrotask(() => { react_micro = false; if (react_alive) { adopt(vyto_worlds()); measure_pair() } })
             return
         }
         if (react_pending) return
-        react_pending = setTimeout(() => { react_pending = 0; adopt(vyto_worlds()) }, REACT_MS)
+        react_pending = setTimeout(() => { react_pending = 0; adopt(vyto_worlds()); measure_pair() }, REACT_MS)
     }
     $effect(() => {
         // subscribe broadly — the body is O(1)-cheap, so a marching-readout here is harmless: the
@@ -3224,6 +3243,7 @@
         if (react_pending) clearTimeout(react_pending); react_pending = 0
         if (fx_sweep) clearTimeout(fx_sweep); fx_sweep = 0
         if (measure_pending) clearTimeout(measure_pending); measure_pending = 0
+        if (measure_pair_t) clearTimeout(measure_pair_t); measure_pair_t = 0
         for (const t of gauge_timers.values()) clearTimeout(t)
         gauge_timers.clear()
         faceRO?.disconnect(); faceRO = null
