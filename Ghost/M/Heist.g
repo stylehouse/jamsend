@@ -1655,6 +1655,26 @@ Heist_keep_memo_rehydrate(w, waft):
     if (typeof this.Radio_trace === 'function') this.Radio_trace(null, { ev: 'keepmemo', why: 'read', on: rows.length, took: n })
     return n
 
+// Heist_keep_memo_same — is the recipe already ON THE SHELF, ts aside?  A source serving the same album
+//  re-materialises a track after every body release / lib sweep, and each pass re-remembers with a fresh
+//   `ts` — without this check every one of those appends a part file that differs from the last by ONE
+//    timestamp (the berth/…/KeepMemo 050≡051 churn, 2026-08-21), and every 64th forces a whole-toc
+//     compaction for nothing.  ts stays memory-only for an unchanged recipe; the cost is that prune
+//      ordering sees a hot track by its FIRST landing, which is fine for a heal cache — a pruned recipe
+//       is re-learned by the very next materialise, and THAT one differs (no row), so it lands.
+Heist_keep_memo_same(row, m):
+    if (!row) return 0
+    if (String(row.sc.path || '') !== String(m.path || '')) return 0
+    if (+(row.sc.total || 0) !== +(m.total || 0)) return 0
+    if (String(row.sc.body_hash || '') !== String(m.body_hash || '')) return 0
+    if (String(row.sc.base || '') !== String(m.base || '')) return 0
+    if (+(row.sc.bytes || 0) !== +(m.bytes || 0)) return 0
+    if ((!!row.sc.lofi) !== (!!m.lofi)) return 0
+    for (const k of ['title', 'artist', 'album', 'genre', 'ext']) {
+        if (String(row.sc[k] || '') !== String(m[k] || '')) return 0
+    }
+    return 1
+
 // Heist_keep_memo_flush — write the recipes learned since the last pass as ONE appended part.  Dirty ids
 //  are cleared only once the write has actually landed, so a throwing disk retries next beat instead of
 //   silently dropping the recipe (the caller counts strikes and gives up after ten).
@@ -1672,7 +1692,10 @@ async Heist_keep_memo_flush(w, waft, nav):
         let m = memo[id]
         // an id culled from the memo by its own cap between mark and flush has nothing left to write
         if (!m || !m.path || !m.body_hash || !(+(m.total || 0) > 0)) { delete dirty[id]; continue }
-        let row = waft.oai({ Keepsake: 1, id: id })
+        // already on the shelf unchanged (ts aside) — a re-materialise of the same bytes earns no write
+        let had = waft.o({ Keepsake: 1, id: id })[0]
+        if (had && this.Heist_keep_memo_same(had, m)) { delete dirty[id]; continue }
+        let row = had || waft.oai({ Keepsake: 1, id: id })
         row.c.up = waft
         row.sc.path = String(m.path)
         row.sc.total = +m.total
