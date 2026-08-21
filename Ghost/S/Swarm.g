@@ -966,6 +966,13 @@ Swarm_arm(w):
         if (frame.header.type === 'suggest') this.Swarm_suggested(w2, ident, frame.swarm)
         if (frame.header.type === 'suggest_got') this.Swarm_suggest_got(w2, ident, frame.swarm)
         if (frame.header.type === 'repli_ready') this.Swarm_repli_ready(w2, ident, frame.swarm)
+        // LEDGER OUTCOME ⇒ SETTLE (Persistence_todo §5.1): every frame kind that can move the durable
+        //  ledger (a seal, a grant, a holder move, a root) settles the account on the way out — stash
+        //   convergence AND the disk-mirror nudge in ONE seam, instead of each handler above carrying
+        //    its own persistence chores.  Presence/gossip kinds are exempt: they mutate no ledger, and
+        //     settling per-pulse would grind a restash on every heartbeat.  (Live-self-guarded inside,
+        //      so a Book's mail-wire puppets skip it whole — fixtures unmoved.)
+        if (['pier_hello', 'pier_accept', 'pier_confirm', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok'].includes(frame.header.type)) this.Swarm_account_settle(ident, frame.header.type)
         return true
     }
     for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready']) w.c.on[kind] = hear
@@ -2067,6 +2074,23 @@ Swarm_restash_all(ident, from):
     return { piers: this.Swarm_restash_piers(ident, src),
              izzes: this.Swarm_restash_izzes(ident, src),
              roots: this.Swarm_restash_chainroots(ident, src) }
+
+// Swarm_account_settle — THE outcome seam (Persistence_todo §5.1, 2026-08-21): "this identity's
+//  durable ledger just changed — make it durable NOW."  Convergent, not fact-typed: it re-mirrors
+//   the WHOLE live ledger (restash_all is idempotent and additive — tombstones kept, grants deduped)
+//    and nudges the .jamsend account mirror, so a caller cannot forget a fact KIND — settle takes no
+//     facts, it converges state, and a missed call self-heals at the next one.  Before this seam only
+//      Swarm_iz_mark nudged the disk mirror; a RE-seal, a revoke or a chainroot change reached Dexie
+//       and then waited on a COINCIDENTAL version bump to reach the account snap ("reached disk only
+//        by luck" — the class Persistence_todo §2.A names, and the eed831f1 session's whole disease).
+//  Live-self-guarded like every _stash verb, so a Book's puppets and a foreign vault no-op here
+//   (and skip the nudge too), keeping every mail-wire fixture byte-identical.
+Swarm_account_settle(ident, why):
+    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!live || live !== ident) return null
+    let r = this.Swarm_restash_all(ident)
+    if (this.Clustation_mirror_nudge) this.Clustation_mirror_nudge()
+    return r
 
 //#region suggestion — "you'd love this": durable, store-and-forward, async to their being online
 //  A %Suggest is a REFERRING particle (enid + display scalars + note — never a second %Record)
@@ -3246,6 +3270,10 @@ async Swarm_revoke(w, ident, pier, feature):
     // the tombstone goes durable IMMEDIATELY (pier.sc.pub = their prepub, the stash key) —
     //  a revoke that a reload could forget would re-grant on rehydrate.
     this.Swarm_pier_stash(ident, { prepub: pier.sc.pub }, null, [atom])
+    // …and SETTLE: pier_stash alone reaches Dexie but never nudged the account snap, so a revoke
+    //  could sit un-mirrored until a coincidental version bump — and a stale snap disk-seeding a
+    //   cleared browser would resurrect the friend the tombstone exists to end (§5.1's class-A).
+    this.Swarm_account_settle(ident, 'revoke')
     return pier.i({ NotGrant: atom.not, by: atom.by, for: atom.for, time: atom.time, sign: atom.sign })
 
 // Swarm_pier_live — a Pier stands iff its Feature grants are present and NO matching %NotGrant

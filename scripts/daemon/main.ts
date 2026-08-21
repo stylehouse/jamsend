@@ -831,7 +831,42 @@ const server = http.createServer((req, res) => {
         })()
         return res.end(`{"restocking":1,"pub":${JSON.stringify(pub)}}`)
     }
-    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)","/restock (token)"]}')
+    // /invite — MINT a fresh single-use invite off THIS identity and hand back the ?Iz= token, so a
+    //  friend can redeem an invite THE DAEMON ACTUALLY ISSUED.  WHY THIS ROUTE HAD TO EXIST (2026-08-21,
+    //   the eed831f1 debug): an invite is only honoured by the body that minted it — the serial ledger
+    //    (Swarm_izzes) is PROCESS-LOCAL (the daemon's DAEMON_STATE; a browser's IndexedDB), NOT the
+    //     shared .jamsend/account (which carries only Identity/Peering/Pier/Grant, never the izzes).  So
+    //      an invite minted in a browser body of the SAME prepub rebuffs `hello_unknown` at the daemon —
+    //       Swarm_hello's `Swarm_iz_find(serial)` misses, because that serial is in the browser's ledger,
+    //        not the daemon's.  Until now the daemon had NO way to issue its own, so a headless server
+    //         could never befriend a soul: the whole point of jamserve, unreachable by a paper cut.
+    //  Token-gated like /stop|/restock: minting WINDS a serial (a write) and the token is a bearer
+    //   credential to this identity's friend door.  ?feature= defaults to Music (v1's only Feature);
+    //    ?base=<page-url> returns a ready click-link, else the raw token to paste into a friend's Door.
+    if (url.pathname === '/invite') {
+        if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required — ?token=<STATUS_TOKEN> or X-Daemon-Token header (logged once at boot)"}') }
+        const feature: any = { [url.searchParams.get('feature') || 'Music']: 1 }
+        const base = url.searchParams.get('base') || ''
+        const w = (H as any).Swarm_station_world?.()
+        const A = (H.o?.({ A: 'Clustation' }) ?? [])[0]
+        const ident = ((A?.o?.({ Identity: 1 }) ?? []) as any[]).find(i => i.sc.active)
+        if (typeof (H as any).Swarm_mint_invite !== 'function' || !w || !ident) {
+            res.statusCode = 409; return res.end('{"error":"swarm station not up yet (no world / active identity / mint verb) — give it a moment after boot"}')
+        }
+        // async: the mint awaits a presig (ed25519).  End the response INSIDE, like /restock's sweep,
+        //  and never let a throw escape the handler (an uncaughtException here would exit 5).
+        return void (async () => {
+            try {
+                const token = await (H as any).Swarm_mint_invite(w, ident, feature)
+                say(`🎟 minted an invite (${Object.keys(feature)[0]}) → ${String(token).slice(0, 20)}… — its serial is in THIS ledger (DAEMON_STATE), so a redeem seals here`)
+                const link = base ? `${base}${base.includes('?') ? '&' : '?'}Iz=${encodeURIComponent(String(token))}` : null
+                res.end(safe_json({ invite: String(token), link, note: 'paste `invite` into a friend\'s Door "paste a link" hole (or open `link` if you passed ?base=<jamsend-page-url>)' }))
+            } catch (e: any) {
+                try { res.statusCode = 500; res.end(`{"error":${JSON.stringify(String(e?.message || e))}}`) } catch {}
+            }
+        })()
+    }
+    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)","/restock (token)","/invite?base=<url> (token)"]}')
   } catch (e: any) {
     // The backstop.  Nothing this server does is worth the process, and everything above is a READ.
     try { res.statusCode = 500; res.end(`{"error":${JSON.stringify(String(e?.message || e))}}`) } catch {}

@@ -9,6 +9,78 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
 
 ## 0. What to get on with next
 
+> **🔴 LIVE 2026-08-21 — "daemon drops every frame from a fresh friend: `no Pier … DROPPED`". It is
+>  NOT a code regression; it is a two-STORE identity split. THE HANDSHAKE WORKS.**
+>
+> Symptom: `jamserve` (identity `7950f300faa8a4f9`, on the production relay `wss://djamsend…:9999`)
+>  spews `🛰☠ deliver: no Pier for {pulse,ive_got,swarm_hi,pier_accept,repli_ready} from=eed831f1
+>   to=7950f300 — DROPPED`, `them=0 crate(s)`, forever. Not a music problem — the shelf is full
+>    (`shelf=40 rec`, ffmpeg encoding). The friend `eed` gets nothing.
+>
+> Root cause (evidence, not theory): eed's on-disk pier to 7950 is **WHOLE** — both `Grant:Music`
+>  signatures present (eed↔7950), sealed 2026-08-21T02:29Z. So a body holding 7950's *key* completed
+>   the full mutual seal. But that body was a **browser** that resumed 7950 (via `?I=7950f300…` — the
+>    exact link handed over earlier in the session; that form *becomes* the server identity and forks
+>     a second body) on the **dev server `:9091`**, which writes **`/app/.jamsend`**. The **daemon**
+>      is a *separate* body of the same prepub reading **`/music/.jamsend`** (host
+>       `${MUSIC_PATH:-/home/s/Music/71mix}/.jamsend`) — a DISJOINT store: the daemon's two friends
+>        (`064b7731`, `d101899a`) don't exist in `/app/.jamsend` at all. eed sealed with the `/app`
+>         body; the live wire routes eed's frames to the `/music` daemon, which has no such pier ⇒ drops.
+>
+> Why "worked in the previous OS": then the browser and daemon shared **one** `.jamsend`/relay/box, so
+>  a browser seal *was* the daemon's seal. The new OS split dev (`/app`, `:9091`) from the production
+>   daemon (`/music`, `wss://djamsend:9999` + the new `leproxy/`). Seals now land where the daemon
+>    never reads. `docker-compose.yml`'s own comment states the intended shape drifted from: *"[the
+>     daemon's `/music/.jamsend`] is where a browser session's FSA grant already put the account it
+>      resumes from."*
+>
+> **The fix is infrastructure + discipline, NOT a ghost edit** (the pier gate correctly restricts
+>  creation to `pier_hello`; reheal only re-mints a missing grant on a pier that EXISTS — neither can
+>   conjure a pier into a store the seal never touched):
+>   1. **One body per identity.** The daemon is the sole live `7950`. Never resume `7950` in a dev
+>       browser (`?I=7950…`) while the daemon is up — that fork is what ate this seal.
+>   2. **Seal into the daemon's store.** Provision/seal `7950`'s friendships from a browser that
+>       FSA-grants the daemon's **`/music`** folder, so its `.jamsend` == the daemon's. Then eed's
+>        redeem lands in `/music/.jamsend` and the daemon holds the pier. (Or unify the two `.jamsend`
+>         mounts to one host dir — see the `app` vs `jamserve` volume split in `docker-compose.yml`.)
+>   3. **Unstick eed:** its whole pier points at a dead `/app` body. Re-seal eed against the daemon
+>       (redeem a `/music`-side invite), or copy eed's `Pier` into `/music/.jamsend/account/7950…/`
+>        and re-mirror. Until then eed retries a stranger forever.
+>   Open design question worth a REVIEWED follow-up (needs live Swarmation-Book verification, so not
+>    done blind here): should a node that receives repeated post-seal frames from a peer it holds no
+>     pier for — but whose Idzeug/invite it still holds — be allowed to re-trigger `pier_hello` so a
+>      cross-body/lost-pier case self-heals over the wire? Today only `pier_hello` opens the door
+>       (Peeroleum.g:589), by design; loosening it is security-relevant (spoof/DoS surface).
+>   Verified from the `claude` container: `/app/.jamsend` accounts, daemon logs, live local-relay
+>    census (`runner_ask runners --live`), and the daemon's own `/status`+`/c` (reachable at
+>     `172.17.0.1:9099`, token from its boot log). Could NOT reach production relay or write `/music`.
+>
+> **DEEPER ROOT CAUSE (2026-08-21, second pass) — the invite ledger is PROCESS-LOCAL, and that is the
+>  real "worked before / lost invite" bug.** When eed finally re-redeemed, the daemon logged
+>   `🚪 rebuff %hello_unknown` on eed's `pier_hello`. That is `Swarm_hello` (Swarm.g:1566): the
+>    invite's serial was not found in the daemon's OWN ledger. WHERE the invite ledger lives is the
+>     crux the human asked and the account dir did NOT answer: **`%Idzeug` (the issuer, with its
+>      `next`/`claimed` serials) is a RUNTIME particle under `%Peering`; its durable twin is the top-
+>       House STASH `stashed.Swarm_izzes[prepub][nonce]` (Swarm.g:1045-1050), which persists to the
+>        PROCESS's kv store — the daemon's `DAEMON_STATE=/var/lib/jamserve/state`, or a browser's
+>         IndexedDB — NEVER `.jamsend/account/*` (that snap carries only Identity/Peering/Pier/Grant).**
+>          So an invite minted in a browser body is invisible to the daemon even if they share
+>           `.jamsend`/`/music` — the account snap does not carry the izzes. The ONLY body that can
+>            issue an invite the daemon will honour is the daemon's own process.
+>
+> **FIX LANDED (working tree, needs a jamserve rebuild+restart to take effect — I cannot restart):**
+>  a token-gated **`/invite`** route on the daemon status server (`scripts/daemon/main.ts`, beside
+>   `/restock`). It calls `Swarm_mint_invite(w, ident, {Music:1})` and returns the `?Iz=` token, so a
+>    headless server can finally issue an invite from its OWN ledger. Usage after restart:
+>     `curl "http://localhost:9099/invite?token=<boot-token>"` → paste `invite` into eed's Door. This
+>      is the reliable path; it also makes the daemon a real always-on host rather than one that can
+>       serve music but never make a friend. Break-glass alternative unchanged: splice eed's already-
+>        signed `Pier` into `/music/.jamsend/account/7950…/toc.snap` and restart.
+>   Follow-up worth a look: the account mirror (`persist_account`, main.ts:864) throttles at
+>    `MIRROR_MS=20s` and fingerprints — a friend sealed then a crash <20s later is lost; and the izzes
+>     stash's durability under `DAEMON_STATE` deserves the same "settled ⇒ on disk" guarantee the human
+>      is asking for. Neither is eed's bug, but both are the reliability itch behind it.
+
 The daemon **boots, thinks, reads the wormhole, runs a Story Book to settle, and keeps a stable
  identity across restarts and across losing its keyfile** — all proven below, on 2026-08-07.
   It needs no npm install and no fake-indexeddb: persistence is a file-backed `dexie` alias (§3.2).

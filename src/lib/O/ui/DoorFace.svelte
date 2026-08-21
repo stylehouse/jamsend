@@ -118,6 +118,11 @@
             prepub: self?.sc?.prepub ? String(self.sc.prepub).slice(0, 8) : undefined,
             born: self?.sc?.born as string | undefined,
             newborn: !!self?.sc?.born && self.sc.born === today,
+            // 🎧 LISTENING-ONLY (MobilenoFSA_todo §0 #3): this browser can't open a folder, so it's a
+            //  radio terminal — and its identity is mortal (Dexie only) until Linked Devices travels
+            //   it.  Read live off H.c.listen_only (set in Housing's boot-role branch); the badge is
+            //    the one honest place that whisper lives.
+            listen_only: !!(H as any)?.c?.listen_only,
             door,
             friends,
             up,
@@ -213,6 +218,8 @@
         {/if}
         {#if face.prepub}<span class="df-pub">{face.prepub}</span>{/if}
         {#if face.newborn}<span class="df-born">✨ born today</span>{/if}
+        {#if face.listen_only}<span class="df-listen"
+            title="listening only — this browser can't open a music folder, so you're a radio terminal. Your identity lives only in this browser: clearing site data forgets you (linked devices will fix that).">🎧 listening only</span>{/if}
     </div>
     <!-- INVITE SITS ABOVE THE PIER LIST (the owner 2026-08-10) — it was at the bottom, under a list
          that grows, so the one verb a newcomer needs was the one thing that walked off the cell as
@@ -369,6 +376,9 @@
         0%, 100% { opacity: 1; }
         50%      { opacity: 0.45; }
     }
+    /* 🎧 the listening-only badge — a quiet, honest tag on the self line, not an alarm: the mode
+       works, it just can't hold a share, and hover carries the mortal-identity whisper. */
+    .df-listen { font-size: 9px; color: #8fd0e8; margin-left: 5px; cursor: help; pointer-events: auto; }
     .df-invite { font-size: 10px; margin-top: 3px; }
     .df-note { font-size: 9px; opacity: 0.7; font-style: italic; margin-top: 2px; }
     /* the friends ARE the app — they read at full size, not as a footnote ("friends list is

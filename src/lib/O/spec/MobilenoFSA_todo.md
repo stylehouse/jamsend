@@ -8,6 +8,19 @@ Split out of `Onboard_todo.md` 2026-08-15 (the owner: *"I'd like to handover mos
 
 ## 0. Get on with next
 
+**TO PRODUCTION — radio-only on Android (the owner, 2026-08-19: "at least it does radio").** The
+ wire is done (below): a phone visitor hits no folder wall, taps once for audio, is in. The push
+  needs three things, in order:
+  1. **THE release gate — verify on a real phone that a friend's stream actually PLAYS in
+     `listen_only`.** Unverified still. The concrete risk: no nav in this mode, so `rw-ops stay
+      "nav not ready"` — if any tune-in / jam-join path needs a nav WRITE, radio silently no-ops on
+       device while dev looks green. Field trip only; not settleable headless.
+  2. **Request persistent storage at boot** (`navigator.storage.persist()`) — one line, cheap
+     mitigation for "clear browsing data = identity death" before Linked Devices lands. Auto-granted
+      once PWA-installed.
+  3. **🎧 badge in Door + the mortal-identity whisper** — `H.c.listen_only` is read NOWHERE in the
+     UI today; the badge makes the mode legible and is where to warn the identity is mortal.
+
 **LANDED 2026-08-15 — listening-only mode, the wire half.** `Housing.svelte.ts` (the boot_role
  branch, `🎧 LISTENING-ONLY` comment): a plain Big*land visitor with no directory picker and no
   `c.book` gets `disk_gated` cleared, `H.c.listen_only = true`, and NO mount — the 83244ad6 shadow-
@@ -23,9 +36,10 @@ Split out of `Onboard_todo.md` 2026-08-15 (the owner: *"I'd like to handover mos
  setup on phones; instead a like that a linked desktop can later action. See §2 — most of the
   machinery already exists and is only ever called by a Book today.
 
-**THEN — LinkDevice** (§3, design ruled 2026-08-14): the live self-Invite ceremony that makes the
- wants actionable. The like-record is deliberately buildable BEFORE it (likes accrue locally now,
-  travel later).
+**THEN — Linked Devices** (§3, design ruled 2026-08-14; "Linked Devices" is Signal/WhatsApp's term
+ for it, adopted 2026-08-19): the live self-Invite ceremony that makes the wants actionable. Stays
+  PARKED below the radio push — the like-record is deliberately buildable BEFORE it (likes accrue
+   locally now, travel later).
 
 ## 1. Listening-only — what stands and what is owed
 
@@ -67,7 +81,9 @@ Split out of `Onboard_todo.md` 2026-08-15 (the owner: *"I'd like to handover mos
      merging (append-only events with `at` + device provenance merge trivially; a mutable
       "liked: yes/no" flag would not).
 
-## 3. LinkDevice — the self-Invite (design ruled 2026-08-14, moved from Onboard_todo)
+## 3. Linked Devices — the self-Invite (design ruled 2026-08-14, moved from Onboard_todo)
+
+*Named "Linked Devices" after Signal/WhatsApp (2026-08-19); "LinkDevice" below is the same thing.*
 
 Multi-device is EMBRACED; the transport is a live ceremony on the invite rails, never a static blob.
 

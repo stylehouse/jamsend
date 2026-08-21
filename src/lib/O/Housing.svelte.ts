@@ -2270,6 +2270,16 @@ export class House extends StorableHousing {
                 && typeof window !== 'undefined' && typeof (window as any).showDirectoryPicker !== 'function') {
                 H.top_House().c.disk_gated = false
                 H.top_House().c.listen_only = true
+                // MORTALITY MITIGATION (MobilenoFSA_todo §0 #2): a shareless listener's identity
+                //  lives only in this browser's Dexie — "clear browsing data" is key death until
+                //   Linked Devices (§3) can travel it.  Ask the browser to pin our storage: best-
+                //    effort in a plain tab, AUTO-granted once installed as a PWA.  Guarded on a
+                //     runtime .c flag (never snapped) so the idempotent call fires once per session,
+                //      not on every Wormhole tick this branch runs.
+                if (!H.top_House().c.persist_asked && typeof navigator !== 'undefined') {
+                    H.top_House().c.persist_asked = true
+                    try { (navigator as any).storage?.persist?.() } catch {}
+                }
                 return w.i({ see: '🎧 listening only — this browser cannot open a folder' })
             }
             H.top_House().c.disk_gated = true
