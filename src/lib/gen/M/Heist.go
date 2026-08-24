@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'c05ec895b4cd45db~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '17678cd07b040d7d~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2715,6 +2715,10 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         for (const pick of picks) {
             let ref = String(pick.sc.ref || pick.sc.id)
             if (pick.sc.landed) { landed = landed + 1; continue }
+            // GIVEN UP (2026-08-24, the 22,322-ask heist): a pick the source demonstrably cannot serve
+            //  wears sc.failed (Heist_pull_giveup below) — neither landed nor left, so the heist finishes
+            //   AROUND it (10/13 + a legible %pullfail row beats "NO PROGRESS" barking for a day).
+            if (pick.sc.failed) continue
             // a wedged pick (driven but nothing landing ~45s) is BENCHED 60s so one bad file can't hold the
             //  whole album hostage; skipped while benched, retried after.  A whole pass that drives NOTHING with
             //   picks left clears the benches below (never a permanent give-up).
@@ -2733,6 +2737,15 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
             let rec = pick.sc.blag ? this.Ra_rec_find(srcmir, { Record: 1, re: ref }) : this.Ra_rec_find(srcmir, { Record: 1, id: ref })
             if (!rec && !pick.sc.blag) rec = this.Ra_rec_find(srcmir, { Record: 1, re: ref })
             if (!rec || !(+(rec.sc.total || 0) > 0)) {
+                // BOUNDED, AT LAST (the owner 2026-08-24 "make robust", 22,322 asks in hand).  The 4s
+                //  ladder + the re-census heal below cover every TRANSIENT — a rebooted source, a lost
+                //   frame, a stale keep-id map.  What they cannot cover is a source that CAN NEVER answer
+                //    (its own console names it: `no native path`, `transcode STALLED`), and "never give
+                //     up" against that is an immortal ask loop that outlives the album by a day.  ~90
+                //      unanswered asks ≈ six minutes of ladder patience — an order past any heal this
+                //       file knows — hands the pick to Heist_pull_giveup (humdinger-gated: a Book keeps
+                //        the never-give-up reading and no fixture ever sees sc.failed).
+                if (+(pick.c.asks_out || 0) >= 90 && this.Heist_pull_giveup(keep, job, pick, String(pick.sc.path || ref).split('/').pop(), `${pick.c.asks_out} materialise-asks unanswered`)) continue
                 let plast = pick.c.ask_ts || 0
                 if (Date.now() - plast > 4000) {
                     pick.c.ask_ts = Date.now()
@@ -2925,6 +2938,13 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                 pick.c.bench_held = rheld
                 pick.c.bench_ts = tnow0
             } else if (pick.c.bench_ts && tnow0 - pick.c.bench_ts > 45000) {
+                // STRIKES (2026-08-24): the bench is deliberately not a give-up — but a pick frozen
+                //  through FIVE bench cycles (~9 min of 45s-frozen + 60s-off laps) is not wedged, it is
+                //   unservable, and the clear-all-benches pass below re-arms it forever.  bench_n
+                //    survives that clear on purpose; the give-up itself is humdinger-gated, so a Book
+                //     keeps the eternal bench exactly as recorded.
+                pick.c.bench_n = (+(pick.c.bench_n || 0)) + 1
+                if (pick.c.bench_n >= 5 && this.Heist_pull_giveup(keep, job, pick, rec.sc.title || ref, `frozen at ${rheld}/${rtot} through ${pick.c.bench_n} benches`)) continue
                 pick.c.bench_until = tnow0 + 60000
                 console.log(`⇊⚠ heist pick BENCHED 60s — ${rec.sc.title || ref} frozen ${rheld}/${rtot} (one stuck track won't hold the album)`)
             } else if (!pick.c.bench_ts) {
@@ -3055,6 +3075,29 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
     if (state === 'committing') {
         await this.Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route)
     }
+
+},
+// Heist_pull_giveup — the PULL-side twin of Heist_beat's land-throw quarantine: a pick the source
+//  demonstrably cannot serve (materialise-asks unanswered past every heal, or frozen through repeated
+//   benches) stops costing asks.  sc.failed is SNAPPED on purpose — a reload must not resurrect a
+//    dead 22,322-ask loop — and un/re-ticking the track in the cell mints a fresh %Pick, which IS the
+//     retry.  A legible %pullfail row lands on the Jam job beside the landfail rows, so the ledger
+//      says what was not gotten and why, not just a shorter count.  LIVE PAGES ONLY (humdinger):
+//       Books keep the never-give-up reading and sc.failed never reaches a fixture.
+Heist_pull_giveup(keep, job, pick, tune, why) {
+    if (!this.top_House().c.humdinger) return 0
+    console.log(`⇊☠ pull gave up — "${tune}": ${why} — the SOURCE cannot serve it (its console names the cause: ◈ no native path | transcode STALLED); un-tick and re-tick the track to retry`)
+    pick.sc.failed = 1
+    keep.sc.pullfails = +(keep.sc.pullfails || 0) + 1
+    if (job) {
+        let row = job.i({ pullfail: 1, tune: String(tune || ''), why: String(why).slice(0, 120) })
+        row.c.up = job
+    }
+    keep.bump()
+    if (typeof this.Radio_trace === 'function') {
+        this.Radio_trace(null, { ev: 'pull-giveup', id: String(pick.sc.ref || pick.sc.id || '').slice(0, 8), why: String(why).slice(0, 60) })
+    }
+    return 1
 
 },
 // Heist_keep_default_pick — the DEFAULT "keep what you're hearing": once the folder is described, ensure a

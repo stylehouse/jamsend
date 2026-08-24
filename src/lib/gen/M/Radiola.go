@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radiola(): string { return '8786e42c3f3d4c97' },
+    Ghostmeta_Ghost_M_Radiola(): string { return '8786e42c3f3d4c97~g1' },
 
 //#region radiola
 // Radiola — the music-piracy spine, reborn on Housing+req (spec: src/lib/O/spec/Radio_todo.md).

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '90f5a012e6fc8a1e~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '490a808cd54e8ad8~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -576,8 +576,20 @@ async Radio_pump_tick(radio, era) {
             //   accepts 'starved') but the face stops LYING 'playing' through a dead-silent dropout.
             if (!radio.c.starved_at) {
                 radio.c.starved_at = now
-                if (radio.sc.Radio === 'playing') this.Radio_state(radio, 'starved')
-                this.Radio_trace(radio, { ev: 'starve', seq: radio.c.seq, wire: radio.c.rec && radio.c.rec.c.from ? 1 : 0 })
+                // SUBDUE THE EXPECTED OFF-TAPE (the owner 2026-08-24: "subdue the expected 'off the
+                //  tape' at the end of the song").  tape_out is the KNOWN end-of-track shape — the
+                //   endgame below turns the dial in ~1.5s and the next track is primed at the seam —
+                //    so flashing the face 'starved' (the '!tape' note) at every ordinary track end
+                //     teaches the eye to ignore the one confession that matters.  Only a HOLE (chunks
+                //      standing beyond) flips the face; a late tail chunk turning tape_out off re-arms
+                //       the flip below on the next pass.  Books unaffected: tape_out is already 0
+                //        without humdinger, so a fixture's face flips exactly as recorded.
+                if (!tape_out && radio.sc.Radio === 'playing') this.Radio_state(radio, 'starved')
+                this.Radio_trace(radio, { ev: 'starve', seq: radio.c.seq, tape: tape_out, wire: radio.c.rec && radio.c.rec.c.from ? 1 : 0 })
+            } else if (!tape_out && radio.sc.Radio === 'playing') {
+                // the suppressed flip re-arms: a tail chunk landed after all, so this was a real
+                //  mid-track hole wearing the endgame's clothes for a pass — confess it now.
+                this.Radio_state(radio, 'starved')
             }
             if (tape_out && now - radio.c.starved_at > 1.5) {
                 this.Radio_trace(radio, { ev: 'tape-out', seq: radio.c.seq, left: total - radio.c.seq })

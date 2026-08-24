@@ -19,6 +19,35 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ## 0. Latest handover — fold into the sections below as it's absorbed
 
+### 2026-08-24 — THE LOOP THAT NEVER GIVES UP, AND THE FILENAME THAT CAN NEVER SERVE
+
+The owner, log in hand: `⇊☠ heist NO PROGRESS 93905s — 10/13 landed after 22322 asks`, the daemon
+ cycling `parked want ABANDONED → transcode STALLED` on one id forever, and its own heartbeat naming
+  the cause: `↳ no native path for /0 themes/…/06 - Manny Oque…`.  One root, two missing give-ups:
+
+- **ROOT — the U+FFFD round trip** (`scripts/NodeWormholeNav.ts`): `readdirSync` decodes latin-1
+   filename bytes to U+FFFD, and that string can never round-trip to disk — `existsSync` misses,
+    `native_path` nulls, the transcode never starts, and NEITHER side ever gives up.  Fixed at the
+     nav: `trueBytes()` re-walks a missing U+FFFD path in buffer mode matching each mangled segment
+      by its own lossy decode; readers (`read_file`/`bin_read`/`read_range`) take the byte path
+       directly, `native_path` hands ffmpeg a clean-named symlink under `overlay/.mangled/`.
+        Proven with a real 0xF3/0xE9 filename (scratchpad nav_rescue_test).  **DAEMON NEEDS RESTART.**
+- **SINK GIVE-UP** (`Heist.g` → `gen/M/Heist.go @ 362643c`): `Heist_pull_giveup` — the pull-side twin
+   of the land-throw quarantine.  Two gates: ≥90 unanswered materialise-asks (~6min of the 4s ladder),
+    or 5 bench strikes (`pick.c.bench_n`, deliberately surviving the clear-all-benches pass).  The pick
+     wears snapped `sc.failed` (a reload must not resurrect the loop; un/re-tick = retry), a `%pullfail`
+      row lands on the Jam job beside the landfail rows, and the heist finishes AROUND it.  Humdinger-
+       gated: Books keep never-give-up.
+- **`!tape` SUBDUED at the expected end** (`Radio.g` → `gen/M/Radio.go @ 237237c`): the starve-start
+   face flip to 'starved' is now skipped when `tape_out` (the KNOWN end shape) — only a real HOLE
+    confesses; a late tail chunk re-arms the flip next pass.  `starve` trace now carries `tape:0|1`.
+     Books unaffected (tape_out is 0 without humdinger).
+- **NOT DONE**: a source-side NACK for a want it can never serve (the honest fix for the
+   ABANDONED→re-ask cycle when the rescue DOESN'T apply — genuinely missing/unreadable files,
+    `failed=38` in the daemon census).  `Repli_recv_missed`/`ra_missed` is the existing shape to
+     extend.  Also: Book gate (MusuBerth/MusuHeist) still pending — no runner tab was up; changes
+      are humdinger-gated so fixtures should hold, but run them before trusting.
+
 ### 2026-08-22 — THE SEAM: tape-out endgame + `%Mag:'Streams'` (the whole-Record order) — ✓ LIVE-CONFIRMED
 
 The owner's asks, one sitting: *"at the very end of each track we say 'ran out of tape'… this

@@ -15,11 +15,12 @@
 //    read_file / write_file / bin_read / bin_write / bin_append / read_range / dir / dir_at — kept at PARITY with
 //     the browser WormholeNav / OpfsOverlayNav / RemoteWormholeNav so the harness is never a partial
 //      nav that a binary-writing Book trips over headlessly.
-import { readFileSync, writeFileSync, appendFileSync, mkdirSync, readdirSync, existsSync, statSync, openSync, readSync, closeSync, chmodSync, unlinkSync } from 'node:fs'
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, readdirSync, existsSync, statSync, openSync, readSync, closeSync, chmodSync, unlinkSync, symlinkSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import path from 'node:path'
 
-const isDirAt = (p: string) => existsSync(p) && statSync(p).isDirectory()
-const isFileAt = (p: string) => existsSync(p) && statSync(p).isFile()
+const isDirAt = (p: string | Buffer) => existsSync(p) && statSync(p).isDirectory()
+const isFileAt = (p: string | Buffer) => existsSync(p) && statSync(p).isFile()
 
 export class NodeWormholeNav {
     base: string       // the real repo root — read-only fallback
@@ -93,6 +94,46 @@ export class NodeWormholeNav {
         return [this.confine(this.overlay, rel), this.confine(this.base, rel)]
     }
 
+    // trueBytes — the MANGLED-NAME RESCUE (2026-08-24, the salsa album that could never serve).
+    //  readdirSync decodes filenames as UTF-8, so a latin-1 name on disk (`Colón` as byte 0xF3) comes
+    //   back with U+FFFD standing in for the raw byte — and that STRING can never round-trip: re-encoding
+    //    U+FFFD gives EF BF BD, not 0xF3, so existsSync says no such file, native_path says `no native
+    //     path`, the transcode never starts, and the sink re-asks forever (measured: 22,322 asks against
+    //      three tracks of one album).  The name in the CATALOG is the lossy decode, so the fix is to
+    //       finish the round trip properly: re-walk the missing path segment-by-segment in BUFFER mode
+    //        and match each mangled segment by its OWN lossy decode — the U+FFFD positions line up
+    //         exactly, because the candidate's decode goes through the same replacement.  Returns the
+    //          TRUE byte path, which every node fs call accepts.  Two entries decaying to the same lossy
+    //           name would be ambiguous (first wins); clean segments pass through untouched, and a rel
+    //            with no U+FFFD at all pays nothing — one indexOf.
+    private trueBytes(abs: string): Buffer | null {
+        if (!abs.includes('�')) return null
+        const root = path.parse(abs).root
+        let cur = Buffer.from(root)
+        for (const seg of abs.slice(root.length).split(path.sep)) {
+            if (!seg) continue
+            const sep = cur[cur.length - 1] === 0x2f ? Buffer.alloc(0) : Buffer.from('/')
+            if (!seg.includes('�')) { cur = Buffer.concat([cur, sep, Buffer.from(seg, 'utf8')]); continue }
+            let hit: Buffer | undefined
+            try { hit = readdirSync(cur, { encoding: 'buffer' }).find(e => e.toString('utf8') === seg) } catch { return null }
+            if (!hit) return null
+            cur = Buffer.concat([cur, sep, hit])
+        }
+        return existsSync(cur) ? cur : null
+    }
+
+    // readCandidates — readAbs plus the rescue: a candidate that misses AND carries U+FFFD contributes
+    //  its true byte path, so every reader below serves a mangled-name file exactly like a clean one.
+    private readCandidates(rel: string): (string | Buffer)[] {
+        const out: (string | Buffer)[] = []
+        for (const p of this.readAbs(rel)) {
+            if (existsSync(p)) { out.push(p); continue }
+            const b = this.trueBytes(p)
+            if (b) out.push(b)
+        }
+        return out
+    }
+
     // native_path — the one PUBLIC escape hatch from rel-space to a real filesystem path, for the
     //  single case that genuinely needs it: handing a file to a NATIVE TOOL we spawn (ffmpeg, for
     //   the loudness/transcode seam — Daemon_todo §2.1/§2.2).  Reading the bytes and piping them to
@@ -104,6 +145,24 @@ export class NodeWormholeNav {
     //     the overlay, never to one the caller named.
     native_path(rel: string): string | null {
         for (const abs of this.readAbs(rel)) if (existsSync(abs)) return abs
+        // A rescued byte path cannot be RETURNED here — the caller hands this string to a spawned
+        //  tool's argv, which re-encodes it as UTF-8 and mangles the raw byte right back.  So point a
+        //   clean-named symlink at the true bytes under the overlay and hand ffmpeg the link; the
+        //    kernel resolves the raw target bytes and the tool never knows.  Stable name (hash of the
+        //     byte path + the real extension, kept for the eye), created once, existsSync(link)
+        //      follows the link so a dangling one (collection unmounted) refuses like any miss.
+        for (const abs of this.readAbs(rel)) {
+            const b = this.trueBytes(abs)
+            if (!b) continue
+            const ext = (String(rel).match(/\.[A-Za-z0-9]{1,5}$/) || [''])[0]
+            const dir = path.join(this.overlay, '.mangled')
+            const link = path.join(dir, createHash('sha256').update(b).digest('hex').slice(0, 16) + ext)
+            try {
+                mkdirSync(dir, { recursive: true })
+                if (!existsSync(link)) symlinkSync(b, link)
+                if (existsSync(link)) return link
+            } catch { /* fall through — a refusal beats a wrong path */ }
+        }
         return null
     }
 
@@ -193,7 +252,7 @@ export class NodeWormholeNav {
 
     async read_file(dir_path: string, filename: string): Promise<string | null> {
         const rel = [dir_path, filename].filter(Boolean).join('/')
-        for (const p of this.readAbs(rel)) {   // overlay shadows base; a mount answers alone
+        for (const p of this.readCandidates(rel)) {   // overlay shadows base; a mount answers alone
             if (isFileAt(p)) return readFileSync(p, 'utf8')
         }
         return null
@@ -209,7 +268,7 @@ export class NodeWormholeNav {
     // bin_read — read_file's binary twin: the raw bytes (no utf8 decode).  Overlay shadows base, same fall-through.
     async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {
         const rel = [dir_path, filename].filter(Boolean).join('/')
-        for (const p of this.readAbs(rel)) {   // overlay shadows base; a mount answers alone
+        for (const p of this.readCandidates(rel)) {   // overlay shadows base; a mount answers alone
             if (isFileAt(p)) { const b = readFileSync(p); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer }
         }
         return null
@@ -240,7 +299,7 @@ export class NodeWormholeNav {
     //  the whole file — a real fd read of just the window + the total size, matching the browser navs.
     async read_range(dir_path: string, filename: string, offset: number, len?: number): Promise<{ buffer: ArrayBuffer, size: number } | null> {
         const rel = [dir_path, filename].filter(Boolean).join('/')
-        for (const p of this.readAbs(rel)) {   // overlay shadows base; a mount answers alone
+        for (const p of this.readCandidates(rel)) {   // overlay shadows base; a mount answers alone
             if (!isFileAt(p)) continue
             const size = statSync(p).size
             const end = len == null ? size : Math.min(size, offset + len)
