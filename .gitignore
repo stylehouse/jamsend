@@ -51,3 +51,4 @@ wormhole/_trace/
 jamserve/run.log
 jamserve/*.log
 jamsend-appcache
+jamserve

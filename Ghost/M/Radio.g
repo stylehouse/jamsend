@@ -110,6 +110,16 @@ Radio_trace(radio, entry):
     let CAP = +(M.c.supply_trace_cap || 1200)
     if (log.length > CAP) log.splice(0, log.length - CAP)
     M.c.supply_trace = log
+    // SPEAK THE SEAM (the owner 2026-08-22, watching for track-end→track-start continuity: *"I can't
+    //  see anything convincing in the console"*).  The ring is silent by doctrine and stays so — but
+    //   the track seam is exactly the moment a human sits watching a console for, so the seam marks
+    //    ECHO there on END-USER pages only (humdinger: a Book's console stays byte-identical, and the
+    //     per-chunk electrodes stay out of the set so this can never become the 2026-08-06 burn).
+    if (M.c.humdinger) {
+        let SPEAK = { 'dial': 1, 'open': 1, 'primed': 1, 'primed-open': 1, 'primed-fin': 1,
+            'primed-fin-use': 1, 'prime-drop': 1, 'starve': 1, 'unstarve': 1, 'tape-out': 1 }
+        if (SPEAK[entry.ev]) console.log('📻⟫ ' + entry.ev, JSON.stringify(entry))
+    }
 //#endregion
 
 //#region controls — what the face's buttons call (sync entries; all real work detaches)

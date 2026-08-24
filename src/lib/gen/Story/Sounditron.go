@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '62abc105ccc67605~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '73b293bd25647102~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -278,7 +278,7 @@ Sounditron_glass(w) {
 //    so the trickle re-commissions when the MusuThem set GROWS.  Re-commission is idempotent for gear
 //     already watched (watch_c dedups per (C, OWNER), Vyto.g) — it just adds the new friend crate.  Returns
 //      1 once dispatched, 0 when the organs aren't ensured yet (caller retries, never latches).
-Sounditron_commission(w) {
+Sounditron_commission(w) { const H = this;
     let SH = this.up ?? this.top_House()
     if (!SH) return 0
     let organs = []
@@ -811,7 +811,18 @@ Sounditron_commission(w) {
         if (focusOrgans.length) organs = focusOrgans
     }
     if (!organs.length) return 0
-    if (!SH.o({ A: 'Vyto' }).length) SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
+    // THE RE-MINT TELL (2026-08-23, the vanish hunt): this guard firing on any commission but the
+    //  FIRST means the standing glass went missing — either the A:Vyto was dropped (nothing in live
+    //   code does), or `this.up` was lost and SH silently became a DIFFERENT house, stranding the old
+    //    glass unreachable while a bare twin mints here.  That bare twin IS the "whole UI vanished to
+    //     tinted cells" the owner saw: a fresh w has no scan history (mirror re-mints at gen 1) and
+    //      draws faceless until the next commission-triggering gesture.  So say WHICH house and
+    //       whether .up was the fallback — the one line that turns the next vanish into a diagnosis.
+    if (!SH.o({ A: 'Vyto' }).length) {
+        if (this.c.glass_stood) console.log('◈⚠ Vyto GLASS RE-MINT — A:Vyto missing on SH=' + String(SH.name || SH.sc?.H || '?') + (this.up ? ' (up held)' : ' (up LOST — SH fell back to top_House)') + ' — the standing glass went unreachable; a bare twin mints now')
+        SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
+    }
+    this.c.glass_stood = 1
     let commission = new TheC({ c: {}, sc: { Scannable: organs[0], client_w: w, grapples: organs } })
     // tell the glass it is plain, so it draws the TYPOGRAPHIC surface rather than waiting for faces
     //  that are never coming.  Carried like foamereo (commission → w.sc), so a capture can see which

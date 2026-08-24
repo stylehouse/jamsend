@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '40ba61ce81896716~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '90f5a012e6fc8a1e~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -126,6 +126,16 @@ Radio_trace(radio, entry) {
     let CAP = +(M.c.supply_trace_cap || 1200)
     if (log.length > CAP) log.splice(0, log.length - CAP)
     M.c.supply_trace = log
+    // SPEAK THE SEAM (the owner 2026-08-22, watching for track-end→track-start continuity: *"I can't
+    //  see anything convincing in the console"*).  The ring is silent by doctrine and stays so — but
+    //   the track seam is exactly the moment a human sits watching a console for, so the seam marks
+    //    ECHO there on END-USER pages only (humdinger: a Book's console stays byte-identical, and the
+    //     per-chunk electrodes stay out of the set so this can never become the 2026-08-06 burn).
+    if (M.c.humdinger) {
+        let SPEAK = { 'dial': 1, 'open': 1, 'primed': 1, 'primed-open': 1, 'primed-fin': 1,
+            'primed-fin-use': 1, 'prime-drop': 1, 'starve': 1, 'unstarve': 1, 'tape-out': 1 }
+        if (SPEAK[entry.ev]) console.log('📻⟫ ' + entry.ev, JSON.stringify(entry))
+    }
 },
 //#endregion
 
@@ -539,6 +549,27 @@ async Radio_pump_tick(radio, era) {
     // a starved hole never stalls the radio for long: past the grace, SPLICE over it (an honest
     //  drop — the show goes on; the decoder re-opens dirty on the far side, real dropout sound)
     if (radio.c.seq < total && m.bytes[radio.c.seq] == null) {
+        // RAN OUT OF TAPE vs A HOLE (the owner 2026-08-21: *"at the very end of each track we seem to
+        //  say 'ran out of tape' ... this particular case we know is coming already"*).  A mid-track
+        //   hole has standing chunks BEYOND it — bytes arrived out of order, the splice reaches them
+        //    and the show goes on, and the 6s grace is real patience for a want in flight.  But when
+        //     NOTHING stands between here and the end of the track, the missing run IS the end: the
+        //      tail was never made (a demand transcode that stopped short, a preview-capped offer) and
+        //       sitting the full grace, then splicing chunk-by-chunk through the void, was the many
+        //        seconds of dead air between every pair of tracks.  So the endgame gets a SHORT grace
+        //         and then jumps to the frontier — the end branch below drains and advances on this
+        //          same look, and the primed next track (Radio_prime) opens right at the seam.
+        //  ONLY when nothing later stands: a scan, not a guess — one late tail chunk landing makes
+        //   `later` true and restores the full 6s patience for it.
+        //  LIVE PAGES ONLY (humdinger): this moves WHEN the advance happens off a wall-clock grace,
+        //   and a Book must keep the recorded splice cadence exactly.
+        let later = 0
+        let s2 = radio.c.seq + 1
+        while (s2 < total) {
+            if (m.bytes[s2] != null) { later = 1; break }
+            s2 = s2 + 1
+        }
+        let tape_out = !later && this.top_House().c.humdinger ? 1 : 0
         if ((radio.c.end || 0) < now + 1) {
             // STALLING (silent): the chunk we need is missing AND the decoded timeline has run out.  Mark
             //  the radio 'starved' the instant the grace starts (#2) — the pump keeps running (its guard
@@ -548,7 +579,11 @@ async Radio_pump_tick(radio, era) {
                 if (radio.sc.Radio === 'playing') this.Radio_state(radio, 'starved')
                 this.Radio_trace(radio, { ev: 'starve', seq: radio.c.seq, wire: radio.c.rec && radio.c.rec.c.from ? 1 : 0 })
             }
-            if (now - radio.c.starved_at > 6) {
+            if (tape_out && now - radio.c.starved_at > 1.5) {
+                this.Radio_trace(radio, { ev: 'tape-out', seq: radio.c.seq, left: total - radio.c.seq })
+                radio.c.seq = total
+                radio.bump()
+            } else if (now - radio.c.starved_at > 6) {
                 radio.c.seq = radio.c.seq + 1
                 radio.sc.drops = (+(radio.sc.drops || 0)) + 1
                 if (radio.c.dec) {
@@ -612,7 +647,13 @@ async Radio_pump_tick(radio, era) {
     // KEEP ONE READY.  Only while the timeline is comfortable (>4s decoded ahead), so priming never
     //  competes for CPU with the track actually playing — the next track's readiness must never be
     //   the reason this one stutters.  Cheap when already primed: two property reads.
-    if (((radio.c.end || 0) - now) > 4) await this.Radio_prime(radio, era)
+    if (((radio.c.end || 0) - now) > 4) {
+        await this.Radio_prime(radio, era)
+        if (radio.c.era !== era) return
+        // …and FULFIL the standing order behind the same comfort gate: one head-kick or transcode
+        //  step per pass toward the ordered record standing whole (detached — the pump never waits).
+        this.Radio_stream_ahead(radio, era).then((r) => 0).catch((er) => 0)
+    }
     if (radio.c.era !== era) return
     this.Radio_pump_soon(radio, era, 400)
 
@@ -653,20 +694,135 @@ async Radio_pump_tick(radio, era) {
 // Radio_peek_next — WHICH RECORD THE DIAL WILL PICK, without picking it.  Radio_dial consumes the
 //  lineup head (dropping cards as it walks), so priming cannot just call it — that would eat the
 //   programme.  This is the same walk, read-only: the first standing card whose record has not been
-//    heard this sitting.  null when the lineup is empty (nothing to prime; the dial will fall through
-//     to its own ladder and the prime is simply skipped that time).
+//    heard this sitting.
+//  …AND THEN THE DIAL'S OWN LADDER, because the lineup alone was a dead letter (2026-08-21): on a
+//   live tab `Mag:Lineup` has ZERO Card children (measured `lu=1 cards=0`, see Radio_head_ahead's
+//    scars) — so peek always answered none, Radio_prime never primed, and every track seam paid the
+//     cold-decode lag prime was built to remove.  So when the lineup is silent, peek walks the same
+//      pool the dial's fallback ladder walks (friend crates, or the own shelf behind sc.own) and
+//       places the pick as an ORDER on `%Mag:'Streams'` (the owner 2026-08-21: *"order the
+//        whole-Record on a special streams Mag"*) — a referring %Card,id beside the Lineup's own
+//         idiom, so the coming track is LEGIBLE in the glass and the snap, not a runtime pointer.
+//        The dial then CONSUMES that order (its first fallback rung), so the random draw happens
+//         once, at peek time — peek and dial cannot disagree, which is the whole point of fixing
+//          the start seq at prime time all over again, one level up.
+//  The Mag is only ever minted here, and peek is only called by Radio_prime, which is
+//   humdinger-gated — so a Book never grows a Streams Mag and the dial's rung is inert there.
+//  A standing order re-answers as long as it is still honest (unheard, playable, same source
+//   policy); a stale one is dropped and re-drawn.
 Radio_peek_next(radio) {
     let w = radio.c.w
-    let lu = w.o({ Mag: 'Lineup' })[0]
-    if (!lu) return null
     let heard = radio.c.heard || {}
-    for (const card of lu.o({ Card: 1 })) {
-        let rec = card.c.rec
-        if (!rec) continue
-        if (heard[String(rec.sc.id)]) continue
-        return rec
+    let lu = w.o({ Mag: 'Lineup' })[0]
+    if (lu) {
+        for (const card of lu.o({ Card: 1 })) {
+            let rec = card.c.rec
+            if (!rec) continue
+            if (heard[String(rec.sc.id)]) continue
+            return rec
+        }
     }
-    return null
+    let own = radio.sc.own ? 1 : 0
+    let st = w.o({ Mag: 'Streams' })[0]
+    if (st) {
+        for (const oc of st.o({ Card: 1 })) {
+            let orec = oc.c.rec
+            if (orec && (oc.sc.own ? 1 : 0) === own && !heard[String(orec.sc.id)] && this.Radio_playable(orec)) return orec
+            st.drop(oc)
+            st.bump()
+        }
+    }
+    let rec = null
+    if (own) {
+        // the own shelf, PROBED not minted (Ra_home_self is an oai — the Radio_head_ahead scar):
+        //  Ra_dial_next is a pure read and the same picker the dial's own rung uses.
+        let pub = (this.Radio_pub ? this.Radio_pub(w) : '') || ''
+        if (!pub) return null
+        let home = w.o({ MusuSelf: 1, pub: pub })[0]
+        let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
+        if (!shelf) return null
+        rec = this.Ra_dial_next(w, shelf, { skip_ids: heard })
+    } else {
+        // peek=1: the same draw the dial would make, minus the aim lock — aiming is "who we are
+        //  listening WITH" and belongs to the moment the pick is actually consumed (Radio_dial).
+        rec = this.Radio_dial_pool(w, radio, 0, 1)
+    }
+    if (!rec) return null
+    this.Radio_stream_order(radio, rec, own)
+    return rec
+
+},
+// Radio_stream_order — the STANDING ORDER: mint `%Mag:'Streams' › %Card,id` naming the record the
+//  dial will play next, so the machinery ahead of the seam (Radio_stream_ahead, Radio_prime) and
+//   any human looking at the glass all read the same coming attraction.  One order at a time: peek
+//    re-answers from the standing card and only draws fresh when it went stale, so the Mag never
+//     deepens past a card or two.  `sc.own` rides 1-or-absent (the snapped-boolean rule) and says
+//      which side of the source-exclusive dial drew it; `sc.by` carries the friend pub the same way
+//       a Lineup card does, so Radio_open can still name whose music it is after the card drops.
+Radio_stream_order(radio, rec, own) {
+    let w = radio.c.w
+    let st = w.o({ Mag: 'Streams' })[0]
+    if (!st) {
+        st = w.i({ Mag: 'Streams', crew: 'Radio' })
+        st.c.up = w
+    }
+    st.c.w = w
+    let card = st.o({ Card: 1, id: String(rec.sc.id) })[0]
+    if (!card) card = st.i({ Card: 1, id: String(rec.sc.id) })
+    card.c.up = st
+    card.c.rec = rec
+    if (own) card.sc.own = 1
+    let by = String(rec.c.from_pub || rec.c.play_by || '')
+    if (!own && by) card.sc.by = by
+    st.bump()
+
+},
+// Radio_stream_ahead — FULFIL the standing order: bring the ordered record WHOLE to standing while
+//  the current track still plays, so the seam pays no dig.  Runs beside Radio_prime, behind the same
+//   >4s-of-comfort gate — the next track's readiness must never be why this one stutters — and
+//    stands down entirely while piers are pulling (the head_ahead discipline).
+//  What "whole" costs depends on the side:
+//   · LOCAL — the head encode (Ra_head_ensure) plus the tail transcode
+//      (Ra_transcode_ensure|advance), exactly the producers Radio_supply_go drives for the PLAYING
+//       record; one ensure+advance step per call, so the pump's cadence is the throttle.
+//   · WIRE — the head already rides the restock beat's opus_head ask; the tail-ahead-of-play want
+//      driver does not exist yet (see Radio_todo — the priced §"%Stream ORDER" piece), so a friend
+//       record's order fulfils its head and leaves the tail to the playhead's own want window.
+//  Single-flighted (c.streaming_fly) and era-guarded: a skip mid-fulfilment abandons cleanly.
+//  A Book never has a Streams Mag (peek is prime-gated), so this is inert in a driven world.
+async Radio_stream_ahead(radio, era) {
+    let w = radio.c.w
+    if (!w || radio.c.streaming_fly) return
+    let st = w.o({ Mag: 'Streams' })[0]
+    let card = st ? st.o({ Card: 1 })[0] : null
+    let rec = card ? card.c.rec : null
+    if (!rec) return
+    if (typeof this.Ra_piers_pulling === 'function' && this.Ra_piers_pulling(w)) return
+    if (!rec.c.from && +(rec.sc.pv_off || 0) > 0 && this.Ra_head_ensure && !this.Ra_head_whole(rec)) {
+        this.Ra_head_ensure(w, rec).then((r) => 0).catch((er) => 0)
+    }
+    if (rec.c.from) return
+    let total = +(rec.sc.total || 0)
+    let P = +(rec.sc.preview || 0)
+    if (!(total > P)) return
+    let m = this.Radio_map(rec)
+    let missing = 0
+    let s = P
+    while (s < total) {
+        if (m.bytes[s] == null) {
+            missing = 1
+            break
+        }
+        s = s + 1
+    }
+    if (!missing) return
+    radio.c.streaming_fly = 1
+    let ra = null
+    try { ra = await this.Ra_transcode_ensure(w, rec) } catch (er) { ra = null }
+    if (ra && radio.c.era === era) {
+        try { await this.Ra_transcode_advance(w, rec) } catch (er) { 0 }
+    }
+    radio.c.streaming_fly = 0
 
 },
 // Radio_prime — KEEP THE NEXT TRACK READY TO GO (the owner 2026-08-07: "try to always have one very
@@ -689,9 +845,19 @@ async Radio_prime(radio, era) {
     //    A Book must see the plain deterministic path or its recorded snaps stop matching — measured
     //     the hard way, MusuHeist going red the first time this ran ungated.
     if (!this.top_House().c.humdinger) return
-    if (radio.c.priming || radio.c.ready) return
+    if (radio.c.priming) return
     let rec = this.Radio_peek_next(radio)
     if (!rec || !rec.sc.id) return
+    // THE SKIP SHAPE IS THE STANDING BET — see the 2026-08-12 reasoning below — but it is no longer
+    //  the ONLY prime.  The finish stopped being coverable by its 2s of slack once the head landed:
+    //   a finish-onto-a-whole-head opens with hbase>0, the skip-shape prime gets DROPPED for it
+    //    (prime-drop), and the cold decode plus the tape-out grind at the old track's tail was the
+    //     seconds of dead air the owner heard between every pair of tracks (2026-08-21: "get the
+    //      next track really ready").  So: near the end — when the coming transition is KNOWN to be
+    //       a finish unless a key intervenes — ALSO prime the finish shape (head chunk 0, the hbase
+    //        Radio_hbase will answer for went='finish').  Both primes ride the same peeked record;
+    //         Radio_open still re-decides from policy and spends whichever shape matches, so neither
+    //          can be handed the wrong timeline.
     // ALWAYS PRIME THE SKIP SHAPE — never the head (2026-08-12, when the rule became finish-only).
     //  Prime runs while the PREVIOUS track is still playing, so it cannot know whether the coming
     //   transition will be a finish or a skip, and the two now want different first bytes: a finish
@@ -707,31 +873,68 @@ async Radio_prime(radio, era) {
     //    skipped open agree exactly, with no shared latch to keep in step.  Radio_open re-decides
     //     from policy and DROPS a prime whose hbase disagrees, so a finish can never be handed the
     //      mid-song PCM by accident.
-    let hbase = 0
-    let m = this.Radio_map(rec, hbase)
-    let start = this.Radio_start_seq(radio, rec)
-    if (m.bytes[start] == null) return
-    let nch = Math.min(2, +(rec.sc.nch || 1))
-    let dec = this.Radio_dec_open(nch)
-    if (!dec) return
-    radio.c.priming = 1
-    let PRIME = 3
-    let s = start
-    let fed = 0
-    while (fed < PRIME && m.bytes[s] != null) {
-        this.Radio_dec_feed(dec, this.Ra_chunk_packets(m.bytes[s]))
-        s = s + 1
-        fed = fed + 1
+    if (!radio.c.ready) {
+        let hbase = 0
+        let m = this.Radio_map(rec, hbase)
+        let start = this.Radio_start_seq(radio, rec)
+        if (m.bytes[start] == null) return
+        let nch = Math.min(2, +(rec.sc.nch || 1))
+        let dec = this.Radio_dec_open(nch)
+        if (!dec) return
+        radio.c.priming = 1
+        let PRIME = 3
+        let s = start
+        let fed = 0
+        while (fed < PRIME && m.bytes[s] != null) {
+            this.Radio_dec_feed(dec, this.Ra_chunk_packets(m.bytes[s]))
+            s = s + 1
+            fed = fed + 1
+        }
+        let got = null
+        try { got = await this.Radio_dec_drain(dec) } catch (er) { got = null }
+        this.Radio_dec_close(dec)
+        radio.c.priming = 0
+        if (radio.c.era !== era) return
+        if (!got || !(got.n > 0)) return
+        radio.c.ready = { id: String(rec.sc.id), start: start, seq: s, nch: nch, hbase: hbase,
+            pre: +(m.heads[start] || 0), at0: start * (+(rec.sc.seg_secs || 2)), got: got }
+        this.Radio_trace(radio, { ev: 'primed', id: String(rec.sc.id).slice(0, 8), start: start, chunks: fed })
+        return
     }
-    let got = null
-    try { got = await this.Radio_dec_drain(dec) } catch (er) { got = null }
-    this.Radio_dec_close(dec)
+    // the finish shape, inside the endgame window only.  Stale-ready first: if the peek has moved on
+    //  (the pool changed under us), let the open drop the stale skip prime and re-prime fresh next
+    //   pass rather than priming a finish for a record the skip prime disagrees with.
+    if (radio.c.ready.id !== String(rec.sc.id)) return
+    if (radio.c.ready_fin && radio.c.ready_fin.id === String(rec.sc.id)) return
+    let AC = radio.c.gat ? radio.c.gat.AC : null
+    if (!AC) return
+    if (((radio.c.end || 0) - AC.currentTime) > 12) return
+    // headless record ⇒ the finish shape IS the skip shape (hbase 0 both ways); ready covers it.
+    let hb = (this.Ra_head_whole && this.Ra_head_whole(rec)) ? +(rec.sc.pv_off || 0) : 0
+    if (!(hb > 0)) return
+    let mf = this.Radio_map(rec, hb)
+    if (mf.bytes[0] == null) return
+    let nchf = Math.min(2, +(rec.sc.nch || 1))
+    let decf = this.Radio_dec_open(nchf)
+    if (!decf) return
+    radio.c.priming = 1
+    let PRIMEF = 3
+    let sf = 0
+    let fedf = 0
+    while (fedf < PRIMEF && mf.bytes[sf] != null) {
+        this.Radio_dec_feed(decf, this.Ra_chunk_packets(mf.bytes[sf]))
+        sf = sf + 1
+        fedf = fedf + 1
+    }
+    let gotf = null
+    try { gotf = await this.Radio_dec_drain(decf) } catch (er) { gotf = null }
+    this.Radio_dec_close(decf)
     radio.c.priming = 0
     if (radio.c.era !== era) return
-    if (!got || !(got.n > 0)) return
-    radio.c.ready = { id: String(rec.sc.id), start: start, seq: s, nch: nch, hbase: hbase,
-        pre: +(m.heads[start] || 0), at0: start * (+(rec.sc.seg_secs || 2)), got: got }
-    this.Radio_trace(radio, { ev: 'primed', id: String(rec.sc.id).slice(0, 8), start: start, chunks: fed })
+    if (!gotf || !(gotf.n > 0)) return
+    radio.c.ready_fin = { id: String(rec.sc.id), start: 0, seq: sf, nch: nchf, hbase: hb,
+        pre: +(mf.heads[0] || 0), at0: 0, got: gotf }
+    this.Radio_trace(radio, { ev: 'primed-fin', id: String(rec.sc.id).slice(0, 8), hbase: hb, chunks: fedf })
 
 },
 Radio_start_seq(radio, rec) {
@@ -759,8 +962,11 @@ Radio_open(radio, rec) {
     //   fed and waited on.  A prime for a different record is stale — drop it and let the pump
     //    prepare the new next one.
     let ready = radio.c.ready
+    let readyf = radio.c.ready_fin
     radio.c.ready = null
+    radio.c.ready_fin = null
     if (ready && ready.id !== String(rec.sc.id)) ready = null
+    if (readyf && readyf.id !== String(rec.sc.id)) readyf = null
     // HOW MANY HEAD CHUNKS RIDE IN FRONT (Radio_hbase).  POLICY DECIDES, THEN THE PRIME IS CHECKED
     //  AGAINST IT — the inverse of how this read until 2026-08-12, and the inversion is the point.
     //   While every open after the first wanted the head, a prime could not be wrong and so was
@@ -776,9 +982,17 @@ Radio_open(radio, rec) {
     //   answer rather than inheriting a stale `finish` and opening some later track at its beginning
     //    for no reason anyone could trace.
     delete radio.c.went
-    if (ready && +(ready.hbase || 0) !== hbase) {
-        this.Radio_trace(radio, { ev: 'prime-drop', want: hbase, had: +(ready.hbase || 0) })
-        ready = null
+    // …and now the OTHER shape can answer (2026-08-21): a finish prime exists precisely so that a
+    //  policy verdict of hbase>0 has decoded head PCM to spend instead of the drop.  Whichever prime
+    //   matches the verdict is spent; prime-drop now means BOTH shapes missed, which is worth the
+    //    same ring mark it always was.
+    let had_skip = ready ? +(ready.hbase || 0) : -1
+    if (ready && +(ready.hbase || 0) !== hbase) ready = null
+    if (!ready && readyf && +(readyf.hbase || 0) === hbase) {
+        ready = readyf
+        this.Radio_trace(radio, { ev: 'primed-fin-use', hbase: hbase })
+    } else if (!ready && (had_skip >= 0 || readyf)) {
+        this.Radio_trace(radio, { ev: 'prime-drop', want: hbase, had: had_skip, had_fin: readyf ? +(readyf.hbase || 0) : -1 })
     }
     radio.c.hbase = hbase
     let start = ready ? ready.start : (hbase ? 0 : this.Radio_start_seq(radio, rec))
@@ -1099,6 +1313,31 @@ async Radio_dial(radio) {
         if (wname) radio.sc.aim_by = wname
         if (!wname) delete radio.sc.aim_by
         radio.bump()
+    }
+    // THE STANDING ORDER outranks the fallback ladder (2026-08-21): if peek placed a %Card on
+    //  `Mag:'Streams'`, the prime decoded THAT record's opening and Radio_stream_ahead has been
+    //   bringing it whole — dialling anything else would waste all of it on a coin flip.  Consume
+    //    the order exactly the way the lineup rung below consumes its head: drop first, then
+    //     validate (a stale card must not survive), aim on the actual pick.  Below the joining
+    //      hold on purpose: a mid-join tab holds everything, order or no order.  Books never have
+    //       a Streams Mag (peek is prime-gated), so this rung is inert in a driven world.
+    let stheard = radio.c.heard || {}
+    let stmag = w.o({ Mag: 'Streams' })[0]
+    if (stmag) {
+        for (const oc of stmag.o({ Card: 1 })) {
+            let orec = oc.c.rec
+            let oby = oc.sc.by
+            let oown = oc.sc.own ? 1 : 0
+            stmag.drop(oc)
+            stmag.bump()
+            if (!orec) continue
+            if (oown !== (radio.sc.own ? 1 : 0)) continue
+            if (stheard[String(orec.sc.id)]) continue
+            if (!this.Radio_playable(orec)) continue
+            if (oby) orec.c.play_by = oby
+            this.Radio_aim_at(w, radio, orec)
+            return orec
+        }
     }
     // THE LINEUP first (the standing programme, the human 2026-07-19: "constantly producing
     //  Mag, up to 20 tracks further than the listened-to cursor"): consume its head card —
@@ -1642,6 +1881,15 @@ Radio_source_toggle(radio) {
         lu.sc.up_next = '0'
         lu.bump()
     }
+    // the standing order and its primes flip with the source: they name a record from the OTHER
+    //  side of the exclusivity rule, so keeping them would spend the next seam on a stale pick.
+    let stg = w ? w.o({ Mag: 'Streams' })[0] : null
+    if (stg) {
+        for (const c of stg.o({ Card: 1 })) stg.drop(c)
+        stg.bump()
+    }
+    radio.c.ready = null
+    radio.c.ready_fin = null
     delete radio.sc.note
     delete radio.sc.solo
     delete radio.sc.solo_by
@@ -1857,7 +2105,10 @@ Radio_playable(rec) {
 //     offline hands the radio on rather than stranding it, and nobody has to remember to clear it.
 //  Falling back is never a downgrade: the fallback pool is exactly the old behaviour, so this can
 //   only ever narrow a choice that had already been made arbitrarily.
-Radio_dial_pool(w, radio, all) {
+// `peek` (2026-08-21): the same draw WITHOUT the aim lock — Radio_peek_next reads the pool a track
+//  early, and "aim" means *who we are listening with*, which is decided when the pick is actually
+//   consumed (the dial's Streams rung calls Radio_aim_at there), not when it is foreseen.
+Radio_dial_pool(w, radio, all, peek) {
     let cands = []
     let aimed = []
     let aim = String(radio.sc.aim || '')
@@ -1877,7 +2128,7 @@ Radio_dial_pool(w, radio, all) {
     let pool = aimed.length ? aimed : cands
     if (!pool.length) return null
     let pick = pool[this.Ra_rand(w, pool.length)]
-    this.Radio_aim_at(w, radio, pick)
+    if (!peek) this.Radio_aim_at(w, radio, pick)
     return pick
 
 },

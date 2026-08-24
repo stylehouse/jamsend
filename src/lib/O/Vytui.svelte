@@ -3139,6 +3139,22 @@
             for (const w of springs.keys()) measure_world(w)
         }, 140)
     }
+    // THE LATE LOOKS (2026-08-22, the owner on the Heist setup: *"could do with an extra geometry
+    //  check moment or two"*): a face that resized once tends to resize AGAIN when its async content
+    //   lands a beat later — the setup's cost line goes spinner → numbers, a listing fills in, a fold
+    //    opens.  The 140ms trailing measure catches the first beat; these two catch the settle.
+    //     Dead-band damped like every measure, so a face that stopped moving costs two no-ops.
+    let measure_late: any = 0
+    function measure_lately() {
+        if (measure_late || typeof setTimeout === 'undefined') return
+        measure_late = setTimeout(() => {
+            if (react_alive) for (const w of springs.keys()) measure_world(w)
+            measure_late = setTimeout(() => {
+                measure_late = 0
+                if (react_alive) for (const w of springs.keys()) measure_world(w)
+            }, 900)
+        }, 450)
+    }
     let faceRO: ResizeObserver | null = null
     // the action rides `.face-scroll`, but what it OBSERVES is the face's own root inside it: the
     //  scroll's box is handed down from the mold (it changes when WE change it), while the child's
@@ -3146,7 +3162,7 @@
     //    a microtask, because the Face mounts after the action runs.
     function sizewatch(el: HTMLElement) {
         if (typeof ResizeObserver === 'undefined') return
-        if (!faceRO) faceRO = new ResizeObserver(() => measure_soon())
+        if (!faceRO) faceRO = new ResizeObserver(() => { measure_soon(); measure_lately() })
         let kid: Element | null = null
         const attach = () => {
             const k = el.firstElementChild
@@ -3244,6 +3260,7 @@
         if (fx_sweep) clearTimeout(fx_sweep); fx_sweep = 0
         if (measure_pending) clearTimeout(measure_pending); measure_pending = 0
         if (measure_pair_t) clearTimeout(measure_pair_t); measure_pair_t = 0
+        if (measure_late) clearTimeout(measure_late); measure_late = 0
         for (const t of gauge_timers.values()) clearTimeout(t)
         gauge_timers.clear()
         faceRO?.disconnect(); faceRO = null

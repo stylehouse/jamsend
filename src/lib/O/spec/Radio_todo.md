@@ -19,17 +19,42 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ## 0. Latest handover — fold into the sections below as it's absorbed
 
-### 2026-08-22 — THE SEAM: tape-out endgame + `%Mag:'Streams'` (the whole-Record order) — ⚠ .go NOT YET COMPILED
+### 2026-08-22 — THE SEAM: tape-out endgame + `%Mag:'Streams'` (the whole-Record order) — ✓ LIVE-CONFIRMED
 
 The owner's asks, one sitting: *"at the very end of each track we say 'ran out of tape'… this
  message should just be '!tape', and in this case which we know is coming, get the next track really
   ready"* · *"next-track-after-finished should be from the start — ordinary sequential listening;
    only surfing jumps into the middle"* · *"we could order the whole-Record on a special streams
-    Mag? keep elegant, within the design."*  All landed in `Ghost/M/Radio.g` ON DISK, **but the .go
-     is still the 2026-08-13 build**: `ghost-compile` (via the 9091 relay — 9092 was dark) acks
-      `done @ 4120f96e` yet the served/disk .go keeps meta `40ba61ce` — the editor's Radio dock
-       almost certainly holds a diverging buffer and the %Good merge needs the human's hand.
-        **First move next session: get Radio.g truly compiled, then re-run the Musu* fleet.**
+    Mag? keep elegant, within the design."*  All landed in `Ghost/M/Radio.g`, compiled to
+     `gen/M/Radio.go @ 90f5a012` (via **LocalGen** — see the compile-rail bomb below), Books green
+      (MusuBerth 7/7, MusuHeist 22/22, ok_pct 1 both), and **confirmed on the owner's live eed tab**:
+
+    📻⟫ starve {seq:44} → tape-out {seq:44,left:1} → dial → primed-fin-use {hbase:162}
+      → open {hbase:162,went:finish,wire:1} → primed-open   — all four seam marks in ~1ms:
+    a FRIEND's track opened at 0:00 from pre-decoded head PCM at a natural finish, over the wire.
+
+**Open threads, in the order they bite ("there's more I want" — the owner, handing over):**
+1. **Wire-side tail-ahead want driver** — the ordered whole-Record for FRIEND records:
+    `Radio_stream_ahead` fulfils local orders (head encode + transcode steps) but a wire record's
+     tail still rides the playhead's own want window, so the tape-out still fires on wire finishes
+      (the confirmed trace above IS one: left=1).  The Streams %Card already names the record and
+       `repli_want {id, stream, from_idx}` already exists — the driver is "want the ordered
+        record's un-held tail, gently, while comfortable".  See the priced §"%Stream ORDER"
+         negative result — the owner's Streams-Mag direction re-opens exactly its wire half.
+2. **Tape-out fired at 5.3s, not its 1.5s grace, on the congested tab** — the pump's 400ms cadence
+    stretches under a held beliefs mutex (same hour eed refused every runner_ask).  Bounded and
+     fine, but if the seam still feels slow, the mutex hold is the suspect, not the grace.
+3. **runner_ask's player rail refused everything that hour** — every `--player=` op acked
+    `ok:false` with an EMPTY error (CLI shows "refused (busy)"), runner went silent on `world`;
+     concurrent census_codec/Auto edits were in flight.  The console seam-echo (below) was the
+      workaround; the rail wants its own diagnosis.
+4. **The compile-rail bomb: editor ghost_compile acks `done` while its .go write silently fails.**
+    `Lang_drain_compile_settles` (LangCompiling.svelte:313) sends the done-ack without checking
+     `ev.sc.error`.  Working path: `GFILES="Ghost/M/Radio.g" vitest run -c
+      scripts/Story_cli.vitest.config.mjs scripts/LocalGen.spec.ts` — then VERIFY the .go's
+       Ghostmeta flipped (= sha256(.g)[:16]); the ack alone proves nothing.
+5. Runner housekeeping: a `fsa_blocked` Peeroleum.g rungo sits wedged; the runner tab holds no
+    local FSA share so MusuBerth/MusuHeist-class Books refuse there until one is granted.
 
 What the .g now says (grep the marks):
 - **`tape-out`** (pump, starve branch): when the missing run at `seq` reaches the END of the track
@@ -60,6 +85,13 @@ Also landed, live already (plain HMR, not .g): RadioFace's starve note is now li
  Vytui measures faces at +0/+100ms off the `react_soon` latch (content-only changes — a next-track
   title swap — never bumped `paint_tick`, so the Radio face sat tiny until a hover moved geometry;
    the measure now rides the same out-of-reactive-context timer as adopt, dead-band damped).
+
+**The seam now SPEAKS on the console** (2026-08-22 follow-up): `Radio_trace` echoes the seam-mark
+ set (`dial open primed primed-open primed-fin primed-fin-use prime-drop starve unstarve tape-out`)
+  as `📻⟫ <ev> {...}` on humdinger pages only — added because the runner_ask rail was refusing all
+   player-addressed ops that hour (every `--player=` op acked `ok:false` with an EMPTY error and the
+    runner went silent on `world`; worth its own look — the census/Auto edits were in flight then).
+     A Book's console stays byte-identical.
 
 Verify (after the compile lands): watch the ring for `tape-out` (left=N), `primed`, `primed-fin`,
  `primed-fin-use` at a finish, `open … hbase>0 went=finish` on the track after a full play-through;

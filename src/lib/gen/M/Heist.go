@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'f42cd945039b183c~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'c05ec895b4cd45db~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -504,7 +504,29 @@ async Heist_beat(w, rx, mine, theirs, job, own_lib, mir, nav, mardir) {
                 //   A permanent w-marker on a transient hiccup was the non-deterministic-fixture bug; the
                 //    reason parks on the job's .c for a live inspect, and a genuinely dead handle surfaces
                 //     honestly as husks that never drain (the Book reads it as a stuck quarantine).
-                job.c.last_land_why = '' + (er && er.message || er)
+                // …AND THE RETRY MUST SPEAK (the owner 2026-08-22, watching three tracks — every one with
+                //  a U+FFFD-mangled name — re-land forever with nothing on the console but the landing
+                //   line itself): a parked `.c` reason nobody can see made an infinite loop read as
+                //    progress, and every lap re-wants the released chunks, so the loop bills the wire too.
+                //     Once-per-change (the Radio_head_note doctrine) — steady retrying is silence, a NEW
+                //      reason is the signal.  Console only: nothing here touches a snap.
+                let why = '' + (er && er.message || er)
+                if (job.c.last_land_why !== why) console.log(`⇊⚠ land threw — "${rec.sc.title || rec.sc.id}": ${why} (staying in the mirror; retrying each beat)`)
+                job.c.last_land_why = why
+                // THREE THROWS AND THE HUSK QUARANTINES — LIVE PAGES ONLY.  A same-record throw is not
+                //  transient by the third lap; dropping the husk with a legible `landfail` verdict row
+                //   (the unvouched idiom exactly) ends the burn, and a re-rummage re-mints it if wanted.
+                //    Humdinger-gated because this stamps the world on a timing-dependent path — the very
+                //     non-deterministic-fixture shape the bare park above exists to avoid; a Book keeps
+                //      husks-that-never-drain as its honest stuck-quarantine reading.
+                rec.c.land_fails = (+(rec.c.land_fails || 0)) + 1
+                if (rec.c.land_fails >= 3 && this.top_House().c.humdinger) {
+                    console.log(`⇊☠ land gave up after ${rec.c.land_fails} throws — "${rec.sc.title || rec.sc.id}": ${why}`)
+                    job.sc.landfails = +(job.sc.landfails || 0) + 1
+                    let job_lf = job.i({ landfail: 1, tune: rec.sc.artist + ' — ' + rec.sc.title, why: why.slice(0, 120) })
+                    job_lf.c.up = job
+                    await mir.rm({ Record: 1, id: rec.sc.id })
+                }
             }
         }
     }
