@@ -42,11 +42,27 @@ The owner, log in hand: `⇊☠ heist NO PROGRESS 93905s — 10/13 landed after 
    face flip to 'starved' is now skipped when `tape_out` (the KNOWN end shape) — only a real HOLE
     confesses; a late tail chunk re-arms the flip next pass.  `starve` trace now carries `tape:0|1`.
      Books unaffected (tape_out is 0 without humdinger).
-- **NOT DONE**: a source-side NACK for a want it can never serve (the honest fix for the
-   ABANDONED→re-ask cycle when the rescue DOESN'T apply — genuinely missing/unreadable files,
-    `failed=38` in the daemon census).  `Repli_recv_missed`/`ra_missed` is the existing shape to
-     extend.  Also: Book gate (MusuBerth/MusuHeist) still pending — no runner tab was up; changes
-      are humdinger-gated so fixtures should hold, but run them before trusting.
+- **BOOK GATE — ✓ GREEN** (2026-08-24, on the Otro runner): MusuHeist ran first (the `--watch`
+   chain exits 1 on red and it proceeded), then MusuBerth 7/7, ok_pct 1.  The give-up / `!tape` /
+    transcode-dead changes are all humdinger-gated and the recorded fixtures held.  Runner released.
+- **SOURCE-SIDE, done in part** (`Ra.g` → `gen/M/Ra.go @ 242757c`): the L3 STALLED bark now
+   ESCALATES to `◈☠ transcode DEAD — <reason>` when the rec's producer has failed ≥8 times running
+    (minutes of sustained failure — past the transient-nav window the retry ladder is kept for at
+     Ra_source_pcm:2064), naming `pcm_dead|pcm_why` instead of the generic "frontier never reached
+      it".  PURE DIAGNOSTICS — the 60s retry ladder stands (Ra_native_continuation:2812 blesses "one
+       ffmpeg a minute" for a dead source; a re-stock revives it).  Humdinger-gated.
+- **STILL NOT DONE — the real NACK needs a frame-semantics bit.** A plain `repli_missed` means
+   "re-census me" to a Heist sink (Heist.g:2699), which is FUTILE for a resolvable-id / unreadable-
+    FILE (the id resolves; the bytes can't be made) and would only add ~6min of census churn until
+     `Heist_pull_giveup` fires.  The honest fix is a distinguished disclaim — `repli_missed` carrying
+      a `dead:1` (or a new `repli_dead` frame) that means "give up on this id, do NOT re-census" —
+       so `Repli_recv_missed` can stamp a give-up flag the pull beat reads directly instead of the
+        re-census flag.  Touches both directions + Book fixtures, so it is its own pass.  Until then
+         the sink converges on its own ladder (the 90-ask / 5-bench give-up) and the source's parked
+          want ABANDON-culls once the sink stops asking (Ra.g leash, 90s) — correct, just not instant.
+  - NOTE the loop the owner pasted TERMINATES END-TO-END the moment eed refreshes onto the new
+     `Heist.go`: sink gives up → stops asking → source want goes unasked → ABANDONED cull → STALLED
+      barks stop.  The frame-semantics pass only makes it FASTER + quieter, not more correct.
 
 ### 2026-08-22 — THE SEAM: tape-out endgame + `%Mag:'Streams'` (the whole-Record order) — ✓ LIVE-CONFIRMED
 

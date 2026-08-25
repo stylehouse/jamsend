@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '9029f42399df6796~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '5d398490758af864~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -3152,6 +3152,36 @@ async Ra_transcode_pump(w) {
             }
             let rec = this.Repli_find_record(w, id, lib)
             if (!rec) continue
+            // NAME THE CAUSE OF A DEAD TRANSCODE (2026-08-24).  The L3 bark above says "the encoder
+            //  frontier never reached it" for BOTH a merely-slow encoder and a genuinely dead one — and
+            //   the source usually KNOWS which: a rec whose producer has FAILED many times running
+            //    (pcm_tries ≥ 8 — the ladder caps its wait at 60s near tries=7, so this is MINUTES of
+            //     sustained failure, past the seconds a boot-transient nav|grant takes to open, the exact
+            //      transient the ladder is kept for at Ra_source_pcm:2064) is dead: the daemon's
+            //       `failed=38`, a file ffmpeg cannot open, a path no U+FFFD rescue reached.  Turning the
+            //        generic bark into the specific reason (pcm_dead|pcm_why) is the §0 move — one side
+            //         knows the fact, so carry it — and it is PURE DIAGNOSTICS: no behaviour changes, the
+            //          60s retry ladder stands (Ra_native_continuation:2812 blesses "one ffmpeg a minute"
+            //           for a source that can never encode; a re-stock|remount revives it, so a hard latch
+            //            would be the over-permanence 2064 warns against).  Throttled on its OWN key
+            //             (p.c.told_at is taken by Repli_park_want's reply throttle).
+            //  NOT a repli_missed send: that lane means "re-census me" to a Heist sink (Heist.g:2699),
+            //   which is futile for a resolvable-id / unreadable-FILE and would only add census churn for
+            //    the ~6min until Heist_pull_giveup fires.  The sink already converges (the pull give-up);
+            //     a proper source→sink "give up, do not re-census" needs a frame-semantics bit, scoped in
+            //      Radio_todo §0 as the real design pass, not guessed at here.
+            //  HUMDINGER-ONLY: a Book runs deterministic fixtures and never fails a decode, so this never
+            //   fires under one — the barks stay off every recorded path.
+            if (this.top_House().c.humdinger && +(rec.c.pcm_tries || 0) >= 8
+                    && p.c.parked_at && Date.now() - p.c.parked_at > 20000
+                    && Date.now() - (p.c.dead_told_at || 0) > 30000) {
+                p.c.dead_told_at = Date.now()
+                let why = String(rec.c.pcm_dead || rec.c.pcm_why || ('producer returned nothing ' + rec.c.pcm_tries + '×')).slice(0, 60)
+                console.log(`◈☠ transcode DEAD — id=${id} from_idx=${p.sc.from_idx}: ${why} (the 60s retry stands; a re-stock revives it) — sink gives up on its own ladder`)
+                if (typeof this.Radio_trace === 'function') {
+                    this.Radio_trace(null, { ev: 'transcode-dead', id: String(id || '').slice(0, 8), off: +(p.sc.from_idx || 0), tries: +(rec.c.pcm_tries || 0), why: why })
+                }
+            }
             // HEIST re-materialise (Evening 5 A3): a parked want over a RELEASED heist body (A2 dropped its bufs
             //  after serving; body_hash promises the file, has_body now < total) re-reads the file on demand —
             //   the heist twin of the opus transcode producer.  Throttled ~5s/rec so a re-ask storm can't re-read

@@ -849,6 +849,9 @@ export class House extends StorableHousing {
         e.c.push_gated = H._ac_gated        //   …of which bounced off the answer_calls_waiting throttle
         e.c.push_tries = H._ac_tries        // _really_answer_calls() entries — did anything LOOK at the queue?
         e.c.push_tag   = tag
+        // push log — record for the diagnostic UI; plain append, no reactivity needed
+        H._push_log.push({ tag, t: e.c.push_t, depth: H.todo.length + 1, Aw: String(e.sc.Aw ?? ''), reqturn: !!e.sc.reqturn })
+        if (H._push_log.length > 60) H._push_log.shift()
         H.todo.push(e)
         H.todo_version++
     }
@@ -857,6 +860,11 @@ export class House extends StorableHousing {
     _ac_calls = 0     // answer_calls() called (the $effect fired, or a retry/watchdog drove it)
     _ac_gated = 0     // …and returned immediately because a drain was already in its gate window
     _ac_tries = 0     // _really_answer_calls() actually ran and looked at the queue
+
+    // push log — ring buffer of recent _push_todo calls.  Not reactive; read by the diagnostic
+    //  UI (Otro's todo-pop) every 500ms.  Answers "who is generating all those think|rw_op items?"
+    //  when the queue is unexpectedly busy on an idle tab.  Cap at 60 so it never grows unbounded.
+    _push_log: Array<{ tag: string, t: number, depth: number, Aw: string, reqturn: boolean }> = []
 
     // -------------------------------------------------------------------------
     // post_do: push a fn-carrying elvis onto H.todo.

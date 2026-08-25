@@ -6,7 +6,7 @@
     import Actions from "$lib/O/ui/Actions.svelte"
     import Lens from "$lib/O/ui/Lens.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
-    import { onDestroy, onMount } from "svelte";
+    import { onDestroy, onMount, untrack } from "svelte";
     import NaviScroll from "./ui/NaviScroll.svelte";
     import { boot_param } from "$lib/boot";
     import BootGate from "./ui/BootGate.svelte";
@@ -128,6 +128,35 @@
     const age_s = (at: number) => { void pop_now; const s = Math.round((Date.now() - at) / 1000); return s < 1 ? 'just now' : `${s}s ago` }
     // the top House's beliefs mutex, live — held by ANY House's item, freezing them all.
     let wedge = $derived.by(() => { void pop_now; return todo_open ? (H?.top_House?.() as any)?.mutex_held?.('beliefs') ?? null : null })
+
+    // Throttled snapshot — refreshes every 2 s so items don't vanish while you're reading them.
+    //  The LIVE count in the badge header always shows truth; the rows show the last snap.
+    //  `untrack` inside the refresh deliberately breaks reactivity on h.todo so the effect
+    //   does NOT re-fire every time an item is pushed/shifted — only the timer drives it.
+    let todo_snap: any[] = $state([])
+    let snap_at: number  = $state(0)
+    $effect(() => {
+        if (!todo_open) { todo_snap = []; snap_at = 0; return }
+        const refresh = () => {
+            const h = houses.find(h => h.c.ip === todo_open)
+            todo_snap = h ? untrack(() => (h as any).todo.slice()) : []
+            snap_at = Date.now()
+        }
+        refresh()
+        const iv = setInterval(refresh, 2000)
+        return () => clearInterval(iv)
+    })
+    // push log — last 20 entries from H._push_log, updated every 500ms with pop_now.
+    //  Non-reactive plain array on H; read here under untrack so this effect only fires
+    //  when pop_now or todo_open changes, not on every individual push.
+    let push_log_snap: any[] = $state([])
+    $effect(() => {
+        void pop_now   // re-run every 500ms while open
+        if (!todo_open) { push_log_snap = []; return }
+        const h = houses.find(h => h.c.ip === todo_open)
+        push_log_snap = h ? untrack(() => ((h as any)._push_log ?? []).slice(-60)) : []
+    })
+
     $effect(() => {
         if (!setup_done) return
         houses = H.all_House
@@ -172,6 +201,7 @@
             {@const kids = childrenOf(house)}
             <div class="house-header"
                 class:sticky={hasActions}
+                class:has-open-todo={todo_open === house.c.ip}
                 id="house-{house.c.ip}"
                 style="--stack-index: {stickyIndex};">
                 <h2 class="house-name" title="navigate to this House"
@@ -190,14 +220,14 @@
                     >{house.todo.length || (todo_open === house.c.ip ? '0' : '')}</span>
                 </h2>
                 {#if todo_open === house.c.ip}
-                    <!-- LIVE, not a snapshot: the queue drains under you (at GALLOP_TICK_MS once the
-                         gallop engages), and watching it empty is most of the diagnostic value.  Each
-                         row is the elvis's headline + keyser(e) — the same `e%k:v, k:v` line
-                         _push_todo already writes under V.organise, so the popup and the console log
-                         read identically. -->
+                    <!-- Throttled snapshot (2 s refresh) so rows don't vanish mid-read.
+                         The header always shows the LIVE count; rows are from the last snap.
+                         Each row is the elvis's headline + keyser(e) — same as the _push_todo
+                         V.organise trace, so popup and console log read identically. -->
                     <div class="todo-pop" role="dialog" aria-label="{house.name} todo queue">
                         <div class="todo-pop-hd">
-                            <span>H:{house.name} · todo {house.todo.length}{#if house.c.drain_at} · last drained {age_s(house.c.drain_at)}{/if}</span>
+                            <!-- live count is always fresh; snap age shows how stale the rows are -->
+                            <span>H:{house.name} · live:{house.todo.length} · snap:{todo_snap.length}{#if snap_at} ({age_s(snap_at)}){/if}{#if house.c.drain_at} · drained {age_s(house.c.drain_at)}{/if}</span>
                             <span class="todo-pop-x" title="close" onclick={() => todo_open = null}>✕</span>
                         </div>
                         <!-- THE WEDGE LINE.  Every House drains under the TOP House's one beliefs mutex
@@ -211,16 +241,47 @@
                         {:else if house.todo.length && house.c.drain_why}
                             <div class="todo-why">◍ not draining: {house.c.drain_why}</div>
                         {/if}
-                        {#each house.todo as e, ti (ti)}
+                        <!-- method histogram — compact count per unique elvis label, most common first -->
+                        {#if todo_snap.length > 1}
+                            {@const hist = Object.entries(todo_snap.reduce((m: Record<string, number>, e) => {
+                                const k = elvis_label(e); m[k] = (m[k] ?? 0) + 1; return m
+                            }, {} as Record<string, number>)).sort((a, b) => b[1] - a[1])}
+                            <div class="todo-hist">{hist.map(([k, n]) => `${k}×${n}`).join(' · ')}</div>
+                        {/if}
+                        <!-- rows from the throttled snapshot — live count in header shows truth -->
+                        {#each todo_snap as e, ti (ti)}
                             <div class="todo-row">
                                 <span class="todo-i">{ti}</span>
+                                {#if e.c?.push_t}<span class="todo-age">{age_s(e.c.push_t)}</span>{/if}
                                 <span class="todo-elvis">{elvis_label(e)}</span>
                                 {#if e.sc?.Aw}<span class="todo-aw">{e.sc.Aw}</span>{/if}
                                 <span class="todo-keys">{keyser(e)}</span>
                             </div>
                         {/each}
-                        {#if !house.todo.length}
-                            <div class="todo-empty">drained — nothing waiting</div>
+                        {#if !todo_snap.length}
+                            <div class="todo-empty">{house.todo.length ? `snap empty · live ${house.todo.length}` : 'drained — nothing waiting'}</div>
+                        {/if}
+                        <!-- push log — last 20 _push_todo calls, newest last; 500ms refresh.
+                             Answers "who is generating all these think|rw_op items?" on an idle tab.
+                             reqturn = this push came from a req-callback turnaround (reply landed). -->
+                        <!-- push log window: entries appear at 1.5s old, drop off at 3s.
+                             The lag keeps transient things (quick drain) out of the view;
+                             the 1.5s width shows the settled burst before it fully clears. -->
+                        <!-- {@const} must be the immediate child of a block, not of the wrapping
+                             <div> — so the cheap push_log_snap.length guard is its parent (an empty
+                             snapshot filters to an empty window anyway, so behaviour is unchanged). -->
+                        {#if push_log_snap.length}
+                            {@const log_window = push_log_snap.filter(p => { const a = Date.now() - p.t; return a >= 1500 && a < 3000 })}
+                            {#if log_window.length}
+                                <div class="push-log-hd">push log 1.5–3s window</div>
+                                {#each [...log_window].reverse() as p (p.t + p.tag)}
+                                    <div class="push-log-row">
+                                        <span class="push-log-age">{age_s(p.t)}</span>
+                                        <span class="push-log-tag" class:push-reqturn={p.reqturn}>{p.tag}</span>
+                                        <span class="push-log-depth">+{p.depth}</span>
+                                    </div>
+                                {/each}
+                            {/if}
                         {/if}
                     </div>
                 {/if}
@@ -309,6 +370,9 @@
         position: sticky;
         top: calc(var(--stack-index) * 1.75rem);
     }
+    /* when a todo pop is open, lift this header above its siblings (they share z-index:100;
+       later DOM order wins at equal z — so without this the popup hides behind headers below) */
+    .house-header.has-open-todo { z-index: 200; }
 
     .house-name {
         margin: 0;
@@ -342,6 +406,7 @@
         top: 100%;
         right: 0;
         z-index: 3000;
+        min-width: min(50vw, 92vw);
         max-width: min(56rem, 92vw);
         max-height: 22rem;
         overflow: auto;
@@ -363,8 +428,17 @@
     }
     .todo-pop-x { cursor: pointer; }
     .todo-pop-x:hover { color: #d68a90; }
+    /* method histogram — compact counts above the row list */
+    .todo-hist {
+        font-size: 0.65rem; opacity: 0.6;
+        padding: 0.1rem 0 0.2rem;
+        border-bottom: 1px solid #2a2a36;
+        margin-bottom: 0.1rem;
+    }
     .todo-row { display: flex; gap: 0.5rem; align-items: baseline; padding: 0.1rem 0; white-space: nowrap; }
     .todo-i     { opacity: 0.35; min-width: 1.5em; text-align: right; }
+    /* push age — how long ago the item entered the queue; short-reads the bottleneck instantly */
+    .todo-age   { opacity: 0.35; min-width: 3.5em; text-align: right; font-size: 0.85em; }
     .todo-elvis { color: #7fb3ff; }
     .todo-aw    { color: #b48ead; }
     /* the full %k:v line can be long — let IT scroll inside the row, never the page */
@@ -375,6 +449,14 @@
         border-radius: 3px; padding: 0.2rem 0.35rem; margin-bottom: 0.25rem; white-space: normal;
     }
     .todo-why { opacity: 0.6; padding: 0.1rem 0 0.25rem; white-space: normal; }
+
+    /* push log — compact push-rate history below the queue rows */
+    .push-log-hd  { opacity: 0.3; font-size: 0.6rem; padding: 0.3rem 0 0.1rem; border-top: 1px solid #2a2a36; margin-top: 0.2rem; }
+    .push-log-row { display: flex; gap: 0.4rem; align-items: baseline; padding: 0.05rem 0; white-space: nowrap; font-size: 0.68rem; }
+    .push-log-age { opacity: 0.3; min-width: 4em; text-align: right; }
+    .push-log-tag { color: #9ab8e0; }
+    .push-log-tag.push-reqturn { color: #6a8f68; }  /* muted green tint = came from a req reply */
+    .push-log-depth { opacity: 0.25; }
 
     .house-nav {
         flex: 0 0 auto;

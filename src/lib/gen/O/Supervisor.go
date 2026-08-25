@@ -13,7 +13,7 @@ import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return '06391bdec75e794b~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return 'aac577d96ca5111c~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -665,12 +665,16 @@ Supervisor_pref(w, key) {
     let mem = this.Supervisor_prefmem()
     let on = mem ? mem.get(key) : null
     if (!on) return 0
-    this.Supervisor_pref_set(w, key, 1)
+    // a RESTORE, not an event (the owner 2026-08-24 "less of a pile"): the stash re-materialising
+    //  the particle at boot minted "⚑ guts — on" into the notice ring every session, 0s old and
+    //   forever news.  Only a real flip is history — quiet=1 here.
+    this.Supervisor_pref_set(w, key, 1, 1)
     return 1
 
 },
 // Supervisor_pref_set — write both halves, particle and stash, in one place so they cannot drift.
-Supervisor_pref_set(w, key, on) {
+//  `quiet` suppresses the notice for the boot-restore path only; every human flip stays history.
+Supervisor_pref_set(w, key, on, quiet) {
     if (!w) return 0
     let pref = w.oai({ Pref: key })
     if (pref.c.up !== w) pref.c.up = w
@@ -679,7 +683,7 @@ Supervisor_pref_set(w, key, on) {
     pref.bump()
     let mem = this.Supervisor_prefmem()
     if (mem) mem.set(key, on ? 1 : 0)
-    this.Supervisor_notice(w, (on ? '⚑ ' : '⚐ ') + key + ' — ' + (on ? 'on' : 'off'))
+    if (!quiet) this.Supervisor_notice(w, (on ? '⚑ ' : '⚐ ') + key + ' — ' + (on ? 'on' : 'off'))
     return on ? 1 : 0
 
 },
@@ -977,7 +981,9 @@ Supervisor_say(w) {
     //   downstream fixture forever (the law the deadline rides `.c` for).  The sentence is stable for
     //    the whole wait; a face wanting the seconds reads `left` off Supervisor_lines and polls.
     let waits = this.Supervisor_waiting(w)
-    let say = 'nothing is registered — nothing is watched'
+    // one clause, not two (the owner 2026-08-24 "less of a pile"): this sentence heads the panel on
+    //  every idle dev tab, and "nothing is registered — nothing is watched" said its nothing twice.
+    let say = 'no watches registered yet'
     if (all.length && !loud.length) say = 'all ' + all.length + ' well'
     if (waits.length && !loud.length) say = '⋯ ' + waits[0].sc.sentence
     if (loud.length) say = this.Supervisor_mark(loud[0]) + ' ' + loud[0].sc.sentence + (loud[0].sc.note ? ' — ' + loud[0].sc.note : '')

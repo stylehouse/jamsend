@@ -121,11 +121,16 @@
 
     <!-- TWO DIFFERENT EMPTIES, and conflating them wasted a round: "I cannot find a Supervisor at
          all" and "I found one and its roster is empty" point at opposite halves of the machine.
-         Same rule as the model's unknown-vs-wrong split. -->
+         Same rule as the model's unknown-vs-wrong split.
+         THE SECOND EMPTY SAYS NOTHING THE HEAD DIDN'T (the owner 2026-08-24: "less of a pile") —
+         `say` is exactly the nothing-registered sentence whenever the roster is empty
+         (Supervisor_say), so a body line repeating it in slightly different words was the pile's
+         first layer. An empty roster renders NO body; only the found-nothing case keeps its line,
+         because that one is a diagnosis the head cannot carry. -->
     {#if !view.found}
         <div class="empty">no w:Supervisor on this House — Supervisor_up has not run here</div>
     {:else if !view.lines.length}
-        <div class="empty">nothing registered — nothing is watched</div>
+        <!-- head say covers it -->
     {:else}
         <table>
             <tbody>
@@ -174,22 +179,28 @@
         </div>
     {/if}
 
-    {#if view.found}
-        <div class="prefs">
-            {#each PREFS as p (p.key)}
-                <button class="pref" class:on={prefs[p.key]} onclick={() => flip(p.key)} title={p.note}>
-                    <span class="m">{prefs[p.key] ? '☑' : '☐'}</span>{p.label}
-                </button>
-            {/each}
-        </div>
-    {/if}
-
-    {#if view.log}
-        <div class="log">
-            reporting:
-            {#if view.log.dormant}<span class="dim">dormant — {view.log.dormant}</span>
-            {:else if view.log.trouble}<span class="bad">{view.log.trouble}{#if view.log.retry} · retry in {view.log.retry}s{/if}</span>
-            {:else}<span class="dim">{view.log.sent} sent · every {view.log.every}s</span>{/if}
+    <!-- ONE FOOTER, not two stacked bordered strips (the owner 2026-08-24: "less of a pile") — the
+         prefs and the reporting ladder are both "machinery state, not health", so they share a row:
+         prefs left, reporting right. Reporting keeps its full voice ONLY when it has something to
+         say (trouble, or real sends); a 0-sent ladder is one dim clause, not a section. -->
+    {#if view.found || view.log}
+        <div class="foot">
+            <span class="prefs">
+                {#if view.found}
+                    {#each PREFS as p (p.key)}
+                        <button class="pref" class:on={prefs[p.key]} onclick={() => flip(p.key)} title={p.note}>
+                            <span class="m">{prefs[p.key] ? '☑' : '☐'}</span>{p.label}
+                        </button>
+                    {/each}
+                {/if}
+            </span>
+            {#if view.log}
+                <span class="log">
+                    {#if view.log.dormant}<span class="dim">reporting dormant — {view.log.dormant}</span>
+                    {:else if view.log.trouble}<span class="bad">reporting: {view.log.trouble}{#if view.log.retry} · retry in {view.log.retry}s{/if}</span>
+                    {:else}<span class="dim">reporting {view.log.sent} sent · {view.log.every}s</span>{/if}
+                </span>
+            {/if}
         </div>
     {/if}
 </div>
@@ -213,8 +224,10 @@
     .note { display: block; opacity: .55; font-size: .92em; }
     .advice { display: block; font-size: .92em; color: #9fc4dd; }
     .flag { color: #d8c98a; margin-right: .25em; }
-    .prefs { margin-top: .45em; padding-top: .3em; border-top: 1px solid #333;
-             display: flex; flex-wrap: wrap; gap: .4em; }
+    .foot { margin-top: .45em; padding-top: .3em; border-top: 1px solid #333;
+            display: flex; flex-wrap: wrap; gap: .4em 1em; align-items: baseline;
+            justify-content: space-between; }
+    .prefs { display: flex; flex-wrap: wrap; gap: .4em; }
     .pref { background: none; border: 1px solid #3a3a3a; border-radius: 3px; cursor: pointer;
             color: #9aa5b5; font: inherit; font-size: .95em; padding: .15em .5em; }
     .pref .m { margin-right: .35em; }
@@ -240,7 +253,7 @@
     .ev { display: flex; gap: .5em; }
     .when { flex: 0 0 2.6em; text-align: right; opacity: .45;
             font-variant-numeric: tabular-nums; font-size: .9em; }
-    .log { margin-top: .45em; padding-top: .3em; border-top: 1px solid #333; opacity: .85; }
+    .log { opacity: .85; white-space: nowrap; }
     .dim { opacity: .6; }
     .bad { color: #ff9b8a; }
 </style>
