@@ -4,7 +4,7 @@ import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.
 import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
 import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 import { grap, grep, tex, throttle } from "$lib/Y.svelte"
-import { mount_opfs_github_nav, mount_lazy_github_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
+import { mount_opfs_github_nav, mount_lazy_github_nav, mount_opfs_pool_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
 import { MountNav, app_tree_decision } from "./MountNav.svelte.ts";
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
@@ -2532,6 +2532,30 @@ export class House extends StorableHousing {
         this.diag(`Wormhole credentials mounted at "${list.name}" — account + identities leave the share`)
     }
 
+    // Wormhole_mount_pool — stand the SoundPool mount (Portability_todo §3: "the pool is simply
+    //  another mount").  A %Record with `path:"pool/…"` then reads|writes through OPFS exactly as
+    //   `"music/…"` resolves through the FSA share: MountNav's longest-prefix routing does the rest,
+    //    zero changes at the meander/serve seams.  Feature-guarded — no OPFS (jsdom, an insecure
+    //     context) mounts nothing and everything else is untouched.  Fire-and-forget OFF the tick
+    //      mutex (OPFS handle acquisition is async); the latch + outcome ride A.c.*, runtime refs.
+    //  One shot per session: OPFS availability is not transient, so 'unavailable' latches too —
+    //   never a per-tick re-probe.
+    Wormhole_mount_pool(A: TheC) {
+        if (A.c.pool_checked) return
+        const mn = A.c.nav as any
+        if (!mn?.is_mounted) return       // no MountNav yet (or the raw cloud nav) — try next tick
+        A.c.pool_checked = true
+        mount_opfs_pool_nav()
+            .then(nav => {
+                if (!nav) { A.c.pool_mounted = 'unavailable'; return }   // honestly no pool here
+                mn.mount('pool', nav, { label: 'SoundPool (OPFS)' })
+                A.c.pool_mounted = 'pool'
+                this.diag(`Wormhole SoundPool mounted — "pool/…" paths now resolve through OPFS`);
+                (this as House).main(true)
+            })
+            .catch(err => { A.c.pool_mounted = 'failed'; A.c.pool_error = String(err) })
+    }
+
     async Wormhole(A: TheC, w: TheC, e: TheC, AT: TheC, wT: TheC) {
         this.diag(`Wormhole() ticked on House=${(this as House).name} DL=${!!A.c.DL} nav=${!!A.c.nav} app_tree=${A.c.app_tree ?? '—'}`)
         if (!A.c.nav && A.c.DL) {
@@ -2546,6 +2570,7 @@ export class House extends StorableHousing {
         }
         if (A.c.DL) this.Wormhole_compose_app_tree(A, A.c.DL)
         this.Wormhole_mount_creds(A)
+        this.Wormhole_mount_pool(A)
         const H  = this as House
 
 

@@ -286,6 +286,29 @@ export async function mount_opfs_github_nav(
     return new OpfsOverlayNav(seed, scratch, `${src.owner}/${src.repo}@${src.ref}`)
 }
 
+// ── OpfsPlainNav — the SoundPool's nav: plain OPFS, no github seed (Portability_todo §3) ──────────
+//  The pool is scratch all the way down — a LOFI cache pressed from Originals, expendable by design —
+//   so the overlay's read-only seed layer has nothing to hold.  Rather than a fourth nav
+//    implementation, this IS the overlay with both layers pointed at the ONE directory: every
+//     read/write/dir method behaves identically (scratch-shadows-seed collapses to a probe of the
+//      same handle), and the nav keeps FULL parity (bin_append/bin_writer/read_range), so MountNav's
+//       capability narrowing never degrades the share when the pool mounts beside it.
+export class OpfsPlainNav extends OpfsOverlayNav {
+    is_opfs_github = false   // NOT the cloud backend — the DirectoryOpener seam must not read it as one
+    is_opfs_pool = true
+    constructor(root: FileSystemDirectoryHandle, label = 'pool') { super(root, root, label) }
+}
+
+// mount_opfs_pool_nav — stand the pool nav on the OPFS directory `<name>/` under this origin's root.
+//  FEATURE-GUARDED, not throwing: no OPFS (jsdom, the daemon, an insecure context) answers null and
+//   the caller mounts nothing — a `path:"pool/…"` is then a dead reference that starts resolving the
+//    day a pool mount stands, exactly the behaviour `"music/…"` has before a share opens.
+export async function mount_opfs_pool_nav(name = 'pool'): Promise<OpfsPlainNav | null> {
+    if (opfs_unavailable()) return null
+    const root = await navigator.storage.getDirectory()
+    return new OpfsPlainNav(await root.getDirectoryHandle(name, { create: true }), name)
+}
+
 // ── LazyGithubNav — the app's own tree, fetched a file at a time ─────────────────
 //
 //  The owner, 2026-08-12: *"just the Sounditron toc.snap needs downloading initially, each step may
