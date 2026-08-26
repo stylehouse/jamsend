@@ -1940,3 +1940,130 @@ async SwarmDisk_order(w):
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+
+// ══ SwarmCohort — the THIRTEENTH Book: the cohort seams + the %Invite autovivify ═══════════════════
+//  SwarmSteal proves the ADDRESS drama end to end — cooperation, theft, Steal Back. SwarmCohort pins
+//   the SEAMS under it one by one — the pure discriminators the cohort census and the ?Iz= boot
+//    handler call directly: the sibling roster (Swarm_sibling|Swarm_is_sibling), note_theft's
+//     family-vs-foe RETURN VALUE (the census branches on it — 👥 silence vs the theft banner),
+//      next_suffix's first-free-berth pick, and the %Invite autovivify (Swarm_invite_note) —
+//       arrived, idempotent, never resetting a walked state. Model layer only — no wire, no pump;
+//        own world w:SwarmCohort (dispatch by WORLD NAME, the usual bomb). Same fixed Alice as the
+//         staple, pinned clock.
+//   beat 2  Alice stands and two vessel tabs join the roster — vessA at _1 (cave) and vessB at _3
+//            (no role) — the discriminator knows them both and no stranger
+//   beat 3  note_theft told about vessA answers FALSE (family, silence) — told about evil99 it
+//            answers TRUE and Identity Stolen rises
+//   beat 4  next_suffix over {bare, _1, _3} picks _2 — the first free berth
+//   beat 5  a compact token knocks twice — ONE %Invite vivifies and stands at state arrived
+//   beat 6  the state walks to redeeming and a re-note does NOT drag it back
+
+SwarmCohort(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmCohort_drive,w,req
+        req%ok = 1
+
+// SwarmCohort_drive — beat dispatch (req-local did_step), then re-sort. No pump: SwarmCohort is all
+//  model-layer (no mail, no frames) so there is nothing to deliver between beats.
+async SwarmCohort_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmCohort_stand(w)
+        if (n === 3) await this.SwarmCohort_alarms(w)
+        if (n === 4) await this.SwarmCohort_berth(w)
+        if (n === 5) await this.SwarmCohort_arrive(w)
+        if (n === 6) await this.SwarmCohort_advance(w)
+    }
+    await this.SwarmCohort_order(w)
+
+// beat 2 — Alice stands and the roster fills: two vessel tabs of the SAME key — vessA holds _1 with
+//  the cave role, vessB holds _3 with NO role (the seam takes '' and writes nothing — no empty sc
+//   leg lands). Witness rides its own swept req, minted last so it observes each pass's settled state.
+async SwarmCohort_stand(w):
+    w.sc.now = 1759200000
+    let alice = await this.SwarmStaple_person(w, 'Alice')
+    let prepub = alice.sc.prepub
+    this.Swarm_sibling(alice, 'vessA', prepub + '_1', 'cave')
+    this.Swarm_sibling(alice, 'vessB', prepub + '_3', '')
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmCohort_witness(w); req.sc.ok = 1 })
+
+// beat 3 — the discriminator's two answers in one beat, the RETURN VALUES parked on w.c (never
+//  encoded): a known sibling claiming the name is family — false, no husk — while evil99 alarms —
+//   true, the stolen flag rises and a durable %Stolen husk lands. Both calls pass a null `at` (the
+//    census's own shape — it carries no clock), so the husk lands wall-clock; re-pin it to the beat
+//     clock so the snap repeats byte for byte.
+async SwarmCohort_alarms(w):
+    w.sc.now = 1759200010
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    w.c.kin_alarm = this.Swarm_note_theft(alice, 'vessA', null)
+    w.c.foe_alarm = this.Swarm_note_theft(alice, 'evil99', null)
+    let husk = this.Swarm_peering(alice)?.o({ Stolen: 'evil99' })[0]
+    if (husk) {
+        husk.sc.at = String(w.sc.now)
+        husk.bump()
+    }
+
+// beat 4 — the berth pick: the pure jump the census hands a newborn tab — past the bare name and the
+//  held suffixes to the first free one. Parked on w.c for the witness (a string return, never sc).
+async SwarmCohort_berth(w):
+    w.sc.now = 1759200020
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    let prepub = alice.sc.prepub
+    w.c.berth = this.Swarm_next_suffix(prepub, [prepub, prepub + '_1', prepub + '_3'])
+
+// beat 5 — the autovivify: a compact token (the file's own codec — prepub16*serial*n*presig16, the
+//  SwarmSpoof presig idiom: 16 hex chars or the parse refuses) knocks TWICE. One %Invite must stand —
+//   state arrived, the offer legs on sc, the presig leg riding .c only — and the second knock finds
+//    the first (oai, never a twin).
+async SwarmCohort_arrive(w):
+    w.sc.now = 1759200030
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    w.c.tok = this.Swarm_token(alice.sc.prepub, 'cohort_1', 'Music', 'deadbeefdeadbeef')
+    this.Swarm_invite_note(w, w.c.tok)
+    this.Swarm_invite_note(w, w.c.tok)
+
+// beat 6 — the walked state sticks: the Door moves the %Invite to redeeming; the same token knocking
+//  again (a re-render or a second scan re-noting the URL) must NOT drag it back to arrived.
+async SwarmCohort_advance(w):
+    w.sc.now = 1759200040
+    let inv = w.o({ Invite: 'cohort_1' })[0]
+    if (inv) {
+        inv.sc.state = 'redeeming'
+        inv.bump()
+    }
+    this.Swarm_invite_note(w, w.c.tok)
+
+// ── the witness — each %see is a per-beat OBSERVATION, gated to its own step (n === K) and reading
+//  the LIVE truth of that beat (the SwarmSteal lesson: %see is not a latch — the drop is the signal).
+SwarmCohort_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    if (!alice) return
+    let peering = this.Swarm_peering(alice)
+    if (!peering) return
+    let prepub = alice.sc.prepub
+    // beat 2: the discriminator — both vessels are known tabs (address + role landed) and a stranger is not.
+    let sibA = peering.o({ Sibling: 'vessA' })[0]
+    if (n === 2 && this.Swarm_is_sibling(alice, 'vessA') && this.Swarm_is_sibling(alice, 'vessB') && !this.Swarm_is_sibling(alice, 'stranger9') && sibA && sibA.sc.address === prepub + '_1' && sibA.sc.role === 'cave' && !(oa %see:'the roster knows vessA and vessB as our own tabs — a stranger is no sibling')) i %see:'the roster knows vessA and vessB as our own tabs — a stranger is no sibling'
+    // beat 3: the two answers — family is silence (false, no husk) while a foe is the alarm (true + husk).
+    if (n === 3 && w.c.kin_alarm === false && !peering.o({ Stolen: 'vessA' })[0] && !(oa %see:'a sibling claiming the name is family — note_theft answers false and raises nothing')) i %see:'a sibling claiming the name is family — note_theft answers false and raises nothing'
+    if (n === 3 && w.c.foe_alarm === true && this.Swarm_stolen(alice) && peering.o({ Stolen: 'evil99' })[0] && !(oa %see:'an unknown claimant is a theft — note_theft answers true and Identity Stolen rises for evil99')) i %see:'an unknown claimant is a theft — note_theft answers true and Identity Stolen rises for evil99'
+    // beat 4: the berth — past the bare name and the held _1|_3 to the first free suffix.
+    if (n === 4 && w.c.berth === prepub + '_2' && !(oa %see:'next_suffix jumps past the bare name and the held tabs to the first free berth at prepub_2')) i %see:'next_suffix jumps past the bare name and the held tabs to the first free berth at prepub_2'
+    // beat 5: the autovivify — ONE particle stands at arrived even after two knocks; the offer legs on sc.
+    let inv = w.o({ Invite: 'cohort_1' })[0]
+    let invs = w.o({ Invite: 1 })
+    if (n === 5 && inv && inv.sc.state === 'arrived' && inv.sc.prepub === prepub && inv.sc.to === 'Music' && !(oa %see:'a scanned token vivifies an Invite particle standing at state arrived with its offer legs on it')) i %see:'a scanned token vivifies an Invite particle standing at state arrived with its offer legs on it'
+    if (n === 5 && inv && invs.length === 1 && !(oa %see:'noting the same token twice is idempotent — one Invite particle stands not two')) i %see:'noting the same token twice is idempotent — one Invite particle stands not two'
+    // beat 6: the walked state sticks — a re-note never resets it and still never twins the particle.
+    if (n === 6 && inv && inv.sc.state === 'redeeming' && invs.length === 1 && !(oa %see:'a re-note never resets a walked state — the Invite stays redeeming after the token knocks again')) i %see:'a re-note never resets a walked state — the Invite stays redeeming after the token knocks again'
+
+// SwarmCohort_order — float A:SwarmCohort to the front of H/* so the Run snap stays readable.
+async SwarmCohort_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmCohort') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
