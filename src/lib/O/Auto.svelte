@@ -1224,6 +1224,12 @@
                 for (const run of w2.o({ run: 1 }) as TheC[]) run.c.driving = false
         existing.stop()
         H.drop(existing)
+        // CULL THE SUPERVISOR'S CORPSES (the owner 2026-08-27: "each Book the runner does can leave
+        //  state in the Supervisor").  The run's worlds just left the tree; every watch|dial a Book
+        //   registered against them is now an orphan on Mundo.  Supervisor_alive stamps them 'unknown'
+        //    per tick, but they accumulate one set per Book forever — so drop them HERE, at the one
+        //     moment we know a run just died.  Soft: no Supervisor up (a plain tab mid-boot) ⇒ no-op.
+        try { (H as any).Supervisor_cull_orphans?.(H) } catch (e) {}
     },
 
 //#region Story stats sync

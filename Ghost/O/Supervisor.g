@@ -431,6 +431,32 @@ Supervisor_unwatch(w, key):
     if (!w) return
     for (const watch of w.o({ Watch: key })) w.drop(watch)
 
+// Supervisor_cull_orphans — DROP every watch|dial whose subject world is no longer in the live tree
+//  (the owner 2026-08-27: "each Book the runner does can leave state in the Supervisor").  The
+//   roster lives on Mundo and OUTLIVES a run BY DESIGN — right for a session-scoped milestone (subject
+//    null: the Butler's boot arc), wrong for a RUN-scoped watch a Book registered against its own
+//     world, which becomes a corpse the moment auto_teardown_story drops H:Story.  Supervisor_alive
+//      already DETECTS that corpse per tick (it is why that walk exists); this ACTS on it at the one
+//       instant the cull is cheap and certain — teardown — turning the passive orphan-stamp into an
+//        active sweep.  Called from auto_teardown_story right after the drop.
+//  THE SCOPE FALLS OUT of Supervisor_alive, not from a tag: a null subject reads ALIVE (a boot
+//   milestone survives), a detached run world reads dead (its watch is culled) — so this needs no
+//    per-watch run-ownership mark, which is exactly the distinction the owner's "virtualise to
+//     H%Story" instinct wants, achieved without moving the world.  A fresh o() snapshot per pass so a
+//      drop never corrupts the live iteration (the req-sweep idiom).
+Supervisor_cull_orphans(H):
+    let w = this.Supervisor_w(H)
+    if (!w) return 0
+    let culled = 0
+    for (const watch of w.o({ Watch: 1 }).slice()) {
+        if (watch.c.subject && !this.Supervisor_alive(watch.c.subject)) { w.drop(watch); culled = culled + 1 }
+    }
+    for (const dial of w.o({ Dial: 1 }).slice()) {
+        if (dial.c.subject && !this.Supervisor_alive(dial.c.subject)) { w.drop(dial); culled = culled + 1 }
+    }
+    if (culled) console.log('🧹 Supervisor culled ' + culled + ' orphaned watch|dial row(s) — a torn-down run left them behind')
+    return culled
+
 // Supervisor_expect — arm an EXPECTATION: a standing watch that is allowed `secs` to come true before
 //  we give up on it.  This is the primitive the doc's title is about ("knowing when to give up"), and
 //   it is what turns a reading into a decision.
