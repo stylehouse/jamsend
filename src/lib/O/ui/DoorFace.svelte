@@ -1,6 +1,7 @@
 <script lang="ts">
     import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
     import InvitePanel from './InvitePanel.svelte'
+    import InviteYourself from './InviteYourself.svelte'
     // DoorFace — WHO AM I and WHO'S WITH ME, floating in the glass: the identity + front-door
     //  arc as the prioritised, for-the-user's-eyes face (the human's ?Iz ask, 2026-07-19).
     //   Mounted by Cytui on the %Door particle (glass_kinds.ts).  Everything here reads LIVE
@@ -152,6 +153,73 @@
         } catch { return null }
     })
 
+    // ── THE BODIES LINE (Portability_todo §9) — which bodies of this soul stand where.  Three
+    //  sources, all live and all soft: the cohort card (`top_House().c.cohort` — the boot census's
+    //   one consumer contract: {primary, vessel, taken, lockless, at}; absent = no cohort ran,
+    //    which is every Book and any API-less browser), the session address (`Swarm_address` —
+    //     bare <prepub> or a <prepub>_N suffix after a Steal Back / non-primary standup), and the
+    //      %Sibling roster on the identity's %Peering (cooperative co-holders — family, the thing
+    //       that keeps the 👥 alarm honest).  Null when there is NOTHING to say (no cohort, no
+    //        siblings, bare address) — a single body at its bare name is the unremarkable default
+    //         and the Door should not spend a line saying so.
+    let bodies = $derived.by(() => {
+        void H?.version
+        void tick
+        try {
+            const ident = typeof H?.Swarm_live_self === 'function' ? H.Swarm_live_self() : null
+            if (!ident) return null
+            const coh = (H?.top_House?.()?.c?.cohort ?? null) as any
+            const bare = String(ident.sc?.prepub ?? '')
+            const addr = String(H?.Swarm_address?.(ident) ?? bare)
+            const suffix = addr !== bare && addr.startsWith(bare + '_') ? addr.slice(bare.length) : ''
+            const sibs = ((H?.Swarm_peering?.(ident)?.o({ Sibling: 1 }) ?? []) as any[]).map((s: any) => ({
+                place: String(s.sc?.Sibling ?? ''),
+                address: s.sc?.address ? String(s.sc.address) : '',
+                role: s.sc?.role ? String(s.sc.role) : '',
+            }))
+            if (!coh && !sibs.length && !suffix && addr === bare) return null
+            return {
+                bare,
+                addr,
+                suffix,
+                primary: coh ? !!coh.primary : null,   // null = no cohort census in this tab
+                lockless: !!coh?.lockless,
+                vessel: coh?.vessel ? String(coh.vessel) : '',
+                sibs,
+            }
+        } catch { return null }
+    })
+    // an address, shortened for a tag: bare reads as the prepub8, a suffixed body as …_N —
+    //  the suffix is the news, the prepub is already on the title line.
+    function short_addr(a: string, bare: string) {
+        if (!a) return ''
+        if (a === bare) return a.slice(0, 8)
+        if (bare && a.startsWith(bare + '_')) return '…' + a.slice(bare.length)
+        return a.slice(0, 8)
+    }
+
+    // ── THE %Invite ROWS (Portability_todo §7/§9) — a landed invite is a visible THING.  The
+    //  vivified %Invite particles live on the station world (Swarm_invite_note homes them there:
+    //   export-blind, Book-blind), sc {Invite:<serial>, prepub, to, n, state}, state walking
+    //    arrived → redeeming → (sealed|refused land later).  Read with a PURE o()[0] walk, never
+    //     `Swarm_station_world()` — that verb is an oai and a probe on a 1s tick must not MINT the
+    //      world it is asking about (the Swarm_probe_station ruling: "a probe that collects").
+    let invites = $derived.by(() => {
+        void H?.version
+        void tick
+        try {
+            const A = H?.top_House?.()?.o?.({ A: 'Clustation' })?.[0]
+            const w = A?.o?.({ w: 'Swarm' })?.[0]
+            return ((w?.o?.({ Invite: 1 }) ?? []) as any[]).map((inv: any) => ({
+                serial: String(inv.sc?.Invite ?? ''),
+                prepub: inv.sc?.prepub ? String(inv.sc.prepub).slice(0, 8) : '',
+                to: inv.sc?.to ? String(inv.sc.to) : '',
+                n: inv.sc?.n ? String(inv.sc.n) : '',
+                state: String(inv.sc?.state ?? 'arrived'),
+            }))
+        } catch { return [] }
+    })
+
     // ── NAME YOURSELF — the first-time move: the chosen name (friendly) is what invites carry
     //  and what friends see; the auto-nick is only a stand-in.  Persists via Clustation_friendly.
     let naming = $state(false)
@@ -266,6 +334,10 @@
            above returns 🚪 and never reaches this. -->
     {#if face.prepub}
         <div class="df-panel"><InvitePanel {H} inglass /></div>
+        <!-- INVITE YOURSELF (Portability_todo §9) — the second gesture beside invite-a-friend:
+             same rails, inverted consequence (its redemption makes you, not befriends you).  V1 is
+             the explainer + an honestly-disabled LinkDevice hatch; see the component. -->
+        <div class="df-panel"><InviteYourself /></div>
     {/if}
     {#if naming}
         <div class="df-naming">
@@ -283,6 +355,17 @@
     {#if face.door?.note}
         <div class="df-note">{face.door.note}</div>
     {/if}
+    <!-- the %Invite rows — each vivified invite is a thing with a lifecycle, shown as one small
+         line: which offer (serial + what it grants), whose (prepub8), and where its state walk
+         stands.  arrived|redeeming are the live states today; sealed|refused wear their colours
+         for when the walk grows those legs. -->
+    {#each invites as inv (inv.serial + inv.prepub)}
+        <div class="df-invrow" class:sealed={inv.state === 'sealed'} class:refused={inv.state === 'refused'}
+            title={`invite #${inv.serial} from ${inv.prepub}${inv.to ? ` — grants ${inv.to}` : ''}${inv.n ? ` (n ${inv.n})` : ''} — ${inv.state}`}>
+            <span>✉ #{inv.serial}{inv.to ? ` ${inv.to}` : ''} from {inv.prepub}</span>
+            <span class="df-invstate">{inv.state}</span>
+        </div>
+    {/each}
     {#if face.up}
         <!-- ME, at the head of the same list the friends stand in: one liveness reading, not two
              cells.  Deliberately styled DOWN from a friend row (this is context, they are the app). -->
@@ -292,6 +375,27 @@
             <span class="df-name">you</span>
             <span class="df-tag dim">up {face.up.label}</span>
             {#if face.up.fresh}<span class="df-tag">fresh reload</span>{/if}
+        </div>
+    {/if}
+    <!-- THE BODIES LINE — one quiet row, only when there is anything to say: this body's place
+         (bare or …_N), whether it holds the bare name (primary), and each known %Sibling.  It sits
+         under the me-row because it is the same reading — WHERE this soul stands — one level
+         deeper.  Hover carries the long form; the row itself stays tag-sized. -->
+    {#if bodies}
+        <div class="df-bodies"
+            title={'the bodies of this identity — one soul, many tabs/devices.'
+                + (bodies.primary === null ? ' No cohort census ran in this tab.'
+                    : bodies.primary ? ' This body holds the bare name (primary).'
+                    : ' Another body holds the bare name; this one stands at a suffix.')
+                + (bodies.lockless ? ' (no Web Locks here — primacy assumed, never arbitrated)' : '')
+                + (bodies.sibs.length ? ` ${bodies.sibs.length} sibling ${bodies.sibs.length === 1 ? 'body' : 'bodies'} known.` : '')}>
+            <span class="df-tag">🧬 this body{bodies.vessel ? ` ${bodies.vessel.slice(0, 6)}` : ''}
+                · {bodies.suffix ? `at …${bodies.suffix}` : 'bare'}{#if bodies.primary !== null}&nbsp;· {bodies.primary ? 'primary' : 'not primary'}{/if}</span>
+            {#each bodies.sibs as s (s.place)}
+                <span class="df-tag dim"
+                    title={`sibling body ${s.place}${s.role ? ` — ${s.role}` : ''}${s.address ? ` at ${s.address}` : ''}`}>👤
+                    {s.place.slice(0, 6)}{s.address ? ` ${short_addr(s.address, bodies.bare)}` : ''}</span>
+            {/each}
         </div>
     {/if}
     <!-- A PIER ROW IS THE LIGHT AND THE NAME, in that order (the owner 2026-08-09: *"other Piers
@@ -435,6 +539,18 @@
     @keyframes df-halfpulse { 0%, 100% { opacity: 0.6 } 50% { opacity: 1 } }
     .df-tag { font-size: 8px; color: #b48fc9; }
     .df-tag.dim { opacity: 0.6; }
+    /* the bodies line — the same voice as a .df-tag row: small, dim, informative.  cursor:help +
+       pointer-events:auto so the hover long-form is reachable through the .df pointer shield. */
+    .df-bodies {
+        display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px;
+        margin-top: 3px; cursor: help; pointer-events: auto;
+    }
+    /* a %Invite row — an arrived offer as a visible thing; the state word carries the colour:
+       amber while it is in flight (arrived|redeeming), green sealed, red refused. */
+    .df-invrow { display: flex; align-items: center; gap: 6px; font-size: 10px; margin-top: 2px; cursor: help; pointer-events: auto; }
+    .df-invstate { font-size: 8px; color: #d8c56b; }
+    .df-invrow.sealed .df-invstate { color: #7fc98a; }
+    .df-invrow.refused .df-invstate { color: #e06a6a; }
     /* the +N more toggle — the cap's release valve, styled to whisper */
     .df-more {
         pointer-events: auto; cursor: pointer; background: none; border: none;

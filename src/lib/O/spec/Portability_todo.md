@@ -85,12 +85,15 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 - ✅ **The wire dial** — `Socket_real` reads `address ?? name` fresh per connect (`home()`),
    gains `rehome()`; `Swarm_steal_back`/`Swarm_reinstate` call `Swarm_rehome(ident)` which
     syncs the station Peering and re-dials. A Steal Back now reaches the relay.
-- ✅ **The cohort v1** (`src/lib/O/Cohort.svelte.ts` + SwarmStandup gate + the
-   `Swarm_station_up` consult): Web Lock decides profile primacy (zero staleness, auto-release
-    on tab death), BroadcastChannel census names `taken` and registers `%Sibling`s (that
-     verb's first app-path caller — family no longer trips the 👥 alarm), and a non-primary
-      tab suffixes BEFORE its first dial. The second tab quietly becomes the second tab.
-       NOT yet live-verified with two real tabs — the morning's first proof.
+- ✅ **The cohort v1** (`Swarm_cohort_vessel/primacy/stand` in Ghost/S/Swarm.g's places
+   region — a GHOST, by the Socket_real raw-browser-API precedent — + the SwarmStandup gate +
+    the `Swarm_station_up` consult): Web Lock decides profile primacy (zero staleness,
+     auto-release on tab death), BroadcastChannel census names `taken` and registers
+      `%Sibling`s (that verb's first app-path caller — family no longer trips the 👥 alarm),
+       and a non-primary tab suffixes BEFORE its first dial. The second tab quietly becomes
+        the second tab. NOT yet live-verified with two real tabs — the next session's first
+         proof. An address change also ROLLS THE ERA (`Swarm_rehome` re-mints station_era +
+          drops the voucher), so peers treat a moved body as the rebirth it is.
 - ✅ **`Ra_holding_keys()`** — the one authority on holding mainkeys; the three
    silently-failing seams (Repli_merge ×2, Repli_recv_lines breadcrumb, Repli_find_record)
     now ask it. Byte-identical today (set = `['Record']`).
@@ -132,12 +135,20 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
     soul, so it cannot mix up when one browser holds two identities. Sits at the top of the
      one slope of persistence (Dexie|FSA behind the same abstraction); largely still to make
       up (§10).
-- **The cohort roster** — new data (ruled 2026-08-27): the bodies of one soul that have met
-   share who-is-who — a Tier-B shelf of instance rows (vessel id, SelfType, last address,
-    last seen). This is "the something parameterised on the Cave end of the Account": each
-     body's replica carries its own instance stamp, and the roster is the union of the
-      stamps. The %Sibling machinery is its seed; the roster is %Sibling made durable and
-       replicated.
+- **Cohort** — the bunch of your device limbs currently standing: every live body of the
+   soul, wherever it stands. Three faces, stacked: the cohort is the SET; "am I alone?" is
+    the boot question a limb asks of it (Swarm_cohort_stand) before touching the wire; and
+     "the identity stands in ONE place" is the guarantee built on the answer — exactly one
+      limb at the bare name at a time, every other limb at a suffix, all verified by the same
+       key. Detection radius grows by layer: the v1 census sees one browser profile (Web Lock
+        + BroadcastChannel); the filesystem beats widen it to the machine; the relay hellos
+         widen it to the world.
+- **The cohort roster** — the cohort's MEMORY (ruled 2026-08-27): the limbs this soul has
+   met, standing or not — a Tier-B shelf of instance rows (vessel id, SelfType, last
+    address, last seen). This is "the something parameterised on the Cave end of the
+     Account": each body's replica carries its own instance stamp, and the roster is the
+      union of the stamps. The %Sibling machinery is its seed; the roster is %Sibling made
+       durable and replicated.
 - **Captain** — the soul's home body, most likely the phone: no FSA (`showDirectoryPicker` is
    desktop-Chromium-only — the one hard fact of the phone arc), storage in OPFS/Dexie only.
     The social hand: in-person QR, invites, the human's presence. Holds the helm.
@@ -335,8 +346,48 @@ Portability is a merge problem, and an account is three tiers that merge differe
              single-writer`, `home: dexie:<table>|berth:<path>|opfs:<mount>`). That keeps
               IOexpr pure and gives the account a machine-readable law-book — and it would
                make the account schemas IOexpr's first tenant, un-parking it with a real
-                load. Standard of that shape to be done; deeper aspects updated here as the
-                 tenant work teaches.
+                load.
+
+  *The standard, drafted (2026-08-27, post-rulings — writer vocabulary reflects
+   Captain-only Tier C, no leases):*
+
+  ```
+  %Schema,account            — Tier A+B+C, the soul's own book
+    io: IO,account           —   find: {Identity:1, active:1}  shape: mirror
+    keyed_by: prepub
+    replicates: yes          —   the standing body-to-body stream (§7)
+    writer: captain-only     —   Tier C rides inside; the role IS the lock (§2C)
+    merge: single-writer
+    home: berth:account/<prepub>/
+
+  %Schema,heists             — Tier B, what the soul decided to take
+    io: IO,heists            —   find: {Heist:1}  in: home shop  shape: mirror
+    keyed_by: prepub
+    replicates: yes
+    writer: any-body         —   any body may Heist (§6)
+    merge: union             —   keyed by id; same take twice = one row
+    home: berth:<prepub>/Heists
+
+  %Schema,pool               — the SoundPool ledger (§3)
+    io: IO,pool              —   find: {Record:1, grade:1}  in: pool shelf  shape: mirror
+    keyed_by: instance       —   THIS body's pool; the smuggle unions it Cave-ward
+    replicates: smuggle-to:cave
+    writer: this-body-only
+    merge: union
+    home: opfs:pool/ + berth:<prepub>/Pool (the Cave-side backup twin)
+
+  %Schema,newlyadded         — per-COLLECTION, deliberately soul-blind (§2D)
+    io: IO,newlyadded        —   find: {Got:1}  shape: mirror
+    keyed_by: collection
+    replicates: no           —   it describes THIS box's collection; travel would lie
+    writer: any-body
+    merge: union
+    home: berth:Newlyadded
+  ```
+
+  The seams that would read these: `Berth_open/save` (home), the persist gates (writer),
+   the §7 replication stream (replicates + merge), the §8 adoption union (merge). Deeper
+    aspects update here as the tenant work teaches.
 
 ---
 
