@@ -126,13 +126,43 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 - ✅ **Regression closed**: the %Invite vivify was snapping onto Book worlds (SwarmStaple/
    SwarmInvite red); gated on `station_up` (Books never set it); both GREEN on live runner now.
 
+**ALSO LANDED (off-lane, the owner surfaced it):**
+- ✅ **Supervisor orphan cull** (`Supervisor_cull_orphans` + `auto_teardown_story` call):
+   each Book the runner runs left its Watch/Dial rows on Mundo's Supervisor (they OUTLIVE the
+    run by design, `Supervisor.g:189`; `Supervisor_alive` only stamped them 'unknown' per tick,
+     never dropped them). Now `auto_teardown_story` drops every orphan (subject world detached)
+      at the one instant it is cheap and certain. Scope falls out of `Supervisor_alive` — a
+       null-subject boot milestone survives, a run world's watch is culled — so it needs no
+        run-ownership tag, which is the owner's "virtualise to H%Story" instinct achieved
+         WITHOUT moving the world. The bigger overlay-virtualisation (a per-run sub-roster
+          under H%Story) stays the recorded direction; this cull is forward-compatible with it.
+
+**VERIFICATION LEDGER (be honest about what is proven):**
+- GREEN on live runner: SwarmCohort (the night's core verbs), SwarmStaple + SwarmInvite (the
+   regression, closed). LocalGen compile: every touched ghost.
+- relay-test.ts GREEN: the hello-v2 arbiter (relay side).
+- NOT cleanly live-proven, needs a session with the right infra: the hello-v2 CLIENT adopt
+   path (needs two machines on one relay); the cohort two-tab case (needs two real tabs); the
+    Supervisor cull's cross-Book non-drift (Sounditron is environmentally red for friend-
+     streaming so it can't prove it — gap evidence says safe, but a two-Book sweep or a
+      dedicated model Book beat is owed); pool landing (proven INERT — no Book sets
+       mardir='pool' — so nothing exercises it yet).
+- Fixtures NOT recorded: SwarmCohort wrote first fixtures to `wormhole/Story/SwarmCohort/`
+   this run — RECORD + commit them to gate the Book. All other wormhole churn was reverted
+    (run-volatile, unverified).
+
 **Candidates to get on with next** (none blocks the others):
-- Two-machine live proof of hello-v2 (the client adopt path is compiled but unrun).
-- The pool PRESS (§5 Flow 2) — `Ra_transcode` pointed at a pool target, the SoundPool fill.
+- Record the SwarmCohort fixtures; a dedicated model Book beat for `Supervisor_cull_orphans`
+   (register watch → drop subject world → cull → assert gone) — clean-verifiable, no infra.
+- Two-machine live proof of hello-v2; two-tab proof of the cohort.
+- The pool PRESS (§5 Flow 2) — `Ra_transcode` pointed at a pool target (located: Ra.g ~802,
+   Radio.g ~1139; needs a transcode-grade knob on the world, absent today) — this is what
+    actually feeds the inert pool-landing.
 - Gossip/stream signing universalisation (§10 signing floor — the audit named ~15-20
    `verifyHeader` sites; ruled to precede pool exchange). Security-sensitive: design + Book
     before blind build.
-- The LinkDevice ceremony proper (§7) — the encrypted account transfer riding repli.
+- The LinkDevice ceremony proper (§7) — the encrypted account transfer riding repli. The
+   InviteYourself dialogue is an honest stub awaiting this.
 - `%Schema` law-book (§2E, drafted) — your preen, then wire `Berth_open/save` to read it.
 
 ---
