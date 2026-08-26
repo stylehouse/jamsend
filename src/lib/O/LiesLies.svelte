@@ -1250,6 +1250,16 @@
             const pub  = (H as any).Lies_self?.(w)?.prepub ?? 'anon'
             const path = `wormhole/_socklog/${role}-${pub}-${SOCKCAP_BOOT}.jsonl`
             const rw   = w.oai({ rw_queue: 1 })
+            // Bound this caller-side queue.  The Wormhole rw_op drain sweeps only ITS OWN wrapper
+            //  reqs (w:Wormhole/rw_queue, Housing.svelte.ts:2714); the req we mint here lives under
+            //   w:Lies/rw_queue and nothing else reclaims it — and rw_data (the growing ring) rides
+            //    the oai match key, so every beat MINTS A FRESH row instead of reusing.  Unswept that
+            //     is one row per beat forever → the 6000 "giant stuff" fatal on w:Lies/rw_queue.  So
+            //      reclaim our finished reqs (the 2714 idiom, owner-side), and if a write is still in
+            //       flight skip this beat — the ring is cumulative, the next dump carries a superset —
+            //        which holds the queue to a single live req even when the target is unreachable.
+            ;(rw.o({ req: 1, finished: 1 }) as TheC[]).forEach(rr => rw.drop(rr))
+            if ((rw.o({ req: 1, rw_name: path }) as TheC[]).length) return
             const req  = await rw.oai({ req: 1, rw_name: path, rw_op: 'write', rw_data: sockcap_lines() })
             H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         },
@@ -1289,6 +1299,11 @@
             const path = `wormhole/_trace/${role}-${pub}-${SOCKCAP_BOOT}.jsonl`
             const data = trace.map((c) => JSON.stringify(c)).join('\n')
             const rw   = w.oai({ rw_queue: 1 })
+            // Same caller-side bound as Lies_dump_socklog (see its note): reclaim our finished reqs
+            //  and skip while a write is in flight, so this shared w:Lies/rw_queue never accretes a
+            //   row per beat past the "giant stuff" ceiling.  The trace ring is cumulative too.
+            ;(rw.o({ req: 1, finished: 1 }) as TheC[]).forEach(rr => rw.drop(rr))
+            if ((rw.o({ req: 1, rw_name: path }) as TheC[]).length) return
             const req  = await rw.oai({ req: 1, rw_name: path, rw_op: 'write', rw_data: data })
             H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         },
