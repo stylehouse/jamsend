@@ -1249,18 +1249,22 @@
             //   the identity stands up.
             const pub  = (H as any).Lies_self?.(w)?.prepub ?? 'anon'
             const path = `wormhole/_socklog/${role}-${pub}-${SOCKCAP_BOOT}.jsonl`
-            const rw   = w.oai({ rw_queue: 1 })
-            // Bound this caller-side queue.  The Wormhole rw_op drain sweeps only ITS OWN wrapper
-            //  reqs (w:Wormhole/rw_queue, Housing.svelte.ts:2714); the req we mint here lives under
-            //   w:Lies/rw_queue and nothing else reclaims it — and rw_data (the growing ring) rides
-            //    the oai match key, so every beat MINTS A FRESH row instead of reusing.  Unswept that
-            //     is one row per beat forever → the 6000 "giant stuff" fatal on w:Lies/rw_queue.  So
-            //      reclaim our finished reqs (the 2714 idiom, owner-side), and if a write is still in
-            //       flight skip this beat — the ring is cumulative, the next dump carries a superset —
-            //        which holds the queue to a single live req even when the target is unreachable.
-            ;(rw.o({ req: 1, finished: 1 }) as TheC[]).forEach(rr => rw.drop(rr))
-            if ((rw.o({ req: 1, rw_name: path }) as TheC[]).length) return
-            const req  = await rw.oai({ req: 1, rw_name: path, rw_op: 'write', rw_data: sockcap_lines() })
+            // Own single-slot holder (NOT the shared {rw_queue:1}): each beat REPLACES its one req
+            //  via r() instead of i()-ing a fresh row.  Why this matters:
+            //   • The overflow — this caller-side holder is serviced by an elvis to Wormhole (the
+            //      Wormhole drain sweeps only its OWN wrapper queue, never this one), and the growing
+            //       ring rides the oai match key so a bare oai() never reuses — it i()s a new req every
+            //        beat.  i()-without-replace() grows X.z without bound (drop() only marks; compact()
+            //         only reclaims dropped rows) → the 6000 "giant stuff" fatal.  r() rebuilds the
+            //          collection down to the single current req, so it stays size 1.
+            //   • A DISTINCT holder from Lies_dump_supply — replace()'s nested-transaction guard is
+            //      per-container-C (replace_having), and Lies_heartbeat fires both dumps un-awaited on
+            //       the same tick; two r()s on ONE C throw "nested replace() transactions".  Separate
+            //        holders keep them independent.
+            //   • Safe to replace this %req's ref — it carries no do_fn/child-reqs/oncelers (roai's
+            //      warning), just rw_* data an elvis hands to Wormhole; the fresh ref re-fires the write.
+            const rw   = w.oai({ rw_queue: 'socklog' })
+            const req  = await rw.r({ req: 1 }, { rw_name: path, rw_op: 'write', rw_data: sockcap_lines() })
             H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         },
         // Lies_dump_supply — persist the SUPPLY|HEIST pipeline trace (top_House().c.supply_trace, the
@@ -1298,13 +1302,12 @@
             const role = H.Lies_role(w) ?? 'app'
             const path = `wormhole/_trace/${role}-${pub}-${SOCKCAP_BOOT}.jsonl`
             const data = trace.map((c) => JSON.stringify(c)).join('\n')
-            const rw   = w.oai({ rw_queue: 1 })
-            // Same caller-side bound as Lies_dump_socklog (see its note): reclaim our finished reqs
-            //  and skip while a write is in flight, so this shared w:Lies/rw_queue never accretes a
-            //   row per beat past the "giant stuff" ceiling.  The trace ring is cumulative too.
-            ;(rw.o({ req: 1, finished: 1 }) as TheC[]).forEach(rr => rw.drop(rr))
-            if ((rw.o({ req: 1, rw_name: path }) as TheC[]).length) return
-            const req  = await rw.oai({ req: 1, rw_name: path, rw_op: 'write', rw_data: data })
+            // Own single-slot holder, r()-replaced each beat — same shape + rationale as
+            //  Lies_dump_socklog (see its note): keeps this caller-side collection at size 1 instead of
+            //   i()-ing a fresh row per beat into the "giant stuff" overflow.  DISTINCT holder from
+            //    socklog's so the two un-awaited r()s on one tick don't trip replace()'s per-C nested guard.
+            const rw   = w.oai({ rw_queue: 'supply' })
+            const req  = await rw.r({ req: 1 }, { rw_name: path, rw_op: 'write', rw_data: data })
             H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         },
         // Lies_keepalive — the channel keepalive: the three-state liveness watchdog + the ping cadence.

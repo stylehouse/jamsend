@@ -71,6 +71,8 @@
 //                       (daemon.log.1 keeps one prior generation — appendFileSync forever was
 //                        unbounded, Daemon_todo §8.5)
 //   QUIET=1            drop the app's own console noise, keep the daemon's own lines
+//                       (per-topic verbosity is the `const V = {}` block below — flip a flag in CODE,
+//                        the repo's own idiom; this is a dev box, so it lives here, not in .env)
 //
 // EXIT CODES — every one drains pending writes first (`shutdown()`, below):
 //   0 normal stop (SECS reached, SIGINT/SIGTERM, or /stop)      1 no House ever appeared
@@ -95,6 +97,32 @@ const STATUS_TOKEN = process.env.STATUS_TOKEN || crypto.randomBytes(16).toString
 const SECS     = Number(process.env.SECS || 0)
 const QUIET    = process.env.QUIET === '1'
 const t0       = Date.now()
+
+// V — per-topic log gate, the repo's own `const V = {}` idiom (Story.svelte:128, Radios.svelte:34,
+//  Records.svelte:23, …): flip a topic to 1 HERE in code to see it — this is a dev box, so it lives in
+//   source, not .env.  The app's transport/replication chatter is a firehose (thousands of lines that
+//    bury the events that matter), so every topic ships OFF; errors|warnings (☠/⚠) and any line that
+//     matches no topic ALWAYS print regardless.  The daemon can't set a flag inside the shared ghost
+//      call sites, so it gates at its own console boundary by the glyph the app already prefixes.
+const V: Record<string, number> = {}
+V.wire = 0        // 🛰  ws frames, buffered sends, transport
+V.repli = 0       // ◈ Repli  the rx/tx throughput meter, serve|land
+V.supply = 0      // ◈  pull cursors, parked|transcode|heist lifecycle (non-error)
+V.presence = 0    // 👥  who_ok online counts
+V.account = 0     // 🪪  account re-mirror settles (~20s)
+// glyph → topic, first match wins — the specific ◈ Repli meter before the generic ◈ supply family.
+const V_TOPIC: Array<[RegExp, string]> = [
+    [/^\s*🛰/, 'wire'],
+    [/^\s*◈ Repli/, 'repli'],
+    [/^\s*◈/, 'supply'],
+    [/^\s*👥/, 'presence'],
+    [/^\s*🪪/, 'account'],
+]
+const v_pass = (s: string): boolean => {
+    if (s.includes('☠') || s.includes('⚠')) return true      // errors|warnings, whatever the topic
+    for (const [re, topic] of V_TOPIC) if (re.test(s)) return !!V[topic]
+    return true                                              // matched no topic ⇒ news, not noise
+}
 
 // Log to a FILE as well as stdout, always.  A daemon's stdout is a pipe, and node block-buffers a
 //  piped stdout — kill the process and the last 64KB of the story dies with it, which is exactly
@@ -225,6 +253,7 @@ process.on('uncaughtException', (e: any) => {
 
 const app_log = console.log
 if (QUIET) console.log = () => {}
+else console.log = (...args: any[]) => { if (v_pass(String(args[0] ?? ''))) app_log(...args) }
 
 // ── 2. the machine ───────────────────────────────────────────────────────────────────────────
 // WHICH dexie am I?  The alias is invisible at the call sites (they all just `import from 'dexie'`),
@@ -972,7 +1001,7 @@ const persist_account = async (): Promise<void> => {
         mirrored_snap = snap || NO_FINGERPRINT
         // the ack edge, same as the browser mirror's: /status's persist card reads this stamp.
         try { (((H as any).top_House?.() ?? H) as any).c.account_mirror_at = Date.now() } catch {}
-        if (again) say(`🪪 account re-mirrored — the friend list on disk changed${owed_why ? ` (settled: ${owed_why})` : ''}`)
+        if (again && V.account) say(`🪪 account re-mirrored — the friend list on disk changed${owed_why ? ` (settled: ${owed_why})` : ''}`)
         else say(`🪪 account mirrored → .jamsend/account/${ident.sc.prepub}/toc.snap (resume with I=${ident.sc.prepub})`)
     } catch (e: any) {
         mirrored_snap = ''
@@ -1002,6 +1031,13 @@ const muse_collection = async (): Promise<void> => {
         //  a dev checkout's `testsounds` is 8 tracks, and finding those instead of a real collection
         //   is precisely the "proves plumbing, means nothing" outcome MUSIC= exists to end.
         const bases = mounts.music ? ['music'] : ['testsounds', 'music', '']
+        // The SoundPool base (Portability_todo §3) — the daemon has no OPFS, so its `pool/` is a
+        //  real directory the overlay pair already serves with zero nav changes: writes to `pool/…`
+        //   land in `${OVERLAY}/pool` through writeAbs, reads fall through overlay→base.  Guarded on
+        //    the nav actually resolving it (dir_at answers null for an absent dir), and LAST in the
+        //     order: the pool is a LOFI cache, and musing it ahead of a real collection would be the
+        //      "proves plumbing, means nothing" outcome all over again.
+        if (await nav.dir_at('pool')) bases.push('pool')
         for (const base of bases) {
             const picks: string[] = (await (H as any).Crate_nav_meander(nav, base, 5)) || []
             if (!picks.length) continue

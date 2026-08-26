@@ -121,7 +121,15 @@
         //    a click no longer changes anyone's size or anyone's view.  What stays is the smuggled
         //     press: a cell whose source wears `.c.press` is a BUTTON (the OK/CANCEL substrate the
         //      satellites ride), and pressing a button is the one thing a click still means.
-        void w
+        // A TAP IS ALSO A RE-MEASURE HINT (the owner 2026-08-27: *"when I click the cell background …
+        //  that should be a re-measure trigger for component overlay … the user will tap on things that
+        //   are spastic so we should take that hint"*).  A glass that is seated wrong — a face off to the
+        //    side, a mold that never left 'crushed' — is exactly the cell a user reaches out and taps,
+        //     and the re-measure ladder is what un-sticks it (the same ladder a pose change or a mouse-
+        //      over arms; "the mouse was the ladder", see `settle_arrival`).  So arm it on ANY cell tap,
+        //       before and regardless of the press below: `measure_world` self-guards (no-op unless a
+        //        row still `need_floor`s, never while engaged), so a tap on a settled cell costs nothing.
+        settle_ladder(w)
         const src: any = (cell.row.c as any)?.source_n
         // `.c.press` is the name; `.c.onclick` is the name people reach for (the owner did — "some of
         //  them have click handlers magically (C.c.onclick?)"), and a handler that silently does not

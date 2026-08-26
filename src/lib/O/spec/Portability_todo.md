@@ -119,10 +119,21 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 - ✅ **Door surfaces** (DoorFace + new InviteYourself.svelte): the bodies line (this body's
    place + primary + siblings, null when unremarkable), the Invite-yourself dialogue (explains
     portability, LinkDevice QR stubbed honest), and %Invite rows (arrived/redeeming visible).
-- ✅ **SwarmCohort Book** (Swarmation.g, GREEN on live runner): proves Swarm_sibling
-   recognition, Swarm_note_theft family-vs-foe, Swarm_next_suffix, and %Invite autovivify +
-    idempotency + state-walk. First fixtures written to `wormhole/Story/SwarmCohort/` — RECORD
-     THEM (`runner_ask run SwarmCohort` then inspect/commit) to gate it.
+- ⚠️ **SwarmCohort Book** (Swarmation.g) — **its green is HOLLOW; do NOT trust or gate it as-is
+   (caught 2026-08-27).** The `.g` authors 5 real beats (2–6: Swarm_sibling recognition,
+    Swarm_note_theft family-vs-foe, Swarm_next_suffix berth, %Invite autovivify + idempotency +
+     state-walk), each with a live `%see` witness — but the recorded Story **Plan is a 1-step
+      stub**, so the runner advances `step_n` to 1 only and beats 2–6 (gated on `step_n===2..6`)
+       **never fire**. Evidence: `runner_ask steps` returns `steps:[{n:1,ok:1}]` and `001.snap`
+        is the empty settled world (no Alice, no Sibling roster, no %Invite); compare SwarmStaple,
+         same convention, which runs `n:1..8` with `001–008.snap`. Neither Book declares its step
+          count in source — the count comes ONLY from the recorded Plan/`NNN.snap` set, authored
+           in the Story EDITOR (Storui), NOT via `runner_ask` (`accept` re-records only what
+            actually ran = 1 step; check-mode caps at the recorded-snap count). **The fix is an
+             editor authoring pass** that walks beats 2–6 and records `002–006.snap`; the CLI
+              cannot bootstrap it, and hand-writing the snaps would be a forged gate. Until then
+               the green means "the empty wrangle stood up", nothing more. **Do NOT commit
+                `wormhole/Story/SwarmCohort/` — it would gate a hollow run.**
 - ✅ **Regression closed**: the %Invite vivify was snapping onto Book worlds (SwarmStaple/
    SwarmInvite red); gated on `station_up` (Books never set it); both GREEN on live runner now.
 
@@ -138,29 +149,57 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
           under H%Story) stays the recorded direction; this cull is forward-compatible with it.
 
 **VERIFICATION LEDGER (be honest about what is proven):**
-- GREEN on live runner: SwarmCohort (the night's core verbs), SwarmStaple + SwarmInvite (the
-   regression, closed). LocalGen compile: every touched ghost.
+- GREEN on live runner (2026-08-27 re-confirmed): SwarmStaple (`n:1..8`, all ok) + SwarmInvite
+   (the regression, closed). LocalGen compile: Ra/Heist/Repli/Swarm clean, zero gen churn.
 - relay-test.ts GREEN: the hello-v2 arbiter (relay side).
+- ⚠️ **NOT actually proven — was a false green: SwarmCohort.** It runs 1 hollow step; beats 2–6
+   never fire (see the ⚠️ entry above). Its verbs (sibling/note_theft/next_suffix/%Invite
+    autovivify) are UNPROVEN at the Book layer until the Plan is authored to 6 steps in the editor.
+   **Blast radius is exactly this one Book** — a disk audit of recorded step-snaps shows every other
+    Swarm Book properly authored (SwarmStaple 8, SwarmGot 9, SwarmShare 9, SwarmPolicy 8, SwarmDisk
+     7, SwarmSteal 6, the rest 5); only SwarmCohort sits at 1. The established suite is genuinely gated.
 - NOT cleanly live-proven, needs a session with the right infra: the hello-v2 CLIENT adopt
    path (needs two machines on one relay); the cohort two-tab case (needs two real tabs); the
     Supervisor cull's cross-Book non-drift (Sounditron is environmentally red for friend-
      streaming so it can't prove it — gap evidence says safe, but a two-Book sweep or a
       dedicated model Book beat is owed); pool landing (proven INERT — no Book sets
        mardir='pool' — so nothing exercises it yet).
-- Fixtures NOT recorded: SwarmCohort wrote first fixtures to `wormhole/Story/SwarmCohort/`
-   this run — RECORD + commit them to gate the Book. All other wormhole churn was reverted
-    (run-volatile, unverified).
+- Fixtures: **do NOT commit `wormhole/Story/SwarmCohort/`** (hollow gate, above). All other
+   wormhole churn is run-volatile and should be reverted, not committed.
+
+**RESOLVED BY DESIGN 2026-08-27 (analysis, no code — two lanes de-risked):**
+- ✅ **Pool PRESS traced** (§3 "PRESS — what actually feeds the landing"): the landing is
+   complete + correct; it is inert only because its two triggers (`mardir='pool'` + a pressed
+    `lofi`/`body_hash`) go unlit. The owed driver is `Ra_press(shelf, origId)` REUSING
+     `Heist_catalog_land` (never a parallel minter), and its verification Book MUST press through
+      a pinned stub — the real transcode isn't bit-reproducible (`Ra.g:1300`), so a byte-exact
+       fixture of a real press is impossible; assert shape, not bytes.
+- ✅ **Signing floor resolved to "already coherent"** (§0 candidate + §10 reconciled): the
+   feared ~15-20-unsigned-sites audit was a red herring. Seals are ed25519-signed, content
+    transfers are vouch-gated fails-closed (`Heist_vouch_ok`/`Ra_verify`), the relay is a
+     hello-bound dumb router, and live-cast `%MusuThem` gossip is structurally non-promotable to
+      a holding (`Ra_holding_keys` exclusion). Per-frame gossip signing is HARDENING, NOT a
+       pool-exchange ship-blocker (the old "land before pool exchange" is withdrawn). One
+        invariant is worth a Book: `%MusuThem` never promotes off-vouch.
 
 **Candidates to get on with next** (none blocks the others):
-- Record the SwarmCohort fixtures; a dedicated model Book beat for `Supervisor_cull_orphans`
+- **Author SwarmCohort's real Plan** — editor-only (confirmed 2026-08-27: `Story.svelte:1547`
+   mints a fresh run with `total = 1` and the comment "user builds up the test step-by-step via
+    Resume"; no `runner_ask`/`poke` verb drives step advance). RECIPE: boot the runner on
+     SwarmCohort, hit **Resume** five times (steps 2→6, each beat's `%see` should light), then
+      **Accept-All** (`runner_ask accept` = the same button over the wire) to record `002–006.snap`;
+       finally re-run in check mode and confirm `steps` shows `n:1..6` all green — THAT is the real
+        proof. Beats + witnesses are already written in `.g`; only the recorded Plan is missing.
+- A dedicated model Book beat for `Supervisor_cull_orphans`
    (register watch → drop subject world → cull → assert gone) — clean-verifiable, no infra.
 - Two-machine live proof of hello-v2; two-tab proof of the cohort.
-- The pool PRESS (§5 Flow 2) — `Ra_transcode` pointed at a pool target (located: Ra.g ~802,
-   Radio.g ~1139; needs a transcode-grade knob on the world, absent today) — this is what
-    actually feeds the inert pool-landing.
-- Gossip/stream signing universalisation (§10 signing floor — the audit named ~15-20
-   `verifyHeader` sites; ruled to precede pool exchange). Security-sensitive: design + Book
-    before blind build.
+- Build the pool PRESS driver — start with **v1 = byte-copy into the OPFS pool** (deterministic,
+   so a NORMAL byte-exact Book proves it — shippable now, `Ra_rec_pool` already handles the
+    no-transcode case); defer **v2 = ogg128 transcode** (non-reproducible → pinned-stub shape-Book).
+     Both reuse `Heist_catalog_land`. Full trace + the v1/v2 split at §3.
+- (Optional hardening, NOT a blocker) per-frame gossip signing — the signing floor is already
+   coherent (resolved above & §10); the only owed test is the `%MusuThem`-never-promotes-off-vouch
+    invariant guard.
 - The LinkDevice ceremony proper (§7) — the encrypted account transfer riding repli. The
    InviteYourself dialogue is an honest stub awaiting this.
 - `%Schema` law-book (§2E, drafted) — your preen, then wire `Berth_open/save` to read it.
@@ -530,6 +569,47 @@ Portability is a merge problem, and an account is three tiers that merge differe
            (This scopes the older "no heist setup on the phone" ruling of 2026-08-15 to the
             v1 *UI*, while the *machinery* below it goes destination-agnostic.)
 
+**PRESS — what actually feeds the landing (traced 2026-08-27, the driver is the one hole left).**
+ The catalog LANDING is already complete and correct: `Heist_catalog_land`'s pool branch
+  (`Heist.g:972`) mints through `Ra_rec_pool` (`Ra.g:895`) — id = the lofi enid
+   (`body_hash.slice(0,16)`), `of:<original>` the cross-fidelity join, `grade:'ogg128'`, `lofi:1`
+    — and I proved it **inert**: no path in the tree lights its two triggers. It fires only when
+     BOTH hold: (a) the mount side — `w.c.mardir` names `'pool'` (already free via MountNav prefix
+      routing, §3 above); and (b) the byte side — the landed `rec` carries `sc.lofi=1` **and** a
+       `sc.body_hash` that is the hash of the *pressed* bytes, not the Original's. Nothing sets (b),
+        so every real heist takes the library branch byte-for-byte. **The missing driver is a press
+         that produces those pressed bytes and hands them to the landing with both flags lit.**
+  Shape of the driver (call it `Ra_press(shelf, origId)`): read the Original's bytes off its nav →
+   encode ogg128 → compute the pressed `body_hash` → drive a heist whose `mardir='pool'` and whose
+    mirror `rec` carries `lofi:1` + that `body_hash`, so it falls straight through the EXISTING pool
+     branch. It must **reuse** `Heist_catalog_land`, never fork a parallel minting path — the whole
+      point of routing the three Repli seams through `Ra_holding_keys()` (§0, landed) was to keep
+       one authority; a bespoke press-minter would re-open the forty-five-seams flaw the coupling
+        burn just closed.
+  **⚠ The determinism trap that governs how this can be VERIFIED.** `Ra.g:1300` is explicit: the
+   Ra-path transcode is **not bit-reproducible** — two presses of one Original yield different bytes,
+    hence different enids, hence a different pool-record `id`/`body_hash` every run. So a Book that
+     presses with the *real* codec can never be byte-exact, and a byte-exact snap fixture is the
+      Story gate. The verification strategy therefore MUST split: a model Book presses through a
+       **pinned stub** (fixed pressed-bytes → fixed enid) and asserts the *shape* — that a
+        `%Record,of:<orig>,grade:ogg128,lofi:1` lands on the pool shelf with a `pool/…` path and the
+         cross-fidelity join is well-formed (a `%see` claim, no comma) — while the *real* codec's
+          fidelity is a separate, non-fixtured concern (listen, or measure, never snap). This is the
+           same reason `%Original` cids are the only ones that ride a swarm-shared signature
+            (`Ra.g:1300`): a grade's bytes are local truth, never shared truth. Build the driver and
+             the stubbed shape-Book together; do not attempt to fixture the real press.
+  **The trap has a clean way around it for v1 — split the press in two (2026-08-27).** A pool copy
+   does NOT have to transcode: `Ra_rec_pool` already handles the no-press case (`lofiId===origId`,
+    `grade` absent, `of:` elided — "a copy of itself needs no cross-fidelity join"). So **v1 press =
+     a byte-for-byte copy of the Original into the OPFS pool nav** — which is *deterministic* (a copy
+      reproduces bit-for-bit, unlike the codec), hence FULLY byte-exact-testable with a normal
+       fixture, no stub required. It is already useful: it makes a track portable to a device that
+        shouldn't hold the library, at Original fidelity, expendable. **v2 press = the ogg128
+         transcode** (smaller, lossy) — THAT is the non-reproducible one that needs the pinned-stub
+          shape-Book above. Ship v1 first (real driver, real fixture, real green); land v2 when the
+           size win is wanted. This turns "the press is blocked on a non-deterministic codec" into
+            "the press ships now; only its lossy optimization waits."
+
 ---
 
 ## 4. The relay — how bodies coexist, and how they collide
@@ -810,14 +890,20 @@ A standing want recorded while we are here (the owner): **better UI lego for dis
           `body_hash` (integrity) but no identity signature — `header.from` is forgeable by
            any bound socket, since the relay authenticates sockets once at `hello` and never
             per-frame. Enforcement is also gated on `station_up`, so Book fixtures bypass it
-             (fine — those are in-process mocks). Making it universal is bounded, not deep:
-              sign+verify on the four gossip types and the repli sender identity — roughly
-               15–20 `verifyHeader` calls and 3–4 signing sites across Swarm.g / Repli.g /
-                Peeroleum.g, using frame fields that already exist. **Ruling recorded: the
-                 signing floor is the security policy; relay address-enforcement stays TODO
-                  as hardening.** The universalising work list above is the tail this doc
-                   leaves open, and it should probably land BEFORE pool exchange ships
-                    (Captain↔Captain transfer leans on gossip-class frames).
+             (fine — those are in-process mocks).
+  **REVISED by the 2026-08-27 transport read (see §0 "Gossip/stream signing — RESOLVED").** The
+   deeper read reframes the residual above: the spoof is real but **cannot escalate**. What a
+    sealed peer can forge is *advisory attribution* — a gossip `header.from` the relay never
+     checks against the socket's bound prepub, and a music chunk's sender identity. What it
+      CANNOT forge is anything that reaches the trusted tier: content lands only through
+       `Heist_vouch_ok`/`Ra_verify` (fails closed, `Heist.g:471`/`Ra.g:1361`), and a live cast's
+        `%MusuThem` is structurally non-promotable to a `%Record` (`Ra_holding_keys()`
+         exclusion). So the four tiers already compose; **universalising per-frame signing is
+          HARDENING, not a ship-blocker for pool exchange** (the earlier "land before pool
+           exchange" is withdrawn — Captain↔Captain transfer rides the *vouched* Heist path, not
+            raw gossip). If pursued later, the bounded work is unchanged (sign+verify the four
+             gossip types + repli sender identity); the one invariant worth a Book first is the
+              `%MusuThem`-never-promotes-off-vouch guard §0 names.
 - **Multi-Cave is NOT guaranteed** (v1 stance: one Cave, one Captain, more bodies at your
    own risk). Someday-sharpening (the owner, 2026-08-26): a booting body should tell
     **within ~40s** whether someone is already around using an address, by reading marks on

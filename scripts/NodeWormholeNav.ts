@@ -87,11 +87,26 @@ export class NodeWormholeNav {
 
     // readAbs — the absolute paths a read should TRY, in precedence order.  A mounted rel resolves to
     //  exactly one candidate (its own root); everything else keeps the overlay-shadows-base pair the
-    //   rest of this file has always used.
+    //   rest of this file has always used, THEN falls back through the mount roots.
+    //  THE MOUNT FALLBACK (2026-08-26, the salsa album that WAS on disk and still couldn't serve).
+    //   A %Record's card is minted where the share ROOT was the music folder — the browser/FSA
+    //    convention — so it carries `base:""` with a collection-relative `path` like
+    //     `0 themes/…/track.mp3`, the mount name STRIPPED.  The daemon reaches that same collection
+    //      through a NAMED mount (`music/…`, from LIBRARY=), so `mountFor` misses (first segment is
+    //       `0 themes`, not `music`), the rel resolves only against base(/app)+overlay(/tmp) — never
+    //        the mount — and `native_path` reports `no native path` for a file plainly there (measured:
+    //         3,500+ daemon failures against one album, and the pull side re-asked forever).  A card
+    //          minted mount-relative-without-prefix names the SAME file as `<mount>/<rel>`, so try each
+    //           mount root as a fallback.  Read-side only and existence-gated by every caller
+    //            (readCandidates/native_path/dir), so a repo file still wins on its own base candidate
+    //             first (testsounds/… resolves under /app before /music is ever consulted) and a bare
+    //              rel that exists nowhere costs only stats — never a write (writeAbs is untouched).
     private readAbs(rel: string): string[] {
         const m = this.mountFor(rel)
         if (m) return [this.confine(m.root, m.sub)]
-        return [this.confine(this.overlay, rel), this.confine(this.base, rel)]
+        const out = [this.confine(this.overlay, rel), this.confine(this.base, rel)]
+        for (const name of Object.keys(this.mounts)) out.push(this.confine(this.mounts[name], rel))
+        return out
     }
 
     // trueBytes — the MANGLED-NAME RESCUE (2026-08-24, the salsa album that could never serve).
@@ -318,8 +333,16 @@ export class NodeWormholeNav {
     async dir(...parts: string[]): Promise<any | null> {
         const rel = parts.filter(Boolean).join('/')
         // A mounted rel lists from its own root ALONE — disjoint namespace, no shadowing (constructor).
+        //  A bare rel lists base+overlay and THEN each mount root — the same mount fallback readAbs
+        //   uses, so `Ra_source_alive`'s dir_at finds a `base:""` card's directory under /music instead
+        //    of false-reporting `gone` and letting `Ra_shuffle_cull` DELETE a servable holding (the
+        //     reverse of the serve bug, same root: a bare rel never reached the mount).  expand() unions
+        //      the entries, so a repo directory and a mounted one of the same name both contribute.
         const m = this.mountFor(rel)
-        const dirs = m ? [this.confine(m.root, m.sub)] : [this.base, this.overlay].map(r => this.confine(r, rel))
+        const dirs = m
+            ? [this.confine(m.root, m.sub)]
+            : [...[this.base, this.overlay].map(r => this.confine(r, rel)),
+               ...Object.keys(this.mounts).map(name => this.confine(this.mounts[name], rel))]
         if (!dirs.some(isDirAt)) return null
         const nav = this
         // At the ROOT listing, the mount names are directories that exist in the nav but on no single

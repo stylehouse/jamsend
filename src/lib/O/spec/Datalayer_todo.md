@@ -9,12 +9,17 @@ A working `_todo`. Companions: `Hovercraft.design.md` (the req machine's own des
 
 ## 0. Next move (read first)
 
-Nothing here is urgent and nothing here is broken. **One** finding worth a decision:
- 1. **§3.1 `resolve()` is O(N²) with a proxy multiplier** — real by construction, UNMEASURED as to whether
+Nothing here is urgent and ~~nothing here is broken~~ — **§3.2 WAS broken and I called it sound.** Findings:
+ 1. **§3.2 was wrong — the producer-side leak is REAL** (2026-08-26, socklog crashed a live tab with the
+     6000 "giant stuff" fatal on `w:Lies/rw_queue`). The servicer's sweep retires its OWN wrapper queue, on
+      the SERVICER's world; the producer's anonymous reqs live on the PRODUCER's world and nobody sweeps them.
+       Fixed for the two `Lies_dump_*` producers; the rest (`auto_save_library`, `cred_persist`, `Story` snap
+        writes) are the same latent leak. See §3.2, now corrected.
+ 2. **§3.1 `resolve()` is O(N²) with a proxy multiplier** — real by construction, UNMEASURED as to whether
      any live container is big enough to feel it. The fix is four lines. Decide by measuring, not by taste.
 
-§3.2 is the audit that *dissolved*: the off-pump queues look like an unbounded leak from the producer side
- and are not, because the servicing actor sweeps them. It is kept because the next person will reach the
+§3.2 was the audit that I thought *dissolved* — I was wrong, and left the trap it warns about IN the doc.
+ The off-pump queues ARE an unbounded leak from the producer side. It is kept, now corrected, because the
   same wrong conclusion and may "fix" it at the wrong end. Everything else is description, recorded because
    answering the owner's question needed it.
 
@@ -97,7 +102,40 @@ Every `includes` is O(N) and every `claim` rebuilds `unfound` with a full `filte
   of `includes`), and the ordered `X.z` walk is untouched — so ordering and semantics are bit-identical and
    only membership gets cheaper.
 
-### 3.2 Off-pump queues — AUDITED, AND THE PATTERN IS SOUND. Recorded because it looked like a bug.
+### 3.2 Off-pump queues — I CALLED THIS SOUND AND IT IS NOT. The producer side really does leak. (corrected 2026-08-26)
+
+> **CORRECTION (2026-08-26).** The conclusion below ("No action, correct by design") is WRONG and cost a live
+>  crash: `Lies_dump_socklog` tripped the §2 6000-row fatal on `w:Lies/rw_queue` after a few hours of a tab.
+>  The error in the audit is a **two-queue conflation**. There are two `rw_queue`s, on two different worlds:
+>  - the **producer's** caller-side queue (`w:Lies/rw_queue`, `w:Auto/rw_queue`, `w:Story/…`), where the
+>     anonymous `oai({req:1, rw_name, rw_op, rw_data})` reqs are minted, and
+>  - the **servicer's** wrapper queue (`w:Wormhole/rw_queue`), where the `rw_op` actor mints one `%req`
+>     wrapper per incoming elvis (`rw_req.c.for = <producer req>`) and pumps it with `do()`.
+>
+>  The sweep I quoted as the retirement (`Housing.svelte.ts:2714`, `rw.o({req:1,finished:1}).forEach(drop)`)
+>   runs on the **servicer's** queue and drops **wrappers**. It never touches the producer's queue — a
+>    DIFFERENT C on a DIFFERENT world. `finish()` (via `o_elvis_req`) sets `finished:1` on the producer's req
+>     too, but nothing on the producer's world sweeps it, so it accretes one finished-but-live row per write.
+>      Because `rw_data` rides the `oai` match key, every write mints a fresh row (never reuses) → monotonic
+>       `i()` with no `replace()` → §2's fatal. `Auto.oai({req:'lib_read'})` escaped ONLY because it is
+>        NAMED (reused, not per-write) and hand-drops on its error paths — the exception that should have
+>         tipped me off, not reassured me.
+>
+>  **Fix (the primitive, per the human 2026-08-26 "we need to `replace()`"):** the producer keeps ONE slot
+>   and `r()`s it in place — `rw.r({req:1}, {rw_name, rw_op, rw_data})` — so the collection stays size 1
+>    instead of growing. Two gotchas that shape it: (a) each single-slot producer needs its OWN holder
+>     (`{rw_queue:'socklog'}` vs `{rw_queue:'supply'}`), because `replace()`'s nested-transaction guard
+>      (`replace_having`) is per-container-C and `Lies_heartbeat` fires both dumps un-awaited on one tick —
+>       two `r()`s on one C throw "nested replace()"; (b) the fresh ref re-arms the elvis (no stale
+>        `finished`/`req_sent`), so the write re-fires. LANDED for `Lies_dump_socklog`/`Lies_dump_supply`
+>         (`LiesLies.svelte`). STILL LATENT, same shape, unfixed: `auto_save_library` (`Auto.svelte`:1178),
+>          `cred_persist` (:1476), and the `Story` snap writes (:3004) — slower only because they are
+>           change-triggered, not a 10s beat. Decide whether to convert them or, better, whether the
+>            SERVICER should reclaim the producer req too (it holds it as `rw_req.c.for`).
+>
+>  The original (wrong) audit is kept verbatim below, because the reasoning is a good trap to see whole.
+
+**ORIGINAL AUDIT (WRONG — see the correction above):** AUDITED, AND THE PATTERN IS SOUND. Recorded because it looked like a bug.
 
 The shape is alarming on the producer side and I expected a leak. Every off-pump write seeds an **anonymous**
  req — `rw.oai({ req: 1, rw_name: path, rw_op: 'write', rw_data: snap })` (`Auto.svelte`:1138, :1436;
