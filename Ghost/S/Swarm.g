@@ -1242,6 +1242,29 @@ Swarm_station_up(w, ident):
     // presence: install the who_ok hook BEFORE the socket can answer (Presence.g).  Idempotent, and
     //  arming it costs nothing if nobody ever asks — the ask itself rides the pulse round below.
     if (typeof this.Presence_arm === 'function') this.Presence_arm(w)
+    // THE ARBITER ADOPT HOOK (Portability §4 hello-v2): the relay answers every hello with the
+    //  addr it GRANTED.  If it differs from what we hold, a body of our soul held our wanted seat
+    //   from somewhere our local cohort census could not see (another machine on this relay) —
+    //    adopt the granted addr onto both %Peerings and REHOME so the reconnect dials `?addr=` at
+    //     the granted place (own-door delivery then applies).  Converges: the re-dial asks for the
+    //      granted addr, which is now ours, so the next hello_ok matches and no further rehome
+    //       fires.  Soft: a relay that never sends addr (older) leaves us exactly where we dialed.
+    let self_w = w
+    if (self_w.c && !self_w.c.on_hello) {
+        self_w.c.on_hello = (frame) => {
+            let granted = frame && frame.addr
+            if (!granted) return
+            let cur = this.Swarm_address(ident)
+            if (granted === cur) return
+            let idp = this.Swarm_peering(ident)
+            if (!idp) return
+            if (granted === ident.sc.prepub) { delete idp.sc.address } else { idp.sc.address = granted }
+            idp.bump()
+            if (frame.taken && frame.taken.length) { try { this.Swarm_note_theft(ident, 'relay_arbiter', null) } catch (e) {} }
+            console.log('🪪 adopted relay-granted address ' + granted + (cur ? ' (was ' + cur + ')' : '') + ' — a body of this soul held the seat we wanted')
+            this.Swarm_rehome(ident)
+        }
+    }
     let port = w.o({ transport: 1, type: 'websocket' })[0]?.c.port
     if (port?.on_open) {
         port.on_open(async () => {
@@ -1252,7 +1275,13 @@ Swarm_station_up(w, ident):
             try {
                 let header = { control: 'hello', from: ident.sc.prepub, pub: ident.c.keys.pub, ts: Date.now() }
                 let sign = await signHeader(header, ident.c.keys.key)
-                port.ws?.send(JSON.stringify(Object.assign({}, header, { sign: sign })))
+                // WANT (Portability §4 hello-v2): the address this body wishes to hold — the cohort's
+                //  local choice (bare, or a suffix if a same-profile sibling holds bare).  It rides
+                //   BESIDE the signed header, never inside it (the signature stays over the 4 keys the
+                //    relay verifies), and the relay may hand back a DIFFERENT addr (a cross-machine
+                //     body held it — the case the local census cannot see); on_hello adopts the answer.
+                let want = this.Swarm_address(ident)
+                port.ws?.send(JSON.stringify(Object.assign({}, header, { sign: sign, want: want })))
             } catch (e) { console.log('⨳⚠ station hello failed (relay down?)', e) }
             // the per-era VOUCHER: the relay authenticates the LINK (the hello above) but ROUTES
             //  on header.to alone and never checks header.from against the key we sealed, so a
@@ -1584,9 +1613,15 @@ async Swarm_redeem(w, ident, iz, advice):
         return null
     }
     // the %Invite lifecycle: the vivified particle (Swarm_invite_note) walks to `redeeming` the
-    //  moment the hello is minted — soft, so a caller that never vivified (Books, CLI) skips.
-    let inv = this.Swarm_invite_note(w, iz)
-    if (inv) { inv.sc.state = 'redeeming'; inv.bump() }
+    //  moment the hello is minted.  GATED on station_up — on a live tab w IS the station world
+    //   (session furniture, snap-blind); in a Book w is the BOOK's world and it SNAPS, so an
+    //    ungated vivify here moved every redeem fixture (found by the 2026-08-27 sweep — the
+    //     SwarmStaple account-roundtrip went red on a %Invite it had never recorded).  Books
+    //      never set station_up; that line is already this file's own law.
+    if (w.c && w.c.station_up) {
+        let inv = this.Swarm_invite_note(w, iz)
+        if (inv) { inv.sc.state = 'redeeming'; inv.bump() }
+    }
     let hello = { kind: 'pier_hello', iz: iz, page: this.Swarm_page(ident) }
     if (advice) hello.relic = String(advice)
     if (!this.Swarm_deliver(w, ident, t.prepub, hello)) {
@@ -3791,6 +3826,11 @@ Swarm_rehome(ident):
     let addr = this.Swarm_address(ident)
     if (addr && addr !== ident.sc.prepub) { station.sc.address = addr } else { delete station.sc.address }
     station.bump()
+    // AN ADDRESS CHANGE IS A REBIRTH (the 2026-08-27 cohort burn, §wake): roll the station era
+    //  and drop the standing voucher so the reconnect's on_open re-signs at the new generation —
+    //   peers' Swarm_note_era machinery then treats the comeback as the rebirth it is, instead
+    //    of trusting stream state from the body's previous life at the old address.
+    if (w.c) { w.c.station_era = Date.now(); delete w.c.station_voucher }
     let port = w.o({ transport: 1, type: 'websocket' })[0]?.c?.port
     if (port?.rehome) { port.rehome(); return 1 }
     return 0

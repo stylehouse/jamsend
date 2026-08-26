@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '5488b297a9ad9c3a~g1' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return '68c229677c6b8d67~g1' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -268,6 +268,17 @@ async Socket_real(w) {
             //  pulse round forever, so noting each answer is the same firehose the `ambient` filter
             //   exists to stop (and note() also rings relay_log, so it would evict real events at 6/min).
             //    A friend arriving or leaving is the event; a steady answer is wallpaper.
+            // hello_ok — the relay's address ARBITER answer (Portability §4, hello-v2): the addr
+            //  we were GRANTED, which may differ from the addr we asked for (another body of our
+            //   soul held it, cross-machine, where the local cohort census could not see it). Hand
+            //    it to the consumer's hook inline, exactly like who_ok — Swarm_station_up adopts it
+            //     and rehomes if it moved. `taken` (present only when suffixed) is the 👥 material.
+            if (frame.control === 'hello_ok') {
+                note(`🪪 hello_ok addr=${frame.addr}${frame.taken ? ' (suffixed — family holds ' + frame.taken.join(',') + ')' : ''}`)
+                if (w.c && w.c.on_hello) { try { w.c.on_hello(frame) } catch (e) { console.log('🪪☠ on_hello threw', e) } }
+                return
+            }
+            if (frame.control === 'hello_error') { note(`🪪☠ relay refused hello: ${frame.reason}`, true); return }
             if (frame.control === 'who_ok' || frame.control === 'who_error') {
                 let sig = frame.control + ':' + ((frame.online || []).join(',')) + ':' + (frame.reason || '')
                 if (sig !== last_who) {
