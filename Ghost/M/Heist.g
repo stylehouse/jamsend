@@ -82,6 +82,19 @@ Heist_marrauding(runid, nick):
 //    in one Heist_sweep.  Runtime-only (`.c`), so no snap anywhere changes.
 Heist_mardir(w):
     return (w && w.c.mardir) ? w.c.mardir : ''
+
+// Heist_is_pool — the TELL that routes a landed track's CATALOG row pool-ward (Portability_todo §3).
+//  The MOUNT side is already done: `w.c.mardir = 'pool'` (or a `pool/…` sub-path) routes every landed
+//   BYTE through MountNav → the OPFS nav, byte-for-byte the same landing code.  This is the catalog
+//    side — when the mardir names the pool, the landed card is minted as a %Record on the pool shelf
+//     via Ra_rec_pool (id = the lofi enid, of:<original>, grade), not a library-grade Ra_rec_home card.
+//  Purely mardir-derived (`Heist_catalog_land` already carries the mardir, never the world), so a
+//   normal library heist — every mardir that is '' or a test-marrauding path — is byte-identical: the
+//    tell is false and the old Ra_rec_home branch runs unchanged.  The first path segment is the mount
+//     name (the pool record's path scheme, §3), so both a bare 'pool' and a 'pool/…' namespace count.
+Heist_is_pool(mardir):
+    let first = ('' + (mardir || '')).split('/').filter(Boolean)[0]
+    return first === 'pool'
 //#endregion
 
 //#region census — a collection walked into heist-servable %Records (the §9.1 slice the heist forces)
@@ -956,14 +969,31 @@ async Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size, held):
     //   rides across when the meta had one, so a re-census of this collection reproduces the same shelf.
     //    The card mints through the ONE owned door (Ra_rec_home — the landing-Mag ruling): a landed
     //     track joins the collection's paged Mag like any other holding, never a flat way-station.
-    let card = this.Ra_rec_home(own_lib, rec.sc.id)
+    //  POOL BRANCH (Portability_todo §3, behind Heist_is_pool): when this heist lands into the SoundPool
+    //   (mardir names 'pool'), the catalog row is a POOL %Record — id = the enid of the LOFI bytes that
+    //    landed here (the whole-file body_hash's first-16 slice, the Ra_enid contract), of:<original id>
+    //     the cross-fidelity join, grade='ogg128' when a lofi rendition landed.  A library heist takes the
+    //      old Ra_rec_home branch byte-for-byte (the tell is false for every '' / test-marrauding mardir).
+    let card = null
+    if (this.Heist_is_pool(mardir)) {
+        // rid is `rec.sc.id || rec.sc.ref` above — the ORIGINAL id the heist asked for.  The bytes that
+        //  landed are the served rendition; when lofi, their enid = body_hash.slice(0,16), a DIFFERENT
+        //   id (different bytes, the identity-is-per-shelf law).  Without a lofi press the landed bytes ARE
+        //    the original, so its id coincides and Ra_rec_pool elides both of: and grade.
+        let lofiId = (rec.sc.lofi && rec.sc.body_hash) ? String(rec.sc.body_hash).slice(0, 16) : rid
+        let grade = rec.sc.lofi ? 'ogg128' : null
+        card = this.Ra_rec_pool(own_lib, rid, lofiId, rel, grade)
+    } else {
+        card = this.Ra_rec_home(own_lib, rec.sc.id)
+        card.sc.path = rel
+    }
     card.sc.title = rec.sc.title
     card.sc.artist = rec.sc.artist
-    card.sc.path = rel
     card.sc.bytes = size
     if (rec.sc.ext) card.sc.ext = rec.sc.ext
     if (rec.sc.body_hash) card.sc.body_hash = rec.sc.body_hash
     if (rec.sc.album) card.sc.album = rec.sc.album
+    if (this.Heist_is_pool(mardir) && rec.sc.lofi) card.sc.lofi = 1
     job.sc.landed = +(job.sc.landed || 0) + 1
     // SURFACE what the heist TOOK (the landing twin of the held/denied verdict rows): one compact
     //  `took,tune:<Artist — Title>` child per file that crossed and passed the byte gate, pointed at the

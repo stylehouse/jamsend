@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '93e5a9ecf62e9558~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'c6cbf4f3158a8be6~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -939,6 +939,27 @@ Ra_rec_home(shelf, id) {
     let page = this.Ra_mag_page(this.Ra_mag_shuffle(shelf))
     rec = page.i({ Record: 1, id: id })
     rec.c.up = page
+    return rec
+},
+// Ra_rec_pool — the SoundPool's own door beside Ra_rec_home (Portability_todo §3, the §3 ruling
+//  2026-08-27).  A pool copy is a %Record on the POOL's own shelf, not a second impersonation of the
+//   Original: `id` = the enid of the LOFI bytes that actually landed here (differs from the Original's
+//    id — different bytes, the identity-is-per-shelf law), `of:<origId>` = the cross-fidelity join back
+//     to the Original, `grade` = the pressing mark ('ogg128' for a lofi rendition).  It mints through
+//      the SAME owned-mint machinery as any holding (find-or-page in the shuffle Mag) — the landing-Mag
+//       ruling: the pool is a collection of live holdings, so its rows page like any other, never flat.
+//  GUARDED: `of` and `grade` are stamped ONLY when supplied — an absent value would brand the snap
+//   {"undef":[...]} (the mint-bug law, CLAUDE.md).  When the landed bytes were the Original itself (no
+//    lofi press), lofiId === origId and grade is absent: the pool row's id then coincides with the
+//     Original's id and of: is elided (a copy of itself needs no cross-fidelity join).
+Ra_rec_pool(shelf, origId, lofiId, path, grade) {
+    let id = lofiId || origId
+    let rec = this.Ra_rec_home(shelf, id)
+    if (path) { rec.sc.path = path }
+    // the cross-fidelity join — many:1 `of:` (a pool copy names its Original) — only when the bytes
+    //  genuinely differ from the Original's, and never a self-join.
+    if (origId && origId !== id) { rec.sc.of = origId }
+    if (grade) { rec.sc.grade = grade }
     return rec
 },
 // Ra_rec_drop — the removal counterpart to Ra_rec_home: find the holding wherever it sits (flat or
