@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '2bc0a9c00b243388~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'c9c9b73d4e9385d7~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -397,7 +397,7 @@ async Repli_merge(mirrorTop, text) {
             //  wire cut) — locate through the census and remove from its true holder, so a retire
             //   reaches a paged card exactly as it reached a flat one.
             let hit = parent.o(pattern)[0]
-            if (!hit && pattern.Record && typeof this.Ra_rec_find === 'function') hit = this.Ra_rec_find(parent, pattern)
+            if (!hit && this.Ra_is_holding_sc(pattern) && typeof this.Ra_rec_find === 'function') hit = this.Ra_rec_find(parent, pattern)
             if (hit) await ((hit.c && hit.c.up) || parent).rm(pattern)
             continue
         }
@@ -410,7 +410,7 @@ async Repli_merge(mirrorTop, text) {
             // ONE TRUE RECORD: a lean page fragment names its %Record at depth 0, but the wire cut
             //  homes a mirror record under %Mag/%Cloud — locate through the census before minting,
             //   so pulled chunks land under the paged head itself, never a flat way-station twin.
-            if (!found && pattern.Record && typeof this.Ra_rec_find === 'function') {
+            if (!found && this.Ra_is_holding_sc(pattern) && typeof this.Ra_rec_find === 'function') {
                 census = this.Ra_rec_find(parent, pattern)
                 // ESCALATE TO THE WHOLE CRATE (2026-08-07).  The census above searches only the
                 //  ARRIVING parent — the %Cloud this frame happens to name — so it answers "is this
@@ -792,13 +792,25 @@ Repli_find_record(w, id, lib) {
     //     The libs are time-swept (Heist_keep_beat) so a served-original id can shadow the radio opus for
     //      at most the sweep window — bounded, and the seed the asker is streaming is excluded chooser-side.
     for (const rl of (w.c.rummage_libs || [])) {
-        let hit = this.Ra_rec_find(rl, { Record: 1, id: id })
-        if (hit) return hit
+        for (const hk of this.Ra_holding_keys()) {
+            let q = { id: id }
+            q[hk] = 1
+            let hit = this.Ra_rec_find(rl, q)
+            if (hit) return hit
+        }
     }
     let l = lib || w.c.repli_src
     if (!l) return null
     // Ra_rec_find walks the Mag model (paged self stock) AND the flat shape (mirrors, Book srcs).
-    return this.Ra_rec_find(l, { Record: 1, id: id })
+    //  Over the HOLDING SET (Ra_holding_keys — one key today, so byte-identical), not the spelled
+    //   name: a served id must be findable whatever holding mainkey carries it.
+    for (const hk of this.Ra_holding_keys()) {
+        let q = { id: id }
+        q[hk] = 1
+        let hit = this.Ra_rec_find(l, q)
+        if (hit) return hit
+    }
+    return null
 
 },
 // Repli_serve_miss — the SILENT-DEATH tell (the human 2026-07-29 "higher level Repli cursor moving info"): a
@@ -1119,7 +1131,7 @@ async Repli_recv_lines(w, pier, frame) {
         // the SOURCE breadcrumb (runtime-only, .c never snaps): which Pier this mirror Record came
         //  through and whose shelf it lives on — the multi-source pull addresses its wants by these
         //   (rec.c.rx to ride, rec.c.from to ask), and the chase knows which source a track is FROM.
-        if (c.sc && c.sc.Record) {
+        if (this.Ra_is_holding_sc(c.sc)) {
             nrec = nrec + 1
             // BIRTH, not touch — the latch the mark below needs (see it for why).
             if (!c.c.mirror_seen) {

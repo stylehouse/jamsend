@@ -153,6 +153,30 @@ Swarm_token_parse(token):
     let picked = this.Swarm_token_n_parse(n)
     return { prepub: prepub, serial: serial, n: n, presig: presig, to: picked.to, params: picked.params }
 
+// Swarm_invite_note — THE %Invite AUTOVIVIFY (Portability §7, ruled 2026-08-27: "there is no
+//  %Invite particle? I always think of them").  An invite used to be smeared across the issuer's
+//   %Idzeug, a token string in a URL, and the landed %Grant — everyone THINKS in invites, so the
+//    data read from a URL now vivifies into a particle with a lifecycle the Door and the glass
+//     can show: state walks arrived → redeeming → (sealed|refused land with the Door work).
+//  HOMED ON THE STATION WORLD, deliberately: w:Swarm is session furniture — Swarm_export walks
+//   the %Identity subtree only, so a %Invite here can never ride an account snap, and no Book
+//    stands a station, so no fixture can see one.  The issuer's own record remains the law
+//     (§10.1); this particle is the VISITOR's copy of the claim, never a second truth.
+//  Token legs: serial+prepub on sc (the identity of the offer), n on sc; the presig leg rides
+//   .c — a raw signature fragment is not furniture worth snapping.
+Swarm_invite_note(w, tok):
+    if (!w || !tok) return null
+    let t = this.Swarm_token_parse(tok)
+    if (!t) return null
+    let inv = w.oai({ Invite: t.serial, prepub: t.prepub })
+    inv.c.up = w
+    if (t.to) inv.sc.to = t.to
+    inv.sc.n = String(t.n)
+    if (!inv.sc.state) inv.sc.state = 'arrived'
+    inv.c.presig = t.presig
+    inv.bump()
+    return inv
+
 // Swarm_iz_params — the Feature params riding a claim: every key that isn't the claim's envelope.
 //  (Grant's `to` names the Feature mainkey; its params ride alongside as plain string keys — §6.1.)
 //   ttl is INVITE policy, never grant policy (grants are infinite — §6.1): it stays on the maker's
@@ -1193,8 +1217,26 @@ Swarm_station_up(w, ident):
     if (station && w.c.station_up) return station
     if (typeof this.Socket_real !== 'function') return null
     if (typeof WebSocket === 'undefined') return null
+    // THE COHORT CONSULT (Portability §10, 2026-08-27): if the profile census says another body
+    //  of this soul holds the bare name, take a suffix BEFORE the first dial — the second tab
+    //   quietly becomes the second tab, and the doubled-stream disease never starts.  Soft by
+    //    construction: no cohort ran (every Book, the daemon, an API-less browser) ⇒ absent ⇒
+    //     today's behaviour byte-for-byte.  The address rides the ident's %Peering (the one
+    //      Swarm_address reads) and is COPIED to the station %Peering below, which is the one
+    //       Socket_real's home() dials.
+    let coh = this.top_House().c.cohort
+    if (coh && !coh.primary && !this.Swarm_peering(ident)?.sc?.address) {
+        let idp = this.Swarm_peering(ident)
+        if (idp) {
+            idp.sc.address = this.Swarm_next_suffix(ident.sc.prepub, coh.taken || [])
+            idp.bump()
+            console.log('👥 station standing at ' + idp.sc.address + ' — the bare name is held by a sibling in this profile')
+        }
+    }
     station = w.oai({ Peering: 1, name: ident.sc.prepub })
     station.c.up = w
+    let saddr = this.Swarm_address(ident)
+    if (saddr && saddr !== ident.sc.prepub) { station.sc.address = saddr } else { delete station.sc.address }
     this.Swarm_arm(w)
     this.Socket_real(w)
     // presence: install the who_ok hook BEFORE the socket can answer (Presence.g).  Idempotent, and
@@ -1541,6 +1583,10 @@ async Swarm_redeem(w, ident, iz, advice):
         this.Swarm_rebuff(ident, 'forged', iz)
         return null
     }
+    // the %Invite lifecycle: the vivified particle (Swarm_invite_note) walks to `redeeming` the
+    //  moment the hello is minted — soft, so a caller that never vivified (Books, CLI) skips.
+    let inv = this.Swarm_invite_note(w, iz)
+    if (inv) { inv.sc.state = 'redeeming'; inv.bump() }
     let hello = { kind: 'pier_hello', iz: iz, page: this.Swarm_page(ident) }
     if (advice) hello.relic = String(advice)
     if (!this.Swarm_deliver(w, ident, t.prepub, hello)) {
@@ -3633,7 +3679,121 @@ Swarm_steal_back(ident, taken):
     peering.sc.address = addr
     delete peering.sc.stolen
     peering.bump()
+    this.Swarm_rehome(ident)
     return addr
+
+// ── the cohort: the live bodies of one soul in one browser profile ─────────────────────────────
+//  The race this kills (Portability §10, the 2026-08-27 burn): a tab boots, consults nothing,
+//   binds the bare prepub — and a second tab of the same soul does exactly the same.  There was
+//    NO aloneness check anywhere in the boot chain; this is it.  Three layers, each degrading to
+//     the next (the spine: ERR TOWARD SUFFIXING — the bare name is the write lock, so corruption
+//      flows only through wrongly-holding-bare, never wrongly-holding-_2):
+//   · Web Locks — the same-profile DECIDER.  Zero staleness, held across background throttling,
+//      auto-released on tab death: leadership IS the lock, no cadence, no stale row, ever.
+//   · BroadcastChannel census — enumerate the living: who else is here, which addresses are
+//      taken, and the place tokens that feed Swarm_sibling (its first app-path caller — what
+//       turns the 👥 theft alarm into family silence).  Silence ≠ absence; advisory only.
+//   · The relay + the 👥 tripwire stay the cross-machine layers; this promises nothing there.
+//  Raw browser APIs in a ghost — the Socket_real precedent (Tribunal.g: "WebSocket + location
+//   … are all transport seams").  Every API is feature-guarded: the daemon's jsdom and any
+//    API-less browser get {primary:1, lockless:1} instantly, i.e. today's behaviour untouched.
+//  The consumer contract is ONE thing: top_House().c.cohort = { primary, vessel, taken } —
+//   Swarm_station_up reads it (soft; absent = no cohort ran = every Book) and suffixes the
+//    session address when this body is not primary.  Runtime-only; no fixture can move.
+
+// Swarm_cohort_vessel — the per-INSTANCE place token (Portability §1: "per-instance, quite
+//  specifically").  sessionStorage: each TAB is its own place, surviving that tab's reloads,
+//   dying with it.  Storage-denied fallback: a per-boot random — still a place, not stable.
+Swarm_cohort_vessel():
+    try {
+        let v = sessionStorage.getItem('jamsend:vessel')
+        if (!v) {
+            let bytes = crypto.getRandomValues(new Uint8Array(6))
+            v = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+            sessionStorage.setItem('jamsend:vessel', v)
+        }
+        return v
+    } catch (e) {
+        return 'v' + Math.floor(Math.random() * 0xffffffff).toString(16)
+    }
+
+// Swarm_cohort_primacy — take (or fail to take) the profile-wide bare-name lock.  Granted ⇒
+//  candidate-primary, and the lock is HELD until the tab dies (the never-resolving callback
+//   promise is the hold — the Web Locks idiom).  Refused ⇒ a sibling holds bare.  No API ⇒
+//    primary with `lockless` marked, so downstream layers know this profile never arbitrated.
+Swarm_cohort_primacy(prepub):
+    let locks = (typeof navigator !== 'undefined' && navigator.locks) || null
+    if (!locks || !locks.request) return Promise.resolve({ primary: 1, lockless: 1 })
+    return new Promise((resolve) => {
+        try {
+            locks.request('jamsend:' + prepub + ':bare', { ifAvailable: true }, (lock) => {
+                if (!lock) { resolve({ primary: 0, lockless: 0 }); return }
+                resolve({ primary: 1, lockless: 0 })
+                return new Promise(() => {})
+            }).catch(() => resolve({ primary: 1, lockless: 1 }))
+        } catch (e) { resolve({ primary: 1, lockless: 1 }) }
+    })
+
+// Swarm_cohort_stand — the boot-time claim + census, idempotent per tab.  Populates
+//  top.c.cohort within its 250ms budget and keeps answering the channel for the tab's life,
+//   registering every heard sibling so the hear funnel knows family from thief.
+async Swarm_cohort_stand(ident):
+    let top = this.top_House()
+    if (!top || !top.c || top.c.cohort || top.c.cohort_standing) return
+    let prepub = ident?.sc?.prepub
+    if (!prepub) return
+    top.c.cohort_standing = 1
+    let vessel = this.Swarm_cohort_vessel()
+    let claim = await this.Swarm_cohort_primacy(prepub)
+    let taken = claim.primary ? [] : [prepub]
+    let heard = {}
+    let note_sibling = (m) => {
+        if (!m || !m.vessel || m.vessel === vessel || heard[m.vessel]) return
+        heard[m.vessel] = m
+        if (m.addr && !taken.includes(m.addr)) taken.push(m.addr)
+        try { this.Swarm_sibling(ident, m.vessel, m.addr || '', m.selftype || '') } catch (e) {}
+    }
+    let bc = null
+    try { bc = new BroadcastChannel('jamsend:' + prepub) } catch (e) { bc = null }
+    if (bc) {
+        bc.onmessage = (ev) => {
+            let m = ev.data
+            if (!m || m.vessel === vessel) return
+            note_sibling(m)
+            if (m.t === 'hi') {
+                let addr = ''
+                try { addr = this.Swarm_address(ident) || '' } catch (e) {}
+                try { bc.postMessage({ t: 'here', vessel: vessel, addr: addr, primary: top.c.cohort ? top.c.cohort.primary : 0 }) } catch (e) {}
+            }
+        }
+        try { bc.postMessage({ t: 'hi', vessel: vessel }) } catch (e) {}
+        await new Promise((r) => setTimeout(r, 250))
+    }
+    top.c.cohort = { primary: claim.primary, vessel: vessel, taken: taken, lockless: claim.lockless, at: Date.now() }
+    delete top.c.cohort_standing
+    if (!claim.primary) { console.log('👥 cohort: another body of ' + prepub.slice(0, 8) + ' holds the bare name in this profile — this tab will stand at a suffix') }
+
+// Swarm_rehome — carry an address change to the WIRE (Portability §4 item 1).  The address
+//  rides the IDENT's %Peering (Swarm_address reads it there), but the socket dials off the
+//   STATION Peering on w:Swarm — two particles, one meaning.  This verb syncs the station copy
+//    and asks the live port to re-dial (Socket_real's rehome(): drop without the intentional
+//     latch; its connect() reads the address fresh).  Soft everywhere: a Book has no station
+//      world and no websocket port, so every step no-ops and no fixture moves; a live tab
+//       whose Swarm world isn't up yet simply dials right the first time, because the dial
+//        itself now reads `address ?? name`.
+Swarm_rehome(ident):
+    if (!ident) return 0
+    let A = this.top_House().o({ A: 'Clustation' })[0]
+    let w = A ? A.o({ w: 'Swarm' })[0] : null
+    if (!w) return 0
+    let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
+    if (!station) return 0
+    let addr = this.Swarm_address(ident)
+    if (addr && addr !== ident.sc.prepub) { station.sc.address = addr } else { delete station.sc.address }
+    station.bump()
+    let port = w.o({ transport: 1, type: 'websocket' })[0]?.c?.port
+    if (port?.rehome) { port.rehome(); return 1 }
+    return 0
 
 // Swarm_reinstate — the backwards move Steal Back never had (Identity_persist §7.4f, the missing
 //  primitive): drop the session suffix and stand at the canonical bare name again.  The §7.4f
@@ -3649,6 +3809,7 @@ Swarm_reinstate(ident):
     peering.bump()
     let top = this.top_House ? this.top_House() : null
     if (top && top.c) top.c.account_mirror_stale = Date.now()
+    this.Swarm_rehome(ident)
     return this.Swarm_address(ident)
 //#endregion
 

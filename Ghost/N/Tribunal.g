@@ -59,10 +59,19 @@ Socket_real(w):
     w i %transport,type:websocket
     // < the live port is a real WebSocket on .c (the transport seam). send buffers until OPEN;
     //    onmessage parses a frame and delivers it through the same Peeroleum_deliver path.
-    let peering = w.o({ Peering: 1 })[0]
-    let addr = (peering && peering.sc.name) || ''
     let scheme = (location.protocol === 'https:') ? 'wss' : 'ws'
-    let url = scheme + '://' + location.host + '/relay?addr=' + encodeURIComponent(addr)
+    // THE DIAL READS THE LIVE ADDRESS, per connect — not a name captured once (Portability §4
+    //  item 1: a Steal Back used to move a model field the relay never heard, because this url
+    //   was built a single time from `sc.name`).  `address ?? name` is the Swarm_address read
+    //    done directly on this w's own Peering (no Swarm-ghost dependency — the Lies
+    //     editor|runner channels ride this same carrier with no ident at all, and for them
+    //      address is simply never set).  Every reconnect — backoff, rehome(), relay restart —
+    //       re-dials at the address the model holds NOW.
+    let home = () => {
+        let peering = w.o({ Peering: 1 })[0]
+        let addr = (peering && (peering.sc.address || peering.sc.name)) || ''
+        return scheme + '://' + location.host + '/relay?addr=' + encodeURIComponent(addr)
+    }
     // The socket AUTO-RECONNECTS (v1 had none — a relay/dev-server restart dropped both browsers at
     //  once and neither came back, so the heartbeat read "no pong" forever). connect() (below) opens
     //   the ws; onclose re-dials with backoff; the relay re-binds our addr and the consumer's on_open
@@ -201,6 +210,11 @@ Socket_real(w):
         //  The consumer (Lies) re-sends the relay `become` through this so a reconnected socket re-binds.
         on_open(cb) { open_hooks.push(cb); if (ws && ws.readyState === WebSocket.OPEN) { try { cb() } catch (e) {} } },
         reconnect() { try { if (ws) ws.close() } catch (e) {} },   // force a drop → onclose re-dials (for a half-open socket)
+        // rehome — the address changed (Steal Back / Reinstate stamped the Peering): drop the
+        //  socket WITHOUT the intentional latch so onclose re-dials — and connect() reads home()
+        //   fresh, so the new dial binds the new place.  tries resets so the re-dial is the fast
+        //    first-step backoff, not wherever a flaky night left the counter.
+        rehome() { tries = 0; note(`🛰 ws REHOME — address changed, re-dialling as the current place`); try { if (ws) ws.close() } catch (e) {} },
         close() { intentional = true; try { if (ws) ws.close() } catch (e) {} },
     }
     // deliver_soon — hand an envelope frame to the coalescing batcher (Lies_deliver_soon: append to a per-w
@@ -259,6 +273,7 @@ Socket_real(w):
         deliver_soon(frame)
     }
     let connect = () => {
+        let url = home()
         ws = new WebSocket(url)
         port.ws = ws
         ws.binaryType = 'arraybuffer'   // so a binary frame arrives as ArrayBuffer (sync-decodable), not a Blob

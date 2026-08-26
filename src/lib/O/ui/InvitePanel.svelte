@@ -368,7 +368,14 @@
         void H?.version
         if (!iz || invite || iz_err || typeof H?.Swarm_token_parse !== 'function') return
         const t = H.Swarm_token_parse(iz)
-        if (t) invite = t
+        if (t) {
+            invite = t
+            // the %Invite AUTOVIVIFY (Portability §7): the token the URL carried becomes a
+            //  particle with a lifecycle on the station world — the Door and the glass can
+            //   show the offer as a thing, not a string. Soft: pre-station, the next parse
+            //    pass (H.version rides this effect) retries via Swarm_redeem's own note.
+            try { H.Swarm_invite_note?.(H.Swarm_station_world?.(), iz) } catch {}
+        }
         else iz_err = 'the invite did not parse — ask for a fresh QR'
     })
     // ── …AND A RELIC BECOMES AN ORDINARY OFFER (rung 2, 2026-08-12) ──────────────────────────────

@@ -1,97 +1,110 @@
 # Portability_todo.md
 
 Account portability — one **soul**, many **bodies**: carry an identity to a second device, let
- each body do the work it is placed to do (the phone wants, the station executes), and hand
-  authority around without corrupting the ledger or doubling yourself on the wire.
+ each body do the work it is placed to do, and hand authority around without corrupting the
+  ledger or doubling yourself on the wire. The two bodies that matter are the **Captain** (the
+   phone in your hand) and the **Cave** (the deep, stable, disk-bearing machine at home).
 
-> Status: working `_todo`, written spec-close but **not** self-promoted. The mechanics below are
->  verified against the code (file:line inventory in §10); the *design* is proposed and wants the
->   human's preen before any of it is blessed `_spec`.
+> Status: working `_todo`, written spec-close but **not** self-promoted. Mechanics are verified
+>  against the code (inventory in §11); the design is proposed and wants the human's preen.
 >
-> Sibling docs, and what each owns: **`MobilenoFSA_todo` is FOLDED INTO THIS DOC**
->  (2026-08-26; the file is in `spec/history/` with a historicity notice) — its dated rulings
->   (the LinkDevice ceremony 2026-08-14, the `%Idzeug` block lease, the listening-only wire,
->    the %Like plan) live on below and keep their dates. **`Onboard_todo`** owns the first-run
->     funnel (namer bubble, welcome, invite landing). **`Daemon_todo`** owns the
->      phone-commands-station-executes verb arc (pokes, `PLAYER_OPS`); this doc owes it only
->       the wants ledger. **`Identity_persist` §7.4** owns the disk write-lease this extends.
->        **`Cluster_spec` §3** owns the relay. **`Persistence_todo`** is the durability arc
->         underneath.
+> Sibling docs: **`Onboard_todo`** owns the first-run funnel. **`Daemon_todo`** owns the
+>  phone-commands-station-executes verb arc (pokes, `PLAYER_OPS`). **`Identity_persist`** owns
+>   the account mirror + disk write-lease mechanics this doc leans on (§7.4 especially).
+>    **`Cluster_spec` §3** owns the relay. (`MobilenoFSA_todo` was folded here 2026-08-26 and
+>     deleted; its dated rulings — the LinkDevice ceremony 2026-08-14, the listening-only
+>      wire — live on below and keep their dates; its serial-block-lease ruling was
+>       SUPERSEDED 2026-08-27 by Captain-only invites, §2C.)
 
 ---
 
 ## 0. Where to start, and the arc
 
-**The destination.** A person's phone is the **Captain** — the soul's home, the social hand, the
- wanting surface — and it needs no folder access at all. A station with a real filesystem is the
-  **Cave** — where the library lives, where Heists are fulfilled, where everything is backed
-   up. The Captain likes and wants; the Cave acquires and keeps. Music flows back to the
-    phone as a **SoundPool** — LOFI listening copies in OPFS — and two phones meeting in the
-     world can swap SoundPool material directly, seeding introductions their Caves later
-      fill out as Originals. Authority stays with the Captain; durability lives with the
-       Cave; and no step double-spends an invite or doubles a name on the wire.
+**The destination.** A person's phone is the **Captain** — the soul's home, the social hand —
+ and it needs no folder access at all. A station with a real filesystem is the **Cave** — where
+  the library lives, where Heists are fulfilled, where everything is backed up. What you'd
+   Heist wanders to the Cave and waits there as treasure; music flows back to the phone as a
+    **SoundPool** — LOFI listening copies in OPFS — and two phones meeting in the world can
+     swap SoundPool material directly, seeding introductions their Caves later fill out as
+      Originals. Authority stays with the Captain; durability lives with the Cave; and no step
+       double-spends an invite or doubles a name on the wire.
   The funnel (ruled 2026-08-14): the phone is the FIRST TOUCH — cold arrival → listening only
-   → likes accrue → LinkDevice → the same identity on a capable station actions the wants.
+   → LinkDevice → the same identity on a capable station does the heavy lifting.
   And a working bet to hold loosely (the owner, 2026-08-26): **pool↔pool exchange between
    phones may be the MAJORITY way music actually moves** — most transfer live and LOFI, hand
     to hand, with the Caves as the archival minority that HIFI-ifies what the pools discover.
      Design the pool paths as primary, not as a nicety bolted onto the library.
 
 **What already exists** (so this is wiring, not invention):
-- The **identity ≠ address** split, with suffix machinery: bare `<prepub>` is the primary place,
-   `<prepub>_1` a second body's place; Piers verify by `pub`, so a suffix costs routing, never
-    recognition. `Swarm_next_suffix` / `Swarm_steal_back` / `Swarm_reinstate` exist. (§4, §10)
-- The **LinkDevice ceremony**, ruled (2026-08-14, ex-MobilenoFSA §3): a live self-Invite on the
-   invite rails — high-entropy, single-use, short-lived, both devices online, account frames
-    encrypted under a code-derived key, matching-emoji confirm. (§7)
-- The **`%Idzeug` block lease**, ruled (same ruling): each linked device draws invite serials
-   from its own range — no shared counter, no double-spend, no "primary". (§2C)
-- The **wants ledger**: `%Jam,with:<dj>` + `%Like/%Spin/%Grab,of:<id>` referring particles
-   (Ghost/M/Jam.g) — pure verbs, idempotent, today called only by a Book. The Captain's
-    want-book is already shaped. (§5, §10)
-- **OPFS plumbing**: `WormholeOpfs.svelte.ts` — an overlay nav (read-only seed under a scratch
-   layer) speaking the same read_file/write_file/dir contract as every other nav. The SoundPool
-    has a nav shape to ride. (§3, §10)
-- The **disk write-lease** (`Identity_persist` §7.4f) and the **👥 collision tripwire** (a frame
-   from our own key raises the alarm) — the safety rails under any handoff. (§8, §10)
+- The **identity ≠ address** split, with suffix machinery: bare `<prepub>` is the primary
+   place, `<prepub>_1` a second body's place; Piers verify by `pub`, so a suffix costs routing,
+    never recognition. `Swarm_next_suffix` / `Swarm_steal_back` / `Swarm_reinstate` exist.
+     (§4, §11)
+- The **LinkDevice ceremony**, ruled (2026-08-14): a live self-Invite on the invite rails —
+   high-entropy, single-use, short-lived, both devices online, account frames encrypted under
+    a code-derived key, matching-emoji confirm. (§7)
+- The **Captain-only invite ruling** (2026-08-27, superseding the earlier block-lease
+   design): the Captain takes care of all Invites; Tier C has one writer by role, so there
+    is no spend-merge problem at all. (§2C)
+- **OPFS plumbing**: `WormholeOpfs.svelte.ts` — an overlay nav speaking the same
+   read_file/write_file/dir contract as every other nav. The SoundPool has a nav shape to
+    ride. (§3, §11)
+- The **disk write-lease** (`Identity_persist` §7.4f) and the **👥 collision tripwire** (a
+   frame from our own key raises the alarm) — the safety rails under any handoff. (§8, §11)
 - **Transcode machinery**, Cave-side: the daemon's native ffmpeg stocking (probe|measure|
    encode) and Radio's demand-driven transcode path — the HIFI→LOFI press already runs. (§3)
 
 **What is missing** (the work this doc scopes):
 1. **The wire is not plumbed to the address.** `Socket_real` dials `peering.sc.name` (bare),
-    captured once; a Steal Back moves a field the relay never hears. (§4, §10)
-2. **The SoundPool itself** — the OPFS audio shelf, its ledger, its cap, its eviction. (§3)
+    captured once; a Steal Back moves a field the relay never hears. (§4, §11)
+2. **The SoundPool itself** — the OPFS audio shelf, its ledger, its cap, its eviction, and
+    the pool record's path scheme. (§3)
 3. **The loosened landing head** — the Heist's landing seam assumes the real-FS share today;
     it must write through ANY nav (the OPFS nav speaks the same contract), so a Heist can land
      **in a pool** as readily as in a library. (§3)
 4. **The pool exchange** — phone↔phone LOFI swap, live, no Cave required — possibly the
     majority transport (§0). (§5)
-5. **The smuggle** — Captain→Cave backup of the SoundPool *and* the account, with every
-    pooled LOFI standing as a want for its Original. (§5)
-6. **The mend verb** — one machinery for "this copy is deficient, a better one exists":
-    LOFI→HIFI upgrade and bit-rot repair are the same want. New interface to design. (§3, §9)
-7. **The quick/still lease + adoption handoff** — who may touch the consumable ledger, and how
-    a daemon takes over cleanly. (§6, §8)
-8. **Relay-enforced exclusivity** — today two bodies at one address is cooperative-avoided,
-    not prevented. (§4, §9)
-9. **The phone push, in flight** (ex-MobilenoFSA §0 — "at least it does radio", 2026-08-19):
+5. **The smuggle** — Captain→Cave backup of the SoundPool *and* the account. (§5)
+6. **`%Invite:MyCave`** — the role invite on the existing %Idzeug rails, plus the graft
+    ceremony around it. (§7)
+7. **The quick/still lease + adoption handoff** — who may touch the consumable ledger, and
+    how a daemon takes over cleanly. (§6, §8)
+8. **The Door dialogue** — Invite-yourself in the Door, opening the portability explainer.
+    (§9)
+9. **The phone push, in flight** (ruled arc — "at least it does radio", 2026-08-19):
     (a) THE release gate — verify on a real phone that a friend's stream actually plays in
-     `listen_only`; concrete risk: no nav in that mode, so if any tune-in/jam-join path needs a
-      nav WRITE, radio silently no-ops on device while dev looks green — field trip only, not
-       settleable headless. (b) `navigator.storage.persist()` at boot — one line, auto-granted
-        once PWA-installed; the cheap mitigation for "clear browsing data = identity death".
-         (c) the 🎧 badge on Door's self line + the mortal-identity whisper — `H.c.listen_only`
-          is read NOWHERE in the UI today; the badge makes the mode legible and is where to
-           whisper that a shareless identity is mortal until LinkDevice lands.
+     `listen_only`; concrete risk: no nav in that mode, so if any tune-in/jam-join path needs
+      a nav WRITE, radio silently no-ops on device while dev looks green — field trip only.
+       (b) `navigator.storage.persist()` at boot — one line, auto-granted once PWA-installed;
+        the cheap mitigation for "clear browsing data = identity death". (c) the 🎧 badge on
+         Door's self line + the mortal-identity whisper — `H.c.listen_only` is read NOWHERE in
+          the UI today; the badge makes the mode legible, and is where to whisper that a
+           shareless identity is mortal until LinkDevice lands.
+
+**LANDED 2026-08-27 (the night build — commits rehome · holdings · cohort · invitep):**
+- ✅ **The wire dial** — `Socket_real` reads `address ?? name` fresh per connect (`home()`),
+   gains `rehome()`; `Swarm_steal_back`/`Swarm_reinstate` call `Swarm_rehome(ident)` which
+    syncs the station Peering and re-dials. A Steal Back now reaches the relay.
+- ✅ **The cohort v1** (`src/lib/O/Cohort.svelte.ts` + SwarmStandup gate + the
+   `Swarm_station_up` consult): Web Lock decides profile primacy (zero staleness, auto-release
+    on tab death), BroadcastChannel census names `taken` and registers `%Sibling`s (that
+     verb's first app-path caller — family no longer trips the 👥 alarm), and a non-primary
+      tab suffixes BEFORE its first dial. The second tab quietly becomes the second tab.
+       NOT yet live-verified with two real tabs — the morning's first proof.
+- ✅ **`Ra_holding_keys()`** — the one authority on holding mainkeys; the three
+   silently-failing seams (Repli_merge ×2, Repli_recv_lines breadcrumb, Repli_find_record)
+    now ask it. Byte-identical today (set = `['Record']`).
+- ✅ **`%Invite` autovivify** — `Swarm_invite_note` on the station world (export-blind,
+   Book-blind home); InvitePanel vivifies on parse, `Swarm_redeem` walks it to `redeeming`.
+    `sealed|refused` land with the Door work.
 
 **Candidates to get on with next** (none blocks the others):
-- Plumb `Socket_real` to dial `Swarm_address()` and re-dial on change — smallest change, widest
-   payoff; it turns the existing suffix primitives into a working "step aside so my other body
-    can have the name" gesture, which the whole tandem stands on.
-- The %Like button + durable want row (§5 Flow 1 carries the folded plan; the Captain side of the tandem
-   starts there, and it is deliberately buildable before LinkDevice).
-- Draft the SoundPool shelf shape (§3) — the pool ledger + OPFS layout — since exchange,
-   smuggle, and mend all read it.
+- Two-tab live proof of the cohort v1, then the relay hello-v2 `want:` answer (the
+   cross-machine decider — the burn's §3.2 step 7).
+- Draft the SoundPool shelf shape (§3) — the pool ledger + OPFS layout + the pool record's
+   path — since exchange and smuggle both read it.
+- The Door's Invite-yourself hatch (§9) — small UI, big legibility: the place portability
+   becomes visible to a person; the %Invite particle now exists for it to show.
 
 ---
 
@@ -101,128 +114,314 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
    per account, however many devices hold it.
 - **Body** — a device (tab, phone, daemon) holding a soul. Bodies of one soul are `%Sibling`s
    when cooperative; an unrecognised body wearing your soul is a **theft** (`%Stolen`).
-- **Vessel key** — a body's own autogen keypair, born with the device before any soul lands on
-   it. What a body is addressable and encryptable-to *as itself*; the LinkDevice beacon's
-    ephemeral pub plays this role in the ceremony (§7).
+- **SelfType** — what a body IS within its soul's tandem: `Captain` or `Cave` (more may come).
+   Not a job assignment but a station in life: which duties this body is placed to carry.
+    Rides beside the address on the %Peering (a body has one SelfType at a time); advertised
+     to peers so they can pick which body to talk to (§4).
+- **The helm** — the authority relation of the tandem: the Captain holds the helm; the Cave
+   serves it. Asymmetric on purpose (the phone is where the human is; the Cave obeys standing
+    orders), and named for the ship, not for the bedroom.
+- **Vessel key** — a body's own autogen keypair, born with the device before any soul lands
+   on it. What a body is addressable and encryptable-to *as itself*; the LinkDevice beacon's
+    ephemeral pub plays this role in the ceremony (§7). **Per-INSTANCE, quite specifically**
+     (ruled 2026-08-27): one vessel key per install (browser profile × origin × device) —
+      moving to a new Captain may deliberately FORGET the previous vessel, retiring its
+       cohort-roster row. A vessel is a place the soul has stood, not a possession it keeps.
+- **Instance memory** — the small store where a body remembers WHICH INSTANCE IT IS (its
+   vessel key, its SelfType, which souls it has held) — scoped to the instance, never to a
+    soul, so it cannot mix up when one browser holds two identities. Sits at the top of the
+     one slope of persistence (Dexie|FSA behind the same abstraction); largely still to make
+      up (§10).
+- **The cohort roster** — new data (ruled 2026-08-27): the bodies of one soul that have met
+   share who-is-who — a Tier-B shelf of instance rows (vessel id, SelfType, last address,
+    last seen). This is "the something parameterised on the Cave end of the Account": each
+     body's replica carries its own instance stamp, and the roster is the union of the
+      stamps. The %Sibling machinery is its seed; the roster is %Sibling made durable and
+       replicated.
 - **Captain** — the soul's home body, most likely the phone: no FSA (`showDirectoryPicker` is
-   desktop-Chromium-only — the one hard fact, ruled ex-MobilenoFSA), storage in OPFS/Dexie only. The social
-    hand (in-person QR, invites, likes) and the wanting surface. Carries **authority**.
+   desktop-Chromium-only — the one hard fact of the phone arc), storage in OPFS/Dexie only.
+    The social hand: in-person QR, invites, the human's presence. Holds the helm.
 - **Cave** — the deepest, stablest, least mobile region of a person's infrastructure: a body
-   with a real filesystem (usually the laptop; at its most cave-like, an always-on daemon).
-    The library's home, where Heists are fulfilled, transcoding runs, and backups land — what
-     the Captain wants *wanders to the Cave* and waits there as treasure. Carries
-      **durability**. The LapBob of the earlier design conversation is a Cave. (Named for the
+   with a real filesystem. Concretely: Chrome-with-FSA on the user's computer at first, the
+    always-on daemon at its most cave-like — often the same machine wearing both, and the
+     daemon is where a Cave wants to end up (§7). The library's home, where Heists are
+      fulfilled, transcoding runs, and backups land. Carries **durability**. (Named for the
        treasure cave, not the container: "TreasureChest" had the better image — open the
         laptop lid like a chest lid — but a chest is portable, and this concept is defined by
          being the thing that does not move. "Merchant" was the working name, retired as too
           market-flavoured for what is really a hoard.)
-- **Quick / still** — a body is **quick** when it holds the consumable-ledger lease (§6); every
-   other body is **still**: it replicates, Heists, and writes grow-only state, but never touches
-    the invite ledger. With block leases (§2C) quickness becomes per-range rather than global.
-- **SoulInvite / LinkDevice** — the invite whose redemption makes you, not befriends you.
-   "LinkDevice" is the ruled ceremony name (2026-08-19, after Signal/WhatsApp); "SoulInvite" the invite object
-    itself. One thing; the human may pick one word.
+- **Quick / still** — a body is **quick** when it may write the consumable ledger; by the
+   2026-08-27 ruling that is **the Captain, by definition** (§2C, §6) — so quick/still has
+    collapsed from a lease into a synonym for the role split, kept in the vocabulary only
+     because the wire-transition rule still needs the words: a body going still must unbind
+      its address, not just stop writing (§6).
+- **SoulInvite / LinkDevice / `%Invite:MyCave`** — the invite whose redemption makes you, not
+   befriends you. "LinkDevice" is the ruled ceremony name (2026-08-19, after Signal/WhatsApp);
+    `%Invite:MyCave` is how it meshes with the standing invite system: today's invites carry a
+     Music Feature (`%Invite:Music` — *what I will serve you*); this one carries a ROLE
+      Feature (*what you will be to me*). The role transcends the Music part of the system.
+       One mechanism; the human may settle one word. A `%Invite` PARTICLE also now exists by
+        ruling — the URL's token data autovivifies into one (§7), so the thing everyone
+         thinks in has a body in the tree.
 - **Original** — the HIFI holding: a `%Record` in a real-filesystem `%Library`, the Cave's
    charge, the librarian's object of interest.
-- **SoundPool** — a body's OPFS audio shelf: LOFI listening copies pressed from Originals (or
-   received from another pool). A cache with a ledger — never a second library.
-- **LOFI / HIFI** — the fidelity axis (§3). A pool copy is LOFI by station; an Original is the
-   HIFI it wants to be.
-- **Want / mend** — a want is a durable "acquire this for me" record (%Like is its first form);
-   a mend is a want whose subject already exists here but deficiently (LOFI where HIFI is
-    grantable, or a corrupt chunk where a healthy one exists). One machinery (§3).
+- **SoundPool** — a body's OPFS audio shelf: LOFI listening copies pressed from Originals or
+   received from another pool. A cache with a ledger — never a second library.
+- **LOFI / HIFI** — the fidelity axis (§3). A pool copy is LOFI by station; an Original is
+   the HIFI it points at.
 
 Notation follows `CLAUDE.md`: `%Sibling`, `%Stolen`, `%Idzeug`; a property as `Peering%address`.
 
 ---
 
+## 1b. The atlas of ids — which ids live where, and the seams between them
+
+Five id families, each with its own lifetime and its own verifier. Every bug in this arc so
+ far has lived at a SEAM — the place one family is translated into another — so the seams are
+  drawn as first-class objects.
+
+### The soul's derivation chain (one person)
+
+```
+key (ed25519 private) ──── SECRET. `.c.keys` at runtime; IN CLEAR in
+ │                          .jamsend/account/<prepub>/toc.snap; Dexie identities row.
+ ▼ derives
+pub (full public key) ──── the VERIFICATION truth. Rides %Page in frames,
+ │                          %Grant.by / %Grant.for, vouchers. Never routes anything.
+ ▼ prepubOf()
+prepub (16 hex) ────────── the NAME. `ident.sc.prepub`; the dir names
+ │                          (account/<prepub>/, berth/<prepub>/); QR token leg 1;
+ │                          the %Pier key at every friend; frame `page.prepub`.
+ ▼ + optional session suffix
+address = <prepub>|<prepub>_N ── REACHABILITY. `Peering%address` (session-only,
+                            omitted from export); the relay `?addr=` bind; what
+                            `deliverLocal` fans out on.
+```
+
+Seams in this chain, and their checks:
+- **pub↔prepub**: `prepubOf(pub) === claimed` — enforced at every seal-minting entry and in
+   the voucher; NOT on gossip or repli frames (§10, the signing floor).
+- **prepub↔address**: `Swarm_address()` — and the known GAP: `Socket_real` dials the name,
+   not the address (§4, item 1).
+- **address↔socket**: the relay's `hello` ed25519-binds a prepub to a socket ONCE at
+   connect; nothing per-frame after.
+
+### One track's ids (the content family)
+
+```
+source bytes ──sha256──▶ id (16 hex, the enid) ─── WHAT it is. The join everywhere:
+    │                     a friend's mirrored %Record carries the SAME id; %Keepsake.id;
+    │                     heist picks. Survives every hop.
+    ├─▶ path ("music/Artist/…", future "pool/…") ─── WHERE it is, base-relative,
+    │     snap-portable. id↔path binding lives in the radiostock card (base+path
+    │     on `.c`) and the keep-id map — which is RUNTIME-ONLY: a reload wipes it,
+    │     which is why the heist re-census exists. WHAT is durable; WHERE is earned.
+    ├─▶ body_hash (per repli frame) ─── transport INTEGRITY, not identity.
+    └─▶ LOFI press ──▶ a NEW id (different bytes!) + `of:<original id>` ─── the
+          cross-fidelity join (§3). A pool copy is a different WHAT that names
+          its Original.
+```
+
+### The ledger's ids (the trust family)
+
+```
+issuer %Idzeug (ordinal, `next`) ──draws──▶ serial ──rides──▶ the QR token
+    <prepub16>*<serial>*<n>*<presig16>     (params do NOT ride the token —
+                                            the issuer's own record is the law)
+spend ledger: `claimed` run-list ("3-5~9~14"), per issuer
+one writer (§2C): the CAPTAIN alone draws and ticks serials — no partition needed
+%Grant / %NotGrant atoms: `by` + `for` are FULL PUBS (not prepubs) + `sign`
+```
+
+The seam to respect: **the wire routes by prepub/address, but the trust atoms bind pubs** —
+ page binding + `prepubOf` is the bridge, and it is checked exactly where the audit says
+  (§10). Never compare a grant's `by` to a frame's `from`; they are different families.
+
+### The wire's per-body state (⚠ the seam that isn't finished)
+
+```
+per BODY:  seq (stream counter) · era (station generation) · voucher (per-era proof)
+per PAIR:  the state a FRIEND keeps about you: peer_era, repli windows, rtt —
+           keyed by their %Pier for you, i.e. BY PREPUB, not by address.
+per ASK:   corr (request ↔ reply correlation; relay ackBack, runner_ask)
+```
+
+⚠ Two bodies of one soul with distinct addresses solve the RELAY (each gets its own door,
+ §4) — but at the FRIEND's end they still meet **one %Pier**, whose seq/era/window state
+  assumes one body. Whose seq does the friend track when your Captain and your Cave both
+   talk to them? Open, and load-bearing — §10 carries it.
+
+### The body's own ids (the design family, §7)
+
+```
+vessel key ──── a body's pre-graft keypair (the LinkDevice beacon pub); what the
+                SoulInvite encrypts toward. Lives in mortal browser storage (⚠ §10).
+%Sibling place ─ the roster row key for a cooperative co-holder.
+SelfType ────── Captain|Cave. ADVERTISORY, not enforcement: every body of a soul
+                holds the same key and therefore the same cryptographic powers —
+                SelfType is coordination among your own bodies, never security
+                against a hostile one.
+```
+
+---
+
 ## 2. An account's data, by merge behaviour
 
-Portability is a merge problem, and an account is three tiers that merge differently. The tier
- boundaries are what make "the Cave may Heist but not spend" precise rather than a vibe.
+Portability is a merge problem, and an account is three tiers that merge differently. The
+ tier boundaries are what make "the Cave may Heist but not spend" precise rather than a vibe.
 
 **Tier A — immutable (the soul).** The keypair. Never merges because it never changes;
  replication is the one-time secure ceremony of §7.
 
-**Tier B — grow-only (friendships, grants, Heisted tracks, the newlyadded berth, the wants
- ledger, the pool ledger).** Append-mostly sets keyed by stable identities. Two bodies each
-  befriending different people, or landing different tracks, or accruing different likes,
-   **union-merge** cleanly — the berth append-door already folds parts by key, a log-structured
-    merge waiting to be pointed at two devices. A still body writes this tier freely to its OWN
-     replica; adoption (§8) takes the union. The %Jam shape is already merge-safe by design
-      (ruled ex-MobilenoFSA §2: append-only events with `at` + device provenance merge trivially; a
-       mutable "liked: yes/no" flag would not — that ruling generalises to every Tier-B shape
-        this doc adds, the pool ledger included).
+**Tier B — grow-only (friendships, grants, Heisted tracks, the newlyadded berth, the pool
+ ledger).** Append-mostly sets keyed by stable identities. Two bodies each befriending
+  different people, or landing different tracks, **union-merge** cleanly — the berth
+   append-door already folds parts by key, a log-structured merge waiting to be pointed at two
+    devices. A still body writes this tier freely to its OWN replica; adoption (§8) takes the
+     union. The standing merge-safety ruling generalises to every Tier-B shape: append-only
+      events carrying `at` + device provenance merge trivially; a mutable yes/no flag would
+       not — shape new ledgers accordingly.
 
-**Tier C — consumable (the invite ledger: `%Idzeug` `next` + `claimed`).** The poison. A serial
- spends exactly once; `claimed` is a run-list set (`"3-5~9~14"`) in one scalar, and the berth
-  fold LWW-supersedes whole scalars — so two bodies ticking serials off the same issuer lose one
-   tick silently, and **an invite un-spends** (the security property `Identity_persist` names).
-  **The ruled answer is the block lease** (ex-MobilenoFSA §3, via the old garden's
-   `IdzeugNumberLeap` +800): each linked body draws serials from its own disjoint range — no
-    shared counter, no double-spend, no primary. Under block leases, Tier C is per-range
-     single-writer, which unions as safely as Tier B. Until a body HOLDS a block lease it does
-      no invite processing at all (the conservative v1 posture; §6).
+**Tier C — consumable (the invite ledger: `%Idzeug` `next` + `claimed`).** The poison. A
+ serial spends exactly once; `claimed` is a run-list set (`"3-5~9~14"`) in one scalar, and the
+  berth fold LWW-supersedes whole scalars — so two writers ticking serials off the same issuer
+   would lose one tick silently, and **an invite un-spends** (the security property
+    `Identity_persist` names). **The ruled answer (2026-08-27, superseding the earlier
+     block-lease ruling): the CAPTAIN takes care of all Invites, full stop.** The role split
+      dissolves the merge problem instead of solving it — Tier C has exactly one writer by
+       definition of the helm, so there is nothing to partition, nothing to lease, and no
+        allocator to design. Caves replicate the ledger read-only (they must SEE spends to
+         refuse a revoked peer) and never write it. The block-lease design (per-body serial
+          ranges) is retired to this parenthesis: it re-enters only if a future ever wants
+           two Captains, which nothing currently does.
   What no tier gets for free: per-field last-writer-wins by *causal* time. A snap carries no
    vector clock; the fold decides by part order on disk. Fine for a nickname; not fine where
     "which edit truly came later" is load-bearing.
 
+**2D — the partition audit (2026-08-26): is the right stuff per-Identity?** Two sweeps, disk
+ and browser, answering "have we got the correct pool of stuff equivalent to tables that
+  shouldn't be per Identity":
+  - **Disk: yes — the layout is already correct.** Per-soul lives under a prepub:
+     `account/<prepub>/`, `berth/<prepub>/{Heists, KeepMemo, HeistDefaults, Faves, Musica}` —
+      all of it replicable soul data. Per-collection deliberately does NOT wear a prepub:
+       `berth/Newlyadded/` (what landed in THIS collection, whoever caused it) and
+        `berth/Census/` (this machine's directory estimator) — both would be wrong to carry
+         to another device. No misfilings found.
+  - **Browser: mostly — three bleeds, all fixable.** (1) `House.stashed` is ONE Dexie row
+     keyed by House name, so any identity-flavoured key in it (UI state, the deprecated
+      `cluster_idento` fallback) bleeds between identities sharing a browser — prepub-prefix
+       such keys or move them to the identities table. (2) the `cluster_idento`-in-stashed
+        legacy read (`LiesLies.svelte:670`) can diverge from the `?I=` identity — already
+         flagged by an `identity_diverged` check; retire the fallback. (3) `localStorage`
+          (invite-dismissed, audio-gesture) is origin-global — acceptable, those are browser
+           prefs, but know a second identity inherits them. The identities Thang itself is
+            correctly keyed by prepub; what it lacks is any cross-device sync — which is
+             exactly what §7's graft is for, so that is a feature of this doc, not a bug of
+              the table.
+
+**2E — writing these schemas in IOexpr (investigated 2026-08-27).** The properties this
+ section states in prose (keyed-by, replicates, writer, merge rule, home store) want to be
+  DECLARED once and read by the seams (Berth open/save, the persist gates, the future
+   replicator, the adoption union) instead of hardcoded per shelf. **IOexpr** is the standing
+    candidate: `%IO` rows in a commission (`from:`/`find:` + `shape: mirror|slope|presence|
+     pick`) — a declarative source-and-shaping language, fully specced in
+      `vyto_workingouts/commission.md` §3 but still flagged "wild speculation," unbuilt,
+       awaiting its first tenant (the Vyto sizing algebra). The investigation's verdict:
+        **IOexpr is the right composition backbone and the wrong place for authority** — it
+         says what to fetch and how to shape, but has no vocabulary for writer/merge/home.
+          The natural extension is a thin **`%Schema,<shelf>`** particle referencing an
+           `%IO` row and adding exactly the missing keys (`keyed_by`, `replicates`,
+            `writer: captain-only|any-body|this-body-only`, `merge: union|lww|
+             single-writer`, `home: dexie:<table>|berth:<path>|opfs:<mount>`). That keeps
+              IOexpr pure and gives the account a machine-readable law-book — and it would
+               make the account schemas IOexpr's first tenant, un-parking it with a real
+                load. Standard of that shape to be done; deeper aspects updated here as the
+                 tenant work teaches.
+
 ---
 
-## 3. The fidelity axis — Originals, the SoundPool, and the mend
+## 3. The fidelity axis — Originals and the SoundPool
 
-**Two stations of being for one piece of music.** The **Original** is the holding: `%Record` in
- a `%Library` on a real filesystem, the Cave's charge. A **pool copy** is a LOFI pressing in
-  some body's OPFS SoundPool, made for listening on a device that cannot (and should not) hold
-   the library. The librarian's interest runs entirely to Originals; the pool is the people's
-    music — portable, lossy, expendable.
+**Two stations of being for one piece of music.** The **Original** is the holding: `%Record`
+ in a `%Library` on a real filesystem, the Cave's charge. A **pool copy** is a LOFI pressing
+  in some body's OPFS SoundPool, made for listening on a device that cannot (and should not)
+   hold the library. The librarian's interest runs entirely to Originals; the pool is the
+    people's music — portable, lossy, expendable.
 
-**Identity across fidelities follows the standing law** (`CLAUDE.md`, "identity is per-shelf"):
- a pool copy is a **referring particle wearing its own mainkey** — `%Pool,of:<id>` (name to
-  preen) beside its chunks — never a second `%Record` impersonating the holding. The `of:` join
-   is what lets a pool copy *want* its Original, survive transcoding, and dedup across pools.
-    The old magazine minted exactly this bug once; the tell is two shapes under one mainkey.
+**Identity across fidelities follows the standing law** (`CLAUDE.md`, "identity is
+ per-shelf"): a pool copy is a **referring particle wearing its own mainkey** — `%Pool,of:<id>`
+  (name to preen) beside its chunks — never a second `%Record` impersonating the holding. The
+   `of:` join is what lets a pool copy name its Original, survive transcoding, and dedup
+    across pools. The old magazine minted exactly this bug once; the tell is two shapes under
+     one mainkey.
 
-**The OPFS reality that shapes the pool.** OPFS works on phones and is invisible to the OS file
- manager ("hella inaccessible" — which is fine: it is a cache, not a collection). It is also
-  **evictable**: browser storage pressure can clear it, and "clear browsing data" kills it
-   outright (§0 item 9b owes the `navigator.storage.persist()` request at boot — cheap
-    mitigation, auto-granted once PWA-installed). Two consequences, both load-bearing:
-  - **The pool is designed expendable.** A pool entry is re-pressable from its Original; losing
-     the pool loses convenience, never music — PROVIDED the smuggle (§5) has run, so the pool
-      ledger (what was pooled, from what, at what fidelity) outlives the pool bytes.
-  - **The pool needs its own economy**: a size cap, an eviction order (least-recently-listened
-     first, wants-pinned last), and honesty in the UI about what is pooled vs merely wanted.
+**The pool record's path — another type of radiostock, worked out (audited 2026-08-26).**
+ Today a `%Record.sc.path` is **base-relative**: `"music/Artist/Album/Track.wav"` — the base
+  is a mount/meander name (`music`, `testsounds`), the radiostock card keeps base+path split
+   on `.c`, and the snap-time join produces the one portable scalar. The nav layer already
+    abstracts all byte I/O behind the same duck-typed contract, and `MountNav` already routes
+     per-method by mount prefix. **So the pool is simply another mount**: a pool record's path
+      is `"pool/…"`, resolved to the OPFS nav exactly as `"music/…"` resolves to the FSA nav.
+       Zero changes at the meander/serve seams (they never inspect path semantics), snap-safe
+        (one scalar, no new fields), and the friend-exchange idiom comes free: a received
+         `path:"pool/…"` that doesn't resolve yet is a dead reference that starts resolving
+          the day a pool mount stands — the exact behaviour `"music/…"` has today before a
+           share opens. A URI scheme (`opfs://…`) and an id-only+nav-tag shape were both
+            considered and rejected (scheme-stripping at every seam; a new sc field that
+             re-records ~8 Books). Touch-list: ~10 lines of MountNav pool-prefix routing, one
+              line adding `'pool'` to the meander bases, ~5 lines standing the pool
+               `OpfsOverlayNav` at boot.
+  The mainkey question was then BURNED (the 2026-08-27 Repli-coupling trace, ranked verdict):
+   pool rows should wear **`%Record`** — on the pool's own shelf, `id` = the hash of the LOFI
+    bytes themselves, `of:<original-id>` the cross-fidelity join, **`grade:'ogg128'`** the
+     pressing mark (a key `%Blob` already carries in the wire identity table for exactly this
+      purpose). That is not a compromise of the identity law but a correct application of it —
+       the law is per-shelf, and a pool row genuinely holds its bytes; provenance rides
+        scalars (`of:`, `grade`, the standing `lofi:1` precedent at `Heist.g:1571`), which is
+         how this codebase has always expressed it, not by minting a noun. The trace's
+          sharpest line, kept: *"the flaw is not that %Record means holding, but that
+           forty-five seams each privately re-decide that it does"* — hence `Ra_holding_keys()`
+            (landed, §0) as the one place the question is answered from now on. Final word
+             remains the human's preen; the machinery no longer cares which way it falls.
+
+**The pool is Mag-based — the standards apply (ruled 2026-08-27).** The landing-Mag ruling
+ already says it (`Heist.g:161`): *"every collection holding lives in the shelf's paged Mag,
+  whatever verb minted it"* — and the pool is a collection of live holdings, so pool tracks
+   mint through the ONE owned door (`Ra_rec_home`) into a paged Mag on the pool shelf, never
+    a flat way-station. Its counterpart ruling cuts the other way (`Heist.g:4072`): *"a
+     ledger is not a Mag"* — so the pool LEDGER (what was pooled, from what, when — the
+      thing the smuggle backs up) stays a berth ledger beside the Mag, not inside it. Two
+       standards, both already law; the pool invents neither.
+
+**The OPFS reality that shapes the pool.** OPFS works on phones and is invisible to the OS
+ file manager ("hella inaccessible" — which is fine: it is a cache, not a collection). It is
+  also **evictable**: browser storage pressure can clear it, and "clear browsing data" kills
+   it outright (§0 item 9b owes the `navigator.storage.persist()` request — cheap mitigation,
+    auto-granted once PWA-installed). Two consequences, both load-bearing:
+  - **The pool is designed expendable.** A pool entry is re-pressable from its Original;
+     losing the pool loses convenience, never music — PROVIDED the smuggle (§5) has run, so
+      the pool ledger (what was pooled, from what, at what fidelity) outlives the pool bytes.
+  - **The pool needs its own economy**: a size cap, an eviction order (least-recently-
+     listened first), and honesty in the UI about what is pooled here vs held elsewhere.
 
 **The press.** HIFI→LOFI transcoding is Cave work and the machinery already runs: the
  daemon's native ffmpeg stocking (probe|measure|encode) and Radio's demand-driven transcode
   (`Ra_transcode_ensure|advance`). SoundPooling is that press pointed at a pool target instead
    of a stream — same gears, new destination.
 
-**The pool is a Heist DESTINATION, not only a press target** (the owner, 2026-08-26: "OPFS can
- be Heisted to as well, we need to really loosen up that exchanger head"). The Heist's landing
-  head — the seam that writes landed material somewhere — assumes the real-FS share today
-   (mardir, the FSA nav). That assumption is the thing to loosen, and the loosening is cheap in
-    principle because **the nav contract is already the seam**: `read_file/write_file/dir` is
-     the whole interface, and the OPFS overlay nav (`WormholeOpfs`) already speaks it. A landing
-      head parameterised over ANY nav lets a Captain Heist straight into its own pool — no Cave
-       in the loop — and lets the pool exchange (§5 Flow 3) BE a heist whose destination is
-        OPFS, one machinery instead of two. What lands pool-side is pool-grade by posture
-         (LOFI, expendable, `of:`-joined); the Cave remains where Original-grade landing and
-          keeping happen. (This scopes the older "no heist setup on the phone" ruling of
-           2026-08-15 to the v1 *UI* — likes instead of heist forms — while the *machinery*
-            below it goes destination-agnostic.)
-
-**The mend — one verb for "a better copy exists."** A LOFI pool copy that could be an Original
- (`of:` resolves, a grant stands) and a corrupt chunk whose healthy twin exists on a sibling or
-  a friend are **the same shape**: a deficient copy naming a better one by content identity.
-   So they share one machinery — a **mend want**: minted by an audit (hash walk over chunks;
-    `body_hash` already rides every repli frame, so the wire's integrity vocabulary exists) or
-     by policy (all LOFI wants HIFI-ification when its Original is reachable), fulfilled by
-      whatever body holds the better copy, at whatever pace the fulfilling body's station
-       affords. Bit-rot repair over time is then not a new subsystem — it is the mend loop
-        running slowly over Tier-B holdings forever. **The interface for this is undesigned**
-         (the owner: "that's a bit of new interface to design huh") — §9 carries it.
+**The pool is a Heist DESTINATION, not only a press target** (the owner, 2026-08-26: "OPFS
+ can be Heisted to as well, we need to really loosen up that exchanger head"). The Heist's
+  landing head — the seam that writes landed material somewhere — assumes the real-FS share
+   today (mardir, the FSA nav). That assumption is the thing to loosen, and the loosening is
+    cheap in principle because **the nav contract is already the seam**:
+     `read_file/write_file/dir` is the whole interface, and the OPFS overlay nav
+      (`WormholeOpfs`) already speaks it. A landing head parameterised over ANY nav lets a
+       Captain Heist straight into its own pool — no Cave in the loop — and lets the pool
+        exchange (§5 Flow 3) BE a heist whose destination is OPFS: one machinery, two
+         destinations. What lands pool-side is pool-grade by posture (LOFI, expendable,
+          `of:`-joined); the Cave remains where Original-grade landing and keeping happen.
+           (This scopes the older "no heist setup on the phone" ruling of 2026-08-15 to the
+            v1 *UI*, while the *machinery* below it goes destination-agnostic.)
 
 ---
 
@@ -230,220 +429,378 @@ Portability is a merge problem, and an account is three tiers that merge differe
 
 The relay is a dumb address-routed forwarder; two verified facts govern the design.
 
-**Fact 1 — delivery fans out to a SET, keyed by address.** `locals` maps an address to a *set*
- of sockets; `deliverLocal` sends a `to:<addr>` frame to **every** station socket bound under
-  that address (the `qaddr === to` own-door rule prefers station sockets over role sockets, but
-   among station sockets of one address, all receive). Two bodies under the **same** address is
-    therefore **duplication, not division**: both receive everything, both answer, each runs its
-     own sequence counter stamped `from:<prepub>`, and a friend receives two interleaved streams
-      one repli window can never reconcile (`repli_missed` forever — the observed two-daemon
-       disease, and the standing `[[relay-locals-additive-bind-fanout]]` lesson: the relay is an
-        unauthenticated forwarder; assume an eavesdropper, expect a fan-out).
+**Fact 1 — delivery fans out to a SET, keyed by address.** `locals` maps an address to a
+ *set* of sockets; `deliverLocal` sends a `to:<addr>` frame to **every** station socket bound
+  under that address (the `qaddr === to` own-door rule prefers station sockets over role
+   sockets, but among station sockets of one address, all receive). Two bodies under the
+    **same** address is therefore **duplication, not division**: both receive everything, both
+     answer, each runs its own sequence counter stamped `from:<prepub>`, and a friend receives
+      two interleaved streams one repli window can never reconcile (`repli_missed` forever —
+       the observed two-daemon disease, and the standing
+        `[[relay-locals-additive-bind-fanout]]` lesson: the relay is an unauthenticated
+         forwarder; assume an eavesdropper, expect a fan-out).
 
-**Fact 2 — music routes to the ASKER's address; recognition rides the pub.** Repli serves pages
- `to: h.from`; grants verify `prepubOf(pub)`, independent of address. So a body receives what it
-  asks for **at whatever address it asked under**, and proves itself by key, not by name.
+**Fact 2 — music routes to the ASKER's address; recognition rides the pub.** Repli serves
+ pages `to: h.from`; grants verify `prepubOf(pub)`, independent of address. So a body receives
+  what it asks for **at whatever address it asked under**, and proves itself by key, not by
+   name.
 
-**The consequence — bodies coexist by holding DISTINCT addresses.** A Captain at the bare
- `<prepub>` and its Cave at `<prepub>_1` (or the reverse — §9) can both be live, both talk
-  to friends, both Heist: each receives its own pages at its own door, both verify as the same
-   soul, neither collides. `Swarm_next_suffix` computes the place, `Swarm_steal_back` takes it,
-    `Swarm_reinstate` returns to the bare name with the §7.4f disk-wins hold. Same-address
-     collision is the disease; the suffix is the standing escape; the 👥 tripwire is the alarm
-      for the case nobody chose.
+**The consequence — bodies coexist by holding DISTINCT addresses.** A Captain and its Cave
+ can both be live, both talk to friends, both Heist: each receives its own pages at its own
+  door, both verify as the same soul, neither collides. `Swarm_next_suffix` computes the
+   place, `Swarm_steal_back` takes it, `Swarm_reinstate` returns to the bare name with the
+    §7.4f disk-wins hold. Same-address collision is the disease; the suffix is the standing
+     escape; the 👥 tripwire is the alarm for the case nobody chose.
 
-**The gap that makes this theory:** `Socket_real` dials `peering.sc.name` — the bare canonical
- name, read once at construction — never `Swarm_address()`, and it never re-dials on change. So
-  today a Steal Back moves a model field the relay never hears, and every body binds bare.
-   **Plumbing the dial is item 1** and the precondition for the whole tandem.
+**The bare name goes to whoever claimed it first.** No body has a birthright to the bare
+ `<prepub>`; first claimant keeps it, later bodies suffix — and that is enough, because peers
+  do not need the bare name to reach the body they want (below). `Swarm_reinstate` exists for
+   the deliberate take-back, not for contesting a live holder.
 
-**Enforcement is cooperative today.** `bind` is additive; `handleHello` gates nothing. Honest
- bodies avoid collision by suffixing; a crashed or modified one won't. Relay-enforced
-  exclusivity (a signed-hello refusal) is §9.
+**How peers know which address to use.** A soul's bodies advertise themselves: the hello /
+ pier_accept a peer receives carries the working address of the body that sent it, and a
+  body's SelfType (§1) rides beside it — so a peer wanting music asks the address that
+   advertised Cave duties, and a peer answering a QR gesture talks to the Captain that showed
+    it. A Captain↔Captain pool exchange (§5 Flow 3) needs no routing wisdom at all: each phone
+     talks to the address of the phone in front of it, whatever suffix it wears. The precise
+      frame fields for the advertisement are design-owed; the principle is settled — **peers
+       address bodies, not souls**, and the soul is proven by pub either way.
+
+**Enforcement at the relay is deliberately TODO.** `bind` is additive; honest bodies avoid
+ collision by suffixing, and a crashed or modified one is caught by the 👥 tripwire rather
+  than prevented. The security floor is not the relay — it is that **peers must sign with the
+   key matching their prepub** and receivers verify. Audited 2026-08-26: **enforced on
+    every seal-minting path (invites, grants, the reinvite chain), NOT enforced on gossip
+     frames or music streams** — the full verdict and the make-it-universal work list are
+      in §10. Relay-enforced address exclusivity stays on the
+      list as hardening on top of that floor, not as the foundation. (The relay does verify
+       one thing already: the `hello` handshake ed25519-binds a prepub to its socket at
+        connect — authentication of the socket, not of any later frame.)
+
+**Two relay duties ruled 2026-08-27:**
+- **One socket, many addresses.** Today a tab opens TWO sockets (the station `?addr=<prepub>`
+   and the role channel `?addr=runner|editor`), and the whole `qaddr` own-door dance in
+    `deliverLocal` exists to un-double the delivery that dual binding caused. Tidier, ruled:
+     **one websocket per body, binding several addresses over it** (hello binds a list; later
+      binds add). One socket = one liveness, one delivery door, no phantom copies — and the
+       own-door rule shrinks to "deliver once per socket." A wire change worth doing together
+        with the signed-hello work.
+- **The relay closes dead sockets — and it already does** (audited in the cohort burn:
+   `HEARTBEAT_MS = 15000`, a socket missing one pong is terminated and unbound — squatting is
+    bounded to ~30s). What remains of this ruling is only the ELECTION half: surviving bodies
+     seeing the address free and a new primary stepping up (the cohort's lock does this
+      within a profile automatically; cross-machine it is the hello-v2 work).
 
 ---
 
-## 5. The tandem — the Captain wants, and it wanders to the Cave
+## 5. The tandem — what you'd Heist wanders to the Cave
 
-The division of labour, stated once: **authority lives with the Captain; durability lives with
- the Cave.** The Captain is where the human is — it mints and redeems in person, it likes,
-  it listens. The Cave is where the disk is — it acquires, presses, keeps, and repairs. This
-   is the ruled "phone commands, station executes" arc (ex-MobilenoFSA §4), given its shape in the tandem.
+The division of labour, stated once: **the Captain holds the helm; the Cave keeps the
+ hoard.** The Captain is where the human is — it meets people, mints and redeems in person,
+  listens. The Cave is where the disk is — it acquires, presses, keeps, and repairs, on
+   standing orders.
 
-**Flow 1 — the want → the Heist.** The Captain accrues wants (%Like rows, the machinery
- already standing in Jam.g). Wants replicate to the Cave (Tier B — trivially).
-  The Cave actions them with the Heist gears that already exist, against the friend grants
-   the soul already holds.
-
-  *Flow 1 in practice — the %Like plan, folded from MobilenoFSA §2 (recon verified
-   2026-08-15).* `Ghost/M/Jam.g` already IS the ledger: `%Jam,with:<dj>` under the listener's
-    shelf; `%Spin/%Like/%Grab,of:<id>,title,at` as ordered referring particles; `Jam_home` /
-     `Jam_like` pure and idempotent per (kind, track) — and nothing in the live app calls them
-      (only `Radiation.g`, a Book). So the build is: **a button** (display, Vyto's zone) on the
-       playing face — `Jam_like(Jam_home(shelf, dj), rec)`; the dj's prepub and the mirror
-        shelf are both in reach (DoorFace resolves `%MusuThem,pub` → stock today). And
-         **durability, the real gap**: a %Jam minted on a live tab dies on reload — TODAY,
-          even on desktop. A like that is "a record of what would be Heisted" must outlive the
-           tab: on a share, a Berth (`.jamsend/berth/<prepub>/Jams`); shareless, a Dexie row
-            (the thang_put shape) — same particle either way, the store is the only fork.
-             Carry enough to heist blind later: `of` (enid), `title`, the dj's prepub (the
-              %Jam's `with`), and `at`. The far arc, the owner 2026-08-15, kept verbatim so it
-               isn't flattened: *"I suppose that becomes a multiplicity thing later... having
-                one's entire life+times with some piece of music."* — %Jam is the seed of
-                 that: a per-relationship ledger of events over tracks; multi-device merge
-                  makes it per-LIFE rather than per-session. The confusing-sounding sentence from the design conversation is
-    exactly right and worth keeping: **the Cave carries out the Heist "from the other
-     Captain"** — the *grant chain* traces Captain-to-Captain (souls befriend souls, in person,
-      by QR), while the *bytes* flow Cave-to-Cave (the bodies with the libraries and the
-       uptime). Socially it is two people sharing music; mechanically it is their two stations
-        doing the lifting overnight.
+**Flow 1 — the Heist.** The human marks something for Heisting; the Cave carries it out with
+ the gears that already exist, against the friend grants the soul already holds. The
+  confusing-sounding sentence from the design conversation is exactly right and worth
+   keeping: **the Cave carries out the Heist "from the other Captain"** — the *grant chain*
+    traces Captain-to-Captain (souls befriend souls, in person, by QR), while the *bytes* flow
+     Cave-to-Cave (the bodies with the libraries and the uptime). Socially it is two people
+      sharing music; mechanically it is their two stations doing the lifting overnight.
 
 **Flow 2 — the pool press.** The Cave presses Originals to LOFI and fills the Captain's
  SoundPool (over the wire, to OPFS), so the phone actually *listens* — the Captain's music
   comes back to the Captain's hand. Pool contents are chosen by the human and by policy
-   (recently liked, recently jammed); the pool cap governs (§3).
+   (recently played, recently jammed); the pool cap governs (§3).
 
 **Flow 3 — the pool exchange, possibly the MAJORITY transport** (§0's working bet). Two
  phones in a room swap SoundPool material directly: live, phone↔phone, LOFI only, no Cave
   online. Not so exciting to the librarian — nothing archival moves — but socially potent,
    and mechanically it is just **a Heist whose landing nav is OPFS** (§3, the loosened head):
     one machinery, two destinations. Each pooled track arrives as a **referring particle with
-     its `of:` identity intact**, so it is simultaneously (a) listenable now, LOFI, and
-      (b) an **introduction** — a want the receiving side's Cave can later fill out as an
+     its `of:` identity intact**, so it is simultaneously (a) listenable now, LOFI, and (b) an
+      **introduction** — something the receiving side's Cave can later fill out as an
        Original, through Flow 1, under whatever grant the two souls' friendship carries. The
-        exchange is the discovery surface; the Caves make it a collection. If the majority
-         bet holds, most music a person carries will have arrived THIS way — so the pool
-          paths get first-class design attention, and the Cave's role sharpens to what only
-           it can do: keep, verify, and HIFI-ify.
+        exchange is the discovery surface; the Caves make it a collection. If the majority bet
+         holds, most music a person carries will have arrived THIS way — so the pool paths get
+          first-class design attention, and the Cave's role sharpens to what only it can do:
+           keep, verify, and HIFI-ify.
 
-**Flow 4 — the smuggle.** The Captain's SoundPool (and the Captain's whole account — see §9,
- the phone's storage is mortal) replicates to the Cave **for backup**, not for listening:
-  the Cave regards every arriving pool copy as **LOFI that wants to be HIFI-ified** — a
-   standing mend want (§3) against the `of:` Original, fulfilled when the Original is reachable
-    (its holder's Cave online, a grant standing). So the backup is also the upgrade queue,
-     and the pool's expendability (§3) is underwritten: bytes may die with the browser; the
-      ledger and the wants live on the Cave's disk.
-
----
-
-## 6. Two shapes, and the lease
-
-**Shape 1 — primary/replica over Tier C (v1).** One quick body per issuer range; still bodies
- do no invite processing at all. The conservative posture from the design conversation ("LapBob
-  cannot do any Invite processing") — nothing to merge, no double-spend possible.
-
-**Shape 2 — block leases (the ruled destination).** the ruled serial-range split (§2C) makes
- every linked body quick *over its own range*: the Captain redeems and mints in person from its
-  block; a Cave could mint from its block if a flow ever wants that. Union-merges safely by
-   construction. Shape 1 is just "only the Captain holds a block yet," so the graduation is
-    allocation, not rearchitecture.
-
-**The lease is narrow on purpose.** It covers Tier C only. A still body reads everything,
- Heists freely, writes its own Tier-B replica (tracks landed, wants accrued, pool ledger) —
-  forbidden only the consumable ledger. That is what makes a Cave useful while safe.
-
-**Quick↔still is a wire transition, not a permission bit.** A body standing down must actually
- unbind/re-dial its address (§4) — as long as it stays bound at a contested name it keeps
-  receiving and answering the soul's fan-out, doubling streams even with the ledger untouched.
+**Flow 4 — the smuggle.** The Captain's SoundPool (and the Captain's whole account — the
+ phone's storage is mortal, §0 item 9b) replicates to the Cave **for backup**, not for
+  listening. The Cave regards every arriving pool copy as **LOFI that wants to be
+   HIFI-ified**: each carries its `of:` join, so the Cave can fetch the Original whenever it
+    becomes reachable, at whatever pace its station affords. The backup is thereby also the
+     upgrade queue, and the pool's expendability (§3) is underwritten: bytes may die with the
+      browser; the ledger lives on the Cave's disk.
 
 ---
 
-## 7. The graft — LinkDevice / SoulInvite
+## 6. The ledger follows the helm
 
-**The ceremony is ruled; this doc defers to it** (ruled 2026-08-14/19, ex-MobilenoFSA §3, kept in force):
+This section used to carry a two-shape lease design (quick/still bodies, serial block
+ leases). The Captain|Cave split retired it (§2C, 2026-08-27): **the Captain is the one
+  invite processor, by definition of the helm.** What remains worth stating:
 
-- An invite **whose redemption makes you, not befriends you** — same rails as any invite
-   (compact code, relay addressing, voucher verify), inverted consequence. Therefore:
-    high-entropy, **single-use, short-lived (minutes), never posted**.
-- **Both devices online is a feature**: the account travels as relay frames **encrypted under a
-   code-derived key** (the relay is an unauthenticated fan-out forwarder — assume an
-    eavesdropper), and liveness lets both screens show a **matching confirm** (same emoji pair)
-     before key material moves.
-- **The carry**: (a) the desktop shows its beacon (addr + ephemeral pub) as QR and the phone
-   scans — the secret never touches a third party; build this. (b) a typed short code as the
-    no-camera fallback — tolerable only because single-use + short-lived.
-- **What moves**: the account Waft — `Identity,key` + `Peering` — with `%Idzeug` issuer state
-   split by block lease (§2C), never a shared counter.
+- A Cave reads everything, Heists freely, and writes its own Tier-B replica (tracks landed,
+   pool ledger) — it is forbidden exactly one thing: writing the consumable ledger. That is
+    what makes a Cave useful while safe.
+- The ledger replicates TO Caves read-only, continuously (§7's mutual backup) — a Cave must
+   *see* spends and revocations to refuse a cut-off peer at serve time.
+- **Standing down is a wire transition, not a permission bit.** A body ceasing its duties
+   must actually unbind/re-dial its address (§4) — as long as it stays bound at a contested
+    name it keeps receiving and answering the soul's fan-out, doubling streams regardless of
+     what it's allowed to write.
 
-What this doc adds to the ruling, in tandem terms: the redeeming body is born **still** (no
- block lease at graft; allocation is explicit, §6), it is born a **%Sibling** (registered
-  cooperative co-holder, so the theft discriminator knows it), and it takes a **suffix address**
-   on first bind (§4) so the graft never collides with the granter on the wire. The ephemeral
-    beacon pub is the **vessel key** doing its job: the thing the transfer is encrypted toward,
-     proven live by the matching confirm.
+---
 
-Distinct in kind from a music `%Idzeug`: that grants *what you'll serve*; this grants *who you
- are* — the most dangerous token the system can mint, handled accordingly.
+## 7. The graft — `%Invite:MyCave`
+
+**The mesh with the standing invite system.** jamsend already has one way trust moves: an
+ `%Idzeug` invite — a serial drawn off an issuer, carried as a compact QR token, redeemed
+  once, verified by presig, landing as a `%Grant`. Today the only Feature is Music
+   (`%Invite:Music` — *I will serve you music*). The graft is the same machinery carrying a
+    ROLE Feature — **`%Invite:MyCave`** (*you will be my Cave*) — because the role transcends
+     the Music part of the system but has no reason to transcend its rails.
+  **Audited 2026-08-26, and the news is unusually good: the rails are ALREADY generic.**
+   `Swarm_iz_issuer` takes any `{Feature, ...params}` and stores `to:<mainkey>`; the token
+    codec, redeem parse, hello/accept doors, and `mint_grant` all carry the Feature through
+     without inspecting it; `mint_revoke` / `Swarm_pier_live` / the `%NotGrant` machinery
+      take the feature as a parameter. **Minting, redeeming, and revoking `%Invite:MyCave`
+       needs zero changes to the invite/grant/revoke layer.** What DOES need surgery is the
+        SERVE layer, which hardcodes `'Music'`: six `Swarm_pier_live(p, 'Music')` call sites
+         (Swarm.g:658, 716, 2371, 2471, 2586, 3130), a `'Music'` fallback in
+          `Swarm_reaccept_incomplete` (~1363), and the legacy-token transcoder (~830, which
+           may stay Music-only — see the `Old garden` note: that prototype is to be deleted
+            once this doc captures its designs, so nothing new should cite it). Plus the
+             mint UI, which never asks which Feature. That is the whole touch-list.
+
+**What the Cave concretely is.** At first: a Chrome tab with FSA on the user's computer — the
+ same Big*land page, opened at home, granted the music folder. At its most cave-like: the
+  always-on daemon on that machine. Often both across a day — the tab does the interactive
+   work, and the adoption handoff (§8) is how the daemon takes the Cave's duties over. A body's
+    SelfType (§1) says which duties it carries; the graft is what bestows them.
+
+**The ceremony** (ruled 2026-08-14/19, kept in force, restated Cave-ward):
+
+- An invite **whose redemption makes you, not befriends you** — same rails as any invite,
+   inverted consequence. Therefore: high-entropy, **single-use, short-lived (minutes), never
+    posted**.
+- **Both devices online is a feature**: the account travels as relay frames **encrypted under
+   a code-derived key** (the relay is an unauthenticated fan-out forwarder — assume an
+    eavesdropper), and liveness lets both screens show a **matching confirm** (same emoji
+     pair) before key material moves.
+- **The carry**: (a) the Cave-to-be shows its beacon (its address + an ephemeral pub — its
+   vessel key doing its job) as a QR; the Captain scans it and issues — the secret never
+    touches a third party, the camera does the carry. Build this. (b) a typed short code as
+     the no-camera fallback — tolerable only because single-use + short-lived.
+- **What moves**: the account Waft — `Identity,key` + `Peering` — with `%Idzeug` issuer
+   state travelling READ-ONLY (§2C: the ledger stays the Captain's to write, wherever it is
+    replicated).
+
+**What a freshly grafted body is.** Three plain facts, each with its own reason:
+- **It has no invite authority — and never gains it as a Cave.** Invite processing is the
+   Captain's alone (§2C); a grafted Cave heists and replicates from day one and never
+    spends. Invite authority moves only when a new CAPTAIN is grafted (`%Invite:MyCaptain`,
+     below) — the helm changes hands whole, never splits.
+- **The Captain writes it into the family register.** At issue time the Captain records the
+   new body on its `%Sibling` roster. This is what keeps the alarm honest: when a frame later
+    arrives from your own key, the tripwire checks the roster — family is co-presence,
+     everyone else is a thief. A graft that skipped this step would trip its own alarm.
+- **It answers at its own address.** The new body takes `<prepub>_N` on first bind (§4), so
+   it never collides with the Captain on the relay. The bare name stays with whoever already
+    holds it.
+
+**The %Invite particle — autovivify what the human already thinks (ruled 2026-08-27).**
+ Today no `%Invite` particle exists: an invite is smeared across the issuer's `%Idzeug`, the
+  token string in a URL/QR, and the landed `%Grant` — yet everyone THINKS in invites. Ruled:
+   the data read from an invite URL **autovivifies into a `%Invite` particle** in the live
+    tree — token legs on `sc` (prepub, serial, n; presig on `.c` if it shouldn't snap), a
+     state that walks `arrived → redeeming → sealed|refused`, and the landed grant/pier
+      backlinked on `.c`. The mental model gets a real particle: the Door and the glass can
+       show an invite as a thing with a lifecycle, instead of a string that vanishes into
+        machinery. (The issuer's record remains the law — the %Invite is the visitor's copy
+         of the claim, never a second source of truth.)
+
+**Replication is continuous — they all back each other up.** The graft's account transfer is
+ not a one-shot ceremony payload: it BOOTSTRAPS a standing replication stream among the
+  soul's bodies, riding the same class of machinery a Heist rides (chunked, resumable,
+   grant-gated repli transfer — the gears exist). From then on the bodies back each other up
+    continuously: Tier B unions flow as they grow, the Tier-C ledger flows Captain→Caves
+     read-only (§6), and the smuggle (§5 Flow 4) is just this stream's pool-ledger lane. A
+      body that was offline catches up the way a heist resumes — same door, same discipline.
+
+**Migration and backup are the same move, in either direction.** A soul is not revocable
+ (§10) — but **either role can mint the other**: a Captain grafts a new Cave
+  (`%Invite:MyCave`), and a Cave can graft a new Captain (`%Invite:MyCaptain` — the phone
+   died, stand at the Cave, scan, walk away whole). That bidirectionality plus the continuous
+    mutual backup above IS the whole backup story: as long as one body of the soul survives,
+     the tandem can be rebuilt from it, current to its last stream. The adoption handoff (§8)
+      is this same move performed on a live pair.
+
+Distinct in kind from a music `%Idzeug`: that grants *what you'll serve*; this grants *who
+ you are to me* — the most dangerous token the system can mint, handled accordingly.
 
 ---
 
 ## 8. The adoption handoff
 
-The owner's arc: the Captain runs with a laptop Cave for a while; later "spins up a daemon
- to do everything, using the laptop's latest replica, and perhaps telling any body online at
-  that point what's up." As a protocol:
+The owner's arc: the Captain runs with a laptop Cave for a while; later "spins up a daemon to
+ do everything, using the laptop's latest replica, and perhaps telling any body online at that
+  point what's up." As a protocol:
 
-1. The daemon boots as a **still** body and **adopts the freshest replica** — a wholesale take
-    of Tier A + a union of Tier B (the laptop was the working Cave, so its copy is
+1. The daemon boots as a **still** body and **adopts the freshest replica** — a wholesale
+    take of Tier A + a union of Tier B (the laptop was the working Cave, so its copy is
      freshest; adoption is a copy-and-union, never a live merge).
-2. The daemon announces it will take the Cave's place; online bodies ack.
+2. The daemon announces it will take the Cave's duties; online bodies ack.
 3. The standing Cave **stands down**: stops fulfilment, unbinds its address (§6).
-4. The daemon **binds** and takes up fulfilment; any Tier-C block the old Cave held (Shape
-    2 only) transfers or retires.
+4. The daemon **binds** and takes up fulfilment; any Tier-C block the old Cave held (Shape 2
+    only) transfers or retires.
 
 Ordered with an ack, the two-body window at any one address is a controlled instant; skipped,
  it is the doubled-stream disease on purpose — which the 👥 tripwire will catch and say so.
-  `Swarm_reinstate`'s disk-wins hold guards the bare name specifically: a body taking it back
-   must re-read disk before it may write, so a stale adopter cannot clobber a fresher ledger.
+ `Swarm_reinstate`'s disk-wins hold guards the bare name specifically: a body taking it back
+  must re-read disk before it may write, so a stale adopter cannot clobber a fresher ledger.
 
 ---
 
-## 9. Open questions
+## 9. The Door — where all this lives in the UI
 
-- **Who stands at the bare name — Captain or Cave?** Friends address the soul at bare
-   `<prepub>`. Inbound *heist asks* want the Cave (the library, the uptime); inbound
-    *invite redemptions* want the Captain (the ledger hand, v1). One address cannot land both
-     at both. Candidates: the always-on Cave holds bare and **forwards invite-class frames
-      to the Captain over the sibling channel**; or redeem flows learn suffixed addresses; or
-       pier_accept reveals the working address per flow. Undecided — and it gates nothing in
-        §0's next-candidates, so decide it with the lease work, not before.
-- **Relay-enforced exclusivity.** Cooperative unbinding is honoured by honest code only.
-   Enforcement needs the relay to refuse/evict a second claimant **on a signed hello** (else
-    anyone knowing your prepub locks you out of your own name). Wire-format + `handleHello`
-     work, `Cluster_spec` territory.
-- **Cross-machine sibling roster.** `%Sibling` is fed by the local Dexie roster today; a body
-   on another machine is invisible to it, so the theft-vs-cooperative discriminator is blind
-    exactly where it matters. Siblings should register through the relay's verified hellos
-     (LinkDevice is the natural minting moment — §7 already makes the graft a %Sibling).
-- **The lost body — revocation is rotation.** A stolen phone or laptop *is* the soul: same
-   key, indistinguishable by construction. There is no revoking a body without **rotating the
-    soul** — a new keypair, a succession statement signed by the old key, friends' clients
-     honouring the succession and re-sealing. Expensive, rare, and currently **undesigned**;
-      until it exists, the honest posture is the mortal-identity whisper generalised: a body holds
-       your whole identity — guard it like one. (The SoulInvite's short life and matching
-        confirm exist to keep grafting from ever being the leak.)
-- **The mend interface** (§3). What mints an audit, where wants surface in the UI, what pace
-   fulfilment runs at, and how "pinned by want" interacts with pool eviction — the new
-    interface the owner named. Wants designing beside DoorFace/Vyto, not in this doc.
-- **Pool quota + eviction policy** (§3). A cap, least-recently-listened eviction, wants-pinned
-   last, and the persist() request landed (§0 item 9b) — small, but someone must own
-    the numbers.
+The Door (DoorFace) is already the identity surface: who am I, sealed friends with the
+ liveness dot, a landed joining, the 👥 alarm, the ⛁ settle chips. Portability enters the UI
+  through the same door, as one distinction:
+
+- **Invite someone** — the standing gesture: mint `%Invite:Music`, show the QR, a friendship
+   seals. Unchanged.
+- **Invite yourself** — the new gesture beside it: opens a small dialogue that explains
+   portability in a few sentences (this doc's §0 destination paragraph is the long-form it
+    links toward), then runs the graft ceremony (§7) — beacon shown or scanned, emoji
+     confirm, done. The dialogue is also the honest place for the phone's mortality whisper
+      (§0 item 9c) and, later, the place a body's SelfType and address are visible.
+
+The Door also inherits the tandem's status surfaces as they land: which bodies stand where
+ (address + SelfType per %Sibling), the 👥 alarm it already has, and eventually the handoff
+  controls (§8's announce/stand-down as buttons rather than console verbs).
+
+A standing want recorded while we are here (the owner): **better UI lego for displaying and
+ working through C beings** — generic components for browsing/inspecting particles, which
+  every surface in this doc (sibling rosters, pool ledgers, grant lists) would ride. That is
+   its own design effort, owed outside this doc, but the Door work should not build one-off
+    what wants to be lego.
+
+---
+
+## 10. Open questions
+
+- **The signing floor — audited 2026-08-26: enforced where trust is minted, unenforced
+   where it is merely used.** Where it IS enforced: every seal-minting path — `pier_hello` by presig
+    regeneration + page binding, `pier_accept`/`pier_confirm` by grant signature, the
+     reinvite chain end-to-end, and sealed piers on a live station must carry a per-era
+      **voucher** (`Swarm_voucher_ok`: prepubOf(pub) matches the claimed sender + ed25519
+       over the canonical header). Where it is NOT: **gossip** (`ive_got`, `suggest`,
+        `pulse`, `swarm_hi`) is seal-gated but per-frame unsigned — one sealed friend can
+         spoof another sealed friend's prepub in advisory data; and **music chunks** carry
+          `body_hash` (integrity) but no identity signature — `header.from` is forgeable by
+           any bound socket, since the relay authenticates sockets once at `hello` and never
+            per-frame. Enforcement is also gated on `station_up`, so Book fixtures bypass it
+             (fine — those are in-process mocks). Making it universal is bounded, not deep:
+              sign+verify on the four gossip types and the repli sender identity — roughly
+               15–20 `verifyHeader` calls and 3–4 signing sites across Swarm.g / Repli.g /
+                Peeroleum.g, using frame fields that already exist. **Ruling recorded: the
+                 signing floor is the security policy; relay address-enforcement stays TODO
+                  as hardening.** The universalising work list above is the tail this doc
+                   leaves open, and it should probably land BEFORE pool exchange ships
+                    (Captain↔Captain transfer leans on gossip-class frames).
+- **Multi-Cave is NOT guaranteed** (v1 stance: one Cave, one Captain, more bodies at your
+   own risk). Someday-sharpening (the owner, 2026-08-26): a booting body should tell
+    **within ~40s** whether someone is already around using an address, by reading marks on
+     an agreed schematica. Audited: the natural signals already exist — the account mirror
+      writes `.jamsend/account/<prepub>/toc.snap` on a **~20s cadence** on a live daemon
+       (fingerprint-gated, so quiet when nothing changed — an mtime probe must allow that),
+        with `berth/Newlyadded` and `berth/<prepub>/KeepMemo` mtimes as activity
+         corroborators. One correction to the premise: `rw_op` is request-response, not a
+          refresh loop — nothing today rewrites on a timer EXCEPT the account mirror, so the
+           schematica either reads the mirror's mtime (free, ~40s detection on an active
+            body, silent on an idle one) or adds a tiny `.jamsend/liveness/beat` written on
+             the mirror's own seam (cheap, honest even when idle). Design owed; both halves
+              are small.
+- **Is a tab a whole Identity, or an address + a SelfType?** Today every tab autogens its own
+   identity unless it restores one; the sibling roster is the local we-are-one-user glue. The
+    multipliable addresses (`<prepub>_N`) soften the old reason for per-tab identities: a tab
+     could instead be *a pointer to a part of the main Identity's business* — an address plus
+      a SelfType saying which duties it carries. Undecided; the answer decides what %Sibling
+       rows contain (identities vs addresses) and what the LinkDevice graft actually mints for
+        a same-house second tab.
+- **%Grant revocation — audited 2026-08-26: the rails hold, with two eyes-open caveats.** A
+   soul cannot be revoked (a stolen body IS the soul — the only remedy is rotation: new
+    keypair, signed succession, friends re-seal; undesigned, rare, accepted). A *grant*,
+     though, revokes cleanly: `Swarm_revoke` mints a signed `%NotGrant` atom
+      (`mint_revoke`), stashes it AND forces an account settle before returning (durable
+       immediately), `Swarm_pier_live` consults it at **every** use, rehydrate re-creates
+        the `%NotGrant` on every standup, and `Swarm_seal` dedups grants by `to+by` — so a
+         stale snap or berth fold **cannot resurrect a revoked grant**. The role grants of
+          §7 ride these exact rails with zero changes (the feature is a parameter all the
+           way down) — so a defected Cave is cut off the same way a defriended peer is.
+            The caveats, recorded so nobody over-trusts: (1) revocation is **lazy** — no
+             wire frame tells the revoked party; they discover it when the next
+              `Swarm_pier_live` check refuses them. (2) **in-flight streams finish** — only
+               the next request sees the `%NotGrant`. Both are acceptable-by-design for
+                Music; for a revoked CAVE (which holds your whole account) they mean: cutting
+                 off a Cave stops its *service*, not its *knowledge* — what it already
+                  replicated, it keeps. Only rotation truly un-knows a body.
+- **At-rest encryption — RULED not yet (2026-08-27).** Any body can pop the admin console
+   for the cohort it belongs to — that is democracy among your own bodies, and it is the
+    point. A crypto layer (account wrapped under the vessel key at rest) goes in there some
+     day, but people's disks are supposed to be fairly secure, and bothering the user to
+      unlock things every session is a worse trade today. Recorded so the someday-door is
+       marked, not open.
+- **A naming preen: "Steal Back".** The verb (`Swarm_steal_back`) CONCEDES the contested
+   name and steps aside to a suffix — the reclaim is `Swarm_reinstate`. The name reads
+    backwards for what it does; candidates like "Step Aside" would read true. The human's
+     call — recorded because two readers have now tripped on it.
 - **The no-shared-anything bound** (`Identity_persist` §7.4i). Two bodies sharing neither
    filesystem nor relay have no common point to reconcile at; no lease covers them. Either
     full Tier-B/C sync or the house rule "one soul, one home at a time." A graft that is born
      still (§7) keeps the default on the right side of this.
+- **The friend-side pier seam — RULED SOLVED IN PRINCIPLE (2026-08-27), verify in code.**
+   The ruling: a friend holds one %Pier **per body** — multiple %Pier rows sharing one
+    %Identity, each keyed by the address it talks to (`<prepub>` and `<prepub>_1` are two
+     Piers that know they are one soul) — so per-body wire state (seq, era, windows) never
+      converges. The code already leans this way: `o({ Pier: 1, pub: from })` is handled as a
+       PLURAL (`Swarm.g:1013`). What remains: verify the repli window and era state actually
+        key off the per-body row and not a first-match, and note that the protocols being
+         built will refer to Captain|Cave subtly — a Pier should know its counterparty's
+          SelfType, not just its address.
+- **The graft's transport — RULED (2026-08-27): it rides the Heist machinery,
+   continuously.** The account stream is chunked, resumable, grant-gated repli transfer —
+    the gears exist — and it is a STANDING stream, not a ceremony payload: the bodies all
+     back each other up, continuously (§7). Remaining design is just the lane naming (what
+      shelf-set flows on which cadence) — no new transport.
+- **Vessel-key mortality — SPECIFIED (2026-08-27).** The vessel key is per-instance (§1);
+   a re-grafted device is a NEW instance with a new vessel, and the human may forget the old
+    one — forgetting retires its cohort-roster row. What remains: the roster's aging story
+     for vessels that vanish WITHOUT being forgotten (a ghost row should fade, not linger as
+      a permanent 👥 suspect).
+- **Instance memory — more to make up.** Where a body remembers which instance it is (§1):
+   instance-scoped, at the top of the one slope of persistence (Dexie|FSA behind one
+    abstraction), never mixed across souls. Undesigned: its exact home (a Dexie table keyed
+     by nothing? a reserved OPFS file?), what it holds beyond vessel+SelfType+souls-held,
+      and how the one-body-many-souls case (a family's shared daemon — the daemon boots one
+       `I=` today) reads it. V1 stance: one soul per Cave; revisit deliberately.
+- **Pool quota numbers** (§3). A cap, an eviction order, the persist() request (§0 item
+   9b) — small, but someone must own the numbers.
 
 ---
 
-## 10. Primitive inventory (what the code already gives us)
+## 11. Primitive inventory (what the code already gives us)
 
 Verified at the time of writing; re-check before relying (a named symbol may have moved).
 
 - **identity ≠ address** — `Ghost/S/Swarm.g` §region "places" (~3559): `Swarm_address`
    (address ?? name), `Swarm_next_suffix` (`<prepub>_N` from `_1`), `Swarm_steal_back`
     (concede + jump), `Swarm_reinstate` (bare name + `account_mirror_stale` disk-wins hold),
-     `Swarm_sibling` / `Swarm_is_sibling`, `Swarm_note_theft` / `Swarm_stolen` (`%Stolen` husk
-      + 👥 surface via `DoorFace.svelte`). All session-local, omitted from every export.
+     `Swarm_sibling` / `Swarm_is_sibling`, `Swarm_note_theft` / `Swarm_stolen` (`%Stolen`
+      husk + 👥 surface via `DoorFace.svelte`). All session-local, omitted from every export.
 - **the wire dial (the gap)** — `Ghost/N/Tribunal.g:63,65` `Socket_real`: `addr =
    peering.sc.name`, captured once into `/relay?addr=`; never re-reads `Swarm_address()`,
     never re-dials on change. **Item 1 lives here.**
@@ -451,27 +808,40 @@ Verified at the time of writing; re-check before relying (a named symbol may hav
    (fan-out to all `qaddr===to` station sockets, ~229), `ackBack` (corr-route, unbound CLI
     only, ~126), additive `bind`, no delivery gate in `handleHello`. ⚠ the file carries a NUL
      byte — grep runs binary-silent; `tr -d '\000'` first, or use the Read tool. Run
-      `scripts/relay-test.ts` after touching it (it encodes the individuation contract no Book
-       covers).
+      `scripts/relay-test.ts` after touching it (it encodes the individuation contract no
+       Book covers).
 - **music routes to the asker; auth by pub** — `src/lib/gen/N/Repli.go:504,654` (pages
    `to: h.from` via `reply_to`); grant check `prepubOf(pub)` — `Ghost/S/Swarm.g` (~71).
 - **Tier C (the consumable ledger)** — `Ghost/S/Swarm.g` iz region (~200–315):
-   `Swarm_iz_issuer` (`next`), `Swarm_claimed_has/add` (the `claimed` run-list codec).
-- **the berth append-door (Tier B transport)** — `Ghost/M/Heist.g`: `Berth_append`/`Berth_save`
-   fold-supersede by key (~4074).
-- **the wants ledger** — `Ghost/M/Jam.g`: `%Jam,with` + `%Spin/%Like/%Grab,of` referring
-   particles; `Jam_home`/`Jam_like` pure + idempotent; live-app callers: none yet
-    (§5 Flow 1 owns wiring the button + durability).
-- **OPFS nav** — `src/lib/O/WormholeOpfs.svelte.ts`: `OpfsOverlayNav`, seed+scratch overlay on
-   `navigator.storage.getDirectory()`, same read_file/write_file/dir contract as every nav —
-    the shape the SoundPool store should ride.
+   `Swarm_iz_issuer` (`next`), `Swarm_claimed_has/add` (the `claimed` run-list codec),
+    `Swarm_token` (the compact QR codec `<prepub16>*<serial>*<n>*<presig16>`).
+- **the berth append-door (Tier B transport)** — `Ghost/M/Heist.g`: `Berth_append` /
+   `Berth_save` fold-supersede by key (~4074).
+- **OPFS nav** — `src/lib/O/WormholeOpfs.svelte.ts`: `OpfsOverlayNav`, seed+scratch overlay
+   on `navigator.storage.getDirectory()`, same read_file/write_file/dir contract as every
+    nav — the shape the SoundPool store should ride.
 - **transcode (the press)** — daemon-native ffmpeg stocking (probe|measure|encode, boot line
-   in `scripts/daemon/main.ts`); `Ghost/M/Radio.g` `Ra_transcode_ensure|advance` (demand-driven
-    HIFI→stream press — the pool press is the same gears, new destination).
-- **integrity vocabulary** — `body_hash` rides every repli frame header (`Repli.go`); the mend
-   audit (§3) speaks a language the wire already speaks.
-- **listening-only boot** — `Housing.svelte.ts` boot_role branch (`H.c.listen_only`), the
-   Captain's no-FSA posture, landed 2026-08-15 (ex-MobilenoFSA §1; NOT yet verified on a real phone — §0 item 9a is the gate).
+   in `scripts/daemon/main.ts`); `Ghost/M/Radio.g` `Ra_transcode_ensure|advance`
+    (demand-driven HIFI→stream press — the pool press is the same gears, new destination).
+- **integrity vocabulary** — `body_hash` rides every repli frame header (`Repli.go`).
+- **revocation** — `Ghost/S/Swarm.g:3311` `Swarm_revoke` → `mint_revoke` (`Grant.ts:108`,
+   signed `%NotGrant` atom) → `Swarm_pier_stash` + `Swarm_account_settle` (durable before
+    return); checked at every use by `Swarm_pier_live` (~3323); rehydrated on standup
+     (~1967); `Swarm_seal` dedup makes it resurrection-proof. Feature-generic throughout.
+- **the generic Feature flow** — `Swarm_iz_issuer` (~215, any `{Feature,...params}` →
+   `to:<mainkey>`), `Swarm_token_n` (~109), redeem/hello/accept (~1538–1665) — none inspect
+    the Feature; the serve layer's six `Swarm_pier_live(p,'Music')` sites are the only
+     hardcoding (§7).
+- **record path semantics** — `Ghost/M/Ra.g:1388-1452` `Ra_record_from` (`sc.path` =
+   base-relative join, `sc.id` = sha256 of source bytes); base+path split rides `.c` on the
+    radiostock card (~1410); `MountNav.svelte.ts` routes per-method by mount prefix — the
+     seam the pool mount rides (§3).
+- **the relay's one verification** — `relay.ts` `hello` (~568): ed25519 over the header
+   binds a prepub to its socket at connect; nothing per-frame after that (§10 signing
+    floor).
+- **listening-only boot (the Captain's posture)** — `Housing.svelte.ts` boot_role branch
+   (`H.c.listen_only`), landed 2026-08-15; NOT yet verified on a real phone — §0 item 9a is
+    the gate.
 - **the disk write-lease** — `Identity_persist` §7.4f; daemon guard `scripts/daemon/main.ts`
    (`Swarm_address` check + stale hold); browser guard `src/lib/O/Auto.svelte`
     (`Clustation_mirror_account`).

@@ -48,11 +48,27 @@
         if (v && v !== self) self = v
     })
 
+    // THE COHORT STANDS FIRST (Portability §10, the 2026-08-27 burn): before this tab binds ANY
+    //  relay address it asks "am I alone in this profile?" — the Web Lock decides, the
+    //   BroadcastChannel census names the taken addresses and registers siblings on the %Sibling
+    //    roster (its first app-path caller). Fire-and-forget with its own latch; the station
+    //     effect below GATES on the answer (top.c.cohort), which cohort_stand always produces
+    //      within its 250ms census budget — lockless browsers and jsdom get {primary:true,
+    //       lockless:1} immediately, so nothing here can hang a boot.
+    let cohorted = $state(false)
+    $effect(() => {
+        void tick
+        if (cohorted || !self || typeof H?.Swarm_cohort_stand !== 'function') return
+        cohorted = true
+        H.Swarm_cohort_stand(self)
+    })
+
     let stood = $state(false)
     $effect(() => {
         void H?.version
         void tick
         if (stood || !self || typeof H?.Swarm_station_up !== 'function') return
+        if (!(H.top_House?.()?.c?.cohort)) return   // census still inside its 250ms budget
         const w = H.Swarm_station_world?.()
         if (w && H.Swarm_station_up(w, self)) {
             stood = true

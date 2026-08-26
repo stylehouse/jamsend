@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '5d398490758af864~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '93e5a9ecf62e9558~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1022,6 +1022,27 @@ Ra_recs_deep(n, out) {
         this.Ra_recs_deep(ch, out)
     }
     return out
+
+},
+// Ra_holding_keys — THE ONE AUTHORITY on which mainkeys are HOLDINGS: a particle that carries its
+//  own chunk children and serves its own bytes (the servable contract — id + total/preview scalars
+//   + seq children).  Today the set is exactly ['Record'], so every reader of this list behaves
+//    byte-identically to the name it replaces — the point is WHERE the question is answered.  The
+//     serve gear used to re-decide "%Record means holding" at ~45 seams by pronouncing the name
+//      (the 2026-08-27 Repli-coupling trace); the seams that would fail SILENTLY for any second
+//       holding (Repli_merge's paged-mirror escalation, Repli_recv_lines' source breadcrumb,
+//        Repli_find_record) now ask here instead.  When a second holding mainkey is ever minted
+//         (a pool pressing, say), it is added HERE — and those seams simply widen; the ~40
+//          remaining name-spelled sites are a mechanical sweep for that day, not this one.
+Ra_holding_keys() {
+    return ['Record']
+
+},
+// Ra_is_holding_sc — does this sc (a particle's or a wire pattern's) wear a holding mainkey?
+Ra_is_holding_sc(sc) {
+    if (!sc) return 0
+    for (const k of this.Ra_holding_keys()) { if (sc[k]) return 1 }
+    return 0
 },
 // Ra_recs — the shape-agnostic record census of a crate: flat shelf|Record holdings first (the
 //  way-station shape), then every Mag's subtree — Mag/Record and Mag/Cloud/Record and deeper — in
