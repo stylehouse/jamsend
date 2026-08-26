@@ -101,13 +101,39 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
    Book-blind home); InvitePanel vivifies on parse, `Swarm_redeem` walks it to `redeeming`.
     `sealed|refused` land with the Door work.
 
+**LANDED 2026-08-27, WAVE 2 (commits arbiter · hellov2 · poolmount · doorface · cohortbook):**
+- ✅ **Relay hello-v2 arbiter** (`relay.ts`, relay-test green): a signed hello may carry
+   `want:<addr>`; the relay grants it if free, else binds the next free `<prepub>_N` and
+    answers `hello_ok {addr, taken}`. Err-toward-suffixing; a dead incumbent's seat frees in
+     ~30s (heartbeat). No `want` ⇒ byte-identical v1. This is the CROSS-MACHINE decider the
+      local cohort census cannot be (it sees one browser profile).
+- ✅ **hello-v2 client** (Swarm.g `on_hello` adopt hook + Tribunal.g surfacing): the station
+   sends `want: Swarm_address(ident)`, adopts the relay's granted addr, and rehomes if it
+    moved. Converges in one extra dial. Compiled; live-unproven (needs two machines on one
+     relay).
+- ✅ **Pool mount** (`WormholeOpfs.OpfsPlainNav` + Housing `Wormhole_mount_pool`): a `pool/`
+   path routes to an OPFS nav via MountNav's existing prefix routing — so `%Record.sc.path =
+    "pool/…"` reads/writes OPFS exactly as `music/…` reads FSA, ZERO serve-seam changes. Free
+     gift: `w.c.mardir = 'pool'` already routes a whole heist into OPFS. (Phone no-share path
+      is the one gap — it uses a raw OpfsOverlayNav, not MountNav; one wrap when wanted.)
+- ✅ **Door surfaces** (DoorFace + new InviteYourself.svelte): the bodies line (this body's
+   place + primary + siblings, null when unremarkable), the Invite-yourself dialogue (explains
+    portability, LinkDevice QR stubbed honest), and %Invite rows (arrived/redeeming visible).
+- ✅ **SwarmCohort Book** (Swarmation.g, GREEN on live runner): proves Swarm_sibling
+   recognition, Swarm_note_theft family-vs-foe, Swarm_next_suffix, and %Invite autovivify +
+    idempotency + state-walk. First fixtures written to `wormhole/Story/SwarmCohort/` — RECORD
+     THEM (`runner_ask run SwarmCohort` then inspect/commit) to gate it.
+- ✅ **Regression closed**: the %Invite vivify was snapping onto Book worlds (SwarmStaple/
+   SwarmInvite red); gated on `station_up` (Books never set it); both GREEN on live runner now.
+
 **Candidates to get on with next** (none blocks the others):
-- Two-tab live proof of the cohort v1, then the relay hello-v2 `want:` answer (the
-   cross-machine decider — the burn's §3.2 step 7).
-- Draft the SoundPool shelf shape (§3) — the pool ledger + OPFS layout + the pool record's
-   path — since exchange and smuggle both read it.
-- The Door's Invite-yourself hatch (§9) — small UI, big legibility: the place portability
-   becomes visible to a person; the %Invite particle now exists for it to show.
+- Two-machine live proof of hello-v2 (the client adopt path is compiled but unrun).
+- The pool PRESS (§5 Flow 2) — `Ra_transcode` pointed at a pool target, the SoundPool fill.
+- Gossip/stream signing universalisation (§10 signing floor — the audit named ~15-20
+   `verifyHeader` sites; ruled to precede pool exchange). Security-sensitive: design + Book
+    before blind build.
+- The LinkDevice ceremony proper (§7) — the encrypted account transfer riding repli.
+- `%Schema` law-book (§2E, drafted) — your preen, then wire `Berth_open/save` to read it.
 
 ---
 
