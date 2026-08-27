@@ -159,9 +159,9 @@
     //    which is every Book and any API-less browser), the session address (`Swarm_address` —
     //     bare <prepub> or a <prepub>_N suffix after a Steal Back / non-primary standup), and the
     //      %Sibling roster on the identity's %Peering (cooperative co-holders — family, the thing
-    //       that keeps the 👥 alarm honest).  Null when there is NOTHING to say (no cohort, no
-    //        siblings, bare address) — a single body at its bare name is the unremarkable default
-    //         and the Door should not spend a line saying so.
+    //       that keeps the 👥 alarm honest).  Null unless there is ANOTHER body — a sibling tab or a
+    //        division (≥2 %Body rows).  A LONE body is the unremarkable default whatever its address or
+    //         primacy, and the Door spends no line on it ("there is no other yet").
     let bodies = $derived.by(() => {
         void H?.version
         void tick
@@ -177,7 +177,12 @@
                 address: s.sc?.address ? String(s.sc.address) : '',
                 role: s.sc?.role ? String(s.sc.role) : '',
             }))
-            if (!coh && !sibs.length && !suffix && addr === bare) return null
+            // NOTHING TO SAY UNTIL THERE IS ANOTHER BODY (the owner: *"there is no other yet"*).  "Which
+            //  bodies stand where" is only news when MORE THAN ONE stands — a sibling tab, or a division
+            //   (≥2 %Body rows).  A lone body says nothing even if it ran a cohort census, sits at a
+            //    suffix, or holds the primary lock: those are its own private standup, not a multiplicity.
+            const div = ((typeof H?.Swarm_body_roster === 'function' ? H.Swarm_body_roster(ident) : []) as any[]).length
+            if (!sibs.length && div < 2) return null
             return {
                 bare,
                 addr,
@@ -337,7 +342,7 @@
         <!-- INVITE YOURSELF (Portability_todo §9) — the second gesture beside invite-a-friend:
              same rails, inverted consequence (its redemption makes you, not befriends you).  V1 is
              the explainer + an honestly-disabled LinkDevice hatch; see the component. -->
-        <div class="df-panel"><InviteYourself /></div>
+        <div class="df-panel"><InviteYourself {H} /></div>
     {/if}
     {#if naming}
         <div class="df-naming">

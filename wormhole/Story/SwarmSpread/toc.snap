@@ -1,0 +1,28 @@
+story:SwarmSpread
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.043
+      sample=0.08,at=1787819239
+      sample=0.08,at=1787819250
+      sample=0.016,at=1787819255
+      sample=0.016,at=1787819269
+      sample=0.017,at=1787819823
+      sample=0.048,at=1787824124
+    TimeTotal:step,avg=0.011
+      sample=0.02,at=1787819239
+      sample=0.02,at=1787819250
+      sample=0.004,at=1787819255
+      sample=0.004,at=1787819269
+      sample=0.004,at=1787819823
+      sample=0.012,at=1787824124
+  step,dige:0000000000000000
+  step=2,dige:3338a029cfe39e2e
+    Assertion:a-blank-device-offers,sentence:a blank device offers itself as a body not a role — the adoption offer proves the device holds its own key and carries no Post so the device does not yet know it will be a Cave
+  step=3,dige:aef91b9fa6c28a14
+    Assertion:the-soul-seals-across,sentence:the soul seals across on a scan — the soul-holder seals its whole account to the blank device and the device unseals it and now holds the very same soul key so it is no longer blank but a body of that soul
+    Assertion:the-device-consents-to,sentence:the device consents to the role and the Charter routes both — the box derives Cave from the proposed grant the phone takes Captain and the first Charter verifies and routes the Cave to its suffix the Captain to the bare name
+  step=4,dige:e56b59a6ff356bc1
+    Assertion:the-ceremony-fails-closed,sentence:the ceremony fails closed — a tampered seal a wrong nonce and a withheld consent each produce no body and the soul never lands on a device that flubbed the seal or that the human did not confirm

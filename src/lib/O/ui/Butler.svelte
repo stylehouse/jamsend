@@ -58,6 +58,7 @@
     //      join door behind a boot log.
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
     import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
+    import LinkDevice from "$lib/O/ui/LinkDevice.svelte"
     import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     import { boot_param, invite_dismissed, dismiss_invite } from "$lib/boot"
     import { onMount } from "svelte"
@@ -459,12 +460,20 @@
                          rather than news about a machine with nobody on it. -->
                     {#if landing_seen || stage === 'door'}
                         {#if landing}<h2 class="ask">you were invited</h2>
+                        {:else if boot_param('Adopt')}<h2 class="ask">🪞 Link Device</h2>
                         {:else if stage === 'door'}<h2 class="ask">music here is shared with friends</h2>{/if}
                         <!-- `arrival` ONLY while an invite is actually being worked through
                              (`landing_seen`), never for the friendless door below it: that door's
                              whole offer IS `invite a friend`, and passing the dress unconditionally
                              would leave a friendless person a card with nothing to press. -->
-                        <div class="door"><InvitePanel {H} arrival={landing_seen} /></div>
+                        <!-- ?Adopt= is a DEVICE-LINK landing, not a friend invite — show the actionable
+                             adoption face (warning + SAS + make-it-my-Cave), never the friend onboarding
+                             (name / invite-a-friend / README), which has no action here and just hangs. -->
+                        {#if boot_param('Adopt')}
+                            <div class="door"><LinkDevice {H} /></div>
+                        {:else}
+                            <div class="door"><InvitePanel {H} arrival={landing_seen} /></div>
+                        {/if}
                         <!-- THE PER-INVITE RELEASE — and `!friendless` is the whole of its ethics
                              (the owner 2026-08-12: *"shouldn't offer them that if they have no other
                              friends, are a new account"*).  Right, and the first version was wrong to.
@@ -679,6 +688,7 @@
            without wrapping every row into three. */
         max-width: 38em;
         width: 100%;
+        min-height: 77vh;
         max-height: 84vh;
         overflow-y: auto;
         padding: 2.2rem 2.2rem;

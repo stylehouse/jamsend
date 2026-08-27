@@ -2857,10 +2857,19 @@
         //      `cell_click` never fires.  So catch it here, on the stage that wraps every cell AND every
         //       mounted overlay, in the CAPTURE phase — a mold's own handler (or a stopPropagation) can't
         //        swallow it — and on `pointerdown`, which fires on the press itself even if the spastic
-        //         overlay jumps away before pointerup so no `click` ever completes.  `settle_ladder` →
-        //          `measure_world` self-guards (no-op unless a row still `need_floor`s), so an idle tap
-        //           costs nothing; a burst of taps is still one ladder (re-arming clears the old rungs).
-        const retap = () => settle_ladder(w)
+        //         overlay jumps away before pointerup so no `click` ever completes.
+        //  THE LEVER IT PULLS matters (2026-08-27, second pass — *"isn't working still, in eed"*): the
+        //   first cut armed `settle_ladder` alone, and that was the wrong lever.  `settle_ladder` →
+        //    `measure_world` (guarded) → `react_soon` → `adopt`, and `adopt` bumps `paint_tick` ONLY when
+        //     it detects the geometry actually MOVED (2703's idle gate).  A spastic seat that is WRONG but
+        //      STATIONARY is exactly the no-change case: `paint_tick` never bumps, the template never
+        //       re-renders, the mold never re-seats — so the tap looked dead.  What the MOUSE did to
+        //        un-jiggle a seat (`on_enter`) was never the ladder; it was an UNCONDITIONAL `paint_tick++`
+        //         (forces the re-render that re-seats molds from live springs AND drives the measure
+        //          `$effect`) plus `kick` to spin the rAF loop — the by-hand reseat idiom of 487/651/1429.
+        //           So pull the same two levers the mouse pulled, and keep the ladder for the multi-round
+        //            floor re-measure on top.
+        const retap = () => { kick(w); paint_tick++; settle_ladder(w) }
         el.addEventListener('pointerdown', retap, true)
         return { destroy() { el.removeEventListener('pointerdown', retap, true); ro?.disconnect(); if (ovt) clearInterval(ovt); if (stageEls.get(w) === el) stageEls.delete(w) } }
     }

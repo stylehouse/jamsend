@@ -537,12 +537,24 @@
         if (m) return decodeURIComponent(m[1])
         return s   // assume a bare token
     }
+    // adopt_from — is this pasted text a LINK-A-DEVICE (?Adopt=) link?  A device-adoption is a different
+    //  act from a friend invite (it shares your identity, not a Pier), so pasting one here does NOT redeem
+    //   as a friend — it routes to the adoption LAND face (the bodily warning + the live SAS).  Empty if not.
+    function adopt_from(text: string): string {
+        const s = String(text || '').trim()
+        if (!s) return ''
+        try { const p = new URL(s).searchParams.get('Adopt'); if (p) return p } catch {}
+        const m = s.match(/[?&]Adopt=([^&\s]+)/)
+        if (m) return decodeURIComponent(m[1])
+        return ''
+    }
     // the QUIET twin of paste_load, run on every keystroke: identical accept path, but it never
     //  writes an error and never clears one the loud path put there.  Silence is the whole contract —
     //   every prefix of a valid link fails to parse, so a chatty version would flash a complaint at
     //    someone who is simply still pasting.  Once a token parses there is nothing left to confirm.
     function paste_try() {
         if (invite) return                      // an offer is already on screen; don't fight it
+        if (adopt_from(paste)) return           // a device link — leave it for paste_load to route (?Adopt=)
         const tok = iz_from(paste)
         if (!tok) return
         const t = H?.Swarm_token_parse?.(tok)
@@ -555,6 +567,10 @@
     }
     function paste_load() {
         paste_err = ''
+        // A LINK-A-DEVICE link routes to the adoption LAND face (?Adopt=), never the friend redeem — it
+        //  shares your identity, so it must land on the warned + SAS-checked screen, not seal quietly.
+        const ad = adopt_from(paste)
+        if (ad) { try { window.location.href = location.origin + location.pathname + '?Adopt=' + encodeURIComponent(ad) } catch { paste_err = 'could not open the device link' }; return }
         const tok = iz_from(paste)
         if (!tok) { paste_err = 'paste an invite link (or its ?Iz token)'; return }
         const t = H?.Swarm_token_parse?.(tok)
@@ -740,7 +756,7 @@
                             onclick={mint} title="mint a single-use Music invite and show its QR">invite a friend</button>
                     <a class="ip-readme" href="https://github.com/stylehouse/jamsend#readme"
                        target="_blank" rel="noopener noreferrer"
-                       title="what BigSoundland is, on github">what is this? ↗</a>
+                       title="what jamsend is, on github">README↗</a>
                 </span>
                 <!-- NO `born_today` HERE (dropped 2026-08-08, Onboard_todo §0 item 1).  This note explains
                      what the button DOES, and the moment that explanation is worth having is "you have no
@@ -772,9 +788,9 @@
                      surfaces "that link's invite did not parse" — the one thing a silent field must
                      never do on its own, since every prefix of a good link is a bad link. -->
                 <span class="ip-row">
-                    <input class="ip-name wide" bind:value={paste} placeholder="paste an invite link"
+                    <input class="ip-name wide" bind:value={paste} placeholder="paste an invite or device link"
                         oninput={paste_try}
-                        onkeydown={(e) => { if (e.key === 'Enter') paste_load() }} />
+                        onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); paste_load() } }} />
                 </span>
                 {#if paste_err}<span class="ip-note">⚠ {paste_err}</span>{/if}
             {/if}

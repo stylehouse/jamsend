@@ -3449,3 +3449,162 @@ async SwarmServe_order(w):
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+
+// ══ SwarmSpread — the CEREMONY: spread out by scanning (Division_todo §CEREMONY / LinkDevice) ════════════
+//  The ACT of dividing, proven at the model layer.  A blank device (just a body key, no soul, no role)
+//   offers itself; the soul-holder seals its whole account across (Sealbox), proposes Cave, the device
+//    consents, and both end up bodies of ONE soul with Posts + a Charter.  Rides the proven bricks:
+//     Swarm_export/import (the account blob) + seal/unseal (proven by SwarmSeal) + mint_grant +
+//      Swarm_body_repost + Swarm_charter_sign.  The Book drives both sides in-process (the live wire
+//       routes same-soul bodies by suffix address — the relay's job, not the mail wire's).
+//   beat 2  Alice (a soul) + a BLANK box (only a body key).  The box mints a role-agnostic adoption offer
+//            and it verifies (the box proves it holds the key nobody will otherwise seal an account to)
+//   beat 3  Alice DIVIDES: verify → seal her account to the box's key → mint %Grant:MyCave → the box
+//            CONSENTS + unseals + imports (now it HOLDS her soul key) + derives Post=Cave from the grant;
+//             Alice finalises (Captain at bare + Cave at its suffix) and writes Charter #1 that routes both
+//   beat 4  the teeth — a tampered seal a wrong nonce and a withheld consent each yield NO body (the soul
+//            never crosses to a device that flubs the seal or that the human did not confirm)
+//  CONVENTION (Swarm*): the world MUST be named SwarmSpread.
+
+SwarmSpread(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmSpread_drive,w,req
+        req%ok = 1
+
+SwarmSpread_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+SwarmSpread_note(w, sc):
+    let t = this.SwarmSpread_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async SwarmSpread_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.SwarmSpread_stand(w) }
+        if (n === 3) { await this.SwarmSpread_divide(w) }
+        if (n === 4) { await this.SwarmSpread_teeth(w) }
+    }
+    await this.SwarmSpread_pump(w)
+    this.SwarmSpread_witness(w)
+    await this.SwarmSpread_order(w)
+
+async SwarmSpread_pump(w):
+    for (const acct of w.o({ Account: 1 })) {
+        for (const ident of acct.o({ Identity: 1 })) { await this.Swarm_pump(w, ident) }
+    }
+
+// beat 2 — a soul, and a blank box that offers itself.  Fixed seeds + pinned clock keep the offer (a
+//  deterministic ed25519 presig) byte-repeatable.
+async SwarmSpread_stand(w):
+    w i reached:step_2
+    w.sc.now = 1751700000
+    let aacct = w.oai({ Account: 1, of: 'Alice' })
+    aacct.c.up = w
+    let akeys = await this.Swarm_mint_keys('SwarmSpread-Alice')
+    let alice = this.Swarm_identity(aacct, akeys, 'Alice')
+    alice.c.bodykey = await this.Swarm_mint_keys('SwarmSpread-Alice-body')
+    w.c.alice = alice
+    this.Swarm_online(alice, true)
+    // the BLANK box — only a body key, addressable at its body-key prepub so the seal can reach it.
+    let bacct = w.oai({ Account: 1, of: 'Box' })
+    bacct.c.up = w
+    w.c.bacct = bacct
+    let bkeys = await this.Swarm_mint_keys('SwarmSpread-Box-body')
+    w.c.bkeys = bkeys
+    let bproto = this.Swarm_identity(bacct, bkeys, 'Box')
+    this.Swarm_online(bproto, true)
+    let offer = await this.Swarm_adopt_offer(bkeys, 'spread_nonce_1')
+    w.c.offer = offer
+    let verified = await this.Swarm_adopt_verify(offer)
+    let row = { stood: 1 }
+    if (verified === true) { row.offer_verifies = 1 }
+    if (offer && !offer.role) { row.role_agnostic = 1 }
+    this.SwarmSpread_note(w, row)
+
+// beat 3 — the division.  Alice redeems (delivers the sealed account to the box); the box absorbs with
+//  consent and becomes a body; Alice finalises + charters.  The seal frame is read off the box's inbox
+//   (the real wire path), then handed to absorb (the human's confirm).
+async SwarmSpread_divide(w):
+    w i reached:step_3
+    let alice = w.c.alice
+    let bacct = w.c.bacct
+    let bkeys = w.c.bkeys
+    let offer = w.c.offer
+    if (!alice || !bacct || !offer) { return }
+    let crossed = await this.Swarm_adopt_redeem(w, alice, offer, 'Cave')
+    let bproto = bacct.o({ Identity: 1 }).find((i) => i.sc.prepub === bkeys.prepub)
+    let m = bproto ? bproto.o({ mail: 1 })[0]?.o({ frame: 'adopt_seal' })[0] : null
+    let frame = m ? m.c.frame : null
+    w.c.frame = frame
+    let bident = frame ? await this.Swarm_adopt_absorb(w, bacct, bkeys, offer.nonce, frame, 1) : null
+    w.c.bident = bident
+    // Alice finalises the division off the box's confirmed body (Captain at bare + Cave at its suffix).
+    let bare = alice.sc.prepub
+    let caveAddr = bident ? bident.sc.prepub + '_1' : ''
+    if (bident) { await this.Swarm_adopt_finalise(w, alice, 'Captain', { pub: bkeys.pub, role: 'Cave', address: caveAddr }, 1) }
+    let peering = this.Swarm_peering(alice)
+    let charter = peering ? peering.o({ Charter: 1 })[0] : null
+    let wire = this.Swarm_charter_wire(alice)
+    let charter_ok = wire ? await this.Swarm_charter_verify(wire, alice.c.keys.pub) : false
+    let boxBody = bident ? this.Swarm_body_mine(bident) : null
+    let row = { divided: 1 }
+    if (crossed === true) { row.sealed_crossed = 1 }
+    if (bident && bident.c.keys && String(bident.c.keys.pub) === String(alice.c.keys.pub)) { row.account_crossed = 1 }
+    if (boxBody && boxBody.sc.role === 'Cave') { row.box_is_cave = 1 }
+    if (charter && this.Charter_addr(peering, 'Cave') === caveAddr && this.Charter_addr(peering, 'Captain') === bare) { row.charter_routes_both = 1 }
+    if (charter_ok === true && peering.o({ Body: 1 }).length === 2) { row.charter_verifies = 1 }
+    this.SwarmSpread_note(w, row)
+
+// beat 4 — the teeth.  A tampered seal a wrong nonce and a withheld consent each produce NO body.
+async SwarmSpread_teeth(w):
+    w i reached:step_4
+    let bkeys = w.c.bkeys
+    let offer = w.c.offer
+    let frame = w.c.frame
+    if (!bkeys || !offer || !frame) { return }
+    let ccont = w.oai({ Account: 1, of: 'Cbox' })
+    ccont.c.up = w
+    let flip = (h) => { let a = String(h).split(''); a[10] = (a[10] === 'a' ? 'b' : 'a'); return a.join('') }
+    let bad = { kind: 'adopt_seal', sealed: flip(frame.sealed), salt: frame.salt, grant: frame.grant, role: 'Cave' }
+    let tampered = await this.Swarm_adopt_absorb(w, ccont, bkeys, offer.nonce, bad, 1)
+    let wrongNonce = await this.Swarm_adopt_absorb(w, ccont, bkeys, 'wrong_nonce_xx', frame, 1)
+    let noConsent = await this.Swarm_adopt_absorb(w, ccont, bkeys, offer.nonce, frame, 0)
+    let row = { teethed: 1 }
+    if (tampered === null) { row.tamper_no_body = 1 }
+    if (wrongNonce === null) { row.wrongnonce_no_body = 1 }
+    if (noConsent === null) { row.noconsent_no_body = 1 }
+    if (ccont.o({ Identity: 1 }).filter((i) => i.sc.prepub === bkeys.prepub).length === 0) { row.no_soul_landed = 1 }
+    this.SwarmSpread_note(w, row)
+
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmSpread_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 2)) { return }
+    let T = this.SwarmSpread_T(w)
+    let s = T.o({ stood: 1 })[0]
+    if (!s) { return }
+    // #1 THE OFFER IS A ROLE-AGNOSTIC BODY: it verifies (the device proves it holds the key) and wears no role.
+    if (s && +s.sc.offer_verifies === 1 && +s.sc.role_agnostic === 1) { this.story_swear(w, 'a blank device offers itself as a body not a role — the adoption offer proves the device holds its own key and carries no Post so the device does not yet know it will be a Cave') }
+    let d = T.o({ divided: 1 })[0]
+    // #2 THE ACCOUNT CROSSES: the soul seals across and the box now HOLDS the soul key — it became a body.
+    if (d && +d.sc.sealed_crossed === 1 && +d.sc.account_crossed === 1) { this.story_swear(w, 'the soul seals across on a scan — the soul-holder seals its whole account to the blank device and the device unseals it and now holds the very same soul key so it is no longer blank but a body of that soul') }
+    // #3 THE POST IS THE PROPOSED GRANT AND THE CHARTER ROUTES BOTH: box→Cave phone→Captain both routed.
+    if (d && +d.sc.box_is_cave === 1 && +d.sc.charter_routes_both === 1 && +d.sc.charter_verifies === 1) { this.story_swear(w, 'the device consents to the role and the Charter routes both — the box derives Cave from the proposed grant the phone takes Captain and the first Charter verifies and routes the Cave to its suffix the Captain to the bare name') }
+    let t = T.o({ teethed: 1 })[0]
+    // #4 THE TEETH: a tampered seal a wrong nonce a withheld consent each yield NO body and no soul lands.
+    if (t && +t.sc.tamper_no_body === 1 && +t.sc.wrongnonce_no_body === 1 && +t.sc.noconsent_no_body === 1 && +t.sc.no_soul_landed === 1) { this.story_swear(w, 'the ceremony fails closed — a tampered seal a wrong nonce and a withheld consent each produce no body and the soul never lands on a device that flubbed the seal or that the human did not confirm') }
+
+// SwarmSpread_order — float A:SwarmSpread to the front of H/* so the Run snap stays readable.
+async SwarmSpread_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) { return }
+    let first = (a) => (a.sc.A === 'SwarmSpread') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)

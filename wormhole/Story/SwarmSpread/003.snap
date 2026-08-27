@@ -1,0 +1,27 @@
+Snap:H
+  H:SwarmSpread,Run
+    A:SwarmSpread
+      self,round=3	{"mung":["age"]}
+      w:SwarmSpread,now=1751700000
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:118fd01cff8a3866,prepub:118fd01cff8a3866,friendly:Alice
+            Peering,name:118fd01cff8a3866,friendly:Alice,online
+              Body,pub:72d7ff9ff7e0e109f503f8e7bf214cdbac6ed15f802a3ca173b589289e4126e7,role:Captain,address:118fd01cff8a3866
+              Body,pub:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7,role:Cave,address:118fd01cff8a3866_1
+              Charter,era:1,payload:72d7ff9ff7e0e109f503f8e7bf214cdbac6ed15f802a3ca173b589289e4126e7:Captain:118fd01cff8a3866;b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7:Cave:118fd01cff8a3866_1,sig:c7e53d5fae6e333da0b5a619f7dd4f8f4023f8a9eb3d58f7da92117e2e1a9534484bc27d8005b88c0efd8b4ef2e0de9acaf0fd69388f6e210437ffb7767a690d,soul:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
+        Account,of:Box
+          Identity:b3658199b235d270,prepub:b3658199b235d270,friendly:Box
+            Peering,name:b3658199b235d270,friendly:Box,online
+            mail
+              frame:adopt_seal,did
+          Identity:118fd01cff8a3866,prepub:118fd01cff8a3866,friendly:Alice
+            Peering,name:118fd01cff8a3866,friendly:Alice
+              Body,pub:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7,address:118fd01cff8a3866_1,role:Cave
+                Grant:MyCave,by:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a,for:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7,time:1751700000,sign:e20aa7bacd91507473073d6ce3c2b427e6fd8de63d353e2f7a68e2122bde9b00cfc1d62be6627dea92121652d9fb89bb41e54e718a56455bcb1dc0852ad03b08
+        testing
+          stood,offer_verifies,role_agnostic
+          divided,sealed_crossed,account_crossed,box_is_cave,charter_routes_both,charter_verifies
+        reached:step_3

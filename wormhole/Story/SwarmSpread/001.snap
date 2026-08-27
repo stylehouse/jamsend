@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmSpread,Run
+    A:SwarmSpread
+      self,round	{"mung":["age"]}
+      w:SwarmSpread
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

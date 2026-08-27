@@ -1,0 +1,16 @@
+Snap:H
+  H:SwarmSpread,Run
+    A:SwarmSpread
+      self,round=2	{"mung":["age"]}
+      w:SwarmSpread,now=1751700000
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:118fd01cff8a3866,prepub:118fd01cff8a3866,friendly:Alice
+            Peering,name:118fd01cff8a3866,friendly:Alice,online
+        Account,of:Box
+          Identity:b3658199b235d270,prepub:b3658199b235d270,friendly:Box
+            Peering,name:b3658199b235d270,friendly:Box,online
+        testing
+          stood,offer_verifies,role_agnostic

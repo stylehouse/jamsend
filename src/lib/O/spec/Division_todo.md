@@ -153,9 +153,9 @@ The resolution layer already speaks C: `%Body` is a true particle (mainkey `Body
 
 - **Birth** — one body, at the bare name, no Post, no Charter. Routing = dial the bare name (it's the one
    body). Division machinery is entirely OFF.
-- **First division** (`%Invite:MyCave`) — confers Posts on BOTH bodies at once (the original → Captain, the
-   new → Cave); the account (soul key included) crosses sealed to the new body's body key; the more-online
-    body takes/keeps the Seat; the Seat writes the first Charter.
+- **First division** — the CEREMONY (see below): a blank device offers itself, the soul-holder scans and
+   seals its account across, both consent, Posts are conferred (original → Captain, new → Cave), the
+    more-online body takes the Seat, and the Seat writes Charter #1.
 - **Post change / revoke** — the Seat mints a `%NotGrant` (existing machinery) and re-charters at a higher
    era; the new Charter gossips out. Change = revoke + re-issue.
 - **Seat succession** — automatic: the bare name frees on the old Seat's relay-heartbeat lapse (~30s), the
@@ -182,6 +182,32 @@ The resolution layer already speaks C: `%Body` is a true particle (mainkey `Body
 | Split-brain (two Seats, a partition) | Peers keep the highest-era Charter; the loser's stale Charter is ignored. |
 | Nobody plays the asked Post | `Charter_addr` → null → dial the Seat (bare); the transport declares `%dead` on exhaustion. |
 | Multi-Cave | Permitted; the pick is deterministic (bare-first, address-asc); try-one-then-next on a miss (no broadcast). |
+
+## THE CEREMONY — spread out by scanning (LinkDevice, the act of dividing)
+
+Dividing rides the friend-invite rails **inverted**: the blank device shows the QR, the soul-holder scans.
+The Door already IS this shape (InvitePanel mints an offer → InviteQR renders it → the OTHER device's native
+ camera reads the `?…=` URL → live relay handshake); there is no in-app scanner and none is needed.
+
+- **Offer — the Cave-to-be, a blank proto-identity.** A fresh device boots as *just a body key* — adopted by
+   nobody, wearing **NO role** (it does not know it is a Cave). It shows a QR: an **adoption offer** (its
+    body-key pub + nonce + presig), reusing the Idzeug compact codec. Role-agnostic by construction.
+- **Scan — the soul-holder (the Captain-to-be).** The device that HAS the soul scans with its native camera.
+   It DECIDES a role to propose (Cave, for an always-on box), **warns the human this is BODILY** — "this
+    device will hold your keys and can serve your library AS you" — and on confirm SEALS its account to the
+     scanned body-key pub (SwarmSeal, Phase 1) + mints `%Grant:MyCave` for it, delivering both over the relay.
+- **Decide — the Cave consents.** The offered device RECEIVES the sealed account + the proposed grant and
+   **decides**: the Cave doesn't know it's a Cave until now, and it must accept. On yes: it unseals (now holds
+    the soul), derives its Post from the grant (`Swarm_body_repost` → Cave), and stands up as a body.
+- **Seat + Charter.** The more-online body (usually the box) claims the bare name = the Seat; the Seat
+   reposts both ends (original → Captain, new → Cave) and writes Charter #1, gossiped out.
+
+**Consent is mutual and neither side is silent:** the soul-holder confirms the bodily *share*; the device
+ confirms the *role*. A blank offer + a proposed role + a granted consent — never a self-declared Post.
+
+**In the Door:** friend-invite stays the main act; a SMALLER **link a device** button opens the offer/scan.
+ The device side shows a blank-body QR (never pre-labels a role); the phone side lands in its OWN colour with
+  the bodily warning (NOT the friend colours) — a mis-scan must never quietly hand over your soul.
 
 ## VOCABULARY (glossary — rename freely, this is the coinage)
 
@@ -228,7 +254,34 @@ The resolution layer already speaks C: `%Body` is a true particle (mainkey `Body
    looked up as `{Pier:<prepub>}` — the same latent bug still sits in the SwarmRole Book at Swarmation.g
     ~2160, un-recorded so never caught); fixed + re-recorded with every derive/revoke flag firing.
 
-**Owed (the last mile):**
+**BUILT — THE CEREMONY (the "spread out" act, 2026-08-27):** `Swarm_adopt_offer`/`_verify` (role-agnostic
+ body-adoption offer, presig-proven) · `Swarm_adopt_redeem` (verify → Sealbox-seal the whole account to the
+  offered body-key → mint `%Grant:MyCave` → deliver) · `Swarm_adopt_absorb` (consent → unseal → import → the
+   body holds the soul key → repost → Post) · `Swarm_adopt_finalise` (Captain + Cave rows + Charter #1) ·
+    `adopt_seal`/`adopt_confirm` frames armed + dispatched · the UI front doors `Swarm_adopt_offer_url` /
+     `_land` / `_pending` / `_consent`. Book **SwarmSpread** RECORDED green (4 steps / 4 assertions): the
+      account genuinely crosses devices (`account_crossed`), the box derives Cave, Charter #1 routes both, and
+       it fails closed on a tampered seal / wrong nonce / withheld consent. Regression-clean (SwarmStaple 8/8).
+- **UI (`LinkDevice.svelte` + Door wiring, compile-clean, UNVERIFIED live):** the offer/land/consent faces;
+   the role rides the offer (`Swarm_adopt_offer_url(w, base, role)`, default Cave) so both confirms NAME it;
+    the **EmojiConfirm SAS** (`Swarm_adopt_sas_land`/`_consent`) shows on BOTH screens to catch a relay MITM;
+     the warning is an opaque **cell takeover**; Link Device **auto-surfaces** on a landing `?Adopt=` or a
+      parked consent; Butler shows "🪞 linking a device" (not the friend welcome); the Door paste slot accepts
+       `?Adopt=` links; **🦑 squid logs** trace the handshake. Label "🪞 Link Device"; "TOTAL TRUST" opens the
+        key-copy warning. **The human's two-device test is the gate** (see the check-list).
+
+**Owed (the ceremony's remaining edges):**
+- **The adoptee's identity transition.** After `Swarm_adopt_absorb` the device holds BOTH its old auto-vivified
+   proto-identity (the body-key donor) AND the imported soul — so it can itself read as "two of you". Retiring
+    the old self is NOT a naive husk-drop: the live self is stood up + managed by Auto/Clustation, so the
+     transition "I am my own identity → I am a body of the soul" has to hand off through that layer, not just
+      `container.drop`. Owed + Book-worthy (SwarmSpread proves the account crosses; it does not yet prune the
+       donor). *(This is the most likely cause of a real post-adoption "two of you".)*
+- **A role picker at the offer** (Cave / Captain) instead of the Cave default — small, offer-side.
+- **Deploy to the remote node.** All of this lives on the local `/app`; the remote (djamsend) needs it pulled/
+   built. The `?Adopt=` token proves the ceremony `.go` reached it; the UI batch above did not, yet.
+
+**Owed (the other last mile):**
 - **Wire the music dial to `Swarm_serve_ask`** at the Heist/Ra serve call site (needs live music fixtures +
    a serving daemon to verify), and **re-ground SwarmDivide onto per-body piers** — SwarmServe already proves
     the per-body Charter routing that supersedes SwarmDivide's roster-under-one-pier resolution.

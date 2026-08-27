@@ -1,42 +1,33 @@
 <script lang="ts">
-    // InviteYourself — the portability hatch on the Door (Portability_todo §9).  Beside "invite a
-    //  friend" (mint %Invite:Music — *what I will serve you*) sits this: the invite whose redemption
-    //   MAKES you, not befriends you (%Invite:MyCave, the LinkDevice ceremony, §7).  V1 is honest
-    //    about its depth: the DIALOGUE is real — it is the one place a person learns what carrying
-    //     an identity to a second device means — and the ceremony itself is NOT built yet, so the
-    //      QR affordance renders disabled and says so, rather than pretending or hiding.
-    //  No props: this component reads no House state yet.  When the ceremony lands it will take H
-    //   and drive Swarm_invite_url with a role Feature; today it is documentation with a doorknob.
+    // InviteYourself — the portability hatch on the Door (Portability_todo §9 / Division_todo §CEREMONY).
+    //  Beside "invite a friend" (mint %Invite:Music — *what I will serve you*) sits this: the invite whose
+    //   redemption MAKES you, not befriends you (the LinkDevice ceremony).  The DIALOGUE below is the one
+    //    place a person learns what carrying an identity to a second device means; the ceremony is now
+    //     BUILT (Swarm_adopt_* in Ghost/S/Swarm.g, proven green by Book SwarmSpread), so the hatch opens the
+    //      live LinkDevice flow (offer / land / consent) instead of the old disabled stub.
+    import LinkDevice from "./LinkDevice.svelte"
+    let { H } = $props()
     let open = $state(false)
+
+    // AUTO-SURFACE an in-flight adoption — you shouldn't have to hunt into this hatch to service the very
+    //  thing that just arrived.  Open when a ?Adopt= is landing (the soul side) OR an adoption is parked
+    //   awaiting this device's consent (the adoptee side).  The warning inside then takes over the cell.
+    $effect(() => {
+        void H?.version
+        try { if (new URL(location.href).searchParams.get('Adopt')) { open = true; return } } catch {}
+        const w = H?.Swarm_station_world?.()
+        if (w && typeof H?.Swarm_adopt_pending === 'function') { try { if (H.Swarm_adopt_pending(w)) open = true } catch {} }
+    })
 </script>
 
 <div class="iy">
     <button class="iy-open" onclick={() => open = !open}
         title="carry your identity to a second device — opens a short explanation">
-        🪞 invite yourself {open ? '▾' : '▸'}
+        🪞 Link Device {open ? '▾' : '▸'}
     </button>
     {#if open}
         <div class="iy-note">
-            <p>
-                One identity, many bodies. Your phone is the <b>Captain</b> — the soul's home, the
-                social hand; it needs no folder access at all. A station with a real filesystem is
-                the <b>Cave</b> — where the library lives, where Heists are fulfilled, where
-                everything is backed up. What you'd Heist wanders to the Cave and waits there as
-                treasure; music flows back to the phone as listening copies. Authority stays with
-                the Captain; durability lives with the Cave.
-            </p>
-            <p>
-                Inviting yourself carries your one identity to a second device: the same key, a new
-                body, each doing the work it is placed to do. <b>This will move your key</b> — treat
-                the QR like your key. It is shown once, lives minutes, works once, and is never
-                posted anywhere; both devices stay online and show the same emoji pair before
-                anything moves.
-            </p>
-            <button class="iy-qr" disabled
-                title="the LinkDevice ceremony is not built yet — this dialogue is the map, honestly ahead of the road">
-                ▦ show the LinkDevice QR
-            </button>
-            <span class="iy-soon">not built yet — coming soon</span>
+            <LinkDevice {H} />
         </div>
     {/if}
 </div>
@@ -66,15 +57,23 @@
     }
     .iy-note p { margin: 0 0 5px 0; }
     .iy-note b { color: #d9a9ef; }
-    .iy-qr {
+    /* TOTAL TRUST — inline clickable that opens the one warning that matters */
+    .iy-trust {
         pointer-events: auto;
-        background: #241733;
-        color: #6a5a74;
-        border: 1px dashed #5a4a66;
-        border-radius: 6px;
-        font-size: 9px;
-        padding: 3px 8px;
-        cursor: not-allowed;
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        font-weight: 700;
+        letter-spacing: .3px;
+        color: #ffb300;
+        text-decoration: underline dotted;
+        cursor: pointer;
     }
-    .iy-soon { font-size: 8px; color: #8a7a94; font-style: italic; margin-left: 5px; }
+    .iy-trust:hover { color: #ffd166; }
+    .iy-warn {
+        border-left: 2px solid #d98a00;
+        padding-left: 6px;
+        color: #e8c98a;
+    }
 </style>

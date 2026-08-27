@@ -16,6 +16,8 @@ IMPORT()
     import { mint_grant, verify_grant, grant_to_C, grant_of_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
     import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     import { bodykey_read, bodykey_write, vessel_register, vessel_subnet, vessel_drop, vessel_sweep } from "$lib/O/vessel_store"
+    import { seal, unseal } from "$lib/O/Funk/Sealbox"
+    import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
 
 //#region self — keys, the account tree, the page
 
@@ -1006,6 +1008,8 @@ Swarm_arm(w):
         if (frame.header.type === 'suggest_got') this.Swarm_suggest_got(w2, ident, frame.swarm)
         if (frame.header.type === 'repli_ready') this.Swarm_repli_ready(w2, ident, frame.swarm)
         if (frame.header.type === 'charter') await this.Swarm_charter_heard(w2, ident, frame.swarm)
+        if (frame.header.type === 'adopt_seal') this.Swarm_adopt_park(w2, ident, frame.swarm)
+        if (frame.header.type === 'adopt_confirm') await this.Swarm_adopt_confirmed(w2, ident, frame.swarm)
         // SEED THE CHARTER AT SEAL (Division_todo step 4), station wire twin of the pump seed above.
         if (frame.header.type === 'pier_accept' || frame.header.type === 'pier_confirm') this.Swarm_charter_gossip(w2, ident, from)
         // LEDGER OUTCOME ⇒ SETTLE (Persistence_todo §5.1): every frame kind that can move the durable
@@ -1017,7 +1021,7 @@ Swarm_arm(w):
         if (['pier_hello', 'pier_accept', 'pier_confirm', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok'].includes(frame.header.type)) this.Swarm_account_settle(ident, frame.header.type)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'adopt_seal', 'adopt_confirm']) w.c.on[kind] = hear
 
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
 //  (1) a cache hit — a voucher whose sign we already proved this era — passes without crypto.
@@ -1076,6 +1080,8 @@ async Swarm_pump(w, ident):
         if (frame.kind === 'reinvite_ok') await this.Swarm_reinvite_ok(w, ident, frame)
         if (frame.kind === 'ive_got') this.Swarm_ive_got(w, ident, frame)
         if (frame.kind === 'charter') await this.Swarm_charter_heard(w, ident, frame)
+        if (frame.kind === 'adopt_seal') this.Swarm_adopt_park(w, ident, frame)
+        if (frame.kind === 'adopt_confirm') await this.Swarm_adopt_confirmed(w, ident, frame)
         // SEED THE CHARTER AT SEAL (Division_todo step 4): a freshly sealed friend learns my division
         //  now, not at the next change.  No-op for an undivided soul (no Charter to gossip).
         if (frame.kind === 'pier_accept' || frame.kind === 'pier_confirm') this.Swarm_charter_gossip(w, ident, frame.page?.prepub)
@@ -4000,6 +4006,263 @@ async Swarm_serve_ask(w, ident, pier, role, frame):
     let to = this.Swarm_serve_to(pier, role)
     if (!to) { return false }
     return this.Swarm_deliver(w, ident, to, frame)
+
+// ══ THE CEREMONY — spread out by scanning (Division_todo §CEREMONY / LinkDevice) ═══════════════════════
+//  The act of dividing rides the invite rails INVERTED: a blank device (just a body key — no soul, no
+//   role) OFFERS itself; the soul-holder SCANS and seals its account across.  Connective, no new crypto:
+//    Sealbox (the AES-GCM account seal, proven by SwarmSeal) + Swarm_export/import (the account blob) +
+//     mint_grant (the Post grant) + Swarm_body_repost + Swarm_charter_sign (just built).  Consent is
+//      MUTUAL: the soul-holder confirms the bodily share (the UI's warned gate), the device confirms the
+//       proposed role (it does not know it's a Cave until asked).  The seal IKM is the offer nonce — a
+//        one-time secret both sides hold (the device made it, the soul-holder read it off the QR) and the
+//         untrusted relay never sees; online-scan, dead after first use.  (Ephemeral-DH is the v2 upgrade.)
+
+// Swarm_adopt_offer — the blank device's role-AGNOSTIC body-adoption offer.  `bodykeys` is its own fresh
+//  keypair; `nonce` the one-time seal secret.  The presig proves the device HOLDS the body key (self-
+//   signed over the offer domain) — the soul-holder checks it before sealing its account to that pub.
+//    Returns { pub, prepub, nonce, presig } — the QR payload (compact-codec-able).
+async Swarm_adopt_offer(bodykeys, nonce):
+    let presig = await signHeader({ pub: bodykeys.pub, prepub: bodykeys.prepub, nonce: String(nonce) }, bodykeys.key)
+    return { pub: bodykeys.pub, prepub: bodykeys.prepub, nonce: String(nonce), presig: presig }
+// Swarm_adopt_verify — does the offer prove the device controls its body key?  NEVER seal an account to a
+//  key nobody proved they hold.  Returns a plain boolean.
+async Swarm_adopt_verify(offer):
+    if (!offer || !offer.pub || !offer.presig) { return false }
+    let head = { nonce: String(offer.nonce), prepub: offer.prepub, pub: offer.pub }
+    head.sign = offer.presig
+    let who = await verifyHeader(head, [offer.pub])
+    return who === offer.pub
+// Swarm_adopt_redeem — the SOUL-HOLDER scans an offer and DIVIDES.  Verify the offer; DECIDE a role to
+//  propose (`role`, e.g. 'Cave'); SEAL the whole account to the offered body-key (ikm = the offer nonce,
+//   salt = both pubs); mint a cross-signed `%Grant:My<role>` for the body; DELIVER the sealed account +
+//    grant over the relay to the body's prepub.  The crown jewel — a warned, human-confirmed act (the UI
+//     gate is the caller's).  Returns did-it-cross.
+async Swarm_adopt_redeem(w, soulIdent, offer, role):
+    let ok = await this.Swarm_adopt_verify(offer)
+    if (!ok) { this.Swarm_rebuff(soulIdent, 'adopt_forged', offer?.prepub); return false }
+    let soulPub = String(soulIdent.c.keys.pub)
+    let salt = soulPub + ':' + offer.pub
+    let blob = await this.Swarm_export(soulIdent)
+    let sealed = await seal(String(offer.nonce), salt, blob)
+    let grant = await mint_grant(soulIdent.c.keys, offer.pub, 'My' + role, {}, this.Swarm_now(w))
+    let frame = { kind: 'adopt_seal', sealed: sealed, salt: salt, soulpub: soulPub, grant: grant, role: String(role) }
+    console.log('🦑 adopt: sealing my account → ' + String(offer.prepub).slice(0, 8) + ' as ' + String(role))
+    return this.Swarm_deliver(w, soulIdent, offer.prepub, frame)
+// Swarm_adopt_absorb — the offered device DECIDES (consent) and BECOMES a body.  Unseal the account (ikm =
+//  the nonce IT generated), IMPORT it into `container` (now it holds the soul key), keep its proto-identity
+//   as its OWN body key, take its %Body row, land the proposed grant, and derive its Post from that grant
+//    (the Cave doesn't know it's a Cave until here).  `consent` is the human's "yes, be my Cave".  Returns
+//     the new soul %Identity (now a body of the soul), or null if refused / the seal did not verify (fails
+//      closed — unseal THROWS on a tampered frame or a wrong nonce, and a wrong account never lands).
+async Swarm_adopt_absorb(w, container, bodykeys, nonce, frame, consent):
+    if (!consent || !frame || !frame.sealed) { return null }
+    let blob = null
+    try { blob = await unseal(String(nonce), frame.salt, frame.sealed) } catch (e) { return null }
+    let ident = this.Swarm_import(container, blob)
+    if (!ident || !ident.c.keys) { return null }
+    ident.c.bodykey = { pub: bodykeys.pub, key: bodykeys.key, prepub: bodykeys.prepub }
+    let addr = ident.sc.prepub + '_1'
+    let body = this.Swarm_body_take(ident, bodykeys.pub, null, addr)
+    if (frame.grant) { grant_to_C(body, frame.grant) }
+    let post = this.Swarm_grant_post(body)
+    if (post) { body.sc.role = post }
+    body.bump()
+    console.log('🦑 adopt: I am now a body of ' + String(ident.sc.prepub).slice(0, 8) + ' — my Post is ' + String(post || 'none'))
+    return ident
+// Swarm_adopt_finalise — the soul-holder finishes the division once the new body is up: take ITS OWN body
+//  row as `role0` (Captain — the inviter becomes the helm), note the new body's Post + address, and write
+//   Charter #1.  `newbody` is { pub, role, address }.  The more-online body claims the Seat later (Seat
+//    succession); this writes the first roster so both bodies and every friend can route immediately.
+async Swarm_adopt_finalise(w, soulIdent, role0, newbody, era):
+    let bare = soulIdent.sc.prepub
+    let mykey = this.Swarm_body_key(soulIdent)
+    let mypub = mykey ? mykey.pub : bare
+    this.Swarm_body_take(soulIdent, mypub, role0, bare)
+    this.Swarm_body_note(soulIdent, newbody.pub, newbody.role, newbody.address)
+    return await this.Swarm_charter_sign(soulIdent, era)
+// Swarm_adopt_park — a blank device heard an adoption sealed to it: PARK it for the human's consent (the
+//  UI reads top.c.adopt_pending and shows the bodily warning; its confirm calls Swarm_adopt_absorb).  Never
+//   auto-absorbs — becoming a body is always a decided act.
+Swarm_adopt_park(w, ident, frame):
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c) { top.c.adopt_pending = { frame: frame, at: this.Swarm_now(w) } }
+    console.log('🦑 adopt: an account arrived sealed to me as ' + String(frame?.role || 'Cave') + ' — awaiting my consent')
+    return true
+// Swarm_adopt_confirmed — the new body accepted: the soul-holder finalises the division (its Captain row +
+//  the Cave note + Charter #1, then gossip).  `frame` carries the new body's { pub, role, address }.
+async Swarm_adopt_confirmed(w, soulIdent, frame):
+    if (!frame || !frame.pub) { return }
+    console.log('🦑 adopt: my new ' + String(frame.role || 'Cave') + ' accepted — writing Charter #1 and gossiping the division')
+    await this.Swarm_adopt_finalise(w, soulIdent, 'Captain', { pub: frame.pub, role: frame.role || 'Cave', address: frame.address }, 1)
+    this.Swarm_charter_gossip(w, soulIdent)
+
+// ── the UI front doors (the Door's "link a device" flow rides these; the model above is what they call)
+// Swarm_adopt_encode / _decode — the offer as a compact URL-safe token (UTF-8-safe base64 of the JSON).
+Swarm_adopt_encode(offer):
+    return this.Swarm_b64(JSON.stringify(offer))
+Swarm_adopt_decode(token):
+    try { return JSON.parse(this.Swarm_unb64(token)) } catch (e) { return null }
+// Swarm_adopt_offer_url — THE OFFERING (blank/this) device: offer ITS OWN live keypair as a body key
+//  (already stood up + reachable on the relay), stash the offer for the later consent/absorb, and dress it
+//   as the URL the QR carries — <base>?Adopt=<token>.  The device that shows this is saying "adopt me AS a
+//    <role>" — the ROLE is settled HERE, at the offering device, BEFORE the QR (the human at the device
+//     knows what it is for), so the trust the soul-holder later grants is role-specific: "be my Cave".
+//      `role` defaults 'Cave' (a linked device is almost always the Cave); the offer carries it end to end.
+async Swarm_adopt_offer_url(w, base, role):
+    let self = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!self || !self.c.keys) { return null }
+    let bodykeys = { pub: self.c.keys.pub, key: self.c.keys.key, prepub: self.sc.prepub }
+    let bytes = crypto.getRandomValues(new Uint8Array(12))
+    let nonce = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+    let offer = await this.Swarm_adopt_offer(bodykeys, nonce)
+    offer.role = String(role || 'Cave')
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c) { top.c.adopt_offering = { bodykeys: bodykeys, nonce: nonce, role: offer.role, container: self.c.up, at: this.Swarm_now(w) } }
+    this.Swarm_expect_arrival(w)
+    console.log('🦑 adopt: offering this device (' + String(bodykeys.prepub).slice(0, 8) + ') as a ' + offer.role + ' — scan/paste it from your soul device')
+    return String(base) + '?Adopt=' + encodeURIComponent(this.Swarm_adopt_encode(offer))
+// Swarm_adopt_land — THE SOUL-HOLDER scanned a ?Adopt= URL: decode the offer and DIVIDE with the role the
+//  OFFER carries (the device chose it; the soul-holder is granting exactly that).  The bodily warning +
+//   confirm is the UI's; this is the confirmed act.  Returns did-it-cross.
+async Swarm_adopt_land(w, token):
+    let offer = this.Swarm_adopt_decode(token)
+    if (!offer) { return 'baddecode' }
+    let self = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!self) { return 'noself' }
+    if (!(await this.Swarm_adopt_verify(offer))) { return 'forged' }
+    // distinguish the two failures the old boolean conflated: a bad signature (forged) vs the SEND
+    //  failing because there is no channel to the device (unreachable — the pier the ceremony still owes).
+    let sent = await this.Swarm_adopt_redeem(w, self, offer, offer.role || 'Cave')
+    return sent ? 'ok' : 'unreachable'
+// Swarm_adopt_role — the role the scanned offer carries (for the soul-holder's LAND screen to NAME it).
+Swarm_adopt_role(w, token):
+    let offer = this.Swarm_adopt_decode(token)
+    return offer && offer.role ? String(offer.role) : 'Cave'
+// Swarm_adopt_pending — the offering device reads whether an adoption has arrived awaiting its consent
+//  (the UI's "become a Cave of X?" prompt reads this).  Returns the parked frame's soul pub, or null.
+Swarm_adopt_pending(w):
+    let top = this.top_House ? this.top_House() : null
+    let p = top && top.c ? top.c.adopt_pending : null
+    return p && p.frame ? { soulpub: p.frame.soulpub, role: p.frame.role } : null
+// Swarm_adopt_consent — the offering device DECIDES: on accept, absorb the parked sealed account (with the
+//  stashed body key + nonce) — becoming a body — and confirm back to the soul-holder so it charters.  On
+//   reject, drop the offer.  Returns the new body %Identity, or null.
+async Swarm_adopt_consent(w, accept):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c) { return null }
+    let off = top.c.adopt_offering
+    let pend = top.c.adopt_pending
+    if (!accept || !off || !pend || !pend.frame) { delete top.c.adopt_pending; return null }
+    let ident = await this.Swarm_adopt_absorb(w, off.container, off.bodykeys, off.nonce, pend.frame, 1)
+    delete top.c.adopt_pending
+    if (ident) {
+        let body = this.Swarm_body_mine(ident)
+        this.Swarm_deliver(w, ident, ident.sc.prepub, { kind: 'adopt_confirm', pub: off.bodykeys.pub, role: pend.frame.role, address: body ? body.sc.address : ident.sc.prepub + '_1' })
+    }
+    return ident
+// ══ THE FERRY — the account crosses a pier the HANDSHAKE just formed (the real transfer, the fix) ═══════
+//  The dead-end in the offer→seal→Swarm_deliver path: Swarm_deliver has no route to an un-paired device.
+//   The fix is the proven order — the Captain mints a MyCave invite, the new device REDEEMS it (pier_hello
+//    /accept forms the pier BOTH ways + cross-signs %Grant:MyCave, SwarmRole-proven), and ONLY THEN the
+//     Captain ferries its sealed account over that pier, where Swarm_deliver finally routes.  Reuses
+//      Swarm_export + seal/unseal (SwarmFerry-proven, fails closed) + Swarm_body_repost.  The seal `code`
+//       rode the invite's URL FRAGMENT (#fc=…) — client-side, never on the relay — so a passive relay
+//        never reads the account.  (Ephemeral-DH can replace the fragment later; the seam is the same.)
+
+// Swarm_ferry_send — the CAPTAIN, once a MyCave pier has sealed: export the whole account, seal it under
+//  `code`, deliver it over the pier (which now routes).  Returns did-it-cross.
+async Swarm_ferry_send(w, soulIdent, pier, code):
+    if (!pier || !code || !soulIdent?.c?.keys) { return false }
+    let theirPub = pier.o({ Peering: 1 })[0]?.sc?.pub
+    if (!theirPub) { return false }
+    let salt = String(soulIdent.c.keys.pub) + ':' + String(theirPub)
+    let blob = await this.Swarm_export(soulIdent)
+    let sealed = await seal(String(code), salt, blob)
+    console.log('🦑 ferry: sending my account → ' + String(pier.sc.pub).slice(0, 8) + ' over the sealed pier')
+    return this.Swarm_deliver(w, soulIdent, String(pier.sc.pub), { kind: 'ferry', sealed: sealed, salt: salt, role: 'Cave' })
+// Swarm_ferry_heard — the NEW DEVICE: unseal the account with the fragment code, import it (now it holds
+//  the soul key), keep its pre-ferry identity as its BODY key, take its body row, and derive Post=Cave off
+//   the MyCave grant that crossed at the handshake.  Fails closed: a wrong code / tampered frame throws in
+//    unseal, so no account lands.  `ident` is this device's pre-ferry self; `code` came off #fc.
+async Swarm_ferry_heard(w, ident, frame, code):
+    if (!frame || !frame.sealed || !code || !ident) { return null }
+    let container = ident.c.up
+    if (!container) { return null }
+    let priorPier = this.Swarm_peering(ident)?.o({ Pier: 1 })[0]
+    let priorPost = priorPier ? this.Swarm_grant_post(priorPier) : null
+    let bodykeys = ident.c.keys ? { pub: ident.c.keys.pub, key: ident.c.keys.key, prepub: ident.sc.prepub } : null
+    let blob = null
+    try { blob = await unseal(String(code), frame.salt, frame.sealed) } catch (e) { console.log('🦑 ferry: unseal failed (wrong code or tampered) — no account landed'); return null }
+    let soul = this.Swarm_import(container, blob)
+    if (!soul || !soul.c.keys) { return null }
+    if (bodykeys) { soul.c.bodykey = bodykeys }
+    let addr = soul.sc.prepub + '_1'
+    let body = this.Swarm_body_take(soul, bodykeys ? bodykeys.pub : soul.sc.prepub, priorPost || 'Cave', addr)
+    console.log('🦑 ferry: account landed — I am now a body of ' + String(soul.sc.prepub).slice(0, 8) + ' as ' + (priorPost || 'Cave'))
+    return soul
+// Swarm_ferry_link — the CAPTAIN's "make another device my Cave" link: mint a MyCave invite (whoever
+//  redeems it dials me, forming the pier), and a random ferry SECRET stashed for the next redeem, carried
+//   in the URL FRAGMENT so it never rides the relay.  Returns <base>?Iz=<token>#fc=<secret>.
+async Swarm_ferry_link(w, soulIdent, base):
+    let iz = await this.Swarm_mint_invite(w, soulIdent, { MyCave: 1 })
+    let bytes = crypto.getRandomValues(new Uint8Array(16))
+    let secret = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c) { top.c.ferry_secret = secret }
+    this.Swarm_expect_arrival(w)
+    console.log('🦑 ferry: offering to make a device my Cave — link minted (redeem forms the pier, then I ferry)')
+    return String(base) + '?Iz=' + encodeURIComponent(iz) + '#fc=' + secret
+// Swarm_ferry_on_seal — called when a %Pier seals: if it bears a MyCave grant AND I have a pending ferry
+//  secret (I minted the link), ferry my account over the now-live pier.  No-op otherwise (a plain friend
+//   seal, or a device that isn't mine).  This is the seam that fires the transfer at the right instant.
+async Swarm_ferry_on_seal(w, soulIdent, pier):
+    if (!pier || !this.Swarm_pier_live(pier, 'MyCave')) { return }
+    let top = this.top_House ? this.top_House() : null
+    let secret = top && top.c ? top.c.ferry_secret : null
+    if (!secret) { return }
+    let sent = await this.Swarm_ferry_send(w, soulIdent, pier, secret)
+    if (sent) { delete top.c.ferry_secret }
+// Swarm_ferry_park — the NEW DEVICE heard the sealed account: park it for the human's consent (the UI has
+//  the #fc fragment code and calls Swarm_ferry_consume).  Never auto-imports — becoming a body is decided.
+Swarm_ferry_park(w, ident, frame):
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c) { top.c.ferry_pending = { frame: frame, at: this.Swarm_now(w) } }
+    console.log('🦑 ferry: an account arrived sealed to me over the pier — awaiting my consent + code')
+    return true
+// Swarm_ferry_pending — the UI reads whether a ferried account is waiting (returns 1 or null).
+Swarm_ferry_pending(w):
+    let top = this.top_House ? this.top_House() : null
+    return top && top.c && top.c.ferry_pending ? 1 : null
+// Swarm_ferry_consume — the UI's "yes, become this Cave" with the #fc code: unseal + import the parked
+//  account.  `ident` is this device's live self (its pre-ferry identity → body key).  Returns the soul.
+async Swarm_ferry_consume(w, code, accept):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c) { return null }
+    let pend = top.c.ferry_pending
+    if (!accept || !pend || !pend.frame) { delete top.c.ferry_pending; return null }
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    let soul = ident ? await this.Swarm_ferry_heard(w, ident, pend.frame, code) : null
+    delete top.c.ferry_pending
+    return soul
+
+// Swarm_adopt_sas — the emoji SAS both devices READ before the key copies (the EmojiConfirm gate, Phase 3):
+//  fold the two pubs + the nonce (sorted, so both sides agree) into an emoji row.  EQUAL rows on both
+//   screens = one channel, no machine in the middle; a relay MITM that swapped a pub yields a DIFFERENT row.
+async Swarm_adopt_sas(soulpub, bodypub, nonce):
+    return await sas_row(sas_transcript([String(soulpub), String(bodypub), String(nonce)]))
+// Swarm_adopt_sas_land — the SAS for the soul-holder's LAND screen (my soul pub + the scanned offer).
+async Swarm_adopt_sas_land(w, token):
+    let offer = this.Swarm_adopt_decode(token)
+    let self = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!offer || !self || !self.c.keys) { return '' }
+    return await this.Swarm_adopt_sas(self.c.keys.pub, offer.pub, offer.nonce)
+// Swarm_adopt_sas_consent — the SAS for the issuing device's CONSENT screen (the parked offer + frame).
+async Swarm_adopt_sas_consent(w):
+    let top = this.top_House ? this.top_House() : null
+    let off = top && top.c ? top.c.adopt_offering : null
+    let pend = top && top.c ? top.c.adopt_pending : null
+    if (!off || !pend || !pend.frame) { return '' }
+    return await this.Swarm_adopt_sas(pend.frame.soulpub, off.bodykeys.pub, off.nonce)
 // NOTE (2026-08-27): a `%Reach` materialised-verdict cache used to live here (Swarm_reach_grade/addr/
 //  refresh/darken/pick/for). It was REVERTED after two adversarial reviews: it re-introduced a presence
 //   cache with its own ~40s clock — the exact "cache liveness + keep it fresh" shape the live transfer
