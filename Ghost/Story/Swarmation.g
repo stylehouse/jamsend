@@ -27,6 +27,8 @@
 //   Idzeug from. REAL dep (the .g→.ts import idiom), used only to STAGE the attack, never the spine.
 IMPORT()
     import { mint_grant, verify_grant } from "$lib/O/Funk/Grant.ts"
+    import { seal, unseal } from "$lib/O/Funk/Sealbox.ts"
+    import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
 
 SwarmStaple(A,w):
     w oai %req:wrangle,eternal
@@ -2064,6 +2066,446 @@ async SwarmCohort_order(w):
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'SwarmCohort') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+// ══ SwarmRole — LinkDevice Phase 0: a role Feature rides the standing rails and the features isolate ══════
+//  Division (Portability_doc §10) is `%Invite:MyCave` on the %Idzeug rails — the same issuer, token codec,
+//   redeem door, and grant mint that carry Music, carrying a ROLE.  The doc says the rails are generic and
+//    the serve layer's 'Music' hardcodes are correct as music-serving; this Book PROVES both halves at the
+//     model layer (SwarmStaple's mould: fixed keys, pinned clock, the in-process mail wire, no socket):
+//   beat 2  Alice (the Captain) + Cara (the cave-to-be) + Bob (a mere friend) stand up
+//   beat 3  Alice mints TWO invites off the one machinery: %Idzeug to:MyCave (role_1) and to:Music (role_m1)
+//   beat 4  both redeem — Cara the role token, Bob the music token; hello → accept → confirm play out
+//            through the pump; each seals a mutual %Pier whose grants WEAR THEIR OWN FEATURE end to end
+//  THE DISCRIMINATION ([[adversarial-test-agent]]): the isolation is checked BOTH ways on BOTH piers —
+//   Swarm_pier_live(cara-pier,'Music') must be FALSE (a Cave is not thereby a music friend) and
+//    Swarm_pier_live(bob-pier,'MyCave') must be FALSE (a music friend is not thereby a body).  And the
+//     RECIPROCAL grant is pinned to the offered feature — the accept derives `to` from the claim; if the
+//      pier-heal's 'Music' fallback (Swarm.g:1434) ever leaked into the seal path this Book reddens.
+//  CONVENTION (Musu*/Swarm*): the world MUST be named SwarmRole (do_fn_for dispatches by w.sc.w).
+
+SwarmRole(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmRole_drive,w,req
+        req%ok = 1
+
+async SwarmRole_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmRole_stand(w)
+        if (n === 3) await this.SwarmRole_mint(w)
+        if (n === 4) await this.SwarmRole_seal(w)
+    }
+    await this.SwarmRole_pump(w)
+    this.SwarmRole_witness(w)
+    await this.SwarmRole_order(w)
+
+async SwarmRole_pump(w):
+    for (const acct of w.o({ Account: 1 })) {
+        for (const ident of acct.o({ Identity: 1 })) await this.Swarm_pump(w, ident)
+    }
+
+async SwarmRole_person(w, name):
+    let acct = w.oai({ Account: 1, of: name })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmRole-' + name)
+    return this.Swarm_identity(acct, keys, name)
+
+SwarmRole_ident(w, name):
+    return w.o({ Account: 1, of: name })[0]?.o({ Identity: 1 })[0]
+
+// beat 2 — three selves: the Captain, the cave-to-be, and a plain friend for the cross-check.
+async SwarmRole_stand(w):
+    w i reached:step_2
+    w.sc.now = 1751600000
+    await this.SwarmRole_person(w, 'Alice')
+    await this.SwarmRole_person(w, 'Cara')
+    await this.SwarmRole_person(w, 'Bob')
+
+// beat 3 — the one machinery mints both kinds: a role invite and a music invite off the same issuer
+//  door.  Named nonces so the fixture reads as prose (the Swarm_mint_idzeug Book idiom).
+async SwarmRole_mint(w):
+    w i reached:step_3
+    w.sc.now = 1751600010
+    let alice = this.SwarmRole_ident(w, 'Alice')
+    w.c.role_iz = await this.Swarm_mint_idzeug(w, alice, { MyCave: 1 }, 'role_1')
+    w.c.music_iz = await this.Swarm_mint_idzeug(w, alice, { Music: 1 }, 'role_m1')
+
+// beat 4 — both seals play out over the pump within this beat's passes: Cara redeems the ROLE token,
+//  Bob the MUSIC token.  From here the witness reads settled piers — %see fires the pass a truth holds.
+async SwarmRole_seal(w):
+    w i reached:step_4
+    w.sc.now = 1751600020
+    this.Swarm_online(this.SwarmRole_ident(w, 'Alice'), true)
+    let cara = this.SwarmRole_ident(w, 'Cara')
+    let bob = this.SwarmRole_ident(w, 'Bob')
+    this.Swarm_online(cara, true)
+    this.Swarm_online(bob, true)
+    await this.Swarm_redeem(w, cara, w.c.role_iz)
+    await this.Swarm_redeem(w, bob, w.c.music_iz)
+
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmRole_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 4)) return
+    let alice = this.SwarmRole_ident(w, 'Alice')
+    let cara = this.SwarmRole_ident(w, 'Cara')
+    let bob = this.SwarmRole_ident(w, 'Bob')
+    if (!alice || !cara || !bob) return
+    let peering = this.Swarm_peering(alice)
+    if (!peering) return
+    let pierC = peering.o({ Pier: cara.sc.prepub })[0]
+    let pierB = peering.o({ Pier: bob.sc.prepub })[0]
+    // #1 THE RAILS CARRY A ROLE: the MyCave redeem seals a mutual pier — the role Feature crossed the
+    //  same issuer door and token codec and hello that Music rides.
+    if (pierC && this.Swarm_pier_live(pierC, 'MyCave')) this.story_swear(w, 'a role invite rides the standing rails — the MyCave redeem seals a live pier with cross-signed MyCave grants')
+    // #2 ISOLATION BOTH WAYS ON BOTH PIERS: a Cave is not thereby a music friend and a music friend is
+    //  not thereby a body.
+    if (pierC && pierB && this.Swarm_pier_live(pierC, 'MyCave') && !this.Swarm_pier_live(pierC, 'Music') && this.Swarm_pier_live(pierB, 'Music') && !this.Swarm_pier_live(pierB, 'MyCave')) this.story_swear(w, 'the features isolate — a MyCave pier never satisfies a Music check and a Music pier never satisfies a MyCave check')
+    // #3 THE RECIPROCAL WEARS THE OFFERED FEATURE: a whole seal holds BOTH cross-signed grants and on
+    //  the role pier both say MyCave — derived from the claim; the pier-heal Music fallback never leaks
+    //   into the seal path (grant `by` is the FULL pub so the pair is counted not name-matched).
+    let role_grants = pierC ? pierC.o({ Grant: 'MyCave' }) : []
+    let wrong = pierC ? pierC.o({ Grant: 'Music' }) : []
+    if (pierC && role_grants.length === 2 && wrong.length === 0) this.story_swear(w, 'both halves of the seal wear the offered feature — two cross-signed MyCave grants and no Music grant rides the role pier')
+
+// SwarmRole_order — float A:SwarmRole to the front of H/* so the Run snap stays readable.
+async SwarmRole_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmRole') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+// ══ SwarmSeal — LinkDevice Phase 1: the symmetric brick that keeps the account transfer secret ═══════════
+//  Division (Portability_doc §10) moves the account Waft over the relay — an unauthenticated forwarder, so
+//   an eavesdropper is assumed — under a code-derived key.  Idento (Y.svelte) is ed25519 + SHA-256 ONLY: it
+//    signs and it hashes, it never keeps a secret, so the codebase had NO symmetric cipher at all.  Sealbox.ts
+//     (beside Grant.ts, imported above) is that one brick — WebCrypto AES-GCM under an HKDF-SHA-256 key, zero
+//      deps — and this Book gates its contract at the model layer (no wire, no Swarm spine, runs on any live
+//       browser runner where crypto.subtle is present):
+//   beat 2  fix the inputs — a stand-in invite code (the IKM), both pubs as the salt, a mini account snap
+//   beat 3  seal it TWICE + unseal both + tamper one + wrong-code one — all outcomes pinned as booleans
+//  THE DETERMINISM LAW'S CRYPTO COROLLARY: a fresh random IV per seal is MANDATORY (a fixed GCM nonce under
+//   one key is the catastrophic reuse break), so the ciphertext is non-deterministic and the Book asserts
+//    BEHAVIOUR — never a byte.  The only snapped number is the FRAME LENGTH (iv 12 + plaintext + tag 16, hex
+//     ×2 — fixed for a fixed plaintext), which proves a real frame was produced without pinning its content.
+//  THE DISCRIMINATION ([[adversarial-test-agent]]): the two seals of one plaintext must DIFFER (a dead IV
+//   flips it) yet BOTH unseal to the original (a broken cipher flips it); and both a flipped byte and a wrong
+//    code must THROW — a sealbox that half-decrypts a tampered frame, or ignores the key, flips the fails-closed
+//     witnesses.  This is the secrecy twin of MusuFloor's fails-closed vouch — one proves WHO said it, this
+//      proves it stays UNREADABLE.
+//  CONVENTION (Musu*/Swarm*): the world MUST be named SwarmSeal (do_fn_for dispatches by w.sc.w).
+
+SwarmSeal(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmSeal_drive,w,req
+        req%ok = 1
+
+SwarmSeal_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+SwarmSeal_note(w, sc):
+    let t = this.SwarmSeal_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async SwarmSeal_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.SwarmSeal_setup(w)
+        if (n === 3) await this.SwarmSeal_prove(w)
+    }
+    this.SwarmSeal_witness(w)
+    await this.SwarmSeal_order(w)
+
+// beat 2 — the fixed inputs.  The code stands in for whatever Phase 3's beacon agrees (a typed short code,
+//  or an ephemeral-pub agreement — the brick's contract holds either way); the salt is both pubs, a value
+//   an eavesdropper knows (that is what a salt is for — domain separation, not secrecy); the plaintext is a
+//    mini account snap so the frame length is a real account-shaped size.  All on .c — no secret in a snap.
+SwarmSeal_setup(w):
+    this.SwarmSeal_note(w, { reached: 'step_2' })
+    w.c.secret = 'linkdevice-code-7f3a2b'
+    w.c.salt = 'capPub_e1e1e1e1|cavePub_c0c0c0c0'
+    w.c.plain = 'Identity,prepub:c0c0c0c0c0c0c0c0\n  Peering,friendly:the cave\n  key:REDACTED-SECRET-MATERIAL'
+    w.c.set_up = 1
+
+// beat 3 — the four proofs, all async, all pinned as booleans a sync witness reads.  Nothing here that
+//  varies run to run reaches sc: the frames live on .c and only their (fixed) LENGTH is stamped.
+async SwarmSeal_prove(w):
+    this.SwarmSeal_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) return
+    let secret = w.c.secret
+    let salt = w.c.salt
+    let plain = w.c.plain
+    let frame1 = await seal(secret, salt, plain)
+    let frame2 = await seal(secret, salt, plain)
+    let back1 = await unseal(secret, salt, frame1)
+    let back2 = await unseal(secret, salt, frame2)
+    let row = { proved: 1, frame_hex: '' + frame1.length }
+    if (back1 === plain && back2 === plain) row.roundtrip = 1
+    if (frame1 !== frame2) row.fresh_iv = 1
+    // tamper: flip the last hex nibble of the frame — a single-bit change the GCM tag must reject.
+    let bad = frame1.slice(0, -1) + (frame1.endsWith('0') ? '1' : '0')
+    let caught_tamper = 0
+    try { await unseal(secret, salt, bad) } catch (e) { caught_tamper = 1 }
+    if (caught_tamper) row.tamper_caught = 1
+    // wrong code: a different IKM derives a different AES key — the tag check fails, unseal throws.
+    let caught_wrong = 0
+    try { let x = await unseal(secret + 'X', salt, frame1); if (x !== plain) caught_wrong = 1 } catch (e) { caught_wrong = 1 }
+    if (caught_wrong) row.wrongkey_caught = 1
+    this.SwarmSeal_note(w, row)
+
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmSeal_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    if (!w.c.set_up) return
+    let T = this.SwarmSeal_T(w)
+    let p = T.o({ proved: 1 })[0]
+    if (!p) return
+    // #1 THE ROUNDTRIP: unseal after seal returns the account whole — the core of a usable cipher.
+    if (+p.sc.roundtrip === 1) this.story_swear(w, 'the sealed account unseals whole — encrypt then decrypt under the code returns the exact account snap')
+    // #2 THE LIVE NONCE: two seals of one account differ yet both unseal — the fresh IV is real not a fixed
+    //  reused nonce (the AES-GCM catastrophe) and the difference costs nothing to correctness.
+    if (+p.sc.fresh_iv === 1 && +p.sc.roundtrip === 1) this.story_swear(w, 'each seal carries a fresh nonce — two seals of one account differ on the wire yet both unseal to it so the ciphertext leaks nothing by repetition')
+    // #3 FAILS CLOSED ON TAMPER: a flipped byte is refused — the GCM tag authenticates so a mangled account
+    //  crashes the open rather than half-decrypting.
+    if (+p.sc.tamper_caught === 1) this.story_swear(w, 'a tampered frame fails closed — a single flipped byte is refused by the tag and never half-decrypts into a mangled account')
+    // #4 THE CODE GATES: a wrong code cannot open the frame — the whole security rests here.
+    if (+p.sc.wrongkey_caught === 1) this.story_swear(w, 'the code is the gate — a wrong code derives a wrong key and the frame refuses to open under it')
+
+// SwarmSeal_order — float A:SwarmSeal to the front of H/* so the Run snap stays readable.
+async SwarmSeal_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmSeal') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+// ══ SwarmFerry — LinkDevice Phase 3 (the core): the whole account crosses a sealed channel, secret and all ══
+//  Division (Portability_doc §10) moves the account Waft to the new body as relay frames encrypted under a
+//   code-derived key.  Two proven halves compose here into that claim, at the model layer with no beacon and
+//    no wire (the QR + emoji-confirm are the remaining UI; the DATA CROSSING is the load-bearing part):
+//     • Swarm_export/import (SwarmStaple beat 8 proved export→import→export byte-identical, keypair and all)
+//     • Sealbox (SwarmSeal proved seal/unseal fails closed) — imported above.
+//   beat 2  Alice the Captain stands with a real account — Identity + Peering + keys + one self-issued Idzeug
+//            (account CONTENT that must survive, not a bare identity)
+//   beat 3  the ferry — export {secret} → SEAL → (the relay carries only the frame) → unseal → import into a
+//            fresh vessel; and a WRONG code at the far end is tried against the same frame
+//  THE DISCRIMINATION ([[adversarial-test-agent]]), the security claims this ceremony rests on:
+//   • the account crosses WHOLE — the vessel re-exports byte-identical to Alice's export (a lossy transfer flips it)
+//   • the SECRET never rides in clear — the sealed frame does NOT contain the private-key hex (a cleartext ferry flips it)
+//   • the CODE gates arrival — a wrong code cannot unseal so NO account lands at the far end (only the code-holder is made)
+//   • the keypair thaws right — the landed account keeps keys on .c and bears no pub/key in sc (the ride-.c-only invariant)
+//  CONVENTION (Musu*/Swarm*): the world MUST be named SwarmFerry.
+
+SwarmFerry(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmFerry_drive,w,req
+        req%ok = 1
+
+SwarmFerry_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+SwarmFerry_note(w, sc):
+    let t = this.SwarmFerry_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async SwarmFerry_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmFerry_stand(w)
+        if (n === 3) await this.SwarmFerry_cross(w)
+    }
+    this.SwarmFerry_witness(w)
+    await this.SwarmFerry_order(w)
+
+// beat 2 — Alice the Captain, a real account: fixed keys (seeded — the export repeats byte for byte), a
+//  pinned clock, and one self-issued Idzeug so the account carries CONTENT the ferry must preserve.
+async SwarmFerry_stand(w):
+    w i reached:step_2
+    w.sc.now = 1751700000
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmFerry-Alice')
+    let alice = this.Swarm_identity(acct, keys, 'Alice')
+    w.c.alice = alice
+    await this.Swarm_mint_idzeug(w, alice, { Music: 1, genre: 'Jazz' }, 'ferry_1')
+
+// beat 3 — the sealed crossing.  The code + salt stand in for Phase 2's beacon agreement (a typed short
+//  code or an ephemeral-pub exchange — the brick holds either way).  Everything the relay would see is the
+//   FRAME alone; the cleartext blob never leaves this function except through the seal.
+async SwarmFerry_cross(w):
+    w i reached:step_3
+    w.sc.now = 1751700010
+    if (!w.c.alice) return
+    let code = 'divide-code-4b8e1a'
+    let salt = 'captainPub|vesselPub'
+    let blob = await this.Swarm_export(w.c.alice, { secret: 1 })
+    let frame = await seal(code, salt, blob)
+    let row = { ferried: 1 }
+    // the wire hides the secret: the frame must not carry the private key hex an eavesdropper could lift.
+    let keyhex = w.c.alice.c.keys.key
+    if (keyhex && frame.indexOf(keyhex) < 0) row.secret_hidden = 1
+    // the far end, code in hand: unseal → import into a FRESH vessel account container.
+    let back = await unseal(code, salt, frame)
+    if (back === blob) row.blob_intact = 1
+    let vessel = w.oai({ Account: 1, of: 'Vessel' })
+    vessel.c.up = w
+    let landed = this.Swarm_import(vessel, back)
+    // the account crossed whole: the landed vessel re-exports byte-identical to Alice's own export.
+    let re = await this.Swarm_export(landed, { secret: 1 })
+    if (re === blob) row.whole = 1
+    // the keypair thawed onto .c and left no scalar behind (the ride-.c-only invariant survived transit).
+    if (landed.c.keys && landed.c.keys.key === keyhex && !landed.sc.key && !landed.sc.pub) row.keys_thawed = 1
+    // the far end WITHOUT the code: a wrong code cannot open the frame, so nothing lands.
+    let caught = 0
+    try { await unseal('wrong-code-000000', salt, frame) } catch (e) { caught = 1 }
+    if (caught) row.code_gated = 1
+    this.SwarmFerry_note(w, row)
+
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmFerry_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    let T = this.SwarmFerry_T(w)
+    let f = T.o({ ferried: 1 })[0]
+    if (!f) return
+    // #1 THE ACCOUNT CROSSES WHOLE: through seal and unseal and import the vessel re-exports byte-identical.
+    if (+f.sc.blob_intact === 1 && +f.sc.whole === 1) this.story_swear(w, 'the whole account crosses the sealed channel — through seal unseal and import the vessel re-exports byte-identical to the captain')
+    // #2 THE SECRET NEVER RIDES IN CLEAR: the relay frame carries no private key an eavesdropper could lift.
+    if (+f.sc.secret_hidden === 1) this.story_swear(w, 'the secret never rides in clear — the sealed frame the relay carries holds no private key for an eavesdropper to lift')
+    // #3 THE CODE GATES ARRIVAL: a wrong code cannot open the frame so no account is made at the far end.
+    if (+f.sc.code_gated === 1) this.story_swear(w, 'the code gates who is made — a wrong code cannot open the frame so no account lands at the far end')
+    // #4 THE KEYS RIDE .c ONLY, EVEN ACROSS TRANSIT: the landed account thaws its keypair onto .c and bears
+    //  no pub or key scalar in sc.
+    if (+f.sc.keys_thawed === 1) this.story_swear(w, 'the keys ride .c only even across transit — the landed account thaws its keypair onto .c and keeps no key scalar in its snap')
+
+// SwarmFerry_order — float A:SwarmFerry to the front of H/* so the Run snap stays readable.
+async SwarmFerry_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmFerry') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+// ══ EmojiConfirm — LinkDevice Phase 3 (the human gate): the SAS that catches a relay MITM ═══════════════
+//  The ferry (SwarmFerry) crosses an UNAUTHENTICATED relay: a code-derived key keeps the account secret, but
+//   secrecy is not authenticity — a machine sitting in the middle could hold two half-channels and read all.
+//    The last brick is a human check: both bodies fold the SAME transcript (their two pubs + the channel salt,
+//     in a fixed sorted order) through Emojiconfirm.ts and READ ALOUD the emoji row.  Equal rows ⇒ one channel,
+//      no MITM.  A spliced transcript (an attacker's pub swapped in) yields a DIFFERENT row — the humans notice.
+//   beat 2  fix two accounts' pubs + the salt — the true pair, and a MITM pair (attacker's pub on one side)
+//   beat 3  derive rows for both sides of the TRUE channel + both sides of the MITM channel — pin agreement
+//  DETERMINISM: sas_emojis is pure sha256 → alphabet fold, no IV, no clock — the rows repeat byte for byte.
+//   The snapped values are the agreement BOOLEANS and the row LENGTH (fixed count), never a raw emoji (a glyph
+//    round-trips a snap badly); the discrimination is entirely in the true-agree / mitm-diverge contrast.
+//  THE DISCRIMINATION ([[adversarial-test-agent]]): the two honest sides MUST agree (a broken fold flips it)
+//   AND the MITM side MUST diverge from the honest row (a fold that ignores the pubs — hashing only the salt —
+//    would agree even under attack, silently passing the very thing this gate exists to catch).  This is the
+//     authenticity twin of SwarmSeal's secrecy: that proved it stays UNREADABLE, this proves you know WHO.
+//  CONVENTION (Musu*/Swarm*): the world MUST be named EmojiConfirm.
+
+EmojiConfirm(A,w):
+    w oai %req:wrangle,eternal
+        await &EmojiConfirm_drive,w,req
+        req%ok = 1
+
+EmojiConfirm_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+EmojiConfirm_note(w, sc):
+    let t = this.EmojiConfirm_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async EmojiConfirm_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.EmojiConfirm_setup(w)
+        if (n === 3) await this.EmojiConfirm_prove(w)
+    }
+    this.EmojiConfirm_witness(w)
+    await this.EmojiConfirm_order(w)
+
+// beat 2 — the pubs.  cap + cave are the honest pair; mallory is the interposer whose pub replaces the peer's
+//  on ONE side of the channel (the classic relay MITM).  The salt is public channel data both honest sides see.
+//   All on .c — pubs are not secret, but they are inputs, and inputs stay off the snap here for tidiness.
+EmojiConfirm_setup(w):
+    this.EmojiConfirm_note(w, { reached: 'step_2' })
+    w.c.capPub = 'cap_11111111111111111111111111111111'
+    w.c.cavePub = 'cave_2222222222222222222222222222222'
+    w.c.malPub = 'mal_9999999999999999999999999999999'
+    w.c.salt = 'chan_salt_a1b2c3'
+    w.c.set_up = 1
+
+// the transcript is SORTED so both bodies build the identical string regardless of who speaks first — the
+//  symmetry the SAS depends on.  A channel is the two endpoint pubs + the salt.
+EmojiConfirm_chan(w, x, y):
+    let pair = [x, y].sort()
+    return sas_transcript([pair[0], pair[1], w.c.salt])
+
+// beat 3 — four rows: the two HONEST sides (cap↔cave, each derives from the true pair) which must match, and
+//  the MITM view (cap↔mallory) which must NOT match the honest row.  Pure — no async state but the sha256.
+async EmojiConfirm_prove(w):
+    this.EmojiConfirm_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) return
+    // honest: both endpoints fold the SAME true pair — sorted, so cap's build == cave's build.
+    let honest = this.EmojiConfirm_chan(w, w.c.capPub, w.c.cavePub)
+    let rowCap = await sas_row(honest)
+    let rowCave = await sas_row(honest)
+    // MITM: cap talks to mallory (thinking it is cave); mallory talks to cave.  Cap's half-channel folds
+    //  cap+mallory — a different pair, so a different row than the honest one cave would read.
+    let mitm = this.EmojiConfirm_chan(w, w.c.capPub, w.c.malPub)
+    let rowMitm = await sas_row(mitm)
+    let row = { proved: 1, row_len: '' + rowCap.length }
+    if (sas_agree(rowCap, rowCave)) row.honest_agree = 1
+    if (!sas_agree(rowCap, rowMitm)) row.mitm_diverge = 1
+    // and the gate is non-trivial: an empty/empty compare must be REFUSED (agree on nothing is not agreement).
+    if (!sas_agree('', '')) row.empty_refused = 1
+    this.EmojiConfirm_note(w, row)
+
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+EmojiConfirm_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    if (!w.c.set_up) return
+    let T = this.EmojiConfirm_T(w)
+    let p = T.o({ proved: 1 })[0]
+    if (!p) return
+    // #1 HONEST SIDES AGREE: both endpoints of the true channel read the same emoji row — the gate passes
+    //  when there is no interposer.
+    if (+p.sc.honest_agree === 1) this.story_swear(w, 'both honest bodies read the same emoji row — the same transcript folds to the same short authentication string so a clean channel confirms')
+    // #2 THE MITM DIVERGES: an interposed pub yields a different row — the humans SEE the mismatch and abort.
+    if (+p.sc.mitm_diverge === 1) this.story_swear(w, 'an interposed pub changes the row — a relay MITM cannot forge the emoji string because it depends on both endpoint keys so the humans see the mismatch')
+    // #3 AGREEMENT IS NON-TRIVIAL: comparing nothing to nothing is refused — the gate is a real check.
+    if (+p.sc.empty_refused === 1) this.story_swear(w, 'empty agrees with nothing — comparing two empty rows is refused so the confirmation is a genuine match not a vacuous pass')
+
+// EmojiConfirm_order — float A:EmojiConfirm to the front of H/* so the Run snap stays readable.
+async EmojiConfirm_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'EmojiConfirm') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

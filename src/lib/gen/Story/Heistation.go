@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '13833d8862172583~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return 'f304113c5cdc1b22~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -4991,6 +4991,536 @@ MusuNeGrind_witness(w) {
     // #6 THE MISS TRAVELS — the half of §3.8 that holds today.  The other half is owed; see the scene.
     let dc = T.o({ disclaim: 1 })[0]
     if (dc && dc.sc.told && !T.oa({ see: 'the source told the sink it cannot resolve an id — the miss travels instead of leaving the asker to guess at silence' })) this.MusuNeGrind_note(w, { see: 'the source told the sink it cannot resolve an id — the miss travels instead of leaving the asker to guess at silence' })
+
+},
+// ══ MusuPress — the SoundPool press v1 gate: a byte-for-byte copy through the ONE landing door ═══════════
+//  Ra_press v1 (Ghost/M/Ra.g, Portability_doc §6) reads an Original off its nav, writes it byte-identical
+//   into the pool mount, and catalogs the copy through Heist_catalog_land — never a parallel minter.  This
+//    Book gates exactly that contract at the MODEL layer: the nav is an in-memory stub the Book hands the
+//     press (bin_read serves the fixture bytes; bin_write records what landed), so the Book is
+//      deterministic, needs no FSA|OPFS, and runs on ANY runner, caveat:0.  What the stub costs is honesty
+//       about scope: the MOUNT routing (pool/… → OPFS) is proven by its own machinery, not here.
+//  THE DISCRIMINATION (non-vacuity — [[adversarial-test-agent]]): beat 4 presses the SAME track a second
+//   time; the pool shelf must hold ONE card, not a twin ("there is only one of anything" — the find-or-
+//    create door doing its work).  And the byte-faithful witness compares the WRITTEN bytes to the source
+//     byte by byte — drop the copy for a re-encode (the v2 mistake pressed into v1) and it flips.
+//  CONVENTION (Musu*): the world MUST be named MusuPress.
+
+MusuPress(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuPress_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+MusuPress_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuPress_note(w, sc) {
+    let t = this.MusuPress_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+// MusuPress_drive — ONE scene per beat off a req-local did_step (the Musu family style): setup (2),
+//  press (3), re-press = the twin control (4).  The witness runs every pass so each %see fires the first
+//   pass its truth holds.
+async MusuPress_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuPress_setup(w)
+        if (n === 3) await this.MusuPress_press(w)
+        if (n === 4) await this.MusuPress_repress(w)
+    }
+    this.MusuPress_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuPress_setup — a library shelf holding ONE Original card whose bytes live on the stub nav, and an
+//  empty pool shelf for the press to land into.  The fixture bytes are a fixed arithmetic pattern (no
+//   randomness — the fixture law), 64 bytes, held on .c only (an object in .sc is fatal at encode).
+MusuPress_setup(w) {
+    this.MusuPress_note(w, { reached: 'step_2' })
+    let lib = w.i({ Library: 1, name: 'presslib' })
+    lib.c.up = w
+    w.c.lib = lib
+    let orig = lib.i({ Record: 1, id: 'o1', artist: 'Auteur', title: 'One', path: 'music/a/one.wav', ext: 'wav' })
+    orig.c.up = lib
+    let pool = w.i({ Library: 1, name: 'pool' })
+    pool.c.up = w
+    w.c.pool = pool
+    let src = new Uint8Array(64)
+    for (let i = 0; i < 64; i++) { src[i] = (i * 7 + 13) % 251 }
+    w.c.press_bytes = src
+    let writes = {}
+    w.c.pool_writes = writes
+    // the stub nav — the press's whole nav contract (bin_read the source, bin_write the landing) plus
+    //  the read_file/write_file pair Berth_open needs for the newlyadded ledger (fresh doc: read null).
+    let nav = {}
+    nav.bin_read = async (d, f) => (d === 'music/a' && f === 'one.wav') ? src : null
+    nav.bin_write = async (d, f, b) => { writes[d + '/' + f] = (b instanceof Uint8Array) ? b : new Uint8Array(b) }
+    nav.read_file = async (d, f) => null
+    nav.write_file = async (d, f, s) => { }
+    nav.dir = async (p) => null
+    w.c.pnav = nav
+    w.c.set_up = 1
+
+},
+// MusuPress_press — the one press.  Outcomes pinned as a note: the card's identity coincides with the
+//  Original's (v1 — no of: and no grade:, a copy of itself needs no cross-fidelity join), the path is the
+//   Original's minus its base, the written bytes match the source byte for byte, and the card carries a
+//    64-hex body_hash of what was written.
+async MusuPress_press(w) {
+    this.MusuPress_note(w, { reached: 'step_3' })
+    let r = await this.Ra_press(w, w.c.pnav, w.c.lib, w.c.pool, 'o1')
+    let row = { pressed: 1 }
+    if (r && r.fail) { row.fail = r.fail }
+    if (r && r.card) {
+        row.ok = 1
+        row.id = r.card.sc.id
+        row.path = r.card.sc.path
+        if (!r.card.sc.of) { row.no_of = 1 }
+        if (!r.card.sc.grade) { row.no_grade = 1 }
+        if (/^[0-9a-f]{64}$/.test('' + (r.card.sc.body_hash || ''))) { row.hashed = 1 }
+        let wrote = w.c.pool_writes['pool/a/one.wav']
+        if (wrote && wrote.length === w.c.press_bytes.length) {
+            let same = 1
+            for (let i = 0; i < wrote.length; i++) { if (wrote[i] !== w.c.press_bytes[i]) { same = 0 } }
+            if (same) { row.byte_faithful = 1 }
+        }
+    }
+    this.MusuPress_note(w, row)
+
+},
+// MusuPress_repress — press the SAME track again: the find-or-create door must land on the standing card,
+//  never mint a twin.  The count walks the pool shelf's paged Mag (Ra_recs) so a twin hiding on a later
+//   page is counted, not missed — the exact shape of the 2026-08-07 twin disease.
+async MusuPress_repress(w) {
+    this.MusuPress_note(w, { reached: 'step_4' })
+    await this.Ra_press(w, w.c.pnav, w.c.lib, w.c.pool, 'o1')
+    let all = this.Ra_recs(w.c.pool)
+    let mine = all.filter((r) => r.sc.id === 'o1')
+    this.MusuPress_note(w, { repressed: 1, cards: '' + mine.length })
+
+},
+// ── the witness — %see gated on TRUTH not beat number, once-noticed (no commas; em-dashes). ──
+MusuPress_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 4)) return
+    if (!w.c.set_up) return
+    let T = this.MusuPress_T(w)
+    let p = T.o({ pressed: 1 })[0]
+    // #1 THE ONE DOOR: the press landed a pool card through Heist_catalog_land — id coincides with the
+    //  Original (v1) and the path is the Original's own minus its base.
+    if (p && +p.sc.ok === 1 && p.sc.id === 'o1' && p.sc.path === 'a/one.wav') this.story_swear(w, 'the press lands through the one catalog door — the pool card wears the original id and its own pool-relative path')
+    // #2 BYTE-FAITHFUL: what bin_write received is the source byte for byte — the v1 contract; a re-encode
+    //  smuggled into v1 flips this.
+    if (p && +p.sc.byte_faithful === 1) this.story_swear(w, 'a v1 press is a byte-for-byte copy — the bytes written to the pool are identical to the original bytes')
+    // #3 THE ELISION: no of: and no grade: on a v1 card — a copy of itself needs no cross-fidelity join.
+    if (p && +p.sc.no_of === 1 && +p.sc.no_grade === 1 && +p.sc.hashed === 1) this.story_swear(w, 'a copy of itself needs no cross-fidelity join — the v1 card elides of and grade and carries the hash of what was written')
+    // #4 NO TWIN: pressing the same track twice leaves ONE card on the pool shelf — the find-or-create
+    //  door holding "there is only one of anything" against a repeat.
+    let rp = T.o({ repressed: 1 })[0]
+    if (rp && rp.sc.cards === '1') this.story_swear(w, 'pressing twice yields one card not a twin — the pool shelf holds only one of anything')
+
+},
+// ══ MusuPressLossy — the pool press v2: an ogg128 rendition lands JOINED to its Original, not a copy ═════════
+//  Ra_press v2 (Ghost/M/Ra.g, opts.lofi) presses a SMALLER lossy rendition into the pool.  Unlike v1 (a
+//   byte copy that coincides with the Original), a lofi press is a DIFFERENT thing: its bytes are transcoded,
+//    so the pool row wears its OWN id (the enid of the ogg bytes — identity is per shelf), of:<origId> the
+//     cross-fidelity join, grade:'ogg128', and its name ends .ogg whatever the source was.  The real transcode
+//      is Cave-side and NOT bit-reproducible (Ra.g's Ra_transcode_* pump), so the Book INJECTS the renderer
+//       (opts.render) with a pinned fake-ogg pattern and asserts SHAPE — never the transcoded bytes, which by
+//        fixture law cannot be pinned across the real encoder.  What IS byte-checkable: the RENDER's own output
+//         landed faithfully (the press writes exactly what the renderer returned), which is the v2 contract.
+//  THE DISCRIMINATION ([[adversarial-test-agent]]): the lofi id must DIFFER from the Original's (a v1-style
+//   coincide flips it) and carry of: + grade (a bare copy flips them); the path must be .ogg (a kept .wav
+//    flips it); and a re-press must find the ONE lofi card by its of:+grade join (a twin flips the control).
+//  CONVENTION (Musu*): the world MUST be named MusuPressLossy.
+
+MusuPressLossy(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuPressLossy_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+MusuPressLossy_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuPressLossy_note(w, sc) {
+    let t = this.MusuPressLossy_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+async MusuPressLossy_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuPressLossy_setup(w)
+        if (n === 3) await this.MusuPressLossy_press(w)
+        if (n === 4) await this.MusuPressLossy_repress(w)
+    }
+    this.MusuPressLossy_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuPressLossy_setup — a library Original at a .wav path + an empty pool + a stub nav (bin_read serves
+//  the source wav bytes bin_write records the landing) + a PINNED renderer: a fixed ogg-ish pattern so the
+//   lofi enid and the body_hash repeat run to run (the fixture law — the REAL encoder never runs here).
+MusuPressLossy_setup(w) {
+    this.MusuPressLossy_note(w, { reached: 'step_2' })
+    let lib = w.i({ Library: 1, name: 'losslib' })
+    lib.c.up = w
+    w.c.lib = lib
+    let orig = lib.i({ Record: 1, id: 'o1', artist: 'Auteur', title: 'One', path: 'music/a/one.wav', ext: 'wav' })
+    orig.c.up = lib
+    let pool = w.i({ Library: 1, name: 'pool' })
+    pool.c.up = w
+    w.c.pool = pool
+    let src = new Uint8Array(64)
+    for (let i = 0; i < 64; i++) { src[i] = (i * 7 + 13) % 251 }
+    w.c.src_bytes = src
+    // the pinned rendition: SMALLER than the source (32 vs 64 — a lossy press shrinks) and a distinct
+    //  pattern, so its enid cannot accidentally equal the source's.
+    let ogg = new Uint8Array(32)
+    for (let i = 0; i < 32; i++) { ogg[i] = (i * 11 + 5) % 251 }
+    w.c.ogg_bytes = ogg
+    w.c.render = async (b) => ogg
+    let writes = {}
+    w.c.pool_writes = writes
+    let nav = {}
+    nav.bin_read = async (d, f) => (d === 'music/a' && f === 'one.wav') ? src : null
+    nav.bin_write = async (d, f, b) => { writes[d + '/' + f] = (b instanceof Uint8Array) ? b : new Uint8Array(b) }
+    nav.read_file = async (d, f) => null
+    nav.write_file = async (d, f, s) => { }
+    nav.dir = async (p) => null
+    w.c.pnav = nav
+    w.c.set_up = 1
+
+},
+// MusuPressLossy_press — the one lofi press.  Outcomes pinned: the card's id is a 16-hex enid DIFFERENT
+//  from the Original (its own bytes), of:'o1' the join, grade 'ogg128', path 'a/one.ogg', lofi flag, and
+//   the bytes written to the pool are the RENDER's output byte for byte (the v2 faithfulness contract).
+async MusuPressLossy_press(w) {
+    this.MusuPressLossy_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) return
+    let r = await this.Ra_press(w, w.c.pnav, w.c.lib, w.c.pool, 'o1', { lofi: 1, render: w.c.render })
+    let row = { pressed: 1 }
+    if (r && r.fail) { row.fail = r.fail }
+    if (r && r.card) {
+        row.ok = 1
+        row.id = r.card.sc.id
+        row.of = r.card.sc.of
+        row.grade = r.card.sc.grade
+        row.path = r.card.sc.path
+        if (r.card.sc.lofi) { row.lofi = 1 }
+        if (r.card.sc.id !== 'o1' && /^[0-9a-f]{16}$/.test('' + (r.card.sc.id || ''))) { row.own_enid = 1 }
+        if (/^[0-9a-f]{64}$/.test('' + (r.card.sc.body_hash || ''))) { row.hashed = 1 }
+        let wrote = w.c.pool_writes['pool/a/one.ogg']
+        if (wrote && wrote.length === w.c.ogg_bytes.length) {
+            let same = 1
+            for (let i = 0; i < wrote.length; i++) { if (wrote[i] !== w.c.ogg_bytes[i]) { same = 0 } }
+            if (same) { row.render_faithful = 1 }
+        }
+    }
+    this.MusuPressLossy_note(w, row)
+
+},
+// MusuPressLossy_repress — press the SAME track's lofi again: the of:+grade join must find the standing
+//  card (its enid is deterministic off the pinned render), never mint a twin.  Count walks the paged Mag.
+async MusuPressLossy_repress(w) {
+    this.MusuPressLossy_note(w, { reached: 'step_4' })
+    if (!w.c.set_up) return
+    await this.Ra_press(w, w.c.pnav, w.c.lib, w.c.pool, 'o1', { lofi: 1, render: w.c.render })
+    let all = this.Ra_recs(w.c.pool)
+    let mine = all.filter((r) => r.sc.of === 'o1' && r.sc.grade === 'ogg128')
+    this.MusuPressLossy_note(w, { repressed: 1, cards: '' + mine.length })
+
+},
+// ── the witness — %see gated on TRUTH not beat number, once-noticed (no commas; em-dashes). ──
+MusuPressLossy_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 4)) return
+    if (!w.c.set_up) return
+    let T = this.MusuPressLossy_T(w)
+    let p = T.o({ pressed: 1 })[0]
+    // #1 A DIFFERENT THING JOINED: the lofi card wears its OWN enid (not the Original's) with of:'o1' the
+    //  cross-fidelity join and grade 'ogg128' — a rendition, not a copy of itself.
+    if (p && +p.sc.ok === 1 && +p.sc.own_enid === 1 && p.sc.of === 'o1' && p.sc.grade === 'ogg128') this.story_swear(w, 'a lofi press is a different thing joined to its original — the pool card wears its own enid with of pointing back and grade ogg128')
+    // #2 THE OGG NAME: the container derives from the lofi claim not the source path — the copy lands .ogg
+    //  even though the original was .wav — and it carries the flag and a body hash of what was rendered.
+    if (p && p.sc.path === 'a/one.ogg' && +p.sc.lofi === 1 && +p.sc.hashed === 1) this.story_swear(w, 'the rendition lands as an ogg — the container follows the lofi claim not the wav source and the card flags lofi and hashes the rendered bytes')
+    // #3 RENDER-FAITHFUL: what reached the pool is the renderer's output byte for byte — the v2 contract
+    //  (the real encoder is not bit-reproducible so this pins the RENDER not the transcode).
+    if (p && +p.sc.render_faithful === 1) this.story_swear(w, 'the pool holds exactly what the renderer produced — the press writes the rendition byte for byte where a byte-copy of the source would land the wrong bytes')
+    // #4 NO TWIN: a second lofi press of the same track finds the one card by its of and grade join.
+    let rp = T.o({ repressed: 1 })[0]
+    if (rp && rp.sc.cards === '1') this.story_swear(w, 'pressing the same rendition twice yields one card not a twin — the of and grade join finds the standing lofi holding')
+
+},
+// ══ MusuQuarter — the Quartermaster's sit-down: goal-stash → diff → want-list — and then it RESTS ═════════
+//  The pool-steward (Ra.g's Quartermaster region, Portability_doc §6): replication ignores the pool, so the
+//   steward decides what a good stash is.  It PROPOSES and the flows DISPOSE — this Book proves the whole
+//    surface at the model layer with not one byte anywhere: a Jam ledger of taste (Like 3 · Grab 2 · Spin 1),
+//     a library of held Originals, a pool with one right and one stale resident, cap 3.
+//  THE DISCRIMINATION ([[adversarial-test-agent]]): beat 4 re-sits an UNCHANGED world — the same want ROWS
+//   must stand (zero mint, zero drop: "once it has a good stash made, that's your mobile device set for a
+//    while"); a steward that re-mints on every sit flips it.  Beat 5 shifts the taste — the displaced press
+//     want must DROP; a steward that only accretes flips that.
+//  CONVENTION (Musu*): the world MUST be named MusuQuarter.
+
+MusuQuarter(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuQuarter_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+MusuQuarter_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuQuarter_note(w, sc) {
+    let t = this.MusuQuarter_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+// one scene per beat off a req-local did_step (the family style): setup (2), the sit-down (3), the
+//  unchanged re-sit (4), the taste shift (5).  The witness runs every pass.
+async MusuQuarter_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuQuarter_setup(w)
+        if (n === 3) this.MusuQuarter_sit(w)
+        if (n === 4) this.MusuQuarter_quiesce(w)
+        if (n === 5) this.MusuQuarter_shift(w)
+    }
+    this.MusuQuarter_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuQuarter_setup — the world the steward reads: a library holding o1 o2 o3, a pool already holding
+//  o1 (right — in the goal, stays quiet) and z9 (stale — nothing wants it), and one Jam session whose
+//   events score o1 at 4 (like+spin) and f1 at 4 (like+spin — a REPUTATION track: no library card)
+//    and o2 at 3 (grab+spin).  o3 is unplayed — beat 5's shift is its entrance.
+MusuQuarter_setup(w) {
+    this.MusuQuarter_note(w, { reached: 'step_2' })
+    let lib = w.i({ Library: 1, name: 'quarterlib' })
+    lib.c.up = w
+    w.c.lib = lib
+    for (const t of [['o1', 'One'], ['o2', 'Two'], ['o3', 'Three']]) {
+        let r = lib.i({ Record: 1, id: t[0], title: t[1] })
+        r.c.up = lib
+    }
+    let pool = w.i({ Library: 1, name: 'pool' })
+    pool.c.up = w
+    w.c.pool = pool
+    for (const id of ['o1', 'z9']) {
+        let r = pool.i({ Record: 1, id: id })
+        r.c.up = pool
+    }
+    let jam = this.Jam_home(lib, 'pal')
+    let rec = (id, title) => ({ sc: { id: id, title: title } })
+    this.Jam_like(jam, rec('o1', 'One'))
+    this.Jam_spin(jam, rec('o1', 'One'))
+    this.Jam_event(jam, 'Grab', rec('o2', 'Two'))
+    this.Jam_spin(jam, rec('o2', 'Two'))
+    this.Jam_like(jam, rec('f1', 'Faraway'))
+    this.Jam_spin(jam, rec('f1', 'Faraway'))
+    w.c.set_up = 1
+
+},
+// MusuQuarter_sit — the first sit-down.  Expected: goal f1 o1 o2 (score desc then id asc — f1 and o1
+//  tie at 4 and the id breaks it); wants = pull f1 (reputation) + press o2 (held) + evict z9 (stale);
+//   o1 pooled-and-wanted stays QUIET.  The whole outcome pinned as one note row.
+MusuQuarter_sit(w) {
+    this.MusuQuarter_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) return
+    let r = this.Ra_quarter(w, w.c.lib, w.c.pool, w.c.lib, 3)
+    let row = { sat: 1, goal: r.goal.map((g) => g.id).join(' '), wants: '' + r.wants }
+    let out = w.o({ Provisions: 1 })[0]
+    if (out) {
+        if (out.o({ Want: 1, of: 'f1', do: 'pull' }).length === 1) row.pull_f1 = 1
+        if (out.o({ Want: 1, of: 'o2', do: 'press' }).length === 1) row.press_o2 = 1
+        if (out.o({ Want: 1, of: 'z9', do: 'evict' }).length === 1) row.evict_z9 = 1
+        if (out.o({ Want: 1, of: 'o1' }).length === 0) row.o1_quiet = 1
+    }
+    this.MusuQuarter_note(w, row)
+
+},
+// MusuQuarter_quiesce — the same world re-sits.  The identical rows must STAND (marked on .c before
+//  the sit; still marked and still three after) — the steward at rest mints nothing and drops nothing.
+MusuQuarter_quiesce(w) {
+    this.MusuQuarter_note(w, { reached: 'step_4' })
+    if (!w.c.set_up) return
+    let out = w.o({ Provisions: 1 })[0]
+    if (!out) return
+    for (const want of out.o({ Want: 1 })) want.c.mark = 1
+    this.Ra_quarter(w, w.c.lib, w.c.pool, w.c.lib, 3)
+    let rows = out.o({ Want: 1 })
+    let kept = rows.filter((r) => r.c.mark === 1)
+    let row = { resat: 1, wants: '' + rows.length }
+    if (rows.length === 3 && kept.length === 3) row.stable = 1
+    this.MusuQuarter_note(w, row)
+
+},
+// MusuQuarter_shift — the taste moves: o3 gets a like and a spin (score 4) and displaces o2 (3) from
+//  the cap-3 goal.  The re-sit must mint press o3 and DROP the stale press o2 while pull f1 and
+//   evict z9 stand on — the want-list follows the stash, never merely accretes.
+MusuQuarter_shift(w) {
+    this.MusuQuarter_note(w, { reached: 'step_5' })
+    if (!w.c.set_up) return
+    let jam = this.Jam_home(w.c.lib, 'pal')
+    let rec = (id, title) => ({ sc: { id: id, title: title } })
+    this.Jam_like(jam, rec('o3', 'Three'))
+    this.Jam_spin(jam, rec('o3', 'Three'))
+    let r = this.Ra_quarter(w, w.c.lib, w.c.pool, w.c.lib, 3)
+    let out = w.o({ Provisions: 1 })[0]
+    let row = { shifted: 1, goal: r.goal.map((g) => g.id).join(' '), wants: '' + r.wants }
+    if (out) {
+        if (out.o({ Want: 1, of: 'o3', do: 'press' }).length === 1) row.press_o3 = 1
+        if (out.o({ Want: 1, of: 'o2' }).length === 0) row.o2_gone = 1
+        if (out.o({ Want: 1, of: 'f1', do: 'pull' }).length === 1) row.pull_stands = 1
+        if (out.o({ Want: 1, of: 'z9', do: 'evict' }).length === 1) row.evict_stands = 1
+    }
+    this.MusuQuarter_note(w, row)
+
+},
+// ── the witness — %see gated on TRUTH not beat number, once-noticed (no commas; em-dashes). ──
+MusuQuarter_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 5)) return
+    if (!w.c.set_up) return
+    let T = this.MusuQuarter_T(w)
+    let s = T.o({ sat: 1 })[0]
+    // #1 THE GOAL: cap-sized and deterministically ordered — score descending then id ascending.
+    if (s && s.sc.goal === 'f1 o1 o2') this.story_swear(w, 'the steward computes a cap-sized goal in a deterministic order — a fave outranks a mere spin and a tie breaks on the id')
+    // #2 PROPOSES NOT DISPOSES: three wants — press for the held track pull for the reputation track
+    //  evict for the stale resident — and the pooled-and-wanted track stays quiet.
+    if (s && +s.sc.pull_f1 === 1 && +s.sc.press_o2 === 1 && +s.sc.evict_z9 === 1 && +s.sc.o1_quiet === 1) this.story_swear(w, 'the steward proposes and the flows dispose — press for the held pull for the reputation evict for the stale and the well-pooled track draws no want at all')
+    let q = T.o({ resat: 1 })[0]
+    // #3 THE REST: an unchanged world re-sits to the SAME rows — zero mint and zero drop.
+    if (q && +q.sc.stable === 1) this.story_swear(w, 'a good stash stays the stash — an unchanged world re-sits to the very same want rows and the steward mints nothing')
+    let h = T.o({ shifted: 1 })[0]
+    // #4 THE SHIFT: fresh taste displaces the weakest want and the stale row DROPS — never mere accretion.
+    if (h && +h.sc.press_o3 === 1 && +h.sc.o2_gone === 1 && +h.sc.pull_stands === 1 && +h.sc.evict_stands === 1) this.story_swear(w, 'a shifted taste shifts the stash — the newcomer takes the press and the displaced want drops while the standing wants stand')
+
+},
+// ══ MusuFloor — the trust floor's two unbooked planks: the pinned holdings vocabulary + fails-closed ══════
+//  Portability_doc §12 names the one invariant owed a Book: %MusuThem never promotes off-vouch.  The DOOR
+//   half is already gated — MusuBreach drives the swapped-manifest refusal end to end.  What no Book pins:
+//   (a) THE STRUCTURAL FLOOR — Ra_holding_keys() is the one authority on servable mainkeys and gossip
+//       vocabulary (%MusuThem the crate · %Jam the ledger · %Card the listing · %Caper the operation) must
+//        never enter it.  Widen that set carelessly (a pool mainkey minted someday) and every serve seam
+//         silently starts serving gossip — this Book flips THAT day, at the one function where it happens.
+//   (b) THE MALFORMED VOUCH, fired from inside a REAL %MusuThem home (Ra_home_them's crate — the gossip
+//       side's actual shape, not a scratch mirror): a husk CLAIMING an origin (`by`) with no signature at
+//        all is the fails-closed branch (Heist_vouch_ok's first return — MusuBreach forged a sig; nobody
+//         drives the missing-sig read).  The door must refuse it before a single want and the library must
+//          gain nothing.
+//  CONVENTION (Musu*): the world MUST be named MusuFloor.
+
+MusuFloor(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuFloor_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+MusuFloor_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuFloor_note(w, sc) {
+    let t = this.MusuFloor_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+// one scene per beat: the crate and its malformed guest (2), the door + the floor asserts (3).
+async MusuFloor_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuFloor_setup(w)
+        if (n === 3) await this.MusuFloor_door(w)
+    }
+    this.MusuFloor_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuFloor_setup — the real gossip-side shape: a %MusuThem home for a friend (Ra_home_them mints the
+//  crate + stock shelf) whose stock holds ONE husk that CLAIMS an origin (`by`) but carries no vouch at
+//   all — exactly what a hostile live-cast whisper could seed.  Beside it an empty own library the door
+//    must keep empty.
+MusuFloor_setup(w) {
+    this.MusuFloor_note(w, { reached: 'step_2' })
+    let mir = this.Ra_home_them(w, 'e1e1e1e1e1e1e1e1')
+    w.c.mir = mir
+    let husk = mir.i({ Record: 1, id: 'g1', artist: 'Ghostly', title: 'Whisper', by: 'e1e1e1e1e1e1e1e1' })
+    husk.c.up = mir
+    let lib = w.i({ Library: 1, name: 'floorlib' })
+    lib.c.up = w
+    w.c.lib = lib
+    w.c.set_up = 1
+
+},
+// MusuFloor_door — run the REAL offer door (Heist_beat) over the crate: the by-with-no-sig husk is the
+//  malformed vouch and must refuse BEFORE the pull (the refusal branch never touches rx|nav — stub-null
+//   is honest).  Then pin the floor: the holdings vocabulary and the gossip mainkeys held out of it.
+async MusuFloor_door(w) {
+    this.MusuFloor_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) return
+    let job = w.i({ heist: 1, at: 'floorgate' })
+    job.c.up = w
+    await this.Heist_beat(w, null, null, null, job, w.c.lib, w.c.mir, null, 'm')
+    let row = { doored: 1 }
+    if (+(job.sc.unvouched || 0) === 1) row.refused = 1
+    if (job.o({ unvouched: 1 }).some((u) => u.sc.tune === 'Ghostly — Whisper')) row.named = 1
+    if (w.c.mir.o({ Record: 1 }).length === 0) row.husk_dropped = 1
+    if (this.Ra_recs(w.c.lib).length === 0) row.lib_clean = 1
+    this.MusuFloor_note(w, row)
+    let floor = { floored: 1 }
+    if (this.Ra_holding_keys().join(' ') === 'Record') floor.pinned = 1
+    let gossip = ['MusuThem', 'MusuSelf', 'Jam', 'Card', 'Caper', 'Spin', 'Like', 'Grab']
+    if (gossip.every((k) => { let q = {}; q[k] = 1; return !this.Ra_is_holding_sc(q) })) floor.gossip_out = 1
+    if (this.Ra_is_holding_sc({ Record: 1 })) floor.record_in = 1
+    this.MusuFloor_note(w, floor)
+
+},
+// ── the witness — %see gated on TRUTH not beat number, once-noticed (no commas; em-dashes). ──
+MusuFloor_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    if (!w.c.set_up) return
+    let T = this.MusuFloor_T(w)
+    let d = T.o({ doored: 1 })[0]
+    // #1 FAILS CLOSED IN THE CRATE: a by-with-no-sig husk inside a real friends home refuses at the door —
+    //  named and dropped — and the library gains nothing.
+    if (d && +d.sc.refused === 1 && +d.sc.named === 1 && +d.sc.husk_dropped === 1 && +d.sc.lib_clean === 1) this.story_swear(w, 'a claimed origin with no vouch fails closed inside the friends crate — the door names and drops the husk and the library gains nothing')
+    let f = T.o({ floored: 1 })[0]
+    // #2 THE PINNED VOCABULARY: Record alone is servable — the gossip mainkeys are held out of the set at
+    //  the one function that answers the question.
+    if (f && +f.sc.pinned === 1 && +f.sc.gossip_out === 1 && +f.sc.record_in === 1) this.story_swear(w, 'the holdings vocabulary is pinned — Record alone serves and no gossip mainkey enters the set that every serve seam asks')
 
 },
 

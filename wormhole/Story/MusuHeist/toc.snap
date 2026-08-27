@@ -5,10 +5,7 @@ story:MusuHeist
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=11.514
-      sample=12.559,at=1786279129
-      sample=13.774,at=1786620591
-      sample=13.774,at=1786620684
+    TimeTotal:beliefs,avg=10.971
       sample=13.774,at=1786620687
       sample=13.774,at=1786620688
       sample=13.774,at=1786620689
@@ -16,10 +13,10 @@ story:MusuHeist
       sample=8.964,at=1786620752
       sample=9.149,at=1786623178
       sample=9.902,at=1787354005
-    TimeTotal:step,avg=0.523
-      sample=0.571,at=1786279129
-      sample=0.626,at=1786620591
-      sample=0.626,at=1786620684
+      sample=11.504,at=1787789410
+      sample=11.504,at=1787789529
+      sample=11.675,at=1787789566
+    TimeTotal:step,avg=0.499
       sample=0.626,at=1786620687
       sample=0.626,at=1786620688
       sample=0.626,at=1786620689
@@ -27,25 +24,28 @@ story:MusuHeist
       sample=0.407,at=1786620752
       sample=0.416,at=1786623178
       sample=0.45,at=1787354005
+      sample=0.523,at=1787789410
+      sample=0.523,at=1787789529
+      sample=0.531,at=1787789566
   step,dige:d2effa20514897c8
   step=2,dige:847d949aeba33ef8
   step=3,dige:13f7d5a94d5720be
   step=4,dige:78a0dd1dbb39e7b9
   step=5,dige:01073369ce02e710
   step=6,dige:d35edb2bccf09fca
-  step=7,dige:e4e761f449672206
-  step=8,dige:a5f309a6d2e1d515
-  step=9,dige:d4bca489d2303185
-  step=10,dige:17ae429bf43379ef
-  step=11,dige:1bf0a09631022bc4
-  step=12,dige:52a8df68a22716e3
-  step=13,dige:cb016e6b00fadb5a
-  step=14,dige:d9f16b2f65c88706
-  step=15,dige:19c9445d53ff53c0
-  step=16,dige:7ea3664bdd315d2d
-  step=17,dige:bdb713d601d61642
-  step=18,dige:f2412391bd95fe3b
-  step=19,dige:3da4f61ca5f0c394
-  step=20,dige:db8b49526571988c
-  step=21,dige:3c1a5b18b54d6e68
-  step=22,dige:1e68e64856e5c84d
+  step=7,dige:b70658fe438253cd
+  step=8,dige:04c2879b46036e6e
+  step=9,dige:e25ee9dfd84eedea
+  step=10,dige:bed017b567e62272
+  step=11,dige:40505c35b946c707
+  step=12,dige:26a88da8d9afde02
+  step=13,dige:90c4050a8898f54e
+  step=14,dige:ce4fde672216b881
+  step=15,dige:6c674c0da66cdda1
+  step=16,dige:7f4cf7f1fdad7818
+  step=17,dige:a88bef2e2ce5055c
+  step=18,dige:21a412c60909f779
+  step=19,dige:a1f301c2e8a9fe41
+  step=20,dige:b31bf35b7f02831c
+  step=21,dige:ff1cc9289659498f
+  step=22,dige:f3f6187339c5c080

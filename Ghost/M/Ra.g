@@ -901,6 +901,185 @@ Ra_rec_pool(shelf, origId, lofiId, path, grade):
     if (origId && origId !== id) { rec.sc.of = origId }
     if (grade) { rec.sc.grade = grade }
     return rec
+// Ra_press — the SoundPool press driver, v1: BYTE-COPY (Portability_doc §6; the PRESS trace in the
+//  todo).  Copies one Original's bytes into the pool mount and catalogs the copy through the ONE
+//   landing tail (Heist_catalog_land) — never a parallel minter (the forty-five-seams lesson behind
+//    Ra_holding_keys).  v1 presses at Original fidelity: the landed bytes ARE the Original's, so the
+//     pool row's id coincides with the Original's and Ra_rec_pool elides of:/grade (a copy of itself
+//      needs no cross-fidelity join).  Deterministic — a copy reproduces bit-for-bit — so a normal
+//       byte-exact Book gates it.  v2 (the ogg128 transcode: smaller, lossy, NOT bit-reproducible)
+//        is the press that needs the pinned-stub shape-Book; unbuilt.
+//  Args: `nav` = the world's MOUNTED nav (music/… → the collection, pool/… → OPFS; MountNav routes
+//   per method), `lib` = the shelf holding the Original, `shelf` = the pool's own shelf, `origId` =
+//    the Original's id.  `opts` (optional): `{ lofi: 1, render }` selects the v2 press — see below.
+//     Returns {card} on success, {fail:'why'} on every expectable miss — no throw.
+//  V2 — the ogg128 press (Portability_doc §6, the fidelity axis).  `opts.lofi` presses a SMALLER,
+//   LOSSY rendition into the pool: the bytes are transcoded (not copied), so the pool row wears its
+//    OWN id (the enid of the ogg bytes — a DIFFERENT identity, the identity-is-per-shelf law),
+//     `of:<origId>` the cross-fidelity join back, and `grade:'ogg128'`.  The transcode is NOT
+//      bit-reproducible (Ra.g's Ra_transcode_* pump, two runs → different ogg bytes) and is Cave-side
+//       (the daemon's ffmpeg), so the RENDERER IS INJECTED: `opts.render(bytes) → ogg bytes`.  A Book
+//        stubs it with a pinned pattern (asserting SHAPE, never bytes); the real caller wires it to
+//         the transcode result when that lands.  v2 without a render is an honest fail, never a
+//          silent byte-copy wearing an ogg name.
+async Ra_press(w, nav, lib, shelf, origId, opts):
+    opts = opts || {}
+    if (typeof this.Heist_catalog_land !== 'function') return { fail: 'no Heist ghost' }
+    let orig = this.Ra_rec_find(lib, { Record: 1, id: origId })
+    if (!orig) return { fail: 'no original ' + origId }
+    // WHERE is earned (the atlas): a card with no path has nothing readable behind it yet.
+    if (!orig.sc.path) return { fail: 'original has no path' }
+    let parts = ('' + orig.sc.path).split('/').filter(Boolean)
+    let filename = parts[parts.length - 1]
+    let srcdir = parts.slice(0, -1).join('/')
+    let raw = null
+    try { raw = await nav.bin_read(srcdir, filename) } catch (e) { raw = null }
+    if (!raw) return { fail: 'bin_read miss ' + orig.sc.path }
+    let bytes = (raw instanceof Uint8Array) ? raw : new Uint8Array(raw)
+    // the pool-relative landing path: the Original's own path minus its base segment — a press is a
+    //  cp, and a cp keeps the source's name + subdirs (the 2026-07-13 landing ruling).  So
+    //   'music/A/B/t.flac' presses to rel 'A/B/t.flac': on disk 'pool/A/B/t.flac', card path
+    //    'A/B/t.flac' on the pool shelf — byte-identical to what a pool HEIST of this track would
+    //     produce, which is the spec (one landing shape, however the bytes travelled).
+    let rel = parts.slice(1).join('/') || filename
+    // ── V2: the ogg128 press ─────────────────────────────────────────────────────────────────
+    if (opts.lofi) {
+        if (typeof opts.render !== 'function') return { fail: 'no lofi renderer — v2 transcode is Cave-side (Ra_transcode_*); pass opts.render' }
+        let rend = await opts.render(bytes)
+        if (!rend) return { fail: 'render produced nothing' }
+        let lofi = (rend instanceof Uint8Array) ? rend : new Uint8Array(rend)
+        // A LOFI COPY IS AN OGG whatever the source named (Heist_cp_path:548 — the same rule): the
+        //  container derives from the `lofi` claim, never a stale path, so bytes and name cannot disagree.
+        let orel = rel.replace(/\.[^./]*$/, '') + '.ogg'
+        let oparts = orel.split('/').filter(Boolean)
+        let ofname = oparts.pop()
+        let odir = 'pool' + (oparts.length ? '/' + oparts.join('/') : '')
+        await nav.bin_write(odir, ofname, lofi)
+        let ohash = await sha256_hex(lofi)
+        // the synthetic rec the tail reads (only ever rec.sc.* — a plain object suffices, no transient
+        //  particle to sweep): id = the Original (rid = the of: join), lofi + body_hash drive the pool
+        //   branch to mint id = ohash.slice(0,16), of:origId, grade:'ogg128'.
+        let vrec = { sc: { id: origId, title: orig.sc.title, artist: orig.sc.artist, lofi: 1, ext: 'ogg', body_hash: ohash } }
+        if (orig.sc.album) vrec.sc.album = orig.sc.album
+        let ojob = w.i({ press: 1, of: origId, grade: 'ogg128' })
+        ojob.c.up = w
+        await this.Heist_catalog_land(nav, 'pool', ojob, shelf, ojob, vrec, orel, lofi.length)
+        // the pool row wears the lofi enid, joined to its Original by of: — find it by that join.
+        let ocard = this.Ra_rec_find(shelf, { Record: 1, of: origId, grade: 'ogg128' })
+        if (!ocard) return { fail: 'lofi landed but card not found' }
+        return { card: ocard }
+    }
+    // ── V1: the byte copy (Original fidelity) ────────────────────────────────────────────────
+    let relparts = rel.split('/').filter(Boolean)
+    let fname = relparts.pop()
+    let dir = 'pool' + (relparts.length ? '/' + relparts.join('/') : '')
+    await nav.bin_write(dir, fname, bytes)
+    // the press job — the visible scaffolding the landing tail tallies into (landed count + a took
+    //  row), pointed at the Original it pressed.  Left standing so the press is legible in a snap;
+    //   the pool-steward's sweep is the natural place to drop served ones (transient-req discipline).
+    let job = w.i({ press: 1, of: origId })
+    job.c.up = w
+    // through the one tail: mardir 'pool' lights the pool branch; `orig` itself rides as the rec
+    //  (read-only in the tail) carrying no lofi flag — the v1 contract, so the pool row's id
+    //   coincides and of:/grade elide.  `job` doubles as the mir: the tail's mir.rm finds nothing
+    //    under it and no-ops — nothing was mirrored, the bytes were local all along.
+    await this.Heist_catalog_land(nav, 'pool', job, shelf, job, orig, rel, bytes.length)
+    let card = this.Ra_rec_find(shelf, { Record: 1, id: origId })
+    if (!card) return { fail: 'landed but card not found' }
+    // the byte gate for later verification: the pressed card carries the hash of exactly what was
+    //  written.  Computed from the bytes in hand (the Original's card may not carry one — body_hash
+    //   is minted by wire transfers) and stamped on the POOL card only, never back onto the library's.
+    if (!card.sc.body_hash) card.sc.body_hash = await sha256_hex(bytes)
+    return { card: card }
+
+//#region the Quartermaster — who THINKS about the pool (Portability_doc §6; name to preen)
+// The steward the owner named 2026-08-27: replication ignores the pool, so SOMETHING decides what a
+//  good stash is — and it is SCHEDULEY, not reactive ("once it has a good stash made, that's your
+//   mobile device set for a while").  It sits down on real occasions, computes what the stash SHOULD
+//    be, diffs that against what IS pooled, mints a want-list, and rests.  IT PROPOSES; FLOWS DISPOSE:
+//     not one byte moves here — the press (Ra_press), the Cave pull, and the eviction machinery serve
+//      the wants under their own gates (grants, reachability, battery).  So the whole surface is
+//       legible: `%Provisions` under the world holding `%Want,of:<id>,do:press|pull|evict,why:…` — a
+//        list a Door face can show as "what your phone wants next and why", and the stash-diff is
+//         Book-testable at the model layer without a single real byte (MusuQuarter).
+//  V1 POLICY — deterministic and legible, no wall clock (the fixture law): the Jam ledger is the taste
+//   record (Jam.g — %Spin/%Like/%Grab,of:<id> under %Jam sessions on the listener's shelf), weighted
+//    Like 3 (a taste FACT outranks exposure) · Grab 2 (they kept it) · Spin 1 (it merely streamed).
+//     Recency and friend-freshness are v2 policy — the seams take them without reshaping anything.
+
+// Ra_quarter_tally — walk every %Jam session under `shelf` and score each track id off its events.
+//  Returns a plain map id → {score, why} (why = the compact tally sentence a %Want carries).
+Ra_quarter_tally(shelf):
+    let scores = {}
+    for (const jam of shelf.o({ Jam: 1 })) {
+        for (const kind of ['Spin', 'Like', 'Grab']) {
+            let q = {}
+            q[kind] = 1
+            for (const ev of jam.o(q)) {
+                let id = String(ev.sc.of || '')
+                if (!id) continue
+                scores[id] = scores[id] || { spins: 0, likes: 0, grabs: 0 }
+                if (kind === 'Spin') scores[id].spins = scores[id].spins + 1
+                if (kind === 'Like') scores[id].likes = scores[id].likes + 1
+                if (kind === 'Grab') scores[id].grabs = scores[id].grabs + 1
+            }
+        }
+    }
+    let out = {}
+    for (const id of Object.keys(scores)) {
+        let s = scores[id]
+        out[id] = { score: s.likes * 3 + s.grabs * 2 + s.spins, why: s.likes + ' liked ' + s.grabs + ' kept ' + s.spins + ' spun' }
+    }
+    return out
+// Ra_quarter_goal — what the stash SHOULD be: the scored ids, score descending then id ascending (the
+//  deterministic order the fixture law wants), zero-scored dropped, sliced to `cap`.
+Ra_quarter_goal(shelf, cap):
+    let tally = this.Ra_quarter_tally(shelf)
+    let ids = Object.keys(tally).filter((id) => tally[id].score > 0)
+    ids.sort((a, b) => (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
+    return ids.slice(0, cap).map((id) => ({ id: id, score: tally[id].score, why: tally[id].why }))
+// Ra_quarter_diff — goal vs pooled: in the goal but not pooled wants IN (press when the library holds
+//  it locally — the v1 byte-copy; pull when it is known only by reputation — the Cave/friend flow);
+//   pooled but out of the goal wants OUT (evict).  Pooled AND in the goal is the quiet case: nothing.
+Ra_quarter_diff(goal, pool, lib):
+    let pooled = {}
+    for (const r of this.Ra_recs(pool)) { if (r.sc.id) pooled[String(r.sc.id)] = 1 }
+    let held = {}
+    for (const r of this.Ra_recs(lib)) { if (r.sc.id) held[String(r.sc.id)] = 1 }
+    let wanted = {}
+    let diff = []
+    for (const g of goal) {
+        wanted[g.id] = 1
+        if (pooled[g.id]) continue
+        diff.push({ of: g.id, do: held[g.id] ? 'press' : 'pull', why: g.why })
+    }
+    for (const id of Object.keys(pooled)) {
+        if (!wanted[id]) diff.push({ of: id, do: 'evict', why: 'not in the goal stash' })
+    }
+    return diff
+// Ra_quarter — the SIT-DOWN: goal → diff → provision, then rest.  Idempotent the way a steward must
+//  be: wants oai-mint per (of, do) so an unchanged world re-sits to the SAME rows (zero mint, zero
+//   drop — "a good stash stays the stash"), and a want whose reason left the diff is dropped (served
+//    or displaced — either way stale).  Returns {goal, diff, wants} for a Book or a face.
+Ra_quarter(w, shelf, pool, lib, cap):
+    let goal = this.Ra_quarter_goal(shelf, cap)
+    let diff = this.Ra_quarter_diff(goal, pool, lib)
+    let out = w.oai({ Provisions: 1 })
+    out.c.up = w
+    let fresh = {}
+    for (const d of diff) fresh[d.of + '|' + d.do] = d
+    for (const want of out.o({ Want: 1 }).slice()) {
+        if (!fresh[String(want.sc.of) + '|' + String(want.sc.do)]) out.drop(want)
+    }
+    for (const k of Object.keys(fresh)) {
+        let d = fresh[k]
+        let want = out.oai({ Want: 1, of: d.of, do: d.do })
+        want.c.up = out
+        if (want.sc.why !== d.why) want.sc.why = d.why
+    }
+    return { goal: goal, diff: diff, wants: out.o({ Want: 1 }).length }
+//#endregion
+
 // Ra_rec_drop — the removal counterpart to Ra_rec_home: find the holding wherever it sits (flat or
 //  paged — Ra_rec_find walks both) and detach it from its ACTUAL parent.  A flat shelf.rm({Record})
 //   misses a Cloud-paged record, so a paged collection could never lose a track; this removes it from

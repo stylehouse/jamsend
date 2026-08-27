@@ -121,15 +121,10 @@
         //    a click no longer changes anyone's size or anyone's view.  What stays is the smuggled
         //     press: a cell whose source wears `.c.press` is a BUTTON (the OK/CANCEL substrate the
         //      satellites ride), and pressing a button is the one thing a click still means.
-        // A TAP IS ALSO A RE-MEASURE HINT (the owner 2026-08-27: *"when I click the cell background …
-        //  that should be a re-measure trigger for component overlay … the user will tap on things that
-        //   are spastic so we should take that hint"*).  A glass that is seated wrong — a face off to the
-        //    side, a mold that never left 'crushed' — is exactly the cell a user reaches out and taps,
-        //     and the re-measure ladder is what un-sticks it (the same ladder a pose change or a mouse-
-        //      over arms; "the mouse was the ladder", see `settle_arrival`).  So arm it on ANY cell tap,
-        //       before and regardless of the press below: `measure_world` self-guards (no-op unless a
-        //        row still `need_floor`s, never while engaged), so a tap on a settled cell costs nothing.
-        settle_ladder(w)
+        // (the re-measure-on-tap hint the owner asked for is armed at the STAGE level in `reg_stage`,
+        //  not here — a mis-positioned overlay eats the tap before `cell_click` ever sees it, so the
+        //   trigger has to sit on the container that catches the click wherever the glass wandered.)
+        void w
         const src: any = (cell.row.c as any)?.source_n
         // `.c.press` is the name; `.c.onclick` is the name people reach for (the owner did — "some of
         //  them have click handlers magically (C.c.onclick?)"), and a handler that silently does not
@@ -2854,7 +2849,20 @@
                 }
             }, 1500)
         }
-        return { destroy() { ro?.disconnect(); if (ovt) clearInterval(ovt); if (stageEls.get(w) === el) stageEls.delete(w) } }
+        // A TAP ANYWHERE IN THE STAGE RE-ARMS THE MEASURE LADDER (the owner 2026-08-27: *"when I click
+        //  the cell background … that should be a re-measure trigger … the user will tap on things that
+        //   are spastic so we should take that hint"* — then: *"I actually can't click the cell … when the
+        //    overlay component is mis-positioned"*).  A mis-seated glass sits OVER the cell it belongs to,
+        //     so the tap the user aims at the spastic thing lands on the overlay, not the cell path, and
+        //      `cell_click` never fires.  So catch it here, on the stage that wraps every cell AND every
+        //       mounted overlay, in the CAPTURE phase — a mold's own handler (or a stopPropagation) can't
+        //        swallow it — and on `pointerdown`, which fires on the press itself even if the spastic
+        //         overlay jumps away before pointerup so no `click` ever completes.  `settle_ladder` →
+        //          `measure_world` self-guards (no-op unless a row still `need_floor`s), so an idle tap
+        //           costs nothing; a burst of taps is still one ladder (re-arming clears the old rungs).
+        const retap = () => settle_ladder(w)
+        el.addEventListener('pointerdown', retap, true)
+        return { destroy() { el.removeEventListener('pointerdown', retap, true); ro?.disconnect(); if (ovt) clearInterval(ovt); if (stageEls.get(w) === el) stageEls.delete(w) } }
     }
     // (`go_fullscreen` went with the ⛶ — 2026-08-11.  The ResizeObserver above still re-cuts the frame
     //  for a browser-driven fullscreen, and fit_frame still lets `document.fullscreenElement` beat the

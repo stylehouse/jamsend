@@ -5,8 +5,11 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
   ledger or doubling yourself on the wire. The two bodies that matter are the **Captain** (the
    phone in your hand) and the **Cave** (the deep, stable, disk-bearing machine at home).
 
-> Status: working `_todo`, written spec-close but **not** self-promoted. Mechanics are verified
->  against the code (inventory in §11); the design is proposed and wants the human's preen.
+> Status: working `_todo`. **The calm, linear statement of the design now lives in
+>  `Portability_doc.md`** (rewritten 2026-08-27 at the owner's ask — no yelling, "graft"
+>   renamed to division, the Repli foundation chased and written up as its §5). This file
+>    keeps the working status: §0 (candidates, verification ledger, what landed) is the part
+>     to read fresh; the design prose below §0 is superseded by the doc where they differ.
 >
 > Sibling docs: **`Onboard_todo`** owns the first-run funnel. **`Daemon_todo`** owns the
 >  phone-commands-station-executes verb arc (pokes, `PLAYER_OPS`). **`Identity_persist`** owns
@@ -54,21 +57,22 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 - **Transcode machinery**, Cave-side: the daemon's native ffmpeg stocking (probe|measure|
    encode) and Radio's demand-driven transcode path — the HIFI→LOFI press already runs. (§3)
 
-**What is missing** (the work this doc scopes):
-1. **The wire is not plumbed to the address.** `Socket_real` dials `peering.sc.name` (bare),
-    captured once; a Steal Back moves a field the relay never hears. (§4, §11)
-2. **The SoundPool itself** — the OPFS audio shelf, its ledger, its cap, its eviction, and
-    the pool record's path scheme. (§3)
-3. **The loosened landing head** — the Heist's landing seam assumes the real-FS share today;
-    it must write through ANY nav (the OPFS nav speaks the same contract), so a Heist can land
-     **in a pool** as readily as in a library. (§3)
+**What is missing** (the work this doc scopes; struck-through = landed since, see the ✅ lists):
+1. ~~**The wire is not plumbed to the address.**~~ LANDED (the ✅ wire-dial entry below: `home()`
+    reads `address ?? name` fresh, `rehome()` re-dials; a Steal Back reaches the relay). (§4, §11)
+2. **The SoundPool itself** — its ledger, cap, eviction. (The path scheme is ruled — `pool/…`,
+    §3 — and the MOUNT landed, ✅ poolmount; what remains is the pool's economy.) (§3)
+3. **The loosened landing head** — partially landed: the pool CATALOG branch is in
+    (`Heist_catalog_land` → `Ra_rec_pool`, ✅ poolland, proven inert) and the mount routes
+     `pool/…` to OPFS free; what remains is the PRESS driver that lights it (v1 byte-copy, §3). (§3)
 4. **The pool exchange** — phone↔phone LOFI swap, live, no Cave required — possibly the
     majority transport (§0). (§5)
 5. **The smuggle** — Captain→Cave backup of the SoundPool *and* the account. (§5)
-6. **`%Invite:MyCave`** — the role invite on the existing %Idzeug rails, plus the graft
-    ceremony around it. (§7)
-7. **The quick/still lease + adoption handoff** — who may touch the consumable ledger, and
-    how a daemon takes over cleanly. (§6, §8)
+6. **`%Invite:MyCave`** — the role invite on the existing %Idzeug rails (rails audited generic;
+    %Invite autovivify landed ✅), plus the graft ceremony around it. (§7)
+7. **The adoption handoff** — how a daemon takes over cleanly. (Its old first half, the
+    quick/still LEASE, was RETIRED by the §2C Captain-only ruling — there is nothing to lease;
+     §6 records the retirement.) (§6, §8)
 8. **The Door dialogue** — Invite-yourself in the Door, opening the portability explainer.
     (§9)
 9. **The phone push, in flight** (ruled arc — "at least it does radio", 2026-08-19):
@@ -151,6 +155,48 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 **VERIFICATION LEDGER (be honest about what is proven):**
 - GREEN on live runner (2026-08-27 re-confirmed): SwarmStaple (`n:1..8`, all ok) + SwarmInvite
    (the regression, closed). LocalGen compile: Ra/Heist/Repli/Swarm clean, zero gen churn.
+- GREEN on live runner (2026-08-27, RE-CONFIRMED against the FINAL session gen — after Ra_press
+   grew its `opts` arg + the whole Quartermaster region + the crypto trilogy landed): MusuHeal
+    `n:1..7`, caveat:0, check mode. The canary proving the `Ra_press`/`MusuPress` additions are
+     inert to the standing suite (their gen diffs are pure
+    additions; only the Ghostmeta hash lines moved).
+- **MusuHeist WAS fixture-stale since the `poolland` commit and is RE-RECORDED GREEN (2026-08-27):**
+   `poolland` reshaped `Heist_catalog_land` so a landed card stamps `path` right after `id`
+    (before title/artist), and the fixtures recorded at `hey` still held the old key order — red
+     from step 7 on first re-run, NOT caused by tonight's additions. Verified benign before
+      accepting: key-sort-normalised diffs of steps 7/12/18/22 differ ONLY in run-volatile
+       `round=` lines. Accepted (16 steps re-recorded), re-run check `n:1..22` all ok (caveats =
+        the known round drift). **Commit `wormhole/Story/MusuHeist/` NNN.snap + toc.snap; revert
+         its Credulate/Credulation churn as usual.** Suspect siblings — any Book whose fixtures
+          hold cards landed through `Heist_catalog_land` (candidates: MusuBay, MusuBreach,
+           MusuLossy, MusuSoft — a grep can't confirm; other minters legitimately stamp title
+            first) — run each, verify benign the same way, accept.
+- COMPILE-GREEN + STATIC-REVIEWED, not yet run (2026-08-27 late — the runner was held by the
+   owner's Radiola run all evening): the four fresh Books MusuPress / SuperCull / MusuQuarter /
+    MusuFloor. The adversarial re-read checked the real seams: `Heist_beat`'s tail past the
+     refusal branch is only `job.bump()` (MusuFloor's stub-null call is safe); `Supervisor_alive`'s
+      live-list walk admits the scratch House pre-drop and its `top_House` property damns it
+       post-drop (SuperCull); the Quartermaster's goal/diff arithmetic re-derived by hand
+        (goal `f1 o1 o2` → shift `f1 o1 o3`, the o2 press drops); `Musu_float` cross-ghost is
+         ten-Book precedent. First LIVE proof is the recording pass itself.
+- COMPILE-GREEN, not yet run (2026-08-27, the LinkDevice crypto trilogy at the model layer, all
+   in Swarmation.g): **SwarmSeal** (Sealbox secrecy — seal/unseal/tamper/wrong-code fails-closed),
+    **SwarmFerry** (the sealed account crossing — export{secret}→seal→unseal→import→re-export
+     byte-identical), **EmojiConfirm** (the SAS authenticity gate — `Emojiconfirm.ts` folds the
+      sorted-pubs+salt transcript to an emoji row; honest sides AGREE, an interposed pub DIVERGES,
+       empty-vs-empty refused). Two new Funk bricks under `src/lib/O/Funk/` (Sealbox.ts WebCrypto
+        AES-GCM/HKDF, Emojiconfirm.ts pure sha256→alphabet). The remaining LinkDevice work is all
+         UI/transport (beacon QR render, emoji row in the Door, the real relay wire) — the crypto
+          contract itself is now closed and gated at the model layer. First LIVE proof is the
+           recording pass. Lane A grows by three (SwarmSeal ×3, SwarmFerry ×3, EmojiConfirm ×3).
+- **BROAD INERTNESS NET, live runner, against the FINAL session gen (2026-08-27):** all five
+   `Heist_catalog_land`-touching siblings re-run GREEN in check mode, caveat:0 — MusuHeal `7/7` ·
+    MusuBreach `10/10` (the shared `Heist_beat` refusal seam MusuFloor leans on) · MusuBay `9/9` ·
+     MusuSoft `6/6` · MusuLossy `4/4`. This is the live proof (not static review) that the whole
+      session's Ra.g surface — Ra_press's `opts` arg-grow, the Quartermaster region, plus the
+       Swarmation crypto trilogy — is inert to the standing suite. No hollow dirs written (all five
+        have real recorded fixtures; check mode never overwrites). The Ra_press signature change is
+         guarded (`opts = opts || {}`, Ra.go:926) and has NO caller outside the new Books.
 - relay-test.ts GREEN: the hello-v2 arbiter (relay side).
 - ⚠️ **NOT actually proven — was a false green: SwarmCohort.** It runs 1 hollow step; beats 2–6
    never fire (see the ⚠️ entry above). Its verbs (sibling/note_theft/next_suffix/%Invite
@@ -179,10 +225,146 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
     transfers are vouch-gated fails-closed (`Heist_vouch_ok`/`Ra_verify`), the relay is a
      hello-bound dumb router, and live-cast `%MusuThem` gossip is structurally non-promotable to
       a holding (`Ra_holding_keys` exclusion). Per-frame gossip signing is HARDENING, NOT a
-       pool-exchange ship-blocker (the old "land before pool exchange" is withdrawn). One
-        invariant is worth a Book: `%MusuThem` never promotes off-vouch.
+       pool-exchange ship-blocker (the old "land before pool exchange" is withdrawn). ✅ The one
+        invariant owed a Book — `%MusuThem` never promotes off-vouch — is now GATED by **MusuFloor**
+         (Heistation.g tail): its structural-floor beat pins `Ra_holding_keys()` to `Record` alone
+          with the gossip mainkeys (MusuThem/MusuSelf/Jam/Card/Caper/Spin/Like/Grab) held OUT, and
+           its fails-closed beat refuses a by-with-no-sig husk fired from inside a REAL Ra_home_them
+            crate. (Compile-green; awaits the Lane-A recording pass like the other new Books.)
 
-**Candidates to get on with next** (none blocks the others):
+**THE WAY FORWARD (plotted 2026-08-27, for the long slog).** Three lanes; A unblocks gates, B is
+ the slog itself in dependency order, C is async and blocks nothing.
+
+*Lane A — your editor passes (minutes each; the CLI cannot do these). RELOAD THE EDITOR TAB
+ FIRST: the live tab re-serialises `wormhole/Credence/toc.snap` from its own model (observed
+  2026-08-27 — a smoke-run auto-registered bare rows and clobbered the curated lines, since
+   restored), so a tab that booted before the board edit will clobber it again on next save.*
+1. **Record the MusuPress Plan** — it is now ON the Credence board (the magazine, beside
+    MusuLossy), so dispatch it from the editor's test list: boot `?B=MusuPress`, Resume ×3
+     (steps 2→4, the %sees light by 4), Accept-All, re-run check → `n:1..4`.
+2. **Record the SwarmCohort Plan** — Resume ×5 (steps 2→6), Accept-All, check → `n:1..6`.
+     Until then its green is hollow and its wormhole dir must not be committed.
+3. **The commit pass** — tonight's src (Ghost/*.g + gen/*.go + the new `Sealbox.ts`) +
+    `wormhole/Story/MusuHeist/` NNN.snap + toc.snap + the Credence board lines; revert the
+     Credulate/Credulation/other-Book gen churn as usual.
+    ⚠ **DO NOT COMMIT the new Books' `wormhole/Story/<Book>/` dirs yet** — the nine new Books
+     (MusuPress, MusuPressLossy, SuperCull, MusuQuarter, MusuFloor, SwarmRole, SwarmSeal,
+      SwarmFerry, EmojiConfirm) each have a HOLLOW `001.snap` on disk from my CLI smoke-runs (a 1-step stub — the wrangle stood,
+       no beats fired; the SwarmCohort lesson). Committing them would gate a hollow run. They
+        become real ONLY after the editor recording pass (Resume ×N, Accept-All) writes
+         `002..00N.snap`; commit each Book's dir THEN, once `steps` shows the full `n:1..N`.
+
+*Lane B — the autonomous slog, in order (each verifiable without you):*
+1. ~~**Fixture-hygiene sweep**~~ **DONE 2026-08-27 — ALL FOUR GREEN, nothing to accept**:
+    MusuBay `n:9/9` · MusuBreach `n:10/10` · MusuLossy `n:4/4` · MusuSoft `n:6/6`, every one
+     caveat:0 in check mode on the live runner. The poolland key-order staleness was confined
+      to MusuHeist (those cards land through the library branch mid-heist; these four record
+       shapes the reorder never touched). Their toc/Credulate churn is run-volatile — revert.
+    ALSO: all four fresh Books SMOKE-FIRED live the same session (`mode:new` 1-step settles,
+     each snap showing `req:wrangle,eternal,ok`) — the runner holds tonight's gen and every
+      Book fn dispatches and drives clean. The recording passes are de-risked.
+2. ~~**`Supervisor_cull_orphans` model Book**~~ **AUTHORED 2026-08-27 — `SuperCull`**
+    (Errchannelation.g tail, LocalGen compile GREEN, gen diff pure addition; on the Credence
+     board beside ErrChannel): stand (2) — a scratch House wearing `top_House` on the top House
+      + a watch AND a dial against a subject inside it + a null-subject milestone CONTROL;
+       drop (3) — the corpse window (alive reads 0, rows still stand); cull (4) — the sweep
+        drops both orphans, the control survives, then the Book leaves the machine as found
+         (unwatch the control, drop a minted supervisor). 4 %see witnesses; model-layer, no
+          infra, caveat:0 expected. **Lane A grows by one: record its Plan — `?B=SuperCull`,
+           Resume ×3 (steps 2→4), Accept-All, check → `n:1..4`.**
+3. ~~**The Quartermaster (pool-steward) v1**~~ **BUILT 2026-08-27** (Ra.g Quartermaster
+    region + `MusuQuarter` Book at Heistation.g tail; both LocalGen GREEN, pure-addition gen
+     diffs; on the Credence board beside MusuPress): `Ra_quarter_tally` (Jam-ledger taste —
+      Like 3 · Grab 2 · Spin 1), `Ra_quarter_goal` (cap-sized, score-desc-then-id-asc,
+       deterministic), `Ra_quarter_diff` (press when held / pull when reputation-only / evict
+        when stale; pooled-and-wanted stays quiet), `Ra_quarter` (the sit-down: oai per
+         (of,do) under `%Provisions` — an unchanged world re-sits to the SAME rows, a
+          displaced want drops). It proposes; flows dispose — zero bytes here. The Book's 4
+           beats gate exactly that (quiescence AND the shift are the discriminations).
+            Occasions (when to sit) + the Door face are v2 wiring. **Lane A grows again:
+             `?B=MusuQuarter`, Resume ×4 (steps 2→5), Accept-All, check → `n:1..5`.**
+4. ~~**`%MusuThem` never-promotes-off-vouch invariant Book**~~ **AUTHORED 2026-08-27 —
+    `MusuFloor`** (Heistation.g tail, LocalGen GREEN; on the board beside MusuBreach). Scoped
+     to the two genuinely un-Booked planks (MusuBreach already drives the swapped-manifest
+      door refusal): (a) the STRUCTURAL floor — `Ra_holding_keys()` pinned to exactly
+       `['Record']` with every gossip mainkey (MusuThem/MusuSelf/Jam/Card/Caper/Spin/Like/
+        Grab) asserted OUT of the servable set; (b) the fails-closed MALFORMED vouch — a
+         `by:`-with-no-sig husk inside a real `Ra_home_them` crate refused at the real
+          `Heist_beat` door before any pull (named + dropped + library stays empty). 2 beats.
+           **Lane A: `?B=MusuFloor`, Resume ×2 (steps 2→3), Accept-All, check → `n:1..3`.**
+5. ~~**Press v2 (ogg128)**~~ **BUILT 2026-08-27** — `Ra_press` grew an `opts` arg (v1 callers
+    unchanged); `opts.lofi` presses through the v2 branch: the renderer is INJECTED
+     (`opts.render(bytes)→ogg`, because the real transcode is Cave-side `Ra_transcode_*` and
+      NOT bit-reproducible — v2 without a render is an honest fail, never a silent byte-copy
+       wearing an ogg name). It lands via the SAME `Heist_catalog_land` tail through a synthetic
+        `{sc}` rec carrying `lofi:1` + the ogg `body_hash`, so the pool branch mints id = the
+         lofi enid (≠ the Original's — identity is per-shelf), `of:origId`, `grade:'ogg128'`,
+          `.ogg` path. `MusuPressLossy` (Heistation.g, 4 beats, LocalGen GREEN, both press Books
+           smoke-fire clean so v1 didn't regress): asserts the different-thing-joined shape, the
+            ogg name, RENDER-faithfulness (the pool holds exactly what the renderer returned —
+             pins the render, never the non-reproducible transcode), and the twin-control (re-
+              press finds the one card by of:+grade). **Lane A: `?B=MusuPressLossy`, Resume ×3
+               (steps 2→4), Accept-All, check → `n:1..4`.** The REAL encoder stays untested by
+                fixture law — its gate is the live Cave flow; wire `opts.render` to the transcode
+                 result when the Cave ffmpeg path lands.
+6. **The LinkDevice ceremony proper** (doc §10) — PHASED BUILD PLAN (grounded against the
+    code 2026-08-27; each phase lands + Books separately, 0 and 1 are buildable now):
+   - ~~**Phase 0 — Feature-generic invites**~~ **PROVEN 2026-08-27 — `SwarmRole`**
+      (Swarmation.g tail, LocalGen GREEN, smoke-fired live; on the board after SwarmCohort).
+       The audit found the rails ALREADY generic end-to-end — `Swarm_mint_invite/mint_idzeug/
+        token_n/redeem/accept` all carry the Feature through (the token's `to:` leg, the
+         reciprocal derived from the claim) — so Phase 0 needed a PROOF, not surgery: 3 beats
+          (stand Alice/Cara/Bob · mint `%Idzeug to:MyCave` AND `to:Music` off the one door ·
+           both seal over the pump), witnesses pin the role pier live for 'MyCave', **feature
+            isolation both ways on both piers**, and both cross-signed grants wearing the
+             offered feature (zero Music grants on the role pier). Remaining Phase-0 crumbs:
+              the mint UI never asks (InvitePanel hardcodes `{Music:1}`; InviteYourself is the
+               doorknob awaiting phases 2–3) and the pier-heal fallback `to:'Music'`
+                (Swarm.g:1434) would mis-heal a role pier missing its grant record — fix when
+                 role piers exist in the wild. The seven `Swarm_pier_live(p,'Music')` serve
+                  sites are CORRECT as-is (they mean music-serving).
+              **Lane A: `?B=SwarmRole`, Resume ×3 (steps 2→4), Accept-All, check → `n:1..4`.**
+   - ~~**Phase 1 — the symmetric brick**~~ **BUILT 2026-08-27 — `Sealbox.ts` + `SwarmSeal`**:
+      confirmed Idento (Y.svelte.ts) is ed25519+SHA-256 ONLY, so `src/lib/O/Funk/Sealbox.ts`
+       (NEW, beside Grant.ts, its secrecy-side twin) is the one symmetric brick: `seal`/`unseal`
+        = WebCrypto AES-GCM under an HKDF-SHA-256 key, hex frame `iv‖ct‖tag`, non-extractable
+         key, domain-separated info string, zero deps. `SwarmSeal` (Swarmation.g tail, imports
+          it via IMPORT(); LocalGen GREEN, gen import resolves in the runner module graph, pure-
+           addition gen diff): 2 beats, 4 witnesses — roundtrip, fresh-nonce (two seals differ
+            yet both unseal — the only snapped number is the fixed frame length, never a byte),
+             tamper fails-closed, wrong-code fails-closed. **Live-crypto caveat**: the smoke-run
+              settles 1-step (fresh Book, no Plan) so beats 2–3 don't fire on the CLI — the
+               `crypto.subtle` HKDF→AES-GCM path is proven only when the editor records the Plan
+                (Resume ×2 → the %sees light). Risk is negligible (standard WebCrypto, the runner
+                 is a localhost secure context). **Lane A: `?B=SwarmSeal`, Resume ×2, Accept-All,
+                  check → `n:1..3`.**
+   - **Phase 2 — the beacon**: the Cave-to-be boots unclaimed showing QR = address + ephemeral
+      vessel pub; Captain scans and ISSUES (the secret never leaves the pair); typed
+       short-code fallback.
+   - **Phase 3 — the transfer**: CORE PROVEN 2026-08-27 — `SwarmFerry` (Swarmation.g tail,
+      LocalGen GREEN, boot-clean): composes Sealbox (phase 1) with the proven Swarm_export/
+       import to carry the WHOLE account across a sealed channel — export {secret} → seal →
+        (relay sees only the frame) → unseal → import → re-export byte-identical. 4 witnesses,
+         the security claims the ceremony rests on: the account crosses whole; the private key
+          NEVER rides in clear (the frame doesn't contain the key hex); a wrong code lands no
+           account (only the code-holder is made); the keypair thaws onto .c leaving no scalar
+            (ride-.c-only survives transit). Sound by composition (SwarmSeal roundtrip +
+             SwarmStaple beat-8 export/import). **Lane A: `?B=SwarmFerry`, Resume ×2, Accept-
+              All, check → `n:1..3`.** What REMAINS for phase 3, both UI/transport not crypto:
+               the emoji-confirm (a transcript-hash both screens show before key material moves)
+                and wiring the frames onto the real invite-rails wire; still owed at issue-time,
+                 the family-register write (%Sibling roster — exists) + `<prepub>_N` first-bind
+                  (hello-v2 — exists).
+   - **Phase 4 — the standing stream**: the ceremony bootstraps §5's body-to-body Repli
+      stream (where the %AppdataSchema law-book meshes); a one-shot payload is exactly what
+       it must NOT be. Two-machine live proof rides the existing "needs infra" list.
+
+*Lane C — rulings only you can make (async):*
+- Repli: rule the sent-shadow successor in/out (Mag_todo §0.2e ruling 0); the key-clear op
+   (Q4); the %Union merge seam reading the law-book; sharpen `replicates:` to key-absence.
+- Preen the steward's name ("Quartermaster" offered).
+
+**Candidates to get on with next** (none blocks the others; detail for the lanes above):
 - **Author SwarmCohort's real Plan** — editor-only (confirmed 2026-08-27: `Story.svelte:1547`
    mints a fresh run with `total = 1` and the comment "user builds up the test step-by-step via
     Resume"; no `runner_ask`/`poke` verb drives step advance). RECIPE: boot the runner on
@@ -193,16 +375,38 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 - A dedicated model Book beat for `Supervisor_cull_orphans`
    (register watch → drop subject world → cull → assert gone) — clean-verifiable, no infra.
 - Two-machine live proof of hello-v2; two-tab proof of the cohort.
-- Build the pool PRESS driver — start with **v1 = byte-copy into the OPFS pool** (deterministic,
-   so a NORMAL byte-exact Book proves it — shippable now, `Ra_rec_pool` already handles the
-    no-transcode case); defer **v2 = ogg128 transcode** (non-reproducible → pinned-stub shape-Book).
-     Both reuse `Heist_catalog_land`. Full trace + the v1/v2 split at §3.
+- ~~Build the pool PRESS driver v1~~ **DRIVER LANDED 2026-08-27** — `Ra_press(w, nav, lib, shelf,
+   origId)` (Ghost/M/Ra.g, beside `Ra_rec_pool`): reads the Original off the nav (`bin_read`),
+    writes it byte-for-byte to `pool/<rel>` (`bin_write`; rel = the Original's path minus its base,
+     same cp shape a pool heist produces), catalogs through `Heist_catalog_land` with mardir `'pool'`
+      (never a parallel minter; a `%press,of:<id>` job is the visible scaffolding and doubles as the
+       no-op mir), stamps `body_hash` of the written bytes on the pool card. LocalGen compile GREEN.
+        **Its Book is AUTHORED too — `MusuPress` (Heistation.g tail, compile GREEN): 3 beats
+         (setup 2 / press 3 / re-press twin-control 4) + 4 `%see` witnesses (one-door landing,
+          byte-for-byte fidelity, of:/grade elision, no-twin)** — model-layer with an in-memory
+           stub nav (bin_read serves fixture bytes, bin_write records the landing), so it runs on
+            any runner, no FSA/OPFS, caveat:0. **What remains is YOUR editor pass** (the SwarmCohort
+             lesson — a CLI cannot bootstrap a Plan): boot `?B=MusuPress`, Resume ×3 (steps 2→4,
+              the %sees should light by 4), Accept-All, re-run check → `steps` shows `n:1..4`.
+               Defer **v2 = ogg128 transcode** (non-reproducible → pinned-stub shape-Book). Full
+                trace + the v1/v2 split at §3.
 - (Optional hardening, NOT a blocker) per-frame gossip signing — the signing floor is already
    coherent (resolved above & §10); the only owed test is the `%MusuThem`-never-promotes-off-vouch
     invariant guard.
 - The LinkDevice ceremony proper (§7) — the encrypted account transfer riding repli. The
    InviteYourself dialogue is an honest stub awaiting this.
-- `%Schema` law-book (§2E, drafted) — your preen, then wire `Berth_open/save` to read it.
+- `%AppdataSchema:<table>` law-book (§2E, reworked 2026-08-27 per your rulings: table-in-key;
+   policy as a PARTICLE — `%SingleWriter:Captain` / `%Union`, not writer/merge keys; io/home
+    demoted to comments as IOExpr-level-not-yet-built; the SoundPool EJECTED from the book —
+     replication ignores it, app flows move it). "What is berth?" RESOLVED against the disk
+      (§2D): account already sits outside berth as a top-level sibling; berth is the
+       Waft-document store, not a share-tier. What's left is YOURS: the IOExpr `writer|merge|home`
+        metadata level, which lands this as its first tenant. Don't wire `Berth_open/save` to it
+         until that level exists.
+- The **pool-steward** (§3, "Who THINKS about the pool" — name to preen, "Quartermaster"
+   offered): the scheduley actor that computes the goal-stash, diffs it against the pool, mints
+    a want-list the app flows serve, then rests. Model-layer Book-able (stash-diff, no bytes)
+     — a good first build beside press v1.
 
 ---
 
@@ -307,8 +511,9 @@ address = <prepub>|<prepub>_N ── REACHABILITY. `Peering%address` (session-on
 Seams in this chain, and their checks:
 - **pub↔prepub**: `prepubOf(pub) === claimed` — enforced at every seal-minting entry and in
    the voucher; NOT on gossip or repli frames (§10, the signing floor).
-- **prepub↔address**: `Swarm_address()` — and the known GAP: `Socket_real` dials the name,
-   not the address (§4, item 1).
+- **prepub↔address**: `Swarm_address()` — and the wire now follows it: `Socket_real`'s `home()`
+   reads `address ?? name` fresh per connect and `rehome()` re-dials on change (the old
+    dials-the-bare-name gap, closed 2026-08-27). (§4)
 - **address↔socket**: the relay's `hello` ed25519-binds a prepub to a socket ONCE at
    connect; nothing per-frame after.
 
@@ -435,53 +640,119 @@ Portability is a merge problem, and an account is three tiers that merge differe
        awaiting its first tenant (the Vyto sizing algebra). The investigation's verdict:
         **IOexpr is the right composition backbone and the wrong place for authority** — it
          says what to fetch and how to shape, but has no vocabulary for writer/merge/home.
-          The natural extension is a thin **`%Schema,<shelf>`** particle referencing an
-           `%IO` row and adding exactly the missing keys (`keyed_by`, `replicates`,
-            `writer: captain-only|any-body|this-body-only`, `merge: union|lww|
-             single-writer`, `home: dexie:<table>|berth:<path>|opfs:<mount>`). That keeps
-              IOexpr pure and gives the account a machine-readable law-book — and it would
-               make the account schemas IOexpr's first tenant, un-parking it with a real
-                load.
+          The natural extension is a thin schema particle beside the `%IO` row adding exactly
+           the missing authority keys — which keeps IOexpr pure, gives the account a
+            machine-readable law-book, and makes the account schemas IOexpr's first tenant,
+             un-parking it with a real load. (A first draft spelled this `%Schema,<shelf>` with
+              `keyed_by`/`home:` fields; the owner's 2026-08-27 rulings reshaped it into the
+               standard below — table-in-key, role-named writer, io/home as comments.)
 
-  *The standard, drafted (2026-08-27, post-rulings — writer vocabulary reflects
-   Captain-only Tier C, no leases):*
+  *The standard, reworked 2026-08-27 (post-rulings). Four rulings shaped this:*
+   1. **The table name rides in the KEY, not a field** — `%AppdataSchema:account`, not
+      `%Schema,account` — because a reader (and the seams) must know which table a row governs
+       from its mainkey alone, the way `%Invite:Music` names its Feature. The mainkey IS the
+        `keyed_by:table` this draft used to spell out.
+   2. **`writer`/`merge` are POLICY that lives INSIDE the table's mention** — not a separate
+       metadata plane — and they name ROLES specifically: `writer: Captain` means the Captain
+        role holds the pen (§2C), not a vague "captain-only" adjective. The role is a first-class
+         referent here, same word §7's `%Invite:MyCave` grants.
+   3. **The `writer|merge|home` metadata LEVEL is coming, but is not here yet** — it belongs to
+       the broader **IOExpr** build (the `%IO` composition language, still parked). So this
+        schema stays THIN and rides ATTACHED to IOExpr as its authority layer; the mechanical
+         `io:/find:/shape:` lines below are **comments, not keys** — self-documentation of what
+          IOExpr will fetch, deliberately not formalised until IOExpr lands its first tenant.
+   4. **`home:` half-lies and is demoted to a comment** — it read `berth:account/…`, implying the
+       account lives *under* berth, and the disk audit (§2D) says it does not: `account/<prepub>/`
+        and `berth/<prepub>/` are top-level siblings. The account is the soul's own private book
+         (Tier A+B+C, Captain-penned), homed at `account:<prepub>/`, beside berth, never inside it.
+          (What "berth" itself means is resolved against the disk in the note after the table — it
+           is the Waft-document store, NOT a share-tier.)
+   5. **Policy is a PARTICLE, not a key-pair** (yours, later 2026-08-27): **`%SingleWriter:Captain`**
+       — the merge DISCIPLINE is the mainkey, the penholder ROLE is the value; one particle says
+        both, and `writer:`/`merge:` as two flat keys are gone. Its sibling is **`%Union`** — any
+         body may write, union-merge, no value needed (the discipline that has no penholder to
+          name). Proper C-within-C policy children of the schema row, the Matstyle idiom.
+   6. **The SoundPool is NOT a replicated table — it left this law-book** (yours, same breath:
+       "smuggle-to Cave is totally not complicated enough… it must be ignored by replication,
+        reside in the FSA|OPFS and be replicated by its actual app reality"). The replication
+         layer carries the account + berth docs and IGNORES the pool entirely; pool material
+          moves only through the app's own flows — the press (§3), the Flow-2 pull, the Flow-3
+           phone↔phone exchange, the Flow-4 smuggle-as-heist — each with its own gates and
+            economics that a flat `replicates:` value was flattening into mush. What DECIDES those
+             movements is its own actor (the scheduley pool-steward, §3 below).
 
   ```
-  %Schema,account            — Tier A+B+C, the soul's own book
-    io: IO,account           —   find: {Identity:1, active:1}  shape: mirror
-    keyed_by: prepub
-    replicates: yes          —   the standing body-to-body stream (§7)
-    writer: captain-only     —   Tier C rides inside; the role IS the lock (§2C)
-    merge: single-writer
-    home: berth:account/<prepub>/
+  %AppdataSchema:account       — the soul's own book (Tier A+B+C), private, outside berth
+    replicates: body-to-body   —   syncs between your own devices (Captain ↔ Cave, both ways,
+                                    whenever both are up — the ceremony §7 establishes it,
+                                     the tandem §5 rides it); friends never receive it
+    # io (future IOExpr sketch, not built): pipe %IO,account; rows gathered off the shelf
+    #  by find {Identity:1, active:1} — "the particle that HAS Identity and HAS active"
+    #   (1 = presence wildcard); doc shape = mirror of that query result (snapshot, no
+    #    transform — doc-from-shelf shape; the cross-body merge rule is the policy child's job)
+    # home: account:<prepub>/  — a top-level store, sibling of berth/ on disk (§2D);
+    #        the daemon mirrors here (".jamsend/account/<prepub>/toc.snap")
+    /SingleWriter:Captain      —   merge discipline (mainkey) + penholder role (value);
+                                    Tier C rides inside — the role is the lock (§2C)
 
-  %Schema,heists             — Tier B, what the soul decided to take
-    io: IO,heists            —   find: {Heist:1}  in: home shop  shape: mirror
-    keyed_by: prepub
-    replicates: yes
-    writer: any-body         —   any body may Heist (§6)
-    merge: union             —   keyed by id; same take twice = one row
-    home: berth:<prepub>/Heists
+  %AppdataSchema:heists        — Tier B, what the soul decided to take
+    replicates: body-to-body
+    # io: pipe %IO,heists · find {Heist:1} · shape mirror
+    # home: berth:<prepub>/Heists  — per-soul berth doc (§2D)
+    /Union                     —   any body may Heist (§6); union-merge keyed by id —
+                                    same take twice = one row
 
-  %Schema,pool               — the SoundPool ledger (§3)
-    io: IO,pool              —   find: {Record:1, grade:1}  in: pool shelf  shape: mirror
-    keyed_by: instance       —   THIS body's pool; the smuggle unions it Cave-ward
-    replicates: smuggle-to:cave
-    writer: this-body-only
-    merge: union
-    home: opfs:pool/ + berth:<prepub>/Pool (the Cave-side backup twin)
+  %AppdataSchema:newlyadded    — per-COLLECTION, deliberately soul-blind (§2D)
+    replicates: no             —   it describes THIS box's collection; travel would lie
+    # io: pipe %IO,newlyadded · find {Got:1} · shape mirror
+    # home: berth:Newlyadded  — box-local berth doc (no prepub in the path, §2D)
+    /Union
 
-  %Schema,newlyadded         — per-COLLECTION, deliberately soul-blind (§2D)
-    io: IO,newlyadded        —   find: {Got:1}  shape: mirror
-    keyed_by: collection
-    replicates: no           —   it describes THIS box's collection; travel would lie
-    writer: any-body
-    merge: union
-    home: berth:Newlyadded
+  (no %AppdataSchema:pool — DELIBERATE, ruling 6: replication ignores the pool; its bytes
+   live in FSA|OPFS and move by app reality — press, pull, exchange, smuggle — under the
+    pool-steward's decisions, §3. The pool LEDGER the smuggle backs up is likewise an app
+     flow riding heist machinery, not a row in this book.)
   ```
+  **Reading the notation.** `%` names a particle without saying where it sits — that edge is
+   soft. The SLASH is what pins containment: `/SingleWriter:Captain` under a table entry
+    definitely means a CHILD particle of that schema row. Each entry above lists the schema
+     particle's OWN sc keys first (`replicates:` — a flat scalar property, `AppdataSchema%replicates`
+      in house notation), then its children on slash lines — the slash is the whole marker. Policy is a child
+       (ruling 5) because it carries structure — a discipline AND a role, later maybe merge-key
+        params; `replicates:` stays a mere key because it is a single enumerable scalar. The `#`
+         lines aren't keys at all (ruling 3): they sketch what the IOExpr level will own when
+          it lands; writing them as real keys would pretend that level exists.
+  `replicates:` vocabulary, now that the pool is out, collapses to two honest values:
+   **body-to-body** (the standing stream among one soul's bodies — Captain↔Cave, both ways)
+    and **no** (box-local, never travels). Nothing else was ever real. (A possible
+     sharpening, C-boolean style: drop `no` and let ABSENCE of the key say it — replication
+      becomes opt-in, the safest default for a law-book. Not ruled yet.)
 
-  The seams that would read these: `Berth_open/save` (home), the persist gates (writer),
-   the §7 replication stream (replicates + merge), the §8 adoption union (merge). Deeper
+  **"What IS berth?" — RESOLVED against the on-disk truth (§2D), and it corrects two of my own
+   guesses.** The disk audit already settled the layout, so this is fact, not a choice:
+   - **Account is ALREADY outside berth — nothing to decide.** `.jamsend/account/<prepub>/` and
+      `.jamsend/berth/<prepub>/` are TOP-LEVEL SIBLINGS on disk; the daemon mirrors the account to
+       `.jamsend/account/<prepub>/toc.snap` (seen live 2026-08-27). So the account's `home` is
+        `account:<prepub>/`, its own store. The ONLY thing that ever "lied" was the draft's
+         `home: berth:account/…` line, which put a `berth:` prefix on the one table that isn't
+          under berth. Fixed above. (My earlier "make account a private berth" idea is RETRACTED —
+           the code already keeps them separate, cleaner than folding account into berth.)
+   - **Berth is NOT "the easily-shared data" — it is the Waft-DOCUMENT store**, holding two kinds
+      of thing side by side: per-soul docs under a prepub (`berth/<prepub>/{Heists, KeepMemo,
+       HeistDefaults, Faves, Musica}`) AND soul-blind box docs with NO prepub (`berth/Newlyadded`,
+        `berth/Census` — deliberately not carried to another device, §2D). So "shareable vs
+         private vs box-local" is NOT what berth means; that axis rides in the SCHEMA
+          (`writer:`/`replicates:`) on top of berth. `berth/<prepub>/` is per-soul-replicable;
+           `berth/<no-prepub>/` is box-local; `account/<prepub>/` is the private identity store
+            beside them. Three homes, one clean rule: **the prepub in the PATH says per-soul; the
+             schema says who writes and whether it travels.**
+   Net: no new store, no berth-vs-not decision — the disk was already right; the schema just needs
+    to name `home: account:<prepub>/ | berth:<prepub>/<Doc> | berth:<Doc>` per table, and that
+     wording finalises with the IOExpr `home` level. Don't hardcode before it lands.
+
+  The seams that would read these (once the IOExpr `writer|merge|home` level exists): the persist
+   gates (writer), the §7 replication stream (replicates + merge), the §8 adoption union (merge),
+    and `Berth_open/save` (home). Deeper
     aspects update here as the tenant work teaches.
 
 ---
@@ -549,6 +820,28 @@ Portability is a merge problem, and an account is three tiers that merge differe
       the pool ledger (what was pooled, from what, at what fidelity) outlives the pool bytes.
   - **The pool needs its own economy**: a size cap, an eviction order (least-recently-
      listened first), and honesty in the UI about what is pooled here vs held elsewhere.
+
+**Who THINKS about the pool — the pool-steward (name to preen; "Quartermaster" fits the
+ Captain/Cave register: the officer who provisions the voyage).** The owner named the missing
+  actor (2026-08-27): replication ignores the pool (§2E ruling 6), so SOMETHING must decide
+   what a good stash is — and it is **scheduley, not reactive**: *"once it has a good stash
+    made, that's your mobile device set for a while."* Not a per-play cache hook; a steward
+     that occasionally sits down, thinks, provisions, and then RESTS. The shape:
+  - **A goal-state, not a queue**: the steward computes what the stash SHOULD be — cap-sized,
+     policy-weighted (recently played, recently jammed, faves, a friend's fresh introductions
+      from Flow 3) — then diffs it against what IS pooled. The diff is a want-list (press these,
+       pull these, evict those), served through the app flows that already exist: the press
+        (v1 byte-copy), the Flow-2 pull when the Cave is reachable, §3's eviction order.
+  - **Scheduley cadence**: it re-evaluates on real occasions — a session of plays ends, a jam
+     happened, the Cave came reachable, idle-and-charging — not on a timer per event. Between
+      occasions it is quiescent; a good stash STAYS the stash (the dige instinct: re-emit only
+       what changed enough to matter). The daemon's digger (tour…rest…tour) is the standing
+        precedent for exactly this rhythm.
+  - **It proposes, flows dispose**: the steward never writes pool bytes itself — it mints wants;
+     the press/pull/exchange machinery serves them under their own gates (grants, reachability,
+      battery). So its whole surface is legible: a want-list you can SEE in the Door ("what your
+       phone wants next and why"), and the stash-diff is Book-testable at the model layer without
+        a single real byte moving.
 
 **The press.** HIFI→LOFI transcoding is Cave work and the machinery already runs: the
  daemon's native ffmpeg stocking (probe|measure|encode) and Radio's demand-driven transcode
@@ -713,8 +1006,10 @@ The division of labour, stated once: **the Captain holds the helm; the Cave keep
           first-class design attention, and the Cave's role sharpens to what only it can do:
            keep, verify, and HIFI-ify.
 
-**Flow 4 — the smuggle.** The Captain's SoundPool (and the Captain's whole account — the
- phone's storage is mortal, §0 item 9b) replicates to the Cave **for backup**, not for
+**Flow 4 — the smuggle.** Two different rails under one word (§2E ruling 6): the ACCOUNT rides
+ the §7 body-to-body replication stream; the SoundPool does NOT — the replication layer ignores
+  it, and pool material crosses as an APP FLOW (a heist-ride, steward-decided, §3). Both reach
+   the Cave **for backup** (the phone's storage is mortal, §0 item 9b), not for
   listening. The Cave regards every arriving pool copy as **LOFI that wants to be
    HIFI-ified**: each carries its `of:` join, so the Cave can fetch the Original whenever it
     becomes reachable, at whatever pace its station affords. The backup is thereby also the
@@ -994,9 +1289,10 @@ Verified at the time of writing; re-check before relying (a named symbol may hav
     (concede + jump), `Swarm_reinstate` (bare name + `account_mirror_stale` disk-wins hold),
      `Swarm_sibling` / `Swarm_is_sibling`, `Swarm_note_theft` / `Swarm_stolen` (`%Stolen`
       husk + 👥 surface via `DoorFace.svelte`). All session-local, omitted from every export.
-- **the wire dial (the gap)** — `Ghost/N/Tribunal.g:63,65` `Socket_real`: `addr =
-   peering.sc.name`, captured once into `/relay?addr=`; never re-reads `Swarm_address()`,
-    never re-dials on change. **Item 1 lives here.**
+- **the wire dial (gap CLOSED 2026-08-27)** — `Ghost/N/Tribunal.g:~72` `Socket_real`: `home()`
+   reads `peering.sc.address || peering.sc.name` FRESH per connect; `rehome()` (~217) drops the
+    socket sans intentional-latch so onclose re-dials at the current place. `Swarm_rehome(ident)`
+     (Swarm.g) syncs the station Peering + calls it on Steal Back / Reinstate.
 - **relay routing** — `src/lib/server/relay.ts`: `locals` (addr → Set, ~120), `deliverLocal`
    (fan-out to all `qaddr===to` station sockets, ~229), `ackBack` (corr-route, unbound CLI
     only, ~126), additive `bind`, no delivery gate in `handleHello`. ⚠ the file carries a NUL

@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=20	{"mung":["age"]}
+      self,round=19	{"mung":["age"]}
       w:MusuHeist,now=1752000090
-        self,round=20	{"mung":["age"]}
+        self,round=19	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -122,9 +122,9 @@ Snap:H
               req:unemit,seq=13,type:repli_lines,body_hash:dd4fa041b3b1903f35be52539f020d718998fa45887a918ba164b30730f8c42b,body_len=213,done,to:repli_lines,finished
               req:unemit,seq=14,type:repli_lines,body_hash:85eab247abbb45475e54dcfcb19f088242a65aece45648a9d3d4fe8cdbd0b0dd,body_len=213,done,to:repli_lines,finished
               req:unemit,seq=15,type:repli_lines,body_hash:2f235c5cb4391d639c6beff162105b0c2fb750101b6e367a5c3a30228f16d197,body_len=217,done,to:repli_lines,finished
-              req:unemit,seq=16,type:repli_lines,body_hash:9cfcb2eddbf01ece0bf107454d54acbc68e56300b3a97688c6184c900c8a72ce,body_len=230,done,to:repli_lines,finished
-              req:unemit,seq=17,type:repli_lines,body_hash:41f7d55397870b6ff6fe1b6ca373b5ce514573726f6a28287b8566423fb5ce42,body_len=222,done,to:repli_lines,finished
-              req:unemit,seq=18,type:repli_lines,body_hash:64658acec46e593f6349a76f8d27798971d142f694dd71c35cc0033ea4f15581,body_len=225,done,to:repli_lines,finished
+              req:unemit,seq=16,type:repli_lines,body_hash:7ef7940ca2ab27a45deeb9298e301c6a6a44553f4e9ede2d4dd4a09086febd5e,body_len=230,done,to:repli_lines,finished
+              req:unemit,seq=17,type:repli_lines,body_hash:b67f1818deaa88e8f8dd5098b9c10f93f2e2bd80298e57ac2b367321b3fde6a7,body_len=222,done,to:repli_lines,finished
+              req:unemit,seq=18,type:repli_lines,body_hash:6cf880dab8bd9b80c95ce3c38a17bb87fa6b75dd5abe56aa0ddb87c9ce9eec18,body_len=225,done,to:repli_lines,finished
             Ud,pubkey:4e09f34f5a6ab900
           active_transport,type:mock,open
         MusuSelf,pub:4e09f34f5a6ab900
@@ -167,9 +167,9 @@ Snap:H
                   Original,seq:2,cid:e0d1807fa53044f48021912f357290b98042bcff9711a9cdb268833f96e87cf5	{"ref":{"buf":"Uint8Array()"}}
                   Original,seq:3,cid:73ea2950a7a0a6020cf94ee01142e43ac40287d007e7acad945210a362cd2acd	{"ref":{"buf":"Uint8Array()"}}
               Cloud,page:2
-                Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:4t-mathrock/Fourier Four - Bogus Name.wav,bytes=8110,ext:wav,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d
-                Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Echo E.wav,bytes=960104,ext:wav,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998
-                Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Query E.wav,bytes=1088104,ext:wav,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e
+                Record,id:f9cb73180655432e,path:4t-mathrock/Fourier Four - Bogus Name.wav,title:Tagged Truth,artist:Fourier Four,bytes=8110,ext:wav,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d
+                Record,id:a14602e5ca2e9bd0,path:4t-mathrock/Fourier Four - Echo E.wav,title:Echo E,artist:Fourier Four,bytes=960104,ext:wav,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998
+                Record,id:370d870166ffe45f,path:4t-mathrock/Fourier Four - Query E.wav,title:Query E,artist:Fourier Four,bytes=1088104,ext:wav,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e
           shop,pub:4e09f34f5a6ab900
           radiostocking,pub:4e09f34f5a6ab900
         MusuSelf,pub:be0dab3303037ad2
@@ -205,6 +205,6 @@ Snap:H
             Record,id:d8a28ada85f2e851,title:Deep A,artist:The Sines,path:The Sines - Deep A.wav,ext:wav,bytes=1152100,body_hash:d8a28ada85f2e85151b446112e4d97db3bc6cc24c5ef335b2593be0d95df6b28,total=5
             Record,id:95f3c03e41e9c007,title:High A,artist:The Sines,path:The Sines - High A.wav,ext:wav,bytes=1280100,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4,total=5
             Record,id:902552d4a0b8b0c1,title:Middle A,artist:The Sines,path:The Sines - Middle A.wav,ext:wav,bytes=1024102,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8,total=4
-            Record,id:f9cb73180655432e,title:Tagged Truth,artist:Fourier Four,path:4t-mathrock/Fourier Four - Bogus Name.wav,bytes=8110,ext:wav,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d
-            Record,id:a14602e5ca2e9bd0,title:Echo E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Echo E.wav,bytes=960104,ext:wav,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998
-            Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,path:4t-mathrock/Fourier Four - Query E.wav,bytes=1088104,ext:wav,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e
+            Record,id:f9cb73180655432e,path:4t-mathrock/Fourier Four - Bogus Name.wav,title:Tagged Truth,artist:Fourier Four,bytes=8110,ext:wav,body_hash:f9cb73180655432e64e0f9a63bc659a5af490e9f274a79f21b8396ede4161a3d
+            Record,id:a14602e5ca2e9bd0,path:4t-mathrock/Fourier Four - Echo E.wav,title:Echo E,artist:Fourier Four,bytes=960104,ext:wav,body_hash:a14602e5ca2e9bd00fe5f7d96e1f27bd1113071f99d18687f3a98a6c76f5b998
+            Record,id:370d870166ffe45f,path:4t-mathrock/Fourier Four - Query E.wav,title:Query E,artist:Fourier Four,bytes=1088104,ext:wav,body_hash:370d870166ffe45f2e19b0bd1e8fdf765e0d208ac53fab66790ffe1e334c4a0e

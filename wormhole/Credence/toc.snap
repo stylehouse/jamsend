@@ -30,6 +30,10 @@ Waft:Credence
     Funkcion:Storying,of_Book:SwarmSpoof,born:2026-07-22,desc:the prepub-forgery teeth — a hostile hello may declare a victim's address while holding its own key and self-signed grant so the door binds the routing prepub to the verified pub or refuses the seal
     Funkcion:Storying,of_Book:SwarmDisk
     Funkcion:Storying,of_Book:SwarmCohort
+    Funkcion:Storying,of_Book:SwarmRole
+    Funkcion:Storying,of_Book:SwarmSeal
+    Funkcion:Storying,of_Book:SwarmFerry
+    Funkcion:Storying,of_Book:EmojiConfirm
   What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette,obsoleted:by Vyto
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:VoroMitosis
@@ -131,6 +135,10 @@ Waft:Credence
     Funkcion:Storying,of_Book:MusuRaStock
     Funkcion:Storying,of_Book:MusuRaTerm
     Funkcion:Storying,of_Book:MusuNeGrind
+    Funkcion:Storying,of_Book:MusuFloor
+    Funkcion:Storying,of_Book:MusuPress
+    Funkcion:Storying,of_Book:MusuQuarter
+    Funkcion:Storying,of_Book:MusuPressLossy
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus
@@ -195,3 +203,4 @@ Waft:Credence
     Funkcion:Storying,of_Book:Radiation
     Funkcion:Storying,of_Book:ErrChannel
     Funkcion:Storying,of_Book:RehealSmoke
+    Funkcion:Storying,of_Book:SuperCull
