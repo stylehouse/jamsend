@@ -111,6 +111,32 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
      this doc: the retransmit timer is **an ambient tick, never a ttlilt** (§7.1), and **`req` is
       a better home for state than a string on a particle** (§7.5).
 
+**FIELD NOTE (2026-08-26): the flood showed up in the wild, off the test bench.** A live
+ humdinger daemon serving a real pull logged `🛰☠ inbox backstop: pier editor holds 2050 unemits`
+  — the sink's serial `%req:unemit` drain (`inbox.do()`, under the beliefs mutex) fell behind an
+   ungated source `conn.send`, hit the 2000 cap, and shed oldest → drop→re-ask churn. Not a new
+    defect: it is §2's convoy and §3.3's head-of-line starvation observed under REAL Book-drive
+     mutex load instead of a quiet `Musu*` world — the first datapoint that the open loop bites
+      *outside the bench*. It reinforces items 3/4 (the ack-clock + AIMD are what close it) and
+       item 00 (only the composition Book would reproduce it deterministically). The ack today is
+        retransmit-only — nothing tells the source the sink is drowning, so there is nothing to
+         *decrease* on; the missing §5.3 park-back is upstream of §5.6's window. **Build stance to
+          carry into item 4:** make the loop's own state (window, in-flight, queue-depth, `srtt`)
+           **legible matter — C particles under the Pier, not closure locals** — so the loop is
+            ordinary C ops, Story can `%see` it, and Vyto can render the convoy instead of us
+             grepping `☠`. One representation serves the loop and the view; it dogfoods the one bet.
+
+**SCOPE FLAG for the human — §7.4 may want reopening (flagged, NOT acted on).** `Portability_doc`
+ §0 now bets pool↔pool phone-to-phone transfer is the MAJORITY path ("design the pool paths as
+  primary, not a nicety bolted on"). That pressures §7.4's ruling that per-peer trunk fairness is
+   OUT — the ruling rests on "every transfer crosses the relay one connection at a time / a single
+    pair saturating is not observed," which the star topology guaranteed and a pool-primary world
+     inverts. If pools are primary, many concurrent peers IS the product and §5.9/§7.4 stop being
+      post-v1.0. This stays a flag: §7 was the human's ruling and holds until the human re-rules.
+       When it is picked up, coordinate the diff with `Portability_doc` §5 — same Repli/Peeroleum
+        file, orthogonal axis (identity/merge there, congestion here); sequence AFTER `RepliShadow`
+         so the window builds on the shadow-shape, not the doomed `Repli_identity_keys` loc-table.
+
 **Scope: v1.0 in ~38h from 2026-08-05 evening.** That is the frame for every "in scope?" call
  here. §5.1 → §5.3 → §5.4 is the spine; §5.6/§5.7 are refinements that can miss the date;
   §5.9 (era-scoped seqs) is post-v1.0 by design; per-peer trunk fairness is explicitly out

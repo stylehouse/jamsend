@@ -1,0 +1,26 @@
+Snap:H
+  H:SwarmBody,Run
+    A:SwarmBody
+      self,round=4	{"mung":["age"]}
+      w:SwarmBody,now=1751700000
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:4b6a63a01204bf0e,prepub:4b6a63a01204bf0e,friendly:Alice
+            Peering,name:4b6a63a01204bf0e,friendly:Alice
+              Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,role:Captain,address:4b6a63a01204bf0e
+          Identity:a336c7172442dcab,prepub:a336c7172442dcab,friendly:Zoe
+            Peering,name:a336c7172442dcab,friendly:Zoe
+        testing
+          stood,keyed_by_bodykey,not_soul_keyed,bodykey_durable,per_soul_bodykey,mine_is_computed,no_self_flag
+          friended,absorbed:1,bob_mine_is_bob,bob_mine_bodykey,no_self_on_pier,no_self_at_source
+          subnetted,primary_is_bare,suffix_ascends,empty_null
+        reached:step_3
+        Account,of:Bob
+          Identity:bob_prepub_000,prepub:bob_prepub_000,friendly:Bob
+            Peering,name:bob_prepub_000,friendly:Bob
+              Body,pub:bob_body_pub_00,role:Captain,address:bob_prepub_000
+              Pier,prepub:4b6a63a01204bf0e,pub:4b6a63a01204bf0efe6be0d9271c83542fa6776000e6664d99e3a7db574c2892
+                Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,role:Captain,address:4b6a63a01204bf0e
+        reached:step_4

@@ -1,0 +1,36 @@
+story:SwarmPost
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.037
+      sample=0.032,at=1787814770
+      sample=0.053,at=1787814791
+      sample=0.055,at=1787814815
+      sample=0.055,at=1787814833
+      sample=0.031,at=1787814838
+      sample=0.025,at=1787814872
+      sample=0.032,at=1787815034
+      sample=0.032,at=1787815045
+      sample=0.025,at=1787815051
+      sample=0.031,at=1787815580
+    TimeTotal:step,avg=0.007
+      sample=0.006,at=1787814770
+      sample=0.01,at=1787814791
+      sample=0.011,at=1787814815
+      sample=0.011,at=1787814833
+      sample=0.006,at=1787814838
+      sample=0.005,at=1787814872
+      sample=0.006,at=1787815034
+      sample=0.006,at=1787815045
+      sample=0.005,at=1787815051
+      sample=0.006,at=1787815580
+  step,dige:0000000000000000
+  step=2,dige:0000000000000000
+  step=3,dige:0000000000000000
+  step=4,dige:52426f8556182891
+    Assertion:a-body-reads-its,sentence:a body reads its Post off the grant — the MyCave pier confers Cave the MyCaptain pier confers Captain and the Post is never a string the body picks but the invite feature projected
+    Assertion:a-capability-is-not,sentence:a capability is not a Post — a Music grant confers no role so serving music and being a body stay distinct kinds of grant
+  step=5,dige:4ced2077e7a9881b
+    Assertion:a-notgrant-drops-the,sentence:a NotGrant drops the Post but keeps the body — re-deriving after the revoke retires the role while the body row still stands so a Post-less body is undivided not deleted

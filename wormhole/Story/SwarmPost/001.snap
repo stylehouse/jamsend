@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmPost,Run
+    A:SwarmPost
+      self,round	{"mung":["age"]}
+      w:SwarmPost
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

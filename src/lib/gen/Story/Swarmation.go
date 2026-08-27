@@ -12,7 +12,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'c74dcc6fc7e7502f~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return '798601eb0b30f094~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -2892,6 +2892,831 @@ async SwarmDivide_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'SwarmDivide') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmBody — the body key + the COMPUTED self + the vessel subnet (Division_todo step 1) ══════════════
+//  Division_todo §ATOMS: a Body is (store × soul), and its durable identity is its own BODY KEY — minted
+//   once per soul per store, never replicated.  The row a body takes is keyed by that key's pub, NOT the
+//    soul prepub (one soul wears many bodies), and WHICH ROW IS ME is COMPUTED from the key, never a
+//     stored `self:1` flag — because a stored flag would REPLICATE and a friend absorbing the roster would
+//      then read MY self bit and mistake its own body for my Captain (the §STORAGE hazard this fixes).
+//   beat 2  Alice mints a body key + takes her own body with NO explicit pub → the row is keyed by the
+//            body key; ensure() honours the cache (idempotent); a second soul in the same store mints its
+//             OWN key; Swarm_body_mine finds the row by pub-match and NO self flag rides it
+//   beat 3  a FRIEND (Bob) absorbs Alice's published roster — his own body_mine is HIS body not Alice's
+//            (the computed self is body-local) and no absorbed row carries a self flag (it never existed)
+//   beat 4  the Vessel table's pure ordering — Swarm_vessel_pick picks the bare address first then
+//            ascends the suffixes (an individual's local subnet has a deterministic primary), [] → null
+//  THE DISCRIMINATION: a row keyed by the soul prepub would fail keyed_by_bodykey; a stored self:1 would
+//   show up on the friend's absorbed copy; a pick that ignored the bare-first tiebreak would not name the
+//    primary.  This is step 1 of the field, proven off pure matter (no Dexie — the adapter is production).
+//  CONVENTION (Swarm*): the world MUST be named SwarmBody.
+
+SwarmBody(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmBody_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+SwarmBody_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+SwarmBody_note(w, sc) {
+    let t = this.SwarmBody_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+async SwarmBody_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.SwarmBody_stand(w) }
+        if (n === 3) { this.SwarmBody_friend(w) }
+        if (n === 4) { this.SwarmBody_subnet(w) }
+    }
+    this.SwarmBody_witness(w)
+    await this.SwarmBody_order(w)
+
+},
+// beat 2 — the body key IS the row's identity.  Fixed seeds + pinned clock keep it byte-repeatable.  The
+//  key is minted onto .c directly (deterministic, no Dexie in a Book); ensure() then returns the cache.
+async SwarmBody_stand(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1751700000
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmBody-Alice')
+    let alice = this.Swarm_identity(acct, keys, 'Alice')
+    w.c.alice = alice
+    let bare = alice.sc.prepub
+    alice.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Alice-body')
+    let k1 = this.Swarm_body_key(alice)
+    let k2 = await this.Swarm_body_key_ensure(alice)
+    // a SECOND soul in the SAME store gets its OWN body key — one per (store × soul).
+    let zkeys = await this.Swarm_mint_keys('SwarmBody-Zoe')
+    let zoe = this.Swarm_identity(acct, zkeys, 'Zoe')
+    zoe.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Zoe-body')
+    let kz = this.Swarm_body_key(zoe)
+    // take Alice's own body with NO explicit pub — it must key by the body key, not the soul prepub.
+    let body = this.Swarm_body_take(alice, null, 'Captain', bare)
+    let mine = this.Swarm_body_mine(alice)
+    let row = { stood: 1 }
+    if (body && String(body.sc.pub) === String(k1.pub)) { row.keyed_by_bodykey = 1 }
+    if (body && String(body.sc.pub) !== String(bare)) { row.not_soul_keyed = 1 }
+    if (k1 && k2 && String(k1.pub) === String(k2.pub)) { row.bodykey_durable = 1 }
+    if (kz && k1 && String(kz.pub) !== String(k1.pub)) { row.per_soul_bodykey = 1 }
+    if (mine && body && mine === body) { row.mine_is_computed = 1 }
+    if (body && !body.sc.self) { row.no_self_flag = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 3 — the computed self is body-LOCAL.  Bob takes his own body, then absorbs Alice's published
+//  roster onto his %Pier.  His body_mine is HIS row (pub-match against his own key); no pier row carries
+//   a self flag (Swarm_roster_of never carried one, because Swarm_body_take never writes one).
+SwarmBody_friend(w) {
+    w.i({reached: "step_3"})
+    let alice = w.c.alice
+    if (!alice) { return }
+    let bare = alice.sc.prepub
+    let bacct = w.oai({ Account: 1, of: 'Bob' })
+    bacct.c.up = w
+    let bkeys = { prepub: 'bob_prepub_000', pub: 'bob_pub_00000000', key: 'bob_key_000' }
+    let bob = this.Swarm_identity(bacct, bkeys, 'Bob')
+    bob.c.bodykey = { pub: 'bob_body_pub_00', key: 'bob_body_key_00', prepub: 'bob_body_pre' }
+    this.Swarm_body_take(bob, null, 'Captain', 'bob_prepub_000')
+    let bpeer = this.Swarm_peering(bob)
+    let pier = bpeer.i({ Pier: 1, prepub: bare, pub: alice.c.keys.pub })
+    pier.c.up = bpeer
+    let payload = this.Swarm_roster_of(alice)
+    this.Swarm_roster_onto(pier, payload)
+    let bmine = this.Swarm_body_mine(bob)
+    let anyself = 0
+    for (const pb of pier.o({ Body: 1 })) { if (pb.sc.self) { anyself = 1 } }
+    let aliceself = 0
+    for (const ab of this.Swarm_body_roster(alice)) { if (ab.sc.self) { aliceself = 1 } }
+    let row = { friended: 1, absorbed: '' + pier.o({ Body: 1 }).length }
+    if (bmine && String(bmine.sc.address) === 'bob_prepub_000') { row.bob_mine_is_bob = 1 }
+    if (bmine && bmine.sc.role === 'Captain' && String(bmine.sc.pub) === 'bob_body_pub_00') { row.bob_mine_bodykey = 1 }
+    if (anyself === 0) { row.no_self_on_pier = 1 }
+    if (aliceself === 0) { row.no_self_at_source = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 4 — the Vessel table's pure ordering (no Dexie in a Book; the adapter is production-only): the
+//  primary is the bare address, then the suffixes ascend, and an empty subnet picks nothing.
+SwarmBody_subnet(w) {
+    w.i({reached: "step_4"})
+    let alice = w.c.alice
+    if (!alice) { return }
+    let bare = alice.sc.prepub
+    let rows = [{ address: bare + '_2' }, { address: bare }, { address: bare + '_1' }]
+    let prim = this.Swarm_vessel_pick(rows, bare)
+    let suffixed = this.Swarm_vessel_pick([{ address: bare + '_3' }, { address: bare + '_1' }], bare)
+    let empty = this.Swarm_vessel_pick([], bare)
+    let row = { subnetted: 1 }
+    if (prim && String(prim.address) === String(bare)) { row.primary_is_bare = 1 }
+    if (suffixed && String(suffixed.address) === bare + '_1') { row.suffix_ascends = 1 }
+    if (empty === null) { row.empty_null = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmBody_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 2)) { return }
+    let T = this.SwarmBody_T(w)
+    let s = T.o({ stood: 1 })[0]
+    if (!s) { return }
+    // #1 THE BODY KEY IS THE ROW'S IDENTITY: keyed by the body key not the soul — one soul wears many bodies.
+    if (s && +s.sc.keyed_by_bodykey === 1 && +s.sc.not_soul_keyed === 1) { this.story_swear(w, 'a body row is keyed by its own body key not the soul — one soul wears many bodies so the durable per-body key is what a roster row IS') }
+    // #2 DURABLE + ONE-PER-SOUL: ensure honours the cache and a second soul in the same store mints its own.
+    if (s && +s.sc.bodykey_durable === 1 && +s.sc.per_soul_bodykey === 1) { this.story_swear(w, 'the body key is durable and one per soul per store — ensure honours the cache and a second soul in the same store mints a key of its own') }
+    // #3 SELF IS COMPUTED NOT STORED: body_mine finds me by the key and the mint writes no self bit.
+    if (s && +s.sc.mine_is_computed === 1 && +s.sc.no_self_flag === 1) { this.story_swear(w, 'which row is me is computed from the body key never a stored flag — the mint writes no self bit onto the row so nothing false can replicate') }
+    let f = T.o({ friended: 1 })[0]
+    // #4 THE COMPUTED SELF IS BODY-LOCAL: a friend computes ITS OWN body as self and no self flag crossed.
+    if (f && +f.sc.bob_mine_is_bob === 1 && +f.sc.bob_mine_bodykey === 1 && +f.sc.no_self_on_pier === 1 && +f.sc.no_self_at_source === 1) { this.story_swear(w, 'the self answer is body-local — a friend absorbing the roster computes its own body as self and no self flag ever crossed the wire') }
+    let sub = T.o({ subnetted: 1 })[0]
+    // #5 THE VESSEL SUBNET ORDERS BARE-FIRST: a deterministic primary then ascending suffixes and empty → null.
+    if (sub && +sub.sc.primary_is_bare === 1 && +sub.sc.suffix_ascends === 1 && +sub.sc.empty_null === 1) { this.story_swear(w, 'the vessel subnet picks the bare address first then ascends the suffixes — an individual local subnet has a deterministic primary and an empty one picks nothing') }
+
+},
+// SwarmBody_order — float A:SwarmBody to the front of H/* so the Run snap stays readable.
+async SwarmBody_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) { return }
+    let first = (a) => (a.sc.A === 'SwarmBody') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmCharter — the soul-signed era-stamped roster (Division_todo step 2) ═════════════════════════════
+//  §POST'S TRUTH CHAIN #2: the %Body rows are pure resolution; the Charter is the SIGNED snapshot of them
+//   that makes routing trustable across the wire.  A friend verifies it against the soul pub — a spoofed
+//    "I am Alice's Cave" fails the signature, and a split-brain can't flap because peers keep the HIGHEST
+//     ERA.  It is Story's own idiom (state serialised at a version re-emitted when the digest moves) given
+//      a signature — the WELD, proven.
+//   beat 2  Alice signs her division (Captain bare + Cave _1) at era 1 → ONE %Charter row that SELF-
+//            verifies and ROUTES (Charter_addr finds the Cave at its suffix the Captain at the bare name)
+//   beat 3  every tamper fails the signature — a moved address a bumped era a swapped soul — while the
+//            genuine wire still verifies (the control that proves the teeth cut something real)
+//   beat 4  a FRIEND absorbs the genuine Charter and routes off it — a HIGHER era supersedes when Alice
+//            moves her Cave — a STALE era is ignored (highest-era wins) — a FORGED one is refused — and
+//             the pier holds exactly ONE Charter row merged in place
+//  CONVENTION (Swarm*): the world MUST be named SwarmCharter.
+
+SwarmCharter(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmCharter_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+SwarmCharter_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+SwarmCharter_note(w, sc) {
+    let t = this.SwarmCharter_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+async SwarmCharter_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.SwarmCharter_stand(w) }
+        if (n === 3) { await this.SwarmCharter_tamper(w) }
+        if (n === 4) { await this.SwarmCharter_peer(w) }
+    }
+    this.SwarmCharter_witness(w)
+    await this.SwarmCharter_order(w)
+
+},
+// beat 2 — Alice signs her division at era 1.  Fixed seeds + pinned clock + deterministic ed25519 keep
+//  the signature (and so the snap) byte-repeatable.  Captain is her OWN body (body key, bare); Cave is
+//   another machine's body (noted at _1).
+async SwarmCharter_stand(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1751700000
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmCharter-Alice')
+    let alice = this.Swarm_identity(acct, keys, 'Alice')
+    w.c.alice = alice
+    let bare = alice.sc.prepub
+    alice.c.bodykey = await this.Swarm_mint_keys('SwarmCharter-Alice-body')
+    this.Swarm_body_take(alice, null, 'Captain', bare)
+    this.Swarm_body_note(alice, 'charter_cave_pub', 'Cave', bare + '_1')
+    let ch = await this.Swarm_charter_sign(alice, 1)
+    let wire = this.Swarm_charter_wire(alice)
+    let ok = await this.Swarm_charter_verify(wire, alice.c.keys.pub)
+    let peering = this.Swarm_peering(alice)
+    let one = peering.o({ Charter: 1 }).length
+    let caveAddr = this.Charter_addr(peering, 'Cave')
+    let capAddr = this.Charter_addr(peering, 'Captain')
+    let noneAddr = this.Charter_addr(peering, 'Nobody')
+    let row = { signed: 1 }
+    if (ch && ch.sc.era === '1') { row.era_one = 1 }
+    if (one === 1) { row.one_row = 1 }
+    if (ok === true) { row.self_verifies = 1 }
+    if (caveAddr === bare + '_1') { row.cave_resolves = 1 }
+    if (capAddr === bare) { row.captain_bare = 1 }
+    if (noneAddr === null) { row.none_null = 1 }
+    this.SwarmCharter_note(w, row)
+
+},
+// beat 3 — the teeth.  Three mutations of the genuine wire — a moved Cave address a bumped era a swapped
+//  soul — each fail the signature; the untouched wire still verifies (the control).
+async SwarmCharter_tamper(w) {
+    w.i({reached: "step_3"})
+    let alice = w.c.alice
+    if (!alice) { return }
+    let bare = alice.sc.prepub
+    let soulPub = alice.c.keys.pub
+    let good = this.Swarm_charter_wire(alice)
+    let bad_addr = { era: good.era, payload: good.payload.replace(bare + '_1', bare + '_9'), sig: good.sig, soul: good.soul }
+    let bad_era = { era: '99', payload: good.payload, sig: good.sig, soul: good.soul }
+    let bad_soul = { era: good.era, payload: good.payload, sig: good.sig, soul: 'deadbeefdeadbeef' }
+    let g = await this.Swarm_charter_verify(good, soulPub)
+    let a = await this.Swarm_charter_verify(bad_addr, soulPub)
+    let e = await this.Swarm_charter_verify(bad_era, soulPub)
+    let s = await this.Swarm_charter_verify(bad_soul, soulPub)
+    let row = { tampered: 1 }
+    if (g === true) { row.genuine_ok = 1 }
+    if (a === false) { row.addr_rejected = 1 }
+    if (e === false) { row.era_rejected = 1 }
+    if (s === false) { row.soul_rejected = 1 }
+    this.SwarmCharter_note(w, row)
+
+},
+// beat 4 — the friend's routing.  Bob absorbs Alice's genuine era-1 Charter (verify → land → project the
+//  %Body rows) and routes off it.  When Alice moves her Cave and re-charters at era 2 the higher era
+//   supersedes; a stale era-1 re-absorb is ignored; a forged Charter is refused; the pier keeps ONE row.
+async SwarmCharter_peer(w) {
+    w.i({reached: "step_4"})
+    let alice = w.c.alice
+    if (!alice) { return }
+    let bare = alice.sc.prepub
+    let soulPub = alice.c.keys.pub
+    let bacct = w.oai({ Account: 1, of: 'Bob' })
+    bacct.c.up = w
+    let bkeys = { prepub: 'bob_prepub_000', pub: 'bob_pub_00000000', key: 'bob_key_000' }
+    let bob = this.Swarm_identity(bacct, bkeys, 'Bob')
+    bob.c.bodykey = { pub: 'bob_body_pub_00', key: 'bob_body_key_00', prepub: 'bob_body_pre' }
+    let bpeer = this.Swarm_peering(bob)
+    let pier = bpeer.i({ Pier: 1, prepub: bare, pub: soulPub })
+    pier.c.up = bpeer
+    let e1 = this.Swarm_charter_wire(alice)
+    let got1 = await this.Swarm_charter_absorb(pier, e1, soulPub)
+    let caveOverPier1 = this.Charter_addr(pier, 'Cave')
+    let bodies1 = pier.o({ Body: 1 }).length
+    this.Swarm_body_note(alice, 'charter_cave_pub', 'Cave', bare + '_2')
+    await this.Swarm_charter_sign(alice, 2)
+    let e2 = this.Swarm_charter_wire(alice)
+    let got2 = await this.Swarm_charter_absorb(pier, e2, soulPub)
+    let caveOverPier2 = this.Charter_addr(pier, 'Cave')
+    let gotStale = await this.Swarm_charter_absorb(pier, e1, soulPub)
+    let forged = { era: '9', payload: e2.payload.replace(bare + '_2', bare + '_7'), sig: e2.sig, soul: soulPub }
+    let gotForged = await this.Swarm_charter_absorb(pier, forged, soulPub)
+    let caveFinal = this.Charter_addr(pier, 'Cave')
+    let charterRows = pier.o({ Charter: 1 }).length
+    let row = { peered: 1 }
+    if (got1 === 1 && caveOverPier1 === bare + '_1' && bodies1 === 2) { row.absorbed = 1 }
+    if (got2 === 1 && caveOverPier2 === bare + '_2') { row.superseded = 1 }
+    if (gotStale === 0 && caveFinal === bare + '_2') { row.stale_ignored = 1 }
+    if (gotForged === 0) { row.forged_refused = 1 }
+    if (charterRows === 1) { row.one_pier_charter = 1 }
+    this.SwarmCharter_note(w, row)
+
+},
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmCharter_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 2)) { return }
+    let T = this.SwarmCharter_T(w)
+    let s = T.o({ signed: 1 })[0]
+    if (!s) { return }
+    // #1 THE CHARTER SIGNS AND ROUTES: one row era-stamped self-verifying and Charter_addr resolves each Post.
+    if (s && +s.sc.era_one === 1 && +s.sc.one_row === 1 && +s.sc.self_verifies === 1 && +s.sc.cave_resolves === 1 && +s.sc.captain_bare === 1 && +s.sc.none_null === 1) { this.story_swear(w, 'the soul signs its division into one era-stamped Charter that verifies against its own pub — and routing reads the address for a Post off it the Cave at its suffix the Captain at the bare name an unheld Post nothing') }
+    let t = T.o({ tampered: 1 })[0]
+    // #2 TAMPER FAILS THE SIGNATURE: a moved address a bumped era a swapped soul all rejected — genuine still ok.
+    if (t && +t.sc.genuine_ok === 1 && +t.sc.addr_rejected === 1 && +t.sc.era_rejected === 1 && +t.sc.soul_rejected === 1) { this.story_swear(w, 'a tampered Charter fails the signature — move an address bump the era swap the soul and each is rejected while the untouched Charter still verifies so a spoofed I-am-your-Cave cannot pass') }
+    let p = T.o({ peered: 1 })[0]
+    // #3 A FRIEND ABSORBS AND ROUTES: verify → land → project the %Body rows → route to the serving Cave.
+    if (p && +p.sc.absorbed === 1) { this.story_swear(w, 'a friend absorbs the signed Charter and routes off it — verify then land then project the roster into per-body rows so routing off %Body IS routing off the Charter one hop removed') }
+    // #4 HIGHEST ERA WINS: a newer era supersedes when the division moves and a stale era is ignored.
+    if (p && +p.sc.superseded === 1 && +p.sc.stale_ignored === 1) { this.story_swear(w, 'the highest era wins — when the soul moves its Cave and re-charters the newer era supersedes and a stale earlier era is ignored so a split-brain cannot flap the routing') }
+    // #5 FORGED REFUSED AND MERGED IN PLACE: a bad signature never lands and the pier keeps ONE Charter row.
+    if (p && +p.sc.forged_refused === 1 && +p.sc.one_pier_charter === 1) { this.story_swear(w, 'a forged Charter is refused at absorb and the pier keeps exactly one Charter row merged in place — the attestation never churns into a row-per-era') }
+
+},
+// SwarmCharter_order — float A:SwarmCharter to the front of H/* so the Run snap stays readable.
+async SwarmCharter_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) { return }
+    let first = (a) => (a.sc.A === 'SwarmCharter') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmPost — the Post is the grant projected (Division_todo step 3) ═══════════════════════════════════
+//  §POST'S TRUTH CHAIN #1: a body's Post is NOT a string it picks — it IS the `%Grant:My<Post>` its Seat
+//   cross-signed, revocable via %NotGrant.  This Book rides the SAME SwarmRole rails (mint the invite →
+//    redeem over the pump → a mutual %Pier wearing the feature) and proves a body READS its Post off that
+//     grant and DROPS it when a %NotGrant retires it — the imperial-realm truth given a signature.
+//   beat 2  Alice (the Seat) stands with three counterparts — Cara (a Cave body) Dave (a Captain body)
+//            Bob (a plain Music friend)
+//   beat 3  Alice mints MyCave + MyCaptain + Music off the one machinery; all three redeem and seal
+//   beat 4  Alice takes the two body rows with NO hand-passed role and DERIVES each Post off its grant —
+//            Cave from MyCave Captain from MyCaptain — while a Music grant confers NO Post (a capability
+//             is not a role) and the pure map holds
+//   beat 5  Alice %NotGrants the MyCave — re-deriving now DROPS Cara's Post while her body row STANDS
+//            (a body without a Post is undivided not deleted — change is revoke plus re-issue)
+//  CONVENTION (Swarm*): the world MUST be named SwarmPost.
+
+SwarmPost(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmPost_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+SwarmPost_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+SwarmPost_note(w, sc) {
+    let t = this.SwarmPost_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+async SwarmPost_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.SwarmPost_stand(w) }
+        if (n === 3) { await this.SwarmPost_seal(w) }
+        if (n === 4) { await this.SwarmPost_derive(w) }
+        if (n === 5) { await this.SwarmPost_revoke(w) }
+    }
+    await this.SwarmPost_pump(w)
+    this.SwarmPost_witness(w)
+    await this.SwarmPost_order(w)
+
+},
+async SwarmPost_pump(w) {
+    for (const acct of w.o({ Account: 1 })) {
+        for (const ident of acct.o({ Identity: 1 })) { await this.Swarm_pump(w, ident) }
+    }
+
+},
+async SwarmPost_person(w, name) {
+    let acct = w.oai({ Account: 1, of: name })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmPost-' + name)
+    return this.Swarm_identity(acct, keys, name)
+
+},
+SwarmPost_ident(w, name) {
+    return w.o({ Account: 1, of: name })[0]?.o({ Identity: 1 })[0]
+
+},
+// beat 2 — the Seat and three counterparts: a Cave body a Captain body and a plain Music friend.
+async SwarmPost_stand(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1751650000
+    await this.SwarmPost_person(w, 'Alice')
+    await this.SwarmPost_person(w, 'Cara')
+    await this.SwarmPost_person(w, 'Dave')
+    await this.SwarmPost_person(w, 'Bob')
+
+},
+// beat 3 — the one machinery mints all three features; each redeems and seals over the pump.
+async SwarmPost_seal(w) {
+    w.i({reached: "step_3"})
+    w.sc.now = 1751650010
+    let alice = this.SwarmPost_ident(w, 'Alice')
+    w.c.cave_iz = await this.Swarm_mint_idzeug(w, alice, { MyCave: 1 }, 'post_cave')
+    w.c.capt_iz = await this.Swarm_mint_idzeug(w, alice, { MyCaptain: 1 }, 'post_capt')
+    w.c.music_iz = await this.Swarm_mint_idzeug(w, alice, { Music: 1 }, 'post_music')
+    this.Swarm_online(alice, true)
+    let cara = this.SwarmPost_ident(w, 'Cara')
+    let dave = this.SwarmPost_ident(w, 'Dave')
+    let bob = this.SwarmPost_ident(w, 'Bob')
+    this.Swarm_online(cara, true)
+    this.Swarm_online(dave, true)
+    this.Swarm_online(bob, true)
+    await this.Swarm_redeem(w, cara, w.c.cave_iz)
+    await this.Swarm_redeem(w, dave, w.c.capt_iz)
+    await this.Swarm_redeem(w, bob, w.c.music_iz)
+
+},
+// beat 4 — the derivation.  Take the body rows with NO role, then read the Post off each grant: the
+//  MyCave pier confers Cave the MyCaptain pier confers Captain the Music pier confers nothing.
+async SwarmPost_derive(w) {
+    w.i({reached: "step_4"})
+    let alice = this.SwarmPost_ident(w, 'Alice')
+    if (!alice) { return }
+    let cara = this.SwarmPost_ident(w, 'Cara')
+    let dave = this.SwarmPost_ident(w, 'Dave')
+    let bob = this.SwarmPost_ident(w, 'Bob')
+    let peering = this.Swarm_peering(alice)
+    let pierC = peering.o({ Pier: 1, pub: cara.sc.prepub })[0]
+    let pierD = peering.o({ Pier: 1, pub: dave.sc.prepub })[0]
+    let pierB = peering.o({ Pier: 1, pub: bob.sc.prepub })[0]
+    if (!pierC || !pierD || !pierB) { return }
+    let bare = alice.sc.prepub
+    this.Swarm_body_take(alice, cara.c.keys.pub, null, bare + '_1')
+    this.Swarm_body_take(alice, dave.c.keys.pub, null, bare)
+    let rc = this.Swarm_body_repost(alice, cara.c.keys.pub, pierC)
+    let rd = this.Swarm_body_repost(alice, dave.c.keys.pub, pierD)
+    let bobPost = this.Swarm_grant_post(pierB)
+    let row = { derived: 1 }
+    if (rc && rc.sc.role === 'Cave') { row.cave_from_grant = 1 }
+    if (rd && rd.sc.role === 'Captain') { row.captain_from_grant = 1 }
+    if (bobPost === null) { row.music_no_post = 1 }
+    if (this.Swarm_post_from_feature('MyCave') === 'Cave' && this.Swarm_post_from_feature('MyCaptain') === 'Captain' && this.Swarm_post_from_feature('Music') === null) { row.map_pure = 1 }
+    this.SwarmPost_note(w, row)
+
+},
+// beat 5 — the revoke.  Alice %NotGrants the MyCave; re-deriving now drops Cara's Post while her body
+//  row stands (change = revoke + re-issue; a Post-less body is undivided not deleted).
+async SwarmPost_revoke(w) {
+    w.i({reached: "step_5"})
+    w.sc.now = 1751650030
+    let alice = this.SwarmPost_ident(w, 'Alice')
+    if (!alice) { return }
+    let cara = this.SwarmPost_ident(w, 'Cara')
+    let peering = this.Swarm_peering(alice)
+    let pierC = peering.o({ Pier: 1, pub: cara.sc.prepub })[0]
+    if (!pierC) { return }
+    await this.Swarm_revoke(w, alice, pierC, 'MyCave')
+    let postAfter = this.Swarm_grant_post(pierC)
+    let rc = this.Swarm_body_repost(alice, cara.c.keys.pub, pierC)
+    let stillThere = peering.o({ Body: 1, pub: cara.c.keys.pub })[0]
+    let row = { revoked: 1 }
+    if (postAfter === null) { row.post_gone = 1 }
+    if (rc && !rc.sc.role) { row.role_dropped = 1 }
+    if (stillThere) { row.body_kept = 1 }
+    this.SwarmPost_note(w, row)
+
+},
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmPost_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 4)) { return }
+    let T = this.SwarmPost_T(w)
+    let d = T.o({ derived: 1 })[0]
+    if (!d) { return }
+    // #1 THE POST IS THE GRANT PROJECTED: Cave read off MyCave Captain off MyCaptain and the map is pure.
+    if (d && +d.sc.cave_from_grant === 1 && +d.sc.captain_from_grant === 1 && +d.sc.map_pure === 1) { this.story_swear(w, 'a body reads its Post off the grant — the MyCave pier confers Cave the MyCaptain pier confers Captain and the Post is never a string the body picks but the invite feature projected') }
+    // #2 A CAPABILITY IS NOT A POST: a Music grant confers no Post — roles and capabilities do not blur.
+    if (d && +d.sc.music_no_post === 1) { this.story_swear(w, 'a capability is not a Post — a Music grant confers no role so serving music and being a body stay distinct kinds of grant') }
+    let r = T.o({ revoked: 1 })[0]
+    // #3 A NOTGRANT DROPS THE POST BUT KEEPS THE BODY: revoke retires the role while the body row stands.
+    if (r && +r.sc.post_gone === 1 && +r.sc.role_dropped === 1 && +r.sc.body_kept === 1) { this.story_swear(w, 'a NotGrant drops the Post but keeps the body — re-deriving after the revoke retires the role while the body row still stands so a Post-less body is undivided not deleted') }
+
+},
+// SwarmPost_order — float A:SwarmPost to the front of H/* so the Run snap stays readable.
+async SwarmPost_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) { return }
+    let first = (a) => (a.sc.A === 'SwarmPost') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmGossip — the Charter crosses the real wire (Division_todo step 4) ═══════════════════════════════
+//  §POST'S TRUTH CHAIN: the signed Charter is only useful if a friend HEARS it.  This Book rides the SAME
+//   redeem→seal→pump machinery Music rides and proves a `charter` frame is (a) SEEDED at the seal — a
+//    freshly sealed friend learns the division with no ask — and (b) RE-EMITTED on a division change, with
+//     the highest era winning on the receiver over the wire as it does in memory.
+//   beat 2  Alice divides (Captain bare + Cave _1) and signs her Charter at era 1
+//   beat 3  Bob befriends Alice over the real handshake — and by seal's end Bob's pier ALREADY holds
+//            Alice's era-1 Charter (the seed at pier_confirm) and routes to her Cave at _1
+//   beat 4  Alice moves her Cave to _2 re-charters at era 2 and re-gossips — Bob's pier supersedes to era
+//            2 and routes to _2 — while a genuine-but-OLD era-1 frame re-delivered over the wire is ignored
+//  CONVENTION (Swarm*): the world MUST be named SwarmGossip.
+
+SwarmGossip(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmGossip_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+SwarmGossip_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+async SwarmGossip_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.SwarmGossip_stand(w) }
+        if (n === 3) { await this.SwarmGossip_seal(w) }
+        if (n === 4) { await this.SwarmGossip_change(w) }
+    }
+    await this.SwarmGossip_pump(w)
+    this.SwarmGossip_witness(w)
+    await this.SwarmGossip_order(w)
+
+},
+async SwarmGossip_pump(w) {
+    for (const acct of w.o({ Account: 1 })) {
+        for (const ident of acct.o({ Identity: 1 })) { await this.Swarm_pump(w, ident) }
+    }
+
+},
+async SwarmGossip_person(w, name) {
+    let acct = w.oai({ Account: 1, of: name })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmGossip-' + name)
+    return this.Swarm_identity(acct, keys, name)
+
+},
+SwarmGossip_ident(w, name) {
+    return w.o({ Account: 1, of: name })[0]?.o({ Identity: 1 })[0]
+
+},
+// beat 2 — Alice divides and signs era 1.  The era-1 wire is stashed for the stale-gossip tooth in beat 4.
+async SwarmGossip_stand(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1751680000
+    let alice = await this.SwarmGossip_person(w, 'Alice')
+    await this.SwarmGossip_person(w, 'Bob')
+    let bare = alice.sc.prepub
+    alice.c.bodykey = await this.Swarm_mint_keys('SwarmGossip-Alice-body')
+    this.Swarm_body_take(alice, null, 'Captain', bare)
+    this.Swarm_body_note(alice, 'gossip_cave_pub', 'Cave', bare + '_1')
+    await this.Swarm_charter_sign(alice, 1)
+    w.c.e1_wire = this.Swarm_charter_wire(alice)
+
+},
+// beat 3 — the real seal.  Bob redeems a Music invite; the handshake plays out over the pump, and Alice's
+//  seed (at the pier_confirm she processes) gossips her era-1 Charter to Bob within the same beat.
+async SwarmGossip_seal(w) {
+    w.i({reached: "step_3"})
+    w.sc.now = 1751680010
+    let alice = this.SwarmGossip_ident(w, 'Alice')
+    w.c.music_iz = await this.Swarm_mint_idzeug(w, alice, { Music: 1 }, 'gossip_m1')
+    this.Swarm_online(alice, true)
+    let bob = this.SwarmGossip_ident(w, 'Bob')
+    this.Swarm_online(bob, true)
+    await this.Swarm_redeem(w, bob, w.c.music_iz)
+    // settle the seal + the seed-at-seal absorb WITHIN this beat, then capture the seed as a STABLE note.
+    //  The era-1 window is transient (beat 4 supersedes it on the very next step, before a live witness can
+    //   catch it), so the seed is proven HERE — after the pump drains — not by a live read.
+    for (let i = 0; i < 8; i++) { await this.SwarmGossip_pump(w) }
+    let bare = alice.sc.prepub
+    let bpier = this.Swarm_peering(bob)?.o({ Pier: 1, pub: alice.sc.prepub })[0]
+    let bch = bpier ? bpier.o({ Charter: 1 })[0] : null
+    let t = this.SwarmGossip_T(w)
+    let mark = t.i({ seeded: 1 })
+    mark.c.up = t
+    if (bch && bch.sc.era === '1' && this.Charter_addr(bpier, 'Cave') === bare + '_1') { mark.sc.seed_at_seal = 1 }
+
+},
+// beat 4 — the division moves and re-gossips; then a stale era-1 frame is re-delivered as the tooth.
+async SwarmGossip_change(w) {
+    w.i({reached: "step_4"})
+    w.sc.now = 1751680020
+    let alice = this.SwarmGossip_ident(w, 'Alice')
+    if (!alice) { return }
+    let bare = alice.sc.prepub
+    this.Swarm_body_note(alice, 'gossip_cave_pub', 'Cave', bare + '_2')
+    await this.Swarm_charter_sign(alice, 2)
+    this.Swarm_charter_gossip(w, alice)
+    let bob = this.SwarmGossip_ident(w, 'Bob')
+    if (w.c.e1_wire && bob) {
+        this.Swarm_deliver(w, alice, bob.sc.prepub, { kind: 'charter', charter: w.c.e1_wire, page: this.Swarm_page(alice) })
+        let t = this.SwarmGossip_T(w)
+        let mark = t.i({ stale_sent: 1 })
+        mark.c.up = t
+    }
+
+},
+// ── the witness — reads Bob's LIVE pier each pass; %see fires the pass a truth holds ──
+SwarmGossip_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) { return }
+    let alice = this.SwarmGossip_ident(w, 'Alice')
+    let bob = this.SwarmGossip_ident(w, 'Bob')
+    if (!alice || !bob) { return }
+    let bare = alice.sc.prepub
+    let pier = this.Swarm_peering(bob)?.o({ Pier: 1, pub: alice.sc.prepub })[0]
+    if (!pier) { return }
+    let ch = pier.o({ Charter: 1 })[0]
+    // #1 SEEDED AT THE SEAL: Bob learned Alice's division at seal over the armed frame — no ask.  Read off
+    //  the stable beat-3 note (the live era-1 is gone by the time a witness could see it — see the seal).
+    let seeded = this.SwarmGossip_T(w).o({ seeded: 1 })[0]
+    if (seeded && +seeded.sc.seed_at_seal === 1) { this.story_swear(w, 'the Charter is seeded at the seal — a freshly sealed friend hears the division over the armed charter frame and routes to the Cave at its suffix without ever asking') }
+    // #2 RE-EMITTED ON CHANGE: a higher era gossiped after the move supersedes on the friend.
+    if (ch && ch.sc.era === '2' && this.Charter_addr(pier, 'Cave') === bare + '_2') { this.story_swear(w, 'a division change re-emits the Charter — the soul moves its Cave and re-charters and the gossiped higher era supersedes on the friend so routing follows the move') }
+    // #3 A STALE GOSSIP IS IGNORED: an older era re-delivered over the wire never downgrades the friend.
+    let stale = this.SwarmGossip_T(w).o({ stale_sent: 1 })[0]
+    if (ch && ch.sc.era === '2' && stale && this.Charter_addr(pier, 'Cave') === bare + '_2') { this.story_swear(w, 'a stale gossiped Charter is ignored — an older era re-delivered over the wire never downgrades the friend so the split-brain guard holds end to end') }
+
+},
+// SwarmGossip_order — float A:SwarmGossip to the front of H/* so the Run snap stays readable.
+async SwarmGossip_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) { return }
+    let first = (a) => (a.sc.A === 'SwarmGossip') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmServe — the serve binding: resolve-and-emit (Division_todo step 5) ══════════════════════════════
+//  §ROUTING: a paradigm's dial reads WHERE a Post's server is off the Charter and EMITS — no liveness
+//   cache.  This Book grounds the music serve on per-body routing: a friend serving Music to Alice
+//    resolves her CAVE's address off the signed Charter (not the bare soul id) and the frame lands THERE;
+//     with no Charter it degrades to the Seat; without the Music grant the dial refuses and emits nothing.
+//   beat 2  Alice divides (Captain bare + Cave at its own address) signs her Charter and befriends Bob
+//            over the real seal (a Music grant + the seeded Charter); the Cave department is an online node
+//   beat 3  Bob serves Music to Alice's Cave — serve_to resolves the CAVE address off the Charter and the
+//            emit LANDS at the Cave department not at the bare Seat (per-body routing proven end to end)
+//   beat 4  the edges — a charter-less pier resolves to the Seat (the bare name the always-on fallback) —
+//            and after the Music grant is revoked the dial REFUSES and emits nothing (the gate at use)
+//  CONVENTION (Swarm*): the world MUST be named SwarmServe.
+
+SwarmServe(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmServe_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+SwarmServe_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+SwarmServe_note(w, sc) {
+    let t = this.SwarmServe_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+async SwarmServe_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.SwarmServe_stand(w) }
+        if (n === 3) { await this.SwarmServe_serve(w) }
+        if (n === 4) { await this.SwarmServe_edge(w) }
+    }
+    await this.SwarmServe_pump(w)
+    this.SwarmServe_witness(w)
+    await this.SwarmServe_order(w)
+
+},
+async SwarmServe_pump(w) {
+    for (const acct of w.o({ Account: 1 })) {
+        for (const ident of acct.o({ Identity: 1 })) { await this.Swarm_pump(w, ident) }
+    }
+
+},
+async SwarmServe_person(w, name) {
+    let acct = w.oai({ Account: 1, of: name })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmServe-' + name)
+    return this.Swarm_identity(acct, keys, name)
+
+},
+SwarmServe_ident(w, name) {
+    return w.o({ Account: 1, of: name })[0]?.o({ Identity: 1 })[0]
+
+},
+// beat 2 — Alice divides, signs, and seals with Bob.  The Cave department is a distinct ONLINE node whose
+//  prepub IS the Cave address (the mail wire routes by prepub — the model-layer stand-in for the relay's
+//   suffix routing), so an emit to the Cave address actually LANDS somewhere the Book can see.
+async SwarmServe_stand(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1751690000
+    let alice = await this.SwarmServe_person(w, 'Alice')
+    await this.SwarmServe_person(w, 'Bob')
+    let cacct = w.oai({ Account: 1, of: 'CaveBody' })
+    cacct.c.up = w
+    let caveKeys = { prepub: 'cave_dept_addr', pub: 'cave_dept_pub00', key: 'cave_dept_key' }
+    let caveBody = this.Swarm_identity(cacct, caveKeys, 'CaveDept')
+    this.Swarm_online(caveBody, true)
+    let bare = alice.sc.prepub
+    alice.c.bodykey = await this.Swarm_mint_keys('SwarmServe-Alice-body')
+    this.Swarm_body_take(alice, null, 'Captain', bare)
+    this.Swarm_body_note(alice, 'serve_cave_pub', 'Cave', 'cave_dept_addr')
+    await this.Swarm_charter_sign(alice, 1)
+    w.c.music_iz = await this.Swarm_mint_idzeug(w, alice, { Music: 1 }, 'serve_m1')
+    this.Swarm_online(alice, true)
+    let bob = this.SwarmServe_ident(w, 'Bob')
+    this.Swarm_online(bob, true)
+    await this.Swarm_redeem(w, bob, w.c.music_iz)
+
+},
+// beat 3 — the serve.  Ensure Bob's pier holds the current Charter (absorb is idempotent — the seed at
+//  seal already carried it; this removes timing from the proof), resolve the Cave address off it, EMIT.
+async SwarmServe_serve(w) {
+    w.i({reached: "step_3"})
+    let alice = this.SwarmServe_ident(w, 'Alice')
+    let bob = this.SwarmServe_ident(w, 'Bob')
+    if (!alice || !bob) { return }
+    let pier = this.Swarm_peering(bob)?.o({ Pier: 1, pub: alice.sc.prepub })[0]
+    if (!pier) { return }
+    let wire = this.Swarm_charter_wire(alice)
+    if (wire) { await this.Swarm_charter_absorb(pier, wire, alice.c.keys.pub) }
+    let to = this.Swarm_serve_to(pier, 'Cave')
+    let ok = await this.Swarm_serve_ask(w, bob, pier, 'Cave', { kind: 'serveprobe', tune: 'serve-probe' })
+    let caveBody = this.SwarmServe_ident(w, 'CaveBody')
+    let inbox = caveBody?.o({ mail: 1 })[0]
+    let landed = inbox ? inbox.o({ frame: 'serveprobe' }).length : 0
+    let row = { served: 1 }
+    if (to === 'cave_dept_addr') { row.resolved_cave = 1 }
+    if (ok === true) { row.emit_ok = 1 }
+    if (landed >= 1) { row.landed_at_cave = 1 }
+    this.SwarmServe_note(w, row)
+
+},
+// beat 4 — the edges.  A charter-less pier falls back to the Seat (the bare name).  Then the Music grant
+//  is revoked on Bob's pier and the dial REFUSES — false, and the Cave inbox does not grow (the gate).
+async SwarmServe_edge(w) {
+    w.i({reached: "step_4"})
+    w.sc.now = 1751690030
+    let alice = this.SwarmServe_ident(w, 'Alice')
+    let bob = this.SwarmServe_ident(w, 'Bob')
+    if (!alice || !bob) { return }
+    let bare = alice.sc.prepub
+    let pier = this.Swarm_peering(bob)?.o({ Pier: 1, pub: alice.sc.prepub })[0]
+    if (!pier) { return }
+    // (a) FALLBACK — Carol's pier to Alice carries NO Charter → serve_to = the Seat (the bare name).
+    let cacct = w.oai({ Account: 1, of: 'Carol' })
+    cacct.c.up = w
+    let ckeys = { prepub: 'carol_prepub_0', pub: 'carol_pub_000000', key: 'carol_key_0' }
+    let carol = this.Swarm_identity(cacct, ckeys, 'Carol')
+    let cpeer = this.Swarm_peering(carol)
+    let cpier = cpeer.i({ Pier: 1, pub: bare })
+    cpier.c.up = cpeer
+    let seatAddr = this.Swarm_serve_to(cpier, 'Cave')
+    // (b) GATE — revoke the Music grant on Bob's pier; the dial refuses and emits nothing.
+    let caveBody = this.SwarmServe_ident(w, 'CaveBody')
+    let inbox0 = caveBody?.o({ mail: 1 })[0]
+    let before = inbox0 ? inbox0.o({ frame: 'serveprobe' }).length : 0
+    await this.Swarm_revoke(w, bob, pier, 'Music')
+    let gated = await this.Swarm_serve_ask(w, bob, pier, 'Cave', { kind: 'serveprobe', tune: 'gated-probe' })
+    let after = inbox0 ? inbox0.o({ frame: 'serveprobe' }).length : 0
+    let row = { edged: 1 }
+    if (seatAddr === bare) { row.fallback_seat = 1 }
+    if (gated === false) { row.gate_refused = 1 }
+    if (after === before) { row.no_emit_when_gated = 1 }
+    this.SwarmServe_note(w, row)
+
+},
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmServe_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) { return }
+    let T = this.SwarmServe_T(w)
+    let s = T.o({ served: 1 })[0]
+    if (!s) { return }
+    // #1 RESOLVE-AND-EMIT: the Cave address read off the Charter and the frame lands THERE not at the Seat.
+    if (s && +s.sc.resolved_cave === 1 && +s.sc.emit_ok === 1 && +s.sc.landed_at_cave === 1) { this.story_swear(w, 'the serve dial resolves and emits — a friend serving music reads the Cave address off the signed Charter and the frame lands at the serving body not at the bare soul id') }
+    let e = T.o({ edged: 1 })[0]
+    // #2 FALLBACK TO THE SEAT: no Charter → dial the bare name (the always-on anchor the relay can always route).
+    if (e && +e.sc.fallback_seat === 1) { this.story_swear(w, 'a Post with no Charter entry degrades to the Seat — resolve-and-emit falls back to the bare name so a missing entry fails forward dark never wrong') }
+    // #3 THE GATE AT USE: no live Music grant → the dial refuses and emits nothing.
+    if (e && +e.sc.gate_refused === 1 && +e.sc.no_emit_when_gated === 1) { this.story_swear(w, 'the grant gate is checked at use — once the Music grant is revoked the serve dial refuses and emits nothing so resolution never outruns permission') }
+
+},
+// SwarmServe_order — float A:SwarmServe to the front of H/* so the Run snap stays readable.
+async SwarmServe_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) { return }
+    let first = (a) => (a.sc.A === 'SwarmServe') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

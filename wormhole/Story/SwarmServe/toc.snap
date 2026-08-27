@@ -1,0 +1,25 @@
+story:SwarmServe
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.031
+      sample=0.026,at=1787815251
+      sample=0.026,at=1787815266
+      sample=0.017,at=1787815270
+      sample=0.039,at=1787815704
+      sample=0.048,at=1787815830
+    TimeTotal:step,avg=0.008
+      sample=0.006,at=1787815251
+      sample=0.006,at=1787815266
+      sample=0.004,at=1787815270
+      sample=0.01,at=1787815704
+      sample=0.012,at=1787815830
+  step,dige:0000000000000000
+  step=2,dige:c3bcab2be137c027
+  step=3,dige:49df3a620bcb24d2
+    Assertion:the-serve-dial-resolves,sentence:the serve dial resolves and emits — a friend serving music reads the Cave address off the signed Charter and the frame lands at the serving body not at the bare soul id
+  step=4,dige:54040c3c08485af5
+    Assertion:a-post-with-no,sentence:a Post with no Charter entry degrades to the Seat — resolve-and-emit falls back to the bare name so a missing entry fails forward dark never wrong
+    Assertion:the-grant-gate-is,sentence:the grant gate is checked at use — once the Music grant is revoked the serve dial refuses and emits nothing so resolution never outruns permission

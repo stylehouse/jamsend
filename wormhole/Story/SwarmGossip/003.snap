@@ -1,0 +1,42 @@
+Snap:H
+  H:SwarmGossip,Run
+    A:SwarmGossip
+      self,round=3	{"mung":["age"]}
+      w:SwarmGossip,now=1751680010
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:6116a529d3ee6f3a,prepub:6116a529d3ee6f3a,friendly:Alice
+            Peering,name:6116a529d3ee6f3a,friendly:Alice,online
+              Body,pub:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9,role:Captain,address:6116a529d3ee6f3a
+              Body,pub:gossip_cave_pub,role:Cave,address:6116a529d3ee6f3a_1
+              Charter,era:1,payload:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9:Captain:6116a529d3ee6f3a;gossip_cave_pub:Cave:6116a529d3ee6f3a_1,sig:2a22b8ec9db7052f009d81cee1d1353633ebf26e2fb617efcd492c62fa0b335aa7fdad70fe23d3b364be21fd0d8790c90dc3fc492c664b8a9b9a4c083eeda50d,soul:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82
+              Idzeug:gossip_m1,to:Music,spent
+              Pier,pub:73683abede8f21fc,friendly:Bob,since:1751680010
+                Peering,name:73683abede8f21fc,friendly:Bob,pub:73683abede8f21fc43499291c50f260043a4b65fb1412741bda59be27aee865a
+                Grant:Music,by:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82,for:73683abede8f21fc43499291c50f260043a4b65fb1412741bda59be27aee865a,time:1751680010,sign:f5c3e4df23228bce98d023ddcd1a63797a3e3bc20bf5d63d4465d7c555521cb53913f0a71d7ba23412e46d0da03ba2ded6346be37b5c80cf494c7605dc3fb605
+                Grant:Music,by:73683abede8f21fc43499291c50f260043a4b65fb1412741bda59be27aee865a,for:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82,time:1751680010,sign:e5045a511ade8a0a20087751f20a5894bcf9961048b9ac68c8f5a65db69cf1c6485f85fd52c52f80f37c559a7c44c257f329abb684c32f87ba2887561b388408
+            mail
+              frame:pier_hello,did
+              frame:pier_confirm,did
+            SocialGraph
+              Edge,a:6116a529d3ee6f3a,b:73683abede8f21fc,at:1751680010
+        Account,of:Bob
+          Identity:73683abede8f21fc,prepub:73683abede8f21fc,friendly:Bob
+            Peering,name:73683abede8f21fc,friendly:Bob,online
+              Pier,pub:6116a529d3ee6f3a,friendly:Alice,since:1751680010
+                Peering,name:6116a529d3ee6f3a,friendly:Alice,pub:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82
+                Grant:Music,by:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82,for:73683abede8f21fc43499291c50f260043a4b65fb1412741bda59be27aee865a,time:1751680010,sign:f5c3e4df23228bce98d023ddcd1a63797a3e3bc20bf5d63d4465d7c555521cb53913f0a71d7ba23412e46d0da03ba2ded6346be37b5c80cf494c7605dc3fb605
+                Grant:Music,by:73683abede8f21fc43499291c50f260043a4b65fb1412741bda59be27aee865a,for:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82,time:1751680010,sign:e5045a511ade8a0a20087751f20a5894bcf9961048b9ac68c8f5a65db69cf1c6485f85fd52c52f80f37c559a7c44c257f329abb684c32f87ba2887561b388408
+                Charter,era:1,payload:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9:Captain:6116a529d3ee6f3a;gossip_cave_pub:Cave:6116a529d3ee6f3a_1,sig:2a22b8ec9db7052f009d81cee1d1353633ebf26e2fb617efcd492c62fa0b335aa7fdad70fe23d3b364be21fd0d8790c90dc3fc492c664b8a9b9a4c083eeda50d,soul:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82
+                Body,pub:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9,role:Captain,address:6116a529d3ee6f3a
+                Body,pub:gossip_cave_pub,role:Cave,address:6116a529d3ee6f3a_1
+            mail
+              frame:pier_accept,did
+              frame:charter,did
+            SocialGraph
+              Edge,a:73683abede8f21fc,b:6116a529d3ee6f3a,at:1751680010
+        reached:step_3
+        testing
+          seeded,seed_at_seal

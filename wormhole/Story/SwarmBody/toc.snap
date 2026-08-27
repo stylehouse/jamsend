@@ -1,0 +1,29 @@
+story:SwarmBody
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.033
+      sample=0.056,at=1787813435
+      sample=0.056,at=1787813444
+      sample=0.065,at=1787813448
+      sample=0.007,at=1787813523
+      sample=0.007,at=1787813524
+      sample=0.008,at=1787815392
+    TimeTotal:step,avg=0.008
+      sample=0.014,at=1787813435
+      sample=0.014,at=1787813444
+      sample=0.016,at=1787813448
+      sample=0.002,at=1787813523
+      sample=0.002,at=1787813524
+      sample=0.002,at=1787815392
+  step,dige:2b840e0ba238da72
+  step=2,dige:5cf226ad429f5f2a
+    Assertion:a-body-row-is,sentence:a body row is keyed by its own body key not the soul — one soul wears many bodies so the durable per-body key is what a roster row IS
+    Assertion:the-body-key-is,sentence:the body key is durable and one per soul per store — ensure honours the cache and a second soul in the same store mints a key of its own
+    Assertion:which-row-is-me,sentence:which row is me is computed from the body key never a stored flag — the mint writes no self bit onto the row so nothing false can replicate
+  step=3,dige:94cc6f565e892219
+    Assertion:the-self-answer-is,sentence:the self answer is body-local — a friend absorbing the roster computes its own body as self and no self flag ever crossed the wire
+  step=4,dige:8fa3136b9456981b
+    Assertion:the-vessel-subnet-picks,sentence:the vessel subnet picks the bare address first then ascends the suffixes — an individual local subnet has a deterministic primary and an empty one picks nothing

@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmBody,Run
+    A:SwarmBody
+      self,round	{"mung":["age"]}
+      w:SwarmBody
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

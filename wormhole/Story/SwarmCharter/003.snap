@@ -1,0 +1,18 @@
+Snap:H
+  H:SwarmCharter,Run
+    A:SwarmCharter
+      self,round=3	{"mung":["age"]}
+      w:SwarmCharter,now=1751700000
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:2673bee2ec71e506,prepub:2673bee2ec71e506,friendly:Alice
+            Peering,name:2673bee2ec71e506,friendly:Alice
+              Body,pub:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd,role:Captain,address:2673bee2ec71e506
+              Body,pub:charter_cave_pub,role:Cave,address:2673bee2ec71e506_1
+              Charter,era:1,payload:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd:Captain:2673bee2ec71e506;charter_cave_pub:Cave:2673bee2ec71e506_1,sig:9ec9e47c55ac8d5901604ea7aaf3e562f11da8ceeb18b9febdc58e0c9e7210636c9dd87c7e07d0451b435a0b26e049edfcaadc1b33dc98d0fd40d3fd0fc4cf01,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+        testing
+          signed,era_one,one_row,self_verifies,cave_resolves,captain_bare,none_null
+          tampered,genuine_ok,addr_rejected,era_rejected,soul_rejected
+        reached:step_3

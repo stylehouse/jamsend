@@ -1,245 +1,273 @@
 # Division_todo.md
 
-**The imperial realm: one soul, many role-bearing bodies — a paradigm-general substrate, music
- poured through first.** Division is how a single soul (one keypair) inhabits several bodies
-  (phone, laptop, daemon) and *departmentalises* the work among them by ROLE. The Cave|Captain split
-   is music's instance of it; the substrate itself is meant to be shared beyond music (the owner,
-    2026-08-27: "the Cave|Captain Division may work across multiple paradigms — these are the elements
-     I want the imperial realm of this software to share with beyond").
-
-> Status: **working `_todo`, opened 2026-08-27** at the owner's push to stop deferring the
->  SelfType/Division modelling and CREATE it. **§3 SUBSTRATE BUILT the same day** — `%Body` +
->   `Swarm_body_take/note/roster/pick/for/primary` + `Swarm_pier_body` in Ghost/S/Swarm.g (compile-green,
->    17 gen markers), proven by the **SwarmDivide** Book (Swarmation.g, 4 beats, on the Credence board,
->     compile+seam+smoke green) AND a standalone routing verifier (`scratchpad/bodypick_verify.mjs`, 8/8:
->      role-match · bare-first tiebreak · address-asc · order-independence · miss→null). Awaits the Lane-A
->       editor recording (`?B=SwarmDivide`, Resume ×4, → `n:1..5`) like the other new Books. The roster
->        WIRE PAYLOAD also landed (`Swarm_roster_of` publish → `Swarm_roster_onto` absorb, scalar Tier-B,
->         proven in SwarmDivide beat 5). NEXT — the LIVE integration phase (touches running code, do with
->          care): (a) carry `Swarm_roster_of` in the pier handshake (pier_accept / the pier page /
->           Swarm_pier_stash) so a friend's pier absorbs the roster for real; (b) have a booting body
->            `Swarm_body_take` its role+address at station-up (the SelfType arrives on real bodies here);
->             (c) bind the serve DIAL to `Swarm_body_for` so a stream reaches the serving body's address.
->    Sibling docs: **`Portability_doc`/`Portability_todo`** own the music-side portability arc (the
->     Cave|Captain flows, the LinkDevice ceremony, the pool). This doc owns the GENERAL substrate those
->      lean on. Where they overlap, Portability is the music tenant; this is the landlord.
+**One soul, many role-bearing bodies — a paradigm-general substrate, music poured through first.**
+ Division is how one soul (one keypair) inhabits several bodies across machines and *departmentalises*
+  the work among them by role. The Cave|Captain split is music's instance; the substrate is meant to be
+   shared beyond music.
 
 ---
 
-## 0. Where to start, and the arc
+## THE FIELD IN ONE BREATH
 
-**The destination.** A soul is not a device. It is a keypair that lives in one-or-more BODIES, each a
- running instance somewhere (a phone browser tab, a laptop tab, a headless daemon). The bodies are not
-  peers-of-convenience; they are DEPARTMENTS of one self, each doing the work its situation suits:
+A **soul** is a keypair. It runs in one-or-more **bodies**, each on a machine, each holding the soul key
+ and its own durable **body key**. An undivided soul is one body at the bare `<prepub>`, with no role.
+  The **Division ceremony** (`%Invite:MyCave`, LinkDevice) confers a **Post** (Captain, Cave, …) on each
+   body — the Post *is* a cross-signed grant, not a self-chosen tag. One body holds the bare name and
+    anchors everything: the **Seat** (whoever is most reliably online — usually the always-on daemon). The
+     Seat derives a soul-signed, era-stamped **Charter** — `{body-pub, post, address}[]` — from its
+      current grants; the Charter is how any body OR any friend learns and *trusts* which body plays which
+       Post. Routing is **resolve-and-emit**: read the address for a Post off the Charter, emit, let the
+        transport fail forward — no liveness cache. Authority to *issue invites* is a separate thing, the
+         **Captain**, which never auto-inherits. That is the whole machine.
 
-- **The substrate is paradigm-general.** Nothing about "a soul has bodies with roles, one of them
-   primary, and peers find a body by the role they need" is about music. That is the imperial realm —
-    the part meant to generalise. It provides: `%Body`, the `SelfType` role slot, the primary that
-     holds the bare address and rosters the rest, and the queryable *find-body-by-role*.
-- **A paradigm is a tenant.** It supplies the role VOCABULARY and what each role DOES. Music's tenancy:
-   **Captain** (the social hand — online, in-person, mints/redeems invites, listens; the phone) and
-    **Cave** (the hoard — disk, library, heists, serving, backup; the laptop/daemon). Another paradigm
-     atop the same substrate would name its own departments and never touch these.
-- **Roles are looked-up, not just worn** (the owner, 2026-08-27: "people have to be looking for a
-   certain role, within the Music paradigm"). A friend wanting a stream does not reach "the soul" — it
-    reaches the soul's body that plays the SERVING role. So `SelfType` is a PEER-VISIBLE ROUTING
-     property: a friend's `%Pier` records the counterparty's role(s), and "who serves music for soul X"
-      resolves to a body + address. This is the reason SelfType cannot be a private tag.
+---
 
-**Two ways bodies relate — the distinction the whole model turns on:**
+## THE ATOMS
 
-- **Siblings** — the SAME store. Because `%Identity` does not partition Dexie, every Chrome tab on one
-   profile shares one IndexedDB and thus one identity: they are the same body multiplexed across tabs,
-    differing only by an address SUFFIX so they don't collide on the relay. No role division — a sibling
-     is not a department, it is a duplicate. Primacy (who holds the bare address) is decided live by a
-      Web Lock, zero-staleness, auto-released on tab death. *(Open naming: "Sibling" may want a better
-       word — it currently means "another tab of the very same store", which is nearer TWIN or FACET
-        than sibling. Decide when the substrate particle is named.)*
-- **Division** — DIFFERENT stores, DIFFERENT machines, joined by the LinkDevice ceremony and split BY
-   ROLE. A phone and a laptop are one soul departmentalised. This is the paradigm-crossing part; a
-    Division is a partition of labour, not a duplication of presence.
+- **Soul** — one ed25519 keypair (`%Identity.c.keys`, Tier A, never encoded). The unit of identity and of
+   every friend-facing grant. Replicated whole to each body at LinkDevice; never changes.
+- **Body** — one soul's presence on one machine: the pair `(store × soul)`, NOT the machine itself. Holds
+   the soul key, its own durable **body key**, a current **address**, and — once divided — a **Post**. A
+    store serving two souls holds two Bodies, one per soul.
+- **Body key** — a body's own durable keypair, minted when a soul first stands up in a store and persisted
+   body-locally (the machine's Dexie, NEVER replicated). It is (a) the stable per-body identity that keys
+    the Charter roster and lets a body find its own row, and (b) what the LinkDevice ceremony encrypts the
+     account TO. *(Built — `Swarm_body_key`/`_ensure`, persisted via `vessel_store.ts`.)*
+- **Vessel** — one running instance on a machine (a tab, the daemon process). Vessels of one store share
+   Dexie but may differ in anything else — which soul they serve, which FSA mount they hold. Every vessel
+    registers in the shared **Vessel table** (a Dexie table beside Housing's `db.House`, per store):
+     `{vessel, root_prepub, address, fsa, alive}`. Queried by a root prepub it yields that individual's
+      local **subnet** — the vessels serving that soul here, now. No crypto among vessels: same-store trust
+       is the Web-Lock and the table.
+- **Address** — `<prepub>` (bare) or `<prepub>_N` (suffixed), won via hello-v2 / Web-Lock. Mutable,
+   body-local, non-replicating (already stripped from export), mostly stable across sessions (a body
+    re-requests its prior suffix on bind). The root prepub is the individual's subnet: every vessel serving
+     that soul addresses inside it, and the bare address is the Seat.
+- **Post** — a body's role in the division: Captain, Cave, … General role NAMES that recur across
+   paradigms; a paradigm binds only what a Post *does*. A body's Post IS the `%Grant:MyCave` (or
+    `:MyCaptain`, …) its Seat cross-signed for it — crypto, revocable via `%NotGrant`. An undivided soul
+     has no Post; dividing is exactly the act that confers them.
 
-  The tell that separates them: siblings share a Dexie and race for one address; a Division shares only
-   the keypair and each body keeps its OWN address + role. Same soul, opposite relationship.
+## THE TWO AXES
 
-**The primary — name TBD (`DivisionMaster` leads; `Steward` also floated).** One body per soul is the
- primary: it holds the unsuffixed `<prepub>` address and tracks the others (the roster). The owner's
-  framing (2026-08-27): "the [primary] is the primary one of a Division, who holds the unsuffixed
-   address and tracks the others." Open question below is whether primary is a SIBLING-primacy concept
-    (Web-Lock, within one store) promoted to span a Division, or a distinct Division-level helm. Music's
-     answer is nearly forced: the Captain is the helm (it alone processes invites — Portability §9), so
-      in the music tenant primary ≈ Captain. Whether the general substrate must name a primary at all,
-       or only paradigms that need a helm do, is the first real design fork (see §2).
+- **Vesselling** — per machine, cross-soul. A store partitions into running Vessels via the Vessel table.
+   Vessels on the SAME root prepub are that soul's local subnet: they share the soul's Body (its body key,
+    Post, grants), differ only by address suffix, and elect a **tab-primary** per soul via Web-Lock.
+     Vessels on DIFFERENT prepubs coexist in one store — each soul's group is its own subnet, its own Body.
+- **Division** — per soul, cross-machine. One soul's Bodies on different machines, joined by the LinkDevice
+   ceremony and split by Post. Shares only the soul key; each Body keeps its own body key, address, and
+    Post. This is the subject of the doc.
 
-**What already exists** (map confirmed against code before building — see §3):
-- `Swarm_sibling`/`Swarm_is_sibling` + the BroadcastChannel cohort census (the Sibling machinery).
-- `Swarm_address`/`Swarm_next_suffix`/`Swarm_steal_back`/`Swarm_reinstate`/`Swarm_rehome` (the
-   bare-vs-suffixed address machinery, disk-wins hold).
-- `Swarm_cohort_vessel`/`_primacy`/`_stand` + `Swarm_station_up` + a Web Lock (the primacy decision).
-- A vestigial `selftype` string threaded through `Swarm_sibling` — set empty, read nowhere. The seam
-   is already CUT for SelfType; nothing fills it. **This is the hook the whole model hangs on.**
-- The LinkDevice crypto (SwarmSeal/SwarmFerry/EmojiConfirm — Portability): the secure body-join.
+The axes are orthogonal: the Vessel table slices a MACHINE by soul; the Division slices a SOUL by machine.
+ A Body is the cell where they cross.
 
-**What is missing (the work this doc scopes):**
-1. **`SelfType` as a real, peer-visible role.** A body carries its role; the role is queryable.
-2. **`%Body` / the roster.** The primary's list of the soul's bodies — each a (role, address, vessel).
-3. **`find-body-by-role`** — the routing query a Pier/serve seam uses to reach the right department.
-4. **The Pier carries counterparty role(s)** — so a friend routes to my serving body, not my phone.
-5. **The music role vocabulary bound onto the substrate** — Captain, Cave, and what each serves.
-6. **The Book** — proving the substrate at the model layer: two bodies of one soul take roles, the
-    primary rosters them, a peer's find-by-role resolves to the serving body, a wrong-role query misses.
+## THE TWO AUTHORITIES (orthogonal — this is the crux)
 
-**The next move (once the map lands, §3):** name the substrate particles (§2 fork first), then build
- the smallest end-to-end slice — a soul with two bodies (Captain + Cave), the primary rostering both,
-  and a `find-body-by-role` that a peer uses to reach the Cave for serving — model-layer, Book-proven,
-   music role names bound but the substrate paradigm-blind. Details accrete below as the design firms.
+- **the Seat** — the body at the bare `<prepub>`: routing anchor + roster-writer + Charter-signer. It is
+   whoever is MOST RELIABLY ONLINE (the bare name is won via hello-v2), so in the standard phone +
+    always-on-daemon deployment the daemon-Cave is the Seat, not the phone. That the Seat is the always-on
+     body is a feature: the Charter-refresh anchor is reliably up. Exactly one Seat at a time.
+- **the Captain** — the INVITE HELM: the sole writer of the Tier-C invite ledger (Portability §9). A Post,
+   usually the phone, usually suffixed, usually asleep — invites happen when the human is on the phone.
 
-## 1. The layering (substrate vs tenant), stated once
+Seat = *coordination* (who anchors the bare name). Captain = *authority* (who issues invites). They
+ coincide only on a phone-only soul with no daemon. This orthogonality gives the right failure mode: a
+  dead phone loses the Captain (invite-issuance freezes; the human re-mints one via `%Invite:MyCaptain`)
+   WITHOUT losing the Seat (the daemon keeps routing + serving alive).
 
-| Concern | Imperial realm (substrate) | Music tenant |
-|---------|----------------------------|--------------|
-| A soul has… | bodies, each with a `SelfType` | — |
-| Roles are… | a queryable slot, peer-visible | Captain, Cave (the vocabulary) |
-| Primary is… | the body holding the bare address + roster | the Captain (the helm) |
-| Find-by-role… | `body_for(soul, role)` → address | "who serves music for X" → the serving body |
-| Knows about music? | NO | yes — binds role meaning |
+## THE POST'S TRUTH CHAIN (one truth, everything else a cache)
 
-The substrate must compile and be Book-provable with the music names factored OUT — a paradigm supplies
- role strings and serve-meaning; the substrate never branches on `'Cave'`.
+1. **Truth = the grant.** A Post IS the `%Grant:MyCave` the Seat cross-signed at the ceremony. Per-body,
+    internal (friends never see it), revocable via `%NotGrant`. Not a string a body picks.
+2. **Attestation = the Charter.** The Seat derives, from its current un-revoked grants, a roster
+    `{body-pub, post, address}[]`, **signs it with the soul key**, and **stamps its era**. A friend (or
+     any body) verifies the Charter against the soul pub; a spoofed "I am Alice's Cave" fails the signature;
+      a split-brain can't flap because peers keep the highest-era Charter.
+3. **Cache = the `%Body` roster** under `%Peering`, keyed by **body-pub**. Replicates (all a soul's bodies
+    must agree who is Captain and who is Cave — keyed by whose-body-it-is, it can't confuse).
 
-## 2. Forks — RULED 2026-08-27 (against the code map; the owner delegated "that's on you")
-- **`%Body` vs reusing `%Sibling`/`%Pier` → NEW `%Body`.** The map settles it: `%Sibling` is a
-   SESSION-ONLY same-store cohort row (BroadcastChannel, lost on reload, `Swarm_sibling(ident, place,
-    address, role)` at Swarm.g:3669), and a self-Pier is explicitly SKIPPED everywhere (Radio.g:1705) —
-     there is NO cross-machine body representation today. A Division body is different in KIND
-      (different store/machine, PERSISTENT, replicated Tier-B, role-partitioned), so it gets its own
-       mainkey **`%Body`**, under `%Peering` beside `%Pier` and `%Sibling`.
-- **"Sibling" rename → NO, split instead.** Sibling stays the same-store cohort (accurate: tabs of one
-   Dexie); `%Body` is the Division roster. The overload the owner sensed is dissolved by the split, not a
-    rename. (`%Sibling.role` — the vestigial field — is the same-store analogue; `%Body.role` is the
-     cross-machine one. Same SelfType idea, two scopes.)
-- **Primary: substrate or tenant → substrate PREDICATE, tenant BINDING.** The substrate exposes
-   `Swarm_body_primary(ident)` = the `%Body` at the bare `<prepub>` (address === prepub) — the map shows
-    bare-address-holding is already the primacy spine (Web Lock same-profile at Swarm.g:3759 + hello-v2
-     cross-machine). Paradigm-general. Music BINDS primary = Captain (the sole invite helm, Portability
-      §9). A paradigm without a helm simply never asks.
-- **Name the primary → `DivisionMaster`** (the general concept, in prose). Distinct from the POOL
-   steward **Quartermaster** (Portability — decides phone stash). Code uses the plain predicate
-    `Swarm_body_primary`; no separate particle (primary is a computed property of the roster).
+**Everyone routes via the Charter** — self-bodies and friends alike — so there is ONE routing path, no
+ self-vs-friend fork. Raw grants only BUILD the Charter; nobody routes off them.
 
-## 3. The ruled model (build target)
+## STORAGE & REPLICATION (what crosses the wire, what stays home)
 
-**The particle.** `%Body,pub:<vesselpub>` under `%Peering`, carrying `role:<SelfType>` (the queryable
- department), `address:<addr>` (bare `<prepub>` or `<prepub>_N`), and `self:1` on the running body's own
-  row. Keyed by `pub` (the vessel key identifies a body — many bodies per soul someday, so not keyed by
-   role). Tier-B grow-only: bodies append, the roster unions across replicas.
+- **Replicates (shared soul-truth, must agree):** the soul key (Tier A, once); the `%Body` roster + the
+   Charter (Tier B / signed snapshot); friendships, grants, the pool ledger (Tier B, grow-only union); the
+    invite ledger (Tier C, Captain-write-only, replicated read-only to Caves).
+- **NEVER replicates (body-local, computed — the existing `Swarm_protocol` strip):** which row is ME
+   (computed by body-key match, never a stored flag); my current address; presence; the Vessel table (it
+    IS the machine's runtime census); the stolen flag; per-body wire state (seq/era/voucher).
 
-**The substrate seams (paradigm-BLIND — never branch on a role string):**
-- `Swarm_body_take(ident, role, address)` — the running body declares its own `%Body,self:1` (oai,
-   idempotent); updates role/address if changed.
-- `Swarm_body_note(ident, pub, role, address)` — record ANOTHER body (from roster replication / the
-   LinkDevice roster hand-off). oai per `pub`.
-- `Swarm_body_roster(ident)` — the `%Body` rows (the division).
-- `Swarm_body_for(ident, role)` — **the routing query**: the body playing `role`, deterministic
-   tiebreak (primary/bare first, then address asc). Returns the row (address on it) or null.
-- `Swarm_body_primary(ident)` — the `%Body` whose address === the bare prepub (DivisionMaster).
+## ROUTING — resolve-and-emit, no liveness cache
 
-**The peer side (why the role is peer-visible).** A friend's `%Pier` carries the counterparty's roster
- so "who serves music for soul X" resolves to a body+address, not to "the soul". `Swarm_pier_body(pier,
-  role)` finds the counterparty body playing `role` over the imported roster on the Pier. (v1 stamps the
-   roster onto the Pier directly and proves the lookup; the WIRE that publishes a soul's roster to its
-    Piers is a later replication slice.)
-
-**Music tenancy** (bound in the Book, never in the substrate): roles `'Captain'` (social hand, online,
- listens) and `'Cave'` (library, disk, heists, SERVING). "Looking for a role within the Music paradigm"
-  = a peer's `Swarm_pier_body(pier, 'Cave')` → the serving body's address. The substrate fns take these
-   as opaque strings; a green Book with the music names factored through the substrate proves the
-    paradigm-blindness (the imperial-realm claim).
-
-**The Book — `SwarmDivide`** (Swarm-family, Swarmation.g): beat 2 a soul stands two bodies (Captain at
- bare `<prepub>`, Cave at `<prepub>_1`), each takes its role; beat 3 the substrate queries resolve
-  (find Cave → `_1`, find Captain → bare, primary → the Captain, a wrong role → null) with the fns never
-   naming a role; beat 4 a friend's Pier carries Alice's roster and `Swarm_pier_body(pier,'Cave')`
-    reaches the Cave address (the peer routing) while an unpublished role misses.
-
-## 4. find-Body-by-role — RESOLVED (2026-08-27, after a second adversarial round scrapped `%Reach`)
-
-A first pass reified "the other side" as a materialised verdict particle `%Reach` (a cached
- `state ∈ {live,stale,dark,ungranted}` kept fresh by a watcher off the presence pulse). **It was
-  built (slice 1) then REVERTED.** Two adversarial reviews converged: `%Reach` re-introduced a presence
-   cache with its own ~40s clock — the EXACT "cache liveness and keep it fresh" shape the live transfer
-    protocol (`repli_want`, `Ghost/N/Repli.g`) already tore out for being "redundant and, live, pure
-     liability" (it flooded the `%outbox` and killed the deliver pump mid-heist). The codebase already ran
-      this experiment one layer down and wrote down why. Don't rebuild it one layer up.
-
-**The sublation — find-Body-by-role is TWO questions that were being conflated:**
-1. **RESOLUTION (directory):** *which body plays role R for soul S, and at what dialable address?* Pure,
-    stateless, paradigm-blind, CANNOT lie (it makes no reachability claim). This is `Swarm_body_for` /
-     `Swarm_pier_body` / `Swarm_body_pick` — **already built and proven (SwarmDivide). It stays.**
-2. **REACHABILITY (liveness):** *is that address answering right now?* This is **NOT a directory property
-    and must not be cached as one.** It is the transport's ground truth — `Swarm_deliver`'s boolean return
-     (`false` = no ready carrier) and the per-Pier outbox ack/dead ledger (`Reliable.g` `retx_due`). You
-      discover it by SENDING, not by asking. "Emit is what `%Reach` wanted to cache" — so cache nothing;
-       emit and let it fail forward.
-
-**The pattern (resolve-and-emit, fail-forward):** resolve role→address (cheap, from the roster), then
- EMIT. The reply lands, or the sink re-asks (the pull's 4s heartbeat already self-heals a dropped want).
-  No verdict particle, no watcher, no freshness clock.
+find-body-by-role is TWO questions, kept apart:
+- **RESOLUTION** — Post → body-pub → address, off the Charter. Pure, stateless, cannot lie.
+- **REACHABILITY** — is that address answering? The transport's ground truth (`Swarm_deliver`'s boolean;
+   the outbox ack/dead ledger). You discover it by SENDING, never by caching a verdict.
 
 ```
-// music tenant — reach a soul's serving body. Grant gate is a real check (G5), not a cache.
 Musu_serve_ask(w, ident, pier, frame):
-    if (!this.Swarm_pier_live(pier, 'Music')) return false        // grant — checked at use, per its own law
-    let body = this.Swarm_pier_body(pier, 'Cave')                 // RESOLUTION (pure directory)
-    let to = (body && body.sc.address) || pier.sc.prepub          // dialable; else the soul (relay fans out)
-    return this.Swarm_deliver(w, ident, to, frame)                // EMIT; false = fail-forward, re-ask heals
+    if (!this.Swarm_pier_live(pier, 'Music')) return false   // grant gate — per-soul, checked at use
+    let to = this.Charter_addr(pier, 'Cave') || pier.sc.prepub   // Cave address from the Charter; else the Seat
+    return this.Swarm_deliver(w, ident, to, frame)           // EMIT; false = fail-forward, re-ask heals
 ```
 
-- **Self vs friend** unify inside `Swarm_deliver` (it already falls to an in-process mail drop for a local
-   account) — no `.send()` local/wire fork needed at call sites.
-- **Captain-offline / nobody-home (G7)** is handled by fail-forward, not a verdict: emit to the bare
-   prepub and the relay fans out to whatever body is awake; nothing answers if none is up — same outcome as
-    "dark," self-healing the instant a body wakes.
-- **The one thing emit can't do** — show a human "your friend's Cave is offline" BEFORE they act — is a
-   DERIVED, NON-PERSISTED read, not a particle: `Musu_serve_note(pier) → 'live'|'offline'|'unknown'` folds
-    `Presence_here(pub)` + `Swarm_pier_live(pier,'Music')` at the moment of the read, exactly as
-     `Radio_reason` already composes them. Zero new state.
+Two hard transport facts the routing must honour:
+- **The relay does EXACT-address routing, no fan-out** (`relay.ts:120,229` — `locals:Map<addr,sockets>`).
+   A bare frame reaches only the Seat; reaching a Cave REQUIRES its Charter address. This is why the Charter
+    is load-bearing, and why the always-on Seat is both the fallback anchor and the Charter-refresh source.
+- **A friend holds one `%Pier` PER BODY** (per address — seq/era/voucher are per-body and never converge,
+   Portability §7). The Charter tells the friend the Post→address map so it annotates each per-body pier
+    with its Post; `Swarm_pier_body(soul, 'Cave')` = "my pier to this soul whose Post is Cave."
 
-**Kept from the reviews:** the RESOLUTION/REACHABILITY split (the spine above); the grant gate as an
- explicit at-use check; and a documented FALLBACK — if a hot loop ever proves it needs a cached reachability
-  read, the lean form is a verdict grounded on the transport's OWN ack/dead ledger (`retx_due`), never a
-   standalone presence clock. We are not there; the live protocols say we likely never will be.
+The one thing emit can't give a synchronous UI ("is Alice's Cave up, right now, before I act") is a
+ DERIVED, non-persisted read — `Musu_serve_note(soul) → 'live'|'offline'|'unknown'` folding `Presence_here`
+  + `Swarm_pier_live` at the read — not a particle.
 
-## 5. The corrected layering (Captain/Cave are GENERAL; SelfType marks Division) — supersedes §1
+## THE WELD — the Charter in the core language
 
-The owner's ruling (2026-08-27): "Captain|Cave will be roles shared beyond the Music realm"; "SelfType|role
- is definitely BELOW the Music realm." So the earlier §0/§1 framing ("substrate paradigm-blind, MUSIC binds
-  Captain/Cave") was INVERTED. The correct split:
+The resolution layer already speaks C: `%Body` is a true particle (mainkey `Body`, identity `{Body,pub}`,
+ oai-idempotent, scalar sc, `.c.up` backlink, bump()-driven watchers), and pure queries (`Swarm_body_for`)
+  are the right shape for pure resolution — the o()/oai() register. The owed process layer (sign, gossip,
+   absorb) is async work, and async work in this application speaks Hovercraft:
 
-- **The general realm (below music) owns:** that a soul may DIVIDE into bodies; that dividing confers a
-   **SelfType** (a body's role) — *an undivided one-body soul has NO SelfType; it is simply the soul,
-    everywhere; dividing is the act that confers roles*; the role NAMES themselves, including **Captain**
-     (social hand / helm / authority) and **Cave** (deep hoard / disk / serving) — general stations that
-      recur across paradigms; and the mechanism to RESOLVE a role to a body and route to it.
-- **A paradigm (music, first tenant) owns:** what a role MEANS and DOES — a Cave serves streams and fulfils
-   heists, a Captain mints invites and listens — and the GRANT that gates it (`%Invite:Music`). It binds
-    behaviour to a role name; it never owns the name.
+- **The Charter is a signed dige of the division.** Era = the version idiom (a counter bumped on change);
+   the payload = a canonical scalar serialisation; re-charter = a watcher noticing the grants' digest
+    moved. This is Story's own snap shape — a serialisation of state at a version, re-emitted when the dige
+     changes — signed. Not a new concept in this app; its oldest one, given a signature.
+- **ONE stable `%Charter` row, merged in place.** `{Charter:1}` under `%Peering`, sc: `era`, `sig`,
+   `payload` (one scalar). oai + merge like `reset_interval`'s `%mo:main,interval` — NEVER replace()-churned
+    (replace empties the container across two awaits: the Vytui childless-window class) and never
+     one-row-per-era (goner+new snap churn).
+- **The async sign/verify rides `expecting()`.** Key ops are async; a bare async fn lets a Story snap tear
+   mid-sign. `expecting(w, 'charter_sign', secs, fn)` holds the snap coherent via ttlilt — resolve is
+    causal, timeout is the bounded escape. Same on the receiving side's verify-then-absorb.
+- **Friend-side `%Body` rows are minted ONLY by Charter-absorb** (verify → project), never by raw roster
+   gossip. Routing off `%Body` rows then IS routing off the Charter, one hop removed — the cache-discipline
+    rule becomes structural, not conventional. `Swarm_roster_of/onto` survive as the Charter's payload
+     codec + projection, not as a parallel unsigned channel.
+- **Cross-ghost = elvisto / vaguely_ponder.** The serve binding asks Swarm via the deferred call, so a
+   context without Swarm stood up gives up cleanly instead of throwing.
 
-The code already honours this — `%Body`/`Swarm_body_for` take `role` as an opaque string and never branch
- on `'Cave'` — so NO code change; only the doc prose (and Portability §2's "SelfType = a station in life"
-  and §1's table cell placing Captain/Cave in the music column) must be corrected to match.
+## LIFECYCLE
 
-## 6. Owed follow-ups the reviews surfaced (not yet resolved — need building or a ruling)
+- **Birth** — one body, at the bare name, no Post, no Charter. Routing = dial the bare name (it's the one
+   body). Division machinery is entirely OFF.
+- **First division** (`%Invite:MyCave`) — confers Posts on BOTH bodies at once (the original → Captain, the
+   new → Cave); the account (soul key included) crosses sealed to the new body's body key; the more-online
+    body takes/keeps the Seat; the Seat writes the first Charter.
+- **Post change / revoke** — the Seat mints a `%NotGrant` (existing machinery) and re-charters at a higher
+   era; the new Charter gossips out. Change = revoke + re-issue.
+- **Seat succession** — automatic: the bare name frees on the old Seat's relay-heartbeat lapse (~30s), the
+   next-most-online body wins it via hello-v2 and re-charters. No election beyond the relay arbiter.
+- **Captain succession** — NEVER automatic: the human re-mints via `%Invite:MyCaptain` (the most dangerous
+   token — grants who-you-are, not what-you-serve). Invite-issuance stays frozen until then; nothing else
+    is affected.
+- **Eviction — replacement, NOT a timer.** A Post-holder leaves the Charter only when it is REPLACED: a new
+   holder of that Post is `%NotGrant` + re-issue (the mechanism above), and the re-charter simply omits the
+    old one. Whether a new holder evicts the incumbent is the Seat's call, defaulting by whether the Post is
+     SINGULAR — a new **Captain** evicts the old (one invite-ledger writer, always); a new **Cave** COEXISTS
+      (multi-Cave is permitted), evicted only on the admin's say-so. A body that dies and is NEVER replaced
+       just lingers and fails-forward dark on each ask — harmless, because the Charter never asserted liveness
+        (that is the `%Reach` cache we reverted): **liveness lives at the bare name**, where the Seat is alive
+         by construction and every miss falls back to it. So there is NO dark-threshold timer and none is owed.
 
-- **How a body FIRST gets its SelfType** (M1): the LinkDevice/Division ceremony should CONFER the role
-   (Portability §10 "the Captain writes the new body into the family register at issue time"), not a body
-    self-declaring locally. Wire `Swarm_body_take` to the ceremony payload, not to an arbitrary boot choice.
-- **Role change/revoke** (M2, M8): the roster is grow-only Tier-B, wrong CRDT for a MUTABLE role; and a
-   defected Cave (`%Invite:MyCave` revoked, Portability §12) must drop from routing — TWO revocation planes
-    (music-grant vs role-grant) the resolve path must both honour. Needs the fade/tombstone story (§13).
-- **The one-body base case** (M3): `Musu_serve_ask` on an undivided soul — does it degrade to "reach the
-   soul" (bare prepub) when no roster/role exists? Almost certainly yes (fail-forward makes it free), but
-    state it. This is the COMMON case today.
-- **Roster refresh transport** (M7): does the peer-visible roster travel by pier HANDSHAKE (point-in-time,
-   `Swarm_roster_of`/`onto` — built) or by the continuous body-to-body REPLICATION stream (Portability §10)?
-    Unreconciled; a peer on a stale handshake roster routes to a decommissioned Cave until re-handshake.
+## FAILURE MODES (the honest table)
+
+| Situation | Outcome |
+|---|---|
+| Seat asleep | Rare (it's the always-on body). Routing still works off the durable Charter; only re-chartering waits. |
+| Captain (phone) dead | Invite-issuance freezes (safe); routing + serving + existing grants all continue. |
+| Stale Charter + Cave moved address | Wedge until the Seat re-charters; bounded by address stability. The one real gap. |
+| Split-brain (two Seats, a partition) | Peers keep the highest-era Charter; the loser's stale Charter is ignored. |
+| Nobody plays the asked Post | `Charter_addr` → null → dial the Seat (bare); the transport declares `%dead` on exhaustion. |
+| Multi-Cave | Permitted; the pick is deterministic (bare-first, address-asc); try-one-then-next on a miss (no broadcast). |
+
+## VOCABULARY (glossary — rename freely, this is the coinage)
+
+**Soul** · **Body** (`store × soul`, one Post) · **Body key** (durable per-body keypair + id) · **Vessel**
+ (one running instance) · **the Vessel table** (the store's shared runtime census, grouped by root prepub =
+  an individual's local subnet) · **Address** (bare / `_N`) · **Post** (role: Captain, Cave) ·
+   **Vesselling** (per-machine, cross-soul partition) · **Division** (per-soul, cross-machine role-split) ·
+    **the Seat** (bare-name anchor + Charter-signer) · **the Captain** (invite helm) · **the Charter**
+     (soul-signed, era-stamped roster).
+
+*Renamed along the way (old → current, for anyone holding an earlier draft): SelfType → Post ·
+ vessel key → body key · Sibling / Facet → Vessel · DivisionMaster → the Seat.*
+
+## BUILT vs OWED
+
+**Built (model layer, additive, dormant — each RECORDED green on the live runner: real snaps + declared
+ `%see` assertions, verified by inspecting the snaps not just the ok_pct; crypto proven standalone too):**
+- **RESOLUTION register** — `%Body` roster + `Swarm_body_take/note/roster/pick/for/mine` + `Swarm_pier_body`
+   + `Swarm_roster_of/onto`. Book **SwarmDivide** (Swarmation.g). `%Reach` was built then reverted (appendix).
+- **1 · body key + Vessel table** — `Swarm_body_key`/`_ensure` (durable per-body keypair on `.c.bodykey`,
+   Dexie-persisted via `src/lib/O/vessel_store.ts`, never replicated); `Swarm_body_mine` COMPUTES which row
+    is me by body-key match (the stored `self:1` is GONE — a flag would replicate and lie); `Swarm_vessel_pick`
+     + `Swarm_vessel_subnet` + the Vessel table (`{vessel, root_prepub, address, fsa, alive}`, registered at
+      `Swarm_cohort_stand`). Book **SwarmBody**.
+- **2 · the Charter** — `Swarm_charter_sign` (derive from the live `%Body` rows, sign with the soul key,
+   stamp era, ONE `%Charter` row merged in place) + `_wire`/`_verify`/`_parse`/`_payload` + `Charter_addr`
+    (resolve a Post→address, bare-first) + `Swarm_charter_absorb` (verify → land → project, highest-era wins).
+     Book **SwarmCharter** + `scratchpad/charter_verify.ts` **16/16** (good verifies; moved-address / bumped-era
+      / swapped-soul / wrong-pub rejected; supersede / stale / forged; multi-Cave pick).
+- **3 · Post-from-grant** — `Swarm_post_from_feature` (My<Post> → Post) + `Swarm_grant_post` (the LIVE
+   grant's Post, honouring `%NotGrant` as `Swarm_pier_live` does) + `Swarm_body_repost` (SET from a live grant,
+    DROP under a revoke, body row stands). Book **SwarmPost** over SwarmRole's real redeem/revoke rails.
+- **4 · Charter gossip** — a signed `charter` frame (`Swarm_charter_gossip` / `Swarm_charter_heard`), armed
+   beside the other kinds, dispatched in both the pump and the hear funnel, SEEDED at `pier_accept`/`pier_confirm`
+    (no-op for an undivided soul), re-emitted on a division change. Book **SwarmGossip**. Regression-clean:
+     SwarmStaple 8/8 + SwarmChain 5/5 green against the shared-plumbing change.
+- **5 · the serve binding** — `Swarm_serve_to` (Cave address off the Charter, else the Seat) + `Swarm_serve_ask`
+   (gate on the Music grant at USE, resolve, emit — fail-forward). Book **SwarmServe**. The last mile — wiring
+    the Heist/Ra dial to `Swarm_serve_ask` — is the owed CALL-SITE seam below.
+
+**Fixtures RECORDED (live runner, `?B=<Book>`, 2026-08-27):** SwarmBody 4 steps / 5 assertions ·
+ SwarmCharter 4 / 5 · SwarmPost 5 / 3 · SwarmGossip 4 / 3 · SwarmServe 4 / 3 — 19 declared swears, all
+  sworn, all green. Checking the snaps caught a hollow-green in SwarmPost (a pier keyed `{Pier:1,pub}` was
+   looked up as `{Pier:<prepub>}` — the same latent bug still sits in the SwarmRole Book at Swarmation.g
+    ~2160, un-recorded so never caught); fixed + re-recorded with every derive/revoke flag firing.
+
+**Owed (the last mile):**
+- **Wire the music dial to `Swarm_serve_ask`** at the Heist/Ra serve call site (needs live music fixtures +
+   a serving daemon to verify), and **re-ground SwarmDivide onto per-body piers** — SwarmServe already proves
+    the per-body Charter routing that supersedes SwarmDivide's roster-under-one-pier resolution.
+
+**Owed a HUMAN ruling (not inventable):** whether the MUSIC paradigm lets one daemon Cave serve several
+ souls' pools at once (Portability v1: one soul per Cave — deferred). One-store-many-souls is otherwise
+  structurally native (the Vessel table groups by root prepub, and Body = `store × soul`, so a family daemon
+   simply holds several Bodies). *(The dark-threshold prune number is RESOLVED: eviction is replacement, not
+    a timer — see LIFECYCLE › Eviction. No quota is owed.)*
+
+---
+
+## APPENDIX — how we got here (the reasoning trail, compact)
+
+- **The layering flip.** Captain/Cave were first placed as MUSIC-tenant vocabulary; the owner ruled them
+   GENERAL ("below the Music realm"). The substrate owns the role NAMES; a paradigm binds only their MEANING.
+- **The `%Reach` reversal.** A first pass reified "the other side" as a materialised liveness verdict
+   (`%Reach`, kept fresh by a watcher off the presence pulse). Two adversarial Opus reviews + the owner's
+    DNS-lookup instinct killed it: it re-introduced the exact "cache liveness + keep it fresh" shape the live
+     transfer protocol (`repli_want`, `Repli.g`) already tore out for being "pure liability" that flooded the
+      outbox and killed the deliver pump. Reverted. RESOLUTION stays pure; REACHABILITY is the transport's.
+- **The Vessel straightening (owner, 2026-08-27).** The doc had hijacked "vessel" — the code's per-instance
+   word (`Swarm_cohort_vessel`) — for the per-Body durable key. Straightened: Vessel = running instance
+    (subsuming the old Facet/Sibling, and free to differ in soul/FSA/anything); the durable keypair is the
+     BODY key; Body = `store × soul`; and a shared Vessel table grouped by root prepub is an individual's
+      local subnet. This also made multi-soul stores structurally native.
+- **The six cracks that shaped the field:** (1) relay has NO fan-out → the Charter is necessary [validated];
+   (2) a stale Charter can wedge with no fan-out net [bounded by address stability]; (3) no durable per-body
+    identity in code → the body key must be built; (4) Charter split-brain [fixed by the era stamp]; (5)
+     friend-side is per-body piers, not roster-under-one-pier [reconcile before live]; (6) the always-on
+      daemon-Cave is usually the SEAT, not the Captain [the insight that made Seat/Captain orthogonal and
+       dissolved crack 2].
+- **Resolved on inspection (not cracks):** per-body vs per-soul grants (both key off the soul — authz via
+   the per-soul Music grant, authn via the soul-key voucher).
+- **Death is eviction, not a timer (owner, 2026-08-27).** The last-owed HUMAN ruling — a "dark-threshold
+   prune number" — dissolved once the frame flipped from *timeout* to *replacement*: a Post-holder leaves only
+    when a new one takes its Post (`%NotGrant` + re-charter), singular Posts (Captain) evicting by default and
+     plural ones (Cave) coexisting. A body that dies unreplaced lingers harmlessly, because the Charter never
+      gated liveness (the `%Reach` lesson) — liveness lives at the bare name, where the Seat is alive by
+       construction and every routing miss falls back to it. No quota, no clock, nothing owed.
+
+*(This doc was consolidated 2026-08-27 from a long design + adversarial-review + crack-hunting arc.)*

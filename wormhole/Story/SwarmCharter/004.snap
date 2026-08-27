@@ -1,0 +1,27 @@
+Snap:H
+  H:SwarmCharter,Run
+    A:SwarmCharter
+      self,round=4	{"mung":["age"]}
+      w:SwarmCharter,now=1751700000
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:2673bee2ec71e506,prepub:2673bee2ec71e506,friendly:Alice
+            Peering,name:2673bee2ec71e506,friendly:Alice
+              Body,pub:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd,role:Captain,address:2673bee2ec71e506
+              Body,pub:charter_cave_pub,role:Cave,address:2673bee2ec71e506_2
+              Charter,era:2,payload:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd:Captain:2673bee2ec71e506;charter_cave_pub:Cave:2673bee2ec71e506_2,sig:70ccd19d90651301fa4f120e1cd0983d36dc7be7eadcc58d25a03260b42749d328f4431e9768f79c065faed995f06516c2c28f5dc80b5cdf50de3c06fb53c802,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+        testing
+          signed,era_one,one_row,self_verifies,cave_resolves,captain_bare,none_null
+          tampered,genuine_ok,addr_rejected,era_rejected,soul_rejected
+          peered,absorbed,superseded,stale_ignored,forged_refused,one_pier_charter
+        reached:step_3
+        reached:step_4
+        Account,of:Bob
+          Identity:bob_prepub_000,prepub:bob_prepub_000,friendly:Bob
+            Peering,name:bob_prepub_000,friendly:Bob
+              Pier,prepub:2673bee2ec71e506,pub:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+                Charter,era:2,payload:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd:Captain:2673bee2ec71e506;charter_cave_pub:Cave:2673bee2ec71e506_2,sig:70ccd19d90651301fa4f120e1cd0983d36dc7be7eadcc58d25a03260b42749d328f4431e9768f79c065faed995f06516c2c28f5dc80b5cdf50de3c06fb53c802,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+                Body,pub:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd,role:Captain,address:2673bee2ec71e506
+                Body,pub:charter_cave_pub,role:Cave,address:2673bee2ec71e506_2

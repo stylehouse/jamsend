@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmServe,Run
+    A:SwarmServe
+      self,round	{"mung":["age"]}
+      w:SwarmServe
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok
