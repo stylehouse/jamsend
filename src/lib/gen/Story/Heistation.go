@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'f304113c5cdc1b22~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '14e01eac2f9a4979~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -5521,6 +5521,286 @@ MusuFloor_witness(w) {
     // #2 THE PINNED VOCABULARY: Record alone is servable — the gossip mainkeys are held out of the set at
     //  the one function that answers the question.
     if (f && +f.sc.pinned === 1 && +f.sc.gossip_out === 1 && +f.sc.record_in === 1) this.story_swear(w, 'the holdings vocabulary is pinned — Record alone serves and no gossip mainkey enters the set that every serve seam asks')
+
+},
+// ══ MusuSteward — the Quartermaster's DISPOSE half: the steward's %Wants get enacted, each by its kind ═══════
+//  MusuQuarter proved the PROPOSE half (Ra_quarter mints press/pull/evict %Wants under %Provisions).  This
+//   proves Ra_quarter_serve (Ghost/M/Ra.g) — the seam that ENACTS the wants a lone body can, with no Cave and
+//    no friend on the wire (Portability_doc §6 "it proposes; flows dispose"):
+//     • press — the library holds the Original, so a v1 byte-copy lands it in the pool (reusing Ra_press, the
+//                one catalog door MusuPress already gates byte-for-byte)
+//     • evict — a pooled track that fell out of the goal drops from the pool shelf (Ra_rec_drop)
+//     • pull  — a reputation-only track needs a foreign body, so its want is LEFT STANDING for that flow
+//   beat 2  a library holding o1 o2 (bytes on the stub nav), a pool already holding stale z9, and a Jam scoring
+//            o1 o2 f1 (f1 reputation-only — no library card).  Goal (cap 3) = f1 o1 o2.
+//   beat 3  serve: press o1 + press o2 land in the pool byte-faithful, evict z9 drops, pull f1 stands.  Tally
+//            {pressed:2, evicted:1, deferred:1, fails:0}, and the pool now holds exactly o1 o2.
+//   beat 4  re-serve the unchanged world: o1 o2 are pooled-and-wanted so they draw no press, z9 is already gone
+//            — pressed:0 evicted:0, only the pull still defers, and the pool holds o1 o2 with NO twins.
+//  THE DISCRIMINATION ([[adversarial-test-agent]]): a serve that pressed the PULL want (reaching for a foreign
+//   body it has no right to) flips deferred; one that evicted nothing leaves z9 in the pool; one that re-pressed
+//   on beat 4 mints a twin the Ra_recs count catches.  This is the dispose twin of MusuQuarter's propose.
+//  CONVENTION (Musu*): the world MUST be named MusuSteward.
+
+MusuSteward(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuSteward_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+MusuSteward_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuSteward_note(w, sc) {
+    let t = this.MusuSteward_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+async MusuSteward_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuSteward_setup(w)
+        if (n === 3) await this.MusuSteward_serve(w)
+        if (n === 4) await this.MusuSteward_reserve(w)
+    }
+    this.MusuSteward_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuSteward_setup — the world the steward reads and then acts on.  Two held Originals with bytes on the
+//  stub nav (o1 o2), a pool already holding a stale resident (z9, nothing wants it), and a Jam whose events
+//   score o1 o2 f1 all high — f1 a REPUTATION track (no library card, so it can only be PULLED not pressed).
+MusuSteward_setup(w) {
+    this.MusuSteward_note(w, { reached: 'step_2' })
+    let lib = w.i({ Library: 1, name: 'stewardlib' })
+    lib.c.up = w
+    w.c.lib = lib
+    let o1 = lib.i({ Record: 1, id: 'o1', artist: 'Auteur', title: 'One', path: 'music/a/one.wav', ext: 'wav' })
+    o1.c.up = lib
+    let o2 = lib.i({ Record: 1, id: 'o2', artist: 'Auteur', title: 'Two', path: 'music/a/two.wav', ext: 'wav' })
+    o2.c.up = lib
+    let pool = w.i({ Library: 1, name: 'pool' })
+    pool.c.up = w
+    w.c.pool = pool
+    let z = pool.i({ Record: 1, id: 'z9', title: 'Stale' })
+    z.c.up = pool
+    // fixed byte patterns per track (the fixture law — no randomness), held on .c (an object in .sc is fatal).
+    let b1 = new Uint8Array(64)
+    for (let i = 0; i < 64; i++) { b1[i] = (i * 7 + 13) % 251 }
+    let b2 = new Uint8Array(48)
+    for (let i = 0; i < 48; i++) { b2[i] = (i * 5 + 3) % 251 }
+    w.c.b1 = b1
+    w.c.b2 = b2
+    let writes = {}
+    w.c.pool_writes = writes
+    let nav = {}
+    nav.bin_read = async (d, f) => (d === 'music/a' && f === 'one.wav') ? b1 : ((d === 'music/a' && f === 'two.wav') ? b2 : null)
+    nav.bin_write = async (d, f, b) => { writes[d + '/' + f] = (b instanceof Uint8Array) ? b : new Uint8Array(b) }
+    nav.read_file = async (d, f) => null
+    nav.write_file = async (d, f, s) => { }
+    nav.dir = async (p) => null
+    w.c.pnav = nav
+    // the Jam taste ledger on the library shelf: o1 o2 f1 all liked+spun (score 4 each) → goal f1 o1 o2.
+    let jam = this.Jam_home(lib, 'pal')
+    let rec = (id, title) => ({ sc: { id: id, title: title } })
+    for (const t of [['o1', 'One'], ['o2', 'Two'], ['f1', 'Faraway']]) {
+        this.Jam_like(jam, rec(t[0], t[1]))
+        this.Jam_spin(jam, rec(t[0], t[1]))
+    }
+    w.c.set_up = 1
+
+},
+// MusuSteward_serve — the sit-and-serve.  Ra_quarter_serve computes the wants and enacts the local ones.
+//  Expected tally {pressed:2, evicted:1, deferred:1, fails:0}; the pool ends holding o1 o2 and NOT z9; the
+//   pull want for f1 still stands in %Provisions (deferred, never reached-for).  Bytes pinned byte-faithful.
+async MusuSteward_serve(w) {
+    this.MusuSteward_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) return
+    let t = await this.Ra_quarter_serve(w, w.c.pnav, w.c.lib, w.c.pool, w.c.lib, 3)
+    let row = { served: 1, pressed: '' + t.pressed, evicted: '' + t.evicted, deferred: '' + t.deferred, fails: '' + t.fails }
+    let ids = this.Ra_recs(w.c.pool).map((r) => String(r.sc.id)).sort()
+    row.pool = ids.join(' ')
+    let prov = w.o({ Provisions: 1 })[0]
+    if (prov && prov.o({ Want: 1, of: 'f1', do: 'pull' }).length === 1) row.pull_stands = 1
+    // byte-faithful: what landed in the pool for o1 is the source bytes, byte for byte (the v1 contract).
+    let wrote = w.c.pool_writes['pool/a/one.wav']
+    if (wrote && wrote.length === w.c.b1.length) {
+        let same = 1
+        for (let i = 0; i < wrote.length; i++) { if (wrote[i] !== w.c.b1[i]) { same = 0 } }
+        if (same) row.byte_faithful = 1
+    }
+    this.MusuSteward_note(w, row)
+
+},
+// MusuSteward_reserve — the unchanged world re-served.  o1 o2 are now pooled AND wanted (quiet), z9 is gone,
+//  so nothing presses and nothing evicts; only the pull still defers.  The pool holds o1 o2 with no twin —
+//   the idempotence a steward must have ("a good stash stays the stash", enacted not merely proposed).
+async MusuSteward_reserve(w) {
+    this.MusuSteward_note(w, { reached: 'step_4' })
+    if (!w.c.set_up) return
+    let t = await this.Ra_quarter_serve(w, w.c.pnav, w.c.lib, w.c.pool, w.c.lib, 3)
+    let ids = this.Ra_recs(w.c.pool).map((r) => String(r.sc.id)).sort()
+    let mine = this.Ra_recs(w.c.pool).filter((r) => r.sc.id === 'o1')
+    this.MusuSteward_note(w, { reserved: 1, pressed: '' + t.pressed, evicted: '' + t.evicted, deferred: '' + t.deferred, pool: ids.join(' '), o1cards: '' + mine.length })
+
+},
+// ── the witness — %see gated on TRUTH not beat number, once-noticed (no commas; em-dashes). ──
+MusuSteward_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 4)) return
+    if (!w.c.set_up) return
+    let T = this.MusuSteward_T(w)
+    let s = T.o({ served: 1 })[0]
+    // #1 EACH WANT BY ITS KIND: the two held tracks press the reputation track defers the stale resident is
+    //  evicted — the tally reads 2 pressed 1 evicted 1 deferred with no failure.
+    if (s && s.sc.pressed === '2' && s.sc.evicted === '1' && s.sc.deferred === '1' && s.sc.fails === '0') this.story_swear(w, 'the steward enacts each want by its kind — two held tracks press one stale resident is evicted and the reputation track defers to a flow this body cannot serve alone')
+    // #2 THE POOL FOLLOWS: after the serve the pool holds exactly the pressed pair and the stale resident is
+    //  gone — and the deferred pull still stands as a legible want.
+    if (s && s.sc.pool === 'o1 o2' && +s.sc.pull_stands === 1) this.story_swear(w, 'the pool follows the plan — the pressed pair lands and the stale resident is dropped while the un-servable pull stays a standing want')
+    // #3 BYTE-FAITHFUL DISPOSE: the press the steward drove is the same byte-for-byte v1 copy the door
+    //  guarantees — the steward proposes and the proven flow disposes, no re-encode smuggled in.
+    if (s && +s.sc.byte_faithful === 1) this.story_swear(w, 'the dispose rides the proven door — the bytes the steward pressed into the pool are the original bytes byte for byte')
+    let r = T.o({ reserved: 1 })[0]
+    // #4 ENACTED IDEMPOTENCE: re-serving an unchanged world presses nothing evicts nothing and leaves the
+    //  pool holding the same pair with no twin — a good stash stays the stash through the DISPOSE too.
+    if (r && r.sc.pressed === '0' && r.sc.evicted === '0' && r.sc.pool === 'o1 o2' && r.sc.o1cards === '1') this.story_swear(w, 'a good stash stays the stash through the dispose — re-serving an unchanged world presses nothing evicts nothing and mints no twin')
+
+},
+// ══ MusuSmuggle — the smuggle's Cave-side consequence: a backed-up lofi copy becomes an UPGRADE want ═════════
+//  Portability_doc §8 Flow 4: pool material crosses to the Cave for backup, and "the Cave regards every
+//   arriving pool copy as lofi that wants to be hifi-ified — each carries its of: join, so the Cave can fetch
+//    the Original whenever it becomes reachable. The backup is thereby also the upgrade queue." This proves
+//     Ra_upgrade_scan (Ghost/M/Ra.g) — the seam that reads the backup crate and queues the fetches:
+//   beat 2  a Cave library holding ONE Original (o1), and a backup crate holding two smuggled lofi copies
+//            (L1 of:o1 grade:ogg128 — Original HELD; L2 of:o2 grade:ogg128 — Original ABSENT) plus a bare
+//             junk record (no of no grade — must be ignored, not every backed-up thing is a lofi upgrade)
+//   beat 3  scan: queued 1 (o2 — the Original the Cave lacks) held 1 (o1 — pure backup, nothing to fetch);
+//            the junk draws nothing; a second scan of the unchanged crate stands on the same row (idempotent)
+//   beat 4  the Original o2 ARRIVES (a heist landed it in the library) → re-scan drops the o2 upgrade — the
+//            queue follows the hoard, never merely accretes
+//  THE DISCRIMINATION ([[adversarial-test-agent]]): a scan that queued o1 (whose Original is HELD) reaches for
+//   a fetch it doesn't need; one that queued the junk record treats any backup as an upgrade; one that kept the
+//    o2 upgrade after its Original landed leaves a stale fetch queued forever. This is the propose-side twin of
+//     the steward — Ra_upgrade_scan queues, the heist (Flow 1) disposes.
+//  CONVENTION (Musu*): the world MUST be named MusuSmuggle.
+
+MusuSmuggle(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuSmuggle_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+MusuSmuggle_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuSmuggle_note(w, sc) {
+    let t = this.MusuSmuggle_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+async MusuSmuggle_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuSmuggle_setup(w)
+        if (n === 3) this.MusuSmuggle_scan(w)
+        if (n === 4) this.MusuSmuggle_arrive(w)
+    }
+    this.MusuSmuggle_witness(w)
+    await this.Musu_float(w)
+
+},
+// MusuSmuggle_setup — the Cave after a smuggle: it holds Original o1, and the backup crate caught two lofi
+//  copies (of:o1 — already held; of:o2 — the Cave never had) plus a bare non-lofi record the filter must skip.
+MusuSmuggle_setup(w) {
+    this.MusuSmuggle_note(w, { reached: 'step_2' })
+    let lib = w.i({ Library: 1, name: 'cavelib' })
+    lib.c.up = w
+    w.c.lib = lib
+    let o1 = lib.i({ Record: 1, id: 'o1', artist: 'Auteur', title: 'One' })
+    o1.c.up = lib
+    let backup = w.i({ Library: 1, name: 'backup' })
+    backup.c.up = w
+    w.c.backup = backup
+    let l1 = backup.i({ Record: 1, id: 'L1', of: 'o1', grade: 'ogg128', title: 'One (lofi)' })
+    l1.c.up = backup
+    let l2 = backup.i({ Record: 1, id: 'L2', of: 'o2', grade: 'ogg128', title: 'Two (lofi)' })
+    l2.c.up = backup
+    let junk = backup.i({ Record: 1, id: 'j1', title: 'a bare backup' })
+    junk.c.up = backup
+    w.c.set_up = 1
+
+},
+// MusuSmuggle_scan — the first scan and the stability re-scan.  Expected {queued:1, held:1}: o2 queues (no
+//  Original), o1 is pure backup (held), the junk is skipped.  Then mark the standing upgrades and re-scan the
+//   unchanged crate — the same rows must stand (oai per of:, zero mint zero drop).
+MusuSmuggle_scan(w) {
+    this.MusuSmuggle_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) return
+    let r = this.Ra_upgrade_scan(w, w.c.lib, w.c.backup)
+    let row = { scanned: 1, queued: '' + r.queued, held: '' + r.held }
+    let up = w.o({ Upgrades: 1 })[0]
+    if (up) {
+        if (up.o({ Upgrade: 1, of: 'o2' }).length === 1) row.up_o2 = 1
+        if (up.o({ Upgrade: 1, of: 'o1' }).length === 0) row.no_up_o1 = 1
+        if (up.o({ Upgrade: 1, of: 'j1' }).length === 0) row.no_up_junk = 1
+        // idempotence: mark, re-scan the unchanged crate, the same one row must stand still marked.
+        for (const u of up.o({ Upgrade: 1 })) u.c.mark = 1
+        this.Ra_upgrade_scan(w, w.c.lib, w.c.backup)
+        let rows = up.o({ Upgrade: 1 })
+        let kept = rows.filter((u) => u.c.mark === 1)
+        if (rows.length === 1 && kept.length === 1) row.stable = 1
+    }
+    this.MusuSmuggle_note(w, row)
+
+},
+// MusuSmuggle_arrive — the Original o2 lands in the library (a heist fulfilled it).  The re-scan must DROP the
+//  o2 upgrade: the fetch is done, the queue follows the hoard.  Now both lofi copies are pure backup.
+MusuSmuggle_arrive(w) {
+    this.MusuSmuggle_note(w, { reached: 'step_4' })
+    if (!w.c.set_up) return
+    let o2 = w.c.lib.i({ Record: 1, id: 'o2', artist: 'Auteur', title: 'Two' })
+    o2.c.up = w.c.lib
+    let r = this.Ra_upgrade_scan(w, w.c.lib, w.c.backup)
+    let up = w.o({ Upgrades: 1 })[0]
+    let row = { arrived: 1, queued: '' + r.queued, held: '' + r.held }
+    if (up && up.o({ Upgrade: 1, of: 'o2' }).length === 0) row.o2_dropped = 1
+    this.MusuSmuggle_note(w, row)
+
+},
+// ── the witness — %see gated on TRUTH not beat number, once-noticed (no commas; em-dashes). ──
+MusuSmuggle_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 4)) return
+    if (!w.c.set_up) return
+    let T = this.MusuSmuggle_T(w)
+    let s = T.o({ scanned: 1 })[0]
+    // #1 THE BACKUP IS THE QUEUE: a smuggled lofi whose Original the Cave lacks queues an upgrade fetch while
+    //  one whose Original is held draws none — pure backup needs nothing fetched.
+    if (s && s.sc.queued === '1' && s.sc.held === '1' && +s.sc.up_o2 === 1 && +s.sc.no_up_o1 === 1) this.story_swear(w, 'the backup is also the upgrade queue — a smuggled lofi whose original the cave lacks queues a fetch while one already held draws none')
+    // #2 ONLY CROSS-FIDELITY COPIES: a bare backup record with no of and no grade is not an upgrade candidate —
+    //  the of: join is what makes a lofi copy hifi-ifiable.
+    if (s && +s.sc.no_up_junk === 1) this.story_swear(w, 'only a cross-fidelity copy queues — a bare backup record with no of join is left alone since there is no original to fetch for it')
+    // #3 STABLE QUEUE: re-scanning the unchanged crate stands on the same upgrade row — the queue mints nothing
+    //  it already holds.
+    if (s && +s.sc.stable === 1) this.story_swear(w, 'the queue is stable — re-scanning an unchanged backup crate stands on the very same upgrade row and mints nothing')
+    let a = T.o({ arrived: 1 })[0]
+    // #4 THE QUEUE FOLLOWS THE HOARD: when the Original arrives the upgrade drops — a served fetch leaves the
+    //  queue, never lingers as a stale want.
+    if (a && a.sc.queued === '0' && +a.sc.o2_dropped === 1) this.story_swear(w, 'the queue follows the hoard — when the original arrives the upgrade drops and no stale fetch lingers')
 
 },
 

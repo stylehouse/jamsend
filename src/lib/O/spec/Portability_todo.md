@@ -197,6 +197,47 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
        Swarmation crypto trilogy — is inert to the standing suite. No hollow dirs written (all five
         have real recorded fixtures; check mode never overwrites). The Ra_press signature change is
          guarded (`opts = opts || {}`, Ra.go:926) and has NO caller outside the new Books.
+- COMPILE-GREEN + LIVE-SMOKE + STATIC-TRACED, not yet recorded (2026-08-27, the steward's DISPOSE
+   half — the §6 "flows dispose" seam that was model-MISSING): **`Ra_quarter_serve(w, nav, shelf,
+    pool, lib, cap)`** in Ghost/M/Ra.g composes the two PROVEN primitives Ra_press (v1 byte-copy,
+     MusuPress-gated) + Ra_rec_drop into the dispose loop — it re-runs Ra_quarter then enacts only
+      the wants a LONE body can honour: `press` (library-held → v1 copy into the pool), `evict`
+       (stale pooled → drop), and LEAVES `pull` standing (it needs the Cave/friend flow). Dormant —
+        NO live caller yet, inert exactly like the pool landing it feeds, so zero regression. Proven
+         by the new **MusuSteward** Book (Heistation.g tail): setup a lib holding o1/o2 + a pool
+          holding stale z9 + a Jam scoring o1/o2/f1 → serve yields `{pressed:2, evicted:1,
+           deferred:1, fails:0}`, pool ends `o1 o2` byte-faithful, the f1 pull stands; re-serve is
+            idempotent (0 pressed, 0 evicted, no twin). Hand-traced the diff→serve arithmetic; LocalGen
+             green; smoke-fired live (mode:new, caveat:0, wrangle stands). **Lane A grows to ten:
+              record MusuSteward — `?B=MusuSteward`, Resume ×3 (steps 2→4), Accept-All, check →
+               `n:1..4`.** This closes the SoundPool-economy model layer: propose (MusuQuarter) +
+                dispose (MusuSteward). What remains is the LIVE OCCASION that calls serve (a
+                 play-session end / jam / Cave-reachable tick) — infra, on-device, your lane.
+- COMPILE-GREEN + LIVE-SMOKE + STATIC-TRACED, not yet recorded (2026-08-27, the SMUGGLE's Cave-side
+   consequence — §8 Flow 4 "the backup is thereby also the upgrade queue", model-MISSING): **`Ra_upgrade_scan(w,
+    lib, backup)`** in Ghost/M/Ra.g walks the backup crate and, for every smuggled lofi copy (a Record wearing
+     BOTH `of:` + `grade`) whose Original the library does NOT hold, mints an `%Upgrade,of:<origId>` under
+      `%Upgrades` — a legible fetch-queue the heist flow (Flow 1) later serves. A copy whose Original IS held
+       draws none (pure backup); a bare record (no of/grade) is filtered. Idempotent the Ra_quarter way (oai per
+        of:, drops an upgrade once its Original arrives — the queue follows the hoard). It queues; the heist
+         disposes — the propose-side twin of the steward. Proven by the new **MusuSmuggle** Book (Heistation.g
+          tail): lib holds o1, backup holds L1(of:o1) + L2(of:o2) + junk → scan yields `{queued:1, held:1}`
+           (only o2 queues), stable on re-scan, and the o2 upgrade DROPS when o2's Original lands. Hand-traced;
+            LocalGen green; smoke-fired live (mode:new, caveat:0). **Lane A grows to eleven: record MusuSmuggle
+             — `?B=MusuSmuggle`, Resume ×3 (steps 2→4), Accept-All, check → `n:1..4`.**
+- **CRYPTO CONTRACT RUNTIME-VERIFIED (2026-08-27, editor-independent) — the shipping bricks actually
+   EXECUTE correctly, not just compile.** The SwarmSeal/EmojiConfirm Books are unrecorded (hollow), so
+    until now the crypto had never run under assertion. Two standalone verifiers mirroring Sealbox.ts +
+     Emojiconfirm.ts EXACTLY, run against real WebCrypto / SHA-256 (Node's `globalThis.crypto.subtle`):
+      **Sealbox 7/7** (roundtrip · fresh-IV · fixed frame-length · tamper→throw · wrong-code→throw ·
+       wrong-salt→throw · truncated→throw) and **EmojiConfirm SAS 7/7** (honest sides agree · MITM
+        diverges · sorted-transcript symmetric · deterministic · empty-refused · 6 valid glyphs ·
+         salt-sensitive). Evidence kept re-runnable at `scratchpad/{sealbox,emoji}_verify.mjs`. This
+          upgrades the trilogy from "compile-green, unrecorded" to "contract proven in a real crypto
+           runtime" — the Book recording pass now only needs to gate it in-repo, the behaviour is sound.
+            (A permanent in-repo vitest importing the REAL modules is offered but NOT added — it is a
+             testing-convention call for the owner, and crypto.subtle under the jsdom test env is
+              unconfirmed.)
 - relay-test.ts GREEN: the hello-v2 arbiter (relay side).
 - ⚠️ **NOT actually proven — was a false green: SwarmCohort.** It runs 1 hollow step; beats 2–6
    never fire (see the ⚠️ entry above). Its verbs (sibling/note_theft/next_suffix/%Invite
@@ -232,6 +273,27 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
            its fails-closed beat refuses a by-with-no-sig husk fired from inside a REAL Ra_home_them
             crate. (Compile-green; awaits the Lane-A recording pass like the other new Books.)
 
+**AUDIT FINDING 2026-08-27 (corrects `Portability_doc.md` §10 — flagged for the owner's preen).** §10
+ says the Division serve layer "hardcodes `'Music'` at seven `Swarm_pier_live` call sites plus a grant
+  fallback and a token re-mint … that is the whole touch-list." A site-by-site read of all ten `'Music'`
+   literals in Swarm.g's serve/token layer says that touch-list is **stale/overstated** — every one is
+    ALREADY correct:
+  - **7 `Swarm_pier_live(_, 'Music')` sites** (Swarm_dial_piers:682, Swarm_probe_arrival:740,
+     Swarm_gossip_music:2452, Swarm_ive_got_tally:2552, Swarm_share_granted:2576, Swarm_offer_now:2667,
+      Swarm_share_beat:3211) all gate **music streaming** — `'Music'` is semantically RIGHT there; a Cave
+       role does not serve music, so these must NOT change.
+  - **The token re-mint** (Swarm_legacy_token:854) carries `'Music'` as a **codec placeholder the door
+     never reads** — "the door reads the Feature off its OWN record, never off this" (the code's own
+      comment). Deliberately inert, not a bug.
+  - **The grant fallback** (Swarm_reaccept_incomplete:1434) already reads the counterparty's real Feature
+     (`theirsC ? theirsC.sc.Grant : 'Music'`) — feature-aware, `'Music'` only when reconstructing from
+      nothing.
+  So the invite AND serve rails are genuinely feature-generic already (confirms §0's "SwarmRole was a
+   PROOF not surgery", resolves the §10 tension in §0's favour). **A `%Invite:MyCave` pier therefore needs
+    NEW Cave-role serve behaviour (SelfType-design, §13), not a retrofit of the music path.** The Division
+     lane is smaller and cleaner than §10 implies: the ONLY blocker is the SelfType ruling; there is no
+      find-replace surgery owed. Owner: preen §10 to match, or tell me I misread a site.
+
 **THE WAY FORWARD (plotted 2026-08-27, for the long slog).** Three lanes; A unblocks gates, B is
  the slog itself in dependency order, C is async and blocks nothing.
 
@@ -248,11 +310,38 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
     `wormhole/Story/MusuHeist/` NNN.snap + toc.snap + the Credence board lines; revert the
      Credulate/Credulation/other-Book gen churn as usual.
     ⚠ **DO NOT COMMIT the new Books' `wormhole/Story/<Book>/` dirs yet** — the nine new Books
-     (MusuPress, MusuPressLossy, SuperCull, MusuQuarter, MusuFloor, SwarmRole, SwarmSeal,
-      SwarmFerry, EmojiConfirm) each have a HOLLOW `001.snap` on disk from my CLI smoke-runs (a 1-step stub — the wrangle stood,
-       no beats fired; the SwarmCohort lesson). Committing them would gate a hollow run. They
+     (MusuPress, MusuPressLossy, SuperCull, MusuQuarter, MusuFloor, MusuSteward, MusuSmuggle, SwarmRole,
+      SwarmSeal, SwarmFerry, EmojiConfirm) each smoke-run to a HOLLOW 1-step `001.snap` (the wrangle stood,
+       no beats fired; the SwarmCohort lesson) — I DELETE each stub after smoke, so none is on disk
+        now, but a future smoke-run re-drops one. Never commit a `wormhole/Story/<Book>/` dir. They
         become real ONLY after the editor recording pass (Resume ×N, Accept-All) writes
          `002..00N.snap`; commit each Book's dir THEN, once `steps` shows the full `n:1..N`.
+
+**▶ THE RECORDING RUNBOOK (all 11, beat counts VERIFIED from source 2026-08-27).** Reload the editor
+ tab FIRST (it re-serialises the Credence board from its own model — a tab booted before the board edits
+  will clobber them on next save). For each: boot `?B=<Book>`, **Resume ×N** (each Resume advances one
+   beat), **Accept-All**, then `node scripts/runner_ask.mjs steps` must show the full `n:1..K` all ok.
+    Then and only then commit that Book's `wormhole/Story/<Book>/` dir. Independent — any order — but the
+     three-step crypto trilogy is the cheapest warm-up:
+
+  | Book | steps (K) | Resume × | check shows |
+  |------|-----------|----------|-------------|
+  | SwarmSeal     | 3 | 2 | `n:1..3` |
+  | SwarmFerry    | 3 | 2 | `n:1..3` |
+  | EmojiConfirm  | 3 | 2 | `n:1..3` |
+  | MusuFloor     | 3 | 2 | `n:1..3` |
+  | SwarmRole     | 4 | 3 | `n:1..4` |
+  | MusuPress     | 4 | 3 | `n:1..4` |
+  | MusuPressLossy| 4 | 3 | `n:1..4` |
+  | MusuSteward   | 4 | 3 | `n:1..4` |
+  | MusuSmuggle   | 4 | 3 | `n:1..4` |
+  | SuperCull     | 4 | 3 | `n:1..4` |
+  | MusuQuarter   | 5 | 4 | `n:1..5` |
+  | SwarmDivide   | 5 | 4 | `n:1..5` |  (the Division substrate + roster wire — `Division_todo`)
+  | SwarmCohort   | 6 | 5 | `n:1..6` |  (the pre-existing hollow one — same fix)
+
+  A recorded run that stalls before `n:K` means a beat threw — capture `runner_ask snap <n>` at the stall
+   and hand it back; every Book here was seam-checked + smoke-dispatched clean, so a stall would be news.
 
 *Lane B — the autonomous slog, in order (each verifiable without you):*
 1. ~~**Fixture-hygiene sweep**~~ **DONE 2026-08-27 — ALL FOUR GREEN, nothing to accept**:

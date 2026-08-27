@@ -34,6 +34,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:SwarmSeal
     Funkcion:Storying,of_Book:SwarmFerry
     Funkcion:Storying,of_Book:EmojiConfirm
+    Funkcion:Storying,of_Book:SwarmDivide
   What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette,obsoleted:by Vyto
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:VoroMitosis
@@ -139,6 +140,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:MusuPress
     Funkcion:Storying,of_Book:MusuQuarter
     Funkcion:Storying,of_Book:MusuPressLossy
+    Funkcion:Storying,of_Book:MusuSteward
+    Funkcion:Storying,of_Book:MusuSmuggle
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus

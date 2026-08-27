@@ -12,7 +12,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'afb752922a4d3842~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'c74dcc6fc7e7502f~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -2707,6 +2707,191 @@ async EmojiConfirm_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'EmojiConfirm') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmDivide — the DIVISION substrate: one soul, many role-bearing bodies, and peers routing by role ═══════
+//  Division_todo (the imperial realm): a soul is not a device — it inhabits BODIES across machines, each a
+//   department by ROLE, one of them the primary (DivisionMaster) at the bare <prepub>.  The substrate
+//    (%Body + Swarm_body_* in Ghost/S/Swarm.g) is paradigm-GENERAL — it never names a role; the MUSIC tenant
+//     binds 'Captain' (the social hand) and 'Cave' (the serving library) as opaque strings here.  And roles
+//      are LOOKED FOR (the owner: "people have to be looking for a certain role"): a friend wanting a stream
+//       resolves to the soul's SERVING body, not "the soul" — so the role is peer-visible over a %Pier.
+//   beat 2  Alice stands two bodies — Captain at the bare <prepub> (self, the primary) + Cave at <prepub>_1 —
+//            plus a third wearing a MADE-UP role ('Frobnicator') to prove the substrate is role-blind
+//   beat 3  the routing queries resolve: find Cave → _1, find Captain → bare, primary → the Captain, the
+//            made-up role resolves too (paradigm-blind), and an unheld role → null
+//   beat 4  a FRIEND (Bob) holds a %Pier carrying Alice's published roster; Swarm_pier_body(pier,'Cave')
+//            reaches Alice's Cave ADDRESS (the peer routing — who serves music for Alice), an unpublished
+//             role misses, and the primary over the pier is still the Captain at the bare name
+//  THE DISCRIMINATION ([[adversarial-test-agent]]): a substrate that branched on 'Cave' would not resolve
+//   'Frobnicator'; a router that returned "the soul" would not carry the _1 address; a pick that ignored the
+//    bare-first tiebreak would not name the Captain primary.  This is the imperial-realm claim, proven.
+//  CONVENTION (Swarm*): the world MUST be named SwarmDivide.
+
+SwarmDivide(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmDivide_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+SwarmDivide_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+SwarmDivide_note(w, sc) {
+    let t = this.SwarmDivide_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+async SwarmDivide_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmDivide_stand(w)
+        if (n === 3) this.SwarmDivide_route(w)
+        if (n === 4) this.SwarmDivide_peer(w)
+        if (n === 5) this.SwarmDivide_wire(w)
+    }
+    this.SwarmDivide_witness(w)
+    await this.SwarmDivide_order(w)
+
+},
+// beat 2 — the soul takes two bodies + a role-blind third.  Fixed keys (seeded) + pinned clock keep the
+//  roster byte-repeatable.  The running body is the Captain (self:1) at the bare prepub; the Cave and the
+//   Frobnicator are NOTED (other machines' bodies, as a roster hand-off would carry them).
+async SwarmDivide_stand(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1751700000
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmDivide-Alice')
+    let alice = this.Swarm_identity(acct, keys, 'Alice')
+    w.c.alice = alice
+    let bare = alice.sc.prepub
+    this.Swarm_body_take(alice, bare, 'Captain', bare)
+    this.Swarm_body_note(alice, 'cave_vessel_pub', 'Cave', bare + '_1')
+    this.Swarm_body_note(alice, 'frob_vessel_pub', 'Frobnicator', bare + '_2')
+
+},
+// beat 3 — the routing queries over the soul's OWN roster.  Every outcome pinned as one note row; the
+//  addresses are compared against the soul's own bare/suffixed names.
+SwarmDivide_route(w) {
+    w.i({reached: "step_3"})
+    let alice = w.c.alice
+    if (!alice) return
+    let bare = alice.sc.prepub
+    let cave = this.Swarm_body_for(alice, 'Cave')
+    let cap = this.Swarm_body_for(alice, 'Captain')
+    let prim = this.Swarm_body_primary(alice)
+    let frob = this.Swarm_body_for(alice, 'Frobnicator')
+    let none = this.Swarm_body_for(alice, 'Encoder')
+    let row = { routed: 1, roster: '' + this.Swarm_body_roster(alice).length }
+    if (cave && cave.sc.address === bare + '_1') row.cave_at_1 = 1
+    if (cap && cap.sc.address === bare) row.captain_bare = 1
+    if (prim && prim.sc.role === 'Captain' && prim.sc.address === bare) row.primary_captain = 1
+    if (frob && frob.sc.address === bare + '_2') row.frob_resolved = 1
+    if (none === null) row.encoder_miss = 1
+    this.SwarmDivide_note(w, row)
+
+},
+// beat 4 — the PEER routing.  Bob befriends Alice: his %Pier carries Alice's PUBLISHED roster (the %Body
+//  rows a replication would hand across).  Bob then asks "who is Alice's Cave" and reaches the ADDRESS —
+//   the whole point: a friend routes to the serving body, not to a bare soul id.
+SwarmDivide_peer(w) {
+    w.i({reached: "step_4"})
+    let alice = w.c.alice
+    if (!alice) return
+    let bare = alice.sc.prepub
+    let bacct = w.oai({ Account: 1, of: 'Bob' })
+    bacct.c.up = w
+    let bkeys = { prepub: 'bob_prepub_000', pub: 'bob_pub_000', key: 'bob_key_000' }
+    let bob = this.Swarm_identity(bacct, bkeys, 'Bob')
+    let bpeer = this.Swarm_peering(bob)
+    let pier = bpeer.i({ Pier: 1, prepub: bare, pub: alice.c.keys.pub })
+    pier.c.up = bpeer
+    // stamp Alice's published roster onto the pier — what the wire will carry (a later replication slice).
+    for (const b of this.Swarm_body_roster(alice)) {
+        let pb = pier.i({ Body: 1, pub: b.sc.pub, role: b.sc.role, address: b.sc.address })
+        pb.c.up = pier
+    }
+    let served = this.Swarm_pier_body(pier, 'Cave')
+    let primOverPier = this.Swarm_pier_body(pier, 'Captain')
+    let missing = this.Swarm_pier_body(pier, 'Librarian')
+    let row = { peered: 1 }
+    if (served && served.sc.address === bare + '_1') row.serves_at_cave = 1
+    if (primOverPier && primOverPier.sc.address === bare) row.captain_over_pier = 1
+    if (missing === null) row.unpublished_miss = 1
+    this.SwarmDivide_note(w, row)
+
+},
+// beat 5 — the roster crosses the WIRE as plain matter.  Swarm_roster_of publishes it as a scalar payload
+//  (no C refs — it snaps and travels, Tier-B grow-only); a FRESH friend (Carol) with an empty pier absorbs
+//   it off the wire (Swarm_roster_onto) and then routes to Alice's serving body.  Re-absorb mints no twin.
+SwarmDivide_wire(w) {
+    w.i({reached: "step_5"})
+    let alice = w.c.alice
+    if (!alice) return
+    let bare = alice.sc.prepub
+    let payload = this.Swarm_roster_of(alice)
+    let scalar = 1
+    for (const e of payload) { if (typeof e.pub !== 'string' || typeof e.role !== 'string' || typeof e.address !== 'string') scalar = 0 }
+    let cacct = w.oai({ Account: 1, of: 'Carol' })
+    cacct.c.up = w
+    let ckeys = { prepub: 'carol_prepub_0', pub: 'carol_pub_0', key: 'carol_key_0' }
+    let carol = this.Swarm_identity(cacct, ckeys, 'Carol')
+    let cpeer = this.Swarm_peering(carol)
+    let pier = cpeer.i({ Pier: 1, prepub: bare, pub: alice.c.keys.pub })
+    pier.c.up = cpeer
+    let landed = this.Swarm_roster_onto(pier, payload)
+    let served = this.Swarm_pier_body(pier, 'Cave')
+    this.Swarm_roster_onto(pier, payload)
+    let count = pier.o({ Body: 1 }).length
+    let row = { wired: 1, payload: '' + payload.length, landed: '' + landed, bodies: '' + count }
+    if (scalar === 1) row.scalar = 1
+    if (served && served.sc.address === bare + '_1') row.routed_off_wire = 1
+    this.SwarmDivide_note(w, row)
+
+},
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmDivide_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 4)) return
+    let T = this.SwarmDivide_T(w)
+    let r = T.o({ routed: 1 })[0]
+    if (!r) return
+    // #1 THE DEPARTMENTS: the soul's bodies resolve by role — the Cave at its suffix the Captain at the bare
+    //  name — a soul is not a device but a roster of role-bearing bodies.
+    if (r && +r.sc.cave_at_1 === 1 && +r.sc.captain_bare === 1 && r.sc.roster === '3') this.story_swear(w, 'a soul is a roster of bodies not a device — find the Cave and it is the suffixed body find the Captain and it is the one at the bare name')
+    // #2 THE DIVISIONMASTER: the primary is the body at the unsuffixed prepub — the one that holds the bare
+    //  address and rosters the rest.
+    if (r && +r.sc.primary_captain === 1) this.story_swear(w, 'the primary is the body at the bare name — the DivisionMaster holds the unsuffixed address and the rest wear suffixes')
+    // #3 PARADIGM-BLIND: a made-up role resolves exactly as the music ones do and an unheld role misses — the
+    //  substrate carries any vocabulary a paradigm brings so the imperial realm generalises beyond music.
+    if (r && +r.sc.frob_resolved === 1 && +r.sc.encoder_miss === 1) this.story_swear(w, 'the substrate is paradigm-blind — a made-up role routes exactly as Captain and Cave do and an unheld role finds nothing so the realm generalises past music')
+    let p = T.o({ peered: 1 })[0]
+    // #4 PEERS ROUTE BY ROLE: a friend carrying the published roster reaches the SERVING body's address — who
+    //  serves music for Alice is her Cave at its suffix not a bare soul id — and an unpublished role misses.
+    if (p && +p.sc.serves_at_cave === 1 && +p.sc.captain_over_pier === 1 && +p.sc.unpublished_miss === 1) this.story_swear(w, 'a peer routes by the role it needs — carrying the published roster a friend reaches the serving Cave at its own address and an unpublished role finds nothing')
+    let ww = T.o({ wired: 1 })[0]
+    // #5 THE ROSTER TRAVELS AS PLAIN MATTER: published as a scalar payload (no C refs) it lands on a fresh
+    //  friend's pier and routes to the serving body — and re-absorbing mints no twin — so who-serves-music
+    //   crosses the wire, not just a same-process stamp.
+    if (ww && +ww.sc.scalar === 1 && +ww.sc.routed_off_wire === 1 && ww.sc.payload === '3' && ww.sc.bodies === '3') this.story_swear(w, 'the roster travels as plain matter — published as a scalar payload it lands on a fresh friend pier and routes to the serving body and re-absorbing mints no twin')
+
+},
+// SwarmDivide_order — float A:SwarmDivide to the front of H/* so the Run snap stays readable.
+async SwarmDivide_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmDivide') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

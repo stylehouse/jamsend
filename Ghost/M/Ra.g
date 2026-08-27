@@ -1078,6 +1078,75 @@ Ra_quarter(w, shelf, pool, lib, cap):
         if (want.sc.why !== d.why) want.sc.why = d.why
     }
     return { goal: goal, diff: diff, wants: out.o({ Want: 1 }).length }
+// Ra_quarter_serve — the DISPOSE half the doc's steward hands to the flows (§6 "proposes; flows dispose").
+//  Ra_quarter PROPOSED the %Wants; this enacts the ones a LONE body can honour with no Cave and no friend
+//   on the wire: `press` (the library holds the Original locally, so a v1 byte-copy lands it in the pool
+//    through the SAME Heist_catalog_land door Ra_press owns — never a parallel minter) and `evict` (a
+//     pooled track that fell out of the goal is dropped from the pool shelf).  A `pull` want is LEFT
+//      STANDING — it needs a foreign body (the Cave's press-over-wire, or a friend's exchange), a flow this
+//       seam cannot honour, so it stays a legible want for that flow to serve.  So this writes no pool
+//        POLICY; it enacts the already-minted decision, and only the half one body owns.  Idempotent by
+//         composition: a served press leaves the track pooled, so the NEXT Ra_quarter drops that want and a
+//          re-serve finds nothing to press.  Returns {pressed, evicted, deferred, fails}.  Dormant until a
+//           live steward occasion (a play-session end, a jam, the Cave reachable) calls it — no live caller
+//            yet, so it is inert exactly like the pool landing it feeds (Portability_doc §6).
+async Ra_quarter_serve(w, nav, shelf, pool, lib, cap):
+    this.Ra_quarter(w, shelf, pool, lib, cap)
+    let prov = w.o({ Provisions: 1 })[0]
+    let out = { pressed: 0, evicted: 0, deferred: 0, fails: 0 }
+    if (!prov) return out
+    for (const want of prov.o({ Want: 1 }).slice()) {
+        let of = String(want.sc.of || '')
+        let doo = String(want.sc.do || '')
+        if (!of) continue
+        if (doo === 'press') {
+            let r = await this.Ra_press(w, nav, lib, pool, of)
+            if (r && r.fail) { out.fails = out.fails + 1 } else { out.pressed = out.pressed + 1 }
+        } else if (doo === 'evict') {
+            let dropped = await this.Ra_rec_drop(pool, of)
+            out.evicted = out.evicted + dropped
+        } else {
+            out.deferred = out.deferred + 1
+        }
+    }
+    return out
+// Ra_upgrade_scan — the SMUGGLE's Cave-side consequence (Portability_doc §8 Flow 4: "the backup is thereby
+//  also the upgrade queue").  A pool copy that reaches the Cave for backup carries its `of:<origId>` +
+//   `grade` cross-fidelity join, so the Cave can read it as "a lofi thing whose Original I may not hold" and
+//    queue the fetch.  This walks the backup crate and, for every lofi copy (a Record wearing BOTH `of:` and
+//     `grade` — the pool-press shape Ra_rec_pool mints) whose Original the library does NOT already hold,
+//      mints an `%Upgrade,of:<origId>` under `%Upgrades` — a legible queue the heist flow (Flow 1) later
+//       serves by fetching the Original under whatever grant the friendship carries.  A copy whose Original
+//        IS held draws no upgrade (pure backup, nothing to fetch).  Idempotent the Ra_quarter way: upgrades
+//         oai per `of:` so an unchanged crate re-scans to the SAME rows, and an upgrade whose Original has
+//          since ARRIVED (or whose backup copy is gone) is dropped — the queue follows the hoard, the pool's
+//           expendability underwritten (bytes may die with the browser; this ledger lives on the Cave disk).
+//  Model-legible with no byte moving (MusuSmuggle), the propose-side twin of the steward — it queues; the
+//   heist disposes.  Returns {queued, held} — how many upgrades stand, and how many copies needed none.
+Ra_upgrade_scan(w, lib, backup):
+    let held = {}
+    for (const r of this.Ra_recs(lib)) {
+        if (r.sc.id && !r.sc.of && !r.sc.grade) held[String(r.sc.id)] = 1
+    }
+    let need = {}
+    let satisfied = 0
+    for (const r of this.Ra_recs(backup)) {
+        if (!r.sc.of || !r.sc.grade) continue
+        let orig = String(r.sc.of)
+        if (held[orig]) { satisfied = satisfied + 1; continue }
+        need[orig] = 'lofi backed up — original not yet held'
+    }
+    let out = w.oai({ Upgrades: 1 })
+    out.c.up = w
+    for (const up of out.o({ Upgrade: 1 }).slice()) {
+        if (!need[String(up.sc.of)]) out.drop(up)
+    }
+    for (const orig of Object.keys(need)) {
+        let up = out.oai({ Upgrade: 1, of: orig })
+        up.c.up = out
+        if (up.sc.why !== need[orig]) up.sc.why = need[orig]
+    }
+    return { queued: out.o({ Upgrade: 1 }).length, held: satisfied }
 //#endregion
 
 // Ra_rec_drop — the removal counterpart to Ra_rec_home: find the holding wherever it sits (flat or

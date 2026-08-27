@@ -3686,6 +3686,96 @@ Swarm_take_role(ident, role):
     peering.sc.role = role
     peering.bump()
 
+// ══ %Body — the DIVISION roster (Division_todo §3): a soul's bodies across MACHINES, each a department
+//  by ROLE. Distinct in kind from %Sibling above (same-store cohort tabs, session-only): a %Body is
+//   PERSISTENT, replicated Tier-B, and role-partitioned — the paradigm-GENERAL substrate ("the imperial
+//    realm"), with music binding Captain|Cave atop it. These seams NEVER branch on a role string; a
+//     paradigm supplies the vocabulary. Keyed by vessel `pub` (the key IS a body's identity — many
+//      bodies per soul someday, so not keyed by role); `self:1` marks the running body's own row.
+// Swarm_body_take — the running body declares its own %Body (role + the address it holds). Idempotent
+//  per vessel `pub`; call once per body (defaults pub to the soul prepub, the primary body's case).
+Swarm_body_take(ident, pub, role, address):
+    let peering = this.Swarm_peering(ident)
+    let body = peering.oai({ Body: 1, pub: pub || ident.sc.prepub })
+    body.c.up = peering
+    body.sc.self = 1
+    if (role) body.sc.role = role
+    if (address) body.sc.address = address
+    body.bump()
+    return body
+// Swarm_body_note — record ANOTHER of the soul's bodies (from roster replication or the LinkDevice
+//  roster hand-off). oai per vessel `pub`; never marks self.
+Swarm_body_note(ident, pub, role, address):
+    if (!pub) return null
+    let peering = this.Swarm_peering(ident)
+    let body = peering.oai({ Body: 1, pub: pub })
+    body.c.up = peering
+    if (role) body.sc.role = role
+    if (address) body.sc.address = address
+    body.bump()
+    return body
+// Swarm_body_roster — the soul's bodies (the division).
+Swarm_body_roster(ident):
+    let peering = this.Swarm_peering(ident)
+    return peering ? peering.o({ Body: 1 }) : []
+// Swarm_body_pick — deterministic pick among role-matches on a page: the PRIMARY (bare address) first,
+//  else address ascending. `bare` is the soul's unsuffixed prepub. Shared by the own-roster and the
+//   peer-roster (Pier) lookups so both route identically.
+Swarm_body_pick(rows, role, bare):
+    let hits = rows.filter((b) => String(b.sc.role || '') === String(role))
+    if (!hits.length) return null
+    hits.sort((a, b) => {
+        let ap = (String(a.sc.address || '') === String(bare)) ? 0 : 1
+        let bp = (String(b.sc.address || '') === String(bare)) ? 0 : 1
+        if (ap !== bp) return ap - bp
+        return (String(a.sc.address || '') < String(b.sc.address || '')) ? -1 : 1
+    })
+    return hits[0]
+// Swarm_body_for — THE ROUTING QUERY: the soul's body playing `role` (the department that does that
+//  work). Returns the %Body row (address on its sc), or null. Paradigm-blind — `role` is opaque.
+Swarm_body_for(ident, role):
+    return this.Swarm_body_pick(this.Swarm_body_roster(ident), role, ident.sc.prepub)
+// Swarm_body_primary — the DivisionMaster: the body at the bare <prepub> (holds the unsuffixed address,
+//  rosters the rest). Null if no body has claimed the bare name yet.
+Swarm_body_primary(ident):
+    let bare = ident.sc.prepub
+    return this.Swarm_body_roster(ident).filter((b) => String(b.sc.address || '') === String(bare))[0] || null
+// Swarm_pier_body — the PEER routing: over a FRIEND's %Pier carrying the counterparty's published roster
+//  (%Body rows imported onto the pier), find the counterparty body playing `role`. This is WHY a role is
+//   peer-visible: "who serves music for soul X" resolves to a body + address, not to "the soul". `bare`
+//    is the counterparty's routing name (pier.sc.prepub).
+Swarm_pier_body(pier, role):
+    if (!pier) return null
+    return this.Swarm_body_pick(pier.o({ Body: 1 }), role, pier.sc.prepub)
+// Swarm_roster_of — PUBLISH: the soul's roster as a PLAIN scalar payload ({pub, role, address}[]) — the
+//  wire shape a Pier page / pier_accept carries. No C refs, so it snaps and travels; Tier-B grow-only, so
+//   two bodies' rosters union cleanly. The receiver lands it with Swarm_roster_onto.
+Swarm_roster_of(ident):
+    return this.Swarm_body_roster(ident).map((b) => ({ pub: String(b.sc.pub || ''), role: String(b.sc.role || ''), address: String(b.sc.address || '') }))
+// Swarm_roster_onto — ABSORB: land a published roster (from Swarm_roster_of, across the wire) as %Body
+//  rows under a FRIEND's %Pier, so Swarm_pier_body can route to the counterparty's departments. oai per
+//   pub; idempotent — re-absorbing an unchanged roster mints no twin. Returns how many rows it carried.
+Swarm_roster_onto(pier, roster):
+    if (!pier || !roster) return 0
+    let n = 0
+    for (const e of roster) {
+        if (!e || !e.pub) continue
+        let body = pier.oai({ Body: 1, pub: e.pub })
+        body.c.up = pier
+        if (e.role) body.sc.role = e.role
+        if (e.address) body.sc.address = e.address
+        body.bump()
+        n = n + 1
+    }
+    return n
+// NOTE (2026-08-27): a `%Reach` materialised-verdict cache used to live here (Swarm_reach_grade/addr/
+//  refresh/darken/pick/for). It was REVERTED after two adversarial reviews: it re-introduced a presence
+//   cache with its own ~40s clock — the exact "cache liveness + keep it fresh" shape the live transfer
+//    protocol (repli_want, Ghost/N/Repli.g) already tore out for being "pure liability" that flooded the
+//     outbox and killed the deliver pump. REACHABILITY is the transport's ground truth (Swarm_deliver's
+//      boolean / the outbox ack-dead ledger), read at use — never a directory cache. RESOLUTION (role →
+//       body → address) stays pure, above: Swarm_body_for / Swarm_pier_body. See Division_todo §4.
+
 // Swarm_note_theft — a claimant `by` is holding our name as of `at`. A KNOWN sibling is cooperative
 //  co-presence (no alarm — return false); anyone else is a THEFT: raise the page's `stolen` flag and
 //   leave a durable %Stolen,by/at husk the warning banner reads. Returns true when it alarmed.
