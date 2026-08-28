@@ -31,3 +31,13 @@ Two irritations, probably one rebuild:
 No design here yet — this doc exists so the itch has an address.  When it starts: inventory the
  actual load lists (LocalGen defaults, boot ghost mounts, GhostList), inventory what the toplevel
   actually does between page-load and commission, and only then propose the A** shape.
+
+## Its twin: the focus authority (`Focus_todo.md`)
+
+The toplevel has TWO jobs and this doc names only one.  Atheory is the **loading** half (what code
+ mounts onto the base Housing).  `Focus_todo.md` is the **attention** half (which fullscreen surface
+  commands the user's screen at each moment — the "who's stealing the user's focus" the owner asked
+   to have *"formulated carefully"*, 2026-08-28).  They meet here: the rebuilt toplevel should OWN
+    the §3 focus authority from `Focus_todo` and stand it up early, rather than re-scattering the
+     seven fullscreen surfaces that today each decide for themselves.  Design either without blocking
+      on the other; land the focus coordinator on today's toplevel first to de-risk the rebuild.

@@ -115,6 +115,7 @@ export class TheX {
         return this.vs ? (this.vs as any[]).indexOf(v) : -1
     }
     pending_drops?: number   // un-reindexed drop()s since the last compact() — the auto-compact trigger
+    compacting?: boolean     // set on the FRESH X while compact() re-keys survivors, so i()'s ceiling check no-ops mid-rebuild and can't recurse
 
     // < tried to make .z state but... it loses the first row? but is reactive
     serial_i = $state(1)
@@ -142,23 +143,14 @@ export class TheX {
         let N = this[kf] = this[kf] || [];
         if (!Array.isArray(N)) throw "!ar";
         N.push(n);
-        // AUTO-GC BEFORE THE FATAL (the human 2026-07-29 "perhaps it could just automatically do that?"):
-        //  drop() only MARKS a child c.drop=1 and LEAVES its row in this ordered list; o_query re-scans the
-        //   whole list every call and just filters the dropped ones out.  So a hot parent whose children
-        //    churn — a Pier %outbox (a retx emit per frame), a req shelf — accretes DEAD rows without bound
-        //     until the length trips the ceiling and whatever is appending throws.  That is the exact fault
-        //      the human hit: the share beat's next outbox emit threw "giant stuff" → the beat died → the
-        //       Sounditrons stopped talking (and the O(deadN) re-scan was choking the tab long before).
-        //  So when the list nears the ceiling, PURGE the dropped rows in place first (only c.drop rows go;
-        //   live rows and their order are untouched — this is the replace() the human said we "must" do,
-        //    made automatic).  Every z self-heals the same way (the /$k and /$k/$v buckets are TheX too).
-        //     Only rows that are genuinely LIVE and still over the ceiling are truly insane — those alone
-        //      still go fatal, now with a message that NAMES the offending index instead of a bare string.
-        if (N.length > 5000) {
-            let live = N.filter(m => !m || !m.c || !m.c.drop);
-            if (live.length < N.length) N = this[kf] = live;
-        }
-        if (N.length > 6000) throw "giant stuff: index '" + kf + "' reached " + N.length + " LIVE rows — a single C cannot hold this many (compaction found nothing dropped to reclaim); the collection must be bounded/paged";
+        // THE CEILING IS ENFORCED AT TheC.i(), NOT HERE (2026-08-28, the human: "the in-place fix is stupid
+        //  we need a new X … X.*.* = x").  The old code filtered THIS x's z-array in place — a half-fix that
+        //   left the keyed /$k and /$k/$v buckets still pointing at the dropped rows.  And firing a real
+        //    reindex from inside i_z is unsafe: compact() nulls+rebuilds this.X mid-i(), so the in-flight
+        //     child would get its buckets added twice.  So i() (which owns compact() and runs AFTER z+k+v are
+        //      built) does the real thing: reindex the WHOLE X, then throw only if a full rebuild still can't
+        //       get the LIVE count under the ceiling.  z ⊇ every bucket, so i()'s z-length check covers them
+        //        all.  drop()'s own auto-compact (pending_drops ≥ 500) still reclaims drop-churn far earlier.
     }
 
     // X/$v +$n
@@ -308,7 +300,9 @@ class StuffIO {
         this.X = null as any
         this.Xify()                     // fresh empty index (host re-stamped)
         this.X.serial_i = keep          // …but keep the version line unbroken for $effect observers
+        this.X.compacting = true        // while we re-key survivors, i()'s ceiling check must no-op — else the rebuild recurses
         for (const c of live) this.i(c as TheC)   // re-key each survivor via the SAME i() path that built it
+        this.X.compacting = false
         this.X.bump_version()
     }
 
@@ -337,6 +331,18 @@ class StuffIO {
                 kx.i_v(v, n);
             // so you have to look up all keys if you want all values
         });
+        // GIANT GUARD — the brute no-memleak backstop (2026-08-28, the human).  At the ceiling, rebuild the
+        //  ENTIRE index fresh from the LIVE children (compact(): a new X, z + every /$k + /$k/$v re-keyed —
+        //   NOT the old z-only in-place filter).  compact() reclaims every drop()'d row for real; only if a
+        //    FULL reindex STILL can't get the live count under the ceiling is this genuine bloat — real
+        //     particles kept in one place, seemingly in error — and THEN we throw, naming the size.  The
+        //      X.compacting guard makes this a no-op while compact() itself re-i()s survivors, so it never
+        //       recurses.  Catches a single runaway C; a distributed mesh of crap still needs its own paging
+        //        (the %Mag/Repli shape), but this keeps surfacing the single-place leaks instead of a fatal.
+        if (this.X.z && this.X.z.length > 6000 && !this.X.compacting) {
+            this.compact()
+            if (this.X.z.length > 6000) throw "giant stuff: " + this.X.z.length + " LIVE rows survive a full reindex — real particles kept in one place, seemingly in error; bound or page the collection";
+        }
         return n
     }
 

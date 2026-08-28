@@ -118,16 +118,22 @@
 <!-- ONE FRAME, BOTH ENDS: the same blurb explains the act on the soul device AND the new device, so the
      language is unified; only the action row below it differs by which side you're on. -->
 <div class="ld-frame">
-    <p class="ld-blurb">
-        <!-- the owner's sentence, dictated twice — keep it verbatim -->
-        backup or colonise other devices, becoming a sloshway of cooperation and
-        <button class="ld-trust" onclick={() => trust = !trust}>TOTAL TRUST</button>.
-    </p>
-    {#if trust}
-        <p class="ld-warn-note">
-            It <b>copies your account</b> to the other device and then they become a team in music sharing.
-            But it's you logged in forever, may sit <b>unencrypted at rest</b>.
+    <!-- THE BLURB IS THE INTRO ONLY (the owner 2026-08-28: *"when the QR is open… that stuff should
+         replace everything under the 'Link Device' heading"*).  Once a link is minted (url) or an
+         account is arriving (pending), the ceremony below IS the whole content — the pitch has done
+         its job and the QR/consent takes the room. -->
+    {#if !url && !pending}
+        <p class="ld-blurb">
+            <!-- the owner's sentence, dictated twice — keep it verbatim -->
+            backup or colonise other devices, becoming a sloshway of cooperation and
+            <button class="ld-trust" onclick={() => trust = !trust}>TOTAL TRUST</button>.
         </p>
+        {#if trust}
+            <p class="ld-warn-note">
+                It <b>copies your account</b> to the other device and then they become a team in music sharing.
+                But it's you logged in forever, may sit <b>unencrypted at rest</b>.
+            </p>
+        {/if}
     {/if}
 
     {#if pending}
@@ -176,6 +182,17 @@
     .ld-frame {
         display: flex; flex-direction: column; align-items: center; gap: .8rem;
         width: 100%; max-width: 32rem; margin: 0 auto; text-align: center;
+    }
+    /* THE INTERACTIVE, SCROLLABLE COLUMN (glass_kinds contract).  LinkFace's root stays
+       pointer-events:none so its full-bleed rectangular mold cannot shield Door/Radio — but the DEAD
+       RIM is what must stay none, not the content.  This centered ≤32rem column re-arms `auto`, so
+       scroll, text-selection and every button work inside it, while the transparent margins around it
+       (where rim buds live) still let clicks through.  It owns the scroll (LinkFace no longer does), so
+       the "link a device as your Cave…" body and its copy button are reachable when the ceremony is
+       taller than the cell. */
+    .ld-frame {
+        pointer-events: auto;
+        max-height: 100%; overflow-y: auto; overscroll-behavior: contain;
     }
     .ld-blurb { font-size: 1rem; line-height: 1.5; margin: 0; }
     .ld-trust {

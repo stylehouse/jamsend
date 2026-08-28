@@ -64,6 +64,74 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
      is the follow-on, and it is what would catch the one-sided-reload wedge (item 3 below). Build the
       one-runner version first: it is deterministic enough to iterate on and needs no human present.
 
+    **BUILD PLAN (2026-08-28, terrain mapped by two exploration passes — anchors inline; the human asked
+     for this before a long build session).** The map changed the shape in one way worth stating up front:
+      **`make_lossy_partner` already exists** (`Reliable.g:91-125` — per-Pier `drop`/`dup`/`delay:{seq:ticks}`/
+       `blackhole`, deterministic, already worn across `Peregrination.g`). So a loopback Book with injected
+        latency+loss is **no longer the zero-latency mock** that makes the control loop inert cargo (§5.5/§5.6):
+         a seeded `delay:` gives non-zero RTT `s`, a seeded `drop:` exercises the tail probe and the ack-clock's
+          re-issue. That splits the work into two rungs that prove DIFFERENT things — build Tier 1, checkpoint,
+           then Tier 2 (Tier 3 rides alongside 2).
+
+    **TIER 1 — `MusuNeGrind`, deterministic bench (loopback + lossy wrapper).** NOT the throwaway item 00
+     once feared: it is the DETERMINISTIC, fixtured reproducer of both the flood and the control loop.
+     Template is `MusuHeist` (`Heistation.g:51-399`) — two Piers sealed by Idzeug over one %Station world,
+      pinned clock+seed, `Crate_nav_paths` census, Repli jobs. Copy that scaffold and:
+     1. **Inject the wire.** At the `Lake_link` call (`Heistation.g:176`) wrap one direction's port with
+         `make_lossy_partner(port, schedule)` (`Reliable.g:91`). Schedule off the pinned seed: a `delay:{seq:N}`
+          spread (non-zero RTT — the estimator finally samples), a `drop:[seqs]` mid-page (re-exercises §3.1b's
+           intra-page hole + the tail probe), one `blackhole` tail seq (the §3.1 tail-loss stall).
+     2. **Few records, MANY chunks each** (item 00's Shape) so pages tile and `Ra_pull_beat` runs over many
+         beats — single-page Books never exercise the pull loop, the window, or the clock.
+     3. **Turn the loop ON in-Book:** `w.c.heist_selfclock=1` + a chosen `w.c.heist_window` in setup, so the
+         ack-clock actually drives. Tier 1 is where the clock's ACCOUNTING is proven (outstanding holds under
+          drops+parks, no double-send, `clocked` climbs) before a nondeterministic relay makes a red hard to pin.
+          This is ALSO item 3's deferred gate: the lossy loopback IS the "re-record the chunk-path Books green
+           first" gate generalised, so it is what finally lets `heist_selfclock` go default-ON with a green net.
+     4. **Reproduce the flood deterministically:** a slow transcode frontier (park a spread of wants) + the OLD
+         unbudgeted serve (`w.c.repli_serve_parked_budget` set high) → burst → assert inbox depth spikes; then
+          the default budget (32) → assert it does NOT. That before/after IS the fix's HELP made into a fixture —
+           the thing item 00 was always for. (The mutex-drain O(depth) amplifier is present in loopback; the
+            real-relay-only amplifiers — `ws.bufferedAmount`, the 15s reaper, OS jitter — are Tier 2.)
+     5. **Assert INVARIANTS, not the snap:** `held` never decreases except mid-land; no rec released while a
+         want is parked on it; every asked page eventually lands or parks; **the beat never overruns 600ms for
+          N consecutive ticks** (the load-bearing one — `Swarm_share_beat`'s skip counter already measures it,
+           nothing asserts on it). The loss schedule is seeded, so the snap is jitter-free and CAN gate here
+            (unlike Tier 2) — but the `%see` invariants are the real gate.
+
+    **TIER 2 — `MusuNeGrindLive`, the REAL relay, two tabs (the human's actual ask).** What EXISTS and works
+     live: `Swarm_share_up` (`Swarm.g:2750`), `Swarm_seal` (`:2020`), Idzeug mint/redeem, the grant gate
+      `w.c.repli_allow` (`:2764`), `Repli_arm`, `?B=<Book>&I=<tag>` boot (`Otro.svelte:34`),
+       `Lies_become_book_drive` (`LiesFunk.svelte:1976`). Swarm.g needs NO change (it is already relay-complete —
+        and it is another agent's file this stage). The missing pieces:
+     1. **`Relay_link(w, pubA, pubB)`** beside `Lake_link` (`Peregrination.g:202`): instead of pairing two
+         in-process ports, return two ports each **relay-bound under a signed hello** — each dials `:9091/relay`,
+          the relay binds `prepubOf(pub)→socket`, pull frames route `to:<prepub>`. Repli's handlers are unchanged;
+           ONLY the port origin changes. This is the load-bearing new primitive.
+     2. **A two-tab coordination wrangle** (runs in BOTH tabs' worlds — two Houses, two `w:` instances, no shared
+         %Account tree): each tab mints its %Identity off `?I=<tag>`, seals via an Idzeug redeemed over the relay
+          (SwarmStaple `Swarmation.g:33-150` proves the in-memory seal; here it crosses the wire), and ELECTS
+           source/sink by **prepub ordering** (lower serves) so no master is needed. Each tab knows the other's
+            `?I=` from the Book's own seed and derives its prepub; rendezvous by polling a witness row.
+     3. **A two-runner driver:** `runner_ask.mjs` insists on ONE runner (`--runner=<pub>`, no failover —
+         `:382-433`). Cheapest parallel drive: a bash wrapper booting two tabs (`&I=alice`/`&I=bob`) and polling
+          two backgrounded `runner_ask --runner=` sessions for convergence. A `run-both` op in the mjs is the
+           tidier follow-on.
+     4. **Assert INVARIANTS only** (real clock, real loss — no snap gate): the Tier-1 `%see` set plus the
+         relay-only ones — inbox depth bounded (`🛰☠` never fires under the budget), socket never reaped mid-pull
+          (the 15s `relay.ts` heartbeat), goodput converges on wire-rate with the clock on.
+
+    **TIER 3 — controllable-relay shim (rides alongside Tier 2, small).** `Socket_real.wire()` (`Tribunal.g:107`)
+     is a bare `ws.send`; add `if (w.c.wire_latency_ms) setTimeout(() => ws.send(…), w.c.wire_latency_ms)` (~3
+      lines) + a relay-side `if (Math.random() < w.c.relay_loss_rate) return` drop gate (`relay.ts` routing, ~1
+       line). Makes even the REAL relay repeatable so a Tier-2 red reproduces instead of vanishing. Both behind
+        knobs unset in production (the `heist_selfclock` stance).
+
+    **COLLISION CHECK before starting:** the other agent has touched `Swarm.g`/`Supervisor.g`/`Swarmation.g`/
+     `Siphonation.g`. Tier 2 lands in `Peregrination.g` + `Heistation.g` (+ `Reliable.g`'s existing wrapper) and
+      needs NO Swarm.g edit — but confirm `Heistation.g`/`Peregrination.g` are clear, and read `Swarmation.g`'s
+       seal wrangle for the Idzeug idiom rather than editing it.
+
 0. **READ §3.1b FIRST (found + fixed 2026-08-06).** Every pull loop tested the *stride-aligned
     chunk* as its stand-in for "is this page missing", so a page that lost ONE chunk to the relay's
      bulk-lane shed read as held and was **never re-asked** — a permanent invisible hole, `landed:0`

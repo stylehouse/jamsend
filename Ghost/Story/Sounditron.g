@@ -858,7 +858,12 @@ Sounditron_commission(w):
         //  away from the face and hands it the biggest rectangle in the belly — right for a folder tree
         //   you are ticking, wrong for the running strip, which is one wide line and would be blown up
         //    to fill a room it has nothing to put in.  A running keep you pressed to inspect gets `big`.
-        if (fmain) fmain.c.pose = fmain.c.pose_want || (bellyForm ? 'stretched' : 'big')
+        // THE LINK CELL IS A FORM TOO (2026-08-28, the owner: *"the title is way up in the top left, 1/4
+        //  of the cell space is used"*).  Like a heist setup, the device-link ceremony is a surface to
+        //   work through, not a player with an aspect to keep — so it takes the whole rectangle (LinkFace
+        //    fills it) instead of rendering its measured box top-left in a big belly.
+        let bellyLink = (fmain && Object.keys(fmain.sc)[0] === 'Link') ? 1 : 0
+        if (fmain) fmain.c.pose = fmain.c.pose_want || ((bellyForm || bellyLink) ? 'stretched' : 'big')
         // ── onunmain — the leaving verb (the owner: *"that Door cell has an onunmain handler that
         //  shuts the Invite panel"*).  A cell that stops being the subject should be able to put
         //   itself away; without this the Door would come back as a bud with its QR still unfolded,
@@ -1063,6 +1068,22 @@ Sounditron_focus(key):
     if (!vw) return 0
     let cw = vw.c.client_w || null
     return this.Sounditron_focus_to(cw || vw, key)
+
+// Sounditron_recommission — RUN A COMMISSION WITHOUT A NAVIGATION (2026-08-28, the receiving-side ferry
+//  surface).  An arriving account (Swarm_ferry_park sets top.c.ferry_pending) must raise the %Link consent
+//   cell — but that auto-surface lives INSIDE Sounditron_commission (`linkActive && !link_surfaced ⇒ focus
+//    Link`), and a cold receiving tab runs no beats, so nothing re-commissions when the ferry lands: the
+//     account sits invisible, "awaiting consent" with no cell to consent in (the owner watched exactly this,
+//      the two-device log).  A live component (SwarmStandup) calls this the instant it notices link-active,
+//       and the commission's own once-latch decides the rest.  No key change — this is a pure re-run of the
+//        cut, not a navigation, so it also can't fight a deliberate press.  No-op if the glass isn't up yet.
+Sounditron_recommission():
+    let vw = this.Sounditron_vyto().vw
+    if (!vw) return 0
+    let cw = vw.c.client_w || vw
+    this.Sounditron_commission(cw)
+    this.feebly_ponder()
+    return 1
 
 // Sounditron_belly_keep — WHICH HEIST IS THE SUBJECT, as ONE function (2026-08-13).  Two callers need
 //  this answer — the belly ladder's rungs 1|1b, and the `stage_want` the keep-grapple loop hands out —
@@ -1814,7 +1835,18 @@ Sounditron_press_play():
         for (const w of h.o({ w: 'Sounditron' })) {
             let radio = w.o({ Radio: 1 })[0]
             if (radio) {
-                M.Radio_toggle(radio)
+                // ▶ START, NEVER TOGGLE (2026-08-28).  This button reads "▶ start the music" and is the
+                //  GESTURE REMEDY on the arrival screen: the tap's whole job is to resume a suspended
+                //   AudioContext and get sound out.  It called `Radio_toggle` — fine when the radio was
+                //    OFF, which it always was before the peerless autopress.  Now the radio auto-plays
+                //     BEFORE the human ever taps, so by the time this screen shows (arrival gave up waiting
+                //      for AUDIBLE sound — 'playing' but AC suspended, no gesture), the toggle PAUSES the
+                //       thing it was meant to start, and the button that says "start" stops the music.  A
+                //        remedy must be one-way: if already playing the tap has already done its one job
+                //         (the global keep-awake tumble resumes the AC on this very gesture), so no-op;
+                //          otherwise Radio_go — which re-digs with the gesture in hand and turns audible.
+                if (radio.sc.Radio === 'playing') { return 1 }
+                M.Radio_go(radio, null)
                 return 1
             }
         }

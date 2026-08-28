@@ -28,9 +28,9 @@ Credulate,of_Book:MusuHeist
   GhostInclude:Ghost_V_Vyto,dige:70b6a54be3abb0a8~g1
   GhostInclude:Ghost_V_Vytonation,dige:4b115424532783d7~g1
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-  GhostInclude:Ghost_Story_Sounditron,dige:891e951edf272001~g1
+  GhostInclude:Ghost_Story_Sounditron,dige:670e20389feb3b26~g1
   GhostInclude:Ghost_O_Supervisor,dige:502a01f7da7e4b14~g1
-  last_ok,at=1787902974.452,ok_pct
+  last_ok,at=1787905961.328,ok_pct
     uses:Ghost_N_Peeroleum,dige:7d6d293338930070~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:68c229677c6b8d67~g1
@@ -60,5 +60,5 @@ Credulate,of_Book:MusuHeist
     uses:Ghost_V_Vyto,dige:70b6a54be3abb0a8~g1
     uses:Ghost_V_Vytonation,dige:4b115424532783d7~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-    uses:Ghost_Story_Sounditron,dige:891e951edf272001~g1
+    uses:Ghost_Story_Sounditron,dige:670e20389feb3b26~g1
     uses:Ghost_O_Supervisor,dige:502a01f7da7e4b14~g1

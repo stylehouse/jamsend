@@ -32,12 +32,26 @@
 </div>
 
 <style>
+    /* POINTER-EVENTS:NONE ON THE ROOT — the glass_kinds contract (HaulFace records the full why).
+       Vytui's .face-mold is a RECTANGLE at the cell's bbox and voronoi bboxes overlap heavily, so a
+       face root left `auto` floats its dead padding over a NEIGHBOUR'S controls and eats the click —
+       and a departing cell's mold lingers through its fold animation, so the shield outlives the visit
+       (the "exit Link and now Door AND Radio are dead, you're stuck" report).  This face was written
+       without a browser to look with and missed it.  An `auto` descendant still hit-tests its own box
+       under a `none` ancestor, so every button re-arms below (here and in LinkDevice). */
     .lf {
+        pointer-events: none;
         display: flex; flex-direction: column; gap: .6rem;
         width: 100%; height: 100%; box-sizing: border-box; padding: 1rem;
-        color: #f4e6c8; overflow: auto;
+        color: #f4e6c8; overflow: hidden;
     }
     .lf-head { font-size: .95rem; font-weight: 700; letter-spacing: .3px; opacity: .95; }
     .lf-phase { font-weight: 400; opacity: .7; }
-    .lf-body { flex: 1; display: flex; align-items: center; justify-content: center; }
+    /* FILL the cell, top-anchored — a big belly cell handed a small measured box was rendering the whole
+       ceremony in a quarter of it, top-left (the owner: "title way up in the top left, 1/4 of the cell").
+       align-items:stretch lets the centered .ld-frame use the width; the cell's own `stretched` pose
+       (set in Sounditron_commission for Link) hands this the whole rectangle to fill. */
+    /* min-height:0 lets the flex child (the scroll column) actually shrink and scroll instead of
+       overflowing the cell; the column itself owns the scroll + pointer events (see LinkDevice). */
+    .lf-body { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; }
 </style>

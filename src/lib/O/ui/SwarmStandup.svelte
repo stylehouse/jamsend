@@ -147,6 +147,26 @@
         try { (H as any).Radio_nudge?.(w) } catch {}
     })
 
+    // SURFACE THE FERRY CONSENT CELL WHEN AN ACCOUNT ARRIVES (the owner 2026-08-28: *"it does grab our
+    //  attention again even if the Door|Link isn't open when the other dials us right?"* — the two-device
+    //   log proved it did NOT).  Swarm_ferry_park just sets top.c.ferry_pending; the auto-surface that raises
+    //    the %Link cell lives inside Sounditron_commission, and a cold receiving tab runs no beats, so nothing
+    //     re-commissions when the ferry lands — the account sits invisible "awaiting consent" with no cell to
+    //      consent in.  This always-on standup notices link-active and pokes ONE re-commission; the cut's own
+    //       `link_surfaced` once-latch focuses the cell and then yields to any deliberate press.  Latched so a
+    //        finished/cancelled ceremony re-arms it (a second device can arrive later in the same session).
+    let ferry_surfaced = $state(false)
+    $effect(() => {
+        void H?.version
+        void tick
+        let active = 0
+        try { active = (H?.Swarm_link_active?.(H.Swarm_station_world?.()) || H?.Swarm_ferry_pending?.(H.Swarm_station_world?.())) ? 1 : 0 } catch { active = 0 }
+        if (!active) { ferry_surfaced = false; return }        // nothing in flight — re-arm for the next arrival
+        if (ferry_surfaced) return
+        ferry_surfaced = true
+        try { (H as any).Sounditron_recommission?.() } catch {}
+    })
+
     let gossiped = 0
     $effect(() => {
         const n = friends.length
