@@ -1,7 +1,6 @@
 <script lang="ts">
     import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
     import InvitePanel from './InvitePanel.svelte'
-    import InviteYourself from './InviteYourself.svelte'
     // DoorFace — WHO AM I and WHO'S WITH ME, floating in the glass: the identity + front-door
     //  arc as the prioritised, for-the-user's-eyes face (the human's ?Iz ask, 2026-07-19).
     //   Mounted by Cytui on the %Door particle (glass_kinds.ts).  Everything here reads LIVE
@@ -339,10 +338,15 @@
            above returns 🚪 and never reaches this. -->
     {#if face.prepub}
         <div class="df-panel"><InvitePanel {H} inglass /></div>
-        <!-- INVITE YOURSELF (Portability_todo §9) — the second gesture beside invite-a-friend:
-             same rails, inverted consequence (its redemption makes you, not befriends you).  V1 is
-             the explainer + an honestly-disabled LinkDevice hatch; see the component. -->
-        <div class="df-panel"><InviteYourself {H} /></div>
+        <!-- LINK A DEVICE — a doorway, not a panel (the owner: "when I click Link Device in the Door, nav
+             to a new cell called LinkDevice, which we can abandon — to focus the UI more").  The ceremony no
+             longer unfolds inside the Door; pressing this makes the %Link cell the belly (focus_to 'Link'),
+             and pressing Door|Radio there abandons it.  n.c.up is this Door particle's Vyto world (minted at
+             door.c.up = w in Sounditron_commission). -->
+        <button class="df-linkdev" onclick={() => H?.Sounditron_focus?.('Link')}
+            title="carry this account to another device — opens the Link Device cell, which you leave by pressing the Door or Radio">
+            🔗 Link Device
+        </button>
     {/if}
     {#if naming}
         <div class="df-naming">
@@ -484,6 +488,14 @@
     /* the panel takes pointer events back — `.df` is pointer-events:none so the cell beneath stays
        draggable/clickable, and every interactive descendant has to opt back in. */
     .df-panel { pointer-events: auto; margin-top: 4px; max-width: 260px; }
+    /* the doorway to the Link Device cell — a quiet verb in the Door's register (like ✎ / +N more),
+       not a loud call to action: the ceremony has its own cell now, this is just the way in. */
+    .df-linkdev {
+        pointer-events: auto; cursor: pointer; background: none; border: none;
+        margin-top: 4px; padding: 0; text-align: left;
+        font-size: 10px; color: #9a86b4;
+    }
+    .df-linkdev:hover { color: #d9a9ef; }
     .df-edit {
         pointer-events: auto;
         cursor: pointer;

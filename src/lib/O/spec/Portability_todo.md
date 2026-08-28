@@ -65,6 +65,26 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 3. **The loosened landing head** — partially landed: the pool CATALOG branch is in
     (`Heist_catalog_land` → `Ra_rec_pool`, ✅ poolland, proven inert) and the mount routes
      `pool/…` to OPFS free; what remains is the PRESS driver that lights it (v1 byte-copy, §3). (§3)
+
+   > **⚠ THE LIVE WIRING GAP (audited 2026-08-28).** The press ECONOMY is fully built and
+   >  Book-proven — `Ra_press` (v1 byte-copy + v2 ogg128), `Ra_quarter` (goal/diff/cap) and
+   >   `Ra_quarter_serve` (the dispose loop: press + evict under cap) all live in `Ghost/M/Ra.g`.
+   >    But their ONLY callers are `Ghost/Story/Heistation.g` (the Book). **Nothing in the LIVE
+   >     flow calls them** — not `Radio.g` (play), not `Heist.g` (pull/land). So today, befriending
+   >      a Cave/Daemon lets a phone STREAM its library (the radio dials the share and pulls tracks
+   >       to play), but no LOFI copy ever lands in the phone's OPFS SoundPool during real listening.
+   >        The gap is purely the DRIVER SEAM: a live tick that hands `Ra_quarter_serve` the phone's
+   >         `pnav` (the OPFS pool nav — now mounted for the shareless phone, `poolmount` + the
+   >          listen-only wrap 2026-08-28), a `lib` (source of Original bytes — a friend's share, NOT
+   >           a local library, which is the §3/§4 question still open), the `pool` shelf and a cap.
+   >            Delicate: the `lib` mapping for a streaming phone (press-what-you-streamed vs
+   >             press-from-a-held-library) is unresolved — do NOT wire blind; it is the §3/§4 economy.
+   >  **User-facing story (the intended UX, once wired):** *"Add a friend (or the Daemon) → their
+   >   music appears in your radio. Press ▶ — it streams live, and the tracks you listen to quietly
+   >    collect as small LOFI copies on your phone (your SoundPool), so they're there offline and two
+   >     phones can swap music hand-to-hand. A Cave (a home machine on your account) fills those out
+   >      into full-quality Originals in the background."*  Until the seam is wired, only the STREAM
+   >       half is true — the copy-to-pool half must not be promised in onboarding yet.
 4. **The pool exchange** — phone↔phone LOFI swap, live, no Cave required — possibly the
     majority transport (§0). (§5)
 5. **The smuggle** — Captain→Cave backup of the SoundPool *and* the account. (§5)

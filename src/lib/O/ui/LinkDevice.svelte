@@ -1,17 +1,22 @@
 <script lang="ts">
     // LinkDevice — the "spread out" front door (Division_todo §CEREMONY).  The DISTINCT, smaller sibling of
-    //  InvitePanel's "invite a friend": here you divide YOURSELF across your own devices.  Three faces, one
-    //   per role in the ceremony, chosen by the live state — never a mode toggle you can mis-tap:
-    //    · OFFER   — this device shows a QR offering ITSELF as a body ("adopt me").  Press it on the device
-    //                 you want to add (a desktop) and scan it from your main device.
-    //    · LAND    — this page opened from a scanned ?Adopt= URL: the BODILY warning + confirm.  Only the
-    //                 device that HOLDS your soul reaches here (it does the sealing).
-    //    · CONSENT — an adoption arrived for this device: "become a Cave of <soul>?" — the device decides.
-    //  The model underneath (Swarm_adopt_* in Ghost/S/Swarm.g) is proven green by Book SwarmSpread; this is
-    //   pure wiring.
-    //  ⚠ THE WARNING IS THE POINT: a friend-invite mis-scanned adds a friend; a divide mis-scanned shares
-    //   your IDENTITY.  So LAND/CONSENT wear their own alarm colour and name exactly what is shared, and
-    //    nothing here reuses the friend flow's welcome.
+    //  InvitePanel's "invite a friend": here you divide YOURSELF across your own devices.  The model is the
+    //   HANDSHAKE + FERRY (Swarm_ferry_* in Ghost/S/Swarm.g), NOT the old adopt-seal — that inverted the
+    //    roles and never crossed, because Swarm_deliver has no pier to route over until a handshake forms one.
+    //  The correct, proven order (SwarmRole forms the pier + cross-signs %Grant:MyCave; SwarmFerry proves the
+    //   sealed account crosses):
+    //    · LINK    — the SOUL device (the one that already IS you) mints an %Invite:MyCave and shows its QR
+    //                 (`?Iz=<invite>#fc=<secret>`).  The seal secret rides the URL FRAGMENT, never the relay.
+    //    · (the new device opens that URL → the ordinary invite-landing path redeems it → pier_hello/accept
+    //       forms the %Pier BOTH ways + cross-signs MyCave → the soul device's Swarm_ferry_on_seal fires the
+    //        instant the pier seals, ferrying the sealed account over it.)
+    //    · RECEIVE — the new device HEARD the sealed account (Swarm_ferry_pending): the BODILY warning + the
+    //                 #fc code from its own address bar → Swarm_ferry_consume imports it.  Becoming a body is
+    //                  DECIDED here, never automatic.
+    //  ⚠ THE WARNING IS THE POINT: a friend-invite mis-scanned adds a friend; this shares your IDENTITY.  So
+    //   RECEIVE wears its own alarm colour and names exactly what is shared, and reuses none of the friend
+    //    flow's welcome.  The redeem of the `?Iz=` half is left to the proven invite-landing path (InvitePanel
+    //     / Butler) — a MyCave invite is an ordinary invite with a different grant feature.
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
     let { H } = $props()
 
@@ -33,102 +38,89 @@
     })
     const world = () => H?.Swarm_station_world?.() ?? null
 
-    // ── which face ──────────────────────────────────────────────────────────────────────────────
-    function boot_param(k: string): string | null {
-        try { return new URL(window.location.href).searchParams.get(k) } catch { return null }
-    }
-    let adopt_token = $state<string | null>(null)
-    $effect(() => { adopt_token = boot_param('Adopt') })   // LAND face when a ?Adopt= is in the URL
+    let err = $state('')
+    let trust = $state(false)   // "TOTAL TRUST" opens the one warning that matters — the account copies
 
+    // the #fc seal secret from THIS page's own address bar (the QR carried it in the fragment, out of band).
+    function frag_code(): string {
+        try { const h = new URL(location.href).hash; const m = /(?:^#|&)fc=([^&]+)/.exec(h); return m ? decodeURIComponent(m[1]) : '' } catch { return '' }
+    }
+
+    // ── RECEIVE — a ferried account is parked, awaiting this device's consent ───────────────────────
     let pending = $state<any>(null)
     $effect(() => {
         H?.version
         const w = world()
-        if (w && typeof H?.Swarm_adopt_pending === 'function') { try { pending = H.Swarm_adopt_pending(w) } catch { pending = null } }
+        if (w && typeof H?.Swarm_ferry_pending === 'function') { try { pending = H.Swarm_ferry_pending(w) ? H.Swarm_ferry_peek?.(w) ?? {} : null } catch { pending = null } }
     })
-
-    let err = $state('')
-    let trust = $state(false)   // "TOTAL TRUST" opens the one warning that matters — the account copies
-
-    // the emoji SAS both devices READ before anything moves — EQUAL rows = one channel, no machine in the
-    //  middle (the EmojiConfirm gate).  Computed per face from the same two pubs + nonce, so the two screens
-    //   agree; a relay MITM that swapped a pub shows a different row and the humans catch it.
-    let sas = $state('')
-    $effect(() => {
-        void H?.version
-        const w = world()
-        if (!w) { sas = ''; return }
-        if (adopt_token && typeof H?.Swarm_adopt_sas_land === 'function') {
-            H.Swarm_adopt_sas_land(w, adopt_token).then((r: string) => { sas = r || '' }).catch(() => { sas = '' })
-        } else if (pending && typeof H?.Swarm_adopt_sas_consent === 'function') {
-            H.Swarm_adopt_sas_consent(w).then((r: string) => { sas = r || '' }).catch(() => { sas = '' })
-        } else { sas = '' }
-    })
-
-    // ── OFFER — this device offers itself ─────────────────────────────────────────────────────────
-    let url = $state('')
-    const qr_size = 180   // the QR sits in the top-left quarter of the beige oblong (a fixed first cut)
-    async function offer() {
+    // the arriving soul's id, for the human to eyeball (salt is `<soulpub>:<mypub>`)
+    const arriving_soul = () => { try { return String(pending?.frame?.salt || '').split(':')[0] } catch { return '' } }
+    let received = $state('')
+    async function receive(yes: boolean) {
         err = ''
         try {
-            const w = world()
-            if (w && typeof H.Swarm_station_up === 'function' && H.Swarm_station_up(w, self)) stood = true
-            url = await H.Swarm_adopt_offer_url(w, location.origin + location.pathname)
-            if (!url) err = 'no live identity yet — wait a moment and retry'
-        } catch (e) { err = String(e) }
-    }
-
-    // ── LAND — the soul-holder scanned an offer ────────────────────────────────────────────────────
-    //  the ROLE is what the OFFER carries (the device chose it before the QR); we name it, and grant exactly
-    //   that.  So the trust is role-specific — "make it my Cave", not a blank "trust this device".
-    let land_role = $state('Cave')
-    $effect(() => {
-        void H?.version
-        const w = world()
-        if (adopt_token && w && typeof H?.Swarm_adopt_role === 'function') {
-            try { land_role = H.Swarm_adopt_role(w, adopt_token) || 'Cave' } catch { land_role = 'Cave' }
-        }
-    })
-    let landing = $state(false)
-    let landed = $state('')
-    async function make_cave() {
-        landing = true; err = ''
-        try {
-            const r = await H.Swarm_adopt_land(world(), adopt_token)
-            if (r === 'ok') {
-                landed = 'sealed — waiting for the device to accept (its row must match this one)'
-                try { const u = new URL(location.href); u.searchParams.delete('Adopt'); history.replaceState(null, '', u.toString()) } catch {}
-            } else if (r === 'unreachable') {
-                landed = 'no channel to that device yet — it must handshake with this one first'
-            } else if (r === 'forged') {
-                landed = 'the offer signature did not verify — a forged or corrupted link'
-            } else if (r === 'noself') {
-                landed = 'no live identity here yet — wait a moment and retry'
-            } else {
-                landed = 'could not read that device link'
-            }
-        } catch (e) { err = String(e) } finally { landing = false }
-    }
-
-    // ── CONSENT — this device was offered a role ───────────────────────────────────────────────────
-    let consented = $state('')
-    async function decide(yes: boolean) {
-        err = ''
-        try {
-            const ident = await H.Swarm_adopt_consent(world(), yes)
-            consented = yes ? (ident ? 'you are now a body of that soul' : 'could not join (the seal failed)') : 'declined'
+            if (!yes) { await H.Swarm_ferry_consume(world(), '', false); received = 'declined'; pending = null; return }
+            const code = frag_code()
+            if (!code) { err = 'no seal code in this link — open the exact QR link from your soul device'; return }
+            const soul = await H.Swarm_ferry_consume(world(), code, true)
+            received = soul ? 'you are now a body of that soul — it lives on this device too' : 'could not join (wrong code, or the seal failed)'
             pending = null
         } catch (e) { err = String(e) }
     }
 
+    // ── LINK — the soul device mints the invite+ferry link and shows its QR ─────────────────────────
+    let url = $state('')
+    const qr_size = 180   // the QR sits in the top-left quarter of the beige oblong (a fixed first cut)
+    async function link() {
+        err = ''
+        try {
+            const w = world()
+            if (w && typeof H.Swarm_station_up === 'function' && H.Swarm_station_up(w, self)) stood = true
+            url = await H.Swarm_ferry_link(w, self, location.origin + location.pathname)
+            if (!url) err = 'no live identity yet — wait a moment and retry'
+        } catch (e) { err = String(e) }
+    }
+
     const short = (s: string) => (s ? String(s).slice(0, 8) : '')
+    // the ORIGIN both devices must share — a cross-origin scan (localhost vs djamsend) lands on two
+    //  different relays and the pier can NEVER seal ("nobody came online"), so name it right at the QR.
+    let origin = $state('')
+    $effect(() => { try { origin = new URL(location.href).host } catch { origin = '' } })
+    // LIVE PEER FEEDBACK — the wait was silent (you couldn't tell a scan had landed until the late
+    //  "nobody came online").  Read whether a MyCave pier has actually SEALED to this soul: the moment the
+    //   other device handshakes, this flips ✓ and the ferry is already on its way (the pump-retry sends it).
+    let peer_ready = $state(false)
+    $effect(() => {
+        void H?.version
+        try {
+            const p = self && typeof H?.Swarm_peering === 'function' ? H.Swarm_peering(self) : null
+            const piers = p ? p.o({ Pier: 1 }) : []
+            peer_ready = !!piers.find((x: any) => H.Swarm_pier_live?.(x, 'MyCave'))
+        } catch { peer_ready = false }
+    })
+    // IS A LINK IN FLIGHT ON THIS TAB (an unspent secret / a parked account)?  A reload loses `url` but the
+    //  soul's secret persists, so without this the face would show the plain "link a device" button over a
+    //   live ceremony and a click would mint a SECOND one — the wedge you couldn't get out of.  When true and
+    //    we have no local QR to show, the default face offers a real reset (Swarm_ferry_cancel clears House
+    //     state, not just the component's `url`).
+    let link_active = $state(false)
+    $effect(() => {
+        void H?.version
+        try { link_active = !!H?.Swarm_ferry_pending?.(world()) || !!H?.Swarm_link_active?.(world()) } catch { link_active = false }
+    })
+    function cancel_link() {
+        err = ''
+        try { H?.Swarm_ferry_cancel?.(world()) } catch (e) { err = String(e) }
+        url = ''; pending = null
+    }
 </script>
 
-<!-- ONE FRAME, BOTH ENDS: the same blurb explains the act on the offering device AND the soul device, so
-     the language is unified; only the action row below it differs by which side you're on. -->
+<!-- ONE FRAME, BOTH ENDS: the same blurb explains the act on the soul device AND the new device, so the
+     language is unified; only the action row below it differs by which side you're on. -->
 <div class="ld-frame">
     <p class="ld-blurb">
-        backup to or colonise other devices with your account, requires 
+        <!-- the owner's sentence, dictated twice — keep it verbatim -->
+        backup or colonise other devices, becoming a sloshway of cooperation and
         <button class="ld-trust" onclick={() => trust = !trust}>TOTAL TRUST</button>.
     </p>
     {#if trust}
@@ -138,45 +130,42 @@
         </p>
     {/if}
 
-    {#if adopt_token}
+    {#if pending}
         <div class="ld-face">
-            {#if sas}<div class="ld-sas">this row must match the other device:<br /><b>{sas}</b></div>{/if}
-            {#if landed}
-                <div class="ld-note">{landed}</div>
+            {#if received}
+                <div class="ld-note">{received}</div>
             {:else}
-                <p class="ld-deal">Make another device your <b>{land_role}</b> — it will hold your keys and
-                    serve your library <b>as you</b>.</p>
+                <p class="ld-deal">A sealed account from <b>{short(arriving_soul())}…</b> is arriving over the
+                    link — accept it and this device <b>becomes that soul</b> (a Cave of it), holding its keys
+                    and serving its library <b>as it</b>.</p>
                 <div class="ld-row">
-                    <button class="ld-go" onclick={make_cave} disabled={landing || !self}>{landing ? '…' : `make it my ${land_role}`}</button>
-                    <a class="ld-cancel" href={location.origin + location.pathname}>cancel</a>
-                </div>
-            {/if}
-        </div>
-    {:else if pending}
-        <div class="ld-face">
-            {#if consented}
-                <div class="ld-note">{consented}</div>
-            {:else}
-                <p class="ld-deal"><b>{short(pending.soulpub)}…</b> wants this device to become its
-                    <b>{pending.role || 'Cave'}</b> — hold that identity and serve its library.</p>
-                {#if sas}<div class="ld-sas">this row must match your main device:<br /><b>{sas}</b></div>{/if}
-                <div class="ld-row">
-                    <button class="ld-go" onclick={() => decide(true)}>yes, be its {pending.role || 'Cave'}</button>
-                    <button class="ld-cancel-b" onclick={() => decide(false)}>no</button>
+                    <button class="ld-go" onclick={() => receive(true)}>accept — become this soul</button>
+                    <button class="ld-cancel-b" onclick={() => receive(false)}>no</button>
                 </div>
             {/if}
         </div>
     {:else if url}
         <div class="ld-face">
-            <div class="ld-cap-big">offer this device as your <b>Cave</b></div>
+            <div class="ld-cap-big">link a device as your <b>Cave</b></div>
             <InviteQR {url} size={qr_size} bg="#e7dcbe" bare caption="" />
-            <div class="ld-wait-big">scan or paste it from your main device · …waiting</div>
-            <button class="ld-cancel-b" onclick={() => url = ''}>cancel</button>
+            {#if peer_ready}
+                <div class="ld-connected">✓ the other device connected — ferrying your account now… accept it there</div>
+            {:else}
+                <div class="ld-wait-big">open this on the other device · …waiting for it to handshake, then I ferry</div>
+                {#if origin}<div class="ld-origin">⚠ the other device must be on <b>{origin}</b> — same origin, or the two land on different relays and never meet</div>{/if}
+            {/if}
+            <button class="ld-cancel-b" onclick={cancel_link}>cancel</button>
         </div>
     {:else}
         <div class="ld-face">
-            <button class="ld-link" onclick={offer} disabled={!self}
-                title="add this device to your soul as a Cave">🔗 link this device</button>
+            <button class="ld-link" onclick={link} disabled={!self}
+                title="copy this account to another device as a Cave">🔗 link a device</button>
+            {#if link_active}
+                <!-- a link is still in flight (a secret survived a reload, or you navigated away mid-mint) —
+                     the one honest way out, clearing House state so a fresh mint starts clean. -->
+                <div class="ld-pending">a device-link is still pending on this tab
+                    <button class="ld-cancel-b" onclick={cancel_link}>cancel it</button></div>
+            {/if}
         </div>
     {/if}
     {#if err}<div class="ld-err">{err}</div>{/if}
@@ -208,16 +197,16 @@
     .ld-row { display: flex; align-items: center; gap: .8rem; margin-top: .2rem; }
     .ld-go { background: #d98a00; color: #000; font-weight: 700; border: none; border-radius: .4rem; padding: .45rem 1rem; cursor: pointer; }
     .ld-go:disabled { opacity: .4; cursor: default; }
-    .ld-cancel { font-size: .85rem; opacity: .85; color: #f4e6c8; text-decoration: underline; }
-    .ld-cancel:hover { opacity: 1; }
     .ld-cancel-b { background: none; border: none; color: inherit; font-size: .85rem; opacity: .8; text-decoration: underline; cursor: pointer; }
     .ld-link { font-size: .95rem; background: #d98a00; color: #000; font-weight: 700; border: none; border-radius: .5rem; padding: .5rem 1rem; cursor: pointer; }
     .ld-link:disabled { opacity: .4; cursor: default; }
     .ld-note { font-size: .95rem; }
     .ld-err { color: #ff6b6b; font-size: .8rem; }
-    .ld-sas { font-size: .85rem; background: #0f0a02; border-radius: .4rem; padding: .5rem .7rem; line-height: 1.6; }
-    .ld-sas b { font-size: 1.35rem; letter-spacing: .2rem; }
     .ld-cap-big { font-size: 1.05rem; font-weight: 600; }
     .ld-cap-big b { color: #ffcf70; }
     .ld-wait-big { font-size: .85rem; opacity: .7; }
+    .ld-origin { font-size: .8rem; line-height: 1.5; color: #e8c98a; background: #0f0a02; border-radius: .4rem; padding: .45rem .7rem; max-width: 26rem; }
+    .ld-origin b { color: #ffcf70; }
+    .ld-connected { font-size: .9rem; line-height: 1.5; color: #9be89b; background: #0c1a0c; border-radius: .4rem; padding: .5rem .8rem; font-weight: 600; }
+    .ld-pending { font-size: .8rem; opacity: .8; display: flex; align-items: center; gap: .5rem; }
 </style>

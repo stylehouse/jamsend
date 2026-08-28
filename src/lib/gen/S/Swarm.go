@@ -15,7 +15,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '4ef0e7a173338bca~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '4f057f03613262f8~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -617,7 +617,14 @@ Swarm_expect_friends(w, ident) {
     let sup = this.Supervisor_w ? this.Supervisor_w(this.top_House()) : null
     if (!sup) return
     let me = String(ident?.sc?.prepub || '')
-    let piers = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).filter(p => p.sc.pub && String(p.sc.pub) !== me)
+    // ONLY A MUSIC FRIEND CAN "COME ONLINE" (2026-08-28, the device-link false-red).  This armed on ANY
+    //  pier, but the probe it arms (Swarm_probe_arrival) only counts a pier LIVE ON MUSIC — so a device-link
+    //   pier, which bears a `MyCave` grant and no Music, armed an expectation it could never satisfy: a fresh
+    //    Cave whose only pier is its own soul reported `nobody has come online` forever ("eed sees Grauc, but
+    //     Grauc says a friend came online : FAILED").  A Cave is your OWN device, not a friend.  So filter to
+    //      friend piers — the `Grant:'Music'` child is the same tell the Door reads to draw a friend at all —
+    //       which drops Cave|Captain body piers on BOTH ends and leaves every music friendship untouched.
+    let piers = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).filter(p => p.sc.pub && String(p.sc.pub) !== me && p.o({ Grant: 'Music' })[0])
     if (!piers.length) return
     // SHORT FORM (owner, 2026-08-11: *"lets get Butler to just say … friend is online vs friend came
     //  online"*).  This DELIBERATELY overrides the em-dash rule in Sounditron_supervise, which keeps a
@@ -1072,6 +1079,7 @@ async Swarm_arm(w) {
         if (frame.header.type === 'charter') await this.Swarm_charter_heard(w2, ident, frame.swarm)
         if (frame.header.type === 'adopt_seal') this.Swarm_adopt_park(w2, ident, frame.swarm)
         if (frame.header.type === 'adopt_confirm') await this.Swarm_adopt_confirmed(w2, ident, frame.swarm)
+        if (frame.header.type === 'ferry') this.Swarm_ferry_park(w2, ident, frame.swarm)
         // SEED THE CHARTER AT SEAL (Division_todo step 4), station wire twin of the pump seed above.
         if (frame.header.type === 'pier_accept' || frame.header.type === 'pier_confirm') this.Swarm_charter_gossip(w2, ident, from)
         // LEDGER OUTCOME ⇒ SETTLE (Persistence_todo §5.1): every frame kind that can move the durable
@@ -1083,7 +1091,7 @@ async Swarm_arm(w) {
         if (['pier_hello', 'pier_accept', 'pier_confirm', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok'].includes(frame.header.type)) this.Swarm_account_settle(ident, frame.header.type)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'adopt_seal', 'adopt_confirm']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'adopt_seal', 'adopt_confirm', 'ferry']) w.c.on[kind] = hear
 
 },
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
@@ -1146,9 +1154,29 @@ async Swarm_pump(w, ident) {
         if (frame.kind === 'charter') await this.Swarm_charter_heard(w, ident, frame)
         if (frame.kind === 'adopt_seal') this.Swarm_adopt_park(w, ident, frame)
         if (frame.kind === 'adopt_confirm') await this.Swarm_adopt_confirmed(w, ident, frame)
+        if (frame.kind === 'ferry') this.Swarm_ferry_park(w, ident, frame)
         // SEED THE CHARTER AT SEAL (Division_todo step 4): a freshly sealed friend learns my division
         //  now, not at the next change.  No-op for an undivided soul (no Charter to gossip).
         if (frame.kind === 'pier_accept' || frame.kind === 'pier_confirm') this.Swarm_charter_gossip(w, ident, frame.page?.prepub)
+    }
+    // FERRY RETRY (robustness — "couldn't not work"): the seal-seam fires Swarm_ferry_on_seal at the sealing
+    //  instant, but if that moment is missed — the pier sealed a tick before the secret was stashed, the
+    //   first deliver didn't land while the redeemer was still standing up, a reload lost the timing — the
+    //    account would silently never cross (the "✓ joined but nobody came online" stall).  So EVERY pump,
+    //     while a ferry is pending (top.c.ferry_secret set by Swarm_ferry_link), re-attempt over any LIVE
+    //      MyCave pier this ident holds.  on_seal guards (pier_live) + deletes the secret only on a
+    //       successful send, so this is a self-clearing no-op the instant the account is on its way; the
+    //        `ferrying` in-flight flag stops a second tick double-sending before the first await returns.
+    let ftop = this.top_House ? this.top_House() : null
+    let fsecret = ftop && ftop.c ? (ftop.c.ferry_secret || (ftop.stashed && ftop.stashed.ferry_pending_secret ? ftop.stashed.ferry_pending_secret.secret : null)) : null
+    if (ftop && ftop.c && fsecret && !ftop.c.ferrying) {
+        let fpeer = this.Swarm_peering(ident)
+        let fpier = fpeer ? fpeer.o({ Pier: 1 }).find((p) => this.Swarm_pier_live(p, 'MyCave')) : null
+        if (fpier) {
+            ftop.c.ferrying = 1
+            try { await this.Swarm_ferry_on_seal(w, ident, fpier) } catch (er) {}
+            delete ftop.c.ferrying
+        }
     }
 
 },
@@ -1389,6 +1417,24 @@ async Swarm_station_up(w, ident) {
     this.Tribunal_activate_websocket(w)
     w.c.station_up = 1
     w.c.station_up_at = Date.now()   // when the gate armed — Swarm_deliver holds unvouched frames for a bounded window after this
+    // STALE FERRY SWEEP (2026-08-28) — a device-link secret only means something while a MyCave pier is
+    //  forming to ferry over.  A secret that survived a reload with NO such pier is a DEAD ceremony (the QR
+    //   was for a session that's gone), and left alone it wedges the soul at "ferrying now…" forever — and,
+    //    since the Link cell now auto-surfaces on Swarm_link_active, boots it into a stuck ceremony cell on
+    //     every reload.  Standup runs ONCE per boot, before any fresh "link a device" mint, so clearing here
+    //      can only catch a stale one.  A LIVE MyCave pier means a real ferry is mid-flight — leave that for
+    //       on_seal/pump-retry.  (The durable-secret twin this sweeps is itself on the way out with #fc.)
+    let sweep_top = this.top_House ? this.top_House() : null
+    if (sweep_top && sweep_top.c) {
+        let had = sweep_top.c.ferry_secret || (sweep_top.stashed && sweep_top.stashed.ferry_pending_secret)
+        let peer = ident ? this.Swarm_peering(ident) : null
+        let livecave = peer ? peer.o({ Pier: 1 }).find((p) => this.Swarm_pier_live(p, 'MyCave')) : null
+        if (had && !livecave) {
+            delete sweep_top.c.ferry_secret
+            if (sweep_top.stashed) { delete sweep_top.stashed.ferry_pending_secret }
+            console.log('🦑 ferry: swept a stale device-link secret at standup (no MyCave pier to ferry over) — the soul is unstuck')
+        }
+    }
     // mint the era HERE, at standup, not lazily at first greeting: Swarm_deliver stamps it on every
     //  swarm frame but only `if (w.c.station_era)`, so a station whose voucher/greeting paths both
     //   failed (relay slow, sign threw) would otherwise pulse era-less forever and no friend could
@@ -2100,6 +2146,13 @@ Swarm_seal(w, ident, page, theirGrant, myGrant) {
         try { this.Radio_trace(null, { ev: 'seal', at: String(page.prepub || '').slice(0, 8),
             who: String(page.friendly || '').slice(0, 12),
             grants: pier.o({ Grant: 1 }).length, re: re_seal }) } catch (er) {}
+    }
+    // FERRY SEAM — the CAPTAIN who minted a MyCave link waits here: the instant that device's pier
+    //  seals bearing a MyCave grant, ferry the sealed account over it (Swarm_ferry_on_seal no-ops
+    //   for a plain friend seal or when no ferry_secret is pending, so this is safe on every seal).
+    let top_seam = this.top_House ? this.top_House() : null
+    if (top_seam && top_seam.c && top_seam.c.ferry_secret) {
+        try { this.Swarm_ferry_on_seal(w, ident, pier) } catch (er) {}
     }
     return pier
 
@@ -4360,6 +4413,148 @@ async Swarm_adopt_consent(w, accept) {
         this.Swarm_deliver(w, ident, ident.sc.prepub, { kind: 'adopt_confirm', pub: off.bodykeys.pub, role: pend.frame.role, address: body ? body.sc.address : ident.sc.prepub + '_1' })
     }
     return ident
+},
+// ══ THE FERRY — the account crosses a pier the HANDSHAKE just formed (the real transfer, the fix) ═══════
+//  The dead-end in the offer→seal→Swarm_deliver path: Swarm_deliver has no route to an un-paired device.
+//   The fix is the proven order — the Captain mints a MyCave invite, the new device REDEEMS it (pier_hello
+//    /accept forms the pier BOTH ways + cross-signs %Grant:MyCave, SwarmRole-proven), and ONLY THEN the
+//     Captain ferries its sealed account over that pier, where Swarm_deliver finally routes.  Reuses
+//      Swarm_export + seal/unseal (SwarmFerry-proven, fails closed) + Swarm_body_repost.  The seal `code`
+//       rode the invite's URL FRAGMENT (#fc=…) — client-side, never on the relay — so a passive relay
+//        never reads the account.  (Ephemeral-DH can replace the fragment later; the seam is the same.)
+
+// Swarm_ferry_send — the CAPTAIN, once a MyCave pier has sealed: export the whole account, seal it under
+//  `code`, deliver it over the pier (which now routes).  Returns did-it-cross.
+async Swarm_ferry_send(w, soulIdent, pier, code) {
+    if (!pier || !code || !soulIdent?.c?.keys) { return false }
+    let theirPub = pier.o({ Peering: 1 })[0]?.sc?.pub
+    if (!theirPub) { return false }
+    let salt = String(soulIdent.c.keys.pub) + ':' + String(theirPub)
+    let blob = await this.Swarm_export(soulIdent)
+    let sealed = await seal(String(code), salt, blob)
+    console.log('🦑 ferry: sending my account → ' + String(pier.sc.pub).slice(0, 8) + ' over the sealed pier')
+    return this.Swarm_deliver(w, soulIdent, String(pier.sc.pub), { kind: 'ferry', sealed: sealed, salt: salt, role: 'Cave' })
+},
+// Swarm_ferry_heard — the NEW DEVICE: unseal the account with the fragment code, import it (now it holds
+//  the soul key), keep its pre-ferry identity as its BODY key, take its body row, and derive Post=Cave off
+//   the MyCave grant that crossed at the handshake.  Fails closed: a wrong code / tampered frame throws in
+//    unseal, so no account lands.  `ident` is this device's pre-ferry self; `code` came off #fc.
+async Swarm_ferry_heard(w, ident, frame, code) {
+    if (!frame || !frame.sealed || !code || !ident) { return null }
+    let container = ident.c.up
+    if (!container) { return null }
+    let priorPier = this.Swarm_peering(ident)?.o({ Pier: 1 })[0]
+    let priorPost = priorPier ? this.Swarm_grant_post(priorPier) : null
+    let bodykeys = ident.c.keys ? { pub: ident.c.keys.pub, key: ident.c.keys.key, prepub: ident.sc.prepub } : null
+    let blob = null
+    try { blob = await unseal(String(code), frame.salt, frame.sealed) } catch (e) { console.log('🦑 ferry: unseal failed (wrong code or tampered) — no account landed'); return null }
+    let soul = this.Swarm_import(container, blob)
+    if (!soul || !soul.c.keys) { return null }
+    if (bodykeys) { soul.c.bodykey = bodykeys }
+    let addr = soul.sc.prepub + '_1'
+    let body = this.Swarm_body_take(soul, bodykeys ? bodykeys.pub : soul.sc.prepub, priorPost || 'Cave', addr)
+    console.log('🦑 ferry: account landed — I am now a body of ' + String(soul.sc.prepub).slice(0, 8) + ' as ' + (priorPost || 'Cave'))
+    return soul
+},
+// Swarm_ferry_link — the CAPTAIN's "make another device my Cave" link: mint a MyCave invite (whoever
+//  redeems it dials me, forming the pier), and a random ferry SECRET stashed for the next redeem, carried
+//   in the URL FRAGMENT so it never rides the relay.  Returns <base>?Iz=<token>#fc=<secret>.
+async Swarm_ferry_link(w, soulIdent, base) {
+    let iz = await this.Swarm_mint_invite(w, soulIdent, { MyCave: 1 })
+    let bytes = crypto.getRandomValues(new Uint8Array(16))
+    let secret = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c) { top.c.ferry_secret = secret }
+    // DURABLE TWIN (reload-resilience): the secret also rides the auto-saved top-House stash, keyed for the
+    //  one pending ceremony, so a reload BETWEEN mint and seal rehydrates it (the pump-retry + on_seal both
+    //   fall back to it).  Without this, reloading the soul device mid-ceremony orphaned the #fc the other
+    //    device already held and the account could never cross.  Cleared on a successful send.
+    if (top && top.stashed) { top.stashed.ferry_pending_secret = { secret: secret, at: this.Swarm_now(w) } }
+    this.Swarm_expect_arrival(w)
+    console.log('🦑 ferry: offering to make a device my Cave — link minted (redeem forms the pier, then I ferry)')
+    return String(base) + '?Iz=' + encodeURIComponent(iz) + '#fc=' + secret
+},
+// Swarm_ferry_on_seal — called when a %Pier seals: if it bears a MyCave grant AND I have a pending ferry
+//  secret (I minted the link), ferry my account over the now-live pier.  No-op otherwise (a plain friend
+//   seal, or a device that isn't mine).  This is the seam that fires the transfer at the right instant.
+async Swarm_ferry_on_seal(w, soulIdent, pier) {
+    if (!pier || !this.Swarm_pier_live(pier, 'MyCave')) { return }
+    let top = this.top_House ? this.top_House() : null
+    if (!top) { return }
+    // secret from the live seam OR the durable twin (a reloaded ceremony has only the stash)
+    let secret = (top.c ? top.c.ferry_secret : null) || (top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null)
+    if (!secret) { return }
+    let sent = await this.Swarm_ferry_send(w, soulIdent, pier, secret)
+    if (sent) {
+        if (top.c) { delete top.c.ferry_secret }
+        if (top.stashed) { delete top.stashed.ferry_pending_secret }
+    }
+},
+// Swarm_ferry_park — the NEW DEVICE heard the sealed account: park it for the human's consent (the UI has
+//  the #fc fragment code and calls Swarm_ferry_consume).  Never auto-imports — becoming a body is decided.
+Swarm_ferry_park(w, ident, frame) {
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c) { top.c.ferry_pending = { frame: frame, at: this.Swarm_now(w) } }
+    console.log('🦑 ferry: an account arrived sealed to me over the pier — awaiting my consent + code')
+    return true
+},
+// Swarm_ferry_pending — the UI reads whether a ferried account is waiting (returns 1 or null).
+Swarm_ferry_pending(w) {
+    let top = this.top_House ? this.top_House() : null
+    return top && top.c && top.c.ferry_pending ? 1 : null
+},
+// Swarm_ferry_peek — the UI reads the parked ferry (its frame carries the salt `<soulpub>:<mypub>`, so the
+//  RECEIVE face can show WHOSE account is arriving for the human to eyeball). Read-only; never consumes.
+Swarm_ferry_peek(w) {
+    let top = this.top_House ? this.top_House() : null
+    return top && top.c && top.c.ferry_pending ? top.c.ferry_pending : null
+},
+// Swarm_link_active — is a device-link ceremony in flight on THIS tab? True on the SOUL device while its
+//  link is minted-and-unspent (top.c.ferry_secret) AND on the NEW device while a ferried account waits
+//   (top.c.ferry_pending).  The glass reads this to raise the %Link takeover cell exactly during the
+//    ceremony and drop it back to Door|Radio the instant it's done (LinkFace / Sounditron_commission).
+Swarm_link_active(w) {
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c) { return null }
+    let durable = top.stashed && top.stashed.ferry_pending_secret ? 1 : 0
+    return top.c.ferry_secret || top.c.ferry_pending || durable ? 1 : null
+},
+// Swarm_ferry_cancel — the human's "call off this link" (the Link cell's reset button).  Clears every trace
+//  of an in-flight device-link on THIS tab: the soul's unspent secret (live seam + durable twin) and any
+//   parked inbound account.  Idempotent — safe to press when nothing is in flight — and the one honest way
+//    out of a wedged ceremony that the old inline hatch never offered.
+Swarm_ferry_cancel(w) {
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c) { return 0 }
+    delete top.c.ferry_secret
+    delete top.c.ferry_pending
+    delete top.c.ferrying
+    if (top.stashed) { delete top.stashed.ferry_pending_secret }
+    console.log('🦑 ferry: link cancelled — cleared the pending secret and any parked account')
+    return 1
+},
+// Swarm_ferry_consume — the UI's "yes, become this Cave" with the #fc code: unseal + import the parked
+//  account.  `ident` is this device's live self (its pre-ferry identity → body key).  Returns the soul.
+async Swarm_ferry_consume(w, code, accept) {
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c) { return null }
+    let pend = top.c.ferry_pending
+    if (!accept || !pend || !pend.frame) { delete top.c.ferry_pending; return null }
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    let soul = ident ? await this.Swarm_ferry_heard(w, ident, pend.frame, code) : null
+    delete top.c.ferry_pending
+    // IDENTITY TRANSITION (Division_todo §0 — the husk): the device WAS its own blank auto-vivified self
+    //  (the active %Identity); now it holds the soul.  Funnel the landed soul through Clustation_concrete —
+    //   the SINGLE chokepoint every mint|adopt funnels through (Auto.svelte) — so it becomes the sole ACTIVE
+    //    identity: the blank husk is deactivated and Swarm_live_self resolves to the soul (else find(active)
+    //     could still return the husk and the device would present as blank).  Guarded so a Book path with no
+    //      Auto layer just skips it (the account still landed); this activation seam's only FULL proof is the
+    //       live two-tab test (Auto's own note, Identity_persist §3), so it is verified live, not headless.
+    if (soul && soul.c && soul.c.keys && soul.sc.Identity && soul.c.up && typeof this.Clustation_concrete === 'function') {
+        try { this.Clustation_concrete(soul.c.up, soul.sc.Identity, { pub: soul.c.keys.pub, key: soul.c.keys.key, prepub: soul.sc.prepub, friendly: soul.sc.friendly }) } catch (er) { console.log('🦑 ferry: concrete threw — soul landed, activation deferred to boot') }
+    }
+    return soul
+
 },
 // Swarm_adopt_sas — the emoji SAS both devices READ before the key copies (the EmojiConfirm gate, Phase 3):
 //  fold the two pubs + the nonce (sorted, so both sides agree) into an emoji row.  EQUAL rows on both

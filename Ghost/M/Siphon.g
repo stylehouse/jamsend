@@ -1,0 +1,128 @@
+// Siphon.g — the DELIBERATE SoundPool act (Siphon_todo.md rungs 2–3): tags + the siphon verb.
+//  A SPIN-OUT beside Ra.g's press economy (Portability_todo §"LIVE WIRING GAP"): Ra_press /
+//   Ra_quarter / Ra_quarter_serve stand Book-proven and DORMANT — the siphon is a NEW deliberate
+//    caller COMPOSING Ra_press, never a rewrite, and never the ambient §3/§4 economy (the lib is
+//     EXPLICIT: the befriended share the user is browsing, so nothing blind is wired).
+//  Two regions, both model-pure until a caller hands in a nav:
+//   TAGS — a %Tag,name:<x> exists ONCE on the world's %Tags shelf ("once a tag is defined it can
+//    be applied easier" — the owner 2026-08-28); an application is a referring particle wearing
+//     of: (%Tagged,of:<origId>) as a CHILD of its %Tag — the many:1 rule (CLAUDE.md "identity is
+//      per-shelf"), never a second particle impersonating %Record.  So a tag's children ENUMERATE
+//       its tracks: a tag IS a playlist with no extra machinery.
+//   SIPHON — Siphon_pull: the whole-thing press of ONE named track from an explicit lib into the
+//    pool, composing Ra_press v1 (the ENTIRE body — not a quarter goal, not a lofi grade).  In
+//     flight it is legible state (%Siphon,of:<origId>, phases asked→pulling→landed) and a landed
+//      siphon DROPS its scaffolding (transient reqs are scaffolding, not ledger — the awaitbuf
+//       lesson).  Pure verbs — no %req self-installs; a Book (Ghost/Story/Siphonation.g) or a
+//        face CALLS these.  NEW FILES ONLY (the spin-out doctrine): nothing standing is touched.
+
+//#region tags — %Tag once on the %Tags shelf; %Tagged,of: children; a tag IS a playlist
+
+// Siphon_tags — the ONE %Tags shelf under the radio world, find-or-create (the %Provisions /
+//  %Upgrades idiom from Ra.g's Quartermaster region).  c.up stamped so a mint under it snaps and
+//   an upward walk reaches w.
+Siphon_tags(w):
+    let shelf = w.oai({ Tags: 1 })
+    shelf.c.up = w
+    return shelf
+
+// Siphon_tag_def — find-or-create the %Tag,name:<name>.  Defined ONCE — a re-def lands on the
+//  standing particle, never a twin ("there is only one of anything").  Defining once is what
+//   makes applying cheap: every later apply is a child mint under this one particle.
+Siphon_tag_def(w, name):
+    if (!name) return null
+    let shelf = this.Siphon_tags(w)
+    let tag = shelf.oai({ Tag: 1, name: String(name) })
+    tag.c.up = shelf
+    return tag
+
+// Siphon_tag_apply — stamp the tag on a track: a %Tagged,of:<origId> CHILD of the %Tag.  The
+//  many:1 of: rule — the application NAMES the holding by id and wears its OWN mainkey; it never
+//   impersonates %Record.  oai so a re-apply is a no-op (one row per track per tag).
+Siphon_tag_apply(w, tag, origId):
+    if (!tag || !origId) return null
+    let row = tag.oai({ Tagged: 1, of: String(origId) })
+    row.c.up = tag
+    return row
+
+// Siphon_tag_unapply — the removal twin: drop the %Tagged,of: row(s).  Collect THEN drop (the
+//  Ra_shuffle_cull discipline — never detach from a list mid-iteration).  Returns how many
+//   dropped, so a caller reads 0 as "was not tagged" without a second probe.
+Siphon_tag_unapply(w, tag, origId):
+    if (!tag || !origId) return 0
+    let rows = tag.o({ Tagged: 1, of: String(origId) }).slice()
+    for (const row of rows) { tag.drop(row) }
+    return rows.length
+
+// Siphon_playlist — a tag IS a playlist: walk its %Tagged children IN ORDER (child insertion
+//  order = the order the applications landed) and yield the origIds.  No extra machinery — the
+//   enumeration is the whole feature; a radio that obeys you walks this list.
+Siphon_playlist(w, tag):
+    if (!tag) return []
+    return tag.o({ Tagged: 1 }).map((row) => String(row.sc.of || '')).filter((id) => id.length > 0)
+//#endregion
+
+//#region siphon — the deliberate whole-thing pull into the pool, composing Ra_press v1
+
+// Siphon_home — where in-flight %Siphon scaffolding homes: a %Siphons shelf under the world (the
+//  %Provisions precedent) — legible on the world floor while anything is in flight, empty once
+//   every siphon has landed and dropped.
+Siphon_home(w):
+    let shelf = w.oai({ Siphons: 1 })
+    shelf.c.up = w
+    return shelf
+
+// Siphon_pull — the DELIBERATE act: press ONE named track's WHOLE body from an EXPLICIT lib into
+//  the pool.  Composes Ra_press v1 (the byte-copy through the ONE Heist_catalog_land door — never
+//   a parallel minter): the entire body, not a quarter goal, and NO ambient policy — the lib
+//    argument IS the choice (the befriended share the user is browsing), which is what keeps this
+//     verb out of the §3/§4 press-what-you-streamed economy (Siphon_todo, the doctrine).
+//  Args: `shelf` hosts the in-flight %Siphon scaffolding (pass Siphon_home(w) unless a better
+//   home stands); `pool` = the SoundPool's own shelf; `lib` = the shelf holding the Original;
+//    `origId` = the Original's id; `nav` = the mounted nav Ra_press reads|writes through (falls
+//     back to w.c.ra_nav — the Ra_shuffle_cull precedent — so a live caller with the world nav
+//      standing can omit it).
+//  IDEMPOTENT the Ra_quarter way: a track already pooled — by id (the v1 press coincides) or by
+//   of: join (a lofi rendition standing in for it) — returns the standing card and moves not one
+//    byte.  IN FLIGHT it is legible: %Siphon,of:<origId> with phase asked→pulling→landed.  A
+//     LANDED siphon drops its own row AND the served %press job Ra_press minted (an owner drops
+//      its finished transient reqs — the awaitbuf lesson); a FAILED one stays STANDING with
+//       fail:<why> — in-flight state worth SEEING — and a retry sweeps it before the fresh mint.
+//  Returns {card, already:1} | {card} | {fail:'why'} — no throw, the Ra_press contract.
+async Siphon_pull(w, shelf, pool, lib, origId, nav):
+    if (!origId) return { fail: 'no origId' }
+    if (!pool || !lib) return { fail: 'no pool or lib shelf' }
+    let id = String(origId)
+    // ── already pooled → no-op: the standing card answers and zero bytes move ──
+    let standing = this.Ra_rec_find(pool, { Record: 1, id: id }) || this.Ra_rec_find(pool, { Record: 1, of: id })
+    if (standing) return { card: standing, already: 1 }
+    let pnav = nav || (w && w.c ? w.c.ra_nav : null)
+    if (!pnav) return { fail: 'no nav' }
+    let home = shelf || this.Siphon_home(w)
+    // one siphon per track at a time: a row mid-pull bows this caller out rather than doubling.
+    let inflight = home.o({ Siphon: 1, of: id })[0]
+    if (inflight && inflight.sc.phase === 'pulling') return { fail: 'already pulling ' + id }
+    // a stale row (a prior FAILED attempt) is swept before the fresh mint — collect THEN drop.
+    let stale = home.o({ Siphon: 1, of: id }).slice()
+    for (const s of stale) { home.drop(s) }
+    // ── the legible in-flight row: asked → pulling → landed ──
+    let sip = home.i({ Siphon: 1, of: id, phase: 'asked' })
+    sip.c.up = home
+    sip.sc.phase = 'pulling'
+    let r = await this.Ra_press(w, pnav, lib, pool, id)
+    if (r && r.card) {
+        sip.sc.phase = 'landed'
+        // an owner drops its finished transient reqs: the landed %Siphon goes, and so does the
+        //  served %press job Ra_press left on w (its comment names "the pool-steward's sweep" as
+        //   the natural drop seam — for a DELIBERATE siphon, this verb IS that seam).
+        home.drop(sip)
+        let jobs = w.o({ press: 1, of: id }).slice()
+        for (const job of jobs) { w.drop(job) }
+        return { card: r.card }
+    }
+    // an honest fail stays standing — in-flight state worth seeing; why is guarded (never stamp
+    //  a maybe-undefined sc value — the mint-bug law).
+    let why = (r && r.fail) ? String(r.fail) : 'press failed'
+    sip.sc.fail = why
+    return { fail: why }
+//#endregion

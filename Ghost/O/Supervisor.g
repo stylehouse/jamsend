@@ -1291,12 +1291,45 @@ Supervisor_log_lines(w, cfg, why):
     let all = w.o({ Watch: 1 })
     let loud = this.Supervisor_speaking(w)
     let tt = w.o({ TimeSpool: 1 })[0]?.o({ TimeTotal: 'happy' })[0]
-    let lines = [{ kind: 'health', why: why || 'cadence', boot: this.Supervisor_boot_id(w), at: Date.now(), watches: all.length, loud: loud.length, ok: loud.length ? 0 : 1, happy_avg: tt ? Number(tt.sc.avg || 0) : null, happy_n: tt ? tt.o({ sample: 1 }).length : 0 }]
+    // TIMING ON THE HEALTH LINE — the boot arc, in ms from page start (Supervisor_since), so a reader
+    //  can tell slow-but-arriving from stuck.  `seen_min` is the earliest anything was first read;
+    //   `won_max` is the LAST claim to come true, i.e. how long the machine took to fully settle.
+    //    Both are OMITTED when there is nothing to say (Supervisor_since reads 0 for unknown, which
+    //     here means "no timing yet" — a false 0ms would read as "instant", the same trap the faces hit).
+    let seen_min = 0
+    let won_max = 0
+    for (const x of all) {
+        let s = this.Supervisor_since(w, x.c.seen)
+        if (s > 0 && (seen_min === 0 || s < seen_min)) seen_min = s
+        let n = this.Supervisor_since(w, x.c.won)
+        if (n > won_max) won_max = n
+    }
+    let health = { kind: 'health', why: why || 'cadence', boot: this.Supervisor_boot_id(w), at: Date.now(), watches: all.length, loud: loud.length, ok: loud.length ? 0 : 1, happy_avg: tt ? Number(tt.sc.avg || 0) : null, happy_n: tt ? tt.o({ sample: 1 }).length : 0 }
+    if (seen_min > 0) health.seen_min = seen_min
+    if (won_max > 0) health.won_max = won_max
+    // `happy_samples` — the raw recent 0/1 series behind happy_avg, oldest-first, as a compact string
+    //  ("1110111110").  The samples already live as {sample} children on the happy TimeTotal (0 unhappy,
+    //   1 happy — Supervisor_happy_sample), so we just read and order them; no new store, nothing snapped.
+    if (tt) {
+        let series = tt.o({ sample: 1 }).sort((a, b) => Number(a.sc.at || 0) - Number(b.sc.at || 0)).map(s => (Number(s.sc.sample || 0) ? '1' : '0')).join('')
+        if (series) health.happy_samples = series
+    }
+    let lines = [health]
     for (const x of loud) {
         // the SENTENCE travels — every one is a string literal in this repo, written by us about our
         //  own machine.  The `note` does NOT: notes carry friendly names and counts of a person's
         //   shelf, which is the §10.3 line this must not cross on its own authority.
-        lines.push({ kind: 'watch', boot: this.Supervisor_boot_id(w), key: String(x.sc.Watch), verdict: String(x.sc.verdict || ''), wkind: String(x.sc.kind || ''), patience: String(x.sc.patience || ''), claim: String(x.sc.sentence || '') })
+        let verdict = String(x.sc.verdict || '')
+        let line = { kind: 'watch', boot: this.Supervisor_boot_id(w), key: String(x.sc.Watch), verdict: verdict, wkind: String(x.sc.kind || ''), patience: String(x.sc.patience || ''), claim: String(x.sc.sentence || '') }
+        // `fn` — the probe method name (watch.sc.fn), so failures group by subsystem.  A NAME, a string
+        //  literal in this repo, never a person's anything.
+        if (x.sc.fn) line.fn = String(x.sc.fn)
+        // `changed: 1` — this watch's verdict differs from what we last reported for it.  The biggest
+        //  signal/noise win: a reader can skip the rows that are the same complaint as five minutes ago.
+        //   Last-reported verdict stashed on `.c` — runtime, forgotten on reload, never snapped.
+        if (x.c.last_reported_verdict !== undefined && x.c.last_reported_verdict !== verdict) line.changed = 1
+        x.c.last_reported_verdict = verdict
+        lines.push(line)
     }
     return lines
 

@@ -51,6 +51,41 @@ A cross-spec sweep of what is in motion and what is deferred-but-load-bearing,
 
 ## Still moving — by subsystem
 
+### Toplevels — BigQualand & what pours through it
+The `/` root **is** the music scape now (`routes/+page.svelte` mounts `V/BigSoundland`,
+ not redirects — an invite URL's `?I=…` must survive arrival untouched). Underneath sits
+  **`BigQualand.svelte.ts`** — the *aufheben* of the two rooms: the ONE machine (construct
+   H:Mundo → Auto activates a Book → pump `think`), with the OOM trap baked in (compute on
+    local `h`, assign `$state H` once, never read H inside the construction `$effect`).
+
+It **diversifies not by forking the machine but by the medium poured through the one
+ substrate** — which is just the one-bet restated (*same legible living matter, pour music
+  through it first*):
+- **BigSoundland** (`V/`, served at `/` and `/BigSoundland`) — the music scape, Voronoi
+   stained glass; identity `sound`, machine-role `runner`. Self-checks via the **Sounditron**
+    Book (two valid outcomes: a track playing, OR no peers online).
+- **BigWordland** (`L/`, `/BigWordland`) — the editor room, Lies+Lang in disguise; identity
+   `word`, machine-role `editor`. Self-checks via the **Educarium** Book.
+The finer `word|sound` rides `H.c.id_role` for the identity layer and NEVER reaches the
+ machine, which stays two-valued (`editor|runner`). Each room's diagnostic Book **lurks in
+  the background of a real end-user page** — a shortfall (no audio, no peers, a compile fault)
+   surfaces as a coherent error so a real user becomes a reporting test-probe. That IS the
+    verdict seam; there is no separate qual Story. A **third** toplevel would be another
+     *medium* poured through BigQualand, not another machine.
+
+**Educarium's latent ambition — parked (2026-08-28, the owner).** Today `L/Educarium.svelte`
+ is the *thin* BigWordland diagnostic Book: it wires editor-flavoured Lies/Lang/Pantheate and
+  opens one Waft (`?W=`, default `Ghost/Net/Easy`) — Editron's sibling recipe, nothing more.
+   But its NAME carried a bigger intention: a **"fake toplevel for a nice code experience"** —
+    a floaty, **searchbar-driven code-mining room** (mine / search / fluidly browse code as the
+     primary surface), *never fully built on*. So Educarium marks the seam where BigWordland
+      could grow from "the editor, opened on a Waft" into a genuine code-**exploration**
+       toplevel. Relatives already in the tree it would stand on: `Lies_search` + `Searchbar.svelte`
+        (search v1 LIVE), Stemdex v2 (region-partitioned scan), the **All method def|call index**
+         TODO above, and the StemHive. Keep the Story stub (`wormhole/Story/Educarium/toc.snap`,
+          unrun — no `NNN.snap`) as that room's placeholder self-check: it's **latent, not dead**.
+   (Its twin AwFloat — a bare lie-dige stub with no such intention — was dropped 2026-08-28.)
+
 ### Story runner
 `Story_future.md` is the biggest live document by far. It frames the
  work as **13 sequential stages, ordered for shippability** (not logical

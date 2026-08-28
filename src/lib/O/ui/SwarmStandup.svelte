@@ -35,6 +35,15 @@
         return () => clearInterval(iv)
     })
 
+    // THE PERSIST REQUEST (Portability §0.9b — the one-liner it owes): ask the browser to mark this
+    //  origin's storage persistent, the cheap mitigation for "clear browsing data = identity death".
+    //   Fire-and-forget, once per mount, browser decides (auto-granted once PWA-installed); this file
+    //    because it is the always-on standup every music page mounts, the same reason it holds the
+    //     station.  Guarded for SSR and for browsers without the API.
+    $effect(() => {
+        try { if (typeof navigator !== 'undefined') navigator.storage?.persist?.() } catch {}
+    })
+
     // LATCHED plain $state, not $derived (reactivity_docs): Swarm_live_self() can THROW transiently
     //  mid-Atime and return null.  Assign only on a truthy, CHANGED ref; never back to null — the
     //   identity never un-exists, so the latch is honest.
@@ -109,6 +118,35 @@
             return (H.Swarm_peering(self)?.o({ Pier: 1 }) ?? []) as any[]
         } catch { return [] }
     })
+    // EARLY SELF-RADIO POKE (the owner 2026-08-28: *"self-radio should play itself ASAP"*).  The
+    //  autopress's only reliable trigger WAS the counted-zero settle-edge below — a 5s debounce meant
+    //   for the door UI, not for the music — because the boot dig stops nudging the moment preheat has
+    //    filled the shelf (`dug=0`), so a full-stock cold tab had nothing pressing play for 5s+.
+    //     Sounditron_peerless has a LIVE fallback (self stood + no Music-granted pier ⇒ peerless) that
+    //      needs no door latch, so poke Radio_nudge the instant that holds.  Radio_autopress re-checks
+    //       every gate (humdinger · off · never-played · stock) and no-ops until stock stands, then
+    //        plays — so poking early and often is safe.  Keeps trying on the tick until it takes; bows
+    //         out the moment a Music-granted friend appears (they get the friend-first path) or the
+    //          radio leaves 'off' (someone — auto or human — already decided).  The radio-off guard is
+    //           also what keeps this inert on a runner tab: no humdinger ⇒ autopress returns 0, and a
+    //            Book's 'digging' radio latches us out before any pump.
+    let autopoked = $state(false)
+    $effect(() => {
+        void H?.version
+        void tick
+        if (autopoked || !self) return
+        let granted = 0
+        try { granted = friends.filter((p: any) => p.o?.({ Grant: 'Music' })[0]).length } catch { granted = 0 }
+        if (granted > 0) { autopoked = true; return }        // peered — leave it to the friend-first path
+        const w = (H.c as any).radio_w
+        if (!w) return                                        // radio world not stood yet — try next tick
+        let radio: any = null
+        try { radio = w.o?.({ Radio: 1 })[0] } catch {}
+        if (radio && radio.sc?.Radio && radio.sc.Radio !== 'off') { autopoked = true; return }   // already going/decided
+        if (radio && (radio.c?.ever_played || radio.c?.auto_pressed)) { autopoked = true; return }
+        try { (H as any).Radio_nudge?.(w) } catch {}
+    })
+
     let gossiped = 0
     $effect(() => {
         const n = friends.length
@@ -150,7 +188,16 @@
         if (n > 0) { zero_since = 0; (H.c as any).door_friends = n; return }
         if ((H.c as any).door_friends > 0) return
         if (!zero_since) { zero_since = Date.now(); return }
-        if (Date.now() - zero_since >= 5000) (H.c as any).door_friends = 0
+        if (Date.now() - zero_since >= 5000) {
+            const first = (H.c as any).door_friends !== 0
+            ;(H.c as any).door_friends = 0
+            // THE COUNTED-ZERO IS A SETTLE-EDGE THE RADIO WANTS (2026-08-28, the peerless auto-press).
+            //  Radio_autopress fires off Radio_nudge, whose usual callers are the stoker's stood-record
+            //   beats — but a fast dig can finish BEFORE this 5s zero settles, leaving nobody to nudge
+            //    the now-provably-peerless radio.  So the moment the zero is first believed, poke the
+            //     radio world once; autopress's own gates (stock, off, never-played, humdinger) decide.
+            if (first) { try { (H as any).Radio_nudge?.((H.c as any).radio_w) } catch {} }
+        }
     })
 
     // …AND WHETHER THE OLD GARDEN SENT THEM, published the same way and for the same reason

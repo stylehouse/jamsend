@@ -7,6 +7,60 @@
 
 ---
 
+## 0. WHERE THIS IS (2026-08-28) — the live device-link path is the FERRY model
+
+The device-link ("spread myself out") ceremony runs on a **handshake + ferry**, which SUPERSEDES the old
+ `Swarm_adopt_*` seal-first model (that inverted the roles and never crossed — `Swarm_deliver` has no `%Pier`
+  to route the seal over until a handshake forms one). The order:
+  1. **SOUL device** presses "🔗 link a device" (in the Door) → `Swarm_ferry_link` mints an `%Invite:MyCave`.
+  2. **NEW device** opens the `?Iz=` link → the ordinary invite path (`Swarm_redeem`) forms the `%Pier` both
+      ways + cross-signs `%Grant:MyCave` (SwarmRole-proven).
+  3. The soul's `Swarm_ferry_on_seal` fires when that pier seals → `Swarm_ferry_send` exports+seals+delivers
+      the whole account over the now-live pier. New device `Swarm_ferry_park`s it; `Swarm_ferry_consume`
+       unseals + imports → it holds the soul key, keeps its old key as body key, derives Post=Cave.
+
+**⚠ THE `#fc` DECISION (owner, 2026-08-28) — it's redundant, remove it.** The seal today rides a random secret
+ in the URL FRAGMENT (`#fc=…`, "hidden from the relay"). But the **adopt** ceremony beside it already sealed
+  correctly with `ikm = offer.nonce` (a nonce that rides the offer frame over the relay) — the codebase already
+   *trusts the relay*, which is the owner's stance ("we've got nothing to hide from the relay… eed is the
+    security control point"). The ferry reinvented a more paranoid, worse version and made the human carry a
+     fragment. **The fix: seal with the invite/redeem nonce like `Swarm_adopt_redeem`; drop `#fc`, the URL
+      fragment, and the durable-secret twin; link goes back to plain `?Iz=<invite>`.** The big attended
+       refactor (crown-jewel seal + re-record SwarmSpread beat 5) — do it carefully, not blind.
+
+**The Cell:** `%Link` (`LinkFace`, in `glass_kinds.ts`, minted in `Sounditron_commission`) is **REACHED, not
+ resident** — pressing "🔗 link a device" in the Door calls `Sounditron_focus('Link')` (a new world-resolved
+  nav verb for faces), the cell takes the belly, and Door|Radio abandon it. Grappled only while focused or a
+   link is in flight (`Swarm_link_active`); auto-surfaces once on the RECEIVING side (`w.c.link_surfaced` latch).
+
+**Landed this session (all compiled + parse-gated + Books green — RaBreach/PortPlant/SwarmSpread):**
+  - **Live blocker fixed:** a device-link Cave pier no longer arms the "a friend came online" expectation
+     (`Swarm_expect_friends` filters to `Grant:'Music'` friend piers). A Cave is your own device, not a friend
+      — it was reporting `nobody has come online` forever ("eed sees Grauc, Grauc says FAILED").
+  - **Unstick + escape:** `Swarm_ferry_cancel` (the Link cell's cancel button) + a **stale-ferry sweep** at
+     `Swarm_station_up` (clears a secret with no live MyCave pier) — so a wedged "ferrying now…" self-heals on
+      reload. NB the auto-surface means a wedged soul boots INTO the Link cell, so the sweep matters.
+  - **Onboarding:** the fullscreen "music here is shared with friends" beg-screen is GONE for a new/peerless
+     tab (`Butler.svelte` — `friendless` no longer opens the door stage; `landing`/`Adopt`/`relic` still do).
+      Instead a **peerless invite button** sits under the ♪ LOCAL sayer in `RadioFace` (shows on counted-zero
+       `door_friends`), pressing it → the Door cell where the QR lives.
+
+**Proven:** `SwarmSpread` **5/5** (beat 5 = the ferry glue, `step=5,dige:ac0f77d14fc3ab55`, «the-account-
+ ferries-over»). Debug tool: `scripts/runner_watch.mjs` (remote run + named "pointer" predicates, exit-coded).
+
+**NEXT MOVES (owed):**
+  - **THE `#fc`→nonce refactor** (above) — the headline. Attended, with a Book re-record.
+  - **Adoptee identity transition — LANDED, needs live proof.** `Swarm_ferry_consume` funnels the landed soul
+     through `Clustation_concrete` (Auto.svelte, the single mint|adopt chokepoint) so the soul becomes the sole
+      ACTIVE `%Identity` and the blank husk deactivates. Only full proof is the **live two-tab test** — confirm
+       after "accept" the device presents AS the soul (eed), not its blank incognito self. Then DROP the husk
+        `%Identity` once nothing (census/vessel/address bind) references it.
+  - **The live gate:** a real **two-device test on ONE shared origin** (mint on the soul, open on the blank
+     device). Note: `djamsend.duckdns.org:9999` is a REMOTE node running OLD code (unreachable from the
+      container) — test on LOCAL `:9091` where this session's code actually runs, or deploy first.
+
+---
+
 ## THE FIELD IN ONE BREATH
 
 A **soul** is a keypair. It runs in one-or-more **bodies**, each on a machine, each holding the soul key

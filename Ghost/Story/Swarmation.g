@@ -3489,6 +3489,7 @@ async SwarmSpread_drive(w, req):
         if (n === 2) { await this.SwarmSpread_stand(w) }
         if (n === 3) { await this.SwarmSpread_divide(w) }
         if (n === 4) { await this.SwarmSpread_teeth(w) }
+        if (n === 5) { await this.SwarmSpread_ferry(w) }
     }
     await this.SwarmSpread_pump(w)
     this.SwarmSpread_witness(w)
@@ -3582,6 +3583,49 @@ async SwarmSpread_teeth(w):
     if (ccont.o({ Identity: 1 }).filter((i) => i.sc.prepub === bkeys.prepub).length === 0) { row.no_soul_landed = 1 }
     this.SwarmSpread_note(w, row)
 
+// beat 5 — THE FERRY (the live device-link path, Division_todo §0).  Proves the ferry GLUE end-to-end and
+//  deterministically: once a MyCave pier stands, Swarm_ferry_send exports+seals+delivers Alice's WHOLE
+//   account over it; the blank Ebox reads the frame off its inbox (the real wire path) and Swarm_ferry_heard
+//    unseals it with the fragment code — Ebox now holds the very same soul key, as a Cave.  Fails closed: a
+//     fresh device given the frame with a WRONG code lands no account.  The seal ciphertext rides `.c`
+//      (m.c.frame), so it never dirties the fixture; the note row is booleans, so the snap stays repeatable.
+async SwarmSpread_ferry(w):
+    w i reached:step_5
+    let alice = w.c.alice
+    if (!alice) { return }
+    // a fresh blank device, addressable at its body-key prepub (same recipe as the Box in beat 2)
+    let eacct = w.oai({ Account: 1, of: 'Ebox' })
+    eacct.c.up = w
+    let ekeys = await this.Swarm_mint_keys('SwarmSpread-Ebox-body')
+    let eproto = this.Swarm_identity(eacct, ekeys, 'Ebox')
+    this.Swarm_online(eproto, true)
+    // a minimal MyCave pier Alice→Ebox — Swarm_ferry_send reads theirPub off the pier's %Peering and
+    //  delivers to pier.sc.pub (same-world mail lands it in Ebox's inbox synchronously, as beat 3's redeem does)
+    let peering = this.Swarm_peering(alice)
+    let pier = peering.oai({ Pier: 1, pub: ekeys.prepub })
+    pier.c.up = peering
+    let epage = pier.oai({ Peering: 1, name: ekeys.prepub })
+    epage.c.up = pier
+    epage.sc.pub = ekeys.pub
+    let code = 'ferry_seed_e1'
+    let sent = await this.Swarm_ferry_send(w, alice, pier, code)
+    let m = eproto.o({ mail: 1 })[0]?.o({ frame: 'ferry' })[0]
+    let frame = m ? m.c.frame : null
+    let esoul = frame ? await this.Swarm_ferry_heard(w, eproto, frame, code) : null
+    // fails-closed — a fresh device given the same frame with a WRONG code unseals nothing
+    let fcont = w.oai({ Account: 1, of: 'Fbox' })
+    fcont.c.up = w
+    let fkeys = await this.Swarm_mint_keys('SwarmSpread-Fbox-body')
+    let fproto = this.Swarm_identity(fcont, fkeys, 'Fbox')
+    let badHeard = frame ? await this.Swarm_ferry_heard(w, fproto, frame, 'wrong_ferry_code') : null
+    let ebody = esoul ? this.Swarm_body_mine(esoul) : null
+    let row = { ferried: 1 }
+    if (sent === true) { row.ferry_sent = 1 }
+    if (esoul && esoul.c.keys && String(esoul.c.keys.pub) === String(alice.c.keys.pub)) { row.ferry_account_crossed = 1 }
+    if (ebody && ebody.sc.role === 'Cave') { row.ferry_post_cave = 1 }
+    if (badHeard === null) { row.ferry_wrongcode_no_body = 1 }
+    this.SwarmSpread_note(w, row)
+
 // ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
 SwarmSpread_witness(w):
     let n = (this.c.run)?.c.step_n
@@ -3599,6 +3643,9 @@ SwarmSpread_witness(w):
     let t = T.o({ teethed: 1 })[0]
     // #4 THE TEETH: a tampered seal a wrong nonce a withheld consent each yield NO body and no soul lands.
     if (t && +t.sc.tamper_no_body === 1 && +t.sc.wrongnonce_no_body === 1 && +t.sc.noconsent_no_body === 1 && +t.sc.no_soul_landed === 1) { this.story_swear(w, 'the ceremony fails closed — a tampered seal a wrong nonce and a withheld consent each produce no body and the soul never lands on a device that flubbed the seal or that the human did not confirm') }
+    let f = T.o({ ferried: 1 })[0]
+    // #5 THE FERRY (the live path): the handshake-formed pier carries the whole sealed account across; wrong code lands nothing.
+    if (f && +f.sc.ferry_sent === 1 && +f.sc.ferry_account_crossed === 1 && +f.sc.ferry_post_cave === 1 && +f.sc.ferry_wrongcode_no_body === 1) { this.story_swear(w, 'the account ferries over the sealed pier — once a MyCave pier stands the soul exports and seals its whole account across to the blank device which unseals it with the fragment code and now holds the very same soul key as a Cave while a wrong code lands no account at all') }
 
 // SwarmSpread_order — float A:SwarmSpread to the front of H/* so the Run snap stays readable.
 async SwarmSpread_order(w):

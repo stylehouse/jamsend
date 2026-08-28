@@ -35,6 +35,12 @@ Waft:Credence
     Funkcion:Storying,of_Book:SwarmFerry
     Funkcion:Storying,of_Book:EmojiConfirm
     Funkcion:Storying,of_Book:SwarmDivide
+    Funkcion:Storying,of_Book:SwarmBody
+    Funkcion:Storying,of_Book:SwarmCharter
+    Funkcion:Storying,of_Book:SwarmGossip
+    Funkcion:Storying,of_Book:SwarmPost
+    Funkcion:Storying,of_Book:SwarmServe
+    Funkcion:Storying,of_Book:SwarmSpread
   What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette,obsoleted:by Vyto
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:VoroMitosis
@@ -207,3 +213,4 @@ Waft:Credence
     Funkcion:Storying,of_Book:ErrChannel
     Funkcion:Storying,of_Book:RehealSmoke
     Funkcion:Storying,of_Book:SuperCull
+    Funkcion:Storying,of_Book:Siphonation

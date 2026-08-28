@@ -22,15 +22,15 @@ Credulate,of_Book:SwarmSpread
   GhostInclude:Ghost_Story_Heistation,dige:14e01eac2f9a4979~g1
   GhostInclude:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
   GhostInclude:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1
-  GhostInclude:Ghost_S_Swarm,dige:90d9914e4e65c906~g1
-  GhostInclude:Ghost_Story_Swarmation,dige:49d3d20870a738c2~g1
+  GhostInclude:Ghost_S_Swarm,dige:4f057f03613262f8~g1
+  GhostInclude:Ghost_Story_Swarmation,dige:e64cdf4b7f3d19c2~g1
   GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
   GhostInclude:Ghost_V_Vyto,dige:46caad99abe9528d~g1
   GhostInclude:Ghost_V_Vytonation,dige:4b115424532783d7~g1
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-  GhostInclude:Ghost_Story_Sounditron,dige:73b293bd25647102~g1
+  GhostInclude:Ghost_Story_Sounditron,dige:c0fbb99937dafbc2~g1
   GhostInclude:Ghost_O_Supervisor,dige:de3a04d0885a11f0~g1
-  last_ok,at=1787824124.324,ok_pct
+  last_ok,at=1787876773.938,ok_pct
     uses:Ghost_N_Peeroleum,dige:7d6d293338930070~g1
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed~g1
     uses:Ghost_N_Tribunal,dige:68c229677c6b8d67~g1
@@ -54,11 +54,11 @@ Credulate,of_Book:SwarmSpread
     uses:Ghost_Story_Heistation,dige:14e01eac2f9a4979~g1
     uses:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
     uses:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1
-    uses:Ghost_S_Swarm,dige:90d9914e4e65c906~g1
-    uses:Ghost_Story_Swarmation,dige:49d3d20870a738c2~g1
+    uses:Ghost_S_Swarm,dige:4f057f03613262f8~g1
+    uses:Ghost_Story_Swarmation,dige:e64cdf4b7f3d19c2~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_V_Vyto,dige:46caad99abe9528d~g1
     uses:Ghost_V_Vytonation,dige:4b115424532783d7~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-    uses:Ghost_Story_Sounditron,dige:73b293bd25647102~g1
+    uses:Ghost_Story_Sounditron,dige:c0fbb99937dafbc2~g1
     uses:Ghost_O_Supervisor,dige:de3a04d0885a11f0~g1

@@ -3662,6 +3662,13 @@ async Ra_pull_beat(w, rx, mine, theirs, rec):
     let LEAD = +(w.c.heist_want_lead || 32)
     w.c.ra_wanted = w.c.ra_wanted || {}
     w.c.ra_want_ts = w.c.ra_want_ts || {}
+    // §5.6 ACK-CLOCK registration (Backpressure_todo.md), idempotent + knob-gated. OFF (default) → never
+    //  registered → Repli_land_rtt's hook branch is dead → byte-identical everywhere. ON → the arrival seam
+    //   drives Ra_clock_issue, which sends fresh wants ahead of the cursor up to a window, so a landing
+    //    clocks the next want instead of waiting for this beat. Registered HERE because Ra_pull_beat rides
+    //     the station w in EVERY pull path (live share + Musu loopback), so no arming site can be missed;
+    //      and Swarm.g is untouched (its Swarm_note_era wipe is another agent's file this stage).
+    if (w.c.heist_selfclock && !w.c.repli_clock) w.c.repli_clock = (cw, r) => this.Ra_clock_arm(cw, r)
     // §5.3 (Backpressure_todo.md): a repli_parked reply suspends the re-ask for that (id, offset) —
     //  the source has already said "not lost, stop spending" — but only up to a generous ceiling, so
     //   a park that never resolves (a dead transcoder) still falls back to the ordinary 4s re-ask
@@ -3777,6 +3784,7 @@ async Ra_pull_beat(w, rx, mine, theirs, rec):
             let rtt = rec.c.rx && rec.c.rx.c && rec.c.rx.c.rtt
             if (rtt && rtt.n > 0) { entry.srtt = Math.round(rtt.srtt); entry.rto = rtt.rto }
             if (rec.c.tlps) entry.tlps = rec.c.tlps
+            if (rec.c.clocked) entry.clocked = rec.c.clocked    // §5.6: wants issued by the ack-clock, not the beat
         }
         g.since = nowms; g.held0 = held; g.asked = 0
     }
@@ -3811,6 +3819,77 @@ async Ra_pull_beat(w, rx, mine, theirs, rec):
     }
     this.Ra_stage(w, rec)
     return { done: held >= total ? 1 : 0, held: held }
+
+// Ra_clock_arm — §5.6's coalescing gate, fired from Repli_land_rtt the instant a page COMPLETES, which is
+//  INSIDE the inbox drain (the beliefs mutex). It must do NOTHING heavy here: a burst of N pages landing in
+//   one drain would otherwise run N window scans + N×W sends under the mutex. So it only ARMS one deferred
+//    issuance per rec (rec.c.clock_armed — the bulk_pump_armed pattern from Tribunal's lane) and returns;
+//     H.post_do runs the real issuance as its OWN Atime pass, once, after the drain. Re-checks the knob so
+//      toggling w.c.heist_selfclock off LIVE silences the clock even though the hook stays registered on w.
+Ra_clock_arm(w, rec):
+    if (!w.c.heist_selfclock) return
+    if (!rec || !rec.c || rec.c.clock_armed) return
+    rec.c.clock_armed = 1
+    H.post_do(async () => {
+        rec.c.clock_armed = 0
+        try { await this.Ra_clock_issue(w, rec) } catch (er) {}
+    }, { see: 'ra_selfclock' })
+
+// Ra_clock_issue — the SELF-CLOCKING half of §5.6 (the AIMD half is deferred: W is FIXED here). Send fresh
+//  wants AHEAD of the ask cursor until `outstanding` pages are in flight, so a transfer runs at wire speed
+//   between beats instead of at window÷600ms. Division of labour is TCP's own: the CLOCK sends new data (the
+//   cursor ahead), the BEAT recovers (RTO re-asks + TLP, and holes BEHIND the cursor — Ra_pull_beat).
+//  OUTSTANDING is DERIVED, never counted: §5.5 made "a ra_want_ts stamp exists" MEAN "this page is
+//   outstanding" (cleared on land by Repli_land_rtt), so a scan of the rec's stamps is self-correcting — a
+//    land drops one, a PARK keeps one (a parked frontier must HOLD the window, §5.3), a lost want keeps one
+//     until the beat re-asks it. No counter to drift. Clock wants are FIRST asks of never-asked pages, so
+//      they are clean RTT samples (no ra_retx mark) and cannot double-send: a stamped page is skipped, and
+//       the beat and the clock are different Atime passes serialised by the mutex, never truly concurrent.
+//  ROUGH EDGE (acceptable while gated off): rec.c.ask_next is per-rec and NOT reset on rebirth — Swarm.g's
+//   Swarm_note_era wipes the w.c want maps but not this cursor, and that file is another agent's this stage.
+//    Held chunks persist a rebirth, so Ra_page_hole stays correct; a stale cursor only means the clock
+//     resumes ahead while the beat backfills behind — it self-heals, it does not lose a page. Wire the reset
+//      into the era wipe when this knob goes default-on (and the fixtures are re-recorded per §5.6).
+async Ra_clock_issue(w, rec):
+    if (!w.c.heist_selfclock) return
+    let rx = rec.c.rx
+    let mine = w.c.repli_mirror_pier
+    let theirs = rec.c.from
+    if (!rx || !mine || !theirs) return
+    let total = +(rec.sc.total || 0)
+    if (!(total > 0)) return
+    let PAGE = +(w.c.repli_page || 2)
+    let W = +(w.c.heist_window || 16)                           // window in PAGES; FIXED this stage (AIMD later)
+    let PARK_CEIL = (w.c.heist_park_ceiling == null ? 20000 : +w.c.heist_park_ceiling)
+    let ts = w.c.ra_want_ts = w.c.ra_want_ts || {}
+    let wanted = w.c.ra_wanted = w.c.ra_wanted || {}
+    let pfx = rec.sc.id + ':'
+    let outstanding = 0
+    for (let k in ts) { if (k.indexOf(pfx) === 0) outstanding = outstanding + 1 }
+    if (outstanding >= W) return                                // window full — the clock waits (backpressure)
+    let map = this.Ra_chunk_have(rec)
+    let nowms = Date.now()
+    let cur = +(rec.c.ask_next || 0)
+    let issued = 0
+    while (outstanding < W && cur < total) {
+        if (this.Ra_page_hole(map, cur, PAGE, total)) {
+            let key = rec.sc.id + ':' + cur
+            let parkedAt = w.c.ra_parked && w.c.ra_parked[key]
+            let parked = parkedAt && (nowms - parkedAt < PARK_CEIL)
+            // a page already stamped (in flight OR parked) is ALREADY in `outstanding` — advance past it;
+            //  a fresh hole with window room is the clock's to send.
+            if (!ts[key] && !parked) {
+                ts[key] = nowms
+                wanted[key] = 1
+                await this.Repli_want_next(w, rx, mine, theirs, rec.sc.id, 'opus', cur)
+                outstanding = outstanding + 1
+                issued = issued + 1
+            }
+        }
+        cur = cur + PAGE
+    }
+    rec.c.ask_next = cur
+    if (issued > 0) rec.c.clocked = (rec.c.clocked || 0) + issued
 
 // Ra_restock_beat — the KEEP_AHEAD fan-out ACROSS the catalog (Radiola's req_restock redrawn on Repli
 //  offers — Radio_todo §0): while one track plays, keep the PREVIEWS of the next Ra_keep_ahead records

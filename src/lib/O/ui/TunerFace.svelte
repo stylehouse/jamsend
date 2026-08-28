@@ -52,7 +52,7 @@
         <div class="tf-src">
             <button class="tf-srcbtn" class:on={!source.own}
                 onclick={() => pick_source(false)}
-                title="play your friends' collections">⚯ friends</button>
+                title="play your friends' collections">friends</button>
             <!-- "local music", not "my crate" (the human 2026-08-07).  The pair reads as a place-vs-place
                  choice now — friends' machines or this one — where "my crate" named a possession and left
                  you to infer that possession was the thing on this disk. -->

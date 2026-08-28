@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '46caad99abe9528d~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '70b6a54be3abb0a8~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -196,7 +196,24 @@ e_Vyto_commission(A, w, e) {
     //       directly, and proves the STATIONS), while the DRIVE — what decides when to stir on a live
     //        page — is exactly what a Book must not have an opinion about.  Gating here keeps the
     //         live fix whole and every recorded rhythm untouched.
-    if (w.c.vw_frame) this.Vyto_stir_soon(w)
+    //  …EXCEPT ON A LIVE HUMDINGER TAB WITH NO FRAME (2026-08-28, the no-cells cold boot).  vw_frame is
+    //   a render-only fact — Vytui's publish_frame is its ONE writer — and on a cold tab it simply never
+    //    lands (the static stage under the Butler never re-fires fit_frame), so the gate above starves the
+    //     commission's ONLY guaranteed stir: no scan ever runs, the mirror stays empty, and a first-time
+    //      listener gets the copper background with NO CELLS forever (settled organs never bump a grapple
+    //       watch either).  A drive-heartbeat stamp was tried first and died with the drive: the deferred
+    //        commission pumps AFTER the resident Book's last drive pass, so no heartbeat outside this verb
+    //         reliably sees it land.  The commission LANDING is the one seam that always fires, so here the
+    //          machine stamps its own default rectangle (the exact 800×450 Vyto_solve|Vyto_normal fall back
+    //           to) and stirs — a real publish_frame later overwrites and re-stirs (it no-ops on equal dims).
+    //  THE BOOK CONTRACT HOLDS: every recorded fixture comes from a runner tab, and a runner has no
+    //   humdinger — so the else below never fires there and every recorded rhythm stays byte-identical.
+    //    Only a live end-user room (humdinger) takes the stamp, which is exactly the DRIVE's jurisdiction.
+    if (w.c.vw_frame) { this.Vyto_stir_soon(w) }
+    else if (this.top_House && this.top_House().c.humdinger) {
+        w.c.vw_frame = { w: 800, h: 450 }
+        this.Vyto_stir_soon(w)
+    }
 
 },
 // Vyto_grapples — derive the watch set.  watch_c(Scannable) was aimed one joint too high:

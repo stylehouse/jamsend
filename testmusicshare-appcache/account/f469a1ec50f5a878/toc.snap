@@ -1,0 +1,11 @@
+Identity:f469a1ec50f5a878,prepub:f469a1ec50f5a878,born:2026-08-12,nick:palm-ray,friendly:Andete,pub:f469a1ec50f5a8780f4dbb408daf3b52bf2f6cfff1be03608e1c49eb1d390b42,key:3ba8fc774020ccd8a0e6ac38fb6109814d7426291374994a510b1bd3abc63078
+  Peering,name:f469a1ec50f5a878,friendly:Andete
+    Idzeug:1,to:Music,next:1
+    Pier,pub:7950f300faa8a4f9,friendly:S,since:1786598209
+      Peering,name:7950f300faa8a4f9,friendly:S,pub:7950f300faa8a4f9aa9cac488f5e8154a645c3befa88524297d097eee3efab6d
+      Grant:Music,by:7950f300faa8a4f9aa9cac488f5e8154a645c3befa88524297d097eee3efab6d,for:f469a1ec50f5a8780f4dbb408daf3b52bf2f6cfff1be03608e1c49eb1d390b42,time:1786541308,sign:bca22e4d8419e810b6b74c386b4260899ee7c0c1eb74ad85d3a69f20e43f82024e125e5f61c9bb92f6c8af4a3dbfa4fbd4d8bdf4747259188905855151f7f200
+      Grant:Music,by:f469a1ec50f5a8780f4dbb408daf3b52bf2f6cfff1be03608e1c49eb1d390b42,for:7950f300faa8a4f9aa9cac488f5e8154a645c3befa88524297d097eee3efab6d,time:1786541308,sign:8013ab1ec9d7bdac4ed17380b3879ee92d93cbed4798031d322adc7eee70b6ada5a924154986337bb3ee344c279e3b537a8d23db06f10e01deb3a0700f42bd00
+      IveGot,by:records,count:0
+      IveGot,by:artists,count:0
+  SocialGraph
+    Edge,a:f469a1ec50f5a878,b:7950f300faa8a4f9,at:1786598209

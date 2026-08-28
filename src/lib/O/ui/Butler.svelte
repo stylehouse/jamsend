@@ -309,17 +309,25 @@
     //   and on a reloaded invited tab every one of them was false at once: a COMPLETELY BLANK CARD,
     //    fullscreen, with no timer.  There is a floor state now (`dark`), so every reachable
     //     combination renders something.  The ladder is the six-step flow's order:
-    //      door — an unresolved invite (the hold), or a counted-zero friend count (the offer)
+    //      door — an unresolved invite (the hold), or an old-link relic (the offer)
     //      tap  — the machine wants the music share opened (boot_gate)
     //      arc  — the roster has spoken: the boot log, the advice, the give-up controls
     //      dark — nothing has spoken yet: the honest "we are up before the machine is"
     //     (`sealed` from the sketch is SUBSUMED: the panel's own ✓ report is the sealed surface,
     //      and the seal flips the friend count, which advances this ladder to `tap` — step 4 of
     //       the flow — by itself.)
+    // ── NO BEG-TO-SHARE ON A NEW TAB (the owner 2026-08-28: *"avoid the `music here is shared with
+    //  friends` beg-to-share screen… on a new tab. and just throw them in there"*).  A counted-zero
+    //   friend count no longer opens the door — a friendless tab boots straight through the arc into the
+    //    app, and the invite-a-friend offer keeps living in-app on the Door glass cell (DoorFace mounts the
+    //     same InvitePanel), which is where it belongs once it is no longer a gate.  `friendless` is still
+    //      read below (it gates the per-invite "put this to the side" release), just not to hold the screen.
+    //       An actual invite `landing` and an old-link `relic` still open the door: those are arrivals with
+    //        a real action, not a nag at someone who came to listen.
     let stage = $derived.by(() => {
         if (landing) return 'door'
         if (gate.wanted) return 'tap'
-        if (friendless || relic) return 'door'
+        if (relic) return 'door'
         if (view.lines.length) return 'arc'
         return 'dark'
     })

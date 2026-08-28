@@ -86,6 +86,15 @@
     //     cells gets exactly the face it got before this existed.
     let pose = $derived.by(() => { void H?.version; void tick; return String(n?.c?.pose ?? 'big') })
     let small = $derived(pose === 'small')
+    // ── PEERLESS: put the invite forward, right here (the owner 2026-08-28: *"in this case of being new
+    //  and peerless they have the invite button put forward, on the Radio UI even? next to the local
+    //   playing origin sayer"*).  We removed the fullscreen beg-to-share, so a new listener lands straight
+    //    in the app playing their own shelf — and the one thing they still need, a way to bring a friend, now
+    //     sits beside the ♪ LOCAL badge instead of greeting them at the door.  `door_friends === 0` is a
+    //      COUNTED zero (stamped by standup, same read the Butler used) — `=== 0`, never `!x`, so it stays
+    //       dark until the ghost has actually counted, rather than flashing on every boot's pre-count.  The
+    //        button navigates to the Door cell (Sounditron_focus, world-resolved) where the QR + paste live.
+    let peerless = $derived.by(() => { void H?.version; void tick; return (H?.c as any)?.door_friends === 0 })
 </script>
 
 <!-- SMALL IS THE WHOLE FACE, not a folded player (DoorFace's discipline, same reason): one early
@@ -143,11 +152,22 @@
     <!-- provenance badge, unmistakably (the human 2026-08-07: "the UI in the player should be clear its
          remote, or local") — its own object like everything else here. -->
     {#if face.by}
-        <div class="rf-src rf-src-remote">⚯ from {face.byName || 'a friend'}</div>
+        <div class="rf-src rf-src-remote">from {face.byName || 'a friend'}</div>
     {:else if face.solo && face.title && face.state !== 'off' && face.state !== 'digging'}
         <div class="rf-src rf-src-local">♪ LOCAL · {soloWhy(face)}</div>
     {:else if face.title && face.state !== 'off' && face.state !== 'digging'}
         <div class="rf-src rf-src-local">♪ LOCAL — your own record</div>
+    {/if}
+    <!-- THE INVITE, PUT FORWARD FOR A PEERLESS LISTENER — sits right under the ♪ LOCAL sayer, because
+         "playing your own record, alone" is the exact moment bringing a friend is the obvious next move.
+         Shows only on a counted-zero friend count, and only while something local is actually saying so
+         (the same visibility as the local badge above), so it never nags a tab that has friends or a
+         player sitting off.  Press → the Door cell, where the invite QR + paste already live.
+         WORDED AS A FACT WITH A DOOR IN IT (the owner 2026-08-28: "have the thing by LOCAL say
+          'no peers ever, [invite some]' where invite some is a link to the Door"). -->
+    {#if peerless && face.by == null && face.title && face.state !== 'off' && face.state !== 'digging'}
+        <div class="rf-src rf-src-local">no peers ever, <button class="rf-invite-link" onclick={() => H?.Sounditron_focus?.('Door')}
+            title="bring a friend in to listen together (opens the Door, where the invite QR lives)">invite some</button></div>
     {/if}
     {#if face.note}<div class="rf-note">{face.note}</div>{/if}
     <!-- terse on purpose (the owner 2026-08-21: "I'd like this message to just be '!tape'") — the
@@ -181,7 +201,9 @@
         {:else if face.state === 'digging' && !face.note}
             <span class="rf-chip">{face.own ? 'digging your crates…' : 'looking for a friend to play…'}</span>
         {:else if face.first}
-            <span class="rf-chip">{face.pool > 0 ? `▶ plays your friends' music — ${face.pool} ${face.pool === 1 ? 'track' : 'tracks'} ready` : face.stock > 0 ? '▶ waiting for a friend — your own crate is in the Tuner' : '▶ waiting for a friend to come online'}</span>
+            <!-- OWN-RADIO FIRST (the owner 2026-08-28: "should just get on with your own Radio ASAP") —
+                 a stocked shelf is an invitation to press play NOW, never a waiting room for a friend. -->
+            <span class="rf-chip">{face.pool > 0 ? `▶ plays your friends' music — ${face.pool} ${face.pool === 1 ? 'track' : 'tracks'} ready` : face.stock > 0 ? `▶ your own records — ${face.stock} ready to play` : '▶ nothing on the shelf yet'}</span>
         {/if}
     </div>
 </div>
@@ -248,6 +270,18 @@
     }
     .rf-src-remote { background: rgba(127, 200, 232, 0.16); color: #8fd0ee; border: 1px solid rgba(127, 200, 232, 0.4); }
     .rf-src-local  { background: rgba(182, 201, 168, 0.13); color: #b6c9a8; border: 1px solid rgba(182, 201, 168, 0.32); }
+    /* the peerless invite nudge — a plain sentence with a warm link in it ("no peers ever, invite some"),
+       the link a real button that opts pointer-events back in through the .rf overlay's
+       pointer-events:none shield.  Sits just under the ♪ LOCAL badge, quiet enough not to fight the
+       player but present enough to be the obvious next move. */
+    .rf-invite-link {
+        pointer-events: auto; cursor: pointer;
+        display: inline; padding: 0 2px; margin: 0;
+        font-size: inherit; font-weight: 600;
+        background: none; border: none;
+        color: #e9b84e; text-decoration: underline; text-underline-offset: 2px;
+    }
+    .rf-invite-link:hover { color: #ffd76e; }
     /* the small facts file in a wrapping row of chips, each its own object */
     .rf-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; max-width: 100%; }
     .rf-chip {

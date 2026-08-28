@@ -42,7 +42,56 @@ Sounditron(A,w):
 // Sounditron_drive — beat dispatch (the SwarmStaple mould: fire a beat's setup once per new
 //  step_n, tracked req-local on req.c.did_step), then let the witness see every pass.
 async Sounditron_drive(w, req):
+    // REGISTER THE ROSTER EVERY PASS, NOT FROM A BEAT (2026-08-28, the cold-boot hang — a first-time nobody
+    //  never got into the app).  `arrive.playing` (the ONLY Supervisor_arrival in the whole tree) and the
+    //   sound.* watches used to register ONLY in beat 2 (Sounditron_machine, dispatched at n===2).  But a COLD
+    //    tab's Story toc seeds from an empty|partial OPFS, so the resident Book "completes" at n=2 before
+    //     step_n is ever set to 2 — beat 2 never fires — so the arrival is never DECLARED, Supervisor_arrived
+    //      reads 'none', and the Butler holds forever.  swarm.*/radio.* dodged this because their ghosts
+    //       register every tick; the arrival is a property of THE MACHINE too, so it belongs on the machine's
+    //        heartbeat — this drive, which the eternal `wrangle` req runs every belief pass regardless of which
+    //         Book step (if any) was reached.  Sounditron_supervise is idempotent per-key and a no-op until the
+    //          Supervisor stands, so an every-pass call is cheap; it registers once, before teardown, and the
+    //           null-subject arrival then survives the Book's teardown for the Supervisor heartbeat to re-read.
+    //  (beat 2 still calls it too — harmless, now a no-op — and the "register before the glass" ordering holds:
+    //   this runs at the top of the drive, ahead of the n===1 glass dispatch below.)
+    this.Sounditron_supervise(w)
     let n = (this.c.run)?.c.step_n
+    // COLD-BOOT GLASS — THE SAME DISEASE AS THE ROSTER ABOVE (2026-08-28).  The glass is commissioned
+    //  only by the n===1 beat, but a cold tab never sets step_n (its Story toc "completes" at n=2 before
+    //   step_n ever lands), so no beat fires and Sounditron_glass never runs: the world exists (something
+    //    mints w:Vyto) but is NEVER COMMISSIONED, so vw.c.commission|grapples stay null and the arrival
+    //     hangs forever on a glass that was handed nothing to draw.  The glass is a property of THE MACHINE
+    //      — a humdinger end-user tab needs it up regardless of the Book — so commission it here when no
+    //       beat will.  Idempotent (glass_done latch + find-or-create organs), so an every-pass call is a
+    //        no-op once committed.  GATED on n==null so every BOOK run — which sets step_n and drives the
+    //         glass through beat 1 exactly as recorded — stays byte-identical (only a live user tab is n==null
+    //          with a humdinger).
+    if (n == null && this.top_House && this.top_House().c.humdinger) this.Sounditron_glass(w)
+    // UNSTARVE THE LIVE GLASS'S FIRST SCAN (2026-08-28, the no-cells hang — the fresh-eyes agent's trace).
+    //  The commission's initial stir is vw_frame-GATED (Vyto.g:185, the Book hand-crank contract), and
+    //   vw_frame is a RENDER-ONLY fact: Vytui's publish_frame is its one writer and on a cold peerless
+    //    tab it never lands — so the commission never kicks Vyto_scan, the mirror stays empty, and the
+    //     glass draws its copper background with NO CELLS while the settled organs never bump a grapple
+    //      watch to stir it either.  So the MACHINE stamps the model's own default rectangle (the exact
+    //       800×450 Vyto_solve|Vyto_normal already fall back to) and kicks the stir publish_frame would
+    //        have — a real measure later just overwrites it and re-stirs (publish_frame no-ops on equal
+    //         dims).  One fact unblocks every vw_frame consumer at once: the initial scan, Vyto_normal,
+    //          Vyto_solve's frame, and the sound.glass probe.
+    //  GATED ON HUMDINGER ALONE, deliberately NOT on n==null like the glass fallback above: the resident
+    //   Book DOES run on a live tab's boot (a 1-step cold toc still fires do_step n=1, so step_n stays 1
+    //    forever after — the first cut hid this stamp inside the n==null branch and it never executed).
+    //     Every RECORDED fixture comes from a runner tab, which has no humdinger, so recordings stay
+    //      byte-identical; the live tab's own check-run is already lenient.  Commission-gated so a bare
+    //       un-commissioned world is never stamped, and idempotent once the frame exists.
+    if (this.top_House && this.top_House().c.humdinger) {
+        let vy = this.Sounditron_vyto ? this.Sounditron_vyto() : null
+        let vw = vy ? vy.vw : null
+        if (vw && vw.c.commission && !vw.c.vw_frame) {
+            vw.c.vw_frame = { w: 800, h: 450 }
+            if (this.Vyto_stir_soon) this.Vyto_stir_soon(vw)
+        }
+    }
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         // stand the GLASS at the very FIRST step (the human: "some Vyto output from the very first
@@ -209,6 +258,16 @@ Sounditron_glass(w):
         door = w.i({ Door: 'open', face: 'Door' })
         door.c.up = w
     }
+    // the LINK cell — the device-link ceremony (copy this account to a Cave) as its OWN cell, a peer of
+    //  the Door (the owner: "a separate Cell like Door|Radio for LinkDevice, which is also in the Butler
+    //   sometimes").  The particle is only the anchor; LinkFace reads live House state.  It is grappled
+    //    into the glass ONLY while a link is in flight (Swarm_link_active, in the organ set below), so it
+    //     takes over for the procedure and folds back to the music the instant it's done.
+    let link = w.o({ Link: 1 })[0]
+    if (!link) {
+        link = w.i({ Link: 1, face: 'Link' })
+        link.c.up = w
+    }
     // the UPTIME heartbeat (the human: "an uptime counter somewhere I can see continuously update in
     //  the Vyto") — a cell whose UptimeFace ticks every second off its own timer (no world bump, so
     //   the layout never re-tessellates for it).  `since` on .c (runtime, never snapped): uptime is a
@@ -320,10 +379,31 @@ Sounditron_commission(w):
     //   up-next already folded on `anyKeep`; the Radio did not, so a heist opened into a glass still
     //    dominated by the player.  Now the whole standing set folds and the heist has the bag to
     //     itself until the last keep leaves — at which point everything grapples straight back.
+    // %Link IS REACHED, NOT RESIDENT (the owner: "when I click Link Device in the Door, nav to a new cell
+    //  called LinkDevice, which we can abandon — to focus the UI more").  So Door and Radio are the always-on
+    //   pair; the Link cell is grappled ONLY while it is the subject (someone pressed "link a device" in the
+    //    Door → focus_to 'Link') or a link is in flight (Swarm_link_active), and is abandoned by pressing
+    //     Door|Radio, which moves focus off it and folds it away.  Otherwise it costs no cell at all — it rests
+    //      as one button in the Door.
     for (const q of anyKeep ? [{ Door: 1 }] : [{ Radio: 1 }, { Door: 1 }]) {
         let row = w.o(q)[0]
         if (row) organs.push(row)
     }
+    // an ARRIVING account must surface itself — on the receiving device the ferry lands with no press, so a
+    //  link that goes active auto-focuses the Link cell ONCE (the w.c.link_surfaced latch) and then yields to
+    //   any deliberate press away; when the ceremony ends (active goes false) the latch clears and a focus
+    //    still parked on Link falls back to the Door|Radio default, so a finished link never strands the belly.
+    let linkActive = 0
+    try { linkActive = this.Swarm_link_active ? this.Swarm_link_active(w) : 0 } catch (e) { linkActive = 0 }
+    if (linkActive && !w.c.link_surfaced) { w.c.focused = 'Link'; w.c.link_surfaced = 1 }
+    if (!linkActive && w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
+    // FIND IT HERE, NOT IN A SIBLING VERB (2026-08-28, the owner's "undefined link" catch): the first cut
+    //  referenced `link`, a variable that exists only in Sounditron_glass's scope — so the moment the Link
+    //   cell was actually asked for (press "Link Device" in the Door), the commission THREW mid-build and
+    //    the whole glass died.  The particle is minted by Sounditron_glass on this same w, so o() finds it;
+    //     guarded so a pre-glass commission can never push undefined into the grapple set.
+    let link = w.o({ Link: 1 })[0]
+    if ((linkActive || w.c.focused === 'Link') && link) organs.push(link)
     // the transfer HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback but I don't see
     //  any"): Heist_keep_beat mints and keeps current a persistent dontSnap %Transfer cell on the radio
     //   world, but a cell only draws once it's in this commission's grapple set — same law as every other
@@ -435,10 +515,17 @@ Sounditron_commission(w):
         //     a small lit cluster IS the report, seen rather than inferred.
         //  Minted like %Transfer: a persistent dontSnap cell on the RADIO world (krw), holding no state of
         //   its own — the face reads live.  Rides with the deck, so an open heist still gets the room.
+        //  ── …AND THE GRAPPLE IS CUT ON A LIVE TAB (the owner 2026-08-28, on meeting it bare: *"'0/0 the
+        //   dial can reach - 0 unheard' so... yeah, don't need that"*).  The standing pattern: only the
+        //    CELL goes — the row still mints (dontSnap, on krw) and ShuffleFace stays registered, so
+        //     restoring is one line.  HUMDINGER-GATED so the cut touches only the end-user glass: a Book
+        //      records on a runner tab WITHOUT humdinger, keeps the push, and every Sounditron fixture
+        //       stays byte-identical (the bomb — break this gate and the fixture set goes red).
         let shuf = krw && krw.oai ? krw.oai({ Shuffle: 1, dontSnap: 1 }) : null
         if (shuf) {
             if (shuf.c.up !== krw) shuf.c.up = krw
-            organs.push(shuf)
+            let shH = this.top_House ? this.top_House() : null
+            if (!(shH && shH.c.humdinger)) organs.push(shuf)
         }
     }
     // the DIAGNOSTICS toggle cell (always present) + the three it gates (Beat · Uptime · Door), grappled ONLY
@@ -788,6 +875,16 @@ Sounditron_commission(w):
         //   nobody mints any more is not a cell that leaves on its own.
         for (const sat of w.o({ Sat: 1 })) w.drop(sat)
         if (focusOrgans.length) organs = focusOrgans
+        // ── THE WAY-BACK ENSURE (2026-08-28, the owner stranded on a one-cell glass: *"there's no way
+        //  back to the Radio from there! it's the only Cell on the screen. we need to do some ensuring!"*).
+        //   A live glass must always carry the Radio or the Door — the two ways home.  A commission that
+        //    has NEITHER is a wrong-world build (the Sounditron_focus bug drew exactly this: a bare world
+        //     where only the oai-minted %Shuffle could exist, dispatched over the good glass) — REFUSE it,
+        //      so the standing glass survives whatever went wrong upstream.  Inside the humdinger gate:
+        //       Books commission whatever their fixtures recorded.
+        let wayback = 0
+        for (const org of organs) { let omk2 = Object.keys(org.sc)[0]; if (omk2 === 'Radio' || omk2 === 'Door') { wayback = 1 } }
+        if (!wayback) return 0
     }
     if (!organs.length) return 0
     // THE RE-MINT TELL (2026-08-23, the vanish hunt): this guard firing on any commission but the
@@ -916,7 +1013,7 @@ Sounditron_focus_step(w):
     // THE PLAYER IS HOME, so it heads the ring and it is the one carried as ABSENCE — stepping onto
     //  it deletes the key rather than pinning it, which keeps "no explicit pick" and "the Player" the
     //   same state.  Pin the default instead and the ladder could never promote a keep or an alarm.
-    let ring = ['Radio', 'Door', 'Shuffle']
+    let ring = ['Radio', 'Door']
     let cur = w.c.focused || 'Radio'
     let i = ring.indexOf(cur)
     let next = ring[(i + 1) % ring.length]
@@ -945,6 +1042,27 @@ Sounditron_focus_to(w, key):
     this.Sounditron_commission(w)
     this.feebly_ponder()
     return 1
+
+// Sounditron_focus — a FACE's navigation, world-resolved.  A cell face wants to make some other cell the
+//  belly but does not hold the Vyto world: its source particle lives in the radio|swarm world, not the
+//   glass (RadioFace's %Radio is minted on the radio world, the Door's %Door on the glass — only the
+//    latter carries `.c.up`).  So resolve the live glass HERE, authoritatively (Sounditron_vyto, the same
+//     walk the glass badge trusts), and hand it to focus_to.  No-op if the glass isn't up yet.  This is the
+//      one navigation seam a face should call — no face should reconstruct the Vyto world by hand.
+//  ⚠ THE WORLD IT HANDS ON IS THE CLIENT'S, NOT THE GLASS'S (2026-08-28, the Link Device wreck).  The
+//   organs — %Radio, %Door, %Link — live on the RUN world the commission was built FROM; the walk finds
+//    the w:Vyto the commission was dispatched TO.  Commissioning the Vyto world "worked": it found no
+//     organ rows, oai-MINTED a bare %Shuffle (the only oai in the organ set — the one cell that can
+//      exist on any world), and dispatched a one-cell glass with no way home, on both live tabs.  Every
+//       BUD press was immune because buds close over the commission's own w — only this face seam
+//        resolved wrong.  e_Vyto_commission stamps `vw.c.client_w` from the req, so the run world is one
+//         hop away; the bare-vw fallback covers a pre-stamp glass, and the way-back ensure now refuses
+//          the wreck even if some future caller repeats this.
+Sounditron_focus(key):
+    let vw = this.Sounditron_vyto().vw
+    if (!vw) return 0
+    let cw = vw.c.client_w || null
+    return this.Sounditron_focus_to(cw || vw, key)
 
 // Sounditron_belly_keep — WHICH HEIST IS THE SUBJECT, as ONE function (2026-08-13).  Two callers need
 //  this answer — the belly ladder's rungs 1|1b, and the `stage_want` the keep-grapple loop hands out —
@@ -1914,6 +2032,12 @@ Sounditron_supervise(w):
     //   now clears it on `ok` AND `moot`.  This function re-runs every beat, so each return to silence
     //    hands the next bad patch a fresh 20s rather than one grace for the life of the tab.
     this.Supervisor_patient(sup, 'sound.audible', 20, 'if it stays quiet — tap the page once, browsers hold sound until you do')
+    // THE PEERLESS OBSERVER — a standing row that only speaks when this tab has no peers, so a stranger who
+    //  stumbled onto the site can SEE that the app is theirs to play rather than watch it hang on friend
+    //   rows that will never turn.  Standing (never latches), moot for anyone with friends, and its note is
+    //    the diagnostic for the arrival: if arrive.playing is stuck while this reads `ok`, the wedge is
+    //     elsewhere; if this reads `wrong`/`moot`, its note names why (glass not up, or peers uncounted).
+    this.Supervisor_watch(sup, 'sound.solo', 'you can always play your own music here', 'standing', 'Sounditron_probe_solo', null, sound)
     // THE ARRIVAL — the finish line, and the only watch on the roster that a face is allowed to wait
     //  for (Supervisor_arrival declares it; Supervisor_arrived is what the Butler asks).  Last rung of
     //   the arc on purpose: `sound + 5` sits inside the gap-of-ten the stage list leaves for exactly
@@ -1928,7 +2052,17 @@ Sounditron_supervise(w):
     //       reporter uses (Supervisor_log_tick's `c.humdinger`), for the same reason.
     //  A runner therefore reads `Supervisor_arrived → 'none'` and the Butler is off over a Book anyway.
     if (this.top_House().c.humdinger) {
-        this.Supervisor_watch(sup, 'arrive.playing', 'the glass is up and music is playing — you have arrived', 'milestone', 'Sounditron_probe_arrived', w, sound + 5)
+        // NULL SUBJECT, NOT `w` (2026-08-28, the peerless-hang root cause).  Arrival is NOT the run's fact:
+        //  the glass and the radio are live properties of the machine that outlive the resident boot Book,
+        //   exactly like `sound.grant` above (registered null for the same reason).  With `w` as subject this
+        //    watch was ORPHAN-STAMPED `unknown` and then CULLED the instant that Book tore down (a few seconds
+        //     in — right as SwarmStandup's 5s counted-zero was landing), so the probe never got a second read
+        //      and the peerless relaxation inside it never fired: the tab hung forever on three green rows.  A
+        //       peered tab escaped only because a friend's track auto-plays and LATCHES `met` before teardown; a
+        //        peerless tab has nothing to auto-play, so it died with the Book.  Null subject reads ALIVE and
+        //         is never culled, so the heartbeat keeps re-running the probe until peerless+glass ⇒ arrived.
+        //          (The probe now reads the radio off `radio_w`, not the null `w` — see its header.)
+        this.Supervisor_watch(sup, 'arrive.playing', 'the glass is up and music is playing — you have arrived', 'milestone', 'Sounditron_probe_arrived', null, sound + 5)
         this.Supervisor_arrival(sup, 'arrive.playing')
         // AND A PATIENCE ON IT, because the Butler now holds until this milestone rather than lifting on
         //  a clock of its own (2026-08-10, the owner: *"it quits right after 'friend comes online'… we
@@ -2146,6 +2280,50 @@ Sounditron_houses():
     if (!M) return []
     return [M].concat(M.o({ H: 1 }) ?? [])
 
+// Sounditron_peerless — does this tab have NO music peers, as a SETTLED fact.  1 = peerless (nobody to
+//  play with, nothing that will auto-play), 0 = has|will-have peers, null = cannot tell yet.  Prefer
+//   SwarmStandup's 5s-debounced, monotonic counted-zero on Mundo.c (`door_friends`) — the same signal the
+//    Door beg-screen and the peerless invite button read.  FALL BACK to a live friend-pier read when that
+//     field is not stamped (no SwarmStandup mounted, or before its first count) so arrival is never wedged
+//      merely because a UI stamp has not landed — the failure the owner watched *"just sit there"* on.  A
+//       friend pier is one bearing a `Grant:'Music'` (the same tell everywhere else), so a device-link Cave
+//        never counts as a peer.  Cross-ghost reads (`this.Swarm_*`) are fine — every method is on the House.
+Sounditron_peerless():
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c && top.c.door_friends === 0) return 1
+    if (top && top.c && top.c.door_friends > 0) return 0
+    let self = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!self) return null
+    let peer = this.Swarm_peering ? this.Swarm_peering(self) : null
+    if (!peer) return null
+    let friends = peer.o({ Pier: 1 }).filter((p) => p.o({ Grant: 'Music' })[0])
+    return friends.length === 0 ? 1 : 0
+
+// Sounditron_probe_solo — THE PEERLESS OBSERVER (the owner 2026-08-28: *"an extra Supervisor thing in this
+//  peerless case to simply observe that"* + *"a nobody who stumbles upon the site is allowed to play their
+//   own music with it"*).  A STANDING row that watches the one path a stranger takes — no peers, but the
+//    glass is up and their own shelf is theirs to play.  It does NOT gate arrival (that stays arrive.playing's
+//     job); it exists so the state is LEGIBLE on the arc instead of a silent hang, and its note carries the
+//      raw values that say WHY arrival has or has not fired.  `moot` when there is nothing to observe (a
+//       peered tab, or peers not counted yet); `ok` once peerless AND the glass is drawing; `wrong` — naming
+//        the blocking rung — while peerless but the glass is not up.  Reads `Sounditron_peerless` so it and
+//         the arrival agree by construction, never by two hand-written copies of the same test.
+Sounditron_probe_solo(w, sup):
+    let pl = this.Sounditron_peerless()
+    if (pl !== 1) { return { verdict: 'moot', note: pl === null ? 'peers not counted yet' : 'you have friends — not solo' } }
+    let found = this.Sounditron_vyto()
+    if (!found.vw) { return { verdict: 'wrong', note: 'peerless — but no glass yet' } }
+    let vw = found.vw
+    // MODEL-SIDE LIVENESS, NOT A RENDERED FRAME (2026-08-28, the cold-glass hang).  A peerless tab's glass
+    //  settles static under the Butler and never re-fires Vytui's fit_frame, so vw_frame|mirror (both render
+    //   facts) never land — but the app IS theirs to play the instant the glass is COMMISSIONED with organs
+    //    (commission + grapples, stamped in e_Vyto_commission).  Mirrors Sounditron_probe_arrived's peerless
+    //     rung so this observer and the arrival agree by construction, never by two hand-written copies.
+    if (!vw.c.commission) { return { verdict: 'wrong', note: 'peerless — the glass is not commissioned yet' } }
+    let organs = (vw.c.grapples || []).length
+    if (!organs) { return { verdict: 'wrong', note: 'peerless — the glass was handed nothing to draw' } }
+    return { verdict: 'ok', note: organs + ' organs — no peers, the app is yours to play' }
+
 // Sounditron_probe_arrived — THE ARRIVAL: the glass is up and drawing, AND music is actually coming
 //  out.  The owner 2026-08-10: *"the Butler is supposed to carry you all the way, letting you know
 //   what's happening, until the Vyto glass is up and running AND playing the thing you want."*
@@ -2176,6 +2354,30 @@ Sounditron_probe_arrived(w, sup):
     let found = this.Sounditron_vyto()
     if (!found.vw) return { verdict: 'wrong', note: 'no glass yet' }
     let vw = found.vw
+    // THE RADIO OFF THE LIVE radio_w, NOT THE SUBJECT (2026-08-28, the teardown fix).  This watch is now
+    //  registered with a NULL subject so it OUTLIVES the resident boot Book — whose run-world used to be this
+    //   watch's subject and got culled/orphan-stamped the instant the Book tore down (a few seconds in, right
+    //    as door_friends was settling), which is why the peerless relaxation below never got a second read and
+    //     the tab *"just sat there"*.  With a null subject the passed `w` is null at read time, so find the
+    //      radio the canonical way every other post-boot reader does: `top_House().c.radio_w` (Radio.g's one
+    //       stamp), falling back to `w` for any caller that still passes a world.  Computed FIRST now, because
+    //        the peerless rung below needs it and must run ABOVE the vw_frame gate (next comment).
+    let radio_w = this.top_House ? (this.top_House().c.radio_w || w) : w
+    let radio = radio_w ? radio_w.o({ Radio: 1 })[0] : null
+    // NO-PEERS ARRIVAL, ABOVE THE FRAME GATE (2026-08-28, the cold-glass hang — a peerless nobody parked on
+    //  *"peerless — glass has not drawn a frame yet"*).  `vw_frame` is a RENDER-ONLY fact: Vytui's
+    //   publish_frame is its ONE writer, fired once at stage mount, and a cold peerless tab's glass settles
+    //    STATIC under the Butler so fit_frame never re-fires and the frame never lands.  So the arrival must
+    //     NOT wait on it — a peerless tab's claim is *"you can play your own music here"*, which is TRUE the
+    //      instant the glass is COMMISSIONED with organs (commission + grapples, both stamped synchronously in
+    //       e_Vyto_commission — model facts the machine owns) and a Radio to press ▶.  It does not need a
+    //        measured frame or a drawn mirror, both render facts a stranger's static glass never produces.
+    //         DELIBERATELY BEFORE the frame|mirror|sound gates: a peered tab falls through to the full ladder
+    //          below, where a drawn glass genuinely matters (its friend's track arrives on its own).  Reads
+    //           `Sounditron_peerless()===1` — the SETTLED counted-zero (door_friends) with a live-pier
+    //            fallback — so an about-to-be-peered tab is NOT relaxed and still waits for music.
+    if (radio && vw.c.commission && (vw.c.grapples || []).length && this.Sounditron_peerless() === 1) return { verdict: 'ok', note: (vw.c.grapples || []).length + ' organs — no peers, ready to play' }
+    // ── THE PEERED LADDER: a drawn glass genuinely matters here, so the frame is a rung ─────────────
     if (!vw.c.vw_frame) return { verdict: 'wrong', note: 'the glass has not drawn a frame yet' }
     if (!vw.c.commission) return { verdict: 'wrong', note: 'the glass has not been commissioned yet' }
     let grapples = (vw.c.grapples || []).length
@@ -2183,7 +2385,6 @@ Sounditron_probe_arrived(w, sup):
     let cells = vw.c.mirror ? vw.c.mirror.o().length : 0
     if (!cells) return { verdict: 'wrong', note: 'the glass has drawn no cells yet' }
     if (Object.keys(vw.c.normal_said || {}).length) return { verdict: 'wrong', note: cells + ' cells — but organs are missing' }
-    let radio = w ? w.o({ Radio: 1 })[0] : null
     if (!radio) return { verdict: 'wrong', note: 'no radio yet' }
     if (!this.Radio_sound) return { verdict: 'unknown', note: 'Radio_sound not loaded' }
     let s = this.Radio_sound(radio)

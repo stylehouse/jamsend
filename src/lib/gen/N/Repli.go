@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'c9c9b73d4e9385d7~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'a4c03014157a8e9f~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -773,10 +773,25 @@ async Repli_serve_parked(w, pier) {
     if (!pier) return
     let PAGE = +(w.c.repli_page || 2)
     let lib = this.Repli_src_for(w, pier)
+    // BURST BUDGET (Backpressure_todo §3.3 + the 2026-08-26 field note — the live 2050-unemit flood).  A
+    //  transcode-frontier advance can make HUNDREDS of accumulated parked wants ready at once, and this loop
+    //   served EVERY one in a single synchronous pass — an un-paced burst of repli_page straight into the
+    //    sink's SERIAL inbox drain (sha256-verify + mint per frame, under the beliefs mutex), which is exactly
+    //     the arrival rate the inbox backstop sheds at 2000.  This is the ONE ask/serve path with no budget:
+    //      the sink's asks are already bounded (Ra_pull_beat INFLIGHT=2 × LEAD, Ra_restock_beat want<B), so a
+    //       flood this deep can only come from the SOURCE dumping a backlog it accumulated while parked.  Cap
+    //        the pages served per advance; the REST stay parked — still visible, re-served on the next release
+    //         or self-healed by the sink's RTO re-ask — so a backlog DRIBBLES out instead of dumping.
+    //  Book-invisible by construction: no Book parks anywhere near this many, so no fixture moves — a
+    //   production-only ceiling, exactly like the inbox backstop it relieves (heaviest Book step books ~46).
+    let BUDGET = +(w.c.repli_serve_parked_budget || 32)
+    let served = 0
     for (const p of pier.o({ parked_want: 1 })) {
+        if (served >= BUDGET) break
         let rec = this.Repli_find_record(w, p.sc.id, lib)
         if (!rec || !this.Repli_page_ready(rec, +(p.sc.from_idx), PAGE)) continue
         await this.Repli_serve_want(w, pier, { header: { id: p.sc.id, stream: p.sc.stream, from_idx: +(p.sc.from_idx), from: p.c.reply_to, to: p.c.reply_from } })
+        served = served + 1
         w.c.repli_unparked = (w.c.repli_unparked || 0) + 1
         await pier.rm({ parked_want: 1, id: p.sc.id, from_idx: '' + (+(p.sc.from_idx)) })
     }
@@ -1355,6 +1370,14 @@ Repli_land_rtt(w, pier, mirror) {
     if (w.c.ra_parked) delete w.c.ra_parked[key]
     if (w.c.ra_tries) delete w.c.ra_tries[key]                  // a clean landing resets the backoff ladder
     rec.c.last_land_ts = nowms                                  // the tail probe's quiet-clock (Ra_pull_beat)
+    // §5.6 (Backpressure_todo.md) — the ACK-CLOCK, gated OFF by default. A completed page is the one event
+    //  that PROVES the pipe has capacity, and until now it drove nothing: the next want waited on the 600ms
+    //   beat, so throughput was bound at window÷beat (§1.1). If the pull side registered a clock (only when
+    //    w.c.heist_selfclock is on — Ra_pull_beat), tell it a page just landed so it can issue AHEAD at wire
+    //     speed between beats. Unregistered — every Book, the idle app, self-clock off — this is a dead branch
+    //      and NOTHING changes (byte-identical, the repli_on_land stance one hop up). O(1) here: the hook only
+    //       ARMS a coalesced post_do; it never sends inline in this drain (inside the beliefs mutex).
+    if (w.c.repli_clock) { try { w.c.repli_clock(w, rec) } catch (er) {} }
 
 },
 // Repli_rtt_note — Jacobson/Karels, verbatim, per source Pier: srtt tracks the mean, rttvar the mean

@@ -138,8 +138,19 @@
         big_size = Math.floor(Math.min(window.innerWidth * 0.92, window.innerHeight * 0.8))
         big = true
     }
+    // NAME BEFORE INVITE, AS A JAMMED PROCESS (the owner 2026-08-28: "must have a name to get the
+    //  Invite worked on" then "it should be UI process spawning, and jam the Invite before it begins" —
+    //   NOT a thrown error, NOT a dead button).  Pressing invite unnamed SPAWNS the invite process and
+    //    jams it at its first stage: the namer (already rendered whenever `!named`) becomes step 1 of
+    //     the thing you started, and the moment the name lands the process resumes on its own — the QR
+    //      appears without a second press.  The name-ask stays loose everywhere else; the invite is the
+    //       one act the name exists for (it rides the QR, the friend sees it at the seal), so the rule
+    //        is SELF-APPLIED here at the spawn — the ghost mint stays clean and never complains.
+    let mint_wanted = $state(false)
+    $effect(() => { if (named && mint_wanted) { mint_wanted = false; mint() } })
     async function mint() {
         err = ''
+        if (!named && !iz) { mint_wanted = true; return }
         try {
             // the door must be dialable before anyone scans — force the station standup here too
             //  (idempotent; the $effect usually beat us to it)
@@ -707,7 +718,8 @@
             </span>
             {/if}
             {#if !named && !iz}
-                {@render namer('what do friends call you? the name rides your invites')}
+                <!-- the hint knows when it is step 1 of a spawned invite: the jam names itself -->
+                {@render namer(mint_wanted ? 'name yourself — your invite mints the moment you do' : 'what do friends call you? the name rides your invites')}
             {/if}
             <!-- said BEFORE the mint button, never after: the point is to stop someone minting a QR a
                  friend will scan for nothing.  Stated as what is certain (no folder ⇒ no sharing) and
@@ -814,7 +826,7 @@
                 <span class="ip-tally">♪ {tally.records} records reachable · {tally.piers} {tally.piers === 1 ? 'shelf' : 'shelves'} counted</span>
             {/if}
             {#each friends as p (p.sc.pub)}
-                <span class="ip-friend" title={p.sc.pub}>⚯ {p.sc.friendly || p.sc.pub}{p.o({ Grant: 'Music' })[0] ? ' · ⇄ Music' : ''}{ivegot(p) != null ? ' · ♪ ' + ivegot(p) : ''}</span>
+                <span class="ip-friend" title={p.sc.pub}>{p.sc.friendly || p.sc.pub}{p.o({ Grant: 'Music' })[0] ? ' · ⇄ Music' : ''}{ivegot(p) != null ? ' · ♪ ' + ivegot(p) : ''}</span>
             {/each}
         </div>
     {/if}

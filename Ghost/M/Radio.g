@@ -2154,10 +2154,42 @@ Radio_nudge(w):
         this.Radio_crossover(w, radio)
         return
     }
-    if (radio.sc.Radio !== 'digging') return
+    if (radio.sc.Radio !== 'digging') { this.Radio_autopress(w, radio); return }
     let era = (radio.c.era || 0) + 1
     radio.c.era = era
     this.Radio_pump(radio, era)
+
+// Radio_autopress — THE PEERLESS LISTENER'S RADIO STARTS ITSELF (the owner 2026-08-28: *"do start
+//  playing it automatically"* / *"should just get on with your own Radio ASAP"*).  A peered tab
+//   auto-starts when a friend's track arrives (Sounditron_listen, beat 6) — but a COLD peerless tab
+//    never runs beats (its 1-step toc finishes before any beat fires), so the only press was the
+//     human's, behind a screen saying their own records are ready.  Reached from Radio_nudge's
+//      radio-is-off path, which fires per stood record during the boot dig — so stock settling is
+//       itself the trigger, no new heartbeat needed.
+//  THE GATES, each load-bearing:
+//   · humdinger — live end-user rooms only; Books run on runner tabs and stay byte-identical.
+//   · !ever_played && !auto_pressed — once a sitting (both `.c`, reload re-arms — the c.crossed
+//      discipline: an arrival, not a policy), and a radio that has ever played was paused
+//       DELIBERATELY, which an auto-press must never overrule.
+//   · radio off — a playing|digging|paused radio is already somebody's decision.
+//   · stock > 0 — something of your own to actually play.
+//   · Sounditron_peerless() === 1 — the SETTLED counted-zero; an about-to-be-peered tab keeps the
+//      friend-first behaviour and waits for their music.
+//  Radio_go without a gesture rolls the pipeline silently ('deaf' — the AC resumes on ANY page
+//   interaction via the keep-awake tumble), so the worst case is music standing ready at first touch.
+Radio_autopress(w, radio):
+    let M = this.top_House ? this.top_House() : null
+    if (!M || !M.c.humdinger) return 0
+    if (radio.c.ever_played || radio.c.auto_pressed) return 0
+    if (radio.sc.Radio && radio.sc.Radio !== 'off') return 0
+    let st = w.o({ Stoker: 1 })[0]
+    if (!st || !(+(st.sc.stock || 0) > 0)) return 0
+    let pl = this.Sounditron_peerless ? this.Sounditron_peerless() : 0
+    if (pl !== 1) return 0
+    radio.c.auto_pressed = 1
+    let p = this.Radio_go(radio, null)
+    if (p && p.catch) p.catch((er) => {})
+    return 1
 
 // Radio_crossover — THE FIRST FRIEND TRACK CUTS IN (the owner 2026-08-10: *"it should switch to
 //  playing from the peer's stream when their first track becomes ready"*).
@@ -2437,7 +2469,18 @@ async Stoker_look(st, era):
         // first landing of the churn: nudge — the radio starts on it while we keep digging
         if (got > 0 && landed === 0) this.Radio_nudge(w)
         landed = landed + got
-        await new Promise((r) => setTimeout(r, 250))
+        // GENTLER AFTER THE FIRST LANDING, but ONLY WHEN ALONE (the owner 2026-08-28: "don't go too
+        //  hard making Records for the self Radio… but do play them", then "don't go hard only if
+        //   they're alone, so they don't get a vibe like something might happen").  A PEERED tab digs
+        //    at full pace — energy is honest there, a friend's music really is coming.  An ALONE tab
+        //     strolls (1.2s between digs) once something playable landed: the first record stands fast
+        //      and plays (the nudge above), and the rest digest without the CPU churn that makes a
+        //       settled room feel like a waiting room.  HUMDINGER-gated too, so a runner/Book keeps
+        //        the recorded 250ms rhythm and every fixture stays byte-identical.
+        let MH = this.top_House ? this.top_House() : null
+        let alone = this.Sounditron_peerless ? this.Sounditron_peerless() : 0
+        let stroll = (MH && MH.c.humdinger && landed > 0 && alone === 1) ? 1200 : 250
+        await new Promise((r) => setTimeout(r, stroll))
         if (st.c.era !== era) return
     }
     this.Stoker_census(st, shelf, radio)

@@ -1,0 +1,13 @@
+story:SwarmFerry
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.005
+      sample=0.005,at=1787832751
+      sample=0.004,at=1787832996
+    TimeTotal:step,avg=0.005
+      sample=0.005,at=1787832751
+      sample=0.004,at=1787832996
+  step,dige:2d1121ca35c66bc3

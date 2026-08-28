@@ -98,11 +98,24 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
       Read §5.5's landed-note before building on it — especially the rule it cost a red to learn:
        **`ra_want_ts` is now an OUTSTANDING marker, so every reader must pair it with a presence
         check.**
-3. **NEXT: the self-clocking half of §5.6** — the same seam learns to DRIVE: a landed page issues the
-    next want (the ack-clock), so throughput stops being bound by 6 wants × 2 chunks ÷ 600ms. The
-     worked build plan, traps included, is inline in §5.6 (2026-08-06); §5.5's arrival bookkeeping
-      is the accounting it reads. This one MOVES chunk-path fixtures — re-record task #11's two
-       Books green BEFORE landing it, so each red has one suspect.
+3. **BUILT, GATED OFF (2026-08-28): the self-clocking half of §5.6.** The arrival seam now learns to
+    DRIVE — a completed page issues the next want (the ack-clock) instead of waiting on the 600ms beat,
+     so throughput stops being bound by 6 wants × 2 chunks ÷ 600ms. Landed as `Ra_clock_arm` +
+      `Ra_clock_issue` (`Ra.g`), fired from `Repli_land_rtt`'s new `if (w.c.repli_clock)` branch
+       (`Repli.g`), all **gated behind `w.c.heist_selfclock` (default OFF)**. The build notes and the
+        one deviation from the worked plan are in §5.6's landed-note below. Why gated rather than
+         fixture-recorded: §5.6 says this MOVES chunk-path fixtures and wants MusuRaStream/MusuRaChase
+          re-recorded green FIRST — but that is a supervised landing, and it was built the day the human
+           was leaving the daemon running. So it ships OFF (no `repli_clock` registered ⇒ the fire branch
+            is a dead branch ⇒ byte-identical; MusuHeist 22/22 + the MusuReplica Float32 control 14/14
+             caveat:0 on the live runner confirm the gate does not leak), and the human flips it on
+              against the live daemon to watch goodput converge on wire-rate. **To make it DEFAULT-ON:**
+               re-record MusuRaStream/MusuRaChase green, wire `rec.c.ask_next` into `Swarm_note_era`'s
+                rebirth wipe (the one rough edge, noted in `Ra_clock_issue` — Swarm.g was another agent's
+                 file this stage), then the AIMD half (item 4) turns the fixed `W` into `rec.c.win`.
+4. **Then §5.6's AIMD half** (the window becomes a variable the loop moves — one variable,
+    by construction of the clock stage) and the fuller req shape of §4 only if the beat still
+     misbehaves once the clock runs.
 4. **Then §5.6's AIMD half** (the window becomes a variable the loop moves — one variable,
     by construction of the clock stage) and the fuller req shape of §4 only if the beat still
      misbehaves once the clock runs.
@@ -125,6 +138,26 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
            **legible matter — C particles under the Pier, not closure locals** — so the loop is
             ordinary C ops, Story can `%see` it, and Vyto can render the convoy instead of us
              grepping `☠`. One representation serves the loop and the view; it dogfoods the one bet.
+
+**ROOT-CAUSE UPDATE (2026-08-28, static trace of the serve/ask paths).** Traced every ask/serve path
+ against the 2050 depth. The ASK side is already bounded everywhere: `Ra_pull_beat` holds at most
+  `INFLIGHT`(2) × `LEAD`(32) outstanding, and `Ra_restock_beat`'s mirror/preview walk carries an
+   *aggregate* `want < B` budget across records. A flood 2050 deep cannot come from either — so it comes
+    from the **source**. The one un-budgeted path is **`Repli_serve_parked`** (`Repli.g`): on a transcode-
+     frontier advance it re-served EVERY ready parked want in a single synchronous pass. A source that
+      accumulated a large parked backlog (the sink re-asking for minutes while the transcoder ran behind —
+       §3.1c/§3.1e territory) therefore DUMPS the whole backlog as one un-paced `repli_page` burst the
+        instant the frontier moves, and the sink's serial inbox (sha256 + mint per frame, one mutex) sheds
+         it at 2000. The `tx 0p/0KB` on the flooded tab fits: the sink is not asking *during* the burst —
+          it is drowning in a push its own re-asks provoked minutes earlier. **First cut LANDED (2026-08-28,
+           unverified against a live flood):** a per-advance serve budget (`w.c.repli_serve_parked_budget`,
+            default 32) so a backlog *dribbles* instead of dumps; the remainder stay parked and self-heal via
+             the RTO re-ask. Book-invisible by threshold (no Book parks near 32), so no fixture moves —
+              **provably harmless, but its HELP is unverifiable** until item 00's `MusuNeGrind` reproduces the
+               burst (or the daemon re-floods). Caveat not ruled out without the live shelf: the opus
+                live-stream (`Swarm.g:3428`) is a second possible contributor. This does NOT retire items 3/4
+                 — a budget *paces* the burst; only the ack-clock/window *bounds the steady state*, and only a
+                  receive-side signal (§5.3-style, keyed on inbox depth) lets the source stop before it floods.
 
 **SCOPE FLAG for the human — §7.4 may want reopening (flagged, NOT acted on).** `Portability_doc`
  §0 now bets pool↔pool phone-to-phone transfer is the MAJORITY path ("design the pool paths as
@@ -1013,6 +1046,39 @@ Replace the constant `B` with a byte window under **AIMD** — additive increase
 *Prove live:* time the 65MB pull before/after; goodput vs wire-rate in the HUD (they should
  CONVERGE — a widening gap under the clock means duplicate asks, i.e. the accounting is wrong);
   `skips` ~0 on the `beat` electrode mid-pull; `relay_bulk_dropped` flat at W=16.
+
+**LANDED, GATED OFF (2026-08-28) — `Ra_clock_arm` + `Ra_clock_issue` (`Ra.g`), the fire branch in
+ `Repli_land_rtt` (`Repli.g`), knob `w.c.heist_selfclock` default OFF, window `w.c.heist_window`
+  default 16 pages.** How it maps onto the plan above, and the deviations:
+- **Registration is in `Ra_pull_beat`, not an arming site.** The plan pictured Ra registering the
+   hook at share-up. But `Ra_pull_beat` rides the station `w` in EVERY pull path (live share AND Musu
+    loopback), so an idempotent `if (w.c.heist_selfclock && !w.c.repli_clock) w.c.repli_clock = …` at
+     the top of the beat cannot miss an arming site and needs no edit to Swarm.g (another agent's file
+      this stage). The knob-gate means OFF ⇒ never registered ⇒ `Repli_land_rtt`'s branch is dead ⇒
+       byte-identical, which is the whole harmlessness argument.
+- **OUTSTANDING is derived from the stamps, not a counter.** The plan said "decrement the rec's
+   outstanding count." A counter drifts (a dropped want, a park that never lands). §5.5 already made
+    "a `ra_want_ts` stamp exists" MEAN "outstanding," so `Ra_clock_issue` just SCANS the rec's stamps
+     — self-correcting by construction: land drops one, park keeps one (holds the window, §5.3), a lost
+      want keeps one until the beat re-asks. No `rec.c.outstanding`, no decrement seam, nothing to drift.
+- **The hook ARMS, it does not send.** Fired inside the inbox drain (the beliefs mutex), `Ra_clock_arm`
+   only sets `rec.c.clock_armed` and `H.post_do`s the real issuance as its own Atime pass (Tribunal's
+    `bulk_pump_armed` idiom). A burst of N pages in one drain ⇒ ONE issuance, after the drain — the
+     "O(1) inline" discipline the plan demanded.
+- **Both the arm and the issue re-check the knob**, so toggling `heist_selfclock` off LIVE silences the
+   clock even though the hook stays registered on `w` (registration is one-way).
+- **Telemetry: `rec.c.clocked`** counts clock-issued wants and rides the pull's HUD entry
+   (`entry.clocked`) beside `srtt`/`goodput`, so `runner_ask world` SHOWS the clock firing.
+- **The one rough edge, left deliberately:** `rec.c.ask_next` (the clock's forward cursor) is NOT reset
+   on rebirth — `Swarm_note_era` wipes the `w.c` want maps but not this per-rec cursor, and Swarm.g was
+    off-limits this stage. Held chunks survive a rebirth so `Ra_page_hole` stays correct; a stale cursor
+     only means the clock resumes ahead while the beat backfills behind — it self-heals, never loses a
+      page. Wire the reset in when the knob goes default-on.
+- **Verified harmless, NOT yet helpful.** MusuHeist 22/22 `ok_pct:1` (chunk path) + MusuReplica 14/14
+   `caveat:0` (Float32 control — proves the gate didn't leak into the no-hook path), live runner, clock
+    OFF. Its HELP is unmeasured until the human flips `heist_selfclock` on against the live daemon (watch
+     `clocked` climb and goodput converge on wire-rate) or item 00's `MusuNeGrind` exercises it on the
+      bench. Same "harmless now / helpful live" posture as the 2026-08-28 `Repli_serve_parked` budget.
 
 ### 5.7 Negotiated chunk size
 256KB is fixed everywhere. The latency argument against big frames is serialization delay —

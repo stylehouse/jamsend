@@ -2296,6 +2296,21 @@ export class House extends StorableHousing {
                     H.top_House().c.persist_asked = true
                     try { (navigator as any).storage?.persist?.() } catch {}
                 }
+                // THE POOL WRAP (Portability_todo §0 "the one gap"): a shareless phone never got a
+                //  MountNav, so Wormhole_mount_pool — gated on mn.is_mounted — never fired and the
+                //   SoundPool stayed dark even in a secure context.  Stand a MINIMAL MountNav over an
+                //    empty base (a nav that owns nothing: every non-pool path is honestly null/no-op,
+                //     exactly right for a listener with no library) so the OPFS `pool/` mount has a
+                //      MountNav to attach to.  Guarded on a runtime .c flag so it stands once per
+                //       session, and only when OPFS actually exists (a secure context: https or
+                //        localhost — over plain http on a LAN ip navigator.storage is absent, so the
+                //         pool mount answers 'unavailable' and this stays a harmless empty MountNav).
+                //  Wormhole_mount_pool runs every Wormhole tick (below), but this branch returns early,
+                //   so we call it here to light the pool this same tick.
+                if (!A.c.nav && typeof navigator !== 'undefined' && (navigator as any).storage?.getDirectory) {
+                    A.c.nav = new MountNav({ label: 'listen-only' }, 'listen-only')
+                    this.Wormhole_mount_pool(A)
+                }
                 return w.i({ see: '🎧 listening only — this browser cannot open a folder' })
             }
             H.top_House().c.disk_gated = true

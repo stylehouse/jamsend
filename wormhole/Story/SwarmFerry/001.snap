@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmFerry,Run
+    A:SwarmFerry
+      self,round	{"mung":["age"]}
+      w:SwarmFerry
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

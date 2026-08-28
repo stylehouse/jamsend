@@ -11,6 +11,12 @@
 		     a raster monolith PNG for iOS is still owed (see spec/PWA_install_handover.md). -->
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
 		<meta name="theme-color" content="#06070c" />
+		<!-- iOS IGNORES SVG apple-touch-icons and falls back to a blurry page screenshot, so a
+		     RASTER PNG is required for a real Add-to-Home-Screen icon.  favicon.png (128×128) is a
+		     stopgap until a proper 180×180 monolith PNG is exported from icon.svg (no rasterizer in
+		     the container — see spec/history/PWA_install_handover.md).  The SVG line stays for the
+		     engines (desktop/Android Chrome) that DO honour it. -->
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/favicon.png" />
 		<link rel="apple-touch-icon" href="%sveltekit.assets%/icon.svg" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="mobile-web-app-capable" content="yes" />
