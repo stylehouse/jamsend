@@ -909,6 +909,15 @@ Peeroleum_bound_inbox(inbox, w, pier):
     //  throws inside the delivery that is trying to drain it.  Drops the OLDEST regardless of
     //   state, so a flood of never-finishing reqs can still not pin the pump.
     let live = inbox.o({req: 'unemit'})
+    // §5.6 receive-side backpressure signal (Backpressure_todo.md): stash the inbox depth for O(0) (live is
+    //  already in hand) so the PULL side can read "am I drain-bound?" in O(1). Ra_pull_beat suppresses a
+    //   RE-ask when this is high, because a "missing" page is then far likelier sitting UNDRAINED in this
+    //    very inbox than lost on the wire — re-asking it is the flood (the source re-serves a page we already
+    //     hold, deepening the inbox, slowing the drain, firing more re-asks: a collapse inside a BOUNDED
+    //      window). ts-stamped so a stale-high reading (a flood that ended during a quiet spell with no fresh
+    //       stride) is IGNORED rather than wedging re-asks forever.
+    pier.c.inbox_depth = live.length
+    pier.c.inbox_depth_ts = Date.now()
     if (live.length >= 2000) {
         // DRAIN TO THE CAP, not one row per visit (2026-08-06, from the human's own `deliver` electrode:
         //  `inbox` climbing 3071 → 3431 monotonically across 22 minutes, i.e. 70% past a cap that was

@@ -86,18 +86,9 @@
     //  different relays and the pier can NEVER seal ("nobody came online"), so name it right at the QR.
     let origin = $state('')
     $effect(() => { try { origin = new URL(location.href).host } catch { origin = '' } })
-    // LIVE PEER FEEDBACK — the wait was silent (you couldn't tell a scan had landed until the late
-    //  "nobody came online").  Read whether a MyCave pier has actually SEALED to this soul: the moment the
-    //   other device handshakes, this flips ✓ and the ferry is already on its way (the pump-retry sends it).
-    let peer_ready = $state(false)
-    $effect(() => {
-        void H?.version
-        try {
-            const p = self && typeof H?.Swarm_peering === 'function' ? H.Swarm_peering(self) : null
-            const piers = p ? p.o({ Pier: 1 }) : []
-            peer_ready = !!piers.find((x: any) => H.Swarm_pier_live?.(x, 'MyCave'))
-        } catch { peer_ready = false }
-    })
+    // (The old `peer_ready` "✓ connected" flash lived here — removed 2026-08-28.  The pier turning up now
+    //  PULLS the grantor QR→Door (LinkFace) to confirm ON the pier, so a status line in the QR is redundant
+    //   junk; the QR just shows the wait until the pull fires.  See Division_todo §0 grantor-consent landing.)
     // IS A LINK IN FLIGHT ON THIS TAB (an unspent secret / a parked account)?  A reload loses `url` but the
     //  soul's secret persists, so without this the face would show the plain "link a device" button over a
     //   live ceremony and a click would mint a SECOND one — the wedge you couldn't get out of.  When true and
@@ -141,9 +132,7 @@
             {#if received}
                 <div class="ld-note">{received}</div>
             {:else}
-                <p class="ld-deal">A sealed account from <b>{short(arriving_soul())}…</b> is arriving over the
-                    link — accept it and this device <b>becomes that soul</b> (a Cave of it), holding its keys
-                    and serving its library <b>as it</b>.</p>
+                <p class="ld-deal">A sealed account from <b>{short(arriving_soul())}…</b> is arriving over the link.</p>
                 <div class="ld-row">
                     <button class="ld-go" onclick={() => receive(true)}>accept — become this soul</button>
                     <button class="ld-cancel-b" onclick={() => receive(false)}>no</button>
@@ -154,12 +143,8 @@
         <div class="ld-face">
             <div class="ld-cap-big">link a device as your <b>Cave</b></div>
             <InviteQR {url} size={qr_size} bg="#e7dcbe" bare caption="" />
-            {#if peer_ready}
-                <div class="ld-connected">✓ the other device connected — ferrying your account now… accept it there</div>
-            {:else}
-                <div class="ld-wait-big">open this on the other device · …waiting for it to handshake, then I ferry</div>
-                {#if origin}<div class="ld-origin">⚠ the other device must be on <b>{origin}</b> — same origin, or the two land on different relays and never meet</div>{/if}
-            {/if}
+            <div class="ld-wait-big">open this on the other device · …waiting for it to handshake, then I ferry</div>
+            {#if origin}<div class="ld-origin">⚠ the other device must be on <b>{origin}</b> — same origin, or the two land on different relays and never meet</div>{/if}
             <button class="ld-cancel-b" onclick={cancel_link}>cancel</button>
         </div>
     {:else}
@@ -224,6 +209,5 @@
     .ld-wait-big { font-size: .85rem; opacity: .7; }
     .ld-origin { font-size: .8rem; line-height: 1.5; color: #e8c98a; background: #0f0a02; border-radius: .4rem; padding: .45rem .7rem; max-width: 26rem; }
     .ld-origin b { color: #ffcf70; }
-    .ld-connected { font-size: .9rem; line-height: 1.5; color: #9be89b; background: #0c1a0c; border-radius: .4rem; padding: .5rem .8rem; font-weight: 600; }
     .ld-pending { font-size: .8rem; opacity: .8; display: flex; align-items: center; gap: .5rem; }
 </style>

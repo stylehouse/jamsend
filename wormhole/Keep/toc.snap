@@ -11,7 +11,7 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1787905566983,minimised
   DocScroll,of_Doc:Ghost/N/Peeroleum.g
   DocScroll,of_Doc:Ghost/N/Tyrant.g
-  DocScroll,of_Doc:Ghost/M/Radiola.g,scroll_line=14
+  DocScroll,of_Doc:Ghost/M/Radiola.g,scroll_line=2
   DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2608
   DocScroll,of_Doc:Ghost/Story/Peregrination.g,scroll_line=43
   DocScroll,of_Doc:src/lib/ghost/Radios.svelte,scroll_line=761

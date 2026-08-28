@@ -2184,8 +2184,14 @@ Radio_autopress(w, radio):
     if (radio.sc.Radio && radio.sc.Radio !== 'off') return 0
     let st = w.o({ Stoker: 1 })[0]
     if (!st || !(+(st.sc.stock || 0) > 0)) return 0
-    let pl = this.Sounditron_peerless ? this.Sounditron_peerless() : 0
-    if (pl !== 1) return 0
+    // ALONE NOW, not merely peerless (2026-08-28, the sealed-but-offline-friend stuck tab).  A device
+    //  that adopted a Cave / sealed a friend is no longer "peerless" — but if that friend is OFFLINE,
+    //   nothing streams to it and it must still play its own shelf, or it strands on *"nothing has started
+    //    playing..."* forever.  Sounditron_alone_now is peerless OR (sealed friends, none reachable); a
+    //     friend arriving later still cuts in via Radio_crossover.  Humdinger already gated above, so Books
+    //      are untouched.
+    let alone = this.Sounditron_alone_now ? this.Sounditron_alone_now(w) : (this.Sounditron_peerless ? this.Sounditron_peerless() : 0)
+    if (alone !== 1) return 0
     radio.c.auto_pressed = 1
     let p = this.Radio_go(radio, null)
     if (p && p.catch) p.catch((er) => {})

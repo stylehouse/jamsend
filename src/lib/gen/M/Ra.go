@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '141c80153a877dbf~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '39e951bb23bc14ca~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -3818,6 +3818,22 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
     let RTO = typeof this.Repli_rto === 'function' ? this.Repli_rto(rec) : 4000
     w.c.ra_retx = w.c.ra_retx || {}
     w.c.ra_tries = w.c.ra_tries || {}
+    // §5.6 RECEIVE-SIDE BACKPRESSURE (Backpressure_todo.md): am I drain-bound?  A page only counts as
+    //  LANDED once the inbox DRAIN mints it (sha256 + chunk particle), and that drain is O(inbox-depth) per
+    //   frame — so under load it falls behind the MEASURED (short) RTO, and a page sitting undrained in my
+    //    own inbox still reads as a hole.  Re-asking it then IS the flood: the source re-serves a page I
+    //     already hold, which deepens my inbox, which slows the drain, which fires more re-asks — a collapse
+    //      inside a BOUNDED window (the observed 2050 is ~64× the 32-page window, so it is duplication, not
+    //       width).  So when my inbox for THIS source is deep, SUPPRESS re-asks — the missing page is almost
+    //        certainly in here, not lost.  FIRST-asks of new ground still go (bounded by B/LEAD), so forward
+    //         progress never stalls; only the wasteful re-ask of an in-flight page is held.  Book-invisible:
+    //          a loopback inbox drains in-tick, so depth stays ~0 and this never fires.  Knob:
+    //           heist_drainbound_ceiling (default 800, well under the 2000 shed).  The FAR cure is an O(1)
+    //            drain (§5.8) so depth never builds; this stops the duplication meanwhile.
+    let DBCEIL = +(w.c.heist_drainbound_ceiling || 800)
+    let rxp = rec.c.rx
+    let idepth = (rxp && rxp.c && (nowms - (rxp.c.inbox_depth_ts || 0) < 3000)) ? +(rxp.c.inbox_depth || 0) : 0
+    let drainbound = idepth > DBCEIL
     let sent = 0
     let seen = 0
     let off = 0
@@ -3837,7 +3853,10 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
             //    only on land), so one bad spell taxed every later page.  8s is still 2× the honest
             //     default RTO; the ladder keeps its shape below the cap.
             let wait = Math.min(8000, RTO * Math.pow(2, Math.min(tries, 3)))
-            if (!parked && nowms - asked_at > wait) {
+            // drainbound (above) suppresses only a RE-ask (asked_at set): the page is almost certainly
+            //  undrained in my own inbox, so re-asking re-serves what I hold. A FIRST ask (asked_at==0) is
+            //   new ground and still goes — forward progress never stalls on a full inbox.
+            if (!parked && nowms - asked_at > wait && !(drainbound && asked_at)) {
                 // KARN'S RULE bookkeeping: this is a RE-ask (a stamp was already standing), so the page
                 //  that eventually lands cannot be attributed to either ask — mark the key and the
                 //   arrival seam will decline to sample it.  A first ask stays clean and measurable.
@@ -3872,7 +3891,7 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
         let quiet = nowms - (rec.c.last_land_ts || rec.c.pull_ts || nowms)
         let probe_after = Math.max(2 * (typeof this.Repli_srtt === 'function' ? this.Repli_srtt(rec) : 0), 600)
         let armed = !rec.c.tlp_ts || rec.c.tlp_ts <= (rec.c.last_land_ts || 0)
-        if (!parked && armed && w.c.ra_want_ts[key] && quiet > probe_after) {
+        if (!parked && !drainbound && armed && w.c.ra_want_ts[key] && quiet > probe_after) {
             rec.c.tlp_ts = nowms
             w.c.ra_retx[key] = 1          // a probe is by definition a re-ask: no RTT sample off its reply
             w.c.ra_want_ts[key] = nowms   // and it owns the ordinary gate's stamp, so the two never double-fire
@@ -3915,6 +3934,7 @@ async Ra_pull_beat(w, rx, mine, theirs, rec) {
             if (rtt && rtt.n > 0) { entry.srtt = Math.round(rtt.srtt); entry.rto = rtt.rto }
             if (rec.c.tlps) entry.tlps = rec.c.tlps
             if (rec.c.clocked) entry.clocked = rec.c.clocked    // §5.6: wants issued by the ack-clock, not the beat
+            if (drainbound) entry.drainbound = idepth           // §5.6: re-asks held — sink is behind on its own drain
         }
         g.since = nowms; g.held0 = held; g.asked = 0
     }

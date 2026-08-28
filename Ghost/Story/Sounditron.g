@@ -2331,6 +2331,23 @@ Sounditron_peerless():
     let friends = peer.o({ Pier: 1 }).filter((p) => p.o({ Grant: 'Music' })[0])
     return friends.length === 0 ? 1 : 0
 
+// Sounditron_alone_now — NOBODY TO STREAM TO ME RIGHT NOW (the owner 2026-08-28, terminally stuck on a
+//  sealed-but-offline friend: *"Incognito tab is terminally 'nothing has started playing...'"* — Focus_todo
+//   §2.5).  Distinct from `Sounditron_peerless`, which is a fact about the DOOR (do I have any music friend
+//    to invite/message) and is 0 the moment one seal exists.  THIS is a fact about the RADIO and the
+//     ARRIVAL: is anything actually going to play FOR me right now?  A sealed friend who is offline streams
+//      nothing, so my own shelf is what plays — and that IS a true arrival, not a failure to wait out.
+//  · peerless (no music friend at all) ⇒ alone.
+//  · a music friend is LIVE (Sounditron_peer_live — a sealed Music pier heard-from < 30s) ⇒ NOT alone; the
+//     friend-first wait is right and Radio_crossover will cut their track in.
+//  · sealed friends, none reachable ⇒ alone_now.  Relaxing here strands nobody: a friend coming online
+//     later still crosses in over the own-music stopgap.  Callers gate this on humdinger themselves, so a
+//      Book (peer_live simulated) is never relaxed by it and its fixtures cannot move.
+Sounditron_alone_now(w):
+    if (this.Sounditron_peerless && this.Sounditron_peerless() === 1) return 1
+    if (this.Sounditron_peer_live && this.Sounditron_peer_live(w)) return 0
+    return 1
+
 // Sounditron_probe_solo — THE PEERLESS OBSERVER (the owner 2026-08-28: *"an extra Supervisor thing in this
 //  peerless case to simply observe that"* + *"a nobody who stumbles upon the site is allowed to play their
 //   own music with it"*).  A STANDING row that watches the one path a stranger takes — no peers, but the
@@ -2408,7 +2425,18 @@ Sounditron_probe_arrived(w, sup):
     //          below, where a drawn glass genuinely matters (its friend's track arrives on its own).  Reads
     //           `Sounditron_peerless()===1` — the SETTLED counted-zero (door_friends) with a live-pier
     //            fallback — so an about-to-be-peered tab is NOT relaxed and still waits for music.
-    if (radio && vw.c.commission && (vw.c.grapples || []).length && this.Sounditron_peerless() === 1) return { verdict: 'ok', note: (vw.c.grapples || []).length + ' organs — no peers, ready to play' }
+    // ALONE-NOW RELAXATION, humdinger-gated (2026-08-28).  A sealed-but-OFFLINE friend leaves a tab
+    //  "not peerless" yet with nothing streaming to it — the terminal *"nothing has started playing..."*
+    //   hang.  On a LIVE tab, relax on Sounditron_alone_now (peerless OR sealed-friends-none-reachable):
+    //    the same machine-facts arrival (a friend that later comes online still crosses in).  A BOOK (no
+    //     humdinger) keeps STRICT peerless, so a peered Book's arrival verdict — and its snapped loud/met —
+    //      cannot move.  peer_live's 30s heard-window means a genuinely-about-to-connect friend still holds
+    //       the wait; only an unreachable one relaxes.
+    let arr_alone = (this.top_House && this.top_House().c.humdinger && this.Sounditron_alone_now) ? this.Sounditron_alone_now(radio_w) : (this.Sounditron_peerless && this.Sounditron_peerless() === 1 ? 1 : 0)
+    if (radio && vw.c.commission && (vw.c.grapples || []).length && arr_alone === 1) {
+        let anote = (this.Sounditron_peerless && this.Sounditron_peerless() === 1) ? ' organs — no peers, ready to play' : ' organs — no friend reachable now, playing your own'
+        return { verdict: 'ok', note: (vw.c.grapples || []).length + anote }
+    }
     // ── THE PEERED LADDER: a drawn glass genuinely matters here, so the frame is a rung ─────────────
     if (!vw.c.vw_frame) return { verdict: 'wrong', note: 'the glass has not drawn a frame yet' }
     if (!vw.c.commission) return { verdict: 'wrong', note: 'the glass has not been commissioned yet' }

@@ -78,9 +78,17 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
      Template is `MusuHeist` (`Heistation.g:51-399`) — two Piers sealed by Idzeug over one %Station world,
       pinned clock+seed, `Crate_nav_paths` census, Repli jobs. Copy that scaffold and:
      1. **Inject the wire.** At the `Lake_link` call (`Heistation.g:176`) wrap one direction's port with
-         `make_lossy_partner(port, schedule)` (`Reliable.g:91`). Schedule off the pinned seed: a `delay:{seq:N}`
-          spread (non-zero RTT — the estimator finally samples), a `drop:[seqs]` mid-page (re-exercises §3.1b's
-           intra-page hole + the tail probe), one `blackhole` tail seq (the §3.1 tail-loss stall).
+         `make_lossy_partner(port, schedule)` (`Reliable.g:91`). A heist's `repli_page` seqs are DYNAMIC, so
+          the old explicit-seq schedule (`drop:[s]`/`delay:{seq:N}`) can't name them — so **2026-08-28 added
+           PATTERN keys to `make_lossy_partner` (LANDED, additive, PereProof/PereComplain/PereReborn still
+            green):** `dropEvery:N` (drop the first transit of every Nth passing frame — retransmit heals) and
+             `delayAll:N` (hold every passing frame N ticks — the one that WAKES the estimator/clock). ⚠ The
+              open question `delayAll` can't answer on the bench: the RTT sample is wall-clock (`Date.now`), so
+               a non-zero SAMPLE needs real time between want-send and the `tick()`-release — a logical hold
+                alone may read ~0ms if the drive ticks immediately. So the drive must `w.c.lossy_uno.tick()`
+                 each pump pass AND the pump must span real wall time (the live runner's post_do/beat cadence).
+                  This is the FIRST thing to settle when the Book is built — it decides whether the loop is
+                   actually exercised or still inert. Add `blackhole:[tailseq]` for the §3.1 tail-loss stall.
      2. **Few records, MANY chunks each** (item 00's Shape) so pages tile and `Ra_pull_beat` runs over many
          beats — single-page Books never exercise the pull loop, the window, or the clock.
      3. **Turn the loop ON in-Book:** `w.c.heist_selfclock=1` + a chosen `w.c.heist_window` in setup, so the
@@ -226,6 +234,57 @@ Scope is the transport spine — `Heist` / `Ra` / `Repli` / `Peeroleum` / `Tribu
                 live-stream (`Swarm.g:3428`) is a second possible contributor. This does NOT retire items 3/4
                  — a budget *paces* the burst; only the ack-clock/window *bounds the steady state*, and only a
                   receive-side signal (§5.3-style, keyed on inbox depth) lets the source stop before it floods.
+
+**THE FLOOD IS RE-ASK DUPLICATION, NOT WIDTH (2026-08-28, live re-flood, both ends observed).** The human
+ left the daemon serving a real pull and pasted both ends. The decisive numbers: the ask window is ≤32 pages
+  outstanding, yet the sink's inbox hit **2050** — ~64× the window. A bounded window cannot produce 64× its
+   own size of *distinct* pages, so the 2050 is **the same ~32 pages asked and served over and over**. The
+    mechanism, one sentence: *a page only counts as LANDED once the inbox DRAIN mints it (sha256 + chunk
+     particle), that drain is O(inbox-depth) per frame (below) so it falls behind the MEASURED (short) RTO,
+      an undrained page still reads as a hole (`Ra_page_hole` sees the minted chunk map, not the inbox), so
+       the sink re-asks a page already sitting in its own inbox, the source re-serves it, the inbox deepens,
+        the drain slows, more re-asks fire — a congestion collapse inside a bounded window.* It is §3.2's sin
+         (a timeout standing in for three different truths) on the RECEIVE side: *undrained-in-my-inbox* is
+          collapsed into *lost-on-the-wire*.
+ **Why cursors/the budget don't catch it:** the window bounds how far AHEAD you ask; this is duplication
+  WITHIN the window. Worse, the window's own accounting HIDES it — "outstanding" = a `ra_want_ts` stamp,
+   cleared only on MINT, so an arrived-but-undrained page still counts as outstanding → the ack-clock
+    correctly stays silent while the beat's RTO re-asks the very same page. The clock behaves perfectly and
+     the flood happens in the gap between the two. The missing thing is a STATE, not a cursor: the sink has
+      *landed* and *not-landed* but no *arrived-but-not-yet-drained*.
+ **FIX LANDED (2026-08-28), gated + Book-invisible — sink-side self-applied backpressure.** Rather than track
+  per-page "arrived" (the page's `(id,offset)` identity is *inside* the undrained frame — only known once the
+   lines decode in the drain, so per-page tracking is expensive), use the one O(1) fact the sink already has:
+    **its own inbox depth.** `Peeroleum_bound_inbox` stashes `pier.c.inbox_depth`(+`_ts`) for free (it already
+     holds `live`); `Ra_pull_beat` reads `rec.c.rx.c.inbox_depth` and, when it exceeds `w.c.heist_drainbound_ceiling`
+      (default 800, well under the 2000 shed), SUPPRESSES re-asks (and the tail probe) — a "missing" page is
+       then far likelier undrained-in-inbox than lost. FIRST-asks of new ground still go (bounded by B/LEAD),
+        so forward progress never stalls; only the wasteful re-buy of an in-flight page is held. `_ts`-guarded
+         (a stale-high depth from a flood that ended in a quiet spell is ignored, not a permanent wedge).
+          Book-invisible by construction (a loopback inbox drains in-tick → depth ~0 → never fires): MusuHeist
+           22/22 + MusuReplica 14/14 caveat:0 on the live runner confirm it. HUD: `entry.drainbound` shows when
+            re-asks are being held. **Unverified against the live flood** (same caveat as the budget) — the
+             daemon that flooded was up 2.7h on PRE-budget/pre-this code, so NONE of the 2026-08-28 fixes were
+              in that loop; a restart is needed to test any of them.
+ **THE DEEPER AMPLIFIER — the O(depth)-per-frame drain (scoped 2026-08-28; NOT landed, needs human eyes).**
+  The drainbound gate stops the *duplication*; the reason depth builds at all is that the drain is O(depth)
+   per frame, so it loses the race to the RTO. Ranked hot-path costs (see §5.8):
+   - **`Peeroleum_book_unemit`'s dedup query** (`Peeroleum.g:~721`/`:779`): `inbox.oai({req,seq,type,body_hash,
+      body_len})` runs on EVERY frame; `o_query` keys on `req` (O(1) → the whole unemit bucket) then filters
+       seq/type/hash/len (O(depth)). This is the UNCONDITIONAL per-frame O(depth) — the base amplifier in the
+        current (error-free) flood.
+   - **`Peeroleum_rollup_faulty`** (`Peeroleum.g:~1131`): `inbox.o({req:'unemit'}).filter(u=>u.sc.error)` runs
+      per deliver and — the sharp edge — its early-return is `!faulty_owed && !faulty0`, so ONCE a `%faulty`
+       node exists (any error ever, e.g. a startup-hold), it re-scans O(depth) on EVERY later frame. This is
+        the catastrophic amplifier of the *errored* flood family (the giant-stuff / startup-hold thread).
+   - The bound's own scans are amortised (50-frame stride) — minor.
+   Three fixes were scoped, all deferred for review because they touch the transport dedup/cache path (or the
+    generic C layer): (A) an O(1) per-pier `booked[seqkey]→ureq` map for the dedup, with invalidation on
+     drop/reset — Peeroleum-only, ~15 lines, the invalidation is the risk; (B) a multi-level X index so a
+      composite-key query is O(result) not O(depth) — `Stuff.svelte.ts`, ~50 lines, fixes the pattern
+       everywhere but higher blast radius; (C) fix the rollup early-return so a stable `%faulty` isn't
+        re-scanned per frame — ~5 lines, Peeroleum-only. Recommend (C)+(A) together; (B) is the structural
+         option. **Landing any of these needs a human — they are the belief-loop's ingress hot path.**
 
 **SCOPE FLAG for the human — §7.4 may want reopening (flagged, NOT acted on).** `Portability_doc`
  §0 now bets pool↔pool phone-to-phone transfer is the MAJORITY path ("design the pool paths as

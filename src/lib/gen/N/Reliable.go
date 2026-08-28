@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Reliable(): string { return '48e8948c7d8da3ed~g1' },
+    Ghostmeta_Ghost_N_Reliable(): string { return '50a8b7076dec22fe~g1' },
 
 // Reliable — the network-healing floor: an in-order, exactly-once stream over a lossy line.
 //  Pure cursor|ledger algebra, no particles of its own; the methods ride on H and the spine calls them.
@@ -111,6 +111,7 @@ make_lossy_partner(realPartner, schedule) {
     let seen = {}
     let dropped = []
     let duped = []
+    let n_pass = 0
     let deliver = (f) => realPartner.recv(f)
     return {
         recv(frame) {
@@ -127,6 +128,26 @@ make_lossy_partner(realPartner, schedule) {
             //   witness can prove two arrived AND one dispatched (not merely that one was sent).
             if (action === 'dup') { duped.push(seq); deliver(frame); deliver(frame); return }
             if (typeof action === 'object') { held.push({ frame, due: clock + action.delay }); return }
+            // action === 'pass' → PATTERN injection, for DYNAMIC-seq traffic (a heist, where the exact
+            //  repli_page seqs aren't known ahead so the explicit `drop:[s]`/`delay:{}` lists can't name
+            //   them). Both are additive: a schedule with neither key behaves exactly as before.
+            //  · dropEvery:N — drop the FIRST transit of every Nth passing frame; a re-transit passes,
+            //     so the retransmit heals it (the congestion-loss case, at heist scale).
+            //  · delayAll:N — hold EVERY passing frame N ticks. This is the one that WAKES the control
+            //     loop: without it the mock wire lands in-tick (RTT s≈0, estimator inert, ack-clock has no
+            //      "between beats"); with it, released on tick(), inter-arrival is non-zero. NOTE (unproven
+            //       until run on the LIVE runner): the RTT sample is wall-clock (Date.now), so a non-zero
+            //        SAMPLE needs real time between the want-send and the tick()-release — a logical hold
+            //         alone may still read ~0ms if the drive ticks immediately. Tune the drive's tick cadence.
+            if (schedule.dropEvery > 0) {
+                n_pass = n_pass + 1
+                if (n_pass % schedule.dropEvery === 0) {
+                    seen[seq] = (seen[seq] || 0) + 1
+                    if (seen[seq] === 1) { dropped.push(seq); return }
+                    return deliver(frame)
+                }
+            }
+            if (schedule.delayAll > 0) { held.push({ frame, due: clock + schedule.delayAll }); return }
             return deliver(frame)
         },
         tick() {

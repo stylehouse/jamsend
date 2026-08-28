@@ -28,6 +28,25 @@ The device-link ("spread myself out") ceremony runs on a **handshake + ferry**, 
       fragment, and the durable-secret twin; link goes back to plain `?Iz=<invite>`.** The big attended
        refactor (crown-jewel seal + re-record SwarmSpread beat 5) — do it carefully, not blind.
 
+**LANDED 2026-08-28 — GRANTOR CONSENT LIVES ON THE PIER (owner: *"when the Pier turns up we should be pulled
+ out of the QRcode openness over to where we're seeing that Pier having that Adopt with us, to confirm it"* +
+  *"the one place that state goes"*).** The ferry no longer auto-fires on seal. Now:
+  - `Swarm_ferry_on_seal` — on a **humdinger** (live end-user) tab, PARKS `top.c.ferry_confirm = {pub,name,at}`
+     keyed to the just-sealed Cave pier and sends **nothing**. A runner tab (no humdinger, every Book) sends
+      straight through as before — so `SwarmSpread` beat 5 dige is **unchanged (`ac0f77d14fc3ab55`)**, no churn.
+  - `Swarm_ferry_confirm(w)` — the grantor's "✓ send my account", pressed ON the pier; does the one held send.
+     `Swarm_ferry_cancel` also clears `ferry_confirm`.
+  - **DoorFace** is the single home: the adopting pier (and only it) becomes a bordered `.df-adopt` block with
+     ✓/no; other Cave piers get a quiet 🔗 + "your Cave" (they used to render as plain friends — the *"wtf it
+      grants Music?"* confusion was a MyCave pier sitting unmarked in the friend list).
+  - **LinkFace** pulls the grantor QR→Door the instant `ferry_confirm` parks (latched, re-arms on clear).
+  - Verified live: Swarm.go **317901c**, `SwarmSpread` **5/5** + `SwarmStaple` **8/8** green on runner e747cbed.
+  - **OWED on this:** (a) the **3-emoji SAS** on the ferry confirm (the adopt path has `Swarm_adopt_sas`; the
+     ferry confirm currently has no MITM match — owner's *"three icons like jackpot machines"*); (b) a
+      **`ferry_ok` ack** so the grantor's pier graduates "sent"→"adopted & confirmed" (today it can only know
+       "sent" — secret cleared); (c) **live two-tab proof** that the pull + confirm actually crosses the account.
+      See `Trust_todo.md` — this is the first payment on making Trust the protocol beneath the protocols.
+
 **The Cell:** `%Link` (`LinkFace`, in `glass_kinds.ts`, minted in `Sounditron_commission`) is **REACHED, not
  resident** — pressing "🔗 link a device" in the Door calls `Sounditron_focus('Link')` (a new world-resolved
   nav verb for faces), the cell takes the belly, and Door|Radio abandon it. Grappled only while focused or a

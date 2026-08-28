@@ -1364,6 +1364,13 @@ Swarm_station_up(w, ident):
             if (sweep_top.stashed) { delete sweep_top.stashed.ferry_pending_secret }
             console.log('🦑 ferry: swept a stale device-link secret at standup (no MyCave pier to ferry over) — the soul is unstuck')
         }
+        // a parked grantor-confirm whose Cave pier is gone is a DEAD ask — clear it so the Door adopt block
+        //  and the QR→pier pull do not linger against a pier that will never turn live (confirm can't send
+        //   over it anyway).  Same standup-once discipline as the secret sweep above.
+        if (sweep_top.c.ferry_confirm && !livecave) {
+            delete sweep_top.c.ferry_confirm
+            console.log('🦑 ferry: swept a stale adopt-confirm at standup (its Cave pier is gone) — the Door ask is cleared')
+        }
     }
     // mint the era HERE, at standup, not lazily at first greeting: Swarm_deliver stamps it on every
     //  swarm frame but only `if (w.c.station_era)`, so a station whose voucher/greeting paths both
@@ -4280,11 +4287,43 @@ async Swarm_ferry_on_seal(w, soulIdent, pier):
     // secret from the live seam OR the durable twin (a reloaded ceremony has only the stash)
     let secret = (top.c ? top.c.ferry_secret : null) || (top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null)
     if (!secret) { return }
+    // GRANTOR CONSENT ON THE PIER (live end-user only).  The account is the crown jewels; a real person at a
+    //  humdinger tab confirms the exfiltration ON the adopting pier (Door), where the QR pulls them the instant
+    //   it turns up.  PARK the ask keyed to this pier and send NOTHING — Swarm_ferry_confirm does the one send.
+    //    A runner tab (no humdinger — every Book) has nobody to ask, so it sends straight through here:
+    //     SwarmSpread beat 5 (the-account-ferries-over) stays green by construction, no fixture churn.
+    if (top.c && top.c.humdinger) {
+        if (!top.c.ferry_confirm || top.c.ferry_confirm.pub !== String(pier.sc.pub)) {
+            top.c.ferry_confirm = { pub: String(pier.sc.pub), name: String(pier.sc.friendly || ''), at: this.Swarm_now(w) }
+            console.log('🦑 ferry: a device sealed as my Cave — awaiting my confirm on its pier (pulled to the Door) before I send')
+        }
+        return
+    }
     let sent = await this.Swarm_ferry_send(w, soulIdent, pier, secret)
     if (sent) {
         if (top.c) { delete top.c.ferry_secret }
         if (top.stashed) { delete top.stashed.ferry_pending_secret }
     }
+// Swarm_ferry_confirm — the grantor's "yes, this device may become my Cave", pressed ON the adopting pier in
+//  the Door (where the QR pulled them the instant it turned up).  Flips the consent gate and performs the one
+//   send that on_seal was holding.  No parked ask (or no live pier for it) → no-op.  Returns did-it-cross.
+async Swarm_ferry_confirm(w):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c || !top.c.ferry_confirm) { return 0 }
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!ident) { return 0 }
+    let want = String(top.c.ferry_confirm.pub)
+    let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => String(p.sc.pub) === want && this.Swarm_pier_live(p, 'MyCave'))
+    if (!pier) { return 0 }
+    delete top.c.ferry_confirm
+    let secret = top.c.ferry_secret || (top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null)
+    if (!secret) { return 0 }
+    let sent = await this.Swarm_ferry_send(w, ident, pier, secret)
+    if (sent) {
+        delete top.c.ferry_secret
+        if (top.stashed) { delete top.stashed.ferry_pending_secret }
+    }
+    return sent ? 1 : 0
 // Swarm_ferry_park — the NEW DEVICE heard the sealed account: park it for the human's consent (the UI has
 //  the #fc fragment code and calls Swarm_ferry_consume).  Never auto-imports — becoming a body is decided.
 Swarm_ferry_park(w, ident, frame):
@@ -4320,6 +4359,7 @@ Swarm_ferry_cancel(w):
     delete top.c.ferry_secret
     delete top.c.ferry_pending
     delete top.c.ferrying
+    delete top.c.ferry_confirm
     if (top.stashed) { delete top.stashed.ferry_pending_secret }
     console.log('🦑 ferry: link cancelled — cleared the pending secret and any parked account')
     return 1
