@@ -45,6 +45,10 @@
     function frag_code(): string {
         try { const h = new URL(location.href).hash; const m = /(?:^#|&)fc=([^&]+)/.exec(h); return m ? decodeURIComponent(m[1]) : '' } catch { return '' }
     }
+    // Does this device still carry the #fc code the ferry needs to unseal?  A hand-copied link often loses the
+    //  URL fragment; without it the ceremony runs to the very end and only then fails at receive() with a
+    //   cryptic error.  Surface it EARLY (a warning + a disabled "receive") so the Linkee's wait isn't wasted.
+    let has_code = $derived.by(() => { void H?.version; try { return frag_code() !== '' } catch { return true } })
 
     // ── RECEIVE — a ferried account is parked, awaiting this device's consent ───────────────────────
     let pending = $state<any>(null)
@@ -55,6 +59,25 @@
     })
     // the arriving soul's id, for the human to eyeball (salt is `<soulpub>:<mypub>`)
     const arriving_soul = () => { try { return String(pending?.frame?.salt || '').split(':')[0] } catch { return '' } }
+    // the arriving soul's chosen NAME, if the ferry frame carried it (Swarm_ferry_send) — so the most
+    //  consequential screen names the soul ("receiving the soul of Steve"), not a raw pub8.  Display only.
+    const arriving_name = () => { try { return String(pending?.frame?.friendly || '') } catch { return '' } }
+    // the 3-glyph SAS the human matches against the soul device's Door screen (Swarm_ferry_sas reads the two
+    //  pubs off THIS side's parked frame salt; equal rows on both screens ⇒ no relay swapped a pub).  Async →
+    //   $state, recomputed whenever a fresh ferry parks.
+    let sas = $state('')
+    $effect(() => {
+        void H?.version
+        let active = false
+        try { const tc = H?.top_House?.()?.c; active = !!pending || !!tc?.ferry_confirm || !!tc?.ferry_awaiting } catch { active = false }
+        if (!active) { sas = ''; return }
+        let cancelled = false
+        ;(async () => {
+            try { const row = await H?.Swarm_ferry_sas?.(); if (!cancelled) sas = String(row || '') }
+            catch { if (!cancelled) sas = '' }
+        })()
+        return () => { cancelled = true }
+    })
     let received = $state('')
     async function receive(yes: boolean) {
         err = ''
@@ -65,7 +88,21 @@
             const soul = await H.Swarm_ferry_consume(world(), code, true)
             received = soul ? 'you are now a body of that soul — it lives on this device too' : 'could not join (wrong code, or the seal failed)'
             pending = null
+            if (soul) finalize_url(soul)
         } catch (e) { err = String(e) }
+    }
+    // CEREMONY COMPLETE — the device is now the soul.  Drop the spent ?Iz + #fc we KEPT through the ceremony
+    //  (InvitePanel leaves a MyCave link in the bar until here, so a reload mid-adopt resumes from the URL), and
+    //   pin ?I=<the NEW soul> so a reload now resumes AS it (eed), never re-triggering the adopt or reverting to
+    //    the blank self ("it should be eed when this procedure is complete").
+    function finalize_url(soul: any) {
+        try {
+            if (typeof window === 'undefined' || !window.history?.replaceState) return
+            const u = new URL(location.href)
+            u.searchParams.delete('Iz'); u.hash = ''
+            if (soul?.sc?.prepub) u.searchParams.set('I', String(soul.sc.prepub))
+            window.history.replaceState(null, '', u.toString())
+        } catch {}
     }
 
     // ── LINK — the soul device mints the invite+ferry link and shows its QR ─────────────────────────
@@ -82,13 +119,11 @@
     }
 
     const short = (s: string) => (s ? String(s).slice(0, 8) : '')
-    // the ORIGIN both devices must share — a cross-origin scan (localhost vs djamsend) lands on two
-    //  different relays and the pier can NEVER seal ("nobody came online"), so name it right at the QR.
-    let origin = $state('')
-    $effect(() => { try { origin = new URL(location.href).host } catch { origin = '' } })
-    // (The old `peer_ready` "✓ connected" flash lived here — removed 2026-08-28.  The pier turning up now
-    //  PULLS the grantor QR→Door (LinkFace) to confirm ON the pier, so a status line in the QR is redundant
-    //   junk; the QR just shows the wait until the pull fires.  See Division_todo §0 grantor-consent landing.)
+    // (the cross-origin/relay warning that used to sit under the QR was removed 2026-08-28 — owner: "lose
+    //  that stuff about relays".  Too much text on the sharing page; a mis-scan fails visibly enough.)
+    // (The old `peer_ready` "✓ connected" flash lived here — removed 2026-08-28.  The confirm now lives IN this
+    //  cell as its own "giving your soul to X" phase — the QR just swaps to it when the pier seals — so a status
+    //   line under the QR was redundant junk.  See Division_todo §0 grantor-consent landing.)
     // IS A LINK IN FLIGHT ON THIS TAB (an unspent secret / a parked account)?  A reload loses `url` but the
     //  soul's secret persists, so without this the face would show the plain "link a device" button over a
     //   live ceremony and a click would mint a SECOND one — the wedge you couldn't get out of.  When true and
@@ -101,21 +136,207 @@
     })
     function cancel_link() {
         err = ''
-        try { H?.Swarm_ferry_cancel?.(world()) } catch (e) { err = String(e) }
-        url = ''; pending = null
+        // "no" / cancel = the ONE dismiss now that the ceremony is its own surface: Sounditron_link_close tears
+        //  down the ferry (Swarm_ferry_cancel, idempotent) AND drops top.c.link_lobby, so LinkSurface folds at
+        //   once — no belly cell to un-focus anymore (owner 2026-08-29: the ceremony was pulled out of the belly).
+        try { (H as any)?.Sounditron_link_close?.(world()) } catch (e) { err = String(e) }
+        url = ''; pending = null; sent = ''
+        try { (H?.ave as any)?.bump_version?.() } catch {}
     }
+
+    // ── GRANTOR CONFIRM ("Linking", soul side) — a device sealed as our Cave, so Swarm_ferry_on_seal parked
+    //  top.c.ferry_confirm and held the send.  The QR yields to THIS, alone in the cell; ✓ performs the copy.
+    let confirm = $derived.by(() => { void H?.version; try { return (H?.top_House?.()?.c?.ferry_confirm) ?? null } catch { return null } })
+    // ── LINKEE "connecting" — a MyCave link was redeemed and a soul is inbound but hasn't landed yet (the
+    //  dead-window fix): top.c.ferry_awaiting is armed at redeem (Swarm_redeem) and cleared when the sealed
+    //   account arrives (Swarm_ferry_park → pending takes over) or on cancel.  Fills the blank wait.
+    let awaiting = $derived.by(() => { void H?.version; try { return (H?.top_House?.()?.c?.ferry_awaiting) ?? null } catch { return null } })
+    let sent = $state('')   // the "Linked" phase on the soul side, set once the account has crossed
+    // LINKOR ADVANCE — while the QR is up, keep asking whether a Cave pier has turned up live.  The instant one
+    //  has, Swarm_ferry_poke parks ferry_confirm and the ladder swaps QR → "giving your soul" (the `confirm`
+    //   phase wins).  Tied to reactivity (H.version bumps the moment the %Pier appears) so it leaves the QR the
+    //    moment the Cave is ready — not waiting on the frame pump.  poke only PARKS; the human still confirms.
+    $effect(() => {
+        void H?.version
+        // Poke whenever THIS tab holds a link in flight — while the QR is up (`url`) OR after a reload that
+        //  lost `url` but kept the durable secret (Swarm_link_active is true off the stash twin).  poke reads
+        //   the twin for its secret and re-parks ferry_confirm from the still-sealed Cave pier, so an eed
+        //    refresh snaps straight back to "giving your soul" the instant reactivity ticks — not a blank cell.
+        //     (poke self-guards on `ferrying` and needs a secret, so it's a no-op on the Linkee and mid-send.)
+        try { if (url || H?.Swarm_link_active?.(world())) H?.Swarm_ferry_poke?.(world()) } catch {}
+    })
+    async function do_confirm() {
+        err = ''
+        try {
+            const ok = await H?.Swarm_ferry_confirm?.(world())
+            if (ok) { sent = 'linked'; url = '' }
+            else err = 'could not send — the device may have dropped; try again, or cancel'
+        } catch (e) { err = String(e) }
+    }
+
+    // ── PRESENCE — is the OTHER device actually THERE right now? ─────────────────────────────────────
+    //  Owner: "an online indicator on the giving your soul to, it's important to know if they're there" /
+    //   "offline indicator at both ends".  Copying a soul into thin air is the worst kind of stuck, so
+    //    each end reads the OTHER end's pier `heard_at` — the very pulse warmth DoorFace grades — and
+    //     shows here/fading/away.  Graded against a 1s tick so it DECAYS live even when no new pulse lands
+    //      (a derivation off H.version alone would freeze at the last-heard reading and read "online" forever).
+    let now_tick = $state(Date.now())
+    $effect(() => {
+        if (typeof window === 'undefined') return
+        const id = setInterval(() => { now_tick = Date.now() }, 1000)
+        return () => clearInterval(id)
+    })
+    // STEADY "I want linkage" ASK — while a soul is inbound this cell re-asks the soul device every 3s so its
+    //  grantor-confirm stays parked through any reload on ITS end (owner: "a steady flow of I want Linkage sentiment
+    //   from 495 to eed to keep it focused… 3s wire chatter for the Link ceremony").  Ceremony-scoped — this cell is
+    //    only mounted while Swarm_link_active — and the ghost throttles to ~3s so the ~5s pulse fallback can't double
+    //     it up.  Fires once immediately on mount so the first ask is snappy, then every 3s.  If we lose the other
+    //      end we just keep asking (no giveup); the presence dot shows them offline and it re-lands when they return.
+    // fire one "I want linkage" ask; force=true bypasses the ghost's ~3s throttle for eager first-contact / re-lock.
+    function fire_ask(force: boolean) {
+        try { if (H?.top_House?.()?.c?.ferry_awaiting) H?.Swarm_ferry_ask?.(world(), self, force) } catch {}
+    }
+    $effect(() => {
+        if (typeof window === 'undefined') return
+        fire_ask(true)                                   // pounce immediately on mount (fresh cell OR a reload)
+        const id = setInterval(() => fire_ask(false), 3000)
+        return () => clearInterval(id)
+    })
+    // the %Pier that stands for the OTHER end of whatever link phase we're in.  Linkor: the live MyCave
+    //  pier we're about to pour the soul into (the same find the SAS uses).  Linkee: the soul device we
+    //   sealed to — matched on the arriving soul's pub, falling back to the sole ceremony pier (mid-adopt
+    //    a fresh Linkee holds exactly one).
+    function other_pier(): any {
+        try {
+            const piers = (H?.Swarm_peering?.(self)?.o({ Pier: 1 }) ?? []) as any[]
+            if (!piers.length) return null
+            const tc = H?.top_House?.()?.c
+            if (tc?.ferry_confirm) return piers.find((p: any) => H?.Swarm_pier_live?.(p, 'MyCave')) || null
+            const soulpub = String(tc?.ferry_awaiting?.soul || arriving_soul() || '')
+            if (soulpub) {
+                const hit = piers.find((p: any) => {
+                    const pp = String(p?.sc?.pub || '')
+                    return pp && (pp === soulpub || pp.startsWith(soulpub) || soulpub.startsWith(pp))
+                })
+                if (hit) return hit
+            }
+            return piers[0] || null
+        } catch { return null }
+    }
+    // {rung, ago} — the graded liveness of the other end, or null when there is no pier to read yet.  Same
+    //  rungs as DoorFace (here <15s · fading <45s · else away); `heard_at` is warmed by ANY sealed frame
+    //   from the peer (the hear funnel stamps it), so an active handshake reads "here" without waiting on a pulse.
+    let presence = $derived.by(() => {
+        void H?.version; void now_tick
+        const p = other_pier()
+        if (!p) return null
+        const ha = p.c?.heard_at
+        if (!ha) return { rung: 'away', ago: null }
+        const ago = Math.round((now_tick - ha) / 1000)
+        return { rung: ago < 15 ? 'here' : ago < 45 ? 'fading' : 'away', ago }
+    })
+    // POUNCE THE MOMENT THE OTHER END APPEARS (the "wants-to-happen" feel, owner 2026-08-29): when the soul device
+    //  flips to online, fire a FORCED ask at once rather than waiting out the 3s idle — so the link leaps into the
+    //   confirm as soon as both devices are present.  Linkee-only in effect (fire_ask no-ops without ferry_awaiting).
+    let last_rung = ''
+    $effect(() => {
+        const r = presence?.rung || ''
+        if (r === 'here' && last_rung !== 'here') fire_ask(true)
+        last_rung = r
+    })
 </script>
 
-<!-- ONE FRAME, BOTH ENDS: the same blurb explains the act on the soul device AND the new device, so the
-     language is unified; only the action row below it differs by which side you're on. -->
+{#snippet live_dot(pr)}
+    {#if pr?.rung === 'here'}
+        <span class="ld-live ld-live-here" title="online now — heard a heartbeat within the last few seconds">● online</span>
+    {:else if pr?.rung === 'fading'}
+        <span class="ld-live ld-live-fade" title="was here a moment ago — its heartbeat is going quiet">◐ fading</span>
+    {:else}
+        <span class="ld-live ld-live-away" title="not heard — the other device may be offline, asleep, or on another screen">○ offline</span>
+    {/if}
+{/snippet}
+
+<!-- THE LINK CELL — one cell, one phase at a time, both ends (owner 2026-08-28: *"the Link / Lobby|QR sharing|
+     Linking|Linked experience needs nailing"*, *"it's a huge deal copying your account… should be on its own
+     in the Link cell. both should be"*).  So each phase OWNS the cell — never a row in a list, never crowded by
+     a blurb.  Order = most-urgent first:
+       received → the act is done (this device joined, or you declined)
+       pending  → RECEIVER, "Linking": a sealed account is here — consent to become it (+ SAS match)
+       confirm  → GRANTOR, "Linking": a device sealed as your Cave — confirm the copy (+ SAS match)
+       sent     → GRANTOR, "Linked": the account crossed
+       url      → GRANTOR, "QR sharing": the QR is up, waiting for the other device
+       (else)   → "Lobby": the pitch + the one button.
+     Both sides are dragged here by the auto-surface (Swarm_link_active → Sounditron_commission), so this cell
+     is where the whole ceremony is seen and decided. -->
 <div class="ld-frame">
-    <!-- THE BLURB IS THE INTRO ONLY (the owner 2026-08-28: *"when the QR is open… that stuff should
-         replace everything under the 'Link Device' heading"*).  Once a link is minted (url) or an
-         account is arriving (pending), the ceremony below IS the whole content — the pitch has done
-         its job and the QR/consent takes the room. -->
-    {#if !url && !pending}
+    {#if received}
+        <div class="ld-face">
+            <div class="ld-cap-big">{received === 'declined' ? 'declined' : '✓ soul received'}</div>
+            <p class="ld-deal">{received === 'declined' ? 'no soul was copied — nothing changed on this device.' : received}</p>
+            <button class="ld-cancel-b" onclick={() => received = ''}>done</button>
+        </div>
+    {:else if pending}
+        <!-- LINKEE, "receiving" — the mirror of the Linkor's "giving" (owner: one modality, two symmetric
+             sentences).  A whole device becoming a new soul; the SAS is the anti-MITM check. -->
+        <div class="ld-face">
+            <div class="ld-cap-big">receiving the soul of <b>{arriving_name() || short(arriving_soul()) || 'a device'}</b> {@render live_dot(presence)}</div>
+            <p class="ld-deal">this device becomes a <b>Cave</b> of it — holding its keys and serving its library <b>in its name</b>.</p>
+            {#if !has_code}
+                <p class="ld-warn-note">⚠ this link is missing its seal code — reopen the <b>full</b> QR link from your soul device (a copied link can drop the part after <b>#</b>).</p>
+            {:else if sas}
+                <p class="ld-sas" title="these three must match the other device's screen — if they differ a relay is in the middle: say no"><b>{sas}</b></p>
+            {:else}
+                <p class="ld-sas ld-sas-wait">···</p>
+            {/if}
+            <div class="ld-row">
+                <button class="ld-go" onclick={() => receive(true)} disabled={!sas || !has_code}>receive this soul</button>
+                <button class="ld-cancel-b" onclick={() => receive(false)}>no</button>
+            </div>
+        </div>
+    {:else if confirm}
+        <!-- LINKOR, "giving" — the mirror of the Linkee's "receiving". -->
+        <div class="ld-face">
+            <div class="ld-cap-big">giving your soul to <b>{confirm.name || short(confirm.pub)}</b> {@render live_dot(presence)}</div>
+            <p class="ld-deal">it becomes a <b>Cave</b> of you — holding your keys and serving your library <b>in your name</b>.</p>
+            {#if sas}
+                <p class="ld-sas" title="these three must match the other device's screen — if they differ a relay is in the middle: say no"><b>{sas}</b></p>
+            {:else}
+                <p class="ld-sas ld-sas-wait">···</p>
+            {/if}
+            <div class="ld-row">
+                <button class="ld-go" onclick={do_confirm} disabled={!sas}>give my soul</button>
+                <button class="ld-cancel-b" onclick={cancel_link}>no</button>
+            </div>
+        </div>
+    {:else if sent}
+        <div class="ld-face">
+            <div class="ld-cap-big">✓ soul given</div>
+            <p class="ld-deal">sent to <b>your other device</b> — it can receive your soul now.</p>
+            <button class="ld-cancel-b" onclick={() => sent = ''}>done</button>
+        </div>
+    {:else if awaiting}
+        <!-- LINKEE "connecting" — the link is redeemed and a soul is inbound, waiting on the OTHER device's
+             human to confirm the send.  The dead-window fix: fills what used to be a blank Radio + a lone
+             "✉ MyCave redeeming" row in the Door with an honest, reassuring wait. -->
+        <div class="ld-face">
+            <div class="ld-cap-big">receiving from <b>{short(awaiting.soul) || 'your other device'}</b> {@render live_dot(presence)}</div>
+            <p class="ld-deal">waiting for it to <b>confirm</b> — the other device decides whether to send its soul here.</p>
+            {#if sas}<p class="ld-sas" title="these three must match the other device's screen — if they differ a relay is in the middle: say no"><b>{sas}</b></p>{/if}
+            {#if !has_code}<p class="ld-warn-note">⚠ heads up: this link is missing its seal code (the part after <b>#</b>) — reopen the full QR link, or the soul won't unseal here.</p>{/if}
+            <button class="ld-cancel-b" onclick={cancel_link}>cancel</button>
+        </div>
+    {:else if url}
+        <!-- QR "sharing" — no heading, no "waiting…" line (owner: don't say "link a device as your Cave" or
+             "waiting for it to connect"; just leave for the confirm screen when the Cave turns up).  The
+             Swarm_ferry_poke effect above swaps this out for "giving your soul" the instant the pier is live.
+             Compact + no-scroll: just the QR and a one-line scan hint. -->
+        <div class="ld-face ld-face-qr">
+            <InviteQR {url} size={qr_size} bg="#e7dcbe" bare caption="" />
+            <div class="ld-wait-big">scan this with your other device</div>
+            <button class="ld-cancel-b" onclick={cancel_link}>cancel</button>
+        </div>
+    {:else}
         <p class="ld-blurb">
-            <!-- the owner's sentence, dictated twice — keep it verbatim -->
             backup or colonise other devices, becoming a sloshway of cooperation and
             <button class="ld-trust" onclick={() => trust = !trust}>TOTAL TRUST</button>.
         </p>
@@ -125,36 +346,11 @@
                 But it's you logged in forever, may sit <b>unencrypted at rest</b>.
             </p>
         {/if}
-    {/if}
-
-    {#if pending}
-        <div class="ld-face">
-            {#if received}
-                <div class="ld-note">{received}</div>
-            {:else}
-                <p class="ld-deal">A sealed account from <b>{short(arriving_soul())}…</b> is arriving over the link.</p>
-                <div class="ld-row">
-                    <button class="ld-go" onclick={() => receive(true)}>accept — become this soul</button>
-                    <button class="ld-cancel-b" onclick={() => receive(false)}>no</button>
-                </div>
-            {/if}
-        </div>
-    {:else if url}
-        <div class="ld-face">
-            <div class="ld-cap-big">link a device as your <b>Cave</b></div>
-            <InviteQR {url} size={qr_size} bg="#e7dcbe" bare caption="" />
-            <div class="ld-wait-big">open this on the other device · …waiting for it to handshake, then I ferry</div>
-            {#if origin}<div class="ld-origin">⚠ the other device must be on <b>{origin}</b> — same origin, or the two land on different relays and never meet</div>{/if}
-            <button class="ld-cancel-b" onclick={cancel_link}>cancel</button>
-        </div>
-    {:else}
         <div class="ld-face">
             <button class="ld-link" onclick={link} disabled={!self}
                 title="copy this account to another device as a Cave">🔗 link a device</button>
             {#if link_active}
-                <!-- a link is still in flight (a secret survived a reload, or you navigated away mid-mint) —
-                     the one honest way out, clearing House state so a fresh mint starts clean. -->
-                <div class="ld-pending">a device-link is still pending on this tab
+                <div class="ld-pending">you have a device link in progress
                     <button class="ld-cancel-b" onclick={cancel_link}>cancel it</button></div>
             {/if}
         </div>
@@ -179,6 +375,11 @@
         pointer-events: auto;
         max-height: 100%; overflow-y: auto; overscroll-behavior: contain;
     }
+    /* THE QR NEVER SCROLLS (owner: "QRcode thing looks bad when it scrolls, don't let it" — the dark-brown box
+       under the heading).  The sharing phase is compact and fixed, so its column centres and hides overflow
+       rather than growing a scrollbar across the QR. */
+    .ld-frame:has(.ld-face-qr) { overflow: hidden; justify-content: center; }
+    .ld-face-qr { gap: .5rem; padding: .8rem; }
     .ld-blurb { font-size: 1rem; line-height: 1.5; margin: 0; }
     .ld-trust {
         background: none; border: none; padding: 0; font: inherit; font-weight: 700; letter-spacing: .3px;
@@ -195,6 +396,11 @@
         background: #1a1206; color: #f4e6c8; border-radius: .6rem;
     }
     .ld-deal { font-size: .95rem; line-height: 1.5; margin: 0; max-width: 28rem; }
+    .ld-sas { font-size: .95rem; margin: .1rem 0 0; cursor: help; }
+    .ld-sas b { font-size: 1.4rem; letter-spacing: 3px; }
+    /* the safety code is still computing — a calm placeholder so the row never just vanishes (and the
+       confirm button stays disabled until it lands, so you can't approve before you can check). */
+    .ld-sas-wait { opacity: .6; font-style: italic; }
     .ld-deal b { color: #ffcf70; }
     .ld-row { display: flex; align-items: center; gap: .8rem; margin-top: .2rem; }
     .ld-go { background: #d98a00; color: #000; font-weight: 700; border: none; border-radius: .4rem; padding: .45rem 1rem; cursor: pointer; }
@@ -207,7 +413,12 @@
     .ld-cap-big { font-size: 1.05rem; font-weight: 600; }
     .ld-cap-big b { color: #ffcf70; }
     .ld-wait-big { font-size: .85rem; opacity: .7; }
-    .ld-origin { font-size: .8rem; line-height: 1.5; color: #e8c98a; background: #0f0a02; border-radius: .4rem; padding: .45rem .7rem; max-width: 26rem; }
-    .ld-origin b { color: #ffcf70; }
     .ld-pending { font-size: .8rem; opacity: .8; display: flex; align-items: center; gap: .5rem; }
+    /* PRESENCE — is the other device there? (owner: "offline indicator at both ends").  A small pill,
+       whitespace-nowrap so it never wraps under the name; here glows, fading dims, away reads plainly grey. */
+    .ld-live { font-size: .72rem; font-weight: 600; white-space: nowrap; vertical-align: middle;
+               padding: .05rem .35rem; border-radius: .7rem; letter-spacing: .2px; }
+    .ld-live-here { color: #093; background: rgba(64, 200, 96, .16); text-shadow: 0 0 6px rgba(64, 220, 96, .5); }
+    .ld-live-fade { color: #a70; background: rgba(220, 160, 40, .14); }
+    .ld-live-away { color: #977; background: rgba(150, 120, 120, .14); }
 </style>

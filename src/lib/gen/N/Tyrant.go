@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tyrant(): string { return 'ed4fd88c7e2b904a' },
+    Ghostmeta_Ghost_N_Tyrant(): string { return 'ed4fd88c7e2b904a~g1' },
 
 // Tyrant — the cabinetry over the Peeroleum floor: identity & trust → admission.
 //  A clean-room rebirth of legacy Tyranny, in stho, riding the Peeroleum transport

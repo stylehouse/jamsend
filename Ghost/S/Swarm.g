@@ -998,7 +998,7 @@ Swarm_arm(w):
         //        gossip never opens a door, and an era is a door onto our stream state.
         if (sealed && frame.swarm && frame.swarm.era) {
             let eroute = this.Swarm_station_pier(w2, ident, String(from))
-            let ephemeral_lane = frame.header.type === 'pulse' || frame.header.type === 'swarm_hi'
+            let ephemeral_lane = frame.header.type === 'pulse' || frame.header.type === 'swarm_hi' || frame.header.type === 'ferry_want' || frame.header.type === 'ferry_cancel'
             if (eroute) this.Swarm_note_era(w2, eroute, frame.swarm, ephemeral_lane ? 1 : 0)
         }
         if (frame.header.type === 'pier_hello') await this.Swarm_hello(w2, ident, frame.swarm)
@@ -1018,6 +1018,30 @@ Swarm_arm(w):
         if (frame.header.type === 'adopt_seal') this.Swarm_adopt_park(w2, ident, frame.swarm)
         if (frame.header.type === 'adopt_confirm') await this.Swarm_adopt_confirmed(w2, ident, frame.swarm)
         if (frame.header.type === 'ferry') this.Swarm_ferry_park(w2, ident, frame.swarm)
+        // FERRY WANT — a Linkee's steady "I want linkage" ask (Swarm_ferry_ask): the far mirror of the seal-seam.
+        //  It keeps the Linkor (me) focused on the confirm no matter how MY `.c` was reset — my focus is driven by
+        //   the Linkee's standing demand, not by my remembering a one-shot seal.  Only a sealed pier that actually
+        //    bears MY MyCave grant, while I still hold the ferry secret (`.c` or durable twin) and am not mid-send,
+        //     may re-raise it; on_seal re-checks pier_live+secret and PARKS (humdinger) or sends (runner) as ever.
+        if (frame.header.type === 'ferry_want') {
+            let wsealed = sealed && this.Swarm_pier_live(sealed, 'MyCave') ? sealed : null
+            let wtop = this.top_House ? this.top_House() : null
+            let wsec = wtop && wtop.c ? (wtop.c.ferry_secret || (wtop.stashed && wtop.stashed.ferry_pending_secret ? 1 : 0)) : 0
+            console.log('🦑 ferry: heard "I want linkage" from ' + String(from || '?').slice(0, 8) + ' — cave_pier=' + (wsealed ? 'yes' : 'no') + ' my_secret=' + (wsec ? 'yes' : 'no') + ' ferrying=' + (wtop && wtop.c && wtop.c.ferrying ? 'yes' : 'no'))
+            if (wsealed && wsec && !wtop.c.ferrying) {
+                // the ferry_want is LIVE proof this Cave pier is up NOW — so re-derive the live secret off the WIRE
+                //  (from the durable twin) rather than waiting on the standup-time REHEAL, whose `livecave` read is
+                //   "often not thawed this early" and silently skips.  This makes the whole live seam consistent
+                //    (poke, link_active, the seal-seam, Swarm_ferry_confirm all read .c.ferry_secret) before on_seal
+                //     parks the confirm (agent 2026-08-29: gate the re-derive on the pier that JUST proved live).
+                if (!wtop.c.ferry_secret && wtop.stashed && wtop.stashed.ferry_pending_secret) { wtop.c.ferry_secret = wtop.stashed.ferry_pending_secret.secret }
+                this.Swarm_ferry_on_seal(w2, ident, wsealed).catch((er) => {})
+            }
+        }
+        // FERRY CANCEL — the soul device called the link off (Swarm_ferry_cancel).  A Linkee awaiting THAT soul
+        //  gives up the "connecting…" wait (owner: "eed can only get rid of that by cancelling the token, which 495
+        //   then gives up from").  Matched on `from` inside so a stray cancel can't knock out an unrelated adopt.
+        if (frame.header.type === 'ferry_cancel') this.Swarm_ferry_cancelled(w2, ident, from)
         // SEED THE CHARTER AT SEAL (Division_todo step 4), station wire twin of the pump seed above.
         if (frame.header.type === 'pier_accept' || frame.header.type === 'pier_confirm') this.Swarm_charter_gossip(w2, ident, from)
         // LEDGER OUTCOME ⇒ SETTLE (Persistence_todo §5.1): every frame kind that can move the durable
@@ -1029,7 +1053,7 @@ Swarm_arm(w):
         if (['pier_hello', 'pier_accept', 'pier_confirm', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok'].includes(frame.header.type)) this.Swarm_account_settle(ident, frame.header.type)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'adopt_seal', 'adopt_confirm', 'ferry']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'adopt_seal', 'adopt_confirm', 'ferry', 'ferry_want', 'ferry_cancel']) w.c.on[kind] = hear
 
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
 //  (1) a cache hit — a voucher whose sign we already proved this era — passes without crypto.
@@ -1359,17 +1383,42 @@ Swarm_station_up(w, ident):
         let had = sweep_top.c.ferry_secret || (sweep_top.stashed && sweep_top.stashed.ferry_pending_secret)
         let peer = ident ? this.Swarm_peering(ident) : null
         let livecave = peer ? peer.o({ Pier: 1 }).find((p) => this.Swarm_pier_live(p, 'MyCave')) : null
-        if (had && !livecave) {
-            delete sweep_top.c.ferry_secret
-            if (sweep_top.stashed) { delete sweep_top.stashed.ferry_pending_secret }
-            console.log('🦑 ferry: swept a stale device-link secret at standup (no MyCave pier to ferry over) — the soul is unstuck')
+        // THE TOKEN IS STICKY (owner 2026-08-29: "eed can only get rid of that by cancelling the token, which 495
+        //  then gives up from").  We USED to delete the secret here when no MyCave pier read live at standup — but
+        //   the peering is often not thawed this early in standup, so that read went transiently false and NUKED a
+        //    LIVE ceremony's secret; eed could then never be re-pulled (my_secret=no forever) no matter how hard 495
+        //     asked.  That was the "eed is not pulled into any Link session" bug.  Under the steady-ask model the
+        //      Linkee's demand keeps the ceremony alive and the Linkor just waits, so a secret is retired ONLY by an
+        //       explicit Swarm_ferry_cancel or a successful send — never by a transient "no pier right now" at boot.
+        //   (Cost, accepted: a never-scanned QR's secret lingers as a cancellable "link in flight" cell until the
+        //    human cancels it — which IS the stated contract.  A delayed dead-QR sweep, decided well after piers are
+        //     thawed rather than at standup, is a possible future nicety; NOT re-added at standup where it misfires.)
+        // REHEAL (owner 2026-08-29: "eed refreshing loses its focus on answering the Adopt… reloading 495 doesn't
+        //  renew eed's focus").  The INVERSE of the sweep: a LIVE Cave pier + a surviving secret is a real ceremony
+        //   that outlived a reload, and every piece of proof is durable — the %Grant:MyCave (pier_live is pure grant
+        //    state, no heard_at) and the ferry_pending_secret twin.  Only ferry_confirm/ferry_secret (`.c`) were lost.
+        //     So re-derive them from that durable truth at standup, no round-trip needed:
+        //      (1) rehydrate `.c.ferry_secret` from the twin so the seal-seam, link_active and poke all see it again;
+        //      (2) on the live end-user tab (humdinger), re-raise the "giving your soul" ask right now — a runner
+        //       Book has no humdinger and no such ceremony, so this is inert to fixtures (SwarmSpread stays green).
+        //    finalize is left to Swarm_ferry_confirm's send; the guards below keep this from firing mid-send or on a
+        //     Linkee (ferry_pending is the receiver's mark).
+        if (had && livecave) {
+            if (!sweep_top.c.ferry_secret && sweep_top.stashed && sweep_top.stashed.ferry_pending_secret) {
+                sweep_top.c.ferry_secret = sweep_top.stashed.ferry_pending_secret.secret
+            }
+            if (sweep_top.c.humdinger && !sweep_top.c.ferry_confirm && !sweep_top.c.ferrying && !sweep_top.c.ferry_pending) {
+                sweep_top.c.ferry_confirm = { pub: String(livecave.sc.pub), name: String(livecave.sc.friendly || ''), at: this.Swarm_now(w) }
+                console.log('🦑 ferry: rehealed the adopt-confirm at standup — a Cave is still sealed and awaiting my give')
+            }
         }
-        // a parked grantor-confirm whose Cave pier is gone is a DEAD ask — clear it so the Door adopt block
-        //  and the QR→pier pull do not linger against a pier that will never turn live (confirm can't send
-        //   over it anyway).  Same standup-once discipline as the secret sweep above.
-        if (sweep_top.c.ferry_confirm && !livecave) {
-            delete sweep_top.c.ferry_confirm
-            console.log('🦑 ferry: swept a stale adopt-confirm at standup (its Cave pier is gone) — the Door ask is cleared')
+        // REHYDRATE a Linkee's "connecting" across reload: ferry_awaiting is .c (lost on reload) but its durable
+        //  twin survives.  If the ceremony didn't complete (twin present, no account pending), restore it so the
+        //   reloaded new device returns to the Link cell's "connecting…" rather than dropping to Radio.  park/
+        //    consume/cancel clear the twin, so a twin still here at standup means the ferry genuinely never landed.
+        if (sweep_top.stashed && sweep_top.stashed.ferry_awaiting && !sweep_top.c.ferry_awaiting && !sweep_top.c.ferry_pending) {
+            sweep_top.c.ferry_awaiting = sweep_top.stashed.ferry_awaiting
+            console.log('🦑 ferry: rehydrated the Linkee "connecting" across a reload — back to the ceremony, not Radio')
         }
     }
     // mint the era HERE, at standup, not lazily at first greeting: Swarm_deliver stamps it on every
@@ -1655,7 +1704,7 @@ Swarm_heard_hi(w, ident, frame):
     this.Swarm_note_era(w, route, hi, 1)
     if (!hi.reply) {
         this.Swarm_hi_one(w, ident, String(from), 1)
-        this.Swarm_gossip_music(w, ident)
+        this.Swarm_boast_on_hi(w, ident)
     }
     // they are HERE — anything queued for them goes now (the store-and-forward drain)
     this.Swarm_suggest_resend(w, ident, String(from))
@@ -1688,6 +1737,23 @@ async Swarm_redeem(w, ident, iz, advice):
     if (w.c && w.c.station_up) {
         let inv = this.Swarm_invite_note(w, iz)
         if (inv) { inv.sc.state = 'redeeming'; inv.bump() }
+        // DEAD-WINDOW FIX (2026-08-28) — redeeming a MyCave (device-link) invite means a soul is about to be
+        //  ferried to THIS device.  Mark it so Swarm_link_active surfaces the RECEIVING cell in a "connecting…
+        //   waiting for the other device" phase instead of a blank Radio until the sealed account lands (which,
+        //    on the consent-gated path, waits on the human at the OTHER device pressing "give my soul").  Cleared
+        //     by Swarm_ferry_park (soul arrived → ferry_pending takes over), _consume, or _cancel.  Live-tab only
+        //      (station_up, like the vivify above), so Books never see it and fixtures stay put.
+        if (t.to === 'MyCave') {
+            let atop = this.top_House ? this.top_House() : null
+            if (atop && atop.c && !atop.c.ferry_pending) {
+                let mark = { soul: String(t.prepub || ''), at: this.Swarm_now(w) }
+                atop.c.ferry_awaiting = mark
+                // DURABLE TWIN so a reload mid-"connecting" returns to the ceremony, not Radio.  The Linkee had
+                //  no reload-resilient marker (the Linkor's ferry_secret has its stash twin — this is the mirror);
+                //   rehydrated at standup, cleared by park/consume/cancel.
+                if (atop.stashed) { atop.stashed.ferry_awaiting = mark }
+            }
+        }
     }
     let hello = { kind: 'pier_hello', iz: iz, page: this.Swarm_page(ident) }
     if (advice) hello.relic = String(advice)
@@ -2065,7 +2131,17 @@ Swarm_seal(w, ident, page, theirGrant, myGrant):
     //  seals bearing a MyCave grant, ferry the sealed account over it (Swarm_ferry_on_seal no-ops
     //   for a plain friend seal or when no ferry_secret is pending, so this is safe on every seal).
     let top_seam = this.top_House ? this.top_House() : null
-    if (top_seam && top_seam.c && top_seam.c.ferry_secret) {
+    // `!ferrying` mirrors the FERRY RETRY guard (~1108): while Swarm_ferry_confirm is mid-send it has already
+    //  deleted `ferry_confirm` and set `ferrying`, so a re-seal landing in that await window must NOT re-fire
+    //   on_seal — that would re-PARK a fresh `ferry_confirm`, and confirm's success then clears the secret,
+    //    stranding a dead "give my soul" (no secret to send).  Small window, but the guard belongs on BOTH
+    //     on_seal call sites, not just the retry.
+    // SECRET FROM `.c` OR THE DURABLE TWIN: after a LINKOR reload the `.c.ferry_secret` is gone but the ceremony
+    //  is alive in `stashed.ferry_pending_secret`.  A Linkee that reloads and RE-seals its pier must still re-fire
+    //   on_seal so eed re-parks the confirm — gating on `.c.ferry_secret` alone silently dropped that re-seal
+    //    (the owner: "even reloading 495 doesn't renew eed's focus on the Link").  on_seal reads the twin itself.
+    let seam_secret = top_seam && top_seam.c ? (top_seam.c.ferry_secret || (top_seam.stashed && top_seam.stashed.ferry_pending_secret ? 1 : 0)) : 0
+    if (top_seam && top_seam.c && seam_secret && !top_seam.c.ferrying) {
         try { this.Swarm_ferry_on_seal(w, ident, pier) } catch (er) {}
     }
     return pier
@@ -2455,6 +2531,9 @@ Swarm_pulse_all(w, ident):
     //       very silence it reasons about.  Slow (60s) because the rung is itself throttled to one
     //        re-offer per pier per 10 min — this only has to be more frequent than that, not fast.
     if (!w.c.heal_look_at || (Date.now() - w.c.heal_look_at) > 60000) { w.c.heal_look_at = Date.now(); this.Swarm_reaccept_incomplete(w, ident).catch((er) => console.log(`⨳⚠ pier heal failed: ${er && er.message || er}`)) }
+    // FERRY WANT rides the same heartbeat: while I am a Linkee awaiting a soul, keep asking the soul device for it
+    //  (Swarm_ferry_ask) so its confirm stays parked through any reload on its end.  Best-effort, same ~5s cadence.
+    this.Swarm_ferry_ask(w, ident)
     for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (typeof this.Presence_worth_sending === 'function' && !this.Presence_worth_sending(w, pier.sc.pub)) continue
         if (this.Swarm_deliver(w, ident, pier.sc.pub, { kind: 'pulse', page: this.Swarm_page(ident) })) sent = sent + 1
@@ -2561,6 +2640,28 @@ Swarm_gossip_music(w, ident):
             cw: cw_set, selfs: selfs, homes: homes, stocks: stocks }) } catch (er) {}
     }
     return told
+
+// Swarm_boast_on_hi — the boast a non-reply swarm_hi triggers, THROTTLED per ident.  swarm_hi is the
+//  rebirth greeting re-sent on every reconnect, so under a flapping relay (live: ws 1006 every ~600ms
+//   during a heavy heist) an un-throttled boast-per-hi is a STORM: each ive_got the far side hears books
+//    a full inbox unemit + O(depth) rollup (ive_got is off the receive-bypass, Peeroleum :664), piling the
+//     sink inbox to its 2000 backstop and starving the reliable handshakes (Invite/LinkDevice) queued in
+//      the same serial lane.  The hi-time boast is usually worthless anyway — the census stands LATER than
+//       the handshake (records:0, see Swarm_boast_floor), so the real boast is the change-triggered one.
+//        The FIRST hi in a quiet spell still boasts a new friend promptly; repeats within the cooldown are
+//         dropped.  Books drive Swarm_gossip_music DIRECTLY, so only the incidental hi-path boast is gated.
+Swarm_boast_on_hi(w, ident):
+    if (this.Swarm_hi_boast_cooling(w, ident)) return
+    ident.c.gossip_hi_at = Date.now()
+    this.Swarm_gossip_music(w, ident)
+
+// Swarm_hi_boast_cooling — true while this ident's hi-boast is still inside its cooldown, so the caller
+//  skips the boast.  Per-IDENT (not per-world) so two identities in a Book never cross-suppress.  Knob
+//   `swarm_gossip_hi_ms` (default 15s; 0 restores the old fire-every-hi behaviour).
+Swarm_hi_boast_cooling(w, ident):
+    let floor = (w.c.swarm_gossip_hi_ms == null ? 15000 : +w.c.swarm_gossip_hi_ms)
+    if (!floor) return 0
+    return ident.c.gossip_hi_at && (Date.now() - ident.c.gossip_hi_at) <= floor
 
 // Swarm_boast_floor — the boast's RE-SEND FLOOR, the twin of the re-offer floor in Swarm_share_beat.
 //  Until 2026-08-06 `Swarm_gossip_music` had exactly ONE trigger: hearing a non-reply `swarm_hi`
@@ -4238,8 +4339,12 @@ async Swarm_ferry_send(w, soulIdent, pier, code):
     let salt = String(soulIdent.c.keys.pub) + ':' + String(theirPub)
     let blob = await this.Swarm_export(soulIdent)
     let sealed = await seal(String(code), salt, blob)
+    // the soul's chosen NAME rides alongside (not secret — it's the public friendly a friend already sees) so
+    //  the receiving device can say "receiving the soul of Steve" on the consent screen, not a raw pub8.  It is
+    //   only a display hint; the account itself is inside `sealed` and is what actually authenticates.
+    let friendly = String(soulIdent.sc.friendly || soulIdent.sc.nick || '')
     console.log('🦑 ferry: sending my account → ' + String(pier.sc.pub).slice(0, 8) + ' over the sealed pier')
-    return this.Swarm_deliver(w, soulIdent, String(pier.sc.pub), { kind: 'ferry', sealed: sealed, salt: salt, role: 'Cave' })
+    return this.Swarm_deliver(w, soulIdent, String(pier.sc.pub), { kind: 'ferry', sealed: sealed, salt: salt, role: 'Cave', friendly: friendly })
 // Swarm_ferry_heard — the NEW DEVICE: unseal the account with the fragment code, import it (now it holds
 //  the soul key), keep its pre-ferry identity as its BODY key, take its body row, and derive Post=Cave off
 //   the MyCave grant that crossed at the handshake.  Fails closed: a wrong code / tampered frame throws in
@@ -4304,9 +4409,13 @@ async Swarm_ferry_on_seal(w, soulIdent, pier):
         if (top.c) { delete top.c.ferry_secret }
         if (top.stashed) { delete top.stashed.ferry_pending_secret }
     }
-// Swarm_ferry_confirm — the grantor's "yes, this device may become my Cave", pressed ON the adopting pier in
-//  the Door (where the QR pulled them the instant it turned up).  Flips the consent gate and performs the one
-//   send that on_seal was holding.  No parked ask (or no live pier for it) → no-op.  Returns did-it-cross.
+// Swarm_ferry_confirm — the grantor's "give my soul", pressed in the Link cell's "giving your soul to X" phase.
+//  Flips the consent gate and performs the one send that on_seal was holding.  No parked ask (or no live pier
+//   for it) → no-op.  Returns did-it-cross.
+//  ⚠ MUST hold `ferrying` across the send (mirroring the FERRY RETRY at ~1108): we delete `ferry_confirm` and
+//   then await the send, and the retry's guard is `fsecret && !ferrying`.  Without the flag, a pump firing
+//    during the await re-runs on_seal, which finds `ferry_confirm` gone and re-PARKS a fresh one — then our
+//     send clears the secret, leaving a stranded confirm with no secret (a dead "give my soul" that can't send).
 async Swarm_ferry_confirm(w):
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c || !top.c.ferry_confirm) { return 0 }
@@ -4315,20 +4424,47 @@ async Swarm_ferry_confirm(w):
     let want = String(top.c.ferry_confirm.pub)
     let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => String(p.sc.pub) === want && this.Swarm_pier_live(p, 'MyCave'))
     if (!pier) { return 0 }
+    top.c.ferrying = 1
     delete top.c.ferry_confirm
     let secret = top.c.ferry_secret || (top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null)
-    if (!secret) { return 0 }
-    let sent = await this.Swarm_ferry_send(w, ident, pier, secret)
+    if (!secret) { delete top.c.ferrying; return 0 }
+    let sent = 0
+    try { sent = await this.Swarm_ferry_send(w, ident, pier, secret) } catch (er) { sent = 0 }
+    delete top.c.ferrying
     if (sent) {
         delete top.c.ferry_secret
         if (top.stashed) { delete top.stashed.ferry_pending_secret }
     }
     return sent ? 1 : 0
+// Swarm_ferry_poke — the Linkor cell's reactive "has a Cave turned up, ready for my confirm?".  on_seal parks
+//  ferry_confirm at the sealing instant, but that fires off the frame PUMP; this ties the SAME park to the UI's
+//   REACTIVITY (H.version bumps the moment the %Pier appears in the tree), so the cell leaves the QR for the
+//    "giving your soul" screen as soon as the Cave's pier is live — not on the next frame that happens to land.
+//     Only PARKS (never sends — the human's "give my soul" still gates the send).  No-op once parked, or with
+//      no secret, or with no live MyCave pier yet.  Returns 1 if a confirm is (now or already) parked.
+Swarm_ferry_poke(w):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c) { return 0 }
+    // MID-SEND: Swarm_ferry_confirm deletes ferry_confirm and sets ferrying while it awaits the one send.
+    //  Poke must NOT re-raise a fresh confirm in that window (it would strand once the send clears the
+    //   secret) — the same reason the seal-seam carries !ferrying.  Cheap guard that makes poke safe to
+    //    call from reactivity/standup as often as we like, which the reload-heal now does.
+    if (top.c.ferrying) { return 0 }
+    if (top.c.ferry_confirm) { return 1 }
+    let secret = top.c.ferry_secret || (top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null)
+    if (!secret) { return 0 }
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!ident) { return 0 }
+    let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => this.Swarm_pier_live(p, 'MyCave'))
+    if (!pier) { return 0 }
+    top.c.ferry_confirm = { pub: String(pier.sc.pub), name: String(pier.sc.friendly || ''), at: this.Swarm_now(w) }
+    console.log('🦑 ferry: a Cave pier is live — parked the confirm from the cell (QR → give my soul)')
+    return 1
 // Swarm_ferry_park — the NEW DEVICE heard the sealed account: park it for the human's consent (the UI has
 //  the #fc fragment code and calls Swarm_ferry_consume).  Never auto-imports — becoming a body is decided.
 Swarm_ferry_park(w, ident, frame):
     let top = this.top_House ? this.top_House() : null
-    if (top && top.c) { top.c.ferry_pending = { frame: frame, at: this.Swarm_now(w) } }
+    if (top && top.c) { top.c.ferry_pending = { frame: frame, at: this.Swarm_now(w) }; delete top.c.ferry_awaiting; if (top.stashed) { delete top.stashed.ferry_awaiting } }
     console.log('🦑 ferry: an account arrived sealed to me over the pier — awaiting my consent + code')
     return true
 // Swarm_ferry_pending — the UI reads whether a ferried account is waiting (returns 1 or null).
@@ -4340,6 +4476,43 @@ Swarm_ferry_pending(w):
 Swarm_ferry_peek(w):
     let top = this.top_House ? this.top_House() : null
     return top && top.c && top.c.ferry_pending ? top.c.ferry_pending : null
+// Swarm_ferry_sas — the 3-glyph SAS row for the device-link, computed IDENTICALLY on both ends from the two
+//  pubs the ferry `salt` already binds (`<soulpub>:<bodypub>`).  The GRANTOR reads soul off its live self and
+//   the body off the confirm pier's Peering pub — the SAME source Swarm_ferry_send builds the salt from, so the
+//    two rows are byte-equal absent a MITM.  The NEW device reads both straight off the parked frame's salt.
+//     Equal rows on both screens ⇒ no relay swapped a pub (owner: "three icons to match, like jackpot
+//      machines").  No nonce: the row's whole job is to expose a swapped pub, and the human compares live.
+async Swarm_ferry_sas(w):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c) { return '' }
+    let soulpub = ''
+    let bodypub = ''
+    if (top.c.ferry_confirm) {
+        let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+        if (!ident || !ident.c || !ident.c.keys) { return '' }
+        let want = String(top.c.ferry_confirm.pub)
+        let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => String(p.sc.pub) === want)
+        let theirPub = pier ? pier.o({ Peering: 1 })[0]?.sc?.pub : null
+        soulpub = String(ident.c.keys.pub)
+        bodypub = String(theirPub || want)
+    } else if (top.c.ferry_pending && top.c.ferry_pending.frame && top.c.ferry_pending.frame.salt) {
+        let parts = String(top.c.ferry_pending.frame.salt).split(':')
+        soulpub = parts[0] || ''
+        bodypub = parts[1] || ''
+    } else if (top.c.ferry_awaiting) {
+        // the RECEIVER during "connecting" (pre-ferry): the frame hasn't landed, but the two pubs the salt will
+        //  bind are ALREADY on the MyCave pier — the peer's Peering pub is the SOUL (the same value the Linkor
+        //   salts with), my own key pub is the BODY.  Compute the SAS now so it shows on THIS screen at the same
+        //    time as the Linkor's "giving your soul", to be matched — not only after the account has crossed.
+        let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+        if (ident && ident.c && ident.c.keys) {
+            let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => this.Swarm_pier_live(p, 'MyCave'))
+            let peerPub = pier ? (pier.o({ Peering: 1 })[0]?.sc?.pub || pier.sc.pub) : null
+            if (peerPub) { soulpub = String(peerPub); bodypub = String(ident.c.keys.pub) }
+        }
+    }
+    if (!soulpub || !bodypub) { return '' }
+    return await sas_row(sas_transcript([soulpub, bodypub]), 3)
 // Swarm_link_active — is a device-link ceremony in flight on THIS tab? True on the SOUL device while its
 //  link is minted-and-unspent (top.c.ferry_secret) AND on the NEW device while a ferried account waits
 //   (top.c.ferry_pending).  The glass reads this to raise the %Link takeover cell exactly during the
@@ -4348,7 +4521,39 @@ Swarm_link_active(w):
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c) { return null }
     let durable = top.stashed && top.stashed.ferry_pending_secret ? 1 : 0
-    return top.c.ferry_secret || top.c.ferry_pending || durable ? 1 : null
+    // ferry_confirm keeps the cell up through the "giving your soul" phase even if the secret is momentarily
+    //  gone; ferry_awaiting keeps the RECEIVING cell up in the dead window between redeem and the soul landing.
+    return top.c.ferry_secret || top.c.ferry_pending || top.c.ferry_confirm || top.c.ferry_awaiting || durable ? 1 : null
+// Swarm_link_fresh — is the ceremony fresh enough to SEIZE THE SCREEN?  Swarm_link_active answers "any ferry
+//  state present", which is right for durable persistence but WRONG for grabbing focus: a reload rehydrates
+//   `ferry_awaiting` from its durable twin even when the soul device is long gone, and that corpse was both
+//    seizing the glass ("linking this device intrudes for no reason" — owner 2026-08-29) and machine-gunning
+//     ferry_want.  This is the SCREEN-decision twin: identical to link_active for Books / non-live tabs (no
+//      humdinger → fixtures byte-identical) and for the Linkor's own standing intent (ferry_secret/confirm) and
+//       a landed decision (ferry_pending); it only DOWNGRADES an awaiting-ONLY ceremony whose soul pier has gone
+//        quiet.  A live reload re-warms heard_at within a pulse (~5s) and re-surfaces on its own; a dead one
+//         never does, so it stays reachable via the Door but stops hijacking the screen.
+Swarm_link_fresh(w):
+    let active = this.Swarm_link_active(w)
+    if (!active) { return active }
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c || !top.c.humdinger) { return active }
+    let onlyAwaiting = top.c.ferry_awaiting && !top.c.ferry_confirm && !top.c.ferry_pending && !top.c.ferry_secret && !(top.stashed && top.stashed.ferry_pending_secret) ? 1 : 0
+    if (!onlyAwaiting) { return 1 }
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!ident) { return active }
+    let soul = String(top.c.ferry_awaiting.soul || '')
+    let piers = this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []
+    let pier = null
+    if (soul) {
+        pier = piers.find((p) => { let pp = String(p.sc.pub || ''); return pp && (pp === soul || pp.startsWith(soul) || soul.startsWith(pp)) ? 1 : 0 })
+    } else {
+        if (piers.length === 1) { pier = piers[0] }
+    }
+    if (!pier) { return active }
+    let ha = pier.c ? pier.c.heard_at : 0
+    if (ha && (Date.now() - ha) < 45000) { return 1 }
+    return null
 // Swarm_ferry_cancel — the human's "call off this link" (the Link cell's reset button).  Clears every trace
 //  of an in-flight device-link on THIS tab: the soul's unspent secret (live seam + durable twin) and any
 //   parked inbound account.  Idempotent — safe to press when nothing is in flight — and the one honest way
@@ -4356,18 +4561,90 @@ Swarm_link_active(w):
 Swarm_ferry_cancel(w):
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c) { return 0 }
+    // TELL THE CAVE (the owner's teardown: eed cancelling the token is HOW 495 gives up).  Before we drop our
+    //  state, fire a best-effort ferry_cancel to the Cave we were about to feed — the Linkor knows its pier from
+    //   the parked confirm's pub, else any live MyCave pier.  Humdinger-gated: only a real person cancels-and-tells
+    //    (a Book calls cancel as a local test artifact and has no humdinger — so this stays Book-inert, no fixture
+    //     frame).  A Linkee cancelling holds no ferry_secret/confirm, so the guard below finds no grantor pier and
+    //      it simply gives up locally.
+    let ct_ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (top.c.humdinger && ct_ident && (top.c.ferry_confirm || top.c.ferry_secret || (top.stashed && top.stashed.ferry_pending_secret))) {
+        let want = top.c.ferry_confirm ? String(top.c.ferry_confirm.pub) : null
+        for (const pier of this.Swarm_peering(ct_ident)?.o({ Pier: 1 }) ?? []) {
+            if (!this.Swarm_pier_live(pier, 'MyCave')) { continue }
+            if (want && String(pier.sc.pub) !== want) { continue }
+            this.Swarm_deliver(w, ct_ident, pier.sc.pub, { kind: 'ferry_cancel', page: this.Swarm_page(ct_ident) })
+        }
+    }
     delete top.c.ferry_secret
     delete top.c.ferry_pending
     delete top.c.ferrying
     delete top.c.ferry_confirm
-    if (top.stashed) { delete top.stashed.ferry_pending_secret }
+    delete top.c.ferry_awaiting
+    if (top.stashed) { delete top.stashed.ferry_pending_secret; delete top.stashed.ferry_awaiting }
     console.log('🦑 ferry: link cancelled — cleared the pending secret and any parked account')
     return 1
+// Swarm_ferry_ask — the Linkee's steady "I want linkage" ask.  While a soul is inbound (ferry_awaiting) this
+//  re-asks the soul device, every pulse, to (re)park its grantor-confirm — so the Linkor stays focused on serving
+//   the adopt no matter how ITS `.c` was reset (a reload).  The ceremony is held open by the Linkee's standing
+//    DEMAND, not by either end durably remembering a one-shot seal (owner 2026-08-29: "a steady flow of 'I want
+//     Linkage' sentiment from 495 to eed to keep it focused on serving the request").  Sent to every sealed pier —
+//      mid-adopt there is exactly one (to the soul); a stray to some other friend no-ops there (they hold no
+//       ferry_secret for me).  Rides Swarm_pulse_all, which the caller never runs in a Book → Book-inert for free.
+Swarm_ferry_ask(w, ident, force):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c || !top.c.ferry_awaiting) { return 0 }
+    // SELF-RESOLVE the identity: the LinkDevice tick calls this with only `w` (the cell has no clean handle on the
+    //  live self), so fall back to Swarm_live_self — without this the 3s driver was a silent no-op (`!ident`) and
+    //   495 never actually asked, so eed was never pulled in.  The pulse caller still passes ident and is unaffected.
+    if (!ident) { ident = this.Swarm_live_self ? this.Swarm_live_self() : null }
+    if (!ident) { return 0 }
+    // ~2.8s THROTTLE in WALL-CLOCK MS.  ⚠ Swarm_now is SECONDS (Math.floor(Date.now()/1000)) on a live tab, so the
+    //  old `Swarm_now(w) - ferry_ask_at < 2800` compared a ~3 gap to 2800 and SUPPRESSED every ask for ~47min after
+    //   the first — the real "eed is not pulled in" bug (an unreloaded first ask, then silence).  Date.now() ms
+    //    makes the 3s tick + 5s pulse fallback dedupe cleanly.  A `force` ask (first contact, or the instant the
+    //     peer comes online) BYPASSES the throttle so the link LEAPS the moment both ends are present — the eager,
+    //      "wants-to-happen" feel — instead of waiting out the idle cadence.
+    let nowt = Date.now()
+    // ABSOLUTE FLOOR that even `force` cannot cross (owner 2026-08-29: "it sends like 1000 of these on startup").
+    //  The Link cell re-grapples on every version bump, so a mounted LinkDevice's fire_ask(true) mount-pounce
+    //   re-fires in a tight remount loop; a forced ask that bypassed the throttle turned that into ~1000
+    //    ferry_want/second (each Swarm_deliver bumps → re-commission → remount → pounce again).  An 1100ms floor
+    //     BEFORE the force check caps the storm to <1/sec while still letting a genuine pounce jump the longer
+    //      idle cadence.  force buys eagerness, never a machine-gun.
+    let gap = top.c.ferry_ask_at ? (nowt - top.c.ferry_ask_at) : 1000000000
+    if (gap < 1100) { return 0 }
+    if (!force && gap < 2800) { return 0 }
+    top.c.ferry_ask_at = nowt
+    let sent = 0
+    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (this.Swarm_deliver(w, ident, pier.sc.pub, { kind: 'ferry_want', page: this.Swarm_page(ident) })) { sent = sent + 1 }
+    }
+    if (sent) { console.log('🦑 ferry: "I want linkage" → ' + sent + ' pier(s) — awaiting my soul') }
+    return sent
+// Swarm_ferry_cancelled — the Linkee's side of the teardown: the soul we were awaiting called the link off, so
+//  give up the "connecting…" wait and drop its durable twin (a reload must not rehydrate a dead ceremony).  Only
+//   the very soul we're awaiting can call it off (`from` must match ferry_awaiting.soul), so a stray cancel can't
+//    knock a Linkee out of an unrelated adopt.  Leaves a brief `ferry_offkey` note for the cell to show + dismiss.
+Swarm_ferry_cancelled(w, ident, from):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c || !top.c.ferry_awaiting) { return }
+    if (from && String(top.c.ferry_awaiting.soul) !== String(from)) { return }
+    delete top.c.ferry_awaiting
+    if (top.stashed) { delete top.stashed.ferry_awaiting }
+    // the "connecting…" cell now has no ferry state → Swarm_link_active falls false and it closes back to Radio,
+    //  which IS "495 gives up".  (A brief "the link was cancelled" toast would be a nice follow-up; left out to
+    //   avoid keeping a dead cell alive just to host it.)
+    console.log('🦑 ferry: the soul device called off the link — gave up awaiting it')
 // Swarm_ferry_consume — the UI's "yes, become this Cave" with the #fc code: unseal + import the parked
 //  account.  `ident` is this device's live self (its pre-ferry identity → body key).  Returns the soul.
 async Swarm_ferry_consume(w, code, accept):
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c) { return null }
+    // the awaiting/"connecting" marker is done either way (accept or decline) — clear its durable twin too, so a
+    //  later reload never rehydrates a "connecting…" for a ceremony that already resolved.
+    delete top.c.ferry_awaiting
+    if (top.stashed) { delete top.stashed.ferry_awaiting }
     let pend = top.c.ferry_pending
     if (!accept || !pend || !pend.frame) { delete top.c.ferry_pending; return null }
     let ident = this.Swarm_live_self ? this.Swarm_live_self() : null

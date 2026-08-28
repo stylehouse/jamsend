@@ -62,6 +62,12 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
                 const g = H()?.c?.musu_gat
                 if (g && !g.AC_ready && !pending_gats.includes(g)) { pending_gats.push(g); ac_poll++ }
             }
+            // MIRROR the AC-wanted fact onto the top-House .c so the toplevel authority (Screen_decide) can SEE it
+            //  — the ghost can't read this store, and `disk_gated` already rides .c the same way (Housing).  Without
+            //   this the splash never yields for an AUDIO-ONLY OPEN SHARE (a mobile listener's AC-resume tap, no
+            //    folder gate) and the tree covers the button for the full 2.2s cap.  `.c` is never snapped; 1-or-absent
+            //     to keep it a clean flag (CLAUDE.md).
+            try { const hc: any = H()?.c; if (hc) { if (pending_gats.some(g => !g?.AC_ready)) hc.ac_wanted = 1; else delete hc.ac_wanted } } catch {}
         }, 400)
         const on_want = (e: any) => {
             const g = e?.detail?.gat

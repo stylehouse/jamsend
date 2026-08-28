@@ -82,6 +82,9 @@ Socket_real(w):
     let ws = null
     let intentional = false   // port.close() was called — stay down, do not re-dial
     let tries = 0             // reconnect attempt counter (drives the backoff)
+    let stable_timer = null   // set on open; fires tries=0 ONLY if the socket survives STABLE_MS, so a
+    //                           flapping open→die never resets the backoff (cleared by onclose)
+    let STABLE_MS = 10000     // a connection must live this long to count "stable" and clear the backoff
     let open_hooks = []       // consumer callbacks fired on every (re)open (e.g. the relay `become`)
     // Wire framing (spec §4.2). A frame with no buffer rides as text JSON (the common case —
     //  hello/trust/ack/control, unchanged). A buffer-carrying frame rides as a text header LINE
@@ -289,12 +292,20 @@ Socket_real(w):
         port.ws = ws
         ws.binaryType = 'arraybuffer'   // so a binary frame arrives as ArrayBuffer (sync-decodable), not a Blob
         ws.onopen = () => {
-            tries = 0
+            // DON'T reset `tries` here (2026-08-29).  A socket that opens then dies in <STABLE_MS never
+            //  accumulates backoff, so a flapping relay (live: ws 1006 every ~600ms under bulk) pinned us
+            //   at attempt-1 and hammered a ~600ms reconnect STORM — which also re-fires this open hook →
+            //    re-`become` → gossip, amplifying the flood.  Reset only once the connection PROVES stable
+            //     (survives STABLE_MS), so real flapping backs off (0.5→1→2…→15s) while a healthy reconnect
+            //      still clears the counter a beat later.  onclose cancels the timer so it can't fire post-drop.
+            clearTimeout(stable_timer)
+            stable_timer = setTimeout(() => { tries = 0 }, STABLE_MS)
             note(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`)
             let q = pending.splice(0); for (const f of q) wire(f)
             for (const cb of open_hooks) { try { cb() } catch (e) {} }   // re-run consumer open work (relay `become`) on every (re)connect
         }
         ws.onclose = (ev) => {
+            clearTimeout(stable_timer)   // a pending "proved stable" reset must not fire after a drop
             note(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}${intentional ? ' (intentional)' : ''}`)
             // the bulk lane is pure repli_page — ephemeral, worthless once stale, self-heals via the
             //  sink's own re-ask — so it drops on close exactly like the noisy/run_phase frames above,

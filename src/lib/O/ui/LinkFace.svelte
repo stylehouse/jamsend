@@ -12,29 +12,21 @@
     let { n, H } = $props()
     // a quiet phase read so the title tracks which side of the ceremony this tab is on
     let phase = $state('')
+    // The whole ceremony is decided INSIDE this cell now (owner: "should be on its own in the Link cell. both
+    //  should be").  Both ends are dragged here by the auto-surface (Swarm_link_active → Sounditron_commission:
+    //   ferry_secret on the soul side, ferry_pending on the new device), and LinkDevice swaps its own phase —
+    //    QR → confirm/consent → linked — in place.  No pull to Door; the title just tracks the phase.
     $effect(() => {
         void H?.version
-        const w = H?.Swarm_station_world?.() ?? null
         try {
-            if (w && H?.Swarm_ferry_pending?.(w)) { phase = 'an account is arriving'; return }
+            const w = H?.Swarm_station_world?.() ?? null
+            if (w && H?.Swarm_ferry_pending?.(w)) { phase = 'receiving a soul'; return }
             const top = H?.top_House?.()
-            if (top?.c?.ferry_confirm) { phase = 'a device is adopting — confirm on its pier'; return }
-            if (top?.c?.ferry_secret) { phase = 'waiting for the other device'; return }
+            if (top?.c?.ferry_confirm) { phase = 'giving your soul'; return }
+            if (top?.c?.ferry_awaiting) { phase = 'connecting'; return }
+            if (top?.c?.ferry_secret) { phase = 'sharing your QR'; return }
         } catch {}
         phase = ''
-    })
-    // PULLED OUT OF THE QR TO THE PIER (the owner, 2026-08-28: "when the Pier turns up we should be pulled out
-    //  of the QRcode openness over to where we're seeing that Pier having that Adopt with us, to confirm it").
-    //   The instant Swarm_ferry_on_seal parks a confirm (a device sealed as our Cave), leave the Link cell for
-    //    the Door, where that pier now wears the bordered confirm.  Latched: pull once, re-arm when it clears.
-    let pulled = false
-    $effect(() => {
-        void H?.version
-        try {
-            const asking = !!H?.top_House?.()?.c?.ferry_confirm
-            if (asking && !pulled) { pulled = true; H?.Sounditron_focus?.('Door') }
-            if (!asking) pulled = false
-        } catch {}
     })
 </script>
 

@@ -28,6 +28,62 @@ There are TWO focus authorities in this app and only one of them is modelled.
  that says which fullscreen surface is dominant right now, why, and what it yields to.**  Not a pile
   of independent `{#if}`s each computing "should I be up" from a private signal.
 
+## 0.1 — LANDED 2026-08-29 (overnight): the authority is built + the ferry root fixed
+
+A first, working slice of §3 shipped and Book-verified (SwarmSpread 5/5, SwarmStaple 8/8 green; every
+ fullscreen `.svelte` transforms 200).  What's live now:
+
+- **`Screen_decide(w)`** (`Ghost/Story/Sounditron.g`, beside the `w.c.focused` twin, called from the
+   humdinger-gated surfacing block) writes **`MH.c.screen = {dominant, reason, wants, yields_to}`** — the
+    fullscreen twin of `w.c.focused`.  Ladder: **ceremony(FRESH link) ▸ arrival ▸ gaveup ▸ glass**.  It is
+     HUMDINGER-GATED (a Book gets no `screen`, so fixtures are untouched) and does NOT bump (rides the
+      commission that already runs per version-bump).  Boot-tap is a **want**, not a rung — the owner's
+       "OPENSHARE must merely WANT it, then be serviced by the thing with focus": `wants:['open-share']`
+        when `disk_gated‖ac_wanted`, hosted by whatever surface is dominant, so a compulsory Adopt is never
+         hidden behind a folder/audio beg.
+- **`Swarm_link_fresh(w)`** (`Ghost/S/Swarm.g`) — the SCREEN-decision twin of `Swarm_link_active`: identical
+   for Books / Linkor-intent / a landed decision, but DOWNGRADES an awaiting-only ceremony whose soul pier
+    has gone quiet (a reloaded-but-dead `ferry_awaiting`).  This is what stops **"the linking-this-device
+     Superglass intrudes for no reason"**: a corpse no longer seizes the belly.  Routed into the Link
+      surfacing (Sounditron), BootGate's stand-down, and Butler's lift.
+- **Splash yields** (`Splash.svelte` `urge` prop ← `BigSoundland` `boot_urge` ← `MH.c.screen`): the tree
+   fades AT ONCE when an open-share want / ceremony / gaveup needs the screen, so **OPEN SHARE shows over the
+    tree** (and the FSA handle finally gets granted — the "account write OWED" stall).  A pure "starting up"
+     arrival with no want still keeps the splash — that flashy window is what it exists to cover.
+- **The `ferry_want` flood is capped** (`Swarm_ferry_ask`: an 1100ms absolute floor `force` can't cross) —
+   the Link-cell remount loop was firing ~1000 `ferry_want`/s on startup.
+- **THE FERRY ROOT — "eed is not at the party" — is fixed** (`Ghost/N/Peeroleum.g`): `ferry_want`/`ferry_cancel`
+   now ride the ephemeral **receive-bypass** (like `repli_want`), so a reloaded Cave pier — which
+    `Swarm_station_routes` never re-`%Ud`'s (a Cave is no sealed friendship) — still HEARS the demand instead
+     of holding it behind the pre-Ud gate forever.  The Linkor re-parks `ferry_confirm` off the wire (twin
+      rehydrate in the handler), the "give my soul" button reappears, and the Adopt completes.  This was the
+       real reason the handshake wedged at `Invite state:redeeming`.
+
+**⚠ BOMB / bequest for the next session — do NOT be fooled by the transport Books.**  `SwarmGot` and
+ `SwarmWire` are RED right now, but **that is the OTHER thread's uncommitted WIP in the SHARED tree, not this
+  work**: `SwarmGot` drifts on their `Swarm_boast_on_hi` swarm_hi-throttle (in `Swarm.g`), `SwarmWire` on
+   their `Tribunal` backoff (`gen/N/Tribunal.go`, `Tyrant.go`, `Mesh.go`, `Mixer.go` were compiled by them).
+    Confirmed by: my ferry Books green, my `Peeroleum` diff being a 12-line false-type-check for `ive_got`,
+     and SwarmWire's early steps passing with `error:null` drift only in Tribunal-driven steps.  Don't "fix"
+      them here — they belong to the ive_got/Tribunal thread to finish and re-record.
+
+**Adversarially reviewed (2026-08-29, static trace):** NO blockers.  The two real worries came back clean —
+ the `Peeroleum` bypass still runs full voucher verification (a forged `ferry_want` can't re-park a confirm; a
+  humdinger soul only PARKS, the human still presses "give my soul"), and `Swarm_link_fresh`'s `heard_at` units
+   are ms on both sides.  One SHOULD-FIX found and FIXED: `Screen_decide` read `MH.c.ac_wanted` which nothing
+    wrote (it was only a boot-gate getter), so an AUDIO-ONLY OPEN SHARE (mobile AC-resume, no folder gate) didn't
+     yield the splash — now mirrored onto `.c` in `boot_gate.svelte.ts`'s poll.  Two bounded NITs left as-is: the
+      Linkee "connecting…" cell blanks for ~5s after a reload until the soul's next pulse warms `heard_at`
+       (self-healing); and the splash still z-occludes the gate but yields early now for BOTH disk and AC.
+**Commit hygiene (reviewer flag):** the working tree carries `Credulate/Credulation/*TimeSpool*` snap churn +
+ GhostList `uses/dige` footprint drift — NOISE; revert those before commit, keep only intentional `NNN.snap` +
+  `toc.snap` step/dige changes (of which this work has none — it is Book-inert).
+
+**Still owed (not done tonight):** the Link-cell RENDER bug ("¼-size scrollable box → big pink 'Link'") is a
+ `Cellsizing_todo` `big`-vs-`stretched` pose issue, orthogonal to the authority.  The full §3 migration of
+  EVERY surface to read `screen.dominant` (below) is only partially wired (Splash reads it; Butler/BootGate
+   still self-decide but now via `link_fresh`).  Receive-ack (task #21) still deferred.
+
 ## 1. The focus-stealers (inventory — verify against the tree; some z-indices are from memory)
 
 Every surface that can command the whole viewport, what raises it, how it lifts, and its z:
@@ -40,7 +96,7 @@ Every surface that can command the whole viewport, what raises it, how it lifts,
 | **the gaveup remedy** ("▶ start the music") | `ui/Butler.svelte` | `arrived==='gaveup'` & remedy | the remedy taken | (inside Butler) |
 | **the Link/Adopt consent cell** | `Sounditron_commission` → LinkFace | `Swarm_link_active` (ferry pending/secret) | ceremony ends | a GLASS cell (needs arrival first!) |
 | **the ▦ guts switch** | `V/BigSoundland.svelte` | always rendered (opacity .2) | toggles `guts` pref | 999999 |
-| **the proposed boot splash** (tree.webp) | (unbuilt — this session) | app start | arrival / peek | above Butler |
+| **the boot splash** (tree.webp) | `ui/Splash.svelte` (BUILT 2026-08-29) | app start | glass‖Butler up, or 4.2s max | z 2000000, pointer-none |
 
 The tell that these are uncoordinated: **BootGate is altitude 77, Butler is 55** — Butler is
  *deliberately* under BootGate and then *suppresses itself* (`butler_up`) so two gates don't stack.
@@ -340,7 +396,51 @@ The "authority" itself scores badly against Homethink §4's own tell: *"the meas
  reconsidered, §1/§3.2 need correcting: the ceremony is a **glass cell** (belly focus), not a
   fullscreen rung — so bug 5's *surfacing* half belongs in commission/arrival (Solo/Atheory), not an
    attention ladder; and **▦ is permanently co-top at z 999999**, which already falsifies "exactly one
-    dominant." The live fullscreen population is really just Butler + BootGate + the unbuilt splash,
+    dominant." The live fullscreen population is really just Butler + BootGate + the splash,
      already coordinated by `butler_up`. If an authority is ever wanted, gate its WRITE on humdinger
       (the ungated `ferry_park` → `ferry_pending` → `Swarm_link_active` path is a real byte-identity
-       hole). The tree.webp splash job is likewise parked here until the owner returns to it.
+       hole).
+
+**SPLASH BUILT standalone (2026-08-29), NOT as a §3 rung.** The owner returned to the tree.webp job while
+ live-hitting the boot jank. `ui/Splash.svelte` mounts in `V/BigSoundland.svelte` above everything
+  (z 2000000), pointer-transparent, fading the instant `glass_full ‖ butler_up` (a real surface is up) or a
+   hard 4.2s max — so it can never trap, and needs no authority to coordinate it (it yields by disappearing,
+    not by ranking). Deliberately a point-fix, not the ladder: if MORE surfaces start fighting, THAT is when
+     the §3 authority earns its keep — the splash was chosen as the one surface that can be correct in
+      isolation (it only ever needs to know "is anything real up yet?"). Runner/editor boots (`?B=`/`?E=`) skip it.
+
+## a concrete hijack (owner, 2026-08-29) — the blue "open share" gate jumps the Adopt
+
+Live test, on the Linkee just before it reaches the Link cell: *"it is asked to open share, but by an
+ older UI with blue. it should be the uniform orange one we have now everywhere, and this occurrence
+  must be only for AC, which we can wait til after this compulsory Adopt thing to happen. there must
+   be some priority of tasks at hand, where something can hijack attention."*
+
+Two faults, one root:
+- **Stale styling** — the "open your music folder / share" prompt is an OLD blue surface, not the
+   uniform orange the rest of the app now uses. (Find it: a share/FSA-permission gate, likely a
+    BootGate/permission surface — re-skin to the orange register.)
+- **No priority** — a *compulsory* Adopt ceremony must OUT-RANK an incidental share/AC (AudioContext)
+   prompt. Today the share gate can jump in front of the Link cell; the AC gate ("press start") should
+    likewise defer until AFTER the Adopt. This IS the focus-authority this doc exists for: the
+     fullscreen surfaces (Butler, BootGate, the share/AC gate, the Link ceremony) need a **ranked**
+      claim on attention, not first-come. The Link ceremony (a compulsory, in-flight `Swarm_link_active`
+       state) should sit ABOVE the share/AC gates in that ranking, which can wait for a lull.
+
+This is the same "something can hijack attention" the §3 authority was meant to arbitrate — now with a
+ concrete, reproducible instance to design against.  (Interim safe step already landed: the Butler
+  stands aside on `Swarm_link_active` — but the share/AC gate is a DIFFERENT surface and still jumps.)
+
+**BOTH FAULTS FIXED for the BootGate surface (2026-08-29, .svelte-only, transform 200).** The share/AC
+ gate the owner saw is `BootGate.svelte` (`.disk-gate`, `class="big"` button — default blue-grey on
+  pale-blue `#d7edff` text). Two changes, mirroring the Butler treatment that already existed one file over:
+- **Styling → uniform orange.** `.big` now wears Butler's exact `.orange` gradient
+   (`linear-gradient(180deg,#ffb156,#ff8c1a)`, warm shadow, hover lift) and the gate text warmed to
+    `#f4ead6`. Both boot gates now show one face.
+- **Priority → stands down for the Adopt.** BootGate already stood down for `butler_up`; it now ALSO
+   gates on `!link_active` (`H.Swarm_link_active(null)`), so a live device-link ceremony suppresses the
+    whole disk/AC beg. When the ceremony ends `link_active` falls false and a still-wanted gate returns —
+     exactly "we can wait til after this compulsory Adopt". This is a point-fix along the grain of the §3
+      ranking, not the general authority: BootGate is the only surface re-skinned/ranked here; the
+       Butler was done earlier. If ANOTHER fullscreen surface is later found jumping the ceremony, the
+        real fix remains the §3 ordered claim, not a third `!link_active` sprinkle.

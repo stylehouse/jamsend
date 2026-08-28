@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '2e7ef4045314b6a5~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '546377c363a68435~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -414,17 +414,37 @@ Sounditron_commission(w) { const H = this;
     //  link that goes active auto-focuses the Link cell ONCE (the w.c.link_surfaced latch) and then yields to
     //   any deliberate press away; when the ceremony ends (active goes false) the latch clears and a focus
     //    still parked on Link falls back to the Door|Radio default, so a finished link never strands the belly.
+    // THE CEREMONY LIVES IN ITS OWN SURFACE NOW (LinkSurface), NOT THE BELLY (owner 2026-08-29: the %Link cell
+    //  "straddled both" focus machines — a belly cell AND a screen-owner — which is why it rendered as a ¼-size
+    //   box / a bare pink "Link" and intruded).  So a LIVE (humdinger) tab no longer surfaces or grapples %Link
+    //    here; LinkSurface reads the SAME Swarm_link_fresh / top.c.link_lobby and shows the ceremony as a full
+    //     overlay of its own.  BOOKS (no humdinger) keep the EXACT old belly-resident %Link so every ferry
+    //      fixture stays byte-identical — the whole change below is gated on `!mh_hd`.
+    let mh = this.top_House ? this.top_House() : null
+    let mh_hd = mh && mh.c ? mh.c.humdinger : 0
     let linkActive = 0
-    try { linkActive = this.Swarm_link_active ? this.Swarm_link_active(w) : 0 } catch (e) { linkActive = 0 }
-    if (linkActive && !w.c.link_surfaced) { w.c.focused = 'Link'; w.c.link_surfaced = 1 }
-    if (!linkActive && w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
-    // FIND IT HERE, NOT IN A SIBLING VERB (2026-08-28, the owner's "undefined link" catch): the first cut
-    //  referenced `link`, a variable that exists only in Sounditron_glass's scope — so the moment the Link
-    //   cell was actually asked for (press "Link Device" in the Door), the commission THREW mid-build and
-    //    the whole glass died.  The particle is minted by Sounditron_glass on this same w, so o() finds it;
-    //     guarded so a pre-glass commission can never push undefined into the grapple set.
+    try { linkActive = this.Swarm_link_fresh ? this.Swarm_link_fresh(w) : (this.Swarm_link_active ? this.Swarm_link_active(w) : 0) } catch (e) { linkActive = 0 }
+    if (!mh_hd) {
+        // BOOK / non-live path — unchanged: an arriving account auto-focuses the belly %Link once (latch), and a
+        //  finished link releases the latch back to the Door|Radio default.
+        if (linkActive && !w.c.link_surfaced) { w.c.focused = 'Link'; w.c.link_surfaced = 1 }
+        if (!linkActive && w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
+    } else {
+        // LIVE path — the ceremony is a SURFACE, so the belly must never keep %Link focused: clear any latch left
+        //  over from an older build so the belly falls cleanly to Door|Radio and LinkSurface owns the ceremony.
+        if (w.c.focused === 'Link') { delete w.c.focused }
+        if (w.c.link_surfaced) { delete w.c.link_surfaced }
+        if (w.c.link_decided) { delete w.c.link_decided }
+    }
+    // PUBLISH THE FULLSCREEN AUTHORITY here, on the same humdinger-gated commission that already decides the belly
+    //  focus — one place, one decision.  Inert on Books (Screen_decide self-gates on humdinger).  On a live tab it
+    //   is what raises the ceremony surface (screen.dominant==='ceremony'), replacing the old belly auto-focus.
+    try { this.Screen_decide(w) } catch (e) {}
+    // FIND IT HERE, NOT IN A SIBLING VERB (2026-08-28, the owner's "undefined link" catch): the %Link particle is
+    //  minted by Sounditron_glass on this same w.  Grapple it into the belly ONLY on a Book (!mh_hd) — a live tab
+    //   shows the ceremony in LinkSurface, so the belly stays free of it.
     let link = w.o({ Link: 1 })[0]
-    if ((linkActive || w.c.focused === 'Link') && link) organs.push(link)
+    if (!mh_hd && (linkActive || w.c.focused === 'Link') && link) organs.push(link)
     // the transfer HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback but I don't see
     //  any"): Heist_keep_beat mints and keeps current a persistent dontSnap %Transfer cell on the radio
     //   world, but a cell only draws once it's in this commission's grapple set — same law as every other
@@ -1071,6 +1091,74 @@ Sounditron_focus_to(w, key) {
     delete w.c.focused_keep
     this.Sounditron_commission(w)
     this.feebly_ponder()
+    return 1
+
+},
+// Screen_decide — the toplevel FOCUS AUTHORITY (Focus_todo §3): the fullscreen twin of `w.c.focused`.  ONE ranked
+//  decision, written to MH.c.screen, that every fullscreen face READS instead of each computing its own `up` — so
+//   no two surfaces can both believe they own the viewport (the intruding-Superglass class of bug).  `dominant` is
+//    the single surface with the screen; `wants` is the set of attention-BEGS (open-share) that the dominant
+//     surface SERVICES rather than each seizing the screen (owner 2026-08-29: "anywhere we want OPENSHARE to show
+//      up has to merely WANT it, then it can be serviced by the thing with focus").  So a compulsory Adopt is never
+//       hidden behind a folder/audio beg — the beg rides as a want the ceremony hosts.  HUMDINGER-GATED and
+//        READ-mostly: a runner/Book tab (no humdinger) gets NO authority and every face falls back to its own gate,
+//         so no fixture sees a screen.  NO bump: it rides the commission that already runs per version-bump, so a
+//          bump here would just re-enter this same commission (the focus block above writes w.c.focused the same
+//           way — no self-bump).  Ladder, highest first: ceremony (a FRESH link) ▸ arrival (still starting up) ▸
+//            gaveup ▸ glass.  Freshness (Swarm_link_fresh) means a dead rehydrated ceremony can't win the screen.
+Screen_decide(w) {
+    let MH = this.top_House ? this.top_House() : null
+    if (!MH || !MH.c || !MH.c.humdinger) { return 0 }
+    let wants = []
+    if (MH.c.disk_gated || MH.c.ac_wanted) { wants.push('open-share') }
+    // a FRESH ceremony OR a deliberately-opened lobby (the Door's "Link Device") is the ceremony rung — both raise
+    //  the LinkSurface overlay and both make the splash yield.
+    let link = 0
+    try { link = (this.Swarm_link_fresh ? this.Swarm_link_fresh(w) : 0) || (MH.c.link_lobby ? 1 : 0) } catch (e) { link = MH.c.link_lobby ? 1 : 0 }
+    let arr = 'none'
+    try { arr = this.Supervisor_arrived ? this.Supervisor_arrived(w) : 'none' } catch (e) { arr = 'none' }
+    let guts = MH.stashed && MH.stashed.Supervisor && MH.stashed.Supervisor.guts ? 1 : 0
+    let dominant = 'glass'
+    let reason = 'the app is up'
+    if (link) {
+        dominant = 'ceremony'
+        reason = 'a device link is in flight'
+    } else {
+        if (arr === 'none' || arr === 'coming') {
+            dominant = 'arrival'
+            reason = 'starting up'
+        } else {
+            if (arr === 'gaveup') {
+                dominant = 'gaveup'
+                reason = 'the invite did not finish — ask for a fresh QR'
+            }
+        }
+    }
+    if (guts) { dominant = 'glass'; reason = 'you asked for the guts' }
+    let wkey = wants.join(',')
+    let prev = MH.c.screen
+    let changed = !prev || prev.dominant !== dominant || (prev.wants ? prev.wants.join(',') : '') !== wkey ? 1 : 0
+    MH.c.screen = { dominant: dominant, reason: reason, wants: wants, yields_to: dominant === 'ceremony' ? [] : ['ceremony'] }
+    if (changed) { console.log('🖥 screen: ' + dominant + (wkey ? ' +[' + wkey + ']' : '') + ' — ' + reason) }
+    return 1
+
+},
+// Sounditron_link_open — the Door's "Link Device" doorway, now that the ceremony is a SURFACE not a belly cell.
+//  Instead of focusing a %Link belly cell (Sounditron_focus 'Link'), it raises the LinkSurface overlay by setting
+//   the durable-free `top.c.link_lobby` flag; Screen_decide then reads it into the ceremony rung and LinkSurface
+//    shows.  A bump so the face re-derives at once.
+Sounditron_link_open(w) {
+    let top = this.top_House ? this.top_House() : null
+    if (top && top.c) { top.c.link_lobby = 1; if (top.bump_version) { top.bump_version() } }
+    return 1
+},
+// Sounditron_link_close — the LinkSurface's ✕ / the one dismiss: tear down any in-flight ceremony (Swarm_ferry_cancel
+//  is idempotent — safe when nothing is in flight) and drop the lobby flag, so the overlay folds and the belly is
+//   already free (a live tab never grappled %Link).
+Sounditron_link_close(w) {
+    let top = this.top_House ? this.top_House() : null
+    try { if (this.Swarm_ferry_cancel) { this.Swarm_ferry_cancel(w) } } catch (e) {}
+    if (top && top.c) { delete top.c.link_lobby; if (top.bump_version) { top.bump_version() } }
     return 1
 
 },

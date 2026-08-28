@@ -444,7 +444,13 @@
         //  handles the invite by itself — the one question a brand-new visitor must answer.
         //  Only a SCAN-landing (?Iz in the URL) auto-joins: a pasted link is already a deliberate
         //   act, so it keeps the explicit JOIN button rather than firing under the paster's hands.
-        if (!landed_url || !invite || !self || !stood || !born_today || !named || auto_fired || joined) return
+        // Don't re-redeem when a device-link ceremony is already live on this tab (ferry_awaiting rehydrated
+        //  from a reload): the soul is inbound and LinkDevice drives it from here, so a second single-use
+        //   redeem only fails and (worse) used to nuke the ?Iz.  The FIRST landing has no live ferry yet, so
+        //    this never blocks the opening redeem.
+        let ceremony_live = false
+        try { ceremony_live = !!(H?.Swarm_link_active?.(null)) } catch {}
+        if (!landed_url || !invite || !self || !stood || !born_today || !named || auto_fired || joined || ceremony_live) return
         auto_fired = true
         joined = '… joining by itself'
         join()
@@ -481,7 +487,9 @@
     //   re-surfacing the same dead offer.  Only the URL's OWN token (landed_url); a pasted one
     //    lives in the paste row, not the location.
     $effect(() => {
-        if (iz_err && landed_url) strip_iz()
+        // Never strip a device-link (MyCave) token on a parse hiccup: it must stay in the bar for the
+        //  whole adopt (owner: "it needs to stay in the URL").  Only clean out a truly dead FRIEND token.
+        if (iz_err && landed_url && !String(iz).includes('*MyCave*')) strip_iz()
     })
     // JOIN — the frontier rung, live: our own station up, a %Pier promoted to the inviter's
     //  prepub, the ws open + hello-bound, then the proven redeem. The seal (their pier_accept)
@@ -511,7 +519,18 @@
         const claim = await H.Swarm_redeem(w, self, iz, relic_advice)
         // SPENT even on refusal: a single-use ?Iz is consumed by the attempt, so drop it either way
         //  — a lingering dead blob only re-fails on reload.
-        if (!claim) { strip_iz(); joined = '✗ the inviter refused or is unreachable — the rebuff rides the identity'; return }
+        if (!claim) {
+            // A device-link (MyCave) landing KEEPS its ?Iz through the entire adopt.  A null claim here is
+            //  the RELOAD case — the token was already spent on the first pass and the ferry ceremony is
+            //   live again from the rehydrated ferry_awaiting; finalize_url (LinkDevice) owns the bar, not
+            //    this.  Stripping now is exactly the "I dropped the Adopt again" regression.  A friend invite
+            //     still drops its dead single-use token.
+            if (invite?.to !== 'MyCave') strip_iz()
+            joined = invite?.to === 'MyCave'
+                ? '… the adopt is already under way on this device — resuming'
+                : '✗ the inviter refused or is unreachable — the rebuff rides the identity'
+            return
+        }
         // the ?Iz is SPENT the moment the redeem lands — swap the address bar to ?I=<prepub>
         //  RIGHT HERE, not after the seal-watch: gating the swap on an 8s seal window stranded
         //   ?Iz whenever the seal ran late, and a reload then re-presented a dead blob ("did
@@ -519,8 +538,17 @@
         //     stored only under its role, and an unpinned ?I=<prepub> reload would mint a
         //      stranger — the friendship left on the old key.  Pin gates only the ?I= SET; the
         //      ?Iz DROP is unconditional (a spent token must never survive, pinned or not).
-        const pinned = self?.sc?.prepub ? await H.Clustation_pin?.() : null
-        strip_iz(pinned ? String(self.sc.prepub) : undefined)
+        // KEEP THE DEVICE-LINK URL until the ceremony is COMPLETE (owner 2026-08-29: "keep the initial
+        //  ?Iz=…*MyCave*…#fc= url, avoid shortening it to ?I=<self>").  A MyCave redeem is only the FIRST step —
+        //   the soul still has to cross and be CONSUMED; pinning ?I=<blank self> now would make a reload forget
+        //    the ceremony and resume as the blank device ("it's trying to become eed, which it should be when
+        //     this procedure is complete").  So leave the ?Iz=…MyCave…#fc= in the bar — Swarm_ferry_consume
+        //      (LinkDevice) drops it and pins the NEW soul once the device has definitely become it.  Friend
+        //       (Music) invites strip as before; a REFUSAL above still strips either kind (a dead token must go).
+        if (invite?.to !== 'MyCave') {
+            const pinned = self?.sc?.prepub ? await H.Clustation_pin?.() : null
+            strip_iz(pinned ? String(self.sc.prepub) : undefined)
+        }
         joined = '… hello delivered — waiting for the seal'
         const sealed = await wait_for(() => H.Swarm_peering(self)?.o({ Pier: 1, pub: invite.prepub })[0], 8000)
         // no seal — the inviter's pier_reject (heard by the station) rides the identity as a

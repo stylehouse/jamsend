@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Mixer(): string { return 'd5597b5a4132d7f3' },
+    Ghostmeta_Ghost_M_Mixer(): string { return 'd5597b5a4132d7f3~g1' },
 
 // Mixer.g — the CELLULAR music world: many sound-sources at once, pitch/rate-bent to mix.  Stage 6 of the
 //  jamsend platform (Radio_spec §5, the platform stages).  A "Cell" is one playing source (one Audiolet at

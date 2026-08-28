@@ -52,3 +52,4 @@ jamserve/run.log
 jamserve/*.log
 jamsend-appcache
 jamserve
+testmusicshare-appcache

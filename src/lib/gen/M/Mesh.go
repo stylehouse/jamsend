@@ -8,10 +8,10 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Mesh(): string { return '286eb98843f6e7f9' },
+    Ghostmeta_Ghost_M_Mesh(): string { return '2c1e6afdb90d9379~g1' },
 
 // Mesh.g — the whole platform as ONE sync that sees itself in several places, with the EDGES between them.
-//  Stages 8 (Mesh) + 9 (Stretch) of the jamsend platform (Musuation.g MusuCrate_filaments).  Each client
+//  Stages 8 (Mesh) + 9 (Stretch) of the jamsend platform (Radio_spec §5, the platform stages).  Each client
 //   is a replica of the C** state; each link is an %edge with a COST and a KIND:
 //     'peer'  — a webrtc link between two clients (cheap; local; the cafe's LAN).
 //     'relay' — the uplink out to the relay server (expensive; the metered/quiet link to conserve).

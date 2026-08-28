@@ -31,6 +31,8 @@
     import { keyser } from "$lib/data/Stuff.svelte"
     import BootGate   from "$lib/O/ui/BootGate.svelte"
     import Butler     from "$lib/O/ui/Butler.svelte"
+    import LinkSurface from "$lib/O/ui/LinkSurface.svelte"
+    import Splash     from "$lib/O/ui/Splash.svelte"
     import Actions    from "$lib/O/ui/Actions.svelte"
     import Lens       from "$lib/O/ui/Lens.svelte"
     import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
@@ -194,6 +196,13 @@
     //   keep every bit of it, because those are the rooms you enter when something is wrong and
     //    they are worth nothing without their labels.  `.scape-peek` (and ? ) are the way back.
     let glass_full = $derived(!!cyto && !sprawl)
+    // BOOT URGE — the splash must YIELD the instant a real decision or a tap-beg needs the screen: an OPEN SHARE
+    //  want (so the yellow gesture shows over the tree — else the FSA handle is never granted and "account write
+    //   OWED" stalls, owner 2026-08-29), or a fresh device-link ceremony / gaveup arrival that must be seen.  Reads
+    //    the toplevel focus authority (MH.c.screen, Screen_decide); false on a Book (no authority) so the splash
+    //     keeps its plain ready/cap fade there.  A pure "starting up" arrival with no want does NOT urge — that is
+    //      exactly the flashy window the splash exists to cover.
+    let boot_urge = $derived.by(() => { void H?.version; let s: any = (H as any)?.top_House?.()?.c?.screen; if (!s) return false; return !!((s.wants && s.wants.length) || s.dominant === 'ceremony' || s.dominant === 'gaveup') })
     // every UI the run has mounted, GROUPED by House (Cyto and all) — the sprawl's content.
     //  Grouping gives each House one anchor the jump-to-H chips scroll to, plus its own heading in
     //   the dump.  Pantheate-include is DROPPED silently: on a runner these are the Creduler's
@@ -274,6 +283,10 @@
 
 <svelte:window onkeydown={radio_key} />
 
+<!-- the boot splash (tree.webp) — the calm first frame over the multi-phase boot, above everything and
+     pointer-transparent; fades the instant the glass or the Butler is up, or by a hard max-wait.  See Splash. -->
+<Splash ready={glass_full || butler_up} urge={boot_urge} />
+
 <BootGate {H} who="the piracy-scape" audio_fullscreen={true} proactive={true} />
 <!-- the Butler: the Supervisor's arrival screen, altitude 55 — UNDER BootGate, because a permission
      the listener has to grant outranks news about work in progress.  It lifts on ARRIVAL and on
@@ -286,6 +299,10 @@
          Mounted beside BootGate rather than inside the view switch for the spine_shims reason: a
           persisted `sprawl` must not be able to starve it. -->
 <Butler {H} />
+<!-- the device-link ceremony's OWN surface (altitude 60 — above the Butler arrival screen, below the compulsory
+     BootGate tap), pulled out of the glass belly so it can never render as a ¼-box or straddle the belly focus.
+     Shows on a fresh link / an opened lobby; folds when both are gone.  See LinkSurface. -->
+<LinkSurface {H} />
 
 <!-- ▦ THE ONE CONTROL, and the only piece of chrome on this page that is ALWAYS on screen (the owner
      2026-08-10: *"just have ▦ hidden-ish (opacity:0.2) in the top right corner at all times. z-index

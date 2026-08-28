@@ -36,6 +36,15 @@
     let disk_gated   = $derived(gate.disk_gated)
     let ac_wanted    = $derived(gate.ac_wanted)
     let butler_up    = $derived.by(() => { gate.poll; return !!(H as any)?.c?.butler_up })
+    // AND IT STANDS DOWN FOR A DEVICE-LINK CEREMONY (owner 2026-08-29: the blue share gate "hijacks the
+    //  Adopt… this occurance must be only for AC which we can wait til after this compulsory Adopt").  A
+    //   soul-copy is the most consequential thing on the glass; a folder/audio beg must not seize the screen
+    //    in front of it.  Same shape as the butler stand-down above — link_active falls false the moment the
+    //     ceremony ends, so a still-wanted gate simply returns then.
+    // link_FRESH, not link_active: a reloaded-but-dead ceremony (soul gone) must NOT keep suppressing OPEN SHARE,
+    //  else the FSA handle never gets acquired and "account write OWED" stalls forever.  Fresh falls back to
+    //   active on any build without the freshness verb.
+    let link_active  = $derived.by(() => { gate.poll; try { return !!((H as any)?.Swarm_link_fresh?.(null) ?? (H as any)?.Swarm_link_active?.(null)) } catch { return false } })
     let ac_via_brink = $derived(!audio_fullscreen
         && (H?.c.boot_role === 'editor' || H?.c.boot_role === 'runner'))
     let role_label   = $derived(who ?? (H?.c.boot_role === 'editor' ? 'Editor' : 'Runner'))
@@ -44,7 +53,7 @@
     const open_share = gate.open_share
 </script>
 
-{#if !butler_up && (disk_gated || (ac_wanted && !ac_via_brink))}
+{#if !butler_up && !link_active && (disk_gated || (ac_wanted && !ac_via_brink))}
     <FaceSucker altitude={77} fullscreen={true}>
         {#snippet content()}
             <!-- ONE standard gate, no situation talk (the human 2026-07-19: it's either needFSA
@@ -77,17 +86,33 @@
         justify-content: center;
         gap: 1rem;
         text-align: center;
-        color: #d7edff;
+        color: #f4ead6;
         padding: 2rem;
         font-family: Arial, Helvetica, sans-serif;
     }
     .disk-gate h2 { margin: 0; font-size: 1.6rem; }
     .disk-gate p  { max-width: 28rem; opacity: 0.8; }
+    /* THE UNIFORM ORANGE (owner: "the uniform orange one we have now everywhere", not the old blue).
+       Mirrors Butler.svelte's `.orange` — both boot gates now wear one face. */
     .disk-gate button.big {
-        font-size: 1.4rem;
-        padding: 0.7em 1.2em;
+        position: relative;
+        font-size: 1.55rem;
+        padding: .75em 1.8em;
         cursor: pointer;
+        color: #2b1500;
+        background: linear-gradient(180deg, #ffb156, #ff8c1a);
+        border: none;
+        border-radius: .6rem;
+        font-weight: 600;
+        box-shadow: 0 10px 34px -6px rgba(255, 140, 26, .55), inset 0 1px 0 rgba(255,255,255,.4);
+        transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
     }
+    .disk-gate button.big:hover:not(:disabled) {
+        background: linear-gradient(180deg, #ffc172, #ffa040);
+        transform: translateY(-1px);
+        box-shadow: 0 14px 40px -6px rgba(255, 140, 26, .65), inset 0 1px 0 rgba(255,255,255,.5);
+    }
+    .disk-gate button.big:active:not(:disabled) { transform: translateY(0); }
     .disk-gate button:disabled { opacity: 0.5; cursor: default; }
     .disk-gate .gate-err { color: #ff8a8a; font-size: 0.9rem; }
 </style>

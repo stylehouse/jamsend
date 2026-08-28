@@ -36,11 +36,6 @@
             if (self && typeof H?.Swarm_peering === 'function') {
                 const rw = (H as any)?.c?.radio_w
                 const playing = !!rw?.o?.({ Radio: 1 })?.[0]?.c?.rec
-                // THE ADOPTING PIER — the ONE home for device-link state (the owner: "the one place that state
-                //  goes… where we're seeing that Pier having that Adopt with us, to confirm it").  A grantor's
-                //   Swarm_ferry_on_seal parks top.c.ferry_confirm keyed to the pier that just sealed as a Cave;
-                //    that pier — and only it — grows a bordered confirm here, and the QR pulls the grantor over.
-                const adopt = ((H as any)?.top_House?.()?.c?.ferry_confirm ?? null) as any
                 friends = ((H.Swarm_peering(self)?.o({ Pier: 1 }) ?? []) as any[]).map((p: any) => {
                     // the latest suggestion FROM them (by === their pub), with its mirror rec
                     //  resolved by enid against their crate when the share already carried it —
@@ -83,10 +78,9 @@
                         seal_missing: seal === 1 ? (mine_ok ? 'they never granted back' : 'we never granted back') : null,
                         pub: String(p.sc.pub),
                         name: String(p.sc.friendly || String(p.sc.pub).slice(0, 8)),
-                        // a MyCave pier is your OWN device, not a friend — quietly marked (🔗), and if it is the
-                        //  pier a device-link is confirming right now it becomes the bordered adopt block below.
+                        // a MyCave pier is your OWN device (a Cave), not a friend — quietly marked 🔗 so it
+                        //  doesn't read as a stranger.  The adopt ceremony itself lives in the Link cell now.
                         cave: !!p.o({ Grant: 'MyCave' })[0],
-                        adopting: !!(adopt && String(adopt.pub) === String(p.sc.pub)),
                         music: !!p.o({ Grant: 'Music' })[0],
                         records: p.o({ IveGot: 1, by: 'records' })[0]?.sc?.count,
                         rung,
@@ -274,16 +268,8 @@
         } catch {}
     }
 
-    // ── THE ADOPT CONFIRM (Trust_todo / Division §CEREMONY) — pressing ✓ is the grantor consent that
-    //  Swarm_ferry_on_seal parked the send for: it performs the one exfiltration.  `no` cancels the whole
-    //   in-flight link.  Station world is fetched in the CLICK (never a derive — Swarm_station_world is an
-    //    oai that mints, and a probe on the 1s tick must not).
-    function ferry_confirm() {
-        try { (H as any)?.Swarm_ferry_confirm?.((H as any)?.Swarm_station_world?.()) } catch {}
-    }
-    function ferry_cancel() {
-        try { (H as any)?.Swarm_ferry_cancel?.((H as any)?.Swarm_station_world?.()) } catch {}
-    }
+    // (The grantor adopt-confirm + its SAS used to live here — moved to the Link cell 2026-08-28, owner:
+    //  "should be on its own in the Link cell. both should be. it's a huge deal copying your account".)
 
     // ── INVITE MANAGEMENT, IN THE GLASS (2026-08-09, the owner: fullscreen Vyto "with Invite
     //  management in there").  This cell was already WHO AM I and WHO'S WITH ME; the one missing
@@ -358,13 +344,12 @@
            above returns 🚪 and never reaches this. -->
     {#if face.prepub}
         <div class="df-panel"><InvitePanel {H} inglass /></div>
-        <!-- LINK A DEVICE — a doorway, not a panel (the owner: "when I click Link Device in the Door, nav
-             to a new cell called LinkDevice, which we can abandon — to focus the UI more").  The ceremony no
-             longer unfolds inside the Door; pressing this makes the %Link cell the belly (focus_to 'Link'),
-             and pressing Door|Radio there abandons it.  n.c.up is this Door particle's Vyto world (minted at
-             door.c.up = w in Sounditron_commission). -->
-        <button class="df-linkdev" onclick={() => H?.Sounditron_focus?.('Link')}
-            title="carry this account to another device — opens the Link Device cell, which you leave by pressing the Door or Radio">
+        <!-- LINK A DEVICE — a doorway to the ceremony's OWN surface, not a belly cell (owner 2026-08-29: the
+             ceremony "straddled both" focus machines).  Pressing this raises the LinkSurface overlay via
+             Sounditron_link_open (top.c.link_lobby); the ceremony no longer lives in the glass belly, so it
+             can't render as a ¼-box.  You leave it by the surface's ✕. -->
+        <button class="df-linkdev" onclick={() => H?.Sounditron_link_open?.()}
+            title="carry this account to another device — opens the Link Device surface, which you close with ✕">
             🔗 Link Device
         </button>
     {/if}
@@ -435,40 +420,26 @@
          not a saying.  And the list is CAPPED (*"the list shouldn't be more than yay many long"*) —
          five rows, then one dim toggle for the rest. -->
     {#each (piers_all ? face.friends : face.friends.slice(0, PIERS_SHOWN)) as f}
-        {#if f.adopting}
-            <!-- THE ADOPT, ON ITS PIER — the QR pulled you here the moment this device's pier turned up.  This
-                 is the ONE place the device-link state lives, and pressing ✓ is what actually SENDS your account
-                 (Swarm_ferry_on_seal held the send for exactly this confirm). -->
-            <div class="df-adopt">
-                <div class="df-adopt-head">🔗 <b>{f.name}</b> is adopting — become your Cave?</div>
-                <div class="df-adopt-note">it will hold your keys and serve your library as you</div>
-                <div class="df-adopt-row">
-                    <button class="df-adopt-go" onclick={ferry_confirm}>✓ send my account</button>
-                    <button class="df-adopt-no" onclick={ferry_cancel}>no</button>
-                </div>
-            </div>
-        {:else}
-            <div class="df-friend">
-                <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1}
-                    title={(f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago`)
-                        + (f.cave ? ' · 🔗 your Cave (a device of yours)' : '') + (f.music ? ' · ♪ granted' : '') + (f.records != null ? ` · ${f.records} records` : '')
-                        + (f.seal === 1 ? ` · ⚠ sealing 1 of 2 — ${f.seal_missing}; should heal itself, say so if it sits` : '')}>●</span>
-                <span class="df-name">{f.cave ? '🔗 ' : ''}{f.name}</span>
-                {#if f.can_suggest}
-                    <button class="df-edit" onclick={() => suggest(f.pub)}
-                        title="suggest the playing track to {f.name} — lands even if they're away">♪→</button>
-                {/if}
-            </div>
-            {#if f.sug}
-                <div class="df-sug">
-                    {#if f.sug_rec}
-                        <button class="df-edit" onclick={() => tune_sug(f.sug_rec)} title="play their suggestion">▶</button>
-                    {/if}
-                    <span class="df-tag">suggests: {f.sug.title}</span>
-                    {#if f.sug.note}<span class="df-tag dim">{f.sug.note}</span>{/if}
-                    {#if !f.sug_rec}<span class="df-tag dim">arriving with the share…</span>{/if}
-                </div>
+        <div class="df-friend">
+            <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1}
+                title={(f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago`)
+                    + (f.cave ? ' · 🔗 your Cave (a device of yours)' : '') + (f.music ? ' · ♪ granted' : '') + (f.records != null ? ` · ${f.records} records` : '')
+                    + (f.seal === 1 ? ` · ⚠ sealing 1 of 2 — ${f.seal_missing}; should heal itself, say so if it sits` : '')}>●</span>
+            <span class="df-name">{f.cave ? '🔗 ' : ''}{f.name}</span>
+            {#if f.can_suggest}
+                <button class="df-edit" onclick={() => suggest(f.pub)}
+                    title="suggest the playing track to {f.name} — lands even if they're away">♪→</button>
             {/if}
+        </div>
+        {#if f.sug}
+            <div class="df-sug">
+                {#if f.sug_rec}
+                    <button class="df-edit" onclick={() => tune_sug(f.sug_rec)} title="play their suggestion">▶</button>
+                {/if}
+                <span class="df-tag">suggests: {f.sug.title}</span>
+                {#if f.sug.note}<span class="df-tag dim">{f.sug.note}</span>{/if}
+                {#if !f.sug_rec}<span class="df-tag dim">arriving with the share…</span>{/if}
+            </div>
         {/if}
     {/each}
     {#if face.friends.length > PIERS_SHOWN}
@@ -602,33 +573,6 @@
     .df-invstate { font-size: 8px; color: #d8c56b; }
     .df-invrow.sealed .df-invstate { color: #7fc98a; }
     .df-invrow.refused .df-invstate { color: #e06a6a; }
-    /* THE ADOPT BLOCK — the one loud thing in this quiet cell, because a device asking to hold your keys
-       is the one pier event that must be CONFIRMED, not merely noticed.  Bordered + pointer-events:auto so
-       its buttons work through the .df shield; it replaces the pier's normal row while the adopt is live. */
-    .df-adopt {
-        pointer-events: auto;
-        margin-top: 6px; padding: 7px 9px;
-        border: 1px solid #d9a9ef; border-radius: 8px;
-        background: #241733;
-        animation: df-adopt-glow 2.2s ease-in-out infinite;
-    }
-    @keyframes df-adopt-glow {
-        0%, 100% { box-shadow: 0 0 3px rgba(217, 169, 239, 0.4); }
-        50%      { box-shadow: 0 0 11px rgba(217, 169, 239, 0.85); }
-    }
-    .df-adopt-head { font-size: 12px; font-weight: 700; color: #ead9ef; }
-    .df-adopt-note { font-size: 9px; opacity: 0.75; margin-top: 2px; }
-    .df-adopt-row { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
-    .df-adopt-go {
-        pointer-events: auto; cursor: pointer;
-        background: #7a4fa0; color: #fff; font-weight: 700; border: none; border-radius: 6px;
-        font-size: 11px; padding: 4px 10px;
-    }
-    .df-adopt-go:hover { background: #9a6fc0; }
-    .df-adopt-no {
-        pointer-events: auto; cursor: pointer;
-        background: none; border: none; color: #b48fc9; font-size: 10px; text-decoration: underline;
-    }
     /* the +N more toggle — the cap's release valve, styled to whisper */
     .df-more {
         pointer-events: auto; cursor: pointer; background: none; border: none;

@@ -393,6 +393,15 @@ Peeroleum_send(w, frame):
     //     The receiver still DISPATCHES it (it is NOT in the receive-side bypass at Peeroleum_deliver), so
     //      the want is still served — only its reliability-tracking + logging drop.
     ephemeral = ephemeral || h.type === 'repli_want'
+    // ferry_want / ferry_cancel (the device-link's self-re-asking "I want linkage" beacon + one-shot teardown)
+    //  join the fire-and-forget set for the SAME reason as pulse/repli_want: Swarm_ferry_ask re-asks every ~3s
+    //   (floored at 1.1s in Swarm.g) while a Linkee awaits its soul, so a transport retransmit emit is dead
+    //    weight — and booking one per ask against a Linkor that doesn't ack piled the %outbox and RE-BLASTED
+    //     every buffered ferry_want on each relay reconnect (the owner's live "SEND ferry_want seq=18,61,83…"
+    //      storm right after a "(control)").  Ephemeral = no emit booked, no retransmit; still SENT + still
+    //       dispatched (they ride the receive-side bypass too, so the Linkor still hears them and re-parks its
+    //        confirm).  Book-inert: no Book emits ferry_want/ferry_cancel (send is pulse-/humdinger-gated).
+    ephemeral = ephemeral || h.type === 'ferry_want' || h.type === 'ferry_cancel'
     // ive_got (Swarm_gossip_music's shelf boast, re-sent to every sealed friend each gossip beat) is the
     //  THIRD unbounded-%outbox culprit after repli_want and pulse — and the one that actually DETONATED in
     //   the live heist.  A serving source booked one reliability %emit per boast, culled only on ack; against
@@ -686,6 +695,18 @@ async Peeroleum_deliver_do(w, frame):
     //       (the serve sends its own frame; a ponder-per-want would re-melt).  Ordering doesn't matter for a
     //        self-re-asking want, so skipping the inseq path on a lossy carrier is safe too.
     if (h.type === 'repli_want') { let on = w.c.on && w.c.on[h.type]; if (on) await on(w, pier, frame); return }
+    // ferry_want / ferry_cancel — the device-link's self-re-asking presence frames (Swarm_ferry_ask re-asks the
+    //  soul every ~3s while a Linkee awaits; ferry_cancel is a one-shot teardown).  Ephemeral on SEND already
+    //   (Swarm.g ephemeral_lane), and — like repli_want — they gain NOTHING from inbox booking.  Worse: booking
+    //    "I want linkage" behind the pre-Ud gate on a RELOADED Cave pier wedges the whole Adopt.  A Cave pier is
+    //     not a "sealed friendship", so Swarm_station_routes never re-stamps its %Ud after a reload; the demand
+    //      then sits un-drained forever, the Linkor never re-parks its ferry_confirm, and eed "is not at the
+    //       party" (owner 2026-08-29).  Dispatch STRAIGHT to the hear funnel — still voucher-verified there, just
+    //        not inbox-gated — so a half-thawed Cave pier still hears the demand and the ceremony completes.
+    //         feebly_ponder (unlike repli_want) so the re-parked confirm wakes the glass and the "give my soul"
+    //          button turns up at once.  Book-inert: no Book emits ferry_want/ferry_cancel (send is pulse-/
+    //           humdinger-gated), so this branch is never taken on a mail-wire fixture.
+    if (h.type === 'ferry_want' || h.type === 'ferry_cancel') { let on = w.c.on && w.c.on[h.type]; if (on) await on(w, pier, frame); H.feebly_ponder(); return }
     // The inbox is a serial %req drain: a booked frame is a %req:unemit (discriminated by the sender's
     //  per-Pier seq) and inbox.do() runs each unemit-req's do_fn (req_unemit) one at a time, in arrival
     //   order, awaiting each — that IS the serial async drain, so the hand-rolled %queued/%handling lock

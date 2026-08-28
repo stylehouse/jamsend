@@ -36,16 +36,206 @@ The device-link ("spread myself out") ceremony runs on a **handshake + ferry**, 
       straight through as before — so `SwarmSpread` beat 5 dige is **unchanged (`ac0f77d14fc3ab55`)**, no churn.
   - `Swarm_ferry_confirm(w)` — the grantor's "✓ send my account", pressed ON the pier; does the one held send.
      `Swarm_ferry_cancel` also clears `ferry_confirm`.
-  - **DoorFace** is the single home: the adopting pier (and only it) becomes a bordered `.df-adopt` block with
-     ✓/no; other Cave piers get a quiet 🔗 + "your Cave" (they used to render as plain friends — the *"wtf it
-      grants Music?"* confusion was a MyCave pier sitting unmarked in the friend list).
-  - **LinkFace** pulls the grantor QR→Door the instant `ferry_confirm` parks (latched, re-arms on clear).
-  - Verified live: Swarm.go **317901c**, `SwarmSpread` **5/5** + `SwarmStaple` **8/8** green on runner e747cbed.
-  - **OWED on this:** (a) the **3-emoji SAS** on the ferry confirm (the adopt path has `Swarm_adopt_sas`; the
-     ferry confirm currently has no MITM match — owner's *"three icons like jackpot machines"*); (b) a
-      **`ferry_ok` ack** so the grantor's pier graduates "sent"→"adopted & confirmed" (today it can only know
-       "sent" — secret cleared); (c) **live two-tab proof** that the pull + confirm actually crosses the account.
-      See `Trust_todo.md` — this is the first payment on making Trust the protocol beneath the protocols.
+  - **THE LINK CELL is the single home (revised 2026-08-28 — owner: *"it's a huge deal copying your account…
+     should be on its own in the Link cell. both should be"*).** LinkDevice is a phase machine: Lobby → QR-
+      sharing → **Linking** (RECEIVER consent on `ferry_pending` / GRANTOR confirm on `ferry_confirm`, each ALONE
+       in the cell, both showing the 🎰 SAS) → Linked. Both ends are dragged here by the existing auto-surface
+        (`Swarm_link_active` → `Sounditron_commission`: `ferry_secret` soul-side, `ferry_pending` new-device-side),
+         so no bespoke navigation. The earlier DoorFace `.df-adopt` block + the LinkFace pull-to-Door were REMOVED;
+          Door keeps only a quiet 🔗 marker on Cave piers (so a device doesn't read as a stranger — the *"wtf it
+           grants Music?"* confusion). Also removed: the relay/origin warning under the QR (*"lose that stuff"*).
+  - **3-EMOJI SAS — LANDED (Swarm.go 320094c).** `Swarm_ferry_sas(w)` computes a 3-glyph row identically on
+     both ends from the two pubs the ferry `salt` binds (`<soulpub>:<bodypub>`) — grantor off the confirm pier's
+      Peering pub (the SAME source `Swarm_ferry_send` salts from), new device straight off the parked frame's
+       salt.  Shown in DoorFace's `.df-adopt` block and LinkDevice's accept prompt ("🎰 match both screens").
+        NO `#fc` entanglement (that earlier worry was wrong — the salt already carries both pubs) and no crypto
+         touch; display-only, snap-inert (SwarmSpread step-5 dige still `ac0f77d14fc3ab55`).  Reuses
+          `Emojiconfirm.ts` (`sas_transcript`/`sas_row`, count=3).  Owner: *"three icons like jackpot machines."*
+  - **QA PASS + FIXES — LANDED (Swarm.go 321835c, 2026-08-28).** Three subagents reviewed (correctness /
+     adversarial-security / UX). Security verdict: **safe to ship** — the humdinger consent gate is a genuine
+      wire-unforgeable boundary (`.c`-only, stamped at House construction, enforced in the ghost not the UI),
+       the SAS binds correctly (salt is GCM-authenticated, no matching-rows-while-compromised splice). Fixes:
+    - **`Swarm_ferry_confirm` now holds `ferrying` across its send** — without it, a pump firing during the await
+       re-ran `on_seal`, which re-PARKED a fresh `ferry_confirm` and stranded the soul side (dead "give my soul").
+    - **`Swarm_link_active` now also true on `ferry_confirm`/`ferry_awaiting`** — a confirm-only state no longer
+       folds the cell away.
+    - **THE LINKEE DEAD-WINDOW is fixed (owner's exact gripe: *"the Incognito side in Door just has ✉ #17 MyCave
+       redeeming, nothing like the eed side"*).** `Swarm_redeem` arms `top.c.ferry_awaiting` when it redeems a
+        MyCave link (`t.to==='MyCave'`, `station_up`-gated so Books never see it → dige `ac0f77d14fc3ab55`
+         unchanged); LinkDevice shows a "**connecting to X · waiting for it to confirm**" phase instead of a blank
+          Radio. Cleared by `Swarm_ferry_park`/`_cancel`.
+    - **UX polish:** symmetric copy (*giving your soul → in your name* / *receiving the soul → in its name*),
+       name/empty guards on both titles, unified SAS tooltip, dismissable + distinct done screens (declined no
+        longer echoes itself), and a **"🎰 safety code · checking…" placeholder that DISABLES the confirm button
+         until the SAS renders** (security LOW + UX: you can't approve a key-copy before you can check the code).
+  - **⚠ SAS ENTROPY — YOUR CALL (kept at 3).** Security flagged 3 glyphs = **18 bits, grindable** (~2^18); it
+     recommends **6** (36 bits, "six icons vs three", trivial human cost). But 3 is your *"jackpot machines"*
+      choice and the SAS is defense-in-depth (real confidentiality rides the out-of-band `#fc` + GCM, not the
+       emojis) — so I **kept 3** and flag it. To bump: change the `3` in `Swarm_ferry_sas` (`sas_row(…, 3)`) to 6.
+    - **Soul NAME on the consent screen (Swarm.go 322259c).** `Swarm_ferry_send` now rides the soul's public
+       `friendly` alongside the sealed blob, so the Linkee's most consequential screen reads *"receiving the soul
+        of **Steve**"* not a raw pub8 (`arriving_name()` → falls back to pub8 → "a device"). Display-only, not
+         the authenticator (the sealed blob is); snap-inert (dige unchanged).
+  - **INTEGRATION REVIEW + FINAL FIX (Swarm.go 322773c, 2026-08-29).** A 4th agent re-reviewed the WHOLE
+     session changeset as an integrated whole (the boot-gate, friendly-name, missing-code, and dead-window
+      landed after the earlier 3-agent QA). Verdict: **broadly sound, ready for the two-tab test.** One real
+       small-window bug found + fixed: the **FERRY SEAM (`Swarm.g:2078`) lacked the `!ferrying` guard** the retry
+        path has — a re-seal during `Swarm_ferry_confirm`'s send-await could re-park `ferry_confirm` and strand a
+         dead "give my soul". Added `&& !top_seam.c.ferrying`; dige `ac0f77d14fc3ab55` unchanged (the guard is
+          inert in Books — `ferrying` isn't set at seal time there). Two acceptable tradeoffs noted, NOT bugs:
+           (i) a brief boot-diagnostic-room flash on the Linkee before the glass commissions (self-heals when
+            the Link cell auto-focuses); (ii) `ferry_awaiting` is `.c`-only, so a Linkee that reloads mid-"connecting"
+             loses that reassurance (the account still crosses — `ferry_park` keys off the pier, not the flag).
+  - **LINKOR HUNG ON THE QR — reactive advance + QR polish (Swarm.go 324233c, 2026-08-29).** Live test: 495
+     (Linkee) sat correctly at "connecting… waiting for it to confirm", but **eed (Linkor) hung on the QR "waiting
+      for it to connect" — never advanced to "giving your soul"**. Landed: **`Swarm_ferry_poke(w)`** + a LinkDevice
+       effect that calls it while the QR is up — it parks `ferry_confirm` from ANY live MyCave pier the instant one
+        appears (tied to H.version reactivity, not just the frame pump), so the cell swaps QR→confirm the moment
+         the Cave is ready (the owner's "just go to another screen when the Cave has turned up"). Only PARKS, never
+          sends. Also: dropped the "link a device as your Cave" heading + the "waiting for it to connect" line
+           (owner), and the QR box (`.ld-face-qr`) now centres + hides overflow so it never scrolls ("QRcode looks
+            bad when it scrolls"). **⚠ CAVEAT (needs eed's console to confirm):** the poke only helps if eed's pier
+             actually bears a **live MyCave grant**. If eed still hangs after reloading, the pier isn't SEALING with
+              a MyCave grant on eed — a peering issue (cross-origin → different relays → never seals, or tangled
+               state from 495233 having already adopted eed's soul earlier this session). Clean re-test: a FRESH
+                incognito Linkee (not the already-adopted 495233), both tabs on the SAME origin; if it still hangs,
+                 eed's 🦑 ferry console lines will show whether the seal fires.
+  - Verified live: `SwarmSpread` **5/5** (step-5 dige `ac0f77d14fc3ab55`) + `SwarmStaple` **8/8** green on runner
+     e747cbed (Swarm.go 324233c), LinkDevice/LinkFace/Butler transform 200.
+  - **"I DROPPED THE ADOPT AGAIN" — the ?Iz nuke, root-caused + fixed .svelte-only (2026-08-29, no compile).**
+     Symptom (recurring): a Linkee reload mid-adopt shortened `?Iz=eed…*MyCave*…#fc=` → `?I=495233…#fc=` (495's OWN
+      blank prepub) and lost the ceremony. **Root cause:** on reload the auto-join effect re-fires, the single-use
+       MyCave redeem returns null (already spent), and `InvitePanel.join()`'s `if (!claim) { strip_iz(); … }` nuked
+        the `?Iz` unconditionally. (`Clustation_mint_named` had separately added the `?I=495233` when the newborn
+         named itself — it keeps `?Iz`; strip_iz is what removed it.) **Fix — three guards in InvitePanel:** (1) the
+          redeem-fail `strip_iz` is now gated `if (invite?.to !== 'MyCave')` — a MyCave landing keeps its token and
+           shows "… the adopt is already under way — resuming"; (2) the parse-fail `strip_iz` skips any `*MyCave*`
+            token; (3) the auto-join effect bails when `Swarm_link_active(null)` is already true (ferry_awaiting
+             rehydrated), so a reload never re-redeems. The URL now survives to `finalize_url` (Swarm_ferry_consume),
+              which is the ONLY place a MyCave `?Iz` is meant to clear. No .g touched → Swarm.go unchanged.
+  - **PRESENCE INDICATOR AT BOTH ENDS (owner: *"an online indicator on the giving your soul to… it's important to
+     know if they're there"* / *"offline indicator at both ends"*) — LANDED .svelte-only (2026-08-29).** Each Link
+      phase now shows the OTHER device's liveness as a small pill — `● online` / `◐ fading` / `○ offline` — read
+       from the relevant pier's `heard_at` (the same pulse warmth DoorFace grades: here <15s · fading <45s · else
+        away), decayed against a 1s tick so "offline" appears live when the peer goes quiet. Reachable without a
+         ghost change: `Swarm_pulse_all` pulses ALL sealed piers (not just `Grant:Music`), so a MyCave pier's
+          `heard_at` stays warm, and the hear funnel stamps it on ANY sealed frame so an active handshake reads
+           "online" immediately. `other_pier()` picks the MyCave pier (Linkor) or the soul-pub pier (Linkee, falling
+            back to the sole ceremony pier). Also fixed the last asymmetry: the Linkee "receiving" SAS lost its
+             `🎰 match both screens:` words → icons-only `<b>{sas}</b>` with a `···` placeholder, matching the
+              already-clean Linkor "giving" screen (owner: *"just have the icons, no words"*, one modality).
+  - **RELOAD STATE-HEAL — eed refreshing (or 495 refreshing) no longer loses eed's focus on the Adopt (Swarm.go
+     329563c, 2026-08-29). Books green, beat-5 dige `ac0f77d14fc3ab55` UNCHANGED (SwarmSpread 5/5 · SwarmStaple 8/8).**
+     Owner: *"eed refreshing loses its focus on answering the Adopt… even reloading 495 doesn't renew eed's focus on
+      the Link. do we build this with req? they should be quite in sync during this, 0.5s ping… snappy state-healing."*
+     **Why it broke:** `ferry_confirm` is `.c`-only, and every reload path only ever CLEARED ferry state, never
+      re-DERIVED it — even though all the proof is durable: the `%Grant:MyCave` on the sealed pier (`Swarm_pier_live`
+       is pure grant state, no `heard_at`, so it reads live the instant the snap thaws) and the `ferry_pending_secret`
+        twin in `stashed`. The seal-seam gate also read `.c.ferry_secret` (gone after reload), so a 495 re-seal
+         couldn't re-trigger eed either. **The heal (all durable-truth, no round-trip, all humdinger-gated → Book-inert):**
+     - STALE FERRY SWEEP gained its INVERSE: a live Cave + surviving twin → rehydrate `.c.ferry_secret` from the twin
+        AND (humdinger only) re-park `ferry_confirm` right at standup. eed reload lands back on "giving your soul".
+     - Seal-seam gate now honours the twin (`seam_secret`), so a **495 reload/re-seal** re-fires `on_seal` → re-parks
+        eed's confirm even if eed's own `.c` secret was lost.
+     - `Swarm_ferry_poke` gained a `!ferrying` guard, and the LinkDevice poke effect now fires on `Swarm_link_active`
+        (not just `url`) — the snappy reactive heal: the instant reactivity ticks after a reload, poke re-parks the
+         confirm from the still-sealed pier. With the ~0.5s pier cadence this feels immediate.
+  - **STEADY "I WANT LINKAGE" ASK — the Linkee now DRIVES the Linkor's focus (Swarm.go 335503c, 2026-08-29). Books
+     green, beat-5 dige `ac0f77d14fc3ab55` UNCHANGED.** Owner's reframe, which is the correct model: *"we need a steady
+      flow of 'I want Linkage' sentiment from 495 to eed to keep it focused on serving the request. eed can only get
+       rid of that by cancelling the token, which 495 then gives up from… right? because right now eed is not at the
+        party."* The reload-heal (above) made eed re-derive from ITS OWN durable state — but that only helps when eed
+         reloads; a **495 reload didn't re-seal**, so eed never got re-triggered. **The fix flips the driver:** the
+          ceremony is held open by the Linkee's standing DEMAND, not by either end remembering a one-shot seal.
+     - `Swarm_ferry_ask` (new): while `ferry_awaiting`, the Linkee sends a tiny sealed `ferry_want` to the soul device.
+        Driven by a **3s ceremony-scoped tick in LinkDevice** (owner: *"3s wire chatter for the Link ceremony"*), with
+         the ~5s presence pulse as a fallback; a shared `ferry_ask_at` throttle (~2.8s) means the two never double up.
+     - `ferry_want` handler (Linkor): the far mirror of the seal-seam — a sealed pier bearing MY MyCave grant, while I
+        hold the secret (`.c` or twin) and am not mid-send, re-fires `Swarm_ferry_on_seal` → re-parks the confirm. So
+         eed leaps back to "giving your soul" within ~3s of a 495 reload, with NO eed reload and NO durable eed memory.
+     - **No giveup** (owner: *"if we lose the other end we probably just sit waiting"*): the ask repeats forever; eed's
+        parked confirm persists with the ● dot showing 495 offline, and it re-lands the instant 495 returns.
+     - **Teardown** (owner: *"eed cancelling the token, which 495 then gives up from"*): `Swarm_ferry_cancel` now fires a
+        best-effort `ferry_cancel` to the Cave (humdinger-gated → Book-inert); `Swarm_ferry_cancelled` clears the
+         Linkee's `ferry_awaiting`+twin (matched on `from`), so its cell closes back to Radio. (A "link cancelled" toast
+          is a nice follow-up, left out to avoid keeping a dead cell alive to host it.)
+     - **Book-inert by construction:** the emitter rides the Book-muted pulse + a cell never mounted in a Book; both
+        handlers only fire on frames never emitted in a Book; the cancel-send is humdinger-gated. Verified: dige held.
+     - Also fixed the doubled "connecting" (LinkFace title + LinkDevice cap): the Linkee cap now reads "receiving from X".
+  - **TWO FOLLOW-ON BUGS behind "eed is not pulled into any Link session" (Swarm.go 336664c, 2026-08-29). Books green,
+     beat-5 dige `ac0f77d14fc3ab55` unchanged.**
+     1. **The ask sent nothing** — the 3s LinkDevice tick called `Swarm_ferry_ask(world())` with NO ident, so it hit
+        `if (!ident) return 0` and 495 silently asked for nothing (the ~5s pulse, the only other caller, doesn't run
+         while the Link cell is up). Fixed: `Swarm_ferry_ask` self-resolves via `Swarm_live_self` and the call site
+          passes `self`. Added console diagnostics both ends (`🦑 "I want linkage" → N` / `heard "I want linkage" …
+           cave_pier= my_secret= ferrying=`) so a live console pinpoints any break — leave them until confirmed.
+     2. **The token got nuked at boot** — the STALE FERRY SWEEP deleted eed's `ferry_secret` whenever no MyCave pier
+        read live *at standup*, but the peering is usually not thawed that early, so the read went transiently false
+         and killed a LIVE ceremony's secret; eed then read `my_secret=no` forever and could never be re-pulled. Fixed
+          by making the token STICKY — retired only by explicit `Swarm_ferry_cancel` or a successful send, never by a
+           boot-time "no pier right now". This is the owner's own contract (*"eed can only get rid of that by
+            cancelling the token"*). Cost accepted: a never-scanned QR lingers as a cancellable "link in flight" cell;
+             a delayed dead-QR sweep (decided well after piers thaw) is a possible future nicety, NOT re-added at standup.
+  - **BUG #3 — THE DECISIVE ONE: clock-unit throttle silenced the ask after ONE fire (Swarm.go 336960c, adversarial
+     review agent, 2026-08-29). Books green, dige `ac0f77d14fc3ab55`.** `Swarm_ferry_ask`'s throttle did
+      `Swarm_now(w) - ferry_ask_at < 2800`, but `Swarm_now` is **seconds** on a live tab (`Math.floor(Date.now()/1000)`),
+       so a ~3-second gap compared to 2800 was ALWAYS true → every ask after the first was suppressed for ~2800s
+        (~47min), and `ferry_ask_at` is never cleared. So even with #1 (ident) and #2 (sticky token) fixed, 495 asked
+         exactly ONCE and went quiet — a Linkor that reloaded after that lone ask was never re-asked. Fixed: throttle
+          on wall-clock `Date.now()` ms. (Three bugs stacked behind one symptom; the review found #3 the same run it
+           cleared the rest of the chain — voucher gate, theft guard, stash durability, Sounditron latches all sound.)
+  - **"MORE WANTS-TO-HAPPENY" (owner) — the link now LEAPS instead of idling (2026-08-29).** `Swarm_ferry_ask` gained a
+     `force` arg that BYPASSES the throttle; LinkDevice fires a forced ask (a) the instant the Link cell mounts and
+      (b) the moment the other device flips to `● online` (a presence-`rung`→'here' edge watcher) — so the ceremony
+       jumps to "giving your soul" as soon as both ends are present, rather than waiting out the 3s cadence. It still
+        idles at a calm 3s between beats. Eager first-contact + eager re-lock, quiet steady state.
+  - **⇒ RE THE REQ QUESTION (owner: *"do we build this with req?"*).** YES — and this heal is precisely the behaviour a
+     `req:Ferry` gives you declaratively. What I did by hand (re-derive `ferry_confirm` from durable truth every
+      standup + every reactive tick, self-clearing once the send lands) is a req's `do()` pass re-arming its `ok` off a
+       standing condition. The honest status: I did the **targeted heal now** because it's low-risk and Book-verifiable
+        in one pass; the **full `req:Ferry` refactor is still the clean destination** and is owed a deliberate pass (it
+         touches the req machine — Coding_guide first). Sketch of the rungs, so the heal reads as a stepping stone not a
+          detour: `req:FerryLink` (eternal, Linkor: holds while `ferry_pending_secret` lives, re-arms `ferry_confirm`
+           from any live MyCave pier, retires when the send lands) · `req:FerryAwait` (eternal, Linkee: holds while
+            `ferry_awaiting`/`ferry_pending`, retires on consume) · `req:FerryAck` (the owed receive-ack below, a natural
+             rung: Linkee emits on consume, Linkor's req retires "✓ they became you"). Each rung's re-arm REPLACES a
+              hand-rolled sweep/poke/rehydrate — same law, one place. Tracked as its own task.
+  - **STILL OWED (feedback gap): no ACK back to the Linkor when the Linkee CONSUMES the soul.** eed sees "✓ soul
+     given" the instant its send returns, but nothing tells it 495 actually *received & became it*. The presence dot
+      mitigates ("are they even there") but a real receive-ack (a tiny frame 495→eed on consume, flipping eed's cell
+       to "✓ they received your soul") is the honest close of the handshake. Needs a ghost frame → deferred to a
+        compile+Book pass, not slipped in unverified. Fold into the `req:Ferry` rework (below) — an ack is a natural
+         req rung.
+  - **LINKEE BOOT-GATE — half-fixed 2026-08-28 (the "stuck at press start" on a fresh device).** A new device
+     opening a `?Iz=<MyCave>#fc=` link does NOT go straight to the ceremony: the boot treats a device-link exactly
+      like a friend-invite. `Butler.svelte`'s `landing` (line ~268) is derived purely from `boot_param('Iz')` —
+       no MyCave/Music split — so the arrival FaceSucker holds its friend-join "door" over the ceremony, AND
+        nothing made it step aside once the ferry was in flight → the Link cell was trapped behind the Butler.
+    - **FIXED (safe half):** the Butler now stands aside on `Swarm_link_active` (Butler.svelte:373-ish). This
+       goes true only AFTER the redeem arms `ferry_awaiting`, so it reveals the ceremony without disturbing
+        naming. Fully gated to device-link tabs (an ordinary boot never fires it). `.svelte`-only, transforms 200.
+    - **STILL OWED (attended — needs the live two-tab test + care):** the friend-join FRAMING. The name-ask on
+       that door is **load-bearing** — InvitePanel's auto-join (line ~447) is gated on `named`, so a newborn
+        Linkee must name itself before `Swarm_redeem` fires. So you can't just hide the friend-door for MyCave
+         (that removes the name-ask → no redeem → wedge). The real fix: make the landing card MyCave-aware —
+          frame it as *"name this device · you're receiving a soul"* not *"join X as a friend"*, still collect
+           the name, then hand off to the Link cell. Touches Butler/InvitePanel/naming → verify live, not blind.
+  - **⇒ THE FERRY WANTS TO BE A REQ (owner, 2026-08-29: *"are you using req enough? it was most perfect in
+     LiesStore… see Hovercraft"*).** The ceremony has grown into ad-hoc `.c` flags (`ferry_secret`/`ferry_confirm`/
+      `ferry_awaiting`/`ferry_pending`/`ferrying`) + a UI **poke** + a pump **retry** (Swarm.g ~1108) + a standup
+       **sweep** — a hand-rolled reinvention of exactly what a **req-stack** gives for free (`Hovercraft.svelte`;
+        `LiesCortex` is the model: `req:Store maz:7 → req:Cortex maz:5 → req:Codebit maz:2 → req:Rundown maz:1`,
+         maz-ordered, `do()` pumps highest-maz first, a **ttlilt** holds the phase open, an un-`ok` un-finishes).
+          Map: a `req:Ferry` whose maz phases are mint→seal→confirm→send (Linkor) / redeem→await→receive→consume
+           (Linkee); the **retry + poke collapse into the req's `do()` pump**, the **sweep into un-finish on a lost
+            pier**, the flags into the req's `sc`, and a **ttlilt keeps the ceremony from being abandoned** (like
+             LiesCortex's `%ttlilt,waiting:run`). A DELIBERATE refactor — NOT mid-live-test; do it once the current
+              flow is proven end-to-end on the live tabs, then delete the scaffolding.  See `Pier_todo` for the
+               adjacent pier-kind cleanup.
+  - **STILL OWED on this:** (b) a **`ferry_ok` ack** so the grantor's pier graduates "sent"→"adopted & confirmed"
+     (today it can only know "sent" — secret cleared; entangled with the identity-transition, deferred); (c)
+      **live two-tab proof** that the pull + confirm + SAS-match actually crosses the account (needs a fresh
+       blank device — the human's gate).  See `Trust_todo.md` — payments on Trust beneath the protocols.
 
 **The Cell:** `%Link` (`LinkFace`, in `glass_kinds.ts`, minted in `Sounditron_commission`) is **REACHED, not
  resident** — pressing "🔗 link a device" in the Door calls `Sounditron_focus('Link')` (a new world-resolved

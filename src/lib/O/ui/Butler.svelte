@@ -277,6 +277,13 @@
     //   unmounting it there would delete the only report of whether the friendship sealed.
     let landing_seen = $state(false)
     $effect(() => { if (landing) landing_seen = true })
+    // A DEVICE-LINK (MyCave) landing is NOT a friend invite — it is THIS device becoming a body of the
+    //  scanner's own soul.  The `?Iz` friend path frames it "you were invited" (wrong, and jarring — owner
+    //   2026-08-29: *"495 says 'you were invited' and another phase of black machinery flashes"*).  Detect it
+    //    off the raw token (`*MyCave*`, same probe InvitePanel uses) so the headline reads as a device-link.
+    //     (The friend InvitePanel still mounts to run the redeem; a dedicated Linkee-landing face that replaces
+    //      its body is the deeper follow-up — see Division_todo Linkee boot-gate.)
+    let is_mycave = $derived.by(() => { void tick; return String(boot_param('Iz') || '').includes('*MyCave*') })
 
     // ── THE FRIENDLESS DOOR (Supervisor_todo §0's "one design decision", taken 2026-08-11) ──────
     //  The Butler shows the door whenever the person HAS NO FRIENDS YET — not merely when a token
@@ -371,6 +378,15 @@
         if (done) return
         if ((H?.c as any)?.butler_done) { done = true; return }    // already lifted earlier this tab
         if (machine_tab || guts) { lift(); return }
+        // A DEVICE-LINK CEREMONY OWNS THE SCREEN, not the arrival glass (2026-08-28).  Once this tab is
+        //  mid-ferry — Swarm_link_active is true on the soul side (sharing a QR) and on the new device once it
+        //   is connecting / receiving / consenting — the %Link cell IS the thing to show, and the arrival
+        //    beg-screen must step aside or the ceremony is trapped behind it (the "stuck at press start" a
+        //     fresh Linkee hit).  This goes true only AFTER the redeem arms ferry_awaiting, so a newborn Linkee
+        //      still names itself on the door first (that name-ask gates the redeem — see InvitePanel auto-join).
+        //       Placed above `landing` so it wins the brief overlap before the ?Iz is stripped.  Gated entirely
+        //        to device-link tabs → an ordinary boot never sees this line fire.
+        if ((H as any)?.Swarm_link_fresh?.(null) ?? H?.Swarm_link_active?.(null)) { lift(); return }  // FRESH: a dead ceremony must not lift the arrival screen
         if (gate.wanted) return                                   // a permission is not progress
         if (landing) return                                       // …and neither is an unspent invite
         if (view.arrived === 'arrived') { lift(); return }        // ★ THE ONLY AUTOMATIC EXIT
@@ -467,7 +483,8 @@
                          mint QR both live in the panel, so the friendless card offers a real action
                          rather than news about a machine with nobody on it. -->
                     {#if landing_seen || stage === 'door'}
-                        {#if landing}<h2 class="ask">you were invited</h2>
+                        {#if landing && is_mycave}<h2 class="ask">🪞 linking this device</h2>
+                        {:else if landing}<h2 class="ask">you were invited</h2>
                         {:else if boot_param('Adopt')}<h2 class="ask">🪞 Link Device</h2>
                         {:else if stage === 'door'}<h2 class="ask">music here is shared with friends</h2>{/if}
                         <!-- `arrival` ONLY while an invite is actually being worked through
