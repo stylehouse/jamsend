@@ -88,8 +88,12 @@
                         sug: sug ? { title: sug.sc.title || sug.sc.id, note: sug.sc.note } : null,
                         sug_rec,
                         can_suggest: playing && !!p.o({ Grant: 'Music' })[0],
+                        // RETIRED = every feature NotGrant-revoked (Swarm_pier_forget).  The Pier row stays in
+                        //  the ledger as history, but the Door stops SHOWING it — "we don't need too much in
+                        //   there" (owner 2026-08-29, six dead Incognito link-test piers cluttering the list).
+                        retired: !((H as any).Swarm_pier_live?.(p, 'Music') || (H as any).Swarm_pier_live?.(p, 'MyCave')),
                     }
-                })
+                }).filter((f: any) => !f.retired)
             }
         } catch { friends = [] }
         // SORTED BY TIME LAST CONNECTED (the owner 2026-08-10: *"the Pier list should be sorted by
@@ -429,6 +433,15 @@
                 <button class="df-edit" onclick={() => suggest(f.pub)}
                     title="suggest the playing track to {f.name} — lands even if they're away">♪→</button>
             {/if}
+            <!-- FORGET (away rows only): retire a pier that will never return — a dead Incognito tab, an
+                 abandoned link test.  Swarm_pier_forget mints the standard signed %NotGrant per feature
+                 (durable; the row stays in the ledger as history) + UnInvites the pub, and the retired
+                 filter above drops it from this list.  Not offered while they're here/fading — forgetting
+                 a live friend deserves more ceremony than a hover-✕. -->
+            {#if f.rung === 'away'}
+                <button class="df-forget" onclick={() => (H as any)?.Swarm_pier_forget?.(null, f.pub)}
+                    title="forget {f.name} — retires this {f.cave ? 'device link' : 'friend'} (it can be re-invited later)">✕</button>
+            {/if}
         </div>
         {#if f.sug}
             <div class="df-sug">
@@ -510,6 +523,18 @@
         padding: 0 3px;
     }
     .df-edit:hover { color: #fff; }
+    /* forget ✕ — deliberately dim until hovered; red on hover says "this retires it" */
+    .df-forget {
+        pointer-events: auto;
+        cursor: pointer;
+        background: none;
+        color: #6a5578;
+        border: none;
+        font-size: 10px;
+        padding: 0 3px;
+        opacity: .55;
+    }
+    .df-forget:hover { color: #e66; opacity: 1; }
     .df-naming { display: flex; gap: 3px; margin-top: 3px; }
     .df-input {
         pointer-events: auto;

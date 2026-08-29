@@ -497,6 +497,19 @@
     //    "hello sent".
     async function join() {
         joined = ''
+        // A PASTED DEVICE-LINK LANDS, IT DOES NOT FRIEND-REDEEM (2026-08-29, owner: pasting the MyCave invite
+        //  "wanted my name input … then I am just back at the Door UI, like it forgot to kick the Link").  The
+        //   cause: `iz_from` lifts only the `?Iz` token, dropping the `#fc=` seal fragment the account is sealed
+        //    under — so the in-place redeem can never unseal, and the ceremony dead-ends after the name.  A
+        //     SCANNED link works only because the whole URL (fragment included) sits in the address bar and
+        //      LinkDevice drives `ferry_awaiting` off it.  So route a pasted MyCave to the SAME path: navigate to
+        //       the whole pasted URL.  Mirrors the `?Adopt=` branch in paste_load — a deliberate page move, not a
+        //        redeem.  A landed ?Iz (landed_url) already has its fragment in the bar and is left untouched.
+        if (invite?.to === 'MyCave' && !landed_url) {
+            if (paste_full) { try { window.location.href = paste_full; return } catch {} }
+            joined = '⚠ paste the WHOLE device link — the seal after the # got left off, so the soul can’t cross'
+            return
+        }
         // the button SPENDS ITSELF (2026-08-08, the human: "the Join button doesn't vanish when we hit
         //  it").  A disabled-but-present button reads as "still waiting for me" while the dial is
         //   already in flight, and the listener taps it again.  join_over hides it the instant it
@@ -568,6 +581,15 @@
     //     JOIN.  Accepts a full URL, a `?Iz=…` tail, or a bare token.
     let paste = $state('')
     let paste_err = $state('')
+    // THE RAW PASTED URL, FRAGMENT AND ALL — because `iz_from` reads only `?Iz` and a device-link
+    //  (MyCave) carries its seal in the `#fc=` FRAGMENT (Swarm_ferry_link returns `<base>?Iz=…#fc=<secret>`),
+    //   which searchParams never sees.  A pasted MyCave link must LAND on the whole URL, not friend-redeem a
+    //    seal-less token — so keep the absolute URL here and let `join()` navigate to it.  '' unless the paste
+    //     parsed as an absolute URL with a fragment.
+    let paste_full = $state('')
+    function url_with_frag(text: string): string {
+        try { const u = new URL(String(text || '').trim()); return u.hash ? u.toString() : '' } catch { return '' }
+    }
     function iz_from(text: string): string {
         const s = String(text || '').trim()
         if (!s) return ''
@@ -611,6 +633,7 @@
         if (!t) { const old = legacy_of(paste); if (old) paste_relic = old; return }
         paste_relic = null
         iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
+        paste_full = url_with_frag(paste)
     }
     function paste_load() {
         paste_err = ''
@@ -636,6 +659,7 @@
         // a NEW pasted invite re-arms the door: without clearing join_over, a second link after a
         //  spent first one lands on a panel with no join button at all.
         iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
+        paste_full = url_with_frag(paste)
     }
 </script>
 

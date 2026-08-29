@@ -100,7 +100,12 @@
         //      still logs every raw gap, so this stays honest: the log says how often it saves us.
         return worlds_hold(out)
     }
-    const worlds_hold = hold_list<TheC>()
+    // 6s, not the default 1200ms (2026-08-29): under transport load (a Repli flood from a mis-pointed editor
+    //  tab) the beliefs mutex starved ticks past 2s (×41 queued), agency_officing's replace() gap OUTLASTED the
+    //   default hold, and the glass believed the emptiness — full teardown + rebuild, cells arriving cold into
+    //    an unsettled sim ("badly positioned, unclickable").  A REAL glass departure is a rare, deliberate event;
+    //     6s of hold is invisible then, but rides out any mutex storm short of a wedge.
+    const worlds_hold = hold_list<TheC>(6000)
     let lastWorldsN: number | undefined = undefined   // DIAGNOSTIC — strip with the life ladder
     let lastWorldObj: TheC | null = null
 

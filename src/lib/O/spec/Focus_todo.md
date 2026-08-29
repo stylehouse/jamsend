@@ -141,6 +141,88 @@ A barrage of live-testing complaints, gathered so none is lost.  The through-lin
 Still owed: a live PIXEL re-check of the belly Link cell (task #27 — the straddle root is gone, but eyes on it);
  the mint-time Repli/tour-latch perf storm (#31); receive-ack (#21).
 
+### SECOND WAVE (same day, owner live-testing — "sort it all out properly") — all landed + Books green
+
+- **"giving your soul to Gag/and ● offline" — three roots, all fixed.**  (1) `Swarm_socket_fresh` was misused
+   as per-pier presence — it IGNORES its `p` arg (global relay-wire stamp); warmth is now `heard_at`-only.
+    (2) The standup reheal re-parked a confirm off "first grant-live MyCave pier" — six stale Incognito
+     link-test piers meant it always found a corpse.  Confirm is now DEMAND-DRIVEN only (parks on a Linkee's
+      live ferry_want / a WARM sealed pier via the poke, never at boot).  (3) `Swarm_ferry_poke` itself now
+       warmth+UnInvite-gates its pick.  Plus: NO logs inside `Swarm_link_fresh` (it runs per version-bump —
+        the COLD line was machine-gunning the console).
+- **"No" is FOREVER.**  The auto-REINVITE on mint/Door-open was resurrecting the just-declined pier — the
+   exact re-hijack loop.  Removed; `Swarm_ferry_reinvite` survives as an uncalled verb for a future explicit
+    unblock.
+- **"Link Device is a noop" — fixed.**  The `link_lobby` + surfaced-latch detour is GONE; the Door button
+   calls `Sounditron_focus('Link')` directly (the proven world-resolved nav seam) and close returns focus to
+    the Door.  No flag, no latch race.
+- **"comes up badly positioned, unclickable" — root found.**  Under transport load (the mis-pointed dev-port
+   editor flooding Repli at ~300KB/s) the beliefs mutex starved ticks 2s+; `agency_officing`'s replace() gap
+    then OUTLASTED Vytui's 1200ms worlds-hold → `Vyto WORLDS 1→0→1` → full glass teardown → cells arrive cold
+     into an unsettled sim.  The worlds hold is now **6s** (a real glass departure is rare + deliberate;
+      6s rides out any mutex storm short of a wedge).  The flood source itself was environmental (editor on
+       dev vs staging).
+- **Mint feedback**: the "link a device" button shows a spinner + "minting a link…" and guards double-mint.
+- **Dead-pier prune (the six Incognito corpses: and/Grac/Grauc/Guaca/Grunca/Gag).**  `Swarm_pier_forget(w,pub)`
+   retires every feature via the standard signed %NotGrant (Swarm_revoke — durable, settled; the Pier row
+    stays as ledger history) + UnInvites the pub.  DoorFace: retired piers are FILTERED from the list, and an
+     away row wears a dim ✕ forget (not offered on here/fading — forgetting a live friend deserves ceremony).
+- **The disk route documented beside the ferry** (LinkDevice.svelte header): `Swarm_boot_seed` restores a
+   mirrored account from `.jamsend/account/<prepub>/` on a Dexie miss — same machine + same FSA + different
+    ORIGIN (port!) is a disk-restore case, not a ferry case.  The staging editor's held boot (`07baa…`) was
+     honest: that id was never mirrored; the editor's canonical `7950f300…` IS in the stash — boot as that.
+      (Owner then stood the staging editor up as a fresh `9d1344…` on :9092 — so eed's old `S`/`7950f300` pier
+       will go stale and is a candidate for the new ✕ forget.)
+  - **THE FRESH-TAB / FSA IDENTITY RACE (owner 2026-08-29, "write that down somewhere").**  A tab boots and
+     MINTS a role-default Identity *immediately*, before FSA is granted (FSA is a user gesture that lands seconds
+      later — or never).  But the `.jamsend` stash on that same disk may already hold one or more mirrored accounts
+       (`.jamsend/account/<prepub>/`).  So the honest order is inverted: by the time the tab *could* assume one of
+        those disk identities, it has already committed to a stranger it just minted.  The two candidate fixes,
+         neither built: (a) **DEFER the mint** — boot identity-less, and only after FSA resolves either adopt a
+          stashed account (offer a picker if >1) or *then* mint fresh if the stash is empty; (b) **mint, then
+           MIGRATE** — keep minting eagerly for a live page, but when FSA later reveals a stash, fold the
+            just-born throwaway into the stashed identity (the throwaway has done nothing yet — no piers, no
+             grants — so a clean swap is cheap; the danger is anything that raced to reference the throwaway pub in
+              the ~seconds before the swap).  (a) is cleaner but delays first paint behind a permission; (b)
+               preserves today's instant boot at the cost of a swap seam.  Same shape as the ferry disk-route
+                above (`Swarm_boot_seed`) — the disk is a SIBLING source of identity to the ferry, and both want
+                 the same "prefer an existing self over a fresh stranger" rule at boot.  See LinkDevice.svelte
+                  header ("THE SIBLING ROUTE: THE DISK").
+    - **COROLLARY — Heist/Haul STATE bleeds across accounts via the FSA too (owner 2026-08-29, live).**  A brand-new
+       Incognito identity, seconds old, already showed a queued Heist ("Return of the 5000 lb. Man" waiting) with Hauls
+        on it.  Because Heist/collection state is keyed to the MUSIC in the shared FSA directory, not to the account, a
+         fresh self inherits the machine's whole heist backlog.  So it isn't just IDENTITY that races the FSA — it's
+          derived collection state.  Whatever fix the identity race gets (defer or migrate) has to decide what a fresh
+           self should SEE of the disk's heist state before it has adopted an identity there (probably: nothing until it
+            is someone).
+- **Adversarial pass (2026-08-29, KEEPGOING).**  Enumerated ALL `ferry_confirm =` park sites — three doors, not
+   two: the poke, on_seal's direct seal-seam, AND the FERRY RETRY PUMP (~1149) which picks its pier by GRANT
+    ALONE and routes through on_seal.  So the warmth+UnInvite gate now lives at the on_seal humdinger CHOKEPOINT
+     (covers seal-seam + ferry_want + retry-pump in one place), and separately in the poke.  The runner SEND
+      branch is untouched (Book piers carry no heard_at — gating it would break SwarmSpread beat 5; Books green
+       confirms).  Ack pier-pick also tightened to prefer the actual soul pier (salt `<soul>:<body>`) over "any
+        MyCave-live".
+- **RENDER (task #27) — a confident CSS root-cause, still owed a human's eyes.**  Re-reading the layout path:
+   Vytui FILLS the face root for the belly cell, but `.ld-frame` (LinkDevice) carried NO `justify-content`, so
+    every phase EXCEPT the QR (which had its own `justify-content:center`) pinned to the TOP of the filled box
+     — precisely the owner's "title way up in the top left, 1/4 of the cell space is used" / "badly positioned".
+      Fix: `.ld-frame { min-height:100%; justify-content: safe center }` — centres a short phase (lobby, ✓ done),
+       and `safe` falls back to top-align when a tall confirm overflows so the scroll never clips.  CSS-only, no
+        Vytui/pose touch, degrades to today's behaviour if `safe` is unsupported.  The OTHER half of "badly
+         positioned/unclickable" was the worlds-teardown under the Repli flood (now shielded by the 6s hold) —
+          so after a clean reload this should be settled; if it STILL clumps, that's a real pose bug to chase
+           WITH the owner in front of it (a live pixel-shot isn't available — the music page exposes no Cyto
+            canvas to runner_shot; only useCyto Books/runners do).
+- **AUDIT (owner "keep working out everything I told you"): all 12 stated factors verified live in source +
+   compiled `.go`** — adopt_from strictness, splash hold/punch-through/no-fall-through, the three warmth gates,
+    No-is-forever, pier-forget + Door ✕ + filter, receive-ack, the 6s teardown shield, Cell-not-Surface,
+     direct-focus open, mint spinner, the disk-route note, the security memory.  Nothing dropped.
+- **Receive-ack LANDED (task #21).**  The Linkee's consume (humdinger-gated → Book-inert) sends `ferry_got`
+   over the reliable outbox; the Linkor's hear funnel retires the SPENT secret + twin (no lingering "link in
+    flight", no re-park for a served mint) and lights `top.c.ferry_got`.  The cell's sent face now says
+     "✓ soul given → waiting for its received…" and upgrades LIVE to "✓ soul received — you live there now
+      too".  The full arc finally reports itself.
+
 ## 1. The focus-stealers (inventory — verify against the tree; some z-indices are from memory)
 
 Every surface that can command the whole viewport, what raises it, how it lifts, and its z:
@@ -501,3 +583,38 @@ This is the same "something can hijack attention" the §3 authority was meant to
       ranking, not the general authority: BootGate is the only surface re-skinned/ranked here; the
        Butler was done earlier. If ANOTHER fullscreen surface is later found jumping the ceremony, the
         real fix remains the §3 ordered claim, not a third `!link_active` sprinkle.
+
+## CELLULAR UI REBUILD + THE .c→C-FOAM REFACTOR (owner 2026-08-29, "big honestly" brief)
+
+The owner, after a run of ferry dead-zones each fixed one-at-a-time: *"we have a lot of unclickable moments
+ in the UI … is it reasonable to plough ahead? … can you rebuild it now we have all this stuff to dump onto a
+  new one, then migrate this really well thought out Link feature to that new UI — that looks EXACTLY the same!
+   organically drawn cells on cells."*  A full design agent is chartered on this; the durable constraints it
+    must honour, captured here so they survive the session:
+
+- **Looks identical.** Organically drawn cells-on-cells (the Vyto belly voronoi), unchanged to the eye. This is
+   a re-plumb, not a re-skin. **Tiny cells drop the cell-wall label — icon only** (owner) — the label is noise at
+    small size.
+- **Model state as C particles + req, NOT `.c` (owner: "hopefully with req and not using so much .c — you're
+   not really supposed to, I don't know why you got so obsessed with that over extra C** foam").**  THE root of
+    the ferry dead-zones: ceremony/transfer state lives on `top.c.ferry_*` — silent writes that never bump
+     `H.version`, so the screen only updates off an UNRELATED bump, which a Repli flood starves → frozen cells,
+      "unclickable moments".  The now_tick 1s poll and Bandwidth's 250ms tick are STOPGAPS papering over exactly
+       this.  The real fix: put that state in the C tree as real particles (creation bumps version; watchers react
+        natively) driven by `req` holds (Coding_guide.md: a HOLD is an unfinished req, not a bare `.c` flag + wake).
+         Then the belief loop reacts on its own and no component needs a private clock.
+- **Separate the "unclickable" business.** The owner wants the responsiveness/click-eating problem split OUT from
+   the Link feature work — it is its own thread (belief-mutex starvation under transport load, worlds-teardown, the
+    `.c`-no-bump pattern). Diagnose + fix it as its own axis, then migrate Link onto the healed UI.
+- **THE SPLASH IS A BLACK TRIANGLE THAT DECAYS (owner's specific wording, to be MAINTAINED — it had been lost):**
+   *"there's a black triangle that keeps being stimulated by any progress, and constantly fades, so we know when
+    it's well dead."*  So the boot indicator is NOT a fill-up bar — it is a **decay-driven liveness mark**: ANY
+     progress signal (a ghost coming up, a directory restored, a house standing) re-stimulates (re-lights) the
+      triangle; absent progress it constantly fades; a triangle that has faded to black means boot is genuinely
+       DEAD/settled (nothing more is happening) — the honest opposite of a bar that lies at 99%.  Bandwidth's
+        determinate mode is the WRONG shape for the splash; the triangle wants a "stimulate on event, ease toward
+         black" driver instead.  (Reconciles with the earlier splash spec: still a calm hold to the Radio
+          beginning — the triangle is the one live tell inside that calm.)
+- **Bandwidth (was "Wire").** The inline live-activity meter built for the ferry (src/lib/O/ui/micro/Bandwidth.svelte).
+   RENAMED off "Wire" — the owner reserves **Wire** for the future project that singularises reactivity across
+    svelte ↔ Housing (the very thing the .c→C-foam refactor above is a down-payment on).

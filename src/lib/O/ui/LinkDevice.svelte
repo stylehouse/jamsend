@@ -17,7 +17,17 @@
     //   RECEIVE wears its own alarm colour and names exactly what is shared, and reuses none of the friend
     //    flow's welcome.  The redeem of the `?Iz=` half is left to the proven invite-landing path (InvitePanel
     //     / Butler) — a MyCave invite is an ordinary invite with a different grant feature.
+    //  ── THE SIBLING ROUTE: THE DISK (owner 2026-08-29, the staging-editor held boot).  The ferry is the RELAY
+    //   route to "this device becomes the soul"; the FSA stash is the DISK route to the same end —
+    //    `Swarm_boot_seed` reads `.jamsend/account/<prepub>/toc.snap` at boot on a Dexie miss and restores the
+    //     key WITHOUT any ceremony (Auto.svelte's disk-seed seam).  Same machine + same .jamsend + different
+    //      ORIGIN (a different port, say) is exactly that case: no ferry needed, just the share grant + a boot
+    //       as the mirrored prepub.  The ferry is for keys the disk does NOT hold (a genuinely other device).
+    //        A future nicety: when a scanned Adopt names a soul whose account dir is ALREADY in this device's
+    //         stash, say so and offer the disk restore instead of the full soul-copy.
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
+    import Bandwidth from "$lib/O/ui/micro/Bandwidth.svelte"
+    import { tick } from "svelte"
     let { H } = $props()
 
     // the machine's live soul (may be null mid-standup), and the station world/up (dialable before a scan)
@@ -38,6 +48,18 @@
     })
     const world = () => H?.Swarm_station_world?.() ?? null
 
+    // THE 1s HEARTBEAT — a mutex-INDEPENDENT clock on the macrotask queue.  Declared up top because the phase
+    //  reads below lean on it: `.c` writes (ferry_confirm/pending/awaiting) never bump H.version, so under a
+    //   Repli flood that saturates the belief mutex the ceremony's screen would never re-render off H.version
+    //    alone.  Reading now_tick in the phase deriveds surfaces a parked confirm within 1s regardless.  Also
+    //     grades the presence dots (its original job — decay "online" live even with no fresh pulse).
+    let now_tick = $state(Date.now())
+    $effect(() => {
+        if (typeof window === 'undefined') return
+        const id = setInterval(() => { now_tick = Date.now() }, 1000)
+        return () => clearInterval(id)
+    })
+
     let err = $state('')
     let trust = $state(false)   // "TOTAL TRUST" opens the one warning that matters — the account copies
 
@@ -53,7 +75,7 @@
     // ── RECEIVE — a ferried account is parked, awaiting this device's consent ───────────────────────
     let pending = $state<any>(null)
     $effect(() => {
-        H?.version
+        H?.version; void now_tick   // ← now_tick: surface even when a Repli flood starves the belief mutex (see confirm)
         const w = world()
         if (w && typeof H?.Swarm_ferry_pending === 'function') { try { pending = H.Swarm_ferry_pending(w) ? H.Swarm_ferry_peek?.(w) ?? {} : null } catch { pending = null } }
     })
@@ -121,10 +143,23 @@
         if (minting) return
         err = ''
         minting = true
+        const t0 = (typeof performance !== 'undefined') ? performance.now() : 0
+        // PAINT THE PRESS FIRST (owner 2026-08-29 "it should have a touchdown effect so we know it happened" +
+        //  "why is it slow").  Swarm_station_up is SYNCHRONOUS and setting ferry_secret/url bumps H.version →
+        //   a full belly re-commission + Vyto fill_body solve; without a yield here that whole heavy beat runs
+        //    BEFORE Svelte paints `minting`, so the button looks dead on press.  One frame's yield lets the
+        //     "minting…" spinner (and the :active touchdown) show before we block.  The timing log below then
+        //      says WHERE the wall-clock goes — station_up vs the presig mint vs the render that follows.
+        await tick()
+        if (typeof requestAnimationFrame !== 'undefined') { await new Promise((r) => requestAnimationFrame(() => r(null))) }
         try {
             const w = world()
+            const t1 = (typeof performance !== 'undefined') ? performance.now() : 0
             if (w && typeof H.Swarm_station_up === 'function' && H.Swarm_station_up(w, self)) stood = true
+            const t2 = (typeof performance !== 'undefined') ? performance.now() : 0
             url = await H.Swarm_ferry_link(w, self, location.origin + location.pathname)
+            const t3 = (typeof performance !== 'undefined') ? performance.now() : 0
+            console.log(`🔗 link a device — paint+yield ${(t1 - t0).toFixed(0)}ms · station_up ${(t2 - t1).toFixed(0)}ms · ferry_link ${(t3 - t2).toFixed(0)}ms · (render fan-out follows on the version bump)`)
             if (!url) err = 'no live identity yet — wait a moment and retry'
         } catch (e) { err = String(e) } finally { minting = false }
     }
@@ -157,18 +192,32 @@
 
     // ── GRANTOR CONFIRM ("Linking", soul side) — a device sealed as our Cave, so Swarm_ferry_on_seal parked
     //  top.c.ferry_confirm and held the send.  The QR yields to THIS, alone in the cell; ✓ performs the copy.
-    let confirm = $derived.by(() => { void H?.version; try { return (H?.top_House?.()?.c?.ferry_confirm) ?? null } catch { return null } })
+    // ⚠ READS now_tick, NOT JUST H.version (owner 2026-08-29, "eed is hanging in the QRcode display still" under a
+    //  Repli flood).  on_seal + poke park `ferry_confirm` on top.c — a `.c` write, which by the codebase law NEVER
+    //   bumps H.version.  So the flip QR → "giving your soul" rides whatever OTHER bump comes next — and under a
+    //    repli storm the belief mutex is saturated, so that bump is queued for seconds and the confirm never
+    //     surfaces though it is parked on the wire.  now_tick is a 1s setInterval on the macrotask queue, INDEPENDENT
+    //      of the belief mutex, so re-reading top.c off it un-wedges the ceremony within 1s regardless of the flood.
+    let confirm = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_confirm) ?? null } catch { return null } })
     // ── LINKEE "connecting" — a MyCave link was redeemed and a soul is inbound but hasn't landed yet (the
     //  dead-window fix): top.c.ferry_awaiting is armed at redeem (Swarm_redeem) and cleared when the sealed
     //   account arrives (Swarm_ferry_park → pending takes over) or on cancel.  Fills the blank wait.
-    let awaiting = $derived.by(() => { void H?.version; try { return (H?.top_House?.()?.c?.ferry_awaiting) ?? null } catch { return null } })
+    let awaiting = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_awaiting) ?? null } catch { return null } })
     let sent = $state('')   // the "Linked" phase on the soul side, set once the account has crossed
+    // ── RECEIVE-ACK (task #21): the other device CONSUMED the soul (ferry_got heard) — the honest "✓ received"
+    //  that closes the arc, distinct from "sent" (which only means the frame left here).  Set by the hear funnel,
+    //   which also retires the spent secret, so the ceremony truly ends when this lights.
+    // void now_tick like `confirm` above: ferry_got is a top.c write off the hear funnel (never bumps H.version),
+    //  so under a Repli flood eed would stay stuck on "waiting for its received" though the ack has landed.  The
+    //   1s heartbeat surfaces the receive-ack regardless of the starved belief loop, closing the arc.
+    let got = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_got) ?? null } catch { return null } })
     // LINKOR ADVANCE — while the QR is up, keep asking whether a Cave pier has turned up live.  The instant one
     //  has, Swarm_ferry_poke parks ferry_confirm and the ladder swaps QR → "giving your soul" (the `confirm`
     //   phase wins).  Tied to reactivity (H.version bumps the moment the %Pier appears) so it leaves the QR the
     //    moment the Cave is ready — not waiting on the frame pump.  poke only PARKS; the human still confirms.
     $effect(() => {
-        void H?.version
+        void H?.version; void now_tick   // ← now_tick: keep poking on the mutex-independent 1s heartbeat, so a WARM
+                                         //    Cave parks the confirm even while a Repli flood has the belief loop queued
         // Poke whenever THIS tab holds a link in flight — while the QR is up (`url`) OR after a reload that
         //  lost `url` but kept the durable secret (Swarm_link_active is true off the stash twin).  poke reads
         //   the twin for its secret and re-parks ferry_confirm from the still-sealed Cave pier, so an eed
@@ -191,14 +240,8 @@
     //  Owner: "an online indicator on the giving your soul to, it's important to know if they're there" /
     //   "offline indicator at both ends".  Copying a soul into thin air is the worst kind of stuck, so
     //    each end reads the OTHER end's pier `heard_at` — the very pulse warmth DoorFace grades — and
-    //     shows here/fading/away.  Graded against a 1s tick so it DECAYS live even when no new pulse lands
-    //      (a derivation off H.version alone would freeze at the last-heard reading and read "online" forever).
-    let now_tick = $state(Date.now())
-    $effect(() => {
-        if (typeof window === 'undefined') return
-        const id = setInterval(() => { now_tick = Date.now() }, 1000)
-        return () => clearInterval(id)
-    })
+    //     shows here/fading/away.  Graded against the shared `now_tick` heartbeat (declared up top) so it DECAYS
+    //      live even when no new pulse lands (a derivation off H.version alone would freeze at the last-heard reading).
     // STEADY "I want linkage" ASK — while a soul is inbound this cell re-asks the soul device every 3s so its
     //  grantor-confirm stays parked through any reload on ITS end (owner: "a steady flow of I want Linkage sentiment
     //   from 495 to eed to keep it focused… 3s wire chatter for the Link ceremony").  Ceremony-scoped — this cell is
@@ -321,7 +364,11 @@
                 <p class="ld-sas ld-sas-wait">···</p>
             {/if}
             {#if giving}
-                <div class="ld-working"><span class="ld-spin"></span> sealing your soul and ferrying it across…</div>
+                <!-- REAL activity, not a dead spinner (owner 2026-08-29: "no cues in the UI at all about it
+                     starting to come over").  Bandwidth reads the shared wire meter's tx bytes/s, so this JIGGLES with
+                     the account actually leaving — and reads "…" only in the brief seal-before-send instant. -->
+                <div class="ld-working"><span>sealing & ferrying your soul across…</span></div>
+                <Bandwidth {H} dir="tx" label="crossing" />
             {:else}
                 <div class="ld-row">
                     <button class="ld-go" onclick={do_confirm} disabled={!sas}>give my soul</button>
@@ -329,11 +376,15 @@
                 </div>
             {/if}
         </div>
-    {:else if sent}
+    {:else if sent || got}
+        <!-- "sent" is honest but half the arc ("the frame left here"); `got` is the whole of it — the other
+             device consumed the soul (ferry_got, which also retired the spent secret).  One face, upgraded
+             live the moment the ack lands.  done clears both (ferry_got is `.c` — never snapped). -->
         <div class="ld-face">
-            <div class="ld-cap-big">✓ soul given</div>
-            <p class="ld-deal">sent to <b>your other device</b> — it can receive your soul now.</p>
-            <button class="ld-cancel-b" onclick={() => sent = ''}>done</button>
+            <div class="ld-cap-big">{got ? '✓ soul received' : '✓ soul given'}</div>
+            <p class="ld-deal">{got ? 'your other device took it on — you live there now too.' : 'sent to your other device — waiting for it to take the soul on…'}</p>
+            {#if !got}<Bandwidth {H} dir="tx" label="waiting for its “received”" />{/if}
+            <button class="ld-cancel-b" onclick={() => { sent = ''; try { const t = H?.top_House?.(); if (t?.c?.ferry_got) delete t.c.ferry_got } catch {} }}>done</button>
         </div>
     {:else if awaiting}
         <!-- LINKEE "connecting" — the link is redeemed and a soul is inbound, waiting on the OTHER device's
@@ -344,6 +395,11 @@
             <p class="ld-deal">waiting for it to <b>confirm</b> — the other device decides whether to send its soul here.</p>
             {#if sas}<p class="ld-sas" title="these three must match the other device's screen — if they differ a relay is in the middle: say no"><b>{sas}</b></p>{/if}
             {#if !has_code}<p class="ld-warn-note">⚠ heads up: this link is missing its seal code (the part after <b>#</b>) — reopen the full QR link, or the soul won't unseal here.</p>{/if}
+            <!-- THE "IT'S COMING OVER" CUE (owner 2026-08-29: "no cues in the UI at all about it starting to come
+                 over").  Bound to the wire's rx bytes: while the other device is still deciding this reads a gentle
+                 "…"; the instant the soul starts crossing it jumps to live KB/s + a spark, so the wait never looks
+                 frozen and the arrival is SEEN before `pending` swaps this whole face for the receive screen. -->
+            <Bandwidth {H} dir="rx" label="listening for the soul" />
             <button class="ld-cancel-b" onclick={cancel_link}>cancel</button>
         </div>
     {:else if url}
@@ -396,6 +452,15 @@
     .ld-frame {
         pointer-events: auto;
         max-height: 100%; overflow-y: auto; overscroll-behavior: contain;
+        /* CENTRE IN THE FILLED BOX (owner 2026-08-28 "the title is way up in the top left, 1/4 of the cell
+           space is used", and 2026-08-29 "badly positioned").  Vytui fills the face root for the belly cell,
+           but this column had no justify-content, so a SHORT phase (the lobby, the ✓ done screens) pinned to
+           the top and left the lower ¾ an empty dead zone.  `safe center` centres when the phase fits and
+           falls back to top-align when a TALL phase (a long confirm) overflows — so the scroll never clips
+           its top.  `min-height:100%` makes the column actually own the whole filled box so the centring has
+           room to act (and clicks land on the frame, not a gap behind it). */
+        min-height: 100%;
+        justify-content: safe center;
     }
     /* THE QR NEVER SCROLLS (owner: "QRcode thing looks bad when it scrolls, don't let it" — the dark-brown box
        under the heading).  The sharing phase is compact and fixed, so its column centres and hides overflow
@@ -435,6 +500,13 @@
     .ld-cancel-b { background: none; border: none; color: inherit; font-size: .85rem; opacity: .8; text-decoration: underline; cursor: pointer; }
     .ld-link { font-size: .95rem; background: #d98a00; color: #000; font-weight: 700; border: none; border-radius: .5rem; padding: .5rem 1rem; cursor: pointer; }
     .ld-link:disabled { opacity: .4; cursor: default; }
+    /* TOUCHDOWN (owner 2026-08-29 "should have a touchdown effect so we know it happened").  `:active` is applied
+       by the browser IN THE COMPOSITOR on pointer-down — before any JS/reactivity runs — so the press registers
+       INSTANTLY even while the main thread is busy re-laying-out the belly.  A tiny depress + brighten; the
+       transition makes the release settle smoothly (the start of the "nice and smooth" the owner wants). */
+    .ld-link, .ld-go, .ld-cancel-b, .ld-trust { transition: transform .09s ease, filter .09s ease, background-color .12s ease; }
+    .ld-link:active:not(:disabled), .ld-go:active:not(:disabled) { transform: scale(.955); filter: brightness(1.12); }
+    .ld-cancel-b:active:not(:disabled), .ld-trust:active:not(:disabled) { transform: scale(.955); }
     .ld-note { font-size: .95rem; }
     .ld-err { color: #ff6b6b; font-size: .8rem; }
     .ld-cap-big { font-size: 1.05rem; font-weight: 600; }

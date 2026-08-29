@@ -1042,6 +1042,21 @@ Swarm_arm(w):
         //  gives up the "connecting…" wait (owner: "eed can only get rid of that by cancelling the token, which 495
         //   then gives up from").  Matched on `from` inside so a stray cancel can't knock out an unrelated adopt.
         if (frame.header.type === 'ferry_cancel') this.Swarm_ferry_cancelled(w2, ident, from)
+        // FERRY GOT — the receive-ack (task #21): the new device TOOK the soul ON.  Close the ceremony's arc on
+        //  this (soul) side: the secret is SPENT (drop it + its durable twin, so no "link in flight" lingers and
+        //   no later poke re-parks a confirm for an already-served mint) and leave `ferry_got` for the cell's
+        //    "✓ received" lamp.  Only a live Linkee can send it (its consume is humdinger-gated) → Book-inert.
+        if (frame.header.type === 'ferry_got') {
+            let gtop = this.top_House ? this.top_House() : null
+            if (gtop && gtop.c) {
+                delete gtop.c.ferry_secret
+                delete gtop.c.ferry_confirm
+                if (gtop.stashed) { delete gtop.stashed.ferry_pending_secret }
+                gtop.c.ferry_got = { pub: String(from || ''), at: Date.now() }
+                if (gtop.bump_version) { gtop.bump_version() }
+            }
+            console.log('🦑 ferry: ✓ the other device took the soul on — ceremony complete, link retired')
+        }
         // SEED THE CHARTER AT SEAL (Division_todo step 4), station wire twin of the pump seed above.
         if (frame.header.type === 'pier_accept' || frame.header.type === 'pier_confirm') this.Swarm_charter_gossip(w2, ident, from)
         // LEDGER OUTCOME ⇒ SETTLE (Persistence_todo §5.1): every frame kind that can move the durable
@@ -1053,7 +1068,7 @@ Swarm_arm(w):
         if (['pier_hello', 'pier_accept', 'pier_confirm', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok'].includes(frame.header.type)) this.Swarm_account_settle(ident, frame.header.type)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'adopt_seal', 'adopt_confirm', 'ferry', 'ferry_want', 'ferry_cancel']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'adopt_seal', 'adopt_confirm', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got']) w.c.on[kind] = hear
 
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
 //  (1) a cache hit — a voucher whose sign we already proved this era — passes without crypto.
@@ -3583,6 +3598,30 @@ async Swarm_revoke(w, ident, pier, feature):
     this.Swarm_account_settle(ident, 'revoke')
     return pier.i({ NotGrant: atom.not, by: atom.by, for: atom.for, time: atom.time, sign: atom.sign })
 
+// Swarm_pier_forget — the human's "forget this device" for a pier that will never return (a dead Incognito
+//  test tab, an abandoned link attempt — owner 2026-08-29: "we have 6 Piers we tried to link to... none
+//   indicate the Link failed which I think they all did... we don't need too much in there").  Retires EVERY
+//    feature the pier holds via the standard signed %NotGrant law (Swarm_revoke — durable, stash-settled,
+//     honoured at use by Swarm_pier_live; the Pier row itself remains as history, per "it is not deleted").
+//      Also UnInvites the pub, so any parked ferry state naming it can never seize the screen again.
+//       HUMAN-PRESSED ONLY (the DoorFace row's forget) — no Book calls it, so fixtures are untouched.
+async Swarm_pier_forget(w, pub):
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!ident) { return 0 }
+    let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => String(p.sc.pub) === String(pub))
+    if (!pier) { return 0 }
+    let feats = {}
+    for (const g of pier.o({ Grant: 1 })) { feats[String(g.sc.Grant)] = 1 }
+    let n = 0
+    for (const f of Object.keys(feats)) {
+        if (this.Swarm_pier_live(pier, f)) { await this.Swarm_revoke(w, ident, pier, f); n = n + 1 }
+    }
+    let top = this.top_House ? this.top_House() : null
+    if (top && this.Swarm_ferry_uninvite) { this.Swarm_ferry_uninvite(top, String(pub)) }
+    if (top && top.bump_version) { top.bump_version() }
+    console.log('🦑 forgot pier ' + String(pier.sc.friendly || String(pub).slice(0, 8)) + ' — retired ' + n + ' grant feature(s) (NotGrant); it stays as history and cannot come back unless re-invited')
+    return 1
+
 // Swarm_pier_live — a Pier stands iff its Feature grants are present and NO matching %NotGrant
 //  (same ability + by + for) overrides any of them — checked at use, never cached.
 Swarm_pier_live(pier, feature):
@@ -4410,6 +4449,16 @@ async Swarm_ferry_on_seal(w, soulIdent, pier):
     //    A runner tab (no humdinger — every Book) has nobody to ask, so it sends straight through here:
     //     SwarmSpread beat 5 (the-account-ferries-over) stays green by construction, no fixture churn.
     if (top.c && top.c.humdinger) {
+        // ⚠ THE CHOKEPOINT WARMTH GATE (adversarial pass 2026-08-29): three callers reach here — the seal-seam
+        //  (fresh redeem, warm by construction), the ferry_want hear (the pier JUST spoke, warm), and the RETRY
+        //   PUMP (~1122), which picks its pier by GRANT alone and so could still park a phantom confirm for a
+        //    cold stale cave (the "giving your soul to Gag ○ offline" shape, resurrected via the third door).
+        //     One warmth + UnInvite check HERE covers all three; the Book/runner SEND branch below is untouched
+        //      (Book piers carry no heard_at — gating the send would break SwarmSpread beat 5).
+        let pha = pier.c ? pier.c.heard_at : 0
+        let pwarm = pha && (Date.now() - pha) < 45000 ? 1 : 0
+        let pun = this.Swarm_ferry_uninvited && this.Swarm_ferry_uninvited(top, String(pier.sc.pub || '')) ? 1 : 0
+        if (!pwarm || pun) { return }
         if (!top.c.ferry_confirm || top.c.ferry_confirm.pub !== String(pier.sc.pub)) {
             top.c.ferry_confirm = { pub: String(pier.sc.pub), name: String(pier.sc.friendly || ''), at: this.Swarm_now(w) }
             console.log('🦑 ferry: a device sealed as my Cave — awaiting my confirm on its pier (pulled to the Door) before I send')
@@ -4745,6 +4794,23 @@ async Swarm_ferry_consume(w, code, accept):
     //       live two-tab test (Auto's own note, Identity_persist §3), so it is verified live, not headless.
     if (soul && soul.c && soul.c.keys && soul.sc.Identity && soul.c.up && typeof this.Clustation_concrete === 'function') {
         try { this.Clustation_concrete(soul.c.up, soul.sc.Identity, { pub: soul.c.keys.pub, key: soul.c.keys.key, prepub: soul.sc.prepub, friendly: soul.sc.friendly }) } catch (er) { console.log('🦑 ferry: concrete threw — soul landed, activation deferred to boot') }
+    }
+    // RECEIVE-ACK (task #21, the last unlit lamp in "none indicate the Link failed/succeeded"): tell the soul
+    //  device its account was actually TAKEN ON, so the Linkor's cell can close the arc with a real "✓ received"
+    //   instead of the half-truth "sent".  HUMDINGER-GATED so a Book never emits it (fixtures untouched); rides
+    //    the reliable outbox (not ephemeral) so a briefly-away Linkor still learns on return.  Best-effort —
+    //     an ack that fails to send costs nothing (the soul already landed).
+    if (soul && top.c.humdinger) {
+        try {
+            let ack_ident = this.Swarm_live_self ? this.Swarm_live_self() : ident
+            let ack_piers = this.Swarm_peering(ack_ident)?.o({ Pier: 1 }) ?? []
+            // prefer the pier that IS the soul we just took on (dsoul / the frame's salt names it); fall back to
+            //  any MyCave-live pier (a fresh Linkee holds exactly one).
+            let ack_soul = dsoul || (pend.frame && pend.frame.salt ? String(pend.frame.salt).split(':')[0] : '')
+            let ack_pier = (ack_soul ? ack_piers.find((p) => { let pp = String(p.sc.pub || ''); return pp && (pp === ack_soul || pp.startsWith(ack_soul) || ack_soul.startsWith(pp)) ? 1 : 0 }) : null)
+                || ack_piers.find((p) => this.Swarm_pier_live(p, 'MyCave'))
+            if (ack_ident && ack_pier) { this.Swarm_deliver(w, ack_ident, ack_pier.sc.pub, { kind: 'ferry_got' }) }
+        } catch (er) {}
     }
     return soul
 

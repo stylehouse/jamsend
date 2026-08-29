@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '670151d53d0cffec~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '59a5b0901161de27~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -1145,12 +1145,11 @@ Screen_decide(w) {
 
 },
 // Sounditron_link_open — the Door's "Link Device" doorway.  Focuses the %Link belly cell DIRECTLY (Sounditron_focus,
-//  the world-resolved nav seam) so the cell shows every press — no link_lobby flag, no surfaced-latch race.  A
-//   deliberate open is also a REINVITE — the human wants to link NOW, so clear any prior UnInvite so a peer they
-//    earlier said "no" to isn't silently barred.  A bump so the face re-derives at once.
+//  the world-resolved nav seam) so the cell shows every press — no link_lobby flag, no surfaced-latch race.
+//   ⚠ Deliberately NO reinvite here (owner 2026-08-29: a "no" puts that Adopt down FOREVER — opening the lobby to
+//    link a NEW device must not resurrect a peer they declined).  A bump so the face re-derives at once.
 Sounditron_link_open(w) {
     let top = this.top_House ? this.top_House() : null
-    try { if (this.Swarm_ferry_reinvite && top) { this.Swarm_ferry_reinvite(top) } } catch (e) {}
     // FOCUS THE CELL DIRECTLY — the proven navigation seam that resolves the glass world authoritatively (the same
     //  path the Door's other cell buttons use).  The earlier `top.c.link_lobby` + surfaced-latch detour made this a
     //   NOOP after a nav-back (the latch had already fired, so `active && !surfaced` never re-focused) — owner
