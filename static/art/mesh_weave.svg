@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" font-family="'IBM Plex Mono','SF Mono',Menlo,monospace">
+  <title>Cello Mesh — the decodable field (C** data model, atom-weave)</title>
+  <desc>The whole particle population as a dense zoomable field: atoms (mainkey pill + sc pebbles + dashed .c feather-stubs) laid in a weave — depth to band, mainkey to cluster with a jewel halo, atoms to grid. A graded twist channel warps a few atoms amber/red (a wound) and one purple (intentional sc.twist:'effect').</desc>
+
+  <defs>
+    <!-- deep field backdrop: not white/grey, the Matstyle base tone -->
+    <radialGradient id="field" cx="38%" cy="30%" r="95%">
+      <stop offset="0%" stop-color="#12171f"/>
+      <stop offset="55%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#070a0e"/>
+    </radialGradient>
+
+    <!-- restrained jewel palette, one per mainkey -->
+    <linearGradient id="jewel-steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7fa7d4"/><stop offset="100%" stop-color="#3f6699"/>
+    </linearGradient>
+    <linearGradient id="jewel-teal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5fd6c4"/><stop offset="100%" stop-color="#2b8a7d"/>
+    </linearGradient>
+    <linearGradient id="jewel-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f4d06a"/><stop offset="100%" stop-color="#c79320"/>
+    </linearGradient>
+    <linearGradient id="jewel-viol" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b18ce0"/><stop offset="100%" stop-color="#6f4bb0"/>
+    </linearGradient>
+    <linearGradient id="jewel-rose" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e08ba6"/><stop offset="100%" stop-color="#a84e6d"/>
+    </linearGradient>
+    <!-- twist channel: amber wound + red fatal + purple door -->
+    <linearGradient id="warp-amber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f2b45a"/><stop offset="100%" stop-color="#c86a1e"/>
+    </linearGradient>
+    <linearGradient id="warp-red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f26a5a"/><stop offset="100%" stop-color="#b02a1e"/>
+    </linearGradient>
+    <linearGradient id="warp-door" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c78bff"/><stop offset="100%" stop-color="#7a3fd0"/>
+    </linearGradient>
+
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.03 0"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#field)"/>
+  <rect width="1200" height="800" filter="url(#grain)"/>
+
+  <!-- title strip -->
+  <text x="40" y="42" fill="#cdd6e2" font-size="17" letter-spacing="3">CELLO&#160;MESH</text>
+  <text x="40" y="62" fill="#5c6b7d" font-size="10.5" letter-spacing="1.4">the snap rendered as a decodable field — atom-weave of the whole C** population</text>
+
+  <!-- ================= BAND DEMARCATIONS (depth ruled lines) ================= -->
+  <g stroke-dasharray="1 5" stroke-width="1" opacity="0.55">
+    <line x1="40" y1="88" x2="1160" y2="88" stroke="#2a3644"/>
+    <line x1="40" y1="196" x2="1160" y2="196" stroke="#2a3644"/>
+    <line x1="40" y1="360" x2="1160" y2="360" stroke="#2a3644"/>
+    <line x1="40" y1="704" x2="1160" y2="704" stroke="#2a3644"/>
+  </g>
+  <g fill="#3d4b5c" font-size="9.5" letter-spacing="2">
+    <text x="46" y="104">BAND&#160;0&#160;·&#160;depth&#160;0</text>
+    <text x="46" y="212">BAND&#160;1&#160;·&#160;depth&#160;1</text>
+    <text x="46" y="376">BAND&#160;2&#160;·&#160;depth&#160;2&#160;—&#160;the&#160;dense&#160;heart</text>
+    <text x="46" y="720">BAND&#160;3&#160;·&#160;depth&#160;3</text>
+  </g>
+
+  <!-- reading-direction arrow: depth flows top→bottom here -->
+  <g opacity="0.4" stroke="#3d4b5c" fill="#3d4b5c">
+    <line x1="1150" y1="96" x2="1150" y2="690" stroke-width="1" stroke-dasharray="2 4"/>
+    <path d="M1146 686 L1150 696 L1154 686 Z"/>
+    <text x="1136" y="400" font-size="8.5" letter-spacing="2" transform="rotate(90 1136 400)" stroke="none">depth&#160;→&#160;reading&#160;direction</text>
+  </g>
+
+  <!-- ======================= ATOM VOCABULARY (reusable via <use>) ======================= -->
+  <!-- Each atom is inlined so wobble/warp can vary per particle. Organic walls hand-tuned. -->
+
+  <!-- ── BAND 0: H:Mundo, the root ── -->
+  <g transform="translate(120,118)">
+    <path d="M2,10 C0,2 8,-2 20,0 C60,-3 130,-2 168,0 C182,1 184,8 182,18 C184,34 183,52 181,64 C182,72 172,74 160,73 C90,75 40,74 14,73 C4,74 -1,66 1,56 C-1,40 0,24 2,10 Z"
+          fill="#161d27" stroke="#2f3d4d" stroke-width="1"/>
+    <!-- mainkey pill (cello_blob, very low wobble) -->
+    <path d="M6,3 C4,-1 10,-4 18,-3 C70,-5 140,-4 168,-3 C176,-3 178,1 176,7 C178,13 176,19 172,20 C120,22 50,21 12,20 C6,20 3,15 5,10 Z"
+          fill="url(#jewel-steel)"/>
+    <text x="16" y="14" fill="#0b1017" font-size="11" font-weight="700" letter-spacing="0.5">H:Mundo</text>
+    <!-- sc pebbles -->
+    <g font-size="8" fill="#9fb2c6">
+      <rect x="12" y="30" width="70" height="14" rx="7" fill="#20303f"/><text x="18" y="40">id:mundo</text>
+      <rect x="90" y="30" width="80" height="14" rx="7" fill="#20303f"/><text x="96" y="40">created:t0</text>
+      <rect x="12" y="50" width="60" height="14" rx="7" fill="#20303f"/><text x="18" y="60">ave:1</text>
+    </g>
+  </g>
+
+  <!-- ── BAND 1: worlds and actors (depth 1) ── -->
+  <!-- cluster halo: w-worlds -->
+  <path d="M70,222 C66,214 74,212 90,212 C240,210 380,211 470,212 C486,213 488,220 486,232 C488,300 487,330 485,344 C486,352 476,354 462,353 C300,355 160,354 88,353 C74,354 68,346 70,336 C68,300 69,254 70,222 Z"
+        fill="none" stroke="url(#jewel-viol)" stroke-width="2" opacity="0.32" filter="url(#soft)"/>
+  <text x="80" y="228" fill="#8b74b8" font-size="8.5" letter-spacing="1.5">w:&#160;worlds</text>
+
+  <!-- atom w:Story -->
+  <g transform="translate(92,238)">
+    <path d="M2,9 C0,2 7,-2 18,0 C50,-2 96,-1 120,0 C132,1 134,8 132,17 C134,40 133,72 131,86 C132,94 122,96 110,95 C60,97 26,96 12,95 C4,96 -1,88 1,80 C-1,50 0,26 2,9 Z"
+          fill="#151c26" stroke="#2f3d4d" stroke-width="1"/>
+    <path d="M6,3 C4,-1 10,-4 18,-3 C56,-5 100,-4 122,-3 C130,-3 132,2 130,8 C132,14 129,19 124,20 C80,22 30,21 12,20 C6,20 3,14 5,9 Z" fill="url(#jewel-viol)"/>
+    <text x="14" y="14" fill="#0d0a14" font-size="10" font-weight="700">w:Story</text>
+    <g font-size="7.5" fill="#a99ac6"><rect x="12" y="30" width="72" height="13" rx="6.5" fill="#241d33"/><text x="17" y="39">UI:Cello</text>
+      <rect x="12" y="47" width="88" height="13" rx="6.5" fill="#241d33"/><text x="17" y="56">client_w:1</text>
+      <rect x="12" y="64" width="60" height="13" rx="6.5" fill="#241d33"/><text x="17" y="73">The:1</text></g>
+    <line x1="12" y1="79" x2="130" y2="79" stroke="#334" stroke-width="0.7" stroke-dasharray="2 3"/>
+    <path d="M20,86 q14,7 30,3" fill="none" stroke="#6f4bb0" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.6"/>
+    <path d="M60,86 q14,7 30,3" fill="none" stroke="#6f4bb0" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.6"/>
+  </g>
+
+  <!-- atom w:Lies -->
+  <g transform="translate(228,238)">
+    <path d="M2,9 C0,2 7,-2 18,0 C48,-2 92,-1 114,0 C126,1 128,8 126,17 C128,38 127,68 125,82 C126,90 116,92 104,91 C58,93 26,92 12,91 C4,92 -1,84 1,76 C-1,48 0,26 2,9 Z"
+          fill="#151c26" stroke="#2f3d4d" stroke-width="1"/>
+    <path d="M6,3 C4,-1 10,-4 18,-3 C52,-5 94,-4 116,-3 C124,-3 126,2 124,8 C126,14 123,19 118,20 C76,22 28,21 12,20 C6,20 3,14 5,9 Z" fill="url(#jewel-viol)"/>
+    <text x="14" y="14" fill="#0d0a14" font-size="10" font-weight="700">w:Lies</text>
+    <g font-size="7.5" fill="#a99ac6"><rect x="12" y="30" width="88" height="13" rx="6.5" fill="#241d33"/><text x="17" y="39">req:Cortex</text>
+      <rect x="12" y="47" width="70" height="13" rx="6.5" fill="#241d33"/><text x="17" y="56">docks:4</text></g>
+    <line x1="12" y1="66" x2="124" y2="66" stroke="#334" stroke-width="0.7" stroke-dasharray="2 3"/>
+    <path d="M20,73 q14,7 30,3" fill="none" stroke="#6f4bb0" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.6"/>
+  </g>
+
+  <!-- cluster halo: A-actors -->
+  <path d="M520,222 C516,214 524,212 540,212 C640,210 720,211 760,212 C776,213 778,220 776,232 C778,290 777,320 775,334 C776,342 766,344 752,343 C660,345 560,344 538,343 C524,344 518,336 520,326 C518,290 519,254 520,222 Z"
+        fill="none" stroke="url(#jewel-rose)" stroke-width="2" opacity="0.3" filter="url(#soft)"/>
+  <text x="530" y="228" fill="#b5748e" font-size="8.5" letter-spacing="1.5">A:&#160;actors</text>
+
+  <!-- atom A:Vyto -->
+  <g transform="translate(542,238)">
+    <path d="M2,9 C0,2 7,-2 18,0 C46,-2 88,-1 108,0 C120,1 122,8 120,17 C122,36 121,64 119,78 C120,86 110,88 98,87 C56,89 26,88 12,87 C4,88 -1,80 1,72 C-1,46 0,26 2,9 Z"
+          fill="#151c26" stroke="#2f3d4d" stroke-width="1"/>
+    <path d="M6,3 C4,-1 10,-4 18,-3 C50,-5 90,-4 110,-3 C118,-3 120,2 118,8 C120,14 117,19 112,20 C72,22 28,21 12,20 C6,20 3,14 5,9 Z" fill="url(#jewel-rose)"/>
+    <text x="14" y="14" fill="#160a10" font-size="10" font-weight="700">A:Vyto</text>
+    <g font-size="7.5" fill="#c69cae"><rect x="12" y="30" width="76" height="13" rx="6.5" fill="#33212a"/><text x="17" y="39">humdinger</text>
+      <rect x="12" y="47" width="64" height="13" rx="6.5" fill="#33212a"/><text x="17" y="56">Seem:1</text></g>
+    <line x1="12" y1="66" x2="118" y2="66" stroke="#334" stroke-width="0.7" stroke-dasharray="2 3"/>
+    <path d="M20,73 q13,7 28,3" fill="none" stroke="#a84e6d" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.6"/>
+  </g>
+
+  <!-- ======================= BAND 2: the dense heart ======================= -->
+
+  <!-- CLUSTER: %req (steel-blue halo) — big tangle, holds two wounds -->
+  <path d="M70,388 C66,378 76,376 94,376 C300,373 480,374 546,376 C562,377 566,386 564,400 C566,540 565,640 563,672 C564,682 552,684 536,683 C320,686 140,685 92,683 C76,684 68,674 70,662 C68,560 69,440 70,388 Z"
+        fill="none" stroke="url(#jewel-steel)" stroke-width="2.5" opacity="0.34" filter="url(#soft)"/>
+  <text x="82" y="394" fill="#6f92bd" font-size="9" letter-spacing="1.5">%req&#160;cluster&#160;·&#160;steel</text>
+
+  <!-- a lattice of req motes/atoms, grid flow. Small ones are motes (pill + dot pattern). -->
+  <!-- helper look: mote = rounded rect w/ pill top + 2-3 key-hue dots -->
+
+  <!-- Row A -->
+  <g transform="translate(90,408)">
+    <rect x="0" y="0" width="66" height="40" rx="7" fill="#141b24" stroke="#293748" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C40,-3 58,-2 62,-1 C64,3 63,8 58,9 C34,10 12,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-steel)"/>
+    <text x="8" y="8" fill="#0b1017" font-size="7" font-weight="700">req:Store</text>
+    <circle cx="10" cy="20" r="2.6" fill="#7fd48f"/><circle cx="20" cy="20" r="2.6" fill="#d4c27f"/><circle cx="30" cy="20" r="2.6" fill="#7f9fd4"/>
+    <circle cx="10" cy="30" r="2.6" fill="#c67fd4"/><circle cx="20" cy="30" r="2.6" fill="#d4977f"/>
+    <path d="M40,34 q9,5 20,2" fill="none" stroke="#3f6699" stroke-width="0.7" stroke-dasharray="2 2" opacity="0.55"/>
+  </g>
+  <g transform="translate(166,408)"><rect x="0" y="0" width="60" height="36" rx="7" fill="#141b24" stroke="#293748" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C36,-3 52,-2 56,-1 C58,3 57,8 52,9 C30,10 12,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-steel)"/>
+    <text x="8" y="8" fill="#0b1017" font-size="6.5" font-weight="700">req:Codebit</text>
+    <circle cx="10" cy="21" r="2.6" fill="#7fd48f"/><circle cx="20" cy="21" r="2.6" fill="#7f9fd4"/><circle cx="30" cy="21" r="2.6" fill="#d4c27f"/><circle cx="40" cy="21" r="2.6" fill="#c67fd4"/></g>
+  <g transform="translate(236,408)"><rect x="0" y="0" width="52" height="34" rx="7" fill="#141b24" stroke="#293748" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C32,-3 46,-2 48,-1 C50,3 49,8 44,9 C26,10 10,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-steel)"/>
+    <text x="8" y="8" fill="#0b1017" font-size="6.5" font-weight="700">req:Run</text>
+    <circle cx="10" cy="21" r="2.6" fill="#7fd48f"/><circle cx="20" cy="21" r="2.6" fill="#7f9fd4"/><circle cx="30" cy="21" r="2.6" fill="#d4977f"/></g>
+  <g transform="translate(298,408)"><rect x="0" y="0" width="48" height="32" rx="7" fill="#141b24" stroke="#293748" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C30,-3 42,-2 44,-1 C46,3 45,8 40,9 C24,10 10,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-steel)"/>
+    <text x="8" y="8" fill="#0b1017" font-size="6.5" font-weight="700">req:Blast</text>
+    <circle cx="10" cy="20" r="2.6" fill="#7fd48f"/><circle cx="20" cy="20" r="2.6" fill="#d4c27f"/></g>
+
+  <!-- WOUND 1: undef sc value — wobblier wall, amber hue-shift, hollow pebble -->
+  <g transform="translate(356,406)">
+    <path d="M2,4 C-2,-2 8,-5 18,-3 C40,-6 62,-1 70,-4 C80,-1 78,10 76,16 C82,24 74,34 78,42 C70,50 52,44 40,48 C28,44 10,52 4,44 C-4,38 6,28 2,20 C-3,12 6,10 2,4 Z"
+          fill="#1c1610" stroke="url(#warp-amber)" stroke-width="1.4"/>
+    <path d="M4,2 C3,-2 9,-3 15,-3 C42,-5 62,-3 66,-2 C70,2 66,9 60,10 C34,12 12,10 7,9 C3,8 3,5 4,2 Z" fill="url(#warp-amber)"/>
+    <text x="9" y="8" fill="#1c1004" font-size="6.5" font-weight="700">req:awaitbuf</text>
+    <circle cx="12" cy="22" r="2.6" fill="#7fd48f"/><circle cx="22" cy="22" r="2.6" fill="#7f9fd4"/>
+    <!-- hollow pebble = undef wound -->
+    <circle cx="32" cy="22" r="3.1" fill="none" stroke="#f2b45a" stroke-width="1.1"/>
+    <text x="12" y="42" fill="#c88a3a" font-size="6">path:undef</text>
+  </g>
+
+  <!-- Row B -->
+  <g transform="translate(90,458)"><rect x="0" y="0" width="46" height="30" rx="7" fill="#141b24" stroke="#293748" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C28,-3 40,-2 42,-1 C44,3 43,8 38,9 C22,10 10,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-steel)"/>
+    <text x="7" y="8" fill="#0b1017" font-size="6.5" font-weight="700">req:Pump</text>
+    <circle cx="10" cy="20" r="2.6" fill="#7fd48f"/><circle cx="20" cy="20" r="2.6" fill="#d4c27f"/></g>
+
+  <!-- WOUND 2: finished but un-dropped req — 50% opacity, amber, ⚠-free -->
+  <g transform="translate(144,458)" opacity="0.52">
+    <path d="M2,4 C-1,-2 7,-4 16,-3 C36,-5 54,-2 60,-4 C68,-1 66,9 64,15 C68,23 62,29 60,30 C44,32 12,31 6,30 C0,26 4,18 1,12 C-2,8 5,9 2,4 Z"
+          fill="#1c1610" stroke="url(#warp-amber)" stroke-width="1.3" stroke-dasharray="3 2"/>
+    <path d="M4,2 C3,-2 9,-3 15,-3 C36,-5 52,-3 56,-2 C60,2 56,9 50,10 C28,12 12,10 7,9 C3,8 3,5 4,2 Z" fill="url(#warp-amber)"/>
+    <text x="8" y="8" fill="#1c1004" font-size="6.5" font-weight="700">req:finished</text>
+    <circle cx="12" cy="21" r="2.6" fill="#7fd48f"/><circle cx="22" cy="21" r="2.6" fill="#c88a3a"/><circle cx="32" cy="21" r="2.6" fill="#7f9fd4"/></g>
+
+  <g transform="translate(214,458)"><rect x="0" y="0" width="44" height="30" rx="7" fill="#141b24" stroke="#293748" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C26,-3 38,-2 40,-1 C42,3 41,8 36,9 C22,10 10,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-steel)"/>
+    <text x="7" y="8" fill="#0b1017" font-size="6.5" font-weight="700">req:Read</text>
+    <circle cx="10" cy="20" r="2.6" fill="#7fd48f"/><circle cx="20" cy="20" r="2.6" fill="#7f9fd4"/><circle cx="30" cy="20" r="2.6" fill="#d4977f"/></g>
+  <g transform="translate(268,458)"><rect x="0" y="0" width="40" height="28" rx="7" fill="#141b24" stroke="#293748" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C24,-3 34,-2 36,-1 C38,3 37,8 32,9 C20,10 10,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-steel)"/>
+    <circle cx="10" cy="19" r="2.6" fill="#7fd48f"/><circle cx="20" cy="19" r="2.6" fill="#d4c27f"/></g>
+  <g transform="translate(316,458)"><rect x="0" y="0" width="38" height="28" rx="7" fill="#141b24" stroke="#293748" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C22,-3 32,-2 34,-1 C36,3 35,8 30,9 C18,10 10,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-steel)"/>
+    <circle cx="10" cy="19" r="2.6" fill="#7f9fd4"/><circle cx="20" cy="19" r="2.6" fill="#c67fd4"/></g>
+
+  <!-- FATAL WOUND: object in sc — red warp, ⚠ glyph, hardest wobble -->
+  <g transform="translate(364,456)">
+    <path d="M2,5 C-3,-3 9,-6 20,-3 C42,-7 66,0 74,-5 C86,-1 82,12 79,18 C86,28 76,40 80,48 C71,58 50,50 38,54 C24,50 8,58 3,48 C-5,40 7,28 1,20 C-6,12 8,11 2,5 Z"
+          fill="#1e100c" stroke="url(#warp-red)" stroke-width="1.6"/>
+    <path d="M4,2 C2,-3 10,-4 16,-4 C44,-6 64,-3 68,-2 C74,2 68,10 61,11 C34,13 12,11 7,10 C2,9 3,6 4,2 Z" fill="url(#warp-red)"/>
+    <text x="10" y="9" fill="#200704" font-size="6.5" font-weight="700">req:enWaft</text>
+    <!-- warning glyph on pill -->
+    <path d="M62,-2 l4,8 h-8 z" fill="#200704"/><circle cx="62" cy="3.5" r="0.7" fill="#f2b45a"/>
+    <circle cx="14" cy="24" r="2.6" fill="#7fd48f"/><circle cx="24" cy="24" r="2.6" fill="#7f9fd4"/>
+    <rect x="32" y="21" width="30" height="7" rx="2" fill="none" stroke="#f26a5a" stroke-width="1"/>
+    <text x="14" y="46" fill="#e0725f" font-size="6">sc.val:{object}</text>
+  </g>
+
+  <!-- Row C: pure motes (deep field, dots only) -->
+  <g fill="#141b24" stroke="#293748" stroke-width="0.7">
+    <g transform="translate(90,498)"><rect width="30" height="22" rx="6"/><rect x="3" y="2" width="24" height="5" rx="2.5" fill="#3f6699" stroke="none"/></g>
+    <g transform="translate(126,498)"><rect width="30" height="22" rx="6"/><rect x="3" y="2" width="24" height="5" rx="2.5" fill="#3f6699" stroke="none"/></g>
+    <g transform="translate(162,498)"><rect width="28" height="22" rx="6"/><rect x="3" y="2" width="22" height="5" rx="2.5" fill="#3f6699" stroke="none"/></g>
+    <g transform="translate(196,498)"><rect width="28" height="22" rx="6"/><rect x="3" y="2" width="22" height="5" rx="2.5" fill="#3f6699" stroke="none"/></g>
+    <g transform="translate(230,498)"><rect width="26" height="22" rx="6"/><rect x="3" y="2" width="20" height="5" rx="2.5" fill="#3f6699" stroke="none"/></g>
+    <g transform="translate(262,498)"><rect width="26" height="20" rx="6"/><rect x="3" y="2" width="20" height="5" rx="2.5" fill="#3f6699" stroke="none"/></g>
+    <g transform="translate(294,498)"><rect width="24" height="20" rx="6"/><rect x="3" y="2" width="18" height="5" rx="2.5" fill="#3f6699" stroke="none"/></g>
+    <g transform="translate(324,498)"><rect width="24" height="20" rx="6"/><rect x="3" y="2" width="18" height="5" rx="2.5" fill="#3f6699" stroke="none"/></g>
+    <g transform="translate(354,498)"><rect width="22" height="20" rx="6"/><rect x="3" y="2" width="16" height="5" rx="2.5" fill="#3f6699" stroke="none"/></g>
+  </g>
+  <g fill="#3f6699" opacity="0.9">
+    <circle cx="100" cy="514" r="2"/><circle cx="108" cy="514" r="2"/><circle cx="136" cy="514" r="2"/><circle cx="170" cy="514" r="2"/><circle cx="204" cy="514" r="2"/><circle cx="238" cy="514" r="2"/><circle cx="270" cy="512" r="2"/><circle cx="302" cy="512" r="2"/><circle cx="332" cy="512" r="2"/></g>
+  <text x="90" y="540" fill="#3d4b5c" font-size="7.5">···&#160;more&#160;req&#160;motes&#160;at&#160;field&#160;zoom&#160;—&#160;width&#160;still&#160;encodes&#160;N_sc</text>
+
+  <!-- CLUSTER: %Step (teal halo) -->
+  <path d="M584,388 C580,378 590,376 606,376 C740,373 840,374 884,376 C900,377 904,386 902,400 C904,480 903,540 901,562 C902,572 890,574 874,573 C740,576 620,575 604,573 C588,574 582,564 584,552 C582,480 583,440 584,388 Z"
+        fill="none" stroke="url(#jewel-teal)" stroke-width="2.5" opacity="0.32" filter="url(#soft)"/>
+  <text x="596" y="394" fill="#4bb8a8" font-size="9" letter-spacing="1.5">%Step&#160;cluster&#160;·&#160;teal</text>
+
+  <g transform="translate(604,408)"><rect x="0" y="0" width="72" height="42" rx="7" fill="#111d1b" stroke="#25423d" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C44,-3 64,-2 68,-1 C70,3 69,8 64,9 C36,10 12,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-teal)"/>
+    <text x="8" y="8" fill="#04120f" font-size="6.5" font-weight="700">Step:beliefs</text>
+    <g font-size="6.5" fill="#8fd6c9"><rect x="8" y="14" width="40" height="9" rx="4.5" fill="#16302b"/><text x="12" y="20.5">dige:h9</text>
+      <rect x="52" y="14" width="16" height="9" rx="4.5" fill="#16302b"/><text x="55" y="20.5">ok</text></g>
+    <line x1="8" y1="27" x2="64" y2="27" stroke="#243" stroke-width="0.6" stroke-dasharray="2 2"/>
+    <path d="M14,34 q10,5 22,2" fill="none" stroke="#2b8a7d" stroke-width="0.7" stroke-dasharray="2 2" opacity="0.55"/></g>
+  <g transform="translate(686,408)"><rect x="0" y="0" width="58" height="38" rx="7" fill="#111d1b" stroke="#25423d" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C34,-3 50,-2 54,-1 C56,3 55,8 50,9 C30,10 12,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-teal)"/>
+    <text x="8" y="8" fill="#04120f" font-size="6.5" font-weight="700">Step:see</text>
+    <circle cx="12" cy="20" r="2.6" fill="#7fd48f"/><circle cx="22" cy="20" r="2.6" fill="#d4c27f"/><circle cx="32" cy="20" r="2.6" fill="#7f9fd4"/></g>
+  <g transform="translate(752,408)"><rect x="0" y="0" width="52" height="34" rx="7" fill="#111d1b" stroke="#25423d" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C32,-3 46,-2 48,-1 C50,3 49,8 44,9 C26,10 10,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-teal)"/>
+    <text x="8" y="8" fill="#04120f" font-size="6.5" font-weight="700">Step:snap</text>
+    <circle cx="12" cy="20" r="2.6" fill="#7fd48f"/><circle cx="22" cy="20" r="2.6" fill="#7f9fd4"/></g>
+
+  <!-- COMPOUND wound: hidden children, +wobble, no hue-shift, depth marker on rim -->
+  <g transform="translate(812,408)">
+    <path d="M2,4 C-2,-2 8,-5 18,-3 C40,-6 58,-1 64,-4 C74,-1 72,10 70,16 C76,24 68,34 72,42 C64,50 46,44 34,48 C22,44 6,52 2,44 C-6,38 4,28 0,20 C-5,12 6,10 2,4 Z"
+          fill="#111d1b" stroke="#2b8a7d" stroke-width="1.3"/>
+    <path d="M4,2 C3,-2 9,-3 15,-3 C36,-5 54,-3 58,-2 C62,2 58,9 52,10 C28,12 12,10 7,9 C3,8 3,5 4,2 Z" fill="url(#jewel-teal)"/>
+    <text x="8" y="8" fill="#04120f" font-size="6.5" font-weight="700">Step:scope</text>
+    <!-- depth marker: stacked rim ticks = hidden children -->
+    <g stroke="#5fd6c4" stroke-width="1"><line x1="60" y1="14" x2="70" y2="14"/><line x1="60" y1="17" x2="70" y2="17"/><line x1="60" y1="20" x2="70" y2="20"/></g>
+    <circle cx="14" cy="24" r="2.6" fill="#7fd48f"/><circle cx="24" cy="24" r="2.6" fill="#7f9fd4"/>
+    <text x="10" y="45" fill="#4bb8a8" font-size="5.5">+3 hidden children</text></g>
+
+  <g fill="#111d1b" stroke="#25423d" stroke-width="0.7">
+    <g transform="translate(604,470)"><rect width="34" height="24" rx="6"/><rect x="3" y="2" width="28" height="5" rx="2.5" fill="#2b8a7d" stroke="none"/></g>
+    <g transform="translate(646,470)"><rect width="32" height="24" rx="6"/><rect x="3" y="2" width="26" height="5" rx="2.5" fill="#2b8a7d" stroke="none"/></g>
+    <g transform="translate(686,470)"><rect width="30" height="22" rx="6"/><rect x="3" y="2" width="24" height="5" rx="2.5" fill="#2b8a7d" stroke="none"/></g>
+    <g transform="translate(724,470)"><rect width="30" height="22" rx="6"/><rect x="3" y="2" width="24" height="5" rx="2.5" fill="#2b8a7d" stroke="none"/></g>
+    <g transform="translate(762,470)"><rect width="28" height="22" rx="6"/><rect x="3" y="2" width="22" height="5" rx="2.5" fill="#2b8a7d" stroke="none"/></g>
+    <g transform="translate(798,470)"><rect width="28" height="22" rx="6"/><rect x="3" y="2" width="22" height="5" rx="2.5" fill="#2b8a7d" stroke="none"/></g>
+  </g>
+  <g fill="#2b8a7d"><circle cx="614" cy="486" r="2"/><circle cx="656" cy="486" r="2"/><circle cx="696" cy="484" r="2"/><circle cx="734" cy="484" r="2"/><circle cx="772" cy="484" r="2"/><circle cx="808" cy="484" r="2"/></g>
+
+  <!-- CLUSTER: %Radio (gold anchor) -->
+  <path d="M920,388 C916,380 924,378 940,378 C1020,376 1080,377 1116,378 C1132,379 1136,386 1134,398 C1136,450 1135,490 1133,508 C1134,516 1124,518 1110,517 C1030,519 950,518 938,517 C924,518 918,510 920,500 C918,460 919,420 920,388 Z"
+        fill="none" stroke="url(#jewel-gold)" stroke-width="2.5" opacity="0.36" filter="url(#soft)"/>
+  <text x="930" y="394" fill="#c79320" font-size="9" letter-spacing="1.5">%Radio&#160;·&#160;gold</text>
+
+  <!-- the Radio anchor atom, rich -->
+  <g transform="translate(946,410)">
+    <path d="M2,10 C0,3 8,-1 20,0 C70,-2 140,-1 158,0 C170,1 172,8 170,18 C172,44 171,74 169,88 C170,96 160,98 148,97 C90,99 40,98 14,97 C4,98 -1,90 1,80 C-1,54 0,26 2,10 Z"
+          fill="#1e1a0e" stroke="#4d3f1e" stroke-width="1"/>
+    <path d="M6,3 C4,-1 10,-4 18,-3 C70,-5 138,-4 162,-3 C170,-3 172,2 170,8 C172,14 169,20 164,21 C110,23 40,22 12,21 C6,21 3,15 5,10 Z" fill="url(#jewel-gold)"/>
+    <text x="16" y="15" fill="#1c1404" font-size="11" font-weight="700" letter-spacing="0.5">Radio</text>
+    <g font-size="7.5" fill="#e0c878"><rect x="12" y="30" width="70" height="13" rx="6.5" fill="#2e2610"/><text x="17" y="39">station:7</text>
+      <rect x="90" y="30" width="72" height="13" rx="6.5" fill="#2e2610"/><text x="95" y="39">heist:on</text>
+      <rect x="12" y="47" width="86" height="13" rx="6.5" fill="#2e2610"/><text x="17" y="56">window:12s</text>
+      <rect x="106" y="47" width="56" height="13" rx="6.5" fill="#2e2610"/><text x="111" y="56">clk:1</text></g>
+    <line x1="12" y1="68" x2="168" y2="68" stroke="#4d3f1e" stroke-width="0.7" stroke-dasharray="2 3"/>
+    <path d="M20,76 q16,8 34,3" fill="none" stroke="#c79320" stroke-width="0.9" stroke-dasharray="2 2" opacity="0.65"/>
+    <path d="M68,76 q16,8 34,3" fill="none" stroke="#c79320" stroke-width="0.9" stroke-dasharray="2 2" opacity="0.65"/>
+    <path d="M116,76 q16,8 34,3" fill="none" stroke="#c79320" stroke-width="0.9" stroke-dasharray="2 2" opacity="0.65"/>
+    <text x="118" y="94" fill="#8a6f2a" font-size="6">+4 unsnapped .c</text>
+  </g>
+
+  <!-- %Spin motes (many:1 ledger, of:X) under Radio -->
+  <g fill="#1e1a0e" stroke="#4d3f1e" stroke-width="0.7">
+    <g transform="translate(946,478)"><rect width="30" height="22" rx="6"/><rect x="3" y="2" width="24" height="5" rx="2.5" fill="#c79320" stroke="none"/></g>
+    <g transform="translate(982,478)"><rect width="30" height="22" rx="6"/><rect x="3" y="2" width="24" height="5" rx="2.5" fill="#c79320" stroke="none"/></g>
+    <g transform="translate(1018,478)"><rect width="28" height="22" rx="6"/><rect x="3" y="2" width="22" height="5" rx="2.5" fill="#c79320" stroke="none"/></g>
+    <g transform="translate(1052,478)"><rect width="28" height="22" rx="6"/><rect x="3" y="2" width="22" height="5" rx="2.5" fill="#c79320" stroke="none"/></g>
+    <g transform="translate(1086,478)"><rect width="26" height="20" rx="6"/><rect x="3" y="2" width="20" height="5" rx="2.5" fill="#c79320" stroke="none"/></g>
+  </g>
+  <g fill="#c79320"><circle cx="960" cy="494" r="2"/><circle cx="996" cy="494" r="2"/><circle cx="1030" cy="494" r="2"/><circle cx="1064" cy="494" r="2"/><circle cx="1098" cy="492" r="2"/></g>
+  <text x="946" y="512" fill="#8a6f2a" font-size="6.5">%Spin,of:X&#160;—&#160;many:1&#160;jam&#160;ledger</text>
+
+  <!-- CLUSTER: %Door (violet) — holds THE INTENTIONAL PURPLE TWIST -->
+  <path d="M584,586 C580,578 588,576 604,576 C700,574 780,575 812,576 C828,577 832,584 830,596 C832,636 831,660 829,672 C830,680 820,682 806,681 C710,683 620,682 604,681 C590,682 584,674 586,664 C584,636 585,610 584,586 Z"
+        fill="none" stroke="url(#jewel-viol)" stroke-width="2.5" opacity="0.3" filter="url(#soft)"/>
+  <text x="596" y="592" fill="#8b74b8" font-size="9" letter-spacing="1.5">%Door&#160;·&#160;violet</text>
+
+  <!-- THE PURPLE TWIST: sc.twist:'effect' — intentional distortion, door not wound -->
+  <g transform="translate(608,606)">
+    <path d="M2,5 C-3,-3 9,-6 20,-3 C44,-8 70,0 80,-5 C94,-1 90,13 87,20 C95,30 84,44 88,52 C79,63 56,54 42,58 C26,54 8,62 3,52 C-6,44 8,30 1,22 C-7,13 9,12 2,5 Z"
+          fill="#181022" stroke="url(#warp-door)" stroke-width="1.8"/>
+    <path d="M4,2 C2,-3 10,-4 16,-4 C46,-6 70,-3 74,-2 C80,2 74,10 67,11 C36,13 12,11 7,10 C2,9 3,6 4,2 Z" fill="url(#warp-door)"/>
+    <text x="10" y="9" fill="#160a24" font-size="7" font-weight="700">Door:vestibule</text>
+    <g font-size="6.5" fill="#c9aef0"><rect x="10" y="16" width="52" height="9" rx="4.5" fill="#2a1c3d"/><text x="14" y="22.5">grant:live</text></g>
+    <!-- the annotation pebble: purple, snapped, legible -->
+    <rect x="10" y="30" width="66" height="11" rx="5.5" fill="#3a2456" stroke="#c78bff" stroke-width="0.8"/>
+    <text x="15" y="38" fill="#d9c2ff" font-size="6.5">twist:'effect'</text>
+    <circle cx="16" cy="50" r="2.6" fill="#c67fd4"/><circle cx="26" cy="50" r="2.6" fill="#7f9fd4"/>
+    <path d="M40,52 q12,6 26,2" fill="none" stroke="#7a3fd0" stroke-width="0.9" stroke-dasharray="2 2" opacity="0.6"/>
+  </g>
+  <g transform="translate(704,606)"><rect x="0" y="0" width="44" height="30" rx="7" fill="#151026" stroke="#33234d" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C26,-3 38,-2 40,-1 C42,3 41,8 36,9 C22,10 10,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-viol)"/>
+    <text x="7" y="8" fill="#0d0a14" font-size="6.5" font-weight="700">Door:sill</text>
+    <circle cx="10" cy="20" r="2.6" fill="#c67fd4"/><circle cx="20" cy="20" r="2.6" fill="#7f9fd4"/></g>
+  <g transform="translate(756,606)"><rect x="0" y="0" width="40" height="28" rx="7" fill="#151026" stroke="#33234d" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C24,-3 34,-2 36,-1 C38,3 37,8 32,9 C20,10 10,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-viol)"/>
+    <circle cx="10" cy="19" r="2.6" fill="#c67fd4"/><circle cx="20" cy="19" r="2.6" fill="#d4977f"/></g>
+
+  <!-- CLUSTER: %LE (rose) small -->
+  <path d="M850,586 C846,578 854,576 870,576 C950,574 1010,575 1042,576 C1058,577 1062,584 1060,596 C1062,636 1061,660 1059,672 C1060,680 1050,682 1036,681 C956,683 876,682 868,681 C854,682 848,674 850,664 C848,636 849,610 850,586 Z"
+        fill="none" stroke="url(#jewel-rose)" stroke-width="2.5" opacity="0.28" filter="url(#soft)"/>
+  <text x="862" y="592" fill="#b5748e" font-size="9" letter-spacing="1.5">%LE&#160;·&#160;rose</text>
+  <g transform="translate(872,608)"><rect x="0" y="0" width="44" height="30" rx="7" fill="#1c121a" stroke="#3d2530" stroke-width="0.8"/>
+    <path d="M4,2 C3,-1 8,-2 14,-2 C26,-3 38,-2 40,-1 C42,3 41,8 36,9 C22,10 10,9 6,9 C3,8 3,5 4,2 Z" fill="url(#jewel-rose)"/>
+    <text x="9" y="8" fill="#160a10" font-size="7" font-weight="700">LE</text>
+    <circle cx="10" cy="20" r="2.6" fill="#7fd48f"/><circle cx="20" cy="20" r="2.6" fill="#d4c27f"/></g>
+  <g fill="#1c121a" stroke="#3d2530" stroke-width="0.7">
+    <g transform="translate(924,608)"><rect width="28" height="24" rx="6"/><rect x="3" y="2" width="22" height="5" rx="2.5" fill="#a84e6d" stroke="none"/></g>
+    <g transform="translate(960,608)"><rect width="28" height="22" rx="6"/><rect x="3" y="2" width="22" height="5" rx="2.5" fill="#a84e6d" stroke="none"/></g>
+    <g transform="translate(996,608)"><rect width="26" height="22" rx="6"/><rect x="3" y="2" width="20" height="5" rx="2.5" fill="#a84e6d" stroke="none"/></g>
+    <g transform="translate(1030,608)"><rect width="24" height="20" rx="6"/><rect x="3" y="2" width="18" height="5" rx="2.5" fill="#a84e6d" stroke="none"/></g>
+  </g>
+  <g fill="#a84e6d"><circle cx="938" cy="624" r="2"/><circle cx="974" cy="622" r="2"/><circle cx="1008" cy="622" r="2"/><circle cx="1042" cy="620" r="2"/></g>
+
+  <!-- ================= BAND 3: thin band, mostly req children (motes) ================= -->
+  <g transform="translate(90,724)">
+    <g fill="#141b24" stroke="#293748" stroke-width="0.6">
+      <g transform="translate(0,0)"><rect width="22" height="16" rx="5"/><rect x="2" y="2" width="18" height="4" rx="2" fill="#3f6699" stroke="none"/></g>
+      <g transform="translate(28,0)"><rect width="22" height="16" rx="5"/><rect x="2" y="2" width="18" height="4" rx="2" fill="#3f6699" stroke="none"/></g>
+      <g transform="translate(56,0)"><rect width="20" height="14" rx="5"/><rect x="2" y="2" width="16" height="4" rx="2" fill="#3f6699" stroke="none"/></g>
+      <g transform="translate(82,0)"><rect width="20" height="14" rx="5"/><rect x="2" y="2" width="16" height="4" rx="2" fill="#2b8a7d" stroke="none"/></g>
+      <g transform="translate(108,0)"><rect width="18" height="14" rx="5"/><rect x="2" y="2" width="14" height="4" rx="2" fill="#2b8a7d" stroke="none"/></g>
+      <g transform="translate(132,0)"><rect width="18" height="12" rx="5"/><rect x="2" y="2" width="14" height="4" rx="2" fill="#3f6699" stroke="none"/></g>
+      <g transform="translate(156,0)"><rect width="16" height="12" rx="5"/><rect x="2" y="2" width="12" height="4" rx="2" fill="#a84e6d" stroke="none"/></g>
+      <g transform="translate(178,0)"><rect width="16" height="12" rx="5"/><rect x="2" y="2" width="12" height="4" rx="2" fill="#c79320" stroke="none"/></g>
+    </g>
+    <text x="204" y="11" fill="#3d4b5c" font-size="7.5">···&#160;req&#160;·&#160;Step-child&#160;·&#160;LE&#160;motes&#160;—&#160;the&#160;field&#160;continues&#160;below&#160;the&#160;zoom&#160;floor</text>
+  </g>
+
+  <!-- cross-band feather stub: a .c ref bowing off toward Radio (source_n backlink) -->
+  <path d="M156,428 C300,470 700,300 946,436" fill="none" stroke="#5c6b7d" stroke-width="0.7" stroke-dasharray="3 4" opacity="0.28"/>
+
+  <!-- ================= LEGEND ================= -->
+  <g transform="translate(40,758)" font-size="8.5" fill="#6b7a8c">
+    <circle cx="4" cy="-3" r="4" fill="url(#jewel-steel)"/><text x="12" y="0">req</text>
+    <circle cx="52" cy="-3" r="4" fill="url(#jewel-teal)"/><text x="60" y="0">Step</text>
+    <circle cx="102" cy="-3" r="4" fill="url(#jewel-gold)"/><text x="110" y="0">Radio</text>
+    <circle cx="158" cy="-3" r="4" fill="url(#jewel-viol)"/><text x="166" y="0">Door/w</text>
+    <circle cx="222" cy="-3" r="4" fill="url(#jewel-rose)"/><text x="230" y="0">LE/A</text>
+    <rect x="282" y="-7" width="8" height="8" rx="2" fill="url(#warp-amber)"/><text x="294" y="0">amber&#160;=&#160;wound</text>
+    <rect x="380" y="-7" width="8" height="8" rx="2" fill="url(#warp-red)"/><text x="392" y="0">red&#160;=&#160;fatal</text>
+    <rect x="452" y="-7" width="8" height="8" rx="2" fill="url(#warp-door)"/><text x="464" y="0">purple&#160;=&#160;twist:'effect'&#160;(door&#160;not&#160;wound)</text>
+    <text x="720" y="0" fill="#4a5769">dashed&#160;=&#160;.c&#160;feather&#160;stub&#160;·&#160;dot&#160;pattern&#160;=&#160;sc&#160;key-hue&#160;·&#160;width&#160;=&#160;N_sc</text>
+  </g>
+</svg>

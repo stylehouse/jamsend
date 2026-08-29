@@ -35,6 +35,7 @@
     import Machinery from "$lib/O/test/Machinery.svelte"
     import Story     from "$lib/O/Story.svelte"
     import Cyto      from "./Cyto.svelte"
+    import Cello     from "./Cello.svelte"
     import Text  from "$lib/O/Text.svelte"
     import Auto from "./Auto.svelte";
     import Matstyle from "./Matstyle.svelte";
@@ -65,6 +66,7 @@
 <Machinery {M} />
 <Story     {M} />
 <Cyto      {M} />
+<Cello     {M} {H} />
 <Matstyle  {M} />
 <!-- %Interest cluster + Lang↔Lies channel reducers (pure logic; no elvis handlers) -->
 <LangCurse {M} />

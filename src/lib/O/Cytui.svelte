@@ -18,12 +18,12 @@
     //   and cy 'render' event.
     //
 
-    import { onMount, mount, unmount } from 'svelte'
-    import cytoscape      from 'cytoscape'
-    import fcose       from 'cytoscape-fcose'
-    import coseBilkent from 'cytoscape-cose-bilkent'
-    import cola        from 'cytoscape-cola'
-    import dagre       from 'cytoscape-dagre'
+    import { onMount, onDestroy, mount, unmount } from 'svelte'
+    // cytoscape + the 4 layout plugins are LAZY now — loaded at first graph build via load_cytoscape()
+    //  from ./cyto_lazy, so the ~200KB library leaves the boot chunk (Track B Stage 0).  Kept in a plain
+    //   .ts module (not a <script module> here) so Cytui stays HMR-self-accepting (glass_kinds.ts:62).
+    import { load_cytoscape } from './cyto_lazy'
+    import type { Core } from 'cytoscape'   // TYPE-ONLY — erased at build, so it adds nothing to the boot chunk
 
     import type { House } from '$lib/O/Housing.svelte'
     import { _C, objectify, type TheC }  from '$lib/data/Stuff.svelte'
@@ -37,15 +37,12 @@
     let ms_palette: string[] = []
     let ms_shapes: string[]  = []
 
-    cytoscape.use(fcose)
-    cytoscape.use(coseBilkent)
-    cytoscape.use(cola)
-    cytoscape.use(dagre)
+    // (cytoscape.use(...) for fcose/coseBilkent/cola/dagre now runs once inside load_cytoscape(), above)
 
     let { H }: { H: House } = $props()
 
     let container: HTMLDivElement
-    let cy: ReturnType<typeof cytoscape>
+    let cy: Core
     let layout_name = $state<string>('fcose')
 
     let status          = $state('no graph')
@@ -4996,7 +4993,9 @@
     }
 
     // ── cytoscape init ────────────────────────────────────────────────────────
-    onMount(() => {
+    //  async: it awaits the lazy cytoscape load (Stage 0) before building the graph.  Cleanup can no longer
+    //   ride onMount's return (async onMount can't hand back a sync teardown) — it lives in onDestroy below.
+    onMount(async () => {
         const stashed_v = (H as any).stashed?.Cyto_voronoi
         if (typeof stashed_v === 'boolean') voronoi_pref = stashed_v
         const stashed_p = (H as any).stashed?.Cyto_properCellable
@@ -5023,6 +5022,7 @@
             const stashed_tu = (H as any).stashed?.Cyto_tunnel
             if (typeof stashed_tu === 'boolean') tunnel_pref = stashed_tu
         }
+        const cytoscape = await load_cytoscape()   // Stage 0: pull the ~200KB library on demand, off the boot chunk
         cy = cytoscape({
             container,
             // a livelier wheel: the default 1 needs a whole spin to move; the
@@ -5225,12 +5225,15 @@
 
         // rebuild from scratch on HMR
         H.i_elvisto('Cyto/Cyto', 'Cyto_wipe', {})
-        return () => {
-            lay?.stop()
-            if (radio_timer) { clearInterval(radio_timer); radio_timer = null }
-            clear_all_overlays()
-            cy?.destroy()
-        }
+    })
+    // cleanup was onMount's returned closure; an async onMount (it awaits the lazy cytoscape load) can't hand
+    //  back a sync cleanup, so it moved here.  Every ref is `?.`-guarded, so a teardown that races the still-
+    //   loading graph (destroy before build finished) is safe — nothing to stop/destroy yet.
+    onDestroy(() => {
+        lay?.stop()
+        if (radio_timer) { clearInterval(radio_timer); radio_timer = null }
+        clear_all_overlays()
+        cy?.destroy()
     })
 </script>
 

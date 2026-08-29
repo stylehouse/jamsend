@@ -497,6 +497,12 @@
     //    "hello sent".
     async function join() {
         joined = ''
+        // NAME-GATE (owner 2026-08-30) — accepting a Grant means the inviter seals a friendship with
+        //  YOU, so you must be someone first.  The button is already `named`-gated and the namer is
+        //   step 1, but ⏎-on-focus and any stale caller reach here directly; refuse rather than seal
+        //    an anon prepub the friend then has to squint at.  The name row stays on screen (it is
+        //     rendered whenever `!named`), so this reads as "finish step 1", not a dead end.
+        if (!named) { joined = '✎ name yourself first — the name rides your hello and the friend sees it at the seal'; return }
         // A PASTED DEVICE-LINK LANDS, IT DOES NOT FRIEND-REDEEM (2026-08-29, owner: pasting the MyCave invite
         //  "wanted my name input … then I am just back at the Door UI, like it forgot to kick the Link").  The
         //   cause: `iz_from` lifts only the `?Iz` token, dropping the `#fc=` seal fragment the account is sealed
@@ -717,11 +723,19 @@
                          one person who happens to be at the door. -->
                     {@render namer('your friends will see this name')}
                 {/if}
-                {#if named || !born_today}
+                {#if named}
                     <!-- STEP 2, the terminal act — the biggest thing on the panel, and it NAMES the
                          person.  "join" alone is a verb with no object; "join Lefto" is the sentence
                          the listener came here to complete.  Suppressed once a join is under way so
-                         the button cannot read as still-waiting while it dials. -->
+                         the button cannot read as still-waiting while it dials.
+                         NAME-GATE, BOTH ENDS (owner 2026-08-30: *"before partaking EITHER end of any
+                          Grant-like thing"*).  The mint end already jams on `!named`; the ACCEPT end
+                           is here, and it used to admit any NON-newborn identity (`named || !born_today`)
+                            — an older nameless self could seal a friendship the inviter would then see
+                             as a bare prepub.  Now the door is symmetric: the namer above (rendered
+                              while `!named`) is step 1 for everyone, and JOIN only appears once you are
+                               named.  The auto-join effect is already `named`-gated, so this only
+                                closes the manual button's older-identity loophole. -->
                     {#if !join_over}
                         <button class="ip-go ip-go-join" bind:this={join_btn} onclick={join}>
                             ⨝ join {invite.friendly || invite.prepub}

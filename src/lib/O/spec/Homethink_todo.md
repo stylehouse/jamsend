@@ -87,3 +87,32 @@ Each ghost keeps one station; the unity is that no station duplicates another's.
 - A contract implemented for SOME backends — a door only some may use.
 - New bespoke machinery where a deletion was available — the measure of a good change is
    how much bespoke machinery it removes (Story_future's doctrine, adopted whole).
+
+## 5. The community's computer
+
+§1 is the builder's bet. Said from the other side — what a group actually GETS — it is a computer
+ they hold in common. Not a server they rent, not apps installed on someone else's machine: a shared
+  machine made of the one legible living matter, where a group's whole state — its music, its
+   friendships, its procedures, its proofs, even its errors — is held where every member can see it,
+    prove it, and rewrite it while it runs. This is the thing being proposed beyond jamsend; jamsend is
+     its first boot, and music is just the first program worth running on it.
+
+- **No landlord.** The relay only routes; it holds no truth. Every party runs the same House on the
+   same clay, so no member is a tenant of another's server. The computer is wherever the community is.
+- **The group decides in the matter.** Identity is a key; a grant and its revocation tombstone are
+   decision-facts that sit in the shared matter, not rows in an admin panel — legible, revocable, and
+    trusted on the fact alone, never a nickname.
+- **You extend it by writing into it.** A new capability is a procedure written into the shared matter
+   and sworn true by a live runner — so a community grows its own computer with no vendor, no deploy, no
+    reboot (Lies renovates the town while it stays inhabited). A feature that touches more than one
+     House is not an integration; it is two Houses agreeing to hold the same matter — which is why
+      "how do we build a network-party procedure" is the load-bearing question, not a footnote.
+- **It survives its people coming and going.** A stranger can join, be granted, contribute a track or a
+   procedure, and leave — and the computer is unchanged in kind, only smaller or larger. Nothing they
+    touched was a borrowed room; it was the same matter all along, which is the whole difference between
+     a computer a community owns and a service it visits.
+
+The tell this is real and not a slogan: every subsystem above (§2) is a part of ONE computer a group
+ operates together — not a stack of apps that happen to sync. When a design choice would quietly make it
+  a service some members merely visit (a truth only the relay holds, a capability only a vendor can add,
+   a room only its owner may enter), that is §4 being broken at the level that matters most.

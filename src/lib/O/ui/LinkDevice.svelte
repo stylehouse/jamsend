@@ -48,6 +48,29 @@
     })
     const world = () => H?.Swarm_station_world?.() ?? null
 
+    // NAME-GATE (owner 2026-08-30: *"name yourself before partaking EITHER end of any Grant-like
+    //  thing"*).  Colonising a Cave is the most consequential grant there is — it copies your whole
+    //   soul onto another body — so BOTH ends must be named first: the grantor (do_confirm, "giving
+    //    your soul") and the linkee (receive, "becoming a body").  A named grantor means the new body
+    //     carries a name from birth; a named linkee is who the SAS + Door name across the two screens.
+    //  LATCHED off self.sc.friendly the same way InvitePanel does — a rename never un-names, and a
+    //   mid-Atime read can momentarily miss it, so once seen it stays true and the ceremony button
+    //    does not flicker back to the name row mid-adopt.  DoorFace already hides the "Link Device"
+    //     entry point when unnamed; this closes the reload/scan-straight-in paths that reach this cell
+    //      with a live ferry but no name yet.
+    let named = $state(false)
+    $effect(() => { void H?.version; if (!named && self?.sc?.friendly) named = true })
+    let name_draft = $state('')
+    let name_err = $state('')
+    async function name_save() {
+        name_err = ''
+        try {
+            const ok = await H?.Clustation_friendly?.(name_draft)
+            if (!ok) { name_err = 'not saved — is the identity still standing up? try again'; return }
+            named = true
+        } catch (e) { name_err = 'not saved — ' + String(e).slice(0, 60) }
+    }
+
     // THE 1s HEARTBEAT — a mutex-INDEPENDENT clock on the macrotask queue.  Declared up top because the phase
     //  reads below lean on it: `.c` writes (ferry_confirm/pending/awaiting) never bump H.version, so under a
     //   Repli flood that saturates the belief mutex the ceremony's screen would never re-render off H.version
@@ -109,6 +132,10 @@
         err = ''
         try {
             if (!yes) { await H.Swarm_ferry_consume(world(), '', false); received = 'declined'; pending = null; return }
+            // NAME-GATE: accepting a Cave makes this device a named body of the soul; declining is
+            //  always free.  The name row is rendered below whenever `!named`, so this reads as
+            //   "finish naming yourself first", not a dead end.
+            if (!named) { err = '✎ name yourself first — you are about to become a body of this soul, and the name travels with it'; return }
             const code = frag_code()
             if (!code) { err = 'no seal code in this link — open the exact QR link from your soul device'; return }
             taking = true
@@ -228,6 +255,10 @@
     let giving = $state(false)
     async function do_confirm() {
         err = ''
+        // NAME-GATE: "giving your soul" copies the whole account onto the other device; a nameless
+        //  grantor would birth a nameless body.  Refuse until named — the name row below is up while
+        //   `!named`, so the human names themselves and re-confirms.
+        if (!named) { err = '✎ name yourself first — you are copying your whole account to that device, and it should carry your name'; return }
         giving = true
         try {
             const ok = await H?.Swarm_ferry_confirm?.(world())
@@ -347,8 +378,19 @@
             {#if taking}
                 <div class="ld-working"><span class="ld-spin"></span> unsealing the account and taking it on…</div>
             {:else}
+                <!-- NAME-GATE — you are about to become a body of this soul; name yourself first so it
+                     travels with you.  Rendered whenever `!named`; the receive button stays disabled
+                     until saved.  Declining ("no") is always free. -->
+                {#if !named}
+                    <div class="ld-name-row">
+                        <input class="ld-name" bind:value={name_draft} placeholder="what do friends call you?"
+                            onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
+                        <button class="ld-act" onclick={name_save} title="save your name">✓</button>
+                    </div>
+                    {#if name_err}<p class="ld-warn-note">⚠ {name_err}</p>{:else}<p class="ld-name-say">name yourself before you take on this soul — the name travels with it</p>{/if}
+                {/if}
                 <div class="ld-row">
-                    <button class="ld-go" onclick={() => receive(true)} disabled={!sas || !has_code}>receive this soul</button>
+                    <button class="ld-go" onclick={() => receive(true)} disabled={!named || !sas || !has_code}>receive this soul</button>
                     <button class="ld-cancel-b" onclick={() => receive(false)}>no</button>
                 </div>
             {/if}
@@ -370,8 +412,19 @@
                 <div class="ld-working"><span>sealing & ferrying your soul across…</span></div>
                 <Bandwidth {H} dir="tx" label="crossing" />
             {:else}
+                <!-- NAME-GATE — copying your whole account to that device should carry your name;
+                     name yourself first.  Rendered whenever `!named`; the give button stays disabled
+                     until saved. -->
+                {#if !named}
+                    <div class="ld-name-row">
+                        <input class="ld-name" bind:value={name_draft} placeholder="what do friends call you?"
+                            onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
+                        <button class="ld-act" onclick={name_save} title="save your name">✓</button>
+                    </div>
+                    {#if name_err}<p class="ld-warn-note">⚠ {name_err}</p>{:else}<p class="ld-name-say">name yourself first — the new body should carry your name</p>{/if}
+                {/if}
                 <div class="ld-row">
-                    <button class="ld-go" onclick={do_confirm} disabled={!sas}>give my soul</button>
+                    <button class="ld-go" onclick={do_confirm} disabled={!named || !sas}>give my soul</button>
                     <button class="ld-cancel-b" onclick={cancel_link}>no</button>
                 </div>
             {/if}
@@ -498,6 +551,13 @@
     .ld-go { background: #d98a00; color: #000; font-weight: 700; border: none; border-radius: .4rem; padding: .45rem 1rem; cursor: pointer; }
     .ld-go:disabled { opacity: .4; cursor: default; }
     .ld-cancel-b { background: none; border: none; color: inherit; font-size: .85rem; opacity: .8; text-decoration: underline; cursor: pointer; }
+    /* the name-gate row — the ceremony's own register (amber act on the warm oblong), one input + a
+       save, shown until this device carries a name. */
+    .ld-name-row { display: flex; align-items: center; gap: .5rem; margin-top: .3rem; }
+    .ld-name { background: #1a130a; border: 1px solid #7a5a10; color: #f3e6c8; border-radius: .35rem; font-size: .9rem; padding: .3rem .6rem; width: 14rem; }
+    .ld-name:focus { border-color: #d98a00; outline: none; }
+    .ld-act { background: #d98a00; color: #000; font-weight: 700; border: none; border-radius: .35rem; padding: .3rem .7rem; cursor: pointer; }
+    .ld-name-say { font-size: .8rem; opacity: .8; margin: .2rem 0 0; text-align: left; }
     .ld-link { font-size: .95rem; background: #d98a00; color: #000; font-weight: 700; border: none; border-radius: .5rem; padding: .5rem 1rem; cursor: pointer; }
     .ld-link:disabled { opacity: .4; cursor: default; }
     /* TOUCHDOWN (owner 2026-08-29 "should have a touchdown effect so we know it happened").  `:active` is applied

@@ -10,6 +10,12 @@
     //    cell chrome around it, matching the glass register (dark panel, a title, room to breathe).
     import LinkDevice from './LinkDevice.svelte'
     let { n, H } = $props()
+    // THE POSE (RadioFace/DoorFace discipline): a satellite is posed 'small' by the renderer, and a
+    //  small Link cell is ONE GLYPH — a 🔗 bud — not the whole ceremony crushed into a minicell
+    //   (owner 2026-08-30: the mini Link cell "should be a link icon").  Read at mount (Cello remounts
+    //    the Face on role change, so the fresh pose lands); default 'big' = the full ceremony.
+    let pose = $derived.by(() => { void H?.version; return String(n?.c?.pose ?? 'big') })
+    let small = $derived(pose === 'small')
     // a quiet phase read so the title tracks which side of the ceremony this tab is on
     let phase = $state('')
     // The whole ceremony is decided INSIDE this cell now (owner: "should be on its own in the Link cell. both
@@ -30,12 +36,17 @@
     })
 </script>
 
-<div class="lf">
-    <div class="lf-head">🔗 Link Device{#if phase} · <span class="lf-phase">{phase}</span>{/if}</div>
-    <div class="lf-body">
-        <LinkDevice {H} />
+{#if small}
+    <!-- SMALL IS THE WHOLE FACE — a bud glyph, the phase riding as its title (DoorFace/RadioFace's rule) -->
+    <div class="lf lf-bud" class:on={!!phase} title={phase ? 'Link Device — ' + phase : 'Link Device'}>🔗</div>
+{:else}
+    <div class="lf">
+        <div class="lf-head">🔗 Link Device{#if phase} · <span class="lf-phase">{phase}</span>{/if}</div>
+        <div class="lf-body">
+            <LinkDevice {H} />
+        </div>
     </div>
-</div>
+{/if}
 
 <style>
     /* POINTER-EVENTS:NONE ON THE ROOT — the glass_kinds contract (HaulFace records the full why).
@@ -51,6 +62,12 @@
         width: 100%; height: 100%; box-sizing: border-box; padding: 1rem;
         color: #f4e6c8; overflow: hidden;
     }
+    /* the bud: one big centred glyph filling the minicell (the whole face when 'small') */
+    .lf-bud {
+        padding: 0; align-items: center; justify-content: center;
+        font-size: clamp(1.5rem, 5vw, 2.8rem); line-height: 1;
+    }
+    .lf-bud.on { filter: drop-shadow(0 0 6px rgba(120, 200, 255, 0.55)); }
     .lf-head { font-size: .95rem; font-weight: 700; letter-spacing: .3px; opacity: .95; }
     .lf-phase { font-weight: 400; opacity: .7; }
     /* FILL the cell, top-anchored — a big belly cell handed a small measured box was rendering the whole

@@ -96,13 +96,20 @@
                 }).filter((f: any) => !f.retired)
             }
         } catch { friends = [] }
-        // SORTED BY TIME LAST CONNECTED (the owner 2026-08-10: *"the Pier list should be sorted by
-        //  time last connected"*).  `ago` is seconds since their last pulse (`pier.c.heard_at`), so
-        //   ascending `ago` IS most-recent-first.  A pier that has never been heard has `ago: null`
-        //    — it sorts LAST rather than first, which is the whole point of the ordering: the top of
-        //     the list should be who is actually around.  Ties keep their walk order, which is
-        //      stable, so a quiet list does not shuffle under the reader between ticks.
-        friends.sort((a, b) => (a.ago == null ? Infinity : a.ago) - (b.ago == null ? Infinity : b.ago))
+        // SORTED BY TIER THEN STABLE PUB (2026-08-29, fix for the thrash bug).  The original sort
+        //  used raw `ago` (seconds since last pulse), which changed every tick for every connected
+        //   peer — the comparator produced a new ordering each second and the list shuffled constantly.
+        //  The fix: bucket into tiers (here=0 · fading=1 · away=2) from the ALREADY-COMPUTED `rung`
+        //   and sort by tier first, then by `pub` (stable string) within a tier.  Peers move between
+        //    tiers only when the rung thresholds (15s / 45s) are crossed — a coarser, deliberate
+        //     reorder — and within a tier the list never jumps.  The owner's intent (most-recent-first)
+        //      is preserved at the tier level.
+        const tier = (f: any) => f.rung === 'here' ? 0 : f.rung === 'fading' ? 1 : 2
+        friends.sort((a, b) => {
+            const dt = tier(a) - tier(b)
+            if (dt !== 0) return dt
+            return String(a.pub) < String(b.pub) ? -1 : String(a.pub) > String(b.pub) ? 1 : 0
+        })
         // MY OWN TIME-ALIVE, folded in beside the peers (the human's §0.9 trim, 2026-08-06: "move
         //  the time-alive/uptime readout INTO the list of Piers — it is networky, it belongs beside
         //   the peers rather than owning a cell").  It reads the SAME `.c.since` the retired
@@ -315,6 +322,29 @@
      and a single branch is the only way to be sure of that by reading it. -->
 {#if small}
     <div class="df df-small" title="the front door — press to open it">🚪</div>
+{:else if face.prepub && !face.named}
+    <!-- THE NAME-GATE (owner 2026-08-30: *"Door should insist you name yourself before partaking
+         either end of any Grant-like thing"*).  Until this identity carries a `friendly`, the Door
+         shows ONLY this prompt — no InvitePanel (mint / open share), no friends list, no Link Device,
+         no suggest/forget.  Every Grant-like initiation, on BOTH ends (the person offering AND the
+         person accepting), rides through one of those surfaces, and each is gated by requiring a
+         name here first.  The name rides the QR and the seal, so a friend never meets an anon prepub.
+         Guarded like the rest of the face: `face.prepub` proves the identity stood up, so this can
+         never white-screen before Auto has minted a self (it falls through to the normal branch's
+         `standing you up…`).  Once saved (Clustation_friendly bumps the identity), `face.named`
+         flips and the ordinary Door returns on the next tick — never nagged again, because the name
+         persists to disk under both the prepub and role homes. -->
+    <div class="df df-gate">
+        <div class="df-gate-title">🚪 welcome</div>
+        <div class="df-gate-say">name yourself to begin — your name rides your invites, and it is what friends will see</div>
+        <div class="df-naming">
+            <input class="df-input" bind:value={name_draft} placeholder="what do friends call you?"
+                onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
+            <button class="df-edit" onclick={name_save} title="save your name and open the door">✓</button>
+        </div>
+        {#if name_err}<div class="df-note">⚠ {name_err}</div>{/if}
+        {#if face.prepub}<span class="df-pub">{face.prepub}</span>{/if}
+    </div>
 {:else}
 <div class="df">
     <div class="df-title">🚪 {face.name ?? 'standing you up…'}
@@ -479,6 +509,12 @@
        that is not a fact about anything.  An intrinsic box is the only honest thing to hand a measurer:
        the glyph's own size, on both axes, which is square and reads as square. */
     .df.df-small { font-size: 30px; line-height: 1; padding: 2px; }
+    /* THE NAME-GATE — the same warm register as the rest of the Door (breathing halo, the rounded
+       plum face), but pared to one welcome + one input.  pointer-events go back to auto on the box
+       itself here (not just descendants) so the whole small card is live while nothing else is drawn. */
+    .df.df-gate { pointer-events: auto; }
+    .df-gate-title { font-size: 13px; font-weight: 700; color: #d9a9ef; }
+    .df-gate-say { font-size: 10px; color: #cbb8d8; margin: 4px 0; max-width: 220px; line-height: 1.35; }
     .df {
         pointer-events: none;
         width: max-content;

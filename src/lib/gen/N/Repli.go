@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'a4c03014157a8e9f~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '4247a87fe2feccd7~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -725,6 +725,22 @@ async Repli_tell_miss(w, pier, h) {
     this.Peeroleum_send(w, { header: { type: 'repli_missed', from: h.to, to: h.from, id: h.id, stream: h.stream, from_idx: h.from_idx, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
 
 },
+// Repli_tell_no_idspace — the TERMINAL NEGATIVE (Repli_idspace_todo §4).  `repli_missed` is a
+//  retriable backoff: 60s window, consumed by Heist's told-miss census, wiped on rebirth — so an id
+//   that can NEVER resolve here (a keep-id minted against another peer's disk, sha256(pub+base+path)
+//    of a file this box does not hold) kept a want/missed loop alive for the life of both tabs
+//     (the 7950f300→eed flood, ~40-145KB/s).  This frame says the stronger thing: "this id is not in
+//      my id-space AT ALL — stop asking, and don't let a rebirth make you forget I said so."
+//  Exact twin of tell_miss in shape and lane; advisory and lossy BY DESIGN (dropping it costs
+//   nothing — the sink just stays on the missed ladder).  Throttled by the caller exactly like
+//    tell_miss (Repli_serve_miss's 5s-per-id gate), so it adds no unbounded budget.
+async Repli_tell_no_idspace(w, pier, h) {
+    let seq = this.Pier_next_seq(pier)
+    let body = new TextEncoder().encode('no_idspace')
+    let bh = await this.Peeroleum_body_digest(body)
+    this.Peeroleum_send(w, { header: { type: 'repli_no_idspace', from: h.to, to: h.from, id: h.id, stream: h.stream, from_idx: h.from_idx, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
+
+},
 // Repli_recv_missed — the SINK hearing that the source cannot resolve this id.  Repli never imports
 //  Heist (every Book and the plain radio run with no Heist at all), so this does not reach for the repair
 //   itself — it drops a flag in the same `.c` neighbourhood as ra_parked, and Heist's pull beat reads it
@@ -762,6 +778,32 @@ Repli_missed_hot(w, id) {
     let hold = w.c.ra_missed_hold_ms == null ? 60000 : +w.c.ra_missed_hold_ms
     if (Date.now() - at < hold) return 1
     delete m[key]
+    return 0
+
+},
+// Repli_recv_no_idspace — the SINK hearing the TERMINAL negative: this id is structurally not in the
+//  source's id-space (Repli_idspace_todo §4b).  PERMANENT on purpose, three ways `ra_missed` is not:
+//   · not time-expiring (no hold window — the id-space partition does not heal with time);
+//   · not consumable (Heist's told-miss census dance must NOT eat it — a census re-materialises the
+//      source's OWN disk and cannot mint an id that belongs to someone else's);
+//   · not wiped on rebirth (Swarm_note_era spares it — the partition is per-peer, not per-era).
+//  The ONE way back in is the source itself offering the id again (a holding Record landing from that
+//   peer clears the entry in Repli_recv_lines) — meaning it now genuinely holds it.
+Repli_recv_no_idspace(w, frame) {
+    let h = frame.header
+    if (h.id == null) return
+    w.c.ra_no_idspace = w.c.ra_no_idspace || {}
+    w.c.ra_no_idspace[String(h.id)] = 1
+
+},
+// Repli_no_idspace_has — "has the source declared this id outside its id-space, terminally?"
+//  The permanent twin of Repli_missed_hot: no window, no delete, no guess.  Every want site may gate
+//   on it; Repli_want_next gates CENTRALLY (every pull path funnels through there), so the per-site
+//    checks are wasted-work savers, not correctness.
+Repli_no_idspace_has(w, id) {
+    let m = w.c.ra_no_idspace
+    if (!m || id == null) return 0
+    if (m[String(id)]) return 1
     return 0
 
 },
@@ -981,8 +1023,33 @@ async Repli_serve_want(w, pier, frame) {
     }
     // TELL THE SINK (2026-08-06): only when the throttle let this one through, so the frame inherits the
     //  same 5s-per-id budget as the log rather than adding a second, unbounded one.
+    // RETRIABLE vs TERMINAL (Repli_idspace_todo §4c): by here EVERY resolver has failed — rummage libs
+    //  + radio stock (Repli_find_record), the keep-memo rebuild (Heist_reheal_id), the radiostock
+    //   re-stand (Ra_reheal_id).  The one heal left is the SINK-driven re-census, which re-materialises
+    //    THIS box's own folders — it can only ever re-mint ids of files this disk holds, and the durable
+    //     keep_memo remembers those (cap 2000, disk-mirrored).  So: memo knows the id ⇒ retriable
+    //      ("materialise gone", a census can rebuild it) ⇒ tell_miss as before; memo has never heard of
+    //       it ⇒ TERMINAL ("wrong id-space") ⇒ tell_no_idspace, and the asker stops forever.
+    // KNOB-GATED, DEFAULT OFF (the backpressure-knob discipline, and a measured lesson: the first cut
+    //  read "no keep_memo ⇒ terminal", and MusuMag went 0.1 red on the spot — in a Book (and the plain
+    //   radio) there is no keep_memo and a miss is transient by construction (the id was offered by
+    //    this very peer; the stock just hasn't landed yet), so every early miss became a permanent
+    //     stop and the warm-start pull never recovered.  The terminal negative is for LIVE tabs where
+    //      the wrong-id-space flood actually lives (7950f300→eed) — flip `w.c.repli_no_idspace_on = 1`
+    //       there (console or daemon).  Off ⇒ byte-identical to before: every miss is tell_miss.
+    //        The recv side + the permanent gate stay armed unconditionally, so a flipped peer's
+    //         declarations are honoured whichever way OUR knob points.
     if (!rec) {
-        if (this.Repli_serve_miss(w, h, 'no record for id — materialise gone / wrong id-space')) await this.Repli_tell_miss(w, pier, h)
+        if (this.Repli_serve_miss(w, h, 'no record for id — materialise gone / wrong id-space')) {
+            let armed = w.c.repli_no_idspace_on == null ? 0 : +w.c.repli_no_idspace_on
+            let memo = w.c.keep_memo
+            let retriable = memo && memo[String(h.id)]
+            if (armed && !retriable) {
+                await this.Repli_tell_no_idspace(w, pier, h)
+            } else {
+                await this.Repli_tell_miss(w, pier, h)
+            }
+        }
         return
     }
     // last-wanted stamp (Evening 5 A2): the release-after-serve sweep frees a rec's bytes only once its wants
@@ -1155,6 +1222,11 @@ async Repli_recv_lines(w, pier, frame) {
             }
             c.c.from = frame.header.from
             c.c.rx = pier
+            // THE WAY BACK IN (Repli_idspace_todo §4b): a holding Record landing FROM this peer is the
+            //  peer saying "I hold this id now" — the one fact that overturns a terminal no_idspace
+            //   declaration (a restock, a fresh Heist on its own disk).  Clear the permanent entry so
+            //    the pull may ask again; everything else leaves it standing (rebirth included).
+            if (w.c.ra_no_idspace && c.sc.id != null && w.c.ra_no_idspace[String(c.sc.id)]) delete w.c.ra_no_idspace[String(c.sc.id)]
             // OWED (attended, pairs with a SwarmShare re-record): stamp a
             //  SNAPPABLE twin `c.sc.from = String(frame.header.from)` here, GATED on
             //   `w.c.repli_mirror_by_from`, so source attribution survives snap+reload+wire (a .c ref
@@ -1452,7 +1524,11 @@ Repli_awaitbuf_do(w, pier, req) {
 },
 // Repli_want_next — B asks A for the next page of a Record's stream (the PULL).
 async Repli_want_next(w, rx, from, to, id, stream, fromIdx) {
-    // WANT-FIRST electrode (2026-08-06, the trace lane): every pull path funnels through here, so
+    // THE TERMINAL GATE (Repli_idspace_todo §4b): every pull path funnels through here, so ONE check
+    //  covers them all — an id the source has declared outside its id-space is never asked again,
+    //   whatever site (pull beat, mag warm, heist keep) wanted it.  Per-site gates upstream are
+    //    wasted-work savers; THIS is the correctness stop that breaks the want/missed loop.
+    if (this.Repli_no_idspace_has(w, id)) return
     //  the FIRST want per record is one latch in one place — the moment a husk stopped being merely
     //   admired and was actually asked for.  Between `mirror-merge` and this mark lives every
     //    "records stood but nobody asked" bug; between this and `page-first` lives every serve/land
@@ -1480,6 +1556,7 @@ async Repli_arm(w) {
     this.Peeroleum_on(w, 'repli_page', (cw, pier, frame) => { this.Repli_recv_page(w, pier, frame); return true })
     this.Peeroleum_on(w, 'repli_parked', (cw, pier, frame) => { this.Repli_recv_parked(w, frame); return true })
     this.Peeroleum_on(w, 'repli_missed', (cw, pier, frame) => { this.Repli_recv_missed(w, frame); return true })
+    this.Peeroleum_on(w, 'repli_no_idspace', (cw, pier, frame) => { this.Repli_recv_no_idspace(w, frame); return true })
 
 },
 // Repli_sent_se — the D** progress mirror as a REAL Selection.process: one Se per library

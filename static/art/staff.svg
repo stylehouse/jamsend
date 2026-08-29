@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="780" viewBox="0 0 1080 780" font-family="Georgia, 'Times New Roman', serif">
+  <!-- the snap as a living score : C** staff scheme -->
+  <rect x="0" y="0" width="1080" height="780" fill="#f7f3ea"/>
+
+  <!-- title -->
+  <text x="48" y="46" font-size="26" font-style="italic" fill="#2a2723">the snap as a living score</text>
+  <text x="48" y="66" font-size="12" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">C** &#8212; clef &#183; mainkey &#8214; sc notation &#8214; .c undertone (always below, never blurred)</text>
+
+  <!-- ===== margin group bars ===== -->
+  <rect x="20" y="92" width="4" height="576" fill="#3d3a75"/><!-- H:Mundo district wall -->
+  <rect x="32" y="146" width="3" height="176" fill="#2e7d74"/><!-- w:Story -->
+  <rect x="32" y="340" width="3" height="132" fill="#c9962a"/><!-- w:Radio -->
+  <line x1="33" y1="490" x2="33" y2="520" stroke="#3d3a75" stroke-width="3" stroke-dasharray="4 4"/><!-- Door's TRUE group, dashed -->
+
+  <!-- ===== terminal double bar (end of system) ===== -->
+  <line x1="1022" y1="92" x2="1022" y2="668" stroke="#2a2723" stroke-width="1"/>
+  <rect x="1027" y="92" width="5" height="576" fill="#2a2723"/>
+
+  <!-- ================= STAFF 1 : House (H:Mundo) ================= -->
+  <line x1="48" y1="110" x2="1020" y2="110" stroke="#cfc8b8" stroke-width="2"/>
+  <rect x="48" y="101" width="12" height="18" rx="3" fill="#3d3a75"/>
+  <text x="68" y="115" font-size="13" font-weight="bold" fill="#2a2723">House</text>
+  <line x1="122" y1="98" x2="122" y2="136" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="127" y1="98" x2="127" y2="136" stroke="#2a2723" stroke-width="1"/>
+  <path d="M148 104 L155 110 L148 116 L141 110 Z" fill="none" stroke="#3d3a75" stroke-width="1.5"/>
+  <text x="163" y="114" font-size="11" fill="#3d3a75" font-family="ui-monospace, Menlo, monospace">root</text>
+  <line x1="68" y1="128" x2="1020" y2="128" stroke="#ddd6c6" stroke-width="1"/>
+  <rect x="141" y="125" width="12" height="6" fill="#7d97b8" opacity="0.7"/>
+  <rect x="158" y="125" width="12" height="6" fill="#c9a86a" opacity="0.7"/>
+  <rect x="175" y="125" width="12" height="6" fill="#a58bc0" opacity="0.7"/>
+  <text x="985" y="132" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:3)</text>
+
+  <!-- ================= STAFF 2 : w:Story / Story ================= -->
+  <line x1="70" y1="162" x2="1020" y2="162" stroke="#cfc8b8" stroke-width="2"/>
+  <rect x="70" y="153" width="12" height="18" rx="3" fill="#2e7d74"/>
+  <text x="90" y="167" font-size="13" font-weight="bold" fill="#2a2723">Story</text>
+  <line x1="140" y1="150" x2="140" y2="188" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="145" y1="150" x2="145" y2="188" stroke="#2a2723" stroke-width="1"/>
+  <path d="M164 156 L171 162 L164 168 L157 162 Z" fill="none" stroke="#2e7d74" stroke-width="1.5"/>
+  <text x="179" y="166" font-size="11" fill="#2e7d74" font-family="ui-monospace, Menlo, monospace">running</text>
+  <rect x="240" y="153" width="104" height="18" rx="9" fill="#2e7d74" fill-opacity="0.12" stroke="#2e7d74"/>
+  <text x="252" y="166" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">phase:beliefs</text>
+  <rect x="354" y="153" width="72" height="18" rx="9" fill="#2e7d74" fill-opacity="0.12" stroke="#2e7d74"/>
+  <text x="366" y="166" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">step:3/7</text>
+  <line x1="90" y1="180" x2="1020" y2="180" stroke="#ddd6c6" stroke-width="1"/>
+  <rect x="157" y="177" width="12" height="6" fill="#7d97b8" opacity="0.7"/>
+  <rect x="174" y="177" width="12" height="6" fill="#7d97b8" opacity="0.7"/>
+  <rect x="191" y="177" width="12" height="6" fill="#c9a86a" opacity="0.7"/>
+  <rect x="208" y="177" width="12" height="6" fill="#a58bc0" opacity="0.7"/>
+  <text x="985" y="184" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:4)</text>
+
+  <!-- ================= STAFF 3 : Step (indented) ================= -->
+  <line x1="92" y1="214" x2="1020" y2="214" stroke="#cfc8b8" stroke-width="1.5"/>
+  <rect x="92" y="206" width="12" height="16" rx="3" fill="#2e7d74" opacity="0.75"/>
+  <text x="112" y="219" font-size="13" font-weight="bold" fill="#2a2723">Step</text>
+  <line x1="158" y1="203" x2="158" y2="238" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="163" y1="203" x2="163" y2="238" stroke="#2a2723" stroke-width="1"/>
+  <rect x="176" y="205" width="44" height="18" rx="9" fill="#2e7d74" fill-opacity="0.12" stroke="#2e7d74"/>
+  <text x="187" y="218" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">n:3</text>
+  <rect x="230" y="205" width="102" height="18" rx="9" fill="#2e7d74" fill-opacity="0.12" stroke="#2e7d74"/>
+  <text x="240" y="218" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">dige:131313</text>
+  <path d="M352 208 L359 214 L352 220 L345 214 Z" fill="none" stroke="#2e7d74" stroke-width="1.5"/>
+  <text x="367" y="218" font-size="11" fill="#2e7d74" font-family="ui-monospace, Menlo, monospace">ok</text>
+  <line x1="112" y1="231" x2="1020" y2="231" stroke="#ddd6c6" stroke-width="1"/>
+  <rect x="176" y="228" width="12" height="6" fill="#a58bc0" opacity="0.7"/>
+  <text x="985" y="235" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:1)</text>
+
+  <!-- ================= STAFF 4 : see (leaf, blank wire) ================= -->
+  <line x1="114" y1="264" x2="1020" y2="264" stroke="#cfc8b8" stroke-width="1.5"/>
+  <rect x="114" y="256" width="12" height="16" rx="3" fill="#6b6357"/>
+  <text x="134" y="269" font-size="13" font-weight="bold" fill="#2a2723">see</text>
+  <line x1="172" y1="253" x2="172" y2="288" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="177" y1="253" x2="177" y2="288" stroke="#2a2723" stroke-width="1"/>
+  <rect x="190" y="255" width="222" height="18" rx="9" fill="#6b6357" fill-opacity="0.10" stroke="#6b6357"/>
+  <text x="200" y="268" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">claim:the music is playing</text>
+  <rect x="422" y="255" width="60" height="18" rx="9" fill="#6b6357" fill-opacity="0.10" stroke="#6b6357"/>
+  <text x="432" y="268" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">beat:3</text>
+  <line x1="134" y1="281" x2="1020" y2="281" stroke="#ddd6c6" stroke-width="1"/>
+  <text x="190" y="285" font-size="9" font-style="italic" fill="#b5ac9b">blank wire &#8212; no live refs</text>
+  <text x="985" y="285" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:0)</text>
+
+  <!-- ================= STAFF 5 : Steps, COLLAPSED (honesty mark) ================= -->
+  <rect x="92" y="304" width="12" height="12" rx="3" fill="#2e7d74" opacity="0.55"/>
+  <text x="112" y="315" font-size="13" font-weight="bold" fill="#2a2723">Steps</text>
+  <line x1="164" y1="310" x2="640" y2="310" stroke="#2a2723" stroke-width="3.5"/>
+  <path d="M652 304 L662 310 L652 316 Z" fill="#2a2723"/>
+  <text x="668" y="315" font-size="13" font-weight="bold" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">42</text>
+  <text x="700" y="315" font-size="10" font-style="italic" fill="#8d8577">children hidden, counted &#8212; not denied</text>
+
+  <!-- ================= STAFF 6 : w:Radio / Radio ================= -->
+  <line x1="70" y1="358" x2="1020" y2="358" stroke="#cfc8b8" stroke-width="2"/>
+  <rect x="70" y="349" width="12" height="18" rx="3" fill="#c9962a"/>
+  <text x="90" y="363" font-size="13" font-weight="bold" fill="#2a2723">Radio</text>
+  <line x1="142" y1="346" x2="142" y2="384" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="147" y1="346" x2="147" y2="384" stroke="#2a2723" stroke-width="1"/>
+  <path d="M166 352 L173 358 L166 364 L159 358 Z" fill="none" stroke="#c9962a" stroke-width="1.5"/>
+  <text x="181" y="362" font-size="11" fill="#a97e20" font-family="ui-monospace, Menlo, monospace">active</text>
+  <rect x="240" y="349" width="176" height="18" rx="9" fill="#c9962a" fill-opacity="0.14" stroke="#c9962a"/>
+  <text x="250" y="362" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">src:&#8230;/Oren Ambarchi.mp3</text>
+  <line x1="416" y1="350" x2="416" y2="366" stroke="#c9962a" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <rect x="428" y="349" width="70" height="18" rx="9" fill="#c9962a" fill-opacity="0.14" stroke="#c9962a"/>
+  <text x="438" y="362" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">vol:0.8</text>
+  <text x="512" y="364" font-size="14" fill="#a97e20">&#8982;</text>
+  <line x1="90" y1="376" x2="1020" y2="376" stroke="#ddd6c6" stroke-width="1"/>
+  <rect x="159" y="373" width="12" height="6" fill="#a58bc0" opacity="0.7"/>
+  <rect x="176" y="373" width="12" height="6" fill="#c9a86a" opacity="0.7"/>
+  <text x="985" y="380" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:2)</text>
+
+  <!-- ================= STAFF 7 : Spin,of:X ================= -->
+  <line x1="92" y1="410" x2="1020" y2="410" stroke="#cfc8b8" stroke-width="1.5"/>
+  <rect x="92" y="402" width="12" height="16" rx="3" fill="#c9962a" opacity="0.7"/>
+  <text x="112" y="415" font-size="13" font-weight="bold" fill="#2a2723">Spin</text>
+  <line x1="160" y1="399" x2="160" y2="434" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="165" y1="399" x2="165" y2="434" stroke="#2a2723" stroke-width="1"/>
+  <rect x="178" y="401" width="52" height="18" rx="9" fill="#c9962a" fill-opacity="0.14" stroke="#c9962a"/>
+  <text x="188" y="414" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">of:X</text>
+  <rect x="240" y="401" width="70" height="18" rx="9" fill="#c9962a" fill-opacity="0.14" stroke="#c9962a"/>
+  <text x="250" y="414" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">at:1:23</text>
+  <line x1="112" y1="427" x2="1020" y2="427" stroke="#ddd6c6" stroke-width="1"/>
+  <rect x="178" y="424" width="12" height="6" fill="#7d97b8" opacity="0.7"/>
+  <text x="985" y="431" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:1)</text>
+
+  <!-- ================= STAFF 8 : Like,of:X (flag + null hexagon) ================= -->
+  <line x1="92" y1="455" x2="1020" y2="455" stroke="#cfc8b8" stroke-width="1.5"/>
+  <rect x="92" y="447" width="12" height="16" rx="3" fill="#c9962a" opacity="0.5"/>
+  <text x="112" y="460" font-size="13" font-weight="bold" fill="#2a2723">Like</text>
+  <line x1="158" y1="444" x2="158" y2="479" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="163" y1="444" x2="163" y2="479" stroke="#2a2723" stroke-width="1"/>
+  <rect x="176" y="446" width="52" height="18" rx="9" fill="#c9962a" fill-opacity="0.14" stroke="#c9962a"/>
+  <text x="186" y="459" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">of:X</text>
+  <path d="M242 455 L246 448 L254 448 L258 455 L254 462 L246 462 Z" fill="none" stroke="#b5ac9b" stroke-width="1.5"/>
+  <text x="264" y="459" font-size="11" fill="#b5ac9b" font-family="ui-monospace, Menlo, monospace">note:&#8709;</text>
+  <line x1="112" y1="472" x2="1020" y2="472" stroke="#ddd6c6" stroke-width="1"/>
+  <text x="985" y="476" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:0)</text>
+
+  <!-- ================= STAFF 9 : Door, RE-PARENTED (dashed honesty mark) ================= -->
+  <line x1="70" y1="505" x2="1020" y2="505" stroke="#cfc8b8" stroke-width="2" stroke-dasharray="7 5"/>
+  <rect x="70" y="496" width="12" height="18" rx="3" fill="#7a4d9e"/>
+  <text x="90" y="510" font-size="13" font-weight="bold" fill="#2a2723">Door</text>
+  <text x="90" y="493" font-size="9" font-style="italic" fill="#7a4d9e">(&#8712; Mundo &#8212; shown here for layout)</text>
+  <line x1="138" y1="493" x2="138" y2="531" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="143" y1="493" x2="143" y2="531" stroke="#2a2723" stroke-width="1"/>
+  <rect x="156" y="496" width="88" height="18" rx="9" fill="#7a4d9e" fill-opacity="0.12" stroke="#7a4d9e"/>
+  <text x="166" y="509" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">to:w.Lies</text>
+  <line x1="90" y1="523" x2="1020" y2="523" stroke="#ddd6c6" stroke-width="1"/>
+  <rect x="156" y="520" width="12" height="6" fill="#a58bc0" opacity="0.7"/>
+  <text x="985" y="527" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:1)</text>
+
+  <!-- ================= STAFF 10 : Record (the holding) ================= -->
+  <line x1="70" y1="557" x2="1020" y2="557" stroke="#cfc8b8" stroke-width="2"/>
+  <rect x="70" y="548" width="12" height="18" rx="3" fill="#4a6fa5"/>
+  <text x="90" y="562" font-size="13" font-weight="bold" fill="#2a2723">Record</text>
+  <line x1="150" y1="545" x2="150" y2="583" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="155" y1="545" x2="155" y2="583" stroke="#2a2723" stroke-width="1"/>
+  <rect x="168" y="548" width="58" height="18" rx="9" fill="#4a6fa5" fill-opacity="0.12" stroke="#4a6fa5"/>
+  <text x="178" y="561" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">id:x9</text>
+  <rect x="236" y="548" width="170" height="18" rx="9" fill="#4a6fa5" fill-opacity="0.12" stroke="#4a6fa5"/>
+  <text x="246" y="561" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">path:/music/oren/quix</text>
+  <line x1="406" y1="549" x2="406" y2="565" stroke="#4a6fa5" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <rect x="418" y="548" width="130" height="18" rx="9" fill="#4a6fa5" fill-opacity="0.12" stroke="#4a6fa5"/>
+  <text x="428" y="561" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">album:Quixotism</text>
+  <line x1="90" y1="575" x2="1020" y2="575" stroke="#ddd6c6" stroke-width="1"/>
+  <rect x="168" y="572" width="12" height="6" fill="#7d97b8" opacity="0.7"/>
+  <text x="985" y="579" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:1)</text>
+
+  <!-- ================= STAFF 11 : Card (the listing, joined by id) ================= -->
+  <line x1="70" y1="602" x2="1020" y2="602" stroke="#cfc8b8" stroke-width="1"/>
+  <rect x="70" y="595" width="12" height="14" rx="3" fill="#4a6fa5" opacity="0.55"/>
+  <text x="90" y="607" font-size="13" font-weight="bold" fill="#2a2723">Card</text>
+  <line x1="140" y1="591" x2="140" y2="626" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="145" y1="591" x2="145" y2="626" stroke="#2a2723" stroke-width="1"/>
+  <rect x="158" y="593" width="58" height="18" rx="9" fill="#4a6fa5" fill-opacity="0.08" stroke="#4a6fa5" stroke-opacity="0.6"/>
+  <text x="168" y="606" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">id:x9</text>
+  <rect x="226" y="593" width="130" height="18" rx="9" fill="#4a6fa5" fill-opacity="0.08" stroke="#4a6fa5" stroke-opacity="0.6"/>
+  <text x="236" y="606" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">title:Quixotism</text>
+  <line x1="90" y1="619" x2="1020" y2="619" stroke="#ddd6c6" stroke-width="1"/>
+  <text x="985" y="623" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:0)</text>
+
+  <!-- ================= STAFF 12 : req (with a mint-bug pill) ================= -->
+  <line x1="70" y1="650" x2="1020" y2="650" stroke="#cfc8b8" stroke-width="1.5"/>
+  <rect x="70" y="642" width="12" height="16" rx="3" fill="#8a7f6a"/>
+  <text x="90" y="655" font-size="13" font-weight="bold" fill="#2a2723">req</text>
+  <line x1="128" y1="639" x2="128" y2="674" stroke="#2a2723" stroke-width="2.5"/>
+  <line x1="133" y1="639" x2="133" y2="674" stroke="#2a2723" stroke-width="1"/>
+  <rect x="146" y="641" width="82" height="18" rx="9" fill="#8a7f6a" fill-opacity="0.12" stroke="#8a7f6a"/>
+  <text x="156" y="654" font-size="11" fill="#2a2723" font-family="ui-monospace, Menlo, monospace">of:Store</text>
+  <rect x="238" y="641" width="106" height="18" rx="9" fill="#b03a3a" fill-opacity="0.14" stroke="#b03a3a"/>
+  <text x="246" y="654" font-size="11" fill="#b03a3a" font-family="ui-monospace, Menlo, monospace">&#9888; cfg:[obj]</text>
+  <text x="352" y="654" font-size="9" font-style="italic" fill="#b03a3a">mint bug &#8212; object in sc, go fix the mint</text>
+  <line x1="90" y1="667" x2="1020" y2="667" stroke="#ddd6c6" stroke-width="1"/>
+  <rect x="146" y="664" width="12" height="6" fill="#7d97b8" opacity="0.7"/>
+  <text x="985" y="671" font-size="10" fill="#8d8577" font-family="ui-monospace, Menlo, monospace">(c:1)</text>
+
+  <!-- ===== legend ===== -->
+  <line x1="48" y1="696" x2="1032" y2="696" stroke="#cfc8b8" stroke-width="1"/>
+  <path d="M56 714 L62 720 L56 726 L50 720 Z" fill="none" stroke="#6b6357" stroke-width="1.5"/>
+  <text x="70" y="724" font-size="10" fill="#6b6357">flag (=1)</text>
+  <rect x="130" y="712" width="40" height="16" rx="8" fill="#6b6357" fill-opacity="0.10" stroke="#6b6357"/>
+  <text x="138" y="723" font-size="9" fill="#6b6357" font-family="ui-monospace, Menlo, monospace">k:v</text>
+  <line x1="182" y1="712" x2="182" y2="728" stroke="#6b6357" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <text x="190" y="724" font-size="10" fill="#6b6357">truncated</text>
+  <path d="M258 720 L262 713 L270 713 L274 720 L270 727 L262 727 Z" fill="none" stroke="#b5ac9b" stroke-width="1.5"/>
+  <text x="280" y="724" font-size="10" fill="#6b6357">null</text>
+  <text x="312" y="724" font-size="10" fill="#b03a3a">&#9888; obj-in-sc</text>
+  <rect x="384" y="716" width="10" height="6" fill="#7d97b8" opacity="0.7"/>
+  <rect x="398" y="716" width="10" height="6" fill="#c9a86a" opacity="0.7"/>
+  <rect x="412" y="716" width="10" height="6" fill="#a58bc0" opacity="0.7"/>
+  <text x="430" y="724" font-size="10" fill="#6b6357">.c undertone (ref / backlink / House)</text>
+  <path d="M628 714 L636 720 L628 726 Z" fill="#2a2723"/>
+  <text x="642" y="724" font-size="10" fill="#6b6357">N collapsed</text>
+  <line x1="716" y1="720" x2="756" y2="720" stroke="#6b6357" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="764" y="724" font-size="10" fill="#6b6357">re-parented</text>
+  <text x="850" y="724" font-size="10" font-style="italic" fill="#8d8577">what is not marked is faithful</text>
+</svg>

@@ -36,6 +36,7 @@
     import Lens       from "$lib/O/ui/Lens.svelte"
     import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
     import SwarmStandup from "$lib/O/ui/SwarmStandup.svelte"
+    import SchemeSwitcher from "$lib/O/ui/SchemeSwitcher.svelte"
     import { boot_param } from "$lib/boot"
     import { boot_qualand } from "$lib/O/BigQualand.svelte"
 
@@ -416,7 +417,10 @@
     {:else if cyto}
         {#key keyser(cyto.ui.sc)}
             <section class="scape-glass">
-                <svelte:component this={cyto.ui.sc.component} H={cyto.house} />
+                <!-- SchemeSwitcher wraps the live glass (owner's temporary critique surface): opens on the REAL
+                     selected renderer (`vyto` = cyto.ui.sc.component, correct house), a bar flips the SAME live
+                     House through every C** renderer.  Revert to the bare <svelte:component> to drop it. -->
+                <SchemeSwitcher H={cyto.house} vyto={cyto.ui.sc.component} />
             </section>
         {/key}
     {:else}

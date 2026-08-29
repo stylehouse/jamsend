@@ -58,6 +58,18 @@ A first, working slice of §3 shipped and Book-verified (SwarmSpread 5/5, SwarmS
      of holding it behind the pre-Ud gate forever.  The Linkor re-parks `ferry_confirm` off the wire (twin
       rehydrate in the handler), the "give my soul" button reappears, and the Adopt completes.  This was the
        real reason the handshake wedged at `Invite state:redeeming`.
+- **THE SURFACE BUMP — "eed has no idea it's happening still" — is fixed** (`Ghost/S/Swarm.g`, `Swarm_ferry_on_seal`,
+   landed 2026-08-29, live-runner verified).  The `ferry_want` DID arrive and reach on_seal (`cave_pier=yes
+    my_secret=yes ferrying=no`), and on the humdinger path on_seal parked `top.c.ferry_confirm` — but that is a
+     **`.c` write, and a `.c` write NEVER bumps `H.version`**, so the auto-surface effect (`SwarmStandup`, gated on
+      `H.version`/wall-tick) and the cell's `confirm` derived only noticed on the next slow tick — which eed, off on a
+       music page, was not even mounting.  The park now **`top.bump_version()`s** (the exact courtesy the `ferry_got`
+        handler already pays after its `.c` writes, ~Swarm.g:1056), so the "giving your soul" cell is pulled up the
+         instant the ask lands.  And the warmth/UnInvite early-return is now **observable** — it logs *why* no confirm
+          rose (`pier is cold (no heard_at within 45s)` / `was UnInvited`) instead of silently looking like a response.
+           Humdinger-branch only ⇒ Books byte-identical (SwarmSpread 5/5 caveat-1-baseline, SwarmStaple 8/8 caveat-0,
+            both green on runner e747).  If a future two-device log STILL shows no rise, the new tell says whether it
+             is the cold-pier gate (heard_at not stamped/stale) or an UnInvite — a real fork, not a mystery.
 
 **⚠ BOMB / bequest for the next session — do NOT be fooled by the transport Books.**  `SwarmGot` and
  `SwarmWire` are RED right now, but **that is the OTHER thread's uncommitted WIP in the SHARED tree, not this

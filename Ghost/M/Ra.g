@@ -1347,6 +1347,11 @@ async Ra_mag_warm(w, mirror):
                 //   so a re-stocked record is asked again within the minute.  Inert in every Book —
                 //    nothing disclaims an id there, so `ra_missed` is empty and this never fires.
                 if (typeof this.Repli_missed_hot === 'function' && this.Repli_missed_hot(w, rec.sc.id)) continue
+                // THE SOURCE SAID NEVER (Repli_idspace_todo §4b): a terminal no_idspace is not a
+                //  backoff — skip the id permanently.  Repli_want_next's central gate would stop the
+                //   frame anyway; this spares the walk.  Re-armed only by the source re-offering the
+                //    id (Repli_recv_lines clears the entry when a holding rec lands from it).
+                if (typeof this.Repli_no_idspace_has === 'function' && this.Repli_no_idspace_has(w, rec.sc.id)) continue
                 // ASK FOR WHAT IS MISSING, NOT FOR WHAT THE TIMER FORGOT.  This loop used to lean on the
                 //  4s stamp ALONE as its memo, with no presence check at all — it re-asked page 0 on a
                 //   cadence until the mag happened to go warm, held down only by the timer being long.

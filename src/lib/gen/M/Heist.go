@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '2e122020d14b8fe6~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '59adbfb3c9d45e69~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2777,6 +2777,12 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                 //       file knows — hands the pick to Heist_pull_giveup (humdinger-gated: a Book keeps
                 //        the never-give-up reading and no fixture ever sees sc.failed).
                 if (+(pick.c.asks_out || 0) >= 90 && this.Heist_pull_giveup(keep, job, pick, String(pick.sc.path || ref).split('/').pop(), `${pick.c.asks_out} materialise-asks unanswered`)) continue
+                // THE SOURCE SAID NEVER (Repli_idspace_todo §4b): a terminal `repli_no_idspace` means
+                //  this ref is structurally outside the source's id-space — no census re-materialises
+                //   someone else's disk, so the told-miss dance below and the "never give up" re-ask
+                //    are both wrong for it.  NOT consumed (unlike ra_missed): the flag stands until
+                //     the source itself re-offers the id.  Skip the pick entirely.
+                if (typeof this.Repli_no_idspace_has === 'function' && this.Repli_no_idspace_has(w, String(ref))) continue
                 let plast = pick.c.ask_ts || 0
                 if (Date.now() - plast > 4000) {
                     pick.c.ask_ts = Date.now()

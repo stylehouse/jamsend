@@ -1655,6 +1655,11 @@ Swarm_note_era(w, route, sf, may_reset):
         delete w.c.ra_want_ts
         delete w.c.ra_parked   // §5.3: a rebirth means the far side forgot every park too — nothing to suspend for
         delete w.c.ra_missed   // ditto (2026-08-06): a told miss describes the PREVIOUS incarnation's id map
+        // w.c.ra_no_idspace SURVIVES ON PURPOSE (Repli_idspace_todo §4b): the id-space partition is
+        //  per-PEER (sha256 of pub+base+path — whose disk holds the file), not per-era, so a rebirth
+        //   changes nothing about which ids can resolve there.  This wipe was exactly how the 60s
+        //    ra_missed backoff never accumulated into a stop (the 7950f300 flood).  The only clear is
+        //     the source re-OFFERING the id (Repli_recv_lines).  Do not add a delete here.
         // §5.5: every in-flight ask is gone with them, so nothing is ambiguous any more — the Karn marks
         //  and the backoff ladders must go with the wants they describe, else the first want after a
         //   rebirth is un-sampleable and waits out a ×8 rung for an ask that no longer exists.
@@ -4458,9 +4463,23 @@ async Swarm_ferry_on_seal(w, soulIdent, pier):
         let pha = pier.c ? pier.c.heard_at : 0
         let pwarm = pha && (Date.now() - pha) < 45000 ? 1 : 0
         let pun = this.Swarm_ferry_uninvited && this.Swarm_ferry_uninvited(top, String(pier.sc.pub || '')) ? 1 : 0
-        if (!pwarm || pun) { return }
+        // OBSERVABLE BLOCK (owner 2026-08-29: "eed has no idea it's happening"): when we hear the ask but refuse to
+        //  park a confirm, the log used to say NOTHING — indistinguishable from "responded".  Name the reason so the
+        //   next two-device log shows WHY the "give your soul" never rose.  ~1/s (ferry_want is floor-throttled).
+        if (!pwarm || pun) {
+            console.log('🦑 ferry: heard the ask from ' + String(pier.sc.pub || '?').slice(0, 8) + ' but NOT surfacing a confirm — pier ' + (pun ? 'was UnInvited' : 'is cold (no heard_at within 45s)') + '; the "give your soul" stays down')
+            return
+        }
         if (!top.c.ferry_confirm || top.c.ferry_confirm.pub !== String(pier.sc.pub)) {
             top.c.ferry_confirm = { pub: String(pier.sc.pub), name: String(pier.sc.friendly || ''), at: this.Swarm_now(w) }
+            // ⚠ THE SURFACE BUMP (owner 2026-08-29: "eed has no idea it's happening").  ferry_confirm is a `.c` write,
+            //  and by the codebase law a `.c` write NEVER bumps H.version — so the auto-surface effect (SwarmStandup)
+            //   and the cell's `confirm` derived only notice on the next wall-tick, which on a music page eed isn't
+            //    even mounting.  Bump here so the "giving your soul" cell is pulled up the instant the ask lands.  The
+            //     ferry_got handler already bumps after its `.c` writes (~line 1056) — this restores the same courtesy
+            //      to the park.  Frame-driven (never called from reactivity), so no bump loop; the send-branch is
+            //       untouched (Books carry no humdinger → never reach here → fixtures byte-identical).
+            if (top.bump_version) { top.bump_version() }
             console.log('🦑 ferry: a device sealed as my Cave — awaiting my confirm on its pier (pulled to the Door) before I send')
         }
         return
