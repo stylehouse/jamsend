@@ -11,7 +11,8 @@
     //    · POINTER-CATCHING (pointer-events:auto) so a tap on the cover can NOT fall through into the machine
     //       room behind it — OPEN SHARE, being out-layered above, still receives its tap;
     //    · a generous safety cap so a wedged boot still reveals the Butler (which carries its own ▦ exit);
-    //    · fades on the Radio beginning (glass up + Butler lifted), or at once only if the boot GAVE UP;
+    //    · fades on the Radio beginning (glass up + Butler lifted), or 3s after a boot GAVE-UP (a grace for a
+    //       fail-then-succeed-into-Radio boot), or the 7s safety cap — whichever first;
     //    · skipped for runner/editor boots (?B= / ?E=).
     //  Progressive load (owner): the blurred tree_mini shows instantly, then the full-res tree.webp crossfades
     //   in when it has loaded — and on later visits the full-res is cached, so its onload fires at once and you
@@ -26,6 +27,11 @@
     let fading   = $state(false)
     let held     = $state(false)   // minimum on-screen beat elapsed
     let hi_ready = $state(false)   // full-res tree.webp loaded → crossfade sharp over the blurred mini
+    // FAIL-GRACE (owner 2026-08-29): a boot can throw a FAILED then immediately succeed into Radio, so a
+    //  gave-up must NOT reveal the Supervisor glass at once — arm a 3s timer on the FIRST `urge` and let the
+    //   Radio win inside it.  Plain lets (a handle + a one-shot latch), not $state — they gate a timeout, not a render.
+    let urge_timer: ReturnType<typeof setTimeout> | null = null
+    let urge_armed = false
 
     onMount(() => {
         try {
@@ -37,7 +43,7 @@
         // SAFETY cap only (7s): the splash now intends to hold to the Radio beginning, but must never wedge — if
         //  the glass never comes up it fades to reveal the Butler's progress/gaveup (with its always-on ▦ exit).
         const max = setTimeout(() => fade(), 7000)
-        return () => { clearTimeout(min); clearTimeout(max) }
+        return () => { clearTimeout(min); clearTimeout(max); if (urge_timer) clearTimeout(urge_timer) }
     })
 
     function fade() {
@@ -47,10 +53,16 @@
     }
 
     // `ready` = the Radio beginning (glass up AND the Butler has lifted) — fades after the 700ms min-hold so a fast
-    //  boot doesn't flash the splash away.  `urge` is now ONLY a boot GAVE-UP: reveal the Butler's failure at once
-    //   rather than sitting behind a calm tree.  OPEN SHARE and the ceremony no longer fade the splash — OPEN SHARE
-    //    is layered above it, and the ceremony is a belly cell that shows the instant the glass (and Radio) is up.
-    $effect(() => { if ((ready && held) || urge) fade() })
+    //  boot doesn't flash the splash away.  OPEN SHARE and the ceremony no longer fade the splash — OPEN SHARE is
+    //   layered ABOVE it (BootGate altitude 2100), and the ceremony is a belly cell that shows once the glass is up.
+    //  `urge` (boot GAVE UP) no longer fades AT ONCE (owner 2026-08-29: *"wait 3s after the first FAILED turns up to
+    //   actually reveal the Supervisor glass, as we sometimes fail then immediately succeed into Radio"*): the FIRST
+    //    failed arms a 3s grace; if the Radio starts inside it the `ready` line fades us instantly, otherwise we fade
+    //     at 3s to reveal the Butler's failure.  (The 7s safety cap still backstops a wholly wedged boot.)
+    $effect(() => {
+        if (ready && held) { fade(); return }
+        if (urge && !urge_armed) { urge_armed = true; urge_timer = setTimeout(() => fade(), 3000) }
+    })
 </script>
 
 {#if show}

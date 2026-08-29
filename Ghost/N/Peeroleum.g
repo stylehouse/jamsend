@@ -733,6 +733,21 @@ async Peeroleum_deliver_do(w, frame):
     let reliable = conn?.reliable !== false   // default reliable; only an explicit false engages inseq
     let seq = Number(h.seq)
     if (reliable || !Number.isFinite(seq)) {   // reliable carrier, or a frame with no seq → book straight, never hold
+        // ── MONOTONIC-SEQ FAST PATH (2026-08-29, the 10-20s belief-mutex FREEZE under a repli_page flood) ──
+        //  Pier_next_seq is a per-pier MONOTONE counter (spec §7.1), so a seq strictly higher than any we've
+        //   booked from this pier is provably NEW: it cannot be a re-delivery or a reused-seq collision (both
+        //    carry seq ≤ our high-water).  So skip BOTH O(inbox-depth) scans — the ledger probe
+        //     (Peeroleum_served_before) AND the `oai` find (book_unemit) — and create the unemit directly.  Under
+        //      a flood (monotone seqs) that turns O(N²)-per-tick booking into O(1), which WAS the freeze.  A seq
+        //       that is NOT strictly higher (a reborn peer restarting at 1, a transport re-delivery) falls
+        //        through to the SLOW PATH below, whose reused-seq guard is UNCHANGED.  `hiseq` is off-snap `.c`
+        //         (a runtime counter, like `c.inseq.last`), so it never snaps and Books stay byte-identical.
+        if (Number.isFinite(seq) && seq > +(pier.c.hiseq || 0)) {
+            pier.c.hiseq = seq
+            H.Peeroleum_book_unemit(inbox, w, pier, frame, 1)   // fresh=1 → direct create, no O(depth) find
+            await inbox.do(); await H.Peeroleum_rollup_faulty(pier); H.Peeroleum_bound_safe(inbox, w, pier); H.feebly_ponder(); return
+        }
+        // ── SLOW PATH (seq ≤ high-water: a rebirth or a re-delivery) — the FULL reused-seq guard, unchanged ──
         // THE LEDGER HALF OF THE REUSED-SEQ GUARD, checked BEFORE booking.  Once the inbox bound
         //  promotes a served req onto %inbox/recent and drops it, `ureq.sc.finished` below can no
         //   longer see it — and booking first would mint a FRESH req for an already-served frame and
@@ -797,11 +812,20 @@ async Peeroleum_deliver_do(w, frame):
 //  the sender's per-Pier seq) and stash its w/pier/raw-frame on .c for req_unemit (avoids the deep
 //   c.up walk). Booking only; the caller drains with inbox.do(). Split out of Peeroleum_deliver so the
 //    inseq path can book a whole gap-released run before a single drain.
-Peeroleum_book_unemit(inbox, w, pier, frame):
+Peeroleum_book_unemit(inbox, w, pier, frame, fresh):
     let h = frame.header
     let usc = {req: 'unemit', seq: h.seq, type: h.type}
     if (h.body_hash != null) { usc.body_hash = h.body_hash; usc.body_len = h.body_len }
-    let ureq = inbox.oai(usc)
+    // `fresh` — the monotonic-seq fast path (Peeroleum_deliver, 2026-08-29): the caller PROVED this (seq,type)
+    //  is new (seq strictly above pier.c.hiseq), so a find is a guaranteed miss — skip the O(inbox-depth) `oai`
+    //   scan and create directly.  That skip is the whole point: under a repli_page flood the oai went O(N²).
+    //  ⚠ A %req needs the req-pump WIRING oai() stamps AFTER its create (Stuff.svelte.ts oai's named-req branch:
+    //   `req.c.up = host` + `req.c.initialdo = 1`).  Plain `i()` skips it, leaving `req.c.up` undefined so
+    //    req_unemit throws at `(req.c.up).finish(req)` (caught 2026-08-29 by MusuNeGrind going red — the unemit
+    //     stayed `done` but never `finished`).  So replicate exactly those two `.c` stamps; everything else oai
+    //      does for a NAMED req is the find (skipped) or a no-op (usc carries no `maz`, book passes no merge `c`).
+    let ureq = fresh ? inbox.i(usc) : inbox.oai(usc)
+    if (fresh) { ureq.c.up = inbox; ureq.c.initialdo = 1 }
     ureq.c.frame = frame
     ureq.c.w = w
     ureq.c.pier = pier

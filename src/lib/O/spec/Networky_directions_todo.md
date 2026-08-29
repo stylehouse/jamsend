@@ -60,6 +60,29 @@ Ranked by leverage-per-line, RE-ORDERED for the WebRTC-unreliable reality above:
 6. **[medium, defer] Anti-entropy gossip: digest-then-delta with a reconcilable digest.** See Front C.
 7. **[invasive, last, not under fire] Fold the epoch into the sequence space.** See Front D.
 
+### Handover to the Invite/LinkDevice agent (their "Stage 5 / #37")
+
+Your live Invite/LinkDevice tests didn't freeze on invite code — they froze on **belief-mutex
+ starvation**. Reliable handshakes queue in the SAME single serial belief-loop inbox that the flood
+  fills (the "one-pipe-two-layers" chain below); a gossip/bulk storm drains ahead of them and the
+   O(depth) drain (`Peeroleum_book_unemit` per-frame `oai` scan + `Peeroleum_rollup_faulty` rescan)
+    collapses under the backlog, so the mutex convoy never reaches your handshake. The C-foam refactor
+     won't fix this — the fusion is the serial inbox, not the object model.
+
+Hard coupling worth knowing: **§0-item-1 (gossip off the shared serial inbox) IS the SwarmGot
+ re-record.** Item 1 must land WITH a `Swarmation.g` rewrite that asserts on the `%IveGot` fact
+  appearing (**delivered**), not on the inbox `%req:unemit` being **booked** — which finally settles
+   the booked-vs-delivered question parked at `Peeroleum.g:665-674` AND greens `SwarmGot`
+    (`Swarm_compact_invite_todo.md` §5). So do not re-record `SwarmGot` off its current `state:redeeming`
+     red in isolation; it lands as one change with the gossip-off-lane fix. The 2026-08-29
+      `swarm_gossip_hi_ms` hi-boast throttle + the `Tribunal.g` backoff fix (§0-item-3, landed) are triage
+       that stop the *amplifier*; item 1 + item 4 are the root that stop the *starvation*.
+
+The deterministic reproduction of your freeze is `MusuNeGrind` (`Backpressure_todo.md` §0/§00) — the
+ missing composition test level where pull + radio + replicate + a handshake all share the beat at once.
+  Its load-bearing invariant, "the beat never overruns 600ms for N consecutive ticks," is exactly the
+   starvation your handshake hit.
+
 ## The diagnosis — one pipe, two layers
 
 The live incident (2026-08-29): a real album Heist over `wss://djamsend.duckdns.org:9999/relay` flooded the
@@ -163,3 +186,50 @@ The architecture was clearly built to run bulk over p2p DataChannels and to self
 - `Cluster_spec.md` — the relay/boot/channel map (§3.2b, §3.3). Front A's relay reality lives there.
 - The `swarm_gossip_hi_ms` throttle (2026-08-29, `Swarm.g` `Swarm_boast_on_hi`/`Swarm_hi_boast_cooling`) is
    the triage that bought time for Front C.
+
+---
+
+## Freeze-fix implementation plan — the SURGICAL BOUND (owner 2026-08-29: "freeze fix first, surgical bound")
+
+The owner is hitting **10–20s** whole-UI freezes (not 0.1s) under a live `repli_page` flood (`7950f300 → eed`). Design-team intake done; owner's calls: **freeze-fix before the cell/foam rebuild; surgical bound before the full item-4 data-plane separation; verify on a live runner (owner leaves a tab up).** This is the grounded plan for the Opus implementation slog.
+
+### The corrected root (read the code, 2026-08-29)
+
+- `Peeroleum_rollup_faulty` is **NOT** the live melt any more — it was gated O(1) on 2026-08-05 (`Peeroleum.g:1158`: `if (!pier.c.faulty_owed && !faulty0) return`). The O(N²) comments around it (`:692,815,1145`) describe the *cured* old behaviour. Do not "fix" it again.
+- The **live O(depth)** is `Peeroleum_book_unemit` (`Peeroleum.g:800`): `let ureq = inbox.oai(usc)` — `oai` scans the inbox's children to find/create the `{req:'unemit',seq,type}`, so it is **O(inbox-depth) per booked frame**.
+- Under a **sustained** flood, `Peeroleum_bound_safe` (`:764,792`) only culls **served/finished** reqs into the `%inbox/recent` ledger; **in-flight (un-served) unemits accumulate**, so the inbox depth stays high, every `oai` stays O(depth), and booking N frames is **O(N²) under the beliefs mutex** → one tick holds the loop for the 10–20s = dead UI.
+
+### The bound (do the least, keep the guards)
+
+Three candidate cuts, in preference order; the slog picks/combines after reading `Backpressure_todo.md §0/§00/§5.6`:
+
+1. **O(1) booking (highest leverage, most delicate).** By the time `Peeroleum_book_unemit` runs, the **inseq gate above it** (`:748-762`, `inseq_admit`) has already rejected `seq ≤ last` (re-ack, never re-book) and holds gaps — so a frame that reaches booking is **new by construction**. That means the `oai` find is provably a miss and can be a **direct create** (or an O(1) `.c` seq→req index), turning booking O(1). ⚠ THE GUARD THIS MUST NOT BREAK (`:800`-block comment): the reused-seq collision check re-acks off a **standing FINISHED `%req:unemit`** (the "already served" memory) to stand a sender's retry down instead of re-dispatching (a 2nd `hear_trust`/`dock_push` is the corruption at stake). That memory now lives in the `%inbox/recent` **ledger** (`Peeroleum_served_before`), so O(1) booking is safe **only** if the dup-detection reads the ledger, not a live `oai` over the inbox. Verify `Peeroleum_served_before` covers every path the old `oai` dedup did before switching.
+2. **Cap in-flight depth WITHOUT dropping bytes.** The 2000-frame backstop drops real bytes (the doc's Front B sin). Instead, when in-flight depth crosses a threshold, **stop ACKing** so the sender's window closes — flow control, not amputation. This is the seam the **already-written, default-off self-clocking window** (`Ra_clock_arm`/`Ra_clock_issue`, `heist_selfclock`/`heist_window`, item 5) plugs into; turning it on may be most of this cut.
+3. **Time-box the drain per mutex hold.** Bound `inbox.do()` to ~M ms (or N frames) per belief tick, then release + `feebly_ponder()` to resume — so no single tick can overrun the MusuNeGrind invariant ("the beat never overruns 600ms for N consecutive ticks"). Safest as a backstop *on top of* (1); on its own it bounds the freeze without curing the O(depth).
+
+### Verify (owner leaves a runner tab up)
+
+- **Reproducer:** `MusuNeGrind` (`Backpressure_todo.md §0/§00`) — the missing composition level where pull+radio+replicate+handshake share the beat; its invariant IS the freeze. Build/run it on the **live runner** (`scripts/runner_ask.mjs run MusuNeGrind --watch`), never headless.
+- **Regression net:** `SwarmSpread` 5/5, `SwarmStaple` 8/8 — **N≥5 re-runs** (a bounded drain is a timing change; races only show across runs, Coding_guide:54-57). Exclude the `SwarmGot`/`SwarmWire` red — it is the OTHER (ive_got/Tribunal) thread's territory (`Focus_todo` bomb note), and item 1 (gossip off-lane) is coupled to its `SwarmGot` re-record; **do not touch gossip/ive_got here.**
+- **Live feel:** the owner clicks during a flood — the ~10–20s dead windows must be gone (bounded to one tick's budget).
+
+### Risk
+
+HIGH — the beliefs mutex + the inbox dedup guard. Cut (1) must preserve the reused-seq/served-before memory exactly (corruption = a re-dispatched `hear_trust`). Keep files disjoint from the cell/foam track (which touches `Ghost.svelte`/`Cyto*`/`Vytui`/`vyto_*`/`package.json` only — zero overlap, confirmed).
+
+### LANDED 2026-08-29 (live-runner verified): the monotonic-seq fast path
+
+Implemented in `Ghost/N/Peeroleum.g` (Peeroleum_deliver reliable path + Peeroleum_book_unemit). A frame whose
+ `seq > pier.c.hiseq` is provably new (per-pier monotone counter), so it skips BOTH O(depth) scans
+  (Peeroleum_served_before + the book_unemit `oai` find) and creates the unemit directly; `seq ≤ hiseq` falls to
+   the unchanged slow-path reused-seq guard.  `hiseq` is off-snap `.c`.
+- **THE GOTCHA (cost a red MusuNeGrind, then fixed):** plain `inbox.i(usc)` is NOT equivalent to `inbox.oai(usc)`
+   for a `%req` — `oai`'s named-req branch (Stuff.svelte.ts:693-697) stamps `req.c.up = host` + `req.c.initialdo = 1`
+    AFTER the create, and `i()` skips it, so `req_unemit` throws at `(req.c.up).finish(req)` (undefined) and the
+     unemit stalls `done`-but-never-`finished`.  Fix: replicate those two `.c` stamps in the fresh branch.  If you
+      ever fast-create another kind of req, remember: `i()` gives you the particle, NOT the req-pump wiring.
+- **Verified on the LIVE runner (e747):** MusuNeGrind (the freeze reproducer) GREEN 2/2 (baseline was green, my
+   first buggy pass went red 0.18 — the diff is what caught the `.finish` throw); SwarmSpread 5/5 (caveat 1 =
+    baseline), SwarmStaple 8/8.  Recommend a couple more MusuNeGrind runs for full N≥5 race confidence.
+- **Still open (the deeper cuts, not needed for this freeze):** flow-control stop-ACK (item 5 self-clock window)
+   and item 1 gossip-off-lane (other thread's SwarmGot).  This fast path alone should end the 10-20s freeze.
