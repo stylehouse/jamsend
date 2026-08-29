@@ -15,7 +15,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '0c50e83958e91ff1~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'f170188bf1a9edc2~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1477,9 +1477,16 @@ async Swarm_station_up(w, ident) {
             if (!sweep_top.c.ferry_secret && sweep_top.stashed && sweep_top.stashed.ferry_pending_secret) {
                 sweep_top.c.ferry_secret = sweep_top.stashed.ferry_pending_secret.secret
             }
-            if (sweep_top.c.humdinger && !sweep_top.c.ferry_confirm && !sweep_top.c.ferrying && !sweep_top.c.ferry_pending) {
-                sweep_top.c.ferry_confirm = { pub: String(livecave.sc.pub), name: String(livecave.sc.friendly || ''), at: this.Swarm_now(w) }
-                console.log('🦑 ferry: rehealed the adopt-confirm at standup — a Cave is still sealed and awaiting my give')
+            // ⚠ NO CONFIRM RE-PARK AT STANDUP (owner 2026-08-29: "giving your soul to Gag ● online even though Gag is
+            //  totally not online … we have 6 Piers we tried to link to").  A %Grant:MyCave PERSISTS for every device
+            //   ever linked (or half-linked in a failed test), so picking "the first live MyCave pier" and re-parking a
+            //    confirm off it at boot offered your soul to whichever stale cave sorted first — never demand.  A confirm
+            //     is now DEMAND-DRIVEN ONLY: it parks when a Linkee actually asks (ferry_want → Swarm_ferry_on_seal), so
+            //      eed only ever offers its soul to a device that is asking for it RIGHT NOW.  A live Linkee re-asks every
+            //       ~3s, so a genuine reloaded ceremony re-parks within a pulse (task #23 still holds); a stale cave that
+            //        isn't asking parks nothing.  We keep only the secret rehydration above (the human's own sticky mint).
+            if (sweep_top.c.humdinger && !sweep_top.c.ferry_confirm) {
+                console.log('🦑 ferry: sealed MyCave grant(s) survive a reload — NOT re-parking a confirm at boot; a "give your soul" appears only when a device actively asks')
             }
         }
         // REHYDRATE a Linkee's "connecting" across reload: ferry_awaiting is .c (lost on reload) but its durable
@@ -4579,6 +4586,9 @@ async Swarm_ferry_link(w, soulIdent, base) {
     let secret = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
     let top = this.top_House ? this.top_House() : null
     if (top && top.c) { top.c.ferry_secret = secret }
+    // a fresh mint is a deliberate "I want to link a device NOW" — REINVITE everyone (clear prior UnInvites) so
+    //  a peer the human previously said "no" to isn't silently barred from this new ceremony.
+    if (top && this.Swarm_ferry_reinvite) { this.Swarm_ferry_reinvite(top) }
     // DURABLE TWIN (reload-resilience): the secret also rides the auto-saved top-House stash, keyed for the
     //  one pending ceremony, so a reload BETWEEN mint and seal rehydrates it (the pump-retry + on_seal both
     //   fall back to it).  Without this, reloading the soul device mid-ceremony orphaned the #fc the other
@@ -4663,10 +4673,22 @@ Swarm_ferry_poke(w) {
     if (!secret) { return 0 }
     let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
     if (!ident) { return 0 }
-    let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => this.Swarm_pier_live(p, 'MyCave'))
+    // ⚠ WARMTH + UNINVITE GATE (owner 2026-08-29: "giving your soul to and ○ offline … peer's name is 'and'").  This
+    //  poke fires on EVERY version-bump while a secret is live, and it used to pick the FIRST grant-live MyCave pier —
+    //   but a %Grant:MyCave persists for every device ever (half-)linked, so it grabbed a stale OFFLINE cave and parked
+    //    a phantom "give your soul" to it (then link_fresh refused, spamming the COLD log).  A Cave has only truly
+    //     "turned up, ready for my confirm" when it is PRESENT: heard_at within 45s.  Grant alone is not presence, and
+    //      an UnInvited cave is barred.  So a fresh mint parks NOTHING until a real device redeems + dials (warm), at
+    //       which point on_seal/this poke park it for real.
+    let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => {
+        if (!this.Swarm_pier_live(p, 'MyCave')) { return 0 }
+        if (this.Swarm_ferry_uninvited && this.Swarm_ferry_uninvited(top, String(p.sc.pub || ''))) { return 0 }
+        let ha = p.c ? p.c.heard_at : 0
+        return ha && (Date.now() - ha) < 45000 ? 1 : 0
+    })
     if (!pier) { return 0 }
     top.c.ferry_confirm = { pub: String(pier.sc.pub), name: String(pier.sc.friendly || ''), at: this.Swarm_now(w) }
-    console.log('🦑 ferry: a Cave pier is live — parked the confirm from the cell (QR → give my soul)')
+    console.log('🦑 ferry: a WARM Cave pier turned up — parked the confirm from the cell (QR → give my soul)')
     return 1
 },
 // Swarm_ferry_park — the NEW DEVICE heard the sealed account: park it for the human's consent (the UI has
@@ -4739,35 +4761,87 @@ Swarm_link_active(w) {
     return top.c.ferry_secret || top.c.ferry_pending || top.c.ferry_confirm || top.c.ferry_awaiting || durable ? 1 : null
 },
 // Swarm_link_fresh — is the ceremony fresh enough to SEIZE THE SCREEN?  Swarm_link_active answers "any ferry
-//  state present", which is right for durable persistence but WRONG for grabbing focus: a reload rehydrates
-//   `ferry_awaiting` from its durable twin even when the soul device is long gone, and that corpse was both
-//    seizing the glass ("linking this device intrudes for no reason" — owner 2026-08-29) and machine-gunning
-//     ferry_want.  This is the SCREEN-decision twin: identical to link_active for Books / non-live tabs (no
-//      humdinger → fixtures byte-identical) and for the Linkor's own standing intent (ferry_secret/confirm) and
-//       a landed decision (ferry_pending); it only DOWNGRADES an awaiting-ONLY ceremony whose soul pier has gone
-//        quiet.  A live reload re-warms heard_at within a pulse (~5s) and re-surfaces on its own; a dead one
-//         never does, so it stays reachable via the Door but stops hijacking the screen.
+//  state present", which is right for durable persistence but WRONG for grabbing focus.  THE UNUSABLE BUG
+//   (owner 2026-08-29, testing live): a boot went straight into "giving your soul to ○ <peer>" where the peer
+//    was the first Pier in the list, OFFLINE FOR AGES.  Two rot sources: (a) `Swarm_pier_live(p,'MyCave')` is a
+//     GRANT check with no presence, so a %Grant:MyCave from a ceremony days ago still reads "live" and the
+//      standup reheal re-parks `ferry_confirm` off that corpse; (b) this fn only gated the AWAITING (Linkee)
+//       side, so a stale `ferry_confirm` (Linkor) hit `return 1` and ALWAYS grabbed the screen.  Fix: a
+//        ceremony seizes the screen ONLY while its counterparty pier is WARM — actually heard_at-recent or
+//         socket-fresh — never on grant alone.  A live reload re-warms heard_at within a pulse (~5s) and
+//          re-surfaces on its own; a dead one never does, so it stays reachable via the Door but stops
+//           hijacking.  UNINVITE: a pub the human said "no" to never re-seizes until a fresh mint / Door-open.
+//   Still identical to link_active for Books / non-live tabs (no humdinger → fixtures byte-identical).
 Swarm_link_fresh(w) {
     let active = this.Swarm_link_active(w)
     if (!active) { return active }
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c || !top.c.humdinger) { return active }
-    let onlyAwaiting = top.c.ferry_awaiting && !top.c.ferry_confirm && !top.c.ferry_pending && !top.c.ferry_secret && !(top.stashed && top.stashed.ferry_pending_secret) ? 1 : 0
-    if (!onlyAwaiting) { return 1 }
+    // the RECEIVER's landed account (ferry_pending) always deserves the screen: it's HERE and needs the
+    //  human's #fc consent — there is no counterparty-presence question to ask.
+    if (top.c.ferry_pending) { return 1 }
     let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
-    if (!ident) { return active }
-    let soul = String(top.c.ferry_awaiting.soul || '')
-    let piers = this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []
-    let pier = null
-    if (soul) {
-        pier = piers.find((p) => { let pp = String(p.sc.pub || ''); return pp && (pp === soul || pp.startsWith(soul) || soul.startsWith(pp)) ? 1 : 0 })
-    } else {
-        if (piers.length === 1) { pier = piers[0] }
+    let piers = ident ? (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) : []
+    // warm(pub) — is the pier we'd transact with ACTUALLY PRESENT?  ONLY per-pier `heard_at` (a voucher-checked
+    //  frame from THEM in the last 45s) counts as positive presence.  ⚠ NOT Swarm_socket_fresh — it ignores its
+    //   `p` arg and reads the GLOBAL relay-wire stamp (its own contract: "never as positive per-pier evidence"),
+    //    so ORing it in made every pier read warm whenever our relay was chatty → "giving your soul to Gag ●
+    //     online" for a peer that is not there (owner 2026-08-29).  Grant-liveness is likewise NOT accepted.
+    let warm = (pub) => {
+        if (!pub) { return 0 }
+        let p = piers.find((q) => { let qp = String(q.sc.pub || ''); return qp && (qp === pub || qp.startsWith(pub) || pub.startsWith(qp)) ? 1 : 0 })
+        if (!p || !p.c) { return 0 }
+        let ha = p.c.heard_at || 0
+        return ha && (Date.now() - ha) < 45000 ? 1 : 0
     }
-    if (!pier) { return active }
-    let ha = pier.c ? pier.c.heard_at : 0
-    if (ha && (Date.now() - ha) < 45000) { return 1 }
+    // SOUL side, "giving your soul": only seize while the Cave we'd give to is warm, and never for a pub the
+    //  human already UnInvited (clicked "no" on — it stays reachable via the Door but won't hijack again).
+    // ⚠ NO console.log in these branches — link_fresh is read on EVERY version-bump, so a log here MACHINE-GUNS the
+    //  console (owner 2026-08-29 saw dozens of "COLD" lines/sec).  The decision is silent; the poke/on_seal warmth
+    //   gate is what keeps a cold confirm from being parked in the first place.
+    if (top.c.ferry_confirm) {
+        let cpub = String(top.c.ferry_confirm.pub || '')
+        if (this.Swarm_ferry_uninvited && this.Swarm_ferry_uninvited(top, cpub)) { return null }
+        return warm(cpub) ? 1 : null
+    }
+    // RECEIVER awaiting the soul ("connecting…"): only while the soul pier is warm (and not UnInvited).
+    if (top.c.ferry_awaiting) {
+        let soul = String(top.c.ferry_awaiting.soul || '')
+        if (this.Swarm_ferry_uninvited && this.Swarm_ferry_uninvited(top, soul)) { return null }
+        let target = soul
+        if (!target && piers.length === 1) { target = String(piers[0].sc.pub || '') }
+        return warm(target) ? 1 : null
+    }
+    // SOUL side, a bare unspent secret (minted QR nobody has sealed yet): this is the human's OWN standing
+    //  intent, but with no counterparty it must NOT auto-seize on boot — the lobby (top.c.link_lobby, set when
+    //   the human opens Door → Link) keeps a FRESHLY-minted QR up; a leftover from a past session stays a
+    //    reachable "link in flight" on the Door without grabbing the screen.  on_seal re-parks a confirm the
+    //     instant a real Cave seals, and THAT (warm) re-surfaces it.
     return null
+},
+// Swarm_ferry_uninvite / _uninvited / _reinvite — the UnInvite (owner 2026-08-29: a ceremony "keeps hijacking
+//  us until we click no, then will refuse to get distracted by that same thing").  When the human clicks "no",
+//   we stamp the counterparty pub into a durable decline set on `top.stashed` (survives reload, `.c` doesn't).
+//    Swarm_link_fresh consults it so that same pub — even if it re-warms — never re-SEIZES the screen; it stays
+//     reachable via the Door.  A deliberate re-engagement (a fresh mint, or opening Door → Link) REINVITES
+//      everyone (clears the set) — the human is asking for it now.  Humdinger-gated so a Book never records one
+//       (and link_fresh short-circuits for no-humdinger anyway → fixtures untouched).  Keyed by a stable pub
+//        prefix so it matches the same startsWith/prefix piers link_fresh's warm() matches.
+Swarm_ferry_uninvite(top, pub) {
+    if (!top || !pub || !top.c || !top.c.humdinger || !top.stashed) { return 0 }
+    let u = top.stashed.uninvited || {}
+    u[String(pub).slice(0, 24)] = Date.now()
+    top.stashed.uninvited = u
+    console.log('🦑 ferry: UnInvited ' + String(pub).slice(0, 8) + '… — it will not seize the screen again until you re-open Link')
+    return 1
+},
+Swarm_ferry_uninvited(top, pub) {
+    if (!top || !pub || !top.stashed || !top.stashed.uninvited) { return 0 }
+    return top.stashed.uninvited[String(pub).slice(0, 24)] ? 1 : 0
+},
+Swarm_ferry_reinvite(top) {
+    if (top && top.stashed && top.stashed.uninvited) { delete top.stashed.uninvited; console.log('🦑 ferry: reinvited — cleared prior UnInvites for a fresh link'); return 1 }
+    return 0
 },
 // Swarm_ferry_cancel — the human's "call off this link" (the Link cell's reset button).  Clears every trace
 //  of an in-flight device-link on THIS tab: the soul's unspent secret (live seam + durable twin) and any
@@ -4782,6 +4856,9 @@ Swarm_ferry_cancel(w) {
     //    (a Book calls cancel as a local test artifact and has no humdinger — so this stays Book-inert, no fixture
     //     frame).  A Linkee cancelling holds no ferry_secret/confirm, so the guard below finds no grantor pier and
     //      it simply gives up locally.
+    // capture the counterparty BEFORE we clear, so "no" can UnInvite it (a decline that also refuses to be
+    //  re-hijacked by the same peer — the whole point of pressing no on a peer that keeps coming back).
+    let un_pub = top.c.ferry_confirm ? String(top.c.ferry_confirm.pub || '') : (top.c.ferry_awaiting ? String(top.c.ferry_awaiting.soul || '') : '')
     let ct_ident = this.Swarm_live_self ? this.Swarm_live_self() : null
     if (top.c.humdinger && ct_ident && (top.c.ferry_confirm || top.c.ferry_secret || (top.stashed && top.stashed.ferry_pending_secret))) {
         let want = top.c.ferry_confirm ? String(top.c.ferry_confirm.pub) : null
@@ -4797,6 +4874,7 @@ Swarm_ferry_cancel(w) {
     delete top.c.ferry_confirm
     delete top.c.ferry_awaiting
     if (top.stashed) { delete top.stashed.ferry_pending_secret; delete top.stashed.ferry_awaiting }
+    if (un_pub) { this.Swarm_ferry_uninvite(top, un_pub) }
     console.log('🦑 ferry: link cancelled — cleared the pending secret and any parked account')
     return 1
 },
@@ -4861,10 +4939,19 @@ async Swarm_ferry_consume(w, code, accept) {
     if (!top || !top.c) { return null }
     // the awaiting/"connecting" marker is done either way (accept or decline) — clear its durable twin too, so a
     //  later reload never rehydrates a "connecting…" for a ceremony that already resolved.
+    let dsoul = top.c.ferry_awaiting ? String(top.c.ferry_awaiting.soul || '') : ''
     delete top.c.ferry_awaiting
     if (top.stashed) { delete top.stashed.ferry_awaiting }
     let pend = top.c.ferry_pending
-    if (!accept || !pend || !pend.frame) { delete top.c.ferry_pending; return null }
+    if (!accept || !pend || !pend.frame) {
+        // the human said "no" to becoming this soul's Cave: UnInvite it so the same soul can't re-hijack this
+        //  device into "receiving a soul" on the next pulse/reload (owner's "refuse to get distracted by that
+        //   same thing").  Falls back to the pending frame's soulpub if the awaiting marker was already gone.
+        let un = dsoul || (pend && pend.frame ? String(pend.frame.soulpub || '') : '')
+        if (!accept && un) { this.Swarm_ferry_uninvite(top, un) }
+        delete top.c.ferry_pending
+        return null
+    }
     let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
     let soul = ident ? await this.Swarm_ferry_heard(w, ident, pend.frame, code) : null
     delete top.c.ferry_pending

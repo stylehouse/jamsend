@@ -79,17 +79,22 @@
         return () => { cancelled = true }
     })
     let received = $state('')
+    // in-flight feedback (owner 2026-08-29: "we need more visual feedback about this, I'm sitting there waiting").
+    //  `taking` covers the receiver's unseal+import, `giving` the grantor's seal+ferry (set in do_confirm) — each
+    //   turns its button into a live "…doing it now" so the human is never staring at a dead screen mid-transfer.
+    let taking = $state(false)
     async function receive(yes: boolean) {
         err = ''
         try {
             if (!yes) { await H.Swarm_ferry_consume(world(), '', false); received = 'declined'; pending = null; return }
             const code = frag_code()
             if (!code) { err = 'no seal code in this link — open the exact QR link from your soul device'; return }
+            taking = true
             const soul = await H.Swarm_ferry_consume(world(), code, true)
             received = soul ? 'you are now a body of that soul — it lives on this device too' : 'could not join (wrong code, or the seal failed)'
             pending = null
             if (soul) finalize_url(soul)
-        } catch (e) { err = String(e) }
+        } catch (e) { err = String(e) } finally { taking = false }
     }
     // CEREMONY COMPLETE — the device is now the soul.  Drop the spent ?Iz + #fc we KEPT through the ceremony
     //  (InvitePanel leaves a MyCave link in the bar until here, so a reload mid-adopt resumes from the URL), and
@@ -108,14 +113,20 @@
     // ── LINK — the soul device mints the invite+ferry link and shows its QR ─────────────────────────
     let url = $state('')
     const qr_size = 180   // the QR sits in the top-left quarter of the beige oblong (a fixed first cut)
+    // `minting` gives the "link a device" button immediate feedback while Swarm_ferry_link runs (it mints an
+    //  invite + signs a ferry secret — a crypto beat that made the button feel dead/"unclickable", owner
+    //   2026-08-29).  Guard against a double-mint too (a second click mid-await would mint a second link).
+    let minting = $state(false)
     async function link() {
+        if (minting) return
         err = ''
+        minting = true
         try {
             const w = world()
             if (w && typeof H.Swarm_station_up === 'function' && H.Swarm_station_up(w, self)) stood = true
             url = await H.Swarm_ferry_link(w, self, location.origin + location.pathname)
             if (!url) err = 'no live identity yet — wait a moment and retry'
-        } catch (e) { err = String(e) }
+        } catch (e) { err = String(e) } finally { minting = false }
     }
 
     const short = (s: string) => (s ? String(s).slice(0, 8) : '')
@@ -165,13 +176,15 @@
         //     (poke self-guards on `ferrying` and needs a secret, so it's a no-op on the Linkee and mid-send.)
         try { if (url || H?.Swarm_link_active?.(world())) H?.Swarm_ferry_poke?.(world()) } catch {}
     })
+    let giving = $state(false)
     async function do_confirm() {
         err = ''
+        giving = true
         try {
             const ok = await H?.Swarm_ferry_confirm?.(world())
             if (ok) { sent = 'linked'; url = '' }
             else err = 'could not send — the device may have dropped; try again, or cancel'
-        } catch (e) { err = String(e) }
+        } catch (e) { err = String(e) } finally { giving = false }
     }
 
     // ── PRESENCE — is the OTHER device actually THERE right now? ─────────────────────────────────────
@@ -288,10 +301,14 @@
             {:else}
                 <p class="ld-sas ld-sas-wait">···</p>
             {/if}
-            <div class="ld-row">
-                <button class="ld-go" onclick={() => receive(true)} disabled={!sas || !has_code}>receive this soul</button>
-                <button class="ld-cancel-b" onclick={() => receive(false)}>no</button>
-            </div>
+            {#if taking}
+                <div class="ld-working"><span class="ld-spin"></span> unsealing the account and taking it on…</div>
+            {:else}
+                <div class="ld-row">
+                    <button class="ld-go" onclick={() => receive(true)} disabled={!sas || !has_code}>receive this soul</button>
+                    <button class="ld-cancel-b" onclick={() => receive(false)}>no</button>
+                </div>
+            {/if}
         </div>
     {:else if confirm}
         <!-- LINKOR, "giving" — the mirror of the Linkee's "receiving". -->
@@ -303,10 +320,14 @@
             {:else}
                 <p class="ld-sas ld-sas-wait">···</p>
             {/if}
-            <div class="ld-row">
-                <button class="ld-go" onclick={do_confirm} disabled={!sas}>give my soul</button>
-                <button class="ld-cancel-b" onclick={cancel_link}>no</button>
-            </div>
+            {#if giving}
+                <div class="ld-working"><span class="ld-spin"></span> sealing your soul and ferrying it across…</div>
+            {:else}
+                <div class="ld-row">
+                    <button class="ld-go" onclick={do_confirm} disabled={!sas}>give my soul</button>
+                    <button class="ld-cancel-b" onclick={cancel_link}>no</button>
+                </div>
+            {/if}
         </div>
     {:else if sent}
         <div class="ld-face">
@@ -347,8 +368,9 @@
             </p>
         {/if}
         <div class="ld-face">
-            <button class="ld-link" onclick={link} disabled={!self}
-                title="copy this account to another device as a Cave">🔗 link a device</button>
+            <button class="ld-link" onclick={link} disabled={!self || minting}
+                title="copy this account to another device as a Cave">
+                {#if minting}<span class="ld-spin"></span> minting a link…{:else}🔗 link a device{/if}</button>
             {#if link_active}
                 <div class="ld-pending">you have a device link in progress
                     <button class="ld-cancel-b" onclick={cancel_link}>cancel it</button></div>
@@ -402,6 +424,11 @@
        confirm button stays disabled until it lands, so you can't approve before you can check). */
     .ld-sas-wait { opacity: .6; font-style: italic; }
     .ld-deal b { color: #ffcf70; }
+    /* in-flight feedback (owner: "I'm sitting there waiting") — a live spinner + sentence while the seal/unseal
+       and ferry happen, so neither end stares at a dead button mid-transfer. */
+    .ld-working { display: flex; align-items: center; gap: .5rem; margin-top: .3rem; font-weight: 600; color: #d98a00; }
+    .ld-spin { width: .85rem; height: .85rem; border: 2px solid rgba(217,138,0,.3); border-top-color: #d98a00; border-radius: 50%; display: inline-block; animation: ld-spin 700ms linear infinite; }
+    @keyframes ld-spin { to { transform: rotate(360deg); } }
     .ld-row { display: flex; align-items: center; gap: .8rem; margin-top: .2rem; }
     .ld-go { background: #d98a00; color: #000; font-weight: 700; border: none; border-radius: .4rem; padding: .45rem 1rem; cursor: pointer; }
     .ld-go:disabled { opacity: .4; cursor: default; }

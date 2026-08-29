@@ -579,13 +579,21 @@
     // adopt_from — is this pasted text a LINK-A-DEVICE (?Adopt=) link?  A device-adoption is a different
     //  act from a friend invite (it shares your identity, not a Pier), so pasting one here does NOT redeem
     //   as a friend — it routes to the adoption LAND face (the bodily warning + the live SAS).  Empty if not.
+    //  SANITY: a device link is a whole URL the copy button minted (origin + path + ?Adopt=…), so we accept
+    //   ONLY a well-formed absolute URL carrying an `Adopt` param — no loose `[?&]Adopt=` regex on arbitrary
+    //    text (owner 2026-08-29: "more sanity about URL-formed-s only … we should let that throw").  A non-URL
+    //     simply fails `new URL` and is not an adopt link; the throw IS the sanity check.  Silent (returns '')
+    //      so the per-keystroke paste_try stays quiet; the LOUD path (paste_load) tells a malformed one apart.
     function adopt_from(text: string): string {
         const s = String(text || '').trim()
         if (!s) return ''
         try { const p = new URL(s).searchParams.get('Adopt'); if (p) return p } catch {}
-        const m = s.match(/[?&]Adopt=([^&\s]+)/)
-        if (m) return decodeURIComponent(m[1])
         return ''
+    }
+    // looks_adopt — the text is TRYING to be a device link (mentions Adopt=) but adopt_from rejected it (not a
+    //  proper URL).  Lets the loud paste_load flag it instead of silently mis-routing it as a friend token.
+    function looks_adopt(text: string): boolean {
+        return /[?&#]Adopt=/.test(String(text || ''))
     }
     // the QUIET twin of paste_load, run on every keystroke: identical accept path, but it never
     //  writes an error and never clears one the loud path put there.  Silence is the whole contract —
@@ -610,6 +618,8 @@
         //  shares your identity, so it must land on the warned + SAS-checked screen, not seal quietly.
         const ad = adopt_from(paste)
         if (ad) { try { window.location.href = location.origin + location.pathname + '?Adopt=' + encodeURIComponent(ad) } catch { paste_err = 'could not open the device link' }; return }
+        // a malformed device link (has Adopt= but isn't a proper URL): flag it rather than mis-routing to friend redeem.
+        if (looks_adopt(paste)) { paste_err = 'that device link looks broken — paste the whole URL (it should start with http…)'; return }
         const tok = iz_from(paste)
         if (!tok) { paste_err = 'paste an invite link (or its ?Iz token)'; return }
         const t = H?.Swarm_token_parse?.(tok)

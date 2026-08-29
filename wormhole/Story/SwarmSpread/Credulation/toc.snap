@@ -1,5 +1,5 @@
 Credulation,of_Book:SwarmSpread
-  run=0,at=1787953854.743,ok,ok_pct,mode:check
+  run=0,at=1787964271.314,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:d1a9035cc3a23a8c~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1
@@ -23,11 +23,11 @@ Credulation,of_Book:SwarmSpread
     uses:Ghost_Story_Heistation,dige:14e01eac2f9a4979~g1
     uses:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
     uses:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1
-    uses:Ghost_S_Swarm,dige:0c50e83958e91ff1~g1
+    uses:Ghost_S_Swarm,dige:bafadc6ebfc86d3c~g1
     uses:Ghost_Story_Swarmation,dige:e64cdf4b7f3d19c2~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_V_Vyto,dige:70b6a54be3abb0a8~g1
     uses:Ghost_V_Vytonation,dige:4b115424532783d7~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
-    uses:Ghost_Story_Sounditron,dige:546377c363a68435~g1
+    uses:Ghost_Story_Sounditron,dige:670151d53d0cffec~g1
     uses:Ghost_O_Supervisor,dige:502a01f7da7e4b14~g1

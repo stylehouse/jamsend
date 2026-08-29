@@ -344,12 +344,11 @@
            above returns 🚪 and never reaches this. -->
     {#if face.prepub}
         <div class="df-panel"><InvitePanel {H} inglass /></div>
-        <!-- LINK A DEVICE — a doorway to the ceremony's OWN surface, not a belly cell (owner 2026-08-29: the
-             ceremony "straddled both" focus machines).  Pressing this raises the LinkSurface overlay via
-             Sounditron_link_open (top.c.link_lobby); the ceremony no longer lives in the glass belly, so it
-             can't render as a ¼-box.  You leave it by the surface's ✕. -->
+        <!-- LINK A DEVICE — opens the Link ceremony as a BELLY CELL (owner 2026-08-29 reversed the FaceSucker:
+             "I want a Cell").  Pressing this raises top.c.link_lobby via Sounditron_link_open (which also REINVITES
+             — clears any prior "no"), and Sounditron_commission surfaces the %Link belly cell; you leave it by "no". -->
         <button class="df-linkdev" onclick={() => H?.Sounditron_link_open?.()}
-            title="carry this account to another device — opens the Link Device surface, which you close with ✕">
+            title="carry this account to another device — opens the Link Device cell, which you dismiss with “no”">
             🔗 Link Device
         </button>
     {/if}

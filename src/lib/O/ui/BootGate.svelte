@@ -54,7 +54,12 @@
 </script>
 
 {#if !butler_up && !link_active && (disk_gated || (ac_wanted && !ac_via_brink))}
-    <FaceSucker altitude={77} fullscreen={true}>
+    <!-- altitude 2100 → z 2,100,000, ABOVE the tree Splash (2,000,000).  The splash now holds all the way to
+         the Radio beginning (owner 2026-08-29 "it should stretch all the way to the Radio beginning") instead of
+         fading itself out of OPEN SHARE's way, so the ONE compulsory boot gesture must punch THROUGH it — this is
+         the "OPEN SHARE embedded through the splash" the owner asked for, and the proper fix for the old regression
+         where the splash covered the tap and boot stalled (it no longer fades for open-share; it's out-layered). -->
+    <FaceSucker altitude={2100} fullscreen={true}>
         {#snippet content()}
             <!-- ONE standard gate, no situation talk (the human 2026-07-19: it's either needFSA
                  or needAC and naming either is noise — a nice app kids can use asks ONCE, warmly).

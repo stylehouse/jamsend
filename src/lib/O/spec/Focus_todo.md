@@ -84,6 +84,63 @@ A first, working slice of §3 shipped and Book-verified (SwarmSpread 5/5, SwarmS
   EVERY surface to read `screen.dominant` (below) is only partially wired (Splash reads it; Butler/BootGate
    still self-decide but now via `link_fresh`).  Receive-ack (task #21) still deferred.
 
+## 0.2 — the 2026-08-29 hour-out complaint sweep (owner testing live, "goddamn unusable")
+
+A barrage of live-testing complaints, gathered so none is lost.  The through-line under all of them:
+ **the Link ceremony seizes the screen when it must NOT, and can't be dismissed for good.**
+
+1. **BOOT-HIJACK into a DEAD peer (the unusable one).** On startup the tab goes straight into the
+    Linkor "giving your soul to ○ <peer>" — and the peer is the *first Pier in the list, offline for
+     ages, can't possibly be asking*.  ROOT: `Swarm_pier_live(p,'MyCave')` is a **grant** check with NO
+      presence — a `%Grant:MyCave` from a ceremony days ago still reads "live".  Standup REHEAL
+       (`Swarm.g` ~1406) re-parks `ferry_confirm` off that grant-live-but-dead cave, and
+        `Swarm_link_fresh` only gated the *awaiting* (Linkee) side, so a stale *confirm* (Linkor) hit
+         `return 1` and always grabbed the screen.  → **warmth-gate** (heard_at / socket_fresh) BOTH
+          confirm and awaiting; gate the reheal on warmth; log when a cold cave is skipped.
+2. **Cell, not FaceSucker.**  Overnight I pulled the ceremony OUT into a `LinkSurface` FaceSucker.
+    Owner reversed: *"I want a Cell, that keeps hijacking us until we click no, then will refuse to get
+     distracted by that same thing — make an UnInvite or something?"*  → revert to a belly Cell; add a
+      durable **UnInvite** (clicking "no" stamps a decline keyed by pub so that same ceremony can't
+       re-seize; a fresh mint / Door-open re-invites).
+3. **Mint lag.**  Minting a token "spawn[s] some action immediately that distracts us from being able
+    to even copy the link" — console: Repli rx storm, `tour detached op hung 128s — latch broken`,
+     Radio starve, `ive_got` seq spam.  The stale-live cave made on_seal instantly park a confirm on
+      mint → UI flipped to "giving your soul" before the QR could be copied.  Warmth-gate kills the
+       instant flip; the Repli/tour-latch storm is a separate perf thread to chase.
+4. **adopt_from sanity.**  `InvitePanel.adopt_from()` should only accept URL-formed `?Adopt=` text;
+    owner is fine letting a non-URL **throw** as a sanity check ("we should let that throw aye").
+5. **Splash reframe.**  The tree splash must NOT exit on "need to OPEN SHARE" or normal Supervisor
+    warmup — it should stretch to the **Radio beginning**.  OPEN SHARE (and anything else) embeds
+     THROUGH the splash.  And block pointer **fall-through** into the machine room behind it.
+6. **More visual feedback** at the receiving/consent step ("I'm sitting there waiting").
+7. **Security posture** — NOTED (memory `ferry-security-posture`): frames are author-guaranteed
+    (signed) but relay-READABLE; only the account is sealed via `#fc`.  Owner accepts it; the
+     generalizable fix if ever wanted is E2E-encrypting all unemit bodies to the receiver.
+
+### LANDED this pass (2026-08-29, hour-out) — Book-verified (SwarmSpread 5/5, SwarmStaple 8/8; every edited `.svelte` transforms 200)
+
+- **1 (boot-hijack): FIXED.**  `Swarm_link_fresh` now warmth-gates BOTH the confirm (soul) and awaiting (body)
+   sides — a ceremony seizes the screen only while its counterparty pier is heard_at-recent / socket-fresh, never
+    on grant alone.  The standup REHEAL only re-parks a confirm for a WARM cave (+ a cold-cave diagnostic log).
+     So a device offline for ages can no longer boot us into "giving your soul".
+- **2 (Cell not FaceSucker): DONE.**  `LinkSurface.svelte` deleted, its mount removed; the belly block in
+   `Sounditron_commission` surfaces %Link as a normal belly cell for live tabs and Books alike (one unified,
+    Book-inert path).  **UnInvite** added (`Swarm_ferry_uninvite/_uninvited/_reinvite`): pressing "no" stamps a
+     durable decline keyed by pub so the same peer can't re-seize; a fresh mint / Door-open REINVITES.
+- **3 (mint instant-hijack): the seize half is FIXED** by the warmth-gate (a cold cave's parked confirm no longer
+   grabs the screen, so the QR/copy stays reachable).  The Repli-download storm + `tour detached op hung 128s`
+    lag is a SEPARATE perf thread, not chased here (task #31).
+- **4 (adopt_from): DONE.**  URL-formed-only (dropped the loose `[?&]Adopt=` regex); a malformed device link is
+   flagged loudly in `paste_load` instead of mis-routed as a friend token.
+- **5 (splash): DONE.**  Holds over the whole boot (Butler/Supervisor warmup behind it) until the Radio beginning
+   (glass up + Butler lifted) or a boot gave-up; pointer-CATCHING (no machine-room fall-through); OPEN SHARE is
+    layered ABOVE it (BootGate altitude 77→2100) so it punches through instead of the splash fading for it.
+- **6 (receive feedback): improved** — a live spinner + sentence while the seal/ferry and unseal/import run.
+- **7 (security): NOTED** (memory `ferry-security-posture`).
+
+Still owed: a live PIXEL re-check of the belly Link cell (task #27 — the straddle root is gone, but eyes on it);
+ the mint-time Repli/tour-latch perf storm (#31); receive-ack (#21).
+
 ## 1. The focus-stealers (inventory — verify against the tree; some z-indices are from memory)
 
 Every surface that can command the whole viewport, what raises it, how it lifts, and its z:
