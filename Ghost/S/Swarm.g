@@ -1064,8 +1064,9 @@ Swarm_arm(w):
             //     folds its "connecting…" to the ended screen and its ask stops.  RACE-SAFE by the far guard:
             //      Swarm_ferry_cancelled only folds while ferry_awaiting is set, so a straggler ask racing a
             //       just-landed soul can't kill the ceremony (park deletes awaiting first).  NOT during ferrying
-            //        (wsec still set mid-send → this branch can't fire).  Humdinger-gated + wire-driven → Book-inert.
-            if ((!wsealed || !wsec || !wbound) && wtop && wtop.c && wtop.c.humdinger && from) {
+            //        (wsec still set mid-send → this branch can't fire).  Humdinger-gated OR consenter-gated
+            //         + wire-driven → Book-inert unless the Book raises top.c.consenter.
+            if ((!wsealed || !wsec || !wbound) && wtop && wtop.c && (wtop.c.humdinger || wtop.c.consenter) && from) {
                 if (!wtop.c.ferry_refused) { wtop.c.ferry_refused = {} }
                 let wref = String(from).slice(0, 24)
                 if ((Date.now() - (wtop.c.ferry_refused[wref] || 0)) > 30000) {
@@ -1112,6 +1113,22 @@ Swarm_arm(w):
                 if (gtop.bump_version) { gtop.bump_version() }
                 // 'got' is a pull phase — the ✓ done flip shows itself NOW (the phase verb's policy).
                 this.Swarm_ferry_phase(w2, 'got', { pub: String(from || ''), role: 'soul' })
+                // FACET D — the Captain FINALISES THE FAMILY ROSTER (the ferry path never did; only the old
+                //  adopt finalise rostered).  It takes its OWN %Body,role:Captain wearing the name this human
+                //   wrote at ITS name-gate (ident.sc.friendly), and notes the Cave that just acked — the
+                //    ferry_got carried the Cave's own body-key pub + chosen name (facet D hand-over above), so
+                //     the row is precise, not a guess off the shared soul pub.  Humdinger-gated OR
+                //      consenter-gated (Books never roster unless consenter is raised — that keeps facet-D
+                //       inert for existing Books; InvWalk's consenter puppet drives it).
+                if ((gtop.c.humdinger || gtop.c.consenter) && ident) {
+                    let capname = String(ident.sc.friendly || '')
+                    let cap = this.Swarm_body_take(ident, (this.Swarm_body_key(ident)?.pub || ident.sc.prepub), 'Captain', ident.sc.prepub)
+                    if (cap && capname) { cap.sc.name = capname }
+                    let cavepub = frame.swarm && frame.swarm.body ? String(frame.swarm.body) : ''
+                    let cavename = frame.swarm && frame.swarm.name ? String(frame.swarm.name) : ''
+                    if (cavepub) { this.Swarm_body_note(ident, cavepub, 'Cave', String(ident.sc.prepub) + '_1', cavename) }
+                    console.log('🦑 ferry: 🪪 family roster — I am Captain ' + (capname || '(unnamed)') + (cavename ? ', linked to Cave ' + cavename : ''))
+                }
             }
             console.log('🦑 ferry: ✓ the other device took the soul on — ceremony complete, link retired')
         }
@@ -1970,7 +1987,34 @@ async Swarm_hello(w, ident, frame):
         this.Swarm_deliver(w, ident, frame.page?.prepub, { kind: 'pier_reject', why: why, prepub: ident.sc.prepub })
         return null
     }
-    if (this.Swarm_iz_spent(f)) return deny('spent')
+    if (this.Swarm_iz_spent(f)) {
+        // A SPENT LINK THAT STILL "STANDS" HERE IS A DEAD QR (owner 2026-08-31: "it is rejecting the link I
+        //  copied").  A cave that redeemed-then-backed-out leaves the invite SPENT but the ferry secret standing —
+        //   the lobby keeps saying "you have a device link in progress", copy-link copies a link NOBODY can ever
+        //    redeem again, and every fresh tab that opens it lands exactly here.  When the spent hello names MY
+        //     standing ceremony's serial AND the redeemer holds no honoured MyCave grant (a reloading LIVE cave
+        //      does — its sealed pier survives in the ledger, so it must NOT retire the ceremony), the link is
+        //       provably dead: retire it whole so the UI falls back to "mint a fresh link".  Humdinger-gated →
+        //        Book-inert (fixtures untouched); self-heals the wedge the moment the dead link is tried.
+        let sptop = this.top_House ? this.top_House() : null
+        let spser = sptop && sptop.c ? String(sptop.c.ferry_serial || (sptop.stashed && sptop.stashed.ferry_pending_secret ? sptop.stashed.ferry_pending_secret.serial : '') || '') : ''
+        if (sptop && sptop.c && sptop.c.humdinger && spser && String(t.serial || '') === spser) {
+            let sppier = this.Swarm_peering(ident)?.o({ Pier: 1, pub: frame.page?.prepub })[0]
+            let splive = sppier && this.Swarm_pier_live(sppier, 'MyCave') ? 1 : 0
+            if (!splive) {
+                delete sptop.c.ferry_secret
+                delete sptop.c.ferry_serial
+                delete sptop.c.ferry_confirm
+                delete sptop.c.ferry_sent
+                if (sptop.stashed) { delete sptop.stashed.ferry_pending_secret; delete sptop.stashed.ferry_await_got }
+                sptop.c.ferry_ended = { by: String(frame.page?.prepub || ''), at: Date.now(), why: 'spent' }
+                if (sptop.bump_version) { sptop.bump_version() }
+                this.Swarm_ferry_phase(w, 'ended', { pub: String(frame.page?.prepub || '') })
+                console.log('🦑 ferry: the standing link is DEAD — its invite was already redeemed once and the redeemer holds no honoured grant. Retired it; mint a fresh link.')
+            }
+        }
+        return deny('spent')
+    }
     // chain policy (§6.3a): a chain invite is not spent on first claim — its first claimant becomes
     //  the tracked HOLDER (the tip), sealed as a normal friend below. A LATER redeem by a NON-holder
     //   is the chain GROWING: the newcomer holds the link the tip passed them, so mint a ReInvite and
@@ -2030,6 +2074,32 @@ async Swarm_accept(w, ident, frame):
 // Swarm_rejected — the inviter said no (spent|held|bad_grant…): surface it, nothing sealed.
 Swarm_rejected(w, ident, frame):
     this.Swarm_rebuff(ident, 'rejected_' + frame.why, frame.prepub)
+    // SPENT MEANS NEVER (Linkee side; owner 2026-08-31 "it is rejecting the link I copied").  The soul just told
+    //  us the invite this ceremony rides was already redeemed once.  With no sealed pier to fall back on the
+    //   ceremony can NEVER complete — the steady ask would only draw the generic "called off" cancel, a lie of
+    //    omission.  Fold NOW to an ended-with-why screen ("this link was already used").  Guard: a LIVE cave
+    //     reloading mid-ceremony also re-hellos into 'spent' (the URL still carries ?Iz), but its sealed pier
+    //      survived the reload in the ledger — if we still hold a live MyCave pier to this soul, stay in the
+    //       ceremony and let ferry_want revive it.  Matched on the rejecter so a stray reject can't fold an
+    //        unrelated adopt.
+    if (String(frame.why) === 'spent') {
+        let top = this.top_House ? this.top_House() : null
+        if (top && top.c && top.c.ferry_awaiting) {
+            let asoul = String(top.c.ferry_awaiting.soul || '')
+            let rp = String(frame.prepub || '')
+            let match = asoul && rp && (asoul === rp || asoul.startsWith(rp) || rp.startsWith(asoul)) ? 1 : 0
+            let rpier = match ? this.Swarm_peering(ident)?.o({ Pier: 1 }).find((p) => { let pp = String(p.sc.pub || ''); return pp && (pp === rp || pp.startsWith(rp) || rp.startsWith(pp)) }) : null
+            let rlive = rpier && this.Swarm_pier_live(rpier, 'MyCave') ? 1 : 0
+            if (match && !rlive) {
+                delete top.c.ferry_awaiting
+                if (top.stashed) { delete top.stashed.ferry_awaiting }
+                top.c.ferry_ended = { by: rp, at: Date.now(), why: 'spent' }
+                if (top.bump_version) { top.bump_version() }
+                this.Swarm_ferry_phase(w, 'ended', { pub: rp })
+                console.log('🦑 ferry: the link this tab opened was ALREADY USED once — it can never complete; folded to the ended screen (mint a fresh link on the soul device)')
+            }
+        }
+    }
 
 // Swarm_confirmed — the issuer hears pier_confirm: the redeemer's DEFERRED reciprocal (§6.3, the
 //  third frame; mirrors Swarm_reinvite_sealed). Only an ALREADY-SEALED redeemer may confirm —
@@ -4137,13 +4207,16 @@ Swarm_body_repost(ident, pub, holder):
     return body
 // Swarm_body_note — record ANOTHER of the soul's bodies (from roster replication or the LinkDevice
 //  roster hand-off). oai per vessel `pub`; never marks self.
-Swarm_body_note(ident, pub, role, address):
+Swarm_body_note(ident, pub, role, address, name):
     if (!pub) return null
     let peering = this.Swarm_peering(ident)
     let body = peering.oai({ Body: 1, pub: pub })
     body.c.up = peering
     if (role) body.sc.role = role
     if (address) body.sc.address = address
+    // the instance name (facet D — "the Name stays with the instance"): the far body's chosen name,
+    //  handed over the roster/ferry so the our-box can list "Captain Grav" / "Cave Guw".
+    if (name) body.sc.name = String(name)
     body.bump()
     return body
 // Swarm_body_roster — the soul's bodies (the division).
@@ -4598,12 +4671,14 @@ async Swarm_ferry_on_seal(w, soulIdent, pier):
     // secret from the live seam OR the durable twin (a reloaded ceremony has only the stash)
     let secret = (top.c ? top.c.ferry_secret : null) || (top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null)
     if (!secret) { return }
-    // GRANTOR CONSENT ON THE PIER (live end-user only).  The account is the crown jewels; a real person at a
-    //  humdinger tab confirms the exfiltration ON the adopting pier (Door), where the QR pulls them the instant
-    //   it turns up.  PARK the ask keyed to this pier and send NOTHING — Swarm_ferry_confirm does the one send.
-    //    A runner tab (no humdinger — every Book) has nobody to ask, so it sends straight through here:
-    //     SwarmSpread beat 5 (the-account-ferries-over) stays green by construction, no fixture churn.
-    if (top.c && top.c.humdinger) {
+    // GRANTOR CONSENT ON THE PIER (live end-user only, OR a Book that raises top.c.consenter for the
+    //  consent beat).  The account is the crown jewels; a real person at a humdinger tab confirms the
+    //   exfiltration ON the adopting pier (Door), where the QR pulls them the instant it turns up.  PARK
+    //    the ask keyed to this pier and send NOTHING — Swarm_ferry_confirm does the one send.
+    //    A runner tab (no humdinger, no consenter — every ordinary Book) has nobody to ask, so it sends
+    //     straight through here: SwarmSpread beat 5 (the-account-ferries-over) stays green by construction,
+    //      no fixture churn.  InvWalk raises consenter to drive the park→puppet-confirm path headlessly.
+    if (top.c && (top.c.humdinger || top.c.consenter)) {
         // ⚠ THE CHOKEPOINT WARMTH GATE (adversarial pass 2026-08-29): three callers reach here — the seal-seam
         //  (fresh redeem, warm by construction), the ferry_want hear (the pier JUST spoke, warm), and the RETRY
         //   PUMP (~1122), which picks its pier by GRANT alone and so could still park a phantom confirm for a
@@ -4781,8 +4856,9 @@ Swarm_ferry_park(w, ident, frame):
     //   which fires after the human here CONSENTS, so the Linkor's wait could not distinguish "sent into
     //    the void" from "delivered, their consent screen is up".  Tell it the sealed soul is HELD, right
     //     now, before any consent: the salt already names the soul (`<soulpub>:<mypub>`).  Humdinger-gated
-    //      (a Book's park stays local → fixtures untouched); rides the reliable outbox like ferry_got.
-    if (top && top.c && top.c.humdinger && frame && frame.salt) {
+    //      OR consenter-gated (a Book raising top.c.consenter can drive the ack in a test);
+    //       a plain Book stays local → fixtures untouched.  Rides the reliable outbox like ferry_got.
+    if (top && top.c && (top.c.humdinger || top.c.consenter) && frame && frame.salt) {
         let hsoul = String(frame.salt).split(':')[0]
         if (hsoul && ident) { try { this.Swarm_deliver(w, ident, hsoul, { kind: 'ferry_held', page: this.Swarm_page(ident) }) } catch (er) {} }
     }
@@ -5148,9 +5224,10 @@ async Swarm_ferry_consume(w, code, accept):
         if (!accept && un) {
             // TELL THE SOUL (the singular-adopt law): its "waiting for its received" must end on a screen, not
             //  hang — a ferry_cancel folds its ferry_sent (Swarm_ferry_cancelled, soul-side branch).  Humdinger-
-            //   gated: only a real person's "no" travels; a Book's local decline stays local.
+            //   gated OR consenter-gated: a Book raising top.c.consenter drives the cancel travel in a test;
+            //    a plain Book's local decline stays local.
             let dident = this.Swarm_live_self ? this.Swarm_live_self() : null
-            if (top.c.humdinger && dident) { this.Swarm_deliver(w, dident, un, { kind: 'ferry_cancel', page: this.Swarm_page(dident) }) }
+            if ((top.c.humdinger || top.c.consenter) && dident) { this.Swarm_deliver(w, dident, un, { kind: 'ferry_cancel', page: this.Swarm_page(dident) }) }
         }
         delete top.c.ferry_pending
         this.Swarm_ferry_phase(w, 'declined', {})
@@ -5217,7 +5294,14 @@ async Swarm_ferry_consume(w, code, accept):
             let ack_soul = dsoul || (pend.frame && pend.frame.salt ? String(pend.frame.salt).split(':')[0] : '')
             let ack_pier = (ack_soul ? ack_piers.find((p) => { let pp = String(p.sc.pub || ''); return pp && (pp === ack_soul || pp.startsWith(ack_soul) || ack_soul.startsWith(pp)) ? 1 : 0 }) : null)
                 || ack_piers.find((p) => this.Swarm_pier_live(p, 'MyCave'))
-            if (ack_ident && ack_pier) { this.Swarm_deliver(w, ack_ident, ack_pier.sc.pub, { kind: 'ferry_got' }) }
+            // FACET D — the ack HANDS THE CAVE'S INSTANCE OVER (owner: "Captain Grav and Cave Guw"): the
+            //  Captain's own roster can't know this new body's key or chosen name unless we tell it, so the
+            //   ferry_got carries `body` (the Cave's own body-key pub, distinct from the shared soul pub) and
+            //    `name` (what THIS human wrote at THIS device's name-gate — the pre-ferry ident's friendly).
+            //     The Captain notes it as a %Body,role:Cave; friends still see the one soul.
+            let ack_bodypub = soul.c && soul.c.bodykey ? String(soul.c.bodykey.pub || '') : ''
+            let ack_name = String(ident.sc.friendly || '')
+            if (ack_ident && ack_pier) { this.Swarm_deliver(w, ack_ident, ack_pier.sc.pub, { kind: 'ferry_got', body: ack_bodypub, name: ack_name }) }
         } catch (er) {}
     }
     return soul

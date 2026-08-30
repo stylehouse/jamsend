@@ -377,6 +377,18 @@
     //    once per ~20 to stay off the console-flood pedal; the mk list shows exactly what the glass is drawing.
     let cell_scan_n = 0
     let cell_scan_last = 0
+    // CELL-SET STORM CIRCUIT-BREAKER — the set-level twin of set_main's breaker below (owner 2026-08-31,
+    //  "notice when it's doing it and arrest it somehow"): freezing main_key alone did NOT stop the Door
+    //   mount/destroy storm, because the {#each} keys off the cell SET — a Link cell toggling in/out of
+    //    the grapple (link_active flapping under two fighting authorities) remounts every face even with
+    //     main frozen.  Same law as set_main: no legitimate change reshapes the set >8×/s; past that,
+    //      serve the last stable list for 2s and let the churn drain.  A normal navigation (a cell
+    //       appearing/leaving once) always passes — only a pathological storm trips it.
+    let set_sig = ''
+    let set_times: number[] = []
+    let set_frozen_until = 0
+    let set_hold: Cell[] | null = null
+    let set_warned = false
     const cells = $derived.by(() => {
         void (H as any)?.version
         void now_tick
@@ -388,6 +400,21 @@
         void dt
         // (the scan-cadence log retired 2026-08-30 — owner: "we are done debugging cell switches";
         //  counters stay live for whoever re-adds a line.)
+        const now = Date.now()
+        if (now < set_frozen_until && set_hold) return set_hold
+        const sig = r.map(c => c.key).sort().join('|')
+        if (sig !== set_sig) {
+            set_sig = sig
+            set_times.push(now)
+            while (set_times.length && now - set_times[0] > 1000) set_times.shift()
+            if (set_times.length > 8 && set_hold) {
+                set_frozen_until = now + 2000
+                set_times = []
+                if (!set_warned) { set_warned = true; console.warn(`🎴 Cello: cell-SET storm detected (>8 reshapes/s) — serving the last stable set for 2s (a cell is flapping in/out of the grapple; see the focus-storm breaker below)`) }
+                return set_hold
+            }
+        }
+        set_hold = r
         return r
     })
 
@@ -485,6 +512,33 @@
         }) ?? null
     })
 
+    // FOCUS STORM CIRCUIT-BREAKER (owner 2026-08-31, "infinite loop of Link/Door popping").  Two focus
+    //  authorities (Sounditron_commission's warmth gate + the phase verb's link_open/done) can disagree
+    //   across the client_w/glass-w split, and under the #37 Repli flood the belief-loop mutex applies
+    //    their writes in interleaved bursts — so `w.c.focused` flips Door↔Link every tick, main_key
+    //     chases it, the Door face remounts + bumps version, the commission re-runs, and it never
+    //      settles (the log: `life mount/destroy face:Door` 1→253).  No legitimate navigation flips the
+    //       belly more than a couple times a second, so: count flips in a rolling 1s window; past a
+    //        threshold, FREEZE main_key for 2s and let the churn drain.  This breaks the feedback loop
+    //         deterministically regardless of which authority is fighting.  A real click still flips
+    //          instantly (the first flips are always allowed); only a pathological storm trips it.
+    let flip_times: number[] = []
+    let flip_frozen_until = 0
+    let flip_warned = false
+    function set_main(next: string | null) {
+        if (next === main_key) return
+        const now = Date.now()
+        if (now < flip_frozen_until) return   // frozen mid-storm — hold the current main, ride it out
+        flip_times.push(now)
+        while (flip_times.length && now - flip_times[0] > 1000) flip_times.shift()
+        if (flip_times.length > 8) {
+            flip_frozen_until = now + 2000
+            flip_times = []
+            if (!flip_warned) { flip_warned = true; console.warn(`🎴 Cello: focus STORM detected (>8 flips/s) — freezing main on '${main_key}' for 2s (two focus authorities fighting; likely under the #37 flood)`) }
+            return
+        }
+        main_key = next
+    }
     $effect(() => {
         const list = cells
         if (!list.length) return
@@ -492,14 +546,14 @@
         // TIER 1 — an unrefused insistent ask (a Cave wearing stage_want) OWNS the belly, re-claiming
         //  even after you wander ("a Cave wanting colonising focuses us back"), until refused ("no").
         const want = insistent
-        if (want) { if (main_key !== want.key) main_key = want.key; return }
+        if (want) { set_main(want.key); return }
         // TIER 2 — the COMMISSIONER'S FOCUS (w.c.focused, a mainkey): the Door buttons + a Vyto switch
         //  drive it, Cello follows.  Match by mainkey (Radio/Door/Link are singletons).
         const foc = commissioner_focus()
-        if (foc) { const c = list.find(x => x.mk === foc); if (c) { if (main_key !== c.key) main_key = c.key; return } }
+        if (foc) { const c = list.find(x => x.mk === foc); if (c) { set_main(c.key); return } }
         // TIER 3 — the resting main: keep a still-valid main, else fall to Radio.
         if (main_key && keys.has(main_key)) return
-        main_key = resting_main(list)?.key ?? null
+        set_main(resting_main(list)?.key ?? null)
     })
 
     // ── partition into main + satellites ─────────────────────────────────────────

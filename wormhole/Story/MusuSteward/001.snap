@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuSteward,Run
+    A:MusuSteward
+      self,round	{"mung":["age"]}
+      w:MusuSteward
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

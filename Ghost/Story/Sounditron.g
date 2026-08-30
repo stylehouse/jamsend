@@ -410,15 +410,23 @@ Sounditron_commission(w):
     //  Swarm_link_fresh.  Opening the cell BY HAND is NOT here — Sounditron_link_open focuses %Link directly (the
     //   Door button), so no `link_lobby` flag is needed and the old lobby-latch noop is gone.
     let active = linkFresh ? 1 : 0
-    // INSISTENT while the ceremony is live (owner 2026-08-30: "it needs to be more insistent on being in Link
-    //  when this is going down").  `active` is the warmth-gated Swarm_link_fresh, so it is only true while a
-    //   REAL adopt/ferry is in flight (a stale one never seizes).  Re-assert focus EVERY commission it holds —
-    //    not once — so wandering to another cell snaps back to Link (the "Cave wanting colonising" pull the
-    //     owner asked for).  The escape is cancel/refuse, which tears the ferry down so `active` falls false and
-    //      this stops re-pulling.  Still latch link_surfaced so the !active teardown below fires once when it ends.
+    // TWO SIGNALS, NOT ONE (owner 2026-08-31, "click the QR button twice → infinite loop of Link/Door
+    //  popping").  THE BUG: `active` (warmth-gated Swarm_link_fresh) drove BOTH the surface (419) AND the
+    //   teardown (420).  Warmth FLICKERS — a Cave heard_at crossing the 45s line, or on eed-origin the
+    //    poke re-parking ferry_confirm off a warm-then-momentarily-cold pier — so `active` flipped every
+    //     commission: 419 set focus Link, 420 immediately yanked it to Door, 419 again next tick.  That
+    //      ping-pong IS the Door mount/destroy storm (and it remounts LinkDevice, resetting its `minting`
+    //       guard so a second click re-mints — the "twice" trigger).
+    //  THE FIX: surface stays warmth-gated (a stale/cold ceremony must NOT seize — the boot-hijack law), but
+    //   TEARDOWN gates on Swarm_link_ACTIVE (is ANY ceremony in flight at all), not link_FRESH (is it warm
+    //    right now).  So a warmth dip no longer folds the cell; only the ceremony genuinely ENDING (flags
+    //     cleared → link_active false: done/cancel/decline) does.  This is also exactly the "more insistent
+    //      on being in Link" the owner asked for — once surfaced, it holds until the ceremony is truly over.
+    let live = 0
+    try { live = (this.Swarm_link_active ? this.Swarm_link_active(w) : active) ? 1 : 0 } catch (e) { live = active }
     if (active) { w.c.focused = 'Link'; w.c.link_surfaced = 1 }
-    if (!active && w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
-    if (!active && w.c.link_decided) { delete w.c.link_decided }
+    if (!live && w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
+    if (!live && w.c.link_decided) { delete w.c.link_decided }
     // PUBLISH THE FULLSCREEN AUTHORITY here, on the same humdinger-gated commission that decides the belly focus —
     //  one place, one decision.  Inert on Books (Screen_decide self-gates on humdinger).  It still coordinates the
     //   OTHER surfaces (Splash/Butler read screen.wants/dominant); the ceremony itself is the belly cell below.

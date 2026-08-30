@@ -1,0 +1,13 @@
+story:MusuSteward
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.003
+      sample=0.004,at=1788079242
+      sample=0.001,at=1788079245
+    TimeTotal:step,avg=0.003
+      sample=0.004,at=1788079242
+      sample=0.001,at=1788079245
+  step,dige:dfae456ac2000ab8

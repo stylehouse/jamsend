@@ -50,6 +50,10 @@
 - **The glass** (ShuffleFace.svelte): pool-mode shows YOUR pocket copies (probe-first `Ra_home_pool`),
    plus the steward want-list "what your phone wants next and why" grouped by pool compartment (§5.4).
 - **Siphonation is a real gate** now (P1 registered + P3 recorded live, 6/6).
+- **The pool economy Books are gates now** — MusuPress / MusuQuarter / MusuSteward / MusuSmuggle
+  were authored-but-never-recorded (no wormhole dir); all four recorded live + verified green in
+  check mode (each %see-asserted, single-beat).  The press/steward/upgrade model is now regression-
+  fenced, not just smoke-green.
 - **P1 registered**: Siphon.g + Siphonation.g in LiesLies CREDULER_GHOSTS.
 
 **Owner-testable NOW (reload both tabs for the 388834c+ build):** tap the source chip under the

@@ -1,0 +1,13 @@
+story:MusuSmuggle
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.001
+      sample=0.001,at=1788079251
+      sample=0.001,at=1788079254
+    TimeTotal:step,avg=0.001
+      sample=0.001,at=1788079251
+      sample=0.001,at=1788079254
+  step,dige:5309b0cd164d06a4

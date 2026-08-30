@@ -1,0 +1,15 @@
+story:MusuPress
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.031
+      sample=0.046,at=1788079200
+      sample=0.046,at=1788079211
+      sample=0.001,at=1788079221
+    TimeTotal:step,avg=0.031
+      sample=0.046,at=1788079200
+      sample=0.046,at=1788079211
+      sample=0.001,at=1788079221
+  step,dige:c527def261525348

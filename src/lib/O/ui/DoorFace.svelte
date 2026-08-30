@@ -131,9 +131,41 @@
                 up = { label: h ? `${h}h ${m}m` : (m ? `${m}m ${s < 10 ? '0' : ''}${s}s` : `${s}s`), fresh: secs < 10 }
             }
         } catch { up = null }
+        // THE FAMILY ROSTER (facet D — "Captain Grav and Cave Guw"): the soul's %Body rows, each an
+        //  INSTANCE (role × name) of the one soul.  Read-only walk (Swarm_body_roster never mints);
+        //   Swarm_body_mine marks which row is THIS body (computed off the body key, never a stored
+        //    flag).  Shown only once a real division exists (≥2 rows) — a lone body says nothing.
+        //     The name is the instance's own (name-gate name), the address its family seat.
+        let family: { role: string; name: string; pub8: string; addr: string; mine: boolean }[] = []
+        // THIS body's own instance (facet D): its role + name-gate name, shown as a title badge so the
+        //  header says WHO THIS DEVICE IS ("· CAVE Guw") beside the SOUL name (what friends see + edit).
+        //   Null for a lone/undivided body — nothing to distinguish.
+        let instance: { role: string; name: string } | null = null
+        try {
+            const roster = (typeof H?.Swarm_body_roster === 'function' ? H.Swarm_body_roster(self) : []) as any[]
+            const mineRow = (typeof H?.Swarm_body_mine === 'function' ? H.Swarm_body_mine(self) : null) as any
+            const minePub = mineRow?.sc?.pub ? String(mineRow.sc.pub) : ''
+            if (mineRow && roster.length >= 2) {
+                instance = { role: String(mineRow.sc?.role || 'body'), name: String(mineRow.sc?.name || '') }
+            }
+            if (roster.length >= 2) {
+                family = roster.map((b: any) => ({
+                    role: String(b?.sc?.role || 'body'),
+                    name: String(b?.sc?.name || ''),
+                    pub8: String(b?.sc?.pub || '').slice(0, 8),
+                    addr: String(b?.sc?.address || ''),
+                    mine: !!minePub && String(b?.sc?.pub || '') === minePub,
+                }))
+                // primary (bare seat) first, then by role then pub — stable, no per-tick shuffle
+                family.sort((a, b) => (a.addr.includes('_') ? 1 : 0) - (b.addr.includes('_') ? 1 : 0)
+                    || (a.role < b.role ? -1 : a.role > b.role ? 1 : (a.pub8 < b.pub8 ? -1 : 1)))
+            }
+        } catch { family = [] }
         return {
             name: (self?.sc?.friendly || self?.sc?.nick) as string | undefined,
             named: !!self?.sc?.friendly,
+            family,
+            instance,
             prepub: self?.sc?.prepub ? String(self.sc.prepub).slice(0, 8) : undefined,
             born: self?.sc?.born as string | undefined,
             newborn: !!self?.sc?.born && self.sc.born === today,
@@ -368,6 +400,14 @@
 {:else}
 <div class="df">
     <div class="df-title">🚪 {face.name ?? 'standing you up…'}
+        {#if face.instance}
+            <!-- WHO THIS DEVICE IS (facet D): the soul name above is what FRIENDS see + what the ✎
+                 edits; this badge is THIS body's own instance (role + its name-gate name), so a Cave
+                 reads "Cave Guw" at the top even though its account is the soul Grav. -->
+            <span class="df-instance"
+                title={`this device is the ${face.instance.role}${face.instance.name ? ' “' + face.instance.name + '”' : ''} of ${face.name ?? 'this soul'} — one soul, this body's own name`}>
+                · {face.instance.role}{#if face.instance.name} {face.instance.name}{/if}</span>
+        {/if}
         {#if face.prepub && !naming}
             <button class="df-edit" onclick={name_open} title="name yourself — friends see this">✎</button>
         {/if}
@@ -460,6 +500,20 @@
                     </button>
                 {/if}
             </div>
+            {#if face.family.length}
+                <!-- THE FAMILY — this soul's bodies by instance name (facet D: "Captain Grav and Cave
+                     Guw").  One soul, many bodies; the NAME belongs to each instance (its own name-gate
+                     name).  Friends see the one soul; this list is the family's own address book. -->
+                <div class="df-family">
+                    {#each face.family as b (b.pub8)}
+                        <div class="df-friend df-body" class:df-body-mine={b.mine}
+                            title={`${b.role}${b.name ? ' ' + b.name : ''} — ${b.mine ? 'THIS device' : 'another device of yours'}${b.addr ? ' · seat ' + b.addr.slice(0, 12) : ''}`}>
+                            <span class="df-dot" class:here={b.mine}>{b.mine ? '●' : '○'}</span>
+                            <span class="df-name"><span class="df-role">{b.role}</span> {#if b.name}{b.name}{:else}<span class="df-fpub df-fpub-solo">{b.pub8}</span>{/if}{#if b.mine}<span class="df-tag dim">you</span>{/if}</span>
+                        </div>
+                    {/each}
+                </div>
+            {/if}
             {#if cave_piers.length}
                 <div class="df-caves">
                     {#each cave_piers as f (f.pub)}
@@ -605,6 +659,12 @@
         display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
         gap: 0.15rem 0.4rem;
     }
+    /* the instance badge — "· CAVE Guw", THIS device's own name beside the soul name.  Quieter than
+       the soul name (it's context, not the account), cursor:help for the one-soul-many-bodies whisper. */
+    .df-instance {
+        font-size: 10px; font-weight: 600; color: #b48fc9;
+        cursor: help; pointer-events: auto; letter-spacing: 0.02em;
+    }
     /* the invite door — a quiet disclosure at the foot of the friends list, not a call to action
        competing with them.  It only shouts (via InvitePanel's own `.ip-go`) once it is open and
         there is actually a stranger to greet. */
@@ -700,6 +760,19 @@
         width: min-content; min-width: 100%; margin-top: 3px;
     }
     .df-caves .df-friend { white-space: nowrap; }
+    /* THE FAMILY — the soul's bodies by instance name (facet D).  Same wrap idiom as the caves row,
+       chips nowrap-atomic; the ROLE reads as a small badge, the name at full weight, self marked. */
+    .df-family {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px;
+        width: min-content; min-width: 100%; margin-top: 3px;
+    }
+    .df-family .df-friend { white-space: nowrap; margin-top: 0; }
+    .df-role {
+        font-size: 8px; text-transform: uppercase; letter-spacing: 0.06em;
+        color: #b48fc9; background: rgba(170, 150, 220, 0.14);
+        padding: 0 4px; border-radius: 3px; margin-right: 4px; font-weight: 600;
+    }
+    .df-body-mine .df-name { color: #d8c8f0; }
     .df-ourbox .df-me, .df-ourbox .df-friend { margin-top: 0; }
     .df-ourbox .df-linkdev { margin-top: 0; }
     .df-ourbox .df-bodies { width: 0; min-width: 100%; margin-top: 2px; }

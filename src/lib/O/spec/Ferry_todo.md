@@ -2,8 +2,76 @@
 
 ## 0. What to get on with
 
-**THE BIG REFACTOR (owner 2026-08-30: "you have my list of wants that we will achieve in a big
-refactor? go ahead then!").** The ceremony works end-to-end (proven live: mint → open → understand →
+### THE POST-MORTEM VERDICT (Fable deep-pass, 2026-08-31) — why this week was so indirect
+
+One misplaced wall, not general mess: **the ceremony was built BELOW the particle system** — ~12
+ `top.c.ferry_*` flags + 3 hand-mirrored stashed twins — so every particle property (reactivity,
+  persistence, snap legibility, single identity) got re-implemented by hand at a different layer,
+   and every fact stored N times made every write a hand-run distributed transaction (the "every
+    fix spawns two bugs" engine).  Homethink §4's first tell, verbatim: "state a group would need,
+     hoarded in `.c`".  The three-authority focus fight, the seven divergent teardown sites, the
+      dead-QR (invite/secret/confirm advanced by different events, no joint invariant owner) all
+       trace to it.  §2's %Ferry refactor is the right cut but is stalled in the STRANGLER'S MIDDLE
+        — the particle is currently a 6th mirror, not the truth.  Finish the inversion:
+  1. %Ferry particle = the truth; the flag pile + 2 of 3 twins DIE (secret rides `f.c.secret` +
+     ONE `stashed.ferry` twin; `ferrying`/`ferry_ended`/`ferry_confirm` become phases).
+  2. `Swarm_ferry_phase` (already idempotent) also owns the twin + terminal cleanup → every exit
+     path becomes one line.
+  3. Readers DERIVE, nobody pushes: drop link_open/pop_glass from the verb; commission latches
+     once per transition off `phase@at`; link_active = "phase non-terminal".
+  4. **Resolve the particle relative to `w`, not top_House()** (facet A's open decision — take the
+     `w` branch): the phase walk lands in Book snaps, `Ferry,phase:*` becomes assertable.
+  Book-blindness seam: `humdinger` conflates 4 meanings — split it.  Keep humdinger = screen+disk
+   (Books never set it), add a Book-settable CONSENT flag for the park + courtesy-acks (InvSeal.g
+    beat 4 already puppets this, tightly scoped); consent ACTIONS are just verbs a beat can call
+     (Swarm_ferry_confirm / Swarm_ferry_consume(w, code, true)).  Then one full-walk Book
+      (mint→confirming→puppet-confirm→sent→held→got→done + decline/cancel/spent-retry) gates the
+       whole class of bugs that ate this week.  Full text in the 2026-08-31 session transcript.
+  NEXT ARC (owner 2026-08-31): the general **Grant:Music ceremony gets the same uniform style** —
+   one particle, one phase walk, ends on a screen — once the ferry proves the shape.
+
+### HANDOVER 2026-08-31 (Fable → Opus, mid-slog) — read this first
+
+**UNCOMMITTED right now** (one clean pile on top of the human's last commit; human commits):
+- `Ghost/S/Swarm.g` (+gen) — facet B (ledger travels with key), facet D (ferry rosters the family:
+  Cave name on its %Body, ferry_got hands body-pub+name over, Captain takes own %Body,role:Captain,
+  `Swarm_body_note` gained `name`), idempotent `Swarm_ferry_phase`.
+- `Ghost/M/Radio.g` (+gen) — pools of defined size (`Ra_pool_define`/`_defs`/`goal_pools`), source
+  chip (`Radio_source_next`), pool dial rung (`Radio_dial_pool_local`), ambient steward
+  (`Radio_autopress`, default-off `top.c.pool_steward`), AND the `liveName`/`anyPier` ReferenceError
+  fix in the Radio_reason starved-trace (was throwing every starved tick, caught+swallowed → console
+  spam the owner hit during QR gen).
+- `Ghost/M/Ra.g` (+gen, may already be committed) — `Ra_home_pool`, pool goal composition.
+- `Ghost/Story/Sounditron.g` (+gen) — **THE Link/Door oscillation fix**: commission teardown now
+  gates on `Swarm_link_active` (ceremony in flight at all), NOT `Swarm_link_fresh` (warm right now).
+  Warmth flicker across the 45s line was flipping `active` every tick → 419 focus Link, 420 yank to
+  Door → the mount/destroy storm (which remounted LinkDevice, reset its `minting` guard, so a 2nd
+  click re-minted — the "click twice" trigger).  Surface stays warmth-gated (no boot-hijack); only a
+  truly-ended ceremony folds the cell.
+- `src/lib/O/ui/DoorFace.svelte` — our-box family roster ("CAPTAIN Grav / CAVE Guw") + title instance
+  badge; `LinkDevice.svelte` (may be committed) — auto-receive no longer needs the awaiting marker
+  (re-link skips "receive this soul").
+- Docs: this file + `SoundPooling_todo.md`.  New Books: `wormhole/Story/Musu{Press,Quarter,Steward,
+  Smuggle}/` (recorded green) + Siphonation (committed).  Skip `Credulate/Credulation/` when staging.
+
+**GATE:** InvFerry 6/6, SwarmSpread 5/5+1, SwarmFerry 1/1, SwarmStaple 8/8, MusuLossy/RaStock/Tune/
+Radio green, 5 pool Books green.  Zero fixture churn (all new model is humdinger-gated).  Swarm.go
+392148c, Radio.go 246566c, Sounditron.go 222144c.
+
+**THE NEXT MOVE (in priority order for the Opus slog):**
+1. **Owner is live-testing the Link/Door oscillation fix** — both tabs need reload for
+   Sounditron.go 222144c.  Confirm the double-click-QR loop is gone; if not, the remaining suspect is
+   the phase verb's `Sounditron_link_open` on pull phases racing the commission (add hysteresis there
+   too, or a per-tick surface-once latch).
+2. **Facet C — the #37 flood / NACK-with-redirect** (Ferry_todo §6-C, drop site `Peeroleum.g:607`).
+   Needs a LIVE two-tab session to verify new wire semantics; do NOT land blind.  Gates remote heists.
+3. **The SoundPool steward live proof** — flip `top.c.pool_steward=1` on a Cave/FSA tab, watch
+   `🏊 steward: pressed N` land `pool/…` rows; then the `pull` wants served over the wire.
+4. **Facet D remainder** — roster gossip to FRIENDS (a friend's Pier shows the soul's bodies) + live
+   per-body presence.  Model-half is gate-able; wire-half needs live.
+
+### THE BIG REFACTOR (owner 2026-08-30: "you have my list of wants that we will achieve in a big
+refactor? go ahead then!"). The ceremony works end-to-end (proven live: mint → open → understand →
 auto-receive → persist → reload → resume as the soul, relay grants `_1`, mirror write-discipline
 holds) but the state is a wart-field: ~11 `top.c.ferry_*` flags + 3 `stashed` twins + UI-local
 latches, with FOUR separate "make it show up" patches (bump / poke / pop_glass / link_open) bolted on
@@ -187,12 +255,25 @@ everything below is either hardening it or building the second half.
   incogni took "Grav" from eed; it should have stayed Guw-the-Cave-of-Grav's-soul).  %Body rows
   carry {role, name}: the friends still see ONE soul; the instance names are the family's own
   address book (our-box, presence, dial targets).
-  **FIRST SLICE LANDED 2026-08-30**: `Swarm_ferry_heard` stamps the pre-ferry husk's `friendly`
-  onto the Cave's %Body row as `name:` — the instance name now survives the soul landing (fixtures
-  re-recorded deliberately: InvFerry 5–6, SwarmSpread 5 — the diff is exactly the name row).
-  STILL OPEN: the Cave's LIVE face still presents the soul's friendly (the name-gate name is only
-  filed, not worn); our-box "● Captain Grav / ● Cave Guw" listing off the %Body roster; presence
-  per body; and the Captain side stamping its own name on ITS %Body row.
+  **LANDED 2026-08-30 (Swarm.go 392148c + DoorFace):**
+  - Cave stamps its instance name on its own %Body row (`Swarm_ferry_heard`, first slice).
+  - **The ferry now finalises the family roster** (it never did — only the old adopt path rostered):
+    the ferry_got ack HANDS OVER the Cave's body-key pub + chosen name (`{kind:'ferry_got', body,
+    name}`), and the Captain's ferry_got handler takes its OWN `%Body,role:Captain,name:<its
+    name-gate name>` and notes the Cave precisely (`Swarm_body_note` gained a `name` param).
+    Humdinger-gated → Book-inert (InvFerry/SwarmSpread/SwarmFerry/SwarmStaple all stayed green,
+    ZERO fixture churn).
+  - **The our-box lists the family by instance name** (DoorFace `df-family`): "CAPTAIN Grav / CAVE
+    Guw", self marked ●/you, off `Swarm_body_roster` + `Swarm_body_mine`, shown once a real division
+    exists (≥2 %Body rows).  Read-only (no mint on render).
+  - **The title header names this device** (DoorFace `df-instance`): beside the soul name (what
+    friends see + what the ✎ edits) sits a "· CAVE Guw" badge = THIS body's role + name-gate name,
+    from `Swarm_body_mine`, shown only in a real division.  The soul name stays the editable
+    name-gate (post-ferry the ✎ edits the SHARED soul, so re-pointing the whole title would break
+    that semantic — the badge is the correct split: soul name = account, badge = this instance).
+  STILL OPEN: live presence per body (the roster dots are static ●/○ = self/other, not
+  heard-recency); the roster travelling to FRIENDS so a friend's Pier shows the soul's bodies
+  (needs roster gossip, not just the local ferry hand-off) — the last big facet-D piece.
 - **E. The Repli self-lane** — the POINT of linking: the Cave's library fills from the Captain.
   Repli is keyed by Pier/Grant today; bodies have neither (twins-not-friends). Needs its own lane
   keyed on the family. Tell today: reborn Cave's radio has `total:70` but nothing it can pull.

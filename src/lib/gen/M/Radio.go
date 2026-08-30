@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'ae6c5f7e861ffe7f~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '370dc35a51460114~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -441,8 +441,9 @@ async Radio_pump_tick(radio, era) {
         radio.c.tune_rec = null
         // THE STEWARD OCCASION (SoundPooling_todo §3.1): a track advance is a natural session
         //  seam — sit the Quartermaster down.  Fire-and-forget (knob- and humdinger-gated inside,
-        //   busy-latched), so the dial is never delayed by a press round.
-        this.Radio_autopress(w, radio)
+        //   busy-latched), so the dial is never delayed by a press round.  (Radio_pool_steward, NOT
+        //    Radio_autopress — the latter is the unrelated auto-PLAY verb below.)
+        this.Radio_pool_steward(w, radio)
         this.Radio_trace(radio, { ev: 'dial' })
         rec = pick || await this.Radio_dial(radio)
         if (radio.c.era !== era) return
@@ -1326,7 +1327,7 @@ Radio_dial_pool_local(w, radio, retry) {
     if (retry) { return this.Ra_dial_next(w, shelf, {}) }
     return this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
 },
-// Radio_autopress — the AMBIENT STEWARD OCCASION (SoundPooling_todo §3.1): at a track advance (a
+// Radio_pool_steward — the AMBIENT STEWARD OCCASION (SoundPooling_todo §3.1): at a track advance (a
 //  natural session seam) sit the Quartermaster down over MY OWN library and let it press into the
 //   OPFS pool.  DEFAULT-OFF behind `top.c.pool_steward` (the backpressure-knob precedent — flip it
 //    live: `H.top_House().c.pool_steward = 1`).  Humdinger-gated (a Book must never press real
@@ -1335,7 +1336,10 @@ Radio_dial_pool_local(w, radio, retry) {
 //       a phone with no library gets the Siphon's explicit act instead.
 //  The cap is `top.c.pool_steward_cap` tracks (default 24), COMPOSED through the declared %Pool
 //   compartments (Ra_pool_defs — pools of defined size); no %Pool declared = one taste-pool.
-async Radio_autopress(w, radio) {
+//  ⚠ NAMED _pool_steward, NOT _autopress: Radio_autopress ALREADY EXISTS below (~line 2269) as the
+//   auto-PLAY-your-own-shelf verb — a totally different thing.  The earlier collision made this
+//    steward dead code (the later def won) AND turned the dial's call into an accidental auto-play.
+async Radio_pool_steward(w, radio) {
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c || !top.c.humdinger) { return null }
     if (!top.c.pool_steward) { return null }
@@ -1935,7 +1939,11 @@ Radio_reason(w, radio) {
             //      their opening page and the fault is upstream, in what the offer/restock actually fills.
             //  `lowseq` is the lowest held seq per record (first few) — it names WHICH page arrived first,
             //   which is the difference between "nothing came" and "the wrong end came".
-            this.Radio_trace(radio, { ev: 'starved', why: liveName ? 'gathering' : (anyPier ? 'offline' : 'nobody'),
+            // `why` here is the Radio_alone_why VERDICT computed at the top of Radio_reason — the old
+            //  `liveName`/`anyPier` locals it once read live ONLY in Radio_alone_why's own scope and were
+            //   a ReferenceError here (thrown every starved tick, caught + swallowed → a dead diagnostic
+            //    that also spammed the console).  Read the verdict's tag instead, which says the same thing.
+            this.Radio_trace(radio, { ev: 'starved', why: why.tag === 'gathering' ? 'gathering' : (why.tag === 'offline' ? 'offline' : 'nobody'),
                 homes: homes, recs: recs, chunks: chunks, byted: byted, probe: probe, probe0: probe0, lowseq: lowseq })
         } catch (er) {}
     }

@@ -365,14 +365,23 @@
     //    the old done never touched the stash, so the dead link haunted every later visit to this cell).
     function link_done() {
         sent = ''
+        // CLEAR THE WHOLE CEREMONY, not just ferry_got/sent (owner 2026-08-31, "when done is clicked that
+        //  should bring us back to the Door" — it wasn't).  Swarm_link_active is an OR over the entire
+        //   ferry_* flag pile + the stashed twins, and the old done left ferry_secret/ferry_confirm/
+        //    ferry_offer/ferry_ended standing — so link_active stayed TRUE, the commission kept the belly
+        //     on Link, and Sounditron_link_done's focus-to-Door was overwritten on the very next tick.
+        //      Drop them ALL (a completed link has no counterparty left to notify — that is why this is a
+        //       local clear, NOT Swarm_ferry_cancel, which would phase 'cancelled' and by ruling STAY on
+        //        the Link cell).  With link_active false, the commission lets go and Door sticks.
         try {
-            const t = H?.top_House?.()
-            if (t?.c) { delete (t.c as any).ferry_got; delete (t.c as any).ferry_sent }
-            if ((t as any)?.stashed) { delete (t as any).stashed.ferry_await_got; delete (t as any).stashed.ferry_pending_secret }
+            const t: any = H?.top_House?.()
+            if (t?.c) {
+                for (const k of ['ferry_got','ferry_sent','ferry_secret','ferry_serial','ferry_pending','ferrying','ferry_confirm','ferry_awaiting','ferry_offer','ferry_offer_accepted','ferry_ended','ferry_refused']) delete t.c[k]
+            }
+            if (t?.stashed) { for (const k of ['ferry_await_got','ferry_pending_secret','ferry_awaiting']) delete t.stashed[k] }
         } catch {}
         // 'done' through the phase verb: the %Ferry particle records the terminal, and its surface
-        //  policy lands us back in the DOOR (owner 2026-08-30: "once done that process should go back
-        //   to Door, not Link") — the new 🔗 cave pier standing in the our-box is the receipt.
+        //  policy lands us back in the DOOR — the new 🔗 cave pier standing in the our-box is the receipt.
         try { (H as any)?.Swarm_ferry_phase?.(world(), 'done', {}) } catch {}
         try { (H as any)?.Sounditron_link_done?.(world()) } catch {}
         try { (H?.ave as any)?.bump_version?.() } catch {}
@@ -540,11 +549,22 @@
              logical END on both screens, never vanish).  Retry path is the SAME as the first time: the soul
              device mints a fresh link, this device opens it — no allow step exists or is needed. -->
         <div class="ld-face">
-            <div class="ld-cap-big">the link was called off</div>
-            <p class="ld-deal">the soul device (<b>{short(ended.by) || 'the other device'}</b>) ended this ceremony — nothing was copied here. to try again, just mint a fresh link over there and open it here, same as before.</p>
-            <!-- done is TERMINAL: also strip the ?Iz, or the ghost's standup parking re-raises the consent for
-                 this very ceremony on the next reload — a loop the far side already said no to. -->
-            <button class="ld-cancel-b" onclick={() => { try { const t = H?.top_House?.(); if (t?.c?.ferry_ended) delete t.c.ferry_ended } catch {}; strip_link_url(); try { (H?.ave as any)?.bump_version?.() } catch {} }}>done</button>
+            {#if ended.why === 'spent'}
+                <!-- the honest SPENT terminal (owner 2026-08-31 "it is rejecting the link I copied"): a
+                     single-use link that was already redeemed once can never work again — say THAT, not
+                     the generic "called off". Both ends can land here (Swarm_rejected fold on the cave;
+                     the hello-spent retire on the soul). -->
+                <div class="ld-cap-big">this link was already used</div>
+                <p class="ld-deal">a device link works exactly <b>once</b>, and this one (<b>{short(ended.by) || ''}</b>) was already redeemed. nothing was copied. mint a <b>fresh link</b> on the soul device and open it here — same as before.</p>
+            {:else}
+                <div class="ld-cap-big">the link was called off</div>
+                <p class="ld-deal">the soul device (<b>{short(ended.by) || 'the other device'}</b>) ended this ceremony — nothing was copied here. to try again, just mint a fresh link over there and open it here, same as before.</p>
+            {/if}
+            <!-- done is TERMINAL: the FULL pack-up (link_done clears the whole ferry_* pile + stashed twins —
+                 the old ferry_ended-only clear left link_active true, so the lobby haunted "you have a device
+                 link in progress"), plus strip the ?Iz, or the ghost's standup parking re-raises the consent
+                 for this very ceremony on the next reload — a loop the far side already said no to. -->
+            <button class="ld-cancel-b" onclick={() => { strip_link_url(); link_done() }}>done</button>
         </div>
     {:else if pending}
         <!-- LINKEE, "receiving" — the mirror of the Linkor's "giving" (owner: one modality, two symmetric

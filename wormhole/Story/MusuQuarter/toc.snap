@@ -1,0 +1,13 @@
+story:MusuQuarter
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.018
+      sample=0.031,at=1788079234
+      sample=0.004,at=1788079236
+    TimeTotal:step,avg=0.018
+      sample=0.031,at=1788079234
+      sample=0.004,at=1788079236
+  step,dige:6982c323e929bc0c
