@@ -384,10 +384,10 @@
         const r = scan_cells()
         const dt = ((typeof performance !== 'undefined') ? performance.now() : 0) - t0
         cell_scan_n++
-        const since = t0 - cell_scan_last; cell_scan_last = t0
-        if (dt > 6 || since < 40 || cell_scan_n % 20 === 1) {
-            console.log(`🎴 Cello scan #${cell_scan_n}: ${r.length} cells in ${dt.toFixed(1)}ms (${since < 9e8 ? '+' + since.toFixed(0) + 'ms' : 'first'}) [${r.map((c) => c.mk).join(',')}]`)
-        }
+        cell_scan_last = t0
+        void dt
+        // (the scan-cadence log retired 2026-08-30 — owner: "we are done debugging cell switches";
+        //  counters stay live for whoever re-adds a line.)
         return r
     })
 
@@ -549,9 +549,14 @@
     // INTENT (owner 2026-08-31: "intent and delivery of some cell layout state").  What does the glass MEAN to
     //  show as the big cell, and is it the dramatic off-edge?  A Link/Door reading offedge=true here is the
     //   giant-cell bug caught red-handed (only Heist/HeistBar are in TAKEOVER), so this line is the smoking gun.
+    //    RETIRED to changes-only 2026-08-30 (owner: "this is all quite noisy now, we are done debugging cell
+    //     switches") — it fired on every version-bump/tick; now it speaks only when the intent actually MOVES.
+    let intent_last = $state('')
     $effect(() => {
         void (H as any)?.version; void now_tick
-        if (main_cell) console.log(`🎴 Cello INTENT: main=${main_cell.mk} offedge=${main_offedge} key=${String(main_cell.key).slice(0, 10)} cells=${cells.length} [${cells.map((c) => c.mk).join(',')}]`)
+        if (!main_cell) return
+        const line = `main=${main_cell.mk} offedge=${main_offedge} cells=${cells.length} [${cells.map((c) => c.mk).join(',')}]`
+        if (line !== intent_last) { intent_last = line; console.log(`🎴 Cello INTENT: ${line}`) }
     })
     // OFF-EDGE blob is OVERSIZED so it OVERFILLS the visible box (owner 2026-08-30: "not fat enough on
     //  the left side — showing two triangles of outside it").  A normal-radius ring in the wide spilling

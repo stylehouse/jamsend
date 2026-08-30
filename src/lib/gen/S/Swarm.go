@@ -15,7 +15,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '744b1ddb9429e799~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '696ff52fb56b4793~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1152,6 +1152,9 @@ async Swarm_arm(w) {
                 htop.c.ferry_sent.held = Date.now()
                 if (htop.stashed && htop.stashed.ferry_await_got) { htop.stashed.ferry_await_got.held = Date.now() }
                 if (htop.bump_version) { htop.bump_version() }
+                // 'held' is a pull phase — the phase verb's surface policy upgrades the sent face NOW
+                //  (owner 2026-08-30: "responsive all the way to the end").
+                this.Swarm_ferry_phase(w2, 'held', { role: 'soul' })
                 console.log('🦑 ferry: ✓ delivered — the other device holds the sealed soul, its consent screen is up')
             }
         }
@@ -1169,6 +1172,8 @@ async Swarm_arm(w) {
                 if (gtop.stashed) { delete gtop.stashed.ferry_pending_secret; delete gtop.stashed.ferry_await_got }
                 gtop.c.ferry_got = { pub: String(from || ''), at: Date.now() }
                 if (gtop.bump_version) { gtop.bump_version() }
+                // 'got' is a pull phase — the ✓ done flip shows itself NOW (the phase verb's policy).
+                this.Swarm_ferry_phase(w2, 'got', { pub: String(from || ''), role: 'soul' })
             }
             console.log('🦑 ferry: ✓ the other device took the soul on — ceremony complete, link retired')
         }
@@ -1964,6 +1969,7 @@ async Swarm_redeem(w, ident, iz, advice) {
                 //  no reload-resilient marker (the Linkor's ferry_secret has its stash twin — this is the mirror);
                 //   rehydrated at standup, cleared by park/consume/cancel.
                 if (atop.stashed) { atop.stashed.ferry_awaiting = mark }
+                this.Swarm_ferry_phase(w, 'awaiting', { pub: String(t.prepub || ''), serial: String(t.serial || ''), role: 'cave' })
             }
         }
     }
@@ -4772,6 +4778,7 @@ async Swarm_ferry_link(w, soulIdent, base) {
     //    device already held and the account could never cross.  Cleared on a successful send.
     if (top && top.stashed) { top.stashed.ferry_pending_secret = { secret: secret, serial: aserial, at: this.Swarm_now(w) } }
     this.Swarm_expect_arrival(w)
+    this.Swarm_ferry_phase(w, 'minted', { serial: aserial, role: 'soul' })
     console.log('🦑 ferry: offering to make a device my Cave — link minted (redeem forms the pier, then I ferry)')
     // ANCHOR FORM PARKED (owner 2026-08-30: "polish everything BUT the linkAccount thing… then come
     //  back and really stop not finishing LinkAccount").  The intended `#Iz=<token>&fc=<secret>` atomic
@@ -4829,7 +4836,16 @@ async Swarm_ferry_on_seal(w, soulIdent, pier) {
             //      to the park.  Frame-driven (never called from reactivity), so no bump loop; the send-branch is
             //       untouched (Books carry no humdinger → never reach here → fixtures byte-identical).
             if (top.bump_version) { top.bump_version() }
-            console.log('🦑 ferry: a device sealed as my Cave — awaiting my confirm on its pier (pulled to the Door) before I send')
+            // THE PHASE VERB owns the surface pull now (Ferry_todo §2 — was a pile of pop_glass/link_open
+            //  patches here): 'confirming' is a pull phase, so the "giving your soul" face rises wherever
+            //   the human is looking (the 2026-08-30 "I have to go into the Door" bug, closed structurally).
+            this.Swarm_ferry_phase(w, 'confirming', { pub: String(pier.sc.pub), name: String(pier.sc.friendly || ''), role: 'soul' })
+            console.log('🦑 ferry: a device sealed as my Cave — awaiting my confirm on its pier (pulled up NOW) before I send')
+        } else {
+            // ALREADY PARKED for this pub — re-assert the pull on EVERY matching ask (owner 2026-08-30:
+            //  "it doesn't seem to care"): the first park can land before the glass exists, so the steady
+            //   ask (~3s, floor-throttled — the task-#24 contract) re-drives the pull until answered.
+            this.Swarm_ferry_phase(w, 'confirming', { pub: String(pier.sc.pub), role: 'soul' })
         }
         return
     }
@@ -4837,6 +4853,7 @@ async Swarm_ferry_on_seal(w, soulIdent, pier) {
     if (sent) {
         if (top.c) { delete top.c.ferry_secret }
         if (top.stashed) { delete top.stashed.ferry_pending_secret }
+        this.Swarm_ferry_phase(w, 'sent', { pub: String(pier.sc.pub || ''), role: 'soul' })
     }
 },
 // Swarm_ferry_confirm — the grantor's "give my soul", pressed in the Link cell's "giving your soul to X" phase.
@@ -4873,6 +4890,7 @@ async Swarm_ferry_confirm(w) {
         //       the arc closes on screen with "✓ received".  ferry_got / cancel / done clear both.
         top.c.ferry_sent = { pub: want, at: this.Swarm_now(w) }
         if (top.stashed) { top.stashed.ferry_await_got = { pub: want, at: this.Swarm_now(w) } }
+        this.Swarm_ferry_phase(w, 'sent', { pub: want, role: 'soul' })
     }
     return sent ? 1 : 0
 },
@@ -4922,6 +4940,7 @@ Swarm_ferry_poke(w) {
     })
     if (!pier) { return 0 }
     top.c.ferry_confirm = { pub: String(pier.sc.pub), name: String(pier.sc.friendly || ''), at: this.Swarm_now(w) }
+    this.Swarm_ferry_phase(w, 'confirming', { pub: String(pier.sc.pub), name: String(pier.sc.friendly || ''), role: 'soul' })
     console.log('🦑 ferry: the Cave asking for THIS adopt turned up warm — parked the confirm (QR → give my soul)')
     return 1
 },
@@ -4948,6 +4967,7 @@ Swarm_offer_land(w) {
     let lt = null
     try { lt = this.Swarm_token_parse(liz) } catch (er) { lt = null }
     if (!lt || lt.to !== 'MyCave') { return 0 }
+    this.Swarm_ferry_phase(w, 'offered', { pub: String(lt.prepub || ''), name: String(lt.friendly || ''), role: 'cave' })
     top.c.ferry_offer = { from: String(lt.prepub || ''), friendly: String(lt.friendly || ''), at: Date.now() }
     console.log('🦑 ferry: this tab was opened from a device link — the "become them?" consent will rise once the boot surface is up')
     return 1
@@ -4960,6 +4980,7 @@ Swarm_ferry_park(w, ident, frame) {
     // a LANDING soul supersedes a stale "the link was called off" note (the told-cancel racing a slow ferry
     //  frame): the pending consent is the consequential screen, so the ended tombstone yields.
     if (top && top.c) { top.c.ferry_pending = { frame: frame, at: this.Swarm_now(w) }; delete top.c.ferry_awaiting; delete top.c.ferry_ended; if (top.stashed) { delete top.stashed.ferry_awaiting } }
+    this.Swarm_ferry_phase(w, 'pending', { pub: (frame && frame.salt ? String(frame.salt).split(':')[0] : ''), role: 'cave' })
     console.log('🦑 ferry: an account arrived sealed to me over the pier — awaiting my consent + code')
     // THE HELD-ACK (owner 2026-08-30: at "waiting for its received", "AS BEFORE, several times now, I'm
     //  begging for more feedback around what's going on").  The soul's ONLY ack used to be ferry_got —
@@ -5022,6 +5043,56 @@ async Swarm_ferry_sas(w) {
     if (!soulpub || !bodypub) { return '' }
     return await sas_row(sas_transcript([soulpub, bodypub]), 3)
 },
+// ── THE %FERRY PARTICLE (Ferry_todo §2 — the big refactor's spine, owner 2026-08-30 "go ahead then!") ──
+//  One ceremony per tab, ONE particle whose phase walk IS the ceremony, on the station world (snap-visible,
+//   so a Book can assert `Ferry,phase:sent` instead of poking `.c`).  Every writer advances it through
+//    Swarm_ferry_phase — the single chokepoint that also owns the SURFACE POLICY (want #1 "aware all the
+//     time" and want #2 "responsive to the end" become structure, not patches).  MIGRATION STANCE (the
+//      strangler): the legacy top.c.ferry_* flags remain the load-bearing mechanics for now — this verb is
+//       the one OBSERVABLE and the one surface authority; flags retire reader-by-reader (Ferry_todo §3).
+// Phases — soul: minted → confirming → ferrying → sent → held → got → done
+//          cave: offered → joining → awaiting → pending → receiving → received → done(reload)
+//          terminals from anywhere: declined | ended | cancelled  (each also clears via its legacy seam)
+Swarm_ferry_particle(w) {
+    // pure find (never mint): the pure A:Clustation → w:Swarm walk, so probes (UI ticks) can't vivify.
+    let top = this.top_House ? this.top_House() : null
+    let A = top ? top.o({ A: 'Clustation' })[0] : null
+    let sw = A ? A.o({ w: 'Swarm' })[0] : null
+    return sw ? sw.o({ Ferry: 1 })[0] : null
+},
+Swarm_ferry_phase(w, phase, patch) {
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c) { return null }
+    let A = top.o({ A: 'Clustation' })[0]
+    let sw = A ? A.o({ w: 'Swarm' })[0] : null
+    if (!sw) { return null }
+    let f = sw.oai({ Ferry: 1 })
+    f.c.up = sw
+    f.sc.phase = String(phase)
+    f.sc.at = this.Swarm_now(w)
+    if (patch) {
+        if (patch.pub) { f.sc.pub = String(patch.pub) }
+        if (patch.name) { f.sc.name = String(patch.name) }
+        if (patch.serial) { f.sc.serial = String(patch.serial) }
+        if (patch.role) { f.sc.role = String(patch.role) }
+    }
+    // TERMINALS drop the particle's counterpart facts so the next ceremony starts clean (the particle
+    //  itself stays — its terminal phase is the legible receipt until the next mint overwrites it).
+    // THE SURFACE POLICY — one place (was four patches: bump/poke/pop_glass/link_open).  Humdinger-gated
+    //  whole: a Book's ceremony advances the particle (snap-visible) but never touches focus.
+    if (top.c.humdinger) {
+        let pull = phase === 'confirming' || phase === 'pending' || phase === 'held' || phase === 'got' || phase === 'ended' || phase === 'received'
+        if (pull) {
+            try { if (typeof this.Radio_pop_glass === 'function') this.Radio_pop_glass() } catch (er) {}
+            try { if (typeof this.Sounditron_link_open === 'function') this.Sounditron_link_open(w) } catch (er) {}
+        }
+        if (phase === 'done') {
+            try { if (typeof this.Sounditron_link_done === 'function') this.Sounditron_link_done(w) } catch (er) {}
+        }
+    }
+    if (top.bump_version) { top.bump_version() }
+    return f
+},
 // Swarm_link_active — is a device-link ceremony in flight on THIS tab? True on the SOUL device while its
 //  link is minted-and-unspent (top.c.ferry_secret) AND on the NEW device while a ferried account waits
 //   (top.c.ferry_pending).  The glass reads this to raise the %Link takeover cell exactly during the
@@ -5065,11 +5136,16 @@ Swarm_link_fresh(w) {
     //    Radio, while the splash/Butler still owned the screen).  The offer PARKS at standup (that fact is
     //     durable and early by design); the SEIZURE waits for the Butler to lift (`top.c.butler_up` gone =
     //      arrival happened, the glass is real).  Grace: an arrival that never comes must not strand the
-    //       consent, so a parked offer older than 20s seizes anyway — by then the splash's own 7s cap has
-    //        long revealed whatever surface exists.  Pages with no Butler at all never set butler_up → no hold.
+    //       consent — but the valve must sit FAR above any honest boot.  It was 20s, reasoned from "the
+    //        splash's own 7s cap has long revealed whatever surface exists" — an assumption the splash
+    //         reframe KILLED (it now holds until Radio begins), so a slow remote-wormhole boot (~25s,
+    //          owner 2026-08-30: "it has a deadlock and dumps me into the machineroom with no Sounditron")
+    //           aged the offer past 20s MID-SPLASH and the old bug rose from the dead on exactly the
+    //            boots slow enough to still be building.  120s: only a truly wedged splash gets overriden.
+    //             Pages with no Butler at all never set butler_up → no hold.
     if (top.c.ferry_offer) {
         let ofr = top.c.ferry_offer
-        if (!top.c.butler_up || (ofr.at && (Date.now() - ofr.at) > 20000)) { return 1 }
+        if (!top.c.butler_up || (ofr.at && (Date.now() - ofr.at) > 120000)) { return 1 }
         return null
     }
     // a ceremony that ENDED (the far side called it off) needs the human's one `done` ack — the terminal screen
@@ -5167,6 +5243,7 @@ Swarm_ferry_cancel(w) {
     // (No revocation minted here — the SINGULAR-ADOPT law, owner 2026-08-31: cancelling just DROPS the one
     //  held adopt (the deletes below), and with it every ask stops being served ("not the adopt I hold").
     //   No per-pier NotGrant traffic for ferries; Swarm_revoke stays the law for real unfriending.)
+    this.Swarm_ferry_phase(w, 'cancelled', {})
     console.log('🦑 ferry: link cancelled — cleared the pending secret and any parked account')
     return 1
 },
@@ -5227,6 +5304,7 @@ Swarm_ferry_cancelled(w, ident, from) {
             if (top.stashed) { delete top.stashed.ferry_await_got }
             top.c.ferry_ended = { by: fp, at: Date.now() }
             if (top.bump_version) { top.bump_version() }
+            this.Swarm_ferry_phase(w, 'ended', { pub: fp })
             console.log('🦑 ferry: the other device declined the soul — the send is void, ceremony closed')
             return
         }
@@ -5256,6 +5334,7 @@ Swarm_ferry_cancelled(w, ident, from) {
     //     link was called off", and the human's `done` clears it.  Cancel clears it too.
     top.c.ferry_ended = { by: String(from || ''), at: Date.now() }
     if (top.bump_version) { top.bump_version() }
+    this.Swarm_ferry_phase(w, 'ended', { pub: String(from || '') })
     console.log('🦑 ferry: the soul device called off the link — gave up awaiting it')
 },
 // Swarm_ferry_consume — the UI's "yes, become this Cave" with the #fc code: unseal + import the parked
@@ -5283,11 +5362,13 @@ async Swarm_ferry_consume(w, code, accept) {
             if (top.c.humdinger && dident) { this.Swarm_deliver(w, dident, un, { kind: 'ferry_cancel', page: this.Swarm_page(dident) }) }
         }
         delete top.c.ferry_pending
+        this.Swarm_ferry_phase(w, 'declined', {})
         return null
     }
     let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
     let soul = ident ? await this.Swarm_ferry_heard(w, ident, pend.frame, code) : null
     delete top.c.ferry_pending
+    if (soul) { this.Swarm_ferry_phase(w, 'received', { pub: (pend.frame && pend.frame.salt ? String(pend.frame.salt).split(':')[0] : ''), role: 'cave' }) }
     // IDENTITY TRANSITION (Division_todo §0 — the husk): the device WAS its own blank auto-vivified self
     //  (the active %Identity); now it holds the soul.  Funnel the landed soul through Clustation_concrete —
     //   the SINGLE chokepoint every mint|adopt funnels through (Auto.svelte) — so it becomes the sole ACTIVE
@@ -5297,6 +5378,25 @@ async Swarm_ferry_consume(w, code, accept) {
     //       live two-tab test (Auto's own note, Identity_persist §3), so it is verified live, not headless.
     if (soul && soul.c && soul.c.keys && soul.sc.Identity && soul.c.up && typeof this.Clustation_concrete === 'function') {
         try { this.Clustation_concrete(soul.c.up, soul.sc.Identity, { pub: soul.c.keys.pub, key: soul.c.keys.key, prepub: soul.sc.prepub, friendly: soul.sc.friendly }) } catch (er) { console.log('🦑 ferry: concrete threw — soul landed, activation deferred to boot') }
+        // THE ARREST FIX (owner 2026-08-30: "disk holds 1 account(s) but none is eed…"): concrete
+        //  ACTIVATES but never PERSISTS — it is the resume path's helper and presumes a disk row
+        //   already exists.  A FERRIED soul has no row on this browser, so the post-done ?I=<soul>
+        //    boot found nothing and ARRESTED — the whole ceremony succeeded and then evaporated on
+        //     reload.  Mirror Clustation_adopt's thang_put here (identities Thang, row keyed by
+        //      prepub — the Identity tag IS the prepub), so the next boot RESUMES the soul.
+        //  HUMDINGER-GATED like the ferry_got ack: a Book's consume must never write its test soul
+        //   into the runner browser's real identities store.
+        if (top.c.humdinger && typeof this.thang_put === 'function') {
+            try {
+                let pA = soul.c.up
+                let pwT = pA.o({ w: 'Thangs', thangs: 'identities' })[0] || pA.i({ w: 'Thangs', thangs: 'identities' })
+                pwT.c.up = pA
+                let pstored = { pub: soul.c.keys.pub, key: soul.c.keys.key, prepub: String(soul.sc.prepub || '') }
+                if (soul.sc.friendly) { pstored.friendly = soul.sc.friendly }
+                await this.thang_put(pwT, String(soul.sc.prepub || soul.sc.Identity), pstored)
+                console.log('🦑 ferry: 🪪 soul keypair persisted — a reload will resume it, not arrest')
+            } catch (er) { console.log('🦑 ferry: 🪪⚠ soul persist FAILED — it lives this session but a reload will arrest: ' + String(er).slice(0, 120)) }
+        }
     }
     // RECEIVE-ACK (task #21, the last unlit lamp in "none indicate the Link failed/succeeded"): tell the soul
     //  device its account was actually TAKEN ON, so the Linkor's cell can close the arc with a real "✓ received"

@@ -239,7 +239,10 @@
                 to: inv.sc?.to ? String(inv.sc.to) : '',
                 n: inv.sc?.n ? String(inv.sc.n) : '',
                 state: String(inv.sc?.state ?? 'arrived'),
-            }))
+            // a MyCave invite IS the device-link ceremony — that lives whole in the Link cell now, so its
+            //  worker row here is a fossil of the earlier course (owner 2026-08-30: "`✉ #65 MyCave …
+            //   redeeming` — this line in Door should have been tidied away").  Friend invites still show.
+            })).filter((inv: any) => inv.to !== 'MyCave')
         } catch { return [] }
     })
 
@@ -319,6 +322,12 @@
     // the pier-list cap ("yay many") — five rows before the +N more toggle takes over.
     const PIERS_SHOWN = 5
     let piers_all = $state(false)
+    // THE OUR-BOX SPLIT (owner 2026-08-30: "ourselves and all our Piers that are Linked in a box of
+    //  their own … the box is a box").  A 🔗 cave pier is OUR OTHER DEVICE — it belongs beside the
+    //   me-row and the Link Device door, not scattered among friends.  Both lists honour the
+    //    optimistic-forget set; the cap applies to FRIENDS only (our own devices are few and always shown).
+    let cave_piers   = $derived(((face?.friends ?? []) as any[]).filter((f: any) => f.cave && !forgotten.has(f.pub)))
+    let friend_piers = $derived(((face?.friends ?? []) as any[]).filter((f: any) => !f.cave && !forgotten.has(f.pub)))
     // OPTIMISTIC FORGET (owner 2026-08-30: "a 'forget…' button lingers for quite a while when I click
     //  delete").  Swarm_pier_forget mints a signed %NotGrant + UnInvites; the retired-filter then drops
     //   the row — but that rides a commission, so the DeleteX sat in its 15s `fired` "forget…" state
@@ -387,13 +396,6 @@
            above returns 🚪 and never reaches this. -->
     {#if face.prepub}
         <div class="df-panel"><InvitePanel {H} inglass /></div>
-        <!-- LINK A DEVICE — opens the Link ceremony as a BELLY CELL (owner 2026-08-29 reversed the FaceSucker:
-             "I want a Cell").  Pressing this raises top.c.link_lobby via Sounditron_link_open (which also REINVITES
-             — clears any prior "no"), and Sounditron_commission surfaces the %Link belly cell; you leave it by "no". -->
-        <button class="df-linkdev" onclick={() => H?.Sounditron_link_open?.()}
-            title="carry this account to another device — opens the Link Device cell, which you dismiss with “no”">
-            🔗 Link Device
-        </button>
     {/if}
     {#if naming}
         <div class="df-naming">
@@ -422,36 +424,77 @@
             <span class="df-invstate">{inv.state}</span>
         </div>
     {/each}
-    {#if face.up}
-        <!-- ME, at the head of the same list the friends stand in: one liveness reading, not two
-             cells.  Deliberately styled DOWN from a friend row (this is context, they are the app). -->
-        <div class="df-me" class:fresh={face.up.fresh}
-            title="this tab has been up {face.up.label} — resets on reload, so a near-zero reading means the reload landed">
-            <span class="df-dot here">●</span>
-            <span class="df-name">you</span>
-            <span class="df-tag dim">up {face.up.label}</span>
-            {#if face.up.fresh}<span class="df-tag">fresh reload</span>{/if}
-        </div>
-    {/if}
-    <!-- THE BODIES LINE — one quiet row, only when there is anything to say: this body's place
-         (bare or …_N), whether it holds the bare name (primary), and each known %Sibling.  It sits
-         under the me-row because it is the same reading — WHERE this soul stands — one level
-         deeper.  Hover carries the long form; the row itself stays tag-sized. -->
-    {#if bodies}
-        <div class="df-bodies"
-            title={'the bodies of this identity — one soul, many tabs/devices.'
-                + (bodies.primary === null ? ' No cohort census ran in this tab.'
-                    : bodies.primary ? ' This body holds the bare name (primary).'
-                    : ' Another body holds the bare name; this one stands at a suffix.')
-                + (bodies.lockless ? ' (no Web Locks here — primacy assumed, never arbitrated)' : '')
-                + (bodies.sibs.length ? ` ${bodies.sibs.length} sibling ${bodies.sibs.length === 1 ? 'body' : 'bodies'} known.` : '')}>
-            <span class="df-tag">🧬 this body{bodies.vessel ? ` ${bodies.vessel.slice(0, 6)}` : ''}
-                · {bodies.suffix ? `at …${bodies.suffix}` : 'bare'}{#if bodies.primary !== null}&nbsp;· {bodies.primary ? 'primary' : 'not primary'}{/if}</span>
-            {#each bodies.sibs as s (s.place)}
-                <span class="df-tag dim"
-                    title={`sibling body ${s.place}${s.role ? ` — ${s.role}` : ''}${s.address ? ` at ${s.address}` : ''}`}>👤
-                    {s.place.slice(0, 6)}{s.address ? ` ${short_addr(s.address, bodies.bare)}` : ''}</span>
-            {/each}
+    <!-- THE OUR-BOX (owner 2026-08-30: "we should have ourselves and all our Piers that are Linked in
+         a box of their own: OurPier, Link Device, LinkPier, they could be inliney… but the box is a
+         box").  US, bounded: this body's me-row, every 🔗 linked-device pier, and the Link Device
+         door — inline chips inside one bordered box.  Friends flow OUTSIDE it (inline too, unboxed):
+         the border marks ownership, not rank.  The bodies line rides the box's full width — it is
+         the same "where this soul stands" reading, one level deeper. -->
+    {#if face.up || face.prepub || cave_piers.length}
+        <div class="df-ourbox">
+            <!-- ROW ONE, nowrap: me + uptime + the Link Device door.  THIS row sets the box's width
+                 (owner: "that first row is the nowrap inline one, so it sets the width") — the caves
+                 below wrap inside it rather than stretching the Door into tinytext. -->
+            <div class="df-ourrow">
+                <!-- ME — one liveness reading, styled DOWN from a friend row (this is context).
+                     ALWAYS present: the uptime tag is a detail riding on this row, not its existence
+                     condition (owner 2026-08-30: "why can't it see itself" — incognito has no %Uptime
+                     row in its radio world, and the whole self-row used to vanish with it). -->
+                <div class="df-me" class:fresh={!!face.up?.fresh}
+                    title={face.up
+                        ? `this tab has been up ${face.up.label} — resets on reload, so a near-zero reading means the reload landed`
+                        : 'this tab — no uptime reading here (no %Uptime row in this world)'}>
+                    <span class="df-dot here">●</span>
+                    <span class="df-name">you</span>
+                    {#if face.up}
+                        <span class="df-tag dim">up {face.up.label}</span>
+                        {#if face.up.fresh}<span class="df-tag">fresh reload</span>{/if}
+                    {/if}
+                </div>
+                {#if face.prepub}
+                    <!-- LINK A DEVICE — opens the Link ceremony as a BELLY CELL (owner 2026-08-29: "I want a
+                         Cell").  Sounditron_link_open focuses %Link directly; you leave it by "no". -->
+                    <button class="df-linkdev" onclick={() => H?.Sounditron_link_open?.()}
+                        title="carry this account to another device — opens the Link Device cell, which you dismiss with “no”">
+                        🔗 Link Device
+                    </button>
+                {/if}
+            </div>
+            {#if cave_piers.length}
+                <div class="df-caves">
+                    {#each cave_piers as f (f.pub)}
+                        <div class="df-friend df-cave">
+                            <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1}
+                                title={(f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago`)
+                                    + ' · 🔗 your Cave (a device of yours)'
+                                    + (f.seal === 1 ? ` · ⚠ sealing 1 of 2 — ${f.seal_missing}; should heal itself, say so if it sits` : '')}>●</span>
+                            <span class="df-name">🔗 {#if f.friendly}{f.friendly}<span class="df-fpub">{f.pub8}</span>{:else}<span class="df-fpub df-fpub-solo">{f.pub8}</span>{/if}</span>
+                            {#if f.rung === 'away'}
+                                <DeleteX inline ondelete={() => { forgotten.add(f.pub); forgotten = new Set(forgotten); (H as any)?.Swarm_pier_forget?.(null, f.pub) }}
+                                    confirm="forget?" glyph="✕"
+                                    title="forget {f.name} — retires this device link (it can be re-linked later)" />
+                            {/if}
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+            {#if bodies}
+                <div class="df-bodies"
+                    title={'the bodies of this identity — one soul, many tabs/devices.'
+                        + (bodies.primary === null ? ' No cohort census ran in this tab.'
+                            : bodies.primary ? ' This body holds the bare name (primary).'
+                            : ' Another body holds the bare name; this one stands at a suffix.')
+                        + (bodies.lockless ? ' (no Web Locks here — primacy assumed, never arbitrated)' : '')
+                        + (bodies.sibs.length ? ` ${bodies.sibs.length} sibling ${bodies.sibs.length === 1 ? 'body' : 'bodies'} known.` : '')}>
+                    <span class="df-tag">🧬 this body{bodies.vessel ? ` ${bodies.vessel.slice(0, 6)}` : ''}
+                        · {bodies.suffix ? `at …${bodies.suffix}` : 'bare'}{#if bodies.primary !== null}&nbsp;· {bodies.primary ? 'primary' : 'not primary'}{/if}</span>
+                    {#each bodies.sibs as s (s.place)}
+                        <span class="df-tag dim"
+                            title={`sibling body ${s.place}${s.role ? ` — ${s.role}` : ''}${s.address ? ` at ${s.address}` : ''}`}>👤
+                            {s.place.slice(0, 6)}{s.address ? ` ${short_addr(s.address, bodies.bare)}` : ''}</span>
+                    {/each}
+                </div>
+            {/if}
         </div>
     {/if}
     <!-- A PIER ROW IS THE LIGHT AND THE NAME, in that order (the owner 2026-08-09: *"other Piers
@@ -461,7 +504,10 @@
          half-sealed pier wears the amber dot; hover says why.  The ♪→ suggest stays: it is a verb,
          not a saying.  And the list is CAPPED (*"the list shouldn't be more than yay many long"*) —
          five rows, then one dim toggle for the rest. -->
-    {#each (piers_all ? face.friends : face.friends.slice(0, PIERS_SHOWN)).filter(f => !forgotten.has(f.pub)) as f}
+    <!-- friends — "a bit inliney too", but unboxed: wrapping chips (a suggestion row takes the full
+         width below its chip).  The 🔗 caves are gone from here — they live in the our-box above. -->
+    <div class="df-others">
+    {#each (piers_all ? friend_piers : friend_piers.slice(0, PIERS_SHOWN)) as f (f.pub)}
         <div class="df-friend">
             <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1}
                 title={(f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago`)
@@ -496,12 +542,13 @@
             </div>
         {/if}
     {/each}
-    {#if face.friends.length > PIERS_SHOWN}
+    {#if friend_piers.length > PIERS_SHOWN}
         <button class="df-more" onclick={() => piers_all = !piers_all}
             title={piers_all ? 'fold the list back to the first few' : 'show every pier'}>
-            {piers_all ? '▾ fewer' : `+ ${face.friends.length - PIERS_SHOWN} more`}
+            {piers_all ? '▾ fewer' : `+ ${friend_piers.length - PIERS_SHOWN} more`}
         </button>
     {/if}
+    </div>
     {#if !face.friends.length && !face.door?.landed}
         <div class="df-note">{face.newborn ? 'you are new here — the invite is how a friend joins you' : 'no friends yet — the invite is how one arrives'}</div>
     {/if}
@@ -631,6 +678,35 @@
     .df-note { font-size: 9px; opacity: 0.7; font-style: italic; margin-top: 2px; }
     /* the friends ARE the app — they read at full size, not as a footnote ("friends list is
        tiny", the human 2026-07-19) */
+    /* THE OUR-BOX — us, bounded.  Row one (me + Link Device) NEVER wraps and is what SETS the box's
+       width (owner 2026-08-30: "that first row is the nowrap inline one, so it sets the width, and
+       the other Piers stack up underneath in that width. it gets too wide otherwise") — so the box
+       is width:fit-content off that row, and the caves/bodies rows use the width:0 + min-width:100%
+       idiom to wrap INSIDE it without ever stretching it.  The border is the point ("the box is a
+       box"). */
+    .df-ourbox {
+        width: fit-content; max-width: 100%;
+        margin-top: 6px; padding: 4px 8px 5px;
+        border: 1px solid rgba(170, 150, 220, 0.35); border-radius: 8px;
+        background: rgba(140, 120, 200, 0.07);
+    }
+    .df-ourrow { display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; white-space: nowrap; }
+    /* width:min-content makes this row's contribution to the box's width the WIDEST SINGLE CHIP
+       (chips are nowrap-atomic — never a break between 🔗 and the name), not the whole line of
+       them; min-width:100% then hands it whatever width the box resolved (row one, or that widest
+       chip when row one is narrower — incognito has no uptime row) and the chips wrap within it. */
+    .df-caves {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px;
+        width: min-content; min-width: 100%; margin-top: 3px;
+    }
+    .df-caves .df-friend { white-space: nowrap; }
+    .df-ourbox .df-me, .df-ourbox .df-friend { margin-top: 0; }
+    .df-ourbox .df-linkdev { margin-top: 0; }
+    .df-ourbox .df-bodies { width: 0; min-width: 100%; margin-top: 2px; }
+    /* friends — inline wrapping chips, unboxed; a suggestion row takes the full width */
+    .df-others { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 14px; margin-top: 4px; }
+    .df-others .df-friend { margin-top: 0; }
+    .df-others .df-sug { flex-basis: 100%; }
     .df-friend { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 4px; }
     /* the prepub tag beside a friendly name — small, dim, monospace (matches .df-pub on the title line). */
     .df-fpub { font-size: 8px; opacity: 0.5; font-family: monospace; font-weight: 400; margin-left: 5px; letter-spacing: 0; }

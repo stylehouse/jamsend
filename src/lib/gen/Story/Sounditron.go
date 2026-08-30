@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '962e87896b132dbc~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '67e0d22cfc59abce~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -1159,6 +1159,22 @@ Sounditron_link_open(w) {
     //    2026-08-29 "clicking Link Device is a noop".  A direct focus works every press; the belly grapples %Link
     //     whenever it is the focus, so the cell shows even with no ferry state yet (the mint/QR lobby).
     try { if (this.Sounditron_focus) { this.Sounditron_focus('Link') } } catch (e) {}
+    if (top && top.bump_version) { top.bump_version() }
+    return 1
+},
+// Sounditron_link_done — the ceremony's TERMINAL exit (the sent-face "done" after ✓, the got pack-up): the
+//  link business is finished, so land the human back in the DOOR (owner 2026-08-30: "once done that process
+//   should go back to Door, not Link") — where the new 🔗 cave pier now stands in the our-box, which IS the
+//    receipt.  Distinct from link_close ("no"/cancel), which deliberately stays parked on the Link cell.
+//     Clears the link_surfaced latch on the client world so the commission's teardown can't fight the focus.
+Sounditron_link_done(w) {
+    let top = this.top_House ? this.top_House() : null
+    try {
+        let vw = this.Sounditron_vyto ? this.Sounditron_vyto().vw : null
+        let cw = vw ? (vw.c.client_w || vw) : null
+        if (cw && cw.c) { delete cw.c.link_surfaced }
+    } catch (e) {}
+    try { if (this.Sounditron_focus) { this.Sounditron_focus('Door') } } catch (e) {}
     if (top && top.bump_version) { top.bump_version() }
     return 1
 },

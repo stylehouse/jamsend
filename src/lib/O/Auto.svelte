@@ -881,7 +881,13 @@
             // humdinger:1 rides the snap when this runner is an end-user Big*land room (boot_qualand set
             //  H.c.humdinger for role sound) — Lies%humdinger, legible: it uses the full Lies stack but
             //   stays invisible to the editor's grid (no advertise/going-cold/ping-`from`; see Lies_humdinger).
-            H.i({ A: 'Lies' }).i({ w: 'Lies', ...(H.c.boot_role === 'runner' ? { runner: 1 } : {}), creduler: 1, ...(H.c.humdinger ? { humdinger: 1 } : {}) })
+            // THE RUNNER SEAT IS THE EDITOR'S DISPATCH TARGET — a HUMDINGER music page must not claim it
+            //  (Ferry_todo §6-G, owner 2026-08-30 live: incognito's console drowning in "pier editor holds
+            //   2050 unemits" — every Big*land tab was binding /relay?addr=runner on the SHARED relay, so a
+            //    person's music page drank the editor's whole dispatch flood; the daemon precedent above is
+            //     exactly this cure: creduler WITHOUT the role claim).  An explicit ?B= is someone deliberately
+            //      driving a Book from their tab (the Butler's own machine_tab predicate) — they keep the seat.
+            H.i({ A: 'Lies' }).i({ w: 'Lies', ...(H.c.boot_role === 'runner' && (!H.c.humdinger || boot_param('B')) ? { runner: 1 } : {}), creduler: 1, ...(H.c.humdinger ? { humdinger: 1 } : {}) })
             // Raise the Creduler gate NOW — before the just-created Lies has had a tick to
             //  run Creduler_ensure.  Auto may tick ahead of the new Lies (it's not in this
             //   pass's attend list), and the first-boot story-start below would otherwise

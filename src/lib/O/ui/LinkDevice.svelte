@@ -359,6 +359,40 @@
     // ── ENDED — the far side called the link off (Swarm_ferry_cancelled parks it): every ceremony ends on a
     //  screen, never a silent fold to Radio.  `done` clears it (and link_active falls with it).
     let ended = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_ended) ?? null } catch { return null } })
+    // done on the sent/got face — the TERMINAL pack-up.  Must clear the DURABLE TWINS too, not just the
+    //  .c flags (owner 2026-08-30: "once I click done … `you have a device link in progress`" — the lobby
+    //   line was the ghost of the finished ceremony: Swarm_link_active counts stashed.ferry_await_got, and
+    //    the old done never touched the stash, so the dead link haunted every later visit to this cell).
+    function link_done() {
+        sent = ''
+        try {
+            const t = H?.top_House?.()
+            if (t?.c) { delete (t.c as any).ferry_got; delete (t.c as any).ferry_sent }
+            if ((t as any)?.stashed) { delete (t as any).stashed.ferry_await_got; delete (t as any).stashed.ferry_pending_secret }
+        } catch {}
+        // 'done' through the phase verb: the %Ferry particle records the terminal, and its surface
+        //  policy lands us back in the DOOR (owner 2026-08-30: "once done that process should go back
+        //   to Door, not Link") — the new 🔗 cave pier standing in the our-box is the receipt.
+        try { (H as any)?.Swarm_ferry_phase?.(world(), 'done', {}) } catch {}
+        try { (H as any)?.Sounditron_link_done?.(world()) } catch {}
+        try { (H?.ave as any)?.bump_version?.() } catch {}
+    }
+    // AUTO-RECEIVE (owner 2026-08-30: "we shouldn't need to 'receive this soul', they already consented") —
+    //  opening the link WAS the consent (offer_accept), and this tab's own armed `awaiting` marker + the #fc
+    //   code in its bar prove the redeem started HERE.  So when the sealed soul lands, take it on without a
+    //    third ask.  Gates kept: named (the name-gate still holds) and sas computed (the seal code is the
+    //     real lock; the glyph row was belt-and-braces and still shows on the soul side).  A soul arriving
+    //      UNASKED — no awaiting marker, e.g. a re-send off an old grant — still gets the manual screen.
+    let auto_received = $state(false)
+    $effect(() => {
+        if (!pending || taking || auto_received) return
+        if (!named || !has_code || !sas) return
+        let initiated = false
+        try { initiated = !!awaiting || !!(H?.top_House?.() as any)?.stashed?.ferry_awaiting } catch {}
+        if (!initiated) return
+        auto_received = true
+        receive(true)
+    })
     // (The 🔔 knock + "allow" affordance lived here for an hour on 2026-08-31 and is GONE — the owner fell
     //  straight into its ditch: "where in the interface can we cancel a cancellation to a specific Pier? why
     //   would we — why not some arrangement that makes it EASIER."  The easier arrangement: a "no" revokes that
@@ -492,7 +526,14 @@
         <div class="ld-face">
             <div class="ld-cap-big">{received === 'declined' ? 'declined' : '✓ soul received'}</div>
             <p class="ld-deal">{received === 'declined' ? 'no soul was copied — nothing changed on this device.' : received}</p>
-            <button class="ld-cancel-b" onclick={() => received = ''}>done</button>
+            {#if received === 'declined'}
+                <button class="ld-cancel-b" onclick={() => received = ''}>done</button>
+            {:else}
+                <!-- the ceremony's true last step IS a reload (owner 2026-08-30: "that final incogni phase
+                     should say|do 'reload' [rather] than 'done'"): the bar is already pinned to ?I=<the new
+                     soul>, so reloading boots this tab AS it — the proof of the ceremony, not a chore. -->
+                <button class="ld-go" onclick={() => { try { location.reload() } catch {} }}>reload — wake up as your account</button>
+            {/if}
         </div>
     {:else if ended}
         <!-- the far side called it off — the honest terminal (owner 2026-08-30: the ceremony must run to a
@@ -572,29 +613,21 @@
             {/if}
         </div>
     {:else if sent || got || sent_fact}
-        <!-- "sent" is honest but half the arc ("the frame left here"); `got` is the whole of it — the other
-             device consumed the soul (ferry_got, which also retired the spent secret).  One face, upgraded
-             live as each ack lands.  done clears both (ferry_got is `.c` — never snapped).
-             THE WAIT LADDER (owner 2026-08-30: "AS BEFORE, several times now, I'm begging for more feedback
-             around what's going on at this point" — and the bandwidth readout was "misleading noise", 0-2kBps
-             says nothing about a ceremony).  So the wait names its FACTS, each with its age: the send, then
-             the held-ack (ferry_held — they HOLD the sealed soul, their consent screen is up), then the human
-             step that remains.  A missing rung after ~10s is itself the finding: the ack lane is blocked. -->
+        <!-- ONE HEADING, ONE LINE, AND IT RESOLVES (owner 2026-08-30: "it's just such bad comms. it has to
+             get simpler and resolve when done" — the previous wait ladder stacked three rung-facts under the
+             heading and read like failure while the ceremony was actually succeeding on the other screen).
+             The single line upgrades as each ack lands: carrying → ✓ delivered (their screen has it) →
+             ✓ done.  The rung diagnostics live on in the wire strip below — guts, not ceremony. -->
         <div class="ld-face">
-            <div class="ld-cap-big">{got ? '✓ soul received' : '✓ soul given'}</div>
-            <p class="ld-deal">{got ? 'your other device took it on — you live there now too.' : 'sent to your other device — waiting for it to take the soul on…'}</p>
-            {#if !got}
-                <div class="ld-ladder">
-                    <div class="ld-rung on">✓ sent{#if sent_fact?.at}&nbsp;<span class="ld-rung-age">{age_of(sent_fact.at)}</span>{/if}</div>
-                    {#if sent_fact?.held}
-                        <div class="ld-rung on">✓ delivered — it holds the sealed soul&nbsp;<span class="ld-rung-age">{age_of(sent_fact.held)}</span></div>
-                        <div class="ld-rung wait">… its consent screen is up: go say <b>yes</b> there (the three glyphs must match)</div>
-                    {:else}
-                        <div class="ld-rung wait">… no delivery ack yet{#if sent_fact?.at}&nbsp;<span class="ld-rung-age">{age_of(sent_fact.at)}</span>{/if} — past ~10s the other device is away, still booting, or its wire is clogged</div>
-                    {/if}
-                </div>
+            <div class="ld-cap-big">{got ? '✓ done — devices linked' : '✓ soul given'}</div>
+            {#if got}
+                <p class="ld-deal">your other device took the soul on — you live there now too.</p>
+            {:else if sent_fact?.held}
+                <p class="ld-deal">✓ delivered — say <b>yes</b> on the other device to finish.</p>
+            {:else}
+                <p class="ld-deal">carrying it over to your other device…{#if sent_fact?.at}&nbsp;<span class="ld-rung-age">{age_of(sent_fact.at)}</span>{/if}</p>
             {/if}
-            <button class="ld-cancel-b" onclick={() => { sent = ''; try { const t = H?.top_House?.(); if (t?.c?.ferry_got) delete t.c.ferry_got; if (t?.c?.ferry_sent) delete t.c.ferry_sent } catch {} }}>done</button>
+            <button class="ld-cancel-b" onclick={link_done}>done</button>
         </div>
     {:else if awaiting}
         <!-- LINKEE "connecting" — the link is redeemed and a soul is inbound, waiting on the OTHER device's
@@ -630,8 +663,12 @@
              current self and takes on the soul — same account, same friends, its music.  The name-gate stays
              (owner: "we must require having a name at that point too"); continue arms the redeem in InvitePanel. -->
         <div class="ld-face">
-            <div class="ld-cap-big">become <b>{offer.friendly || short(offer.from) || 'this device'}</b>?</div>
-            <p class="ld-deal">you opened a link from it — continue and <b>this device becomes a body of it</b>: its account, its friends, its music, all here in its name.</p>
+            <!-- CONCISE (owner 2026-08-30: "perhaps just 'become 23489348394?' [understand] [not now]") —
+                 the heading IS the deal; the full weight (account, friends, music, main identity of this
+                 profile) rides the hover for whoever wants it spelled out. -->
+            <div class="ld-cap-big"
+                title="you opened a link from it — continue and this device becomes a body of it: its account, its friends, its music, all here in its name. it becomes the main identity of this browser profile — what this webapp wakes up as from now on."
+                >become <b>{offer.friendly || short(offer.from) || 'this device'}</b>?</div>
             {#if !named}
                 <div class="ld-name-row">
                     <input class="ld-name" bind:value={name_draft} placeholder="what do friends call you?"
@@ -642,7 +679,7 @@
             {/if}
             {#if err}<p class="ld-warn-note">⚠ {err}</p>{/if}
             <div class="ld-row">
-                <button class="ld-go" onclick={offer_accept} disabled={!named}>understand — continue</button>
+                <button class="ld-go" onclick={offer_accept} disabled={!named}>understand</button>
                 <button class="ld-cancel-b" onclick={offer_decline}>not now</button>
             </div>
         </div>

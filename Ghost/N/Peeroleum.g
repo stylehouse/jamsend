@@ -977,8 +977,21 @@ Peeroleum_bound_inbox(inbox, w, pier):
         //  A bound whose drain rate does not scale with the overshoot is decorative.  Shed the whole
         //   excess in one pass: it is O(excess) once, against O(depth) on every frame forever.
         let excess = live.length - 2000
+        // CONTROL-PLANE CARVE-OUT (owner 2026-08-30, "for the fifth time now, the transfer looks like it's
+        //  going like shit from the eed side"): the cull was indiscriminate, so the tiny, rare ceremony
+        //   frames — ferry_held / ferry_got / adopt_* / pier_* handshakes — died in the same shed as the
+        //    Repli bulk that CAUSED the flood, and the device-link succeeded while its acks starved: the
+        //     soul crossed, eed read failure.  A ceremony ack is a hand-signed letter; Repli is gravel.
+        //      Never shed the letters to make room for gravel — skip frames whose type marks them
+        //       control-plane, shed everything else oldest-first.  One O(depth) pass, still once per visit.
         let k = 0
-        while (k < excess) { if (live[k]) inbox.drop(live[k]); k = k + 1 }
+        let shed = 0
+        while (k < live.length && shed < excess) {
+            let u = live[k]
+            let ut = u ? String(u.sc.type || '') : ''
+            if (u && !(ut.startsWith('ferry') || ut.startsWith('adopt') || ut.startsWith('pier_'))) { inbox.drop(u); shed = shed + 1 }
+            k = k + 1
+        }
         let nowms = Date.now()
         if (nowms - (w.c.inbox_cap_warn_ts || 0) > 1000) {
             w.c.inbox_cap_warn_ts = nowms
@@ -999,7 +1012,9 @@ Peeroleum_bound_inbox(inbox, w, pier):
             //   not — :739/:768 call the bound after `inbox.do()`, so the frame was already dispatched
             //    and acked. The damage was the missing trim, not a dropped frame. See Peeroleum_bound_safe.)
             let who = String(pier.sc.pub || '').slice(0, 8)
-            console.log(`🛰☠ inbox backstop: pier ${who} holds ${live.length} unemits (cap 2000) — dropped oldest seq=${live[0]?.sc?.seq} type=${live[0]?.sc?.type}; frames are arriving faster than they finish`)
+            // say what was actually SHED (the carve-out spares ferry/adopt/pier_* — reporting live[0] here
+            //  once claimed "dropped … type=pier_confirm" for a frame the shed had spared, owner 2026-08-30).
+            console.log(`🛰☠ inbox backstop: pier ${who} holds ${live.length} unemits (cap 2000) — shed ${shed} bulk frame(s), control-plane spared; frames are arriving faster than they finish`)
         }
     }
 

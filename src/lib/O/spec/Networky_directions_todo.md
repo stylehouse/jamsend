@@ -49,6 +49,18 @@ Ranked by leverage-per-line, RE-ORDERED for the WebRTC-unreliable reality above:
    to 0 on every `onopen` (`Tribunal.g:292`), so a socket that dies 600ms after opening is pinned at
     attempt-1 forever — the jittered-exponential backoff (`Tribunal.g:307`) degenerates to a ~600ms fixed
      storm, exactly the live log. Only reset `tries` after a connection survives a threshold (~10s stable).
+3b. **[cheap, relay-side, do with 3] Explicit flood-quench on the UNIFIED error channel — stop dropping
+   silently.** Today overload is signalled *implicitly*: the backstop `console.log`s and drops the oldest
+    frame (`Peeroleum.g:495`), which looks identical to loss, so the sender's 4s timer RE-ASKS and
+     amplifies. Replace the silent drop with a structured `%error,kind:flood,pier,depth,retry_ms` that
+      rides the same error channel every other Cluster error uses (`Errchannelation.g` / `%error`),
+       so it appears identically at BOTH ends and in the HUD/Brink (the human 2026-08-30: "the Cluster
+        should have unified errors"). Detect on `pier.c.inbox_depth` over the drainbound ceiling for K
+         ticks (depth already measured, §0-item-drainbound). **Rate-limit the error itself** — one quench
+          per pier per ~500ms–1s window, else the flood-error becomes a second flood. On RECEIPT the
+           sender treats it as an explicit congestion signal (multiplicative-decrease its window + stall
+            its cursor, see "the sending end" below), NOT a reason to re-ask. Triage tier, not the root
+             (that's 1+4), but it makes collapse *graceful* instead of *catastrophic* and needs no WebRTC.
 4. **[the deeper bulk fix] Bulk bytes off the belief-loop inbox.** Even on a DataChannel, if pages still
    land as `%req:unemit` and mint under the beliefs mutex, the O(depth) drain (`Peeroleum_book_unemit`'s
     per-frame `oai` scan + `Peeroleum_rollup_faulty` rescan) remains. Land chunk bytes in a plain per-Pier
@@ -82,6 +94,35 @@ The deterministic reproduction of your freeze is `MusuNeGrind` (`Backpressure_to
  missing composition test level where pull + radio + replicate + a handshake all share the beat at once.
   Its load-bearing invariant, "the beat never overruns 600ms for N consecutive ticks," is exactly the
    starvation your handshake hit.
+
+## The sending end — how a peer's right to make traffic is mediated
+
+The flood is a receiver-side story, but the *cure* is mostly sender-side: a peer's ability to generate
+ traffic must be **feedback-driven, not a fixed politeness constant**. The rule: *never generate a request
+  you have no evidence the receiver can handle.* Three levers, really three views of one thing:
+
+- **Window — how many asks may be outstanding at once.** The master governor. `heist_window` (default 16)
+   is meant to be it but today is a *constant*, open-loop. Closed-loop = **AIMD**: grow by one per clean
+    round-trip (additive increase), halve on a congestion signal (multiplicative decrease). The item-3b
+     `%error,kind:flood` quench is precisely the "halve now" trigger — an *input to this controller*, which
+      is what makes the pressure-signal translate to the sender at all. A timeout can't: it's ambiguous
+       (loss vs slow), so the sender guesses "lost" and re-asks, amplifying. An explicit quench removes the
+        guess.
+- **Clock — when the next ask fires.** Most asks fire on the 600ms beat (a timer, open-loop pacing).
+   Ack-clocking (`heist_selfclock`, built + off, §0-item-5) fires the next ask *when a previous answer
+    lands*, at wire speed — **self-limiting by construction: if answers stop, asks stop.** The network's own
+     pace becomes the rate limiter for free.
+- **Cursor — the read-ahead position** (how far past the last-delivered page you'll request). The window is
+   just *the maximum distance the cursor may lead the delivered frontier*. A quench doesn't merely "ask
+    less" — it **pulls the cursor back toward what actually landed** and freezes read-ahead, which creeps
+     forward again only as pages drain. Window = leash length; cursor = where the dog is; quench = yank.
+
+**Per-class, once Repli routes into separate `A:` queues (the human 2026-08-30).** When traffic classes
+ land in different queues owned by different actors, each backpressures at *its own* consumer's speed — a
+  slow class throttles only itself, not everything (head-of-line-blocking cure; per-stream flow control like
+   HTTP/2 vs HTTP/1). Consequence for the sender: window + cursor become **per-class, not global** — a cursor
+    per stream — so one slow lane no longer freezes the fast ones. This is the sender-side dual of the
+     data-plane/control-plane split this whole doc bets on.
 
 ## The diagnosis — one pipe, two layers
 

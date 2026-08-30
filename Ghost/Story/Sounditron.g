@@ -1134,6 +1134,21 @@ Sounditron_link_open(w):
     try { if (this.Sounditron_focus) { this.Sounditron_focus('Link') } } catch (e) {}
     if (top && top.bump_version) { top.bump_version() }
     return 1
+// Sounditron_link_done — the ceremony's TERMINAL exit (the sent-face "done" after ✓, the got pack-up): the
+//  link business is finished, so land the human back in the DOOR (owner 2026-08-30: "once done that process
+//   should go back to Door, not Link") — where the new 🔗 cave pier now stands in the our-box, which IS the
+//    receipt.  Distinct from link_close ("no"/cancel), which deliberately stays parked on the Link cell.
+//     Clears the link_surfaced latch on the client world so the commission's teardown can't fight the focus.
+Sounditron_link_done(w):
+    let top = this.top_House ? this.top_House() : null
+    try {
+        let vw = this.Sounditron_vyto ? this.Sounditron_vyto().vw : null
+        let cw = vw ? (vw.c.client_w || vw) : null
+        if (cw && cw.c) { delete cw.c.link_surfaced }
+    } catch (e) {}
+    try { if (this.Sounditron_focus) { this.Sounditron_focus('Door') } } catch (e) {}
+    if (top && top.bump_version) { top.bump_version() }
+    return 1
 // Sounditron_link_close — the cell's "no"/✕ / the one dismiss: tear down any in-flight ceremony (Swarm_ferry_cancel
 //  is idempotent — safe when nothing is in flight, and it UnInvites the counterparty so the same peer can't re-seize).
 //   STAY IN THE LINK CELL (owner 2026-08-30: "if we cancel it we want to stay in that Link cell") — do NOT eject to
