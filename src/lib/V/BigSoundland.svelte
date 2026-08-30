@@ -33,6 +33,7 @@
     import Butler     from "$lib/O/ui/Butler.svelte"
     import Splash     from "$lib/O/ui/Splash.svelte"
     import Actions    from "$lib/O/ui/Actions.svelte"
+    import TodoSpool, { spool_open } from "$lib/O/ui/TodoSpool.svelte"
     import Lens       from "$lib/O/ui/Lens.svelte"
     import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
     import SwarmStandup from "$lib/O/ui/SwarmStandup.svelte"
@@ -242,6 +243,10 @@
     //    the row below the bar.  That row rides IN FLOW (not sticky) so it scrolls away with the
     //     page, exactly like BigWordland's .bw-panel.  All of it shows only while sprawling.
     let view = $state<string | undefined>(undefined)   // the user's picked House (ip); undefined ⇒ auto
+    // the sticky top bar's LIVE height (it flex-wraps, so no fixed rem is honest) — the per-House
+    //  sprawl headers stick just under it (their `top:`), so the tools stay on screen all the way
+    //   down a big House's UIs (owner 2026-08-30: "fixed at the top of the viewport").
+    let bar_h = $state(0)
     let active_ip = $derived(
         view
         ?? cyto?.house.c.ip                       // default to the graph House — the interesting one
@@ -342,7 +347,7 @@
                stood up).  That is the room you enter when something is wrong, and it is worth
                 nothing without its labels — `?` / ▦ is the way in. -->
     {:else}
-    <header class="scape-top">
+    <header class="scape-top" bind:clientHeight={bar_h}>
         <span class="scape-name" title="BigSoundland — the music scape: Voronoi stained glass graphs of music (the /BigSoundland route)">◈ BigSoundland</span>
         <span class="scape-book">{book}</span>
         <!-- WHICH GLASS is actually mounted — the definitive VYTO/CYTO tell.  Under ?VY=1 the page
@@ -411,7 +416,20 @@
         <section class="scape-sprawl">
             {#each sprawl_view.groups as { house, uis } (house.c.ip)}
                 <div class="scape-house" id={'sp-' + house.c.ip}>
-                    <div class="scape-house-name" class:off={!house.started}>{house.name}</div>
+                    <!-- the House's TOOL BAR — sticky just under the top bar, so its actions + the
+                         elvis spool stay on screen all the way down a big House's UIs (owner
+                         2026-08-30: "slap the ActionButtons on the end of every H heading by
+                         default … fixed at the top of the viewport … only in show-guts mode" —
+                         and this whole section IS guts mode).  Retires the navibar-⚙-opens-miles-
+                         away dance for the sprawl.  TodoSpool is the flood-tracer: histogram of
+                         queued elvises + the beliefs-mutex wedge line. -->
+                    <div class="scape-house-hd" class:lifted={spool_open.ip === house.c.ip} style="top: {bar_h}px;">
+                        <span class="scape-house-name" class:off={!house.started}>{house.name}</span>
+                        <TodoSpool {house} {H} />
+                        {#if house.actions.ob({ action: 1 }).length}
+                            <div class="scape-house-acts"><Actions N={house.actions.ob({ action: 1 })} /></div>
+                        {/if}
+                    </div>
                     {#each uis as ui (keyser(ui.sc))}
                         <div class="diag-ui">
                             <span class="diag-tag">{house.name} · {ui.sc.UI}</span>
@@ -640,10 +658,21 @@
     }
     /* one House's block — its heading + its UIs; scroll-margin clears the sticky bar on a jump */
     .scape-house { display: flex; flex-direction: column; gap: 1.6rem; scroll-margin-top: 6rem; }
+    /* the House TOOL BAR — sticky under the measured top bar (inline `top:`), so name + spool +
+       actions ride the viewport across the whole section.  position:sticky is also the positioned
+       anchor the spool's absolute .todo-pop hangs off.  Opaque-ish backdrop: UIs scroll UNDER it. */
+    .scape-house-hd {
+        position: sticky; z-index: 40;
+        display: flex; align-items: center; gap: 0.6rem;
+        background: rgba(8, 10, 16, 0.92); backdrop-filter: blur(4px);
+        border-bottom: 1px dashed rgba(120, 140, 195, 0.18); padding: 0.15rem 0.2rem 0.25rem;
+    }
+    /* a spool popover must clear the SIBLING sticky bars below (equal z, later DOM wins) */
+    .scape-house-hd.lifted { z-index: 55; }
+    .scape-house-acts { margin-left: auto; display: flex; min-width: 0; }
     .scape-house-name {
         font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
         color: rgba(150, 170, 205, 0.6); font-family: monospace;
-        border-bottom: 1px dashed rgba(120, 140, 195, 0.18); padding-bottom: 0.25rem;
     }
     .scape-house-name.off { color: rgba(200, 110, 110, 0.6); }
 

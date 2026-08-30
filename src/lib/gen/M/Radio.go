@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'e64ccf35a4044f50~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '27ca950854524c32~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -2202,6 +2202,10 @@ Radio_pool_census(w, radio) {
 //   one is never woken.  What changed on 2026-08-08 is that 'playing' is no longer a plain no-op —
 //    it re-opens the LINEUP instead, which touches no timer and cuts no track.
 Radio_nudge(w) {
+    // a new user's first patient moments: radio_w isn't minted yet, so the peerless-zero settle edge
+    //  (SwarmStandup) nudges with an undefined world — w.o() then threw (caught, but noisy in every fresh
+    //   boot, owner 2026-08-31).  A nudge at nothing is simply a no-op.
+    if (!w) return
     let radio = w.o({ Radio: 1 })[0]
     if (!radio) return
     // A PLAYING RADIO IS NOT DEAF (2026-08-08, the human: a friend who comes online mid-track stays

@@ -220,6 +220,18 @@
         }
     })
 
+    // AN ANCHOR-FORM DEVICE LINK LANDING ON A LIVE TAB (2026-08-30 — the whole link rides the fragment
+    //  now: `#Iz=…&fc=…`).  Same-page navigation to a fragment-only URL fires NO reload and NO fresh
+    //   standup — just a hashchange — so the ghost must hear it here, in the always-on standup, and
+    //    re-park the consent (Swarm_offer_land carries the same guards the boot path uses; the
+    //     ferry_surfaced effect above then pokes the re-commission that raises the cell).
+    $effect(() => {
+        if (typeof window === 'undefined') return
+        const on_hash = () => { try { (H as any)?.post_do?.(() => { (H as any)?.Swarm_offer_land?.(H?.Swarm_station_world?.()) }, { see: 'device link landed (hashchange)' }) } catch {} }
+        window.addEventListener('hashchange', on_hash)
+        return () => window.removeEventListener('hashchange', on_hash)
+    })
+
     // …AND WHETHER THE OLD GARDEN SENT THEM, published the same way and for the same reason
     //  (2026-08-12, the owner asking whether the Invite is *"totally robust"* — this was the hole).
     //  A relic invite is `#<pad><prepub>-<advice>-<sign>` in the URL FRAGMENT, so `boot_param`

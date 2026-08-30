@@ -2137,6 +2137,10 @@ Radio_pool_census(w, radio):
 //   one is never woken.  What changed on 2026-08-08 is that 'playing' is no longer a plain no-op —
 //    it re-opens the LINEUP instead, which touches no timer and cuts no track.
 Radio_nudge(w):
+    // a new user's first patient moments: radio_w isn't minted yet, so the peerless-zero settle edge
+    //  (SwarmStandup) nudges with an undefined world — w.o() then threw (caught, but noisy in every fresh
+    //   boot, owner 2026-08-31).  A nudge at nothing is simply a no-op.
+    if (!w) return
     let radio = w.o({ Radio: 1 })[0]
     if (!radio) return
     // A PLAYING RADIO IS NOT DEAF (2026-08-08, the human: a friend who comes online mid-track stays

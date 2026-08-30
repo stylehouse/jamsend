@@ -23,6 +23,7 @@
     //   any glass commissions, and the boot-diagnostic page is where that person lands.
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
     import { boot_param } from "$lib/boot"
+    import { replaceState } from "$app/navigation"   // shallow-router bar rewrite — raw history.replaceState warns
 
     //  ARRIVAL (2026-08-12) — the THIRD dress, and a display mode for the same reason `inglass` is one
     //   (the owner asked for "a new component just for this purpose"; this file's own rule above says
@@ -356,8 +357,11 @@
     //   (below) can REPLACE it so you accept an invite as the identity you're ALREADY booted as
     //    (the enclosing page's ?I), never a fresh role-default.  `landed_url` remembers we opened
     //     FROM a scan, so only that path auto-joins / hides the paste row.
-    const landed_url = !!boot_param('Iz')
-    let iz = $state<string>(boot_param('Iz') || '')
+    // a device link now rides wholly in the ANCHOR (`#Iz=…&fc=…`, 2026-08-30) — read the fragment
+    //  beside the query so an anchor-form landing counts as a scan-landing too (old ?Iz links still land).
+    const hash_iz = (() => { try { return typeof location !== 'undefined' ? (new URLSearchParams(String(location.hash || '').slice(1)).get('Iz') || '') : '' } catch { return '' } })()
+    const landed_url = !!boot_param('Iz') || !!hash_iz
+    let iz = $state<string>(boot_param('Iz') || hash_iz || '')
     let invite = $state<any>(null)       // the parsed token {prepub, serial, to, params} — the offer's face
     let iz_err = $state('')
     let joined = $state('')
@@ -475,7 +479,7 @@
     //     pinned-success path that used to gate it.  Optionally pin the identity onto the bar in the
     //      same replaceState (?I=<prepub>) so the reload resumes as this self, never a role stranger.
     function strip_iz(pin_prepub?: string) {
-        if (typeof window === 'undefined' || !window.history?.replaceState) return
+        if (typeof window === 'undefined') return
         const u = new URL(window.location.href)
         // A RELIC LIVES IN THE FRAGMENT (rung 2), and the `?Iz` early-return below used to leave one
         //  in the bar forever: an old link spent on its first visit re-armed on every reload and then
@@ -484,11 +488,14 @@
         //     new friendship on the old key. Only ever clears a fragment we PARSED as a relic; a
         //      plain #anchor belongs to somebody else and stays.
         const had_relic = !!landed_relic && !!u.hash
-        if (!u.searchParams.has('Iz') && !had_relic) return
+        // an anchor-form device link (`#Iz=…&fc=…`) lives wholly in the fragment — clear it like the
+        //  relic case, but ONLY when the fragment actually parses an Iz; a plain #anchor stays.
+        const had_hash_iz = (() => { try { return !!new URLSearchParams(String(u.hash || '').slice(1)).get('Iz') } catch { return false } })()
+        if (!u.searchParams.has('Iz') && !had_relic && !had_hash_iz) return
         u.searchParams.delete('Iz')
-        if (had_relic) u.hash = ''
+        if (had_relic || had_hash_iz) u.hash = ''
         if (pin_prepub) u.searchParams.set('I', pin_prepub)
-        window.history.replaceState(null, '', u.toString())
+        try { replaceState(u.pathname + u.search + u.hash, {}) } catch {}
     }
     // a landed ?Iz that will not parse is a DEAD token (malformed, or a single-use blob already
     //  spent on an earlier scan) — clean it out of the bar so a reload starts fresh instead of
@@ -607,8 +614,13 @@
     function iz_from(text: string): string {
         const s = String(text || '').trim()
         if (!s) return ''
-        try { const p = new URL(s).searchParams.get('Iz'); if (p) return p } catch {}
-        const m = s.match(/[?&]Iz=([^&\s]+)/)
+        try {
+            const u = new URL(s)
+            const p = u.searchParams.get('Iz'); if (p) return p
+            // anchor form (`#Iz=…&fc=…`) — the fragment parses as params
+            const h = new URLSearchParams(String(u.hash || '').slice(1)).get('Iz'); if (h) return h
+        } catch {}
+        const m = s.match(/[?&#]Iz=([^&\s]+)/)
         if (m) return decodeURIComponent(m[1])
         return s   // assume a bare token
     }

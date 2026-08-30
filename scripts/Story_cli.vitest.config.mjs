@@ -14,7 +14,9 @@ const APP = path.resolve('.')
 
 export default defineConfig({
     plugins: [svelte(), svelteTesting()],
-    resolve: { alias: { $lib: path.join(APP, 'src/lib') }, conditions: ['browser'] },
+    // `$app/navigation` (SvelteKit virtual module) has no provider under bare svelte() — stub it so any
+    //  .svelte importing it (LinkDevice/InvitePanel's shallow-router bar rewrite) transforms headless.
+    resolve: { alias: { $lib: path.join(APP, 'src/lib'), '$app/navigation': path.join(APP, 'scripts/app_navigation_stub.mjs') }, conditions: ['browser'] },
     // a root-run dev server leaves /app/node_modules/.vite root-owned → EACCES when the
     //  svelte optimizer writes _svelte_metadata.json.  Point the cache at a node-writable
     //   /tmp dir (the proven LakeRace fix; --root was tried and breaks bare svelte resolution).

@@ -1,4 +1,4 @@
-Credulate,of_Book:InvSeal
+Credulate,of_Book:InvFerry
   GhostInclude:Ghost_N_Peeroleum,dige:b073368117843b34~g1
   GhostInclude:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
   GhostInclude:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1
@@ -32,7 +32,7 @@ Credulate,of_Book:InvSeal
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
   GhostInclude:Ghost_Story_Sounditron,dige:962e87896b132dbc~g1
   GhostInclude:Ghost_O_Supervisor,dige:502a01f7da7e4b14~g1
-  last_ok,at=1788063986.055,ok_pct
+  last_ok,at=1788064012.64,ok_pct
     uses:Ghost_N_Peeroleum,dige:b073368117843b34~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1

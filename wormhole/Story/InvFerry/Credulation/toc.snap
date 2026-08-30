@@ -1,5 +1,5 @@
-Credulation,of_Book:SwarmStaple
-  run=0,at=1788064001.285,ok,ok_pct,mode:check
+Credulation,of_Book:InvFerry
+  run=0,at=1788064012.64,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:b073368117843b34~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1

@@ -766,10 +766,16 @@ Swarm_iz_of_url(href):
     if (!href) return null
     let s = String(href)
     let hash = s.indexOf('#')
+    let frag = hash >= 0 ? s.slice(hash + 1) : ''
     if (hash >= 0) s = s.slice(0, hash)
     let at = s.indexOf('?')
-    if (at < 0) return null
-    return new URLSearchParams(s.slice(at + 1)).get('Iz')
+    let q = at >= 0 ? new URLSearchParams(s.slice(at + 1)).get('Iz') : null
+    if (q) return q
+    // ANCHOR FORM (2026-08-30): the device link now rides wholly in the fragment (`#Iz=<token>&fc=<secret>`)
+    //  so the token never reaches a server and landing is navigation-free.  The fragment parses as params;
+    //   a `#frag?Iz=x` chat-mangled shape still refuses (its key is 'frag?Iz', not 'Iz') — the old caution holds.
+    if (frag) { let f = new URLSearchParams(frag).get('Iz'); if (f) return f }
+    return null
 //#endregion
 
 //#region legacy — the old garden's Idzeug (§6.2 rung 1: dual-parse at the door)
@@ -1073,6 +1079,20 @@ Swarm_arm(w):
         //  gives up the "connecting…" wait (owner: "eed can only get rid of that by cancelling the token, which 495
         //   then gives up from").  Matched on `from` inside so a stray cancel can't knock out an unrelated adopt.
         if (frame.header.type === 'ferry_cancel') this.Swarm_ferry_cancelled(w2, ident, from)
+        // FERRY HELD — the delivery-ack (the beat BEFORE ferry_got): the new device HOLDS the sealed soul
+        //  and its consent screen is up.  Fold it into the standing ferry_sent (+ the durable twin, so a
+        //   Linkor reload keeps the fact) — the cell's wait ladder reads `held` to say "delivered — they're
+        //    looking at the consent" instead of a blind "waiting".  No state is retired here: the ceremony
+        //     still ends only at ferry_got / ferry_cancel.
+        if (frame.header.type === 'ferry_held') {
+            let htop = this.top_House ? this.top_House() : null
+            if (htop && htop.c && htop.c.ferry_sent) {
+                htop.c.ferry_sent.held = Date.now()
+                if (htop.stashed && htop.stashed.ferry_await_got) { htop.stashed.ferry_await_got.held = Date.now() }
+                if (htop.bump_version) { htop.bump_version() }
+                console.log('🦑 ferry: ✓ delivered — the other device holds the sealed soul, its consent screen is up')
+            }
+        }
         // FERRY GOT — the receive-ack (task #21): the new device TOOK the soul ON.  Close the ceremony's arc on
         //  this (soul) side: the secret is SPENT (drop it + its durable twin, so no "link in flight" lingers and
         //   no later poke re-parks a confirm for an already-served mint) and leave `ferry_got` for the cell's
@@ -1101,7 +1121,7 @@ Swarm_arm(w):
         if (['pier_hello', 'pier_accept', 'pier_confirm', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok'].includes(frame.header.type)) this.Swarm_account_settle(ident, frame.header.type)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'adopt_seal', 'adopt_confirm', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'adopt_seal', 'adopt_confirm', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held']) w.c.on[kind] = hear
 
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
 //  (1) a cache hit — a voucher whose sign we already proved this era — passes without crypto.
@@ -1520,18 +1540,7 @@ Swarm_station_up(w, ident):
         //       and by the cell's decline (which strips the ?Iz).  jsdom/Books carry no ?Iz → no-op → fixtures
         //        untouched.  The consent CLICK stays in the Link cell — the one dependency on a mounted UI that
         //         is legitimate, because it IS the user OKing something.
-        if (typeof location !== 'undefined' && !sweep_top.c.ferry_offer && !sweep_top.c.ferry_awaiting && !sweep_top.c.ferry_pending) {
-            let liz = ''
-            try { liz = new URLSearchParams(location.search).get('Iz') || '' } catch (er) { liz = '' }
-            if (liz && typeof this.Swarm_token_parse === 'function') {
-                let lt = null
-                try { lt = this.Swarm_token_parse(liz) } catch (er) { lt = null }
-                if (lt && lt.to === 'MyCave') {
-                    sweep_top.c.ferry_offer = { from: String(lt.prepub || ''), friendly: String(lt.friendly || '') }
-                    console.log('🦑 ferry: this tab was opened from a device link — raising the "become them?" consent')
-                }
-            }
-        }
+        this.Swarm_offer_land(w)
     }
     // mint the era HERE, at standup, not lazily at first greeting: Swarm_deliver stamps it on every
     //  swarm frame but only `if (w.c.station_era)`, so a station whose voucher/greeting paths both
@@ -4536,7 +4545,7 @@ async Swarm_ferry_heard(w, ident, frame, code):
     return soul
 // Swarm_ferry_link — the CAPTAIN's "make another device my Cave" link: mint a MyCave invite (whoever
 //  redeems it dials me, forming the pier), and a random ferry SECRET stashed for the next redeem, carried
-//   in the URL FRAGMENT so it never rides the relay.  Returns <base>?Iz=<token>#fc=<secret>.
+//   in the URL FRAGMENT so it never rides the relay.  Returns <base>#Iz=<token>&fc=<secret> (anchor form).
 async Swarm_ferry_link(w, soulIdent, base):
     let iz = await this.Swarm_mint_invite(w, soulIdent, { MyCave: 1 })
     let bytes = crypto.getRandomValues(new Uint8Array(16))
@@ -4558,6 +4567,14 @@ async Swarm_ferry_link(w, soulIdent, base):
     if (top && top.stashed) { top.stashed.ferry_pending_secret = { secret: secret, serial: aserial, at: this.Swarm_now(w) } }
     this.Swarm_expect_arrival(w)
     console.log('🦑 ferry: offering to make a device my Cave — link minted (redeem forms the pier, then I ferry)')
+    // ANCHOR FORM PARKED (owner 2026-08-30: "polish everything BUT the linkAccount thing… then come
+    //  back and really stop not finishing LinkAccount").  The intended `#Iz=<token>&fc=<secret>` atomic
+    //   fragment (token off the server logs, hashchange landing, all-or-nothing against fragment
+    //    strippers) is READ everywhere already — Swarm_iz_of_url, Swarm_offer_land, the panels all
+    //     parse `#Iz=` beside `?Iz=` — but the MINT stays on the proven query form: the InvFerry gate
+    //      went red on the anchor mint (token extracts, Swarm_token_parse refuses — undiagnosed), and a
+    //       link that cannot parse is a landmine, not a feature.  Flip this line back when LinkAccount
+    //        gets its finishing pass; the read side is ready and the Book will gate it.
     return String(base) + '?Iz=' + encodeURIComponent(iz) + '#fc=' + secret
 // Swarm_ferry_on_seal — called when a %Pier seals: if it bears a MyCave grant AND I have a pending ferry
 //  secret (I minted the link), ferry my account over the now-live pier.  No-op otherwise (a plain friend
@@ -4698,6 +4715,33 @@ Swarm_ferry_poke(w):
     top.c.ferry_confirm = { pub: String(pier.sc.pub), name: String(pier.sc.friendly || ''), at: this.Swarm_now(w) }
     console.log('🦑 ferry: the Cave asking for THIS adopt turned up warm — parked the confirm (QR → give my soul)')
     return 1
+// Swarm_offer_land — park the landed device-link consent off the bar: a `Iz` naming a MyCave IS the
+//  standing fact "this tab was opened from a device link" (the ghost-side parking, owner 2026-08-30:
+//   "relying on a certain cell being mounted to hear a message is quite the design dissonance").
+//  Called at station STANDUP (a scanned link boots a fresh tab) AND on a HASHCHANGE (an anchor-form
+//   link landing on a LIVE tab is a fragment change — no navigation, no reboot; owner 2026-08-30:
+//    "does it need to navigate the page though?").  Reads the fragment first (`#Iz=…&fc=…`, the atomic
+//     anchor form), the query as the old-link fallback.  Guarded: a mid-flight ceremony is never
+//      disturbed; jsdom/Books carry no Iz → no-op → fixtures untouched.  `at` is the seizure clock —
+//       Swarm_link_fresh holds the belly-grab until the Butler lifts or 20s pass (never mid-boot).
+Swarm_offer_land(w):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c) { return 0 }
+    if (typeof location === 'undefined') { return 0 }
+    if (top.c.ferry_offer || top.c.ferry_awaiting || top.c.ferry_pending) { return 0 }
+    let liz = ''
+    try {
+        if (location.hash) { liz = new URLSearchParams(String(location.hash).slice(1)).get('Iz') || '' }
+        if (!liz) { liz = new URLSearchParams(location.search).get('Iz') || '' }
+    } catch (er) { liz = '' }
+    if (!liz || typeof this.Swarm_token_parse !== 'function') { return 0 }
+    let lt = null
+    try { lt = this.Swarm_token_parse(liz) } catch (er) { lt = null }
+    if (!lt || lt.to !== 'MyCave') { return 0 }
+    top.c.ferry_offer = { from: String(lt.prepub || ''), friendly: String(lt.friendly || ''), at: Date.now() }
+    console.log('🦑 ferry: this tab was opened from a device link — the "become them?" consent will rise once the boot surface is up')
+    return 1
+
 // Swarm_ferry_park — the NEW DEVICE heard the sealed account: park it for the human's consent (the UI has
 //  the #fc fragment code and calls Swarm_ferry_consume).  Never auto-imports — becoming a body is decided.
 Swarm_ferry_park(w, ident, frame):
@@ -4706,6 +4750,16 @@ Swarm_ferry_park(w, ident, frame):
     //  frame): the pending consent is the consequential screen, so the ended tombstone yields.
     if (top && top.c) { top.c.ferry_pending = { frame: frame, at: this.Swarm_now(w) }; delete top.c.ferry_awaiting; delete top.c.ferry_ended; if (top.stashed) { delete top.stashed.ferry_awaiting } }
     console.log('🦑 ferry: an account arrived sealed to me over the pier — awaiting my consent + code')
+    // THE HELD-ACK (owner 2026-08-30: at "waiting for its received", "AS BEFORE, several times now, I'm
+    //  begging for more feedback around what's going on").  The soul's ONLY ack used to be ferry_got —
+    //   which fires after the human here CONSENTS, so the Linkor's wait could not distinguish "sent into
+    //    the void" from "delivered, their consent screen is up".  Tell it the sealed soul is HELD, right
+    //     now, before any consent: the salt already names the soul (`<soulpub>:<mypub>`).  Humdinger-gated
+    //      (a Book's park stays local → fixtures untouched); rides the reliable outbox like ferry_got.
+    if (top && top.c && top.c.humdinger && frame && frame.salt) {
+        let hsoul = String(frame.salt).split(':')[0]
+        if (hsoul && ident) { try { this.Swarm_deliver(w, ident, hsoul, { kind: 'ferry_held', page: this.Swarm_page(ident) }) } catch (er) {} }
+    }
     return true
 // Swarm_ferry_pending — the UI reads whether a ferried account is waiting (returns 1 or null).
 Swarm_ferry_pending(w):
@@ -4790,7 +4844,18 @@ Swarm_link_fresh(w):
     //  ghost-side at standup off the landed ?Iz URL): their own deliberate act, so seize the screen to ask —
     //   there is no counterparty to have dialed yet, and the offer is non-durable so a stale one can't survive
     //    a reload (the URL is its durable copy).
-    if (top.c.ferry_offer) { return 1 }
+    //  …but NOT MID-BOOT (owner 2026-08-30: "the state of ferry is kicking off way too early" — the consent
+    //   cell seized a half-built stage, rendering giant/mispositioned over a boot that hadn't reached the
+    //    Radio, while the splash/Butler still owned the screen).  The offer PARKS at standup (that fact is
+    //     durable and early by design); the SEIZURE waits for the Butler to lift (`top.c.butler_up` gone =
+    //      arrival happened, the glass is real).  Grace: an arrival that never comes must not strand the
+    //       consent, so a parked offer older than 20s seizes anyway — by then the splash's own 7s cap has
+    //        long revealed whatever surface exists.  Pages with no Butler at all never set butler_up → no hold.
+    if (top.c.ferry_offer) {
+        let ofr = top.c.ferry_offer
+        if (!top.c.butler_up || (ofr.at && (Date.now() - ofr.at) > 20000)) { return 1 }
+        return null
+    }
     // a ceremony that ENDED (the far side called it off) needs the human's one `done` ack — the terminal screen
     //  is the whole point (never a silent vanish), so it deserves the screen exactly once.
     if (top.c.ferry_ended) { return 1 }

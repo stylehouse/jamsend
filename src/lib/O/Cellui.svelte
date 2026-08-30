@@ -371,10 +371,24 @@
     })
 
     // ── derived cell list (re-runs on H.version bump OR the heartbeat) ───────────
+    // OBSERVABILITY (owner 2026-08-31: "very burny … more logging as we navigate … everything should be
+    //  observable enough").  Count + time every cell re-scan: a hot re-commission shows as a high #/sec and
+    //   the ms says whether the scan itself is the cost or it's just firing too often.  Logs on a SLOW scan or
+    //    once per ~20 to stay off the console-flood pedal; the mk list shows exactly what the glass is drawing.
+    let cell_scan_n = 0
+    let cell_scan_last = 0
     const cells = $derived.by(() => {
         void (H as any)?.version
         void now_tick
-        return scan_cells()
+        const t0 = (typeof performance !== 'undefined') ? performance.now() : 0
+        const r = scan_cells()
+        const dt = ((typeof performance !== 'undefined') ? performance.now() : 0) - t0
+        cell_scan_n++
+        const since = t0 - cell_scan_last; cell_scan_last = t0
+        if (dt > 6 || since < 40 || cell_scan_n % 20 === 1) {
+            console.log(`🎴 Cello scan #${cell_scan_n}: ${r.length} cells in ${dt.toFixed(1)}ms (${since < 9e8 ? '+' + since.toFixed(0) + 'ms' : 'first'}) [${r.map((c) => c.mk).join(',')}]`)
+        }
+        return r
     })
 
     // ── RESTING MAIN is ALWAYS the Player (Radio) ─────────────────────────────────
@@ -532,6 +546,13 @@
     //     stay available — flip by which cell is main.  When off-edge the main's wall is re-derived
     //      oversized (scale) and shifted LEFT (dx<0) so only its right portion shows in the box.
     const main_offedge = $derived(!!main_cell && TAKEOVER.has(main_cell.mk))
+    // INTENT (owner 2026-08-31: "intent and delivery of some cell layout state").  What does the glass MEAN to
+    //  show as the big cell, and is it the dramatic off-edge?  A Link/Door reading offedge=true here is the
+    //   giant-cell bug caught red-handed (only Heist/HeistBar are in TAKEOVER), so this line is the smoking gun.
+    $effect(() => {
+        void (H as any)?.version; void now_tick
+        if (main_cell) console.log(`🎴 Cello INTENT: main=${main_cell.mk} offedge=${main_offedge} key=${String(main_cell.key).slice(0, 10)} cells=${cells.length} [${cells.map((c) => c.mk).join(',')}]`)
+    })
     // OFF-EDGE blob is OVERSIZED so it OVERFILLS the visible box (owner 2026-08-30: "not fat enough on
     //  the left side — showing two triangles of outside it").  A normal-radius ring in the wide spilling
     //   box left the top-left/bottom-left viewport corners OUTSIDE the curve (the two triangles).  scale
@@ -776,6 +797,11 @@
                 const fit = Math.max(FIT_MIN, Math.min(cap, raw))
                 const cur = fits.get(key) ?? 1
                 if (Math.abs(fit - cur) / cur <= FIT_DEADBAND) continue   // dead-band damp
+                // DELIVERY (owner 2026-08-31: "intent and delivery of some cell layout state is what we're after").
+                //  The main cell's fit is what actually SIZES it — a giant cell is a fit that never got applied
+                //   (mold unmeasured) or a wrong natural box.  Log the change so the ×½-then-back wobble + the
+                //    giant are legible: cur→fit, the natural box, the inscribe target, and which cap bit.
+                if (key === main_key) console.log(`🎴 fit[main ${main_cell?.mk}] ${cur.toFixed(2)}→${fit.toFixed(2)} · nat ${nw}×${nh} inscr ${iw | 0}×${ih | 0} · ${stretched ? 'stretched' : 'compact'} cap=${cap}`)
                 if (!next) next = new Map(fits)
                 next.set(key, fit)
             }

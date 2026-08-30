@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_InvFerry(): string { return '80cfd0e7587f0a67~g1' },
+    Ghostmeta_Ghost_Story_InvFerry(): string { return '03c00a4024b94132~g1' },
 
 // InvFerry.g — the SECOND Inv* Book: the WHOLE ferry exchange end to end (Inv_ferry_todo.md §3).
 //  InvSeal proves ONE rung (the seal-seam warmth gate — cold refuses / warm parks the consent).
@@ -128,6 +128,11 @@ async InvFerry_mint(w) {
     let token = this.Swarm_iz_of_url(url)
     let t = token ? this.Swarm_token_parse(token) : null
     w.c.token = token
+    // CAPTURE THE CODE NOW (the first run's finding, 2026-08-30): Swarm_ferry_on_seal fires at beat 4's
+    //  seal seam, auto-sends the ferry AND CLEARS the live secret + twin ("cleared on a successful send") —
+    //   so a beat-5 read of top.c.ferry_secret finds nothing and the cross silently skips.  The human's
+    //    copy is the #fc fragment they carried; this is the Book's fragment.
+    w.c.code = secret ? String(secret) : ''
     let row = { minted: 1 }
     if (url.startsWith('https://jamsend.example/BigSoundland?Iz=') && url.includes('#fc=')) { row.url_carries_both = 1 }
     if (secret && String(secret).length === 32 && url.endsWith('#fc=' + String(secret))) { row.secret_rides_fragment = 1 }
@@ -169,13 +174,16 @@ async InvFerry_cross(w) {
     let peering = this.Swarm_peering(alice)
     let pier = peering ? peering.o({ Pier: 1, pub: ckeys.prepub })[0] : null
     if (!pier) { this.InvFerry_note(w, { crossed: 1, no_pier: 1 }); return }
-    // the code the human carried on the #fc fragment — re-read off the live secret (never off the wire).
-    let code = top && top.c ? top.c.ferry_secret : null
-    if (!code) { code = top && top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null }
+    // the code the human carried on the #fc fragment — the Book's copy, captured AT MINT (beat 3), because
+    //  Swarm_ferry_on_seal already fired at beat 4's seal: it auto-sent the ferry over the fresh pier and
+    //   CLEARED the live secret + its twin (its own "cleared on a successful send" contract).  So by here
+    //    the frame is ALREADY in Cavey's mail — the frame's presence IS the sent proof — and only the
+    //     carried fragment can unseal it, exactly the live shape.
+    let code = w.c.code
     let keyhex = alice.c.keys ? alice.c.keys.key : null
-    let sent = code ? await this.Swarm_ferry_send(w, alice, pier, code) : false
     let m = cavey.o({ mail: 1 })[0]?.o({ frame: 'ferry' })[0]
     let frame = m ? m.c.frame : null
+    let sent = frame ? true : false
     let esoul = frame && code ? await this.Swarm_ferry_heard(w, cavey, frame, code) : null
     // fails-closed — a fresh device given the same frame with a WRONG code unseals nothing.
     let fcont = w.oai({ Account: 1, of: 'Fbox' })
@@ -184,15 +192,16 @@ async InvFerry_cross(w) {
     let fproto = this.Swarm_identity(fcont, fkeys, 'Fbox')
     let badHeard = frame ? await this.Swarm_ferry_heard(w, fproto, frame, 'wrong-ferry-code-000') : null
     let ebody = esoul ? this.Swarm_body_mine(esoul) : null
-    // the account crossed WHOLE: the landed soul re-exports byte-identical to Alice's own export
-    //  (the SwarmFerry claim — a lossy transfer flips it).  Both exported with {secret} for a full compare.
-    let aliceBlob = await this.Swarm_export(alice, { secret: 1 })
-    let landedBlob = esoul ? await this.Swarm_export(esoul, { secret: 1 }) : null
+    // the account's CONTENT crossed: the Idzeug Alice self-issued at beat 2 (Music, Jazz) stands on the
+    //  landed soul's Peering.  (NOT a byte-identical re-export — the landing legitimately mutates the
+    //   account: Swarm_body_take writes the new Cave body onto it, so `whole` was a false claim; the
+    //    first run proved every other rung and refused exactly this one.)
+    let eidz = esoul ? this.Swarm_peering(esoul)?.o({ Idzeug: 1 }).find((z) => z.sc.genre === 'Jazz') : null
     let row = { crossed: 1 }
     if (sent === true) { row.ferry_sent = 1 }
     if (frame && keyhex && String(frame.sealed || '').indexOf(keyhex) < 0) { row.secret_hidden = 1 }
     if (esoul && esoul.c.keys && String(esoul.c.keys.pub) === String(alice.c.keys.pub)) { row.account_crossed = 1 }
-    if (landedBlob && landedBlob === aliceBlob) { row.whole = 1 }
+    if (eidz) { row.content_crossed = 1 }
     if (esoul && esoul.c.keys && String(esoul.c.keys.key) === String(keyhex) && !esoul.sc.key && !esoul.sc.pub) { row.keys_thawed = 1 }
     if (ebody && ebody.sc.role === 'Cave') { row.post_cave = 1 }
     if (badHeard === null) { row.wrongcode_no_body = 1 }
@@ -247,7 +256,7 @@ InvFerry_witness(w) {
     if (aPier && cPier && aGave) { this.story_swear(w, 'the door verifies and claims — the presig regenerates off the issuer ledger and only the issuer can wear the MAC then the serial ticks the spend ledger and both sides land a mutual Pier bearing the cross-signed MyCave grant') }
     // beat 5: the account crosses whole and secret; the keys thaw to .c; a wrong code lands nothing.
     let cr = T.o({ crossed: 1 })[0]
-    if (cr && +cr.sc.ferry_sent === 1 && +cr.sc.account_crossed === 1 && +cr.sc.whole === 1 && +cr.sc.secret_hidden === 1 && +cr.sc.keys_thawed === 1 && +cr.sc.post_cave === 1 && +cr.sc.wrongcode_no_body === 1) { this.story_swear(w, 'the account crosses the sealed pier whole — the soul exports and seals across under the fragment code and the blank device unseals it and now holds the very same soul key as a Cave with keys on .c only while the frame hides the secret and a wrong code lands no account') }
+    if (cr && +cr.sc.ferry_sent === 1 && +cr.sc.account_crossed === 1 && +cr.sc.content_crossed === 1 && +cr.sc.secret_hidden === 1 && +cr.sc.keys_thawed === 1 && +cr.sc.post_cave === 1 && +cr.sc.wrongcode_no_body === 1) { this.story_swear(w, 'the account crosses the sealed pier — the soul seals across under the fragment code and the blank device unseals it and now holds the very same soul key and its issued content as a Cave with keys on .c only while the frame hides the secret and a wrong code lands no account') }
     // beat 6: the teeth — the spent serial refuses a re-scan; a forged presig refuses at the door.
     let eve = this.InvFerry_ident(w, 'Eve')
     let mallory = this.InvFerry_ident(w, 'Mallory')

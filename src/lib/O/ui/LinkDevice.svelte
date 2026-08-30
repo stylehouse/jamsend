@@ -28,6 +28,12 @@
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
     import Bandwidth from "$lib/O/ui/micro/Bandwidth.svelte"
     import { tick } from "svelte"
+    // SvelteKit's shallow-router replaceState — raw history.replaceState warns ("will conflict with SvelteKit's
+    //  router", owner 2026-08-31 console).  We only ever REWRITE this page's query/hash (drop ?Iz, pin ?I=), never
+    //   navigate, so shallow replaceState is exactly right.  set_bar() is the one seam both the finalize + the
+    //    cancel strip go through.
+    import { replaceState } from "$app/navigation"
+    function set_bar(u: URL) { try { replaceState(u.pathname + u.search + u.hash, {}) } catch {} }
     let { H } = $props()
 
     // the machine's live soul (may be null mid-standup), and the station world/up (dialable before a scan)
@@ -155,11 +161,11 @@
     //    the blank self ("it should be eed when this procedure is complete").
     function finalize_url(soul: any) {
         try {
-            if (typeof window === 'undefined' || !window.history?.replaceState) return
+            if (typeof window === 'undefined') return
             const u = new URL(location.href)
             u.searchParams.delete('Iz'); u.hash = ''
             if (soul?.sc?.prepub) u.searchParams.set('I', String(soul.sc.prepub))
-            window.history.replaceState(null, '', u.toString())
+            set_bar(u)
         } catch {}
     }
 
@@ -196,6 +202,40 @@
     }
 
     const short = (s: string) => (s ? String(s).slice(0, 8) : '')
+    // seconds-or-minutes age off the shared heartbeat — every fact in the wait ladder + wire strip carries one,
+    //  because "which rung is STALE" is exactly the question the owner keeps having to ask the console.
+    //  MIXED CLOCKS (owner's "29771251m", 2026-08-30): ferry_sent/awaiting/confirm stamp `at` with Swarm_now —
+    //   epoch SECONDS — while ferry_got/ferry_held stamp Date.now() ms.  Auto-detect: below 1e11 it's seconds.
+    const age_of = (at: any) => { void now_tick; let a = +at || 0; if (a && a < 1e11) a = a * 1000; const s = Math.max(0, Math.round((Date.now() - a) / 1000)); return s < 120 ? `${s}s` : `${Math.round(s / 60)}m` }
+    // ── THE FERRY WIRE STRIP (owner 2026-08-30: "we want some indicator of what's happening, so I can tell
+    //  you where it's stuck").  The RAW standing ferry facts — every top.c.ferry_* flag with its age, the
+    //   durable twins, the counterparty pier's warmth — printed small under every phase of this cell.  Not a
+    //    summary, a dump: when the ceremony wedges, this line IS the bug report.  Heartbeat-driven (`.c`
+    //     writes never bump H.version), so it stays live even with the belief loop starved. -->
+    let wire = $derived.by(() => {
+        void now_tick; void H?.version
+        try {
+            const t = H?.top_House?.(); const c: any = t?.c ?? {}; const st: any = (t as any)?.stashed ?? {}
+            const rows: string[] = []
+            if (c.ferry_secret)   rows.push('secret✓' + (c.ferry_serial ? '#' + c.ferry_serial : ''))
+            if (st.ferry_pending_secret) rows.push('twin ' + age_of(st.ferry_pending_secret.at))
+            if (c.ferry_offer)    rows.push('offer ' + (c.ferry_offer.at ? age_of(c.ferry_offer.at) : '·'))
+            if (c.ferry_awaiting) rows.push('awaiting ' + short(c.ferry_awaiting.soul) + ' ' + (c.ferry_awaiting.at ? age_of(c.ferry_awaiting.at) : '·'))
+            if (c.ferry_confirm)  rows.push('confirm ' + short(c.ferry_confirm.pub) + ' ' + (c.ferry_confirm.at ? age_of(c.ferry_confirm.at) : '·'))
+            if (c.ferrying)       rows.push('ferrying…')
+            if (c.ferry_sent)     rows.push('sent ' + age_of(c.ferry_sent.at) + (c.ferry_sent.held ? ' held✓' + age_of(c.ferry_sent.held) : ' unheld'))
+            if (c.ferry_pending)  rows.push('pending ' + (c.ferry_pending.at ? age_of(c.ferry_pending.at) : '·'))
+            if (c.ferry_got)      rows.push('got✓ ' + age_of(c.ferry_got.at))
+            if (c.ferry_ended)    rows.push('ended')
+            const p = other_pier?.()
+            if (p) {
+                const ha = (p as any).c?.heard_at || 0
+                rows.push('pier ' + short(String((p as any).sc?.pub || '')) + (ha ? ' heard ' + age_of(ha) : ' silent'))
+            }
+            if (!has_code) rows.push('code✗')
+            return rows.join(' · ')
+        } catch { return '' }
+    })
     // (the cross-origin/relay warning that used to sit under the QR was removed 2026-08-28 — owner: "lose
     //  that stuff about relays".  Too much text on the sharing page; a mis-scan fails visibly enough.)
     // (The old `peer_ready` "✓ connected" flash lived here — removed 2026-08-28.  The confirm now lives IN this
@@ -260,7 +300,11 @@
         //       the "connecting" phase on its own.  The ?Iz token is in the bar (a landed device link).
         const soulpub = offer ? String(offer.from || '') : ''
         let iz = ''
-        try { iz = new URLSearchParams(location.search).get('Iz') || '' } catch {}
+        // anchor form first (`#Iz=…&fc=…` — the whole link rides the fragment now), query as the old-link fallback
+        try {
+            if (location.hash) iz = new URLSearchParams(String(location.hash).slice(1)).get('Iz') || ''
+            if (!iz) iz = new URLSearchParams(location.search).get('Iz') || ''
+        } catch {}
         if (!iz || !soulpub) { err = 'this device link is missing its token — reopen the whole link from your other device'; return }
         const w = world()
         if (!w || typeof H?.Swarm_station_up !== 'function' || !H.Swarm_station_up(w, self)) {
@@ -286,9 +330,9 @@
     //   a reload resurrects a consent the ceremony already answered.
     function strip_link_url() {
         try {
-            if (typeof window !== 'undefined' && window.history?.replaceState) {
+            if (typeof window !== 'undefined') {
                 const u = new URL(location.href); u.searchParams.delete('Iz'); u.hash = ''
-                window.history.replaceState(null, '', u.toString())
+                set_bar(u)
             }
         } catch {}
     }
@@ -307,6 +351,11 @@
     //  so under a Repli flood eed would stay stuck on "waiting for its received" though the ack has landed.  The
     //   1s heartbeat surfaces the receive-ack regardless of the starved belief loop, closing the arc.
     let got = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_got) ?? null } catch { return null } })
+    // the MACHINE's sent fact (top.c.ferry_sent {pub,at,held?}) beside the local `sent` state: it carries the
+    //  held-ack (ferry_held → .held stamped by the hear funnel) for the wait ladder below, and it SURVIVES a
+    //   reload (the standup rehydrates it off the ferry_await_got twin) where the local `sent` string does not —
+    //    so the phase reads `sent || got || sent_fact` and a reloaded Linkor lands back on this screen (task #48).
+    let sent_fact = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_sent) ?? null } catch { return null } })
     // ── ENDED — the far side called the link off (Swarm_ferry_cancelled parks it): every ceremony ends on a
     //  screen, never a silent fold to Radio.  `done` clears it (and link_active falls with it).
     let ended = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_ended) ?? null } catch { return null } })
@@ -522,15 +571,30 @@
                 </div>
             {/if}
         </div>
-    {:else if sent || got}
+    {:else if sent || got || sent_fact}
         <!-- "sent" is honest but half the arc ("the frame left here"); `got` is the whole of it — the other
              device consumed the soul (ferry_got, which also retired the spent secret).  One face, upgraded
-             live the moment the ack lands.  done clears both (ferry_got is `.c` — never snapped). -->
+             live as each ack lands.  done clears both (ferry_got is `.c` — never snapped).
+             THE WAIT LADDER (owner 2026-08-30: "AS BEFORE, several times now, I'm begging for more feedback
+             around what's going on at this point" — and the bandwidth readout was "misleading noise", 0-2kBps
+             says nothing about a ceremony).  So the wait names its FACTS, each with its age: the send, then
+             the held-ack (ferry_held — they HOLD the sealed soul, their consent screen is up), then the human
+             step that remains.  A missing rung after ~10s is itself the finding: the ack lane is blocked. -->
         <div class="ld-face">
             <div class="ld-cap-big">{got ? '✓ soul received' : '✓ soul given'}</div>
             <p class="ld-deal">{got ? 'your other device took it on — you live there now too.' : 'sent to your other device — waiting for it to take the soul on…'}</p>
-            {#if !got}<Bandwidth {H} dir="tx" label="waiting for its “received”" />{/if}
-            <button class="ld-cancel-b" onclick={() => { sent = ''; try { const t = H?.top_House?.(); if (t?.c?.ferry_got) delete t.c.ferry_got } catch {} }}>done</button>
+            {#if !got}
+                <div class="ld-ladder">
+                    <div class="ld-rung on">✓ sent{#if sent_fact?.at}&nbsp;<span class="ld-rung-age">{age_of(sent_fact.at)}</span>{/if}</div>
+                    {#if sent_fact?.held}
+                        <div class="ld-rung on">✓ delivered — it holds the sealed soul&nbsp;<span class="ld-rung-age">{age_of(sent_fact.held)}</span></div>
+                        <div class="ld-rung wait">… its consent screen is up: go say <b>yes</b> there (the three glyphs must match)</div>
+                    {:else}
+                        <div class="ld-rung wait">… no delivery ack yet{#if sent_fact?.at}&nbsp;<span class="ld-rung-age">{age_of(sent_fact.at)}</span>{/if} — past ~10s the other device is away, still booting, or its wire is clogged</div>
+                    {/if}
+                </div>
+            {/if}
+            <button class="ld-cancel-b" onclick={() => { sent = ''; try { const t = H?.top_House?.(); if (t?.c?.ferry_got) delete t.c.ferry_got; if (t?.c?.ferry_sent) delete t.c.ferry_sent } catch {} }}>done</button>
         </div>
     {:else if awaiting}
         <!-- LINKEE "connecting" — the link is redeemed and a soul is inbound, waiting on the OTHER device's
@@ -605,6 +669,9 @@
         </div>
     {/if}
     {#if err}<div class="ld-err">{err}</div>{/if}
+    <!-- the ferry wire strip — raw standing facts + ages, every phase (see the `wire` derived's header).
+         Dim and small: furniture until something wedges, at which point it IS the bug report. -->
+    {#if wire}<div class="ld-wire" title="the raw ferry facts standing on this tab — each with its age; the counterparty pier's warmth rides at the end">{wire}</div>{/if}
 </div>
 
 <style>
@@ -721,4 +788,19 @@
     .ld-live-here { color: #093; background: rgba(64, 200, 96, .16); text-shadow: 0 0 6px rgba(64, 220, 96, .5); }
     .ld-live-fade { color: #a70; background: rgba(220, 160, 40, .14); }
     .ld-live-away { color: #977; background: rgba(150, 120, 120, .14); }
+    /* the wait ladder — one fact per rung, ages beside them; the missing rung is the finding */
+    .ld-ladder { display: flex; flex-direction: column; gap: 0.2rem; margin: 0.3rem 0; }
+    .ld-rung { font-size: 0.78rem; line-height: 1.35; }
+    .ld-rung.on   { color: #8fd6a2; }
+    .ld-rung.wait { color: rgba(220, 210, 170, 0.85); }
+    .ld-rung-age  { opacity: 0.55; font-size: 0.85em; font-family: monospace; }
+
+    /* the ferry wire strip — the raw facts dump under every phase */
+    .ld-wire {
+        margin-top: 0.4rem;
+        font-family: monospace; font-size: 0.62rem; line-height: 1.4;
+        color: rgba(160, 175, 200, 0.55);
+        word-break: break-word;
+        border-top: 1px dashed rgba(120, 140, 195, 0.2); padding-top: 0.25rem;
+    }
 </style>
