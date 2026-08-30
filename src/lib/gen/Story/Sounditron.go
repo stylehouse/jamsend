@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '59a5b0901161de27~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '962e87896b132dbc~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -431,10 +431,13 @@ Sounditron_commission(w) { const H = this;
     //  Swarm_link_fresh.  Opening the cell BY HAND is NOT here — Sounditron_link_open focuses %Link directly (the
     //   Door button), so no `link_lobby` flag is needed and the old lobby-latch noop is gone.
     let active = linkFresh ? 1 : 0
-    // auto-focus the belly %Link ONCE when it goes active (the link_surfaced latch), then yield to any deliberate
-    //  press away; when it goes inactive, release the latch and let a focus still parked on Link fall back to the
-    //   Door|Radio default so a finished/dead link never strands the belly.
-    if (active && !w.c.link_surfaced) { w.c.focused = 'Link'; w.c.link_surfaced = 1 }
+    // INSISTENT while the ceremony is live (owner 2026-08-30: "it needs to be more insistent on being in Link
+    //  when this is going down").  `active` is the warmth-gated Swarm_link_fresh, so it is only true while a
+    //   REAL adopt/ferry is in flight (a stale one never seizes).  Re-assert focus EVERY commission it holds —
+    //    not once — so wandering to another cell snaps back to Link (the "Cave wanting colonising" pull the
+    //     owner asked for).  The escape is cancel/refuse, which tears the ferry down so `active` falls false and
+    //      this stops re-pulling.  Still latch link_surfaced so the !active teardown below fires once when it ends.
+    if (active) { w.c.focused = 'Link'; w.c.link_surfaced = 1 }
     if (!active && w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
     if (!active && w.c.link_decided) { delete w.c.link_decided }
     // PUBLISH THE FULLSCREEN AUTHORITY here, on the same humdinger-gated commission that decides the belly focus —
@@ -1160,12 +1163,23 @@ Sounditron_link_open(w) {
     return 1
 },
 // Sounditron_link_close — the cell's "no"/✕ / the one dismiss: tear down any in-flight ceremony (Swarm_ferry_cancel
-//  is idempotent — safe when nothing is in flight, and it UnInvites the counterparty so the same peer can't re-seize)
-//   then navigate the belly back to the Door so the manually-opened cell folds away.
+//  is idempotent — safe when nothing is in flight, and it UnInvites the counterparty so the same peer can't re-seize).
+//   STAY IN THE LINK CELL (owner 2026-08-30: "if we cancel it we want to stay in that Link cell") — do NOT eject to
+//    the Door.  Re-focus 'Link' so the belly stays parked on the cell (Sounditron_commission line 427 keeps %Link
+//     grappled whenever focused==='Link', even with no ferry in flight — it lands back on its start/blurb screen).
+//  We must ALSO clear the `link_surfaced` auto-latch on the SAME world the focus lives on (client_w, where the
+//   commission's 416/417 read it): the ferry just went inactive, so the `!active && link_surfaced` teardown at 417
+//    would otherwise delete our fresh 'Link' focus and fold the cell out from under the cancel.  The UnInvite in
+//     ferry_cancel is what keeps a warm Cave from re-seizing us, so parking on Link doesn't reintroduce the hijack.
 Sounditron_link_close(w) {
     let top = this.top_House ? this.top_House() : null
     try { if (this.Swarm_ferry_cancel) { this.Swarm_ferry_cancel(w) } } catch (e) {}
-    try { if (this.Sounditron_focus) { this.Sounditron_focus('Door') } } catch (e) {}
+    try {
+        let vw = this.Sounditron_vyto ? this.Sounditron_vyto().vw : null
+        let cw = vw ? (vw.c.client_w || vw) : null
+        if (cw && cw.c) { delete cw.c.link_surfaced }
+    } catch (e) {}
+    try { if (this.Sounditron_focus) { this.Sounditron_focus('Link') } } catch (e) {}
     if (top && top.bump_version) { top.bump_version() }
     return 1
 

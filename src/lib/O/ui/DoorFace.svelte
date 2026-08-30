@@ -1,6 +1,7 @@
 <script lang="ts">
     import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
     import InvitePanel from './InvitePanel.svelte'
+    import DeleteX from './micro/DeleteX.svelte'   // the confirmey delete (arm → "forget?" → confirm)
     // DoorFace — WHO AM I and WHO'S WITH ME, floating in the glass: the identity + front-door
     //  arc as the prioritised, for-the-user's-eyes face (the human's ?Iz ask, 2026-07-19).
     //   Mounted by Cytui on the %Door particle (glass_kinds.ts).  Everything here reads LIVE
@@ -78,6 +79,10 @@
                         seal_missing: seal === 1 ? (mine_ok ? 'they never granted back' : 'we never granted back') : null,
                         pub: String(p.sc.pub),
                         name: String(p.sc.friendly || String(p.sc.pub).slice(0, 8)),
+                        // split so the row can show "Gwop eed831f1" — friendly prominent, prepub small (owner
+                        //  2026-08-31).  friendly '' when unnamed (then only the pub8 shows, once).
+                        friendly: p.sc.friendly ? String(p.sc.friendly) : '',
+                        pub8: String(p.sc.pub).slice(0, 8),
                         // a MyCave pier is your OWN device (a Cave), not a friend — quietly marked 🔗 so it
                         //  doesn't read as a stranger.  The adopt ceremony itself lives in the Link cell now.
                         cave: !!p.o({ Grant: 'MyCave' })[0],
@@ -314,6 +319,12 @@
     // the pier-list cap ("yay many") — five rows before the +N more toggle takes over.
     const PIERS_SHOWN = 5
     let piers_all = $state(false)
+    // OPTIMISTIC FORGET (owner 2026-08-30: "a 'forget…' button lingers for quite a while when I click
+    //  delete").  Swarm_pier_forget mints a signed %NotGrant + UnInvites; the retired-filter then drops
+    //   the row — but that rides a commission, so the DeleteX sat in its 15s `fired` "forget…" state
+    //    meanwhile.  Hide the row LOCALLY the instant it's confirmed so the button unmounts at once; the
+    //     real forget proceeds underneath, and the retired filter keeps it gone on the next derive.
+    let forgotten = $state(new Set<string>())
 </script>
 
 <!-- SMALL IS THE WHOLE FACE, not a folded version of it (*"Small has only name, maybe the door icon,
@@ -357,8 +368,6 @@
             title="listening only — this browser can't open a music folder, so you're a radio terminal. Your identity lives only in this browser: clearing site data forgets you (linked devices will fix that).">🎧 listening only</span>{/if}
         {#if settle?.state === 'stolen'}<span class="df-settle stolen"
             title="another live body of your identity is on the wire — two writers means either can clobber the other's ledger. This body keeps writing; close the other one (or Steal Back to a new address here).">👥 two of you</span>
-        {:else if settle?.state === 'settled'}<span class="df-settle ok"
-            title={`your ledger is on disk — last confirmed ${new Date(settle.at).toLocaleTimeString()}${settle.why ? ` (after ${settle.why})` : ''}`}>⛁ settled ✓</span>
         {:else if settle?.state === 'settling'}<span class="df-settle busy"
             title={`writing your ledger to disk now${settle.why ? ` (${settle.why})` : ''}…`}>⛁ settling…</span>
         {:else if settle?.state === 'owed'}<span class="df-settle owed"
@@ -452,13 +461,15 @@
          half-sealed pier wears the amber dot; hover says why.  The ♪→ suggest stays: it is a verb,
          not a saying.  And the list is CAPPED (*"the list shouldn't be more than yay many long"*) —
          five rows, then one dim toggle for the rest. -->
-    {#each (piers_all ? face.friends : face.friends.slice(0, PIERS_SHOWN)) as f}
+    {#each (piers_all ? face.friends : face.friends.slice(0, PIERS_SHOWN)).filter(f => !forgotten.has(f.pub)) as f}
         <div class="df-friend">
             <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1}
                 title={(f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago`)
                     + (f.cave ? ' · 🔗 your Cave (a device of yours)' : '') + (f.music ? ' · ♪ granted' : '') + (f.records != null ? ` · ${f.records} records` : '')
                     + (f.seal === 1 ? ` · ⚠ sealing 1 of 2 — ${f.seal_missing}; should heal itself, say so if it sits` : '')}>●</span>
-            <span class="df-name">{f.cave ? '🔗 ' : ''}{f.name}</span>
+            <!-- "Gwop eed831f1" — friendly prominent, prepub small (owner 2026-08-31: "both name and prepub …
+                 make the [name] part bigger, the rest pretty small").  Unnamed pier → just the pub8, once. -->
+            <span class="df-name">{f.cave ? '🔗 ' : ''}{#if f.friendly}{f.friendly}<span class="df-fpub">{f.pub8}</span>{:else}<span class="df-fpub df-fpub-solo">{f.pub8}</span>{/if}</span>
             {#if f.can_suggest}
                 <button class="df-edit" onclick={() => suggest(f.pub)}
                     title="suggest the playing track to {f.name} — lands even if they're away">♪→</button>
@@ -469,8 +480,9 @@
                  filter above drops it from this list.  Not offered while they're here/fading — forgetting
                  a live friend deserves more ceremony than a hover-✕. -->
             {#if f.rung === 'away'}
-                <button class="df-forget" onclick={() => (H as any)?.Swarm_pier_forget?.(null, f.pub)}
-                    title="forget {f.name} — retires this {f.cave ? 'device link' : 'friend'} (it can be re-invited later)">✕</button>
+                <DeleteX inline ondelete={() => { forgotten.add(f.pub); forgotten = new Set(forgotten); (H as any)?.Swarm_pier_forget?.(null, f.pub) }}
+                    confirm="forget?" glyph="✕"
+                    title="forget {f.name} — retires this {f.cave ? 'device link' : 'friend'} (it can be re-invited later)" />
             {/if}
         </div>
         {#if f.sug}
@@ -518,7 +530,14 @@
     .df {
         pointer-events: none;
         width: max-content;
-        max-width: 300px;
+        /* max-width RAISED 300→500 (owner 2026-08-30: "the Door inlay is half the area it should be").
+           This is the Door's NATURAL layout width; the cell's --fit trick then scales it to inscribe.
+            At 300 the Door topped out near HALF a big cell's inscribed width (~585px), and because it is
+             a max-content (non-stretched) face the fit takes min(width,height) — a height-bound Door kept
+              that narrow 300px and rendered at ~half area.  500 lets it reach the width-bound regime and
+               fill the inlay; the min() fit still inscribes it (never overflows the wall), and a small
+                cell just scales the whole thing down as before, so nothing else regresses. */
+        max-width: 500px;
         padding: 8px 12px;
         font-family: ui-rounded, 'Trebuchet MS', sans-serif;
         color: #ead9ef;
@@ -531,7 +550,14 @@
         0%, 100% { filter: drop-shadow(0 0 3px rgba(196, 130, 224, 0.35)); }
         50%      { filter: drop-shadow(0 0 10px rgba(196, 130, 224, 0.75)); }
     }
-    .df-title { font-size: 12px; font-weight: 700; color: #d9a9ef; }
+    /* the top line — name, ✎, pub, born/listen/settle badges — reads as one centred caption
+       (owner 2026-08-30: "center the other stuff on that line").  flex-wrap so a long name + badges
+        fall to a second centred row rather than shove off the cell edge. */
+    .df-title {
+        font-size: 12px; font-weight: 700; color: #d9a9ef;
+        display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+        gap: 0.15rem 0.4rem;
+    }
     /* the invite door — a quiet disclosure at the foot of the friends list, not a call to action
        competing with them.  It only shouts (via InvitePanel's own `.ip-go`) once it is open and
         there is actually a stranger to greet. */
@@ -606,6 +632,10 @@
     /* the friends ARE the app — they read at full size, not as a footnote ("friends list is
        tiny", the human 2026-07-19) */
     .df-friend { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 4px; }
+    /* the prepub tag beside a friendly name — small, dim, monospace (matches .df-pub on the title line). */
+    .df-fpub { font-size: 8px; opacity: 0.5; font-family: monospace; font-weight: 400; margin-left: 5px; letter-spacing: 0; }
+    /* when the pier is UNNAMED the pub8 is all there is, so it carries the name's own weight (not shrunk). */
+    .df-fpub-solo { font-size: 12px; opacity: 0.8; margin-left: 0; }
     /* the me-row: same list, quieter voice — the friends read at full size, this is the context they sit in */
     .df-me { display: flex; align-items: center; gap: 6px; font-size: 11px; margin-top: 4px; opacity: 0.75; }
     .df-me .df-name { font-weight: 600; }

@@ -1,4 +1,4 @@
-Credulate,of_Book:SwarmFerry
+Credulate,of_Book:InvSeal
   GhostInclude:Ghost_N_Peeroleum,dige:b073368117843b34~g1
   GhostInclude:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
   GhostInclude:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1
@@ -22,7 +22,7 @@ Credulate,of_Book:SwarmFerry
   GhostInclude:Ghost_Story_Heistation,dige:14e01eac2f9a4979~g1
   GhostInclude:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
   GhostInclude:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1
-  GhostInclude:Ghost_S_Swarm,dige:6d3fc757dcfce0ff~g1
+  GhostInclude:Ghost_S_Swarm,dige:d5d35fd05b529699~g1
   GhostInclude:Ghost_Story_Swarmation,dige:e64cdf4b7f3d19c2~g1
   GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
   GhostInclude:Ghost_V_Vyto,dige:70b6a54be3abb0a8~g1
@@ -30,7 +30,7 @@ Credulate,of_Book:SwarmFerry
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
   GhostInclude:Ghost_Story_Sounditron,dige:962e87896b132dbc~g1
   GhostInclude:Ghost_O_Supervisor,dige:502a01f7da7e4b14~g1
-  last_ok,at=1788055453.717,ok_pct
+  {"last_ok":1,"at":1788040828.253,"ok_pct":null}
     uses:Ghost_N_Peeroleum,dige:b073368117843b34~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1
@@ -54,7 +54,7 @@ Credulate,of_Book:SwarmFerry
     uses:Ghost_Story_Heistation,dige:14e01eac2f9a4979~g1
     uses:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
     uses:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1
-    uses:Ghost_S_Swarm,dige:6d3fc757dcfce0ff~g1
+    uses:Ghost_S_Swarm,dige:d5d35fd05b529699~g1
     uses:Ghost_Story_Swarmation,dige:e64cdf4b7f3d19c2~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_V_Vyto,dige:70b6a54be3abb0a8~g1

@@ -46,6 +46,16 @@
     //    ARE the graph the crusher folds.  ?B= overrides (?B=VoroScape for the music demo).
     const book = boot_param('B') || 'Sounditron'
 
+    // THE RENDERER CRITIQUE SURFACE IS THE PLAYER'S ALONE (owner 2026-08-30: "editor|runner tabs have taken
+    //  up Cello as well — it needs to be something about BigSoundland… the toplevel with the boot params").
+    //   SchemeSwitcher persists its pick in localStorage['cello:renderer'], which is per-ORIGIN, so the
+    //    owner flipping the music page to Cello colonised every OTHER tab on :9091 that mounts it — and a
+    //     ?B= tab is exactly a dispatch tab (?B=Editron = the editor, ?B=<Book> = a runner), which must show
+    //      the world's REAL commissioned glass so a Book verifies against what it actually renders.  So the
+    //       switcher (and its persisted Cello) is gated to the genuine end-user player: a plain BigSoundland
+    //        with NO ?B= override.  A ?B= boot renders the bare commissioned glass, no critique chrome.
+    const critique_surface = !boot_param('B')
+
     //#region H:Mundo — the shared boot lives in BigQualand now (the aufheben's common bit): this
     //  scape supplies only its knobs — a music Book, the runner role (run it so the graph forms and
     //   crush-folds to glass) — and reads H + houses back.  The OOM trap is baked in over there.
@@ -419,8 +429,15 @@
             <section class="scape-glass">
                 <!-- SchemeSwitcher wraps the live glass (owner's temporary critique surface): opens on the REAL
                      selected renderer (`vyto` = cyto.ui.sc.component, correct house), a bar flips the SAME live
-                     House through every C** renderer.  Revert to the bare <svelte:component> to drop it. -->
-                <SchemeSwitcher H={cyto.house} vyto={cyto.ui.sc.component} />
+                     House through every C** renderer.  Revert to the bare <svelte:component> to drop it.
+                     GATED to the player (critique_surface): a ?B= editor|runner tab renders the world's bare
+                     commissioned glass, so its persisted localStorage Cello pick can't colonise dispatch tabs. -->
+                {#if critique_surface}
+                    <SchemeSwitcher H={cyto.house} vyto={cyto.ui.sc.component} />
+                {:else}
+                    {@const Glass = cyto.ui.sc.component}
+                    <Glass H={cyto.house} />
+                {/if}
             </section>
         {/key}
     {:else}

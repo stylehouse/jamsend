@@ -14,12 +14,18 @@
     //      it drops an intent and keeps every file already landed.  Saying `delete?` there was a lie in
     //       the one place a lie costs most: the moment someone decides whether to press again.  Default
     //        stays `delete?` so every existing chip × is untouched.
-    let { ondelete, title = 'delete', glyph = '×', big = false, confirm = 'delete?' }: {
+    // `inline` — keep the armed/fired pill IN FLOW (owner 2026-08-30: on a Pier, "the confirm button
+    //  should not be centered on the spot, let it be inline").  The default out-of-flow rig (ghost holds
+    //   the footprint, pill floats centred over it) exists so a wrapping row of path chips doesn't reflow
+    //    when one arms; but in a roomy flex row (the pier row) that centring reads as the button jumping.
+    //     `inline` drops the ghost + absolute positioning so the pill just grows where it sits.
+    let { ondelete, title = 'delete', glyph = '×', big = false, confirm = 'delete?', inline = false }: {
         ondelete: () => void
         title?:   string
         glyph?:   string
         big?:     boolean
         confirm?: string
+        inline?:  boolean
     } = $props()
     // the hover title says the same word the pill does — one string to pass, not two to keep in step.
     //  Trailing '?' is the pill's questioning form, not part of the verb: "cancel?" → "click again to cancel".
@@ -61,8 +67,10 @@
         if (fired) return
         if (armed) {
             disarm()
-            fired = true
-            fired_t = setTimeout(() => { fired = false }, 15000)
+            // inline consumers remove their OWN row on confirm (DoorFace's optimistic `forgotten` hide),
+            //  so don't enter the 15s `fired` "verb…" state — it would only flash where the row is already
+            //   gone (owner 2026-08-30: "stop 'forget…' from hanging around at all visually").
+            if (!inline) { fired = true; fired_t = setTimeout(() => { fired = false }, 15000) }
             ondelete()
         }
         else { armed = true; armedAt = performance.now(); timer = setTimeout(disarm, 2200) }
@@ -77,8 +85,8 @@
      second press land exactly where the first one did — the only place a human will look for it. -->
 <!-- FIRED rides the same out-of-flow rig as ARMED (ghost holds the footprint, pill floats over it):
      the acknowledgement must not reflow the row any more than the arm was allowed to. -->
-<span class="mx-wrap" class:mx-wrap-armed={armed || fired}>
-    {#if armed || fired}<span class="mx-ghost" class:mx-big={big} aria-hidden="true">{glyph}</span>{/if}
+<span class="mx-wrap" class:mx-wrap-armed={armed || fired} class:mx-inline={inline}>
+    {#if (armed || fired) && !inline}<span class="mx-ghost" class:mx-big={big} aria-hidden="true">{glyph}</span>{/if}
     <button class="mx-del" class:mx-armed={armed} class:mx-fired={fired} class:mx-big={big}
             disabled={fired}
             title={fired ? `${verb} underway` : armed ? `click again to ${verb}` : title}
@@ -94,10 +102,12 @@
     .mx-ghost { visibility: hidden; pointer-events: none; font-size: 0.82rem; padding: 0 0.15rem; }
     .mx-ghost.mx-big { display: inline-flex; width: 22px; height: 22px; padding: 0; font-size: 1rem; }
     /* armed: centred on the footprint, above its neighbours, never wrapping mid-word */
-    .mx-wrap-armed .mx-del {
+    .mx-wrap-armed:not(.mx-inline) .mx-del {
         position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
         z-index: 3; white-space: nowrap;
     }
+    /* inline: no ghost, no float — the pill just grows where it sits (the pier row has room) */
+    .mx-inline .mx-del { white-space: nowrap; }
     .mx-del {
         /* RE-ARM POINTER EVENTS (2026-08-07 — "the cancel heist ✕ is unclickable").  A voronoi glass
            cell's bbox overlaps its neighbours, so every face root in the glass sets

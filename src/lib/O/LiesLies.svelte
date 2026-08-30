@@ -81,6 +81,8 @@
 
         'Ghost/S/Swarm.g',              // swarm spine — identity/page/pier + the Idzeug invite (Swarm_spec.md)
         'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here
+        'Ghost/Story/InvSeal.g',        // the Inv* tests, rung 1 — the seal-seam warmth gate (cold refuses / warm parks the consent)
+        'Ghost/Story/InvFerry.g',       // the Inv* tests, rung 2 — the WHOLE ferry exchange as a state machine (mint→carry→verify→claim→cross; double-spend + forged presig refuse)
 
         'Ghost/V/Voro.g',               // the Vis lens — the crush fold policy (Musu drives + ◈ imposition call it)
         'Ghost/V/Vyto.g',               // the NEW glass, model side — organs/board/spool as named stubs (Vyto_spec.md; the moult)

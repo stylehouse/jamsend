@@ -68,7 +68,7 @@
         font-size: clamp(1.5rem, 5vw, 2.8rem); line-height: 1;
     }
     .lf-bud.on { filter: drop-shadow(0 0 6px rgba(120, 200, 255, 0.55)); }
-    .lf-head { font-size: .95rem; font-weight: 700; letter-spacing: .3px; opacity: .95; }
+    .lf-head { font-size: .95rem; font-weight: 700; letter-spacing: .3px; opacity: .95; text-align: center; }
     .lf-phase { font-weight: 400; opacity: .7; }
     /* FILL the cell, top-anchored — a big belly cell handed a small measured box was rendering the whole
        ceremony in a quarter of it, top-left (the owner: "title way up in the top left, 1/4 of the cell").

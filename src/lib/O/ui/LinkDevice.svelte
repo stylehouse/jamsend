@@ -112,10 +112,14 @@
     //   $state, recomputed whenever a fresh ferry parks.
     let sas = $state('')
     $effect(() => {
-        void H?.version
+        void H?.version; void now_tick   // ← now_tick (reactivity_docs:121): the SAS is derived from the pier's
+        //  Peering pub + heard_at, which settle via `.c` writes that NEVER bump H.version — so on the offer→
+        //   listening transition the row stayed stuck on the `···` placeholder, never recomputing.  The 1s
+        //    heartbeat re-polls it independent of the belief mutex, the same fix every other ferry reader carries.
         let active = false
         try { const tc = H?.top_House?.()?.c; active = !!pending || !!tc?.ferry_confirm || !!tc?.ferry_awaiting } catch { active = false }
         if (!active) { sas = ''; return }
+        if (sas) return   // resolved already; a device-link's pubs are fixed for the ceremony, so don't re-hash every tick
         let cancelled = false
         ;(async () => {
             try { const row = await H?.Swarm_ferry_sas?.(); if (!cancelled) sas = String(row || '') }
@@ -214,6 +218,10 @@
         //   once — no belly cell to un-focus anymore (owner 2026-08-29: the ceremony was pulled out of the belly).
         try { (H as any)?.Sounditron_link_close?.(world()) } catch (e) { err = String(e) }
         url = ''; pending = null; sent = ''
+        // a Linkee cancelling must also drop the device-link ?Iz from the bar (owner 2026-08-31: "cancelling
+        //  doesn't remove it from the location") — else the ghost's standup re-parks ferry_offer off it and the
+        //   consent re-raises on reload.  No-op on the soul side (it booted as ?I=, carries no ?Iz).
+        strip_link_url()
         try { (H?.ave as any)?.bump_version?.() } catch {}
     }
 
@@ -230,6 +238,67 @@
     //  dead-window fix): top.c.ferry_awaiting is armed at redeem (Swarm_redeem) and cleared when the sealed
     //   account arrives (Swarm_ferry_park → pending takes over) or on cancel.  Fills the blank wait.
     let awaiting = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_awaiting) ?? null } catch { return null } })
+    // ── LINKEE "offer" — you OPENED a device link but haven't consented yet (owner 2026-08-30: the "⨝ join eed"
+    //  redeem was landing "in amongst the Door UI"; "take us to the Link cell already … we're really asking them if
+    //   they understand this link they opened is making this arrangement").  InvitePanel parks top.c.ferry_offer for
+    //    a landed MyCave link (and no longer auto-redeems it); this cell hosts the consent.  Accepting sets
+    //     top.c.ferry_offer_accepted, which InvitePanel's effect turns into the real redeem (it owns the station-up +
+    //      Swarm_redeem, so the crypto path is not duplicated here).  Once the redeem arms ferry_awaiting the offer
+    //       clears and `awaiting` (above) takes the cell — so this is only ever the FIRST beat.
+    let offer = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_offer) ?? null } catch { return null } })
+    let joining = $state(false)
+    async function offer_accept() {
+        err = ''
+        if (!named) { err = '✎ name yourself first — you are about to become this soul, and the name travels with it'; return }
+        if (joining) return
+        // SELF-CONTAINED REDEEM (owner 2026-08-30: "the understand-continue button doesn't work").  The accept used
+        //  to only set top.c.ferry_offer_accepted and lean on InvitePanel's effect to run the real redeem — but the
+        //   Link cell SEIZES the screen the moment ferry_offer parks, which unmounts the Door (and InvitePanel with
+        //    it), so nothing consumed the flag.  Do the redeem HERE, the same sequence InvitePanel.join() runs:
+        //     station up → dial the soul → wait for the relay socket → Swarm_redeem.  Swarm_redeem arms
+        //      ferry_awaiting for a MyCave (and the ghost clears ferry_offer at that seam), so the cell advances to
+        //       the "connecting" phase on its own.  The ?Iz token is in the bar (a landed device link).
+        const soulpub = offer ? String(offer.from || '') : ''
+        let iz = ''
+        try { iz = new URLSearchParams(location.search).get('Iz') || '' } catch {}
+        if (!iz || !soulpub) { err = 'this device link is missing its token — reopen the whole link from your other device'; return }
+        const w = world()
+        if (!w || typeof H?.Swarm_station_up !== 'function' || !H.Swarm_station_up(w, self)) {
+            err = '⚠ the transport ghosts are still booting — try again in a moment'; return
+        }
+        joining = true
+        try {
+            H.Swarm_station_pier?.(w, self, soulpub)
+            // wait up to 8s for the relay socket to open, then a beat for the signed hello-bind to land (join()'s 400ms)
+            const port = () => { try { return (w.o({ transport: 1, type: 'websocket' })[0] as any)?.c?.port } catch { return null } }
+            const t0 = Date.now()
+            while (!((port() as any)?.ws?.readyState === 1)) {
+                if (Date.now() - t0 > 8000) { err = '⚠ the relay did not answer — is your other device (and the dev server) reachable?'; joining = false; return }
+                await new Promise((r) => setTimeout(r, 120))
+            }
+            await new Promise((r) => setTimeout(r, 400))
+            await H.Swarm_redeem?.(w, self, iz, '')
+            try { const t = H?.top_House?.(); if (t?.c) delete t.c.ferry_offer } catch {}
+        } catch (e) { err = String(e) } finally { joining = false }
+    }
+    // strip the device-link ?Iz#fc from the bar — the ghost re-parks the offer from the URL at every standup,
+    //  so any TERMINAL exit from the ceremony (decline, the far side's ended+done) must remove the URL copy or
+    //   a reload resurrects a consent the ceremony already answered.
+    function strip_link_url() {
+        try {
+            if (typeof window !== 'undefined' && window.history?.replaceState) {
+                const u = new URL(location.href); u.searchParams.delete('Iz'); u.hash = ''
+                window.history.replaceState(null, '', u.toString())
+            }
+        } catch {}
+    }
+    function offer_decline() {
+        err = ''
+        // drop the offer AND the spent ?Iz#fc from the bar, so a reload doesn't re-raise the same consent.
+        try { const t = H?.top_House?.(); if (t?.c) { delete t.c.ferry_offer; delete t.c.ferry_offer_accepted } } catch {}
+        strip_link_url()
+        try { (H?.ave as any)?.bump_version?.() } catch {}
+    }
     let sent = $state('')   // the "Linked" phase on the soul side, set once the account has crossed
     // ── RECEIVE-ACK (task #21): the other device CONSUMED the soul (ferry_got heard) — the honest "✓ received"
     //  that closes the arc, distinct from "sent" (which only means the frame left here).  Set by the hear funnel,
@@ -238,6 +307,14 @@
     //  so under a Repli flood eed would stay stuck on "waiting for its received" though the ack has landed.  The
     //   1s heartbeat surfaces the receive-ack regardless of the starved belief loop, closing the arc.
     let got = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_got) ?? null } catch { return null } })
+    // ── ENDED — the far side called the link off (Swarm_ferry_cancelled parks it): every ceremony ends on a
+    //  screen, never a silent fold to Radio.  `done` clears it (and link_active falls with it).
+    let ended = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_ended) ?? null } catch { return null } })
+    // (The 🔔 knock + "allow" affordance lived here for an hour on 2026-08-31 and is GONE — the owner fell
+    //  straight into its ditch: "where in the interface can we cancel a cancellation to a specific Pier? why
+    //   would we — why not some arrangement that makes it EASIER."  The easier arrangement: a "no" revokes that
+    //    ceremony's grant (signed %NotGrant), and MINTING A FRESH LINK is the re-consent — the fresh redeem's
+    //     newer grant outranks the tombstone.  Nothing to allow, nothing to remember, same button as ever.)
     // LINKOR ADVANCE — while the QR is up, keep asking whether a Cave pier has turned up live.  The instant one
     //  has, Swarm_ferry_poke parks ferry_confirm and the ladder swaps QR → "giving your soul" (the `confirm`
     //   phase wins).  Tied to reactivity (H.version bumps the moment the %Pier appears) so it leaves the QR the
@@ -298,7 +375,13 @@
             const piers = (H?.Swarm_peering?.(self)?.o({ Pier: 1 }) ?? []) as any[]
             if (!piers.length) return null
             const tc = H?.top_House?.()?.c
-            if (tc?.ferry_confirm) return piers.find((p: any) => H?.Swarm_pier_live?.(p, 'MyCave')) || null
+            // MATCH THE ACTUAL CONFIRM PUB, not just "first MyCave-live pier" (owner 2026-08-31: "Gwop is online!
+            //  what the hell").  eed carries a pile of old test-round caves, so first-by-grant grabbed a STALE one
+            //   and read ITS heard_at → the live Gwop showed offline.  Find the pier whose pub is the confirm's.
+            if (tc?.ferry_confirm) {
+                const cpub = String(tc.ferry_confirm.pub || '')
+                return piers.find((p: any) => { const pp = String(p?.sc?.pub || ''); return pp && (pp === cpub || pp.startsWith(cpub) || cpub.startsWith(pp)) }) || null
+            }
             const soulpub = String(tc?.ferry_awaiting?.soul || arriving_soul() || '')
             if (soulpub) {
                 const hit = piers.find((p: any) => {
@@ -362,6 +445,17 @@
             <p class="ld-deal">{received === 'declined' ? 'no soul was copied — nothing changed on this device.' : received}</p>
             <button class="ld-cancel-b" onclick={() => received = ''}>done</button>
         </div>
+    {:else if ended}
+        <!-- the far side called it off — the honest terminal (owner 2026-08-30: the ceremony must run to a
+             logical END on both screens, never vanish).  Retry path is the SAME as the first time: the soul
+             device mints a fresh link, this device opens it — no allow step exists or is needed. -->
+        <div class="ld-face">
+            <div class="ld-cap-big">the link was called off</div>
+            <p class="ld-deal">the soul device (<b>{short(ended.by) || 'the other device'}</b>) ended this ceremony — nothing was copied here. to try again, just mint a fresh link over there and open it here, same as before.</p>
+            <!-- done is TERMINAL: also strip the ?Iz, or the ghost's standup parking re-raises the consent for
+                 this very ceremony on the next reload — a loop the far side already said no to. -->
+            <button class="ld-cancel-b" onclick={() => { try { const t = H?.top_House?.(); if (t?.c?.ferry_ended) delete t.c.ferry_ended } catch {}; strip_link_url(); try { (H?.ave as any)?.bump_version?.() } catch {} }}>done</button>
+        </div>
     {:else if pending}
         <!-- LINKEE, "receiving" — the mirror of the Linkor's "giving" (owner: one modality, two symmetric
              sentences).  A whole device becoming a new soul; the SAS is the anti-MITM check. -->
@@ -399,7 +493,6 @@
         <!-- LINKOR, "giving" — the mirror of the Linkee's "receiving". -->
         <div class="ld-face">
             <div class="ld-cap-big">giving your soul to <b>{confirm.name || short(confirm.pub)}</b> {@render live_dot(presence)}</div>
-            <p class="ld-deal">it becomes a <b>Cave</b> of you — holding your keys and serving your library <b>in your name</b>.</p>
             {#if sas}
                 <p class="ld-sas" title="these three must match the other device's screen — if they differ a relay is in the middle: say no"><b>{sas}</b></p>
             {:else}
@@ -446,7 +539,10 @@
         <div class="ld-face">
             <div class="ld-cap-big">receiving from <b>{short(awaiting.soul) || 'your other device'}</b> {@render live_dot(presence)}</div>
             <p class="ld-deal">waiting for it to <b>confirm</b> — the other device decides whether to send its soul here.</p>
-            {#if sas}<p class="ld-sas" title="these three must match the other device's screen — if they differ a relay is in the middle: say no"><b>{sas}</b></p>{/if}
+            <!-- SAS ALWAYS SHOWS, symmetric with the soul side (owner 2026-08-31: "icons show there but not on
+                 incognito, who is listening for the soul").  The 3-glyph match row is the ceremony's face; a
+                 `···` placeholder holds its place until the pubs resolve, so the listening screen is never iconless. -->
+            {#if sas}<p class="ld-sas" title="these three must match the other device's screen — if they differ a relay is in the middle: say no"><b>{sas}</b></p>{:else}<p class="ld-sas ld-sas-wait">···</p>{/if}
             {#if !has_code}<p class="ld-warn-note">⚠ heads up: this link is missing its seal code (the part after <b>#</b>) — reopen the full QR link, or the soul won't unseal here.</p>{/if}
             <!-- THE "IT'S COMING OVER" CUE (owner 2026-08-29: "no cues in the UI at all about it starting to come
                  over").  Bound to the wire's rx bytes: while the other device is still deciding this reads a gentle
@@ -462,8 +558,29 @@
              Compact + no-scroll: just the QR and a one-line scan hint. -->
         <div class="ld-face ld-face-qr">
             <InviteQR {url} size={qr_size} bg="#e7dcbe" bare caption="" />
-            <div class="ld-wait-big">scan this with your other device</div>
             <button class="ld-cancel-b" onclick={cancel_link}>cancel</button>
+        </div>
+    {:else if offer}
+        <!-- LINKEE "offer" — you opened a device link; consent to BECOME it before anything crosses (owner
+             2026-08-30).  Not a friend-join (that framing was the Door's ⨝ button): this device gives up its
+             current self and takes on the soul — same account, same friends, its music.  The name-gate stays
+             (owner: "we must require having a name at that point too"); continue arms the redeem in InvitePanel. -->
+        <div class="ld-face">
+            <div class="ld-cap-big">become <b>{offer.friendly || short(offer.from) || 'this device'}</b>?</div>
+            <p class="ld-deal">you opened a link from it — continue and <b>this device becomes a body of it</b>: its account, its friends, its music, all here in its name.</p>
+            {#if !named}
+                <div class="ld-name-row">
+                    <input class="ld-name" bind:value={name_draft} placeholder="what do friends call you?"
+                        onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
+                    <button class="ld-act" onclick={name_save} title="save your name">✓</button>
+                </div>
+                {#if name_err}<p class="ld-warn-note">⚠ {name_err}</p>{:else}<p class="ld-name-say">name yourself first — the name travels onto the new body</p>{/if}
+            {/if}
+            {#if err}<p class="ld-warn-note">⚠ {err}</p>{/if}
+            <div class="ld-row">
+                <button class="ld-go" onclick={offer_accept} disabled={!named}>understand — continue</button>
+                <button class="ld-cancel-b" onclick={offer_decline}>not now</button>
+            </div>
         </div>
     {:else}
         <p class="ld-blurb">
@@ -472,8 +589,9 @@
         </p>
         {#if trust}
             <p class="ld-warn-note">
-                It <b>copies your account</b> to the other device and then they become a team in music sharing.
-                But it's you logged in forever, may sit <b>unencrypted at rest</b>.
+                It <b>copies your account</b> to another device — which is then
+                <b>you, logged in, forever</b>. Your personal data
+                may sit <b>unencrypted at rest</b>.
             </p>
         {/if}
         <div class="ld-face">
@@ -504,7 +622,10 @@
        taller than the cell. */
     .ld-frame {
         pointer-events: auto;
-        max-height: 100%; overflow-y: auto; overscroll-behavior: contain;
+        /* overflow-x hidden (not auto): the .ld-face stripe bleeds to ±50vw via a pseudo, and an
+           `auto` x-axis would grow a horizontal scrollbar chasing it.  hidden clips the bleed at the
+            frame edge (already wider than a normal cell) with no bar; the mold's blob then trims it. */
+        max-height: 100%; overflow: hidden auto; overscroll-behavior: contain;
         /* CENTRE IN THE FILLED BOX (owner 2026-08-28 "the title is way up in the top left, 1/4 of the cell
            space is used", and 2026-08-29 "badly positioned").  Vytui fills the face root for the belly cell,
            but this column had no justify-content, so a SHORT phase (the lobby, the ✓ done screens) pinned to
@@ -520,20 +641,40 @@
        rather than growing a scrollbar across the QR. */
     .ld-frame:has(.ld-face-qr) { overflow: hidden; justify-content: center; }
     .ld-face-qr { gap: .5rem; padding: .8rem; }
-    .ld-blurb { font-size: 1rem; line-height: 1.5; margin: 0; }
+    /* INSET THE READABLE COLUMN, KEEP THE STRIPE (owner 2026-08-30: "the .ld-face fat background should
+       spill out the sides of the cell like a stripe painted on a boat — keep it — but .ld-blurb and other
+        text have a character at the start that the cell's curved edge occludes; narrow the component space
+         by ~4em").  The stripe is `.ld-face` at frame width (below); here we only pull the TEXT in 2em each
+          side so no leading glyph sits under the curve.  The stripe itself is untouched, so it still bleeds. */
+    .ld-blurb { font-size: 1rem; line-height: 1.5; margin: 0; padding-inline: 2em; box-sizing: border-box; }
     .ld-trust {
         background: none; border: none; padding: 0; font: inherit; font-weight: 700; letter-spacing: .3px;
         color: #ffb300; text-decoration: underline dotted; cursor: pointer;
     }
     .ld-trust:hover { color: #ffd166; }
-    .ld-warn-note { font-size: .9rem; line-height: 1.5; color: #e8c98a; border-left: 2px solid #d98a00; padding-left: .7rem; margin: 0; text-align: left; }
+    .ld-warn-note { font-size: .9rem; line-height: 1.5; color: #e8c98a; border-left: 2px solid #d98a00; padding-left: .7rem; margin: 0 2em; text-align: left; }
     .ld-warn-note b { color: #ffb300; }
 
     /* the ACTION face — a settled panel, generous, flowing (no fragile absolute positioning) */
+    /* THE STRIPE: full frame width (spills a narrower cell's sides — the "painted on a boat" look, kept),
+       but its CONTENT is inset 2em each side (border-box keeps the outer stripe width unchanged) so the
+        buttons/text sit in the same safe column as the blurb and nothing rides under the cell's curve. */
     .ld-face {
         display: flex; flex-direction: column; align-items: center; gap: .7rem;
-        width: 100%; padding: 1.1rem; box-sizing: border-box;
-        background: #1a1206; color: #f4e6c8; border-radius: .6rem;
+        width: 100%; padding: 1.1rem 2em; box-sizing: border-box;
+        position: relative;                       /* anchor the bleeding stripe below */
+        color: #f4e6c8; border-radius: .6rem;
+    }
+    /* THE STRIPE BLEEDS OFF THE CELL (owner 2026-08-30: "so wide the ld-face went off the edges of the
+       cell … make it extend magically").  A pseudo carries the fat background far past the readable
+        column; the cell's blob clip-path (the mold wall) trims it into a stripe painted across the hull.
+         Absolutely positioned, so it adds NOTHING to the measured box — the --fit trick can't see it and
+          won't shrink the face to "fit" a width that isn't really there (the trap that made a plain wide
+           element self-defeating).  z-index:-1 keeps it behind the in-flow buttons/text. */
+    .ld-face::before {
+        content: ''; position: absolute; z-index: -1;
+        top: 0; bottom: 0; left: -50vw; right: -50vw;
+        background: #1a1206; border-radius: .6rem;
     }
     .ld-deal { font-size: .95rem; line-height: 1.5; margin: 0; max-width: 28rem; }
     .ld-sas { font-size: .95rem; margin: .1rem 0 0; cursor: help; }

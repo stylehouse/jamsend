@@ -1,0 +1,11 @@
+story:InvSeal
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.001
+      sample=0.001,at=1788040828
+    TimeTotal:step,avg=0.001
+      sample=0.001,at=1788040828
+  step,dige:269646df1a575582

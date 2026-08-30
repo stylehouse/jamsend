@@ -392,11 +392,12 @@
             ?? null
     }
 
-    // ── TAKEOVER cells (glass_kinds: "its own takeover cell") — Link/Heist/Transfer/Caper are
-    //  contextual ceremonies that get the dramatic OFF-EDGE belly look when they are the main (see
-    //   main_offedge).  They CLAIM the main through the commissioner's focus (w.c.focused, driven by
-    //    the Door's Link button and by Cello's own switcheroo), not a special tier here.
-    const TAKEOVER = new Set(['Heist', 'HeistBar', 'Link', 'Transfer', 'Caper'])
+    // ── TAKEOVER cells (glass_kinds: "its own takeover cell") — the dramatic OFF-EDGE belly look (see
+    //  main_offedge).  Owner 2026-08-30: "it's actually only the Heist setup that's super big; the Link
+    //   Device is likely okay as the regular large cell" — so ONLY the Heist ceremony earns the giant
+    //    spill-off-screen geometry.  Link/Transfer/Caper still CLAIM the main (commissioner focus +
+    //     the main-or-gone satellites filter for Link), but render as a normal large main cell.
+    const TAKEOVER = new Set(['Heist', 'HeistBar'])
     // THE COMMISSIONER'S FOCUS is the shared belly signal (task #45 "defer to commissioner belly").
     //  Sounditron stores the focused cell's MAINKEY on the commissioned world as `w.c.focused`
     //   (Sounditron.g: the Door's "Link Device" button → 'Link', a Vyto cell-switch → that cell, else
@@ -502,6 +503,13 @@
         if (c?.n?.c) c.n.c.pose = 'big'
         return c
     })
+    // LATCH THE LEAVING CELL'S KEY (owner 2026-08-31, the Door-nav crash "Cannot read properties of undefined
+    //  (reading 'reset')").  On a rapid swap (Link→Door) main_cell blips null for a tick, so `out:send` fired
+    //   with key:undefined — and Svelte's DEFERRED crossfade facade does `reset: () => a.reset()` where `a` is
+    //    only set in a later microtask (transitions.js), so an undefined-key leave that resets before that tick
+    //     throws.  A real, stable key keeps the leave a normal deferred outro.  Holds the last non-null main key.
+    let last_main_key = $state<string | null>(null)
+    $effect(() => { if (main_cell?.key) last_main_key = main_cell.key })
 
     // ── KICK THE SETTLE SPRING on every main_key change — the arrival wind-up+overshoot.  Snap to
     //  the dipped anticipation pose (0) WITHOUT animating (instant), then release to 1 so the
@@ -706,12 +714,25 @@
     //  Width a touch wider than height (these blobs squish wide); the tighter height factor
     //   also keeps the guts BELOW the rim label's band.
     const INSCRIBE_W = 0.68, INSCRIBE_H = 0.62
+    // UNIFORM INLAY SCALE (owner 2026-08-30: "all inlays need to be 1.6x the size, all uniformly").  The
+    //  INSCRIBE rect above is the blob's honest interior; this multiplies the fit TARGET so every face —
+    //   main and satellite, compact and stretched — fills ~1.6x that.  Content grows toward the blob's
+    //    edge (the clip-path trims only the rounded CORNERS, which carry no centred text), and the
+    //     stretched-cap below (min 1) still stops a full-width face scaling out past its own sides into
+    //      the wall — so this enlarges without reviving the clipped-letter.  One knob: retune here.
+    const INLAY_SCALE = 1.2
     //  THE CAP IS PER-ROLE (the owner, 2026-08-29: "it needs to resize the overlay glass, the
     //   Radio controls are taking up 1/5th of the area of the cell").  A compact-natural face
     //    (RadioFace's pill cluster) in an 860px belly needs to SCALE UP to fill its inscribed
     //     box — the screenshot's player is BIG in the big cell — so the main's cap must be well
     //      above 1.  Satellites keep the low cap: a bud glyph ballooned 3× is a cartoon.
-    const FIT_MIN = 0.3, FIT_MAX_MAIN = 2.8, FIT_MAX_SAT = 1.15
+    const FIT_MIN = 0.3, FIT_MAX_MAIN = 4.5, FIT_MAX_SAT = 1.85   // caps ×1.6 so INLAY_SCALE isn't clamped
+    // STRETCHED CAP (owner 2026-08-30: "the Link innard is much smaller than it was, was looking really
+    //  good").  A full-width (block-layout) face can't scale UP without its sides crossing the wall, but
+    //   capping it at 1 shrank the Link badly.  1.3 lets it fill to the blob's widest point (~the cell
+    //    edge at mid-height, where the column at 0.76·cell × 1.3 ≈ 1.0·cell) — big again — while still
+    //     stopping the gross overflow that clipped whole letters.  Below the wall, not past it.
+    const STRETCH_CAP = 1.3
     // DEAD-BAND WIDER (owner 2026-08-30: "Link's overlay glass … constantly re-measuring").  A live
     //  Face animates (LinkDevice's spinner/pills/SAS), and each pulse fired the fit at 2% — visible
     //   thrash.  6% + rounding the natural box to 6px absorbs the animation while still catching a
@@ -728,7 +749,7 @@
                 if (!child || typeof child.offsetWidth !== 'number') continue
                 const mold = scroll.parentElement as HTMLElement | null
                 if (!mold) continue
-                const iw = mold.clientWidth * INSCRIBE_W, ih = mold.clientHeight * INSCRIBE_H
+                const iw = mold.clientWidth * INSCRIBE_W * INLAY_SCALE, ih = mold.clientHeight * INSCRIBE_H * INLAY_SCALE
                 // round the natural box to 6px so a 1-2px animation wobble in the Face can't nudge the fit
                 const nw = Math.round(child.offsetWidth / 6) * 6, nh = Math.round(child.offsetHeight / 6) * 6
                 if (!(nw > 0 && nh > 0 && iw > 0 && ih > 0)) continue
@@ -744,7 +765,14 @@
                 //          <10 cells), so we look often and let the dead-band keep it calm.
                 const stretched = Math.abs(child.offsetWidth - scroll.clientWidth) <= 1
                 const cap = key === main_key ? FIT_MAX_MAIN : FIT_MAX_SAT
-                const raw = stretched ? (ih / nh) : Math.min(iw / nw, ih / nh)
+                // NEVER SCALE A STRETCHED FACE *UP* (owner 2026-08-30: "the cell inlay left|right padding is
+                //  not there at all, we're missing a letter off the text").  A stretched (block-layout) face
+                //   already fills the scroll column width, so scaling it up by a HEIGHT-derived fit widens it
+                //    PAST the inscribed rect into the wobbly wall — the clip-path trims the overflow and the
+                //     first/last glyph vanishes, defeating the mold's 12% horizontal padding.  Cap the
+                //      stretched case at 1 (fill the column at natural scale; shrink only if genuinely too
+                //       tall).  A compact face still scales up on the min(width,height) term as before.
+                const raw = stretched ? Math.min(STRETCH_CAP, ih / nh) : Math.min(iw / nw, ih / nh)
                 const fit = Math.max(FIT_MIN, Math.min(cap, raw))
                 const cur = fits.get(key) ?? 1
                 if (Math.abs(fit - cur) / cur <= FIT_DEADBAND) continue   // dead-band damp
@@ -806,11 +834,17 @@
     let faceRO: ResizeObserver | null = null
     function sizewatch(el: HTMLElement, key: string) {
         if (typeof ResizeObserver === 'undefined') return
-        if (!faceRO) faceRO = new ResizeObserver(() => { measure_soon(); measure_lately() })
+        if (!faceRO) faceRO = new ResizeObserver(() => { try { measure_soon(); measure_lately() } catch { /* an RO callback must never escape as an uncaught error */ } })
         let kid: Element | null = null
         let mykey = key
         molds.set(mykey, el)
         const attach = () => {
+            // TORN-DOWN GUARD (owner 2026-08-30, Incogni: "threw on faceRO!.observe(kid) … after Link took us
+            //  giantcell").  A giant-cell mount/unmount churns actions fast; the teardown $effect nulls faceRO, but a
+            //   queued attach (queueMicrotask below, or a use:action update) can still fire after — then
+            //    faceRO!.observe(kid) dereferences null.  Bail before touching the observer; the catch was the net,
+            //     this is the fix.
+            if (!faceRO) { kid = null; return }
             try {
                 const k = el.firstElementChild
                 if (k === kid) return
@@ -879,8 +913,8 @@
         <div
             class="cello-main"
             class:offedge={main_offedge}
-            in:receive={{ key: main_cell.key }}
-            out:send={{ key: main_cell.key }}
+            in:receive={{ key: main_cell?.key ?? last_main_key }}
+            out:send={{ key: main_cell?.key ?? last_main_key }}
             style="
                 --cell-bg:     {main_cell.colour.bg};
                 --cell-fg:     {main_cell.colour.color};
@@ -1086,10 +1120,11 @@
    .cello-main box is a plain rectangle that the pieces clip/trace themselves. */
 .cello-main {
     position: relative;
-    flex: 0 1 min(92vw, 1320px);   /* the main DOMINATES and is WIDE like Vyto (owner: "much wider still!") */
-    aspect-ratio: 1.5 / 1;         /* WIDE, not square — a rectangular Face (the Door UI) inscribes without
-                                       its corners poking past the blob's curve (owner: corners obscured) */
-    max-height: 90vh;
+    flex: 0 1 min(96vw, 1452px);   /* 10% wider (owner 2026-08-30); DOMINATES + WIDE like Vyto */
+    aspect-ratio: 1.25 / 1;        /* 20% taller (owner 2026-08-30): lowered from 1.5 so the cell rises;
+                                       still wide enough that a rectangular Face inscribes without its
+                                        corners poking past the blob curve */
+    max-height: 94vh;
     color: var(--cell-fg, #a8a8cc);
     transition: flex-basis 0.4s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.4s ease;
     filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.55));
@@ -1101,15 +1136,24 @@
       on the right via .cello-satellites.  clip:visible so the spilled wall isn't boxed. */
 .cello-stage.offedge { justify-content: flex-start; }
 /* ABSOLUTE + SPILLING (owner: it was "only taking the left 1/3, not underlapping the minicells").
-   left -32vw so the wall arcs off the left; RIGHT EDGE AT the viewport edge (left -32 + width 132 =
-    100vw) so the big cell reaches under the minicells (right:2.5vw, z-index above); top/bottom spill
-     ±9vh.  Absolute so it doesn't fight the flex row — the satellites are absolute in off-edge too. */
+   left -32vw so the wall arcs off the left.  RIGHT EDGE pulled IN off the viewport edge (owner
+    2026-08-30: "the superbig's right edge is about at the right edge of the screen, so the minicells
+     are inside it — bring it in a bit so the minicells look like they're sitting on it like a
+      planetary body").  left -32 + width 120 = 88vw right edge, so the curved right limb passes UNDER
+       the minicells' left side (satellites at right:2.5vw) and they perch on the bulge, sticking out
+        into space on the right rather than being swallowed.  top/bottom spill ±9vh.  Absolute so it
+         doesn't fight the flex row — the satellites are absolute in off-edge too. */
 .cello-main.offedge {
     position: absolute;
-    left: -32vw;
-    width: 132vw;
-    top: -9vh;
-    height: 118vh;
+    /* owner 2026-08-30 nudge: 10vw further LEFT, 8vw wider on the RIGHT (so the minicells now tuck a
+       tiny bit UNDER the right edge at the screen edge, not perched clear of it), and ~11% taller at
+        both the top and bottom spills.  left -42 + width 138 = 96vw right edge (was 88); top/bottom
+         overhang ±15vh (was ±9).  The mold (left:40%/right:16%) and blob are box-relative, so they
+          track these automatically. */
+    left: -42vw;
+    width: 138vw;
+    top: -15vh;
+    height: 130vh;
     max-height: none;
     margin: 0;
     flex: none;

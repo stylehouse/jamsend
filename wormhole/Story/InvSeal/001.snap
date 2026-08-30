@@ -1,0 +1,6 @@
+Snap:H
+  H:InvSeal,Run
+    A:InvSeal
+      self,round	{"mung":["age"]}
+      w:InvSeal
+        self,round	{"mung":["age"]}
