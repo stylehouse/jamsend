@@ -32,17 +32,30 @@
         const heard = radio?.c?.heard ?? {}
         const playingId = radio?.c?.rec?.sc?.id != null ? String(radio.c.rec.sc.id) : ''
 
+        // POOL MODE (SoundPooling_todo §3.3): the source chip flipped to 'pool' — show the OPFS
+        //  SoundPool shelf (your pocket copies), NOT the friend mirrors.  Probe-first (oa) so a
+        //   render never mints the home (the ShuffleFace read-only law); `open` (chunk 0 present)
+        //    now means "the bytes are LOCAL", never a latency question.  The picture then matches
+        //     what the dial's pool rung actually picks from.
+        const shelves: { name: string; recs: any[] }[] = []
+        const poolMode = radio?.sc?.source === 'pool'
+        if (poolMode) {
+            // POOL MODE: the OPFS SoundPool shelf ONLY — probe-first (oa) so a render never mints the
+            //  home; `open` (chunk 0 present) here means the bytes are LOCAL, not a latency question.
+            const me = A?.Radio_pub?.(w)
+            const pool = (me && w.oa?.({ MusuPool: 1, pub: me })) ? A?.Ra_home_pool?.(w, me) : null
+            shelves.push({ name: '♪ your pool', recs: pool ? (A?.Ra_recs?.(pool) ?? []) : [] })
+        }
         // every shelf the dial can reach: the friend crates by default, plus my own when the listener
         //  flipped the source switch (radio.sc.own) — the same two ladders Radio_dial walks.
-        const shelves: { name: string; recs: any[] }[] = []
-        for (const home of (w.o?.({ MusuThem: 1 }) ?? [])) {
+        for (const home of (poolMode ? [] : (w.o?.({ MusuThem: 1 }) ?? []))) {
             const pub = String(home.sc?.pub ?? '')
             if (!pub) continue
             const shelf = A?.Ra_home_them?.(w, pub)
             if (!shelf) continue
             shelves.push({ name: String(home.sc?.name ?? pub.slice(0, 6)), recs: A?.Ra_recs?.(shelf) ?? [] })
         }
-        if (radio?.sc?.own) {
+        if (!poolMode && radio?.sc?.own) {
             // Ra_home_self is a find-or-CREATE (oai) — probe first so a mere render can never mint a
             //  home.  Same reason the MusuThem walk above goes through w.o() and only then resolves.
             const me = A?.Radio_pub?.(w)
@@ -97,8 +110,26 @@
             whole:     'whole track held',
             husk:      'husk — nothing asked for',
         }
+        // THE STEWARD WANT-LIST (SoundPooling_todo §5.4 — "what your phone wants next and why"): a
+        //  PURE read over %Provisions → %Want,of,do,why,pool, grouped by the pool compartment each
+        //   want provisions for.  Probe-first (o, never oai) so a render never mints Provisions.  Only
+        //    surfaced in pool mode, where it is the composition the human is shaping.
+        let wantGroups: { pool: string; wants: { of: string; do: string; why: string }[] }[] = []
+        if (poolMode) {
+            const prov = w.o?.({ Provisions: 1 })?.[0]
+            const byPool: Record<string, { of: string; do: string; why: string }[]> = {}
+            for (const want of (prov?.o?.({ Want: 1 }) ?? [])) {
+                const pool = String(want.sc?.pool ?? '')
+                ;(byPool[pool] = byPool[pool] ?? []).push({
+                    of: String(want.sc?.of ?? '').slice(0, 6),
+                    do: String(want.sc?.do ?? ''),
+                    why: String(want.sc?.why ?? ''),
+                })
+            }
+            wantGroups = Object.keys(byPool).sort().map((pool) => ({ pool, wants: byPool[pool] }))
+        }
         return {
-            groups, reach, dialable, warm, heardN,
+            groups, reach, dialable, warm, heardN, poolMode, wantGroups,
             fresh: Math.max(0, dialable - heardN),
             replays: +(radio?.sc?.replays ?? 0),
             now, nowSays: now ? (NOW[now.stage] ?? now.stage) : '',
@@ -171,8 +202,29 @@
         {#if view.replays > 0}
             <div class="sf-foot">↻ {view.replays} replay{view.replays === 1 ? '' : 's'} — the pool ran out, not the music</div>
         {/if}
-        {#if !view.reach}
+        {#if !view.reach && !view.poolMode}
             <div class="sf-foot sf-dim">no crate in reach yet</div>
+        {/if}
+        <!-- THE STEWARD WANT-LIST — "what your phone wants next and why" (SoundPooling §5.4).  Shown in
+             pool mode: the composition the steward is provisioning, grouped by pool compartment. -->
+        {#if view.poolMode}
+            {#if view.wantGroups.length}
+                <div class="sf-wants">
+                    {#each view.wantGroups as wg}
+                        <div class="sf-want-pool">{wg.pool || 'pool'} · wants {wg.wants.length}</div>
+                        {#each wg.wants.slice(0, 6) as want}
+                            <div class="sf-want" title={want.why}>
+                                <span class="sf-want-do sf-want-{want.do}">{want.do}</span>
+                                <span class="sf-want-of">{want.of}</span>
+                                <span class="sf-want-why">{want.why}</span>
+                            </div>
+                        {/each}
+                        {#if wg.wants.length > 6}<div class="sf-want sf-dim">…and {wg.wants.length - 6} more</div>{/if}
+                    {/each}
+                </div>
+            {:else}
+                <div class="sf-foot sf-dim">the steward hasn't sat down yet — flip pool_steward on, or siphon a track</div>
+            {/if}
         {/if}
     </div>
 {/if}
@@ -202,6 +254,16 @@
     .sf-pip.playing { border-color: #fff; box-shadow: 0 0 4px rgba(255, 255, 255, 0.8); opacity: 1; }
     .sf-pip.playing .sf-fill { background: #fff; }
     .sf-foot { margin-top: 3px; font-size: 9px; opacity: 0.7; }
+    /* the steward want-list — the phone's composition, quiet enough not to fight the pips */
+    .sf-wants { margin-top: 4px; border-top: 1px solid rgba(127, 232, 191, 0.18); padding-top: 3px; }
+    .sf-want-pool { font-size: 9px; color: #7fe8bf; letter-spacing: 0.03em; margin: 3px 0 1px; }
+    .sf-want { display: flex; gap: 4px; align-items: baseline; font-size: 9px; line-height: 1.35; }
+    .sf-want-do { flex: none; font-family: monospace; padding: 0 3px; border-radius: 3px; }
+    .sf-want-press { background: rgba(127, 232, 191, 0.18); color: #7fe8bf; }
+    .sf-want-pull  { background: rgba(127, 200, 232, 0.18); color: #8fd0ee; }
+    .sf-want-evict { background: rgba(232, 160, 127, 0.18); color: #e8a07f; }
+    .sf-want-of { flex: none; font-family: monospace; opacity: 0.8; }
+    .sf-want-why { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.6; }
     /* the now-playing line: one row, the title clipped rather than wrapping, so the cell keeps its height */
     .sf-now {
         display: flex; gap: 4px; align-items: baseline; margin-top: 2px;

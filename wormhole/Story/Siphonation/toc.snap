@@ -3,9 +3,18 @@ story:Siphonation
   Plan
   Opt
     For
-  step,dige:0000000000000000
-  step=2,dige:0000000000000000
-  step=3,dige:0000000000000000
-  step=4,dige:0000000000000000
-  step=5,dige:0000000000000000
-  step=6,dige:0000000000000000
+  TimeSpool
+    TimeTotal:beliefs,avg=0.028
+      sample=0.026,at=1788076229
+      sample=0.026,at=1788076267
+      sample=0.031,at=1788076275
+    TimeTotal:step,avg=0.004
+      sample=0.004,at=1788076229
+      sample=0.004,at=1788076267
+      sample=0.005,at=1788076275
+  step,dige:dbfbcf7858877f52
+  step=2,dige:324161a785d16922
+  step=3,dige:14979df517522dda
+  step=4,dige:dc74eec2b3ad2f95
+  step=5,dige:e1d94e39a050e8b8
+  step=6,dige:d7ee9b6420982834

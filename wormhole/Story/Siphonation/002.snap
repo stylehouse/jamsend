@@ -1,0 +1,13 @@
+Snap:H
+  H:Siphonation,Run
+    A:Siphonation
+      self,round=2	{"mung":["age"]}
+      w:Siphonation
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+        Library,name:siphonlib
+          Record,id:o1,artist:Auteur,title:One,path:music/a/one.wav,ext:wav
+          Record,id:o2,artist:Auteur,title:Two,path:music/a/two.wav,ext:wav
+        Library,name:pool

@@ -1,0 +1,19 @@
+Snap:H
+  H:Siphonation,Run
+    A:Siphonation
+      self,round=3	{"mung":["age"]}
+      w:Siphonation
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          reached:step_3
+          tagged,one_tag,tags:1,o1_rows:1,walk:o1 o2
+        Library,name:siphonlib
+          Record,id:o1,artist:Auteur,title:One,path:music/a/one.wav,ext:wav
+          Record,id:o2,artist:Auteur,title:Two,path:music/a/two.wav,ext:wav
+        Library,name:pool
+        Tags
+          Tag,name:lofi
+            Tagged,of:o1
+            Tagged,of:o2

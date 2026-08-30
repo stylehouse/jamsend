@@ -35,6 +35,28 @@
   pool material without a Cave. A Cave comes online: it fills pool copies out into Originals.
    The pool is the PEOPLE'S music — expendable, portable, honest about what it is.
 
+**LANDED 2026-08-30 (this session — the ambient economy + its glass):**
+- **Pools of defined size** (Ra.g → Ra.go): `Ra_pool_define(w,name,take,cap)` + `Ra_pool_defs` +
+   `Ra_quarter_goal_pools` — the goal composes from `%Pool,name,take,cap` compartments (declaration
+    order = priority, dedup across pools); take-policies `taste|liked|kept|latest`, all clockless.
+     No %Pool declared = the old single anonymous goal (byte-identical, gate stayed green).
+- **The source chip + pool rung** (Radio.g → Radio.go): `Radio_source_next(n)` cycles `'' ⇄ 'pool'`
+   on `%Radio,source`; `Radio_dial_pool_local` is the SoundPool dial rung (own OPFS shelf via
+    `Ra_home_pool`); `Radio_dial` obeys `source==='pool'` EXCLUSIVELY.  RadioFace's provenance badge
+     is now the tappable source chip (P2 applied).
+- **The ambient steward occasion**: `Radio_autopress(w,radio)` fires at a track advance, DEFAULT-OFF
+   behind `top.c.pool_steward` (+`pool_steward_cap`, default 24), humdinger-gated, own-library-only
+    (the §3/§4 lib-mapping tripwire respected — a shareless phone still uses the explicit Siphon).
+- **The glass** (ShuffleFace.svelte): pool-mode shows YOUR pocket copies (probe-first `Ra_home_pool`),
+   plus the steward want-list "what your phone wants next and why" grouped by pool compartment (§5.4).
+- **Siphonation is a real gate** now (P1 registered + P3 recorded live, 6/6).
+- **P1 registered**: Siphon.g + Siphonation.g in LiesLies CREDULER_GHOSTS.
+
+**Owner-testable NOW (reload both tabs for the 388834c+ build):** tap the source chip under the
+ player → it flips to "♪ SOUNDPOOL"; the ShuffleFace shows your pool (empty until pressed) + the
+  steward's want-list.  Flip `H.top_House().c.pool_steward = 1` on a Cave/FSA tab and let a track
+   advance → `🏊 steward: pressed N` presses `%Record,path:pool/…` rows you can snap.
+
 **What to get on with next (fresh session reads here):**
 1. **Wire the ambient steward** — `Radio_source_next(n)` + `Radio_autopress` (the press driver that
     lights `Ra_quarter_serve` at a natural play-session seam). This is the ambient economy proper

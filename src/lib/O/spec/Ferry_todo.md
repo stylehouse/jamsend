@@ -166,8 +166,20 @@ everything below is either hardening it or building the second half.
   soul re-linked); after a fresh ferry + reload the "no Pier for … DROPPED" spam should be gone.
 - **C. Family fan-out hygiene** — frames addressed to the bare soul-name reach every body; a body
   that can't serve them drops SILENTLY, stranding the sender's reliable-outbox emits → retry storm.
-  **This is very likely the #37 Repli-flood root** (the editor 7950f300 resending forever). Fix
-  shape: NACK-with-redirect (or relay-side: fan out only to the seat asked for).
+  **This is very likely the #37 Repli-flood root** (the editor 7950f300 resending forever).
+  **SCOPED 2026-08-30, deliberately NOT landed blind.** The drop site is `Peeroleum.g:607` (`if
+  (!pier) …` — counts `w.c.wire_drop[type]`, logs `🛰☠ no Pier for … DROPPED`, returns).  The fix
+  is NACK-with-redirect: on a no-pier drop of a STALL type (repli_want/repli_data/ack — NOT
+  pulse/pong/advertise), emit a lightweight `{type:'nack', to:h.from, from:h.to, ref:h.seq,
+  why:'no-pier'}` back over the same wire (the relay routes by address, no %Pier needed — cf. the
+  pier_hello ack at :603), and have the reliable outbox RETIRE the referenced emit on nack instead
+  of retransmitting.  WHY DEFERRED: there is no `nack`/retire concept in Reliable.g/Peeroleum.g yet
+  (grep confirms), so this introduces new wire semantics whose only real proof is a two-body live
+  run — exactly the thing a single-node Book cannot gate.  Land it in a LIVE two-tab session:
+  add the nack emit (additive, an unknown peer ignores it → no regression), add outbox retire-on-nack
+  (the delicate half — retire ONLY the exact (to,seq) named, never a broader sweep), then watch the
+  reborn Cave's `wire_drop`/#37 flood fall to zero across a relink.  Relay-side alternative (fan out
+  only to the seat asked for) is cleaner but lives in the relay, not this repo's ghosts.
 - **D. Captain/Cave instance identity** (§5) — %Body rows + our-box listing + presence per body.
   **THE NAME IS THE INSTANCE'S UNIQUE PART (owner 2026-08-30: "the Name stays with the instance!
   Captain Grav and Cave Guw").** The name written at each device's name-gate BELONGS TO THAT BODY —
