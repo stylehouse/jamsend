@@ -32,6 +32,25 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
     let pending_gats: any[] = []
     let error = $state('')
     let opening = $state(false)
+    // THE DECLINE IS AN ANSWER (owner 2026-08-31: "can I just decline the FSA request to get it to
+    //  store only with OPFS?").  A cancelled picker used to land as a raw "AbortError…" in the error
+    //   line with the gate re-armed forever — Chrome had no road to the listen-only life that
+    //    no-picker browsers get automatically (Housing's stand-down).  Now a decline is remembered
+    //     (not shouted) and the faces offer the alternative: `listen_only()` raises the runtime
+    //      `listen_choice` flag, and Housing's listen-only branch (extended to honor choice beside
+    //       incapability) stands the gate down, pins Dexie persistence, and mounts the OPFS pool —
+    //        the phone-shaped life, chosen on a desktop.  `.c` only, never snapped.
+    let declined = $state(false)
+    function listen_only() {
+        const hc: any = H()?.c
+        if (hc) {
+            hc.listen_choice = 1
+            hc.disk_gated = false      // drop the gate NOW; the Wormhole tick re-affirms + mounts the pool
+        }
+        declined = false
+        error = ''
+        poll++
+    }
 
     // THE CAPABILITY, PROBED UP FRONT (2026-08-14, field report: "OPEN SHARE just sits there").
     //  Firefox, Safari, Brave-by-default and EVERY mobile browser have no window.showDirectoryPicker,
@@ -109,7 +128,12 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
         try {
             await Promise.all(wakes)
             if (disk_p) await disk_p
-        } catch (e) { error = String(e) }
+        } catch (e: any) {
+            // a cancelled picker is a choice, not a fault — remember it quietly and let the faces
+            //  offer "listen without a folder" instead of dressing the cancel up as an error.
+            if (e?.name === 'AbortError' || /abort/i.test(String(e))) { declined = true; error = '' }
+            else { error = String(e) }
+        }
         finally {
             pending_gats = pending_gats.filter(g => !g?.AC_ready)
             ac_poll++
@@ -132,5 +156,8 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
         //  shown WITHOUT waiting for a doomed tap, so the button never has to lie first.
         get fsa_missing() { return no_fsa },
         get fsa_advice()  { return fsa_advice },
+        // the picker was CANCELLED — a choice worth answering with the listen-only road, not an error.
+        get declined()    { return declined },
+        listen_only,
     }
 }

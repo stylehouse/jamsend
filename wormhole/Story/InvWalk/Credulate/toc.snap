@@ -1,4 +1,4 @@
-Credulate,of_Book:SwarmSpread
+Credulate,of_Book:InvWalk
   GhostInclude:Ghost_N_Peeroleum,dige:8947c2963be869fb~g1
   GhostInclude:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
   GhostInclude:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1
@@ -35,7 +35,7 @@ Credulate,of_Book:SwarmSpread
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
   GhostInclude:Ghost_Story_Sounditron,dige:3131347685e97d61~g1
   GhostInclude:Ghost_O_Supervisor,dige:502a01f7da7e4b14~g1
-  last_ok,at=1788091887.822,ok_pct
+  last_ok,at=1788091893.904,ok_pct
     uses:Ghost_N_Peeroleum,dige:8947c2963be869fb~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1

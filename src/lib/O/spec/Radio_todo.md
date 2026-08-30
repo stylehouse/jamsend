@@ -3603,3 +3603,38 @@ Before → after, both tabs, off the trace rings:
      animating Vyto sensibly over the long run"* — is the right shape: the resident glass should be
       paced by its own clock (the wave/grawave timing Cyto already uses is the candidate), not by
        whether a Story step is willing to advance.  Not built; filed here so it is not lost.
+
+### 2026-08-30 — THE POLE MOVED UPSTREAM: the Creduler standup, not the step clock
+
+With the drain fix landed the steps run at ~0.5 s — and the boot still felt long, because the Radio
+ cannot even BEGIN until the resident Story starts, and Auto holds the Story on `%Creduler_pending`
+  (Auto.svelte:1144 "⏳ Creduler loading spine…").  Live boots put "🧪 Creduler ready — 35 ghost(s)
+   live" at **16.4 s and 26.3 s** — a third to two-thirds of the whole 35 s before any music can move,
+    spent before a single step runs.  Two causes found, two fixes landed:
+
+- **SERIAL SPINE IMPORTS (the big one).** `Creduler_ensure` loaded the 35 gen modules with
+   `for (const p of unmet) await H.Lies_ghost_set(p)` — one dev-server fetch+transform per ghost,
+    in a row, INSIDE the beliefs pass (the trace rings' "beliefs mutex held 7s by H:Mundo think"
+     during boot is this).  Fixed (LiesLies.svelte, Creduler_ensure): a parallel warm loop fires
+      every unmet `import()` first — one module record per URL, so the kept ORDERED loop then awaits
+       work already in flight.  Standup goes from sum(imports) to ~max(imports); enrolment order
+        (watched:UIs) is unchanged, so nothing observable reorders.
+- **GHOSTLIST ON THE MUSIC PAGE.** A humdinger's Creduler Lies wears no `runner:1` (the dispatch-
+   seat carve-out, Auto:890), so it read as a *bare* Lies and seeded the editor's file index:
+    a wormhole/GhostList/toc.snap load + 3+ `LiesStore_listing` walks of src/ + Ghost/ every 8 s —
+     the live "🗂⚠ wormhole … overran 5000ms — retrying" lines — contending the one Wormhole queue
+      exactly while the shelf and the resident Story load.  Fixed (Lies.svelte:860): the GhostList
+       gate now also skips `Lies_humdinger(w)`.  Book-inert both ways: runner tabs are non-humdinger
+        and a humdinger is never a recorded Book's tab.
+- **NOT the pull path, still:** census restore at 35.4 s trails the same Creduler delay (Crate_nav
+   is ghost-deposited, so `restore()`'s nav-gate can't pass until the spine is live + FSA restored);
+    it biases the wander, it does not gate the Radio.  Expected to pull in with the fixes.
+
+**What remains, scoped not landed:** `Swarm_share_beat`'s 5-8 s beliefs-mutex hold (above — still
+ the top REAL-work item, Swarm.g); and the structural one — the resident Sounditron check pass
+  (8 steps) still stands between boot and the Radio surface, so the floor is Creduler + ~8×0.5 s +
+   the share beat.  Moving the resident Book off the boot path (Radio world stood at once, the Book
+    checking beside it) is the restructure the "paced by its own clock" note above points at; it
+     moves fixtures and wants its own session.  Verify these fixes by a real /BigSoundland reload:
+      "Creduler ready" should land in low single digits, no 🗂⚠ list overruns on a music page, and
+       the splash should now plausibly make its 7 s cap to the Radio beginning.

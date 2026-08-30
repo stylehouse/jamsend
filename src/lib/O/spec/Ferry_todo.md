@@ -27,6 +27,15 @@ One misplaced wall, not general mess: **the ceremony was built BELOW the particl
      (Swarm_ferry_confirm / Swarm_ferry_consume(w, code, true)).  Then one full-walk Book
       (mint→confirming→puppet-confirm→sent→held→got→done + decline/cancel/spent-retry) gates the
        whole class of bugs that ate this week.  Full text in the 2026-08-31 session transcript.
+  ⚠ SECURITY FOLLOW-UP once the consenter split lands: `on_seal`'s consent gate FAILS OPEN — the
+   straight-send branch fires on the ABSENCE of humdinger, and humdinger is a courted fact that is
+    unset for the first boot ticks of a real tab (a re-seal in that window would exfiltrate the
+     soul to a live MyCave pier with nobody asked).  With `consenter` in place, make the gate fail
+      CLOSED: straight-send only on an explicit runner/Book condition, never on absence.  Policy
+       marbles articulated 2026-08-31 (session transcript): 1 link=bearer-once, 2 soul crosses only
+        on live-human confirm × warm pier × exact serial, 3 cave consent = #fc possession + accept,
+         4 refusal is signed law and a fresh mint always outranks ("mint a fresh link" is the
+          universal recovery action on every terminal screen).
   NEXT ARC (owner 2026-08-31): the general **Grant:Music ceremony gets the same uniform style** —
    one particle, one phase walk, ends on a screen — once the ferry proves the shape.
 

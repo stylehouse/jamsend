@@ -91,8 +91,9 @@ async InvFerry_stand(w):
     this.Swarm_online(cavey, true)
     this.InvFerry_note(w, { stood: 1 })
 
-// beat 3 — the MINT and the CARRY.  Swarm_ferry_link mints a MyCave invite → <base>?Iz=<token>#fc=<secret>.
-//  The CARRY leg: pull the ?Iz token back out of the URL (Swarm_iz_of_url — the boot handler's core) and
+// beat 3 — the MINT and the CARRY.  Swarm_ferry_link mints a MyCave invite → <base>#Iz=<token>&fc=<secret>
+//  (the ANCHOR form, unparked 2026-08-31 — the whole link rides the fragment, hashchange lands it reload-free).
+//  The CARRY leg: pull the #Iz token back out of the URL (Swarm_iz_of_url — the boot handler's core) and
 //   parse it (Swarm_token_parse) — the compact token names Alice's prepub + the serial.  Secret rides the
 //    fragment (client-side); the durable twin sits in the stash.  Note booleans only.
 async InvFerry_mint(w):
@@ -114,8 +115,8 @@ async InvFerry_mint(w):
     //    copy is the #fc fragment they carried; this is the Book's fragment.
     w.c.code = secret ? String(secret) : ''
     let row = { minted: 1 }
-    if (url.startsWith('https://jamsend.example/BigSoundland?Iz=') && url.includes('#fc=')) { row.url_carries_both = 1 }
-    if (secret && String(secret).length === 32 && url.endsWith('#fc=' + String(secret))) { row.secret_rides_fragment = 1 }
+    if (url.startsWith('https://jamsend.example/BigSoundland#Iz=') && url.includes('&' + 'fc=')) { row.url_carries_both = 1 }
+    if (secret && String(secret).length === 32 && url.endsWith(('&' + 'fc=') + String(secret))) { row.secret_rides_fragment = 1 }
     if (twin && String(twin) === String(secret)) { row.twin_stashed = 1 }
     // the CARRY: the token pulled back out parses to Alice's prepub and a MyCave offer.
     if (t && t.prepub === alice.sc.prepub && t.to === 'MyCave') { row.token_carries = 1 }

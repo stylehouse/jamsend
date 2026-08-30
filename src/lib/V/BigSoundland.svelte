@@ -28,6 +28,7 @@
     //      SEPARATE fullscreen gate: BootGate's FaceSucker (disk-share / audio tap) — cleared by GRANTING,
     //       not by ▦; if it's covering the screen, open the folder / tap for sound to get past it.
     import Ghost      from "$lib/O/Ghost.svelte"
+    import { hold_list } from "$lib/O/ui/micro/hold"
     import { keyser } from "$lib/data/Stuff.svelte"
     import BootGate   from "$lib/O/ui/BootGate.svelte"
     import Butler     from "$lib/O/ui/Butler.svelte"
@@ -80,16 +81,27 @@
     //    the invite strip below: whoever owns the screen owns the door.
     let butler_up = $derived.by(() => { void H?.version; return !!(H as any)?.c?.butler_up })
 
+    // THE GLASS HOLD (live catch 2026-08-31, "a storm of cell respawnings": `▣▣ Vytui REAL destroy`
+    //  in the log = THIS derivation flipping undefined for a render).  The UI:'Vyto' row rides the
+    //   same replace()-transaction gap hold.ts documents, and under a mutex storm (the #37 flood) the
+    //    gap gets CAUGHT by a render — the {#if} below then tears down the ENTIRE Vytui (world, stage,
+    //     faces, Cellui and its storm breakers all die with it) and respawns it cold.  No inner hold
+    //      can survive its own component's unmount, so the buffer belongs HERE, on the outermost seam.
+    //       6s, matching Vytui's worlds_hold and for the same reason: a real glass departure is a rare,
+    //        deliberate event; a 6s-late teardown is invisible then, but rides out any mutex storm.
+    const glass_hold = hold_list<{ house: any, ui: any }>(6000)
     let cyto = $derived.by(() => {
         let fallback
+        let found
         for (const house of houses) {
             void house.UIs.version
             const vyto = house.UIs.ob({ UI: 'Vyto' })[0]
-            if (vyto) return { house, ui: vyto }
+            if (vyto) { found = { house, ui: vyto }; break }
             const cy = house.UIs.ob({ UI: 'Cyto' })[0]
             if (cy && !fallback) fallback = { house, ui: cy }
         }
-        return fallback
+        const pick = found ?? fallback
+        return glass_hold(pick ? [pick] : [])[0]
     })
 
     // ?VY=1 TRACE — when the badge is stuck at "no glass yet", walk for the A:Vyto world the

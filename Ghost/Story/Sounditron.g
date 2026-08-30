@@ -424,9 +424,57 @@ Sounditron_commission(w):
     //      on being in Link" the owner asked for — once surfaced, it holds until the ceremony is truly over.
     let live = 0
     try { live = (this.Swarm_link_active ? this.Swarm_link_active(w) : active) ? 1 : 0 } catch (e) { live = active }
-    if (active) { w.c.focused = 'Link'; w.c.link_surfaced = 1 }
-    if (!live && w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
-    if (!live && w.c.link_decided) { delete w.c.link_decided }
+    // THE SURFACE DECISION IS LATCHED PER PHASE, NOT RE-DERIVED PER TICK (owner 2026-08-30, "when I click
+    //  'Link Device' the Door becomes its minicell icon, big" — the fight the Cellui breakers were arresting
+    //   but not ending).  Both inputs here FLICKER: `active` (warmth — a heard_at crossing the 45s line,
+    //    applied in mutex BURSTS under a Repli flood) and `live` (the ferry_* flags, re-parked/cleared by the
+    //     poke reheal).  This commission runs on every focus press / trickle / standup poke, so deciding
+    //      surface+teardown from those signals HERE made the commission a second authority fighting the
+    //       changed-gated phase verb (Swarm_ferry_phase's link_open/link_done) many times a second — %Link
+    //        in/out of the grapple, Door faces remounting in the 80s.
+    //  ONE WRITER PER TRANSITION: the %Ferry particle's phase@at is the ceremony's own clock.  Decide AT MOST
+    //   ONCE per phase (w.c.link_decided remembers which phase@at got its decision).  Warmth gates the FIRST
+    //    surfacing of a phase (the boot-hijack law — a cold boot must not seize) but never SUSTAINS it: once
+    //     surfaced the decision STANDS until the phase itself changes, so a warmth dip can't fold the cell
+    //      and a flag flicker can't yank the focus.  In-flight-but-cold stays UNDECIDED (no writes), so a
+    //       late-warming pier still gets its one surface.  A missed terminal can't wedge the cell up: the
+    //        10s unlive janitor below tears down a surfaced latch only when the flags stay gone for real.
+    //  BOOK-INERT: the latch is humdinger-gated — a Book runs the verbatim old lines — and every fact here
+    //   is .c-only, so the ferry fixtures stay byte-identical.
+    if (mh_hd) {
+        let fkey = ''
+        try {
+            let fp = this.Swarm_ferry_particle ? this.Swarm_ferry_particle(w) : null
+            if (fp && fp.sc) { fkey = String(fp.sc.phase || '') + '@' + String(fp.sc.at || '') }
+        } catch (e) {}
+        if (fkey !== (w.c.link_decided || '')) {
+            if (active) {
+                w.c.focused = 'Link'
+                w.c.link_surfaced = 1
+                w.c.link_decided = fkey
+            } else if (!live) {
+                // the ceremony genuinely ENDED (flags cleared + a terminal phase): one teardown, then it's a receipt
+                w.c.link_decided = fkey
+                if (w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
+            }
+            // else: in flight but cold — leave UNDECIDED so warmth arriving later still surfaces exactly once
+        }
+        // the unlive JANITOR — belt for a clearing path that missed its terminal phase stamp: a surfaced
+        //  latch with NO ferry flags for a sustained 10s is a dead ceremony, not a flicker.  Debounced so
+        //   the poke reheal's momentary flag gaps (the old flap fuel) can never trip it.
+        if (!live && w.c.link_surfaced) {
+            if (!w.c.link_unlive_at) { w.c.link_unlive_at = Date.now() }
+            else if (Date.now() - w.c.link_unlive_at > 10000) {
+                delete w.c.link_unlive_at
+                delete w.c.link_surfaced
+                if (w.c.focused === 'Link') { delete w.c.focused }
+            }
+        } else if (w.c.link_unlive_at) { delete w.c.link_unlive_at }
+    } else {
+        if (active) { w.c.focused = 'Link'; w.c.link_surfaced = 1 }
+        if (!live && w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
+        if (!live && w.c.link_decided) { delete w.c.link_decided }
+    }
     // PUBLISH THE FULLSCREEN AUTHORITY here, on the same humdinger-gated commission that decides the belly focus —
     //  one place, one decision.  Inert on Books (Screen_decide self-gates on humdinger).  It still coordinates the
     //   OTHER surfaces (Splash/Butler read screen.wants/dominant); the ceremony itself is the belly cell below.
@@ -435,7 +483,12 @@ Sounditron_commission(w):
     //  minted by Sounditron_glass on this same w.  Grapple it into the belly whenever the ceremony is active (or a
     //   focus is still parked on it), for Books and live tabs alike.
     let link = w.o({ Link: 1 })[0]
-    if ((active || w.c.focused === 'Link') && link) organs.push(link)
+    // the GRAPPLE keys off the LATCHED decision on a live tab, not volatile `active` — otherwise a warmth
+    //  flicker still flapped the cell in/out of the set even with the focus latched (link_surfaced is set
+    //   exactly when a phase earns its surface, cleared exactly when the ceremony ends).  Books keep the
+    //    verbatim old gate — fixtures byte-identical.
+    let link_up = mh_hd ? (w.c.link_surfaced || w.c.focused === 'Link') : (active || w.c.focused === 'Link')
+    if (link_up && link) organs.push(link)
     // the transfer HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback but I don't see
     //  any"): Heist_keep_beat mints and keeps current a persistent dontSnap %Transfer cell on the radio
     //   world, but a cell only draws once it's in this commission's grapple set — same law as every other

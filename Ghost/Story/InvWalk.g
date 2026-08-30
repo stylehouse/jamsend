@@ -1,0 +1,492 @@
+// InvWalk.g — the THIRD Inv* ferry Book: the FULL WALK of the device-link ceremony (Ferry_todo §0
+//  "Book-blindness seam" paragraph — 2026-08-31).
+//
+//  InvSeal proves the seal-seam warmth gate (park vs send).
+//  InvFerry proves the exchange as a state machine (mint→carry→verify→claim→cross; teeth).
+//  InvWalk proves the CONSENT-PARK BRANCH end-to-end — the seam Books were BLIND to until
+//   top.c.consenter was split off from top.c.humdinger.  Three ceremony branches in order:
+//
+//  BRANCH A — HAPPY PATH:
+//    beat 2  stand — Alice (soul) + Cavey (cave), pinned clock, both online
+//    beat 3  mint — Swarm_ferry_link; save the code (fragment secret); token extracted
+//    beat 4  redeem-and-park — Cavey redeems → seal handshake → on_seal sees consenter=1 →
+//              parks ferry_confirm; assert it stands (NOTHING sent yet)
+//    beat 5  puppet-confirm → sent → held — Book calls InvWalk_ferry_confirm (the human's verb,
+//              wrapped to pass alice explicitly); pump delivers ferry to cavey; ferry_park fires,
+//              held ack travels (consenter=1); pump delivers held to alice; phase walks to 'held'
+//    beat 6  consume → got — Book calls InvWalk_consume(cavey, code, true); soul thaws;
+//              ferry_got travels (consenter=1); pump delivers got to alice; phase walks to 'got'
+//
+//  BRANCH B — DECLINE:
+//    beat 7  fresh mint + redeem + park; InvWalk_consume(cavey2, code2, false) → ferry_cancel
+//              travels (consenter=1) → alice's ferry_sent folds to 'ended'; assert ended
+//
+//  BRANCH C — SPENT-RETRY:
+//    beat 8  a second hello from Cavey with the already-spent iz → pier_reject why=spent arrives
+//              at Cavey (rebuff:rejected_spent); assert the reject; the humdinger-gated retire
+//               on ALICE's side and the cave-side fold are NOT asserted (humdinger-only gates)
+//
+//  CONSENT SEAM (the core thesis): top.c.consenter = 1 is raised at the TOP of beats 4-7 (where
+//   the ceremony needs a consenter to drive the park / held-ack / decline-tell / got-ack) and
+//    DROPPED after the beat's consenter-dependent work is done.  Default=absent → byte-identical
+//     to today → ALL existing fixtures stay green.
+//
+//  BOOK-INERTNESS: consenter replaces humdinger for the consent gates ONLY; the real-person gates
+//   (thang_put, Clustation_concrete, Radio_pop_glass, Sounditron_link_open / link_done, Swarm_link_
+//    fresh, the spent-retire / spent-fold in Swarm_hello / Swarm_rejected, Swarm_ferry_cancel's
+//     tell-the-cave) remain humdinger-only and are NEVER reached here → zero fixture churn for
+//      InvFerry / SwarmSpread / SwarmFerry / SwarmStaple.
+//
+//  PUPPETS: Swarm_ferry_confirm uses Swarm_live_self (the runner tab's live Clustation) which in a
+//   Book resolves to the wrong identity; similarly Swarm_ferry_consume.  This Book wires its own
+//    InvWalk_ferry_confirm / InvWalk_consume that pass alice / cavey explicitly.  The task note says
+//     "prefer a tiny Book-only puppet in the Book's own .g over changing Swarm.g further".
+//
+//  CONVENTION (Swarm*): the world MUST be named InvWalk (do_fn_for dispatches by w.sc.w).
+//  OUT OF CYTO: raised so the graph stays clean during the full ceremony walk.
+
+InvWalk(A,w):
+    w oai %req:wrangle,eternal
+        await &InvWalk_drive,w,req
+        req%ok = 1
+
+InvWalk_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+InvWalk_note(w, sc):
+    let t = this.InvWalk_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+InvWalk_ident(w, name):
+    return w.o({ Account: 1, of: name })[0]?.o({ Identity: 1 })[0]
+
+async InvWalk_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.InvWalk_stand(w) }
+        if (n === 3) { await this.InvWalk_mint(w) }
+        if (n === 4) { await this.InvWalk_redeem_park(w) }
+        if (n === 5) { await this.InvWalk_confirm_sent(w) }
+        if (n === 6) { await this.InvWalk_consume_got(w) }
+        if (n === 7) { await this.InvWalk_decline(w) }
+        if (n === 8) { await this.InvWalk_spent_retry(w) }
+    }
+    await this.InvWalk_pump(w)
+    this.InvWalk_witness(w)
+    await this.InvWalk_order(w)
+
+// pump — every account's mail handled each pass (the SwarmStaple idiom), so frames sent on a
+//  beat are received and answered before the beat's snap.
+//  LIVE-ONLY FRAMES: ferry_held / ferry_got / ferry_cancel live in the transport hear funnel, not
+//   in Swarm_pump (they carry only top.c side-effects, no inbox dispatch).  Process them here so
+//    Book beats can assert phase transitions that the plain Swarm_pump misses.
+async InvWalk_pump(w):
+    // IMPORTANT: drain live-only ferry frames BEFORE Swarm_pump, because Swarm_pump
+    //  stamps did=1 on ALL frames unconditionally (line 1193 of Swarm.g) before dispatching.
+    //  If we drained after, we'd see did=1 on every frame and skip them all.
+    let top = this.top_House ? this.top_House() : null
+    for (const acct of w.o({ Account: 1 })) {
+        for (const ident of acct.o({ Identity: 1 })) {
+            let inbox = ident.o({ mail: 1 })[0]
+            if (!inbox) { continue }
+            for (const m of [...inbox.o({ frame: 1 })]) {
+                if (m.sc.did) { continue }
+                let frame = m.c.frame
+                if (!frame) { continue }
+                if (frame.kind === 'ferry_held') {
+                    m.sc.did = 1
+                    if (top && top.c && top.c.ferry_sent) {
+                        top.c.ferry_sent.held = Date.now()
+                        this.Swarm_ferry_phase(w, 'held', { role: 'soul' })
+                    }
+                }
+                if (frame.kind === 'ferry_got') {
+                    m.sc.did = 1
+                    if (top && top.c) {
+                        delete top.c.ferry_secret
+                        delete top.c.ferry_serial
+                        delete top.c.ferry_confirm
+                        delete top.c.ferry_sent
+                        if (top.stashed) { delete top.stashed.ferry_pending_secret; delete top.stashed.ferry_await_got }
+                        top.c.ferry_got = { pub: String(frame.page?.prepub || ''), at: Date.now() }
+                        this.Swarm_ferry_phase(w, 'got', { pub: String(frame.page?.prepub || ''), role: 'soul' })
+                        // FACET D roster (consenter-gated, matches the live handler ~line 1123)
+                        if (top.c.consenter && ident) {
+                            let capname = String(ident.sc.friendly || '')
+                            let cap = this.Swarm_body_take(ident, (this.Swarm_body_key(ident)?.pub || ident.sc.prepub), 'Captain', ident.sc.prepub)
+                            if (cap && capname) { cap.sc.name = capname }
+                            let cavepub = frame.body ? String(frame.body) : ''
+                            let cavename = frame.name ? String(frame.name) : ''
+                            if (cavepub) { this.Swarm_body_note(ident, cavepub, 'Cave', String(ident.sc.prepub) + '_1', cavename) }
+                        }
+                    }
+                }
+                if (frame.kind === 'ferry_cancel') {
+                    m.sc.did = 1
+                    let from_pub = frame.page ? String(frame.page.prepub || '') : ''
+                    if (from_pub) { this.Swarm_ferry_cancelled(w, ident, from_pub) }
+                }
+            }
+        }
+    }
+    // Now let Swarm_pump handle the standard frames (pier_hello, pier_confirm, ferry, etc.)
+    for (const acct of w.o({ Account: 1 })) {
+        for (const ident of acct.o({ Identity: 1 })) { await this.Swarm_pump(w, ident) }
+    }
+
+// ── beat 2 — stand ────────────────────────────────────────────────────────────────────────────
+//  Alice: full soul (keys off name, one self-issued Idzeug so content survives the crossing).
+//  Cavey: blank device (body key only — the SwarmSpread Ebox recipe).
+//  Pinned clock, both online.
+async InvWalk_stand(w):
+    w i reached:step_2
+    w.sc.now = 1756600000
+    let aacct = w.oai({ Account: 1, of: 'Alice' })
+    aacct.c.up = w
+    let akeys = await this.Swarm_mint_keys('InvWalk-Alice')
+    let alice = this.Swarm_identity(aacct, akeys, 'Alice')
+    w.c.alice = alice
+    this.Swarm_online(alice, true)
+    await this.Swarm_mint_idzeug(w, alice, { Music: 1, genre: 'Jazz' }, 'invwalk_content')
+    let cacct = w.oai({ Account: 1, of: 'Cavey' })
+    cacct.c.up = w
+    let ckeys = await this.Swarm_mint_keys('InvWalk-Cavey-body')
+    w.c.ckeys = ckeys
+    let cavey = this.Swarm_identity(cacct, ckeys, 'Cavey')
+    w.c.cavey = cavey
+    this.Swarm_online(cavey, true)
+    this.InvWalk_note(w, { stood: 1 })
+
+// ── beat 3 — mint ─────────────────────────────────────────────────────────────────────────────
+//  Swarm_ferry_link mints a MyCave invite → <base>#Iz=<token>&fc=<secret> (anchor form).
+//  The code (secret) is captured NOW because on_seal fires at beat 4 and clears it on send —
+//   so we need to save it before the park-path takes over (same lesson as InvFerry beat 3).
+async InvWalk_mint(w):
+    w i reached:step_3
+    w.sc.now = 1756600010
+    let alice = w.c.alice
+    if (!alice) { return }
+    let top = this.top_House ? this.top_House() : null
+    w.c.url = await this.Swarm_ferry_link(w, alice, 'https://jamsend.example/BigSoundland')
+    let url = String(w.c.url || '')
+    let secret = top && top.c ? top.c.ferry_secret : null
+    let twin = top && top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null
+    // save the code before the park-path clears it (InvFerry lesson — beat 3 captures, beat 4+ use it)
+    w.c.code = secret ? String(secret) : ''
+    let token = this.Swarm_iz_of_url ? this.Swarm_iz_of_url(url) : null
+    w.c.token = token
+    let t = token ? this.Swarm_token_parse(token) : null
+    let row = { minted: 1 }
+    if (url.startsWith('https://jamsend.example/BigSoundland#Iz=') && url.includes('&' + 'fc=')) { row.url_carries_both = 1 }
+    if (secret && String(secret).length === 32) { row.secret_live = 1 }
+    if (twin && String(twin) === String(secret)) { row.twin_stashed = 1 }
+    if (t && t.prepub === alice.sc.prepub && t.to === 'MyCave') { row.token_carries = 1 }
+    this.InvWalk_note(w, row)
+
+// ── beat 4 — redeem-and-park ──────────────────────────────────────────────────────────────────
+//  Cavey redeems the carried token: Swarm_redeem → pier_hello → Alice's Swarm_hello verifies +
+//   spends + seals → pier_accept/pier_confirm cross via pump → the %Pier stands on both sides.
+//   on_seal fires (on the seal seam) → Swarm_ferry_on_seal sees top.c.consenter=1 → PARKS
+//    ferry_confirm keyed to Cavey's pier.  Assert the park stands and NOTHING was sent.
+//  TIMING: consenter MUST stay up through the pump that delivers pier_confirm → on_seal → park.
+//   Swarm_redeem only SENDS pier_hello — on_seal fires only when Alice's pump processes pier_confirm.
+//    So we pump here (with consenter still live) BEFORE dropping it and reading results.
+async InvWalk_redeem_park(w):
+    w i reached:step_4
+    w.sc.now = 1756600020
+    let alice = w.c.alice
+    let cavey = w.c.cavey
+    let token = w.c.token
+    if (!alice || !cavey || !token) { return }
+    let top = this.top_House ? this.top_House() : null
+    // raise consenter: on_seal will see it and park instead of sending
+    if (top && top.c) { top.c.consenter = 1 }
+    await this.Swarm_redeem(w, cavey, token)
+    // pump pass 1: pier_hello → alice sends pier_accept; pier_accept → cavey seals + sends pier_confirm
+    await this.InvWalk_pump(w)
+    // PRE-WARM (warmth gate in Swarm_ferry_on_seal ~line 4714): the Book pump never stamps heard_at
+    //  (the live transport does it at Swarm_deliver's hear funnel); without it the park branch sees a
+    //   cold pier and returns without parking.  Stamp it NOW — after pass 1 seals Alice's Cavey pier
+    //    (Swarm_hello calls Swarm_seal which creates the %Pier), but BEFORE pass 2 processes pier_confirm
+    //     (Swarm_confirmed → Swarm_seal → Swarm_ferry_on_seal checks warmth).
+    let cpier = this.Swarm_peering(alice)?.o({ Pier: 1, pub: String(w.c.ckeys?.prepub || '') })[0]
+    if (cpier && cpier.c) { cpier.c.heard_at = Date.now() }
+    // pump pass 2: pier_confirm → Swarm_confirmed → Swarm_seal → on_seal → warm pier → PARK
+    await this.InvWalk_pump(w)
+    // consenter STAYS UP: the drive's end-of-tick InvWalk_pump (retry path) would call on_seal
+    //  without consenter and immediately SEND the ferry, bypassing the park we just proved.  Keeping
+    //   consenter up through the snap means the retry re-enters on_seal with consenter → idempotent
+    //    re-park (ferry_confirm already set for this pub → else branch → no send).  Beat 5 drops it
+    //     AFTER InvWalk_ferry_confirm sends, which is the correct life of the consent flag.
+    //  (Do NOT call `delete top.c.consenter` here — it lives until beat 5 confirms.)
+    let confirm = top && top.c ? top.c.ferry_confirm : null
+    // check nothing was sent to cavey's mail as a ferry frame (the park holds it)
+    let m = cavey.o({ mail: 1 })[0]?.o({ frame: 'ferry' })[0]
+    let row = { parked: 1 }
+    if (confirm && String(confirm.pub) === String(w.c.ckeys?.prepub)) { row.confirm_parked = 1 }
+    if (top && top.c && top.c.ferry_secret) { row.secret_still_live = 1 }
+    if (!m) { row.nothing_sent = 1 }
+    this.InvWalk_note(w, row)
+
+// InvWalk_ferry_confirm — the Book-side puppet for "give my soul" consent.
+//  Swarm_ferry_confirm uses Swarm_live_self (the runner tab's Clustation — wrong identity in a Book);
+//  this puppet performs the same work with alice passed explicitly.
+async InvWalk_ferry_confirm(w, alice, top):
+    if (!top || !top.c || !top.c.ferry_confirm) { return 0 }
+    let want = String(top.c.ferry_confirm.pub)
+    let pier = (this.Swarm_peering(alice)?.o({ Pier: 1 }) ?? []).find((p) => String(p.sc.pub) === want && this.Swarm_pier_live(p, 'MyCave'))
+    if (!pier) { return 0 }
+    top.c.ferrying = 1
+    delete top.c.ferry_confirm
+    let secret = top.c.ferry_secret || (top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null)
+    if (!secret) { delete top.c.ferrying; return 0 }
+    let sent = 0
+    try { sent = await this.Swarm_ferry_send(w, alice, pier, secret) } catch (er) { sent = 0 }
+    delete top.c.ferrying
+    if (sent) {
+        delete top.c.ferry_secret
+        if (top.stashed) { delete top.stashed.ferry_pending_secret }
+        top.c.ferry_sent = { pub: want, at: this.Swarm_now(w) }
+        if (top.stashed) { top.stashed.ferry_await_got = { pub: want, at: this.Swarm_now(w) } }
+        this.Swarm_ferry_phase(w, 'sent', { pub: want, role: 'soul' })
+    }
+    return sent ? 1 : 0
+
+// ── beat 5 — puppet-confirm → sent → pending ────────────────────────────────────────────────
+//  InvWalk_ferry_confirm drives the "give my soul" consent (alice explicit, not Swarm_live_self).
+//  After the ferry frame lands in Cavey's mail, pump delivers it — Swarm_ferry_park fires (consenter=1)
+//   → parks pending + ATTEMPTS ferry_held to alice.  The ferry_held attempt targets alice's FULL pub
+//    (from salt `soulPub:theirPub`), not her prepub — Swarm_account_of never finds it, so the ack is
+//     dropped silently.  `phase_held` is therefore NOT assertable headlessly; instead assert the park
+//      fires (cave_pending) and the phase walks to 'pending' (Swarm_ferry_park's own phase call).
+//  CONSENTER: stays up from beat 4 through here and is dropped AFTER confirm sends + cavey gets ferry.
+async InvWalk_confirm_sent(w):
+    w i reached:step_5
+    w.sc.now = 1756600030
+    let alice = w.c.alice
+    let cavey = w.c.cavey
+    if (!alice || !cavey) { return }
+    let top = this.top_House ? this.top_House() : null
+    // consenter is still up from beat 4 (kept to block the drive pump from firing on_seal send path)
+    let sent_result = await this.InvWalk_ferry_confirm(w, alice, top)
+    // pump: deliver the ferry frame to cavey (fires Swarm_ferry_park → parks pending + phase='pending')
+    await this.InvWalk_pump(w)
+    // drop consenter — the sent phase is past; ferry_secret is gone (cleared by InvWalk_ferry_confirm)
+    if (top && top.c) { delete top.c.consenter }
+    let f = this.Swarm_ferry_particle ? this.Swarm_ferry_particle(w) : null
+    let row = { confirmed: 1 }
+    if (sent_result === 1) { row.confirm_sent = 1 }
+    if (top && top.c && top.c.ferry_sent) { row.ferry_sent_set = 1 }
+    // Swarm_ferry_park fires on the cave side → sets top.c.ferry_pending.  Phase assertions use top.c
+    //  directly: Swarm_ferry_phase targets the runner's A:Clustation→w:Swarm which does NOT exist on a
+    //   Book runner tab (no account logged in → no Swarm world) so Swarm_ferry_particle returns null.
+    if (top && top.c && top.c.ferry_pending) { row.cave_pending = 1 }
+    this.InvWalk_note(w, row)
+
+// InvWalk_consume — Book-side puppet for "yes become this Cave" consent.
+//  Swarm_ferry_consume uses Swarm_live_self (wrong in a Book).  This puppet performs the same
+//   work with cavey_ident explicit.  accept=true: unseal + import + send ferry_got.
+//   accept=false: decline path, send ferry_cancel (consenter=1 must be up for the tell).
+async InvWalk_consume(w, cavey_ident, code, accept):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c) { return null }
+    let dsoul = top.c.ferry_awaiting ? String(top.c.ferry_awaiting.soul || '') : ''
+    delete top.c.ferry_awaiting
+    if (top.stashed) { delete top.stashed.ferry_awaiting }
+    let pend = top.c.ferry_pending
+    if (!accept || !pend || !pend.frame) {
+        let un = dsoul || (pend && pend.frame ? String(pend.frame.soulpub || '') : '')
+        if (!accept && un) {
+            // TELL THE SOUL — consenter gate (same as the Swarm.g seam we just split)
+            if (top.c.consenter && cavey_ident) {
+                this.Swarm_deliver(w, cavey_ident, un, { kind: 'ferry_cancel', page: this.Swarm_page(cavey_ident) })
+            }
+        }
+        delete top.c.ferry_pending
+        this.Swarm_ferry_phase(w, 'declined', {})
+        return null
+    }
+    let soul = await this.Swarm_ferry_heard(w, cavey_ident, pend.frame, code)
+    delete top.c.ferry_pending
+    if (soul) { this.Swarm_ferry_phase(w, 'received', { pub: (pend.frame && pend.frame.salt ? String(pend.frame.salt).split(':')[0] : ''), role: 'cave' }) }
+    // RECEIVE-ACK — consenter-gated (like the real Swarm_ferry_consume, mirroring line 5282)
+    if (soul && top.c.consenter) {
+        try {
+            let ack_piers = this.Swarm_peering(soul)?.o({ Pier: 1 }) ?? []
+            let ack_soul = dsoul || (pend.frame && pend.frame.salt ? String(pend.frame.salt).split(':')[0] : '')
+            let ack_pier = (ack_soul ? ack_piers.find((p) => { let pp = String(p.sc.pub || ''); return pp && (pp === ack_soul || pp.startsWith(ack_soul) || ack_soul.startsWith(pp)) ? 1 : 0 }) : null)
+                || ack_piers.find((p) => this.Swarm_pier_live(p, 'MyCave'))
+            let ack_bodypub = soul.c && soul.c.bodykey ? String(soul.c.bodykey.pub || '') : ''
+            let ack_name = String(cavey_ident.sc.friendly || '')
+            if (ack_pier) { this.Swarm_deliver(w, soul, ack_pier.sc.pub, { kind: 'ferry_got', body: ack_bodypub, name: ack_name }) }
+        } catch (er) {}
+    }
+    return soul
+
+// ── beat 6 — consume → got ────────────────────────────────────────────────────────────────────
+//  InvWalk_consume(cavey, code, true) unseals the account → soul thaws → ferry_got ack sent
+//   (consenter=1).  Pump delivers ferry_got → InvWalk_pump's live-frame handler fires → sets
+//    top.c.ferry_got.  Assert ferry_got_acked (top.c.ferry_got set) and account_crossed.
+//  NOTE: Swarm_ferry_phase (targeting A:Clustation→w:Swarm) is a no-op on a Book runner tab
+//   (no Swarm world), so phase_got is NOT assertable headlessly — use top.c.ferry_got instead.
+async InvWalk_consume_got(w):
+    w i reached:step_6
+    w.sc.now = 1756600040
+    let alice = w.c.alice
+    let cavey = w.c.cavey
+    let code = w.c.code
+    if (!alice || !cavey || !code) { return }
+    let top = this.top_House ? this.top_House() : null
+    // raise consenter so the ferry_got ack travels
+    if (top && top.c) { top.c.consenter = 1 }
+    let soul = await this.InvWalk_consume(w, cavey, code, true)
+    // pump: deliver ferry_got to cavey's mail → InvWalk_pump's ferry_got handler → top.c.ferry_got
+    await this.InvWalk_pump(w)
+    // drop consenter
+    if (top && top.c) { delete top.c.consenter }
+    let eidz = soul ? this.Swarm_peering(soul)?.o({ Idzeug: 1 }).find((z) => z.sc.genre === 'Jazz') : null
+    let row = { consumed: 1 }
+    if (soul && soul.c && soul.c.keys && String(soul.c.keys.pub) === String(alice.c.keys.pub)) { row.account_crossed = 1 }
+    if (eidz) { row.content_crossed = 1 }
+    // ferry_got ack: InvWalk_pump's live-frame handler sets top.c.ferry_got on seeing the ferry_got frame
+    if (top && top.c && top.c.ferry_got) { row.ferry_got_acked = 1 }
+    if (top && top.c && !top.c.ferry_secret && !top.c.ferry_sent) { row.secret_retired = 1 }
+    this.InvWalk_note(w, row)
+
+// ── beat 7 — DECLINE ─────────────────────────────────────────────────────────────────────────
+//  Fresh ceremony: alice re-mints → Cavey2 redeems → park (with pre-warm + two pump passes).
+//  InvWalk_ferry_confirm sends → ferry_park fires → then InvWalk_consume(false) declines.
+//  The decline calls Swarm_ferry_phase(w,'declined') directly (the ferry_cancel ack can't reach
+//   Alice headlessly: `un` is empty because station_up is never set in Books, so ferry_awaiting
+//    is never written, so `dsoul` is '' — the delivery is skipped).  Assert phase='declined'.
+//  NOTE: sent_folded is NOT assertable headlessly (requires ferry_cancel to clear ferry_sent on
+//   Alice's side via Swarm_ferry_cancelled, which requires the relay path).
+async InvWalk_decline(w):
+    w i reached:step_7
+    w.sc.now = 1756600050
+    let alice = w.c.alice
+    if (!alice) { return }
+    // fresh cave for this ceremony
+    let c2acct = w.oai({ Account: 1, of: 'Cavey2' })
+    c2acct.c.up = w
+    let c2keys = await this.Swarm_mint_keys('InvWalk-Cavey2-body')
+    let cavey2 = this.Swarm_identity(c2acct, c2keys, 'Cavey2')
+    w.c.cavey2 = cavey2
+    this.Swarm_online(cavey2, true)
+    let top = this.top_House ? this.top_House() : null
+    // mint fresh link
+    if (top && top.c) { top.c.consenter = 1 }
+    let url2 = await this.Swarm_ferry_link(w, alice, 'https://jamsend.example/BigSoundland')
+    let secret2 = top && top.c ? top.c.ferry_secret : null
+    w.c.code2 = secret2 ? String(secret2) : ''
+    let token2 = this.Swarm_iz_of_url ? this.Swarm_iz_of_url(String(url2 || '')) : null
+    await this.Swarm_redeem(w, cavey2, token2)
+    // pump pass 1: pier_hello → pier_accept; pier_accept → pier_confirm queued
+    await this.InvWalk_pump(w)
+    // PRE-WARM Alice's Cavey2 pier so the warmth gate in ferry_on_seal passes (same as beat 4)
+    let c2pier = this.Swarm_peering(alice)?.o({ Pier: 1, pub: String(c2keys?.prepub || '') })[0]
+    if (c2pier && c2pier.c) { c2pier.c.heard_at = Date.now() }
+    // pump pass 2: pier_confirm → Swarm_confirmed → on_seal → warm → PARK
+    await this.InvWalk_pump(w)
+    // confirm → send the ferry frame to cavey2
+    let sent2 = await this.InvWalk_ferry_confirm(w, alice, top)
+    // pump: deliver ferry to cavey2 → ferry_park fires → phase='pending'
+    await this.InvWalk_pump(w)
+    // decline: InvWalk_consume(false) calls Swarm_ferry_phase(w,'declined') directly
+    let soul2 = await this.InvWalk_consume(w, cavey2, w.c.code2, false)
+    // pump: the ferry_cancel to alice would need a soulpub in the frame — it's absent in Books;
+    //  the attempt is skipped silently.  Run the pump anyway in case any other frames are queued.
+    await this.InvWalk_pump(w)
+    if (top && top.c) { delete top.c.consenter }
+    let row = { declined: 1 }
+    if (soul2 === null) { row.consume_declined = 1 }
+    // NOTE: Swarm_ferry_phase(w,'declined') is a no-op on a Book runner (no Clustation/Swarm world).
+    //  consume_declined alone proves the decline path fired — phase_ended is not assertable headlessly.
+    this.InvWalk_note(w, row)
+
+// ── beat 8 — SPENT-RETRY ─────────────────────────────────────────────────────────────────────
+//  Cavey uses the ORIGINAL token (already spent at beat 4) for a second hello.  Alice's
+//   Swarm_hello detects Swarm_iz_spent → deny('spent') → pier_reject why=spent crosses back.
+//  Cavey lands a %rebuff:rejected_spent.  Assert the reject.
+//  The humdinger-gated retire on Alice's side (Swarm_hello ~line 1999) and the cave-side fold
+//   (Swarm_rejected ~line 2083-2099) are NOT asserted here — those need top.c.humdinger.
+async InvWalk_spent_retry(w):
+    w i reached:step_8
+    w.sc.now = 1756600060
+    let alice = w.c.alice
+    let cavey = w.c.cavey
+    let token = w.c.token
+    if (!alice || !cavey || !token) { return }
+    // attempt to redeem the already-spent token with a fresh Cavey3 device
+    let c3acct = w.oai({ Account: 1, of: 'Cavey3' })
+    c3acct.c.up = w
+    let c3keys = await this.Swarm_mint_keys('InvWalk-Cavey3-body')
+    let cavey3 = this.Swarm_identity(c3acct, c3keys, 'Cavey3')
+    w.c.cavey3 = cavey3
+    this.Swarm_online(cavey3, true)
+    await this.Swarm_redeem(w, cavey3, token)
+    // pump to let the reject travel back
+    await this.InvWalk_pump(w)
+    let row = { spent_tried: 1 }
+    // the reject lands as %rebuff:rejected_spent on cavey3 (Swarm_rejected is called from pier_reject handler)
+    if (cavey3.o({ rebuff: 'rejected_spent' })[0]) { row.pier_reject_spent = 1 }
+    // no new pier formed (the spent deny stops the seal)
+    let c3pier = this.Swarm_peering(alice)?.o({ Pier: 1, pub: c3keys.prepub })[0]
+    if (!c3pier) { row.no_pier_formed = 1 }
+    this.InvWalk_note(w, row)
+
+// ── witness — %see sentences gated on the beat's boolean note rows ─────────────────────────────
+//  No commas — em-dashes (the peel splits on commas).  story_swear is idempotent per run.
+InvWalk_witness(w):
+    let T = this.InvWalk_T(w)
+    let alice = this.InvWalk_ident(w, 'Alice')
+    let cavey = this.InvWalk_ident(w, 'Cavey')
+    if (!alice || !cavey) { return }
+    // beat 3: the link is minted — secret lives — token carries the offer
+    let m = T.o({ minted: 1 })[0]
+    if (m && +m.sc.url_carries_both === 1 && +m.sc.secret_live === 1 && +m.sc.twin_stashed === 1 && +m.sc.token_carries === 1) {
+        this.story_swear(w, 'the ferry link is minted — the secret lives on top.c — the twin is stashed for reload — the token carries a MyCave offer back to alice')
+    }
+    // beat 4: the consent seam parks — nothing sent — the Book-blindness seam is open
+    let pk = T.o({ parked: 1 })[0]
+    if (pk && +pk.sc.confirm_parked === 1 && +pk.sc.secret_still_live === 1 && +pk.sc.nothing_sent === 1) {
+        this.story_swear(w, 'with consenter raised the seal-seam parks ferry_confirm keyed to the cave pier — the secret is held — nothing crosses until the puppet consent fires')
+    }
+    // beat 5: puppet confirm sends — ferry_park fires — cave pending
+    //  (phase_pending NOT assertable: Swarm_ferry_phase targets A:Clustation→w:Swarm — no-op on runner.
+    //   ferry_held ack cannot reach alice headlessly: salt uses full pub ≠ prepub → Swarm_account_of fails)
+    let co = T.o({ confirmed: 1 })[0]
+    if (co && +co.sc.confirm_sent === 1 && +co.sc.ferry_sent_set === 1 && +co.sc.cave_pending === 1) {
+        this.story_swear(w, 'the puppet confirm sends the ferry — ferry_park fires with consenter up — the cave lands pending — the consent screen would now show the invite')
+    }
+    // beat 6: consume accepts — account crosses — ferry_got ack received — secret retired
+    //  (phase_got NOT assertable: Swarm_ferry_phase is a no-op on runner — use top.c.ferry_got instead)
+    let go = T.o({ consumed: 1 })[0]
+    if (go && +go.sc.account_crossed === 1 && +go.sc.content_crossed === 1 && +go.sc.ferry_got_acked === 1 && +go.sc.secret_retired === 1) {
+        this.story_swear(w, 'the cave accepts and the account crosses — the soul key and its issued content land on the cave — the ferry_got ack is received — the secret is retired')
+    }
+    // beat 7: decline path — cave declines — consume returns null
+    //  (phase_ended NOT assertable: Swarm_ferry_phase is a no-op on runner; consume_declined proves the path)
+    let dc = T.o({ declined: 1 })[0]
+    if (dc && +dc.sc.consume_declined === 1) {
+        this.story_swear(w, 'when the cave declines — InvWalk_consume returns null — the ceremony closes on the cave side without relay')
+    }
+    // beat 8: spent serial refuses — no pier forms
+    let sp = T.o({ spent_tried: 1 })[0]
+    if (sp && +sp.sc.pier_reject_spent === 1 && +sp.sc.no_pier_formed === 1) {
+        this.story_swear(w, 'a spent token redeemed again draws a pier_reject with why=spent — no pier forms — the door refuses silently to the redeemer')
+    }
+
+// InvWalk_order — float A:InvWalk to the front of H/* so the Run snap stays readable.
+async InvWalk_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) { return }
+    let first = (a) => (a.sc.A === 'InvWalk') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)

@@ -1066,13 +1066,28 @@ Swarm_arm(w):
             //       just-landed soul can't kill the ceremony (park deletes awaiting first).  NOT during ferrying
             //        (wsec still set mid-send → this branch can't fire).  Humdinger-gated OR consenter-gated
             //         + wire-driven → Book-inert unless the Book raises top.c.consenter.
-            if ((!wsealed || !wsec || !wbound) && wtop && wtop.c && (wtop.c.humdinger || wtop.c.consenter) && from) {
+            // ⚠ "NOT SEALED YET" IS NOT "NO CEREMONY" (owner 2026-08-31, "it was suddenly called off again"):
+            //  the old trigger `!wsealed` cancelled the instant the MyCave grant wasn't LIVE — but in the
+            //   healthy redeem the grant seals a beat or two AFTER the cave's first ferry_want lands (the log
+            //    that proved it: cave_pier=no my_secret=YES adopt_match=YES — eed holds the secret for the very
+            //     adopt this cave is asking about, the seal is IN FLIGHT).  Cancelling there aborts a ceremony
+            //      that is about to succeed, and the cave — flung off "connecting…" — falls through to whatever
+            //       else it has (a Haul from its own FSA).  So REFUSE only when the ask is provably dead, never
+            //        on a merely-late seal: (a) the serial isn't the adopt I hold (`!wbound` — I re-minted), or
+            //         (b) I hold no secret at all (`!wsec` — the ceremony ended|was cancelled my side), or
+            //          (c) the human REVOKED this cave (a signed %NotGrant:MyCave tombstone under its pier —
+            //           Swarm_revoke's durable "no").  When I hold the secret + serial matches + no tombstone,
+            //            STAY QUIET: the cave's steady ask is exactly the "I'm here, seal me" the ceremony wants,
+            //             and on_seal fires the instant the pier goes live.  The cave never folds on its own; the
+            //              human's cancel on THIS device drops the secret (→ `!wsec` → the honest refuse fires).
+            let wrevoked = sealed && sealed.o({ NotGrant: 'MyCave' })[0] ? 1 : 0
+            if ((!wbound || !wsec || wrevoked) && wtop && wtop.c && (wtop.c.humdinger || wtop.c.consenter) && from) {
                 if (!wtop.c.ferry_refused) { wtop.c.ferry_refused = {} }
                 let wref = String(from).slice(0, 24)
                 if ((Date.now() - (wtop.c.ferry_refused[wref] || 0)) > 30000) {
                     wtop.c.ferry_refused[wref] = Date.now()
                     this.Swarm_deliver(w2, ident, String(from), { kind: 'ferry_cancel', page: this.Swarm_page(ident) })
-                    console.log('🦑 ferry: told ' + String(from).slice(0, 8) + ' there is no ceremony for it here (' + (!wbound ? 'not the adopt I hold' : wsealed ? 'no live secret' : 'no honoured MyCave grant') + ') — it can stop asking; a fresh link is a fresh start')
+                    console.log('🦑 ferry: told ' + String(from).slice(0, 8) + ' there is no ceremony for it here (' + (!wbound ? 'not the adopt I hold' : !wsec ? 'no live secret' : 'the grant was revoked') + ') — it can stop asking; a fresh link is a fresh start')
                 }
             }
         }
@@ -2001,13 +2016,31 @@ async Swarm_hello(w, ident, frame):
         if (sptop && sptop.c && sptop.c.humdinger && spser && String(t.serial || '') === spser) {
             let sppier = this.Swarm_peering(ident)?.o({ Pier: 1, pub: frame.page?.prepub })[0]
             let splive = sppier && this.Swarm_pier_live(sppier, 'MyCave') ? 1 : 0
-            if (!splive) {
+            // LIVE-CEREMONY GUARD (security pass 2026-08-31): the iz rode pier_hello over the readable relay
+            //  once, so an observer can REPLAY the spent hello from its OWN page.  Without this guard that
+            //   replay retires a ceremony MID-FLIGHT for the legitimate cave (confirm parked, soul sent and
+            //    awaiting its got, or the cave's pier warm under this very serial) — a cheap remote "called
+            //     off".  Retire only when the ceremony shows no life ANYWHERE, not just none on the asker.
+            let spbusy = (sptop.c.ferry_confirm || sptop.c.ferry_sent) ? 1 : 0
+            if (!spbusy) { spbusy = this.Swarm_peering(ident)?.o({ Pier: 1 }).some((p) => p.c && String(p.c.ferry_want_serial || '') === spser && this.Swarm_pier_live(p, 'MyCave')) ? 1 : 0 }
+            // PROVABLY dead, not merely not-yet-sealed (live catch 2026-08-31 "always eed condemns it as
+            //  already used"): a DUPLICATE pier_hello re-delivered while the fresh seal was still QUEUED
+            //   behind a starved beliefs mutex (the #37 flood had it 500s deep) hit this seam — spent +
+            //    no-grant-YET — and retired the ceremony its own redeem had just legitimately opened.
+            //     "No honoured grant" only proves death when the refusal is a signed %NotGrant tombstone
+            //      (the revoked wedge this retire was built for) or the mint is OLD enough that any seal
+            //       would have landed ages ago (15min >> any mutex storm short of a wedge).  A mid-flight
+            //        duplicate now just draws the deny; the ceremony lives on to seal.
+            let sptomb = sppier && sppier.o && sppier.o({ NotGrant: 1 })[0] ? 1 : 0
+            let spage = sptop.stashed && sptop.stashed.ferry_pending_secret && sptop.stashed.ferry_pending_secret.at ? (this.Swarm_now(w) - sptop.stashed.ferry_pending_secret.at) : 1000000000
+            let spdead = (sptomb || spage > 900) ? 1 : 0
+            if (!splive && !spbusy && spdead) {
                 delete sptop.c.ferry_secret
                 delete sptop.c.ferry_serial
                 delete sptop.c.ferry_confirm
                 delete sptop.c.ferry_sent
                 if (sptop.stashed) { delete sptop.stashed.ferry_pending_secret; delete sptop.stashed.ferry_await_got }
-                sptop.c.ferry_ended = { by: String(frame.page?.prepub || ''), at: Date.now(), why: 'spent' }
+                sptop.c.ferry_ended = { by: String(frame.page?.prepub || ''), at: Date.now(), why: 'spent', role: 'soul' }
                 if (sptop.bump_version) { sptop.bump_version() }
                 this.Swarm_ferry_phase(w, 'ended', { pub: String(frame.page?.prepub || '') })
                 console.log('🦑 ferry: the standing link is DEAD — its invite was already redeemed once and the redeemer holds no honoured grant. Retired it; mint a fresh link.')
@@ -2035,6 +2068,11 @@ async Swarm_hello(w, ident, frame):
     }
     let mine = await mint_grant(ident.c.keys, frame.page.pub, f.to, f.params, this.Swarm_now(w))
     let pier = this.Swarm_seal(w, ident, frame.page, null, mine)
+    // FRESH DEVICE-LINK REDEEM FORGIVES A STALE FORGET (Ferry_rebuild Stage 0): a re-linked, previously-pruned
+    //  body-key reuses this same pier (keyed by prepub), so its old %NotGrant:MyCave would bury the fresh grant
+    //   forever (Swarm_pier_live is clock-blind).  This redeem IS proven fresh consent (unspent Iz, presig-checked
+    //    above) — retire the tombstone durably so the link seals.  MyCave-only; friend trust untouched.
+    if (f.to === 'MyCave') { this.Swarm_cave_forgive(ident, pier, frame.page.prepub) }
     this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', grant: mine, page: this.Swarm_page(ident) })
     return pier
 
@@ -2093,7 +2131,7 @@ Swarm_rejected(w, ident, frame):
             if (match && !rlive) {
                 delete top.c.ferry_awaiting
                 if (top.stashed) { delete top.stashed.ferry_awaiting }
-                top.c.ferry_ended = { by: rp, at: Date.now(), why: 'spent' }
+                top.c.ferry_ended = { by: rp, at: Date.now(), why: 'spent', role: 'cave' }
                 if (top.bump_version) { top.bump_version() }
                 this.Swarm_ferry_phase(w, 'ended', { pub: rp })
                 console.log('🦑 ferry: the link this tab opened was ALREADY USED once — it can never complete; folded to the ended screen (mint a fresh link on the soul device)')
@@ -3837,6 +3875,32 @@ Swarm_pier_live(pier, feature):
     if (!grants.length) return false
     let nots = pier.o({ NotGrant: feature })
     return !nots.some(n => grants.some(g => n.sc.by === g.sc.by && n.sc.for === g.sc.for))
+
+// Swarm_cave_forgive — DEVICE-LINK CONSENT IS NOT FRIEND-TRUST (5-fork panel + 2-critic review 2026-08-31,
+//  Ferry_rebuild_todo §0/§4 — the corrected Stage 0).  A MyCave link is a per-ceremony consent the human
+//   re-does ON PURPOSE, so a stale forget-"no" (the ONLY MyCave %NotGrant source is Swarm_pier_forget, the
+//    human's prune) must not bury the next deliberate yes.  A time-compare CANNOT fix this: Swarm_seal (2353)
+//     and Swarm_pier_stash (2416) BOTH dedup grants on to|by|for with NO time, so a fresh redeem's newer-timed
+//      grant is discarded and the stale-timed one it kept still loses to the tombstone.  So the honest fix is
+//       to RETIRE the tombstone at the proven-fresh redeem — drop the %NotGrant:MyCave from the live pier AND
+//        splice it from the durable stash (else standup rehydrate re-buries it — the reload-durability trap),
+//         then settle.  Scoped to MyCave: the friend %NotGrant:Music permanent-unfriend law is never touched
+//          (SwarmStaple inert).  Replay-safe: ONLY Swarm_hello's proven-fresh, unspent-invite, presig-verified
+//           redeem reaches this seam, so a hostile relay replay of an old seal (which fails the spent-Iz gate)
+//            never forgives.  This is Stage 0 of the rebuild; the eventual epoch model (Stage 2) makes the
+//             supersession structural, but retiring the tombstone is the same "fresh consent wins" law drawn
+//              once in pencil.
+Swarm_cave_forgive(ident, pier, theirPrepub):
+    let dropped = 0
+    for (const n of (pier.o({ NotGrant: 'MyCave' }) ?? [])) { pier.drop(n); dropped = dropped + 1 }
+    let st = this.top_House ? this.top_House().stashed : null
+    let e = st && st.Swarm_piers && st.Swarm_piers[ident.sc.prepub] ? st.Swarm_piers[ident.sc.prepub][theirPrepub] : null
+    if (e && e.nots) { e.nots = e.nots.filter(a => a.not !== 'MyCave') }
+    if (dropped) {
+        this.Swarm_account_settle(ident, 'cave_forgive')
+        console.log('🦑 ferry: a fresh device-link redeem forgave ' + dropped + ' stale MyCave "no"(s) on ' + String(theirPrepub).slice(0, 8) + ' — a pruned device links again')
+    }
+    return dropped
 //#endregion
 
 //#region portability — export | import (§4 pt 3: the "copy their snap in|out", thawEnteredStashed reborn)
@@ -4652,15 +4716,18 @@ async Swarm_ferry_link(w, soulIdent, base):
     this.Swarm_expect_arrival(w)
     this.Swarm_ferry_phase(w, 'minted', { serial: aserial, role: 'soul' })
     console.log('🦑 ferry: offering to make a device my Cave — link minted (redeem forms the pier, then I ferry)')
-    // ANCHOR FORM PARKED (owner 2026-08-30: "polish everything BUT the linkAccount thing… then come
-    //  back and really stop not finishing LinkAccount").  The intended `#Iz=<token>&fc=<secret>` atomic
-    //   fragment (token off the server logs, hashchange landing, all-or-nothing against fragment
-    //    strippers) is READ everywhere already — Swarm_iz_of_url, Swarm_offer_land, the panels all
-    //     parse `#Iz=` beside `?Iz=` — but the MINT stays on the proven query form: the InvFerry gate
-    //      went red on the anchor mint (token extracts, Swarm_token_parse refuses — undiagnosed), and a
-    //       link that cannot parse is a landmine, not a feature.  Flip this line back when LinkAccount
-    //        gets its finishing pass; the read side is ready and the Book will gate it.
-    return String(base) + '?Iz=' + encodeURIComponent(iz) + '#fc=' + secret
+    // ANCHOR FORM UNPARKED (2026-08-31).  The whole link rides the fragment — `#Iz=<token>&fc=<secret>`:
+    //  the token never reaches a server log, the two legs are atomic against fragment strippers, and a
+    //   link pasted into a RUNNING tab's bar lands via hashchange (SwarmStandup's listener → offer_land)
+    //    with NO reload — the owner's "not needing to reload the page".  THE REAL 2026-08-30 KILLER,
+    //     finally caught live (owner's URL showed `<token>this.fc()=<secret>`): .g's `&name`
+    //      subroutine interpolation is NOT string-aware — a literal '&fc=' compiles to 'this.fc()='
+    //       INSIDE the string, gluing an unparseable tail onto the token ("token extracts, parse
+    //        refuses", exactly).  Hence the split literal below: '&' must never sit adjacent to an
+    //         identifier in a .g string.  The round trip itself is clean (proven headlessly for
+    //          hostile serials through iz_of_url's frag branch + token_parse + LinkDevice's
+    //           (?:^#|&)fc= regex); InvFerry beat 3 asserts the anchor shape with the same split.
+    return String(base) + '#Iz=' + encodeURIComponent(iz) + ('&' + 'fc=') + secret
 // Swarm_ferry_on_seal — called when a %Pier seals: if it bears a MyCave grant AND I have a pending ferry
 //  secret (I minted the link), ferry my account over the now-live pier.  No-op otherwise (a plain friend
 //   seal, or a device that isn't mine).  This is the seam that fires the transfer at the right instant.

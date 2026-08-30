@@ -85,6 +85,7 @@
         'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here
         'Ghost/Story/InvSeal.g',        // the Inv* tests, rung 1 — the seal-seam warmth gate (cold refuses / warm parks the consent)
         'Ghost/Story/InvFerry.g',       // the Inv* tests, rung 2 — the WHOLE ferry exchange as a state machine (mint→carry→verify→claim→cross; double-spend + forged presig refuse)
+        'Ghost/Story/InvWalk.g',        // the Inv* tests, rung 3 — the FULL WALK: consent-park→puppet-confirm→sent→held→got→done + decline + spent-retry (the Book-blindness seam)
 
         'Ghost/V/Voro.g',               // the Vis lens — the crush fold policy (Musu drives + ◈ imposition call it)
         'Ghost/V/Vyto.g',               // the NEW glass, model side — organs/board/spool as named stubs (Vyto_spec.md; the moult)
@@ -1008,6 +1009,21 @@
                 return
             }
             H.oai({ Creduler_pending: 1 })
+            // WARM THE WHOLE SPINE IN PARALLEL first (the boot pole, measured 2026-08-30: "Creduler
+            //  ready — 35 ghost(s) live" at 16.4s and 26.3s on two real boots — the serial await
+            //   below paid one dev-server fetch+transform per gen module, in a row, inside the
+            //    beliefs pass; the drain-lag rings show the matching multi-second "mutex held by
+            //     H:Mundo think").  import() of one specifier is idempotent (one module record per
+            //      URL), so firing them all here makes the serial loop below await work already in
+            //       flight: the standup shrinks from sum(imports) to ~max(imports).  The ORDERED
+            //        loop is KEPT — enrolment into watched:UIs stays in manifest order, so nothing
+            //         observable reorders.  A failing module still surfaces in the loop's own await
+            //          exactly as before; the warm's twin rejection is swallowed so it can't add an
+            //           unhandled-rejection duplicate of the same error.
+            for (const p of unmet) {
+                const gen = H.Lies_gen_path(p)
+                if (gen) import(/* @vite-ignore */ `../../lib/${gen}`).catch(() => {})
+            }
             for (const p of unmet) await H.Lies_ghost_set(p)
             // The async mounts deposit Ghostmeta a beat or two later; their own
             //  Ghost_version_checkin → feebly_ponder is Runtime-gated (a no-op on this idle

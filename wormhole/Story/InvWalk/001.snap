@@ -1,0 +1,6 @@
+Snap:H
+  H:InvWalk,Run
+    A:InvWalk
+      self,round	{"mung":["age"]}
+      w:InvWalk
+        self,round	{"mung":["age"]}

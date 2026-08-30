@@ -2282,8 +2282,15 @@ export class House extends StorableHousing {
             //           real tree, and its jsdom also lacks the picker, which is why capability
             //            alone is not the test.  disk_gated is cleared, not just left unset: this
             //             runs every Wormhole tick and an earlier pass may have raised it.
+            // …OR by CHOICE (owner 2026-08-31: "can I just decline the FSA request to get it to store
+            //  only with OPFS?").  A capable browser whose human declined the picker and chose "listen
+            //   without a folder" (boot_gate.listen_only → the runtime `listen_choice` flag) gets the
+            //    SAME listen-only life as a no-picker browser: identity in Dexie, pool/ in OPFS, no
+            //     folder ever asked again this session.  The flag rides `.c` (never snapped) and a
+            //      reload forgets it — a fresh boot asks fresh, which is the honest default.
             if (!H.top_House().c.book
-                && typeof window !== 'undefined' && typeof (window as any).showDirectoryPicker !== 'function') {
+                && typeof window !== 'undefined'
+                && (typeof (window as any).showDirectoryPicker !== 'function' || H.top_House().c.listen_choice)) {
                 H.top_House().c.disk_gated = false
                 H.top_House().c.listen_only = true
                 // MORTALITY MITIGATION (MobilenoFSA_todo §0 #2): a shareless listener's identity
@@ -2311,7 +2318,7 @@ export class House extends StorableHousing {
                     A.c.nav = new MountNav({ label: 'listen-only' }, 'listen-only')
                     this.Wormhole_mount_pool(A)
                 }
-                return w.i({ see: '🎧 listening only — this browser cannot open a folder' })
+                return w.i({ see: H.top_House().c.listen_choice ? '🎧 listening only — no folder by choice (music pools in browser storage)' : '🎧 listening only — this browser cannot open a folder' })
             }
             H.top_House().c.disk_gated = true
             return w.i({ see: `📁 open a share — OPFS disabled under ?${H.top_House().c.boot_role === 'editor' ? 'E' : 'B'}=` })

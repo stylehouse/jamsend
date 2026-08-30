@@ -1,5 +1,5 @@
-Credulation,of_Book:InvFerry
-  run=0,at=1788092599.862,ok,ok_pct,mode:check
+Credulation,of_Book:InvWalk
+  run=0,at=1788091893.904,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:8947c2963be869fb~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1
@@ -25,7 +25,7 @@ Credulation,of_Book:InvFerry
     uses:Ghost_Story_Siphonation,dige:a51b38e9318b6f9b~g1
     uses:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
     uses:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1
-    uses:Ghost_S_Swarm,dige:a9e46c42689f3481~g1
+    uses:Ghost_S_Swarm,dige:4eb6695154ea852d~g1
     uses:Ghost_Story_Swarmation,dige:e64cdf4b7f3d19c2~g1
     uses:Ghost_Story_InvSeal,dige:81fdf9b4ca3f388a~g1
     uses:Ghost_Story_InvFerry,dige:488b75d1aa1ce728~g1

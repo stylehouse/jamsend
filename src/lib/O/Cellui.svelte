@@ -387,8 +387,19 @@
     let set_sig = ''
     let set_times: number[] = []
     let set_frozen_until = 0
+    let set_stormy_until = 0
     let set_hold: Cell[] | null = null
     let set_warned = false
+    // USER-INTENT BYPASS state (owner 2026-08-30, "when I click 'Link Device' the Door becomes its minicell
+    //  icon, big"): mid-storm the held set ATE the reshape that adds the cell a fresh commissioner focus
+    //   names, while main moved toward it — the exact broken click.  A user-initiated ENTRANCE (focus
+    //    changed to a mainkey present in the raw scan but absent from the held set) is a legit navigation,
+    //     never a flap, so it is admitted immediately; `user_intent_at` also melts set_main's freeze for
+    //      the matching flip.  Rate-limited so a pathological lockstep focus+cell flap degrades to a calm
+    //       ≤0.5 reshapes/s instead of disarming the smoke alarm.
+    let set_last_foc: string | null = null
+    let set_bypass_at = 0
+    let user_intent_at = 0
     const cells = $derived.by(() => {
         void (H as any)?.version
         void now_tick
@@ -401,16 +412,45 @@
         // (the scan-cadence log retired 2026-08-30 — owner: "we are done debugging cell switches";
         //  counters stay live for whoever re-adds a line.)
         const now = Date.now()
+        // THE USER-INTENT ENTRANCE — checked BEFORE the freeze so a click lands even mid-arrest.  The
+        //  breaker timers are left standing (the entrance is admitted INTO the hold, the alarm stays
+        //   armed for the very next non-entrance reshape).
+        const foc_now = commissioner_focus()
+        if (foc_now !== set_last_foc) {
+            const entrance = !!foc_now && !!set_hold
+                && r.some(c => c.mk === foc_now)
+                && !set_hold.some(c => c.mk === foc_now)
+                && (now - set_bypass_at > 2000)
+            set_last_foc = foc_now
+            if (entrance) {
+                set_bypass_at = now
+                user_intent_at = now
+                set_sig = r.map(c => c.key).sort().join('|')
+                set_hold = r
+                return r
+            }
+        }
         if (now < set_frozen_until && set_hold) return set_hold
         const sig = r.map(c => c.key).sort().join('|')
         if (sig !== set_sig) {
+            // STORM MEMORY (live catch 2026-08-31: the 2s freeze alone thawed into `mount face:Door 5`
+            //  — a sustained fight leaked ~4 remounts/s through the 8-free-flips-then-freeze cycle).
+            //   After a trip the breaker stays STORMY for 15s: any reshape inside that window re-freezes
+            //    IMMEDIATELY, so a persistent fight holds the last stable set until real calm.  A human
+            //     click mid-storm lands within one freeze (≤2s) of the flapping actually stopping.
+            if (now < set_stormy_until && set_hold) {
+                set_frozen_until = now + 2000
+                set_stormy_until = now + 15000
+                return set_hold
+            }
             set_sig = sig
             set_times.push(now)
             while (set_times.length && now - set_times[0] > 1000) set_times.shift()
             if (set_times.length > 8 && set_hold) {
                 set_frozen_until = now + 2000
+                set_stormy_until = now + 15000
                 set_times = []
-                if (!set_warned) { set_warned = true; console.warn(`🎴 Cello: cell-SET storm detected (>8 reshapes/s) — serving the last stable set for 2s (a cell is flapping in/out of the grapple; see the focus-storm breaker below)`) }
+                if (!set_warned) { set_warned = true; console.warn(`🎴 Cello: cell-SET storm detected (>8 reshapes/s) — arresting: the last stable set holds until the flapping stops (a cell is fighting in/out of the grapple; see the focus-storm breaker below)`) }
                 return set_hold
             }
         }
@@ -525,10 +565,26 @@
     let flip_times: number[] = []
     let flip_frozen_until = 0
     let flip_warned = false
+    // RENDER-FAULT CONTAINMENT (owner 2026-08-30, the "Cannot read properties of undefined (reading
+    //  'reset')" crash that killed the whole cell UI): Svelte's DEFERRED transition facade (`reset: () =>
+    //   a.reset()`, transitions.js:346) throws if a block that just started an outro re-enters in the SAME
+    //    synchronous flush — its `a` is only set in a later microtask.  A rapid main swap (the {#if
+    //     main_cell} blip while the effect ladder re-picks) can do exactly that.  The authority latch +
+    //      entrance bypass remove the storm that made it frequent, but a legit rapid swap can still race it
+    //       once — so the main and satellite regions each ride a <svelte:boundary>: a fault costs one
+    //        ~150ms blink of that region, never the whole glass.
+    let bound_warned = false
+    function bound_err(e: unknown, reset: () => void) {
+        if (!bound_warned) { bound_warned = true; console.warn('🎴 Cello: contained a render fault (deferred-transition reset race) — region retries in 150ms', e) }
+        setTimeout(() => { try { reset() } catch { /* region gone */ } }, 150)
+    }
     function set_main(next: string | null) {
         if (next === main_key) return
         const now = Date.now()
-        if (now < flip_frozen_until) return   // frozen mid-storm — hold the current main, ride it out
+        // frozen mid-storm — hold the current main, ride it out.  EXCEPT within a beat and a half of a
+        //  user-intent entrance (the cells derivation stamps user_intent_at when a fresh commissioner
+        //   focus admits its cell): that one flip is a click, not a flap, and must land instantly.
+        if (now < flip_frozen_until && now - user_intent_at > 1500) return
         flip_times.push(now)
         while (flip_times.length && now - flip_times[0] > 1000) flip_times.shift()
         if (flip_times.length > 8) {
@@ -990,6 +1046,7 @@
         </defs>
     </svg>
 
+    <svelte:boundary onerror={bound_err}>
     {#if main_cell}
         <!-- ── MAIN CELL ──────────────────────────────────────────────────── -->
         <!-- `offedge` = the really-big belly (screenshot RIGHT): its wall is oversized + left-anchored
@@ -1086,8 +1143,13 @@
     {:else}
         <div class="cello-empty">no cells</div>
     {/if}
+    {#snippet failed()}
+        <div class="cello-empty"></div>
+    {/snippet}
+    </svelte:boundary>
 
     <!-- ── SATELLITE STRIP — smaller blobs nestling along the right edge ──── -->
+    <svelte:boundary onerror={bound_err}>
     {#if satellites.length}
         <div class="cello-satellites">
             {#each satellites as cell (cell.key)}
@@ -1168,6 +1230,10 @@
             {/each}
         </div>
     {/if}
+    {#snippet failed()}
+        <div class="cello-satellites"></div>
+    {/snippet}
+    </svelte:boundary>
 
 </div>
 

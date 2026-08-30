@@ -328,6 +328,23 @@ Resolved (was a rumour): Stuffing no longer over-creates instances. One
 
 The decisions the specs *defer* but that gate real work:
 
+0. **RE-RULE THE BOOLEAN ENCODING (owner 2026-08-31): stop banning Boolean — intelligise it.**
+    The standing law ("a snapped boolean rides as `1` or absent, never `false`/`0`") makes every
+     flag site contort (`x ? 1 : 0`, delete-not-false) when the tidiest normal code just wants
+      honest booleans.  The ruling: a JS boolean in sc becomes LEGAL — `true`/`false` encode flat
+       as the bare words, and the DECODER intelligises the bare strings `true`|`false` back into
+        real booleans.  The one edge — a genuine STRING that happens to be the word "true" or
+         "false" — rides the existing use-json trick: the ENCODER notices the collision and marks
+          that line as needing JSON (exactly how objecties handles unclean scalars today), so
+           string-ness survives the round trip and nothing is ambiguous on the way back in.
+            enLines is the seam for both halves.  Open sub-rulings before landing: (a) query
+             semantics — `{k:1}` stays the presence wildcard; decide whether `{k:true}` matches
+              literally (probably yes — it's a value, not a probe) and what `exactly` does to it;
+               (b) migration — old `1`-style flags keep decoding as before (no mass re-record);
+                fixtures churn only where a mint site actually flips to booleans, so flip them
+                 deliberately, subsystem by subsystem; (c) update CLAUDE.md's boolean law + the
+                  Coding_guide when this lands.  Until then the `1`-or-absent law STANDS.
+
 1. **"Which legs are plural" taxonomy seam** — stho annotation (collector decides
     locally) vs compile-time Lies/Understanding fact. Gates the entire LangSion
      fan-out / ark design.

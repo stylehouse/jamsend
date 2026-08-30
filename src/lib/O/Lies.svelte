@@ -846,7 +846,18 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //   the long pole on those steps (~48 Lies think-spins behind a held listing
         //    ttlilt).  gl.sc.dontSnap (set in Lies_ghostlist) still folds the already-
         //     persisted Waft line out of the snap; this stops it walking in the first place.
-        if (!H.Lies_is_runner(w) && !H.o_Opt_val(w, 'dontSnapGhostList')) {
+        // …and a HUMDINGER room skips it too (2026-08-30, the boot-latency pass): an end-user
+        //  /BigSoundland tab's Creduler Lies reads as a *bare* Lies (no runner:1 on its w — the
+        //   dispatch-seat carve-out, Auto:890), so it was seeding the editor's file index on every
+        //    music page: a wormhole/GhostList/toc.snap load plus 3+ LiesStore_listing walks of
+        //     src/ + Ghost/ every 8s, right through the boot window (the live "🗂⚠ wormhole …
+        //      overran 5000ms" retries were these lists).  Developer chrome on a listener's page —
+        //       nobody reads it there, and it contends the one Wormhole queue exactly while the
+        //        shelf and the resident Story load.  Book-inert: a humdinger is never a recorded
+        //         Book's tab (runner_ask re-courts a humdinger; runner tabs are non-humdinger), so
+        //          every fixture stays byte-identical.  A future word-room humdinger that WANTS the
+        //           index should gate on id_role rather than re-open this for the sound room.
+        if (!H.Lies_is_runner(w) && !H.Lies_humdinger(w) && !H.o_Opt_val(w, 'dontSnapGhostList')) {
             const gl = H.Lies_ghostlist(w)             // undefined while it loads
             if (gl) await H.GhostList_funkcion(gl, w)
         }

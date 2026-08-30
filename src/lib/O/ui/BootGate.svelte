@@ -76,6 +76,13 @@
                 {#if disk_gated && gate.fsa_advice && !share_error}
                     <p class="gate-err">{gate.fsa_advice}</p>
                 {/if}
+                <!-- the picker was declined: a choice, answered with the listen-only road (the same
+                     life a phone gets — Dexie identity, OPFS pool).  Only AFTER a decline: the warm
+                     one-tap ask stays singular until the human hesitates (the 2026-07-19 ruling). -->
+                {#if disk_gated && gate.declined}
+                    <button class="listen-b" onclick={gate.listen_only}>🎧 listen without a folder</button>
+                    <p class="gate-soft">no folder is opened — music from friends pools in browser storage</p>
+                {/if}
             </div>
         {/snippet}
     </FaceSucker>
@@ -120,4 +127,16 @@
     .disk-gate button.big:active:not(:disabled) { transform: translateY(0); }
     .disk-gate button:disabled { opacity: 0.5; cursor: default; }
     .disk-gate .gate-err { color: #ff8a8a; font-size: 0.9rem; }
+    .disk-gate .gate-soft { font-size: 0.85rem; opacity: 0.65; margin: 0; }
+    .disk-gate .listen-b {
+        font-size: 1rem;
+        padding: .5em 1.2em;
+        cursor: pointer;
+        color: #f4ead6;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(244, 234, 214, 0.35);
+        border-radius: .55rem;
+        transition: background 160ms ease;
+    }
+    .disk-gate .listen-b:hover { background: rgba(255, 255, 255, 0.16); }
 </style>
