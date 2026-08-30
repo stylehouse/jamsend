@@ -378,18 +378,18 @@
         try { (H?.ave as any)?.bump_version?.() } catch {}
     }
     // AUTO-RECEIVE (owner 2026-08-30: "we shouldn't need to 'receive this soul', they already consented") —
-    //  opening the link WAS the consent (offer_accept), and this tab's own armed `awaiting` marker + the #fc
-    //   code in its bar prove the redeem started HERE.  So when the sealed soul lands, take it on without a
-    //    third ask.  Gates kept: named (the name-gate still holds) and sas computed (the seal code is the
-    //     real lock; the glyph row was belt-and-braces and still shows on the soul side).  A soul arriving
-    //      UNASKED — no awaiting marker, e.g. a re-send off an old grant — still gets the manual screen.
+    //  opening the link WAS the consent (offer_accept), and the #fc code in THIS tab's bar proves the human
+    //   opened the link HERE (the fragment never rides the relay).  So when the sealed soul lands, take it
+    //    on without a third ask.  Gates kept: named (the name-gate still holds) and sas computed (the seal
+    //     code is the real lock).  The old `initiated` gate (awaiting marker) is GONE (owner 2026-08-31,
+    //      "again let's skip the receive step"): a RE-link on an already-linked profile arms no fresh
+    //       awaiting marker — the MyCave grant already stands, so the redeem seam never re-fires — and that
+    //        was exactly the run that fell back to the manual screen and stranded the soul side "carrying…".
+    //         A soul arriving with NO code in the bar still gets the manual screen (has_code fails).
     let auto_received = $state(false)
     $effect(() => {
         if (!pending || taking || auto_received) return
         if (!named || !has_code || !sas) return
-        let initiated = false
-        try { initiated = !!awaiting || !!(H?.top_House?.() as any)?.stashed?.ferry_awaiting } catch {}
-        if (!initiated) return
         auto_received = true
         receive(true)
     })

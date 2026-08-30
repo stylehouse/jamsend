@@ -73,9 +73,11 @@
         'Ghost/M/Jam.g',                // the jam ledger — %Jam,with:<dj> session of ordered %Spin/%Like/%Grab facts + a keeper copy into the listener's own shelf (the glanceable session history)
         'Ghost/M/Orig.g',               // the %Original / grade-dispatch layer — the ogg128 export writes a real RFC-7845 Ogg/Opus container BACK (phone-sync ships .ogg) + its structural reader
         'Ghost/M/Radio.g',              // the RADIO — continuous listening: dial → stream-decode → AudioContext timeline → auto-advance; the %Radio face the glass mounts RadioFace on
+        'Ghost/M/Siphon.g',             // the DELIBERATE SoundPool act — tags-as-playlists + Siphon_pull, the one-track press into the OPFS pool (Siphon_todo rungs 2–3)
         'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
         'Ghost/Story/Radiation.g',      // the Ra* PRODUCT tests — RaStock; racast/raterm Books pile on here
         'Ghost/Story/Heistation.g',     // the Heist* tests — MusuHeist rung 1; the cohort + cafe rungs pile on here
+        'Ghost/Story/Siphonation.g',    // the Siphon* tests — tag model + the pull press through the one landing door (Siphon_todo rung 4)
         'Ghost/Story/Berthation.g',     // the Berth* tests — MusuBerth: the persistence door round-trips a doc through disk and resets with the Story (§11.7)
         'Ghost/Story/Errchannelation.g',// the Story ERROR CHANNEL test — ErrChannel: a captured throw rides w/%Errlog/%Err into the fixture and gates it (spec/Error_channel_todo.md; needs a live runner to record + declare)
 

@@ -15,7 +15,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '696ff52fb56b4793~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '4b79c6662b78d4b3~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -4752,6 +4752,11 @@ async Swarm_ferry_heard(w, ident, frame, code) {
     if (bodykeys) { soul.c.bodykey = bodykeys }
     let addr = soul.sc.prepub + '_1'
     let body = this.Swarm_body_take(soul, bodykeys ? bodykeys.pub : soul.sc.prepub, priorPost || 'Cave', addr)
+    // THE NAME STAYS WITH THE INSTANCE (owner 2026-08-30: "Captain Grav and Cave Guw"): the name this
+    //  human wrote at THIS device's name-gate belongs to THIS body — the landed soul's friendly must not
+    //   swallow it.  Filed on the %Body row (the family's own address book, Ferry_todo facet D); friends
+    //    still see the ONE soul's friendly.  The pre-ferry `ident` IS this device's named husk.
+    if (body && ident.sc.friendly) { body.sc.name = String(ident.sc.friendly) }
     console.log('🦑 ferry: account landed — I am now a body of ' + String(soul.sc.prepub).slice(0, 8) + ' as ' + (priorPost || 'Cave'))
     return soul
 },
@@ -5068,14 +5073,22 @@ Swarm_ferry_phase(w, phase, patch) {
     if (!sw) { return null }
     let f = sw.oai({ Ferry: 1 })
     f.c.up = sw
+    // IDEMPOTENT RE-ASSERT (owner 2026-08-31, "the origin eed Link is going spastic" — Door faces
+    //  mounting/destroying every tick): the poke/ask reheal paths RE-assert their phase every beat,
+    //   and a verb that bumped + re-surfaced on every identical call fed the version loop its own
+    //    output (poke → 'confirming' → bump → $effect → poke …).  A call that changes NOTHING now
+    //     returns quietly: no at re-stamp (at = when the phase was ENTERED), no bump, no surface.
+    //      The first transition still pulls the screen; a human who then walks away is not re-grabbed.
+    let changed = f.sc.phase !== String(phase) ? 1 : 0
+    if (patch) {
+        if (patch.pub && f.sc.pub !== String(patch.pub)) { f.sc.pub = String(patch.pub); changed = 1 }
+        if (patch.name && f.sc.name !== String(patch.name)) { f.sc.name = String(patch.name); changed = 1 }
+        if (patch.serial && f.sc.serial !== String(patch.serial)) { f.sc.serial = String(patch.serial); changed = 1 }
+        if (patch.role && f.sc.role !== String(patch.role)) { f.sc.role = String(patch.role); changed = 1 }
+    }
+    if (!changed) { return f }
     f.sc.phase = String(phase)
     f.sc.at = this.Swarm_now(w)
-    if (patch) {
-        if (patch.pub) { f.sc.pub = String(patch.pub) }
-        if (patch.name) { f.sc.name = String(patch.name) }
-        if (patch.serial) { f.sc.serial = String(patch.serial) }
-        if (patch.role) { f.sc.role = String(patch.role) }
-    }
     // TERMINALS drop the particle's counterpart facts so the next ceremony starts clean (the particle
     //  itself stays — its terminal phase is the legible receipt until the next mint overwrites it).
     // THE SURFACE POLICY — one place (was four patches: bump/poke/pop_glass/link_open).  Humdinger-gated
@@ -5396,6 +5409,20 @@ async Swarm_ferry_consume(w, code, accept) {
                 await this.thang_put(pwT, String(soul.sc.prepub || soul.sc.Identity), pstored)
                 console.log('🦑 ferry: 🪪 soul keypair persisted — a reload will resume it, not arrest')
             } catch (er) { console.log('🦑 ferry: 🪪⚠ soul persist FAILED — it lives this session but a reload will arrest: ' + String(er).slice(0, 120)) }
+            // THE LEDGER TRAVELS WITH THE KEY (Ferry_todo §3.9 / facet B — account portability): the ferry
+            //  blob carried the WHOLE account and Swarm_import grafted it, but the Dexie resume path reads
+            //   the stash, which so far learned only the keypair — so the reborn Cave woke friendless and
+            //    dropped the family's traffic ("no Pier for 7950f300").  Mirror the disk-seed idiom
+            //     (Auto.svelte's Swarm_restash_all(live, vault)): read the ledger OUT of the grafted soul,
+            //      stash it UNDER the live self concrete just activated — the same-prepub check inside
+            //       restash_all is the guard that keeps a stranger's friends out of our stash.
+            try {
+                let plive = this.Swarm_live_self ? this.Swarm_live_self() : null
+                if (plive && plive.sc.prepub === soul.sc.prepub) {
+                    let pgot = this.Swarm_restash_all(plive, soul)
+                    console.log(`🦑 ferry: 🪪 ledger restashed — ${pgot.piers} pier(s), ${pgot.izzes} invite(s), ${pgot.roots} chain root(s) travel with the key`)
+                }
+            } catch (er) { console.log('🦑 ferry: 🪪⚠ ledger restash FAILED (key is safe, friends will not survive reload) — ' + String(er).slice(0, 120)) }
         }
     }
     // RECEIVE-ACK (task #21, the last unlit lamp in "none indicate the Link failed/succeeded"): tell the soul

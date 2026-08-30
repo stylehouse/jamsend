@@ -107,6 +107,39 @@ refreshes their liveness off the family hello, and the Door's our-box lists them
 "● Captain Hook" / "● Cave Hook" — self marked, each with its own presence dot. That row is ALSO
 the dial target for the Repli self-lane (a).
 
+### 5b. When the fun starts — the startability ladder (owner 2026-08-30: "SoundPooling… remote
+### heists, etc. note when we can start them")
+
+What each wants, in dependency order — the point being that E is startable NOW:
+
+- **SoundPooling / the Repli self-lane (facet E)** — the Cave's library filling from the Captain.
+  Startable **now**: B landed (the reborn body has its piers/grants back, so ordinary friend-Repli
+  already flows to it); what's missing is only the body↔body lane itself (Repli is keyed by
+  Pier/Grant; bodies are twins-not-friends, so they need a family-keyed lane — the %Body roster +
+  relay family addresses are already the dial book). First slice: the Cave pulls the Captain's
+  %Library listing over the family address, reusing the existing repli_want machinery with the
+  family as the authz (same soul = full grant by definition, no %Grant needed).
+  **STARTED 2026-08-30 — pools of defined size (Ra.go 273583c).** The Quartermaster (Ra.g, the
+  goal→diff→%Want steward, Portability_doc §6) now composes the goal from **%Pool compartments**:
+  `Ra_pool_define(w, name, take, cap)` declares `%Pool,name,take,cap` under a %Pools shelf;
+  declaration order is priority (earlier pools claim first, dedup); take-policies v1 all
+  deterministic — `taste` (Like3/Grab2/Spin1), `liked`, `kept`, `latest` (last %Jam session, ledger
+  order as clockless recency). Caps count TRACKS v1; byte-budgets are v2. No %Pool declared = the
+  old anonymous single goal, byte-identical (MusuRaStock/MusuLossy/MusuHeist stayed green, zero
+  churn). Wants from a declared pool wear `pool:<name>` — the Door face's composition column.
+  **NEXT (the "magic" that moves bytes): the live steward occasion** — a default-off knob (the
+  backpressure precedent) that runs `Ra_quarter_serve` on real occasions (play-session end, idle,
+  Cave reachable); then `pull` wants served over the wire (Siphon/heist ride); then the Door face
+  showing pools + wants ("what your phone wants next and why").
+- **Remote heists** — heisting a track off a body/friend on ANOTHER host. The machinery exists
+  (Heist ledger + repli/heist knobs, default-off: repli_serve_parked_budget, heist_selfclock,
+  heist_window); what gates confidence is **facet C** (family fan-out silently drops → retry
+  storms — likely the #37 flood) since a heist across the family rides the same addressing.
+  Startable **after C's NACK-with-redirect** (or relay-side exact-seat fan-out); before that,
+  remote heists between FRIENDS (distinct souls) are already exercisable behind the knobs.
+- **Role division across machines** (daemon Captain, browser Caves, %Sibling→%Body census) —
+  needs D's roster+presence build-out first; not before.
+
 ## 6. The full facet ledger — everything open, one line + its tell (2026-08-30 handover)
 
 The destination: **a person links their devices and the devices then ACT like one person** — same
@@ -125,8 +158,12 @@ everything below is either hardening it or building the second half.
   **Stage 2 (next): reader migration** — link_active/link_fresh/LinkDevice/BootGate read
   `Ferry%phase` instead of the flag pile; then retire the legacy top.c.ferry_* flags + unify the
   three stashed twins into `stashed.ferry`; then seam 9 (ledger travels with the key — facet B).
-- **B. Ledger travels with the key** (§3.9) — the reborn Cave has NO piers (Dexie resume restores
-  key only). Tell: `deliver: no Pier for … from=7950f300 — DROPPED` spam on the new body.
+- **B. Ledger travels with the key** (§3.9) — **LANDED 2026-08-30** (Swarm.go 388834c): consume now
+  runs `Swarm_restash_all(live, soul)` after the keypair thang_put (the disk-seed idiom — read from
+  the grafted soul, stash under the concrete-activated live self; the same-prepub guard inside).
+  Boot log tell when it works: `🪪 ledger restashed — N pier(s), …`. NEEDS ONE LIVE RELINK to prove:
+  the previously-reborn Cave was stashed key-only, so it stays friendless until re-ferried (or the
+  soul re-linked); after a fresh ferry + reload the "no Pier for … DROPPED" spam should be gone.
 - **C. Family fan-out hygiene** — frames addressed to the bare soul-name reach every body; a body
   that can't serve them drops SILENTLY, stranding the sender's reliable-outbox emits → retry storm.
   **This is very likely the #37 Repli-flood root** (the editor 7950f300 resending forever). Fix
@@ -138,6 +175,12 @@ everything below is either hardening it or building the second half.
   incogni took "Grav" from eed; it should have stayed Guw-the-Cave-of-Grav's-soul).  %Body rows
   carry {role, name}: the friends still see ONE soul; the instance names are the family's own
   address book (our-box, presence, dial targets).
+  **FIRST SLICE LANDED 2026-08-30**: `Swarm_ferry_heard` stamps the pre-ferry husk's `friendly`
+  onto the Cave's %Body row as `name:` — the instance name now survives the soul landing (fixtures
+  re-recorded deliberately: InvFerry 5–6, SwarmSpread 5 — the diff is exactly the name row).
+  STILL OPEN: the Cave's LIVE face still presents the soul's friendly (the name-gate name is only
+  filed, not worn); our-box "● Captain Grav / ● Cave Guw" listing off the %Body roster; presence
+  per body; and the Captain side stamping its own name on ITS %Body row.
 - **E. The Repli self-lane** — the POINT of linking: the Cave's library fills from the Captain.
   Repli is keyed by Pier/Grant today; bodies have neither (twins-not-friends). Needs its own lane
   keyed on the family. Tell today: reborn Cave's radio has `total:70` but nothing it can pull.

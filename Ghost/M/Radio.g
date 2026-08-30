@@ -411,6 +411,10 @@ async Radio_pump_tick(radio, era):
         // a tuned pick (the riffle's audition) outranks the dial — consumed exactly once
         let pick = radio.c.tune_rec || null
         radio.c.tune_rec = null
+        // THE STEWARD OCCASION (SoundPooling_todo §3.1): a track advance is a natural session
+        //  seam — sit the Quartermaster down.  Fire-and-forget (knob- and humdinger-gated inside,
+        //   busy-latched), so the dial is never delayed by a press round.
+        this.Radio_autopress(w, radio)
         this.Radio_trace(radio, { ev: 'dial' })
         rec = pick || await this.Radio_dial(radio)
         if (radio.c.era !== era) return
@@ -1250,6 +1254,65 @@ Radio_pub(w):
 //  record not in heard-this-sitting (skip_ids); (2) none fresh = the set is EXHAUSTED — poke
 //   the stoker to CHURN and REPLAY meanwhile (a radio never goes quiet because the crate ran
 //    out; sc.replays counts the honesty, and it stops climbing the moment fresh stock lands).
+// Radio_source_next — the source chip's cycle verb (Siphon_todo P2 / SoundPooling_todo §3.2):
+//  stamp `sc.source` on the %Radio particle and let the dial obey it.  V1 cycles '' (the friends-
+//   first ladder) ⇄ 'pool' (the OPFS SoundPool rung); the <friend> aim-lock stop joins the cycle
+//    when the aimed dial grows a source face.  '' rides as ABSENT (the local delete idiom — see
+//     aim_by above), so an untouched radio snaps byte-identically.
+Radio_source_next(n):
+    let radio = n
+    if (!radio || !radio.sc) { return '' }
+    if (radio.sc.source === 'pool') {
+        delete radio.sc.source
+    } else {
+        radio.sc.source = 'pool'
+    }
+    radio.bump()
+    return radio.sc.source || ''
+// Radio_dial_pool_local — the SOUNDPOOL rung (SoundPooling_todo §3.2): the own-shelf dial walk
+//  (Ra_dial_next — heard-gated, stock-aware) pointed at MY OPFS pool shelf instead of the library.
+//   PROBED, never minted (the ShuffleFace law: a dial poll must not vivify a home) — no pool home
+//    standing simply means nothing pooled yet.  `retry` is the replay pass (exhaustion is not
+//     starvation — the same law as the friend pool).
+Radio_dial_pool_local(w, radio, retry):
+    let pub = this.Radio_pub(w) || 'me'
+    let home = w.o({ MusuPool: 1, pub: pub })[0]
+    let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
+    if (!shelf) { return null }
+    if (retry) { return this.Ra_dial_next(w, shelf, {}) }
+    return this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
+// Radio_autopress — the AMBIENT STEWARD OCCASION (SoundPooling_todo §3.1): at a track advance (a
+//  natural session seam) sit the Quartermaster down over MY OWN library and let it press into the
+//   OPFS pool.  DEFAULT-OFF behind `top.c.pool_steward` (the backpressure-knob precedent — flip it
+//    live: `H.top_House().c.pool_steward = 1`).  Humdinger-gated (a Book must never press real
+//     bytes), and OWN-LIBRARY ONLY — the lib mapping for a shareless streaming phone is the open
+//      Portability_todo §3/§4 question this deliberately does NOT guess at (the doc's tripwire);
+//       a phone with no library gets the Siphon's explicit act instead.
+//  The cap is `top.c.pool_steward_cap` tracks (default 24), COMPOSED through the declared %Pool
+//   compartments (Ra_pool_defs — pools of defined size); no %Pool declared = one taste-pool.
+async Radio_autopress(w, radio):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c || !top.c.humdinger) { return null }
+    if (!top.c.pool_steward) { return null }
+    if (top.c.pool_steward_busy) { return null }
+    let pub = this.Radio_pub(w) || 'me'
+    let lhome = w.o({ MusuSelf: 1, pub: pub })[0]
+    let lib = lhome ? lhome.o({ stock: 1, pub: pub })[0] : null
+    if (!lib || !this.Ra_recs(lib).length) { return null }
+    let nav = w.c.ra_nav || (this.Crate_nav ? this.Crate_nav() : null)
+    if (!nav) { return null }
+    let pool = this.Ra_home_pool(w, pub)
+    let cap = +(top.c.pool_steward_cap || 24)
+    top.c.pool_steward_busy = 1
+    let got = null
+    try {
+        got = await this.Ra_quarter_serve(w, nav, lib, pool, lib, cap)
+    } catch (er) { console.log('🏊 steward: press round failed — ' + String(er).slice(0, 140)) }
+    delete top.c.pool_steward_busy
+    if (got && (got.pressed || got.evicted || got.fails)) {
+        console.log('🏊 steward: pressed ' + got.pressed + ' · evicted ' + got.evicted + ' · deferred ' + got.deferred + (got.fails ? ' · FAILS ' + got.fails : ''))
+    }
+    return got
 async Radio_dial(radio):
     let w = radio.c.w
     let pub = this.Radio_pub(w) || 'me'
@@ -1282,6 +1345,24 @@ async Radio_dial(radio):
         if (wname) radio.sc.aim_by = wname
         if (!wname) delete radio.sc.aim_by
         radio.bump()
+    }
+    // THE SOUNDPOOL RUNG (SoundPooling_todo §3.2): the listener flipped the source chip to the
+    //  OPFS pocket cache — a DELIBERATE flip, so the dial obeys it EXCLUSIVELY: no lineup, no
+    //   friends, no own fall-through (a silent fall-through would mask an empty pool exactly the
+    //    way the old own-replay masked a dead share).  Dry pool ⇒ the replay pass, then an honest
+    //     note — flip the chip back for the ordinary ladder.
+    if (radio.sc.source === 'pool') {
+        let prec = this.Radio_dial_pool_local(w, radio)
+        if (prec) { return prec }
+        let pagain = this.Radio_dial_pool_local(w, radio, 1)
+        if (pagain) {
+            radio.sc.replays = (+(radio.sc.replays || 0)) + 1
+            radio.bump()
+            return pagain
+        }
+        let pnote = 'your SoundPool is empty — siphon a track, or let the steward press some'
+        if (radio.sc.note !== pnote) { radio.sc.note = pnote; radio.bump() }
+        return null
     }
     // THE STANDING ORDER outranks the fallback ladder (2026-08-21): if peek placed a %Card on
     //  `Mag:'Streams'`, the prime decoded THAT record's opening and Radio_stream_ahead has been

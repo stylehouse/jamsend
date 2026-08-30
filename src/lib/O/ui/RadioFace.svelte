@@ -48,6 +48,7 @@
             by:     sc.by as string | undefined,
             byName: (sc.by_name as string) ?? '',
             own:    !!sc.own,   // the source switch: true = playing MY records, false = friends' (default)
+            source: (sc.source as string) ?? '',   // SoundPooling §2.6: '' | 'pool' — what the dial obeys
             // solo — the DIAL fell to its last rung: no friend was reachable so we are playing your own
             //  shelf rather than sitting silent (Radio_dial, 2026-08-08).  Distinct from `own`, which is
             //   the listener CHOOSING their own records; solo is the radio saying nobody else was there.
@@ -151,12 +152,21 @@
     </div>
     <!-- provenance badge, unmistakably (the human 2026-08-07: "the UI in the player should be clear its
          remote, or local") — its own object like everything else here. -->
-    {#if face.by}
-        <div class="rf-src rf-src-remote">from {face.byName || 'a friend'}</div>
+    <!-- THE SOURCE CHIP (Siphon_todo P2): the provenance badge is also the source selector —
+         pressing it cycles friends-first ⇄ SoundPool via Radio_source_next, which stamps
+         sc.source on the %Radio particle; the dial obeys it (Radio_dial's pool rung). -->
+    {#if face.source === 'pool'}
+        <button class="rf-src rf-src-local" onclick={() => (H as any)?.Radio_source_next?.(n)}
+            title="the source — press to flip back to friends-first">♪ SOUNDPOOL — your pocket copies</button>
+    {:else if face.by}
+        <button class="rf-src rf-src-remote" onclick={() => (H as any)?.Radio_source_next?.(n)}
+            title="the source — press to flip friends | SoundPool">from {face.byName || 'a friend'}</button>
     {:else if face.solo && face.title && face.state !== 'off' && face.state !== 'digging'}
-        <div class="rf-src rf-src-local">♪ LOCAL · {soloWhy(face)}</div>
+        <button class="rf-src rf-src-local" onclick={() => (H as any)?.Radio_source_next?.(n)}
+            title="the source — press to flip friends | SoundPool">♪ LOCAL · {soloWhy(face)}</button>
     {:else if face.title && face.state !== 'off' && face.state !== 'digging'}
-        <div class="rf-src rf-src-local">♪ LOCAL — your own record</div>
+        <button class="rf-src rf-src-local" onclick={() => (H as any)?.Radio_source_next?.(n)}
+            title="the source — press to flip friends | SoundPool">♪ LOCAL — your own record</button>
     {/if}
     <!-- THE INVITE, PUT FORWARD FOR A PEERLESS LISTENER — sits right under the ♪ LOCAL sayer, because
          "playing your own record, alone" is the exact moment bringing a friend is the obvious next move.
@@ -268,6 +278,9 @@
         display: inline-block; padding: 1px 7px; border-radius: 999px;
         font-size: 0.72em; letter-spacing: 0.04em; font-weight: 600;
     }
+    /* the badge is now ALSO a button (the source chip) — keep its badge look, add the hand */
+    button.rf-src { pointer-events: auto; cursor: pointer; font-family: inherit; }
+    button.rf-src:hover { filter: brightness(1.25); }
     .rf-src-remote { background: rgba(127, 200, 232, 0.16); color: #8fd0ee; border: 1px solid rgba(127, 200, 232, 0.4); }
     .rf-src-local  { background: rgba(182, 201, 168, 0.13); color: #b6c9a8; border: 1px solid rgba(182, 201, 168, 0.32); }
     /* the peerless invite nudge — a plain sentence with a warm link in it ("no peers ever, invite some"),

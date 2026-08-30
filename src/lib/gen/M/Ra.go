@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'a786ebe5f133a495~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '6ea83aabe9c0ec3d~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -720,6 +720,13 @@ async Ra_stock_peek(nav, name) {
 Ra_home_self(w, pub) {
     return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'stock')
 },
+// Ra_home_pool — the SOUNDPOOL home (SoundPooling_todo §2.1): MY pressed lofi copies, a
+//  `%MusuPool,pub:<me>` home with the same paged stock shelf, its records rooted at `pool/…`
+//   OPFS paths.  A DISTINCT home on purpose: identity is per-shelf, so a pool %Record (same id,
+//    path pool/…) is a different holding from the library %Record — a cache row, never a dupe.
+Ra_home_pool(w, pub) {
+    return this.Ra_home_shelf(w, w.oai({ MusuPool: 1, pub: pub }), pub, 'stock')
+},
 Ra_home_them(w, pub) {
     // NO self-guard here, deliberately (removed 2026-08-05).  A "last-line" guard reading
     //  `w.oa({MusuSelf:1, pub})` asked "does a MusuSelf for this pub exist HERE?" when it meant "is this
@@ -1090,17 +1097,86 @@ Ra_quarter_tally(shelf) {
     let out = {}
     for (const id of Object.keys(scores)) {
         let s = scores[id]
-        out[id] = { score: s.likes * 3 + s.grabs * 2 + s.spins, why: s.likes + ' liked ' + s.grabs + ' kept ' + s.spins + ' spun' }
+        out[id] = { score: s.likes * 3 + s.grabs * 2 + s.spins, why: s.likes + ' liked ' + s.grabs + ' kept ' + s.spins + ' spun', spins: s.spins, likes: s.likes, grabs: s.grabs }
     }
     return out
 },
-// Ra_quarter_goal — what the stash SHOULD be: the scored ids, score descending then id ascending (the
-//  deterministic order the fixture law wants), zero-scored dropped, sliced to `cap`.
-Ra_quarter_goal(shelf, cap) {
+// ── POOLS OF DEFINED SIZE (owner 2026-08-30: "Pools of defined size, so the overall composition of
+//  the cache on the phone can be focused") — the goal is a COMPOSITION of %Pool compartments, each
+//   with its own take-policy and cap, declared under a %Pools shelf on the world (the %Tags idiom).
+//    No %Pool declared = ONE anonymous taste-pool of the passed cap — byte-identical to the old
+//     single-goal steward, so every existing caller and fixture stands.  `cap` counts TRACKS in v1
+//      (deterministic, Book-provable); a byte-budget is v2, once rec sizes are settled on the row.
+// Ra_pool_define — declare|resize one compartment: %Pool,name:<n>,take:<policy>,cap:<tracks>.
+//  Order of declaration IS priority: earlier pools pick first, later pools never double-claim a
+//   track an earlier one took (dedup), so the composition adds up instead of overlapping.
+Ra_pool_define(w, name, take, cap) {
+    let shelf = w.oai({ Pools: 1 })
+    shelf.c.up = w
+    let p = shelf.oai({ Pool: 1, name: String(name) })
+    p.c.up = shelf
+    if (take) { p.sc.take = String(take) }
+    p.sc.cap = String(cap)
+    p.bump()
+    return p
+},
+// Ra_pool_defs — read the declared composition; fall back to the anonymous single pool.
+Ra_pool_defs(w, cap) {
+    let shelf = w ? w.o({ Pools: 1 })[0] : null
+    let defs = shelf ? shelf.o({ Pool: 1 }).map((p) => ({ name: String(p.sc.name || ''), take: String(p.sc.take || 'taste'), cap: Number(p.sc.cap || 0) })).filter((p) => p.name && p.cap > 0) : []
+    if (!defs.length) { return [{ name: '', take: 'taste', cap: cap }] }
+    return defs
+},
+// Ra_quarter_goal_pools — fill each compartment in declared order off ONE tally, dedup across pools.
+//  V1 take-policies, all deterministic (no wall clock — the fixture law):
+//   'taste' — the classic Like3/Grab2/Spin1 score, descending;  'liked' — liked tracks only, most-
+//    liked first;  'kept' — grabbed tracks only, most-kept first;  'latest' — the LAST %Jam session's
+//     tracks in encounter order (the ledger's own order stands in for recency without a clock).
+Ra_quarter_goal_pools(shelf, pools) {
     let tally = this.Ra_quarter_tally(shelf)
-    let ids = Object.keys(tally).filter((id) => tally[id].score > 0)
-    ids.sort((a, b) => (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
-    return ids.slice(0, cap).map((id) => ({ id: id, score: tally[id].score, why: tally[id].why }))
+    let taken = {}
+    let goal = []
+    for (const pd of pools) {
+        let ids = []
+        if (pd.take === 'latest') {
+            let jams = shelf.o({ Jam: 1 })
+            let last = jams.length ? jams[jams.length - 1] : null
+            if (last) {
+                for (const kind of ['Spin', 'Like', 'Grab']) {
+                    let q = {}
+                    q[kind] = 1
+                    for (const ev of last.o(q)) {
+                        let id = String(ev.sc.of || '')
+                        if (id && !ids.includes(id)) { ids.push(id) }
+                    }
+                }
+            }
+        } else if (pd.take === 'liked') {
+            ids = Object.keys(tally).filter((id) => tally[id].likes > 0)
+            ids.sort((a, b) => (tally[b].likes - tally[a].likes) || (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
+        } else if (pd.take === 'kept') {
+            ids = Object.keys(tally).filter((id) => tally[id].grabs > 0)
+            ids.sort((a, b) => (tally[b].grabs - tally[a].grabs) || (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
+        } else {
+            ids = Object.keys(tally).filter((id) => tally[id].score > 0)
+            ids.sort((a, b) => (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
+        }
+        let picked = 0
+        for (const id of ids) {
+            if (picked >= pd.cap) { break }
+            if (taken[id]) { continue }
+            taken[id] = 1
+            let t = tally[id]
+            goal.push({ id: id, score: t ? t.score : 0, why: t ? t.why : 'in the latest jam', pool: pd.name })
+            picked = picked + 1
+        }
+    }
+    return goal
+},
+// Ra_quarter_goal — what the stash SHOULD be: the anonymous single-pool composition (kept as the
+//  stable single-goal door; the steward itself composes via Ra_pool_defs).
+Ra_quarter_goal(shelf, cap) {
+    return this.Ra_quarter_goal_pools(shelf, [{ name: '', take: 'taste', cap: cap }])
 },
 // Ra_quarter_diff — goal vs pooled: in the goal but not pooled wants IN (press when the library holds
 //  it locally — the v1 byte-copy; pull when it is known only by reputation — the Cave/friend flow);
@@ -1115,7 +1191,7 @@ Ra_quarter_diff(goal, pool, lib) {
     for (const g of goal) {
         wanted[g.id] = 1
         if (pooled[g.id]) continue
-        diff.push({ of: g.id, do: held[g.id] ? 'press' : 'pull', why: g.why })
+        diff.push({ of: g.id, do: held[g.id] ? 'press' : 'pull', why: g.why, pool: g.pool || '' })
     }
     for (const id of Object.keys(pooled)) {
         if (!wanted[id]) diff.push({ of: id, do: 'evict', why: 'not in the goal stash' })
@@ -1127,7 +1203,7 @@ Ra_quarter_diff(goal, pool, lib) {
 //   drop — "a good stash stays the stash"), and a want whose reason left the diff is dropped (served
 //    or displaced — either way stale).  Returns {goal, diff, wants} for a Book or a face.
 Ra_quarter(w, shelf, pool, lib, cap) {
-    let goal = this.Ra_quarter_goal(shelf, cap)
+    let goal = this.Ra_quarter_goal_pools(shelf, this.Ra_pool_defs(w, cap))
     let diff = this.Ra_quarter_diff(goal, pool, lib)
     let out = w.oai({ Provisions: 1 })
     out.c.up = w
@@ -1141,6 +1217,9 @@ Ra_quarter(w, shelf, pool, lib, cap) {
         let want = out.oai({ Want: 1, of: d.of, do: d.do })
         want.c.up = out
         if (want.sc.why !== d.why) want.sc.why = d.why
+        // the compartment the want provisions FOR — the Door face's composition column.  Only a
+        //  declared pool stamps (the anonymous pool stamps nothing, keeping old snaps byte-identical).
+        if (d.pool && want.sc.pool !== d.pool) want.sc.pool = d.pool
     }
     return { goal: goal, diff: diff, wants: out.o({ Want: 1 }).length }
 },

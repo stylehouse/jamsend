@@ -44,7 +44,7 @@ Snap:H
               Charter,era:1,payload:72d7ff9ff7e0e109f503f8e7bf214cdbac6ed15f802a3ca173b589289e4126e7:Captain:118fd01cff8a3866;b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7:Cave:118fd01cff8a3866_1,sig:c7e53d5fae6e333da0b5a619f7dd4f8f4023f8a9eb3d58f7da92117e2e1a9534484bc27d8005b88c0efd8b4ef2e0de9acaf0fd69388f6e210437ffb7767a690d,soul:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
               Pier,pub:60e94974b654f1b0
                 Peering,name:60e94974b654f1b0,pub:60e94974b654f1b0de8b48877f2b5208b531f077b69b5829e0dda286c6d38845
-              Body,pub:60e94974b654f1b0de8b48877f2b5208b531f077b69b5829e0dda286c6d38845,role:Cave,address:118fd01cff8a3866_1
+              Body,pub:60e94974b654f1b0de8b48877f2b5208b531f077b69b5829e0dda286c6d38845,role:Cave,address:118fd01cff8a3866_1,name:Ebox
         Account,of:Fbox
           Identity:63c010b5b7eff26c,prepub:63c010b5b7eff26c,friendly:Fbox
             Peering,name:63c010b5b7eff26c,friendly:Fbox
