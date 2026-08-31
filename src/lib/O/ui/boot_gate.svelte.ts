@@ -47,6 +47,11 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
             hc.listen_choice = 1
             hc.disk_gated = false      // drop the gate NOW; the Wormhole tick re-affirms + mounts the pool
         }
+        // PERSIST THE CHOICE (Onboarding §3 — owner confirmed "don't ask again later").  Until now
+        //  listen_choice rode `.c` only and a reload forgot it, so a decliner got re-nagged every visit.
+        //   Stash it (Dexie-backed, survives reload) so the next boot stands straight into listen-only.
+        //    Escapable: "open a folder" (reopen_share / OPEN SHARE) clears it back to a folder life.
+        try { (H() as any)?.top_House?.()?.imem?.('share')?.set?.('mode', 'thin') } catch {}
         declined = false
         error = ''
         poll++

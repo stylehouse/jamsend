@@ -2261,6 +2261,16 @@ export class House extends StorableHousing {
         //        design lives in Supervisor_todo §0; until it lands, a non-dev listener runs with
         //         ghosts from the bundle and no Books, which the Supervisor should say out loud.
         if (H.top_House().c.boot_role) {
+            // PERSIST THE LISTEN-ONLY CHOICE ACROSS RELOAD (Onboarding §3, owner confirmed).  A human who chose
+            //  "listen without a folder" must not be re-nagged every visit — restore that choice from the stash
+            //   (Dexie-backed, written by boot_gate.listen_only) into the runtime `listen_choice` flag, so the
+            //    branch below stands the gate down without asking again.  ONLY when no fresh choice is already
+            //     live and this isn't a dev/Book boot (which never wrote the key); a folder user never reaches
+            //      here (the local-share path above returns first), so a stale 'thin' can't trap a folder life —
+            //       and "open a folder" clears the key.  Book-inert (carries c.book → skipped).
+            if (!H.top_House().c.listen_choice && !H.top_House().c.book) {
+                try { if (H.top_House().imem('share').get('mode') === 'thin') H.top_House().c.listen_choice = 1 } catch (e) {}
+            }
             // &remoteWormhole=1 runner: NO FaceSucker — the real tree arrives over the channel from a trusted
             //  editor (method:remoteWormhole).  w:Lies drives the beg→grant→install (Lies_remote_wormhole_step
             //   off Lies_aim); here we only REFLECT A.c.nav.  Until it installs, A.c.nav stays unset, every
@@ -2288,9 +2298,20 @@ export class House extends StorableHousing {
             //    SAME listen-only life as a no-picker browser: identity in Dexie, pool/ in OPFS, no
             //     folder ever asked again this session.  The flag rides `.c` (never snapped) and a
             //      reload forgets it — a fresh boot asks fresh, which is the honest default.
-            if (!H.top_House().c.book
-                && typeof window !== 'undefined'
-                && (typeof (window as any).showDirectoryPicker !== 'function' || H.top_House().c.listen_choice)) {
+            // AN EXPLICIT REFUSE OVERRIDES THE `book` GATE (owner 2026-08-31: "the refuse button isn't
+            //  getting us out of a keep-asking tailspin").  The `!book` guard was written when `book`
+            //   meant a dev ?E=/?B= boot that must load the real tree — but BigQualand now DEFAULT-stamps
+            //    `book='Sounditron'` on EVERY /BigSoundland end-user page (BigQualand.svelte.ts:57,
+            //     BigSoundland `boot_param('B') || 'Sounditron'`), so `!book` was false for every real
+            //      listener and the listen_choice branch could never fire — refuse set the flag, the next
+            //       Wormhole tick skipped this branch and re-raised disk_gated=true, the tailspin.  A human
+            //        clicking "listen without a folder" is an unambiguous choice that must WIN even on a
+            //         page with a resident Book; no headless boot (CredRunner/daemon/jsdom) ever sets
+            //          listen_choice, so the no-picker AUTO path below still keeps its `!book` guard — a
+            //           book boot in jsdom (no picker, book set, no click) still holds the gate for the tree.
+            if (typeof window !== 'undefined'
+                && (H.top_House().c.listen_choice
+                    || (!H.top_House().c.book && typeof (window as any).showDirectoryPicker !== 'function'))) {
                 H.top_House().c.disk_gated = false
                 H.top_House().c.listen_only = true
                 // MORTALITY MITIGATION (MobilenoFSA_todo §0 #2): a shareless listener's identity

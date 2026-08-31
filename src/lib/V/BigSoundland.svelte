@@ -223,7 +223,22 @@
     //  "it should stretch all the way to the Radio beginning").  While the Butler is still holding (butler_up) the
     //   splash stays OVER it, so the owner never watches "the Supervisor get ready".  OPEN SHARE no longer fades the
     //    splash — it's layered above it (BootGate altitude 2100).
-    let boot_ready = $derived(glass_full && !butler_up)
+    // …OR listen-only has SETTLED to a THIN arrival (Arrival_todo brick 2): with no Book no glass will
+    //  ever commission, but `%Arrival,phase:thin` (dual-written to `.c.screen.dominant` by Screen_decide,
+    //   now driven Book-independently off the Supervisor heartbeat) IS a real arrival — lift the splash to
+    //    the listen-only landing below, never leave it hanging over a shareless boot that quietly finished.
+    let screen_dominant = $derived.by(() => { void H?.version; return (H as any)?.top_House?.()?.c?.screen?.dominant })
+    let boot_ready = $derived((glass_full || screen_dominant === 'thin') && !butler_up)
+    // the listen-only landing's "open a folder" — drop the listen-only choice so Housing's next Wormhole tick
+    //  re-raises `disk_gated` (a capable browser falls straight to the folder gate), and the BootGate OPEN
+    //   SHARE bar returns.  Clearing the choice also flips the phase off `thin`, so the landing yields cleanly.
+    const reopen_share = () => {
+        const c: any = H?.top_House?.()?.c
+        if (c) { delete c.listen_only; delete c.listen_choice; c.disk_gated = true }
+        // clear the persisted listen-only choice (Onboarding §3) — they want a folder now, so a reload must
+        //  not restore listen-only over the top of it.
+        try { (H as any)?.top_House?.()?.imem?.('share')?.set?.('mode', 'folder') } catch {}
+    }
     // BOOT GAVE UP — the ONE thing that still fades the splash at once: the boot failed, so reveal the Butler's
     //  failure/▦ exit rather than sit behind a calm tree.  Reads the toplevel authority; false on a Book.
     let boot_gaveup = $derived.by(() => { void H?.version; let s: any = (H as any)?.top_House?.()?.c?.screen; if (!s) return false; return s.dominant === 'gaveup' })
@@ -478,6 +493,16 @@
                 {/if}
             </section>
         {/key}
+    {:else if screen_dominant === 'thin'}
+        <!-- LISTEN-ONLY LANDING (Arrival_todo brick 2): a shareless life has no Book and no glass, but it
+             has ARRIVED — an honest landing, not the machine room, and never a hang.  `reopen_share` drops
+             the listen-only choice so the OPEN SHARE gate returns for anyone who wants their disk after all. -->
+        <section class="scape-thin">
+            <h1>🎧 listening only</h1>
+            <p>no music library yet — your sounds pool in this browser. Open a folder to keep a bigger
+                collection on your own disk, or paste a share link someone sent you.</p>
+            <button class="thin-open" onclick={reopen_share}>open a folder</button>
+        </section>
     {:else}
         <!-- the glass isn't drawing — show what the machine is doing so we can scan out what's wrong -->
         <section class="scape-diag">
@@ -702,6 +727,27 @@
         display: flex; flex-direction: column; gap: 0.9rem;
         padding: 1rem;
     }
+    /* LISTEN-ONLY LANDING (Arrival_todo brick 2) — the honest arrival for a shareless life. */
+    .scape-thin {
+        flex: 1; min-height: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 1rem; padding: 2rem; text-align: center;
+        color: #f4ead6; font-family: Arial, Helvetica, sans-serif;
+    }
+    .scape-thin h1 { margin: 0; font-size: 1.6rem; font-weight: 700; }
+    .scape-thin p { margin: 0; max-width: 30rem; line-height: 1.5; opacity: 0.85; font-size: 0.95rem; }
+    .thin-open {
+        margin-top: 0.4rem; font-size: 1.05rem; padding: 0.6em 1.5em; cursor: pointer;
+        color: #2b1500; background: linear-gradient(180deg, #ffb156, #ff8c1a);
+        border: none; border-radius: 0.6rem; font-weight: 700;
+        box-shadow: 0 10px 34px -6px rgba(255, 140, 26, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+    .thin-open:hover {
+        background: linear-gradient(180deg, #ffc172, #ffa040); transform: translateY(-1px);
+        box-shadow: 0 14px 40px -6px rgba(255, 140, 26, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    .thin-open:active { transform: translateY(0); }
     .diag-line {
         display: flex; align-items: baseline; gap: 0.5rem;
         font-size: 0.82rem; color: rgba(180, 195, 225, 0.75); line-height: 1.4;

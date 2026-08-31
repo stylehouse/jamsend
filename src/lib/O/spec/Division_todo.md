@@ -7,6 +7,80 @@
 
 ---
 
+## THE TELEOLOGY — a soul is an organism, its bodies are organs
+
+*(the PURPOSE behind Division — what the bodies are FOR, drafted 2026-08-31 at the owner's ask for
+ "a lovely teleology of the bodies providing a bunch of different organs… particle-expressive about
+  relationing and working, Captain of readily-available mobile music vs Cave the huge sprawling
+   collection." The mechanism below is unchanged; this is the WHY it serves. It sits ABOVE Post/Seat/
+    Charter and points them at a destination.)*
+
+**A divided soul is one organism; its bodies are its organs.** An undivided soul is a single cell
+ doing everything adequately and nothing deeply. Division is the soul GROWING ORGANS — specialising
+  its bodies so each does one thing wholly and leans on the others for the rest. No organ is the
+   whole soul; the soul is the **living relation among them**. A **Post** (Captain, Cave) is not a
+    label a body wears — it is *which organs that body grows*.
+
+**The two first organs (music's instance):**
+
+- **The Captain — the organ of REACH and WILL.** The phone in the hand: where the human actually
+   is, decides, and acts. It carries **readily-available mobile music** — a pocketful you can play
+    THIS SECOND, offline, on a train, curated small and warm. It holds the **invite helm** (the sole
+     writer of who-joins; will is issued here, where the human is). Intermittent, mobile, sovereign.
+      The Captain is *presence* — the soul's hands and voice.
+- **The Cave — the organ of DEPTH and MEMORY.** The always-on box at home: the **huge sprawling
+   collection**, the whole library too big for any pocket, kept warm and served on demand. It holds
+    the **Seat** (routing anchor + Charter-signer — the body reliably awake to answer for the soul).
+     Stationary, deep, tireless. The Cave is *hearth* — the soul's long memory and its patient body
+      that never sleeps.
+
+The contrast IS the point: **the Captain has what you want NOW; the Cave has EVERYTHING.** Reach vs
+ depth, pocket vs trove, will vs memory. Neither is lesser; the organism needs both, and it is the
+  TRAFFIC between them that is the soul being alive across its machines.
+
+**…and a bunch more organs to come.** Captain and Cave are only the first two because music asked
+ first. The organ set is open: an **Ear** (a listen-only body — a phone with no library, all reach
+  no depth: the noFSA/listen-only life of Onboarding §5), a **Loft** (an editing/compiling body —
+   the Wordland room), a Seat-only vs Serve-only split when one box grows too busy. A Post is a
+    BUNDLE of organs; one day a body might grow organs à la carte rather than wear a fixed Post name.
+     The teleology holds regardless: **bodies specialise into organs; the soul is their union.**
+
+**RELATIONING + WORKING, made of PARTICLES (the §A law of Onboarding_todo, applied to the bodies).**
+
+The organs don't merely co-exist — they WORK together, constantly, and that work should be **living
+ legible matter in the mesh, not `.c` flags.** When the Captain wants a track its pocket doesn't
+  hold it reaches into the Cave; when the Cave takes in newly-arrived music it restocks the Captain's
+   ready set. That is the organism's bloodstream — and you should be able to SEE it in a snap. Sketch
+    (words, not booleans; coinage renameable per the glossary):
+
+- **The organs a body grows** — under each `%Body,pub:X`, an organ cluster you can read:
+   `/Organ:ready,tracks:214,tags:vio+train,offline/` (the Captain's pocket) beside
+    `/Organ:trove,tracks:38k,tags:*,served/` (the Cave's collection). The Post NAMES the bundle; the
+     `%Organ` rows SPELL it, in the snap, as quantities. **The Disk cell of Onboarding §4 is exactly
+      this organ made visible** — an OPFS/library readout is a body describing the organ it grows.
+- **A reach in flight** — the Captain asking the Cave for a track is NOT a `.c.wanting` flag; it is a
+   particle: `/Reach,from:Captain,of:<track>,for:play/` — or simply the existing `%Heist,of:X` Jam
+    ledger, since *a reach into your own Cave IS a heist of your own trove*. It lives in the snap while
+     in flight, graduates when the audio crosses, and is dropped like any served transient req.
+      ⚠ This is NOT the reverted `%Reach` liveness cache (killed — see Appendix — for reifying "is the
+       other side up" as a kept-fresh VERDICT). This reifies an EVENT — a request actually made,
+        resolve-and-emit, fail-forward. **Work-in-flight is legible; liveness stays the transport's.**
+- **The working bond itself** — the standing relation between two organs as one cluster both write and
+   read: `/Bond,Captain:<pub>,Cave:<pub>,restock:auto,synced:<snaptime>/` — how the pocket keeps step
+    with the trove. Not two private `.c` clouds guessing at each other (the very *"two clouds of state
+     that want to unison"* the ferry ceremony kept hitting) — ONE particle, seen by both and by the mesh.
+
+**Why this matters (for a reader with little context):** it turns "Division" from plumbing (Seat,
+ Charter, routing tables) into a PURPOSE — the bodies are organs of one living soul, and their
+  collaboration is the soul alive across its machines. Every future particle here should serve that:
+   when you reach to express what an organ IS, or what two organs are DOING, reach for a
+    `/cluster,of:words/` the mesh can see — never a `.c` bool. That is the one bet, poured through the
+     bodies. **Next spin:** pick ONE of the three sketch-particles (`%Organ` is the cheapest + ties
+      straight to the Disk-cell readout) and make it real on the live bodies; the mechanism below is
+       ready to carry it.
+
+---
+
 ## 0. WHERE THIS IS (2026-08-28) — the live device-link path is the FERRY model
 
 The device-link ("spread myself out") ceremony runs on a **handshake + ferry**, which SUPERSEDES the old
@@ -256,6 +330,20 @@ The device-link ("spread myself out") ceremony runs on a **handshake + ferry**, 
 
 **Proven:** `SwarmSpread` **5/5** (beat 5 = the ferry glue, `step=5,dige:ac0f77d14fc3ab55`, «the-account-
  ferries-over»). Debug tool: `scripts/runner_watch.mjs` (remote run + named "pointer" predicates, exit-coded).
+
+**⚠ REGRESSED — SwarmSpread beat 5 is now RED (found 2026-08-31, during unrelated arrival-machine work).**
+ On a FRESH runner (reloaded, clean state) SwarmSpread consistently fails beat 5 «the-account-ferries-over»:
+  `ok:false, ok_pct:0.8, caveat:1` — the live account crossing no longer completes/asserts (the other 4 beats
+   pass). NOT flaky (2 stale-runner + 2 fresh-runner runs, all identical) and NOT drift. `SwarmStaple` stays
+    **8/8 green**, so first-contact/redeem/grant/roundtrip are intact — it's specifically the ferry SEND→park→
+     consume crossing. Ruled OUT as the cause: the 2026-08-31 arrival-machine edits (Screen_decide/%Arrival/
+      %Share/thin) — humdinger-GATED, inert on a non-humdinger runner, and they touch NO ferry code; `Swarm.g`/
+       `.go` are clean in the working tree. Likely suspect: the committed **Ferry** commits (`f7b90075 Ferry
+        stage 1` … `fa6cbbf4 to Ferry`) — the live crossing regressed since the fixture was recorded, OR the
+         recorded fixture predates a real behaviour change. **Owed:** re-run on a fresh runner, read the beat-5
+          `snap 5` to see whether the account actually crossed (Cave holds the soul key?) or just missed the
+           %see patience; if it truly doesn't cross, bisect the Ferry commits. This is the live-two-tab gate the
+            §0 `#fc`→nonce note already flags as un-proven.
 
 **NEXT MOVES (owed):**
   - **THE `#fc`→nonce refactor** (above) — the headline. Attended, with a Book re-record.

@@ -648,9 +648,16 @@
             {#if got}
                 <p class="ld-deal">your other device took the soul on — you live there now too.</p>
             {:else if sent_fact?.held}
-                <p class="ld-deal">✓ delivered — say <b>yes</b> on the other device to finish.</p>
+                <p class="ld-deal">✓ delivered — now say <b>yes</b> on the other device to finish.</p>
             {:else}
-                <p class="ld-deal">carrying it over to your other device…{#if sent_fact?.at}&nbsp;<span class="ld-rung-age">{age_of(sent_fact.at)}</span>{/if}</p>
+                <!-- RESOLVED, not busy (owner 2026-08-31, "that dangling look of still doing something"): by the
+                     time this face shows, Swarm_ferry_confirm already returned ok — the soul frame has LEFT; the
+                     giver's work is done.  What's outstanding is the other device's held/got ack, which can never
+                     return (relay-readable but the ack path is lossy — the other screen already reads "done").
+                     So no ticking age_of here (that count-up read as in-flight work); it lived only to diagnose,
+                     and the raw sent/held ages still ride the wire strip below.  Point the human at the one real
+                     next action instead — say yes over there. -->
+                <p class="ld-deal">now say <b>yes</b> on your other device to take the soul on.</p>
             {/if}
             <button class="ld-cancel-b" onclick={link_done}>done</button>
         </div>
@@ -859,7 +866,6 @@
     .ld-rung { font-size: 0.78rem; line-height: 1.35; }
     .ld-rung.on   { color: #8fd6a2; }
     .ld-rung.wait { color: rgba(220, 210, 170, 0.85); }
-    .ld-rung-age  { opacity: 0.55; font-size: 0.85em; font-family: monospace; }
 
     /* the ferry wire strip — the raw facts dump under every phase */
     .ld-wire {

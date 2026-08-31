@@ -462,6 +462,19 @@
         joined = '… joining by itself'
         join()
     })
+    // WHISK TO THE LINK CELL (owner 2026-08-31: naming at the Door "leads to the usual Door … but doesn't
+    //  actually whisk me away to [the Link]").  The MyCave card below PROMISED "opening in the Link panel"
+    //   but leaned on a ghost-side auto-surface that doesn't fire after the name-gate — so the human sat on
+    //    the Door reading a promise.  Make it TRUE: focus the %Link belly cell directly, exactly as the Door's
+    //     own "link a device" button does (`Sounditron_link_open`, self-resolving its world).  ONCE, and only
+    //      when NAMED (the ferry needs a name first — the whole reason the name-gate runs before this) and the
+    //       landing is a MyCave device link.  Idempotent with any auto-surface: both just focus the same cell.
+    let whisked = $state(false)
+    $effect(() => {
+        if (whisked || !invite || invite.to !== 'MyCave' || !named || !stood) return
+        whisked = true
+        try { H?.Sounditron_link_open?.() } catch {}
+    })
     // (The DEVICE-LINK OFFER BRIDGE that lived here for a few hours on 2026-08-30 is GONE, on the owner's
     //  ruling: "relying on a certain cell being mounted to hear a message is quite the design dissonance."
     //   The `ferry_offer` consent is now parked GHOST-SIDE at Swarm standup off the landed ?Iz URL, and the

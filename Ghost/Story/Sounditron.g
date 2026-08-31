@@ -1163,13 +1163,23 @@ Screen_decide(w):
         dominant = 'ceremony'
         reason = 'a device link is in flight'
     } else {
-        if (arr === 'none' || arr === 'coming') {
-            dominant = 'arrival'
-            reason = 'starting up'
+        if (arr === 'none' && MH.c.listen_only) {
+            // LISTEN-ONLY HAS SETTLED (Arrival_todo brick 2): no Book, no library, but this IS a complete
+            //  arrival — a THIN one.  `listen_only` is set only after Housing's listen-only branch runs (never
+            //   in a normal boot's first seconds), so it can't false-lift an ordinary boot that is merely early
+            //    (arr 'none' before its arrival is declared).  `thin` is a LIFT: the splash yields to the
+            //     listen-only landing (open a folder / paste a link), never the machine room, never a hang.
+            dominant = 'thin'
+            reason = 'listening only — no library yet'
         } else {
-            if (arr === 'gaveup') {
-                dominant = 'gaveup'
-                reason = 'the invite did not finish — ask for a fresh QR'
+            if (arr === 'none' || arr === 'coming') {
+                dominant = 'arrival'
+                reason = 'starting up'
+            } else {
+                if (arr === 'gaveup') {
+                    dominant = 'gaveup'
+                    reason = 'the invite did not finish — ask for a fresh QR'
+                }
             }
         }
     }
@@ -1179,6 +1189,41 @@ Screen_decide(w):
     let changed = !prev || prev.dominant !== dominant || (prev.wants ? prev.wants.join(',') : '') !== wkey ? 1 : 0
     MH.c.screen = { dominant: dominant, reason: reason, wants: wants, yields_to: dominant === 'ceremony' ? [] : ['ceremony'] }
     if (changed) { console.log('🖥 screen: ' + dominant + (wkey ? ' +[' + wkey + ']' : '') + ' — ' + reason) }
+    // …AND AS AN INTELLIGIBLE C STRUCTURE (Arrival_todo, owner 2026-08-31: "create intelligible C** structures
+    //  for reality").  The ranked decision above rides `MH.c.screen`, a `.c` OBJECT invisible to the snap/mesh/
+    //   Cyto/Books — the very anti-pattern being retired.  Mint the SAME decision as `%Arrival` under w:Supervisor
+    //    (where %Watch/%Pref already live), so the toplevel phase is legible matter every surface can READ.
+    //     DUAL-WRITE for now (brick 1): readers migrate off `.c.screen` in a later brick, then it goes.  Humdinger-
+    //      gated by the early return above, so a runner/Book mints NOTHING — fixtures stay inert.  `%want` children
+    //       are presence rows (the open-share begs the dominant surface services), merged in place, never churned.
+    let arrv = w.oai({ Arrival: 1 })
+    if (arrv.c.up !== w) { arrv.c.up = w }
+    let a_changed = 0
+    if (arrv.sc.phase !== dominant) { arrv.sc.phase = dominant; a_changed = 1 }
+    if (arrv.sc.reason !== reason) { arrv.sc.reason = reason; a_changed = 1 }
+    for (const wn of wants) {
+        if (!arrv.o({ want: wn })[0]) { arrv.i({ want: wn }); a_changed = 1 }
+    }
+    for (const wr of arrv.o({ want: 1 }).slice()) {
+        if (wants.indexOf(wr.sc.want) < 0) { arrv.drop(wr); a_changed = 1 }
+    }
+    if (a_changed) { arrv.bump() }
+    // THE STORAGE DECISION, ALSO AS A C STRUCTURE (Arrival_todo §2, the `%Share` particle).  Which storage
+    //  LIFE this body is in — a folder wanted, a folder held, listening-only by CHOICE, or listen-only
+    //   because the browser cannot pick a folder — is today three scattered `.c` bools (disk_gated /
+    //    listen_choice / listen_only).  Reflect them into ONE legible `%Share,mode` beside %Arrival so the
+    //     decision reads in the snap and the mesh.  Persisting the CHOICE across a reload (Onboarding §3, so a
+    //      decliner is never re-nagged) is the NEXT brick; this is the visibility half.  Same humdinger gate
+    //       (the early return above), merged in place, bump only on a real change — a runner/Book mints none.
+    let share_mode = 'held'
+    if (MH.c.listen_only) {
+        share_mode = MH.c.listen_choice ? 'thin' : 'impossible'
+    } else {
+        if (MH.c.disk_gated) { share_mode = 'folder' }
+    }
+    let shr = w.oai({ Share: 1 })
+    if (shr.c.up !== w) { shr.c.up = w }
+    if (shr.sc.mode !== share_mode) { shr.sc.mode = share_mode; shr.bump() }
     return 1
 
 // Sounditron_link_open — the Door's "Link Device" doorway.  Focuses the %Link belly cell DIRECTLY (Sounditron_focus,

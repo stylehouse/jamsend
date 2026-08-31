@@ -171,6 +171,14 @@ Supervisor_tick(H):
     this.Supervisor_read(w)
     this.Supervisor_read_dials(w)
     this.Supervisor_say(w)
+    // THE TOPLEVEL ARRIVAL AUTHORITY, driven BOOK-INDEPENDENTLY (Arrival_todo brick 2 b1).  Screen_decide
+    //  lived ONLY in the Sounditron Book's drive, so a listen-only tab — NO Book, no wormhole — never ran it:
+    //   the arrival phase stayed unset, nothing lifted the splash, and refuse-FSA hung forever.  This
+    //    heartbeat is the one thing that ticks with or without a Book (its whole reason to exist — a stopped
+    //     drive cannot report a stopped drive), so driving the authority HERE makes the phase reliable in
+    //      every life.  Humdinger-gated inside Screen_decide (a runner/Book gets no authority → fixtures
+    //       inert), and idempotent/merge-in-place, so sharing the decision with Sounditron's own call is safe.
+    if (this.Screen_decide) { try { this.Screen_decide(w) } catch (er) {} }
     return 1
 
 // Supervisor_w — find the standing world from anywhere.  Returns null when no Supervisor is up, and
