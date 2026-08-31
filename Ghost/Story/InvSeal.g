@@ -94,11 +94,14 @@ async InvSeal_mint(w):
     let top = this.top_House ? this.top_House() : null
     w.c.url = await this.Swarm_ferry_link(w, alice, 'https://jamsend.example/BigSoundland')
     let url = String(w.c.url || '')
-    let secret = top && top.c ? top.c.ferry_secret : null
-    let twin = top && top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null
+    let msoul = this.Swarm_ferry_role('soul')
+    let secret = msoul ? msoul.c.secret : null
+    let twin = top && top.stashed && top.stashed.ferry && top.stashed.ferry.soul ? top.stashed.ferry.soul.secret : null
     let row = { minted: 1 }
-    if (url.startsWith('https://jamsend.example/BigSoundland?Iz=') && url.includes('#fc=')) { row.url_carries_both = 1 }
-    if (secret && String(secret).length === 32 && url.endsWith('#fc=' + String(secret))) { row.secret_rides_fragment = 1 }
+    // ANCHOR FORM (2026-08-31): the whole link rides the fragment — `#Iz=<token>&fc=<secret>` (the split
+    //  '&'+'fc=' literal is the .g &-verb munge law; InvFerry beat 3 asserts the same shape).
+    if (url.startsWith('https://jamsend.example/BigSoundland#Iz=') && url.includes('&' + 'fc=')) { row.url_carries_both = 1 }
+    if (secret && String(secret).length === 32 && url.endsWith(('&' + 'fc=') + String(secret))) { row.secret_rides_fragment = 1 }
     if (twin && String(twin) === String(secret)) { row.twin_stashed = 1 }
     this.InvSeal_note(w, row)
 
@@ -125,17 +128,19 @@ async InvSeal_seal(w):
     pier.oai({ Grant: 'MyCave', by: ckeys.pub })
     if (top && top.c) { top.c.humdinger = 1 }
     await this.Swarm_ferry_on_seal(w, alice, pier)
-    let cold_refused = top && top.c && !top.c.ferry_confirm ? 1 : 0
+    let ssoul = this.Swarm_ferry_role('soul')
+    let cold_refused = !(ssoul && !ssoul.sc.finished && ssoul.sc.phase === 'confirming') ? 1 : 0
     pier.c.heard_at = Date.now()
     await this.Swarm_ferry_on_seal(w, alice, pier)
-    let confirm = top && top.c ? top.c.ferry_confirm : null
+    ssoul = this.Swarm_ferry_role('soul')
+    let confirm = ssoul && !ssoul.sc.finished && ssoul.sc.phase === 'confirming' ? { pub: String(ssoul.sc.pub || '') } : null
     if (top && top.c) { delete top.c.humdinger }
     let cavey = w.c.cavey
     let crossed = cavey ? cavey.o({ mail: 1 })[0]?.o({ frame: 'ferry' })[0] : null
     let row = { sealed: 1 }
     if (cold_refused === 1) { row.cold_refused = 1 }
     if (confirm && String(confirm.pub) === String(ckeys.prepub)) { row.confirm_parked = 1 }
-    if (top && top.c && top.c.ferry_secret) { row.secret_held = 1 }
+    if (ssoul && ssoul.c.secret) { row.secret_held = 1 }
     if (!crossed) { row.nothing_sent = 1 }
     this.InvSeal_note(w, row)
 
@@ -149,8 +154,11 @@ async InvSeal_cancel(w):
     let did = this.Swarm_ferry_cancel(w)
     let row = { cancelled: 1 }
     if (did === 1) { row.cancel_ran = 1 }
-    if (top && top.c && !top.c.ferry_secret && !top.c.ferry_confirm && !top.c.ferry_pending) { row.live_cleared = 1 }
-    if (top && (!top.stashed || !top.stashed.ferry_pending_secret)) { row.twin_cleared = 1 }
+    // cancel FINISHES both ceremony reqs — live cleared = no unfinished role req stands
+    let cs = this.Swarm_ferry_role('soul')
+    let cc = this.Swarm_ferry_role('cave')
+    if (!(cs && !cs.sc.finished && cs.sc.phase) && !(cc && !cc.sc.finished && cc.sc.phase)) { row.live_cleared = 1 }
+    if (top && (!top.stashed || !top.stashed.ferry)) { row.twin_cleared = 1 }
     this.InvSeal_note(w, row)
 
 // ── the witness — DURABLE sworn facts via this.story_swear (idempotent per run; evidence lands on the

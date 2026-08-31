@@ -14,19 +14,28 @@
     //    · fades on the Radio beginning (glass up + Butler lifted), or 3s after a boot GAVE-UP (a grace for a
     //       fail-then-succeed-into-Radio boot), or the 7s safety cap — whichever first;
     //    · skipped for runner/editor boots (?B= / ?E=).
-    //  Progressive load (owner): the blurred tree_mini shows instantly, then the full-res tree.webp crossfades
-    //   in when it has loaded — and on later visits the full-res is cached, so its onload fires at once and you
-    //    just get the sharp frame with no blur beat.
+    //  JUST THE TREE (owner 2026-08-31: "it shows the lowres version every subsequent time, lets not wait for
+    //   the hires splash image to load.  this is simple and standard web frontending").  The blurred-mini +
+    //    crossfade was the bug: the splash is SSR'd (to cover from the first paint), so it always shipped the
+    //     lowres visible and then FADED it out — a blur beat on every load.  Dropped entirely.  One <img
+    //      src="/tree.webp"> over a dark bg: the browser caches it, so it shows instantly on every visit but
+    //       the first; the dark bg covers the boot while the first-ever load fetches.  Standard.
     //  NOTE (owner, acknowledged): covering EVERY boot path and letting OPEN SHARE punch through properly wants
     //   the splash mounted at the ROOT above all toplevels, not inside BigSoundland — a deliberate toplevel redo.
     import { onMount } from "svelte"
 
-    let { ready = false, urge = false }: { ready?: boolean, urge?: boolean } = $props()
+    let { ready = false, urge = false, hold = false }: { ready?: boolean, urge?: boolean, hold?: boolean } = $props()
 
-    let show     = $state(false)   // client-only — set true in onMount, never SSR
+    // FROM THE VERY FIRST PAINT (owner 2026-08-31: "I want the splash to go from the very start of the page
+    //  load … right now we have a bare Supervisor glass saying 'starting up' at the start, like a splash for
+    //   the splash").  Default TRUE so the cover is in the SSR HTML / initial client render — there is no gap
+    //    between first paint and onMount for the Butler's "starting up" to peek through.  The markup is static
+    //     (a dark div + two <img>, no H dependency), so it hydrates cleanly.  A runner/editor boot (?B=/?E=)
+    //      still gets NO splash — onMount hides it at once (one frame on those dev boots is fine).
+    let show     = $state(true)
     let fading   = $state(false)
     let held     = $state(false)   // minimum on-screen beat elapsed
-    let hi_ready = $state(false)   // full-res tree.webp loaded → crossfade sharp over the blurred mini
+    let want_fade = false          // a fade was asked for while `hold` blocked it (honoured on release)
     // FAIL-GRACE (owner 2026-08-29): a boot can throw a FAILED then immediately succeed into Radio, so a
     //  gave-up must NOT reveal the Supervisor glass at once — arm a 3s timer on the FIRST `urge` and let the
     //   Radio win inside it.  Plain lets (a handle + a one-shot latch), not $state — they gate a timeout, not a render.
@@ -36,9 +45,8 @@
     onMount(() => {
         try {
             const s = new URLSearchParams(location.search)
-            if (s.has("B") || s.has("E")) return       // runner/editor boot — no splash
+            if (s.has("B") || s.has("E")) { show = false; return }   // runner/editor boot — HIDE the SSR'd splash
         } catch {}
-        show = true
         const min = setTimeout(() => { held = true }, 700)
         // SAFETY cap only (7s): the splash now intends to hold to the Radio beginning, but must never wedge — if
         //  the glass never comes up it fades to reveal the Butler's progress/gaveup (with its always-on ▦ exit).
@@ -48,9 +56,16 @@
 
     function fade() {
         if (fading || !show) return
+        // PINNED BEHIND A BOOT-CRITICAL GATE (owner 2026-08-31: "put a nice open share button on TOP of the
+        //  splash").  While `hold` is set (the boot needs a folder → BootGate's "▶ open" is up over us), the
+        //   splash must NOT fade to the machine room — the calm tree stays behind the button.  A fade asked for
+        //    now is remembered and honoured the instant hold releases (share granted → boot proceeds).
+        if (hold) { want_fade = true; return }
         fading = true
         setTimeout(() => { show = false }, 550)
     }
+    // hold released (share granted / listen-only chosen → the boot moves on): honour any deferred fade.
+    $effect(() => { if (!hold && want_fade) fade() })
 
     // `ready` = the Radio beginning (glass up AND the Butler has lifted) — fades after the 700ms min-hold so a fast
     //  boot doesn't flash the splash away.  OPEN SHARE and the ceremony no longer fade the splash — OPEN SHARE is
@@ -67,8 +82,7 @@
 
 {#if show}
     <div class="splash" class:fading aria-hidden="true">
-        <img class="splash-lo" class:hide={hi_ready} src="/tree_mini.webp" alt="" />
-        <img class="splash-hi" class:in={hi_ready} src="/tree.webp" alt="" onload={() => (hi_ready = true)} />
+        <img class="splash-hi" src="/tree.webp" alt="" />
     </div>
 {/if}
 
@@ -86,7 +100,6 @@
         overflow: hidden;
     }
     .splash.fading { opacity: 0; pointer-events: none; }   /* once fading, let taps reach the UI it's revealing */
-    .splash-lo,
     .splash-hi {
         position: absolute;
         inset: 0;
@@ -95,15 +108,4 @@
         object-fit: cover;               /* ENLARGE to fill the whole screen, cropping rather than boxing */
         object-position: center;
     }
-    .splash-lo {
-        filter: blur(16px);              /* the low-res mini, blurred, scaled to hide the blurred edges */
-        transform: scale(1.08);
-        transition: opacity 400ms ease;
-    }
-    .splash-lo.hide { opacity: 0; }      /* fade the blur out once the sharp one is in */
-    .splash-hi {
-        opacity: 0;
-        transition: opacity 400ms ease;
-    }
-    .splash-hi.in { opacity: 1; }        /* crossfade the full-res tree in on load (instant when cached) */
 </style>

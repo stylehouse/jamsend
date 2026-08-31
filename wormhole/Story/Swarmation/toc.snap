@@ -4,16 +4,20 @@ story:Swarmation
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.005
+    TimeTotal:beliefs,avg=0.004
       sample=0.002,at=1784407598
       sample=0.015,at=1784418010
       sample=0.004,at=1786109614
       sample=0.002,at=1787306283
       sample=0.001,at=1787306291
-    TimeTotal:step,avg=0.005
+      sample=0.001,at=1788134092
+      sample=0.001,at=1788134123
+    TimeTotal:step,avg=0.004
       sample=0.002,at=1784407598
       sample=0.015,at=1784418010
       sample=0.004,at=1786109614
       sample=0.002,at=1787306283
       sample=0.001,at=1787306291
+      sample=0.001,at=1788134092
+      sample=0.001,at=1788134123
   step,dige:50ab9079202419ee

@@ -1,0 +1,22 @@
+Snap:H
+  H:InvFerry,Run
+    A:InvFerry
+      self,round=3	{"mung":["age"]}
+      w:InvFerry,now=1756500010
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          stood
+          minted,url_carries_both,secret_rides_fragment,twin_stashed,token_carries
+        reached:step_2
+        Account,of:Alice
+          Identity:c691de0dd9e8b39a,prepub:c691de0dd9e8b39a,friendly:Alice
+            Peering,name:c691de0dd9e8b39a,friendly:Alice,online
+              Idzeug:invferry_content,to:Music,genre:Jazz
+              Idzeug:1,to:MyCave,next:2
+        Account,of:Cavey
+          Identity:51fce20e175e67af,prepub:51fce20e175e67af,friendly:Cavey
+            Peering,name:51fce20e175e67af,friendly:Cavey,online
+        reached:step_3
+        req:Ferry,eternal
+          req:Ferry_soul,serial:1,phase:minted,at=1756500010

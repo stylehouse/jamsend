@@ -100,20 +100,19 @@ async InvWalk_pump(w):
                 if (!frame) { continue }
                 if (frame.kind === 'ferry_held') {
                     m.sc.did = 1
-                    if (top && top.c && top.c.ferry_sent) {
-                        top.c.ferry_sent.held = Date.now()
+                    let hs = this.Swarm_ferry_role('soul')
+                    if (hs && !hs.sc.finished && (hs.sc.phase === 'sent' || hs.sc.phase === 'held')) {
+                        hs.sc.held_at = this.Swarm_now(w)
                         this.Swarm_ferry_phase(w, 'held', { role: 'soul' })
                     }
                 }
                 if (frame.kind === 'ferry_got') {
                     m.sc.did = 1
                     if (top && top.c) {
-                        delete top.c.ferry_secret
-                        delete top.c.ferry_serial
-                        delete top.c.ferry_confirm
-                        delete top.c.ferry_sent
-                        if (top.stashed) { delete top.stashed.ferry_pending_secret; delete top.stashed.ferry_await_got }
-                        top.c.ferry_got = { pub: String(frame.page?.prepub || ''), at: Date.now() }
+                        // mirror the live handler: the secret is SPENT off the soul req; the phase walk to
+                        //  'got' is the receipt (the phase verb re-stashes, dropping the twin).
+                        let gs = this.Swarm_ferry_role('soul')
+                        if (gs) { delete gs.c.secret; delete gs.c.ferrying }
                         this.Swarm_ferry_phase(w, 'got', { pub: String(frame.page?.prepub || ''), role: 'soul' })
                         // FACET D roster (consenter-gated, matches the live handler ~line 1123)
                         if (top.c.consenter && ident) {
@@ -174,8 +173,9 @@ async InvWalk_mint(w):
     let top = this.top_House ? this.top_House() : null
     w.c.url = await this.Swarm_ferry_link(w, alice, 'https://jamsend.example/BigSoundland')
     let url = String(w.c.url || '')
-    let secret = top && top.c ? top.c.ferry_secret : null
-    let twin = top && top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null
+    let msoul = this.Swarm_ferry_role('soul')
+    let secret = msoul ? msoul.c.secret : null
+    let twin = top && top.stashed && top.stashed.ferry && top.stashed.ferry.soul ? top.stashed.ferry.soul.secret : null
     // save the code before the park-path clears it (InvFerry lesson — beat 3 captures, beat 4+ use it)
     w.c.code = secret ? String(secret) : ''
     let token = this.Swarm_iz_of_url ? this.Swarm_iz_of_url(url) : null
@@ -224,12 +224,13 @@ async InvWalk_redeem_park(w):
     //    re-park (ferry_confirm already set for this pub → else branch → no send).  Beat 5 drops it
     //     AFTER InvWalk_ferry_confirm sends, which is the correct life of the consent flag.
     //  (Do NOT call `delete top.c.consenter` here — it lives until beat 5 confirms.)
-    let confirm = top && top.c ? top.c.ferry_confirm : null
+    let psoul = this.Swarm_ferry_role('soul')
+    let confirm = psoul && !psoul.sc.finished && psoul.sc.phase === 'confirming' ? { pub: String(psoul.sc.pub || '') } : null
     // check nothing was sent to cavey's mail as a ferry frame (the park holds it)
     let m = cavey.o({ mail: 1 })[0]?.o({ frame: 'ferry' })[0]
     let row = { parked: 1 }
     if (confirm && String(confirm.pub) === String(w.c.ckeys?.prepub)) { row.confirm_parked = 1 }
-    if (top && top.c && top.c.ferry_secret) { row.secret_still_live = 1 }
+    if (psoul && psoul.c.secret) { row.secret_still_live = 1 }
     if (!m) { row.nothing_sent = 1 }
     this.InvWalk_note(w, row)
 
@@ -237,22 +238,20 @@ async InvWalk_redeem_park(w):
 //  Swarm_ferry_confirm uses Swarm_live_self (the runner tab's Clustation — wrong identity in a Book);
 //  this puppet performs the same work with alice passed explicitly.
 async InvWalk_ferry_confirm(w, alice, top):
-    if (!top || !top.c || !top.c.ferry_confirm) { return 0 }
-    let want = String(top.c.ferry_confirm.pub)
+    // the Book-side mirror of Swarm_ferry_confirm on the ceremony REQ (alice explicit, not Swarm_live_self).
+    let csoul = this.Swarm_ferry_role('soul')
+    if (!(csoul && !csoul.sc.finished && csoul.sc.phase === 'confirming')) { return 0 }
+    let want = String(csoul.sc.pub || '')
     let pier = (this.Swarm_peering(alice)?.o({ Pier: 1 }) ?? []).find((p) => String(p.sc.pub) === want && this.Swarm_pier_live(p, 'MyCave'))
     if (!pier) { return 0 }
-    top.c.ferrying = 1
-    delete top.c.ferry_confirm
-    let secret = top.c.ferry_secret || (top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null)
-    if (!secret) { delete top.c.ferrying; return 0 }
+    csoul.c.ferrying = 1
+    let secret = this.Swarm_ferry_secret()
+    if (!secret) { delete csoul.c.ferrying; return 0 }
     let sent = 0
     try { sent = await this.Swarm_ferry_send(w, alice, pier, secret) } catch (er) { sent = 0 }
-    delete top.c.ferrying
+    delete csoul.c.ferrying
     if (sent) {
-        delete top.c.ferry_secret
-        if (top.stashed) { delete top.stashed.ferry_pending_secret }
-        top.c.ferry_sent = { pub: want, at: this.Swarm_now(w) }
-        if (top.stashed) { top.stashed.ferry_await_got = { pub: want, at: this.Swarm_now(w) } }
+        delete csoul.c.secret
         this.Swarm_ferry_phase(w, 'sent', { pub: want, role: 'soul' })
     }
     return sent ? 1 : 0
@@ -278,14 +277,14 @@ async InvWalk_confirm_sent(w):
     await this.InvWalk_pump(w)
     // drop consenter — the sent phase is past; ferry_secret is gone (cleared by InvWalk_ferry_confirm)
     if (top && top.c) { delete top.c.consenter }
-    let f = this.Swarm_ferry_particle ? this.Swarm_ferry_particle(w) : null
     let row = { confirmed: 1 }
     if (sent_result === 1) { row.confirm_sent = 1 }
-    if (top && top.c && top.c.ferry_sent) { row.ferry_sent_set = 1 }
-    // Swarm_ferry_park fires on the cave side → sets top.c.ferry_pending.  Phase assertions use top.c
-    //  directly: Swarm_ferry_phase targets the runner's A:Clustation→w:Swarm which does NOT exist on a
-    //   Book runner tab (no account logged in → no Swarm world) so Swarm_ferry_particle returns null.
-    if (top && top.c && top.c.ferry_pending) { row.cave_pending = 1 }
+    // the ceremony reqs are TOP-hosted now (Swarm_ferry_host — Mundo exists on a runner tab), so the
+    //  role reqs ARE assertable headlessly: soul walked to 'sent', cave parked 'pending' with the frame.
+    let s5 = this.Swarm_ferry_role('soul')
+    if (s5 && !s5.sc.finished && (s5.sc.phase === 'sent' || s5.sc.phase === 'held')) { row.ferry_sent_set = 1 }
+    let c5 = this.Swarm_ferry_role('cave')
+    if (c5 && !c5.sc.finished && c5.sc.phase === 'pending' && c5.c.pending) { row.cave_pending = 1 }
     this.InvWalk_note(w, row)
 
 // InvWalk_consume — Book-side puppet for "yes become this Cave" consent.
@@ -293,12 +292,12 @@ async InvWalk_confirm_sent(w):
 //   work with cavey_ident explicit.  accept=true: unseal + import + send ferry_got.
 //   accept=false: decline path, send ferry_cancel (consenter=1 must be up for the tell).
 async InvWalk_consume(w, cavey_ident, code, accept):
+    // mirror of the real Swarm_ferry_consume on the ceremony REQ (cavey_ident explicit, not live_self).
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c) { return null }
-    let dsoul = top.c.ferry_awaiting ? String(top.c.ferry_awaiting.soul || '') : ''
-    delete top.c.ferry_awaiting
-    if (top.stashed) { delete top.stashed.ferry_awaiting }
-    let pend = top.c.ferry_pending
+    let ccav = this.Swarm_ferry_role('cave')
+    let dsoul = ccav && !ccav.sc.finished ? String(ccav.sc.pub || '') : ''
+    let pend = ccav && !ccav.sc.finished ? ccav.c.pending : null
     if (!accept || !pend || !pend.frame) {
         let un = dsoul || (pend && pend.frame ? String(pend.frame.soulpub || '') : '')
         if (!accept && un) {
@@ -307,12 +306,11 @@ async InvWalk_consume(w, cavey_ident, code, accept):
                 this.Swarm_deliver(w, cavey_ident, un, { kind: 'ferry_cancel', page: this.Swarm_page(cavey_ident) })
             }
         }
-        delete top.c.ferry_pending
         this.Swarm_ferry_phase(w, 'declined', {})
         return null
     }
     let soul = await this.Swarm_ferry_heard(w, cavey_ident, pend.frame, code)
-    delete top.c.ferry_pending
+    if (ccav) { delete ccav.c.pending }
     if (soul) { this.Swarm_ferry_phase(w, 'received', { pub: (pend.frame && pend.frame.salt ? String(pend.frame.salt).split(':')[0] : ''), role: 'cave' }) }
     // RECEIVE-ACK — consenter-gated (like the real Swarm_ferry_consume, mirroring line 5282)
     if (soul && top.c.consenter) {
@@ -353,9 +351,10 @@ async InvWalk_consume_got(w):
     let row = { consumed: 1 }
     if (soul && soul.c && soul.c.keys && String(soul.c.keys.pub) === String(alice.c.keys.pub)) { row.account_crossed = 1 }
     if (eidz) { row.content_crossed = 1 }
-    // ferry_got ack: InvWalk_pump's live-frame handler sets top.c.ferry_got on seeing the ferry_got frame
-    if (top && top.c && top.c.ferry_got) { row.ferry_got_acked = 1 }
-    if (top && top.c && !top.c.ferry_secret && !top.c.ferry_sent) { row.secret_retired = 1 }
+    // ferry_got ack: InvWalk_pump's live-frame handler walks the soul req to 'got' on seeing the frame
+    let s6 = this.Swarm_ferry_role('soul')
+    if (s6 && !s6.sc.finished && s6.sc.phase === 'got') { row.ferry_got_acked = 1 }
+    if (!(s6 && s6.c.secret) && !(s6 && !s6.sc.finished && (s6.sc.phase === 'sent' || s6.sc.phase === 'held'))) { row.secret_retired = 1 }
     this.InvWalk_note(w, row)
 
 // ── beat 7 — DECLINE ─────────────────────────────────────────────────────────────────────────
@@ -382,7 +381,8 @@ async InvWalk_decline(w):
     // mint fresh link
     if (top && top.c) { top.c.consenter = 1 }
     let url2 = await this.Swarm_ferry_link(w, alice, 'https://jamsend.example/BigSoundland')
-    let secret2 = top && top.c ? top.c.ferry_secret : null
+    let s7 = this.Swarm_ferry_role('soul')
+    let secret2 = s7 ? s7.c.secret : null
     w.c.code2 = secret2 ? String(secret2) : ''
     let token2 = this.Swarm_iz_of_url ? this.Swarm_iz_of_url(String(url2 || '')) : null
     await this.Swarm_redeem(w, cavey2, token2)

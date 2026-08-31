@@ -1,0 +1,26 @@
+Snap:H
+  H:InvSeal,Run
+    A:InvSeal
+      self,round=4	{"mung":["age"]}
+      w:InvSeal,now=1756400020
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          stood
+          minted,url_carries_both,secret_rides_fragment,twin_stashed
+          sealed,cold_refused,confirm_parked,secret_held,nothing_sent
+        reached:step_2
+        Account,of:Alice
+          Identity:c18fb5f392a0207f,prepub:c18fb5f392a0207f,friendly:Alice
+            Peering,name:c18fb5f392a0207f,friendly:Alice,online
+              Idzeug:1,to:MyCave,next:2
+              Pier,pub:86905922a618fdc7
+                Peering,name:86905922a618fdc7,pub:86905922a618fdc73c2cc8fb24c0cf11dbb907d38c34be95956a614b2285dbfe
+                Grant:MyCave,by:86905922a618fdc73c2cc8fb24c0cf11dbb907d38c34be95956a614b2285dbfe
+        Account,of:Cavey
+          Identity:86905922a618fdc7,prepub:86905922a618fdc7,friendly:Cavey
+            Peering,name:86905922a618fdc7,friendly:Cavey,online
+        reached:step_3
+        req:Ferry,eternal
+          req:Ferry_soul,serial:1,phase:confirming,at=1756400020,pub:86905922a618fdc7
+        reached:step_4

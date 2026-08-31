@@ -104,8 +104,9 @@ async InvFerry_mint(w):
     let top = this.top_House ? this.top_House() : null
     w.c.url = await this.Swarm_ferry_link(w, alice, 'https://jamsend.example/BigSoundland')
     let url = String(w.c.url || '')
-    let secret = top && top.c ? top.c.ferry_secret : null
-    let twin = top && top.stashed && top.stashed.ferry_pending_secret ? top.stashed.ferry_pending_secret.secret : null
+    let msoul = this.Swarm_ferry_role('soul')
+    let secret = msoul ? msoul.c.secret : null
+    let twin = top && top.stashed && top.stashed.ferry && top.stashed.ferry.soul ? top.stashed.ferry.soul.secret : null
     let token = this.Swarm_iz_of_url(url)
     let t = token ? this.Swarm_token_parse(token) : null
     w.c.token = token

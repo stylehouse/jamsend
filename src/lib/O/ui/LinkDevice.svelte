@@ -122,8 +122,10 @@
         //  Peering pub + heard_at, which settle via `.c` writes that NEVER bump H.version — so on the offer→
         //   listening transition the row stayed stuck on the `···` placeholder, never recomputing.  The 1s
         //    heartbeat re-polls it independent of the belief mutex, the same fix every other ferry reader carries.
-        let active = false
-        try { const tc = H?.top_House?.()?.c; active = !!pending || !!tc?.ferry_confirm || !!tc?.ferry_awaiting } catch { active = false }
+        // read the CEREMONY FACTS, not the retired top.c.ferry_* flags (the rebuild moved the ceremony onto the
+        //  req; this one `active` gate still poked the dead flags → active stayed false → sas never computed →
+        //   the `···` froze both "give my soul" and "receive this soul" disabled, deadlocking the whole ferry).
+        let active = !!pending || !!confirm || !!awaiting
         if (!active) { sas = ''; return }
         if (sas) return   // resolved already; a device-link's pubs are fixed for the ceremony, so don't re-hash every tick
         let cancelled = false
@@ -212,21 +214,26 @@
     //   durable twins, the counterparty pier's warmth — printed small under every phase of this cell.  Not a
     //    summary, a dump: when the ceremony wedges, this line IS the bug report.  Heartbeat-driven (`.c`
     //     writes never bump H.version), so it stays live even with the belief loop starved. -->
+    // ── THE ONE CEREMONY READ (Ferry_rebuild §4 Stage 3): the ghost's Swarm_ferry_facts view over the two
+    //  role reqs (req:Ferry_soul / req:Ferry_cave on w:Swarm) — same shapes the old flag pile carried, ONE
+    //   ask.  now_tick keeps it live under a starved belief loop (the req's sc writes DO bump, but the 1s
+    //    heartbeat is mutex-independent, which mattered for every wedge this cell has ever debugged).
+    let facts = $derived.by(() => { void H?.version; void now_tick; try { return (H as any)?.Swarm_ferry_facts?.(world()) ?? null } catch { return null } })
     let wire = $derived.by(() => {
         void now_tick; void H?.version
         try {
-            const t = H?.top_House?.(); const c: any = t?.c ?? {}; const st: any = (t as any)?.stashed ?? {}
+            const f: any = facts ?? {}
             const rows: string[] = []
-            if (c.ferry_secret)   rows.push('secret✓' + (c.ferry_serial ? '#' + c.ferry_serial : ''))
-            if (st.ferry_pending_secret) rows.push('twin ' + age_of(st.ferry_pending_secret.at))
-            if (c.ferry_offer)    rows.push('offer ' + (c.ferry_offer.at ? age_of(c.ferry_offer.at) : '·'))
-            if (c.ferry_awaiting) rows.push('awaiting ' + short(c.ferry_awaiting.soul) + ' ' + (c.ferry_awaiting.at ? age_of(c.ferry_awaiting.at) : '·'))
-            if (c.ferry_confirm)  rows.push('confirm ' + short(c.ferry_confirm.pub) + ' ' + (c.ferry_confirm.at ? age_of(c.ferry_confirm.at) : '·'))
-            if (c.ferrying)       rows.push('ferrying…')
-            if (c.ferry_sent)     rows.push('sent ' + age_of(c.ferry_sent.at) + (c.ferry_sent.held ? ' held✓' + age_of(c.ferry_sent.held) : ' unheld'))
-            if (c.ferry_pending)  rows.push('pending ' + (c.ferry_pending.at ? age_of(c.ferry_pending.at) : '·'))
-            if (c.ferry_got)      rows.push('got✓ ' + age_of(c.ferry_got.at))
-            if (c.ferry_ended)    rows.push('ended')
+            if (f.secret)   rows.push('secret✓' + (f.serial ? '#' + f.serial : ''))
+            if (f.twin)     rows.push('twin ' + age_of((f.twin.soul || f.twin.cave || {}).at))
+            if (f.offer)    rows.push('offer ' + (f.offer.at ? age_of(f.offer.at) : '·'))
+            if (f.awaiting) rows.push('awaiting ' + short(f.awaiting.soul) + ' ' + (f.awaiting.at ? age_of(f.awaiting.at) : '·'))
+            if (f.confirm)  rows.push('confirm ' + short(f.confirm.pub) + ' ' + (f.confirm.at ? age_of(f.confirm.at) : '·'))
+            if (f.ferrying) rows.push('ferrying…')
+            if (f.sent)     rows.push('sent ' + age_of(f.sent.at) + (f.sent.held ? ' held✓' + age_of(f.sent.held) : ' unheld'))
+            if (f.pending)  rows.push('pending ' + (f.pending.at ? age_of(f.pending.at) : '·'))
+            if (f.got)      rows.push('got✓ ' + age_of(f.got.at))
+            if (f.ended)    rows.push('ended')
             const p = other_pier?.()
             if (p) {
                 const ha = (p as any).c?.heard_at || 0
@@ -273,11 +280,11 @@
     //    repli storm the belief mutex is saturated, so that bump is queued for seconds and the confirm never
     //     surfaces though it is parked on the wire.  now_tick is a 1s setInterval on the macrotask queue, INDEPENDENT
     //      of the belief mutex, so re-reading top.c off it un-wedges the ceremony within 1s regardless of the flood.
-    let confirm = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_confirm) ?? null } catch { return null } })
+    let confirm = $derived.by(() => { void H?.version; void now_tick; return (facts as any)?.confirm ?? null })
     // ── LINKEE "connecting" — a MyCave link was redeemed and a soul is inbound but hasn't landed yet (the
     //  dead-window fix): top.c.ferry_awaiting is armed at redeem (Swarm_redeem) and cleared when the sealed
     //   account arrives (Swarm_ferry_park → pending takes over) or on cancel.  Fills the blank wait.
-    let awaiting = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_awaiting) ?? null } catch { return null } })
+    let awaiting = $derived.by(() => { void H?.version; void now_tick; return (facts as any)?.awaiting ?? null })
     // ── LINKEE "offer" — you OPENED a device link but haven't consented yet (owner 2026-08-30: the "⨝ join eed"
     //  redeem was landing "in amongst the Door UI"; "take us to the Link cell already … we're really asking them if
     //   they understand this link they opened is making this arrangement").  InvitePanel parks top.c.ferry_offer for
@@ -285,7 +292,7 @@
     //     top.c.ferry_offer_accepted, which InvitePanel's effect turns into the real redeem (it owns the station-up +
     //      Swarm_redeem, so the crypto path is not duplicated here).  Once the redeem arms ferry_awaiting the offer
     //       clears and `awaiting` (above) takes the cell — so this is only ever the FIRST beat.
-    let offer = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_offer) ?? null } catch { return null } })
+    let offer = $derived.by(() => { void H?.version; void now_tick; return (facts as any)?.offer ?? null })
     let joining = $state(false)
     async function offer_accept() {
         err = ''
@@ -322,7 +329,8 @@
             }
             await new Promise((r) => setTimeout(r, 400))
             await H.Swarm_redeem?.(w, self, iz, '')
-            try { const t = H?.top_House?.(); if (t?.c) delete t.c.ferry_offer } catch {}
+            // (no manual offer clear: the redeem seam walks the cave req offered → awaiting — the offer
+            //  IS gone the moment the phase moves; on a failed redeem it stays parked, retryable.)
         } catch (e) { err = String(e) } finally { joining = false }
     }
     // strip the device-link ?Iz#fc from the bar — the ghost re-parks the offer from the URL at every standup,
@@ -339,7 +347,8 @@
     function offer_decline() {
         err = ''
         // drop the offer AND the spent ?Iz#fc from the bar, so a reload doesn't re-raise the same consent.
-        try { const t = H?.top_House?.(); if (t?.c) { delete t.c.ferry_offer; delete t.c.ferry_offer_accepted } } catch {}
+        //  'declined' FINISHES the cave req (the ghost's terminal law) — link_active falls with it.
+        try { (H as any)?.Swarm_ferry_phase?.(world(), 'declined', { role: 'cave' }) } catch {}
         strip_link_url()
         try { (H?.ave as any)?.bump_version?.() } catch {}
     }
@@ -350,15 +359,15 @@
     // void now_tick like `confirm` above: ferry_got is a top.c write off the hear funnel (never bumps H.version),
     //  so under a Repli flood eed would stay stuck on "waiting for its received" though the ack has landed.  The
     //   1s heartbeat surfaces the receive-ack regardless of the starved belief loop, closing the arc.
-    let got = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_got) ?? null } catch { return null } })
+    let got = $derived.by(() => { void H?.version; void now_tick; return (facts as any)?.got ?? null })
     // the MACHINE's sent fact (top.c.ferry_sent {pub,at,held?}) beside the local `sent` state: it carries the
     //  held-ack (ferry_held → .held stamped by the hear funnel) for the wait ladder below, and it SURVIVES a
     //   reload (the standup rehydrates it off the ferry_await_got twin) where the local `sent` string does not —
     //    so the phase reads `sent || got || sent_fact` and a reloaded Linkor lands back on this screen (task #48).
-    let sent_fact = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_sent) ?? null } catch { return null } })
+    let sent_fact = $derived.by(() => { void H?.version; void now_tick; return (facts as any)?.sent ?? null })
     // ── ENDED — the far side called the link off (Swarm_ferry_cancelled parks it): every ceremony ends on a
     //  screen, never a silent fold to Radio.  `done` clears it (and link_active falls with it).
-    let ended = $derived.by(() => { void H?.version; void now_tick; try { return (H?.top_House?.()?.c?.ferry_ended) ?? null } catch { return null } })
+    let ended = $derived.by(() => { void H?.version; void now_tick; return (facts as any)?.ended ?? null })
     // done on the sent/got face — the TERMINAL pack-up.  Must clear the DURABLE TWINS too, not just the
     //  .c flags (owner 2026-08-30: "once I click done … `you have a device link in progress`" — the lobby
     //   line was the ghost of the finished ceremony: Swarm_link_active counts stashed.ferry_await_got, and
@@ -373,13 +382,8 @@
         //      Drop them ALL (a completed link has no counterparty left to notify — that is why this is a
         //       local clear, NOT Swarm_ferry_cancel, which would phase 'cancelled' and by ruling STAY on
         //        the Link cell).  With link_active false, the commission lets go and Door sticks.
-        try {
-            const t: any = H?.top_House?.()
-            if (t?.c) {
-                for (const k of ['ferry_got','ferry_sent','ferry_secret','ferry_serial','ferry_pending','ferrying','ferry_confirm','ferry_awaiting','ferry_offer','ferry_offer_accepted','ferry_ended','ferry_refused']) delete t.c[k]
-            }
-            if (t?.stashed) { for (const k of ['ferry_await_got','ferry_pending_secret','ferry_awaiting']) delete t.stashed[k] }
-        } catch {}
+        // the whole flag-pile pack-up is ONE verb now: finish both ceremony reqs + drop the twin.
+        try { (H as any)?.Swarm_ferry_done?.(world()) } catch {}
         // 'done' through the phase verb: the %Ferry particle records the terminal, and its surface
         //  policy lands us back in the DOOR — the new 🔗 cave pier standing in the our-box is the receipt.
         try { (H as any)?.Swarm_ferry_phase?.(world(), 'done', {}) } catch {}
@@ -450,7 +454,8 @@
     //      end we just keep asking (no giveup); the presence dot shows them offline and it re-lands when they return.
     // fire one "I want linkage" ask; force=true bypasses the ghost's ~3s throttle for eager first-contact / re-lock.
     function fire_ask(force: boolean) {
-        try { if (H?.top_House?.()?.c?.ferry_awaiting) H?.Swarm_ferry_ask?.(world(), self, force) } catch {}
+        // the ghost self-guards on the cave req's 'awaiting' phase — no pre-check needed here.
+        try { H?.Swarm_ferry_ask?.(world(), self, force) } catch {}
     }
     $effect(() => {
         if (typeof window === 'undefined') return
@@ -466,15 +471,15 @@
         try {
             const piers = (H?.Swarm_peering?.(self)?.o({ Pier: 1 }) ?? []) as any[]
             if (!piers.length) return null
-            const tc = H?.top_House?.()?.c
+            const f: any = (H as any)?.Swarm_ferry_facts?.(world()) ?? {}
             // MATCH THE ACTUAL CONFIRM PUB, not just "first MyCave-live pier" (owner 2026-08-31: "Gwop is online!
             //  what the hell").  eed carries a pile of old test-round caves, so first-by-grant grabbed a STALE one
             //   and read ITS heard_at → the live Gwop showed offline.  Find the pier whose pub is the confirm's.
-            if (tc?.ferry_confirm) {
-                const cpub = String(tc.ferry_confirm.pub || '')
+            if (f.confirm) {
+                const cpub = String(f.confirm.pub || '')
                 return piers.find((p: any) => { const pp = String(p?.sc?.pub || ''); return pp && (pp === cpub || pp.startsWith(cpub) || cpub.startsWith(pp)) }) || null
             }
-            const soulpub = String(tc?.ferry_awaiting?.soul || arriving_soul() || '')
+            const soulpub = String(f.awaiting?.soul || arriving_soul() || '')
             if (soulpub) {
                 const hit = piers.find((p: any) => {
                     const pp = String(p?.sc?.pub || '')
@@ -818,8 +823,12 @@
     .ld-cancel-b { background: none; border: none; color: inherit; font-size: .85rem; opacity: .8; text-decoration: underline; cursor: pointer; }
     /* the name-gate row — the ceremony's own register (amber act on the warm oblong), one input + a
        save, shown until this device carries a name. */
-    .ld-name-row { display: flex; align-items: center; gap: .5rem; margin-top: .3rem; }
-    .ld-name { background: #1a130a; border: 1px solid #7a5a10; color: #f3e6c8; border-radius: .35rem; font-size: .9rem; padding: .3rem .6rem; width: 14rem; }
+    .ld-name-row { display: flex; align-items: center; gap: .5rem; margin-top: .3rem; width: 100%; box-sizing: border-box; }
+    /* FILL THE BOX, never a fixed width (owner 2026-08-31: "the input field needs to be 100% width, it's fixed
+       now which is odd" — a fixed 14rem overflowed the brown cell off both sides, chopping a letter + the ✓).
+       flex-fill beside the ✓ button; min-width:0 lets it shrink below content so it can NEVER overflow the cell
+       (that shrink-floor was also why it "sometimes repositioned correctly" — a measurement race on the parent). */
+    .ld-name { background: #1a130a; border: 1px solid #7a5a10; color: #f3e6c8; border-radius: .35rem; font-size: .9rem; padding: .3rem .6rem; flex: 1 1 auto; min-width: 0; box-sizing: border-box; }
     .ld-name:focus { border-color: #d98a00; outline: none; }
     .ld-act { background: #d98a00; color: #000; font-weight: 700; border: none; border-radius: .35rem; padding: .3rem .7rem; cursor: pointer; }
     .ld-name-say { font-size: .8rem; opacity: .8; margin: .2rem 0 0; text-align: left; }

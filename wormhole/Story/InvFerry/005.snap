@@ -48,6 +48,9 @@ Snap:H
             SocialGraph
               Edge,a:c691de0dd9e8b39a,b:51fce20e175e67af,at:1756500020
         reached:step_3
+        req:Ferry,eternal
+          req:Ferry_soul,serial:1,phase:sent,at=1756500020,pub:51fce20e175e67af
+          req:Ferry_cave,pub:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,phase:pending,at=1756500020
         reached:step_4
         reached:step_5
         Account,of:Fbox

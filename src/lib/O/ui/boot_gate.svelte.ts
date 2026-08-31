@@ -125,9 +125,10 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
         // the full keep-awake pin rides the same gesture (resume + silent source + re-advertise) —
         //  harmless when the AC is already up, exactly right when this tap is the grant.
         try { H()?.keep_awake_acquire?.() } catch {}
+        let granted_disk = false
         try {
             await Promise.all(wakes)
-            if (disk_p) await disk_p
+            if (disk_p) { await disk_p; granted_disk = true }
         } catch (e: any) {
             // a cancelled picker is a choice, not a fault — remember it quietly and let the faces
             //  offer "listen without a folder" instead of dressing the cancel up as an error.
@@ -139,6 +140,21 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
             ac_poll++
             opening = false
         }
+        // RE-BOOT CLEAN WITH THE NEW NAV (owner 2026-08-31: "it's only the time that it stalled to acquire the
+        //  FSA, a reload gets me into 'become'").  A tab that booted with NO share already committed its Story
+        //   and glass in no-nav mode — granting the folder now can't retro-fit the stood boot, so the tab sits
+        //    half-alive until a manual reload.  Do that reload FOR them, but ONLY when the boot actually ran
+        //     degraded (top.c.account_mirror_owed — the "account write OWED" tell) AND the folder truly opened;
+        //      a share granted EARLY (before any owed write) never reloads.  The FSA handle persists in
+        //       IndexedDB, so the reload re-acquires it silently → straight into "become", no loop.  The
+        //        device-link ceremony survives (its #Iz URL + stashed twin re-park on standup).
+        try {
+            const tc: any = H()?.top_House?.()?.c
+            if (granted_disk && !error && tc?.account_mirror_owed && typeof location !== 'undefined') {
+                console.log('🪪 share opened after a no-share boot — reloading to boot clean with the folder')
+                location.reload()
+            }
+        } catch {}
     }
 
     return {
@@ -146,6 +162,10 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
         open_share,
         get poll()       { return poll },
         get disk_gated() { poll; return !!H()?.c?.disk_gated },
+        // the gate was raised because the BOOT needs a folder to load (BigSoundland's solicit), not the
+        //  proactive audio nicety — so the face can say WHY (owner 2026-08-31: "no explanation at all that
+        //   this new tab needs an FSA").  `.c` flag, set beside disk_gated, cleared with it when a share opens.
+        get boot_need()  { poll; const c: any = H()?.c; return !!c?.disk_gated && !!c?.disk_gated_boot },
         get ac_wanted()  { poll; ac_poll; return pending_gats.some(g => !g?.AC_ready) },
         // WANTED = there is a permission to ask for. The one question a host needs in order to decide
         //  whether to show a button, so neither host re-derives it from the two halves.

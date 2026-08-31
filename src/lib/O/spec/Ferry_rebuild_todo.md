@@ -118,13 +118,53 @@ The 5-fork panel was reviewed by two adversarial critics. Both are worth heeding
    `Swarm_cave_live` backing swaps `time` → `epoch` (replay-proof, Book-pinnable). Optionally promote MyCave to
     its own `%Adopt`/`%CaveBond` kind off the friend-Pier. Gate: security fixture — revoke → replayed-old-seal
      STAYS buried, fresh-serial redeem OUTRANKS (design 2's "single most important gate").
-- **Stage 3 — finish the %Ferry PARTICLE inversion ON `top` (NOT a req-stack — see Critic B):** retire the
-   ~14 `top.c.ferry_*` flags reader-by-reader so `Swarm_ferry_phase`'s `%Ferry` particle is the ONLY writer;
-    `Swarm_link_active`/`Swarm_link_fresh`/LinkDevice/BootGate/Sounditron-commission all derive off
-     `Ferry%phase` (change-gated, to avoid re-entering the focus-storm loop the idempotent phase-verb guard
-      already fights). Collapse the 3 twins → 1 `stashed.ferry` (secret only). Books get snap-visibility via a
-       runner accessor over the wire (`runner_ask snap` already round-trips live `%Ferry`), so the ceremony
-        STAYS on `top` and fixtures stay inert. Gate: Swarm* + Inv* green; no `w`-relocation churn.
+- **Stage 3 — LANDED + GATED + VISIBLE 2026-08-31.** Built as a **req**, the owner's call ("perhaps req-stack
+   then… have you read LiesStore?"). After actually reading LiesStore + Hovercraft + Housing, Critic B's
+    blockers dissolved: `reqdo_sweep` DOES pump every `A→w` each belief beat (Housing.svelte.ts:1285→1304);
+     `reqyoncile` IS the wire seam; a `req` serialises so it IS the snap row. Shape (LiesStore 1:1): the ~14
+      `top.c.ferry_*` flags are GONE, replaced by TWO role reqs — `req:Ferry_soul` / `req:Ferry_cave` under an
+       eternal `req:Ferry` pump — whose `sc.phase` walk IS the ceremony (secret + parked frame ride `.c`,
+        never sc; role do_fns are INERT — no ttlilt, to keep fixtures clean + flap-free).
+   **HOSTED ON THE CEREMONY'S OWN WORLD `w`** (the correction the owner forced — "why can't we see any of it in
+    snap?"): `w:Swarm` on a live tab (in the account tree → Cyto + daemon /c see it), `w:<Book>` in a Book (RIGHT
+     IN THE STEP SNAP). NOT `top` (Mundo): in a Book that is the *runner's* Mundo, one House ABOVE the Book's
+      snapped world → invisible. The world is a runtime `.c` ref (`top.c.ferry_world`) stamped by the write
+       chokepoint (`Swarm_ferry_phase`/reheal/mint/park) so pure reads stay w-less; `Swarm_ferry_host` resolves
+        it (fallback: find `w:Swarm` directly). ONE durable twin (`stashed.ferry`, ms clocks both sides)
+         replaced the three (whose sec-vs-ms cap silently dropped every twin — the #48 reload bug, dead by
+          construction). All ~30 seams ported; LinkDevice.svelte reads one `Swarm_ferry_facts`; InvSeal/InvFerry/
+           InvWalk assert the reqs. **All timestamps in req sc are `Swarm_now(w)` (deterministic/pinned) — no
+            `Date.now()` in sc (that would flap the dige).**
+   **GATE (live runner, Swarm.go 413599c):** InvSeal 5/5, InvFerry 6/6, InvWalk 8/8 GREEN against RE-RECORDED
+    fixtures that now SHOW the walk (`req:Ferry_soul phase:minted→sent→confirming→got`, `req:Ferry_cave
+     phase:pending→received`) — proven stable (two runs, identical diges). SwarmStaple 8/8 + SwarmSpread 5/5 +
+      SwarmFerry 1/1 GREEN and **byte-identical** (step diges unchanged) — the friend/Music trust ledger is
+       provably inert. Fixture hygiene done (Credulate/Credulation/TimeTotal churn reverted). ⚠ REMAINING: the
+        owner's live 2-device walk (the one thing Books can't prove — a cross-wire race). SwarmFerry is a
+         vestigial 1-step Book (delete/fold candidate). `%Iz`-under-`%Pier` nesting stays TODO #50, low-pri.
+  Superseded design note (kept for the reasoning trail):
+- **Stage 3 alt — NEST the ceremony under its `%Pier` (owner 2026-08-31 — NOT flags on `top.c`):**
+   THE MECHANISM the owner named, which explains the whole mess: `top` = `top_House()` = `H:Mundo`, the single
+    GLOBAL tab-root; the ~14 `top.c.ferry_*` flags live in the runtime **`.c`** store, which is **NEVER snapped**
+     (CLAUDE.md law — `.c` is runtime refs, never encoded). Story serialises the `H/**` **sc**-tree, not `H.c.*`
+      — so the ENTIRE ceremony has always been INVISIBLE to every fixture. That is not incidental; it is the
+       mechanism: no Book could ever assert the ferry (which is exactly why Stage 0/1 have no Book coverage and
+        need a live test), so the state drifted unchecked. Three owner complaints are ONE disease: *too wide*
+         (global, not per-Pier), *not enough natural fall-through* (state pushed via poke/bump, not derived),
+          *can't see it in a Story* (`.c` not `sc`) — all "the state is in the wrong store in the wrong place."
+     **Fix:** the invite/ceremony becomes a real **`%Iz` particle nested UNDER its `%Pier`** (the Pier already
+      holds `Grant`/`Suggest`/`IveGot` — it IS the owner's "Mag of business" with that peer), carrying
+       `phase`/`serial` in **sc** (the secret alone stays in `.c`). Then it SNAPS (Books finally assert the
+        ceremony), it's per-relationship (not a global sibling), and `Swarm_link_active`/`Swarm_link_fresh`/
+         LinkDevice/BootGate/Sounditron-commission all **derive off `Iz%phase`** (the natural fall-through)
+          instead of reading `.c` flags. Change-gate the derivations (the idempotent phase-verb guard already
+           fights the focus-storm loop). Collapse the 3 twins → the `%Iz`'s own sc + one `.c` secret.
+     **THE DESIGN FORK (owner's call):** at MINT the cave is incognito — no prepub yet, so no `%Pier` to nest
+      under. Either (a) a provisional per-account holder keyed by serial that RE-PARENTS under the `%Pier` at
+       seal, or (b) mint a provisional `%Pier`-by-serial up front. Recommend **(a)**: the serial is already the
+        correlation key, singular-adopt guarantees exactly one, and `Swarm_seal` is the natural re-parent seam.
+     Gate: Swarm* + Inv* green; NEW beat asserts `Iz%phase` in the snap — the first time the ceremony is ever
+      fixture-visible (the point of the whole exercise).
       OPTIONAL "use req" (only if the owner still wants it): first prove the shadow-req slice (§3b) — one
        write-only req on the tab world + one new Book + 3 deterministic runner runs — before committing to
         the full migration.

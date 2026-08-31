@@ -227,6 +227,14 @@
     // BOOT GAVE UP — the ONE thing that still fades the splash at once: the boot failed, so reveal the Butler's
     //  failure/▦ exit rather than sit behind a calm tree.  Reads the toplevel authority; false on a Book.
     let boot_gaveup = $derived.by(() => { void H?.version; let s: any = (H as any)?.top_House?.()?.c?.screen; if (!s) return false; return s.dominant === 'gaveup' })
+    // ── HOLD THE TREE BEHIND THE "▶ open" GATE (owner 2026-08-31: "put a nice open share button on top of the
+    //  splash … don't dump us into the machine room for this").  Housing raises `disk_gated` for any no-share
+    //   listener on a Big*land page (boot_role, Housing:2323); the real bug was BootGate suppressing it for a
+    //    device-link ceremony — fixed there (the folder gate now punches through the Adopt).  Here we just keep
+    //     the calm tree UP behind that button (instead of fading to the machine room) until the share opens or
+    //      listen-only is chosen (disk_gated drops → the deferred fade in Splash honours the boot moving on). -->
+    // hold the tree behind the "▶ open" gate while a folder is being solicited.
+    let boot_share_hold = $derived.by(() => { void H?.version; const c: any = (H as any)?.top_House?.()?.c; return !!c?.disk_gated })
     // every UI the run has mounted, GROUPED by House (Cyto and all) — the sprawl's content.
     //  Grouping gives each House one anchor the jump-to-H chips scroll to, plus its own heading in
     //   the dump.  Pantheate-include is DROPPED silently: on a runner these are the Creduler's
@@ -314,7 +322,7 @@
 <!-- the boot splash (tree.webp) — the calm cover over the WHOLE multi-phase boot (Butler/Supervisor warmup lives
      behind it), pointer-CATCHING (no fall-through into the machine room), holding until the Radio beginning (glass
      up + Butler lifted) or a boot gave-up, or a safety cap.  OPEN SHARE punches through it (BootGate, above).  Splash. -->
-<Splash ready={boot_ready} urge={boot_gaveup} />
+<Splash ready={boot_ready} urge={boot_gaveup} hold={boot_share_hold} />
 
 <BootGate {H} who="the piracy-scape" audio_fullscreen={true} proactive={true} />
 <!-- the Butler: the Supervisor's arrival screen, altitude 55 — UNDER BootGate, because a permission
