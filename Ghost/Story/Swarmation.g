@@ -2725,6 +2725,8 @@ async SwarmBody_drive(w, req):
         if (n === 2) { await this.SwarmBody_stand(w) }
         if (n === 3) { this.SwarmBody_friend(w) }
         if (n === 4) { this.SwarmBody_subnet(w) }
+        if (n === 5) { this.SwarmBody_remint(w) }
+        if (n === 6) { this.SwarmBody_owed(w) }
     }
     this.SwarmBody_witness(w)
     await this.SwarmBody_order(w)
@@ -2827,6 +2829,71 @@ SwarmBody_witness(w):
     let sub = T.o({ subnetted: 1 })[0]
     // #5 THE VESSEL SUBNET ORDERS BARE-FIRST: a deterministic primary then ascending suffixes and empty → null.
     if (sub && +sub.sc.primary_is_bare === 1 && +sub.sc.suffix_ascends === 1 && +sub.sc.empty_null === 1) { this.story_swear(w, 'the vessel subnet picks the bare address first then ascends the suffixes — an individual local subnet has a deterministic primary and an empty one picks nothing') }
+    let rm = T.o({ reminted: 1 })[0]
+    // #6 A REMINT IS SEEN: minting while the division stands keyed stamps caveat:remint; a virgin mints clean.
+    if (rm && +rm.sc.caveat_stands === 1 && +rm.sc.old_seat_kept === 1 && +rm.sc.virgin_clean === 1 && +rm.sc.no_caveat_on_virgin === 1) { this.story_swear(w, 'a reminted body wears its caveat — minting a key while the division already stands keyed stamps remint onto the fresh row and keeps the old seat standing while a virgin soul mints clean — a fork is seen never silently absorbed') }
+    let ow = T.o({ owed: 1 })[0]
+    // #7 A MISSED FRAME STANDS AS DEBT: deduped by kind — paid does not stand — the cap folds loudly and its evidence survives.
+    if (ow && +ow.sc.deduped === 1 && +ow.sc.at_pinned === 1 && +ow.sc.paid_gone === 1 && +ow.sc.capped_loud === 1 && +ow.sc.overflow_survives === 1) { this.story_swear(w, 'a frame that could not go stands as a debt on the counterparty row — deduped by kind so retries cannot grow it — a paid debt detaches and an empty shelf removes itself — the cap folds overflow into a dropped count that outlives full payment') }
+
+// beat 5 — REMINT-NOT-READ is SEEN (Statehome_todo debts: "a fork must be seen").  The sanctioned join
+//  paths (adopt, the ferry become) HAND the body key over before ensure can mint, so a mint while the
+//   division already stands keyed means this store lost its durable key — the fresh row may double an
+//    old seat.  The caveat stamps the fresh row as a STANDING fact (snapped, provable); a virgin soul
+//     (no keyed roster) mints clean.  Pure C-matter — ensure's Dexie adapter is production-only; the
+//      Book proves the decision, not the IO (the beat-2/beat-4 stance).
+SwarmBody_remint(w):
+    w i reached:step_5
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    // Rema: her division ALREADY stands keyed (an old seat in the roster) but this store holds no key.
+    let rkeys = { prepub: 'rema_prepub_000', pub: 'rema_pub_00000000', key: 'rema_key_000' }
+    let rema = this.Swarm_identity(acct, rkeys, 'Rema')
+    this.Swarm_body_note(rema, 'rema_old_body_pub', 'Captain', 'rema_prepub_000', 'OldSeat')
+    let fresh = this.Swarm_body_remint_caveat(rema, 'rema_new_body_pub')
+    // Vera: a VIRGIN soul — no keyed roster, so her mint is clean and stamps nothing.
+    let vkeys = { prepub: 'vera_prepub_000', pub: 'vera_pub_00000000', key: 'vera_key_000' }
+    let vera = this.Swarm_identity(acct, vkeys, 'Vera')
+    let clean = this.Swarm_body_remint_caveat(vera, 'vera_new_body_pub')
+    let row = { reminted: 1 }
+    if (fresh && fresh.sc.caveat === 'remint') { row.caveat_stands = 1 }
+    if (fresh && this.Swarm_body_roster(rema).length === 2) { row.old_seat_kept = 1 }
+    if (clean === null) { row.virgin_clean = 1 }
+    if (!this.Swarm_body_roster(vera).filter((b) => b.sc.caveat).length) { row.no_caveat_on_virgin = 1 }
+    this.SwarmBody_note(w, row)
+
+// beat 6 — THE %OWED LEDGER (Statehome_todo debts: a bounded debt hung on the counterparty's OWN row).
+//  A frame that did not go used to vanish into per-tick re-fire noise (the eed storm); now the miss
+//   STANDS as `Owed/owe:<kind>` on the very row the relationship lives on — a %Body sibling and a
+//    %Pier friend take the same shape.  Proven pure (the note/paid verbs; the live wiring — deliver
+//     misses noting and the presence-edge settle — is station-gated, the beat-5 stance).
+SwarmBody_owed(w):
+    w i reached:step_6
+    let alice = w.c.alice
+    if (!alice) { return }
+    let body = this.Swarm_body_roster(alice)[0]
+    let bacct = w.oai({ Account: 1, of: 'Bob' })
+    let bob = bacct.o({ Identity: 1 })[0]
+    let pier = bob ? this.Swarm_peering(bob).o({ Pier: 1 })[0] : null
+    if (!body || !pier) { return }
+    let row = { owed: 1 }
+    // note stands + DEDUP: the same kind re-noted refreshes rather than grows.
+    this.Swarm_owed_note(w, body, 'repli_ready')
+    this.Swarm_owed_note(w, body, 'repli_ready')
+    let shelf = body.o({ Owed: 1 })[0]
+    if (shelf && shelf.o({ owe: 1 }).length === 1) { row.deduped = 1 }
+    if (shelf && shelf.o({ owe: 'repli_ready' })[0] && +shelf.o({ owe: 'repli_ready' })[0].sc.at === 1751700000) { row.at_pinned = 1 }
+    // PAID does not stand: the item detaches and the empty shelf removes itself.
+    this.Swarm_owed_paid(body, 'repli_ready')
+    if (!body.o({ Owed: 1 }).length) { row.paid_gone = 1 }
+    // the CAP is loud never silent: 9 distinct kinds on the pier → 8 stand + dropped=1 folds visibly.
+    for (const k of ['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9']) { this.Swarm_owed_note(w, pier, k) }
+    let pshelf = pier.o({ Owed: 1 })[0]
+    if (pshelf && pshelf.o({ owe: 1 }).length === 8 && +pshelf.sc.dropped === 1) { row.capped_loud = 1 }
+    // a shelf with overflow evidence SURVIVES full payment — the drop stays seen.
+    for (const k of ['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8']) { this.Swarm_owed_paid(pier, k) }
+    pshelf = pier.o({ Owed: 1 })[0]
+    if (pshelf && !pshelf.o({ owe: 1 }).length && +pshelf.sc.dropped === 1) { row.overflow_survives = 1 }
+    this.SwarmBody_note(w, row)
 
 // SwarmBody_order — float A:SwarmBody to the front of H/* so the Run snap stays readable.
 async SwarmBody_order(w):

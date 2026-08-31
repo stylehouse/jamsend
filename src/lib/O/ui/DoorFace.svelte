@@ -145,7 +145,11 @@
             const roster = (typeof H?.Swarm_body_roster === 'function' ? H.Swarm_body_roster(self) : []) as any[]
             const mineRow = (typeof H?.Swarm_body_mine === 'function' ? H.Swarm_body_mine(self) : null) as any
             const minePub = mineRow?.sc?.pub ? String(mineRow.sc.pub) : ''
-            if (mineRow && roster.length >= 2) {
+            // UNGATED to a lone ROLED row (the owner's ruling): a Post is only ever conferred by a
+            //  ceremony, so "CAVE Guw" deserves its badge even while the sibling's row hasn't arrived
+            //   — a Cave that can't see its Captain yet should still know WHAT IT IS.  A truly
+            //    undivided body has no %Body row at all and shows nothing, as before.
+            if (mineRow && (roster.length >= 2 || mineRow.sc?.role)) {
                 instance = { role: String(mineRow.sc?.role || 'body'), name: String(mineRow.sc?.name || '') }
             }
             if (roster.length >= 2) {

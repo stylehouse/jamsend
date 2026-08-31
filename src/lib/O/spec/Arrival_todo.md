@@ -9,6 +9,45 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
  legible C particles, that every boot surface (Splash, BootGate, Butler, LinkDevice, BigSoundland)
   READS instead of each deriving its own truth from a pile of `.c` flags.
 
+## NEXT LIVE TEST — the Crew ceremony, briefed (2026-08-31, late — read this before testing)
+
+The owner: *"if I do a Link ceremony again, will they actually know each other as Crew? that's at least
+ where I want to be next time I have to test."* **Yes — that is now the wired outcome**, and this is the
+  whole brief:
+
+**What you're testing, in one sentence:** one Link ceremony (laptop eed = soul, phone/incognito = Linkee,
+ refuse-FSA is fine) should end with BOTH devices showing the family in the Door — and still showing it
+  after you reload each device.
+
+**What was missing until tonight** (why last time looked like "no work at all"): three welds, found by
+ tracing, each now landed:
+ 1. Captain half (landed previous session): at `ferry_got` the Captain rosters both bodies, SIGNS the
+     %Charter, gossips it — including over the still-standing ceremony pier to the not-yet-reloaded Cave.
+ 2. Cave half (landed previous session): `Swarm_charter_heard`'s sibling-absorb lands the Captain's row +
+     charter onto the imported soul's own %Peering, pre-reload.
+ 3. **THE ONE FOUND TONIGHT: none of it survived a reload on EITHER side.** `Swarm_restash_all` carried
+     piers|izzes|chainroots and NOT the own division — the family formed live and evaporated at the next
+      boot, every time. The roster is now the FOURTH stash pillar (`Swarm_restash_roster` /
+       `Swarm_roster_rehydrate`, settled at `ferry_got` and at sibling-absorb; the charter re-enters
+        through the same signature-checked absorb a gossiped one takes).
+
+**What you should SEE, step by step:**
+ - Ceremony as before (OPEN SHARE → link → consent → emoji → done). At the Captain's console:
+    `🪪 family roster — I am Captain <name>, linked to Cave <name>`.
+ - At the Cave's console, BEFORE its reload: `🪪 sibling charter absorbed — my family roster now lists 2
+    bodies of this soul`. ← this line is weld 2+3 working; if it's missing, the gossip never reached the
+     ceremony pier — grab the console.
+ - After the Cave reloads as eed_1: `🪪 roster rehydrated — 2 bodies of this soul survive the reload
+    (charter era 1)`, and the **Door shows the family on both devices** (Captain badge + both rows).
+     A Cave that hasn't heard its Captain yet still shows its own "CAVE <name>" badge (ungated tonight).
+ - Reload the LAPTOP too — the family must still be there (that's pillar-four; before tonight this is
+    exactly where it silently vanished).
+
+**Explicitly NOT in this test:** %Owed settling (`w.c.owed_settle` stays off — it needs an offline
+ friend-with-music to be worth anything; parked until a batch test), music flowing between bodies (the
+  sibling reach channel — the SoundPooling arc — is the NEXT build, and lands on top of exactly this
+   roster+charter ground).
+
 ## HANDOVER — THE CIRCLE FOUND (2026-08-31, evening, the two-device live session)
 
 **Read this first; the older handover below still holds for the machine's shape.** The owner ran the real

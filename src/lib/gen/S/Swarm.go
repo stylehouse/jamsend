@@ -15,7 +15,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '286bd3a67d43a5e9~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'b8c11926077429da~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1055,7 +1055,13 @@ async Swarm_arm(w) {
         //  stamps heard_at (c-side — never snapped, Books untouched).  A stranger stamps nothing —
         //   the same law as ive_got: gossip never opens a door.  The 'pulse' kind exists ONLY to
         //    generate this traffic (Swarm_pulse_all); it needs no verb of its own.
-        if (sealed) sealed.c.heard_at = Date.now()
+        if (sealed) {
+            // the presence EDGE (silent → speaking) pays the %Owed ledger — the one moment a re-send
+            //  is worth anything.  A mid-conversation frame is no edge and costs nothing here.
+            let owed_edge = !sealed.c.heard_at || (Date.now() - sealed.c.heard_at) > 30000
+            sealed.c.heard_at = Date.now()
+            if (owed_edge) { try { this.Swarm_owed_settle(w2, ident, sealed) } catch (er) {} }
+        }
         // THE EPOCH, off ANY vouched frame (2026-08-04): a reborn peer announces itself on every
         //  swarm frame it sends (Swarm_deliver stamps era+saw), so recovery no longer hangs on one
         //   greeting surviving.  THE GATE — `may_reset` is 1 only for the EPHEMERAL-lane kinds
@@ -1221,6 +1227,10 @@ async Swarm_arm(w) {
                     //              so the reverse direction — Cave learning Captain — still needs a sibling channel;
                     //               this closes the Captain's half and unblocks all friend-facing division routing.
                     try { await this.Swarm_charter_sign(ident); this.Swarm_charter_gossip(w2, ident) } catch (e) {}
+                    // …and make the family DURABLE now (the fourth stash pillar): without this settle the
+                    //  roster+charter lived only in the C tree and the Captain forgot its own division at
+                    //   the next reload.  Live-self-guarded inside, so InvWalk's puppet stays Book-inert.
+                    try { this.Swarm_account_settle(ident, 'ferry_family') } catch (e) {}
                 }
             }
             console.log('🦑 ferry: ✓ the other device took the soul on — ceremony complete, link retired')
@@ -1490,6 +1500,7 @@ async Swarm_station_up(w, ident) {
     if (!w.c.iz_rehydrated && this.top_House().stashed) { w.c.iz_rehydrated = 1; this.Swarm_iz_rehydrate(w, ident) }
     if (!w.c.piers_rehydrated && this.top_House().stashed) { w.c.piers_rehydrated = 1; this.Swarm_piers_rehydrate(w, ident) }
     if (!w.c.roots_rehydrated && this.top_House().stashed) { w.c.roots_rehydrated = 1; this.Swarm_chainroots_rehydrate(w, ident) }
+    if (!w.c.roster_rehydrated && this.top_House().stashed) { w.c.roster_rehydrated = 1; this.Swarm_roster_rehydrate(w, ident).catch((er) => console.log('🪪⚠ roster rehydrate failed: ' + String(er).slice(0, 120))) }
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     if (station && w.c.station_up) return station
     if (typeof this.Socket_real !== 'function') return null
@@ -1751,7 +1762,7 @@ async Swarm_reaccept_incomplete(w, ident) {
             if (since < 120000) continue
             if (pier.c.reoffer_at && (Date.now() - pier.c.reoffer_at) < 600000) continue
             pier.c.reoffer_at = Date.now()
-            this.Swarm_deliver(w, ident, String(pier.sc.pub), { kind: 'pier_accept', grant: grant_of_C(mineC), page: this.Swarm_page(ident) })
+            if (!this.Swarm_deliver(w, ident, String(pier.sc.pub), { kind: 'pier_accept', grant: grant_of_C(mineC), page: this.Swarm_page(ident) })) { this.Swarm_owed_note(w, pier, 'pier_accept') }
             console.log(`⨳⟲ pier heal: re-offered my standing grant to ${String(pier.sc.pub).slice(0, 8)} — whole here, ${heard ? 'silent ' + Math.round(since / 1000) + 's' : 'never heard'} (§9 rung 3, the forgotten pier)`)
             n = n + 1
             continue
@@ -1770,7 +1781,9 @@ async Swarm_reaccept_incomplete(w, ident) {
             }
         }
         if (!theirsC && mineC) {
-            this.Swarm_deliver(w, ident, String(pier.sc.pub), { kind: 'pier_accept', grant: grant_of_C(mineC), page: this.Swarm_page(ident) })
+            // note the miss only on a LIVE station — a Book's mail wire refuses offline parties by
+            //  design and its fixtures must not grow ledger rows as a side effect of the heal sweep.
+            if (!this.Swarm_deliver(w, ident, String(pier.sc.pub), { kind: 'pier_accept', grant: grant_of_C(mineC), page: this.Swarm_page(ident) }) && w.c.station_up) { this.Swarm_owed_note(w, pier, 'pier_accept') }
             n = n + 1
         }
     }
@@ -2636,7 +2649,65 @@ Swarm_restash_all(ident, from) {
     }
     return { piers: this.Swarm_restash_piers(ident, src),
              izzes: this.Swarm_restash_izzes(ident, src),
-             roots: this.Swarm_restash_chainroots(ident, src) }
+             roots: this.Swarm_restash_chainroots(ident, src),
+             roster: this.Swarm_restash_roster(ident, src) }
+
+},
+// ── the roster is the FOURTH stash pillar (2026-08-31, the owner: "if I do a Link ceremony again,
+//  will they actually know each other as Crew?") ─────────────────────────────────────────────────────
+//  The answer used to be "only until either side reloads": the ceremony's mutual knowing — the
+//   Captain's %Body rows + signed %Charter, the Cave's sibling-absorbed copy — lived ONLY in the C
+//    tree, and restash_all carried piers|izzes|chainroots and NOT the own division.  So the family
+//     formed live, then evaporated on the next boot of each body, and the Door (gated on roster≥2)
+//      went back to showing nothing.  Same disease, fourth organ.
+//  The entry mirrors the pier-stash shape: the signed Charter WIRE (era, payload, sig, soul — the
+//   attestation IS the durable truth) plus the raw %Body rows (belt and braces: `name`/`caveat` ride
+//    the rows, not the payload, and a roster noted before any charter signs still deserves to live).
+Swarm_restash_roster(ident, from) {
+    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (!live || live !== ident) { return 0 }
+    let peering = this.Swarm_peering(from || ident)
+    if (!peering) { return 0 }
+    let st = this.top_House().stashed
+    if (!st) { return 0 }
+    let bodies = []
+    for (const b of peering.o({ Body: 1 })) {
+        if (!b.sc.pub) { continue }
+        let e = { pub: String(b.sc.pub) }
+        if (b.sc.role) { e.role = String(b.sc.role) }
+        if (b.sc.address) { e.address = String(b.sc.address) }
+        if (b.sc.name) { e.name = String(b.sc.name) }
+        if (b.sc.caveat) { e.caveat = String(b.sc.caveat) }
+        bodies.push(e)
+    }
+    let wire = this.Swarm_charter_wire(from || ident)
+    if (!bodies.length && !wire) { return 0 }
+    if (!st.Swarm_rosters) { st.Swarm_rosters = {} }
+    st.Swarm_rosters[ident.sc.prepub] = { bodies: bodies, charter: wire }
+    return bodies.length
+},
+// Swarm_roster_rehydrate — the boot half: re-note the stashed %Body rows onto the own %Peering, then
+//  re-absorb the stashed Charter WIRE through the same verified door a gossiped one takes
+//   (Swarm_charter_absorb onto the own %Peering — the sibling-absorb proved that shape) so the
+//    %Charter row re-lands signature-checked and re-projects its roster.  A tampered stash fails
+//     closed at the signature; the raw body rows still land (they are the resolution register, and
+//      re-noting is idempotent oai).
+async Swarm_roster_rehydrate(w, ident) {
+    let st = this.top_House().stashed
+    let mine = st?.Swarm_rosters?.[ident.sc.prepub]
+    if (!mine) { return 0 }
+    let n = 0
+    for (const b of (mine.bodies || [])) {
+        if (!b || !b.pub) { continue }
+        let row = this.Swarm_body_note(ident, String(b.pub), b.role, b.address, b.name)
+        if (row && b.caveat && !row.sc.caveat) { row.sc.caveat = String(b.caveat); row.bump() }
+        if (row) { n = n + 1 }
+    }
+    if (mine.charter && ident.c && ident.c.keys) {
+        try { await this.Swarm_charter_absorb(this.Swarm_peering(ident), mine.charter, ident.c.keys.pub) } catch (er) {}
+    }
+    if (n) { console.log('🪪 roster rehydrated — ' + n + ' bodies of this soul survive the reload' + (mine.charter ? ' (charter era ' + String(mine.charter.era) + ')' : '')) }
+    return n
 
 },
 // Swarm_account_settle — THE outcome seam (Persistence_todo §5.1, 2026-08-21): "this identity's
@@ -3237,7 +3308,9 @@ Swarm_share_up(w, ident) {
             //    announce exists to close.  Register the rx here, then speak.
             let route = this.Swarm_station_pier(w, ident, String(p.sc.pub))
             if (route && !route.c.repli_rx) this.Repli_register_rx(w, route)
-            this.Swarm_deliver(w, ident, String(p.sc.pub), { kind: 'repli_ready', page: this.Swarm_page(ident) })
+            // a blast that missed is a DEBT, not noise: the %Owed on the pier row makes the offline
+            //  fan-out visible (the eed storm) and Swarm_owed_settle re-fires it on the presence edge.
+            if (!this.Swarm_deliver(w, ident, String(p.sc.pub), { kind: 'repli_ready', page: this.Swarm_page(ident) })) { this.Swarm_owed_note(w, p, 'repli_ready') }
         }
     }
     this.Swarm_share_loop(w, ident)
@@ -4380,8 +4453,26 @@ async Swarm_body_key_ensure(ident, seed) { const H = this;
     }
     let mint = await this.Swarm_mint_keys(seed)
     ident.c.bodykey = { pub: mint.pub, key: mint.key, prepub: mint.prepub }
+    this.Swarm_body_remint_caveat(ident, mint.pub)
     await bodykey_write({ root_prepub: root, pub: mint.pub, key: mint.key, prepub: mint.prepub, at: this.Swarm_now(H) * 1000 })
     return ident.c.bodykey
+},
+// Swarm_body_remint_caveat — the fork-suspicion mark (Statehome_todo debts: "a fork must be seen").
+//  The sanctioned join paths (adopt_absorb, the ferry become) HAND the body key over before ensure can
+//   mint, so reaching ensure's mint branch while the soul's division ALREADY stands keyed means this
+//    store lost — or was refused — its durable key: the fresh row may double a seat an old key still
+//     holds in the roster.  Stamp the fresh %Body with `caveat:remint` so the suspicion STANDS in the
+//      tree (snapped, seen, provable) instead of vanishing into one instance's interior.  Nothing here
+//       clears it — retiring the caveat is a re-charter's job (the Seat re-attesting the division),
+//        never an automatic forget.  Pure C-matter (no Dexie), so a Book proves it directly.
+Swarm_body_remint_caveat(ident, pub) {
+    if (!ident || !pub) { return null }
+    let keyed = this.Swarm_body_roster(ident).filter((b) => b.sc.pub && String(b.sc.pub) !== String(ident.sc.prepub))
+    if (!keyed.length) { return null }
+    let body = this.Swarm_body_take(ident, pub, null, null)
+    body.sc.caveat = 'remint'
+    body.bump()
+    return body
 },
 // Swarm_body_take — the running body declares its own %Body (role + the address it holds). Idempotent
 //  per body-key `pub`; defaults pub to THIS body's key (Swarm_body_key), falling back to the soul
@@ -4404,6 +4495,79 @@ Swarm_body_mine(ident) {
     let key = this.Swarm_body_key(ident)
     if (!key || !key.pub) { return null }
     return this.Swarm_body_roster(ident).filter((b) => String(b.sc.pub || '') === String(key.pub))[0] || null
+
+},
+// ── %Owed — the bounded debt ledger, hung on the counterparty's OWN row (Statehome_todo debts) ───────
+//  A frame the far side NEEDED that did not go (Swarm_deliver said false) used to vanish into per-tick
+//   re-fire noise — the eed storm: pier_accept/repli_ready blasted at 15 offline piers, invisible to
+//    every snap.  Now the failure STANDS: one `%Owed` shelf per counterparty row (a friend's %Pier, a
+//     sibling's %Body — the row IS the relationship's locality, so a dropped row drops its debts), its
+//      items `owe:<kind>` deduped by kind (re-noting refreshes `at`, so the ledger cannot grow with
+//       retries).  The frame itself is NEVER stored — a debt is the FACT a kind is owed; the frame is
+//        re-derived at pay time (an object in sc is fatal, and a stale frame is worse than none).
+//  BOUNDED, NEVER SILENTLY (cap 8 distinct kinds): overflow folds into a visible `dropped=N` scalar.
+//  A paid debt does not stand (the transient-req rule): the item detaches, and an empty shelf with
+//   nothing dropped removes itself.
+Swarm_owed_note(w, holder, kind) {
+    if (!holder || !holder.oai || !kind) { return null }
+    let shelf = holder.oai({ Owed: 1 })
+    shelf.c.up = holder
+    let item = shelf.o({ owe: String(kind) })[0]
+    if (!item) {
+        if (shelf.o({ owe: 1 }).length >= 8) {
+            shelf.sc.dropped = (+shelf.sc.dropped || 0) + 1
+            shelf.bump()
+            return null
+        }
+        item = shelf.i({ owe: String(kind) })
+        item.c.up = shelf
+    }
+    item.sc.at = this.Swarm_now(w)
+    item.bump()
+    return item
+},
+Swarm_owed_paid(holder, kind) {
+    let shelf = holder && holder.o ? holder.o({ Owed: 1 })[0] : null
+    if (!shelf) { return 0 }
+    let item = shelf.o({ owe: String(kind) })[0]
+    if (!item) { return 0 }
+    shelf.drop(item)
+    if (!shelf.o({ owe: 1 }).length && !shelf.sc.dropped) { holder.drop(shelf) }
+    return 1
+},
+// Swarm_owed_settle — pay the standing debts the moment the counterparty comes back (the presence
+//  EDGE in the hear funnel — the one signal that replaces the per-tick blast).  Each owed kind is
+//   re-derived and re-sent ONCE; a landed send pays the debt, a failed one leaves it standing for
+//    the next edge.  Both kinds are idempotent at the far end (seal dedups; repli_ready meets an
+//     armed rx), and a pier_accept debt was only ever noted at the HARD-GATED reaccept site — this
+//      delivers that same single frame late, it re-decides nothing.
+//  GATED DEFAULT-OFF (`w.c.owed_settle` — the backpressure-knob discipline): until flipped, the
+//   ledger only OBSERVES.  repli_ready waits for our own share to actually be up.
+Swarm_owed_settle(w, ident, pier) {
+    if (!w || !w.c.owed_settle) { return 0 }
+    let shelf = pier && pier.o ? pier.o({ Owed: 1 })[0] : null
+    if (!shelf) { return 0 }
+    let n = 0
+    for (const item of shelf.o({ owe: 1 })) {
+        let kind = String(item.sc.owe)
+        let frame = null
+        if (kind === 'repli_ready') {
+            if (!w.c.share_up) { continue }
+            frame = { kind: 'repli_ready', page: this.Swarm_page(ident) }
+        }
+        if (kind === 'pier_accept') {
+            let me = ident.c.keys ? ident.c.keys.pub : null
+            let mineC = me ? pier.o({ Grant: 1, by: String(me) })[0] : null
+            if (mineC) { frame = { kind: 'pier_accept', grant: grant_of_C(mineC), page: this.Swarm_page(ident) } }
+        }
+        if (!frame) { this.Swarm_owed_paid(pier, kind); continue }
+        if (this.Swarm_deliver(w, ident, String(pier.sc.pub), frame)) {
+            this.Swarm_owed_paid(pier, kind)
+            console.log('⨳🧾 owed settled: ' + kind + ' → ' + String(pier.sc.pub).slice(0, 8) + ' (presence edge)')
+            n = n + 1
+        }
+    }
+    return n
 
 },
 // ── the Post is the grant, projected (Division_todo §POST'S TRUTH CHAIN #1, step 3) ──────────────────
@@ -4692,7 +4856,14 @@ async Swarm_charter_heard(w, ident, frame) {
         }
         if (!sib) { return 0 }
         let took = await this.Swarm_charter_absorb(this.Swarm_peering(sib), frame.charter, soul)
-        if (took) { console.log('🦑 🪪 sibling charter absorbed — my family roster now lists ' + this.Swarm_body_roster(sib).length + ' bodies of this soul') }
+        if (took) {
+            console.log('🦑 🪪 sibling charter absorbed — my family roster now lists ' + this.Swarm_body_roster(sib).length + ' bodies of this soul')
+            // make the absorbed family DURABLE now (the fourth stash pillar): the Cave hears this
+            //  charter AFTER its consume already restashed, so without this settle the absorbed
+            //   roster was post-stash RAM and died at the become-reload — the very reload that
+            //    should wake "already knowing its family".  Live-self-guarded inside (Book-inert).
+            try { this.Swarm_account_settle(sib, 'sibling_charter') } catch (e) {}
+        }
         return took
     }
     let soulPub = pier.o({ Peering: 1 })[0]?.sc?.pub
