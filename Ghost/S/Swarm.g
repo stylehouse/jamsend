@@ -891,6 +891,12 @@ Swarm_account_of(w, prepub):
     }
     let self = this.Swarm_live_self()
     if (self && self.sc.prepub === prepub) return self
+    // THE SEAT RESOLVES TO THE SOUL: a sibling-addressed frame arrives `to: <prepub>_N` (the suffixed
+    //  seat a second body holds on the relay — Swarm_sibling_send's road).  The seat is an address of
+    //   the SAME identity, so strip the suffix and resolve the bare name.  A prepub is hex, so `_` can
+    //    only be a seat suffix; exact matches above always win.
+    let base = String(prepub || '').split('_')[0]
+    if (base && base !== prepub) { return this.Swarm_account_of(w, base) }
     return null
 
 // Swarm_deliver — carry a frame from `ident` to the page at `prepub`; false = unreachable.
@@ -970,6 +976,19 @@ Swarm_arm(w):
         //   DoorFace banner + a diag fact, and Steal Back stays a human move.  Standing kinds only —
         //    a multicast gossip echo must never raise a theft alarm.
         if (from && from === ident.sc.prepub && ['pier_hello', 'swarm_hi', 'pulse'].includes(frame.header.type)) {
+            // A ROSTERED SIBLING'S PULSE IS PRESENCE, NOT THEFT (owner 2026-08-31: "not clear that
+            //  the two of them can see each other").  The sibling pulse carries `body` — the sender's
+            //   roster key — so stamp `heard` ON the %Body row (a standing particle the family box
+            //    reads; its wobble is Entcase matter, never a reason to hide it on .c) and note its
+            //     live seat.  Only an UNROSTERED claimant still raises the theft alarm.
+            let sib_body = frame.swarm && frame.swarm.body ? String(frame.swarm.body) : ''
+            let sib_row = sib_body ? this.Swarm_body_roster(ident).find((b) => String(b.sc.pub) === sib_body) : null
+            if (sib_row) {
+                sib_row.sc.heard = this.Swarm_now(w2)
+                if (frame.swarm.addr && String(sib_row.sc.address || '') !== String(frame.swarm.addr)) { sib_row.sc.address = String(frame.swarm.addr) }
+                sib_row.bump()
+                return false
+            }
             let by = String(frame.header.from || 'unknown_place')
             if (this.Swarm_note_theft(ident, by, null)) console.log('👥⚠ another live body of ' + String(ident.sc.prepub).slice(0, 8) + ' is on the wire (' + by + ') — name contested. This body keeps the write; resolution is the human\'s (close one body, or Steal Back).')
             return false
@@ -1147,7 +1166,15 @@ Swarm_arm(w):
                     if (cap && capname) { cap.sc.name = capname }
                     let cavepub = frame.swarm && frame.swarm.body ? String(frame.swarm.body) : ''
                     let cavename = frame.swarm && frame.swarm.name ? String(frame.swarm.name) : ''
-                    if (cavepub) { this.Swarm_body_note(ident, cavepub, 'Cave', String(ident.sc.prepub) + '_1', cavename) }
+                    // the seat: keep an existing row's address; a NEW Cave takes the next FREE suffix
+                    //  (a second linked device must not collide with the first's _1 — owner 2026-08-31,
+                    //   the second-incognito test).
+                    if (cavepub) {
+                        let prior = this.Swarm_peering(ident)?.o({ Body: 1, pub: cavepub })[0]
+                        let taken = this.Swarm_body_roster(ident).map((b) => String(b.sc.address || '')).filter((a) => a)
+                        let caddr = prior && prior.sc.address ? String(prior.sc.address) : this.Swarm_next_suffix(String(ident.sc.prepub), taken)
+                        this.Swarm_body_note(ident, cavepub, 'Cave', caddr, cavename)
+                    }
                     console.log('🦑 ferry: 🪪 family roster — I am Captain ' + (capname || '(unnamed)') + (cavename ? ', linked to Cave ' + cavename : ''))
                     // ATTEST + PROPAGATE THE DIVISION (2026-08-31, the owner live: "Link ceremony is done now,
                     //  they still don't know each other … as Piers").  The %Body rows just written are the
@@ -1431,6 +1458,12 @@ Swarm_station_up(w, ident):
     if (!w.c.piers_rehydrated && this.top_House().stashed) { w.c.piers_rehydrated = 1; this.Swarm_piers_rehydrate(w, ident) }
     if (!w.c.roots_rehydrated && this.top_House().stashed) { w.c.roots_rehydrated = 1; this.Swarm_chainroots_rehydrate(w, ident) }
     if (!w.c.roster_rehydrated && this.top_House().stashed) { w.c.roster_rehydrated = 1; this.Swarm_roster_rehydrate(w, ident).catch((er) => console.log('🪪⚠ roster rehydrate failed: ' + String(er).slice(0, 120))) }
+    // hydrate THE ME-POINTER (pays the "ensure is called by no production path" debt): without the
+    //  body key, a rehydrated roster is a family album with no idea which face is mine — body_mine
+    //   null, no badge, no me-still-me.  Reads the body-local Dexie, mints-and-persists on a true
+    //    first stand (the remint caveat marks the suspicious case).  Same stashed-gate as its
+    //     siblings, so every Book world skips it byte-identically.
+    if (!w.c.bodykey_hydrated && this.top_House().stashed) { w.c.bodykey_hydrated = 1; this.Swarm_body_key_ensure(ident).catch((er) => console.log('🪪⚠ body key hydrate failed: ' + String(er).slice(0, 120))) }
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     if (station && w.c.station_up) return station
     if (typeof this.Socket_real !== 'function') return null
@@ -2818,9 +2851,34 @@ Swarm_pulse_all(w, ident):
     //       very silence it reasons about.  Slow (60s) because the rung is itself throttled to one
     //        re-offer per pier per 10 min — this only has to be more frequent than that, not fast.
     if (!w.c.heal_look_at || (Date.now() - w.c.heal_look_at) > 60000) { w.c.heal_look_at = Date.now(); this.Swarm_reaccept_incomplete(w, ident).catch((er) => console.log(`⨳⚠ pier heal failed: ${er && er.message || er}`)) }
+    // THE FAMILY HEAL rides the same clock: the division re-derived from the standing My* grants
+    //  (Swarm_family_heal is change-gated + humdinger-gated, so a settled family costs a walk and a
+    //   Book costs nothing).  This is what makes a ceremony that misfired — stale build, lost frame,
+    //    mistimed reload — converge within a minute instead of never.
+    if (!w.c.family_look_at || (Date.now() - w.c.family_look_at) > 60000) { w.c.family_look_at = Date.now(); this.Swarm_family_heal(w, ident).catch((er) => console.log(`🪪⚠ family heal failed: ${er && er.message || er}`)) }
     // FERRY WANT rides the same heartbeat: while I am a Linkee awaiting a soul, keep asking the soul device for it
     //  (Swarm_ferry_ask) so its confirm stays parked through any reload on its end.  Best-effort, same ~5s cadence.
     this.Swarm_ferry_ask(w, ident)
+    // ── THE SIBLING PULSE (owner 2026-08-31: "it's not clear that the two of them can see each
+    //  other yet") — bodies of one soul had NO liveness channel at all: pulses walk %Piers, and a
+    //   body is not a friend.  So each body also pulses every OTHER roster seat by ADDRESS, carrying
+    //    `body` (my body-key pub — the roster row the far side should stamp) and `addr` (my seat).
+    //     The far side's own-name claim branch stamps `heard` ON THE %Body ROW — presence as a
+    //      standing particle (the Statehome ruling; EntropyArrest forgives the wobble), which is what
+    //       the Door's family box reads.  Live-station only (Books untouched).  v1 trust note: the
+    //        stamp is unsigned like a stranger's hello — a voucher-grade proof can harden it later.
+    if (w.c.station_up) {
+        let mykey = this.Swarm_body_key(ident)
+        let mybody = mykey && mykey.pub ? String(mykey.pub) : ''
+        let myaddr = this.Swarm_address(ident) || String(ident.sc.prepub)
+        if (mybody) {
+            for (const b of this.Swarm_body_roster(ident)) {
+                let baddr = String(b.sc.address || '')
+                if (!baddr || baddr === myaddr) { continue }
+                if (this.Swarm_sibling_send(w, ident, baddr, { kind: 'pulse', page: this.Swarm_page(ident), body: mybody, addr: myaddr })) sent = sent + 1
+            }
+        }
+    }
     for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (typeof this.Presence_worth_sending === 'function' && !this.Presence_worth_sending(w, pier.sc.pub)) continue
         if (this.Swarm_deliver(w, ident, pier.sc.pub, { kind: 'pulse', page: this.Swarm_page(ident) })) sent = sent + 1
@@ -4416,6 +4474,127 @@ Swarm_grant_post(holder):
         return post
     }
     return null
+// ── THE FAMILY DERIVES FROM THE STANDING GRANTS, CONTINUOUSLY (2026-08-31, the owner's live test:
+//  "both tabs are eed, know Gri… basically it's like you didn't do anything") ────────────────────────
+//  The ceremony-moment welds (ferry_got finalise, sibling-absorb) are ONE-SHOT event handlers: a stale
+//   build, a lost frame or a mistimed reload at THAT INSTANT and the family never forms — and nothing
+//    ever retried.  But the ceremony's durable truth is not the moment: it is the cross-signed
+//     `%Grant:My<Post>` still standing on the pier.  So the division is RE-DERIVABLE at any time —
+//      the Post doctrine ("a Post is NEVER a string a body picks: it IS the grant") applied to the
+//       whole roster.  Derive is PURE (Book-proven); heal applies it on the live heartbeat, so a
+//        botched ceremony self-repairs within a minute of both tabs breathing.
+// Swarm_family_derive — read the division OFF the grants I hold.  For each live My<Post> grant SIGNED
+//  BY MY SOUL KEY: `for` names a body and <Post> its role.  `for` == my OWN body-key pub means the
+//   pier is my ceremony HUSK (my pre-become identity, riding the imported account) — evidence of MY
+//    role + my instance name, not a second member.  A grant signed by anyone else confers nothing.
+Swarm_family_derive(ident):
+    let out = []
+    if (!ident || !ident.c || !ident.c.keys) { return out }
+    let me = String(ident.c.keys.pub)
+    let mypre = String(ident.sc.prepub || '')
+    let mykey = this.Swarm_body_key(ident)
+    let mypub = mykey && mykey.pub ? String(mykey.pub) : ''
+    // `by`/`for` ride as a prepub in some mints and a full pub in others (the DoorFace seal-check's own
+    //  warning) — prefix-compare, which is true for both forms and cannot false-positive across keys.
+    let same = (a, b) => a && b ? (a.startsWith(b) || b.startsWith(a) ? 1 : 0) : 0
+    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        for (const g of pier.o({ Grant: 1 })) {
+            let post = this.Swarm_post_from_feature(g.sc.Grant)
+            if (!post) { continue }
+            if (!same(String(g.sc.by || ''), me) && !same(String(g.sc.by || ''), mypre)) { continue }
+            if (!this.Swarm_pier_live(pier, g.sc.Grant)) { continue }
+            let forPub = String(g.sc.for || '')
+            if (!forPub) { continue }
+            // the member's ROSTER key wants the full page pub the seal imported — but ONLY when the
+            //  page IS the grantee (a grant can ride a pier that is not its grantee's: the Linkee's own
+            //   redeem pier carries by-soul-for-me on a page that is the SOUL — taking page pub there
+            //    would mint a phantom member keyed by the soul itself).  Else the grant's `for` stands.
+            let page = pier.o({ Peering: 1 })[0]
+            let ppub = page && page.sc.pub ? String(page.sc.pub) : ''
+            let pub = ppub && same(ppub, forPub) ? ppub : forPub
+            // dedup by key; the PAGE-MATCHED sighting wins (full pub + the grantee's own pier friendly
+            //  — its instance name), over the short-form `for` riding some other pier.
+            let dupe = out.find((e) => same(e.pub, pub))
+            if (dupe) {
+                if (pub.length > dupe.pub.length) { dupe.pub = pub; if (pier.sc.friendly) { dupe.name = String(pier.sc.friendly) } }
+                continue
+            }
+            out.push({ pub: pub, role: post, name: String(pier.sc.friendly || ''), husk: mypub && same(forPub, mypub) ? 1 : 0 })
+        }
+    }
+    return out
+// Swarm_family_heal — apply the derivation: my own row (Captain when I granted a member a Post; the
+//  husk's Post when I was the Linkee), the member rows, the pre-key GHOST row dropped, and — on a
+//   CHANGED roster or an unpaid sibling charter debt — sign + gossip + settle, so both the wire and
+//    the stash converge.  Humdinger/consenter-gated (Book-inert); idempotent, rides the 60s trickle.
+async Swarm_family_heal(w, ident):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c || (!top.c.humdinger && !top.c.consenter)) { return 0 }
+    if (!ident || !ident.c || !ident.c.keys) { return 0 }
+    let fam = this.Swarm_family_derive(ident)
+    if (!fam.length) { return 0 }
+    let row_key = (b) => String(b.sc.pub) + ':' + String(b.sc.role || '') + ':' + String(b.sc.name || '')
+    let before = this.Swarm_body_roster(ident).map(row_key).sort().join('|')
+    let key = await this.Swarm_body_key_ensure(ident)
+    let mypub = key && key.pub ? String(key.pub) : String(ident.sc.prepub)
+    let husk = fam.find((f) => f.husk)
+    let members = fam.filter((f) => !f.husk)
+    let myrole = husk ? husk.role : 'Captain'
+    let myaddr = husk ? (this.Swarm_address(ident) || String(ident.sc.prepub) + '_1') : String(ident.sc.prepub)
+    let mine = this.Swarm_body_take(ident, mypub, myrole, myaddr)
+    if (mine && !mine.sc.name) {
+        let nm = husk && husk.name ? husk.name : String(ident.sc.friendly || '')
+        if (nm) { mine.sc.name = nm; mine.bump() }
+    }
+    for (const m of members) {
+        // seat assignment mirrors the finalise: an existing row keeps its address; a new member takes
+        //  the bare name if Captain, else the next FREE suffix (two Caves must not both read _1).
+        let prior = this.Swarm_peering(ident)?.o({ Body: 1, pub: m.pub })[0]
+        let maddr = prior && prior.sc.address ? String(prior.sc.address)
+            : (m.role === 'Captain' ? String(ident.sc.prepub)
+                : this.Swarm_next_suffix(String(ident.sc.prepub), this.Swarm_body_roster(ident).map((b) => String(b.sc.address || '')).filter((a) => a)))
+        this.Swarm_body_note(ident, m.pub, m.role, maddr, m.name)
+    }
+    // the pre-key GHOST: the undivided fallback row keyed by the soul prepub — once a real keyed own
+    //  row stands, the fallback is a third body that never existed.  Drop it.
+    let ghost = this.Swarm_body_roster(ident).find((b) => String(b.sc.pub) === String(ident.sc.prepub))
+    if (ghost && mypub !== String(ident.sc.prepub)) { this.Swarm_peering(ident).drop(ghost) }
+    let after = this.Swarm_body_roster(ident).map(row_key).sort().join('|')
+    let owing = this.Swarm_body_roster(ident).some((b) => { let s = b.o({ Owed: 1 })[0]; return s && s.o({ owe: 'charter' })[0] ? 1 : 0 })
+    if (after === before && !owing) { return 0 }
+    if (after !== before) { console.log('🦑 🪪 family healed from the standing grants — ' + this.Swarm_body_roster(ident).length + ' bodies of this soul (I am ' + String(myrole) + (mine && mine.sc.name ? ' ' + String(mine.sc.name) : '') + ')') }
+    // ONLY THE SEAT ATTESTS (Division doctrine: "the Seat re-charters").  A husk-side (Cave) heal
+    //  fixes its own rows and settles, but must never sign — a partial husk roster out-era-ing the
+    //   Captain's fuller charter would erase the family at every friend, highest-era-wins working
+    //    against us.  The Cave's missing Captain row arrives via the Captain's gossip, not its own.
+    if (!husk) {
+        try { await this.Swarm_charter_sign(ident) } catch (e) {}
+        this.Swarm_charter_gossip(w, ident)
+    }
+    try { this.Swarm_account_settle(ident, 'family_heal') } catch (e) {}
+    return 1
+
+// Swarm_sibling_send — the ADDRESSED send between bodies of one soul.  Swarm_deliver stamps
+//  `from: ident.sc.prepub` (the bare name), and the far side's Peeroleum_deliver looks the sender's
+//   route up BY that from — a sibling has no route pier for its own name, so every bare-from sibling
+//    frame died at the receive gate ("🛰☠ deliver: no Pier for pulse from=eed831f1 to=eed831f1" —
+//     the owner's log, the pulses ARRIVING and dropping).  So sibling frames ride `from: my SEAT`
+//      (<soul>_N), which is precisely the route pier the far side mints to send to ME — symmetric by
+//       construction, and each sibling gets its own stream (no shared-name seq collisions).
+//  Ephemeral-lane by nature (pulse/charter re-derive cheaply); no voucher/era stamping — the hear
+//   side treats an unmatched-from frame as a stranger and the claim/sibling roads gate on the SOUL
+//    (roster pub match; charter signature), so a forged from buys nothing.
+Swarm_sibling_send(w, ident, baddr, frame):
+    if (!w || !ident || !baddr || !w.c.station_up) { return false }
+    let station = w.o({ Peering: 1 }).find((p) => p.sc.name === ident.sc.prepub)
+    if (!station || !this.Peeroleum_carrier(station, w)) { return false }
+    let route = this.Swarm_station_pier(w, ident, String(baddr))
+    if (!route) { return false }
+    let myaddr = this.Swarm_address(ident) || String(ident.sc.prepub)
+    let seq = this.Pier_next_seq(route)
+    this.Peeroleum_send(w, { header: { type: frame.kind, from: String(myaddr), to: String(baddr), seq: seq }, swarm: frame })
+    return true
+
 // Swarm_body_repost — (re)derive a body's Post from the grant `holder` and stamp its %Body row: SET
 //  when a live grant confers one, DROP when a %NotGrant has retired it.  "Change = revoke + re-issue"
 //   (Division_todo §LIFECYCLE): dropping the Post leaves the body row standing — a body without a Post
@@ -4614,6 +4793,26 @@ Swarm_charter_gossip(w, ident, onlyPub):
         if (!to) { continue }
         if (onlyPub && to !== String(onlyPub)) { continue }
         if (this.Swarm_deliver(w, ident, to, { kind: 'charter', charter: wire, page: this.Swarm_page(ident) })) { sent = sent + 1 }
+    }
+    // THE SIBLING MILE (2026-08-31): a body is not a friend, so the pier loop above can never reach
+    //  the one party who needs the charter MOST — my own sibling.  But the roster knows each sibling's
+    //   ADDRESS, and the relay does exact-addr routing (the ferry's own road: Swarm_station_pier mints
+    //    a transport route to any addr string).  Receiver-side the frame has no matching %Pier and
+    //     takes charter_heard's sibling road — soul-signature-gated, so a spoofed addr forges nothing.
+    //  A miss is a DEBT (%Owed,owe:charter on the sibling's %Body row — the family_heal trickle
+    //   retries while it stands, and pays it on a landed send).  Live-station only (Books untouched).
+    if (!onlyPub && w.c.station_up) {
+        let myaddr = this.Swarm_address(ident) || String(ident.sc.prepub)
+        for (const b of this.Swarm_body_roster(ident)) {
+            let addr = String(b.sc.address || '')
+            if (!addr || addr === myaddr) { continue }
+            // the ADDRESSED send (Swarm_sibling_send): a bare-from frame dies at the far side's
+            //  route lookup — the owner's "no Pier for pulse from=eed831f1" log, same disease.
+            if (this.Swarm_sibling_send(w, ident, addr, { kind: 'charter', charter: wire, page: this.Swarm_page(ident) })) {
+                sent = sent + 1
+                this.Swarm_owed_paid(b, 'charter')
+            } else { this.Swarm_owed_note(w, b, 'charter') }
+        }
     }
     return sent
 // Swarm_charter_heard — the receiver: absorb a gossiped `charter` onto the sender's %Pier, verifying
@@ -5772,6 +5971,15 @@ async Swarm_ferry_consume(w, code, accept):
                 await this.thang_put(pwT, String(soul.sc.prepub || soul.sc.Identity), pstored)
                 console.log('🦑 ferry: 🪪 soul keypair persisted — a reload will resume it, not arrest')
             } catch (er) { console.log('🦑 ferry: 🪪⚠ soul persist FAILED — it lives this session but a reload will arrest: ' + String(er).slice(0, 120)) }
+            // THE ME-POINTER SURVIVES TOO (owner 2026-08-31: "no trace of 'I am actually this body'
+            //  except 'two of you'").  ferry_heard set soul.c.bodykey — RAM only — so the become-reload
+            //   forgot WHICH roster row is me: Swarm_body_mine → null, the CAVE badge never shows, and
+            //    the only body-awareness left was the cohort's _1 suffix.  Persist it to the body-local
+            //     Dexie (the store bodykey_read/ensure hydrates at the next standup).
+            try {
+                let bk = soul.c.bodykey
+                if (bk && bk.pub) { await bodykey_write({ root_prepub: String(soul.sc.prepub), pub: String(bk.pub), key: String(bk.key), prepub: String(bk.prepub || ''), at: this.Swarm_now(w) * 1000 }) }
+            } catch (er) { console.log('🦑 ferry: 🪪⚠ body key persist FAILED — me-still-me lives this session only: ' + String(er).slice(0, 120)) }
             // THE LEDGER TRAVELS WITH THE KEY (Ferry_todo §3.9 / facet B — account portability): the ferry
             //  blob carried the WHOLE account and Swarm_import grafted it, but the Dexie resume path reads
             //   the stash, which so far learned only the keypair — so the reborn Cave woke friendless and

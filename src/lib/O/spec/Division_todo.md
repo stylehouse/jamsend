@@ -81,6 +81,55 @@ The organs don't merely co-exist — they WORK together, constantly, and that wo
 
 ---
 
+## 0a. THE INVITE HELM IS ROLE-AWARE — MyCaptain is resume-from-backup (design, 2026-09-01)
+
+*(the owner, live, after the family went green: "a Cave produces another MyCave invite? I thought it
+ would produce a MyCaptain, and that's how you resume from backup?" — CORRECT, and it is this doc's own
+  §LIFECYCLE doctrine; the code just never learned it: `Swarm_ferry_link` hardcodes `{MyCave:1}` for
+   whoever presses the button.)*
+
+**The design, from the standing doctrine (§TWO AUTHORITIES, §LIFECYCLE, §POST'S TRUTH CHAIN):**
+
+1. **The Link button offers by MY Post.**
+   - Captain (or undivided founder): mint `%Invite:MyCave` — "add a Cave" (grow the family). Today's
+      only road; stays the default face.
+   - **Cave: mint `%Invite:MyCaptain` — "resurrect my Captain"** (the recovery road; the most dangerous
+      token, deliberately human). The surviving Cave holds the whole account (its mirror); the new
+       device redeems, the ferry carries the account exactly as today (soul-holder → blank device; only
+        the conferred Post differs), and the newcomer stands as Captain.
+   - A Cave minting MyCave: NO (the doc's line — invite-issuance is the Captain's helm, its sole
+      ledger; a dead phone freezes issuance until MyCaptain succession). One deliberate exception per
+       §LIFECYCLE, nothing else.
+2. **Succession evicts (already ruled, §LIFECYCLE)**: Captain is a SINGULAR Post — the new holder's
+    grant + re-charter OMITS the old one (`%NotGrant` + re-issue). Caves coexist; a new Cave evicts
+     nobody.
+3. **Every Post grant-backed — kill the founder-inference.** `Swarm_family_derive` currently infers
+    "no husk grant ⇒ founding Captain". Cleaner per the truth chain (truth = the grant, everything else
+     a cache): the FIRST ceremony also cross-signs a `%MyCaptain` for the original body, so every role
+      including the Captain's derives from a standing grant and the inference dies. (Migration: the
+       inference stays as the fallback for pre-existing divisions.)
+4. **Attest = the SEAT, not the Captain** (§TWO AUTHORITIES: the Seat is roster-writer + Charter-signer;
+    the Captain is the invite helm; orthogonal). `Swarm_family_heal` currently gates sign/gossip on
+     role=Captain — right answer today only because they coincide on this deployment. The design gate:
+      attest iff I hold the bare seat (`Swarm_address(ident) === prepub`). Seat succession is automatic
+       (bare-name lapse + hello-v2); Captain succession never is.
+5. **Retirement completes the loop** (the owner's 5-body roster): the heal today only ADDS rows. It must
+    also RETIRE: a non-mine `%Body` row with NO live deriving grant (revoked or never-granted) drops at
+     the next heal, and the Seat re-charters at era+1 so friends and siblings shrink too. UI: a forget
+      affordance ON the family row (the kin-filtered pier hid the old one) → `%NotGrant` on its My*
+       grant → derive skips → heal retires. Dead Gri exits by exactly this road.
+6. **The cold-restore ladder** (resume-from-backup, both rungs):
+   - Rung 1 — a Cave survives: MyCaptain invite (above). The account rides the ferry; nothing new.
+   - Rung 2 — only the FSA folder survives: open the folder on a fresh device → account resumes → the
+      roster it carries is all dead bodies → the human's "I am all that's left" = re-charter at era+1
+       retiring every row but its own (needs a small UI act; NOT automatic — same caution as MyCaptain).
+7. **Later hardening**: grants could carry `via:<bodypub>` (which body physically minted) so the helm
+    doctrine is checkable, not just honoured; the `caveat:remint` clears at any successful re-charter.
+
+Owed by this design: ferry_link takes a feature param + role-aware Door face (1) · founding MyCaptain
+ self-grant (3) · heal attest-gate → seat (4) · heal retirement + family-row forget (5) · rung-2 restore
+  act (6). The ferry, charter, derive, and %Owed machinery all already serve.
+
 ## 0. WHERE THIS IS (2026-08-28) — the live device-link path is the FERRY model
 
 The device-link ("spread myself out") ceremony runs on a **handshake + ferry**, which SUPERSEDES the old

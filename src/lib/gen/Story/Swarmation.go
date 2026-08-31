@@ -12,7 +12,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return '5037c450b3d4d8f5~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'c6526275305d88ab~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -2944,6 +2944,7 @@ async SwarmBody_drive(w, req) {
         if (n === 4) { this.SwarmBody_subnet(w) }
         if (n === 5) { this.SwarmBody_remint(w) }
         if (n === 6) { this.SwarmBody_owed(w) }
+        if (n === 7) { this.SwarmBody_family(w) }
     }
     this.SwarmBody_witness(w)
     await this.SwarmBody_order(w)
@@ -3056,6 +3057,9 @@ SwarmBody_witness(w) {
     let ow = T.o({ owed: 1 })[0]
     // #7 A MISSED FRAME STANDS AS DEBT: deduped by kind — paid does not stand — the cap folds loudly and its evidence survives.
     if (ow && +ow.sc.deduped === 1 && +ow.sc.at_pinned === 1 && +ow.sc.paid_gone === 1 && +ow.sc.capped_loud === 1 && +ow.sc.overflow_survives === 1) { this.story_swear(w, 'a frame that could not go stands as a debt on the counterparty row — deduped by kind so retries cannot grow it — a paid debt detaches and an empty shelf removes itself — the cap folds overflow into a dropped count that outlives full payment') }
+    let fm = T.o({ familied: 1 })[0]
+    // #8 THE FAMILY DERIVES FROM THE GRANTS: the ceremony instant stops mattering — Captain reads its Cave off its own signature — the husk names ME not a phantom — foreign signatures confer nothing.
+    if (fm && +fm.sc.captain_sees_cave === 1 && +fm.sc.cave_page_named === 1 && +fm.sc.husk_is_me === 1 && +fm.sc.husk_keeps_my_name === 1 && +fm.sc.no_phantom_member === 1 && +fm.sc.foreign_sign_ignored === 1) { this.story_swear(w, 'the family derives from the standing grants at any time — a captain reads its cave off its own live signature and a linkee reads its own role and kept name off the husk — the soul never appears as a phantom member and a foreign signature confers nothing') }
 
 },
 // beat 5 — REMINT-NOT-READ is SEEN (Statehome_todo debts: "a fork must be seen").  The sanctioned join
@@ -3116,6 +3120,64 @@ SwarmBody_owed(w) {
     for (const k of ['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8']) { this.Swarm_owed_paid(pier, k) }
     pshelf = pier.o({ Owed: 1 })[0]
     if (pshelf && !pshelf.o({ owe: 1 }).length && +pshelf.sc.dropped === 1) { row.overflow_survives = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 7 — THE FAMILY DERIVES FROM THE GRANTS (the owner's live failure: "both tabs are eed, know Gri…
+//  like you didn't do anything").  The division is re-derivable at ANY time from the standing cross-
+//   signed My<Post> grants — pure, so a botched ceremony instant stops mattering.  Four truths:
+//    CAPTAIN side (Hera): a live Grant:MyCave BY me FOR a pier's page → that page is my Cave, wearing
+//     the pier's friendly as its instance name.  LINKEE side (the husk): a by-me grant FOR my own
+//      body-key pub → MY role + MY instance name, never a second member — even when the same grant
+//       rides the redeem pier whose page is the SOUL itself (the phantom-member trap).  A grant signed
+//        by a FOREIGN key confers nothing.  A revoked (%NotGrant) grant confers nothing.
+SwarmBody_family(w) {
+    w.i({reached: "step_7"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    // ── Hera the CAPTAIN: her pier for Gwen carries her own MyCave grant ──
+    let hkeys = { prepub: 'hera_prepub_0000', pub: 'hera_prepub_0000_full_pub_00000', key: 'hera_key' }
+    let hera = this.Swarm_identity(acct, hkeys, 'Hera')
+    hera.c.bodykey = { pub: 'hera_body_pub_00', key: 'hbk', prepub: 'hera_body_pre' }
+    let hp = this.Swarm_peering(hera)
+    let gpier = hp.i({ Pier: 1, pub: 'gwen_prepub_0000', friendly: 'Gwen' })
+    gpier.c.up = hp
+    let gpage = gpier.i({ Peering: 1, pub: 'gwen_prepub_0000_full_pub_00000' })
+    gpage.c.up = gpier
+    let gg = gpier.i({ Grant: 'MyCave', by: 'hera_prepub_0000', for: 'gwen_prepub_0000' })
+    gg.c.up = gpier
+    // a FOREIGN-signed My* grant on another pier confers nothing
+    let xpier = hp.i({ Pier: 1, pub: 'xena_prepub_0000', friendly: 'Xena' })
+    xpier.c.up = hp
+    let xg = xpier.i({ Grant: 'MyCave', by: 'stranger_pub_000', for: 'xena_prepub_0000' })
+    xg.c.up = xpier
+    let hfam = this.Swarm_family_derive(hera)
+    // ── Gwen the LINKEE (post-become): holds the soul key; her huskiness rides TWO piers ──
+    let wkeys = { prepub: 'wsoul_prepub_000', pub: 'wsoul_prepub_000_full_pub_00000', key: 'wsoul_key' }
+    let wsoul = this.Swarm_identity(acct, wkeys, 'Wanda')
+    wsoul.c.bodykey = { pub: 'gril_prepub_0000_full_pub_00000', key: 'glk', prepub: 'gril_prepub_0000' }
+    let wp = this.Swarm_peering(wsoul)
+    // her ceremony husk: the soul's pier FOR her old identity (imported with the account)
+    let hup = wp.i({ Pier: 1, pub: 'gril_prepub_0000', friendly: 'Gril' })
+    hup.c.up = wp
+    let hpage = hup.i({ Peering: 1, pub: 'gril_prepub_0000_full_pub_00000' })
+    hpage.c.up = hup
+    let hg = hup.i({ Grant: 'MyCave', by: 'wsoul_prepub_000', for: 'gril_prepub_0000' })
+    hg.c.up = hup
+    // the PHANTOM trap: the same grant riding her old redeem pier, whose page is the SOUL itself
+    let rpier = wp.i({ Pier: 1, pub: 'wsoul_prepub_000', friendly: 'Wanda' })
+    rpier.c.up = wp
+    let rpage = rpier.i({ Peering: 1, pub: 'wsoul_prepub_000_full_pub_00000' })
+    rpage.c.up = rpier
+    let rg = rpier.i({ Grant: 'MyCave', by: 'wsoul_prepub_000', for: 'gril_prepub_0000' })
+    rg.c.up = rpier
+    let wfam = this.Swarm_family_derive(wsoul)
+    let row = { familied: 1 }
+    if (hfam.length === 1 && hfam[0].role === 'Cave' && hfam[0].husk === 0) { row.captain_sees_cave = 1 }
+    if (hfam.length === 1 && hfam[0].pub === 'gwen_prepub_0000_full_pub_00000' && hfam[0].name === 'Gwen') { row.cave_page_named = 1 }
+    if (wfam.length === 1 && wfam[0].husk === 1 && wfam[0].role === 'Cave') { row.husk_is_me = 1 }
+    if (wfam.length === 1 && wfam[0].name === 'Gril') { row.husk_keeps_my_name = 1 }
+    if (!wfam.some((e) => e.pub === 'wsoul_prepub_000_full_pub_00000')) { row.no_phantom_member = 1 }
+    if (!hfam.some((e) => e.pub && e.pub.indexOf('xena') === 0)) { row.foreign_sign_ignored = 1 }
     this.SwarmBody_note(w, row)
 
 },

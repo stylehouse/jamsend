@@ -37,7 +37,20 @@
             if (self && typeof H?.Swarm_peering === 'function') {
                 const rw = (H as any)?.c?.radio_w
                 const playing = !!rw?.o?.({ Radio: 1 })?.[0]?.c?.rec
-                friends = ((H.Swarm_peering(self)?.o({ Pier: 1 }) ?? []) as any[]).map((p: any) => {
+                // FAMILY SUPERSEDES FRIENDSHIP (owner 2026-08-31: both tabs listed "you" / "captain
+                //  Grav you" among the piers — each body seeing its own family, husk included, dressed
+                //   as friends).  A pier whose key matches a roster %Body — or my own soul (the redeem
+                //    husk) — is a ceremony RAIL: its grants still ground the Posts, but the Door shows
+                //     those people in the family box, never the pier list.  Prefix-compare, the
+                //      prepub-vs-full-pub law.
+                const fam_pubs = ((typeof H?.Swarm_body_roster === 'function' ? H.Swarm_body_roster(self) : []) as any[])
+                    .map((b: any) => String(b?.sc?.pub ?? '')).filter(Boolean)
+                fam_pubs.push(String(self?.sc?.prepub ?? ''))
+                const kin = (p: any) => {
+                    const keys = [String(p?.sc?.pub ?? ''), String(p?.o({ Peering: 1 })?.[0]?.sc?.pub ?? '')].filter(Boolean)
+                    return keys.some(k => fam_pubs.some(fp => fp && (k.startsWith(fp) || fp.startsWith(k))))
+                }
+                friends = ((H.Swarm_peering(self)?.o({ Pier: 1 }) ?? []) as any[]).filter((p: any) => !kin(p)).map((p: any) => {
                     // the latest suggestion FROM them (by === their pub), with its mirror rec
                     //  resolved by enid against their crate when the share already carried it —
                     //   resolvable means ▶ plays it right here.
@@ -153,13 +166,26 @@
                 instance = { role: String(mineRow.sc?.role || 'body'), name: String(mineRow.sc?.name || '') }
             }
             if (roster.length >= 2) {
-                family = roster.map((b: any) => ({
-                    role: String(b?.sc?.role || 'body'),
-                    name: String(b?.sc?.name || ''),
-                    pub8: String(b?.sc?.pub || '').slice(0, 8),
-                    addr: String(b?.sc?.address || ''),
-                    mine: !!minePub && String(b?.sc?.pub || '') === minePub,
-                }))
+                // THE OTHERS ONLY (owner 2026-08-31: a greenlit "you" row is noise — the badge already
+                //  says who I am).  Each sibling wears a presence rung off %Body `heard` — the standing
+                //   particle the sibling pulse stamps — so "can the two of them see each other" has a
+                //    visible answer: their dot is green because their pulse is landing HERE.
+                const now_s = Math.floor(Date.now() / 1000)
+                family = roster
+                    .filter((b: any) => !(!!minePub && String(b?.sc?.pub || '') === minePub))
+                    .map((b: any) => {
+                        const heard = +(b?.sc?.heard || 0)
+                        const ago = heard ? now_s - heard : null
+                        return {
+                            role: String(b?.sc?.role || 'body'),
+                            name: String(b?.sc?.name || ''),
+                            pub8: String(b?.sc?.pub || '').slice(0, 8),
+                            addr: String(b?.sc?.address || ''),
+                            mine: false,
+                            ago,
+                            rung: ago == null ? 'away' : ago < 15 ? 'here' : ago < 45 ? 'fading' : 'away',
+                        }
+                    })
                 // primary (bare seat) first, then by role then pub — stable, no per-tick shuffle
                 family.sort((a, b) => (a.addr.includes('_') ? 1 : 0) - (b.addr.includes('_') ? 1 : 0)
                     || (a.role < b.role ? -1 : a.role > b.role ? 1 : (a.pub8 < b.pub8 ? -1 : 1)))
@@ -241,7 +267,11 @@
                 bare,
                 addr,
                 suffix,
-                primary: coh ? !!coh.primary : null,   // null = no cohort census in this tab
+                // PRIMACY IS THE SEAT, NOT THE LOCAL CENSUS (owner 2026-08-31: both tabs read
+                //  "primary" — each machine's cohort census is alone in its own browser profile, so
+                //   it can only ever crown itself).  The address IS the arbitrated truth: the relay
+                //    granted exactly one body the bare name.  Bare seat → primary; a suffix → not.
+                primary: addr === bare,
                 lockless: !!coh?.lockless,
                 vessel: coh?.vessel ? String(coh.vessel) : '',
                 sibs,
@@ -508,12 +538,15 @@
                 <!-- THE FAMILY — this soul's bodies by instance name (facet D: "Captain Grav and Cave
                      Guw").  One soul, many bodies; the NAME belongs to each instance (its own name-gate
                      name).  Friends see the one soul; this list is the family's own address book. -->
+                <!-- rows are THE OTHERS only (the badge says who I am); the dot is their sibling
+                     pulse landing here — the honest "we can see each other". -->
                 <div class="df-family">
                     {#each face.family as b (b.pub8)}
-                        <div class="df-friend df-body" class:df-body-mine={b.mine}
-                            title={`${b.role}${b.name ? ' ' + b.name : ''} — ${b.mine ? 'THIS device' : 'another device of yours'}${b.addr ? ' · seat ' + b.addr.slice(0, 12) : ''}`}>
-                            <span class="df-dot" class:here={b.mine}>{b.mine ? '●' : '○'}</span>
-                            <span class="df-name"><span class="df-role">{b.role}</span> {#if b.name}{b.name}{:else}<span class="df-fpub df-fpub-solo">{b.pub8}</span>{/if}{#if b.mine}<span class="df-tag dim">you</span>{/if}</span>
+                        <div class="df-friend df-body"
+                            title={`${b.role}${b.name ? ' ' + b.name : ''} — another device of yours${b.addr ? ' · seat ' + b.addr.slice(0, 12) : ''}`
+                                + (b.ago == null ? ' · not heard this session (closed or away)' : ` · heard ${b.ago}s ago`)}>
+                            <span class="df-dot" class:here={b.rung === 'here'} class:fading={b.rung === 'fading'}>●</span>
+                            <span class="df-name"><span class="df-role">{b.role}</span> {#if b.name}{b.name}{:else}<span class="df-fpub df-fpub-solo">{b.pub8}</span>{/if}</span>
                         </div>
                     {/each}
                 </div>
@@ -536,21 +569,13 @@
                     {/each}
                 </div>
             {/if}
-            {#if bodies}
-                <div class="df-bodies"
-                    title={'the bodies of this identity — one soul, many tabs/devices.'
-                        + (bodies.primary === null ? ' No cohort census ran in this tab.'
-                            : bodies.primary ? ' This body holds the bare name (primary).'
-                            : ' Another body holds the bare name; this one stands at a suffix.')
-                        + (bodies.lockless ? ' (no Web Locks here — primacy assumed, never arbitrated)' : '')
-                        + (bodies.sibs.length ? ` ${bodies.sibs.length} sibling ${bodies.sibs.length === 1 ? 'body' : 'bodies'} known.` : '')}>
-                    <span class="df-tag">🧬 this body{bodies.vessel ? ` ${bodies.vessel.slice(0, 6)}` : ''}
-                        · {bodies.suffix ? `at …${bodies.suffix}` : 'bare'}{#if bodies.primary !== null}&nbsp;· {bodies.primary ? 'primary' : 'not primary'}{/if}</span>
-                    {#each bodies.sibs as s (s.place)}
-                        <span class="df-tag dim"
-                            title={`sibling body ${s.place}${s.role ? ` — ${s.role}` : ''}${s.address ? ` at ${s.address}` : ''}`}>👤
-                            {s.place.slice(0, 6)}{s.address ? ` ${short_addr(s.address, bodies.bare)}` : ''}</span>
-                    {/each}
+            <!-- the 🧬 this-body line is RETIRED (owner 2026-08-31: "I don't think we'll care in the
+                 UI this body etc") — the instance badge (· CAPTAIN Grav / · CAVE Gabo) plus the
+                 family rows carry everything it said, in family language instead of plumbing
+                 language.  The `bodies` derivation stays for its title facts and diagnostics. -->
+            {#if bodies && bodies.lockless}
+                <div class="df-bodies">
+                    <span class="df-tag dim" title="no Web Locks in this browser — primacy assumed, never arbitrated">🧬 lockless</span>
                 </div>
             {/if}
         </div>

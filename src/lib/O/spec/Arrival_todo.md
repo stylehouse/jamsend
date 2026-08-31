@@ -9,6 +9,20 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
  legible C particles, that every boot surface (Splash, BootGate, Butler, LinkDevice, BigSoundland)
   READS instead of each deriving its own truth from a pile of `.c` flags.
 
+## LIVE CONFIRMED + the symmetry residue (2026-08-31, night — supersedes the brief below)
+
+The owner reloaded after the family-heal build: **"hey this looks much more there!"** — the heal derived
+ the family from the standing grants on both tabs. Two residues he spotted, both fixed in DoorFace:
+ - **Both tabs said `primary`** — the 🧬 line read the LOCAL cohort census, and each machine's census is
+    alone in its own browser profile, so it can only ever crown itself. Primacy now reads the SEAT (the
+     relay-arbitrated address): bare → primary, `_N` → not.
+ - **The family showed up dressed as piers** ("you" / "captain Grav you" in the pier list — each body
+    seeing its own family, husk included, as friends). Family supersedes friendship: a pier whose key
+     matches a roster %Body or my own soul is a ceremony RAIL — grants still ground the Posts, but the
+      Door shows those people only in the family box.
+ Still to verify on reload: badges ("· CAPTAIN Grav" / "· CAVE Gri"), one primary each side, pier list
+  clean of selves. The ceremony brief below remains right for a FRESH pairing.
+
 ## NEXT LIVE TEST — the Crew ceremony, briefed (2026-08-31, late — read this before testing)
 
 The owner: *"if I do a Link ceremony again, will they actually know each other as Crew? that's at least
