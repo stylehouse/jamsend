@@ -331,19 +331,20 @@ The device-link ("spread myself out") ceremony runs on a **handshake + ferry**, 
 **Proven:** `SwarmSpread` **5/5** (beat 5 = the ferry glue, `step=5,dige:ac0f77d14fc3ab55`, «the-account-
  ferries-over»). Debug tool: `scripts/runner_watch.mjs` (remote run + named "pointer" predicates, exit-coded).
 
-**⚠ REGRESSED — SwarmSpread beat 5 is now RED (found 2026-08-31, during unrelated arrival-machine work).**
- On a FRESH runner (reloaded, clean state) SwarmSpread consistently fails beat 5 «the-account-ferries-over»:
-  `ok:false, ok_pct:0.8, caveat:1` — the live account crossing no longer completes/asserts (the other 4 beats
-   pass). NOT flaky (2 stale-runner + 2 fresh-runner runs, all identical) and NOT drift. `SwarmStaple` stays
-    **8/8 green**, so first-contact/redeem/grant/roundtrip are intact — it's specifically the ferry SEND→park→
-     consume crossing. Ruled OUT as the cause: the 2026-08-31 arrival-machine edits (Screen_decide/%Arrival/
-      %Share/thin) — humdinger-GATED, inert on a non-humdinger runner, and they touch NO ferry code; `Swarm.g`/
-       `.go` are clean in the working tree. Likely suspect: the committed **Ferry** commits (`f7b90075 Ferry
-        stage 1` … `fa6cbbf4 to Ferry`) — the live crossing regressed since the fixture was recorded, OR the
-         recorded fixture predates a real behaviour change. **Owed:** re-run on a fresh runner, read the beat-5
-          `snap 5` to see whether the account actually crossed (Cave holds the soul key?) or just missed the
-           %see patience; if it truly doesn't cross, bisect the Ferry commits. This is the live-two-tab gate the
-            §0 `#fc`→nonce note already flags as un-proven.
+**✔ SwarmSpread is FUNCTIONALLY GREEN — the red is a STALE FIXTURE, not a bug (diagnosed 2026-08-31).**
+ First read as a regression, but `runner_ask assertions` is decisive: **declared 5, sworn 5, gaps 0** — every
+  `%see` swears, including #5 «the-account-ferries-over» *sworn at step 5*. `snap 5` confirms the behaviour:
+   Ebox (right code) forms a `Body role:Cave` holding the soul; Fbox (wrong code) forms NO Body. The account
+    ferries across correctly and fails closed on a wrong code. **The `ok:false, ok_pct:0.8` is a SNAP-FIXTURE
+     DRIFT** — the live beat-5 (and beat-1) diges differ from the recorded `toc.snap`, so the STEP reads not-ok
+      while the ASSERTIONS all pass. The `Sealbox unseal() OperationError, ikm="wrong_ferry_code"` in devtools
+       is the EXPECTED, CAUGHT wrong-code fail-closed test (`Swarm.go:4874` swallows it, "no account landed");
+        Chrome logs WebCrypto rejections even when caught — noise, not an escape. NOT the arrival work (humdinger-
+         gated, ferry code untouched). **Cause of the drift:** an earlier snap-shape change (committed Ferry
+          commits, or the loaded uncommitted `Heist.g`/`Radio.g`) moved what beat 5/1 snap. **Fix:** `runner_ask
+           accept` to re-record (behaviour is correct), then keep only `NNN.snap` + `toc.snap` step,dige and
+            revert Credulate/Credulation churn — but eyeball the diff first, since the drift cause is worth a
+             glance. Owner's call whether to re-record now.
 
 **NEXT MOVES (owed):**
   - **THE `#fc`→nonce refactor** (above) — the headline. Attended, with a Book re-record.

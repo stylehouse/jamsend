@@ -228,7 +228,12 @@
     //   now driven Book-independently off the Supervisor heartbeat) IS a real arrival — lift the splash to
     //    the listen-only landing below, never leave it hanging over a shareless boot that quietly finished.
     let screen_dominant = $derived.by(() => { void H?.version; return (H as any)?.top_House?.()?.c?.screen?.dominant })
-    let boot_ready = $derived((glass_full || screen_dominant === 'thin') && !butler_up)
+    // The splash lifts once the arrival reaches ANY interactive phase — the app glass, the listen-only landing
+    //  (thin), a device-link ceremony (the Link cell must show — owner 2026-08-31: a refused-FSA device-link tab's
+    //   "splash never lifts"), or a gave-up boot — never while still 'coming'/'arrival'.  `ceremony` is the fix
+    //    for the deadend: on a device-link tab `thin` is preempted by the link-in-flight, so the splash needs to
+    //     yield on `ceremony` too, else the tree pins over the Link cell forever.
+    let boot_ready = $derived((glass_full || screen_dominant === 'thin' || screen_dominant === 'ceremony') && !butler_up)
     // the listen-only landing's "open a folder" — drop the listen-only choice so Housing's next Wormhole tick
     //  re-raises `disk_gated` (a capable browser falls straight to the folder gate), and the BootGate OPEN
     //   SHARE bar returns.  Clearing the choice also flips the phase off `thin`, so the landing yields cleanly.
@@ -249,7 +254,13 @@
     //     the calm tree UP behind that button (instead of fading to the machine room) until the share opens or
     //      listen-only is chosen (disk_gated drops → the deferred fade in Splash honours the boot moving on). -->
     // hold the tree behind the "▶ open" gate while a folder is being solicited.
-    let boot_share_hold = $derived.by(() => { void H?.version; const c: any = (H as any)?.top_House?.()?.c; return !!c?.disk_gated })
+    // Hold the tree behind the "▶ open" button ONLY while genuinely soliciting a folder for an ordinary boot —
+    //  NOT once listen-only is chosen (the boot has moved on to its shareless life) and NOT during a device-link
+    //   ceremony (the Link cell must be visible; the OPEN SHARE button floats ABOVE the splash anyway, z 2.1M, so
+    //    the folder can still be opened without the tree pinned over the ceremony).  This was the "splash never
+    //     lifts" deadend: `hold` defers the Splash fade (Splash.svelte:63), and a ceremony tab kept disk_gated's
+    //      hold long enough to wedge the tree over the Link cell.
+    let boot_share_hold = $derived.by(() => { void H?.version; const c: any = (H as any)?.top_House?.()?.c; return !!c?.disk_gated && !c?.listen_only && c?.screen?.dominant !== 'ceremony' })
     // every UI the run has mounted, GROUPED by House (Cyto and all) — the sprawl's content.
     //  Grouping gives each House one anchor the jump-to-H chips scroll to, plus its own heading in
     //   the dump.  Pantheate-include is DROPPED silently: on a runner these are the Creduler's

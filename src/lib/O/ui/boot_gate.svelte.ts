@@ -167,10 +167,6 @@ export function boot_gate(H_in: any, opts: { proactive?: boolean } = {}) {
         open_share,
         get poll()       { return poll },
         get disk_gated() { poll; return !!H()?.c?.disk_gated },
-        // the gate was raised because the BOOT needs a folder to load (BigSoundland's solicit), not the
-        //  proactive audio nicety — so the face can say WHY (owner 2026-08-31: "no explanation at all that
-        //   this new tab needs an FSA").  `.c` flag, set beside disk_gated, cleared with it when a share opens.
-        get boot_need()  { poll; const c: any = H()?.c; return !!c?.disk_gated && !!c?.disk_gated_boot },
         get ac_wanted()  { poll; ac_poll; return pending_gats.some(g => !g?.AC_ready) },
         // WANTED = there is a permission to ask for. The one question a host needs in order to decide
         //  whether to show a button, so neither host re-derives it from the two halves.

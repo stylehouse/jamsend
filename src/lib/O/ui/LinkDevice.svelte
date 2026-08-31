@@ -861,11 +861,6 @@
     .ld-live-here { color: #093; background: rgba(64, 200, 96, .16); text-shadow: 0 0 6px rgba(64, 220, 96, .5); }
     .ld-live-fade { color: #a70; background: rgba(220, 160, 40, .14); }
     .ld-live-away { color: #977; background: rgba(150, 120, 120, .14); }
-    /* the wait ladder — one fact per rung, ages beside them; the missing rung is the finding */
-    .ld-ladder { display: flex; flex-direction: column; gap: 0.2rem; margin: 0.3rem 0; }
-    .ld-rung { font-size: 0.78rem; line-height: 1.35; }
-    .ld-rung.on   { color: #8fd6a2; }
-    .ld-rung.wait { color: rgba(220, 210, 170, 0.85); }
 
     /* the ferry wire strip — the raw facts dump under every phase */
     .ld-wire {

@@ -442,15 +442,27 @@ Sounditron_commission(w):
     //  BOOK-INERT: the latch is humdinger-gated — a Book runs the verbatim old lines — and every fact here
     //   is .c-only, so the ferry fixtures stay byte-identical.
     if (mh_hd) {
+        // §6 NAME AT THE DOOR FIRST (owner 2026-08-31: stuck at the Link's "name yourself first" — "I want to
+        //  visit the Door one first, as it is more of a general account activity, THEN there's a Link to do").
+        //   Naming is folded into the decision key so the moment a name lands the surface re-decides Link.
+        let l_named = 0
+        try { let ls = this.Swarm_live_self ? this.Swarm_live_self() : null; if (ls?.sc?.friendly) { l_named = 1 } } catch (e) {}
         let fkey = ''
         try {
             let fp = this.Swarm_ferry_particle ? this.Swarm_ferry_particle(w) : null
-            if (fp && fp.sc) { fkey = String(fp.sc.phase || '') + '@' + String(fp.sc.at || '') }
+            if (fp && fp.sc) { fkey = String(fp.sc.phase || '') + '@' + String(fp.sc.at || '') + '@' + (l_named ? 'n' : 'u') }
         } catch (e) {}
         if (fkey !== (w.c.link_decided || '')) {
             if (active) {
-                w.c.focused = 'Link'
-                w.c.link_surfaced = 1
+                // UNNAMED → surface the Door (its name-gate); NAMED → the Link takes the belly.  Once the Door
+                //  name-gate saves a friendly, `l_named` flips, `fkey` changes, this re-fires and lands on Link
+                //   (InvitePanel's whisk focuses it too).  Book-inert: humdinger branch only; Books never name mid-run.
+                if (l_named) {
+                    w.c.focused = 'Link'
+                    w.c.link_surfaced = 1
+                } else {
+                    w.c.focused = 'Door'
+                }
                 w.c.link_decided = fkey
             } else if (!live) {
                 // the ceremony genuinely ENDED (flags cleared + a terminal phase): one teardown, then it's a receipt

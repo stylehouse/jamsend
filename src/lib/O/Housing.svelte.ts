@@ -2261,14 +2261,17 @@ export class House extends StorableHousing {
         //        design lives in Supervisor_todo §0; until it lands, a non-dev listener runs with
         //         ghosts from the bundle and no Books, which the Supervisor should say out loud.
         if (H.top_House().c.boot_role) {
-            // PERSIST THE LISTEN-ONLY CHOICE ACROSS RELOAD (Onboarding §3, owner confirmed).  A human who chose
-            //  "listen without a folder" must not be re-nagged every visit — restore that choice from the stash
-            //   (Dexie-backed, written by boot_gate.listen_only) into the runtime `listen_choice` flag, so the
-            //    branch below stands the gate down without asking again.  ONLY when no fresh choice is already
-            //     live and this isn't a dev/Book boot (which never wrote the key); a folder user never reaches
-            //      here (the local-share path above returns first), so a stale 'thin' can't trap a folder life —
-            //       and "open a folder" clears the key.  Book-inert (carries c.book → skipped).
-            if (!H.top_House().c.listen_choice && !H.top_House().c.book) {
+            // PERSIST THE LISTEN-ONLY CHOICE ACROSS RELOAD (Onboarding §3, owner confirmed: "reload after refusing
+            //  asks again").  A human who chose "listen without a folder" must not be re-nagged every visit —
+            //   restore that choice from the stash (Dexie-backed, written by boot_gate.listen_only) into the
+            //    runtime `listen_choice` flag, so the branch below stands the gate down without asking again.
+            //  ⚠ NO `!c.book` GUARD: BigQualand stamps `book='Sounditron'` on EVERY end-user page, so a `!book`
+            //   guard silently skipped the restore on every real tab (the "asks again" bug — the same `book`
+            //    footgun as the refuse tailspin).  It stays Book-inert anyway: a dev/CredRunner boot never wrote
+            //     the 'thin' stash key, so `get('mode')` returns null and nothing restores.  Only fires when the
+            //      choice isn't already live; a folder user never reaches here (the local-share path above returns
+            //       first), so a stale 'thin' can't trap a folder life — and "open a folder" clears the key.
+            if (!H.top_House().c.listen_choice) {
                 try { if (H.top_House().imem('share').get('mode') === 'thin') H.top_House().c.listen_choice = 1 } catch (e) {}
             }
             // &remoteWormhole=1 runner: NO FaceSucker — the real tree arrives over the channel from a trusted

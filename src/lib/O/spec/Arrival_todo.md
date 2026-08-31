@@ -9,6 +9,46 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
  legible C particles, that every boot surface (Splash, BootGate, Butler, LinkDevice, BigSoundland)
   READS instead of each deriving its own truth from a pile of `.c` flags.
 
+## HANDOVER — FRESH EYES (2026-08-31, after a long reactive-patching session)
+
+**Read this first.** The owner called the boot/splash work "whack-a-mole" and asked for fresh eyes — correctly.
+ The arrival MACHINE (below) is solid; the SPLASH-LIFT LAYER on top of it is not, and here's the honest arc.
+
+**Destination:** device-link onboarding + boot that Just Works, with the arrival state as legible C particles
+ (`%Arrival`/`%Share`) — and the Captain/Cave "organs" teleology in `Division_todo`.
+
+**SOLID (compiled + Book-green; humdinger-gated so SwarmStaple 8/8 stays green; likely correct):**
+- **The arrival authority** — `Screen_decide` mints `%Arrival,phase,reason,%want` + `%Share,mode` under
+   w:Supervisor, driven Book-INDEPENDENTLY off the Supervisor heartbeat (`Supervisor_tick`). `phase`:
+    ceremony ▸ coming/arrival ▸ gaveup ▸ thin ▸ glass. This is the good bones.
+- **Refuse tailspin fix** (`Housing.svelte.ts`): `listen_choice` overrides the `book` gate (BigQualand stamps
+   `book` on every page, which broke the old `!book` guards). Same footgun bit §3.
+- **§3 persist choice** (Housing + boot_gate): stash `share/mode:'thin'`, restore it — `!book` guard REMOVED.
+- **name→Link whisk** (`InvitePanel.svelte`) + **§6 Door-first** (`Sounditron.g` surface: unnamed→Door,
+   named→Link, `l_named` folded into the `link_decided` key).
+
+**⚠ THE LANDMINE — the splash-lift layer in `BigSoundland.svelte` (`boot_ready` / `boot_share_hold`).**
+ These are `$derived` booleans over SIX interacting flags — `glass_full, screen.dominant, butler_up,
+  disk_gated, listen_only, ac_wanted` — PLUS the Splash's own `hold`→defer-fade logic (`Splash.svelte:63`).
+   Every patch to one flips another: I fixed the device-link "splash never lifts" (added `ceremony`), then
+    broke **eed** ("splash doesn't reveal") by holding on `ac_wanted` (reverted that one edit already).
+     **You CANNOT verify any of this headlessly** — it's humdinger browser UX; the runner can't boot it. So
+      reactive patching without the owner at a tab is doomed to whack-a-mole. That's the bomb.
+
+**THE NEXT MOVE (the clean redesign, do WITH the owner testing):** collapse the splash-lift decision into ONE
+ read of `%Arrival.phase` — the whole point of building the particle. The splash should lift iff
+  `phase ∈ {glass, thin, ceremony, gaveup}` and hold on `{coming}`; the AC/folder begs ride as `%want` shown
+   OVER the tree (BootGate is already z-2.1M above the splash), never by holding the fade. Kill the six-flag
+    `$derived` soup in BigSoundland and read the phase. Add the owner's **"show guts" escape hatch atop the
+     splash** (a robustness valve so a wedged splash is always escapable — they asked for it). THEN re-run the
+      6-row test checklist (in the chat / §0 below) at a real tab, one pass, batch the fails.
+
+**Also open:** `Division_todo` SwarmSpread beat-5 is a STALE FIXTURE not a bug (5/5 assertions sworn) —
+ re-record when ready. The owner had "not even got a new Link made yet" — the actual device-link crossing
+  works (SwarmStaple/snap-proven); it's the boot SURFACE around it that's been in the way.
+
+---
+
 ## 0. What to get on with next
 
 **Confirmed direction (owner 2026-08-31): "go straight to the state machine".** Build order below (§5).
