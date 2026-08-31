@@ -1116,6 +1116,12 @@ export class House extends StorableHousing {
             //    plain boolean would stay latched and miss the NEXT wedge.
             if (held && held.ms > MUTEX_WEDGE_MS && H.c._mutex_wedge_told !== H.c._mutex_beliefs_at) {
                 H.c._mutex_wedge_told = H.c._mutex_beliefs_at
+                // …AND SAY IT IN THE CONSOLE (2026-08-31, the eed 609s jam).  Story_error particles into
+                //  %Errlog / the run bar — right for a Book, INVISIBLE on a live music tab, where the only
+                //   console tell was Swarm's ⏳ skip-line spamming "QUEUED Ns behind the beliefs mutex"
+                //    every few seconds WITHOUT naming the holder.  One console.error per lock episode
+                //     (the same key as the report above), naming who: the single fact a paste needs.
+                console.error(`🧱 beliefs mutex held ${Math.round(held.ms / 1000)}s by ${held.who} — no House can drain until it settles (this line fires once per episode; the holder is an await inside that fn that never resolved)`)
                 ;(H as any).Story_error?.('error', 'mutex',
                     `beliefs mutex held ${Math.round(held.ms / 1000)}s by ${held.who} — no House can drain until it settles`)
             }

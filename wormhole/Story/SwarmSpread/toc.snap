@@ -4,9 +4,7 @@ story:SwarmSpread
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.073
-      sample=0.056,at=1788061948
-      sample=0.145,at=1788063991
+    TimeTotal:beliefs,avg=0.117
       sample=0.1,at=1788071927
       sample=0.061,at=1788072722
       sample=0.039,at=1788072885
@@ -15,9 +13,9 @@ story:SwarmSpread
       sample=0.089,at=1788086191
       sample=0.039,at=1788091077
       sample=0.045,at=1788091887
-    TimeTotal:step,avg=0.015
-      sample=0.011,at=1788061948
-      sample=0.029,at=1788063991
+      sample=0.352,at=1788160035
+      sample=0.289,at=1788160241
+    TimeTotal:step,avg=0.023
       sample=0.02,at=1788071927
       sample=0.012,at=1788072722
       sample=0.008,at=1788072885
@@ -26,6 +24,8 @@ story:SwarmSpread
       sample=0.018,at=1788086191
       sample=0.008,at=1788091077
       sample=0.009,at=1788091887
+      sample=0.07,at=1788160035
+      sample=0.058,at=1788160241
   step,dige:0000000000000000
   step=2,dige:3338a029cfe39e2e
     Assertion:a-blank-device-offers,sentence:a blank device offers itself as a body not a role — the adoption offer proves the device holds its own key and carries no Post so the device does not yet know it will be a Cave
@@ -34,5 +34,5 @@ story:SwarmSpread
     Assertion:the-device-consents-to,sentence:the device consents to the role and the Charter routes both — the box derives Cave from the proposed grant the phone takes Captain and the first Charter verifies and routes the Cave to its suffix the Captain to the bare name
   step=4,dige:e56b59a6ff356bc1
     Assertion:the-ceremony-fails-closed,sentence:the ceremony fails closed — a tampered seal a wrong nonce and a withheld consent each produce no body and the soul never lands on a device that flubbed the seal or that the human did not confirm
-  step=5,dige:e733ad6d4821c4af
+  step=5,dige:7ebd2896f1348e07
     Assertion:the-account-ferries-over,sentence:the account ferries over the sealed pier — once a MyCave pier stands the soul exports and seals its whole account across to the blank device which unseals it with the fragment code and now holds the very same soul key as a Cave while a wrong code lands no account at all

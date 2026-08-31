@@ -48,9 +48,15 @@
             if (s.has("B") || s.has("E")) { show = false; return }   // runner/editor boot — HIDE the SSR'd splash
         } catch {}
         const min = setTimeout(() => { held = true }, 700)
-        // SAFETY cap only (7s): the splash now intends to hold to the Radio beginning, but must never wedge — if
-        //  the glass never comes up it fades to reveal the Butler's progress/gaveup (with its always-on ▦ exit).
-        const max = setTimeout(() => fade(), 7000)
+        // LAST-DITCH cap only — 45s, was 7s (owner 2026-08-31: a slow-but-progressing boot "takes ages" and the
+        //  7s cap FADED THE TREE mid-boot, revealing the bare Supervisor glass with an OPEN SHARE icon in it —
+        //   "interrupts the splash").  The 7s was set when there was no other escape from a wedged tree; now ▦
+        //    sits ABOVE this splash (z 2.2M) and lifts it on demand (BigSoundland boot_ready `sprawl`), so the
+        //     cap is a genuine wedge backstop, not a trip-wire — a slow remote-wormhole boot (~25s) stays calm
+        //      under the tree, OPEN SHARE floating over it, and only a truly hung boot (>45s, no arrival, no
+        //       ▦) ever falls through to the Butler's progress/gaveup.  (Radio-beginning `ready` and the 3s
+        //        gaveup grace still fade FIRST on a healthy boot — this only ever fires on a real wedge.)
+        const max = setTimeout(() => fade(), 45000)
         return () => { clearTimeout(min); clearTimeout(max); if (urge_timer) clearTimeout(urge_timer) }
     })
 

@@ -1200,7 +1200,16 @@ Screen_decide(w):
     let prev = MH.c.screen
     let changed = !prev || prev.dominant !== dominant || (prev.wants ? prev.wants.join(',') : '') !== wkey ? 1 : 0
     MH.c.screen = { dominant: dominant, reason: reason, wants: wants, yields_to: dominant === 'ceremony' ? [] : ['ceremony'] }
-    if (changed) { console.log('🖥 screen: ' + dominant + (wkey ? ' +[' + wkey + ']' : '') + ' — ' + reason) }
+    if (changed) {
+        console.log('🖥 screen: ' + dominant + (wkey ? ' +[' + wkey + ']' : '') + ' — ' + reason)
+        // PUBLISH THE EDGE (2026-08-31, the splash-hang session): every surface reads this decision through
+        //  a `$derived` keyed on H.version (boot_ready / boot_gaveup / the Butler's ceremony-lift), and a
+        //   `.c` write announces NOTHING — the flip only reached them when some UNRELATED bump happened by.
+        //    A phase transition is rare and load-bearing, so it earns its own bump.  Changed-gated, so the
+        //     re-entered commission recomputes `changed=0` and stops — no self-bump loop (the "NO bump"
+        //      worry above was about bumping UNCONDITIONALLY, which really would re-enter forever).
+        if (MH.bump_version) { MH.bump_version() }
+    }
     // …AND AS AN INTELLIGIBLE C STRUCTURE (Arrival_todo, owner 2026-08-31: "create intelligible C** structures
     //  for reality").  The ranked decision above rides `MH.c.screen`, a `.c` OBJECT invisible to the snap/mesh/
     //   Cyto/Books — the very anti-pattern being retired.  Mint the SAME decision as `%Arrival` under w:Supervisor
@@ -1236,6 +1245,26 @@ Screen_decide(w):
     let shr = w.oai({ Share: 1 })
     if (shr.c.up !== w) { shr.c.up = w }
     if (shr.sc.mode !== share_mode) { shr.sc.mode = share_mode; shr.bump() }
+    // DRAG THE TAB INTO THE CEREMONY (2026-08-31, the fresh-incogni "plops into the Radio, doesn't drag to
+    //  Door→Link" bug — with OR without FSA).  A tab opened from a MyCave link exists FOR the link, but the
+    //   belly SURFACE (Door name-gate → Link) is set by Sounditron_commission, which only re-runs on the Book
+    //    drive (STOPPED once the cold resident toc completes at n=2) or a manual nav — so the ceremony that
+    //     becomes surfaceable only AFTER the glass stands (link_fresh flips on glass_stood) never got a re-run
+    //      to surface it: the tab committed to the Radio focus and sat there, and the human had to nav to the
+    //       Door by hand.  THIS authority runs every Supervisor heartbeat (Supervisor_tick, Book-independent),
+    //        so when a device link is genuinely in flight on a humdinger tab, re-run the resident glass
+    //         commission (the Radio_pop_glass handles) — its surface logic is latched per phase@named, so this
+    //          is a no-op once Door/Link is decided, and it fires exactly once more the moment the phase or the
+    //           name changes.  RE-ENTRANCY GUARD: the commission calls Screen_decide too (with the GLASS world);
+    //            the heartbeat calls it with the Supervisor world — so only re-commission when `w` is NOT the
+    //             glass world (`rw !== w`), which is precisely "I was ticked from outside the glass".
+    if (link && MH.c.humdinger) {
+        let run = MH.c.sounditron_run
+        let rw = MH.c.radio_w
+        if (run && rw && rw !== w && typeof run.Sounditron_commission === 'function') {
+            try { run.Sounditron_commission(rw) } catch (e) {}
+        }
+    }
     return 1
 
 // Sounditron_link_open — the Door's "Link Device" doorway.  Focuses the %Link belly cell DIRECTLY (Sounditron_focus,

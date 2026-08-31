@@ -16,10 +16,10 @@
     //    AudioContext_wanted listener, and above all the rule that the FSA picker and the AC resume
     //     must each be INITIATED inside the click's gesture — lives there once.  This file is now
     //      only the standalone way of asking.
-    //  AND IT STANDS DOWN FOR THE BUTLER: `H.c.butler_up` means a fullscreen loading screen is
-    //   already on the glass carrying this same button, and two gates in a row is a bad arrival
-    //    (the owner: *"the second one of those FaceSuckers needs keeping out of happening by the
-    //     first"*).  Read through the poll, so it needs no reactivity of its own.
+    //  IT NO LONGER STANDS DOWN FOR THE BUTLER (2026-08-31): this is a small button over the splash, not
+    //   a rival fullscreen cover, so "two FaceSuckers in a row" cannot happen — and standing down while the
+    //    Butler held was the "OPEN SHARE takes ages to appear" bug (the Butler's own copy was hidden behind
+    //     the splash, so no tap showed until arrival).  See the render comment.
     import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     import { onMount } from "svelte"
     import type { House } from "$lib/O/Housing.svelte"
@@ -34,7 +34,8 @@
 
     let disk_gated   = $derived(gate.disk_gated)
     let ac_wanted    = $derived(gate.ac_wanted)
-    let butler_up    = $derived.by(() => { gate.poll; return !!(H as any)?.c?.butler_up })
+    // (the old `butler_up` stand-down is GONE — this bar now sits above the Butler and is the one visible
+    //  OPEN SHARE host in every phase; see the render comment below.)
     // AND IT STANDS DOWN FOR A DEVICE-LINK CEREMONY (owner 2026-08-29: the blue share gate "hijacks the
     //  Adopt… this occurance must be only for AC which we can wait til after this compulsory Adopt").  A
     //   soul-copy is the most consequential thing on the glass; a folder/audio beg must not seize the screen
@@ -62,23 +63,32 @@
      raised when a share is genuinely needed (Housing under a boot_role, or BigSoundland's boot-stuck solicit),
      and the ceremony CAN'T complete without it — so it must punch through.  Only the proactive AUDIO nicety
      (ac_wanted, no folder) waits for the Adopt. -->
-{#if !butler_up && (disk_gated || (ac_wanted && !ac_via_brink && !link_active))}
-    <!-- A COMPACT BAR, NOT A FULLSCREEN FACESUCKER (owner 2026-08-31: "I want that to just be an 'OPEN SHARE'
-         button on top of the splash, not a big facesucker of its own … also a clickable ? to explain a little").
-         Fixed low-centre, z 2,100,000 — ABOVE the tree Splash (2,000,000), so the ONE compulsory gesture punches
-         through it without a second full takeover.  The button harvests the gesture (open_share): AC wakes always;
-         the folder picker fires only when a share is wanted (disk_gated). -->
+<!-- ONE BUTTON, ONE WORD, ON THE SPLASH (owner 2026-08-31: "we always click this vague button called OPEN
+     SHARE in this piracy program … having two differently labelled buttons for needAC and needFSA is going to
+     annoy users — they don't care, just train them to click OPEN SHARE any time, sometimes it has a dialogue
+     open if it's needFSA").  So the label is ALWAYS "OPEN SHARE" — whether this gesture merely wakes audio (a
+     silent instant click) or opens a folder dialog, the user learns exactly one affordance.  The ? / explainer
+     / "listen without a folder" appear ONLY in the folder case, where there is a real choice to explain; the
+     bare audio click gets NOTHING but the button (owner: "just not have a cancel or ? button in the case that
+     it's just soliciting a click").
+     NO LONGER SUPPRESSED BY `butler_up` (the "takes ages to turn up OPEN SHARE" bug, 2026-08-31): the old
+     `!butler_up` gate meant that while the Butler held the arrival screen, THIS bar stood down and the only
+     OPEN SHARE was the Butler's own copy — hidden BEHIND the splash — so no tap was visible until the Butler
+     lifted (~"exactly when show guts appears").  This bar sits at z 2,100,000, ABOVE both the splash
+     (2,000,000) and the Butler (55,000), so it is the ONE visible host in every phase; and whenever the splash
+     is DOWN the Butler is already down too (boot_ready requires !butler_up), so there is never a double. -->
+{#if disk_gated || (ac_wanted && !ac_via_brink && !link_active)}
     <div class="bg-bar">
         <div class="bg-row">
             <button class="bg-open" onclick={open_share} disabled={opening_share}>
-                {opening_share ? 'opening…' : (disk_gated ? 'OPEN SHARE' : '▶ open sound')}
+                {opening_share ? 'opening…' : 'OPEN SHARE'}
             </button>
-            <button class="bg-q" onclick={() => (explain = !explain)} aria-label="what is this?" title="what is this?">?</button>
+            {#if disk_gated}
+                <button class="bg-q" onclick={() => (explain = !explain)} aria-label="what is this?" title="what is this?">?</button>
+            {/if}
         </div>
-        {#if explain}
-            <p class="bg-explain">
-                {#if disk_gated}this device keeps your music &amp; account in a folder you pick, so they survive across visits and stay on YOUR disk — not a server. or listen without one and it pools in browser storage.{:else}one tap starts the sound (browsers need a tap before they'll play audio).{/if}
-            </p>
+        {#if disk_gated && explain}
+            <p class="bg-explain">this device keeps your music &amp; account in a folder you pick, so they survive across visits and stay on YOUR disk — not a server. or listen without one and it pools in browser storage.</p>
         {/if}
         {#if share_error}<p class="bg-err">{share_error}</p>{/if}
         {#if disk_gated && gate.fsa_advice && !share_error}<p class="bg-err">{gate.fsa_advice}</p>{/if}

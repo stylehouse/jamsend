@@ -219,6 +219,19 @@
     //   keep every bit of it, because those are the rooms you enter when something is wrong and
     //    they are worth nothing without their labels.  `.scape-peek` (and ? ) are the way back.
     let glass_full = $derived(!!cyto && !sprawl)
+    // MIRROR THE GLASS MACHINE-FACTS ONTO top.c (Arrival_todo 2026-08-31, the circle fix) — the same
+    //  .c-mirror pattern boot_gate uses for ac_wanted: the ghost side (Swarm_link_fresh's offer-seizure
+    //   hold) can't read Svelte state, so the page says "I intend a glass" (glass_wanted, at mount) and
+    //    "the glass has actually mounted" (glass_stood, LATCHED on the first cyto — a stood glass this tab
+    //     is a fact; a later sprawl toggle doesn't un-stand it).  This replaces the ghost reading
+    //      `butler_up` — the flag whose owner (the Butler) consults the ghost back: the first-boot
+    //       device-link deadlock.  `.c` only, never snapped; 1-or-absent.
+    $effect(() => {
+        const c: any = H?.top_House?.()?.c
+        if (!c) return
+        c.glass_wanted = 1
+        if (cyto) c.glass_stood = 1
+    })
     // RADIO BEGINNING — the splash holds until BOTH the glass is up AND the Butler has lifted (owner 2026-08-29:
     //  "it should stretch all the way to the Radio beginning").  While the Butler is still holding (butler_up) the
     //   splash stays OVER it, so the owner never watches "the Supervisor get ready".  OPEN SHARE no longer fades the
@@ -233,7 +246,10 @@
     //   "splash never lifts"), or a gave-up boot — never while still 'coming'/'arrival'.  `ceremony` is the fix
     //    for the deadend: on a device-link tab `thin` is preempted by the link-in-flight, so the splash needs to
     //     yield on `ceremony` too, else the tree pins over the Link cell forever.
-    let boot_ready = $derived((glass_full || screen_dominant === 'thin' || screen_dominant === 'ceremony') && !butler_up)
+    //  …and `sprawl` (the ▦ guts switch) lifts it UNCONDITIONALLY: ▦ now sits ABOVE the splash (the
+    //   escape hatch the owner asked for), and a hatch that flips a pref without revealing anything
+    //    would be a lie — "show me the guts" is a lift in its own right, whatever the boot is doing.
+    let boot_ready = $derived(sprawl || ((glass_full || screen_dominant === 'thin' || screen_dominant === 'ceremony') && !butler_up))
     // the listen-only landing's "open a folder" — drop the listen-only choice so Housing's next Wormhole tick
     //  re-raises `disk_gated` (a capable browser falls straight to the folder gate), and the BootGate OPEN
     //   SHARE bar returns.  Clearing the choice also flips the phase off `thin`, so the landing yields cleanly.
@@ -680,16 +696,19 @@
     }
     .scape-panel-name { font-size: 0.8rem; color: #cfe0ff; }
     .scape-off { color: #e05a5a; font-size: 0.75em; margin-left: 0.4em; }
-    /* ▦ THE ONE CONTROL — fixed top-right, on screen in every room, over every FaceSucker.
-       z-index: FaceSucker computes `altitude * 1000`, so BootGate (77) sits at 77000 and the Butler
-        (55) at 55000.  999999 is not a magic number picked for luck: it is "above anything that
-         hoists itself", and the reason it has to be is that this button's whole job is to reverse a
-          fullscreen state.  Under them it would be invisible exactly when it is needed.
+    /* ▦ THE ONE CONTROL — fixed top-right, on screen in every room, over every FaceSucker AND the
+        boot splash.  z-index: FaceSucker computes `altitude * 1000`, so BootGate (77) sits at 77000
+         and the Butler (55) at 55000 — but the SPLASH sits at 2,000,000 and the boot-gate bar at
+          2,100,000, and until 2026-08-31 this button's 999999 left it UNDER the splash: a wedged
+           splash had no escape at all (the owner asked for a "show guts" hatch atop it — this is
+            that hatch, the existing control raised above everything for real).  2,200,000: above
+             anything that hoists itself, which is this button's whole job — it reverses fullscreen
+              states, and under them it would be invisible exactly when it is needed.
        0.2 at rest, full on hover/focus.  A listener never notices it; anyone looking for a way out
         finds it in the corner every app puts one in.  `-webkit-tap-highlight` and a fat padding keep
          it pressable on a phone where 0.2 opacity is easy to miss but a corner is easy to hit. */
     .scape-guts {
-        position: fixed; top: 0; right: 0; z-index: 999999;
+        position: fixed; top: 0; right: 0; z-index: 2200000;
         opacity: 0.2;
         background: none; border: none; border-radius: 6px;
         cursor: pointer; font-family: inherit; font-size: 1rem; line-height: 1;

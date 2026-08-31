@@ -9,6 +9,63 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
  legible C particles, that every boot surface (Splash, BootGate, Butler, LinkDevice, BigSoundland)
   READS instead of each deriving its own truth from a pile of `.c` flags.
 
+## HANDOVER — THE CIRCLE FOUND (2026-08-31, evening, the two-device live session)
+
+**Read this first; the older handover below still holds for the machine's shape.** The owner ran the real
+ thing: incognito cave (refuse FSA, MyCave link) + eed the soul. Two separate diseases surfaced, one on
+  each device, and the cave one is now FIXED IN THE TREE (needs the owner's live confirm):
+
+**1. THE CAVE FIRST-BOOT SPLASH HANG WAS A LITERAL CIRCULAR WAIT.** `Swarm_link_fresh`'s offer-seizure
+ held until `!top.c.butler_up`; the Butler's own ceremony-lift consulted `Swarm_link_fresh` — each waiting
+  on the other, escaped only by the 120s valve. Worse, the Butler called `link_fresh(null)` while
+   `Screen_decide` called `link_fresh(w)` — two computations of one truth that could disagree. And the
+    reload "fix" was a road-change, not a fix: the stashed `share/mode:'thin'` made boot 2 take the thin
+     path from t=0 (the owner: *"needing to refresh incogni to get it to not hang sounds like needing to
+      kick in the noFSA mode before we know we need to"* — exactly right, see THE LAW below).
+ **The fix (landed, compiled, gate-green):**
+ - `Swarm_link_fresh` offer-hold now reads **machine facts**: `glass_wanted`/`glass_stood`, mirrored onto
+    top.c by BigSoundland (the ac_wanted mirror pattern). No surface flag in the ghost's read path.
+ - The Butler's ceremony-lift now READS THE AUTHORITY (`c.screen.dominant === 'ceremony'`) instead of
+    recomputing it. One decision, one reader discipline — the whole point of the machine.
+ - `Screen_decide` now **bumps top on a changed decision** (changed-gated, so no loop): a phase flip is
+    rare and load-bearing, and a `.c` write announces nothing — surfaces only saw it by luck of unrelated
+     bumps before.
+ - ▦ raised ABOVE the splash (z 2.2M) and `boot_ready` lifts on `sprawl` — the owner's "show guts"
+    escape hatch atop a wedged splash, real now.
+ GATE: SwarmStaple 8/8, InvFerry 6/6, InvWalk 8/8, InvSeal 5/5 all ok_pct 1 caveat 0 IN CHECK MODE
+  (= diges matched committed fixtures = byte-inert), PROVEN on the new code (the Credulate spool bakes
+   `Ghost_S_Swarm,dige:138ea0db…` / `Ghost_Story_Sounditron,dige:7973f222…`). The 8-step Sounditron
+    fleet Book is red — and its Credulation shows it was IDENTICALLY red before this diff (ok_pct 0 at
+     the prior diges): environmental (it needs live peers; eed was wedged — see 2).
+
+**2. EED (THE SOUL) HAD ITS BELIEFS MUTEX HELD 10+ MINUTES — this, not the cave, is why the ceremony
+ never crossed.** The log: `⏳ Swarm_share_beat busy — QUEUED 609s behind the beliefs mutex (×1011)`.
+  QUEUED-not-running = a mutex jam: some OTHER fn held the top House's beliefs mutex the whole time, so
+   NOTHING drained — the incogni's `pier_hello seq=1` arrived repeatedly and was never processed (hence
+    "no trace of the new incogni as a Pier of any kind" on eed), presence never warmed (hence "eed is
+     offline" on the cave), and the ~180-deep `pier_accept` retransmit storm to `7f86cafc` (the OLD dead
+      incogni body) ground on. The wedge DID self-report — but only into %Errlog/`drain_why` (the todo
+       popover), invisible in a console paste. **Landed: the wedge now also `console.error`s once per
+        episode, naming the holder** (`🧱 beliefs mutex held Ns by <who>…`). NEXT TIME IT HAPPENS: the
+         console names the fn; paste that. **PRIME SUSPECT, now DEFUSED:** `Clustation_mirror_account`
+          runs inside the beliefs-mutex chain (the cave's own stack trace showed it) and `Swarm_persist
+           → Swarm_account_save` awaits RAW FSA writes with no timeout (wormhole ops get WH_OP_TIMEOUT;
+            this path never did) — and FSA handles went bad on this rig the same evening (the editor tab
+             lost its FSA live). One wedged write = the mutex held forever. **Landed: the mirror is
+              timeboxed at 15s** (Auto.svelte) — on overrun it logs `🪪🧱`, leaves the mark set (no
+               concurrent re-enWaft), and RELEASES the belief loop; durability stays owed, the machine
+                stays alive. Other suspects if the 🧱 line names something else: a Heist/Repli await
+                 against the dead old body, a Dexie transaction. FOLLOW-UP owed: bound the reliable
+                  outbox to a peer that never acks (~180 buffered frames to a dead body is its own
+                   disease).
+
+**THE LAW THIS SESSION EARNED — first boot must equal second boot.** Any state that only becomes correct
+ after a reload (the stashed thin choice, the re-acquired FSA handle, the re-parked offer) is a bug
+  wearing persistence as a bandage. Every decision the reload "unlocks" must be reachable on boot one:
+   the `#Iz` fact is in the URL at t=0 (no ghost needed), the glass facts are machine facts, the share
+    default for a ceremony tab can be thin-until-decided (folder = upgrade, offered from the Door after —
+     Onboarding §3/§4). Test any boot change by asking "does boot 1 take the same road as boot 2?"
+
 ## HANDOVER — FRESH EYES (2026-08-31, after a long reactive-patching session)
 
 **Read this first.** The owner called the boot/splash work "whack-a-mole" and asked for fresh eyes — correctly.
@@ -49,7 +106,94 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
 
 ---
 
+## THE ARRIVAL, FROM THE USER'S CHAIR (the lovely end goal — owner asked 2026-08-31: "what sort of
+##  lovely end goal do we get to?")
+
+The destination, stated so no session re-derives it and every brick can be checked against it:
+
+**One calm tree, from first paint to music.** The splash covers the whole boot and is NEVER interrupted —
+ no "bare Supervisor glass", no machine-room flash, no second full-screen takeover. Slow boots stay calm
+  under the tree; the tree yields only to the real thing (the glass with music, the listen-only landing, or
+   the become-a-body ceremony), never to the plumbing.
+
+**One button, one word: OPEN SHARE.** The single affordance of the whole pirate app. Whenever the boot wants
+ a human gesture — wake audio, open a folder, or both — the SAME orange button appears in the SAME place
+  over the tree with the SAME word. The user learns exactly one thing: *when the app wants something, click
+   OPEN SHARE.* Sometimes that click is silent and instant (audio woke); sometimes a folder dialog opens; the
+    user never has to know or care which. No second label ("▶ open sound" is gone), no "?" or cancel clutter
+     on the bare-click case — the "?" and the "listen without a folder" escape appear ONLY in the folder case,
+      where there is a genuine choice to explain.
+
+**One escape, one glyph: ▦.** The machine room — the Supervisor glass, diagnostics, every House's UI — lives
+ behind exactly ONE deliberate control, ▦, sitting above everything (even a wedged splash). A boot is never a
+  dead tree: if you WANT the guts you can always reach them, and a genuinely hung boot (>45s, no arrival) still
+   falls through to the Butler's progress/gaveup as a last-ditch. But you go to the machine room; it never comes
+    to you.
+
+**The user answers ONE question, ONCE, up front, and never gets surprised later.** Folder-or-listen-only is
+ asked at OPEN SHARE and remembered (a decliner is never re-nagged; the folder is an UPGRADE offered from the
+  Door later, never a mid-feature surprise picker — Onboarding §3/§4). A device-link cave becomes-a-body through
+   the same calm surface, the folder question folded in, not stacked on top.
+
+Structurally this is the RETOPLEVEL (§5d): splash + OPEN SHARE + ▦ are PLATFORM chrome mounted once at the
+ root above every page, driven by the ONE arrival authority (`%Arrival.phase` + `%Share.mode` + `%want` begs).
+  The pages underneath just say "which glass". Every flag a surface stops cross-reading, and every
+   differently-labelled button that collapses into OPEN SHARE, is a step down that ladder.
+
+**Checkable tells the bet is being kept:** the tree never flashes to the machine room on a slow boot; OPEN
+ SHARE appears the instant a gesture is wanted (not "ages later, when ▦ shows up"); there is exactly one
+  button label; boot 1 takes the same road as boot 2 (no reload-to-fix — see THE LAW in the top handover).
+
 ## 0. What to get on with next
+
+**FIRST (owner, live): the circle-fix confirm + the eed wedge.** (a) Fresh incognito + MyCave link +
+ refuse FSA, FIRST boot: the splash should now yield to the ceremony without a reload (the circle is
+  broken — see the top handover). (b) On eed: reload the wedged tab; if the jam recurs the console now
+   names the holder (`🧱 beliefs mutex held Ns by <who>`) — paste that line, it's the whole diagnosis.
+    (c) Re-run the 8-step Sounditron fleet Book once eed is back — it was red only because eed was wedged.
+
+**LANDED 2026-08-31 (eve, all .svelte → HMR, no compile) — the ONE OPEN SHARE button (owner's live gripe
+ "eed has an AC OPENSHARE icon in a bare Supervisor glass interrupting the splash / takes ages to turn up /
+  two labels annoy users"):** the label is now ALWAYS "OPEN SHARE" (▶ open sound gone); the ? / explainer /
+   listen-escape show ONLY in the folder case; the `!butler_up` suppression is GONE so the button appears the
+    instant a gesture is wanted (BootGate is the single visible host, z 2.1M above splash AND Butler); the
+     Splash last-ditch cap is 7s → 45s so a slow-but-progressing boot no longer fades the tree into the bare
+      Supervisor glass (▦ above the splash is the real escape now). See "THE ARRIVAL, FROM THE USER'S CHAIR".
+
+**LANDED 2026-08-31 (later) — THE CEREMONY NOW AUTO-DRAGS THE TAB TO DOOR→LINK (owner: fresh incogni
+ "plops into the Radio … should've been dragged into Door then Link … if I nav to Door it's ready to grab my
+  name, then proceeds with Link"; same with FSA: "I have to go into Door to get it on").** ROOT: the belly
+   SURFACE (`w.c.focused = Door|Link`) is set by `Sounditron_commission`, which re-runs only on the Book drive
+    (STOPS when the cold resident toc completes at n=2) or a manual nav — so a ceremony that becomes
+     surfaceable only AFTER the glass stands (`link_fresh` flips on `glass_stood`) never got a re-run to
+      surface it; the tab committed to the Radio focus and sat. FIX (`Screen_decide`, Sounditron.g): the
+       Supervisor heartbeat runs `Screen_decide` every tick (Book-independent) and already knows the ceremony
+        is fresh — so when a link is in flight on a humdinger tab it now re-runs the resident glass commission
+         (the `Radio_pop_glass` handles `sounditron_run`/`radio_w`), whose surface logic is latched per
+          phase@named (a no-op until the phase or the name changes). Re-entrancy-guarded by `rw !== w` (the
+           commission calls Screen_decide with the glass world; the heartbeat with the Supervisor world).
+            GATE: SwarmStaple 8/8 + InvWalk 8/8 byte-identical on the new code (`Sounditron.go` a6cc1250) —
+             inert by construction (every Screen_decide edit sits after the `!humdinger → return 0` gate).
+              ⚠ needs the owner's live confirm: fresh incogni (± FSA) should now walk splash → Door(name) →
+               Link(become) with NO manual nav. Reload the tab to pick up the new .go (LocalGen wrote disk;
+                no editor was on the relay to HMR).
+
+**STILL SECONDARY — the AC "OPEN SHARE" is deferred DURING a ceremony (by design).** During the Adopt the
+ audio beg is suppressed (`ac_wanted && !link_active`, owner's 2026-08-29 rule "AC can wait til after this
+  compulsory Adopt") — so the button "goes away until I make a gesture" is that deferral: once the ceremony
+   completes, `link_active` falls and OPEN SHARE returns for the audio tap. If the owner wants audio to wake
+    from a ceremony click instead, that's a keep_awake-on-ceremony-buttons change, not the auto-drag.
+
+**STILL OPEN — the fresh-incognito boot is SLOW ("amazingly slowly … ages to go … chaos").** Not yet
+ diagnosed; candidates: (1) the boot_gate poll doesn't start until BigSoundland assigns H inside an $effect
+  (late), so ac_wanted/OPEN SHARE has inherent first-paint latency; (2) a fresh incognito with no Dexie/OPFS
+   does real cold setup; (3) aftermath of the eed wedge (the cave was talking to a jammed soul). The 45s cap +
+    always-visible OPEN SHARE make the slowness CALM (tree stays, button floats) rather than a machine-room
+     dump, but the underlying "ages" wants a real look — likely a boot-cost profile, best done with the owner
+      timing a real fresh-incognito boot (headless can't see this). This is where the retoplevel (§5d/§5b) pays
+       off: a root-mounted splash + platform OPEN SHARE stop every page re-racing the boot.
+**THEN:** the remaining §5 bricks — retire the `.c` flags (readers → `%Arrival`/`%Share`), the phase-walk
+ Book, and the ceremony-tab share default (thin-until-decided, folder-as-upgrade — the first-boot law).
 
 **Confirmed direction (owner 2026-08-31): "go straight to the state machine".** Build order below (§5).
 
@@ -249,6 +393,30 @@ So brick 2 is a DECOUPLING, and there are two clean ways (decide live):
 
 Recommend **b1 first** (cheap, unblocks the hang via `thin` + a landing face), then **b2** as the upgrade
  to a real empty glass. Both need the `%Arrival` phase logic to gain `thin` and read the `%Share` decision.
+
+## 5d. THE RETOPLEVEL — the meaning, captured (owner 2026-08-31: "that's probably a lot though…
+##      damn, we need to capture the meaning somewhere… but make it available")
+
+**Decision: NOT now.** The owner's lean is right — it's a lot, and the phase-authority work is the
+ ladder to it, not a detour from it. But the destination deserves stating once, so no session
+  re-derives it:
+
+**The meaning:** BigQualand and Auto are today PAGE plumbing — each Big*land re-hosts the boot (book
+ stamping, identity-by-role, splash-in-the-page, gate wiring) as if arrival were a page concern. The
+  retoplevel says arrival is a PLATFORM concern: ONE toplevel arrival surface that owns splash + gates +
+   phase for every page, with the pages underneath reduced to "which glass to stand". Concretely:
+- **The splash mounts at the ROOT above all toplevels** (Splash.svelte's own NOTE already says this),
+   not inside BigSoundland — so every boot path is covered and OPEN SHARE punches through by design.
+- **`book = boot_param('B') || 'Sounditron'` dies** (§5b) — the arrival authority decides the glass from
+   machine facts (humdinger), not a string stamped on every page; `?B=` stays the explicit dev ask.
+- **Auto's role-identity + account-mirror become platform services** the arrival machine sequences,
+   instead of per-page wiring racing the boot.
+- **Listen-only stands a REAL empty glass** (§5b b2 — the "escaped Vyto" move): the glass decouples from
+   the Book drive, so `thin` dissolves into `glass` with an empty pool.
+**Why the current work is the ladder:** every brick that moves a surface from cross-read flags to
+ READING `%Arrival`/`%Share` shrinks the retoplevel to a relocation — once nothing derives its own
+  boot-truth, hoisting the one authority (and the splash) above the pages is mechanical. Do not start
+   the hoist until the flag-retirement brick (§5 item 6) is done.
 
 ## 6. LAWS TO HOLD (so this doesn't become a 7th mirror)
 - **State → particle; ref → `.c`.** `%Arrival`/`%Share` are state (SEE them). World refs, DOM handles, the

@@ -551,7 +551,26 @@
         //  on the far side of the write would let a second pass start the same enWaft concurrently.
         ;(top.c as any).account_mirror_mark = mark
         try {
-            await (H as any).Swarm_persist(nav, '', ident)
+            // TIMEBOX THE WRITE — THE BELIEFS MUTEX MUST NEVER HANG ON DISK (2026-08-31, the eed 609s
+            //  wedge).  This await runs INSIDE the beliefs-mutex chain (the boot tick), and Swarm_persist
+            //   → Swarm_account_save is a RAW FSA write — unlike wormhole ops it rides no Wormhole_park,
+            //    so it has NO WH_OP_TIMEOUT.  An FSA handle that goes bad mid-session (seen live today:
+            //     the editor tab lost its FSA) can leave the write pending FOREVER → the mutex held →
+            //      no House drains → pier_hellos unprocessed, presence dead, the whole soul "offline"
+            //       while the tab looks alive.  15s: far above any honest local write.  On timeout we
+            //        LEAVE the mark SET (deliberately NOT the catch's clear-the-mark) — the underlying
+            //         write may still be in flight, and clearing would let the next tick start a second
+            //          concurrent enWaft on the same file; the mark blocks re-entry until the account
+            //           versions again, at which point a truly dead handle costs 15s, not forever.
+            const overran = Symbol('mirror-overran')
+            const raced = await Promise.race([
+                (H as any).Swarm_persist(nav, '', ident).then(() => true),
+                new Promise(r => setTimeout(() => r(overran), 15000)),
+            ])
+            if (raced === overran) {
+                console.error(`🪪🧱 account mirror overran 15s — FSA handle wedged? The write is abandoned (not cancelled); the mirror stays owed until the account next versions. The beliefs mutex is NOT held hostage.`)
+                return false
+            }
             // THE ACK EDGE (Persistence_todo §5.3): stamp when the mirror last LANDED and consume
             //  the settle-owed flag — the browser's counterpart of the daemon's persist_account
             //   consuming it.  DoorFace derives "settling… / settled ✓" from exactly these.

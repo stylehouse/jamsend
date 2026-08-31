@@ -48,3 +48,5 @@ Snap:H
         Account,of:Fbox
           Identity:63c010b5b7eff26c,prepub:63c010b5b7eff26c,friendly:Fbox
             Peering,name:63c010b5b7eff26c,friendly:Fbox
+        req:Ferry,eternal
+          req:Ferry_cave,pub:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a,phase:pending,at=1751700000

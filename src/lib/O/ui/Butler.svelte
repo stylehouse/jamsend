@@ -379,14 +379,19 @@
         if ((H?.c as any)?.butler_done) { done = true; return }    // already lifted earlier this tab
         if (machine_tab || guts) { lift(); return }
         // A DEVICE-LINK CEREMONY OWNS THE SCREEN, not the arrival glass (2026-08-28).  Once this tab is
-        //  mid-ferry — Swarm_link_active is true on the soul side (sharing a QR) and on the new device once it
-        //   is connecting / receiving / consenting — the %Link cell IS the thing to show, and the arrival
-        //    beg-screen must step aside or the ceremony is trapped behind it (the "stuck at press start" a
-        //     fresh Linkee hit).  This goes true only AFTER the redeem arms ferry_awaiting, so a newborn Linkee
-        //      still names itself on the door first (that name-ask gates the redeem — see InvitePanel auto-join).
-        //       Placed above `landing` so it wins the brief overlap before the ?Iz is stripped.  Gated entirely
-        //        to device-link tabs → an ordinary boot never sees this line fire.
-        if ((H as any)?.Swarm_link_fresh?.(null) ?? H?.Swarm_link_active?.(null)) { lift(); return }  // FRESH: a dead ceremony must not lift the arrival screen
+        //  mid-ferry the %Link cell IS the thing to show, and the arrival beg-screen must step aside or the
+        //   ceremony is trapped behind it (the "stuck at press start" a fresh Linkee hit).
+        //    Placed above `landing` so it wins the brief overlap before the ?Iz is stripped.  Gated entirely
+        //     to device-link tabs → an ordinary boot never sees this line fire.
+        //  READ THE AUTHORITY, DON'T RECOMPUTE IT (2026-08-31, the incognito first-boot splash hang).  This
+        //   line used to call `Swarm_link_fresh(null)` itself — a SECOND computation, with a different
+        //    argument than Screen_decide's `link_fresh(w)`, so the two could disagree — and link_fresh's
+        //     offer branch in turn consulted `butler_up`, the very flag this component holds up: a circle,
+        //      escaped only by a 120s valve.  Now the ghost's offer-hold reads the glass machine-facts
+        //       (glass_wanted/glass_stood, mirrored by BigSoundland) and THIS reads the one ranked decision
+        //        Screen_decide already publishes.  Pre-ghost (cold compile) there is no screen yet → no
+        //         lift → we keep holding, which is right: the boot genuinely is still coming.
+        if ((H?.top_House?.() as any)?.c?.screen?.dominant === 'ceremony') { lift(); return }
         if (gate.wanted) return                                   // a permission is not progress
         if (landing) return                                       // …and neither is an unspent invite
         if (view.arrived === 'arrived') { lift(); return }        // ★ THE ONLY AUTOMATIC EXIT

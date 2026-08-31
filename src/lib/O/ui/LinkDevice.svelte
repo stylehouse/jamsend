@@ -647,18 +647,12 @@
             <div class="ld-cap-big">{got ? '✓ done — devices linked' : '✓ soul given'}</div>
             {#if got}
                 <p class="ld-deal">your other device took the soul on — you live there now too.</p>
-            {:else if sent_fact?.held}
-                <p class="ld-deal">✓ delivered — now say <b>yes</b> on the other device to finish.</p>
-            {:else}
-                <!-- RESOLVED, not busy (owner 2026-08-31, "that dangling look of still doing something"): by the
-                     time this face shows, Swarm_ferry_confirm already returned ok — the soul frame has LEFT; the
-                     giver's work is done.  What's outstanding is the other device's held/got ack, which can never
-                     return (relay-readable but the ack path is lossy — the other screen already reads "done").
-                     So no ticking age_of here (that count-up read as in-flight work); it lived only to diagnose,
-                     and the raw sent/held ages still ride the wire strip below.  Point the human at the one real
-                     next action instead — say yes over there. -->
-                <p class="ld-deal">now say <b>yes</b> on your other device to take the soul on.</p>
             {/if}
+            <!-- SOUL GIVEN + DONE, nothing more (owner 2026-08-31: "too much, just say soul given + done").  By
+                 the time this face shows, Swarm_ferry_confirm already returned ok — the frame has LEFT, the
+                 giver's work is done.  The old "now say yes on your other device…" instruction and the held-ack
+                 line read as dangling busywork; the wire strip below still carries the raw sent/held ages for
+                 anyone in the guts.  `done` is the one action. -->
             <button class="ld-cancel-b" onclick={link_done}>done</button>
         </div>
     {:else if awaiting}

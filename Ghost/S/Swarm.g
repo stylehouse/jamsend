@@ -1143,6 +1143,22 @@ Swarm_arm(w):
                     let cavename = frame.swarm && frame.swarm.name ? String(frame.swarm.name) : ''
                     if (cavepub) { this.Swarm_body_note(ident, cavepub, 'Cave', String(ident.sc.prepub) + '_1', cavename) }
                     console.log('🦑 ferry: 🪪 family roster — I am Captain ' + (capname || '(unnamed)') + (cavename ? ', linked to Cave ' + cavename : ''))
+                    // ATTEST + PROPAGATE THE DIVISION (2026-08-31, the owner live: "Link ceremony is done now,
+                    //  they still don't know each other … as Piers").  The %Body rows just written are the
+                    //   RESOLUTION register only — and the ceremony NEVER signed a %Charter over them (verified in
+                    //    the InvWalk fixture: the Captain's Body rows land but no Charter row does).  So
+                    //     Swarm_charter_wire stayed null, Swarm_charter_gossip sent nothing, and the division died
+                    //      LOCAL: no friend of this soul, and no sibling, could ever learn it — the family existed
+                    //       only in the Captain's own head.  Sign it now (the WELD — soul-signed, era-stamped
+                    //        attestation of the roster) and gossip it to the sealed piers, INCLUDING the fresh
+                    //         MyCave pier the redeem just formed to the Cave.  Async is fine (hear is async).  This
+                    //          whole block is already humdinger/consenter-gated, so it stays Book-inert except in
+                    //           InvWalk (which raises consenter and now records the Charter — the outcome the Book
+                    //            never asserted).  ⚠ KNOWN-OPEN (the sibling-sync gap, see Division_todo): the Cave
+                    //             has no %Pier for the Captain to ABSORB this charter onto (a body is not a friend),
+                    //              so the reverse direction — Cave learning Captain — still needs a sibling channel;
+                    //               this closes the Captain's half and unblocks all friend-facing division routing.
+                    try { await this.Swarm_charter_sign(ident); this.Swarm_charter_gossip(w2, ident) } catch (e) {}
                 }
             }
             console.log('🦑 ferry: ✓ the other device took the soul on — ceremony complete, link retired')
@@ -4445,11 +4461,51 @@ Swarm_charter_gossip(w, ident, onlyPub):
 // Swarm_charter_heard — the receiver: absorb a gossiped `charter` onto the sender's %Pier, verifying
 //  against the pub we imported at seal (never a pub the frame claims — the counterparty's real pub rides
 //   the pier's %Peering child).  Highest-era wins inside absorb, so a replayed old frame is ignored.
+//  …AND THE SIBLING ABSORB (2026-08-31, the owner live after the first real ferry: "Link ceremony is done
+//   now, they still don't know each other").  A charter for MY OWN SOUL arrives with no matching %Pier —
+//    the sender is my sibling body, and a body is not a friend — so this fn silently dropped the one frame
+//     that completes mutual knowing: at ferry_got the Captain signs + gossips its division over the still-
+//      standing ceremony pier (the Cave has not reloaded yet, so its pre-become address is still live), and
+//       the Cave held an account whose soul IS the charter's soul, with nowhere to put it.  Now the `!pier`
+//        fallthrough tries the sibling road: find a KEYED identity I hold whose soul pub equals the
+//         charter's soul, verify the signature against that pub (only a real holder of the soul key can
+//          sign — a stranger's forgery fails closed), and absorb onto that identity's OWN %Peering —
+//           structurally the same absorb (the %Charter row + %Body rows live under %Peering exactly as
+//            under a %Pier), so highest-era-wins convergence comes free.  The Cave thus lands the
+//             Captain's %Body row + the era-1 %Charter INTO the imported soul account BEFORE the reload,
+//              and wakes as the soul already knowing its family.  Book-inert: every existing charter
+//               fixture (SwarmGossip/SwarmCharter/SwarmServe) is friend-directed — the pier path matches
+//                and returns before this road; a pier-less charter frame reaches no existing Book.
 async Swarm_charter_heard(w, ident, frame):
     let from = frame?.page?.prepub
     if (!from || !frame.charter) { return 0 }
     let pier = this.Swarm_peering(ident)?.o({ Pier: 1, pub: from })[0]
-    if (!pier) { return 0 }
+    if (!pier) {
+        let soul = String(frame.charter.soul || '')
+        if (!soul) { return 0 }
+        // three roads to the soul identity I might hold: (1) beside the recipient in ITS OWN account
+        //  container — the live Cave right after consume, where the imported soul sits next to the husk
+        //   `ident` and is NOT under any w %Account row; (2) the world's %Account sweep — Book worlds;
+        //    (3) the live self — the reloaded-as-the-soul tab.
+        let sib = null
+        if (ident && ident.c && ident.c.up && ident.c.up.o) {
+            sib = ident.c.up.o({ Identity: 1 }).find((i) => i.c.keys && String(i.c.keys.pub) === soul)
+        }
+        if (!sib) {
+            for (const acct of w.o({ Account: 1 })) {
+                sib = acct.o({ Identity: 1 }).find((i) => i.c.keys && String(i.c.keys.pub) === soul)
+                if (sib) { break }
+            }
+        }
+        if (!sib) {
+            let self = this.Swarm_live_self ? this.Swarm_live_self() : null
+            if (self && self.c.keys && String(self.c.keys.pub) === soul) { sib = self }
+        }
+        if (!sib) { return 0 }
+        let took = await this.Swarm_charter_absorb(this.Swarm_peering(sib), frame.charter, soul)
+        if (took) { console.log('🦑 🪪 sibling charter absorbed — my family roster now lists ' + this.Swarm_body_roster(sib).length + ' bodies of this soul') }
+        return took
+    }
     let soulPub = pier.o({ Peering: 1 })[0]?.sc?.pub
     if (!soulPub) { return 0 }
     return await this.Swarm_charter_absorb(pier, frame.charter, String(soulPub))
@@ -5306,18 +5362,23 @@ Swarm_link_fresh(w):
     //  …but NOT MID-BOOT (owner 2026-08-30: "the state of ferry is kicking off way too early" — the consent
     //   cell seized a half-built stage, rendering giant/mispositioned over a boot that hadn't reached the
     //    Radio, while the splash/Butler still owned the screen).  The offer PARKS at standup (that fact is
-    //     durable and early by design); the SEIZURE waits for the Butler to lift (`top.c.butler_up` gone =
-    //      arrival happened, the glass is real).  Grace: an arrival that never comes must not strand the
-    //       consent — but the valve must sit FAR above any honest boot.  It was 20s, reasoned from "the
-    //        splash's own 7s cap has long revealed whatever surface exists" — an assumption the splash
-    //         reframe KILLED (it now holds until Radio begins), so a slow remote-wormhole boot (~25s,
-    //          owner 2026-08-30: "it has a deadlock and dumps me into the machineroom with no Sounditron")
-    //           aged the offer past 20s MID-SPLASH and the old bug rose from the dead on exactly the
-    //            boots slow enough to still be building.  120s: only a truly wedged splash gets overriden.
-    //             Pages with no Butler at all never set butler_up → no hold.
+    //     durable and early by design); the SEIZURE waits for the STAGE, read as a machine fact.
+    //  ⚠ THE HOLD USED TO READ `top.c.butler_up` — AND THAT WAS A CIRCLE (found 2026-08-31, the incognito
+    //   first-boot splash hang): the Butler's own ceremony-lift consults this verb (via Screen_decide's
+    //    phase now, link_fresh(null) before), while this verb consulted the flag the Butler holds up —
+    //     so a device-link boot waited on the Butler, which waited on us, until the 120s valve.  The
+    //      reload "fix" only worked because the stashed thin choice rebooted down a different road.
+    //  NOW: `glass_wanted`/`glass_stood` — mirrored onto top.c by the page itself (BigSoundland, the same
+    //   .c-mirror pattern as boot_gate's ac_wanted) — say "this page intends a glass" and "the glass has
+    //    actually mounted".  A glass-page offer holds only while the glass is genuinely still building; a
+    //     page that never wants a glass (an ?Iz landing on a non-glass room) never holds at all — which is
+    //      also the pre-2026-08-30 behavior for Butler-less pages.  Grace: an arrival that never comes must
+    //       not strand the consent — the valve sits FAR above any honest boot (a slow remote-wormhole boot
+    //        is ~25s).  120s: only a truly wedged boot gets overridden.
     if (facts.offer) {
         let ofr = facts.offer
-        if (!top.c.butler_up || (ofr.at && (Date.now() - ofr.at) > 120000)) { return 1 }
+        let building = top.c.glass_wanted && !top.c.glass_stood ? 1 : 0
+        if (!building || (ofr.at && (Date.now() - ofr.at) > 120000)) { return 1 }
         return null
     }
     // a ceremony that ENDED (the far side called it off) needs the human's one `done` ack — the terminal screen
