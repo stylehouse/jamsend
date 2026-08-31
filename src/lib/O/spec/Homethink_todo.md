@@ -14,6 +14,8 @@ This doc is mostly read, not worked: a fresh session reads §1–§4 to stand so
 - When a design fight breaks out and this doc can't arbitrate it, the doc is missing a
    clause — come back and add the clause, don't just win the fight.
 - Candidate `_spec`, not self-promoted: the human preens it into shape when it's earned.
+- §6 (the situations a body passes through) is new — its live debt is getting **Focus** and **Arrival**
+   off `.c` into their particles; `Statemap_todo`/`Arrival_todo` hold the build, `Statehome_todo` the law.
 
 ## 1. The one bet
 
@@ -116,3 +118,32 @@ The tell this is real and not a slogan: every subsystem above (§2) is a part of
  operates together — not a stack of apps that happen to sync. When a design choice would quietly make it
   a service some members merely visit (a truth only the relay holds, a capability only a vendor can add,
    a room only its owner may enter), that is §4 being broken at the level that matters most.
+
+## 6. Being somewhere — the situations a body passes through
+
+§2 is the ghosts, each at its own station; this is the states every BODY passes through no matter which
+ ghost it is running. They are universal activity kinds — the same few whatever the program — and the bet
+  (§1) binds them exactly as it binds a song: if a body's situation is a fact the group would see, prove,
+   or rewrite, it must STAND as legible matter, not hide in a `.c` flag or a closure (§4's first tell).
+    Music is only the first thing poured through them; the device-link ceremony is only their first
+     instance, not their definition.
+
+- **Arrival** — coming into a known state at a context: boot → identity → a storage choice → ready. ONE
+   authority the whole toplevel reads (`%Arrival,phase` + `%Share,mode` + `%want` begs), not every surface
+    deriving its own truth from a pile of boot flags. `Arrival_todo`.
+- **Ceremony** — walking a bounded, often multi-party ritual to an ATTESTED outcome. The walk is a legible
+   req (`req:Ferry* .sc.phase`); the outcome is signed matter (a roster of `%Body`, welded into a
+    `%Charter`) — a ritual that leaves no standing, provable record did not happen. `Statemap_todo` §3,
+     `Division_todo`.
+- **Focus** — attending to, and presenting, a locus: what this body is looking at right now
+   (`%Focus,cell·surfaced·decided`). The surface is the ceremony's whole visible OUTPUT; kept on `.c` it
+    flickers undebuggably and no Book can swear to it. `Statemap_todo` §2.
+- *the ground they stand on* — **Account / Crew**: who I am, my bodies, my friends — already good matter
+   (`%Identity`/`%Peering`/`%Body`/`%Charter`), the durable substrate the three write into.
+
+The law under all of them is one chapter (`Statehome_todo`, "a Phenomenology regarding the computer"): a
+ datum is either for-itself (a secret, a ref, an organ, a vanishing — flesh, rightly `.c`) or
+  for-the-community (a fact that wants recognition — speech, a particle). Situatedness is speech: where a
+   body is, what it enacts, what it attends. Every place we let it live a for-itself life, it broke — the
+    ferry invisible for a year, the surface flickering with no diff to read. The test is one line: *would
+     the community SEE it, PROVE it, or REWRITE it while it runs?* — yes → it stands.

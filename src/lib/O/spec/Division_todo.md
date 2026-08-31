@@ -88,6 +88,12 @@ The organs don't merely co-exist — they WORK together, constantly, and that wo
   §LIFECYCLE doctrine; the code just never learned it: `Swarm_ferry_link` hardcodes `{MyCave:1}` for
    whoever presses the button.)*
 
+*(and the owner's grounding, 2026-09-01: "how else do you backup but with all your bodies? we want some
+ stuff to be quite immortal, and share it amongst our bodies" — BACKUP IS NOT A SEPARATE ARTIFACT. The
+  division IS the backup: replication among your own bodies is the redundancy, and account-matter is
+   "quite immortal" precisely because every body carries it. MyCaptain is not a restore tool bolted on —
+    it is the organism regrowing its lost organ from any surviving one.)*
+
 **The design, from the standing doctrine (§TWO AUTHORITIES, §LIFECYCLE, §POST'S TRUTH CHAIN):**
 
 1. **The Link button offers by MY Post.**

@@ -179,6 +179,7 @@
                         return {
                             role: String(b?.sc?.role || 'body'),
                             name: String(b?.sc?.name || ''),
+                            pub: String(b?.sc?.pub || ''),
                             pub8: String(b?.sc?.pub || '').slice(0, 8),
                             addr: String(b?.sc?.address || ''),
                             mine: false,
@@ -547,6 +548,20 @@
                                 + (b.ago == null ? ' · not heard this session (closed or away)' : ` · heard ${b.ago}s ago`)}>
                             <span class="df-dot" class:here={b.rung === 'here'} class:fading={b.rung === 'fading'}>●</span>
                             <span class="df-name"><span class="df-role">{b.role}</span> {#if b.name}{b.name}{:else}<span class="df-fpub df-fpub-solo">{b.pub8}</span>{/if}</span>
+                            {#if b.rung === 'away'}
+                                <!-- FORGET A DEAD BODY (Division_todo §0a #5): revokes its My* grant on the
+                                     kin pier — derive skips a revoked grant, the Seat's next heal retires the
+                                     row, and the era-bumped re-charter spreads the shrink.  Away-only, like
+                                     the pier forget — never a one-click kill of a live body. -->
+                                <DeleteX inline ondelete={() => {
+                                    const kin_self = (H as any)?.Swarm_live_self?.()
+                                    const kin_piers = ((H as any)?.Swarm_peering?.(kin_self)?.o({ Pier: 1 }) ?? []) as any[]
+                                    const kp = kin_piers.find((p: any) => [String(p?.sc?.pub ?? ''), String(p?.o({ Peering: 1 })?.[0]?.sc?.pub ?? '')]
+                                        .some(k => k && b.pub && (k.startsWith(b.pub) || b.pub.startsWith(k))))
+                                    if (kp) (H as any)?.Swarm_pier_forget?.(null, String(kp.sc.pub))
+                                }} confirm="forget?" glyph="✕"
+                                    title="forget {b.role} {b.name || b.pub8} — revokes its device grant; the family charter will omit it (it can be re-linked later)" />
+                            {/if}
                         </div>
                     {/each}
                 </div>
