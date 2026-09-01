@@ -132,9 +132,144 @@ The organs don't merely co-exist — they WORK together, constantly, and that wo
 7. **Later hardening**: grants could carry `via:<bodypub>` (which body physically minted) so the helm
     doctrine is checkable, not just honoured; the `caveat:remint` clears at any successful re-charter.
 
-Owed by this design: ferry_link takes a feature param + role-aware Door face (1) · founding MyCaptain
- self-grant (3) · heal attest-gate → seat (4) · heal retirement + family-row forget (5) · rung-2 restore
-  act (6). The ferry, charter, derive, and %Owed machinery all already serve.
+### ✅ THE FORK IS ANSWERED — the owner ruled "A" (2026-09-01): the founding self-grant lives on a
+### SELF-HUSK PIER. Built + Book-gated the same night.
+
+**As built (`Swarm_founding_grant`, called from `Swarm_family_heal`):** a divided KEYED Seat holding
+ no husk grant signs `%Grant:MyCaptain, by:<soul>, for:<own bodykey pub>` onto a pier keyed by the
+  body-key prepub — the exact ceremony-husk shape `Swarm_family_derive` already reads, landed through
+   `Swarm_seal` (idempotent, durably stashed, page_bound holds since a body key's prepub IS its pub's
+    prefix). Minted from the HEAL, not the Link press: an already-divided live Seat migrates on the
+     next 60s trickle, a fresh founder gains it one trickle after its first ceremony, and a lone
+      undivided body never grows a keyed roster from a mere button press. The heal re-derives after
+       minting, so the same walk is already grant-backed. Gated by SwarmBody beat 8's second `%see`
+        ("the founder signs its own captaincy…").
+
+**The corollary it forced — `Swarm_pier_husk` + three skips:** a husk pier (this one, or the Linkee's
+ imported ceremony husk) is evidence of MY role, never a counterparty — nothing listens at its address.
+  The reaccept sweep was ALREADY pier_accept-blasting the Linkee's husk forever (one face of the
+   owner's boot-log storm) and hanging %Owed junk on it. Now the reaccept sweep, the charter gossip
+    and the share-up repli_ready blast all skip husks.
+
+**Grant replication between siblings — BUILT the same night** (the brick the guard analysis surfaced):
+ `Swarm_family_grants_wire` collects every soul-signed My\* atom off my piers (each SELF-VERIFYING —
+  a forgery fails `verify_grant` at the far end); the atoms ride the sibling charter mile
+   (`grants:` on the frame) and `Swarm_family_grants_absorb` lands them at the sibling through
+    `Swarm_seal` — verify, by-must-be-my-soul, page_bound (a legacy short-form `for` stays home on
+     its minting body). So a sibling — a Cave holding the seat through a Captain-death interregnum —
+      now derives the whole family from standing grants it absorbed, not from role-guesses. Gated by
+       SwarmBody beat 9 (sibling derives the captaincy it never witnessed; a retargeted atom refuses;
+        an unsigned relic stays home).
+
+**The retirement gap-Captain guard still stays for now:** replication is trickle-eventual (it rides
+ the sibling gossip, both ends live), so a freshly-woken seat may not hold the grants yet. Retire the
+  guard only after the stash carries absorbed family grants across a reload and a real interregnum
+   has been walked once.
+
+**The §0a ledger as of 2026-09-01 overnight — BUILT + Book-gated (SwarmBody 8/8 green):**
+ role-aware helm (1) — a Cave's link mints MyCaptain, the LinkDevice button/title/consent say the
+  Captain deal, and `Swarm_offer_land` + InvitePanel treat ANY My\<Post\> as a device link (both were
+   MyCave-hardcoded, so a MyCaptain link never even raised the consent) · succession eviction (2) ·
+    attest = Seat (4) · retirement + charter shrink + family-row forget (5) · caveat:remint retires when
+     a living grant vouches the pub (7, the clearing half) · `Swarm_cave_forgive`/`Swarm_cave_unbond`
+      generalized by feature so a MyCaptain relink/forget follows the device-link law, not the friend
+       tombstone law.
+Now also built (same night, after the owner's "A"): founding self-grant (3) + sibling grant
+ replication (above) — so every §0a point except these is DONE. Still owed: rung-2 "I am all that's
+  left" restore act (6) · `via:<bodypub>` provenance (7, the audit half) · retiring the gap-Captain
+   guard once replication has proven itself across a reload. The ferry, charter, derive, and %Owed
+    machinery all already serve.
+
+### ⚑ DOCTRINE CORRECTION (the owner, 2026-09-01) — roles are NOT a trust hierarchy
+
+*"I'm not sure about 'only the Captain issues invites' because then how do we restore a Captain from a Cave
+ if you lose your phone? I think they're all high-trust, it's just our replication model that necessitates
+  making them different … and their different abilities of course."*
+
+**All bodies are equally high-trust — they are all YOU.** The Captain/Cave split is NOT a trust tier. It is
+ forced by two things and ONLY two: (a) the **replication model** needs a singular coordinator (one
+  invite-helm, one roster-writer) to avoid split-brain; (b) bodies have **genuinely different abilities /
+   organs** (the phone's pocket vs the laptop's 38k trove — §PURPOSE's %Organ). So:
+ - "Only the Captain issues invites" is WRONG as a trust rule. A **Cave issues a MyCaptain** to restore a
+    lost phone — we already built exactly that (§0a), and it is correct. The helm is a *coordination* role
+     (who writes, to avoid two writers), not an *authority* one (who is allowed).
+ - This DEFLATES `via:` provenance (§0a #7): if every body is high-trust, "which body minted this grant" is
+    an *audit/coordination* nicety, not a security gate — even lower priority than filed.
+ - The reframe to carry forward: when a doc says "the Captain does X," read it as "the singular coordinator
+    does X so two bodies don't fight," never "the privileged body does X." Capability differences (who HAS
+     the trove) are real and separate from trust (everyone is trusted).
+
+### ⚑ RUNG-2 THINKING (deferred, but the owner's design captured, 2026-09-01)
+
+*"what if nothing in Dexie but FSA has a bunch? we'd want to just automatically do something — perhaps point
+ to the main account so the later resumer knows who to be … Crew not online can be deleted, but they can also
+  come back when they come online again, announcing themselves. there's no way to keep them out or ensure
+   they're gone, because of the deal with space."*
+
+ - **Auto-resume shape**: empty Dexie + populated FSA → don't force the destructive button; AUTO-resume,
+    and let a **"main account" pointer** in the FSA tell the resumer *who to be*. That likely dissolves most
+     of the need for an explicit rung-2 act.
+ - **The deep principle — deletion is PROVISIONAL (the space-deal).** You can never *guarantee* a body is
+    gone: a pruned/offline body can always come back online and re-announce itself, and there is no way to
+     keep it out. So **retirement is "prune what I don't currently see," not "evict forever"** — a returning
+      body just re-announces and rejoins. This VALIDATES the current heal-retirement (drop unbacked rows;
+       they self-resurrect on return) and means any "declare all dead" act is itself only provisional.
+       Build retirement/restore in that spirit: convergent and reversible, never a hard tombstone-the-self.
+
+## 0b. THE WEB OF ACTIVITY AFTER A LINK — booking Heists across bodies, offline-tolerant (design, 2026-09-01)
+
+*(the owner, after the family went green live: "are we through to where I can book Heists on the phone and
+ my laptop will carry them out? even if not online at the exact moment … I need this whole web of activity
+  after a Link resolved, invented.")*
+
+**Honest status.** No — not yet. But the hard half is done and the second half is ASSEMBLY, not invention.
+ What's through: the IDENTITY web — the bodies know each other, their Posts, and how to route to each other
+  (charter + roster + `Swarm_body_for`/`Charter_addr`). What's NOT: the ACTIVITY web — a request BOOKED on
+   one body and CARRIED OUT by another, tolerant of the carrier being offline at booking time.
+ `Swarm_serve_ask` (the serve resolve-and-emit) exists but is ONLINE-ONLY: it emits and returns false if the
+  transport can't deliver *now* — no durable booking, no queue. That's the whole gap.
+
+**The key realisation — this is the %Owed pattern pointed at music.** "Book now, carry out whenever the
+ bodies next overlap" is structurally IDENTICAL to the charter-debt we shipped this session: a durable thing
+  that STANDS on a row, retries on the 60s trickle, and settles on the presence edge. We are not inventing
+   offline sync; we already built it (for charters) and proved it (SwarmBody beats 6–9). This arc points that
+    same machine at a track request.
+
+**The lifecycle (the %Reach/%Heist booking — §PURPOSE's "reach in flight" made real):**
+ 1. **BOOK** (phone): mint a STANDING snapped particle — `%Heist,of:<track>,for:play,by:<phone body pub>` —
+     NOT a `.c.wanting` flag. It lives in the snap the instant it's booked, so both bodies and the mesh see it.
+ 2. **RESOLVE** (phone): which of MY OWN bodies serves music? Read it off my own charter — `Swarm_body_for(me,
+     'Cave')` / `Charter_addr(my %Peering, 'Cave')` — the exact family routing built this session. Degrades to
+      the Seat if no charter entry (the always-on anchor).
+ 3. **DISPATCH** (phone → laptop): the booking rides `Swarm_sibling_send` to the resolved body address. If the
+     laptop is OFFLINE → the booking simply STANDS (it's durable — snapped + stashed), and the miss is a
+      `%Owed,owe:heist` debt on the laptop's %Body row, retried by the family trickle, settled on the presence
+       edge. **This is "even if not online at the exact moment" — for free, from the machine we already have.**
+ 4. **CARRY OUT** (laptop, when awake): the laptop's share/heist loop notices standing Heists addressed to it
+     (heard over the wire, or replicated in), gates on the Music grant, and serves the track via Repli (the
+      crate machinery that already moves audio).
+ 5. **GRADUATE**: the audio crosses (Repli), the `%Heist` graduates (audio landed) and DROPS like a served
+     transient req (the owner's law — scaffolding, not ledger). On the phone the booking resolves to "arrived."
+
+**The bricks (each Book-gateable, in SwarmBody's world or a new SwarmHeist Book):**
+ - **B1 — %Heist as a durable BOOKING** with a lifecycle (booked → dispatched → serving → arrived), addressed
+    by role, snapped + stashed. *(Today it's a Jam ledger of events — this gives it a standing lifecycle.)*
+ - **B2 — bind the resolve to the FAMILY charter** (`Swarm_body_for` on my own %Peering — "who in my family
+    serves music"), not just a friend's %Pier.
+ - **B3 — cross-body dispatch + offline debt**: booking rides `Swarm_sibling_send`; a miss becomes
+    `%Owed,owe:heist` on the target %Body row, retried on the trickle, settled on the presence edge. **Reuses
+     `Swarm_owed_note/paid/settle` verbatim** — the settle knob (`w.c.owed_settle`) already exists to gate it.
+ - **B4 — carry-out on the target**: the share loop picks up standing bookings addressed to it and serves them
+    (bind `Swarm_serve_ask` → Repli at the Heist site — the "owed seam" §ROUTING step 5 already names).
+ - **B5 — graduation + the phone-side "arrived"** resolution (drop the served Heist; the phone sees it land).
+
+**THE ONE FORK for the owner (like the founding-grant "A"):** does the booking REUSE `%Heist` (the existing
+ Jam ledger — one mainkey, add a lifecycle + `for`/`by` addressing) or is it a FRESH `%Reach` particle (the
+  §PURPOSE sketch — a clean request atom, leaving `%Heist` as the pure event ledger it is)? The tension: one
+   mainkey must not wear two shapes (the CLAUDE.md "only one of anything" law). Reuse is cheaper; a fresh
+    `%Reach` is cleaner if `%Heist` is genuinely an event-ledger and a booking is a different KIND of thing.
+     **Recommend `%Reach`** — a booking (a standing intent) and a heist-event (a thing that happened) are
+      different particles; conflating them is the two-shapes-under-one-mainkey tell. Answer and B1 has its shape.
 
 ## 0. WHERE THIS IS (2026-08-28) — the live device-link path is the FERRY model
 

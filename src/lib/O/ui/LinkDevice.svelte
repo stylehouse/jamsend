@@ -53,6 +53,10 @@
         if (w && H.Swarm_station_up(w, self)) stood = true
     })
     const world = () => H?.Swarm_station_world?.() ?? null
+    // ROLE-AWARE HELM (Division_todo §0a): a Captain's link mints MyCave (grow a Cave); a CAVE's link
+    //  mints MyCaptain — the resume-from-backup act.  The feature choice itself lives in
+    //   Swarm_ferry_link; this face only says which act the one button performs.
+    let my_role = $derived.by(() => { void H?.version; try { return String((H as any)?.Swarm_body_mine?.(self)?.sc?.role || '') } catch { return '' } })
 
     // NAME-GATE (owner 2026-08-30: *"name yourself before partaking EITHER end of any Grant-like
     //  thing"*).  Colonising a Cave is the most consequential grant there is — it copies your whole
@@ -638,22 +642,32 @@
             {/if}
         </div>
     {:else if sent || got || sent_fact}
-        <!-- ONE HEADING, ONE LINE, AND IT RESOLVES (owner 2026-08-30: "it's just such bad comms. it has to
-             get simpler and resolve when done" — the previous wait ladder stacked three rung-facts under the
-             heading and read like failure while the ceremony was actually succeeding on the other screen).
-             The single line upgrades as each ack lands: carrying → ✓ delivered (their screen has it) →
-             ✓ done.  The rung diagnostics live on in the wire strip below — guts, not ceremony. -->
+        <!-- ONE HEADING, ONE LINE, AND IT RESOLVES — but it WAITS FOR THE ACK first (owner 2026-09-01: "can we
+             wait for an ACK after 'give my soul', it feels fake … it feels a bit like nothing").  The bug was a ✓
+             the instant the frame LEFT — victory before the other device had said a word.  Now the one line tracks
+             the real acks the hear funnel already stamps: SENDING (no ack — a live spinner, not a checkmark) →
+             ✓ DELIVERED (sent_fact.held — their device holds the sealed account) → ✓ DONE (got — they consumed it
+             and became the soul).  So the giver watches it actually cross, and the ✓ means something.  The raw
+             sent/held/got ages still live in the wire strip below (guts, not ceremony). -->
         <div class="ld-face">
-            <div class="ld-cap-big">{got ? '✓ done — devices linked' : '✓ soul given'}</div>
             {#if got}
+                <div class="ld-cap-big">✓ done — devices linked</div>
                 <p class="ld-deal">your other device took the soul on — you live there now too.</p>
+                <button class="ld-cancel-b" onclick={link_done}>done</button>
+            {:else if sent_fact?.held}
+                <div class="ld-cap-big">✓ delivered {@render live_dot(presence)}</div>
+                <p class="ld-deal">your other device has the sealed soul and is taking it on now — this resolves to
+                    "done" the moment it becomes you (a breath).</p>
+                <button class="ld-cancel-b" onclick={link_done}>done</button>
+            {:else}
+                <div class="ld-cap-big"><span class="ld-spin"></span> sending your soul to
+                    <b>{short(sent_fact?.pub) || 'your other device'}</b> {@render live_dot(presence)}</div>
+                <p class="ld-deal">waiting for it to confirm it received the soul — keep this open a moment; it
+                    upgrades to ✓ delivered on its own.</p>
+                <!-- done stays as a quiet escape (the frame HAS left — the giver's send is real even if the ack is
+                     slow), but the face leads with the wait so the ✓ is earned, not faked. -->
+                <button class="ld-cancel-b" onclick={link_done}>done</button>
             {/if}
-            <!-- SOUL GIVEN + DONE, nothing more (owner 2026-08-31: "too much, just say soul given + done").  By
-                 the time this face shows, Swarm_ferry_confirm already returned ok — the frame has LEFT, the
-                 giver's work is done.  The old "now say yes on your other device…" instruction and the held-ack
-                 line read as dangling busywork; the wire strip below still carries the raw sent/held ages for
-                 anyone in the guts.  `done` is the one action. -->
-            <button class="ld-cancel-b" onclick={link_done}>done</button>
         </div>
     {:else if awaiting}
         <!-- LINKEE "connecting" — the link is redeemed and a soul is inbound, waiting on the OTHER device's
@@ -693,8 +707,10 @@
                  the heading IS the deal; the full weight (account, friends, music, main identity of this
                  profile) rides the hover for whoever wants it spelled out. -->
             <div class="ld-cap-big"
-                title="you opened a link from it — continue and this device becomes a body of it: its account, its friends, its music, all here in its name. it becomes the main identity of this browser profile — what this webapp wakes up as from now on."
-                >become <b>{offer.friendly || short(offer.from) || 'this device'}</b>?</div>
+                title={offer.post === 'Captain'
+                    ? 'you opened a Captain link — continue and this device takes the Captain post of that soul: its account, its friends, its music, all here in its name. this is the resume-from-backup act, and a new Captain replaces any old one.'
+                    : 'you opened a link from it — continue and this device becomes a body of it: its account, its friends, its music, all here in its name. it becomes the main identity of this browser profile — what this webapp wakes up as from now on.'}
+                >{offer.post === 'Captain' ? 'become the Captain of' : 'become'} <b>{offer.friendly || short(offer.from) || 'this device'}</b>?</div>
             {#if !named}
                 <div class="ld-name-row">
                     <input class="ld-name" bind:value={name_draft} placeholder="what do friends call you?"
@@ -723,8 +739,10 @@
         {/if}
         <div class="ld-face">
             <button class="ld-link" onclick={link} disabled={!self || minting}
-                title="copy this account to another device as a Cave">
-                {#if minting}<span class="ld-spin"></span> minting a link…{:else}🔗 link a device{/if}</button>
+                title={my_role === 'Cave'
+                    ? 'mint a Captain link — the device that opens it takes the Captain post of this soul (resume from backup: this Cave carries the whole account, and a new Captain replaces the old one)'
+                    : 'copy this account to another device as a Cave'}>
+                {#if minting}<span class="ld-spin"></span> minting a link…{:else}{my_role === 'Cave' ? '🔗 resurrect my Captain' : '🔗 link a device'}{/if}</button>
             {#if link_active}
                 <div class="ld-pending">you have a device link in progress
                     <button class="ld-cancel-b" onclick={cancel_link}>cancel it</button></div>

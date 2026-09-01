@@ -363,6 +363,10 @@
     const landed_url = !!boot_param('Iz') || !!hash_iz
     let iz = $state<string>(boot_param('Iz') || hash_iz || '')
     let invite = $state<any>(null)       // the parsed token {prepub, serial, to, params} — the offer's face
+    // ANY My<Post> token is a DEVICE link (Division_todo §0a role-aware helm): MyCave grows a Cave,
+    //  MyCaptain resurrects the Captain — both ride the ferry path, never the friend-redeem.  One
+    //   predicate over the conferred-Post shape, so a new Post never falls through to auto-join.
+    const device_link = (t: any) => { const f = String(t?.to || ''); return f.startsWith('My') && f.length > 2 }
     let iz_err = $state('')
     let joined = $state('')
     // the join button has been spent — see join().  Separate from `joined` (the progress LINE) because
@@ -457,7 +461,7 @@
         // A DEVICE LINK NEVER AUTO-JOINS (owner 2026-08-30): becoming a body of the soul is a consent, and it now
         //  lives in the Link cell's `offer` phase.  The effect below parks that offer and runs the redeem only when
         //   the human accepts there — so a scanned MyCave no longer silently redeems under their hands.
-        if (!landed_url || !invite || !self || !stood || !born_today || !named || auto_fired || joined || ceremony_live || invite?.to === 'MyCave') return
+        if (!landed_url || !invite || !self || !stood || !born_today || !named || auto_fired || joined || ceremony_live || device_link(invite)) return
         auto_fired = true
         joined = '… joining by itself'
         join()
@@ -471,7 +475,7 @@
     //       landing is a MyCave device link.  Idempotent with any auto-surface: both just focus the same cell.
     let whisked = $state(false)
     $effect(() => {
-        if (whisked || !invite || invite.to !== 'MyCave' || !named || !stood) return
+        if (whisked || !invite || !device_link(invite) || !named || !stood) return
         whisked = true
         try { H?.Sounditron_link_open?.() } catch {}
     })
@@ -517,7 +521,7 @@
     $effect(() => {
         // Never strip a device-link (MyCave) token on a parse hiccup: it must stay in the bar for the
         //  whole adopt (owner: "it needs to stay in the URL").  Only clean out a truly dead FRIEND token.
-        if (iz_err && landed_url && !String(iz).includes('*MyCave*')) strip_iz()
+        if (iz_err && landed_url && !/\*My[A-Z]/.test(String(iz))) strip_iz()
     })
     // JOIN — the frontier rung, live: our own station up, a %Pier promoted to the inviter's
     //  prepub, the ws open + hello-bound, then the proven redeem. The seal (their pier_accept)
@@ -539,7 +543,7 @@
         //      LinkDevice drives `ferry_awaiting` off it.  So route a pasted MyCave to the SAME path: navigate to
         //       the whole pasted URL.  Mirrors the `?Adopt=` branch in paste_load — a deliberate page move, not a
         //        redeem.  A landed ?Iz (landed_url) already has its fragment in the bar and is left untouched.
-        if (invite?.to === 'MyCave' && !landed_url) {
+        if (device_link(invite) && !landed_url) {
             if (paste_full) { try { window.location.href = paste_full; return } catch {} }
             joined = '⚠ paste the WHOLE device link — the seal after the # got left off, so the soul can’t cross'
             return
@@ -572,8 +576,8 @@
             //   live again from the rehydrated ferry_awaiting; finalize_url (LinkDevice) owns the bar, not
             //    this.  Stripping now is exactly the "I dropped the Adopt again" regression.  A friend invite
             //     still drops its dead single-use token.
-            if (invite?.to !== 'MyCave') strip_iz()
-            joined = invite?.to === 'MyCave'
+            if (!device_link(invite)) strip_iz()
+            joined = device_link(invite)
                 ? '… the adopt is already under way on this device — resuming'
                 : '✗ the inviter refused or is unreachable — the rebuff rides the identity'
             return
@@ -592,7 +596,7 @@
         //     this procedure is complete").  So leave the ?Iz=…MyCave…#fc= in the bar — Swarm_ferry_consume
         //      (LinkDevice) drops it and pins the NEW soul once the device has definitely become it.  Friend
         //       (Music) invites strip as before; a REFUSAL above still strips either kind (a dead token must go).
-        if (invite?.to !== 'MyCave') {
+        if (!device_link(invite)) {
             const pinned = self?.sc?.prepub ? await H.Clustation_pin?.() : null
             strip_iz(pinned ? String(self.sc.prepub) : undefined)
         }
@@ -678,7 +682,7 @@
         //    which `full` non-empty guarantees), so it re-lands as landed_url → the offer effect arms ferry_offer
         //     → the Link cell asks consent.  A seal-less paste (no #fc → full empty) stays SILENT here — showing
         //      the "opening in the Link panel" note without navigating was the lie; ⏎ (paste_load) explains why.
-        if (t?.to === 'MyCave') {
+        if (device_link(t)) {
             if (full) { try { window.location.href = full; return } catch {} }
             return
         }
@@ -714,7 +718,7 @@
         //  used to do this navigate for a MyCave — is gone now that the consent lives in the Link cell; so route
         //   the paste the same way here.  `iz_from` drops the `#fc=` seal, so we MUST reload on the full pasted
         //    URL (fragment and all): landing arms ferry_offer (the effect above) and the Link cell asks consent.
-        if (t?.to === 'MyCave') {
+        if (device_link(t)) {
             if (paste_full) { try { window.location.href = paste_full; return } catch {} }
             paste_err = 'paste the WHOLE device link — the seal after the # got left off, so the soul can’t cross'
         }
@@ -760,7 +764,7 @@
     {#if invite || iz_err}
         <!-- the LANDING face: this page was opened from a scanned invite -->
         <div class="ip-land">
-            {#if invite && invite.to === 'MyCave'}
+            {#if invite && device_link(invite)}
                 <!-- A DEVICE LINK, not a friend invite (owner 2026-08-30: the "⨝ join eed" was landing "in amongst
                      the Door UI"; "separate that, take us to the Link cell already").  The consent now lives in the
                      Link cell's `offer` phase (LinkDevice, driven by top.c.ferry_offer parked in the effect below);

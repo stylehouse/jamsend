@@ -494,9 +494,15 @@
     function commissioner_focus(): string | null {
         try {
             void now_tick
+            const get = (H as any)?.Sounditron_focus_get
             for (const w of commissioned_worlds()) {
                 const cw = (w.c as any)?.client_w
-                const f = (cw?.c as any)?.focused ?? (w.c as any)?.focused
+                // %Focus is a particle now (Statehome §Focus) — the accessor reads it, falling back to the
+                //  old `.c.focused` (Book/headless, or a pre-particle boot moment).  cw-first then the glass w,
+                //   mirroring the old `??`.  now_tick still drives the re-read (focus writes don't bump).
+                let f = ''
+                if (typeof get === 'function') f = (cw ? get.call(H, cw) : '') || get.call(H, w)
+                else f = (cw?.c as any)?.focused ?? (w.c as any)?.focused ?? ''
                 if (f) return String(f)
             }
         } catch {}

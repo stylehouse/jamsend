@@ -12,7 +12,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'c6526275305d88ab~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return '2601390dcceb9885~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -2910,6 +2910,17 @@ async SwarmDivide_order(w) { const H = this;
 //            (the computed self is body-local) and no absorbed row carries a self flag (it never existed)
 //   beat 4  the Vessel table's pure ordering — Swarm_vessel_pick picks the bare address first then
 //            ascends the suffixes (an individual's local subnet has a deterministic primary), [] → null
+//   beat 5  a REMINT is SEEN — minting a key while the division already stands keyed stamps
+//            caveat:remint on the fresh row (Rema) while a virgin soul mints clean (Vera)
+//   beat 6  the %OWED ledger — a frame that could not go stands as a debt on the counterparty row,
+//            deduped by kind, cap-8-loud, paid detaches, the frame itself never stored
+//   beat 7  the FAMILY DERIVES FROM THE GRANTS — a Captain reads its Cave off its own signature, a
+//            Linkee reads its role+name off the husk, no phantom member, a foreign signature confers nothing
+//   beat 8  the HEAL APPLIED — converges the roster on the grants + the Seat attests: member seated,
+//            unbacked junk retired (gap-Captain survives), caveat retired, ghost dropped, charter signed;
+//            and the FOUNDING SELF-GRANT (§0a "A") — a divided huskless Seat signs its own MyCaptain
+//   beat 9  FAMILY GRANTS REPLICATE — the soul-signed atoms travel to a sibling (self-verifying), which
+//            derives the captaincy it never witnessed; a retargeted atom refuses, an unsigned relic stays home
 //  THE DISCRIMINATION: a row keyed by the soul prepub would fail keyed_by_bodykey; a stored self:1 would
 //   show up on the friend's absorbed copy; a pick that ignored the bare-first tiebreak would not name the
 //    primary.  This is step 1 of the field, proven off pure matter (no Dexie — the adapter is production).
@@ -2945,6 +2956,8 @@ async SwarmBody_drive(w, req) {
         if (n === 5) { this.SwarmBody_remint(w) }
         if (n === 6) { this.SwarmBody_owed(w) }
         if (n === 7) { this.SwarmBody_family(w) }
+        if (n === 8) { await this.SwarmBody_heal(w) }
+        if (n === 9) { await this.SwarmBody_replicate(w) }
     }
     this.SwarmBody_witness(w)
     await this.SwarmBody_order(w)
@@ -3060,6 +3073,15 @@ SwarmBody_witness(w) {
     let fm = T.o({ familied: 1 })[0]
     // #8 THE FAMILY DERIVES FROM THE GRANTS: the ceremony instant stops mattering — Captain reads its Cave off its own signature — the husk names ME not a phantom — foreign signatures confer nothing.
     if (fm && +fm.sc.captain_sees_cave === 1 && +fm.sc.cave_page_named === 1 && +fm.sc.husk_is_me === 1 && +fm.sc.husk_keeps_my_name === 1 && +fm.sc.no_phantom_member === 1 && +fm.sc.foreign_sign_ignored === 1) { this.story_swear(w, 'the family derives from the standing grants at any time — a captain reads its cave off its own live signature and a linkee reads its own role and kept name off the husk — the soul never appears as a phantom member and a foreign signature confers nothing') }
+    let hl = T.o({ healed: 1 })[0]
+    // #9 THE HEAL CONVERGES AND THE SEAT ATTESTS: granted rows stand — unbacked ones retire (except the founding-gap captain) — the vouched caveat and the pre-key ghost leave — the charter lists exactly the standing division — a settled family heals to no change.
+    if (hl && +hl.sc.heal_ran === 1 && +hl.sc.own_row_seated === 1 && +hl.sc.member_from_grant === 1 && +hl.sc.caveat_retired === 1 && +hl.sc.junk_retired === 1 && +hl.sc.gap_captain_survives === 1 && +hl.sc.ghost_dropped === 1 && +hl.sc.charter_attested === 1 && +hl.sc.settled_idempotent === 1) { this.story_swear(w, 'the heal converges the roster on the standing grants and the seat attests it — a granted member keeps its seat while unbacked junk retires and the founding-gap captain survives — a living grant retires the fork caveat and the pre-key ghost drops — the signed charter lists exactly the standing division and a settled family heals to no change') }
+    // #10 THE FOUNDER'S CAPTAINCY IS A GRANT (§0a #3 — the owner ruled the self-husk pier): a divided
+    //  huskless Seat signs its own MyCaptain so every Post derives from a standing grant.
+    if (hl && +hl.sc.founding_grant_stands === 1 && +hl.sc.self_husk_pier === 1) { this.story_swear(w, 'the founder signs its own captaincy — a divided seat holding no husk grant mints a MyCaptain onto its self-husk pier at the heal so every post including the captain derives from a standing grant and the founder-inference decays to a fallback') }
+    let rp = T.o({ replicated: 1 })[0]
+    // #11 THE FAMILY'S PROOF TRAVELS: soul-signed atoms replicate to siblings — self-verifying, tamper-refusing.
+    if (rp && +rp.sc.grants_wired === 1 && +rp.sc.signed_landed === 1 && +rp.sc.relic_stayed_home === 1 && +rp.sc.sibling_sees_captain === 1 && +rp.sc.tamper_refused === 1) { this.story_swear(w, 'the family grants replicate between siblings — each soul-signed atom self-verifies so a sibling derives the captaincy it never witnessed — a retargeted atom refuses at the signature and an unsigned relic stays home') }
 
 },
 // beat 5 — REMINT-NOT-READ is SEEN (Statehome_todo debts: "a fork must be seen").  The sanctioned join
@@ -3178,6 +3200,103 @@ SwarmBody_family(w) {
     if (wfam.length === 1 && wfam[0].name === 'Gril') { row.husk_keeps_my_name = 1 }
     if (!wfam.some((e) => e.pub === 'wsoul_prepub_000_full_pub_00000')) { row.no_phantom_member = 1 }
     if (!hfam.some((e) => e.pub && e.pub.indexOf('xena') === 0)) { row.foreign_sign_ignored = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 8 — THE HEAL APPLIED (the ceremony OUTCOME made durable): Swarm_family_heal converges the
+//  roster on the standing grants and the Seat attests the result.  Hana (real seeded keys — the
+//   charter must really sign) stands as Seat with one granted Cave (Kavi — pre-noted wearing a
+//    caveat:remint) plus three impostors: an unbacked junk row (retires), a grantless CAPTAIN row
+//     (survives — the founding-grant gap guard) and the pre-key ghost (drops).  The consenter
+//      puppet (InvWalk's seam) raises the gate for exactly the heal call.  A second heal on the
+//       settled family returns 0 — the trickle costs nothing once converged.
+async SwarmBody_heal(w) {
+    w.i({reached: "step_8"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let hkeys = await this.Swarm_mint_keys('SwarmBody-Hana')
+    let hana = this.Swarm_identity(acct, hkeys, 'Hana')
+    hana.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Hana-body')
+    let bare = String(hana.sc.prepub)
+    let mypub = String(hana.c.bodykey.pub)
+    let hp = this.Swarm_peering(hana)
+    // the granted Cave: pier + page + a live MyCave grant BY the soul FOR Kavi (the page carries the full pub)
+    let kpier = hp.i({ Pier: 1, pub: 'kavi_prepub_0000', friendly: 'Kavi' })
+    kpier.c.up = hp
+    let kpage = kpier.i({ Peering: 1, pub: 'kavi_prepub_0000_full_pub_00000' })
+    kpage.c.up = kpier
+    let kg = kpier.i({ Grant: 'MyCave', by: bare, for: 'kavi_prepub_0000' })
+    kg.c.up = kpier
+    // Kavi's row pre-stands at _1 WEARING the fork-suspicion — the living grant must retire it
+    let krow = this.Swarm_body_note(hana, 'kavi_prepub_0000_full_pub_00000', 'Cave', bare + '_1', 'Kavi')
+    krow.sc.caveat = 'remint'
+    krow.bump()
+    // the three impostors: unbacked junk / the founding-gap captain / the pre-key ghost
+    this.Swarm_body_note(hana, 'junk_body_pub_0000', 'Cave', bare + '_2', 'Junky')
+    this.Swarm_body_note(hana, 'gapcap_body_pub_00', 'Captain', bare + '_3', 'GapCap')
+    this.Swarm_body_note(hana, bare, 'Captain', bare)
+    // the consenter puppet: raised for exactly the heal (dropped before the beat's read-back)
+    let top = this.top_House()
+    if (top && top.c) { top.c.consenter = 1 }
+    let healed = await this.Swarm_family_heal(w, hana)
+    let healed2 = await this.Swarm_family_heal(w, hana)
+    if (top && top.c) { delete top.c.consenter }
+    let roster = this.Swarm_body_roster(hana)
+    let own = roster.find((b) => String(b.sc.pub) === mypub)
+    let kavi = roster.find((b) => String(b.sc.pub) === 'kavi_prepub_0000_full_pub_00000')
+    let ch = hp.o({ Charter: 1 })[0]
+    let listed = ch ? this.Swarm_charter_parse(ch.sc.payload) : []
+    // §0a #3 ("A"): the first heal on a divided huskless Seat should have SIGNED the founding
+    //  MyCaptain onto a self-husk pier — so the re-derive now reads captaincy off a grant.
+    let fam2 = this.Swarm_family_derive(hana)
+    let husk2 = fam2.find((f) => f.husk)
+    let hpier = hp.o({ Pier: 1 }).find((p) => p.o({ Grant: 'MyCaptain' })[0])
+    let row = { healed: 1 }
+    if (husk2 && husk2.role === 'Captain') { row.founding_grant_stands = 1 }
+    if (hpier && hpier.sc.pub && mypub.startsWith(String(hpier.sc.pub))) { row.self_husk_pier = 1 }
+    if (healed === 1) { row.heal_ran = 1 }
+    if (own && own.sc.role === 'Captain' && String(own.sc.address) === bare) { row.own_row_seated = 1 }
+    if (kavi && kavi.sc.role === 'Cave' && String(kavi.sc.address) === bare + '_1' && kavi.sc.name === 'Kavi') { row.member_from_grant = 1 }
+    if (kavi && !kavi.sc.caveat) { row.caveat_retired = 1 }
+    if (!roster.find((b) => String(b.sc.pub) === 'junk_body_pub_0000')) { row.junk_retired = 1 }
+    if (roster.find((b) => String(b.sc.pub) === 'gapcap_body_pub_00')) { row.gap_captain_survives = 1 }
+    if (!roster.find((b) => String(b.sc.pub) === bare)) { row.ghost_dropped = 1 }
+    if (ch && +ch.sc.era >= 1 && listed.some((e) => e.pub === mypub) && listed.some((e) => e.pub === 'kavi_prepub_0000_full_pub_00000') && !listed.some((e) => e.pub === 'junk_body_pub_0000')) { row.charter_attested = 1 }
+    if (healed2 === 0) { row.settled_idempotent = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 9 — FAMILY GRANTS REPLICATE (§0a "why the guard stays" → the road that closes it): grants
+//  lived only on the minting body's piers, so a sibling could not DERIVE the family it belongs to.
+//   Swarm_family_grants_wire collects every soul-signed My<Post> atom (self-verifying); a sibling
+//    absorbs them through Swarm_seal and derives the captaincy it never witnessed.  Teeth: a
+//     hand-relic without a signature stays home (verify throws — skipped) and a retargeted atom
+//      (`for` swapped to the thief's own pub) refuses at the signature.
+async SwarmBody_replicate(w) {
+    w.i({reached: "step_9"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let hana = acct.o({ Identity: 1 }).find((i) => i.sc.friendly === 'Hana')
+    if (!hana) { return }
+    let wires = this.Swarm_family_grants_wire(hana)
+    // the TWIN: the same soul standing in another store — its own Account container + its own body key
+    let tacct = w.oai({ Account: 1, of: 'HanaTwin' })
+    tacct.c.up = w
+    let hkeys = { prepub: String(hana.sc.prepub), pub: String(hana.c.keys.pub), key: String(hana.c.keys.key) }
+    let twin = this.Swarm_identity(tacct, hkeys, 'Hana')
+    twin.c.bodykey = await this.Swarm_mint_keys('SwarmBody-HanaTwin-body')
+    let landed = await this.Swarm_family_grants_absorb(w, twin, wires)
+    let tfam = this.Swarm_family_derive(twin)
+    let mypub = String(this.Swarm_body_key(hana)?.pub || '')
+    // the retarget tooth: the real founding atom with `for` pointed at the twin's own key — the
+    //  signature no longer covers the claim, verify throws, nothing lands.
+    let real = wires.find((g) => g && g.sign)
+    let tampered = real ? { to: String(real.to), by: String(real.by), for: String(twin.c.bodykey.pub), time: String(real.time), sign: String(real.sign) } : null
+    let refused = tampered ? await this.Swarm_family_grants_absorb(w, twin, [tampered]) : -1
+    let row = { replicated: 1 }
+    if (wires.length === 2) { row.grants_wired = 1 }
+    if (landed === 1) { row.signed_landed = 1 }
+    if (wires.length - landed === 1) { row.relic_stayed_home = 1 }
+    if (tfam.some((f) => !f.husk && f.role === 'Captain' && f.pub === mypub)) { row.sibling_sees_captain = 1 }
+    if (refused === 0) { row.tamper_refused = 1 }
     this.SwarmBody_note(w, row)
 
 },

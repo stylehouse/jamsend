@@ -103,21 +103,40 @@ ONE test, applied to every datum: **"Would the community want to SEE this, PROVE
 **THE DEBTS — `.c` that should STAND (this session's rulings):**
 | today (`.c`) | becomes | ruled |
 |---|---|---|
-| `w.c.focused` / `link_surfaced` / `link_decided` | **`%Focus`** (cell · surfaced · decided) | ✅ owner |
+| `w.c.focused` / `link_surfaced` / `link_decided` | **`%Focus`** (cell · surfaced · decided) | ✅ LANDED 2026-09-01 |
 | offline-sibling backlog (the eed storm) | **`%Owed`** under `%Crew` (bounded, seen, gated) | ✅ owner |
 | body-key fork-suspicion (remint-not-read) | a **`%Body` caveat field** (a fork must be seen) | ✅ owner |
 | presence / `heard_at` ("who's aboard") | a **particle**, EntropyArrest-forgiven | ✅ (corrected §6) |
 | `top.c.disk_gated` / `listen_only` / `butler_up` / `ac_wanted` | `%Arrival` / `%Share` | Arrival_todo §A |
 
 ## 0. What to get on with next
-- These rulings are the build list for the **Crew** work (see `Statemap_todo.md`): `%Focus`, `%Owed` ✅,
+- These rulings are the build list for the **Crew** work (see `Statemap_todo.md`): `%Focus` ✅, `%Owed` ✅,
    the `%Body` caveat ✅, presence-as-particle. Each is "a `.c` debt paid to the tree."
+- **LANDED 2026-09-01 — `%Focus`** (the owner: "the kind of rebuild I've been wanting the whole time").
+   `w.c.focused`/`link_surfaced`/`link_decided` now live on a `%Focus` particle (`cell`/`surfaced`/`decided`)
+    on the client world — accessors `Sounditron_focus_get/set`, `Sounditron_surfaced_get/set`,
+     `Sounditron_decided_get/set` (Sounditron.g), read through by Cellui's `commissioner_focus`. It is the
+      STORE, not a mirror. **BOOK-INERT by the humdinger gate**: a Book sets no humdinger → the writer falls
+       to `.c` (never encoded) → byte-identical fixtures (proven: InvWalk/InvFerry/InvSeal green with the
+        change; CHECK `=` on the gen; no `%Focus` in any Story snap). Writes are **change-gated** (no-op when
+         unchanged) — strictly less flap-prone than the old unconditional `.c` writes — and do NOT bump
+          (reactivity rides `now_tick` + `feebly_ponder` exactly as before). `link_unlive_at` (a debounce
+           clock) and `focused_keep` (the bud pin) stay `.c` — runtime timing, not standing facts (the §5
+            test). The WIN is live: on a humdinger tab focus is now a particle Cyto/the daemon/`/c` can SEE.
+             ⚠ Live flap-check is the owner's (the humdinger landmine) — the logic is unchanged, only storage.
 - **LANDED 2026-08-31 — the `%Body` caveat.** `Swarm_body_remint_caveat(ident, pub)` (Swarm.g, beside
    `Swarm_body_key_ensure` which now calls it after its mint): reaching the MINT branch while the division
     already stands keyed (a roster `%Body` whose pub ≠ the soul prepub) means this store lost its durable
      key — the fresh row is stamped `caveat:remint`, a STANDING fact. Nothing clears it automatically; a
       re-charter retires it. Proven by SwarmBody beat 5 (Rema reminted+stamped / Vera virgin+clean),
        fixture 005.snap + `%see` "a reminted body wears its caveat…", 5/5 green on the live runner.
+- **LANDED 2026-09-01 — the caveat's EXIT.** `Swarm_caveat_retire(ident, fam)` (called from
+   `Swarm_family_heal`, the re-attestation walk): a LIVING My\* grant for the marked pub — the Seat has
+    since run the real ceremony over that key — retires the mark; remint itself still clears nothing.
+     Proven by SwarmBody beat 8 (`caveat_retired`), which also gates the heal applied end-to-end:
+      member-from-grant seated · unbacked junk retired (founding-gap Captain survives) · pre-key ghost
+       dropped · the Seat's charter listing exactly the standing division · a settled family healing to
+        no change. 8/8 green on the live runner.
 - **LANDED 2026-08-31 — `%Owed`, hung on the counterparty's OWN row** (the owner's call: Body/Owed for a
    sibling, Pier/Owed for a friend — the row is the relationship's locality, drops with it, and the Door
     can read "owed N" in place). `Swarm_owed_note/paid/settle` in Swarm.g beside the body verbs. A

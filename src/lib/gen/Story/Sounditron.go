@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'a6cc12505b5f876f~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'a909f0031a6d3359~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -473,40 +473,41 @@ Sounditron_commission(w) { const H = this;
             let fp = this.Swarm_ferry_particle ? this.Swarm_ferry_particle(w) : null
             if (fp && fp.sc) { fkey = String(fp.sc.phase || '') + '@' + String(fp.sc.at || '') + '@' + (l_named ? 'n' : 'u') }
         } catch (e) {}
-        if (fkey !== (w.c.link_decided || '')) {
+        if (fkey !== this.Sounditron_decided_get(w)) {
             if (active) {
                 // UNNAMED → surface the Door (its name-gate); NAMED → the Link takes the belly.  Once the Door
                 //  name-gate saves a friendly, `l_named` flips, `fkey` changes, this re-fires and lands on Link
                 //   (InvitePanel's whisk focuses it too).  Book-inert: humdinger branch only; Books never name mid-run.
                 if (l_named) {
-                    w.c.focused = 'Link'
-                    w.c.link_surfaced = 1
+                    this.Sounditron_focus_set(w, 'Link')
+                    this.Sounditron_surfaced_set(w, 1)
                 } else {
-                    w.c.focused = 'Door'
+                    this.Sounditron_focus_set(w, 'Door')
                 }
-                w.c.link_decided = fkey
+                this.Sounditron_decided_set(w, fkey)
             } else if (!live) {
                 // the ceremony genuinely ENDED (flags cleared + a terminal phase): one teardown, then it's a receipt
-                w.c.link_decided = fkey
-                if (w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
+                this.Sounditron_decided_set(w, fkey)
+                if (this.Sounditron_surfaced_get(w)) { this.Sounditron_surfaced_set(w, 0); if (this.Sounditron_focus_get(w) === 'Link') this.Sounditron_focus_set(w, null) }
             }
             // else: in flight but cold — leave UNDECIDED so warmth arriving later still surfaces exactly once
         }
         // the unlive JANITOR — belt for a clearing path that missed its terminal phase stamp: a surfaced
         //  latch with NO ferry flags for a sustained 10s is a dead ceremony, not a flicker.  Debounced so
-        //   the poke reheal's momentary flag gaps (the old flap fuel) can never trip it.
-        if (!live && w.c.link_surfaced) {
+        //   the poke reheal's momentary flag gaps (the old flap fuel) can never trip it.  link_unlive_at
+        //    stays `.c` — a debounce clock is runtime timing, not a standing fact.
+        if (!live && this.Sounditron_surfaced_get(w)) {
             if (!w.c.link_unlive_at) { w.c.link_unlive_at = Date.now() }
             else if (Date.now() - w.c.link_unlive_at > 10000) {
                 delete w.c.link_unlive_at
-                delete w.c.link_surfaced
-                if (w.c.focused === 'Link') { delete w.c.focused }
+                this.Sounditron_surfaced_set(w, 0)
+                if (this.Sounditron_focus_get(w) === 'Link') { this.Sounditron_focus_set(w, null) }
             }
         } else if (w.c.link_unlive_at) { delete w.c.link_unlive_at }
     } else {
-        if (active) { w.c.focused = 'Link'; w.c.link_surfaced = 1 }
-        if (!live && w.c.link_surfaced) { delete w.c.link_surfaced; if (w.c.focused === 'Link') delete w.c.focused }
-        if (!live && w.c.link_decided) { delete w.c.link_decided }
+        if (active) { this.Sounditron_focus_set(w, 'Link'); this.Sounditron_surfaced_set(w, 1) }
+        if (!live && this.Sounditron_surfaced_get(w)) { this.Sounditron_surfaced_set(w, 0); if (this.Sounditron_focus_get(w) === 'Link') this.Sounditron_focus_set(w, null) }
+        if (!live && this.Sounditron_decided_get(w)) { this.Sounditron_decided_set(w, null) }
     }
     // PUBLISH THE FULLSCREEN AUTHORITY here, on the same humdinger-gated commission that decides the belly focus —
     //  one place, one decision.  Inert on Books (Screen_decide self-gates on humdinger).  It still coordinates the
@@ -520,7 +521,7 @@ Sounditron_commission(w) { const H = this;
     //  flicker still flapped the cell in/out of the set even with the focus latched (link_surfaced is set
     //   exactly when a phase earns its surface, cleared exactly when the ceremony ends).  Books keep the
     //    verbatim old gate — fixtures byte-identical.
-    let link_up = mh_hd ? (w.c.link_surfaced || w.c.focused === 'Link') : (active || w.c.focused === 'Link')
+    let link_up = mh_hd ? (this.Sounditron_surfaced_get(w) || this.Sounditron_focus_get(w) === 'Link') : (active || this.Sounditron_focus_get(w) === 'Link')
     if (link_up && link) organs.push(link)
     // the transfer HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback but I don't see
     //  any"): Heist_keep_beat mints and keeps current a persistent dontSnap %Transfer cell on the radio
@@ -827,7 +828,7 @@ Sounditron_commission(w) { const H = this;
         if (hbag) {
             let dayAgo = Math.floor(Date.now() / 1000) - 86400
             for (const row of hbag.o({ Haul: 1 })) { if (+(row.sc.at || 0) >= dayAgo) hbag_fresh = hbag_fresh + 1 }
-            if ((hbag_fresh || anyKeep || w.c.focused === 'Hauls') && organs.indexOf(hbag) < 0) organs.push(hbag)
+            if ((hbag_fresh || anyKeep || this.Sounditron_focus_get(w) === 'Hauls') && organs.indexOf(hbag) < 0) organs.push(hbag)
         }
         // RUNGS 1 + 1b — A KEEP YOU ARE STILL FILLING IN, or one you explicitly asked to see.  Both live
         //  in `Sounditron_belly_keep`; see its header for why they are one comparison and not two rungs.
@@ -839,7 +840,8 @@ Sounditron_commission(w) { const H = this;
         //  to `for (const w.oa({of: 1}) organs)` and the generated module does not parse.  It was the
         //   only `const o of` in the whole Ghost tree, which is why nothing had hit it before.  Same
         //    family as the `%`-after-an-IO-verb peel collision: a JS keyword next to a verb name.
-        if (!fmain && w.c.focused) for (const org of organs) if (Object.keys(org.sc)[0] === w.c.focused) { fmain = org; break }
+        let ffocus = this.Sounditron_focus_get(w)
+        if (!fmain && ffocus) for (const org of organs) if (Object.keys(org.sc)[0] === ffocus) { fmain = org; break }
         // (the sanity rung is GONE — 2026-08-13, with the cell.  It said "a cell that has gone amiss is by
         //  definition the thing worth seeing", which was true of the rung and false of the cell: what it
         //   then showed you was not actionable.  A diag-only cell must never take the belly anyway, or
@@ -1135,18 +1137,86 @@ Sounditron_seat_toggle(w) {
 //  Runtime `.c`, resets on reload, same discipline as show_diag.  Ends in a commission, which ends
 //   in a DEFERRED elvisto — so wake the loop, or the press waits out the idle cadence (~12s), the
 //    exact lesson the keep gesture already recorded.
+// ── %Focus — the belly's focused cell + the link auto-surface latches, made LEGIBLE (Statehome_todo
+//  §Focus: "w.c.focused / link_surfaced / link_decided → %Focus (cell·surfaced·decided)").  The owner's
+//   ruling: surface state is a for-the-community datum — it WANTS to be a particle the mesh/Cyto/daemon
+//    can SEE, not a flag hidden in one tab's interior.  This is the STORE, not a mirror (the doc's whole
+//     point — a mirror is the "6th mirror" disease it rails against).
+//  BOOK-INERT, by the humdinger gate: a live tab sets humdinger, so the writer mints %Focus; a Book sets
+//   NONE, so the writer falls to `.c` (never encoded) and the reader finds no particle and reads `.c` —
+//    byte-identical fixtures (proven by CHECK + the full gate).  link_unlive_at (a debounce clock) and
+//     focused_keep (the bud pin) STAY `.c`: runtime timing, not standing facts (the §5 test).
+//  WRITES ARE CHANGE-GATED (no-op when the value is unchanged) — strictly LESS flap-prone than the old
+//   unconditional `.c` writes.  No version bump: reactivity already rides now_tick (Cellui) + feebly_ponder
+//    (the press seams), exactly as the old `.c` design did, so timing is unchanged.
+Sounditron_focus_particle(w) {
+    if (!w) { return null }
+    let live = (this.top_House && this.top_House()) ? this.top_House().c.humdinger : 0
+    if (!live) { return null }
+    let f = w.oai({ Focus: 1 })
+    f.c.up = w
+    return f
+},
+Sounditron_focus_get(w) {
+    if (!w) { return '' }
+    let f = w.o({ Focus: 1 })[0]
+    return f ? String(f.sc.cell || '') : String(w.c.focused || '')
+},
+Sounditron_focus_set(w, cell) {
+    if (!w) { return }
+    let val = cell ? String(cell) : ''
+    let f = this.Sounditron_focus_particle(w)
+    if (f) {
+        if (String(f.sc.cell || '') === val) { return }
+        if (val) { f.sc.cell = val } else { delete f.sc.cell }
+    } else {
+        if (String(w.c.focused || '') === val) { return }
+        if (val) { w.c.focused = val } else { delete w.c.focused }
+    }
+},
+Sounditron_surfaced_get(w) {
+    if (!w) { return 0 }
+    let f = w.o({ Focus: 1 })[0]
+    return f ? (f.sc.surfaced ? 1 : 0) : (w.c.link_surfaced ? 1 : 0)
+},
+Sounditron_surfaced_set(w, on) {
+    if (!w) { return }
+    let f = this.Sounditron_focus_particle(w)
+    if (f) {
+        if (on) { if (!f.sc.surfaced) { f.sc.surfaced = 1 } } else { if (f.sc.surfaced) { delete f.sc.surfaced } }
+    } else {
+        if (on) { w.c.link_surfaced = 1 } else { delete w.c.link_surfaced }
+    }
+},
+Sounditron_decided_get(w) {
+    if (!w) { return '' }
+    let f = w.o({ Focus: 1 })[0]
+    return f ? String(f.sc.decided || '') : String(w.c.link_decided || '')
+},
+Sounditron_decided_set(w, key) {
+    if (!w) { return }
+    let val = key ? String(key) : ''
+    let f = this.Sounditron_focus_particle(w)
+    if (f) {
+        if (String(f.sc.decided || '') === val) { return }
+        if (val) { f.sc.decided = val } else { delete f.sc.decided }
+    } else {
+        if (String(w.c.link_decided || '') === val) { return }
+        if (val) { w.c.link_decided = val } else { delete w.c.link_decided }
+    }
+},
 Sounditron_focus_step(w) {
     // THE PLAYER IS HOME, so it heads the ring and it is the one carried as ABSENCE — stepping onto
     //  it deletes the key rather than pinning it, which keeps "no explicit pick" and "the Player" the
     //   same state.  Pin the default instead and the ladder could never promote a keep or an alarm.
     let ring = ['Radio', 'Door']
-    let cur = w.c.focused || 'Radio'
+    let cur = this.Sounditron_focus_get(w) || 'Radio'
     let i = ring.indexOf(cur)
     let next = ring[(i + 1) % ring.length]
     if (next === 'Radio') {
-        delete w.c.focused
+        this.Sounditron_focus_set(w, null)
     } else {
-        w.c.focused = next
+        this.Sounditron_focus_set(w, next)
     }
     this.Sounditron_commission(w)
     this.feebly_ponder()
@@ -1160,7 +1230,7 @@ Sounditron_focus_step(w) {
 //    dangling ref.  Same deferred-elvisto wake as its siblings.
 Sounditron_focus_to(w, key) {
     if (!key) return 0
-    w.c.focused = key
+    this.Sounditron_focus_set(w, key)
     // NAMING AN ORGAN LETS GO OF THE PINNED KEEP (2026-08-13).  `focused_keep` sits ABOVE `focused` on
     //  the belly ladder — it has to, or pressing a heist bud would be outranked by whatever you last
     //   pressed — so without this line, pressing the Radio while a running heist was the belly would
@@ -1319,7 +1389,7 @@ Sounditron_link_done(w) {
     try {
         let vw = this.Sounditron_vyto ? this.Sounditron_vyto().vw : null
         let cw = vw ? (vw.c.client_w || vw) : null
-        if (cw && cw.c) { delete cw.c.link_surfaced }
+        if (cw && cw.c) { this.Sounditron_surfaced_set(cw, 0) }
     } catch (e) {}
     try { if (this.Sounditron_focus) { this.Sounditron_focus('Door') } } catch (e) {}
     if (top && top.bump_version) { top.bump_version() }
@@ -1340,7 +1410,7 @@ Sounditron_link_close(w) {
     try {
         let vw = this.Sounditron_vyto ? this.Sounditron_vyto().vw : null
         let cw = vw ? (vw.c.client_w || vw) : null
-        if (cw && cw.c) { delete cw.c.link_surfaced }
+        if (cw && cw.c) { this.Sounditron_surfaced_set(cw, 0) }
     } catch (e) {}
     try { if (this.Sounditron_focus) { this.Sounditron_focus('Link') } } catch (e) {}
     if (top && top.bump_version) { top.bump_version() }
@@ -1418,7 +1488,7 @@ Sounditron_belly_keep(setups, pin) {
 Sounditron_focus_keep(w, keep) {
     if (!keep) return 0
     w.c.focused_keep = keep
-    delete w.c.focused
+    this.Sounditron_focus_set(w, null)
     if (typeof this.Heist_keep_touch === 'function') this.Heist_keep_touch(keep)
     this.Sounditron_commission(w)
     this.feebly_ponder()
@@ -1470,7 +1540,7 @@ Sounditron_leave_keep(w, key, only) {
 // Sounditron_focus_home — the home satellite: back to the DEFAULT, which is now the Player (the
 //  belly ladder decides — home is absence, never a hardcoded name, so it follows the ladder).
 Sounditron_focus_home(w) {
-    delete w.c.focused
+    this.Sounditron_focus_set(w, null)
     this.Sounditron_commission(w)
     this.feebly_ponder()
     return 1
