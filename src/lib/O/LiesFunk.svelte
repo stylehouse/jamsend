@@ -2365,6 +2365,110 @@ await M.eatfunc({
         //    Lies_ghost_compile_ack); the relay routes it back to the CLI by corr.  v1 unsigned/trust-
         //     everything like gen_write-when-unconfigured — a run executes already-compiled gen, dev-only
         //      on localhost; signing mirrors ghost_compile once CLUSTER_TRUSTED_PUBS deploys.
+        // ── minisnap — a TARGETED, BOUNDED, standalone C-tree read (owner 2026-09-01: "a big string of
+        //  Pointers to what you actually want to read … use Travel to limit number|depth … a lot of what
+        //   Story does, diffs over time of the same thing … invoke from code as well").  NOT Story: no
+        //    Book, no ladder, no beats — just point at a bunch of C and serialise it, on demand or from a
+        //     wired code seam, and diff successive reads of the SAME pointer.
+        //  POINTERS: `root>step>step` — root ∈ {mundo,radio,story,self}; each step descends by an
+        //   sc-match (`Body` = presence wildcard {Body:1}; `Body,role:Cave` = {Body:1,role:'Cave'}),
+        //    collecting EVERY match at that level (pure `.o()` — never mints).  `;` separates several
+        //     pointer paths in one read.
+        //  BOUNDS: opt.depth caps child-depth (enWaft max_child_depth); opt.nodes caps the line count —
+        //   a hit is reported LOUDLY (⚠ CUT), never a silent trim (the owner's standing rule).
+        //  DIFF: each read stashes into a ring keyed by the pointer string (top.c.minisnaps[key], last 8),
+        //   so a caller can diff this read against the previous of the same target.
+        Lies_minisnap_parse_step(step: string): any {
+            // each bit is `key` (presence wildcard {key:1}) or `key:value` (literal match) — the FIRST
+            //  bit is the mainkey and may itself carry a value (`A:Lies`, `w:Story`).  Insertion order
+            //   preserves mainkey-first, which .o() needs.
+            const bits = String(step).split(',').map(s => s.trim()).filter(Boolean)
+            if (!bits.length) return null
+            const m: any = {}
+            for (const kv of bits) {
+                const i = kv.indexOf(':')
+                if (i < 0) { m[kv] = 1; continue }
+                const k = kv.slice(0, i), v = kv.slice(i + 1)
+                m[k] = (v === '' || v === '1') ? 1 : v
+            }
+            return m
+        },
+        Lies_minisnap_root(name: string): TheC | null {
+            const H = this as House
+            const top = H.top_House()
+            switch (String(name).trim()) {
+                case 'mundo': return top
+                case 'radio': return ((top.c as any).radio_w as TheC) ?? null
+                case 'story': return H.Lies_runner_story_w() ?? null
+                case 'self':  return ((H as any).Lies_self_ident?.(top) ?? (H as any).Swarm_live_self?.()) ?? null
+                default: return null
+            }
+        },
+        // resolve ONE `root>step>step` path to the set of C nodes it names (pure read).
+        Lies_minisnap_resolve(path: string): TheC[] {
+            const H = this as House
+            const steps = String(path).split('>').map(s => s.trim()).filter(Boolean)
+            if (!steps.length) return []
+            const root = H.Lies_minisnap_root(steps[0])
+            if (!root) return []
+            let here: TheC[] = [root]
+            for (const step of steps.slice(1)) {
+                const m = H.Lies_minisnap_parse_step(step)
+                if (!m) continue
+                const next: TheC[] = []
+                for (const n of here) { try { for (const c of (n.o(m) as TheC[])) next.push(c) } catch { /* skip */ } }
+                here = next
+                if (!here.length) break
+            }
+            return here
+        },
+        // minisnap(pointers, opt) — the primitive, callable from ANY ghost at a wired seam or from the op.
+        //  opt: { depth?=4, nodes?=400, diff?=false, label? }.  Returns { pointers, snap, nodes, cut, diff? }.
+        async minisnap(pointers: string, opt?: { depth?: number, nodes?: number, diff?: boolean, label?: string }): Promise<any> {
+            const H = this as House
+            const depth = opt?.depth ?? 4
+            const nodes = opt?.nodes ?? 400
+            const paths = String(pointers).split(';').map(s => s.trim()).filter(Boolean)
+            const chunks: string[] = []
+            let total = 0, cut = false
+            for (const p of paths) {
+                const targets = H.Lies_minisnap_resolve(p)
+                if (!targets.length) { chunks.push(`// ${p} → (no match)`); continue }
+                chunks.push(`// ${p} → ${targets.length} node(s)`)
+                for (const t of targets) {
+                    let snap = ''
+                    try { snap = ((await (H as any).enWaft(t, { max_child_depth: depth }))?.snap as string) ?? '' } catch (e) { snap = `// enWaft failed: ${String((e as any)?.message ?? e)}` }
+                    const lines = snap.split('\n')
+                    if (total + lines.length > nodes) {
+                        const room = Math.max(0, nodes - total)
+                        chunks.push(lines.slice(0, room).join('\n'))
+                        chunks.push(`… ⚠ CUT at ${nodes} nodes — raise nodes= to see more (not a silent trim)`)
+                        cut = true; total = nodes; break
+                    }
+                    chunks.push(snap); total += lines.length
+                }
+                if (cut) break
+            }
+            const out = chunks.join('\n')
+            // stash into the per-pointer ring so successive reads of the SAME target can diff over time.
+            const top = H.top_House()
+            const ring = ((top.c as any).minisnaps ??= {}) as Record<string, string[]>
+            const key = String(pointers)
+            const prev = ring[key]?.[ring[key].length - 1]
+            ;(ring[key] ??= []).push(out)
+            if (ring[key].length > 8) ring[key].shift()
+            let diff: string | undefined
+            if (opt?.diff && prev !== undefined) diff = H.Lies_minisnap_diff(prev, out)
+            if (opt?.label) H.tlog(`🔎 minisnap[${opt.label}] ${key} — ${total} lines${cut ? ' (CUT)' : ''}`)
+            return { pointers: key, snap: out, nodes: total, cut, ...(diff !== undefined ? { diff } : {}) }
+        },
+        // a plain line diff (added/removed), enough to watch a target evolve — no LCS ceremony for MVP.
+        Lies_minisnap_diff(a: string, b: string): string {
+            const A = new Set(a.split('\n')), B = new Set(b.split('\n'))
+            const gone = a.split('\n').filter(l => l && !B.has(l)).map(l => '- ' + l)
+            const came = b.split('\n').filter(l => l && !A.has(l)).map(l => '+ ' + l)
+            return [...gone, ...came].join('\n') || '(no change)'
+        },
         async Lies_runner_ask_recv(w: TheC, frame: any): Promise<boolean> {
             const H    = this as House
             const corr = (frame?.corr ?? frame?.header?.corr) as string | undefined
@@ -2381,7 +2485,15 @@ await M.eatfunc({
             let result: any = {}
             try {
                 H.Lies_engage_touch(w, client)   // any activity from the holder keeps its lease alive
-                if (op === 'ping') {
+                // READ-ONLY on a diagnostic humdinger (a music-page listener that stood up a read-only
+                //  channel — Lies_channel_up gated on Lies_player_seen): refuse every run-driving or
+                //   reloading op. The CLI's PLAYER_OPS gate is advisory; THIS is the authority — a music
+                //    tab can be introspected but never made to run a Book or reload (owner 2026-09-01).
+                const ro_only = H.Lies_humdinger(w) && !H.Lies_is_runner(w)
+                if (ro_only && (op === 'run' || op === 'release' || op === 'retain' || op === 'accept' || op === 'declare' || op === 'reload')) {
+                    ok = false
+                    result = { refused: `op '${op}' refused — this tab is a music-page listener (read-only introspection only)` }
+                } else if (op === 'ping') {
                     const sr = H.Lies_rungo_record(w)
                     result = {
                         role:    H.Lies_is_runner(w) ? 'runner' : 'editor',
@@ -2401,6 +2513,10 @@ await M.eatfunc({
                     }
                 } else if (op === 'probe') {
                     result = await H.Lies_audio_probe()   // real-audio one-shot: real-time? analyser-heard? (fleet capability)
+                } else if (op === 'minisnap') {
+                    // TARGETED read of a pointer path (read-only; safe on a humdinger).  See H.minisnap above.
+                    const a = ask as any
+                    result = await H.minisnap(String(a.pointers ?? a.p ?? ''), { depth: a.depth, nodes: a.nodes, diff: !!a.diff, label: a.label })
                 } else if (op === 'world') {
                     // READ-ONLY diagnostic of the LIVE RESIDENT world — the music tab as it stands NOW, no
                     //  test run required (the read ops below serve a Storyrun's steps; a plain playing tab has

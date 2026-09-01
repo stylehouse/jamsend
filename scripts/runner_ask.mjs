@@ -74,7 +74,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  never listed here, so the CLI refused the one op that makes a MIDDLE step inspectable: without it
 //   `snap 3` of a 9-step Book returns got_snap:null, trimmed 5 steps behind, and a flapping early step
 //    cannot be diffed at all.  `retain on` sticks on w:Story.c across runs.
-const OPS = ['ping', 'probe', 'world', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -196,7 +196,7 @@ const live  = flags.has('--live') || !localHost
 // READ-ONLY verbs — the only ones that may target a role:'player' tab (someone's actual music page).
 //  Module-scope because it now gates TWO doors: explicit --player= targeting (below), and the
 //   auto-court's humdinger veto (a player can answer a to:'runner' broadcast — see the veto).
-const PLAYER_OPS = ['ping', 'probe', 'world', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions']
+const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions']
 
 // ── liveCensus — learn who is on THIS relay, FROM the relay ─────────────────────────────────
 //  clusterRunners() above reads a LOCAL FILE.  Point RUNNER_URL at another host and that file is
@@ -490,6 +490,7 @@ if (op === 'socklog' && arg && arg !== 'on' && arg !== 'off') { console.error('s
 if (op === 'declare' && !arg) { console.error('declare needs the sworn sentence (quote it — byte-identical to `assertions` output): node scripts/runner_ask.mjs declare \'<sentence>\''); process.exit(2) }
 if (op === 'snap' && !arg) { console.error('snap needs a step number: node scripts/runner_ask.mjs snap <n>'); process.exit(2) }
 if (op === 'trace' && !arg) { console.error('trace needs a step number: node scripts/runner_ask.mjs trace <n>  (the step\'s beliefs-cycle trace + causal|timeout quiescent label)'); process.exit(2) }
+if (op === 'minisnap' && !arg) { console.error('minisnap needs a pointer path: node scripts/runner_ask.mjs minisnap \'radio>Radio\' [--depth=4] [--nodes=400] [--diff]\n  pointers: root>step>step  (root ∈ mundo|radio|story|self; step = a mainkey, e.g. `Body` or `Body,role:Cave`; `;` joins several paths)\n  --diff shows the change vs your PREVIOUS read of the same pointer (the ring persists on the tab — call again to watch it evolve)'); process.exit(2) }
 
 // clientId — the stable identity the runner records as the engagement holder (its don't-steal lease).
 //  Prefer the claude cluster prepub (.env.cluster-claude → CLUSTER_IDENTO_CLAUDE_PUB, first 16 hex) so the
@@ -513,6 +514,14 @@ if (op === 'declare') ask.sentence = arg   // the explorer button's CLI twin (e_
 if (op === 'socklog') { ask.on = arg === 'off' ? 0 : 1; if (flags.has('--reload')) ask.reload = 1 }   // arm the tab's trace dump remotely (was: 🪪 hatch only)
 if (op === 'poke') ask.verb = arg          // allowlisted UI verb (runner-side allowlist is the authority)
 if (op === 'retain') ask.on = arg === 'off' ? false : true   // keep every step's got_snap, not just the last 5
+if (op === 'minisnap') {
+	// targeted, bounded C-tree read; --diff shows the change vs the previous read of the SAME pointer.
+	const flagVal = (name) => { const f = argv.find(a => a.startsWith(name + '=')); return f ? f.split('=').slice(1).join('=') : undefined }
+	ask.pointers = arg
+	const d = flagVal('--depth'); if (d !== undefined) ask.depth = Number(d)
+	const n = flagVal('--nodes'); if (n !== undefined) ask.nodes = Number(n)
+	if (flags.has('--diff')) ask.diff = 1
+}
 if (uid) ask.uid = uid
 
 // (HTTP / WS_URL / TIMEOUT_MS / WATCH_MS / stamp / cliAddr are declared with the origin block near
@@ -678,6 +687,11 @@ if (reply.control !== 'runner_ack') { console.error(`✗ ${op}: ${reply.error ??
 else if (op === 'snap' && reply.result?.got_snap) {
 	console.error(`snap: Step ${reply.result.n} ok=${reply.result.ok} dige=${reply.result.dige}`)
 	process.stdout.write(reply.result.got_snap.endsWith('\n') ? reply.result.got_snap : reply.result.got_snap + '\n')
+} else if (op === 'minisnap' && reply.result) {
+	const r = reply.result
+	console.error(`minisnap ${r.pointers} — ${r.nodes} lines${r.cut ? ' ⚠ CUT' : ''}`)
+	if (r.diff !== undefined) process.stdout.write((r.diff.endsWith('\n') ? r.diff : r.diff + '\n'))
+	else process.stdout.write((r.snap ?? '').endsWith('\n') ? r.snap : (r.snap ?? '') + '\n')
 } else if (op === 'supervisor' && reply.result?.stood != null) {
 	// THE SUPERVISOR'S OWN SCREEN, on a terminal.  Same rows, same order, same marks the Butler and
 	//  the cell draw — the model judged them (Supervisor_lines) and nothing here re-decides.  The one

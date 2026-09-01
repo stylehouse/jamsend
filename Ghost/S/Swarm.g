@@ -1536,8 +1536,16 @@ Swarm_station_up(w, ident):
             if (!idp) return
             if (granted === ident.sc.prepub) { delete idp.sc.address } else { idp.sc.address = granted }
             idp.bump()
-            if (frame.taken && frame.taken.length) { try { this.Swarm_note_theft(ident, 'relay_arbiter', null) } catch (e) {} }
-            console.log('🪪 adopted relay-granted address ' + granted + (cur ? ' (was ' + cur + ')' : '') + ' — a body of this soul held the seat we wanted')
+            // NOT A THEFT (owner 2026-09-01, "two of you — still relevant or safe?"): relay seat
+            //  contention is ALWAYS same-soul — the seat is keyed by the soul prepub, so a stranger has a
+            //   different name and never contests ours; whoever holds our wanted seat is another BODY OF
+            //    OURS.  Cross-device bodies keep SEPARATE ledgers (their own FSA account) and reconcile by
+            //     charter/ferry — they cannot clobber THIS tab's write, so the old note_theft here raised a
+            //      FALSE 👥 alarm for a plain multi-device family (it passed by:'relay_arbiter', a synthetic
+            //       token no %Sibling check could ever match, so it fired unconditionally).  Adopt the
+            //        suffix + rehome — the GENUINE same-profile double-write clobber is still caught by the
+            //         pulse path (Swarm_note_theft with the real claimant, gated by the %Sibling check).
+            console.log('🪪 adopted relay-granted address ' + granted + (cur ? ' (was ' + cur + ')' : '') + ' — a sibling body of this soul holds the bare seat (cooperative, not a theft)')
             this.Swarm_rehome(ident)
         }
     }
@@ -4936,7 +4944,7 @@ async Swarm_family_heal(w, ident):
     if (!ident || !ident.c || !ident.c.keys) { return 0 }
     let fam = this.Swarm_family_derive(ident)
     if (!fam.length) { return 0 }
-    let row_key = (b) => String(b.sc.pub) + ':' + String(b.sc.role || '') + ':' + String(b.sc.name || '')
+    let row_key = (b) => String(b.sc.pub) + ':' + String(b.sc.role || '') + ':' + String(b.sc.name || '') + ':' + String(b.sc.address || '')
     let before = this.Swarm_body_roster(ident).map(row_key).sort().join('|')
     let key = await this.Swarm_body_key_ensure(ident)
     let mypub = key && key.pub ? String(key.pub) : String(ident.sc.prepub)
@@ -4952,19 +4960,40 @@ async Swarm_family_heal(w, ident):
         members = fam.filter((f) => !f.husk)
     }
     let myrole = husk ? husk.role : 'Captain'
-    let myaddr = husk ? (this.Swarm_address(ident) || String(ident.sc.prepub) + '_1') : String(ident.sc.prepub)
+    // MY SEAT: the arbitrated seat if the relay/cohort granted me one; else keep my own prior row;
+    //  else the next FREE suffix off the roster I already hold — NEVER a blind _1 (owner 2026-09-01:
+    //   three Caves all read _1 because every mint hardcoded it instead of consulting the roster.  The
+    //    relay only arbitrates seats for bodies that are online AT THE SAME TIME, so sequential links
+    //     each grabbed _1; the durable roster is the real seat ledger).
+    let selfrow = this.Swarm_peering(ident)?.o({ Body: 1, pub: mypub })[0]
+    let myaddr = husk
+        ? (this.Swarm_address(ident)
+            || (selfrow && selfrow.sc.address ? String(selfrow.sc.address)
+                : this.Swarm_next_suffix(String(ident.sc.prepub), this.Swarm_body_roster(ident).map((b) => String(b.sc.address || '')).filter((a) => a && String(b.sc.pub) !== mypub))))
+        : String(ident.sc.prepub)
     let mine = this.Swarm_body_take(ident, mypub, myrole, myaddr)
     if (mine && !mine.sc.name) {
         let nm = husk && husk.name ? husk.name : String(ident.sc.friendly || '')
         if (nm) { mine.sc.name = nm; mine.bump() }
     }
+    // THE SEAT LEDGER HEALS COLLISIONS (owner 2026-09-01, "fix everyone wanting _1"): keep an existing
+    //  row's address ONLY if no earlier body this pass already holds it.  Two Caves that both minted _1
+    //   must diverge to _1/_2 — and ONLY the SEAT re-suffixes (it alone re-charters; a suffixed body's
+    //    roster is the charter's projection and must not diverge from the signed payload, §TWO
+    //     AUTHORITIES).  `seen` accumulates every seat handed out this pass; a colliding prior is
+    //      re-minted to the next free suffix past everything seen + everything the roster already holds.
+    let taken0 = this.Swarm_body_roster(ident).map((b) => String(b.sc.address || '')).filter((a) => a)
+    let seen = new Set()
+    if (myaddr) { seen.add(myaddr) }
     for (const m of members) {
-        // seat assignment mirrors the finalise: an existing row keeps its address; a new member takes
-        //  the bare name if Captain, else the next FREE suffix (two Caves must not both read _1).
         let prior = this.Swarm_peering(ident)?.o({ Body: 1, pub: m.pub })[0]
-        let maddr = prior && prior.sc.address ? String(prior.sc.address)
+        let kept = prior && prior.sc.address ? String(prior.sc.address) : ''
+        let collide = seat && kept && seen.has(kept)
+        let maddr = (kept && !collide) ? kept
             : (m.role === 'Captain' ? String(ident.sc.prepub)
-                : this.Swarm_next_suffix(String(ident.sc.prepub), this.Swarm_body_roster(ident).map((b) => String(b.sc.address || '')).filter((a) => a)))
+                : this.Swarm_next_suffix(String(ident.sc.prepub), taken0.concat(Array.from(seen))))
+        if (collide) { console.log('🦑 🪪 seat collision healed — ' + String(m.pub).slice(0, 8) + ' ' + kept + ' → ' + maddr + ' (another body already holds ' + kept + ')') }
+        seen.add(maddr)
         this.Swarm_body_note(ident, m.pub, m.role, maddr, m.name)
     }
     // grant-vouched rows shed their fork-suspicion here (the heal IS the re-attestation walk).
@@ -5417,7 +5446,12 @@ async Swarm_adopt_absorb(w, container, bodykeys, nonce, frame, consent):
     let ident = this.Swarm_import(container, blob)
     if (!ident || !ident.c.keys) { return null }
     ident.c.bodykey = { pub: bodykeys.pub, key: bodykeys.key, prepub: bodykeys.prepub }
-    let addr = ident.sc.prepub + '_1'
+    // GUESS A FREE SEAT off the account I just imported (owner 2026-09-01: never a blind _1) — the
+    //  soul-holder re-asserts the authoritative seat in adopt_finalise + the signed charter, but even the
+    //   provisional self-view must not collide with a sibling already on the imported roster.
+    let priorb = this.Swarm_peering(ident)?.o({ Body: 1, pub: bodykeys.pub })[0]
+    let addr = priorb && priorb.sc.address ? String(priorb.sc.address)
+        : this.Swarm_next_suffix(String(ident.sc.prepub), this.Swarm_body_roster(ident).map((b) => String(b.sc.address || '')).filter((a) => a))
     let body = this.Swarm_body_take(ident, bodykeys.pub, null, addr)
     if (frame.grant) { grant_to_C(body, frame.grant) }
     let post = this.Swarm_grant_post(body)
@@ -5434,7 +5468,14 @@ async Swarm_adopt_finalise(w, soulIdent, role0, newbody, era):
     let mykey = this.Swarm_body_key(soulIdent)
     let mypub = mykey ? mykey.pub : bare
     this.Swarm_body_take(soulIdent, mypub, role0, bare)
-    this.Swarm_body_note(soulIdent, newbody.pub, newbody.role, newbody.address)
+    // THE SEAT ASSIGNS THE ADDRESS, not the new body's guess (owner 2026-09-01): the new device proposes
+    //  a seat off its imported view, but the soul-holder holds the authoritative roster — keep the row's
+    //   prior seat if it has one, else the next FREE suffix, so a fresh Cave never signs into a colliding _1.
+    let prior = this.Swarm_peering(soulIdent)?.o({ Body: 1, pub: newbody.pub })[0]
+    let addr = prior && prior.sc.address ? String(prior.sc.address)
+        : (newbody.role === 'Captain' ? bare
+            : this.Swarm_next_suffix(String(bare), this.Swarm_body_roster(soulIdent).map((b) => String(b.sc.address || '')).filter((a) => a)))
+    this.Swarm_body_note(soulIdent, newbody.pub, newbody.role, addr)
     return await this.Swarm_charter_sign(soulIdent, era)
 // Swarm_adopt_park — a blank device heard an adoption sealed to it: PARK it for the human's consent (the
 //  UI reads top.c.adopt_pending and shows the bodily warning; its confirm calls Swarm_adopt_absorb).  Never
@@ -5556,8 +5597,15 @@ async Swarm_ferry_heard(w, ident, frame, code):
     let soul = this.Swarm_import(container, blob)
     if (!soul || !soul.c.keys) { return null }
     if (bodykeys) { soul.c.bodykey = bodykeys }
-    let addr = soul.sc.prepub + '_1'
-    let body = this.Swarm_body_take(soul, bodykeys ? bodykeys.pub : soul.sc.prepub, priorPost || 'Cave', addr)
+    // MY SEAT off the account I just landed (owner 2026-09-01: three Caves all read _1 because this line
+    //  hardcoded it) — keep an existing own row's seat, else the next FREE suffix past the roster I just
+    //   imported.  The Captain re-asserts the authoritative seat in the ferry_got finalise + charter; this
+    //    is the provisional self-view, and it must already avoid a sibling's _1.
+    let ownpub = bodykeys ? bodykeys.pub : soul.sc.prepub
+    let ownrow = this.Swarm_peering(soul)?.o({ Body: 1, pub: ownpub })[0]
+    let addr = ownrow && ownrow.sc.address ? String(ownrow.sc.address)
+        : this.Swarm_next_suffix(String(soul.sc.prepub), this.Swarm_body_roster(soul).map((b) => String(b.sc.address || '')).filter((a) => a))
+    let body = this.Swarm_body_take(soul, ownpub, priorPost || 'Cave', addr)
     // THE NAME STAYS WITH THE INSTANCE (owner 2026-08-30: "Captain Grav and Cave Guw"): the name this
     //  human wrote at THIS device's name-gate belongs to THIS body — the landed soul's friendly must not
     //   swallow it.  Filed on the %Body row (the family's own address book, Ferry_todo facet D); friends

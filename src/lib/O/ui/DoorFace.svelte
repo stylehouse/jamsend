@@ -545,7 +545,7 @@
          door — inline chips inside one bordered box.  Friends flow OUTSIDE it (inline too, unboxed):
          the border marks ownership, not rank.  The bodies line rides the box's full width — it is
          the same "where this soul stands" reading, one level deeper. -->
-    {#if face.up || face.prepub || cave_piers.length}
+    {#if face.up || face.prepub || cave_piers.length || face.family.length}
         <div class="df-ourbox">
             <!-- ROW ONE, nowrap: me + uptime + the Link Device door.  THIS row sets the box's width
                  (owner: "that first row is the nowrap inline one, so it sets the width") — the caves
@@ -744,7 +744,7 @@
         /* 20em cap (owner 2026-09-01): without it, a long Pier list grows the max-content Door too wide,
            and the cell's min() fit then renders the whole thing SMALL.  Capping forces the piers to a
             single column (df-others is column now) and lets the fit scale a narrow Door UP — readable. */
-        max-width: 20em;
+        max-width: 28em;
         padding: 8px 12px;
         font-family: ui-rounded, 'Trebuchet MS', sans-serif;
         color: #ead9ef;

@@ -306,7 +306,17 @@
         Lies_channel_up(w: TheC) {
             const H = this as House
             const role = H.Lies_role(w)
-            if (role !== 'editor' && role !== 'runner') return        // bare: no channel
+            // A humdinger (a music page, no runner|editor role) normally stands up NO channel — the
+            //  2026-08-30 fix that stopped every music tab drinking the editor's dispatch flood. But a
+            //   DIAGNOSTIC-ARMED dev humdinger (Lies_player_seen: dev build, not production, socklog/
+            //    sockcap armed) stands up a READ-ONLY channel so runner_ask can introspect it live. It
+            //     binds ?addr=player (its Lies Peering named 'player', never the runner slot) and
+            //      registers ONLY the read-only runner_ask handler below (no become_book/rungo), so no
+            //       wire frame can run a Book or move playback on it. An unarmed / production tab returns
+            //        here exactly as before (owner 2026-09-01: "get you into the app instances").
+            const player = role !== 'editor' && role !== 'runner' && H.Lies_player_seen(w)
+            if (role !== 'editor' && role !== 'runner' && !player) return   // bare: no channel
+            const chrole = role ?? 'player'
             // ARREST (Auto.svelte, 2026-08-04): a named ?I=<tag> this browser can't resume leaves the
             //  top House flagged identity_pending until a human resolves it via the IdHatch the miss
             //   popped. Stay dark here too — Lies_cluster_idento would otherwise sign the hello with
@@ -353,7 +363,7 @@
 
             // Peering named by our own addr; Pier keyed by the peer (header.to routing).
             //  c.up stamped both levels — a Pier-hosted req silently never pumps otherwise.
-            const peering = w.oai({ Peering: 1, name: role })
+            const peering = w.oai({ Peering: 1, name: chrole })
             peering.c.up = w
             const pier = peering.oai({ Pier: 1, pub: peer })
             pier.c.up = peering
@@ -366,7 +376,7 @@
             //   role/addr. on_open fires immediately if already open, else on each (re)open. (Set-once
             //    role on the relay makes a repeat become with the same role a safe no-op.)
             if (port?.on_open) {
-                port.on_open(() => { try { H.tlog(`🛰 ws SEND control:become role=${role}`); port.ws?.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — reconnect re-dials */ } })
+                port.on_open(() => { try { H.tlog(`🛰 ws SEND control:become role=${chrole}`); port.ws?.send(JSON.stringify({ control: 'become', role: chrole })) } catch { /* relay down — reconnect re-dials */ } })
                 // Authenticated identity bind — beside `become`, both re-fire on every (re)connect. Where
                 //  `become` binds our ?addr= role (unauthenticated — any socket could claim it), `hello`
                 //   PROVES identity: a signed {control:hello,from,pub,ts} lets the relay bind prepubOf(pub)→
@@ -446,6 +456,13 @@
                 //  replies to our rw-ops.  We hold the grant + present it back (Funk/Grant.ts; LiesFunk).
                 on('grant_offer',    (cw, _p, fr) => { void H.Lies_grant_offer_recv(cw, fr); return true })
                 on('wormhole_reply', (cw, _p, fr) => { H.Lies_wormhole_reply_recv(cw, fr); return true })
+            } else if (player) {
+                // A diagnostic humdinger answers READ-ONLY introspection only — the SAME handler the
+                //  runner uses, but WITHOUT become_book/rungo/ghost_ledger, so no wire frame can run a
+                //   Book or mutate playback here. Lies_runner_ask_recv enforces the read-only op
+                //    allowlist for a humdinger (refusing run/accept/release/retain/declare/reload) as the
+                //     authority; the CLI-side PLAYER_OPS gate is only advisory.
+                on('runner_ask', (cw, _p, fr) => { void H.Lies_runner_ask_recv(cw, fr); return true })
             } else {
                 on('run_result', (cw, _p, fr) => H.Lies_run_result_recv(cw, fr))
                 on('run_phase',  (cw, _p, fr) => H.Lies_run_phase_recv(cw, fr))
@@ -489,7 +506,7 @@
             // Page Lifecycle warmth (freeze/resume) rides the SAME once-per-channel lifetime as the keepalive
             //  timer above — a frozen tab's setInterval pauses, so these browser events are the wake/sleep edges.
             ;(H as any).Lies_lifecycle_hook(w)
-            H.tlog(`🔌 Lies channel up [${role}] addr=${role} → ${peer}`)
+            H.tlog(`🔌 Lies channel up [${chrole}] addr=${chrole} → ${peer}`)
         },
 
         // Lies_transport_up — put the transport ghosts on H so Lies_channel_up's
