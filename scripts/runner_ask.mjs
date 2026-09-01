@@ -263,10 +263,17 @@ async function liveCensus({ classify = true,
 	//  early-stopping census under-reports (a 4-tab relay listed 3 twice out of three tries at idle-5
 	//   alone).  A floor of `min` rounds costs ~2s and is the difference between a listing and a guess.
 	for (let r = 0; r < rounds && (r < min || quiet < idle); r++) {
-		const a = await askOne('runner', { op: 'ping' }, 3500)
-		const pub = a?.control === 'runner_ack' ? a.result?.self : null
-		if (pub && !found.has(pub)) { found.set(pub, { pub, ack: a.result ?? {}, role: 'unknown' }); quiet = 0 }
-		else quiet++
+		// Sweep BOTH addr slots: runners bind ?addr=runner, but a diagnostic-armed music page binds
+		//  ?addr=player (LiesLies Lies_channel_up, 2026-09-01) and a to:'runner' broadcast never reaches
+		//   it — so without the to:'player' round an armed player is invisible here, findable only by an
+		//    already-known --player=<pub>.  A slot with nobody bound just times out to null (harmless).
+		let added = false
+		for (const slot of ['runner', 'player']) {
+			const a = await askOne(slot, { op: 'ping' }, 3500)
+			const pub = a?.control === 'runner_ack' ? a.result?.self : null
+			if (pub && !found.has(pub)) { found.set(pub, { pub, ack: a.result ?? {}, role: 'unknown' }); added = true }
+		}
+		if (added) quiet = 0; else quiet++
 		if (!found.size && r >= 1) break        // two silent rounds ⇒ nobody home; don't burn the cap
 		await new Promise(res => setTimeout(res, gapMs))
 	}

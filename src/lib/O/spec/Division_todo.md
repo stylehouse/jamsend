@@ -283,6 +283,65 @@ Now also built (same night, after the owner's "A"): founding self-grant (3) + si
 
 ## 0. WHERE THIS IS (2026-08-28) — the live device-link path is the FERRY model
 
+**⚑ 2026-09-01 — SEAT SUCCESSION: the dual-bare + era-climb diagnosis, rechecked against the code.
+ This block is the front of the queue; the ferry material below it stands.**
+
+*The live symptom (two `?I=eed` tabs, Grav + Gurn):* the charter carried TWO bodies at the bare seat
+ (`…Cave:eed…;…Captain:eed…` — one Cave AND one Captain both bare) and the era climbed +1 every trickle
+  with a byte-identical payload. The owner confirmed the design: **every body has its own key already
+   (`ident.c.bodykey`, `Swarm_body_key`); binding and seat-pick must key off it.** Four root causes,
+    each pinned:
+
+1. **The "Captain = bare" legacy assumption is the dual-bare MINT — three sites in `Swarm_family_heal`
+    (Ghost/S/Swarm.g).** Line ~4993: a member row with `role==='Captain'` is FORCED to the bare address
+     — and that branch runs even on `collide`, so the 2026-09-01 collision heal never touches it (the
+      Captain re-mints straight back to bare beside the seat's own bare row). Line ~4969-73: a huskless
+       self defaults `myrole='Captain'` and takes bare. This contradicts the Seat doctrine the SAME
+        function states at ~5028 ("the Seat — the bare-name holder — is roster-writer + Charter-signer;
+         the Captain is merely the invite helm; **orthogonal**"). *Fix: role NEVER implies address.
+          Address comes from the roster row / arbiter grant / next_suffix only; delete the
+           Captain→bare forcing at both sites.*
+
+2. **Seat-ness is decided off per-tab volatile state, not the signed roster.** `seat =
+    Swarm_address(ident)===prepub` (~4951), and `Swarm_address` (~4339) is just
+     `peering.sc.address ?? name` — local %Peering state. Two tabs can BOTH read bare in the pre-adopt
+      window (boot ordering, reload before the hello_ok adopt hook fires) → two signers → era wars.
+       *Fix: a body's durable address derives from ITS OWN `%Body,pub:<bodypub>` row in the absorbed
+        charter (new `Swarm_address_of_body(ident, bodypub)`); the hello `want` (~1567) asks for THAT,
+         falling back to arbiter/next_suffix for an un-rostered body. `Swarm_address` stays the live
+          view but is fed by roster-first picks.*
+
+3. **The relay cannot tell same-soul bodies apart.** The station hello (~1560) signs with the SOUL key
+    only; `relay.ts handleHello` binds `prepubOf(pub)` and arbitrates seats per-SOCKET (`seats` vs the
+     always-added courtesy bare bind, ~665). Seat succession is therefore first-come-per-connection:
+      a reconnecting body cannot reclaim ITS seat, and with two same-soul tabs the courtesy binds make
+       `to:<bare>` delivery ambiguous (the runner_ask --player clobber). *Fix (hello-v3): carry
+        `body_pub` beside the soul-signed header; the relay stamps it on the socket; `heldByAnother`
+         treats a holder with the SAME body_pub as self (idempotent reclaim across reconnects), and
+          seat grants become per-body-stable. Optionally `deliverLocal` prefers the socket whose
+           `seats` holds the addr, closing the two-station ambiguity.*
+
+4. **The era climbs because identical payloads re-sign.** `Swarm_charter_sign` (~5172) bumps era
+    unconditionally (`e = cur.era + 1`), and the heal re-signs whenever ANY `%Owed,owe:charter` debt
+     stands (~5025) — an unpayable debt (sibling offline, or the pre-fix sibling drop) = +1 era per
+      trickle forever, same payload. *Fix: in charter_sign, `if (cur && cur.sc.payload === payload &&
+       cur.sc.sig) return cur` — the stashed signature still verifies; paying the debt means
+        re-GOSSIPING the standing charter, not re-signing it.*
+
+**Order of work (each phase independently landable + verifiable):** (1) kill Captain→bare + the
+ identical-payload re-sign — pure Swarm.g, stops the bleeding; (2) roster-first seat pick
+  (`Swarm_address_of_body` + want derivation); (3) hello-v3 body_pub at the relay (`relay.ts` +
+   station hello — see `ClusterAddressing_todo` §4/§6, this intersects the parked address-model
+    question); (4) live-verify: reload BOTH eed tabs (HMR caches the old .go), then minisnap
+     `self>Peering>Charter` + `self>Peering>Body` on each body — era must FREEZE and addresses
+      converge unique; `runner_ask --player=<prepub>_N` should then address a specific body.
+
+**Already in the working tree, uncommitted (2026-09-01):** the Peeroleum same-soul pier-less dispatch
+ (sibling frames no longer DROP — the charter-gossip/ack path phase 4 needs), the `_1` collision heal
+  (correct but holed by #1 above), the removed relay-arbiter false-theft note, and the
+   player-tab introspection reach (minisnap). All compiled + strict-parsed; the Peeroleum fix is NOT
+    yet live-verified (needs the tabs stable through a roster convergence).
+
 The device-link ("spread myself out") ceremony runs on a **handshake + ferry**, which SUPERSEDES the old
  `Swarm_adopt_*` seal-first model (that inverted the roles and never crossed — `Swarm_deliver` has no `%Pier`
   to route the seal over until a handshake forms one). The order:

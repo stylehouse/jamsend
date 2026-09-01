@@ -533,6 +533,18 @@ Peeroleum_send(w, frame):
 //   no-Pier drop, the inseq hold), and instrumenting each is how a probe ends up measuring five of them and
 //    silently missing the sixth — which would be the expensive one.  try/finally catches every exit, thrown
 //     ones included.  A nested delivery (a handler that delivers) double-counts into `ms`; none does today.
+// Peeroleum_same_soul — is this no-Pier frame a SIBLING frame (same soul, body→body)?  from and to must
+//  share a root (the part before `_`), that root must look like a soul prepub (16+ hex — never a role name
+//   like runner|editor|player), and THIS node must hold a station %Peering named that soul (so we don't
+//    pier-less-dispatch arbitrary same-root traffic we're not a body of).  Used to let sibling frames past
+//     the no-Pier drop so the Swarm hear funnel can promote a station route + verify (see deliver_do).
+Peeroleum_same_soul(w, h):
+    let root = (a) => String(a || '').split('_')[0]
+    let from = root(h && h.from), to = root(h && h.to)
+    if (!from || from !== to) return false
+    if (from.length < 16 || !/^[0-9a-f]+$/.test(from)) return false
+    return !!w.o({ Peering: 1 }).find((p) => String(p.sc.name) === from)
+
 async Peeroleum_deliver(w, frame):
     let dv = (w.c.dv = w.c.dv || { n: 0, ms: 0, max: 0, since: Date.now(), deep: 0, probe: 0 })
     let dv_t0 = Date.now()
@@ -602,6 +614,20 @@ async Peeroleum_deliver_do(w, frame):
         let now = this.Peeroleum_route(w, h, 'to')
         if (now.pier) this.Peeroleum_send(w, {header: {type: 'ack', from: h.to, to: h.from, ack: h.seq}})
         H.feebly_ponder()
+        return
+    }
+    // A SIBLING frame — same soul, body→body, from and to sharing the soul-prepub root and differing only
+    //  by the _N seat (Swarm_sibling_send's road: pulse/charter/reach/ferry ack) — arrives with NO %Pier,
+    //   because a body is not a friend.  Before 2026-09-01 it hit the drop below ("no Pier from=eed to=eed"),
+    //    which was the root under the ceremony ack stall AND the roster-divergence: siblings could never
+    //     talk.  Dispatch it pier-less exactly like pier_hello — the Swarm hear funnel promotes a station
+    //      route (so the sibling Pier self-heals after this first frame) and the handler (charter_heard &c.)
+    //       re-verifies the soul signature, so nothing unsigned lands.  Scoped hard: from/to must share a
+    //        16+hex root AND we must hold a station Peering named that soul, so role channels (runner/editor/
+    //         player) and any non-soul addr never match.
+    if (!pier && this.Peeroleum_same_soul(w, h)) {
+        let on = w.c.on && w.c.on[h.type]
+        if (on) { await on(w, null, frame); H.feebly_ponder() }
         return
     }
     if (!pier) {

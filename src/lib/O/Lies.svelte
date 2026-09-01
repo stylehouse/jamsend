@@ -747,7 +747,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //      the read gums up the tick, the standup below it never runs, the ws is never
         //       dialed, and the read it was waiting on can never land.  Connection first;
         //        disk settles through it.
-        if (H.Lies_is_editor(w) || H.Lies_is_runner(w)) {
+        //  …and a DIAGNOSTIC-ARMED humdinger (a dev music page with socklog/sockcap on) stands up the
+        //   SAME channel READ-ONLY, so runner_ask can introspect it live (owner 2026-09-01). Lies_player_seen
+        //    is fail-closed (dev build, not production, armed), and Lies_channel_up binds ?addr=player +
+        //     registers only the read-only handler — so an unarmed/production music tab still opens nothing.
+        if (H.Lies_is_editor(w) || H.Lies_is_runner(w) || H.Lies_player_seen(w)) {
             H.Lies_transport_up(w)
             H.Lies_channel_up(w)
             H.Lies_heartbeat(w)   // periodic ping → pong proves the channel carries

@@ -8,6 +8,13 @@ Companion to `Cluster_spec.md` (§3.2b boot→channel map, §3.3 Brink badges + 
 
 ## 0. What to get on with next
 
+- **NEW 2026-09-01 — hello-v3 wants a `body_pub` beside the soul-signed header (Division_todo §0 ⚑).**
+   Two same-soul bodies are indistinguishable to the arbiter (hello signs with the SOUL key only), so
+    seat succession is first-come-per-socket — a reconnecting body can't reclaim its seat, and the
+     always-added courtesy bare bind makes `to:<bare>` ambiguous with two live tabs. The plan (relay
+      stamps body_pub on the socket; `heldByAnother` treats a same-body_pub holder as self; delivery
+       prefers the `seats` holder) lives in `Division_todo` §0's ⚑ block — it is phase 3 there, and it
+        intersects §4/§6's parked address-model question, so read those before landing it.
 - **NEW 2026-08-08 — `header.from` is not an address; the wire trusts it and never verifies it (§6).**
    Four "who sent this" channels, and the authoritative-looking one is unrouted + unverified. Findings
     ranked in §6: acks mis-route to the role-slot Pier (dev emits strand), N runners share one inbox
