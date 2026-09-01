@@ -149,11 +149,12 @@
         //   Swarm_body_mine marks which row is THIS body (computed off the body key, never a stored
         //    flag).  Shown only once a real division exists (≥2 rows) — a lone body says nothing.
         //     The name is the instance's own (name-gate name), the address its family seat.
-        let family: { role: string; name: string; pub8: string; addr: string; mine: boolean }[] = []
+        let family: any[] = []
+        let flows: any[] = []   // the Plot's Mag-flows (standing %Reach rows), from → to
         // THIS body's own instance (facet D): its role + name-gate name, shown as a title badge so the
         //  header says WHO THIS DEVICE IS ("· CAVE Guw") beside the SOUL name (what friends see + edit).
         //   Null for a lone/undivided body — nothing to distinguish.
-        let instance: { role: string; name: string } | null = null
+        let instance: any = null
         try {
             const roster = (typeof H?.Swarm_body_roster === 'function' ? H.Swarm_body_roster(self) : []) as any[]
             const mineRow = (typeof H?.Swarm_body_mine === 'function' ? H.Swarm_body_mine(self) : null) as any
@@ -171,6 +172,13 @@
                 //   particle the sibling pulse stamps — so "can the two of them see each other" has a
                 //    visible answer: their dot is green because their pulse is landing HERE.
                 const now_s = Math.floor(Date.now() / 1000)
+                // THE PLOT (owner 2026-09-01: "the Plot is that box with all the semantics filled in"):
+                //  each body a lane carrying its organ sizes (pocket/trove), read straight off the %Body
+                //   row it describes.  organ replication (Swarm_organ_absorb) lands a sibling's sizes here,
+                //    so the phone lane shows the laptop's trove.
+                const organsize = (row: any, kind: string) => {
+                    try { const o = (H as any)?.Swarm_organ_of?.(row, kind); return o ? +(o.sc?.tracks || 0) : null } catch { return null }
+                }
                 family = roster
                     .filter((b: any) => !(!!minePub && String(b?.sc?.pub || '') === minePub))
                     .map((b: any) => {
@@ -185,17 +193,49 @@
                             mine: false,
                             ago,
                             rung: ago == null ? 'away' : ago < 15 ? 'here' : ago < 45 ? 'fading' : 'away',
+                            pocket: organsize(b, 'pocket'),
+                            trove: organsize(b, 'trove'),
                         }
                     })
                 // primary (bare seat) first, then by role then pub — stable, no per-tick shuffle
                 family.sort((a, b) => (a.addr.includes('_') ? 1 : 0) - (b.addr.includes('_') ? 1 : 0)
                     || (a.role < b.role ? -1 : a.role > b.role ? 1 : (a.pub8 < b.pub8 ? -1 : 1)))
             }
-        } catch { family = [] }
+            // MY lane's organ (facet D badge grows into the Plot's own-lane sizes)
+            if (instance && mineRow) {
+                instance.pocket = organsize(mineRow, 'pocket')
+                instance.trove = organsize(mineRow, 'trove')
+            }
+            // THE MAG-FLOWS (the Plot's arrows): the standing %Reach rows read straight off the peering —
+            //  each a flow between bodies (from `by` → `to`), carrying its Mag (`of`) and live state.
+            //   booked ⋯ / dispatched ⋯ / serving ↯ / arrived ✓ / refused ⚠.  Read-only walk.
+            const glyph: Record<string, string> = { booked: '⋯', dispatched: '⋯', serving: '↯', arrived: '✓', refused: '⚠' }
+            const nameFor = (key: string) => {
+                if (!key) return ''
+                const k = String(key)
+                const hit = [...family, ...(instance ? [{ ...instance, addr: '', pub: minePub }] : [])]
+                    .find((m: any) => (m.pub && (m.pub.startsWith(k) || k.startsWith(m.pub))) || m.role === k || m.addr === k)
+                return hit ? (hit.name || hit.role || String(k).slice(0, 6)) : String(k).slice(0, 6)
+            }
+            const now_r = Math.floor(Date.now() / 1000)
+            flows = ((H.Swarm_peering(self)?.o({ Reach: 1 }) ?? []) as any[]).map((r: any) => {
+                const st = String(r?.sc?.state || 'booked')
+                return {
+                    of: String(r?.sc?.of || ''),
+                    forv: String(r?.sc?.for || ''),
+                    fromName: nameFor(String(r?.sc?.by || '')),
+                    toName: nameFor(String(r?.sc?.to || '')),
+                    state: st,
+                    glyph: glyph[st] || '·',
+                    ago: r?.sc?.at ? now_r - (+r.sc.at) : null,
+                }
+            })
+        } catch { family = []; flows = [] }
         return {
             name: (self?.sc?.friendly || self?.sc?.nick) as string | undefined,
             named: !!self?.sc?.friendly,
             family,
+            flows,
             instance,
             prepub: self?.sc?.prepub ? String(self.sc.prepub).slice(0, 8) : undefined,
             born: self?.sc?.born as string | undefined,
@@ -548,6 +588,10 @@
                                 + (b.ago == null ? ' · not heard this session (closed or away)' : ` · heard ${b.ago}s ago`)}>
                             <span class="df-dot" class:here={b.rung === 'here'} class:fading={b.rung === 'fading'}>●</span>
                             <span class="df-name"><span class="df-role">{b.role}</span> {#if b.name}{b.name}{:else}<span class="df-fpub df-fpub-solo">{b.pub8}</span>{/if}</span>
+                            {#if b.trove != null || b.pocket != null}
+                                <!-- THE PLOT lane's organ (SoundPool §5.5): what this body holds -->
+                                <span class="df-organ" title="what this body holds">{#if b.trove != null}{b.trove >= 1000 ? (b.trove / 1000).toFixed(0) + 'k' : b.trove} trove{/if}{#if b.pocket != null}{b.trove != null ? ' · ' : ''}{b.pocket} ready{/if}</span>
+                            {/if}
                             {#if b.rung === 'away'}
                                 <!-- FORGET A DEAD BODY (Division_todo §0a #5): revokes its My* grant on the
                                      kin pier — derive skips a revoked grant, the Seat's next heal retires the
@@ -566,11 +610,26 @@
                     {/each}
                 </div>
             {/if}
+            {#if face.flows && face.flows.length}
+                <!-- THE PLOT's MAG-FLOWS (owner 2026-09-01, "the Plot is that box with all the semantics
+                     filled in"): the standing %Reach rows as arrows between bodies — what's crossing right
+                     now.  from → to · the Mag · a state glyph (⋯ booked · ↯ serving · ✓ arrived · ⚠ refused).
+                     First cut of the flow-map; refine the lane layout live. -->
+                <div class="df-flows" title="Mag-flows between your bodies — SoundPoolings in motion">
+                    {#each face.flows as fl (fl.fromName + fl.of + fl.toName)}
+                        <div class="df-flow" class:serving={fl.state === 'serving'} class:arrived={fl.state === 'arrived'} class:refused={fl.state === 'refused'}>
+                            <span class="df-flow-glyph">{fl.glyph}</span>
+                            <span class="df-flow-ends">{fl.fromName} <span class="df-flow-arrow">→</span> {fl.toName}</span>
+                            {#if fl.of}<span class="df-flow-of">{fl.of}</span>{/if}
+                        </div>
+                    {/each}
+                </div>
+            {/if}
             {#if cave_piers.length}
                 <div class="df-caves">
                     {#each cave_piers as f (f.pub)}
                         <div class="df-friend df-cave">
-                            <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1}
+                            <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1 && f.rung !== 'away'}
                                 title={(f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago`)
                                     + ' · 🔗 your Cave (a device of yours)'
                                     + (f.seal === 1 ? ` · ⚠ sealing 1 of 2 — ${f.seal_missing}; should heal itself, say so if it sits` : '')}>●</span>
@@ -607,7 +666,7 @@
     <div class="df-others">
     {#each (piers_all ? friend_piers : friend_piers.slice(0, PIERS_SHOWN)) as f (f.pub)}
         <div class="df-friend">
-            <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1}
+            <span class="df-dot" class:here={f.rung === 'here'} class:fading={f.rung === 'fading'} class:half={f.seal === 1 && f.rung !== 'away'}
                 title={(f.ago == null ? `${f.name} — not heard this session (their tab is closed or away)` : `${f.name} — heard ${f.ago}s ago`)
                     + (f.cave ? ' · 🔗 your Cave (a device of yours)' : '') + (f.music ? ' · ♪ granted' : '') + (f.records != null ? ` · ${f.records} records` : '')
                     + (f.seal === 1 ? ` · ⚠ sealing 1 of 2 — ${f.seal_missing}; should heal itself, say so if it sits` : '')}>●</span>
@@ -682,7 +741,10 @@
               that narrow 300px and rendered at ~half area.  500 lets it reach the width-bound regime and
                fill the inlay; the min() fit still inscribes it (never overflows the wall), and a small
                 cell just scales the whole thing down as before, so nothing else regresses. */
-        max-width: 500px;
+        /* 20em cap (owner 2026-09-01): without it, a long Pier list grows the max-content Door too wide,
+           and the cell's min() fit then renders the whole thing SMALL.  Capping forces the piers to a
+            single column (df-others is column now) and lets the fit scale a narrow Door UP — readable. */
+        max-width: 20em;
         padding: 8px 12px;
         font-family: ui-rounded, 'Trebuchet MS', sans-serif;
         color: #ead9ef;
@@ -811,6 +873,24 @@
         width: min-content; min-width: 100%; margin-top: 3px;
     }
     .df-family .df-friend { white-space: nowrap; margin-top: 0; }
+    /* THE PLOT — the family box's semantics filled in (owner 2026-09-01) */
+    .df-organ {
+        font-size: 9px; opacity: 0.65; font-family: monospace; margin-left: 6px;
+        color: #9fc9b4; letter-spacing: 0;
+    }
+    .df-flows { display: flex; flex-direction: column; gap: 2px; margin-top: 5px; width: 100%; }
+    .df-flow {
+        display: flex; align-items: center; gap: 6px; font-size: 11px;
+        opacity: 0.75; white-space: nowrap;
+    }
+    .df-flow-glyph { width: 12px; text-align: center; opacity: 0.8; }
+    .df-flow.serving { opacity: 1; color: #cbb0e6; }
+    .df-flow.serving .df-flow-glyph { color: #b48fc9; }
+    .df-flow.arrived { color: #9fc9b4; }
+    .df-flow.refused { color: #d69a9a; }
+    .df-flow-ends { font-weight: 600; }
+    .df-flow-arrow { opacity: 0.5; margin: 0 1px; }
+    .df-flow-of { font-family: monospace; font-size: 9px; opacity: 0.55; }
     .df-role {
         font-size: 8px; text-transform: uppercase; letter-spacing: 0.06em;
         color: #b48fc9; background: rgba(170, 150, 220, 0.14);
@@ -821,7 +901,9 @@
     .df-ourbox .df-linkdev { margin-top: 0; }
     .df-ourbox .df-bodies { width: 0; min-width: 100%; margin-top: 2px; }
     /* friends — inline wrapping chips, unboxed; a suggestion row takes the full width */
-    .df-others { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 14px; margin-top: 4px; }
+    /* SINGLE COLUMN (owner 2026-09-01: "at 20em there's two wobbly columns of them") — a capped-width
+       Door wraps a flex list into an uneven grid; stack the piers in one clean column instead. */
+    .df-others { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: 4px; }
     .df-others .df-friend { margin-top: 0; }
     .df-others .df-sug { flex-basis: 100%; }
     .df-friend { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 4px; }

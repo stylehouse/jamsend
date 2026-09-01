@@ -1,4 +1,8 @@
-# SoundPooling_todo.md — the OPFS pocket cache: from ambient press to pool-first radio
+# SoundPooling_todo.md — the pool: press + reach into it, pool-first radio out, cells over it
+
+*(Two mechanisms fill the pool — PRESS (passive, this doc's origin) and REACH (active/cross-body, §0.5 +
+ `Reach_todo`) — and the cells (§0.5) surface both. Origin title kept below for continuity.)*
+### (origin: the OPFS pocket cache — from ambient press to pool-first radio)
 
 **What SoundPooling is.** When you stream a friend's track over Radio today, chunks land in
  memory and are immediately played — nothing persists past the session. SoundPooling is the
@@ -78,6 +82,51 @@
  moves (Portability_todo §0). Design pool paths as PRIMARY, not as a nicety on top of the library.
 
 ---
+
+## 0.5 THE REACH CHAPTER (2026-09-01) — the cross-body procedure layer this doc was hand-rolling
+
+*(Reconciliation note: a near-duplicate doc for the multi-body music environment was drafted this day
+ before this one was found, then FOLDED IN HERE and removed — one topic, one todo. They COMPLEMENT (see
+  below); the generic cross-body primitive lives in `Reach_todo.md`.)*
+
+**They do not conflict — they are two mechanisms filling ONE pool, plus the surface over both:**
+ - **PRESS** (this doc, §3–§4.2) — the pool fills PASSIVELY: bytes that stream through you are pressed to
+    OPFS; the ambient steward + Siphon. "What flows through me sticks."
+ - **REACH** (`Reach_todo`, LANDED — SwarmBody beats 10–14) — the pool fills ACTIVELY: a body BOOKS a
+    durable, addressed intent ("get me this here") that stands as legible matter, routes off the family
+     charter, survives the target being offline (settles on the presence edge), and drops when served.
+
+**The load-bearing realisation: Flow 3 (§4.3, phone↔phone) and Flow 4 (§4.4, Cave→Captain) ARE reaches.**
+ Both are "move pool material from one body/peer to another, whenever they overlap." §4.4 even names the
+  hand-rolled version — "steward occasions: Cave came online / library grew / Captain pool is thin … the
+   daemon's digger tour→rest→tour." That per-flow occasion+resume logic is EXACTLY the Reach settle loop
+    (`Swarm_reach_settle`, the 60s trickle, presence-edge re-dispatch). So:
+     - a pool Heist to another body becomes `%Reach,of:<content-id>,to:<body|friend>,for:serve` — the
+        booking STANDS, dispatches when reachable, and the carry-out DELEGATES to the existing Heist doer
+         (`Heist_materialise_one`, `mardir='pool'`, the §4.3 landing shape — UNCHANGED). Reach adds the
+          durability + addressing + offline-tolerance; the byte-transport + landing stay as they are.
+     - the "Captain pool is thin → fill it" occasion becomes a reach the Captain BOOKS (or the Cave books
+        on the Captain's behalf), instead of a bespoke daemon occasion per flow.
+   The measure (Homethink §4): Reach REMOVES the per-flow occasion/resume machinery, replacing it with one
+    primitive Flow 3/Flow 4 both ride. **Do NOT rip out the flows yet** — bind them to Reach after the
+     live doer-binding proves (Reach_todo §0 "still owed"), same isolation-first discipline as everything.
+
+**§5.4 "Door — pool legibility (future)" is now data-ready.** That deferred pool-legibility surface is the
+ **cells** the owner named ("bunch of new cells to make up"), and their DATA landed this day:
+  - **`%Organ`** (SwarmBody beat 14) — a body describing the organ it grows: `pocket` (ready set) vs
+     `trove` (collection), as quantities on its own `%Body` row. `Swarm_organ_take` / `Swarm_organ_of`.
+      This is the pocket/trove readout §5.4 + the Organ cell want. (Cross-body organ visibility — the
+       phone seeing the laptop's trove — is the next data brick: organ rides the charter mile like the
+        family grants do.)
+  - **the crew read** (`Swarm_reach_crew`, beat 13) — the standing reaches in one legible glance, tallied
+     by state. The Crew cell's data.
+  - **the cells** (Crew · Pool · Organ) — belly cells alongside Door/Radio/Link, reading the above; the
+     Pool cell's "pull here" gesture calls `Swarm_reach_book`. Svelte/humdinger → un-Book-provable, so
+      built WITH the owner at a tab (the standing law); the data beneath is Book-gated and safe.
+
+**So the arc, unified:** the pool is filled by PRESS (passive) and REACH (active, cross-body); the cells
+ make it legible and drivable; pool-first radio (§0 LANDED) plays it back. Press and pool-first radio are
+  the owner-testable NOW; Reach + cells are the new frontier this chapter opens.
 
 ## 1. What Radio does today and where SoundPooling plugs in
 
@@ -322,6 +371,24 @@ This face does NOT exist yet. It is rung 5 of Siphon_todo. Design it there; poin
  "what your phone wants next and why" is a pure read over these particles — no new model
   work. Defer until the steward is live and the list has something to show.
 
+### 5.5 The cross-body cells (the Reach chapter's surface — data landed 2026-09-01)
+
+Three belly cells alongside Door/Radio/Link (the Sounditron organ ladder + Cellui), each reading a
+ Book-gated data verb; Svelte/humdinger so built WITH the owner at a tab (the standing law). Spec'd here
+  so the build is a fill-in, not an invention:
+- **Crew** (`CrewFace.svelte`) — the soul across its machines. READS `Swarm_reach_crew` +
+   `Swarm_body_roster` (roles + presence off `sc.heard`) + `Swarm_organ_of` (sizes). SHOWS a row per body
+    (mine dimmed): role badge · presence dot (here/fading/away) · organ size ("214 ready" / "38k trove");
+     beneath, the reaches in flight with state glyphs (booked ⋯ / serving ↯ / arrived ✓ / refused ⚠).
+      This is DoorFace's family box grown into the full crew view. DRIVES: away-body forget ✕ (built);
+       refused-reach dismiss.
+- **Pool** (`PoolFace.svelte`) — SoundPooling proper: the union trove across the roster, deduped by
+   content-id, each track tagged with which body/bodies HOLD it. A track not on THIS body shows "pull
+    here" → `Swarm_reach_book(w, self, {to:<this body>, of:<content-id>, for:'serve'})`; the fill
+     progresses as the reach serves (its state shown inline, the crew read filtered to the track).
+- **Organ** (`OrganFace.svelte`, or a strip in Crew) — pocket vs trove as quantities + top tags +
+   offline/served, per body. "A body describing the organ it grows."
+
 ---
 
 ## 6. The smallest demonstrable first slice
@@ -372,6 +439,18 @@ The FIRST LIVE PRESS to verify bytes actually land: run `Ra_quarter_serve` manua
    would mint a home on a mere poll. Probe first (`oa`), then read.
 - **The pool is NOT replicated** (Portability §2E ruling 6). Replication ignores it; pool material
    crosses as APP FLOWS (heist-rides, steward-decided). Never add the pool shelf to Repli targets.
+   **→ This is exactly why REACH fits (§0.5):** a reach IS an app-flow (a booking riding a Heist doer),
+    NOT replication — so Flow 3/Flow 4 riding Reach honours this ruling, they do not violate it.
+
+**The cross-body forks (from the Reach chapter — decide when you can SEE them, not before):**
+- **Auto-restock vs explicit.** Does the pocket auto-fill from the trove (the bloodstream — Division
+   §PURPOSE), or only on an explicit pull? Auto is the magic but it's a policy with backpressure teeth
+    (it's the Reach cousin of the §7 lib-mapping tripwire). Decide when the Pool cell is real and you can
+     watch it fill.
+- **Ear bodies** (a phone with NO library, all reach). A first-class role, or a Captain with an empty
+   pocket? Affects the roster/organ shape.
+- **Cross-SOUL pooling** (a friend's trove in your pool, by grant) vs only your own bodies. Reach
+   `to:<friendpub>` already addresses it; the policy (whose music appears in MY pool) is the open question.
 
 ---
 

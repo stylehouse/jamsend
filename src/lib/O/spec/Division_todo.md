@@ -251,6 +251,16 @@ Now also built (same night, after the owner's "A"): founding self-grant (3) + si
  5. **GRADUATE**: the audio crosses (Repli), the `%Heist` graduates (audio landed) and DROPS like a served
      transient req (the owner's law — scaffolding, not ledger). On the phone the booking resolves to "arrived."
 
+**→ SUPERSEDED BY THE REACH LAYER (2026-09-01, same day): see `Reach_todo.md`.** The owner generalized
+ this design ("we've been under-abstracting … one foam layer between the foam layers"): the booking below
+  is not a music-special mechanism — it is ONE INSTANCE of the `%Reach` primitive (a durable addressed
+   cross-body intent), which LANDED Book-gated (SwarmBody beats 10–12): B1 booking = `Swarm_reach_book`
+    ✓ · B2 charter resolve = `Swarm_reach_addr` ✓ · B3 dispatch + offline-standing + trickle retry =
+     `Swarm_reach_dispatch`/`_settle` ✓ (the state IS the debt — no separate %Owed) · B5 graduation ✓ ·
+      **B4 (the carry-out doer binding to Heist/Repli) is the remaining owner-seam** — it needs the
+       sibling music-serve lane (a body serving its sibling like a listener), which is its own arc.
+        The brick list below stays as the map of what the music slice still binds:
+
 **The bricks (each Book-gateable, in SwarmBody's world or a new SwarmHeist Book):**
  - **B1 — %Heist as a durable BOOKING** with a lifecycle (booked → dispatched → serving → arrived), addressed
     by role, snapped + stashed. *(Today it's a Jam ledger of events — this gives it a standing lifecycle.)*

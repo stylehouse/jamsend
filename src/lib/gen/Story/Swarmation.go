@@ -12,7 +12,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return '2601390dcceb9885~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return '627ef2442bf12361~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -2921,6 +2921,8 @@ async SwarmDivide_order(w) { const H = this;
 //            and the FOUNDING SELF-GRANT (§0a "A") — a divided huskless Seat signs its own MyCaptain
 //   beat 9  FAMILY GRANTS REPLICATE — the soul-signed atoms travel to a sibling (self-verifying), which
 //            derives the captaincy it never witnessed; a retargeted atom refuses, an unsigned relic stays home
+//   beat 10 THE %REACH primitive — one durable addressed cross-body intent (the foam layer): book stands,
+//            routes off the family, an offline dispatch leaves it standing, target hears→serves→arrives→graduates
 //  THE DISCRIMINATION: a row keyed by the soul prepub would fail keyed_by_bodykey; a stored self:1 would
 //   show up on the friend's absorbed copy; a pick that ignored the bare-first tiebreak would not name the
 //    primary.  This is step 1 of the field, proven off pure matter (no Dexie — the adapter is production).
@@ -2958,6 +2960,14 @@ async SwarmBody_drive(w, req) {
         if (n === 7) { this.SwarmBody_family(w) }
         if (n === 8) { await this.SwarmBody_heal(w) }
         if (n === 9) { await this.SwarmBody_replicate(w) }
+        if (n === 10) { await this.SwarmBody_reach(w) }
+        if (n === 11) { await this.SwarmBody_reach_ack(w) }
+        if (n === 12) { await this.SwarmBody_reach_road(w) }
+        if (n === 13) { await this.SwarmBody_reach_crew(w) }
+        if (n === 14) { await this.SwarmBody_organ(w) }
+        if (n === 15) { await this.SwarmBody_organ_wire(w) }
+        if (n === 16) { await this.SwarmBody_reach_cap(w) }
+        if (n === 17) { await this.SwarmBody_reach_sweep(w) }
     }
     this.SwarmBody_witness(w)
     await this.SwarmBody_order(w)
@@ -3082,6 +3092,30 @@ SwarmBody_witness(w) {
     let rp = T.o({ replicated: 1 })[0]
     // #11 THE FAMILY'S PROOF TRAVELS: soul-signed atoms replicate to siblings — self-verifying, tamper-refusing.
     if (rp && +rp.sc.grants_wired === 1 && +rp.sc.signed_landed === 1 && +rp.sc.relic_stayed_home === 1 && +rp.sc.sibling_sees_captain === 1 && +rp.sc.tamper_refused === 1) { this.story_swear(w, 'the family grants replicate between siblings — each soul-signed atom self-verifies so a sibling derives the captaincy it never witnessed — a retargeted atom refuses at the signature and an unsigned relic stays home') }
+    let rc = T.o({ reached: 1 })[0]
+    // #12 THE CROSS-BODY REACH primitive: one durable addressed intent that the five hand-rolled dialects collapse into.
+    if (rc && +rc.sc.booked_stands === 1 && +rc.sc.addr_resolves === 1 && +rc.sc.offline_stands === 1 && +rc.sc.idempotent === 1 && +rc.sc.heard_serving === 1 && +rc.sc.doer_gates === 1 && +rc.sc.served_arrived === 1 && +rc.sc.graduated === 1) { this.story_swear(w, 'a reach is one durable addressed intent — it books and stands as legible matter routed off the family charter — an offline dispatch leaves the intent standing rather than minting a separate debt — and the target hears it serves it through its own doer marks it arrived and it graduates away') }
+    let ac = T.o({ acked: 1 })[0]
+    // #13 THE REACH ROUND-TRIP: the settle loop observes until the knob flips — the booker hears the outcome — success graduates and refusal stands.
+    if (ac && +ac.sc.knob_off_observes === 1 && +ac.sc.knob_on_settles === 1 && +ac.sc.round_trip === 1 && +ac.sc.refused_stands === 1) { this.story_swear(w, 'the reach settle loop observes until its knob is flipped — then the booker hears the outcome and closes the trip — an arrived reach graduates away while a refused one stands as a visible receipt') }
+    let rd = T.o({ roaded: 1 })[0]
+    // #14 THE WIRE LANE IS GATED ON THE ROSTER: only my own soul's body books work on me — a stranger lands nothing — and the outcome reports back to the booker's rostered seat.
+    if (rd && +rd.sc.kin_admitted === 1 && +rd.sc.stranger_refused === 1 && +rd.sc.report_resolves === 1) { this.story_swear(w, 'the reach wire lane is gated on the roster — a rostered sibling books work on me while a stranger lands nothing — and the outcome reports back to the seat the roster names for the booker') }
+    let cw = T.o({ crewed: 1 })[0]
+    // #15 THE CREW READ: the standing reaches project into one legible glance — tallied by state — the multi-body activity made readable.
+    if (cw && +cw.sc.tallies_total === 1 && +cw.sc.tallies_states === 1 && +cw.sc.entry_shape === 1) { this.story_swear(w, 'the crew read projects the standing reaches into one legible glance — tallied by state with each intent carrying what it is and who it is for — so what the whole crew is doing reads at once instead of hiding across the ghosts') }
+    let og = T.o({ organed: 1 })[0]
+    // #16 THE %ORGAN readout: a body describes the organ it grows — pocket and trove as quantities on its own row.
+    if (og && +og.sc.pocket_stood === 1 && +og.sc.trove_stood === 1 && +og.sc.idempotent_updated === 1 && +og.sc.read_by_kind === 1) { this.story_swear(w, 'a body describes the organ it grows — a pocket of what it wants now and a trove of everything as quantities on its own row — re-describing updates in place and each organ reads back by its kind') }
+    let orw = T.o({ organ_wired: 1 })[0]
+    // #17 ORGAN REPLICATION: a body's pocket/trove sizes travel to a sibling so the phone sees the laptop's trove.
+    if (orw && +orw.sc.wire_shape === 1 && +orw.sc.sibling_organ_seen === 1 && +orw.sc.stray_skipped === 1) { this.story_swear(w, 'a body ships its own organ sizes and a sibling lands them onto the roster row they describe — so the phone sees the laptop trove — while an organ for a body it does not roster lands nothing') }
+    let cap = T.o({ capped: 1 })[0]
+    // #18 REACH BACKPRESSURE: a new booking beyond the cap is refused while a re-book of a standing reach is always honoured.
+    if (cap && +cap.sc.under_cap_booked === 1 && +cap.sc.over_cap_refused === 1 && +cap.sc.rebook_honoured === 1) { this.story_swear(w, 'the reach shelf is bounded — a new booking beyond the cap is refused so a runaway loop cannot flood it — while re-booking a reach that already stands is always honoured so a retry is never lost') }
+    let sw = T.o({ swept: 1 })[0]
+    // #19 REFUSED RECEIPTS AGE OUT: a stale refused receipt is swept so it can't fill the cap; a fresh one survives.
+    if (sw && +sw.sc.stale_swept === 1 && +sw.sc.fresh_survives === 1) { this.story_swear(w, 'a refused receipt ages out — the settle loop sweeps one older than its window so dead receipts cannot fill the cap — while a fresh refusal still stands for its moment to be seen') }
 
 },
 // beat 5 — REMINT-NOT-READ is SEEN (Statehome_todo debts: "a fork must be seen").  The sanctioned join
@@ -3297,6 +3331,265 @@ async SwarmBody_replicate(w) {
     if (wires.length - landed === 1) { row.relic_stayed_home = 1 }
     if (tfam.some((f) => !f.husk && f.role === 'Captain' && f.pub === mypub)) { row.sibling_sees_captain = 1 }
     if (refused === 0) { row.tamper_refused = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 10 — THE CROSS-BODY REACH primitive (Reach_todo — the foam between the foam).  A %Reach is the ONE
+//  shape the five hand-rolled send-retry-settle-drop dialects collapse into: a durable addressed intent
+//   that STANDS as legible matter until served.  Proven on pure C-matter: book stands + carries `by`; the
+//    address resolves off the family charter (a role → the body that plays it); an offline dispatch (no
+//     station) resolves the route but LEAVES the intent standing (the state IS the debt — no separate
+//      %Owed); re-booking is idempotent; the target hears → serves through a doer → arrives, a refusing
+//       doer leaves it serving (the gate), and a fulfilled reach graduates away.
+async SwarmBody_reach(w) {
+    w.i({reached: "step_10"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    // Rex — the BOOKER: a Seat (Captain) whose family holds a Cave at <bare>_1
+    let rkeys = await this.Swarm_mint_keys('SwarmBody-Rex')
+    let rex = this.Swarm_identity(acct, rkeys, 'Rex')
+    rex.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Rex-body')
+    let bare = String(rex.sc.prepub)
+    this.Swarm_body_take(rex, null, 'Captain', bare)
+    this.Swarm_body_note(rex, 'cove_body_pub_00', 'Cave', bare + '_1', 'Cove')
+    // BOOK a reach to my Cave, RESOLVE its address, DISPATCH with no station (wire inert → intent stands)
+    let reach = this.Swarm_reach_book(w, rex, { to: 'Cave', of: 'track_xyz', for: 'serve' })
+    let addr = this.Swarm_reach_addr(rex, reach)
+    let daddr = this.Swarm_reach_dispatch(w, rex, reach)
+    this.Swarm_reach_book(w, rex, { to: 'Cave', of: 'track_xyz', for: 'serve' })   // idempotent re-book
+    let rcount = this.Swarm_peering(rex).o({ Reach: 1 }).length
+    // TARGET — Cove the laptop HEARS the reach, then serves it
+    let ckeys = await this.Swarm_mint_keys('SwarmBody-Cove')
+    let cove = this.Swarm_identity(acct, ckeys, 'Cove')
+    let inb = this.Swarm_reach_heard(w, cove, { reach: { of: 'track_xyz', to: 'Cave', for: 'serve', by: String(rex.c.bodykey.pub) } })
+    let heard_ok = inb && inb.sc.state === 'serving' ? 1 : 0   // capture BEFORE serve mutates the live ref
+    let refused = this.Swarm_reach_serve(w, cove, (r) => 0)
+    let stillServing = this.Swarm_peering(cove).o({ Reach: 1, state: 'serving' }).length
+    let served = this.Swarm_reach_serve(w, cove, (r) => 1)
+    let arrived = this.Swarm_peering(cove).o({ Reach: 1, state: 'arrived' }).length
+    let dropped = this.Swarm_reach_graduate(cove)
+    let left = this.Swarm_peering(cove).o({ Reach: 1 }).length
+    let row = { reached: 1 }
+    if (reach && reach.sc.state === 'booked' && reach.sc.by) { row.booked_stands = 1 }
+    if (addr === bare + '_1' && daddr === bare + '_1') { row.addr_resolves = 1 }
+    if (reach.sc.state === 'booked') { row.offline_stands = 1 }
+    if (rcount === 1) { row.idempotent = 1 }
+    if (heard_ok) { row.heard_serving = 1 }
+    if (refused === 0 && stillServing === 1) { row.doer_gates = 1 }
+    if (served === 1 && arrived === 1) { row.served_arrived = 1 }
+    if (dropped === 1 && left === 0) { row.graduated = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 11 — THE REACH ROUND-TRIP + the receipts (completing the primitive's lifecycle).  The settle loop
+//  is KNOB-GATED (observe until w.c.reach_on flipped — the backpressure discipline); the booker hears the
+//   outcome and closes the trip: 'arrived' graduates away, 'refused' STANDS as a visible terminal receipt.
+async SwarmBody_reach_ack(w) {
+    w.i({reached: "step_11"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let rkeys = await this.Swarm_mint_keys('SwarmBody-Rax')
+    let rax = this.Swarm_identity(acct, rkeys, 'Rax')
+    rax.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Rax-body')
+    let bare = String(rax.sc.prepub)
+    this.Swarm_body_note(rax, 'cave_body_pub_11', 'Cave', bare + '_1', 'Caz')
+    let ckeys = await this.Swarm_mint_keys('SwarmBody-Caz')
+    let caz = this.Swarm_identity(acct, ckeys, 'Caz')
+    // book reach A; the SETTLE LOOP observes-only until the knob is flipped
+    let ra = this.Swarm_reach_book(w, rax, { to: 'Cave', of: 'track_A', for: 'serve' })
+    let settle_off = this.Swarm_reach_settle(w, rax)
+    w.c.reach_on = 1
+    let settle_on = this.Swarm_reach_settle(w, rax)
+    delete w.c.reach_on
+    // ROUND TRIP on A: target hears → serves → booker acks 'arrived' → graduates away
+    let inA = this.Swarm_reach_heard(w, caz, { reach: { of: 'track_A', to: 'Cave', for: 'serve', by: String(rax.c.bodykey.pub) } })
+    this.Swarm_reach_serve(w, caz, (r) => 1)
+    this.Swarm_reach_ack(w, rax, { state: 'arrived', reach: { to: 'Cave', of: 'track_A', for: 'serve' } })
+    let a_arrived = this.Swarm_peering(rax).o({ Reach: 1, of: 'track_A' })[0]
+    let a_state = a_arrived ? String(a_arrived.sc.state) : ''
+    let a_grad = this.Swarm_reach_graduate(rax)
+    let a_gone = this.Swarm_peering(rax).o({ Reach: 1, of: 'track_A' }).length === 0 ? 1 : 0
+    // REFUSED arm on B: target refuses → booker acks 'refused' → it STANDS (graduate does not drop it)
+    let rb = this.Swarm_reach_book(w, rax, { to: 'Cave', of: 'track_B', for: 'serve' })
+    let inB = this.Swarm_reach_heard(w, caz, { reach: { of: 'track_B', to: 'Cave', for: 'serve', by: String(rax.c.bodykey.pub) } })
+    this.Swarm_reach_refuse(w, caz, inB)
+    this.Swarm_reach_ack(w, rax, { state: 'refused', reach: { to: 'Cave', of: 'track_B', for: 'serve' } })
+    this.Swarm_reach_graduate(rax)
+    let b = this.Swarm_peering(rax).o({ Reach: 1, of: 'track_B' })[0]
+    let b_refused_stands = (b && String(b.sc.state) === 'refused') ? 1 : 0
+    let row = { acked: 1 }
+    if (settle_off === 0) { row.knob_off_observes = 1 }
+    if (settle_on >= 1) { row.knob_on_settles = 1 }
+    if (a_state === 'arrived' && a_grad === 1 && a_gone === 1) { row.round_trip = 1 }
+    if (b_refused_stands === 1) { row.refused_stands = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 12 — THE REACH WIRE LANE's gates (the funnel routes are live now — `reach`/`reach_done` frames):
+//  the ROAD only admits a body of MY OWN soul (`by` must prefix-match a rostered %Body pub — the relay
+//   is untrusted, so a stranger's booking lands NOTHING), and the REPORT resolves the booker's return
+//    address off the same roster (wire inert without a station — the resolution is the proof).
+async SwarmBody_reach_road(w) {
+    w.i({reached: "step_12"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let tkeys = await this.Swarm_mint_keys('SwarmBody-Tove')
+    let tove = this.Swarm_identity(acct, tkeys, 'Tove')
+    tove.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Tove-body')
+    let bare = String(tove.sc.prepub)
+    this.Swarm_body_note(tove, 'rex_body_pub_1200', 'Captain', bare, 'Rexa')
+    // the KIN road: a rostered sibling's reach is admitted and stands serving
+    let kin = this.Swarm_reach_road(w, tove, { reach: { of: 'track_R', to: 'Cave', for: 'serve', by: 'rex_body_pub_1200' } })
+    // the STRANGER gate: an unrostered `by` lands nothing
+    let stranger = this.Swarm_reach_road(w, tove, { reach: { of: 'track_S', to: 'Cave', for: 'serve', by: 'evil_body_pub_99' } })
+    let standing = this.Swarm_peering(tove).o({ Reach: 1 }).length
+    // the REPORT: after the doer serves — the booker's return address resolves off the roster
+    this.Swarm_reach_serve(w, tove, (r) => 1)
+    let back = kin ? this.Swarm_reach_report(w, tove, kin) : null
+    let row = { roaded: 1 }
+    if (kin && kin.sc.state === 'arrived') { row.kin_admitted = 1 }
+    if (stranger === null && standing === 1) { row.stranger_refused = 1 }
+    if (back === bare) { row.report_resolves = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 13 — THE CREW READ (Reach_todo §6, the legibility half): the standing reaches project into ONE
+//  legible glance — tallied by state, each entry carrying its (of, to, for, state).  This is the Crew
+//   cell's data (what my crew is doing for me and I for them), made snap-readable and Book-assertable.
+async SwarmBody_reach_crew(w) {
+    w.i({reached: "step_13"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let kkeys = await this.Swarm_mint_keys('SwarmBody-Krew')
+    let krew = this.Swarm_identity(acct, kkeys, 'Krew')
+    krew.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Krew-body')
+    let bare = String(krew.sc.prepub)
+    this.Swarm_body_note(krew, 'kcave_body_pub_13', 'Cave', bare + '_1', 'Kave')
+    this.Swarm_reach_book(w, krew, { to: 'Cave', of: 't1', for: 'serve' })                       // booked
+    this.Swarm_reach_book(w, krew, { to: 'Cave', of: 't2', for: 'serve' })
+    this.Swarm_reach_heard(w, krew, { reach: { of: 't2', to: 'Cave', for: 'serve', by: 'x' } })  // → serving
+    let r3 = this.Swarm_reach_book(w, krew, { to: 'Cave', of: 't3', for: 'serve' })
+    this.Swarm_reach_refuse(w, krew, r3)                                                          // → refused
+    let crew = this.Swarm_reach_crew(w, krew)
+    let t1 = crew.reaches.find((r) => r.of === 't1')
+    let row = { crewed: 1 }
+    if (crew.total === 3) { row.tallies_total = 1 }
+    if (crew.booked === 1 && crew.serving === 1 && crew.refused === 1) { row.tallies_states = 1 }
+    if (t1 && t1.state === 'booked' && t1.to === 'Cave' && t1.for === 'serve') { row.entry_shape = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 14 — THE %ORGAN readout (SoundPool §3): a body describes the organ it grows — pocket vs trove,
+//  as QUANTITIES on its own %Body row (not the tracks — the body naming what it holds).  The Crew/Pool/
+//   Organ cells all read this.  Proven pure: pocket + trove stand with their counts + tag-shape; a
+//    re-take updates in place (idempotent); the read resolves by kind.
+async SwarmBody_organ(w) {
+    w.i({reached: "step_14"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let okeys = await this.Swarm_mint_keys('SwarmBody-Orin')
+    let orin = this.Swarm_identity(acct, okeys, 'Orin')
+    orin.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Orin-body')
+    let bare = String(orin.sc.prepub)
+    this.Swarm_body_take(orin, null, 'Captain', bare)   // my own row, so body_mine finds it
+    let pocket = this.Swarm_organ_take(orin, 'pocket', { tracks: 214, tags: 'vio+train' })
+    let pocket0 = pocket ? String(pocket.sc.tracks) : ''   // capture BEFORE the idempotent re-take mutates the live ref
+    let trove = this.Swarm_organ_take(orin, 'trove', { tracks: 38000, tags: 'all' })
+    this.Swarm_organ_take(orin, 'pocket', { tracks: 220, tags: 'vio+train' })   // idempotent update
+    let mine = this.Swarm_body_mine(orin)
+    let organs = mine ? mine.o({ Organ: 1 }).length : 0
+    let rp = this.Swarm_organ_of(mine, 'pocket')
+    let rt = this.Swarm_organ_of(mine, 'trove')
+    let row = { organed: 1 }
+    if (pocket0 === '214') { row.pocket_stood = 1 }
+    if (trove && String(trove.sc.tracks) === '38000' && String(trove.sc.tags) === 'all') { row.trove_stood = 1 }
+    if (organs === 2 && rp && String(rp.sc.tracks) === '220') { row.idempotent_updated = 1 }
+    if (rt && String(rt.sc.kind) === 'trove') { row.read_by_kind = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 15 — ORGAN REPLICATION (SoundPool §0.5): a body's pocket/trove sizes travel to a sibling so the
+//  phone sees the laptop's trove.  Organs ride the charter mile beside the family grants; each body is
+//   authoritative for its OWN organ (wire = my own rows); the receiver lands them onto the roster row
+//    they describe (matched by pub), and an organ for a body it doesn't roster is skipped.
+async SwarmBody_organ_wire(w) {
+    w.i({reached: "step_15"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    // Sage — the sender: its own body + a trove organ
+    let skeys = await this.Swarm_mint_keys('SwarmBody-Sage')
+    let sage = this.Swarm_identity(acct, skeys, 'Sage')
+    sage.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Sage-body')
+    this.Swarm_body_take(sage, null, 'Cave', String(sage.sc.prepub))
+    this.Swarm_organ_take(sage, 'trove', { tracks: 38000, tags: 'all' })
+    let wire = this.Swarm_organ_wire(sage)
+    let sagepub = String(this.Swarm_body_key(sage).pub)
+    // Rue — the receiver: already rosters Sage (a %Body row), absorbs Sage's organ onto it
+    let rkeys = await this.Swarm_mint_keys('SwarmBody-Rue')
+    let rue = this.Swarm_identity(acct, rkeys, 'Rue')
+    this.Swarm_body_note(rue, sagepub, 'Cave', String(sage.sc.prepub), 'Sage')
+    let landed = this.Swarm_organ_absorb(rue, wire)
+    // a stray organ for a body Rue does NOT roster lands nothing
+    let stray = this.Swarm_organ_absorb(rue, [{ pub: 'nobody_pub_15', kind: 'trove', tracks: '9' }])
+    let row = { organ_wired: 1 }
+    let saw = this.Swarm_peering(rue).o({ Body: 1 }).find((b) => String(b.sc.pub) === sagepub)
+    let seen = saw ? this.Swarm_organ_of(saw, 'trove') : null
+    if (wire.length === 1 && wire[0].kind === 'trove' && wire[0].tracks === '38000') { row.wire_shape = 1 }
+    if (landed === 1 && seen && String(seen.sc.tracks) === '38000') { row.sibling_organ_seen = 1 }
+    if (stray === 0) { row.stray_skipped = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 16 — REACH BACKPRESSURE (the %Owed cap discipline): a NEW booking beyond w.c.reach_cap is refused
+//  so a runaway loop cannot flood the shelf; re-booking an EXISTING reach is always honoured (a retry of
+//   something already standing is never blocked by the cap).
+async SwarmBody_reach_cap(w) {
+    w.i({reached: "step_16"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let ckeys = await this.Swarm_mint_keys('SwarmBody-Cap')
+    let cap = this.Swarm_identity(acct, ckeys, 'Cap')
+    cap.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Cap-body')
+    let bare = String(cap.sc.prepub)
+    this.Swarm_body_note(cap, 'capcave_pub_16', 'Cave', bare + '_1', 'Capa')
+    w.c.reach_cap = 3
+    let b1 = this.Swarm_reach_book(w, cap, { to: 'Cave', of: 'c1', for: 'serve' })
+    let b2 = this.Swarm_reach_book(w, cap, { to: 'Cave', of: 'c2', for: 'serve' })
+    let b3 = this.Swarm_reach_book(w, cap, { to: 'Cave', of: 'c3', for: 'serve' })
+    let over = this.Swarm_reach_book(w, cap, { to: 'Cave', of: 'c4', for: 'serve' })   // beyond cap → refused
+    let atcap = this.Swarm_peering(cap).o({ Reach: 1 }).length
+    let rebook = this.Swarm_reach_book(w, cap, { to: 'Cave', of: 'c2', for: 'serve' })  // existing → honoured
+    let still = this.Swarm_peering(cap).o({ Reach: 1 }).length
+    delete w.c.reach_cap
+    let row = { capped: 1 }
+    if (b1 && b2 && b3) { row.under_cap_booked = 1 }
+    if (over === null && atcap === 3) { row.over_cap_refused = 1 }
+    if (rebook && still === 3) { row.rebook_honoured = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 17 — REFUSED-RECEIPT AGING (the cap's cousin): a refused reach stands as a receipt but must not
+//  stand forever, or it fills the cap and starves live bookings.  The settle loop sweeps refused reaches
+//   older than the receipt TTL; a fresh refused receipt survives (its window to be seen).
+async SwarmBody_reach_sweep(w) {
+    w.i({reached: "step_17"})
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let skeys = await this.Swarm_mint_keys('SwarmBody-Swp')
+    let swp = this.Swarm_identity(acct, skeys, 'Swp')
+    swp.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Swp-body')
+    let bare = String(swp.sc.prepub)
+    this.Swarm_body_note(swp, 'swpcave_pub_17', 'Cave', bare + '_1', 'Swpa')
+    w.c.reach_on = 1
+    w.c.reach_receipt_ttl = 100
+    // an OLD refused receipt (at well past the ttl) and a FRESH one
+    let old = this.Swarm_reach_book(w, swp, { to: 'Cave', of: 'old_r', for: 'serve' })
+    this.Swarm_reach_refuse(w, swp, old)
+    old.sc.at = String(this.Swarm_now(w) - 200)   // 200s old, past the 100s ttl
+    old.bump()
+    let fresh = this.Swarm_reach_book(w, swp, { to: 'Cave', of: 'fresh_r', for: 'serve' })
+    this.Swarm_reach_refuse(w, swp, fresh)   // at = now (fresh)
+    this.Swarm_reach_settle(w, swp)          // dispatches + sweeps
+    delete w.c.reach_on
+    delete w.c.reach_receipt_ttl
+    let left = this.Swarm_peering(swp).o({ Reach: 1 })
+    let hasOld = left.some((r) => String(r.sc.of) === 'old_r')
+    let hasFresh = left.some((r) => String(r.sc.of) === 'fresh_r')
+    let row = { swept: 1 }
+    if (!hasOld) { row.stale_swept = 1 }
+    if (hasFresh) { row.fresh_survives = 1 }
     this.SwarmBody_note(w, row)
 
 },
