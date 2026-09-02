@@ -39,6 +39,8 @@ Today the pier list conflates them. The only distinction so far is a cosmetic **
 
 ## Neighbours
 
-- **`Division_todo.md`** — the Post-as-grant model + the Cave/Captain bodies this must distinguish.
+- **`Crew_todo.md`** — the Cave/Captain bodies this must distinguish + the `/Crew/pier,role/Grant`
+   structure (it absorbed `Division_todo`, now `spec/history/`; the Post-as-grant reading is revised —
+    crew-ness is the `Grant:Crew`, the `role` rides the crew row).
 - **`DoorFace.svelte`** — the current pier list + the 🔗 band-aid; where the grouping would land.
 - **`Trust_todo.md`** — "which grant a pier bears" is the same question Trust asks of every protocol.

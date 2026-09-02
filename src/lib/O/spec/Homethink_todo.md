@@ -16,8 +16,10 @@ This doc is mostly read, not worked: a fresh session reads §1–§4 to stand so
 - Candidate `_spec`, not self-promoted: the human preens it into shape when it's earned.
 - §6 (the situations a body passes through) is new — its live debts: **Arrival**'s reader-migration
    (the particles stand; surfaces still derive their own truth from `.c` flags — Arrival_todo §5 brick 3)
-    and **Ceremony**'s readability (the `%Charter` is signed + gossiped but nothing READS it as proof —
-     no Book asserts it, no surface shows it). `%Focus` itself landed 2026-09-01 (Statehome's ledger).
+    and **Ceremony**'s readability, half-paid 2026-09-02: the proof-carrier is now the `Grant:Crew` and
+     it IS read as proof (`Swarm_voucher_ok`'s cert-crew road verifies it; Books assert it lands at the
+      seal) — still owed: no surface shows the crew/grant, and the `%Charter` (demoted to display +
+       recovery artifact) has no reader. `%Focus` itself landed 2026-09-01 (Statehome's ledger).
 
 ## 1. The one bet
 
@@ -134,9 +136,9 @@ The tell this is real and not a slogan: every subsystem above (§2) is a part of
    authority the whole toplevel reads (`%Arrival,phase` + `%Share,mode` + `%want` begs), not every surface
     deriving its own truth from a pile of boot flags. `Arrival_todo`.
 - **Ceremony** — walking a bounded, often multi-party ritual to an ATTESTED outcome. The walk is a legible
-   req (`req:Ferry* .sc.phase`); the outcome is signed matter (a roster of `%Body`, welded into a
-    `%Charter`) — a ritual that leaves no standing, provable record did not happen. `Statemap_todo` §3,
-     `Division_todo`.
+   req (`req:Ferry* .sc.phase`); the outcome is signed matter (a `Grant:Crew` the sealed body carries; the
+    roster of `%Body` welded into a `%Charter` for display + recovery) — a ritual that leaves no standing,
+     provable record did not happen. `Statemap_todo` §3, `Crew_todo`.
 - **Focus** — attending to, and presenting, a locus: what this body is looking at right now
    (`%Focus,cell·surfaced·decided`, landed 2026-09-01, humdinger-gated). The surface is the ceremony's
     whole visible OUTPUT; the year it lived on `.c` it flickered undebuggably and no Book could swear to

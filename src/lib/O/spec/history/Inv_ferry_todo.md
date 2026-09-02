@@ -1,4 +1,19 @@
+# ⚰ HISTORICITY NOTICE (2026-09-03)
+
+The ferry exchange surveyed as a state machine, for Book coverage. Living content — the `?Iz`/`#fc`
+ spine mechanics, the Book coverage map + missing-coverage list, the 11 assertion targets — absorbed
+  into `spec/Crew_todo.md` §6/§7. The soul-key crossing it surveys is the superseded mechanism. Kept
+   whole for the frame×state tables.
+
+---
+
 # Inv_ferry_todo.md — the ferry / invite / adopt / colonise exchange, as a state machine
+
+> **ⓘ 2026-09-02:** the crossing this doc surveys — the soul key ferried to the Linkee, "both end up
+>  bodies of ONE soul (key)" — is the SUPERSEDED mechanism. Cert-crew (`CrewLink_todo.md`): the Linkee
+>   keeps its OWN key, the Captain mints a `Grant:Crew` at the seal, and the ferry carries account DATA
+>    only (`{ferry:1}` omits the private key). The frame×state tables + the sealed-channel/secret
+>     discipline below remain the map of the rungs the new ceremony still rides — read with that flip.
 
 > **DRAFT 2026-08-30** — a SURVEY written to unit-test the ferry exchange with a Story Book
 >  (task #35). Authored WITHOUT a live runner, so nothing here has been re-run: the frame×state

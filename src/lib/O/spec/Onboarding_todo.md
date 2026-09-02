@@ -2,8 +2,8 @@
 
 The boot→share→name→(link) arc. Consolidated 2026-08-31 during the device-ferry live-testing session,
  as the ferry finally walked end-to-end (splash → OPEN SHARE → grant → auto-reload → become → SAS → cross).
-  Companions: `Division_todo.md` (Cave|Captain bodies), `Ferry_rebuild_todo.md` (the req rebuild),
-   `MobilenoFSA_todo.md` / `Portability_todo.md` (the listen-only life).
+  Companions: `Crew_todo.md` (Cave|Captain bodies + the ceremony — it absorbed Division/Ferry_rebuild,
+   both now `spec/history/`), `MobilenoFSA_todo.md` / `Portability_todo.md` (the listen-only life).
 
 ## 0. What to get on with next
 
@@ -58,11 +58,13 @@ DON'T over-correct: genuinely-runtime refs (secret, the parked frame object, wor
  poll counters `Swarm_watch_loop` reads) STAY on `.c` — that IS what `.c` is for. The test is "state vs ref",
   not "move everything."
 
-## 1. THE IDENTITY MODEL (soul key vs body key) — add this to Division_todo as a preamble
+## 1. THE IDENTITY MODEL (soul key vs body key) — landed as `Crew_todo.md` §2/§5; kept here for the arc
 
 Two keys per device; conflating them is the whole confusion.
-- **Soul key** (`eed831f…`) = THE ACCOUNT. Shared by every linked device. What friends see, what owns the
-   music, what the account IS (`ident.c.keys` / `ident.sc.prepub`). All your devices carry the SAME soul key.
+- **Soul key** (`eed831f…`) = THE ACCOUNT. What friends see, what owns the music, what the account IS
+   (`ident.c.keys` / `ident.sc.prepub`). ⚑ 2026-09-02: held by the CAPTAIN alone — a linked device no
+    longer carries it (cert-crew, `Crew_todo.md`); it keeps its own key + a `Grant:Crew` minted by
+     the soul at the seal, and friends trust it AS the soul via that grant.
 - **Body key** (`7f86cafc` = "Garar") = THIS INSTANCE. Each device mints its OWN durable keypair
    (`ident.c.bodykey = {pub,key,prepub}`, via `Swarm_body_key_ensure`): `.c.bodykey` cache → body-local Dexie
     (`bodykey_read`, **never replicated** — physically never leaves that browser) → else freshly minted.
@@ -77,8 +79,8 @@ Two keys per device; conflating them is the whole confusion.
    bodies of one soul on the wire at once → `Swarm_note_theft` contention ("close one, or Steal Back").
 
 Key files: `Swarm.g` Swarm_body_key_ensure:4189 / Swarm_body_take:4206 / Swarm_body_mine:4218 /
- Swarm_note_theft; `$lib/O/vessel_store` (bodykey_read/write). TODO: move the four bullets above into
-  `Division_todo.md` as a "## Identity: soul key vs body key" section at the top.
+ Swarm_note_theft; `$lib/O/vessel_store` (bodykey_read/write). The four bullets above landed in
+  `Crew_todo.md` §2 (the words) + §5 (the substrate).
 
 ## 2. ONE "OPEN SHARE" BUTTON (AC + FSA, on the splash)
 

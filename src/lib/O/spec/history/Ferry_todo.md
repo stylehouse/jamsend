@@ -1,4 +1,24 @@
+# ⚰ HISTORICITY NOTICE (2026-09-03)
+
+The ceremony post-mortem + the %Ferry req-inversion acceptance tests. Living content — the inversion
+ (Stage 3 landed; finish against the grant-based carry), the consent wants, the warmth/consent laws,
+  the Stage-4 fail-closed gate — absorbed into `spec/Crew_todo.md` §6/§9/§0. Kept whole for the
+   acceptance-test detail and the battle-log.
+
+---
+
 # Ferry_todo — the device-link ceremony: one particle, one phase walk, aware to the end
+
+## ⓘ MODEL UPDATE 2026-09-02 (night) — what the ferry CARRIES changed; this doc's critique stands
+
+**The ferry no longer transplants the soul key.** Cert-crew (grant-based, `CrewLink_todo.md` + memory
+ `crew-charter-glossary.md`): the joining device keeps its OWN key, the Captain mints `Grant:Crew` at the
+  seal, and `Swarm_export(n,{ferry:1})` ships account DATA only. Vocabulary shift for readers of the body
+   below: "the opener becomes the soul" is dead; a Cave is a regular keyed Identity holding a Grant:Crew;
+    the Charter is display+recovery, not trust. **What STANDS unreduced:** this doc's post-mortem (the
+     ceremony built below the particle system, the `top.c.ferry_*` flag pile) and the %Ferry-particle
+      inversion — the cert-crew ceremony still runs through the same phase walk and still deserves the
+       one-particle truth. Finish the inversion against the NEW carry.
 
 ## 0. What to get on with
 

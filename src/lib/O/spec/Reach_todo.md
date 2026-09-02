@@ -12,14 +12,15 @@ This doc is the answer to that, and to Homethink §5's load-bearing question —
 ## ⓘ UPDATED 2026-09-02 (night) — Reach is NOT superseded; it composes on top of the cert-crew pivot
 
 **Reach stands.** The device-link MODEL flipped (owner, 2026-09-02): device-link is now a CREW of DISTINCT
- identities bound by a signed Charter cert, NOT one soul key copied across colliding bodies — see
-  `CrewLink_todo.md`. That does not touch the Reach primitive; it CLARIFIES the destination the "still
+ identities, each carrying a `Grant:Crew` minted by the Captain, NOT one soul key copied across colliding
+  bodies — see `Crew_todo.md`. That does not touch the Reach primitive; it CLARIFIES the destination the "still
    owed" migrations point at:
 - The W1 Reach primitive is COMPLETE + Book-gated (SwarmBody 23 beats / 25 sworn): 3 exits + terminal
    latch + terminal guard + cap + receipt-aging + pier-less auth + doer tri-state + why-on-the-wire + one
     self-throttling pump. See memory `want-middleware-plan.md`.
-- The **cert-offer of CrewLink IS a Reach** — the knock that offers a Charter membership cert to a new
-   device settles `landed | refused,<why> | dead,nobody-answered` exactly like any Reach. So the "no one
+- The **cert-offer of CrewLink IS a Reach** — the knock that offers crew membership (a `Grant:Crew`
+   minted by the Captain at the seal, handed over in the accept) to a new device settles
+    `landed | refused,<why> | dead,nobody-answered` exactly like any Reach. So the "no one
     answered the door" gap (old `ferry_want`) ports onto Reach (W2), and CrewLink's ceremony rides this
      layer rather than re-hand-rolling the knock. Keep the doer-binding + migration seams below aimed there.
 - The addressing self-collision that used to swallow reaches to `to:<soul>` is FIXED + Book-green (memory

@@ -1,3 +1,15 @@
+# ⚰ HISTORICITY NOTICE (2026-09-02)
+
+An architecture reckoning triggered by the 'stuck at receiving from eed' wedge. Both its axes resolved:
+ the addressing self-collision is fixed (memory `foreign-want-door-holder.md`) and the soul-copy model
+  whose collisions it dissects is replaced by grant-based cert-crew (`spec/CrewLink_todo.md`). Its one
+   durable verdict — a knock must never depend on a %Pier existing; the ceremony must never depend on
+    the %Pier's stream state — is carried forward in CrewLink_todo. Kept whole for the reasoning trail.
+     NB the ⓘ notes below say "signed Charter cert" — that was the INTERMEDIATE model, itself superseded
+      the same night; the final cert is a `Grant:Crew` (the Charter is display+recovery only).
+
+---
+
 # Ceremony_layering_todo.md
 
 ## ⓘ SUPERSEDED / UPDATED 2026-09-02 (night)

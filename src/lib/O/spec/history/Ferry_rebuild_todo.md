@@ -1,4 +1,19 @@
+# ⚰ HISTORICITY NOTICE (2026-09-03)
+
+The 5-fork synthesis of the Pier|Iz|Link req rebuild. Its living content — the inversion plan, the
+ consent-liveness category-error finding (stale %NotGrant vs fresh re-link, epoch = signed serial),
+  the staged plan — absorbed into `spec/Crew_todo.md` §6/§9. Kept whole for the fork-panel reasoning.
+
+---
+
 # Ferry_rebuild_todo — the Pier | Iz | Link rebuild (5-fork Opus panel, 2026-08-31)
+
+> **ⓘ 2026-09-02:** the link mechanism is now grant-based cert-crew (`CrewLink_todo.md`): own key +
+>  `Grant:Crew` minted at seal, no soul-key transplant. This doc's category-error finding (device-link
+>   consent riding the clock-less friend-grant liveness rule) still applies to the MyCave/Grant:Crew
+>    atoms — a stale `%NotGrant` from a pruned device could still bury a fresh re-link grant — so the
+>     "own liveness rule for device-links, never touch `Swarm_pier_live`" verdict stays live. Read with
+>      the new vocabulary (memory `crew-charter-glossary.md`).
 
 Owner: "we must refactor. I don't know what's going on with the code at all anymore. use req."
 Five independent Opus designs were run on "rebuild Pier|Iz|Link + why does the origin always reject it now?"

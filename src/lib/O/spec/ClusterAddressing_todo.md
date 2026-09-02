@@ -11,10 +11,11 @@
      client-side (`LiesLies.svelte` seat-dodge + `Ghost/S/Swarm.g` in-family want-clamp + `on_hello`
       door-reclaim) with ZERO relay change. SwarmBody 23/23. See memory `foreign-want-door-holder.md`.
 - **The device-link MODEL that drove the soul-address question is replaced (owner, 2026-09-02): a CREW of
-   DISTINCT identities bound by a signed Charter cert, NOT one soul key on many colliding bodies.** So
+   DISTINCT identities, each carrying a `Grant:Crew` minted by the Captain, NOT one soul key on many
+    colliding bodies.** So
     "should addressing route by soul or by identity" (§4) has its answer forced: **identity, always** —
      every device is its own address, grouping lives in the Pier/Peering table, and the relay handles
-      distinct addresses perfectly with no v3 hello. The single clean statement is `CrewLink_todo.md`.
+      distinct addresses perfectly with no v3 hello. The single clean statement is `Crew_todo.md`.
 
 **Still live and unrelated to the pivot:** the `header.from`-not-verified spine surgery (§6), the
  double-delivery cost (§4.5), the `who` presence probe (now `Presence_todo.md`), and `?addr=<role>`

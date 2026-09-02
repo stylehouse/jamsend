@@ -38,7 +38,8 @@ The owner's own half-question — *"are we within a `Grant:Adopt` role or someth
 
 ## Its neighbours (so this doesn't grow in isolation)
 
-- **`Division_todo.md`** — the Adopt/Ferry ceremony + the Post-as-grant model live here. Trust is
+- **`Crew_todo.md`** (absorbed `Division_todo`, now `spec/history/`) — the crew ceremony + grant model
+   live here. Trust is
    the layer *beneath* it: Division is one protocol that Trust would secure. The `#fc`→nonce
     decision (§0 there — "eed is the security control point") is already a Trust-shaped ruling:
      the human at the granting device IS the trust anchor, so the paranoid machine-secret is fluff.

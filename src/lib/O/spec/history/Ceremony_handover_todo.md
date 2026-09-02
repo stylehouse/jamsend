@@ -1,3 +1,16 @@
+# ⚰ HISTORICITY NOTICE (2026-09-02)
+
+This was the forensic handover of the week the live device-link never completed. Its blocker (the
+ 'foreign want' — a tab's OWN two sockets colliding on its soul name) is FIXED + Book-green, and the
+  soul-key-copy model it chases is REPLACED by the grant-based cert-crew model. Living content:
+   `spec/CrewLink_todo.md` (the model + what's next), memory `foreign-want-door-holder.md` (the
+    disease + fix), `Reach_todo.md` (the %Reach middleware its §6 planned). Kept whole as the record
+     of how the disease looked from inside. NB the ⓘ notes below say "signed Charter cert" — that was
+      the INTERMEDIATE model, itself superseded the same night; the final cert is a `Grant:Crew`
+       (the Charter is display+recovery only).
+
+---
+
 # Ceremony_handover_todo.md
 
 ## ⓘ SUPERSEDED / UPDATED 2026-09-02 (night)

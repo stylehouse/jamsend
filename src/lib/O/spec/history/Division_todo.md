@@ -1,3 +1,14 @@
+# ⚰ HISTORICITY NOTICE (2026-09-03)
+
+The organism/organs design + the whole 2026-08/09 build log: land-of-prepub Model B, the roster mile,
+ the seat war, Phases A–D, the ferry battles. Its living content — the teleology, the ladder, the
+  substrate facts, the durable laws, the owed list — was distilled into `spec/Crew_todo.md` (the one
+   living doc for this cluster). NB this doc's strata disagree with each other (the model moved twice
+    on 2026-09-02: grantless stamp vs Grant:Crew at seal; "Charter deleted" vs demoted) — where they
+     conflict, `Crew_todo.md` wins. Kept whole as the reasoning trail.
+
+---
+
 # Division_todo.md
 
 ## ⓘ UPDATED 2026-09-02 (night) — the LINK MECHANISM flips: cert-not-copy
@@ -7,19 +18,24 @@
   below — *"LinkDevice is how that [soul] key gets copied around and turns up on the relay"* — is now
    **"LinkDevice certifies a NEW device key into the crew; it does NOT copy the soul key."**
 
-- **Device-link = a CREW of DISTINCT identities bound by a signed Charter cert.** Each device mints its
-   OWN Identity (own key, own address — the relay handles distinct addresses perfectly); the inviter signs
-    a Charter membership cert ("this Identity is one of mine"); friends are told the crew set and render
-     any member as "you". Grouping lives in the Pier/Peering table, not via relay-address collision.
-      **Certify a new key; do NOT copy the old one.** Safer (per-device revocable keys) and it deletes the
-       soul-door contention entirely. The single clean statement is `CrewLink_todo.md`.
+- **Device-link = a CREW of DISTINCT identities, GRANT-gated (settled same night, superseding the
+   "Charter cert" phrasing that briefly stood here).** Each device mints its OWN Identity (own key, own
+    address); the Captain mints a **`Grant:Crew`** (by:soul, for:device-key — the same grant primitive
+     friendships use) AT THE SEAL and hands it over in the accept; friends `verify_grant` it and trust
+      the Cave AS the Captain. The **Charter is NOT the trust root** — it demotes to a Captain-built
+       display + recovery artifact (roster picture; destructive resume-Captain-from-Cave). Blessing is
+        Captain-only (a Cave can invite, never mint). Grouping lives in the Pier/Peering table, not via
+         relay-address collision. **Certify a new key; do NOT copy the old one.** Safer (revoke = one
+          %NotGrant on the device's grant) and it deletes the soul-door contention entirely. The single
+           clean statement is `CrewLink_todo.md` + memory `crew-charter-glossary.md`.
 - **This EXTENDS working code, not greenfield.** DISK TRUTH (verify on disk, not the UI): eed's account
    `/app/.jamsend/account/eed831f1977c4e81/toc.snap` carries a live signed `Charter,era:137` = Captain +
     3 Caves, matching `%Body` rows + both-way MyCave grants. The cert-crew MODEL is already real and
      persisted — the pivot revises the FERRY (which today copies the account blob incl. keys) to
       cert-not-copy, and additionally makes the Charter an ACCOUNT-BACKUP vector (replicate + keep fresh,
        all FSA-able). This means §0's "Charter: deleted" ⚑⚑⚑ ruling is REVISED: the Charter is NOT deleted
-        — it becomes the membership cert + backup ledger. The roster stays the routing convenience.
+        — it survives demoted, a display + recovery artifact (and candidate account-backup vector); the
+         `Grant:Crew` is what proves membership. The roster stays the routing convenience.
 - **The addressing self-collision is FIXED + Book-green** (memory `foreign-want-door-holder.md`): the
    live "two-founder war" / seat contention was a same-tab two-socket collision, cured client-side. Under
     cert-crew there is no soul-name collision to arbitrate at all.
@@ -312,14 +328,16 @@ Now also built (same night, after the owner's "A"): founding self-grant (3) + si
 
 ## 0. WHERE THIS IS (2026-08-28) — the live device-link path is the FERRY model
 
-**⚑⚑⚑⚑ 2026-09-02 (night) — THE FERRY MODEL FLIPS TO CERT-NOT-COPY. See the ⓘ note at the top of this
- file + `CrewLink_todo.md`.** The ferry below copies the account blob (incl. keys) at link time; the new
-  model has each device mint its OWN key and the inviter sign a Charter membership cert. The land-of-prepub
-   (Model B) receive/send work in this §0 STANDS (bodies hello with own keys, roster gossip, contact-learned
-    %Body rows) — it is exactly the substrate cert-crew needs. What changes: the MINT-STOP/ferry no longer
-     transplants the soul key into a blank device; it certifies a fresh device identity into the crew, and
-      the account DATA replicates over the Charter as a backup vector. The `⚑⚑⚑` "Charter: deleted" ruling
-       further below is REVISED — the Charter comes back as the membership cert + backup ledger.
+**⚑⚑⚑⚑ 2026-09-02 (night) — THE FERRY MODEL FLIPS TO CERT-NOT-COPY, and the cert is a `Grant:Crew`
+ (grant-based, NOT a carried Charter — that intermediate stood for hours and was superseded). See the ⓘ
+  note at the top of this file + `CrewLink_todo.md`.** The ferry below copies the account blob (incl.
+   keys) at link time; the built model (`Ghost/S/Swarm.g`, InvWalk 8/8) has each device mint its OWN key
+    and the Captain mint `Grant:Crew,by:soul,for:device-key` at the seal. The land-of-prepub (Model B)
+     receive/send work in this §0 STANDS (bodies hello with own keys, roster gossip, contact-learned
+      %Body rows) — it is exactly the substrate cert-crew needs. What changes: the MINT-STOP/ferry no
+       longer transplants the soul key; the account DATA replicates (`Swarm_export {ferry:1}` omits the
+        key), with the Charter as a backup/display vector only. The `⚑⚑⚑` "Charter: deleted" ruling
+         further below stays REVISED — the Charter survives, but as artifact, not authority.
 
 **✅ 2026-09-02 (midday) — THE REBORN-KNOCK WEDGE (live ceremony "stuck at receiving from eed"),
  two layers, both cured in `Peeroleum.g`'s reused-seq collision branch:** (1) a reborn knocker's
@@ -420,7 +438,10 @@ Now also built (same night, after the owner's "A"): founding self-grant (3) + si
   but it doesn't birth a Grant." "The Charter doesn't need persisting at all — whoever can sign
    with that key is included in the set of Crew; LinkDevice is how that key gets copied around
     and turns up on the relay." This supersedes the §C fork below (Model B wins AND slims
-     further) and puts §0a's grant-based founding ruling in question.**
+     further) and puts §0a's grant-based founding ruling in question.** *[⚑ 2026-09-02 (night):
+      itself superseded — crew IS grant-gated now (the Captain mints a `Grant:Crew` per device at
+       the seal; the soul key never travels), and the Charter persists demoted to display +
+        recovery. See the ⓘ at top + `CrewLink_todo.md`.]*
 
 **The three-level ladder (each level its own key/token, its own membership rule):**
   | level | key | scope | membership | office |

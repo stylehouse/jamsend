@@ -3,6 +3,8 @@
 A READ-ONLY consolidation audit of the `~40` `*_todo.md` docs that accumulated over the last
  hectic week, EXCLUDING the ceremony/addressing cluster owned by another agent
   (`Ceremony_*`, `ClusterAddressing_todo`, `Reach_todo`, `Presence_todo`, `Division_todo` — SKIPPED).
+   *[2026-09-03: that cluster consolidated itself — `Crew_todo.md` absorbed CrewLink/Division/Ferry/
+    Ferry_rebuild/Inv_ferry, all now `spec/history/`.]*
 
 Verdicts follow the repo convention (CLAUDE.md → "Docs: specs, todos, and the history/ shelf"):
  retiring means moving the WHOLE file into `spec/history/` with a prepended historicity notice
@@ -49,9 +51,9 @@ Eleven Cello docs exist. They are **one built renderer + one design tournament o
 | `Arrival_todo.md` | **LIVE** | Toplevel arrival state machine; "LIVE CONFIRMED" but multiple live-test items still open (Crew ceremony, eed wedge). Actively worked; adjacent to the skipped ceremony cluster. |
 | `Onboard_todo.md` | **SUPERSEDED** by `Onboarding_todo.md` | 2026-07-22 first-run funnel doc; mostly LANDED (invite/FSA-warning/funnel-into-glass all done). The 2026-08-31 `Onboarding_todo` re-owns the same boot→share→name→link arc with current state. Overlap is heavy; retire the old one. **Note the cross-ref debt:** `Portability_*`, `Solo_todo`, `Sharing_design` still cite `Onboard_todo` as the funnel owner — flip those to `Onboarding_todo` when retiring. |
 | `Onboarding_todo.md` | **LIVE** | Current first-run funnel doc (§0 has a live, PAUSED, greenlit-in-order plan). Keeper of the arc. |
-| `Ferry_todo.md` | **LIVE** | The device-link ceremony doc; §0 post-mortem + the "finish the %Ferry inversion" plan is unfinished (strangler's middle). Actively load-bearing. |
-| `Ferry_rebuild_todo.md` | **LIVE** | The 5-fork Opus synthesis of the Pier|Iz|Link rebuild + staged plan; explicit companion to `Ferry_todo` §0. Not yet executed — keep. |
-| `Inv_ferry_todo.md` | **LIVE (draft)** | DRAFT survey to unit-test the ferry exchange with a Story Book (task #35); Books (`InvSeal.g`/`InvFerry.g`) authored but NOT compiled/run. Live debt, keep. Note: `Network_procedures_todo` is its parent recipe (ferry = that doc's worked example). |
+| `Ferry_todo.md` | **RETIRED 2026-09-03** | Absorbed into `Crew_todo.md` (the owner-called crew-cluster consolidation); now `spec/history/`. |
+| `Ferry_rebuild_todo.md` | **RETIRED 2026-09-03** | Absorbed into `Crew_todo.md`; now `spec/history/`. |
+| `Inv_ferry_todo.md` | **RETIRED 2026-09-03** | Absorbed into `Crew_todo.md` (§6/§7); now `spec/history/`. `Network_procedures_todo` remains its parent recipe. |
 | `Statemap_todo.md` | **LIVE** | Map of account/ceremony/surface state + push to predictable structure. §0 sibling-sync gap open. Companion to `Arrival`/`Statehome`. |
 | `Statehome_todo.md` | **LIVE** | The LAW ("where a datum lives, and why" — `.c` vs `.sc`/particle). Mostly-read grounding doc; several items LANDED (`%Focus`, `%Owed`, `%Body` caveat) but it's canon-in-progress, candidate `_spec`. Keep. |
 | `Networky_directions_todo.md` | **LIVE** | The one-bet transport arc (split data plane from control plane); explicitly a working `_todo` stating an arc, delegating detail to `Backpressure_todo`/`Cluster_spec`. Keep. |
