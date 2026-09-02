@@ -4,8 +4,7 @@ story:SwarmStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.08
-      sample=0.146,at=1788048574
+    TimeTotal:beliefs,avg=0.068
       sample=0.114,at=1788055469
       sample=0.057,at=1788060328
       sample=0.027,at=1788061933
@@ -15,8 +14,8 @@ story:SwarmStaple
       sample=0.168,at=1788086198
       sample=0.047,at=1788091214
       sample=0.042,at=1788092613
-    TimeTotal:step,avg=0.01
-      sample=0.018,at=1788048574
+      sample=0.031,at=1788354822
+    TimeTotal:step,avg=0.009
       sample=0.014,at=1788055469
       sample=0.007,at=1788060328
       sample=0.003,at=1788061933
@@ -26,6 +25,7 @@ story:SwarmStaple
       sample=0.021,at=1788086198
       sample=0.006,at=1788091214
       sample=0.005,at=1788092613
+      sample=0.004,at=1788354822
   step,dige:857b7f27f55187b6
   step=2,dige:8c658e1450d254fb
     Assertion:two-selves,sentence:two selves stand — each an Identity owning its Peering page — keys ride .c only
@@ -43,5 +43,5 @@ story:SwarmStaple
     Assertion:single-use-spent,sentence:the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed
   step=7,dige:88ed1e77ed402e4a
     Assertion:notgrant-retires,sentence:a NotGrant under the Pier retires it at use — the other end stands until told
-  step=8,dige:455e59964971e370
+  step=8,dige:91382cb3cd5d18d6
     Assertion:account-roundtrip,sentence:the account survives export and import byte for byte — Pier and grants and keys intact

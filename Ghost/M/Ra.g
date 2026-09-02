@@ -4309,3 +4309,160 @@ async Ra_term_stream_beat(w, rx, mine, theirs, rec):
     p.plays = p.plays + 1
     return { done: p.head >= p.total ? 1 : 0, head: here }
 //#endregion
+
+//#region the POOL-FILL REACH — SoundPooling_todo §0.5 Flow 4 (Cave → Captain), the live doer binding
+// "Cave will have a huge library and Captain wants some at all times via SoundPooling" (owner
+//  2026-09-02).  The Captain BOOKS a standing %Reach (to:'Cave', for:'serve' — the boundary law:
+//   standing intent = Reach; bytes+doing = the Heist/Siphon doers; the POOL is the liquid
+//    destination) and the crew Cave's live doer serves it from its OWN library (the §3/§4
+//     lib-mapping tripwire honoured: never press-what-streams-through).  Every verb here BINDS
+//      proven parts — Swarm_reach_* (SwarmBody beats 10–23), Siphon_pull → Ra_press →
+//       Heist_catalog_land (MusuPress / Siphonation) — and invents no transport: the artifact
+//        crosses through a nav read (a crew-mirror lib the Captain's nav can read), which is the
+//         same seam the live Repli byte-lane will stand behind when it lands.  Book-gated by
+//          MusuPoolFill (Ghost/Story/Heistation.g).
+
+// Ra_pool_fill_book — the Captain's booking seam: a standing %Reach toward my crew Cave asking it
+//  to make `origId` servable for my pool.  Role-addressed (to:'Cave' — Swarm_reach_addr resolves
+//   the roster row, so the booking survives the Cave re-keying) and it only books when a Cave
+//    actually stands on my roster — no crew Cave, no intent to fake.  Dispatch is kicked once
+//     (wire inert without a station; the settle loop is the retry), and the reach STANDS while
+//      the Cave is away — that is the whole point of booking over calling.
+Ra_pool_fill_book(w, ident, origId):
+    if (!w || !ident || !origId) { return null }
+    let cave = this.Swarm_body_for ? this.Swarm_body_for(ident, 'Cave') : null
+    if (!cave) { return null }
+    let reach = this.Swarm_reach_book(w, ident, { to: 'Cave', of: String(origId), for: 'serve' })
+    if (reach) { this.Swarm_reach_dispatch(w, ident, reach) }
+    return reach
+
+// Ra_pool_fill_homes — WHERE the fill reads and lands, resolved once per pass.  A Book stands its
+//  own homes on the IDENTITY's .c (fill_mw + fill_lib/fill_pool/fill_nav/fill_from — runtime refs,
+//   never sc) and that override is the WHOLE story (never mixed with live homes — a Book on a live
+//    runner must not leak into the tab's radio world).  Live: the radio world's own homes — lib is
+//     probe-first (a body with no library home has nothing to serve; never mint on a read), the
+//      pool home may mint (we are about to press into it), `from` is the crew mirror (probe-first
+//       %MusuThem of my roster Cave) the landing reads the served artifact out of.
+Ra_pool_fill_homes(w, ident):
+    let out = { mw: w, lib: null, pool: null, nav: null, from: null }
+    if (ident && ident.c && ident.c.fill_mw) {
+        out.mw = ident.c.fill_mw
+        if (ident.c.fill_lib) { out.lib = ident.c.fill_lib }
+        if (ident.c.fill_pool) { out.pool = ident.c.fill_pool }
+        if (ident.c.fill_nav) { out.nav = ident.c.fill_nav }
+        if (ident.c.fill_from) { out.from = ident.c.fill_from }
+        return out
+    }
+    let top = this.top_House ? this.top_House() : null
+    let rw = (top && top.c) ? top.c.radio_w : null
+    if (!rw) { return out }
+    out.mw = rw
+    let pub = this.Radio_pub ? this.Radio_pub(rw) : null
+    if (!pub) { return out }
+    if (rw.oa({ MusuSelf: 1, pub: pub })) { out.lib = this.Ra_home_self(rw, pub) }
+    out.pool = this.Ra_home_pool(rw, pub)
+    out.nav = rw.c.ra_nav || null
+    let cave = this.Swarm_body_for ? this.Swarm_body_for(ident, 'Cave') : null
+    let cavename = cave ? this.Swarm_body_addr(cave) : ''
+    if (cavename && rw.oa({ MusuThem: 1, pub: cavename })) { out.from = this.Ra_home_them(rw, cavename) }
+    return out
+
+// Ra_pool_fill_verdict — the SYNC tri-state probe Swarm_reach_serve's doer contract wants (truthy →
+//  arrived · falsy → stays serving · {refuse:why} → refused).  PURE READ of what the async serve
+//   pass left standing: a pool card standing (by id — a v1 press coincides — or by of: join) IS
+//    served; a library that provably lacks the Original refuses honestly; a recorded press fail
+//     refuses with its named why; cold homes are "not yet" (the retry covers a booting tab).
+//  A FOREIGN verb returns FALSY, never a refusal: another layer's reach (a ceremony verb, a future
+//   for:) must be left standing for ITS doer — refusing here would bury someone else's intent.
+Ra_pool_fill_verdict(w, ident, reach):
+    if (String(reach.sc.for || '') !== 'serve') { return 0 }
+    let of = String(reach.sc.of || '')
+    if (!of) { return { refuse: 'no_content' } }
+    let homes = this.Ra_pool_fill_homes(w, ident)
+    if (!homes.pool) { return 0 }
+    let standing = this.Ra_rec_find(homes.pool, { Record: 1, id: of }) || this.Ra_rec_find(homes.pool, { Record: 1, of: of })
+    if (standing) { return 1 }
+    if (homes.lib && !this.Ra_rec_find(homes.lib, { Record: 1, id: of })) { return { refuse: 'not_in_library' } }
+    if (reach.c.fill_fail) { return { refuse: String(reach.c.fill_fail) } }
+    return 0
+
+// Ra_pool_fill_serve — the CAVE-SIDE serve tick (the Reach_todo §0 "still owed" doer binding).
+//  For each inbound serving for:'serve' reach: make the asked track servable in MY OWN pool via
+//   Siphon_pull (idempotent — a standing card moves not one byte; the one Heist_catalog_land door
+//    mints the card), THEN run the one sync tri-state gate (Swarm_reach_serve + the verdict), THEN
+//     report each terminal inbound ONCE to its booker (reach_done over the sibling lane; wire-inert
+//      in a Book) and graduate the arrived copies — scaffolding, not ledger.  Returns the serve count.
+async Ra_pool_fill_serve(w, ident):
+    let peering = this.Swarm_peering ? this.Swarm_peering(ident) : null
+    if (!peering) { return 0 }
+    let serving = peering.o({ Reach: 1, state: 'serving' }).filter((r) => String(r.sc.for || '') === 'serve')
+    if (serving.length) {
+        let homes = this.Ra_pool_fill_homes(w, ident)
+        for (const reach of serving) {
+            let of = String(reach.sc.of || '')
+            if (!of) { continue }
+            if (!homes.lib || !homes.pool || !homes.nav) { continue }
+            let standing = this.Ra_rec_find(homes.pool, { Record: 1, id: of }) || this.Ra_rec_find(homes.pool, { Record: 1, of: of })
+            if (standing) { continue }
+            if (!this.Ra_rec_find(homes.lib, { Record: 1, id: of })) { continue }
+            let r = await this.Siphon_pull(homes.mw, null, homes.pool, homes.lib, of, homes.nav)
+            if (r && r.fail && !String(r.fail).startsWith('already pulling')) { reach.c.fill_fail = String(r.fail) }
+        }
+    }
+    let n = this.Swarm_reach_serve(w, ident, (r) => this.Ra_pool_fill_verdict(w, ident, r))
+    let mypub = String((this.Swarm_body_key ? this.Swarm_body_key(ident) : null)?.pub || '')
+    for (const st of ['arrived', 'refused']) {
+        for (const reach of peering.o({ Reach: 1, state: st })) {
+            let by = String(reach.sc.by || '')
+            if (!by) { continue }
+            if (mypub && (mypub.startsWith(by) || by.startsWith(mypub))) { continue }
+            if (reach.c.reported) { continue }
+            reach.c.reported = 1
+            this.Swarm_reach_report(w, ident, reach)
+        }
+    }
+    if (n > 0) { console.log('🏊 pool-fill: served ' + n + ' reach(es) from my own library'); this.Swarm_reach_graduate(ident) }
+    return n
+
+// Ra_pool_fill_land — the CAPTAIN-SIDE landing: an outbound for:'serve' reach acked 'arrived' means
+//  the Cave made the artifact servable — siphon it out of the crew mirror into MY OPFS pool (the
+//   same Siphon_pull → Ra_press → Heist_catalog_land chain; the pool branch lights on mardir 'pool')
+//    and drop the fulfilled reach.  No mirror / no nav → the reach STANDS 'arrived' as visible
+//     awaiting-transport state (the live byte-lane is the named owed seam) — never a fake landing.
+async Ra_pool_fill_land(w, ident):
+    let peering = this.Swarm_peering ? this.Swarm_peering(ident) : null
+    if (!peering) { return 0 }
+    let mypub = String((this.Swarm_body_key ? this.Swarm_body_key(ident) : null)?.pub || '')
+    let landed = 0
+    let arrived = peering.o({ Reach: 1, state: 'arrived' }).filter((r) => String(r.sc.for || '') === 'serve')
+    for (const reach of arrived) {
+        let by = String(reach.sc.by || '')
+        if (by && mypub && !(mypub.startsWith(by) || by.startsWith(mypub))) { continue }
+        let of = String(reach.sc.of || '')
+        if (!of) { continue }
+        let homes = this.Ra_pool_fill_homes(w, ident)
+        if (!homes.pool || !homes.nav || !homes.from) { continue }
+        let got = await this.Siphon_pull(homes.mw, null, homes.pool, homes.from, of, homes.nav)
+        if (got && got.card) {
+            landed = landed + 1
+            peering.drop(reach)
+        }
+    }
+    if (landed > 0) { console.log('🏊 pool-fill: landed ' + landed + ' pool cop' + (landed === 1 ? 'y' : 'ies') + ' from the crew mirror') }
+    return landed
+
+// Ra_pool_fill_pump — the ONE live tick (rides Swarm_reach_pump's cadence, knob-gated there by
+//  w.c.reach_on): serve what my crew booked on me, land what my crew served for me.  Re-entrant
+//   guard on .c (the async passes may outlive a 5s cadence under a real press).
+async Ra_pool_fill_pump(w, ident):
+    if (!w || !ident) { return 0 }
+    if (w.c.pool_fill_busy) { return 0 }
+    w.c.pool_fill_busy = 1
+    let n = 0
+    try {
+        n = await this.Ra_pool_fill_serve(w, ident)
+        await this.Ra_pool_fill_land(w, ident)
+    } catch (er) { console.log('🏊⚠ pool-fill pump: ' + er) }
+    delete w.c.pool_fill_busy
+    return n
+//#endregion

@@ -104,6 +104,15 @@ Swarm_is_cave(ident):
 Swarm_crew_grant(ident):
     let sa = this.Swarm_signas(ident)
     if (!sa || !sa.pub) { return null }
+    // THE CREW HAS A HOME (owner 2026-09-03, Crew_todo §3): /Crew/pier:<prepub>,role/Grant:'Crew' —
+    //  my cert lives on MY crew row.  Legacy pier-scan kept below for pre-migration accounts.
+    let crew = ident ? ident.o({ Crew: 1 })[0] : null
+    if (crew) {
+        for (const row of crew.o({ mate: 1 })) {
+            let g = row.o({ Grant: 'Crew' }).find((x) => String(x.sc.for) === String(sa.pub))
+            if (g) { return grant_of_C(g) }
+        }
+    }
     let peering = this.Swarm_peering(ident)
     if (!peering) { return null }
     for (const pier of peering.o({ Pier: 1 })) {
@@ -111,6 +120,35 @@ Swarm_crew_grant(ident):
         if (g) { return grant_of_C(g) }
     }
     return null
+
+// Swarm_crew — the crew's HOME in the tree (Crew_todo §3): a %Crew container on the identity holding
+//  one row per member — `mate:<prepub>,role:<Post>` (%mate = a NAMING of a crew member, its value
+//   the join key; never %Pier, and not lowercase %pier either — Caperlet already wears `pier:` as a
+//    property, and a mainkey must never appear as another shape's non-first key) — each row holding
+//    that member's Grant:'Crew'.  The Charter becomes the signed export of this subtree: ledger and
+//     picture are one thing.  Transport untouched: %Piers stay homed in the Peering; /Crew points.
+Swarm_crew(ident):
+    if (!ident) { return null }
+    let crew = ident.o({ Crew: 1 })[0]
+    if (!crew) {
+        crew = ident.i({ Crew: 1 })
+    }
+    crew.c.up = ident
+    return crew
+// Swarm_crew_row — find-or-create one member's row; `role` updates in place (merged-in-place ledger
+//  rows, never row-per-change).
+Swarm_crew_row(ident, prepub, role):
+    let crew = this.Swarm_crew(ident)
+    if (!crew || !prepub) { return null }
+    let row = crew.o({ mate: String(prepub) })[0]
+    if (!row) {
+        row = crew.i({ mate: String(prepub), role: String(role || 'Cave') })
+    } else if (role && String(row.sc.role || '') !== String(role)) {
+        row.sc.role = String(role)
+        row.bump()
+    }
+    row.c.up = crew
+    return row
 
 // Swarm_page_bound — a wire page's prepub MUST be the address its OWN pub derives. page.pub is proven
 //  by the accompanying grant's signature; prepubOf(pub) is deterministic (the prepub is the pub's
@@ -2443,7 +2481,12 @@ async Swarm_hello(w, ident, frame):
         let crewgrant = null
         try {
             crewgrant = await mint_grant(ident.c.keys, String(frame.page.pub), 'Crew', {}, this.Swarm_now(w))
-            if (crewgrant && !pier.o({ Grant: 'Crew', by: String(crewgrant.by) })[0]) grant_to_C(pier, crewgrant)
+            // THE CREW ROW IS THE GRANT'S HOME (Crew_todo §3): /Crew/mate:<cave>,role/Grant:'Crew' —
+            //  crew matter lives on the crew shelf, not the transport pier.  My own Captain row stands
+            //   beside it, so /Crew renders the whole gang and the Charter is just its signed export.
+            this.Swarm_crew_row(ident, ident.sc.prepub, 'Captain')
+            let crow = this.Swarm_crew_row(ident, frame.page.prepub, String(lpost))
+            if (crewgrant && crow && !crow.o({ Grant: 'Crew', for: String(crewgrant.for) })[0]) { grant_to_C(crow, crewgrant) }
         } catch (er) { console.log('🦑 crew: Grant:Crew mint failed —', er) }
         // FRESH REDEEM FORGIVES A STALE FORGET (Ferry_rebuild Stage 0): retire any legacy tombstone
         //  so a re-linked body-key seals clean — this redeem IS proven fresh consent.
@@ -2509,8 +2552,12 @@ async Swarm_accept(w, ident, frame):
             try {
                 let cc = await verify_grant(frame.grant)
                 if (String(cc.by) === String(frame.page.pub) && String(cc.for) === String(ident.c.keys?.pub || '')) {
-                    if (!pier.o({ Grant: String(cc.to), by: String(cc.by) })[0]) grant_to_C(pier, frame.grant)
-                    console.log('🏴 crew: landed my Grant:' + String(cc.to) + ' from Captain ' + String(cc.by).slice(0, 8) + ' — I am crew')
+                    // MY CERT HOMES ON MY CREW ROW (Crew_todo §3) — beside the Captain's row, so both
+                    //  sides render the same /Crew bundle.
+                    this.Swarm_crew_row(ident, frame.page.prepub, 'Captain')
+                    let myrow = this.Swarm_crew_row(ident, ident.sc.prepub, String(frame.link.post || 'Cave'))
+                    if (myrow && !myrow.o({ Grant: String(cc.to), for: String(cc.for) })[0]) { grant_to_C(myrow, frame.grant) }
+                    console.log('🏴 crew: landed my Grant:' + String(cc.to) + ' from Captain ' + String(cc.by).slice(0, 8) + ' — I am crew (row on /Crew)')
                 }
             } catch (er) { /* forged/absent crew grant — link still seals, just no cert landed */ }
         }
@@ -5195,6 +5242,15 @@ Swarm_reach_pump(w, ident):
     if (w.c.reach_pump_at && (now - w.c.reach_pump_at) < cadence) { return null }
     w.c.reach_pump_at = now
     this.Swarm_reach_sweep_receipts(w, ident)
+    // THE LIVE DOER BINDING (SoundPooling_todo §0.5 / Reach_todo §0 "still owed"): the pool-fill
+    //  serve+land tick rides the ONE pump — knob-gated with the settle (w.c.reach_on, default-off,
+    //   the backpressure discipline) and M-SIDE (Ra_pool_fill_pump, Ghost/M/Ra.g), so the primitive
+    //    stays verb-agnostic here and a Book drives the M seams directly.  Fire-and-forget: the tick
+    //     is async (it may press bytes); a rejection logs loudly, never throws into the pump.
+    if (w.c.reach_on && typeof this.Ra_pool_fill_pump === 'function') {
+        let pf = this.Ra_pool_fill_pump(w, ident)
+        if (pf && pf.catch) { pf.catch((er) => console.log('🏊⚠ pool-fill pump: ' + er)) }
+    }
     return this.Swarm_reach_settle(w, ident)
 
 // Swarm_reach_heard — the TARGET receives a reach frame: mint the inbound copy on MY OWN %Peering (same
@@ -6220,36 +6276,51 @@ async Swarm_ferry_heard(w, ident, frame, code):
     let bodykeys = ident.c.keys ? { pub: ident.c.keys.pub, key: ident.c.keys.key, prepub: ident.sc.prepub } : null
     let blob = null
     try { blob = await unseal(String(code), frame.salt, frame.sealed) } catch (e) { console.log('🦑 ferry: unseal failed (wrong code or tampered) — no account landed'); return null }
+    // PEEK BEFORE GRAFTING: a KEYLESS snap (the cert-crew {ferry:1} export) takes THE LIBRARY MERGE;
+    //  a KEYED snap is a legacy in-flight old-model ceremony and keeps the graft-beside path below so
+    //   a ceremony mid-air still completes.
+    let got = null
+    try { got = this.decode_wh_lines(JSON.parse(blob).snap) } catch (e) { got = null }
+    if (!got || !got.C) { console.log('🦑 ferry: bad account snap — nothing landed'); return null }
+    if (!(got.C.sc.pub && got.C.sc.key)) {
+        if (!bodykeys) { console.log('🦑 ferry: no signing key (keyless blob, keyless self) — no account landed'); return null }
+        // THE LIBRARY MERGE (Crew_todo §0.1 — owner: "just a regular Identity"): ONE identity — my own
+        //  key, my Grant:Crew, my own copy of the shared library.  The ferried account's Peering rows
+        //   (Idzeugs = the library, friend %Piers, the %Body roster, the %Charter) fold into MY Peering —
+        //    its rows about ME are skipped (I don't dial myself, and Swarm_body_take below re-mints my
+        //     roster row with my own name).  No second %Identity is ever minted, so the keyless-husk
+        //      persistence gap (every soul.c.keys-gated seam skipped it) cannot form: the merged matter
+        //       rides my identity's own persist path and survives reload with it.
+        let mine = this.Swarm_peering(ident)
+        let soulname = String(got.C.sc.prepub || '')
+        for (const child of got.C.o()) {
+            let cmk = Object.keys(child.sc)[0]
+            if (cmk === 'Peering' && mine) {
+                for (const row of child.o()) {
+                    if (row.sc.pub && String(row.sc.pub) === String(bodykeys.pub)) { continue }
+                    this.Swarm_graft(mine, row)
+                }
+            } else if (cmk !== 'Identity') {
+                this.Swarm_graft(ident, child)
+            }
+        }
+        // land-of-prepub: I AM my own address (prepubOf of my key) — nothing to re-point.  Row = pub +
+        //  post + name; THE NAME STAYS WITH THE INSTANCE (owner 2026-08-30: "Captain Grav and Cave Guw").
+        //   A merged Cave's BODY key IS its identity key (one identity, one key) — state it so
+        //    Swarm_body_mine/body_key resolve me without a separate bodykey mint.
+        if (!ident.c.bodykey) { ident.c.bodykey = { pub: bodykeys.pub, key: bodykeys.key, prepub: bodykeys.prepub } }
+        let body = this.Swarm_body_take(ident, bodykeys.pub, priorPost || 'Cave', null)
+        if (body && ident.sc.friendly) { body.sc.name = String(ident.sc.friendly) }
+        console.log('🦑 ferry(merge): the account landed IN my own identity ' + String(bodykeys.prepub).slice(0, 8) + ' — a Cave of ' + soulname.slice(0, 8) + ' by Grant:Crew; one identity, no husk')
+        return ident
+    }
+    // LEGACY KEYED BLOB (an in-flight old-model ceremony completing mid-air): graft beside, thaw the
+    //  key — the retired soul-copy flow, kept only until live-proven dead (Crew_todo §0.6).
     let soul = this.Swarm_import(container, blob)
     if (!soul) { return null }
     if (bodykeys) { soul.c.bodykey = bodykeys }
-    // CERT-CREW (2026-09-02): a keyless ferry blob means this device NEVER holds the soul key — it keeps
-    //  its OWN body key (above) as its sole signing identity and belongs to the crew by the Charter it
-    //   just received, not by wielding the soul's key.  It holds eed's ACCOUNT (library, friend-piers,
-    //    the soul-signed Charter naming this body) but signs + routes as ITSELF.  A legacy KEYED blob
-    //     (an in-flight old-model ceremony) still hydrated soul.c.keys in Swarm_import — support it so a
-    //      ceremony mid-air completes, but require SOME key to sign as.
-    let cave = !soul.c.keys
-    if (!soul.c.keys && !bodykeys) { console.log('🦑 ferry: no signing key (neither soul nor body) — no account landed'); return null }
-    if (cave && bodykeys) {
-        // address + route AS MY OWN BODY, never as the soul name (that is the Captain's door, and
-        //  contending for it is the whole collision this rebuild retires).  The account identity is
-        //   eed's (name eed831f1 — that is WHOSE library this is); the NETWORK identity is my body.
-        let cavepeer = this.Swarm_peering(soul)
-        if (cavepeer && String(cavepeer.sc.address || '') !== String(bodykeys.prepub)) {
-            cavepeer.sc.address = String(bodykeys.prepub)
-            cavepeer.bump()
-        }
-        console.log('🦑 ferry(cert-crew): I am my OWN identity ' + String(bodykeys.prepub).slice(0, 8) + ', now a Cave of ' + String(soul.sc.prepub).slice(0, 8) + ' — I hold the crew Charter, not the soul key')
-    }
-    // land-of-prepub (Phase D): no seat to compute — I AM my own address (prepubOf of my body key);
-    //  the "three Caves all read _1" class of bug cannot form.  Row = pub + post + name.
     let ownpub = bodykeys ? bodykeys.pub : soul.sc.prepub
     let body = this.Swarm_body_take(soul, ownpub, priorPost || 'Cave', null)
-    // THE NAME STAYS WITH THE INSTANCE (owner 2026-08-30: "Captain Grav and Cave Guw"): the name this
-    //  human wrote at THIS device's name-gate belongs to THIS body — the landed soul's friendly must not
-    //   swallow it.  Filed on the %Body row (the family's own address book, Ferry_todo facet D); friends
-    //    still see the ONE soul's friendly.  The pre-ferry `ident` IS this device's named husk.
     if (body && ident.sc.friendly) { body.sc.name = String(ident.sc.friendly) }
     console.log('🦑 ferry: account landed — I am now a body of ' + String(soul.sc.prepub).slice(0, 8) + ' as ' + (priorPost || 'Cave'))
     return soul
@@ -7161,7 +7232,10 @@ async Swarm_ferry_consume(w, code, accept):
     //     could still return the husk and the device would present as blank).  Guarded so a Book path with no
     //      Auto layer just skips it (the account still landed); this activation seam's only FULL proof is the
     //       live two-tab test (Auto's own note, Identity_persist §3), so it is verified live, not headless.
-    if (soul && soul.c && soul.c.keys && soul.sc.Identity && soul.c.up && typeof this.Clustation_concrete === 'function') {
+    //  MERGE GUARD (Crew_todo §0.1): the library-merge ferry returns MY OWN identity (soul === ident) —
+    //   already active, already persisted by its own path; the transition/persist block below is for the
+    //    LEGACY keyed flow only (a ferried soul that has no row on this browser yet).
+    if (soul && soul !== ident && soul.c && soul.c.keys && soul.sc.Identity && soul.c.up && typeof this.Clustation_concrete === 'function') {
         try { this.Clustation_concrete(soul.c.up, soul.sc.Identity, { pub: soul.c.keys.pub, key: soul.c.keys.key, prepub: soul.sc.prepub, friendly: soul.sc.friendly }) } catch (er) { console.log('🦑 ferry: concrete threw — soul landed, activation deferred to boot') }
         // THE ARREST FIX (owner 2026-08-30: "disk holds 1 account(s) but none is eed…"): concrete
         //  ACTIVATES but never PERSISTS — it is the resume path's helper and presumes a disk row
@@ -7225,7 +7299,7 @@ async Swarm_ferry_consume(w, code, accept):
             //   ferry_got carries `body` (the Cave's own body-key pub, distinct from the shared soul pub) and
             //    `name` (what THIS human wrote at THIS device's name-gate — the pre-ferry ident's friendly).
             //     The Captain notes it as a %Body,role:Cave; friends still see the one soul.
-            let ack_bodypub = soul.c && soul.c.bodykey ? String(soul.c.bodykey.pub || '') : ''
+            let ack_bodypub = soul.c && soul.c.bodykey ? String(soul.c.bodykey.pub || '') : String(this.Swarm_signas(soul)?.pub || '')   // merge path: my body pub IS my identity pub
             let ack_name = String(ident.sc.friendly || '')
             if (ack_ident && ack_pier) { this.Swarm_deliver(w, ack_ident, ack_pier.sc.pub, { kind: 'ferry_got', body: ack_bodypub, name: ack_name }) }
         } catch (er) {}

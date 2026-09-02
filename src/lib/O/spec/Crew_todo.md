@@ -21,28 +21,47 @@ The grant-cert core is BUILT + PROVEN (committed `063d790c "Grant:Crew"`): minte
  the Cave, verified by `Swarm_voucher_ok`'s cert-crew road. Gates: `crew-cert-test.ts` 6/6, InvWalk 8/8
   (`Grant:Crew` lands both piers; `soul_key_copied` stays ABSENT), InvSeal 5/5, SwarmBody 23/23. In order:
 
-1. **The library merge + reload-survival (the one real fork left).** Post-ferry the Cave holds TWO
-    identities: its own keyed one (persists fine) and the Captain's account grafted as a separate keyless
-     identity (the library — does NOT persist; the `soul.c.keys`-gated seams at `Swarm.g` ~7106 skip it).
-      Merge the ferried library into the Cave's OWN identity — one identity, own key, a Grant:Crew, its
-       own library copy. Rework `Swarm_ferry_heard`'s import; Book-gate on InvWalk; verify which identity
-        is ACTIVE post-boot, on disk and live (the Door UI lies).
-2. **Build the `/Crew` structure (§3)** — give the crew a home as matter: `/Crew/pier:<prepub>,role/`
-    rows holding the `Grant:Crew`s; `Swarm_crew_grant` reads it instead of grant-scanning the Peering;
-     the Charter becomes the signed export of the subtree. Migration: the seal mints the row + homes the
-      grant there.
-3. **SoundPooling over the crew.** A Cave is a Pier we talk certain music protocols to, QUIETLY (no UI
-    ceremony): `Radio_dial_pool` → `Swarm_reach_book` → `Swarm_reach_serve` doer →
-     `Heist_catalog_land(mardir:'pool')`. Then **daemon-as-Cave**: the daemon joins your Crew (same
-      ceremony, own identity + Grant:Crew) — the while-you-sleep music-refreshing system. Enumerate
-       `/Crew` for the pool peers.
+1. ✅ **The library merge — BUILT + Book-gated (2026-09-03).** `Swarm_ferry_heard` peeks the blob: a
+    keyless (cert-crew) snap MERGES the account's Peering rows (Idzeugs/piers/roster/Charter) into the
+     Cave's OWN identity — rows about ME skipped, no second `%Identity` ever minted, so the keyless-husk
+      persistence gap cannot form (the merged matter rides my identity's own persist path). A merged
+       Cave's body key IS its identity key (stated on `.c.bodykey` so body_mine resolves). A KEYED blob
+        keeps the legacy graft-beside path (in-flight old-model ceremony only). Gates: InvWalk 8/8
+         (merged_into_self + no_keyless_husk + content_crossed; soul_key_copied ABSENT), InvFerry 6/6 +
+          SwarmSpread 5/5 (both re-authored off the old soul-copy claims; SwarmSpread's ferry %see
+           re-sworn to "folds it into its own identity … the soul key never crosses"), InvSeal 5/5,
+            SwarmBody 23/23, SwarmFerry 1/1, SwarmStaple 8/8 (beat-7 friend-trust canary byte-identical;
+             beat-8 roundtrip still `identical`). STILL OWED LIVE: a real reload on a linked device
+              (library + Grant:Crew survive; which identity is active post-boot — the Door UI lies,
+               check disk).
+2. ✅ **The `/Crew` structure — LANDED (2026-09-03).** `/Crew/mate:<prepub>,role/Grant:'Crew'` minted at
+    BOTH seal arms (Captain's own row + each mate's row; the grant homes on the row of the member it is
+     FOR); `Swarm_crew_grant` reads `/Crew` first (legacy pier-scan fallback for pre-migration accounts);
+      the ferry merge carries the bundle so both sides render the SAME ledger (InvWalk beat 6 swears
+       `crew_row_holds_cert` + `captain_ledger_lists_crew`; snap shows identical /Crew on both piers).
+        Mainkey is **`%mate`** — not `%Pier` (impersonation) and not lowercase `%pier` (`%Caperlet`
+         already wears `pier:` as a property). Owed on top: the Crew UI panel still reads the %Body
+          roster, not /Crew (flip it); Charter-as-signed-export not yet wired; no prune verb (rows are
+           grow-only).
+3. ✅ **SoundPooling over the crew — FIRST INCREMENT LANDED (2026-09-03, Book `MusuPoolFill` 6/6).**
+    The pool-fill is a booked `%Reach,to:Cave,of:<id>,for:serve` (`Ra_pool_fill_book`), served by the
+     Cave from its OWN library (`Ra_pool_fill_serve` → `Siphon_pull` → `Ra_press` →
+      `Heist_catalog_land(mardir:'pool')` — zero new transport, the Siphonation-proven chain), landed
+       Captain-side off the crew mirror (`Ra_pool_fill_land`), all under one knob-gated tick
+        (`Swarm_reach_pump` → `Ra_pool_fill_pump`, `w.c.reach_on`). Honest refusal stands as
+         `state:refused,why:not_in_library` on both sides. OWED: the live cross-device BYTE lane (the
+          Mag-travels shape — a live fill currently ends Cave-side with the Captain's reach standing
+           'arrived' awaiting transport); the booking gesture (owner-gated glass); then
+            **daemon-as-Cave** (same ceremony, own identity + Grant:Crew) — the while-you-sleep system.
 4. **A Book where a FRIEND honours the crew voucher** (third identity: Captain, Cave, friend — the
     verify road is crypto-proven but not Book-proven from a friend's seat).
 5. **Finish the %Ferry req inversion against the new carry** (§6) + **Stage-4 fail-closed consent**
     (send gates on `req:FerryConfirm.finished`, NEVER on humdinger-absence — the fails-open hole) +
      the **%Reach cert-offer** (settles landed | refused,why | dead — every dead-end names itself).
-6. **Retire the soul-copy path**: `Swarm_adopt_redeem` (~5902) still key-copies; the `{ferry:1}` export
-    already bypasses `Swarm_ferry_link`'s transplant — delete the dead branches once live-proven.
+6. **Retire the soul-copy path**: `Swarm_adopt_redeem` (~5902) still key-copies, and **SwarmSpread's
+    beat-3 %see still SWEARS it** ("the soul seals across … now holds the very same soul key") — that
+     sworn sentence is the retirement's Book gate: re-author beat 3 + retire the adopt key-copy
+      together. `Swarm_ferry_heard`'s legacy keyed branch goes at the same time, once live-proven.
 7. **Owner's live 2-device walk** of the rebuilt ceremony (cross-wire races are live-only by nature).
 8. **Housekeeping:** prune eed's ~12 dead Caves (all NotGrant); stop reload-piling (trust the ~30s relay
     reaper); fix ~5 stale Swarm.g comments (4746/4857/5047/5126/5277) claiming decline mints a NotGrant.
@@ -121,10 +140,11 @@ The Crew gets a HOME in the tree instead of existing only as a scan:
       /pier:<prepub>,role:<Captain|Cave|daemon…>
         /Grant:'Crew',by:<soul-pub>,for:<body-pub>,…
 
-- Lowercase **`%pier`** is its own mainkey — "a naming of a Pier" — whose value IS the join key (the
-   `%Spotlight,src` idiom). It is NOT `%Pier`: a second shape wearing the transport mainkey under a
-    different container would be the magazine-minted-`%Record` disease. `%Pier` in the Peering stays
-     the one holding of the transport peer; `/Crew/pier:$prepub` points at it.
+- **`%mate`** is its own mainkey — "a naming of a crew member" — whose value IS the join key (the
+   `%Spotlight,src` idiom). It is NOT `%Pier` (a second shape wearing the transport mainkey would be the
+    magazine-minted-`%Record` disease) and not lowercase `%pier` either (`%Caperlet` already wears
+     `pier:` as a property — a mainkey must never appear as another shape's non-first key). `%Pier` in
+      the Peering stays the one holding of the transport peer; `/Crew/mate:$prepub` points at it.
 - **`role`** rides the row — what kind of crew member this is. This is where Division's Post concept
    lands (the old Charter payload `pub:Post:soulname` was trying to say exactly this).
 - **Piers stay homed in the Peering** (transport untouched — every Peeroleum sweep keeps its one
@@ -292,7 +312,7 @@ Friends learn the crew via roster gossip and render any member as "you" — one 
     `expecting()`. ttlilt is NOT a scheduler — steady asks stay real wire heartbeats.
 - Book-inertness: total determinism; witness notes are boolean OUTCOMES, never timestamps; gate on
    ok/exit-code, never cross-run dige; fixtures re-record ONCE, at a declared seam.
-- Two shapes under one mainkey = the identity tell (why `/Crew` rows wear `%pier`, not `%Pier`).
+- Two shapes under one mainkey = the identity tell (why `/Crew` rows wear `%mate`, not `%Pier`).
 - Every dead-end must name itself — a vanished knock must be indistinguishable from nothing, not from
    "working, please wait."
 

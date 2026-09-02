@@ -5,7 +5,6 @@ story:SwarmSpread
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.037
-      sample=0.043,at=1788268137
       sample=0.028,at=1788268145
       sample=0.033,at=1788297300
       sample=0.057,at=1788298921
@@ -15,8 +14,8 @@ story:SwarmSpread
       sample=0.038,at=1788326535
       sample=0.059,at=1788326811
       sample=0.02,at=1788328066
-    TimeTotal:step,avg=0.008
-      sample=0.009,at=1788268137
+      sample=0.038,at=1788354828
+    TimeTotal:step,avg=0.007
       sample=0.006,at=1788268145
       sample=0.007,at=1788297300
       sample=0.011,at=1788298921
@@ -26,6 +25,7 @@ story:SwarmSpread
       sample=0.008,at=1788326535
       sample=0.012,at=1788326811
       sample=0.004,at=1788328066
+      sample=0.008,at=1788354828
   step,dige:0000000000000000
   step=2,dige:3338a029cfe39e2e
     Assertion:a-blank-device-offers,sentence:a blank device offers itself as a body not a role — the adoption offer proves the device holds its own key and carries no Post so the device does not yet know it will be a Cave
@@ -34,5 +34,5 @@ story:SwarmSpread
     Assertion:the-device-consents-to,sentence:the device consents to the role and the roster routes both — the box derives Cave from the proposed grant the phone takes Captain and each body answers at its own key-derived name — the first charter still verifies while carrying no seat column at all
   step=4,dige:be9a1e2762c37c76
     Assertion:the-ceremony-fails-closed,sentence:the ceremony fails closed — a tampered seal a wrong nonce and a withheld consent each produce no body and the soul never lands on a device that flubbed the seal or that the human did not confirm
-  step=5,dige:9ce4f3b7eb7a1f1b
-    Assertion:the-account-ferries-over,sentence:the account ferries over the sealed pier — once a MyCave pier stands the soul exports and seals its whole account across to the blank device which unseals it with the fragment code and now holds the very same soul key as a Cave while a wrong code lands no account at all
+  step=5,dige:18e2e721d98276df
+    Assertion:the-account-ferries-over,sentence:the account ferries over the sealed pier — once a MyCave pier stands the soul exports and seals its account data across to the device which unseals it with the fragment code and folds it into its own identity as a Cave keeping its own key while the soul key never crosses and a wrong code lands no account at all

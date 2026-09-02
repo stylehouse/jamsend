@@ -10,7 +10,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '14e01eac2f9a4979~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '6bcf929ecb1a13b1~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -5801,6 +5801,231 @@ MusuSmuggle_witness(w) {
     // #4 THE QUEUE FOLLOWS THE HOARD: when the Original arrives the upgrade drops — a served fetch leaves the
     //  queue, never lingers as a stale want.
     if (a && a.sc.queued === '0' && +a.sc.o2_dropped === 1) this.story_swear(w, 'the queue follows the hoard — when the original arrives the upgrade drops and no stale fetch lingers')
+
+},
+// ══ MusuPoolFill — the FIRST LIVE SOUNDPOOLING INCREMENT's gate: Captain books a pool fill as a %Reach ═════
+//  and the crew Cave's LIVE DOER serves it (SoundPooling_todo §0.5 / Reach_todo §0 "still owed").
+//  What this Book gates end to end, on pure C-matter + stub navs (the MusuPress fixture law):
+//    beat 2  stand — one soul (Alice) as TWO bodies: Cap (Captain, bodykey) + Cavey (Cave, bodykey),
+//              rosters noted both ways (the road + the report resolve off them); the Cave's own
+//               library holds Original o1 with bytes on a stub nav; both sides' pool shelves stand;
+//                the Captain's nav reads the CREW-MIRROR paths off what the Cave wrote (the byte
+//                 crossing is a nav read — the seam the live Repli byte-lane will stand behind).
+//    beat 3  book — Ra_pool_fill_book: the standing %Reach (to:'Cave' of:o1 for:serve) wears by and
+//              STANDS booked (wire inert without a station; re-book is idempotent — no twin).
+//    beat 4  serve — the frame the station would carry is hand-fed (Swarm_reach_road — the wire lane
+//              itself is SwarmBody beat-12 gated); Ra_pool_fill_serve presses o1 from the Cave's OWN
+//               library into the Cave's pool (Siphon_pull → Ra_press v1 → Heist_catalog_land — the
+//                one door), the tri-state verdict marks arrived, the report fires once and the
+//                 inbound copy graduates.
+//    beat 5  land — the reach_done ack lands 'arrived' on the Captain; the crew mirror learns the
+//              served artifact's pool path; Ra_pool_fill_land siphons it byte-for-byte into the
+//               Captain's OWN pool (the pool-marked catalog row) and the fulfilled reach drops.
+//    beat 6  refuse — a track the Cave does not hold refuses honestly: 'not_in_library' crosses as
+//              the why and the refused receipt STANDS on both sides (the tri-state's third posture).
+//  DETERMINISM: name-seeded keys, pinned w.sc.now per beat, fixed byte pattern, no Date.now().
+//  CONVENTION (Musu*): the world MUST be named MusuPoolFill.
+
+MusuPoolFill(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuPoolFill_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+MusuPoolFill_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+},
+MusuPoolFill_note(w, sc) {
+    let t = this.MusuPoolFill_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+},
+async MusuPoolFill_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.MusuPoolFill_stand(w) }
+        if (n === 3) { await this.MusuPoolFill_book(w) }
+        if (n === 4) { await this.MusuPoolFill_serve(w) }
+        if (n === 5) { await this.MusuPoolFill_land(w) }
+        if (n === 6) { await this.MusuPoolFill_refuse(w) }
+    }
+    this.MusuPoolFill_witness(w)
+    await this.Musu_float(w)
+
+},
+// beat 2 — stand.  Two bodies of one soul + the Cave's library + both pools + the two stub navs.
+//  The homes ride the IDENTITY's .c (fill_mw and friends — the Ra_pool_fill_homes Book override), so
+//   a run on a live tab can never leak into the tab's radio world.
+async MusuPoolFill_stand(w) {
+    this.MusuPoolFill_note(w, { reached: 'step_2' })
+    w.sc.now = 1788300000
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    acct.c.up = w
+    let ckeys = await this.Swarm_mint_keys('MusuPoolFill-Cap')
+    let cap = this.Swarm_identity(acct, ckeys, 'Cap')
+    cap.c.bodykey = await this.Swarm_mint_keys('MusuPoolFill-Cap-body')
+    w.c.cap = cap
+    let vkeys = await this.Swarm_mint_keys('MusuPoolFill-Cavey')
+    let cavey = this.Swarm_identity(acct, vkeys, 'Cavey')
+    cavey.c.bodykey = await this.Swarm_mint_keys('MusuPoolFill-Cavey-body')
+    w.c.cavey = cavey
+    let bare = String(cap.sc.prepub)
+    this.Swarm_body_take(cap, null, 'Captain', bare)
+    this.Swarm_body_note(cap, String(cavey.c.bodykey.pub), 'Cave', bare + '_1', 'Cavey')
+    this.Swarm_body_note(cavey, String(cap.c.bodykey.pub), 'Captain', bare, 'Cap')
+    // the Cave's own music — an Original whose bytes live on the stub nav (the MusuPress shape)
+    let lib = w.i({ Library: 1, name: 'cavelib' })
+    lib.c.up = w
+    let orig = lib.i({ Record: 1, id: 'o1', artist: 'Auteur', title: 'One', path: 'music/a/one.wav', ext: 'wav' })
+    orig.c.up = lib
+    let cpool = w.i({ Library: 1, name: 'cavepool' })
+    cpool.c.up = w
+    let src = new Uint8Array(64)
+    for (let i = 0; i < 64; i++) { src[i] = (i * 7 + 13) % 251 }
+    w.c.src_bytes = src
+    let cwrites = {}
+    w.c.cave_writes = cwrites
+    let cnav = {}
+    cnav.bin_read = async (d, f) => (d === 'music/a' && f === 'one.wav') ? src : null
+    cnav.bin_write = async (d, f, b) => { cwrites[d + '/' + f] = (b instanceof Uint8Array) ? b : new Uint8Array(b) }
+    cnav.read_file = async (d, f) => null
+    cnav.write_file = async (d, f, s) => { }
+    cnav.dir = async (p) => null
+    cavey.c.fill_mw = w
+    cavey.c.fill_lib = lib
+    cavey.c.fill_pool = cpool
+    cavey.c.fill_nav = cnav
+    // the Captain's side — its own pool + a nav that reads the crew-mirror paths off the Cave's writes
+    let kpool = w.i({ Library: 1, name: 'cappool' })
+    kpool.c.up = w
+    let kwrites = {}
+    w.c.cap_writes = kwrites
+    let knav = {}
+    knav.bin_read = async (d, f) => cwrites[d + '/' + f] || null
+    knav.bin_write = async (d, f, b) => { kwrites[d + '/' + f] = (b instanceof Uint8Array) ? b : new Uint8Array(b) }
+    knav.read_file = async (d, f) => null
+    knav.write_file = async (d, f, s) => { }
+    knav.dir = async (p) => null
+    let mirror = w.i({ Library: 1, name: 'crewmirror' })
+    mirror.c.up = w
+    cap.c.fill_mw = w
+    cap.c.fill_pool = kpool
+    cap.c.fill_nav = knav
+    cap.c.fill_from = mirror
+    w.c.set_up = 1
+    this.MusuPoolFill_note(w, { stood: 1 })
+
+},
+// beat 3 — book.  The booking seam only books toward a rostered crew Cave; the intent stands booked
+//  (wire inert — no station) and a re-book lands on the same particle.
+async MusuPoolFill_book(w) {
+    this.MusuPoolFill_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788300010
+    let cap = w.c.cap
+    let reach = this.Ra_pool_fill_book(w, cap, 'o1')
+    this.Ra_pool_fill_book(w, cap, 'o1')
+    let standing = this.Swarm_peering(cap).o({ Reach: 1 })
+    let row = { booked: 1 }
+    if (reach && String(reach.sc.state) === 'booked' && reach.sc.by) { row.booked_stands = 1 }
+    if (standing.length === 1) { row.idempotent = 1 }
+    let addr = this.Swarm_reach_addr(cap, reach)
+    if (addr && reach && String(reach.sc.to) === 'Cave') { row.addr_resolves = 1 }
+    this.MusuPoolFill_note(w, row)
+
+},
+// beat 4 — serve.  The Cave hears the frame through the road gate and the LIVE DOER presses the
+//  asked track from its own library into its own pool; tri-state → arrived; reported + graduated.
+async MusuPoolFill_serve(w) {
+    this.MusuPoolFill_note(w, { reached: 'step_4' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788300020
+    let cap = w.c.cap
+    let cavey = w.c.cavey
+    let inb = this.Swarm_reach_road(w, cavey, { reach: { of: 'o1', to: 'Cave', for: 'serve', by: String(cap.c.bodykey.pub) } })
+    let served = await this.Ra_pool_fill_serve(w, cavey)
+    let row = { served: 1 }
+    if (inb) { row.road_admitted = 1 }
+    if (served === 1) { row.doer_served = 1 }
+    let ccard = this.Ra_rec_find(cavey.c.fill_pool, { Record: 1, id: 'o1' })
+    if (ccard && ccard.sc.path === 'a/one.wav' && /^[0-9a-f]{64}$/.test('' + (ccard.sc.body_hash || ''))) { row.cave_pressed = 1 }
+    let wrote = w.c.cave_writes['pool/a/one.wav']
+    if (wrote && wrote.length === w.c.src_bytes.length) { row.cave_bytes_landed = 1 }
+    if (this.Swarm_peering(cavey).o({ Reach: 1 }).length === 0) { row.cave_graduated = 1 }
+    this.MusuPoolFill_note(w, row)
+
+},
+// beat 5 — land.  The ack walks the Captain's reach to 'arrived'; the crew mirror learns the served
+//  artifact at its pool path; the landing siphons it into the Captain's OWN pool and the reach drops.
+async MusuPoolFill_land(w) {
+    this.MusuPoolFill_note(w, { reached: 'step_5' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788300030
+    let cap = w.c.cap
+    this.Swarm_reach_ack(w, cap, { state: 'arrived', reach: { to: 'Cave', of: 'o1', for: 'serve' } })
+    let a = this.Swarm_peering(cap).o({ Reach: 1, of: 'o1' })[0]
+    let row = { landed: 1 }
+    if (a && String(a.sc.state) === 'arrived') { row.acked_arrived = 1 }
+    let mirror = cap.c.fill_from
+    let mrec = mirror.i({ Record: 1, id: 'o1', artist: 'Auteur', title: 'One', path: 'pool/a/one.wav', ext: 'wav' })
+    mrec.c.up = mirror
+    let landed = await this.Ra_pool_fill_land(w, cap)
+    if (landed === 1) { row.pool_landed = 1 }
+    let kcard = this.Ra_rec_find(cap.c.fill_pool, { Record: 1, id: 'o1' })
+    if (kcard && kcard.sc.path === 'a/one.wav' && /^[0-9a-f]{64}$/.test('' + (kcard.sc.body_hash || ''))) { row.cap_card = 1 }
+    let wrote = w.c.cap_writes['pool/a/one.wav']
+    if (wrote && wrote.length === w.c.src_bytes.length) {
+        let same = 1
+        for (let i = 0; i < wrote.length; i++) { if (wrote[i] !== w.c.src_bytes[i]) { same = 0 } }
+        if (same) { row.byte_faithful = 1 }
+    }
+    if (this.Swarm_peering(cap).o({ Reach: 1 }).length === 0) { row.graduated = 1 }
+    this.MusuPoolFill_note(w, row)
+
+},
+// beat 6 — refuse.  A track the Cave does not hold: the doer refuses with a named why; the receipt
+//  stands on both sides (never a silent hang and never a fake landing).
+async MusuPoolFill_refuse(w) {
+    this.MusuPoolFill_note(w, { reached: 'step_6' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788300040
+    let cap = w.c.cap
+    let cavey = w.c.cavey
+    this.Ra_pool_fill_book(w, cap, 'oX')
+    this.Swarm_reach_road(w, cavey, { reach: { of: 'oX', to: 'Cave', for: 'serve', by: String(cap.c.bodykey.pub) } })
+    await this.Ra_pool_fill_serve(w, cavey)
+    let inb = this.Swarm_peering(cavey).o({ Reach: 1, of: 'oX' })[0]
+    let row = { refused: 1 }
+    if (inb && String(inb.sc.state) === 'refused' && String(inb.sc.why) === 'not_in_library') { row.cave_refused = 1 }
+    this.Swarm_reach_ack(w, cap, { state: 'refused', why: 'not_in_library', reach: { to: 'Cave', of: 'oX', for: 'serve' } })
+    let mine = this.Swarm_peering(cap).o({ Reach: 1, of: 'oX' })[0]
+    if (mine && String(mine.sc.state) === 'refused' && String(mine.sc.why) === 'not_in_library') { row.receipt_stands = 1 }
+    this.MusuPoolFill_note(w, row)
+
+},
+// ── the witness — %see gated on TRUTH not beat number, once-noticed (no commas; em-dashes). ──
+MusuPoolFill_witness(w) {
+    if (!w.c.set_up) { return }
+    let T = this.MusuPoolFill_T(w)
+    let b = T.o({ booked: 1 })[0]
+    // #1 THE BOOKING: a standing addressed intent — not a call.
+    if (b && +b.sc.booked_stands === 1 && +b.sc.idempotent === 1 && +b.sc.addr_resolves === 1) this.story_swear(w, 'the captain books a pool fill as a standing reach toward its crew cave — the intent wears by and resolves its address and a re-book lands on the one particle')
+    let s = T.o({ served: 1 })[0]
+    // #2 THE LIVE DOER: own-library-only press through the one catalog door; tri-state honoured.
+    if (s && +s.sc.road_admitted === 1 && +s.sc.doer_served === 1 && +s.sc.cave_pressed === 1 && +s.sc.cave_bytes_landed === 1 && +s.sc.cave_graduated === 1) this.story_swear(w, 'the cave road admits its captain and the live doer presses the asked track from its own library into its pool — the artifact stands servable behind the one catalog door and the served copy graduates')
+    let l = T.o({ landed: 1 })[0]
+    // #3 THE LANDING: the pool-marked catalog row on the Captain — byte-faithful — reach closed.
+    if (l && +l.sc.acked_arrived === 1 && +l.sc.pool_landed === 1 && +l.sc.cap_card === 1 && +l.sc.byte_faithful === 1 && +l.sc.graduated === 1) this.story_swear(w, 'the arrived ack lands the fill — the captain siphons the served artifact through the crew mirror byte for byte into its own pool and the fulfilled reach drops away')
+    let r = T.o({ refused: 1 })[0]
+    // #4 THE HONEST REFUSAL: named why crossing as a receipt on both sides.
+    if (r && +r.sc.cave_refused === 1 && +r.sc.receipt_stands === 1) this.story_swear(w, 'a track the cave does not hold refuses honestly — not in library crosses as the named why and the refused receipt stands on both sides')
 
 },
 

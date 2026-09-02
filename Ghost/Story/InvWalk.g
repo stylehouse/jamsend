@@ -321,7 +321,7 @@ async InvWalk_consume(w, cavey_ident, code, accept):
             let ack_soul = dsoul || (pend.frame && pend.frame.salt ? String(pend.frame.salt).split(':')[0] : '')
             let ack_pier = (ack_soul ? ack_piers.find((p) => { let pp = String(p.sc.pub || ''); return pp && (pp === ack_soul || pp.startsWith(ack_soul) || ack_soul.startsWith(pp)) ? 1 : 0 }) : null)
                 || ack_piers.find((p) => this.Swarm_pier_live(p, 'MyCave'))
-            let ack_bodypub = soul.c && soul.c.bodykey ? String(soul.c.bodykey.pub || '') : ''
+            let ack_bodypub = soul.c && soul.c.bodykey ? String(soul.c.bodykey.pub || '') : String(this.Swarm_signas(soul)?.pub || '')   // merge path: my body pub IS my identity pub
             let ack_name = String(cavey_ident.sc.friendly || '')
             if (ack_pier) { this.Swarm_deliver(w, soul, ack_pier.sc.pub, { kind: 'ferry_got', body: ack_bodypub, name: ack_name }) }
         } catch (er) {}
@@ -355,16 +355,25 @@ async InvWalk_consume_got(w):
     if (top && top.c) { delete top.c.consenter }
     let eidz = soul ? this.Swarm_peering(soul)?.o({ Idzeug: 1 }).find((z) => z.sc.genre === 'Jazz') : null
     let row = { consumed: 1 }
-    // CERT-CREW (2026-09-02): the account DATA crosses, the SOUL KEY does NOT.  The old model asserted
-    //  the Cave now HELD Alice's soul key (soul.c.keys.pub === alice's) — the "became eed" copy this
-    //   rebuild retires.  The new truth: the Cave keeps its OWN body key as its sole identity and never
-    //    holds Alice's soul key — membership will be proven by the Charter cert, not by the key.  That
-    //     absence IS the security property, so it is what we assert.
-    if (soul && soul.c && soul.c.bodykey && !(soul.c.keys && String(soul.c.keys.pub) === String(alice.c.keys.pub))) { row.account_crossed = 1 }
+    // THE LIBRARY MERGE (Crew_todo §0.1): the ferried account DATA folds INTO the Cave's OWN identity —
+    //  ferry_heard returns cavey ITSELF (one identity: own key + Grant:Crew + Alice's library), never a
+    //   grafted-beside keyless husk.  The soul key still never crosses; that absence stays the asserted
+    //    security property.
+    if (soul && soul === cavey) { row.merged_into_self = 1 }
+    if (soul && soul.c && soul.c.keys && !(String(soul.c.keys.pub) === String(alice.c.keys.pub))) { row.account_crossed = 1 }
     if (soul && soul.c && soul.c.keys && String(soul.c.keys.pub) === String(alice.c.keys.pub)) { row.soul_key_copied = 1 }   // must STAY absent — the forbidden old behaviour
-    // CERT-CREW: the Cave keeps its OWN body key (its network identity) and holds Alice's account.
-    if (soul && soul.c && soul.c.bodykey) { row.cave_kept_own_key = 1 }
+    if (soul && soul.c && soul.c.keys) { row.cave_kept_own_key = 1 }
+    // no second %Identity wearing Alice's prepub may exist in cavey's container (the husk gap, closed)
+    let husk = cavey && cavey.c.up ? cavey.c.up.o({ Identity: 1 }).find((i) => i !== cavey && String(i.sc.prepub || '') === String(alice.sc.prepub || '')) : null
+    if (!husk) { row.no_keyless_husk = 1 }
     if (eidz) { row.content_crossed = 1 }
+    // THE CREW HAS A HOME (Crew_todo §3): /Crew/mate:<prepub>,role/Grant:'Crew' on BOTH sides — the
+    //  Cave's own row holds its cert; the Captain's ledger shows the same bundle.
+    let ccrew = cavey ? cavey.o({ Crew: 1 })[0] : null
+    let cmyrow = ccrew ? ccrew.o({ mate: String(cavey.sc.prepub || ''), role: 'Cave' })[0] : null
+    if (cmyrow && cmyrow.o({ Grant: 'Crew' })[0]) { row.crew_row_holds_cert = 1 }
+    let acrew = alice ? alice.o({ Crew: 1 })[0] : null
+    if (acrew && acrew.o({ mate: 1, role: 'Captain' })[0] && acrew.o({ mate: String(cavey.sc.prepub || ''), role: 'Cave' })[0]) { row.captain_ledger_lists_crew = 1 }
     // ferry_got ack: InvWalk_pump's live-frame handler walks the soul req to 'got' on seeing the frame
     let s6 = this.Swarm_ferry_role('soul')
     if (s6 && !s6.sc.finished && s6.sc.phase === 'got') { row.ferry_got_acked = 1 }

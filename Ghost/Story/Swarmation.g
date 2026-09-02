@@ -4426,7 +4426,10 @@ async SwarmSpread_ferry(w):
     let ebody = esoul ? this.Swarm_body_mine(esoul) : null
     let row = { ferried: 1 }
     if (sent === true) { row.ferry_sent = 1 }
-    if (esoul && esoul.c.keys && String(esoul.c.keys.pub) === String(alice.c.keys.pub)) { row.ferry_account_crossed = 1 }
+    // THE LIBRARY MERGE (Crew_todo §0.1): the account DATA folds INTO the receiving device's own
+    //  identity (ferry_heard returns eproto itself); the soul key never crosses — the old row asserted
+    //   the copy (the retired model).
+    if (esoul && esoul === eproto && esoul.c.keys && String(esoul.c.keys.pub) !== String(alice.c.keys.pub)) { row.ferry_account_crossed = 1 }
     if (ebody && ebody.sc.post === 'Cave') { row.ferry_post_cave = 1 }
     if (badHeard === null) { row.ferry_wrongcode_no_body = 1 }
     this.SwarmSpread_note(w, row)
@@ -4450,7 +4453,7 @@ SwarmSpread_witness(w):
     if (t && +t.sc.tamper_no_body === 1 && +t.sc.wrongnonce_no_body === 1 && +t.sc.noconsent_no_body === 1 && +t.sc.no_soul_landed === 1) { this.story_swear(w, 'the ceremony fails closed — a tampered seal a wrong nonce and a withheld consent each produce no body and the soul never lands on a device that flubbed the seal or that the human did not confirm') }
     let f = T.o({ ferried: 1 })[0]
     // #5 THE FERRY (the live path): the handshake-formed pier carries the whole sealed account across; wrong code lands nothing.
-    if (f && +f.sc.ferry_sent === 1 && +f.sc.ferry_account_crossed === 1 && +f.sc.ferry_post_cave === 1 && +f.sc.ferry_wrongcode_no_body === 1) { this.story_swear(w, 'the account ferries over the sealed pier — once a MyCave pier stands the soul exports and seals its whole account across to the blank device which unseals it with the fragment code and now holds the very same soul key as a Cave while a wrong code lands no account at all') }
+    if (f && +f.sc.ferry_sent === 1 && +f.sc.ferry_account_crossed === 1 && +f.sc.ferry_post_cave === 1 && +f.sc.ferry_wrongcode_no_body === 1) { this.story_swear(w, 'the account ferries over the sealed pier — once a MyCave pier stands the soul exports and seals its account data across to the device which unseals it with the fragment code and folds it into its own identity as a Cave keeping its own key while the soul key never crosses and a wrong code lands no account at all') }
 
 // SwarmSpread_order — float A:SwarmSpread to the front of H/* so the Run snap stays readable.
 async SwarmSpread_order(w):

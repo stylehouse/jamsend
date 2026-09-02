@@ -1,0 +1,26 @@
+Snap:H
+  H:MusuPoolFill,Run
+    A:MusuPoolFill
+      self,round=3	{"mung":["age"]}
+      w:MusuPoolFill,now=1788300010
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          stood
+          reached:step_3
+          booked,booked_stands,idempotent,addr_resolves
+        Account,of:Alice
+          Identity:db75a5adc4c2faab,prepub:db75a5adc4c2faab,friendly:Cap
+            Peering,name:db75a5adc4c2faab,friendly:Cap
+              Body,pub:57139cba289aec268179ef3dc36e54c5d57a6ca5eaacdacb2c002b19b3ebcd58,post:Captain,address:db75a5adc4c2faab
+              Body,pub:fcf2def414aa208cd605352055798d8db9783b98fce027d35eb58d084581510f,post:Cave,address:db75a5adc4c2faab_1,name:Cavey
+              Reach,to:Cave,of:o1,for:serve,by:57139cba289aec268179ef3dc36e54c5d57a6ca5eaacdacb2c002b19b3ebcd58,state:booked,at:1788300010
+          Identity:f905743fbf1e27a5,prepub:f905743fbf1e27a5,friendly:Cavey
+            Peering,name:f905743fbf1e27a5,friendly:Cavey
+              Body,pub:57139cba289aec268179ef3dc36e54c5d57a6ca5eaacdacb2c002b19b3ebcd58,post:Captain,address:db75a5adc4c2faab,name:Cap
+        Library,name:cavelib
+          Record,id:o1,artist:Auteur,title:One,path:music/a/one.wav,ext:wav
+        Library,name:cavepool
+        Library,name:cappool
+        Library,name:crewmirror

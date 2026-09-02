@@ -64,9 +64,12 @@ This doc is the answer to that, and to Homethink §5's load-bearing question —
     built; captured as the intended shape for when the music slice is ripe.
 
 **Still owed (the owner's seams):**
- - **the DOER BINDING** (§5 step 3) — `Swarm_reach_serve`'s doer is a stub in the Book; the live binding
-    (`for:serve` → `Radio_keep`/`Heist_materialise_one`) is the humdinger seam — land it with the owner at
-     two tabs and flip `w.c.reach_on`. THAT is the "book on the phone, laptop serves it" moment.
+ - **the DOER BINDING** (§5 step 3) — ~~stub only~~ **LANDED 2026-09-03 for `for:serve`** (see
+    SoundPooling_todo §0 "FIRST LIVE SOUNDPOOLING INCREMENT"): `Swarm_reach_pump` → `Ra_pool_fill_pump`
+     (knob-gated `w.c.reach_on`) → serve from the Cave's OWN library via Siphon_pull/Heist_catalog_land,
+      tri-state honoured, Book-gated by MusuPoolFill.  The live two-tab flip of `w.c.reach_on` remains
+       the human-gated proof ("book on the phone, laptop serves it"); the cross-device BYTE lane (the
+        Mag-travels shape below) is still the owed transport — a live fill ends Cave-side today.
  - **the booking GESTURE** — where in the UI a reach is born (a heard-but-absent track's press?).
  - the §7 forks (open `for` vocabulary · %Owed retirement schedule · the Seem-over-Reach dashboard).
  - the MIGRATIONS (§4): charter/grant/pier-heal debts becoming reaches — after the music slice proves live.

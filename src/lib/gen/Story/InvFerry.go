@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_InvFerry(): string { return '05187e96640aa421~g1' },
+    Ghostmeta_Ghost_Story_InvFerry(): string { return '4552392557f81f6a~g1' },
 
 // InvFerry.g — the SECOND Inv* Book: the WHOLE ferry exchange end to end (Inv_ferry_todo.md §3).
 //  InvSeal proves ONE rung (the seal-seam warmth gate — cold refuses / warm parks the consent).
@@ -202,9 +202,13 @@ async InvFerry_cross(w) {
     let row = { crossed: 1 }
     if (sent === true) { row.ferry_sent = 1 }
     if (frame && keyhex && String(frame.sealed || '').indexOf(keyhex) < 0) { row.secret_hidden = 1 }
-    if (esoul && esoul.c.keys && String(esoul.c.keys.pub) === String(alice.c.keys.pub)) { row.account_crossed = 1 }
+    // THE LIBRARY MERGE (Crew_todo §0.1): the account DATA folds INTO the Cave's own identity —
+    //  ferry_heard returns cavey ITSELF.  The soul key never crosses; that absence is the asserted
+    //   security property (the old rows asserted the copy — the retired model).
+    if (esoul && esoul === cavey) { row.merged_into_self = 1 }
+    if (esoul && esoul.c.keys && String(esoul.c.keys.pub) !== String(alice.c.keys.pub) && !esoul.sc.key && !esoul.sc.pub) { row.account_crossed = 1 }
+    if (esoul && esoul.c.keys && String(esoul.c.keys.pub) === String(alice.c.keys.pub)) { row.soul_key_copied = 1 }   // must STAY absent
     if (eidz) { row.content_crossed = 1 }
-    if (esoul && esoul.c.keys && String(esoul.c.keys.key) === String(keyhex) && !esoul.sc.key && !esoul.sc.pub) { row.keys_thawed = 1 }
     if (ebody && ebody.sc.post === 'Cave') { row.post_cave = 1 }
     if (badHeard === null) { row.wrongcode_no_body = 1 }
     this.InvFerry_note(w, row)
@@ -256,9 +260,9 @@ InvFerry_witness(w) {
     let cPier = this.Swarm_peering(cavey)?.o({ Pier: 1, pub: alice.sc.prepub })[0]
     let aGave = aPier?.o({ Grant: 'MyCave', by: alice.c.keys?.pub })[0]
     if (aPier && cPier && aGave) { this.story_swear(w, 'the door verifies and claims — the presig regenerates off the issuer ledger and only the issuer can wear the MAC then the serial ticks the spend ledger and both sides land a mutual Pier bearing the cross-signed MyCave grant') }
-    // beat 5: the account crosses whole and secret; the keys thaw to .c; a wrong code lands nothing.
+    // beat 5: the account DATA crosses and merges INTO the Cave's own identity; the soul key stays home.
     let cr = T.o({ crossed: 1 })[0]
-    if (cr && +cr.sc.ferry_sent === 1 && +cr.sc.account_crossed === 1 && +cr.sc.content_crossed === 1 && +cr.sc.secret_hidden === 1 && +cr.sc.keys_thawed === 1 && +cr.sc.post_cave === 1 && +cr.sc.wrongcode_no_body === 1) { this.story_swear(w, 'the account crosses the sealed pier — the soul seals across under the fragment code and the blank device unseals it and now holds the very same soul key and its issued content as a Cave with keys on .c only while the frame hides the secret and a wrong code lands no account') }
+    if (cr && +cr.sc.ferry_sent === 1 && +cr.sc.merged_into_self === 1 && +cr.sc.account_crossed === 1 && +cr.sc.content_crossed === 1 && +cr.sc.secret_hidden === 1 && !cr.sc.soul_key_copied && +cr.sc.post_cave === 1 && +cr.sc.wrongcode_no_body === 1) { this.story_swear(w, 'the account data crosses the sealed pier — the blank device unseals it with the fragment code and folds the library INTO its own identity keeping its own key as a Cave while the soul key never crosses and the frame hides the secret and a wrong code lands no account') }
     // beat 6: the teeth — the spent serial refuses a re-scan; a forged presig refuses at the door.
     let eve = this.InvFerry_ident(w, 'Eve')
     let mallory = this.InvFerry_ident(w, 'Mallory')

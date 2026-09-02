@@ -84,6 +84,31 @@
   steward's want-list.  Flip `H.top_House().c.pool_steward = 1` on a Cave/FSA tab and let a track
    advance → `🏊 steward: pressed N` presses `%Record,path:pool/…` rows you can snap.
 
+**LANDED 2026-09-03 — the FIRST LIVE SOUNDPOOLING INCREMENT: the pool-fill reach, Book-gated.**
+ The §0.5 realisation made real: a Captain's pool fills FROM its crew Cave by BOOKING, not calling.
+- **The booking seam** — `Ra_pool_fill_book(w, ident, origId)` (Ghost/M/Ra.g, POOL-FILL REACH region):
+   books `%Reach,to:Cave,of:<id>,for:serve` toward the rostered crew Cave (role-addressed so it
+    survives re-keying; no Cave on the roster → no intent faked; idempotent; stands while away).
+- **The live doer binding** (Reach_todo §0 "still owed" — now bound for `for:serve`): `Swarm_reach_pump`
+   invokes `Ra_pool_fill_pump` (knob-gated `w.c.reach_on`, default-off) → `Ra_pool_fill_serve` presses
+    the asked track from the Cave's OWN library into its own pool (`Siphon_pull` → `Ra_press` v1 →
+     `Heist_catalog_land` — the one door; the §3/§4 lib tripwire honoured) and answers the sync
+      tri-state verdict (`Ra_pool_fill_verdict`: arrived | not-yet | refused,'not_in_library'); then
+       reports terminals once and graduates.  Foreign `for:` verbs return FALSY (left for their own
+        doer — never refused by this layer).
+- **The landing** — `Ra_pool_fill_land`: an outbound fill acked 'arrived' siphons the artifact out of
+   the crew mirror into MY pool through the same one door (the pool branch lights, byte-faithful,
+    body_hash); no mirror / no readable nav → the reach STANDS 'arrived' as visible awaiting-transport
+     state, never a fake landing.
+- **Book-gated** — MusuPoolFill (Ghost/Story/Heistation.g, 6 beats, recorded live, 2× green, 4 %see):
+   book → road → live-doer serve → ack → byte-faithful pool %Record on the Captain → graduate — plus
+    the honest refusal receipt standing on both sides.
+- **What stays live-only (the named owed seam):** the real cross-device BYTE transport.  Live, the
+   Captain's crew mirror has no byte-readable nav yet (the Repli/Mag lane — Reach_todo's "the Mag is
+    what travels"), so a live fill today walks the whole reach + presses the artifact CAVE-side and
+     the Captain sees 'arrived'; the Captain-side OPFS landing runs the moment a mirror nav stands.
+      The booking GESTURE (where in the glass a fill is born) also stays owner-gated (Reach_todo §0).
+
 **What to get on with next (fresh session reads here):**
 1. **Wire the ambient steward** — `Radio_source_next(n)` + `Radio_autopress` (the press driver that
     lights `Ra_quarter_serve` at a natural play-session seam). This is the ambient economy proper
