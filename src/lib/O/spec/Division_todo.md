@@ -1,5 +1,34 @@
 # Division_todo.md
 
+## ⓘ UPDATED 2026-09-02 (night) — the LINK MECHANISM flips: cert-not-copy
+
+**Division stands — the teleology (bodies as organs), the roster/Post/Charter machinery, land-of-prepub
+ (Model B) all hold.** ONE ruling is deliberately REVERSED by the owner (2026-09-02): the `⚑⚑⚑` line
+  below — *"LinkDevice is how that [soul] key gets copied around and turns up on the relay"* — is now
+   **"LinkDevice certifies a NEW device key into the crew; it does NOT copy the soul key."**
+
+- **Device-link = a CREW of DISTINCT identities bound by a signed Charter cert.** Each device mints its
+   OWN Identity (own key, own address — the relay handles distinct addresses perfectly); the inviter signs
+    a Charter membership cert ("this Identity is one of mine"); friends are told the crew set and render
+     any member as "you". Grouping lives in the Pier/Peering table, not via relay-address collision.
+      **Certify a new key; do NOT copy the old one.** Safer (per-device revocable keys) and it deletes the
+       soul-door contention entirely. The single clean statement is `CrewLink_todo.md`.
+- **This EXTENDS working code, not greenfield.** DISK TRUTH (verify on disk, not the UI): eed's account
+   `/app/.jamsend/account/eed831f1977c4e81/toc.snap` carries a live signed `Charter,era:137` = Captain +
+    3 Caves, matching `%Body` rows + both-way MyCave grants. The cert-crew MODEL is already real and
+     persisted — the pivot revises the FERRY (which today copies the account blob incl. keys) to
+      cert-not-copy, and additionally makes the Charter an ACCOUNT-BACKUP vector (replicate + keep fresh,
+       all FSA-able). This means §0's "Charter: deleted" ⚑⚑⚑ ruling is REVISED: the Charter is NOT deleted
+        — it becomes the membership cert + backup ledger. The roster stays the routing convenience.
+- **The addressing self-collision is FIXED + Book-green** (memory `foreign-want-door-holder.md`): the
+   live "two-founder war" / seat contention was a same-tab two-socket collision, cured client-side. Under
+    cert-crew there is no soul-name collision to arbitrate at all.
+
+**→ Division itself is NOT retirement-ready** (it is the live substrate). Only the soul-key-copy mechanism
+  and the "Charter: deleted" sub-ruling are revised; read `CrewLink_todo.md` for the replacement.
+
+---
+
 **One soul, many role-bearing bodies — a paradigm-general substrate, music poured through first.**
  Division is how one soul (one keypair) inhabits several bodies across machines and *departmentalises*
   the work among them by role. The Cave|Captain split is music's instance; the substrate is meant to be
@@ -282,6 +311,15 @@ Now also built (same night, after the owner's "A"): founding self-grant (3) + si
       different particles; conflating them is the two-shapes-under-one-mainkey tell. Answer and B1 has its shape.
 
 ## 0. WHERE THIS IS (2026-08-28) — the live device-link path is the FERRY model
+
+**⚑⚑⚑⚑ 2026-09-02 (night) — THE FERRY MODEL FLIPS TO CERT-NOT-COPY. See the ⓘ note at the top of this
+ file + `CrewLink_todo.md`.** The ferry below copies the account blob (incl. keys) at link time; the new
+  model has each device mint its OWN key and the inviter sign a Charter membership cert. The land-of-prepub
+   (Model B) receive/send work in this §0 STANDS (bodies hello with own keys, roster gossip, contact-learned
+    %Body rows) — it is exactly the substrate cert-crew needs. What changes: the MINT-STOP/ferry no longer
+     transplants the soul key into a blank device; it certifies a fresh device identity into the crew, and
+      the account DATA replicates over the Charter as a backup vector. The `⚑⚑⚑` "Charter: deleted" ruling
+       further below is REVISED — the Charter comes back as the membership cert + backup ledger.
 
 **✅ 2026-09-02 (midday) — THE REBORN-KNOCK WEDGE (live ceremony "stuck at receiving from eed"),
  two layers, both cured in `Peeroleum.g`'s reused-seq collision branch:** (1) a reborn knocker's

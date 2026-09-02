@@ -10,7 +10,7 @@ Snap:H
           minted,url_carries_both,secret_live,twin_stashed,token_carries
           parked,confirm_parked,secret_still_live,nothing_sent
           confirmed,confirm_sent,ferry_sent_set,cave_pending
-          consumed,account_crossed,content_crossed,ferry_got_acked,secret_retired
+          consumed,account_crossed,cave_kept_own_key,content_crossed,ferry_got_acked,secret_retired
         reached:step_2
         Account,of:Alice
           Identity:dc4f0202db467c5b,prepub:dc4f0202db467c5b,friendly:Alice
@@ -19,6 +19,7 @@ Snap:H
               Idzeug:1,to:MyCave,next:2,claimed:1
               Pier,pub:801ca80af2d45548,friendly:Cavey,since:1756600020,link,post:Cave
                 Peering,name:801ca80af2d45548,friendly:Cavey,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
+                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
             mail
               frame:pier_hello,did
               frame:pier_confirm,did
@@ -29,6 +30,7 @@ Snap:H
             Peering,name:801ca80af2d45548,friendly:Cavey,online
               Pier,pub:dc4f0202db467c5b,friendly:Alice,since:1756600020,link,post:Cave
                 Peering,name:dc4f0202db467c5b,friendly:Alice,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
+                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
               Body,pub:801ca80af2d45548,post:Captain,name:Cavey
               Body,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,post:Cave,name:Cavey
             mail
@@ -38,11 +40,12 @@ Snap:H
             SocialGraph
               Edge,a:801ca80af2d45548,b:dc4f0202db467c5b,at:1756600020
           Identity:dc4f0202db467c5b,prepub:dc4f0202db467c5b,friendly:Alice
-            Peering,name:dc4f0202db467c5b,friendly:Alice
+            Peering,name:dc4f0202db467c5b,friendly:Alice,address:801ca80af2d45548
               Idzeug:invwalk_content,to:Music,genre:Jazz
               Idzeug:1,to:MyCave,next:2,claimed:1
               Pier,pub:801ca80af2d45548,friendly:Cavey,since:1756600020,link,post:Cave
                 Peering,name:801ca80af2d45548,friendly:Cavey,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
+                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
               Body,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,post:Cave,name:Cavey
             SocialGraph
               Edge,a:dc4f0202db467c5b,b:801ca80af2d45548,at:1756600020

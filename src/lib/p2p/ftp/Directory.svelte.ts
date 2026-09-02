@@ -257,8 +257,13 @@ export class DirectoryListing {
             await this.handle.removeEntry(pathbit, { recursive: false })
         } catch (err) {
             if (err.name == "NotFoundError") {
-                // D** lags behind reality?
-                console.warn(`double-deleted`)
+                // D** lags behind reality?  The entry was already gone when we asked to remove it.
+                //  Benign idempotent churn (see below), so name what vanished and stay a debug note,
+                //   not a naked warn: several call paths (tidy_crswap's crswap-sweep-then-name,
+                //    whittle_stock, radiostock_caching's source-gone drop) can each ask to delete the
+                //     same disk entry, and a .crswap rename can settle the target away between listing
+                //      and removeEntry.  The C-tree (D**) that drove this delete lags the real FS.
+                console.debug(`double-deleted "${pathbit}" under ${this.up?.name ? this.up.name + '/' : ''}${this.name}`)
                 return
             }
             throw erring(`Failed to delete "${pathbit}"`, err)

@@ -1,5 +1,30 @@
 # ClusterAddressing_todo
 
+## ⓘ SUPERSEDED / UPDATED 2026-09-02 (night)
+
+**The soul-family / seat / `want` / arbiter apparatus this doc grew around is DELETED, not extended —
+ and the specific self-collision that made it look necessary is FIXED.**
+
+- **The addressing fix landed + Book-green.** The live "foreign want" was NOT a v3-hello / soul-family
+   gap — it was a tab's OWN two sockets colliding on its bare prepub (a no-`want` Lies-channel hello
+    seated the bare name unconditionally; the station socket got suffixed off its own name). Cured
+     client-side (`LiesLies.svelte` seat-dodge + `Ghost/S/Swarm.g` in-family want-clamp + `on_hello`
+      door-reclaim) with ZERO relay change. SwarmBody 23/23. See memory `foreign-want-door-holder.md`.
+- **The device-link MODEL that drove the soul-address question is replaced (owner, 2026-09-02): a CREW of
+   DISTINCT identities bound by a signed Charter cert, NOT one soul key on many colliding bodies.** So
+    "should addressing route by soul or by identity" (§4) has its answer forced: **identity, always** —
+     every device is its own address, grouping lives in the Pier/Peering table, and the relay handles
+      distinct addresses perfectly with no v3 hello. The single clean statement is `CrewLink_todo.md`.
+
+**Still live and unrelated to the pivot:** the `header.from`-not-verified spine surgery (§6), the
+ double-delivery cost (§4.5), the `who` presence probe (now `Presence_todo.md`), and `?addr=<role>`
+  (§2, settled). Those are transport hygiene the cert-crew model neither creates nor fixes.
+
+**→ Retirement-ready in part:** the seat/want/soul-family reasoning (the ⚑/⚑⚑ v3-hello entries below)
+  is dead. The `header.from` + double-delivery findings are worth keeping until landed. The human decides.
+
+---
+
 How a runner becomes *reachable* and how it becomes *chosen* are two different mechanisms that keep
  getting confused for one. This doc separates them and parks the design questions.
 

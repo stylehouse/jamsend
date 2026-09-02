@@ -58,6 +58,26 @@
     //   Swarm_ferry_link; this face only says which act the one button performs.
     let my_role = $derived.by(() => { void H?.version; try { return String((H as any)?.Swarm_body_mine?.(self)?.sc?.post || '') } catch { return '' } })
 
+    // ── THE CREW ROSTER — the %Body rows under this identity's Peering (Swarm_body_roster).  Each row is a
+    //  device sworn into the crew: `.sc.post` = Captain|Cave, `.sc.name` its crew name, `.sc.pub` its key.
+    //   Both ends read the same roster (the Charter replicates it), so a Captain sees its Caves and a Cave sees
+    //    the whole crew it signed onto.  Defensive: try/catch, hide when empty, Captain sorted first.  Read off
+    //     both H.version and now_tick so it refreshes after a link lands even under a starved belief mutex.
+    let crew = $derived.by(() => {
+        void H?.version; void now_tick
+        try {
+            const rows = ((H as any)?.Swarm_body_roster?.(self) ?? []) as any[]
+            const out = rows.map((b: any) => ({
+                post: String(b?.sc?.post || ''),
+                name: String(b?.sc?.name || ''),
+                pub: String(b?.sc?.pub || ''),
+            })).filter((m) => m.post || m.name || m.pub)
+            // Captain first, then Caves; stable within a post so the list doesn't jitter.
+            out.sort((a, b) => (a.post === 'Captain' ? 0 : 1) - (b.post === 'Captain' ? 0 : 1))
+            return out
+        } catch { return [] }
+    })
+
     // NAME-GATE (owner 2026-08-30: *"name yourself before partaking EITHER end of any Grant-like
     //  thing"*).  Colonising a Cave is the most consequential grant there is — it copies your whole
     //   soul onto another body — so BOTH ends must be named first: the grantor (do_confirm, "giving
@@ -151,12 +171,12 @@
             // NAME-GATE: accepting a Cave makes this device a named body of the soul; declining is
             //  always free.  The name row is rendered below whenever `!named`, so this reads as
             //   "finish naming yourself first", not a dead end.
-            if (!named) { err = '✎ name yourself first — you are about to become a body of this soul, and the name travels with it'; return }
+            if (!named) { err = '✎ name yourself first — you are about to sign this device onto the crew, and your crew name sails with it'; return }
             const code = frag_code()
             if (!code) { err = 'no seal code in this link — open the exact QR link from your soul device'; return }
             taking = true
             const soul = await H.Swarm_ferry_consume(world(), code, true)
-            received = soul ? 'you are now a body of that soul — it lives on this device too' : '✗ this link is stale — its code no longer matches the other device (it re-minted or updated). Mint a FRESH link there and open that one.'
+            received = soul ? 'you are now a Cave in the crew — the shared library lives on this device too' : '✗ this link is stale — its code no longer matches the other device (it re-minted or updated). Mint a FRESH link there and open that one.'
             pending = null
             if (soul) finalize_url(soul)
         } catch (e) { err = String(e) } finally { taking = false }
@@ -270,7 +290,7 @@
     let joining = $state(false)
     async function offer_accept() {
         err = ''
-        if (!named) { err = '✎ name yourself first — you are about to become this soul, and the name travels with it'; return }
+        if (!named) { err = '✎ name yourself first — you are about to sign onto this crew, and your crew name sails with it'; return }
         if (joining) return
         // SELF-CONTAINED REDEEM (owner 2026-08-30: "the understand-continue button doesn't work").  The accept used
         //  to only set top.c.ferry_offer_accepted and lean on InvitePanel's effect to run the real redeem — but the
@@ -405,7 +425,7 @@
         // NAME-GATE: "giving your soul" copies the whole account onto the other device; a nameless
         //  grantor would birth a nameless body.  Refuse until named — the name row below is up while
         //   `!named`, so the human names themselves and re-confirms.
-        if (!named) { err = '✎ name yourself first — you are copying your whole account to that device, and it should carry your name'; return }
+        if (!named) { err = '✎ name yourself first — the crew grant carries your Captain name to that device'; return }
         giving = true
         try {
             const ok = await H?.Swarm_ferry_confirm?.(world())
@@ -512,15 +532,15 @@
 <div class="ld-frame">
     {#if received}
         <div class="ld-face">
-            <div class="ld-cap-big">{received === 'declined' ? 'declined' : '✓ soul received'}</div>
-            <p class="ld-deal">{received === 'declined' ? 'no soul was copied — nothing changed on this device.' : received}</p>
+            <div class="ld-cap-big">{received === 'declined' ? 'declined' : '🏴 signed on to the crew'}</div>
+            <p class="ld-deal">{received === 'declined' ? 'you did not sign on — nothing changed on this device.' : received}</p>
             {#if received === 'declined'}
                 <button class="ld-cancel-b" onclick={() => received = ''}>done</button>
             {:else}
                 <!-- the ceremony's true last step IS a reload (owner 2026-08-30: "that final incogni phase
                      should say|do 'reload' [rather] than 'done'"): the bar is already pinned to ?I=<the new
-                     soul>, so reloading boots this tab AS it — the proof of the ceremony, not a chore. -->
-                <button class="ld-go" onclick={() => { try { location.reload() } catch {} }}>reload — wake up as your account</button>
+                     soul>, so reloading boots this tab in the crew — the proof of the ceremony, not a chore. -->
+                <button class="ld-go" onclick={() => { try { location.reload() } catch {} }}>reload — wake up in the crew</button>
             {/if}
         </div>
     {:else if ended}
@@ -534,10 +554,10 @@
                      the generic "called off". Both ends can land here (Swarm_rejected fold on the cave;
                      the hello-spent retire on the soul). -->
                 <div class="ld-cap-big">this link was already used</div>
-                <p class="ld-deal">a device link works exactly <b>once</b>, and this one (<b>{short(ended.by) || ''}</b>) was already redeemed. nothing was copied. mint a <b>fresh link</b> on the soul device and open it here — same as before.</p>
+                <p class="ld-deal">a device link works exactly <b>once</b>, and this one (<b>{short(ended.by) || ''}</b>) was already redeemed. nothing changed. mint a <b>fresh link</b> on the Captain's device and open it here — same as before.</p>
             {:else}
                 <div class="ld-cap-big">the link was called off</div>
-                <p class="ld-deal">the soul device (<b>{short(ended.by) || 'the other device'}</b>) ended this ceremony — nothing was copied here. to try again, just mint a fresh link over there and open it here, same as before.</p>
+                <p class="ld-deal">the Captain's device (<b>{short(ended.by) || 'the other device'}</b>) ended this ceremony — nothing changed here, and no one signed onto the crew. to try again, just mint a fresh link over there and open it here, same as before.</p>
             {/if}
             <!-- done is TERMINAL: the FULL pack-up (link_done clears the whole ferry_* pile + stashed twins —
                  the old ferry_ended-only clear left link_active true, so the lobby haunted "you have a device
@@ -546,23 +566,24 @@
             <button class="ld-cancel-b" onclick={() => { strip_link_url(); link_done() }}>done</button>
         </div>
     {:else if pending}
-        <!-- LINKEE, "receiving" — the mirror of the Linkor's "giving" (owner: one modality, two symmetric
-             sentences).  A whole device becoming a new soul; the SAS is the anti-MITM check. -->
+        <!-- LINKEE, "signing on" — the mirror of the Captain's "adding to crew" (owner: one modality, two
+             symmetric sentences).  This device keeps its OWN identity and joins the Captain's Crew; the SAS is
+             the anti-MITM check. -->
         <div class="ld-face">
-            <div class="ld-cap-big">receiving the soul of <b>{arriving_name() || short(arriving_soul()) || 'a device'}</b> {@render live_dot(presence)}</div>
-            <p class="ld-deal">this device becomes a <b>Cave</b> of it — holding its keys and serving its library <b>in its name</b>.</p>
+            <div class="ld-cap-big">🏴 joining the Crew of Captain <b>{arriving_name() || short(arriving_soul()) || 'a device'}</b> {@render live_dot(presence)}</div>
+            <p class="ld-deal">this device signs on as a <b>Cave</b> — it keeps its own key, and serves the Captain's shared library <b>as part of the crew</b>.</p>
             {#if !has_code}
-                <p class="ld-warn-note">⚠ this link is missing its seal code — reopen the <b>full</b> QR link from your soul device (a copied link can drop the part after <b>#</b>).</p>
+                <p class="ld-warn-note">⚠ this link is missing its seal code — reopen the <b>full</b> QR link from the Captain's device (a copied link can drop the part after <b>#</b>).</p>
             {:else if sas}
                 <p class="ld-sas" title="these three must match the other device's screen — if they differ a relay is in the middle: say no"><b>{sas}</b></p>
             {:else}
                 <p class="ld-sas ld-sas-wait">···</p>
             {/if}
             {#if taking}
-                <div class="ld-working"><span class="ld-spin"></span> unsealing the account and taking it on…</div>
+                <div class="ld-working"><span class="ld-spin"></span> signing on to the crew and taking on the shared library…</div>
             {:else}
-                <!-- NAME-GATE — you are about to become a body of this soul; name yourself first so it
-                     travels with you.  Rendered whenever `!named`; the receive button stays disabled
+                <!-- NAME-GATE — you are about to sign this device onto the crew; name yourself first so your
+                     crew name sails with you.  Rendered whenever `!named`; the sign-on button stays disabled
                      until saved.  Declining ("no") is always free. -->
                 {#if !named}
                     <div class="ld-name-row">
@@ -570,18 +591,18 @@
                             onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
                         <button class="ld-act" onclick={name_save} title="save your name">✓</button>
                     </div>
-                    {#if name_err}<p class="ld-warn-note">⚠ {name_err}</p>{:else}<p class="ld-name-say">name yourself before you take on this soul — the name travels with it</p>{/if}
+                    {#if name_err}<p class="ld-warn-note">⚠ {name_err}</p>{:else}<p class="ld-name-say">name yourself before you sign on — your crew name sails with you</p>{/if}
                 {/if}
                 <div class="ld-row">
-                    <button class="ld-go" onclick={() => receive(true)} disabled={!named || !sas || !has_code}>receive this soul</button>
+                    <button class="ld-go" onclick={() => receive(true)} disabled={!named || !sas || !has_code}>🏴 sign on to the crew</button>
                     <button class="ld-cancel-b" onclick={() => receive(false)}>no</button>
                 </div>
             {/if}
         </div>
     {:else if confirm}
-        <!-- LINKOR, "giving" — the mirror of the Linkee's "receiving". -->
+        <!-- CAPTAIN, "adding to crew" — the mirror of the Cave's "signing on". -->
         <div class="ld-face">
-            <div class="ld-cap-big">giving your soul to <b>{confirm.name || short(confirm.pub)}</b> {@render live_dot(presence)}</div>
+            <div class="ld-cap-big">⚓ add to your Crew the device showing <b>{confirm.name || short(confirm.pub)}</b> {@render live_dot(presence)}</div>
             {#if sas}
                 <p class="ld-sas" title="these three must match the other device's screen — if they differ a relay is in the middle: say no"><b>{sas}</b></p>
             {:else}
@@ -591,22 +612,21 @@
                 <!-- REAL activity, not a dead spinner (owner 2026-08-29: "no cues in the UI at all about it
                      starting to come over").  Bandwidth reads the shared wire meter's tx bytes/s, so this JIGGLES with
                      the account actually leaving — and reads "…" only in the brief seal-before-send instant. -->
-                <div class="ld-working"><span>sealing & ferrying your soul across…</span></div>
+                <div class="ld-working"><span>hoisting the colours & signing them onto the crew…</span></div>
                 <Bandwidth {H} dir="tx" label="crossing" />
             {:else}
-                <!-- NAME-GATE — copying your whole account to that device should carry your name;
-                     name yourself first.  Rendered whenever `!named`; the give button stays disabled
-                     until saved. -->
+                <!-- NAME-GATE — the crew grant should carry your Captain name; name yourself first.
+                     Rendered whenever `!named`; the add button stays disabled until saved. -->
                 {#if !named}
                     <div class="ld-name-row">
                         <input class="ld-name" bind:value={name_draft} placeholder="what do friends call you?"
                             onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
                         <button class="ld-act" onclick={name_save} title="save your name">✓</button>
                     </div>
-                    {#if name_err}<p class="ld-warn-note">⚠ {name_err}</p>{:else}<p class="ld-name-say">name yourself first — the new body should carry your name</p>{/if}
+                    {#if name_err}<p class="ld-warn-note">⚠ {name_err}</p>{:else}<p class="ld-name-say">name yourself first — the crew grant carries your Captain name</p>{/if}
                 {/if}
                 <div class="ld-row">
-                    <button class="ld-go" onclick={do_confirm} disabled={!named || !sas}>give my soul</button>
+                    <button class="ld-go" onclick={do_confirm} disabled={!named || !sas}>⚓ add to crew</button>
                     <button class="ld-cancel-b" onclick={cancel_link}>no</button>
                 </div>
             {/if}
@@ -620,18 +640,18 @@
              and became the soul).  So the giver watches it actually cross, and the ✓ means something. -->
         <div class="ld-face">
             {#if got}
-                <div class="ld-cap-big">✓ done — devices linked</div>
-                <p class="ld-deal">your other device took the soul on — you live there now too.</p>
+                <div class="ld-cap-big">⚓ done — added to the crew</div>
+                <p class="ld-deal">your other device signed on as a Cave — it sails in your crew now.</p>
                 <button class="ld-cancel-b" onclick={link_done}>done</button>
             {:else if sent_fact?.held}
                 <div class="ld-cap-big">✓ delivered {@render live_dot(presence)}</div>
-                <p class="ld-deal">your other device has the sealed soul and is taking it on now — this resolves to
-                    "done" the moment it becomes you (a breath).</p>
+                <p class="ld-deal">your other device has the crew grant and is signing on now — this resolves to
+                    "done" the moment it joins the crew (a breath).</p>
                 <button class="ld-cancel-b" onclick={link_done}>done</button>
             {:else}
-                <div class="ld-cap-big"><span class="ld-spin"></span> sending your soul to
+                <div class="ld-cap-big"><span class="ld-spin"></span> signing on
                     <b>{short(sent_fact?.pub) || 'your other device'}</b> {@render live_dot(presence)}</div>
-                <p class="ld-deal">waiting for it to confirm it received the soul — keep this open a moment; it
+                <p class="ld-deal">waiting for it to confirm it joined the crew — keep this open a moment; it
                     upgrades to ✓ delivered on its own.</p>
                 <!-- done stays as a quiet escape (the frame HAS left — the giver's send is real even if the ack is
                      slow), but the face leads with the wait so the ✓ is earned, not faked. -->
@@ -643,18 +663,18 @@
              human to confirm the send.  The dead-window fix: fills what used to be a blank Radio + a lone
              "✉ MyCave redeeming" row in the Door with an honest, reassuring wait. -->
         <div class="ld-face">
-            <div class="ld-cap-big">receiving from <b>{short(awaiting.soul) || 'your other device'}</b> {@render live_dot(presence)}</div>
-            <p class="ld-deal">waiting for it to <b>confirm</b> — the other device decides whether to send its soul here.</p>
+            <div class="ld-cap-big">🏴 signing on with <b>{short(awaiting.soul) || 'your other device'}</b> {@render live_dot(presence)}</div>
+            <p class="ld-deal">waiting for the Captain to <b>confirm</b> — the other device decides whether to add this one to the crew.</p>
             <!-- SAS ALWAYS SHOWS, symmetric with the soul side (owner 2026-08-31: "icons show there but not on
                  incognito, who is listening for the soul").  The 3-glyph match row is the ceremony's face; a
                  `···` placeholder holds its place until the pubs resolve, so the listening screen is never iconless. -->
             {#if sas}<p class="ld-sas" title="these three must match the other device's screen — if they differ a relay is in the middle: say no"><b>{sas}</b></p>{:else}<p class="ld-sas ld-sas-wait">···</p>{/if}
-            {#if !has_code}<p class="ld-warn-note">⚠ heads up: this link is missing its seal code (the part after <b>#</b>) — reopen the full QR link, or the soul won't unseal here.</p>{/if}
+            {#if !has_code}<p class="ld-warn-note">⚠ heads up: this link is missing its seal code (the part after <b>#</b>) — reopen the full QR link, or the crew grant won't unseal here.</p>{/if}
             <!-- THE "IT'S COMING OVER" CUE (owner 2026-08-29: "no cues in the UI at all about it starting to come
                  over").  Bound to the wire's rx bytes: while the other device is still deciding this reads a gentle
                  "…"; the instant the soul starts crossing it jumps to live KB/s + a spark, so the wait never looks
                  frozen and the arrival is SEEN before `pending` swaps this whole face for the receive screen. -->
-            <Bandwidth {H} dir="rx" label="listening for the soul" />
+            <Bandwidth {H} dir="rx" label="listening for the crew grant" />
             <button class="ld-cancel-b" onclick={cancel_link}>cancel</button>
         </div>
     {:else if url}
@@ -667,26 +687,26 @@
             <button class="ld-cancel-b" onclick={cancel_link}>cancel</button>
         </div>
     {:else if offer}
-        <!-- LINKEE "offer" — you opened a device link; consent to BECOME it before anything crosses (owner
-             2026-08-30).  Not a friend-join (that framing was the Door's ⨝ button): this device gives up its
-             current self and takes on the soul — same account, same friends, its music.  The name-gate stays
-             (owner: "we must require having a name at that point too"); continue arms the redeem in InvitePanel. -->
+        <!-- LINKEE "offer" — you opened a device link; consent to SIGN ON before anything crosses (owner
+             2026-08-30).  Not a friend-join (that framing was the Door's ⨝ button): this device keeps its own
+             identity and joins the crew — sharing the Captain's account, friends, and music.  The name-gate
+             stays (owner: "we must require having a name at that point too"); continue arms the redeem in InvitePanel. -->
         <div class="ld-face">
             <!-- CONCISE (owner 2026-08-30: "perhaps just 'become 23489348394?' [understand] [not now]") —
-                 the heading IS the deal; the full weight (account, friends, music, main identity of this
-                 profile) rides the hover for whoever wants it spelled out. -->
+                 the heading IS the deal; the full weight (shared account, friends, music, crew post) rides
+                 the hover for whoever wants it spelled out. -->
             <div class="ld-cap-big"
                 title={offer.post === 'Captain'
-                    ? 'you opened a Captain link — continue and this device takes the Captain post of that soul: its account, its friends, its music, all here in its name. this is the resume-from-backup act, and a new Captain replaces any old one.'
-                    : 'you opened a link from it — continue and this device becomes a body of it: its account, its friends, its music, all here in its name. it becomes the main identity of this browser profile — what this webapp wakes up as from now on.'}
-                >{offer.post === 'Captain' ? 'become the Captain of' : 'become'} <b>{offer.friendly || short(offer.from) || 'this device'}</b>?</div>
+                    ? 'you opened a Captain link — continue and this device takes the Captain post of that crew: its shared account, its friends, its music, all here as the crew Captain. this is the resume-from-backup act, and a new Captain replaces any old one.'
+                    : 'you opened a link from it — continue and this device signs on as a Cave of that crew: it keeps its own key, and serves the Captain\'s shared account, friends, and music as part of the crew.'}
+                >{offer.post === 'Captain' ? '⚓ become the Captain of' : '🏴 join the Crew of'} <b>{offer.friendly || short(offer.from) || 'this device'}</b>?</div>
             {#if !named}
                 <div class="ld-name-row">
                     <input class="ld-name" bind:value={name_draft} placeholder="what do friends call you?"
                         onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
                     <button class="ld-act" onclick={name_save} title="save your name">✓</button>
                 </div>
-                {#if name_err}<p class="ld-warn-note">⚠ {name_err}</p>{:else}<p class="ld-name-say">name yourself first — the name travels onto the new body</p>{/if}
+                {#if name_err}<p class="ld-warn-note">⚠ {name_err}</p>{:else}<p class="ld-name-say">name yourself first — your crew name sails on with you</p>{/if}
             {/if}
             {#if err}<p class="ld-warn-note">⚠ {err}</p>{/if}
             <div class="ld-row">
@@ -696,26 +716,39 @@
         </div>
     {:else}
         <p class="ld-blurb">
-            backup or colonise other devices, becoming a sloshway of cooperation and
+            🏴 muster a Crew across your devices — a fleet sailing under your colours in
             <button class="ld-trust" onclick={() => trust = !trust}>TOTAL TRUST</button>.
         </p>
         {#if trust}
             <p class="ld-warn-note">
-                It <b>copies your account</b> to another device — which is then
-                <b>you, logged in, forever</b>. Your personal data
+                Each device keeps its <b>own key</b> and joins your <b>Crew</b> under a signed
+                grant — so the crew <b>shares this account</b>, its friends and its library, and
+                any member can serve it <b>in the crew's name</b>. Your personal data
                 may sit <b>unencrypted at rest</b>.
             </p>
         {/if}
         <div class="ld-face">
             <button class="ld-link" onclick={link} disabled={!self || minting}
                 title={my_role === 'Cave'
-                    ? 'mint a Captain link — the device that opens it takes the Captain post of this soul (resume from backup: this Cave carries the whole account, and a new Captain replaces the old one)'
-                    : 'copy this account to another device as a Cave'}>
-                {#if minting}<span class="ld-spin"></span> minting a link…{:else}{my_role === 'Cave' ? '🔗 resurrect my Captain' : '🔗 link a device'}{/if}</button>
+                    ? 'mint a Captain link — the device that opens it takes the Captain post of this crew (resume from backup: this Cave carries the whole account, and a new Captain replaces the old one)'
+                    : 'add another device to your crew as a Cave — it keeps its own key and serves the shared library in the crew\'s name'}>
+                {#if minting}<span class="ld-spin"></span> minting a link…{:else}{my_role === 'Cave' ? '🔗 resurrect my Captain' : '🏴 muster a crew mate'}{/if}</button>
             {#if link_active}
                 <div class="ld-pending">you have a device link in progress
                     <button class="ld-cancel-b" onclick={cancel_link}>cancel it</button></div>
             {/if}
+        </div>
+    {/if}
+    <!-- ── THE CREW — who is sailing under these colours (both the Captain's view and a Cave's).  A compact
+         roster off Swarm_body_roster; hidden when empty (a lone unlinked identity has no crew yet), so it only
+         appears once at least one device is sworn in.  ⚓ marks the Captain, 🏴 each Cave; the crew name shows
+         where there is one, else a short pub (never a raw prepub). -->
+    {#if crew.length}
+        <div class="ld-crew" title="the devices sailing under your colours — one Captain, and its Caves">
+            <span class="ld-crew-lbl">crew</span>
+            {#each crew as m (m.pub || m.name)}
+                <span class="ld-crew-m" class:ld-crew-cap={m.post === 'Captain'}>{m.post === 'Captain' ? '⚓' : '🏴'} {m.post || 'crew'} {m.name || short(m.pub) || '·'}</span>
+            {/each}
         </div>
     {/if}
     {#if err}<div class="ld-err">{err}</div>{/if}
@@ -839,5 +872,17 @@
     .ld-live-here { color: #093; background: rgba(64, 200, 96, .16); text-shadow: 0 0 6px rgba(64, 220, 96, .5); }
     .ld-live-fade { color: #a70; background: rgba(220, 160, 40, .14); }
     .ld-live-away { color: #977; background: rgba(150, 120, 120, .14); }
+
+    /* THE CREW ROSTER — a compact wrap of the devices sworn under these colours (⚓ Captain, 🏴 Cave).
+       Same warm register as the ceremony faces; sits below whatever phase is showing, so you can always
+       see who is in the crew.  Wraps on narrow cells, never scrolls its own bar. */
+    .ld-crew {
+        display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .3rem .5rem;
+        width: 100%; max-width: 28rem; margin-top: .2rem; padding: .4rem .6rem; box-sizing: border-box;
+        border-top: 1px solid rgba(217, 138, 0, .25); font-size: .78rem; color: #d9c79a;
+    }
+    .ld-crew-lbl { font-size: .68rem; text-transform: uppercase; letter-spacing: .8px; opacity: .6; margin-right: .2rem; }
+    .ld-crew-m { white-space: nowrap; padding: .1rem .4rem; border-radius: .7rem; background: rgba(120, 90, 30, .18); }
+    .ld-crew-cap { color: #ffcf70; background: rgba(217, 138, 0, .2); font-weight: 600; }
 
 </style>

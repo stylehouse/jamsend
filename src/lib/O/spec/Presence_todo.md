@@ -1,11 +1,26 @@
 # Presence_todo — who is online, asked instead of guessed
 
-The relay has always known who is online. Nothing could read it, so every layer above inferred
- presence by SENDING — and a miss is silent. This doc is the batch `who` probe that inverts that,
-  what it deliberately does NOT do, and what is still unwired.
+## ⓘ UPDATED 2026-09-02 (night) — orthogonal to the cert-crew pivot, with one consequence
+
+**The `who` presence probe is NOT superseded** — it is the durable answer to "who is online" and survives
+ every model change. One consequence of the device-link pivot (device-link is now a CREW of DISTINCT
+  identities bound by a signed Charter cert, NOT one soul key on many bodies — see `CrewLink_todo.md`):
+   **"is this soul online" becomes the UNION of its crew members' presences**, each a distinct address the
+    `who` probe can ask about directly. That is a clean fit for a batch `who` (ask all crew addrs at once)
+     and REMOVES the old ambiguity where one soul name might or might not be held by the body you meant.
+      No work is invalidated; the crew set (from the Charter/roster) just becomes the natural input to a
+       "render member as you + is-any-body-online" read. Seam D and the runner-can't-gate finding below
+        stand unchanged. The addressing self-collision that muddied live presence is FIXED (memory
+         `foreign-want-door-holder.md`).
 
 Companion to `Cluster_spec.md` (the blessed statement) and `ClusterAddressing_todo.md` (§6.4 — the
  three doors into the relay's fan-out Set, two shut, one open by design). Nothing here is blessed.
+
+---
+
+The relay has always known who is online. Nothing could read it, so every layer above inferred
+ presence by SENDING — and a miss is silent. This doc is the batch `who` probe that inverts that,
+  what it deliberately does NOT do, and what is still unwired.
 
 ## 0. What to get on with next
 

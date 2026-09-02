@@ -133,6 +133,68 @@ async function main() {
 	check('to:<prepub> (the room) FANNED OUT to body A', bA.got.length > a2)
 	check('to:<prepub> (the room) FANNED OUT to body B', bB.got.length > b2)
 
+	// ── (D) THE SELF-COLLISION KILL-CHAIN (2026-09-02, from eed's own boot log) + THE FIX ────────
+	//  A live tab opens TWO sockets. The Lies/role channel hellos the identity with NO `want` — and a
+	//   no-want hello is granted the BARE prepub seat unconditionally (handleHello: `let grant = addr`).
+	//    The station then wants the bare name → suffixed → door-yields to its BODY-KEY name → rehomes →
+	//     re-hellos wanting that foreign-family name → the WHOLE hello is refused ('foreign want') → the
+	//      tab loses its soul bind and to:<soul> lands only on the Lies socket, where swarm frames die
+	//       unprocessed in w:Lies. The tab locks ITSELF out of its own name, every boot.
+	//  THE FIX (client-side, proven here): the role-channel hello wants a harmless numeric suffix seat
+	//   (<prepub>_9xxx — familyAddr-valid on the deployed relay), and the station's want is clamped
+	//    in-family. Then the station takes the bare seat, no yield, no rehome, no refusal.
+	log('\n— (D) the two-socket self-collision (role socket seats bare, station locked out) + the fix —')
+	const soul3 = await mint()
+	const P3 = prepubOf(soul3.pubHex)
+	const body3 = await mint()                       // the tab's body key (a foreign prepub family)
+	const B3 = prepubOf(body3.pubHex)
+	// the kill-chain, step by step
+	const lies = browser(port, ''); await lies.open              // the Lies/role channel socket
+	await hello(lies, soul3, P3)                                  // NO want — the current client
+	await until(() => lies.ctrl.some((m) => m.control === 'hello_ok'))
+	const liesSeat = lies.ctrl.find((m) => m.control === 'hello_ok')?.addr
+	check('a no-want role-channel hello SEATS THE BARE NAME (seat=' + liesSeat + ') — the landmine', liesSeat === P3)
+	const stn = browser(port, P3); await stn.open                // the station dials its soul name
+	await hello(stn, soul3, P3, P3)                               // wants the bare name
+	await until(() => stn.ctrl.some((m) => m.control === 'hello_ok'))
+	const stnSeat = stn.ctrl.find((m) => m.control === 'hello_ok')?.addr
+	check('the station is suffixed off ITS OWN name by its own sibling socket (seat=' + stnSeat + ')', stnSeat === P3 + '_1')
+	stn.ws.close(); await wait(50)                                // door-yield → REHOME (closes ?addr=<soul>)
+	const stn2 = browser(port, B3); await stn2.open              // re-dials at the body name…
+	await hello(stn2, soul3, P3, B3)                              // …and wants it: a FOREIGN-family want
+	const refused = await until(() => stn2.ctrl.some((m) => m.control === 'hello_error' && m.reason === 'foreign want'))
+	check('the rehomed soul hello is REFUSED outright (foreign want) — the tab loses its soul bind', refused)
+	const l1 = lies.got.length, s1 = stn2.got.length
+	sender.send({ header: { from: 'somefriend', to: P3, type: 'ferry', seq: 4 } })
+	await wait(150)
+	check('to:<soul> now lands ONLY on the Lies socket (the w:Lies dead-end)', lies.got.length > l1)
+	check('…and never reaches the rehomed station — the ceremony void, reproduced', stn2.got.length === s1)
+	lies.ws.close(); stn2.ws.close(); await wait(50)
+	// the fix, same shape
+	const soul4 = await mint()
+	const P4 = prepubOf(soul4.pubHex)
+	const lies4 = browser(port, ''); await lies4.open
+	await hello(lies4, soul4, P4, P4 + '_9001')                   // FIX A: role channel wants a suffix seat
+	await until(() => lies4.ctrl.some((m) => m.control === 'hello_ok'))
+	const lies4Seat = lies4.ctrl.find((m) => m.control === 'hello_ok')?.addr
+	check('fixed role-channel hello seats the harmless suffix (seat=' + lies4Seat + ')', lies4Seat === P4 + '_9001')
+	const stn4 = browser(port, P4); await stn4.open
+	await hello(stn4, soul4, P4, P4)                              // FIX B keeps this want in-family
+	await until(() => stn4.ctrl.some((m) => m.control === 'hello_ok'))
+	const stn4Seat = stn4.ctrl.find((m) => m.control === 'hello_ok')?.addr
+	check('the station now takes the BARE seat — no yield, no rehome, no refusal (seat=' + stn4Seat + ')', stn4Seat === P4)
+	const l4 = lies4.got.length, s4 = stn4.got.length
+	sender.send({ header: { from: 'somefriend', to: P4, type: 'ferry', seq: 5 } })
+	await wait(150)
+	check('to:<soul> reaches the station ALONE (own-door)', stn4.got.length > s4)
+	check('…and skips the Lies socket (no w:Lies swallow)', lies4.got.length === l4)
+	// failover: the station dies → the courtesy bare bind still reaches the family
+	stn4.ws.close(); await wait(80)
+	const l5 = lies4.got.length
+	sender.send({ header: { from: 'somefriend', to: P4, type: 'ferry', seq: 6 } })
+	await wait(150)
+	check('station gone → the courtesy bare bind still catches to:<soul> (no black hole)', lies4.got.length > l5)
+
 	log('')
 	log(failures ? `FAIL — ${failures} check(s) failed` : 'PASS — the ${prepub}_${rid} model routes on the current relay')
 	srv.close()

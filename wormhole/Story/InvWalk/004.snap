@@ -17,6 +17,7 @@ Snap:H
               Idzeug:1,to:MyCave,next:2,claimed:1
               Pier,pub:801ca80af2d45548,friendly:Cavey,since:1756600020,link,post:Cave
                 Peering,name:801ca80af2d45548,friendly:Cavey,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
+                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
             mail
               frame:pier_hello,did
               frame:pier_confirm,did
@@ -27,6 +28,7 @@ Snap:H
             Peering,name:801ca80af2d45548,friendly:Cavey,online
               Pier,pub:dc4f0202db467c5b,friendly:Alice,since:1756600020,link,post:Cave
                 Peering,name:dc4f0202db467c5b,friendly:Alice,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
+                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
             mail
               frame:pier_accept,did
             SocialGraph

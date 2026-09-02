@@ -1,5 +1,29 @@
 # Ceremony_layering_todo.md
 
+## ⓘ SUPERSEDED / UPDATED 2026-09-02 (night)
+
+**The wedge that triggered this reckoning — "stuck at receiving from eed", the reborn-knock, the
+ pier_hello/transport mis-layering — resolved on BOTH the axes this doc reasons about, and the reasoning
+  here is now the record, not the plan.**
+
+- **The addressing self-collision is FIXED + Book-green.** The live "stuck" was the tab's own two sockets
+   fighting for its soul name (a no-`want` Lies-channel hello seated the bare prepub → the station got
+    suffixed off its own name → foreign-want → `to:<soul>` dead-ended). Fix landed in `LiesLies.svelte`
+     (seat-dodge) + `Ghost/S/Swarm.g` (in-family want-clamp + `on_hello` door-reclaim). SwarmBody 23/23,
+      zero fixture churn. See memory `foreign-want-door-holder.md`.
+- **The device-link MODEL is being replaced (owner, 2026-09-02): CREW of DISTINCT identities bound by a
+   signed Charter cert, NOT one soul key copied across devices.** With distinct identities there is no
+    soul-door collision and no multi-body door-election — the disease this doc dissects is deleted at the
+     source. The single clean statement is `CrewLink_todo.md`. The `%Pier`-as-both-transport-and-ceremony-
+      state critique (§1, §3) remains a durable, correct piece of architectural taste and still informs
+       the cert-crew ceremony, so keep it.
+
+**→ This doc is retirement-ready** as a standalone plan (its trigger resolved). Its load-bearing verdict —
+  *a knock must never depend on a %Pier existing; the ceremony must never depend on the %Pier's stream
+   state* — is carried forward into `CrewLink_todo.md`.
+
+---
+
 **Is the device-link ceremony machinery mis-designed — and specifically, why did a ceremony
  (pier_hello) concern force patches into the reliable TRANSPORT layer (Peeroleum)?** An
   architecture reckoning (analysis only; no code changed), triggered by the live "stuck at
@@ -8,6 +32,11 @@
 ---
 
 ## 0. WHAT TO GET ON WITH NEXT
+
+**⚠ 2026-09-02 (night): the trigger is resolved — see the ⓘ note at the top. The ranked moves below
+ describe a Peeroleum refactor for a collision model that the cert-crew pivot (`CrewLink_todo.md`)
+  deletes. Keep §1/§3's taste (pier = dial-handle, not state store); do not chase the collision-branch
+   surgery in a world where devices are distinct identities.**
 
 The reckoning below argues **the owner's instinct is right in spirit but half-wrong on the
  remedy**, and that the fragilities are mostly ONE model error, not many. If you are picking

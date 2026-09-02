@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_InvWalk(): string { return 'bcca60e481a4b075~g1' },
+    Ghostmeta_Ghost_Story_InvWalk(): string { return '393b949ceb7f33bf~g1' },
 
 // InvWalk.g — the THIRD Inv* ferry Book: the FULL WALK of the device-link ceremony (Ferry_todo §0
 //  "Book-blindness seam" paragraph — 2026-08-31).
@@ -372,11 +372,23 @@ async InvWalk_consume_got(w) {
     let soul = await this.InvWalk_consume(w, cavey, code, true)
     // pump: deliver ferry_got to cavey's mail → InvWalk_pump's ferry_got handler → top.c.ferry_got
     await this.InvWalk_pump(w)
+    // CERT-CREW: Alice's ferry_got handler re-signed the Charter WITH the fresh Cave and mailed it to
+    //  Cavey — a SECOND pump delivers that charter frame → Cavey's charter_heard sibling-road absorbs it
+    //   onto its own Peering, so the Cave ends holding the cert that names it (row.cave_holds_cert).
+    await this.InvWalk_pump(w)
     // drop consenter
     if (top && top.c) { delete top.c.consenter }
     let eidz = soul ? this.Swarm_peering(soul)?.o({ Idzeug: 1 }).find((z) => z.sc.genre === 'Jazz') : null
     let row = { consumed: 1 }
-    if (soul && soul.c && soul.c.keys && String(soul.c.keys.pub) === String(alice.c.keys.pub)) { row.account_crossed = 1 }
+    // CERT-CREW (2026-09-02): the account DATA crosses, the SOUL KEY does NOT.  The old model asserted
+    //  the Cave now HELD Alice's soul key (soul.c.keys.pub === alice's) — the "became eed" copy this
+    //   rebuild retires.  The new truth: the Cave keeps its OWN body key as its sole identity and never
+    //    holds Alice's soul key — membership will be proven by the Charter cert, not by the key.  That
+    //     absence IS the security property, so it is what we assert.
+    if (soul && soul.c && soul.c.bodykey && !(soul.c.keys && String(soul.c.keys.pub) === String(alice.c.keys.pub))) { row.account_crossed = 1 }
+    if (soul && soul.c && soul.c.keys && String(soul.c.keys.pub) === String(alice.c.keys.pub)) { row.soul_key_copied = 1 }   // must STAY absent — the forbidden old behaviour
+    // CERT-CREW: the Cave keeps its OWN body key (its network identity) and holds Alice's account.
+    if (soul && soul.c && soul.c.bodykey) { row.cave_kept_own_key = 1 }
     if (eidz) { row.content_crossed = 1 }
     // ferry_got ack: InvWalk_pump's live-frame handler walks the soul req to 'got' on seeing the frame
     let s6 = this.Swarm_ferry_role('soul')

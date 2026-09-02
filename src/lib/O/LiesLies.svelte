@@ -412,8 +412,18 @@
                     try {
                         const header = { control: 'hello', from: prepubOf(idento.pub), pub: idento.pub, ts: Date.now() }
                         const sign = await signHeader(header, idento.key)
-                        port.ws?.send(JSON.stringify({ ...header, sign }))
-                        H.tlog(`🪪 ws SEND control:hello ${header.from}`)
+                        // THE SEAT DODGE (2026-09-02, the two-socket self-collision — scripts/ceremony-addr-test.ts §D):
+                        //  a no-`want` hello is granted the BARE prepub SEAT unconditionally (relay handleHello:
+                        //   `let grant = addr`), so this role-channel socket was seating the tab's own soul name
+                        //    FIRST — suffixing its own station off its own door (→ door-yield → rehome → 'foreign
+                        //     want' → to:<soul> dead-ending unprocessed in w:Lies).  Want a throwaway numeric
+                        //      suffix seat instead: the hello still BINDS the bare name (the courtesy bind `who`
+                        //       presence and control-plane reach ride on — delivery is unchanged), but the SEAT —
+                        //        the only thing arbitration fights over — becomes one no station will ever want.
+                        //         `want` rides BESIDE the signed header (the signature stays over the 4 verified keys).
+                        const want = header.from + '_9' + String(100 + Math.floor(Math.random() * 900))
+                        port.ws?.send(JSON.stringify({ ...header, sign, want }))
+                        H.tlog(`🪪 ws SEND control:hello ${header.from} (seat dodge → _${want.slice(header.from.length + 1)})`)
                     } catch { /* no key | relay down — reconnect re-dials, ?addr= meanwhile carries */ }
                 })
                 // The moment the socket OPENS — first connect AND every reconnect — fire an immediate

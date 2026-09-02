@@ -1,10 +1,42 @@
 # Ceremony_handover_todo.md
 
+## ⓘ SUPERSEDED / UPDATED 2026-09-02 (night)
+
+**The `foreign-want` blocker that cursed this whole handover is SOLVED, and its ROOT CAUSE was not what
+ the body of this doc assumes.** It was never a foreign/stale relay holder of the `eed831f1` soul door —
+  it was the tab's OWN TWO SOCKETS fighting for its soul name: a no-`want` Lies/role-channel hello seated
+   the bare prepub unconditionally on the relay, so the station socket got suffixed OFF ITS OWN NAME by
+    its sibling socket → door-yield → rehome → `foreign want` → `to:<soul>` dead-ended unprocessed in
+     w:Lies. **FIXED + Book-green (SwarmBody 23/23, ok_pct:1, zero fixture churn):** seat-dodge in
+      `LiesLies.svelte` (~413, role hello wants a throwaway `<prepub>_9<rand>` seat), in-family want-clamp
+       + `on_hello` door-reclaim/soul-family guard in `Ghost/S/Swarm.g` (~1644). Proven first in
+        `scripts/ceremony-addr-test.ts` §D (10/10) + relay-test. See memory `foreign-want-door-holder.md`.
+
+**And the whole device-link MECHANISM this doc chases is being replaced (owner decision, 2026-09-02).**
+ Device-link is now a **CREW of DISTINCT identities bound by a signed Charter cert — NOT one soul key
+  copied across devices colliding on the relay.** Each device mints its OWN Identity; the inviter signs a
+   Charter membership cert; friends are told the crew set and render any member as "you". The addressing
+    collision this doc treats as the enemy is DELETED, not solved. The single clean statement of the new
+     plan is `CrewLink_todo.md` — **read that, not the §1–§6 body below**, which is preserved as the
+      forensic record of the disease (and §6's `%Reach` middleware, which still composes on top: the
+       W1 primitive is COMPLETE + Book-gated, see memory `want-middleware-plan.md`).
+
+**→ This doc is retirement-ready** (its blocker solved, its model superseded). Left in place for the human
+  to retire; §6's Reach plan has already migrated to `Reach_todo.md` + `CrewLink_todo.md`.
+
+---
+
 **Handoff brief, 2026-09-02 evening. Context got cursed chasing a live device-link between two tabs that
  never completed. Read this before touching the ceremony again.** Sibling docs: `Division_todo.md` (the
   plan/destination), `Ceremony_layering_todo.md` (the architecture reckoning — read it, it predicted this).
 
 ## 0. WHAT TO GET ON WITH NEXT
+
+**⚠ 2026-09-02 (night): items 1–4 below are LARGELY MOOT — see the ⓘ note at the top of this file.**
+ Item 1 (the `foreign-want` mystery) is SOLVED (self-collision, not a foreign holder — fix landed +
+  Book-green). Item 3 (the "nobody answered the door" error) survives as the `ferry_want`/`%Reach` W2
+   port (see `CrewLink_todo.md` turn-key deliverables + `want-middleware-plan.md`). The cert-crew pivot
+    (`CrewLink_todo.md`) retires the soul-door-collision framing that items 1/4 fight. Read that first.
 
 **→ 2026-09-02 (night): the §5 think HAPPENED (three forked analyses, convergent) and became a PLAN — see
  §6. The missing middleware is named: the `%Want` — an addressed message as a standing snapped req that

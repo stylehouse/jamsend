@@ -14,8 +14,10 @@ This doc is mostly read, not worked: a fresh session reads §1–§4 to stand so
 - When a design fight breaks out and this doc can't arbitrate it, the doc is missing a
    clause — come back and add the clause, don't just win the fight.
 - Candidate `_spec`, not self-promoted: the human preens it into shape when it's earned.
-- §6 (the situations a body passes through) is new — its live debt is getting **Focus** and **Arrival**
-   off `.c` into their particles; `Statemap_todo`/`Arrival_todo` hold the build, `Statehome_todo` the law.
+- §6 (the situations a body passes through) is new — its live debts: **Arrival**'s reader-migration
+   (the particles stand; surfaces still derive their own truth from `.c` flags — Arrival_todo §5 brick 3)
+    and **Ceremony**'s readability (the `%Charter` is signed + gossiped but nothing READS it as proof —
+     no Book asserts it, no surface shows it). `%Focus` itself landed 2026-09-01 (Statehome's ledger).
 
 ## 1. The one bet
 
@@ -136,8 +138,9 @@ The tell this is real and not a slogan: every subsystem above (§2) is a part of
     `%Charter`) — a ritual that leaves no standing, provable record did not happen. `Statemap_todo` §3,
      `Division_todo`.
 - **Focus** — attending to, and presenting, a locus: what this body is looking at right now
-   (`%Focus,cell·surfaced·decided`). The surface is the ceremony's whole visible OUTPUT; kept on `.c` it
-    flickers undebuggably and no Book can swear to it. `Statemap_todo` §2.
+   (`%Focus,cell·surfaced·decided`, landed 2026-09-01, humdinger-gated). The surface is the ceremony's
+    whole visible OUTPUT; the year it lived on `.c` it flickered undebuggably and no Book could swear to
+     it. `Statemap_todo` §2.
 - *the ground they stand on* — **Account / Crew**: who I am, my bodies, my friends — already good matter
    (`%Identity`/`%Peering`/`%Body`/`%Charter`), the durable substrate the three write into.
 
