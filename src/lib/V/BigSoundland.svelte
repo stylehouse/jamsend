@@ -294,7 +294,7 @@
         // the spine: %Creduler_pending rides as a particle on H:Mundo while ghosts import; gone once all live.
         const spine_pending = (() => { try { return top?.oa?.({ Creduler_pending: 1 }) } catch { return false } })()
         if (spine_pending) return { label: 'starting engines…', frac: 0.15 }
-        if (!c.station_up)  return { label: 'sealing your links…', frac: 0.35 }
+        if (!c.station_up)  return { label: 'opening the wire…', frac: 0.35 }
         if (!c.roster_rehydrated) return { label: 'finding your people…', frac: 0.5 }
         if (c.census_phase === 'restoring' || (!c.census_phase && !c.glass_stood)) {
             const n = +(c.census_music || 0)

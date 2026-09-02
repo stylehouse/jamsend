@@ -2751,6 +2751,12 @@ async SwarmBody_drive(w, req):
         if (n === 15) { await this.SwarmBody_organ_wire(w) }
         if (n === 16) { await this.SwarmBody_reach_cap(w) }
         if (n === 17) { await this.SwarmBody_reach_sweep(w) }
+        if (n === 18) { await this.SwarmBody_reach_dead(w) }
+        if (n === 19) { await this.SwarmBody_reach_latch(w) }
+        if (n === 20) { await this.SwarmBody_reach_zombie(w) }
+        if (n === 21) { await this.SwarmBody_reach_auth(w) }
+        if (n === 22) { await this.SwarmBody_reach_doer(w) }
+        if (n === 23) { await this.SwarmBody_reach_pump(w) }
     }
     this.SwarmBody_witness(w)
     await this.SwarmBody_order(w)
@@ -2897,6 +2903,24 @@ SwarmBody_witness(w):
     let sw = T.o({ swept: 1 })[0]
     // #19 REFUSED RECEIPTS AGE OUT: a stale refused receipt is swept so it can't fill the cap; a fresh one survives.
     if (sw && +sw.sc.stale_swept === 1 && +sw.sc.fresh_survives === 1) { this.story_swear(w, 'a refused receipt ages out — the settle loop sweeps one older than its window so dead receipts cannot fill the cap — while a fresh refusal still stands for its moment to be seen') }
+    let dd = T.o({ deaded: 1 })[0]
+    // #20 THE THIRD EXIT (proving beat): a want past its deadline settles dead nobody-answered — the only exit besides landed and refused so it can never hang silent — while a want with no deadline stands forever.
+    if (dd && +dd.sc.deadline_dies === 1 && +dd.sc.dead_at_pinned === 1 && +dd.sc.no_deadline_stands === 1) { this.story_swear(w, 'a want past its deadline settles dead — nobody answered — the third and only other exit besides landed and refused so a standing want can never hang silent — while a want with no deadline stands forever as the durable cross-body booking and the dead receipt is clocked by the world not the wall') }
+    let lt = T.o({ latched: 1 })[0]
+    // #21 THE TERMINAL LATCH (proving beat): first terminal wins and a landing outranks a refusal — a racing refusal cannot bury an arrived under a multi-path fan.
+    if (lt && +lt.sc.landed_survives_refusal === 1 && +lt.sc.refusal_upgrades_to_landed === 1 && +lt.sc.first_terminal_wins === 1) { this.story_swear(w, 'a landed reach outranks a refusal so a racing refusal from a body that could not serve can never bury the one that did — a refusal upgrades when the holder later lands — and at equal rank the first terminal wins so a dead ack cannot flip a standing refused') }
+    let zb = T.o({ zombied: 1 })[0]
+    // #22 THE TERMINAL GUARD (proving beat): a settled reach never re-dispatches — dispatch refuses refused and dead alike while a booked one still resolves — so a receipt cannot flip back to dispatched and dodge its sweep.
+    if (zb && +zb.sc.refused_guarded === 1 && +zb.sc.dead_guarded === 1 && +zb.sc.booked_dispatches === 1 && +zb.sc.settle_skips_terminals === 1) { this.story_swear(w, 'a settled reach never re-dispatches — dispatch refuses a refused and a dead one alike while a booked one still resolves its address — so the settle loop skips both failure terminals and a receipt can never flip itself back to dispatched and dodge its own sweep') }
+    let au = T.o({ authed: 1 })[0]
+    // #23 THE PIER-LESS REACH AUTH (proving beat): admission needs a valid soul-signed voucher — my own soul and a sealed friend pass while no voucher a tampered signature and an unknown soul each land nothing.
+    if (au && +au.sc.own_soul_admitted === 1 && +au.sc.no_voucher_rejected === 1 && +au.sc.tampered_rejected === 1 && +au.sc.stranger_rejected === 1 && +au.sc.sealed_friend_admitted === 1) { this.story_swear(w, 'a reach admitted with no sealed pier needs a valid soul-signed voucher — a body of my own soul passes and a sealed friend passes while a frame with no voucher a tampered signature or an unknown soul each lands nothing — so a forged settle cannot land on the untrusted relay') }
+    let dr = T.o({ doered: 1 })[0]
+    // #24 THE DOER CONTRACT (proving beat): placed | not-yet | provably-cannot — a missing handler refuses no_handler instead of auto-landing — a throw stays serving but loud — the named why crosses the wire guarded.
+    if (dr && +dr.sc.no_handler_refuses === 1 && +dr.sc.refusal_named === 1 && +dr.sc.throw_not_terminal_but_loud === 1 && +dr.sc.controls_hold === 1 && +dr.sc.why_crosses_guarded === 1) { this.story_swear(w, 'the doer answers in the req machine\'s three postures — placed lands it and not-yet leaves it serving while provably-cannot refuses with a named why — a missing handler refuses no handler instead of auto-landing the lie — a throw is never terminal but leaves a loud rebuff — and the why crosses the wire to the booker while an ack without one stamps nothing') }
+    let pm = T.o({ pumped: 1 })[0]
+    // #25 THE ONE PUMP (proving beat): self-throttling single entry — hygiene runs knob-off, the knob gates action only.
+    if (pm && +pm.sc.sweeps_while_observing === 1 && +pm.sc.self_throttles === 1 && +pm.sc.knob_on_dispatches === 1) { this.story_swear(w, 'the reach pump is one self-throttling entry any driver may call — a second call inside its cadence no-ops — it sweeps stale receipts even while the settle knob leaves the ledger observing because the knob gates action never hygiene — and with the knob on the same entry dispatches the standing wants') }
 
 // beat 5 — REMINT-NOT-READ is SEEN (Statehome_todo debts: "a fork must be seen").  The sanctioned join
 //  paths (adopt, the ferry become) HAND the body key over before ensure can mint, so a mint while the
@@ -3248,11 +3272,14 @@ async SwarmBody_reach_crew(w):
     this.Swarm_reach_heard(w, krew, { reach: { of: 't2', to: 'Cave', for: 'serve', by: 'x' } })  // → serving
     let r3 = this.Swarm_reach_book(w, krew, { to: 'Cave', of: 't3', for: 'serve' })
     this.Swarm_reach_refuse(w, krew, r3)                                                          // → refused
+    let r4 = this.Swarm_reach_book(w, krew, { to: 'Cave', of: 't4', for: 'serve' })
+    r4.sc.state = 'dead'                                                                          // → dead (the third exit's receipt)
+    r4.bump()
     let crew = this.Swarm_reach_crew(w, krew)
     let t1 = crew.reaches.find((r) => r.of === 't1')
     let row = { crewed: 1 }
-    if (crew.total === 3) { row.tallies_total = 1 }
-    if (crew.booked === 1 && crew.serving === 1 && crew.refused === 1) { row.tallies_states = 1 }
+    if (crew.total === 4) { row.tallies_total = 1 }
+    if (crew.booked === 1 && crew.serving === 1 && crew.refused === 1 && crew.dead === 1) { row.tallies_states = 1 }
     if (t1 && t1.state === 'booked' && t1.to === 'Cave' && t1.for === 'serve') { row.entry_shape = 1 }
     this.SwarmBody_note(w, row)
 
@@ -3368,6 +3395,240 @@ async SwarmBody_reach_sweep(w):
     let row = { swept: 1 }
     if (!hasOld) { row.stale_swept = 1 }
     if (hasFresh) { row.fresh_survives = 1 }
+    this.SwarmBody_note(w, row)
+
+// beat 18 — THE THIRD EXIT (W1, the proving beat): a standing want past its deadline settles 'dead'
+//  ('nobody-answered') — the only exit besides landed|refused, so a want can NEVER hang silent (the
+//   week's curse: the incognito hung "listening for the soul" forever).  The deadline is ms-epoch on
+//    `.c` (volatile — never snapped, so the fixture stays byte-stable and a reloaded ceremony re-books
+//     its own); a want with NO deadline STANDS forever (the durable cross-body booking).  Pinned: the
+//      dead receipt's `at` is Swarm_now (the world clock), never wall clock, so the snap is repeatable.
+async SwarmBody_reach_dead(w):
+    w i reached:step_18
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let dkeys = await this.Swarm_mint_keys('SwarmBody-Dex')
+    let dex = this.Swarm_identity(acct, dkeys, 'Dex')
+    dex.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Dex-body')
+    let bare = String(dex.sc.prepub)
+    this.Swarm_body_note(dex, 'dcave_pub_18', 'Cave', bare + '_1', 'Dave')
+    w.c.reach_on = 1
+    // a want whose deadline already passed — nobody answered the door → the third exit
+    let want = this.Swarm_reach_book(w, dex, { to: 'Cave', of: 'gone_track', for: 'serve' })
+    let before = String(want.sc.state)          // 'booked' — not yet settled
+    want.c.deadline = 1                          // ms-epoch far in the past (Date.now() > 1 always)
+    // a want with NO deadline stands forever — the durable cross-body booking
+    let durable = this.Swarm_reach_book(w, dex, { to: 'Cave', of: 'standing_track', for: 'serve' })
+    this.Swarm_reach_settle(w, dex)             // one pass: gone_track → dead, standing_track stands
+    delete w.c.reach_on
+    let after = String(want.sc.state)
+    let why = String(want.sc.why || '')
+    let at = +want.sc.at
+    let durable_state = String(durable.sc.state)
+    let row = { deaded: 1 }
+    if (before === 'booked' && after === 'dead' && why === 'nobody-answered') { row.deadline_dies = 1 }
+    if (at === 1751700000) { row.dead_at_pinned = 1 }              // the receipt's clock is the world's, not the wall's
+    if (durable_state !== 'dead') { row.no_deadline_stands = 1 }
+    this.SwarmBody_note(w, row)
+
+// beat 19 — THE TERMINAL LATCH (W1, the proving beat): cross-node truth where the FIRST terminal wins and
+//  a landing OUTRANKS a refusal.  Under a multi-path fan only the holder can land while every other body
+//   legitimately refuses, so a racing refusal must NEVER bury a landed.  Three arms: a landed survives a
+//    later refusal (X); a refusal upgrades when the holder later lands (Y); and at equal rank the first
+//     terminal wins so a dead ack cannot flip a standing refused (Z).
+async SwarmBody_reach_latch(w):
+    w i reached:step_19
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let lkeys = await this.Swarm_mint_keys('SwarmBody-Lex')
+    let lex = this.Swarm_identity(acct, lkeys, 'Lex')
+    lex.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Lex-body')
+    let bare = String(lex.sc.prepub)
+    this.Swarm_body_note(lex, 'lcave_pub_19', 'Cave', bare + '_1', 'Lave')
+    // X — a landed reach cannot be buried by a racing refusal (the multi-path fan)
+    this.Swarm_reach_book(w, lex, { to: 'Cave', of: 'landed_x', for: 'serve' })
+    this.Swarm_reach_ack(w, lex, { state: 'arrived', reach: { to: 'Cave', of: 'landed_x', for: 'serve' } })
+    this.Swarm_reach_ack(w, lex, { state: 'refused', reach: { to: 'Cave', of: 'landed_x', for: 'serve' } })
+    let x = this.Swarm_peering(lex).o({ Reach: 1, of: 'landed_x' })[0]
+    let x_state = x ? String(x.sc.state) : ''
+    // Y — a refusal THEN a landing upgrades (the holder lands after another body refused)
+    this.Swarm_reach_book(w, lex, { to: 'Cave', of: 'upgrade_y', for: 'serve' })
+    this.Swarm_reach_ack(w, lex, { state: 'refused', reach: { to: 'Cave', of: 'upgrade_y', for: 'serve' } })
+    this.Swarm_reach_ack(w, lex, { state: 'arrived', reach: { to: 'Cave', of: 'upgrade_y', for: 'serve' } })
+    let y = this.Swarm_peering(lex).o({ Reach: 1, of: 'upgrade_y' })[0]
+    let y_state = y ? String(y.sc.state) : ''
+    // Z — equal rank: a dead ack cannot flip a standing refused (first-terminal-wins)
+    this.Swarm_reach_book(w, lex, { to: 'Cave', of: 'first_z', for: 'serve' })
+    this.Swarm_reach_ack(w, lex, { state: 'refused', reach: { to: 'Cave', of: 'first_z', for: 'serve' } })
+    this.Swarm_reach_ack(w, lex, { state: 'dead', reach: { to: 'Cave', of: 'first_z', for: 'serve' } })
+    let z = this.Swarm_peering(lex).o({ Reach: 1, of: 'first_z' })[0]
+    let z_state = z ? String(z.sc.state) : ''
+    let row = { latched: 1 }
+    if (x_state === 'arrived') { row.landed_survives_refusal = 1 }
+    if (y_state === 'arrived') { row.refusal_upgrades_to_landed = 1 }
+    if (z_state === 'refused') { row.first_terminal_wins = 1 }
+    this.SwarmBody_note(w, row)
+
+// beat 20 — THE TERMINAL GUARD (W1, the proving beat): a SETTLED reach never re-dispatches.  The zombie
+//  was a 'refused' reach re-sending every pass and flipping itself back to 'dispatched', dodging its own
+//   receipt sweep — the guard was `=== 'arrived'` only.  Now dispatch REFUSES a refused and a dead one
+//    alike (returns null), while a booked one still resolves its address (the control that proves the
+//     guard cuts something real), and the settle loop skips both failure terminals in one pass.
+async SwarmBody_reach_zombie(w):
+    w i reached:step_20
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let zkeys = await this.Swarm_mint_keys('SwarmBody-Zed')
+    let zed = this.Swarm_identity(acct, zkeys, 'Zed')
+    zed.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Zed-body')
+    let bare = String(zed.sc.prepub)
+    this.Swarm_body_note(zed, 'zcave_pub_20', 'Cave', bare + '_1', 'Zave')
+    // a REFUSED reach — dispatch refuses to touch it (null), so it can never flip back to 'dispatched'
+    let refd = this.Swarm_reach_book(w, zed, { to: 'Cave', of: 'refused_z', for: 'serve' })
+    this.Swarm_reach_refuse(w, zed, refd)
+    let d_refused = this.Swarm_reach_dispatch(w, zed, refd)
+    let refd_state = String(refd.sc.state)
+    // a DEAD reach — the same guard (both failure terminals stand still)
+    let deadr = this.Swarm_reach_book(w, zed, { to: 'Cave', of: 'dead_z', for: 'serve' })
+    deadr.sc.state = 'dead'
+    deadr.bump()
+    let d_dead = this.Swarm_reach_dispatch(w, zed, deadr)
+    // a BOOKED reach — the CONTROL: dispatch DOES resolve its address (proves the guard cuts something)
+    let bookd = this.Swarm_reach_book(w, zed, { to: 'Cave', of: 'live_z', for: 'serve' })
+    let d_live = this.Swarm_reach_dispatch(w, zed, bookd)
+    // and the settle loop skips both terminals in one pass — only the live booking re-dispatches
+    w.c.reach_on = 1
+    let n = this.Swarm_reach_settle(w, zed)
+    delete w.c.reach_on
+    let refd_after = String(refd.sc.state)
+    let row = { zombied: 1 }
+    if (d_refused === null && refd_state === 'refused') { row.refused_guarded = 1 }
+    if (d_dead === null) { row.dead_guarded = 1 }
+    // the CONTROL: a booked reach STILL resolves to a truthy address (the guard cuts only terminals)
+    if (typeof d_live === 'string' && d_live) { row.booked_dispatches = 1 }
+    if (n === 1 && refd_after === 'refused') { row.settle_skips_terminals = 1 }
+    this.SwarmBody_note(w, row)
+
+// beat 21 — THE PIER-LESS REACH AUTH (Ceremony §6 rule 6, "auth before mint|settle"): a reach|reach_done
+//  that resolves no sealed pier at the hear funnel is admitted only by a valid soul-signed voucher.  Proven
+//   on pure matter (Swarm_reach_vouched is not station-gated — the FUNNEL that calls it is; that 4-line
+//    guard mirrors the sealed-pier voucher gate right above it, proven live by SwarmWire's seal): a body of
+//     my OWN soul passes (its voucher is signed by our shared soul key); a SEALED friend passes (delegates
+//      to Swarm_voucher_ok against the pub imported at seal); while NO voucher, a TAMPERED signature, and an
+//       UNKNOWN soul each land nothing — so a forged reach_done cannot settle a standing reach.
+async SwarmBody_reach_auth(w):
+    w i reached:step_21
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let akeys = await this.Swarm_mint_keys('SwarmBody-Auth-Alice')
+    let alice = this.Swarm_identity(acct, akeys, 'AuthAlice')
+    // a valid per-era voucher signed by Alice's OWN soul key — a body of my soul
+    let av = await this.Swarm_voucher_mint(alice, 1)
+    let own = await this.Swarm_reach_vouched(alice, { voucher: av })
+    // no voucher at all
+    let none = await this.Swarm_reach_vouched(alice, {})
+    // a tampered voucher — the signature no longer covers the (changed) era
+    let tampered = await this.Swarm_reach_vouched(alice, { voucher: Object.assign({}, av, { era: 999 }) })
+    // a STRANGER — a different soul's valid voucher, with no sealed pier for it
+    let ekeys = await this.Swarm_mint_keys('SwarmBody-Auth-Eve')
+    let eve = this.Swarm_identity(acct, ekeys, 'AuthEve')
+    let ev = await this.Swarm_voucher_mint(eve, 1)
+    let stranger = await this.Swarm_reach_vouched(alice, { voucher: ev })
+    // a SEALED FRIEND — Bob, with a %Pier under Alice holding the pub she imported at his seal
+    let bkeys = await this.Swarm_mint_keys('SwarmBody-Auth-Bob')
+    let bob = this.Swarm_identity(acct, bkeys, 'AuthBob')
+    let bv = await this.Swarm_voucher_mint(bob, 1)
+    let apeer = this.Swarm_peering(alice)
+    let pier = apeer.i({ Pier: 1, pub: String(bob.sc.prepub) })
+    pier.c.up = apeer
+    let held = pier.i({ Peering: 1, pub: String(bkeys.pub) })
+    held.c.up = pier
+    let friend = await this.Swarm_reach_vouched(alice, { voucher: bv })
+    let row = { authed: 1 }
+    if (own === true) { row.own_soul_admitted = 1 }
+    if (none === false) { row.no_voucher_rejected = 1 }
+    if (tampered === false) { row.tampered_rejected = 1 }
+    if (stranger === false) { row.stranger_rejected = 1 }
+    if (friend === true) { row.sealed_friend_admitted = 1 }
+    this.SwarmBody_note(w, row)
+
+// beat 22 — THE DOER CONTRACT (Ceremony §6 rule 4, the req machine's three postures at the wire): a doer
+//  answers placed (truthy → arrived) | not-yet (falsy → stays serving) | provably-cannot ({refuse:<why>} →
+//   refused with its named why).  A MISSING handler refuses 'no_handler' — the old code AUTO-LANDED it, a
+//    lie in the ledger.  A THROW is NOT terminal (the tri-state lesson): the want stays serving for the
+//     re-ask, but a loud %rebuff marks it.  And the why CROSSES THE WIRE: a reach_done ack carrying why
+//      lands it on the booker's receipt (guarded — an ack without one stamps nothing, no undef marker).
+//  Each arm gets its own hear→serve window (serve iterates ALL serving reaches, so order is the harness).
+async SwarmBody_reach_doer(w):
+    w i reached:step_22
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let skeys = await this.Swarm_mint_keys('SwarmBody-Serl')
+    let serl = this.Swarm_identity(acct, skeys, 'Serl')
+    // arm A — NO handler: the only serving reach refuses 'no_handler' (never auto-lands)
+    let a = this.Swarm_reach_heard(w, serl, { reach: { of: 's1', to: 'Cave', for: 'serve', by: 'x' } })
+    this.Swarm_reach_serve(w, serl, null)
+    let a_ok = (String(a.sc.state) === 'refused' && String(a.sc.why) === 'no_handler') ? 1 : 0
+    // arms D|E — the controls: falsy leaves it serving, truthy lands it
+    let d = this.Swarm_reach_heard(w, serl, { reach: { of: 's4', to: 'Cave', for: 'serve', by: 'x' } })
+    this.Swarm_reach_serve(w, serl, (r) => 0)
+    let e_still = String(d.sc.state) === 'serving' ? 1 : 0
+    this.Swarm_reach_serve(w, serl, (r) => 1)
+    let d_ok = String(d.sc.state) === 'arrived' ? 1 : 0
+    // arm B — the doer names its refusal
+    let b = this.Swarm_reach_heard(w, serl, { reach: { of: 's2', to: 'Cave', for: 'serve', by: 'x' } })
+    this.Swarm_reach_serve(w, serl, (r) => ({ refuse: 'shelf_full' }))
+    let b_ok = (String(b.sc.state) === 'refused' && String(b.sc.why) === 'shelf_full') ? 1 : 0
+    // arm C — a throw is not terminal: serving stands + a loud %rebuff
+    let c = this.Swarm_reach_heard(w, serl, { reach: { of: 's3', to: 'Cave', for: 'serve', by: 'x' } })
+    this.Swarm_reach_serve(w, serl, (r) => { throw 'boom' })
+    let c_serving = String(c.sc.state) === 'serving' ? 1 : 0
+    let c_loud = serl.o({ rebuff: 'reach_doer_threw' })[0] ? 1 : 0
+    // the WIRE arm — the why crosses on the ack (and an ack WITHOUT one stamps nothing)
+    let w1 = this.Swarm_reach_book(w, serl, { to: 'Cave', of: 'w1', for: 'serve' })
+    this.Swarm_reach_ack(w, serl, { state: 'refused', why: 'no_handler', reach: { to: 'Cave', of: 'w1', for: 'serve' } })
+    let w2 = this.Swarm_reach_book(w, serl, { to: 'Cave', of: 'w2', for: 'serve' })
+    this.Swarm_reach_ack(w, serl, { state: 'refused', reach: { to: 'Cave', of: 'w2', for: 'serve' } })
+    let wire_why = (String(w1.sc.state) === 'refused' && String(w1.sc.why) === 'no_handler') ? 1 : 0
+    let wire_guard = (String(w2.sc.state) === 'refused' && w2.sc.why == null) ? 1 : 0
+    let row = { doered: 1 }
+    if (a_ok) { row.no_handler_refuses = 1 }
+    if (b_ok) { row.refusal_named = 1 }
+    if (c_serving && c_loud) { row.throw_not_terminal_but_loud = 1 }
+    if (d_ok && e_still) { row.controls_hold = 1 }
+    if (wire_why && wire_guard) { row.why_crosses_guarded = 1 }
+    this.SwarmBody_note(w, row)
+
+// beat 23 — THE ONE PUMP ENTRY (Ceremony §6 build notes — un-bury the retry): reach_pump is callable
+//  from any driver and paces ITSELF (reach_cadence ms — the buried 60s trickle throttle is gone), so a
+//   second call inside the cadence no-ops (null).  Hygiene is knob-independent: with reach_on OFF (the
+//    observing ledger) the pump still sweeps stale failure receipts — the knob gates ACTION never
+//     hygiene — while flipping the knob makes the same entry dispatch the standing wants.
+async SwarmBody_reach_pump(w):
+    w i reached:step_23
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let pkeys = await this.Swarm_mint_keys('SwarmBody-Pum')
+    let pum = this.Swarm_identity(acct, pkeys, 'Pum')
+    pum.c.bodykey = await this.Swarm_mint_keys('SwarmBody-Pum-body')
+    let bare = String(pum.sc.prepub)
+    this.Swarm_body_note(pum, 'pumcave_pub_23', 'Cave', bare + '_1', 'Puma')
+    // knob OFF + a STALE refused receipt: the pump must sweep it anyway (hygiene is unconditional)
+    w.c.reach_receipt_ttl = 100
+    let stale = this.Swarm_reach_book(w, pum, { to: 'Cave', of: 'stale_p', for: 'serve' })
+    this.Swarm_reach_refuse(w, pum, stale)
+    stale.sc.at = String(this.Swarm_now(w) - 200)
+    stale.bump()
+    let p1 = this.Swarm_reach_pump(w, pum)
+    let swept_off = this.Swarm_peering(pum).o({ Reach: 1, of: 'stale_p' }).length === 0 ? 1 : 0
+    // an immediate second call sits inside the cadence — the pump throttles ITSELF
+    let p2 = this.Swarm_reach_pump(w, pum)
+    // knob ON (fresh cadence window): the same entry now dispatches the standing want
+    delete w.c.reach_pump_at
+    w.c.reach_on = 1
+    this.Swarm_reach_book(w, pum, { to: 'Cave', of: 'live_p', for: 'serve' })
+    let p3 = this.Swarm_reach_pump(w, pum)
+    delete w.c.reach_on
+    delete w.c.reach_pump_at
+    delete w.c.reach_receipt_ttl
+    let row = { pumped: 1 }
+    if (p1 === 0 && swept_off === 1) { row.sweeps_while_observing = 1 }
+    if (p2 === null) { row.self_throttles = 1 }
+    if (p3 === 1) { row.knob_on_dispatches = 1 }
     this.SwarmBody_note(w, row)
 
 // SwarmBody_order — float A:SwarmBody to the front of H/* so the Run snap stays readable.

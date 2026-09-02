@@ -4,10 +4,7 @@ story:SwarmSpread
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.036
-      sample=0.025,at=1788266744
-      sample=0.038,at=1788268025
-      sample=0.043,at=1788268122
+    TimeTotal:beliefs,avg=0.037
       sample=0.043,at=1788268137
       sample=0.028,at=1788268145
       sample=0.033,at=1788297300
@@ -15,10 +12,10 @@ story:SwarmSpread
       sample=0.032,at=1788299097
       sample=0.032,at=1788299099
       sample=0.028,at=1788299110
-    TimeTotal:step,avg=0.007
-      sample=0.005,at=1788266744
-      sample=0.008,at=1788268025
-      sample=0.009,at=1788268122
+      sample=0.038,at=1788326535
+      sample=0.059,at=1788326811
+      sample=0.02,at=1788328066
+    TimeTotal:step,avg=0.008
       sample=0.009,at=1788268137
       sample=0.006,at=1788268145
       sample=0.007,at=1788297300
@@ -26,6 +23,9 @@ story:SwarmSpread
       sample=0.006,at=1788299097
       sample=0.006,at=1788299099
       sample=0.006,at=1788299110
+      sample=0.008,at=1788326535
+      sample=0.012,at=1788326811
+      sample=0.004,at=1788328066
   step,dige:0000000000000000
   step=2,dige:3338a029cfe39e2e
     Assertion:a-blank-device-offers,sentence:a blank device offers itself as a body not a role — the adoption offer proves the device holds its own key and carries no Post so the device does not yet know it will be a Cave

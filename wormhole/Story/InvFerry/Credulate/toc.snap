@@ -1,7 +1,7 @@
 Credulate,of_Book:InvFerry
   GhostInclude:Ghost_N_Peeroleum,dige:a6779a3ee6f8821d~g1
   GhostInclude:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
-  GhostInclude:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1
+  GhostInclude:Ghost_N_Tribunal,dige:b4c37f0c56f24f1a~g1
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a~g1
   GhostInclude:Ghost_N_Presence,dige:6ffb380736d2b169~g1
   GhostInclude:Ghost_N_Repli,dige:4247a87fe2feccd7~g1
@@ -24,8 +24,8 @@ Credulate,of_Book:InvFerry
   GhostInclude:Ghost_Story_Siphonation,dige:a51b38e9318b6f9b~g1
   GhostInclude:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
   GhostInclude:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1
-  GhostInclude:Ghost_S_Swarm,dige:2d64fbb7dbc28389~g1
-  GhostInclude:Ghost_Story_Swarmation,dige:6a626a26fdaa18c1~g1
+  GhostInclude:Ghost_S_Swarm,dige:86f61c6f62520b52~g1
+  GhostInclude:Ghost_Story_Swarmation,dige:67289cf886bb8a0f~g1
   GhostInclude:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
   GhostInclude:Ghost_Story_InvFerry,dige:05187e96640aa421~g1
   GhostInclude:Ghost_Story_InvWalk,dige:bcca60e481a4b075~g1
@@ -35,10 +35,10 @@ Credulate,of_Book:InvFerry
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
   GhostInclude:Ghost_Story_Sounditron,dige:a909f0031a6d3359~g1
   GhostInclude:Ghost_O_Supervisor,dige:98120e82dc5b2eb9~g1
-  last_ok,at=1788306200.809,ok_pct
+  last_ok,at=1788326554.482,ok_pct
     uses:Ghost_N_Peeroleum,dige:a6779a3ee6f8821d~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
-    uses:Ghost_N_Tribunal,dige:2a4271ca45a64e34~g1
+    uses:Ghost_N_Tribunal,dige:b4c37f0c56f24f1a~g1
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a~g1
     uses:Ghost_N_Presence,dige:6ffb380736d2b169~g1
     uses:Ghost_N_Repli,dige:4247a87fe2feccd7~g1
@@ -61,8 +61,8 @@ Credulate,of_Book:InvFerry
     uses:Ghost_Story_Siphonation,dige:a51b38e9318b6f9b~g1
     uses:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
     uses:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1
-    uses:Ghost_S_Swarm,dige:2d64fbb7dbc28389~g1
-    uses:Ghost_Story_Swarmation,dige:6a626a26fdaa18c1~g1
+    uses:Ghost_S_Swarm,dige:86f61c6f62520b52~g1
+    uses:Ghost_Story_Swarmation,dige:67289cf886bb8a0f~g1
     uses:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
     uses:Ghost_Story_InvFerry,dige:05187e96640aa421~g1
     uses:Ghost_Story_InvWalk,dige:bcca60e481a4b075~g1

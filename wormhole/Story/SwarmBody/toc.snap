@@ -52,13 +52,25 @@ story:SwarmBody
     Assertion:the-reach-settle-loop,sentence:the reach settle loop observes until its knob is flipped — then the booker hears the outcome and closes the trip — an arrived reach graduates away while a refused one stands as a visible receipt
   step=12,dige:cd4d32303bfc175b
     Assertion:the-reach-wire-lane,sentence:the reach wire lane is gated on the roster — a rostered sibling books work on me while a stranger lands nothing — and the outcome reports back to the seat the roster names for the booker
-  step=13,dige:6c29e219aaf4d60c
+  step=13,dige:6b597bbc92b548a8
     Assertion:the-crew-read,sentence:the crew read projects the standing reaches into one legible glance — tallied by state with each intent carrying what it is and who it is for — so what the whole crew is doing reads at once instead of hiding across the ghosts
-  step=14,dige:ec14244035cfd322
+  step=14,dige:3da023532d87d186
     Assertion:a-body-describes-the,sentence:a body describes the organ it grows — a pocket of what it wants now and a trove of everything as quantities on its own row — re-describing updates in place and each organ reads back by its kind
-  step=15,dige:e8191b40b49f2606
+  step=15,dige:d78586981f130a59
     Assertion:a-body-ships-its,sentence:a body ships its own organ sizes and a sibling lands them onto the roster row they describe — so the phone sees the laptop trove — while an organ for a body it does not roster lands nothing
-  step=16,dige:80e149ff206b9a41
+  step=16,dige:0b002f004f32e063
     Assertion:the-reach-shelf-is,sentence:the reach shelf is bounded — a new booking beyond the cap is refused so a runaway loop cannot flood it — while re-booking a reach that already stands is always honoured so a retry is never lost
-  step=17,dige:cc1ccbb9815d8d5f
+  step=17,dige:fc3157aa03545433
     Assertion:a-refused-receipt-ages,sentence:a refused receipt ages out — the settle loop sweeps one older than its window so dead receipts cannot fill the cap — while a fresh refusal still stands for its moment to be seen
+  step=18,dige:71c69d3d8e463e3a
+    Assertion:a-want-past-its,sentence:a want past its deadline settles dead — nobody answered — the third and only other exit besides landed and refused so a standing want can never hang silent — while a want with no deadline stands forever as the durable cross-body booking and the dead receipt is clocked by the world not the wall
+  step=19,dige:077b59e402dfdc77
+    Assertion:a-landed-reach-outranks,sentence:a landed reach outranks a refusal so a racing refusal from a body that could not serve can never bury the one that did — a refusal upgrades when the holder later lands — and at equal rank the first terminal wins so a dead ack cannot flip a standing refused
+  step=20,dige:862bb14591daeccf
+    Assertion:a-settled-reach-never,sentence:a settled reach never re-dispatches — dispatch refuses a refused and a dead one alike while a booked one still resolves its address — so the settle loop skips both failure terminals and a receipt can never flip itself back to dispatched and dodge its own sweep
+  step=21,dige:fe18be324462004a
+    Assertion:a-reach-admitted-with,sentence:a reach admitted with no sealed pier needs a valid soul-signed voucher — a body of my own soul passes and a sealed friend passes while a frame with no voucher a tampered signature or an unknown soul each lands nothing — so a forged settle cannot land on the untrusted relay
+  step=22,dige:378ee084000c87a4
+    Assertion:the-doer-answers-in,sentence:the doer answers in the req machine's three postures — placed lands it and not-yet leaves it serving while provably-cannot refuses with a named why — a missing handler refuses no handler instead of auto-landing the lie — a throw is never terminal but leaves a loud rebuff — and the why crosses the wire to the booker while an ack without one stamps nothing
+  step=23,dige:6ce8c4341db596f5
+    Assertion:the-reach-pump-is,sentence:the reach pump is one self-throttling entry any driver may call — a second call inside its cadence no-ops — it sweeps stale receipts even while the settle knob leaves the ledger observing because the knob gates action never hygiene — and with the knob on the same entry dispatches the standing wants

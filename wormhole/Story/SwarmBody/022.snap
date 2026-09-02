@@ -1,9 +1,9 @@
 Snap:H
   H:SwarmBody,Run
     A:SwarmBody
-      self,round=16	{"mung":["age"]}
+      self,round=22	{"mung":["age"]}
       w:SwarmBody,now=1751700000
-        self,round=16	{"mung":["age"]}
+        self,round=22	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:Alice
@@ -90,6 +90,44 @@ Snap:H
               Reach,to:Cave,of:c1,for:serve,by:acbc93dc53344260ca0b9362068add4797cd38276e583d210e623035c1732698,state:booked,at:1751700000
               Reach,to:Cave,of:c2,for:serve,by:acbc93dc53344260ca0b9362068add4797cd38276e583d210e623035c1732698,state:booked,at:1751700000
               Reach,to:Cave,of:c3,for:serve,by:acbc93dc53344260ca0b9362068add4797cd38276e583d210e623035c1732698,state:booked,at:1751700000
+          Identity:1b5b87bc7c9238d9,prepub:1b5b87bc7c9238d9,friendly:Swp
+            Peering,name:1b5b87bc7c9238d9,friendly:Swp
+              Body,pub:swpcave_pub_17,post:Cave,address:1b5b87bc7c9238d9_1,name:Swpa
+              Reach,to:Cave,of:fresh_r,for:serve,by:4c8d53acb6aee3cedb02ca447f127cb6043c179c1b1591e4207ad97acaf73714,state:refused,at:1751700000
+          Identity:5f84f04638a55413,prepub:5f84f04638a55413,friendly:Dex
+            Peering,name:5f84f04638a55413,friendly:Dex
+              Body,pub:dcave_pub_18,post:Cave,address:5f84f04638a55413_1,name:Dave
+              Reach,to:Cave,of:gone_track,for:serve,by:2f22e0859e6928408c18baeb56846e3f3182ff33f15b7f7ad3edf7bbd690ff86,state:dead,at:1751700000,why:nobody-answered
+              Reach,to:Cave,of:standing_track,for:serve,by:2f22e0859e6928408c18baeb56846e3f3182ff33f15b7f7ad3edf7bbd690ff86,state:booked,at:1751700000
+          Identity:b8b30f9b54f8ffe7,prepub:b8b30f9b54f8ffe7,friendly:Lex
+            Peering,name:b8b30f9b54f8ffe7,friendly:Lex
+              Body,pub:lcave_pub_19,post:Cave,address:b8b30f9b54f8ffe7_1,name:Lave
+              Reach,to:Cave,of:landed_x,for:serve,by:8fa434bea2441b2dba636ab3ad872d31c728abe82a68517bd6b0fa4bbe7f59d7,state:arrived,at:1751700000
+              Reach,to:Cave,of:upgrade_y,for:serve,by:8fa434bea2441b2dba636ab3ad872d31c728abe82a68517bd6b0fa4bbe7f59d7,state:arrived,at:1751700000
+              Reach,to:Cave,of:first_z,for:serve,by:8fa434bea2441b2dba636ab3ad872d31c728abe82a68517bd6b0fa4bbe7f59d7,state:refused,at:1751700000
+          Identity:6f378697693e8d39,prepub:6f378697693e8d39,friendly:Zed
+            Peering,name:6f378697693e8d39,friendly:Zed
+              Body,pub:zcave_pub_20,post:Cave,address:6f378697693e8d39_1,name:Zave
+              Reach,to:Cave,of:refused_z,for:serve,by:715a3d60dfac16d037a915eab348e1976ef9b0353fb5ae90809aa387462c40c9,state:refused,at:1751700000
+              Reach,to:Cave,of:dead_z,for:serve,by:715a3d60dfac16d037a915eab348e1976ef9b0353fb5ae90809aa387462c40c9,state:dead,at:1751700000
+              Reach,to:Cave,of:live_z,for:serve,by:715a3d60dfac16d037a915eab348e1976ef9b0353fb5ae90809aa387462c40c9,state:booked,at:1751700000
+          Identity:813b13953fcbb242,prepub:813b13953fcbb242,friendly:AuthAlice
+            Peering,name:813b13953fcbb242,friendly:AuthAlice
+              Pier,pub:590e5760c3991d0d
+                Peering,pub:590e5760c3991d0d8d91f9efd378248dca3aaa8a6253bd5cee9c8de38824ee69
+          Identity:426ba307bfc36df7,prepub:426ba307bfc36df7,friendly:AuthEve
+            Peering,name:426ba307bfc36df7,friendly:AuthEve
+          Identity:590e5760c3991d0d,prepub:590e5760c3991d0d,friendly:AuthBob
+            Peering,name:590e5760c3991d0d,friendly:AuthBob
+          Identity:8da5fc731cf8c3db,prepub:8da5fc731cf8c3db,friendly:Serl
+            Peering,name:8da5fc731cf8c3db,friendly:Serl
+              Reach,to:Cave,of:s1,for:serve,by:x,state:refused,at:1751700000,why:no_handler
+              Reach,to:Cave,of:s4,for:serve,by:x,state:arrived,at:1751700000
+              Reach,to:Cave,of:s2,for:serve,by:x,state:refused,at:1751700000,why:shelf_full
+              Reach,to:Cave,of:s3,for:serve,by:x,state:serving,at:1751700000
+              Reach,to:Cave,of:w1,for:serve,by:8da5fc731cf8c3db,state:refused,at:1751700000,why:no_handler
+              Reach,to:Cave,of:w2,for:serve,by:8da5fc731cf8c3db,state:refused,at:1751700000
+            rebuff:reach_doer_threw,say:serve:s3 boom
         testing
           stood,keyed_by_bodykey,not_soul_keyed,bodykey_durable,per_soul_bodykey,mine_is_computed,no_self_flag
           friended,absorbed:1,bob_mine_is_bob,bob_mine_bodykey,no_self_on_pier,no_self_at_source
@@ -106,6 +144,12 @@ Snap:H
           organed,pocket_stood,trove_stood,idempotent_updated,read_by_kind
           organ_wired,wire_shape,sibling_organ_seen,stray_skipped
           capped,under_cap_booked,over_cap_refused,rebook_honoured
+          swept,stale_swept,fresh_survives
+          deaded,deadline_dies,dead_at_pinned,no_deadline_stands
+          latched,landed_survives_refusal,refusal_upgrades_to_landed,first_terminal_wins
+          zombied,refused_guarded,dead_guarded,booked_dispatches,settle_skips_terminals
+          authed,own_soul_admitted,no_voucher_rejected,tampered_rejected,stranger_rejected,sealed_friend_admitted
+          doered,no_handler_refuses,refusal_named,throw_not_terminal_but_loud,controls_hold,why_crosses_guarded
         reached:step_3
         Account,of:Bob
           Identity:bob_prepub_000,prepub:bob_prepub_000,friendly:Bob
@@ -133,3 +177,9 @@ Snap:H
         reached:step_14
         reached:step_15
         reached:step_16
+        reached:step_17
+        reached:step_18
+        reached:step_19
+        reached:step_20
+        reached:step_21
+        reached:step_22

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'a6779a3ee6f8821d~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '44a9005b0392864b~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -601,7 +601,13 @@ Peeroleum_crew_road(w, frame) {
     if (vpub.length < 16 || !/^[0-9a-f]+$/.test(vpub)) return false
     let soul = vpub.slice(0, 16)
     let from = String((frame.header && frame.header.from) || '')
-    if (!from || from.split('_')[0] === soul) return false
+    // THE DOOR-HOLDER FIX (2026-09-02, live: 🛰☠ no Pier for swarm_hi from=eed831f1 to=5ade3510 DROPPED):
+    //  the old guard `from.split('_')[0] === soul` REJECTED any sender whose name shared the soul root —
+    //   but under land-of-prepub ONE body holds the bare soul name (from=<soul>) and others hold <soul>_N
+    //    suffixes, so their presence to a distinct-named sibling (5ade3510) was dropped and the cohort could
+    //     never warm.  A sender sharing the soul root is a SIBLING to admit, not a stranger to reject — the
+    //      real gates remain: we must SERVE that soul (the find below) and the handler re-verifies the sig.
+    if (!from) return false
     return !!w.o({ Peering: 1 }).find((p) => String(p.sc.name) === soul || p.o({ Pier: 1 }).find((q) => String(q.sc.pub) === soul))
 
 },
@@ -661,6 +667,12 @@ async Peeroleum_deliver_do(w, frame) {
     //         0, 1, or N Piers, editor or runner alike.
     if (h.type === 'runner_ask' || h.type === 'ghost_compile') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, null, frame); return }
     let {peering, pier} = this.Peeroleum_route(w, h, 'to')
+    // 🔦 CEREMONY TRACE (2026-09-02, temporary floodlight): the live device-link died SILENTLY between
+    //  "knock dispatched fresh" and Swarm_hello — every ceremony frame's routing verdict now prints, so
+    //   a console paste shows exactly which branch ate it.  pier_*/ferry* only — pulses stay quiet.
+    if (/^(pier_|ferry)/.test(String(h.type || ''))) {
+        console.log(`🔦 deliver ${h.type} seq=${h.seq} from=${String(h.from || '').slice(0, 8)} to=${String(h.to || '').slice(0, 8)} pier=${pier ? 'yes' : 'NO'}${pier && pier.oa && !pier.oa({ Ud: 1 }) ? ' PRE-UD' : ''} hiseq=${pier && pier.c ? +(pier.c.hiseq || 0) : '-'}`)
+    }
     // first-contact: a pier_hello arrives BY DESIGN from a prepub no %Pier exists for yet — the
     //  invite front door (Swarm_spec §6.3/§10.1). The Pier/Ud booking discipline can't apply to a
     //   caller we haven't met, and doesn't need to: the Idzeug echoed inside is its own credential
@@ -670,7 +682,8 @@ async Peeroleum_deliver_do(w, frame) {
     //       through to the normal booked path below; every other no-pier frame still drops.
     if (!pier && h.type === 'pier_hello') {
         let on = w.c.on && w.c.on[h.type]
-        if (!on) return
+        if (!on) { console.log(`🔦 first-contact pier_hello from=${String(h.from || '').slice(0, 8)} — NO handler armed on this world (w.c.on empty) — knock DIES here`); return }
+        console.log(`🔦 first-contact pier_hello from=${String(h.from || '').slice(0, 8)} → handler-direct (Swarm_hello should ENTER next)`)
         await on(w, null, frame)
         let now = this.Peeroleum_route(w, h, 'to')
         if (now.pier) this.Peeroleum_send(w, {header: {type: 'ack', from: h.to, to: h.from, ack: h.seq}})
@@ -866,7 +879,8 @@ async Peeroleum_deliver_do(w, frame) {
                 //   Swarm_hello chain, invisible because this handler-direct call is OUTSIDE req_unemit's
                 //    try/catch).  Make it LOUD: a bail this deep must name itself, or every debug session
                 //     is a copy-paste hunt for a line that never printed.
-                if (kon) { try { await kon(w, null, frame) } catch (er) { console.log(`🛰⚠ reborn pier_hello handler THREW (from=${h.from}): ${String((er && er.stack) || (er && er.message) || er).slice(0, 240)}`) } }
+                if (!kon) { console.log(`🔦 reborn pier_hello from=${String(h.from || '').slice(0, 8)} — NO handler armed on this world (w.c.on empty) — knock DIES here`) }
+                if (kon) { try { let kres = await kon(w, null, frame); console.log(`🔦 reborn pier_hello dispatched → handler returned ${kres === null ? 'null (refused/denied — a 🚪 rebuff above says why)' : kres === undefined ? 'undefined' : 'truthy (processed)'}`) } catch (er) { console.log(`🛰⚠ reborn pier_hello handler THREW (from=${h.from}): ${String((er && er.stack) || (er && er.message) || er).slice(0, 240)}`) } }
                 let know = this.Peeroleum_route(w, h, 'to')
                 if (know.pier) H.Peeroleum_send(w, {header: {type: 'ack', from: h.to, to: h.from, ack: h.seq}})
                 H.feebly_ponder()
@@ -1158,6 +1172,12 @@ async req_unemit(req) {
     let pre_ud = !pier.oa({Ud:1})
     let ok = !(pre_ud && h.type !== 'hello' && h.type !== 'noop')
     let reason = pre_ud ? 'pre-Ud' : 'not-them'
+    // 🔦 CEREMONY TRACE: the pre-Ud/startup-hold refusals below are quiet BY DESIGN (the boot path) —
+    //  but for ceremony kinds that silence ate a live device-link knock un-diagnosably.  Ceremony
+    //   frames print their verdict here, silence policy notwithstanding.
+    if (/^(pier_|ferry)/.test(String(h.type || ''))) {
+        console.log(`🔦 unemit ${h.type} seq=${h.seq} from=${String(h.from || '').slice(0, 8)} pre_ud=${pre_ud ? 1 : 0} → ${ok ? 'dispatching to handler' : 'REFUSED:' + reason + ' (silently eaten — THIS is where the knock died)'}`)
+    }
     // body integrity (spec §4.2: header.body_hash covers the body) is part of verify, checked
     //  BEFORE delivery so a corrupt body fails identically to a tweaked header-sign — same
     //   %error→%faulty path. The digest is an AWAITED sha256 over the off-snap raw buffer
@@ -1217,7 +1237,9 @@ async req_unemit(req) {
         inbox.finish(req)
         let me = pier.c.up.sc.name
         H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier.sc.pub, ack:h.seq}})
+        if (/^(pier_|ferry)/.test(String(h.type || ''))) { console.log(`🔦 unemit ${h.type} seq=${h.seq} handled + acked`) }
     } else {
+        if (/^(pier_|ferry)/.test(String(h.type || ''))) { console.log(`🔦 unemit ${h.type} seq=${h.seq} FAILED after dispatch — reason=${reason}${req.c.threw_msg ? ' threw=' + req.c.threw_msg : ''}`) }
         req.sc.error = reason
         // ARM THE ROLLUP (2026-08-05).  This is the ONLY place an unemit is ever stamped with an error, so
         //  it is the only place a %faulty rollup can become owed.  Peeroleum_rollup_faulty reads this and

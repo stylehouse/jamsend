@@ -70,6 +70,7 @@ Snap:H
               Reach,to:Cave,of:t1,for:serve,by:b9801bc3a1fb5c2575eaec590b1cc94d3768b258309ce66e728500f6fc9a0154,state:booked,at:1751700000
               Reach,to:Cave,of:t2,for:serve,by:x,state:serving,at:1751700000
               Reach,to:Cave,of:t3,for:serve,by:b9801bc3a1fb5c2575eaec590b1cc94d3768b258309ce66e728500f6fc9a0154,state:refused,at:1751700000
+              Reach,to:Cave,of:t4,for:serve,by:b9801bc3a1fb5c2575eaec590b1cc94d3768b258309ce66e728500f6fc9a0154,state:dead,at:1751700000
         testing
           stood,keyed_by_bodykey,not_soul_keyed,bodykey_durable,per_soul_bodykey,mine_is_computed,no_self_flag
           friended,absorbed:1,bob_mine_is_bob,bob_mine_bodykey,no_self_on_pier,no_self_at_source

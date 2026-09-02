@@ -70,6 +70,7 @@ Snap:H
               Reach,to:Cave,of:t1,for:serve,by:b9801bc3a1fb5c2575eaec590b1cc94d3768b258309ce66e728500f6fc9a0154,state:booked,at:1751700000
               Reach,to:Cave,of:t2,for:serve,by:x,state:serving,at:1751700000
               Reach,to:Cave,of:t3,for:serve,by:b9801bc3a1fb5c2575eaec590b1cc94d3768b258309ce66e728500f6fc9a0154,state:refused,at:1751700000
+              Reach,to:Cave,of:t4,for:serve,by:b9801bc3a1fb5c2575eaec590b1cc94d3768b258309ce66e728500f6fc9a0154,state:dead,at:1751700000
           Identity:27aca4b5a937f6be,prepub:27aca4b5a937f6be,friendly:Orin
             Peering,name:27aca4b5a937f6be,friendly:Orin
               Body,pub:249551df8b2d1aaced6f0fd816a98c71cf51a470adfdd7b64bbbf04ac9c11897,post:Captain,address:27aca4b5a937f6be

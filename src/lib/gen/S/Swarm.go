@@ -15,7 +15,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'eeb67e331db4838a~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '011efe5b8e92670b~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1107,6 +1107,19 @@ async Swarm_arm(w) {
                 brow.bump()
             }
         }
+        // REACH AUTH — the pier-less lane (Ceremony §6 rule 6 "auth before mint|settle"): reach|reach_done
+        //  carry a soul-signed voucher (Swarm_sibling_send stamps station_voucher).  The sealed-pier gate
+        //   above already vouched a friend's frame; but when NO pier resolved — a body of my OWN soul (whom
+        //    I do not pier) or a pre-relationship stranger — the general 'stranger ungated' policy would
+        //     admit a FORGED reach_done that settles a booked reach terminal (the relay never checks from).
+        //      So the reach lane REQUIRES a valid voucher whose soul is mine or a sealed friend's; a
+        //       stranger lands nothing.  Station-only (Books never set station_up), so no fixture moves.
+        if (!sealed && w2.c.station_up && (frame.header.type === 'reach' || frame.header.type === 'reach_done')) {
+            if (!(await this.Swarm_reach_vouched(ident, frame.swarm))) {
+                this.Swarm_rebuff(ident, 'unvouched_' + frame.header.type, from)
+                return false
+            }
+        }
         // PRESENCE, for free: a VOUCHED (or ungated) inbound frame from an already-sealed pier
         //  stamps heard_at (c-side — never snapped, Books untouched).  A stranger stamps nothing —
         //   the same law as ive_got: gossip never opens a door.  The 'pulse' kind exists ONLY to
@@ -1385,6 +1398,35 @@ async Swarm_voucher_ok(sealed, from, vh, ident, page) {
     if (who !== vh.pub) return nope('signature bad')
     sealed.c.voucher_ok = vh.sign
     return true
+
+},
+// Swarm_reach_vouched — the pier-less reach gate (Ceremony §6 rule 6, "auth before mint|settle").  A
+//  reach|reach_done that resolved NO sealed pier at the hear funnel is admitted ONLY if it carries a
+//   valid per-era voucher (Swarm_sibling_send stamps station_voucher) whose SOUL is mine — a body of my
+//    own soul, where membership IS the ability to sign as the soul — or a sealed friend's (delegate to
+//     Swarm_voucher_ok against the pub imported at seal).  No voucher, a bad signature, or an unknown
+//      soul ⇒ rejected, so a forged reach_done can never settle a standing reach on the untrusted relay.
+async Swarm_reach_vouched(ident, frame) {
+    let vh = frame && frame.voucher
+    if (!vh || !vh.sign || !vh.pub) { return false }
+    let who = await verifyHeader(vh, [vh.pub])
+    if (who !== vh.pub) { return false }
+    let soul = prepubOf(String(vh.pub))
+    if (soul === String(ident.sc.prepub)) { return true }
+    let sealed = this.Swarm_peering(ident)?.o({ Pier: 1, pub: soul })[0]
+    if (sealed) { return await this.Swarm_voucher_ok(sealed, soul, vh, ident, frame.page) }
+    return false
+
+},
+// Swarm_voucher_mint — mint a per-era station voucher for ident's SOUL (the proof Swarm_voucher_ok /
+//  Swarm_reach_vouched verify): the soul pub + era, signed by the soul key.  Swarm_station_up mints its
+//   own inline on the live socket (era + ts from the wall clock); this extraction lets a Book forge and
+//    verify the crew-road auth on pure matter with a pinned era/ts, so the fixture stays byte-stable.
+async Swarm_voucher_mint(ident, era) {
+    if (!ident || !ident.c || !ident.c.keys) { return null }
+    let vh = { control: 'voucher', from: String(ident.sc.prepub), pub: ident.c.keys.pub, era: era || 1, ts: 1 }
+    vh.sign = await signHeader(vh, ident.c.keys.key)
+    return vh
 
 },
 // Swarm_pump — handle an identity's undone mail (a Book's drive calls this each pass; production
@@ -2162,6 +2204,9 @@ async Swarm_redeem(w, ident, iz, advice) {
 //     spend the serial, mint our BOUND grant, seal ONE-SIDED (their reciprocal follows as
 //      pier_confirm), import their page as a %Pier, and answer pier_accept.
 async Swarm_hello(w, ident, frame) {
+    // 🔦 CEREMONY TRACE: unconditional ENTER — "was Swarm_hello even called" must never be a mystery
+    //  again (live 2026-09-02: knock 'dispatched fresh' then pure silence — this line forks the world).
+    console.log(`🔦 Swarm_hello ENTER from=${String(frame && frame.page && frame.page.prepub || '?').slice(0, 8)} iz=${frame && frame.iz ? String(frame.iz).slice(0, 20) + '…' : 'NONE'} me=${String(ident && ident.sc.prepub || '?').slice(0, 8)}`)
     // VERIFY BEFORE WE LEAVE A TRACE (the F3 flood + the SwarmSpoof tooth): a junk / forged /
     //  misdirected / spoofed / UNKNOWN-serial hello must mint NO transport route, stamp NO %Ud,
     //   and send NO reply — replying only confirms us to a spammer, and serials are GUESSABLE
@@ -2259,6 +2304,21 @@ async Swarm_hello(w, ident, frame) {
                 console.log('🦑 ferry: the standing link is DEAD — its invite was already redeemed once and the redeemer holds no honoured grant. Retired it; mint a fresh link.')
             }
         }
+        // IDEMPOTENT LANDING (Ceremony §6 rule 3, the live 2026-09-02 self-murder): a spent-serial knock
+        //  from a redeemer we ALREADY sealed as our Cave is a RETRY of a ceremony that LANDED — the redeemer
+        //   re-knocks because it has not yet processed our accept (its accept routed to a cohort sibling, or
+        //    just raced).  Rejecting it 'spent' KILLS a succeeded link (the incognito's "listening for the
+        //     soul" forever, while eed already sent it).  Re-answer LANDED: re-send the same pier_accept
+        //      (idempotent), never a pier_reject.  Only a redeemer we hold NO live Cave pier for is a real
+        //       spent-replay stranger → deny below.  This is the reach latch (landed outranks refused) at
+        //        the ceremony door.
+        let respier = this.Swarm_peering(ident)?.o({ Pier: 1, pub: frame.page?.prepub })[0]
+        if (respier && this.Swarm_pier_linklive(respier)) {
+            let repost = this.Swarm_post_from_feature(f.to)
+            let resent = this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', link: { post: String(repost || ''), serial: String(f.serial || '') }, page: this.Swarm_page(ident) })
+            console.log(`🔦 pier_accept RE-SENT (idempotent — serial ${t.serial} spent but this Cave is already sealed live; a retry-knock must LAND not be rejected) → ${String(frame.page.prepub).slice(0, 8)} delivered=${resent ? 'yes' : 'NO'}`)
+            return respier
+        }
         return deny('spent')
     }
     // chain policy (§6.3a): a chain invite is not spent on first claim — its first claimant becomes
@@ -2315,12 +2375,14 @@ async Swarm_hello(w, ident, frame) {
         if (ltop && ltop.c && !(lsoul && lsoul.c.ferrying)) {
             this.Swarm_ferry_on_seal(w, ident, pier).catch((er) => {})
         }
-        this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', link: { post: String(lpost), serial: String(f.serial || '') }, page: this.Swarm_page(ident) })
+        let lsent = this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', link: { post: String(lpost), serial: String(f.serial || '') }, page: this.Swarm_page(ident) })
+        console.log(`🔦 pier_accept (link arm) → ${String(frame.page.prepub).slice(0, 8)} delivered=${lsent ? 'yes' : 'NO (unreachable — no route)'}`)
         return pier
     }
     let mine = await mint_grant(ident.c.keys, frame.page.pub, f.to, f.params, this.Swarm_now(w))
     let pier = this.Swarm_seal(w, ident, frame.page, null, mine)
-    this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', grant: mine, page: this.Swarm_page(ident) })
+    let gsent = this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', grant: mine, page: this.Swarm_page(ident) })
+    console.log(`🔦 pier_accept (grant arm) → ${String(frame.page.prepub).slice(0, 8)} delivered=${gsent ? 'yes' : 'NO (unreachable — no route)'}`)
     return pier
 
 },
@@ -2330,6 +2392,8 @@ async Swarm_hello(w, ident, frame) {
 //    grant-proven above), so our grant mints now, seals beside theirs, and rides back as
 //     pier_confirm — the third frame. Both being online, the living connection stands at once.
 async Swarm_accept(w, ident, frame) {
+    // 🔦 CEREMONY TRACE: the redeemer's side — did the accept ever arrive back.
+    console.log(`🔦 Swarm_accept ENTER from=${String(frame && frame.page && frame.page.prepub || '?').slice(0, 8)} arm=${frame && frame.link && !frame.grant ? 'link' : 'grant'} me=${String(ident && ident.sc.prepub || '?').slice(0, 8)}`)
     // THE LINK-ARM (mint-stop): a device-link accept carries `link:{post,serial}` and NO grant.
     //  What proves it: (1) page_bound — the sender wears a real key at its claimed name; (2) the
     //   page prepub MATCHES THE ISSUER I SCANNED — the ?Iz + fc rode the QR's physical channel, so
@@ -3161,9 +3225,10 @@ Swarm_pulse_all(w, ident) {
     //   Book costs nothing).  This is what makes a ceremony that misfired — stale build, lost frame,
     //    mistimed reload — converge within a minute instead of never.
     if (!w.c.family_look_at || (Date.now() - w.c.family_look_at) > 60000) { w.c.family_look_at = Date.now(); this.Swarm_family_heal(w, ident).catch((er) => console.log(`🪪⚠ family heal failed: ${er && er.message || er}`)) }
-    // the reach RETRY rides the same trickle (Reach_todo): re-dispatch standing cross-body intents.
-    //  Self-gated on w.c.reach_on (default-off — the ledger observes until the knob is flipped).
-    if (!w.c.reach_look_at || (Date.now() - w.c.reach_look_at) > 60000) { w.c.reach_look_at = Date.now(); try { this.Swarm_reach_settle(w, ident) } catch (er) {} }
+    // the reach RETRY rides the same trickle (Reach_todo) — through the ONE pump entry, which paces
+    //  itself (reach_cadence ms, default 5s — the buried 60s throttle is gone) and sweeps receipts even
+    //   while the settle knob (w.c.reach_on, default-off) leaves the ledger observing.
+    try { this.Swarm_reach_pump(w, ident) } catch (er) {}
     // ORGAN refresh (SoundPool): a body re-describes its own pocket/trove from the live library counts so
     //  the Plot's lanes show real sizes (and organ replication carries them to siblings).  Book-inert (no
     //   radio world → no-op).
@@ -3898,6 +3963,24 @@ async Swarm_share_loop(w, ident) {
     const tick = () => {
         if (era !== w.c.share_era || !w.c.share_up) return
         if (w.c.share_beat_running) {
+            // SELF-HEAL A LOST POST (2026-09-02, the ×1191 jam): POSTED-never-ENTERED used to be read as
+            //  "queued behind the beliefs mutex" — but live, the 🧱 mutex watchdog never fired AND Story
+            //   steps drained happily through the same loop, so the mutex was FREE: the posted callback
+            //    was simply LOST (an HMR module swap / a teardown racing the todo queue), and the guard
+            //     latched forever ("Reload clears it" was the only cure).  When the post is >120s old,
+            //      never entered, and the mutex is verifiably free — far beyond any honest queueing —
+            //       declare it lost, re-arm, and let the next tick re-post.  A genuinely HELD mutex
+            //        stays the watchdog's case (we do not fight it; 🧱 names the holder there).
+            if (!w.c.beat_entered_at && w.c.beat_posted_at && (Date.now() - w.c.beat_posted_at) > 120000) {
+                let mtop = this.top_House ? this.top_House() : null
+                if (!(mtop && mtop.c && mtop.c._mutex_beliefs)) {
+                    console.log('⏳⚕ share beat posted ' + Math.round((Date.now() - w.c.beat_posted_at) / 1000) + 's ago and never entered while the beliefs mutex is FREE — the posted callback was LOST (HMR/teardown swap) — re-arming the beat')
+                    w.c.share_beat_running = false
+                    w.c.beat_posted_at = 0
+                    w.c.share_beat_skipped = 0
+                    return
+                }
+            }
             w.c.share_beat_skipped = (w.c.share_beat_skipped || 0) + 1
             if (w.c.share_beat_skipped % 10 === 1) {
                 // carry the SPLIT into the skip line: this counter climbing is the symptom everyone
@@ -5077,16 +5160,44 @@ Swarm_reach_settle(w, ident) {
         if (dl && Date.now() > dl) { reach.sc.state = 'dead'; reach.sc.why = 'nobody-answered'; reach.sc.at = String(this.Swarm_now(w)); reach.bump(); continue }
         if (this.Swarm_reach_dispatch(w, ident, reach)) { n = n + 1 }
     }
-    // SWEEP stale refused receipts (the cap's cousin, beat 16): a 'refused' reach STANDS as a receipt the
-    //  human sees, but must not stand forever — else the shelf fills with dead receipts and the cap starts
-    //   refusing live bookings.  Drop refused reaches older than the receipt TTL (default 1h).  Bounded,
-    //    quiet — the receipt had its window to be seen.
+    // SWEEP stale receipts on the way out (extracted below so the PUMP can also run it knob-off).
+    this.Swarm_reach_sweep_receipts(w, ident)
+    return n
+},
+// Swarm_reach_sweep_receipts — age out the failure receipts (the cap's cousin, beat 16): a 'refused' or
+//  'dead' reach STANDS as a receipt the human sees, but must not stand forever — else the shelf fills and
+//   the cap starts refusing live bookings.  Drop terminals older than the receipt TTL (default 1h).
+//    UNCONDITIONAL (not knob-gated): an OBSERVING node (reach_on off) must still shed its receipts, or
+//     observation itself leaks the shelf full.  Bounded, quiet — the receipt had its window to be seen.
+Swarm_reach_sweep_receipts(w, ident) {
+    let peering = this.Swarm_peering(ident)
+    if (!w || !peering) { return 0 }
     let ttl = (w.c.reach_receipt_ttl != null) ? +w.c.reach_receipt_ttl : 3600
     let now = this.Swarm_now(w)
-    for (const reach of peering.o({ Reach: 1, state: 'refused' })) {
-        if (now - (+reach.sc.at || now) > ttl) { peering.drop(reach) }
+    let dropped = 0
+    for (const rst of ['refused', 'dead']) {
+        for (const reach of peering.o({ Reach: 1, state: rst })) {
+            if (now - (+reach.sc.at || now) > ttl) { peering.drop(reach); dropped = dropped + 1 }
+        }
     }
-    return n
+    return dropped
+},
+// Swarm_reach_pump — THE ONE PUMP ENTRY (Ceremony §6 build notes): callable from ANY driver — the pulse
+//  trickle, a ceremony tick, a Book beat — and SELF-THROTTLING, so callers never coordinate cadences.
+//   Cadence is a pump-mode constant (`w.c.reach_cadence` ms, default 5000 — a ceremony sets ~3000), all
+//    math `Date.now()` ms (never Swarm_now seconds — the ms-vs-seconds trap).  Every un-throttled pass:
+//     SWEEP receipts unconditionally (an observing node must shed its terminals — the knob gates ACTION,
+//      never hygiene), then SETTLE (dispatch + deadline) only when `reach_on` is flipped.
+//       Returns null when throttled, else the settle count.  Replaces the buried 60s trickle throttle.
+Swarm_reach_pump(w, ident) {
+    if (!w || !ident) { return null }
+    let cadence = (w.c.reach_cadence != null) ? +w.c.reach_cadence : 5000
+    let now = Date.now()
+    if (w.c.reach_pump_at && (now - w.c.reach_pump_at) < cadence) { return null }
+    w.c.reach_pump_at = now
+    this.Swarm_reach_sweep_receipts(w, ident)
+    return this.Swarm_reach_settle(w, ident)
+
 },
 // Swarm_reach_heard — the TARGET receives a reach frame: mint the inbound copy on MY OWN %Peering (same
 //  particle shape, replicated across — the charter model), state 'serving', ready for Swarm_reach_serve.
@@ -5102,15 +5213,27 @@ Swarm_reach_heard(w, ident, frame) {
 // Swarm_reach_serve — the TARGET does the work: for each inbound serving reach, DELEGATE to the doer (Reach
 //  does not re-implement landing — it hands off to Heist/Repli), mark 'arrived' when the doer places it.
 //   The doer binding is the live/humdinger seam (Reach_todo §5 step 3); a Book proves the walk with a stub.
-//    `doer(reach)` returns truthy when the work is placed; a falsy return leaves the reach serving (retry).
+//  THE DOER CONTRACT (Ceremony §6 rule 4 — the req machine's three postures pushed to the wire):
+//    truthy            → placed → 'arrived' (ok)
+//    falsy             → not yet → stays 'serving' (needs_work — the retry covers it)
+//    { refuse: <why> } → provably-cannot → 'refused' with its named why (the ferry-verdict idiom)
+//    a THROW is NOT terminal (the 2026-08-31 tri-state lesson): the want stays serving — the re-ask
+//     covers the transient race — but LOUDLY (a %rebuff), never a silent swallow.
+//    NO doer wired    → 'refused','no_handler' — auto-landing unknowns was a lie in the ledger (a want
+//     nobody can serve reported 'arrived'); a missing handler is provably-cannot, not quietly-done.
 Swarm_reach_serve(w, ident, doer) {
     let peering = this.Swarm_peering(ident)
     if (!peering) { return 0 }
     let n = 0
     for (const reach of peering.o({ Reach: 1, state: 'serving' })) {
-        let placed = 1
-        if (typeof doer === 'function') { try { placed = doer(reach) ? 1 : 0 } catch (e) { placed = 0 } }
-        if (placed) { reach.sc.state = 'arrived'; reach.sc.at = String(this.Swarm_now(w)); reach.bump(); n = n + 1 }
+        if (typeof doer !== 'function') { this.Swarm_reach_refuse(w, ident, reach, 'no_handler'); continue }
+        let got
+        try { got = doer(reach) } catch (e) {
+            this.Swarm_rebuff(ident, 'reach_doer_threw', String(reach.sc.for || '') + ':' + String(reach.sc.of || '') + ' ' + String(e).slice(0, 40))
+            continue
+        }
+        if (got && got.refuse) { this.Swarm_reach_refuse(w, ident, reach, String(got.refuse)); continue }
+        if (got) { reach.sc.state = 'arrived'; reach.sc.at = String(this.Swarm_now(w)); reach.bump(); n = n + 1 }
     }
     return n
 },
@@ -5126,10 +5249,12 @@ Swarm_reach_graduate(ident) {
 },
 // Swarm_reach_refuse — the TARGET marks an inbound reach it cannot serve (the doer refused for good, not a
 //  retry): a terminal 'refused', distinct from 'serving'.  The booker learns via a reach ack of state
-//   refused; unlike 'arrived' it does not graduate — the failure stays visible.
-Swarm_reach_refuse(w, ident, reach) {
+//   refused; unlike 'arrived' it does not graduate — the failure stays visible.  `why` NAMES the refusal
+//    (no_handler | the doer's own reason) — GUARDED: never stamp a maybe-undefined (the undef-marker law).
+Swarm_reach_refuse(w, ident, reach, why) {
     if (!reach) { return null }
     reach.sc.state = 'refused'
+    if (why != null && String(why)) { reach.sc.why = String(why) }
     reach.sc.at = String(this.Swarm_now(w))
     reach.bump()
     return reach
@@ -5154,7 +5279,14 @@ Swarm_reach_ack(w, ident, frame) {
     let cur = String(reach.sc.state || '')
     let rank = (s) => s === 'arrived' ? 2 : (s === 'refused' || s === 'dead') ? 1 : 0
     if (rank(cur) === 0 || rank(st) > rank(cur)) {
-        if (reach.sc.state !== st) { reach.sc.state = st; reach.sc.at = String(this.Swarm_now(w)); reach.bump() }
+        if (reach.sc.state !== st) {
+            reach.sc.state = st
+            // the named refusal lands with its terminal (guarded — never a maybe-undefined stamp);
+            //  only a FAILURE terminal carries one, and only when the acked state was accepted.
+            if ((st === 'refused' || st === 'dead') && frame.why != null && String(frame.why)) { reach.sc.why = String(frame.why) }
+            reach.sc.at = String(this.Swarm_now(w))
+            reach.bump()
+        }
     }
     return reach
 },
@@ -5184,7 +5316,9 @@ Swarm_reach_report(w, ident, reach) {
     if (!addr) { return null }
     if (!w || !w.c.station_up) { return addr }        // Book / no station: resolution proven, wire inert
     let wire = { of: String(reach.sc.of || ''), to: String(reach.sc.to || ''), for: String(reach.sc.for || ''), by: by }
-    return this.Swarm_sibling_send(w, ident, addr, { kind: 'reach_done', state: String(reach.sc.state || 'arrived'), reach: wire }) ? addr : null
+    let done = { kind: 'reach_done', state: String(reach.sc.state || 'arrived'), reach: wire }
+    if (reach.sc.why != null && String(reach.sc.why)) { done.why = String(reach.sc.why) }   // the named refusal crosses too (guarded)
+    return this.Swarm_sibling_send(w, ident, addr, done) ? addr : null
 },
 // Swarm_reach_crew — the CREW ACTIVITY read (Reach_todo §6, the legibility half — the owner: "I don't
 //  bother reading your code anymore").  A pure projection of the standing reaches into ONE legible glance:
@@ -5193,7 +5327,7 @@ Swarm_reach_report(w, ident, reach) {
 //     Read-only, no bump — returns a plain object (the Swarm_ferry_facts idiom), Book-assertable.
 Swarm_reach_crew(w, ident) {
     let peering = this.Swarm_peering(ident)
-    let out = { booked: 0, dispatched: 0, serving: 0, arrived: 0, refused: 0, total: 0, reaches: [] }
+    let out = { booked: 0, dispatched: 0, serving: 0, arrived: 0, refused: 0, dead: 0, total: 0, reaches: [] }
     if (!peering) { return out }
     let now = this.Swarm_now(w)
     for (const r of peering.o({ Reach: 1 })) {

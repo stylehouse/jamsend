@@ -1,9 +1,9 @@
 Snap:H
   H:SwarmBody,Run
     A:SwarmBody
-      self,round=16	{"mung":["age"]}
+      self,round=18	{"mung":["age"]}
       w:SwarmBody,now=1751700000
-        self,round=16	{"mung":["age"]}
+        self,round=18	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:Alice
@@ -90,6 +90,15 @@ Snap:H
               Reach,to:Cave,of:c1,for:serve,by:acbc93dc53344260ca0b9362068add4797cd38276e583d210e623035c1732698,state:booked,at:1751700000
               Reach,to:Cave,of:c2,for:serve,by:acbc93dc53344260ca0b9362068add4797cd38276e583d210e623035c1732698,state:booked,at:1751700000
               Reach,to:Cave,of:c3,for:serve,by:acbc93dc53344260ca0b9362068add4797cd38276e583d210e623035c1732698,state:booked,at:1751700000
+          Identity:1b5b87bc7c9238d9,prepub:1b5b87bc7c9238d9,friendly:Swp
+            Peering,name:1b5b87bc7c9238d9,friendly:Swp
+              Body,pub:swpcave_pub_17,post:Cave,address:1b5b87bc7c9238d9_1,name:Swpa
+              Reach,to:Cave,of:fresh_r,for:serve,by:4c8d53acb6aee3cedb02ca447f127cb6043c179c1b1591e4207ad97acaf73714,state:refused,at:1751700000
+          Identity:5f84f04638a55413,prepub:5f84f04638a55413,friendly:Dex
+            Peering,name:5f84f04638a55413,friendly:Dex
+              Body,pub:dcave_pub_18,post:Cave,address:5f84f04638a55413_1,name:Dave
+              Reach,to:Cave,of:gone_track,for:serve,by:2f22e0859e6928408c18baeb56846e3f3182ff33f15b7f7ad3edf7bbd690ff86,state:dead,at:1751700000,why:nobody-answered
+              Reach,to:Cave,of:standing_track,for:serve,by:2f22e0859e6928408c18baeb56846e3f3182ff33f15b7f7ad3edf7bbd690ff86,state:booked,at:1751700000
         testing
           stood,keyed_by_bodykey,not_soul_keyed,bodykey_durable,per_soul_bodykey,mine_is_computed,no_self_flag
           friended,absorbed:1,bob_mine_is_bob,bob_mine_bodykey,no_self_on_pier,no_self_at_source
@@ -106,6 +115,8 @@ Snap:H
           organed,pocket_stood,trove_stood,idempotent_updated,read_by_kind
           organ_wired,wire_shape,sibling_organ_seen,stray_skipped
           capped,under_cap_booked,over_cap_refused,rebook_honoured
+          swept,stale_swept,fresh_survives
+          deaded,deadline_dies,dead_at_pinned,no_deadline_stands
         reached:step_3
         Account,of:Bob
           Identity:bob_prepub_000,prepub:bob_prepub_000,friendly:Bob
@@ -133,3 +144,5 @@ Snap:H
         reached:step_14
         reached:step_15
         reached:step_16
+        reached:step_17
+        reached:step_18
