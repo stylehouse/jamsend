@@ -10,6 +10,25 @@
    phone's OPFS so they are there OFFLINE: small LOFI copies, replayable without a peer,
     tradable phone-to-phone. The pool is a cache with a ledger — not a second library.
 
+**THE HEIST/POOL BOUNDARY (owner, 2026-09-02) — two different acts, do not conflate:**
+ - **Heist** = a CONCISE, usually-LOSSLESS acquisition between two different IDENTITIES (keeps a whole
+    album together — a deliberate, structured grab). See [[ferry-cave-model]] for identity terms.
+ - **SoundPooling** = a LIQUID approach to music piracy: lofi, casual, ambient, expendable — music
+    kept MOVING and filling space, not a curated transaction.
+ They share the Heist byte-DOER (§0.5: a pool Reach delegates carry-out to `Heist_materialise_one`),
+  but they are opposite in DIGNITY — lossless-album-per-Identity vs liquid-lofi-circulation. The
+   boundary law: bytes+doing belong to Heist/Repli; standing intent belongs to Reach; the POOL is the
+    liquid destination, the LIBRARY is the lossless one.
+
+**THE FORMULAS ARE THE CONTROL SURFACE (owner, 2026-09-02).** SoundPooling's character is DIALLED by
+ the two formula sites in `Ghost/M/Ra.g`, and these are what we tune (not the plumbing): (1) the taste
+  score `likes×3 + grabs×2 + spins×1` (`Ra_quarter_tally` ~1016), (2) the `%Pool` composition +
+   take-policies + declaration-order priority (`Ra_pool_define`/`Ra_quarter_goal_pools` ~1046–1107).
+    ⚠ **WATCH THE JAM SCHEMA (owner's explicit ask):** the taste score reads `%Spin`/`%Like`/`%Grab`
+     events under `%Jam` sessions — that schema is LOAD-BEARING for the whole economy; a drift in the
+      Jam ledger silently changes what gets pooled. Any Jam-schema change must be checked against
+       `Ra_quarter_tally`'s reads.
+
 **What already exists** (audited 2026-08-28 / Portability_todo §0 §3):
 - `Ghost/M/Ra.g` — `Ra_press` (v1 byte-copy, v2 ogg128), `Ra_quarter` (steward goal/diff),
    `Ra_quarter_serve` (dispose loop: press + evict), `Ra_rec_pool` (catalog door), `Ra_upgrade_scan`
@@ -80,6 +99,30 @@
 
 **The bet to hold.** Pool↔pool exchange between phones may be the MAJORITY way music actually
  moves (Portability_todo §0). Design pool paths as PRIMARY, not as a nicety on top of the library.
+
+**THE ECONOMY'S CHARACTER (owner, 2026-09-02) — two fills, and a gift-shaped transaction.**
+ *"Not just 'stream → copy lands' — you have to LIKE it, I think? but also another bunch of stuff
+  comes across whether you like it or not, just because we want to fill up the space and keep
+   things moving. That's a new concept for software — everything has been paywall and static and
+    transaction-driven. We want to give the user transactions like 'enjoy what you can of all this
+     music' that then affect how we SoundPool for them later. And it's likely how they keep random
+      music on their phone from their computer as well."*
+ Unpacked, this rules the press economy's shape:
+ - **Two fills, distinct in dignity:** the CHOSEN fill (liked/taste — tracks you engaged with) and
+    the **CIRCULATION fill** (unchosen — music that arrives to fill spare space and keep the music
+     MOVING through the mesh; expendable by design, first-evicted, no ask). Circulation is not a
+      cache-miss optimisation — it is the point: the pool is how music travels.
+ - **The transaction is a GIFT with a feedback loop, not a purchase:** "enjoy what you can of all
+    this" (the Music grant already has this shape) — and what you then PLAY/LIKE out of the
+     circulation stream shapes what gets pooled for you next (circulation → engagement → the taste
+      compartment). Anti-paywall, anti-static: the ledger records enjoyment, not entitlement.
+ - **Same machinery, one mapping (sketch):** %Pool compartments already carry take-policies and
+    declaration-order priority — a `liked`/`taste` compartment (high priority, kept) beside a
+     `circulation` compartment (fills remaining cap, evict-first, generous take); engagement
+      GRADUATES a track from circulation into taste. No new machinery smell — a policy expression
+       over `Ra_pool_define`.
+ - **The everyday corollary:** Cave→Captain fill (Flow 4) IS the circulation stream between your
+    own bodies — "random music on their phone from their computer," unasked, space-permitting.
 
 ---
 

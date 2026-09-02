@@ -24,7 +24,12 @@
     //   the splash mounted at the ROOT above all toplevels, not inside BigSoundland — a deliberate toplevel redo.
     import { onMount } from "svelte"
 
-    let { ready = false, urge = false, hold = false }: { ready?: boolean, urge?: boolean, hold?: boolean } = $props()
+    // A MEANINGFUL SPINNER (owner 2026-09-02): `phase` is a short human label for the boot stage now running
+    //  ("starting engines…", "sealing your links…", "restoring your library (674)…", "tuning the radio…") and
+    //   `frac` a coarse 0..1 progress, both derived in BigSoundland off boot facts the ghosts ALREADY write to
+    //    `top.c` (off-snap `.c` — no Book fixture moves).  So the tree is a moving progress, not a frozen cover.
+    let { ready = false, urge = false, hold = false, phase = '', frac = 0 }:
+        { ready?: boolean, urge?: boolean, hold?: boolean, phase?: string, frac?: number } = $props()
 
     // FROM THE VERY FIRST PAINT (owner 2026-08-31: "I want the splash to go from the very start of the page
     //  load … right now we have a bare Supervisor glass saying 'starting up' at the start, like a splash for
@@ -89,6 +94,19 @@
 {#if show}
     <div class="splash" class:fading aria-hidden="true">
         <img class="splash-hi" src="/tree.webp" alt="" />
+        <!-- MEANINGFUL PROGRESS (owner 2026-09-02): the boot phase + a coarse bar, so the tree shows motion and
+             WHICH stage is running instead of a dead cover.  Only shown once the client-side derivation has a
+             label (SSR/first-paint ships the bare tree; the phase peeks in on hydration) and never after a boot
+             gave-up (the Butler's failure is about to be revealed). -->
+        {#if phase && !urge}
+            <div class="splash-progress">
+                <div class="splash-label">
+                    <span class="splash-spin"></span>
+                    <span>{phase}</span>
+                </div>
+                <div class="splash-bar"><div class="splash-fill" style:width={`${Math.round(Math.max(0, Math.min(1, frac)) * 100)}%`}></div></div>
+            </div>
+        {/if}
     </div>
 {/if}
 
@@ -113,5 +131,47 @@
         height: 100%;
         object-fit: cover;               /* ENLARGE to fill the whole screen, cropping rather than boxing */
         object-position: center;
+    }
+    /* the progress readout — low, centred, calm; over the tree, under nothing */
+    .splash-progress {
+        position: absolute;
+        left: 50%;
+        bottom: 12%;
+        transform: translateX(-50%);
+        width: min(320px, 70vw);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        color: #e8efe9;
+        font: 500 14px/1.3 system-ui, -apple-system, sans-serif;
+        text-shadow: 0 1px 3px rgba(0,0,0,.6);
+        user-select: none;
+    }
+    .splash-label { display: flex; align-items: center; gap: 9px; }
+    .splash-spin {
+        width: 13px; height: 13px;
+        border: 2px solid rgba(232,239,233,.3);
+        border-top-color: #e8efe9;
+        border-radius: 50%;
+        animation: splash-spin 0.8s linear infinite;
+        flex: 0 0 auto;
+    }
+    @keyframes splash-spin { to { transform: rotate(360deg); } }
+    .splash-bar {
+        width: 100%;
+        height: 3px;
+        border-radius: 3px;
+        background: rgba(232,239,233,.18);
+        overflow: hidden;
+    }
+    .splash-fill {
+        height: 100%;
+        background: #e8efe9;
+        border-radius: 3px;
+        transition: width 450ms ease;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .splash-spin { animation: none; }
     }
 </style>

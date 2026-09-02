@@ -156,7 +156,7 @@
             if (!code) { err = 'no seal code in this link — open the exact QR link from your soul device'; return }
             taking = true
             const soul = await H.Swarm_ferry_consume(world(), code, true)
-            received = soul ? 'you are now a body of that soul — it lives on this device too' : 'could not join (wrong code, or the seal failed)'
+            received = soul ? 'you are now a body of that soul — it lives on this device too' : '✗ this link is stale — its code no longer matches the other device (it re-minted or updated). Mint a FRESH link there and open that one.'
             pending = null
             if (soul) finalize_url(soul)
         } catch (e) { err = String(e) } finally { taking = false }

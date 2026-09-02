@@ -277,6 +277,32 @@
     //     lifts" deadend: `hold` defers the Splash fade (Splash.svelte:63), and a ceremony tab kept disk_gated's
     //      hold long enough to wedge the tree over the Link cell.
     let boot_share_hold = $derived.by(() => { void H?.version; const c: any = (H as any)?.top_House?.()?.c; return !!c?.disk_gated && !c?.listen_only && c?.screen?.dominant !== 'ceremony' })
+    // A MEANINGFUL SPINNER (owner 2026-09-02: "takes forever to get through the splash before we can tell it's
+    //  doing anything … a MEANINGFUL SPINNER").  The boot already moves through legible phases, each a fact the
+    //   ghosts ALREADY write to `top.c` (all off-snap `.c`, 1-or-absent — no Book fixture sees them): the
+    //    Creduler loading the spine (%Creduler_pending on Mundo), Swarm sealing the relay (station_up), the
+    //     roster rehydrating (roster_rehydrated), Housing restoring the remembered library (census_phase +
+    //      census_music), and the glass drawing (glass_stood).  We READ those here — no new signal, no ghost
+    //       edit — and hand the splash a short human label + a coarse 0..1 fraction so the tree isn't a frozen
+    //        cover but a progress it can trust.  Keyed on H.version like every other toplevel read; a runner/
+    //         editor boot has no humdinger so it shows nothing (Splash already hides on ?B=/?E= anyway). -->
+    let boot_progress = $derived.by(() => {
+        void H?.version
+        const top: any = (H as any)?.top_House?.()
+        const c: any = top?.c
+        if (!c) return { label: '', frac: 0 }
+        // the spine: %Creduler_pending rides as a particle on H:Mundo while ghosts import; gone once all live.
+        const spine_pending = (() => { try { return top?.oa?.({ Creduler_pending: 1 }) } catch { return false } })()
+        if (spine_pending) return { label: 'starting engines…', frac: 0.15 }
+        if (!c.station_up)  return { label: 'sealing your links…', frac: 0.35 }
+        if (!c.roster_rehydrated) return { label: 'finding your people…', frac: 0.5 }
+        if (c.census_phase === 'restoring' || (!c.census_phase && !c.glass_stood)) {
+            const n = +(c.census_music || 0)
+            return { label: n ? `restoring your library (${n})…` : 'restoring your library…', frac: 0.7 }
+        }
+        if (!c.glass_stood) return { label: 'tuning the radio…', frac: 0.9 }
+        return { label: 'almost there…', frac: 0.97 }
+    })
     // every UI the run has mounted, GROUPED by House (Cyto and all) — the sprawl's content.
     //  Grouping gives each House one anchor the jump-to-H chips scroll to, plus its own heading in
     //   the dump.  Pantheate-include is DROPPED silently: on a runner these are the Creduler's
@@ -364,7 +390,8 @@
 <!-- the boot splash (tree.webp) — the calm cover over the WHOLE multi-phase boot (Butler/Supervisor warmup lives
      behind it), pointer-CATCHING (no fall-through into the machine room), holding until the Radio beginning (glass
      up + Butler lifted) or a boot gave-up, or a safety cap.  OPEN SHARE punches through it (BootGate, above).  Splash. -->
-<Splash ready={boot_ready} urge={boot_gaveup} hold={boot_share_hold} />
+<Splash ready={boot_ready} urge={boot_gaveup} hold={boot_share_hold}
+        phase={boot_progress.label} frac={boot_progress.frac} />
 
 <BootGate {H} who="the piracy-scape" audio_fullscreen={true} proactive={true} />
 <!-- the Butler: the Supervisor's arrival screen, altitude 55 — UNDER BootGate, because a permission

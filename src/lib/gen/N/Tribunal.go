@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '2a4271ca45a64e34~g1' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return 'b4c37f0c56f24f1a~g1' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -134,7 +134,12 @@ async Socket_real(w) {
     //          Real EVENTS (hello/trust/run_result/dock_push) always log.  (A buffered send is always logged:
     //           it only happens before the socket opens, which is worth seeing.)
     let verbose = !!(w && w.c && w.c.wire_verbose)
-    let ambient = { ping: 1, pong: 1, ack: 1, repli_want: 1, repli_page: 1, repli_lines: 1, repli_parked: 1, pulse: 1, swarm_hi: 1, advertise: 1 }
+    // AMBIENT = the chatty gossip/heal/replication frames that fire every beat and drown the console
+    //  (owner 2026-09-02 "does this crap really cover what we're doing anymore").  Suppressed unless
+    //   w.c.wire_verbose.  The CEREMONY frames (pier_hello/pier_accept/pier_confirm/pier_reject/ferry*)
+    //    are deliberately NOT here — those are the signal.  Added this pass: ive_got, repli_ready,
+    //     roster, run_phase, suggest/suggest_got (all high-volume, none user-legible).
+    let ambient = { ping: 1, pong: 1, ack: 1, repli_want: 1, repli_page: 1, repli_lines: 1, repli_parked: 1, repli_ready: 1, pulse: 1, swarm_hi: 1, advertise: 1, ive_got: 1, roster: 1, run_phase: 1, suggest: 1, suggest_got: 1 }
     let noisy = (h) => !verbose && h && !!ambient[h.type]
     // ── bulk lane (Backpressure_todo.md §5.1) — the only type carrying six-figure byte bodies is
     //  repli_page (folder-describe rides repli_lines, not this — see the doc's classification note),
@@ -204,7 +209,8 @@ async Socket_real(w) {
                 if (!bulk_pump_armed) { bulk_pump_armed = true; setTimeout(pump_bulk, 30) }
                 return
             }
-            if (!noisy(h)) note(`🛰 ws SEND ${h ? h.type + (frame.buffer ? ' +buf=' + frame.buffer.length : '') + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
+            if (h && !noisy(h)) note(`🛰 ws SEND ${h.type + (frame.buffer ? ' +buf=' + frame.buffer.length : '') + ' seq=' + h.seq + ' → ' + h.to}`)
+            else if (!h && verbose) note(`🛰 ws SEND (control)`)
             wire(frame)
         },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },

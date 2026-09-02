@@ -1762,6 +1762,7 @@ async Swarm_reaccept_incomplete(w, ident):
     let me = ident.c.keys ? ident.c.keys.pub : null
     if (!me) return 0
     let n = 0
+    let heal3 = 0   // count rung-3 re-offers and log ONE summary, not ×N per pier (owner: console noise)
     for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!pier.sc.pub) continue
         let peer = pier.o({ Peering: 1 })[0]
@@ -1812,7 +1813,7 @@ async Swarm_reaccept_incomplete(w, ident):
             if (pier.c.reoffer_at && (Date.now() - pier.c.reoffer_at) < 600000) continue
             pier.c.reoffer_at = Date.now()
             if (!this.Swarm_deliver(w, ident, String(pier.sc.pub), { kind: 'pier_accept', grant: grant_of_C(mineC), page: this.Swarm_page(ident) })) { this.Swarm_owed_note(w, pier, 'pier_accept') }
-            console.log(`⨳⟲ pier heal: re-offered my standing grant to ${String(pier.sc.pub).slice(0, 8)} — whole here, ${heard ? 'silent ' + Math.round(since / 1000) + 's' : 'never heard'} (§9 rung 3, the forgotten pier)`)
+            heal3 = heal3 + 1
             n = n + 1
             continue
         }
@@ -1843,6 +1844,7 @@ async Swarm_reaccept_incomplete(w, ident):
             n = n + 1
         }
     }
+    if (heal3) { console.log(`⨳⟲ pier heal: re-offered standing grants to ${heal3} forgotten pier(s) (§9 rung 3) — silent past 120s`) }
     return n
 
 // ── the rebirth greeting (swarm_hi) ─────────────────────────────────────────────────────────
@@ -2220,13 +2222,18 @@ async Swarm_hello(w, ident, frame):
         // FRESH REDEEM FORGIVES A STALE FORGET (Ferry_rebuild Stage 0): retire any legacy tombstone
         //  so a re-linked body-key seals clean — this redeem IS proven fresh consent.
         this.Swarm_cave_forgive(ident, pier, frame.page.prepub, f.to)
-        // RE-FIRE THE FERRY SEAM: Swarm_seal ran its on_seal seam BEFORE the stamp landed (a
-        //  grantless pier isn't linklive until stamped), so it no-op'd — without this the account
-        //   only crosses on the NEXT pump's retry, a whole beat late.  Same guard as the seam.
+        // RE-FIRE THE FERRY SEAM, RELOAD-PROOF (rebuild 2026-09-02): stamp the adopt SERIAL and mark the
+        //  pier warm (a fresh redeem IS warm by construction) so on_seal can DERIVE the ferry secret from
+        //   the soul key + this serial even when a reload left no stash.  Dropping the old
+        //    `Swarm_ferry_secret()` PRE-gate is the fix: it blocked the seam on exactly the reloaded giver
+        //     that most needs it (the live "eed has no idea it has a token" hang).  on_seal self-guards
+        //      (pier_live + secret-or-derivable + humdinger warmth), so calling it here is safe.
+        pier.c.ferry_serial = String(f.serial || '')
+        pier.c.heard_at = Date.now()
         let ltop = this.top_House ? this.top_House() : null
         let lsoul = this.Swarm_ferry_role('soul')
-        if (ltop && ltop.c && this.Swarm_ferry_secret() && !(lsoul && lsoul.c.ferrying)) {
-            try { this.Swarm_ferry_on_seal(w, ident, pier) } catch (er) {}
+        if (ltop && ltop.c && !(lsoul && lsoul.c.ferrying)) {
+            this.Swarm_ferry_on_seal(w, ident, pier).catch((er) => {})
         }
         this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', link: { post: String(lpost), serial: String(f.serial || '') }, page: this.Swarm_page(ident) })
         return pier
@@ -3076,7 +3083,15 @@ Swarm_pulse_all(w, ident):
             }
         }
     }
+    // NEVER PULSE MYSELF (2026-09-02, the 'no Pier … to=<my own body> — DROPPED' ~1/s flood): the founding
+    //  stamp plants a %Pier at my OWN body address so family_derive sees my post — but a node is not its own
+    //   friend, so there is no route to it and every pulse/swarm_hi to it drops forever, drowning the console.
+    //    Skip my self-husk by address (and my soul prepub); the stamp it exists for is untouched.
+    let selfaddr = (this.Swarm_body_key(ident) || {}).prepub
+    selfaddr = selfaddr ? String(selfaddr) : ''
     for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (selfaddr && String(pier.sc.pub) === selfaddr) { continue }
+        if (String(pier.sc.pub) === String(ident.sc.prepub)) { continue }
         if (typeof this.Presence_worth_sending === 'function' && !this.Presence_worth_sending(w, pier.sc.pub)) continue
         if (this.Swarm_deliver(w, ident, pier.sc.pub, { kind: 'pulse', page: this.Swarm_page(ident) })) sent = sent + 1
         // self-heal: a friend we haven't heard for a while gets the rebirth greeting too —
@@ -4843,7 +4858,12 @@ Swarm_reach_addr(ident, reach):
 //   debt).  Idempotent — re-dispatching a standing reach IS the retry.  Returns the resolved address (so a
 //    Book proves routing without a wire), or null.
 Swarm_reach_dispatch(w, ident, reach):
-    if (!reach || String(reach.sc.state || '') === 'arrived') { return null }
+    if (!reach) { return null }
+    // TERMINAL GUARD (kill the zombie, W1): a SETTLED reach — arrived | refused | dead — never
+    //  re-dispatches.  Was `=== 'arrived'` only, so a 'refused' reach re-sent every pass and flipped
+    //   itself back to 'dispatched', dodging its own receipt sweep.  All three terminals stand still.
+    let st0 = String(reach.sc.state || '')
+    if (st0 === 'arrived' || st0 === 'refused' || st0 === 'dead') { return null }
     let addr = this.Swarm_reach_addr(ident, reach)
     if (!addr) { return null }
     if (!w || !w.c.station_up) { return addr }        // Book / no station: routing proven, wire inert, intent stands
@@ -4861,7 +4881,14 @@ Swarm_reach_settle(w, ident):
     if (!peering) { return 0 }
     let n = 0
     for (const reach of peering.o({ Reach: 1 })) {
-        if (String(reach.sc.state || '') === 'arrived') { continue }
+        let st = String(reach.sc.state || '')
+        if (st === 'arrived' || st === 'refused' || st === 'dead') { continue }
+        // THE THIRD EXIT — deadline → dead (W1): a standing want past its deadline settles 'dead'
+        //  ('nobody-answered'), the only exit besides landed|refused, so a want can NEVER hang silent.
+        //   The deadline is ms-epoch on `.c` (volatile — never snapped, Books stay clean; a reloaded
+        //    ceremony re-books its own); NO deadline = stands forever (the durable cross-body booking).
+        let dl = +reach.c.deadline || 0
+        if (dl && Date.now() > dl) { reach.sc.state = 'dead'; reach.sc.why = 'nobody-answered'; reach.sc.at = String(this.Swarm_now(w)); reach.bump(); continue }
         if (this.Swarm_reach_dispatch(w, ident, reach)) { n = n + 1 }
     }
     // SWEEP stale refused receipts (the cap's cousin, beat 16): a 'refused' reach STANDS as a receipt the
@@ -4870,8 +4897,12 @@ Swarm_reach_settle(w, ident):
     //    quiet — the receipt had its window to be seen.
     let ttl = (w.c.reach_receipt_ttl != null) ? +w.c.reach_receipt_ttl : 3600
     let now = this.Swarm_now(w)
-    for (const reach of peering.o({ Reach: 1, state: 'refused' })) {
-        if (now - (+reach.sc.at || now) > ttl) { peering.drop(reach) }
+    // BOTH failure receipts age out (W1 double-check): 'dead' joined 'refused' as a standing terminal,
+    //  so it must join the sweep too — else deadline-expired wants clog the cap forever.
+    for (const rst of ['refused', 'dead']) {
+        for (const reach of peering.o({ Reach: 1, state: rst })) {
+            if (now - (+reach.sc.at || now) > ttl) { peering.drop(reach) }
+        }
     }
     return n
 // Swarm_reach_heard — the TARGET receives a reach frame: mint the inbound copy on MY OWN %Peering (same
@@ -4928,7 +4959,16 @@ Swarm_reach_ack(w, ident, frame):
     if (!peering) { return null }
     let reach = peering.o({ Reach: 1, to: String(r.to || ''), of: String(r.of || ''), for: String(r.for || '') })[0]
     if (!reach) { return null }
-    if (reach.sc.state !== st) { reach.sc.state = st; reach.sc.at = String(this.Swarm_now(w)); reach.bump() }
+    // TERMINAL LATCH (cross-node truth, W1): the FIRST terminal wins, and 'arrived' (landed) OUTRANKS a
+    //  'refused'/'dead' — under a multi-path fan only the holder can land while every other body
+    //   legitimately refuses, so a racing refusal must never bury a landed.  Non-terminal → any state;
+    //    terminal → terminal only as an UPGRADE (refused/dead → arrived), never a downgrade or a
+    //     same-rank flip (first-terminal-wins).
+    let cur = String(reach.sc.state || '')
+    let rank = (s) => s === 'arrived' ? 2 : (s === 'refused' || s === 'dead') ? 1 : 0
+    if (rank(cur) === 0 || rank(st) > rank(cur)) {
+        if (reach.sc.state !== st) { reach.sc.state = st; reach.sc.at = String(this.Swarm_now(w)); reach.bump() }
+    }
     return reach
 // Swarm_reach_road — the RECEIVER's gate for an inbound `reach` frame: only a body of MY OWN soul may
 //  book work on me (the sibling law — `by` must prefix-match a rostered %Body pub), so a stranger's
@@ -5887,8 +5927,6 @@ async Swarm_ferry_link(w, soulIdent, base, feature):
     let feat = {}
     feat[f] = 1
     let iz = await this.Swarm_mint_invite(w, soulIdent, feat)
-    let bytes = crypto.getRandomValues(new Uint8Array(16))
-    let secret = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
     let top = this.top_House ? this.top_House() : null
     // THE ADOPT IS SINGULAR (owner 2026-08-31: "it is so important and rare to do a Link Device — eed could
     //  hold on to the current Adopt… Adopt will only be one at a time, so just require we already know about
@@ -5898,6 +5936,9 @@ async Swarm_ferry_link(w, soulIdent, base, feature):
     //      No pardon ledger, no per-pier revocation traffic for the ferry: possession of the one adopt IS consent.
     let atok = this.Swarm_token_parse ? this.Swarm_token_parse(iz) : null
     let aserial = atok ? String(atok.serial || '') : ''
+    // DERIVED, NOT RANDOM (rebuild 2026-09-02): fc = MAC(soul key, 'ferry_fc:'+serial), so a reloaded
+    //  giver re-derives it from a knock's serial and can always ship — nothing to stash or lose.
+    let secret = await this.Swarm_ferry_derive_secret(soulIdent, aserial)
     // THE CEREMONY IS THE REQ (Ferry_rebuild §4 Stage 3): minting again REPLACES the singular adopt — the
     //  one soul req is re-armed fresh (stale counterparty facts dropped, new secret on `.c`), and the phase
     //   verb's stash writes the ONE durable twin so a reload between mint and seal rehydrates it.
@@ -5934,8 +5975,11 @@ async Swarm_ferry_on_seal(w, soulIdent, pier):
     if (!pier || !this.Swarm_pier_linklive(pier)) { return }
     let top = this.top_House ? this.top_House() : null
     if (!top) { return }
-    // secret from the live req OR the durable twin (a reloaded ceremony has only the stash)
+    // secret from the live req OR the durable twin — and if BOTH are gone (a fully-reloaded giver),
+    //  DERIVE it from the soul key + the serial the knock stamped on this pier.  The rebuild's heart:
+    //   the giver never depends on remembering a random secret across a reload.
     let secret = this.Swarm_ferry_secret()
+    if (!secret && pier && pier.c && pier.c.ferry_serial) { secret = await this.Swarm_ferry_derive_secret(soulIdent, pier.c.ferry_serial) }
     if (!secret) { return }
     // GRANTOR CONSENT ON THE PIER (live end-user only, OR a Book that raises top.c.consenter for the
     //  consent beat).  The account is the crown jewels; a real person at a humdinger tab confirms the
@@ -6000,6 +6044,7 @@ async Swarm_ferry_confirm(w):
     //  fresh confirm (it would strand once the send clears the secret) — same guard as the retry pump.
     csoul.c.ferrying = 1
     let secret = this.Swarm_ferry_secret()
+    if (!secret && pier && pier.c && pier.c.ferry_serial) { secret = await this.Swarm_ferry_derive_secret(ident, pier.c.ferry_serial) }
     if (!secret) { delete csoul.c.ferrying; return 0 }
     let sent = 0
     try { sent = await this.Swarm_ferry_send(w, ident, pier, secret) } catch (er) { sent = 0 }
@@ -6246,6 +6291,16 @@ Swarm_ferry_secret():
         return tw.secret
     }
     return null
+// Swarm_ferry_derive_secret — THE ferry secret is DERIVED, not stored (rebuild 2026-09-02): a
+//  deterministic MAC of the soul key over 'ferry_fc:<serial>' (32 hex = two 16-char presigs, n=0|1).
+//   Only the soul key can make it (like every Swarm_presig), so the giver RE-DERIVES it from a knock's
+//    serial after ANY reload — the fc in the redeemer's link is this same value.  This is what lets a
+//     reloaded giver ship with NO stash; the reheal/sweep/twin apparatus is now vestigial belt-and-braces.
+async Swarm_ferry_derive_secret(soulIdent, serial):
+    if (!soulIdent?.c?.keys || !serial) { return null }
+    let a = await this.Swarm_presig(soulIdent.c.keys, soulIdent.sc.prepub, 'ferry_fc:' + String(serial), 0)
+    let b = await this.Swarm_presig(soulIdent.c.keys, soulIdent.sc.prepub, 'ferry_fc:' + String(serial), 1)
+    return String(a) + String(b)
 Swarm_ferry_serial():
     let s = this.Swarm_ferry_role('soul')
     if (s && s.sc.serial) { return String(s.sc.serial) }
@@ -6733,7 +6788,16 @@ async Swarm_ferry_consume(w, code, accept):
     let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
     let soul = ident ? await this.Swarm_ferry_heard(w, ident, pend.frame, code) : null
     if (ccav) { delete ccav.c.pending }
-    if (soul) { this.Swarm_ferry_phase(w, 'received', { pub: (pend.frame && pend.frame.salt ? String(pend.frame.salt).split(':')[0] : ''), role: 'cave' }) }
+    if (soul) {
+        this.Swarm_ferry_phase(w, 'received', { pub: (pend.frame && pend.frame.salt ? String(pend.frame.salt).split(':')[0] : ''), role: 'cave' })
+    } else {
+        // LEGIBLE FAILURE, NOT SILENCE (owner 2026-09-02: "we are entirely too blind… 'never says why'
+        //  should be impossible by design").  Unseal returned nothing — a wrong or STALE fc: its code no
+        //   longer matches the sender's secret (the giver re-minted or upgraded, so the old link's fc is
+        //    dead).  Name the cause LOUD so the console tool + the human both see WHY, not a vanished
+        //     ceremony.  The cell's accept handler surfaces its own "stale link" line off this null return.
+        console.log('🦑 ferry: ✗ could NOT open the account — the fc code did not match. This link is STALE or wrong (its code no longer matches the sender). Mint a FRESH link on the other device and open THAT one.')
+    }
     // IDENTITY TRANSITION (Division_todo §0 — the husk): the device WAS its own blank auto-vivified self
     //  (the active %Identity); now it holds the soul.  Funnel the landed soul through Clustation_concrete —
     //   the SINGLE chokepoint every mint|adopt funnels through (Auto.svelte) — so it becomes the sole ACTIVE
