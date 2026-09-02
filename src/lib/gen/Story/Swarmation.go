@@ -12,7 +12,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return '627ef2442bf12361~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return '6a626a26fdaa18c1~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -459,7 +459,7 @@ SwarmSteal_witness(w) {
     if (n === 2 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub && !peering.o({ Sibling: 1 }).length && !(w.oa({see: 'Alice stands alone — her key-derived name is her one address'}))) w.i({see: 'Alice stands alone — her key-derived name is her one address'})
     // beat 3: cooperative tabs — a known sibling raised NO alarm and the places split the work.
     let sib = peering.o({ Sibling: 'tab_encode' })[0]
-    if (n === 3 && sib && peering.sc.role === 'music' && sib.sc.role === 'encode' && !this.Swarm_stolen(alice) && !(w.oa({see: 'sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes'}))) w.i({see: 'sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes'})
+    if (n === 3 && sib && peering.sc.duty === 'music' && sib.sc.duty === 'encode' && !this.Swarm_stolen(alice) && !(w.oa({see: 'sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes'}))) w.i({see: 'sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes'})
     // beat 4: a claimant that is NOT one of our tabs raises the LIVE alarm — Identity Stolen.
     if (n === 4 && this.Swarm_stolen(alice) && peering.o({ Stolen: 'remote_copy' })[0] && !this.Swarm_is_sibling(alice, 'remote_copy') && !(w.oa({see: 'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name'}))) w.i({see: 'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name'})
     // beat 5: Steal Back re-presented at the next free suffix past thief + siblings and cleared the alarm.
@@ -2796,7 +2796,7 @@ SwarmDivide_route(w) {
     let row = { routed: 1, roster: '' + this.Swarm_body_roster(alice).length }
     if (cave && cave.sc.address === bare + '_1') row.cave_at_1 = 1
     if (cap && cap.sc.address === bare) row.captain_bare = 1
-    if (prim && prim.sc.role === 'Captain' && prim.sc.address === bare) row.primary_captain = 1
+    if (prim && prim.sc.post === 'Captain' && prim.sc.address === bare) row.primary_captain = 1
     if (frob && frob.sc.address === bare + '_2') row.frob_resolved = 1
     if (none === null) row.encoder_miss = 1
     this.SwarmDivide_note(w, row)
@@ -2819,7 +2819,7 @@ SwarmDivide_peer(w) {
     pier.c.up = bpeer
     // stamp Alice's published roster onto the pier — what the wire will carry (a later replication slice).
     for (const b of this.Swarm_body_roster(alice)) {
-        let pb = pier.i({ Body: 1, pub: b.sc.pub, role: b.sc.role, address: b.sc.address })
+        let pb = pier.i({ Body: 1, pub: b.sc.pub, post: b.sc.post, address: b.sc.address })
         pb.c.up = pier
     }
     let served = this.Swarm_pier_body(pier, 'Cave')
@@ -2842,7 +2842,7 @@ SwarmDivide_wire(w) {
     let bare = alice.sc.prepub
     let payload = this.Swarm_roster_of(alice)
     let scalar = 1
-    for (const e of payload) { if (typeof e.pub !== 'string' || typeof e.role !== 'string' || typeof e.address !== 'string') scalar = 0 }
+    for (const e of payload) { if (typeof e.pub !== 'string' || typeof e.post !== 'string' || typeof e.address !== 'string') scalar = 0 }
     let cacct = w.oai({ Account: 1, of: 'Carol' })
     cacct.c.up = w
     let ckeys = { prepub: 'carol_prepub_0', pub: 'carol_pub_0', key: 'carol_key_0' }
@@ -3031,7 +3031,7 @@ SwarmBody_friend(w) {
     for (const ab of this.Swarm_body_roster(alice)) { if (ab.sc.self) { aliceself = 1 } }
     let row = { friended: 1, absorbed: '' + pier.o({ Body: 1 }).length }
     if (bmine && String(bmine.sc.address) === 'bob_prepub_000') { row.bob_mine_is_bob = 1 }
-    if (bmine && bmine.sc.role === 'Captain' && String(bmine.sc.pub) === 'bob_body_pub_00') { row.bob_mine_bodykey = 1 }
+    if (bmine && bmine.sc.post === 'Captain' && String(bmine.sc.pub) === 'bob_body_pub_00') { row.bob_mine_bodykey = 1 }
     if (anyself === 0) { row.no_self_on_pier = 1 }
     if (aliceself === 0) { row.no_self_at_source = 1 }
     this.SwarmBody_note(w, row)
@@ -3085,13 +3085,15 @@ SwarmBody_witness(w) {
     if (fm && +fm.sc.captain_sees_cave === 1 && +fm.sc.cave_page_named === 1 && +fm.sc.husk_is_me === 1 && +fm.sc.husk_keeps_my_name === 1 && +fm.sc.no_phantom_member === 1 && +fm.sc.foreign_sign_ignored === 1) { this.story_swear(w, 'the family derives from the standing grants at any time — a captain reads its cave off its own live signature and a linkee reads its own role and kept name off the husk — the soul never appears as a phantom member and a foreign signature confers nothing') }
     let hl = T.o({ healed: 1 })[0]
     // #9 THE HEAL CONVERGES AND THE SEAT ATTESTS: granted rows stand — unbacked ones retire (except the founding-gap captain) — the vouched caveat and the pre-key ghost leave — the charter lists exactly the standing division — a settled family heals to no change.
-    if (hl && +hl.sc.heal_ran === 1 && +hl.sc.own_row_seated === 1 && +hl.sc.member_from_grant === 1 && +hl.sc.caveat_retired === 1 && +hl.sc.junk_retired === 1 && +hl.sc.gap_captain_survives === 1 && +hl.sc.ghost_dropped === 1 && +hl.sc.charter_attested === 1 && +hl.sc.settled_idempotent === 1) { this.story_swear(w, 'the heal converges the roster on the standing grants and the seat attests it — a granted member keeps its seat while unbacked junk retires and the founding-gap captain survives — a living grant retires the fork caveat and the pre-key ghost drops — the signed charter lists exactly the standing division and a settled family heals to no change') }
-    // #10 THE FOUNDER'S CAPTAINCY IS A GRANT (§0a #3 — the owner ruled the self-husk pier): a divided
-    //  huskless Seat signs its own MyCaptain so every Post derives from a standing grant.
-    if (hl && +hl.sc.founding_grant_stands === 1 && +hl.sc.self_husk_pier === 1) { this.story_swear(w, 'the founder signs its own captaincy — a divided seat holding no husk grant mints a MyCaptain onto its self-husk pier at the heal so every post including the captain derives from a standing grant and the founder-inference decays to a fallback') }
+    if (hl && +hl.sc.heal_ran === 1 && +hl.sc.own_row_seated === 1 && +hl.sc.member_from_grant === 1 && +hl.sc.caveat_retired === 1 && +hl.sc.junk_retired === 1 && +hl.sc.gap_captain_survives === 1 && +hl.sc.ghost_dropped === 1 && +hl.sc.no_charter_minted === 1 && +hl.sc.settled_idempotent === 1) { this.story_swear(w, 'the heal converges the roster on the standing links and every body is its own address — no seat column survives while unbacked junk retires and the founding-gap captain survives — a living link retires the fork caveat and the pre-key ghost drops — no charter is minted for the roster is not a document — and a settled family heals to no change') }
+    // #10 THE FOUNDER'S CAPTAINCY IS A STAMP (§0a #3 self-husk pier, mint-stop 2026-09-02): a divided
+    //  huskless Seat stamps its own self-husk pier `link, post:Captain` — same chrysalis shape as
+    //   every other link rail, no grant minted.
+    if (hl && +hl.sc.founding_stamp_stands === 1 && +hl.sc.self_husk_pier === 1) { this.story_swear(w, 'the founder signs its own captaincy — a divided seat holding no husk stamps link post Captain onto its self-husk pier at the heal so every post including the captain derives from a standing stamp and the founder-inference decays to a fallback') }
     let rp = T.o({ replicated: 1 })[0]
-    // #11 THE FAMILY'S PROOF TRAVELS: soul-signed atoms replicate to siblings — self-verifying, tamper-refusing.
-    if (rp && +rp.sc.grants_wired === 1 && +rp.sc.signed_landed === 1 && +rp.sc.relic_stayed_home === 1 && +rp.sc.sibling_sees_captain === 1 && +rp.sc.tamper_refused === 1) { this.story_swear(w, 'the family grants replicate between siblings — each soul-signed atom self-verifies so a sibling derives the captaincy it never witnessed — a retargeted atom refuses at the signature and an unsigned relic stays home') }
+    // #11 THE FAMILY'S VIEW TRAVELS (mint-stop): plain roster rows ride the roster frame — a VIEW that
+    //  grow-only unions; proof stays at the voucher door, and neither relic grants nor stamps travel.
+    if (rp && +rp.sc.roster_rode === 1 && +rp.sc.union_grows_only === 1 && +rp.sc.relic_stayed_home === 1 && +rp.sc.sibling_sees_captain === 1 && +rp.sc.stamp_stayed_home === 1) { this.story_swear(w, 'the roster mile replicates the family between siblings — plain rows union grow-only so a sibling sees the captain it never witnessed while the unsigned relic and the chrysalis stamp both stay home and proof lives at the voucher door') }
     let rc = T.o({ reached: 1 })[0]
     // #12 THE CROSS-BODY REACH primitive: one durable addressed intent that the five hand-rolled dialects collapse into.
     if (rc && +rc.sc.booked_stands === 1 && +rc.sc.addr_resolves === 1 && +rc.sc.offline_stands === 1 && +rc.sc.idempotent === 1 && +rc.sc.heard_serving === 1 && +rc.sc.doer_gates === 1 && +rc.sc.served_arrived === 1 && +rc.sc.graduated === 1) { this.story_swear(w, 'a reach is one durable addressed intent — it books and stands as legible matter routed off the family charter — an offline dispatch leaves the intent standing rather than minting a separate debt — and the target hears it serves it through its own doer marks it arrived and it graduates away') }
@@ -3228,9 +3230,9 @@ SwarmBody_family(w) {
     rg.c.up = rpier
     let wfam = this.Swarm_family_derive(wsoul)
     let row = { familied: 1 }
-    if (hfam.length === 1 && hfam[0].role === 'Cave' && hfam[0].husk === 0) { row.captain_sees_cave = 1 }
+    if (hfam.length === 1 && hfam[0].post === 'Cave' && hfam[0].husk === 0) { row.captain_sees_cave = 1 }
     if (hfam.length === 1 && hfam[0].pub === 'gwen_prepub_0000_full_pub_00000' && hfam[0].name === 'Gwen') { row.cave_page_named = 1 }
-    if (wfam.length === 1 && wfam[0].husk === 1 && wfam[0].role === 'Cave') { row.husk_is_me = 1 }
+    if (wfam.length === 1 && wfam[0].husk === 1 && wfam[0].post === 'Cave') { row.husk_is_me = 1 }
     if (wfam.length === 1 && wfam[0].name === 'Gril') { row.husk_keeps_my_name = 1 }
     if (!wfam.some((e) => e.pub === 'wsoul_prepub_000_full_pub_00000')) { row.no_phantom_member = 1 }
     if (!hfam.some((e) => e.pub && e.pub.indexOf('xena') === 0)) { row.foreign_sign_ignored = 1 }
@@ -3279,58 +3281,64 @@ async SwarmBody_heal(w) {
     let kavi = roster.find((b) => String(b.sc.pub) === 'kavi_prepub_0000_full_pub_00000')
     let ch = hp.o({ Charter: 1 })[0]
     let listed = ch ? this.Swarm_charter_parse(ch.sc.payload) : []
-    // §0a #3 ("A"): the first heal on a divided huskless Seat should have SIGNED the founding
-    //  MyCaptain onto a self-husk pier — so the re-derive now reads captaincy off a grant.
+    // §0a #3 (mint-stop): the first heal on a divided huskless Seat should have STAMPED the founding
+    //  captaincy onto a self-husk pier (link, post:Captain) — the re-derive reads it off the stamp.
     let fam2 = this.Swarm_family_derive(hana)
     let husk2 = fam2.find((f) => f.husk)
-    let hpier = hp.o({ Pier: 1 }).find((p) => p.o({ Grant: 'MyCaptain' })[0])
+    let hpier = hp.o({ Pier: 1 }).find((p) => p.sc.link && String(p.sc.post || '') === 'Captain')
     let row = { healed: 1 }
-    if (husk2 && husk2.role === 'Captain') { row.founding_grant_stands = 1 }
+    if (husk2 && husk2.post === 'Captain') { row.founding_stamp_stands = 1 }
     if (hpier && hpier.sc.pub && mypub.startsWith(String(hpier.sc.pub))) { row.self_husk_pier = 1 }
     if (healed === 1) { row.heal_ran = 1 }
-    if (own && own.sc.role === 'Captain' && String(own.sc.address) === bare) { row.own_row_seated = 1 }
-    if (kavi && kavi.sc.role === 'Cave' && String(kavi.sc.address) === bare + '_1' && kavi.sc.name === 'Kavi') { row.member_from_grant = 1 }
+    // land-of-prepub (Phase D): a body IS its own address — the heal writes NO seat column.
+    if (own && own.sc.post === 'Captain' && !own.sc.address) { row.own_row_seated = 1 }
+    if (kavi && kavi.sc.post === 'Cave' && !kavi.sc.address && kavi.sc.name === 'Kavi') { row.member_from_grant = 1 }
     if (kavi && !kavi.sc.caveat) { row.caveat_retired = 1 }
     if (!roster.find((b) => String(b.sc.pub) === 'junk_body_pub_0000')) { row.junk_retired = 1 }
     if (roster.find((b) => String(b.sc.pub) === 'gapcap_body_pub_00')) { row.gap_captain_survives = 1 }
     if (!roster.find((b) => String(b.sc.pub) === bare)) { row.ghost_dropped = 1 }
-    if (ch && +ch.sc.era >= 1 && listed.some((e) => e.pub === mypub) && listed.some((e) => e.pub === 'kavi_prepub_0000_full_pub_00000') && !listed.some((e) => e.pub === 'junk_body_pub_0000')) { row.charter_attested = 1 }
+    // Phase D: the heal signs NOTHING — the roster is not a document ("the Charter doesn't need
+    //  persisting at all"); membership is the key, the roster mile carries the view.
+    if (!ch && listed.length === 0) { row.no_charter_minted = 1 }
     if (healed2 === 0) { row.settled_idempotent = 1 }
     this.SwarmBody_note(w, row)
 
 },
-// beat 9 — FAMILY GRANTS REPLICATE (§0a "why the guard stays" → the road that closes it): grants
-//  lived only on the minting body's piers, so a sibling could not DERIVE the family it belongs to.
-//   Swarm_family_grants_wire collects every soul-signed My<Post> atom (self-verifying); a sibling
-//    absorbs them through Swarm_seal and derives the captaincy it never witnessed.  Teeth: a
-//     hand-relic without a signature stays home (verify throws — skipped) and a retargeted atom
-//      (`for` swapped to the thief's own pub) refuses at the signature.
+// beat 9 — THE ROSTER MILE REPLICATES (mint-stop, Division §0 ⚑⚑⚑: "the Charter just popped up by
+//  whoever you manage to talk to").  Grant atoms no longer carry the family — plain roster rows do,
+//   riding the `roster` frame between same-soul bodies; membership PROOF lives at the door (the
+//    soul-signed voucher, gated in Peeroleum's crew road), so the rows are a VIEW that grow-only
+//     unions.  Teeth: a hand-relic grant without a signature still stays home (the legacy sidecar
+//      absorbs nothing unsigned), and the chrysalis STAMP never travels — a sibling's rails are
+//       re-earned per store, never gossiped into being.
 async SwarmBody_replicate(w) {
     w.i({reached: "step_9"})
     let acct = w.oai({ Account: 1, of: 'Alice' })
     let hana = acct.o({ Identity: 1 }).find((i) => i.sc.friendly === 'Hana')
     if (!hana) { return }
     let wires = this.Swarm_family_grants_wire(hana)
+    let rows = this.Swarm_roster_of(hana)
     // the TWIN: the same soul standing in another store — its own Account container + its own body key
     let tacct = w.oai({ Account: 1, of: 'HanaTwin' })
     tacct.c.up = w
     let hkeys = { prepub: String(hana.sc.prepub), pub: String(hana.c.keys.pub), key: String(hana.c.keys.key) }
     let twin = this.Swarm_identity(tacct, hkeys, 'Hana')
     twin.c.bodykey = await this.Swarm_mint_keys('SwarmBody-HanaTwin-body')
-    let landed = await this.Swarm_family_grants_absorb(w, twin, wires)
-    let tfam = this.Swarm_family_derive(twin)
+    // the roster frame lands (the wire shape Swarm_roster_gossip sends; heard = the receiver's whole job)
+    let n = await this.Swarm_roster_heard(w, twin, { roster: rows, grants: wires, organs: [] })
     let mypub = String(this.Swarm_body_key(hana)?.pub || '')
-    // the retarget tooth: the real founding atom with `for` pointed at the twin's own key — the
-    //  signature no longer covers the claim, verify throws, nothing lands.
-    let real = wires.find((g) => g && g.sign)
-    let tampered = real ? { to: String(real.to), by: String(real.by), for: String(twin.c.bodykey.pub), time: String(real.time), sign: String(real.sign) } : null
-    let refused = tampered ? await this.Swarm_family_grants_absorb(w, twin, [tampered]) : -1
+    let before = this.Swarm_body_roster(twin).length
+    let cap = this.Swarm_body_roster(twin).find((b) => String(b.sc.pub) === mypub)
+    // hear the SAME view again — the union may only fill, never mint twins
+    await this.Swarm_roster_heard(w, twin, { roster: rows, grants: [], organs: [] })
+    let tstamped = (this.Swarm_peering(twin)?.o({ Pier: 1 }) ?? []).filter((p) => p.sc.link)
     let row = { replicated: 1 }
-    if (wires.length === 2) { row.grants_wired = 1 }
-    if (landed === 1) { row.signed_landed = 1 }
-    if (wires.length - landed === 1) { row.relic_stayed_home = 1 }
-    if (tfam.some((f) => !f.husk && f.role === 'Captain' && f.pub === mypub)) { row.sibling_sees_captain = 1 }
-    if (refused === 0) { row.tamper_refused = 1 }
+    if (n >= 2) { row.roster_rode = 1 }
+    if (cap && cap.sc.post === 'Captain' && cap.sc.name === 'Hana' && !cap.sc.address) { row.sibling_sees_captain = 1 }
+    if (this.Swarm_body_roster(twin).length === before) { row.union_grows_only = 1 }
+    // the unsigned hand-relic (Kavi's planted grant carries no sign) stays home: verify throws, skipped
+    if (wires.length === 1 && !this.Swarm_peering(twin).o({ Pier: 1, pub: 'kavi_prepub_0000' })[0]?.o({ Grant: 1 })[0]) { row.relic_stayed_home = 1 }
+    if (tstamped.length === 0) { row.stamp_stayed_home = 1 }
     this.SwarmBody_note(w, row)
 
 },
@@ -3370,7 +3378,10 @@ async SwarmBody_reach(w) {
     let left = this.Swarm_peering(cove).o({ Reach: 1 }).length
     let row = { reached: 1 }
     if (reach && reach.sc.state === 'booked' && reach.sc.by) { row.booked_stands = 1 }
-    if (addr === bare + '_1' && daddr === bare + '_1') { row.addr_resolves = 1 }
+    // land-of-prepub (Division §0 ⚑⚑⚑, 2026-09-02): the reach resolves to the Cave's KEY-DERIVED
+    //  name — prepubOf of its roster pub — never the recorded seat (the address column is furniture).
+    let want_addr = 'cove_body_pub_00'.slice(0, 16)
+    if (addr === want_addr && daddr === want_addr) { row.addr_resolves = 1 }
     if (reach.sc.state === 'booked') { row.offline_stands = 1 }
     if (rcount === 1) { row.idempotent = 1 }
     if (heard_ok) { row.heard_serving = 1 }
@@ -3446,7 +3457,8 @@ async SwarmBody_reach_road(w) {
     let row = { roaded: 1 }
     if (kin && kin.sc.state === 'arrived') { row.kin_admitted = 1 }
     if (stranger === null && standing === 1) { row.stranger_refused = 1 }
-    if (back === bare) { row.report_resolves = 1 }
+    // land-of-prepub: the return address is the Captain's key-derived name, not the bare seat.
+    if (back === 'rex_body_pub_1200'.slice(0, 16)) { row.report_resolves = 1 }
     this.SwarmBody_note(w, row)
 
 },
@@ -3895,8 +3907,8 @@ async SwarmPost_derive(w) {
     let rd = this.Swarm_body_repost(alice, dave.c.keys.pub, pierD)
     let bobPost = this.Swarm_grant_post(pierB)
     let row = { derived: 1 }
-    if (rc && rc.sc.role === 'Cave') { row.cave_from_grant = 1 }
-    if (rd && rd.sc.role === 'Captain') { row.captain_from_grant = 1 }
+    if (rc && rc.sc.post === 'Cave') { row.cave_from_grant = 1 }
+    if (rd && rd.sc.post === 'Captain') { row.captain_from_grant = 1 }
     if (bobPost === null) { row.music_no_post = 1 }
     if (this.Swarm_post_from_feature('MyCave') === 'Cave' && this.Swarm_post_from_feature('MyCaptain') === 'Captain' && this.Swarm_post_from_feature('Music') === null) { row.map_pure = 1 }
     this.SwarmPost_note(w, row)
@@ -3919,7 +3931,7 @@ async SwarmPost_revoke(w) {
     let stillThere = peering.o({ Body: 1, pub: cara.c.keys.pub })[0]
     let row = { revoked: 1 }
     if (postAfter === null) { row.post_gone = 1 }
-    if (rc && !rc.sc.role) { row.role_dropped = 1 }
+    if (rc && !rc.sc.post) { row.role_dropped = 1 }
     if (stillThere) { row.body_kept = 1 }
     this.SwarmPost_note(w, row)
 
@@ -4367,10 +4379,10 @@ async SwarmSpread_divide(w) {
     w.c.frame = frame
     let bident = frame ? await this.Swarm_adopt_absorb(w, bacct, bkeys, offer.nonce, frame, 1) : null
     w.c.bident = bident
-    // Alice finalises the division off the box's confirmed body (Captain at bare + Cave at its suffix).
+    // Alice finalises the division off the box's confirmed body — land-of-prepub: NO seat to assign,
+    //  each body answers at its own key-derived name (Swarm_body_addr).
     let bare = alice.sc.prepub
-    let caveAddr = bident ? bident.sc.prepub + '_1' : ''
-    if (bident) { await this.Swarm_adopt_finalise(w, alice, 'Captain', { pub: bkeys.pub, role: 'Cave', address: caveAddr }, 1) }
+    if (bident) { await this.Swarm_adopt_finalise(w, alice, 'Captain', { pub: bkeys.pub, role: 'Cave' }, 1) }
     let peering = this.Swarm_peering(alice)
     let charter = peering ? peering.o({ Charter: 1 })[0] : null
     let wire = this.Swarm_charter_wire(alice)
@@ -4379,8 +4391,10 @@ async SwarmSpread_divide(w) {
     let row = { divided: 1 }
     if (crossed === true) { row.sealed_crossed = 1 }
     if (bident && bident.c.keys && String(bident.c.keys.pub) === String(alice.c.keys.pub)) { row.account_crossed = 1 }
-    if (boxBody && boxBody.sc.role === 'Cave') { row.box_is_cave = 1 }
-    if (charter && this.Charter_addr(peering, 'Cave') === caveAddr && this.Charter_addr(peering, 'Captain') === bare) { row.charter_routes_both = 1 }
+    if (boxBody && boxBody.sc.post === 'Cave') { row.box_is_cave = 1 }
+    let caveRow = this.Swarm_body_for(alice, 'Cave')
+    let caveAt = caveRow ? this.Swarm_body_addr(caveRow) : ''
+    if (caveAt === String(bkeys.prepub) && !caveRow.sc.address) { row.roster_routes_both = 1 }
     if (charter_ok === true && peering.o({ Body: 1 }).length === 2) { row.charter_verifies = 1 }
     this.SwarmSpread_note(w, row)
 
@@ -4446,7 +4460,7 @@ async SwarmSpread_ferry(w) {
     let row = { ferried: 1 }
     if (sent === true) { row.ferry_sent = 1 }
     if (esoul && esoul.c.keys && String(esoul.c.keys.pub) === String(alice.c.keys.pub)) { row.ferry_account_crossed = 1 }
-    if (ebody && ebody.sc.role === 'Cave') { row.ferry_post_cave = 1 }
+    if (ebody && ebody.sc.post === 'Cave') { row.ferry_post_cave = 1 }
     if (badHeard === null) { row.ferry_wrongcode_no_body = 1 }
     this.SwarmSpread_note(w, row)
 
@@ -4464,7 +4478,7 @@ SwarmSpread_witness(w) {
     // #2 THE ACCOUNT CROSSES: the soul seals across and the box now HOLDS the soul key — it became a body.
     if (d && +d.sc.sealed_crossed === 1 && +d.sc.account_crossed === 1) { this.story_swear(w, 'the soul seals across on a scan — the soul-holder seals its whole account to the blank device and the device unseals it and now holds the very same soul key so it is no longer blank but a body of that soul') }
     // #3 THE POST IS THE PROPOSED GRANT AND THE CHARTER ROUTES BOTH: box→Cave phone→Captain both routed.
-    if (d && +d.sc.box_is_cave === 1 && +d.sc.charter_routes_both === 1 && +d.sc.charter_verifies === 1) { this.story_swear(w, 'the device consents to the role and the Charter routes both — the box derives Cave from the proposed grant the phone takes Captain and the first Charter verifies and routes the Cave to its suffix the Captain to the bare name') }
+    if (d && +d.sc.box_is_cave === 1 && +d.sc.roster_routes_both === 1 && +d.sc.charter_verifies === 1) { this.story_swear(w, 'the device consents to the role and the roster routes both — the box derives Cave from the proposed grant the phone takes Captain and each body answers at its own key-derived name — the first charter still verifies while carrying no seat column at all') }
     let t = T.o({ teethed: 1 })[0]
     // #4 THE TEETH: a tampered seal a wrong nonce a withheld consent each yield NO body and no soul lands.
     if (t && +t.sc.tamper_no_body === 1 && +t.sc.wrongnonce_no_body === 1 && +t.sc.noconsent_no_body === 1 && +t.sc.no_soul_landed === 1) { this.story_swear(w, 'the ceremony fails closed — a tampered seal a wrong nonce and a withheld consent each produce no body and the soul never lands on a device that flubbed the seal or that the human did not confirm') }

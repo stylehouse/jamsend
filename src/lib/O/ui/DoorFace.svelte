@@ -163,8 +163,8 @@
             //  ceremony, so "CAVE Guw" deserves its badge even while the sibling's row hasn't arrived
             //   — a Cave that can't see its Captain yet should still know WHAT IT IS.  A truly
             //    undivided body has no %Body row at all and shows nothing, as before.
-            if (mineRow && (roster.length >= 2 || mineRow.sc?.role)) {
-                instance = { role: String(mineRow.sc?.role || 'body'), name: String(mineRow.sc?.name || '') }
+            if (mineRow && (roster.length >= 2 || mineRow.sc?.post)) {
+                instance = { role: String(mineRow.sc?.post || 'body'), name: String(mineRow.sc?.name || '') }
             }
             if (roster.length >= 2) {
                 // THE OTHERS ONLY (owner 2026-08-31: a greenlit "you" row is noise — the badge already
@@ -185,7 +185,7 @@
                         const heard = +(b?.sc?.heard || 0)
                         const ago = heard ? now_s - heard : null
                         return {
-                            role: String(b?.sc?.role || 'body'),
+                            role: String(b?.sc?.post || 'body'),
                             name: String(b?.sc?.name || ''),
                             pub: String(b?.sc?.pub || ''),
                             pub8: String(b?.sc?.pub || '').slice(0, 8),
@@ -296,7 +296,7 @@
             const sibs = ((H?.Swarm_peering?.(ident)?.o({ Sibling: 1 }) ?? []) as any[]).map((s: any) => ({
                 place: String(s.sc?.Sibling ?? ''),
                 address: s.sc?.address ? String(s.sc.address) : '',
-                role: s.sc?.role ? String(s.sc.role) : '',
+                role: s.sc?.duty ? String(s.sc.duty) : '',
             }))
             // NOTHING TO SAY UNTIL THERE IS ANOTHER BODY (the owner: *"there is no other yet"*).  "Which
             //  bodies stand where" is only news when MORE THAN ONE stands — a sibling tab, or a division

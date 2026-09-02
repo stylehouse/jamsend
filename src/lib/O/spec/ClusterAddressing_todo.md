@@ -8,6 +8,13 @@ Companion to `Cluster_spec.md` (§3.2b boot→channel map, §3.3 Brink badges + 
 
 ## 0. What to get on with next
 
+- **SUPERSEDED SAME DAY — see Division_todo §0 ⚑⚑ (Model B, "land of prepub"): instead of teaching
+   the relay soul-families via a body_pub in hello, bodies hello with their OWN keys and each IS its
+    own address — the arbiter/want/seat apparatus deletes rather than growing a v3. handleHello
+     already binds any self-signed key, so the relay needs no change at all; the soul name survives
+      as the Seat's DOOR (one extra hello), and §4's "should role addressing exist" gets its answer
+       sharpened: identity addressing wins even WITHIN a soul. The entry below is kept for the
+        reasoning trail.**
 - **NEW 2026-09-01 — hello-v3 wants a `body_pub` beside the soul-signed header (Division_todo §0 ⚑).**
    Two same-soul bodies are indistinguishable to the arbiter (hello signs with the SOUL key only), so
     seat succession is first-come-per-socket — a reconnecting body can't reclaim its seat, and the

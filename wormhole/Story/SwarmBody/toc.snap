@@ -4,57 +4,61 @@ story:SwarmBody
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.033
-      sample=0.056,at=1787813435
-      sample=0.056,at=1787813444
-      sample=0.065,at=1787813448
-      sample=0.007,at=1787813523
-      sample=0.007,at=1787813524
-      sample=0.008,at=1787815392
-      sample=0.044,at=1788179466
-      sample=0.023,at=1788179584
-    TimeTotal:step,avg=0.008
-      sample=0.014,at=1787813435
-      sample=0.014,at=1787813444
-      sample=0.016,at=1787813448
-      sample=0.002,at=1787813523
-      sample=0.002,at=1787813524
-      sample=0.002,at=1787815392
-      sample=0.006,at=1788179466
-      sample=0.003,at=1788179584
+    TimeTotal:beliefs,avg=0.108
+      sample=0.057,at=1788267889
+      sample=0.095,at=1788297324
+      sample=0.084,at=1788297459
+      sample=0.144,at=1788297666
+      sample=0.144,at=1788297689
+      sample=0.088,at=1788297708
+      sample=0.097,at=1788298875
+      sample=0.137,at=1788299013
+      sample=0.137,at=1788299021
+      sample=0.094,at=1788299039
+    TimeTotal:step,avg=0.006
+      sample=0.003,at=1788267889
+      sample=0.006,at=1788297324
+      sample=0.005,at=1788297459
+      sample=0.008,at=1788297666
+      sample=0.008,at=1788297689
+      sample=0.005,at=1788297708
+      sample=0.006,at=1788298875
+      sample=0.008,at=1788299013
+      sample=0.008,at=1788299021
+      sample=0.006,at=1788299039
   step,dige:2b840e0ba238da72
-  step=2,dige:5cf226ad429f5f2a
+  step=2,dige:d7b09e2fd45b7a84
     Assertion:a-body-row-is,sentence:a body row is keyed by its own body key not the soul — one soul wears many bodies so the durable per-body key is what a roster row IS
     Assertion:the-body-key-is,sentence:the body key is durable and one per soul per store — ensure honours the cache and a second soul in the same store mints a key of its own
     Assertion:which-row-is-me,sentence:which row is me is computed from the body key never a stored flag — the mint writes no self bit onto the row so nothing false can replicate
-  step=3,dige:94cc6f565e892219
+  step=3,dige:1bd38acf8a48ac37
     Assertion:the-self-answer-is,sentence:the self answer is body-local — a friend absorbing the roster computes its own body as self and no self flag ever crossed the wire
-  step=4,dige:8fa3136b9456981b
+  step=4,dige:08d3699c9006b4f5
     Assertion:the-vessel-subnet-picks,sentence:the vessel subnet picks the bare address first then ascends the suffixes — an individual local subnet has a deterministic primary and an empty one picks nothing
-  step=5,dige:183ddc5be0f8646a
+  step=5,dige:74ae7faff7b9fdc3
     Assertion:a-reminted-body-wears,sentence:a reminted body wears its caveat — minting a key while the division already stands keyed stamps remint onto the fresh row and keeps the old seat standing while a virgin soul mints clean — a fork is seen never silently absorbed
-  step=6,dige:b2403edcdb69ba25
+  step=6,dige:ed437309b01cb45c
     Assertion:a-frame-that-could,sentence:a frame that could not go stands as a debt on the counterparty row — deduped by kind so retries cannot grow it — a paid debt detaches and an empty shelf removes itself — the cap folds overflow into a dropped count that outlives full payment
-  step=7,dige:d06d42c33c1bacbd
+  step=7,dige:7edba9021ca8c03c
     Assertion:the-family-derives-from,sentence:the family derives from the standing grants at any time — a captain reads its cave off its own live signature and a linkee reads its own role and kept name off the husk — the soul never appears as a phantom member and a foreign signature confers nothing
-  step=8,dige:f6a12557eeb68103
-    Assertion:the-heal-converges-the,sentence:the heal converges the roster on the standing grants and the seat attests it — a granted member keeps its seat while unbacked junk retires and the founding-gap captain survives — a living grant retires the fork caveat and the pre-key ghost drops — the signed charter lists exactly the standing division and a settled family heals to no change
-    Assertion:the-founder-signs-its,sentence:the founder signs its own captaincy — a divided seat holding no husk grant mints a MyCaptain onto its self-husk pier at the heal so every post including the captain derives from a standing grant and the founder-inference decays to a fallback
-  step=9,dige:2ed4cac620b17c41
-    Assertion:the-family-grants-replicate,sentence:the family grants replicate between siblings — each soul-signed atom self-verifies so a sibling derives the captaincy it never witnessed — a retargeted atom refuses at the signature and an unsigned relic stays home
-  step=10,dige:48df69270f22512a
+  step=8,dige:395db203fabc0dfd
+    Assertion:the-heal-converges-the,sentence:the heal converges the roster on the standing links and every body is its own address — no seat column survives while unbacked junk retires and the founding-gap captain survives — a living link retires the fork caveat and the pre-key ghost drops — no charter is minted for the roster is not a document — and a settled family heals to no change
+    Assertion:the-founder-signs-its,sentence:the founder signs its own captaincy — a divided seat holding no husk stamps link post Captain onto its self-husk pier at the heal so every post including the captain derives from a standing stamp and the founder-inference decays to a fallback
+  step=9,dige:4852ac0f320f6c6c
+    Assertion:the-roster-mile-replicates,sentence:the roster mile replicates the family between siblings — plain rows union grow-only so a sibling sees the captain it never witnessed while the unsigned relic and the chrysalis stamp both stay home and proof lives at the voucher door
+  step=10,dige:d0ccb5dcde6db883
     Assertion:a-reach-is-one,sentence:a reach is one durable addressed intent — it books and stands as legible matter routed off the family charter — an offline dispatch leaves the intent standing rather than minting a separate debt — and the target hears it serves it through its own doer marks it arrived and it graduates away
-  step=11,dige:e8f9744c2bd71fbb
+  step=11,dige:dc8af930c5942f88
     Assertion:the-reach-settle-loop,sentence:the reach settle loop observes until its knob is flipped — then the booker hears the outcome and closes the trip — an arrived reach graduates away while a refused one stands as a visible receipt
-  step=12,dige:436a0587f154cdeb
+  step=12,dige:cd4d32303bfc175b
     Assertion:the-reach-wire-lane,sentence:the reach wire lane is gated on the roster — a rostered sibling books work on me while a stranger lands nothing — and the outcome reports back to the seat the roster names for the booker
-  step=13,dige:67ac27de1531a8d3
+  step=13,dige:6c29e219aaf4d60c
     Assertion:the-crew-read,sentence:the crew read projects the standing reaches into one legible glance — tallied by state with each intent carrying what it is and who it is for — so what the whole crew is doing reads at once instead of hiding across the ghosts
-  step=14,dige:eef6d4c7a3eea0e7
+  step=14,dige:ec14244035cfd322
     Assertion:a-body-describes-the,sentence:a body describes the organ it grows — a pocket of what it wants now and a trove of everything as quantities on its own row — re-describing updates in place and each organ reads back by its kind
-  step=15,dige:7c45bc36ad980a51
+  step=15,dige:e8191b40b49f2606
     Assertion:a-body-ships-its,sentence:a body ships its own organ sizes and a sibling lands them onto the roster row they describe — so the phone sees the laptop trove — while an organ for a body it does not roster lands nothing
-  step=16,dige:1b55082c77532ef7
+  step=16,dige:80e149ff206b9a41
     Assertion:the-reach-shelf-is,sentence:the reach shelf is bounded — a new booking beyond the cap is refused so a runaway loop cannot flood it — while re-booking a reach that already stands is always honoured so a retry is never lost
-  step=17,dige:a2554963bc6778d4
+  step=17,dige:cc1ccbb9815d8d5f
     Assertion:a-refused-receipt-ages,sentence:a refused receipt ages out — the settle loop sweeps one older than its window so dead receipts cannot fill the cap — while a fresh refusal still stands for its moment to be seen

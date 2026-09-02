@@ -9,12 +9,12 @@ Snap:H
         Account,of:Alice
           Identity:4b6a63a01204bf0e,prepub:4b6a63a01204bf0e,friendly:Alice
             Peering,name:4b6a63a01204bf0e,friendly:Alice
-              Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,role:Captain,address:4b6a63a01204bf0e
+              Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,post:Captain,address:4b6a63a01204bf0e
           Identity:a336c7172442dcab,prepub:a336c7172442dcab,friendly:Zoe
             Peering,name:a336c7172442dcab,friendly:Zoe
           Identity:rema_prepub_000,prepub:rema_prepub_000,friendly:Rema
             Peering,name:rema_prepub_000,friendly:Rema
-              Body,pub:rema_old_body_pub,role:Captain,address:rema_prepub_000,name:OldSeat
+              Body,pub:rema_old_body_pub,post:Captain,address:rema_prepub_000,name:OldSeat
               Body,pub:rema_new_body_pub,caveat:remint
           Identity:vera_prepub_000,prepub:vera_prepub_000,friendly:Vera
             Peering,name:vera_prepub_000,friendly:Vera
@@ -38,13 +38,11 @@ Snap:H
               Pier,pub:kavi_prepub_0000,friendly:Kavi
                 Peering,pub:kavi_prepub_0000_full_pub_00000
                 Grant:MyCave,by:cbec4cf20c6aaab3,for:kavi_prepub_0000
-              Body,pub:kavi_prepub_0000_full_pub_00000,role:Cave,address:cbec4cf20c6aaab3_1,name:Kavi
-              Body,pub:gapcap_body_pub_00,role:Captain,address:cbec4cf20c6aaab3_3,name:GapCap
-              Pier,pub:35b476497b4482c8,friendly:Hana,since:1751700000
+              Body,pub:kavi_prepub_0000_full_pub_00000,post:Cave,name:Kavi
+              Body,pub:gapcap_body_pub_00,post:Captain,name:GapCap
+              Pier,pub:35b476497b4482c8,friendly:Hana,since:1751700000,link,post:Captain
                 Peering,name:35b476497b4482c8,friendly:Hana,pub:35b476497b4482c81cd6e6881a7446c7eca597a6e7b6b592b389282e828bed93
-                Grant:MyCaptain,by:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72,for:35b476497b4482c81cd6e6881a7446c7eca597a6e7b6b592b389282e828bed93,time:1751700000,sign:5d6c86c1160c4486a8d05ec7e74d155fdd9c4f2af6de4aa925b73beb250ac6a495b52cddbf313e78118f23caaf2fd0a0770e1ad30c8a9d2b5afdb3abbe3a960f
-              Body,pub:35b476497b4482c81cd6e6881a7446c7eca597a6e7b6b592b389282e828bed93,role:Captain,address:cbec4cf20c6aaab3,name:Hana
-              Charter,era:1,payload:35b476497b4482c81cd6e6881a7446c7eca597a6e7b6b592b389282e828bed93:Captain:cbec4cf20c6aaab3;gapcap_body_pub_00:Captain:cbec4cf20c6aaab3_3;kavi_prepub_0000_full_pub_00000:Cave:cbec4cf20c6aaab3_1,sig:cdb1b27c92e8beef2e4dddc9fbb7ab8dfaeb4ab14164437370eb7ae635feca6076fdc57fb519f6ee95d8d3157deeb9652ce1932d46a3b20a47d7120ac300010b,soul:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72
+              Body,pub:35b476497b4482c81cd6e6881a7446c7eca597a6e7b6b592b389282e828bed93,post:Captain,name:Hana
             SocialGraph
               Edge,a:cbec4cf20c6aaab3,b:35b476497b4482c8,at:1751700000
         testing
@@ -54,14 +52,14 @@ Snap:H
           reminted,caveat_stands,old_seat_kept,virgin_clean,no_caveat_on_virgin
           owed,deduped,at_pinned,paid_gone,capped_loud,overflow_survives
           familied,captain_sees_cave,cave_page_named,husk_is_me,husk_keeps_my_name,no_phantom_member,foreign_sign_ignored
-          healed,founding_grant_stands,self_husk_pier,heal_ran,own_row_seated,member_from_grant,caveat_retired,junk_retired,gap_captain_survives,ghost_dropped,charter_attested,settled_idempotent
+          healed,founding_stamp_stands,self_husk_pier,heal_ran,own_row_seated,member_from_grant,caveat_retired,junk_retired,gap_captain_survives,ghost_dropped,no_charter_minted,settled_idempotent
         reached:step_3
         Account,of:Bob
           Identity:bob_prepub_000,prepub:bob_prepub_000,friendly:Bob
             Peering,name:bob_prepub_000,friendly:Bob
-              Body,pub:bob_body_pub_00,role:Captain,address:bob_prepub_000
+              Body,pub:bob_body_pub_00,post:Captain,address:bob_prepub_000
               Pier,prepub:4b6a63a01204bf0e,pub:4b6a63a01204bf0efe6be0d9271c83542fa6776000e6664d99e3a7db574c2892
-                Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,role:Captain,address:4b6a63a01204bf0e
+                Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,post:Captain,address:4b6a63a01204bf0e
                 Owed,dropped
         reached:step_4
         reached:step_5

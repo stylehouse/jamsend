@@ -545,6 +545,22 @@ Peeroleum_same_soul(w, h):
     if (from.length < 16 || !/^[0-9a-f]+$/.test(from)) return false
     return !!w.o({ Peering: 1 }).find((p) => String(p.sc.name) === from)
 
+// Peeroleum_crew_road — land-of-prepub (Division §0 ⚑⚑⚑, 2026-09-02): a frame from a BODY arrives
+//  from:<its-own-body-prepub> — no %Pier is ever keyed by that name (a body is not a friend; the
+//   SOUL is). Its voucher names its soul (vh.pub = the soul pub every body holds — membership IS
+//    the ability to sign as the soul): dispatch pier-less when we hold that soul's station (a
+//     sibling of an identity we serve) or a route pier for it (a friend's body), and let the Swarm
+//      hear funnel verify the signature before anything lands — an unvouched claim rebuffs there,
+//       exactly as a forged soul-from does today. Voucher-less frames never match (strangers keep
+//        hitting the drop below); prepubOf is a slice, done inline to keep this ghost import-free.
+Peeroleum_crew_road(w, frame):
+    let vpub = frame && frame.swarm && frame.swarm.voucher ? String(frame.swarm.voucher.pub || '') : ''
+    if (vpub.length < 16 || !/^[0-9a-f]+$/.test(vpub)) return false
+    let soul = vpub.slice(0, 16)
+    let from = String((frame.header && frame.header.from) || '')
+    if (!from || from.split('_')[0] === soul) return false
+    return !!w.o({ Peering: 1 }).find((p) => String(p.sc.name) === soul || p.o({ Pier: 1 }).find((q) => String(q.sc.pub) === soul))
+
 async Peeroleum_deliver(w, frame):
     let dv = (w.c.dv = w.c.dv || { n: 0, ms: 0, max: 0, since: Date.now(), deep: 0, probe: 0 })
     let dv_t0 = Date.now()
@@ -625,7 +641,7 @@ async Peeroleum_deliver_do(w, frame):
     //       re-verifies the soul signature, so nothing unsigned lands.  Scoped hard: from/to must share a
     //        16+hex root AND we must hold a station Peering named that soul, so role channels (runner/editor/
     //         player) and any non-soul addr never match.
-    if (!pier && this.Peeroleum_same_soul(w, h)) {
+    if (!pier && (this.Peeroleum_same_soul(w, h) || this.Peeroleum_crew_road(w, frame))) {
         let on = w.c.on && w.c.on[h.type]
         if (on) { await on(w, null, frame); H.feebly_ponder() }
         return
@@ -782,6 +798,35 @@ async Peeroleum_deliver_do(w, frame):
         let served = H.Peeroleum_served_before(inbox, h)
         let ureq = served ? null : H.Peeroleum_book_unemit(inbox, w, pier, frame)
         if (served || ureq.sc.finished) {
+            // THE KNOCK RESETS THE EPOCH (the live incognito wedge, owner 2026-09-02 "stuck at
+            //  receiving from eed"): a reborn first-contact knocker restarts at seq=1 and its
+            //   pier_hello landed HERE forever — swallowed as a replay, Swarm_hello never ran, no
+            //    pier_accept, the ceremony dead.  The era-borne reset below only exists for SEALED
+            //     friends (swarm_hi rides a relationship); a knocker has no era lane, so the KNOCK
+            //      ITSELF is the rebirth proof: pier_hello carries its whole authority IN the frame
+            //       (?Iz presig + the serial spend ledger, re-verified by Swarm_hello every time —
+            //        a replayed spent token draws 'spent'/'held', benign), so stale seq history must
+            //         not gate it.  Reset this pier's dead stream and dispatch the knock the way FIRST
+            //          CONTACT does — handler-direct, NO inbox booking: a stale knock pier never earned
+            //           a %Ud, so a booked unemit dies silently in req_unemit's pre-Ud gate (the live
+            //            2026-09-02 second wedge: the reborn line printed, then nothing — no rebuff, no
+            //             accept).  The first-contact branch above is the proof this lane is sound.
+            if (h.type === 'pier_hello') {
+                H.Peeroleum_reset_handshake(pier)
+                pier.c.hiseq = Number.isFinite(seq) ? seq : 0   // the stream is REBORN — the old high-water dies with it
+                console.log(`🛰 pier_hello from a reborn knocker (seq=${h.seq} from=${h.from}) — stale stream RESET, knock dispatched fresh`)
+                let kon = w.c.on && w.c.on[h.type]
+                // NEVER SWALLOW A REBORN-KNOCK THROW (live 2026-09-02: the reborn line printed, then the
+                //  ceremony died with no rebuff/no accept/no seal — a swallowed exception in the hear→
+                //   Swarm_hello chain, invisible because this handler-direct call is OUTSIDE req_unemit's
+                //    try/catch).  Make it LOUD: a bail this deep must name itself, or every debug session
+                //     is a copy-paste hunt for a line that never printed.
+                if (kon) { try { await kon(w, null, frame) } catch (er) { console.log(`🛰⚠ reborn pier_hello handler THREW (from=${h.from}): ${String((er && er.stack) || (er && er.message) || er).slice(0, 240)}`) } }
+                let know = this.Peeroleum_route(w, h, 'to')
+                if (know.pier) H.Peeroleum_send(w, {header: {type: 'ack', from: h.to, to: h.from, ack: h.seq}})
+                H.feebly_ponder()
+                return
+            }
             // reused-seq collision: this (seq,type) already served a PREVIOUS incarnation (or the
             //  transport re-delivered a served frame).  Silence here was the 20s wormhole mute —
             //   RE-ACK so the sender's ack-gated retry stands down; the boot-epoch reset (ping-borne

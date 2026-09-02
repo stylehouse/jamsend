@@ -1023,6 +1023,11 @@
                     H.main()   // wake the pass so Auto starts the held Story now the spine is live
                 }
                 if (w.c.creduler_trickle) { clearTimeout(w.c.creduler_trickle as any); w.c.creduler_trickle = undefined }
+                // The whole spine is live — a safe seam to fold in any RECOMPILED .go without a
+                //  page reload.  Creduler_reswap self-gates on a run being in flight (it queues to
+                //   the next boundary), so calling it every ready tick is correct + cheap (a HEAD
+                //    ETag pre-filter; a real fetch+re-mount only on a changed .go).
+                void H.Creduler_reswap(w)
                 return
             }
             H.oai({ Creduler_pending: 1 })
@@ -1052,6 +1057,99 @@
                     w.c.creduler_trickle = undefined
                     H.i_elvisto(w, 'think')
                 }, 150)
+            }
+        },
+
+        // Creduler_reswap — HOT-SWAP a recompiled .go into the LIVE runner without a page reload.
+        //
+        //   The problem it solves: the runner acquires its spine ONCE at boot (Creduler_ensure →
+        //    Lies_ghost_set → import(gen)).  A later LocalGen recompile rewrites the .go on disk,
+        //     but nothing re-imports it: import() is idempotent per URL and the .go rides @vite-ignore
+        //      (Vite doesn't track it, so HMR won't hot-update it).  The tab keeps running BOOT-TIME
+        //       code until a hard reload — the [[reload-runner-after-recompile]] footgun.
+        //
+        //   The swap: for each spine ghost, cheaply HEAD its .go for the dev-server ETag (encodes
+        //    content-length + mtime, so a recompile changes it).  On a changed ETag, re-import the .go
+        //     with a cache-busting ?swap=<etag> query (a distinct module URL, so the browser fetches
+        //      FRESH bytes past @vite-ignore) and DROP+RE-CREATE the watched:UIs enrolment with the
+        //       fresh component — Otro's keyed #each then unmounts the old and mounts the new, whose
+        //        onMount → eatfunc → ghostsHaunt Object.assign-overwrites the ghost's methods (incl. the
+        //         baked Ghostmeta dige) onto every House.  Lies_ghost_get then reads the new version.
+        //
+        //   THE HARD CONSTRAINT — stable version across a Story run: a Story snaps between steps, so a
+        //    code swap MID-RUN would mix two versions into the fixtures (false diffs, corrupt gate).
+        //     So we swap ONLY at a safe seam — no run in flight (the active Storyrun is done|failed or
+        //      absent, the same phase test become_book_drive's dup-guard uses).  If a recompile lands
+        //       mid-run we DON'T swap; the changed ETag simply stays a candidate and gets picked up the
+        //        next ready tick after the run settles (a wake is armed so we don't wait on happenstance).
+        //
+        //   First-seen ETags are recorded as the BASELINE (no swap) — a fresh boot already loaded the
+        //    current bytes, so the first observation is "what's live", not "changed".
+        async Creduler_reswap(w: TheC) {
+            const H = this as House
+            const POLL_MS = 2000                                   // throttle: at most one ETag sweep per 2s
+            const now = Date.now()
+            if (((w.c.reswap_last as number) ?? 0) + POLL_MS > now) return
+            w.c.reswap_last = now
+
+            // Safe seam: never swap while a run is in flight (would mix two code versions into the snap).
+            //  A candidate detected now is remembered (the ETag map is only advanced on a real swap), so
+            //   it re-surfaces on the next ready tick once the run settles.
+            const inflight = H.Lies_rungo_record(w)
+            const running  = !!inflight && inflight.sc.phase !== 'done' && inflight.sc.phase !== 'failed'
+            if (running) {
+                if (w.c.reswap_wanted) H.i_elvisto(w, 'think')     // keep re-checking so we catch the boundary
+                return
+            }
+
+            const etags = (w.c.reswap_etags ??= {}) as Record<string, string>
+            const uis   = H.oai_enroll(H, { watched: 'UIs' })
+            let swapped = 0
+            let wanted  = false
+
+            for (const p of CREDULER_GHOSTS) {
+                const gen = H.Lies_gen_path(p)
+                if (!gen) continue
+                const url = `/src/lib/${gen}`
+                let etag: string | null = null
+                try {
+                    const r = await fetch(url, { method: 'HEAD', cache: 'no-store' })
+                    etag = r.headers.get('etag')
+                } catch { continue }                               // dev server hiccup — try again next sweep
+                if (!etag) continue
+                if (!(gen in etags)) { etags[gen] = etag; continue }   // baseline the first observation
+                if (etags[gen] === etag) continue                  // unchanged
+                wanted = true
+
+                // Changed on disk → hot-swap.  Cache-bust so the browser fetches fresh bytes (the whole
+                //  point — @vite-ignore means the plain URL is module-cached).  Import BEFORE touching the
+                //   enrolment so a failed fetch/parse leaves the old (working) component mounted + the ETag
+                //    un-advanced (we retry next sweep) rather than tearing down into a blank.
+                let component: any
+                try {
+                    const module = await import(/* @vite-ignore */ `../../lib/${gen}?swap=${encodeURIComponent(etag)}`)
+                    component = module.default
+                } catch (e) {
+                    H.tlog(`👻 reswap ${gen}: import failed — ${String((e as any)?.message ?? e)} (keeping live version)`)
+                    continue
+                }
+                if (!component) continue
+                for (const old of uis.o({ UI: 'Pantheate-include', gen_path: gen }) as TheC[]) uis.drop(old)
+                // component rides in .sc exactly as Lies_ghost_set / Pantheate enrol it (Otro reads
+                //  uiC.sc.component); the added `swap` key changes keyser() so Otro's keyed #each
+                //   unmounts the old mount and mounts the fresh one (re-running its onMount eatfunc).
+                uis.i({ UI: 'Pantheate-include', gen_path: gen, swap: etag, component })
+                etags[gen] = etag                                  // only advance the baseline on a real swap
+                swapped++
+                H.tlog(`👻 reswap ${gen} @ ${etag}`)
+            }
+
+            w.c.reswap_wanted = wanted && swapped === 0 ? 1 : undefined
+            if (swapped) {
+                // The re-mounted components' onMount → eatfunc lands a beat later; wake so the
+                //  GhostInclude ledger + any version reader picks up the new diges promptly.
+                H.i_elvisto(w, 'think')
+                H.tlog(`👻 Creduler reswap: ${swapped} ghost(s) hot-swapped (no reload)`)
             }
         },
 

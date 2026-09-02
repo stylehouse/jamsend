@@ -9,7 +9,7 @@ Snap:H
         Account,of:Alice
           Identity:4b6a63a01204bf0e,prepub:4b6a63a01204bf0e,friendly:Alice
             Peering,name:4b6a63a01204bf0e,friendly:Alice
-              Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,role:Captain,address:4b6a63a01204bf0e
+              Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,post:Captain,address:4b6a63a01204bf0e
           Identity:a336c7172442dcab,prepub:a336c7172442dcab,friendly:Zoe
             Peering,name:a336c7172442dcab,friendly:Zoe
         testing
@@ -20,7 +20,7 @@ Snap:H
         Account,of:Bob
           Identity:bob_prepub_000,prepub:bob_prepub_000,friendly:Bob
             Peering,name:bob_prepub_000,friendly:Bob
-              Body,pub:bob_body_pub_00,role:Captain,address:bob_prepub_000
+              Body,pub:bob_body_pub_00,post:Captain,address:bob_prepub_000
               Pier,prepub:4b6a63a01204bf0e,pub:4b6a63a01204bf0efe6be0d9271c83542fa6776000e6664d99e3a7db574c2892
-                Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,role:Captain,address:4b6a63a01204bf0e
+                Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,post:Captain,address:4b6a63a01204bf0e
         reached:step_4

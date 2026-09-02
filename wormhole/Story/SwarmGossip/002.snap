@@ -9,8 +9,8 @@ Snap:H
         Account,of:Alice
           Identity:6116a529d3ee6f3a,prepub:6116a529d3ee6f3a,friendly:Alice
             Peering,name:6116a529d3ee6f3a,friendly:Alice
-              Body,pub:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9,role:Captain,address:6116a529d3ee6f3a
-              Body,pub:gossip_cave_pub,role:Cave,address:6116a529d3ee6f3a_1
+              Body,pub:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9,post:Captain,address:6116a529d3ee6f3a
+              Body,pub:gossip_cave_pub,post:Cave,address:6116a529d3ee6f3a_1
               Charter,era:1,payload:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9:Captain:6116a529d3ee6f3a;gossip_cave_pub:Cave:6116a529d3ee6f3a_1,sig:2a22b8ec9db7052f009d81cee1d1353633ebf26e2fb617efcd492c62fa0b335aa7fdad70fe23d3b364be21fd0d8790c90dc3fc492c664b8a9b9a4c083eeda50d,soul:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82
         Account,of:Bob
           Identity:73683abede8f21fc,prepub:73683abede8f21fc,friendly:Bob

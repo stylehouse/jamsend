@@ -16,10 +16,8 @@ Snap:H
             Peering,name:dc4f0202db467c5b,friendly:Alice,online
               Idzeug:invwalk_content,to:Music,genre:Jazz
               Idzeug:1,to:MyCave,next:2,claimed:1
-              Pier,pub:801ca80af2d45548,friendly:Cavey,since:1756600020
+              Pier,pub:801ca80af2d45548,friendly:Cavey,since:1756600020,link,post:Cave
                 Peering,name:801ca80af2d45548,friendly:Cavey,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
-                Grant:MyCave,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:5533e5f876402f58b0ad70588f2d612045c29696fe08e8e9567655bdd363ecc506e24288885efb9b85db2f88eb4718aacf6d918327d54e55299c373fbfb9f305
-                Grant:MyCave,by:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,for:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,time:1756600020,sign:5c5e74df65625b48cf531c5e11d501c889dc574ee5430bfb6198f5259ca2e3a57fafb24915d35137d954c6761dce53ed7a9ae117cf3be48b713577a6b4421e0f
             mail
               frame:pier_hello,did
               frame:pier_confirm,did
@@ -28,10 +26,8 @@ Snap:H
         Account,of:Cavey
           Identity:801ca80af2d45548,prepub:801ca80af2d45548,friendly:Cavey
             Peering,name:801ca80af2d45548,friendly:Cavey,online
-              Pier,pub:dc4f0202db467c5b,friendly:Alice,since:1756600020
+              Pier,pub:dc4f0202db467c5b,friendly:Alice,since:1756600020,link,post:Cave
                 Peering,name:dc4f0202db467c5b,friendly:Alice,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
-                Grant:MyCave,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:5533e5f876402f58b0ad70588f2d612045c29696fe08e8e9567655bdd363ecc506e24288885efb9b85db2f88eb4718aacf6d918327d54e55299c373fbfb9f305
-                Grant:MyCave,by:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,for:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,time:1756600020,sign:5c5e74df65625b48cf531c5e11d501c889dc574ee5430bfb6198f5259ca2e3a57fafb24915d35137d954c6761dce53ed7a9ae117cf3be48b713577a6b4421e0f
             mail
               frame:pier_accept,did
               frame:ferry,did
@@ -40,6 +36,6 @@ Snap:H
         reached:step_3
         req:Ferry,eternal
           req:Ferry_soul,serial:1,phase:sent,at=1756600030,pub:801ca80af2d45548,name:Cavey
-          req:Ferry_cave,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,phase:pending,at=1756600030
+          req:Ferry_cave,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,serial:1,phase:pending,at=1756600030
         reached:step_4
         reached:step_5

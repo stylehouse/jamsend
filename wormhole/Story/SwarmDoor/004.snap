@@ -44,3 +44,4 @@ Snap:H
             inbox
               req:unemit,seq,type:pier_accept,done,to:pier_accept,finished
         req:witness,eternal,ok
+        Invite:door_1,prepub:47866215d1d749f7,to:Music,n:Music~genre~Classical,state:redeeming

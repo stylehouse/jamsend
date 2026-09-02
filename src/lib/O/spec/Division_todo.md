@@ -283,6 +283,297 @@ Now also built (same night, after the owner's "A"): founding self-grant (3) + si
 
 ## 0. WHERE THIS IS (2026-08-28) — the live device-link path is the FERRY model
 
+**✅ 2026-09-02 (midday) — THE REBORN-KNOCK WEDGE (live ceremony "stuck at receiving from eed"),
+ two layers, both cured in `Peeroleum.g`'s reused-seq collision branch:** (1) a reborn knocker's
+  `pier_hello` seq=1 hit a STALE pier's inbox history and was swallowed as a replay — Swarm_hello
+   never ran, no accept ever crossed; the era reset only exists for sealed friends, and the KNOCK
+    ITSELF is the rebirth proof (its ?Iz presig + serial ledger re-verify every time). (2) the
+     first cure (reset + re-book through the pier inbox) died one layer deeper: **req_unemit's
+      pre-Ud gate** passes only hello/noop on a %Ud-less pier, so the booked knock vanished with
+       `error:'pre-Ud'` — no rebuff, no accept, perfectly silent. Landed: the collision branch now
+        resets the dead stream and dispatches the knock **exactly like first contact** — handler-
+         direct (`w.c.on['pier_hello'](w, null, frame)`), no inbox booking, ack via re-route.
+          Law worth keeping: *nothing may book onto a pier inbox before %Ud exists; first-contact
+           frames ride the pier-less lane.* Verified: SwarmDoor/SwarmWire/SwarmChain/InvFerry all
+            ok_pct:1 (SwarmWire's caveat:4 is `round=` drift, assertions 5/5 sworn). Diagnosed,
+             NOT chased: eed's `no Pier for pulse to=5ade3510` chatter is the tab pulsing its OWN
+              Captain %Body row (5ade = prepubOf(own bodykey)) — the pulse fan may want a
+               skip-self; parked beside the body-addressing rulings below.
+
+**✅✅ 2026-09-02 (overnight) — PHASES A+B+C LANDED + VERIFIED (the owner: "finish eeeeverything";
+ all Swarm* + Inv* Books green ok_pct:1 on the live e747 runner, TwoFounder green, fixtures
+  re-recorded via `runner_ask accept` where the model legitimately moved them):**
+  - **A — the crew road (receive).** `Peeroleum_crew_road` admits a pier-less frame whose VOUCHER
+     names a soul we hold (station or route pier) — the voucher was ALREADY soul-signed, so
+      "whoever can sign with that key is Crew" was one check too narrow, now generalised
+       (`Swarm_voucher_ok` accepts a page-bound body-from pinned to the sealed soul key).
+        `Swarm_account_of` resolves to:<my-body-prepub>; `Swarm_pier_of_body` finds a body's home
+         pier; a vouched body-from is CONTACT-LEARNED as a %Body row under its pier ("the Charter
+          just popped up by whoever you manage to talk to").
+  - **B — land of prepub (send).** Every body hellos its OWN key (no want — nothing to arbitrate);
+     the soul hello stays as the DOOR. `Swarm_sibling_send` speaks AS the body (body page +
+      voucher); `Swarm_body_addr` derives every dial (prepubOf(pub), seat only as pre-migration
+       fallback); reach/report/pulse/charter-mile all flipped. SwarmBody beats 10/12 re-authored
+        to key-derived expectations.
+  - **C — the grant purge (truth moved, cargo still riding).** `Swarm_seal` stamps `link`+`post`
+     on the chrysalis pier (derived from the sealing grant while the wire still carries one; the
+      rehydrate re-seals through seal, so the stamp survives reload; `cave_unbond` clears it —
+       forget stays tombstone-free). `pier_linklive`/`grant_post`/`family_derive` all read the
+        STAMP first (grant arms kept for pre-purge accounts). **THE MINT-STOP LANDED (morning,
+         2026-09-02): a device-link redeem seals GRANTLESS** — `pier_accept` carries
+          `link:{post,serial}`; the linkee verifies page_bound + THE ISSUER PREPUB IT SCANNED (the
+           ceremony req armed at redeem — the QR's physical channel replaces the grant signature;
+            the fc-sealed ferry stays the hard gate); `pier_confirm` echoes the link, NO reciprocal
+             mint. Friendships keep the full grant handshake untouched. Plus a REAL BUG FIX found
+              en route: the derive link-arm needed the PHANTOM-MEMBER GUARD (the linkee's chrysalis
+               points at the SOUL — my own soul key derives no member; latent because Book piers
+                are hand-planted, never sealed). ✅ BOOK-VERIFIED (runner returned ~09:00,
+                 accept batch landed): InvFerry 6/6, InvWalk 8/8, InvSeal 5/5, SwarmSpread 5/5,
+                  SwarmBody 17/17. Three REAL fixes fell out of running the ceremony live:
+                   (1) the redeem's 'awaiting' arm moved OUT of `Swarm_redeem`'s station_up
+                    gate — the scanned-issuer expectation is GHOST state (the accept link-arm
+                     verifies against it), so a Book's redeem must arm it too (the
+                      Ferry_rebuild law: req machinery works headless; only the %Invite vivify
+                       stays live-tab-only). (2) the hello link path RE-FIRES the ferry seam
+                        after stamping — `Swarm_seal` runs on_seal BEFORE the caller's stamp
+                         lands, so a grantless pier wasn't linklive yet and the account crossed
+                          a beat late via the retry pump. (3) `Swarm_pier_live` grew the STAMP
+                           ARM — a link feature (My<Post>) is live off `link`+`post` match,
+                            feature isolation intact ('Music' never reads the stamp); this is
+                             what let InvWalk's puppet-confirm find its pier. InvWalk's beat
+                              also re-authored to null addresses (it still hand-planted `_1`).
+              - **founding_grant DELETED (same morning):** `Swarm_founding_grant` now seals the
+                 self-husk pier grantless and stamps `link, post:Captain` — the same chrysalis
+                  shape every rail wears. Beat 8 re-authored (stamp probe;
+                   `founding_stamp_stands`), beat 9 REWRITTEN from grants-wire to THE ROSTER
+                    MILE (plain rows union grow-only; the sibling sees the captain off ROWS;
+                     the unsigned relic and the chrysalis stamp both stay home — new Assertion
+                      'the-roster-mile-replicates'). `Swarm_family_grants_wire`/`_absorb`
+                       remain as the legacy sidecar on roster frames — pre-purge interop only,
+                        deletable once pre-stamp accounts are retired (owner's call).
+  - **Fixture moves accepted:** SwarmBody 008-017 (the stamp line + cascade), InvFerry 004-006
+     (both ceremony piers stamped), SwarmSpread 005 (the long-stale `_1`→`_2` healed — first
+      all-green SwarmSpread). Credulate/Credulation churn reverted per discipline.
+  - **D — THE LIVE PATH FORGETS THE CHARTER (landed same night, all Books re-verified green):**
+     `family_heal` writes pub+role+name rows only, SCRUBS the address column, signs nothing —
+      the **roster mile** (`Swarm_roster_gossip`/`Swarm_roster_heard`, new `roster` frame kind)
+       replaces the charter mile, carrying the same grants+organs sidecars, membership proven by
+        the voucher at the door, grow-only union converging views. `Swarm_serve_to` routes off
+         the contact-learned rows (Charter_addr = pre-purge fallback). Ceremony finalise
+          (`adopt_absorb`/`adopt_finalise`/`ferry_heard`) assigns NO seats. The COHORT CONSULT
+           deleted; the adopt hook became the **DOOR YIELD** — a displaced tab stands at its own
+            body name (no `_N` ever adopted; the courtesy prepub-bind gives door failover for
+             free when the holder closes). `want` + the relay arbiter STAY (the door's
+              single-delivery hinges on exactly one qaddr=bare socket — relay.ts:660-691).
+     **Charter functions still exist, Book-driven only** (SwarmCharter green, unchanged): their
+      deletion + the SwarmCharter/SwarmGossip Book retirement is the OWNER's call — they test a
+       mechanism the live path no longer uses. Beats re-authored to the new truth: SwarmBody
+        beat 8 ("no charter is minted for the roster is not a document"), SwarmSpread beat 3
+         ("the roster routes both... no seat column at all") — toc sentences updated in place,
+          slugs preserved. TwoFounder reworked: identical pub:role rosters with ZERO
+           negotiation, no address columns, no charters — the war is not won, it is unfightable.
+  - **HELD for the owner:** live eed-tab verification (reload both); retire SwarmCharter/
+     SwarmGossip Books?; delete charter functions + Charter_addr + era machinery once the Books
+      go; the C mint-stop pair (above); Steal Back's meaning under land-of-prepub (the soul-DOOR
+       contest is still real; `next_suffix` survives only there).
+
+**⚑⚑⚑ 2026-09-01 (night) — THE SETTLED MODEL (the owner, live): "Grants are for complicated
+ relationships between PEOPLE; Links are just your Account in multiple places." "It's an Invite,
+  but it doesn't birth a Grant." "The Charter doesn't need persisting at all — whoever can sign
+   with that key is included in the set of Crew; LinkDevice is how that key gets copied around
+    and turns up on the relay." This supersedes the §C fork below (Model B wins AND slims
+     further) and puts §0a's grant-based founding ruling in question.**
+
+**The three-level ladder (each level its own key/token, its own membership rule):**
+  | level | key | scope | membership | office |
+  |---|---|---|---|---|
+  | **Soul** | soul key | the identity | IS the identity — holds-the-key = member | — |
+  | **Body** | body key (Dexie `bodykey_read`, per store, never replicated) | device/browser-profile | soul key ferried to it (LinkDevice) | a **Post** (`%Body,post` — Captain, Cave) |
+  | **Sibling** | vessel `place` (per pageload/Mundo) | session tab | none — not in any roster | a **duty** (play/encode work-split) |
+  Same-browser tabs share the Dexie store → share ONE body key → they are one Body, many
+   Siblings (the eed "two-founder" war was really this case — no address contention exists
+    under land-of-prepub, the vessels coordinate behind one body via `%Sibling`).
+
+**The Invite is the shared root; what it births differs:**
+  - **Friendship**: Invite → `%Pier` + `%Grant` (by/for/feature — Music &c.). Grants live HERE ONLY.
+  - **Link**: Invite (`#Iz=<token>&fc=<secret>`) → ferry the sealed Account → new store mints its
+     body key → a `%Body,pub/post/name` row. NO pier-to-self, NO `%Grant:My<Post>`, NO Charter.
+  - **Charter: deleted.** Membership = can-sign-as-the-soul. The roster (`%Body` rows) is a
+     ROUTING convenience, not a membership proof — replicated between bodies (`roster_of`/
+      `roster_onto`, Tier-B grow-only union) and published to friends on the pier page /
+       `pier_accept` (which ALREADY carries it — `charter_absorb` only funneled into the same
+        `roster_onto`). Frames are body-signed; a friend trusts the roster the way it trusts
+         every other frame. Era/single-writer/Seat-signing apparatus deletes with it.
+
+**The purge surface (sweep 2026-09-01 — the grant is load-bearing at exactly FOUR seams; the
+ ferry's core triggers already ride the Invite: serial-bound ~1070, secret ~1065, warmth
+  `heard_at` ~5699 — the `%Grant:MyCave` minted at seal is cargo, not mechanism):**
+  1. **`Swarm_pier_linklive` gates** (~1061, 2083, 4042, 5674, 5737, 5789 — ferry_want /
+      on_seal / confirm / poke). New home: the ceremony's own state (serial + phase + no
+       tombstone) — "a live link rail" becomes "an unfinished ceremony req whose serial matches."
+  2. **Role source** — `Swarm_grant_post` (~4884), ferry_got's post derivation (~1177). New
+      home: the ceremony/ferry hand-off names the Post directly (ferry_got ALREADY carries the
+       far body's pub + chosen name — add post; the helm is already role-aware, §0a).
+  3. **`Swarm_family_derive`/`heal`** (~4901/4941, grants → roster). New home: DELETE the
+      derivation — the LinkDevice hand-off writes `%Body` directly at ferry_got, and roster
+       replication (charter mile sans charter: the `grants`/`organs` sidecar frames) unions the
+        rest. The 60s heal shrinks to roster-replication settling.
+  4. **Revocation** — `%NotGrant:MyCave` (~1112, 3986, 4035) + the Stage-0/1 carve-outs
+      (`cave_forgive` ~4058 "fresh consent wins", `cave_unbond` ~4082 "forget the bond WITHOUT
+       a tombstone or it buries the next relink"). New home: an **UnLink tombstone on the
+        roster** (soul-signed `%NotBody,pub` beside the grow-only union) — and KEEP both
+         carved lessons: a fresh Link clears a stale UnLink of the same pub; forgetting a
+          device drops its row without tombstoning, so a reused body-key can relink.
+  Also deletes: `Swarm_founding_grant`/self-husk pier (~4457 — §0a's ruling "A" is superseded
+   IF the owner confirms: the husk's job, proof-of-MY-role, moves to my own `%Body` row), the
+    husk-exclusion carve-outs (~1722, 3289, 5273), `Swarm_post_from_feature` branching
+     everywhere (~1981, 2139, 4017 — the "ANY My<Post> is a device-link, not a friendship"
+      confession at 4013 IS the category-error tell this model cures).
+
+**Naming ruling wanted:** the office axis wears three names — `Post` (grant-land), `role`
+ (`%Body`), `role` (`%Sibling`, a DIFFERENT axis: per-tab work-split). Proposal: a body **holds
+  a Post** (`%Body,post`, retire `post_from_feature` — nothing to extract a Post from), a
+   sibling **has a duty** (`%Sibling,duty`). "Seat ≠ Post" (the code's own line ~1183) stays
+    true; under this model the Seat shrinks to "who holds the soul DOOR binding right now."**
+
+**THE PIER/PEERING LAW (the owner, same night): "Peering = who we listen as, Pier = who we
+ dial."** Not a category error — a perspectival duality worth leaning into: my %Pier is my
+  view of THEIR %Peering (and they see my Peering as their Pier — the `/Pier/Peering,pub` page
+   child is literally that view, held). The law makes the violations legible:
+  - a **husk pier** (a Pier to MYSELF) dials no one — confirmed cargo; deletes with the purge.
+  - a **role-slot Pier** (`from:'runner'`, ClusterAddressing §6) dials a ROLE, not an identity
+     — the whole §6 from-mess stated in one clause.
+  - **sibling frames forced through Piers** (the "a body isn't a friend" drop, the pier-less
+     same-soul dispatch patch): a twin needs a DIAL-HANDLE, not a friendship. Under this model
+      the handles split cleanly: **%Body is the dial-handle for a twin** (pub → prepub → its
+       address, land-of-prepub), **%Pier is the dial-handle for another soul**, and Grants
+        ride only Piers. The Peeroleum same-soul carve-out becomes the rule, not the patch.
+  - **dial-side session claims stamped on the listen-side object** (`%Peering.sc.address` /
+     `stolen` / the seat claims) — already export-omitted, but the law names WHY they were
+      always awkward there.
+
+**SIMILAR AUTISTICS (wider sweep, 2026-09-01, ranked)** — most collapse into the two
+ conflations this model cures (identity/address, dial/listen); listed so none get lost:
+  1. `%Sibling.address` vs `%Body.address` — same key, opposite lifetimes (session seat claim
+      vs durable roster field). Dies under land-of-prepub (address = derived from pub).
+  2. `header.from` unverified + role-shaped (ClusterAddressing §6, known) — Model B gives
+      every body a stable, verifiable `from` by construction.
+  3. `role` triple-duty — ✅ CURED (naming pass, 2026-09-02 morning): **%Body.sc.post** (a Body
+      HOLDS a POST — durable, and now DELIBERATELY exported: the old blanket `role:1` omit was
+       silently stripping it from every ferried account, contradicting the %Body header's own
+        "PERSISTENT, replicated" claim), **%Sibling.sc.duty** + `%Peering.sc.duty` (the tab
+         work-split — session-only, export-omitted as before; `Swarm_take_duty`, with
+          `Swarm_take_role` left as a thin alias until blessed away). Compat reads at every
+           landing seam (`e.post || e.role`): rehydrate (old disk mirrors), roster_heard/onto
+            (pre-flip senders), adopt_finalise, charter_payload (the deprecated charter format
+             keeps its legacy `pub:role:address` shape verbatim). Cluster-tab `role`
+              (runner|player) and Lang roles are DIFFERENT domains, untouched. All Swarm*/Inv*
+               Books re-accepted green (`Body,…,role:X` → `post:X` fixture drift). STILL PARKED
+                for the owner: the prepub→pubkey phase-out and the %Pier.sc.pub lie (holds a
+                 prepub; the full pub sits on the /Peering child) — wire+relay-wide, wants a
+                  real ruling.
+  4. `humdinger` = presence ∧ consent (Ferry_todo §0 already flags the fails-open gate; the
+      consenter split is owed SEPARATELY from this model).
+  5. `claim.for` full-pub vs prepub-address leakage (Cluster_spec §3.2a half-fixed) — the
+      rule "for is an IDENTITY, never an address" becomes cheap to enforce when address is
+       always derivable.
+
+**⚑⚑ 2026-09-01 (evening) — THE BIG THINK: does the Crew need a Charter at all, and where do
+ addresses come from?  (The owner, mid-session: "it doesn't matter who among Crew holds the bare
+  pub... what functionality connects to that holder though?" and "do we need [the Charter] if the
+   relay can easily tell the Crew that is online?")  This supersedes the phase-3 framing below and
+    the "Cave-first?" question — both were asking inside a model this section questions.**
+
+**§A. What the bare-holder actually is (the corrected understanding).** The bare name is not a
+ prestige address — it is the **Seat**, and exactly two functions attach to it: (1) it signs and
+  distributes the **Charter** (the "ledger of the Crew" — `Swarm_charter_sign` + the sibling mile of
+   `Swarm_charter_gossip`; single-writer so membership changes serialize), and (2) it is the **default
+    door** — friends dial `to:<soul-prepub>`, and `Charter_addr`'s null-fallback dials the Seat. WHICH
+     body holds it is genuinely arbitrary (the teleology's "the Cave holds the Seat" is an AVAILABILITY
+      heuristic — the always-on box naturally wins first-come — not a rule to enforce). What must hold:
+       exactly ONE holder, everyone AGREES who, and the body the ledger names at bare is the body
+        actually BOUND at bare on the wire.
+
+**§B. Do we need the Charter if the relay can tell who's online?  YES — but for MEMBERSHIP, not
+ necessarily for ADDRESSES.**  Four things presence structurally cannot do:
+  1. **Offline members exist.** The Crew is who IS of the soul, not who is awake — the Captain is
+      intermittent BY TELEOLOGY, and the reach primitive books durable intents against sleeping
+       bodies. Presence is a live VIEW of the Crew's subset, never the Crew.
+  2. **The relay is list-in by design.** `who` (relay.ts ~514) answers "which of THESE addrs are
+      online" and REFUSES to enumerate (`locals` unlistable — the owner's own parked anti-leak
+       ruling, ClusterAddressing §4a). The addr list the probe needs comes FROM the roster. Presence
+        is a lookup KEYED by the ledger — complement, not substitute.
+  3. **The relay is untrusted.** Frames are signed precisely because the relay is readable/dumb
+      (ferry security posture). A friend deciding "is body 19754b… really eed's?" cannot ask the
+       relay — it doesn't know, and couldn't be believed if it claimed to. Only the soul-signed
+        Charter (grants as proof, Charter as the compiled summary) answers portably.
+  4. **Wake-up self-knowledge + cross-relay truth.** A body booting offline still knows its family
+      (the stash + sibling-absorb pillar); bodies on different relays share no `locals` at all. The
+       Charter travels in frames/piers/ferries; the relay's view is per-AP and dies with it.
+
+**§C. THE FORK — where addresses come from.  Model S (status quo): one soul-name family, bodies at
+ `<soul>`, `<soul>_1`, …, seats arbitrated by the relay (hello-v2 want/grant), succession + collision
+  heals + adopt/rehome keeping ledger and wire aligned.  Model B ("land of prepub"): every body
+   hellos with its OWN body key and IS its own address — `to:<prepubOf(body_pub)>` — collisions
+    impossible BY CONSTRUCTION.**  Under B:
+  - **The Charter slims to what §B proved it must be: membership + roles (+ organs) — `pub:role`
+     per body, soul-signed, era-stamped.** The address column EVAPORATES: address = prepubOf(pub),
+      derived, never assigned, never fought over. (Routing = membership × presence.)
+  - **The entire seat apparatus deletes**: want/grant arbitration, familyAddr, adopt hook, rehome,
+     next_suffix, collision heals, seat succession races — the whole class this week's bugs (dual-
+      bare, era war, `--player=eed` clobber) came from. The relay needs NOTHING new — handleHello
+       already binds any self-signed key; a body helloing with its bodykey works TODAY. (This
+        SUPERSEDES "phase 3 hello-v3": instead of teaching the relay soul-families, stop needing them.)
+  - **The doubled-stream disease dies at the root**: `from:<body-prepub>` gives each body its own
+     stream identity by construction — hello-v2's arbiter was built to arbitrate around exactly this.
+  - **The `--player` clobber dies**: deliverLocal's own-door ambiguity (two tabs, both `?addr=<bare>`,
+     both "own") cannot form; each tab is dialable at its own name.
+  - **The Seat survives, smaller**: the soul-name stays bound as the DOOR (the Seat hellos the soul
+     key beside its body key — two hellos on one socket, both already routine) and the Seat stays the
+      single Charter-signer. First-come arbitration of ONE binding is all the relay ever arbitrates.
+  - **Migration inventory (bounded — all address consumers funnel through two necks):**
+     `Swarm_sibling_send` (to:addr → to:body-prepub; from:seat → from:body-prepub) and
+      `Charter_addr`/`Swarm_body_for`/`Swarm_reach_addr` (role→addr becomes role→pub→prepub).
+       Receiver side, ONE real change: friend-traffic arriving `from:<body-prepub>` misses the
+        soul-keyed %Pier lookup — needs a "body-of-my-friend" road (prefix-match `from` against the
+         pier's absorbed charter pubs), mirroring the 2026-09-01 sibling road in Peeroleum. Plus
+          fixture re-records (payload drops its address segment) and the `?I=` boot binding.
+       Graceful path: charterless old friends keep dialing the soul door — the Seat still answers.
+  - **Cost/risks**: N body prepubs visible to the relay instead of one family (equivalent leak to
+     today's `_N` suffixes); spine-adjacent surgery in the from-resolution (§6's header.from caveats
+      apply); the multi-writer question stays settled by keeping the Seat as sole signer.
+
+**§D. Honest flaw-note on the shipped phase 2 (pub-sort).** As the SOLE authority it can contradict
+ a live relay grant (higher-pub body helloed first and holds bare → the heal writes the ledger naming
+  the LOWER pub at bare — ledger and wire disagree). It is safe as the no-arbiter FALLBACK (Books,
+   relay-down founders — where it provably converges, the TwoFounder gate). Under Model B the whole
+    question dissolves. So: pub-sort STAYS as shipped (strictly better than what preceded it), the
+     three-authority rework (relay grant ▸ recorded claim ▸ pub-sort slot, sketched mid-session) is
+      the Model-S successor ONLY IF the owner picks S. **Decision to make: Model S polish vs Model B
+       migration. The recommendation is B** — it deletes the bug class instead of managing it, needs
+        ~zero relay change, and makes the Charter exactly what §B says it is: the signed ledger of
+         who the Crew IS, with the relay answering who is AWAKE, and identity itself answering WHERE.
+
+**§E. Model B stress-tests + migration order (for the implementing session).**
+  - **Half the codebase already lives in land-of-prepub**: grants' `for` carry body pubs; the ceremony
+     husk pier is keyed by body-key prepub; page_bound holds because a body key's prepub IS its pub's
+      prefix; SwarmSpread beat 2 has the blank device offering "itself as a body not a role" with its
+       OWN key pre-ceremony. `?I=` keeps naming the SOUL (which account to load); the hello names the
+        BODY. The Lies channel hellos with the body key too → `--player=<body-prepub>` addresses one
+         specific tab — the introspection un-jam falls out for free.
+  - **Repli stability bonus**: friend-side repli windows key on `header.from`. Under S a succession
+     (body flips `_1`→bare) CHANGES its from mid-friendship — a latent stream-fork nobody has hit yet.
+      Under B a body's from is its key: stable for the body's whole life.
+  - **The Seat under B**: first-come arbitration of ONE binding (the soul door) — `heldByAnother`
+     survives scoped to that single name; door-holder = Charter-signer (same invariant as today);
+      the ledger doesn't record the door (it's live state; all-asleep = nobody home, correctly).
+  - **Migration order (each step live-verifiable, old+new interoperate through the soul door):**
+     (a) receiver-side "body-of-my-friend" road (absorb `from:<body-prepub>` by prefix-matching the
+      pier's charter pubs — backward compatible, accepts both froms); (b) flip senders (sibling +
+       friend) to body-prepub from/to; (c) drop the address segment from the Charter payload +
+        re-record fixtures; (d) delete the seat apparatus (want/adopt/rehome/next_suffix/collision
+         heals) + TwoFounder gate shrinks to "identical membership payload."
+
 **⚑ 2026-09-01 — SEAT SUCCESSION: the dual-bare + era-climb diagnosis, rechecked against the code.
  This block is the front of the queue; the ferry material below it stands.**
 
@@ -335,6 +626,67 @@ Now also built (same night, after the owner's "A"): founding self-grant (3) + si
     question); (4) live-verify: reload BOTH eed tabs (HMR caches the old .go), then minisnap
      `self>Peering>Charter` + `self>Peering>Body` on each body — era must FREEZE and addresses
       converge unique; `runner_ask --player=<prepub>_N` should then address a specific body.
+
+**✅ PHASE 1 LANDED + BOOK-VERIFIED (2026-09-01, working tree, uncommitted).** Three edits in
+ `Ghost/S/Swarm.g` (→ recompiled `src/lib/gen/S/Swarm.go`, LocalGen clean + esbuild strict-parse clean):
+  - `Swarm_charter_sign` (~5178): `if (era == null && cur && cur.sc.payload === payload && cur.sc.sig)
+     return cur` — an unpaid `%Owed,owe:charter` debt no longer re-signs a byte-identical roster every
+      trickle; the standing charter is re-GOSSIPED (a separate call, still pays the debt), so the era
+       FREEZES. Fixes the observed +1 era / ~10s climb.
+  - `Swarm_family_heal` member loop (~4985): bare is now a CLAIM-ONCE seat. `wish` = kept-address, else
+     bare for a founding Captain, else next suffix; `collide = seat && seen.has(wish)` re-suffixes ANY
+      dup (bare or suffix) uniformly. Role never forces a SECOND bare beside the seat's own — kills the
+       single-tab `Cave:bare;Captain:bare` charter.
+  - `Swarm_adopt_finalise` (~5475): a second body is always suffixed regardless of Post (the inviter
+     already holds bare) — the same dual-bare seed removed from the legacy adopt path.
+  - **Verified no-regression on the LIVE e747 runner** (not headless): SwarmBody 17/17 `ok:true`
+     (beat 8 = `family_heal`, beat 9 = replicate), SwarmCharter 4/4 `ok:true`, SwarmGossip 4/4
+      `ok:true` — all `ok_pct:1` in check mode = zero fixture drift. SwarmSpread declared 5 / sworn 5 /
+       gaps 0 (its `ok_pct:0.8` is the pre-existing §above stale-fixture drift, unchanged by this pass).
+  - **NOT yet verified against the live eed two-tab symptom** — the Books use explicit eras / single-seat
+     rosters, so they cover the machinery but not the cross-tab race. Phase 1 should stop the era climb
+      on any tab running it, and stop single-tab dual-bare; the CROSS-tab dual-bare (two tabs each
+       taking bare for their own `mine` row) is phase 2/3.
+
+**✅ PHASE 2 LANDED + VERIFIED IN-PROCESS (2026-09-01, working tree, uncommitted).** The originally-
+ planned "roster-first seat pick" resolved to something simpler and more robust: a **deterministic
+  pub-sort seat assignment** in `Swarm_family_heal` (~4962, replacing the whole myaddr + member-loop
+   block). Every body computes the SAME address map from its shared derived family — **bare goes to the
+    LOWEST body_pub; the rest suffix `_1.._k` in pub order** — so two same-soul founders write a
+     BYTE-IDENTICAL charter and phase-1's identical-payload guard freezes it instantly (no absorb race;
+      equal-era cross-absorb, which never reconciled the old dual-bare, is now moot because there is
+       nothing to reconcile). Kept/volatile addresses are no longer consulted (they diverge per tab —
+        that WAS the bug); body-key order is the one truth both tabs share.
+  - **Root cause proven, then fixed, in a throwaway in-process harness** (`scripts/TwoFounder.spec.ts` —
+     mounts the real `gen/S/Swarm.go`, stands two identities of one soul with distinct body keys, runs
+      `family_heal` + charter cross-absorb over 4 rounds; NOT a Book, no fixture). BEFORE (phase-1 only):
+       `A→{A:bare,B:_1}` vs `B→{B:bare,A:_1}`, `IDENTICAL payloads=false` forever (era frozen at 1 but a
+        permanent cross-tab dual-bare — equal era so neither absorbs the other). AFTER (phase 2): both
+         write `{9557…:bare, ca7b…:_1}` (lowest pub = bare), `IDENTICAL payloads=true` from round 1, era
+          frozen. Converged.
+  - **No-regression on the LIVE e747 runner:** SwarmBody 17/17 `ok:true` + declared 19 / sworn 19 / gaps 0
+     (beat 8 = `family_heal` — hana stays bare because a hex pub sorts below Kavi's `k…`, so the fixture is
+      unchanged; `ok_pct:1` = zero drift), SwarmCharter 4/4, SwarmGossip 4/4 (3/3 sworn), SwarmChain 5/5
+       (8/8 sworn), SwarmFerry ok. SwarmSpread 5/5 sworn (its `ok_pct:0.8` is the known stale fixture).
+  - **NOT yet verified against the live eed tabs** — that needs a reload (below). The in-process harness
+     is faithful to the charter mechanics but not to the relay/station layer (phase 3).
+
+**OPEN DECISION FOR THE OWNER (phase 2 is role-BLIND).** Pub-sort makes WHICH body holds bare
+ deterministic but arbitrary — it does NOT honour the teleology's "**the Cave holds the Seat**." Today
+  that's fine (beat 8's founder-Captain lands at bare by luck of hex<`k`, and the eed tabs just need to
+   AGREE), but if you want Cave-at-bare it's a one-line sort-key tweak (weight Cave ahead of pub). Say
+    which: pure pub-sort (shipped), or Cave-first-then-pub.
+
+**⛔ PHASE 3 — relay hello-v3 (`body_pub`) — HELD for the owner.** Phases 1+2 fix the CHARTER (era climb +
+ dual-bare — the reported symptom). They do NOT fix the RELAY-binding half: two `?I=eed` tabs both dial
+  `?addr=<bare>`, so `to:<bare>` delivery is ambiguous and `--player=eed` times out. That is spine surgery
+   in `relay.ts` (stamp a `body_pub` on the socket; `heldByAnother` treats a same-body holder as self so a
+    reconnect reclaims ITS seat; delivery prefers the `seats` holder) and it intersects the parked
+     address-model question in `ClusterAddressing_todo` §4/§6 — so it's held for a decision, not landed blind.
+
+**LIVE-VERIFY PHASES 1+2 (owner action).** Reload BOTH eed tabs onto the new `.go` (HMR caches the old
+ one). The charter should converge to a SINGLE bare with a FROZEN era. To READ it, close one eed tab so
+  `--player=eed` un-jams (or wait for phase 3), then minisnap `self>Peering>Charter` + `self>Peering>Body`.
 
 **Already in the working tree, uncommitted (2026-09-01):** the Peeroleum same-soul pier-less dispatch
  (sibling frames no longer DROP — the charter-gossip/ack path phase 4 needs), the `_1` collision heal

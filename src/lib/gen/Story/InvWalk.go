@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_InvWalk(): string { return 'a7b044bf6d59724c~g1' },
+    Ghostmeta_Ghost_Story_InvWalk(): string { return 'bcca60e481a4b075~g1' },
 
 // InvWalk.g — the THIRD Inv* ferry Book: the FULL WALK of the device-link ceremony (Ferry_todo §0
 //  "Book-blindness seam" paragraph — 2026-08-31).
@@ -132,14 +132,16 @@ async InvWalk_pump(w) {
                         let gs = this.Swarm_ferry_role('soul')
                         if (gs) { delete gs.c.secret; delete gs.c.ferrying }
                         this.Swarm_ferry_phase(w, 'got', { pub: String(frame.page?.prepub || ''), role: 'soul' })
-                        // FACET D roster (consenter-gated, matches the live handler ~line 1123)
+                        // FACET D roster (consenter-gated, matches the live handler ~line 1123):
+                        //  LAND-OF-PREPUB — no seat addresses; a body IS its address (prepubOf(pub)),
+                        //   so both rows note NULL address exactly as the live finalise does.
                         if (top.c.consenter && ident) {
                             let capname = String(ident.sc.friendly || '')
-                            let cap = this.Swarm_body_take(ident, (this.Swarm_body_key(ident)?.pub || ident.sc.prepub), 'Captain', ident.sc.prepub)
+                            let cap = this.Swarm_body_take(ident, (this.Swarm_body_key(ident)?.pub || ident.sc.prepub), 'Captain', null)
                             if (cap && capname) { cap.sc.name = capname }
                             let cavepub = frame.body ? String(frame.body) : ''
                             let cavename = frame.name ? String(frame.name) : ''
-                            if (cavepub) { this.Swarm_body_note(ident, cavepub, 'Cave', String(ident.sc.prepub) + '_1', cavename) }
+                            if (cavepub) { this.Swarm_body_note(ident, cavepub, 'Cave', null, cavename) }
                         }
                     }
                 }

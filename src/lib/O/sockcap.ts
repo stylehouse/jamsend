@@ -86,6 +86,62 @@ export function sockcap_lines(): string {
 }
 export function sockcap_count(): number { return ring.length }
 
+// ── concap — a browser-side tap on console.{log,warn,error,info,debug} ────────────────────────────
+//  The socket tap above catches WIRE frames; this catches the RAW console lines a human reads in
+//   DevTools → Console (the `🛰 ws SEND/RECV` from Tribunal, `🛰☠ no Pier` drops from Peeroleum, the
+//    `🦑` from Swarm, Story's beliefs narration).  Pulled READ-ONLY over the relay by `runner_ask
+//     console` — no disk file, no reload once installed, no manual DevTools copy-paste.
+//  UNCONDITIONAL at boot (concap_install from Otro), NOT arm-gated like sockcap: it is a pure
+//   in-memory ring (bounded CON_MAX), never persisted, never snapped — so it costs a page nothing
+//    but the ring, and is always there when a bug happens.  Off-snap runtime state: the ring is a
+//     module-level array, never a C particle, so no Story fixture can ever see it.
+type Con = { t: number; lv: 'log' | 'warn' | 'error' | 'info' | 'debug'; line: string }
+const CON_MAX = 2000
+const conRing: Con[] = []
+let conInstalled = false
+// serialise one console arg the way DevTools would show it, without exploding a deep object into the
+//  ring.  Strings pass through; everything else is a compact JSON (or String() when it won't stringify,
+//   e.g. an Error or a circular ref).  Bounded per-arg so one fat object can't blow the line length.
+function conArg(a: any): string {
+    if (typeof a === 'string') return a
+    if (a instanceof Error) return a.stack ? String(a.stack) : `${a.name}: ${a.message}`
+    try { const s = JSON.stringify(a); return s === undefined ? String(a) : s } catch { return String(a) }
+}
+function conPush(lv: Con['lv'], args: any[]) {
+    let line: string
+    try { line = args.map(conArg).join(' ') } catch { line = '(unserialisable console args)' }
+    if (line.length > 2000) line = line.slice(0, 2000) + '…'
+    conRing.push({ t: Date.now(), lv, line })
+    if (conRing.length > CON_MAX) conRing.splice(0, conRing.length - CON_MAX)
+}
+// Install the console tap once, browser-only.  Wrap each level so the ORIGINAL still prints to DevTools
+//  (a human at the tab loses nothing) AND the line lands in the ring.  Idempotent across HMR.
+export function concap_install() {
+    if (conInstalled || typeof window === 'undefined' || typeof console === 'undefined') return
+    conInstalled = true
+    for (const lv of ['log', 'warn', 'error', 'info', 'debug'] as const) {
+        const orig = (console as any)[lv]?.bind(console)
+        if (typeof orig !== 'function') continue
+        ;(console as any)[lv] = (...args: any[]) => { try { conPush(lv, args) } catch {} ; orig(...args) }
+    }
+}
+// The ring as an array of {t,lv,line}, oldest→newest, AFTER optional grep + tail.  Applied ring-side so
+//  the relay reply carries only the N lines the caller wants, not the whole 2000-entry ring every read.
+//   grep is a plain substring OR a /re/flags literal; matched against the line only (not the level).
+export function concap_read(opts: { tail?: number; grep?: string } = {}): Con[] {
+    let out = conRing
+    if (opts.grep) {
+        let test: (s: string) => boolean
+        const m = /^\/(.*)\/([a-z]*)$/.exec(opts.grep)
+        try { const re = m ? new RegExp(m[1], m[2]) : new RegExp(opts.grep.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); test = (s) => re.test(s) }
+        catch { const g = opts.grep; test = (s) => s.includes(g) }
+        out = out.filter(c => test(c.line))
+    }
+    const tail = opts.tail && opts.tail > 0 ? opts.tail : out.length
+    return out.slice(Math.max(0, out.length - tail))
+}
+export function concap_count(): number { return conRing.length }
+
 // Persistent ARM flag (per-browser, localStorage — readable SYNCHRONOUSLY at boot, before the House or the
 //  relay socket exist, which a particle|Dexie flag can't be).  Otro reads socklog_armed() to decide whether
 //   to sockcap_install() this boot; the 🪪 Id toggle flips it.  A flip takes effect on the NEXT reload — the

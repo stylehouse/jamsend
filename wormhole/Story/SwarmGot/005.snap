@@ -63,3 +63,4 @@ Snap:H
             Record,id:f1,title:Naima,artist:Coltrane
             Record,id:f2,title:Cousin-Mary,artist:Coltrane
         req:witness,eternal,ok
+        Invite:got_1,prepub:fe3e32fea4a2a33e,to:Music,n:Music~genre~Jazz,state:redeeming

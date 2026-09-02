@@ -4,35 +4,35 @@ story:SwarmSpread
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.117
-      sample=0.1,at=1788071927
-      sample=0.061,at=1788072722
-      sample=0.039,at=1788072885
-      sample=0.039,at=1788072898
-      sample=0.114,at=1788072903
-      sample=0.089,at=1788086191
-      sample=0.039,at=1788091077
-      sample=0.045,at=1788091887
-      sample=0.352,at=1788160035
-      sample=0.289,at=1788160241
-    TimeTotal:step,avg=0.023
-      sample=0.02,at=1788071927
-      sample=0.012,at=1788072722
-      sample=0.008,at=1788072885
-      sample=0.008,at=1788072898
-      sample=0.023,at=1788072903
-      sample=0.018,at=1788086191
-      sample=0.008,at=1788091077
-      sample=0.009,at=1788091887
-      sample=0.07,at=1788160035
-      sample=0.058,at=1788160241
+    TimeTotal:beliefs,avg=0.036
+      sample=0.025,at=1788266744
+      sample=0.038,at=1788268025
+      sample=0.043,at=1788268122
+      sample=0.043,at=1788268137
+      sample=0.028,at=1788268145
+      sample=0.033,at=1788297300
+      sample=0.057,at=1788298921
+      sample=0.032,at=1788299097
+      sample=0.032,at=1788299099
+      sample=0.028,at=1788299110
+    TimeTotal:step,avg=0.007
+      sample=0.005,at=1788266744
+      sample=0.008,at=1788268025
+      sample=0.009,at=1788268122
+      sample=0.009,at=1788268137
+      sample=0.006,at=1788268145
+      sample=0.007,at=1788297300
+      sample=0.011,at=1788298921
+      sample=0.006,at=1788299097
+      sample=0.006,at=1788299099
+      sample=0.006,at=1788299110
   step,dige:0000000000000000
   step=2,dige:3338a029cfe39e2e
     Assertion:a-blank-device-offers,sentence:a blank device offers itself as a body not a role — the adoption offer proves the device holds its own key and carries no Post so the device does not yet know it will be a Cave
-  step=3,dige:aef91b9fa6c28a14
+  step=3,dige:83f1a2eeac326d3e
     Assertion:the-soul-seals-across,sentence:the soul seals across on a scan — the soul-holder seals its whole account to the blank device and the device unseals it and now holds the very same soul key so it is no longer blank but a body of that soul
-    Assertion:the-device-consents-to,sentence:the device consents to the role and the Charter routes both — the box derives Cave from the proposed grant the phone takes Captain and the first Charter verifies and routes the Cave to its suffix the Captain to the bare name
-  step=4,dige:e56b59a6ff356bc1
+    Assertion:the-device-consents-to,sentence:the device consents to the role and the roster routes both — the box derives Cave from the proposed grant the phone takes Captain and each body answers at its own key-derived name — the first charter still verifies while carrying no seat column at all
+  step=4,dige:be9a1e2762c37c76
     Assertion:the-ceremony-fails-closed,sentence:the ceremony fails closed — a tampered seal a wrong nonce and a withheld consent each produce no body and the soul never lands on a device that flubbed the seal or that the human did not confirm
-  step=5,dige:7ebd2896f1348e07
+  step=5,dige:9ce4f3b7eb7a1f1b
     Assertion:the-account-ferries-over,sentence:the account ferries over the sealed pier — once a MyCave pier stands the soul exports and seals its whole account across to the blank device which unseals it with the fragment code and now holds the very same soul key as a Cave while a wrong code lands no account at all

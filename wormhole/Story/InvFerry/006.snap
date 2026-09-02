@@ -16,10 +16,8 @@ Snap:H
             Peering,name:c691de0dd9e8b39a,friendly:Alice,online
               Idzeug:invferry_content,to:Music,genre:Jazz
               Idzeug:1,to:MyCave,next:2,claimed:1
-              Pier,pub:51fce20e175e67af,friendly:Cavey,since:1756500020
+              Pier,pub:51fce20e175e67af,friendly:Cavey,since:1756500020,link,post:Cave
                 Peering,name:51fce20e175e67af,friendly:Cavey,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd
-                Grant:MyCave,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:ef9c4501db9588c4231cce574b22b728f7e974d484eff81c73aadce0cb79df3b30d130b0b119b1fbdc8acc3ccb5301ab457e3c8abc8d04439ef1f25f92fc050f
-                Grant:MyCave,by:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,for:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,time:1756500020,sign:9fbb4e8113a6031de18d28fca643782c9748657402e10e1a4df3ca7d14323ff57c1fdabb6380e26b08406794b0fbf94ef1031ccd8f622fc7ff5f71efc3c07901
             mail
               frame:pier_hello,did
               frame:pier_confirm,did
@@ -32,10 +30,8 @@ Snap:H
         Account,of:Cavey
           Identity:51fce20e175e67af,prepub:51fce20e175e67af,friendly:Cavey
             Peering,name:51fce20e175e67af,friendly:Cavey,online
-              Pier,pub:c691de0dd9e8b39a,friendly:Alice,since:1756500020
+              Pier,pub:c691de0dd9e8b39a,friendly:Alice,since:1756500020,link,post:Cave
                 Peering,name:c691de0dd9e8b39a,friendly:Alice,pub:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b
-                Grant:MyCave,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:ef9c4501db9588c4231cce574b22b728f7e974d484eff81c73aadce0cb79df3b30d130b0b119b1fbdc8acc3ccb5301ab457e3c8abc8d04439ef1f25f92fc050f
-                Grant:MyCave,by:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,for:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,time:1756500020,sign:9fbb4e8113a6031de18d28fca643782c9748657402e10e1a4df3ca7d14323ff57c1fdabb6380e26b08406794b0fbf94ef1031ccd8f622fc7ff5f71efc3c07901
             mail
               frame:pier_accept,did
               frame:ferry,did
@@ -46,16 +42,15 @@ Snap:H
             Peering,name:c691de0dd9e8b39a,friendly:Alice
               Idzeug:invferry_content,to:Music,genre:Jazz
               Idzeug:1,to:MyCave,next:2,claimed:1
-              Pier,pub:51fce20e175e67af,friendly:Cavey,since:1756500020
+              Pier,pub:51fce20e175e67af,friendly:Cavey,since:1756500020,link,post:Cave
                 Peering,name:51fce20e175e67af,friendly:Cavey,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd
-                Grant:MyCave,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:ef9c4501db9588c4231cce574b22b728f7e974d484eff81c73aadce0cb79df3b30d130b0b119b1fbdc8acc3ccb5301ab457e3c8abc8d04439ef1f25f92fc050f
-              Body,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,role:Cave,address:c691de0dd9e8b39a_1,name:Cavey
+              Body,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,post:Cave,name:Cavey
             SocialGraph
               Edge,a:c691de0dd9e8b39a,b:51fce20e175e67af,at:1756500020
         reached:step_3
         req:Ferry,eternal
           req:Ferry_soul,serial:1,phase:sent,at=1756500020,pub:51fce20e175e67af
-          req:Ferry_cave,pub:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,phase:pending,at=1756500020
+          req:Ferry_cave,pub:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,serial:1,phase:pending,at=1756500020
         reached:step_4
         reached:step_5
         Account,of:Fbox

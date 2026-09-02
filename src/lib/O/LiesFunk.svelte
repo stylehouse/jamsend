@@ -33,7 +33,7 @@ import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
 import { RemoteWormholeNav } from "$lib/O/RemoteWormholeNav.svelte"
 import { Dexie } from "dexie"
 import { onMount } from "svelte"
-import { socklog_arm, socklog_armed } from "$lib/O/sockcap"
+import { socklog_arm, socklog_armed, concap_read, concap_count } from "$lib/O/sockcap"
 
 let { M } = $props()
 
@@ -2513,6 +2513,16 @@ await M.eatfunc({
                     }
                 } else if (op === 'probe') {
                     result = await H.Lies_audio_probe()   // real-audio one-shot: real-time? analyser-heard? (fleet capability)
+                } else if (op === 'console') {
+                    // THE CONSOLE RING (concap, sockcap.ts) — the raw console.{log,warn,error,…} a human
+                    //  reads in DevTools, pulled to the CLI READ-ONLY so debugging a live tab no longer
+                    //   means copy-pasting the console into chat.  The tap installs UNCONDITIONALLY at boot
+                    //    (Otro concap_install), so no arm + no reload is needed to READ.  tail/grep are
+                    //     applied ring-side so the reply carries only the wanted lines, not all 2000.
+                    //  Off-snap: concap's ring is a module-level array, never a C — no fixture sees it.
+                    const a = ask as any
+                    const lines = concap_read({ tail: a.tail != null ? Number(a.tail) : undefined, grep: a.grep != null ? String(a.grep) : undefined })
+                    result = { total: concap_count(), returned: lines.length, lines }
                 } else if (op === 'minisnap') {
                     // TARGETED read of a pointer path (read-only; safe on a humdinger).  See H.minisnap above.
                     const a = ask as any

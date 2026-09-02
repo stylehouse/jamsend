@@ -9,7 +9,7 @@ Snap:H
         Account,of:Alice
           Identity:4b6a63a01204bf0e,prepub:4b6a63a01204bf0e,friendly:Alice
             Peering,name:4b6a63a01204bf0e,friendly:Alice
-              Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,role:Captain,address:4b6a63a01204bf0e
+              Body,pub:59c4d88a7bee0308d01c94632aef62b28d7e422aa71895cd4845da6436812b52,post:Captain,address:4b6a63a01204bf0e
           Identity:a336c7172442dcab,prepub:a336c7172442dcab,friendly:Zoe
             Peering,name:a336c7172442dcab,friendly:Zoe
         testing

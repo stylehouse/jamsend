@@ -1,9 +1,9 @@
 Snap:H
   H:SwarmGot,Run
     A:SwarmGot
-      self,round=7	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:SwarmGot,now=1751910020
-        self,round=7	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:Ella
           Identity:fe3e32fea4a2a33e,prepub:fe3e32fea4a2a33e,friendly:Ella
@@ -63,3 +63,4 @@ Snap:H
             Record,id:f1,title:Naima,artist:Coltrane
             Record,id:f2,title:Cousin-Mary,artist:Coltrane
         req:witness,eternal,ok
+        Invite:got_1,prepub:fe3e32fea4a2a33e,to:Music,n:Music~genre~Jazz,state:redeeming

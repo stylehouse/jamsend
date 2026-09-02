@@ -9,8 +9,8 @@ Snap:H
         Account,of:Alice
           Identity:6116a529d3ee6f3a,prepub:6116a529d3ee6f3a,friendly:Alice
             Peering,name:6116a529d3ee6f3a,friendly:Alice,online
-              Body,pub:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9,role:Captain,address:6116a529d3ee6f3a
-              Body,pub:gossip_cave_pub,role:Cave,address:6116a529d3ee6f3a_2
+              Body,pub:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9,post:Captain,address:6116a529d3ee6f3a
+              Body,pub:gossip_cave_pub,post:Cave,address:6116a529d3ee6f3a_2
               Charter,era:2,payload:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9:Captain:6116a529d3ee6f3a;gossip_cave_pub:Cave:6116a529d3ee6f3a_2,sig:790d075ce12e3bace187e1f529d49cfa5102d51fb861c47f19c1f99d68f27b5b11691b25d2d9100158884d25d7981bb16ad62a636e58c6952afbe0b8cf9b810d,soul:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82
               Idzeug:gossip_m1,to:Music,spent
               Pier,pub:73683abede8f21fc,friendly:Bob,since:1751680010
@@ -30,8 +30,8 @@ Snap:H
                 Grant:Music,by:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82,for:73683abede8f21fc43499291c50f260043a4b65fb1412741bda59be27aee865a,time:1751680010,sign:f5c3e4df23228bce98d023ddcd1a63797a3e3bc20bf5d63d4465d7c555521cb53913f0a71d7ba23412e46d0da03ba2ded6346be37b5c80cf494c7605dc3fb605
                 Grant:Music,by:73683abede8f21fc43499291c50f260043a4b65fb1412741bda59be27aee865a,for:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82,time:1751680010,sign:e5045a511ade8a0a20087751f20a5894bcf9961048b9ac68c8f5a65db69cf1c6485f85fd52c52f80f37c559a7c44c257f329abb684c32f87ba2887561b388408
                 Charter,era:2,payload:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9:Captain:6116a529d3ee6f3a;gossip_cave_pub:Cave:6116a529d3ee6f3a_2,sig:790d075ce12e3bace187e1f529d49cfa5102d51fb861c47f19c1f99d68f27b5b11691b25d2d9100158884d25d7981bb16ad62a636e58c6952afbe0b8cf9b810d,soul:6116a529d3ee6f3a12cfdb626b0ad6f675d54902ffbef02a3fa832831e4c3a82
-                Body,pub:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9,role:Captain,address:6116a529d3ee6f3a
-                Body,pub:gossip_cave_pub,role:Cave,address:6116a529d3ee6f3a_2
+                Body,pub:17ec8de38a095c41514ddfec75c7e985cd0cc6bdce8cfd70cb75fa9a7cce34b9,post:Captain,address:6116a529d3ee6f3a
+                Body,pub:gossip_cave_pub,post:Cave,address:6116a529d3ee6f3a_2
             mail
               frame:pier_accept,did
               frame:charter,did

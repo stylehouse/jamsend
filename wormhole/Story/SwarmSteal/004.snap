@@ -7,9 +7,9 @@ Snap:H
         req:wrangle,eternal,ok
         Account,of:Alice
           Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
-            Peering,name:32c1ce7a059129d1,friendly:Alice,role:music,stolen
-              Sibling:tab_encode,address:32c1ce7a059129d1_1,role:encode
-              Sibling:tab_spare,address:32c1ce7a059129d1_3,role:serve
+            Peering,name:32c1ce7a059129d1,friendly:Alice,duty:music,stolen
+              Sibling:tab_encode,address:32c1ce7a059129d1_1,duty:encode
+              Sibling:tab_spare,address:32c1ce7a059129d1_3,duty:serve
               Stolen:remote_copy,at:1751700020
         req:witness,eternal,ok
         see:a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name

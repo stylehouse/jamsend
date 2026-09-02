@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_InvFerry(): string { return 'a22daa07786d9d0f~g1' },
+    Ghostmeta_Ghost_Story_InvFerry(): string { return '05187e96640aa421~g1' },
 
 // InvFerry.g — the SECOND Inv* Book: the WHOLE ferry exchange end to end (Inv_ferry_todo.md §3).
 //  InvSeal proves ONE rung (the seal-seam warmth gate — cold refuses / warm parks the consent).
@@ -205,7 +205,7 @@ async InvFerry_cross(w) {
     if (esoul && esoul.c.keys && String(esoul.c.keys.pub) === String(alice.c.keys.pub)) { row.account_crossed = 1 }
     if (eidz) { row.content_crossed = 1 }
     if (esoul && esoul.c.keys && String(esoul.c.keys.key) === String(keyhex) && !esoul.sc.key && !esoul.sc.pub) { row.keys_thawed = 1 }
-    if (ebody && ebody.sc.role === 'Cave') { row.post_cave = 1 }
+    if (ebody && ebody.sc.post === 'Cave') { row.post_cave = 1 }
     if (badHeard === null) { row.wrongcode_no_body = 1 }
     this.InvFerry_note(w, row)
 

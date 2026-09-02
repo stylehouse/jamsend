@@ -9,8 +9,8 @@ Snap:H
         Account,of:Alice
           Identity:f9f74e40023b4b63,prepub:f9f74e40023b4b63,friendly:Alice
             Peering,name:f9f74e40023b4b63,friendly:Alice,online
-              Body,pub:a23269ef292a0526f9a43bb622edddc5bf0cab96c8346287718f09b55f1befbc,role:Captain,address:f9f74e40023b4b63
-              Body,pub:serve_cave_pub,role:Cave,address:cave_dept_addr
+              Body,pub:a23269ef292a0526f9a43bb622edddc5bf0cab96c8346287718f09b55f1befbc,post:Captain,address:f9f74e40023b4b63
+              Body,pub:serve_cave_pub,post:Cave,address:cave_dept_addr
               Charter,era:1,payload:a23269ef292a0526f9a43bb622edddc5bf0cab96c8346287718f09b55f1befbc:Captain:f9f74e40023b4b63;serve_cave_pub:Cave:cave_dept_addr,sig:f9fa45f48c6b48c2ec1a40109649e9a0ec68409bc33a6840ae1d6a39afc65ca52ac9316538c108f720cfb7a118620bcf1a83ac633aa98ef629c75eac4d54500b,soul:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629
               Idzeug:serve_m1,to:Music,spent
               Pier,pub:271a5b4b0f1c870b,friendly:Bob,since:1751690000

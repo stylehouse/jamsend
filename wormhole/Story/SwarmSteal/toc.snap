@@ -4,33 +4,33 @@ story:SwarmSteal
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.02
-      sample=0.012,at=1784378206
-      sample=0.033,at=1784378224
-      sample=0.026,at=1784382233
-      sample=0.012,at=1785075907
-      sample=0.015,at=1785075914
-      sample=0.021,at=1785077801
-      sample=0.021,at=1785094635
+    TimeTotal:beliefs,avg=0.018
       sample=0.008,at=1785094647
       sample=0.021,at=1785095226
       sample=0.027,at=1785097140
+      sample=0.018,at=1788299213
+      sample=0.018,at=1788299216
+      sample=0.018,at=1788299217
+      sample=0.018,at=1788299218
+      sample=0.018,at=1788299218
+      sample=0.018,at=1788299219
+      sample=0.014,at=1788299586
     TimeTotal:step,avg=0.003
-      sample=0.002,at=1784378206
-      sample=0.005,at=1784378224
-      sample=0.004,at=1784382233
-      sample=0.002,at=1785075907
-      sample=0.003,at=1785075914
-      sample=0.004,at=1785077801
-      sample=0.003,at=1785094635
       sample=0.001,at=1785094647
       sample=0.003,at=1785095226
       sample=0.004,at=1785097140
+      sample=0.003,at=1788299213
+      sample=0.003,at=1788299216
+      sample=0.003,at=1788299217
+      sample=0.003,at=1788299218
+      sample=0.003,at=1788299218
+      sample=0.003,at=1788299219
+      sample=0.002,at=1788299586
   step,dige:e4469f33b30ab529
   step=2,dige:f06c000a693257e0
-  step=3,dige:8cee1080e430c174
-  step=4,dige:705d9e3f05e16006
+  step=3,dige:171ad112889aab7c
+  step=4,dige:1865cc5f128f2a41
     Assertion:theft-contested,sentence:a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen
-  step=5,dige:494003587078ccbd
-  step=6,dige:81e80bae84580ac2
+  step=5,dige:5f0adcd2cfe4782e
+  step=6,dige:0c05506c977499a0
     Assertion:identity-not-address,sentence:identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2

@@ -183,7 +183,7 @@ async InvFerry_cross(w):
     if (esoul && esoul.c.keys && String(esoul.c.keys.pub) === String(alice.c.keys.pub)) { row.account_crossed = 1 }
     if (eidz) { row.content_crossed = 1 }
     if (esoul && esoul.c.keys && String(esoul.c.keys.key) === String(keyhex) && !esoul.sc.key && !esoul.sc.pub) { row.keys_thawed = 1 }
-    if (ebody && ebody.sc.role === 'Cave') { row.post_cave = 1 }
+    if (ebody && ebody.sc.post === 'Cave') { row.post_cave = 1 }
     if (badHeard === null) { row.wrongcode_no_body = 1 }
     this.InvFerry_note(w, row)
 

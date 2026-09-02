@@ -56,7 +56,7 @@
     // ROLE-AWARE HELM (Division_todo §0a): a Captain's link mints MyCave (grow a Cave); a CAVE's link
     //  mints MyCaptain — the resume-from-backup act.  The feature choice itself lives in
     //   Swarm_ferry_link; this face only says which act the one button performs.
-    let my_role = $derived.by(() => { void H?.version; try { return String((H as any)?.Swarm_body_mine?.(self)?.sc?.role || '') } catch { return '' } })
+    let my_role = $derived.by(() => { void H?.version; try { return String((H as any)?.Swarm_body_mine?.(self)?.sc?.post || '') } catch { return '' } })
 
     // NAME-GATE (owner 2026-08-30: *"name yourself before partaking EITHER end of any Grant-like
     //  thing"*).  Colonising a Cave is the most consequential grant there is — it copies your whole
@@ -208,45 +208,15 @@
     }
 
     const short = (s: string) => (s ? String(s).slice(0, 8) : '')
-    // seconds-or-minutes age off the shared heartbeat — every fact in the wait ladder + wire strip carries one,
-    //  because "which rung is STALE" is exactly the question the owner keeps having to ask the console.
-    //  MIXED CLOCKS (owner's "29771251m", 2026-08-30): ferry_sent/awaiting/confirm stamp `at` with Swarm_now —
-    //   epoch SECONDS — while ferry_got/ferry_held stamp Date.now() ms.  Auto-detect: below 1e11 it's seconds.
-    const age_of = (at: any) => { void now_tick; let a = +at || 0; if (a && a < 1e11) a = a * 1000; const s = Math.max(0, Math.round((Date.now() - a) / 1000)); return s < 120 ? `${s}s` : `${Math.round(s / 60)}m` }
-    // ── THE FERRY WIRE STRIP (owner 2026-08-30: "we want some indicator of what's happening, so I can tell
-    //  you where it's stuck").  The RAW standing ferry facts — every top.c.ferry_* flag with its age, the
-    //   durable twins, the counterparty pier's warmth — printed small under every phase of this cell.  Not a
-    //    summary, a dump: when the ceremony wedges, this line IS the bug report.  Heartbeat-driven (`.c`
-    //     writes never bump H.version), so it stays live even with the belief loop starved. -->
+    // (THE FERRY WIRE STRIP is GONE — owner 2026-09-02: "get rid of the bottom row of Link".  It was the
+    //  raw ferry-facts dump the owner asked for 2026-08-30 to debug wedges; the phase reads below carry
+    //   the cell now, and a wedge is debugged at the source — Swarm_ferry_facts / runner_ask minisnap —
+    //    not off furniture.)
     // ── THE ONE CEREMONY READ (Ferry_rebuild §4 Stage 3): the ghost's Swarm_ferry_facts view over the two
     //  role reqs (req:Ferry_soul / req:Ferry_cave on w:Swarm) — same shapes the old flag pile carried, ONE
     //   ask.  now_tick keeps it live under a starved belief loop (the req's sc writes DO bump, but the 1s
     //    heartbeat is mutex-independent, which mattered for every wedge this cell has ever debugged).
     let facts = $derived.by(() => { void H?.version; void now_tick; try { return (H as any)?.Swarm_ferry_facts?.(world()) ?? null } catch { return null } })
-    let wire = $derived.by(() => {
-        void now_tick; void H?.version
-        try {
-            const f: any = facts ?? {}
-            const rows: string[] = []
-            if (f.secret)   rows.push('secret✓' + (f.serial ? '#' + f.serial : ''))
-            if (f.twin)     rows.push('twin ' + age_of((f.twin.soul || f.twin.cave || {}).at))
-            if (f.offer)    rows.push('offer ' + (f.offer.at ? age_of(f.offer.at) : '·'))
-            if (f.awaiting) rows.push('awaiting ' + short(f.awaiting.soul) + ' ' + (f.awaiting.at ? age_of(f.awaiting.at) : '·'))
-            if (f.confirm)  rows.push('confirm ' + short(f.confirm.pub) + ' ' + (f.confirm.at ? age_of(f.confirm.at) : '·'))
-            if (f.ferrying) rows.push('ferrying…')
-            if (f.sent)     rows.push('sent ' + age_of(f.sent.at) + (f.sent.held ? ' held✓' + age_of(f.sent.held) : ' unheld'))
-            if (f.pending)  rows.push('pending ' + (f.pending.at ? age_of(f.pending.at) : '·'))
-            if (f.got)      rows.push('got✓ ' + age_of(f.got.at))
-            if (f.ended)    rows.push('ended')
-            const p = other_pier?.()
-            if (p) {
-                const ha = (p as any).c?.heard_at || 0
-                rows.push('pier ' + short(String((p as any).sc?.pub || '')) + (ha ? ' heard ' + age_of(ha) : ' silent'))
-            }
-            if (!has_code) rows.push('code✗')
-            return rows.join(' · ')
-        } catch { return '' }
-    })
     // (the cross-origin/relay warning that used to sit under the QR was removed 2026-08-28 — owner: "lose
     //  that stuff about relays".  Too much text on the sharing page; a mis-scan fails visibly enough.)
     // (The old `peer_ready` "✓ connected" flash lived here — removed 2026-08-28.  The confirm now lives IN this
@@ -647,8 +617,7 @@
              the instant the frame LEFT — victory before the other device had said a word.  Now the one line tracks
              the real acks the hear funnel already stamps: SENDING (no ack — a live spinner, not a checkmark) →
              ✓ DELIVERED (sent_fact.held — their device holds the sealed account) → ✓ DONE (got — they consumed it
-             and became the soul).  So the giver watches it actually cross, and the ✓ means something.  The raw
-             sent/held/got ages still live in the wire strip below (guts, not ceremony). -->
+             and became the soul).  So the giver watches it actually cross, and the ✓ means something. -->
         <div class="ld-face">
             {#if got}
                 <div class="ld-cap-big">✓ done — devices linked</div>
@@ -750,9 +719,6 @@
         </div>
     {/if}
     {#if err}<div class="ld-err">{err}</div>{/if}
-    <!-- the ferry wire strip — raw standing facts + ages, every phase (see the `wire` derived's header).
-         Dim and small: furniture until something wedges, at which point it IS the bug report. -->
-    {#if wire}<div class="ld-wire" title="the raw ferry facts standing on this tab — each with its age; the counterparty pier's warmth rides at the end">{wire}</div>{/if}
 </div>
 
 <style>
@@ -874,12 +840,4 @@
     .ld-live-fade { color: #a70; background: rgba(220, 160, 40, .14); }
     .ld-live-away { color: #977; background: rgba(150, 120, 120, .14); }
 
-    /* the ferry wire strip — the raw facts dump under every phase */
-    .ld-wire {
-        margin-top: 0.4rem;
-        font-family: monospace; font-size: 0.62rem; line-height: 1.4;
-        color: rgba(160, 175, 200, 0.55);
-        word-break: break-word;
-        border-top: 1px dashed rgba(120, 140, 195, 0.2); padding-top: 0.25rem;
-    }
 </style>

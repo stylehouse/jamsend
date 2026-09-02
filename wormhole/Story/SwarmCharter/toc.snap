@@ -11,6 +11,10 @@ story:SwarmCharter
       sample=0.018,at=1787814106
       sample=0.021,at=1787814144
       sample=0.017,at=1787815395
+      sample=0.026,at=1788299153
+      sample=0.026,at=1788299156
+      sample=0.026,at=1788299156
+      sample=0.03,at=1788299166
     TimeTotal:step,avg=0.007
       sample=0.009,at=1787813974
       sample=0.009,at=1787813986
@@ -18,12 +22,16 @@ story:SwarmCharter
       sample=0.005,at=1787814106
       sample=0.005,at=1787814144
       sample=0.004,at=1787815395
+      sample=0.006,at=1788299153
+      sample=0.006,at=1788299156
+      sample=0.006,at=1788299156
+      sample=0.007,at=1788299166
   step,dige:0000000000000000
-  step=2,dige:1b479fee7c6b9bed
+  step=2,dige:c18c437f110de483
     Assertion:the-soul-signs-its,sentence:the soul signs its division into one era-stamped Charter that verifies against its own pub — and routing reads the address for a Post off it the Cave at its suffix the Captain at the bare name an unheld Post nothing
-  step=3,dige:70621fe0f70e2bf3
+  step=3,dige:acdaecae6ab76b3d
     Assertion:a-tampered-charter-fails,sentence:a tampered Charter fails the signature — move an address bump the era swap the soul and each is rejected while the untouched Charter still verifies so a spoofed I-am-your-Cave cannot pass
-  step=4,dige:3e0e04df371de052
+  step=4,dige:077312e1fba2810a
     Assertion:a-friend-absorbs-the,sentence:a friend absorbs the signed Charter and routes off it — verify then land then project the roster into per-body rows so routing off %Body IS routing off the Charter one hop removed
     Assertion:the-highest-era-wins,sentence:the highest era wins — when the soul moves its Cave and re-charters the newer era supersedes and a stale earlier era is ignored so a split-brain cannot flap the routing
     Assertion:a-forged-charter-is,sentence:a forged Charter is refused at absorb and the pier keeps exactly one Charter row merged in place — the attestation never churns into a row-per-era

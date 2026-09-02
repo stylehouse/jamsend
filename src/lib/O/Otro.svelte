@@ -11,7 +11,7 @@
     import NaviScroll from "./ui/NaviScroll.svelte";
     import { boot_param } from "$lib/boot";
     import BootGate from "./ui/BootGate.svelte";
-    import { sockcap_install, socklog_armed } from "$lib/O/sockcap";   // ALMOST-GONER: relay-socket tap (dumped via Wormhole) — sockcap.ts header
+    import { sockcap_install, socklog_armed, concap_install } from "$lib/O/sockcap";   // ALMOST-GONER: relay-socket tap (dumped via Wormhole) — sockcap.ts header; concap = the console ring (runner_ask console)
     // TEMP — CPU-attribution experiment (?cpu_legs=1): cycles which Lies/Lang/Cyto/Story panel
     //  is mounted, announcing the leg on screen + console, so CPU readings taken externally
     //  (Activity Monitor / Task Manager) can be attributed to a panel. Inert unless armed —
@@ -63,6 +63,11 @@
     //   installs, sockcap stays empty, and Lies_dump_socklog early-returns — so no _socklog files and no
     //    rw-req blob every ~10s (which is what an always-on capture was parking in the snap).  Browser-guarded.
     if ((editor_book || book || on_grid) && (boot_param('socklog') != null || socklog_armed() || watch_min > 0)) sockcap_install()
+    // The CONSOLE ring — UNCONDITIONAL on any cluster boot (runner|editor|grid), no arm, no reload.
+    //  Unlike the socket tap it is pure in-memory (bounded, never persisted, never snapped), so it is
+    //   always ready when a bug happens and a human never has to pre-arm + reload to catch it.  Pulled
+    //    read-only by `runner_ask console`.  Browser-guarded inside concap_install.
+    if (editor_book || book || on_grid) concap_install()
     if (typeof window !== 'undefined' && (editor_book || book || on_grid) && watch_min > 0) {
         onMount(() => {
             const id = setInterval(() => { try { location.reload() } catch {} }, watch_min * 60_000)
