@@ -4476,8 +4476,8 @@ async SwarmSpread_order(w):
 //   AND `top_House().stashed`, both false in a Book world.  Swarm_stash_of makes the stash a PARAMETER —
 //    a caller with its own scratch stash needs no guard — so a fixture can finally drive the round trip:
 //     populate → restash → WIPE the tree → rehydrate → swear it all came back.
-//  Covers the two pillars added today (crew · reaches) plus roster; piers|izzes|chainroots still stash
-//   through their own verbs and are OWED the same treatment (their stash verbs carry side effects).
+//  Covers ALL SIX pillars: piers (with page + grants) · izzes (a named serial) · chainroots · roster ·
+//   crew (with the cert) · reaches (standing only).  Every _stash writer takes the stash as a parameter.
 SwarmReboot(A,w):
     w oai %req:wrangle,eternal
         await &SwarmReboot_drive,w,req
@@ -4528,6 +4528,10 @@ async SwarmReboot_stand(w):
     // a friend pier, the transport shelf (its own pillar — here as tree furniture the wipe must clear)
     this.Swarm_seal(w, reba, { pub: mate.pub, prepub: mate.prepub, friendly: 'Mate' }, null, null)
     await this.Swarm_mint_idzeug(w, reba, { Music: 1 }, 'reboot_1')
+    // a chain root (lineage): the shelf the third pillar carries
+    let cr = reba.oai({ ChainRoot: 1, pub: String(mate.pub) })
+    cr.c.up = reba
+    cr.sc.prepub = String(mate.prepub)
     // the roster: my own body row, wearing my name
     let body = this.Swarm_body_take(reba, keys.pub, 'Captain', null)
     if (body) { body.sc.name = 'Reba'; body.bump() }
@@ -4551,6 +4555,9 @@ async SwarmReboot_stash(w):
     let r = this.Swarm_restash_all(w.c.reba, null, w.c.st)
     let row = { stashed: 1 }
     if (r && +r.roster >= 1) { row.roster_stashed = 1 }
+    if (r && +r.piers === 1) { row.pier_stashed = 1 }
+    if (r && +r.izzes === 1) { row.izz_stashed = 1 }
+    if (r && +r.roots === 1) { row.root_stashed = 1 }
     if (r && +r.crew === 2) { row.crew_stashed = 1 }
     if (r && +r.reaches === 1) { row.one_reach_stashed = 1 }
     let mates = w.c.st.Swarm_crews?.[w.c.reba.sc.prepub]?.mates || []
@@ -4567,7 +4574,9 @@ async SwarmReboot_wipe(w):
     let peering = this.Swarm_peering(reba)
     for (const child of peering.o()) { peering.drop(child) }
     for (const crew of reba.o({ Crew: 1 })) { reba.drop(crew) }
+    for (const cr2 of reba.o({ ChainRoot: 1 })) { reba.drop(cr2) }
     let row = { wiped: 1 }
+    if (!reba.o({ ChainRoot: 1 }).length) { row.roots_gone = 1 }
     if (!peering.o().length) { row.peering_bare = 1 }
     if (!reba.o({ Crew: 1 }).length) { row.crew_gone = 1 }
     if (!this.Swarm_crew_grant(reba)) { row.cert_gone = 1 }
@@ -4581,18 +4590,27 @@ async SwarmReboot_back(w):
     w.sc.now = 1751700030
     let reba = w.c.reba
     if (!reba || !w.c.st) { return }
+    // the SAME ladder Swarm_station_up runs, in its order, against the scratch stash
+    this.Swarm_iz_rehydrate(w, reba, w.c.st)
+    this.Swarm_piers_rehydrate(w, reba, w.c.st)
+    this.Swarm_chainroots_rehydrate(w, reba, w.c.st)
     await this.Swarm_roster_rehydrate(w, reba, w.c.st)
     this.Swarm_crew_rehydrate(w, reba, w.c.st)
     this.Swarm_reaches_rehydrate(w, reba, w.c.st)
     let peering = this.Swarm_peering(reba)
     let row = { back: 1 }
+    let pier = peering.o({ Pier: 1, pub: String(w.c.matekeys.prepub) })[0]
+    if (pier && String(pier.sc.friendly) === 'Mate' && String(pier.o({ Peering: 1 })[0]?.sc?.pub || '') === String(w.c.matekeys.pub)) { row.pier_back = 1 }
+    let izz = peering.o({ Idzeug: 'reboot_1' })[0]
+    if (izz && String(izz.sc.to) === 'Music') { row.izz_back = 1 }
+    if (reba.o({ ChainRoot: 1, pub: String(w.c.matekeys.pub) })[0]) { row.root_back = 1 }
     let crew = reba.o({ Crew: 1 })[0]
     if (crew && crew.o({ mate: 1 }).length === 2) { row.crew_back = 1 }
     let mine = crew ? crew.o({ mate: String(reba.sc.prepub) })[0] : null
     if (mine && String(mine.sc.role) === 'Captain') { row.my_role_back = 1 }
     let mrow = crew ? crew.o({ mate: String(w.c.matekeys.prepub) })[0] : null
     if (mrow && mrow.o({ Grant: 'Crew' })[0]) { row.cert_back = 1 }
-    if (mrow && String(mrow.sc.body || '') === String(w.c.matekeys.pub)) { row.body_back = 1 }
+    if (mrow && String(mrow.sc.pub || '') === String(w.c.matekeys.pub)) { row.body_back = 1 }
     let bodies = peering.o({ Body: 1 })
     if (bodies.length === 1 && String(bodies[0].sc.name || '') === 'Reba') { row.roster_back = 1 }
     let reaches = peering.o({ Reach: 1 })
@@ -4600,9 +4618,13 @@ async SwarmReboot_back(w):
     if (!reaches.some((r) => String(r.sc.of) === 'tune-omega')) { row.terminal_reach_stayed_dead = 1 }
     if (reaches.length === 1 && String(reaches[0].sc.state) === 'booked') { row.reach_state_back = 1 }
     // the round trip is idempotent: a second ladder pass must not double a single row.
+    this.Swarm_iz_rehydrate(w, reba, w.c.st)
+    this.Swarm_piers_rehydrate(w, reba, w.c.st)
+    this.Swarm_chainroots_rehydrate(w, reba, w.c.st)
     this.Swarm_crew_rehydrate(w, reba, w.c.st)
     this.Swarm_reaches_rehydrate(w, reba, w.c.st)
-    if (crew && crew.o({ mate: 1 }).length === 2 && peering.o({ Reach: 1 }).length === 1) { row.idempotent = 1 }
+    if (crew && crew.o({ mate: 1 }).length === 2 && peering.o({ Reach: 1 }).length === 1
+        && peering.o({ Pier: 1 }).length === 1 && peering.o({ Idzeug: 1 }).length === 1 && reba.o({ ChainRoot: 1 }).length === 1) { row.idempotent = 1 }
     this.SwarmReboot_note(w, row)
 
 // ── the witness ───────────────────────────────────────────────────────────────────────────────────
@@ -4624,6 +4646,9 @@ SwarmReboot_witness(w):
     if (+b.sc.terminal_reach_stayed_dead === 1) this.story_swear(w, 'a settled reach stays settled — only live intent is carried so a reload never resurrects work already finished')
     // #5 THE ROSTER + MY OWN ROLE RETURN: the family album and which face is mine.
     if (+b.sc.roster_back === 1 && +b.sc.my_role_back === 1 && +b.sc.body_back === 1) this.story_swear(w, 'the roster and my own post return with the crew — a rebooted body knows what it is and which key each mate answers at')
+    // #7 THE OLDER THREE PILLARS, FINALLY UNDER A FIXTURE: a friend pier with its page, a named invite
+    //  serial, a chain root — stashed, wiped, and back.
+    if (+s.sc.pier_stashed === 1 && +s.sc.izz_stashed === 1 && +s.sc.root_stashed === 1 && +d.sc.roots_gone === 1 && +b.sc.pier_back === 1 && +b.sc.izz_back === 1 && +b.sc.root_back === 1) this.story_swear(w, 'a friend pier with its page an issued invite serial and a chain root all come back from the stash — the three oldest pillars finally stand under a fixture')
     // #6 THE LADDER IS IDEMPOTENT: boot runs it once but a re-entry must not double a row.
     if (+b.sc.idempotent === 1) this.story_swear(w, 'running the rehydrate ladder twice changes nothing — every pillar finds-or-creates so a re-entered boot cannot double a mate or a booking')
 

@@ -137,7 +137,7 @@ Swarm_crew(ident):
     return crew
 // Swarm_crew_row — find-or-create one member's row; `role` updates in place (merged-in-place ledger
 //  rows, never row-per-change).
-Swarm_crew_row(ident, prepub, role, body):
+Swarm_crew_row(ident, prepub, role, pub):
     let crew = this.Swarm_crew(ident)
     if (!crew || !prepub) { return null }
     let row = crew.o({ mate: String(prepub) })[0]
@@ -147,12 +147,12 @@ Swarm_crew_row(ident, prepub, role, body):
         row.sc.role = String(role)
         row.bump()
     }
-    // `body` = the member's BODY key pub (the name its frames come from) — the Captain's differs
-    //  from its soul key (land-of-prepub), a merged Cave's is its identity key.  Stamped by the
-    //   member itself (seal / accept / merge) and learned at the door off a vouched frame's page;
-    //    it is what lets the tidy tell a mate's body row from a stale remint wearing the same post.
-    if (body && String(body).length >= 16 && String(row.sc.body || '') !== String(body)) {
-        row.sc.body = String(body)
+    // `pub` = the mate's OWN key (owner 2026-09-03: "Crew/mate:$name,role,pub:$pub … why body not just
+    //  pub?").  Today's Captain wears a separate body key (land-of-prepub) — that is what lands here for
+    //   it; the decided model (§4a) makes this simply the mate's key.  Stamped by the member itself
+    //    (seal / accept / merge) and learned at the door off a vouched frame's page.
+    if (pub && String(pub).length >= 16 && String(row.sc.pub || '') !== String(pub)) {
+        row.sc.pub = String(pub)
         row.bump()
     }
     row.c.up = crew
@@ -172,7 +172,7 @@ Swarm_crew_view(ident):
         let prepub = String(m.sc.mate || '')
         let mine = prepub === me
         let pier = !mine && peering ? peering.o({ Pier: 1 }).find((p) => same(p.sc.pub, prepub)) : null
-        let bodies = peering ? peering.o({ Body: 1 }).filter((b) => same(b.sc.pub, prepub) || (m.sc.body && same(b.sc.pub, m.sc.body))) : []
+        let bodies = peering ? peering.o({ Body: 1 }).filter((b) => same(b.sc.pub, prepub) || (m.sc.pub && same(b.sc.pub, m.sc.pub))) : []
         let name = mine ? String(ident.sc.friendly || '') : String((pier && pier.sc.friendly) || (bodies.find((b) => b.sc.name) || {}).sc?.name || '')
         let heard = pier && pier.c && pier.c.heard_at ? +pier.c.heard_at : 0
         for (const b of bodies) { if (b.sc.heard && (+b.sc.heard) * 1000 > heard) { heard = (+b.sc.heard) * 1000 } }
@@ -182,14 +182,14 @@ Swarm_crew_view(ident):
         let g = m.o({ Grant: 'Crew' })[0]
         let since = +((pier && pier.sc.since) || (g && g.sc.time) || 0)
         let fresh = since && (now_ms / 1000 - since) < 240 ? 1 : 0
-        out.push({ prepub: prepub, role: String(m.sc.role || 'Cave'), name: name, pub8: prepub.slice(0, 8), body: String(m.sc.body || ''), mine: mine ? 1 : 0,
+        out.push({ prepub: prepub, role: String(m.sc.role || 'Cave'), name: name, pub8: prepub.slice(0, 8), pub: String(m.sc.pub || ''), mine: mine ? 1 : 0,
                    cert: g ? 1 : 0, since: since, fresh: fresh, ago: ago, rung: mine ? 'here' : (ago == null ? 'away' : ago < 15 ? 'here' : ago < 45 ? 'fading' : 'away') })
     }
     out.sort((a, b) => (a.role === 'Captain' ? 0 : 1) - (b.role === 'Captain' ? 0 : 1) || (a.prepub < b.prepub ? -1 : 1))
     return out
 // Swarm_crew_tidy — /Crew IS THE LEDGER; the %Body roster and the link piers are its projection.
 //  Once an identity carries a /Crew, a %Body row or a link %Pier that no mate backs (by prepub or
-//   by its stamped `body`) and that is not me (soul key OR body key) is a stale remint, a dead
+//   by its stamped `pub`) and that is not me (soul key OR body key) is a stale remint, a dead
 //    experiment's bond or a grafted husk — retired here, loudly.  Twin %Body rows for one pub fold
 //     into the richest.  Pre-migration accounts (no /Crew) are left exactly as they are.  Pure
 //      C-matter; returns how many rows went.
@@ -220,7 +220,7 @@ Swarm_crew_tidy(ident):
         if (sa && same(pub, sa.pub)) { return true }
         if (bk && same(pub, bk.pub)) { return true }
         if (same(pub, ident.sc.prepub)) { return true }
-        return mates.some((m) => same(pub, m.sc.mate) || (m.sc.body && same(pub, m.sc.body)))
+        return mates.some((m) => same(pub, m.sc.mate) || (m.sc.pub && same(pub, m.sc.pub)))
     }
     let n = 0
     let kept = {}
@@ -1241,7 +1241,7 @@ Swarm_arm(w):
                 let pg2 = frame.swarm?.page
                 if (vpub && from && prepubOf(vpub) !== from && pg2 && pg2.pub && String(pg2.prepub) === from && prepubOf(String(pg2.pub)) === from) {
                     let mrow = ident.o({ Crew: 1 })[0]?.o({ mate: prepubOf(vpub) })[0]
-                    if (mrow && String(mrow.sc.body || '') !== String(pg2.pub)) { mrow.sc.body = String(pg2.pub); mrow.bump() }
+                    if (mrow && String(mrow.sc.pub || '') !== String(pg2.pub)) { mrow.sc.pub = String(pg2.pub); mrow.bump() }
                 }
             } catch (er) {}
         }
@@ -1706,10 +1706,8 @@ Swarm_rebuff(ident, why, say):
 //    twin rides the top House stash (auto-saved, the BigSoundland_sprawl rail) keyed
 //     prepub → nonce; the station standup rehydrates records before any hello can arrive
 //      (handlers only arm AT standup).  Spend marks both homes — a reload never un-spends.
-Swarm_iz_stash(ident, nonce, c):
-    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
-    if (!live || live !== ident) return
-    let st = this.top_House().stashed
+Swarm_iz_stash(ident, nonce, c, st0):
+    let st = this.Swarm_stash_of(ident, st0)
     if (!st) return
     if (!st.Swarm_izzes) st.Swarm_izzes = {}
     let prepub = ident.sc.prepub
@@ -1741,8 +1739,8 @@ Swarm_iz_mark(ident, record, patch):
     //    (measured 2026-08-13: invites reached disk only at "the next time around to openshare").
     if (this.Clustation_mirror_nudge) this.Clustation_mirror_nudge()
 
-Swarm_iz_rehydrate(w, ident):
-    let st = this.top_House().stashed
+Swarm_iz_rehydrate(w, ident, st0):
+    let st = st0 || this.top_House().stashed
     let mine = st?.Swarm_izzes?.[ident.sc.prepub]
     if (!mine) return
     let peering = this.Swarm_peering(ident)
@@ -2624,6 +2622,16 @@ async Swarm_hello(w, ident, frame):
             let crow = this.Swarm_crew_row(ident, frame.page.prepub, String(lpost), String(frame.page.pub || ''))
             if (crewgrant && crow && !crow.o({ Grant: 'Crew', for: String(crewgrant.for) })[0]) { grant_to_C(crow, crewgrant) }
         } catch (er) { console.log('🦑 crew: Grant:Crew mint failed —', er) }
+        // CREW SHARES MUSIC (owner 2026-09-03: "Crew better give Music grants as well") — the same Grant:Music a
+        //  friendship seals, minted here for the mate, so the existing Repli consent (Swarm_share_granted →
+        //   Swarm_pier_live Music) serves a crewmate untouched: catalog mirror + bytes over the lane that already
+        //    exists.  Landed on MY pier (the pier stash carries it), handed over in pier_accept; the mate's
+        //     reciprocal rides back in pier_confirm.  Nothing paradigm-special: crew is a friendship plus.
+        let musicgrant = null
+        try {
+            musicgrant = await mint_grant(ident.c.keys, String(frame.page.pub), 'Music', {}, this.Swarm_now(w))
+            if (musicgrant && !pier.o({ Grant: 'Music', for: String(musicgrant.for) })[0]) { grant_to_C(pier, musicgrant) }
+        } catch (er) { console.log('🦑 crew: Grant:Music mint failed —', er) }
         // FRESH REDEEM FORGIVES A STALE FORGET (Ferry_rebuild Stage 0): retire any legacy tombstone
         //  so a re-linked body-key seals clean — this redeem IS proven fresh consent.
         this.Swarm_cave_forgive(ident, pier, frame.page.prepub, f.to)
@@ -2640,7 +2648,7 @@ async Swarm_hello(w, ident, frame):
         if (ltop && ltop.c && !(lsoul && lsoul.c.ferrying)) {
             this.Swarm_ferry_on_seal(w, ident, pier).catch((er) => {})
         }
-        let lsent = this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', link: { post: String(lpost), serial: String(f.serial || '') }, grant: crewgrant || undefined, page: this.Swarm_page(ident) })
+        let lsent = this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', link: { post: String(lpost), serial: String(f.serial || '') }, grant: crewgrant || undefined, music: musicgrant || undefined, page: this.Swarm_page(ident) })
         console.log(`🔦 pier_accept (link arm) → ${String(frame.page.prepub).slice(0, 8)} delivered=${lsent ? 'yes' : 'NO (unreachable — no route)'}`)
         return pier
     }
@@ -2697,9 +2705,23 @@ async Swarm_accept(w, ident, frame):
                 }
             } catch (er) { /* forged/absent crew grant — link still seals, just no cert landed */ }
         }
+        // CREW SHARES MUSIC: land the Captain's Grant:Music (by the soul, for my key) on my pier, mint my
+        //  reciprocal (by me, for the soul) and hand it back in pier_confirm — both piers end Music-live, so
+        //   Swarm_share_granted admits either side's pulls with no crew special-case anywhere.
+        let musicback = null
+        try {
+            if (frame.music) {
+                let mm = await verify_grant(frame.music)
+                if (String(mm.by) === String(frame.page.pub) && String(mm.for) === String(ident.c.keys?.pub || '') && String(mm.to) === 'Music' && !pier.o({ Grant: 'Music', by: String(mm.by) })[0]) { grant_to_C(pier, frame.music) }
+            }
+            if (frame.music && ident.c.keys) {
+                musicback = await mint_grant(ident.c.keys, String(frame.page.pub), 'Music', {}, this.Swarm_now(w))
+                if (musicback && !pier.o({ Grant: 'Music', by: String(musicback.by) })[0]) { grant_to_C(pier, musicback) }
+            }
+        } catch (er) { /* a bad Music grant just doesn't land — the link still seals */ }
         pier.bump()
         this.top_House().c.aim_wish = String(frame.page.prepub)
-        this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_confirm', link: { post: String(frame.link.post || 'Cave') }, page: this.Swarm_page(ident) })
+        this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_confirm', link: { post: String(frame.link.post || 'Cave') }, music: musicback || undefined, page: this.Swarm_page(ident) })
         return pier
     }
     let claim
@@ -2773,6 +2795,13 @@ async Swarm_confirmed(w, ident, frame):
     if (frame.link && !frame.grant) {
         let pier = this.Swarm_seal(w, ident, frame.page, null, null)
         if (pier && !pier.sc.link) { pier.sc.link = 1; pier.sc.post = String(frame.link.post || 'Cave'); pier.bump() }
+        // the mate's reciprocal Grant:Music (crew shares music) — by the mate, for my soul key
+        if (pier && frame.music) {
+            try {
+                let mm = await verify_grant(frame.music)
+                if (String(mm.by) === String(frame.page.pub) && String(mm.for) === String(ident.c.keys?.pub || '') && String(mm.to) === 'Music' && !pier.o({ Grant: 'Music', by: String(mm.by) })[0]) { grant_to_C(pier, frame.music); pier.bump() }
+            } catch (er) {}
+        }
         return pier
     }
     let theirs
@@ -2938,17 +2967,15 @@ Swarm_chain_root_ok(ident, rootPub):
 // Swarm_chainroot_stash / _rehydrate — the LIGHT lineage reference survives reload (a %ChainRoot is
 //  not a friendship, so the pier stash never carries it): keyed my-prepub → root-pub, prepub beside.
 //   Without it a reloaded Carol would forget Alice's chain authority and deny Carol→Dave 'unknown_root'.
-Swarm_chainroot_stash(ident, rootPub):
-    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
-    if (!live || live !== ident) return
-    let st = this.top_House().stashed
+Swarm_chainroot_stash(ident, rootPub, st0):
+    let st = this.Swarm_stash_of(ident, st0)
     if (!st) return
     if (!st.Swarm_roots) st.Swarm_roots = {}
     if (!st.Swarm_roots[ident.sc.prepub]) st.Swarm_roots[ident.sc.prepub] = {}
     st.Swarm_roots[ident.sc.prepub][rootPub] = { prepub: prepubOf(rootPub) }
 
-Swarm_chainroots_rehydrate(w, ident):
-    let st = this.top_House().stashed
+Swarm_chainroots_rehydrate(w, ident, st0):
+    let st = st0 || this.top_House().stashed
     let mine = st?.Swarm_roots?.[ident.sc.prepub]
     if (!mine) return
     for (const rootPub of Object.keys(mine)) {
@@ -3039,10 +3066,8 @@ Swarm_seal(w, ident, page, theirGrant, myGrant):
 //       tombstone is a negative decision-fact — the stash NEVER drops one, so a rehydrated
 //        revoke still revokes.  Station standup rehydrates through Swarm_seal ITSELF
 //         (idempotent), so every friendship stands before the first frame can arrive.
-Swarm_pier_stash(ident, page, grants, nots):
-    let live = this.Swarm_live_self ? this.Swarm_live_self() : null
-    if (!live || live !== ident) return
-    let st = this.top_House().stashed
+Swarm_pier_stash(ident, page, grants, nots, st0):
+    let st = this.Swarm_stash_of(ident, st0)
     if (!st) return
     if (!st.Swarm_piers) st.Swarm_piers = {}
     let mine = st.Swarm_piers[ident.sc.prepub]
@@ -3063,8 +3088,8 @@ Swarm_pier_stash(ident, page, grants, nots):
         if (!e.nots.some(h => h.sign === a.sign)) e.nots.push(a)
     }
 
-Swarm_piers_rehydrate(w, ident):
-    let st = this.top_House().stashed
+Swarm_piers_rehydrate(w, ident, st0):
+    let st = st0 || this.top_House().stashed
     let mine = st?.Swarm_piers?.[ident.sc.prepub]
     // (a) re-seal every pier the Dexie stash remembers — the WARM-reload rail, when the C tree below
     //  Clustation wasn't itself auto-saved (piers are runtime particles).
@@ -3128,13 +3153,13 @@ Swarm_pier_entry(pier):
 //       the live self" are each half-useless alone — the vault has the ledger but fails the guard, the
 //        live self passes the guard with an empty Peering.  Splitting read-from / stash-under is the
 //         whole fix; both must name the SAME prepub, which Swarm_restash_all checks.
-Swarm_restash_piers(ident, from):
+Swarm_restash_piers(ident, from, st0):
     let peering = this.Swarm_peering(from || ident)
     if (!peering) return 0
     let n = 0
     for (const pier of peering.o({ Pier: 1 })) {
         let e = this.Swarm_pier_entry(pier)
-        this.Swarm_pier_stash(ident, e.page, e.grants, e.nots)
+        this.Swarm_pier_stash(ident, e.page, e.grants, e.nots, st0)
         n = n + 1
     }
     return n
@@ -3148,7 +3173,7 @@ Swarm_restash_piers(ident, from):
 //   `holder`/`blotter` by name and re-wears every OTHER key as a feature param (the door's presig
 //    regeneration reads the record, never a carried $n), so copying sc wholesale is not laziness —
 //     it is the only shape that survives a feature param nobody has invented yet.
-Swarm_restash_izzes(ident, from):
+Swarm_restash_izzes(ident, from, st0):
     let peering = this.Swarm_peering(from || ident)
     if (!peering) return 0
     let n = 0
@@ -3157,7 +3182,7 @@ Swarm_restash_izzes(ident, from):
         if (!nonce) continue
         let c = {}
         for (const k of Object.keys(iz.sc)) { if (k !== 'Idzeug') c[k] = iz.sc[k] }
-        this.Swarm_iz_stash(ident, nonce, c)
+        this.Swarm_iz_stash(ident, nonce, c, st0)
         n = n + 1
     }
     return n
@@ -3167,13 +3192,13 @@ Swarm_restash_izzes(ident, from):
 //   — the recipe in Identity_persist_todo §5/§6.6 says "the Peering's ChainRoots" and is simply wrong
 //    about the shelf; walking the Peering here would find nothing and report a confident zero.
 //  Without it a restored Carol forgets Alice's chain authority and denies Carol→Dave 'unknown_root'.
-Swarm_restash_chainroots(ident, from):
+Swarm_restash_chainroots(ident, from, st0):
     let src = from || ident
     if (!src) return 0
     let n = 0
     for (const cr of src.o({ ChainRoot: 1 })) {
         if (!cr.sc.pub) continue
-        this.Swarm_chainroot_stash(ident, cr.sc.pub)
+        this.Swarm_chainroot_stash(ident, cr.sc.pub, st0)
         n = n + 1
     }
     return n
@@ -3189,6 +3214,9 @@ Swarm_restash_chainroots(ident, from):
 //   LIVE SELF — every _stash verb refuses when `ident` is not the machine's active identity, so the
 //    caller must concrete FIRST and pass the live object.  A Book's puppets and a foreign tab must
 //     never write the House stash, and that guard is the thing stopping them; do not route around it.
+//      (2026-09-03: the guard lives in Swarm_stash_of and applies to the SHARED stash only — a caller
+//       that passes its OWN `st` is writing its own object, which is how SwarmReboot exercises every
+//        pillar without touching a runner's Dexie.  Same law, one seam.)
 //   SAME PREPUB — reading from a vault means naming two objects, and naming two objects means someone
 //    will eventually pass the wrong one.  A mismatch here would file a STRANGER's friends and invites
 //     under our own prepub, which is worse than the bug being fixed: refuse it and say so.
@@ -3300,7 +3328,7 @@ Swarm_restash_crew(ident, from, st0):
         if (!m.sc.mate) { continue }
         let e = { mate: String(m.sc.mate) }
         if (m.sc.role) { e.role = String(m.sc.role) }
-        if (m.sc.body) { e.body = String(m.sc.body) }
+        if (m.sc.pub) { e.pub = String(m.sc.pub) }
         let g = m.o({ Grant: 'Crew' })[0]
         if (g) { e.grant = grant_of_C(g) }
         mates.push(e)
@@ -3321,7 +3349,7 @@ Swarm_crew_rehydrate(w, ident, st0):
     let certs = 0
     for (const e of (mine.mates || [])) {
         if (!e || !e.mate) { continue }
-        let row = this.Swarm_crew_row(ident, String(e.mate), e.role || null, e.body || null)
+        let row = this.Swarm_crew_row(ident, String(e.mate), e.role || null, e.pub || e.body || null)
         if (!row) { continue }
         n = n + 1
         if (e.grant && !row.o({ Grant: 'Crew', for: String(e.grant.for) })[0]) { grant_to_C(row, e.grant); certs = certs + 1 }
@@ -4759,7 +4787,7 @@ async Swarm_pier_forget(w, pub):
     if (crewf) {
         for (const m of crewf.o({ mate: 1 })) {
             if (String(m.sc.mate) === String(ident.sc.prepub)) { continue }
-            if (samef(m.sc.mate, pub) || (m.sc.body && samef(m.sc.body, pub))) { crewf.drop(m); console.log('🦑 🧹 crew row dropped — ' + String(m.sc.role || '') + ' ' + String(m.sc.mate).slice(0, 8)) }
+            if (samef(m.sc.mate, pub) || (m.sc.pub && samef(m.sc.pub, pub))) { crewf.drop(m); console.log('🦑 🧹 crew row dropped — ' + String(m.sc.role || '') + ' ' + String(m.sc.mate).slice(0, 8)) }
         }
     }
     for (const b of (this.Swarm_peering(ident)?.o({ Body: 1 }) ?? [])) { if (samef(b.sc.pub, pub)) { this.Swarm_peering(ident).drop(b) } }

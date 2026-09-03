@@ -4,9 +4,7 @@ story:InvWalk
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.067
-      sample=0.075,at=1788297242
-      sample=0.075,at=1788297257
+    TimeTotal:beliefs,avg=0.087
       sample=0.051,at=1788297275
       sample=0.07,at=1788298903
       sample=0.078,at=1788299073
@@ -15,9 +13,9 @@ story:InvWalk
       sample=0.046,at=1788326406
       sample=0.077,at=1788326682
       sample=0.061,at=1788354811
-    TimeTotal:step,avg=0.008
-      sample=0.009,at=1788297242
-      sample=0.009,at=1788297257
+      sample=0.227,at=1788408696
+      sample=0.116,at=1788408939
+    TimeTotal:step,avg=0.011
       sample=0.006,at=1788297275
       sample=0.009,at=1788298903
       sample=0.01,at=1788299073
@@ -26,11 +24,13 @@ story:InvWalk
       sample=0.006,at=1788326406
       sample=0.01,at=1788326682
       sample=0.008,at=1788354811
+      sample=0.028,at=1788408696
+      sample=0.015,at=1788408939
   step,dige:05626b6f4eb6c08a
   step=2,dige:a07ae9106cf4bc9a
   step=3,dige:ea28cabeac9a87ec
-  step=4,dige:cd5de964dbe4f746
-  step=5,dige:79fb9c1af3ead324
-  step=6,dige:5ecd1bb1c34edc89
-  step=7,dige:9b766fc991b83c79
-  step=8,dige:647665ea8699ac8c
+  step=4,dige:ef1b1dae1b56780d
+  step=5,dige:f66f8696d57372d7
+  step=6,dige:fcab8c2d3f0ec25c
+  step=7,dige:05e071abf87cf79c
+  step=8,dige:6a60dfd2e8821311

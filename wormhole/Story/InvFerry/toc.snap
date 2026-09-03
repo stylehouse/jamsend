@@ -4,9 +4,7 @@ story:InvFerry
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.056
-      sample=0.048,at=1788298890
-      sample=0.052,at=1788299049
+    TimeTotal:beliefs,avg=0.06
       sample=0.052,at=1788299051
       sample=0.032,at=1788299062
       sample=0.032,at=1788302262
@@ -15,9 +13,9 @@ story:InvFerry
       sample=0.114,at=1788326279
       sample=0.055,at=1788326554
       sample=0.027,at=1788354816
-    TimeTotal:step,avg=0.009
-      sample=0.008,at=1788298890
-      sample=0.009,at=1788299049
+      sample=0.085,at=1788408705
+      sample=0.058,at=1788408944
+    TimeTotal:step,avg=0.01
       sample=0.009,at=1788299051
       sample=0.005,at=1788299062
       sample=0.005,at=1788302262
@@ -26,9 +24,11 @@ story:InvFerry
       sample=0.019,at=1788326279
       sample=0.009,at=1788326554
       sample=0.005,at=1788354816
+      sample=0.014,at=1788408705
+      sample=0.01,at=1788408944
   step,dige:82e208deeae28537
   step=2,dige:37fd7e094bfffd21
   step=3,dige:01fe57b4ba1e501a
-  step=4,dige:164203af86a246a8
-  step=5,dige:69578b899263dad3
-  step=6,dige:3fa77651ec8eb0e1
+  step=4,dige:be50f497b24d0e3a
+  step=5,dige:87b473ccb71cafd7
+  step=6,dige:6095f00a57e9de19

@@ -13,6 +13,6 @@ Snap:H
               Edge,a:08c3e3304c792752,b:648f0a13b56c582d,at:1751700000
         reached:step_3
         testing
-          stashed,roster_stashed,crew_stashed,one_reach_stashed,cert_stashed
-          wiped,peering_bare,crew_gone,cert_gone
+          stashed,roster_stashed,pier_stashed,izz_stashed,root_stashed,crew_stashed,one_reach_stashed,cert_stashed
+          wiped,roots_gone,peering_bare,crew_gone,cert_gone
         reached:step_4

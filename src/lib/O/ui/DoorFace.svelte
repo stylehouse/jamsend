@@ -173,9 +173,9 @@
                 const meRow = crewv.find((m: any) => m.mine)
                 if (meRow) instance = { role: meRow.role, name: meRow.name }
                 family = crewv.filter((m: any) => !m.mine).map((m: any) => {
-                    const brow = roster.find((b: any) => samek(String(b?.sc?.pub || ''), m.prepub) || (m.body && samek(String(b?.sc?.pub || ''), m.body)))
+                    const brow = roster.find((b: any) => samek(String(b?.sc?.pub || ''), m.prepub) || (m.pub && samek(String(b?.sc?.pub || ''), m.pub)))
                     return {
-                        role: m.role, name: m.name, pub: m.body || m.prepub, pub8: m.pub8, addr: '', mine: false,
+                        role: m.role, name: m.name, pub: m.pub || m.prepub, pub8: m.pub8, addr: '', mine: false,
                         ago: m.ago, rung: m.rung, cert: !!m.cert, fresh: !!m.fresh,
                         pocket: brow ? organsize(brow, 'pocket') : null,
                         trove: brow ? organsize(brow, 'trove') : null,
