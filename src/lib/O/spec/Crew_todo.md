@@ -21,6 +21,138 @@ The grant-cert core is BUILT + PROVEN (committed `063d790c "Grant:Crew"`): minte
  the Cave, verified by `Swarm_voucher_ok`'s cert-crew road. Gates: `crew-cert-test.ts` 6/6, InvWalk 8/8
   (`Grant:Crew` lands both piers; `soul_key_copied` stays ABSENT), InvSeal 5/5, SwarmBody 23/23. In order:
 
+0. ✅ **THE OWNER'S FIRST LIVE WALK (2026-09-03) — what it found, what landed.** Four symptoms, three
+    causes, all fixed + InvWalk-gated (fixtures 4–8 re-sworn; the diff was EXACTLY the cleanup):
+    - *"🚪 unvouched_roster — 5ade…" ×3 in the Cave's Door.* The merge grafted EVERY Peering row of the
+      account — including the Captain's **self-husk pier** (`Pier,pub:<Captain BODY key>,link,post:Captain`),
+      so the Cave held the Captain's body key where `Swarm_voucher_ok` expects the held SOUL key →
+      'held pub differs' on every roster frame. **Fix:** the merge skips `link` piers (a link pier is the
+      Captain's bond with ONE body: its husk, its piers to my sibling Caves, its pier to ME — none is my
+      relationship; I hold my own pier to the Captain), skips the `%rebuff` ledger, prefix-skips my own rows.
+    - *The Captain's door slamming the Cave's frames* ('signature bad', silent). A crew member that is ALSO
+      the sealed counterparty (its key = the held pub) signs FLAT and attaches the grant AFTER, but the
+      classic arm verified the whole envelope (canonicalHeader hashes every field). **Fix:** verify the
+      flat header when a grant/charter rides along.
+    - *"Captain Grewp" + "Cave Grewp" + two "Captain Grav"s + three dead Caves* in the crew list. The
+      Cave's lone-body standup had minted a SEPARATE body key (post:Captain of itself) that survived the
+      merge and gossiped into the Captain's roster; `Swarm_graft` keyed %Body rows by whole-sc so any
+      post change twinned a row; the roster is a grow-only gossip union and never was a membership.
+      **Fix:** the merge forces ONE key (`.c.bodykey` = the identity key, persisted via bodykey_write) and
+      retires the old row + husk; graft dedupes %Body by `pub` (+ %Crew/%mate/%Charter/%rebuff); NEW
+      **`Swarm_crew_tidy`** — once /Crew stands, a %Body row or link %Pier no mate backs (by prepub or its
+      stamped `body:`) and that is not me is retired; rides the 60s trickle (human-gated) + the merge.
+      Crew rows now carry **`body:<pub>`** (stamped at seal/accept/merge, learned at the door off a
+      vouched frame's page) so the Captain's body row is backed by more than its post.
+    - *"there's a CREW in the Link … isn't where I want that" / Door shows no crew.* The Link strip read
+      the %Body roster; **removed**. The Door's family box now reads **`Swarm_crew_view`** over /Crew
+      (role off the row, name off the pier/roster, presence off heard_at/heard; roster only lends organ
+      sizes; a pre-/Crew account keeps the roster view). Link's last screen is "done — you're in the
+      crew" (nothing to become under the merge; reload harmless, not required).
+    - *Door ✕ (forget)* now drops the /Crew mate row + that key's %Body rows with the bond. Rebuffs are
+      ONE row per (why, who) with a `n` count, capped at 24.
+    - **Dial-in for the developer** (owner: "AI having access to the database and tidying it"):
+      `runner_ask crew --player=<id>` dumps the live self (crew view, bodies, link/friend piers with
+      grants/nots, rebuffs); `runner_ask tidy <crew|rebuffs|forget:<pub>> --player=<id>` mutates —
+      refused unless the tab is ARMED (socklog on --reload: the dev switch is the consent). Fixed verbs,
+      no eval (Swarm_spec's untrusted-relay ruling).
+    STILL TO SEE LIVE: reload both tabs (this build), re-walk; the Cave's Door should list ⚓ Captain +
+     🏴 itself and nothing else; the Captain's Door the same; zero 🚪 unvouched rows; the three dead
+      Caves + the two stale Captain rows retire on the first trickle (~60s) or via `tidy crew`.
+
+    **SECOND WALK (same day, on the fixed build) — the Door crew looked right at both ends.** Landed after it:
+    - the Cave's "done" now runs `link_done()` (the Captain's terminal pack-up: finish the ceremony reqs, drop
+      the twins, focus the Door) — a bare state clear left the flag pile standing → "you have a device link in
+      progress" haunted the lobby. The received screen names the Captain with its live dot; the reload note is gone.
+    - name-gate inputs are `autocomplete="off"` and `Clustation_friendly` refuses a URL-shaped name (the owner
+      saw "add to your Crew the device showing https://djamsend.duckdns…" — the only road for a URL into
+      `peering.sc.friendly` is that input; treat a recurrence as a real lead, not noise).
+    - a crew row sealed <4 min ago wears `fresh` (crew_view `since` off the pier's seal stamp / grant time) and
+      the Door GLOWS it — the receipt of a finished link, where the ceremony now dumps you.
+    - ⏰ **OWNER REMINDER: test "🔗 resurrect my Captain"** (a Cave minting MyCaptain — the succession/recovery
+      ceremony; `Swarm_ferry_link` role-aware helm). Untested since the merge; blind spot 6 (§8) applies.
+
+    **IS THE CEREMONY CODIFIED, OR SPAGHETTI? (the owner's question, 2026-09-03) — honest answer: half-spined.**
+    - The SPINE exists and is good: `Swarm_ferry_phase(w, phase, facts)` (12 phases: minted offered awaiting
+      pending confirming sent held got received declined cancelled ended) writes ONE `%Ferry` req; `Swarm_ferry_facts`
+      reads it back as `{offer, awaiting, pending, confirm, sent, got, ended, twin}`; LinkDevice's screen = a
+      switch over those facts. That is the codification, and it is the right shape.
+    - The SPAGHETTI is the two legacies still alive beside it: (1) **eight `top.c.ferry_*` flags** (secret, offer,
+      offer_accepted, awaiting, pending, confirm, sent, world) that the phase verb mirrors rather than replaces,
+      plus the stashed "durable twins" — every reload bug this month was a flag and its twin disagreeing;
+      (2) the UI's own `$state` (LinkDevice: 19 `$state`, 11 `$derived`, 11 `$effect`, 33 template branches;
+      `url/pending/sent/received/taking/auto_received` are a SECOND copy of the phase). Swarm.g holds 48
+      ferry|link|adopt|redeem|seal|accept verbs across 7.8k lines, a third of them the retired soul-copy road
+      (adopt_redeem, the keyed ferry branch, the MyCave/MyCaptain grant handshake the mint-stop replaced).
+    - The slog that de-spaghettis it (§0.5/§0.6, unchanged in shape, now unblocked): make `%Ferry` the ONLY
+      state — every `top.c.ferry_*` read becomes a `Swarm_ferry_facts` read, the twins die with them, LinkDevice
+      keeps at most `name_draft`/`err` as local state; then delete the adopt road + the keyed ferry branch with
+      SwarmSpread beat-3 re-sworn. ~2 sessions. Do it BEFORE daemon-as-Cave (a headless ceremony can't lean on
+      UI-held state).
+
+    **SMOOTHING LEFT FOR THE CREW PIVOT (seen, not yet done):** the "🏴 muster a crew mate" lobby still explains
+     the OLD deal in its title ("copies your whole soul" wording survives in a few titles/comments — grep
+      "soul" in LinkDevice); the Door's friend list still shows a Cave's inherited friends with no "shared
+       with the crew" mark; `InvitePanel` renders rebuffs raw (`unvouched_roster` is a code name — say "a crew
+        frame failed its voucher"); no way to see a mate's cert (the Grant:Crew) or revoke it from the Door row
+         except ✕-forget (which does not travel, §8 blind spot 2); the splash's "🎧 listen without a folder"
+          (BootGate) sets `top.c.listen_only` and stays out of the ceremony's way (BootGate suppresses only the
+           audio nicety on `link_active`, never the FSA gate) — the GATE half of that is true.
+
+    **⚑ THE LISTEN-ONLY TRACE (the owner: "this needs a really high-level tracking through") — and the
+     REGRESSION it found, fixed same day.** Tracking "🎧 listen without a folder" end to end:
+     `boot_gate.listen_only()` → `c.listen_choice=1`, `c.disk_gated=false`, share mode 'thin' stashed →
+      Housing's Wormhole tick (`listen_choice || (!book && no showDirectoryPicker)`) → `disk_gated=false`,
+       `listen_only=true`, `navigator.storage.persist()`, a MINIMAL no-op MountNav + OPFS pool mount, and
+        **`return` early** → BootGate's bar renders on `disk_gated || (ac_wanted && …)`, so nothing about a
+         live ceremony suppresses the gate (only the audio nicety waits on `link_active`). Escape:
+          BigSoundland's OPEN SHARE deletes both flags and re-raises `disk_gated`. **That half held.**
+     **What the trace actually exposed:** the listen-only LIFE has no account snap (no nav ⇒
+      `.jamsend/account/<prepub>/toc.snap` is never written), and **a phone is always in that life** — no
+       mobile browser has `showDirectoryPicker`. Durable identity state there survives ONLY through the
+        House stash, whose whole surface is `Swarm_restash_all`: piers · izzes · chainroots · roster. When
+         the cert moved onto `/Crew/mate:<me>/Grant:Crew` this morning it left the %Pier — **whose grants
+          the pier stash already carried** — for a shelf with NO pillar. Consequence: on a folderless
+           device's second boot, /Crew is gone, `Swarm_crew_grant` returns null, the station voucher falls
+            back to the classic arm, and **the Cave silently stops being crew** — on exactly the device the
+             cert-crew model exists for. **Fixed:** `Swarm_restash_crew` + `Swarm_crew_rehydrate` (the fifth
+              pillar), wired into restash_all and the `Swarm_station_up` ladder BEFORE the voucher mint,
+               SYNC (the grant lands unverified exactly as pier grants do — a cert is a credential you
+                PRESENT, verified at the far side, so there is no race with the voucher). 8/8 Books green,
+                 caveat:0, fixtures unmoved (every stash verb is live-self + `stashed` gated).
+
+    **⚑ AND THE HOLE THAT LET IT THROUGH (the owner: "do we have some lovely abstractions that we can test
+     with?").** For the CEREMONY, yes: %Ferry + `Swarm_ferry_phase`/`_facts` is a real spine and the eight
+      Books gate it. For **PERSISTENCE, no** — and that is why eight green Books said nothing about a
+       regression that breaks every phone. Every _stash/_rehydrate verb is gated on
+        `Swarm_live_self() === ident` AND `top_House().stashed`, both false in a Book world, so **no fixture
+         has ever exercised a single pillar**. The missing gate is one Book: **SwarmReboot** — raise the
+          puppet as live-self (the consenter-puppet idiom) with a scratch `stashed`, restash_all, drop the
+           live %Peering + /Crew, run the station_up rehydrate ladder, and swear all five pillars came back
+            (piers with grants · izzes · chainroots · roster+charter · crew+cert). Author it before the
+             %Ferry-only slog: it is the only thing that makes "survives a reload" a fact instead of a hope,
+              and it would have caught this in the minute it was written.
+
+    **✅ BOTH LANDED, LATER THE SAME DAY — and one correction.** The crew-pillar edit reported above as
+     "fixed" **silently never reached disk** (a batch edit script exited on a later failed match before its
+      single writeFileSync — see the sandbox-tooling memory: write per edit and read back). It is landed
+       now, with three things beside it:
+     - **`Swarm_stash_of(ident, st)`** — the stash is a PARAMETER. Pass your own and the live-self guard
+        stands down (it protects the SHARED stash; a caller with its own resource needs none). This is what
+         makes any pillar testable at all.
+     - **The sixth pillar, `%Reach`** (`Swarm_restash_reaches` / `Swarm_reaches_rehydrate`): standing
+        bookings survive a reload, terminal ones stay buried. Without it "book it and walk away" — the whole
+         SoundPooling premise — was false on a phone. The rehydrate finds-or-creates on the same triple
+          (to · of · for) `Swarm_reach_book` uses, so it can never double a live booking.
+     - **`SwarmReboot`** (Swarmation.g, 5 beats, 6 sworn, recorded live): populate a lived-in account →
+        restash into a scratch stash → **WIPE** the tree → run the rehydrate ladder → swear the crew ledger
+         + cert, the roster + my post, and the standing booking came back, that a settled reach did NOT, and
+          that a second ladder pass doubles nothing. The first fixture that has ever touched the stash.
+     **Still owed:** piers · izzes · chainroots stash through their own verbs (which carry side effects), so
+      they are not yet `st`-threaded or in SwarmReboot — do that next, then consider the spin-out: stash the
+       whole keyless account snap in Dexie (one blob rather than N pillars) so a phone gets exactly what a
+        folder gives. That is the better model, but it wants SwarmReboot standing first to be safe.
+
+
 1. ✅ **The library merge — BUILT + Book-gated (2026-09-03).** `Swarm_ferry_heard` peeks the blob: a
     keyless (cert-crew) snap MERGES the account's Peering rows (Idzeugs/piers/roster/Charter) into the
      Cave's OWN identity — rows about ME skipped, no second `%Identity` ever minted, so the keyless-husk
@@ -40,9 +172,8 @@ The grant-cert core is BUILT + PROVEN (committed `063d790c "Grant:Crew"`): minte
       the ferry merge carries the bundle so both sides render the SAME ledger (InvWalk beat 6 swears
        `crew_row_holds_cert` + `captain_ledger_lists_crew`; snap shows identical /Crew on both piers).
         Mainkey is **`%mate`** — not `%Pier` (impersonation) and not lowercase `%pier` (`%Caperlet`
-         already wears `pier:` as a property). Owed on top: the Crew UI panel still reads the %Body
-          roster, not /Crew (flip it); Charter-as-signed-export not yet wired; no prune verb (rows are
-           grow-only).
+         already wears `pier:` as a property). Owed on top: Charter-as-signed-export not yet wired. (The Crew UI now reads /Crew and
+          `Swarm_crew_tidy` prunes — §0.0.)
 3. ✅ **SoundPooling over the crew — FIRST INCREMENT LANDED (2026-09-03, Book `MusuPoolFill` 6/6).**
     The pool-fill is a booked `%Reach,to:Cave,of:<id>,for:serve` (`Ra_pool_fill_book`), served by the
      Cave from its OWN library (`Ra_pool_fill_serve` → `Siphon_pull` → `Ra_press` →
@@ -63,7 +194,7 @@ The grant-cert core is BUILT + PROVEN (committed `063d790c "Grant:Crew"`): minte
      sworn sentence is the retirement's Book gate: re-author beat 3 + retire the adopt key-copy
       together. `Swarm_ferry_heard`'s legacy keyed branch goes at the same time, once live-proven.
 7. **Owner's live 2-device walk** of the rebuilt ceremony (cross-wire races are live-only by nature).
-8. **Housekeeping:** prune eed's ~12 dead Caves (all NotGrant); stop reload-piling (trust the ~30s relay
+8. **Housekeeping:** eed's dead Caves now retire via `Swarm_crew_tidy` (§0.0); stop reload-piling (trust the ~30s relay
     reaper); fix ~5 stale Swarm.g comments (4746/4857/5047/5126/5277) claiming decline mints a NotGrant.
 
 Do NOT re-open the seat/`want`/soul-family arbiter — distinct identities never collide.
@@ -132,7 +263,7 @@ Inter-body work is **living legible matter, not `.c` flags**: `%Organ` (what a b
 
 ---
 
-## 3. THE STRUCTURE — `/Crew/pier,role/Grant` (owner, 2026-09-03)
+## 3. THE STRUCTURE — `/Crew/mate:<prepub>,role[,body]/Grant:Crew` (owner, 2026-09-03; `%mate` not `%pier`)
 
 The Crew gets a HOME in the tree instead of existing only as a scan:
 

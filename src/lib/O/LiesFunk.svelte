@@ -3097,6 +3097,48 @@ await M.eatfunc({
                                : 'off at next reload',
                         reloading: willReload }
                     if (willReload) setTimeout(() => location.reload(), 400)
+                } else if (op === 'crew') {
+                    // THE ACCOUNT AS THE CREW SEES IT (read-only; safe on a humdinger): the /Crew view, the
+                    //  %Body roster, the link + friend piers and the door's rebuff ledger of the LIVE self —
+                    //   "what is this tab holding on to", the dump the tidy op then acts on (owner 2026-09-03:
+                    //    "AI having access to the database and tidying it while we're developing").
+                    const self = (H as any).Swarm_live_self?.() as TheC | null
+                    if (!self) { ok = false; result = { error: 'no live self identity on this tab' } }
+                    else {
+                        const peering = (H as any).Swarm_peering?.(self) as TheC | null
+                        const sc = (n: any) => ({ ...(n?.sc ?? {}) })
+                        const piers = (peering?.o({ Pier: 1 }) ?? []) as any[]
+                        const gr = (p: any) => ({ grants: p.o({ Grant: 1 }).map((g: any) => g.sc.Grant), nots: p.o({ NotGrant: 1 }).map((g: any) => g.sc.NotGrant), heard_ago: p.c?.heard_at ? Math.round((Date.now() - p.c.heard_at) / 1000) : null })
+                        result = {
+                            self: { prepub: self.sc.prepub, friendly: self.sc.friendly ?? '', soul_key: !!self.c?.keys, bodykey: String((H as any).Swarm_body_key?.(self)?.pub ?? '').slice(0, 16) },
+                            crew: (H as any).Swarm_crew_view?.(self) ?? [],
+                            bodies: (peering?.o({ Body: 1 }) ?? []).map(sc),
+                            link_piers: piers.filter((p: any) => p.sc.link).map((p: any) => ({ ...sc(p), ...gr(p) })),
+                            friend_piers: piers.filter((p: any) => !p.sc.link).map((p: any) => ({ pub: p.sc.pub, friendly: p.sc.friendly ?? '', ...gr(p) })),
+                            rebuffs: self.o({ rebuff: 1 }).map(sc),
+                        }
+                    }
+                } else if (op === 'tidy') {
+                    // THE TIDY — the ONE mutation a --player accepts, and only while the human has ARMED the tab
+                    //  (socklog on: the same dev switch that opens the trace dump — the consent).  Fixed verbs,
+                    //   each already reachable by a human at the Door (forget) or run by the trickle anyway (the
+                    //    crew tidy) — no eval, no generic door on the untrusted relay (Swarm_spec's ruling).
+                    const self = (H as any).Swarm_live_self?.() as TheC | null
+                    const what = String((ask as any).what ?? '')
+                    if (!socklog_armed()) { ok = false; result = { refused: 'tidy refused — arm the tab first (runner_ask socklog on --reload --player=<id>); the dev switch is the consent' } }
+                    else if (!self) { ok = false; result = { error: 'no live self identity on this tab' } }
+                    else if (what === 'crew') { result = { retired: (H as any).Swarm_crew_tidy?.(self) ?? 0 } }
+                    else if (what === 'rebuffs') { let n = 0; for (const r of self.o({ rebuff: 1 })) { self.drop(r); n++ } result = { dropped: n } }
+                    else if (what.startsWith('forget:')) {
+                        const key = what.slice(7)
+                        const peering = (H as any).Swarm_peering?.(self) as TheC | null
+                        const pier = ((peering?.o({ Pier: 1 }) ?? []) as any[]).find((p: any) => String(p.sc.pub).startsWith(key))
+                        if (!pier) { ok = false; result = { error: `no pier ${key}` } }
+                        else { result = { forgot: String(pier.sc.pub), friendly: pier.sc.friendly ?? '', n: await (H as any).Swarm_pier_forget?.(null, String(pier.sc.pub)) } }
+                    }
+                    else { ok = false; result = { error: `tidy ${what || '(none)'} — allowed: crew | rebuffs | forget:<pub prefix>` } }
+                    if (ok && self) { try { (H as any).Swarm_account_settle?.(self, 'tidy') } catch {} }
+                    try { (H.top_House() as any).bump_version?.() } catch {}
                 } else if (op === 'dump') {
                     // FORCE A TRACE DUMP NOW.  Lies_dump_supply throttles to ~5s (w.c.last_supplylog), so
                     //  a CLI reading wormhole/_trace/ right after an event sees an up-to-5s-stale ring and

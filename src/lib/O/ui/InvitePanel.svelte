@@ -949,7 +949,7 @@
                  recent ones so a denied scan is a NAMED event here, not silence (hello_unknown
                  was invisible through the whole 2026-07-18 two-tab session) -->
             {#each rebuffs as r}
-                <span class="ip-note" title={r.sc.say}>🚪 {r.sc.rebuff}{r.sc.say ? ' — ' + r.sc.say : ''}</span>
+                <span class="ip-note" title={r.sc.say}>🚪 {r.sc.rebuff}{r.sc.say ? ' — ' + r.sc.say : ''}{r.sc.n ? ' ×' + r.sc.n : ''}</span>
             {/each}
         </div>
     {:else}

@@ -63,19 +63,11 @@
     //   Both ends read the same roster (the Charter replicates it), so a Captain sees its Caves and a Cave sees
     //    the whole crew it signed onto.  Defensive: try/catch, hide when empty, Captain sorted first.  Read off
     //     both H.version and now_tick so it refreshes after a link lands even under a starved belief mutex.
-    let crew = $derived.by(() => {
+    // (the crew roster derived that lived here moved to the Door — Swarm_crew_view over /Crew.)  What the
+    //  Link still wants to SAY is who the Captain is: the received screen names them with their live dot.
+    let captain = $derived.by(() => {
         void H?.version; void now_tick
-        try {
-            const rows = ((H as any)?.Swarm_body_roster?.(self) ?? []) as any[]
-            const out = rows.map((b: any) => ({
-                post: String(b?.sc?.post || ''),
-                name: String(b?.sc?.name || ''),
-                pub: String(b?.sc?.pub || ''),
-            })).filter((m) => m.post || m.name || m.pub)
-            // Captain first, then Caves; stable within a post so the list doesn't jitter.
-            out.sort((a, b) => (a.post === 'Captain' ? 0 : 1) - (b.post === 'Captain' ? 0 : 1))
-            return out
-        } catch { return [] }
+        try { const v = ((H as any)?.Swarm_crew_view?.(self) ?? []) as any[]; return v.find((m: any) => m.role === 'Captain' && !m.mine) ?? null } catch { return null }
     })
 
     // NAME-GATE (owner 2026-08-30: *"name yourself before partaking EITHER end of any Grant-like
@@ -532,15 +524,19 @@
 <div class="ld-frame">
     {#if received}
         <div class="ld-face">
-            <div class="ld-cap-big">{received === 'declined' ? 'declined' : '🏴 signed on to the crew'}</div>
+            <div class="ld-cap-big">{received === 'declined' ? 'declined' : '🏴 signed on to the crew'}{#if received !== 'declined' && captain} of Captain <b>{captain.name || captain.pub8}</b> {@render live_dot({ rung: captain.rung, ago: captain.ago })}{/if}</div>
             <p class="ld-deal">{received === 'declined' ? 'you did not sign on — nothing changed on this device.' : received}</p>
             {#if received === 'declined'}
                 <button class="ld-cancel-b" onclick={() => received = ''}>done</button>
             {:else}
-                <!-- the ceremony's true last step IS a reload (owner 2026-08-30: "that final incogni phase
-                     should say|do 'reload' [rather] than 'done'"): the bar is already pinned to ?I=<the new
-                     soul>, so reloading boots this tab in the crew — the proof of the ceremony, not a chore. -->
-                <button class="ld-go" onclick={() => { try { location.reload() } catch {} }}>reload — wake up in the crew</button>
+                <!-- UNDER THE MERGE THERE IS NOTHING TO BECOME (2026-09-03): this device kept its own identity and
+                     the account folded INTO it, so the crew is already awake here — "done" closes the cell.  The
+                     08-30 ruling ("say|do 'reload'") belonged to the become-eed model, where a reload was the
+                     only way to boot AS the new soul; a reload is still harmless (the bar pins ?I=<this identity>). -->
+                <!-- done = the SAME terminal pack-up the Captain's side runs (link_done: finish the ceremony reqs,
+                     drop the twins, focus the Door) — a bare `received = ''` left the flag pile standing, so the
+                     lobby haunted "you have a device link in progress" (owner 2026-09-03). -->
+                <button class="ld-go" onclick={() => { received = ''; link_done() }}>done</button>
             {/if}
         </div>
     {:else if ended}
@@ -587,7 +583,7 @@
                      until saved.  Declining ("no") is always free. -->
                 {#if !named}
                     <div class="ld-name-row">
-                        <input class="ld-name" bind:value={name_draft} placeholder="what do friends call you?"
+                        <input class="ld-name" bind:value={name_draft} autocomplete="off" placeholder="what do friends call you?"
                             onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
                         <button class="ld-act" onclick={name_save} title="save your name">✓</button>
                     </div>
@@ -619,7 +615,7 @@
                      Rendered whenever `!named`; the add button stays disabled until saved. -->
                 {#if !named}
                     <div class="ld-name-row">
-                        <input class="ld-name" bind:value={name_draft} placeholder="what do friends call you?"
+                        <input class="ld-name" bind:value={name_draft} autocomplete="off" placeholder="what do friends call you?"
                             onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
                         <button class="ld-act" onclick={name_save} title="save your name">✓</button>
                     </div>
@@ -702,7 +698,7 @@
                 >{offer.post === 'Captain' ? '⚓ become the Captain of' : '🏴 join the Crew of'} <b>{offer.friendly || short(offer.from) || 'this device'}</b>?</div>
             {#if !named}
                 <div class="ld-name-row">
-                    <input class="ld-name" bind:value={name_draft} placeholder="what do friends call you?"
+                    <input class="ld-name" bind:value={name_draft} autocomplete="off" placeholder="what do friends call you?"
                         onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
                     <button class="ld-act" onclick={name_save} title="save your name">✓</button>
                 </div>
@@ -743,14 +739,9 @@
          roster off Swarm_body_roster; hidden when empty (a lone unlinked identity has no crew yet), so it only
          appears once at least one device is sworn in.  ⚓ marks the Captain, 🏴 each Cave; the crew name shows
          where there is one, else a short pub (never a raw prepub). -->
-    {#if crew.length}
-        <div class="ld-crew" title="the devices sailing under your colours — one Captain, and its Caves">
-            <span class="ld-crew-lbl">crew</span>
-            {#each crew as m (m.pub || m.name)}
-                <span class="ld-crew-m" class:ld-crew-cap={m.post === 'Captain'}>{m.post === 'Captain' ? '⚓' : '🏴'} {m.post || 'crew'} {m.name || short(m.pub) || '·'}</span>
-            {/each}
-        </div>
-    {/if}
+    <!-- the crew strip that stood here is RETIRED (owner 2026-09-03: "there's a CREW in the Link, under the
+         rest of the UI, which isn't where I want that") — the Door's family box is the crew's one home, and it
+         reads /Crew (Swarm_crew_view), not the %Body roster this strip read. -->
     {#if err}<div class="ld-err">{err}</div>{/if}
 </div>
 

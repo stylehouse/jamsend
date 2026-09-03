@@ -1,0 +1,26 @@
+Snap:H
+  H:SwarmReboot,Run
+    A:SwarmReboot
+      self,round=3	{"mung":["age"]}
+      w:SwarmReboot,now=1751700010
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Reba
+          Identity:08c3e3304c792752,prepub:08c3e3304c792752,friendly:Reba
+            Peering,name:08c3e3304c792752,friendly:Reba
+              Pier,pub:648f0a13b56c582d,friendly:Mate,since:1751700000
+                Peering,name:648f0a13b56c582d,friendly:Mate,pub:648f0a13b56c582d96c5c0b437518fabc4fb12c27862cfc74653e6ee99d0cd6b
+              Idzeug:reboot_1,to:Music
+              Body,pub:08c3e3304c792752d3256a015fbd12908a72c84ee8d3bc940be902c718488235,post:Captain,name:Reba
+              Reach,to:Cave,of:tune-alpha,for:serve,by:08c3e3304c792752,state:booked,at:1751700000
+              Reach,to:Cave,of:tune-omega,for:serve,by:08c3e3304c792752,state:arrived,at:1751700000
+            SocialGraph
+              Edge,a:08c3e3304c792752,b:648f0a13b56c582d,at:1751700000
+            Crew
+              mate:08c3e3304c792752,role:Captain,body:08c3e3304c792752d3256a015fbd12908a72c84ee8d3bc940be902c718488235
+              mate:648f0a13b56c582d,role:Cave,body:648f0a13b56c582d96c5c0b437518fabc4fb12c27862cfc74653e6ee99d0cd6b
+                Grant:Crew,by:08c3e3304c792752d3256a015fbd12908a72c84ee8d3bc940be902c718488235,for:648f0a13b56c582d96c5c0b437518fabc4fb12c27862cfc74653e6ee99d0cd6b,time:1751700000,sign:ecdda5e57e30fc5a42f4ce3ead4023ae70dd78f58228a3fea81e23c607c66a24ff81ffaca2cf71cee90458f16a3d65aa42251ddbb70ee75e1345074d23070e02
+        reached:step_3
+        testing
+          stashed,roster_stashed,crew_stashed,one_reach_stashed,cert_stashed

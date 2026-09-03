@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmReboot,Run
+    A:SwarmReboot
+      self,round	{"mung":["age"]}
+      w:SwarmReboot
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

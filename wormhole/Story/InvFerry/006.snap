@@ -27,7 +27,7 @@ Snap:H
               Edge,a:c691de0dd9e8b39a,b:51fce20e175e67af,at:1756500020
             Crew
               mate:c691de0dd9e8b39a,role:Captain
-              mate:51fce20e175e67af,role:Cave
+              mate:51fce20e175e67af,role:Cave,body:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd
                 Grant:Crew,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:00190b899543fd70f292b211187f227c6fd9dcc9d3aed782288932a94d1e8907988ab7437bf1f1f062a199fce22310eb6a47d7ec42408968e68fb32e349a4d0d
             rebuff:hello_spent,say:eb88b64f49e6a890
             rebuff:hello_forged,say:46ae2cfa897bd480
@@ -38,8 +38,6 @@ Snap:H
                 Peering,name:c691de0dd9e8b39a,friendly:Alice,pub:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b
               Idzeug:invferry_content,to:Music,genre:Jazz
               Idzeug:1,to:MyCave,next:2,claimed:1
-              Pier,pub:51fce20e175e67af,friendly:Cavey,since:1756500020,link,post:Cave
-                Peering,name:51fce20e175e67af,friendly:Cavey,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd
               Body,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,post:Cave,name:Cavey
             mail
               frame:pier_accept,did
@@ -50,7 +48,7 @@ Snap:H
               Edge,a:c691de0dd9e8b39a,b:51fce20e175e67af,at:1756500020
             Crew
               mate:c691de0dd9e8b39a,role:Captain
-              mate:51fce20e175e67af,role:Cave
+              mate:51fce20e175e67af,role:Cave,body:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd
                 Grant:Crew,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:00190b899543fd70f292b211187f227c6fd9dcc9d3aed782288932a94d1e8907988ab7437bf1f1f062a199fce22310eb6a47d7ec42408968e68fb32e349a4d0d
         reached:step_3
         req:Ferry,eternal

@@ -159,6 +159,29 @@
             const roster = (typeof H?.Swarm_body_roster === 'function' ? H.Swarm_body_roster(self) : []) as any[]
             const mineRow = (typeof H?.Swarm_body_mine === 'function' ? H.Swarm_body_mine(self) : null) as any
             const minePub = mineRow?.sc?.pub ? String(mineRow.sc.pub) : ''
+            const organsize = (row: any, kind: string) => {
+                try { const o = (H as any)?.Swarm_organ_of?.(row, kind); return o ? +(o.sc?.tracks || 0) : null } catch { return null }
+            }
+            // THE CREW SHELF IS THE LEDGER (Crew_todo §3, live 2026-09-03: the %Body roster listed two
+            //  "Captain Grav"s, a "Captain Grewp" that was the Cave's pre-merge self, and three dead Caves —
+            //   grow-only gossip union, never a membership).  Once /Crew stands, the Door reads IT: one row
+            //    per mate, role off the row, name + presence resolved by Swarm_crew_view; the roster only
+            //     lends its organ sizes.  A pre-migration account (no /Crew) keeps the roster view below.
+            const crewv = (typeof (H as any)?.Swarm_crew_view === 'function' ? (H as any).Swarm_crew_view(self) : []) as any[]
+            const samek = (a: string, b: string) => !!(a && b && (a.startsWith(b) || b.startsWith(a)))
+            if (crewv.length) {
+                const meRow = crewv.find((m: any) => m.mine)
+                if (meRow) instance = { role: meRow.role, name: meRow.name }
+                family = crewv.filter((m: any) => !m.mine).map((m: any) => {
+                    const brow = roster.find((b: any) => samek(String(b?.sc?.pub || ''), m.prepub) || (m.body && samek(String(b?.sc?.pub || ''), m.body)))
+                    return {
+                        role: m.role, name: m.name, pub: m.body || m.prepub, pub8: m.pub8, addr: '', mine: false,
+                        ago: m.ago, rung: m.rung, cert: !!m.cert, fresh: !!m.fresh,
+                        pocket: brow ? organsize(brow, 'pocket') : null,
+                        trove: brow ? organsize(brow, 'trove') : null,
+                    }
+                })
+            } else {
             // UNGATED to a lone ROLED row (the owner's ruling): a Post is only ever conferred by a
             //  ceremony, so "CAVE Guw" deserves its badge even while the sibling's row hasn't arrived
             //   — a Cave that can't see its Captain yet should still know WHAT IT IS.  A truly
@@ -176,9 +199,6 @@
                 //  each body a lane carrying its organ sizes (pocket/trove), read straight off the %Body
                 //   row it describes.  organ replication (Swarm_organ_absorb) lands a sibling's sizes here,
                 //    so the phone lane shows the laptop's trove.
-                const organsize = (row: any, kind: string) => {
-                    try { const o = (H as any)?.Swarm_organ_of?.(row, kind); return o ? +(o.sc?.tracks || 0) : null } catch { return null }
-                }
                 family = roster
                     .filter((b: any) => !(!!minePub && String(b?.sc?.pub || '') === minePub))
                     .map((b: any) => {
@@ -200,6 +220,7 @@
                 // primary (bare seat) first, then by role then pub — stable, no per-tick shuffle
                 family.sort((a, b) => (a.addr.includes('_') ? 1 : 0) - (b.addr.includes('_') ? 1 : 0)
                     || (a.role < b.role ? -1 : a.role > b.role ? 1 : (a.pub8 < b.pub8 ? -1 : 1)))
+            }
             }
             // MY lane's organ (facet D badge grows into the Plot's own-lane sizes)
             if (instance && mineRow) {
@@ -465,7 +486,7 @@
         <div class="df-gate-title">🚪 welcome</div>
         <div class="df-gate-say">name yourself to begin — your name rides your invites, and it is what friends will see</div>
         <div class="df-naming">
-            <input class="df-input" bind:value={name_draft} placeholder="what do friends call you?"
+            <input class="df-input" bind:value={name_draft} autocomplete="off" placeholder="what do friends call you?"
                 onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
             <button class="df-edit" onclick={name_save} title="save your name and open the door">✓</button>
         </div>
@@ -514,7 +535,7 @@
     {/if}
     {#if naming}
         <div class="df-naming">
-            <input class="df-input" bind:value={name_draft} placeholder="what do friends call you?"
+            <input class="df-input" bind:value={name_draft} autocomplete="off" placeholder="what do friends call you?"
                 onkeydown={(e) => { if (e.key === 'Enter') name_save(); if (e.key === 'Escape') naming = false }} />
             <button class="df-edit" onclick={name_save}>✓</button>
         </div>
@@ -583,8 +604,8 @@
                      pulse landing here — the honest "we can see each other". -->
                 <div class="df-family">
                     {#each face.family as b (b.pub8)}
-                        <div class="df-friend df-body"
-                            title={`${b.role}${b.name ? ' ' + b.name : ''} — another device of yours${b.addr ? ' · seat ' + b.addr.slice(0, 12) : ''}`
+                        <div class="df-friend df-body" class:fresh={!!b.fresh}
+                            title={`${b.role}${b.name ? ' ' + b.name : ''} — ${b.role === 'Captain' ? 'the Captain of your crew' : 'a Cave in your crew'}${b.cert ? ' · holds the Captain\'s Grant:Crew' : ''}${b.addr ? ' · seat ' + b.addr.slice(0, 12) : ''}`
                                 + (b.ago == null ? ' · not heard this session (closed or away)' : ` · heard ${b.ago}s ago`)}>
                             <span class="df-dot" class:here={b.rung === 'here'} class:fading={b.rung === 'fading'}>●</span>
                             <span class="df-name"><span class="df-role">{b.role}</span> {#if b.name}{b.name}{:else}<span class="df-fpub df-fpub-solo">{b.pub8}</span>{/if}</span>
@@ -915,6 +936,9 @@
     .df-me { display: flex; align-items: center; gap: 6px; font-size: 11px; margin-top: 4px; opacity: 0.75; }
     .df-me .df-name { font-weight: 600; }
     .df-me.fresh .df-dot { color: #f0c060; text-shadow: 0 0 5px rgba(240, 190, 110, 0.8); }
+    /* a crew row sealed in the last few minutes GLOWS — the Door is where a finished link lands, and the new
+       mate's row is the receipt (owner 2026-09-03: "dump us off in the Door, and have a glow behind the new Crew Pier") */
+    .df-body.fresh { box-shadow: 0 0 14px 3px rgba(240, 190, 110, 0.45); border-radius: 0.6rem; background: rgba(240, 190, 110, 0.10); }
     .df-friend .df-name { font-weight: 600; }
     .df-sug { display: flex; align-items: center; gap: 4px; font-size: 10px; margin-left: 16px; }
     .df-dot { color: #5a4a5f; font-size: 10px; }

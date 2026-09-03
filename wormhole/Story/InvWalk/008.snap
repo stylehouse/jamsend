@@ -37,9 +37,9 @@ Snap:H
               Edge,a:dc4f0202db467c5b,b:771b7531de714be0,at:1756600050
             Crew
               mate:dc4f0202db467c5b,role:Captain
-              mate:801ca80af2d45548,role:Cave
+              mate:801ca80af2d45548,role:Cave,body:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
                 Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
-              mate:771b7531de714be0,role:Cave
+              mate:771b7531de714be0,role:Cave,body:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e
                 Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e,time:1756600050,sign:79a86dd84aecf34aed887d90f23a26317f106afc0b8e8fd38daf54ae39b072b395a83bd39fe05798ca8a2689d8dbcbff436cbf3ce0e55f6d6daf09a31cbc8405
             rebuff:hello_spent,say:effd2fdca10b4d30
         Account,of:Cavey
@@ -49,8 +49,6 @@ Snap:H
                 Peering,name:dc4f0202db467c5b,friendly:Alice,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
               Idzeug:invwalk_content,to:Music,genre:Jazz
               Idzeug:1,to:MyCave,next:2,claimed:1
-              Pier,pub:801ca80af2d45548,friendly:Cavey,since:1756600020,link,post:Cave
-                Peering,name:801ca80af2d45548,friendly:Cavey,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
               Body,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,post:Cave,name:Cavey
             mail
               frame:pier_accept,did
@@ -61,7 +59,7 @@ Snap:H
               Edge,a:dc4f0202db467c5b,b:801ca80af2d45548,at:1756600020
             Crew
               mate:dc4f0202db467c5b,role:Captain
-              mate:801ca80af2d45548,role:Cave
+              mate:801ca80af2d45548,role:Cave,body:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
                 Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
         reached:step_3
         req:Ferry,eternal
@@ -82,7 +80,7 @@ Snap:H
               Edge,a:771b7531de714be0,b:dc4f0202db467c5b,at:1756600050
             Crew
               mate:dc4f0202db467c5b,role:Captain
-              mate:771b7531de714be0,role:Cave
+              mate:771b7531de714be0,role:Cave,body:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e
                 Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e,time:1756600050,sign:79a86dd84aecf34aed887d90f23a26317f106afc0b8e8fd38daf54ae39b072b395a83bd39fe05798ca8a2689d8dbcbff436cbf3ce0e55f6d6daf09a31cbc8405
         reached:step_8
         Account,of:Cavey3

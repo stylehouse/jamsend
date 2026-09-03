@@ -367,6 +367,9 @@
         if (!ident?.c?.keys || typeof (H as any).thang_put !== 'function') return false
         const clean = String(name ?? '').split(',').join(' ·').trim().slice(0, 24)
         if (!clean) return false
+        // a name is not an address: a browser autofill (or a paste) that drops a URL into the name box would
+        //  otherwise sail as the crew name ("add to your Crew the device showing https://…", 2026-09-03)
+        if (/^[a-z][a-z0-9+.-]*:\/\//i.test(clean) || /^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(clean)) return false
         ident.sc.friendly = clean
         const peering = ident.o({ Peering: 1 })[0] as TheC | undefined
         if (peering) peering.sc.friendly = clean

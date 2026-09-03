@@ -38,8 +38,6 @@ Snap:H
               Body,pub:72d7ff9ff7e0e109f503f8e7bf214cdbac6ed15f802a3ca173b589289e4126e7,post:Captain
               Body,pub:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7,post:Cave
               Charter,era:1,payload:72d7ff9ff7e0e109f503f8e7bf214cdbac6ed15f802a3ca173b589289e4126e7:Captain:;b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7:Cave:,sig:ccda186408eedb73275425a85b2e10529028e6889bdeaa102763d9f2c2fe0ed46c6d57fa4136ae594922e8edb67016907681b4c9064b48f8e681b68886aafb05,soul:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
-              Pier,pub:60e94974b654f1b0
-                Peering,name:60e94974b654f1b0,pub:60e94974b654f1b0de8b48877f2b5208b531f077b69b5829e0dda286c6d38845
               Body,pub:60e94974b654f1b0de8b48877f2b5208b531f077b69b5829e0dda286c6d38845,post:Cave,name:Ebox
             mail
               frame:ferry,did

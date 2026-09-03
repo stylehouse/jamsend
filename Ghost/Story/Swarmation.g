@@ -26,7 +26,7 @@
 //  grant a malicious pier_hello would carry — the same signed-capability atom Swarm.g composes an
 //   Idzeug from. REAL dep (the .g→.ts import idiom), used only to STAGE the attack, never the spine.
 IMPORT()
-    import { mint_grant, verify_grant } from "$lib/O/Funk/Grant.ts"
+    import { mint_grant, verify_grant, grant_to_C } from "$lib/O/Funk/Grant.ts"
     import { seal, unseal } from "$lib/O/Funk/Sealbox.ts"
     import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
 
@@ -4460,6 +4460,178 @@ async SwarmSpread_order(w):
     let As = H.o({A: 1})
     if (!As.length) { return }
     let first = (a) => (a.sc.A === 'SwarmSpread') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+// ══ SwarmReboot — DOES IT SURVIVE A RELOAD? (2026-09-03, the owner: "no-FSA mode … it just seems very
+//  important to get through the model") ═══════════════════════════════════════════════════════════════
+//  THE GAP THIS BOOK CLOSES: durable identity state has four homes — the C tree (live only), the House
+//   STASH (Dexie, no folder needed), the ACCOUNT SNAP (.jamsend/…/toc.snap, needs a real nav ⇒ a FOLDER),
+//    and body-local Dexie.  A PHONE has no folder (no browser on a phone has showDirectoryPicker), so on
+//     a phone the stash is the ONLY durable home, and its whole surface is Swarm_restash_all.  Anything
+//      not in a pillar dies at the next boot — silently.  That is how /Crew + Grant:Crew (moved off the
+//       %Pier this morning) and every standing %Reach were lost on exactly the devices they are for.
+//  Until today NO Book could see any of it: every _stash verb was gated on `Swarm_live_self() === ident`
+//   AND `top_House().stashed`, both false in a Book world.  Swarm_stash_of makes the stash a PARAMETER —
+//    a caller with its own scratch stash needs no guard — so a fixture can finally drive the round trip:
+//     populate → restash → WIPE the tree → rehydrate → swear it all came back.
+//  Covers the two pillars added today (crew · reaches) plus roster; piers|izzes|chainroots still stash
+//   through their own verbs and are OWED the same treatment (their stash verbs carry side effects).
+SwarmReboot(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmReboot_drive,w,req
+        req%ok = 1
+
+SwarmReboot_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+SwarmReboot_note(w, sc):
+    let t = this.SwarmReboot_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async SwarmReboot_drive(w, req):
+    // A BOOK DECLARES ITS OWN BEAT COUNT (the Vytonation idiom).  Without this a Book with no recorded
+    //  toc runs HOLLOW from the CLI — total 1, one step, green, zero beats fired — because a fresh Run
+    //   grows its total only by a human pressing Resume in the editor.  'new' mode only: a recorded Book
+    //    takes its total from the toc.
+    let run = (this.c.run)
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 5 }
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.SwarmReboot_stand(w) }
+        if (n === 3) { await this.SwarmReboot_stash(w) }
+        if (n === 4) { await this.SwarmReboot_wipe(w) }
+        if (n === 5) { await this.SwarmReboot_back(w) }
+    }
+    this.SwarmReboot_witness(w)
+    await this.SwarmReboot_order(w)
+
+// beat 2 — A LIVED-IN ACCOUNT: Reba the Captain with every shelf a real account carries — a friend pier
+//  with its grant, a self-issued Idzeug, a %Body roster row, a /Crew ledger (my Captain row + a Cave mate
+//   holding my Grant:Crew), and two %Reach bookings: one STANDING and one already arrived.
+async SwarmReboot_stand(w):
+    w i reached:step_2
+    w.sc.now = 1751700000
+    let acct = w.oai({ Account: 1, of: 'Reba' })
+    acct.c.up = w
+    let keys = await this.Swarm_mint_keys('SwarmReboot-Reba')
+    let reba = this.Swarm_identity(acct, keys, 'Reba')
+    w.c.reba = reba
+    let mate = await this.Swarm_mint_keys('SwarmReboot-Mate')
+    w.c.matekeys = mate
+    // a friend pier, the transport shelf (its own pillar — here as tree furniture the wipe must clear)
+    this.Swarm_seal(w, reba, { pub: mate.pub, prepub: mate.prepub, friendly: 'Mate' }, null, null)
+    await this.Swarm_mint_idzeug(w, reba, { Music: 1 }, 'reboot_1')
+    // the roster: my own body row, wearing my name
+    let body = this.Swarm_body_take(reba, keys.pub, 'Captain', null)
+    if (body) { body.sc.name = 'Reba'; body.bump() }
+    // the crew ledger: my row + the mate's, the mate's row holding the cert I signed for it
+    this.Swarm_crew_row(reba, reba.sc.prepub, 'Captain', keys.pub)
+    let crow = this.Swarm_crew_row(reba, mate.prepub, 'Cave', mate.pub)
+    let cert = await mint_grant(keys, String(mate.pub), 'Crew', {}, this.Swarm_now(w))
+    if (crow && cert) { grant_to_C(crow, cert) }
+    // two bookings: one standing (survives), one terminal (history — must NOT come back)
+    this.Swarm_reach_book(w, reba, { to: 'Cave', of: 'tune-alpha', for: 'serve' })
+    let done = this.Swarm_reach_book(w, reba, { to: 'Cave', of: 'tune-omega', for: 'serve' })
+    if (done) { done.sc.state = 'arrived'; done.bump() }
+
+// beat 3 — THE STASH, into a scratch of this Book's own (never the House's Dexie-backed one: a Book must
+//  not write a runner's durable memory).  Swarm_stash_of takes it and the live-self guard stands down.
+async SwarmReboot_stash(w):
+    w i reached:step_3
+    w.sc.now = 1751700010
+    if (!w.c.reba) { return }
+    w.c.st = {}
+    let r = this.Swarm_restash_all(w.c.reba, null, w.c.st)
+    let row = { stashed: 1 }
+    if (r && +r.roster >= 1) { row.roster_stashed = 1 }
+    if (r && +r.crew === 2) { row.crew_stashed = 1 }
+    if (r && +r.reaches === 1) { row.one_reach_stashed = 1 }
+    let mates = w.c.st.Swarm_crews?.[w.c.reba.sc.prepub]?.mates || []
+    if (mates.some((m) => m.grant && String(m.grant.to) === 'Crew')) { row.cert_stashed = 1 }
+    this.SwarmReboot_note(w, row)
+
+// beat 4 — THE RELOAD: everything the C tree held is gone.  A real boot keeps only what Dexie carried —
+//  the keypair (thang_put) — and re-stands an EMPTY %Peering, which is exactly what a phone wakes to.
+async SwarmReboot_wipe(w):
+    w i reached:step_4
+    w.sc.now = 1751700020
+    let reba = w.c.reba
+    if (!reba) { return }
+    let peering = this.Swarm_peering(reba)
+    for (const child of peering.o()) { peering.drop(child) }
+    for (const crew of reba.o({ Crew: 1 })) { reba.drop(crew) }
+    let row = { wiped: 1 }
+    if (!peering.o().length) { row.peering_bare = 1 }
+    if (!reba.o({ Crew: 1 }).length) { row.crew_gone = 1 }
+    if (!this.Swarm_crew_grant(reba)) { row.cert_gone = 1 }
+    this.SwarmReboot_note(w, row)
+
+// beat 5 — THE REHYDRATE LADDER, the same three calls Swarm_station_up makes at boot, against the scratch
+//  stash.  What must come back: the roster row, the crew ledger WITH my cert (so Swarm_crew_grant answers
+//   again — the phone is still crew), and the STANDING booking only.
+async SwarmReboot_back(w):
+    w i reached:step_5
+    w.sc.now = 1751700030
+    let reba = w.c.reba
+    if (!reba || !w.c.st) { return }
+    await this.Swarm_roster_rehydrate(w, reba, w.c.st)
+    this.Swarm_crew_rehydrate(w, reba, w.c.st)
+    this.Swarm_reaches_rehydrate(w, reba, w.c.st)
+    let peering = this.Swarm_peering(reba)
+    let row = { back: 1 }
+    let crew = reba.o({ Crew: 1 })[0]
+    if (crew && crew.o({ mate: 1 }).length === 2) { row.crew_back = 1 }
+    let mine = crew ? crew.o({ mate: String(reba.sc.prepub) })[0] : null
+    if (mine && String(mine.sc.role) === 'Captain') { row.my_role_back = 1 }
+    let mrow = crew ? crew.o({ mate: String(w.c.matekeys.prepub) })[0] : null
+    if (mrow && mrow.o({ Grant: 'Crew' })[0]) { row.cert_back = 1 }
+    if (mrow && String(mrow.sc.body || '') === String(w.c.matekeys.pub)) { row.body_back = 1 }
+    let bodies = peering.o({ Body: 1 })
+    if (bodies.length === 1 && String(bodies[0].sc.name || '') === 'Reba') { row.roster_back = 1 }
+    let reaches = peering.o({ Reach: 1 })
+    if (reaches.length === 1 && String(reaches[0].sc.of) === 'tune-alpha') { row.standing_reach_back = 1 }
+    if (!reaches.some((r) => String(r.sc.of) === 'tune-omega')) { row.terminal_reach_stayed_dead = 1 }
+    if (reaches.length === 1 && String(reaches[0].sc.state) === 'booked') { row.reach_state_back = 1 }
+    // the round trip is idempotent: a second ladder pass must not double a single row.
+    this.Swarm_crew_rehydrate(w, reba, w.c.st)
+    this.Swarm_reaches_rehydrate(w, reba, w.c.st)
+    if (crew && crew.o({ mate: 1 }).length === 2 && peering.o({ Reach: 1 }).length === 1) { row.idempotent = 1 }
+    this.SwarmReboot_note(w, row)
+
+// ── the witness ───────────────────────────────────────────────────────────────────────────────────
+SwarmReboot_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 5)) { return }
+    let T = this.SwarmReboot_T(w)
+    let s = T.o({ stashed: 1 })[0]
+    let d = T.o({ wiped: 1 })[0]
+    let b = T.o({ back: 1 })[0]
+    if (!s || !d || !b) { return }
+    // #1 THE PHONE'S ONE DURABLE HOME CARRIES THE CREW: cert and all, with no folder anywhere.
+    if (+s.sc.crew_stashed === 1 && +s.sc.cert_stashed === 1 && +b.sc.crew_back === 1 && +b.sc.cert_back === 1) this.story_swear(w, 'the crew ledger and its cert survive a reload through the stash alone — the home a device with no folder actually has')
+    // #2 A WIPE IS A REAL WIPE: the fixture proves the tree was empty before anything came back.
+    if (+d.sc.peering_bare === 1 && +d.sc.crew_gone === 1 && +d.sc.cert_gone === 1) this.story_swear(w, 'the reload is real — the peering stands bare and the crew grant answers nothing until the rehydrate runs')
+    // #3 A BOOKING IS DURABLE INTENT: it outlives the boot that was standing when it was made.
+    if (+s.sc.one_reach_stashed === 1 && +b.sc.standing_reach_back === 1 && +b.sc.reach_state_back === 1) this.story_swear(w, 'a standing booking outlives the boot that made it — reach comes back booked so book-it-and-walk-away is true on a phone')
+    // #4 HISTORY STAYS BURIED: a settled reach is not resurrected by its own stash.
+    if (+b.sc.terminal_reach_stayed_dead === 1) this.story_swear(w, 'a settled reach stays settled — only live intent is carried so a reload never resurrects work already finished')
+    // #5 THE ROSTER + MY OWN ROLE RETURN: the family album and which face is mine.
+    if (+b.sc.roster_back === 1 && +b.sc.my_role_back === 1 && +b.sc.body_back === 1) this.story_swear(w, 'the roster and my own post return with the crew — a rebooted body knows what it is and which key each mate answers at')
+    // #6 THE LADDER IS IDEMPOTENT: boot runs it once but a re-entry must not double a row.
+    if (+b.sc.idempotent === 1) this.story_swear(w, 'running the rehydrate ladder twice changes nothing — every pillar finds-or-creates so a re-entered boot cannot double a mate or a booking')
+
+// SwarmReboot_order — float A:SwarmReboot to the front of H/* so the Run snap stays readable.
+async SwarmReboot_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) { return }
+    let first = (a) => (a.sc.A === 'SwarmReboot') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

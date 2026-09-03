@@ -79,7 +79,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  never listed here, so the CLI refused the one op that makes a MIDDLE step inspectable: without it
 //   `snap 3` of a 9-step Book returns got_snap:null, trimmed 5 steps behind, and a flapping early step
 //    cannot be diffed at all.  `retain on` sticks on w:Story.c across runs.
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -169,7 +169,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
 
@@ -201,7 +201,7 @@ const live  = flags.has('--live') || !localHost
 // READ-ONLY verbs — the only ones that may target a role:'player' tab (someone's actual music page).
 //  Module-scope because it now gates TWO doors: explicit --player= targeting (below), and the
 //   auto-court's humdinger veto (a player can answer a to:'runner' broadcast — see the veto).
-const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console']
+const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy']
 
 // ── liveCensus — learn who is on THIS relay, FROM the relay ─────────────────────────────────
 //  clusterRunners() above reads a LOCAL FILE.  Point RUNNER_URL at another host and that file is
@@ -497,6 +497,7 @@ if (playerSel !== undefined) {
 	TARGET = pub
 }
 if (op === 'run' && !arg)  { console.error('run needs a Book: node scripts/runner_ask.mjs run <Book>'); process.exit(2) }
+if (op === 'tidy' && !arg) { console.error('tidy needs a target: node scripts/runner_ask.mjs tidy <crew|rebuffs|forget:<pub prefix>> --player=<id>   (the tab must be armed: socklog on --reload)'); process.exit(2) }
 if (op === 'poke' && !arg) { console.error('poke needs a verb: node scripts/runner_ask.mjs poke <Radio_toggle|Radio_skip|Radio_source_toggle|Sounditron_diag_toggle> [--runner=<id>]'); process.exit(2) }
 if (op === 'socklog' && arg && arg !== 'on' && arg !== 'off') { console.error('socklog takes on|off (default on): node scripts/runner_ask.mjs socklog [on|off] [--reload] [--runner=<id>]'); process.exit(2) }
 if (op === 'declare' && !arg) { console.error('declare needs the sworn sentence (quote it — byte-identical to `assertions` output): node scripts/runner_ask.mjs declare \'<sentence>\''); process.exit(2) }
@@ -525,6 +526,7 @@ if (op === 'snap' || op === 'trace') ask.n = Number(arg)
 if (op === 'declare') ask.sentence = arg   // the explorer button's CLI twin (e_story_declare)
 if (op === 'socklog') { ask.on = arg === 'off' ? 0 : 1; if (flags.has('--reload')) ask.reload = 1 }   // arm the tab's trace dump remotely (was: 🪪 hatch only)
 if (op === 'poke') ask.verb = arg          // allowlisted UI verb (runner-side allowlist is the authority)
+if (op === 'tidy') ask.what = arg          // crew | rebuffs | forget:<pub prefix> — refused tab-side unless socklog is armed
 if (op === 'console') {
 	// pull the live tab's console ring; tail/grep applied RING-SIDE so the reply carries only the
 	//  wanted lines.  --follow polls below, streaming only lines newer than the last read.

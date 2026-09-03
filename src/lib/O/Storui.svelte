@@ -1134,6 +1134,36 @@
         }
     }
 
+    // SEEK (owner 2026-09-03: "a quick UI for resnapping and seeking to the SoundPooling datastructure,
+    //  presenting through that popped-up resnap diff viewer"): jump the diff body this button lives in to the
+    //   next line naming a structure — the SoundPool shelf (pool %Records, %Pool compartments, %Reach rows,
+    //    the steward's wants) or the crew ledger — cycling on repeat presses, highlighting the hit.  Scoped
+    //     like sync_col_scroll: the nearest ancestor that CONTAINS a diff body, so the popup and the main
+    //      panel each seek their own rows.  Pure DOM over the rendered rows — no snap re-parse.
+    const SEEKS: Record<string, { re: RegExp, say: string }> = {
+        pool: { re: /Record,[^\n]*path:pool\/|\bPool,name|\bReach,|\bSteward\b|\bpool_|\bSiphon\b|\bpocket\b|\btrove\b/, say: 'SoundPooling — pool %Records · %Pool compartments · %Reach · steward · siphon' },
+        crew: { re: /\bCrew\b|\bmate:|Grant:Crew|\bBody,pub|\bPier,pub/, say: 'the crew — /Crew rows · Grant:Crew · %Body · %Pier' },
+    }
+    let seek_i: Record<string, number> = {}
+    let seek_say = $state('')
+    function seek_to(e: Event, what: string) {
+        const src = e.currentTarget as HTMLElement
+        let el: HTMLElement | null = src
+        let body: HTMLElement | null = null
+        while (el && !body) { body = el.querySelector<HTMLElement>('.sr-diff2-body'); el = el.parentElement }
+        if (!body) { seek_say = 'no diff body here'; return }
+        const re = SEEKS[what].re
+        const cells = [...body.querySelectorAll<HTMLElement>('.sr-diff2-cell')].filter(c => re.test(c.textContent || ''))
+        for (const c of body.querySelectorAll<HTMLElement>('.sr-seek-hit')) c.classList.remove('sr-seek-hit')
+        if (!cells.length) { seek_say = `no ${what} lines in this diff`; return }
+        const i = ((seek_i[what] ?? -1) + 1) % cells.length
+        seek_i[what] = i
+        const hit = cells[i]
+        hit.classList.add('sr-seek-hit')
+        hit.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        seek_say = `${what} ${i + 1}/${cells.length}`
+    }
+    // the seek buttons — one snippet, rendered in the popup header AND the main diff header
     //#region trace colouring
     //
     //   FNV-1a hash of ev.kind → hue (0-359) + lightness (44-67).
@@ -1328,6 +1358,9 @@
                             <span class="sr-resnap-dim">(no change yet)</span>
                         {/if}
                     </span>
+                    <button class="sr-seek" onclick={(e) => seek_to(e, 'pool')} title={SEEKS.pool.say + ' — next hit on repeat'}>🏊 pool</button>
+                    <button class="sr-seek" onclick={(e) => seek_to(e, 'crew')} title={SEEKS.crew.say + ' — next hit on repeat'}>🏴 crew</button>
+                    {#if seek_say}<span class="sr-resnap-dim">{seek_say}</span>{/if}
                     <button class="sr-resnap-goto" onclick={go_to_diff}
                             title="close popup, scroll to diff, open step (Enter)">go to diff ↓</button>
                     <button class="sr-resnap-close" onclick={() => popup_open = false}
@@ -1514,6 +1547,8 @@
                         {:else}
                             <button class="sr-diffrange" onclick={start_diff_collect}>copy diff</button>
                         {/if}
+                        <button class="sr-seek" onclick={(e) => seek_to(e, 'pool')} title={SEEKS.pool.say + ' — next hit on repeat'}>🏊</button>
+                        <button class="sr-seek" onclick={(e) => seek_to(e, 'crew')} title={SEEKS.crew.say + ' — next hit on repeat'}>🏴</button>
                     {/if}
 
                     {#if Step?.sc.Run_trace?.length}
@@ -2257,6 +2292,9 @@
     color: #b97; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; flex: 1;
 }
 .sr-resnap-dim   { color: #664; font-style: italic; font-weight: 400; }
+.sr-seek { font-size: .72rem; padding: .05rem .4rem; border-radius: .6rem; border: 1px solid rgba(240, 190, 110, .35); background: rgba(240, 190, 110, .10); color: inherit; cursor: pointer; margin-right: .25rem; }
+.sr-seek:hover { background: rgba(240, 190, 110, .25); }
+.sr-seek-hit { outline: 2px solid #f0c060; outline-offset: -1px; background: rgba(240, 190, 110, .28) !important; }
 .sr-resnap-goto {
     background: #1a1208; border: 1px solid #3a2808; border-radius: 2px;
     color: #b97; cursor: pointer; font-size: 9px; font-family: inherit;

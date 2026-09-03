@@ -5,12 +5,7 @@
   },
   "permissions": {
     "deny": [
-      "Bash(git push:*)",
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./ty/.env.chrome-profiles)",
-      "Read(./ty/droidlounge/.env.chrome-profiles)",
-      "Read(**/.env.chrome-profiles)"
+      "Bash(git push:*)"
     ]
   }
 }

@@ -1,0 +1,25 @@
+story:SwarmReboot
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.042
+      sample=0.064,at=1788402772
+      sample=0.028,at=1788402803
+      sample=0.034,at=1788403392
+    TimeTotal:step,avg=0.009
+      sample=0.013,at=1788402772
+      sample=0.006,at=1788402803
+      sample=0.007,at=1788403392
+  step,dige:f508e4cd43e96afe
+  step=2,dige:686931f99ab3b23c
+  step=3,dige:89d4896d2af100c9
+  step=4,dige:9bb6ede883b39705
+  step=5,dige:a78ef4deb9635f2b
+    Assertion:the-crew-ledger-and,sentence:the crew ledger and its cert survive a reload through the stash alone — the home a device with no folder actually has
+    Assertion:the-reload-is-real,sentence:the reload is real — the peering stands bare and the crew grant answers nothing until the rehydrate runs
+    Assertion:a-standing-booking-outlives,sentence:a standing booking outlives the boot that made it — reach comes back booked so book-it-and-walk-away is true on a phone
+    Assertion:a-settled-reach-stays,sentence:a settled reach stays settled — only live intent is carried so a reload never resurrects work already finished
+    Assertion:the-roster-and-my,sentence:the roster and my own post return with the crew — a rebooted body knows what it is and which key each mate answers at
+    Assertion:running-the-rehydrate-ladder,sentence:running the rehydrate ladder twice changes nothing — every pillar finds-or-creates so a re-entered boot cannot double a mate or a booking

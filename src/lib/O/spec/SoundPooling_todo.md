@@ -109,6 +109,44 @@
      the Captain sees 'arrived'; the Captain-side OPFS landing runs the moment a mirror nav stands.
       The booking GESTURE (where in the glass a fill is born) also stays owner-gated (Reach_todo §0).
 
+**THE START (owner 2026-09-03: "it needs a lot of Book testing it moving noise around, unit testing style…
+ and a quick UI for resnapping and seeking to the SoundPooling datastructure") — the ladder, then the glass:**
+
+*The seek UI is LANDED (Storui.svelte):* the 📸 resnap popup and the main diff header carry **🏊 pool** and
+ **🏴 crew** seek buttons — each press jumps the diff body to the NEXT line naming that structure (pool
+  `%Record,path:pool/`, `%Pool,name`, `%Reach`, steward/siphon/pocket/trove; or /Crew, Grant:Crew, %Body,
+   %Pier), highlights it, and says `pool 2/7`. Pure DOM over the rendered rows; scoped to whichever diff body
+    the button lives in. Resnap a step, press 🏊, watch the noise move.
+
+*The noise ladder — one Book per move, single-beat where possible, ONE %see each, seeded (no Date.now /
+ Math.random on the Book path), noise = generated PCM under the Book's marrauding root (the Siphonation /
+  MusuPress idiom). Existing gates in [brackets]; NEW ones are the work:*
+1. [MusuPress] press one own-library track → a pool `%Record` (lofi v1, body_hash).
+2. [MusuQuarter / MusuSteward] the goal composes from `%Pool` compartments; the steward wants the right next.
+3. [MusuPoolFill] Captain books `%Reach,for:serve` → Cave serves from its own library → 'arrived' + refusal receipt.
+4. **MusuPoolBytes** — THE OWED LANE: the served artifact's BYTES cross to the Captain's OPFS (the "Mag travels"
+   transport over the crew mirror / Repli lane). Today's fill ends Cave-side with 'arrived' standing; this Book
+    is red until bytes land Captain-side (`%Record,path:pool/…` with the same body_hash on BOTH identities).
+     Author it first — it is the Book that forces the transport to exist.
+5. **MusuPoolSwap** — Flow 3, phone↔phone: two FRIENDS (no crew), A holds a pool copy, B books a reach for it,
+   A serves it from its POOL (not its library — the pool is the people's music), B's pool gains it. The
+    tripwire: a shareless phone still serves pool copies.
+6. **MusuPoolEvict** — cap + take policy: fill past `%Pool cap` → the lowest-priority compartment's oldest
+   copy evicts; declaration order = priority; `taste|liked|kept|latest` each proven by one arrangement.
+7. **MusuPoolRadio** — `%Radio,source:pool` with no friend online dials from the pool; source '' ignores it.
+8. **MusuPoolUpgrade** — a Cave online fills a lofi pool copy out into an Original (§2.5 queue): pool → Originals,
+   the copy retired, the Original wearing the pool's provenance.
+9. **MusuPoolDaemon** — the same ceremony with the daemon as the Cave (Crew_todo §0.3): a headless crew member
+   serving reaches while the phone sleeps. Needs the %Ferry-only ceremony state (Crew_todo §0.0 "half-spined").
+Each: Heistation.g (the Musu* home), recorded on the LIVE runner, wormhole dir committed with toc + snaps.
+ Verify a fill by `runner_ask snap <n>` + the 🏊 seek, never by log lines.
+
+**A BOOKING NOW SURVIVES A RELOAD (2026-09-03).** `%Reach` became the sixth stash pillar
+ (`Swarm_restash_reaches` + `Swarm_reaches_rehydrate`, gated by the SwarmReboot Book). Until then a
+  standing booking lived only in the account snap — which a PHONE never writes (no folder ⇒ no nav), so
+   every booked fill died at the next boot and "book it and walk away" was false on exactly the device
+    SoundPooling is for. Terminal reaches are deliberately NOT carried: a settled fill is history.
+
 **What to get on with next (fresh session reads here):**
 1. **Wire the ambient steward** — `Radio_source_next(n)` + `Radio_autopress` (the press driver that
     lights `Ra_quarter_serve` at a natural play-session seam). This is the ambient economy proper
