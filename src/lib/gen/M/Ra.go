@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '9855aa2805017021~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '3a601ec66c922767~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1110,13 +1110,16 @@ Ra_quarter_tally(shelf) {
 // Ra_pool_define — declare|resize one compartment: %Pool,name:<n>,take:<policy>,cap:<tracks>.
 //  Order of declaration IS priority: earlier pools pick first, later pools never double-claim a
 //   track an earlier one took (dedup), so the composition adds up instead of overlapping.
-Ra_pool_define(w, name, take, cap) {
+Ra_pool_define(w, name, take, cap, who) {
     let home = this.Ra_pool_home(w)
     let shelf = home.oai({ Pools: 1 })
     shelf.c.up = home
     let p = shelf.oai({ Pool: 1, name: String(name) })
     p.c.up = shelf
     if (take) { p.sc.take = String(take) }
+    // `who` — THE ONE REAL DECISION (owner 2026-09-03): 'friends' = random tracks to hear for the first time,
+    //  'crew' = your own collection spread across your devices, 'all' = both.  Absent = all.
+    if (who && String(who) !== 'all') { p.sc.who = String(who) } else if (who && p.sc.who) { delete p.sc.who }
     p.sc.cap = String(cap)
     p.bump()
     return p
@@ -1129,6 +1132,157 @@ Ra_pool_home(w) {
     let self = this.Swarm_live_self ? this.Swarm_live_self() : null
     if (top && top.c && w && top.c.radio_w === w && self) { return self }
     return w
+},
+// ── CONSENT (owner 2026-09-03: "we should get consent to start SoundPooling and one-paragraph explain it,
+//  since it'll start putting big files in an obscure location on their phone, which might be low on space
+//   already").  Pooling WRITES BYTES to browser storage — a place the person will never see in a files app
+//    and which the browser may clear unasked — so nothing may press, catch or evict until this device has
+//     said yes ONCE.  The yes is a particle, `%Consent,at` on the %Pools shelf: snapped, stashed with the
+//      pools pillar (a phone keeps it through a reload), and takeable back.  Declaring a pool is still free —
+//       it is a plan, and a plan costs nothing — but every act on bytes reads Ra_pool_consent first.
+Ra_pool_consent(w) {
+    let shelf = w ? (this.Ra_pool_home(w).o({ Pools: 1 })[0] || w.o({ Pools: 1 })[0]) : null
+    return shelf && shelf.o({ Consent: 1 })[0] ? 1 : 0
+},
+Ra_pool_consent_give(w, now) {
+    let home = this.Ra_pool_home(w)
+    let shelf = home.oai({ Pools: 1 })
+    shelf.c.up = home
+    let c = shelf.oai({ Consent: 1 })
+    c.c.up = shelf
+    if (now != null && !c.sc.at) { c.sc.at = String(now) }
+    shelf.bump()
+    return c
+},
+Ra_pool_consent_take(w) {
+    let n = 0
+    for (const shelf of [this.Ra_pool_home(w).o({ Pools: 1 })[0], w ? w.o({ Pools: 1 })[0] : null]) {
+        if (!shelf) { continue }
+        let hit = 0
+        for (const c of shelf.o({ Consent: 1 })) { shelf.drop(c); hit = hit + 1 }
+        if (hit) { shelf.bump(); n = n + hit }
+    }
+    return n
+},
+// ── THE BUDGET IS THE UNIT OF CONSENT (owner 2026-09-03: "aim for 3GB… or less than 1/3rd of what chrome
+//  thinks it can use… that amount adjustment thing should be able to go back to 0 and turn off and clean
+//   out it all").  `budget_mb` rides the %Pools shelf; 0/absent with no consent = off.  v1 turns megabytes
+//    into a track cap at ~4 MB a lofi track (the byte-budget steward is v2 — Ra.g's own note above).
+Ra_pool_budget(w) {
+    let shelf = w ? (this.Ra_pool_home(w).o({ Pools: 1 })[0] || w.o({ Pools: 1 })[0]) : null
+    return shelf ? Number(shelf.sc.budget_mb || 0) : 0
+},
+Ra_pool_budget_set(w, mb) {
+    let home = this.Ra_pool_home(w)
+    let shelf = home.oai({ Pools: 1 })
+    shelf.c.up = home
+    let v = Math.max(0, Math.floor(Number(mb) || 0))
+    if (v) { shelf.sc.budget_mb = String(v) } else if (shelf.sc.budget_mb) { delete shelf.sc.budget_mb }
+    shelf.bump()
+    this.Ra_pool_caps_apply(w)
+    return v
+},
+Ra_pool_cap_of(mb) {
+    return Math.max(1, Math.floor((Number(mb) || 0) / 4))
+},
+// ── FRACTIONS, NOT CAPS (owner 2026-09-03: "why limit anything? they each should have a fraction, use sliders
+//  that redistribute in a gang").  Every %Pool wears `share` (percent of the budget); its `cap` is DERIVED —
+//   budget × share ÷ ~4 MB — never set by hand any more.  Moving one share rescales the others so the gang
+//    always sums to 100.
+Ra_pool_caps_apply(w) {
+    let shelf = this.Ra_pool_home(w).o({ Pools: 1 })[0]
+    if (!shelf) { return 0 }
+    let mb = Number(shelf.sc.budget_mb || 0)
+    let n = 0
+    for (const p of shelf.o({ Pool: 1 })) {
+        let share = Number(p.sc.share || 0)
+        let cap = (p.sc.share != null && p.sc.share !== '') ? Math.floor(mb * share / 100 / 4) : Number(p.sc.cap || 1)
+        if (String(p.sc.cap || '') !== String(cap)) { p.sc.cap = String(cap); p.bump(); n = n + 1 }
+    }
+    return n
+},
+Ra_pool_share_set(w, name, pct) {
+    let shelf = this.Ra_pool_home(w).o({ Pools: 1 })[0]
+    if (!shelf) { return 0 }
+    let me = shelf.o({ Pool: 1, name: String(name) })[0]
+    if (!me) { return 0 }
+    let v = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)))
+    let others = shelf.o({ Pool: 1 }).filter((p) => p !== me)
+    let rest = 100 - v
+    let sum = 0
+    for (const p of others) { sum = sum + Number(p.sc.share || 0) }
+    for (const p of others) {
+        let s = sum > 0 ? Math.round(Number(p.sc.share || 0) * rest / sum) : (others.length ? Math.round(rest / others.length) : 0)
+        p.sc.share = String(s)
+        p.bump()
+    }
+    me.sc.share = String(v)
+    me.bump()
+    this.Ra_pool_caps_apply(w)
+    return v
+},
+// Ra_pool_gang — declare (or top up) a compartment at `pct`, taking that share from the others in proportion.
+Ra_pool_gang(w, name, take, who, pct) {
+    this.Ra_pool_define(w, String(name), take, 1, who)
+    return this.Ra_pool_share_set(w, String(name), pct)
+},
+// Ra_pool_start — THE ONE SENTENCE (owner 2026-09-03, the final cut: "SoundPool keeps rolling [ 300 ] MB of
+//  music in browser storage, sourced from [ ] friends (less predictable) and [x] crew (your devices, see
+//   Door)").  One random compartment at 100% of the budget, drawing from `who`: 'friends' | 'crew' | 'all' |
+//    'none'.  The multi-pool gang (liked/taste/shares) stays as machinery and Books, but it is no longer what
+//     the yes declares — the fair-share question it raises ("a pool that can't fill shouldn't hold the others
+//      back, yet should claim its space back one day") is real and unsolved, and one pool makes it moot.
+//  Idempotent: a second call only moves the budget and the who.  Returns 1 the first time.
+Ra_pool_start(w, budget_mb, now, who) {
+    this.Ra_pool_consent_give(w, now)
+    this.Ra_pool_budget_set(w, budget_mb)
+    let had = this.Ra_pool_defs(w, 0).filter((p) => p.name)
+    let w2 = who || 'crew'
+    if (had.length) {
+        for (const d of had) { if (d.take === 'random') { this.Ra_pool_define(w, d.name, 'random', d.cap, w2) } }
+        return 0
+    }
+    this.Ra_pool_define(w, 'rolling', 'random', 1, w2)
+    this.Ra_pool_share_set(w, 'rolling', 100)
+    console.log('🏊 SoundPool keeps rolling ' + this.Ra_pool_budget(w) + ' MB from ' + w2)
+    return 1
+},
+// Ra_pool_who — the two checkboxes as one word: 'all' | 'friends' | 'crew' | 'none' (read off the random pool)
+Ra_pool_who(w) {
+    let d = this.Ra_pool_defs(w, 0).find((p) => p.name && p.take === 'random')
+    return d ? String(d.who || 'all') : 'crew'
+},
+// Ra_pool_unfile — THE BYTES GO WITH THE CARD.  A pooled %Record's `path` is pool-relative ('A/B/t.ogg'; on disk
+//  `pool/A/B/t.ogg` through the OPFS mount), so the file is one nav.bin_rm away.  Best-effort: a missing file
+//   or a nav without bin_rm (a Book's mock) is not an error — the card still goes.  Returns 1 if a file went.
+async Ra_pool_unfile(w, nav, rec) {
+    let path = String(rec && rec.sc && rec.sc.path || '')
+    if (!nav || typeof nav.bin_rm !== 'function' || !path) { return 0 }
+    let parts = path.split('/').filter(Boolean)
+    let fname = parts.pop()
+    if (!fname) { return 0 }
+    try { let ok = await nav.bin_rm('pool' + (parts.length ? '/' + parts.join('/') : ''), fname); return ok ? 1 : 0 } catch (e) { return 0 }
+},
+// Ra_pool_off — BACK TO ZERO: the yes taken back, the budget gone, every compartment dropped and every pooled
+//  card with it — AND its file (Ra_pool_unfile), so "off" means the space comes back.  Returns {pools, records, files}.
+async Ra_pool_off(w) {
+    let out = { pools: 0, records: 0, files: 0 }
+    this.Ra_pool_consent_take(w)
+    this.Ra_pool_budget_set(w, 0)
+    for (const d of this.Ra_pool_defs(w, 0)) { if (d.name) { out.pools = out.pools + this.Ra_pool_drop(w, d.name) } }
+    let me = (this.Radio_pub ? this.Radio_pub(w) : null) || 'me'
+    let phome = w ? w.o({ MusuPool: 1, pub: me })[0] : null
+    let pshelf = phome ? phome.o({ stock: 1, pub: me })[0] : null
+    let nav = w ? (w.c.ra_nav || (this.Crate_nav ? this.Crate_nav() : null)) : null
+    if (pshelf) {
+        for (const r of this.Ra_recs(pshelf)) {
+            if (!r.sc.id) { continue }
+            out.files = out.files + await this.Ra_pool_unfile(w, nav, r)
+            if (await this.Ra_rec_drop(pshelf, String(r.sc.id))) { out.records = out.records + 1 }
+        }
+    }
+    console.log('🏊 SoundPooling off — ' + out.pools + ' pool(s), ' + out.records + ' pooled card(s) and ' + out.files + ' file(s) gone')
+    return out
 },
 // Ra_pool_drop — retire a compartment (the D of CRUD).  Its wants fall out at the next sit-down (the steward
 //  re-derives the goal from what stands); its pooled copies are then 'evict' wants — the pool is expendable.
@@ -1149,7 +1303,7 @@ Ra_pool_defs(w, cap) {
     //  hydrated wrote its %Pools to the WORLD, and reading only the identity afterwards made that pool
     //   invisible and undroppable.  Probe-first either way — a read never mints a shelf.
     let shelf = w ? (this.Ra_pool_home(w).o({ Pools: 1 })[0] || w.o({ Pools: 1 })[0]) : null
-    let defs = shelf ? shelf.o({ Pool: 1 }).map((p) => ({ name: String(p.sc.name || ''), take: String(p.sc.take || 'taste'), cap: Number(p.sc.cap || 0), salt: String(p.sc.salt || '') })).filter((p) => p.name && p.cap > 0) : []
+    let defs = shelf ? shelf.o({ Pool: 1 }).map((p) => ({ name: String(p.sc.name || ''), take: String(p.sc.take || 'taste'), cap: Number(p.sc.cap || 0), salt: String(p.sc.salt || ''), who: String(p.sc.who || 'all'), share: Number(p.sc.share || 0) })).filter((p) => p.name) : []
     if (!defs.length) { return [{ name: '', take: 'taste', cap: cap }] }
     return defs
 },
@@ -1168,6 +1322,12 @@ Ra_pool_hash(s) {
 Ra_pool_sources(w) {
     let out = []
     if (!w || !w.o) { return out }
+    // crew or friend?  /Crew lives on the identity the pools live on (Ra_pool_home) — a holder whose routing
+    //  name prefix-matches a mate row is crew; everyone else sharing with me is a friend.
+    let crew = this.Ra_pool_home(w).o({ Crew: 1 })[0]
+    let mates = crew ? crew.o({ mate: 1 }) : []
+    let samec = (a, b) => a && b ? (String(a).startsWith(String(b)) || String(b).startsWith(String(a))) : false
+    let crewish = (from) => mates.some((m) => samec(m.sc.mate, from) || (m.sc.pub && samec(m.sc.pub, from)))
     for (const them of w.o({ MusuThem: 1 })) {
         let from = String(them.sc.pub || '')
         if (!from) { continue }
@@ -1176,7 +1336,9 @@ Ra_pool_sources(w) {
         for (const r of this.Ra_recs(stock)) {
             let id = String(r.sc.id || '')
             if (!id) { continue }
-            out.push({ id: id, from: from, title: String(r.sc.title || '') })
+            let row = { id: id, from: from, title: String(r.sc.title || '') }
+            if (crewish(from)) { row.crew = 1 }
+            out.push(row)
         }
     }
     return out
@@ -1198,6 +1360,9 @@ Ra_quarter_goal_pools(shelf, pools, sources, pool) {
             //  in a clockless shuffle — the same draw every sit-down, a new one per salt.
             for (const s of (sources || [])) {
                 if (!s || !s.id) { continue }
+                if (pd.who === 'none') { continue }
+                if (pd.who === 'friends' && s.crew) { continue }
+                if (pd.who === 'crew' && !s.crew) { continue }
                 if (!holder[s.id]) { holder[s.id] = String(s.from || '') }
                 if (!ids.includes(s.id)) { ids.push(s.id) }
             }
@@ -1332,6 +1497,7 @@ async Ra_quarter_serve(w, nav, shelf, pool, lib, cap, sources) {
             let r = await this.Ra_press(w, nav, lib, pool, of)
             if (r && r.fail) { out.fails = out.fails + 1 } else { out.pressed = out.pressed + 1 }
         } else if (doo === 'evict') {
+            await this.Ra_pool_unfile(w, nav, this.Ra_rec_find(pool, { Record: 1, id: of }))   // the bytes go with the card
             let dropped = await this.Ra_rec_drop(pool, of)
             out.evicted = out.evicted + dropped
         } else {

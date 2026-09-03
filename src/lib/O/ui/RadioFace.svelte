@@ -14,6 +14,9 @@
         return () => clearInterval(iv)
     })
 
+    // consent + want, read live (Ra_pool_consent / Radio_pool_wanted) so the source chip can say "needs setup"
+    let pool_ok = $derived.by(() => { void H?.version; try { const w = n?.c?.w; return !!(w && (H as any)?.Ra_pool_consent?.(w)) } catch { return false } })
+    let pool_wanted = $derived.by(() => { void H?.version; try { const w = n?.c?.w; return !!(w && (H as any)?.Radio_pool_wanted?.(w, null)) } catch { return false } })
     let face = $derived.by(() => {
         void H?.version
         void tick
@@ -60,6 +63,7 @@
             // the heist gesture's ✓ tell (the human 2026-07-28 "keep what you're hearing"): Radio_keep
             //  stamps n.c.kept[seed] (runtime, never snapped) so the ⇊ reads back as kept for this track.
             keptThis: !!(n?.c?.kept && n?.c?.rec?.sc?.id && n.c.kept[n.c.rec.sc.id]),
+            likedThis: !!(n?.c?.liked && n?.c?.rec?.sc?.id && n.c.liked[n.c.rec.sc.id]),
         }
     })
 
@@ -145,9 +149,9 @@
             <button class="rf-btn rf-heart" onclick={() => (H as any)?.Radio_skip?.(n)} title="next">⏭</button>
         </div>
         {#if face.by}
-            <button class="rf-btn rf-keep" class:kept={face.keptThis}
-                onclick={() => { (H as any)?.Radio_keep?.(n) }}
-                title={face.keptThis ? 'kept — open the keep and press ▶ to start the download' : "keep this — queues a download you start (▶) from the keep panel"}>{face.keptThis ? '✓' : '⇊'}</button>
+            <button class="rf-btn rf-like" class:liked={face.likedThis} onclick={() => { (H as any)?.Radio_like?.(n) }}
+                title={face.likedThis ? 'liked — on your ledger, and heisting in the background if this device has a share' : 'like this — on your ledger; with a share the album heists in the background, without one your crew or your pool lives it out'}>{face.likedThis ? '♥' : '♡'}</button>
+<!-- (the ⇊ keep button folded into ♥ — owner 2026-09-03: "turn the heist button into the like button") -->
         {/if}
     </div>
     <!-- provenance badge, unmistakably (the human 2026-08-07: "the UI in the player should be clear its
@@ -155,7 +159,15 @@
     <!-- THE SOURCE CHIP (Siphon_todo P2): the provenance badge is also the source selector —
          pressing it cycles friends-first ⇄ SoundPool via Radio_source_next, which stamps
          sc.source on the %Radio particle; the dial obeys it (Radio_dial's pool rung). -->
-    {#if face.source === 'pool'}
+    {#if face.source === 'pool' && !pool_ok}
+        <!-- THE SOURCE IS THE DOOR TO ITS SETUP (owner 2026-09-03: "perhaps the sourcebutton has a link in it to
+             that Cell? and it says 'needs setup'").  A pool source with no consent yet cannot play anything, so
+             the chip stops pretending and takes you to the one place the yes is given. -->
+        <!-- the chip stays a SWITCHER (owner: reach the setup "via a separate button rather than just clicking
+             the source switcher button again") — it only says so; the link is the line below -->
+        <button class="rf-src rf-src-local rf-src-setup" onclick={() => (H as any)?.Radio_source_next?.(n)}
+            title="SoundPooling has not been started on this device — press to flip back to friends-first">♪ SOUNDPOOL — needs setup</button>
+    {:else if face.source === 'pool'}
         <button class="rf-src rf-src-local" onclick={() => (H as any)?.Radio_source_next?.(n)}
             title="the source — press to flip back to friends-first">♪ SOUNDPOOL — your pocket copies</button>
     {:else if face.by}
@@ -167,6 +179,11 @@
     {:else if face.title && face.state !== 'off' && face.state !== 'digging'}
         <button class="rf-src rf-src-local" onclick={() => (H as any)?.Radio_source_next?.(n)}
             title="the source — press to flip friends | SoundPool">♪ LOCAL — your own record</button>
+    {/if}
+    {#if !pool_ok && (pool_wanted || face.source === 'pool')}
+        <!-- THE SEPARATE BUTTON to the setup (owner 2026-09-03) — never the chip itself -->
+        <div class="rf-src rf-src-local">{pool_wanted ? "your crew's music could live on this phone, " : 'nothing pooled yet, '}<button class="rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')}
+            title="opens the SoundPool cell — pick how much space, that is all">set up SoundPool</button></div>
     {/if}
     <!-- THE INVITE, PUT FORWARD FOR A PEERLESS LISTENER — sits right under the ♪ LOCAL sayer, because
          "playing your own record, alone" is the exact moment bringing a friend is the obvious next move.
@@ -271,6 +288,8 @@
     .rf-small { width: 24px; height: 24px; font-size: 10px; opacity: 0.8; }
     .rf-small:hover { opacity: 1; }
     .rf-keep { width: 30px; height: 30px; font-size: 12px; }
+    .rf-like { width: 30px; height: 30px; font-size: 14px; }
+    .rf-like.liked { background: #6b2e3a; border-color: #c75777; color: #ffeaf0; }
     .rf-keep.kept { background: #2e6b3a; border-color: #57c777; color: #eafff0; }
     .rf-keep.kept:hover { background: #57c777; color: #04202a; }
     .rf-note { font-size: 9px; opacity: 0.6; font-style: italic; }

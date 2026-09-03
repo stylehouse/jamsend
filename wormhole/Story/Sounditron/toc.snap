@@ -36,6 +36,7 @@ story:Sounditron
       style:background-color,v:#8259c5
   Plan
   Opt
+    fail_lenient
     report
     For
     trickle
@@ -98,8 +99,7 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.34
-      sample=0.367,at=1788302877
+    TimeTotal:beliefs,avg=0.403
       sample=0.356,at=1788303020
       sample=0.517,at=1788304416
       sample=0.309,at=1788304878
@@ -109,8 +109,8 @@ story:Sounditron
       sample=0.331,at=1788329646
       sample=0.339,at=1788330491
       sample=0.27,at=1788330685
-    TimeTotal:step,avg=0.043
-      sample=0.046,at=1788302877
+      sample=0.996,at=1788434814
+    TimeTotal:step,avg=0.05
       sample=0.045,at=1788303020
       sample=0.065,at=1788304416
       sample=0.039,at=1788304878
@@ -120,6 +120,7 @@ story:Sounditron
       sample=0.041,at=1788329646
       sample=0.042,at=1788330491
       sample=0.034,at=1788330685
+      sample=0.125,at=1788434814
   step,dige:7b49494b56c4ab61
   step=2,dige:59b784f9ea897300,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine

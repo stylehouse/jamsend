@@ -1,72 +1,72 @@
 # SoundPooling_todo.md — the pool: press + reach into it, pool-first radio out, cells over it
 
-## 0. WHERE THIS IS AND WHAT TO DO NEXT (2026-09-03 night)
+## 0. THE DECISION (2026-09-03, the owner's — everything below §0 is history or machinery)
 
-**The one-paragraph state.** A pool is a declared compartment of your device's music — a `%Pool` with a
- name, a take-policy and a cap — living on the identity, stashed as the seventh pillar so a folderless
-  phone keeps it across a reload. Six policies now stand: `taste` (the likes×3/keeps×2/spins score),
-   `liked`, `kept`, `latest` (the last jam), `random` (the circulation fill: whole tracks drawn from every
-    mirrored catalog, crew and friends alike, in a clockless FNV-1a shuffle you can reshuffle with a new
-     salt), and now `radio`. A steward sits down at each track advance, turns the composition into wants
-      (`press` from your own library, `pull` from whoever holds it, `evict` what fell out of the goal), and
-       `Ra_pool_fill_wants` turns pulls into standing `%Reach` bookings. The Pool cell surfaces all of it.
-        Green Books: MusuPoolRandom, MusuPoolFill, SwarmReboot. **What was still missing was the last
-         mile — bytes actually landing — and a device with no library of its own (a Cave, a phone) could
-          not use any policy at all, because every one of them scores a tally that was empty.**
+**SoundPool is one sentence, and the sentence is the whole UI:**
 
-**THE ANSWER, and it is the owner's (2026-09-03): ride Radio + Heist, don't build a file browser.**
- *"ideally it works on top of a the Radio+Heist protocols, asking for Radio from a given area and then
-  Heisting it all. saves us building a file browser?"* — yes, and the seam turned out to be two scalars:
+> *SoundPool keeps rolling **[ 300 ] MB** of music in browser storage, sourced from **[ ] friends** (less
+>  predictable) and **[x] crew** (your devices, see Door).*
 
- - **Choosing is already solved.** The dial picks over friends' mirrors, honours the aim-lock, skips
-    what you have heard. A file browser would be a second and worse answer to a question the radio
-     already answers. So a `radio` pool does not choose: it KEEPS what the dial chose and you heard.
-      What fills your phone becomes a fact about your evening, not a filing decision.
- - **The area already has a name**: `radio.sc.aim` / `sc.aim_by`, written by `Radio_aim_at`, already
-    honoured by `Radio_dial_pool`'s aimed-vs-all split. Tune to a body, and the catch follows it.
- - **The act already exists**: the `%Heist` intent that the ⇊ button mints.
- - **The destination was one string.** `Heist_catalog_land` routes pool-ward purely on
-    `Heist_is_pool(mardir)`, and the keep chain passed `Heist_mardir(w)` — a WORLD-wide switch that
-     cannot say "this track to the pool, that one to the library" on one tab. `Heist_keep_mardir(w, keep)`
-      now lets a keep carry its own `into:'pool'`. No second lane, no new byte machinery: the machine
-       that hauls a friend's album hauls a pooled track.
+Under it, the framing: *"just whether they want surprise music in their daily playlist."* And the reason the
+ owner wants it at all: **the lofi transcode levels the volume** (verified: -14 LUFS, both serve paths).
 
- So: `Radio_pool_catch` fires at `Radio_open` — humdinger-gated, never my own track, never outside the
-  aim, never past the cap — and mints an `into:'pool'` keep. `take:'radio'` in `Ra_quarter_goal_pools`
-   makes the compartment's own contents its goal (newest kept, oldest trimmed), which is what stops
-    every OTHER pool's goal from marking the sediment "not wanted" and evicting it.
+**What the sentence means, in the machine (all built, all Book-green tonight):**
+- **The number is the consent.** 0 = off and clean out (`Ra_pool_off`: the yes taken back, budget 0, every
+   compartment dropped, every pooled card AND its file gone — `nav.bin_rm` → `Ra_pool_unfile`). A number =
+    the yes (`Ra_pool_start(w, mb, now, who)`): a `%Consent` and `budget_mb` on the %Pools shelf, and ONE
+     compartment, `rolling`, `take:'random'`, at 100% of the budget. Caps are derived (~4 MB a lofi track),
+      never set by hand. Nothing that touches bytes — the catch, the steward's press/evict, the fills — runs
+       without the yes; the yes rides the pools pillar so a phone is asked once and never wakes up pooling.
+- **The two checkboxes are `who`**: friends (mirrors of non-crew sharers — new to me), crew (mirrors of
+   my own crew — my collection spread across my devices), both, or neither. `Ra_pool_sources` marks each
+    holder crew-or-not off /Crew; `Ra_quarter_goal_pools` filters on it.
+- **"Keep what I hear" is negated** (you already heard it): random from everyone is the default draw, a
+   clockless shuffle re-drawn per salt. The `take:'radio'` catch stays built and gated, not offered.
+- **♥ is the heist button.** `Radio_like` puts a %Like on the ledger (the taste tally reads it, ×3); with a
+   share mounted the same keep the old ⇊ minted goes straight to pulling in the background (no form, no glass
+    seize); without one the Like stands for the crew or the pool to live out. A pool keep starts itself, takes
+     ONE track not the album, forced lofi (`Heist_keep_pool_go`).
+- **The seam is one scalar**: `into:'pool'` on the keep → `Heist_keep_mardir` → the same Heist transport and
+   the same landing tail (`Heist_catalog_land`'s pool branch). No second lane.
 
-**A Cave pools by default** (`Radio_pool_cave_default`). A Captain sits on a library and a folder; a Cave
- usually has neither, so its music can only ever arrive over the wire from its crew — exactly what a
-  radio pool does. The first time a Cave with no declared pools and no library of its own hears a crew
-   track, it declares one `crew` pool (radio, cap 12) as a real visible `%Pool`, not a hidden `.c` mode.
+**Gates:** MusuPoolRadio (6 beats, 11 sworn — the catch, the guards, the goal, the one sentence, the who,
+ off), MusuPoolBytes (4 beats — a keep's bytes land under pool/ and off takes them back), MusuPoolRandom,
+  MusuPoolFill, SwarmReboot (the pools pillar). `Ra_pool_defs` now lists a 0-share pool (declared but inert).
 
-**Next, in order (2026-09-03 night, after reading the byte lane end to end):**
+**What is deliberately NOT in the sentence, and why:**
+- Several compartments with fractions "in a gang" (shares, `Ra_pool_share_set`, `Ra_pool_caps_apply`) — built
+   and Book-proven, then set aside: the fair-share question it raises (an unfillable pool must not hold the
+    others back, yet should reclaim its space one day — water-filling) is real and unsolved, and one pool makes
+     it moot. It comes back on the day of *"20% chill, for your entire music collection"* — composition by
+      specifics of a remote collection.
+- Knobs (steward/fills/sit-down), want lists, ids on the face — internals. The yes IS the fills switch.
 
-1. **A radio keep must actually GO, and take only its track.** Two facts from Heist.g make the catch inert
-   as it stands: a keep sits `primed` until `Heist_keep_start` (a human button) flips it to `pulling`, and
-   seed granularity is deliberately THE WHOLE FOLDER (`Heist_keep_default_pick` keeps everything the describe
-   returned — right for an album heist, wrong for a pool of twelve tracks). So for `into:'pool'`: auto-advance
-   primed→pulling in `Heist_keep_step`, and pick exactly the seed id. Also force `lofi:1` on a pool keep —
-   the pool is the liquid lofi destination by the boundary law, and lofi is a holder-side transcode, so it
-   is also the fewer-bytes choice. Book: extend MusuPoolRadio or add MusuPoolGo.
-2. **Eviction on a Cave.** `Radio_pool_steward` is default-off and bails with no own library, so on the one
-   body that pools by default the cap just stops the catch and never rotates. Let the steward sit for any
-   body with pools declared (it only needs `evict` there), and consider on-by-default when a pool exists.
-3. **MusuPoolBytes** — a pool keep driven through `Heist_keep_pull` against a seeded holder, asserting the
-   catalog tail took the pool branch (`of:`, `grade:'ogg128'`, path under `pool/`).
-4. **Live walk on the Cave**: declare (or let it self-declare), listen to the Captain, watch for `🏊⇊`
-   lines, see a %Record appear on the pool shelf, flip the source chip to `pool` and hear it play offline.
-5. **The controls** (owner asked): the area on the source chip (`Radio_source_next`'s reserved `<friend>`
-   stop), a fill-line per compartment, one per-pool switch instead of three global knobs, ✕ stating its
-   consequence. Plus Cello as the default glass, and the 5s source-button clunk (the toggle wipes the
-   Lineup + Streams Mags and re-dials; measure before touching).
-6. **Crew, still owed**: the promoted Captain's address re-home and a durable stand-down (Crew_todo §0);
-   SwarmGot's run-to-run %Crew block ordering.
+**Next (in order):** the live walk on the Cave (declare 300 MB from crew, listen, watch `🏊` lines, flip the
+ source chip to pool, hear it play offline); the "later" half of the Like (a Cave with a disk reading the
+  crew's Likes and hauling them); "how full is it" on the sentence; the aim on the source chip as the day-one
+   "point it places"; the Radio busy-loop's cousin, Stoker_churn resetting on every dry pass.
 
+## 0.1 THE RADIO CRUX (owner, 2026-09-03 night — kept verbatim-ish; the design in §0 came out of it)
 
-*(Two mechanisms fill the pool — PRESS (passive, this doc's origin) and REACH (active/cross-body, §0.5 +
- `Reach_todo`) — and the cells (§0.5) surface both. Origin title kept below for continuity.)*
+- **The unit of consent is SPACE, not a track count.** "Aim for 3GB… or less than 1/3rd of what Chrome thinks
+   it can use." The first visit sets a byte budget; the same control must go back to **0 = off, and clean it
+    all out**. Explained in **20 words max** — "splash-with-simple-buttons", and the splash PERSISTS as the
+     top of the Pooling UI proper, it is not a one-time modal. Reached by a **separate button**, never by
+      pressing the source switcher again.
+- **"Keep what I hear" is negated.** You already heard it; the pool exists to give you what you have NOT.
+   So the default is **random**, on by default once consented — "take another random bunch of Records".
+- **The one real decision to present**: should the pool be (a) **random friends' tracks, to hear for the first
+   time**, (b) **sourced from your Crew** — your own collection, possibly spread across several devices —
+    or (c) **both**. That is the whole setup UI: budget + this choice.
+- **There is no LIKE button — it is download or nothing.** The shape it wants: a Like is a DURABLE INTENT on
+   the ledger (`%Like` under `%Jam`, which the taste tally already reads). If the liker has FSA, the Heist
+    happens on the spot into the library (lossless). If not — a Captain "with no FSA but an ear for the
+     music" — it happens LATER, when a Cave of the crew looks for things to do with ITS FSA. The crew's
+      disk fulfils the crew's ear. **Built the same night**: the ⇊ button IS the ♥ now — `Radio_like` mints the
+       Like and, with a share mounted, flips the same keep straight to pulling (dose off, no form, no glass
+        seize — the Haul cell is a folded row while it lands); without a share the Like stands on the ledger.
+         Owed: the "later" half — a Cave with a disk reading the crew's Likes and hauling them.
+
 ### (origin: the OPFS pocket cache — from ambient press to pool-first radio)
 
 **What SoundPooling is.** When you stream a friend's track over Radio today, chunks land in

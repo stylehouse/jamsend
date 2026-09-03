@@ -1,9 +1,9 @@
 Snap:H
   H:MusuPoolRadio,Run
     A:MusuPoolRadio
-      self,round=5	{"mung":["age"]}
-      w:MusuPoolRadio,now=1788400030
-        self,round=5	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
+      w:MusuPoolRadio,now=1788400040
+        self,round=6	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -14,6 +14,8 @@ Snap:H
           goaled,own_contents_are_the_goal,honest_why,trims_the_oldest_only
           reached:step_5
           caved,captain_not_wanting,bare_cave_wants,wanting_declares_nothing,the_yes_declares_one_rolling_pool,a_second_yes_only_moves_the_budget,back_to_zero_cleans_out
+          reached:step_6
+          went,folder_described,takes_the_track_not_the_album,starts_itself_lofi,narrowing_holds,human_keep_untouched
         Radio:playing,by:friendo
         MusuThem,pub:friendo
           stock,pub:friendo
@@ -26,7 +28,8 @@ Snap:H
         Record,id:own1,title:Mine
         MusuSelf,pub:me
           shop,pub:me
-            Heist:Radio One,seed:r1,pub:friendo,state:primed,into:pool,why:radio,from_name:friendo
+            Heist:Radio One,seed:r1,pub:friendo,state:pulling,into:pool,why:radio,from_name:friendo,lofi,pick_edited
+              Pick,ref:r1
             Heist:Radio Two,seed:r2,pub:friendo,state:primed,into:pool,why:radio,from_name:friendo
         MusuPool,pub:me
           stock,pub:me

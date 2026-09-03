@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'ebf90b1055878a7b~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '0e0a46fa48edf55c~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2684,6 +2684,8 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         //     The OLD auto-flip on seed-stops-playing was the shared root of BOTH bugs: a Radio track-skip nulls
         //      the playhead → the seed is no longer "playing" → the keep auto-flipped into the downloading view
         //       (and a natural track-end skipped the form the same way).  Independent of track-skip by design.
+        //  …EXCEPT a pool keep, which nobody pressed and which has no form to skip (Heist_keep_pool_go).
+        if (String(keep.sc.into || '') === 'pool') { this.Heist_keep_pool_go(keep, srcmir, seed) }
         return
     }
     if (state === 'pulling') {
@@ -3283,6 +3285,39 @@ Heist_keep_spawn_tag(keep) {
 //   Heist_keep_step does the rest next beat.  Also PERSISTS the confirmed intent (the human 2026-07-30: "a
 //    resuming heist must happen" — this is the moment the list-of-files-and-structure becomes fixed, so it's
 //     the moment worth saving; see Heist_keep_persist).
+// Heist_keep_pool_go — A POOL KEEP HAS NO FORM AND NO HUMAN, SO IT STARTS ITSELF (SoundPooling §0).
+//  primed→pulling is USER-CONFIRMED ONLY (the 2026-07-29 ruling above: the setup form must not be skipped,
+//   and a Radio track-skip must never auto-flip a keep into downloading).  That ruling is about the ⇊
+//    BUTTON — a human pressed it, so a human decides what it takes.  A radio-caught keep is the opposite
+//     act: nobody pressed anything, there is no form to skip, and the decision was already made when the
+//      pool was declared.  Gated hard on `into:'pool'`, so every human keep is untouched.
+//  It differs from the button's keep in three ways, all of them the pool's character (Heist/pool boundary,
+//   SoundPooling_todo): TAKE ONE TRACK, not the folder — Heist_keep_default_pick deliberately adopts the
+//    whole describe, which is right for an album and wrong for a compartment of twelve; take it LOFI, the
+//     liquid grade, which is also a holder-side transcode and so the fewer-bytes-on-the-wire choice; and
+//      start WITHOUT the glass hand-back Heist_keep_start performs (a pool keep must never seize the room).
+//  Reuses default_pick's substance-stamping by pruning AFTER it, rather than minting a second kind of pick.
+//   `pick_edited` then holds the narrowing against later describe answers — the pool did make a deliberate
+//    choice, which is exactly what that latch records.
+//  Returns 1 on the beat it starts, else 0.  Idempotent: once pulling, this verb is never reached again.
+Heist_keep_pool_go(keep, srcmir, seed) {
+    if (String(keep.sc.into || '') !== 'pool') { return 0 }
+    if (!keep.sc.lofi) { keep.sc.lofi = 1; keep.bump() }
+    let sid = String(seed)
+    if (!keep.o({ Pick: 1, ref: sid })[0]) { return 0 }   // the seed's own husk has not landed yet — wait
+    let cut = 0
+    for (const p of keep.o({ Pick: 1 })) {
+        if (String(p.sc.ref || '') === sid) { continue }
+        keep.drop(p)
+        cut = cut + 1
+    }
+    if (!keep.sc.pick_edited) { keep.sc.pick_edited = 1; keep.bump() }
+    keep.sc.state = 'pulling'
+    keep.bump()
+    console.log('🏊▶ pooling ' + String(keep.sc.Heist || sid).slice(0, 32) + ' — one track, lofi' + (cut ? ' (' + cut + ' folder sibling(s) left behind — a pool takes the track, not the album)' : ''))
+    return 1
+
+},
 async Heist_keep_start(keep) {
     let s = keep.sc.state || 'primed'
     if (s === 'primed' || s === 'wanted' || s === 'asking') {

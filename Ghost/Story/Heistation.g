@@ -5947,7 +5947,7 @@ MusuPoolRadio_keeps(w):
 
 async MusuPoolRadio_drive(w, req):
     let run = (this.c.run)
-    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 5 }
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 6 }
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
@@ -5955,6 +5955,7 @@ async MusuPoolRadio_drive(w, req):
         if (n === 3) { await this.MusuPoolRadio_guards(w) }
         if (n === 4) { await this.MusuPoolRadio_goal(w) }
         if (n === 5) { await this.MusuPoolRadio_cave(w) }
+        if (n === 6) { await this.MusuPoolRadio_go(w) }
     }
     this.MusuPoolRadio_witness(w)
     await this.Musu_float(w)
@@ -5965,6 +5966,7 @@ async MusuPoolRadio_drive(w, req):
 async MusuPoolRadio_stand(w):
     this.MusuPoolRadio_note(w, { reached: 'step_2' })
     w.sc.now = 1788400000
+    w.c.ra_pub = 'me'          // pin the world's identity so the fixture is the same on any runner tab
     let radio = w.i({ Radio: 'playing' })
     radio.c.up = w
     radio.c.w = w
@@ -5979,9 +5981,11 @@ async MusuPoolRadio_stand(w):
     mine.c.up = w
     delete radio.sc.by
     if (this.MusuPoolRadio_catch(w, radio, mine) === 0 && !this.MusuPoolRadio_keeps(w).length) { row.own_track_never_caught = 1 }
-    // a friend's track
+    // a friend's track — but the device has not said yes: nothing is caught, however it is declared
     radio.sc.by = 'friendo'
     let r1 = this.Ra_rec_find(them, { Record: 1, id: 'r1' })
+    if (this.MusuPoolRadio_catch(w, radio, r1) === 0 && !this.MusuPoolRadio_keeps(w).length && !this.Ra_pool_consent(w)) { row.refused_without_consent = 1 }
+    this.Ra_pool_consent_give(w, w.sc.now)
     let got = this.MusuPoolRadio_catch(w, radio, r1)
     let keeps = this.MusuPoolRadio_keeps(w)
     if (got === 1 && keeps.length === 1) { row.one_keep = 1 }
@@ -6045,19 +6049,20 @@ async MusuPoolRadio_goal(w):
     w.c.goaled = 1
     this.MusuPoolRadio_note(w, row)
 
-// beat 5 — the bare Cave.  A Captain sits on a library and a folder and chooses its own composition; a
-//  Cave usually has neither, so every take-policy scores an empty tally and it can never pool at all.
-//   Its music arrives over the wire from its crew — which is what a radio pool is.  So a Cave with no
-//    pools and no library declares one, ONCE, as a real visible %Pool it can resize or drop.
+// beat 5 — the bare Cave, and the consent.  A Captain sits on a library and a folder and chooses its own
+//  composition; a Cave usually has neither, so it WANTS pooling — but wanting declares nothing.  Pooling
+//   writes bytes into browser storage on a phone that may already be short of room, so the device must
+//    say yes once, and only that yes (Ra_pool_start) turns the want into a declared crew pool.  The yes
+//     rides the pools pillar and can be taken back.
 async MusuPoolRadio_cave(w):
     this.MusuPoolRadio_note(w, { reached: 'step_5' })
     if (!w.c.goaled) { return }
     w.sc.now = 1788400030
     let row = { caved: 1 }
-    // a Captain is never defaulted for — it declares its own
-    if (!this.Radio_pool_cave_default(w, null).length) { row.captain_left_alone = 1 }
+    if (!this.Radio_pool_wanted(w, null)) { row.captain_not_wanting = 1 }
     let w2 = w.i({ w: 'MusuPoolRadioCave' })
     w2.c.up = w
+    w2.c.ra_pub = 'cavey'
     let acct = w2.oai({ Account: 1, of: 'Cavey' })
     acct.c.up = w2
     let ckeys = await this.Swarm_mint_keys('MusuPoolRadio-Cap')
@@ -6067,10 +6072,61 @@ async MusuPoolRadio_cave(w):
     this.Swarm_crew_join(cave, String(ckeys.pub))
     this.Swarm_crew_row(cave, String(ckeys.prepub), 'Captain', String(ckeys.pub))
     this.Swarm_crew_row(cave, String(vkeys.prepub), 'Cave', String(vkeys.pub))
-    let made = this.Radio_pool_cave_default(w2, cave)
-    if (made.length === 1 && String(made[0].name) === 'crew' && String(made[0].take) === 'radio' && Number(made[0].cap) === 12) { row.bare_cave_declares_one = 1 }
-    let again = this.Ra_pool_defs(w2, 0).filter((p) => p.name)
-    if (again.length === 1) { row.declared_once_not_every_track = 1 }
+    if (this.Radio_pool_wanted(w2, cave) === 1) { row.bare_cave_wants = 1 }
+    if (!this.Ra_pool_consent(w2) && !this.Ra_pool_defs(w2, 0).filter((p) => p.name).length) { row.wanting_declares_nothing = 1 }
+    // the one sentence: 3000 MB, from crew — one rolling random compartment at 100% of the budget
+    let made = this.Ra_pool_start(w2, 3000, 1788400030, 'crew')
+    let defs = this.Ra_pool_defs(w2, 0).filter((p) => p.name)
+    let shape = defs.map((d) => d.name + ':' + d.take + ':' + d.who + ':' + d.share + ':' + d.cap).join(' ')
+    if (made === 1 && this.Ra_pool_consent(w2) === 1 && this.Ra_pool_budget(w2) === 3000 && shape === 'rolling:random:crew:100:750') { row.the_yes_declares_one_rolling_pool = 1 }
+    if (this.Ra_pool_start(w2, 1000, 1788400031, 'all') === 0 && this.Ra_pool_budget(w2) === 1000 && this.Ra_pool_who(w2) === 'all' && this.Ra_pool_defs(w2, 0).filter((p) => p.name)[0].cap === 250) { row.a_second_yes_only_moves_the_budget = 1 }
+    // the one real decision: friends only / crew only / both — Cap's shelf is crew, a stranger's is not
+    let cstock = this.Ra_home_them(w2, String(ckeys.prepub))
+    for (const id of ['cap1', 'cap2']) { let r = cstock.i({ Record: 1, id: id }); r.c.up = cstock }
+    let fstock = this.Ra_home_them(w2, 'strangerfriend')
+    for (const id of ['fr1', 'fr2']) { let r = fstock.i({ Record: 1, id: id }); r.c.up = fstock }
+    let src = this.Ra_pool_sources(w2)
+    let lib2 = w2.i({ Library: 1, name: 'lib2' })
+    lib2.c.up = w2
+    let ids = (who) => this.Ra_quarter_goal_pools(lib2, [{ name: 'x', take: 'random', cap: 9, salt: '', who: who }], src, null).map((g) => String(g.id)).sort().join(' ')
+    if (src.filter((s) => s.crew).length === 2 && ids('crew') === 'cap1 cap2' && ids('friends') === 'fr1 fr2' && ids('all') === 'cap1 cap2 fr1 fr2') { row.friends_crew_or_both = 1 }
+    let off = await this.Ra_pool_off(w2)
+    if (off.pools === 1 && !this.Ra_pool_consent(w2) && this.Ra_pool_budget(w2) === 0 && !this.Ra_pool_defs(w2, 0).filter((p) => p.name).length) { row.back_to_zero_cleans_out = 1 }
+    this.MusuPoolRadio_note(w, row)
+
+// beat 6 — the keep starts ITSELF, and takes one track.  primed→pulling is user-confirmed only, by a
+//  ruling about the ⇊ button (a human pressed it, so a human decides what it takes).  A radio-caught keep
+//   is the opposite act: nobody pressed anything and there is no form to skip.  It also differs in what it
+//    takes — Heist_keep_default_pick adopts the WHOLE describe, right for an album and wrong for a
+//     compartment of twelve — and in grade: lofi, the liquid one, which is a holder-side transcode and so
+//      the fewer-bytes-on-the-wire choice too.  A keep with no into: must be left exactly alone.
+async MusuPoolRadio_go(w):
+    this.MusuPoolRadio_note(w, { reached: 'step_6' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788400040
+    let shop = this.Ra_home_shop(w, this.MusuPoolRadio_me(w))
+    let row = { went: 1 }
+    let k = shop.o({ Heist: 1, seed: 'r1' })[0]
+    if (!k) { this.MusuPoolRadio_note(w, row); return }
+    // the describe landed a whole folder — the seed and two siblings
+    for (const ref of ['r1', 'r2', 'r3']) {
+        if (k.o({ Pick: 1, ref: ref })[0]) { continue }
+        let p = k.i({ Pick: 1, ref: ref })
+        p.c.up = k
+    }
+    if (k.o({ Pick: 1 }).length === 3 && String(k.sc.state) === 'primed') { row.folder_described = 1 }
+    let went = this.Heist_keep_pool_go(k, null, 'r1')
+    let picks = k.o({ Pick: 1 })
+    if (went === 1 && picks.length === 1 && String(picks[0].sc.ref) === 'r1') { row.takes_the_track_not_the_album = 1 }
+    if (String(k.sc.state) === 'pulling' && String(k.sc.lofi || '') === '1') { row.starts_itself_lofi = 1 }
+    if (String(k.sc.pick_edited || '') === '1') { row.narrowing_holds = 1 }
+    // a keep nobody marked for the pool is untouched — the human's ruling stands
+    let plain = shop.i({ Heist: 'plain', seed: 'p9', pub: 'friendo', state: 'primed' })
+    plain.c.up = shop
+    let pp = plain.i({ Pick: 1, ref: 'p9' })
+    pp.c.up = plain
+    if (this.Heist_keep_pool_go(plain, null, 'p9') === 0 && String(plain.sc.state) === 'primed' && !plain.sc.lofi) { row.human_keep_untouched = 1 }
+    shop.drop(plain)
     this.MusuPoolRadio_note(w, row)
 
 MusuPoolRadio_witness(w):
@@ -6081,6 +6137,8 @@ MusuPoolRadio_witness(w):
     let c = T.o({ caved: 1 })[0]
     if (s && +s.sc.one_keep === 1 && +s.sc.keep_says_pool === 1 && +s.sc.own_track_never_caught === 1 && +s.sc.catching_twice_is_once === 1)
         this.story_swear(w, 'a radio pool does not choose — it keeps what the dial already chose and I already heard — as the same Heist intent the keep button mints, wearing into:pool')
+    if (s && +s.sc.refused_without_consent === 1 && +s.sc.one_keep === 1)
+        this.story_swear(w, 'nothing touches bytes before the device has said yes — a declared pool catches nothing until the consent stands — and catches the very next track once it does')
     if (s && +s.sc.same_shape_as_the_button === 1 && g && +g.sc.one_scalar_routes_it === 1)
         this.story_swear(w, 'one scalar is the whole seam — a keep that says into:pool lands on the pool shelf and every keep that does not still takes the world’s own answer — so no existing heist moves an inch')
     if (g && +g.sc.aim_confines_the_catch === 1 && +g.sc.aim_lifted_catches_again === 1)
@@ -6089,5 +6147,148 @@ MusuPoolRadio_witness(w):
         this.story_swear(w, 'the cap counts keeps in flight as well as tracks landed — so an evening of radio can never mint a hundred standing claims on somebody else’s wire')
     if (o && +o.sc.own_contents_are_the_goal === 1 && +o.sc.honest_why === 1 && +o.sc.trims_the_oldest_only === 1)
         this.story_swear(w, 'the sediment is safe — a radio compartment’s goal is what it already holds — so the steward trims the oldest catch and never evicts the evening')
-    if (c && +c.sc.captain_left_alone === 1 && +c.sc.bare_cave_declares_one === 1 && +c.sc.declared_once_not_every_track === 1)
-        this.story_swear(w, 'a Captain chooses its own composition — but a Cave with no library and no pools declares one visible crew pool the first time it hears its crew — and only ever once')
+    if (c && +c.sc.captain_not_wanting === 1 && +c.sc.bare_cave_wants === 1 && +c.sc.wanting_declares_nothing === 1)
+        this.story_swear(w, 'a Captain chooses its own composition — a Cave with no library wants pooling — and wanting declares nothing on its own')
+    if (c && +c.sc.the_yes_declares_one_rolling_pool === 1 && +c.sc.a_second_yes_only_moves_the_budget === 1)
+        this.story_swear(w, 'the unit of consent is space — the yes sets how many megabytes keep rolling and where from — and a second yes only moves the number and the where')
+    if (c && +c.sc.friends_crew_or_both === 1)
+        this.story_swear(w, 'the one real decision is who the pool draws from — random friends’ tracks to hear for the first time — my own crew’s collection spread across its devices — or both')
+    if (c && +c.sc.back_to_zero_cleans_out === 1)
+        this.story_swear(w, 'the budget goes back to zero — the yes is taken back — every compartment and every pooled card goes with it')
+    let gg = T.o({ went: 1 })[0]
+    if (gg && +gg.sc.folder_described === 1 && +gg.sc.takes_the_track_not_the_album === 1 && +gg.sc.narrowing_holds === 1)
+        this.story_swear(w, 'a pool takes the track and not the album — the describe may land a whole folder but the compartment keeps the one that played — and the narrowing holds against every later answer')
+    if (gg && +gg.sc.starts_itself_lofi === 1 && +gg.sc.human_keep_untouched === 1)
+        this.story_swear(w, 'nobody pressed anything so there is no form to skip — a pool keep starts itself and takes the lofi grade — while a keep a human minted still waits for that human’s start')
+
+// ══ MusuPoolBytes — THE LAST MILE: a pool keep's bytes LAND, and "off" gives the space back ═══════════════
+//  Every other pool Book proves intent particles and catalog rows.  This one drives the ONE landing tail the
+//   keep chain ends in (Heist_land, with the destination Heist_keep_mardir reads off the keep) against a real
+//    censused source on the share, and asserts what the person cares about: a %Record on the POOL shelf, the
+//     file readable under pool/…, and — the owner's "0 = off and clean it all out" — Ra_pool_off taking the
+//      file with the card (nav.bin_rm, new tonight; before it, off was a catalog act and the bytes stayed).
+//  Skips honestly on a runner with no writable share (the MusuLossy idiom).  Own marrauding dir, swept at start.
+//  CONVENTION (Musu*): the world MUST be named MusuPoolBytes.
+MusuPoolBytes(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuPoolBytes_drive,w,req
+        req%ok = 1
+
+MusuPoolBytes_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuPoolBytes_note(w, sc):
+    let t = this.MusuPoolBytes_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async MusuPoolBytes_drive(w, req):
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!this.MusuPoolBytes_T(w).oa({ skipped: 'no_writable_share' })) this.MusuPoolBytes_note(w, { skipped: 'no_writable_share' })
+        return
+    }
+    let run = (this.c.run)
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 4 }
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.MusuPoolBytes_seed(w, nav) }
+        if (n === 3) { await this.MusuPoolBytes_land(w, nav) }
+        if (n === 4) { await this.MusuPoolBytes_off(w, nav) }
+    }
+    this.MusuPoolBytes_witness(w)
+    await this.Musu_float(w)
+
+// beat 2 — a source on the share: one tagged WAV planted in the Book's own marrauding dir and censused, so
+//  its card wears a path and whole-file chunks with cids — exactly what a friend's mirror holds mid-pull.
+async MusuPoolBytes_seed(w, nav):
+    this.MusuPoolBytes_note(w, { reached: 'step_2' })
+    w.sc.now = 1788400100
+    w.c.ra_pub = 'me'
+    w.c.ra_nav = nav
+    this.Ra_seed(w, 'MusuPoolBytes')
+    let root = this.Heist_marrauding('MusuPoolBytes', 'shop')
+    w.c.root = root
+    await this.Heist_sweep(nav, this.Heist_meta_dir() + '/test-marrauding-of-MusuPoolBytes')
+    await this.Heist_sweep(nav, 'pool/MusuPoolBytes')
+    let sr = 8000
+    let nsamp = 4000
+    let pcm = new Float32Array(nsamp)
+    let i = 0
+    while (i < nsamp) { pcm[i] = Math.sin(2 * Math.PI * 220 * i / sr) * 0.5; i = i + 1 }
+    let wav = this.Crate_wav_with_tags(pcm, sr, { artist: 'Pool Source', title: 'Rolling One', album: 'MusuPoolBytes' })
+    await nav.bin_write(root, 'MusuPoolBytes/Pool Source - Rolling One.wav', wav)
+    let src = this.Ra_home_them(w, 'friendo')
+    w.c.src = src
+    await this.expecting(w, 'bytes_census', 60, async () => {
+        let cen = await this.Heist_census(w, src, nav, root, null)
+        let rec = this.Ra_recs(src).find((r) => String(r.sc.artist) === 'Pool Source')
+        let row = { seeded: 1, censused: cen.built + cen.stood }
+        if (rec && rec.sc.path && +(rec.sc.total || 0) > 0 && rec.sc.body_hash) { row.source_card_has_path_and_body = 1 }
+        w.c.rec = rec
+        w.c.seeded = 1
+        this.MusuPoolBytes_note(w, row)
+    })
+
+// beat 3 — the landing.  A keep wearing into:'pool' decides the destination (Heist_keep_mardir); Heist_land is
+//  the SAME verb the album heist ends in.  What must be true after: a %Record on the pool shelf (of: the
+//   source id, path pool-relative), the file readable under pool/…, and NOTHING on the library shelf.
+async MusuPoolBytes_land(w, nav):
+    this.MusuPoolBytes_note(w, { reached: 'step_3' })
+    if (!w.c.seeded || !w.c.rec) { return }
+    w.sc.now = 1788400110
+    let rec = w.c.rec
+    let shop = this.Ra_home_shop(w, 'me')
+    let keep = shop.i({ Heist: 'Rolling One', seed: String(rec.sc.id), pub: 'friendo', state: 'pulling', into: 'pool', why: 'radio' })
+    keep.c.up = shop
+    let job = this.Heist_job(w, 'friendo', {}, { home: shop, seed: String(rec.sc.id) })
+    let pool = this.Ra_home_pool(w, 'me')
+    let lib = this.Ra_home_self(w, 'me')
+    let mardir = this.Heist_keep_mardir(w, keep)
+    let row = { landed: 1, mardir: mardir }
+    try { await this.Heist_land(w, nav, job, pool, w.c.src, rec, mardir) } catch (e) { row.land_threw = String(e).slice(0, 80) }
+    let card = this.Ra_recs(pool)[0]
+    if (mardir === 'pool' && card && String(card.sc.path || '')) { row.card_on_the_pool_shelf = 1; w.c.card_path = String(card.sc.path) }
+    if (!this.Ra_recs(lib).length) { row.nothing_on_the_library_shelf = 1 }
+    if (card && card.sc.path) {
+        let parts = String(card.sc.path).split('/').filter(Boolean)
+        let fname = parts.pop()
+        let bytes = await nav.bin_read('pool' + (parts.length ? '/' + parts.join('/') : ''), fname)
+        if (bytes && bytes.byteLength > 0) { row.file_under_pool = 1 }
+    }
+    w.c.landed = 1
+    this.MusuPoolBytes_note(w, row)
+
+// beat 4 — off means the space comes back.  Consent given and taken in one beat: Ra_pool_off drops the card
+//  AND the file (Ra_pool_unfile → nav.bin_rm) — a re-read under pool/… finds nothing.
+async MusuPoolBytes_off(w, nav):
+    this.MusuPoolBytes_note(w, { reached: 'step_4' })
+    if (!w.c.landed) { return }
+    w.sc.now = 1788400120
+    this.Ra_pool_start(w, 300, 1788400120, 'crew')
+    let before = this.Ra_recs(this.Ra_home_pool(w, 'me')).length
+    let out = await this.Ra_pool_off(w)
+    let row = { offed: 1, before: before }
+    if (before === 1 && out.records === 1 && out.files === 1 && !this.Ra_recs(this.Ra_home_pool(w, 'me')).length) { row.card_and_file_gone = 1 }
+    if (w.c.card_path) {
+        let parts = String(w.c.card_path).split('/').filter(Boolean)
+        let fname = parts.pop()
+        let bytes = await nav.bin_read('pool' + (parts.length ? '/' + parts.join('/') : ''), fname)
+        if (!bytes) { row.nothing_left_under_pool = 1 }
+    }
+    if (!this.Ra_pool_consent(w) && this.Ra_pool_budget(w) === 0) { row.back_to_zero = 1 }
+    this.MusuPoolBytes_note(w, row)
+
+MusuPoolBytes_witness(w):
+    let T = this.MusuPoolBytes_T(w)
+    let s = T.o({ seeded: 1 })[0]
+    let l = T.o({ landed: 1 })[0]
+    let o = T.o({ offed: 1 })[0]
+    if (s && +s.sc.source_card_has_path_and_body === 1 && l && +l.sc.card_on_the_pool_shelf === 1 && +l.sc.file_under_pool === 1 && +l.sc.nothing_on_the_library_shelf === 1)
+        this.story_swear(w, 'the last mile — a keep that says into:pool lands its bytes under pool and its card on the pool shelf through the very same landing the album heist ends in — and nothing touches the library')
+    if (o && +o.sc.card_and_file_gone === 1 && +o.sc.nothing_left_under_pool === 1 && +o.sc.back_to_zero === 1)
+        this.story_swear(w, 'off means the space comes back — the yes is taken — the budget is zero — and every pooled card goes with its file')

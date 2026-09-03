@@ -4,14 +4,15 @@ story:MusuPoolRadio
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.024
-      sample=0.028,at=1788424935
-      sample=0.02,at=1788425086
-    TimeTotal:step,avg=0.005
-      sample=0.006,at=1788424935
-      sample=0.004,at=1788425086
+    TimeTotal:beliefs,avg=0.073
+      sample=0.107,at=1788432734
+      sample=0.039,at=1788432754
+    TimeTotal:step,avg=0.012
+      sample=0.018,at=1788432734
+      sample=0.006,at=1788432754
   step,dige:a9ab66df494fe28f
-  step=2,dige:b2482fafca11ad11
-  step=3,dige:14a226b3fc7f4e94
-  step=4,dige:969bb67d5f4039ed
-  step=5,dige:c39ca272137bffa9
+  step=2,dige:c54fb2e62b31873a
+  step=3,dige:d8729228cc19b418
+  step=4,dige:3b0d7b3a64c2f3de
+  step=5,dige:cef7f3dad0a0acec
+  step=6,dige:1e64ecdf843fd6cc

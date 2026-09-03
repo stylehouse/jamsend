@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '51d972655fe1e427~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'a1f779bea7b42edb~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -3845,14 +3845,22 @@ Swarm_restash_pools(ident, from, st0) {
         if (p.sc.take) { e.take = String(p.sc.take) }
         if (p.sc.cap) { e.cap = String(p.sc.cap) }
         if (p.sc.salt) { e.salt = String(p.sc.salt) }
+        if (p.sc.who) { e.who = String(p.sc.who) }
+        if (p.sc.share) { e.share = String(p.sc.share) }
         rows.push(e)
     }
-    if (!rows.length) {
+    // the consent rides the pillar too (Ra_pool_consent): a phone that said yes must not be asked again
+    //  after every reload — and one that never said yes must not wake up pooling.
+    let consent = shelf ? shelf.o({ Consent: 1 })[0] : null
+    if (!rows.length && !consent) {
         if (st.Swarm_pools) { delete st.Swarm_pools[ident.sc.prepub] }
         return 0
     }
     if (!st.Swarm_pools) { st.Swarm_pools = {} }
-    st.Swarm_pools[ident.sc.prepub] = { rows: rows }
+    let entry = { rows: rows }
+    if (consent) { entry.consent = String(consent.sc.at || '1') }
+    if (shelf && shelf.sc.budget_mb) { entry.budget_mb = String(shelf.sc.budget_mb) }
+    st.Swarm_pools[ident.sc.prepub] = entry
     return rows.length
 },
 // Swarm_pools_rehydrate — re-declare the compartments on the identity's %Pools shelf, in their stashed
@@ -3864,6 +3872,8 @@ Swarm_pools_rehydrate(w, ident, st0) {
     if (!mine || !ident) { return 0 }
     let shelf = ident.oai({ Pools: 1 })
     shelf.c.up = ident
+    if (mine.consent) { let c = shelf.oai({ Consent: 1 }); c.c.up = shelf; if (!c.sc.at && mine.consent !== '1') { c.sc.at = String(mine.consent) } }
+    if (mine.budget_mb && String(shelf.sc.budget_mb || '') !== String(mine.budget_mb)) { shelf.sc.budget_mb = String(mine.budget_mb) }
     let n = 0
     for (const e of (mine.rows || [])) {
         if (!e || !e.name) { continue }
@@ -3872,6 +3882,8 @@ Swarm_pools_rehydrate(w, ident, st0) {
         if (e.take && String(p.sc.take || '') !== String(e.take)) { p.sc.take = String(e.take) }
         if (e.cap && String(p.sc.cap || '') !== String(e.cap)) { p.sc.cap = String(e.cap) }
         if (e.salt && String(p.sc.salt || '') !== String(e.salt)) { p.sc.salt = String(e.salt) }
+        if (e.who && String(p.sc.who || '') !== String(e.who)) { p.sc.who = String(e.who) }
+        if (e.share && String(p.sc.share || '') !== String(e.share)) { p.sc.share = String(e.share) }
         p.bump()
         n = n + 1
     }

@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { calm_watch } from "./calm"
+    calm_watch()   // measure the fps once; under ~40 the glow below is switched off (calm.ts)
     import { lifewatch } from './micro/lifetell'   // DIAGNOSTIC — strip with the rest of the remount probes
     import InvitePanel from './InvitePanel.svelte'
     import DeleteX from './micro/DeleteX.svelte'   // the confirmey delete (arm → "forget?" → confirm)
@@ -634,21 +636,8 @@
                     {/each}
                 </div>
             {/if}
-            {#if face.flows && face.flows.length}
-                <!-- THE PLOT's MAG-FLOWS (owner 2026-09-01, "the Plot is that box with all the semantics
-                     filled in"): the standing %Reach rows as arrows between bodies — what's crossing right
-                     now.  from → to · the Mag · a state glyph (⋯ booked · ↯ serving · ✓ arrived · ⚠ refused).
-                     First cut of the flow-map; refine the lane layout live. -->
-                <div class="df-flows" title="Mag-flows between your bodies — SoundPoolings in motion">
-                    {#each face.flows as fl (fl.fromName + fl.of + fl.toName)}
-                        <div class="df-flow" class:serving={fl.state === 'serving'} class:arrived={fl.state === 'arrived'} class:refused={fl.state === 'refused'}>
-                            <span class="df-flow-glyph">{fl.glyph}</span>
-                            <span class="df-flow-ends">{fl.fromName} <span class="df-flow-arrow">→</span> {fl.toName}</span>
-                            {#if fl.of}<span class="df-flow-of">{fl.of}</span>{/if}
-                        </div>
-                    {/each}
-                </div>
-            {/if}
+            <!-- (a "Mag-flows" arrow list of standing %Reach rows lived here 2026-09-01→03 — removed on the
+                 owner's call: "this div.df-flows is total hallucination".  The %Reach rows are real; the framing was not.) -->
             {#if cave_piers.length}
                 <div class="df-caves">
                     {#each cave_piers as f (f.pub)}
@@ -902,7 +891,6 @@
         font-size: 9px; opacity: 0.65; font-family: monospace; margin-left: 6px;
         color: #9fc9b4; letter-spacing: 0;
     }
-    .df-flows { display: flex; flex-direction: column; gap: 2px; margin-top: 5px; width: 100%; }
     .df-flow {
         display: flex; align-items: center; gap: 6px; font-size: 11px;
         opacity: 0.75; white-space: nowrap;
@@ -971,4 +959,7 @@
         font-size: 8px; color: #8a7a94; text-align: left; padding: 0;
     }
     .df-more:hover { color: #cbb8d8; }
+    /* CALM (calm.ts, owner 2026-09-03: the glowy effects lag a slow page) — when <html data-calm> is
+       stamped, every animation and filter halo in this face stops; the layout is untouched. */
+    :global(html[data-calm]) * { animation: none !important; filter: none !important; box-shadow: none !important; }
 </style>

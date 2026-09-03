@@ -7,7 +7,7 @@ Snap:H
         req:wrangle,eternal,ok
         testing
           reached:step_2
-          stood,own_track_never_caught,one_keep,keep_says_pool,same_shape_as_the_button,catching_twice_is_once
+          stood,own_track_never_caught,refused_without_consent,one_keep,keep_says_pool,same_shape_as_the_button,catching_twice_is_once
           reached:step_3
           guarded,one_scalar_routes_it,aim_confines_the_catch,aim_lifted_catches_again,cap_counts_intent
         Radio:playing,by:friendo
@@ -18,8 +18,9 @@ Snap:H
             Record,id:r3,title:Radio Three
         Pools
           Pool,name:heard,take:radio,cap:2
+          Consent,at:1788400000
         Record,id:own1,title:Mine
-        MusuSelf,pub:e747cbed6a9ca919
-          shop,pub:e747cbed6a9ca919
+        MusuSelf,pub:me
+          shop,pub:me
             Heist:Radio One,seed:r1,pub:friendo,state:primed,into:pool,why:radio,from_name:friendo
             Heist:Radio Two,seed:r2,pub:friendo,state:primed,into:pool,why:radio,from_name:friendo

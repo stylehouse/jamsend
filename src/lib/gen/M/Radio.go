@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '7cad8b8045a8e0c5~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '45b06ed5960f22d7~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1146,12 +1146,12 @@ Radio_pool_catch(w, radio, rec) {
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c || !top.c.humdinger) { return 0 }
     if (!w || !rec) { return 0 }
+    if (!this.Ra_pool_consent(w)) { return 0 }        // nothing touches bytes before the device said yes
     let by = String(radio.sc.by || '')
     if (!by) { return 0 }                       // my own track — already held
     let aim = String(radio.sc.aim || '')
     if (aim && !String(by).startsWith(aim) && !String(aim).startsWith(by)) { return 0 }
     let pools = this.Ra_pool_defs(w, 0).filter((p) => p.name && String(p.take) === 'radio')
-    if (!pools.length) { pools = this.Radio_pool_cave_default(w) }
     if (!pools.length) { return 0 }
     let cap = 0
     for (const p of pools) { cap = cap + (+p.cap || 0) }
@@ -1179,33 +1179,26 @@ Radio_pool_catch(w, radio, rec) {
     return 1
 
 },
-// Radio_pool_cave_default — A CAVE POOLS BY DEFAULT (owner 2026-09-03: "it says my SoundPool is empty,
-//  we've been in the Crew for 10m but we are the Cave… the Cave should SoundPool to the Captain right?").
-//   Right — and a Cave is the one body where the default is unambiguous.  A Captain sits on a library and
-//    a folder; a Cave typically has NEITHER (a phone: no share, no MusuSelf, nothing to press from), so
-//     every existing take-policy scores an empty tally and the steward's own guard bails before it starts.
-//      Its music can only ever arrive over the wire from its crew — which is exactly what a radio pool
-//       does.  So the first time a Cave with no declared pools and no library of its own hears a track
-//        from its crew, it starts keeping: one compartment, capped, droppable with the ✕ like any other.
-//  Declared, not hidden: it lands as a real %Pool the human can see, resize, retake or drop in the Pool
-//   cell, and it is stashed with the pools pillar — never a silent `.c` mode.
-//  Returns the fresh defs (or [] when this body is not a Cave, or already has a library, or already
-//   declared something).  Called ONLY from Radio_pool_catch, which is humdinger-gated above.
-Radio_pool_cave_default(w, who) {
-    if (this.Ra_pool_defs(w, 0).filter((p) => p.name).length) { return [] }
+// Radio_pool_wanted — WOULD THIS BODY BENEFIT FROM POOLING?  (owner 2026-09-03: "the Cave should SoundPool
+//  to the Captain right?" — and then: "we should get consent to start SoundPooling… it'll start putting big
+//   files in an obscure location on their phone, which might be low on space already").  So this verb
+//    DECLARES NOTHING.  It answers a question the surfaces ask: a Cave — crew, not the Captain — with no
+//     library of its own can only ever get music over the wire from its crew, which is what a radio pool is.
+//      The source chip reads it to say "needs setup"; the Pool cell reads it to offer the crew preset; and
+//       Ra_pool_start, the consent act, is the only thing that turns a yes into a declared pool.
+//  `who` lets a Book name the identity; live, the tab's own self answers.
+Radio_pool_wanted(w, who) {
     let M = this.top_House()
     let ident = who || (M.Swarm_live_self ? M.Swarm_live_self() : null)
-    if (!ident || !M.Swarm_captain_here) { return [] }
-    if (M.Swarm_captain_here(ident)) { return [] }        // a Captain chooses its own composition
+    if (!ident || !M.Swarm_captain_here) { return 0 }
+    if (M.Swarm_captain_here(ident)) { return 0 }
     let crew = ident.o({ Crew: 1 })[0]
-    if (!crew || !crew.o({ mate: 1 }).length) { return [] }
+    if (!crew || !crew.o({ mate: 1 }).length) { return 0 }
     let me = this.Radio_pub(w) || 'me'
     let lhome = w.o({ MusuSelf: 1, pub: me })[0]
     let lib = lhome ? lhome.o({ stock: 1, pub: me })[0] : null
-    if (lib && this.Ra_recs(lib).length) { return [] }    // it has its own music — not a bare Cave
-    this.Ra_pool_define(w, 'crew', 'radio', 12)
-    console.log('🏊 a Cave with no library of its own — declaring a \'crew\' pool (radio, 12): what your crew plays here, this phone keeps')
-    return this.Ra_pool_defs(w, 0).filter((p) => p.name && String(p.take) === 'radio')
+    if (lib && this.Ra_recs(lib).length) { return 0 }
+    return 1
 
 },
 // Radio_friendly — a source pub → the friend's chosen name (%Pier.friendly under my Peering), the SAME
@@ -1398,6 +1391,12 @@ Radio_render_note(radio, gat) {
 
 //#region dial — pick the next record off the shelf, FRESH first (the stoker keeps it stocked)
 Radio_pub(w) {
+    // A WORLD MAY PIN ITS OWN IDENTITY (2026-09-03).  Every other world-scoped fact the music layer
+    //  needs is already pinnable on `.c` — `w.c.ra_nav`, `w.c.mardir` — but the pub was always resolved
+    //   from the LIVE self, so a Book's shelves ended up keyed by whichever runner tab happened to run it
+    //    and its fixture would not verify on a second tab (caught exactly that way: `shop,pub:e747cbed…`
+    //     against `shop,pub:da060c94…`).  A pinned world answers for itself; a live one is unchanged.
+    if (w && w.c && w.c.ra_pub) { return String(w.c.ra_pub) }
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
     // the prepub rides sc (Clustation_concrete) — c.keys is {pub, key} only, so the old
@@ -1457,12 +1456,28 @@ Radio_dial_pool_local(w, radio, retry) {
 async Radio_pool_steward(w, radio) {
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c || !top.c.humdinger) { return null }
-    if (!top.c.pool_steward) { return null }
+    if (!this.Ra_pool_consent(w)) { return null }     // nothing touches bytes before the device said yes
     if (top.c.pool_steward_busy) { return null }
     let pub = this.Radio_pub(w) || 'me'
     let lhome = w.o({ MusuSelf: 1, pub: pub })[0]
     let lib = lhome ? lhome.o({ stock: 1, pub: pub })[0] : null
-    if (!lib || !this.Ra_recs(lib).length) { return null }
+    let held = lib ? this.Ra_recs(lib).length : 0
+    // DECLARING A POOL IS THE CONSENT (2026-09-03 — MusuPoolRandom already says this in a sworn sentence;
+    //  it just was not true of the steward yet).  Two different acts were sharing one default-off knob:
+    //   · the AMBIENT PRESS over your own library into an undeclared taste-pool — nobody asked for that,
+    //      so it stays behind `top.c.pool_steward` exactly as before;
+    //   · keeping a compartment YOU DECLARED at the cap YOU SET — that is not an extra liberty, it is the
+    //      declaration's whole meaning.  A cap that never evicts is not a cap.
+    //  This mattered most on the one body that pools by default: a bare Cave has no library, so the
+    //   own-library bail below returned before the steward could ever evict, and its pool would fill to
+    //    the cap and then simply stop — the radio catch stops catching and nothing ever rotates out.
+    let declared = this.Ra_pool_defs(w, 0).filter((p) => p.name).length
+    if (!declared && !top.c.pool_steward) { return null }
+    if (!held && !declared) { return null }
+    // no MusuSelf at all (the bare Cave) — stand my own empty shelf, the same one Radio_dial stands, so
+    //  the goal/diff pass has a lib to read: with nothing held, every want is a 'pull' and the only work
+    //   the serve loop finds is the eviction the cap is asking for.
+    if (!lib) { lib = this.Ra_home_self(w, pub) }
     let nav = w.c.ra_nav || (this.Crate_nav ? this.Crate_nav() : null)
     if (!nav) { return null }
     let pool = this.Ra_home_pool(w, pub)
@@ -1474,7 +1489,8 @@ async Radio_pool_steward(w, radio) {
         //  its pull-wants become standing bookings toward their holders (reach_on-gated, like every reach).
         got = await this.Ra_quarter_serve(w, nav, lib, pool, lib, cap, this.Ra_pool_sources(w))
         let self = this.Swarm_live_self ? this.Swarm_live_self() : null
-        if (self && w.c.reach_on) { let b = this.Ra_pool_fill_wants(w, self); if (b) { console.log('🏊 steward: booked ' + b + ' circulation fill(s)') } }
+        // the yes IS the fills switch — a consented pool books its pulls (the old reach_on knob stays as an override)
+        if (self && (w.c.reach_on || this.Ra_pool_consent(w))) { let b = this.Ra_pool_fill_wants(w, self); if (b) { console.log('🏊 steward: booked ' + b + ' circulation fill(s)') } }
     } catch (er) { console.log('🏊 steward: press round failed — ' + String(er).slice(0, 140)) }
     delete top.c.pool_steward_busy
     if (got && (got.pressed || got.evicted || got.fails)) {
@@ -3863,6 +3879,41 @@ async Radio_mag_pop(w, rec) {
 //       ADDITIVE (a new %Heist mainkey, no hot-path touch); the pull+land completes where the wire is live.
 //        Idempotent: a second press on the same seed no-ops (a keep already stands).  n.c.kept mirrors the
 //         seed for the face's ✓ (runtime .c, never snapped — the "did my click land" tell).
+// Radio_like — THE LIKE BUTTON (owner 2026-09-03: "I don't believe we have a LIKE button? it's all download
+//  or nothing").  A Like is a DURABLE INTENT on the ledger — %Like,of under the listener's %Jam with this dj —
+//   which the taste tally already reads (Ra_quarter_tally: likes ×3) and the 'liked' pool policy already draws
+//    on.  Nothing moves on the press; the shape it wants next (§0.1): if the liker has FSA the Heist happens on
+//     the spot into the library, else later, when a Cave of the crew looks for things to do with ITS disk.
+//  Idempotent per session (Jam_event dedups by kind+of).  n.c.liked mirrors it for the face's ♥.
+Radio_like(n) {
+    let w = n.c.w
+    let rec = n.c.rec
+    if (!w || !rec || !rec.sc.id) return false
+    let me = this.Radio_pub(w) || 'me'
+    let shelf = this.Ra_home_self(w, me)
+    let jam = this.Jam_home(shelf, String(n.sc.by || me))
+    this.Jam_like(jam, rec)
+    n.c.liked = n.c.liked || {}
+    n.c.liked[String(rec.sc.id)] = 1
+    // THE LIKE IS THE HEIST BUTTON NOW (owner 2026-09-03: "turn the heist button into the like button, and
+    //  present the Cell:Haul only as a minicell, but have it do the Heist in the background (or not if noFSA,
+    //   leaving it to your Cave or SP to live out)").  With a mounted share (Crate_nav — FSA) the same %Heist
+    //    the old ⇊ minted goes straight to 'pulling', dose off, no form and no glass hand-back, so the Haul
+    //     cell shows only as a folded row while the album lands.  Without a share the Like simply stands on
+    //      the ledger: a Cave of the crew with a disk, or the pool's 'liked' policy, is what lives it out.
+    let heisted = 0
+    if (n.sc.by && this.Crate_nav && this.Crate_nav()) {
+        let shop = this.Ra_home_shop(w, me)
+        let had = shop.o({ Heist: 1, seed: String(rec.sc.id) })[0]
+        if (!had) { this.Radio_keep(n) }
+        let keep = shop.o({ Heist: 1, seed: String(rec.sc.id) })[0]
+        if (keep && (keep.sc.state || 'primed') === 'primed') { keep.sc.state = 'pulling'; if (keep.sc.dose) { delete keep.sc.dose }; keep.bump(); heisted = 1 }
+    }
+    n.bump()
+    console.log('♥ liked ' + String(rec.sc.title || rec.sc.id).slice(0, 32) + (heisted ? ' — heisting in the background' : (n.sc.by ? ' — no share here; the crew or the pool lives it out' : '')))
+    return true
+
+},
 async Radio_keep(n) {
     let w = n.c.w
     let rec = n.c.rec

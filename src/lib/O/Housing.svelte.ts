@@ -2946,6 +2946,22 @@ export class WormholeNav {
         return concat_chunks(chunks)
     }
 
+    // bin_rm — bin_read's DELETING twin (2026-09-03, SoundPooling): remove one file from a mounted dir.
+    //  The pool's "off" must give the space back, and a steward evict must take the bytes with the card —
+    //   both were catalog-only until this existed.  Same dir walk as bin_read; false when the dir or file is
+    //    not there (a missing file is not an error for a sweep).  Drops the listing's stale entry so a
+    //     following bin_read on the same handle does not answer from a cached name.
+    async bin_rm(dir_path: string, filename: string): Promise<boolean> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const dir = await this.dir(...parts)
+        if (!dir) return false
+        if (!dir.expanded) await dir.expand()
+        if (!dir.files.find(f => f.name === filename)) return false
+        await (dir as any).handle.removeEntry(filename)
+        dir.files = dir.files.filter(f => f.name !== filename)
+        return true
+    }
+
     // read_range — bin_read's SEEKABLE twin: bytes [offset, offset+len) only, never the whole file.
     //  Reaches the FSA File via the DirectoryListing handle and slices it (len omitted ⇒ to EOF),
     //   returning the window + total size so a consumer can jump into the middle of a big asset.

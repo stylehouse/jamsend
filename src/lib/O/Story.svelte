@@ -2740,7 +2740,10 @@
                     console.warn(`⛔ Story: step ${H.pad(n)} — run tainted by ${drained.errors} error(s) in the channel (see w/%Errlog)`)
                 }
 
-                if (!ok && !w.c.lenient && !is_runner()) {
+                // fail_lenient — a per-Book Opt (The/Opt/{fail_lenient:1}) for a Book that is a weird sort of Book:
+                //  Sounditron tracks STARTUP, so a mismatch there is information, not a stop (owner 2026-09-03).
+                //   Named apart from the action-button `lenient` (a person's session toggle) on purpose.
+                if (!ok && !w.c.lenient && !H.The_Opt_val(w, 'fail_lenient') && !is_runner()) {
                     run.c.driving = false
                     run.sc.paused = 2
                     run.sc.failed_at = n
