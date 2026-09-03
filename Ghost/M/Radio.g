@@ -416,16 +416,41 @@ async Radio_pump_tick(radio, era):
         //   busy-latched), so the dial is never delayed by a press round.  (Radio_pool_steward, NOT
         //    Radio_autopress — the latter is the unrelated auto-PLAY verb below.)
         this.Radio_pool_steward(w, radio)
-        this.Radio_trace(radio, { ev: 'dial' })
+        // THE DIAL MARK SPEAKS ON CHANGE, NOT ON A TIMER (2026-09-03 live walk: a Cave with an empty
+        //  shelf printed `📻⟫ dial …,"id":null` at 1.25 Hz for ten minutes and evicted every other
+        //   electrode from the ~1200-mark ring).  Radio_head_note's doctrine, applied here: steady
+        //    state is silence, a CHANGE is the whole signal.  A dial that finds something still marks
+        //     (dry resets to 0 below), so the birth story advertise→…→dial→open stays unbroken.
+        let dry0 = +(radio.c.dial_dry || 0)
+        if (!dry0) { this.Radio_trace(radio, { ev: 'dial' }) }
         rec = pick || await this.Radio_dial(radio)
         if (radio.c.era !== era) return
         if (!rec) {
-            // nothing to play YET — the stoker was poked (Radio_dial did); show the dig
-            //  and look again soon: music starts the moment the first stock lands.
+            // NOTHING TO PLAY YET — AND THE WAITING MUST COST LESS THE LONGER IT LASTS (2026-09-03).
+            //  This was a flat 800ms re-arm with no attempt counter and no ceiling, and because the
+            //   branch sets 'digging' — which the gate at the head of this verb admits — it re-armed
+            //    its own precondition forever.  Worse, each pass ran the steward AND Stoker_churn,
+            //     whose 50ms re-look reset the stoker's own graded cadence, so the stoker's 15s rest
+            //      could never be reached while the pump span.  A device with no music (a fresh Cave)
+            //       is the NORMAL case, not an error, so the idle has to be genuinely cheap.
+            //  Graded: 800ms · 1.6× per dry pass · capped at 15s — the same patience Stoker_look
+            //   already keeps.  ANY landing stock resets it (Radio_dial_wake), so the first track to
+            //    arrive still starts the music on the next beat, not fifteen seconds later.
+            //  THE WAIT BREAKS THE MOMENT THE WORLD CHANGES.  Ra_dial_next records the size of the
+            //   candidate domain it just failed to pick from (Ra.g `w.c.ra_dial_cands`); a stock
+            //    landing MOVES that number.  So a changed mark means "something arrived while I was
+            //     asleep" and the patience starts over at 800ms — the first track to reach a bare
+            //      Cave still plays on the next beat, however long the device had been quiet.
+            let mark = String(w.c.ra_dial_cands ?? '') + ':' + String(radio.sc.source || '')
+            let dry = (radio.c.dial_mark !== mark) ? 1 : dry0 + 1
+            radio.c.dial_mark = mark
+            radio.c.dial_dry = dry
+            let wait = Math.min(15000, Math.round(800 * Math.pow(1.6, dry - 1)))
             this.Radio_state(radio, 'digging')
-            this.Radio_pump_soon(radio, era, 800)
+            this.Radio_pump_soon(radio, era, wait)
             return
         }
+        radio.c.dial_dry = 0
         this.Radio_open(radio, rec)
         // LAY THE PRIMED PCM DOWN IMMEDIATELY (Radio_prime).  Before the map, before the feed loop,
         //  before the 30ms harvest wait — this is the whole point of priming: the first sound is
@@ -1056,7 +1081,95 @@ Radio_open(radio, rec):
         delete radio.sc.by_name
     }
     radio.bump()
+    // THE POOL CATCHES WHAT THE RADIO SERVES (see Radio_pool_catch) — after the by-stamp, so the
+    //  holder is known; fire-and-forget so a keep never delays the sound.
+    this.Radio_pool_catch(w, radio, rec)
     this.Radio_media_now(radio, rec)
+
+// Radio_pool_catch — SOUNDPOOLING RIDES RADIO + HEIST (owner 2026-09-03: "ideally it works on top of the
+//  Radio+Heist protocols, asking for Radio from a given area and then Heisting it all. saves us building
+//   a file browser?").  It does, and this is the whole of it.
+//
+//  THE INSIGHT, worth keeping: choosing music is a SOLVED problem here — the dial already does it, over
+//   friends' mirrors, honouring the aim-lock, skipping what you've heard.  A file browser would be a
+//    second, worse answer to the same question.  So the pool does not choose at all: it KEEPS what the
+//     dial already chose and you already heard.  Tune to an area, let it play, and the pool is the
+//      sediment of the listening.  What fills your phone is then a fact about your evening, not a
+//       filing decision — which is the SoundPooling premise ("book it and walk away") stated properly.
+//
+//  MECHANISM — three existing things and no new ones:
+//   · the AREA is `radio.sc.aim` (Radio_aim_at), the one-friend lock the dial already honours;
+//   · the ACT is Radio_keep's own %Heist intent — the same particle the ⇊ button mints;
+//   · the DESTINATION is `into:'pool'` (Heist_keep_mardir), so the keep chain lands it on the pool
+//      shelf instead of the library, with no second lane and no new byte machinery.
+//  A `%Pool,take:'radio'` compartment is the declaration that turns it on; its `cap` is the bound.
+//   No such pool = this verb costs one Ra_pool_defs read and returns.
+//  Humdinger-gated: a Book must never heist real bytes.  Never keeps my OWN track (nothing to fetch),
+//   never a track from outside the aimed area when an aim stands, and never past the cap — the steward
+//    does the evicting, so the catch simply stops.
+Radio_pool_catch(w, radio, rec):
+    let top = this.top_House ? this.top_House() : null
+    if (!top || !top.c || !top.c.humdinger) { return 0 }
+    if (!w || !rec) { return 0 }
+    let by = String(radio.sc.by || '')
+    if (!by) { return 0 }                       // my own track — already held
+    let aim = String(radio.sc.aim || '')
+    if (aim && !String(by).startsWith(aim) && !String(aim).startsWith(by)) { return 0 }
+    let pools = this.Ra_pool_defs(w, 0).filter((p) => p.name && String(p.take) === 'radio')
+    if (!pools.length) { pools = this.Radio_pool_cave_default(w) }
+    if (!pools.length) { return 0 }
+    let cap = 0
+    for (const p of pools) { cap = cap + (+p.cap || 0) }
+    if (cap < 1) { return 0 }
+    let me = this.Radio_pub(w) || 'me'
+    let phome = w.o({ MusuPool: 1, pub: me })[0]          // probe-first: a read never mints a home
+    let pshelf = phome ? phome.o({ stock: 1, pub: me })[0] : null
+    let seed = String(rec.sc.id || '')
+    if (!seed) { return 0 }
+    let shop = this.Ra_home_shop(w, me)
+    if (shop.o({ Heist: 1, seed: seed })[0]) { return 0 }  // already keeping this one
+    // THE CAP MUST COUNT INTENT, NOT JUST SEDIMENT.  A landed track and a keep still in flight both
+    //  spend the same room, and an evening of radio mints far more keeps than it lands tracks — so
+    //   counting only the pool shelf would let a cap of 12 grow a hundred outstanding %Heists behind
+    //    it, each one a standing claim on someone's wire.  Count both, and the cap means what it says.
+    let held = pshelf ? this.Ra_recs(pshelf).length : 0
+    for (const k of shop.o({ Heist: 1 })) { if (String(k.sc.into || '') === 'pool' && String(k.sc.state || '') !== 'done') { held = held + 1 } }
+    if (held >= cap) { return 0 }
+    let keep = shop.i({ Heist: this.Radio_clean(rec.sc.title || 'this'), seed: seed, pub: by, state: 'primed', into: 'pool', why: 'radio' })
+    keep.c.up = shop
+    keep.c.last_touch = Date.now()
+    keep.sc.from_name = this.Radio_friendly(w, by)
+    if (rec.sc.artist) { keep.sc.artist = this.Radio_clean(rec.sc.artist) }
+    console.log('🏊⇊ pooling what is playing — ' + String(rec.sc.title || seed).slice(0, 32) + ' from ' + String(keep.sc.from_name || by).slice(0, 12) + ' (' + (held + 1) + '/' + cap + ')')
+    return 1
+
+// Radio_pool_cave_default — A CAVE POOLS BY DEFAULT (owner 2026-09-03: "it says my SoundPool is empty,
+//  we've been in the Crew for 10m but we are the Cave… the Cave should SoundPool to the Captain right?").
+//   Right — and a Cave is the one body where the default is unambiguous.  A Captain sits on a library and
+//    a folder; a Cave typically has NEITHER (a phone: no share, no MusuSelf, nothing to press from), so
+//     every existing take-policy scores an empty tally and the steward's own guard bails before it starts.
+//      Its music can only ever arrive over the wire from its crew — which is exactly what a radio pool
+//       does.  So the first time a Cave with no declared pools and no library of its own hears a track
+//        from its crew, it starts keeping: one compartment, capped, droppable with the ✕ like any other.
+//  Declared, not hidden: it lands as a real %Pool the human can see, resize, retake or drop in the Pool
+//   cell, and it is stashed with the pools pillar — never a silent `.c` mode.
+//  Returns the fresh defs (or [] when this body is not a Cave, or already has a library, or already
+//   declared something).  Called ONLY from Radio_pool_catch, which is humdinger-gated above.
+Radio_pool_cave_default(w, who):
+    if (this.Ra_pool_defs(w, 0).filter((p) => p.name).length) { return [] }
+    let M = this.top_House()
+    let ident = who || (M.Swarm_live_self ? M.Swarm_live_self() : null)
+    if (!ident || !M.Swarm_captain_here) { return [] }
+    if (M.Swarm_captain_here(ident)) { return [] }        // a Captain chooses its own composition
+    let crew = ident.o({ Crew: 1 })[0]
+    if (!crew || !crew.o({ mate: 1 }).length) { return [] }
+    let me = this.Radio_pub(w) || 'me'
+    let lhome = w.o({ MusuSelf: 1, pub: me })[0]
+    let lib = lhome ? lhome.o({ stock: 1, pub: me })[0] : null
+    if (lib && this.Ra_recs(lib).length) { return [] }    // it has its own music — not a bare Cave
+    this.Ra_pool_define(w, 'crew', 'radio', 12)
+    console.log('🏊 a Cave with no library of its own — declaring a \'crew\' pool (radio, 12): what your crew plays here, this phone keeps')
+    return this.Ra_pool_defs(w, 0).filter((p) => p.name && String(p.take) === 'radio')
 
 // Radio_friendly — a source pub → the friend's chosen name (%Pier.friendly under my Peering), the SAME
 //  lookup Riffle_homes and the lineup error already use; falls back to a short pub when the Pier isn't
@@ -1310,7 +1423,11 @@ async Radio_pool_steward(w, radio):
     top.c.pool_steward_busy = 1
     let got = null
     try {
-        got = await this.Ra_quarter_serve(w, nav, lib, pool, lib, cap)
+        // CIRCULATION (SoundPooling_todo, 2026-09-03): a 'random' pool draws from every mirrored catalog;
+        //  its pull-wants become standing bookings toward their holders (reach_on-gated, like every reach).
+        got = await this.Ra_quarter_serve(w, nav, lib, pool, lib, cap, this.Ra_pool_sources(w))
+        let self = this.Swarm_live_self ? this.Swarm_live_self() : null
+        if (self && w.c.reach_on) { let b = this.Ra_pool_fill_wants(w, self); if (b) { console.log('🏊 steward: booked ' + b + ' circulation fill(s)') } }
     } catch (er) { console.log('🏊 steward: press round failed — ' + String(er).slice(0, 140)) }
     delete top.c.pool_steward_busy
     if (got && (got.pressed || got.evicted || got.fails)) {

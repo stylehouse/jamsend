@@ -9,16 +9,31 @@ Snap:H
         Account,of:Host
           Identity:8e0b046f67fbbf1c,prepub:8e0b046f67fbbf1c,friendly:Host
             Peering,name:8e0b046f67fbbf1c,friendly:Host,online
+            Crew,soul:8e0b046f67fbbf1cc1b105f417142e0f1b66ff055c4a57173d986729fca3a354
+              mate:8e0b046f67fbbf1c,role:Captain,pub:8e0b046f67fbbf1cc1b105f417142e0f1b66ff055c4a57173d986729fca3a354
+              Key,pub:8e0b046f67fbbf1cc1b105f417142e0f1b66ff055c4a57173d986729fca3a354	{"mung":["secret"]}
         Account,of:Uno
           Identity:977d35e0a8e0cd0e,prepub:977d35e0a8e0cd0e,friendly:Uno
             Peering,name:977d35e0a8e0cd0e,friendly:Uno,online
+            Crew,soul:977d35e0a8e0cd0e54748ee7c5147940207e4039fa498fa3d5a9e5fc9fc636a8
+              mate:977d35e0a8e0cd0e,role:Captain,pub:977d35e0a8e0cd0e54748ee7c5147940207e4039fa498fa3d5a9e5fc9fc636a8
+              Key,pub:977d35e0a8e0cd0e54748ee7c5147940207e4039fa498fa3d5a9e5fc9fc636a8	{"mung":["secret"]}
         Account,of:Dos
           Identity:3c2569c2c4366c9c,prepub:3c2569c2c4366c9c,friendly:Dos
             Peering,name:3c2569c2c4366c9c,friendly:Dos,online
+            Crew,soul:3c2569c2c4366c9c405a1306aa43e8a429a14f68ea8f65e0ecfc84c99021d626
+              mate:3c2569c2c4366c9c,role:Captain,pub:3c2569c2c4366c9c405a1306aa43e8a429a14f68ea8f65e0ecfc84c99021d626
+              Key,pub:3c2569c2c4366c9c405a1306aa43e8a429a14f68ea8f65e0ecfc84c99021d626	{"mung":["secret"]}
         Account,of:Tres
           Identity:6077adc818434359,prepub:6077adc818434359,friendly:Tres
             Peering,name:6077adc818434359,friendly:Tres,online
+            Crew,soul:6077adc818434359f7e3928a4c7926ef6cf783301c5ff408d1314e21da77629f
+              mate:6077adc818434359,role:Captain,pub:6077adc818434359f7e3928a4c7926ef6cf783301c5ff408d1314e21da77629f
+              Key,pub:6077adc818434359f7e3928a4c7926ef6cf783301c5ff408d1314e21da77629f	{"mung":["secret"]}
         Account,of:Qua
           Identity:7c5e239685f95f2f,prepub:7c5e239685f95f2f,friendly:Qua
             Peering,name:7c5e239685f95f2f,friendly:Qua,online
+            Crew,soul:7c5e239685f95f2f99255634f7e1220a694bbfbbeaaa8f471c10a1230fcc0105
+              mate:7c5e239685f95f2f,role:Captain,pub:7c5e239685f95f2f99255634f7e1220a694bbfbbeaaa8f471c10a1230fcc0105
+              Key,pub:7c5e239685f95f2f99255634f7e1220a694bbfbbeaaa8f471c10a1230fcc0105	{"mung":["secret"]}
         req:witness,eternal,ok

@@ -1,9 +1,9 @@
 Snap:H
   H:SwarmWire,Run
     A:SwarmWire
-      self,round=9	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:SwarmWire,now=1751600030
-        self,round=9	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:Alice
           Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
@@ -13,6 +13,9 @@ Snap:H
                 Peering,name:6eb0df4e976acef2,friendly:Bob,pub:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7
                 Grant:Music,by:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,for:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,time:1751600030,sign:2aa6a155941d02bf459256cb1ce00a685e365cf9cfc01f3ed9b3b30165205b6b859ca18db55eb98581ac90824532ae4434be8fb993ca26ea418e3aa461ab7403,genre:Classical
                 Grant:Music,by:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,for:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,time:1751600030,sign:98b7f115349bf298a3440c42386be9ca5e26938c1f5904739d538fb4b1ca47cf727d48189d4ce6b88f62384eb6858567efcff746e06888599b7fce40420ec004,genre:Classical
+            Crew,soul:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+              mate:32c1ce7a059129d1,role:Captain,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+              Key,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213	{"mung":["secret"]}
             SocialGraph
               Edge,a:32c1ce7a059129d1,b:6eb0df4e976acef2,at:1751600030
         Account,of:Bob
@@ -22,6 +25,9 @@ Snap:H
                 Peering,name:32c1ce7a059129d1,friendly:Alice,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
                 Grant:Music,by:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,for:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,time:1751600030,sign:2aa6a155941d02bf459256cb1ce00a685e365cf9cfc01f3ed9b3b30165205b6b859ca18db55eb98581ac90824532ae4434be8fb993ca26ea418e3aa461ab7403,genre:Classical
                 Grant:Music,by:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,for:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,time:1751600030,sign:98b7f115349bf298a3440c42386be9ca5e26938c1f5904739d538fb4b1ca47cf727d48189d4ce6b88f62384eb6858567efcff746e06888599b7fce40420ec004,genre:Classical
+            Crew,soul:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7
+              mate:6eb0df4e976acef2,role:Captain,pub:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7
+              Key,pub:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7	{"mung":["secret"]}
             SocialGraph
               Edge,a:6eb0df4e976acef2,b:32c1ce7a059129d1,at:1751600030
         Peering,name:32c1ce7a059129d1,req=2,ok

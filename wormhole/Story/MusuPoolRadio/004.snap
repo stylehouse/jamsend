@@ -1,0 +1,33 @@
+Snap:H
+  H:MusuPoolRadio,Run
+    A:MusuPoolRadio
+      self,round=4	{"mung":["age"]}
+      w:MusuPoolRadio,now=1788400020
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          stood,own_track_never_caught,one_keep,keep_says_pool,same_shape_as_the_button,catching_twice_is_once
+          reached:step_3
+          guarded,one_scalar_routes_it,aim_confines_the_catch,aim_lifted_catches_again,cap_counts_intent
+          reached:step_4
+          goaled,own_contents_are_the_goal,honest_why,trims_the_oldest_only
+        Radio:playing,by:friendo
+        MusuThem,pub:friendo
+          stock,pub:friendo
+            Record,id:r1,title:Radio One
+            Record,id:r2,title:Radio Two
+            Record,id:r3,title:Radio Three
+        Pools
+          Pool,name:heard,take:radio,cap:2
+        Record,id:own1,title:Mine
+        MusuSelf,pub:e747cbed6a9ca919
+          shop,pub:e747cbed6a9ca919
+            Heist:Radio One,seed:r1,pub:friendo,state:primed,into:pool,why:radio,from_name:friendo
+            Heist:Radio Two,seed:r2,pub:friendo,state:primed,into:pool,why:radio,from_name:friendo
+        MusuPool,pub:e747cbed6a9ca919
+          stock,pub:e747cbed6a9ca919
+            Record,id:r1
+            Record,id:r2
+            Record,id:r3
+        Library,name:radiolib

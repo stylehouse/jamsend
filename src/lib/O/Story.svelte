@@ -1104,6 +1104,12 @@
             }
         },
         {
+            // %Key — a signing key as a PARTICLE (Crewkeys.ts): the pub is the snap's truth, the
+            //  secret is munged — present ({"mung":["secret"]}) but never a fixture byte.
+            matching_any: [{ sc_has: { Key: 1 } }],
+            means: { munging: [{ these_sc: { secret: 1 }, type: 'secret' }] },
+        },
+        {
             // Lies real-IO epoch stamps — volatile `at`/`seeded`/`walked_at`/`noticed_at`
             //  on otherwise stable particles.  Mung them so a real w:Lies snap diffs on
             //   structure, not on WHEN a read/walk/seed/notice happened.  The content
@@ -2257,7 +2263,17 @@
         //     address; it says nothing about how a Run should behave, and reading it as if it did made
         //      a daemon halt at the first value-noise mismatch — measured: 1/1 steps where a runner
         //       does 7/7, with no error anywhere, just a Book that quietly stopped.
-        const is_runner = () => ['runner', 'daemon'].includes((H.top_House() as any).c.boot_role)
+        //  ⚠ BUT boot_role ALONE IS NOT "NOBODY IS THERE" (owner 2026-09-03: "Story used to be able to
+        //   pause mid run when things failed, it's always acting lenient now").  A Big*land music page
+        //    boots machine-role `runner` (BigQualand ~60: sound→runner) with a HUMAN sitting at it, so
+        //     this predicate answered true for exactly the person the halt exists to serve, and their
+        //      Book drove past the first mismatch flagging stragglers nobody would ever sweep.
+        //  `humdinger` is the codebase's own live tell for person-vs-machine — it is what decides
+        //   player-vs-runner off the wire (CLAUDE.md), what gates every real-bytes verb, and what
+        //    Lies_humdinger uses to keep an end-user page out of the dispatch grid.  So: headless means
+        //     the machine role AND no humdinger.  A true `?B=` runner and a daemon are unchanged (they
+        //      carry none); a page with a person at it now halts and shows them the step.
+        const is_runner = () => ['runner', 'daemon'].includes((H.top_House() as any).c.boot_role) && !(H.top_House() as any).c.humdinger
 
         // advance: called after snap_step completes and (for waitCyto path)
         // after the animation_done event has resumed the drive.

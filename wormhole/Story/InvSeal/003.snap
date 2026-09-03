@@ -13,9 +13,15 @@ Snap:H
           Identity:c18fb5f392a0207f,prepub:c18fb5f392a0207f,friendly:Alice
             Peering,name:c18fb5f392a0207f,friendly:Alice,online
               Idzeug:1,to:MyCave,next:2
+            Crew,soul:c18fb5f392a0207feaea714eee26ed90bef1cad3e1dcc40474897b9e3fc75c37
+              mate:c18fb5f392a0207f,role:Captain,pub:c18fb5f392a0207feaea714eee26ed90bef1cad3e1dcc40474897b9e3fc75c37
+              Key,pub:c18fb5f392a0207feaea714eee26ed90bef1cad3e1dcc40474897b9e3fc75c37	{"mung":["secret"]}
         Account,of:Cavey
           Identity:86905922a618fdc7,prepub:86905922a618fdc7,friendly:Cavey
             Peering,name:86905922a618fdc7,friendly:Cavey,online
+            Crew,soul:86905922a618fdc73c2cc8fb24c0cf11dbb907d38c34be95956a614b2285dbfe
+              mate:86905922a618fdc7,role:Captain,pub:86905922a618fdc73c2cc8fb24c0cf11dbb907d38c34be95956a614b2285dbfe
+              Key,pub:86905922a618fdc73c2cc8fb24c0cf11dbb907d38c34be95956a614b2285dbfe	{"mung":["secret"]}
         reached:step_3
         req:Ferry,eternal
           req:Ferry_soul,serial:1,phase:minted,at=1756400010

@@ -56,6 +56,7 @@
     import { boot_param }   from "$lib/boot"
     import { Idento }       from "$lib/Y.svelte"
     import { prepubOf }     from "$lib/p2p/cluster_trust"
+    import { crew_keys, crew_keys_home } from "$lib/O/Funk/Crewkeys"
     import { cluster_name } from "$lib/cluster_name"
     import { SoundSystem }  from "$lib/p2p/ftp/Audio.svelte"
 
@@ -88,7 +89,7 @@
     // The cluster IDENTITY layer. A %Identity is the per-?I self: it OWNS a %Peering (our real pub
     //  address — 1:1 in the common case) and the trust it earns. It is the CONCRETION of a persisted
     //   identity-thang (the Thangs `identities` table, Peeroleum_spec §10) — the live particle a Dexie
-    //    row hydrates into. The signing key rides on the %Identity (.c.keys — a secret, never sc, never
+    //    row hydrates into. The signing key rides on the %Identity (/Crew %Key particles, Crewkeys.ts — snappable, the secret munged in Story, never
     //     encoded); Lies_cluster_idento reads the ACTIVE one, so the relay `hello` (LiesLies) binds
     //      prepubOf(pub)→our socket and to:<pub> routes to a VERIFIED Id — the address Waft:Cluster lists.
     //   ?I=<tag> resume (mint first time) · ?I=new always-fresh fork · absent ⇒ inert (legacy key path).
@@ -229,7 +230,7 @@
                 try {
                     const vault = _C({ Account: 1, of: 'BootSeed' })
                     const seed  = await (H as any).Swarm_boot_seed(nav, '', vault, param)
-                    const keys  = seed?.ident?.c?.keys
+                    const keys  = seed?.ident ? crew_keys(seed.ident) : null
                     if (keys?.pub && keys?.key && seed.prepub === param) {
                         const stored = { pub: keys.pub, key: keys.key, prepub: seed.prepub,
                                          born: seed.ident.sc.born, friendly: seed.ident.sc.friendly }
@@ -316,7 +317,6 @@
         for (const old of A.o({ Identity: 1 }) as TheC[]) delete old.sc.active
         const ident = A.oai({ Identity: tag }) as TheC
         ident.c.up = A
-        ident.c.keys = { pub: stored.pub, key: stored.key }
         ident.sc.prepub = stored.prepub
         // birth date, snap-clean (yyyy-mm-dd): the door's born-today auto-join reads it, the
         //  DoorFace shows it.  Absent on pre-born Thangs and adopted legacy keys — honestly old.
@@ -334,6 +334,9 @@
             ident.sc.friendly = stored.friendly
             peering.sc.friendly = stored.friendly
         }
+        // THE KEY IS A PARTICLE (Crewkeys.ts, Crew_todo §4a REFINED): /Crew,soul / Key / mate:<me>,role:Captain —
+        //  a crew of one from birth.  After the Peering so the snap order stays Peering-then-Crew.
+        crew_keys_home(ident, { pub: stored.pub, key: stored.key, prepub: stored.prepub })
         ;(this as House).c.active_identity = ident
         // LIFT THE ARREST HERE (2026-08-08, Identity_persist_todo §6.3). identity_pending used to be
         //  cleared only by the two HUMAN gestures — Clustation_generate_for_pending and the IdHatch
@@ -364,7 +367,7 @@
         const ident = A && (A.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
         // thang_put, not thang_add: the identity IS already stored under these tags — a rename
         //  is an update, and add's duplicate-throw was the bug that kept the name box open forever.
-        if (!ident?.c?.keys || typeof (H as any).thang_put !== 'function') return false
+        if (!ident || !crew_keys(ident) || typeof (H as any).thang_put !== 'function') return false
         const clean = String(name ?? '').split(',').join(' ·').trim().slice(0, 24)
         if (!clean) return false
         // a name is not an address: a browser autofill (or a paste) that drops a URL into the name box would
@@ -376,8 +379,10 @@
         const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0] || A.i({ w: 'Thangs', thangs: 'identities' })
         wT.c.up = A
         const born = ident.sc.born ? Date.parse(String(ident.sc.born)) : undefined
+        const ik = crew_keys(ident)
+        if (!ik) return false
         const stored = {
-            pub: ident.c.keys.pub, key: ident.c.keys.key, prepub: String(ident.sc.prepub),
+            pub: ik.pub, key: ik.key, prepub: String(ident.sc.prepub),
             ...(born ? { born } : {}), friendly: clean,
         }
         await (H as any).thang_put(wT, String(ident.sc.prepub), stored)
@@ -394,7 +399,7 @@
     async Clustation_pin(this: House, H?: House): Promise<boolean> {
         H = (H ?? this) as House
         // WRONG SHAPE, FIXED 2026-08-08: this used to ask Clustation_active_identity, which returns the
-        //  SIGNING KEY `{pub, key}` — a plain object with no `.c` — and then guarded on `ident.c.keys`.
+        //  SIGNING KEY `{pub, key}` — a plain object with no `.c` — and then guarded on the identity's key.
         //   That guard could never pass, so Clustation_pin has ALWAYS returned false at its first line
         //    and has never pinned anything. Nothing caught it because the only caller (the door's
         //     ?Iz→?I swap) treats a false as "not mounted yet, fine" — so the failure it exists to
@@ -412,13 +417,15 @@
         }
         // thang_put: a re-pin of an already-pinned prepub is a no-op update, not a clash — the
         //  add-throw here silently killed the ?Iz→?I address-bar swap downstream of a re-join.
-        if (!ident?.c?.keys || typeof (H as any).thang_put !== 'function') return false
+        if (!ident || !crew_keys(ident) || typeof (H as any).thang_put !== 'function') return false
         const A  = H.o({ A: 'Clustation' })[0] || H.i({ A: 'Clustation' })
         const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0] || A.i({ w: 'Thangs', thangs: 'identities' })
         wT.c.up = A
         const born = ident.sc.born ? Date.parse(String(ident.sc.born)) : undefined
+        const pk = crew_keys(ident)
+        if (!pk) return false
         await (H as any).thang_put(wT, String(ident.sc.prepub), {
-            pub: ident.c.keys.pub, key: ident.c.keys.key, prepub: String(ident.sc.prepub),
+            pub: pk.pub, key: pk.key, prepub: String(ident.sc.prepub),
             ...(born ? { born } : {}),
             ...(ident.sc.friendly ? { friendly: String(ident.sc.friendly) } : {}),
         })
@@ -458,7 +465,7 @@
             const Ac = (top.o({ A: 'Clustation' }) as TheC[])[0]
             ident = Ac && (Ac.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
         }
-        if (!ident?.c?.keys?.key) return false
+        if (!ident || !crew_keys(ident)) return false
         // THE CANONICAL ADDRESS IS THE WRITE LOCK (§7.4f / §6.6). Landing the write side is what gives
         //  the two-writers problem teeth: an always-up daemon and a tab that renames itself both mirror
         //   `.jamsend/account/<prepub>/`, there is no merge, and divergence is last-write-wins — so one
@@ -672,8 +679,8 @@
             const A = (top.o({ A: 'Clustation' }) as TheC[])[0]
             ident = A && (A.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
         }
-        const keys = (ident?.c as any)?.keys as { pub?: string; key?: string } | undefined
-        return keys?.pub && keys?.key ? { pub: keys.pub, key: keys.key } : undefined
+        const keys = ident ? crew_keys(ident) : null
+        return keys ? { pub: keys.pub, key: keys.key } : undefined
     },
 
     // Clustation_self — the active %Identity's PUBLIC face {prepub, nick}, or undefined.  prepub =

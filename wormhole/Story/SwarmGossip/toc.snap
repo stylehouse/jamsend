@@ -20,10 +20,10 @@ story:SwarmGossip
       sample=0.01,at=1788299174
       sample=0.01,at=1788299177
       sample=0.005,at=1788299187
-  step,dige:0000000000000000
-  step=2,dige:8daf4a09d614947f
-  step=3,dige:2411bb7de7a02b16
+  step,dige:922b87f5a5e444e1
+  step=2,dige:35ddd1ad7ff38c46
+  step=3,dige:d6781af3acc5617d
     Assertion:the-charter-is-seeded,sentence:the Charter is seeded at the seal — a freshly sealed friend hears the division over the armed charter frame and routes to the Cave at its suffix without ever asking
-  step=4,dige:bd94e213f72c9af4
+  step=4,dige:701d0a5a2b3e3bd8
     Assertion:a-division-change-re,sentence:a division change re-emits the Charter — the soul moves its Cave and re-charters and the gossiped higher era supersedes on the friend so routing follows the move
     Assertion:a-stale-gossiped-charter,sentence:a stale gossiped Charter is ignored — an older era re-delivered over the wire never downgrades the friend so the split-brain guard holds end to end

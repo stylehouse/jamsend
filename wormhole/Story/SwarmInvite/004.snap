@@ -9,12 +9,18 @@ Snap:H
         Account,of:Machine
           Identity:9ff272fbf4b59795,prepub:9ff272fbf4b59795,nick:lone-mast
             Peering,name:9ff272fbf4b59795
+            Crew,soul:9ff272fbf4b5979534d50a8f1592145deab4a4f1b07095404469943cf4a8493a
+              mate:9ff272fbf4b59795,role:Captain,pub:9ff272fbf4b5979534d50a8f1592145deab4a4f1b07095404469943cf4a8493a
+              Key,pub:9ff272fbf4b5979534d50a8f1592145deab4a4f1b07095404469943cf4a8493a	{"mung":["secret"]}
           Identity:5c4b63609cd01594,prepub:5c4b63609cd01594,nick:lone-sail,active
             Peering,name:5c4b63609cd01594,online
               Idzeug:1,to:Music,next:2,claimed:1
               Pier,pub:0bd16fbd60d7b3bb,friendly:Phone,since:1751800020
                 Peering,name:0bd16fbd60d7b3bb,friendly:Phone,pub:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e
                 Grant:Music,by:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799,for:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e,time:1751800020,sign:75dafed71fa18673acdabf9fc69ac3f31a6a82a0043e2927802d107b3c3784e5a4594476bab8b54ab31657612a22e8fb13e5d708e7ace0b60a37bc8d7724eb0e
+            Crew,soul:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799
+              mate:5c4b63609cd01594,role:Captain,pub:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799
+              Key,pub:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799	{"mung":["secret"]}
             mail
               frame:pier_hello,did
               frame:pier_confirm
@@ -27,6 +33,9 @@ Snap:H
                 Peering,name:5c4b63609cd01594,friendly:,pub:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799
                 Grant:Music,by:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799,for:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e,time:1751800020,sign:75dafed71fa18673acdabf9fc69ac3f31a6a82a0043e2927802d107b3c3784e5a4594476bab8b54ab31657612a22e8fb13e5d708e7ace0b60a37bc8d7724eb0e
                 Grant:Music,by:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e,for:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799,time:1751800020,sign:dc6ea0cc3dafc4ae9467194efb2f16342ad4bef2fda76e138a3b0b968ce017aa0c7da75d2d068a77adf60579a714598dd63ec223b181eaded8f3a8f5c03db808
+            Crew,soul:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e
+              mate:0bd16fbd60d7b3bb,role:Captain,pub:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e
+              Key,pub:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e	{"mung":["secret"]}
             mail
               frame:pier_accept,did
             SocialGraph

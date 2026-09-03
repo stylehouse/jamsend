@@ -9,19 +9,24 @@ Snap:H
         Account,of:Alice
           Identity:118fd01cff8a3866,prepub:118fd01cff8a3866,friendly:Alice
             Peering,name:118fd01cff8a3866,friendly:Alice,online
-              Body,pub:72d7ff9ff7e0e109f503f8e7bf214cdbac6ed15f802a3ca173b589289e4126e7,post:Captain
+              Body,pub:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a,post:Captain
               Body,pub:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7,post:Cave
-              Charter,era:1,payload:72d7ff9ff7e0e109f503f8e7bf214cdbac6ed15f802a3ca173b589289e4126e7:Captain:;b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7:Cave:,sig:ccda186408eedb73275425a85b2e10529028e6889bdeaa102763d9f2c2fe0ed46c6d57fa4136ae594922e8edb67016907681b4c9064b48f8e681b68886aafb05,soul:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
+              Charter,era:1,payload:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a:Captain:;b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7:Cave:,sig:f4ebd0c11c8f467905af5d24b8588d5f602c445d2c4b6160fde1fa6c9382d24e6efac72dd6abb3f1ea433a5c4933697cb8e94727b577afe6681c0a10e7742307,soul:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
+            Crew,soul:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
+              mate:118fd01cff8a3866,role:Captain,pub:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
+              Key,pub:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a	{"mung":["secret"]}
+              mate:b3658199b235d270,role:Cave,pub:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7
+                Grant:Crew,by:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a,for:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7,time:1751700000,sign:b86c30ec5793a3256dcb5c862892c256b8171a8eb05040ccb6282850087978c8714bf0e4b84502e327d6b035c9aaf31904f63e0b972351811faaba0ffd899b01
         Account,of:Box
           Identity:b3658199b235d270,prepub:b3658199b235d270,friendly:Box
             Peering,name:b3658199b235d270,friendly:Box,online
-            mail
-              frame:adopt_seal,did
-          Identity:118fd01cff8a3866,prepub:118fd01cff8a3866,friendly:Alice
-            Peering,name:118fd01cff8a3866,friendly:Alice
-              Body,pub:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7,post:Cave
-                Grant:MyCave,by:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a,for:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7,time:1751700000,sign:e20aa7bacd91507473073d6ce3c2b427e6fd8de63d353e2f7a68e2122bde9b00cfc1d62be6627dea92121652d9fb89bb41e54e718a56455bcb1dc0852ad03b08
+            Crew,soul:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
+              mate:b3658199b235d270,role:Cave,pub:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7
+                Key,pub:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7	{"mung":["secret"]}
+                Grant:Crew,by:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a,for:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7,time:1751700000,sign:b86c30ec5793a3256dcb5c862892c256b8171a8eb05040ccb6282850087978c8714bf0e4b84502e327d6b035c9aaf31904f63e0b972351811faaba0ffd899b01
+              mate:118fd01cff8a3866,role:Captain,pub:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
+              Key,pub:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a	{"mung":["secret"]}
         testing
-          stood,offer_verifies,role_agnostic
-          divided,sealed_crossed,account_crossed,box_is_cave,roster_routes_both,charter_verifies
+          stood,each_a_crew_of_one,each_wields_own,key_is_a_particle
+          divided,box_is_cave,box_holds_soul,box_signs_own,box_holds_cert,roster_routes_both,charter_verifies,ledgers_agree
         reached:step_3

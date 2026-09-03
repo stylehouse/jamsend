@@ -19,6 +19,9 @@ Snap:H
                 Peering,name:f59a244fe995db2d,friendly:Pia,pub:f59a244fe995db2dad159f3f29ef1564d9703fa68171ae7167261df6ec4a65d9
                 Grant:Music,by:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e,for:f59a244fe995db2dad159f3f29ef1564d9703fa68171ae7167261df6ec4a65d9,time:1751920140,sign:ce105cc444b1cd832642e501ea0d1d436b50bfb87b883b4d3be44074d30e7709990a4203eda556c7b1a53d97a796a009c21c28084b8823dbd2a23c930553cc00
                 Grant:Music,by:f59a244fe995db2dad159f3f29ef1564d9703fa68171ae7167261df6ec4a65d9,for:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e,time:1751920140,sign:da78b5b6e19cca4d7038d541def3a50c27a067902d77f31eb2afa88da15f2a1fcc6f9b5f05a654d111fdd1828ef0bb73b4416a0b1cfd66a40741ced06516b907
+            Crew,soul:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e
+              mate:69b18b170a8c2fb2,role:Captain,pub:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e
+              Key,pub:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e	{"mung":["secret"]}
             mail
               frame:pier_hello,did
               frame:pier_confirm,did
@@ -40,6 +43,9 @@ Snap:H
                 Peering,name:69b18b170a8c2fb2,friendly:Vera,pub:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e
                 Grant:Music,by:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e,for:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6,time:1751920010,sign:2a8470bdffe6ccfa0c9f734578a113cef8bff4fd28ffed8c2a30e8886e9154f14e648463eb9b65499db3799a83a1002b8fcddbd5f89f796c46e43acadefd8108,genre:Baroque
                 Grant:Music,by:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6,for:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e,time:1751920010,sign:7e2ae3da7b11be267d4d00e5fea69d9098999c3821f3486408c9134ccacaf68056cd8396e7c2c16744e940750edc74a70dfbbdd3316214b5f1ec4c34391b2e0a,genre:Baroque
+            Crew,soul:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6
+              mate:d54622b2f2557ba4,role:Captain,pub:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6
+              Key,pub:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6	{"mung":["secret"]}
             mail
               frame:pier_accept,did
               frame:pier_accept,did
@@ -53,6 +59,9 @@ Snap:H
                 Peering,name:69b18b170a8c2fb2,friendly:Vera,pub:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e
                 Grant:Music,by:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e,for:f59a244fe995db2dad159f3f29ef1564d9703fa68171ae7167261df6ec4a65d9,time:1751920140,sign:ce105cc444b1cd832642e501ea0d1d436b50bfb87b883b4d3be44074d30e7709990a4203eda556c7b1a53d97a796a009c21c28084b8823dbd2a23c930553cc00
                 Grant:Music,by:f59a244fe995db2dad159f3f29ef1564d9703fa68171ae7167261df6ec4a65d9,for:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e,time:1751920140,sign:da78b5b6e19cca4d7038d541def3a50c27a067902d77f31eb2afa88da15f2a1fcc6f9b5f05a654d111fdd1828ef0bb73b4416a0b1cfd66a40741ced06516b907
+            Crew,soul:f59a244fe995db2dad159f3f29ef1564d9703fa68171ae7167261df6ec4a65d9
+              mate:f59a244fe995db2d,role:Captain,pub:f59a244fe995db2dad159f3f29ef1564d9703fa68171ae7167261df6ec4a65d9
+              Key,pub:f59a244fe995db2dad159f3f29ef1564d9703fa68171ae7167261df6ec4a65d9	{"mung":["secret"]}
             mail
               frame:pier_accept,did
             SocialGraph
@@ -60,6 +69,9 @@ Snap:H
         Account,of:Quin
           Identity:2b9f1e468a8c1ab2,prepub:2b9f1e468a8c1ab2,friendly:Quin
             Peering,name:2b9f1e468a8c1ab2,friendly:Quin,online
+            Crew,soul:2b9f1e468a8c1ab2f32c2bf4607cb3e01be08d00d7ebac550a9ce2f3860e735a
+              mate:2b9f1e468a8c1ab2,role:Captain,pub:2b9f1e468a8c1ab2f32c2bf4607cb3e01be08d00d7ebac550a9ce2f3860e735a
+              Key,pub:2b9f1e468a8c1ab2f32c2bf4607cb3e01be08d00d7ebac550a9ce2f3860e735a	{"mung":["secret"]}
             mail
               frame:pier_reject,did
             rebuff:rejected_spent,say:69b18b170a8c2fb2

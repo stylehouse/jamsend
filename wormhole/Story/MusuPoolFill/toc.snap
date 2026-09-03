@@ -5,7 +5,6 @@ story:MusuPoolFill
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.026
-      sample=0.025,at=1788353940
       sample=0.025,at=1788353944
       sample=0.025,at=1788353945
       sample=0.025,at=1788353946
@@ -15,8 +14,8 @@ story:MusuPoolFill
       sample=0.024,at=1788354454
       sample=0.016,at=1788354675
       sample=0.016,at=1788354833
+      sample=0.03,at=1788425557
     TimeTotal:step,avg=0.004
-      sample=0.004,at=1788353940
       sample=0.004,at=1788353944
       sample=0.004,at=1788353945
       sample=0.004,at=1788353946
@@ -26,13 +25,14 @@ story:MusuPoolFill
       sample=0.004,at=1788354454
       sample=0.003,at=1788354675
       sample=0.003,at=1788354833
+      sample=0.005,at=1788425557
   step,dige:80c1d9611de5c2e9
-  step=2,dige:282960e79ee7b3d8
-  step=3,dige:60cbb5d250f46121
+  step=2,dige:c4d2698f99d6fab1
+  step=3,dige:9072793e3b0f0944
     Assertion:the-captain-books-a,sentence:the captain books a pool fill as a standing reach toward its crew cave — the intent wears by and resolves its address and a re-book lands on the one particle
-  step=4,dige:f93fb6132d6c5400
+  step=4,dige:6579e4f4cc270392
     Assertion:the-cave-road-admits,sentence:the cave road admits its captain and the live doer presses the asked track from its own library into its pool — the artifact stands servable behind the one catalog door and the served copy graduates
-  step=5,dige:223808ebb798695b
+  step=5,dige:daf1b8f8ac93c555
     Assertion:the-arrived-ack-lands,sentence:the arrived ack lands the fill — the captain siphons the served artifact through the crew mirror byte for byte into its own pool and the fulfilled reach drops away
-  step=6,dige:aa0378291da99945
+  step=6,dige:3db227c2f91f1a70
     Assertion:a-track-the-cave,sentence:a track the cave does not hold refuses honestly — not in library crosses as the named why and the refused receipt stands on both sides

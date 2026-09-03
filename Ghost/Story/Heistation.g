@@ -47,6 +47,7 @@
 //     its keys — so the vouch repeats run to run, a pinnable fixture.
 IMPORT()
     import { Idento } from "$lib/Y.svelte.ts"
+    import { mint_grant } from "$lib/O/Funk/Grant.ts"
 
 MusuHeist(A,w):
     w oai %req:wrangle,eternal
@@ -5556,16 +5557,14 @@ async MusuPoolFill_stand(w):
     acct.c.up = w
     let ckeys = await this.Swarm_mint_keys('MusuPoolFill-Cap')
     let cap = this.Swarm_identity(acct, ckeys, 'Cap')
-    cap.c.bodykey = await this.Swarm_mint_keys('MusuPoolFill-Cap-body')
     w.c.cap = cap
     let vkeys = await this.Swarm_mint_keys('MusuPoolFill-Cavey')
     let cavey = this.Swarm_identity(acct, vkeys, 'Cavey')
-    cavey.c.bodykey = await this.Swarm_mint_keys('MusuPoolFill-Cavey-body')
     w.c.cavey = cavey
     let bare = String(cap.sc.prepub)
     this.Swarm_body_take(cap, null, 'Captain', bare)
-    this.Swarm_body_note(cap, String(cavey.c.bodykey.pub), 'Cave', bare + '_1', 'Cavey')
-    this.Swarm_body_note(cavey, String(cap.c.bodykey.pub), 'Captain', bare, 'Cap')
+    this.Swarm_body_note(cap, String(this.Swarm_body_key(cavey).pub), 'Cave', bare + '_1', 'Cavey')
+    this.Swarm_body_note(cavey, String(this.Swarm_body_key(cap).pub), 'Captain', bare, 'Cap')
     // the Cave's own music — an Original whose bytes live on the stub nav (the MusuPress shape)
     let lib = w.i({ Library: 1, name: 'cavelib' })
     lib.c.up = w
@@ -5633,7 +5632,7 @@ async MusuPoolFill_serve(w):
     w.sc.now = 1788300020
     let cap = w.c.cap
     let cavey = w.c.cavey
-    let inb = this.Swarm_reach_road(w, cavey, { reach: { of: 'o1', to: 'Cave', for: 'serve', by: String(cap.c.bodykey.pub) } })
+    let inb = this.Swarm_reach_road(w, cavey, { reach: { of: 'o1', to: 'Cave', for: 'serve', by: String(this.Swarm_body_key(cap).pub) } })
     let served = await this.Ra_pool_fill_serve(w, cavey)
     let row = { served: 1 }
     if (inb) { row.road_admitted = 1 }
@@ -5681,7 +5680,7 @@ async MusuPoolFill_refuse(w):
     let cap = w.c.cap
     let cavey = w.c.cavey
     this.Ra_pool_fill_book(w, cap, 'oX')
-    this.Swarm_reach_road(w, cavey, { reach: { of: 'oX', to: 'Cave', for: 'serve', by: String(cap.c.bodykey.pub) } })
+    this.Swarm_reach_road(w, cavey, { reach: { of: 'oX', to: 'Cave', for: 'serve', by: String(this.Swarm_body_key(cap).pub) } })
     await this.Ra_pool_fill_serve(w, cavey)
     let inb = this.Swarm_peering(cavey).o({ Reach: 1, of: 'oX' })[0]
     let row = { refused: 1 }
@@ -5707,3 +5706,388 @@ MusuPoolFill_witness(w):
     let r = T.o({ refused: 1 })[0]
     // #4 THE HONEST REFUSAL: named why crossing as a receipt on both sides.
     if (r && +r.sc.cave_refused === 1 && +r.sc.receipt_stands === 1) this.story_swear(w, 'a track the cave does not hold refuses honestly — not in library crosses as the named why and the refused receipt stands on both sides')
+
+
+// ══ MusuPoolRandom — THE RANDOM POOL + POOL CRUD (owner 2026-09-03: "take SoundPooling all the way through
+//  CRUD if you like, of Pools, start with one that just acquires random whole LOFI tracks from all
+//   Piers|Crewmates") ═══════════════════════════════════════════════════════════════════════════════════════
+//  A %Pool,take:random draws from EVERY mirrored catalog in the radio world (a %MusuThem crate stands only
+//   for a body that shared with me — crew and friends alike) in a CLOCKLESS shuffle (Ra_pool_hash over
+//    name:salt:id): the same draw every sit-down and in every fixture, a new draw per salt.  Its pull-wants
+//     name their HOLDER, and Ra_pool_fill_wants turns them into standing %Reach bookings toward that holder —
+//      a crewmate at its body name, a friend at its pier — where the reach road now admits a Music-granted
+//       friend (the people's music) and still refuses a stranger.  Then the CRUD: resize, a second pool, drop.
+//  CONVENTION (Musu*): the world MUST be named MusuPoolRandom.
+MusuPoolRandom(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuPoolRandom_drive,w,req
+        req%ok = 1
+
+MusuPoolRandom_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuPoolRandom_note(w, sc):
+    let t = this.MusuPoolRandom_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async MusuPoolRandom_drive(w, req):
+    let run = (this.c.run)
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 4 }
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.MusuPoolRandom_stand(w) }
+        if (n === 3) { await this.MusuPoolRandom_book(w) }
+        if (n === 4) { await this.MusuPoolRandom_crud(w) }
+    }
+    this.MusuPoolRandom_witness(w)
+    await this.Musu_float(w)
+
+MusuPoolRandom_wants(w):
+    let prov = w.o({ Provisions: 1 })[0]
+    return prov ? prov.o({ Want: 1 }) : []
+
+// beat 2 — stand + the first sit-down.  Cap (Captain) with a crewmate Cavey on the roster and a friend Fay
+//  sealed both ways with Music; two mirrored catalogs on the world (Cavey's 4 tracks, Fay's 4); Cap's own
+//   library (o1) and an empty pool.  One 'random' pool of cap 3 → three pull-wants, each naming its holder,
+//    the same three in the same order on a second sit-down; a new salt draws differently.
+async MusuPoolRandom_stand(w):
+    this.MusuPoolRandom_note(w, { reached: 'step_2' })
+    w.sc.now = 1788400000
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    acct.c.up = w
+    let ckeys = await this.Swarm_mint_keys('MusuPoolRandom-Cap')
+    let cap = this.Swarm_identity(acct, ckeys, 'Cap')
+    w.c.cap = cap
+    w.c.ckeys = ckeys
+    let vkeys = await this.Swarm_mint_keys('MusuPoolRandom-Cavey')
+    let cavey = this.Swarm_identity(acct, vkeys, 'Cavey')
+    w.c.cavey = cavey
+    let bare = String(cap.sc.prepub)
+    this.Swarm_body_take(cap, ckeys.pub, 'Captain', bare)
+    this.Swarm_body_note(cap, String(vkeys.pub), 'Cave', bare + '_1', 'Cavey')
+    this.Swarm_body_take(cavey, vkeys.pub, 'Cave', bare + '_1')
+    this.Swarm_body_note(cavey, String(ckeys.pub), 'Captain', bare, 'Cap')
+    let fkeys = await this.Swarm_mint_keys('MusuPoolRandom-Fay')
+    let fay = this.Swarm_identity(acct, fkeys, 'Fay')
+    w.c.fay = fay
+    let capToFay = await mint_grant(ckeys, String(fkeys.pub), 'Music', {}, this.Swarm_now(w))
+    let fayToCap = await mint_grant(fkeys, String(ckeys.pub), 'Music', {}, this.Swarm_now(w))
+    this.Swarm_seal(w, cap, { pub: fkeys.pub, prepub: fkeys.prepub, friendly: 'Fay' }, fayToCap, capToFay)
+    this.Swarm_seal(w, fay, { pub: ckeys.pub, prepub: ckeys.prepub, friendly: 'Cap' }, capToFay, fayToCap)
+    // the mirrored catalogs — what Cap can reach: Cavey's shelf at its body name, Fay's at its prepub
+    let cname = this.Swarm_body_addr(this.Swarm_body_for(cap, 'Cave'))
+    w.c.cname = cname
+    let cstock = this.Ra_home_them(w, cname)
+    for (const t of [['c1', 'Cave One'], ['c2', 'Cave Two'], ['c3', 'Cave Three'], ['c4', 'Cave Four']]) { let r = cstock.i({ Record: 1, id: t[0], title: t[1] }); r.c.up = cstock }
+    let fstock = this.Ra_home_them(w, String(fkeys.prepub))
+    for (const t of [['f1', 'Fay One'], ['f2', 'Fay Two'], ['f3', 'Fay Three'], ['f4', 'Fay Four']]) { let r = fstock.i({ Record: 1, id: t[0], title: t[1] }); r.c.up = fstock }
+    let lib = w.i({ Library: 1, name: 'caplib' })
+    lib.c.up = w
+    let own = lib.i({ Record: 1, id: 'o1', title: 'Own One' })
+    own.c.up = lib
+    let pool = w.i({ Library: 1, name: 'cappool' })
+    pool.c.up = w
+    w.c.lib = lib
+    w.c.pool = pool
+    this.Ra_pool_define(w, 'random', 'random', 3)
+    let sources = this.Ra_pool_sources(w)
+    this.Ra_quarter(w, lib, pool, lib, 3, sources)
+    let first = this.MusuPoolRandom_wants(w).map((x) => String(x.sc.of) + '<' + String(x.sc.from || '')).join(' ')
+    this.Ra_quarter(w, lib, pool, lib, 3, this.Ra_pool_sources(w))
+    let again = this.MusuPoolRandom_wants(w).map((x) => String(x.sc.of) + '<' + String(x.sc.from || '')).join(' ')
+    w.c.first_draw = first
+    let row = { stood: 1 }
+    if (sources.length === 8 && new Set(sources.map((x) => x.from)).size === 2) { row.eight_reachable_from_two = 1 }
+    let ws = this.MusuPoolRandom_wants(w)
+    if (ws.length === 3 && ws.every((x) => String(x.sc.do) === 'pull' && String(x.sc.pool) === 'random')) { row.three_pull_wants = 1 }
+    if (ws.length && ws.every((x) => x.sc.from && (String(x.sc.from) === cname || String(x.sc.from) === String(fkeys.prepub)))) { row.every_want_names_its_holder = 1 }
+    if (first && first === again) { row.same_draw_twice = 1 }
+    if (ws.every((x) => String(x.sc.of) !== 'o1')) { row.own_library_not_drawn = 1 }
+    // a new salt — the human's "shuffle again"
+    let pdef = this.Ra_pool_home(w).o({ Pools: 1 })[0].o({ Pool: 1, name: 'random' })[0]
+    pdef.sc.salt = '1'
+    pdef.bump()
+    this.Ra_quarter(w, lib, pool, lib, 3, this.Ra_pool_sources(w))
+    let salted = this.MusuPoolRandom_wants(w).map((x) => String(x.sc.of) + '<' + String(x.sc.from || '')).join(' ')
+    if (salted && salted !== first && this.MusuPoolRandom_wants(w).length === 3) { row.new_salt_new_draw = 1 }
+    w.c.set_up = 1
+    this.MusuPoolRandom_note(w, row)
+
+// beat 3 — book.  The wants become standing bookings toward their holders; the crewmate's resolves to its
+//  body name, the friend's to its pier; Fay's road admits Cap (Music live) and refuses a stranger; Fay's
+//   report back resolves to Cap's pier.  A re-run of the bridge books nothing new.
+async MusuPoolRandom_book(w):
+    this.MusuPoolRandom_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788400010
+    let cap = w.c.cap
+    let fay = w.c.fay
+    let n1 = this.Ra_pool_fill_wants(w, cap)
+    let n2 = this.Ra_pool_fill_wants(w, cap)
+    let reaches = this.Swarm_peering(cap).o({ Reach: 1 })
+    let row = { booked: 1 }
+    if (n1 === 3 && reaches.length === 3 && reaches.every((r) => String(r.sc.state) === 'booked' && String(r.sc.for) === 'serve')) { row.three_booked = 1 }
+    if (n2 === 3 && this.Swarm_peering(cap).o({ Reach: 1 }).length === 3) { row.rebook_idempotent = 1 }
+    let ws = this.MusuPoolRandom_wants(w)
+    let ok = reaches.length > 0
+    for (const r of reaches) {
+        let want = ws.find((x) => String(x.sc.of) === String(r.sc.of))
+        if (!want || String(r.sc.to) !== String(want.sc.from)) { ok = false }
+        if (this.Swarm_reach_addr(cap, r) !== String(want ? want.sc.from : '')) { ok = false }
+    }
+    if (ok) { row.addressed_to_holders = 1 }
+    let fr = reaches.find((r) => String(r.sc.to) === String(fay.sc.prepub))
+    if (fr) {
+        let by = String(this.Swarm_keys(cap).pub)
+        let inb = this.Swarm_reach_road(w, fay, { reach: { of: String(fr.sc.of), to: String(fr.sc.to), for: 'serve', by: by } })
+        if (inb) { row.friend_admits_granted_booker = 1 }
+        let skeys = await this.Swarm_mint_keys('MusuPoolRandom-Stranger')
+        let bad = this.Swarm_reach_road(w, fay, { reach: { of: String(fr.sc.of), to: String(fr.sc.to), for: 'serve', by: String(skeys.pub) } })
+        if (bad === null) { row.stranger_refused = 1 }
+        let landed = this.Swarm_peering(fay).o({ Reach: 1 }).find((r) => String(r.sc.of) === String(fr.sc.of))
+        if (landed && this.Swarm_reach_report(w, fay, landed) === String(cap.sc.prepub)) { row.friend_reports_to_pier = 1 }
+    }
+    this.MusuPoolRandom_note(w, row)
+
+// beat 4 — CRUD.  Resize the random pool to 1 (one want); define a second pool (two listed); drop the random
+//  pool (its wants gone); drop the last (the composition falls back to the anonymous single pool).
+async MusuPoolRandom_crud(w):
+    this.MusuPoolRandom_note(w, { reached: 'step_4' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788400020
+    let lib = w.c.lib
+    let pool = w.c.pool
+    let row = { crudded: 1 }
+    this.Ra_pool_define(w, 'random', 'random', 1)
+    this.Ra_quarter(w, lib, pool, lib, 3, this.Ra_pool_sources(w))
+    let ws = this.MusuPoolRandom_wants(w)
+    if (ws.length === 1 && String(ws[0].sc.pool) === 'random' && w.c.first_draw.indexOf(String(ws[0].sc.of)) < 0) { row.resized_to_one = 1 }
+    this.Ra_pool_define(w, 'liked', 'liked', 2)
+    let defs = this.Ra_pool_defs(w, 3)
+    if (defs.length === 2 && defs[0].name === 'random' && defs[1].name === 'liked' && defs[0].cap === 1) { row.two_listed_in_order = 1 }
+    let dropped = this.Ra_pool_drop(w, 'random')
+    this.Ra_quarter(w, lib, pool, lib, 3, this.Ra_pool_sources(w))
+    if (dropped === 1 && this.MusuPoolRandom_wants(w).length === 0 && this.Ra_pool_defs(w, 3).length === 1) { row.dropped_pool_wants_gone = 1 }
+    this.Ra_pool_drop(w, 'liked')
+    let fb = this.Ra_pool_defs(w, 3)
+    if (fb.length === 1 && fb[0].name === '' && fb[0].take === 'taste' && fb[0].cap === 3) { row.falls_back_to_anonymous = 1 }
+    if (this.Ra_pool_drop(w, 'random') === 0) { row.drop_missing_is_zero = 1 }
+    this.MusuPoolRandom_note(w, row)
+
+// ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
+MusuPoolRandom_witness(w):
+    let T = this.MusuPoolRandom_T(w)
+    let s = T.o({ stood: 1 })[0]
+    let b = T.o({ booked: 1 })[0]
+    let c = T.o({ crudded: 1 })[0]
+    if (s && +s.sc.eight_reachable_from_two === 1 && +s.sc.three_pull_wants === 1 && +s.sc.every_want_names_its_holder === 1 && +s.sc.own_library_not_drawn === 1)
+        this.story_swear(w, 'a random pool draws whole tracks from everyone who shares with me — crewmate and friend alike — each want naming its holder and never my own shelf')
+    if (s && +s.sc.same_draw_twice === 1 && +s.sc.new_salt_new_draw === 1)
+        this.story_swear(w, 'the draw is clockless — the same three in the same order on every sit-down — and a new salt is the shuffle-again')
+    if (b && +b.sc.three_booked === 1 && +b.sc.rebook_idempotent === 1 && +b.sc.addressed_to_holders === 1)
+        this.story_swear(w, 'declaring the pool is the consent — its wants stand as bookings toward their holders — the crewmate at its body name and the friend at its pier — and a re-run books nothing twice')
+    if (b && +b.sc.friend_admits_granted_booker === 1 && +b.sc.stranger_refused === 1 && +b.sc.friend_reports_to_pier === 1)
+        this.story_swear(w, 'the reach road admits a Music-granted friend as it admits kin — the people\'s music — a stranger is still refused and the report finds its way back over the pier')
+    if (c && +c.sc.resized_to_one === 1 && +c.sc.two_listed_in_order === 1 && +c.sc.dropped_pool_wants_gone === 1 && +c.sc.falls_back_to_anonymous === 1 && +c.sc.drop_missing_is_zero === 1)
+        this.story_swear(w, 'pools are CRUD — resize in place — list in declaration order — drop one and its wants fall out at the next sit-down — drop the last and the composition is the anonymous taste pool again')
+
+// ══ MusuPoolRadio — SOUNDPOOLING RIDES RADIO + HEIST (owner 2026-09-03: "ideally it works on top of a
+//  the Radio+Heist protocols, asking for Radio from a given area and then Heisting it all. saves us
+//   building a file browser?") ══════════════════════════════════════════════════════════════════════════
+//  The claim under test: choosing music is already SOLVED by the dial, so a pool need not choose — it
+//   keeps what the dial chose and you heard.  A %Pool,take:'radio' is that declaration; Radio_pool_catch
+//    mints the same %Heist intent the ⇊ button mints, wearing `into:'pool'`; Heist_keep_mardir routes it
+//     to the pool shelf instead of the library, which is the WHOLE seam (one scalar — every byte write and
+//      every catalog row downstream was already mardir-derived).  Then the two guards that make it safe to
+//       leave running all evening: the aim confines the catch to one area, and the cap counts INTENT as
+//        well as sediment so an evening of radio cannot mint a hundred standing claims on someone's wire.
+//  Beat 5 is the bare Cave: no library, no pools, crew — the one body whose default is unambiguous.
+//  CONVENTION (Musu*): the world MUST be named MusuPoolRadio.
+MusuPoolRadio(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuPoolRadio_drive,w,req
+        req%ok = 1
+
+MusuPoolRadio_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuPoolRadio_note(w, sc):
+    let t = this.MusuPoolRadio_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+// the catch is humdinger-gated (a Book must never heist real bytes).  Raise it for EXACTLY the call and
+//  drop it again — the consenter-puppet idiom — so nothing else humdinger-gated wakes in the run.  Safe
+//   here because the catch only mints an intent particle: the pulling needs a live route, which no Book has.
+MusuPoolRadio_catch(w, radio, rec):
+    let top = this.top_House()
+    let was = top.c.humdinger
+    top.c.humdinger = 1
+    let got = 0
+    try { got = this.Radio_pool_catch(w, radio, rec) } catch (e) { got = -1 }
+    if (!was) { delete top.c.humdinger } else { top.c.humdinger = was }
+    return got
+
+// the catch homes its shop under whatever Radio_pub answers in this world — ask the same question it
+//  asks, or the Book reads an empty shelf beside a full one (which is exactly what it did first time).
+MusuPoolRadio_me(w):
+    return this.Radio_pub(w) || 'me'
+
+MusuPoolRadio_keeps(w):
+    let shop = this.Ra_home_shop(w, this.MusuPoolRadio_me(w))
+    return shop.o({ Heist: 1 })
+
+async MusuPoolRadio_drive(w, req):
+    let run = (this.c.run)
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 5 }
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.MusuPoolRadio_stand(w) }
+        if (n === 3) { await this.MusuPoolRadio_guards(w) }
+        if (n === 4) { await this.MusuPoolRadio_goal(w) }
+        if (n === 5) { await this.MusuPoolRadio_cave(w) }
+    }
+    this.MusuPoolRadio_witness(w)
+    await this.Musu_float(w)
+
+// beat 2 — the catch.  A radio playing a friend's track, one 'radio' pool of cap 2, and nothing else:
+//  one keep appears, wearing into:'pool', and it is the SAME %Heist shape the ⇊ button mints.  My own
+//   track is never caught (nothing to fetch — I hold it), and a second pass on the same track is a no-op.
+async MusuPoolRadio_stand(w):
+    this.MusuPoolRadio_note(w, { reached: 'step_2' })
+    w.sc.now = 1788400000
+    let radio = w.i({ Radio: 'playing' })
+    radio.c.up = w
+    radio.c.w = w
+    w.c.radio = radio
+    let them = this.Ra_home_them(w, 'friendo')
+    for (const t of [['r1', 'Radio One'], ['r2', 'Radio Two'], ['r3', 'Radio Three']]) { let r = them.i({ Record: 1, id: t[0], title: t[1] }); r.c.up = them }
+    w.c.them = them
+    this.Ra_pool_define(w, 'heard', 'radio', 2)
+    let row = { stood: 1 }
+    // my OWN track — no holder stamped, so nothing to keep
+    let mine = w.i({ Record: 1, id: 'own1', title: 'Mine' })
+    mine.c.up = w
+    delete radio.sc.by
+    if (this.MusuPoolRadio_catch(w, radio, mine) === 0 && !this.MusuPoolRadio_keeps(w).length) { row.own_track_never_caught = 1 }
+    // a friend's track
+    radio.sc.by = 'friendo'
+    let r1 = this.Ra_rec_find(them, { Record: 1, id: 'r1' })
+    let got = this.MusuPoolRadio_catch(w, radio, r1)
+    let keeps = this.MusuPoolRadio_keeps(w)
+    if (got === 1 && keeps.length === 1) { row.one_keep = 1 }
+    let k = keeps[0]
+    if (k && String(k.sc.into || '') === 'pool' && String(k.sc.seed) === 'r1' && String(k.sc.pub) === 'friendo' && String(k.sc.why || '') === 'radio') { row.keep_says_pool = 1 }
+    if (k && String(k.sc.state || '') === 'primed') { row.same_shape_as_the_button = 1 }
+    if (this.MusuPoolRadio_catch(w, radio, r1) === 0 && this.MusuPoolRadio_keeps(w).length === 1) { row.catching_twice_is_once = 1 }
+    w.c.set_up = 1
+    this.MusuPoolRadio_note(w, row)
+
+// beat 3 — the two guards, and the seam itself.  The AIM confines the catch to one area; the CAP counts
+//  keeps in flight as well as landed tracks, so it binds from the first evening rather than the first
+//   landing.  And Heist_keep_mardir is the whole routing change: 'pool' for a keep that says so, the
+//    world's own answer for every keep that does not — which is why no existing heist moves an inch.
+async MusuPoolRadio_guards(w):
+    this.MusuPoolRadio_note(w, { reached: 'step_3' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788400010
+    let radio = w.c.radio
+    let them = w.c.them
+    let row = { guarded: 1 }
+    // the seam: a pool keep routes pool-ward, a plain keep keeps the world's answer
+    let k1 = this.MusuPoolRadio_keeps(w)[0]
+    let plain = this.Ra_home_shop(w, this.MusuPoolRadio_me(w)).i({ Heist: 'plain', seed: 'z9', pub: 'friendo', state: 'primed' })
+    plain.c.up = this.Ra_home_shop(w, this.MusuPoolRadio_me(w))
+    if (this.Heist_keep_mardir(w, k1) === 'pool' && this.Heist_keep_mardir(w, plain) === '') { row.one_scalar_routes_it = 1 }
+    this.Ra_home_shop(w, this.MusuPoolRadio_me(w)).drop(plain)
+    // the AIM — a track from outside the aimed area is not caught
+    radio.sc.aim = 'someoneelse'
+    let r2 = this.Ra_rec_find(them, { Record: 1, id: 'r2' })
+    let before = this.MusuPoolRadio_keeps(w).length
+    if (this.MusuPoolRadio_catch(w, radio, r2) === 0 && this.MusuPoolRadio_keeps(w).length === before) { row.aim_confines_the_catch = 1 }
+    delete radio.sc.aim
+    if (this.MusuPoolRadio_catch(w, radio, r2) === 1 && this.MusuPoolRadio_keeps(w).length === before + 1) { row.aim_lifted_catches_again = 1 }
+    // the CAP — two in flight fills a cap of 2, and the third is refused with nothing landed yet
+    let r3 = this.Ra_rec_find(them, { Record: 1, id: 'r3' })
+    if (this.MusuPoolRadio_catch(w, radio, r3) === 0 && this.MusuPoolRadio_keeps(w).length === 2) { row.cap_counts_intent = 1 }
+    w.c.guarded = 1
+    this.MusuPoolRadio_note(w, row)
+
+// beat 4 — the sediment is safe.  A 'radio' compartment's goal is what it ALREADY HOLDS, newest kept:
+//  without that, every other pool's goal would mark these tracks "not wanted" and the steward would
+//   evict on the next sit-down the very tracks the radio just caught.  This is the beat that would go
+//    red if someone made take:'radio' fall through to the taste default.
+async MusuPoolRadio_goal(w):
+    this.MusuPoolRadio_note(w, { reached: 'step_4' })
+    if (!w.c.guarded) { return }
+    w.sc.now = 1788400020
+    let pool = this.Ra_home_pool(w, this.MusuPoolRadio_me(w))
+    for (const id of ['r1', 'r2', 'r3']) { let r = pool.i({ Record: 1, id: id }); r.c.up = pool }
+    let lib = w.i({ Library: 1, name: 'radiolib' })
+    lib.c.up = w
+    let row = { goaled: 1 }
+    let goal = this.Ra_quarter_goal_pools(lib, this.Ra_pool_defs(w, 0), [], pool)
+    let ids = goal.map((g) => String(g.id)).join(' ')
+    if (ids === 'r2 r3' && goal.every((g) => String(g.pool) === 'heard')) { row.own_contents_are_the_goal = 1 }
+    if (goal.every((g) => String(g.why) === 'caught off the radio')) { row.honest_why = 1 }
+    let diff = this.Ra_quarter_diff(goal, pool, lib)
+    let evicts = diff.filter((d) => String(d.do) === 'evict').map((d) => String(d.of)).join(' ')
+    if (evicts === 'r1' && !diff.some((d) => String(d.do) === 'pull' || String(d.do) === 'press')) { row.trims_the_oldest_only = 1 }
+    w.c.goaled = 1
+    this.MusuPoolRadio_note(w, row)
+
+// beat 5 — the bare Cave.  A Captain sits on a library and a folder and chooses its own composition; a
+//  Cave usually has neither, so every take-policy scores an empty tally and it can never pool at all.
+//   Its music arrives over the wire from its crew — which is what a radio pool is.  So a Cave with no
+//    pools and no library declares one, ONCE, as a real visible %Pool it can resize or drop.
+async MusuPoolRadio_cave(w):
+    this.MusuPoolRadio_note(w, { reached: 'step_5' })
+    if (!w.c.goaled) { return }
+    w.sc.now = 1788400030
+    let row = { caved: 1 }
+    // a Captain is never defaulted for — it declares its own
+    if (!this.Radio_pool_cave_default(w, null).length) { row.captain_left_alone = 1 }
+    let w2 = w.i({ w: 'MusuPoolRadioCave' })
+    w2.c.up = w
+    let acct = w2.oai({ Account: 1, of: 'Cavey' })
+    acct.c.up = w2
+    let ckeys = await this.Swarm_mint_keys('MusuPoolRadio-Cap')
+    let cap = this.Swarm_identity(acct, ckeys, 'Cap')
+    let vkeys = await this.Swarm_mint_keys('MusuPoolRadio-Cave')
+    let cave = this.Swarm_identity(acct, vkeys, 'Cavey')
+    this.Swarm_crew_join(cave, String(ckeys.pub))
+    this.Swarm_crew_row(cave, String(ckeys.prepub), 'Captain', String(ckeys.pub))
+    this.Swarm_crew_row(cave, String(vkeys.prepub), 'Cave', String(vkeys.pub))
+    let made = this.Radio_pool_cave_default(w2, cave)
+    if (made.length === 1 && String(made[0].name) === 'crew' && String(made[0].take) === 'radio' && Number(made[0].cap) === 12) { row.bare_cave_declares_one = 1 }
+    let again = this.Ra_pool_defs(w2, 0).filter((p) => p.name)
+    if (again.length === 1) { row.declared_once_not_every_track = 1 }
+    this.MusuPoolRadio_note(w, row)
+
+MusuPoolRadio_witness(w):
+    let T = this.MusuPoolRadio_T(w)
+    let s = T.o({ stood: 1 })[0]
+    let g = T.o({ guarded: 1 })[0]
+    let o = T.o({ goaled: 1 })[0]
+    let c = T.o({ caved: 1 })[0]
+    if (s && +s.sc.one_keep === 1 && +s.sc.keep_says_pool === 1 && +s.sc.own_track_never_caught === 1 && +s.sc.catching_twice_is_once === 1)
+        this.story_swear(w, 'a radio pool does not choose — it keeps what the dial already chose and I already heard — as the same Heist intent the keep button mints, wearing into:pool')
+    if (s && +s.sc.same_shape_as_the_button === 1 && g && +g.sc.one_scalar_routes_it === 1)
+        this.story_swear(w, 'one scalar is the whole seam — a keep that says into:pool lands on the pool shelf and every keep that does not still takes the world’s own answer — so no existing heist moves an inch')
+    if (g && +g.sc.aim_confines_the_catch === 1 && +g.sc.aim_lifted_catches_again === 1)
+        this.story_swear(w, 'the aim is the area — tune the radio at one body and the pool fills from that body alone — lift it and the catch opens again')
+    if (g && +g.sc.cap_counts_intent === 1)
+        this.story_swear(w, 'the cap counts keeps in flight as well as tracks landed — so an evening of radio can never mint a hundred standing claims on somebody else’s wire')
+    if (o && +o.sc.own_contents_are_the_goal === 1 && +o.sc.honest_why === 1 && +o.sc.trims_the_oldest_only === 1)
+        this.story_swear(w, 'the sediment is safe — a radio compartment’s goal is what it already holds — so the steward trims the oldest catch and never evicts the evening')
+    if (c && +c.sc.captain_left_alone === 1 && +c.sc.bare_cave_declares_one === 1 && +c.sc.declared_once_not_every_track === 1)
+        this.story_swear(w, 'a Captain chooses its own composition — but a Cave with no library and no pools declares one visible crew pool the first time it hears its crew — and only ever once')

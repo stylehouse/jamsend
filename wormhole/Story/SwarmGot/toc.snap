@@ -4,8 +4,7 @@ story:SwarmGot
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.069
-      sample=0.084,at=1787931643
+    TimeTotal:beliefs,avg=0.076
       sample=0.091,at=1787932993
       sample=0.04,at=1787934994
       sample=0.04,at=1787935105
@@ -15,8 +14,8 @@ story:SwarmGot
       sample=0.078,at=1788298358
       sample=0.079,at=1788298373
       sample=0.054,at=1788299468
+      sample=0.153,at=1788426517
     TimeTotal:step,avg=0.008
-      sample=0.009,at=1787931643
       sample=0.01,at=1787932993
       sample=0.004,at=1787934994
       sample=0.004,at=1787935105
@@ -26,12 +25,13 @@ story:SwarmGot
       sample=0.009,at=1788298358
       sample=0.009,at=1788298373
       sample=0.006,at=1788299468
+      sample=0.017,at=1788426517
   step,dige:4cceff1eb9074df1
-  step=2,dige:080b9fcba6abd5a7
-  step=3,dige:838445059c129a89
+  step=2,dige:c4c4b9520d29b1b9
+  step=3,dige:1ba132d687e442c7
   step=4,dige:3455a412070d4055
-  step=5,dige:d6c5b4f09b161604
-  step=6,dige:53e5c59557289fd9
-  step=7,dige:add007577db1fbbf
-  step=8,dige:faeb992699ca9926
-  step=9,dige:3d72b5ad7199636c
+  step=5,dige:a11f7e60463600c4
+  step=6,dige:5f994c7150986bf6
+  step=7,dige:a4bcab9527b01e02
+  step=8,dige:c824403b3d2e713b
+  step=9,dige:18d301171d440523

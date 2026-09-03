@@ -10,7 +10,7 @@ Snap:H
           minted,url_carries_both,secret_live,twin_stashed,token_carries
           parked,confirm_parked,secret_still_live,nothing_sent
           confirmed,confirm_sent,ferry_sent_set,cave_pending
-          consumed,merged_into_self,account_crossed,cave_kept_own_key,no_keyless_husk,content_crossed,crew_row_holds_cert,captain_ledger_lists_crew,ferry_got_acked,secret_retired
+          consumed,merged_into_self,account_crossed,cave_kept_own_key,soul_held,no_keyless_husk,content_crossed,crew_row_holds_cert,captain_ledger_lists_crew,ferry_got_acked,secret_retired
           declined,consume_declined
         reached:step_2
         Account,of:Alice
@@ -22,12 +22,19 @@ Snap:H
                 Peering,name:801ca80af2d45548,friendly:Cavey,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
                 Grant:Music,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:72525b7032c9c7c202f866e173ac6a9f7eaaabef07a248655820fef057939549f2a0c8fba2b08561e902990cb158a7adc345314f06f99f61d82bfcc68ff8df09
                 Grant:Music,by:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,for:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,time:1756600020,sign:f2e6c6a4a2597b2d8928a143cba446f0d4056bd9a82cda1fe2e37ae4426757de06348829a90200b6e499e5f9edf48c7f3ca0f177a27a3b71f740a0b22fe9f308
-              Body,pub:dc4f0202db467c5b,post:Captain,name:Alice
+              Body,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,post:Captain,name:Alice
               Body,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,post:Cave,name:Cavey
               Pier,pub:771b7531de714be0,friendly:Cavey2,since:1756600050,link,post:Cave
                 Peering,name:771b7531de714be0,friendly:Cavey2,pub:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e
                 Grant:Music,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e,time:1756600050,sign:8e69c8673d656b6c7f9eee5bd75e36a117c8f211c21a05deb10afffe436ae189abcc9124c133f7c28ae4e5e97a2d31f437bf2085e42f78fa7d9446204bc5260f
                 Grant:Music,by:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e,for:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,time:1756600050,sign:1eb79023af3fcd88307a096943de385701f15e3981c299d1af65da88e807ee18f3b1c732ec6d612515a577ae2448b74f600f747e0979b58b630243b9cf067501
+            Crew,soul:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
+              mate:dc4f0202db467c5b,role:Captain,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
+              Key,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e	{"mung":["secret"]}
+              mate:801ca80af2d45548,role:Cave,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
+                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
+              mate:771b7531de714be0,role:Cave,pub:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e
+                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e,time:1756600050,sign:79a86dd84aecf34aed887d90f23a26317f106afc0b8e8fd38daf54ae39b072b395a83bd39fe05798ca8a2689d8dbcbff436cbf3ce0e55f6d6daf09a31cbc8405
             mail
               frame:pier_hello,did
               frame:pier_confirm,did
@@ -37,12 +44,6 @@ Snap:H
             SocialGraph
               Edge,a:dc4f0202db467c5b,b:801ca80af2d45548,at:1756600020
               Edge,a:dc4f0202db467c5b,b:771b7531de714be0,at:1756600050
-            Crew
-              mate:dc4f0202db467c5b,role:Captain
-              mate:801ca80af2d45548,role:Cave,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
-                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
-              mate:771b7531de714be0,role:Cave,pub:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e
-                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e,time:1756600050,sign:79a86dd84aecf34aed887d90f23a26317f106afc0b8e8fd38daf54ae39b072b395a83bd39fe05798ca8a2689d8dbcbff436cbf3ce0e55f6d6daf09a31cbc8405
         Account,of:Cavey
           Identity:801ca80af2d45548,prepub:801ca80af2d45548,friendly:Cavey
             Peering,name:801ca80af2d45548,friendly:Cavey,online
@@ -53,6 +54,12 @@ Snap:H
               Idzeug:invwalk_content,to:Music,genre:Jazz
               Idzeug:1,to:MyCave,next:2,claimed:1
               Body,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,post:Cave,name:Cavey
+            Crew,soul:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
+              mate:801ca80af2d45548,role:Cave,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
+                Key,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1	{"mung":["secret"]}
+                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
+              mate:dc4f0202db467c5b,role:Captain,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
+              Key,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e	{"mung":["secret"]}
             mail
               frame:pier_accept,did
               frame:ferry,did
@@ -60,10 +67,6 @@ Snap:H
             SocialGraph
               Edge,a:801ca80af2d45548,b:dc4f0202db467c5b,at:1756600020
               Edge,a:dc4f0202db467c5b,b:801ca80af2d45548,at:1756600020
-            Crew
-              mate:dc4f0202db467c5b,role:Captain
-              mate:801ca80af2d45548,role:Cave,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
-                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1,time:1756600020,sign:fff365cb96825cbf2af6ad8ca68f904b30adf60d0673bcf88b24dc3e7af2cfa12fc304fb555d3b7c9e04490fb3fbd1ab05d405cd4bbbe220a70738e3457f1000
         reached:step_3
         req:Ferry,eternal
           req:Ferry_soul,serial:2,phase:sent,at=1756600050,pub:801ca80af2d45548,name:Cavey
@@ -79,11 +82,12 @@ Snap:H
                 Peering,name:dc4f0202db467c5b,friendly:Alice,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
                 Grant:Music,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e,time:1756600050,sign:8e69c8673d656b6c7f9eee5bd75e36a117c8f211c21a05deb10afffe436ae189abcc9124c133f7c28ae4e5e97a2d31f437bf2085e42f78fa7d9446204bc5260f
                 Grant:Music,by:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e,for:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,time:1756600050,sign:1eb79023af3fcd88307a096943de385701f15e3981c299d1af65da88e807ee18f3b1c732ec6d612515a577ae2448b74f600f747e0979b58b630243b9cf067501
+            Crew,soul:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
+              mate:771b7531de714be0,role:Cave,pub:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e
+                Key,pub:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e	{"mung":["secret"]}
+                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e,time:1756600050,sign:79a86dd84aecf34aed887d90f23a26317f106afc0b8e8fd38daf54ae39b072b395a83bd39fe05798ca8a2689d8dbcbff436cbf3ce0e55f6d6daf09a31cbc8405
+              mate:dc4f0202db467c5b,role:Captain,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
             mail
               frame:pier_accept,did
             SocialGraph
               Edge,a:771b7531de714be0,b:dc4f0202db467c5b,at:1756600050
-            Crew
-              mate:dc4f0202db467c5b,role:Captain
-              mate:771b7531de714be0,role:Cave,pub:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e
-                Grant:Crew,by:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e,for:771b7531de714be01cb560dc97c3e4317f84f08ecb9dbd9d6c2e1f57827a2f5e,time:1756600050,sign:79a86dd84aecf34aed887d90f23a26317f106afc0b8e8fd38daf54ae39b072b395a83bd39fe05798ca8a2689d8dbcbff436cbf3ce0e55f6d6daf09a31cbc8405

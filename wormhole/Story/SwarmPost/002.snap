@@ -9,12 +9,24 @@ Snap:H
         Account,of:Alice
           Identity:b23d518eb4ec663e,prepub:b23d518eb4ec663e,friendly:Alice
             Peering,name:b23d518eb4ec663e,friendly:Alice
+            Crew,soul:b23d518eb4ec663ecaa8c287acc62703d667e5375b24e5621e6cca5618dcd08c
+              mate:b23d518eb4ec663e,role:Captain,pub:b23d518eb4ec663ecaa8c287acc62703d667e5375b24e5621e6cca5618dcd08c
+              Key,pub:b23d518eb4ec663ecaa8c287acc62703d667e5375b24e5621e6cca5618dcd08c	{"mung":["secret"]}
         Account,of:Cara
           Identity:5d08b29f2fabeff1,prepub:5d08b29f2fabeff1,friendly:Cara
             Peering,name:5d08b29f2fabeff1,friendly:Cara
+            Crew,soul:5d08b29f2fabeff117fc82b2178d805e159702f4f191bb85ba7f2bbdbb09c38d
+              mate:5d08b29f2fabeff1,role:Captain,pub:5d08b29f2fabeff117fc82b2178d805e159702f4f191bb85ba7f2bbdbb09c38d
+              Key,pub:5d08b29f2fabeff117fc82b2178d805e159702f4f191bb85ba7f2bbdbb09c38d	{"mung":["secret"]}
         Account,of:Dave
           Identity:02bbb8bff0589db0,prepub:02bbb8bff0589db0,friendly:Dave
             Peering,name:02bbb8bff0589db0,friendly:Dave
+            Crew,soul:02bbb8bff0589db0d6e5b2fa0edf374d5d2a2672f296cc5e1158773942dec1e1
+              mate:02bbb8bff0589db0,role:Captain,pub:02bbb8bff0589db0d6e5b2fa0edf374d5d2a2672f296cc5e1158773942dec1e1
+              Key,pub:02bbb8bff0589db0d6e5b2fa0edf374d5d2a2672f296cc5e1158773942dec1e1	{"mung":["secret"]}
         Account,of:Bob
           Identity:18480a85d1777608,prepub:18480a85d1777608,friendly:Bob
             Peering,name:18480a85d1777608,friendly:Bob
+            Crew,soul:18480a85d1777608255cea71c3cd33748ad7cb0db97c5ed074c5bb9271709d51
+              mate:18480a85d1777608,role:Captain,pub:18480a85d1777608255cea71c3cd33748ad7cb0db97c5ed074c5bb9271709d51
+              Key,pub:18480a85d1777608255cea71c3cd33748ad7cb0db97c5ed074c5bb9271709d51	{"mung":["secret"]}

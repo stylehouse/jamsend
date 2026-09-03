@@ -27,21 +27,21 @@ story:SwarmDisk
       sample=0.009,at=1786521329
       sample=0.013,at=1787306302
   step,dige:46ec288dbaeec02c
-  step=2,dige:47cf9713e36761ff
-  step=3,dige:ed2731e9668212f6
+  step=2,dige:faeb7deb4efe3f33
+  step=3,dige:418448e5f2791c36
     Assertion:friends,sentence:Alice and Bob become friends — each Pier carries a Music grant the other signed — a real account to persist
-  step=4,dige:d24614583b6a1955
+  step=4,dige:a837fc4d05a439ac
     Assertion:account-alone,sentence:the account persists to disk — its snap carries the friendship grant and the keypair inline so the owner-local backup stands alone
     Assertion:roster-pub-only,sentence:the roster names its owner for recognition — pub and friendly on disk and never the private key
-  step=5,dige:4ce23e9a351a9e2b
+  step=5,dige:a23f24915a138054
     Assertion:reseed-reborn,sentence:a fresh browser reseeds its owner off disk — the friendship and the private key reborn from the account snap alone
     Assertion:reseed-signs,sentence:the reseeded key still signs — a new grant minted after the disk round trip verifies under the same public key
     Assertion:reseed-identical,sentence:the account survives the disk round trip byte for byte — the reseeded self re-saves to the very same snap
     Assertion:grafted-stashed,sentence:a disk-grafted Pier is stash-worthy — its durable entry rebuilds the friend page and a Music grant that still verifies — so the reseeded friend survives the next warm reload
-  step=6,dige:1f83d31f345a0e6c
+  step=6,dige:88d532f14e089bec
     Assertion:two-owners,sentence:two owners share the one FSA point — enumeration finds both accounts on disk keyed by prepub
     Assertion:named-pick,sentence:the requested owner is the one reseeded — a named pick lands Carol not merely the first account and her own key thaws
     Assertion:roster-both,sentence:the roster names both owners for recognition — each pub and friendly on disk and neither private key
-  step=7,dige:c7f55cfe63d35614
+  step=7,dige:49d30ba7e026fa7c
     Assertion:update-not-append,sentence:the account write-through is an update not an append — a revocation re-saves the whole snap so disk tracks the live account
     Assertion:tombstone-survives,sentence:a revocation survives the disk round trip — the reseeded account carries the NotGrant tombstone so a reload never silently re-grants

@@ -57,6 +57,13 @@
     //  mints MyCaptain — the resume-from-backup act.  The feature choice itself lives in
     //   Swarm_ferry_link; this face only says which act the one button performs.
     let my_role = $derived.by(() => { void H?.version; try { return String((H as any)?.Swarm_body_mine?.(self)?.sc?.post || '') } catch { return '' } })
+    // THE POST IS A CHOICE NOW (owner 2026-09-03: "I guess we have a drop-down of roles we can give via the
+    //  Link").  Under the ledger model (Crew_todo §4) both posts are one road: the device takes the whole
+    //   /Crew either way; the post it lands with is the ROLE on its row.  'Captain' hands over the helm —
+    //    this device stands down to a Cave with a fresh key of its own (Swarm_crew_standdown).  Defaults by
+    //     my own role, which is what the button used to derive on its own.
+    let post_pick = $state('')
+    let post_choice = $derived(post_pick || (my_role === 'Cave' ? 'Captain' : 'Cave'))
 
     // ── THE CREW ROSTER — the %Body rows under this identity's Peering (Swarm_body_roster).  Each row is a
     //  device sworn into the crew: `.sc.post` = Captain|Cave, `.sc.name` its crew name, `.sc.pub` its key.
@@ -212,7 +219,7 @@
             const t1 = (typeof performance !== 'undefined') ? performance.now() : 0
             if (w && typeof H.Swarm_station_up === 'function' && H.Swarm_station_up(w, self)) stood = true
             const t2 = (typeof performance !== 'undefined') ? performance.now() : 0
-            url = await H.Swarm_ferry_link(w, self, location.origin + location.pathname)
+            url = await H.Swarm_ferry_link(w, self, location.origin + location.pathname, post_choice === 'Captain' ? 'MyCaptain' : 'MyCave')
             const t3 = (typeof performance !== 'undefined') ? performance.now() : 0
             console.log(`🔗 link a device — paint+yield ${(t1 - t0).toFixed(0)}ms · station_up ${(t2 - t1).toFixed(0)}ms · ferry_link ${(t3 - t2).toFixed(0)}ms · (render fan-out follows on the version bump)`)
             if (!url) err = 'no live identity yet — wait a moment and retry'
@@ -724,11 +731,19 @@
             </p>
         {/if}
         <div class="ld-face">
+            <label class="ld-post" title="what the device that opens this link becomes — a Cave joins your crew; a Captain takes the helm and this device stands down to a Cave">
+                give the post
+                <select bind:value={post_pick} disabled={minting}>
+                    <option value="">{my_role === 'Cave' ? 'Captain (resume)' : 'Cave (default)'}</option>
+                    <option value="Cave">Cave — joins the crew</option>
+                    <option value="Captain">Captain — takes the helm</option>
+                </select>
+            </label>
             <button class="ld-link" onclick={link} disabled={!self || minting}
                 title={my_role === 'Cave'
                     ? 'mint a Captain link — the device that opens it takes the Captain post of this crew (resume from backup: this Cave carries the whole account, and a new Captain replaces the old one)'
                     : 'add another device to your crew as a Cave — it keeps its own key and serves the shared library in the crew\'s name'}>
-                {#if minting}<span class="ld-spin"></span> minting a link…{:else}{my_role === 'Cave' ? '🔗 resurrect my Captain' : '🏴 muster a crew mate'}{/if}</button>
+                {#if minting}<span class="ld-spin"></span> minting a link…{:else}{post_choice === 'Captain' ? '⚓ hand over the helm' : '🏴 muster a crew mate'}{/if}</button>
             {#if link_active}
                 <div class="ld-pending">you have a device link in progress
                     <button class="ld-cancel-b" onclick={cancel_link}>cancel it</button></div>
@@ -746,6 +761,8 @@
 </div>
 
 <style>
+    .ld-post { pointer-events: auto; display: inline-flex; gap: .35rem; align-items: center; font-size: .8em; opacity: .85; margin-right: .5rem; }
+    .ld-post select { pointer-events: auto; background: rgba(0,0,0,.3); color: inherit; border: 1px solid rgba(244,230,200,.3); border-radius: 5px; padding: .1rem .3rem; font: inherit; font-size: .95em; }
     /* ONE FRAME both ends — the blurb explains the act; the face below is the only thing that differs. */
     .ld-frame {
         display: flex; flex-direction: column; align-items: center; gap: .8rem;

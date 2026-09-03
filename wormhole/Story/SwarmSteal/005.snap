@@ -11,5 +11,8 @@ Snap:H
               Sibling:tab_encode,address:32c1ce7a059129d1_1,duty:encode
               Sibling:tab_spare,address:32c1ce7a059129d1_3,duty:serve
               Stolen:remote_copy,at:1751700020
+            Crew,soul:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+              mate:32c1ce7a059129d1,role:Captain,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+              Key,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213	{"mung":["secret"]}
         req:witness,eternal,ok
         see:Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm

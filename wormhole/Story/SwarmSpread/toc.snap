@@ -26,13 +26,13 @@ story:SwarmSpread
       sample=0.012,at=1788326811
       sample=0.004,at=1788328066
       sample=0.008,at=1788354828
-  step,dige:0000000000000000
-  step=2,dige:3338a029cfe39e2e
+  step,dige:04719603a51e3f2a
+  step=2,dige:020dc4c31cfd085d
     Assertion:a-blank-device-offers,sentence:a blank device offers itself as a body not a role — the adoption offer proves the device holds its own key and carries no Post so the device does not yet know it will be a Cave
-  step=3,dige:83f1a2eeac326d3e
+  step=3,dige:b1fdb8c5aaed275a
     Assertion:the-soul-seals-across,sentence:the soul seals across on a scan — the soul-holder seals its whole account to the blank device and the device unseals it and now holds the very same soul key so it is no longer blank but a body of that soul
     Assertion:the-device-consents-to,sentence:the device consents to the role and the roster routes both — the box derives Cave from the proposed grant the phone takes Captain and each body answers at its own key-derived name — the first charter still verifies while carrying no seat column at all
-  step=4,dige:be9a1e2762c37c76
+  step=4,dige:34756ed9a836b4a6
     Assertion:the-ceremony-fails-closed,sentence:the ceremony fails closed — a tampered seal a wrong nonce and a withheld consent each produce no body and the soul never lands on a device that flubbed the seal or that the human did not confirm
-  step=5,dige:b6f5fdf3e4e2aa28
+  step=5,dige:cca7c2d23e3a680d
     Assertion:the-account-ferries-over,sentence:the account ferries over the sealed pier — once a MyCave pier stands the soul exports and seals its account data across to the device which unseals it with the fragment code and folds it into its own identity as a Cave keeping its own key while the soul key never crosses and a wrong code lands no account at all

@@ -60,6 +60,10 @@ db.version(1).stores({
 // ── the body key ─────────────────────────────────────────────────────────────────────────────
 
 /** Read this store's durable body key for `root_prepub`, or undefined (first stand-up / no IDB). */
+// ⚠ ORPHANED 2026-09-03 (keys became particles — src/lib/O/Funk/Crewkeys.ts): NOTHING reads or writes
+//  this table any more; an identity's own key IS its body key and lives on /Crew. The two verbs and the
+//   `bodykeys` store are left standing ONLY so an existing browser's rows can be migrated or inspected —
+//    delete them, and the table, once no live account predates the change.
 export async function bodykey_read(root_prepub: string): Promise<BodyKeyRow | undefined> {
     if (!HAS_IDB) return undefined
     try { return await db.BodyKey.get(root_prepub) } catch { return undefined }

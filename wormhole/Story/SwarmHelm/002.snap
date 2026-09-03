@@ -1,0 +1,67 @@
+Snap:H
+  H:SwarmHelm,Run
+    A:SwarmHelm
+      self,round=2	{"mung":["age"]}
+      w:SwarmHelm,now=1751700000
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          stood,three_rows,caves_hold_soul,cave_signs_own,captain_wields_soul,mates_carry_ledger,friend_admits_caves
+        reached:step_2
+        Account,of:Helm
+          Identity:6c06a7b30daf891b,prepub:6c06a7b30daf891b,friendly:Alice
+            Peering,name:6c06a7b30daf891b,friendly:Alice
+              Pier,pub:933aec76c0e386f0,friendly:Cavey,since:1751700000
+                Peering,name:933aec76c0e386f0,friendly:Cavey,pub:933aec76c0e386f04933f6ea4b42524a2d627c7602e1acf5cffd44509aa3e56d
+              Pier,pub:138f6f15e7cca4bf,friendly:Dory,since:1751700000
+                Peering,name:138f6f15e7cca4bf,friendly:Dory,pub:138f6f15e7cca4bf122835bcbaba88a1785547190d2ba06bfd9b311521af57ca
+              Pier,pub:c39732b5b653e947,friendly:Fred,since:1751700000
+                Peering,name:c39732b5b653e947,friendly:Fred,pub:c39732b5b653e947fa930a5d598319f63c0eb376814658bb70e21aa9b8f44e44
+            Crew,soul:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff
+              mate:6c06a7b30daf891b,role:Captain,pub:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff
+              Key,pub:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff	{"mung":["secret"]}
+              mate:933aec76c0e386f0,role:Cave,pub:933aec76c0e386f04933f6ea4b42524a2d627c7602e1acf5cffd44509aa3e56d
+                Grant:Crew,by:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff,for:933aec76c0e386f04933f6ea4b42524a2d627c7602e1acf5cffd44509aa3e56d,time:1751700000,sign:05e65ffdca544f4c3d3b239628b4b72f32b8f6d587d07b52396305590670c18c6a48e4b7ac7ae0c5eac9b48054d8ec47ea3b81e5f13b77879b950aebbee51207
+              mate:138f6f15e7cca4bf,role:Cave,pub:138f6f15e7cca4bf122835bcbaba88a1785547190d2ba06bfd9b311521af57ca
+                Grant:Crew,by:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff,for:138f6f15e7cca4bf122835bcbaba88a1785547190d2ba06bfd9b311521af57ca,time:1751700000,sign:6df4dc2a96f02d2ca1859cf549d7ca7098bd9d4fa69aa8179e71a51a610111feca31ceb91fff241c1c5d8ac148fc32819c62fecae52384891d621a966d632f07
+            SocialGraph
+              Edge,a:6c06a7b30daf891b,b:933aec76c0e386f0,at:1751700000
+              Edge,a:6c06a7b30daf891b,b:138f6f15e7cca4bf,at:1751700000
+              Edge,a:6c06a7b30daf891b,b:c39732b5b653e947,at:1751700000
+          Identity:933aec76c0e386f0,prepub:933aec76c0e386f0,friendly:Cavey
+            Peering,name:933aec76c0e386f0,friendly:Cavey
+              Pier,pub:6c06a7b30daf891b,friendly:Alice,since:1751700000
+                Peering,name:6c06a7b30daf891b,friendly:Alice,pub:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff
+            Crew,soul:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff
+              mate:933aec76c0e386f0,role:Cave,pub:933aec76c0e386f04933f6ea4b42524a2d627c7602e1acf5cffd44509aa3e56d
+                Key,pub:933aec76c0e386f04933f6ea4b42524a2d627c7602e1acf5cffd44509aa3e56d	{"mung":["secret"]}
+                Grant:Crew,by:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff,for:933aec76c0e386f04933f6ea4b42524a2d627c7602e1acf5cffd44509aa3e56d,time:1751700000,sign:05e65ffdca544f4c3d3b239628b4b72f32b8f6d587d07b52396305590670c18c6a48e4b7ac7ae0c5eac9b48054d8ec47ea3b81e5f13b77879b950aebbee51207
+              Key,pub:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff	{"mung":["secret"]}
+              mate:6c06a7b30daf891b,role:Captain,pub:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff
+              mate:138f6f15e7cca4bf,role:Cave,pub:138f6f15e7cca4bf122835bcbaba88a1785547190d2ba06bfd9b311521af57ca
+                Grant:Crew,by:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff,for:138f6f15e7cca4bf122835bcbaba88a1785547190d2ba06bfd9b311521af57ca,time:1751700000,sign:6df4dc2a96f02d2ca1859cf549d7ca7098bd9d4fa69aa8179e71a51a610111feca31ceb91fff241c1c5d8ac148fc32819c62fecae52384891d621a966d632f07
+            SocialGraph
+              Edge,a:933aec76c0e386f0,b:6c06a7b30daf891b,at:1751700000
+          Identity:138f6f15e7cca4bf,prepub:138f6f15e7cca4bf,friendly:Dory
+            Peering,name:138f6f15e7cca4bf,friendly:Dory
+              Pier,pub:6c06a7b30daf891b,friendly:Alice,since:1751700000
+                Peering,name:6c06a7b30daf891b,friendly:Alice,pub:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff
+            Crew,soul:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff
+              mate:138f6f15e7cca4bf,role:Cave,pub:138f6f15e7cca4bf122835bcbaba88a1785547190d2ba06bfd9b311521af57ca
+                Key,pub:138f6f15e7cca4bf122835bcbaba88a1785547190d2ba06bfd9b311521af57ca	{"mung":["secret"]}
+                Grant:Crew,by:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff,for:138f6f15e7cca4bf122835bcbaba88a1785547190d2ba06bfd9b311521af57ca,time:1751700000,sign:6df4dc2a96f02d2ca1859cf549d7ca7098bd9d4fa69aa8179e71a51a610111feca31ceb91fff241c1c5d8ac148fc32819c62fecae52384891d621a966d632f07
+              Key,pub:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff	{"mung":["secret"]}
+              mate:6c06a7b30daf891b,role:Captain,pub:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff
+              mate:933aec76c0e386f0,role:Cave,pub:933aec76c0e386f04933f6ea4b42524a2d627c7602e1acf5cffd44509aa3e56d
+                Grant:Crew,by:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff,for:933aec76c0e386f04933f6ea4b42524a2d627c7602e1acf5cffd44509aa3e56d,time:1751700000,sign:05e65ffdca544f4c3d3b239628b4b72f32b8f6d587d07b52396305590670c18c6a48e4b7ac7ae0c5eac9b48054d8ec47ea3b81e5f13b77879b950aebbee51207
+            SocialGraph
+              Edge,a:138f6f15e7cca4bf,b:6c06a7b30daf891b,at:1751700000
+          Identity:c39732b5b653e947,prepub:c39732b5b653e947,friendly:Fred
+            Peering,name:c39732b5b653e947,friendly:Fred
+              Pier,pub:6c06a7b30daf891b,friendly:Alice,since:1751700000
+                Peering,name:6c06a7b30daf891b,friendly:Alice,pub:6c06a7b30daf891bee8117187a053da7c3daeccad9ddaa550f9ce25267123dff
+            Crew,soul:c39732b5b653e947fa930a5d598319f63c0eb376814658bb70e21aa9b8f44e44
+              mate:c39732b5b653e947,role:Captain,pub:c39732b5b653e947fa930a5d598319f63c0eb376814658bb70e21aa9b8f44e44
+              Key,pub:c39732b5b653e947fa930a5d598319f63c0eb376814658bb70e21aa9b8f44e44	{"mung":["secret"]}
+            SocialGraph
+              Edge,a:c39732b5b653e947,b:6c06a7b30daf891b,at:1751700000

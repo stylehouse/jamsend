@@ -3110,7 +3110,7 @@ await M.eatfunc({
                         const piers = (peering?.o({ Pier: 1 }) ?? []) as any[]
                         const gr = (p: any) => ({ grants: p.o({ Grant: 1 }).map((g: any) => g.sc.Grant), nots: p.o({ NotGrant: 1 }).map((g: any) => g.sc.NotGrant), heard_ago: p.c?.heard_at ? Math.round((Date.now() - p.c.heard_at) / 1000) : null })
                         result = {
-                            self: { prepub: self.sc.prepub, friendly: self.sc.friendly ?? '', soul_key: !!self.c?.keys, bodykey: String((H as any).Swarm_body_key?.(self)?.pub ?? '').slice(0, 16) },
+                            self: { prepub: self.sc.prepub, friendly: self.sc.friendly ?? '', key: !!(H as any).Swarm_keys?.(self), soul: String((H as any).Swarm_soulpub?.(self) ?? '').slice(0, 16), soul_held: !!(H as any).Swarm_soul?.(self), wields: String((H as any).Swarm_signas?.(self)?.prepub ?? '') },
                             crew: (H as any).Swarm_crew_view?.(self) ?? [],
                             bodies: (peering?.o({ Body: 1 }) ?? []).map(sc),
                             link_piers: piers.filter((p: any) => p.sc.link).map((p: any) => ({ ...sc(p), ...gr(p) })),

@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '59adbfb3c9d45e69~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'ebf90b1055878a7b~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -99,6 +99,21 @@ Heist_marrauding(runid, nick) {
 //    in one Heist_sweep.  Runtime-only (`.c`), so no snap anywhere changes.
 Heist_mardir(w) {
     return (w && w.c.mardir) ? w.c.mardir : ''
+
+},
+// Heist_keep_mardir — WHERE THIS PARTICULAR KEEP LANDS (SoundPooling, owner 2026-09-03: "ideally it
+//  works on top of the Radio+Heist protocols — asking for Radio from a given area and then Heisting it
+//   all; saves us building a file browser").  `w.c.mardir` is a WORLD-WIDE routing switch — the whole
+//    tab pointed at a marraud root or at OPFS — which cannot express "this track to the pool, that one
+//     to the library" on one tab at one time.  A %Heist may now carry its own destination, `into:'pool'`,
+//      and that is the ENTIRE seam: every byte write (Heist_land's `mardir + '/' + rel`) and every
+//       catalog row (Heist_catalog_land → Heist_is_pool → Ra_rec_pool) is already mardir-derived, so a
+//        pool keep needs no new byte machinery, no second nav and no parallel lane — the machine that
+//         hauls a friend's album hauls a pooled track, and the only difference is one scalar.
+//  Absent `into`, the world's answer stands, so every existing keep is byte-identical.
+Heist_keep_mardir(w, keep) {
+    if (keep && String(keep.sc.into || '') === 'pool') { return 'pool' }
+    return this.Heist_mardir(w)
 
 },
 // Heist_is_pool — the TELL that routes a landed track's CATALOG row pool-ward (Portability_todo §3).
@@ -2686,7 +2701,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         //     one — and skip straight to landed for whatever verifies. THIS is the live 'pulling' branch
         //      (not the dormant Heist_keep_pull below, which nothing live ever reaches — state never
         //       becomes 'committing' on the one-click flow); resume must run HERE to matter.
-        await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, this.Heist_mardir(w), keep)
+        await this.Heist_resume_sync(w, nav, job, own, srcmir, picks, this.Heist_keep_mardir(w, keep), keep)
         // SERIALIZE + OVERLAP (Evening 5 A1 — the human 2026-07-29: "doing every track in parallel or holding
         //  more than a reasonable amount of the music is wrong ... we could overlap them a little bit but only
         //   for a few seconds, to beat a latency ... where we ask for another while nothing is coming").  The
@@ -2917,7 +2932,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                             //    Stamp ONLY on true, exactly mirroring what the inline call always MEANT to
                             //     do. A breach already re-fires Heist_land next beat via BREACH_COOLDOWN,
                             //      unchanged.
-                            let ok = await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_mardir(w))
+                            let ok = await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_keep_mardir(w, keep))
                             if (ok) {
                                 pick.sc.landed = 1
                                 // REMEMBER EXACTLY WHAT WE WROTE (2026-08-05), so a cancel can take back
@@ -3989,7 +4004,7 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route) {
         let r = await this.Ra_pull_beat(w, rec.c.rx || route, me, String(rec.c.from || keep.sc.pub), rec)
         let cooling = rec.c.breach_at && (Date.now() - rec.c.breach_at) < BREACH_COOLDOWN
         if (r && r.done && !cooling) {
-            await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_mardir(w))
+            await this.Heist_land(w, nav, job, own, srcmir, rec, this.Heist_keep_mardir(w, keep))
             pick.sc.landed = 1
             pick.sc.landed_at = this.Heist_rel_for(job, rec)   // what we wrote, so a cancel can take it back
             pick.bump()

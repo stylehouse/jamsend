@@ -8,7 +8,13 @@ Snap:H
         Account,of:Vera
           Identity:69b18b170a8c2fb2,prepub:69b18b170a8c2fb2,friendly:Vera
             Peering,name:69b18b170a8c2fb2,friendly:Vera,online
+            Crew,soul:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e
+              mate:69b18b170a8c2fb2,role:Captain,pub:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e
+              Key,pub:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e	{"mung":["secret"]}
         Account,of:Otto
           Identity:d54622b2f2557ba4,prepub:d54622b2f2557ba4,friendly:Otto
             Peering,name:d54622b2f2557ba4,friendly:Otto
+            Crew,soul:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6
+              mate:d54622b2f2557ba4,role:Captain,pub:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6
+              Key,pub:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6	{"mung":["secret"]}
         req:witness,eternal,ok

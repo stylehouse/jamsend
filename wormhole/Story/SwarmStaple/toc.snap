@@ -27,21 +27,21 @@ story:SwarmStaple
       sample=0.005,at=1788092613
       sample=0.004,at=1788354822
   step,dige:857b7f27f55187b6
-  step=2,dige:8c658e1450d254fb
+  step=2,dige:1d86c1a806677065
     Assertion:two-selves,sentence:two selves stand — each an Identity owning its Peering page — keys ride .c only
-  step=3,dige:f05dfb0492b0d481
+  step=3,dige:9fd2aec5153c1a16
     Assertion:idzeug-minted,sentence:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical
-  step=4,dige:3aab3d2d108242f9
+  step=4,dige:fa8f298206366821
     Assertion:offline-redeem-fails,sentence:redeeming with the inviter offline fails — the token is proof of receipt not an offline capability
     Assertion:mangled-token-rebuffed,sentence:a mangled token is rebuffed at the redeemer — it never parses and no frame crosses
-  step=5,dige:d1deb79f08d1a5af
+  step=5,dige:336e0691cbffcf59
     Assertion:presig-flip-door,sentence:a flipped presig refuses locally at the door — only the issuer key can wear the MAC — and the true token still seals behind it
     Assertion:friendship-edge,sentence:the friendship is an edge logged in the social graph at both ends
     Assertion:reciprocity-sealed,sentence:each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed
     Assertion:page-imported,sentence:Bob imported the page of Alice — the stashed Peering reborn under his Pier
-  step=6,dige:dec3447fb00ec61d
+  step=6,dige:2ed03feeeb0fc155
     Assertion:single-use-spent,sentence:the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed
-  step=7,dige:88ed1e77ed402e4a
+  step=7,dige:a8db4c22571b5a67
     Assertion:notgrant-retires,sentence:a NotGrant under the Pier retires it at use — the other end stands until told
-  step=8,dige:91382cb3cd5d18d6
+  step=8,dige:58492b5955c26e37
     Assertion:account-roundtrip,sentence:the account survives export and import byte for byte — Pier and grants and keys intact

@@ -17,10 +17,10 @@ story:SwarmReboot
       sample=0.013,at=1788408888
       sample=0.004,at=1788408949
   step,dige:f508e4cd43e96afe
-  step=2,dige:df9992e234c3c056
-  step=3,dige:35f6336ec6c88bba
-  step=4,dige:cb047236fb6aa1de
-  step=5,dige:3b8f90125e952aea
+  step=2,dige:6d69830e924547db
+  step=3,dige:cae5af7e9099ce6e
+  step=4,dige:c46959d004f4c4ec
+  step=5,dige:5b989b5e7f1c99bd
     Assertion:the-crew-ledger-and,sentence:the crew ledger and its cert survive a reload through the stash alone — the home a device with no folder actually has
     Assertion:the-reload-is-real,sentence:the reload is real — the peering stands bare and the crew grant answers nothing until the rehydrate runs
     Assertion:a-standing-booking-outlives,sentence:a standing booking outlives the boot that made it — reach comes back booked so book-it-and-walk-away is true on a phone

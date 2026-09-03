@@ -27,11 +27,11 @@ story:SwarmSpoof
       sample=0.016,at=1786519027
       sample=0.007,at=1786521317
   step,dige:e459d5a3175f7c10
-  step=2,dige:68bae842c38d16a4
-  step=3,dige:8b387e6c0cec086b
+  step=2,dige:4430cab54baeac2a
+  step=3,dige:f291c16ceba3689c
     Assertion:alice-mints-a-real,sentence:Alice mints a real Music Idzeug scoped to Jazz — a single-use invite Mallory carries to the door
-  step=4,dige:06b9796ebc732af7
+  step=4,dige:a3957be02329cf91
     Assertion:a-hostile-hello-declaring,sentence:a hostile hello declaring an address its key cannot derive is refused at the door — no contact seals under the forged address and the live invite stays unspent
     Assertion:the-forged-victim-is,sentence:the forged victim is left untouched — the refused spoof sends no reply so the innocent address the attacker wore is never spammed with a rejection
-  step=5,dige:818758fe530ac2f0
+  step=5,dige:443fff52743bab34
     Assertion:presig-mac-teeth,sentence:a guessed serial and a forged presig both refuse locally — no reply and no spend and no contact — only the issuer key can wear the MAC

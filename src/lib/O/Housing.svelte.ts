@@ -1905,7 +1905,9 @@ export class House extends StorableHousing {
                 const next = !w.c[key]
                 w.c[key] = next
                 opts.on_change?.(next)
-                if (do_stash) H.stashed[key] = w.c[key]
+                // delete-on-default, as the header promises (it never did — every toggle-off WROTE
+                //  `false`, so a stashed toggle could never return to "unset" and a lean stash was a lie)
+                if (do_stash) { if (w.c[key] === def_v) delete H.stashed[key]; else H.stashed[key] = w.c[key] }
                 H.main()
             },
         })

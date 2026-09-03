@@ -9,14 +9,17 @@ Snap:H
         Account,of:Alice
           Identity:f9f74e40023b4b63,prepub:f9f74e40023b4b63,friendly:Alice
             Peering,name:f9f74e40023b4b63,friendly:Alice,online
-              Body,pub:a23269ef292a0526f9a43bb622edddc5bf0cab96c8346287718f09b55f1befbc,post:Captain,address:f9f74e40023b4b63
+              Body,pub:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629,post:Captain,address:f9f74e40023b4b63
               Body,pub:serve_cave_pub,post:Cave,address:cave_dept_addr
-              Charter,era:1,payload:a23269ef292a0526f9a43bb622edddc5bf0cab96c8346287718f09b55f1befbc:Captain:f9f74e40023b4b63;serve_cave_pub:Cave:cave_dept_addr,sig:f9fa45f48c6b48c2ec1a40109649e9a0ec68409bc33a6840ae1d6a39afc65ca52ac9316538c108f720cfb7a118620bcf1a83ac633aa98ef629c75eac4d54500b,soul:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629
+              Charter,era:1,payload:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629:Captain:f9f74e40023b4b63;serve_cave_pub:Cave:cave_dept_addr,sig:503e062a78ba150e7b4a568d8233ec05c66c71ea36893c5d1409794f04fd3c89f33008783c2eefdb0dcceec1566c54fafac33331a17c4aa2f821538f9f34670a,soul:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629
               Idzeug:serve_m1,to:Music,spent
               Pier,pub:271a5b4b0f1c870b,friendly:Bob,since:1751690000
                 Peering,name:271a5b4b0f1c870b,friendly:Bob,pub:271a5b4b0f1c870be39dc40ad55550a5d94a7f33be04f2ac8172c54f0d4dd0bb
                 Grant:Music,by:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629,for:271a5b4b0f1c870be39dc40ad55550a5d94a7f33be04f2ac8172c54f0d4dd0bb,time:1751690000,sign:aab5e6833b2ed5b50efcb142d7cb10bde909e45d641974d42ab470e862e7569003ed62baef01f32cdbbf9829ead60f24bd0f375acd6455158c7ca67fda32d00f
                 Grant:Music,by:271a5b4b0f1c870be39dc40ad55550a5d94a7f33be04f2ac8172c54f0d4dd0bb,for:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629,time:1751690000,sign:c9839dcab9b53bf44b1ce53f9dd2cdeaf015a03d559f77c4de1a9d140d313dfa446b85a61868ce56aaef56ef7b894ec01da69ac05efe5a571ebdc0adee17fd0e
+            Crew,soul:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629
+              mate:f9f74e40023b4b63,role:Captain,pub:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629
+              Key,pub:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629	{"mung":["secret"]}
             mail
               frame:pier_hello,did
               frame:pier_confirm,did
@@ -29,9 +32,12 @@ Snap:H
                 Peering,name:f9f74e40023b4b63,friendly:Alice,pub:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629
                 Grant:Music,by:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629,for:271a5b4b0f1c870be39dc40ad55550a5d94a7f33be04f2ac8172c54f0d4dd0bb,time:1751690000,sign:aab5e6833b2ed5b50efcb142d7cb10bde909e45d641974d42ab470e862e7569003ed62baef01f32cdbbf9829ead60f24bd0f375acd6455158c7ca67fda32d00f
                 Grant:Music,by:271a5b4b0f1c870be39dc40ad55550a5d94a7f33be04f2ac8172c54f0d4dd0bb,for:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629,time:1751690000,sign:c9839dcab9b53bf44b1ce53f9dd2cdeaf015a03d559f77c4de1a9d140d313dfa446b85a61868ce56aaef56ef7b894ec01da69ac05efe5a571ebdc0adee17fd0e
-                Charter,era:1,payload:a23269ef292a0526f9a43bb622edddc5bf0cab96c8346287718f09b55f1befbc:Captain:f9f74e40023b4b63;serve_cave_pub:Cave:cave_dept_addr,sig:f9fa45f48c6b48c2ec1a40109649e9a0ec68409bc33a6840ae1d6a39afc65ca52ac9316538c108f720cfb7a118620bcf1a83ac633aa98ef629c75eac4d54500b,soul:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629
-                Body,pub:a23269ef292a0526f9a43bb622edddc5bf0cab96c8346287718f09b55f1befbc,post:Captain,address:f9f74e40023b4b63
+                Charter,era:1,payload:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629:Captain:f9f74e40023b4b63;serve_cave_pub:Cave:cave_dept_addr,sig:503e062a78ba150e7b4a568d8233ec05c66c71ea36893c5d1409794f04fd3c89f33008783c2eefdb0dcceec1566c54fafac33331a17c4aa2f821538f9f34670a,soul:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629
+                Body,pub:f9f74e40023b4b63bed36870be4eefa79a67608efe653afc5eeb54c1de29a629,post:Captain,address:f9f74e40023b4b63
                 Body,pub:serve_cave_pub,post:Cave,address:cave_dept_addr
+            Crew,soul:271a5b4b0f1c870be39dc40ad55550a5d94a7f33be04f2ac8172c54f0d4dd0bb
+              mate:271a5b4b0f1c870b,role:Captain,pub:271a5b4b0f1c870be39dc40ad55550a5d94a7f33be04f2ac8172c54f0d4dd0bb
+              Key,pub:271a5b4b0f1c870be39dc40ad55550a5d94a7f33be04f2ac8172c54f0d4dd0bb	{"mung":["secret"]}
             mail
               frame:pier_accept,did
               frame:charter,did
@@ -40,6 +46,9 @@ Snap:H
         Account,of:CaveBody
           Identity:cave_dept_addr,prepub:cave_dept_addr,friendly:CaveDept
             Peering,name:cave_dept_addr,friendly:CaveDept,online
+            Crew,soul:cave_dept_pub00
+              mate:cave_dept_addr,role:Captain,pub:cave_dept_pub00
+              Key,pub:cave_dept_pub00	{"mung":["secret"]}
             mail
               frame:serveprobe,did
         reached:step_3

@@ -9,7 +9,13 @@ Snap:H
         Account,of:Alice
           Identity:de6421a43276961e,prepub:de6421a43276961e,friendly:Alice
             Peering,name:de6421a43276961e,friendly:Alice,online
+            Crew,soul:de6421a43276961e80f044bc65c42f10366937ea0eebb6342eb9fd459668bd07
+              mate:de6421a43276961e,role:Captain,pub:de6421a43276961e80f044bc65c42f10366937ea0eebb6342eb9fd459668bd07
+              Key,pub:de6421a43276961e80f044bc65c42f10366937ea0eebb6342eb9fd459668bd07	{"mung":["secret"]}
         Account,of:Bob
           Identity:3084d341784e948c,prepub:3084d341784e948c,friendly:Bob
             Peering,name:3084d341784e948c,friendly:Bob,online
+            Crew,soul:3084d341784e948ca741de079a1120ff163cce29ba60b9f999b2c692f0efe668
+              mate:3084d341784e948c,role:Captain,pub:3084d341784e948ca741de079a1120ff163cce29ba60b9f999b2c692f0efe668
+              Key,pub:3084d341784e948ca741de079a1120ff163cce29ba60b9f999b2c692f0efe668	{"mung":["secret"]}
         req:witness,eternal,ok

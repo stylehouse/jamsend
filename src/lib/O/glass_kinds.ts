@@ -25,6 +25,7 @@ import RiffFace from './ui/RiffFace.svelte'
 import ZineFace from './ui/ZineFace.svelte'
 import LineupFace from './ui/LineupFace.svelte'
 import ShuffleFace from './ui/ShuffleFace.svelte'
+import PoolFace from './ui/PoolFace.svelte'
 import CrateFace from './ui/CrateFace.svelte'
 import UptimeFace from './ui/UptimeFace.svelte'
 import BeatFace from './ui/BeatFace.svelte'
@@ -53,6 +54,7 @@ export const GLASS_KINDS: Record<string, any> = {
     Zine: ZineFace,       // the pocket mag (Faves Berth) — its cards listed, ▶ auditions
     Lineup: LineupFace,   // the standing programme — up next (~20 deep), starve errors RED
     Shuffle: ShuffleFace, // the shuffle POOL — one pip per record in reach, lit = the dial can pick it
+    Pooling: PoolFace,    // SoundPooling — the %Pool compartments (CRUD), what the steward wants, from whom
     Crate: CrateFace,     // a Musu home — the records spread out on the bed, ▶ auditions
     // the FACELESS face: draws whatever particle it is handed — mainkey, scalars, children, recursively.
     //  Every entry above knows what its thing MEANS and draws that; this one knows nothing and draws the

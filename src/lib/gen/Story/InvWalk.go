@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_InvWalk(): string { return 'b95c975c4d7ebfa4~g1' },
+    Ghostmeta_Ghost_Story_InvWalk(): string { return 'e3dd6a1629d67c5c~g1' },
 
 // InvWalk.g — the THIRD Inv* ferry Book: the FULL WALK of the device-link ceremony (Ferry_todo §0
 //  "Book-blindness seam" paragraph — 2026-08-31).
@@ -345,7 +345,7 @@ async InvWalk_consume(w, cavey_ident, code, accept) {
             let ack_soul = dsoul || (pend.frame && pend.frame.salt ? String(pend.frame.salt).split(':')[0] : '')
             let ack_pier = (ack_soul ? ack_piers.find((p) => { let pp = String(p.sc.pub || ''); return pp && (pp === ack_soul || pp.startsWith(ack_soul) || ack_soul.startsWith(pp)) ? 1 : 0 }) : null)
                 || ack_piers.find((p) => this.Swarm_pier_live(p, 'MyCave'))
-            let ack_bodypub = soul.c && soul.c.bodykey ? String(soul.c.bodykey.pub || '') : String(this.Swarm_signas(soul)?.pub || '')   // merge path: my body pub IS my identity pub
+            let ack_bodypub = soul.c && this.Swarm_body_key(soul) ? String(this.Swarm_body_key(soul).pub || '') : String(this.Swarm_signas(soul)?.pub || '')   // merge path: my body pub IS my identity pub
             let ack_name = String(cavey_ident.sc.friendly || '')
             if (ack_pier) { this.Swarm_deliver(w, soul, ack_pier.sc.pub, { kind: 'ferry_got', body: ack_bodypub, name: ack_name }) }
         } catch (er) {}
@@ -382,12 +382,15 @@ async InvWalk_consume_got(w) {
     let row = { consumed: 1 }
     // THE LIBRARY MERGE (Crew_todo §0.1): the ferried account DATA folds INTO the Cave's OWN identity —
     //  ferry_heard returns cavey ITSELF (one identity: own key + Grant:Crew + Alice's library), never a
-    //   grafted-beside keyless husk.  The soul key still never crosses; that absence stays the asserted
-    //    security property.
+    //   grafted-beside keyless husk.  The Cave's OWN key is never overwritten (soul_key_copied stays absent);
+    //    the soul's secret crosses as a /Crew particle and is HELD — see soul_held.
     if (soul && soul === cavey) { row.merged_into_self = 1 }
-    if (soul && soul.c && soul.c.keys && !(String(soul.c.keys.pub) === String(alice.c.keys.pub))) { row.account_crossed = 1 }
-    if (soul && soul.c && soul.c.keys && String(soul.c.keys.pub) === String(alice.c.keys.pub)) { row.soul_key_copied = 1 }   // must STAY absent — the forbidden old behaviour
-    if (soul && soul.c && soul.c.keys) { row.cave_kept_own_key = 1 }
+    if (soul && soul.c && this.Swarm_keys(soul) && !(String(this.Swarm_keys(soul).pub) === String(this.Swarm_keys(alice).pub))) { row.account_crossed = 1 }
+    if (soul && soul.c && this.Swarm_keys(soul) && String(this.Swarm_keys(soul).pub) === String(this.Swarm_keys(alice).pub)) { row.soul_key_copied = 1 }   // must STAY absent — the forbidden old behaviour
+    if (soul && soul.c && this.Swarm_keys(soul)) { row.cave_kept_own_key = 1 }
+    // THE SOUL CROSSES AND IS HELD (Crew_todo §4a REFINED): the Cave now carries the soul's Key on /Crew — held
+    //  for resume/the helm — while it still hellos + signs as its OWN key (Swarm_signas reads its row: Cave).
+    if (soul && this.Swarm_soul(soul)?.pub === String(this.Swarm_keys(alice).pub) && this.Swarm_signas(soul)?.pub === this.Swarm_keys(soul)?.pub) { row.soul_held = 1 }
     // no second %Identity wearing Alice's prepub may exist in cavey's container (the husk gap, closed)
     let husk = cavey && cavey.c.up ? cavey.c.up.o({ Identity: 1 }).find((i) => i !== cavey && String(i.sc.prepub || '') === String(alice.sc.prepub || '')) : null
     if (!husk) { row.no_keyless_husk = 1 }
@@ -518,8 +521,8 @@ InvWalk_witness(w) {
     // beat 6: consume accepts — account crosses — ferry_got ack received — secret retired
     //  (phase_got NOT assertable: Swarm_ferry_phase is a no-op on runner — use top.c.ferry_got instead)
     let go = T.o({ consumed: 1 })[0]
-    if (go && +go.sc.account_crossed === 1 && +go.sc.content_crossed === 1 && +go.sc.ferry_got_acked === 1 && +go.sc.secret_retired === 1) {
-        this.story_swear(w, 'the cave accepts and the account crosses — the soul key and its issued content land on the cave — the ferry_got ack is received — the secret is retired')
+    if (go && +go.sc.account_crossed === 1 && +go.sc.content_crossed === 1 && +go.sc.ferry_got_acked === 1 && +go.sc.secret_retired === 1 && +go.sc.soul_held === 1 && !go.sc.soul_key_copied) {
+        this.story_swear(w, 'the cave accepts and the account crosses — the soul secret and its issued content land on the cave HELD not wielded — the cave still signs as its own key — the ferry_got ack is received — the secret is retired')
     }
     // beat 7: decline path — cave declines — consume returns null
     //  (phase_ended NOT assertable: Swarm_ferry_phase is a no-op on runner; consume_declined proves the path)

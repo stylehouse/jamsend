@@ -10,9 +10,15 @@ Snap:H
           Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
             Peering,name:32c1ce7a059129d1,friendly:Alice
               Idzeug:staple_1,to:Music,genre:Classical
+            Crew,soul:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+              mate:32c1ce7a059129d1,role:Captain,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+              Key,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213	{"mung":["secret"]}
         Account,of:Bob
           Identity:6eb0df4e976acef2,prepub:6eb0df4e976acef2,friendly:Bob
             Peering,name:6eb0df4e976acef2,friendly:Bob,online
+            Crew,soul:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7
+              mate:6eb0df4e976acef2,role:Captain,pub:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7
+              Key,pub:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7	{"mung":["secret"]}
             rebuff:forged,say:not-a-token-at-all
             rebuff:offline,say:32c1ce7a059129d1
         req:witness,eternal,ok

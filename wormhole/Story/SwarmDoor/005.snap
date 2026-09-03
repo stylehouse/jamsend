@@ -12,6 +12,9 @@ Snap:H
               Pier,pub:5443ee4a8731b711,friendly:Joiner,since:1751900020
                 Peering,name:5443ee4a8731b711,friendly:Joiner,pub:5443ee4a8731b71174a6ea6fd34dea5995f15ffa56472ddbe6582d9ecd1ae127
                 Grant:Music,by:47866215d1d749f75f12fff6b9218fcc81fab4c70e49f587a85e5fd97e7e5a9c,for:5443ee4a8731b71174a6ea6fd34dea5995f15ffa56472ddbe6582d9ecd1ae127,time:1751900020,sign:86a22dc49031d7da2acc5b68525bb8ae89af1fb6fb297282847eb9f33fb945d4e04a89954dd24bb0dd223dbaa46a2d53e61654652bd9ab111f16d770364b7e09,genre:Classical
+            Crew,soul:47866215d1d749f75f12fff6b9218fcc81fab4c70e49f587a85e5fd97e7e5a9c
+              mate:47866215d1d749f7,role:Captain,pub:47866215d1d749f75f12fff6b9218fcc81fab4c70e49f587a85e5fd97e7e5a9c
+              Key,pub:47866215d1d749f75f12fff6b9218fcc81fab4c70e49f587a85e5fd97e7e5a9c	{"mung":["secret"]}
             SocialGraph
               Edge,a:47866215d1d749f7,b:5443ee4a8731b711,at:1751900020
             rebuff:unvouched_pier_confirm,say:5443ee4a8731b711
@@ -22,6 +25,9 @@ Snap:H
                 Peering,name:47866215d1d749f7,friendly:Inviter,pub:47866215d1d749f75f12fff6b9218fcc81fab4c70e49f587a85e5fd97e7e5a9c
                 Grant:Music,by:47866215d1d749f75f12fff6b9218fcc81fab4c70e49f587a85e5fd97e7e5a9c,for:5443ee4a8731b71174a6ea6fd34dea5995f15ffa56472ddbe6582d9ecd1ae127,time:1751900020,sign:86a22dc49031d7da2acc5b68525bb8ae89af1fb6fb297282847eb9f33fb945d4e04a89954dd24bb0dd223dbaa46a2d53e61654652bd9ab111f16d770364b7e09,genre:Classical
                 Grant:Music,by:5443ee4a8731b71174a6ea6fd34dea5995f15ffa56472ddbe6582d9ecd1ae127,for:47866215d1d749f75f12fff6b9218fcc81fab4c70e49f587a85e5fd97e7e5a9c,time:1751900020,sign:4a687eed0e4a15ecf4d7e24f757e1dbf7ecb9321a522b0922b2354f4bb511dbc845087382f973fd45817e69e8f6ff8a7a74df316fc7e17160ed177718764ee0a,genre:Classical
+            Crew,soul:5443ee4a8731b71174a6ea6fd34dea5995f15ffa56472ddbe6582d9ecd1ae127
+              mate:5443ee4a8731b711,role:Captain,pub:5443ee4a8731b71174a6ea6fd34dea5995f15ffa56472ddbe6582d9ecd1ae127
+              Key,pub:5443ee4a8731b71174a6ea6fd34dea5995f15ffa56472ddbe6582d9ecd1ae127	{"mung":["secret"]}
             SocialGraph
               Edge,a:5443ee4a8731b711,b:47866215d1d749f7,at:1751900020
         Peering,name:47866215d1d749f7

@@ -17,15 +17,16 @@ Snap:H
               Pier,pub:51fce20e175e67af,friendly:Cavey,since:1756500020,link,post:Cave
                 Peering,name:51fce20e175e67af,friendly:Cavey,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd
                 Grant:Music,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:7d3b97f9e99de2cf3d2f64be59eb6af5146eb306463f83e171a85a6dfe0e3aa03983b8e3a121566cb34205a5cbfac85413dd79f610c7a3873c2ae3289e944706
+            Crew,soul:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b
+              mate:c691de0dd9e8b39a,role:Captain,pub:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b
+              Key,pub:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b	{"mung":["secret"]}
+              mate:51fce20e175e67af,role:Cave,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd
+                Grant:Crew,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:00190b899543fd70f292b211187f227c6fd9dcc9d3aed782288932a94d1e8907988ab7437bf1f1f062a199fce22310eb6a47d7ec42408968e68fb32e349a4d0d
             mail
               frame:pier_hello,did
               frame:pier_confirm
             SocialGraph
               Edge,a:c691de0dd9e8b39a,b:51fce20e175e67af,at:1756500020
-            Crew
-              mate:c691de0dd9e8b39a,role:Captain
-              mate:51fce20e175e67af,role:Cave,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd
-                Grant:Crew,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:00190b899543fd70f292b211187f227c6fd9dcc9d3aed782288932a94d1e8907988ab7437bf1f1f062a199fce22310eb6a47d7ec42408968e68fb32e349a4d0d
         Account,of:Cavey
           Identity:51fce20e175e67af,prepub:51fce20e175e67af,friendly:Cavey
             Peering,name:51fce20e175e67af,friendly:Cavey,online
@@ -33,16 +34,17 @@ Snap:H
                 Peering,name:c691de0dd9e8b39a,friendly:Alice,pub:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b
                 Grant:Music,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:7d3b97f9e99de2cf3d2f64be59eb6af5146eb306463f83e171a85a6dfe0e3aa03983b8e3a121566cb34205a5cbfac85413dd79f610c7a3873c2ae3289e944706
                 Grant:Music,by:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,for:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,time:1756500020,sign:1dcfc17fa7934940827b1fb1852be0b9e671cde5281ce65c4deaebc52b48d28f229aa1e3d929ad98983d728afa6e5937e8b000788fb3cafcc101af6e610f6f02
+            Crew,soul:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b
+              mate:51fce20e175e67af,role:Cave,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd
+                Key,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd	{"mung":["secret"]}
+                Grant:Crew,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:00190b899543fd70f292b211187f227c6fd9dcc9d3aed782288932a94d1e8907988ab7437bf1f1f062a199fce22310eb6a47d7ec42408968e68fb32e349a4d0d
+              mate:c691de0dd9e8b39a,role:Captain,pub:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b
             mail
               frame:pier_accept,did
               frame:ferry,did
               frame:ferry,did
             SocialGraph
               Edge,a:51fce20e175e67af,b:c691de0dd9e8b39a,at:1756500020
-            Crew
-              mate:c691de0dd9e8b39a,role:Captain
-              mate:51fce20e175e67af,role:Cave,pub:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd
-                Grant:Crew,by:c691de0dd9e8b39a86e264dbef83dbcb944f1fee759c56261ab8ffc1ed01840b,for:51fce20e175e67af14a2003573184060daa62e26d24c689f1e1b7e755c8390fd,time:1756500020,sign:00190b899543fd70f292b211187f227c6fd9dcc9d3aed782288932a94d1e8907988ab7437bf1f1f062a199fce22310eb6a47d7ec42408968e68fb32e349a4d0d
         reached:step_3
         req:Ferry,eternal
           req:Ferry_soul,serial:1,phase:sent,at=1756500020,pub:51fce20e175e67af

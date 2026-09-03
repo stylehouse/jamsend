@@ -27,10 +27,10 @@ story:SwarmSteal
       sample=0.003,at=1788299219
       sample=0.002,at=1788299586
   step,dige:e4469f33b30ab529
-  step=2,dige:f06c000a693257e0
-  step=3,dige:171ad112889aab7c
-  step=4,dige:1865cc5f128f2a41
+  step=2,dige:4899cfcb4b86d9d6
+  step=3,dige:db28ab9f87b2e0e6
+  step=4,dige:5874f941f634d371
     Assertion:theft-contested,sentence:a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen
-  step=5,dige:5f0adcd2cfe4782e
-  step=6,dige:0c05506c977499a0
+  step=5,dige:204407b4f262d5b0
+  step=6,dige:34a941ac1ab65e44
     Assertion:identity-not-address,sentence:identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2

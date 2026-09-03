@@ -1,0 +1,69 @@
+Snap:H
+  H:MusuPoolRandom,Run
+    A:MusuPoolRandom
+      self,round=3	{"mung":["age"]}
+      w:MusuPoolRandom,now=1788400010
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          stood,eight_reachable_from_two,three_pull_wants,every_want_names_its_holder,same_draw_twice,own_library_not_drawn,new_salt_new_draw
+          reached:step_3
+          booked,three_booked,rebook_idempotent,addressed_to_holders,friend_admits_granted_booker,stranger_refused,friend_reports_to_pier
+        Account,of:Alice
+          Identity:aad21c616df0ea57,prepub:aad21c616df0ea57,friendly:Cap
+            Peering,name:aad21c616df0ea57,friendly:Cap
+              Body,pub:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b,post:Captain,address:aad21c616df0ea57
+              Body,pub:1f70462e86324dc2a4158b2c5c2d5143bdd1bb07d5eb762dbe6f4cc32b67b2d5,post:Cave,address:aad21c616df0ea57_1,name:Cavey
+              Pier,pub:ed6acbbcd1435dad,friendly:Fay,since:1788400000
+                Peering,name:ed6acbbcd1435dad,friendly:Fay,pub:ed6acbbcd1435dad4d804fa56051d8965e3572af9e5760645cff549e4f0392cf
+                Grant:Music,by:ed6acbbcd1435dad4d804fa56051d8965e3572af9e5760645cff549e4f0392cf,for:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b,time:1788400000,sign:a4701555ffee3350c5ead8fe1bb753c09b26ff34bc57f82b89e967ffab398051f4ae6b5bc0f7ce60e369e8eb787965cd2fc055972fa0d6604e97491da384af06
+                Grant:Music,by:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b,for:ed6acbbcd1435dad4d804fa56051d8965e3572af9e5760645cff549e4f0392cf,time:1788400000,sign:5e68063923389e215430f657e59d685808de4d4f1fbfd1b7335f2ef32f5c936666bd5b9138332addcb68716bb4f4b0c9f355e57c8e1ac9597baed6c21ff10401
+              Reach,to:ed6acbbcd1435dad,of:f2,for:serve,by:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b,state:booked,at:1788400010
+              Reach,to:ed6acbbcd1435dad,of:f3,for:serve,by:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b,state:booked,at:1788400010
+              Reach,to:ed6acbbcd1435dad,of:f4,for:serve,by:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b,state:booked,at:1788400010
+            Crew,soul:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b
+              mate:aad21c616df0ea57,role:Captain,pub:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b
+              Key,pub:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b	{"mung":["secret"]}
+            SocialGraph
+              Edge,a:aad21c616df0ea57,b:ed6acbbcd1435dad,at:1788400000
+          Identity:1f70462e86324dc2,prepub:1f70462e86324dc2,friendly:Cavey
+            Peering,name:1f70462e86324dc2,friendly:Cavey
+              Body,pub:1f70462e86324dc2a4158b2c5c2d5143bdd1bb07d5eb762dbe6f4cc32b67b2d5,post:Cave,address:aad21c616df0ea57_1
+              Body,pub:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b,post:Captain,address:aad21c616df0ea57,name:Cap
+            Crew,soul:1f70462e86324dc2a4158b2c5c2d5143bdd1bb07d5eb762dbe6f4cc32b67b2d5
+              mate:1f70462e86324dc2,role:Captain,pub:1f70462e86324dc2a4158b2c5c2d5143bdd1bb07d5eb762dbe6f4cc32b67b2d5
+              Key,pub:1f70462e86324dc2a4158b2c5c2d5143bdd1bb07d5eb762dbe6f4cc32b67b2d5	{"mung":["secret"]}
+          Identity:ed6acbbcd1435dad,prepub:ed6acbbcd1435dad,friendly:Fay
+            Peering,name:ed6acbbcd1435dad,friendly:Fay
+              Pier,pub:aad21c616df0ea57,friendly:Cap,since:1788400000
+                Peering,name:aad21c616df0ea57,friendly:Cap,pub:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b
+                Grant:Music,by:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b,for:ed6acbbcd1435dad4d804fa56051d8965e3572af9e5760645cff549e4f0392cf,time:1788400000,sign:5e68063923389e215430f657e59d685808de4d4f1fbfd1b7335f2ef32f5c936666bd5b9138332addcb68716bb4f4b0c9f355e57c8e1ac9597baed6c21ff10401
+                Grant:Music,by:ed6acbbcd1435dad4d804fa56051d8965e3572af9e5760645cff549e4f0392cf,for:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b,time:1788400000,sign:a4701555ffee3350c5ead8fe1bb753c09b26ff34bc57f82b89e967ffab398051f4ae6b5bc0f7ce60e369e8eb787965cd2fc055972fa0d6604e97491da384af06
+              Reach,to:ed6acbbcd1435dad,of:f2,for:serve,by:aad21c616df0ea57c87e473668e3c55c4f03be7d4d37f831549c03b157e5ef5b,state:serving,at:1788400010
+            Crew,soul:ed6acbbcd1435dad4d804fa56051d8965e3572af9e5760645cff549e4f0392cf
+              mate:ed6acbbcd1435dad,role:Captain,pub:ed6acbbcd1435dad4d804fa56051d8965e3572af9e5760645cff549e4f0392cf
+              Key,pub:ed6acbbcd1435dad4d804fa56051d8965e3572af9e5760645cff549e4f0392cf	{"mung":["secret"]}
+            SocialGraph
+              Edge,a:ed6acbbcd1435dad,b:aad21c616df0ea57,at:1788400000
+        MusuThem,pub:1f70462e86324dc2
+          stock,pub:1f70462e86324dc2
+            Record,id:c1,title:Cave One
+            Record,id:c2,title:Cave Two
+            Record,id:c3,title:Cave Three
+            Record,id:c4,title:Cave Four
+        MusuThem,pub:ed6acbbcd1435dad
+          stock,pub:ed6acbbcd1435dad
+            Record,id:f1,title:Fay One
+            Record,id:f2,title:Fay Two
+            Record,id:f3,title:Fay Three
+            Record,id:f4,title:Fay Four
+        Library,name:caplib
+          Record,id:o1,title:Own One
+        Library,name:cappool
+        Pools
+          Pool,name:random,take:random,cap:3,salt:1
+        Provisions
+          Want,of:f2,do:pull,why:circulating from ed6acbbc,pool:random,from:ed6acbbcd1435dad
+          Want,of:f3,do:pull,why:circulating from ed6acbbc,pool:random,from:ed6acbbcd1435dad
+          Want,of:f4,do:pull,why:circulating from ed6acbbc,pool:random,from:ed6acbbcd1435dad

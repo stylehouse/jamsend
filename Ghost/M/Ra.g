@@ -1047,32 +1047,104 @@ Ra_quarter_tally(shelf):
 //  Order of declaration IS priority: earlier pools pick first, later pools never double-claim a
 //   track an earlier one took (dedup), so the composition adds up instead of overlapping.
 Ra_pool_define(w, name, take, cap):
-    let shelf = w.oai({ Pools: 1 })
-    shelf.c.up = w
+    let home = this.Ra_pool_home(w)
+    let shelf = home.oai({ Pools: 1 })
+    shelf.c.up = home
     let p = shelf.oai({ Pool: 1, name: String(name) })
     p.c.up = shelf
     if (take) { p.sc.take = String(take) }
     p.sc.cap = String(cap)
     p.bump()
     return p
+// Ra_pool_home — WHERE the pools live (SoundPooling CRUD, 2026-09-03): on the live self's IDENTITY when `w`
+//  is the tab's radio world (so the account snap carries them and a phone keeps them through the stash —
+//   the pools pillar), on the world itself for a Book or a lone world.  One shape, two homes by ownership.
+Ra_pool_home(w):
+    let top = this.top_House ? this.top_House() : null
+    let self = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (top && top.c && w && top.c.radio_w === w && self) { return self }
+    return w
+// Ra_pool_drop — retire a compartment (the D of CRUD).  Its wants fall out at the next sit-down (the steward
+//  re-derives the goal from what stands); its pooled copies are then 'evict' wants — the pool is expendable.
+Ra_pool_drop(w, name):
+    let n = 0
+    // drop from BOTH homes (see Ra_pool_defs): a pool minted before the self hydrated must still die.
+    for (const shelf of [this.Ra_pool_home(w).o({ Pools: 1 })[0], w ? w.o({ Pools: 1 })[0] : null]) {
+        if (!shelf) { continue }
+        let hit = 0
+        for (const p of shelf.o({ Pool: 1, name: String(name) })) { shelf.drop(p); hit = hit + 1 }
+        if (hit) { shelf.bump(); n = n + hit }
+    }
+    return n
 // Ra_pool_defs — read the declared composition; fall back to the anonymous single pool.
 Ra_pool_defs(w, cap):
-    let shelf = w ? w.o({ Pools: 1 })[0] : null
-    let defs = shelf ? shelf.o({ Pool: 1 }).map((p) => ({ name: String(p.sc.name || ''), take: String(p.sc.take || 'taste'), cap: Number(p.sc.cap || 0) })).filter((p) => p.name && p.cap > 0) : []
+    // READ BOTH HOMES, prefer the identity (2026-09-03 review): a define that ran before the live self
+    //  hydrated wrote its %Pools to the WORLD, and reading only the identity afterwards made that pool
+    //   invisible and undroppable.  Probe-first either way — a read never mints a shelf.
+    let shelf = w ? (this.Ra_pool_home(w).o({ Pools: 1 })[0] || w.o({ Pools: 1 })[0]) : null
+    let defs = shelf ? shelf.o({ Pool: 1 }).map((p) => ({ name: String(p.sc.name || ''), take: String(p.sc.take || 'taste'), cap: Number(p.sc.cap || 0), salt: String(p.sc.salt || '') })).filter((p) => p.name && p.cap > 0) : []
     if (!defs.length) { return [{ name: '', take: 'taste', cap: cap }] }
     return defs
+// Ra_pool_hash — the clockless shuffle key (FNV-1a over name:salt:id): a 'random' pool draws in an order
+//  that is random-LOOKING yet the same on every sit-down and in every fixture; a new `salt` on the pool is
+//   the human's "shuffle again".  No Math.random on a Book path — the fixture law.
+Ra_pool_hash(s):
+    let h = 2166136261
+    for (let i = 0; i < s.length; i++) { h = h ^ s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0 }
+    return ('00000000' + h.toString(16)).slice(-8)
+// Ra_pool_sources — WHAT A 'random' POOL DRAWS FROM (owner 2026-09-03: "one that just acquires random whole
+//  LOFI tracks from all Piers|Crewmates"): every mirrored catalog in the radio world — a %MusuThem crate
+//   stands only for a body that shared with me (Repli mirrors the granted), so crew and friends alike are
+//    sources.  Plain rows {id, from, title}; `from` is the holder's routing name the fill will book toward.
+Ra_pool_sources(w):
+    let out = []
+    if (!w || !w.o) { return out }
+    for (const them of w.o({ MusuThem: 1 })) {
+        let from = String(them.sc.pub || '')
+        if (!from) { continue }
+        let stock = them.o({ stock: 1 })[0]   // probe-first: a read never mints a shelf
+        if (!stock) { continue }
+        for (const r of this.Ra_recs(stock)) {
+            let id = String(r.sc.id || '')
+            if (!id) { continue }
+            out.push({ id: id, from: from, title: String(r.sc.title || '') })
+        }
+    }
+    return out
 // Ra_quarter_goal_pools — fill each compartment in declared order off ONE tally, dedup across pools.
 //  V1 take-policies, all deterministic (no wall clock — the fixture law):
 //   'taste' — the classic Like3/Grab2/Spin1 score, descending;  'liked' — liked tracks only, most-
 //    liked first;  'kept' — grabbed tracks only, most-kept first;  'latest' — the LAST %Jam session's
 //     tracks in encounter order (the ledger's own order stands in for recency without a clock).
-Ra_quarter_goal_pools(shelf, pools):
+Ra_quarter_goal_pools(shelf, pools, sources, pool):
     let tally = this.Ra_quarter_tally(shelf)
     let taken = {}
     let goal = []
+    let holder = {}
     for (const pd of pools) {
         let ids = []
-        if (pd.take === 'latest') {
+        if (pd.take === 'random') {
+            // CIRCULATION (SoundPooling_todo "two fills"): unchosen music from everyone who shares with me,
+            //  in a clockless shuffle — the same draw every sit-down, a new one per salt.
+            for (const s of (sources || [])) {
+                if (!s || !s.id) { continue }
+                if (!holder[s.id]) { holder[s.id] = String(s.from || '') }
+                if (!ids.includes(s.id)) { ids.push(s.id) }
+            }
+            let key = {}
+            for (const id of ids) { key[id] = this.Ra_pool_hash(String(pd.name) + ':' + String(pd.salt || '') + ':' + id) }
+            ids.sort((a, b) => (key[a] < key[b] ? -1 : (key[a] > key[b] ? 1 : (a < b ? -1 : 1))))
+        } else if (pd.take === 'radio') {
+            // WHAT THE RADIO ALREADY CAUGHT (Radio_pool_catch).  A 'radio' compartment does not CHOOSE —
+            //  the dial chose, hours ago, and you heard it.  So its goal is simply what it already holds,
+            //   newest last (the shelf's own row order stands in for recency, clocklessly), trimmed to the
+            //    cap from the FRONT so the oldest catches are the ones that fall out.  Stating the goal
+            //     this way is what keeps the sediment safe: without it every OTHER pool's goal would mark
+            //      these tracks "not wanted" and Ra_quarter_diff would evict them the next sit-down.
+            //  Nothing here mints a press or a pull — a radio pool fills at the RADIO, never at the steward.
+            let hold = pool ? this.Ra_recs(pool).map((r) => String(r.sc.id || '')).filter(Boolean) : []
+            ids = hold.slice(Math.max(0, hold.length - pd.cap))
+        } else if (pd.take === 'latest') {
             let jams = shelf.o({ Jam: 1 })
             let last = jams.length ? jams[jams.length - 1] : null
             if (last) {
@@ -1101,7 +1173,10 @@ Ra_quarter_goal_pools(shelf, pools):
             if (taken[id]) { continue }
             taken[id] = 1
             let t = tally[id]
-            goal.push({ id: id, score: t ? t.score : 0, why: t ? t.why : 'in the latest jam', pool: pd.name })
+            let why0 = pd.take === 'random' ? 'circulating from ' + String(holder[id] || '').slice(0, 8) : (pd.take === 'radio' ? 'caught off the radio' : 'in the latest jam')
+            let g = { id: id, score: t ? t.score : 0, why: t ? t.why : why0, pool: pd.name }
+            if (pd.take === 'random' && holder[id]) { g.from = holder[id] }
+            goal.push(g)
             picked = picked + 1
         }
     }
@@ -1123,7 +1198,7 @@ Ra_quarter_diff(goal, pool, lib):
     for (const g of goal) {
         wanted[g.id] = 1
         if (pooled[g.id]) continue
-        diff.push({ of: g.id, do: held[g.id] ? 'press' : 'pull', why: g.why, pool: g.pool || '' })
+        diff.push({ of: g.id, do: held[g.id] ? 'press' : 'pull', why: g.why, pool: g.pool || '', from: g.from || '' })
     }
     for (const id of Object.keys(pooled)) {
         if (!wanted[id]) diff.push({ of: id, do: 'evict', why: 'not in the goal stash' })
@@ -1133,8 +1208,8 @@ Ra_quarter_diff(goal, pool, lib):
 //  be: wants oai-mint per (of, do) so an unchanged world re-sits to the SAME rows (zero mint, zero
 //   drop — "a good stash stays the stash"), and a want whose reason left the diff is dropped (served
 //    or displaced — either way stale).  Returns {goal, diff, wants} for a Book or a face.
-Ra_quarter(w, shelf, pool, lib, cap):
-    let goal = this.Ra_quarter_goal_pools(shelf, this.Ra_pool_defs(w, cap))
+Ra_quarter(w, shelf, pool, lib, cap, sources):
+    let goal = this.Ra_quarter_goal_pools(shelf, this.Ra_pool_defs(w, cap), sources, pool)
     let diff = this.Ra_quarter_diff(goal, pool, lib)
     let out = w.oai({ Provisions: 1 })
     out.c.up = w
@@ -1150,7 +1225,12 @@ Ra_quarter(w, shelf, pool, lib, cap):
         if (want.sc.why !== d.why) want.sc.why = d.why
         // the compartment the want provisions FOR — the Door face's composition column.  Only a
         //  declared pool stamps (the anonymous pool stamps nothing, keeping old snaps byte-identical).
-        if (d.pool && want.sc.pool !== d.pool) want.sc.pool = d.pool
+        // the want particle is found-or-created on (of, do) ALONE, so a row re-used by a different
+        //  compartment must SHED the old stamps — else a track that moved from the random pool to the
+        //   liked one keeps booking fills at a holder it no longer comes from (2026-09-03 review).
+        if (d.pool) { if (want.sc.pool !== d.pool) want.sc.pool = d.pool } else if (want.sc.pool != null) { delete want.sc.pool; want.bump() }
+        // a circulation want names its HOLDER — the fill books toward it (Ra_pool_fill_wants)
+        if (d.from) { if (want.sc.from !== d.from) want.sc.from = d.from } else if (want.sc.from != null) { delete want.sc.from; want.bump() }
     }
     return { goal: goal, diff: diff, wants: out.o({ Want: 1 }).length }
 // Ra_quarter_serve — the DISPOSE half the doc's steward hands to the flows (§6 "proposes; flows dispose").
@@ -1165,8 +1245,8 @@ Ra_quarter(w, shelf, pool, lib, cap):
 //          re-serve finds nothing to press.  Returns {pressed, evicted, deferred, fails}.  Dormant until a
 //           live steward occasion (a play-session end, a jam, the Cave reachable) calls it — no live caller
 //            yet, so it is inert exactly like the pool landing it feeds (Portability_doc §6).
-async Ra_quarter_serve(w, nav, shelf, pool, lib, cap):
-    this.Ra_quarter(w, shelf, pool, lib, cap)
+async Ra_quarter_serve(w, nav, shelf, pool, lib, cap, sources):
+    this.Ra_quarter(w, shelf, pool, lib, cap, sources)
     let prov = w.o({ Provisions: 1 })[0]
     let out = { pressed: 0, evicted: 0, deferred: 0, fails: 0 }
     if (!prov) return out
@@ -4328,13 +4408,44 @@ async Ra_term_stream_beat(w, rx, mine, theirs, rec):
 //    actually stands on my roster — no crew Cave, no intent to fake.  Dispatch is kicked once
 //     (wire inert without a station; the settle loop is the retry), and the reach STANDS while
 //      the Cave is away — that is the whole point of booking over calling.
-Ra_pool_fill_book(w, ident, origId):
+Ra_pool_fill_book(w, ident, origId, to):
     if (!w || !ident || !origId) { return null }
-    let cave = this.Swarm_body_for ? this.Swarm_body_for(ident, 'Cave') : null
-    if (!cave) { return null }
-    let reach = this.Swarm_reach_book(w, ident, { to: 'Cave', of: String(origId), for: 'serve' })
+    let target = String(to || 'Cave')
+    // a ROLE target must stand on my roster (no crew Cave, no intent to fake); a NAMED holder (a friend's
+    //  routing name off a circulation want) is the address itself — Swarm_reach_addr passes it through.
+    let role = target === 'Cave' || target === 'Captain'
+    if (role) {
+        let body = this.Swarm_body_for ? this.Swarm_body_for(ident, target) : null
+        if (!body) { return null }
+    } else if (!/^[0-9a-f]{16}/.test(target)) {
+        // A NAME MUST BE ROUTABLE (2026-09-03 review): a mirror crate keyed by a placeholder ('Crowd', the
+        //  Repli fallback) would dispatch to a station pier that oai-mints itself — a %Pier per bogus
+        //   holder.  A real routing name is a key-derived prepub; anything else books nothing.
+        return null
+    }
+    let reach = this.Swarm_reach_book(w, ident, { to: target, of: String(origId), for: 'serve' })
     if (reach) { this.Swarm_reach_dispatch(w, ident, reach) }
     return reach
+// Ra_pool_fill_wants — THE BRIDGE from the steward's wants to standing bookings: every 'pull' want that
+//  names a holder (a circulation want) books a fill toward that holder; a pull with no holder stays a
+//   legible want (nobody to ask).  Idempotent (reach_book finds-or-creates on to·of·for).  Declaring a
+//    'random' pool IS the consent — the gesture is the compartment, not a button per track.
+Ra_pool_fill_wants(w, ident):
+    let out = w ? w.o({ Provisions: 1 })[0] : null
+    if (!out || !ident) { return 0 }
+    let n = 0
+    // BUDGETED (2026-09-03 review): the %Reach shelf is capped and shared with the ceremony, the charter
+    //  and the heist, and a circulation booking stands for as long as its holder is away.  Book a few per
+    //   pass — the next sit-down books the next few — so a cap-12 pool can never crowd the shelf out.
+    let budget = 4
+    for (const want of out.o({ Want: 1, do: 'pull' })) {
+        if (n >= budget) { break }
+        let from = String(want.sc.from || '')
+        let of = String(want.sc.of || '')
+        if (!from || !of) { continue }
+        if (this.Ra_pool_fill_book(w, ident, of, from)) { n = n + 1 }
+    }
+    return n
 
 // Ra_pool_fill_homes — WHERE the fill reads and lands, resolved once per pass.  A Book stands its
 //  own homes on the IDENTITY's .c (fill_mw + fill_lib/fill_pool/fill_nav/fill_from — runtime refs,
@@ -4366,6 +4477,16 @@ Ra_pool_fill_homes(w, ident):
     let cavename = cave ? this.Swarm_body_addr(cave) : ''
     if (cavename && rw.oa({ MusuThem: 1, pub: cavename })) { out.from = this.Ra_home_them(rw, cavename) }
     return out
+// Ra_pool_fill_from — WHOSE mirror a landing reads, per reach (2026-09-03 review): a circulation fill
+//  names its holder on `to:` — a friend as often as the crew Cave — and reading the Cave's crate for a
+//   friend's track can only ever miss (a phone with friends and no Cave had NO `from` at all, so every
+//    circulation fill stalled at 'arrived' forever).  Probe-first: no crate for that holder, no landing.
+Ra_pool_fill_from(w, ident, reach, homes):
+    let to = String(reach && reach.sc ? (reach.sc.to || '') : '')
+    if (!to || to === 'Cave' || to === 'Captain') { return homes.from }
+    let rw = homes.mw
+    if (rw && rw.oa && rw.oa({ MusuThem: 1, pub: to })) { return this.Ra_home_them(rw, to) }
+    return homes.from
 
 // Ra_pool_fill_verdict — the SYNC tri-state probe Swarm_reach_serve's doer contract wants (truthy →
 //  arrived · falsy → stays serving · {refuse:why} → refused).  PURE READ of what the async serve
@@ -4441,8 +4562,9 @@ async Ra_pool_fill_land(w, ident):
         let of = String(reach.sc.of || '')
         if (!of) { continue }
         let homes = this.Ra_pool_fill_homes(w, ident)
-        if (!homes.pool || !homes.nav || !homes.from) { continue }
-        let got = await this.Siphon_pull(homes.mw, null, homes.pool, homes.from, of, homes.nav)
+        let from = this.Ra_pool_fill_from(w, ident, reach, homes)
+        if (!homes.pool || !homes.nav || !from) { continue }
+        let got = await this.Siphon_pull(homes.mw, null, homes.pool, from, of, homes.nav)
         if (got && got.card) {
             landed = landed + 1
             peering.drop(reach)

@@ -17,6 +17,133 @@ Companions still their own docs: `Reach_todo.md` (the cross-body procedure primi
 
 ## 0. WHAT TO GET ON WITH NEXT
 
+### 0.0 THE FIRST LIVE WALK OF THE CERT-CREW (2026-09-03 night) — four faults, all fixed
+
+The owner linked a real second device and pasted ten minutes of its console. Everything structural held
+ (the ledger landed, the Grant:Crew landed, the merge folded the account into the Cave's own identity),
+  and **every fault was the same shape: a body that IS crew being treated as a stranger, because the code
+   asked the %Body roster — a grow-only routing cache — instead of /Crew, the membership.** The law that
+    came out of it, worth stating once and obeying everywhere: **when the question is "is this one of
+     mine?", /Crew answers. The roster is a cache and may be missing rows; it may never be the authority.**
+
+1. **The theft alarm screamed at the Captain** — `👥⚠ another live body of 631300e8 is on the wire`, every
+    few seconds for ten minutes, raising the Door's "name contested" banner. The sibling test was an
+     EXACT full-pub match of `frame.swarm.body` against the roster; a mate known only by its ledger row
+      fell through to the alarm. Now a frame from a body wearing a mate row is presence, full stop.
+2. **The ✕ on a crewmate half-worked.** `Swarm_crew_eject` correctly refused (only the Captain writes
+    membership) — and then the SAME handler dropped the mate's row locally anyway, so a Cave's ✕ on its
+     Captain deleted a row it had no right to delete and the Captain's next gossip put it straight back.
+      That flicker is almost certainly the owner's earlier "I did a new Cave and the old Cave vanished".
+       The ✕ now means three different things by who presses it: the Captain on a mate ⇒ eject; a **Cave
+        on its Captain ⇒ RESIGN** (`Swarm_crew_leave` — the honest reading, and the only ledger write a
+         Cave may make); a Cave on a sibling ⇒ the bond goes, the ledger stands. Nothing else touches
+          /Crew, and the roster sweep now runs only when the ledger actually moved.
+3. **`🚪 ive_got_stranger — eed831f1… ×27`** sitting in the Door, naming the Cave's own Captain. Two
+    causes, two fixes: a crewmate's boast is no longer a stranger's (silence, not a rebuff — gossip still
+     opens no door), and **a refusal is a statement about a moment, so the moment ends when the
+      relationship forms**: `Swarm_rebuff_forgive` drops the admission-class complaints naming a pub the
+       instant a %Pier to it seals. ⚠ NARROW BY DESIGN — SwarmStaple beats 5-8 caught the wide first
+        version. A forgery or an `offline` is a fact about an event and is never forgiven; that is
+         precisely what the door ledger exists to remember.
+4. **A pier wearing a relay URL as its name** (`forgot pier https://djamsend.duckdns…`). The friendly is
+    the one wire string that reaches a human's eye unmediated, so it is now clamped at the single place a
+     durable pier takes its name: no scheme, no newlines, 24 chars, and an empty name stays absent rather
+      than stamping undefined.
+
+Books re-run green on the fixed build, caveat 0: SwarmBody (23), SwarmSpread, SwarmHelm, SwarmStaple,
+ SwarmPost, InvFerry, SwarmReboot, MusuPoolRandom, MusuPoolFill. **SwarmGot is unstable run-to-run
+  (3c,6c / 4 / 3c,6c) and that is NOT from this work** — its dirty fixture carries only the keys-as-
+   particles Crew block from earlier the same day, and the two %Crew blocks appear in a different order
+    between runs. Someone should find what orders them; a fixture that cannot be sworn twice is not a gate.
+
+
+
+**▶ WHERE THIS SESSION GOT TO (2026-09-03 night — read this first).**
+ DONE and compiled: keys as particles (§4), the travelling ledger with eject + helm + resume (§4, Book
+  SwarmHelm), the adopt road deleted, SwarmSpread re-authored, InvWalk/InvFerry re-sworn to "HELD not
+   wielded", the Door's ✕ ejecting, a Link role drop-down that hands over the helm at the ferry ACK, and
+    SoundPooling's random pool + CRUD + Pool cell (SoundPooling_todo §0, Book MusuPoolRandom).
+ THE FIXTURE SWEEP is the long tail: ~28 Books render an Identity, so all of them reddened. Use
+  `node scripts/story_accept.mjs <Book>… --allow=<regex>` (written this session; memory:
+   [[story-accept-filtered-diff]]) — it accepts only when the residual, after filtering the lines a model
+    change may move, is EMPTY, and patches tocs last. Reviewed + expected residuals so far: the added
+     `soul_held` note (InvWalk 6-8, InvFerry 5-6), SwarmSpread's re-authored beats, `Body,pub:` now the
+      identity pub, Charter payloads following it. The Musu streaming Books (MusuBuddy · MusuMag ·
+       MusuRaStream · MusuRaChase) are red on the runner's /music mount state (`path:testsounds/…`), NOT on
+        this work — check /music before chasing them.
+ ✅ RECORDED + CHECK-GREEN: **SwarmHelm** (5 beats, 7/7 sworn) and **MusuPoolRandom** (4 beats, 5/5 sworn),
+  both caveat 0 on a second run against their own fixtures.
+ ⚑ **SwarmHelm caught a real hole while being written:** a %Pier caches the last accepted voucher signature
+  (`pier.c.voucher_ok`), and a voucher is per-ERA, not per-frame — so an EJECTED body kept walking through a
+   friend's door on its last accepted voucher. `Swarm_crew_heard` now clears that cache when ejections land,
+    and the Book keeps its stale voucher byte-identical on purpose so the clearing is what it proves.
+     Memory: [[voucher-cache-outlives-revocation]].
+ ⚑ **A CODE-READ REVIEW RAN OVER THE WHOLE CHANGE** (an opus agent) and found real holes — fixed the same
+  night, each with a Book still green after: (1) **the ledger was dead on the live wire** — the `crew` frame
+   was dispatched only in `Swarm_pump` (which is what Books use), never in `hear`, and was missing from the
+    `w.c.on` registration, so live peers answered `no_protocol` and no ejection or helm flip ever travelled;
+     the registration also still listed the deleted adopt kinds. (2) **eject and the helm authorised on
+      possession of the soul secret** — which the ferry now hands every Cave, so any mate could put the
+       Captain off the crew. Both are Captain-only now (`Swarm_captain_here` reads MY ROW's role); RESUME is
+        the one deliberate exception and says so with a `resume` argument (SwarmHelm beat 5 is that case).
+         (3) an ejection minted for a row with no full key produced a `NotGrant` that **matched nothing at
+          either consumer** — a silent half-eject that logged success; it now refuses and says why. (4) the
+           crew rehydrate could plant the soul secret under a made-up mate row for a pre-migration stash,
+            making a Cave believe it was the founder. (5) `crew_key_hold` named my own row off the pub
+             instead of my identity's prepub, which could leave `crew_keys` unable to find my key at all.
+ ⚑ **STILL OPEN from that review, and the honest state of the helm:** a body promoted by a ledger flip signs
+  as the soul but still ADVERTISES and binds its own name, so its frames would be refused by sealed friends
+   until it also takes the soul's ADDRESS (the mirror of `Swarm_crew_standdown`, which re-homes the demoted
+    founder). `Swarm_crew_standdown` itself raw-writes the Identity mainkey and does not `thang_put` the
+     fresh key or re-home the stash, so a reload after a hand-over resurrects the old founder. The helm path
+      is therefore **Book-proven and NOT live-walked** — treat it as design-complete, implementation-owed.
+       Do that before any live hand-over: a re-home helper that re-indexes properly (`r()`, not a raw sc
+        write), the fresh key persisted, and the stash + account dir moved with it.
+ ✅ THE POOLS PILLAR LANDED (the seventh): `Swarm_restash_pools` / `Swarm_pools_rehydrate`, wired into
+  `Swarm_restash_all` and the station_up ladder, and SwarmReboot now declares two compartments, wipes them
+   with the tree and swears them back in declaration order with their policies, caps and shuffle salt
+    (8 sworn, 7 declared, gaps 0). A phone keeps its pools across a reload with no folder anywhere.
+ OWED, named: the station re-dial + stash/account re-home after a founder stands down; a mate's own secret
+   never reaches the Captain's ledger (only the soul's does).
+
+**▶▶ IN FLIGHT (2026-09-03 night, the owner's "work for a virtual 48hrs": "get on with everything … a
+ refoundationing of whatever might be wanted for elegance").** Three rulings closed the open questions:
+ - **No epoch primitive.** "Don't we have such a no-two-Captains data model that resuming one should just
+    work? then any Crew online falls in line." → the ledger IS the mutex: a soul-signed `/Crew` heard from a
+     crewmate REPLACES mine (rows + roles); the mate whose row says Captain wields the soul. Resume = flip two
+      roles, broadcast, everyone falls in line. No ordering primitive, no era compare.
+ - **Low security accepted** ("super low security, putting the whole Crew's secrets on every Cave").
+ - **The Door's ✕ on a crew mate EJECTS it from the Crew** — and the ejection TRAVELS: a soul-signed
+    `NotGrant:Crew` for that pub rides the ledger to every crewmate (the ejected one self-ejects back to a
+     crew of one, dropping the soul Key it held) and to every friend (whose cert-crew door then refuses it).
+ THE BUILD, in order (each step compiled + Book-gated before the next):
+ 1. ✅ **Keys become particles** (the `.c` ruling, §4a REFINED): `/Crew,soul:<pub>` + `Key,pub,secret` (the soul's)
+    + `mate:<prepub>,role,pub` (+ its own `Key` under it) stand on EVERY identity from birth — everyone is a
+     crew of one. Accessors in `src/lib/O/Funk/Crewkeys.ts` (shared by Swarm.g and Auto's Clustation_concrete):
+      `crew_keys(ident)` = my own key (the Key whose prepub is mine), `crew_soul(ident)` = the soul's Key,
+       `crew_keys_home(ident, keys)` = the one setter. `Swarm_signas` reads the ROLE: my row Captain ⇒ the
+        soul Key (a promoted Cave wields it), else my own. `.c.keys` / `.c.bodykey` / bodykey_read|write /
+         `Swarm_is_cave` retire; `Swarm_body_key` = my own key (the Captain's separate body key is gone — its
+          %Body row is keyed by the soul pub). Story mungs `secret` (`{"mung":["secret"]}`), Cyto skips %Key.
+           Export: the tree carries Keys, so a backup/ferry export needs no root-line embed; the `page` kind
+            skips Key + Crew. Legacy root-line `pub,key` snaps thaw into a crew of one on import (disk
+             accounts + Dexie thangs migrate on load). The stash crew pillar carries soul + Keys.
+             Fixture churn = the ~28 Books whose snaps render an Identity: accepted by FILTERED diff (only
+              +Crew/+Key/+mate lines may differ).
+ 2. ✅ **The ferry carries the whole /Crew** (Keys included, fc-sealed as before) — the merge re-homes my crew of
+    one under the Captain's soul (`Swarm_crew_join`). InvWalk 6 / InvFerry 5 / SwarmSpread 5 re-sworn: "the
+     soul crosses sealed and is HELD, not wielded".
+ 3. ✅ **Eject + helm** (`Swarm_crew_eject`, `Swarm_crew_captain`, the `crew` frame + `Swarm_crew_heard`), Book
+    `SwarmHelm`: Captain + two Caves + a friend; eject one Cave (ledger shrinks everywhere, the friend refuses
+     its voucher, it self-ejects); pass the helm to the other Cave (it hellos as the soul, the old Captain
+      stands down, the friend still reaches "eed").
+ 4. ✅ **SoundPooling CRUD + the random pool** (see SoundPooling_todo §0) (SoundPooling_todo): `%Pool` verbs, `take:random` over every
+    Pier|Crewmate's catalog (seeded, no Math.random in a Book path), Book MusuPoolRandom, the Pool cell.
+ OWED / DECIDE: a mate's own secret stays on the mate (the Captain's ledger has every pub + the soul's secret,
+  not a Cave's secret — shipping it back means a sealed relay frame; say if you want it). The adopt road
+   (`Swarm_adopt_*`) is DELETED (with its dispatch + the InviteYourself check; SwarmSpread 2–4 re-authored). A promoted Cave's Identity root keeps its own prepub (stash + account dir unchanged); only
+     `Swarm_signas` changes what it wields.
+
 **▶ NEXT SESSION, IN ORDER (written 2026-09-03 evening for a compact; the owner: "prep for my next
  wanting-to-see-and-know session, possibly manual testing, and carrying on with wider developments").**
 
@@ -339,13 +466,21 @@ Inter-body work is **living legible matter, not `.c` flags**: `%Organ` (what a b
 
 ---
 
-## 3. THE STRUCTURE — `/Crew/mate:<prepub>,role[,body]/Grant:Crew` (owner, 2026-09-03; `%mate` not `%pier`)
+## 3. THE STRUCTURE — `/Crew,soul` · `%Key` · `mate:<prepub>,role,pub` (owner, 2026-09-03; `%mate` not `%pier`)
 
-The Crew gets a HOME in the tree instead of existing only as a scan:
+The Crew is the identity's ledger AND its keyring — the whole distributable, in the tree:
 
-    /Crew
-      /pier:<prepub>,role:<Captain|Cave|daemon…>
-        /Grant:'Crew',by:<soul-pub>,for:<body-pub>,…
+    /Crew,soul:<S.pub>                     the crew's one name; what friends dial and grant to
+      Key,pub:<S.pub>,secret:<S.key>       the soul's secret — a particle, munged in Story, never exported on a page
+      mate:<prepub>,role:Captain,pub:<pub> the founder: its own key IS the soul
+      mate:<prepub>,role:Cave,pub:<P.pub>  a mate: its OWN key; it hellos and signs as P
+        Key,pub:<P.pub>,secret:<P.key>     (on that mate's own device)
+        Grant:'Crew',by:<S.pub>,for:<P.pub>   its cert — what proves crew to outsiders
+        Grant:'Music',by:<S.pub>,for:<P.pub>  crew shares music, no paradigm special-case
+      NotGrant:'Crew',by:<S.pub>,for:<pub>    an ejection — travels, and shuts friends' doors too
+
+Every identity is born a crew of ONE (`crew_keys_home` at the mint), so this shape is universal, not a
+ state a device enters. Accessors live in `src/lib/O/Funk/Crewkeys.ts` — see §4.
 
 - **`%mate`** is its own mainkey — "a naming of a crew member" — whose value IS the join key (the
    `%Spotlight,src` idiom). It is NOT `%Pier` (a second shape wearing the transport mainkey would be the
@@ -444,31 +579,53 @@ THE CREW  = the bodies that CARRY S.  Exactly one WIELDS it at a time (Captain =
    A body that is never Captain still carries S — that is what makes resume possible from ANY crewmate, and
     why locking the secret at rest is the next step, not a new key road.
 
-## 4. THE MODEL AS BUILT — Grant:Crew end to end
+## 4. THE MODEL AS BUILT — keys as particles, the ledger as the mutex (rebuilt 2026-09-03 night)
 
-**Certify a new key; do NOT copy the old one.** Four moves: the new device MINTS its own key → knocks
- with the `?Iz` token (physical channel + `#fc` seal gate stands) → the Captain seals + CERTIFIES
-  (mints the Grant:Crew, hands it over in the accept) → the ferry carries account DATA only
-   (`Swarm_export(n,{ferry:1})` omits the private key).
+**Keys are particles** (`src/lib/O/Funk/Crewkeys.ts`, shared by Swarm.g and Auto's `Clustation_concrete`): every
+ identity is born a crew of ONE — `/Crew,soul:<pub>` · `Key,pub,secret` · `mate:<prepub>,role:Captain,pub`. Nothing
+  about a key lives in `.c` any more (`ident.c.keys`, `.c.bodykey`, `bodykey_read/write` and `Swarm_is_cave` are
+   gone). Accessors: `Swarm_keys(ident)` = my own key · `Swarm_soul(ident)` = the soul's Key if I hold it ·
+    `Swarm_soulpub` · `Swarm_myrow`. **`Swarm_signas` reads MY ROW'S ROLE**: Captain ⇒ I sign + hello as the soul
+     (a promoted Cave, a resumed Captain); otherwise my own key (a founder's own key IS the soul, so every
+      existing node is byte-identical). `Swarm_body_key` = my own key — the Captain's separate body key is
+       retired, its %Body row is keyed by the soul pub. Story mungs `secret` (`{"mung":["secret"]}`); Cyto skips %Key;
+        the `page` export skips Key + Crew; a legacy root-line `pub,key` snap thaws into a crew of one on import.
+         The crew stash pillar carries the soul + every Key (a phone holds the soul through Dexie alone).
 
-**`Swarm_signas(ident)`** is the one seam for "who I sign+route as on the wire": soul key for a Captain
- (byte-identical to before → zero fixture churn), own body key for a Cave. Discriminator for crew-ness:
-  `Swarm_crew_grant(ident)` (do I hold a Grant:Crew?) — never `!keys`.
+**The ferry carries the whole /Crew**, Keys included (fc-sealed as before); the merge runs `Swarm_crew_join` (my crew
+ of one dissolves under the Captain's soul, my Key moves to my row) and grafts the ledger — the soul secret lands
+  HELD, my row says Cave, I keep signing as myself. InvWalk 6 / InvFerry 5 / SwarmSpread 5 swear exactly that.
 
-**How a friend trusts a Cave** (`Swarm_voucher_ok`'s cert-crew road): the Cave's station voucher is
- `{control:'crew', from:body-prepub, pub:body-pub, era, ts, sign:<body-key sig>, grant:<the Grant:Crew>}`.
-  The friend, sealed to soul-pub `held`, checks: `prepubOf(vh.pub) === from`; `verify_grant(vh.grant)`;
-   `claim.by === held`; `claim.for === vh.pub`; body sig verifies → trust the Cave AS the Captain.
-    Stateless — no ledger fetch, no era compare. Forgery-hammered in `crew-cert-test.ts` (grant-for-
-     another-body / grant-by-wrong-soul / tampered-grant / body-sig-swap all refused).
+**The ledger travels** (`Swarm_crew_wire` → `Swarm_crew_gossip` → the `crew` frame → `Swarm_crew_heard` →
+ `Swarm_crew_apply`): rows + certs + ejections, never a Key, signed by the soul (verifyHeader against
+  `crew.soul`; every ejection atom re-verified). A body of that soul REPLACES its ledger — last soul-signed
+   writer wins, no epoch, no era compare (the owner: "any Crew online falls in line"). A friend of the soul keeps
+    only the ejections on its pier (`NotGrant:Crew`), and the cert-crew door refuses that body from then on
+     (`Swarm_voucher_ok`: 'crew ejected'). Off the ledger ⇒ `Swarm_crew_leave`: a crew of one again, the soul
+      secret dropped.
+- **Eject** = the Door's ✕ on a mate (`Swarm_pier_forget` → `Swarm_crew_eject`): a soul-signed NotGrant:Crew on
+   the ledger, the row (Key + cert) dropped, the ledger gossiped — BEFORE the bond unbonds.
+- **The helm** = `Swarm_crew_captain(w, ident, prepub)`: flip roles (target Captain, all else Cave), gossip. "grant
+   Captain" from the Link and "resume" from any mate are the SAME call. A FOUNDER handing over STANDS DOWN
+    (`Swarm_crew_standdown`): mints a fresh key, re-homes its Identity tag/prepub/Peering name under it, retires the
+     soul's founder row — the soul's name belongs to whoever wields it. A founder that HEARS a ledger demoting it
+      stands down too and re-signs the ledger so the others learn its new name. Live owed: the station re-dials
+       under the new name at the next standup (in-place re-dial not built); the stash/account dir keyed by the
+        old prepub is not migrated.
+- **Gate: SwarmHelm** (Swarmation.g, 5 beats, 7 sworn): held-not-wielded · eject travels · the ejected leaves · the
+   friend refuses it and still admits a mate · the helm passes with no key moved · a fresh device resumes and the
+    three ledgers agree byte for byte · the soul secret survives a reload through the stash.
 
-Friends learn the crew via roster gossip and render any member as "you" — one presence, many bodies;
- grouping lives in the Pier/Peering table, never in relay-address collision. "Is this soul online" is
-  the union of the crew's presences (`Presence_todo.md`).
+**The adopt road is GONE** (Swarm_adopt_* ~250 lines, its dispatch, InviteYourself's pending check): the %Ferry
+ ceremony is the one road. SwarmSpread beats 2–4 re-authored to the ledger model (crew of one at birth · the
+  division is a ledger · the ledger's teeth); beat 5 (the ferry) unchanged.
 
-**Pirate UI** (landed, `LinkDevice.svelte`): "add to Crew the device showing: $icons" / "joining the
- Crew of Captain Grav" (⚓/🏴, "muster a crew mate"); crew-roster panel; offer supersession (a fresh
-  invite supersedes a stale non-pending cave req so consent surfaces).
+**How a friend trusts a Cave** (unchanged, `Swarm_voucher_ok`'s cert-crew road): voucher `{control:'crew', from:
+ body-prepub, pub: body-pub, era, ts, sign: <body sig>, grant: <Grant:Crew>}`; sealed to soul-pub `held` it checks
+  prepubOf(pub)===from · verify_grant · by===held · for===pub · body sig · **and no NotGrant:Crew for that pub on the
+   pier**. Stateless otherwise. Forgery-hammered in `crew-cert-test.ts`.
+
+**Dial-in:** `runner_ask crew --player=<id>` now reports `key · soul · soul_held · wields` on `self`.
 
 ---
 
@@ -593,7 +750,20 @@ Friends learn the crew via roster gossip and render any member as "you" — one 
     `expecting()`. ttlilt is NOT a scheduler — steady asks stay real wire heartbeats.
 - Book-inertness: total determinism; witness notes are boolean OUTCOMES, never timestamps; gate on
    ok/exit-code, never cross-run dige; fixtures re-record ONCE, at a declared seam.
-- Two shapes under one mainkey = the identity tell (why `/Crew` rows wear `%mate`, not `%Pier`).
+- Two shapes under one mainkey = the identity tell (why `/Crew` rows wear `%mate`, not `%Pier`, and why the
+   pool CELL is `%Pooling` while a compartment is `%Pool`).
+- **Everything is snappable** (2026-09-03): `.c` is for WebAudio-grade runtime objects only. A key is a
+   particle (`%Key,pub,secret`), protected by the export protocol and the Story munge — never a runtime field.
+    A secret's protection is WHERE IT IS ALLOWED TO GO, not where it is stored.
+- **The ledger is the mutex, and it has no clock** (2026-09-03, owner): membership, roles and ejections live
+   on `/Crew`, signed by the soul; the last soul-signed ledger a mate hears REPLACES its own. No epoch, no era
+    compare, no wall clock. One row says Captain — a social rule with the data model shaped to make it the
+     obvious one, not a cryptographic enforcement (the crew all hold the soul secret, by the owner's ruling).
+- **Which key a body WIELDS is read off its row's role**, never a stored flag: `Swarm_signas` is the one seam.
+   A promoted mate signs as the soul; a founder demoted by a heard ledger stands down to a fresh key + name.
+- **An ejection must travel** or it is theatre: the ✕ writes a soul-signed `NotGrant:Crew` onto the ledger and
+   gossips it to mates AND to friends of the soul, whose doors then refuse that body. The ejected mate leaves
+    on hearing it. Local-only revocation is the bug this replaced.
 - Every dead-end must name itself — a vanished knock must be indistinguishable from nothing, not from
    "working, please wait."
 

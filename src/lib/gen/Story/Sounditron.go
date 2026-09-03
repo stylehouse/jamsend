@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'a909f0031a6d3359~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '07afe993896935f2~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -139,7 +139,7 @@ Sounditron_lies_w(w) {
 Sounditron_self(w) {
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
-    return ident?.c?.keys?.prepub ?? M.Lies_self?.(this.Sounditron_lies_w(w))?.prepub ?? null
+    return this.Swarm_keys(ident)?.prepub ?? M.Lies_self?.(this.Sounditron_lies_w(w))?.prepub ?? null
 
 },
 Sounditron_channel_live(w) {
@@ -645,6 +645,19 @@ Sounditron_commission(w) { const H = this;
             if (shuf.c.up !== krw) shuf.c.up = krw
             let shH = this.top_House ? this.top_House() : null
             if (!(shH && shH.c.humdinger)) organs.push(shuf)
+        }
+        // THE POOL CELL (owner 2026-09-03: "how do we select what music we want to keep available … perhaps
+        //  just another cell when there's any Crew").  %Pooling (not %Pool — that mainkey is the compartment
+        //   itself; two shapes under one mainkey is the tell) — a persistent dontSnap anchor on the radio world,
+        //    PoolFace reads live: the compartments (name · take · cap · filled), the steward's wants, the
+        //     "random from everyone" preset, ✕ to drop one.  LIVE TABS ONLY (humdinger-gated like the Shuffle
+        //      cut, so every Sounditron fixture stays byte-identical) and only once anyone shares with me — a
+        //       sealed pier or a crewmate — since a pool with no source is an empty promise.
+        let pooling = krw && krw.oai ? krw.oai({ Pooling: 1, face: 'Pooling', dontSnap: 1 }) : null
+        if (pooling) {
+            if (pooling.c.up !== krw) pooling.c.up = krw
+            let pH = this.top_House ? this.top_House() : null
+            if (pH && pH.c.humdinger && spiers.length >= 1) organs.push(pooling)
         }
     }
     // the DIAGNOSTICS toggle cell (always present) + the three it gates (Beat · Uptime · Door), grappled ONLY

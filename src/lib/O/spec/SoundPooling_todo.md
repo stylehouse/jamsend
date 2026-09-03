@@ -1,5 +1,70 @@
 # SoundPooling_todo.md — the pool: press + reach into it, pool-first radio out, cells over it
 
+## 0. WHERE THIS IS AND WHAT TO DO NEXT (2026-09-03 night)
+
+**The one-paragraph state.** A pool is a declared compartment of your device's music — a `%Pool` with a
+ name, a take-policy and a cap — living on the identity, stashed as the seventh pillar so a folderless
+  phone keeps it across a reload. Six policies now stand: `taste` (the likes×3/keeps×2/spins score),
+   `liked`, `kept`, `latest` (the last jam), `random` (the circulation fill: whole tracks drawn from every
+    mirrored catalog, crew and friends alike, in a clockless FNV-1a shuffle you can reshuffle with a new
+     salt), and now `radio`. A steward sits down at each track advance, turns the composition into wants
+      (`press` from your own library, `pull` from whoever holds it, `evict` what fell out of the goal), and
+       `Ra_pool_fill_wants` turns pulls into standing `%Reach` bookings. The Pool cell surfaces all of it.
+        Green Books: MusuPoolRandom, MusuPoolFill, SwarmReboot. **What was still missing was the last
+         mile — bytes actually landing — and a device with no library of its own (a Cave, a phone) could
+          not use any policy at all, because every one of them scores a tally that was empty.**
+
+**THE ANSWER, and it is the owner's (2026-09-03): ride Radio + Heist, don't build a file browser.**
+ *"ideally it works on top of a the Radio+Heist protocols, asking for Radio from a given area and then
+  Heisting it all. saves us building a file browser?"* — yes, and the seam turned out to be two scalars:
+
+ - **Choosing is already solved.** The dial picks over friends' mirrors, honours the aim-lock, skips
+    what you have heard. A file browser would be a second and worse answer to a question the radio
+     already answers. So a `radio` pool does not choose: it KEEPS what the dial chose and you heard.
+      What fills your phone becomes a fact about your evening, not a filing decision.
+ - **The area already has a name**: `radio.sc.aim` / `sc.aim_by`, written by `Radio_aim_at`, already
+    honoured by `Radio_dial_pool`'s aimed-vs-all split. Tune to a body, and the catch follows it.
+ - **The act already exists**: the `%Heist` intent that the ⇊ button mints.
+ - **The destination was one string.** `Heist_catalog_land` routes pool-ward purely on
+    `Heist_is_pool(mardir)`, and the keep chain passed `Heist_mardir(w)` — a WORLD-wide switch that
+     cannot say "this track to the pool, that one to the library" on one tab. `Heist_keep_mardir(w, keep)`
+      now lets a keep carry its own `into:'pool'`. No second lane, no new byte machinery: the machine
+       that hauls a friend's album hauls a pooled track.
+
+ So: `Radio_pool_catch` fires at `Radio_open` — humdinger-gated, never my own track, never outside the
+  aim, never past the cap — and mints an `into:'pool'` keep. `take:'radio'` in `Ra_quarter_goal_pools`
+   makes the compartment's own contents its goal (newest kept, oldest trimmed), which is what stops
+    every OTHER pool's goal from marking the sediment "not wanted" and evicting it.
+
+**A Cave pools by default** (`Radio_pool_cave_default`). A Captain sits on a library and a folder; a Cave
+ usually has neither, so its music can only ever arrive over the wire from its crew — exactly what a
+  radio pool does. The first time a Cave with no declared pools and no library of its own hears a crew
+   track, it declares one `crew` pool (radio, cap 12) as a real visible `%Pool`, not a hidden `.c` mode.
+
+**Next, in order (2026-09-03 night, after reading the byte lane end to end):**
+
+1. **A radio keep must actually GO, and take only its track.** Two facts from Heist.g make the catch inert
+   as it stands: a keep sits `primed` until `Heist_keep_start` (a human button) flips it to `pulling`, and
+   seed granularity is deliberately THE WHOLE FOLDER (`Heist_keep_default_pick` keeps everything the describe
+   returned — right for an album heist, wrong for a pool of twelve tracks). So for `into:'pool'`: auto-advance
+   primed→pulling in `Heist_keep_step`, and pick exactly the seed id. Also force `lofi:1` on a pool keep —
+   the pool is the liquid lofi destination by the boundary law, and lofi is a holder-side transcode, so it
+   is also the fewer-bytes choice. Book: extend MusuPoolRadio or add MusuPoolGo.
+2. **Eviction on a Cave.** `Radio_pool_steward` is default-off and bails with no own library, so on the one
+   body that pools by default the cap just stops the catch and never rotates. Let the steward sit for any
+   body with pools declared (it only needs `evict` there), and consider on-by-default when a pool exists.
+3. **MusuPoolBytes** — a pool keep driven through `Heist_keep_pull` against a seeded holder, asserting the
+   catalog tail took the pool branch (`of:`, `grade:'ogg128'`, path under `pool/`).
+4. **Live walk on the Cave**: declare (or let it self-declare), listen to the Captain, watch for `🏊⇊`
+   lines, see a %Record appear on the pool shelf, flip the source chip to `pool` and hear it play offline.
+5. **The controls** (owner asked): the area on the source chip (`Radio_source_next`'s reserved `<friend>`
+   stop), a fill-line per compartment, one per-pool switch instead of three global knobs, ✕ stating its
+   consequence. Plus Cello as the default glass, and the 5s source-button clunk (the toggle wipes the
+   Lineup + Streams Mags and re-dials; measure before touching).
+6. **Crew, still owed**: the promoted Captain's address re-home and a durable stand-down (Crew_todo §0);
+   SwarmGot's run-to-run %Crew block ordering.
+
+
 *(Two mechanisms fill the pool — PRESS (passive, this doc's origin) and REACH (active/cross-body, §0.5 +
  `Reach_todo`) — and the cells (§0.5) surface both. Origin title kept below for continuity.)*
 ### (origin: the OPFS pocket cache — from ambient press to pool-first radio)
@@ -146,6 +211,55 @@ Each: Heistation.g (the Musu* home), recorded on the LIVE runner, wormhole dir c
   standing booking lived only in the account snap — which a PHONE never writes (no folder ⇒ no nav), so
    every booked fill died at the next boot and "book it and walk away" was false on exactly the device
     SoundPooling is for. Terminal reaches are deliberately NOT carried: a settled fill is history.
+
+**LANDED 2026-09-03 NIGHT — THE RANDOM POOL, POOL CRUD, THE POOL CELL (owner: "take SoundPooling all the way
+ through CRUD if you like, of Pools, start with one that just acquires random whole LOFI tracks from all
+  Piers|Crewmates" · "perhaps just another cell when there's any Crew").**
+- **`take:random`** (Ra.g `Ra_quarter_goal_pools(shelf, pools, sources)`): the CIRCULATION fill. Draws from
+   `Ra_pool_sources(w)` — every %MusuThem mirror's stock shelf (a crate stands only for a body that shared with
+    me, so crew and friends alike) — in a CLOCKLESS shuffle: `Ra_pool_hash` (FNV-1a over `name:salt:id`) orders
+     the draw, so it is the same every sit-down and in every fixture; `%Pool,salt` is the human's "shuffle again".
+      Each want names its holder (`Want,from:<name>`; the goal row carries `from`).
+- **The bridge** `Ra_pool_fill_wants(w, ident)`: every pull-want that names a holder books `%Reach,to:<holder>,
+   of,for:serve` (`Ra_pool_fill_book(w, ident, id, to)` — a ROLE target must stand on my roster; a NAMED holder is
+    the address itself). Declaring the pool IS the consent. Live: `Radio_pool_steward` passes the sources and,
+     under `w.c.reach_on`, books the fills. The reach road/report/dispatch now admit a **Music-granted FRIEND** as
+      they admit kin (the people's music — a shareless phone still serves pool copies); a stranger is refused.
+- **CRUD**: `Ra_pool_define` (C+U, resize in place) · `Ra_pool_defs` (R, declaration order) · `Ra_pool_drop` (D; its
+   wants fall out at the next sit-down, pooled copies become evict wants). `Ra_pool_home(w)`: on the LIVE radio
+    world the %Pools shelf lives on the live self's IDENTITY (the account snap carries it; a phone: OWED a pools
+     stash pillar — the seventh — until then a folderless device loses its pool definitions at reload); a Book /
+      lone world keeps them on the world.
+- **The Pool cell** (`%Pooling,face:'Pooling'` on the radio world, `PoolFace.svelte`, grappled on live tabs once
+   anyone shares with me — humdinger-gated so every Sounditron fixture stays byte-identical): the compartments
+    (name · take · cap · wanted · 🔀 reshuffle · ✕), the wants per pool with their holders, "＋ random from
+     everyone" / "＋ what I liked" presets, a define form, and the two knobs (steward · fills) + "sit down".
+- **Gate: MusuPoolRandom** (Heistation.g, 4 beats, 5 sworn): 8 reachable from 2 holders → 3 pull-wants naming
+   holders, never my own shelf · the same draw twice, a new salt a new draw · the wants book toward their
+    holders (crewmate at its body name, friend at its pier), idempotent · the friend road admits Cap, refuses a
+     stranger, reports back over the pier · resize / list / drop / fall back to the anonymous pool.
+- **A REVIEW PASS RAN OVER IT THE SAME NIGHT** (an opus agent, code-read). Fixed: the landing read only the
+   crew Cave's mirror, so a FRIEND-served circulation fill could never land (`Ra_pool_fill_from` now resolves
+    the holder off the reach's `to:`, probe-first — on a phone with friends and no Cave every fill used to
+     stall at 'arrived'); a re-used `%Want` kept a stale `pool`/`from` (both are deleted when the fresh diff
+      row has none); `Ra_pool_defs`/`_drop` now read and drop from BOTH homes, so a pool minted before the
+       live self hydrated is not orphaned on the world; bookings are BUDGETED (4 per pass) so a cap-12 pool
+        cannot crowd the shared %Reach cap; a holder name must look like a key-derived prepub, so a Repli
+         placeholder ('Crowd') can no longer vivify a station %Pier; PoolFace probes the pool home instead of
+          minting it in a render effect, and its "sit down" cannot latch the steward on.
+   ⚠ STILL OPEN from that review: nothing binds a reach's `by` to the frame's actual sender — the friend arm
+    now demands a full key-derived prepub before it will prefix-match, which closes the one-character match,
+     but a real authentication of `by` is owed (it is the same shape as the voucher gate).
+- **Gate RECORDED + check-green** (2026-09-03 night): MusuPoolRandom 4 beats, 5/5 sworn, caveat 0 on a second
+   run against its own fixtures.
+- ✅ **THE POOLS STASH PILLAR (the seventh) LANDED** the same night: `Swarm_restash_pools` +
+   `Swarm_pools_rehydrate`, in `Swarm_restash_all` and the `Swarm_station_up` ladder. A %Pool is a
+    DECLARATION and it homed on the identity, which rides the account snap — and a phone never writes one,
+     so every compartment a phone declared died at its next boot and the circulation stream stopped
+      silently on exactly the device this is for. Gated by SwarmReboot (declare two → wipe → rehydrate →
+       swear them back IN DECLARATION ORDER, since order is priority, with policy, cap and salt intact).
+- NEXT on this thread: **MusuPoolBytes** (the byte lane — still the Book that forces the transport to exist);
+   the pools stash pillar; the location pool (`take:dir`, Crew_todo §0 A½.3); the Pool cell on a real phone.
 
 **What to get on with next (fresh session reads here):**
 1. **Wire the ambient steward** — `Radio_source_next(n)` + `Radio_autopress` (the press driver that

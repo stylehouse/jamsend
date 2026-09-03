@@ -27,10 +27,10 @@ story:SwarmPolicy
       sample=0.008,at=1786521260
       sample=0.005,at=1786521273
   step,dige:e5c5f344a350825c
-  step=2,dige:5a6d64f986b731f7
-  step=3,dige:eafff74fbade34aa
-  step=4,dige:53f81ff993a47fb3
-  step=5,dige:c4e78614b84a059d
-  step=6,dige:e3c38b6d0e4d4978
-  step=7,dige:626f055367a7f1d3
-  step=8,dige:76b64ca9964be9ae
+  step=2,dige:c4039260a17f4fc5
+  step=3,dige:d6453f50bf65d266
+  step=4,dige:3e13ffefed4de6a9
+  step=5,dige:1c1b0c8f91d132e0
+  step=6,dige:d4c6a511719ea6e5
+  step=7,dige:41ab48a1510f3638
+  step=8,dige:b86123047a411749

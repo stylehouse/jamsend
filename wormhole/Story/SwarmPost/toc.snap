@@ -26,11 +26,11 @@ story:SwarmPost
       sample=0.008,at=1788299602
       sample=0.008,at=1788299611
       sample=0.006,at=1788299622
-  step,dige:0000000000000000
-  step=2,dige:0000000000000000
-  step=3,dige:d22b3e599b582d5b
-  step=4,dige:64aa11f8e0ec2b8e
+  step,dige:3a917484334071a5
+  step=2,dige:1eeadb1e218f1ad0
+  step=3,dige:b604351bd0b2b439
+  step=4,dige:0d12526289457d07
     Assertion:a-body-reads-its,sentence:a body reads its Post off the grant — the MyCave pier confers Cave the MyCaptain pier confers Captain and the Post is never a string the body picks but the invite feature projected
     Assertion:a-capability-is-not,sentence:a capability is not a Post — a Music grant confers no role so serving music and being a body stay distinct kinds of grant
-  step=5,dige:8eb7954766c73608
+  step=5,dige:8d118e416fbb132b
     Assertion:a-notgrant-drops-the,sentence:a NotGrant drops the Post but keeps the body — re-deriving after the revoke retires the role while the body row still stands so a Post-less body is undivided not deleted

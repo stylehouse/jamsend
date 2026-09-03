@@ -718,6 +718,8 @@
             //   flora.  The crusher already ignores it; the view hides it too, so
             //    the graph reads as pure data.  skip drops its config-leaf subtree.
             || s.Opt
+            // %Key — a signing key particle (Crewkeys.ts): a secret is not flora.
+            || s.Key
             || s.snapshot || s.cyto_edge_root || s.cyto_z) return 'skip'
         // a REPRESENTED gang member (c.represented — c-side, only the Voro
         //  crusher's Voro_gang_fold ever stamps it): its row already shows in

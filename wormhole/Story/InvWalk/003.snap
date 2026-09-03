@@ -14,9 +14,15 @@ Snap:H
             Peering,name:dc4f0202db467c5b,friendly:Alice,online
               Idzeug:invwalk_content,to:Music,genre:Jazz
               Idzeug:1,to:MyCave,next:2
+            Crew,soul:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
+              mate:dc4f0202db467c5b,role:Captain,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e
+              Key,pub:dc4f0202db467c5ba3981890eda19704a845f78700fe712a441fa1111f2c0b3e	{"mung":["secret"]}
         Account,of:Cavey
           Identity:801ca80af2d45548,prepub:801ca80af2d45548,friendly:Cavey
             Peering,name:801ca80af2d45548,friendly:Cavey,online
+            Crew,soul:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
+              mate:801ca80af2d45548,role:Captain,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1
+              Key,pub:801ca80af2d4554840494e5203f273dc079978f9abb28a853646da634e245dc1	{"mung":["secret"]}
         reached:step_3
         req:Ferry,eternal
           req:Ferry_soul,serial:1,phase:minted,at=1756600010

@@ -9,8 +9,11 @@ Snap:H
         Account,of:Alice
           Identity:2673bee2ec71e506,prepub:2673bee2ec71e506,friendly:Alice
             Peering,name:2673bee2ec71e506,friendly:Alice
-              Body,pub:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd,post:Captain,address:2673bee2ec71e506
+              Body,pub:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3,post:Captain,address:2673bee2ec71e506
               Body,pub:charter_cave_pub,post:Cave,address:2673bee2ec71e506_1
-              Charter,era:1,payload:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd:Captain:2673bee2ec71e506;charter_cave_pub:Cave:2673bee2ec71e506_1,sig:9ec9e47c55ac8d5901604ea7aaf3e562f11da8ceeb18b9febdc58e0c9e7210636c9dd87c7e07d0451b435a0b26e049edfcaadc1b33dc98d0fd40d3fd0fc4cf01,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+              Charter,era:1,payload:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3:Captain:2673bee2ec71e506;charter_cave_pub:Cave:2673bee2ec71e506_1,sig:1caa75326b39f236f8605c6215f8c8ca8d66a68433f87f50945962310d43b3776ca252503a3b598e2971083c6e72fd1922f615565e324c140761266db37d5301,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+            Crew,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+              mate:2673bee2ec71e506,role:Captain,pub:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+              Key,pub:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3	{"mung":["secret"]}
         testing
           signed,era_one,one_row,self_verifies,cave_resolves,captain_bare,none_null

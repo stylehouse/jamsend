@@ -1,0 +1,50 @@
+Snap:H
+  H:MusuPoolRadio,Run
+    A:MusuPoolRadio
+      self,round=5	{"mung":["age"]}
+      w:MusuPoolRadio,now=1788400030
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          stood,own_track_never_caught,one_keep,keep_says_pool,same_shape_as_the_button,catching_twice_is_once
+          reached:step_3
+          guarded,one_scalar_routes_it,aim_confines_the_catch,aim_lifted_catches_again,cap_counts_intent
+          reached:step_4
+          goaled,own_contents_are_the_goal,honest_why,trims_the_oldest_only
+          reached:step_5
+          caved,captain_left_alone,bare_cave_declares_one,declared_once_not_every_track
+        Radio:playing,by:friendo
+        MusuThem,pub:friendo
+          stock,pub:friendo
+            Record,id:r1,title:Radio One
+            Record,id:r2,title:Radio Two
+            Record,id:r3,title:Radio Three
+        Pools
+          Pool,name:heard,take:radio,cap:2
+        Record,id:own1,title:Mine
+        MusuSelf,pub:e747cbed6a9ca919
+          shop,pub:e747cbed6a9ca919
+            Heist:Radio One,seed:r1,pub:friendo,state:primed,into:pool,why:radio,from_name:friendo
+            Heist:Radio Two,seed:r2,pub:friendo,state:primed,into:pool,why:radio,from_name:friendo
+        MusuPool,pub:e747cbed6a9ca919
+          stock,pub:e747cbed6a9ca919
+            Record,id:r1
+            Record,id:r2
+            Record,id:r3
+        Library,name:radiolib
+        w:MusuPoolRadioCave
+          Account,of:Cavey
+            Identity:b2663d787b470325,prepub:b2663d787b470325,friendly:Cap
+              Peering,name:b2663d787b470325,friendly:Cap
+              Crew,soul:b2663d787b470325bb454d531be2cbf808638f8b0369b6e3ee2a8a0bd6d1531d
+                mate:b2663d787b470325,role:Captain,pub:b2663d787b470325bb454d531be2cbf808638f8b0369b6e3ee2a8a0bd6d1531d
+                Key,pub:b2663d787b470325bb454d531be2cbf808638f8b0369b6e3ee2a8a0bd6d1531d	{"mung":["secret"]}
+            Identity:5270274852ee42c6,prepub:5270274852ee42c6,friendly:Cavey
+              Peering,name:5270274852ee42c6,friendly:Cavey
+              Crew,soul:b2663d787b470325bb454d531be2cbf808638f8b0369b6e3ee2a8a0bd6d1531d
+                mate:5270274852ee42c6,role:Cave,pub:5270274852ee42c65c4655f72db279cbee84c2193802c3445b2ae951c514b9a2
+                  Key,pub:5270274852ee42c65c4655f72db279cbee84c2193802c3445b2ae951c514b9a2	{"mung":["secret"]}
+                mate:b2663d787b470325,role:Captain,pub:b2663d787b470325bb454d531be2cbf808638f8b0369b6e3ee2a8a0bd6d1531d
+          Pools
+            Pool,name:crew,take:radio,cap:12

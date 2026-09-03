@@ -1,0 +1,17 @@
+story:MusuPoolRadio
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.024
+      sample=0.028,at=1788424935
+      sample=0.02,at=1788425086
+    TimeTotal:step,avg=0.005
+      sample=0.006,at=1788424935
+      sample=0.004,at=1788425086
+  step,dige:a9ab66df494fe28f
+  step=2,dige:b2482fafca11ad11
+  step=3,dige:14a226b3fc7f4e94
+  step=4,dige:969bb67d5f4039ed
+  step=5,dige:c39ca272137bffa9

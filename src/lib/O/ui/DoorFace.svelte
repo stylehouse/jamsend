@@ -613,11 +613,14 @@
                                 <!-- THE PLOT lane's organ (SoundPool §5.5): what this body holds -->
                                 <span class="df-organ" title="what this body holds">{#if b.trove != null}{b.trove >= 1000 ? (b.trove / 1000).toFixed(0) + 'k' : b.trove} trove{/if}{#if b.pocket != null}{b.trove != null ? ' · ' : ''}{b.pocket} ready{/if}</span>
                             {/if}
-                            {#if b.rung === 'away'}
-                                <!-- FORGET A DEAD BODY (Division_todo §0a #5): revokes its My* grant on the
-                                     kin pier — derive skips a revoked grant, the Seat's next heal retires the
-                                     row, and the era-bumped re-charter spreads the shrink.  Away-only, like
-                                     the pier forget — never a one-click kill of a live body. -->
+                            {#if true}
+                                <!-- EJECT A CREWMATE (owner 2026-09-03: "dropping Piers with the ✕ button as we
+                                     do now should eject them from the Crew").  Swarm_pier_forget now runs
+                                     Swarm_crew_eject first: a soul-signed NotGrant:Crew stands on the ledger,
+                                     the mate's row + Key + cert go, and the ledger gossips — every other mate
+                                     drops it, the ejected body leaves the crew, and friends of the soul shut
+                                     their doors on it.  Offered for a LIVE mate too now (it is a deliberate,
+                                     confirmed act), not only a dead one. -->
                                 <DeleteX inline ondelete={() => {
                                     const kin_self = (H as any)?.Swarm_live_self?.()
                                     const kin_piers = ((H as any)?.Swarm_peering?.(kin_self)?.o({ Pier: 1 }) ?? []) as any[]
@@ -625,7 +628,7 @@
                                         .some(k => k && b.pub && (k.startsWith(b.pub) || b.pub.startsWith(k))))
                                     if (kp) (H as any)?.Swarm_pier_forget?.(null, String(kp.sc.pub))
                                 }} confirm="forget?" glyph="✕"
-                                    title="forget {b.role} {b.name || b.pub8} — revokes its device grant; the family charter will omit it (it can be re-linked later)" />
+                                    title="eject {b.role} {b.name || b.pub8} from your crew — a signed ejection travels to every crewmate and to friends of your soul; it keeps its own key and can be re-linked later" />
                             {/if}
                         </div>
                     {/each}

@@ -3,7 +3,7 @@
     //  Beside "invite a friend" (mint %Invite:Music — *what I will serve you*) sits this: the invite whose
     //   redemption MAKES you, not befriends you (the LinkDevice ceremony).  The DIALOGUE below is the one
     //    place a person learns what carrying an identity to a second device means; the ceremony is now
-    //     BUILT (Swarm_adopt_* in Ghost/S/Swarm.g, proven green by Book SwarmSpread), so the hatch opens the
+    //     BUILT (the %Ferry ceremony in Ghost/S/Swarm.g — the adopt road retired 2026-09-03), so the hatch opens the
     //      live LinkDevice flow (offer / land / consent) instead of the old disabled stub.
     import LinkDevice from "./LinkDevice.svelte"
     let { H } = $props()
@@ -15,8 +15,6 @@
     $effect(() => {
         void H?.version
         try { if (new URL(location.href).searchParams.get('Adopt')) { open = true; return } } catch {}
-        const w = H?.Swarm_station_world?.()
-        if (w && typeof H?.Swarm_adopt_pending === 'function') { try { if (H.Swarm_adopt_pending(w)) open = true } catch {} }
     })
 </script>
 

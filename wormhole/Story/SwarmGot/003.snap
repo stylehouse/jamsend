@@ -12,6 +12,9 @@ Snap:H
               Pier,pub:0332cf6fb046bfa9,friendly:Fats,since:1751910010
                 Peering,name:0332cf6fb046bfa9,friendly:Fats,pub:0332cf6fb046bfa977290d334de0bbd787853a8ca1d9e4ca53ff2dedaae26167
                 Grant:Music,by:fe3e32fea4a2a33e2a5341da9c1f950149aa8162fdbb1e4a346c060c09dae6be,for:0332cf6fb046bfa977290d334de0bbd787853a8ca1d9e4ca53ff2dedaae26167,time:1751910010,sign:3b83202ca613988c2612039a8affc6a283cb1598d9cd1b57b7a0a663141329438e27a7e60b3699b257ad42a7f3a771ef0635bb8908c3d24ea13ce220a037ae09,genre:Jazz
+            Crew,soul:fe3e32fea4a2a33e2a5341da9c1f950149aa8162fdbb1e4a346c060c09dae6be
+              mate:fe3e32fea4a2a33e,role:Captain,pub:fe3e32fea4a2a33e2a5341da9c1f950149aa8162fdbb1e4a346c060c09dae6be
+              Key,pub:fe3e32fea4a2a33e2a5341da9c1f950149aa8162fdbb1e4a346c060c09dae6be	{"mung":["secret"]}
             SocialGraph
               Edge,a:fe3e32fea4a2a33e,b:0332cf6fb046bfa9,at:1751910010
             rebuff:unvouched_pier_confirm,say:0332cf6fb046bfa9
@@ -22,6 +25,9 @@ Snap:H
                 Peering,name:fe3e32fea4a2a33e,friendly:Ella,pub:fe3e32fea4a2a33e2a5341da9c1f950149aa8162fdbb1e4a346c060c09dae6be
                 Grant:Music,by:fe3e32fea4a2a33e2a5341da9c1f950149aa8162fdbb1e4a346c060c09dae6be,for:0332cf6fb046bfa977290d334de0bbd787853a8ca1d9e4ca53ff2dedaae26167,time:1751910010,sign:3b83202ca613988c2612039a8affc6a283cb1598d9cd1b57b7a0a663141329438e27a7e60b3699b257ad42a7f3a771ef0635bb8908c3d24ea13ce220a037ae09,genre:Jazz
                 Grant:Music,by:0332cf6fb046bfa977290d334de0bbd787853a8ca1d9e4ca53ff2dedaae26167,for:fe3e32fea4a2a33e2a5341da9c1f950149aa8162fdbb1e4a346c060c09dae6be,time:1751910010,sign:d5539e6214d8690b789899fe961ae20f6c562d9693156642881dec53e76fc3ab10489f26c0e1ce9d69d4d42c5f75c967c9fd0f2d5db049c86637445f2dd0e102,genre:Jazz
+            Crew,soul:0332cf6fb046bfa977290d334de0bbd787853a8ca1d9e4ca53ff2dedaae26167
+              mate:0332cf6fb046bfa9,role:Captain,pub:0332cf6fb046bfa977290d334de0bbd787853a8ca1d9e4ca53ff2dedaae26167
+              Key,pub:0332cf6fb046bfa977290d334de0bbd787853a8ca1d9e4ca53ff2dedaae26167	{"mung":["secret"]}
             SocialGraph
               Edge,a:0332cf6fb046bfa9,b:fe3e32fea4a2a33e,at:1751910010
         Peering,name:fe3e32fea4a2a33e

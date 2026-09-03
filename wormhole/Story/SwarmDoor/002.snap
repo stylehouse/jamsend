@@ -8,9 +8,15 @@ Snap:H
         Account,of:Inviter
           Identity:47866215d1d749f7,prepub:47866215d1d749f7,friendly:Inviter
             Peering,name:47866215d1d749f7,friendly:Inviter
+            Crew,soul:47866215d1d749f75f12fff6b9218fcc81fab4c70e49f587a85e5fd97e7e5a9c
+              mate:47866215d1d749f7,role:Captain,pub:47866215d1d749f75f12fff6b9218fcc81fab4c70e49f587a85e5fd97e7e5a9c
+              Key,pub:47866215d1d749f75f12fff6b9218fcc81fab4c70e49f587a85e5fd97e7e5a9c	{"mung":["secret"]}
         Account,of:Joiner
           Identity:5443ee4a8731b711,prepub:5443ee4a8731b711,friendly:Joiner
             Peering,name:5443ee4a8731b711,friendly:Joiner
+            Crew,soul:5443ee4a8731b71174a6ea6fd34dea5995f15ffa56472ddbe6582d9ecd1ae127
+              mate:5443ee4a8731b711,role:Captain,pub:5443ee4a8731b71174a6ea6fd34dea5995f15ffa56472ddbe6582d9ecd1ae127
+              Key,pub:5443ee4a8731b71174a6ea6fd34dea5995f15ffa56472ddbe6582d9ecd1ae127	{"mung":["secret"]}
         Peering,name:47866215d1d749f7
           active_transport,type:mock,open
         Peering,name:5443ee4a8731b711

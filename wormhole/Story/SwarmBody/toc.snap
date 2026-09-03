@@ -4,8 +4,7 @@ story:SwarmBody
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.114
-      sample=0.095,at=1788297324
+    TimeTotal:beliefs,avg=0.119
       sample=0.084,at=1788297459
       sample=0.144,at=1788297666
       sample=0.144,at=1788297689
@@ -15,8 +14,8 @@ story:SwarmBody
       sample=0.137,at=1788299021
       sample=0.094,at=1788299039
       sample=0.123,at=1788317602
+      sample=0.137,at=1788425146
     TimeTotal:step,avg=0.007
-      sample=0.006,at=1788297324
       sample=0.005,at=1788297459
       sample=0.008,at=1788297666
       sample=0.008,at=1788297689
@@ -26,51 +25,52 @@ story:SwarmBody
       sample=0.008,at=1788299021
       sample=0.006,at=1788299039
       sample=0.007,at=1788317602
+      sample=0.006,at=1788425146
   step,dige:2b840e0ba238da72
-  step=2,dige:d7b09e2fd45b7a84
+  step=2,dige:40b3026ce7a2c652
     Assertion:a-body-row-is,sentence:a body row is keyed by its own body key not the soul — one soul wears many bodies so the durable per-body key is what a roster row IS
     Assertion:the-body-key-is,sentence:the body key is durable and one per soul per store — ensure honours the cache and a second soul in the same store mints a key of its own
     Assertion:which-row-is-me,sentence:which row is me is computed from the body key never a stored flag — the mint writes no self bit onto the row so nothing false can replicate
-  step=3,dige:1bd38acf8a48ac37
+  step=3,dige:4add37a62949d672
     Assertion:the-self-answer-is,sentence:the self answer is body-local — a friend absorbing the roster computes its own body as self and no self flag ever crossed the wire
-  step=4,dige:08d3699c9006b4f5
+  step=4,dige:f8d983bdab44721d
     Assertion:the-vessel-subnet-picks,sentence:the vessel subnet picks the bare address first then ascends the suffixes — an individual local subnet has a deterministic primary and an empty one picks nothing
-  step=5,dige:74ae7faff7b9fdc3
+  step=5,dige:64c5a19f8cc803a9
     Assertion:a-reminted-body-wears,sentence:a reminted body wears its caveat — minting a key while the division already stands keyed stamps remint onto the fresh row and keeps the old seat standing while a virgin soul mints clean — a fork is seen never silently absorbed
-  step=6,dige:ed437309b01cb45c
+  step=6,dige:dc0768d6ed6445ef
     Assertion:a-frame-that-could,sentence:a frame that could not go stands as a debt on the counterparty row — deduped by kind so retries cannot grow it — a paid debt detaches and an empty shelf removes itself — the cap folds overflow into a dropped count that outlives full payment
-  step=7,dige:7edba9021ca8c03c
+  step=7,dige:1b622e3c4ebf0844
     Assertion:the-family-derives-from,sentence:the family derives from the standing grants at any time — a captain reads its cave off its own live signature and a linkee reads its own role and kept name off the husk — the soul never appears as a phantom member and a foreign signature confers nothing
-  step=8,dige:395db203fabc0dfd
+  step=8,dige:27f086c761c6ab52
     Assertion:the-heal-converges-the,sentence:the heal converges the roster on the standing links and every body is its own address — no seat column survives while unbacked junk retires and the founding-gap captain survives — a living link retires the fork caveat and the pre-key ghost drops — no charter is minted for the roster is not a document — and a settled family heals to no change
     Assertion:the-founder-signs-its,sentence:the founder signs its own captaincy — a divided seat holding no husk stamps link post Captain onto its self-husk pier at the heal so every post including the captain derives from a standing stamp and the founder-inference decays to a fallback
-  step=9,dige:4852ac0f320f6c6c
+  step=9,dige:1685c841278bd216
     Assertion:the-roster-mile-replicates,sentence:the roster mile replicates the family between siblings — plain rows union grow-only so a sibling sees the captain it never witnessed while the unsigned relic and the chrysalis stamp both stay home and proof lives at the voucher door
-  step=10,dige:d0ccb5dcde6db883
+  step=10,dige:307dc73a7ac7296e
     Assertion:a-reach-is-one,sentence:a reach is one durable addressed intent — it books and stands as legible matter routed off the family charter — an offline dispatch leaves the intent standing rather than minting a separate debt — and the target hears it serves it through its own doer marks it arrived and it graduates away
-  step=11,dige:dc8af930c5942f88
+  step=11,dige:5a5883a1bf49fc9c
     Assertion:the-reach-settle-loop,sentence:the reach settle loop observes until its knob is flipped — then the booker hears the outcome and closes the trip — an arrived reach graduates away while a refused one stands as a visible receipt
-  step=12,dige:cd4d32303bfc175b
+  step=12,dige:5d5619d1aa64db79
     Assertion:the-reach-wire-lane,sentence:the reach wire lane is gated on the roster — a rostered sibling books work on me while a stranger lands nothing — and the outcome reports back to the seat the roster names for the booker
-  step=13,dige:6b597bbc92b548a8
+  step=13,dige:90eacca320f0f94a
     Assertion:the-crew-read,sentence:the crew read projects the standing reaches into one legible glance — tallied by state with each intent carrying what it is and who it is for — so what the whole crew is doing reads at once instead of hiding across the ghosts
-  step=14,dige:3da023532d87d186
+  step=14,dige:88da90123ec23bb9
     Assertion:a-body-describes-the,sentence:a body describes the organ it grows — a pocket of what it wants now and a trove of everything as quantities on its own row — re-describing updates in place and each organ reads back by its kind
-  step=15,dige:d78586981f130a59
+  step=15,dige:86c0dad2823571a0
     Assertion:a-body-ships-its,sentence:a body ships its own organ sizes and a sibling lands them onto the roster row they describe — so the phone sees the laptop trove — while an organ for a body it does not roster lands nothing
-  step=16,dige:0b002f004f32e063
+  step=16,dige:3a9a14618ee4be81
     Assertion:the-reach-shelf-is,sentence:the reach shelf is bounded — a new booking beyond the cap is refused so a runaway loop cannot flood it — while re-booking a reach that already stands is always honoured so a retry is never lost
-  step=17,dige:fc3157aa03545433
+  step=17,dige:5e13c9dbb3bf446f
     Assertion:a-refused-receipt-ages,sentence:a refused receipt ages out — the settle loop sweeps one older than its window so dead receipts cannot fill the cap — while a fresh refusal still stands for its moment to be seen
-  step=18,dige:71c69d3d8e463e3a
+  step=18,dige:53ce61a27aac6100
     Assertion:a-want-past-its,sentence:a want past its deadline settles dead — nobody answered — the third and only other exit besides landed and refused so a standing want can never hang silent — while a want with no deadline stands forever as the durable cross-body booking and the dead receipt is clocked by the world not the wall
-  step=19,dige:077b59e402dfdc77
+  step=19,dige:d463b6f9f7b10fe7
     Assertion:a-landed-reach-outranks,sentence:a landed reach outranks a refusal so a racing refusal from a body that could not serve can never bury the one that did — a refusal upgrades when the holder later lands — and at equal rank the first terminal wins so a dead ack cannot flip a standing refused
-  step=20,dige:862bb14591daeccf
+  step=20,dige:f628c18e277a6deb
     Assertion:a-settled-reach-never,sentence:a settled reach never re-dispatches — dispatch refuses a refused and a dead one alike while a booked one still resolves its address — so the settle loop skips both failure terminals and a receipt can never flip itself back to dispatched and dodge its own sweep
-  step=21,dige:fe18be324462004a
+  step=21,dige:2957464ca47e0ccc
     Assertion:a-reach-admitted-with,sentence:a reach admitted with no sealed pier needs a valid soul-signed voucher — a body of my own soul passes and a sealed friend passes while a frame with no voucher a tampered signature or an unknown soul each lands nothing — so a forged settle cannot land on the untrusted relay
-  step=22,dige:378ee084000c87a4
+  step=22,dige:1d460da913985b73
     Assertion:the-doer-answers-in,sentence:the doer answers in the req machine's three postures — placed lands it and not-yet leaves it serving while provably-cannot refuses with a named why — a missing handler refuses no handler instead of auto-landing the lie — a throw is never terminal but leaves a loud rebuff — and the why crosses the wire to the booker while an ack without one stamps nothing
-  step=23,dige:6ce8c4341db596f5
+  step=23,dige:984912c364115f34
     Assertion:the-reach-pump-is,sentence:the reach pump is one self-throttling entry any driver may call — a second call inside its cadence no-ops — it sweeps stale receipts even while the settle knob leaves the ledger observing because the knob gates action never hygiene — and with the knob on the same entry dispatches the standing wants

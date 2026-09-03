@@ -63,13 +63,13 @@ test('two same-soul founders — observe war vs convergence', async () => {
 
 	const acctA = world.i({ Account: 1, of: 'BodyA' }); acctA.c.up = world
 	const A = H.Swarm_identity(acctA, { pub: soul.pub, key: soul.key, prepub: soul.prepub }, 'Grav')
-	A.c.bodykey = await H.Swarm_mint_keys('TwoFounder-A-body')
+	// keys are particles now (Crewkeys.ts): an identity's own key IS its body key — no separate mint.
 	const acctB = world.i({ Account: 1, of: 'BodyB' }); acctB.c.up = world
 	const B = H.Swarm_identity(acctB, { pub: soul.pub, key: soul.key, prepub: soul.prepub }, 'Gurn')
-	B.c.bodykey = await H.Swarm_mint_keys('TwoFounder-B-body')
+	// keys are particles now (Crewkeys.ts): an identity's own key IS its body key — no separate mint.
 
-	const Apub = String(A.c.bodykey.pub)
-	const Bpub = String(B.c.bodykey.pub)
+	const Apub = String((H as any).Swarm_keys(A).pub)
+	const Bpub = String((H as any).Swarm_keys(B).pub)
 	console.log('A body[:8]=', Apub.slice(0, 8), ' B body[:8]=', Bpub.slice(0, 8), ' A<B=', Apub < Bpub)
 
 	// each derives BOTH itself (husk) and its sibling (member) as a Captain founder (full gossip simulated)

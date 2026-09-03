@@ -9,8 +9,14 @@ Snap:H
         Account,of:Alice
           Identity:118fd01cff8a3866,prepub:118fd01cff8a3866,friendly:Alice
             Peering,name:118fd01cff8a3866,friendly:Alice,online
+            Crew,soul:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
+              mate:118fd01cff8a3866,role:Captain,pub:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a
+              Key,pub:118fd01cff8a3866634273a7c6e1d99ff6ead8518f74e345fb1655c0322f4e5a	{"mung":["secret"]}
         Account,of:Box
           Identity:b3658199b235d270,prepub:b3658199b235d270,friendly:Box
             Peering,name:b3658199b235d270,friendly:Box,online
+            Crew,soul:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7
+              mate:b3658199b235d270,role:Captain,pub:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7
+              Key,pub:b3658199b235d270cca349c150807f75574e27af5218a49c75ecf2e034cf28a7	{"mung":["secret"]}
         testing
-          stood,offer_verifies,role_agnostic
+          stood,each_a_crew_of_one,each_wields_own,key_is_a_particle

@@ -9,9 +9,12 @@ Snap:H
         Account,of:Alice
           Identity:2673bee2ec71e506,prepub:2673bee2ec71e506,friendly:Alice
             Peering,name:2673bee2ec71e506,friendly:Alice
-              Body,pub:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd,post:Captain,address:2673bee2ec71e506
+              Body,pub:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3,post:Captain,address:2673bee2ec71e506
               Body,pub:charter_cave_pub,post:Cave,address:2673bee2ec71e506_2
-              Charter,era:2,payload:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd:Captain:2673bee2ec71e506;charter_cave_pub:Cave:2673bee2ec71e506_2,sig:70ccd19d90651301fa4f120e1cd0983d36dc7be7eadcc58d25a03260b42749d328f4431e9768f79c065faed995f06516c2c28f5dc80b5cdf50de3c06fb53c802,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+              Charter,era:2,payload:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3:Captain:2673bee2ec71e506;charter_cave_pub:Cave:2673bee2ec71e506_2,sig:ba97c33bc01c099f66014c419962cc964beab20171ef1a5c10554368c8994cabe7e6ed48a83c81b5802ca1916d80b96dd318ca7ad44e9f9cec2e74b43d590804,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+            Crew,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+              mate:2673bee2ec71e506,role:Captain,pub:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+              Key,pub:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3	{"mung":["secret"]}
         testing
           signed,era_one,one_row,self_verifies,cave_resolves,captain_bare,none_null
           tampered,genuine_ok,addr_rejected,era_rejected,soul_rejected
@@ -22,6 +25,9 @@ Snap:H
           Identity:bob_prepub_000,prepub:bob_prepub_000,friendly:Bob
             Peering,name:bob_prepub_000,friendly:Bob
               Pier,prepub:2673bee2ec71e506,pub:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
-                Charter,era:2,payload:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd:Captain:2673bee2ec71e506;charter_cave_pub:Cave:2673bee2ec71e506_2,sig:70ccd19d90651301fa4f120e1cd0983d36dc7be7eadcc58d25a03260b42749d328f4431e9768f79c065faed995f06516c2c28f5dc80b5cdf50de3c06fb53c802,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
-                Body,pub:0730864d88895b035d9cbc7b9a5197f53b68e51a21dd75afb879ddf2f51738dd,post:Captain,address:2673bee2ec71e506
+                Charter,era:2,payload:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3:Captain:2673bee2ec71e506;charter_cave_pub:Cave:2673bee2ec71e506_2,sig:ba97c33bc01c099f66014c419962cc964beab20171ef1a5c10554368c8994cabe7e6ed48a83c81b5802ca1916d80b96dd318ca7ad44e9f9cec2e74b43d590804,soul:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3
+                Body,pub:2673bee2ec71e506cbc09c53c21a0eb434b1ddc19a4a101b346eba75b763c4c3,post:Captain,address:2673bee2ec71e506
                 Body,pub:charter_cave_pub,post:Cave,address:2673bee2ec71e506_2
+            Crew,soul:bob_pub_00000000
+              mate:bob_prepub_000,role:Captain,pub:bob_pub_00000000
+              Key,pub:bob_pub_00000000	{"mung":["secret"]}

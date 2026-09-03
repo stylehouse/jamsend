@@ -1,17 +1,23 @@
 Snap:H
   H:SwarmShare,Run
     A:SwarmShare
-      self,round=13	{"mung":["age"]}
+      self,round=12	{"mung":["age"]}
       w:SwarmShare,now=1751940040
-        self,round=13	{"mung":["age"]}
+        self,round=12	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:Cass
           Identity:249c771147d7d638,prepub:249c771147d7d638,friendly:Cass
             Peering,name:249c771147d7d638,friendly:Cass
+            Crew,soul:249c771147d7d638430c0e9974697218eac7b7e71ec86d7ff41ed0258a8ff06d
+              mate:249c771147d7d638,role:Captain,pub:249c771147d7d638430c0e9974697218eac7b7e71ec86d7ff41ed0258a8ff06d
+              Key,pub:249c771147d7d638430c0e9974697218eac7b7e71ec86d7ff41ed0258a8ff06d	{"mung":["secret"]}
         Account,of:Deb
           Identity:b97265e1fbb28558,prepub:b97265e1fbb28558,friendly:Deb
             Peering,name:b97265e1fbb28558,friendly:Deb
+            Crew,soul:b97265e1fbb285582ecce253ae5ea7fee5663824884c7c68d80009bcbc286cca
+              mate:b97265e1fbb28558,role:Captain,pub:b97265e1fbb285582ecce253ae5ea7fee5663824884c7c68d80009bcbc286cca
+              Key,pub:b97265e1fbb285582ecce253ae5ea7fee5663824884c7c68d80009bcbc286cca	{"mung":["secret"]}
         Peering,name:249c771147d7d638,req=2,ok
           Pier,pub:b97265e1fbb28558,req=2,ok
             req:handshake,finished
@@ -71,6 +77,9 @@ Snap:H
                 Grant:Music,by:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,for:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,time:1751940000,sign:9c979d083f4ed861459089b641a3962dd6d51c6a06e7bd69375e06d469cb399e9883648adedcd0a877df43e4b0256adb3754c44e5a4250e3d92edcba47a0650f,genre:Jazz
                 Grant:Music,by:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,for:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,time:1751940000,sign:a38ea7fa0a739ad65b2161d9c1d408e793c86e78e44d80423c53b0e2483c2d26b248d66d21170d8aaa7823c8dc9a2c9fb9662cd737763dcd7e1e71838bb0c705,genre:Jazz
                 Suggest,id:a1,by:32c1ce7a059129d1,title:Ruby,artist:Navarro,note:for a late night
+            Crew,soul:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+              mate:32c1ce7a059129d1,role:Captain,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+              Key,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213	{"mung":["secret"]}
             mail
               frame:pier_hello,did
               frame:pier_confirm,did
@@ -83,6 +92,9 @@ Snap:H
                 Peering,name:32c1ce7a059129d1,friendly:Alice,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
                 Grant:Music,by:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,for:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,time:1751940000,sign:9c979d083f4ed861459089b641a3962dd6d51c6a06e7bd69375e06d469cb399e9883648adedcd0a877df43e4b0256adb3754c44e5a4250e3d92edcba47a0650f,genre:Jazz
                 Grant:Music,by:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,for:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,time:1751940000,sign:a38ea7fa0a739ad65b2161d9c1d408e793c86e78e44d80423c53b0e2483c2d26b248d66d21170d8aaa7823c8dc9a2c9fb9662cd737763dcd7e1e71838bb0c705,genre:Jazz
+            Crew,soul:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7
+              mate:6eb0df4e976acef2,role:Captain,pub:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7
+              Key,pub:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7	{"mung":["secret"]}
             mail
               frame:pier_accept,did
             SocialGraph

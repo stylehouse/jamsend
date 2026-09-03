@@ -1,0 +1,25 @@
+story:SwarmHelm
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.193
+      sample=0.22,at=1788416005
+      sample=0.203,at=1788416033
+      sample=0.141,at=1788417885
+      sample=0.087,at=1788418844
+      sample=0.171,at=1788418952
+      sample=0.336,at=1788423574
+    TimeTotal:step,avg=0.039
+      sample=0.044,at=1788416005
+      sample=0.041,at=1788416033
+      sample=0.028,at=1788417885
+      sample=0.017,at=1788418844
+      sample=0.034,at=1788418952
+      sample=0.067,at=1788423574
+  step,dige:0f22bab5b3fb3d23
+  step=2,dige:c497559343f5d9ba
+  step=3,dige:1b724bd122ab9b1b
+  step=4,dige:6325920d4f6f2d7a
+  step=5,dige:8bbe65c4bdddaec2
