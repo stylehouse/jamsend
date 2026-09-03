@@ -1138,6 +1138,7 @@ Radio_pool_catch(w, radio, rec):
     let keep = shop.i({ Heist: this.Radio_clean(rec.sc.title || 'this'), seed: seed, pub: by, state: 'primed', into: 'pool', why: 'radio' })
     keep.c.up = shop
     keep.c.last_touch = Date.now()
+    if (this.Heist_keep_born) { this.Heist_keep_born(keep, this.Swarm_now ? this.Swarm_now(w) : 0) }
     keep.sc.from_name = this.Radio_friendly(w, by)
     if (rec.sc.artist) { keep.sc.artist = this.Radio_clean(rec.sc.artist) }
     console.log('🏊⇊ pooling what is playing — ' + String(rec.sc.title || seed).slice(0, 32) + ' from ' + String(keep.sc.from_name || by).slice(0, 12) + ' (' + (held + 1) + '/' + cap + ')')
@@ -1497,7 +1498,7 @@ async Radio_dial(radio):
             radio.bump()
             return pagain
         }
-        let pnote = 'your SoundPool is empty — siphon a track, or let the steward press some'
+        let pnote = 'empty'   // the most minimal effective comms (owner 2026-09-03)
         if (radio.sc.note !== pnote) { radio.sc.note = pnote; radio.bump() }
         return null
     }
@@ -3825,6 +3826,7 @@ async Radio_keep(n):
     //    the space-favouring dose; every other primed keep folds to a compact row, so racking up several
     //     albums while tearing through a friend's collection reads as one list, not N cells fighting for room.
     keep.c.last_touch = Date.now()
+    if (this.Heist_keep_born) { this.Heist_keep_born(keep, this.Swarm_now ? this.Swarm_now(w) : 0) }
     keep.sc.from_name = this.Radio_friendly(w, friend)
     if (rec.sc.artist) keep.sc.artist = this.Radio_clean(rec.sc.artist)
     // THE REMEMBERED SETUP, and it is `lofi` ONLY now (the human 2026-08-07: "LOFI should stay ticked, as

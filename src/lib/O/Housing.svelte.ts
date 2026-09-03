@@ -2955,9 +2955,11 @@ export class WormholeNav {
         const parts = dir_path.split('/').filter(Boolean)
         const dir = await this.dir(...parts)
         if (!dir) return false
-        if (!dir.expanded) await dir.expand()
-        if (!dir.files.find(f => f.name === filename)) return false
-        await (dir as any).handle.removeEntry(filename)
+        // ALWAYS re-expand: a listing cached by an earlier dir() may predate a write made through another
+        //  handle (Heist_land writes via mkdirp/getWriter), so a stale `files` would say 'not here' about a
+        //   file that is.  Then remove by handle and let NotFound answer false rather than pre-checking.
+        try { await dir.expand() } catch {}
+        try { await (dir as any).handle.removeEntry(filename) } catch (e: any) { if (e && e.name === 'NotFoundError') return false; throw e }
         dir.files = dir.files.filter(f => f.name !== filename)
         return true
     }

@@ -11,7 +11,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '3d37cac1290bdfe4~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return 'a4cf8587bcc6f475~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -6570,7 +6570,8 @@ async MusuPoolBytes_seed(w, nav) {
     let i = 0
     while (i < nsamp) { pcm[i] = Math.sin(2 * Math.PI * 220 * i / sr) * 0.5; i = i + 1 }
     let wav = this.Crate_wav_with_tags(pcm, sr, { artist: 'Pool Source', title: 'Rolling One', album: 'MusuPoolBytes' })
-    await nav.bin_write(root, 'MusuPoolBytes/Pool Source - Rolling One.wav', wav)
+    // a bare FILENAME — the FSA getFileHandle refuses a slash in the name ('Name is not allowed'); the subdir is the dir
+    await nav.bin_write(root + '/MusuPoolBytes', 'Pool Source - Rolling One.wav', wav)
     let src = this.Ra_home_them(w, 'friendo')
     w.c.src = src
     await this.expecting(w, 'bytes_census', 60, async () => {
@@ -6595,7 +6596,7 @@ async MusuPoolBytes_land(w, nav) {
     let shop = this.Ra_home_shop(w, 'me')
     let keep = shop.i({ Heist: 'Rolling One', seed: String(rec.sc.id), pub: 'friendo', state: 'pulling', into: 'pool', why: 'radio' })
     keep.c.up = shop
-    let job = this.Heist_job(w, 'friendo', {}, { home: shop, seed: String(rec.sc.id) })
+    let job = this.Heist_job(w, 'friendo', [], { home: shop, seed: String(rec.sc.id) })   // filings is a LIST (an {} threw 'not iterable')
     let pool = this.Ra_home_pool(w, 'me')
     let lib = this.Ra_home_self(w, 'me')
     let mardir = this.Heist_keep_mardir(w, keep)
@@ -6623,12 +6624,15 @@ async MusuPoolBytes_off(w, nav) {
     this.Ra_pool_start(w, 300, 1788400120, 'crew')
     let before = this.Ra_recs(this.Ra_home_pool(w, 'me')).length
     let out = await this.Ra_pool_off(w)
-    let row = { offed: 1, before: before }
+    let row = { offed: 1, before: before, files: out.files, records: out.records, has_rm: (typeof nav.bin_rm === 'function') ? 1 : 0 }
     if (before === 1 && out.records === 1 && out.files === 1 && !this.Ra_recs(this.Ra_home_pool(w, 'me')).length) { row.card_and_file_gone = 1 }
     if (w.c.card_path) {
         let parts = String(w.c.card_path).split('/').filter(Boolean)
         let fname = parts.pop()
-        let bytes = await nav.bin_read('pool' + (parts.length ? '/' + parts.join('/') : ''), fname)
+        let pdir = 'pool' + (parts.length ? '/' + parts.join('/') : '')
+        let bytes = await nav.bin_read(pdir, fname)
+        row.left_bytes = bytes ? bytes.byteLength : 0
+        row.rm_again = (await nav.bin_rm(pdir, fname)) ? 'true' : 'false'   // a second delete must find nothing
         if (!bytes) { row.nothing_left_under_pool = 1 }
     }
     if (!this.Ra_pool_consent(w) && this.Ra_pool_budget(w) === 0) { row.back_to_zero = 1 }

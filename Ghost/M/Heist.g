@@ -2454,6 +2454,11 @@ async Heist_keep_beat(w, ident):
             keep.c.pull_stall_warned = 0
             continue
         }
+        // the birthday, once, and the give-up mark the face reads (Heist_keep_born / _stale)
+        let bnow = this.Swarm_now ? this.Swarm_now(w) : 0
+        this.Heist_keep_born(keep, bnow)
+        let stale = this.Heist_keep_stale(keep, bnow, w.c.heist_keep_ttl)
+        if (stale) { keep.c.stale_secs = stale } else if (keep.c.stale_secs) { delete keep.c.stale_secs }
         w.c.keep_beat_at = 'step:' + String(keep.sc.Heist || keep.sc.seed || '?').slice(0, 24)
         try { await this.Heist_keep_step(w, rw, ident, me, nav, keep, shop) }
         catch (er) { keep.c.last_why = '' + (er && er.message || er) }
@@ -4407,6 +4412,33 @@ Heist_live_rows(w):
 //  Ordered most-decisive first: `paused` is a FLAG over any state (§0U.3) so it must be read before the
 //   state at all, and `done` before that because a done keep is about to drop itself and is not "paused"
 //    in any sense worth saying.  `queued`/`no_route` are `.c` marks the beat leaves as it passes.
+// Heist_keep_born — THE KEEP'S OWN BIRTHDAY, durable (owner 2026-09-04: Cell:Hauls still saying "Giant Steps
+//  running" for something ancient).  A keep carried NO time in `sc` — only `.c.last_touch`, which dies with
+//   the process — so after one reload nothing could tell a heist started ten seconds ago from one abandoned
+//    last week, and every stalled row said "running" forever with no way to age it out.  Stamped once at
+//     mint (never re-stamped: a resume keeps the original birthday, which is the number a human means by
+//      "how long has this been going").  Returns 0 for a pre-stamp keep, which reads as "unknown", not "new".
+Heist_keep_born(keep, now):
+    if (!keep) { return 0 }
+    if (!keep.sc.at && now) { keep.sc.at = String(now); keep.bump() }
+    return +(keep.sc.at || 0)
+// Heist_keep_age — seconds since the keep was minted, 0 when unknown.
+Heist_keep_age(keep, now):
+    let born = +(keep && keep.sc.at || 0)
+    if (!born || !now) { return 0 }
+    let d = (+now) - born
+    return d > 0 ? d : 0
+// Heist_keep_stale — HAS THIS ONE GIVEN UP?  A keep that has been alive longer than `ttl` (default 6h) and
+//  has landed NOTHING is not "running", it is wreckage: the source went away for good, or the ceremony that
+//   minted it was abandoned.  Progress of any kind clears it — one landed track means the thing works and
+//    may simply be big.  Reported, not enforced: the face says "given up" and offers the ✕, because deleting
+//     somebody's half-finished album on a timer is not ours to do.
+Heist_keep_stale(keep, now, ttl):
+    if (!keep) { return 0 }
+    if (String(keep.sc.state || 'primed') === 'done') { return 0 }
+    if (+(keep.sc.landed_n || 0) > 0) { return 0 }
+    let age = this.Heist_keep_age(keep, now)
+    return age > (+ttl || 21600) ? age : 0
 Heist_keep_gist(keep):
     if (!keep) return { word: '', live: 0, form: 0, landed: 0, total: 0 }
     let st = String(keep.sc.state || 'primed')
@@ -4416,6 +4448,7 @@ Heist_keep_gist(keep):
     if (st === 'committing') { g.word = 'finishing'; return g }
     if (st === 'choosing') { g.word = 'nothing picked yet'; g.form = 1; return g }
     if (st === 'primed' || st === 'wanted' || st === 'asking') { g.word = 'setting up'; g.form = 1; return g }
+    if (keep.c.stale_secs) { g.word = 'given up — ' + Math.round(+keep.c.stale_secs / 3600) + 'h, nothing landed'; g.stale = 1; return g }
     if (keep.c.no_route_ts) { g.word = 'waiting for ' + String(keep.sc.from_name || 'them'); return g }
     if (keep.c.queued_ts) { g.word = 'waiting its turn'; return g }
     return g

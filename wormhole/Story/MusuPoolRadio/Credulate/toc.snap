@@ -1,4 +1,4 @@
-Credulate,of_Book:MusuQuarter
+Credulate,of_Book:MusuPoolRadio
   GhostInclude:Ghost_N_Peeroleum,dige:44a9005b0392864b~g1
   GhostInclude:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
   GhostInclude:Ghost_N_Tribunal,dige:b4c37f0c56f24f1a~g1
@@ -35,7 +35,7 @@ Credulate,of_Book:MusuQuarter
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
   GhostInclude:Ghost_Story_Sounditron,dige:07afe993896935f2~g1
   GhostInclude:Ghost_O_Supervisor,dige:98120e82dc5b2eb9~g1
-  last_ok,at=1788436836.559,ok_pct
+  last_ok,at=1788436805.1,ok_pct
     uses:Ghost_N_Peeroleum,dige:44a9005b0392864b~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:b4c37f0c56f24f1a~g1

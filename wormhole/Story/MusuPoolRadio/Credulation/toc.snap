@@ -1,5 +1,5 @@
-Credulation,of_Book:MusuQuarter
-  run=0,at=1788436836.559,ok,ok_pct,mode:check
+Credulation,of_Book:MusuPoolRadio
+  run=0,at=1788436805.1,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:44a9005b0392864b~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:b4c37f0c56f24f1a~g1

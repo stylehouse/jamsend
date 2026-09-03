@@ -60,6 +60,7 @@ export type NavLike = {
     mkdirp?(...parts: string[]): Promise<any>
     read_file?(dir_path: string, filename: string): Promise<string | null>
     bin_read?(dir_path: string, filename: string): Promise<ArrayBuffer | null>
+    bin_rm?(dir_path: string, filename: string): Promise<boolean>
     read_range?(dir_path: string, filename: string, offset: number, len?: number): Promise<{ buffer: ArrayBuffer, size: number } | null>
     write_file?(dir_path: string, filename: string, content: string): Promise<void>
     bin_write?(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void>
@@ -109,7 +110,7 @@ export class MountNav {
     //   interface that pretends to stream and silently rewrites"* — held one level further out.
     //  Narrowing is recomputed on every mount|unmount, never accumulated, so removing a thin mount
     //   RESTORES the capability rather than leaving the nav permanently degraded.
-    static OPTIONAL = ['bin_append', 'bin_writer', 'read_range'] as const
+    static OPTIONAL = ['bin_append', 'bin_writer', 'read_range', 'bin_rm'] as const
 
     _narrow() {
         const navs: NavLike[] = [this.base, ...this.mounts.map(m => m.nav)]
@@ -181,6 +182,11 @@ export class MountNav {
     }
 
     async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {
+        const { nav, rest } = this._pick(seg(dir_path))
+        return nav.bin_read ? nav.bin_read(rest.join('/'), filename) : null
+    }
+    // bin_rm — bin_read's deleting twin, routed the same way (SoundPooling "off" and the steward's evict).
+    async bin_rm(dir_path: string, filename: string): Promise<boolean> {
         const { nav, rest } = this._pick(seg(dir_path))
         return nav.bin_read ? nav.bin_read(rest.join('/'), filename) : null
     }

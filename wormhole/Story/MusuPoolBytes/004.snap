@@ -1,0 +1,32 @@
+Snap:H
+  H:MusuPoolBytes,Run
+    A:MusuPoolBytes
+      self,round=5	{"mung":["age"]}
+      w:MusuPoolBytes,now=1788400120
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          seeded,censused,source_card_has_path_and_body
+          reached:step_3
+          landed,mardir:pool,card_on_the_pool_shelf,nothing_on_the_library_shelf,file_under_pool
+          reached:step_4
+          offed,before,files,records,has_rm,card_and_file_gone,left_bytes=8118,rm_again:true,back_to_zero
+        MusuThem,pub:friendo
+          stock,pub:friendo
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:60cef3926c854c29,title:Rolling One,artist:Pool Source,path:MusuPoolBytes/Pool Source - Rolling One.wav,ext:wav,bytes=8118,body_hash:60cef3926c854c29522b52f26e931a3a2c72baf51383fdcf35845940d364bb13,total,album:MusuPoolBytes
+                  Original,seq:0,cid:60cef3926c854c29522b52f26e931a3a2c72baf51383fdcf35845940d364bb13
+        req:bytes_census,finished
+        MusuSelf,pub:me
+          shop,pub:me
+            Heist:Rolling One,seed:60cef3926c854c29,pub:friendo,state:pulling,into:pool,why:radio
+            Caper,at:friendo,seed:60cef3926c854c29,disbelieve_directories,landed
+              took,tune:Pool Source — Rolling One
+          stock,pub:me
+        MusuPool,pub:me
+          stock,pub:me
+            Mag:shuffle
+              Cloud,page:1
+        Pools

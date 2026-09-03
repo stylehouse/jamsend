@@ -1,0 +1,8 @@
+Snap:H
+  H:MusuPoolBytes,Run
+    A:MusuPoolBytes
+      self,round	{"mung":["age"]}
+      w:MusuPoolBytes
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing

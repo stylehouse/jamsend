@@ -16,6 +16,7 @@
 
     // consent + want, read live (Ra_pool_consent / Radio_pool_wanted) so the source chip can say "needs setup"
     let pool_ok = $derived.by(() => { void H?.version; try { const w = n?.c?.w; return !!(w && (H as any)?.Ra_pool_consent?.(w)) } catch { return false } })
+    let pool_n = $derived.by(() => { void H?.version; try { const w = n?.c?.w; const pub = (H as any)?.Radio_pub?.(w) || 'me'; const sh = w?.o({ MusuPool: 1, pub })[0]?.o({ stock: 1, pub })[0]; return sh && (H as any)?.Ra_recs ? (H as any).Ra_recs(sh).length : 0 } catch { return 0 } })
     let pool_wanted = $derived.by(() => { void H?.version; try { const w = n?.c?.w; return !!(w && (H as any)?.Radio_pool_wanted?.(w, null)) } catch { return false } })
     let face = $derived.by(() => {
         void H?.version
@@ -159,17 +160,12 @@
     <!-- THE SOURCE CHIP (Siphon_todo P2): the provenance badge is also the source selector —
          pressing it cycles friends-first ⇄ SoundPool via Radio_source_next, which stamps
          sc.source on the %Radio particle; the dial obeys it (Radio_dial's pool rung). -->
-    {#if face.source === 'pool' && !pool_ok}
-        <!-- THE SOURCE IS THE DOOR TO ITS SETUP (owner 2026-09-03: "perhaps the sourcebutton has a link in it to
-             that Cell? and it says 'needs setup'").  A pool source with no consent yet cannot play anything, so
-             the chip stops pretending and takes you to the one place the yes is given. -->
-        <!-- the chip stays a SWITCHER (owner: reach the setup "via a separate button rather than just clicking
-             the source switcher button again") — it only says so; the link is the line below -->
-        <button class="rf-src rf-src-local rf-src-setup" onclick={() => (H as any)?.Radio_source_next?.(n)}
-            title="SoundPooling has not been started on this device — press to flip back to friends-first">♪ SOUNDPOOL — needs setup</button>
-    {:else if face.source === 'pool'}
-        <button class="rf-src rf-src-local" onclick={() => (H as any)?.Radio_source_next?.(n)}
-            title="the source — press to flip back to friends-first">♪ SOUNDPOOL — your pocket copies</button>
+    {#if face.source === 'pool'}
+        <!-- THE MOST MINIMAL EFFECTIVE COMMS (owner 2026-09-03: "SOUNDPOOL / setup / is empty"): the word is the
+             switcher; the line under it is the state, and "setup" is itself the separate button to the cell. -->
+        <button class="rf-src rf-src-local rf-src-pool" onclick={() => (H as any)?.Radio_source_next?.(n)} title="press to flip to friends">♪ SOUNDPOOL</button>
+        {#if !pool_ok}<button class="rf-src-sub rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')} title="open SoundPool">setup</button>
+        {:else if !pool_n}<div class="rf-src-sub">empty</div>{/if}
     {:else if face.by}
         <button class="rf-src rf-src-remote" onclick={() => (H as any)?.Radio_source_next?.(n)}
             title="the source — press to flip friends | SoundPool">from {face.byName || 'a friend'}</button>
@@ -180,10 +176,8 @@
         <button class="rf-src rf-src-local" onclick={() => (H as any)?.Radio_source_next?.(n)}
             title="the source — press to flip friends | SoundPool">♪ LOCAL — your own record</button>
     {/if}
-    {#if !pool_ok && (pool_wanted || face.source === 'pool')}
-        <!-- THE SEPARATE BUTTON to the setup (owner 2026-09-03) — never the chip itself -->
-        <div class="rf-src rf-src-local">{pool_wanted ? "your crew's music could live on this phone, " : 'nothing pooled yet, '}<button class="rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')}
-            title="opens the SoundPool cell — pick how much space, that is all">set up SoundPool</button></div>
+    {#if !pool_ok && pool_wanted && face.source !== 'pool'}
+        <button class="rf-src-sub rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')} title="open SoundPool">SOUNDPOOL setup</button>
     {/if}
     <!-- THE INVITE, PUT FORWARD FOR A PEERLESS LISTENER — sits right under the ♪ LOCAL sayer, because
          "playing your own record, alone" is the exact moment bringing a friend is the obvious next move.
@@ -287,6 +281,7 @@
                      transition: stroke-dasharray 0.4s linear; }
     .rf-small { width: 24px; height: 24px; font-size: 10px; opacity: 0.8; }
     .rf-small:hover { opacity: 1; }
+    .rf-src-sub { display: block; margin-top: -2px; font-size: .78em; opacity: .75; letter-spacing: .3px; }
     .rf-keep { width: 30px; height: 30px; font-size: 12px; }
     .rf-like { width: 30px; height: 30px; font-size: 14px; }
     .rf-like.liked { background: #6b2e3a; border-color: #c75777; color: #ffeaf0; }

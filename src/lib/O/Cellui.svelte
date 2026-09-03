@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { calm_watch } from "./ui/calm"
+    calm_watch()   // fps sample once per page; a slow page (or a forced calm) stops the drift + halos
     // Cellui.svelte — the Cello renderer view.
     //  "Nearly powerpoint looking UI, one after another, presented as cells that switcheroo
     //   and line up against one edge of the main one."  — owner, 2026-08-29.
@@ -1458,13 +1460,17 @@
    own space so neighbours appear to jostle/orbit one another.  Small amplitude (a few px + a few
     degrees), ease-in-out, infinite; rides an INNER wrapper so it never fights the outer flex,
      switcheroo, off-edge or nudge transforms.  Paused while a stone is held (settles where it lands). */
+/* THE DRIFT IS OPT-IN NOW (owner 2026-09-04: "not too keen on the constantly floating thing the cells are
+   doing").  It is a per-frame transform on every cell forever, so it is also the most expensive charm we
+   own.  The keyframes stay; they run only under <html data-drift>, which nothing sets by default —
+   `document.documentElement.dataset.drift = "1"` in a console brings it back for a look. */
 .cello-drift {
     position: absolute;
     inset: 0;
     transform-origin: 50% 60%;   /* pivot low, like a stone resting in a cupped palm */
-    animation: cello-roll var(--drift-dur, 20s) ease-in-out infinite;
     will-change: transform;
 }
+:global(html[data-drift]) .cello-drift { animation: cello-roll var(--drift-dur, 20s) ease-in-out infinite; }
 .cello-drift.main-drift { animation-name: cello-roll-main; }
 .cello-drift.paused { animation-play-state: paused; }
 @keyframes cello-roll {
@@ -1484,6 +1490,9 @@
 @media (prefers-reduced-motion: reduce) {
     .cello-drift { animation: none; }
 }
+/* …and OFF when the page is calm (calm.ts: a slow machine, or the owner 2026-09-04 — "not too keen on the
+   constantly floating thing the cells are doing").  The stones sit still; nothing else about them changes. */
+:global(html[data-calm]) .cello-drift { animation: none !important; }
 
 /* ── BLOB BODY (jewel fill) ──────────────────────────────────────────────────── */
 /* The dim jewel ground.  A soft radial highlight gives the blob a little roundness

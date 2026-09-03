@@ -41,6 +41,21 @@ Under it, the framing: *"just whether they want surprise music in their daily pl
       specifics of a remote collection.
 - Knobs (steward/fills/sit-down), want lists, ids on the face — internals. The yes IS the fills switch.
 
+**Comms on the Radio are minimal by ruling** (owner 2026-09-03: "SOUNDPOOL / setup / is empty — just the most minimal effective comms"): the chip is the word; under it one word of state — `setup` (a button to the cell) or `empty`; the dial's pool note is `empty`. A table of the app's wordier speeches is in `Speeches_todo.md` for the owner to chop.
+
+⚠ **Not understood yet, do not "fix"**: a Sounditron mounts BOTH UI:Vyto and UI:Cello (Otro mounts every registered UI; "show guts" reveals the Vyto under the Cello). Whether that is a cost, a design, or an accident is an open question — investigate before touching.
+
+**THE LIVE WALK (the one thing only the owner can do — once, after the overnight pass):**
+1. On the Cave: open the SoundPool cell (the `setup` word under SOUNDPOOL on the Radio), type 300, tick crew. Expect one console line: `🏊 SoundPool keeps rolling 300 MB from crew`.
+2. Listen to the Captain for a few tracks. Expect `🏊 steward: booked N circulation fill(s)` at a track advance, then `⇊` lines as keeps pull, then `🏊` cards landing. If nothing after ~2 min: paste the console.
+3. Press ♥ on a track. Expect `♥ liked … — no share here; the crew or the pool lives it out` on a Cave, or `— heisting in the background` on a body with a share.
+4. Flip the Radio source to SOUNDPOOL. Expect play from pool copies (levelled). If it says `empty`, step 2 did not land — paste the console.
+5. Reload the Cave. The sentence must still read 300 / crew (the pillar). Type 0. Expect the off line with pools/cards/files counts and the pool/ folder gone.
+
+See also **** — likes → heists → batch per holder, what berth is actually for, and the `take:'recent'` acquisitions input the owner asked for.
+
+See also **`Acquisition_todo.md`** — likes → heists → batch per holder, what berth is actually for (three caches, one of them the music-tree Census), and the `take:'recent'` acquisitions input.
+
 **Next (in order):** the live walk on the Cave (declare 300 MB from crew, listen, watch `🏊` lines, flip the
  source chip to pool, hear it play offline); the "later" half of the Like (a Cave with a disk reading the
   crew's Likes and hauling them); "how full is it" on the sentence; the aim on the source chip as the day-one

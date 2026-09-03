@@ -99,6 +99,17 @@ export class OpfsOverlayNav {
     //  takes a BufferSource directly, no TextEncoder).  Completes the contract so all THREE backends
     //   (FSA WormholeNav, remote RemoteWormholeNav, this cloud overlay) can write binary — no backend is a
     //    partial nav that surfaces "can't write binary" three layers away for a WAV-writing Book.
+    // bin_rm — bin_read's deleting twin (SoundPooling "off" + the steward's evict take the bytes with the
+    //  card).  Writes land in scratch, so that is the layer a delete reaches; a name that is not there
+    //   answers false (a sweep is not an error), anything else throws as it would on read.
+    async bin_rm(dir_path: string, filename: string): Promise<boolean> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const d = await walk(this.scratch, parts, false)
+        if (!d) return false
+        try { await d.removeEntry(filename); return true }
+        catch (e: any) { if (e && e.name === 'NotFoundError') return false; throw e }
+    }
+
     async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
         const parts = dir_path.split('/').filter(Boolean)
         const d = await walk(this.scratch, parts, true)
@@ -453,6 +464,7 @@ export class LazyGithubNav {
     // writes never consult github — they land in scratch, which shadows the seed from then on
     async write_file(dir_path: string, filename: string, content: string): Promise<void> { return this.opfs.write_file(dir_path, filename, content) }
     async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> { return this.opfs.bin_write(dir_path, filename, bytes) }
+    async bin_rm(dir_path: string, filename: string): Promise<boolean> { return this.opfs.bin_rm ? this.opfs.bin_rm(dir_path, filename) : false }
     async bin_append(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> { return this.opfs.bin_append(dir_path, filename, bytes) }
     async bin_writer(dir_path: string, filename: string) { return this.opfs.bin_writer(dir_path, filename) }
 
