@@ -1,0 +1,609 @@
+// Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
+//  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
+//   radio ever played me, in `%Cloud,page:N` pages, one page per sitting.  A Card has TWO STAGES and
+//    nothing else:
+//      heard — `id, pub, mire`.  BARE IDS (Mag_todo §6b, ruled 2026-07-19: "listening history … keep it
+//       OBLIQUE — bare ids, no titles|paths").  `mire` counts play-throughs with a person in the room.
+//      taken — `take, at` plus the listing, cloned from the friend's answer to a describe once it lands
+//       (`title, artist, dir, path, bytes, body_hash`) and `keep:<their keep-id>` naming the ORIGINAL.
+//  Acting is the moment a track becomes yours to hold, so the listing arrives with the act, never before.
+//
+//  THIS MAG IS FOUR READERS AT ONCE, which is the whole reason it exists (Radio_circuit_todo §1b):
+//   the DEDUP set the dial skips by (it replaces `radio.c.heard`, a 100-cap runtime bag that died on
+//    every reload), the durable OBLIQUE cursor Mag_todo §8 ruled six weeks ago and never had a home,
+//     `Radio_mag_cursor`'s source, and the taste ledger the heist reads.  One Mag, four readers, no `.c`.
+//
+//  THE HEIST IS A QUERY, NOT A STORE.  "What am I owed?" is `take` Cards whose track is not on my
+//   shelf, grouped by `pub`, oldest `at` first (Heard_takes).  There is no %Jam, no %Like, no %Grab, no
+//    %Caper-as-ledger: a heist in progress IS that query plus the one `%Heist` keep the beat mints from
+//     it.  The keep is transient scaffolding for the byte lane; the Card is the intent and the ledger.
+//
+//  NOTHING HERE EVER CROSSES.  The Mag hangs under `%Identity` (or, in a Book, under the `MusuSelf,pub`
+//   HOME — never its `stock` shelf, which is the Repli unit).  A Card is not a holding and must never
+//    read as one: `Repli_identity_keys` and `Swarm_graft` carry `Card: ['id','pub']` so a re-import
+//     upserts rather than twinning every Card whose `mire` moved.
+//
+//  THE CLOCK IS `Swarm_now` (a Book pins `w.sc.now`), never a bare Date.now — `at` and `created_at` are
+//   snapped scalars and a wall clock in a fixture is churn.  And a `mire` tick NEVER bumps: a bump on
+//    `%Identity` rewrites the whole account file inside the beliefs mutex, and a play-through is not
+//     worth a disk write (Radio_circuit_todo §5).
+
+//#region the mag — where it hangs, and the page per sitting
+
+// Heard_thumb — the un-press window in seconds.  A second ♥ inside it means UNDO (a fat thumb, not a
+//  second vote); outside it the press re-affirms the ask and re-arms the gave-up clock.  Retiring a
+//   heart later is a deliberate act with its own control (the ✕ on the Haul row → Heard_untake), which
+//    is why this window is short: "you can't lose a heart" is only true if a stray tap cannot spend one.
+Heard_thumb():
+    return 10
+// Heard_keeps_cap — how many keeps the ♥ may have standing at once, across every holder.  Not a
+//  transfer bound (that is `heist_inflight`, enforced in the beat): a bound on CELLS, so a take spree
+//   does not open twelve of them.  Three is "a couple going, one queued".
+Heard_keeps_cap():
+    return 3
+// Heard_landed_cap — how many landed takes the pool's `recent` compartment may see.  A compartment
+//  that could name three hundred tracks would only ever draw the same handful anyway.
+Heard_landed_cap():
+    return 60
+
+// Heard_now — the swarm clock, so a Book pinning `w.sc.now` gets a byte-identical snap.
+Heard_now(w):
+    return this.Swarm_now ? this.Swarm_now(w) : Math.floor(Date.now() / 1000)
+
+// Heard_home_find — WHERE THE MAG HANGS, found and never minted.  The live `%Identity` when this pub
+//  IS the machine's own identity (so it rides the account snap and the stash for free), else the
+//   `MusuSelf,pub:<me>` HOME — the home, not its `stock` shelf: `Ra_offer_stock` walks the shelf, so a
+//    Mag one level up cannot be swept into an offer by accident.  A Book pins `w.c.ra_pub` and takes
+//     the second road, which is why every fixture here is world-local and crosses nothing.
+Heard_home_find(w, me):
+    if (!w || !me) { return null }
+    let M = this.top_House ? this.top_House() : null
+    let live = (M && M.Swarm_live_self) ? M.Swarm_live_self() : null
+    if (live && String(live.sc.prepub || '') === String(me)) { return live }
+    return w.o({ MusuSelf: 1, pub: String(me) })[0] || null
+// Heard_home — the same door, find-or-CREATE.  Only a writer walks through it.
+Heard_home(w, me):
+    if (!w || !me) { return null }
+    let found = this.Heard_home_find(w, me)
+    if (found) { return found }
+    let home = w.oai({ MusuSelf: 1, pub: String(me) })
+    home.c.up = w
+    return home
+
+// Heard_mag_find / Heard_mag — the Mag itself.  EVERY READER TAKES THE `_find` DOOR: this is read by
+//  the dial on every pump tick, and a reader built on `oai` mints by being asked — the shape that turns
+//   a face into a writer ([[a-read-helper-inherits-creation]], the reason Heist_shop_find exists).
+Heard_mag_find(w, me):
+    let home = this.Heard_home_find(w, me)
+    return home ? (home.o({ Mag: 'heard', pub: String(me) })[0] || null) : null
+Heard_mag(w, me):
+    return this.Heard_mag_at(this.Heard_home(w, me), me)
+// Heard_mag_at — the Mag under ANY container, find-or-create.  The identity doors above resolve the home
+//  off the live self; a hand-built shelf (a Book's, or the pool fixtures') has no identity to resolve, so
+//   the container is passed in directly.  `pub` is elided when absent rather than stamped empty — an empty
+//    scalar in a snap is a mint bug, not a value.
+Heard_mag_at(container, pub):
+    if (!container) { return null }
+    let mag = pub ? container.oai({ Mag: 'heard', pub: String(pub) }) : container.oai({ Mag: 'heard' })
+    mag.c.up = container
+    // the rules ride the Mag line — visible, snapped, Book-gated, no %Rules particle (§2).  Only the
+    //  two TTLs in v1.0: the ambient road (mire ⇒ take with no heart pressed) wants a screen first.
+    if (!mag.sc.heard_ttl) { mag.sc.heard_ttl = '30'; mag.sc.take_ttl = '90'; mag.bump() }
+    return mag
+// Heard_mag_near — the Mag a SHELF can see: on the shelf itself, else on the container above it.  The
+//  taste readers are handed a `stock` shelf (live) or a bare hand-built one (every pool fixture), and the
+//   Mag hangs one level up in the first case and directly on it in the second.  Matches by VALUE only
+//    (`{Mag:'heard'}`), so it finds the Mag whatever `pub` it wears.  Pure `o`, mints nothing.
+Heard_mag_near(shelf):
+    if (!shelf) { return null }
+    let here = shelf.o({ Mag: 'heard' })[0]
+    if (here) { return here }
+    let up = shelf.c ? shelf.c.up : null
+    return up ? (up.o({ Mag: 'heard' })[0] || null) : null
+// Heard_seed — mint or refresh one Card directly under a container's heard Mag, from a plain sc bag
+//  ({id, pub?, mire?, take?, at?, keep?, title?}).  The door for a Book and for the stash rehydrate: both
+//   have the facts in hand and no identity to resolve them through.  Idempotent by (id, pub).
+Heard_seed(container, e):
+    if (!container || !e || !e.id) { return null }
+    let mag = this.Heard_mag_at(container, e.pub)
+    let card = this.Heard_find(mag, e.id, e.pub)
+    if (!card) {
+        let pg = this.Heard_page(mag, +(e.at || 0))
+        card = pg.i(e.pub ? { Card: 1, id: String(e.id), pub: String(e.pub) } : { Card: 1, id: String(e.id) })
+        card.c.up = pg
+    }
+    for (const k of Object.keys(e)) {
+        if (k === 'id' || k === 'pub') { continue }
+        if (e[k] == null || e[k] === '') { continue }
+        card.sc[k] = String(e[k])
+    }
+    card.bump()
+    return card
+
+// Heard_page — THE OPEN PAGE, one per SITTING.  `mag.c.sitting` is a runtime latch, so the first touch
+//  of a boot mints the next page and everything that boot hears shares it.  That makes `created_at` the
+//   page's own coordinate — "Tuesday's page" — which is what a human reading the snap wants, and it is
+//    what the GC ages by (§3): one clock read per page instead of one per Card.
+//  No `era`, no promotion, no move: a page only ever grows at the back and leaves at the front.
+Heard_page(mag, now):
+    if (!mag) { return null }
+    if (mag.c.sitting) { return mag.c.sitting }
+    let last = 0
+    for (const p of mag.o({ Cloud: 1 })) { let n = +(p.sc.page || 0); if (n > last) { last = n } }
+    let pg = mag.i({ Cloud: 1, page: '' + (last + 1) })
+    pg.c.up = mag
+    if (now) { pg.sc.created_at = '' + now }
+    mag.c.sitting = pg
+    return pg
+
+// Heard_cards — every Card, across every page, in page order.  The one walk; nothing else iterates the
+//  Clouds by hand.
+Heard_cards(mag):
+    let out = []
+    if (!mag) { return out }
+    for (const pg of mag.o({ Cloud: 1 })) { for (const c of pg.o({ Card: 1 })) { out.push(c) } }
+    return out
+
+// Heard_find — the Card for one (id, pub), anywhere in the Mag.  ONE CARD PER (id, pub), find-or-create,
+//  never re-minted: "heard again" bumps the Card that exists, so nothing ever duplicates an id across
+//   pages and a heist holding a Card can never be handed a corpse.
+Heard_find(mag, id, pub):
+    if (!mag || !id) { return null }
+    for (const pg of mag.o({ Cloud: 1 })) {
+        let hit = pub ? pg.o({ Card: 1, id: String(id), pub: String(pub) })[0] : pg.o({ Card: 1, id: String(id) })[0]
+        if (hit) { return hit }
+    }
+    return null
+// Heard_card — find-or-create, landing a fresh Card in the open page.
+Heard_card(w, me, id, pub):
+    if (!id) { return null }
+    let mag = this.Heard_mag(w, me)
+    if (!mag) { return null }
+    let card = this.Heard_find(mag, id, pub)
+    if (card) { return card }
+    let pg = this.Heard_page(mag, this.Heard_now(w))
+    let sc = { Card: 1, id: String(id) }
+    if (pub) { sc.pub = String(pub) }
+    card = pg.i(sc)
+    card.c.up = pg
+    return card
+//#endregion
+
+//#region the two events — a track started, a track played through, a heart pressed
+
+// Heard_mark — A TRACK STARTED.  The Card exists from here on, oblique: id, who.  Called from
+//  Radio_open, which is the one place every route into the playhead passes through.
+Heard_mark(w, me, rec):
+    if (!w || !me || !rec || !rec.sc.id) { return null }
+    let pub = this.Ra_pub_of ? (this.Ra_pub_of(rec) || '') : ''
+    return this.Heard_card(w, me, rec.sc.id, pub)
+
+// Heard_through — PLAYED ALL THE WAY THROUGH, WITH A PERSON IN THE ROOM.  A kitchen phone playing to an
+//  empty room is not attention, and `humdinger` is already the app's word for "a human is here" — so the
+//   same predicate that keeps a Book from growing a Streams Mag keeps it from growing taste.
+//  NO BUMP, deliberately (§5): `%Identity` bumps rewrite the whole account file inside the beliefs mutex,
+//   and a play-through must never cost a disk write.  The value is snapped the next time anything else
+//    on the Mag bumps — a take, an un-take, a page roll — which is soon enough for a score nobody reads.
+Heard_through(w, me, rec):
+    let M = this.top_House ? this.top_House() : null
+    if (!M || !M.c.humdinger) { return 0 }
+    let card = this.Heard_mark(w, me, rec)
+    if (!card) { return 0 }
+    card.sc.mire = '' + ((+(card.sc.mire || 0)) + 1)
+    return 1
+
+// Heard_verdict_keys — what a Card wears when the wire ANSWERED and the answer was not the track: the
+//  three failures no shelf can derive.  They are stripped on a fresh take, which is what makes a
+//   re-press a real retry rather than a heart that silently never asks again.
+Heard_verdict_keys():
+    return ['held', 'unvouched', 'landfail', 'why']
+// Heard_listing_keys — what a taken Card clones off the friend's answer (§1, stage 2).
+Heard_listing_keys():
+    return ['title', 'artist', 'dir', 'path', 'bytes', 'body_hash', 'keep']
+// Heard_verdict — the answered-but-not-landed word on a Card, or ''.
+Heard_verdict(card):
+    if (!card) { return '' }
+    for (const k of ['held', 'unvouched', 'landfail']) { if (card.sc[k]) { return k } }
+    return ''
+
+// Heard_take — THE HEART.  Not a score that "reaches" a threshold: the heart is a decision, and a
+//  threshold nobody can see is magic (§2, the human lens).  A second press inside Heard_thumb() seconds
+//   UN-presses it — every phone there is means undo by that gesture, and an accidental press had no exit
+//    but a ✕ on a keep that might not have been minted yet.  A press outside the window re-affirms: it
+//     re-stamps `at` (re-arming the gave-up clock) and clears any failure verdict, so pressing again is
+//      how a human retries a track the wire could not bring.
+//  Returns 1 for taken, -1 for un-taken, 0 for nothing.
+Heard_take(w, me, rec, by):
+    if (!w || !me || !rec || !rec.sc.id) { return 0 }
+    let pub = String(by || (this.Ra_pub_of ? this.Ra_pub_of(rec) : '') || '')
+    let card = this.Heard_card(w, me, rec.sc.id, pub)
+    if (!card) { return 0 }
+    let now = this.Heard_now(w)
+    if (card.sc.take && (now - (+(card.sc.at || 0))) < this.Heard_thumb()) {
+        this.Heard_strip(card, ['take', 'at'])
+        card.bump()
+        return -1
+    }
+    card.sc.take = '1'
+    card.sc.at = '' + now
+    this.Heard_strip(card, this.Heard_verdict_keys())
+    // the listing STARTS here (§1: acting is when it becomes yours to hold) with whatever the mirror card
+    //  in hand already knows; the rest is cloned off the describe answer when it lands (Heard_clone_beat).
+    //   Guarded stamps — an absent value would brand the snap {"undef":[…]}, the mint-bug law.
+    if (rec.sc.title && !card.sc.title) { card.sc.title = this.Radio_clean(rec.sc.title) }
+    if (rec.sc.artist && !card.sc.artist) { card.sc.artist = this.Radio_clean(rec.sc.artist) }
+    card.bump()
+    return 1
+
+// Heard_strip — drop a set of keys off a Card without bumping (the caller bumps once).  Prefer deleting
+//  a key to setting it 0: a snapped boolean rides as `1` or ABSENT (CLAUDE.md).
+Heard_strip(card, keys):
+    let n = 0
+    for (const k of keys) { if (card.sc[k] != null) { delete card.sc[k]; n = n + 1 } }
+    return n
+
+// Heard_untake — RETIRE THE HEART: the ✕, on a Haul row or on the keep the row became.  The Card stays
+//  (you did hear the track, and the GC forgets it on the ordinary clock); what goes is the ask and
+//   everything the ask accreted.  The machine never calls this — only a human does, which is the whole
+//    content of "you can't lose a heart" (§C).
+Heard_untake(w, me, pub, id):
+    let mag = this.Heard_mag_find(w, me)
+    let card = this.Heard_find(mag, id, pub)
+    if (!card || !card.sc.take) { return 0 }
+    this.Heard_strip(card, ['take', 'at'])
+    this.Heard_strip(card, this.Heard_verdict_keys())
+    this.Heard_strip(card, this.Heard_listing_keys())
+    card.bump()
+    return 1
+
+// Heard_taken — IS THIS TRACK ON MY LEDGER WITH THIS HOLDER?  The ♥ glyph reads the durable thing, not a
+//  runtime mirror: a mirror dies with the process, so after a reload the heart went hollow while the ask
+//   it stood for was still standing — the button saying the opposite of the truth.  Pure probe.
+Heard_taken(w, me, pub, id):
+    let card = this.Heard_find(this.Heard_mag_find(w, me), id, pub)
+    return (card && card.sc.take) ? 1 : 0
+
+// Heard_set — THE DEDUP SET the dial skips by: `{id:1}` over every Card, heard or taken.  This is the
+//  `radio.c.heard` replacement, and the difference that matters is that it SURVIVES A RELOAD and ages by
+//   `heard_ttl` rather than by a 100-entry cap — Mag_todo §8's "ABSOLUTELY durable … keep OBLIQUE track
+//    of Records heard", finally by construction.
+//  Rebuilt per call rather than cached: the set only changes when a Card mints or the GC drops one, and a
+//   cache would need invalidating from three places to save a walk over a few hundred bare ids.  Callers
+//    hoist it out of their own loops, exactly as they hoisted `radio.c.heard` before.
+Heard_set(w, me):
+    let set = {}
+    for (const c of this.Heard_cards(this.Heard_mag_find(w, me))) { if (c.sc.id) { set[String(c.sc.id)] = 1 } }
+    return set
+//#endregion
+
+// Heard_tally — WHAT THIS LISTENER'S HISTORY SAYS ABOUT EACH TRACK, as id → {score, why, …}.  The pool
+//  steward's taste input (Ra_quarter_tally delegates here).  It read a %Jam ledger of %Spin/%Like/%Grab
+//   rows until 2026-09-04 and scored Like 3 · Grab 2 · Spin 1; the same three signals live on the Card now
+//    and keep the same weights, with one deliberate change:
+//      `take` (the heart)                       → 3   — a decision outranks exposure, as before
+//      `keep` (the original was materialised)   → 2   — they carried it: the old %Grab, by evidence
+//      `mire` (played through, someone present) → 1 each — the old %Spin, but ATTENTION rather than mere
+//                                                    exposure: a bare hearing now scores ZERO.
+//  That last is the point. A %Spin was "it streamed at you", which a radio does all day whether anyone is
+//   in the room; `mire` only moves when a person was there and let the track finish. Taste built out of
+//    what a machine played to an empty kitchen was never taste.
+Heard_tally(shelf):
+    let out = {}
+    for (const c of this.Heard_cards(this.Heard_mag_near(shelf))) {
+        let id = String(c.sc.id || '')
+        if (!id) { continue }
+        let mire = +(c.sc.mire || 0)
+        let took = c.sc.take ? 1 : 0
+        let kept = c.sc.keep ? 1 : 0
+        let why = took ? 'took it' : 'heard it'
+        if (kept) { why = why + ' — carried' }
+        if (mire) { why = why + ' — played through ' + mire }
+        out[id] = { score: took * 3 + kept * 2 + mire, why: why, mire: mire, took: took, kept: kept, at: +(c.sc.at || 0) }
+    }
+    return out
+// Heard_latest — the LAST SITTING's tracks, in the order they were heard.  The old 'latest' pool policy
+//  read the last %Jam session; a Cloud page IS a sitting, which is the same idea with a coordinate the
+//   model already keeps, and it is clockless (page order, not a timestamp) so no fixture moves on it.
+Heard_latest(shelf):
+    let mag = this.Heard_mag_near(shelf)
+    if (!mag) { return [] }
+    let pages = mag.o({ Cloud: 1 })
+    let last = pages[pages.length - 1]
+    let out = []
+    for (const c of (last ? last.o({ Card: 1 }) : [])) { if (c.sc.id) { out.push(String(c.sc.id)) } }
+    return out
+
+//#region the query that IS the heist
+
+// Heard_shelf — MY OWN STOCK SHELF, FOUND, never minted.  `Ra_home_self` is find-or-create and every
+//  reader here is called from a face poll or a beat, so going through it would conjure the shelf it is
+//   reporting on.
+Heard_shelf(rw, me):
+    if (!rw || !me) { return null }
+    let home = rw.o({ MusuSelf: 1, pub: String(me) })[0]
+    return home ? (home.o({ stock: 1, pub: String(me) })[0] || null) : null
+
+// Heard_landed — IS THE THING ON MY SHELF?  Done-ness is derived, in one home: there is no `landed` key
+//  on a Card, because "do I have it" is a question the collection answers however the track arrived (this
+//   heist, a Cave of my crew, a pool press, a folder I copied in by hand).  A hook on any ONE of those
+//    roads would leave the ask standing after the other four.
+//  TWO ID-SPACES, so two probes (§4): the Mag `id` is the enid of the STREAMED rendition, while the
+//   original the heist lands was materialised on their side under its own keep-id, which the Card learns
+//    as `keep:` when the describe answers.  A pool press lands the streamed bytes; a heist lands the
+//     original.  Either one answers the ask.
+Heard_landed(shelf, card):
+    if (!shelf || !card) { return null }
+    if (card.sc.id) {
+        let hit = this.Ra_rec_find(shelf, { Record: 1, id: String(card.sc.id) })
+        if (hit) { return hit }
+    }
+    if (card.sc.keep) { return this.Ra_rec_find(shelf, { Record: 1, id: String(card.sc.keep) }) }
+    return null
+
+// Heard_takes — WHAT I AM OWED, AND BY WHOM.  THE heist, as a query: `take` Cards not yet on my shelf,
+//  oldest first, grouped by holder, one holder pulled at a time.  No operation particle survives this —
+//   %Caper-as-ledger, %Pick-as-intent, %Jam/%Like/%Grab, %Provisions/%Want all dissolve into it.
+//  A Card whose track is my OWN is never owed by anyone: liking your own music is a taste fact.
+//  A Card wearing a verdict is ANSWERED (the wire replied and the reply was not the track), so it waits
+//   for a human — a re-press or a ✕ — rather than re-asking forever behind the holder's one live keep.
+//  Pure: `o` throughout, so a face may call it every poll.
+Heard_takes(w, me, shelf):
+    let out = []
+    let mag = this.Heard_mag_find(w, me)
+    if (!mag) { return out }
+    let cards = []
+    for (const c of this.Heard_cards(mag)) {
+        if (!c.sc.take || !c.sc.id) { continue }
+        let pub = String(c.sc.pub || '')
+        if (!pub || pub === String(me)) { continue }
+        if (this.Heard_landed(shelf, c)) { continue }
+        cards.push(c)
+    }
+    cards.sort((a, b) => (+(a.sc.at || 0)) - (+(b.sc.at || 0)))
+    let rows = {}
+    let order = []
+    for (const c of cards) {
+        let pub = String(c.sc.pub || '')
+        if (!rows[pub]) { rows[pub] = { pub: pub, cards: [] }; order.push(pub) }
+        rows[pub].cards.push(c)
+    }
+    for (const p of order) { out.push(rows[p]) }
+    return out
+
+// Heard_gave_up — 90 days and no holder has ever answered.  A STATE, not an exit: the Card is shown and
+//  offers a ✕, and is never deleted by the machine.  "A take with no exit is immortality" and "you can't
+//   lose a heart" reconciled — the clock can change what a heart SAYS, never whether it exists (§3).
+Heard_gave_up(mag, card, now):
+    if (!card || !card.sc.take || card.sc.keep) { return 0 }
+    let ttl = (+((mag && mag.sc.take_ttl) || 90)) * 86400
+    let at = +(card.sc.at || 0)
+    return (at && (now - at) >= ttl) ? 1 : 0
+
+// Heard_word — the ONE SHORT PHRASE a Haul row carries for a wish, decided here rather than in the face
+//  (the Heist_keep_gist doctrine).  These are §C's words verbatim: a person meets these, never `mire`.
+Heard_word(mag, card, now):
+    if (!card) { return '' }
+    if (card.sc.held) { return 'already had it' }
+    if (card.sc.unvouched) { return 'could not be verified' }
+    if (card.sc.landfail) { return 'failed' }
+    if (this.Heard_gave_up(mag, card, now)) { return 'gave up' }
+    return 'waiting'
+
+// Heard_gc — HOW IT FORGETS (§3).  One rule, run per page rather than per Card because a page IS the
+//  sitting and carries the only `created_at` either needs:
+//    drop  if  ¬take  ∧  created_at < now − heard_ttl
+//    keep  if  take                     — a heart is never dropped by a clock
+//  An emptied page goes with its last Card; the OPEN page never goes (it is this boot's sitting, and the
+//   latch still points at it).  A page holding a take is pinned by construction — the model's "never drop
+//    a Cloud any position sits on", where a want is a position, honoured without a re-mint.
+//  Bound: (tracks heard in the last 30 days) + (hearts not yet landed).  Flat, no immortals.
+Heard_gc(w, me, now):
+    let mag = this.Heard_mag_find(w, me)
+    if (!mag) { return 0 }
+    let ttl = (+(mag.sc.heard_ttl || 30)) * 86400
+    let n = 0
+    let pages = mag.o({ Cloud: 1 })
+    for (const pg of pages) {
+        let born = +(pg.sc.created_at || 0)
+        if (!born || (now - born) < ttl) { continue }
+        let goners = []
+        for (const c of pg.o({ Card: 1 })) { if (!c.sc.take) { goners.push(c) } }
+        for (const c of goners) { pg.drop(c); n = n + 1 }
+        if (!pg.o({ Card: 1 }).length && pg !== mag.c.sitting) { mag.drop(pg) }
+    }
+    if (n) { mag.bump() }
+    return n
+
+// Heard_landed_ids — MY LANDED TAKES, newest first: the pool's `recent` compartment input (the one pool
+//  source that CHOOSES nothing, because the choosing happened when you took the track).  This replaces
+//   the dontSnap %Hauls/%Newly/%Fresh mirror, which existed only because the disk's arrivals ledger is a
+//    read and the goal builder is synchronous — the Mag is both durable and in memory, so no mirror.
+Heard_landed_ids(w, me, shelf):
+    let out = []
+    let mag = this.Heard_mag_find(w, me)
+    if (!mag || !shelf) { return out }
+    let cards = []
+    for (const c of this.Heard_cards(mag)) {
+        if (!c.sc.take || !c.sc.id) { continue }
+        // a heart on a track of MY OWN is a taste fact, not an acquisition — nothing was acquired, so it
+        //  is not "what came in lately" and the pool's recent compartment must not draw it (the same
+        //   exclusion Heard_takes makes for the same reason: nobody was ever owed it).
+        let pub = String(c.sc.pub || '')
+        if (!pub || pub === String(me)) { continue }
+        let got = this.Heard_landed(shelf, c)
+        if (!got) { continue }
+        cards.push({ card: c, id: String(got.sc.id || c.sc.id) })
+    }
+    cards.sort((a, b) => (+(b.card.sc.at || 0)) - (+(a.card.sc.at || 0)))
+    for (const e of cards.slice(0, this.Heard_landed_cap())) { out.push(e.id) }
+    return out
+//#endregion
+
+//#region the seam to the byte lane — one keep per holder, and what it writes back
+
+// Heard_keep — mint the `%Heist` one take has earned.  Radio_keep's shape minus everything that belongs
+//  to a GESTURE: no `last_touch` (this keep must not steal focus off whatever the human is looking at),
+//   no glass pop, no feebly_ponder — the beat that called this is already awake.  `take:1` is the tell
+//    that makes it start itself and take ONE track (Heist_keep_take_go).
+//  The keep is SCAFFOLDING: it exists only while a Card is being carried, and the Card is the ledger.
+Heard_keep(w, rw, shop, dj, rec):
+    let seed = String(rec.sc.id || '')
+    if (!seed || !shop) { return null }
+    if (shop.o({ Heist: 1, seed: seed })[0]) { return null }
+    let keep = shop.i({ Heist: this.Radio_clean(rec.sc.title || 'this'), seed: seed, pub: String(dj), state: 'primed', take: 1 })
+    keep.c.up = shop
+    this.Heist_keep_born(keep, this.Heard_now(w))
+    let nice = this.Radio_friendly ? this.Radio_friendly(rw, dj) : ''
+    if (nice) { keep.sc.from_name = nice }
+    if (rec.sc.artist) { keep.sc.artist = this.Radio_clean(rec.sc.artist) }
+    let dflt = this.Heist_defaults_get ? this.Heist_defaults_get() : {}
+    if (dflt && dflt.lofi) { keep.sc.lofi = 1 }
+    keep.bump()
+    console.log('♥⇊ hauling ' + String(keep.sc.Heist).slice(0, 32) + ' from ' + (nice || String(dj).slice(0, 8)))
+    return keep
+
+// Heard_clone_beat — WHAT THE WIRE ANSWERS, WRITTEN BACK ONTO THE CARD.  Two things land here, both of
+//  them facts only the holder could supply:
+//   THE LISTING — the describe answers with the ORIGINAL's own head (`%Record,re:<streamed id>`, §4's
+//    two id-spaces), carrying the real `total`, `path` and `body_hash`.  Cloning it onto the Card is what
+//     makes the Card self-describing: everything a later reader needs for the way back rides the line —
+//      `pub` is the Pier, `id` is the content hash, `keep` is the original's own id on their side.
+//   THE VERDICT — `held` (you already had it by artist+title), `unvouched` (the offer's signature did not
+//    verify), `landfail,why` (three throws on the landing).  The engine stamps these on the JOB, which
+//     FLATTENS when the keep finishes, so nothing durable would remember them; and each of them removes
+//      the husk from the mirror, which leaves the keep pulling something that is no longer there — the
+//       holder's one live slot wedged forever.  So: copy the verdict onto the Card and END the keep, and
+//        the queue moves on.  A re-press of ♥ clears the verdict and asks again (Heard_take).
+//  Runs at the top of every haul beat.  Pure `o` until something has actually landed.
+Heard_clone_beat(w, rw, me, shop):
+    if (!shop || !rw || !me) { return 0 }
+    let mag = this.Heard_mag_find(rw, me)
+    if (!mag) { return 0 }
+    let n = 0
+    for (const keep of shop.o({ Heist: 1 })) {
+        if (!keep.sc.take) { continue }
+        let seed = String(keep.sc.seed || '')
+        let dj = String(keep.sc.pub || '')
+        if (!seed || !dj) { continue }
+        let card = this.Heard_find(mag, seed, dj)
+        if (!card) { continue }
+        let mir = rw.o({ MusuThem: 1, pub: dj })[0]
+        let mirstock = mir ? mir.o({ stock: 1, pub: dj })[0] : null
+        let head = mirstock ? this.Ra_rec_find(mirstock, { Record: 1, re: seed }) : null
+        if (head) { n = n + this.Heard_clone_head(card, head) }
+        let v = this.Heard_verdict_of(this.Heist_job_of ? this.Heist_job_of(shop, keep) : null)
+        if (v && String(keep.sc.state || 'primed') !== 'done') {
+            card.sc[v.key] = '1'
+            if (v.why) { card.sc.why = String(v.why).slice(0, 120) }
+            card.bump()
+            keep.sc.state = 'done'
+            keep.bump()
+            try { this.Heist_job_drop(shop, keep) } catch (er) {}
+            console.log('♥⚠ ' + String(card.sc.title || seed).slice(0, 32) + ' — ' + this.Heard_word(mag, card, this.Heard_now(w)))
+            n = n + 1
+        }
+    }
+    return n
+
+// Heard_clone_head — the listing, off the original's head, guarded key by key (an absent value would
+//  brand the snap {"undef":[…]}).  `bytes` is the head's promised `total` under the name a human reads;
+//   `keep` is the original's id on their side, which is also the second probe Heard_landed makes.
+Heard_clone_head(card, head):
+    if (!card || !head) { return 0 }
+    let n = 0
+    let put = (k, v) => { if (v != null && v !== '' && String(card.sc[k] || '') !== String(v)) { card.sc[k] = String(v); n = n + 1 } }
+    put('title', head.sc.title ? this.Radio_clean(head.sc.title) : '')
+    put('artist', head.sc.artist ? this.Radio_clean(head.sc.artist) : '')
+    put('dir', head.sc.dir)
+    put('path', head.sc.path)
+    put('bytes', head.sc.total)
+    put('body_hash', head.sc.body_hash)
+    put('keep', head.sc.id)
+    if (n) { card.bump() }
+    return n
+
+// Heard_verdict_of — the job's answered-but-not-landed row, as {key, tune, why}.  A ♥ keep is soloed to
+//  ONE pick, so a job carries at most one of these and the first hit is unambiguous.
+Heard_verdict_of(job):
+    if (!job) { return null }
+    let h = job.o({ held: 1 })[0]
+    if (h) { return { key: 'held', tune: String(h.sc.tune || '') } }
+    let u = job.o({ unvouched: 1 })[0]
+    if (u) { return { key: 'unvouched', tune: String(u.sc.tune || '') } }
+    let l = job.o({ landfail: 1 })[0]
+    if (l) { return { key: 'landfail', tune: String(l.sc.tune || ''), why: String(l.sc.why || '') } }
+    return null
+
+// Heard_haul_beat — THE PASS.  Clone first (an answer must be written down before anything is decided on
+//  it), then AT MOST ONE MINT: a take spree should open one cell now and the next when that one is done,
+//   not twelve at once.  A holder already carrying a live keep is skipped entirely — that is the per-Pier
+//    serialisation the whole shape exists for.
+//  A take whose record is not in the friend's mirror is LEFT STANDING rather than dropped: they are away,
+//   or the mirror was swept between sessions.  The ask outliving the session is the point of a ledger.
+async Heard_haul_beat(w, rw, me, nav, shop):
+    if (!nav || !rw || !me || !shop) { return 0 }
+    this.Heard_clone_beat(w, rw, me, shop)
+    let live = 0
+    for (const k of shop.o({ Heist: 1 })) { if (String(k.sc.state || 'primed') !== 'done') { live = live + 1 } }
+    if (live >= this.Heard_keeps_cap()) { return 0 }
+    let mine = this.Heard_shelf(rw, me)
+    for (const row of this.Heard_takes(rw, me, mine)) {
+        let busy = 0
+        for (const k of shop.o({ Heist: 1, pub: row.pub })) { if (String(k.sc.state || 'primed') !== 'done') { busy = 1 } }
+        if (busy) { continue }
+        let mir = rw.o({ MusuThem: 1, pub: row.pub })[0]
+        let mirstock = mir ? mir.o({ stock: 1, pub: row.pub })[0] : null
+        if (!mirstock) { continue }
+        for (const card of row.cards) {
+            let id = String(card.sc.id || '')
+            if (!id || this.Heard_verdict(card)) { continue }
+            if (shop.o({ Heist: 1, seed: id })[0]) { continue }
+            let rec = this.Ra_rec_find(mirstock, { Record: 1, id: id })
+            if (!rec) { continue }
+            if (this.Heard_keep(w, rw, shop, row.pub, rec)) { return 1 }
+        }
+    }
+    return 0
+
+// Heard_haul_piers — THE TAKE, GROUPED BY WHO IS BRINGING IT (the owner 2026-09-04: "they have to be per
+//  Pier").  One row per holder I have anything from: the keeps actually running, in the beat's own order
+//   so the list cannot claim an order the machine does not have, and under them the wishes still waiting
+//    — the hearts that have not been carried yet, which used to be invisible entirely.
+//  Pure: `o` throughout, so a face may call it every poll.  A holder with neither is not a row.
+Heard_haul_piers(rw, me):
+    let out = []
+    if (!rw || !me) { return out }
+    let mag = this.Heard_mag_find(rw, me)
+    let now = this.Heard_now(rw)
+    let rows = {}
+    let order = []
+    let at = (dj) => {
+        if (!rows[dj]) { rows[dj] = { dj: dj, name: (this.Radio_friendly ? this.Radio_friendly(rw, dj) : String(dj).slice(0, 8)), keeps: [], waiting: [] }; order.push(dj) }
+        return rows[dj]
+    }
+    for (const keep of this.Heist_live_rows(rw)) {
+        if (String(keep.sc.state || 'primed') === 'done') { continue }
+        // a keep with no `pub` has no holder to be a row of — it would open a nameless pier headed by the
+        //  first 8 characters of nothing.  Every minted keep carries one; this is the guard, not a case.
+        let dj = String(keep.sc.pub || '')
+        if (!dj) { continue }
+        at(dj).keeps.push(keep)
+    }
+    for (const row of this.Heard_takes(rw, me, this.Heard_shelf(rw, me))) {
+        let r = at(row.pub)
+        for (const card of row.cards) {
+            if (this.Heard_carrying(r, String(card.sc.id || ''))) { continue }
+            r.waiting.push({ card: card, of: String(card.sc.id || ''), title: String(card.sc.title || card.sc.id || ''), word: this.Heard_word(mag, card, now) })
+        }
+    }
+    for (const dj of order) { out.push(rows[dj]) }
+    return out
+
+// Heard_carrying — is this holder's row already showing that track as a running keep?  A wish being
+//  carried right now is not ALSO waiting, and saying it twice is how a list of four reads as a list of
+//   eight (the same double-count the pool cap had to learn about intent vs sediment).
+Heard_carrying(row, of):
+    if (!of) { return 0 }
+    for (const keep of row.keeps) { if (String(keep.sc.seed || '') === of) { return 1 } }
+    return 0
+//#endregion

@@ -1,0 +1,35 @@
+Snap:H
+  H:MusuHeard,Run
+    A:MusuHeard
+      self,round=9	{"mung":["age"]}
+      w:MusuHeard,now=1788400200
+        self,round=9	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          marked,one_card_per_track,oblique,hearing_again_is_the_same_card,one_page_per_sitting,the_set_is_the_mag,never_crosses
+          throughed,an_empty_room_earns_nothing,present_is_a_play_through,it_accrues,never_bumps_the_account,a_skip_is_nothing
+          took,the_press_is_the_ask,the_listing_starts_at_the_act,the_press_mints_no_heist,pressing_again_takes_it_back,later_it_re_affirms,my_own_track_is_a_taste_fact
+          queried,grouped_by_holder,oldest_first,nobody_is_owed_my_own,a_row_per_holder
+          forgot,a_hearing_nobody_wanted_is_forgotten,a_heart_is_never_dropped_by_a_clock,this_sitting_is_untouched,gave_up_is_a_word,only_a_person_retires_a_heart,an_emptied_sitting_goes
+        MusuThem,pub:friendo
+          stock,pub:friendo
+            Record,id:r1,title:Track One,artist:Friendo,total:10
+            Record,id:r2,title:Track Two,artist:Friendo,total:10
+            Record,id:r3,title:Track Three,artist:Friendo,total:10
+        MusuSelf,pub:me
+          Mag:heard,pub:me,heard_ttl:30,take_ttl:90
+            Cloud,page:1,created_at:1788400000
+              Card,id:r1,pub:friendo,mire:2,title:Track One,artist:Friendo,take:1,at:1788400150
+              Card,id:r2,pub:friendo,take:1,at:1788400000,title:Track Two,artist:Friendo
+              Card,id:r3,pub:friendo
+              Card,id:own1,pub:me,take:1,at:1788400150,title:Mine
+              Card,id:o1,pub:otherfriend,take:1,at:1788400200,title:Over There
+          shop,pub:me
+          stock,pub:me
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:own1,title:Mine
+        MusuThem,pub:otherfriend
+          stock,pub:otherfriend
+            Record,id:o1,title:Over There,total:10

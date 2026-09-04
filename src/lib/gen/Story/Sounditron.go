@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '07afe993896935f2~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'f5dc1d0015bf9888~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -3139,10 +3139,11 @@ Sounditron_witness(w) {
     if (radio && (radio.sc.Radio === 'playing' || radio.sc.Radio === 'starved') && seq > 0) {
         this.story_swear(w, 'the music played — record chunks decoded onto the live timeline', radio)
     }
-    // the WHOLE trick: what played came off a FRIEND's shelf (in radio.c.heard once the pump opened
-    //  it).  Opportunistic — latches only when a peer stood online with previews pulled.
+    // the WHOLE trick: what played came off a FRIEND's shelf (on the heard Mag once the pump opened
+    //  it — Heard.g; it was `radio.c.heard`, a runtime bag, until 2026-09-04).  Opportunistic — latches
+    //   only when a peer stood online with previews pulled.
     let lt = w.c.listen_target
-    if (radio && lt && radio.c.heard && radio.c.heard[lt.id]) {
+    if (radio && lt && this.Radio_heard(radio)[lt.id]) {
         this.story_swear(w, 'music from a friend played — their track streamed off their shelf over Repli', radio)
     }
     if (n != null && n >= 6 && w.c.ttf != null && w.c.ttf > 2000 && !(w.oa({log: 'slow to sound — music took over two seconds to begin'}))) w.i({log: 'slow to sound — music took over two seconds to begin'})

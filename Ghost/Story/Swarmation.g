@@ -4471,8 +4471,9 @@ async SwarmSpread_order(w):
 //   AND `top_House().stashed`, both false in a Book world.  Swarm_stash_of makes the stash a PARAMETER —
 //    a caller with its own scratch stash needs no guard — so a fixture can finally drive the round trip:
 //     populate → restash → WIPE the tree → rehydrate → swear it all came back.
-//  Covers ALL SIX pillars: piers (with page + grants) · izzes (a named serial) · chainroots · roster ·
-//   crew (with the cert) · reaches (standing only).  Every _stash writer takes the stash as a parameter.
+//  Covers ALL EIGHT pillars: piers (with page + grants) · izzes (a named serial) · chainroots · roster ·
+//   crew (with the cert) · reaches (standing only) · pools · heard (takes only).  Every _stash writer
+//    takes the stash as a parameter.
 SwarmReboot(A,w):
     w oai %req:wrangle,eternal
         await &SwarmReboot_drive,w,req
@@ -4547,6 +4548,12 @@ async SwarmReboot_stand(w):
         if (pd[3]) { pp.sc.salt = pd[3] }
         pp.bump()
     }
+    // the heard Mag — the EIGHTH pillar's subject: what this device heard, and what it WANTS.  Two Cards,
+    //  and only one of them is durable matter: a bare hearing is a dedup mark with a thirty-day clock on
+    //   it, worth nothing after a reload and (multiplied by every track ever played) the fat privacy
+    //    liability §6b's OBLIQUE ruling exists to prevent.  A HEART is a decision and must outlive the boot.
+    this.Heard_seed(reba, { id: 'trk-take', pub: 'Cave', title: 'Kept Wanting', take: 1, at: 1751699000, mire: 2 })
+    this.Heard_seed(reba, { id: 'trk-heard', pub: 'Cave', mire: 1 })
     // two bookings: one standing (survives), one terminal (history — must NOT come back)
     this.Swarm_reach_book(w, reba, { to: 'Cave', of: 'tune-alpha', for: 'serve' })
     let done = this.Swarm_reach_book(w, reba, { to: 'Cave', of: 'tune-omega', for: 'serve' })
@@ -4568,6 +4575,9 @@ async SwarmReboot_stash(w):
     if (r && +r.crew === 2) { row.crew_stashed = 1 }
     if (r && +r.reaches === 1) { row.one_reach_stashed = 1 }
     if (r && +r.pools === 2) { row.pools_stashed = 1 }
+    if (r && +r.heard === 1) { row.one_wish_stashed = 1 }
+    let hs = w.c.st.Swarm_heards?.[w.c.reba.sc.prepub]?.rows || []
+    if (hs.length === 1 && String(hs[0].id) === 'trk-take' && String(hs[0].mire) === '2') { row.the_bare_hearing_stayed_behind = 1 }
     let mates = w.c.st.Swarm_crews?.[w.c.reba.sc.prepub]?.mates || []
     if (mates.some((m) => m.grant && String(m.grant.to) === 'Crew')) { row.cert_stashed = 1 }
     this.SwarmReboot_note(w, row)
@@ -4584,11 +4594,13 @@ async SwarmReboot_wipe(w):
     for (const crew of reba.o({ Crew: 1 })) { reba.drop(crew) }
     for (const cr2 of reba.o({ ChainRoot: 1 })) { reba.drop(cr2) }
     for (const ps of reba.o({ Pools: 1 })) { reba.drop(ps) }
+    for (const hm of reba.o({ Mag: 'heard' })) { reba.drop(hm) }
     let row = { wiped: 1 }
     if (!reba.o({ ChainRoot: 1 }).length) { row.roots_gone = 1 }
     if (!peering.o().length) { row.peering_bare = 1 }
     if (!reba.o({ Crew: 1 }).length) { row.crew_gone = 1 }
     if (!this.Ra_pool_defs(reba, 0).some((d) => d.name)) { row.pools_gone = 1 }
+    if (!reba.o({ Mag: 'heard' }).length) { row.heard_gone = 1 }
     if (!this.Swarm_crew_grant(reba)) { row.cert_gone = 1 }
     this.SwarmReboot_note(w, row)
 
@@ -4608,6 +4620,7 @@ async SwarmReboot_back(w):
     this.Swarm_crew_rehydrate(w, reba, w.c.st)
     this.Swarm_reaches_rehydrate(w, reba, w.c.st)
     this.Swarm_pools_rehydrate(w, reba, w.c.st)
+    this.Swarm_heard_rehydrate(w, reba, w.c.st)
     let peering = this.Swarm_peering(reba)
     let row = { back: 1 }
     let pier = peering.o({ Pier: 1, pub: String(w.c.matekeys.prepub) })[0]
@@ -4633,6 +4646,14 @@ async SwarmReboot_back(w):
     if (reaches.length === 1 && String(reaches[0].sc.of) === 'tune-alpha') { row.standing_reach_back = 1 }
     if (!reaches.some((r) => String(r.sc.of) === 'tune-omega')) { row.terminal_reach_stayed_dead = 1 }
     if (reaches.length === 1 && String(reaches[0].sc.state) === 'booked') { row.reach_state_back = 1 }
+    // the eighth pillar: the WISH comes back, with what it knew — and the bare hearing does not, which is
+    //  the pillar being selective rather than merely lossy.  Its page is dated when the stash was READ,
+    //   not when the track was pressed: a page is a sitting, and this sitting is the one that recovered it.
+    let hmag = reba.o({ Mag: 'heard', pub: String(reba.sc.prepub) })[0]
+    let hcards = hmag ? this.Heard_cards(hmag) : []
+    if (hcards.length === 1 && String(hcards[0].sc.id) === 'trk-take' && hcards[0].sc.take) { row.wish_back = 1 }
+    if (hcards[0] && String(hcards[0].sc.pub) === 'Cave' && String(hcards[0].sc.title) === 'Kept Wanting' && String(hcards[0].sc.mire) === '2') { row.wish_knows_what_it_knew = 1 }
+    if (!hcards.some((c) => String(c.sc.id) === 'trk-heard')) { row.the_bare_hearing_stayed_dead = 1 }
     // the round trip is idempotent: a second ladder pass must not double a single row.
     this.Swarm_iz_rehydrate(w, reba, w.c.st)
     this.Swarm_piers_rehydrate(w, reba, w.c.st)
@@ -4640,6 +4661,8 @@ async SwarmReboot_back(w):
     this.Swarm_crew_rehydrate(w, reba, w.c.st)
     this.Swarm_reaches_rehydrate(w, reba, w.c.st)
     this.Swarm_pools_rehydrate(w, reba, w.c.st)
+    this.Swarm_heard_rehydrate(w, reba, w.c.st)
+    if (this.Heard_cards(reba.o({ Mag: 'heard', pub: String(reba.sc.prepub) })[0]).length !== 1) { row.idem_heard_doubled = 1 }
     if (crew && crew.o({ mate: 1 }).length === 2 && this.Ra_pool_defs(reba, 0).filter((d) => d.name).length === 2 && peering.o({ Reach: 1 }).length === 1
         && peering.o({ Pier: 1 }).length === 1 && peering.o({ Idzeug: 1 }).length === 1 && reba.o({ ChainRoot: 1 }).length === 1) { row.idempotent = 1 }
     this.SwarmReboot_note(w, row)
@@ -4668,8 +4691,17 @@ SwarmReboot_witness(w):
     if (+s.sc.pier_stashed === 1 && +s.sc.izz_stashed === 1 && +s.sc.root_stashed === 1 && +d.sc.roots_gone === 1 && +b.sc.pier_back === 1 && +b.sc.izz_back === 1 && +b.sc.root_back === 1) this.story_swear(w, 'a friend pier with its page an issued invite serial and a chain root all come back from the stash — the three oldest pillars finally stand under a fixture')
     // #8 THE PHONE KEEPS ITS POOLS: the declared composition is durable matter, not a session choice.
     if (+s.sc.pools_stashed === 1 && +d.sc.pools_gone === 1 && +b.sc.pools_back_in_order === 1 && +b.sc.pool_policy_back === 1) this.story_swear(w, 'the pool compartments a device declares survive its reload through the stash alone — names and policies and caps and the shuffle salt — and in declaration order so the priority they were given is the priority they come back with')
+    // #9 THE PHONE KEEPS ITS WISHES, AND ONLY ITS WISHES: a heart is a decision and outlives the boot; a
+    //  bare hearing is a thirty-day dedup mark and is deliberately left behind.
+    if (+s.sc.one_wish_stashed === 1 && +s.sc.the_bare_hearing_stayed_behind === 1 && +d.sc.heard_gone === 1 && +b.sc.wish_back === 1 && +b.sc.wish_knows_what_it_knew === 1 && +b.sc.the_bare_hearing_stayed_dead === 1)
+        this.story_swear(w, 'a heart pressed on a device with no folder survives that device rebooting — with the holder and the listing it had learned — while the bare hearings it sat among are left behind rather than hoarded')
     // #6 THE LADDER IS IDEMPOTENT: boot runs it once but a re-entry must not double a row.
-    if (+b.sc.idempotent === 1) this.story_swear(w, 'running the rehydrate ladder twice changes nothing — every pillar finds-or-creates so a re-entered boot cannot double a mate or a booking')
+    //  ⚠ THE SENTENCE IS THE CONTRACT — do not reword it.  A declared %Assertion in this Book's toc
+    //   carries it verbatim, so appending "or a wish" (tried 2026-09-04) turns the run red with a
+    //    permanent gap for a claim the Book still makes.  The eighth pillar rides the same sentence:
+    //     `idem_heard_doubled` is the new guard, so "cannot double a mate or a booking" now covers the
+    //      wish too without touching a word the contract already blessed.
+    if (+b.sc.idempotent === 1 && !(+b.sc.idem_heard_doubled === 1)) this.story_swear(w, 'running the rehydrate ladder twice changes nothing — every pillar finds-or-creates so a re-entered boot cannot double a mate or a booking')
 
 // SwarmReboot_order — float A:SwarmReboot to the front of H/* so the Run snap stays readable.
 async SwarmReboot_order(w):

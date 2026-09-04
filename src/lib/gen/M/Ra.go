@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'd656fa7a98a0d76e~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '670f94b3158ef6a8~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -948,6 +948,47 @@ Ra_rec_home(shelf, id) {
     rec.c.up = page
     return rec
 },
+// Ra_rec_copy — STAND A FAITHFUL COPY OF ONE HOLDING IN ANOTHER SHELF I OWN.  Every non-binary scalar
+//  (identity + audio metadata) plus every chunk particle the holding actually holds, bytes and all —
+//   presence stays fill state, so a copy of a half-pulled track keeps only what crossed.  The copy is
+//    ATTRIBUTION-FREE by construction (the ruling from MusuHeist's landed cards): provenance lives in the
+//     STRUCTURE that holds it, never stamped on the keeper.  Mints through the ONE owned door
+//      (Ra_rec_home — the landing-Mag ruling), so a copy pages like any other holding, never flat.
+//  Re-homed from Jam.g's `Jam_grab` (2026-09-04) when the %Jam ledger went: the ledger half of that verb
+//   was the cursed part, but "copy a holding into a shelf of mine" is a plain Record capability with one
+//    real caller (MusuBuddy's keeper) and no opinion in it.  Returns the standing copy.
+Ra_rec_copy(rec, kept) {
+    if (!rec || !kept) { return null }
+    let dst = this.Ra_rec_home(kept, rec.sc.id)
+    // skip the mainkey (already Record), the id (the match key), and `stage` (the Mag pipeline's session
+    //  read — a keeper is out of the pipeline, and flat shelves never wear the key).
+    for (const k of Object.keys(rec.sc)) {
+        if (k === 'Record' || k === 'id' || k === 'stage') { continue }
+        if (this.Repli_is_binary(rec.sc[k])) { continue }
+        dst.sc[k] = rec.sc[k]
+    }
+    // the chunks: re-mint each %Preview,seq / %Stream,seq under the copy, preserving mainkey + seq and
+    //  sharing the (immutable) byte buffer.  The snap encoder mutes each buffer to a ~12-byte ref, so the
+    //   copy reads as a Record with its chunk children present — a real copy, weight off the plane.
+    for (const ch of rec.o({ seq: 1 })) {
+        let bytes = this.Repli_chunk_bytes(ch)
+        if (bytes == null) { continue }
+        let mk = this.mainkey(ch)
+        let bufk = null
+        for (const k of Object.keys(ch.sc)) {
+            if (this.Repli_is_binary(ch.sc[k])) { bufk = k; break }
+        }
+        let csc = {}
+        csc[mk] = ch.sc[mk]
+        csc.seq = ch.sc.seq
+        let cc = dst.oai(csc)
+        cc.c.up = dst
+        if (bufk) { cc.sc[bufk] = bytes }
+    }
+    dst.bump()
+    return dst
+
+},
 // Ra_rec_pool — the SoundPool's own door beside Ra_rec_home (Portability_todo §3, the §3 ruling
 //  2026-08-27).  A pool copy is a %Record on the POOL's own shelf, not a second impersonation of the
 //   Original: `id` = the enid of the LOFI bytes that actually landed here (differs from the Original's
@@ -1071,35 +1112,17 @@ async Ra_press(w, nav, lib, shelf, origId, opts) {
 //       legible: `%Provisions` under the world holding `%Want,of:<id>,do:press|pull|evict,why:…` — a
 //        list a Door face can show as "what your phone wants next and why", and the stash-diff is
 //         Book-testable at the model layer without a single real byte (MusuQuarter).
-//  V1 POLICY — deterministic and legible, no wall clock (the fixture law): the Jam ledger is the taste
-//   record (Jam.g — %Spin/%Like/%Grab,of:<id> under %Jam sessions on the listener's shelf), weighted
-//    Like 3 (a taste FACT outranks exposure) · Grab 2 (they kept it) · Spin 1 (it merely streamed).
-//     Recency and friend-freshness are v2 policy — the seams take them without reshaping anything.
+//  V1 POLICY — deterministic and legible, no wall clock (the fixture law): the HEARD MAG is the taste
+//   record (Heard.g — one %Card,id,pub per track, carrying `take` · `keep` · `mire`), weighted
+//    take 3 (a decision outranks exposure) · keep 2 (they carried it) · mire 1 each (played through with
+//     someone in the room).  It read a %Jam ledger of %Spin/%Like/%Grab until 2026-09-04.
+//      Recency and friend-freshness are v2 policy — the seams take them without reshaping anything.
 
-// Ra_quarter_tally — walk every %Jam session under `shelf` and score each track id off its events.
-//  Returns a plain map id → {score, why} (why = the compact tally sentence a %Want carries).
+// Ra_quarter_tally — score each track id off the listener's own heard Mag.  Returns a plain map
+//  id → {score, why} (why = the compact sentence a %Want carries).  One line, because the scoring itself
+//   belongs beside the Cards it reads (Heard_tally) — this is the seam, not a second copy of the policy.
 Ra_quarter_tally(shelf) {
-    let scores = {}
-    for (const jam of shelf.o({ Jam: 1 })) {
-        for (const kind of ['Spin', 'Like', 'Grab']) {
-            let q = {}
-            q[kind] = 1
-            for (const ev of jam.o(q)) {
-                let id = String(ev.sc.of || '')
-                if (!id) continue
-                scores[id] = scores[id] || { spins: 0, likes: 0, grabs: 0 }
-                if (kind === 'Spin') scores[id].spins = scores[id].spins + 1
-                if (kind === 'Like') scores[id].likes = scores[id].likes + 1
-                if (kind === 'Grab') scores[id].grabs = scores[id].grabs + 1
-            }
-        }
-    }
-    let out = {}
-    for (const id of Object.keys(scores)) {
-        let s = scores[id]
-        out[id] = { score: s.likes * 3 + s.grabs * 2 + s.spins, why: s.likes + ' liked ' + s.grabs + ' kept ' + s.spins + ' spun', spins: s.spins, likes: s.likes, grabs: s.grabs }
-    }
-    return out
+    return this.Heard_tally(shelf)
 },
 // ── POOLS OF DEFINED SIZE (owner 2026-08-30: "Pools of defined size, so the overall composition of
 //  the cache on the phone can be focused") — the goal is a COMPOSITION of %Pool compartments, each
@@ -1365,9 +1388,10 @@ Ra_pool_sources(w) {
 },
 // Ra_quarter_goal_pools — fill each compartment in declared order off ONE tally, dedup across pools.
 //  V1 take-policies, all deterministic (no wall clock — the fixture law):
-//   'taste' — the classic Like3/Grab2/Spin1 score, descending;  'liked' — liked tracks only, most-
-//    liked first;  'kept' — grabbed tracks only, most-kept first;  'latest' — the LAST %Jam session's
-//     tracks in encounter order (the ledger's own order stands in for recency without a clock).
+//   'taste' — the take3/keep2/mire1 score, descending;  'liked' — TAKEN tracks only, most recently taken
+//    first (a heart is binary now, so there is no "most liked" — the honest order is what you wanted last);
+//     'kept' — carried tracks only;  'latest' — the LAST SITTING's tracks in the order they were heard
+//      (a %Cloud page IS a sitting, so page order stands in for recency without a clock).
 Ra_quarter_goal_pools(shelf, pools, sources, pool, recent) {
     let tally = this.Ra_quarter_tally(shelf)
     let taken = {}
@@ -1410,24 +1434,16 @@ Ra_quarter_goal_pools(shelf, pools, sources, pool, recent) {
             //   shelf), so a scrubbed track does not haunt this compartment.
             ids = (recent || []).slice()
         } else if (pd.take === 'latest') {
-            let jams = shelf.o({ Jam: 1 })
-            let last = jams.length ? jams[jams.length - 1] : null
-            if (last) {
-                for (const kind of ['Spin', 'Like', 'Grab']) {
-                    let q = {}
-                    q[kind] = 1
-                    for (const ev of last.o(q)) {
-                        let id = String(ev.sc.of || '')
-                        if (id && !ids.includes(id)) { ids.push(id) }
-                    }
-                }
-            }
+            ids = this.Heard_latest(shelf).slice()
         } else if (pd.take === 'liked') {
-            ids = Object.keys(tally).filter((id) => tally[id].likes > 0)
-            ids.sort((a, b) => (tally[b].likes - tally[a].likes) || (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
+            // MOST RECENTLY TAKEN FIRST.  It was "most-liked first", which a countable %Like made sense of;
+            //  a heart is binary, so the honest order is what you wanted LAST, with the score and then the
+            //   id breaking ties — deterministic either way, which is what the fixture law actually asks.
+            ids = Object.keys(tally).filter((id) => tally[id].took > 0)
+            ids.sort((a, b) => (tally[b].at - tally[a].at) || (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
         } else if (pd.take === 'kept') {
-            ids = Object.keys(tally).filter((id) => tally[id].grabs > 0)
-            ids.sort((a, b) => (tally[b].grabs - tally[a].grabs) || (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
+            ids = Object.keys(tally).filter((id) => tally[id].kept > 0)
+            ids.sort((a, b) => (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
         } else {
             ids = Object.keys(tally).filter((id) => tally[id].score > 0)
             ids.sort((a, b) => (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
@@ -1477,9 +1493,13 @@ Ra_quarter_diff(goal, pool, lib) {
 //   drop — "a good stash stays the stash"), and a want whose reason left the diff is dropped (served
 //    or displaced — either way stale).  Returns {goal, diff, wants} for a Book or a face.
 Ra_quarter(w, shelf, pool, lib, cap, sources) {
-    // the arrivals mirror is read HERE rather than inside the goal builder, which must stay pure and
-    //  world-less (every pool fixture calls it directly with hand-built pools).
-    let recent = this.Heist_newly_ids ? this.Heist_newly_ids(w) : []
+    // RECENT ACQUISITIONS = MY LANDED TAKES, newest first, read HERE rather than inside the goal builder,
+    //  which must stay pure and world-less (every pool fixture calls it directly with hand-built pools).
+    //  It read a dontSnap %Hauls>%Newly>%Fresh mirror of the DISK's arrivals ledger until 2026-09-04 — a
+    //   mirror that existed only because the ledger is an async disk read and this builder is synchronous.
+    //    The heard Mag is both durable and already in memory, so there is nothing to mirror: a take Card
+    //     whose track is now on my shelf IS an acquisition, and it carries the moment I asked (Heard.g).
+    let recent = this.Heard_landed_ids ? this.Heard_landed_ids(w, this.Radio_pub(w) || '', lib) : []
     let goal = this.Ra_quarter_goal_pools(shelf, this.Ra_pool_defs(w, cap), sources, pool, recent)
     let diff = this.Ra_quarter_diff(goal, pool, lib)
     let out = w.oai({ Provisions: 1 })

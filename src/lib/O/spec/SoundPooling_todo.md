@@ -1,6 +1,66 @@
 # SoundPooling_todo.md — the pool: press + reach into it, pool-first radio out, cells over it
 
-## 0. THE DECISION (2026-09-03, the owner's — everything below §0 is history or machinery)
+## 0. WHAT TO GET ON WITH NEXT — PUT THE FEATURE IN ONE PLACE (2026-09-04, the owner's)
+
+*"lets move all those into unison? SoundPooling/Pool/* should have its scheme and content|state and
+ everything it has?"* — yes, and it is worse than it looks. **SoundPooling lives in FOUR homes today:**
+
+| part | where it lives now |
+|---|---|
+| the **declaration** | `%Identity > %Pools > %Pool,name,take,cap,salt,who,share` (`Ra_pool_home`) |
+| **consent + budget** | `%Pools > %Consent,at` · `%Pools%budget_mb` |
+| the **want-list** (its running state) | `w > %Provisions > %Want,of:<id>,do:press|pull|evict,why` — on the world floor |
+| the **material** | `w > MusuPool,pub:<me> > stock,pub > Mag:shuffle > Cloud,page > Record,id,of,grade,path:pool/…` |
+
+**The unison:**
+
+```
+SoundPool,pub:c0de,budget_mb=200          ← ONE home for the whole feature
+  Consent,at:1788400000
+  Pool,name:circulation,take:random,cap:12,salt:3,who:crew,share:50
+  Pool,name:recent,take:recent,cap:50,share:50
+  Provisions
+    Want,of:9a3c…,do:press,why:took it — carried
+  stock,pub:c0de
+    Mag:shuffle > Cloud,page:N > Record,id,of,grade,path:pool/…
+```
+
+### Where it hangs is the whole decision — and the mechanics were checked, not assumed
+
+**Hang it under `%Identity`.** Then the declaration keeps its account-snap home (the second durable home
+ beside the Dexie stash) and `Swarm_restash_pools` walks it one level deeper, unchanged in shape.
+The obvious fear — that pool churn now rewrites the whole account file on every press, inside the beliefs
+ mutex — **does not happen**: Auto.svelte's account-write `mark` is built from `ident.version`, and
+  `bump()` does NOT propagate upward (`TheX.bump_version` touches its own `serial_i` only), so a mint under
+   `SoundPool > stock > Mag > Cloud` bumps that Cloud's X and nothing above it.
+
+Two consequences, both to decide with open eyes:
+1. **The pooled catalog would ride the account snap** — ~30KB at 200 tracks. Cheap, and arguably right: it
+    is what is actually on this device. `dontSnap` on `stock` would prune it, at the cost of making the
+     pool unreadable from a snap, which is the wrong trade for the one shelf a person might want to audit.
+2. ⚠ **A latent bug this exposes, which is TRUE TODAY and not caused by the move**: a pool declaration
+    change does not trigger an account write at all. Minting `%Pool` bumps `%Pools`' X, never the
+     identity's, so the declaration only reaches disk when something ELSE bumps the identity. The stash
+      pillar is doing all the real work; the account copy is incidental. Worth fixing (bump the identity on
+       a declaration change) whether or not the unison happens.
+
+### What it touches
+
+`Ra_home_pool` · `Ra_pool_home` · every `Ra_pool_*` verb · `Ra_quarter`/`_diff`/`_serve` (the
+ `%Provisions` home) · `Swarm_restash_pools`/`_pools_rehydrate` · SwarmReboot · PoolFace · and every pool
+  fixture. **Bigger than the `Musu` rename sweep** ([[musu-prefix-rename-ruled]]: `MusuSelf`→`Mine`,
+   `MusuThem`→`Theirs`, `MusuPool`→ the pool home's new name). Do them as ONE pass, since both rewrite the
+    same fixtures — and note that once the feature IS one home, **`SoundPooling` becomes an honest name for
+     it** (the objection to that name was only that a reader would look for the compartments underneath and
+      not find them; here they are underneath).
+
+**Ordering**: after `Radio_circuit_todo.md`'s heard circuit lands (in flight 2026-09-04), then the rename +
+ unison as one sweep. See also that doc's §7.8: whether the pool should exist AT ALL on a device that has a
+  folder — if the answer is no, this home only ever stands on a phone, which simplifies everything here.
+
+---
+
+## 0.1 THE DECISION (2026-09-03, the owner's — everything below is history or machinery)
 
 **SoundPool is one sentence, and the sentence is the whole UI:**
 

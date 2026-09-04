@@ -4,8 +4,7 @@ story:SwarmBody
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.119
-      sample=0.084,at=1788297459
+    TimeTotal:beliefs,avg=0.12
       sample=0.144,at=1788297666
       sample=0.144,at=1788297689
       sample=0.088,at=1788297708
@@ -15,8 +14,8 @@ story:SwarmBody
       sample=0.094,at=1788299039
       sample=0.123,at=1788317602
       sample=0.137,at=1788425146
+      sample=0.094,at=1788497338
     TimeTotal:step,avg=0.007
-      sample=0.005,at=1788297459
       sample=0.008,at=1788297666
       sample=0.008,at=1788297689
       sample=0.005,at=1788297708
@@ -26,6 +25,7 @@ story:SwarmBody
       sample=0.006,at=1788299039
       sample=0.007,at=1788317602
       sample=0.006,at=1788425146
+      sample=0.004,at=1788497338
   step,dige:2b840e0ba238da72
   step=2,dige:40b3026ce7a2c652
     Assertion:a-body-row-is,sentence:a body row is keyed by its own body key not the soul — one soul wears many bodies so the durable per-body key is what a roster row IS

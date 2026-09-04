@@ -2147,6 +2147,8 @@ Swarm_station_up(w, ident):
     if (!w.c.reaches_rehydrated && this.top_House().stashed) { w.c.reaches_rehydrated = 1; this.Swarm_reaches_rehydrate(w, ident) }
     // the pool compartments (seventh pillar): a phone's declared composition outlives its boot.
     if (!w.c.pools_rehydrated && this.top_House().stashed) { w.c.pools_rehydrated = 1; this.Swarm_pools_rehydrate(w, ident) }
+    // the hearts (eighth pillar): a wish pressed on a phone still stands after that phone reloads.
+    if (!w.c.heard_rehydrated && this.top_House().stashed) { w.c.heard_rehydrated = 1; this.Swarm_heard_rehydrate(w, ident) }
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     if (station && w.c.station_up) return station
     if (typeof this.Socket_real !== 'function') return null
@@ -3559,10 +3561,10 @@ Swarm_stash_of(ident, st):
 
 Swarm_restash_all(ident, from, st):
     let src = from || ident
-    if (!ident || !src) return { piers: 0, izzes: 0, roots: 0 }
+    if (!ident || !src) return { piers: 0, izzes: 0, roots: 0, heard: 0 }
     if (src !== ident && src.sc.prepub !== ident.sc.prepub) {
         console.log('🪪 restash REFUSED — ' + String(src.sc.prepub) + ' is not ' + String(ident.sc.prepub))
-        return { piers: 0, izzes: 0, roots: 0 }
+        return { piers: 0, izzes: 0, roots: 0, heard: 0 }
     }
     return { piers: this.Swarm_restash_piers(ident, src, st),
              izzes: this.Swarm_restash_izzes(ident, src, st),
@@ -3570,7 +3572,8 @@ Swarm_restash_all(ident, from, st):
              roster: this.Swarm_restash_roster(ident, src, st),
              crew: this.Swarm_restash_crew(ident, src, st),
              reaches: this.Swarm_restash_reaches(ident, src, st),
-             pools: this.Swarm_restash_pools(ident, src, st) }
+             pools: this.Swarm_restash_pools(ident, src, st),
+             heard: this.Swarm_restash_heard(ident, src, st) }
 
 // ── the roster is the FOURTH stash pillar (2026-08-31, the owner: "if I do a Link ceremony again,
 //  will they actually know each other as Crew?") ─────────────────────────────────────────────────────
@@ -3733,6 +3736,76 @@ Swarm_restash_pools(ident, from, st0):
     if (shelf && shelf.sc.budget_mb) { entry.budget_mb = String(shelf.sc.budget_mb) }
     st.Swarm_pools[ident.sc.prepub] = entry
     return rows.length
+// ── %Mag:heard is the EIGHTH pillar (2026-09-04, Radio_circuit_todo §5) ─────────────────────────
+//  The heard Mag is what I heard of whom and what I TOOK — the hearts I pressed and have not been
+//   brought yet.  It hangs on the identity, so it rides the account snap for free … and a PHONE HAS NO
+//    FOLDER, so on a phone the stash is its only durable home (SwarmReboot's whole premise).  Without
+//     this pillar every wish a phone makes dies at its next boot, on exactly the device the feature is
+//      for — the same disease as the crew cert, the standing reach and the pool compartment, eighth organ.
+//  WHAT TRAVELS: the takes, and ONLY the takes.  A bare hearing is a dedup mark with a thirty-day clock
+//   on it — worth nothing after a reload and, multiplied by every track a listener ever played, the fat
+//    privacy liability §6b's OBLIQUE ruling exists to prevent.  A HEART is a decision, and a decision
+//     must outlive the boot that made it.  So the stash carries `take` Cards whole (the listing rides
+//      along — it is what makes the ask legible before anything lands) and forgets the rest.
+//  Rehydrated into ONE page of its own, dated when the stash was written: the pages are sittings, and
+//   the sitting that recovered them is this boot, not whichever evening they were pressed in.
+//  MERGE LAW, stated here because two bodies WILL write (§5): `mire = max`, `take = OR`, keyed
+//   (id, pub), no device key.  Where it lands first is this pillar's own `oai`.
+Swarm_restash_heard(ident, from, st0):
+    let st = this.Swarm_stash_of(ident, st0)
+    if (!st || !ident) { return 0 }
+    let src = from || ident
+    let mag = src.o({ Mag: 'heard', pub: String(src.sc.prepub || '') })[0]
+    let rows = []
+    for (const pg of (mag ? mag.o({ Cloud: 1 }) : [])) {
+        for (const card of pg.o({ Card: 1 })) {
+            if (!card.sc.take || !card.sc.id) { continue }
+            let e = {}
+            for (const k of Object.keys(card.sc)) { if (k !== 'Card') { e[k] = String(card.sc[k]) } }
+            rows.push(e)
+        }
+    }
+    if (!rows.length) {
+        if (st.Swarm_heards) { delete st.Swarm_heards[ident.sc.prepub] }
+        return 0
+    }
+    if (!st.Swarm_heards) { st.Swarm_heards = {} }
+    let entry = { rows: rows }
+    if (mag && mag.sc.heard_ttl) { entry.heard_ttl = String(mag.sc.heard_ttl) }
+    if (mag && mag.sc.take_ttl) { entry.take_ttl = String(mag.sc.take_ttl) }
+    st.Swarm_heards[ident.sc.prepub] = entry
+    return rows.length
+// Swarm_heard_rehydrate — re-stand the takes on the identity's own heard Mag.  Idempotent by (id, pub),
+//  the same key Heard_card finds-or-creates on, so a re-entered boot cannot double a wish.  SYNC and
+//   stashed-gated like every sibling, so no Book world moves unless it hands its own stash in.
+Swarm_heard_rehydrate(w, ident, st0):
+    let st = st0 || this.top_House().stashed
+    let mine = st?.Swarm_heards?.[ident?.sc?.prepub]
+    if (!mine || !ident) { return 0 }
+    let me = String(ident.sc.prepub || '')
+    let mag = ident.oai({ Mag: 'heard', pub: me })
+    mag.c.up = ident
+    if (mine.heard_ttl && !mag.sc.heard_ttl) { mag.sc.heard_ttl = String(mine.heard_ttl) }
+    if (mine.take_ttl && !mag.sc.take_ttl) { mag.sc.take_ttl = String(mine.take_ttl) }
+    let page = this.Heard_page ? this.Heard_page(mag, this.Swarm_now(w)) : null
+    if (!page) { return 0 }
+    let n = 0
+    for (const e of (mine.rows || [])) {
+        if (!e || !e.id) { continue }
+        let card = this.Heard_find(mag, e.id, e.pub) || page.i(e.pub ? { Card: 1, id: String(e.id), pub: String(e.pub) } : { Card: 1, id: String(e.id) })
+        card.c.up = card.c.up || page
+        for (const k of Object.keys(e)) {
+            if (k === 'id' || k === 'pub') { continue }
+            // the merge law: mire takes the LARGER, everything else the stashed value.
+            if (k === 'mire' && +(card.sc.mire || 0) >= +(e.mire || 0)) { continue }
+            card.sc[k] = String(e[k])
+        }
+        card.bump()
+        n = n + 1
+    }
+    if (n) { console.log('♥ heard rehydrated — ' + n + ' wish(es) survive the reload') }
+    return n
+
 // Swarm_pools_rehydrate — re-declare the compartments on the identity's %Pools shelf, in their stashed
 //  order (declaration order IS priority).  Idempotent: find-or-create by name, values refreshed.  SYNC and
 //   stashed-gated like every sibling, so no Book world moves.
@@ -5408,7 +5481,12 @@ Swarm_import(container, blob):
 //     is byte-identical.
 Swarm_graft(parent, node):
     let ID = { Identity: [], Peering: ['name'], Pier: ['pub'], Grant: ['sign'], NotGrant: ['sign'], Idzeug: [], SocialGraph: [], Edge: ['a', 'b'], Account: ['of'],
-               Body: ['pub'], Crew: [], mate: [], Key: ['pub'], Charter: [], rebuff: ['say'] }
+               Body: ['pub'], Crew: [], mate: [], Key: ['pub'], Charter: [], rebuff: ['say'],
+               // the heard Mag rides the account export (the skip-list lets it), so its three levels need
+               //  identity rows or every re-import TWINS every Card whose `mire` moved (Radio_circuit_todo
+               //   §5, the persistence lens).  A Mag is keyed (name, pub) — the 2026-08-05 ruling; a page by
+               //    its number; a Card by the pair that IS its identity.
+               Mag: ['pub'], Cloud: ['page'], Card: ['id', 'pub'] }
     let mk = Object.keys(node.sc)[0]
     let find = {}
     find[mk] = node.sc[mk]

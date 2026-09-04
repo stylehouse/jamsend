@@ -1,0 +1,21 @@
+story:MusuHeard
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.044
+      sample=0.039,at=1788495798
+      sample=0.049,at=1788495885
+    TimeTotal:step,avg=0.005
+      sample=0.004,at=1788495798
+      sample=0.005,at=1788495885
+  step,dige:9fad2f0a72efe108
+  step=2,dige:213e8cc234b6ff07
+  step=3,dige:00e3ce410954ecf2
+  step=4,dige:d9a8ac079cb378bf
+  step=5,dige:554ec4ecb5548525
+  step=6,dige:79a2463a45afd401
+  step=7,dige:116cecd682f65789
+  step=8,dige:31ba2eaa31a446e8
+  step=9,dige:a9e26dfa02d54081

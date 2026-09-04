@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return '68c7f05fb8bb317d~g1' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return 'e10067ece79aacce~g1' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.
@@ -1059,25 +1059,32 @@ async MusuBuddy_hear(w) {
 },
 // beat 11 — MusuBuddy_jam — the session's history, made legible on the snap (the human 2026-07-14: "I should be able to
 //  glance through this snap and see what they played to each other — what each liked — what each heisted").  The
-//   listener heard the browsed track, so it SPINS (the DJ played it), LIKES it, and GRABS a keeper into their OWN
-//    shelf — %Kept, DISTINCT from the streaming mirror (grabbing into the mirror would just re-find the husk; a
-//     grab is a KEEP, not a transient stream).  The ledger (%Jam,with > %Spin/%Like/%Grab, ordered by `at`) rides
-//      the mirror's snap; the keeper stands beside the buddy's magazine.  Runs once (guarded on w.c.jammed).
+//   listener heard the browsed track, so it is MARKED heard, TAKEN (♥), and a keeper copy stands in their OWN
+//    shelf — %Kept, DISTINCT from the streaming mirror (copying into the mirror would just re-find the husk; a
+//     keeper is a KEEP, not a transient stream).  Runs once (guarded on w.c.jammed).
+//  REWRITTEN 2026-09-04 (Radio_circuit_todo): this used to mint a %Jam,with:<dj> ledger of ordered
+//   %Spin/%Like/%Grab rows under the MIRROR — the shape the owner called *"cursed … a big cancer"*, and it
+//    hung a durable ledger off the one shelf in the app that is explicitly disposable (§0.5: the mirror IS
+//     the edge; it never berths, it is swept every session). The same three facts are now: the hearing and
+//      the heart on MY OWN `%Mag:heard` (Heard.g), which is durable and oblique; and the keeper as a plain
+//       Record copy (Ra_rec_copy, re-homed from Jam_grab — the useful half of that verb).
 async MusuBuddy_jam(w) {
     if (w.c.jammed) return
     let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let rec = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
     if (!rec || !w.c.term) { w.i({ jam_fail: 'nothing heard' }); return }
     w.c.jammed = 1
+    w.c.ra_pub = w.c.lis_pre
     let kept = w.oai({ Kept: 1, pier: w.c.lis_pre })
     kept.c.up = w
-    let jam = this.Jam_home(mir, w.c.dj_pre)
-    this.Jam_spin(jam, rec)
-    this.Jam_like(jam, rec)
-    let g = this.Jam_grab(jam, rec, kept)
-    let tally = this.Jam_tally(jam)
-    let row = { jammed: 1, spins: tally.spins, likes: tally.likes, grabs: tally.grabs, events: this.Jam_ledger(jam).length }
-    if (g.kept) row.kept_id = g.kept.sc.id
+    this.Heard_mark(w, w.c.lis_pre, rec)
+    let took = this.Heard_take(w, w.c.lis_pre, rec, w.c.dj_pre)
+    let card = this.Heard_find(this.Heard_mag_find(w, w.c.lis_pre), rec.sc.id, w.c.dj_pre)
+    let copy = this.Ra_rec_copy(rec, kept)
+    let row = { jammed: 1 }
+    if (took === 1) { row.took = 1 }
+    if (card && String(card.sc.pub || '') === String(w.c.dj_pre)) { row.card_names_the_dj = 1 }
+    if (copy) { row.kept_id = copy.sc.id }
     w.i(row)
 
 },
@@ -1193,13 +1200,13 @@ MusuBuddy_witness(w) {
     if (n === 11 && t && t.lufs != null && Math.abs(t.lufs - target) < 2 && !(w.oa({see: 'the follower decoded what it pulled — the loudness reads the target back from the bytes that crossed'}))) w.i({see: 'the follower decoded what it pulled — the loudness reads the target back from the bytes that crossed'})
     if (n === 11 && t && t.starved_gaps > t.healthy_gaps + 3 && !(w.oa({see: 'a withheld run of chunks surfaced as measured gaps — the spool starved without papering over the hole'}))) w.i({see: 'a withheld run of chunks surfaced as measured gaps — the spool starved without papering over the hole'})
     if (n === 11 && t && t.healthy_gaps <= 3 && t.starved_gaps > t.healthy_gaps + 3 && !(w.oa({see: 'the complete pull played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole'}))) w.i({see: 'the complete pull played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole'})
-    // beat 11: the JAM LEDGER reads the session in ORDER — the referring-particle rows under the mirror
-    //  session (Spin then Like then Grab by `at`), not a summary flag: the DJ spun a track the listener liked
-    //   and then grabbed a keeper of.
-    let jamnode = mir ? mir.o({ Jam: 1, with: w.c.dj_pre })[0] : null
-    let led = jamnode ? this.Jam_ledger(jamnode) : []
-    let ledger_ok = led.length === 3 && Object.keys(led[0].sc)[0] === 'Spin' && Object.keys(led[1].sc)[0] === 'Like' && Object.keys(led[2].sc)[0] === 'Grab'
-    if (n === 11 && ledger_ok && !(w.oa({see: 'the jam ledger reads the session in order — the DJ spun a track the listener liked and then grabbed'}))) w.i({see: 'the jam ledger reads the session in order — the DJ spun a track the listener liked and then grabbed'})
+    // beat 11: THE HEARING AND THE HEART LAND ON THE LISTENER'S OWN MAG, not on the disposable mirror — one
+    //  %Card,id,pub naming the DJ, wearing `take`, under the listener's own identity home.  This is the
+    //   §0.5 rule under a fixture: a durable structure REFERS into the edge and holds nothing of it.
+    let hmag = this.Heard_mag_find(w, w.c.lis_pre)
+    let hcard = hmag ? this.Heard_find(hmag, w.c.pick_id, w.c.dj_pre) : null
+    let heard_ok = !!(hcard && hcard.sc.take && String(hcard.sc.pub || '') === String(w.c.dj_pre) && !hmag.o({ Record: 1 }).length)
+    if (n === 11 && heard_ok && !(w.oa({see: 'the listener remembers the session on their own heard Mag — a card naming the DJ and wearing the heart — while the mirror it refers to stays disposable'}))) w.i({see: 'the listener remembers the session on their own heard Mag — a card naming the DJ and wearing the heart — while the mirror it refers to stays disposable'})
     // beat 11: the grabbed keeper STANDS whole in the listeners own %Kept shelf (every chunk copied off the
     //  pulled husk) beside the buddys magazine still in the mirror — a KEEP the listener owns, not a stream.
     let kept = w.o({ Kept: 1, pier: w.c.lis_pre })[0]
@@ -1220,9 +1227,13 @@ MusuBuddy_witness(w) {
     // COPY not move: the keeper is whole in %Kept AND the original husk still stands in the mirror (a grab that
     //  re-parented the husk would drop husk_still) AND the buddy's magazine is still beside it.
     if (n === 11 && keptrec && kept_whole && husk_still && vmag && !(w.oa({see: 'the grabbed keeper stands whole in the listeners own shelf beside the buddys magazine'}))) w.i({see: 'the grabbed keeper stands whole in the listeners own shelf beside the buddys magazine'})
-    // SWORN — the session history + the keep (the jam leg that died with the pull): ledger in order
-    //  AND the keeper whole AND the husk still standing (a grab is a copy never a move).
-    if (n >= 11 && ledger_ok && keptrec && kept_whole && husk_still) this.story_swear(w, 'the jam ledger reads spin like grab in order and the grabbed keeper stands whole in the listeners own shelf')
+    // SWORN — the session remembered + the keep: the heart on the listener's OWN heard Mag AND the keeper
+    //  whole AND the husk still standing in the mirror (a keeper is a copy, never a move).
+    //  ⚠ The sentence CHANGED 2026-09-04 with the ledger it named: it read "the jam ledger reads spin like
+    //   grab in order …" and the %Jam ledger is deleted (Radio_circuit_todo). A declared %Assertion in this
+    //    Book's toc still carries the old sentence and must be re-declared to this one, or the run reports
+    //     a permanent gap for a claim the app can no longer make.
+    if (n >= 11 && heard_ok && keptrec && kept_whole && husk_still) this.story_swear(w, 'the listener remembers the session on their own heard Mag and the keeper stands whole in their own shelf while the husk it was copied from still stands in the mirror')
     // beat 13: the stale magazine — the origin CHANGED (a fresh card stands in its own magazine) but the
     //  closed gate let nothing cross: zero frames burned and the mirror still shows the pre-revoke draw.
     let rv = w.o({ revoked_stand: 1 })[0]

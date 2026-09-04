@@ -11,8 +11,8 @@
     //   include forwards exactly that — so handing M in as H is the same attach path Machinery
     //    uses for its test-case children.
     //  ALSO mounted: the ghosts the siphon COMPOSES — Ra.go (Ra_press / Ra_rec_find / Ra_recs),
-    //   Heist.go (Heist_catalog_land — the one landing door), Jam.go (Heist's census neighbours
-    //    live fine without it but Ra's quarter region reads Jam verbs) and Musuation.go
+    //   Heist.go (Heist_catalog_land — the one landing door), Heard.go (Heist's census neighbours
+    //    live fine without it but Ra's quarter region reads Heard verbs) and Musuation.go
     //     (Musu_float — the family's snap-order float).  A headless Story_cli boot mounts no
     //      Otro, so the Creduler's watched:UIs enrolment never renders and CREDULER_GHOSTS never
     //       deposit — without these mounts the Book's beats throw "this.Ra_rec_find is not a
@@ -21,13 +21,13 @@
     import SiphonationGhost from '$lib/gen/Story/Siphonation.go'
     import RaGhost from '$lib/gen/M/Ra.go'
     import HeistGhost from '$lib/gen/M/Heist.go'
-    import JamGhost from '$lib/gen/M/Jam.go'
+    import HeardGhost from '$lib/gen/M/Heard.go'
     import MusuationGhost from '$lib/gen/Story/Musuation.go'
     let { M } = $props()
 </script>
 <RaGhost H={M} />
 <HeistGhost H={M} />
-<JamGhost H={M} />
+<HeardGhost H={M} />
 <MusuationGhost H={M} />
 <SiphonGhost H={M} />
 <SiphonationGhost H={M} />

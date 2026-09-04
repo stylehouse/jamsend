@@ -70,7 +70,7 @@
             //    the press itself (the ledger probe is a walk; the mirror is already in hand).
             likedThis: !!(
                 (n?.c?.liked && n?.c?.rec?.sc?.id && n.c.liked[n.c.rec.sc.id]) ||
-                (n?.sc?.by && n?.c?.rec?.sc?.id && (H as any)?.Heist_want_liked?.(n?.c?.w, (H as any)?.Radio_pub?.(n?.c?.w), n.sc.by, n.c.rec.sc.id))
+                (n?.sc?.by && n?.c?.rec?.sc?.id && (H as any)?.Heard_taken?.(n?.c?.w, (H as any)?.Radio_pub?.(n?.c?.w), n.sc.by, n.c.rec.sc.id))
             ),
         }
     })

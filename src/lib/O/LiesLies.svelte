@@ -70,7 +70,7 @@
         'Ghost/M/Ra.g',                 // the PIPELINE spine — rastock: needles LUFS → baked gain → ONE opus encode cut into %Preview,seq chunk particles + demand-driven stream transcode
         'Ghost/M/Booth.g',              // the Booth — taste as standing facts: the tune: handle + the %Ban do-not-play list the heist door consults (Radio_todo §11)
         'Ghost/M/Heist.g',              // the heist engine — %Caper,at:<pier> moves ORIGINAL file bytes over Repli straight into the collection (newlyadded probation, catalog-identity dedup)
-        'Ghost/M/Jam.g',                // the jam ledger — %Jam,with:<dj> session of ordered %Spin/%Like/%Grab facts + a keeper copy into the listener's own shelf (the glanceable session history)
+        'Ghost/M/Heard.g',              // the HEARD MAG — %Mag:heard,pub:<me> > %Cloud,page > %Card,id,pub: what I heard of whom (oblique) and what I took (♥); the heist is a query over it (replaced Jam.g, 2026-09-04)
         'Ghost/M/Orig.g',               // the %Original / grade-dispatch layer — the ogg128 export writes a real RFC-7845 Ogg/Opus container BACK (phone-sync ships .ogg) + its structural reader
         'Ghost/M/Radio.g',              // the RADIO — continuous listening: dial → stream-decode → AudioContext timeline → auto-advance; the %Radio face the glass mounts RadioFace on
         'Ghost/M/Siphon.g',             // the DELIBERATE SoundPool act — tags-as-playlists + Siphon_pull, the one-track press into the OPFS pool (Siphon_todo rungs 2–3)

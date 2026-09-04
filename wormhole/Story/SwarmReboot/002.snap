@@ -26,3 +26,7 @@ Snap:H
             Pools
               Pool,name:circulation,take:random,cap:12,salt:3
               Pool,name:liked,take:liked,cap:6
+            Mag:heard,pub:Cave,heard_ttl:30,take_ttl:90
+              Cloud,page:1,created_at:1751699000
+                Card,id:trk-take,pub:Cave,title:Kept Wanting,take:1,at:1751699000,mire:2
+                Card,id:trk-heard,pub:Cave,mire:1

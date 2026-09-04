@@ -37,9 +37,12 @@ Radio_ensure(w):
         radio.c.up = w
     }
     radio.c.w = w
-    // heard-this-sitting: the ids the dial already played (runtime memory, never snapped —
-    //  a radio forgets on reload, honestly; durable taste is the Booth's job, not this).
-    if (!radio.c.heard) radio.c.heard = {}
+    // HEARD IS DURABLE NOW (2026-09-04, Radio_circuit_todo §1b).  This used to hang a `radio.c.heard`
+    //  bag here — a 100-cap runtime map of bare ids that died on every reload, so the dial cheerfully
+    //   replayed the same tracks after a refresh, and Mag_todo §8's "ABSOLUTELY durable … keep OBLIQUE
+    //    track of Records heard" had no home for six weeks.  The set is now `%Mag:heard,pub:<me>` under
+    //     my own identity (Heard.g), read through Radio_heard below: same {id:1} shape, same skip, but
+    //      it survives the reload and ages by heard_ttl instead of by a cap.
     // WAKE ON A CROSS-PIER LANDING (the missing twin of the stoker's Radio_nudge): the local dig
     //  nudges a digging radio the moment a track stands (Stoker_look), but a friend's chunk crossing
     //   the wire had NO such wake — it landed and the playhead waited out its dig poll (800ms; this
@@ -650,6 +653,11 @@ async Radio_pump_tick(radio, era):
             //   drops `c.rec` says which it was, and an open that arrives with neither said gets the
             //    conservative answer (mid-song).
             radio.c.went = 'finish'
+            // PLAYED THROUGH WITH A PERSON IN THE ROOM ⇒ mire +1 on the heard Card (Heard_through,
+            //  humdinger-gated inside).  Here and not in Radio_skip: people skip songs they love, so a
+            //   skip is worth exactly nothing, while sitting through a track is the one ambient signal
+            //    the app can honestly read.  No bump — a play-through must never cost a disk write.
+            if (radio.c.rec) { this.Heard_through(w, this.Radio_pub(w) || '', radio.c.rec) }
             radio.c.rec = null
             radio.c.drained = 0
             w.c.play = null
@@ -725,7 +733,7 @@ async Radio_pump_tick(radio, era):
 //   policy); a stale one is dropped and re-drawn.
 Radio_peek_next(radio):
     let w = radio.c.w
-    let heard = radio.c.heard || {}
+    let heard = this.Radio_heard(radio)
     let lu = w.o({ Mag: 'Lineup' })[0]
     if (lu) {
         for (const card of lu.o({ Card: 1 })) {
@@ -964,7 +972,9 @@ Radio_open(radio, rec):
     let w = radio.c.w
     this.Ra_term_stream_open(w, rec, {})
     radio.c.rec = rec
-    this.Radio_heard_add(radio, rec.sc.id)
+    // THE TRACK STARTED — one oblique Card per (id, pub) on the durable heard Mag (Heard.g).  This is
+    //  the one place every route into the playhead passes through, which is why the mark lives here.
+    this.Heard_mark(w, this.Radio_pub(w) || '', rec)
     // SPEND THE PRIMED TRACK if this is the one we prepared (Radio_prime).  Its chunks are already
     //  decoded, so the sound starts on THIS tick instead of after a fresh decoder has been opened,
     //   fed and waited on.  A prime for a different record is stale — drop it and let the pump
@@ -1174,37 +1184,25 @@ Radio_friendly(w, pub):
     let pier = (ident && M.Swarm_peering) ? M.Swarm_peering(ident)?.o({ Pier: 1, pub: String(pub) })[0] : null
     return pier?.sc?.friendly ? String(pier.sc.friendly) : String(pub).slice(0, 8)
 
-// Radio_heard_cap — the bound on heard-this-sitting: keep the ~100 most-recent record ids, no more.
-//  The set is a dedup memory for the dial (never repeat a track this sitting), NOT a browsing
-//   history — an unbounded map would grow O(tracks-played) forever on a long-running station and,
-//    once graduated toward durable taste, would be a fat privacy liability (Mag_todo §6b: keep
-//     listening OBLIQUE — bare ids, bounded).  100 is plenty of anti-repeat runway for one sitting.
-Radio_heard_cap():
-    return 100
-// Radio_heard_add — mark an id heard, then whittle to the cap.  JS preserves string-key insertion
-//  order, so Object.keys() is oldest-first: evict from the front.  Re-hearing an id is a no-op (it
-//   keeps its original slot — fine, we only ever probe membership, never recency, for the skip).
-Radio_heard_add(radio, id):
-    if (!id) return
-    if (!radio.c.heard) radio.c.heard = {}
-    if (radio.c.heard[id]) return
-    radio.c.heard[id] = 1
-    let ks = Object.keys(radio.c.heard)
-    let over = ks.length - this.Radio_heard_cap()
-    let i = 0
-    while (i < over) {
-        delete radio.c.heard[ks[i]]
-        i = i + 1
-    }
+// Radio_heard — THE DEDUP SET THE DIAL SKIPS BY, {id:1}, read off the durable %Mag:heard (Heard.g).
+//  It replaced `radio.c.heard` + Radio_heard_cap/Radio_heard_add (2026-09-04): a 100-cap runtime bag
+//   that forgot everything on reload, with a cap chosen to bound a map nobody could see.  The Mag is
+//    bounded by heard_ttl instead — thirty days of hearing, then the Card goes — which is a bound a
+//     human can read, and the very ruling Mag_todo §8 made and could not house.
+//  ONE WALK PER CALL, so every caller hoists it out of its own loop exactly as it hoisted the bag.
+Radio_heard(radio):
+    let w = radio ? radio.c.w : null
+    if (!w) { return {} }
+    return this.Heard_set(w, this.Radio_pub(w) || '')
 // Radio_mag_cursor — the DERIVED per-Mag playhead (the human's ruling 2026-07-26: drop the
 //  browsing-history store; instead, given any Mag**, the 'cursor' is the last of its records that
 //   is in the bounded heard set — how far through this Mag the listener has got).  Pure read over
 //    the recursive census (Ra_recs_deep, Mag** at any depth); nothing stored, so it can never rot.
-//     Null = untouched Mag (nothing heard yet).  This is the runtime germ of Mag_todo §8's durable
-//      cursor: graduate heard-ids → exhausted-Mag names when durable taste earns a home.
+//     Null = untouched Mag (nothing heard yet).  Mag_todo §8's durable cursor IS this now that the
+//      heard set itself is durable (Heard.g): the same derivation, over a set that survives a reload.
 Radio_mag_cursor(radio, mag):
     if (!radio || !mag) return null
-    let heard = radio.c.heard || {}
+    let heard = this.Radio_heard(radio)
     let last = null
     for (const rec of this.Ra_recs_deep(mag, [])) {
         if (heard[rec.sc.id]) last = rec
@@ -1394,7 +1392,7 @@ Radio_dial_pool_local(w, radio, retry):
     let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
     if (!shelf) { return null }
     if (retry) { return this.Ra_dial_next(w, shelf, {}) }
-    return this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
+    return this.Ra_dial_next(w, shelf, { skip_ids: this.Radio_heard(radio) })
 // Radio_pool_steward — the AMBIENT STEWARD OCCASION (SoundPooling_todo §3.1): at a track advance (a
 //  natural session seam) sit the Quartermaster down over MY OWN library and let it press into the
 //   OPFS pool.  DEFAULT-OFF behind `top.c.pool_steward` (the backpressure-knob precedent — flip it
@@ -1509,7 +1507,7 @@ async Radio_dial(radio):
     //     validate (a stale card must not survive), aim on the actual pick.  Below the joining
     //      hold on purpose: a mid-join tab holds everything, order or no order.  Books never have
     //       a Streams Mag (peek is prime-gated), so this rung is inert in a driven world.
-    let stheard = radio.c.heard || {}
+    let stheard = this.Radio_heard(radio)
     let stmag = w.o({ Mag: 'Streams' })[0]
     if (stmag) {
         for (const oc of stmag.o({ Card: 1 })) {
@@ -1533,7 +1531,7 @@ async Radio_dial(radio):
     //    a consumed card drops, the programme advances.
     this.Radio_lineup_fill(w, radio)
     let lu = this.Radio_lineup_ensure(w)
-    let heard = radio.c.heard || {}
+    let heard = this.Radio_heard(radio)
     // consume the lineup head — but SKIP any card already heard this sitting (#6): the user may have
     //  riffle-auditioned a track that was already queued, and the dial reaching its stale card would
     //   replay it, breaking "never repeat a track this sitting".  Drop-and-continue past heard heads.
@@ -1561,7 +1559,7 @@ async Radio_dial(radio):
     //       note and we return null (the pump shows it) — NEVER a silent own-replay that masked a
     //        dead share and had both tabs quietly playing their own records.
     if (radio.sc.own) {
-        let fresh = this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
+        let fresh = this.Ra_dial_next(w, shelf, { skip_ids: this.Radio_heard(radio) })
         if (fresh) return fresh
         this.Stoker_churn(stoker)
         let again = this.Ra_dial_next(w, shelf, {})
@@ -1625,7 +1623,7 @@ async Radio_dial(radio):
         if (radio.sc.note !== waitnote) { radio.sc.note = waitnote; radio.bump() }
         return null
     }
-    let mine = this.Ra_dial_next(w, shelf, { skip_ids: radio.c.heard || {} })
+    let mine = this.Ra_dial_next(w, shelf, { skip_ids: this.Radio_heard(radio) })
     if (!mine) {
         this.Stoker_churn(stoker)
         mine = this.Ra_dial_next(w, shelf, {})
@@ -2125,6 +2123,8 @@ Radio_lineup_fill(w, radio):
     let lined = {}
     for (const c2 of lu.o({ Card: 1 })) lined[c2.sc.id] = 1
     let pub = this.Radio_pub(w) || 'me'
+    // ONE walk of the heard Mag for the whole fill (it used to be a .c bag, free to probe inline).
+    let heard = this.Radio_heard(radio)
     let pools = []
     // SOURCE-EXCLUSIVE (the human 2026-07-28): the lineup draws from ONE side — the friends'
     //  collections by default, or your OWN only once you've flipped radio.sc.own.  It never
@@ -2134,7 +2134,7 @@ Radio_lineup_fill(w, radio):
         let mine = []
         for (const rec of this.Ra_recs(this.Ra_home_self(w, pub))) {
             if (lined[rec.sc.id]) continue
-            if (radio && radio.c.heard && radio.c.heard[rec.sc.id]) continue
+            if (heard[rec.sc.id]) continue
             mine.push(rec)
         }
         if (mine.length) pools.push({ key: 'mine', recs: mine })
@@ -2145,7 +2145,7 @@ Radio_lineup_fill(w, radio):
             let frecs = []
             for (const rec of this.Ra_recs(this.Ra_home_them(w, hp))) {
                 if (lined[rec.sc.id]) continue
-                if (radio && radio.c.heard && radio.c.heard[rec.sc.id]) continue
+                if (heard[rec.sc.id]) continue
                 // husk gate by PRESENCE, not by materialising the record (the Radio_deal idiom, below).
                 // WHY (2026-08-06, the human "downloader is still CPU burning ... goes away when Heist
                 //  finishes"): this ran Ra_chunk_map — which COPIES every held chunk into a fresh
@@ -2282,6 +2282,8 @@ Radio_playable(rec):
 //  early, and "aim" means *who we are listening with*, which is decided when the pick is actually
 //   consumed (the dial's Streams rung calls Radio_aim_at there), not when it is foreseen.
 Radio_dial_pool(w, radio, all, peek):
+    // `all` = the EXHAUSTION pass: ignore what has been heard entirely (2026-08-06).
+    let heard = all ? {} : this.Radio_heard(radio)
     let cands = []
     let aimed = []
     let aim = String(radio.sc.aim || '')
@@ -2290,7 +2292,7 @@ Radio_dial_pool(w, radio, all, peek):
         let pub = String(home.sc.pub)
         let shelf = this.Ra_home_them(w, pub)
         for (const rec of this.Ra_recs(shelf)) {
-            if (!all && radio.c.heard && radio.c.heard[rec.sc.id]) continue
+            if (heard[rec.sc.id]) continue
             // presence, not materialisation — the same per-landed-chunk burn as Radio_lineup_fill above.
             if (!this.Radio_playable(rec)) continue
             cands.push(rec)
@@ -2330,6 +2332,7 @@ Radio_aim_at(w, radio, rec):
 //     of fresh music and going around what you've already heard" is a state worth naming.
 //  A PURE READ: `o()[0]`-style throughout, no minting, nothing written.
 Radio_pool_census(w, radio):
+    let heard = this.Radio_heard(radio)
     let friends = 0
     let known = 0
     let playable = 0
@@ -2345,7 +2348,7 @@ Radio_pool_census(w, radio):
         for (const rec of recs) {
             if (!this.Radio_playable(rec)) continue
             playable = playable + 1
-            if (!(radio && radio.c.heard && radio.c.heard[rec.sc.id])) fresh = fresh + 1
+            if (!heard[rec.sc.id]) fresh = fresh + 1
         }
         let nm = this.Radio_friendly ? this.Radio_friendly(w, pub) : ''
         names.push(nm || pub.slice(0, 8))
@@ -2745,7 +2748,7 @@ async Stoker_look(st, era):
 // the count pass: stock = records standing; fresh = not yet heard this sitting.  One bump only
 //  when a number moved — the watching glance runs every 3s and must cost the glass nothing.
 Stoker_census(st, shelf, radio):
-    let heard = (radio && radio.c.heard) ? radio.c.heard : {}
+    let heard = this.Radio_heard(radio)
     let recs = this.Ra_recs(shelf)
     let fresh = 0
     for (const r of recs) {
@@ -2765,7 +2768,7 @@ Stoker_cull(st, shelf, radio):
     let recs = this.Ra_recs(shelf)
     let over = recs.length - 44
     if (over < 1) return
-    let heard = (radio && radio.c.heard) ? radio.c.heard : {}
+    let heard = this.Radio_heard(radio)
     let playing = radio ? radio.c.rec : null
     let worn = 0
     for (const r of recs) {
@@ -3772,61 +3775,40 @@ async Radio_mag_pop(w, rec):
 //       ADDITIVE (a new %Heist mainkey, no hot-path touch); the pull+land completes where the wire is live.
 //        Idempotent: a second press on the same seed no-ops (a keep already stands).  n.c.kept mirrors the
 //         seed for the face's ✓ (runtime .c, never snapped — the "did my click land" tell).
-// Radio_like — THE LIKE BUTTON (owner 2026-09-03: "I don't believe we have a LIKE button? it's all download
-//  or nothing").  A Like is a DURABLE INTENT on the ledger — %Like,of under the listener's %Jam with this dj —
-//   which the taste tally already reads (Ra_quarter_tally: likes ×3) and the 'liked' pool policy already draws
-//    on.  Nothing moves on the press; the shape it wants next (§0.1): if the liker has FSA the Heist happens on
-//     the spot into the library, else later, when a Cave of the crew looks for things to do with ITS disk.
-//  Idempotent per session (Jam_event dedups by kind+of).  n.c.liked mirrors it for the face's ♥.
-// …AND IT IS A TOGGLE (2026-09-04).  A heart that cannot be un-pressed is an odd button anywhere; it is
-//  an untenable one now that pressing it QUEUES A DOWNLOAD — an accidental press had no exit but the ✕ on
-//   a keep that might not have been minted yet.  Second press drops the %Like: the ask goes with it (it WAS
-//    the ask) and so does the taste fact, because you changed your mind about the track, not merely about
-//     the download.
-//  A keep already RUNNING is left running, deliberately: calling off a half-finished download is a bigger
-//   act than this button looks, and the Haul row's ✕ is the place that says so.  Nothing is lost — the
-//    track lands and stays.
+// Radio_like — THE HEART.  One control, and the only one this whole circuit ever asks a person to touch
+//  (owner 2026-09-03: "I don't believe we have a LIKE button? it's all download or nothing").  The press
+//   stamps `take` on the track's Card in my own `%Mag:heard` (Heard.g) — durable the instant it lands,
+//    nothing to wait for, nothing to lose on a reload — and MINTS NOTHING ELSE.  The heist is what the
+//     share beat makes of it: one live keep per holder, oldest take first (Heard_haul_beat).
+//  IT USED TO MINT THE %Heist RIGHT HERE, which made ten hearts ten heists racing three Piers; and before
+//   2026-09-04 the durable thing was a %Like under a %Jam ledger, which the owner called *"cursed … a big
+//    cancer"*.  Both are gone.  The queueing that used to be invisible (ten cells, all "waiting its turn")
+//     is now a ledger you can read, on the Haul, grouped by who is bringing it.
+//  A SECOND PRESS INSIDE ~10s TAKES IT BACK — a fat thumb, not a second vote.  Later than that the press
+//   re-affirms (it re-arms the gave-up clock and clears a failure verdict, so pressing again is the retry
+//    road); RETIRING a heart is the ✕ on the Haul row, which is the whole content of "you can't lose a
+//     heart".  A keep already RUNNING is left running: calling off a half-finished download is a bigger
+//      act than this button looks, and the Haul row's ✕ is the place that says so.
+//  `n.c.liked` stays as the INSTANT tell on the press itself (the durable probe is a walk; the mirror is
+//   already in hand) — the face reads the Mag, and falls back to the mirror for the same-tick answer.
 Radio_like(n):
     let w = n.c.w
     let rec = n.c.rec
     if (!w || !rec || !rec.sc.id) return false
     let me = this.Radio_pub(w) || 'me'
-    let shelf = this.Ra_home_self(w, me)
-    let jam = this.Jam_home(shelf, String(n.sc.by || me))
-    let had = jam.o({ Like: 1, of: rec.sc.id })[0]
-    if (had) { return this.Radio_unlike(n, jam, had) }
-    this.Jam_like(jam, rec)
+    let by = String(n.sc.by || me)
+    let got = this.Heard_take(w, me, rec, by)
+    if (!got) return false
     n.c.liked = n.c.liked || {}
-    n.c.liked[String(rec.sc.id)] = 1
-    // THE LIKE IS THE HEIST BUTTON NOW (owner 2026-09-03: "turn the heist button into the like button, and
-    //  present the Cell:Haul only as a minicell, but have it do the Heist in the background (or not if noFSA,
-    //   leaving it to your Cave or SP to live out)").  With a mounted share (Crate_nav — FSA) the same %Heist
-    //    the old ⇊ minted goes straight to 'pulling', dose off, no form and no glass hand-back, so the Haul
-    //     cell shows only as a folded row while the album lands.  Without a share the Like simply stands on
-    //      the ledger: a Cave of the crew with a disk, or the pool's 'liked' policy, is what lives it out.
-    // …AND THE PRESS MINTS NOTHING (2026-09-04, Acquisition_todo §2).  It used to mint the %Heist right
-    //  here, which made ten Likes ten heists racing three Piers.  The Like IS the ask now: it stands on the
-    //   ledger, and Heist_want_beat carries at most one keep per holder from it, oldest first.  So the press
-    //    is instant and durable at once — nothing to wait for, nothing to lose on a reload — and the queueing
-    //     that used to be invisible (ten cells, all "waiting its turn") is now the ledger you can read.
-    //  A press with a share still starts within a beat; without one the ask simply waits for a road (the
-    //   crew's disk, or the pool) — the same sentence as before, minus the lie that nothing was recorded.
+    if (got > 0) { n.c.liked[String(rec.sc.id)] = 1 } else { delete n.c.liked[String(rec.sc.id)] }
     let mine = !n.sc.by
-    if (!mine) { this.feebly_ponder() }
+    if (!mine && got > 0) { this.feebly_ponder() }
     n.bump()
-    console.log('♥ liked ' + String(rec.sc.title || rec.sc.id).slice(0, 32) + (mine ? '' : (this.Crate_nav && this.Crate_nav() ? ' — queued to haul from ' + String(n.sc.by).slice(0, 8) : ' — no share here; the crew or the pool lives it out')))
-    return true
-
-// Radio_unlike — take the heart back.  Drops the %Like and clears the face's runtime mirror so the glyph
-//  answers immediately; the ledger is the truth either way (Heist_want_liked reads it).  A %Grab is LEFT
-//   STANDING — it records that you have the track, which is still true and is not an opinion.
-Radio_unlike(n, jam, like):
-    let rec = n.c.rec
-    if (!jam || !like || !rec) { return false }
-    jam.drop(like)
-    if (n.c.liked) { delete n.c.liked[String(rec.sc.id)] }
-    n.bump()
-    console.log('♡ unliked ' + String(rec.sc.title || rec.sc.id).slice(0, 32))
+    if (got < 0) {
+        console.log('♡ took it back — ' + String(rec.sc.title || rec.sc.id).slice(0, 32))
+    } else {
+        console.log('♥ took ' + String(rec.sc.title || rec.sc.id).slice(0, 32) + (mine ? '' : (this.Crate_nav && this.Crate_nav() ? ' — queued to haul from ' + String(n.sc.by).slice(0, 8) : ' — no share here; the crew or the pool lives it out')))
+    }
     return true
 
 async Radio_keep(n):

@@ -1,3 +1,19 @@
+> **HISTORICITY NOTICE (2026-09-04).** This doc described the acquisition circuit built on the **%Jam
+> ledger** — `%Jam,with:<dj> > %Like,of:<id> / %Grab,of:<id>`, minted by `Ghost/M/Jam.g` and read by
+> `Heist_want_*`. The owner's verdict on that shape, hours after it landed, was *"cursed … a big cancer"*:
+> it hung a durable ledger off the friend MIRROR, which is the one shelf in the app that is explicitly
+> disposable, and it made the unit of acquisition a session rather than a track.
+>
+> **It is all deleted.** `Jam.g` is gone, `Heist_want_*` is gone, `MusuLikeHaul` is gone (its fixtures with
+> it). The living replacement is **`src/lib/O/spec/Radio_circuit_todo.md`** — one `%Mag:heard,pub:<me>` of
+> `%Card,id,pub` under my own identity, where the heist is a QUERY and not a store — built and gated by
+> **`MusuHeard`** on 2026-09-04, and `Ghost/M/Heard.g` is the code.
+>
+> What survived the move, and is worth reading below for its reasoning rather than its shapes: the
+> per-holder serialisation (one live keep per Pier, oldest ask first), "the collection answers the ask by
+> whatever road the track arrived", and byte progress off `%Body` never `%Preview`. Every particle name in
+> this file is dead.
+
 # Acquisition_todo — likes → heists → batch, and what the Haul is for
 
 The owner, 2026-09-04: *"likes -> heists, but how and where, has become complex."* It has. This doc is the

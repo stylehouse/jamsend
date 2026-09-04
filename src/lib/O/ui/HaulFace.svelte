@@ -95,10 +95,14 @@
         //    were organised by the machine's unit (a %Heist, a folder) rather than by the human's: WHO is
         //     bringing me WHAT.  `Heist_haul_piers` is that grouping, and it also surfaces the half that
         //      was invisible entirely — the ♥s still waiting their turn behind the one running.
+        //  Reads the heard Mag since 2026-09-04 (Heard_haul_piers): the ♥ is a `take` Card there now, not
+        //   a %Like on a %Jam ledger, and each waiting row carries its own WORD — waiting / gave up /
+        //    already had it / could not be verified / failed — decided in the ghost beside the state it
+        //     describes (the Heist_keep_gist doctrine), never spelled here.
         //  `keep` is the PARTICLE, carried on the row so a press acts on the object rather than on a name
         //   (all %Heists share a mainkey, so a string could not have addressed one of five).
         const me = A?.Radio_pub?.(W) ?? null
-        const piers = (A?.Heist_haul_piers?.(W, me) ?? []).map((row: any) => ({
+        const piers = (A?.Heard_haul_piers?.(W, me) ?? []).map((row: any) => ({
             dj: String(row.dj || ''),
             name: String(row.name || row.dj || 'them'),
             keeps: (row.keeps ?? []).map((k: any) => {
@@ -113,7 +117,7 @@
                     word: String(g.word || ''),
                     form: !!g.form,
                     paused: !!k.sc.paused,
-                    liked: !!k.sc.liked,
+                    liked: !!k.sc.take,
                     landed: +(g.landed || 0),
                     total: +(g.total || 0),
                     // the unity, if the record knew it — the count the form leads with, so the list and the
@@ -123,9 +127,11 @@
                     flying: !!(fl && fl.total > 0),
                 }
             }),
-            // a ♥ that has not been carried yet.  Not a control: the verb that removes it is the ✕ on the
-            //  keep it becomes, and un-liking belongs on the Radio where the ♥ was pressed.
-            waiting: (row.waiting ?? []).map((l: any) => ({ of: String(l.sc.of || ''), title: String(l.sc.title || l.sc.of || '') })),
+            // a ♥ that has not been carried yet.  It DOES carry a verb now (2026-09-04): a wish is the
+            //  one thing in this app a clock can never spend, so the only way one ever ends is a person
+            //   retiring it — and until this row grew a ✕ the only place to do that was a keep that might
+            //    never be minted.  §C: "you can't lose a heart — only you retire one".
+            waiting: (row.waiting ?? []).map((q: any) => ({ card: q.card, of: String(q.of || ''), title: String(q.title || q.of || ''), word: String(q.word || 'waiting') })),
         })).filter((r: any) => r.keeps.length || r.waiting.length)
         const live = piers.flatMap((p: any) => p.keeps)
         const waitingN = piers.reduce((s: number, p: any) => s + p.waiting.length, 0)
@@ -173,11 +179,20 @@
     //  coming".  Per-viewer, per-session — a preference this small is not worth a particle.
     let open_landed = $state(false)
     let arm = $state('')
-    $effect(() => { void tick; if (arm && !face.live.some((r: any) => r.key === arm)) arm = '' })
+    $effect(() => { void tick; if (arm && !arm.includes('|') && !face.live.some((r: any) => r.key === arm)) arm = '' })
     function cancel(row: any) {
         if (arm !== row.key) { arm = row.key; return }
         arm = ''
         A?.Heist_keep_cancel?.(W, row.keep)
+    }
+    // RETIRING A WISH that never became a keep.  Same two-press arm as the ✕ above (this is destructive in
+    //  the only sense this app has: nothing else, ever, deletes a heart).  Keyed by the holder + track so
+    //   two wishes cannot arm each other.
+    function retire(dj: string, q: any) {
+        const k = dj + '|' + q.of
+        if (arm !== k) { arm = k; return }
+        arm = ''
+        A?.Heard_untake?.(W, A?.Radio_pub?.(W), dj, q.of)
     }
 </script>
 
@@ -251,7 +266,13 @@
                         <div class="hf-row hf-wait">
                             <span class="hf-heart">♥</span>
                             <span class="hf-name" title={q.title}>{q.title}</span>
-                            <span class="hf-when">waiting</span>
+                            <span class="hf-when">{q.word}</span>
+                            <span class="hf-verbs">
+                                <button class="hf-b hf-x" class:armed={arm === p.dj + '|' + q.of}
+                                        onclick={() => retire(p.dj, q)}
+                                        title={arm === p.dj + '|' + q.of ? 'press again to let this one go' : 'let this one go'}
+                                >{arm === p.dj + '|' + q.of ? 'sure?' : '✕'}</button>
+                            </span>
                         </div>
                     {/each}
                 </div>

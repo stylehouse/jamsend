@@ -1,0 +1,49 @@
+Snap:H
+  H:MusuHeard,Run
+    A:MusuHeard
+      self,round=13	{"mung":["age"]}
+      w:MusuHeard,now=1788400300
+        self,round=13	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          marked,one_card_per_track,oblique,hearing_again_is_the_same_card,one_page_per_sitting,the_set_is_the_mag,never_crosses
+          throughed,an_empty_room_earns_nothing,present_is_a_play_through,it_accrues,never_bumps_the_account,a_skip_is_nothing
+          took,the_press_is_the_ask,the_listing_starts_at_the_act,the_press_mints_no_heist,pressing_again_takes_it_back,later_it_re_affirms,my_own_track_is_a_taste_fact
+          queried,grouped_by_holder,oldest_first,nobody_is_owed_my_own,a_row_per_holder
+          forgot,a_hearing_nobody_wanted_is_forgotten,a_heart_is_never_dropped_by_a_clock,this_sitting_is_untouched,gave_up_is_a_word,only_a_person_retires_a_heart,an_emptied_sitting_goes
+          carried,one_mint,oldest_wish_first,the_shape_the_button_made,a_busy_holder_waits,no_share_no_haul,a_wish_is_a_track,the_cell_cap_holds
+          cloned,the_listing_lands_on_the_card,the_way_back_rides_the_line,cloning_twice_writes_nothing,the_verdict_lands_on_the_card,the_wedged_keep_is_ended,an_answered_wish_still_stands_as_a_wish,the_queue_moves_on,a_re_press_clears_the_verdict
+          landeded,the_original_answers_the_ask,either_id_space_answers_it,newest_wish_first,the_pool_takes_the_newest,nothing_landed_is_nothing_pooled,a_plain_yes_declares_one_compartment,on_splits_the_budget,each_half_is_a_real_cap,off_gives_the_room_back
+        MusuThem,pub:friendo
+          stock,pub:friendo
+            Record,id:r1,title:Track One,artist:Friendo,total:10
+            Record,id:r2,title:Track Two,artist:Friendo,total:10
+            Record,id:r3,title:Track Three,artist:Friendo,total:10
+            Record,id:keep2,re:r2,title:Track Two,artist:Friendo,path:Friendo/Track Two.flac,total:51744301,body_hash:bh2
+        MusuSelf,pub:me
+          Mag:heard,pub:me,heard_ttl:30,take_ttl:90
+            Cloud,page:1,created_at:1788400000
+              Card,id:r1,pub:friendo,mire:2,title:Track One,artist:Friendo,take:1,at:1788400150
+              Card,id:r2,pub:friendo,take:1,at:1788400300,title:Track Two,artist:Friendo,path:Friendo/Track Two.flac,bytes:51744301,body_hash:bh2,keep:keep2
+              Card,id:r3,pub:friendo
+              Card,id:own1,pub:me,take:1,at:1788400150,title:Mine
+              Card,id:o1,pub:otherfriend,take:1,at:1788400200,title:Over There
+          shop,pub:me
+            Heist:Track Two,seed:r2,pub:friendo,state:done,take,at:1788400300,from_name:friendo,artist:Friendo,pick_edited
+              Pick,ref:r2
+            Heist:Over There,seed:o1,pub:otherfriend,state:primed,take,at:1788400300,from_name:otherfri
+            Heist:Track One,seed:r1,pub:friendo,state:primed,take,at:1788400300,from_name:friendo,artist:Friendo
+          stock,pub:me
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:own1,title:Mine
+                Record,id:keep2,title:Track Two
+                Record,id:r1,title:Track One
+        MusuThem,pub:otherfriend
+          stock,pub:otherfriend
+            Record,id:o1,title:Over There,total:10
+        w:poolrecent
+          Pools,budget_mb:400
+            Consent,at:1788400200
+            Pool,name:rolling,take:random,who:crew,cap:100,share:100

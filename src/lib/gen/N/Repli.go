@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '4247a87fe2feccd7~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '4548cda6dbde60cb~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -108,7 +108,12 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
 Repli_identity_keys(mainkey) {
     let T = {
         // ── holdings: what a peer HAS.  These were already right under the old heuristic. ──
-        Record: ['id'], Card: ['id'], ask: ['id'],
+        // %Card is TWO things wearing one mainkey by design (both are 1:1 references naming a track by
+        //  `id`, the referring-particle rule): the Lineup's dial card on the world floor, which never
+        //   crosses, and a heard Card in `%Mag:heard` (Heard.g), which never crosses either but DOES ride
+        //    the account export.  `pub` is part of its identity — one Card per (id, holder) — so keying on
+        //     `id` alone would merge two friends' Cards for the same track on a re-import.
+        Record: ['id'], Card: ['id', 'pub'], ask: ['id'],
         Preview: ['seq'], Original: ['seq'], Lossy: ['seq'],
         // %Blob is keyed by (id, GRADE) at its mint — `home.oai({Blob:1, id, grade:'ogg128'})`
         //  (Orig.g:261).  The old heuristic stopped at ['Blob','id'], so a SECOND export grade of the
@@ -145,7 +150,7 @@ Repli_identity_keys(mainkey) {
         Mag: [],
         Cloud: ['page', 'randomic'],
         // ── the referring particles: what a peer SAYS.  `of` is the many:1 pointer. ──
-        Spin: ['of'], Like: ['of'], Grab: ['of'], Jam: ['with'],
+        //  (%Spin/%Like/%Grab/%Jam were here until 2026-09-04 — the whole Jam ledger went with Jam.g.)
         Caperlet: ['of', 'pier'], Rummage: ['want', 'seed', 'pier'],
         Caper: ['at', 'wish', 'hid'], Renamed: ['key', 'from'],
         // %Reco is keyed by WHO recommended — `rec.oai({Reco:1, by})` (this file, Repli_reco_*).

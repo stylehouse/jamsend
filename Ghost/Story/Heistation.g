@@ -5039,9 +5039,11 @@ async MusuQuarter_drive(w, req):
     await this.Musu_float(w)
 
 // MusuQuarter_setup — the world the steward reads: a library holding o1 o2 o3, a pool already holding
-//  o1 (right — in the goal, stays quiet) and z9 (stale — nothing wants it), and one Jam session whose
-//   events score o1 at 4 (like+spin) and f1 at 4 (like+spin — a REPUTATION track: no library card)
-//    and o2 at 3 (grab+spin).  o3 is unplayed — beat 5's shift is its entrance.
+//  o1 (right — in the goal, stays quiet) and z9 (stale — nothing wants it), and a HEARD MAG on the shelf
+//   whose Cards score o1 at 4 (took + one play-through) and f1 at 4 (same — a REPUTATION track: no library
+//    card) and o2 at 3 (carried + one play-through).  o3 is unheard — beat 5's shift is its entrance.
+//  (It was a %Jam ledger of %Spin/%Like/%Grab until 2026-09-04; the weights are the same three signals
+//   read off the Card — take 3 · keep 2 · mire 1 — so every goal in this Book is unmoved.)
 MusuQuarter_setup(w):
     this.MusuQuarter_note(w, { reached: 'step_2' })
     let lib = w.i({ Library: 1, name: 'quarterlib' })
@@ -5058,14 +5060,9 @@ MusuQuarter_setup(w):
         let r = pool.i({ Record: 1, id: id })
         r.c.up = pool
     }
-    let jam = this.Jam_home(lib, 'pal')
-    let rec = (id, title) => ({ sc: { id: id, title: title } })
-    this.Jam_like(jam, rec('o1', 'One'))
-    this.Jam_spin(jam, rec('o1', 'One'))
-    this.Jam_event(jam, 'Grab', rec('o2', 'Two'))
-    this.Jam_spin(jam, rec('o2', 'Two'))
-    this.Jam_like(jam, rec('f1', 'Faraway'))
-    this.Jam_spin(jam, rec('f1', 'Faraway'))
+    this.Heard_seed(lib, { id: 'o1', pub: 'pal', title: 'One', take: 1, at: 1788400001, mire: 1 })
+    this.Heard_seed(lib, { id: 'o2', pub: 'pal', title: 'Two', keep: 'k2', at: 1788400002, mire: 1 })
+    this.Heard_seed(lib, { id: 'f1', pub: 'pal', title: 'Faraway', take: 1, at: 1788400003, mire: 1 })
     w.c.set_up = 1
 
 // MusuQuarter_sit — the first sit-down.  Expected: goal f1 o1 o2 (score desc then id asc — f1 and o1
@@ -5100,16 +5097,13 @@ MusuQuarter_quiesce(w):
     if (rows.length === 3 && kept.length === 3) row.stable = 1
     this.MusuQuarter_note(w, row)
 
-// MusuQuarter_shift — the taste moves: o3 gets a like and a spin (score 4) and displaces o2 (3) from
+// MusuQuarter_shift — the taste moves: o3 is taken and played through (score 4) and displaces o2 (3) from
 //  the cap-3 goal.  The re-sit must mint press o3 and DROP the stale press o2 while pull f1 and
 //   evict z9 stand on — the want-list follows the stash, never merely accretes.
 MusuQuarter_shift(w):
     this.MusuQuarter_note(w, { reached: 'step_5' })
     if (!w.c.set_up) return
-    let jam = this.Jam_home(w.c.lib, 'pal')
-    let rec = (id, title) => ({ sc: { id: id, title: title } })
-    this.Jam_like(jam, rec('o3', 'Three'))
-    this.Jam_spin(jam, rec('o3', 'Three'))
+    this.Heard_seed(w.c.lib, { id: 'o3', pub: 'pal', title: 'Three', take: 1, at: 1788400004, mire: 1 })
     let r = this.Ra_quarter(w, w.c.lib, w.c.pool, w.c.lib, 3)
     let out = w.o({ Provisions: 1 })[0]
     let row = { shifted: 1, goal: r.goal.map((g) => g.id).join(' '), wants: '' + r.wants }
@@ -5312,12 +5306,11 @@ MusuSteward_setup(w):
     nav.write_file = async (d, f, s) => { }
     nav.dir = async (p) => null
     w.c.pnav = nav
-    // the Jam taste ledger on the library shelf: o1 o2 f1 all liked+spun (score 4 each) → goal f1 o1 o2.
-    let jam = this.Jam_home(lib, 'pal')
-    let rec = (id, title) => ({ sc: { id: id, title: title } })
+    // the heard Mag on the library shelf: o1 o2 f1 all taken + played through (score 4 each) → goal f1 o1 o2.
+    let tn = 1788400000
     for (const t of [['o1', 'One'], ['o2', 'Two'], ['f1', 'Faraway']]) {
-        this.Jam_like(jam, rec(t[0], t[1]))
-        this.Jam_spin(jam, rec(t[0], t[1]))
+        tn = tn + 1
+        this.Heard_seed(lib, { id: t[0], pub: 'pal', title: t[1], take: 1, at: tn, mire: 1 })
     }
     w.c.set_up = 1
 
@@ -6300,40 +6293,45 @@ MusuPoolBytes_witness(w):
     if (o && +o.sc.card_and_file_gone === 1 && +o.sc.nothing_left_under_pool === 1 && +o.sc.back_to_zero === 1)
         this.story_swear(w, 'off means the space comes back — the yes is taken — the budget is zero — and every pooled card goes with its file')
 
-// ══ MusuLikeHaul — BATCH ACQUISITION: ONE STANDING ASK PER HOLDER (owner 2026-09-04: "likes -> heists,
-//  but how and where, has become complex") ══════════════════════════════════════════════════════════════
-//  The claim under test: a ♥ is a DURABLE ASK on the Jam ledger, and the heist is what the beat makes of
-//   it — one live keep per holder, oldest first, the rest waiting where a human can read them.  So there
-//    is no new store: %Jam,with:<dj> is the standing container, %Like,of:<id> is the want, %Grab,of:<id>
-//     is the got-mark, and the settle asks the COLLECTION whether the ask was answered rather than
-//      trusting any one road to report it.
-//  Beat 5 is the whole point of the road-blind settle: a track that lands by some OTHER means retires its
-//   want exactly as a heist would.  Beat 6 is the ✕, which has to call off the ASK or the beat re-mints it.
-//  CONVENTION (Musu*): the world MUST be named MusuLikeHaul.
-MusuLikeHaul(A,w):
+// ══ MusuHeard — THE HEARD MAG: what I heard of whom, what I took, and the heist as a QUERY over it ══
+//  (Radio_circuit_todo.md; it replaces MusuLikeHaul, which gated the %Jam ledger the owner called
+//   *"cursed … a big cancer"*.)
+//  The claim under test, in one sentence: **a durable structure REFERS into the disposable edge and holds
+//   nothing of it, until you act** (§0.5).  A track the radio plays leaves ONE oblique Card — id, who,
+//    nothing else — on my own `%Mag:heard,pub:<me>`; sitting through it with someone in the room adds
+//     `mire`; the heart adds `take` and, at that moment and not before, the listing.  There is no
+//      operation particle anywhere: "what am I owed" is a query (Heard_takes), and the `%Heist` keep is
+//       transient scaffolding the beat mints from it and reads back.
+//  The beats each pin ONE joint of that: the mark, the play-through, the heart (and the fat-thumb undo),
+//   the query, the forgetting, the keep, what the wire writes back, and done-ness.
+//  CONVENTION (Musu*): the world MUST be named MusuHeard.
+MusuHeard(A,w):
     w oai %req:wrangle,eternal
-        await &MusuLikeHaul_drive,w,req
+        await &MusuHeard_drive,w,req
         req%ok = 1
 
-MusuLikeHaul_T(w):
+MusuHeard_T(w):
     let t = w.o({ testing: 1 })[0]
     if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
     return t
 
-MusuLikeHaul_note(w, sc):
-    let t = this.MusuLikeHaul_T(w)
+MusuHeard_note(w, sc):
+    let t = this.MusuHeard_T(w)
     let n = t.i(sc)
     n.c.up = t
     return n
 
-MusuLikeHaul_me(w):
+MusuHeard_me(w):
     return this.Radio_pub(w) || 'me'
 
-MusuLikeHaul_keeps(w):
-    return this.Ra_home_shop(w, this.MusuLikeHaul_me(w)).o({ Heist: 1 })
+MusuHeard_mag(w):
+    return this.Heard_mag_find(w, this.MusuHeard_me(w))
 
-// the ♥ press, as the face makes it: a %Spotlight-ish node carrying the world, the record and the dj.
-MusuLikeHaul_press(w, rec, by):
+MusuHeard_keeps(w):
+    return this.Ra_home_shop(w, this.MusuHeard_me(w)).o({ Heist: 1 })
+
+// the ♥ press, as the face makes it: a %Spotlight-ish node carrying the world, the record and the holder.
+MusuHeard_press(w, rec, by):
     let n = w.i({ Spotlight: 1, by: by, of: String(rec.sc.id) })
     n.c.up = w
     n.c.w = w
@@ -6342,256 +6340,315 @@ MusuLikeHaul_press(w, rec, by):
     w.drop(n)
     return got
 
-MusuLikeHaul_jam(w):
-    let mine = this.Ra_home_self(w, this.MusuLikeHaul_me(w))
-    return mine.o({ Jam: 1, with: 'friendo' })[0]
+// PRESENCE, BORROWED FOR ONE CALL.  `Heard_through` is humdinger-gated because a kitchen phone playing to
+//  an empty room is not attention — so a Book that wants to test the present case has to BE present, for
+//   exactly that call and no longer (the puppet idiom).  Returns what Heard_through returned.
+MusuHeard_present(w, rec, here):
+    let M = this.top_House()
+    let was = M.c.humdinger
+    M.c.humdinger = here ? 1 : 0
+    let got = 0
+    try { got = this.Heard_through(w, this.MusuHeard_me(w), rec) } catch (er) { got = 0 }
+    M.c.humdinger = was
+    return got
 
-async MusuLikeHaul_drive(w, req):
+async MusuHeard_drive(w, req):
     let run = (this.c.run)
     if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 9 }
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
-        if (n === 2) { await this.MusuLikeHaul_ask(w) }
-        if (n === 3) { await this.MusuLikeHaul_carry(w) }
-        if (n === 4) { await this.MusuLikeHaul_solo(w) }
-        if (n === 5) { await this.MusuLikeHaul_settle(w) }
-        if (n === 6) { await this.MusuLikeHaul_off(w) }
-        if (n === 7) { await this.MusuLikeHaul_flight(w) }
-        if (n === 8) { await this.MusuLikeHaul_piers(w) }
-        if (n === 9) { await this.MusuLikeHaul_recent(w) }
+        if (n === 2) { await this.MusuHeard_mark(w) }
+        if (n === 3) { await this.MusuHeard_through(w) }
+        if (n === 4) { await this.MusuHeard_take(w) }
+        if (n === 5) { await this.MusuHeard_query(w) }
+        if (n === 6) { await this.MusuHeard_forget(w) }
+        if (n === 7) { await this.MusuHeard_carry(w) }
+        if (n === 8) { await this.MusuHeard_clone(w) }
+        if (n === 9) { await this.MusuHeard_landed(w) }
     }
-    this.MusuLikeHaul_witness(w)
+    this.MusuHeard_witness(w)
     await this.Musu_float(w)
 
-// beat 2 — THE PRESS IS THE ASK.  Three of a friend's tracks on the radio, two of them ♥'d: two %Likes
-//  stand under the one %Jam with that friend, and NOT ONE %Heist is minted by the press itself.  My own
-//   track ♥'s to a Like too (a taste fact) but names no holder, so nothing can ever be asked of it.
-async MusuLikeHaul_ask(w):
-    this.MusuLikeHaul_note(w, { reached: 'step_2' })
+// beat 2 — THE MARK IS OBLIQUE, AND IT IS THE DEDUP SET.  Three of a friend's tracks play.  Each leaves
+//  ONE Card wearing `id` and `pub` and NOTHING else — no title, no path, no total — because a shuffle
+//   Card often has no path at all and because a durable clone of every track a person ever heard is the
+//    hoard Mag_todo §6b forbids.  The same Cards ARE the set the dial skips by, which is the whole
+//     unification: it used to be `radio.c.heard`, a 100-cap runtime bag that died on every reload.
+async MusuHeard_mark(w):
+    this.MusuHeard_note(w, { reached: 'step_2' })
     w.sc.now = 1788400000
     w.c.ra_pub = 'me'
     let them = this.Ra_home_them(w, 'friendo')
-    for (const t of [['r1', 'Track One'], ['r2', 'Track Two'], ['r3', 'Track Three']]) { let r = them.i({ Record: 1, id: t[0], title: t[1], artist: 'Friendo' }); r.c.up = them }
+    for (const t of [['r1', 'Track One'], ['r2', 'Track Two'], ['r3', 'Track Three']]) {
+        let r = them.i({ Record: 1, id: t[0], title: t[1], artist: 'Friendo', total: '10' })
+        r.c.up = them
+    }
     w.c.them = them
-    let row = { asked: 1 }
+    let row = { marked: 1 }
+    for (const id of ['r1', 'r2', 'r3']) { this.Heard_mark(w, 'me', this.Ra_rec_find(them, { Record: 1, id: id })) }
+    let mag = this.MusuHeard_mag(w)
+    let cards = mag ? this.Heard_cards(mag) : []
+    if (cards.length === 3) { row.one_card_per_track = 1 }
+    let c1 = this.Heard_find(mag, 'r1', 'friendo')
+    if (c1 && Object.keys(c1.sc).join(',') === 'Card,id,pub') { row.oblique = 1 }
+    // hearing it again is the SAME Card — nothing ever duplicates an id, so a heist holding a Card can
+    //  never be handed a corpse
+    this.Heard_mark(w, 'me', this.Ra_rec_find(them, { Record: 1, id: 'r1' }))
+    if (this.Heard_cards(mag).length === 3) { row.hearing_again_is_the_same_card = 1 }
+    // one sitting, one page — and the page carries the clock the forgetting reads
+    let pages = mag ? mag.o({ Cloud: 1 }) : []
+    if (pages.length === 1 && String(pages[0].sc.created_at) === '1788400000') { row.one_page_per_sitting = 1 }
+    // …and the dedup set the dial skips by is exactly those ids
+    let set = this.Heard_set(w, 'me')
+    if (set.r1 && set.r2 && set.r3 && Object.keys(set).length === 3) { row.the_set_is_the_mag = 1 }
+    // the Mag hangs where nothing crosses: under the home, NOT under the stock shelf Repli offers
+    let home = w.o({ MusuSelf: 1, pub: 'me' })[0]
+    let shelf = home ? home.o({ stock: 1, pub: 'me' })[0] : null
+    if (mag && mag.c.up === home && !(shelf && shelf.o({ Mag: 'heard' })[0])) { row.never_crosses = 1 }
+    this.MusuHeard_note(w, row)
+
+// beat 3 — A PLAY-THROUGH ONLY COUNTS WITH A PERSON IN THE ROOM.  `mire` is the ambient signal, and the
+//  `humdinger` predicate is already the app's word for "a human is here" — so a phone playing to an empty
+//   kitchen earns nothing, which is the difference between attention and exposure.  And it must NOT bump:
+//    a bump on %Identity rewrites the whole account file inside the beliefs mutex (§5), and a track
+//     finishing is not worth a disk write.
+async MusuHeard_through(w):
+    let row = { throughed: 1 }
+    let them = w.c.them
+    let r1 = this.Ra_rec_find(them, { Record: 1, id: 'r1' })
+    let mag = this.MusuHeard_mag(w)
+    let card = this.Heard_find(mag, 'r1', 'friendo')
+    let v0 = card.version
+    if (this.MusuHeard_present(w, r1, 0) === 0 && !card.sc.mire) { row.an_empty_room_earns_nothing = 1 }
+    if (this.MusuHeard_present(w, r1, 1) === 1 && String(card.sc.mire) === '1') { row.present_is_a_play_through = 1 }
+    this.MusuHeard_present(w, r1, 1)
+    if (String(card.sc.mire) === '2') { row.it_accrues = 1 }
+    if (card.version === v0) { row.never_bumps_the_account = 1 }
+    // a skip is worth exactly nothing — people skip songs they love, so there is no verb for it at all
+    if (!this.Heard_find(mag, 'r2', 'friendo').sc.mire) { row.a_skip_is_nothing = 1 }
+    this.MusuHeard_note(w, row)
+
+// beat 4 — THE HEART IS A DECISION, NOT A VOTE.  ♥ stamps `take` directly — not "+5 toward a threshold",
+//  because a score that reaches a threshold is magic nobody can see.  A second press inside ten seconds
+//   takes it back (a fat thumb, not a second vote); a press after that RE-AFFIRMS, re-arming the gave-up
+//    clock and clearing a failure verdict, which is the retry road.  And the listing arrives WITH the act:
+//     before it you refer to something foreign, after it you describe something about to be yours.
+async MusuHeard_take(w):
+    let row = { took: 1 }
+    let them = w.c.them
+    let mag = this.MusuHeard_mag(w)
     let r1 = this.Ra_rec_find(them, { Record: 1, id: 'r1' })
     let r2 = this.Ra_rec_find(them, { Record: 1, id: 'r2' })
-    this.MusuLikeHaul_press(w, r1, 'friendo')
-    this.MusuLikeHaul_press(w, r2, 'friendo')
-    let jam = this.MusuLikeHaul_jam(w)
-    if (jam && jam.o({ Like: 1 }).length === 2) { row.two_likes_one_jam = 1 }
-    if (!this.MusuLikeHaul_keeps(w).length) { row.press_mints_no_heist = 1 }
-    // pressing the same track again TAKES IT BACK — a heart that cannot be un-pressed is untenable once
-    //  pressing it queues a download, and an accidental press had no exit but a ✕ on a keep that may not
-    //   have been minted yet.  A third press asks again, from scratch.
-    this.MusuLikeHaul_press(w, r1, 'friendo')
-    if (jam && !jam.o({ Like: 1, of: 'r1' }).length && jam.o({ Like: 1 }).length === 1) { row.pressing_again_takes_it_back = 1 }
-    this.MusuLikeHaul_press(w, r1, 'friendo')
-    if (jam && jam.o({ Like: 1, of: 'r1' }).length === 1) { row.and_again_asks_afresh = 1 }
-    // my own track: a Like with no holder — a taste fact that can never become an ask
+    this.MusuHeard_press(w, r1, 'friendo')
+    this.MusuHeard_press(w, r2, 'friendo')
+    let c1 = this.Heard_find(mag, 'r1', 'friendo')
+    if (c1 && String(c1.sc.take) === '1' && String(c1.sc.at) === '1788400000') { row.the_press_is_the_ask = 1 }
+    if (c1 && String(c1.sc.title) === 'Track One' && !c1.sc.path) { row.the_listing_starts_at_the_act = 1 }
+    if (!this.MusuHeard_keeps(w).length) { row.the_press_mints_no_heist = 1 }
+    // the fat thumb: a second press inside the window takes it back, and the Card SURVIVES as a hearing
+    this.MusuHeard_press(w, r1, 'friendo')
+    if (c1 && !c1.sc.take && !c1.sc.at && String(c1.sc.mire) === '2') { row.pressing_again_takes_it_back = 1 }
+    // …and later than that it re-affirms rather than undoing.  TWO presses, a minute apart: the first
+    //  re-takes it, the second lands OUTSIDE the window and re-arms the clock instead of spending it.
+    //   (Pressing twice in the same second would undo it again, which is the rule, not a bug — and is
+    //    exactly the mistake the first draft of this beat made.)
+    w.sc.now = 1788400100
+    this.MusuHeard_press(w, r1, 'friendo')
+    w.sc.now = 1788400150
+    this.MusuHeard_press(w, r1, 'friendo')
+    if (c1 && String(c1.sc.take) === '1' && String(c1.sc.at) === '1788400150') { row.later_it_re_affirms = 1 }
+    // a track of my OWN is a taste fact nobody is owed — it names no holder to ask
     let mine = this.Ra_home_self(w, 'me')
-    let own = mine.i({ Record: 1, id: 'own1', title: 'Mine' })
-    own.c.up = mine
-    this.MusuLikeHaul_press(w, own, '')
-    let jams = this.Heist_want_jams(w, 'me')
-    if (jams.length === 1 && String(jams[0].dj) === 'friendo' && jams[0].open.length === 2) { row.only_the_friend_is_owed = 1 }
-    this.MusuLikeHaul_note(w, row)
+    let own = this.Ra_rec_home(mine, 'own1')
+    own.sc.title = 'Mine'
+    own.bump()
+    this.MusuHeard_press(w, own, '')
+    if (this.Heard_find(mag, 'own1', 'me')) { row.my_own_track_is_a_taste_fact = 1 }
+    this.MusuHeard_note(w, row)
 
-// beat 3 — ONE LIVE KEEP PER HOLDER.  The beat carries the OLDEST open ask into a %Heist wearing liked:1,
-//  and while that one stands it will not mint a second for the same friend however many are queued.
-async MusuLikeHaul_carry(w):
+// beat 5 — THE HEIST IS A QUERY, NOT A STORE.  "What am I owed, and by whom" is: `take` Cards whose track
+//  is not on my shelf, oldest first, grouped by holder.  %Caper, %Pick, %Jam/%Like/%Grab, %Provisions>%Want
+//   and keep.c.blagged all dissolve into this one walk.  Nothing here mints anything.
+async MusuHeard_query(w):
+    let row = { queried: 1 }
+    let mine = this.Heard_shelf(w, 'me')
+    let rows = this.Heard_takes(w, 'me', mine)
+    if (rows.length === 1 && rows[0].pub === 'friendo' && rows[0].cards.length === 2) { row.grouped_by_holder = 1 }
+    if (rows[0] && rows[0].cards.length === 2 && String(rows[0].cards[0].sc.id) === 'r2' && String(rows[0].cards[1].sc.id) === 'r1') { row.oldest_first = 1 }
+    if (!rows.some((r) => r.pub === 'me')) { row.nobody_is_owed_my_own = 1 }
+    // the query must never assume the shape it is asserting: index into cards only once the count is known
+    // a second holder with one wish is its own group, and the groups follow the oldest wish in each
+    let other = this.Ra_home_them(w, 'otherfriend')
+    let o1 = other.i({ Record: 1, id: 'o1', title: 'Over There', total: '10' })
+    o1.c.up = other
+    w.sc.now = 1788400200
+    this.MusuHeard_press(w, o1, 'otherfriend')
+    let rows2 = this.Heard_takes(w, 'me', mine)
+    if (rows2.length === 2 && rows2[0].pub === 'friendo' && rows2[1].pub === 'otherfriend') { row.a_row_per_holder = 1 }
+    this.MusuHeard_note(w, row)
+
+// beat 6 — HOW IT FORGETS (§3).  A hearing nobody wanted goes thirty days after the sitting it happened
+//  in; a HEART is never dropped by a clock, ever.  Ninety days with no holder answering does not delete
+//   it either — it changes what it SAYS, to "gave up", and only a person's ✕ ends it.  That is "a take
+//    with no exit is immortality" and "you can't lose a heart" reconciled: the clock can change what a
+//     heart says, never whether it exists.
+async MusuHeard_forget(w):
+    let row = { forgot: 1 }
+    let mag = this.MusuHeard_mag(w)
+    // an OLD sitting, with one bare hearing and one heart in it
+    let old = mag.i({ Cloud: 1, page: '99', created_at: '1780000000' })
+    old.c.up = mag
+    for (const e of [['x1', ''], ['x2', '1']]) {
+        let c = old.i(e[1] ? { Card: 1, id: e[0], pub: 'friendo', take: 1, at: '1780000000' } : { Card: 1, id: e[0], pub: 'friendo' })
+        c.c.up = old
+    }
+    let now = 1788400300
+    let gone = this.Heard_gc(w, 'me', now)
+    if (gone === 1 && !this.Heard_find(mag, 'x1', 'friendo')) { row.a_hearing_nobody_wanted_is_forgotten = 1 }
+    if (this.Heard_find(mag, 'x2', 'friendo')) { row.a_heart_is_never_dropped_by_a_clock = 1 }
+    if (this.Heard_find(mag, 'r3', 'friendo')) { row.this_sitting_is_untouched = 1 }
+    // ninety days with no answer is a WORD, not a deletion
+    let x2 = this.Heard_find(mag, 'x2', 'friendo')
+    if (this.Heard_gave_up(mag, x2, now) === 1 && this.Heard_word(mag, x2, now) === 'gave up') { row.gave_up_is_a_word = 1 }
+    // …and the only exit is a person's ✕
+    if (this.Heard_untake(w, 'me', 'friendo', 'x2') === 1 && !x2.sc.take && this.Heard_find(mag, 'x2', 'friendo')) { row.only_a_person_retires_a_heart = 1 }
+    // an emptied page goes with its last Card; the OPEN page never goes
+    this.Heard_gc(w, 'me', now)
+    if (!mag.o({ Cloud: 1, page: '99' })[0] && mag.o({ Cloud: 1 }).length === 1) { row.an_emptied_sitting_goes = 1 }
+    this.MusuHeard_note(w, row)
+
+// beat 7 — ONE LIVE KEEP PER HOLDER, OLDEST WISH FIRST.  The beat carries the oldest outstanding take into
+//  a %Heist wearing `take:1`, and while that one stands it will not mint a second for the same holder
+//   however many are queued.  The keep is SCAFFOLDING: the Card is the ledger, the keep only carries bytes.
+async MusuHeard_carry(w):
     let row = { carried: 1 }
+    w.sc.now = 1788400300
     let shop = this.Ra_home_shop(w, 'me')
-    let got = await this.Heist_want_beat(w, w, null, 'me', {}, shop)
-    let keeps = this.MusuLikeHaul_keeps(w)
+    let got = await this.Heard_haul_beat(w, w, 'me', {}, shop)
+    let keeps = this.MusuHeard_keeps(w)
     if (got === 1 && keeps.length === 1) { row.one_mint = 1 }
     let k = keeps[0]
-    if (k && String(k.sc.seed) === 'r1' && String(k.sc.pub) === 'friendo' && +k.sc.liked === 1) { row.oldest_ask_first = 1 }
-    if (k && String(k.sc.state || '') === 'primed' && String(k.sc.from_name || '') === 'friendo' && String(k.sc.at || '') === '1788400000') { row.same_shape_as_the_button = 1 }
-    // the holder is busy now: the second ask waits where it is, and it is still legible as an ask
-    let again = await this.Heist_want_beat(w, w, null, 'me', {}, shop)
-    let jams = this.Heist_want_jams(w, 'me')
-    if (again === 0 && this.MusuLikeHaul_keeps(w).length === 1 && jams.length === 1 && jams[0].open.length === 2) { row.busy_holder_waits = 1 }
-    // and no nav is no haul at all — the ask stands, nothing is minted
-    let bare = await this.Heist_want_beat(w, w, null, 'me', null, shop)
+    if (k && String(k.sc.seed) === 'r2' && String(k.sc.pub) === 'friendo' && +k.sc.take === 1) { row.oldest_wish_first = 1 }
+    if (k && String(k.sc.state || '') === 'primed' && String(k.sc.at || '') === '1788400300') { row.the_shape_the_button_made = 1 }
+    // the holder is BUSY now, and that is per-HOLDER, not global: a second pass mints nothing more for
+    //  friendo however many wishes are queued behind the one running — and it serves the OTHER holder in
+    //   the same pass, which is the per-Pier serialisation the whole shape exists for.
+    let again = await this.Heard_haul_beat(w, w, 'me', {}, shop)
+    let rows = this.Heard_takes(w, 'me', this.Heard_shelf(w, 'me'))
+    if (again === 1 && shop.o({ Heist: 1, pub: 'friendo' }).length === 1 && shop.o({ Heist: 1, pub: 'otherfriend' }).length === 1 && rows[0] && rows[0].cards.length === 2) { row.a_busy_holder_waits = 1 }
+    // no share is no haul at all — the wish stands, nothing is minted
+    let bare = await this.Heard_haul_beat(w, w, 'me', null, shop)
     if (bare === 0) { row.no_share_no_haul = 1 }
+    // a ♥ keep has no form and no human: it prunes the described folder to the one track and starts itself
+    for (const ref of ['r1', 'r2', 'r3']) { let pk = k.i({ Pick: 1, ref: ref }); pk.c.up = k }
+    let went = this.Heist_keep_take_go(k, null, 'r2')
+    if (went === 1 && k.o({ Pick: 1 }).length === 1 && String(k.o({ Pick: 1 })[0].sc.ref) === 'r2' && String(k.sc.state) === 'pulling') { row.a_wish_is_a_track = 1 }
+    // the CELL cap, not the transfer cap: three standing keeps is as many as the heart may open
+    let filler = shop.i({ Heist: 'Filler', seed: 'y1', pub: 'someone', state: 'primed' })
+    filler.c.up = shop
+    let capped = await this.Heard_haul_beat(w, w, 'me', {}, shop)
+    if (capped === 0 && this.MusuHeard_keeps(w).length === this.Heard_keeps_cap()) { row.the_cell_cap_holds = 1 }
+    await shop.rm({ Heist: 1, seed: 'y1' })
     w.c.keep = k
-    this.MusuLikeHaul_note(w, row)
+    this.MusuHeard_note(w, row)
 
-// beat 4 — A LIKE IS A TRACK.  The describe brings the whole folder back as %Picks; a ♥ keep prunes to
-//  the one it was seeded on and starts itself.  A keep nobody liked is left exactly as it was.
-async MusuLikeHaul_solo(w):
-    let row = { soloed: 1 }
+// beat 8 — WHAT THE WIRE ANSWERS, WRITTEN BACK ON THE CARD.  Two things only the holder can supply.
+//  THE LISTING: the describe answers with the ORIGINAL's own head (%Record,re:<streamed id> — the two
+//   id-spaces, §4), carrying the real total, path and body_hash, and the Card clones it and learns
+//    `keep:<their keep-id>`.  After that the Card is self-describing: pub is the Pier, id is the content
+//     hash, keep is the original on their side.
+//  THE VERDICT: held · unvouched · landfail all remove the husk from the mirror, so the keep is left
+//   pulling a record that no longer exists and that holder's one live slot is WEDGED FOREVER.  Copying the
+//    verdict onto the Card and ending the keep is what lets the queue move on — and a re-press of ♥ clears
+//     the verdict and asks again.
+async MusuHeard_clone(w):
+    let row = { cloned: 1 }
+    let shop = this.Ra_home_shop(w, 'me')
+    let mag = this.MusuHeard_mag(w)
+    let them = w.c.them
+    let card = this.Heard_find(mag, 'r2', 'friendo')
+    // the describe answers: the ORIGINAL's head lands in the mirror, keyed by its own id, re: the stream
+    let head = them.i({ Record: 1, id: 'keep2', re: 'r2', title: 'Track Two', artist: 'Friendo', path: 'Friendo/Track Two.flac', total: '51744301', body_hash: 'bh2' })
+    head.c.up = them
+    this.Heard_clone_beat(w, w, 'me', shop)
+    if (String(card.sc.keep) === 'keep2' && String(card.sc.bytes) === '51744301' && String(card.sc.body_hash) === 'bh2') { row.the_listing_lands_on_the_card = 1 }
+    if (String(card.sc.path) === 'Friendo/Track Two.flac' && String(card.sc.pub) === 'friendo') { row.the_way_back_rides_the_line = 1 }
+    // a re-run writes nothing: the clone is idempotent, so a beat every 600ms costs one walk
+    let v = card.version
+    this.Heard_clone_beat(w, w, 'me', shop)
+    if (card.version === v) { row.cloning_twice_writes_nothing = 1 }
+    // now the WIRE answers with a refusal instead: the job stamps a verdict and drops the husk
     let keep = w.c.keep
-    if (!keep) { this.MusuLikeHaul_note(w, row); return }
-    // the seed's own husk has not landed yet — the go must WAIT rather than start on an empty pick set
-    if (this.Heist_keep_like_go(keep, null, 'r1') === 0 && String(keep.sc.state) === 'primed') { row.waits_for_the_describe = 1 }
-    for (const ref of ['r1', 'r2', 'r3']) { let p = keep.i({ Pick: 1, ref: ref }); p.c.up = keep }
-    let went = this.Heist_keep_like_go(keep, null, 'r1')
-    let picks = keep.o({ Pick: 1 })
-    if (went === 1 && picks.length === 1 && String(picks[0].sc.ref) === 'r1') { row.one_track_not_the_album = 1 }
-    if (String(keep.sc.state) === 'pulling' && +keep.sc.pick_edited === 1) { row.starts_itself = 1 }
-    if (!keep.sc.lofi) { row.takes_the_track_as_it_is = 1 }
-    // a keep the human set up is NOT touched by the like path
-    let shop = this.Ra_home_shop(w, 'me')
-    let plain = shop.i({ Heist: 'By Hand', seed: 'r3', pub: 'friendo', state: 'primed' })
-    plain.c.up = shop
-    for (const ref of ['r2', 'r3']) { let p = plain.i({ Pick: 1, ref: ref }); p.c.up = plain }
-    if (this.Heist_keep_like_go(plain, null, 'r3') === 0 && plain.o({ Pick: 1 }).length === 2 && String(plain.sc.state) === 'primed') { row.human_keep_untouched = 1 }
-    shop.drop(plain)
-    this.MusuLikeHaul_note(w, row)
+    let job = this.Heist_job(w, 'friendo', [], { home: shop, seed: 'r2' })
+    let bad = job.i({ unvouched: 1, tune: 'Friendo — Track Two' })
+    bad.c.up = job
+    this.Heard_clone_beat(w, w, 'me', shop)
+    if (String(card.sc.unvouched) === '1' && this.Heard_word(mag, card, 1788400300) === 'could not be verified') { row.the_verdict_lands_on_the_card = 1 }
+    if (String(keep.sc.state) === 'done' && !this.Heist_job_of(shop, keep)) { row.the_wedged_keep_is_ended = 1 }
+    // …and the holder's queue moves on to the next wish rather than sitting behind a dead one
+    let rows = this.Heard_takes(w, 'me', this.Heard_shelf(w, 'me'))
+    let fr = rows.find((r) => r.pub === 'friendo')
+    if (fr && fr.cards.length === 2) { row.an_answered_wish_still_stands_as_a_wish = 1 }
+    let got = await this.Heard_haul_beat(w, w, 'me', {}, shop)
+    let k2 = shop.o({ Heist: 1, seed: 'r1' })[0]
+    if (got === 1 && k2) { row.the_queue_moves_on = 1 }
+    // a re-press is the retry road: it clears the verdict and the wish is askable again
+    this.MusuHeard_press(w, this.Ra_rec_find(them, { Record: 1, id: 'r2' }), 'friendo')
+    if (!card.sc.unvouched && card.sc.take) { row.a_re_press_clears_the_verdict = 1 }
+    this.MusuHeard_note(w, row)
 
-// beat 5 — THE COLLECTION ANSWERS THE ASK, whatever road the track came by.  Nothing here runs a heist:
-//  the track simply turns up in the library (a Cave hauled it, a pool pressed it, it was copied in) and
-//   the settle retires the want on the evidence.  Then the next ask is free to be carried.
-async MusuLikeHaul_settle(w):
-    let row = { settled: 1 }
-    let mine = this.Ra_home_self(w, 'me')
-    let jam = this.MusuLikeHaul_jam(w)
-    if (jam && !jam.o({ Grab: 1 }).length) { row.nothing_got_yet = 1 }
-    // it arrives by SOME road — no heist, no landing, just a holding in my own collection
-    let landed = this.Ra_rec_home(mine, 'r1')
-    landed.sc.title = 'Track One'
-    landed.sc.path = 'Friendo/Track One.flac'
-    landed.bump()
-    let marks = this.Heist_want_settle(w, 'me')
-    if (marks === 1 && jam && jam.o({ Grab: 1, of: 'r1' }).length === 1) { row.arrival_retires_the_ask = 1 }
-    let jams = this.Heist_want_jams(w, 'me')
-    if (jams.length === 1 && jams[0].open.length === 1 && String(jams[0].open[0].sc.of) === 'r2') { row.only_the_unanswered_stands = 1 }
-    if (this.Heist_want_settle(w, 'me') === 0) { row.settling_twice_marks_nothing = 1 }
-    // the keep for r1 is done with; the next beat carries r2 for the same friend
-    let shop = this.Ra_home_shop(w, 'me')
-    let k1 = shop.o({ Heist: 1, seed: 'r1' })[0]
-    if (k1) { k1.sc.state = 'done'; k1.bump() }
-    let got = await this.Heist_want_beat(w, w, null, 'me', {}, shop)
-    let k2 = shop.o({ Heist: 1, seed: 'r2' })[0]
-    if (got === 1 && k2 && +k2.sc.liked === 1) { row.the_queue_moves_on = 1 }
-    // the CELL cap, not the transfer cap: three standing keeps is enough of them on screen
-    for (const s of ['x1', 'x2']) { let x = shop.i({ Heist: 'Filler', seed: s, pub: 'someone', state: 'primed' }); x.c.up = shop }
-    let capped = await this.Heist_want_beat(w, w, null, 'me', {}, shop)
-    if (capped === 0 && this.MusuLikeHaul_keeps(w).length === this.Heist_wants_cap() + 1) { row.cell_cap_holds = 1 }
-    for (const s of ['x1', 'x2']) { await shop.rm({ Heist: 1, seed: s }) }
-    this.MusuLikeHaul_note(w, row)
-
-// beat 6 — THE ✕ CALLS OFF THE ASK, not just the download.  Otherwise the next beat mints it straight
-//  back and the button reads as broken by doing exactly what it was told.  And a called-off ask that
-//   arrives anyway is un-marked: you did like it, and the ledger should read like the thing happened.
-async MusuLikeHaul_off(w):
-    let row = { offed: 1 }
-    let shop = this.Ra_home_shop(w, 'me')
-    let k2 = shop.o({ Heist: 1, seed: 'r2' })[0]
-    if (k2) { await this.Heist_keep_cancel(w, k2) }
-    let jam = this.MusuLikeHaul_jam(w)
-    let like = jam ? jam.o({ Like: 1, of: 'r2' })[0] : null
-    if (like && +like.sc.off === 1) { row.the_x_calls_off_the_ask = 1 }
-    if (!this.Heist_want_open(jam).length) { row.a_called_off_ask_is_not_open = 1 }
-    let again = await this.Heist_want_beat(w, w, null, 'me', {}, shop)
-    if (again === 0 && !shop.o({ Heist: 1, seed: 'r2' })[0]) { row.never_minted_back = 1 }
-    // the %Like itself SURVIVES — the taste fact is not the download.  (Two hearts on THIS jam, not
-    //  three: liking a track of my own homes on %Jam,with:me, which is the shape that says nobody is owed
-    //   it — the first run said so and the assertion was the thing that was wrong.)
-    if (jam && jam.o({ Like: 1 }).length === 2 && jam.o({ Like: 1, of: 'r2' })[0]) { row.the_heart_still_stands = 1 }
-    // …and if it turns up anyway, the ledger says so and the mark comes off
-    let mine = this.Ra_home_self(w, 'me')
-    let landed = this.Ra_rec_home(mine, 'r2')
-    landed.sc.title = 'Track Two'
-    landed.bump()
-    this.Heist_want_settle(w, 'me')
-    if (jam && jam.o({ Grab: 1, of: 'r2' }).length === 1 && !like.sc.off) { row.arriving_anyway_unmarks_it = 1 }
-    this.MusuLikeHaul_note(w, row)
-
-// beat 7 — HOW FAR THE TRACK ITSELF HAS COME.  landed_n/total_n count PICKS, so a one-track ♥ keep
-//  reads 0% until it reads 100%.  The honest number is the whole-file %Body chunks on the source's mirror
-//   card — and NOT its %Preview chunks, which are the streaming copy you already heard and which would
-//    report every heist as finished the moment the track stopped playing.
-async MusuLikeHaul_flight(w):
-    let row = { flew: 1 }
-    let them = this.Ra_home_them(w, 'friendo')
-    let r3 = this.Ra_rec_find(them, { Record: 1, id: 'r3' })
-    r3.sc.total = 10
-    r3.bump()
-    let shop = this.Ra_home_shop(w, 'me')
-    let keep = shop.i({ Heist: 'Track Three', seed: 'r3', pub: 'friendo', state: 'pulling', liked: 1 })
-    keep.c.up = shop
-    let pick = keep.i({ Pick: 1, ref: 'r3' })
-    pick.c.up = keep
-    let f0 = this.Heist_keep_flight(w, keep)
-    if (f0 && f0.of === 'r3' && f0.got === 0 && f0.total === 10 && f0.pct === 0) { row.nothing_yet_is_zero = 1 }
-    // the STREAMING copy arrives — it is not the download and must not read as one
-    for (const s of ['0', '1', '2', '3', '4']) { let c = r3.i({ Preview: 1, seq: s }); c.c.up = r3 }
-    let fp = this.Heist_keep_flight(w, keep)
-    if (fp && fp.got === 0 && fp.pct === 0) { row.preview_is_not_progress = 1 }
-    // the BODY arrives, a chunk at a time
-    for (const s of ['0', '1', '2', '3']) { let c = this.Heist_body_new(r3, 0, s); c.c.up = r3 }
-    let f1 = this.Heist_keep_flight(w, keep)
-    if (f1 && f1.got === 4 && f1.pct === 40) { row.bytes_are_progress = 1 }
-    // a landed pick is not in flight; nothing in flight is null, never a false zero
-    pick.sc.landed = 1
-    pick.bump()
-    if (this.Heist_keep_flight(w, keep) === null) { row.nothing_in_flight_is_null = 1 }
-    w.c.flight_keep = keep
-    this.MusuLikeHaul_note(w, row)
-
-// beat 8 — WHO IS BRINGING ME WHAT.  The cell listed keeps then albums, and could not answer the question
-//  a human arrives with: "what is happening with the track I just liked?".  Grouping by holder answers it,
-//   and it surfaces the half that was invisible — the ♥s still waiting behind the one running.
-async MusuLikeHaul_piers(w):
-    let row = { piered: 1 }
-    let shop = this.Ra_home_shop(w, 'me')
-    // a second holder, with one ask and no keep at all: a waiting-only pier is still a row
-    let other = this.Ra_home_them(w, 'otherfriend')
-    let o1 = other.i({ Record: 1, id: 'o1', title: 'Over There' })
-    o1.c.up = other
-    this.MusuLikeHaul_press(w, o1, 'otherfriend')
-    let piers = this.Heist_haul_piers(w, 'me')
-    let byname = {}
-    for (const pr of piers) { byname[pr.dj] = pr }
-    if (piers.length === 2 && byname.friendo && byname.otherfriend) { row.a_row_per_holder = 1 }
-    if (byname.friendo && byname.friendo.keeps.length === 1 && String(byname.friendo.keeps[0].sc.seed) === 'r3') { row.the_running_keep_sits_under_its_holder = 1 }
-    if (byname.otherfriend && !byname.otherfriend.keeps.length && byname.otherfriend.waiting.length === 1) { row.an_ask_with_no_keep_is_still_a_row = 1 }
-    // the ask being carried RIGHT NOW is not also waiting — saying it twice is how four reads as eight
-    let jam = this.MusuLikeHaul_jam(w)
-    let like3 = this.Jam_mark(jam, 'Like', 'r3', 'Track Three')
-    let after = this.Heist_haul_piers(w, 'me')
-    let fr = after.find((x) => x.dj === 'friendo')
-    if (fr && fr.keeps.length === 1 && !fr.waiting.length) { row.carrying_is_not_waiting = 1 }
-    // a holder with neither is not a row at all
-    if (!after.find((x) => x.dj === 'nobody')) { row.a_silent_holder_is_no_row = 1 }
-    this.MusuLikeHaul_note(w, row)
-
-// beat 9 — RECENT ACQUISITIONS AS A POOL INPUT (owner 2026-09-04: *"perhaps soundpooling also defaults on
-//  a [x] recent acquisitions"*).  The one pool input whose source is already durable, ordered and free to
-//   read — and it CHOOSES nothing, because the choosing happened when you took the track.
-//  The mirror is what makes it possible at all: the goal builder is synchronous and clockless (every pool
-//   fixture calls it directly) while the ledger is a disk read, so the arrivals ride a dontSnap bag beside
-//    the album rows, written by the one beat that already read the log.
-async MusuLikeHaul_recent(w):
-    let row = { recented: 1 }
-    // the ledger, as Heist_newlyadded_grouped hands it over: folders of arrival cards, seq in mint order
-    let groups = [
-        { dir: 'A', cards: [{ sc: { id: 'n1', seq: '1', dir: 'A' } }, { sc: { id: 'n2', seq: '2', dir: 'A' } }] },
-        { dir: 'B', cards: [{ sc: { id: 'n3', seq: '5', dir: 'B' } }, { sc: { seq: '6', dir: 'B' } }] }
-    ]
-    let bag = w.oai({ Hauls: 1, dontSnap: 1 })
-    bag.c.up = w
-    let n = this.Heist_newly_mirror(w, groups)
-    let ids = this.Heist_newly_ids(w)
-    if (n === 3 && ids.length === 3) { row.a_card_with_no_id_is_no_row = 1 }
-    if (ids[0] === 'n3' && ids[1] === 'n2' && ids[2] === 'n1') { row.newest_first = 1 }
-    // idempotent: the same ledger re-mirrors to the same rows, and a vanished arrival leaves
-    if (this.Heist_newly_mirror(w, groups) === 3 && this.Heist_newly_ids(w).length === 3) { row.re_mirroring_is_a_no_op = 1 }
-    this.Heist_newly_mirror(w, [groups[0]])
-    let after = this.Heist_newly_ids(w)
-    if (after.length === 2 && !after.includes('n3')) { row.a_gone_arrival_leaves = 1 }
-    this.Heist_newly_mirror(w, groups)
-    // the take policy: the goal IS the arrivals, newest first, capped from the tail
-    let lib = this.Ra_home_self(w, 'me')
-    let goal = this.Ra_quarter_goal_pools(lib, [{ name: 'recent', take: 'recent', cap: 2 }], [], null, this.Heist_newly_ids(w))
-    if (goal.length === 2 && String(goal[0].id) === 'n3' && String(goal[1].id) === 'n2') { row.the_pool_takes_the_newest = 1 }
-    // and it chooses nothing of its own: no ledger, no goal — never a fallback to taste
-    let empty = this.Ra_quarter_goal_pools(lib, [{ name: 'recent', take: 'recent', cap: 2 }], [], null, [])
+// beat 9 — DONE-NESS IS THE COLLECTION'S ANSWER, BY WHATEVER ROAD THE TRACK ARRIVED.  There is no
+//  `landed` key on a Card: "do I have it" is one derived question, asked of the shelf, so a track that
+//   turns up via a Cave, a pool press or a folder copied in by hand retires its wish exactly as a heist
+//    would.  A hook on any ONE of those roads would leave the wish standing after the other four.
+//  TWO ID-SPACES, so two probes: the streamed `id` (a pool press lands those bytes) or the `keep` id the
+//   describe taught it (a heist lands the original).  Either answers the ask.
+//  And the landed wishes are the pool's `recent` compartment — the one pool input that chooses NOTHING,
+//   because the choosing happened when you took the track.
+async MusuHeard_landed(w):
+    let row = { landeded: 1 }
+    let mine = this.Heard_shelf(w, 'me')
+    let mag = this.MusuHeard_mag(w)
+    // r2 arrives as the ORIGINAL, under the keep-id — not under the id the Card was minted with
+    let got = this.Ra_rec_home(this.Ra_home_self(w, 'me'), 'keep2')
+    got.sc.title = 'Track Two'
+    got.bump()
+    let rows = this.Heard_takes(w, 'me', mine)
+    let fr = rows.find((r) => r.pub === 'friendo')
+    if (fr && fr.cards.length === 1 && String(fr.cards[0].sc.id) === 'r1') { row.the_original_answers_the_ask = 1 }
+    // r1 arrives under its OWN id instead — the pool-press road; the same query retires it
+    let got2 = this.Ra_rec_home(this.Ra_home_self(w, 'me'), 'r1')
+    got2.sc.title = 'Track One'
+    got2.bump()
+    let rows2 = this.Heard_takes(w, 'me', mine)
+    if (!rows2.some((r) => r.pub === 'friendo')) { row.either_id_space_answers_it = 1 }
+    // the arrivals, newest wish first, are the pool's recent compartment
+    let ids = this.Heard_landed_ids(w, 'me', mine)
+    if (ids.length === 2 && ids[0] === 'keep2' && ids[1] === 'r1') { row.newest_wish_first = 1 }
+    let goal = this.Ra_quarter_goal_pools(mine, [{ name: 'recent', take: 'recent', cap: 1 }], [], null, ids)
+    if (goal.length === 1 && String(goal[0].id) === 'keep2') { row.the_pool_takes_the_newest = 1 }
+    let empty = this.Ra_quarter_goal_pools(mine, [{ name: 'recent', take: 'recent', cap: 2 }], [], null, [])
     if (!empty.length) { row.nothing_landed_is_nothing_pooled = 1 }
+    // ── AND THE TASTE POLICIES, WHICH NOTHING ELSE GATES.  MusuQuarter and MusuSteward are one-step
+    //  stubs whose beats never fire on a check run, so 'taste' / 'liked' / 'latest' had no live cover at
+    //   all — they read the %Jam ledger until 2026-09-04 and now read the heard Mag (Heard_tally), which
+    //    is a policy change nobody would have noticed breaking.  Asserted here because this is the one
+    //     Book that has real Cards in hand.
+    let tally = this.Ra_quarter_tally(mine)
+    // r1: took + played through twice = 3 + 2.  r2: took + carried (it learned a keep id) = 3 + 2.
+    if (tally.r1 && tally.r1.score === 5 && tally.r1.mire === 2 && tally.r1.took === 1) { row.a_heart_and_attention_score = 1 }
+    if (tally.r2 && tally.r2.kept === 1 && tally.r2.score === 5) { row.carrying_it_scores_too = 1 }
+    // r3 was HEARD and nothing else — a machine playing to an empty room is not taste, so it scores zero
+    if (tally.r3 && tally.r3.score === 0) { row.a_bare_hearing_is_not_taste = 1 }
+    let taste = this.Ra_quarter_goal_pools(mine, [{ name: 't', take: 'taste', cap: 9 }], [], null, []).map((g) => String(g.id))
+    if (taste.length === 3 && !taste.includes('r3')) { row.taste_leaves_the_bare_hearings_out = 1 }
+    // 'liked' is TAKEN tracks, most recently wanted first — a heart is binary, so there is no most-liked
+    let liked = this.Ra_quarter_goal_pools(mine, [{ name: 'l', take: 'liked', cap: 9 }], [], null, []).map((g) => String(g.id))
+    if (liked.length === 3 && liked[0] === 'r2' && !liked.includes('r3')) { row.liked_is_what_you_wanted_last = 1 }
+    // 'latest' is the LAST SITTING — a %Cloud page IS a sitting, so page order stands in for a clock
+    let latest = this.Heard_latest(mine)
+    if (latest.length && latest.includes('r1') && !latest.includes('x2')) { row.latest_is_the_last_sitting = 1 }
     // the third checkbox: on takes half the budget from rolling, off gives it all back
     let w2 = w.i({ w: 'poolrecent' })
     w2.c.up = w
@@ -6603,36 +6660,53 @@ async MusuLikeHaul_recent(w):
     let rec = defs.find((d) => d.name === 'recent')
     if (this.Ra_pool_recent_on(w2) && roll && rec && roll.share === 50 && rec.share === 50) { row.on_splits_the_budget = 1 }
     if (roll && rec && roll.cap === 50 && rec.cap === 50) { row.each_half_is_a_real_cap = 1 }
-    if (this.Ra_pool_recent_set(w2, 1) === 0) { row.ticking_twice_is_once = 1 }
     this.Ra_pool_recent_set(w2, 0)
     let back = this.Ra_pool_defs(w2, 0)
     if (!this.Ra_pool_recent_on(w2) && back.length === 1 && back[0].share === 100 && back[0].cap === 100) { row.off_gives_the_room_back = 1 }
-    this.MusuLikeHaul_note(w, row)
+    this.MusuHeard_note(w, row)
 
-MusuLikeHaul_witness(w):
-    let T = this.MusuLikeHaul_T(w)
-    let a = T.o({ asked: 1 })[0]
+MusuHeard_witness(w):
+    let T = this.MusuHeard_T(w)
+    let m = T.o({ marked: 1 })[0]
+    let th = T.o({ throughed: 1 })[0]
+    let tk = T.o({ took: 1 })[0]
+    let q = T.o({ queried: 1 })[0]
+    let f = T.o({ forgot: 1 })[0]
     let c = T.o({ carried: 1 })[0]
-    let s = T.o({ soloed: 1 })[0]
-    let t = T.o({ settled: 1 })[0]
-    let o = T.o({ offed: 1 })[0]
-    if (a && +a.sc.two_likes_one_jam === 1 && +a.sc.press_mints_no_heist === 1 && +a.sc.pressing_again_takes_it_back === 1 && +a.sc.and_again_asks_afresh === 1 && +a.sc.only_the_friend_is_owed === 1)
-        this.story_swear(w, 'the heart is the ask and it mints nothing — two likes stand as one holder\'s standing account — pressing it again takes the ask back — and a track of my own is a taste fact nobody is owed')
-    if (c && +c.sc.one_mint === 1 && +c.sc.oldest_ask_first === 1 && +c.sc.same_shape_as_the_button === 1 && +c.sc.busy_holder_waits === 1 && +c.sc.no_share_no_haul === 1)
-        this.story_swear(w, 'the beat carries the oldest ask into the very heist the button used to mint — one at a time per holder — the rest waiting legibly as likes — and with no share it carries none')
-    if (s && +s.sc.waits_for_the_describe === 1 && +s.sc.one_track_not_the_album === 1 && +s.sc.starts_itself === 1 && +s.sc.takes_the_track_as_it_is === 1 && +s.sc.human_keep_untouched === 1)
-        this.story_swear(w, 'a like is a track — the described folder is pruned to the one that was asked for and started without a form — at full fidelity — while a keep somebody set up by hand is left alone')
-    if (t && +t.sc.arrival_retires_the_ask === 1 && +t.sc.only_the_unanswered_stands === 1 && +t.sc.settling_twice_marks_nothing === 1 && +t.sc.the_queue_moves_on === 1 && +t.sc.cell_cap_holds === 1)
-        this.story_swear(w, 'the collection answers the ask by whatever road the track arrived — the mark is written once — the queue moves on to the next holder — and three standing keeps is as many as the heart may open')
-    if (o && +o.sc.the_x_calls_off_the_ask === 1 && +o.sc.never_minted_back === 1 && +o.sc.the_heart_still_stands === 1 && +o.sc.arriving_anyway_unmarks_it === 1)
-        this.story_swear(w, 'calling off the download calls off the ask so the beat cannot mint it back — the heart survives it — and a track that turns up anyway un-marks the calling-off')
-    if (f && +f.sc.nothing_yet_is_zero === 1 && +f.sc.preview_is_not_progress === 1 && +f.sc.bytes_are_progress === 1 && +f.sc.nothing_in_flight_is_null === 1)
-        this.story_swear(w, 'a track in flight reports its own bytes off the record itself — the streaming copy you already heard counts for nothing — and a keep with nothing flying says so rather than reporting a false zero')
-    if (pr && +pr.sc.a_row_per_holder === 1 && +pr.sc.the_running_keep_sits_under_its_holder === 1 && +pr.sc.an_ask_with_no_keep_is_still_a_row === 1 && +pr.sc.carrying_is_not_waiting === 1 && +pr.sc.a_silent_holder_is_no_row === 1)
-        this.story_swear(w, 'the take is grouped by who is bringing it — a holder with only an ask is still a row — the one being carried is not also listed as waiting — and a holder bringing nothing is no row at all')
-    if (rc && +rc.sc.newest_first === 1 && +rc.sc.a_card_with_no_id_is_no_row === 1 && +rc.sc.re_mirroring_is_a_no_op === 1 && +rc.sc.a_gone_arrival_leaves === 1)
-        this.story_swear(w, 'the arrivals ledger is mirrored to bare ids where a clockless goal builder can see it — newest first — re-mirroring the same ledger writes nothing — and an arrival that leaves the ledger leaves the mirror')
-    if (rc && +rc.sc.the_pool_takes_the_newest === 1 && +rc.sc.nothing_landed_is_nothing_pooled === 1)
-        this.story_swear(w, 'a recent compartment chooses nothing — the choosing happened when you took the track — so its goal is simply the newest arrivals and an empty ledger pools nothing rather than falling back to taste')
-    if (rc && +rc.sc.a_plain_yes_declares_one_compartment === 1 && +rc.sc.on_splits_the_budget === 1 && +rc.sc.each_half_is_a_real_cap === 1 && +rc.sc.ticking_twice_is_once === 1 && +rc.sc.off_gives_the_room_back === 1)
+    let cl = T.o({ cloned: 1 })[0]
+    let ld = T.o({ landeded: 1 })[0]
+    if (m && +m.sc.one_card_per_track === 1 && +m.sc.oblique === 1 && +m.sc.hearing_again_is_the_same_card === 1 && +m.sc.one_page_per_sitting === 1 && +m.sc.never_crosses === 1)
+        this.story_swear(w, 'a track the radio played leaves one card wearing nothing but its id and whose it was — hearing it again is that same card — and the whole sitting shares one page under a Mag that never crosses to anyone')
+    if (m && +m.sc.the_set_is_the_mag === 1)
+        this.story_swear(w, 'the set the dial skips by IS the heard Mag — so never-repeat-a-track survives a reload instead of dying with the process and being capped at a hundred ids nobody could see')
+    if (th && +th.sc.an_empty_room_earns_nothing === 1 && +th.sc.present_is_a_play_through === 1 && +th.sc.it_accrues === 1 && +th.sc.never_bumps_the_account === 1 && +th.sc.a_skip_is_nothing === 1)
+        this.story_swear(w, 'a track played to an empty room earns nothing and a skip earns nothing — only sitting through it with someone there counts — and counting it never bumps the account because a track finishing is not worth a disk write')
+    if (tk && +tk.sc.the_press_is_the_ask === 1 && +tk.sc.the_listing_starts_at_the_act === 1 && +tk.sc.the_press_mints_no_heist === 1 && +tk.sc.my_own_track_is_a_taste_fact === 1)
+        this.story_swear(w, 'the heart is the whole ask and it mints no heist — the listing arrives with the act and not before — and a heart on a track of my own is a taste fact nobody is owed')
+    if (tk && +tk.sc.pressing_again_takes_it_back === 1 && +tk.sc.later_it_re_affirms === 1)
+        this.story_swear(w, 'a second press within a moment is a fat thumb and takes the ask back while the hearing survives — later than that the same press re-affirms it instead of undoing something you meant')
+    if (q && +q.sc.grouped_by_holder === 1 && +q.sc.oldest_first === 1 && +q.sc.nobody_is_owed_my_own === 1 && +q.sc.a_row_per_holder === 1)
+        this.story_swear(w, 'what I am owed is a query and not a store — take cards not yet on my shelf — oldest first — grouped by who could bring them — and nobody is ever owed a track of my own')
+    if (f && +f.sc.a_hearing_nobody_wanted_is_forgotten === 1 && +f.sc.a_heart_is_never_dropped_by_a_clock === 1 && +f.sc.this_sitting_is_untouched === 1 && +f.sc.an_emptied_sitting_goes === 1)
+        this.story_swear(w, 'a hearing nobody wanted is forgotten thirty days after the sitting it happened in and the emptied sitting goes with it — while a heart in that same sitting pins it and is never dropped by a clock')
+    if (f && +f.sc.gave_up_is_a_word === 1 && +f.sc.only_a_person_retires_a_heart === 1)
+        this.story_swear(w, 'ninety days with nobody answering changes what a heart SAYS and not whether it exists — the clock can word it gave up but only a person pressing the cross ever ends one')
+    if (c && +c.sc.one_mint === 1 && +c.sc.oldest_wish_first === 1 && +c.sc.the_shape_the_button_made === 1 && +c.sc.a_busy_holder_waits === 1 && +c.sc.no_share_no_haul === 1)
+        this.story_swear(w, 'the beat carries the oldest wish per holder into the very heist the button used to mint — one at a time — the rest waiting legibly as wishes — and with no share it carries none')
+    if (c && +c.sc.a_wish_is_a_track === 1 && +c.sc.the_cell_cap_holds === 1)
+        this.story_swear(w, 'a wish is a track so the described folder is pruned to the one that was asked for and started with no form at all — and three standing keeps is as many as the heart may ever open')
+    if (cl && +cl.sc.the_listing_lands_on_the_card === 1 && +cl.sc.the_way_back_rides_the_line === 1 && +cl.sc.cloning_twice_writes_nothing === 1)
+        this.story_swear(w, 'the original the describe answers with teaches the card its own keep id and its real size and hash — so everything a later reader needs for the way back rides the line — and re-reading it writes nothing')
+    if (cl && +cl.sc.the_verdict_lands_on_the_card === 1 && +cl.sc.the_wedged_keep_is_ended === 1 && +cl.sc.the_queue_moves_on === 1 && +cl.sc.a_re_press_clears_the_verdict === 1)
+        this.story_swear(w, 'a refusal takes the husk out of the mirror and would leave the keep pulling something that no longer exists — so the verdict is copied onto the card and the keep ended — the holder queue moves on and a re-press is the retry')
+    if (ld && +ld.sc.the_original_answers_the_ask === 1 && +ld.sc.either_id_space_answers_it === 1)
+        this.story_swear(w, 'done-ness is the collection answering by whatever road the track arrived — the original under its own keep id or the streamed bytes under theirs — one derived question and no landed flag anywhere')
+    if (ld && +ld.sc.newest_wish_first === 1 && +ld.sc.the_pool_takes_the_newest === 1 && +ld.sc.nothing_landed_is_nothing_pooled === 1)
+        this.story_swear(w, 'a recent compartment chooses nothing because the choosing happened when you took the track — so its goal is simply the wishes that landed newest first and an empty ledger pools nothing rather than falling back to taste')
+    if (ld && +ld.sc.a_heart_and_attention_score === 1 && +ld.sc.carrying_it_scores_too === 1 && +ld.sc.a_bare_hearing_is_not_taste === 1 && +ld.sc.taste_leaves_the_bare_hearings_out === 1)
+        this.story_swear(w, 'the pool reads taste off the same cards — a heart weighs three and carrying it two and each play-through with someone there one — while a track the machine merely played at an empty room weighs nothing at all')
+    if (ld && +ld.sc.liked_is_what_you_wanted_last === 1 && +ld.sc.latest_is_the_last_sitting === 1)
+        this.story_swear(w, 'a heart is binary so the liked compartment is ordered by what you wanted LAST rather than by a count that no longer exists — and the latest compartment is simply the last sitting because a page IS a sitting')
+    if (ld && +ld.sc.a_plain_yes_declares_one_compartment === 1 && +ld.sc.on_splits_the_budget === 1 && +ld.sc.each_half_is_a_real_cap === 1 && +ld.sc.off_gives_the_room_back === 1)
         this.story_swear(w, 'the yes still declares exactly one compartment — the third checkbox is what splits the budget in two — and unticking it gives the room back whole so the number a person typed always means the same thing')
+

@@ -1,170 +1,579 @@
-# Radio_circuit_todo — the datasplatter behind Radio, and the one circuit it wants to be
+# Radio_circuit_todo — the wires behind the radio, haggled down to one shape
 
-The owner, 2026-09-04, reading the Like|Jam|Grab schematics: *"none of this shit makes sense to me… it
- seems like a big cancer? can we please simplify… think long and hard about the datasplatter behind
-  Radio, basically… mature!"* This is that thinking. It is a `_todo` for you to preen, not a build.
+The owner, 2026-09-04: *"think long and hard about the datasplatter behind Radio… mature!"* and then *"run
+ a series of subagents to haggle you down to a smoother shape… scan the same nest of wires many times,
+  differently."* Six lenses scanned it — ego-death, lifecycle, persistence, the wire, the human, the Mag
+   model. §8 records what each won. This is the shape that survived. A `_todo` for you to preen.
 
-## 0. THE ONE SENTENCE, AND THE RULING IT RESTS ON
+---
 
-**There is one container, `%Mag`, and one referring particle, `%Card`. Every other "want" shape is
- vocabulary pretending to be structure.** That is not a new idea — it is your own ruling of 2026-08-05
-  (`Mag_todo.md` §0.0): *"there is ONE Mag kind… `%Grasp` is DROPPED… a want is a `%Caper`… the disk
-   becomes a Mag at the point it is read… favouriting is not in v1.0."*
+## 0. WHAT IS BUILT — and what to get on with next (2026-09-04)
 
-What went wrong since is simple to say: **`Jam.g` (July) predates that ruling and contradicts it**, and
- tonight I built batch acquisition ON it rather than noticing. So the ♥ landed as `%Jam > %Like`, a
-  fourth want-shape beside `%Heist`, `%Caper` and the pool's `%Want` — the splatter got one deeper.
+**BUILT AND GATED.** The circuit below is in the working tree, uncommitted, gated on the live runner by
+ **`MusuHeard`** — 9 beats, 15 sworn, caveat 0. The rulings §7 owed were taken as this doc's own
+  recommendations so the owner vetoes in the diff rather than answering a questionnaire: **♥ only, no
+   ambient road** (`take_after`/`album_after` are not read in v1.0); the per-holder group is a **query**;
+    **no phone→laptop frame**; `Mag:heard` **replaces `radio.c.heard`**.
 
-## 1. THE SPLATTER, COUNTED
+**The new ghost: `Ghost/M/Heard.g`** (registered in `LiesLies.svelte`'s GhostList where `Jam.g` was; compile
+ with `GFILES="Ghost/M/Heard.g Ghost/M/Heist.g Ghost/M/Radio.g Ghost/M/Ra.g Ghost/S/Swarm.g Ghost/N/Repli.g Ghost/Story/Heistation.g Ghost/Story/Radiation.g Ghost/Story/Swarmation.g Ghost/Story/Sounditron.g"`
+  or LocalGen silently skips it; esbuild-parse each `.go` after; reload the runner before trusting a red).
+- **the Mag** — `Heard_home/_mag/_mag_at/_mag_find/_mag_near` (find vs find-or-create kept strictly apart:
+   the dial reads this on every pump tick and a reader built on `oai` mints by being asked),
+    `Heard_page` (one `Cloud,page:N,created_at` per sitting, `mag.c.sitting` latch), `Heard_cards/_find/_card`.
+- **the events** — `Heard_mark` (from `Radio_open`), `Heard_through` (from the `went='finish'` seam in
+   `Radio_pump_tick`, humdinger-gated, **no bump**), `Heard_take` / `Heard_untake` / `Heard_taken`,
+    `Heard_set` (the dedup map every `radio.c.heard` read became).
+- **the query** — `Heard_takes` · `Heard_landed` (two id-spaces: `id` or the learned `keep`) · `Heard_gc`
+   · `Heard_gave_up` · `Heard_word` · `Heard_landed_ids` · `Heard_tally` / `Heard_latest` (the pool's taste).
+- **the byte-lane seam** — `Heard_keep` · `Heard_haul_beat` (from the share beat, `w.c.keep_beat_at='heard'`)
+   · `Heard_clone_beat` · `Heard_haul_piers`. `Heist_keep_like_go` → `Heist_keep_take_go`, keyed `take`.
+- **persistence** — `Swarm_restash_heard` + `Swarm_heard_rehydrate`, the **eighth stash pillar**, in
+   `Swarm_restash_all` and the `Swarm_station_up` boot ladder, gated by **SwarmReboot**. It carries the
+    TAKES ONLY: a bare hearing is a 30-day dedup mark, worthless after a reload and (× every track ever
+     played) the hoard §6b forbids. `Repli_identity_keys` `Card: ['id','pub']`; `Swarm_graft` gains
+      `Mag/Cloud/Card` rows.
 
-Six ways today to say "I want that", each with its own container, its own lifetime and its own reader:
+**One thing the build FOUND that the doc had not** (§3's middle row): `held` · `unvouched` · `landfail` all
+ `mir.rm` the husk out of the mirror, so the keep is left pulling a record that no longer exists — `left`
+  never reaches zero, the keep never reaches `done`, and **that holder's one live slot is wedged forever**.
+   `Heard_clone_beat` copies the verdict onto the Card and ends the keep, so the queue moves on; a re-press
+    of ♥ clears the verdict and asks again, which is the retry road.
 
-| shape | container | minted by | read by | lifetime |
-|---|---|---|---|---|
-| `%Like,of` | `stock > %Jam,with:<dj>` | ♥ | `Heist_want_beat` | forever (never partitioned) |
-| `%Heist,seed,pub` | `shop` | ⇊ / pool catch / the beat | `Heist_keep_step` | until landed |
-| `%Caper,at,seed` | `shop` | `Heist_job` | `Heist_beat` | until flattened |
-| `%Pick,ref` | under a `%Heist` | describe | the pull | with the keep |
-| `%Want,of,do` | `w > %Provisions` | `Ra_quarter` | `Ra_quarter_serve` | until the next sit-down |
-| `%Caperlet` / `%Rummage` | `shop > bay,pub` | the ask | the far side | until answered |
+### What went, and what it became
 
-And beside them, **invisible**: `keep.c.blagged` (the folder listing), `rec.c.unity` (the folder's MB),
- `w.c.keep_beat_at`, `rw.c.want_n` — **139 distinct `.c` keys in `Heist.g`, 118 in `Ra.g`, 124 in
-  `Radio.g`**. That is the `.dontsee` you named. `Repli_design.md` §0.3 calls the same thing "the `.c`
-   smear" and records your own read of it: *"any mention of `.c.*` is likely meant to be another attached
-    sphere."* Nothing here is a new diagnosis; it is the same one, arrived at from the Radio side.
-
-## 2. YOUR QUESTIONS, ANSWERED STRAIGHT
-
-- **When does a `%Jam` happen? whole session?** — On the first ♥ with that dj, and then **never again**:
-   one `%Jam,with:<dj>` per relationship, forever, accreting. Not a session at all, despite the name.
-- **`%pub` is a prepub?** — Yes, 16 hex, everywhere in the music homes (`Radio_pub` reads `ident.sc.prepub`).
-   It names a Pier you hold.
-- **Why is their catalogue mirrored to me — doesn't that happen in Mags?** — It IS Mags. `%MusuThem,pub`
-   is merely *where their Mags land*: `stock > %Mag:shuffle > %Cloud,page > %Record` husks, offered
-    head-first when a record appears in their library (Repli's Seem notices; nobody "pushes"), bytes pulled
-     page by page on demand. **The remote never pushes; each end has a Mag to talk through** — exactly as you
-      said. The `bay` is the talking-Mag in the other direction (a chunkless ask crosses, comes back
-       annotated). The architecture you described is ~80% built; what is NOT on it is the *wants*.
-- **The `Musu` prefix** — leaked from the Book convention (`Musu*` Books require a `Musu*` world) into
-   the home names in July. It implies nothing. Names are cheap: `%Self,pub` / `%Them,pub`.
-- **`shop`** — your 2026-07-17 ruling (*"the whole loading here-and-there zone"*), and the concept is the
-   GC invariant: bytes settle in exactly one place, so anything *in motion* must live somewhere that is
-    not the collection. The concept stays; the word can go (`inbound`?).
-- **Why would anyone press ♥ twice?** — They wouldn't, and tonight's toggle was the wrong answer to a
-   question nobody asked. The right reading of a second press is §3's `mire`: it *adds*.
-- **`%title` won't locate anything later** — correct. The pointer was `of:<id>` into a mirror that is
-   swept on a TTL. The fix is not a better pointer; it is a **self-sufficient Card** (§3).
-- **`keep.c.blagged` / `Ra_unity_stamp`** — the *idea* under both is the one you want: a Record already
-   knows enough to begin a heist, and the folder listing is derivable from the mirror's cards sharing a
-    dirname, ad hoc. The sin is the home (`.c`, invisible) and the names. §3 makes the listing a Cloud
-     of Cards you can see; the MB is then a sum over it, not a stamp.
-- **Persistence** — you already have it right: a want is *account* matter (`.jamsend/account/<prepub>/
-   toc.snap` — `Swarm_export` is a skip-list, so a Mag hung under the `%Identity` rides for free, which is
-    how the pools already persist); a heist is *FSA* matter (`berth/<prepub>/`, already per-prepub, so
-     "filter for our own" is the existing layout).
-
-## 3. THE CIRCUIT
-
-Five stations, one shape. Read it top to bottom as one track's life.
-
-```
-THEIR SHELF — their Mag, landed at me husk-first, scrolling (era-GC off the front)
-  Them,pub:f00d
-    stock
-      Mag:shuffle
-        Cloud,page:7
-          Record,id:r1,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo/Cosmic C.flac,bytes=51744301,body_hash:…
-
-MY ATTENTION — my Mag, partitioned by era, scrolling the same way.  THIS REPLACES %Jam/%Like/%Grab/%Spin.
-  Identity                                   ← account matter: rides the export for free
-    Mag:mire
-      Cloud,era:41                           ← the open era; a new era every N hours|tracks (§4)
-        Card,id:r1,of:f00d,mire=6,title:Cosmic C,artist:DJ Oscillo,path:DJ Oscillo/Cosmic C.flac,bytes=51744301
-        Card,id:r2,of:f00d,mire=1,title:Dorian D,…
-      Cloud,era:40
-        Card,id:q9,of:beef,mire=1,…          ← ages off the front unless promoted (§4)
-
-MY WANT — the harvester's verdict, as your ruling says: a %Caper.  THIS ABSORBS %Heist, %Pick, %blagged.
-  Identity
-    Mag:caper                                ← FSA matter too: mirrored to berth/<prepub>/ for resume
-      Caper,at:f00d,seed:r1,state:pulling
-        Cloud,dir:DJ Oscillo                 ← THE FOLDER LISTING, visible — derived from their shelf's
-          Card,id:r1,…,take                     cards sharing the dirname (what blag did, in .c)
-          Card,id:r3,…                        ← untaken = the old un-ticked %Pick, as ABSENCE of `take`
-
-THE BAY — the Mag we talk through, unchanged in kind (Caperlet | Rummage already work this way)
-
-MY COLLECTION — the disk, which becomes a Mag when read (your ruling).  A landed Card's id now
-  answers "do I have it" on the shelf; the Caper drops itself; the Card in Mag:mire stays as history.
-```
-
-**What `mire` is.** One number on the Card, accreting from behaviour: heard a whole track `+1`, heard it
- again `+1`, ♥ `+5`, ♥ again `+5` (mashing the heart IS human), skipped `−1`. There is no `%Like`, no
-  `%Grab`, no toggle, no un-like: disinterest is *decay* — a Card that never rises ages off with its era.
-   That is your *"squishy adjustable rule engine"*, and it is one table (§4), not five particle kinds.
-
-**Why a Card and not a pointer.** The Card carries the listing (`title, artist, path, bytes, body_hash`)
- copied off their shelf at the moment of attention, so it is **self-sufficient**: it survives the mirror
-  sweep, a reload, and the friend going offline for a week. `id + of` is still the join; the rest is what
-   lets the Caper begin without asking. *A Mag can't hold binary in the Wormhole* — right, and it never
-    does: Cards only. Bytes fill at runtime through Repli, as today.
-
-**What "delete at the top" is.** The era-GC you already ruled for shuffle (`Mag_todo` §0.0: *drop Clouds
- off the FRONT, bounded by any position that sits on them*), applied to `Mag:mire` with one extra bound:
-  **a Card above threshold is promoted** (re-minted into the open era) before its Cloud drops. The Mag is
-   therefore a **queue you run harvesters over, then delete** — your words — and it cannot grow
-    ridiculously-shaped, because an era is a bounded window and the only thing that outlives one is
-     something you demonstrably cared about.
-
-## 4. THE RULE TABLE — the whole society, tweakable in one place
-
-```
-Mire                                   Harvest (a Card ⇒ a Caper)         Era
-  heard whole        +1                  track    mire ≥ 5                   new era: 24h or 60 cards
-  heard again        +1                  album    Σ mire over dir ≥ 12       drop: era < open−3
-  ♥                  +5                  pool     mire ≥ 1 ∧ consent         promote: mire ≥ 5
-  skipped            −1                  radio-more   mire 2..4 → dial bias
-```
-
-Every number is a scalar on one `%Rules` particle (visible, snapped, Book-gated), not a constant in a
- verb. Whether a ♥ takes the track, the album, or just biases the dial to play more of that folder — your
-  *"squishy zone we'd be tweaking UX and app function with"* — is a row here, not a code path. The
-   harvester is one pure function `Mire_harvest(mag, rules) → [caper intents]`, which is what makes it
-    testable without a wire.
-
-## 5. WHAT THIS DELETES, AND WHAT SURVIVES
-
-| goes | because |
+| gone | became |
 |---|---|
-| `Jam.g` entire (`%Jam/%Spin/%Like/%Grab`) | `Mag:mire` + `mire=` on a Card |
-| `%Heist` (the keep) as a kind | it was always the soft half of a `%Caper` (`Heist_todo` says so) |
-| `%Pick` | a Card in the Caper's Cloud; untaken = no `take` |
-| `keep.c.blagged`, `rec.c.unity` | the Caper's Cloud, visible; MB = Σ bytes over it |
-| `%Provisions > %Want` | the pool is one more harvester row over `Mag:mire` |
-| `%Hauls/%Haul/%Newly/%Fresh` (dontSnap) | the collection-as-Mag answers "what landed" with `created_at` |
-| tonight's `Heist_want_*`, `Heist_keep_like_go`, `Radio_unlike`, `Heist_newly_mirror` | built on `%Jam` |
+| `Jam.g` entire (`%Jam/%Spin/%Like/%Grab`, `Jam_home/_seq/_event/_mark/_spin/_like/_grab/_ledger/_tally`) | `Mag:heard`; ♥ = `take` |
+| `Heist_wants_cap/_want_shelf/_want_liked/_want_open/_want_jams/_want_settle/_want_off/_want_keep/_want_beat` | `Heard_keeps_cap/_shelf/_taken/_takes/_landed/_untake/_keep/_haul_beat` |
+| `Heist_haul_piers/_haul_carrying` | `Heard_haul_piers/_carrying` |
+| `Heist_newly_mirror/_newly_keep/_newly_ids` + the `%Hauls>%Newly>%Fresh` dontSnap mirror | `Heard_landed_ids` (the Mag is durable AND in memory, so there is nothing to mirror) |
+| `Radio_heard_cap/_heard_add` + `radio.c.heard` | `Radio_heard(radio)` → `Heard_set` |
+| `Radio_unlike` + the ♥ toggle | `Heard_take`'s own ±10s window |
+| `Ra_quarter_tally`'s %Jam walk; the `liked/kept/latest` policies' %Jam reads | `Heard_tally` (take 3 · keep 2 · mire 1) / `Heard_latest` (the last %Cloud page IS the last sitting) |
+| `Jam_grab`'s keeper copy | `Ra_rec_copy` (the useful half, re-homed; the ledger half was the cursed part) |
+| `MusuLikeHaul` (Book + fixtures) | `MusuHeard` |
 
-| survives, re-homed |
-|---|
-| one live Caper per holder, oldest first (the serialisation) — now a harvester rule, not a beat |
-| "the collection answers the ask" — `Heist_want_settle` becomes: a Card whose id is on my shelf is done |
-| byte progress off `%Body` never `%Preview` (`Heist_keep_flight`) — reads the Caper's Card |
-| the Haul grouped by holder (`Heist_haul_piers`) — reads `Mag:caper` grouped by `at` |
-| the wire: `Caper`, `Caperlet`, `Rummage`, `Repli`, the bay — untouched |
+**Survived, re-homed:** the whole byte lane (Rummage · the bay · Repli · materialise · quarantine · vouch ·
+ land), `Heist_keep_flight`, `Heist_keep_solo`, `Heist_haul_look`/`%Hauls>%Haul` (the landed-album rows),
+  `Heist_want_path_ok` (unrelated — the serve-side path gate).
 
-The engine (`Heist_beat`/`Heist_land`/the quarantine/the vouch door) is not in this picture because it
- does not need to be: it takes a `%Caper` and lands bytes, and that is exactly what it takes today.
+### Next
 
-## 6. RULINGS OWED (yours)
+1. **The rename sweep** (§7.4): `MusuSelf`→`Mine`, `MusuThem`→`Theirs`, `MusuPool`→`SoundPile`. 322
+    references, ~28 files, 344 fixture snaps — one mechanical pass and one re-swear, on its own.
+2. **§7.8** — does the SoundPile exist on a device that HAS a folder? Recommendation: no.
+3. **§7.5** — the phone→laptop `take` frame. Network work; stated, not built.
+4. Then `Acquisition_todo.md` retires to `spec/history/`.
 
-1. **`mire` values** — the four numbers in §4, and whether ♥ is +5 or "jump to threshold".
-2. **Era size** — by time, by count, or by session (a `Cloud,era` per sitting is the most legible).
-3. **Names** — `mire` / `caper` / `Self|Them` / what replaces `shop`. Cheap, but they go in a snap.
-4. **Does the harvester run a Cave for a Captain?** (the blocked §3 of `Acquisition_todo`) — under this
-    shape it is *one line*: `Mag:mire` is account matter, so it can ride the crew ferry like the pools do.
-     Still your call whether it should.
-5. **`.c` → a visible sphere** — the `Repli_design` §5 thread. This doc assumes it; it does not build it.
+---
 
-Nothing in tonight's tree needs to be kept for this. It was a night's work on the wrong container and the
- verbs that were right are three, listed above; the fixtures re-record in an hour once the shape is ruled.
+## A. FOR A PERSON — what this is
+
+You listen to the radio. Some of it is yours, some of it is a friend's, and once in a while something on a
+ friend's radio is good enough that you want it to be yours too. This is the part of the app that notices
+  that. It watches nothing but what you already do: let a track play out, press the heart. From that it
+   works out what you'd keep, asks the friend for it quietly, and puts it on your disk under the artist's
+    folder as if it had always been there. You never search, never name a file, never wait on a download
+     screen. The one control you'll ever touch is the heart. Everything else is the app remembering, on
+      your behalf, that you liked something — and forgetting, on your behalf, the things you shrugged past.
+
+## B. ONE EVENING
+
+Tuesday, the kitchen phone, the chip says *from Maya*. A track plays through while you cook; you touched
+ nothing and nothing on screen changed. Next track, halfway in, you press ♡. It fills to ♥. Under the
+  download glyph a small line says *1 waiting*. That's it — the phone has no music folder, so it holds
+   the wish.
+
+Thursday you open the laptop, the one with the drive, while the phone is still on the shelf and awake.
+ On the phone the *1 waiting* line changes to *handed to laptop*. On the laptop the Haul shows *Maya ·
+  Cosmic C · waiting* — Maya is not around yet. Friday night she is; the row grows a bar, then slides down
+   into *landed*. Flip the chip to LOCAL: it's there, in *DJ Oscillo/*.
+
+What you did not do: remember the title, ask Maya, open a folder picker, choose a format, keep a tab
+ alive, or think about it once between Tuesday and Friday.
+
+**What this evening actually needs, honestly.** Two overlaps, not one. The wish moves phone → laptop
+ only while both are online at once (there is no ongoing crew road today — §5 — but same-soul body↔body
+  frames already dispatch pier-less, so this is a small frame, not a new transport). The bytes move
+   Maya → laptop only while those two are online at once. The phone's Haul is what makes the pathway
+    legible: each wish says where it is — *on this phone only* → *handed to laptop* → *laptop is fetching
+     from Maya* → *landed on laptop*. A phone can also act alone: a ♥ on a phone with no laptop pools the
+      lofi rendition into its own browser pile the moment Maya is around, so the track plays on the phone
+       offline; the original still waits for a body with a disk. The handoff frame is the one network
+        piece in this doc (§7.5) — you said leave the radiator alone, so it is stated, not built.
+
+## C. THE WORDS A PERSON MEETS
+
+| on screen | means |
+|---|---|
+| **♥** | I want this. Press it again within a moment and it's un-pressed — a fat thumb, not a second vote. |
+| **waiting** | the app is holding your wish until a friend with it is around and a device of yours has a disk. |
+| **coming** | it is being fetched now, from that friend. |
+| **landed** | it is on your disk. |
+| **gave up** | nobody has had it for a long while; you can let it go or leave it. **You can't lose a heart** — only you retire one. |
+| **the Haul** | the screen that shows waiting / coming / landed, grouped by who is bringing it. |
+| **the pool** | a bounded pile of friends' music kept in the browser so the radio has surprises offline. |
+
+Words a person never meets: `mire`, `take`, `Card`, `Cloud`. The heart *is* the score. (The human lens's
+ verdict on `mire`: *"it sounds like a swamp, it's a score, and a person never needs the number — only its
+  consequences."* Agreed: it stays in the snap and the rule table, never on a face.)
+
+**Three decisions that stay yours** — press the heart or don't (Radio); let the pool exist and how big
+ (the SoundPool cell — the number is the consent); call a fetch off, pause it, push it first (the Haul
+  row's ✕ ⏸ ↑ — the only place a wish is withdrawn after the fact). The rule numbers in §2 are a fourth
+   decision with no screen yet; say so rather than hide it.
+
+---
+
+## 0.5. THE ONE SHAPE — a disposable edge, and durable references into it
+
+The owner, 2026-09-04, arriving at it from the other side: *"we need to mirror metadata at the edge of our
+ kingdom of continuity… then these other structures refer to it? is that the thing?"* — **yes, that is
+  the thing**, and everything below is a consequence of it. It is written here rather than discovered
+   again in §4, because every place this doc did not cohere was two of these tiers being mixed.
+
+**The `%Them` mirror IS the edge, and it is deliberately disposable.** Friend Mags never berth (Mag_todo
+ §6b): session matter, re-exploded on every connect and shaved off after. It is the ONLY place foreign
+  matter is held, and nothing in it survives a reload.
+
+**Everything durable REFERS into it and holds nothing.** All four, by the same key:
+
+| durable thing | how it refers |
+|---|---|
+| the dial's lineup card | `Card,id` (+ `.c.rec`, a §7.6 smear) |
+| **a heard Card** | `Card,id,pub` |
+| a keep in flight | `Heist,seed:<id>,pub` |
+| an ask on the wire | `Rummage,want:<ref>,pier` |
+
+`(id, pub)` is the whole address: `pub` → the Pier (`Swarm_peering(ident).o({Pier:1, pub})[0]`, what
+ `Radio_friendly` already does), `id` → the mirror if it is up (`Ra_rec_find`), else a fresh
+  `Rummage,seed:<id>` re-asks. **A lookup, never a search** — which is the whole reason no epoch is
+   needed anywhere in this doc: nothing but the wire's CURRENT answer is ever trusted for bytes.
+
+**And the one exception is the consent moment.** A heard Card is oblique — `id, pub, mire`, nothing else.
+ On ♥ it clones the listing (`title, artist, dir, path, bytes, body_hash`, then `keep`). That is not an
+  inconsistency: it is the border moving. Before the act you REFER to something foreign; after it you
+   DESCRIBE something about to be yours. The first draft cloned at hearing — that was the hoard §6b
+    forbids, and it was also impossible, since a shuffle Card often carries no `path` at all
+     (`Ra_record_from` omits it).
+
+**Four tiers, and mixing any two of them is the mistake:**
+
+| | what | continuity |
+|---|---|---|
+| the collection (`Mine,pub > stock`) | my files, on disk | forever — the disk is the truth |
+| `SoundPile,pub:<me>` | bytes that crossed, kept as cache | policy in, budget out (nobody chose a track) |
+| **the mirrors** (`Theirs,pub > stock`) | **foreign metadata + preview chunks** | **none — this is the edge** |
+| `Mag:heard` · the keeps · the asks | **references into the edge** | durable, and oblique until you act |
+
+---
+
+## 1. THE SHAPE — one Mag, two stages, no operation particle
+
+```
+Identity
+  Mag:heard,pub:c0de                          ← MINE. `Mag,pub` is the Mag's primary key (ruled 2026-08-05):
+    Cloud,page:41,created_at=1788400000          the name is unique PER pub, pub = who created and serves it.
+      Card,id:r1,pub:f00d,mire=3,take,at=…    ← STAGE 2: taken — the listing is cloned in at this moment
+        title:Cosmic C,artist:DJ Oscillo,dir:DJ Oscillo,path:…,bytes=51744301,body_hash:…,keep:9a3c…
+      Card,id:r3,pub:f00d,take,at=…           ← its album sibling, taken with it (cloned from the describe)
+        title:Blue Trane,dir:DJ Oscillo,path:…,bytes=…,body_hash:…
+      Card,id:r2,pub:f00d,mire=1              ← STAGE 1: heard — OBLIQUE: id, who, how much. Nothing else.
+    Cloud,page:40,created_at=1788313600
+      Card,id:q2,pub:beef,mire=2
+
+MusuSelf,pub:c0de                             ← my music home (the names are §7.4's — `Musu` leaked from Books)
+  stock,pub:c0de
+    Mag:shuffle,pub:c0de > Cloud,page:N > Record,id   ← MY DISK read as a Mag: the generator (Mag_design)
+  bay,pub:f00d                                ← what is left of `shop`: my asks OF f00d, and theirs of me
+    Rummage,want:r1,pier:f00d,path:DJ Oscillo/Cosmic C.flac   ← transient: a describe|want ask; dropped when answered
+
+MusuThem,pub:f00d                             ← THEIR music as I hold it: the MIRROR. Session matter, never berths
+  stock,pub:f00d
+    Mag:shuffle,pub:f00d                      ← their generator Mag, arrived as ONE husk fragment (Ra_offer_stock)
+      Cloud,page:7                            ← their page numbers, upserted by (Cloud,page)
+        Record,id:r1,title:…,total=…,stage:previewed    ← a head + its preview chunks; `stage` is the fill state
+        Record,id:r2,…
+    Record,id:9a3c…,re:r1,path:…,total=1580,body_hash:…,by:f00d,vouch_sig:…   ← a materialised ORIGINAL (flat)
+      Body,seq:0 … Body,seq:611               ← the wet partial, quarantined here as today
+```
+
+(The listing keys are drawn on a second line only to show the two stages; in a snap they ride the Card
+ line like any other sc.)
+
+### 1a. The Mag population — and where Repli operates
+
+You asked whether there are tons of Mags to filter through, ours against replicated ones. There are
+ exactly these, and nothing is ever filtered — the CONTAINER says whose (`MusuSelf` | `MusuThem,pub`)
+  and the KEY says whose again (`Mag,pub`), so a container fault is misfiling, never merging:
+
+| Mag | where | what | crosses? |
+|---|---|---|---|
+| `Mag:shuffle,pub:<me>` | `MusuSelf > stock` | my disk read as a Mag — the `prandle` meander mints `Cloud,page:N` of 6 at the BACK, on demand; era-GC drops off the FRONT | yes — the Repli unit, husk-first, to every granted Pier |
+| `Mag:shuffle,pub:<them>` | `MusuThem,pub:<them> > stock` | the MIRROR of a friend's generator: heads + previews, chunks pulled by page on demand | it IS the crossing — never re-offered |
+| `Mag:Lineup` (of `%Card`) | on `w` | the dial's 20-ahead: Cards referring by `id` into any of the above | no |
+| `Mag:Streams` | on `w` | the dial's peek — what's playing next, fixed at prime time | no |
+| the pool's Mag | `MusuPool,pub:<me> > stock` | my pressed lofi copies at `pool/…` (OPFS); same paged shape | no |
+| `Mag:Musica` (culture draws) | `MusuSelf > radiostocking` | ephemeral handfuls, keep-8, GC fodder | no |
+| **`Mag:heard,pub:<me>`** (this doc) | `Identity` | what I heard of whom + what I took | **never** |
+
+**Where Repli operates**, in one breath: a `%Record` appearing under a shelf is noticed by that shelf's
+ Seem (`Repli_sent_se`), and the notice IS the offer — nobody says "offer this". `Ra_offer_stock` ships
+  each Mag as ONE husk fragment (Mag head, its Cloud pages, every Record head, no chunk bytes). The far
+   side lands it with `Repli_merge`: every line is a serialised find-or-create keyed by its `loc`
+    (`Mag,pub` / `Cloud,page` / `Record,id`), so the mirror wears the sender's exact shape. `Ra_mag_warm`
+     then pulls the first two records' opening chunk pages; `Ra_pull_beat` pulls further pages with
+      `repli_want` on demand; `Ra_stage` stamps each mirrored Record's fill state
+       (`husk|pulling|landing|previewed|parked|whole`). Absence is not deletion on this wire — a retired
+        record is an `op:delete` line. That is the entire Repli surface this doc touches.
+
+**No epoch, and why there is none to want.** The mirror is never versioned. Friend Mags never berth
+ (Mag_todo §6b): they are session matter, re-exploded on every connect and shaved off after. So the only
+  coordinate a mirrored Mag has is the friend's own `Cloud,page:N`, which only ever grows at the back. A
+   Card's `id` therefore does not point at "their Mag as of Tuesday"; it points at a content hash, and
+    the way back is a lookup, never a search (§6b again): `pub` → the Pier
+     (`Swarm_peering(ident).o({Pier:1, pub})[0]`, what `Radio_friendly` already does), and `id` → the
+      mirror if it is up (`Ra_rec_find(Ra_home_them(w, pub), {Record:1, id})`), else a fresh
+       `Rummage,seed:<id>` re-asks the Pier (§4). **So yes: any structure may refer to a Card by
+        `(id, pub)`, and from any such pair the source Pier is two lookups away — no epoch required,
+         because nothing but the wire's current answer is ever trusted for bytes.** The Lineup already
+          refers this way; its Cards carry the Record on `.c.rec`, which is one of the `.c` smears §7.6
+           would make visible by carrying `pub` instead.
+
+### 1b. The shuffler, in five lines — what really matters
+
+There is a shuffler, and it is nearly clean; it is just spread over four homes. Today:
+
+1. **Generate**: `Mag:shuffle` (mine, and each friend's mirror) mints six-record pages on demand
+    (`Ra_mag_page`, `prandle`-seeded, 200k-safe — never enumerates).
+2. **Choose**: `Radio_lineup_fill` keeps `Mag:Lineup` 20 Cards ahead by round-robining the contributor
+    pools — mine, each `MusuThem` mirror with a playable record, the pool — skipping ids that are lined
+     or heard.
+3. **Dedup**: `radio.c.heard`, a 100-cap set of bare ids, `.c`, gone on reload. Mag_todo §8 already ruled
+    the cursor **"ABSOLUTELY durable — keep OBLIQUE track of Records heard"**, and `Radio_mag_cursor`
+     (how far through a Mag you are) is derived from the same set. That ruling has had no home for six
+      weeks.
+4. **Dial**: `Radio_dial` ranks the rungs (a join in flight holds everything; then Lineup; then Streams
+    peek; then pool; then own shuffle) and `Radio_peek_next` answers "what's next" once, at prime time.
+
+**The unification this doc buys**: `Mag:heard` IS line 3. The heard Cards are the durable oblique cursor
+ §8 asked for, the dedup set the fill skips by, the per-Mag cursor `Radio_mag_cursor` reads, AND the
+  taste ledger §2 scores. One Mag, four readers, no `.c`. The Lineup stays a Mag of `%Card` on `w` (it is
+   the right shape already); the only change there is `Card,id,pub` instead of `Card` + `.c.rec`. Nothing
+    else in the shuffler moves.
+
+**A Card has two stages, and the second is the consent moment.**
+- **Heard** — `id, pub, mire`. Bare ids. This is Mag_todo §6b, ruled 2026-07-19 and never overturned:
+   *"listening history… keep it OBLIQUE — bare ids, no titles|paths."* The first draft cloned every
+    heard track's listing into account matter; that was the hoard the ruling forbids, and it was also
+     impossible — a shuffle Card often has no `path` at all (`Ra_record_from` omits it).
+- **Taken** — `take` plus the listing (`title, artist, dir, path, bytes, body_hash`) cloned from the
+   friend's answer to a describe, plus `keep:` once the original is materialised. Acting is when it
+    becomes yours to hold. Everything a later reader needs to find the way back is on the line: `pub` is
+     the Pier, `id` is the content hash, `keep` is the original's own id on their side.
+
+**One Card per `(id, pub)`, find-or-create, never re-minted.** All six lenses landed on this. "Heard
+ again" bumps the Card that exists; nothing ever duplicates an `id` across pages; a heist holding a Card
+  can never be handed a corpse.
+
+**No `landed` key.** Four lenses, independently: "do I have it" is `id` on my shelf — derived, one home.
+ The `Newlyadded` ledger stays the disk's own answer to *when and where*. What a Card DOES carry are the
+  failures, which no shelf can derive: `held` (already had it by artist+title), `unvouched`, `landfail,why`.
+
+**No operation particle.** A heist in progress *is* the query: `take` Cards whose `id` is not on my
+ shelf, grouped by `pub`, oldest `at` first, one holder pulled at a time. `%Caper`, `%Heist`, `%Pick`,
+  `%Jam/%Like/%Grab`, `keep.c.blagged`, `%Provisions/%Want` all dissolve into it. (The Mag lens argues
+   the per-holder group deserves the ruled word `%Caper` as a container — §7.3.)
+
+**No `era`, no `open` counter, no promotion, no move.** `Cloud,page:N,created_at` is the model's own
+ coordinate; a page is one sitting, which is what a human reading the snap wants ("Tuesday's page"). GC is
+  per-Card (§3); a Cloud goes when its last Card does. Nothing is ever re-minted or relocated.
+
+## 2. THE RULES — one table, on the Mag, not in verbs
+
+```
+Mag:heard,pub:c0de,take_after=3,album_after=8,heard_ttl=30,take_ttl=90
+```
+
+| scalar | plain words |
+|---|---|
+| `take_after=3` | a track you let play through three times, present, gets taken as if you had pressed ♥ (the ambient road — §7.1 asks whether it exists at all) |
+| `album_after=8` | eight play-throughs across one friend's folder and the whole folder is taken |
+| `heard_ttl=30` | a heard-but-never-taken Card is forgotten after thirty days |
+| `take_ttl=90` | a taken Card no holder has answered in ninety days reads *gave up* |
+
+| event | effect | why (the human lens) |
+|---|---|---|
+| a track plays through **with a person present** | `mire +1` | a kitchen phone playing to an empty room is not attention — the `humdinger` predicate already exists for exactly this |
+| ♥ | `take` — directly. Not `+5`. | the heart is a decision, not a vote; a score that "reaches" a threshold is magic nobody can see |
+| ♥ again within ~10 s | un-`take` | a second press means *undo* on every phone there is; mashing is not a behaviour, mis-tapping is |
+| skip | nothing | people skip songs they love — wrong moment, heard it this morning, the phone rang |
+| `mire ≥ take_after` | `take` | the ambient road: you never pressed anything, you just kept letting it play |
+| Σ `mire` over `(pub, dir)` ≥ `album_after` | `take` the folder | and the Haul row says **album**, not just the track — the verdict must be visible or it is creepy |
+| `mire` in the ambient band | bias the dial toward `pub` | with a tell on the chip — *more Maya* — or it feels either clever or creepy depending on nothing you control |
+
+Every number is a scalar on the Mag line — visible, snapped, Book-gated, no `%Rules` particle. When they
+ are ever per-account, they already are.
+
+## 3. HOW IT FORGETS
+
+(This was called "the protein machinery" and the owner called it, correctly: *"do you really understand
+ `PROTEIN MACHINERY`, how will that work… it decides when Mags are discardable? or what?"*.  It does not.
+  It is not about Mags and not about Heists. It is about ONE thing — **heard Cards, and when they go**.
+   The metaphor was reaching for turnover: the Mag is a steady-state pool, synthesised on hearing and
+    degraded on a clock, so it stays flat instead of growing forever. That is a BOUND, not a machine, and
+     the bound is stated below in its own words.)
+
+One query, run on the tick, per Card:
+
+```
+drop  if  ¬take  ∧  created_at < now − heard_ttl          (a heard track nobody wanted: gone in 30 days)
+keep  if  take                                             (a heart is never dropped by a clock)
+```
+
+and one human-facing state instead of an exit:
+
+```
+gave up  if  take  ∧  ¬keep  ∧  at < now − take_ttl        (90 days with no holder ever answering)
+```
+
+A given-up Card is *shown* (the Haul row I already built) and offers ✕; it is never deleted by the
+ machine. This is the lifecycle lens's "a take with no exit is immortality" and the human lens's *"you
+  can't lose a heart"* reconciled: the clock can change what a heart *says*, never whether it exists.
+
+**THREE DIFFERENT GIVE-UPS, and conflating them is half of why this doc did not cohere** (the owner:
+ *"or Heists are give-up-able?"*). They live at three different layers and only the third is new:
+
+| give-up | whose | what happens |
+|---|---|---|
+| the **transfer stalls** — bytes stop arriving | the keep | already built: `Heist_keep_gist`'s *"given up — 4h, nothing landed"*, and `Heist_pull_giveup` for a pick the source demonstrably cannot serve |
+| the wire **answers, and the answer is not the track** | the keep → the Card | `held` (you already had it by artist+title) · `unvouched` (the offer's signature did not verify) · `landfail,why` (three throws at the landing). The verdict is copied onto the Card and the keep is ENDED |
+| **nobody has ever had it**, 90 days | the Card | the display word *gave up*. No deletion, no machine act; the ✕ is the only exit |
+
+The middle row is the one that was actually broken, and it is a WEDGE, not a cosmetic gap: all three of
+ those engine verdicts `mir.rm` the husk out of the mirror, so the keep is left pulling a record that no
+  longer exists — `left` never reaches zero, the keep never reaches `done`, and that holder's one live
+   slot is occupied forever. Copying the verdict onto the Card and ending the keep is what lets the queue
+    move on; a re-press of ♥ clears the verdict and asks again, which is the retry road.
+
+**Bound.** With no immortals and no promotion the Mag is (tracks heard in the last 30 days) + (hearts not
+ yet landed). The lifecycle lens priced a heavy listener at ≤ ~1,000 Cards ≈ 250 KB, flat.
+
+**A Cloud with a `take` Card in it is pinned by construction** — the model's "never drop a Cloud any
+ position sits on", where a want is a position. No re-mint needed to honour it.
+
+## 4. THE SEAM TO THE BYTE LANE — what the wire lens found
+
+**How a heist is asked for: it is a Repli thing, all the way down.** There is no heist protocol. There
+ are three asks, each a particle offered over the granted wire, each answered by particles offered back:
+
+| ask | particle, minted in MY `bay,pub:<them>` | their answer, landing in MY mirror |
+|---|---|---|
+| **describe the folder** this track came from | `Rummage,seed:<id>,pier:<them>` | the folder's `%Record` heads — metadata only, no reads on their disk (`Heist_rummage_answer` → `Heist_offer_all`) |
+| **materialise one file** (the original, or `lofi` the ogg128) | `Rummage,want:<ref>,pier:<them>,path:<hint>` | that one `%Record,re:<id>` with its FULL head — `total`, `body_hash`, vouch — the only read-side cost, bounded to chosen tracks |
+| **pull the pages** | `repli_want` frames, a want-once cursor re-asked every 4 s | `%Body,seq:N` chunk particles under that Record until `stage:whole` |
+
+So the answer to "per file, after we enumerate?" is: **enumerate by Repli, then per file by Repli, then
+ per page by Repli.** The first ask is the enumeration; the second is per chosen file; the third is
+  `Ra_pull_beat`, the same pump that fills a preview. The ask is idempotent by key (a re-ask upserts onto
+   the same mirror particle; `n=` counts the episode so the source can tell a fresh ask from an echo).
+
+**Two id-spaces — why the first ask is not optional.** The Mag `id` is the enid of the *streamed*
+ rendition. The original a heist lands is materialised on their side under a keep-id (`Heist_keep_id`)
+  with `re:<enid>` pointing back. So a `take` cannot `repli_want` by `id` and get the flac — it would get
+   the opus. The sequence, every time:
+
+1. `take` mints `Rummage,seed:<id>` (describe) — or straight to `Rummage,want:<id>` when the Card already
+    holds a listing (a re-heist after *gave up*, or a sibling taken by the album rule).
+2. The answer lands `%Record,re:<id>` heads in the mirror — the album's siblings among them.
+3. The Card clones its listing off that head and stamps `keep:<their keep-id>`; siblings become sibling
+    Cards with `take` if the album rule fired, else nothing (an untaken sibling is not an interaction).
+4. `Heist_beat(…, cards, …)` joins `mir.o({Record:1, re:card.sc.id})` and pulls; the wet partial
+    quarantines under that mirror record exactly as today; land verifies `body_hash`.
+5. Done-ness is `id` on my shelf. Failures stamp the Card.
+
+**Friend offline** ⇒ the Card waits with `take` and no `keep`. Honest, and the row says *waiting*.
+
+**The Card must not be offered back as a holding.** `Mag:heard` hangs under `%Identity`, which is never
+ a Repli source; and the export protocol strips `mire`/`take` so a ferried Card cannot read as a
+  `%Record`. Add `Card:['id','pub']` to `Repli_identity_keys` and to `Swarm_graft`'s ID table before the
+   first Card exists, or every re-import twins every Card whose `mire` moved (persistence lens, §5).
+
+**The job's scalars find homes**: `into:<category>` on a Card **only when a human chose** (absence =
+ land under `dir`; "any sibling in this group carries `into`" is what "the human spoke" means now);
+  `disbelieve_directories` is a Mag scalar; the tally rows become the failure keys above.
+
+## 5. PERSISTENCE — the corrected matrix
+
+`Mag:heard` files under **S3**: hung under `%Identity` (the account export is a skip-list, so it rides
+ free) **plus** a `Swarm_restash_heard` stash pillar (a phone has no folder, so the stash is its only
+  durable home). The pools are the precedent. Three corrections from the persistence lens:
+
+- **Never bump the account on a `mire` tick.** `Swarm_persist` rewrites the whole account file on every
+   `%Identity` bump, inside the beliefs mutex. Bump on `take`, un-`take`, and a page roll — never on a
+    play-through.
+- **There is no crew road.** The ferry is a one-shot bootstrap at link; afterwards each body writes its
+   own account file and nothing merges. So "pools ride the crew ferry by design" was wrong, and "the
+    Cave lives out the Captain's hearts" is real work (W2 `ferry_want` / a `%Reach`), not one line.
+     State the merge law now anyway, because two bodies will write: **`mire = max`, `take = OR`, keyed
+      `(id, pub)` with no device key.** Where it lands first is the pillar's `oai`.
+- **`take` rides the ferry; the haul is body-level.** A new device inheriting your wishes is the
+   feature. A body hauls a `take` Card only into the share *it* mounts, gated by `/Crew` membership
+    (never the `%Body` roster). A phone hauls nothing. No `into:<share>` on the Card.
+
+Truth model: the C tree is truth; both homes are write-through mirrors; on a healthy boot the stash wins
+ and the disk is read only when Dexie is empty.
+
+| thing | reload | data cleared | new device | FSA gone | crewmate | friend offline |
+|---|---|---|---|---|---|---|
+| `Mag:heard` | ✓ stash | ✗ unless account | ~ account, once graft has ID rows | ✓ stash | ✗ — no road yet | ✓ |
+| `take` | ✓ | ✗ unless account | ✓ inherits the queue | ✓ waits | ✗ — no road yet | ✓ waits |
+| the wet partial | ✗ (resync re-verifies bytes on disk) | ✗ | ✗ | ✗ | ✗ | ✗ |
+| berth · the collection · `pool/` · the mirror | unchanged from before | | | | | |
+
+Two policy facts, once: **berth is per-share** — a crewmate mounting the same NAS would inherit anything
+ there, which is why a want is account matter and not a berth tenant; and **a `dontSnap` bag is S0
+  wearing a hat** — fine for a face's mirror of a ledger, wrong for anything a human decided.
+
+## 6. WHAT THIS DELETED, AND WHAT SURVIVED
+
+**The actual list is §0's two tables** — written from the diff rather than from the plan, so it is the one
+ to trust. What follows is only the part of the original plan that did NOT happen, and why, because a
+  deletion list that quietly shrank is how a doc starts lying about the code:
+
+| planned to go | what actually happened |
+|---|---|
+| `%Heist` (the keep) and `%Pick` | **KEPT**, deliberately. The keep is now TRANSIENT SCAFFOLDING: the beat mints one per holder from the oldest take Card, lets it finish, reads it back (`Heard_clone_beat`) and ends it. The Card is the intent and the ledger; the keep only carries bytes. Ripping the shop/keep/Pick machine is a separate multi-day job and this circuit does not need it to be true. |
+| `%Caper` (the job) and its `filing/took/held/denied` rows | **KEPT** as the job — but its VERDICT rows (`held`/`unvouched`/`landfail,why`) are now copied onto the Card before the job flattens, which is what §0 found: without that copy the keep wedges its holder's slot forever. |
+| `%Hauls/%Haul` (the landed-album rows) | **KEPT**. Only the `%Newly>%Fresh` arrivals MIRROR inside it went (→ `Heard_landed_ids`). `Heist_haul_look` still answers "what landed, by album, when" off the disk's own ledger, which nothing else answers. |
+| `%Provisions > %Want` | **KEPT**. It is the pool steward's want-list, not the heart's — a different question with a different answer, and folding it in would have been the one-of-anything mistake in reverse. |
+| `keep.c.blagged`, `rec.c.unity`, `w.c.keep_beat_at` | **KEPT** (`keep_beat_at` now stamps `'heard'` where it stamped `'wants'` — it is the hang cursor `Swarm_latch_stale` reads, not a design statement). |
+
+## 7. RULINGS OWED (yours)
+
+1. **The four numbers** — `take_after`, `album_after`, `heard_ttl`, `take_ttl` — and whether the ambient
+    road (`mire ≥ take_after` ⇒ `take`, no heart pressed) exists at all in v1.0. Recommendation: ship
+     v1.0 with ♥ only and the two TTLs; the ambient road is the squishy zone and wants a screen first.
+2. **A page per sitting** — or per day. Sitting is the most legible; day is the most predictable.
+3. **The per-holder group: a query or a container?** Five lenses say query (no particle). The Mag lens
+    says the ruled word `%Caper,pub:<them>` should name it. My recommendation: query — a container that
+     holds nothing the Cards don't already say is the splatter coming back.
+4. **Names** — ✅ **RULED 2026-09-04**: the leaked Book prefix goes. `MusuSelf` → **`Mine`**,
+    `MusuThem` → **`Theirs`**, `MusuPool` → **`SoundPile`**; each still wears `pub` and still keeps its `stock`
+     child, and the two mainkeys stay DISTINCT (merging mine-and-theirs into one keyed by `pub` is the
+      exact bug fixed 2026-08-05 — `Ra_home_them` cannot answer "is this me?"). Measured blast radius:
+       **322 references across ~28 files and 344 fixture snaps** — a pure mechanical rename, so it is ONE
+        SWEEP OF ITS OWN, **after** the circuit lands (whose fixtures move anyway); two clean diffs
+         instead of one tangled one. `heard` / `take` stand. `shop` still goes and `bay,pub:<them>` still
+          moves up under the home — both are shape changes, not renames, and neither is in this build.
+     ⚠ **`Pool` was the owner's third word and it CANNOT be used**: `%Pool,name:<compartment>` already
+      exists — the SoundPooling declaration on the identity (`%Pools > %Pool,name,take,cap,salt`, Ra.g:1053,
+       the seventh stash pillar, gated by SwarmReboot). Taking it for the HOME as well would put two
+        different shapes under one mainkey, which is the one-of-anything fault CLAUDE.md names. `Pile` is
+         free, and the owner asked the pool home be "more descriptive … two or three words shoved together"
+           and asked what is actually in it: **my pressed lofi copies of friends' tracks**, at `pool/…`
+            OPFS paths (`grade:ogg128`), a bounded browser-side sediment so the radio still has surprises
+             offline. So **`SoundPile,pub:<me>`** — tied to the feature that fills it (SoundPooling), "pile"
+              being §C's own word, and honest when the pooled bytes are NOT lofi (`Ra_rec_pool` keeps the
+               original when no press happened, so `LofiPile` would sometimes lie). The `%Pool,name`
+                compartments stay exactly where they are: they are the DECLARATION ("keep this much of this
+                 kind"), the SoundPile is the sediment — two different things, two mainkeys, as it should be.
+
+     **The SoundPile is LIFECYCLE; the heard Mag is DECISIONS. That line is what this whole doc is about**
+      (the owner, asking the right question of the name: *"what's in it? what's it for? it's lifecycle?"*):
+
+     | | who decides what is in it | how a thing leaves |
+     |---|---|---|
+     | `SoundPile,pub:<me>` | the machine, by policy (`%Pool,name,take,cap`) | the machine, by budget — eviction (`Ra_quarter` press·pull·**evict**) |
+     | `Mag:heard,pub:<me>` | you heard it — or **you pressed ♥** | a hearing ages out at `heard_ttl`; a **heart only ever leaves by your ✕** |
+
+     Concretely the pile holds transcoded LOFI copies of friends' tracks in OPFS under `pool/…`
+      (`Record,id:<lofi enid>,of:<orig id>,grade:ogg128`) — not files, not your collection: browser storage
+       the person will never see in a files app. It exists so the radio still plays when nobody is online,
+        which on a phone (no folder, §5) is the difference between a radio and silence.
+
+     **It is NOT a staging area in front of the `%Them` mirrors** (the owner's next question, and the
+      answer separates three homes that this doc kept letting blur into one):
+
+     | home | how many | what it is |
+     |---|---|---|
+     | `Theirs,pub:<them> > stock` | **one per friend** | the mirror of their generator Mag — heads + preview chunks. Session matter, swept between sessions, never berths |
+     | the **quarantine** (`Record,re:… > %Body,seq` under that mirror) | **one per friend** | ← THIS is the staging area in front of a `%Them`: the wet partial, verified against `body_hash`, then moved out into the collection and gone |
+     | `SoundPile,pub:<me>` | **one, keyed by ME** | a DESTINATION, not a way-station: bytes land and stay until evicted |
+
+     The pile sits BESIDE the mirrors, not in front of them — the dial reads it as one more contributor
+      pool alongside each `%Them` and my own shuffle. And it is not fed only by them: `Ra_quarter_diff`
+       decides per track `held[id] ? 'press' : 'pull'` — **press** = transcode from MY OWN library,
+        **pull** = fetch through a friend's mirror. Both roads end in the same pile.
+     **Is the pooled material tracked, and should the home just be called `SoundPooling`?** It is tracked,
+      and the pile IS the tracking — no second ledger: each pooled track is a `%Record` on the pile's own
+       stock shelf (`id:<lofi enid>, of:<orig id>, grade:ogg128, path:pool/…`), which is both the holding
+        and the record of it (identity-is-per-shelf: a pool %Record is a DIFFERENT holding from the library
+         one, never a dupe), and `Ra_quarter` reads exactly that shelf for `pooled[]`.
+     But the FEATURE is three parts in three places — the **declaration** (`%Pools > %Pool,name,take,cap`
+      on the identity), the **activity** (`Ra_quarter`, the steward), and the **material** (the pile). Name
+       the material after the feature and a reader seeing `SoundPooling,pub:c0de` in a snap will go looking
+        for the compartments underneath it and not find them. `-ing` names an activity; a mainkey names a
+         thing. **Recommendation: `SoundPile` for the material, and the feature name stays free.**
+     ⤷ There IS a version where `SoundPooling` becomes the right name: move the compartments UNDER the home,
+        so `SoundPooling,pub:<me> > %Pool,name:… + stock,pub > Mag:shuffle > Record` is the whole feature in
+         one place. Real cohesion gain, but a SHAPE change rather than a rename — it moves the seventh stash
+          pillar and SwarmReboot's fixture. Owner's call; not in this build either way.
+
+     **⚠ IS THE PILE WORTH HAVING AT ALL? The owner, and he is half right** (*"a cache of Radio that
+      happened? maybe… to make smuggleable to peers? it's a little contrived. I just don't see the
+       point."*). Two facts settle the shape of the answer:
+     - **It is NOT for smuggling.** Checked on the wire: only `Ra_home_self` — my own library — is ever
+        registered as a caster or offered (`Swarm.g:4462`, `:5075`). The pile is never re-offered to
+         anybody. It is purely local playback.
+     - So the whole justification is local, and it is exactly one sentence: **the SoundPile is the PHONE's
+        library.** A phone has no `showDirectoryPicker` — no folder, no collection, ever — so everything it
+         can play is either streaming from a friend who is online RIGHT NOW, or in the pile. Without it a
+          phone's radio goes silent the moment its friends go to bed.
+     **And where he is right that it is contrived**: on a laptop with a real disk the pile is a WORSE
+      DUPLICATE OF THE HEIST. A ♥ there lands the ORIGINAL, in the collection, under the artist's folder,
+       yours forever; the pile lands a LOFI copy into obscure browser storage the browser may clear unasked,
+        under a different id. Same track, second copy, strictly worse. And `take:'radio'` ("keep what
+         played") is the most contrived compartment of all — sediment with no decision anywhere in it.
+
+     **RULING WORTH MAKING (§7.8, not in this build):** *the pile should exist only where there is no
+      folder.* FSA ⇒ a heart lands the original in the collection and there is NO pile; no FSA ⇒ the pile
+       IS the collection. One rule, and the contrived case disappears: a laptop stops keeping a second
+        worse copy of music it already owns, and the phone keeps the only thing that makes it a radio.
+     Today it is ungated — a laptop pools too. That is a change to SoundPooling, not to this circuit.
+
+     One-per-me is the right shape because the pile is a BUDGET: "keep 200MB of music on this device" is a
+      fact about the device, not about any friend, and splitting it per friend would invent N budgets
+       nobody set. Checked the same way: `Mine` and `Theirs` are both free as mainkeys and as non-first
+           keys; mainkeys are NOT namespaced per paradigm, so the check is over the whole tree.
+
+     **Where all this lives, for a reader who has lost the thread**: `H:Mundo > A:Sounditron > w:Sounditron`
+      — the resident /BigSoundland world, which is a NAMED BOOK world that the whole music app runs inside
+       (the reason `Radio_prod_seed`'s old `if (w.sc.w) return` gate misfired on the one surface it was
+        written for). The beacon is `top_House().c.radio_w`, stamped in exactly ONE place — `Stoker_ensure`,
+         Radio.g:2521 — and read by the share, every face, Repli and Sounditron.
+5. **The handoff road** — the phone → laptop `take` frame (§B). Same-soul body↔body frames already
+    dispatch pier-less, so this is one frame kind + one `oai` at the landing, not a transport — but it is
+     the network layer you said to leave alone, so it waits for your word. Without it a phone's ♥ can only
+      pool lofi on the phone itself.
+6. **`.c` → a visible sphere** — assumed by §6, not built here (`Repli_design` §5). First candidates from
+    this doc: `radio.c.heard` (becomes `Mag:heard`), Lineup's `Card.c.rec` (becomes `Card,id,pub`).
+8. **Does the SoundPile exist on a device that HAS a folder?** Recommendation: no — FSA ⇒ hearts land
+    originals in the collection and there is no pile; no FSA ⇒ the pile is the collection. See §1a's
+     ⚠ block: on a laptop the pile is a strictly worse duplicate of the heist, and `take:'radio'` is
+      sediment nobody chose. Not in this build; it is a SoundPooling change.
+
+7. **`Mag:heard` as the durable cursor** — §1b makes the six-week-old §8 ruling real by construction. Nod
+    or veto: it means the dedup set survives reload and grows by `heard_ttl`, not by a 100 cap.
+
+## 8. THE HAGGLE — what each lens won
+
+| lens | won | lost |
+|---|---|---|
+| **ego-death** | flat GC by `created_at`; ♥ *is* `take`; `mire` counts plays only; `landed` derived; `%Rules` → scalars on the Mag; don't clone untaken siblings | "keep the full clone at heard" — overruled by §6b |
+| **lifecycle** | one Card per `(id, pub)`, never re-minted; no timer-driven pages; the harvester's receipt is `take` itself; the growth bound | promotion, promote-cost, `born=` — unnecessary once nothing is re-minted |
+| **persistence** | no crew road exists; graft ID rows; never bump on a `mire` tick; the merge law; haul is body-level | — |
+| **the wire** | two id-spaces (`re:`/`keep:`); Rummage first, always; failure keys on the Card; strip `mire/take` at export | `landed` as a stamp — outvoted 4–1 |
+| **the human** | §A–C verbatim; second ♥ = undo; skip = 0; presence-gated play-through; the verdict word on the row; *you can't lose a heart* | — |
+| **the Mag model** | OBLIQUE heard (§6b); `of:` → `pub:`; `Cloud,page,created_at`; a Mag wears `pub:<me>`; `landed` derived | `%Caper` as the group's container — left to you (§7.3) |

@@ -28,7 +28,7 @@ Snap:H
         reached:step_3
         testing
           stashed,roster_stashed,pier_stashed,izz_stashed,root_stashed,crew_stashed,one_reach_stashed,pools_stashed,cert_stashed
-          wiped,roots_gone,peering_bare,crew_gone,pools_gone,cert_gone
-          back,pier_back,izz_back,root_back,crew_back,my_role_back,cert_back,body_back,roster_back,pools_back_in_order,pool_policy_back,standing_reach_back,terminal_reach_stayed_dead,reach_state_back,idempotent
+          wiped,roots_gone,peering_bare,crew_gone,pools_gone,heard_gone,cert_gone
+          back,pier_back,izz_back,root_back,crew_back,my_role_back,cert_back,body_back,roster_back,pools_back_in_order,pool_policy_back,standing_reach_back,terminal_reach_stayed_dead,reach_state_back,the_bare_hearing_stayed_dead,idem_heard_doubled,idempotent
         reached:step_4
         reached:step_5

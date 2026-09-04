@@ -3049,10 +3049,11 @@ Sounditron_witness(w):
     if (radio && (radio.sc.Radio === 'playing' || radio.sc.Radio === 'starved') && seq > 0) {
         this.story_swear(w, 'the music played — record chunks decoded onto the live timeline', radio)
     }
-    // the WHOLE trick: what played came off a FRIEND's shelf (in radio.c.heard once the pump opened
-    //  it).  Opportunistic — latches only when a peer stood online with previews pulled.
+    // the WHOLE trick: what played came off a FRIEND's shelf (on the heard Mag once the pump opened
+    //  it — Heard.g; it was `radio.c.heard`, a runtime bag, until 2026-09-04).  Opportunistic — latches
+    //   only when a peer stood online with previews pulled.
     let lt = w.c.listen_target
-    if (radio && lt && radio.c.heard && radio.c.heard[lt.id]) {
+    if (radio && lt && this.Radio_heard(radio)[lt.id]) {
         this.story_swear(w, 'music from a friend played — their track streamed off their shelf over Repli', radio)
     }
     if (n != null && n >= 6 && w.c.ttf != null && w.c.ttf > 2000 && !(oa %log:'slow to sound — music took over two seconds to begin')) i %log:'slow to sound — music took over two seconds to begin'
