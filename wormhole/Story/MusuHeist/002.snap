@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=6	{"mung":["age"]}
+      self,round=5	{"mung":["age"]}
       w:MusuHeist,now=1752000020
-        self,round=6	{"mung":["age"]}
+        self,round=5	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -12,9 +12,15 @@ Snap:H
         Account,of:Uno
           Identity:4e09f34f5a6ab900,prepub:4e09f34f5a6ab900,friendly:Uno
             Peering,name:4e09f34f5a6ab900,friendly:Uno
+            Crew,soul:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
+              mate:4e09f34f5a6ab900,role:Captain,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
+              Key,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5	{"mung":["secret"]}
         Account,of:Duo
           Identity:be0dab3303037ad2,prepub:be0dab3303037ad2,friendly:Duo
             Peering,name:be0dab3303037ad2,friendly:Duo
+            Crew,soul:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
+              mate:be0dab3303037ad2,role:Captain,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
+              Key,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8	{"mung":["secret"]}
         Peering,name:4e09f34f5a6ab900,req=2,ok
           Pier,pub:be0dab3303037ad2,req=2,ok
             req:handshake,finished
@@ -59,7 +65,7 @@ Snap:H
               req:unemit,seq=2,type:trust,done,to:trust,finished
             Ud,pubkey:4e09f34f5a6ab900
           active_transport,type:mock,open
-        MusuSelf,pub:4e09f34f5a6ab900
+        Mine,pub:4e09f34f5a6ab900
           stock,pub:4e09f34f5a6ab900
             Mag:shuffle
               Cloud,page:1
@@ -100,7 +106,7 @@ Snap:H
                   Original,seq:3,cid:73ea2950a7a0a6020cf94ee01142e43ac40287d007e7acad945210a362cd2acd	{"ref":{"buf":"Uint8Array()"}}
           shop,pub:4e09f34f5a6ab900
           radiostocking,pub:4e09f34f5a6ab900
-        MusuSelf,pub:be0dab3303037ad2
+        Mine,pub:be0dab3303037ad2
           stock,pub:be0dab3303037ad2
             Mag:shuffle
               Cloud,page:1

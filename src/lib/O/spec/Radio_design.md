@@ -107,7 +107,7 @@ And a fourth, **planned** layer: an opportunistic WebRTC **multicast swarm** for
 - **The cross-wire share glue** `[LIVE-WIRED, loopback-only]` — `Swarm_share_up`/`loop`/`beat`
    (Swarm.g:1378) → `Repli_arm`, `Ra_offer_stock` (Ra.g:743), `Ra_mag_warm`, `Ra_restock_beat`,
     `Ra_transcode_pump`. Called live from `InvitePanel.svelte:57`, mounted in BigSoundland: stock
-     husk-casts to granted friends, per-friend `%MusuThem` crates mint in the radio world, the
+     husk-casts to granted friends, per-friend `%Theirs` crates mint in the radio world, the
       dial plays the pool. But it has **only ever run over `Lake_link`** — no cross-machine
        round-trip is proven.
 - **The multicast swarm itself** `[OWED]` — advertise / discover / serve. "Nothing built yet"

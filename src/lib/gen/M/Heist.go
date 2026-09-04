@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '2d67994f374fa066~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '8e00ce451a98582a~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -1116,7 +1116,7 @@ async Heist_flatten(w, job, mir) {
 //                                the built land, it never edits it
 // WHERE THE SOFT HEIST HOMES (§2.4, re-homed 2026-07-17): the `shop/` shelf now exists (Ra_home_shop(w, <me>)
 //  in Ra.g, beside stock/) — the LOADING ZONE where a heist lives WHILE IN MOTION.  A heist is the ASKER's
-//   operation, so it homes under the asker's OWN %MusuSelf,pub shop shelf, not the world floor (the §2.1
+//   operation, so it homes under the asker's OWN %Mine,pub shop shelf, not the world floor (the §2.1
 //    homing law — nothing per-Pier floats on w).  A caller passes the asker's shop as `home` (Heist_wish for
 //     soft, Heist_job's opts.home for hard); the %Lead answers accumulate UNDER the wish there.  Passing `w`
 //      still works (the compat leg) — the seam is the `home` param, unchanged.
@@ -2004,7 +2004,7 @@ Heist_unity_of(mir, seed) {
     return { n: +(card.sc.un_n || 0), size: +(card.sc.un_size || 0), d: card.sc.un_d ? 1 : 0 }
 
 },
-// Heist_blag_folder — THE FOLDER, WITHOUT ASKING.  A friend's %MusuThem mirror already holds a %Record card
+// Heist_blag_folder — THE FOLDER, WITHOUT ASKING.  A friend's %Theirs mirror already holds a %Record card
 //  per track they share, and since the crate-root-relative path landed (`Ra.g`, 4938d5f5) every card carries
 //   `path` — plus `title`, `artist`, `ext` and a stat'd `bytes`.  That is a file listing.  The heard track's
 //    own card gives the directory; every card sharing that directory IS the rest of the folder.  So the
@@ -2400,7 +2400,7 @@ async Heist_keep_beat(w, ident) {
     // (the keep_beat_at stamps are the hang CURSOR for Swarm_latch_stale — when the detached latch breaks,
     //  the stamp names which await ate the beat.  Cheap: one .c write per phase.)
     w.c.keep_beat_at = 'serve'
-    for (const home of rw.o({ MusuThem: 1 })) {
+    for (const home of rw.o({ Theirs: 1 })) {
         if (!home.sc.pub) continue
         let asker = String(home.sc.pub)
         if (asker === me) continue
@@ -4574,7 +4574,7 @@ Heist_shop_find(w) {
     if (!w) return null
     let me = (typeof this.Radio_pub === 'function') ? this.Radio_pub(w) : null
     if (!me) return null
-    let home = w.o({ MusuSelf: 1, pub: me })[0]
+    let home = w.o({ Mine: 1, pub: me })[0]
     if (!home) return null
     return home.o({ shop: 1, pub: me })[0] || null
 
@@ -4674,7 +4674,7 @@ Heist_keep_flight(rw, keep) {
     let of = String(live.sc.ref || '')
     let out = { of: of, title: String(live.sc.title || ''), got: 0, total: 0, pct: 0 }
     let dj = String(keep.sc.pub || '')
-    let mir = dj ? rw.o({ MusuThem: 1, pub: dj })[0] : null
+    let mir = dj ? rw.o({ Theirs: 1, pub: dj })[0] : null
     let stock = mir ? mir.o({ stock: 1, pub: dj })[0] : null
     let rec = (stock && of) ? this.Ra_rec_find(stock, { Record: 1, id: of }) : null
     if (!rec) { return out }
@@ -5091,7 +5091,7 @@ Musica_zine_tune(z, id) {
     let rec = this.Ra_rec_find(this.Ra_home_self(w, pub), { Record: 1, id: String(id) })
     if (rec && this.Repli_chunk_at(rec, 0) == null) rec = null
     if (!rec) {
-        for (const home of w.o({ MusuThem: 1 })) {
+        for (const home of w.o({ Theirs: 1 })) {
             if (rec) continue
             let hit = this.Ra_rec_find(this.Ra_home_them(w, String(home.sc.pub)), { Record: 1, id: String(id) })
             if (hit && this.Repli_chunk_at(hit, 0) != null) rec = hit

@@ -27,7 +27,7 @@ Snap:H
               recent
                 unemit:1,type:repli_lines,seq:1,body_len:667
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
@@ -56,21 +56,21 @@ Snap:H
                 Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D,path:DJ Oscillo - Dorian D.wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
                 Card,id:cf95c97b08584b92,artist:DJ Oscillo,title:Groove G,path:DJ Oscillo - Groove G.wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
         req:soft_census,finished
-        MusuThem,pub:Origin
+        Theirs,pub:Origin
           stock,pub:Origin
             Mag:Musica
               Cloud,randomic:softdraw,created_at=1000
                 Card,id:d71294dbbcd7b726,artist:DJ Oscillo,title:Cosmic C,path:DJ Oscillo - Cosmic C.wav,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
                 Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D,path:DJ Oscillo - Dorian D.wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
                 Card,id:cf95c97b08584b92,artist:DJ Oscillo,title:Groove G,path:DJ Oscillo - Groove G.wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
-        MusuSelf,pub:Seeker
+        Mine,pub:Seeker
           shop,pub:Seeker
             Caper,wish:cosmic voyage,at:Origin,chose:d71294dbbcd7b726
               Lead,pier:Origin,id:d71294dbbcd7b726,tune:DJ Oscillo — Cosmic C
               filing,artist:DJ Oscillo,genre:softtest
             Caper,wish:zither reggae
         req:soft_pull,finished
-        MusuThem,pub:soft.pull.mirror
+        Theirs,pub:soft.pull.mirror
           stock,pub:soft.pull.mirror
             Mag:shuffle
               Cloud,page:1

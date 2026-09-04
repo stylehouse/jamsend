@@ -14,13 +14,13 @@ Snap:H
           forgot,a_hearing_nobody_wanted_is_forgotten,a_heart_is_never_dropped_by_a_clock,this_sitting_is_untouched,gave_up_is_a_word,only_a_person_retires_a_heart,an_emptied_sitting_goes
           carried,one_mint,oldest_wish_first,the_shape_the_button_made,a_busy_holder_waits,no_share_no_haul,a_wish_is_a_track,the_cell_cap_holds
           cloned,the_listing_lands_on_the_card,the_way_back_rides_the_line,cloning_twice_writes_nothing,the_verdict_lands_on_the_card,the_wedged_keep_is_ended,an_answered_wish_still_stands_as_a_wish,the_queue_moves_on,a_re_press_clears_the_verdict
-        MusuThem,pub:friendo
+        Theirs,pub:friendo
           stock,pub:friendo
             Record,id:r1,title:Track One,artist:Friendo,total:10
             Record,id:r2,title:Track Two,artist:Friendo,total:10
             Record,id:r3,title:Track Three,artist:Friendo,total:10
             Record,id:keep2,re:r2,title:Track Two,artist:Friendo,path:Friendo/Track Two.flac,total:51744301,body_hash:bh2
-        MusuSelf,pub:me
+        Mine,pub:me
           Mag:heard,pub:me,heard_ttl:30,take_ttl:90
             Cloud,page:1,created_at:1788400000
               Card,id:r1,pub:friendo,mire:2,title:Track One,artist:Friendo,take:1,at:1788400150
@@ -37,6 +37,6 @@ Snap:H
             Mag:shuffle
               Cloud,page:1
                 Record,id:own1,title:Mine
-        MusuThem,pub:otherfriend
+        Theirs,pub:otherfriend
           stock,pub:otherfriend
             Record,id:o1,title:Over There,total:10

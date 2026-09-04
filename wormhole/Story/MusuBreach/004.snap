@@ -8,7 +8,7 @@ Snap:H
         testing
           reached:step_2
           censused,records=0
-        MusuThem,pub:breach.mirror
+        Theirs,pub:breach.mirror
           stock,pub:breach.mirror
             Mag:shuffle
               Cloud,page:1
@@ -47,7 +47,7 @@ Snap:H
                   Original,seq:1,cid:7590a233708c2b4f30a8abdd8105d153790bb88c32a46a03739679f248814d5c	{"ref":{"buf":"Uint8Array()"}}
                   Original,seq:2,cid:e0d1807fa53044f48021912f357290b98042bcff9711a9cdb268833f96e87cf5	{"ref":{"buf":"Uint8Array()"}}
                   Original,seq:3,cid:73ea2950a7a0a6020cf94ee01142e43ac40287d007e7acad945210a362cd2acd	{"ref":{"buf":"Uint8Array()"}}
-        MusuSelf,pub:breach.own
+        Mine,pub:breach.own
           stock,pub:breach.own
           shop,pub:breach.own
             Caper,at:breachpier,disbelieve_directories

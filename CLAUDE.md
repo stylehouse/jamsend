@@ -55,7 +55,8 @@ A snapped boolean rides as `1` or **absent**, never `false`/`0`: a JS boolean is
      A 1:1 reference can let the mainkey carry the identity, keeping the join key beside
       it (`Card,id:X` — a catalog listing — sits beside `Record,id:X` — the holding — and
        the shared `id` IS the join). A **many:1** reference wears an `of:` pointer
-        (`Spin,of:X` / `Like,of:X` / `Heist,of:X` — a Jam ledger, many events per track).
+        (`Reco,by:X` / `Heist,of:X` — many events per track; the `Spin`/`Like`/`Grab` Jam ledger that
+          used to illustrate this was deleted 2026-09-04, see spec/Radio_circuit_todo.md).
          The tell you got this wrong: two DIFFERENT shapes under one mainkey (the old
           magazine minted `%Record` cards that looked exactly like holdings — "there's
            only one of anything", the human).

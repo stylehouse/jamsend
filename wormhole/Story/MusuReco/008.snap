@@ -1,9 +1,9 @@
 Snap:H
   H:MusuReco,Run
     A:MusuReco
-      self,round=19	{"mung":["age"]}
+      self,round=18	{"mung":["age"]}
       w:MusuReco
-        self,round=19	{"mung":["age"]}
+        self,round=18	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -83,7 +83,7 @@ Snap:H
               req:unemit,seq=43,type:repli_lines,body_hash:3d6de24be77ebd9015455fd4bc9046a9f875d46dd534316df05b9ae3f7160f87,body_len=99,done,to:repli_lines,finished
               req:unemit,seq=44,type:repli_page,body_hash:3594949d611278fb4191188dd10d5052e8efbb52ab0b611561bb56550a79433a,body_len=76800,done,to:repli_page,finished
           active_transport,type:mock,open
-        MusuSelf,pub:DJ
+        Mine,pub:DJ
           stock,pub:DJ
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
               Fill,name:audio,have=0,sr=48000
@@ -97,7 +97,7 @@ Snap:H
               Fill,name:audio,have=0,sr=48000
         reached:step_3
         refused:not_started
-        MusuThem,pub:Crowd
+        Theirs,pub:Crowd
           stock,pub:Crowd
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
               Fill,name:audio,have=56,sr=48000,got=7

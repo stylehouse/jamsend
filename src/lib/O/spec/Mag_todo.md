@@ -138,8 +138,8 @@ That is a regression hiding inside a simplification, and it must be noticed *bef
 This supersedes the `%from:<prepub>` proposal (§6b, 2026-07-19). `from` was reaching for the same
  thing and got there worse. Why `pub` wins:
 
-- **`pub:` is already the identity key of the whole Musu layer** — `%MusuSelf,pub:<me>`,
-   `%MusuThem,pub:<them>`. The Mag joins an established vocabulary instead of opening a second one.
+- **`pub:` is already the identity key of the whole Musu layer** — `%Mine,pub:<me>`,
+   `%Theirs,pub:<them>`. The Mag joins an established vocabulary instead of opening a second one.
    A reader who knows what `pub:` means anywhere already knows what it means here.
 - **It resolves the name/kind contradiction rather than dodging it.** `shuffle` may go on being the
    name, because names are namespaced by `pub` — so `%Mag:<name>` genuinely does follow
@@ -149,7 +149,7 @@ This supersedes the `%from:<prepub>` proposal (§6b, 2026-07-19). `from` was rea
     as a key rather than as an arrangement.
 
 **Consequence worth stating loudly — this demotes bomb 1.** Origin currently survives only by
- CONTAINER (the per-friend `%MusuThem` crate), which is exactly what `Ra_home_them`'s self-guard
+ CONTAINER (the per-friend `%Theirs` crate), which is exactly what `Ra_home_them`'s self-guard
   breaks; today that guard turns into merged data. With `Mag,pub` locatory, two Piers' mags stay two
    particles **even when they land in the wrong shelf**. That turns a container fault from *data
     loss* into *misfiling* — recoverable, visible, not fatal. Defence in depth. Fix the guard anyway;
@@ -165,10 +165,10 @@ This supersedes the `%from:<prepub>` proposal (§6b, 2026-07-19). `from` was rea
        hand-stamps instead of a fix.
 
 RECOMMENDED: **`pub`, plus the one-word allow-list edit.** The codebase already carries two words
- for "which peer", split by layer — `pub:` in the Musu shelf layer (`%MusuSelf,pub:`,
-  `%MusuThem,pub:`), `pier:` in the Heist|Repli layer (`%Lead,pier:`, `%Heistlet,…,pier:`,
+ for "which peer", split by layer — `pub:` in the Musu shelf layer (`%Mine,pub:`,
+  `%Theirs,pub:`), `pier:` in the Heist|Repli layer (`%Lead,pier:`, `%Heistlet,…,pier:`,
    `%Rummage,…,pier:`, `%Sent_Tree,pier:`). **A Mag lives on the Musu shelf** —
-    `%MusuThem,pub:<them> > stock > %Mag` — so `%Mag:…,pub:<them>` restates the container's own
+    `%Theirs,pub:<them> > stock > %Mag` — so `%Mag:…,pub:<them>` restates the container's own
      identity one rung down, in the container's own word. `pier:` there would introduce a second
       name for the identity of the very shelf the mag is standing on.
  Second reason, sharper: **the two keys have different value domains.** `pub:` is strictly a prepub.
@@ -379,7 +379,7 @@ POST-1.0 DESTINATION: **declare identity per-mainkey in the protocol rule set, b
 §0.1 argued the `Repli_loc_keys` fix from three known collisions (`Cloud,page`; `Cloud,randomic`;
  `Mag,which`). This section replaces that argument with a **census**: every mainkey ever observed
   inside a mirror shelf in a recorded fixture, with the `loc` today's heuristic picks for it.
-   (Method: walk every `wormhole/Story/*/NNN.snap`, take every line inside a `%MusuThem`|`mirror`|
+   (Method: walk every `wormhole/Story/*/NNN.snap`, take every line inside a `%Theirs`|`mirror`|
     `stock` subtree — a particle sitting there got there by crossing — and run its key list through
      `Repli_loc_keys`. The script was disposable; the finding is not.)
 
@@ -394,19 +394,20 @@ POST-1.0 DESTINATION: **declare identity per-mainkey in the protocol rule set, b
 | **`%Blob`** | `Blob,id,grade,path` | **`[Blob,id]`** | ❌ minted `{Blob,id,grade}` (`Orig.g:261`) |
 | **`%Mag`** | `Mag` · `Mag,warm` · `Mag,which` | **`[Mag]`** | ❌ every mag is one row |
 | **`%Cloud`** | `Cloud,page` · `Cloud,randomic` | **`[Cloud]`** | ❌ (two hand-stamps paper it) |
-| **`%Spin`** | `Spin,of,title,at` | **`[Spin]`** | ❌ |
-| **`%Like`** | `Like,of,title,at` | **`[Like]`** | ❌ |
-| **`%Grab`** | `Grab,of,title,at` | **`[Grab]`** | ❌ |
+| **`%Spin`** | `Spin,of,title,at` | **`[Spin]`** | ❌ (`%Spin` deleted 2026-09-04 with the whole Jam ledger — see `Radio_circuit_todo.md`) |
+| **`%Like`** | `Like,of,title,at` | **`[Like]`** | ❌ (`%Like` deleted 2026-09-04 — folded into `take` on `%Card`, see `Radio_circuit_todo.md`) |
+| **`%Grab`** | `Grab,of,title,at` | **`[Grab]`** | ❌ (`%Grab` deleted 2026-09-04 — folded into `keep` on `%Card`, see `Radio_circuit_todo.md`) |
 | **`%Caper`** | `Heist,wish,hid` | **`[Heist]`** | ❌ |
 | **`%Heistlet`** | `Heistlet,of,pier` | **`[Heistlet]`** | ❌ |
-| **`%Jam`** | `Jam,with` | **`[Jam]`** | ❌ |
+| **`%Jam`** | `Jam,with` | **`[Jam]`** | ❌ (`%Jam` and `Jam.g` deleted 2026-09-04 — replaced by `Mag:heard,pub:<me>`, see `Radio_circuit_todo.md`) |
 | **`%Reco`** | `Reco,by,note` | **`[Reco]`** | ❌ minted `{Reco,by}` — one per recommender |
 | **`%Renamed`** | `Renamed,key,from,to` | **`[Renamed]`** | ❌ |
 | **`%stock`** | `stock,pub` | **`[stock]`** | ❌ (harmless — one per home) |
 
 Read the failing column and the rule falls out on its own: **`of:` is this codebase's documented
  many:1 join key (CLAUDE.md: *"a `%Spin,of:X` / `%Like,of:X` / `%Caper,of:X` — a Jam ledger, many
-  events per track"*) and it is NOT on `Repli_loc_keys`' allow-list.** Neither is `with`, `by`,
+  events per track"*) and it is NOT on `Repli_loc_keys`' allow-list.** (`%Spin`/`%Like` themselves were
+   deleted 2026-09-04 with `Jam.g`; the `of:` convention the quote illustrates still stands.) Neither is `with`, `by`,
    `key`, `wish`, `page`, `pub`. The list is `id|name|seq|pier|kind`, which happens to cover the
     *holdings* — the things Ra mints — and covers **none of the referring particles**. So the wire
      can address what a peer HAS, and cannot address any statement a peer MAKES about it.
@@ -414,12 +415,15 @@ Read the failing column and the rule falls out on its own: **`of:` is this codeb
 **The instance that proves it is not theoretical: `%Spin`.** `Jam_event` (`Ghost/M/Jam.g:50`) mints
  **one row per (kind, track)**, keyed on `of:rec.sc.id` — so one `%Jam` legitimately holds many
   `%Spin`, one per distinct track, and `Jam_tally` (`Jam.g:128`) exists precisely to COUNT them.
-   The ledger crosses (`MusuBuddy/011.snap:266` — `MusuThem,pub:… > stock,pub:… > Jam,with:… > Spin,of:…`).
+   The ledger crosses (`MusuBuddy/011.snap:266` — `Theirs,pub:… > stock,pub:… > Jam,with:… > Spin,of:…`).
     On arrival every `%Spin` upserts onto the first, so **a friend's ledger lands holding at most one
      Spin, one Like and one Grab no matter how many tracks were played**, and the mirror's
       `Jam_tally` reads `{spins:1,likes:1,grabs:1}` forever. It is invisible because **every Book
        mints exactly one of each** — the fixtures show one `Spin`, one `Like`, one `Grab` under one
         `Jam`, which is the single case where a broken key still looks right.
+         (`Jam.g`, `%Jam`, `%Spin`, `%Like` and `%Grab` were deleted entire 2026-09-04 — the replacement
+          is `Mag:heard,pub:<me>` holding `%Card,id,pub`; see `Radio_circuit_todo.md`. The bug this
+           section diagnoses is moot for this family now, but the `Repli_identity_keys` lesson stands.)
 
 That is the fourth instance §0.1 item 3 predicted would arrive unnoticed, and it is not in a Book —
  it is in shipped code, in the social layer the v1.0 destination is built on ("a friend's collection
@@ -446,7 +450,9 @@ That is the fourth instance §0.1 item 3 predicted would arrive unnoticed, and i
   particle** — the single case where the old broken key still looked right. The suite is blind here
    by construction, which is the same reason the bug survived a month. A regression would be caught
     by nothing. Two three-line Book changes would fix that and they are the highest-value test work
-     outstanding: a `%Jam` holding TWO `%Spin`s, and one shelf holding TWO Piers' Mags.
+     outstanding: a `%Jam` holding TWO `%Spin`s, and one shelf holding TWO Piers' Mags. (The `%Jam`
+      side of this is now moot — `Jam.g` was deleted 2026-09-04; the surviving test work is one shelf
+       holding TWO Piers' Mags.)
 
 *And a method note that is the real lesson of authoring it.* **Every row must be read off the MINT
  SITE, never inferred from how Books query it.** Two rows were nearly shipped wrong from inference:
@@ -718,7 +724,7 @@ The systems this needs have been getting **dialled in by the Story Books** — o
  Book proving a seam the protocol leans on. What is already proven and load-bearing:
 
 - **Per-friend mirror keying** (SwarmShare, 2026-07-19): what I hold OF a friend lands under
-   `%MusuThem,pub:<them>` — the per-friend crate, not a merged pile. The Mag layer hangs off THIS.
+   `%Theirs,pub:<them>` — the per-friend crate, not a merged pile. The Mag layer hangs off THIS.
 - **%Suggest store-and-forward** (SwarmShare): a referring pointer that survives the friend being
    offline and drains on their rebirth greeting. A Mag is the same shape at collection scale.
    RULING (2026-07-19): the `%Suggest` MAINKEY retires once Mags cross the wire — a suggestion is a
@@ -775,7 +781,9 @@ The systems this needs have been getting **dialled in by the Story Books** — o
             head; the mirror wears the origin's own shape. Fallout, all landed: `Ra_mag_warm` reads the
              head directly; `MusuMag_deep` returns the ONE record; the head's `stage` now honestly reads
               SUPPLY (previewed/whole/decoded live in MusuMag's snaps, impossible before); `Jam_grab`
-               skips the `stage` key (pipeline furniture never rides a keeper into `%Kept`).
+               skips the `stage` key (pipeline furniture never rides a keeper into `%Kept`). (`Jam_grab`
+                is gone with `Jam.g` — its keeper-copy half survives, re-homed as `Ra_rec_copy` in
+                 `Ghost/M/Ra.g`; see `Radio_circuit_todo.md`.)
     THE TWIN HAD DRAWN BLOOD: the split had silently frozen MusuBuddy's pull leg (the census flip to the
      total-less holder), and the 2026-07-20 sweep re-record enshrined `hear_fail:nothing pulled` +
       `jam_fail:nothing heard` in its fixtures — only one sworn claim gated the Book, so it stayed green.
@@ -810,7 +818,8 @@ The owner's challenge, same day the table landed: *"one way replication without 
    located, `c` is merged after. A wire line is a serialized oai call whose split got flattened
     into one sc bag, then reconstructed by census. Checked per-row against the mints: every `oai`
      and every manual find-or-create (`Jam_event`'s `o(q)[0] else i(q)`, `Heist_rummage_ask`) has
-      a find pattern exactly equal to its table row. The only divergers are `i()` create-only mints
+      a find pattern exactly equal to its table row. (`Jam_event` no longer exists — `Jam.g` was
+       deleted 2026-09-04; the analysis is historical.) The only divergers are `i()` create-only mints
        that mixed props into the creation bag — `Cloud,randomic` ×3 sites and `Renamed`
         (both ALREADY hand-stamped `.c.repli_loc`), plus `%Caper` whose `hid` joins identity
          POST-mint (`Heist.g:280,740` — needs a ruling, Q2 below). Decisive bonus: **the %Stream
@@ -842,7 +851,8 @@ The owner's challenge, same day the table landed: *"one way replication without 
   persists, but every crossing shape re-passes its mint funnel each session, so reload heals the
    stamps). `Repli_loc_for` becomes `.c.repli_loc → .c.oai_loc → all keys` — no table, no warn,
     no mainkey knowledge in the transport. ~6 mint-site touches (Jam_event, Card ×3, ask, Heist's
-     hid) + one core line. Honors "Repli must stay ignorant" literally. (B) Append+delete-only —
+     hid) + one core line. (`Jam_event` is gone with `Jam.g`, deleted 2026-09-04 — its would-be touch
+      point is moot; the Card and ask touches still apply.) Honors "Repli must stay ignorant" literally. (B) Append+delete-only —
       rejected as stated (resends need dedupe, the spine needs locating, the mutating set exists)
        but absorbed as the default: insert-by-self-matching IS the default, loc only where
         mutation is declared. The owner's `op:front` window-advance ("the first particle in A/B/C
@@ -856,7 +866,8 @@ The owner's challenge, same day the table landed: *"one way replication without 
 
 **Migration, staged so wire bytes never change until the ruled re-record:** Stage 1 (~zero
  fixture cost): the `_foc` stamp + ~6 touches, rewrite `Repli_loc_for`, delete the table + warn;
-  per-line loc stays byte-identical (verify %Spin/%Grab and %Caper,hid live before deleting);
+  per-line loc stays byte-identical (verify %Spin/%Grab and %Caper,hid live before deleting —
+   %Spin/%Grab no longer exist, deleted 2026-09-04 with `Jam.g`; %Caper,hid still applies);
    gate = the existing 23 green. Stage 2 (post-1.0, rides §0.1 item 5's insert-default move):
     omit `loc` for immutables; measured cost **16 Books / 218 fixture snaps** re-record once —
      consider folding into the `Mag,pub` re-record (21 Books/~250 snaps) so the suite reddens
@@ -975,7 +986,7 @@ The recurse ruling came paired with two forward directions. Neither is built; bo
 A holding does not float flat under a shelf; it lives under a **Mag**. The tree branches:
 
 ```
-%MusuSelf,pub:<me>
+%Mine,pub:<me>
   %Mag:shuffle,day:2026-07-19,page:1        ← the default holding — most of the radiostock is here
     %Record,id:… > %Preview,seq:0..15 > %Stream,seq:…
     %Record,id:… …                          (up to a page's worth, ~6, §5)
@@ -1108,7 +1119,7 @@ Vague candidate (the owner, 2026-08-05): as the shuffle scrolls, the Mag's BEGIN
 
 ## 6. Explode-on-connect — Mag as the main experience, and the limbic show|hide
 
-**The headline:** connecting to a Pier EXPLODES their Mags onto the scene. Their `%MusuThem,pub:<them>`
+**The headline:** connecting to a Pier EXPLODES their Mags onto the scene. Their `%Theirs,pub:<them>`
  crate is a shelf-of-Mags; the offer husks them all cheaply; the scene blooms with their curated
   rooms; a shuffle over their collection autostarts. The friend arrives as their *taste*, immediately
    audible — not a directory you then go spelunking. Ruled 2026-07-19: explode-on-connect is the
@@ -1134,7 +1145,7 @@ Vague candidate (the owner, 2026-08-05): as the shuffle scrolls, the Mag's BEGIN
                and to PUSH BACK on: proposing a view-state change, not only obeying toggles. This is
                 the "make space" ask realised as a living layout instead of a list.
 
-**Vtuffing / the crush reads Mags.** The crush misrepresents `%MusuThem/**` today because a flat pile
+**Vtuffing / the crush reads Mags.** The crush misrepresents `%Theirs/**` today because a flat pile
  has no structure to fold and `Voro_crushable|swarmable` judge nodes in isolation. Fold the MAGS
   (real, curated groupings) and the misrepresentation dissolves — the sub-cell stuffing renders a
    Mag's Cards, honouring husk (unknowable) vs held (knowable). Same move, both problems.
@@ -1156,10 +1167,10 @@ Every Mag wears `%from:<prepub>`: curation is authored and the author rides with
    privacy shaving removes CONTENT, never decisions.
 - **Provenance is a LOOKUP, never a search (ruled 2026-07-19: owned but not persisted).** Whose a
    thing is must be readable ON it immediately — the Mag's `%from` + the per-friend crate keying
-    (`%MusuThem,pub:<them>`, the SwarmShare-proven mirror law) — or every "where did this come from"
+    (`%Theirs,pub:<them>`, the SwarmShare-proven mirror law) — or every "where did this come from"
      becomes an every-Pier search query. Origin picks the crate; the cursor picks the position;
       resolution is a walk.
-- <posited> The same ephemerality should reach the whole `%MusuThem` mirror (the husk catalog too) —
+- <posited> The same ephemerality should reach the whole `%Theirs` mirror (the husk catalog too) —
    shaving Mags while the full catalog mirror persists beside them would be theatre. Session matter,
     re-offered on connect.
 
@@ -1295,7 +1306,10 @@ The human floated it, then blessed it ("pat and say good"): **instead of `%Recor
   R1 owner) before moving its fixtures, since it may be mid-flight there.
 
 **The paired question — "will it know all the autogen Mags as one cursor?" → YES, and it's BUILT.** The
- heard-memory is ONE shared set (`radio.c.heard`, now **bounded to 100** — §8's runtime germ, `Radio_heard_add`),
+ heard-memory is ONE shared set (`radio.c.heard`, now **bounded to 100** — §8's runtime germ, `Radio_heard_add`)
+  — **UPDATE 2026-09-04**: `radio.c.heard`/`Radio_heard_cap`/`Radio_heard_add` are deleted; the shared set is
+   now `Radio_heard(radio)` reading `Heard_set` off the durable `Mag:heard,pub:<me>` (`Ghost/M/Radio.g:1193`,
+    `Ghost/M/Heard.g:273`), bounded by `heard_ttl` rather than a 100-cap — see `Radio_circuit_todo.md` —
   so "have I heard this" is unified across every Mag. Per-Mag *position* is DERIVED, never stored:
    **`Radio_mag_cursor(radio, mag)`** (Radio.g, built 2026-07-26) walks the recursive census (`Ra_recs_deep`,
     §0b `Mag**`) and returns the last of the Mag's records that sits in the heard set — how far through THIS

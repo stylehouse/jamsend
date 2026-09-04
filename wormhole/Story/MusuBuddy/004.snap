@@ -167,7 +167,7 @@ Snap:H
               req:unemit,seq=92,type:repli_page,body_hash:ca2cc2ecf90ee39a357650d60709a06a54f6f4d30f9b41c9948f8c042e964692,body_len=39645,done,to:repli_page,finished
             Ud,pubkey:c012850d69de1318
           active_transport,type:mock,open
-        MusuSelf,pub:c012850d69de1318
+        Mine,pub:c012850d69de1318
           stock,pub:c012850d69de1318
             Mag:shuffle
               Cloud,page:1
@@ -238,7 +238,7 @@ Snap:H
         req:buddy_restock,finished
         stocked:again,stood=2
         published,cards=2,mags,sent=2
-        MusuThem,pub:b317b9a776e39d30
+        Theirs,pub:b317b9a776e39d30
           stock,pub:b317b9a776e39d30
             Mag:Musica
               Cloud,randomic:draw_one,created_at=1752400000000

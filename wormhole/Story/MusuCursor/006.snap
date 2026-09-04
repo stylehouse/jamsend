@@ -27,7 +27,7 @@ Snap:H
             curs,Mag:FlatCrowd
               curs,wild:Card,id:f23
           resolved:crowd,depth=2,siblings=40,ok,id:f23
-        MusuSelf,pub:Self
+        Mine,pub:Self
           radiostocking,pub:Self
             Mag:Musica
               Cloud,randomic:draw_one,created_at=1000

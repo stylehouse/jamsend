@@ -561,6 +561,13 @@ And the corollary, which ties this to §2.1: the discovery layer is not merely u
 - it is a second, independent argument for stripping `self,round` via `omit_sc` (§2.3): strip it and
    these two fixtures are *empty files*, which states the truth out loud instead of dressing a hollow
     Book in a plausible-looking snap.
+ ⚠ **STALE AS WRITTEN (noted 2026-09-04) — kept because the finding still stands, but neither name nor
+  the count survives.** `Swarmation.g` now defines eleven-plus Books (`SwarmStaple`, `SwarmWire`,
+   `SwarmSteal`, `SwarmInvite`, `SwarmDoor`, `SwarmGot`, `SwarmPolicy`, `SwarmShare`, `SwarmChain`,
+    `SwarmBlotter`, `SwarmSpoof`, …), and `MusuSelf`/`MusuThem` are gone twice over: the two hollow Books
+     were retired, and the *particle mainkeys* of the same names were renamed **`MusuSelf`→`Mine`,
+      `MusuThem`→`Theirs`** in the 2026-09-04 sweep (Radio_circuit_todo §7.4). The durable point — that a
+       Book with no recorded fixture is not a gate, however green it reads — is unaffected.
 
 ### 2.3 A Book's verdict is partly a function of how warm the tab is
 

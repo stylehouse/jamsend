@@ -14,7 +14,7 @@ Snap:H
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
           active_transport,type:mock,open
-        MusuSelf,pub:DJ
+        Mine,pub:DJ
           stock,pub:DJ
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
               Fill,name:audio,have=0,sr=48000

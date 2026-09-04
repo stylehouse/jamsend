@@ -52,9 +52,9 @@ story:MusuReplica
       style:background-color,v:#af43db
     matstyle:Voro
       style:background-color,v:#8f8f32
-    matstyle:MusuSelf
+    matstyle:Mine
       style:background-color,v:#2f8bb1
-    matstyle:MusuThem
+    matstyle:Theirs
       style:background-color,v:#d62970
   Plan
   Opt
@@ -65,8 +65,7 @@ story:MusuReplica
     waitCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.167
-      sample=0.074,at=1785932310
+    TimeTotal:beliefs,avg=0.19
       sample=0.111,at=1785941530
       sample=0.087,at=1785942736
       sample=0.148,at=1785943379
@@ -76,8 +75,8 @@ story:MusuReplica
       sample=0.186,at=1787903005
       sample=0.384,at=1787905867
       sample=0.236,at=1787907562
-    TimeTotal:step,avg=0.012
-      sample=0.005,at=1785932310
+      sample=0.309,at=1788502217
+    TimeTotal:step,avg=0.014
       sample=0.008,at=1785941530
       sample=0.006,at=1785942736
       sample=0.011,at=1785943379
@@ -87,17 +86,18 @@ story:MusuReplica
       sample=0.013,at=1787903005
       sample=0.027,at=1787905867
       sample=0.017,at=1787907562
+      sample=0.022,at=1788502217
   step,dige:50568e7a78216459
-  step=2,dige:2bd93bb8cbaefb4a
-  step=3,dige:17216b2527b05e7b
-  step=4,dige:aea116e25ceb1403
-  step=5,dige:cd4398c1cb64b79a
-  step=6,dige:fe2b99a67b81eb51
-  step=7,dige:6612c9195648be54
-  step=8,dige:8eddd200a2900987
-  step=9,dige:5b2c9d5f028b7a87
-  step=10,dige:a1f13800a94318ca
-  step=11,dige:84e426696acbf0de
-  step=12,dige:1566949eb8f248ea
-  step=13,dige:3ba2a39cf763c263
-  step=14,dige:80fe891f5fab4f04
+  step=2,dige:e290f63fc48f3c57
+  step=3,dige:f6ad927b56deb3db
+  step=4,dige:9830b3e98f239b2e
+  step=5,dige:9d35a7e2dd2eff89
+  step=6,dige:83ad2a20dd0b00a7
+  step=7,dige:004448e28865383e
+  step=8,dige:2948d0209de2ede3
+  step=9,dige:3c56cad0cb8894d1
+  step=10,dige:85d328d3f5904f0c
+  step=11,dige:3513e58ed9b99fc7
+  step=12,dige:25eca32df277a58e
+  step=13,dige:d504b78b0dc91768
+  step=14,dige:47aa62b24965b701

@@ -14,7 +14,7 @@ Snap:H
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
           active_transport,type:mock,open
-        MusuSelf,pub:DJ
+        Mine,pub:DJ
           stock,pub:DJ
             Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
               Fill,name:audio,have=0,sr=48000

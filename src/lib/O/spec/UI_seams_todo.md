@@ -213,9 +213,9 @@ The engines below are all proven by recorded golden fixtures. But the human's co
       (`Matstyle.svelte:246-249`). Two *specialised* mags do have faces (`LineupFace` for
        `%Mag:'Lineup'`, `ZineFace` for `%Zine:'Faves'`) — the **core stock Mag does not**.
 - **Gap:** there is **no `MagFace` / `CloudFace` / `PageFace`**. The human's "one at a
-   time per Pier" maps onto: the crate is a friend's `%MusuThem` mirror → render each
+   time per Pier" maps onto: the crate is a friend's `%Theirs` mirror → render each
     friend's crate as a collapsible magazine (its `%Mag:shuffle`), pages closed by
-     default, one open at a time. The data (per-friend `%MusuThem`, paged clouds) is all
+     default, one open at a time. The data (per-friend `%Theirs`, paged clouds) is all
       there.
 - **The move (display + a new face):** a `MagFace`/`CloudFace` in `src/lib/O/glass_kinds.ts`
    + `glass_faces.ts`, reading `%Mag:shuffle`/`%Cloud,page` instead of flattening. Medium

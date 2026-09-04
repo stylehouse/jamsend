@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHeist,Run
     A:MusuHeist
-      self,round=31	{"mung":["age"]}
+      self,round=30	{"mung":["age"]}
       w:MusuHeist,now=1752000140
-        self,round=31	{"mung":["age"]}
+        self,round=30	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -47,6 +47,9 @@ Snap:H
                 Peering,name:be0dab3303037ad2,friendly:Duo,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
                 Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1752000030,sign:3563d28e03d63cdd1130d3d6ad581cc78385f2b542cfdc00dd7d64826225a136a199b1699007e1ff3e260faaae57c1db829d3c7a7c5d52e42e74e7e7b9dbcc0e,genre:Heist
                 Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1752000030,sign:ea5a0dd6a411387d4d264d7dd7e5f83da2b7bf2e8e6a093fd085da801ac4ddccac4e480655660b4ef8f57d683750723b6dba09f456b018071bfe57cb070bc403,genre:Heist
+            Crew,soul:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
+              mate:4e09f34f5a6ab900,role:Captain,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
+              Key,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5	{"mung":["secret"]}
             SocialGraph
               Edge,a:4e09f34f5a6ab900,b:be0dab3303037ad2,at:1752000030
         Account,of:Duo
@@ -56,6 +59,9 @@ Snap:H
                 Peering,name:4e09f34f5a6ab900,friendly:Uno,pub:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5
                 Grant:Music,by:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,for:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,time:1752000030,sign:3563d28e03d63cdd1130d3d6ad581cc78385f2b542cfdc00dd7d64826225a136a199b1699007e1ff3e260faaae57c1db829d3c7a7c5d52e42e74e7e7b9dbcc0e,genre:Heist
                 Grant:Music,by:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8,for:4e09f34f5a6ab900c39c71c42d5e2857753f87cab4119f936e58ee20d85e3cd5,time:1752000030,sign:ea5a0dd6a411387d4d264d7dd7e5f83da2b7bf2e8e6a093fd085da801ac4ddccac4e480655660b4ef8f57d683750723b6dba09f456b018071bfe57cb070bc403,genre:Heist
+            Crew,soul:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
+              mate:be0dab3303037ad2,role:Captain,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8
+              Key,pub:be0dab3303037ad28ed54826e18aaae7d99eebb2c4786e15283289a46be711f8	{"mung":["secret"]}
             SocialGraph
               Edge,a:be0dab3303037ad2,b:4e09f34f5a6ab900,at:1752000030
         Peering,name:4e09f34f5a6ab900,req=2,ok
@@ -195,7 +201,7 @@ Snap:H
                 unemit:64,type:repli_page,seq:64,body_len:237670
             Ud,pubkey:4e09f34f5a6ab900
           active_transport,type:mock,open
-        MusuSelf,pub:4e09f34f5a6ab900
+        Mine,pub:4e09f34f5a6ab900
           stock,pub:4e09f34f5a6ab900
             Mag:shuffle
               Cloud,page:1
@@ -251,7 +257,7 @@ Snap:H
               held,tune:The Sines — High A
               held,tune:The Sines — Middle A
           radiostocking,pub:4e09f34f5a6ab900
-        MusuSelf,pub:be0dab3303037ad2
+        Mine,pub:be0dab3303037ad2
           stock,pub:be0dab3303037ad2
             Mag:shuffle
               Cloud,page:1
@@ -278,7 +284,7 @@ Snap:H
           shop,pub:be0dab3303037ad2
         req:heist_census,finished
         req:witness,eternal,ok
-        MusuThem,pub:4e09f34f5a6ab900.heist
+        Theirs,pub:4e09f34f5a6ab900.heist
           stock,pub:4e09f34f5a6ab900.heist
-        MusuThem,pub:be0dab3303037ad2.heist
+        Theirs,pub:be0dab3303037ad2.heist
           stock,pub:be0dab3303037ad2.heist

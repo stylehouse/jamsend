@@ -204,24 +204,24 @@
         const rw = A?.top_House?.()?.c?.radio_w
         // A PROBE THAT COLLECTS — the reason this reads the shelves by hand instead of asking
         //  `Ra_home_them` / `Ra_home_self`.  BOTH of those are `oai`, find-or-CREATE
-        //   (`w.oai({MusuThem:1,pub})` → `home.oai({stock:1,pub})`), and this is a $derived that
+        //   (`w.oai({Theirs:1,pub})` → `home.oai({stock:1,pub})`), and this is a $derived that
         //    re-runs on every `H.version` bump.  Two consequences, and the second is the bug:
         //     · `me` falls back to the literal string `'me'` whenever `Radio_pub` is not answering
         //        yet — which on a fresh|incognito tab is every early render — so the face MINTED a
-        //         `%MusuSelf,pub:'me'` home and a stock shelf under it, then read zero records off
+        //         `%Mine,pub:'me'` home and a stock shelf under it, then read zero records off
         //          the shelf it had just created.  Exactly the fault `Radio_head_ahead` was carrying
         //           on 2026-08-12; this is the same defect in a second place, and worse here because
         //            a render path re-runs far more often than a pump.
         //     · if the keep's `sc.pub` is not EXACTLY the pub the mirror landed under, `Ra_home_them`
-        //        silently mints a fresh empty `%MusuThem,pub:<at>` rather than missing — so `husks`
+        //        silently mints a fresh empty `%Theirs,pub:<at>` rather than missing — so `husks`
         //         comes back empty, `dirsAuto` computes over nothing, and DIRECTORIES renders blank
         //          while the rest of the setup (which reads `%Pick`, a different source) still looks
         //           populated.  A missing shelf must read as ABSENT here, never as freshly-empty.
         //  `o()` only, and `?? null` so an absent home stays absent.  Mirrors Ra_home_shelf's shape.
         const shelf_of = (home: any, pub: string) => home?.o?.({ stock: 1, pub })?.[0] ?? null
-        const mir = (rw && at) ? shelf_of(rw.o({ MusuThem: 1, pub: at })[0], at) : null
+        const mir = (rw && at) ? shelf_of(rw.o({ Theirs: 1, pub: at })[0], at) : null
         const me = rw ? String(A?.Radio_pub?.(rw) || '') : ''
-        const own = (rw && me) ? shelf_of(rw.o({ MusuSelf: 1, pub: me })[0], me) : null
+        const own = (rw && me) ? shelf_of(rw.o({ Mine: 1, pub: me })[0], me) : null
 
         const husks = (mir && A?.Heist_rummage_recs) ? A.Heist_rummage_recs(mir, seed) : []
         const picks = n?.ob?.({ Pick: 1 }) ?? []

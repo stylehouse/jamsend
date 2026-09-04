@@ -14,7 +14,7 @@ Snap:H
           before,depth=2,ok,id:t1
           reached:step_4
           reload,encode_clean,cloud_ok,dogear_count,kept_present,live_absent
-        MusuSelf,pub:Self
+        Mine,pub:Self
           radiostocking,pub:Self
             Mag:Musica
               Cloud,randomic:draw_one,created_at=1000

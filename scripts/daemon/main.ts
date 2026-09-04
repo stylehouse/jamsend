@@ -610,12 +610,12 @@ const stock_state = () => {
         const shelf = (H as any).Ra_home_self?.(rw, pub)
         out.records = shelf ? ((H as any).Ra_recs?.(shelf)?.length ?? 0) : 0
         // THE NUMBER THAT PROVES A FRIENDSHIP IS DOING ANYTHING.  A friend's cast mints a per-friend
-        //  `%MusuThem` crate in the radio world (`Swarm_share_up`'s `repli_mirror_by_from` +
+        //  `%Theirs` crate in the radio world (`Swarm_share_up`'s `repli_mirror_by_from` +
         //   `repli_mirror_w`).  ZERO of them while sealed peers trade `ive_got` every few seconds is
         //    the exact signature of an unarmed rx — the fault that hid all morning behind a box that
         //     looked healthy from every other angle: sealed, granted, shelf stocked, no errors.
         out.share = share_armed
-        out.them = rw.o?.({ MusuThem: 1 })?.length ?? 0
+        out.them = rw.o?.({ Theirs: 1 })?.length ?? 0
         // THE CONVEYOR'S OWN ELECTRODES, which `Stoker_dig` already sets and nobody outside a browser
         //  could read: they live on `.c`, and /c dumps `sc`.  Without them "the shelf stopped growing"
         //   has at least three explanations wanting opposite fixes — the tour never ran; it ran and the
@@ -1202,7 +1202,7 @@ const station_up = (): void => {
 
 // ── the SHARE — armed the way a TAB arms it ───────────────────────────────────────────────────
 // THE BLOCKER, found 2026-08-08 with a friend sealed and nothing flowing.  A sealed peer exchanged
-//  `ive_got` with this box every few seconds and the box held ZERO `%MusuThem`.  The reason is that
+//  `ive_got` with this box every few seconds and the box held ZERO `%Theirs`.  The reason is that
 //   `Swarm_share_up` is not only "offer my stock": it calls `Repli_arm` and sets
 //    `repli_mirror_by_from`, so it is equally the **rx registration for a friend's cast**.  Unarmed,
 //     the census arrives and nothing consumes it.  Radio.g:1281 describes this box exactly — "it
@@ -1238,7 +1238,7 @@ const share_arm = (): void => {
     if (!CULL) { rw.c.ra_cull_at = Date.now(); rw.c.ra_cull_floor_ms = 1e15 }
     if ((H as any).Swarm_share_up(w, self)) {
         share_armed = true
-        say(`📻 share ARMED — Repli rx registered; a friend's cast now mints %MusuThem, and the share beat turns`
+        say(`📻 share ARMED — Repli rx registered; a friend's cast now mints %Theirs, and the share beat turns`
             + (CULL ? '  ·  ⚠ CULL=1 — Ra_shuffle_cull is LIVE and deletes records whose source is gone'
                     : '  ·  Ra_shuffle_cull held off (CULL=1 releases it)'))
     } else if (share_note !== 'no') {

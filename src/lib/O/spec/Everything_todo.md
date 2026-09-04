@@ -326,6 +326,14 @@ Resolved (was a rumour): Stuffing no longer over-creates instances. One
 
 ## Not nailed down that should be
 
+- **Story runner: a `release`→`run` standup RACE, measured 2026-09-04, LOCATED NOT FOUND.** Back-to-back
+   `MusuHeist`: no gap wedged 2/6 (`phase:begun, n:null, steps=0`, console silent after `▶ Story subHouse
+    created`), 6s gap wedged 0/6. Seam: `auto_reset_story`s teardown vs the posted `think`. Sharpest
+     candidate: the previous run's `story_save` write still pending in the wormhole `rw_queue`/`LiesStore`
+      when the next run's toc READ queues behind it and the House owning the write is dropped — the
+       "begun/n:null + story_save jam" signature. Finding: `Story_hygiene_todo.md` §0a.2. Fix design:
+        `Story_future.md` §8.3 + §15 (the drive/teardown as req-owned ttlilts). Another-day'd by the owner.
+
 The decisions the specs *defer* but that gate real work:
 
 0. **RE-RULE THE BOOLEAN ENCODING (owner 2026-08-31): stop banning Boolean — intelligise it.**

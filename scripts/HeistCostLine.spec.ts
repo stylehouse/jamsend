@@ -41,13 +41,13 @@ async function ghost_house() {
     return H
 }
 
-// A FRIEND'S MIRROR, built the shape the face reads it: `%MusuThem,pub > stock,pub > %Record`, each record
+// A FRIEND'S MIRROR, built the shape the face reads it: `%Theirs,pub > stock,pub > %Record`, each record
 //  tagged `rummage:<seed>` (the wire census's own mark).  `un_n`/`un_size` ride the record, which is the
 //   whole point of the unity — it crosses to us for free with the card, before anyone is asked anything.
 function scene(H: any, opts: any) {
     const rw: any = new TheC({ c: {}, sc: { w: 'Radio' } })
     H.c.radio_w = rw
-    const stock = rw.i({ MusuThem: 1, pub: 'them' }).i({ stock: 1, pub: 'them' })
+    const stock = rw.i({ Theirs: 1, pub: 'them' }).i({ stock: 1, pub: 'them' })
     for (let i = 0; i < (opts.husks ?? 0); i++) {
         const r = stock.i({ Record: 1, id: 'r' + i })
         r.sc.rummage = 'SEED'

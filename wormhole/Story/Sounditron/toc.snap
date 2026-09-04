@@ -28,7 +28,7 @@ story:Sounditron
       style:background-color,v:#bbdb43
     matstyle:ttlilt
       style:background-color,v:#32618f
-    matstyle:MusuSelf
+    matstyle:Mine
       style:background-color,v:#b12f4a
     matstyle:sworn
       style:background-color,v:#29d638
@@ -47,8 +47,8 @@ story:Sounditron
           means,spayer,re:Session.alive={INT},tol:any
     Entcase:Stock_fold
       lematch,w:Sounditron
-        lematch,MusuSelf
-          means,spayer,re:MusuSelf.pub:{TOK},tol:any
+        lematch,Mine
+          means,spayer,re:Mine.pub:{TOK},tol:any
           lematch,stock
             means,dontSnap
             means,spayer,re:stock.pub:{TOK},tol:any
@@ -99,46 +99,46 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.483
-      sample=0.321,at=1788327393
-      sample=0.378,at=1788327446
-      sample=0.211,at=1788328520
-      sample=0.331,at=1788329646
+    TimeTotal:beliefs,avg=0.488
       sample=0.339,at=1788330491
       sample=0.27,at=1788330685
       sample=0.996,at=1788434814
       sample=0.7,at=1788437321
       sample=0.773,at=1788437490
       sample=0.506,at=1788437669
-    TimeTotal:step,avg=0.06
-      sample=0.04,at=1788327393
-      sample=0.047,at=1788327446
-      sample=0.026,at=1788328520
-      sample=0.041,at=1788329646
+      sample=0.249,at=1788500785
+      sample=0.319,at=1788501846
+      sample=0.274,at=1788502359
+      sample=0.45,at=1788507869
+    TimeTotal:step,avg=0.061
       sample=0.042,at=1788330491
       sample=0.034,at=1788330685
       sample=0.125,at=1788434814
       sample=0.088,at=1788437321
       sample=0.097,at=1788437490
       sample=0.063,at=1788437669
-  step,dige:7b49494b56c4ab61
-  step=2,dige:59b784f9ea897300,desc:the machine stands
+      sample=0.031,at=1788500785
+      sample=0.04,at=1788501846
+      sample=0.034,at=1788502359
+      sample=0.056,at=1788507869
+  step,dige:6f2828d71f3a2536
+  step=2,dige:29a253cbeb428c52,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine
     Assertion:the-supervisor-stood,sentence:the supervisor stood — a roster of registered watches is being read
     Assertion:granted,sentence:granted — a sealed friendship holds Music grants in storage
     Assertion:a-peer-stood-reachable,sentence:a peer stood reachable — a channel opened beyond ourselves
     Assertion:a-friend-counted-their,sentence:a friend counted their shelf — records stand reachable
     Assertion:every-registered-watch-found,sentence:every registered watch found its probe — no blind spots in the roster
-  step=3,dige:258391d216bb5d68,desc:the relay answers
+  step=3,dige:6f71ba2665e00a0d,desc:the relay answers
     Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross
-  step=4,dige:cb2974f10daf9c8f,desc:who could we reach
+  step=4,dige:e563797a0631401e,desc:who could we reach
     Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted
     Assertion:the-collection-stirred,sentence:the collection stirred — real tracks wandered into the glass
-  step=5,dige:6826abf0ec14873f,desc:reach for a peer
-  step=6,dige:13fc978ec3ee9150,desc:does sound run here
+  step=5,dige:8efbc3e8a282a0bc,desc:reach for a peer
+  step=6,dige:62598b50e788aab2,desc:does sound run here
     Assertion:the-sound-system-answered,sentence:the sound system answered — a real AudioContext ran here
     Assertion:music-from-a-friend,sentence:music from a friend played — their track streamed off their shelf over Repli
-  step=7,dige:af6053b467353f47,desc:the music runs
+  step=7,dige:e45e688f6ce45c9c,desc:the music runs
     Assertion:music-runs,sentence:the music played — record chunks decoded onto the live timeline
-  step=8,dige:1bccd4d2c9214963,desc:sum and report
+  step=8,dige:0d36dc094355170e,desc:sum and report
     Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel

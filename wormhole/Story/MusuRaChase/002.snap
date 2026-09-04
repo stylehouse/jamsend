@@ -102,7 +102,7 @@ Snap:H
               req:unemit,seq=2,type:trust,done,to:trust,finished
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
-        MusuSelf,pub:4e09f34f5a6ab900
+        Mine,pub:4e09f34f5a6ab900
           stock,pub:4e09f34f5a6ab900
             Mag:shuffle
               Cloud,page:1
@@ -140,7 +140,7 @@ Snap:H
                   Preview,seq:13,cid:009ed34af0bea671c1bc2cab4e9a52f2932f89625fad01ecfa27967e9e1e2d97	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:14,cid:819beaabf2ab5742123998ed14ec1b8a6601aab545d4ce893119feca0bdb78a6	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:15,cid:82060ded7c33145ae7de702e7550c7641590f602f69b86c6f8771abf8b815413	{"ref":{"buf":"Uint8Array()"}}
-        MusuSelf,pub:be0dab3303037ad2
+        Mine,pub:be0dab3303037ad2
           stock,pub:be0dab3303037ad2
             Mag:shuffle
               Cloud,page:1

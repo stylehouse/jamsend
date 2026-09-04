@@ -108,8 +108,9 @@ First loose end to actually decide by running, not designing: whether `res.c.to`
 **builder:** It can't avoid knowing. A recording-wax commit is already a three-way merge: base
  (the crust at the wax's rev), mine (the figurine), theirs (the crust now). The wall holds all
   three corners as a matter of course. And the same shape is waiting everywhere the app goes
-   multi-place: %Jam ledgers merging across linked devices, Repli's bidirectional sync, the daemon
-    federation taking turns at one address. One merge organ in the wall, every front borrows it. §6.
+   multi-place: %Jam ledgers merging across linked devices (`Jam.g` deleted 2026-09-04 — the
+    successor is `Mag:heard`, see `Radio_circuit_todo.md`), Repli's bidirectional sync, the daemon
+     federation taking turns at one address. One merge organ in the wall, every front borrows it. §6.
 
 **owner:** And the toplevel? How does the whole thing hang — dangling from the white hole?
 
@@ -316,10 +317,14 @@ The recording-wax commit is the local, single-user case. The same organ then ser
   with `at` + provenance merge trivially; the row shape was chosen for this), **Repli**
    bidirectional sync, and the **daemon federation** (Identity_persist_todo §7.4 — places of one
     identity taking turns at an address). Wire_spec §12's covariance-folding is the auto-merge
-     assist: deltas of one shape are one cause, mergeable as one decision.
+     assist: deltas of one shape are one cause, mergeable as one decision. (`%Jam` ledgers were
+      deleted entire 2026-09-04; the successor, `Mag:heard`, merges a mutable `take` flag per Card
+       instead — `take = OR`, `mire = max`, keyed `(id, pub)` — see `Radio_circuit_todo.md` §5.)
 
 Rule worth carrying from day one: prefer **append-only events over mutable flags** anywhere a
  kind might someday merge — a mutable `liked:yes/no` cannot merge; `%Like,at,device` always can.
+  (`%Like` itself is gone — deleted 2026-09-04 with `Jam.g` — folded into a mutable `take` on
+   `Mag:heard`'s Card; see the note above.)
 
 And the transport exists (§4.1): the **Dif codec** encodes change itself as C-matter. A
  line-based three-way merge over crust lines, with D-identity pairing the sides instead of git's

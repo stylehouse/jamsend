@@ -19,7 +19,7 @@ Snap:H
           see:a berthed bookmark resolves before any reload — it lands on the exact record it names
           see:a bookmark homed in the berth survives a full snap-out and snap-in while a live-only position does not — persistence is the berth not the session
           see:the browse resumes across a reload — the re-decoded bookmark lands on the same record even after the original live tree is torn down
-        MusuSelf,pub:Self
+        Mine,pub:Self
           radiostocking,pub:Self
             Mag:Musica
               Cloud,randomic:draw_one,created_at=1000

@@ -10,7 +10,7 @@ Snap:H
           Dogear,of:live-t2
             curs,wild:Cloud,randomic:draw_one
               curs,wild:Card,id:t2
-        MusuSelf,pub:Self
+        Mine,pub:Self
           radiostocking,pub:Self
             Mag:Musica
               Cloud,randomic:draw_one,created_at=1000

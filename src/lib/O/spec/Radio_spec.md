@@ -65,9 +65,9 @@ Everything is a particle (`C`/TheC). Persisted scalar strings ride `.sc`; runtim
 
 The tell you broke this is the MusuBuddy smell — a `Mag:Musica`, a `Kept`, a `Dogear`, telemetry rows all
  lying flat on `w` where nothing says whose they are. Each belongs under a `Peering` or a `Pier` — for
-  music, under its `%MusuSelf|%MusuThem` home (§2.2).
+  music, under its `%Mine|%Theirs` home (§2.2).
 
-### 2.2 The Musu homes — `%MusuSelf` | `%MusuThem` *(re-drawn 2026-07-17 — supersedes the Ray; design, unbuilt)*
+### 2.2 The Musu homes — `%Mine` | `%Theirs` *(re-drawn 2026-07-17 — supersedes the Ray; design, unbuilt)*
 
 *(Notation here: `/` nests — `A/B` is a child B under A; `|` alternates — `%Preview|Stream` is "a
  `%Preview` or a `%Stream`".)*
@@ -76,13 +76,13 @@ The tell you broke this is the MusuBuddy smell — a `Mag:Musica`, a `Kept`, a `
  a `Peering/Pier/something,deep` path to reach the shelf it wants, yet still obeying the homing law (§2.1)
   because each home wears the `pub`:
 
-- **`%MusuSelf,pub:<me>`** — my music home (correlates to `Peering,name:<self>`).
-- **`%MusuThem,pub:<them>`** — a friend's music as I hold it (correlates to `Pier,pub:<them>`); one per key.
+- **`%Mine,pub:<me>`** — my music home (correlates to `Peering,name:<self>`).
+- **`%Theirs,pub:<them>`** — a friend's music as I hold it (correlates to `Pier,pub:<them>`); one per key.
 
 Each home carries the same shelves:
 
 ```
-%MusuSelf,pub:<me>
+%Mine,pub:<me>
   radiostocking/%Mag…     ← the ephemeral draws — machine-drawn handfuls, GC fodder
   the/%Mag…               ← the durable Mags — tracks written about, hence never dropped
   shop/                   ← the LOADING ZONE — mid-transfer both directions, per-Pier bays inside (§2.4)
@@ -95,7 +95,7 @@ Each home carries the same shelves:
     `loc:['Mag']`, container-blind — proven again). `the/` has its door but no resident until the
      written-zine rung mints one.
 
-A `%MusuThem` home is mostly descriptor — their Mags as I've learned them; the bytes I hold all sit on MY
+A `%Theirs` home is mostly descriptor — their Mags as I've learned them; the bytes I hold all sit on MY
  settled shelf with `from:`/`at:` provenance, so the two planes (§1) map onto the homes. **A card still resolves
   against MANY homes** — you browse the blogs and pull a record from anyone who holds it, a friend or a
    stranger or yourself.
@@ -106,7 +106,7 @@ A `%MusuThem` home is mostly descriptor — their Mags as I've learned them; the
  keep it and it names what to hold.
 
 ```
-%MusuSelf,pub / radiostocking|the      ← the home's shelves (§2.2): ephemeral draws | durable keepers
+%Mine,pub / radiostocking|the      ← the home's shelves (§2.2): ephemeral draws | durable keepers
   %Mag:Musica                          ← a magazine — music, OR want-of-music (symmetric)
     %Cloud,randomic:<draw>,created_at   ← one draw's arrivals; randomic present ⇒ machine-drawn
       %Card,id,artist,title,album,path,body_hash    ← a catalog LISTING (a referring particle)
@@ -135,7 +135,7 @@ A `%MusuThem` home is mostly descriptor — their Mags as I've learned them; the
 
 ### 2.4 The shop (the loading zone) + the settled holdings *(re-drawn 2026-07-17 twice — shop = "the whole loading here-and-there zone", the human; as-built today = `%Library,pier:` + census `%Record/%Body` — rung 3 is this re-draw)*
 
-The **shop** (`%MusuSelf,pub/shop/`) is the LOADING ZONE: what is mid-transfer, in either direction, lives
+The **shop** (`%Mine,pub/shop/`) is the LOADING ZONE: what is mid-transfer, in either direction, lives
  here and ONLY while in motion — nothing settles in the shop. It has a **per-Pier sub-part** — the loading
   **bay** (name provisional) — because the ask itself travels: a **`%Heistlet`** minted in F's bay is
    **Repli'd over to F** — *have you got these?* — F stamps have|held marks on it in place, and the
@@ -194,12 +194,12 @@ A Heist is a desire hardening into bytes; every phase is the SAME particle weari
         (`Heist_beat`/`Heist_land`/the vouch door — all untouched) takes it from there, landing the one record
          whole in the asker's `Ra_home_them(w, <pier>)` stock. **THE SHOP SHELF LANDED (2026-07-17):** the soft
           `%Heist` (and the hard `Heist_job` alike) no longer floats on the world floor — `Ra_home_shop(w, <me>)`
-           (`Ghost/M/Ra.g`, beside `Ra_home_self`/`_them`) mints the `shop/` shelf under the ASKER's `%MusuSelf,pub`
+           (`Ghost/M/Ra.g`, beside `Ra_home_self`/`_them`) mints the `shop/` shelf under the ASKER's `%Mine,pub`
             home, and `Heist_wish(w, home, …)` / `Heist_job(w, at, filings, {home})` hang the `%Heist` there (the
              `%Lead` answers accumulate UNDER it in the shop). A heist is MY operation, so the loading zone lives
               under MY home (§2.1 satisfied — nothing per-Pier on `w`); `Heist_flatten` removes from the job's own
                container (`job.c.up`), not `w`. Re-recorded green ×2: MusuHeist 22/22, MusuBreach 10/10, MusuSoft
-                6/6 — the fixture diff was ONLY the `Heist,` line moving from the floor to `MusuSelf,pub:<asker>` >
+                6/6 — the fixture diff was ONLY the `Heist,` line moving from the floor to `Mine,pub:<asker>` >
                  `shop,pub:<asker>` (records/Leads/filings/took rows unchanged beneath). **Still owed:** the
                   wet `%Original`/`%Record` quarantine moving UNDER the `%Heist` in the shop (the bay +
                    `%Heistlet` landed 2026-07-17 — see the bay block above · Book MusuBay). MusuSoft proves the arc on the MusuVend loopback: origin
@@ -212,7 +212,7 @@ A Heist is a desire hardening into bytes; every phase is the SAME particle weari
 **The settled holdings shelve on `stock/`** — a fourth shelf beside `radiostocking|the|shop` (ruled
  2026-07-17 on the human's names-are-cheap license: its disk shadow is literally the radiostock). *(As-built
   2026-07-17, the container dissolve leg: `Ra_home_self(w, pub)` / `Ra_home_them(w, pub)` in `Ghost/M/Ra.g`
-   find-or-create the `%MusuSelf,pub`|`%MusuThem,pub` home and return its `stock` child — the shelf that
+   find-or-create the `%Mine,pub`|`%Theirs,pub` home and return its `stock` child — the shelf that
     replaces the old flat `%Library,pier:` node one-for-one, `%Record`s living directly under it. The shelf
      carries `pub` so a Record's `rec.c.up.sc.pub` still names WHOSE bytes these are. `Ra_library` is a thin
       deprecated alias to `Ra_home_self` for one cycle. All ~35 call sites converted by side-judgment —
@@ -275,7 +275,7 @@ stock/
 
 ### 2.5 The Rack — the super-Mag of interests
 
-**`%Rack`** (name provisional) is the super-`%Mag` at the `%MusuSelf` home (was `Peering/*`): it tracks
+**`%Rack`** (name provisional) is the super-`%Mag` at the `%Mine` home (was `Peering/*`): it tracks
  *every* `%Mag` a `Peering` has an interest in — its own and its friends'. It is **loaded on init** and is
   the root of what to re-home and re-subscribe when the app wakes. *(Open: the `radiostocking|the` shelves
    may absorb this job — the shelves ARE the interest list.)*
@@ -323,7 +323,7 @@ peer's collection ─▶ publish a %Mag ─▶ browse a home of Mags ─▶ heis
 
 1. **Publish** — a holder folds its collection into a `%Mag:Musica` (`Musica_publish`; `Musica_fold` is the
    pure one-brain that serves the disk publish AND the wire offer).
-2. **Browse** — you read a peer's home of `%Mag`s (`%MusuThem`, §2.2) over their `Pier`. Cards, not
+2. **Browse** — you read a peer's home of `%Mag`s (`%Theirs`, §2.2) over their `Pier`. Cards, not
    bytes; a card resolves against whoever holds it.
 3. **Heist** — the pull, a transient `%Heist,at:<pier>` that exists as briefly as possible:
    - **offer** (`Heist_offer_all`) — the source casts its catalog as chunkless husks: a pointer to every
@@ -419,9 +419,9 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
 
 **1 — Identity homing** *(the multi-Pier law, §2.1)* **[todo]** — every per-peer particle under
  `Peering,name:<self>` or `Pier,pub:<them>`; drop the finished transient `buddy_*` reqs at a safe seam;
-  nest the loose telemetry rows. The music shape of this law is the `%MusuSelf|%MusuThem` homes (§2.2).
+  nest the loose telemetry rows. The music shape of this law is the `%Mine|%Theirs` homes (§2.2).
    *(The MusuBuddy snap is the smell that names the work.)* **[done, 2026-07-17]** the `%Heist` (soft wish AND
-    hard job) no longer floats on `w` — `Ra_home_shop(w, <me>)` homes it under the asker's `%MusuSelf,pub` >
+    hard job) no longer floats on `w` — `Ra_home_shop(w, <me>)` homes it under the asker's `%Mine,pub` >
      `shop/` shelf (§2.4); MusuHeist/MusuBreach/MusuSoft re-recorded green ×2, the diff only the re-shelving.
 
 **2 — Magazine** *(Book: MusuHeist · `Ghost/M/Heist.g`)* **[built · green ×2, 2026-07-14]** —
@@ -432,7 +432,7 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
 
 **3 — Holdings + Library dissolve** **[the container dissolve: built · green ×2, 2026-07-17 · the
  `%Original` master + `%Blob` re-home still todo]** — `%Library` (and the `Ray`) dissolve into the
-  `%MusuSelf|%MusuThem` homes (§2.2); the `stock/` shelf holds `%Original/%Chunk` (the master — today's
+  `%Mine|%Theirs` homes (§2.2); the `stock/` shelf holds `%Original/%Chunk` (the master — today's
    census `%Record/%Body` re-homed), `%Record/%Preview|Stream` standing on its own beside it (a pull lands
     a Record — derived, never a master), and `%Blob,grade:` export grades (`ogg128` for phone-sync). Waking
      a card loads the `%Record`; `%Stream` only in the live copy. **The container dissolve LANDED
@@ -442,7 +442,7 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
          the census walk `Swarm_music_census` (`Ghost/S/Swarm.g`) walking the new home. Green ×2 on the core
           six (MusuVend 11/11 · MusuHeist 22/22 · MusuBreach 10/10 · MusuOgg 6/6 · MusuReap 4/4 · MusuBuddy
            14/14) + MusuReco/MusuReplica; the fixture diff was ONLY the re-shelving (`Library,pier:X` →
-            `MusuSelf|MusuThem,pub:X` + a nested `stock,pub:X` line, records unchanged beneath). The MusuVend
+            `Mine|Theirs,pub:X` + a nested `stock,pub:X` line, records unchanged beneath). The MusuVend
              two-Pier wire loopback proved container mainkeys do NOT ride the wire (offer/merge locate by
               `['Record','id']`). New ghost **`Ghost/M/Orig.g`** groups the `%Original`/grade-dispatch verbs —
                its first verb landed: the `ogg128` export (`Orig_ogg_export`, Book **MusuOgg**, green ×2, §2.4)
@@ -474,7 +474,8 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
   restart; the `%Heist` is its actively-downloading leg. *(Re-coined 2026-07-17 — was
    `Ray,self/Mag:marauding`; the resume side is unbuilt — see rung 4.)* Ruled (on license): the Grasp
     **prunes** as legs complete — forward intent only; the `%Grab` ledger fact **endures** — never a
-     double ledger.
+     double ledger. (`%Grab` was deleted entire 2026-09-04 with `Jam.g`; the durable fact it recorded
+      now lives as `keep:<id>` on `Mag:heard`'s Card — see `Radio_circuit_todo.md`.)
 
 **7 — Swarm (opportunistic webrtc chunk-sharing)** **[routing: design · trust keystone: WIRED + green ×2 2026-07-17]**
  — a swarm peer is just another `Repli_register_caster`; **Repli sends `C**` to many overlapping-interest

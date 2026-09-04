@@ -13,7 +13,7 @@ Snap:H
           forgot,dropped,cascaded,clouds,one_era_dropped,mag_shed_a,stock_a_gone,stock_b_stands,cascaded_a
           see:forgetting the old era drops exactly one cloud — the magazine sheds the old-era card while the fresher card stays listed
           see:the forget reaps the derived cache — the dropped track radiostock file is gone from disk while the kept track file still stands — the bias-to-keep discriminator reading both sides of the shelf
-        MusuSelf,pub:reap.shop
+        Mine,pub:reap.shop
           stock,pub:reap.shop
             Mag:shuffle
               Cloud,page:1

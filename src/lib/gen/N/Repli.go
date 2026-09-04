@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '4548cda6dbde60cb~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '32796fb09bc1727f~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -1175,27 +1175,27 @@ async Repli_serve_chunks(w, pier, h, rec) {
 },
 // ─── receiver (Pier B) ───
 // Repli_mirror_lib — B's growing MIRROR collection (find-or-create).  The mirror side of the Musu
-//  homes (Radio_spec §2.2 rung 3): what I hold OF another rides a `%MusuThem,pub:<them>` / stock
+//  homes (Radio_spec §2.2 rung 3): what I hold OF another rides a `%Theirs,pub:<them>` / stock
 //   shelf.  The pub key defaults to the demo's 'Crowd'; a real listener names its shelf
 //    (w.c.repli_mirror_pier — the source's key, the census convention).  Returns the stock shelf,
 //     which stands in for the old flat %Library one-for-one (Records live directly under it).
 //  Two OPT-IN live extensions (unset = the Book behaviour, byte-identical):
 //   w.c.repli_mirror_by_from — key the shelf by the frame's SENDER, so N friends grow N
-//    per-friend %MusuThem crates (what Riffle_homes browses) instead of one merged pile.
+//    per-friend %Theirs crates (what Riffle_homes browses) instead of one merged pile.
 //   w.c.repli_mirror_w — mint the homes in THAT world (the radio/glass world) rather than the
 //    transport world the frames ride: the station world is plumbing, the crates are furniture.
 Repli_mirror_lib(w, from) {
     let mw = w.c.repli_mirror_w || w
     // a frame whose SENDER is ME (a relay echo, or a self-Pier casting to itself) must not mint a friend
     //  crate of myself: in live by-from mode w.c.repli_mirror_pier IS my own prepub, so from===it means
-    //   "my own stock coming back" — fold it into my OWN shelf (idempotent dedup), never %MusuThem,pub:<me>.
+    //   "my own stock coming back" — fold it into my OWN shelf (idempotent dedup), never %Theirs,pub:<me>.
     if (w.c.repli_mirror_by_from && from && String(from) === String(w.c.repli_mirror_pier)) return this.Ra_home_self(mw, String(from))
     let key = (w.c.repli_mirror_by_from && from) ? String(from) : (w.c.repli_mirror_pier || 'Crowd')
-    // CRATE-BIRTH electrode (2026-08-06, the trace lane): the %MusuThem home minting is the exact
+    // CRATE-BIRTH electrode (2026-08-06, the trace lane): the %Theirs home minting is the exact
     //  moment the dial's `homes` count goes 0→1 — the seam between `advertise homes=1` (the census
     //   of MY OWN shelf) and `starved homes=0` (the dial's count of THESE).  Mark the birth, once,
     //    so the ring can say whether a "gathering" tab ever grew a friend crate at all.  .c-only.
-    let had = mw.oa({ MusuThem: 1, pub: key })
+    let had = mw.oa({ Theirs: 1, pub: key })
     let shelf = this.Ra_home_them(mw, key)
     if (!had && typeof this.Radio_trace === 'function') {
         try { this.Radio_trace(null, { ev: 'crate-born', of: String(key).slice(0, 8) }) } catch (er) {}

@@ -138,9 +138,10 @@ The working doc for the DELIBERATE SoundPool experience — the owner (2026-08-2
  the Creduler's `watched:UIs` enrolment never renders and **CREDULER_GHOSTS never deposit** — a
   Book run headless with only its own ghost dies with `this.Ra_rec_find is not a function` in
    the Errlog (seen on this Book's first run).  The `INCLUDE=` shim is the door: mount the gen
-    components directly (`scripts/Siphon_include.svelte` mounts Ra.go / Heist.go / Jam.go /
+    components directly (`scripts/Siphon_include.svelte` mounts Ra.go / Heist.go / Heard.go /
      Musuation.go + the two new gens; each only calls `H.eatfunc`, so the spec's M shim serves
-      as H).  Fixture "mismatches" against the placeholder toc are baseline noise — the headless
+      as H).  (`Jam.go` — `Jam.g` was deleted 2026-09-04; `Heard.go` is its replacement, see
+       `Radio_circuit_todo.md`.)  Fixture "mismatches" against the placeholder toc are baseline noise — the headless
        verdict is boot-green + the %testing notes + the sworn shelf
         (`scripts/Siphonation_asserts.spec.ts`).
 

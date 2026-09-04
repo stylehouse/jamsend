@@ -322,9 +322,9 @@ One helper, in Vyto.g, used for **every** furniture find (tuner/crews, `%Seek`, 
 The gear that really stands in a Radio run world (Radio.g / Ra.g / Sounditron.g):
  `%Radio` and `%Stoker` face particles (`Radio_ensure`, `Stoker_ensure`), `%Tuner`,
   `%Mag:'Lineup'` with `%Card` children (`Radio_lineup_fill`), `%Friend` rows kept
-   current by the trickle, my home `%MusuSelf,pub:<me>` whose `stock` shelf pages as
+   current by the trickle, my home `%Mine,pub:<me>` whose `stock` shelf pages as
     `%Mag:shuffle → %Cloud,page:N → cards` (the Mag model, Ra.g 533-546), and each
-     friend's mirror `%MusuThem,pub:<them>` whose stock still lays flat (*"mirrors still
+     friend's mirror `%Theirs,pub:<them>` whose stock still lays flat (*"mirrors still
       lay flat until the wire cut"*, Ra.g 536).
 
 The commission, authored where `Sounditron_glass` builds today's (Sounditron.g 176-177),
@@ -336,10 +336,10 @@ commission %Vyto_commission          — detached scaffolding, refs in .c
   Styles:   SH.The_Styles(stw)
   recipe:
     %IO,stock                        — "my stoker's stock"
-      find: {MusuSelf:1, pub:<me>} → stock shelf     in: w
+      find: {Mine:1, pub:<me>} → stock shelf     in: w
       shape: mirror    deep: 1
     %IO,mags                         — "these piers' Mags shaped as a slope"
-      find: {MusuThem:1} → stock shelf               in: w    each: 1
+      find: {Theirs:1} → stock shelf               in: w    each: 1
       shape: slope     weight: fresh
     %IO,presence                     — "the trickle's presence"
       from: w    pick: {Friend:1}
@@ -348,10 +348,10 @@ commission %Vyto_commission          — detached scaffolding, refs in .c
 
 The derived grapple set — *a grapple on what it has a grapple on*:
 
-> - `%MusuSelf,pub:me/stock` — the shelf; **deep** adds `%Mag:shuffle` and every
+> - `%Mine,pub:me/stock` — the shelf; **deep** adds `%Mag:shuffle` and every
 >    `%Cloud,page:N` under it.  A page minted by `Stoker_mag_draw` enrolls at the next
 >     derivation; without deep, cards landing on page 3 would be invisible (Fact 2).
-> - each `%MusuThem,pub:<them>/stock` — one flat shelf per friend; plus `w` as the
+> - each `%Theirs,pub:<them>/stock` — one flat shelf per friend; plus `w` as the
 >    **each-root**, so a new friend home minted by `Swarm_share_up` bumps w, fires a
 >     scan, and the re-derivation grapples the new shelf — a friend arriving mid-play
 >      joins the slope with no recommission.

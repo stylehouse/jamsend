@@ -23,7 +23,7 @@ Snap:H
                 unemit:1,type:repli_lines,seq:1,body_len:819
               req:unemit,seq=2,type:repli_lines,body_hash:79d16d7a969f738919d95047d366e632e8dd8f2abcf422c8f784c12dd6302de7,body_len=908,done,to:repli_lines,finished
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
@@ -37,7 +37,7 @@ Snap:H
                 Record,id:g6,artist:Grind,title:Beat g6,path:grind/held.opus
                 Record,id:g7,artist:Grind,title:Beat g7,path:grind/held.opus
                 Record,id:gx,artist:Grind,title:Beat gx,path:grind/held.opus
-        MusuThem,pub:Follower.mirror
+        Theirs,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:shuffle
               Cloud,page:1

@@ -468,7 +468,7 @@ This doc reserved `%Haul` for "the larger collective" and the first surface read
     the folder *"can ONLY be resolved by the SOURCE, off its own radiostock card"* — and that was TRUE when
      it was written, because the asker's mirrored heads carried no path. Since `rec.sc.path` started
       carrying the crate-root-relative path (`Ra.g`, build `4938d5f5`) it has been false. Nobody re-read the
-       comment against the data. **A friend's `%MusuThem` mirror card carries `path`, `title`, `artist`,
+       comment against the data. **A friend's `%Theirs` mirror card carries `path`, `title`, `artist`,
         `ext` and a stat'd `bytes` — that IS a file listing** (see any MusuBay fixture, line `Record,id:…,
          title:…,path:Fourier Four - Echo E.wav,ext:wav,bytes=960104`).
    **Landed** (`Heist.g`, compiled): `Heist_blag_folder` takes the seed's own mirror card, takes
@@ -809,7 +809,7 @@ This doc reserved `%Haul` for "the larger collective" and the first surface read
 
    **The seam: a lofi heist is a DIFFERENT PULL, not a post-step on the normal one.** A heist pulls the
     ORIGINAL file's byte chunks out of `srcmir` and gates them on `rec.sc.body_hash` (`Heist_land_stream`).
-     The opus segments live on a *different* mirror — the radio's `%MusuThem` crate. So lofi should not
+     The opus segments live on a *different* mirror — the radio's `%Theirs` crate. So lofi should not
       download the original at all: take the opus already streamed (or finish streaming it, far cheaper
        than a FLAC), mux, and write `<rel with .ogg extension>`. That is the whole appeal — a phone-sized
         heist that is mostly already on disk.

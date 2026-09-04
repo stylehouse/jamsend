@@ -4,38 +4,38 @@ story:SwarmShare
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.095
-      sample=0.123,at=1786366681
-      sample=0.093,at=1786439658
-      sample=0.065,at=1786441207
-      sample=0.058,at=1786442580
-      sample=0.054,at=1786444906
-      sample=0.074,at=1786456332
-      sample=0.07,at=1786466507
-      sample=0.12,at=1786518159
-      sample=0.151,at=1788497738
-      sample=0.145,at=1788498154
-    TimeTotal:step,avg=0.01
-      sample=0.014,at=1786366681
-      sample=0.01,at=1786439658
-      sample=0.007,at=1786441207
-      sample=0.006,at=1786442580
-      sample=0.006,at=1786444906
-      sample=0.008,at=1786456332
-      sample=0.008,at=1786466507
-      sample=0.013,at=1786518159
-      sample=0.017,at=1788497738
-      sample=0.016,at=1788498154
-  step,dige:bc1061aa38822e63
-  step=2,dige:8b9eb840c8b25487
-  step=3,dige:ef727727b5bf42a3
-  step=4,dige:f958eef5002b1ce8
-    Assertion:the-mirror-lands-keyed,sentence:the mirror lands keyed by the caster prepub — two records under MusuThem for the friend never merged under the listener key
-  step=5,dige:04b6e3e22985daa2
+    TimeTotal:beliefs,avg=0.192
+      sample=0.361,at=1788504519
+      sample=0.151,at=1788505784
+      sample=0.164,at=1788505798
+      sample=0.169,at=1788505809
+      sample=0.168,at=1788506242
+      sample=0.143,at=1788506252
+      sample=0.264,at=1788506262
+      sample=0.131,at=1788506272
+      sample=0.179,at=1788506282
+      sample=0.194,at=1788506293
+    TimeTotal:step,avg=0.022
+      sample=0.04,at=1788504519
+      sample=0.017,at=1788505784
+      sample=0.018,at=1788505798
+      sample=0.019,at=1788505809
+      sample=0.019,at=1788506242
+      sample=0.016,at=1788506252
+      sample=0.029,at=1788506262
+      sample=0.015,at=1788506272
+      sample=0.02,at=1788506282
+      sample=0.022,at=1788506293
+  step,dige:043fa96e9545f194
+  step=2,dige:7b3fb405fc09f6e0
+  step=3,dige:c37fb39796011511
+  step=4,dige:c37fb39796011511
+    Assertion:the-mirror-lands-keyed,sentence:the mirror lands keyed by the caster prepub — two records under Theirs for the friend never merged under the listener key
+  step=5,dige:99db766adc9e241f
     Assertion:a-suggestion-minted-while,sentence:a suggestion minted while the friend is unreachable stands un-got under my Pier for them — store and forward
-  step=6,dige:1d4b4b856ad401c5
-  step=7,dige:e356a0255cef566b
-  step=8,dige:ebd7a3b33e8c6b50
+  step=6,dige:16ad5262c97d2b93
+  step=7,dige:93d57ce4a50098a9
+  step=8,dige:93d57ce4a50098a9
     Assertion:the-rebirth-greeting-drains,sentence:the rebirth greeting drains the queue — the suggestion crosses mirrored at the friend and his confirmation retires my copy got
-  step=9,dige:bbc2e36af3b8d390
+  step=9,dige:f578e86602db2f13
     Assertion:a-changed-era-in,sentence:a changed era in the greeting resets the route stream state while keeping Ud — the reborn peer re-baselines the link

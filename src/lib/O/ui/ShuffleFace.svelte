@@ -43,12 +43,12 @@
             // POOL MODE: the OPFS SoundPool shelf ONLY — probe-first (oa) so a render never mints the
             //  home; `open` (chunk 0 present) here means the bytes are LOCAL, not a latency question.
             const me = A?.Radio_pub?.(w)
-            const pool = (me && w.oa?.({ MusuPool: 1, pub: me })) ? A?.Ra_home_pool?.(w, me) : null
+            const pool = (me && w.oa?.({ SoundPile: 1, pub: me })) ? A?.Ra_home_pool?.(w, me) : null
             shelves.push({ name: '♪ your pool', recs: pool ? (A?.Ra_recs?.(pool) ?? []) : [] })
         }
         // every shelf the dial can reach: the friend crates by default, plus my own when the listener
         //  flipped the source switch (radio.sc.own) — the same two ladders Radio_dial walks.
-        for (const home of (poolMode ? [] : (w.o?.({ MusuThem: 1 }) ?? []))) {
+        for (const home of (poolMode ? [] : (w.o?.({ Theirs: 1 }) ?? []))) {
             const pub = String(home.sc?.pub ?? '')
             if (!pub) continue
             const shelf = A?.Ra_home_them?.(w, pub)
@@ -57,9 +57,9 @@
         }
         if (!poolMode && radio?.sc?.own) {
             // Ra_home_self is a find-or-CREATE (oai) — probe first so a mere render can never mint a
-            //  home.  Same reason the MusuThem walk above goes through w.o() and only then resolves.
+            //  home.  Same reason the Theirs walk above goes through w.o() and only then resolves.
             const me = A?.Radio_pub?.(w)
-            const mine = (me && w.oa?.({ MusuSelf: 1, pub: me })) ? A?.Ra_home_self?.(w, me) : null
+            const mine = (me && w.oa?.({ Mine: 1, pub: me })) ? A?.Ra_home_self?.(w, me) : null
             if (mine) shelves.push({ name: 'mine', recs: A?.Ra_recs?.(mine) ?? [] })
         }
 

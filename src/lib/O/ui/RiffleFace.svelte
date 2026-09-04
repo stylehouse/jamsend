@@ -4,7 +4,7 @@
     //   (RiffFace — folders open, tracks ▶): the display system, never a hand-list inside this
     //    panel.  Crates: MY crate walks the real share by folder, its track hand drawn DEEP from
     //     the whole subtree below (a nested album is one flip away); each friend crate is their
-    //      %MusuThem mirror (the live Repli fill).  Pointer stance as the sibling faces: the card
+    //      %Theirs mirror (the live Repli fill).  Pointer stance as the sibling faces: the card
     //       is pointer-events:none, buttons re-arm.
     let { n, H } = $props()
 

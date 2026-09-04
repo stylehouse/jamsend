@@ -42,8 +42,8 @@ export const FACE_MAINKEYS: Record<string, string> = {
                           //  jiggling rx/tx bars + per-track pull/serve progress so bytes-in-flight are VISIBLE
     Shuffle: 'Shuffle',   // the shuffle pool — a dontSnap cell showing WHAT THE DIAL CAN REACH vs what
                           //  merely stands in the crate; the husk/dial-able gap is the "same 10 tracks" shape
-    MusuSelf: 'Crate',    // my music home — the record collection, spread out to gaze across
-    MusuThem: 'Crate',    // a friend's music as I hold it — same spread, worn with their name
+    Mine: 'Crate',    // my music home — the record collection, spread out to gaze across
+    Theirs: 'Crate',    // a friend's music as I hold it — same spread, worn with their name
     // Tree: THE FACELESS FACE (the human 2026-08-07 "a cell can kind of be a component or a
     //  rendering of the C data all labelled ... and recurse C**") — MISSING from this map since it
     //   was built, which means it has never actually rendered.  `cyto_face_kind` (Cyto.svelte) falls

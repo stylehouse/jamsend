@@ -1782,7 +1782,7 @@ An adversarial agent was set on the whole session's diff with the brief "argue t
 >   newly-added `commission.sc.*` (today: `need_floor`) is only read by `Vyto_commission` on a tab that
 >    has not commissioned yet. `glass_done` rides `.c`, so a RELOAD clears it and the next tick
 >     re-commissions with the new flag; otherwise you wait for the trickle's re-commission, which only
->      fires when the `%MusuThem` friend set GROWS. The tell is the exact symptom the owner reported
+>      fires when the `%Theirs` friend set GROWS. The tell is the exact symptom the owner reported
 >       minutes after the flag landed — *"the Components don't fit in these weird little things"*: the
 >        renderer had the new molds, the model still had `w.c.need_floor = 0`, so nothing grew the cells.
 >  **Any future commission flag has the same trap.**
@@ -2138,7 +2138,7 @@ The arc: **wear the words in ✓ → give the glass eyes (Scan) ✓ → give it 
       **dead end**, and `glass_kinds.ts` — whose only importer is Vytui — inherited it, so registering
        one face full-reloaded both player tabs and cost an AudioContext tap each time. Serial moved to
         `H.c.vytui_serial`. **Measured both ways on the live pair**: the identical one-line edit to
-         `glass_kinds.ts` wiped the mirror crate to `0 %MusuThem home(s)` before, and left `1 home / 31
+         `glass_kinds.ts` wiped the mirror crate to `0 %Theirs home(s)` before, and left `1 home / 31
           records` standing (own shelf still climbing) after. Propagation stops at the nearest
            *accepting* importer, not at the root — so when an edit reloads, walk the importers rather
             than re-reading the file you edited. Nine components still carry module blocks:

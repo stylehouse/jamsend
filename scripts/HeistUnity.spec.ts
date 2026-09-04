@@ -295,7 +295,7 @@ test('Ra_unity_dirs is the work list — distinct folders, not records', async (
 // ── THE BLAG ───────────────────────────────────────────────────────────────────────────────────────
 test('the blag derives the seed\'s folder from cards we already hold, and prices it from src_size', async () => {
     const H = await stub_house()
-    const mir = shelf('MusuThem')
+    const mir = shelf('Theirs')
     rec(mir, 'SEED', 'Artist/Album/2.flac', { src_size: 7_000_000, title: 'Two', un_n: 3, un_size: 21_000_000 })
     rec(mir, 'sib1', 'Artist/Album/1.flac', { src_size: 6_000_000, title: 'One' })
     rec(mir, 'sib3', 'Artist/Album/3.flac', { src_size: 8_000_000, title: 'Three' })
@@ -326,7 +326,7 @@ test('the blag derives the seed\'s folder from cards we already hold, and prices
 
 test('the WIRE census wins whenever it exists — and is what the ask must gate on', async () => {
     const H = await stub_house()
-    const mir = shelf('MusuThem')
+    const mir = shelf('Theirs')
     rec(mir, 'SEED', 'Artist/Album/2.flac', { src_size: 10 })
     H.Heist_blag_folder(mir, 'SEED')
     // with only a blag in hand, the blended list is populated but the WIRE list is empty — and that
@@ -348,7 +348,7 @@ test('the WIRE census wins whenever it exists — and is what the ask must gate 
 // ── THE HANDOVER (claim 2) ─────────────────────────────────────────────────────────────────────────
 test('supersede re-points blagged picks onto their wire twins BY PATH, and drops the rest', async () => {
     const H = await stub_house()
-    const mir = shelf('MusuThem')
+    const mir = shelf('Theirs')
     const shop: any = new TheC({ c: {}, sc: { Shop: 1 } })
     const keep = shop.i({ Heist: 'Album', seed: 'SEED', pub: 'them', state: 'primed' })
     keep.c.up = shop

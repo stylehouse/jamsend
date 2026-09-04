@@ -316,8 +316,10 @@ Nothing new needs minting for the happy path — the identity, the username stor
 ## The phone arc — MOVED to `MobilenoFSA_todo.md` (2026-08-15)
 
 The whole arc — listening-only mode (wire half LANDED same day, `Housing.svelte.ts` 🎧 branch),
- the %Like record ("what would be Heisted"), LinkDevice (the self-Invite ceremony), and the
-  phone-commands-station posture — now lives in **`MobilenoFSA_todo.md`**, per the owner's split.
+ the %Like record ("what would be Heisted") — `%Like` was deleted 2026-09-04 with `Jam.g`, folded
+  into `take` on `Mag:heard`'s Card, see `Radio_circuit_todo.md` — LinkDevice (the self-Invite
+   ceremony), and the phone-commands-station posture — now lives in **`MobilenoFSA_todo.md`**, per
+    the owner's split.
    Onboard keeps only the first-run funnel; the two docs meet at the Door, where the namer
     bubble (here) and the 🎧 badge + LinkDevice verbs (there) share the self line.
 

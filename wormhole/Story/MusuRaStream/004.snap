@@ -83,7 +83,7 @@ Snap:H
               req:unemit,seq=5,type:repli_lines,body_hash:d822632976ff4b8c291071b34fb85a5874ff0f34852708e0a9ab347722b7cbee,body_len=192,done,to:repli_lines,finished
             Ud,pubkey:c012850d69de1318
           active_transport,type:mock,open
-        MusuSelf,pub:c012850d69de1318
+        Mine,pub:c012850d69de1318
           stock,pub:c012850d69de1318
             Mag:shuffle
               Cloud,page:1
@@ -124,7 +124,7 @@ Snap:H
         req:rastream_stock,finished
         req:witness,eternal,ok
         reached:step_4
-        MusuThem,pub:b317b9a776e39d30
+        Theirs,pub:b317b9a776e39d30
           stock,pub:b317b9a776e39d30
             Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
             Record,id:02cfcb9c15affeaf,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=38,bytes=517443

@@ -33,7 +33,7 @@ Snap:H
                 unemit:3,type:repli_lines,seq:3,body_len:472
                 unemit:4,type:repli_lines,seq:4,body_len:126
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
@@ -47,7 +47,7 @@ Snap:H
                 Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
               Cloud,randomic:c2,created_at=3000
                 Card,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
-        MusuThem,pub:Follower.mirror
+        Theirs,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:Musica
               Cloud,randomic:c1,created_at=1000

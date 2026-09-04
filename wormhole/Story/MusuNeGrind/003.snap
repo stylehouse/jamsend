@@ -18,7 +18,7 @@ Snap:H
             inbox
               req:unemit,seq,type:repli_lines,body_hash:bc3cc42fbde17aafab8b0d4e8255f0a66787f539586777bd30d1bebd59fbb5b4,body_len=819,done,to:repli_lines,finished
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
@@ -31,7 +31,7 @@ Snap:H
               Cloud,page:2
                 Record,id:g6,artist:Grind,title:Beat g6,path:grind/held.opus
                 Record,id:g7,artist:Grind,title:Beat g7,path:grind/held.opus
-        MusuThem,pub:Follower.mirror
+        Theirs,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:shuffle
               Cloud,page:1

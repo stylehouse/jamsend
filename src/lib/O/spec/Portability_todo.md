@@ -284,12 +284,12 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
 - ✅ **Signing floor resolved to "already coherent"** (§0 candidate + §10 reconciled): the
    feared ~15-20-unsigned-sites audit was a red herring. Seals are ed25519-signed, content
     transfers are vouch-gated fails-closed (`Heist_vouch_ok`/`Ra_verify`), the relay is a
-     hello-bound dumb router, and live-cast `%MusuThem` gossip is structurally non-promotable to
+     hello-bound dumb router, and live-cast `%Theirs` gossip is structurally non-promotable to
       a holding (`Ra_holding_keys` exclusion). Per-frame gossip signing is HARDENING, NOT a
        pool-exchange ship-blocker (the old "land before pool exchange" is withdrawn). ✅ The one
-        invariant owed a Book — `%MusuThem` never promotes off-vouch — is now GATED by **MusuFloor**
+        invariant owed a Book — `%Theirs` never promotes off-vouch — is now GATED by **MusuFloor**
          (Heistation.g tail): its structural-floor beat pins `Ra_holding_keys()` to `Record` alone
-          with the gossip mainkeys (MusuThem/MusuSelf/Jam/Card/Caper/Spin/Like/Grab) held OUT, and
+          with the gossip mainkeys (Theirs/Mine/Jam/Card/Caper/Spin/Like/Grab) held OUT, and
            its fails-closed beat refuses a by-with-no-sig husk fired from inside a REAL Ra_home_them
             crate. (Compile-green; awaits the Lane-A recording pass like the other new Books.)
 
@@ -392,11 +392,11 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
            beats gate exactly that (quiescence AND the shift are the discriminations).
             Occasions (when to sit) + the Door face are v2 wiring. **Lane A grows again:
              `?B=MusuQuarter`, Resume ×4 (steps 2→5), Accept-All, check → `n:1..5`.**
-4. ~~**`%MusuThem` never-promotes-off-vouch invariant Book**~~ **AUTHORED 2026-08-27 —
+4. ~~**`%Theirs` never-promotes-off-vouch invariant Book**~~ **AUTHORED 2026-08-27 —
     `MusuFloor`** (Heistation.g tail, LocalGen GREEN; on the board beside MusuBreach). Scoped
      to the two genuinely un-Booked planks (MusuBreach already drives the swapped-manifest
       door refusal): (a) the STRUCTURAL floor — `Ra_holding_keys()` pinned to exactly
-       `['Record']` with every gossip mainkey (MusuThem/MusuSelf/Jam/Card/Caper/Spin/Like/
+       `['Record']` with every gossip mainkey (Theirs/Mine/Jam/Card/Caper/Spin/Like/
         Grab) asserted OUT of the servable set; (b) the fails-closed MALFORMED vouch — a
          `by:`-with-no-sig husk inside a real `Ra_home_them` crate refused at the real
           `Heist_beat` door before any pull (named + dropped + library stays empty). 2 beats.
@@ -500,7 +500,7 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
                Defer **v2 = ogg128 transcode** (non-reproducible → pinned-stub shape-Book). Full
                 trace + the v1/v2 split at §3.
 - (Optional hardening, NOT a blocker) per-frame gossip signing — the signing floor is already
-   coherent (resolved above & §10); the only owed test is the `%MusuThem`-never-promotes-off-vouch
+   coherent (resolved above & §10); the only owed test is the `%Theirs`-never-promotes-off-vouch
     invariant guard.
 - The LinkDevice ceremony proper (§7) — the encrypted account transfer riding repli. The
    InviteYourself dialogue is an honest stub awaiting this.
@@ -1301,13 +1301,13 @@ A standing want recorded while we are here (the owner): **better UI lego for dis
      checks against the socket's bound prepub, and a music chunk's sender identity. What it
       CANNOT forge is anything that reaches the trusted tier: content lands only through
        `Heist_vouch_ok`/`Ra_verify` (fails closed, `Heist.g:471`/`Ra.g:1361`), and a live cast's
-        `%MusuThem` is structurally non-promotable to a `%Record` (`Ra_holding_keys()`
+        `%Theirs` is structurally non-promotable to a `%Record` (`Ra_holding_keys()`
          exclusion). So the four tiers already compose; **universalising per-frame signing is
           HARDENING, not a ship-blocker for pool exchange** (the earlier "land before pool
            exchange" is withdrawn — Captain↔Captain transfer rides the *vouched* Heist path, not
             raw gossip). If pursued later, the bounded work is unchanged (sign+verify the four
              gossip types + repli sender identity); the one invariant worth a Book first is the
-              `%MusuThem`-never-promotes-off-vouch guard §0 names.
+              `%Theirs`-never-promotes-off-vouch guard §0 names.
 - **Multi-Cave is NOT guaranteed** (v1 stance: one Cave, one Captain, more bodies at your
    own risk). Someday-sharpening (the owner, 2026-08-26): a booting body should tell
     **within ~40s** whether someone is already around using an address, by reading marks on

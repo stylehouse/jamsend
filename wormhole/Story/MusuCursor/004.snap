@@ -18,7 +18,7 @@ Snap:H
           resolved:cloud,depth=2,ok,randomic:draw_two,cloud_type
           reached:step_4
           resolved:gone,depth=2,failed,missing_id:t1
-        MusuSelf,pub:Self
+        Mine,pub:Self
           radiostocking,pub:Self
             Mag:Musica
               Cloud,randomic:draw_one,created_at=1000

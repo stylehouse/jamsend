@@ -17,7 +17,7 @@ Snap:H
           reached:step_6
           went,folder_described,takes_the_track_not_the_album,starts_itself_lofi,narrowing_holds,human_keep_untouched
         Radio:playing,by:friendo
-        MusuThem,pub:friendo
+        Theirs,pub:friendo
           stock,pub:friendo
             Record,id:r1,title:Radio One
             Record,id:r2,title:Radio Two
@@ -26,12 +26,12 @@ Snap:H
           Pool,name:heard,take:radio,cap:2
           Consent,at:1788400000
         Record,id:own1,title:Mine
-        MusuSelf,pub:me
+        Mine,pub:me
           shop,pub:me
             Heist:Radio One,seed:r1,pub:friendo,state:pulling,into:pool,why:radio,at:1788400000,from_name:friendo,lofi,pick_edited
               Pick,ref:r1
             Heist:Radio Two,seed:r2,pub:friendo,state:primed,into:pool,why:radio,at:1788400010,from_name:friendo
-        MusuPool,pub:me
+        SoundPile,pub:me
           stock,pub:me
             Record,id:r1
             Record,id:r2
@@ -51,11 +51,11 @@ Snap:H
                   Key,pub:5270274852ee42c65c4655f72db279cbee84c2193802c3445b2ae951c514b9a2	{"mung":["secret"]}
                 mate:b2663d787b470325,role:Captain,pub:b2663d787b470325bb454d531be2cbf808638f8b0369b6e3ee2a8a0bd6d1531d
           Pools
-          MusuThem,pub:b2663d787b470325
+          Theirs,pub:b2663d787b470325
             stock,pub:b2663d787b470325
               Record,id:cap1
               Record,id:cap2
-          MusuThem,pub:strangerfriend
+          Theirs,pub:strangerfriend
             stock,pub:strangerfriend
               Record,id:fr1
               Record,id:fr2

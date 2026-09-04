@@ -45,7 +45,8 @@ at **6 records/page** (`Ra_page_size`). The shuffle Mag is a discovery generator
      `//#region mag model` (Ra.g 622-855).
 - **The one door** `[LIVE]` — `Ra_rec_home` (654): every owned mint lands in the open shuffle
    page, **never flat**. Callers: stock provisioning `Ra.g:1008`, heist census `Heist.g:133`,
-    heist cp-landing `Heist.g:520`, Jam keeper `Jam.g:81`.
+    heist cp-landing `Heist.g:520`, keeper copy `Ra_rec_copy` (`Ghost/M/Ra.g:899`) — re-homed from
+     `Jam.g`'s `Jam_grab` 2026-09-04 when the `%Jam` ledger was deleted, see `Radio_circuit_todo.md`.
 - **The census readers (recursive)** `[LIVE]` — `Ra_recs` (690) → `Ra_recs_deep` (679) and
    `Ra_rec_find` (709) → `Ra_rec_find_deep` (697). **Ruled + built 2026-07-26:** they recurse
     over `Mag**` — a `%Record` is the leaf (its children are chunk particles), so a Mag may nest

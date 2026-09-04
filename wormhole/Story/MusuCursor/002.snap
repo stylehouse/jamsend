@@ -14,7 +14,7 @@ Snap:H
           Dogear,of:cloud-two
             curs,Mag:Musica
               curs,wild:Cloud,randomic:draw_two
-        MusuSelf,pub:Self
+        Mine,pub:Self
           radiostocking,pub:Self
             Mag:Musica
               Cloud,randomic:draw_one,created_at=1000

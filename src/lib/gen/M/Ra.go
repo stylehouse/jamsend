@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '670f94b3158ef6a8~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'f8cb2ff2cd4a7581~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -711,40 +711,40 @@ async Ra_stock_peek(nav, name) {
 //  homes, each with a `stock/` shelf where the settled %Record/%Original holdings live.  Since the
 //   Mag model (Mag_todo §1) MY holdings page under the shelf's %Mag:shuffle (see the mag-model
 //    region below); the flat shape remains readable, and mirrors still lay flat until the wire cut.
-//  `%MusuSelf,pub:<me>` is MY holdings; `%MusuThem,pub:<them>` is what I hold OF a friend (the
+//  `%Mine,pub:<me>` is MY holdings; `%Theirs,pub:<them>` is what I hold OF a friend (the
 //   mirror side).  Both obey the homing law (§2.1) by wearing `pub`.
 //  Each door returns the SHELF (the stock child), which replaces the old %Library node one-for-one:
 //   the shelf carries `pub` so the stock readers (Ra_stock_one, Ra_card via Ra_pub_of's c.up climb)
 //    resolve WHOSE bytes these are without digging back up to the home.  `oai` is a side-effecting
 //     find-or-create on a plain (non-req) mainkey — the same idiom the old Ra_library used.
 Ra_home_self(w, pub) {
-    return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'stock')
+    return this.Ra_home_shelf(w, w.oai({ Mine: 1, pub: pub }), pub, 'stock')
 },
 // Ra_home_pool — the SOUNDPOOL home (SoundPooling_todo §2.1): MY pressed lofi copies, a
-//  `%MusuPool,pub:<me>` home with the same paged stock shelf, its records rooted at `pool/…`
+//  `%SoundPile,pub:<me>` home with the same paged stock shelf, its records rooted at `pool/…`
 //   OPFS paths.  A DISTINCT home on purpose: identity is per-shelf, so a pool %Record (same id,
 //    path pool/…) is a different holding from the library %Record — a cache row, never a dupe.
 Ra_home_pool(w, pub) {
-    return this.Ra_home_shelf(w, w.oai({ MusuPool: 1, pub: pub }), pub, 'stock')
+    return this.Ra_home_shelf(w, w.oai({ SoundPile: 1, pub: pub }), pub, 'stock')
 },
 Ra_home_them(w, pub) {
     // NO self-guard here, deliberately (removed 2026-08-05).  A "last-line" guard reading
-    //  `w.oa({MusuSelf:1, pub})` asked "does a MusuSelf for this pub exist HERE?" when it meant "is this
+    //  `w.oa({Mine:1, pub})` asked "does a Mine for this pub exist HERE?" when it meant "is this
     //   pub ME?" — the same question only in a world holding ONE identity.  In a world holding several
     //    (every swarm Book, and any live tab that mirrors a peer who also appears as a self) it folded a
-    //     FRIEND's mirror into that friend's own shelf and the %MusuThem,pub:<them> crate never minted:
+    //     FRIEND's mirror into that friend's own shelf and the %Theirs,pub:<them> crate never minted:
     //      two different things merged into one particle, silently.  Ra_home_them cannot answer "is this
     //       me?" — it is handed a pub and knows no identity — so the check belongs where `me` is actually
     //        known: Repli_mirror_lib's `from === w.c.repli_mirror_pier` (Repli.g), added the same day
     //         (deb35c44) and correct.  Keep the self-mirror question upstream of the homing verb.
-    return this.Ra_home_shelf(w, w.oai({ MusuThem: 1, pub: pub }), pub, 'stock')
+    return this.Ra_home_shelf(w, w.oai({ Theirs: 1, pub: pub }), pub, 'stock')
 },
 // Ra_home_shop — the LOADING ZONE shelf beside stock/ (Radio_spec §2.4): what is mid-transfer in either
 //  direction, and ONLY while in motion — a %Caper (my active pull) lives here, not on the world floor.
-//   The shop is the ASKER's: a heist is MY operation, so it homes under MY %MusuSelf,pub home (the same
+//   The shop is the ASKER's: a heist is MY operation, so it homes under MY %Mine,pub home (the same
 //    home Ra_home_self returns the stock shelf of).  Returns the `shop` child, carrying pub like stock does.
 Ra_home_shop(w, pub) {
-    return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'shop')
+    return this.Ra_home_shelf(w, w.oai({ Mine: 1, pub: pub }), pub, 'shop')
 },
 // Ra_home_bay — the PER-PIER sub-part of the loading zone (Radio_spec §2.4): a `bay,pub:<them>` corner UNDER
 //  the shop shelf, the Repli-able piece of MY loading zone for one relationship.  MY asks OF them live here
@@ -764,16 +764,16 @@ Ra_home_bay(w, me, them) {
 //    randomic draw, so every converted mint lands here); `the/` = the DURABLE mags, the ones a `What/` review
 //     is written about, hence never dropped.  A mag graduates radiostocking → the the moment prose is written
 //      about a track it carries (the zine sense — see the/'s first-resident comment below).  Both are the
-//       ASKER/HOLDER's own shelf under `%MusuSelf,pub`, mirroring Ra_home_shop — the mag is MY publication, so
+//       ASKER/HOLDER's own shelf under `%Mine,pub`, mirroring Ra_home_shop — the mag is MY publication, so
 //        it homes under MY home (§2.1 satisfied — nothing per-Pier floats on w).  Returns the shelf child.
 Ra_home_radiostocking(w, pub) {
-    return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'radiostocking')
+    return this.Ra_home_shelf(w, w.oai({ Mine: 1, pub: pub }), pub, 'radiostocking')
 },
 // Ra_home_the — the durable-keeper shelf.  Its FIRST resident arrives with the written-zine rung (rung 2's
 //  `What/` prose promoting a draw into a keeper — Radio_spec §2.3); no hand-authored keeper mag exists yet, so
 //   nothing mints here today — the door stands ready for that rung, never fabricating a resident.
 Ra_home_the(w, pub) {
-    return this.Ra_home_shelf(w, w.oai({ MusuSelf: 1, pub: pub }), pub, 'the')
+    return this.Ra_home_shelf(w, w.oai({ Mine: 1, pub: pub }), pub, 'the')
 },
 // Ra_home_shelf — the shared tail: home under w, a NAMED shelf (`stock`|`shop`) under the home, pub stamped
 //  on both (the home wears it as its identity; the shelf carries it so a Record's rec.c.up resolves pub).
@@ -1314,7 +1314,7 @@ async Ra_pool_off(w) {
     this.Ra_pool_budget_set(w, 0)
     for (const d of this.Ra_pool_defs(w, 0)) { if (d.name) { out.pools = out.pools + this.Ra_pool_drop(w, d.name) } }
     let me = (this.Radio_pub ? this.Radio_pub(w) : null) || 'me'
-    let phome = w ? w.o({ MusuPool: 1, pub: me })[0] : null
+    let phome = w ? w.o({ SoundPile: 1, pub: me })[0] : null
     let pshelf = phome ? phome.o({ stock: 1, pub: me })[0] : null
     let nav = w ? (w.c.ra_nav || (this.Crate_nav ? this.Crate_nav() : null)) : null
     if (pshelf) {
@@ -1359,7 +1359,7 @@ Ra_pool_hash(s) {
     return ('00000000' + h.toString(16)).slice(-8)
 },
 // Ra_pool_sources — WHAT A 'random' POOL DRAWS FROM (owner 2026-09-03: "one that just acquires random whole
-//  LOFI tracks from all Piers|Crewmates"): every mirrored catalog in the radio world — a %MusuThem crate
+//  LOFI tracks from all Piers|Crewmates"): every mirrored catalog in the radio world — a %Theirs crate
 //   stands only for a body that shared with me (Repli mirrors the granted), so crew and friends alike are
 //    sources.  Plain rows {id, from, title}; `from` is the holder's routing name the fill will book toward.
 Ra_pool_sources(w) {
@@ -1371,7 +1371,7 @@ Ra_pool_sources(w) {
     let mates = crew ? crew.o({ mate: 1 }) : []
     let samec = (a, b) => a && b ? (String(a).startsWith(String(b)) || String(b).startsWith(String(a))) : false
     let crewish = (from) => mates.some((m) => samec(m.sc.mate, from) || (m.sc.pub && samec(m.sc.pub, from)))
-    for (const them of w.o({ MusuThem: 1 })) {
+    for (const them of w.o({ Theirs: 1 })) {
         let from = String(them.sc.pub || '')
         if (!from) { continue }
         let stock = them.o({ stock: 1 })[0]   // probe-first: a read never mints a shelf
@@ -4819,7 +4819,7 @@ Ra_pool_fill_wants(w, ident) {
 //    runner must not leak into the tab's radio world).  Live: the radio world's own homes — lib is
 //     probe-first (a body with no library home has nothing to serve; never mint on a read), the
 //      pool home may mint (we are about to press into it), `from` is the crew mirror (probe-first
-//       %MusuThem of my roster Cave) the landing reads the served artifact out of.
+//       %Theirs of my roster Cave) the landing reads the served artifact out of.
 Ra_pool_fill_homes(w, ident) {
     let out = { mw: w, lib: null, pool: null, nav: null, from: null }
     if (ident && ident.c && ident.c.fill_mw) {
@@ -4836,12 +4836,12 @@ Ra_pool_fill_homes(w, ident) {
     out.mw = rw
     let pub = this.Radio_pub ? this.Radio_pub(rw) : null
     if (!pub) { return out }
-    if (rw.oa({ MusuSelf: 1, pub: pub })) { out.lib = this.Ra_home_self(rw, pub) }
+    if (rw.oa({ Mine: 1, pub: pub })) { out.lib = this.Ra_home_self(rw, pub) }
     out.pool = this.Ra_home_pool(rw, pub)
     out.nav = rw.c.ra_nav || null
     let cave = this.Swarm_body_for ? this.Swarm_body_for(ident, 'Cave') : null
     let cavename = cave ? this.Swarm_body_addr(cave) : ''
-    if (cavename && rw.oa({ MusuThem: 1, pub: cavename })) { out.from = this.Ra_home_them(rw, cavename) }
+    if (cavename && rw.oa({ Theirs: 1, pub: cavename })) { out.from = this.Ra_home_them(rw, cavename) }
     return out
 },
 // Ra_pool_fill_from — WHOSE mirror a landing reads, per reach (2026-09-03 review): a circulation fill
@@ -4852,7 +4852,7 @@ Ra_pool_fill_from(w, ident, reach, homes) {
     let to = String(reach && reach.sc ? (reach.sc.to || '') : '')
     if (!to || to === 'Cave' || to === 'Captain') { return homes.from }
     let rw = homes.mw
-    if (rw && rw.oa && rw.oa({ MusuThem: 1, pub: to })) { return this.Ra_home_them(rw, to) }
+    if (rw && rw.oa && rw.oa({ Theirs: 1, pub: to })) { return this.Ra_home_them(rw, to) }
     return homes.from
 
 },

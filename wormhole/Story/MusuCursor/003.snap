@@ -16,7 +16,7 @@ Snap:H
               curs,wild:Cloud,randomic:draw_two
           resolved:hit,depth=3,ok,id:t1
           resolved:cloud,depth=2,ok,randomic:draw_two,cloud_type
-        MusuSelf,pub:Self
+        Mine,pub:Self
           radiostocking,pub:Self
             Mag:Musica
               Cloud,randomic:draw_one,created_at=1000

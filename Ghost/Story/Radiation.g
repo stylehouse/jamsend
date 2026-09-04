@@ -188,7 +188,7 @@ async MusuRaStream_flow(w):
         }
     }
     if (!w.c.a_id) return
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let recA = mir ? mir.o({ Record: 1, id: w.c.a_id })[0] : null
     if (recA && +(recA.sc.preview || 0) > 0 && !w.c.sess) {
         w.c.sess = 1
@@ -205,7 +205,7 @@ async MusuRaStream_beat(w):
     if (!w.c.sess) return
     let p = w.c.play
     if (!p) return
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let rec = mir ? mir.o({ Record: 1, id: p.id })[0] : null
     if (!rec) return
     let asked0 = p.asked
@@ -275,7 +275,7 @@ async MusuRaStream_beat(w):
 //      Cached on w.c.stream + stamped as the streamed row.
 async MusuRaStream_measure(w):
     await this.expecting(w, 'rastream_measure', 180, async () => {
-        let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+        let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
         let recA = mir ? mir.o({ Record: 1, id: w.c.a_id })[0] : null
         let recB = mir ? mir.o({ Record: 1, id: w.c.b_id })[0] : null
         if (!recA || !recB) { w.i({ measure_fail: 'no mirror record' }); return }
@@ -521,7 +521,7 @@ async MusuRaChase_flow(w):
         let peering = this.Swarm_peering(src)
         let pier = peering ? peering.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
         if (!(pier && this.Swarm_pier_live(pier, 'Music'))) continue
-        let lib = w.o({ MusuSelf: 1, pub: pre })[0]?.o({ stock: 1 })[0]
+        let lib = w.o({ Mine: 1, pub: pre })[0]?.o({ stock: 1 })[0]
         let recs = this.Ra_recs(lib)
         if (recs.length < 2) continue
         w.c[flag] = 1
@@ -531,12 +531,12 @@ async MusuRaChase_flow(w):
         }
     }
     if (!w.c.a_id) {
-        let src = w.o({ MusuSelf: 1, pub: w.c.uno_pre })[0]?.o({ stock: 1 })[0]
+        let src = w.o({ Mine: 1, pub: w.c.uno_pre })[0]?.o({ stock: 1 })[0]
         let srecs = this.Ra_recs(src)
         if (srecs.length >= 1) w.c.a_id = srecs[0].sc.id
     }
     if (!w.c.a_id) return
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let recA = mir ? mir.o({ Record: 1, id: w.c.a_id })[0] : null
     if (recA && +(recA.sc.preview || 0) > 0 && !w.c.sess) {
         w.c.sess = 1
@@ -555,7 +555,7 @@ async MusuRaChase_beat(w):
     if (!w.c.sess) return
     let p = w.c.play
     if (!p) return
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     if (!mir) return
     let rec = mir.o({ Record: 1, id: p.id })[0]
     if (!rec || !rec.c.rx || !rec.c.from) return
@@ -683,7 +683,7 @@ async MusuRaChase_beat(w):
 //      not a measurement subject.)
 async MusuRaChase_measure(w):
     await this.expecting(w, 'rachase_measure', 180, async () => {
-        let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+        let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
         let recA = mir ? mir.o({ Record: 1, id: w.c.a_id })[0] : null
         let recB = mir ? mir.o({ Record: 1, id: w.c.c_id || w.c.b_id })[0] : null
         if (!recA || !recB) { w.i({ measure_fail: 'no mirror record' }); return }
@@ -709,11 +709,11 @@ async MusuRaChase_measure(w):
 //     first live CHECK run — the rows record the real numbers.
 MusuRaChase_witness(w):
     let n = (this.c.run)?.c.step_n
-    let libu = w.o({ MusuSelf: 1, pub: w.c.uno_pre })[0]?.o({ stock: 1 })[0]
-    let libd = w.o({ MusuSelf: 1, pub: w.c.duo_pre })[0]?.o({ stock: 1 })[0]
+    let libu = w.o({ Mine: 1, pub: w.c.uno_pre })[0]?.o({ stock: 1 })[0]
+    let libd = w.o({ Mine: 1, pub: w.c.duo_pre })[0]?.o({ stock: 1 })[0]
     let recsu = this.Ra_recs(libu)
     let recsd = this.Ra_recs(libd)
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let mrecs = mir ? mir.o({ Record: 1 }) : []
     let s = w.c.stream
     let target = this.Ra_target_lufs(w)
@@ -931,7 +931,7 @@ async MusuBuddy_flow(w):
     // LEG 2 — the browse: a %Dogear pinned by TITLE walks the MIRROR magazine (never the origin) down to
     //  its card.  The pick is the SECOND title in sorted order — deterministic and never hardcoded to a
     //   tone, so the tone set can change under the Book without touching it.
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
     if (vmag && !w.c.browsed) {
         let cards = this.Musica_cards(vmag)
@@ -995,7 +995,7 @@ async MusuBuddy_flow(w):
 //   middle run withheld), cache the scalar reads on w.c.term and stamp a heard row.  Runs exactly once.
 async MusuBuddy_hear(w):
     if (w.c.term) return
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let rec = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
     if (!rec || !w.c.pull_ok) {
         w.i({ hear_fail: 'nothing pulled' })
@@ -1032,7 +1032,7 @@ async MusuBuddy_hear(w):
 //       Record copy (Ra_rec_copy, re-homed from Jam_grab — the useful half of that verb).
 async MusuBuddy_jam(w):
     if (w.c.jammed) return
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let rec = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
     if (!rec || !w.c.term) { w.i({ jam_fail: 'nothing heard' }); return }
     w.c.jammed = 1
@@ -1075,7 +1075,7 @@ MusuBuddy_witness(w):
     //  the shelf, everything pages under the one %Mag:shuffle, and every page stays bounded.
     let smag = lib ? lib.o({ Mag: 'shuffle' })[0] : null
     if (n >= 2 && smag && recs.length >= 2 && !lib.o({ Record: 1 }).length && smag.o({ Cloud: 1 }).every((cl) => cl.o({ Record: 1 }).length <= this.Ra_page_size())) this.story_swear(w, 'the stock pages under the shuffle mag — every record stands in a bounded cloud page never flat on the shelf')
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
     let dj = this.SwarmStaple_ident(w, 'DJ')
     let djp = dj ? this.Swarm_peering(dj) : null
@@ -1326,7 +1326,7 @@ async MusuMag_flow(w):
             w.i({ offered: 1, mags: r.mags, sent: (w.c.tx.c.seq || 0) - before })
         }
     }
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     if (mir && !w.c.arrived) {
         let heads = this.Ra_recs(mir)
         if (heads.length >= 3) {
@@ -1387,7 +1387,7 @@ async MusuMag_flow(w):
 //  census, so the Mag-homed head carries the catalog + the stage stamp AND the pulled chunk particles
 //   — one true record, matching the origin (the flat way-station twin is gone).
 MusuMag_deep(w):
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     if (!mir || !w.c.deep_id) return { mir: mir }
     return { mir: mir, rec: this.Ra_rec_find(mir, { Record: 1, id: w.c.deep_id }) }
 
@@ -1396,7 +1396,7 @@ MusuMag_deep(w):
 //   sc.stage reads parked across the settle.  The pick: the first record with a real deep window
 //    (total past the preview) — never a hardcoded index, so the tone set can change under the Book.
 async MusuMag_starve(w):
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let rows = mir ? this.Ra_recs(mir) : []
     let rec = rows.find((r2) => +(r2.sc.total || 0) > +(r2.sc.preview || 0))
     if (!rec) {
@@ -1441,7 +1441,7 @@ async MusuMag_decode(w):
 // ── the witness — the wire cut's four sworn claims, read off live truth (no commas, no apostrophes) ──
 MusuMag_witness(w):
     let n = (this.c.run)?.c.step_n
-    let mir = w.o({ MusuThem: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let vmag = mir ? mir.o({ Mag: 'shuffle' })[0] : null
     // S1 — the replication unit: the whole shape crossed in ONE husk.  The arrival row FROZE the proof
     //  the instant the mirror wore the mag — three record heads and a cloud page with zero bytes held

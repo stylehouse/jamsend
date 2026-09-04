@@ -37,7 +37,7 @@ Snap:H
             inbox
               req:unemit,seq=2,type:repli_lines,body_hash:3803d6b93f10636956675e9f058704af2efb7bf87b498ef09c9a8315d4eabdf7,body_len=63,done,to:repli_lines,finished
           active_transport,type:mock,open
-        MusuSelf,pub:Origin1
+        Mine,pub:Origin1
           stock,pub:Origin1
             Mag:shuffle
               Cloud,page:1
@@ -65,7 +65,7 @@ Snap:H
                 Card,id:d71294dbbcd7b726,artist:DJ Oscillo,title:Cosmic C,path:DJ Oscillo - Cosmic C.wav,body_hash:d71294dbbcd7b726b29eb435b756e0663034b5e94639324b091fed01fbd6c1f7
                 Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D,path:DJ Oscillo - Dorian D.wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
                 Card,id:cf95c97b08584b92,artist:DJ Oscillo,title:Groove G,path:DJ Oscillo - Groove G.wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
-        MusuSelf,pub:Origin2
+        Mine,pub:Origin2
           stock,pub:Origin2
             Mag:shuffle
               Cloud,page:1
@@ -93,7 +93,7 @@ Snap:H
                 Card,id:95f3c03e41e9c007,artist:The Sines,title:High A,path:The Sines - High A.wav,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4
                 Card,id:902552d4a0b8b0c1,artist:The Sines,title:Middle A,path:The Sines - Middle A.wav,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8
         req:bay_census,finished
-        MusuThem,pub:Origin1
+        Theirs,pub:Origin1
           stock,pub:Origin1
             Mag:Musica,which:two
               Cloud,randomic:baydraw1,created_at=1000
@@ -105,7 +105,7 @@ Snap:H
                 Card,id:95f3c03e41e9c007,artist:The Sines,title:High A,path:The Sines - High A.wav,body_hash:95f3c03e41e9c0070da6e6a35d5901ac37a8e0e18025e75c3ad8862326f97ef4
                 Card,id:902552d4a0b8b0c1,artist:The Sines,title:Middle A,path:The Sines - Middle A.wav,body_hash:902552d4a0b8b0c19cc6e6331097145ccc9be1d31b90ee9bc3691730c85043b8
             Caper,wish:cosmic sine,hid:wish1
-        MusuSelf,pub:Seeker
+        Mine,pub:Seeker
           shop,pub:Seeker
             Caper,wish:cosmic sine,hid:wish1
               Lead,pier:Origin1,id:d71294dbbcd7b726,tune:DJ Oscillo — Cosmic C

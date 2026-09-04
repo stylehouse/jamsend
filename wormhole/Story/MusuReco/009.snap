@@ -106,7 +106,7 @@ Snap:H
               req:unemit,seq=89,type:repli_lines,body_hash:a7940fdc9689fc466c00f3a89e9dee30875bc8a2a3fb32732d1e9bb5092a0092,body_len=101,done,to:repli_lines,finished
               req:unemit,seq=90,type:repli_page,body_hash:99835ae81078a2f0d2d10a5a2f3b93d2b565cd5ddccce56a1dd0379c6315ee4a,body_len=76800,done,to:repli_page,finished
           active_transport,type:mock,open
-        MusuSelf,pub:DJ
+        Mine,pub:DJ
           stock,pub:DJ
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real,transcoded
               Fill,name:audio,have=0,sr=48000
@@ -121,7 +121,7 @@ Snap:H
               Fill,name:audio,have=0,sr=48000
         reached:step_3
         refused:not_started
-        MusuThem,pub:Crowd
+        Theirs,pub:Crowd
           stock,pub:Crowd
             Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
               Fill,name:audio,have=240,sr=48000,got=30

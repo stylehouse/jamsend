@@ -17,7 +17,7 @@ Snap:H
                 curs,wild:Card,id:t2
           reached:step_3
           baseline,both
-        MusuSelf,pub:Self
+        Mine,pub:Self
           radiostocking,pub:Self
             Mag:Musica
               Cloud,randomic:draw_one,created_at=1000

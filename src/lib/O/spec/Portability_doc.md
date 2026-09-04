@@ -249,7 +249,9 @@ The account stream of §10 and the `replicates: body-to-body` promise of §4 bot
      mints a fresh twin at the mirror. This happened live (`%Prehead`, the night the head
       serve went live), and its predecessor — a spelling heuristic — was hand-patched seven
        times and silently broke the friend's Jam ledger (every `%Spin` upserting onto the
-        first). The direction of failure is deliberate and correct — a too-wide loc splits
+        first). (The Jam ledger and `%Spin` were deleted entire 2026-09-04 — see
+         `Radio_circuit_todo.md` — but the identity lesson below still stands.) The direction
+          of failure is deliberate and correct — a too-wide loc splits
          visibly, a too-narrow one merges silently, so wide is the safe way to be wrong, and
           a console warn announces each unknown mainkey — but the baseline being paid is
            that the transport carries a model of the app vocabulary, and every new crossing
@@ -543,9 +545,9 @@ The signing floor, audited and then reframed by the deeper transport read: trust
     frames and music-chunk sender identity are per-frame unsigned — a sealed friend can
      spoof another's prepub in advisory data — but the spoof cannot escalate: content lands
       only through `Heist_vouch_ok`/`Ra_verify`, which fail closed, and a live cast's
-       `%MusuThem` is structurally non-promotable to a holding (`Ra_holding_keys`
+       `%Theirs` is structurally non-promotable to a holding (`Ra_holding_keys`
         exclusion). Universalising per-frame signing is hardening, not a ship-blocker; the
-         one invariant worth a Book first is that `%MusuThem` never promotes off-vouch.
+         one invariant worth a Book first is that `%Theirs` never promotes off-vouch.
 
 Grant revocation holds: a signed `%NotGrant` atom, durable before return, consulted at
  every use, rehydrated on standup, resurrection-proof against stale snaps. Role grants ride

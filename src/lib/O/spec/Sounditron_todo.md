@@ -214,8 +214,8 @@ The human, after the boot fix took steps from 7.8s to ~0.48s: *"we get to the en
 7. **"muchOther" artist** — `Crate_meta_from_path` (Crate.g:288) stamped artist=TOP FOLDER for nested files.
     Now filename-`" - "`-split only; missing → empty (title alone). *needs reload; ALREADY-minted stock keeps
      the baked-in folder artist until a clean RE-RECORD.*
-8. **Self-mirror bug** (Righto's `MusuThem,pub:56fbce` = itself) — self-guards in `Swarm_share_beat`
-    (skip `pub===me`), `Repli_mirror_lib` (self-`from` → own shelf), `Ra_home_them` (MusuSelf-pub backstop).
+8. **Self-mirror bug** (Righto's `Theirs,pub:56fbce` = itself) — self-guards in `Swarm_share_beat`
+    (skip `pub===me`), `Repli_mirror_lib` (self-`from` → own shelf), `Ra_home_them` (Mine-pub backstop).
      *needs reload.*
 9. **Pier provenance** — RadioFace now shows **"⚯ from Lefto"** (friend) / **"♪ your own record"** (own);
     `radio.sc.by_name` via new `Radio_friendly` helper. *needs reload for the name; the by-pub was already set.*
@@ -263,7 +263,7 @@ The human, after the boot fix took steps from 7.8s to ~0.48s: *"we get to the en
 1. **Hard-reload BOTH tabs.** The gen changes (`%Beat` HUD, the reliability fix, all the `Radio.g`
     pump/dial/stoker fixes, the `Heist.g` zine fix) need a reload, not HMR. The `.svelte` bits (cell
      colours, occlusion, pause-click, RadioFace pool, RiffleFace count) are HMR-live already.
-2. **Fixtures need a re-record.** The `%Beat` organ + friend `%MusuThem` crates are new snap structure;
+2. **Fixtures need a re-record.** The `%Beat` organ + friend `%Theirs` crates are new snap structure;
     the committed Sounditron fixtures won't match until you re-record/accept. Expected glass growth.
 3. **The starve fix (#2/#3) is NOT runtime-verified.** A solo run has all local chunks, so the stall
     path never fires — it rests on the adversarial review + your EAR on a friend/wire track where holes
@@ -317,13 +317,13 @@ DONE so far this session:
        `{for·since·budget}` on `beat.c.wait` (RUNTIME .c → zero snap drift) and the face self-ticks its own
         1s clock (no world bump → no re-tessellate). Waits now labelled ("the stoker to fill the shelf" /
          "the relay to answer" / "a peer to come online"); `beat.c.settled` narrates ✓met / ✕timed-out.
-- **Friend shelves are cells now.** `%MusuThem` (the friend dial pool, `CrateFace` feature-complete but
+- **Friend shelves are cells now.** `%Theirs` (the friend dial pool, `CrateFace` feature-complete but
    NEVER grappled) now spreads as a Crate cell ("showing the queues coming in"). Solo pushes nothing → lone
     run unchanged. **Adversarial review CAUGHT a real bug in the first cut:** the grapple list snapshots ONCE
      at commission (`Vyto_grapples`, `glass_done` latch), and the commission fires at beat 1 — BEFORE any
       peer has mirrored in — so on a genuine first-time pairing the friend crate never appeared (only on a
        reload of an already-stashed pairing). Fixed: extracted a re-callable `Sounditron_commission(w)`, and
-        the **trickle re-commissions when the `%MusuThem` count GROWS** (re-commission is idempotent for
+        the **trickle re-commissions when the `%Theirs` count GROWS** (re-commission is idempotent for
          already-watched gear — `watch_c` dedups per (C,OWNER), Vyto.g); growth-gated so no per-tick churn.
 - VERIFIED on ★claude 49dee91d (reloaded → new gen): `Beat,face:Beat` mints, all 7 beats run, gaps EMPTY,
    zero errors/caveats — machine health identical to baseline. **Fixture note:** the `%Beat` row (+ friend
@@ -332,9 +332,9 @@ DONE so far this session:
 - Compile floor all green: `Sounditron.g → gen 38078c`, BeatFace + glass_kinds bundle HTTP 200 clean.
 - **Organ colours are DISTINCT now (finishes "colour each of them somehow").** The Vyto cells colour via
    `cell_ground`→`matstyle_ground`→`matstyle_hue` (a string-hash), and the hash CLUSTERED the organs —
-    Tuner 346 / Beat 350 / Stoker 2 all one red, and Door + MusuThem hashed to the SAME 134 green (the nice
+    Tuner 346 / Beat 350 / Stoker 2 all one red, and Door + Theirs hashed to the SAME 134 green (the nice
      hand-tuned Matstyle seeds only feed Cyto, never Vyto). Added `matstyle_organ_hue`: a hand-placed hue
-      table for the 12 known organs (MusuThem 5 · Zine 22 · Radio 40 · Mag 95 · Uptime 128 · Stoker 165 ·
+      table for the 12 known organs (Theirs 5 · Zine 22 · Radio 40 · Mag 95 · Uptime 128 · Stoker 165 ·
        Tuner 192 · Beat 210 · Machine 240 · Riffle 262 · Door 288 · Heist 332 — min 17° apart, aligned to
         the Cyto seeds so both views agree). Consulted ONLY for those exact mainkeys; every other key (a
          record id in CrateFace, any future type) falls through to the hash unchanged. HMR — live on next
@@ -407,7 +407,7 @@ DONE so far this session:
 
 - **CAPSTONE holistic review of the WHOLE diff — caught 2 interaction bugs the per-round reviews couldn't.**
    Items verified CLEAN under interaction tracing: the `Sounditron_commission` refactor + trickle re-commission
-    (crate_n stays in sync, growth-gated, `%MusuThem` never dropped so no leave/join blind spot), the starve
+    (crate_n stays in sync, growth-gated, `%Theirs` never dropped so no leave/join blind spot), the starve
      state machine (no stuck-starved, recovery only on genuine chunk-present), the dial/fill interaction.
     FIXED:
   - **Riffle blank-deck-with-N-claim** (`Radio.g Riffle_deal_shelf`): my round-2 husk-gate dealt only playable
@@ -448,7 +448,7 @@ DONE so far this session:
         for real = commission flag + a recursive paint pass in Vytui (the human's in-flight renderer, with
          the idle-gate). Left UN-touched tonight: it's pure geometry I can't see, in the human's live file
           — exactly the blind-edit that goes wrong. Best done together, on a live tab. (Lower-risk partial
-           already shipped: friend shelves as top-level Crate cells via the `%MusuThem` grapple.)
+           already shipped: friend shelves as top-level Crate cells via the `%Theirs` grapple.)
 - **TUNER/CREWS are vestigial in the live Vyto path.** `CREW_MAINKEYS` + `Tuner_toggle` only ever worked
    through the now-retired Cyto scan (`Vytui` never imports `CREW_MAINKEYS`; `tuner.c.crews` is never
     populated; pressing the dial hides nothing). If "grouping/structure" work resumes, the Tuner needs

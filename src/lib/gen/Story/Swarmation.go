@@ -14,7 +14,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return '2b52e2ae3408ea8d~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'b0ed5024c9a827bf~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -823,7 +823,7 @@ async SwarmGot_drive(w, req) {
 
 },
 // SwarmGot_shelf — seed (or grow) a person's OWN music home (Radio_spec §2.2 rung 3): a
-//  %MusuSelf,pub:<prepub> / stock shelf — the census convention, a shelf belongs to a KEY, never a
+//  %Mine,pub:<prepub> / stock shelf — the census convention, a shelf belongs to a KEY, never a
 //   nickname. Single-word titles (a comma in a value is a line-codec landmine). Idempotent per Record id.
 SwarmGot_shelf(w, ident, rows) {
     let lib = this.Ra_home_self(w, ident.sc.prepub)
@@ -1134,7 +1134,7 @@ async SwarmPolicy_order(w) { const H = this;
 // ══ SwarmShare — the EIGHTH Book: live-share keying + suggestion store-and-forward + rebirth reset ══════
 //  This week's machinery on the Book wire (Swarm_spec §9 share/suggest + Repli §2.2 per-friend homes):
 //   1) the per-friend MIRROR KEYING — Repli's opt-in repli_mirror_by_from/repli_mirror_w key what I hold
-//    OF a friend under %MusuThem,pub:<THEM> (the caster) instead of one merged pile under my own key;
+//    OF a friend under %Theirs,pub:<THEM> (the caster) instead of one merged pile under my own key;
 //   2) the SUGGESTION as store-and-forward — a %Suggest minted while the friend is unreachable stands
 //    un-got under my Pier for them, and their rebirth greeting (swarm_hi) drains the queue when they
 //     surface, the far side mirroring it and confirming with suggest_got (my copy wears got:1);
@@ -1217,7 +1217,7 @@ async SwarmShare_stand(w) {
 
 },
 // beat 3 — the per-friend keying (the new opt-in): key the mirror shelf by the frame SENDER and mint the
-//  homes in THIS world, then Cass offers her two records. What I hold OF Cass lands under %MusuThem,pub:<Cass>,
+//  homes in THIS world, then Cass offers her two records. What I hold OF Cass lands under %Theirs,pub:<Cass>,
 //   not merged under my own listener key (the old default).
 async SwarmShare_mirror(w) {
     w.i({reached: "step_3"})
@@ -1295,11 +1295,11 @@ SwarmShare_witness(w) {
     let alice = this.SwarmStaple_ident(w, 'Alice')
     let bob = this.SwarmStaple_ident(w, 'Bob')
     if (!cass || !deb || !alice || !bob) return
-    // beat 4: the mirror landed keyed by the CASTER prepub — Cass's two records under my %MusuThem,pub:<Cass>
+    // beat 4: the mirror landed keyed by the CASTER prepub — Cass's two records under my %Theirs,pub:<Cass>
     //  crate, NEVER merged under the listener key (the per-friend keying the opt-in flags switched on).
-    let cassMir = w.o({ MusuThem: 1, pub: cass.sc.prepub })[0]?.o({ stock: 1 })[0]
-    let debMir = w.o({ MusuThem: 1, pub: deb.sc.prepub })[0]
-    if (n === 4 && cassMir && cassMir.o({ Record: 1 }).length === 2 && !debMir) this.story_swear(w, 'the mirror lands keyed by the caster prepub — two records under MusuThem for the friend never merged under the listener key')
+    let cassMir = w.o({ Theirs: 1, pub: cass.sc.prepub })[0]?.o({ stock: 1 })[0]
+    let debMir = w.o({ Theirs: 1, pub: deb.sc.prepub })[0]
+    if (n === 4 && cassMir && cassMir.o({ Record: 1 }).length === 2 && !debMir) this.story_swear(w, 'the mirror lands keyed by the caster prepub — two records under Theirs for the friend never merged under the listener key')
     // OWED (attended — pairs with the Repli.g `c.sc.from` stamp): add a beat-4 swear that each mirrored
     //  record wears its source prepub as a SNAPPABLE from (query `{ Record:1, from:cass.sc.prepub }`),
     //   then re-record + declare.  Held with the Repli line so SwarmShare's fixtures move exactly once.

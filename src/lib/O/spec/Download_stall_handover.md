@@ -285,7 +285,7 @@ So the sink was never the problem. `ive_got` (Swarm_gossip_music's shelf boast) 
 - `heist-stall [id] at/of` — a track started then FROZE; with `ive_got` ephemeral + the outbox backstop this
    should be extinct. If it still appears with a quiet source console, the next suspect is want-budget
     arbitration / roughly-serial serving (`heist_want_budget` B=6 / `heist_want_lead` 32) + stream-priority.
-- the now-deep `MusuSelf/shop/Keep` subtree (world snap uncapped by the depth-cap removal).
+- the now-deep `Mine/shop/Keep` subtree (world snap uncapped by the depth-cap removal).
 Gold standard remains a live watch of both consoles: no `giant stuff`, tracks reach `✓`.
 
 ### Evening cont. — live pulse, a correction, heist-UI landed
@@ -317,7 +317,7 @@ Gold standard remains a live watch of both consoles: no `giant stuff`, tracks re
    DRIVER (`Heist_keep_beat` → re-materialise + re-pull un-landed picks) is correct. The gap is upstream: the
     resident `/BigSoundland` tab **rebuilds its world C-tree FRESH each boot** (`Sounditron_setup` re-`i()`s
      the organs, re-digs shelves) — only the FSA dir handle + identity/friendship (`.jamsend`) restore, so
-      `MusuSelf/shop` and its `%Keep` are simply gone on reload; there's nothing to resume. **Implementation
+      `Mine/shop` and its `%Keep` are simply gone on reload; there's nothing to resume. **Implementation
        sketch (for a verified session — do NOT blind-build, it touches the `.jamsend` ledger that holds
         identity/friendship):** persist the `shop` subtree to `.jamsend` on Keep mint/step, and reload it in
          `Sounditron_setup`. Left for the human/next session because it's unverifiable while out and a wrong
@@ -370,6 +370,20 @@ Gold standard remains a live watch of both consoles: no `giant stuff`, tracks re
     "empty in health"). Its `req_unemit` wrap also FIXES agent A's latent inbox-wedge (A#1/#3). Spec-worthy
      after the human preens it. BUILD it next (6 files + a proof Book; bundle-verifiable, Book needs a runner).
 - **Re-record SwarmShare + MusuReco** (Fix A fixture churn) — live runner only.
+
+✅ **RESOLVED 2026-09-04 — the "re-record SwarmShare (005-009) + MusuReco (005-011)" cost above is NOT
+ OWED, and both Books pass.** Checked on a live runner with the fixtures in hand:
+ - Fix A is in the tree and committed (`Peeroleum.g:435`, `ephemeral = … || h.type === 'repli_lines' ||
+    h.type === 'repli_page'`), so this is not "the fix was lost".
+ - The predicted churn was *vanishing source-outbox* `emit,type:repli_lines` rows. There are **zero** such
+    rows in either Book's fixtures, and `MusuReco/009.snap` has no `outbox` section at all. The 31
+     `repli_lines` rows that ARE in that fixture are `unemit:` rows under `inbox > recent` — the RECEIVE
+      side, a different thing — and they stand identically in the live snap.
+ - Verdicts: `MusuReco` **ok_pct:1, 11/11**; `SwarmShare` **ok_pct:1, 9/9**. Their whole fixture-vs-live
+    diff is one line each: `self,round=23`→`24` and `self,round=14`→`15` respectively.
+ So the caveats these two carry are the belief-round counter, NOT this work's churn — see
+  `Composition_todo.md` §2.3 (caveat counts carry no signal; `ok`/`ok_pct` is the gate) and
+   `Radio_circuit_todo.md` §0. **Do not spend a runner re-recording these.**
 - **L3 parked-want age watchdog** (`Repli_park_want`/`Ra_transcode_pump`) — source-side twin of L1.
 - **A#3 recv-wrapper honesty** (`Repli.g:689-691` `return true` → return the verdict) — behavioural, do it WITH
    the `req_unemit` wrap under the channel work, verified.

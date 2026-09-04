@@ -59,7 +59,7 @@ Snap:H
                 unemit:2,type:trust,seq:2
             Ud,pubkey:c012850d69de1318
           active_transport,type:mock,open
-        MusuSelf,pub:c012850d69de1318
+        Mine,pub:c012850d69de1318
           stock,pub:c012850d69de1318
             Mag:shuffle
               Cloud,page:1

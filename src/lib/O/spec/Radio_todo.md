@@ -226,7 +226,7 @@ Planned, then measured, then dropped. Worth the space because it looked obviousl
 Measured on player `96d0cf88` (`socklog on` → `dump` → `wormhole/_trace/`, plus the resident snap):
 - **Every record is head-whole. 16 of 16, exact.** Per-record `pv_off` against `%Prehead` count:
    `16/16, 14/14, 12/12, 10/10, 14/14, 16/16, 12/12, 14/14, 14/14, 12/12, 14/14, 14/14, 16/16,
-    16/16, 10/10, 12/12` — and it spans BOTH shelves, 8 `MusuSelf` + 8 `MusuThem`. The fan-out
+    16/16, 10/10, 12/12` — and it spans BOTH shelves, 8 `Mine` + 8 `Theirs`. The fan-out
      converges completely, not partially.
 - **Production is ~1–3s, not minutes.** The trace's own sequence per record is
    `head-wait-pcm pending=0` (kicks the PCM load) → `pending=1` → `head-made chunks=N`. Four heads
@@ -243,7 +243,7 @@ Measured on player `96d0cf88` (`socklog on` → `dump` → `wormhole/_trace/`, p
  **If it is ever worth improving, the cheap lever is ordering, not architecture:** walk the AIMED
   friend's records first in `Ra_restock_beat`'s rotation, since the dial's pool is aim-narrowed. Tuning,
    not a mechanism. Measure the boot window before spending anything on it.
- The pool is also small — this tab: 1 `%MusuThem` home, `records=8`. A rotation covers 8 records fast.
+ The pool is also small — this tab: 1 `%Theirs` home, `records=8`. A rotation covers 8 records fast.
   Re-measure before assuming this holds for a 500-record crate; that is the one thing that would
    revive the order.
 
@@ -269,7 +269,9 @@ Three runs, three independent `seq` spaces, one record. A run's mainkey says WHI
 1. **The mainkey-blind walks become mainkey-AWARE.** Every one of these takes a run kind:
     `Ra_chunk_map` (Ra.g:2625), `Ra_chunk_have` (Ra.g:2642), `Ra_chunk_heads` (Ra.g:2706),
      `Radio_map` (Radio.g:3190), `Repli_chunk_at` (Repli.g:198), plus the incidental counters
-      `Jam.g:93`, `Radio.g:1391`, `Swarm.g:2549`, `Heistation.g:2632`.
+      `Radio.g:1391`, `Swarm.g:2549`, `Heistation.g:2632`, and (replacing `Jam.g:93`'s `Jam_grab`
+       chunk-copy loop, gone with `Jam.g` 2026-09-04) `Ra_rec_copy`'s chunk-copy loop
+        (`Ghost/M/Ra.g:912`) — see `Radio_circuit_todo.md`.
 2. **A `run` argument replaces `hbase` arithmetic.** `Radio_map` stops concatenating with an offset
     and instead returns an ORDERED CONCATENATION OF RUNS — `[Headstream, Preview, Stream]` for a
      continuation, `[Preview, Stream]` for a tune-in. The playback timeline is then a property of the
@@ -431,7 +433,7 @@ The owner's reframe, verbatim: *"sounds like Lefto needs to get consent to send 
      sealed route BEFORE sending `repli_ready` (arm the door, then knock).
   Measured (scratchpad `whenland3.mjs`, per-route grep — suspect 1 honoured): reload B beside a
    serving A → B `share-up` ~+12s, A's ring `repli-ready` + `offer-now`, `offered 1–2s ago` on
-    B's OWN route block, B `crates: 1 %MusuThem` at **13.6s / 13.7s**; then `crossover
+    B's OWN route block, B `crates: 1 %Theirs` at **13.6s / 13.7s**; then `crossover
      playable=3 of=Righto` and ~211 KB/s flowing. Books: SwarmInvite 5/5 green, SwarmShare
       exactly its 8-caveat baseline. The residual come-back IS B's standup — any further shaving
        is work on B's boot, as the entry below already concluded.
@@ -535,7 +537,7 @@ The offer loop's own comment already names this class of bug — *"a mark that i
       before B arms. A back-signal that ceases on success can never carry the success.
 
 **THE FIX THIS LEAVES, and it is the ask — hung on the right trigger.** B knows, at `Swarm_share_up`
- and nowhere else, both halves at once: *I can now receive* and *I hold no `%MusuThem` crate for this
+ and nowhere else, both halves at once: *I can now receive* and *I hold no `%Theirs` crate for this
   mutually-sealed friend*. That one instant is the whole answer. Ask there: once per boot, per
    crateless sealed friend, receiver-initiated. It collapses the 48.8s tail to ~0.2s and leaves the
     come-back equal to B's standup plus ~2s. Needs one small new frame type (a re-offer request) —
@@ -676,6 +678,11 @@ The owner, on the tab at `?I=f5da6599b8505881`: *"observe why it won't stream fr
 8. `radio.sc.own` is absent, so the lineup is in SOURCE-EXCLUSIVE friends mode (the 2026-07-28
     ruling, 1145). There is no fallback to your own shelf: pool-empty is silence, not a switch.
 
+(`radio.c.heard`, `Radio_heard_add`, and `Radio_heard_cap` named in this chain were deleted
+ 2026-09-04 with the rest of the old Jam machinery; the dedup set is now `Radio_heard(radio)`
+  reading `Heard_set` off the durable `Mag:heard,pub:<me>`, bounded by `heard_ttl` rather than a
+   100-cap — see `Radio_circuit_todo.md`. The diagnosis above is historical and stands as read.)
+
 **THE ASYMMETRY IS NOT REAL — BOTH TABS HAVE IT, and Lefto is the WORSE one.** Checked Lefto's own
  world in the same session, and it carries the mirror-image row: `error,of:f5da6599b8505881,say:no
   music coming across from Righto`. The numbers:
@@ -756,7 +763,7 @@ It calls `Radio_skip` (which blends rather than cuts, 2026-08-07) and lets the d
      is the 2026-08-06 "exhaustion is not starvation" fix, and it sits *above* the local rung on
       purpose. All-heard costs one honest replay (counted in `sc.replays`), never own music.
 - `Radio_pool_census` (:1577) and `Radio_dial_pool` (:1526) apply the SAME `Radio_playable` over the
-   same `MusuThem` crates, so a census that said `playable > 0` cannot be followed by an empty
+   same `Theirs` crates, so a census that said `playable > 0` cannot be followed by an empty
     exhaustion pool. And `Radio_lineup_fill` is source-exclusive (:1367/:1375), so the lineup cannot
      hand back own music either.
 
@@ -864,11 +871,11 @@ Verified live on Righto, no reload: `recs=68 distinct=55` → **`recs=56 distinc
    twin was minted"*, *"the second pass located the standing mag and cloud spine"*).
 
 **Tooling that found it, and keeps it findable:** `runner_ask world` grew a **`crate_census`** —
- `%MusuThem` homes, per-shelf `recs` vs `distinct_ids`, mags, clouds. It states the two leaks
+ `%Theirs` homes, per-shelf `recs` vs `distinct_ids`, mags, clouds. It states the two leaks
   *separately*: `homes > pubs` means one crate counted many times by any reader that loops homes;
    `recs > distinct_ids` means the same track standing twice in the tree. They are different bugs and
     look identical in a total. The same op's `world_snap` was ALSO a lie worth knowing about — its
-     comment claimed it encoded "the resident world so Radio/Musu/MusuThem show", but it encoded
+     comment claimed it encoded "the resident world so Radio/Musu/Theirs show", but it encoded
       `Lies_runner_story_w()`, the **Story** world; on a tab that has run a Book you got its recorded
        step snaps and not one live particle. The two coincide only on a virgin player tab, which is why
         it read as working for so long. `resident_snap` is now its own key.
@@ -1431,7 +1438,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
    reads `gathering` (live peer, every record a husk). That is the trace to build next: the owner
     wants "really good traces of the radio behaviour", and the honest gap is between `advertise
      homes=1 stocks=1` (the census's view of MY OWN home) and `starved homes=0 recs=0` (the dial's
-      view of `w.o({MusuThem:1})`, the FRIENDS' shelves). **Those two `homes` count opposite sides
+      view of `w.o({Theirs:1})`, the FRIENDS' shelves). **Those two `homes` count opposite sides
        and must never be read as contradicting each other** — that near-miss cost an hour tonight.
 
 **(b) Then §3.x #33 — the collection wander samples branches, not tracks.** `Crate_nav_meander`
@@ -1811,7 +1818,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
   and the glass is being remade to show MUSIC first.  One line per organ — the code is the detail:
 
  - **Live share**: `Swarm_share_up/_beat/_loop` (Swarm.g) — stock husk-casts to granted friends,
-    per-friend `%MusuThem` crates mint in the RADIO world, the dial plays the pool, and the
+    per-friend `%Theirs` crates mint in the RADIO world, the dial plays the pool, and the
      keep-ahead leg wants full-length pages off the REAL playhead.
  - **Reconnect**: `Swarm_station_routes` + the `swarm_hi` era-reset greeting (swarm channel);
     ping-borne boot epoch + spine re-ack + `pinned_stable` promotion (Lies channel).
@@ -1825,7 +1832,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
      granted friend giving nothing playable (Radio.g lineup region; LineupFace).
  - **THE GLASS ALLOWLIST** (the "remake the model" cut): a `use_faces` world tucks every
     UNDRESSED cell-holder under 'system' (`cyto_crew`, Cyto.svelte) — the model VoroCyto gets
-     is the user's, not the machinery's.  CrateFace spreads `%MusuSelf|%MusuThem` records as
+     is the user's, not the machinery's.  CrateFace spreads `%Mine|%Theirs` records as
       little cards (▶ auditions); gang mirrors label by member mainkey, never 'gang_of'; the
        Sounditron probe %Caper wears `crew:system`.
  - **Draw-Mags**: `Stoker_mag_draw` — every landing churn mints a `%Cloud` of `%Card`s on the

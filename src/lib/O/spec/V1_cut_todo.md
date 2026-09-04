@@ -346,7 +346,7 @@ Ranked. None of these need you.
     stricter fulfilled=SEALED hold (order matters — the strict hold without dismissal strands people).
 4. **Eight watches and four dials owe a mutation test [doc].** A green gate that has never been
    seen to go red gates nothing — one was already found to be theatre **[memory]**.
-5. **Hollow Books [memory]:** MusuSelf/MusuThem have no fixtures; four Vyto Books are `dige:lie`.
+5. **Hollow Books [memory]:** Mine/Theirs have no fixtures; four Vyto Books are `dige:lie`.
    Their green is not evidence.
 
 ---
@@ -386,7 +386,7 @@ The diaries stay authoritative for *how* each thing landed: `Radio_todo` §0 (st
 
 ## 6. The hollow Books — three of six now gate (2026-08-12)
 
-The handover's standing item: *"MusuSelf, MusuThem, VytoCrush, VytoDepth, VytoMemo, VytoNeed are all
+The handover's standing item: *"Mine, Theirs, VytoCrush, VytoDepth, VytoMemo, VytoNeed are all
  dige:lie or fixture-less. Six green gates that gate nothing."* Worked through overnight.
 
 **First correction: `dige:lie` means NOT YET RECORDED, not "deliberately un-gated"**
@@ -404,7 +404,7 @@ The handover's standing item: *"MusuSelf, MusuThem, VytoCrush, VytoDepth, VytoMe
 | **VytoNeed** | ✅ **recorded and gating** — 4/4, caveat 0, deterministic. |
 | **VytoCrush** | ◐ **diges recorded and gating**, but **3 of its 4 assertions are ABSENT** — all three step-3 claims. Investigated below. |
 | **VytoMemo** | ✗ **left hollow on purpose.** Step 4 is *"hold the settled glass under forced repaints — the wall counter must stand still"*, and its dige **differs between identical runs** — it snaps a repaint counter, so it cannot be stable by construction. Reverted to its committed `dige:lie`. The fix is at the source (stop snapping the churning value), not in the toc. |
-| **MusuSelf / MusuThem** | no fixture directory at all — untouched, still hollow. |
+| **Mine / Theirs** | no fixture directory at all — untouched, still hollow. |
 
 ⚠ **Two traps, both hit tonight** (recorded as [[dige-lie-means-unrecorded]]): a runner **rewrites
  the toc after every run**, so a hand edit to a fixture is clobbered by the next run unless you
@@ -527,9 +527,9 @@ Everything touched overnight, re-checked against its expected state:
 
 The handover's standing item named six hollow Books. Chased to the end 2026-08-12:
 
-- **`MusuSelf` and `MusuThem` are not Books at all.** They are **particle types** — `%MusuSelf,pub:…`
-   is the stock-shelf census convention (`Swarmation.g:755`) and `%MusuThem` is a friend's shelf that
-    Sounditron grapples. There is no `wormhole/Story/MusuSelf/` because there was never a Book to have
+- **`Mine` and `Theirs` are not Books at all.** They are **particle types** — `%Mine,pub:…`
+   is the stock-shelf census convention (`Swarmation.g:755`) and `%Theirs` is a friend's shelf that
+    Sounditron grapples. There is no `wormhole/Story/Mine/` because there was never a Book to have
      one. `Swarmation.g` in fact defines **eleven** Swarm Books (SwarmBlotter · SwarmChain · SwarmDisk
       · SwarmDoor · SwarmGot · SwarmInvite · SwarmPolicy · SwarmShare · SwarmSpoof · SwarmSteal ·
        SwarmWire), all with fixtures — the discovery layer IS covered.

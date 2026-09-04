@@ -9,7 +9,7 @@ Snap:H
           reached:step_2
           stood,own_track_never_caught,refused_without_consent,one_keep,keep_says_pool,same_shape_as_the_button,catching_twice_is_once
         Radio:playing,by:friendo
-        MusuThem,pub:friendo
+        Theirs,pub:friendo
           stock,pub:friendo
             Record,id:r1,title:Radio One
             Record,id:r2,title:Radio Two
@@ -18,6 +18,6 @@ Snap:H
           Pool,name:heard,take:radio,cap:2
           Consent,at:1788400000
         Record,id:own1,title:Mine
-        MusuSelf,pub:me
+        Mine,pub:me
           shop,pub:me
             Heist:Radio One,seed:r1,pub:friendo,state:primed,into:pool,why:radio,at:1788400000,from_name:friendo

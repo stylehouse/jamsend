@@ -26,7 +26,7 @@ Snap:H
                 unemit:1,type:repli_lines,seq:1,body_len:311
                 unemit:2,type:repli_lines,seq:2,body_len:546
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
@@ -42,7 +42,7 @@ Snap:H
               Cloud,randomic:draw_evil,created_at=1500
                 Card,id:evil,artist:Attacker,title:Trojan Draw,path:crate/x/evil.opus
                   req:sabotage,eternal,arm:pwn
-        MusuThem,pub:Follower.mirror
+        Theirs,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:Musica
               Cloud,randomic:draw_hon,created_at=1000

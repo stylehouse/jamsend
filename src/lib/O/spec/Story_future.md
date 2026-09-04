@@ -805,6 +805,12 @@ The full diff stays underneath: a Point's timeline expands to the surf of its
 
 ## 15. Story's drive as a req** — how and when a step happens
 
+> **Measured 2026-09-04 — the failure this section is the cure for is real and reproducible.** Two of
+>  the three faults §8.3 predicts were caught on a live runner: (1) quiescence is a 75ms idleness
+>   heuristic, so every async completion ends in a tail-race that jitters `self,round` by one — Books
+>    flap in `dige` while `ok_pct` stays 1 (5 Books × 6 runs); (2) a `release`→`run` with no gap wedges
+>     the standup 2/6, a 6s gap 0/6. Data + mechanism: `Story_hygiene_todo.md` §0a–§0a.2.
+
 The runner's drive is hand-rolled: `story_drive` is a fixed phase chain
  (`do_step → poll_step → snap_step → snap_step_after_wave → snap_step_finish →
   advance → schedule`, a 200 ms loop). It works, but it is its own little engine

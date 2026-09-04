@@ -241,12 +241,12 @@ test('Heist_shop_find / Heist_live_rows FIND and never mint — a face polls the
     // nothing at all yet — not even a home. Both levels of the walk have to hold.
     expect(H.Heist_shop_find(w)).toBe(null)
     expect(H.Heist_live_rows(w)).toEqual([])
-    expect(w.o({ MusuSelf: 1, pub: 'me' }).length).toBe(0)
+    expect(w.o({ Mine: 1, pub: 'me' }).length).toBe(0)
 
     // A HOME BUT NO SHELF — the case that actually exercises the mint. (Written the other way round first,
     //  and the `oai` mutant SURVIVED: with no home the `!home` guard returns before the shelf lookup is
     //  ever reached, so the assertion was proving the guard, not the `o`. A test has to reach the line.)
-    const home = w.i({ MusuSelf: 1, pub: 'me' })
+    const home = w.i({ Mine: 1, pub: 'me' })
     expect(H.Heist_shop_find(w)).toBe(null)
     expect(H.Heist_live_rows(w)).toEqual([])
     expect(home.o({ shop: 1, pub: 'me' }).length).toBe(0)

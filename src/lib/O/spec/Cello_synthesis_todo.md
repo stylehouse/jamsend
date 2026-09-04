@@ -205,9 +205,11 @@ A prior for mainkey `M` is a compact expected shape, learned from the population
 - **Expected .c weight**: a typical count band (e.g. a live `%req` mid-flight carries ~2 refs).
 - **Expected child fanout**: a typical `o({})` count band.
 - **Referring-vs-holding shape**: a `%Card,id:X` (referring, 1:1) has a different expected shape
-   than a `%Record,id:X` (holding) even sharing `id`; a `%Spin,of:X` (many:1) expects an `of:`
+   than a `%Record,id:X` (holding) even sharing `id`; a `%Siphon,of:X` (many:1) expects an `of:`
     pointer. The prior is keyed by mainkey AND by the reference role (`of:` present → referring),
      so a holding masquerading as a reference (the old-magazine bug) is *surprising by construction*.
+     (`%Spin,of:X` was this section's original example; `%Spin` and the whole Jam ledger were
+      deleted 2026-09-04 — see `Radio_circuit_todo.md`.)
 
 ### R.3 Where the prior lives (matter, beside Matstyle)
 

@@ -60,7 +60,7 @@
                     let sug_rec: any = null
                     if (sug && rw) {
                         try {
-                            const shelf = rw.o({ MusuThem: 1, pub: String(p.sc.pub) })[0]?.o({ stock: 1 })?.[0]
+                            const shelf = rw.o({ Theirs: 1, pub: String(p.sc.pub) })[0]?.o({ stock: 1 })?.[0]
                             sug_rec = ((H as any)?.Ra_rec_find
                                 ? (H as any).Ra_rec_find(shelf, { Record: 1, id: String(sug.sc.id) })
                                 : shelf?.o({ Record: 1, id: String(sug.sc.id) })?.[0]) ?? null

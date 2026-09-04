@@ -68,12 +68,12 @@ Every flow is an append-only ledger event carrying an `of:<id>` (many-events-per
 
 | flow | particle (mainkey) | file:line | direction / join |
 |---|---|---|---|
-| **radio spin** (DJ streamed a track at a listener) | `%Spin,of:<id>,at` | `Ghost/M/Jam.g:63` (`Jam_spin`) | child of `%Jam,with:<dj-prepub>` — the edge is listener←DJ, one row per play |
-| **like** (taste fact) | `%Like,of:<id>,at` | `Ghost/M/Jam.g:67` | listener-local, on the same `%Jam` session |
-| **grab / keep** (heisted a keeper copy) | `%Grab,of:<id>,at` | `Ghost/M/Jam.g:71` | listener kept a copy — the "flow became durable" event |
+| **radio spin** (DJ streamed a track at a listener) | `%Spin,of:<id>,at` | `Ghost/M/Jam.g:63` (`Jam_spin`) | child of `%Jam,with:<dj-prepub>` — the edge is listener←DJ, one row per play (`Jam.g` and `%Spin` were deleted 2026-09-04; the play-through count now lives as `mire` on `%Card,id,pub` under `Mag:heard,pub:<me>` — `Heard_through`, `Ghost/M/Heard.g:187` — see `Radio_circuit_todo.md`) |
+| **like** (taste fact) | `%Like,of:<id>,at` | `Ghost/M/Jam.g:67` | listener-local, on the same `%Jam` session (`%Like` was deleted 2026-09-04; the taste fact is now `take` on the same `%Card` — `Heard_take`, `Ghost/M/Heard.g:216` — see `Radio_circuit_todo.md`) |
+| **grab / keep** (heisted a keeper copy) | `%Grab,of:<id>,at` | `Ghost/M/Jam.g:71` | listener kept a copy — the "flow became durable" event (`%Grab` was deleted 2026-09-04; landing now stamps `keep:<id>` onto the same `%Card` — `Heard_clone_beat`, `Ghost/M/Heard.g:478` — see `Radio_circuit_todo.md`) |
 | **heist** (whole album / track pull op) | `%Heist,seed:<id>,pub:<source>,state` | `Ghost/M/Radio.g:297` | `pub`=source friend (empty=own); `state:primed→wanted→asking→pulling→landed` — a directed pull with a live phase |
 | heist picks | `%Pick,ref:<id>` under `%Heist` | `Ghost/M/Heist.g:3555` | the tracks inside a heist |
-| **friend's crate** (their shelf, live-mirrored over Repli) | `%MusuThem,pub:<friend>` | `Ghost/M/Ra.g:686` (usage `:2304`) | a per-friend mirror container — the node-adjacent "what they have" |
+| **friend's crate** (their shelf, live-mirrored over Repli) | `%Theirs,pub:<friend>` | `Ghost/M/Ra.g:686` (usage `:2304`) | a per-friend mirror container — the node-adjacent "what they have" |
 | **live transfer HUD** (bytes moving now) | `%Transfer` (`dontSnap:1`) | `Ghost/M/Heist.g:2202` | reads `Repli_xfer` live (`held/total`, goodput) — the pulsing-edge data, deliberately NOT snapped |
 | single-track siphon (SoundPool phone-pull) | `%Siphon,of:<id>,phase` | `Ghost/M/Siphon.g:109` | `asked→pulling→landed` — the LOFI hand-to-hand pull |
 | pool press/evict pressure | `%Want,of:<id>,do:press\|pull\|evict` | `Ghost/M/Ra.g:1076` | the SoundPool economy proposals |
@@ -110,7 +110,7 @@ The graph must never paint a false-complete flock.  Two honesty primitives alrea
      `edge_upsert` for directed edges and animates state-changes via a **wave** (`grawave`, 0.3–0.4s,
       `:100`).  A soul/device/grant/flow graph is *exactly* what Cyto renders — nodes with backlinks,
        directed edges, live-animated diffs.  Matstyle (`Matstyle.svelte`) already auto-swatches any
-        particle by mainkey, so `%Identity`/`%Body`/`%Pier`/`%Spin` each get a swatch for free.
+        particle by mainkey, so `%Identity`/`%Body`/`%Pier`/`%Card` each get a swatch for free.
 - **NOT a new mode of Vyto (reject option a-as-Vyto).**  Vyto is the voronoi *cell* glass tuned for
    ~5–15 attention-competing cells, and its measure loop is unsettled (`Cellsizing_todo`: one-shot
     measure, nothing re-solves on change).  A flock of dozens of souls×devices×edges is the wrong scale
@@ -153,17 +153,20 @@ The minimal picture the owner asked for, and exactly which particles feed each n
 1. **the seal** (me ↔ friend) — the pair of `%Grant` rows under the `%Pier` (`Swarm.g:2038`).  Drawn
     **undirected**; **half-seal honesty**: if only one of the two grants is present, draw it dashed and
      label "sealing — 1 of 2" (reuse the DoorFace predicate, `DoorFace.svelte:56`).
-2. **the live stream** (their Captain → me) — a `%Spin,of:<id>` on my `%Jam,with:<friend>`
-    (`Jam.g:63`), drawn as a **directed** edge animated by the Cyto wave; its "moving now" thickness/
-     pulse reads the live `%Transfer` HUD (`held/total`, `Heist.g:2202`).  When the track lands as a
-      keeper, a `%Grab` (`Jam.g:71`) marks the edge durable.
-3. **(implicit) their crate** — `%MusuThem,pub:<friend>` (`Ra.g:686`) as the friend node's "what they
+2. **the live stream** (their Captain → me) — a `%Card,id,pub:<friend>` on my `Mag:heard,pub:<me>` gains
+    `mire` on each play-through (`Heard_through`, `Ghost/M/Heard.g:187`), drawn as a **directed** edge
+     animated by the Cyto wave; its "moving now" thickness/pulse reads the live `%Transfer` HUD
+      (`held/total`, `Heist.g:2202`).  When the track lands as a keeper, the Card gains `keep:<id>`
+       (`Heard_clone_beat`, `Ghost/M/Heard.g:478`) marking the edge durable. (`%Spin`/`%Jam`/`%Grab` were
+        deleted 2026-09-04 — see `Radio_circuit_todo.md`.)
+3. **(implicit) their crate** — `%Theirs,pub:<friend>` (`Ra.g:686`) as the friend node's "what they
     have" badge, the reservoir the stream pulls from.
 
 **The truth test this prototype must pass:** turn the Cave daemon off and the Cave node goes
  **unknown/away** (dimmed) while remaining on the graph; drop one grant and the seal edge shows
-  **half-sealed**, not connected; stop the stream and the directed edge stops pulsing but the `%Spin`
-   history remains.  If all three degrade honestly — dim, half, still — the picture is truthful, and
+  **half-sealed**, not connected; stop the stream and the directed edge stops pulsing but the `%Card`
+   history remains (`%Spin` was deleted 2026-09-04; the history is now the Card's `mire` count — see
+    `Radio_circuit_todo.md`).  If all three degrade honestly — dim, half, still — the picture is truthful, and
     that IS the prototype's acceptance gate.  Build it as a Cyto scan over a hand-built two-soul
      `Waft:Account` fixture first (no wire), then point it at a live `runner_ask`/DoorFace pair.
 
@@ -190,6 +193,8 @@ The minimal picture the owner asked for, and exactly which particles feed each n
 Secondary opens (lower stakes, decide during build): (a) do device sub-nodes render as Cyto **compound**
  children or as satellite nodes with a "same-soul" edge? (compound reads truer but Cyto compound layout
   can be fussy at scale); (b) which flow ledgers earn a persistent edge vs a transient wave-only pulse —
-   leaning: `%Spin`/`%Heist`/`%Grab` persist, `%Transfer`/`%Stream` are live-only pulses; (c) does the
+   leaning: `%Card` (Heard)/`%Heist` persist, `%Transfer`/`%Stream` are live-only pulses (`%Spin`/`%Grab`
+    were deleted 2026-09-04, folded into `%Card`; note `%Heist` is now transient scaffolding per
+     `Radio_circuit_todo.md`, so this leaning wants a re-check); (c) does the
     graph read a live world (a runner tab, via `runner_ask`) or a snapped `Waft:Account` fixture — both,
      but the fixture path is the testable one and should come first.

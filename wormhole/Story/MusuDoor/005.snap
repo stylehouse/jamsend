@@ -20,7 +20,7 @@ Snap:H
               recent
                 unemit:1,type:repli_lines,seq:1,body_len:311
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
@@ -33,7 +33,7 @@ Snap:H
               Cloud,randomic:draw_hon,created_at=1000
                 Card,id:t0,artist:Auteur,title:Honest One,path:crate/a/Auteur - Honest One.opus
                 Card,id:t1,artist:Bassbin,title:Honest Two,path:crate/b/Bassbin - Honest Two.opus
-        MusuThem,pub:Follower.mirror
+        Theirs,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:Musica
               Cloud,randomic:draw_hon,created_at=1000

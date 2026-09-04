@@ -36,7 +36,7 @@
             //  will act on; afterwards it shows what actually stands.
             recent = consent ? !!H.Ra_pool_recent_on?.(w) : true
             const pub = H.Radio_pub?.(w) || 'me'
-            const shelf = w.o({ MusuPool: 1, pub })[0]?.o({ stock: 1, pub })[0] ?? null   // probed, never minted
+            const shelf = w.o({ SoundPile: 1, pub })[0]?.o({ stock: 1, pub })[0] ?? null   // probed, never minted
             pooled = shelf && H.Ra_recs ? (H.Ra_recs(shelf) as any[]).length : 0
         } catch {}
     })

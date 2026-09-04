@@ -1,5 +1,5 @@
 <script lang="ts">
-    // CrateFace — a Musu home in the glass: mounted by Cytui on %MusuSelf|%MusuThem
+    // CrateFace — a Musu home in the glass: mounted by Cytui on %Mine|%Theirs
     //  (imposed, FACE_MAINKEYS).  The record collection SPREAD OUT — every standing
     //   record a little card you can gaze across, the bed-of-records feel; ▶ on a
     //    landed one auditions it NOW (Radio_tune).  A husk (no first chunk yet) shows
@@ -16,7 +16,7 @@
     let face = $derived.by(() => {
         void H?.version
         const mk = Object.keys(n?.sc ?? {})[0] ?? ''
-        const mine = mk === 'MusuSelf'
+        const mine = mk === 'Mine'
         const pub = String(n?.sc?.pub ?? '')
         const stock = n?.o?.({ stock: 1 })?.[0]
         // Ra_recs — the shape-agnostic census: my stock pages under %Mag:shuffle/%Cloud now

@@ -1219,7 +1219,7 @@ The §0 A½ symptom checks out. `Swarm_share_granted` → `Swarm_pier_live(p,'Mu
 carries `link:1, post:Cave` + `Grant:Crew` and no `Grant:Music`, and the stamp arm fires only for `My<Post>`
 features, so `'Music'` reads **false** **[code]**. Downstream `Swarm_gossip_music` (3714), the share-beat
 offer loop (4534), `Swarm_offer_to` (3951) and `Swarm_ive_got_tally` (3836) all skip the mate → no
-`%MusuThem` crate → `Ra_pool_fill_homes` returns `from:null` and the fill reach stands 'arrived' forever
+`%Theirs` crate → `Ra_pool_fill_homes` returns `from:null` and the fill reach stands 'arrived' forever
 (Ra.g:4410) **[code]**. One missing grant explains the whole dead byte lane.
 
 **A** — at `Swarm_hello`'s link arm (2606-2645) mint a second atom beside `crewgrant`, pass it as `myGrant`

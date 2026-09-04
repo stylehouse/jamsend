@@ -11,7 +11,7 @@ Snap:H
           swept
           wire_census,honest=0,forged=0
           wire_swept
-        MusuThem,pub:breach.mirror
+        Theirs,pub:breach.mirror
           stock,pub:breach.mirror
             Mag:shuffle
               Cloud,page:1
@@ -50,13 +50,13 @@ Snap:H
                   Original,seq:1,cid:7590a233708c2b4f30a8abdd8105d153790bb88c32a46a03739679f248814d5c	{"ref":{"buf":"Uint8Array()"}}
                   Original,seq:2,cid:e0d1807fa53044f48021912f357290b98042bcff9711a9cdb268833f96e87cf5	{"ref":{"buf":"Uint8Array()"}}
                   Original,seq:3,cid:73ea2950a7a0a6020cf94ee01142e43ac40287d007e7acad945210a362cd2acd	{"ref":{"buf":"Uint8Array()"}}
-        MusuSelf,pub:breach.own
+        Mine,pub:breach.own
           stock,pub:breach.own
           shop,pub:breach.own
             Caper,at:breachpier,disbelieve_directories
               filing,artist:The Sines,genre:breachtest
               filing,artist:DJ Oscillo,genre:breachtest
-        MusuThem,pub:breach.wire.honest.mirror
+        Theirs,pub:breach.wire.honest.mirror
           stock,pub:breach.wire.honest.mirror
             Mag:shuffle
               Cloud,page:1
@@ -77,12 +77,12 @@ Snap:H
                   Original,seq:1,cid:7590a233708c2b4f30a8abdd8105d153790bb88c32a46a03739679f248814d5c	{"ref":{"buf":"Uint8Array()"}}
                   Original,seq:2,cid:e0d1807fa53044f48021912f357290b98042bcff9711a9cdb268833f96e87cf5	{"ref":{"buf":"Uint8Array()"}}
                   Original,seq:3,cid:73ea2950a7a0a6020cf94ee01142e43ac40287d007e7acad945210a362cd2acd	{"ref":{"buf":"Uint8Array()"}}
-        MusuSelf,pub:breach.wire.honest.own
+        Mine,pub:breach.wire.honest.own
           stock,pub:breach.wire.honest.own
           shop,pub:breach.wire.honest.own
             Caper,at:breachwirehonest,disbelieve_directories
               filing,artist:The Sines,genre:breachtest
-        MusuThem,pub:breach.wire.forged.mirror
+        Theirs,pub:breach.wire.forged.mirror
           stock,pub:breach.wire.forged.mirror
             Mag:shuffle
               Cloud,page:1
@@ -104,7 +104,7 @@ Snap:H
                   Original,seq:2,cid:938dd9f2ec627db677312339931e1b58afd0b3e10b76de01b300d936f78e5351	{"ref":{"buf":"Uint8Array()"}}
                   Original,seq:3,cid:fc42c9b09c25eab1c9201e3870b41e19b585ee64fa5b8057f878f2848582d940	{"ref":{"buf":"Uint8Array()"}}
                   Original,seq:4,cid:083b9dbe9be2e50a2047552429dd4599755f3d8560f0960b3ef8d43a96001c88	{"ref":{"buf":"Uint8Array()"}}
-        MusuSelf,pub:breach.wire.forged.own
+        Mine,pub:breach.wire.forged.own
           stock,pub:breach.wire.forged.own
           shop,pub:breach.wire.forged.own
             Caper,at:breachwireforged,disbelieve_directories

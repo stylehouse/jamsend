@@ -4,29 +4,29 @@ story:MusuReap
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.842
-      sample=0.166,at=1785838666
-      sample=0.418,at=1785853967
-      sample=0.237,at=1785855447
-      sample=0.321,at=1785856203
-      sample=0.347,at=1785996319
-      sample=1.507,at=1786109110
+    TimeTotal:beliefs,avg=1.739
       sample=1.188,at=1786118670
       sample=1.902,at=1786118964
       sample=1.565,at=1786119181
       sample=0.773,at=1786119203
-    TimeTotal:step,avg=0.21
-      sample=0.041,at=1785838666
-      sample=0.104,at=1785853967
-      sample=0.059,at=1785855447
-      sample=0.08,at=1785856203
-      sample=0.087,at=1785996319
-      sample=0.377,at=1786109110
+      sample=1.101,at=1788498833
+      sample=1.881,at=1788499207
+      sample=0.813,at=1788500078
+      sample=2.514,at=1788501913
+      sample=3.161,at=1788504964
+      sample=2.492,at=1788504994
+    TimeTotal:step,avg=0.435
       sample=0.297,at=1786118670
       sample=0.475,at=1786118964
       sample=0.391,at=1786119181
       sample=0.193,at=1786119203
+      sample=0.275,at=1788498833
+      sample=0.47,at=1788499207
+      sample=0.203,at=1788500078
+      sample=0.629,at=1788501913
+      sample=0.79,at=1788504964
+      sample=0.623,at=1788504994
   step,dige:e2f2e0a44d2e5c66
-  step=2,dige:f7085263dce172be
-  step=3,dige:4f3f02c11eb5c3ba
-  step=4,dige:9800ae5dbef25f49
+  step=2,dige:f7cc79d72490029f
+  step=3,dige:2c3464e8d3d29534
+  step=4,dige:a3bcfc7e8579cb5a

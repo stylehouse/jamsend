@@ -53,12 +53,12 @@ async function stub_house() {
     return H
 }
 
-// A RADIO WORLD WITH AN EMPTY SHELF — the state both the probe and the watch are about. `MusuSelf` /
+// A RADIO WORLD WITH AN EMPTY SHELF — the state both the probe and the watch are about. `Mine` /
 //  `stock` are the shapes Radio_probe_shelf reads with `o()[0]`, never oai (it is a probe, and a probe
 //   that collects is its own recorded bug).
 function radio_w(H: any, pub = 'me', recs = 0) {
     const w = H.i({ A: 'Radio' }).i({ w: 'Radio' })
-    const home = w.i({ MusuSelf: 1, pub })
+    const home = w.i({ Mine: 1, pub })
     const shelf = home.i({ stock: 1, pub })
     for (let i = 0; i < recs; i++) shelf.i({ Record: 1, id: 'r' + i, path: 'A/' + i + '.flac' })
     return w

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'e4f356ae6cff5504~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '48ab21ce91b54d8c~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -788,7 +788,7 @@ Radio_peek_next(radio) {
         //  Ra_dial_next is a pure read and the same picker the dial's own rung uses.
         let pub = (this.Radio_pub ? this.Radio_pub(w) : '') || ''
         if (!pub) return null
-        let home = w.o({ MusuSelf: 1, pub: pub })[0]
+        let home = w.o({ Mine: 1, pub: pub })[0]
         let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
         if (!shelf) return null
         rec = this.Ra_dial_next(w, shelf, { skip_ids: heard })
@@ -1167,7 +1167,7 @@ Radio_pool_catch(w, radio, rec) {
     for (const p of pools) { cap = cap + (+p.cap || 0) }
     if (cap < 1) { return 0 }
     let me = this.Radio_pub(w) || 'me'
-    let phome = w.o({ MusuPool: 1, pub: me })[0]          // probe-first: a read never mints a home
+    let phome = w.o({ SoundPile: 1, pub: me })[0]          // probe-first: a read never mints a home
     let pshelf = phome ? phome.o({ stock: 1, pub: me })[0] : null
     let seed = String(rec.sc.id || '')
     if (!seed) { return 0 }
@@ -1206,7 +1206,7 @@ Radio_pool_wanted(w, who) {
     let crew = ident.o({ Crew: 1 })[0]
     if (!crew || !crew.o({ mate: 1 }).length) { return 0 }
     let me = this.Radio_pub(w) || 'me'
-    let lhome = w.o({ MusuSelf: 1, pub: me })[0]
+    let lhome = w.o({ Mine: 1, pub: me })[0]
     let lib = lhome ? lhome.o({ stock: 1, pub: me })[0] : null
     if (lib && this.Ra_recs(lib).length) { return 0 }
     return 1
@@ -1433,7 +1433,7 @@ Radio_source_next(n) {
 //     starvation — the same law as the friend pool).
 Radio_dial_pool_local(w, radio, retry) {
     let pub = this.Radio_pub(w) || 'me'
-    let home = w.o({ MusuPool: 1, pub: pub })[0]
+    let home = w.o({ SoundPile: 1, pub: pub })[0]
     let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
     if (!shelf) { return null }
     if (retry) { return this.Ra_dial_next(w, shelf, {}) }
@@ -1457,7 +1457,7 @@ async Radio_pool_steward(w, radio) {
     if (!this.Ra_pool_consent(w)) { return null }     // nothing touches bytes before the device said yes
     if (top.c.pool_steward_busy) { return null }
     let pub = this.Radio_pub(w) || 'me'
-    let lhome = w.o({ MusuSelf: 1, pub: pub })[0]
+    let lhome = w.o({ Mine: 1, pub: pub })[0]
     let lib = lhome ? lhome.o({ stock: 1, pub: pub })[0] : null
     let held = lib ? this.Ra_recs(lib).length : 0
     // DECLARING A POOL IS THE CONSENT (2026-09-03 — MusuPoolRandom already says this in a sworn sentence;
@@ -1472,7 +1472,7 @@ async Radio_pool_steward(w, radio) {
     let declared = this.Ra_pool_defs(w, 0).filter((p) => p.name).length
     if (!declared && !top.c.pool_steward) { return null }
     if (!held && !declared) { return null }
-    // no MusuSelf at all (the bare Cave) — stand my own empty shelf, the same one Radio_dial stands, so
+    // no Mine at all (the bare Cave) — stand my own empty shelf, the same one Radio_dial stands, so
     //  the goal/diff pass has a lib to read: with nothing held, every want is a 'pull' and the only work
     //   the serve loop finds is the eviction the cap is asking for.
     if (!lib) { lib = this.Ra_home_self(w, pub) }
@@ -1851,7 +1851,7 @@ Radio_remember_ms() {
 Radio_probe_shelf(w, sup) {
     if (!w) return { verdict: 'unknown', note: 'no radio world' }
     let pub = this.Radio_pub(w) || 'me'
-    let home = w.o({ MusuSelf: 1, pub: pub })[0]
+    let home = w.o({ Mine: 1, pub: pub })[0]
     let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
     if (!shelf) return { verdict: 'unknown', note: 'no shelf yet — still starting up' }
     let recs = this.Ra_recs(shelf)
@@ -2043,7 +2043,7 @@ Radio_reason(w, radio) {
     if (typeof this.Radio_trace === 'function') {
         try {
             let homes = 0, recs = 0, chunks = 0, byted = 0, probe = 0, probe0 = 0, lowseq = ''
-            for (const home of w.o({ MusuThem: 1 })) {
+            for (const home of w.o({ Theirs: 1 })) {
                 if (!home.sc.pub) continue
                 homes = homes + 1
                 for (const rec of this.Ra_recs(this.Ra_home_them(w, String(home.sc.pub)))) {
@@ -2202,7 +2202,7 @@ Radio_lineup_fill(w, radio) {
         }
         if (mine.length) pools.push({ key: 'mine', recs: mine })
     } else {
-        for (const home of w.o({ MusuThem: 1 })) {
+        for (const home of w.o({ Theirs: 1 })) {
             let hp = String(home.sc.pub || '')
             if (!hp) continue
             let frecs = []
@@ -2353,7 +2353,7 @@ Radio_dial_pool(w, radio, all, peek) {
     let cands = []
     let aimed = []
     let aim = String(radio.sc.aim || '')
-    for (const home of w.o({ MusuThem: 1 })) {
+    for (const home of w.o({ Theirs: 1 })) {
         if (!home.sc.pub) continue
         let pub = String(home.sc.pub)
         let shelf = this.Ra_home_them(w, pub)
@@ -2406,7 +2406,7 @@ Radio_pool_census(w, radio) {
     let playable = 0
     let fresh = 0
     let names = []
-    for (const home of w.o({ MusuThem: 1 })) {
+    for (const home of w.o({ Theirs: 1 })) {
         if (!home.sc.pub) continue
         let pub = String(home.sc.pub)
         friends = friends + 1
@@ -3484,7 +3484,7 @@ async Stoker_dig(st, w, shelf, nav, skip) {
 //    so a nested album four folders down is one flip away, not four clicks.  Dir cards still
 //     deal one level (alphabetical, cap 12) for SCOPING the deep draw.  sc.tracks is the honest
 //      subtree total ("128 tracks below"); a clipped walk says so.
-//  A FRIEND's crate is their %MusuThem mirror (the live Repli fill): flat record hand, ▶
+//  A FRIEND's crate is their %Theirs mirror (the live Repli fill): flat record hand, ▶
 //   auditions the mirror record itself; flip replaces its hand too.  Deal-state, the deep path
 //    cache, and PATHS ride .c only (paths carry commas; browsing is viewer furniture) — sc holds
 //     only clean display scalars.  An unstocked track stocks on demand at ▶ (Riffle_tune:
@@ -3573,7 +3573,7 @@ async Riffle_deep_ensure(ri, nav) {
     return ri.c.deep
 
 },
-// the collections one can rifle: MY crate + every friend crate standing (a %MusuThem home
+// the collections one can rifle: MY crate + every friend crate standing (a %Theirs home
 //  exists only once something pulled — few rows is honest, not an error).  Friendly names
 //   come off the sealed %Pier; a nameless friend shows their prepub8.
 Riffle_homes(w) {
@@ -3582,7 +3582,7 @@ Riffle_homes(w) {
     out.push({ key: 'mine', name: 'my crate', shelf: this.Ra_home_self(w, pub) })
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
-    for (const home of w.o({ MusuThem: 1 })) {
+    for (const home of w.o({ Theirs: 1 })) {
         let hp = String(home.sc.pub || '')
         if (!hp) continue
         let pier = (ident && M.Swarm_peering) ? M.Swarm_peering(ident)?.o({ Pier: 1, pub: hp })[0] : null
@@ -4061,12 +4061,12 @@ Radio_head_ahead(radio) {
     //  The own shelf is the only place records we can actually ENCODE from live, which is the whole
     //   requirement: a head is made from the source file, and we only hold our own.
     // A PURE READ, and the fourth thing this function got wrong.  `Ra_home_self` is an `oai` — a
-    //  find-or-CREATE — so calling it from the pump minted a fresh empty `MusuSelf,pub:'me'` home
+    //  find-or-CREATE — so calling it from the pump minted a fresh empty `Mine,pub:'me'` home
     //   every pass whenever Radio_pub was not yet answering, and then faithfully reported that the
     //    shelf it had just created held no records.  A probe that collects: o() only in here.
     let pub = (this.Radio_pub ? this.Radio_pub(w) : '') || ''
     if (!pub) return
-    let home = w.o({ MusuSelf: 1, pub: pub })[0]
+    let home = w.o({ Mine: 1, pub: pub })[0]
     let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
     let recs = shelf ? this.Ra_recs(shelf) : []
     let cut = 0

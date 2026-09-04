@@ -58,13 +58,109 @@ The owner, 2026-09-04: *"think long and hard about the datasplatter behind Radio
  land), `Heist_keep_flight`, `Heist_keep_solo`, `Heist_haul_look`/`%Hauls>%Haul` (the landed-album rows),
   `Heist_want_path_ok` (unrelated — the serve-side path gate).
 
-### Next
+### Where the VERIFICATION stands (2026-09-04, end of day)
 
-1. **The rename sweep** (§7.4): `MusuSelf`→`Mine`, `MusuThem`→`Theirs`, `MusuPool`→`SoundPile`. 322
-    references, ~28 files, 344 fixture snaps — one mechanical pass and one re-swear, on its own.
-2. **§7.8** — does the SoundPile exist on a device that HAS a folder? Recommendation: no.
-3. **§7.5** — the phone→laptop `take` frame. Network work; stated, not built.
-4. Then `Acquisition_todo.md` retires to `spec/history/`.
+**The circuit is green and the fleet is green around it.** `MusuHeard` 9/9 caveat 0, re-confirmed after
+ every change below. Also green, count-checked, on the live runner: `MusuBay` · `MusuBreach` · `MusuCursor`
+  · `MusuDoor` · `MusuFreeze` · `MusuHeal` · `MusuHeist` 22/22 · `MusuLossy` · `MusuNeGrind` · `MusuPoolBytes`
+   · `MusuPoolRadio` · `MusuPoolRandom` · `MusuRaChase` 56 · `MusuRaStream` 40 · `MusuRecast` · `MusuReco`
+    11/11 · `MusuRename` · `MusuReplica` · `MusuResume` · `MusuSoft` · `MusuStanding` 12/12 · `MusuVend` ·
+     `Sounditron` · `SwarmGot` · `SwarmReboot` · `SwarmShare` 9/9.
+
+**ONE red is ours, and it is the gate working.** `MusuBuddy` declared an assertion naming the deleted
+ ledger — *"the jam ledger reads spin like grab in order…"* — which deleting `%Jam`/`%Spin`/`%Like`/`%Grab`
+  made unmeetable. Beat 11 already SWEARS the replacement (`Radiation.g:1196`); only the toc line was stale,
+   and it has been rewritten to that sentence verbatim. ⚠ **`MusuBuddy` is still red for an unrelated,
+    upstream reason**: it stamps `jam_fail:nothing heard` because `w.c.term` is never set — this diff
+     touches neither `term` nor `pick_id` — and the tell is that it runs all 14 steps in **27 seconds**,
+      nowhere near enough for a Book that must play real audio and measure loudness and gaps. Its LISTENING
+       beat is not engaging at all. Own session.
+
+**`MusuOgg` + `MusuReap` — a REAL transcode change, not entropy. Do not silence it.**
+ Both are red on chunk `cid`s. I first called this a non-reproducible "entropy bomb" and recommended
+  forgiving it. **That was wrong three ways, corrected here so nobody re-derives it:**
+ 1. *"The Book breaks its own ENTROPY LAW"* — **no.** The law ("never the ogg bytes|hash|size") is about the
+     ogg EXPORT file, and the `%Blob` line carries `path` only — no bytes, no hash, no size. The Book obeys
+      it exactly. The chunk `cid`s are a different artifact the law never covered.
+ 2. *"Not bit-reproducible"* — **no.** `MusuOgg` gave byte-identical cids across **three** runs spanning
+     ~1.5 hours with dozens of other Books in between; `MusuReap` identical across two. It is deterministic.
+ 3. *"`lufs` is run-volatile"* — **no.** That came from comparing `MusuReap`'s `lufs` against `MusuMag`'s —
+     different Books, different stocking. Within a Book it is stable.
+ So EntropyArrest is the WRONG tool here (a `tol:any` on `cid:{TOK}`, or a `drop`, would silence either Book
+  in one line — and permanently blind it to chunk content, the one thing it exists to verify). A blind
+   re-record does the same thing quietly. **Two distinct fingerprints, so possibly two causes:**
+ - `MusuOgg` — `lufs`/`gain` UNCHANGED, Preview chunks (seq 0-15) MATCH, only the **Stream** chunks
+    (seq 16-38, the continuation encode that opens a fresh head at `preskip=312`) differ.
+ - `MusuReap` — `lufs` −7.33→−7.38 and `gain` −6.67→−6.62 moved, and every Preview chunk moved with them.
+ Not from this work, on strong but non-bisected evidence: the whole `Ghost/` diff has **zero** matches for
+  `Ra_encode_open|Ra_transcode_advance|Ra_transcode_ensure|nat.encode|Ra_bitrate|Ra_seg_secs|configure(`,
+   and its `Ra.g` edits are confined to `Ra_home_*`/`Ra_pool_*`. A month of commits touched `Ra.g`/`Radio.g`
+    while these fixtures sat untouched since **2026-08-08** — these two Books are simply the only thing that
+     noticed. Note `Ra.g` has TWO encode paths, native `nat.encode` (2464, 3260) and WebCodecs
+      `AudioEncoder` (320/333); both take `gain.db`, so `lufs → gain → bytes → cid`. **Bisect it.**
+
+**`self,round` — RULED (the owner, 2026-09-04): keep it in the snap.** *"self,round is fine to include, it
+ shouldn't wobble unless our ttlilt is not functioning well — Story step-times should be predictable."*
+  I had muted it with a test-scoped `Entcase:Round_noise` (`means,drop`) on MusuHeist/SwarmShare/MusuReco;
+   **that has been reverted and the three re-recorded.** The reasoning that matters: a wobbling `self,round`
+    is not noise to be hidden, it is a READING ON TTLILT. The sharpest instance — `MusuHeist` gave
+     **caveat 13 then 21 on two consecutive warm runs** — means the belief loop took a different number of
+      rounds to reach the same step twice running. That is the signal, and muting it deleted the instrument.
+ Still true and worth keeping: `Composition_todo.md` §2.3 measured cold→warm as red/20 → 22/22 with 14 →
+  22/22 with 1 on IDENTICAL code, so **`ok`/`ok_pct` is the gate and a caveat COUNT is not a regression
+   signal** — but per the ruling above, a caveat count IS a symptom worth reading, not noise to arrest.
+ ⚠ Mechanism worth knowing: `self,round` is ALREADY globally spayed (`Story.svelte:1074`, `tol:'any'`), and
+  a spay forgives at COMPARE — which is *why* it produces a caveat rather than a pass. Only a structural
+   means (`drop`/`dontSnap`, encode-time) removes it. Recipe + costs in `Story_hygiene_todo.md` §0.
+
+**Resolved and off the board:** the `Download_stall_handover.md` debt *"re-record SwarmShare (005-009) +
+ MusuReco (005-011)"* is **NOT owed** — Fix A is in the tree (`Peeroleum.g:435`), there are zero
+  source-outbox `emit,type:repli_lines` rows in either Book, and both pass. (An earlier note here blamed
+   `MusuReco` on cert-crew debt; that was wrong too — it was never anything but `self,round`.)
+
+⚠ **Before trusting any sweep, read `spec/Story_hygiene_todo.md` §0** — the faults that all fail toward a
+ FALSE GREEN (a hollow run reads `ok:true`; `ok` hides `caveat`; TaskStop does not kill a sweep shell), the
+  six Books whose COMMITTED toc diges disagree with their own snaps (`SwarmBody` 22/23), and the discovery
+   that removes most sweeps: **`dige` == `sha256(<whole snap file>)`[:16]**, so a provably content-preserving
+    fixture change needs no runner at all — 319 stale diges over 30 Books were settled locally that way.
+⚠ **A red is not a red until it reproduces on a fresh runner.** `MusuFreeze` went red→GREEN untouched;
+ `MusuStanding` collapsed 12-red→GREEN; `SwarmShare` went from a total standup wedge (`phase:begun`,
+  `n:null`, `steps=0`, 96s of console silence after "▶ Story subHouse created") to 9/9 green on
+   byte-identical files. That wedge is real, transient, and NOT diagnosable from the fixtures.
+
+### Next — where this is going
+
+**The circuit itself is done.** What remains is not circuit work; it is (a) one honest unknown about the
+ RUNNER, (b) one real bug this work uncovered but did not cause, and (c) the two rulings still owed.
+
+1. ✅ **Is the runner deterministic? — ANSWERED, see `Story_hygiene_todo.md` §0a.** No, for 3 of 5
+    Books — but **the entire flap is `self,round` and nothing else** (`MusuHeist` step 22 over three runs:
+     304 lines, ONE differs, `39` vs `38`). The world state is reproducible; only the number of belief
+      rounds taken to reach it jitters by one. Verdicts never moved: `ok_pct:1` in all 30 runs. Two
+       hypotheses died there too — it is NOT the wire/peer Books (`MusuStanding` is peer-heavy and stable),
+        and ttlilt explains the worst case (`MusuHeist`, the only ttlilt user, 21/22 steps) but not the
+         class (`MusuReco`/`SwarmShare` flap with zero ttlilt). ⚠ Practical bite: a Book whose round count
+          differs between `story_accept`s write-run and its verify-run CANNOT be re-recorded green —
+           `MusuHeist` and `SwarmShare` both failed for exactly that reason. **Next: find why the loop takes
+            a different number of rounds.** The owner's standing design (`Story.svelte:79`) is to hide the
+             value but ASSERT on a jump of more than one — not built.
+
+2. **Bisect the transcode change** (`MusuOgg` Stream chunks, `MusuReap` `lufs`/`gain`). Deterministic, real,
+    and NOT this work — see §0. Do NOT silence it with EntropyArrest and do NOT blind re-record; those two
+     Books are the only instrument that noticed a month of `Ra.g`/`Radio.g` commits move the encoder.
+3. **`MusuBuddy`'s listening beat** — `w.c.term` never set, 14 steps in 27 seconds, `jam_fail:nothing heard`.
+    Upstream of the ledger; its assertion is already re-declared and correct.
+4. **§7.8** — does the SoundPile exist on a device that HAS a folder? Recommendation: no.
+5. **§7.5** — the phone→laptop `take` frame. Network work; stated, not built.
+6. **Hygiene, when someone owns it:** six Books' COMMITTED toc diges disagree with their own snaps
+    (`SwarmBody` **22/23**, the `%Want` W1 gate) — no runner needed to fix, see `Story_hygiene_todo.md` §0.
+7. **The commit.** ~420 files stand uncommitted in the working tree: the circuit, the rename sweep, the
+    re-recorded fixtures, and the docs. Commits are the human's job; this is a commit point.
+
+**The one thing that would detonate for a fresh session:** a red here is not evidence until it reproduces
+ on a warm runner, and a caveat count is not a regression — but per the `self,round` ruling it IS a
+  symptom. Read §0's last two ⚠ blocks before believing any sweep, and never mute a value to make a
+   Book green — that is how the instrument gets deleted (I did it once; the owner reversed it).
 
 ---
 
@@ -183,13 +279,13 @@ Identity
     Cloud,page:40,created_at=1788313600
       Card,id:q2,pub:beef,mire=2
 
-MusuSelf,pub:c0de                             ← my music home (the names are §7.4's — `Musu` leaked from Books)
+Mine,pub:c0de                             ← my music home (the names are §7.4's — `Musu` leaked from Books)
   stock,pub:c0de
     Mag:shuffle,pub:c0de > Cloud,page:N > Record,id   ← MY DISK read as a Mag: the generator (Mag_design)
   bay,pub:f00d                                ← what is left of `shop`: my asks OF f00d, and theirs of me
     Rummage,want:r1,pier:f00d,path:DJ Oscillo/Cosmic C.flac   ← transient: a describe|want ask; dropped when answered
 
-MusuThem,pub:f00d                             ← THEIR music as I hold it: the MIRROR. Session matter, never berths
+Theirs,pub:f00d                             ← THEIR music as I hold it: the MIRROR. Session matter, never berths
   stock,pub:f00d
     Mag:shuffle,pub:f00d                      ← their generator Mag, arrived as ONE husk fragment (Ra_offer_stock)
       Cloud,page:7                            ← their page numbers, upserted by (Cloud,page)
@@ -205,17 +301,17 @@ MusuThem,pub:f00d                             ← THEIR music as I hold it: the 
 ### 1a. The Mag population — and where Repli operates
 
 You asked whether there are tons of Mags to filter through, ours against replicated ones. There are
- exactly these, and nothing is ever filtered — the CONTAINER says whose (`MusuSelf` | `MusuThem,pub`)
+ exactly these, and nothing is ever filtered — the CONTAINER says whose (`Mine` | `Theirs,pub`)
   and the KEY says whose again (`Mag,pub`), so a container fault is misfiling, never merging:
 
 | Mag | where | what | crosses? |
 |---|---|---|---|
-| `Mag:shuffle,pub:<me>` | `MusuSelf > stock` | my disk read as a Mag — the `prandle` meander mints `Cloud,page:N` of 6 at the BACK, on demand; era-GC drops off the FRONT | yes — the Repli unit, husk-first, to every granted Pier |
-| `Mag:shuffle,pub:<them>` | `MusuThem,pub:<them> > stock` | the MIRROR of a friend's generator: heads + previews, chunks pulled by page on demand | it IS the crossing — never re-offered |
+| `Mag:shuffle,pub:<me>` | `Mine > stock` | my disk read as a Mag — the `prandle` meander mints `Cloud,page:N` of 6 at the BACK, on demand; era-GC drops off the FRONT | yes — the Repli unit, husk-first, to every granted Pier |
+| `Mag:shuffle,pub:<them>` | `Theirs,pub:<them> > stock` | the MIRROR of a friend's generator: heads + previews, chunks pulled by page on demand | it IS the crossing — never re-offered |
 | `Mag:Lineup` (of `%Card`) | on `w` | the dial's 20-ahead: Cards referring by `id` into any of the above | no |
 | `Mag:Streams` | on `w` | the dial's peek — what's playing next, fixed at prime time | no |
-| the pool's Mag | `MusuPool,pub:<me> > stock` | my pressed lofi copies at `pool/…` (OPFS); same paged shape | no |
-| `Mag:Musica` (culture draws) | `MusuSelf > radiostocking` | ephemeral handfuls, keep-8, GC fodder | no |
+| the pool's Mag | `SoundPile,pub:<me> > stock` | my pressed lofi copies at `pool/…` (OPFS); same paged shape | no |
+| `Mag:Musica` (culture draws) | `Mine > radiostocking` | ephemeral handfuls, keep-8, GC fodder | no |
 | **`Mag:heard,pub:<me>`** (this doc) | `Identity` | what I heard of whom + what I took | **never** |
 
 **Where Repli operates**, in one breath: a `%Record` appearing under a shelf is noticed by that shelf's
@@ -248,7 +344,7 @@ There is a shuffler, and it is nearly clean; it is just spread over four homes. 
 1. **Generate**: `Mag:shuffle` (mine, and each friend's mirror) mints six-record pages on demand
     (`Ra_mag_page`, `prandle`-seeded, 200k-safe — never enumerates).
 2. **Choose**: `Radio_lineup_fill` keeps `Mag:Lineup` 20 Cards ahead by round-robining the contributor
-    pools — mine, each `MusuThem` mirror with a playable record, the pool — skipping ids that are lined
+    pools — mine, each `Theirs` mirror with a playable record, the pool — skipping ids that are lined
      or heard.
 3. **Dedup**: `radio.c.heard`, a 100-cap set of bare ids, `.c`, gone on reload. Mag_todo §8 already ruled
     the cursor **"ABSOLUTELY durable — keep OBLIQUE track of Records heard"**, and `Radio_mag_cursor`
@@ -459,13 +555,19 @@ Two policy facts, once: **berth is per-share** — a crewmate mounting the same 
 3. **The per-holder group: a query or a container?** Five lenses say query (no particle). The Mag lens
     says the ruled word `%Caper,pub:<them>` should name it. My recommendation: query — a container that
      holds nothing the Cards don't already say is the splatter coming back.
-4. **Names** — ✅ **RULED 2026-09-04**: the leaked Book prefix goes. `MusuSelf` → **`Mine`**,
+4. **Names** — ✅ **RULED AND DONE 2026-09-04** (the code, the faces, the scripts and the fixtures; the
+    living docs followed after). The leaked Book prefix is gone. `MusuSelf` → **`Mine`**,
     `MusuThem` → **`Theirs`**, `MusuPool` → **`SoundPile`**; each still wears `pub` and still keeps its `stock`
      child, and the two mainkeys stay DISTINCT (merging mine-and-theirs into one keyed by `pub` is the
       exact bug fixed 2026-08-05 — `Ra_home_them` cannot answer "is this me?"). Measured blast radius:
-       **322 references across ~28 files and 344 fixture snaps** — a pure mechanical rename, so it is ONE
-        SWEEP OF ITS OWN, **after** the circuit lands (whose fixtures move anyway); two clean diffs
-         instead of one tangled one. `heard` / `take` stand. `shop` still goes and `bay,pub:<them>` still
+       the estimate was "322 references"; the MEASURED figure with word boundaries was **159 in code**,
+        and the sweep touched **896 occurrences across 351 files** once fixtures were included. The gap is
+         the trap below, and it is the whole reason this was worth measuring before doing.
+     ⚠⚠ **`MusuPool` MATCHES 170 TIMES NAIVELY AND 8 TIMES CORRECTLY.** The other 162 are the Book names
+      `MusuPoolRadio` · `MusuPoolRandom` · `MusuPoolBytes` · `MusuPoolFill` and every one of their
+       `_T/_note/_drive/_stand/_witness` helpers, plus seed strings like `'MusuPoolBytes-Cap'` and paths
+        like `'pool/MusuPoolBytes'`. A bare `s/MusuPool/…/g` destroys four Books. **The rename is only ever
+         safe with a word boundary** (`MusuPool\b`). Same shape, smaller blast, for the other two. `heard` / `take` stand. `shop` still goes and `bay,pub:<them>` still
           moves up under the home — both are shape changes, not renames, and neither is in this build.
      ⚠ **`Pool` was the owner's third word and it CANNOT be used**: `%Pool,name:<compartment>` already
       exists — the SoundPooling declaration on the identity (`%Pools > %Pool,name,take,cap,salt`, Ra.g:1053,

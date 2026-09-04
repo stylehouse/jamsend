@@ -15,7 +15,7 @@ Snap:H
           Pier,pub:Origin,req=2,ok
             Ud,pubkey:Origin
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1

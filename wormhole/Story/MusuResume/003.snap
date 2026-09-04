@@ -12,7 +12,7 @@ Snap:H
               curs,wild:Card,id:t2
           reached:step_3
           before,depth=2,ok,id:t1
-        MusuSelf,pub:Self
+        Mine,pub:Self
           radiostocking,pub:Self
             Mag:Musica
               Cloud,randomic:draw_one,created_at=1000

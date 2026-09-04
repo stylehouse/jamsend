@@ -55,7 +55,7 @@ Snap:H
               req:unemit,seq=2,type:trust,done,to:trust,finished
             Ud,pubkey:d70f253aa325f68b
           active_transport,type:mock,open
-        MusuSelf,pub:d70f253aa325f68b
+        Mine,pub:d70f253aa325f68b
           stock,pub:d70f253aa325f68b
             Mag:shuffle
               Cloud,page:1

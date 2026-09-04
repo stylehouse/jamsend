@@ -18,7 +18,7 @@
 //    %Caper-as-ledger: a heist in progress IS that query plus the one `%Heist` keep the beat mints from
 //     it.  The keep is transient scaffolding for the byte lane; the Card is the intent and the ledger.
 //
-//  NOTHING HERE EVER CROSSES.  The Mag hangs under `%Identity` (or, in a Book, under the `MusuSelf,pub`
+//  NOTHING HERE EVER CROSSES.  The Mag hangs under `%Identity` (or, in a Book, under the `Mine,pub`
 //   HOME — never its `stock` shelf, which is the Repli unit).  A Card is not a holding and must never
 //    read as one: `Repli_identity_keys` and `Swarm_graft` carry `Card: ['id','pub']` so a re-import
 //     upserts rather than twinning every Card whose `mire` moved.
@@ -52,7 +52,7 @@ Heard_now(w):
 
 // Heard_home_find — WHERE THE MAG HANGS, found and never minted.  The live `%Identity` when this pub
 //  IS the machine's own identity (so it rides the account snap and the stash for free), else the
-//   `MusuSelf,pub:<me>` HOME — the home, not its `stock` shelf: `Ra_offer_stock` walks the shelf, so a
+//   `Mine,pub:<me>` HOME — the home, not its `stock` shelf: `Ra_offer_stock` walks the shelf, so a
 //    Mag one level up cannot be swept into an offer by accident.  A Book pins `w.c.ra_pub` and takes
 //     the second road, which is why every fixture here is world-local and crosses nothing.
 Heard_home_find(w, me):
@@ -60,13 +60,13 @@ Heard_home_find(w, me):
     let M = this.top_House ? this.top_House() : null
     let live = (M && M.Swarm_live_self) ? M.Swarm_live_self() : null
     if (live && String(live.sc.prepub || '') === String(me)) { return live }
-    return w.o({ MusuSelf: 1, pub: String(me) })[0] || null
+    return w.o({ Mine: 1, pub: String(me) })[0] || null
 // Heard_home — the same door, find-or-CREATE.  Only a writer walks through it.
 Heard_home(w, me):
     if (!w || !me) { return null }
     let found = this.Heard_home_find(w, me)
     if (found) { return found }
-    let home = w.oai({ MusuSelf: 1, pub: String(me) })
+    let home = w.oai({ Mine: 1, pub: String(me) })
     home.c.up = w
     return home
 
@@ -320,7 +320,7 @@ Heard_latest(shelf):
 //   reporting on.
 Heard_shelf(rw, me):
     if (!rw || !me) { return null }
-    let home = rw.o({ MusuSelf: 1, pub: String(me) })[0]
+    let home = rw.o({ Mine: 1, pub: String(me) })[0]
     return home ? (home.o({ stock: 1, pub: String(me) })[0] || null) : null
 
 // Heard_landed — IS THE THING ON MY SHELF?  Done-ness is derived, in one home: there is no `landed` key
@@ -487,7 +487,7 @@ Heard_clone_beat(w, rw, me, shop):
         if (!seed || !dj) { continue }
         let card = this.Heard_find(mag, seed, dj)
         if (!card) { continue }
-        let mir = rw.o({ MusuThem: 1, pub: dj })[0]
+        let mir = rw.o({ Theirs: 1, pub: dj })[0]
         let mirstock = mir ? mir.o({ stock: 1, pub: dj })[0] : null
         let head = mirstock ? this.Ra_rec_find(mirstock, { Record: 1, re: seed }) : null
         if (head) { n = n + this.Heard_clone_head(card, head) }
@@ -551,7 +551,7 @@ async Heard_haul_beat(w, rw, me, nav, shop):
         let busy = 0
         for (const k of shop.o({ Heist: 1, pub: row.pub })) { if (String(k.sc.state || 'primed') !== 'done') { busy = 1 } }
         if (busy) { continue }
-        let mir = rw.o({ MusuThem: 1, pub: row.pub })[0]
+        let mir = rw.o({ Theirs: 1, pub: row.pub })[0]
         let mirstock = mir ? mir.o({ stock: 1, pub: row.pub })[0] : null
         if (!mirstock) { continue }
         for (const card of row.cards) {

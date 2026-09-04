@@ -39,7 +39,7 @@ async function ghost_house() {
 function scene(H: any, heists: Array<Record<string, any>>) {
     const w: any = new TheC({ c: {}, sc: { w: 'Radio' } })
     H.c.radio_w = w
-    const shelf = w.i({ MusuSelf: 1, pub: 'me' }).i({ shop: 1, pub: 'me' })
+    const shelf = w.i({ Mine: 1, pub: 'me' }).i({ shop: 1, pub: 'me' })
     const keeps = heists.map((h) => {
         const k = shelf.i({ Heist: h.title, seed: h.title, pub: 'them', state: h.state || 'primed' })
         k.c.up = shelf

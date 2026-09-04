@@ -18,7 +18,7 @@
     //   · the station    — the prepub-addressed relay socket + armed swarm frame kinds; the inviter
     //                       must be dialable BEFORE anyone scans
     //   · the share      — the standing music session: my stock serves every Music-granted friend,
-    //                       their casts fill per-friend %MusuThem crates
+    //                       their casts fill per-friend %Theirs crates
     //  …plus the boast on every new seal, which belongs with them for exactly the same reason.
     let { H }: { H: any } = $props()
 

@@ -2079,7 +2079,7 @@ Confirmed a second way, at MATCHED uptime so the cumulative average is a fair co
 
 ### 10.7 The daemon could not RECEIVE either — one unarmed verb, both directions (2026-08-08, midday)
 
-A sealed friend traded `ive_got` with the box every few seconds and the box held **zero `%MusuThem`**.
+A sealed friend traded `ive_got` with the box every few seconds and the box held **zero `%Theirs`**.
  Both sides looked healthy: `Pier` + `Peering` + `Friend` on the daemon, `seal at=7c0d0bfd grants=2` and
   `advertise piers=1 granted=1 told=1` in the tab's own ring, `Repli rx 0p/0KB tx 2p/24KB` in its console.
 

@@ -386,12 +386,12 @@
     // the known Sounditron organs get HAND-PLACED hues, well-separated around the wheel and aligned
     //  to the Cyto seeds above (Radio amber · Stoker teal · Door violet · Caper pink) so the two views
     //   agree.  The raw string-hash CLUSTERED them (Tuner 346 / Beat 350 / Stoker 2 all one red; Door
-    //    and MusuThem hashed to the SAME 134 green) — the human's "colour each of them somehow" only
+    //    and Theirs hashed to the SAME 134 green) — the human's "colour each of them somehow" only
     //     half-met.  This table is consulted ONLY for these exact mainkeys; every other key (a record
     //      id in CrateFace, any future type) still falls through to the deterministic hash unchanged.
     matstyle_organ_hue(key: string): number | null {
         const H: Record<string, number> = {
-            MusuThem: 5, Zine: 22, Radio: 40, Mag: 95, Uptime: 128, Stoker: 165,
+            Theirs: 5, Zine: 22, Radio: 40, Mag: 95, Uptime: 128, Stoker: 165,
             Tuner: 192, Beat: 210, Machine: 240, Riffle: 262, Door: 288, Caper: 332,
         }
         return H[key] ?? null

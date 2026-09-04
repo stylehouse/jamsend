@@ -13,7 +13,7 @@ Snap:H
           reached:step_4
           goaled,own_contents_are_the_goal,honest_why,trims_the_oldest_only
         Radio:playing,by:friendo
-        MusuThem,pub:friendo
+        Theirs,pub:friendo
           stock,pub:friendo
             Record,id:r1,title:Radio One
             Record,id:r2,title:Radio Two
@@ -22,11 +22,11 @@ Snap:H
           Pool,name:heard,take:radio,cap:2
           Consent,at:1788400000
         Record,id:own1,title:Mine
-        MusuSelf,pub:me
+        Mine,pub:me
           shop,pub:me
             Heist:Radio One,seed:r1,pub:friendo,state:primed,into:pool,why:radio,at:1788400000,from_name:friendo
             Heist:Radio Two,seed:r2,pub:friendo,state:primed,into:pool,why:radio,at:1788400010,from_name:friendo
-        MusuPool,pub:me
+        SoundPile,pub:me
           stock,pub:me
             Record,id:r1
             Record,id:r2

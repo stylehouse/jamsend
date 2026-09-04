@@ -310,10 +310,10 @@ Sounditron_glass(w):
     if (!this.Sounditron_commission(w)) return    // organs not ensured yet — retry next tick, DON'T latch
     this.c.glass_done = 1                          // first commission committed; friend-shelf re-commissions ride the trickle
 
-// Sounditron_commission — build the grapple set (the organ cells + every friend %MusuThem shelf) and
+// Sounditron_commission — build the grapple set (the organ cells + every friend %Theirs shelf) and
 //  dispatch the Vyto glass.  RE-CALLABLE by design: Vyto_grapples snapshots the list ONCE per commission
 //   (Vyto.g), but a friend's shelf mirrors in AFTER the first commission (beat 5+, once a peer connects) —
-//    so the trickle re-commissions when the MusuThem set GROWS.  Re-commission is idempotent for gear
+//    so the trickle re-commissions when the Theirs set GROWS.  Re-commission is idempotent for gear
 //     already watched (watch_c dedups per (C, OWNER), Vyto.g) — it just adds the new friend crate.  Returns
 //      1 once dispatched, 0 when the organs aren't ensured yet (caller retries, never latches).
 Sounditron_commission(w):
@@ -591,7 +591,7 @@ Sounditron_commission(w):
         // NO SWITCHER WHEN THERE IS NOTHING TO SWITCH BETWEEN (the human 2026-08-07: "have no
         //  Pier|Crate switcher visible at all if there's only one Pier — keep it simple and straight
         //   forward").  %Riffle IS the crate/friend picker — Riffle_homes deals `my crate` plus one chip
-        //    per sealed %MusuThem — so with a single Pier its whole reason to be on the glass is a choice
+        //    per sealed %Theirs — so with a single Pier its whole reason to be on the glass is a choice
         //     of one.  Count SEALED Piers off the peering (the same walk Riffle_homes names friends by);
         //      two or more and the deck comes back on its own.  The deck still WORKS when hidden, exactly
         //       as the stoker and zine do — this only decides whether it spends a cell.
@@ -735,7 +735,7 @@ Sounditron_commission(w):
     // a friend's shelf is NO LONGER its own cell.  Two friend Crates spread the ~10 organs so thin every
     //  jewel turned unreadably tiny (the human 2026-07-28: "lets not show us the two Crates because that's
     //   way too much info on the screen and everything gets tiny").  Friends stay REACHABLE through the
-    //    Radio + Riffle faces — their pools read %MusuThem directly, off the glass — so the tessellation
+    //    Radio + Riffle faces — their pools read %Theirs directly, off the glass — so the tessellation
     //     keeps the FIXED organ set and each cell stays a legible size no matter how many friends arrive.
     // ── THE PLAIN GLASS TAKES THE PAGE ──────────────────────────────────────────────────────
     //  Everything above still RUNS: every row is minted, every face stays registered, the witness
@@ -2864,13 +2864,13 @@ Sounditron_probe_shelf(w, sup):
     let f = w.o({ Friend: 1 }).find(x => Number(x.sc.records) > 0)
     if (f) return { verdict: 'ok', note: f.sc.Friend + ' · ' + f.sc.records + ' records' }
     //  READ THE SHELF PURELY.  `Ra_home_them` is `oai` all the way down (Ra.g:657) and mints both the
-    //   %MusuThem home and its `stock` shelf — a probe calling it is the probe-that-collects trap, and
+    //   %Theirs home and its `stock` shelf — a probe calling it is the probe-that-collects trap, and
     //    it got sharper the moment the Supervisor grew a 1s heartbeat: what used to run once a Book
     //     beat now runs on every tick, on every tab.  `Radio_pool_census` does this correctly and is
     //      the shape to copy — `o()[0]` throughout, nothing written.
     let M = this.top_House()
     if (M.Ra_recs) {
-        for (const home of w.o({ MusuThem: 1 })) {
+        for (const home of w.o({ Theirs: 1 })) {
             if (!home.sc.pub) continue
             let shelf = home.o({ stock: 1, pub: String(home.sc.pub) })[0]
             let n = shelf ? M.Ra_recs(shelf).length : 0
@@ -2895,7 +2895,7 @@ Sounditron_pulled(w):
     //      home it again.
     let M = this.top_House()
     if (!M.Ra_recs || !M.Repli_chunk_at) return 0
-    for (const home of w.o({ MusuThem: 1 })) {
+    for (const home of w.o({ Theirs: 1 })) {
         if (!home.sc.pub) continue
         let shelf = home.o({ stock: 1, pub: String(home.sc.pub) })[0]
         if (!shelf) continue

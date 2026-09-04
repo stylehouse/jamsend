@@ -1,9 +1,9 @@
 Snap:H
   H:MusuStanding,Run
     A:MusuStanding
-      self,round=13	{"mung":["age"]}
+      self,round=12	{"mung":["age"]}
       w:MusuStanding
-        self,round=13	{"mung":["age"]}
+        self,round=12	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -31,7 +31,7 @@ Snap:H
               req:unemit,seq=3,type:repli_lines,body_hash:d0938fe1422b3c28f5a989df7145fcc7dede78ea6321694de422a12cc76cfd66,body_len=472,done,to:repli_lines,finished
               req:unemit,seq=4,type:repli_lines,body_hash:5a0f061ecffee99979ec6ebe486056e64c72299b8dc2917db5b4fa69432ae038,body_len=126,done,to:repli_lines,finished
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
@@ -45,7 +45,7 @@ Snap:H
                 Card,id:t2,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
               Cloud,randomic:c2,created_at=3000
                 Card,id:t3,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
-        MusuThem,pub:Follower.mirror
+        Theirs,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:Musica
               Cloud,randomic:c1,created_at=1000

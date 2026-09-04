@@ -149,7 +149,7 @@ Snap:H
               req:unemit,seq=50,type:repli_page,body_hash:35ec8c6044f14e537c8f6e93ef6d52e7def4736a98cd04122dc56529ebba9232,body_len=32300,done,to:repli_page,finished
             Ud,pubkey:c012850d69de1318
           active_transport,type:mock,open
-        MusuSelf,pub:c012850d69de1318
+        Mine,pub:c012850d69de1318
           stock,pub:c012850d69de1318
             Mag:shuffle
               Cloud,page:1
@@ -194,7 +194,7 @@ Snap:H
         req:rastream_stock,finished
         req:witness,eternal,ok
         reached:step_4
-        MusuThem,pub:b317b9a776e39d30
+        Theirs,pub:b317b9a776e39d30
           stock,pub:b317b9a776e39d30
             Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
               Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}

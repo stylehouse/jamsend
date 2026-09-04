@@ -130,7 +130,7 @@ This is the part `client.md` said didn't exist yet.  It exists (`src/lib/O/Vytui
    string is a key into `GLASS_KINDS` (`src/lib/O/glass_kinds.ts`): Radio · Stoker · Tuner ·
     Door · Riffle · Riff · Zine · Lineup · Crate · Heist.
 - **Imposed**: the particle's **mainkey** is in `FACE_MAINKEYS`
-   (`src/lib/O/glass_faces.ts`: `Heist`, and `MusuSelf`/`MusuThem` → the `Crate` face) — a
+   (`src/lib/O/glass_faces.ts`: `Heist`, and `Mine`/`Theirs` → the `Crate` face) — a
     face without the particle having to wear one.
 
 The face component is handed props `{ n, H }` where **`n` is the LIVE source particle**

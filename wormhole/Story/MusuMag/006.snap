@@ -151,7 +151,7 @@ Snap:H
               req:unemit,seq=76,type:repli_page,body_hash:dcb0d234b9f7543a4bc0481cc15c28d41e36fa4cd03e1fc34987050f1cb92580,body_len=32623,done,to:repli_page,finished
             Ud,pubkey:d70f253aa325f68b
           active_transport,type:mock,open
-        MusuSelf,pub:d70f253aa325f68b
+        Mine,pub:d70f253aa325f68b
           stock,pub:d70f253aa325f68b
             Mag:shuffle
               Cloud,page:1
@@ -210,7 +210,7 @@ Snap:H
         req:witness,eternal,ok
         stocked:mag,of=3,ready=3
         offered,mags,sent
-        MusuThem,pub:2ea86ae9ea3556f0
+        Theirs,pub:2ea86ae9ea3556f0
           stock,pub:2ea86ae9ea3556f0
             Mag:shuffle,warm
               Cloud,page:1

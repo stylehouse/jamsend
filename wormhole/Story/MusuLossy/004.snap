@@ -15,7 +15,7 @@ Snap:H
           reached:step_3
           materialized,path:.jamsend/lossy-proof/left-on-disk.opus,bytes=202,faithful
           see:the opus %Lossy chunks reassemble into the whole file left on disk under .jamsend/lossy-proof — its sha256 matches the record body hash so the graded chunks carry the source byte for byte
-        MusuSelf,pub:lossy
+        Mine,pub:lossy
           stock,pub:lossy
             Mag:shuffle
               Cloud,page:1

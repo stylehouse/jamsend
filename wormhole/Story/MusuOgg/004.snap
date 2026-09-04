@@ -14,7 +14,7 @@ Snap:H
           parsed,pages=81,crc_ok,eos,rate_ok,nch_ok,preskip_ok,gran_secs=78,gran_near
           see:the written container is well-formed — every Ogg page CRC recomputes on read-back and the final page carries the end-of-stream flag
           see:the OpusHead is honest — its 48000 input rate channel count and preskip match the record and the page granule reads back the track duration
-        MusuSelf,pub:ogg.shop
+        Mine,pub:ogg.shop
           stock,pub:ogg.shop
             Mag:shuffle
               Cloud,page:1

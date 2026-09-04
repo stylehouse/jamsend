@@ -19,7 +19,7 @@ Snap:H
               recent
                 unemit:1,type:repli_lines,seq:1,body_len:412
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
@@ -32,7 +32,7 @@ Snap:H
                 Card,id:t0,artist:Auteur,title:Meander One,path:crate/a/Auteur - Meander One.opus
                 Card,id:t1,artist:Bassbin,title:Low Draw,path:crate/b/Bassbin - Low Draw.opus
                 Card,id:t2,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
-        MusuThem,pub:Follower.mirror
+        Theirs,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:Musica
               Cloud,randomic:dgbl8pe,created_at=1000

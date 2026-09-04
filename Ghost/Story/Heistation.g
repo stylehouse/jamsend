@@ -328,7 +328,7 @@ async MusuHeist_job(w, nick):
     let b = this.MusuHeist_bundle(w, nick)
     w.c.repli_mirror_pier = b.mir_key
     // the job homes in the ASKER's shop shelf (Radio_spec §2.4) — b.mine is who is pulling, so the loading
-    //  zone is under their %MusuSelf,pub home, never the world floor.
+    //  zone is under their %Mine,pub home, never the world floor.
     b.job = this.Heist_job(w, b.at, b.filings, { home: this.Ra_home_shop(w, b.mine) })
     w.c.heist_active = b
 
@@ -351,7 +351,7 @@ async MusuHeist_flow(w):
         this.MusuHeist_note(w, { offered: b.nick, n: b.offered })
         return true
     }
-    let mir = w.o({ MusuThem: 1, pub: b.mir_key })[0]?.o({ stock: 1 })[0]
+    let mir = w.o({ Theirs: 1, pub: b.mir_key })[0]?.o({ stock: 1 })[0]
     if (!mir) return false
     let landed = +(b.job.sc.landed || 0)
     let skipped = +(b.job.sc.skipped || 0)
@@ -525,8 +525,8 @@ async MusuHeist_flat_check(w):
     let shop_a = this.Ra_home_shop(w, w.c.uno_pre)
     let shop_b = this.Ra_home_shop(w, w.c.duo_pre)
     let heists = w.o({ Caper: 1 }).length + shop_a.o({ Caper: 1 }).length + shop_b.o({ Caper: 1 }).length
-    let mir_a = w.o({ MusuThem: 1, pub: w.c.uno_pre + '.heist' })[0]?.o({ stock: 1 })[0]
-    let mir_b = w.o({ MusuThem: 1, pub: w.c.duo_pre + '.heist' })[0]?.o({ stock: 1 })[0]
+    let mir_a = w.o({ Theirs: 1, pub: w.c.uno_pre + '.heist' })[0]?.o({ stock: 1 })[0]
+    let mir_b = w.o({ Theirs: 1, pub: w.c.duo_pre + '.heist' })[0]?.o({ stock: 1 })[0]
     let quarantined = (mir_a ? mir_a.o({ Record: 1 }).length : 0) + (mir_b ? mir_b.o({ Record: 1 }).length : 0)
     if (heists === 0 && quarantined === 0) {
         this.MusuHeist_note(w, { flattened: 1 })
@@ -829,7 +829,7 @@ MusuVend_meander(w, from, count):
         let t = pool[i]
         // page through the one owned-mint door (Ra_rec_home) so Origin's tape lands under
         //  %Mag:shuffle > %Cloud like every real stock shelf, not flat on the library (origin_lib
-        //   is a %MusuSelf stock shelf — a flat Record on it is the shape the model retired).
+        //   is a %Mine stock shelf — a flat Record on it is the shape the model retired).
         let rec = this.Ra_rec_home(w.c.origin_lib, t.id)
         rec.sc.artist = t.artist
         rec.sc.title = t.title
@@ -4694,7 +4694,7 @@ MusuNeGrind_witness(w):
     //   reading their own effect INLINE, in the same `do_fn` that sent the frame: after
     //    `MusuNeGrind_pump` the frame is settled but still a `req:unemit,done,finished` in the
     //     Follower's inbox — the mirror does not carry it until the NEXT belief pass. Measured: the
-    //      `%MusuThem` the step-3 scene looked for appears at step 4.
+    //      `%Theirs` the step-3 scene looked for appears at step 4.
     //  `MusuVend` never hit this because it offers in one beat and reads the crossing from its WITNESS,
     //   which runs the following beat. This does the same thing, non-destructively: the scene still
     //    records what it ATTEMPTED, and the witness — which runs every beat from 4 on — fills in the
@@ -5135,13 +5135,13 @@ MusuQuarter_witness(w):
     if (h && +h.sc.press_o3 === 1 && +h.sc.o2_gone === 1 && +h.sc.pull_stands === 1 && +h.sc.evict_stands === 1) this.story_swear(w, 'a shifted taste shifts the stash — the newcomer takes the press and the displaced want drops while the standing wants stand')
 
 // ══ MusuFloor — the trust floor's two unbooked planks: the pinned holdings vocabulary + fails-closed ══════
-//  Portability_doc §12 names the one invariant owed a Book: %MusuThem never promotes off-vouch.  The DOOR
+//  Portability_doc §12 names the one invariant owed a Book: %Theirs never promotes off-vouch.  The DOOR
 //   half is already gated — MusuBreach drives the swapped-manifest refusal end to end.  What no Book pins:
 //   (a) THE STRUCTURAL FLOOR — Ra_holding_keys() is the one authority on servable mainkeys and gossip
-//       vocabulary (%MusuThem the crate · %Jam the ledger · %Card the listing · %Caper the operation) must
+//       vocabulary (%Theirs the crate · %Jam the ledger · %Card the listing · %Caper the operation) must
 //        never enter it.  Widen that set carelessly (a pool mainkey minted someday) and every serve seam
 //         silently starts serving gossip — this Book flips THAT day, at the one function where it happens.
-//   (b) THE MALFORMED VOUCH, fired from inside a REAL %MusuThem home (Ra_home_them's crate — the gossip
+//   (b) THE MALFORMED VOUCH, fired from inside a REAL %Theirs home (Ra_home_them's crate — the gossip
 //       side's actual shape, not a scratch mirror): a husk CLAIMING an origin (`by`) with no signature at
 //        all is the fails-closed branch (Heist_vouch_ok's first return — MusuBreach forged a sig; nobody
 //         drives the missing-sig read).  The door must refuse it before a single want and the library must
@@ -5175,7 +5175,7 @@ async MusuFloor_drive(w, req):
     this.MusuFloor_witness(w)
     await this.Musu_float(w)
 
-// MusuFloor_setup — the real gossip-side shape: a %MusuThem home for a friend (Ra_home_them mints the
+// MusuFloor_setup — the real gossip-side shape: a %Theirs home for a friend (Ra_home_them mints the
 //  crate + stock shelf) whose stock holds ONE husk that CLAIMS an origin (`by`) but carries no vouch at
 //   all — exactly what a hostile live-cast whisper could seed.  Beside it an empty own library the door
 //    must keep empty.
@@ -5207,7 +5207,7 @@ async MusuFloor_door(w):
     this.MusuFloor_note(w, row)
     let floor = { floored: 1 }
     if (this.Ra_holding_keys().join(' ') === 'Record') floor.pinned = 1
-    let gossip = ['MusuThem', 'MusuSelf', 'Jam', 'Card', 'Caper', 'Spin', 'Like', 'Grab']
+    let gossip = ['Theirs', 'Mine', 'Jam', 'Card', 'Caper', 'Spin', 'Like', 'Grab']
     if (gossip.every((k) => { let q = {}; q[k] = 1; return !this.Ra_is_holding_sc(q) })) floor.gossip_out = 1
     if (this.Ra_is_holding_sc({ Record: 1 })) floor.record_in = 1
     this.MusuFloor_note(w, floor)
@@ -5704,7 +5704,7 @@ MusuPoolFill_witness(w):
 // ══ MusuPoolRandom — THE RANDOM POOL + POOL CRUD (owner 2026-09-03: "take SoundPooling all the way through
 //  CRUD if you like, of Pools, start with one that just acquires random whole LOFI tracks from all
 //   Piers|Crewmates") ═══════════════════════════════════════════════════════════════════════════════════════
-//  A %Pool,take:random draws from EVERY mirrored catalog in the radio world (a %MusuThem crate stands only
+//  A %Pool,take:random draws from EVERY mirrored catalog in the radio world (a %Theirs crate stands only
 //   for a body that shared with me — crew and friends alike) in a CLOCKLESS shuffle (Ra_pool_hash over
 //    name:salt:id): the same draw every sit-down and in every fixture, a new draw per salt.  Its pull-wants
 //     name their HOLDER, and Ra_pool_fill_wants turns them into standing %Reach bookings toward that holder —
@@ -6403,7 +6403,7 @@ async MusuHeard_mark(w):
     let set = this.Heard_set(w, 'me')
     if (set.r1 && set.r2 && set.r3 && Object.keys(set).length === 3) { row.the_set_is_the_mag = 1 }
     // the Mag hangs where nothing crosses: under the home, NOT under the stock shelf Repli offers
-    let home = w.o({ MusuSelf: 1, pub: 'me' })[0]
+    let home = w.o({ Mine: 1, pub: 'me' })[0]
     let shelf = home ? home.o({ stock: 1, pub: 'me' })[0] : null
     if (mag && mag.c.up === home && !(shelf && shelf.o({ Mag: 'heard' })[0])) { row.never_crosses = 1 }
     this.MusuHeard_note(w, row)

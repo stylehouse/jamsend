@@ -29,7 +29,7 @@ Snap:H
             req:awaitbuf,bufferid:1
               warned:buffer_late
           active_transport,type:mock,open
-        MusuSelf,pub:DJ
+        Mine,pub:DJ
           stock,pub:DJ
             Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
               Fill,name:audio,have=0,sr=48000
@@ -39,7 +39,7 @@ Snap:H
               Fill,name:audio,have=0,sr=48000
         reached:step_3
         Sent_Tree,pier:DJ,dontSnap
-        MusuThem,pub:Crowd
+        Theirs,pub:Crowd
           stock,pub:Crowd
             Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
               Fill,name:audio,have=4,sr=48000,got=2

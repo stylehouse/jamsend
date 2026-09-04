@@ -19,7 +19,7 @@ Snap:H
             inbox
               req:unemit,seq,type:repli_lines,body_hash:6d94c054c991d0e9b7e83e1e4d8950d3d7ee8010dae68f817ef1af9e05c09b69,body_len=667,done,to:repli_lines,finished
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
@@ -48,7 +48,7 @@ Snap:H
                 Card,id:02cfcb9c15affeaf,artist:DJ Oscillo,title:Dorian D,path:DJ Oscillo - Dorian D.wav,body_hash:02cfcb9c15affeaf0321fb7f155f65782ba44e45767f2cea9beeac447a8784ef
                 Card,id:cf95c97b08584b92,artist:DJ Oscillo,title:Groove G,path:DJ Oscillo - Groove G.wav,body_hash:cf95c97b08584b92d262f214ddfdf536da5a18303b6e27ccb177c1c4088eb765
         req:soft_census,finished
-        MusuThem,pub:Origin
+        Theirs,pub:Origin
           stock,pub:Origin
             Mag:Musica
               Cloud,randomic:softdraw,created_at=1000

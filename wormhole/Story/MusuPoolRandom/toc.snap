@@ -4,9 +4,7 @@ story:MusuPoolRandom
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.054
-      sample=0.054,at=1788416019
-      sample=0.032,at=1788416038
+    TimeTotal:beliefs,avg=0.06
       sample=0.043,at=1788417856
       sample=0.045,at=1788418270
       sample=0.046,at=1788419559
@@ -15,9 +13,9 @@ story:MusuPoolRandom
       sample=0.015,at=1788425337
       sample=0.017,at=1788425546
       sample=0.118,at=1788496781
-    TimeTotal:step,avg=0.013
-      sample=0.013,at=1788416019
-      sample=0.008,at=1788416038
+      sample=0.067,at=1788499223
+      sample=0.081,at=1788499875
+    TimeTotal:step,avg=0.015
       sample=0.011,at=1788417856
       sample=0.011,at=1788418270
       sample=0.011,at=1788419559
@@ -26,7 +24,9 @@ story:MusuPoolRandom
       sample=0.004,at=1788425337
       sample=0.004,at=1788425546
       sample=0.029,at=1788496781
+      sample=0.017,at=1788499223
+      sample=0.02,at=1788499875
   step,dige:85d660e1b7d42c9f
-  step=2,dige:9c23b4001ea54e42
-  step=3,dige:df4d0479afb62a88
-  step=4,dige:c9c5ec1d09d1ebfd
+  step=2,dige:42cb1d42c61908ae
+  step=3,dige:c5bde6e33830fc9b
+  step=4,dige:9d614ffbf6379bfd

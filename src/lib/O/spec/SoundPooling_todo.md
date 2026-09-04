@@ -10,7 +10,7 @@
 | the **declaration** | `%Identity > %Pools > %Pool,name,take,cap,salt,who,share` (`Ra_pool_home`) |
 | **consent + budget** | `%Pools > %Consent,at` · `%Pools%budget_mb` |
 | the **want-list** (its running state) | `w > %Provisions > %Want,of:<id>,do:press|pull|evict,why` — on the world floor |
-| the **material** | `w > MusuPool,pub:<me> > stock,pub > Mag:shuffle > Cloud,page > Record,id,of,grade,path:pool/…` |
+| the **material** | `w > SoundPile,pub:<me> > stock,pub > Mag:shuffle > Cloud,page > Record,id,of,grade,path:pool/…` |
 
 **The unison:**
 
@@ -49,7 +49,7 @@ Two consequences, both to decide with open eyes:
 `Ra_home_pool` · `Ra_pool_home` · every `Ra_pool_*` verb · `Ra_quarter`/`_diff`/`_serve` (the
  `%Provisions` home) · `Swarm_restash_pools`/`_pools_rehydrate` · SwarmReboot · PoolFace · and every pool
   fixture. **Bigger than the `Musu` rename sweep** ([[musu-prefix-rename-ruled]]: `MusuSelf`→`Mine`,
-   `MusuThem`→`Theirs`, `MusuPool`→ the pool home's new name). Do them as ONE pass, since both rewrite the
+   `MusuThem`→`Theirs`, `MusuPool`→`SoundPile`) — all three landed 2026-09-04. Do them as ONE pass, since both rewrite the
     same fixtures — and note that once the feature IS one home, **`SoundPooling` becomes an honest name for
      it** (the objection to that name was only that a reader would look for the compartments underneath and
       not find them; here they are underneath).
@@ -82,10 +82,13 @@ Under it, the framing: *"just whether they want surprise music in their daily pl
     holder crew-or-not off /Crew; `Ra_quarter_goal_pools` filters on it.
 - **"Keep what I hear" is negated** (you already heard it): random from everyone is the default draw, a
    clockless shuffle re-drawn per salt. The `take:'radio'` catch stays built and gated, not offered.
-- **♥ is the heist button.** `Radio_like` puts a %Like on the ledger (the taste tally reads it, ×3); with a
-   share mounted the same keep the old ⇊ minted goes straight to pulling in the background (no form, no glass
-    seize); without one the Like stands for the crew or the pool to live out. A pool keep starts itself, takes
-     ONE track not the album, forced lofi (`Heist_keep_pool_go`).
+- **♥ is the heist button.** `Radio_like` stamps `take` on the track's Card in `Mag:heard` (`Heard_take`,
+   `Ghost/M/Heard.g:216`) — durable the instant it lands, and mints nothing else; with a share mounted the
+    share beat (`Heard_haul_beat`) turns the oldest take per holder into one live keep, pulling in the
+     background (no form, no glass seize); without one the take stands for the crew or the pool to live
+      out. (Before 2026-09-04 this minted a `%Like` under a `%Jam` ledger and a `%Heist` right here — both
+       gone, see `Radio_circuit_todo.md`.) A pool keep starts itself, takes ONE track not the album,
+        forced lofi (`Heist_keep_pool_go`).
 - **The seam is one scalar**: `into:'pool'` on the keep → `Heist_keep_mardir` → the same Heist transport and
    the same landing tail (`Heist_catalog_land`'s pool branch). No second lane.
 
@@ -140,7 +143,9 @@ See also **`Acquisition_todo.md`** — likes → heists → batch per holder, wh
       disk fulfils the crew's ear. **Built the same night**: the ⇊ button IS the ♥ now — `Radio_like` mints the
        Like and, with a share mounted, flips the same keep straight to pulling (dose off, no form, no glass
         seize — the Haul cell is a folded row while it lands); without a share the Like stands on the ledger.
-         Owed: the "later" half — a Cave with a disk reading the crew's Likes and hauling them.
+         Owed: the "later" half — a Cave with a disk reading the crew's Likes and hauling them. (`%Like`
+          and the `%Jam` ledger were deleted entire 2026-09-04; `Radio_like` now stamps `take` on
+           `Mag:heard`'s Card instead — see `Radio_circuit_todo.md`. The "later" half is still owed.)
 
 ### (origin: the OPFS pocket cache — from ambient press to pool-first radio)
 
@@ -162,12 +167,16 @@ See also **`Acquisition_todo.md`** — likes → heists → batch per holder, wh
 
 **THE FORMULAS ARE THE CONTROL SURFACE (owner, 2026-09-02).** SoundPooling's character is DIALLED by
  the two formula sites in `Ghost/M/Ra.g`, and these are what we tune (not the plumbing): (1) the taste
-  score `likes×3 + grabs×2 + spins×1` (`Ra_quarter_tally` ~1016), (2) the `%Pool` composition +
-   take-policies + declaration-order priority (`Ra_pool_define`/`Ra_quarter_goal_pools` ~1046–1107).
-    ⚠ **WATCH THE JAM SCHEMA (owner's explicit ask):** the taste score reads `%Spin`/`%Like`/`%Grab`
-     events under `%Jam` sessions — that schema is LOAD-BEARING for the whole economy; a drift in the
-      Jam ledger silently changes what gets pooled. Any Jam-schema change must be checked against
-       `Ra_quarter_tally`'s reads.
+  score, now `take×3 + keep×2 + mire×1` (`Ra_quarter_tally` ~1060, delegating to `Heard_tally`,
+   `Ghost/M/Heard.g:290` — was `likes×3 + grabs×2 + spins×1` before 2026-09-04), (2) the `%Pool`
+    composition + take-policies + declaration-order priority (`Ra_pool_define`/`Ra_quarter_goal_pools`
+     ~1071–1309).
+    ⚠ **WATCH THE HEARD SCHEMA (owner's explicit ask, formerly "the Jam schema"):** the taste score
+     reads `take`/`keep`/`mire` off `%Card` rows under `Mag:heard` — that schema is LOAD-BEARING for
+      the whole economy; a drift there silently changes what gets pooled. `Jam.g` and its `%Spin`/
+       `%Like`/`%Grab` events under `%Jam` sessions were deleted entire 2026-09-04 — see
+        `Radio_circuit_todo.md`. Any Heard-schema change must be checked against `Ra_quarter_tally`'s
+         reads.
 
 **What already exists** (audited 2026-08-28 / Portability_todo §0 §3):
 - `Ghost/M/Ra.g` — `Ra_press` (v1 byte-copy, v2 ogg128), `Ra_quarter` (steward goal/diff),
@@ -291,7 +300,7 @@ Each: Heistation.g (the Musu* home), recorded on the LIVE runner, wormhole dir c
  through CRUD if you like, of Pools, start with one that just acquires random whole LOFI tracks from all
   Piers|Crewmates" · "perhaps just another cell when there's any Crew").**
 - **`take:random`** (Ra.g `Ra_quarter_goal_pools(shelf, pools, sources)`): the CIRCULATION fill. Draws from
-   `Ra_pool_sources(w)` — every %MusuThem mirror's stock shelf (a crate stands only for a body that shared with
+   `Ra_pool_sources(w)` — every %Theirs mirror's stock shelf (a crate stands only for a body that shared with
     me, so crew and friends alike) — in a CLOCKLESS shuffle: `Ra_pool_hash` (FNV-1a over `name:salt:id`) orders
      the draw, so it is the same every sit-down and in every fixture; `%Pool,salt` is the human's "shuffle again".
       Each want names its holder (`Want,from:<name>`; the goal row carries `from`).
@@ -426,23 +435,23 @@ Each: Heistation.g (the Musu* home), recorded on the LIVE runner, wormhole dir c
 ## 1. What Radio does today and where SoundPooling plugs in
 
 **The dial ladder** (Radio_dial, `Ghost/M/Radio.g`): friend-first by default (`Radio_dial_pool`
- walks `%MusuThem` mirrors), falls through to own stock only when friend pool dry OR listener
+ walks `%Theirs` mirrors), falls through to own stock only when friend pool dry OR listener
   flipped `radio.sc.own`. The dial reads `radio.c.heard` (heard-this-sitting) to avoid repeats.
    `Radio_pool_census` counts friends/known/playable/fresh honestly — the ShuffleFace reads these
     same pools visually (one pip per reachable %Record, fill = preview fraction landed).
 
 **What the pool IS in Radio terms today:** the "pool" Radio uses is the IN-MEMORY mirror of friends'
- stocks (`%MusuThem` shelves). That is the radio-pool / shuffle-pool — a volatile runtime thing.
+ stocks (`%Theirs` shelves). That is the radio-pool / shuffle-pool — a volatile runtime thing.
   The SoundPool is DIFFERENT: a durable OPFS store of pressed copies. These two uses of "pool" must
    be held clearly separate. Going forward:
-- **Radio-pool / shuffle pool** = friend-mirror records in `%MusuThem`, volatile, play-over-wire.
+- **Radio-pool / shuffle pool** = friend-mirror records in `%Theirs`, volatile, play-over-wire.
 - **SoundPool** = the OPFS `pool/…` shelf, durable, play-offline.
 
 **Where SoundPooling plugs in:** a third source rung between "friends" and "own":
 
 ```
 dial ladder:
-  1. friends (MusuThem mirrors, live wire)        ← today: default
+  1. friends (Theirs mirrors, live wire)        ← today: default
   2. SoundPool  (OPFS pool shelf, offline-ok)     ← NEW RUNG: sc.source === 'pool'
   3. own stock  (local library, sc.source === '' + sc.own)  ← today: explicit toggle
 ```
@@ -457,7 +466,7 @@ The source selector (`sc.source` on the %Radio particle) is already sketched in 
 
 The pool is an existing concept with an existing mount, not a new container shape. Pool records
  wear **`%Record`** (the 2026-08-27 ruling, Portability_todo §3 "mainkey question BURNED") on the
-  pool's own shelf — a `%MusuSelf`-shaped home standing in the radio world alongside the library
+  pool's own shelf — a `%Mine`-shaped home standing in the radio world alongside the library
    home, but rooted at `pool/…` paths. The identity law (CLAUDE.md "identity is per-shelf") is
     satisfied because the pool SHELF is distinct: a pool %Record at `id:X,path:pool/A/B/t.wav` is
      a different holding from the library %Record at `id:X,path:music/A/B/t.wav`, even if X
@@ -469,7 +478,7 @@ The pool is an existing concept with an existing mount, not a new container shap
 
 **The pool home particle** (to be stood):
 ```
-%MusuSelf (or a new name — call it %MusuPool to avoid ambiguity with the library home)
+%Mine (or a new name — call it %SoundPile to avoid ambiguity with the library home)
   pub: <my-prepub>
   pool: 1           ← 1-or-absent; distinguishes from the library home
   stock: 1  (the shuffle Mag shelf — same paged-Mag structure Ra_rec_home uses)
@@ -569,7 +578,7 @@ elif sc.source is a pub:   Radio_dial_aimed(w, radio, pub)   ← aim-locked to t
 else:                      current ladder (friend-first, fallback own)
 ```
 `Radio_dial_pool_local` is a thin read over `Ra_home_pool(w, pub)` — the same Ra_recs walk
- `Radio_dial_pool` does over MusuThem, but against the OPFS pool shelf. No new machinery; new
+ `Radio_dial_pool` does over Theirs, but against the OPFS pool shelf. No new machinery; new
   two-liner.
 
 ### 3.3 ShuffleFace extension

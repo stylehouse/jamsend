@@ -64,7 +64,7 @@ Snap:H
               req:unemit,seq=4,type:repli_lines,body_hash:8f7d4422509ccdfb55b74abcc7fc9d7ee8680d46b9d31f1e154fa63639571abb,body_len=63,done,to:repli_lines,finished
             Ud,pubkey:249c771147d7d638
           active_transport,type:mock,open
-        MusuSelf,pub:249c771147d7d638
+        Mine,pub:249c771147d7d638
           stock,pub:249c771147d7d638
             Record,id:c1,title:Take-Five,artist:Brubeck
             Record,id:c2,title:So-What,artist:Davis
@@ -100,7 +100,7 @@ Snap:H
               Edge,a:6eb0df4e976acef2,b:32c1ce7a059129d1,at:1751940000
         req:witness,eternal,ok
         reached:step_3
-        MusuThem,pub:249c771147d7d638
+        Theirs,pub:249c771147d7d638
           stock,pub:249c771147d7d638
             Record,id:c1,title:Take-Five,artist:Brubeck
             Record,id:c2,title:So-What,artist:Davis

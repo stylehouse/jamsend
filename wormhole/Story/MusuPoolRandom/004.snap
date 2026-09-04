@@ -48,13 +48,13 @@ Snap:H
               Key,pub:ed6acbbcd1435dad4d804fa56051d8965e3572af9e5760645cff549e4f0392cf	{"mung":["secret"]}
             SocialGraph
               Edge,a:ed6acbbcd1435dad,b:aad21c616df0ea57,at:1788400000
-        MusuThem,pub:1f70462e86324dc2
+        Theirs,pub:1f70462e86324dc2
           stock,pub:1f70462e86324dc2
             Record,id:c1,title:Cave One
             Record,id:c2,title:Cave Two
             Record,id:c3,title:Cave Three
             Record,id:c4,title:Cave Four
-        MusuThem,pub:ed6acbbcd1435dad
+        Theirs,pub:ed6acbbcd1435dad
           stock,pub:ed6acbbcd1435dad
             Record,id:f1,title:Fay One
             Record,id:f2,title:Fay Two

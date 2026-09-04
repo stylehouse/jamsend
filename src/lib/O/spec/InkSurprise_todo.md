@@ -161,6 +161,10 @@ The two are composable: a Cello cell is the fovea you drill into from an InkSurp
   └──────────────────────────────────────────────────────────────────────┘
 ```
 
+(Illustrative only: `%Spin`/`%Like` were deleted entire 2026-09-04 with `Jam.g` — the diagram's
+ real-world successor is `mire`/`take` fields on a `%Card` under `Mag:heard`; see
+  `Radio_circuit_todo.md`.)
+
 The island outlines are `cello_blob()` polygons — same charm as Cello cells, same seeded
  determinism.  They are calm where the particles are expected; a future version tears the
   outline at the wound's position.

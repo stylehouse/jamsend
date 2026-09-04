@@ -281,7 +281,7 @@ Snap:H
               req:unemit,seq=12,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
-        MusuSelf,pub:4e09f34f5a6ab900
+        Mine,pub:4e09f34f5a6ab900
           stock,pub:4e09f34f5a6ab900
             Mag:shuffle
               Cloud,page:1
@@ -319,7 +319,7 @@ Snap:H
                   Preview,seq:13,cid:009ed34af0bea671c1bc2cab4e9a52f2932f89625fad01ecfa27967e9e1e2d97	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:14,cid:819beaabf2ab5742123998ed14ec1b8a6601aab545d4ce893119feca0bdb78a6	{"ref":{"buf":"Uint8Array()"}}
                   Preview,seq:15,cid:82060ded7c33145ae7de702e7550c7641590f602f69b86c6f8771abf8b815413	{"ref":{"buf":"Uint8Array()"}}
-        MusuSelf,pub:be0dab3303037ad2
+        Mine,pub:be0dab3303037ad2
           stock,pub:be0dab3303037ad2
             Mag:shuffle
               Cloud,page:1
@@ -360,7 +360,7 @@ Snap:H
         req:rachase_stock,finished
         req:witness,eternal,ok
         reached:step_4
-        MusuThem,pub:b317b9a776e39d30
+        Theirs,pub:b317b9a776e39d30
           stock,pub:b317b9a776e39d30
             Record,id:d71294dbbcd7b726,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=39,bytes=517443
               Preview,seq:0,head,preskip=312,cid:3ccd2f51f3f3b66e3115ee8cb2d1c43575a42bf9704abf44b8af40d1a8d74d7b	{"ref":{"buf":"Uint8Array()"}}

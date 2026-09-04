@@ -72,7 +72,7 @@ The system has **two distinct id-namespaces** that never overlap:
 
 1. **Radio-stock ids** (`rec.sc.id`): minted by `Ra.g`'s `Ra_record_from` (or Stoker/Crate) — a
    content-address or a uuid that belongs to a peer's _own_ music library, served via
-   `Ra_home_self(rw, pub)` → `%MusuSelf,pub:<me>/stock/Mag…/Record,id:<id>`.
+   `Ra_home_self(rw, pub)` → `%Mine,pub:<me>/stock/Mag…/Record,id:<id>`.
 
 2. **Keep-ids** (heist / rummage space): minted by `Heist.g`'s `Heist_materialise_one` —
    `sha256(pub + base + path)` of a _specific file on a specific peer's disk_. These live in

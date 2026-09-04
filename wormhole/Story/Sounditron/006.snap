@@ -13,7 +13,7 @@ Snap:H
         Door:open,face:Door
         Uptime,face:Uptime
         Beat,face:Beat
-        MusuSelf,pub:f5da6599b8505881
+        Mine,pub:f5da6599b8505881
           shop,pub:f5da6599b8505881
           stock,pub:f5da6599b8505881	{"dontSnap":1}
         Transfer,dontSnap

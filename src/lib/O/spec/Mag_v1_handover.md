@@ -13,7 +13,7 @@ Continuation brief. Written at a resting point mid-push; **production is a week 
 >
 > - **Bomb 1 is DEFUSED (verified).** `Ra_home_them`'s self-guard is deleted (`Ghost/M/Ra.g`, with a
 >    comment saying why it can never come back). SwarmShare's mirror law goes green on the live
->     runner: the `%MusuThem,pub:<them>` crate mints again, the `see:` sentence *"the mirror lands
+>     runner: the `%Theirs,pub:<them>` crate mints again, the `see:` sentence *"the mirror lands
 >      keyed by the caster prepub"* notices at step 4, and **all four of SwarmShare's `see:` claims
 >       now notice** (zero gaps). The body's **"DO NOT ACCEPT SwarmShare"** is RETIRED — it was right
 >        when written (the failure then was an unearned `story_swear`), and that failure is gone.
@@ -30,7 +30,8 @@ Continuation brief. Written at a resting point mid-push; **production is a week 
 >     `Mag_todo.md` **§0.2**–**§0.2c**, summarised under "Book state" below.
 > - **Bomb 2 is BIGGER than the body says** — not three collisions but an entire vocabulary, and it
 >    is losing data in shipped code today (`%Spin`/`%Like`/`%Grab` in a friend's `%Jam` ledger).
->     Census and evidence: `Mag_todo.md` §0.2.
+>     Census and evidence: `Mag_todo.md` §0.2. (`Jam.g`, `%Spin`, `%Like`, `%Grab` were deleted entire
+>     2026-09-04, replaced by `Mag:heard,pub:<me>` — see `Radio_circuit_todo.md`.)
 > - **MusuOgg was actually BROKEN, and is fixed.** Not staleness — the whole-track ogg128 export had
 >    produced nothing since 2026-07-28, because `Ra_transcode_ensure` went non-blocking that day and
 >     MusuOgg is a one-shot driver, not a pump. It took the `null` and never encoded a single `%Stream`
@@ -82,13 +83,13 @@ Two live BigSoundland tabs, mutually sealed. One presses ⇊ on the other's coll
 
 1. **`Ra_home_them`'s self-guard** (`Ghost/M/Ra.g:572`, added 2026-07-29 in `deb35c44`)
    ```js
-   if (w.oa({ MusuSelf: 1, pub: pub })) return this.Ra_home_self(w, pub)
+   if (w.oa({ Mine: 1, pub: pub })) return this.Ra_home_self(w, pub)
    ```
-   Its comment says the intent — *"is this pub ME?"* — but the test is *"does a MusuSelf for this pub
+   Its comment says the intent — *"is this pub ME?"* — but the test is *"does a Mine for this pub
     exist here?"*. Those diverge in any world holding more than one identity. **A friend's mirror gets
-     folded into that friend's own shelf and the `%MusuThem,pub:<them>` crate never mints.**
-   Evidence: `wormhole/Story/SwarmShare/004.snap` has BOTH `MusuSelf,pub:249c7711…` (line 63) and
-    `MusuThem,pub:249c7711…` (line 93) — `249c7711…` is Cass. The live run has only the MusuSelf.
+     folded into that friend's own shelf and the `%Theirs,pub:<them>` crate never mints.**
+   Evidence: `wormhole/Story/SwarmShare/004.snap` has BOTH `Mine,pub:249c7711…` (line 63) and
+    `Theirs,pub:249c7711…` (line 93) — `249c7711…` is Cass. The live run has only the Mine.
    `Repli_mirror_lib` (`Ghost/N/Repli.g:590`) already does the correct `from === me` check upstream,
     so this guard is redundant where it is right and wrong where it differs. **Deleting it is
      probably the whole fix.**
@@ -395,7 +396,8 @@ Not yet swept overnight: **MusuRaChase** (56 steps; the subagent's earlier pass 
 4. **`%Spin`/`%Like`/`%Grab` deserve the same new assertion** (`Mag_todo.md` §0.2): the table fixes
     them, and no Book would notice if it were reverted, because every Book mints exactly one of each.
      A ledger with TWO spins under one Jam is a three-line Book change and it is the only thing that
-      would ever catch a regression here.
+      would ever catch a regression here. (Moot: `Jam.g`, `%Spin`, `%Like`, `%Grab` were deleted
+       entire 2026-09-04 — see `Radio_circuit_todo.md`.)
 
 5. **Pin `w.sc.now`** in MusuBuddy / MusuMag / MusuRaStream / MusuHeist and re-record them once —
     turns four permanently-meaningless verdicts into real gates (`Mag_todo.md` §0.2c).

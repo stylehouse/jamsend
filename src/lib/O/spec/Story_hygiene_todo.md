@@ -9,6 +9,55 @@ A NEW Story primitive: a declared, per-run **reset** of the disk working-area a 
 
 ## 0. What to get on with next
 
+### ⚠ TODO (2026-09-04, the owner: *"please push a TODO somewhere for that nondeterministic runner problem"*)
+
+**A VERIFICATION SWEEP CANNOT CURRENTLY BE TRUSTED, and it fails SILENTLY GREEN.** Measured over a
+ 30-Book sweep today. Four separate faults compound; the first two are the dangerous ones because their
+  failure mode is a Book that reports `ok:true, caveat:0` while proving nothing.
+
+**1. Two live runner tabs make `runner_ask` NON-DETERMINISTIC.** With `da060c94…` and `e747cbed…` both
+ advertising, an un-targeted call lands on whichever answers first: `ping` replied from `e747` while the
+  sweep held `da06`, and `steps` returned **a different Book than the one just run** (asked for MusuReap,
+   got MusuPoolRandom; asked after MusuBay, got MusuBuddy). Since `story_accept` writes fixtures from
+    `snap <n>`, this is the same class as the guard it already carries — *"a degraded runner served
+     SwarmBody's snap for a SwarmPost step … cross-Book corruption that only a `H:<Book>,Run` check
+      catches"* — except one tab further out, where that guard cannot see it.
+ - `--runner=<id>` pins `run`, but the FOLLOW-UPS (`steps`, `snap`, `state`) do not honour it reliably.
+    **Until they do, a fixture-writing pass is only safe against exactly one live tab.**
+ - *Wanted*: the lease/engagement id already on every reply (`engagement.client`) threaded through the
+    follow-ups, so a session addresses ONE tab for a whole run→steps→snap transaction; and `runners`
+     refusing (or loudly warning) when a write-path op is issued with more than one tab live.
+
+**2. A HOLLOW RUN READS AS GREEN.** `MusuHeist` reported `ok:true, caveat:0` at `done:11` against **22**
+ recorded steps; `MusuMag` 6/10; `MusuNeGrind` 6/11. Nothing in the outcome says "I only ran half of it" —
+  `ok_pct` was 1 in each case, because the steps that DID run passed.
+ - *Wanted*: the run outcome carries the toc's own step count, and `ok` is false when `done < total`.
+    Until then **every caller must compare `done` against the fixture count itself** — see the count-check
+     in this session's sweep script. `story_accept` already has a hollow retry; the raw `run` path has none.
+
+**3. `ok:true` HIDES `caveat`.** Known ([[story-fixture-gate-vs-churn]]) and still true: `MusuStock`
+ answered `ok:true, caveat:5`. Any gate that reads `ok` alone passes a Book whose diges have drifted.
+
+**4. STOPPING A SWEEP DOES NOT STOP IT.** The harness's TaskStop kills the task wrapper, **not the shell
+ script it spawned**. Two "stopped" sweeps kept driving the runner for ~20 minutes afterwards — including
+  a `story_accept` mid-flight, which is a fixture WRITER. Verified afterwards that all 319 touched snaps
+   were still exactly `committed + rename` and nothing had been overwritten, but that was luck of timing.
+ - *Wanted*: any long sweep script writes its PID (`echo $ > …/x.pid`) so it can be killed for real, and
+    a fixture-writing sweep should refuse to start if another one is already live.
+
+**The one good discovery from the same session**, because it removes the need for most sweeps:
+ **`dige` == `sha256(<the whole snap file>)` sliced to the first 16 hex chars** (reproduced byte-for-byte
+  against a live runner's reported dige). So a fixture change that is provably content-preserving — a pure
+   rename, say — needs NO runner at all: recompute the diges locally and patch the toc. That is how 319
+    stale diges across 30 Books were settled today without a single re-swear. ⚠ But note the corollary
+     found the same way: the runner compares live-dige against the **toc**, never against the `.snap` file,
+      so a `.snap` that has drifted from its toc is INVISIBLE to a green run. Six Books are in that state
+       right now (Diffmatication · InvSeal · InvWalk · Peeringinst · SwarmBody · SwarmWire) — they run green
+        with 28 snap files that no longer hash to what their toc claims.
+
+---
+
+
 **BUILT + PROVEN live (2026-07-26).** The primitive is landed in `src/lib/O/Story.svelte`:
  `Story_hygiene(w,Run,run)` (a new method beside `Story_settingoff`) + an **opt-in `expecting()` arm** in
   `do_step` at step 1. It is byte-neutral to the ~50 existing Books (the gate is a cheap optional-chained
@@ -70,6 +119,207 @@ Next moves, in order:
 
 ---
 
+**Committed toc diges that disagree with their own snap (found 2026-09-04, NOT acted on — out of scope).**
+ Since `dige == sha256(<whole snap file>)[:16]`, toc-vs-snap consistency is checkable with no runner at all.
+  Six Books are inconsistent **in committed state** (clean working tree), so every run of them reports
+   caveats that mean nothing:
+
+| Book | stale / total |
+|---|---|
+| `SwarmBody` | **22 / 23** |
+| `Peeringinst` | 2 / 2 |
+| `Diffmatication` | 1 / 1 |
+| `InvSeal` | 1 / 4 |
+| `InvWalk` | 1 / 7 |
+| `SwarmWire` | 1 / 5 |
+
+ The formula is sound — `MusuHeard` reads 0/9 and `MusuStanding` 0/12 — and none of these carry the
+  legitimate `dige:0000000000000000` un-gated marker (SwarmBody has zero of them). `SwarmBody` matters most:
+   it is the `%Want` W1 gate (23 beats), and 22 stale diges mean it has been reporting a wall of meaningless
+    caveats since it was recorded.
+ **The fix costs no runner:** rewrite each `step[=N],dige:` to `sha256(NNN.snap)[:16]`. That only settles
+  BOOKKEEPING — a genuine content drift still surfaces as a red step, never a caveat — so it cannot hide a
+   regression. Left undone deliberately: these are committed fixtures belonging to other work, and doing it
+    would add ~27 unrelated files to an already large review. Worth one deliberate pass by whoever owns them.
+
+**MUTING THE `self,round` CAVEAT NOISE — ⚠ REVERSED BY THE OWNER 2026-09-04, KEPT ONLY AS THE `drop` RECIPE.**
+ ⛔ **Do NOT apply this to `self,round`.** The owner ruled the wobble is a READING ON TTLILT, not noise:
+  *"self,round is fine to include, it shouldn't wobble unless our ttlilt is not functioning well — Story
+   step-times should be predictable."* The three Entcases were removed and the Books re-recorded; §0a is the
+    measurement that ruling produced. What follows is still the correct recipe for `means,drop` in general —
+     use it for genuinely dead churn, never to make a Book green by deleting its instrument.
+ The counter was ALREADY globally forgiven — `Story.svelte:1074` carries
+  `spay:{ re:'\\bround(?:=\\d+)?\\b', tol:'any' }` — and that is precisely why it is noisy: a spay forgives
+   at COMPARE, and a forgiven step is demoted to *ok with a **caveat***. So the caveat wall was the
+    forgiveness working as designed. Forgiving harder cannot help; the line has to stop being snapped.
+ EntropyArrest's structural means do exactly that (§5): **`drop` → `means.skip` omits the whole matched
+  line at ENCODE**, so got and exp never carry it and there is nothing to forgive. `self,est` on the very
+   next rule already uses this path. Authored **test-scoped** as an Entcase in the Book's own `The`, so no
+    other Book is blinded (`Composition_todo.md` §2.3's objection to a global arrest stands — do NOT make
+     this the global rule without deciding the ~120-Book fixture cost first):
+
+```
+  EntropyArrest                                        ← a top-level The bucket, beside Styles/TimeSpool
+    Entcase:Round_noise
+      note:the per-tick belief-round counter — dropped not forgiven so it stops tagging every step with a caveat
+      lematch,self,round                               ← locator: the mainkey stripped off IS the sc_has
+        means,drop                                     ← no `re` — encode-time omission, not a graft
+```
+
+ Write it straight into `wormhole/Story/<Book>/toc.snap` with the runner RELEASED, then
+  `node scripts/story_accept.mjs <Book>`. It round-trips through `The` intact (verified) and the residual
+   is empty by construction — `story_accept`'s `FILTER` already strips `self,round` — so the accept is
+    automatic and reviewable. **`MusuHeist`, the very Book §2.3 measured at 20/14/1 caveats on identical
+     code, came back `ACCEPTED → GREEN (22 steps, caveat 0)`.**
+ ⚠ The cost, stated plainly: that Book can no longer see `self,round`, so it loses the one value in the
+  snap that detects ambient work. The owner's standing design note (`Story.svelte:79`) wants the signal
+   kept a better way — *"when that raises more than one since the last Story that's %interesting"* — i.e.
+    hide the value but ASSERT on a jump greater than one. That is the real fix and it is not built.
+
+## 0a. THE DETERMINISM SOAK (2026-09-04) — what flaps, and what it is
+
+The owner's ruling that made this worth measuring: *"self,round is fine to include, it shouldn't wobble
+ unless our ttlilt is not functioning well — Story step-times should be predictable."* So the wobble is a
+  READING, not noise. 30 runs, five Books × six, serial on one live runner, code frozen throughout.
+
+**Verdicts never moved. Content did.** `ok:true` / `ok_pct:1` in all 30 runs — no gaps, no wedges, no
+ errors. Per-step `dige` across the six runs:
+
+| Book | steps flapping | caveat range |
+|---|---|---|
+| `MusuHeist` | **21 / 22** | 0 → 20 |
+| `MusuReco` | **8 / 11** | 1 → 8 |
+| `SwarmShare` | 1 / 9 | fixed 8 |
+| `MusuHeard` | **0 / 9** | 0 |
+| `MusuStanding` | **0 / 12** | 0 |
+
+**THE FINDING: the flap is `self,round` and NOTHING else.** `MusuHeist` step 22 captured on three
+ consecutive runs — **304 lines each, one line different**: `self,round=39` vs `38` (and its duplicate at
+  the w level). All 302 other lines identical. Earlier, `SwarmShare` step 7 gave the same answer:
+   `self,round=14`→`15`, nothing else. **So the world state is reproducible; only the NUMBER OF BELIEF
+    ROUNDS taken to reach it varies, by one.** This is jitter in the loop's step-timing, not divergence in
+     what the app computes — which is precisely the condition the owner's ruling predicted, and the reason
+      to keep the counter in the snap rather than arrest it.
+
+**It is Book-specific, and all five Books carry the counter** (18-44 `self,round` lines each), so this is
+ not "the counter is noisy" — it is that three Books have unpredictable step-times and two do not.
+
+**Two hypotheses tested; report them so nobody re-runs them:**
+- ❌ **NOT "the wire/peer Books flap".** `MusuStanding` uses `Lake_link` (2), `Peering` (3) and `Repli_` (6)
+   and is perfectly stable at 0/12. Killed.
+- ~ **ttlilt is implicated but is NOT the whole story.** `MusuHeist` is the ONLY one of the five that uses
+   `expecting(`/ttlilt (4 and 5 occurrences) and it is by far the worst flapper (21/22) — which fits the
+    owner's hypothesis. But `MusuReco` and `SwarmShare` flap with **zero** ttlilt, and `MusuStanding` is
+     stable with zero. So ttlilt explains the worst case, not the class.
+
+**Shape matters when you go looking:**
+- `MusuHeist` flaps **per-run, not per-step** — runs 2 and 5 diverged as a BLOCK from step 10 onward, every
+   step taking the same alternate value. One extra round early, propagated forward.
+- `MusuReco` shifted **one-way mid-soak** — steps 4/5/7 gave value A for runs 1-3 and value B for 4-6 and
+   stayed. Re-running it three times afterwards gave **byte-identical** step-7 snaps, so the shift is an
+    occasional event, not per-run noise. Something settles into a new state and stays there.
+
+⚠ **Consequence for recording.** `story_accept` writes fixtures from one live run and then verifies with
+ another; if the round count differs between those two runs the Book cannot be re-recorded green.
+  `MusuHeist` and `SwarmShare` both failed to land green for exactly this reason (`MusuReco` did land,
+   11/11 caveat 0). **A Book that will not accept twice in a row is not necessarily broken — check whether
+    its only diff is `self,round` before touching anything else.**
+
+
+### 0a.1 WHY it flaps — quiescence is an IDLENESS heuristic, not a causal wait
+
+The owner, reading the soak: *"we probably need more ttlilts not less — Heist might have way more flaps
+ with less ttlilts… the way things execute is fairly direct?"* He is right, and the code says so plainly.
+  `Story.svelte:2443`, commented **"the crux"**:
+
+```js
+let quiescent = long_after_Atime && dont_want_Atime && dont_leave_running() && !ttlilt_held()
+```
+
+`long_after_Atime` means **no belief-mutex activity for `quiesce_snap_time`** — default `1.5 × TICK_MS`,
+ about **75ms** (`Story.svelte:2219`). So a Story step ends because *nothing has happened for 75ms*, NOT
+  because the work finished. It is a wall-clock idleness heuristic.
+
+**Therefore every real async boundary is a coin-flip against a 75ms timer.** A decode, a socket
+ round-trip, an IndexedDB read, a transcode advance: resolve inside the window and the work joins THIS
+  step; resolve outside it and the step was already declared quiescent and the work lands in the NEXT one,
+   shifting the belief-round count from there onward. Which side you land on is decided by machine load.
+    That is exactly the shape measured in §0a — `MusuHeist` runs 2 and 5 diverging **as a block from step
+     10 onward**, one late arrival then every later step offset by one round.
+
+**A `%ttlilt` is the only thing that makes the wait causal.** `o_Story_req_ttlilt` (Hovercraft.svelte:556)
+ returns true — holding the world non-quiescent — while a live ttlilt has `until_ts > now` and its req is
+  not finished. With NO ttlilt the list is empty, it returns false, and the step ends on the poll's own
+   cadence with nothing forcing it to wait for in-flight work.
+ ⇒ **More ttlilts, not fewer.** My first read of the soak ("MusuHeist has the most ttlilts AND the most
+    flaps") had the causality backwards: MusuHeist has ttlilts *because* it is the most async-heavy Book,
+     and they are already suppressing worse jitter. Removing them would make it flap harder.
+ ⇒ Raising the `quiesce_snap_time` Opt widens the window, so the coin lands the same way more often — it
+    reduces the flap RATE without removing the race, and slows every step. A ttlilt on the specific req
+     removes the race instead of shrinking it. Longer ttlilts help only where a ttlilt already exists.
+
+**The instrument already exists and is not on the wire: `run.c.quiesce_blame`** (`Story.svelte:2450`,
+ added 2026-08-06 for exactly this — *"the four reasons want four different fixes, but from the outside
+  they are one indistinguishable pause"*). It counts, per poll, WHICH of the four conditions held the
+   step: `in_Atime` · `todo` · `leave_running` · `ttlilt`. It lives on `.c`, so it never reaches a snap,
+    and the `steps` op explicitly drops `trace` too (`LiesFunk.svelte:2814` maps only n/ok/caveat/untried/
+     error/dige/desc). **Surfacing `quiesce_blame` per step is the next move** — it turns "some part of the
+      process is nondeterministic" into a named condition per step, which is the thing we cannot currently
+       see. (Note the same block warns: blame must READ `leave_running`, never re-call the helper, which
+        mutates.)
+
+**Reading traces, practically.** `node scripts/runner_ask.mjs trace <n>` gives `{ok, n, caveat, dige,
+ cycles, trace:[{t,kind,tag}]}` where `kind` runs step→todo→beliefs→think→beliefs done→quiescent→snap→
+  snapped, and the `quiescent` tag is the idle seconds, suffixed **` timeout`** when the ttlilt expired
+   rather than cleared (`Story.svelte:2555`). ⚠ **Traces are only readable while the run's `This` is still
+    up** — collect them immediately after the run, and expect a ~30-40s window; one `trace` call per step
+     is too slow to walk 22 steps before it clears.
+
+**Observed, and worth chasing:** cycle counts vary enormously *within* a single run — step 1 = 8, step 2 =
+ 61, step 6 = 133, **step 10 = 351**, step 11 = 8. Step 10 is both the heaviest spinner and the exact point
+  where the block divergence begins. When the runner stays in one mode, cycles and dige are perfectly
+   reproducible (steps 9/10/11 gave identical `cycles`=73/351/8 and identical diges across three runs).
+
+### 0a.2 THE STANDUP WEDGE IS A RELEASE→RUN RACE — and a pause clears it
+
+The `phase:"begun", n:null, total:null, steps=0` wedge (console: `▶ Story subHouse created for <Book>`
+ then TOTAL SILENCE — no `story_analysis`, no `story_save`, no `drive started`) is **not rare and not
+  mysterious**. It is a race between `auto_reset_story`'s teardown and the next run's standup.
+
+**Measured 2026-09-04, `MusuHeist`, same runner, back to back:**
+
+| cadence | wedges |
+|---|---|
+| `release` → `run` immediately | **2 / 6** |
+| `release` → wait 6s → `run` | **0 / 6** |
+
+(n=6 per arm — small, so treat the RATE as indicative; the direction is clean and the mechanism below
+ explains it.)
+
+**Why.** `auto_reset_story` (Auto.svelte:1220) calls `auto_teardown_story` — which hand-walks `A → w → run`
+ setting `run.c.driving = false`, then `existing.stop()`, `H.drop(existing)`, then culls Supervisor
+  orphans — and only THEN schedules the new subHouse in a `post_do`, whose body ends with
+   `S.i_elvisto(S, 'think')`. The wedge is that posted `think` never running: subHouse created, nothing
+    after. Re-engaging while the previous teardown is still draining lands the new Story on a half-dropped
+     one.
+
+**This is a KNOWN SHAPE, already written up.** `Story_future.md` §8.3, verbatim: *"This is precisely the
+ bug that bit `auto_reset_story`: a story drive leaked because its wake was a free `setTimeout` gated on a
+  bare `.c.driving` flag, not a req-owned ttlilt — so 'stop the drive' was a hand-walk that silently
+   no-op'd (it queried `w` one level too high, found nothing, and never set `driving=false`)."* The stated
+    cure is the general one: a timing impulse held as a **particle** is *inspectable* (it is a
+     `%req/%ttlilt,until_ts` in the snap — "the snap is the control panel of every timing impulse") and
+      *structurally torn down* (drop the req subtree and its wake dies with it, so "stop" cannot silently
+       fail). A `setTimeout` closure has neither property.
+ ⚠ Scope check before over-applying it: §8.4 deliberately KEEPS the drive's own poll chain a timer —
+  *"a timer that reads the ttlilts to decide when to snap can't itself be a ttlilt without circularity"* —
+   and pushes the fix to §15, recasting the steps it drives as reqs. So the answer is not "make everything
+    a ttlilt"; it is that everything *beneath* the drive's clock should be req-owned, and much of it isn't.
+
+**DO THIS NOW, in every sweep/soak script: put a gap between `release` and the next `run`.** A large share
+ of this session's false reds — `SwarmShare`'s "total standup wedge" that later ran 9/9 green on
+  byte-identical files, the repeated `NO-RUN (try 2)`s, the hollow runs — are consistent with this one race.
+   It costs seconds per Book and removes a whole class of un-reproducible red.
 ## 1. The arc — why this exists
 
 The whole suite is green, but Sounditron is green only because its `toc.snap` is loaded with

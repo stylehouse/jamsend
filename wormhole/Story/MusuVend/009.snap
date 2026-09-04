@@ -33,7 +33,7 @@ Snap:H
                 unemit:1,type:repli_lines,seq:1,body_len:416
                 unemit:2,type:repli_lines,seq:2,body_len:800
           active_transport,type:mock,open
-        MusuSelf,pub:Origin
+        Mine,pub:Origin
           stock,pub:Origin
             Mag:shuffle
               Cloud,page:1
@@ -55,7 +55,7 @@ Snap:H
                 Card,id:t3,artist:Bassbin,title:Deep Draw,path:crate/b/Bassbin - Deep Draw.opus
                 Card,id:t4,artist:Choral,title:High Draw,path:crate/c/Choral - High Draw.opus
                 Card,id:t5,artist:Choral,title:Long Draw,path:crate/c/Choral - Long Draw.opus
-        MusuThem,pub:Follower.mirror
+        Theirs,pub:Follower.mirror
           stock,pub:Follower.mirror
             Mag:Musica
               Cloud,randomic:d70fnpn,created_at=1000

@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'a5027dcd65028821~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'd946b5aad7515869~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -4177,7 +4177,7 @@ Swarm_suggest_stash(ident, prepub, sug) {
 //     friend's last boast into ONE number a face can show (a Pier with music is a BIGGER cell).
 //      The full tree stays a DELIBERATE pull (§9.2 Selections) — the tally is the appetite for it.
 
-// Swarm_music_census — count MY OWN shelf in w: the %MusuSelf,pub:<my prepub> / stock home
+// Swarm_music_census — count MY OWN shelf in w: the %Mine,pub:<my prepub> / stock home
 //  (Radio_spec §2.2 rung 3 — was %Library,pier:; keyed by WHOSE it is, a key not a nickname, so live
 //   and Book read the same). records = every %Record; artists = distinct sc.artist. No home counts
 //    zero — an honest empty shelf, never an error.
@@ -4187,7 +4187,7 @@ Swarm_music_census(w, ident) {
     // opt-in census world (w.c.census_w — the live share points it at the RADIO world, where
     //  the stoker actually shelves): unset = census w itself, the Book behaviour, unchanged.
     let cw = w.c.census_w || w
-    for (const home of cw.o({ MusuSelf: 1, pub: ident.sc.prepub })) {
+    for (const home of cw.o({ Mine: 1, pub: ident.sc.prepub })) {
         for (const shelf of home.o({ stock: 1 })) {
             for (const r of this.Ra_recs(shelf)) {
                 records = records + 1
@@ -4372,9 +4372,9 @@ Swarm_gossip_music(w, ident) {
     //    other "I have nothing" while the bytes moved fine.  A zero census has three distinct causes
     //     that the single number cannot tell apart, so name them:
     //      `cw`=0 ⇒ w.c.census_w was never pointed at the RADIO world, so we counted the swarm world,
-    //        which holds no %MusuSelf and can only ever answer 0 (the default in Swarm_music_census is
+    //        which holds no %Mine and can only ever answer 0 (the default in Swarm_music_census is
     //         `w` itself — the BOOK behaviour, wrong for a live tab);
-    //      `selfs`>0 but `homes`=0 ⇒ a %MusuSelf exists but under a DIFFERENT pub than ident.prepub —
+    //      `selfs`>0 but `homes`=0 ⇒ a %Mine exists but under a DIFFERENT pub than ident.prepub —
     //        an identity mismatch, not an empty shelf;
     //      `homes`>0 and `stocks`=0 ⇒ the home stands but the stoker has shelved no stock yet.
     let cw_set = 0, homes = 0, selfs = 0, stocks = 0
@@ -4382,8 +4382,8 @@ Swarm_gossip_music(w, ident) {
         try {
             let cw = w.c.census_w || w
             cw_set = w.c.census_w ? 1 : 0
-            selfs = cw.o({ MusuSelf: 1 }).length
-            for (const home of cw.o({ MusuSelf: 1, pub: ident.sc.prepub })) {
+            selfs = cw.o({ Mine: 1 }).length
+            for (const home of cw.o({ Mine: 1, pub: ident.sc.prepub })) {
                 homes = homes + 1
                 stocks = stocks + home.o({ stock: 1 }).length
             }
@@ -4504,7 +4504,7 @@ Swarm_ive_got_tally(w, ident) {
 
 //#region share — the STANDING music session: what a friendship is FOR
 //  After the seal the music must actually MOVE: my stock is served to every Music-granted
-//   friend, and their casts fill per-friend %MusuThem crates in the RADIO world — the crates
+//   friend, and their casts fill per-friend %Theirs crates in the RADIO world — the crates
 //    the Riffle browses and the radio's pool dial draws from.  Every wire below is the proven
 //     Repli machinery (the Radiation Books); this region is only the LIVE glue: arm, enroll,
 //      offer, pump.  The pump is a detached era-guarded wall-clock loop OUTSIDE the beliefs
@@ -5096,7 +5096,7 @@ Swarm_share_why(w, er) {
     let chunks = 0
     try {
         let rw = this.top_House().c.radio_w || w
-        for (const home of rw.o({ MusuThem: 1 })) {
+        for (const home of rw.o({ Theirs: 1 })) {
             try {
                 let shelf = this.Ra_home_them(rw, String(home.sc.pub))
                 for (const rec of this.Ra_recs(shelf)) {
@@ -5216,7 +5216,7 @@ async Swarm_share_beat(w, ident) {
         if (!this.Swarm_pier_live(p, 'Music')) continue
         let pub = String(p.sc.pub)
         // never treat my OWN Pier as a friend: a self-offer echoes back and Repli_mirror_lib would mint a
-        //  spurious %MusuThem,pub:<me> right beside my %MusuSelf — the self-mirror the human saw on Righto.
+        //  spurious %Theirs,pub:<me> right beside my %Mine — the self-mirror the human saw on Righto.
         if (pub === me) continue
         let route = this.Swarm_station_pier(w, ident, pub)
         if (!route) continue
@@ -5282,7 +5282,7 @@ async Swarm_share_beat(w, ident) {
     let lead_fresh = w.c.lead_at && (Date.now() - w.c.lead_at) < 3000
     let hungry = lead_fresh && +(w.c.lead_s || 0) < 16
     w.c.restock_held = hungry ? (+(w.c.restock_held || 0)) + 1 : 0
-    for (const home of rw.o({ MusuThem: 1 })) {
+    for (const home of rw.o({ Theirs: 1 })) {
         if (!home.sc.pub) continue
         let shelf = this.Ra_home_them(rw, String(home.sc.pub))
         // the §5 warm start FIRST (2 records × their opening page — autostart-ready fast),

@@ -2533,7 +2533,7 @@ await M.eatfunc({
                     //   none).  The human 2026-07-28 asked to diagnose either Sounditron straight from a snap.
                     //    Two lenses: (1) the SEAL state — every %Pier of the live identity with its grant count
                     //     (2 = mutually sealed; 1 = a one-way half-seal, the bug); (2) a FULL enWaft of the
-                    //      resident world so Radio/Musu/MusuThem show.  This WAS depth-bounded (max_child_depth:6)
+                    //      resident world so Radio/Musu/Theirs show.  This WAS depth-bounded (max_child_depth:6)
                     //       to skip the paged record clouds, but the human never agreed to a snap depth limit —
                     //        a silent cut is worse than a big reply, so it encodes the WHOLE tree now (uncapped).
                     const ident = (H as any).Swarm_live_self?.()
@@ -2589,7 +2589,7 @@ await M.eatfunc({
                         try { world_snap = (await (H as any).enWaft(stW))?.snap ?? null } catch (e) { world_snap = `enWaft failed: ${String((e as any)?.message ?? e)}` }
                     }
                     // THE RESIDENT WORLD, separately (2026-08-07).  The comment above has always claimed this
-                    //  op shows "Radio/Musu/MusuThem", but Lies_runner_story_w() returns the STORY world — on a
+                    //  op shows "Radio/Musu/Theirs", but Lies_runner_story_w() returns the STORY world — on a
                     //   tab that has run a Book you get its recorded step snaps and NOT one live particle.  The
                     //    two coincide only on a virgin player tab, which is why it read as working.  The radio
                     //     world is where the crates actually live, so encode it under its own key.
@@ -2601,14 +2601,14 @@ await M.eatfunc({
                     // CRATE CENSUS — the shape question the 638/62 leak asks (the human 2026-08-07: "the set of
                     //  them is at 61/638, dunno why it keeps accumulating on its own"), answered in ~20 numbers
                     //   instead of a 165KB tree.  Counts the homes SEPARATELY from the shelves they resolve to:
-                    //    duplicate %MusuThem homes for one pub all resolve to the SAME shelf, so a reader that
+                    //    duplicate %Theirs homes for one pub all resolve to the SAME shelf, so a reader that
                     //     loops homes counts one crate many times.  `homes` > `pubs` IS that bug, stated.
                     let crate_census: any = null
                     if (rw) {
                         const A = H as any
                         const seen: Record<string, number> = {}
                         const shelves: any[] = []
-                        for (const home of ((rw.o({ MusuThem: 1 }) as TheC[]) ?? [])) {
+                        for (const home of ((rw.o({ Theirs: 1 }) as TheC[]) ?? [])) {
                             const pub = String(home.sc?.pub ?? '')
                             seen[pub] = (seen[pub] ?? 0) + 1
                             // resolve WITHOUT Ra_home_them — that door is find-or-CREATE and a diagnostic must
@@ -2626,7 +2626,7 @@ await M.eatfunc({
                                 mags: mags.length, clouds,
                             })
                         }
-                        const selfs = ((rw.o({ MusuSelf: 1 }) as TheC[]) ?? []).map((home: TheC) => {
+                        const selfs = ((rw.o({ Mine: 1 }) as TheC[]) ?? []).map((home: TheC) => {
                             const shelf = (home.o({ stock: 1 }) as TheC[])[0]
                             const recs = shelf ? (A.Ra_recs ? A.Ra_recs(shelf) : []) : []
                             return { pub: String(home.sc?.pub ?? '').slice(0, 8), recs: recs.length,

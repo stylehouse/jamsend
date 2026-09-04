@@ -62,7 +62,7 @@ Snap:H
               req:unemit,seq=2,type:trust,done,to:trust,finished
             Ud,pubkey:249c771147d7d638
           active_transport,type:mock,open
-        MusuSelf,pub:249c771147d7d638
+        Mine,pub:249c771147d7d638
           stock,pub:249c771147d7d638
             Record,id:c1,title:Take-Five,artist:Brubeck
             Record,id:c2,title:So-What,artist:Davis

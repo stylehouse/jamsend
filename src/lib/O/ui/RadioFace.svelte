@@ -16,7 +16,7 @@
 
     // consent + want, read live (Ra_pool_consent / Radio_pool_wanted) so the source chip can say "needs setup"
     let pool_ok = $derived.by(() => { void H?.version; try { const w = n?.c?.w; return !!(w && (H as any)?.Ra_pool_consent?.(w)) } catch { return false } })
-    let pool_n = $derived.by(() => { void H?.version; try { const w = n?.c?.w; const pub = (H as any)?.Radio_pub?.(w) || 'me'; const sh = w?.o({ MusuPool: 1, pub })[0]?.o({ stock: 1, pub })[0]; return sh && (H as any)?.Ra_recs ? (H as any).Ra_recs(sh).length : 0 } catch { return 0 } })
+    let pool_n = $derived.by(() => { void H?.version; try { const w = n?.c?.w; const pub = (H as any)?.Radio_pub?.(w) || 'me'; const sh = w?.o({ SoundPile: 1, pub })[0]?.o({ stock: 1, pub })[0]; return sh && (H as any)?.Ra_recs ? (H as any).Ra_recs(sh).length : 0 } catch { return 0 } })
     let pool_wanted = $derived.by(() => { void H?.version; try { const w = n?.c?.w; return !!(w && (H as any)?.Radio_pool_wanted?.(w, null)) } catch { return false } })
     let face = $derived.by(() => {
         void H?.version
@@ -25,10 +25,10 @@
         // the first-time read: never played, nothing dialed — teach what ▶ will do, using the
         //  stoker's census (stock standing = the preheat already dug) so the promise is honest.
         const stock = +((n?.c?.w?.o?.({ Stoker: 1 })?.[0]?.sc?.stock) ?? 0)
-        // the POOL: friend tracks standing in the %MusuThem mirrors (the live share fill) —
+        // the POOL: friend tracks standing in the %Theirs mirrors (the live share fill) —
         //  the radio dials across them too, and the face says so only when it's true.
         let pool = 0
-        for (const home of (n?.c?.w?.o?.({ MusuThem: 1 }) ?? [])) {
+        for (const home of (n?.c?.w?.o?.({ Theirs: 1 }) ?? [])) {
             // a friend's mirror is PAGED (%Mag:shuffle › %Cloud › %Record), not flat — so count via the
             //  shape-agnostic Ra_recs census (what Radio_dial_pool / Radio_lineup_fill / CrateFace all use),
             //   NOT a flat stock.o({Record}) which reads 0 on every real peer and hid the whole friend pool.
