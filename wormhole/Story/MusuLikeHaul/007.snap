@@ -1,0 +1,49 @@
+Snap:H
+  H:MusuLikeHaul,Run
+    A:MusuLikeHaul
+      self,round=9	{"mung":["age"]}
+      w:MusuLikeHaul,now=1788400000
+        self,round=9	{"mung":["age"]}
+        req:wrangle,eternal
+        testing
+          reached:step_2
+          asked,two_likes_one_jam,press_mints_no_heist,pressing_again_takes_it_back,and_again_asks_afresh,only_the_friend_is_owed
+          carried,one_mint,same_shape_as_the_button,busy_holder_waits,no_share_no_haul
+          soloed,waits_for_the_describe,one_track_not_the_album,starts_itself,takes_the_track_as_it_is,human_keep_untouched
+          settled,nothing_got_yet,arrival_retires_the_ask,only_the_unanswered_stands,settling_twice_marks_nothing
+          offed,the_x_calls_off_the_ask,a_called_off_ask_is_not_open,never_minted_back,the_heart_still_stands,arriving_anyway_unmarks_it
+          flew,nothing_yet_is_zero,preview_is_not_progress,bytes_are_progress,nothing_in_flight_is_null
+        Errlog
+          Err,sig:14lslw1,kind:error,where:req_do_fn:req,msg:f is not defined,n:1,count:9
+        MusuThem,pub:friendo
+          stock,pub:friendo
+            Record,id:r1,title:Track One,artist:Friendo
+            Record,id:r2,title:Track Two,artist:Friendo
+            Record,id:r3,title:Track Three,artist:Friendo,total=10
+              Preview,seq:0
+              Preview,seq:1
+              Preview,seq:2
+              Preview,seq:3
+              Preview,seq:4
+              Lossy,seq:0
+              Lossy,seq:1
+              Lossy,seq:2
+              Lossy,seq:3
+        MusuSelf,pub:me
+          stock,pub:me
+            Jam,with:friendo
+              Like,of:r2,title:Track Two,at=2
+              Like,of:r1,title:Track One,at=3
+              Grab,of:r1,title:Track One,at=4
+              Grab,of:r2,title:Track Two,at=5
+            Record,id:own1,title:Mine
+            Jam,with:me
+              Like,of:own1,title:Mine,at
+              Grab,of:own1,title:Mine,at=2
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:r1,title:Track One,path:Friendo/Track One.flac
+                Record,id:r2,title:Track Two
+          shop,pub:me
+            Heist:Track Three,seed:r3,pub:friendo,state:pulling,liked
+              Pick,ref:r3,landed

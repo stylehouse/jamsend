@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '3a601ec66c922767~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'd656fa7a98a0d76e~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1221,6 +1221,26 @@ Ra_pool_share_set(w, name, pct) {
     this.Ra_pool_caps_apply(w)
     return v
 },
+// Ra_pool_recent_on / _set — THE THIRD CHECKBOX (owner 2026-09-04: *"perhaps soundpooling also defaults on
+//  a [x] recent acquisitions"*).  On: a second compartment taking half the budget, drawing from the
+//   newlyadded ledger.  Off: it goes and the rolling one takes the room back, so the budget the human typed
+//    always means the same thing.  Two compartments is the most the one sentence can honestly describe.
+Ra_pool_recent_on(w) {
+    return this.Ra_pool_defs(w, 0).some((p) => p.name === 'recent' && p.take === 'recent') ? 1 : 0
+},
+Ra_pool_recent_set(w, on) {
+    if (on) {
+        if (this.Ra_pool_recent_on(w)) { return 0 }
+        this.Ra_pool_gang(w, 'recent', 'recent', null, 50)
+        return 1
+    }
+    if (!this.Ra_pool_recent_on(w)) { return 0 }
+    this.Ra_pool_drop(w, 'recent')
+    // rolling takes the room back.  Not "rescale what is left": with one compartment standing, anything
+    //  short of 100 silently shrinks the budget the human typed.
+    if (this.Ra_pool_defs(w, 0).some((p) => p.name === 'rolling')) { this.Ra_pool_share_set(w, 'rolling', 100) }
+    return 1
+},
 // Ra_pool_gang — declare (or top up) a compartment at `pct`, taking that share from the others in proportion.
 Ra_pool_gang(w, name, take, who, pct) {
     this.Ra_pool_define(w, String(name), take, 1, who)
@@ -1348,7 +1368,7 @@ Ra_pool_sources(w) {
 //   'taste' — the classic Like3/Grab2/Spin1 score, descending;  'liked' — liked tracks only, most-
 //    liked first;  'kept' — grabbed tracks only, most-kept first;  'latest' — the LAST %Jam session's
 //     tracks in encounter order (the ledger's own order stands in for recency without a clock).
-Ra_quarter_goal_pools(shelf, pools, sources, pool) {
+Ra_quarter_goal_pools(shelf, pools, sources, pool, recent) {
     let tally = this.Ra_quarter_tally(shelf)
     let taken = {}
     let goal = []
@@ -1379,6 +1399,16 @@ Ra_quarter_goal_pools(shelf, pools, sources, pool) {
             //  Nothing here mints a press or a pull — a radio pool fills at the RADIO, never at the steward.
             let hold = pool ? this.Ra_recs(pool).map((r) => String(r.sc.id || '')).filter(Boolean) : []
             ids = hold.slice(Math.max(0, hold.length - pd.cap))
+        } else if (pd.take === 'recent') {
+            // WHAT LANDED ON THE SHARE LATELY (Acquisition_todo §4).  The one pool input whose source is
+            //  already durable, ordered and free to read: the newlyadded ledger, mirrored to bare ids by
+            //   Heist_newly_mirror on the same slow beat that reads it.  It closes the loop the owner drew
+            //    — heist it on the desktop, hear it on the bus — and it CHOOSES nothing: the choosing was
+            //     done when you took the track.  Newest first; the cap trims the tail, so a big evening's
+            //      haul displaces last month's rather than the other way round.
+            //  Ids the library no longer holds fall out on their own (Ra_quarter_diff resolves against the
+            //   shelf), so a scrubbed track does not haunt this compartment.
+            ids = (recent || []).slice()
         } else if (pd.take === 'latest') {
             let jams = shelf.o({ Jam: 1 })
             let last = jams.length ? jams[jams.length - 1] : null
@@ -1447,7 +1477,10 @@ Ra_quarter_diff(goal, pool, lib) {
 //   drop — "a good stash stays the stash"), and a want whose reason left the diff is dropped (served
 //    or displaced — either way stale).  Returns {goal, diff, wants} for a Book or a face.
 Ra_quarter(w, shelf, pool, lib, cap, sources) {
-    let goal = this.Ra_quarter_goal_pools(shelf, this.Ra_pool_defs(w, cap), sources, pool)
+    // the arrivals mirror is read HERE rather than inside the goal builder, which must stay pure and
+    //  world-less (every pool fixture calls it directly with hand-built pools).
+    let recent = this.Heist_newly_ids ? this.Heist_newly_ids(w) : []
+    let goal = this.Ra_quarter_goal_pools(shelf, this.Ra_pool_defs(w, cap), sources, pool, recent)
     let diff = this.Ra_quarter_diff(goal, pool, lib)
     let out = w.oai({ Provisions: 1 })
     out.c.up = w

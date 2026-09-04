@@ -2,9 +2,16 @@
     // PoolFace — the %Pooling CELL as ONE SENTENCE (owner 2026-09-03, the final cut):
     //   "SoundPool keeps rolling [ 300 ] MB of music in browser storage, sourced from [ ] friends (less
     //    predictable) and [x] crew (your devices, see Door)"
-    //  One number, two checkboxes.  0 MB = off (Ra_pool_off cleans out).  A number = on (Ra_pool_start —
-    //   consent, budget, one rolling random compartment).  The checkboxes are `who`.  "then one day we can point
+    //  One number, three checkboxes.  0 MB = off (Ra_pool_off cleans out).  A number = on (Ra_pool_start —
+    //   consent, budget, one rolling random compartment).  The first two are `who`.  "then one day we can point
     //    it places".  Face contract: { n: TheC, H: House }; every read re-derives off H.version.
+    //  ── AND [x] RECENT ACQUISITIONS (owner 2026-09-04: *"perhaps soundpooling also defaults on a [x] recent
+    //   acquisitions"*).  A second compartment taking half the budget, drawn from the newlyadded ledger: what
+    //    landed on your share lately also gets a lofi copy on the phone.  Heist it on the desktop, hear it on
+    //     the bus.  THE DEFAULT LIVES HERE, not in Ra_pool_start, because it is a fact about the sentence
+    //      rather than about the machine — Ra_pool_start stays the one-compartment door it says it is, and
+    //       every pool fixture keeps meaning what it meant.  It is only defaulted at a FIRST yes; after that
+    //        the checkbox is the human's and is never re-asserted under them.
     let { n, H } = $props()
     let pose = $derived.by(() => { void H?.version; return String(n?.c?.pose ?? 'big') })
     let small = $derived(pose === 'small')
@@ -14,6 +21,7 @@
     let consent = $state(false)
     let budget = $state(0)
     let who = $state('crew')
+    let recent = $state(true)
     let pooled = $state(0)
     let free_gb = $state<number | null>(null)
     $effect(() => {
@@ -24,6 +32,9 @@
             consent = !!H.Ra_pool_consent?.(w)
             budget = +(H.Ra_pool_budget?.(w) || 0)
             who = String(H.Ra_pool_who?.(w) || 'crew')
+            // before the first yes there is no compartment to read, so the checkbox shows the DEFAULT it
+            //  will act on; afterwards it shows what actually stands.
+            recent = consent ? !!H.Ra_pool_recent_on?.(w) : true
             const pub = H.Radio_pub?.(w) || 'me'
             const shelf = w.o({ MusuPool: 1, pub })[0]?.o({ stock: 1, pub })[0] ?? null   // probed, never minted
             pooled = shelf && H.Ra_recs ? (H.Ra_recs(shelf) as any[]).length : 0
@@ -45,7 +56,13 @@
         try {
             if (draft === 0) { if (consent) { const p = H.Ra_pool_off?.(w); if (p && p.then) p.then(bump, bump); else bump() } }
             else if (consent) { H.Ra_pool_budget_set?.(w, draft); bump() }
-            else { H.Ra_pool_start?.(w, draft, Math.floor(Date.now() / 1000), who); bump() }
+            else {
+                H.Ra_pool_start?.(w, draft, Math.floor(Date.now() / 1000), who)
+                // the FIRST yes is where the default is applied — one act, so a person who unticked it
+                //  before typing a number gets what they asked for and not what we assumed.
+                if (recent) { H.Ra_pool_recent_set?.(w, 1) }
+                bump()
+            }
         } catch {}
     }
     function set_who(f: boolean, c: boolean) {
@@ -53,6 +70,11 @@
         const next = f && c ? 'all' : f ? 'friends' : c ? 'crew' : 'none'
         who = next
         try { if (consent) { H.Ra_pool_start?.(w, budget, Math.floor(Date.now() / 1000), next); bump() } } catch {}
+    }
+    function set_recent(on: boolean) {
+        const w = world(); if (!w) return
+        recent = on
+        try { if (consent) { H.Ra_pool_recent_set?.(w, on ? 1 : 0); bump() } } catch {}
     }
     const num = (e: Event) => +((e.currentTarget as HTMLInputElement).value)
 </script>
@@ -66,8 +88,9 @@
             <input class="pf-mb" type="number" min="0" step="100" value={draft} onchange={(e) => set_mb(num(e))} title="megabytes of music to keep — 0 switches it off and clears it out" />
             MB of music in browser storage{#if free_gb != null} <span class="pf-dim">({free_gb} GB free)</span>{/if}, sourced from
             <label class="pf-ck"><input type="checkbox" checked={friends} onchange={(e) => set_who((e.currentTarget as HTMLInputElement).checked, crew)} /> friends <span class="pf-dim">(less predictable)</span></label>
+            <label class="pf-ck"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => (H as any)?.Sounditron_focus?.('Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>
             and
-            <label class="pf-ck"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => (H as any)?.Sounditron_focus?.('Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>{#if consent}<span class="pf-dim"> · {pooled} pooled so far</span>{/if}
+            <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label>{#if consent}<span class="pf-dim"> · {pooled} pooled so far</span>{/if}
         </p>
     </div>
 {/if}

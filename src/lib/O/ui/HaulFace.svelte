@@ -89,30 +89,46 @@
         const dayAgo = Math.floor(Date.now() / 1000) - 86400
         const today = albums.filter((a) => a.at >= dayAgo)
 
-        // ── the live half.  `keep` is the PARTICLE, carried on the row so a press acts on the object
-        //  rather than on a name — the whole point of the ways-through (all %Heists share a mainkey, so a
-        //   string could not have addressed one of five; the same reason `focused_keep` exists at all).
-        const keeps: any[] = A?.Heist_live_rows?.(W) ?? []
-        const live = keeps.map((k: any) => {
-            const g = A?.Heist_keep_gist?.(k) ?? { word: '', live: 1, form: 0, landed: 0, total: 0 }
-            return {
-                keep: k,
-                key: String(k.sc.seed || k.sc.Heist || ''),
-                name: String(k.sc.Heist || k.sc.seed || 'heist'),
-                // NB no `from` — who gave it to you is deliberately unrecorded (the newlyadded log's own
-                //  rule, restated by the owner 2026-08-11: *"just the destination directory and when, not
-                //   who it came from"*).  A live heist DOES know its source, but showing it here and not on
-                //    the landed row below would make the list say two different things about one album.
-                word: String(g.word || ''),
-                form: !!g.form,
-                paused: !!k.sc.paused,
-                landed: +(g.landed || 0),
-                total: +(g.total || 0),
-                // the unity, if the record knew it — the count the form leads with, so the list and the
-                //  form cannot quote different sizes for the same folder.
-                unN: +(k.sc.un_n || 0),
-            }
-        }).filter((r: any) => String(r.keep.sc.state || 'primed') !== 'done')
+        // ── THE LIVE HALF, GROUPED BY WHO IS BRINGING IT (the owner 2026-09-04: *"they have to be per
+        //  Pier"*).  The cell used to list keeps, then albums, and a human reading it could not answer the
+        //   question they arrived with — *"what is happening with the track I just liked?"*.  Both halves
+        //    were organised by the machine's unit (a %Heist, a folder) rather than by the human's: WHO is
+        //     bringing me WHAT.  `Heist_haul_piers` is that grouping, and it also surfaces the half that
+        //      was invisible entirely — the ♥s still waiting their turn behind the one running.
+        //  `keep` is the PARTICLE, carried on the row so a press acts on the object rather than on a name
+        //   (all %Heists share a mainkey, so a string could not have addressed one of five).
+        const me = A?.Radio_pub?.(W) ?? null
+        const piers = (A?.Heist_haul_piers?.(W, me) ?? []).map((row: any) => ({
+            dj: String(row.dj || ''),
+            name: String(row.name || row.dj || 'them'),
+            keeps: (row.keeps ?? []).map((k: any) => {
+                const g = A?.Heist_keep_gist?.(k) ?? { word: '', live: 1, form: 0, landed: 0, total: 0 }
+                // the BYTES of the track actually in flight, not the tracks of the album (Heist_keep_flight
+                //  — a ♥ keep has one pick, so landed_n/total_n reads 0% until it reads 100%).
+                const fl = A?.Heist_keep_flight?.(W, k) ?? null
+                return {
+                    keep: k,
+                    key: String(k.sc.seed || k.sc.Heist || ''),
+                    name: String(k.sc.Heist || k.sc.seed || 'heist'),
+                    word: String(g.word || ''),
+                    form: !!g.form,
+                    paused: !!k.sc.paused,
+                    liked: !!k.sc.liked,
+                    landed: +(g.landed || 0),
+                    total: +(g.total || 0),
+                    // the unity, if the record knew it — the count the form leads with, so the list and the
+                    //  form cannot quote different sizes for the same folder.
+                    unN: +(k.sc.un_n || 0),
+                    pct: fl && fl.total > 0 ? fl.pct : 0,
+                    flying: !!(fl && fl.total > 0),
+                }
+            }),
+            // a ♥ that has not been carried yet.  Not a control: the verb that removes it is the ✕ on the
+            //  keep it becomes, and un-liking belongs on the Radio where the ♥ was pressed.
+            waiting: (row.waiting ?? []).map((l: any) => ({ of: String(l.sc.of || ''), title: String(l.sc.title || l.sc.of || '') })),
+        })).filter((r: any) => r.keeps.length || r.waiting.length)
+        const live = piers.flatMap((p: any) => p.keeps)
+        const waitingN = piers.reduce((s: number, p: any) => s + p.waiting.length, 0)
 
         // HOW MANY ALBUMS THERE REALLY ARE, which is NOT `albums.length`.  `Heist_haul_look` whittles the
         //  bag to the newest 40 (`Heist_haul_keep`) so the slow beat cannot re-mint and re-drop hundreds of
@@ -124,6 +140,7 @@
 
         return {
             albums, tracks, nAll, today: today.length, todayTracks: today.reduce((s, a) => s + a.tracks, 0),
+            piers, waitingN,
             // (no `anyPausable` — it was minted for a "pause all" that has not been asked for.  A derive
             //  nothing renders is a fact thrown away every pass; if pause-all lands, it wants a real verb
             //   on the ghost, not a boolean here.  See [[derived-in-a-face-is-a-fact-thrown-away]].)
@@ -152,6 +169,9 @@
     //  `.c` never bumps, so it is the 1s tick that keeps this live — same as everything else here.
     let bud = $derived.by(() => { void H?.version; void tick; return String((n as any)?.c?.pose ?? '') === 'small' })
 
+    // the landed half starts FOLDED: it is the archive, and the cell exists to answer "is my track
+    //  coming".  Per-viewer, per-session — a preference this small is not worth a particle.
+    let open_landed = $state(false)
     let arm = $state('')
     $effect(() => { void tick; if (arm && !face.live.some((r: any) => r.key === arm)) arm = '' })
     function cancel(row: any) {
@@ -175,38 +195,65 @@
              cell is empty, and says it better (it says what WOULD be here).  Two ways of saying nothing
              happened is the cheapest kind of furniture and the easiest to miss. -->
         <span class="hf-sub">
-            {#if face.live.length}{face.live.length} on the go{:else if face.today}{face.todayTracks} track{face.todayTracks === 1 ? '' : 's'} today{:else if face.tracks}{face.tracks} track{face.tracks === 1 ? '' : 's'} kept{/if}
+            {#if face.live.length}{face.live.length} on the go{#if face.waitingN}, {face.waitingN} waiting{/if}{:else if face.waitingN}{face.waitingN} waiting on a share{:else if face.today}{face.todayTracks} track{face.todayTracks === 1 ? '' : 's'} today{:else if face.tracks}{face.tracks} track{face.tracks === 1 ? '' : 's'} kept{/if}
         </span>
     </div>
 
-    {#if face.live.length}
-        <div class="hf-list hf-live">
-            {#each face.live as r (r.key)}
-                <!-- THE ROW IS THE DOOR.  The name is the button; the verbs sit to its right and stop the
-                     press from bubbling, so "open it" and "call it off" can never be the same click. -->
-                <div class="hf-row hf-liverow" class:paused={r.paused}>
-                    <button class="hf-open" onclick={() => open(r.keep)} title="open this heist">
-                        <!-- the name carries its OWN title, the landed row's idiom: an album folder is
-                             routinely longer than 320px and the name is what elides, so hovering the
-                             elided thing has to show the thing (hovering anywhere else still offers the
-                             door's own tooltip — the innermost title wins). -->
-                        <span class="hf-name" title={r.name}>{r.name}</span>
-                        <span class="hf-state">{r.word}{#if !r.form && r.total}&nbsp;{r.landed}/{r.total}{:else if r.form && r.unN}&nbsp;{r.unN} track{r.unN === 1 ? '' : 's'}{/if}</span>
-                    </button>
-                    <span class="hf-acts">
-                        {#if r.paused}
-                            <button class="hf-b" onclick={() => resume(r.keep)} title="carry on with this one">▶</button>
-                        {:else}
-                            <button class="hf-b" onclick={() => pause(r.keep)} title="not now — it keeps its place and everything you set up">⏸</button>
-                        {/if}
-                        {#if face.live.length > 1}
-                            <button class="hf-b" onclick={() => first(r.keep)} title="run this one before the others">↑</button>
-                        {/if}
-                        <button class="hf-b hf-x" class:armed={arm === r.key}
-                                onclick={() => cancel(r)}
-                                title={arm === r.key ? 'press again to call it off — anything already landed stays' : 'call this heist off'}
-                        >{arm === r.key ? 'sure?' : '✕'}</button>
-                    </span>
+    {#if face.piers.length}
+        <div class="hf-live">
+            {#each face.piers as p (p.dj)}
+                <!-- WHO, then WHAT.  The holder's name is the heading rather than a column on each row:
+                     the question this cell answers is "is my track coming", and the answer is a person. -->
+                <div class="hf-pier">
+                    <span class="hf-who" title={p.dj}>{p.name}</span>
+                    <span class="hf-owed">{p.keeps.length + p.waiting.length} coming</span>
+                </div>
+                <div class="hf-list">
+                    <!-- THE ROW IS THE DOOR.  The name is the button; the verbs sit to its right and stop
+                         the press bubbling, so "open it" and "call it off" can never be the same click. -->
+                    {#each p.keeps as r (r.key)}
+                    <div class="hf-row hf-liverow" class:paused={r.paused}>
+                        <button class="hf-open" onclick={() => open(r.keep)} title="open this heist">
+                            <!-- the name carries its OWN title, the landed row's idiom: an album folder is
+                                 routinely longer than 320px and the name is what elides, so hovering the
+                                 elided thing has to show the thing (hovering anywhere else still offers the
+                                 door's own tooltip — the innermost title wins). -->
+                            <span class="hf-name" title={r.name}>{r.name}</span>
+                            <span class="hf-state">{r.word}{#if !r.form && r.total}&nbsp;{r.landed}/{r.total}{:else if r.form && r.unN}&nbsp;{r.unN} track{r.unN === 1 ? '' : 's'}{/if}</span>
+                        </button>
+                        <span class="hf-acts">
+                            {#if r.paused}
+                                <button class="hf-b" onclick={() => resume(r.keep)} title="carry on with this one">▶</button>
+                            {:else}
+                                <button class="hf-b" onclick={() => pause(r.keep)} title="not now — it keeps its place and everything you set up">⏸</button>
+                            {/if}
+                            {#if face.live.length > 1}
+                                <button class="hf-b" onclick={() => first(r.keep)} title="run this one before the others">↑</button>
+                            {/if}
+                            <button class="hf-b hf-x" class:armed={arm === r.key}
+                                    onclick={() => cancel(r)}
+                                    title={arm === r.key ? 'press again to call it off — anything already landed stays' : 'call this heist off'}
+                            >{arm === r.key ? 'sure?' : '✕'}</button>
+                        </span>
+                    </div>
+                    <!-- HOW FAR THE TRACK ITSELF HAS COME (Heist_keep_flight): the bytes of the file in
+                         flight, off the %Record's own body chunks — NOT its %Preview chunks, which are the
+                         streaming copy you already heard and would report every heist as finished.  Only
+                         drawn once the source has promised a size; a keep still describing has no bar. -->
+                    {#if r.flying}<div class="hf-bar"><div class="hf-bar-fill" style="width:{r.pct}%"></div></div>{/if}
+                    {/each}
+
+                    <!-- THE ASKS NOT YET CARRIED.  These used to be nowhere: the ♥ minted a heist or it
+                         minted nothing, so a like on a busy friend simply vanished and you had to trust it.
+                         They carry no verb — the ✕ lives on the keep this becomes, and un-liking belongs on
+                         the Radio where the ♥ was pressed — so they are deliberately quiet rows. -->
+                    {#each p.waiting as q (q.of)}
+                        <div class="hf-row hf-wait">
+                            <span class="hf-heart">♥</span>
+                            <span class="hf-name" title={q.title}>{q.title}</span>
+                            <span class="hf-when">waiting</span>
+                        </div>
+                    {/each}
                 </div>
             {/each}
         </div>
@@ -221,9 +268,17 @@
     {:else}
         <!-- the two tenses need one word between them, and only when both are on screen: with nothing in
              flight the ✓ header already says what the list is. -->
-        {#if face.live.length}<div class="hf-sep">landed</div>{/if}
+        <!-- THE LANDED LIST IS HISTORY, AND IT FOLDS (the owner 2026-09-04: *"do I need this LANDED list
+             of things we downloaded there?  I was looking for word on what was happening with my recently
+             Liked track"*).  It was answering "what do I have", which the library answers better, while
+             pushing the thing you came for off the bottom.  Three rows and a press: the news stays, the
+             archive stops competing with it.  Not deleted — it is the only place that says WHEN. -->
+        <button class="hf-sep hf-sepb" onclick={() => (open_landed = !open_landed)}
+                title={open_landed ? 'fold the landed list away' : 'what has landed here lately'}>
+            landed<span class="hf-fold">{open_landed ? '▾' : '▸'}</span>
+        </button>
         <div class="hf-list">
-            {#each face.albums.slice(0, 12) as a (a.key)}
+            {#each face.albums.slice(0, open_landed ? 12 : 3) as a (a.key)}
                 <div class="hf-row" class:fresh={a.fresh}>
                     <span class="hf-n">{a.tracks}</span>
                     <span class="hf-name" title={a.key}>
@@ -235,8 +290,8 @@
             <!-- counted off `nAll`, not off the rendered list: the bag itself is capped at 40, so
                  `albums.length - 12` was an overflow line bounded by a cap it never mentioned — it would
                  sit at "…and 28 more" for ever while the real number climbed past 300. -->
-            {#if face.nAll > 12}
-                <div class="hf-more">…and {face.nAll - 12} more</div>
+            {#if face.nAll > (open_landed ? 12 : 3)}
+                <div class="hf-more">…and {face.nAll - (open_landed ? 12 : 3)} more</div>
             {/if}
         </div>
     {/if}
@@ -314,6 +369,30 @@
        them apart without reading. Warm pink is the heist colour everywhere else in this app (kf-title),
        so the cell borrows it rather than inventing a third vocabulary. */
     .hf-badge.going { color: #e8a9c0; }
+    /* WHO IS BRINGING IT.  A heading, not a column: repeating "from Lefto" on four rows spends four times
+       the room to say one thing, and the thing it says is the grouping itself. */
+    .hf-pier {
+        display: flex; align-items: baseline; gap: 6px; justify-content: space-between;
+        font-size: 9.5px; letter-spacing: 0.04em; margin-top: 4px;
+    }
+    .hf-who { color: #e8a9c0; font-weight: 600; pointer-events: auto; }
+    .hf-owed { color: rgba(150, 170, 200, 0.5); font-size: 8.5px; white-space: nowrap; }
+    /* a ♥ that has not been carried yet — quiet by construction: it is a promise, not an event. */
+    .hf-wait { grid-template-columns: 1rem 1fr auto; opacity: 0.7; }
+    .hf-heart { color: rgba(232, 169, 192, 0.7); font-size: 9px; text-align: center; }
+    /* the byte bar.  2px and no label: the number is on the row already, this is the thing you read
+       without reading.  Inside the row's own indent so it reads as belonging to the row above it. */
+    .hf-bar { height: 2px; border-radius: 1px; background: rgba(232, 169, 192, 0.14); margin: 0 2px 3px; }
+    .hf-bar-fill { height: 100%; border-radius: 1px; background: rgba(232, 169, 192, 0.62); transition: width 0.3s linear; }
+    /* the separator is a BUTTON now, so it needs the pointer back and must not inherit the flex row's
+       button chrome.  ::after still runs the rule out to the cell edge. */
+    .hf-sepb {
+        pointer-events: auto; cursor: pointer; width: 100%;
+        background: none; border: 0; padding: 0; font: inherit;
+        font-size: 8.5px; letter-spacing: 0.09em; text-transform: uppercase;
+    }
+    .hf-sepb:hover { color: rgba(180, 200, 225, 0.7); }
+    .hf-fold { margin-left: 4px; font-size: 9px; }
     /* THE TENSES DIFFER IN SHAPE, NOT ONLY IN COLOUR.  Pink-vs-grey is the right vocabulary but it is a
        weak tell on the rim, where this cell is a bud a few dozen pixels tall and half of it is read at a
        glance from across the glass (and no tell at all for a colour-blind eye).  A rail down the live

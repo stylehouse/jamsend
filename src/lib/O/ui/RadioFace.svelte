@@ -64,7 +64,14 @@
             // the heist gesture's ✓ tell (the human 2026-07-28 "keep what you're hearing"): Radio_keep
             //  stamps n.c.kept[seed] (runtime, never snapped) so the ⇊ reads back as kept for this track.
             keptThis: !!(n?.c?.kept && n?.c?.rec?.sc?.id && n.c.kept[n.c.rec.sc.id]),
-            likedThis: !!(n?.c?.liked && n?.c?.rec?.sc?.id && n.c.liked[n.c.rec.sc.id]),
+            // THE ♥ READS THE LEDGER, not a runtime mirror (2026-09-04).  `n.c.liked` dies with the process,
+            //  so after a reload the heart went hollow while the ask it stood for was still standing — the
+            //   button saying the opposite of the durable truth.  The mirror stays as the instant tell on
+            //    the press itself (the ledger probe is a walk; the mirror is already in hand).
+            likedThis: !!(
+                (n?.c?.liked && n?.c?.rec?.sc?.id && n.c.liked[n.c.rec.sc.id]) ||
+                (n?.sc?.by && n?.c?.rec?.sc?.id && (H as any)?.Heist_want_liked?.(n?.c?.w, (H as any)?.Radio_pub?.(n?.c?.w), n.sc.by, n.c.rec.sc.id))
+            ),
         }
     })
 
@@ -151,7 +158,7 @@
         </div>
         {#if face.by}
             <button class="rf-btn rf-like" class:liked={face.likedThis} onclick={() => { (H as any)?.Radio_like?.(n) }}
-                title={face.likedThis ? 'liked — on your ledger, and heisting in the background if this device has a share' : 'like this — on your ledger; with a share the album heists in the background, without one your crew or your pool lives it out'}>{face.likedThis ? '♥' : '♡'}</button>
+                title={face.likedThis ? 'liked — it comes when this friend\'s turn comes round (see Haul)' : 'like this — the track is asked for and fetched one at a time per friend'}>{face.likedThis ? '♥' : '♡'}</button>
 <!-- (the ⇊ keep button folded into ♥ — owner 2026-09-03: "turn the heist button into the like button") -->
         {/if}
     </div>

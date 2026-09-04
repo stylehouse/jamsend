@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'f13b4a4c83b8b2fd~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'fcb279727e710b14~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2448,6 +2448,12 @@ async Heist_keep_beat(w, ident) {
     }
     w.c.keep_beat_at = 'defaults'
     try { await this.Heist_defaults_rehydrate(nav, ident) } catch (er) {}
+    // THE ♥ LEDGER, LIVED OUT (Acquisition_todo §2).  Here rather than earlier because it MINTS into the
+    //  same shop the loop below walks, and a keep minted after the loop would idle a whole beat before its
+    //   first step.  Bounded to one mint per pass and one live keep per holder inside; nav-gated, so a Book
+    //    (which has no Crate_nav) never spontaneously grows a heist out of a seeded Jam.
+    w.c.keep_beat_at = 'wants'
+    try { await this.Heist_want_beat(w, rw, ident, me, nav, shop) } catch (er) {}
     // the SOURCE side's own reload recovery: read the durable keep-memo back once, and mirror out whatever
     //  this beat's materialises learned.  Its own gate (humdinger, nav, strikes) is inside; it is put here,
     //   beside the two rehydrates, because this is the one place per beat that already holds nav + me.
@@ -2690,7 +2696,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         //      the playhead → the seed is no longer "playing" → the keep auto-flipped into the downloading view
         //       (and a natural track-end skipped the form the same way).  Independent of track-skip by design.
         //  …EXCEPT a pool keep, which nobody pressed and which has no form to skip (Heist_keep_pool_go).
-        if (String(keep.sc.into || '') === 'pool') { this.Heist_keep_pool_go(keep, srcmir, seed) }
+        if (String(keep.sc.into || '') === 'pool') { this.Heist_keep_pool_go(keep, srcmir, seed) } else if (keep.sc.liked) { this.Heist_keep_like_go(keep, srcmir, seed) }
         return
     }
     if (state === 'pulling') {
@@ -3305,11 +3311,16 @@ Heist_keep_spawn_tag(keep) {
 //   `pick_edited` then holds the narrowing against later describe answers — the pool did make a deliberate
 //    choice, which is exactly what that latch records.
 //  Returns 1 on the beat it starts, else 0.  Idempotent: once pulling, this verb is never reached again.
-Heist_keep_pool_go(keep, srcmir, seed) {
-    if (String(keep.sc.into || '') !== 'pool') { return 0 }
-    if (!keep.sc.lofi) { keep.sc.lofi = 1; keep.bump() }
+// Heist_keep_solo — PRUNE A DESCRIBED FOLDER DOWN TO THE ONE TRACK THAT WAS ASKED FOR.  The default
+//  (Heist_keep_default_pick) adopts the WHOLE describe, which is right for an album and wrong for a track,
+//   and TWO callers now want the track: a pool keep (which takes a track, never an album) and a ♥ keep
+//    (a Like is a track — Acquisition_todo §2).  It was written inside the pool's own starter; a second
+//     copy in the like path would be the same prune with a different bug in it, so it comes out here.
+//  Returns the number of siblings left behind, or -1 when the seed's own husk has not landed yet — which
+//   is a WAIT, not a failure: both callers must leave the keep alone and try again next beat.
+Heist_keep_solo(keep, seed) {
     let sid = String(seed)
-    if (!keep.o({ Pick: 1, ref: sid })[0]) { return 0 }   // the seed's own husk has not landed yet — wait
+    if (!keep.o({ Pick: 1, ref: sid })[0]) { return -1 }
     let cut = 0
     for (const p of keep.o({ Pick: 1 })) {
         if (String(p.sc.ref || '') === sid) { continue }
@@ -3317,9 +3328,33 @@ Heist_keep_pool_go(keep, srcmir, seed) {
         cut = cut + 1
     }
     if (!keep.sc.pick_edited) { keep.sc.pick_edited = 1; keep.bump() }
+    return cut
+
+},
+Heist_keep_pool_go(keep, srcmir, seed) {
+    if (String(keep.sc.into || '') !== 'pool') { return 0 }
+    if (!keep.sc.lofi) { keep.sc.lofi = 1; keep.bump() }
+    let cut = this.Heist_keep_solo(keep, seed)
+    if (cut < 0) { return 0 }   // the seed's own husk has not landed yet — wait
     keep.sc.state = 'pulling'
     keep.bump()
-    console.log('🏊▶ pooling ' + String(keep.sc.Heist || sid).slice(0, 32) + ' — one track, lofi' + (cut ? ' (' + cut + ' folder sibling(s) left behind — a pool takes the track, not the album)' : ''))
+    console.log('🏊▶ pooling ' + String(keep.sc.Heist || seed).slice(0, 32) + ' — one track, lofi' + (cut ? ' (' + cut + ' folder sibling(s) left behind — a pool takes the track, not the album)' : ''))
+    return 1
+
+},
+// Heist_keep_like_go — A ♥ KEEP HAS NO FORM AND NO HUMAN EITHER (the owner 2026-09-03: *"turn the heist
+//  button into the like button … but have it do the Heist in the background"*).  The pool's twin, one
+//   difference: the pool forces `lofi` because a phone's rolling copy is a rendition, while a ♥ takes the
+//    listener's own remembered setting — you asked for the TRACK, not for a smaller version of it.
+Heist_keep_like_go(keep, srcmir, seed) {
+    if (!keep.sc.liked) { return 0 }
+    if (String(keep.sc.into || '') === 'pool') { return 0 }
+    let cut = this.Heist_keep_solo(keep, seed)
+    if (cut < 0) { return 0 }
+    keep.sc.state = 'pulling'
+    if (keep.sc.dose) { delete keep.sc.dose }
+    keep.bump()
+    console.log('♥⇊ ' + String(keep.sc.Heist || seed).slice(0, 32) + ' — the track you liked' + (cut ? ' (' + cut + ' folder sibling(s) left behind)' : ''))
     return 1
 
 },
@@ -4173,6 +4208,10 @@ async Heist_keep_cancel(w, keep) {
     //    on that seed in the Berth, not on the %Heist standing — dropping first cannot orphan it.
     shop.rm({ Heist: 1, seed: keep.sc.seed })
     this.Heist_blag_drop(keep.sc.seed)
+    // A ♥ KEEP'S ✕ CALLS OFF THE ASK TOO, or the wants beat mints it straight back next pass and the
+    //  button reads as broken by doing exactly what it was told (Heist_want_off marks the %Like, never
+    //   deletes it — you did like the track, and it un-marks if the thing turns up anyway).
+    if (keep.sc.liked && keep.sc.pub && keep.sc.seed) { try { this.Heist_want_off(w, keep.sc.pub, keep.sc.seed) } catch (er) {} }
     // THE GLASS REACTS ON THE GESTURE, NOT ON THE POLL (the owner 2026-08-09: "make the cell layout
     //  react to that being clicked more immediately").  The rm above changes the keep set, but the
     //   only thing watching the keep set was the trickle's ≤2.5s poll — so a confirmed cancel dropped
@@ -4463,6 +4502,7 @@ async Heist_haul_look(w, nav, mardir) {
     let bag = w.oai({ Hauls: 1, dontSnap: 1 })
     bag.c.up = w
     if (bag.sc.n_all !== String(all.length)) { bag.sc.n_all = String(all.length); bag.bump() }
+    this.Heist_newly_mirror(w, all)
     let live = new Set()
     let n = 0
     for (const g of groups) {
@@ -4488,6 +4528,53 @@ async Heist_haul_look(w, nav, mardir) {
     // a dropped album leaves the list — the ledger is the truth, this bag only mirrors it
     for (const row of bag.o({ Haul: 1 })) { if (!live.has(String(row.sc.dir || ''))) bag.drop(row) }
     return n
+
+},
+// Heist_newly_mirror — THE NEWEST ARRIVALS, AS BARE IDS, WHERE A SYNC READER CAN SEE THEM (Acquisition_todo
+//  §4 — the owner: *"perhaps soundpooling also defaults on a [x] recent acquisitions"*).
+//  The pool's goal builder (Ra_quarter_goal_pools) is deliberately SYNCHRONOUS and clockless — it is what
+//   every pool fixture is written against — while the newlyadded ledger is a disk read.  The two cannot meet
+//    directly, and stamping arrival order onto the library card instead would move every landing fixture in
+//     the app for a field only one compartment reads.  So the ledger is MIRRORED, in the one place per beat
+//      that already read it, onto the same dontSnap bag the album rows ride: no second disk read, no snap
+//       byte, nothing to keep in step.
+//  Newest first, capped: a pool wants "what came in lately", and a compartment that could name three hundred
+//   tracks would only ever draw the same handful anyway (the cap trims from the front).
+//  ⚠ dontSnap and humdinger-gated by its CALLER — a Book has no collection ledger and must not grow one.
+Heist_newly_keep() {
+    return 60
+},
+Heist_newly_mirror(w, groups) {
+    let bag = w.o({ Hauls: 1 })[0]
+    if (!bag) { return 0 }
+    let cards = []
+    for (const g of (groups || [])) { for (const card of (g.cards || [])) { if (card.sc.id) { cards.push(card) } } }
+    cards.sort((a, b) => (+b.sc.seq || 0) - (+a.sc.seq || 0))
+    let keep = cards.slice(0, this.Heist_newly_keep())
+    let newly = bag.oai({ Newly: 1, dontSnap: 1 })
+    newly.c.up = bag
+    let live = {}
+    let n = 0
+    for (const card of keep) {
+        let id = String(card.sc.id)
+        live[id] = 1
+        let row = newly.oai({ Fresh: 1, of: id })
+        row.c.up = newly
+        let seq = String(+card.sc.seq || 0)
+        if (row.sc.seq !== seq) { row.sc.seq = seq; row.bump() }
+        n = n + 1
+    }
+    for (const row of newly.o({ Fresh: 1 })) { if (!live[String(row.sc.of || '')]) { newly.drop(row) } }
+    return n
+
+},
+// Heist_newly_ids — the mirrored arrivals, newest first.  Pure: `o` throughout, mints nothing, so the
+//  steward may ask on every sit-down and a world that never landed anything answers [].
+Heist_newly_ids(w) {
+    let bag = w ? w.o({ Hauls: 1 })[0] : null
+    let newly = bag ? bag.o({ Newly: 1 })[0] : null
+    if (!newly) { return [] }
+    return newly.o({ Fresh: 1 }).slice().sort((a, b) => (+b.sc.seq || 0) - (+a.sc.seq || 0)).map((r) => String(r.sc.of || '')).filter(Boolean)
 
 },
 // Heist_haul_rows — the bag, newest first, for a face.  Pure read: it mints NOTHING, because a reader
@@ -4588,6 +4675,272 @@ Heist_keep_gist(keep) {
     if (keep.c.no_route_ts) { g.word = 'waiting for ' + String(keep.sc.from_name || 'them'); return g }
     if (keep.c.queued_ts) { g.word = 'waiting its turn'; return g }
     return g
+
+},
+// ── BATCH ACQUISITION: ONE STANDING ASK PER HOLDER ─────────────────────────────────────────────────
+//  (the owner 2026-09-04: *"likes -> heists, but how and where, has become complex"* — Acquisition_todo §2.)
+//  Ten Likes across an evening from three friends used to be ten %Heists: ten describes, ten cells, ten rows
+//   racing the same three Piers.  The engine serialised them so it worked, but the SHAPE was wrong — the unit
+//    of acquisition is a track and the unit of relationship is a Pier, and nothing in the app said so.
+//
+//  ⚠ AND STILL NO SECOND STORE, for the third time in this file.  The obvious build was `%Haul,at:<pier>`
+//   carrying `%Want,of:<id>` children — and `%Haul` is ALREADY the landed-album row (`%Hauls > %Haul,dir:`),
+//    so that would have put two DIFFERENT SHAPES UNDER ONE MAINKEY, the exact tell CLAUDE.md names.  But the
+//     store was never needed: `%Jam,with:<dj>` has been the standing per-holder container since July, `%Like,
+//      of:<id>` IS the want, and `%Grab,of:<id>` IS the got-mark.  A batch acquisition is therefore not a new
+//       particle at all — it is a BEAT that reads the ledger that already exists, and the ♥ the human pressed
+//        stays the durable thing while the %Heist becomes an implementation detail of it.
+//
+//  THE LOOP, once per share beat: SETTLE (every liked track the collection now holds gets its %Grab, by
+//   whatever road it arrived) → then, per holder, at most ONE live keep, seeded on the oldest outstanding
+//    Like.  Idempotent by composition: a settled want stops being open, and a mint is vetoed by any keep
+//     already standing for that holder, so the beat re-runs forever at zero cost on a settled world.
+//
+//  %Grab WIDENS, DELIBERATELY.  Jam.g minted it for "the listener heisted a keeper copy"; it now means "I
+//   have this now", stamped by EVIDENCE (the collection holds the id) rather than by the road taken.  That
+//    is one meaning, not two — a Cave that hauled it for me, a pool press, a copy in by hand and a heist all
+//     answer the same question the ♥ asked — and inventing a fourth mainkey for "got it, but differently"
+//      would be the one-of-anything mistake wearing a hat.
+
+// Heist_wants_cap — how many keeps the ♥ may have standing at once, across every holder.  Not a transfer
+//  bound (that is `heist_inflight`, enforced in the beat): a bound on CELLS, so a like spree does not open
+//   twelve of them.  Three is "a couple going, one queued".
+Heist_wants_cap() {
+    return 3
+
+},
+// Heist_want_shelf — MY OWN STOCK SHELF, FOUND, never minted.  `Ra_home_self` is find-or-create and every
+//  reader here is called from a face poll or a beat, so going through it would conjure the shelf it is
+//   reporting on (the [[a-read-helper-inherits-creation]] shape, the same reason Heist_shop_find exists).
+//    One walk, five callers — it was copied out four times before this.
+Heist_want_shelf(rw, me) {
+    if (!rw || !me) { return null }
+    let home = rw.o({ MusuSelf: 1, pub: String(me) })[0]
+    return home ? (home.o({ stock: 1, pub: String(me) })[0] || null) : null
+
+},
+// Heist_want_liked — IS THIS TRACK ON MY LEDGER WITH THIS DJ?  The ♥ used to read a runtime mirror
+//  (`n.c.liked`) which dies with the process, so after a reload the heart went hollow while the ask it
+//   stood for was still standing — the face saying the opposite of the ledger.  Now that the Like IS the
+//    durable thing, the button has to read the durable thing.  Pure probe; mints nothing.
+Heist_want_liked(rw, me, dj, of) {
+    let mine = this.Heist_want_shelf(rw, me)
+    let jam = (mine && dj) ? mine.o({ Jam: 1, with: String(dj) })[0] : null
+    return (jam && of && jam.o({ Like: 1, of: String(of) })[0]) ? 1 : 0
+
+},
+// Heist_want_open — one holder's outstanding asks, oldest first: liked, not yet got, not called off.
+Heist_want_open(jam) {
+    if (!jam) { return [] }
+    let out = []
+    for (const like of jam.o({ Like: 1 })) {
+        let of = String(like.sc.of || '')
+        if (!of) { continue }
+        if (like.sc.off) { continue }
+        if (jam.o({ Grab: 1, of: of })[0]) { continue }
+        out.push(like)
+    }
+    return out.sort((a, b) => (+(a.sc.at || 0)) - (+(b.sc.at || 0)))
+
+},
+// Heist_want_jams — every holder I have an outstanding ask with, as [{dj, jam, open}].  Pure read: it
+//  finds, it never mints, so a face may call it every poll (Ra_home_self is find-or-CREATE, hence the `o`
+//   walk from the world here rather than a home call — the [[a-read-helper-inherits-creation]] shape).
+Heist_want_jams(rw, me) {
+    let out = []
+    let mine = this.Heist_want_shelf(rw, me)
+    if (!mine) { return out }
+    for (const jam of mine.o({ Jam: 1 })) {
+        let dj = String(jam.sc.with || '')
+        if (!dj || dj === String(me)) { continue }
+        let open = this.Heist_want_open(jam)
+        if (open.length) { out.push({ dj: dj, jam: jam, open: open }) }
+    }
+    return out
+
+},
+// Heist_want_settle — THE ASK IS ANSWERED BY THE COLLECTION, NOT BY THE HEIST.  Walk every open want and
+//  stamp its %Grab if the library now holds that id.  Deliberately not wired into Heist_catalog_land: a
+//   liked track can arrive by five roads (this heist, a Cave of my crew, a pool press, a re-census of a
+//    folder I copied in by hand, an album someone else's heist happened to bring) and a hook on ONE of them
+//     would leave the ask standing after four of the five — re-minting a keep for a track already on disk,
+//      forever.  Asking the collection is the road-blind question, and it is one `o()` per want.
+//  An answered want also un-marks a called-off one (`off`): the ♥ stands, the thing arrived, the ledger
+//   should read like it.  Returns how many marks it wrote.
+Heist_want_settle(rw, me) {
+    let n = 0
+    let mine = this.Heist_want_shelf(rw, me)
+    if (!mine) { return 0 }
+    for (const jam of mine.o({ Jam: 1 })) {
+        for (const like of jam.o({ Like: 1 })) {
+            let of = String(like.sc.of || '')
+            if (!of) { continue }
+            if (jam.o({ Grab: 1, of: of })[0]) { continue }
+            if (!this.Ra_rec_find(mine, { Record: 1, id: of })) { continue }
+            this.Jam_mark(jam, 'Grab', of, like.sc.title)
+            if (like.sc.off) { delete like.sc.off; like.bump() }
+            n = n + 1
+        }
+    }
+    return n
+
+},
+// Heist_want_off — THE ✕ ON A ♥ KEEP CALLS OFF THE ASK, not just the download.  Without this the want
+//  would still be open next beat and the beat would mint the keep straight back, so the button would read
+//   as broken by doing exactly what it was told.  It marks the %Like rather than deleting it: you did like
+//    the track, and `Heist_want_settle` clears the mark if the thing ever turns up anyway.
+Heist_want_off(w, dj, of) {
+    let rw = (this.top_House ? this.top_House().c.radio_w : null) || w
+    let me = this.Radio_pub ? this.Radio_pub(rw) : null
+    if (!dj || !of) { return 0 }
+    let mine = this.Heist_want_shelf(rw, me)
+    if (!mine) { return 0 }
+    let jam = mine.o({ Jam: 1, with: String(dj) })[0]
+    let like = jam ? jam.o({ Like: 1, of: String(of) })[0] : null
+    if (!like) { return 0 }
+    if (!like.sc.off) { like.sc.off = 1; like.bump() }
+    return 1
+
+},
+// Heist_want_keep — mint the %Heist one open want has earned.  Radio_keep's shape minus everything that
+//  belongs to a GESTURE: no `last_touch` (this keep must not steal the focus off whatever the human is
+//   actually looking at), no glass pop, no feebly_ponder — the beat that called this is already awake.
+//    `liked:1` is the tell that makes it start itself and take one track (Heist_keep_like_go).
+Heist_want_keep(w, rw, shop, dj, rec) {
+    let seed = String(rec.sc.id || '')
+    if (!seed || !shop) { return null }
+    if (shop.o({ Heist: 1, seed: seed })[0]) { return null }
+    let keep = shop.i({ Heist: this.Radio_clean(rec.sc.title || 'this'), seed: seed, pub: String(dj), state: 'primed', liked: 1 })
+    keep.c.up = shop
+    this.Heist_keep_born(keep, this.Swarm_now ? this.Swarm_now(w) : 0)
+    let nice = this.Radio_friendly ? this.Radio_friendly(rw, dj) : ''
+    if (nice) { keep.sc.from_name = nice }
+    if (rec.sc.artist) { keep.sc.artist = this.Radio_clean(rec.sc.artist) }
+    let dflt = this.Heist_defaults_get ? this.Heist_defaults_get() : {}
+    if (dflt && dflt.lofi) { keep.sc.lofi = 1 }
+    keep.bump()
+    console.log('♥⇊ hauling ' + String(keep.sc.Heist).slice(0, 32) + ' from ' + (nice || String(dj).slice(0, 8)))
+    return keep
+
+},
+// Heist_want_beat — the pass.  Settle first (an arrival must retire its want before anything is minted for
+//  it), then AT MOST ONE MINT: a like spree should open one cell now and the next one when that one is
+//   done, not twelve at once.  A holder already carrying a live keep is skipped entirely — that is the
+//    per-Pier serialisation the whole shape exists for.
+//  A want whose record is not in the friend's mirror is LEFT STANDING rather than dropped: they are away,
+//   or the mirror was swept between sessions.  The ask outliving the session is the point of a ledger.
+async Heist_want_beat(w, rw, ident, me, nav, shop) {
+    if (!nav || !rw || !me || !shop) { return 0 }
+    // ⚠ THE SETTLE IS A MAG WALK PER OPEN WANT, so it does NOT run every beat.  `Ra_rec_find` pages
+    //  through the library's %Mag, and this loop is (open wants × library pages) — on a 600ms share beat
+    //   with a real collection and a few dozen ♥s that is a steady tax for a question whose answer only
+    //    changes when a track LANDS.  Same event-driven-with-a-floor shape as the haul look a few lines
+    //     up: the library's own size is the cheap tell that something arrived, and the 20s floor catches
+    //      a replacement that left the count where it was.  `== null` makes the FIRST look happen (a
+    //       count of 0 and an unset cursor must not compare equal).
+    let mine0 = this.Heist_want_shelf(rw, me)
+    let mineN = mine0 ? this.Ra_recs(mine0).length : 0
+    //  The Date.now() here is SAFE ON A BOOK PATH, unusually: the settle is idempotent, so running it
+    //   more often or less often cannot move a snap by one byte — the clock only decides how much work is
+    //    done, never what is true.  A Book that needs the settle to have happened calls it directly.
+    if (rw.c.want_n == null || +rw.c.want_n !== mineN || Date.now() - (+(rw.c.want_ts || 0)) > 20000) {
+        rw.c.want_n = mineN
+        rw.c.want_ts = Date.now()
+        this.Heist_want_settle(rw, me)
+    }
+    let live = 0
+    for (const k of shop.o({ Heist: 1 })) { if (String(k.sc.state || 'primed') !== 'done') { live = live + 1 } }
+    if (live >= this.Heist_wants_cap()) { return 0 }
+    for (const row of this.Heist_want_jams(rw, me)) {
+        let busy = 0
+        for (const k of shop.o({ Heist: 1, pub: row.dj })) { if (String(k.sc.state || 'primed') !== 'done') { busy = 1 } }
+        if (busy) { continue }
+        let mir = rw.o({ MusuThem: 1, pub: String(row.dj) })[0]
+        let mirstock = mir ? mir.o({ stock: 1, pub: String(row.dj) })[0] : null
+        if (!mirstock) { continue }
+        for (const like of row.open) {
+            let of = String(like.sc.of || '')
+            if (!of || shop.o({ Heist: 1, seed: of })[0]) { continue }
+            let rec = this.Ra_rec_find(mirstock, { Record: 1, id: of })
+            if (!rec) { continue }
+            if (this.Heist_want_keep(w, rw, shop, row.dj, rec)) { return 1 }
+        }
+    }
+    return 0
+
+},
+// ── THE HAUL, PER PIER (the owner 2026-09-04: *"chaos … they have to be per Pier and know the Record
+//  particle itself (not the /Preview chunks)"*) ───────────────────────────────────────────────────────
+//  The cell listed keeps, then landed albums, and a human reading it could not answer the question they
+//   came with: *"what is happening with the track I just liked?"*.  Both halves were organised by the
+//    machine's unit (a %Heist, a folder) rather than by the human's: WHO is bringing me WHAT.
+
+// Heist_keep_flight — HOW FAR THE TRACK IN FLIGHT HAS COME, in bytes.  `landed_n/total_n` count PICKS,
+//  which is the right number for an album and a lie for a single track: a ♥ keep has one pick, so it
+//   reads 0% until the moment it reads 100%.  The honest number is on the RECORD — the whole-file %Body
+//    chunks that have accreted on the source's mirror card against the `total` it promised.
+//  ⚠ THE BODY CHUNKS, NOT THE PREVIEW ONES (the owner's own note).  A radio %Record carries %Preview /
+//   %Stream chunks in the SAME seq space — that is the streaming copy you are listening to, which is
+//    already complete and has nothing to do with the download.  Heist_has_body is mainkey-specific for
+//     exactly this reason; counting `o({seq:1})` would report a finished heist the moment the track
+//      finished playing.
+//  Returns null when nothing is in flight (a described-but-unstarted keep, or a finished one).
+Heist_keep_flight(rw, keep) {
+    if (!rw || !keep) { return null }
+    let live = null
+    for (const pick of keep.o({ Pick: 1 })) { if (!pick.sc.landed) { live = pick; break } }
+    if (!live) { return null }
+    let of = String(live.sc.ref || '')
+    let out = { of: of, title: String(live.sc.title || ''), got: 0, total: 0, pct: 0 }
+    let dj = String(keep.sc.pub || '')
+    let mir = dj ? rw.o({ MusuThem: 1, pub: dj })[0] : null
+    let stock = mir ? mir.o({ stock: 1, pub: dj })[0] : null
+    let rec = (stock && of) ? this.Ra_rec_find(stock, { Record: 1, id: of }) : null
+    if (!rec) { return out }
+    if (rec.sc.title) { out.title = String(rec.sc.title) }
+    out.total = +(rec.sc.total || 0)
+    out.got = this.Heist_has_body(rec)
+    if (out.total > 0) { out.pct = Math.min(100, Math.round(out.got / out.total * 100)) }
+    return out
+
+},
+// Heist_haul_piers — THE TAKE, GROUPED BY WHO IS BRINGING IT.  One row per holder I have anything from:
+//  the keeps actually running (in the beat's own order, so the list cannot claim a running order the
+//   machine does not have) and, under them, the asks still waiting — the ♥s that have not been carried
+//    yet, which used to be invisible entirely.
+//  Pure: `o` throughout, so a face may call it every poll.  A holder with neither is not a row.
+Heist_haul_piers(rw, me) {
+    let out = []
+    if (!rw || !me) { return out }
+    let rows = {}
+    let order = []
+    let at = (dj) => {
+        if (!rows[dj]) { rows[dj] = { dj: dj, name: (this.Radio_friendly ? this.Radio_friendly(rw, dj) : String(dj).slice(0, 8)), keeps: [], waiting: [] }; order.push(dj) }
+        return rows[dj]
+    }
+    for (const keep of this.Heist_live_rows(rw)) {
+        if (String(keep.sc.state || 'primed') === 'done') { continue }
+        // a keep with no `pub` has no holder to be a row of — it would open a nameless pier headed by the
+        //  first 8 characters of nothing.  Every minted keep carries one; this is the guard, not a case.
+        let dj = String(keep.sc.pub || '')
+        if (!dj) { continue }
+        at(dj).keeps.push(keep)
+    }
+    for (const jam of this.Heist_want_jams(rw, me)) {
+        let row = at(jam.dj)
+        for (const like of jam.open) { if (!this.Heist_haul_carrying(row, String(like.sc.of || ''))) { row.waiting.push(like) } }
+    }
+    for (const dj of order) { out.push(rows[dj]) }
+    return out
+
+},
+// Heist_haul_carrying — is this holder's row already showing that track as a running keep?  An ask being
+//  carried right now is not ALSO waiting, and saying it twice is how a list of four reads as a list of
+//   eight (the same double-count the pool cap had to learn about intent vs sediment).
+Heist_haul_carrying(row, of) {
+    if (!of) { return 0 }
+    for (const keep of row.keeps) { if (String(keep.sc.seed || '') === of) { return 1 } }
+    return 0
 
 },
 // ⚠ Heist_feel IS GONE (2026-08-13) — do not re-add it without a writer.

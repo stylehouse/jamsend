@@ -24,8 +24,8 @@ Snap:H
         Record,id:own1,title:Mine
         MusuSelf,pub:me
           shop,pub:me
-            Heist:Radio One,seed:r1,pub:friendo,state:primed,into:pool,why:radio,from_name:friendo
-            Heist:Radio Two,seed:r2,pub:friendo,state:primed,into:pool,why:radio,from_name:friendo
+            Heist:Radio One,seed:r1,pub:friendo,state:primed,into:pool,why:radio,at:1788400000,from_name:friendo
+            Heist:Radio Two,seed:r2,pub:friendo,state:primed,into:pool,why:radio,at:1788400010,from_name:friendo
         MusuPool,pub:me
           stock,pub:me
             Record,id:r1

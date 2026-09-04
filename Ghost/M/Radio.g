@@ -3778,6 +3778,14 @@ async Radio_mag_pop(w, rec):
 //    on.  Nothing moves on the press; the shape it wants next (§0.1): if the liker has FSA the Heist happens on
 //     the spot into the library, else later, when a Cave of the crew looks for things to do with ITS disk.
 //  Idempotent per session (Jam_event dedups by kind+of).  n.c.liked mirrors it for the face's ♥.
+// …AND IT IS A TOGGLE (2026-09-04).  A heart that cannot be un-pressed is an odd button anywhere; it is
+//  an untenable one now that pressing it QUEUES A DOWNLOAD — an accidental press had no exit but the ✕ on
+//   a keep that might not have been minted yet.  Second press drops the %Like: the ask goes with it (it WAS
+//    the ask) and so does the taste fact, because you changed your mind about the track, not merely about
+//     the download.
+//  A keep already RUNNING is left running, deliberately: calling off a half-finished download is a bigger
+//   act than this button looks, and the Haul row's ✕ is the place that says so.  Nothing is lost — the
+//    track lands and stays.
 Radio_like(n):
     let w = n.c.w
     let rec = n.c.rec
@@ -3785,6 +3793,8 @@ Radio_like(n):
     let me = this.Radio_pub(w) || 'me'
     let shelf = this.Ra_home_self(w, me)
     let jam = this.Jam_home(shelf, String(n.sc.by || me))
+    let had = jam.o({ Like: 1, of: rec.sc.id })[0]
+    if (had) { return this.Radio_unlike(n, jam, had) }
     this.Jam_like(jam, rec)
     n.c.liked = n.c.liked || {}
     n.c.liked[String(rec.sc.id)] = 1
@@ -3794,16 +3804,29 @@ Radio_like(n):
     //    the old ⇊ minted goes straight to 'pulling', dose off, no form and no glass hand-back, so the Haul
     //     cell shows only as a folded row while the album lands.  Without a share the Like simply stands on
     //      the ledger: a Cave of the crew with a disk, or the pool's 'liked' policy, is what lives it out.
-    let heisted = 0
-    if (n.sc.by && this.Crate_nav && this.Crate_nav()) {
-        let shop = this.Ra_home_shop(w, me)
-        let had = shop.o({ Heist: 1, seed: String(rec.sc.id) })[0]
-        if (!had) { this.Radio_keep(n) }
-        let keep = shop.o({ Heist: 1, seed: String(rec.sc.id) })[0]
-        if (keep && (keep.sc.state || 'primed') === 'primed') { keep.sc.state = 'pulling'; if (keep.sc.dose) { delete keep.sc.dose }; keep.bump(); heisted = 1 }
-    }
+    // …AND THE PRESS MINTS NOTHING (2026-09-04, Acquisition_todo §2).  It used to mint the %Heist right
+    //  here, which made ten Likes ten heists racing three Piers.  The Like IS the ask now: it stands on the
+    //   ledger, and Heist_want_beat carries at most one keep per holder from it, oldest first.  So the press
+    //    is instant and durable at once — nothing to wait for, nothing to lose on a reload — and the queueing
+    //     that used to be invisible (ten cells, all "waiting its turn") is now the ledger you can read.
+    //  A press with a share still starts within a beat; without one the ask simply waits for a road (the
+    //   crew's disk, or the pool) — the same sentence as before, minus the lie that nothing was recorded.
+    let mine = !n.sc.by
+    if (!mine) { this.feebly_ponder() }
     n.bump()
-    console.log('♥ liked ' + String(rec.sc.title || rec.sc.id).slice(0, 32) + (heisted ? ' — heisting in the background' : (n.sc.by ? ' — no share here; the crew or the pool lives it out' : '')))
+    console.log('♥ liked ' + String(rec.sc.title || rec.sc.id).slice(0, 32) + (mine ? '' : (this.Crate_nav && this.Crate_nav() ? ' — queued to haul from ' + String(n.sc.by).slice(0, 8) : ' — no share here; the crew or the pool lives it out')))
+    return true
+
+// Radio_unlike — take the heart back.  Drops the %Like and clears the face's runtime mirror so the glyph
+//  answers immediately; the ledger is the truth either way (Heist_want_liked reads it).  A %Grab is LEFT
+//   STANDING — it records that you have the track, which is still true and is not an opinion.
+Radio_unlike(n, jam, like):
+    let rec = n.c.rec
+    if (!jam || !like || !rec) { return false }
+    jam.drop(like)
+    if (n.c.liked) { delete n.c.liked[String(rec.sc.id)] }
+    n.bump()
+    console.log('♡ unliked ' + String(rec.sc.title || rec.sc.id).slice(0, 32))
     return true
 
 async Radio_keep(n):

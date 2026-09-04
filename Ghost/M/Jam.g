@@ -48,14 +48,25 @@ Jam_seq(jam):
 //   human wants, not a replay log; a real replay log would drop the of-dedup).  Carries `title` for legibility
 //    and `at` for order.  `kind` is the event mainkey ('Spin'|'Like'|'Grab').  Returns the event particle.
 Jam_event(jam, kind, rec):
+    return this.Jam_mark(jam, kind, rec.sc.id, rec.sc.title)
+
+// Jam_mark — the same minter, FROM AN ID rather than from a live %Record (2026-09-04, batch acquisition).
+//  Every event above is a REFERRING particle — it only ever needed `of` and a legible `title` — but the one
+//   door to it demanded the holding itself, which a caller settling an OLD fact does not have: when a liked
+//    track finally lands, the mirror card that carried it is long swept, and the fact to write is "I got the
+//     thing I asked for", not "here is a record".  Jam_event stays the door for the live path (it is what a
+//      spin, a like and a grab all have in hand) and delegates here, so there is still ONE minter and the
+//       idempotence, the ordinal and the title-for-legibility are written in exactly one place.
+Jam_mark(jam, kind, of, title):
+    if (!jam || !of) return null
     let q = {}
     q[kind] = 1
-    q.of = rec.sc.id
+    q.of = of
     let existing = jam.o(q)[0]
     if (existing) return existing
     let ev = jam.i(q)
     ev.c.up = jam
-    if (rec.sc.title) ev.sc.title = rec.sc.title
+    if (title) ev.sc.title = title
     ev.sc.at = this.Jam_seq(jam)
     return ev
 
