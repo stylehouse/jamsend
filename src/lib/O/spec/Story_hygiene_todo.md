@@ -320,6 +320,177 @@ The `phase:"begun", n:null, total:null, steps=0` wedge (console: `▶ Story subH
  of this session's false reds — `SwarmShare`'s "total standup wedge" that later ran 9/9 green on
   byte-identical files, the repeated `NO-RUN (try 2)`s, the hollow runs — are consistent with this one race.
    It costs seconds per Book and removes a whole class of un-reproducible red.
+
+### 0a.3 TWO TOOLS BUILT FOR THIS (2026-09-04)
+
+**`scripts/story_late.mjs <Book> [--runs=N] [--steps=A-B] [--settle=6]`** — names the nondeterminism in a
+ step instead of guessing at it. Read-only: it drives runs and reads the runner's own `Run_trace`; no core
+  code was changed to add it. Per step it reports:
+ - **`late`** — entries after the final `gallop: off todo:0` and before `quiescent`. **This is the number
+    that matters**: by definition that work was triggered by something the todo registry did not hold, i.e.
+     an *unregistered async*. It should be 0, and each one names the think that ran. `late>0` is the
+      wrap-it-in-a-req list, handed to you by name.
+ - **`rekick`** — the watchdog's "actively re-drive a dropped wakeup", which fires off a wall-clock idle
+    threshold *inside* the step (`rekick: todo:17 idle:0.04s` seen on MusuHeist step 10). A re-drive whose
+     firing depends on the clock is a coin-flip in the middle of the ordering.
+ - **`clip`** — `gallop: clip todo:N`: the drain was cut by a CAP with N todos still queued, not by running
+    out of work.
+ - **`timeout`** — the `quiescent` tag carried ` timeout`, i.e. a ttlilt expired rather than cleared.
+ It cross-tabs those against whether the step's `dige` flapped, and — the honest part — **explicitly calls
+  out steps that FLAP with `late=0 rekick=0 clip=0`**, meaning the divergence is upstream of the trace and
+   the tool cannot see it. Do not guess past that line.
+
+**`scripts/story_accept.mjs` now settles between `release` and `run`** (`SETTLE_MS`, default 6000, override
+ with `STORY_SETTLE_MS`). This is the §0a.2 fix: no gap wedged the standup 2 of 6, a 6s gap 0 of 6. A
+  wedged Book costs a whole re-record, so the seconds are cheap. **Any new sweep/soak script must do the
+   same** — a large share of this session's un-reproducible reds were that one race.
+
+⚠ **What `cycles` is NOT.** `LiesFunk.svelte:2843` sets `cycles = trace.length` — trace ENTRIES, not belief
+ passes. MusuHeist step 10's famous 351 is 113 `todo` + 226 `beliefs` (113 begin/done pairs) + 4 `think` +
+  3 `gallop` + 1 `rekick`, spanning ~1.1s: a gallop draining back-to-back at ~10ms a pass, and byte-identical
+   across three runs. **The intensity is not the problem** — that much twisty compute stays perfectly
+    ordered. Only the ~100ms after `gallop: off` is undecided.
+
+### 0a.4 THE CAUSAL CHAIN, MEASURED (2026-09-04) — one dropped wake, inherited forward
+
+`scripts/story_late.mjs MusuHeist --runs=3 --steps=1-9`:
+
+```
+step | dige flap | late | rekick | cycles
+   1 |   stable |    0 |      0 | 8          <- causally settled: the baseline
+   2 | FLAP 2   |   11 |      1 | 51/47/53   <- THE SOURCE (reqyonciliation +1 | think +1)
+   3 | FLAP 2   |    0 |      1 | 33
+   4 | FLAP 2   |    0 |      0 | 12         <- inherited (trace identical)
+   5 | FLAP 3   |    4 |      1 | 37/33
+   6 | FLAP 2   |    4 |      1 | 133/137
+   7 | FLAP 2   |    0 |      0 | 8          <- inherited
+   8 | FLAP 2   |    0 |      0 | 8          <- inherited
+   9 | FLAP 2   |    4 |      1 | 73/69
+```
+
+**The chain, each link measured rather than argued:**
+1. **A wake is dropped.** `rekick: todo:17 idle:0.04s` — the loop went idle *with 17 todos still queued*.
+    A loop with queued work does not idle unless its wake was lost. That is exactly `Story_future.md`
+     §8.3's named failure: a wake held as a free `setTimeout` on a bare `.c.driving` flag instead of owned
+      by a req, so it can be silently dropped.
+2. **The watchdog re-drives it on a WALL-CLOCK threshold** (`Story.svelte` ~2470, "actively re-drive a
+    dropped wakeup"). When it fires is decided by the clock, not by the work.
+3. **That re-drive lands work after `gallop: off todo:0`** — a LATE ARRIVAL, i.e. work the todo registry
+    did not hold — costing one extra belief round.
+4. **`self,round` is CUMULATIVE**, so from there on every downstream step's snap differs while those steps
+    are themselves perfectly deterministic. Steps 4/7/8 prove it: `cycles` identical across all runs
+     (12, 8, 8), traces identical, dige still flapping.
+
+**Therefore "21 of 22 steps flap" massively overstates the problem.** There are ~4 real sources (steps 2,
+ 5, 6, 9); the rest is contamination carried by the counter. Three of the four share ONE signature —
+  `4 late + 1 rekick` — so it is plausibly a single unregistered async shape recurring, not four bugs.
+ Correlation worth noting: **every step with `late>0` also had `rekick=1`** (4/4); step 3 had a rekick
+  with no late arrival, so rekick is the wider set. n=3 runs — suggestive, not established.
+
+**The fix is now falsifiable, which is the point.** Wrap what step 2 names (`reqyonciliation +1`,
+ `think +1`) in a req/`expecting()`, re-run `story_late`, and `late` should fall to 0 with the downstream
+  flap vanishing behind it. If it does not, the model above is wrong and it says so immediately.
+ ⚠ Not proven: steps 4/7/8 flapping with `late=0 rekick=0 clip=0` is CONSISTENT with inheritance but is
+  not proof of it — a second, trace-invisible source is not excluded.
+
+**On the inheritance claim — what is and is not proven.** Steps that flap with `late=0 rekick=0 clip=0`
+ (MusuHeist 4/7/8) are claimed here to be INHERITING an earlier step's extra round via the cumulative
+  `self,round`, not to be independent sources. The evidence:
+ - their traces are IDENTICAL across runs — `cycles` 12, 8, 8 with no variation — so nothing about how
+    those steps executed differed;
+ - with an identical trace, the only thing that can move the dige is snap CONTENT, and the only
+    run-varying content found anywhere today is `self,round`;
+ - two DIRECT snap-level proofs exist on other steps: `MusuHeist` step 22 (304 lines, sole difference
+    `self,round=39`→`38`) and `SwarmShare` step 7 (sole difference `self,round=14`→`15`).
+ ⚠ **Not proven directly for 4/7/8**, because the runner retains `got_snap` for only SOME steps — `snap 4`,
+  `snap 7` and `snap 8` all return `{"ok":1,"dige":"…","got_snap":null}` while `snap 22` returns full
+   text — so the snap-level diff cannot be taken on those particular steps. A second, trace-invisible
+    source is therefore not excluded, only made unlikely. Someone wanting certainty should find what
+     governs `got_snap` retention first.
+
+**The registry is not a thing to build — it already exists.** `expecting(w, name, secs, async_fn)`
+ (Hovercraft.svelte:621) enrols an async: a `%req` hung on `w` hosting a `%ttlilt`, with the work running
+  OFF the Atime mutex ("think() returns immediately… not holding it for its whole extent the way a bare
+   `await` inside an eternal do_fn does"). `Run.o({ttlilt:1})` enumerates every thread in flight, and
+    quiescence ALREADY consults it — `!ttlilt_held()` is one of the four conjuncts. The bug is that it is
+     **ANDed with `long_after_Atime`**, so even a perfectly enrolled async still waits 75ms of silence.
+      **The idle window is only the safety net for threads that never enrolled**; complete the coverage and
+       that conjunct can go to ~0, making quiescence "todo empty and no live ttlilt" — fully causal.
+ ⚠ The cost you cannot delete: wall-clock moves rather than vanishing — from an implicit global 75ms to a
+  per-call `secs`. Undersize it and `expecting()` takes its TIMEOUT branch and snaps an in-progress
+   picture — nondeterministic again, but LOUD (the `quiescent` tag carries ` timeout`; `story_late` has a
+    column for it). A silent race becomes a sized promise you can be visibly wrong about.
+
+### 0a.5 THE MECHANISM, EXACTLY — a 200ms throttle inside a 75ms window
+
+Two constants decide it (`Housing.svelte.ts:35,39`):
+
+```
+ANSWER_CALLS_TICK_MS = 50     → quiesce_snap_time = 1.5 × TICK  ≈  75ms   (the window)
+AMBIENT_MAIN_TICK_MS = 200                                                (the throttle)
+```
+
+**The throttle is longer than the window.** That is the whole bug, and everything measured in §0a–§0a.4
+ falls out of it.
+
+**The sequence, per late arrival:**
+1. `expecting()` enrols an async: a `%req` hosting a `%ttlilt`. While that ttlilt is live the world is
+    held non-quiescent — this part works, and is causal.
+2. The async settles → `settle()` → `reqyoncile(req,{finished:1})` → posts a `reqyonciliation` elvis.
+3. `e_reqyonciliation` (Hovercraft.svelte:285) runs → `host.finish(req)` → **the ttlilt is dropped**. The
+    world is now eligible to quiesce after 75ms of silence. **The cover is gone.**
+4. The same line then calls `H.feebly_ponder()` to wake the downstream work (Hovercraft.svelte:300,303).
+    `feebly_ponder` → `main(true)` → `throttle(() => push_todo(think), AMBIENT_MAIN_TICK_MS)`.
+5. **So the consequences of the completion are pushed through a 0-200ms throttle, while the step will
+    declare itself quiescent after 75ms.** Throttle window open ⇒ the think lands in THIS step. Throttle
+     recently fired ⇒ up to 200ms of delay ⇒ the step already snapped ⇒ the work lands in the NEXT step and
+      `self,round` is offset from there on.
+
+Whether the window is open depends on the wall-clock history of prior thinks. **That is the coin-flip**,
+ and it is why `late>0` correlated 4/4 with `rekick=1`: a step sitting in a throttled wait with todos
+  queued is exactly the "loop idle with work pending" state the watchdog exists to re-drive.
+
+**Measured confirmation of the boundary (2026-09-04).** `MusuHeist` step 9, timestamps taken off the
+ trace, three separate runs — the late arrivals land at **+115.6ms, +115.5ms and +112.2ms after
+  `gallop: off todo:0`**, against a **75ms** quiescence window:
+
+```
+    +115.6ms  todo:    think +1
+    +115.7ms  beliefs: begin think
+    +116.6ms  think:   MusuHeist/MusuHeist→MusuHeist
+    +117.2ms  beliefs: done
+    [rekick]  todo:9 idle:0.04s
+```
+
+The work arrives **~40ms after the step is already eligible to snap**. It is not merely "sometimes late" —
+ it lands, reproducibly, *just past* the boundary, which is precisely the signature of a 0-200ms throttle
+  firing into a 75ms window. Whether it is included is then decided by where the 50ms poll phase happens to
+   fall. The clustering (112-118ms over three runs) also says the throttle delay itself is fairly stable —
+    so the mode flip comes from something shifting the phase, not from wild jitter.
+
+⚠ **`got_snap` is retained for only SOME steps** (`snap 4` → `{"ok":1,"dige":"…","got_snap":null}` while
+ `snap 7`/`22` return full text). So a snap-level comparison cannot be done on an arbitrary step; check for
+  a null `got_snap` before concluding anything from an empty capture.
+
+**The ttlilt covers the async but NOT the work its completion triggers.** Sizing ttlilts longer cannot fix
+ this — the gap opens at `finish()`, after the ttlilt is already gone.
+
+**The candidate fix is one call, and it is NOT mine to make.** `ponder_now()` (Housing.svelte.ts:942)
+ exists for precisely this: *"an UNTHROTTLED think push, for a real event that must not wait out the
+  ambient throttle… 'the disk answered' is not chatter… Use ONLY on a genuine settle — never on a poll."*
+   The Wormhole op queue already uses it on IO completion (Housing.svelte.ts:2508,2512). A req settling is
+    the same category of event, yet `e_reqyonciliation` uses the throttled path — an asymmetry, not an
+     obvious design intent.
+ ⛔ **Do not swap it unprompted.** `V1_cut_todo.md` §625 already reached this exact candidate from a
+  different symptom (a starved nudge) and ruled: *"its own header says 'use ONLY on a genuine settle —
+   never on a poll', so this wants the owner's eye, not a 6am swap."* That ruling stands. Note also
+    `ponder_now` bypasses `no_ambient`, which a Story run sets deliberately — so the blast radius is the
+     whole runtime, not just Books.
+
+**How to test it when the owner rules.** `node scripts/story_late.mjs MusuHeist --runs=3 --steps=1-9`
+ before and after: `late` should fall to 0 on steps 2/5/6/9, `rekick` with it, and the downstream flap on
+  4/7/8 should vanish without those steps being touched. If it does not, this model is wrong and the tool
+   says so on the first run.
 ## 1. The arc — why this exists
 
 The whole suite is green, but Sounditron is green only because its `toc.snap` is loaded with

@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'd946b5aad7515869~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'df387a1893ac7c8f~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1656,6 +1656,9 @@ async Swarm_arm(w) {
         // the cross-body procedure lane (Reach_todo): a sibling books work on me / tells me the outcome.
         if (frame.header.type === 'reach') this.Swarm_reach_road(w2, ident, frame.swarm)
         if (frame.header.type === 'reach_done') this.Swarm_reach_ack(w2, ident, frame.swarm)
+        // the handoff lane (Heard.g, Radio_circuit_todo §7.5): a sibling hands me a heart to carry / confirms mine landed.
+        if (frame.header.type === 'take' && this.Heard_hand_land) this.Heard_hand_land(w2, ident, frame.swarm)
+        if (frame.header.type === 'take_got' && this.Heard_hand_got) this.Heard_hand_got(w2, ident, frame.swarm)
         if (frame.header.type === 'ferry') this.Swarm_ferry_park(w2, ident, frame.swarm)
         // FERRY WANT — a Linkee's steady "I want linkage" ask (Swarm_ferry_ask): the far mirror of the seal-seam.
         //  It keeps the Linkor (me) focused on the confirm no matter how MY `.c` was reset — my focus is driven by
@@ -1997,6 +2000,8 @@ async Swarm_pump(w, ident) {
         if (frame.kind === 'crew') await this.Swarm_crew_heard(w, ident, frame)
         if (frame.kind === 'reach') this.Swarm_reach_road(w, ident, frame)
         if (frame.kind === 'reach_done') this.Swarm_reach_ack(w, ident, frame)
+        if (frame.kind === 'take' && this.Heard_hand_land) this.Heard_hand_land(w, ident, frame)
+        if (frame.kind === 'take_got' && this.Heard_hand_got) this.Heard_hand_got(w, ident, frame)
         if (frame.kind === 'ferry') this.Swarm_ferry_park(w, ident, frame)
         // SEED THE CHARTER AT SEAL (Division_todo step 4): a freshly sealed friend learns my division
         //  now, not at the next change.  No-op for an undivided soul (no Charter to gossip).
@@ -3839,7 +3844,7 @@ Swarm_crew_rehydrate(w, ident, st0) {
 //       seventh organ.  Scalars only (name · take · cap · salt) — a compartment is its own record.
 Swarm_restash_pools(ident, from, st0) {
     let st = this.Swarm_stash_of(ident, st0)
-    let shelf = (from || ident).o({ Pools: 1 })[0]
+    let shelf = (from || ident).o({ SoundPooling: 1 })[0]
     if (!st) { return 0 }
     let rows = []
     for (const p of (shelf ? shelf.o({ Pool: 1 }) : [])) {
@@ -3895,7 +3900,8 @@ Swarm_restash_heard(ident, from, st0) {
             rows.push(e)
         }
     }
-    if (!rows.length) {
+    let settings = mag && (mag.sc.tipped || mag.sc.no_handoff) ? 1 : 0
+    if (!rows.length && !settings) {
         if (st.Swarm_heards) { delete st.Swarm_heards[ident.sc.prepub] }
         return 0
     }
@@ -3903,6 +3909,9 @@ Swarm_restash_heard(ident, from, st0) {
     let entry = { rows: rows }
     if (mag && mag.sc.heard_ttl) { entry.heard_ttl = String(mag.sc.heard_ttl) }
     if (mag && mag.sc.take_ttl) { entry.take_ttl = String(mag.sc.take_ttl) }
+    // heart-settings ride the same pillar (Heard.g): the one-time tip and the linked-device road switch
+    if (mag && mag.sc.tipped) { entry.tipped = '1' }
+    if (mag && mag.sc.no_handoff) { entry.no_handoff = '1' }
     st.Swarm_heards[ident.sc.prepub] = entry
     return rows.length
 },
@@ -3918,6 +3927,8 @@ Swarm_heard_rehydrate(w, ident, st0) {
     mag.c.up = ident
     if (mine.heard_ttl && !mag.sc.heard_ttl) { mag.sc.heard_ttl = String(mine.heard_ttl) }
     if (mine.take_ttl && !mag.sc.take_ttl) { mag.sc.take_ttl = String(mine.take_ttl) }
+    if (mine.tipped && !mag.sc.tipped) { mag.sc.tipped = '1' }
+    if (mine.no_handoff && !mag.sc.no_handoff) { mag.sc.no_handoff = '1' }
     let page = this.Heard_page ? this.Heard_page(mag, this.Swarm_now(w)) : null
     if (!page) { return 0 }
     let n = 0
@@ -3945,7 +3956,7 @@ Swarm_pools_rehydrate(w, ident, st0) {
     let st = st0 || this.top_House().stashed
     let mine = st?.Swarm_pools?.[ident.sc.prepub]
     if (!mine || !ident) { return 0 }
-    let shelf = ident.oai({ Pools: 1 })
+    let shelf = ident.o({ SoundPooling: 1 })[0] || ident.oai({ SoundPooling: 1, pub: String(ident.sc.prepub || 'me') })
     shelf.c.up = ident
     if (mine.consent) { let c = shelf.oai({ Consent: 1 }); c.c.up = shelf; if (!c.sc.at && mine.consent !== '1') { c.sc.at = String(mine.consent) } }
     if (mine.budget_mb && String(shelf.sc.budget_mb || '') !== String(mine.budget_mb)) { shelf.sc.budget_mb = String(mine.budget_mb) }
@@ -6728,6 +6739,15 @@ Swarm_sibling_send(w, ident, baddr, frame) {
     return true
 
 },
+// Swarm_sibling_reach — one frame to one of MY OWN bodies, whichever road stands: the crew mile when a
+//  station is up (Swarm_sibling_send — body page + soul voucher), the in-process mail when none does (a
+//   Book).  The mail drop is keyed by IDENTITY prepub, the live road by body ADDRESS; a body row carries
+//    both (its pub prefixes its identity).  Returns 1 sent, 0 unreachable.  The handoff lane's one door.
+Swarm_sibling_reach(w, ident, body, frame) {
+    if (!w || !ident || !body || !frame) { return 0 }
+    if (w.c && w.c.station_up) { return this.Swarm_sibling_send(w, ident, this.Swarm_body_addr(body), frame) ? 1 : 0 }
+    return this.Swarm_deliver(w, ident, prepubOf(String(body.sc.pub || '')), frame) ? 1 : 0
+},
 // Swarm_body_repost — (re)derive a body's Post from the grant `holder` and stamp its %Body row: SET
 //  when a live grant confers one, DROP when a %NotGrant has retired it.  "Change = revoke + re-issue"
 //   (Division_todo §LIFECYCLE): dropping the Post leaves the body row standing — a body without a Post
@@ -6866,6 +6886,8 @@ async Swarm_roster_heard(w, ident, frame) {
     try { landed = await this.Swarm_family_grants_absorb(w, ident, frame.grants || []) } catch (e) {}
     let orgs = 0
     try { orgs = this.Swarm_organ_absorb(ident, frame.organs || []) } catch (e) {}
+    // a sibling is here — the hearts I could not carry get re-offered (Heard_hand_wake; the ack retires them)
+    if (this.Heard_hand_wake) { try { this.Heard_hand_wake(w, ident) } catch (e) {} }
     if (n || landed || orgs) { try { this.Swarm_account_settle(ident, 'sibling_roster') } catch (e) {} }
     return n
 },

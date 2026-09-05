@@ -23,10 +23,10 @@ Snap:H
             SocialGraph
               Edge,a:08c3e3304c792752,b:648f0a13b56c582d,at:1751700000
             ChainRoot,pub:648f0a13b56c582d96c5c0b437518fabc4fb12c27862cfc74653e6ee99d0cd6b,prepub:648f0a13b56c582d
-            Pools
+            SoundPooling,pub:08c3e3304c792752
               Pool,name:circulation,take:random,cap:12,salt:3
               Pool,name:liked,take:liked,cap:6
-            Mag:heard,pub:Cave,heard_ttl:30,take_ttl:90
+            Mag:heard,pub:08c3e3304c792752,heard_ttl:30,take_ttl:90
               Cloud,page:1,created_at:1751699000
                 Card,id:trk-take,pub:Cave,title:Kept Wanting,take:1,at:1751699000,mire:2
                 Card,id:trk-heard,pub:Cave,mire:1

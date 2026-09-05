@@ -61,9 +61,9 @@ Snap:H
         Library,name:caplib
           Record,id:o1,title:Own One
         Library,name:cappool
-        Pools
+        SoundPooling,pub:me
           Pool,name:random,take:random,cap:3,salt:1
-        Provisions
-          Want,of:f2,do:pull,why:circulating from ed6acbbc,pool:random,from:ed6acbbcd1435dad
-          Want,of:f3,do:pull,why:circulating from ed6acbbc,pool:random,from:ed6acbbcd1435dad
-          Want,of:f4,do:pull,why:circulating from ed6acbbc,pool:random,from:ed6acbbcd1435dad
+          Provisions
+            Want,of:f2,do:pull,why:circulating from ed6acbbc,pool:random,from:ed6acbbcd1435dad
+            Want,of:f3,do:pull,why:circulating from ed6acbbc,pool:random,from:ed6acbbcd1435dad
+            Want,of:f4,do:pull,why:circulating from ed6acbbc,pool:random,from:ed6acbbcd1435dad

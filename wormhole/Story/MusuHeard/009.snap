@@ -44,6 +44,6 @@ Snap:H
           stock,pub:otherfriend
             Record,id:o1,title:Over There,total:10
         w:poolrecent
-          Pools,budget_mb:400
+          SoundPooling,pub:me,budget_mb:400
             Consent,at:1788400200
             Pool,name:rolling,take:random,who:crew,cap:100,share:100

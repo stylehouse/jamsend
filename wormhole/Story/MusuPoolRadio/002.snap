@@ -14,7 +14,7 @@ Snap:H
             Record,id:r1,title:Radio One
             Record,id:r2,title:Radio Two
             Record,id:r3,title:Radio Three
-        Pools
+        SoundPooling,pub:me
           Pool,name:heard,take:radio,cap:2
           Consent,at:1788400000
         Record,id:own1,title:Mine

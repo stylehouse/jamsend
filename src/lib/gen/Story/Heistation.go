@@ -11,7 +11,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '7008e6357da0df53~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '4e86dcd79c135c17~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -5352,7 +5352,7 @@ MusuQuarter_sit(w) {
     if (!w.c.set_up) return
     let r = this.Ra_quarter(w, w.c.lib, w.c.pool, w.c.lib, 3)
     let row = { sat: 1, goal: r.goal.map((g) => g.id).join(' '), wants: '' + r.wants }
-    let out = w.o({ Provisions: 1 })[0]
+    let out = this.Ra_pool_provisions(w)
     if (out) {
         if (out.o({ Want: 1, of: 'f1', do: 'pull' }).length === 1) row.pull_f1 = 1
         if (out.o({ Want: 1, of: 'o2', do: 'press' }).length === 1) row.press_o2 = 1
@@ -5367,7 +5367,7 @@ MusuQuarter_sit(w) {
 MusuQuarter_quiesce(w) {
     this.MusuQuarter_note(w, { reached: 'step_4' })
     if (!w.c.set_up) return
-    let out = w.o({ Provisions: 1 })[0]
+    let out = this.Ra_pool_provisions(w)
     if (!out) return
     for (const want of out.o({ Want: 1 })) want.c.mark = 1
     this.Ra_quarter(w, w.c.lib, w.c.pool, w.c.lib, 3)
@@ -5386,7 +5386,7 @@ MusuQuarter_shift(w) {
     if (!w.c.set_up) return
     this.Heard_seed(w.c.lib, { id: 'o3', pub: 'pal', title: 'Three', take: 1, at: 1788400004, mire: 1 })
     let r = this.Ra_quarter(w, w.c.lib, w.c.pool, w.c.lib, 3)
-    let out = w.o({ Provisions: 1 })[0]
+    let out = this.Ra_pool_provisions(w)
     let row = { shifted: 1, goal: r.goal.map((g) => g.id).join(' '), wants: '' + r.wants }
     if (out) {
         if (out.o({ Want: 1, of: 'o3', do: 'press' }).length === 1) row.press_o3 = 1
@@ -5621,7 +5621,7 @@ async MusuSteward_serve(w) {
     let row = { served: 1, pressed: '' + t.pressed, evicted: '' + t.evicted, deferred: '' + t.deferred, fails: '' + t.fails }
     let ids = this.Ra_recs(w.c.pool).map((r) => String(r.sc.id)).sort()
     row.pool = ids.join(' ')
-    let prov = w.o({ Provisions: 1 })[0]
+    let prov = this.Ra_pool_provisions(w)
     if (prov && prov.o({ Want: 1, of: 'f1', do: 'pull' }).length === 1) row.pull_stands = 1
     // byte-faithful: what landed in the pool for o1 is the source bytes, byte for byte (the v1 contract).
     let wrote = w.c.pool_writes['pool/a/one.wav']
@@ -6066,7 +6066,7 @@ async MusuPoolRandom_drive(w, req) {
 
 },
 MusuPoolRandom_wants(w) {
-    let prov = w.o({ Provisions: 1 })[0]
+    let prov = this.Ra_pool_provisions(w)
     return prov ? prov.o({ Want: 1 }) : []
 
 },
@@ -6128,7 +6128,7 @@ async MusuPoolRandom_stand(w) {
     if (first && first === again) { row.same_draw_twice = 1 }
     if (ws.every((x) => String(x.sc.of) !== 'o1')) { row.own_library_not_drawn = 1 }
     // a new salt — the human's "shuffle again"
-    let pdef = this.Ra_pool_home(w).o({ Pools: 1 })[0].o({ Pool: 1, name: 'random' })[0]
+    let pdef = this.Ra_pool_home(w).o({ Pool: 1, name: 'random' })[0]
     pdef.sc.salt = '1'
     pdef.bump()
     this.Ra_quarter(w, lib, pool, lib, 3, this.Ra_pool_sources(w))
@@ -7081,6 +7081,178 @@ MusuHeard_witness(w) {
     if (ld && +ld.sc.a_plain_yes_declares_one_compartment === 1 && +ld.sc.on_splits_the_budget === 1 && +ld.sc.each_half_is_a_real_cap === 1 && +ld.sc.off_gives_the_room_back === 1)
         this.story_swear(w, 'the yes still declares exactly one compartment — the third checkbox is what splits the budget in two — and unticking it gives the room back whole so the number a person typed always means the same thing')
 
+
+},
+// ══ MusuHandoff — THURSDAY (Radio_circuit_todo §7.5, ruled 2026-09-05): a ♥ pressed where it cannot be
+//  carried is HANDED to the crew body that can ══════════════════════════════════════════════════════════
+//  Tuesday exists (a phone holds the wish) and Friday exists (a body with a folder hauls a heart — MusuHeard
+//   beat 7); this Book is the day between.  Alice's soul has two bodies in ONE world: `phone` (Captain, no
+//    nav — it can keep nothing) and `laptop` (Cave, a nav + a %Organ,kind:trove that the roster mile has
+//     already replicated onto the phone's view of it).  A DJ's mirror stands with two tracks.  Seeded keys,
+//      pinned clock, no station: the crew frames ride Swarm_deliver's in-process mail and SwarmStaple_pump
+//       drains it each pass.  Everything the test observes hangs under ONE w/%testing subtree.
+//   beat 2  STAND   — the two bodies, the trove organ, the DJ mirror, the laptop's shop
+//   beat 3  HEART   — ♥ on the phone; the hand beat sends ONE `take` frame to the trove body
+//   beat 4  LAND    — the mail drains: the laptop's own heard Mag wears the same Card, taken, `via` Phone;
+//                     the `take_got` comes back and the phone's Card wears `handed` — its WORD changes
+//   beat 5  CARRY   — the laptop's ordinary Heard_haul_beat keeps it from the DJ mirror: one %Heist, take:1
+//   beat 6  ONCE    — a handed heart is never re-sent; the laptop's own ♥ finds the one Card; a heart
+//                     pressed while the laptop is AWAY waits — and hands the moment the laptop is back
+MusuHandoff(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuHandoff_drive(w,req)
+        req.sc.ok = 1
+    })
+},
+MusuHandoff_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+},
+MusuHandoff_note(w, sc) {
+    let t = this.MusuHandoff_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+},
+MusuHandoff_card(w, ident, id) {
+    let mag = this.Heard_mag_find(w, String(ident.sc.prepub))
+    return mag ? this.Heard_find(mag, id, 'dj') : null
+},
+async MusuHandoff_drive(w, req) {
+    let run = (this.c.run)
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 6 }
+    let n = run?.c.step_n
+    w.sc.now = 1788500000 + 10 * (+n || 0)
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.MusuHandoff_stand(w) }
+        if (n === 3) { await this.MusuHandoff_heart(w) }
+        if (n === 4) { await this.MusuHandoff_land(w) }
+        if (n === 5) { await this.MusuHandoff_carry(w) }
+        if (n === 6) { await this.MusuHandoff_once(w) }
+    }
+    await this.SwarmStaple_pump(w)
+    this.MusuHandoff_witness(w)
+    await this.Musu_float(w)
+},
+// beat 2 — the two bodies of one soul, the laptop naming its trove, the DJ's mirror both have heard.
+async MusuHandoff_stand(w) {
+    this.MusuHandoff_note(w, { reached: 'step_2' })
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    acct.c.up = w
+    let pkeys = await this.Swarm_mint_keys('MusuHandoff-Phone')
+    let phone = this.Swarm_identity(acct, pkeys, 'Phone')
+    let lkeys = await this.Swarm_mint_keys('MusuHandoff-Laptop')
+    let laptop = this.Swarm_identity(acct, lkeys, 'Laptop')
+    w.c.phone = phone
+    w.c.laptop = laptop
+    let bare = String(phone.sc.prepub)
+    this.Swarm_body_take(phone, null, 'Captain', bare)
+    this.Swarm_body_note(phone, String(this.Swarm_body_key(laptop).pub), 'Cave', bare + '_1', 'Laptop')
+    this.Swarm_body_take(laptop, null, 'Cave', bare + '_1')
+    this.Swarm_body_note(laptop, String(this.Swarm_body_key(phone).pub), 'Captain', bare, 'Phone')
+    this.Swarm_online(phone, true)
+    this.Swarm_online(laptop, true)
+    // the laptop names what it holds; the roster mile has already told the phone (Swarm_organ_absorb)
+    this.Swarm_organ_take(laptop, 'trove', { tracks: '12' })
+    this.Swarm_organ_absorb(phone, this.Swarm_organ_wire(laptop))
+    // the DJ's mirror — what both bodies heard (the world's one mirror serves both here); two tracks
+    let mir = this.Ra_home_them(w, 'dj')
+    for (const t of [['t1', 'Cosmic C'], ['t2', 'Dorian D']]) {
+        let rec = mir.i({ Record: 1, id: t[0], title: t[1], artist: 'DJ Oscillo' })
+        rec.c.up = mir
+        w.c['rec_' + t[0]] = rec
+    }
+    w.c.shop = this.Ra_home_shop(w, String(laptop.sc.prepub))
+    let row = { stood: 1 }
+    let seen = this.Heard_hand_targets(phone, this.Heard_hand_myaddr(phone))
+    if (seen.length === 1 && seen[0].name === 'Laptop') { row.phone_sees_one_trove = 1 }
+    if (!this.Heard_hand_targets(laptop, this.Heard_hand_myaddr(laptop)).length) { row.laptop_sees_none = 1 }
+    this.MusuHandoff_note(w, row)
+},
+// beat 3 — ♥ on the phone.  It has no folder (nav null on purpose): the wish is taken and HANDED, once.
+async MusuHandoff_heart(w) {
+    let phone = w.c.phone
+    let me = String(phone.sc.prepub)
+    let took = this.Heard_take(w, me, w.c.rec_t1, 'dj')
+    let sent = await this.Heard_hand_beat(w, w, me, phone, null)
+    let again = await this.Heard_hand_beat(w, w, me, phone, null)
+    let row = { hearted: 1 }
+    if (took === 1) { row.took = 1 }
+    if (sent === 1 && again === 0) { row.one_frame_once = 1 }
+    let card = this.MusuHandoff_card(w, phone, 't1')
+    if (card && !card.sc.handed && this.Heard_word(this.Heard_mag_find(w, me), card, this.Heard_now(w)) === 'waiting') { row.word_is_waiting = 1 }
+    // a body WITH a folder hands nothing (it carries its own)
+    if (await this.Heard_hand_beat(w, w, me, phone, {}) === 0) { row.a_folder_hands_nothing = 1 }
+    this.MusuHandoff_note(w, row)
+},
+// beat 4 — the mail drains both ways.  The laptop wears the same Card; the phone's word changes.
+async MusuHandoff_land(w) {
+    let phone = w.c.phone
+    let laptop = w.c.laptop
+    await this.SwarmStaple_pump(w)
+    await this.SwarmStaple_pump(w)
+    let row = { landed: 1 }
+    let lc = this.MusuHandoff_card(w, laptop, 't1')
+    if (lc && +lc.sc.take === 1 && String(lc.sc.via) === 'Phone' && String(lc.sc.title) === 'Cosmic C') { row.laptop_wears_the_card = 1 }
+    let pc = this.MusuHandoff_card(w, phone, 't1')
+    if (pc && String(pc.sc.handed) === 'Laptop') { row.phone_reads_handed = 1 }
+    if (pc && this.Heard_word(this.Heard_mag_find(w, String(phone.sc.prepub)), pc, this.Heard_now(w)) === 'handed to Laptop') { row.word_changed = 1 }
+    if (lc && !lc.sc.handed && !lc.c.hand_sent) { row.laptop_hands_nothing_back = 1 }
+    this.MusuHandoff_note(w, row)
+},
+// beat 5 — the ordinary haul on the laptop carries the handed heart (MusuHeard beat 7's road, unchanged).
+async MusuHandoff_carry(w) {
+    let laptop = w.c.laptop
+    let me = String(laptop.sc.prepub)
+    let got = await this.Heard_haul_beat(w, w, me, {}, w.c.shop)
+    let keeps = w.c.shop.o({ Heist: 1 })
+    let row = { carried: 1 }
+    let k = keeps[0]
+    if (got === 1 && keeps.length === 1 && k && String(k.sc.seed) === 't1' && String(k.sc.pub) === 'dj' && +k.sc.take === 1 && String(k.sc.state) === 'primed') { row.one_keep_primed = 1 }
+    this.MusuHandoff_note(w, row)
+},
+// beat 6 — once, dedup, and store-and-forward: away waits; back hands.
+async MusuHandoff_once(w) {
+    let phone = w.c.phone
+    let laptop = w.c.laptop
+    let me = String(phone.sc.prepub)
+    let row = { once: 1 }
+    if (await this.Heard_hand_beat(w, w, me, phone, null) === 0) { row.handed_is_never_resent = 1 }
+    // the laptop ♥s the same track itself, 20s after the landing: a re-affirm on the ONE card, no second card
+    let lme = String(laptop.sc.prepub)
+    let re = this.Heard_take(w, lme, w.c.rec_t1, 'dj')
+    let lmag = this.Heard_mag_find(w, lme)
+    let lcards = lmag ? this.Heard_cards(lmag).filter((c) => String(c.sc.id) === 't1') : []
+    if (re === 1 && lcards.length === 1 && +lcards[0].sc.take === 1) { row.own_heart_finds_the_one_card = 1 }
+    // the laptop is AWAY: a new heart on the phone waits (nothing sent; the word stays waiting)
+    this.Swarm_online(laptop, false)
+    this.Heard_take(w, me, w.c.rec_t2, 'dj')
+    let away = await this.Heard_hand_beat(w, w, me, phone, null)
+    let pc2 = this.MusuHandoff_card(w, phone, 't2')
+    if (away === 0 && pc2 && !pc2.sc.handed && !pc2.c.hand_sent) { row.away_waits = 1 }
+    // …and hands the moment the laptop is back — the roster mile's wake plus the next beat
+    this.Swarm_online(laptop, true)
+    this.Heard_hand_wake(w, phone)
+    let back = await this.Heard_hand_beat(w, w, me, phone, null)
+    await this.SwarmStaple_pump(w)
+    await this.SwarmStaple_pump(w)
+    let lc2 = this.MusuHandoff_card(w, laptop, 't2')
+    pc2 = this.MusuHandoff_card(w, phone, 't2')
+    if (back === 1 && lc2 && +lc2.sc.take === 1 && pc2 && String(pc2.sc.handed) === 'Laptop') { row.back_hands = 1 }
+    this.MusuHandoff_note(w, row)
+},
+// the witness — every pass; each %see fires the first pass its truth holds.
+MusuHandoff_witness(w) {
+    let t = this.MusuHandoff_T(w)
+    let n = (this.c.run)?.c.step_n
+    let has = (k) => t.o(k).length > 0
+    let say = (s) => { if (!t.oa({ see: s })) { this.MusuHandoff_note(w, { see: s }) } }
+    if (n >= 3 && has({ hearted: 1, took: 1, one_frame_once: 1, word_is_waiting: 1, a_folder_hands_nothing: 1 })) { say('a heart pressed where there is no folder is taken and handed once — one frame to the one body wearing a trove while a body with a folder hands nothing') }
+    if (n >= 4 && has({ landed: 1, laptop_wears_the_card: 1, phone_reads_handed: 1, word_changed: 1, laptop_hands_nothing_back: 1 })) { say('the wish travels not the bytes — the laptop wears the same card taken via the phone and the phone reads handed to Laptop') }
+    if (n >= 5 && has({ carried: 1, one_keep_primed: 1 })) { say('a handed heart is carried by the ordinary haul — one keep primed on the laptop from the DJ mirror wearing take') }
+    if (n >= 6 && has({ once: 1, handed_is_never_resent: 1, own_heart_finds_the_one_card: 1, away_waits: 1, back_hands: 1 })) { say('a handed heart is never re-sent and the laptops own heart finds the one card — a wish pressed while the laptop is away waits and hands the moment it is back') }
 
 },
 

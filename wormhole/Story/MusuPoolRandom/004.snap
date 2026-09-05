@@ -63,5 +63,5 @@ Snap:H
         Library,name:caplib
           Record,id:o1,title:Own One
         Library,name:cappool
-        Pools
-        Provisions
+        SoundPooling,pub:me
+          Provisions

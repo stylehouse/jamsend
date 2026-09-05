@@ -22,13 +22,16 @@ Snap:H
               mate:648f0a13b56c582d,role:Cave,pub:648f0a13b56c582d96c5c0b437518fabc4fb12c27862cfc74653e6ee99d0cd6b
                 Grant:Crew,by:08c3e3304c792752d3256a015fbd12908a72c84ee8d3bc940be902c718488235,for:648f0a13b56c582d96c5c0b437518fabc4fb12c27862cfc74653e6ee99d0cd6b,time:1751700000,sign:ecdda5e57e30fc5a42f4ce3ead4023ae70dd78f58228a3fea81e23c607c66a24ff81ffaca2cf71cee90458f16a3d65aa42251ddbb70ee75e1345074d23070e02
               Key,pub:08c3e3304c792752d3256a015fbd12908a72c84ee8d3bc940be902c718488235	{"mung":["secret"]}
-            Pools
+            SoundPooling,pub:08c3e3304c792752
               Pool,name:circulation,take:random,cap:12,salt:3
               Pool,name:liked,take:liked,cap:6
+            Mag:heard,pub:08c3e3304c792752,heard_ttl:30,take_ttl:90
+              Cloud,page:1,created_at:1751700030
+                Card,id:trk-take,pub:Cave,title:Kept Wanting,take:1,at:1751699000,mire:2
         reached:step_3
         testing
-          stashed,roster_stashed,pier_stashed,izz_stashed,root_stashed,crew_stashed,one_reach_stashed,pools_stashed,cert_stashed
+          stashed,roster_stashed,pier_stashed,izz_stashed,root_stashed,crew_stashed,one_reach_stashed,pools_stashed,one_wish_stashed,the_bare_hearing_stayed_behind,cert_stashed
           wiped,roots_gone,peering_bare,crew_gone,pools_gone,heard_gone,cert_gone
-          back,pier_back,izz_back,root_back,crew_back,my_role_back,cert_back,body_back,roster_back,pools_back_in_order,pool_policy_back,standing_reach_back,terminal_reach_stayed_dead,reach_state_back,the_bare_hearing_stayed_dead,idem_heard_doubled,idempotent
+          back,pier_back,izz_back,root_back,crew_back,my_role_back,cert_back,body_back,roster_back,pools_back_in_order,pool_policy_back,standing_reach_back,terminal_reach_stayed_dead,reach_state_back,wish_back,wish_knows_what_it_knew,the_bare_hearing_stayed_dead,idempotent
         reached:step_4
         reached:step_5

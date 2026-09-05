@@ -2,6 +2,32 @@
 
 ## 0. WHAT TO GET ON WITH NEXT — PUT THE FEATURE IN ONE PLACE (2026-09-04, the owner's)
 
+✅ **LANDED 2026-09-05 — the unison is built** (owner: *"yeah. all good?"* — yes). One particle now holds the
+ whole feature, on the live identity when `w` is the tab's radio world and on the world for a Book:
+```
+SoundPooling,pub:<me>,budget_mb=200
+  Consent,at
+  Pool,name,take,cap,salt,who,share
+  Provisions > Want,of,do,why,pool,from
+  stock,pub > Mag:shuffle > Cloud,page > Record,id,of,grade,path:pool/…
+```
+ - Mainkey **`SoundPooling`** (not the sketch's `SoundPool`): the compartments ARE underneath it now, which was
+    the only objection to the -ing name. `%Pools` and `%SoundPile` are gone as mainkeys. ONE per owner — the
+     probe ignores `pub` (a label, not a key), because a budget is a fact about the device.
+ - The verbs (Ra.g): `Ra_pool_owner` (identity|world, the old Ra_pool_home body) · `Ra_pool_home` (PROBE,
+    owner then world — the pre-hydration fallback kept) · `Ra_pool_home_mint` (a standing home anywhere wins,
+     never split) · `Ra_pool_homes` (both, for drop/consent-take) · `Ra_pool_pub` · **`Ra_pool_provisions`** and
+      **`Ra_pool_stock`** — the two probed READ seams every face now uses (PoolFace, RadioFace, ShuffleFace),
+       so no face walks `w.o({SoundPile…})` or `w.o({Provisions})` any more. `Ra_home_pool(w, pub)` still mints
+        the material shelf, under the home.
+ - Stash pillar unchanged in shape: `Swarm_restash_pools` walks the home; `Swarm_pools_rehydrate` re-homes on
+    `ident > SoundPooling,pub:<prepub>`.
+ - ⚠ The `.g` trap that cost one compile: a loop variable named `o` is rewritten by the `.o()` sugar
+    (`for (const o of [...])` → `w.o({of: 1})`). Never name a binding `o`.
+ - Consequence 2 below (a declaration change does not bump the identity) is still TRUE and still owed.
+ - §7.8 of Radio_circuit_todo was ruled the same day: SoundPooling is ALWAYS the one thing, only its backing
+    varies (OPFS on a phone, the FSA folder on a laptop) — which this shape makes free.
+
 *"lets move all those into unison? SoundPooling/Pool/* should have its scheme and content|state and
  everything it has?"* — yes, and it is worse than it looks. **SoundPooling lives in FOUR homes today:**
 

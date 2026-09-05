@@ -27,6 +27,6 @@ story:MusuPoolRandom
       sample=0.017,at=1788499223
       sample=0.02,at=1788499875
   step,dige:85d660e1b7d42c9f
-  step=2,dige:42cb1d42c61908ae
-  step=3,dige:c5bde6e33830fc9b
-  step=4,dige:9d614ffbf6379bfd
+  step=2,dige:c0fd0dfd299db04a
+  step=3,dige:c052af5b8a9df909
+  step=4,dige:9276ab4bbef67fd8

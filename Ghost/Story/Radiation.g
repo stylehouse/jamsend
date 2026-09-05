@@ -906,11 +906,17 @@ async MusuBuddy_flow(w):
     if (!w.c.repli_allow) return
     let dj = this.SwarmStaple_ident(w, 'DJ')
     if (!dj) return
+    // STEP-GATED LEGS (2026-09-05).  The legs used to fire on their preconditions alone, so a fast run had the
+    //  whole pull done inside step 4's quiescence window while a slow one snapped step 4 mid-pull with eleven
+    //   parked wants standing — the same Book, two fixtures, neither wrong (Story_hygiene_todo §0a).  Now each
+    //    leg waits for ITS step (stand 5 · browse 6 · pull 7).  (A ttlilt hold on the pull was tried and wedged
+    //     the step — see LEG 3.)
+    let n = +((this.c.run)?.c.step_n || 0)
     let djp = this.Swarm_peering(dj)
     let grantPier = djp ? djp.o({ Pier: 1, pub: w.c.lis_pre })[0] : null
     let live = !!(grantPier && this.Swarm_pier_live(grantPier, 'Music'))
     // LEG 1 — the magazine stands and crosses, and every husk follows (the catalog promise; no bytes).
-    if (live && !w.c.stand_done) {
+    if (live && n >= 5 && !w.c.stand_done) {
         let srecs = this.Ra_recs(w.c.repli_src)
         if (srecs.length >= 2) {
             w.c.stand_done = 1
@@ -933,7 +939,7 @@ async MusuBuddy_flow(w):
     //   tone, so the tone set can change under the Book without touching it.
     let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
     let vmag = mir ? mir.o({ Mag: 'Musica' })[0] : null
-    if (vmag && !w.c.browsed) {
+    if (vmag && n >= 6 && !w.c.browsed) {
         let cards = this.Musica_cards(vmag)
         let husk_ok = cards.length >= 2 && cards.every((c2) => { let h2 = this.Ra_rec_find(mir, { Record: 1, id: c2.sc.id }); return h2 && +(h2.sc.total || 0) > 0 })
         if (husk_ok) {
@@ -954,7 +960,12 @@ async MusuBuddy_flow(w):
     // LEG 3 — the pull, of the browsed record ONLY: page wants go out want-once per offset; the pulled
     //  row lands once the mirror holds every chunk, carrying the park|release counts the demand claim reads.
     let rec = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
-    if (rec && +(rec.sc.total || 0) > 0 && !w.c.pull_ok) {
+    if (rec && +(rec.sc.total || 0) > 0 && n >= 7 && !w.c.pull_ok) {
+        // NO expecting() here, measured 2026-09-05: a ttlilt at the wrangle's level halts descent (Coding_guide —
+        //  "a req can arm a ttlilt and bow out; level.some(needs_work) then halts descent"), so the very legs the
+        //   hold waited on stopped being pumped and the run wedged at step 7 (120s+, six steps done, nothing).
+        //    MusuOgg can hold because it drives its work INSIDE the async; this pull is driven by passes.  The
+        //     step gates above are the determinism that was cheap; the pull's mid-flight snap is the residue.
         // THE SHED PUNCH (2026-08-06, Backpressure_todo §3.1b).  A page does NOT land all-or-nothing:
         //  each chunk rides its own repli_page frame, so the relay's bulk lane can shed seq off+1 while
         //   off survives.  Every pull loop used to test the STRIDE-ALIGNED chunk alone as its stand-in for
@@ -995,13 +1006,26 @@ async MusuBuddy_flow(w):
 //   middle run withheld), cache the scalar reads on w.c.term and stamp a heard row.  Runs exactly once.
 async MusuBuddy_hear(w):
     if (w.c.term) return
-    let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
-    let rec = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
-    if (!rec || !w.c.pull_ok) {
-        w.i({ hear_fail: 'nothing pulled' })
-        return
-    }
     await this.expecting(w, 'buddy_hear', 240, async () => {
+        // WAIT FOR THE PULL FIRST (2026-09-05).  This beat fires off step_n; the pull lands on its own flow
+        //  leg (LEG 3 in MusuBuddy_flow, every pass), and a fast runner reached step 10 before pull_ok stood
+        //   — `hear_fail:nothing pulled`, then `jam_fail:nothing heard` at beat 11, the whole Book done in
+        //    27 seconds (Radio_circuit_todo §0 Next 3).  expecting() runs OFF the mutex, so the wrangle keeps
+        //     pumping the flow while this yields — wait for the pull the way MusuOgg waits for its detached
+        //      decode: yield for real (a bare retry loop would starve the macrotask queue), bounded inside
+        //       this beat's 240s ttlilt, then be honest.  Nothing about the wait is stamped: the snap must
+        //        not carry how long a runner took.
+        let wait = 0
+        while (!w.c.pull_ok && wait < 1800) {
+            await new Promise((r) => setTimeout(r, 100))
+            wait = wait + 1
+        }
+        let mir = w.o({ Theirs: 1, pub: w.c.lis_pre })[0]?.o({ stock: 1 })[0]
+        let rec = (mir && w.c.pick_id) ? this.Ra_rec_find(mir, { Record: 1, id: w.c.pick_id }) : null
+        if (!rec || !w.c.pull_ok) {
+            w.i({ hear_fail: 'nothing pulled' })
+            return
+        }
         let T = +(rec.sc.total || 0)
         let d = await this.Ra_term_decode_pulled(w, rec, T)
         if (d.fail) { w.i({ hear_fail: d.fail }); return }
@@ -1039,7 +1063,11 @@ async MusuBuddy_jam(w):
     w.c.ra_pub = w.c.lis_pre
     let kept = w.oai({ Kept: 1, pier: w.c.lis_pre })
     kept.c.up = w
-    this.Heard_mark(w, w.c.lis_pre, rec)
+    // ONE card, the DJ's rendition (2026-09-05): Heard_take mints it under dj_pre.  A Heard_mark(w, me, rec)
+    //  before it read the pub off the RECORD (Ra_pub_of → the mirror's label), and this Book keys its mirror
+    //   by the LISTENER — so the mark minted a second Card wearing my own pub beside the DJ's.  The unison
+    //    gate caught the stray in the snap; the live app's mirrors are keyed by the caster, so it is a
+    //     Book-topology quirk, not a Heard.g bug.
     let took = this.Heard_take(w, w.c.lis_pre, rec, w.c.dj_pre)
     let card = this.Heard_find(this.Heard_mag_find(w, w.c.lis_pre), rec.sc.id, w.c.dj_pre)
     let copy = this.Ra_rec_copy(rec, kept)

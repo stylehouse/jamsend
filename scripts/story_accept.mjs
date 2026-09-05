@@ -28,8 +28,19 @@ const lastJson = (txt) => {
     for (const l of lines) { const i = l.indexOf('{'); if (i >= 0) { try { return JSON.parse(l.slice(i)) } catch (e) {} } }
     return null
 }
+// SETTLE — the gap between a `release` and the next `run`.  Measured 2026-09-04 on MusuHeist back to
+//  back: release→run with no gap wedged the standup 2 of 6 runs (`phase:begun, n:null, steps=0`; in the
+//   tab, `▶ Story subHouse created` then total silence — no story_analysis, no drive started), a 6s gap
+//    wedged 0 of 6.  auto_reset_story tears down (hand-walking A→w→run, stop(), drop(), Supervisor cull)
+//     and only THEN posts the new subHouse whose body ends `i_elvisto(S,'think')`; re-engaging mid-drain
+//      loses that posted think.  Story_hygiene_todo.md §0a.2; the real cure is a req-owned teardown
+//       (Story_future.md §8.3), and this is the workaround until then.  A dropped Book here costs a whole
+//        re-record, so the seconds are cheap.
+const SETTLE_MS = Number(process.env.STORY_SETTLE_MS ?? 6000)
+const settle = () => { try { execSync(`sleep ${SETTLE_MS / 1000}`) } catch (e) {} }
 const run = (book) => {
     for (let attempt = 0; attempt < 2; attempt++) {
+        settle()
         const r = sh(`node scripts/runner_ask.mjs run ${book} --watch`)
         const j = lastJson(r.out)
         const st = sh(`node scripts/runner_ask.mjs steps`)

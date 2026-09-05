@@ -1,0 +1,51 @@
+Snap:H
+  H:MusuHandoff,Run
+    A:MusuHandoff
+      self,round=5	{"mung":["age"]}
+      w:MusuHandoff,now=1788500050
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          stood,phone_sees_one_trove,laptop_sees_none
+          hearted,took,one_frame_once,word_is_waiting,a_folder_hands_nothing
+          see:a heart pressed where there is no folder is taken and handed once — one frame to the one body wearing a trove while a body with a folder hands nothing
+          landed,laptop_wears_the_card,phone_reads_handed,word_changed,laptop_hands_nothing_back
+          see:the wish travels not the bytes — the laptop wears the same card taken via the phone and the phone reads handed to Laptop
+          carried,one_keep_primed
+          see:a handed heart is carried by the ordinary haul — one keep primed on the laptop from the DJ mirror wearing take
+        Account,of:Alice
+          Identity:f14417f95661701f,prepub:f14417f95661701f,friendly:Phone
+            Peering,name:f14417f95661701f,friendly:Phone,online
+              Body,pub:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076,post:Captain,address:f14417f95661701f
+              Body,pub:68983ffd155abb421a29653e2174d0380aa2e7dd8d2e84c32f7bc72bfc929519,post:Cave,address:f14417f95661701f_1,name:Laptop
+                Organ,kind:trove,tracks:12
+            Crew,soul:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076
+              mate:f14417f95661701f,role:Captain,pub:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076
+              Key,pub:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076	{"mung":["secret"]}
+            mail
+              frame:take_got,did
+          Identity:68983ffd155abb42,prepub:68983ffd155abb42,friendly:Laptop
+            Peering,name:68983ffd155abb42,friendly:Laptop,online
+              Body,pub:68983ffd155abb421a29653e2174d0380aa2e7dd8d2e84c32f7bc72bfc929519,post:Cave,address:f14417f95661701f_1
+                Organ,kind:trove,tracks:12
+              Body,pub:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076,post:Captain,address:f14417f95661701f,name:Phone
+            Crew,soul:68983ffd155abb421a29653e2174d0380aa2e7dd8d2e84c32f7bc72bfc929519
+              mate:68983ffd155abb42,role:Captain,pub:68983ffd155abb421a29653e2174d0380aa2e7dd8d2e84c32f7bc72bfc929519
+              Key,pub:68983ffd155abb421a29653e2174d0380aa2e7dd8d2e84c32f7bc72bfc929519	{"mung":["secret"]}
+            mail
+              frame:take,did
+        Theirs,pub:dj
+          stock,pub:dj
+            Record,id:t1,title:Cosmic C,artist:DJ Oscillo
+            Record,id:t2,title:Dorian D,artist:DJ Oscillo
+        Mine,pub:68983ffd155abb42
+          shop,pub:68983ffd155abb42
+            Heist:Cosmic C,seed:t1,pub:dj,state:primed,take,at:1788500050,from_name:dj,artist:DJ Oscillo
+          Mag:heard,pub:68983ffd155abb42,heard_ttl:30,take_ttl:90
+            Cloud,page:1,created_at:1788500030
+              Card,id:t1,pub:dj,take:1,at:1788500030,title:Cosmic C,artist:DJ Oscillo,via:Phone
+        Mine,pub:f14417f95661701f
+          Mag:heard,pub:f14417f95661701f,heard_ttl:30,take_ttl:90
+            Cloud,page:1,created_at:1788500030
+              Card,id:t1,pub:dj,take:1,at:1788500030,title:Cosmic C,artist:DJ Oscillo,handed:Laptop

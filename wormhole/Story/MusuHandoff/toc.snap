@@ -1,0 +1,22 @@
+story:MusuHandoff
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.033
+      sample=0.025,at=1788573578
+      sample=0.034,at=1788573759
+      sample=0.039,at=1788573957
+      sample=0.034,at=1788574515
+    TimeTotal:step,avg=0.006
+      sample=0.004,at=1788573578
+      sample=0.006,at=1788573759
+      sample=0.006,at=1788573957
+      sample=0.006,at=1788574515
+  step,dige:f5d953e52433c61c
+  step=2,dige:06e020df8c5094ad
+  step=3,dige:22ba88dd70c41de4
+  step=4,dige:f40e41aeec81007d
+  step=5,dige:af7419d013171936
+  step=6,dige:ef1ec0f950413c63

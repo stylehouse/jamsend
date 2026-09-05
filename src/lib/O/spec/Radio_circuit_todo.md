@@ -145,17 +145,104 @@ The owner, 2026-09-04: *"think long and hard about the datasplatter behind Radio
             a different number of rounds.** The owner's standing design (`Story.svelte:79`) is to hide the
              value but ASSERT on a jump of more than one — not built.
 
-2. **Bisect the transcode change** (`MusuOgg` Stream chunks, `MusuReap` `lufs`/`gain`). Deterministic, real,
-    and NOT this work — see §0. Do NOT silence it with EntropyArrest and do NOT blind re-record; those two
-     Books are the only instrument that noticed a month of `Ra.g`/`Radio.g` commits move the encoder.
-3. **`MusuBuddy`'s listening beat** — `w.c.term` never set, 14 steps in 27 seconds, `jam_fail:nothing heard`.
-    Upstream of the ledger; its assertion is already re-declared and correct.
-4. **§7.8** — does the SoundPile exist on a device that HAS a folder? Recommendation: no.
-5. **§7.5** — the phone→laptop `take` frame. Network work; stated, not built.
+2. ✅ **The transcode drift — BISECTED 2026-09-05 (a subagent, static, no runner): it is the BROWSER, not a
+    commit.** Function-body diff of `Ra.g` from a63e14c0 (08-08) to HEAD, comments stripped: `Ra_encode_open`
+     `_feed` `_drain`, `Ra_chunk_cut` `_pack`, `Ra_opus_samples`, `Ra_bake`, `Ra_lufs`, `Ra_gain_for`,
+      `Ra_bitrate`, `Ra_seg_secs`, `Ra_preview_*`, `Ra_decode_packets`, `Ra_enid` are **byte-identical**; the
+       only changes are scaffolding (`Ra_bake_gentle` skips a ×1.0 within ±0.01 dB — not taken at -6.67; a
+        `need_secs` prefix read gated on `humdinger`, unreachable in a Book). The on-disk shelf DATES it:
+         `.jamsend/radiostock/` cards for Cosmic C / Dorian D with identical enid, pv_off, lufs, gain and packet
+          `sizes[]` carry one cid set through **2026-08-12 10:53 UTC** and another from **2026-08-21 01:56**
+           on. Same samples, same config, same packet sizes, different payload ⇒ Chrome's `AudioEncoder`/libopus
+            updated in that window (commit 0473e26b 08-19 "chrome sucks…" is the circumstantial nod).
+    Why MusuOgg's previews matched and its Streams didn't: it STANDS on the 08-07 card (`stocked,…,stood`) so
+     preview bytes come off disk un-re-encoded, and only the %Stream continuation opens a fresh encoder
+      (`Ra.g:3439`) on today's Chrome. MusuReap sweeps its shop first and rebuilds, so all 64 previews move.
+    And `lufs` is **run-volatile on unchanged code** — 3139f0c0… measured -17.49 (08-07) vs -17.62 (08-08),
+     same cid — and a stood record REPORTS the stored August number rather than measuring (`Ra_record_from`),
+      which is the "-7.33 again" I saw. `gain` follows lufs into the baked PCM, a second reason preview cids
+       cannot be stable. So: **re-swearing is honest** (it is a dated environment change, not a masked bug),
+        but the cids stay a bomb for the next Chrome. The owner's call stands as written in §0 class 3.
+    Cheap instrument for next time: stamp `navigator.userAgent` into a `%see` note so a snap DATES the
+     encoder instead of shelf archaeology doing it.
+3. ✅ **`MusuBuddy`'s listening beat — FIXED 2026-09-05, two faults.** (a) The race: beat 10 fires off
+    `step_n`, the pull lands on its own flow leg (LEG 3, every pass), and a fast runner reached step 10 before
+     `pull_ok` stood — `hear_fail:nothing pulled` → `jam_fail:nothing heard`, the whole Book in 27s. Now
+      `MusuBuddy_hear` WAITS for the pull inside its off-mutex `expecting()` (the wrangle keeps pumping the
+       flow while it yields — MusuOgg's detached-decode idiom), bounded in the 240s ttlilt, stamping nothing.
+        (b) A stray of my own from the beat-11 rewrite: `Heard_mark(w, me, rec)` reads the pub off the RECORD
+         (`Ra_pub_of` → the mirror's label) and this Book keys its mirror by the LISTENER, so it minted a second
+          heard Card wearing my own pub beside the DJ's. `Heard_take` mints the DJ's card itself; the mark is
+           gone. (Live mirrors are keyed by the caster, so it was a Book-topology quirk, not a Heard.g bug.)
+    (c) later the same day, the flow legs themselves: they fired on their preconditions alone, so a fast run had
+     the whole stand→browse→pull inside step 4's quiescence window and a slow one snapped step 4 mid-pull with
+      eleven parked wants — the same Book, two fixtures, neither wrong. The legs are now STEP-GATED (stand 5 ·
+       browse 6 · pull 7). A ttlilt hold on the pull was tried and WEDGED the step: a req that arms a ttlilt bows
+        out and `level.some(needs_work)` halts descent, so the legs the hold waited on stopped being pumped
+         (Coding_guide; MusuOgg can hold only because it drives its work inside the async). The residue is the
+          pull's mid-flight snap at step 7. **Measured:** two consecutive runs agreed exactly at steps 5, 7 (eleven
+           parked wants) and 8 (`pulled,chunks=38,healed`); re-sworn; an independent check run then read
+            **`ok:true`, 14/14, caveat 7** (the `self,round` class). The residue that remains: the pull can land at
+             step 8 OR 9 depending on the run, so that one boundary can still go red — the accept's own verify pass
+              saw 8/9 red while the very next run saw them ok. The real cure is a pull that drives itself inside an
+               `expecting()` (MusuOgg's shape), which is a rewrite of LEG 3, not a gate; left for a deliberate pass.
+    **Re-sworn 2026-09-05 with `--force`, and here is exactly what the force absorbed** — five classes, each
+     read off the uncapped residual on a run whose `.go` mtime preceded the reload (both printed in the log):
+      (1) `unemit:`/`req:unemit` reseq — `repli_parked` frames now interleave (`parked=9→11`) and the
+       `repli_lines` header grew 22 bytes since 08-08; wire staleness, the pull still reaches `done,chunks=38,healed`.
+      (2) `Stream,seq:16..37` cids — the Chrome encoder drift, bisected under Next 2. (3) `Record`/`Card`
+       `path:` bare → `testsounds/…` — Ra.g:2060's dual-shape radiostock. (4) `pulled,chunks` parked/unparked
+        counts — wire timing. (5) the intended change: `Jam,with > Spin/Like/Grab` + `jammed,spins,likes,grabs`
+         + the old `see:the jam ledger…` → `Mag:heard > Cloud > Card,id,pub:<dj>,take` + `Mine,pub` + `jammed,took,
+          card_names_the_dj` + the owner's re-declared `see:the listener remembers…`. Nothing else. 26 live
+           `Card` lines = 22 catalog cards (class 3) + 4 heard cards (class 5); no own-pub card remains.
+4. ✅ **§7.8 — RULED 2026-09-05** (owner's words under §7.8): SoundPooling is always the one thing, only its
+    BACKING varies (OPFS on a phone, the FSA folder on a laptop); no gate, no second pile. The unison below
+     makes that free.
+5. **§7.5 — RULED, not built** (owner's words under §7.5): the handoff is CREW work (a ♥ on a Cave is a job the
+    Captain hands to the crew body with the folder), and the FIRST ♥ is the consent sheet for the whole
+     scheme — three checkboxes that are the three roads. **This is the next feature cut**: one frame kind +
+      one `oai` at the landing over the same-soul body↔body frames, plus the first-♥ sheet.
+    ✅ **THURSDAY — BUILT 2026-09-05, Book `MusuHandoff` 6/6 on its first run, every `%see` fired.** The
+     wish travels, not the bytes: `Heard_hand_beat` (the phone's pass, nav-less, in `Heist_keep_beat`) sends
+      ONE `take` frame to the first roster body wearing `%Organ,kind:trove` (organs already replicate on the
+       roster mile); `Heard_hand_land` on the laptop mints the SAME Card on its own heard Mag — taken, `via:Phone`
+        — and its ordinary `Heard_haul_beat` keeps it (beat 5: one `%Heist,seed,pub,take`); `take_got` comes back
+         and the phone's Card wears `handed:Laptop`, so `Heard_word` turns `waiting` into `handed to Laptop`.
+          Store-and-forward like %Suggest: the Card is the queue, sent once per session (`card.c.hand_sent`),
+           re-offered when a sibling announces itself (`Heard_hand_wake` off `Swarm_roster_heard`), retired by the
+            ack; beat 6 proves away-waits / back-hands and that the laptop's own ♥ finds the one Card. Both roads
+             behind one door, `Swarm_sibling_reach` (crew mile live, in-process mail in a Book — keyed by body
+              address vs identity prepub, which a %Body row carries both of).  Every road is a scalar on the Card
+               (`into:pool` · `handed` · `via` · `held` · `landfail`) so the owner's patchbay — *"engine bits the
+                user can put wires between… illegal paths glow white hot then melt"* — can be drawn straight off
+                 the Mag with no state of its own.
+     NOT built on purpose: un-taking does not travel (a heart handed then taken back within 10s stays handed;
+      the laptop's ✕ is the way back — §C's law).
+    ✅ **HEART-SETTINGS — BUILT 2026-09-05** (the owner: *"long-press the heart to open heart-settings"*). The
+     sheet IS the one-sentence explanation the owner asked for — **"♥ keeps it."** — then the roads a ♥ can take
+      on THIS device, one line each: *a copy this phone can play* (reads the SoundPool yes) · *the real file,
+       into your music folder here* (a folder stands) or *fetched by your linked device when it's around — Laptop*
+        (no folder; a switch, `Heard_hand_set`) · *the whole album it came from — not yet* (greyed until §C).
+         Opens itself ONCE after the first ♥ ever (`Heard_tipped`/`Heard_tip`, a scalar on the heard Mag: durable,
+          stashed with pillar 8, never re-asked across reloads or devices); long-press (450ms) or right-click on ♥
+           is the way back forever. Scalars: `Mag:heard%tipped`, `%no_handoff` (absent = on) — the beat honours the
+            switch (`Heard_hand_on`). RadioFace only; no state beyond open/closed. svelte-check clean.
+    ⚠ **A bug the SwarmReboot gap exposed, fixed the same day: `Heard_seed` keyed the Mag by the CARD's pub**
+     (`Mag:heard,pub:Cave`) while restash, the wipe, rehydrate and every reader key it by the OWNER's prepub —
+      so a seeded wish sat where nobody looked: zero rows stashed, nothing back, and the idempotence swear blocked
+       on a count of ZERO (the fixture at HEAD already carried `idem_heard_doubled`, so this predates today).
+        The Mag wears its owner's pub; the Cards wear the holders'. Also: `story_accept` reads per-step `ok` and
+         never `outcome.gaps`, so it called SwarmReboot GREEN with a declared assertion unmet — read `state` after
+          every accept and require `"ok":true` with no `gaps` (memory + Story_hygiene_todo).
+5b. ✅ **The SoundPooling unison — LANDED 2026-09-05** (SoundPooling_todo §0): one `%SoundPooling,pub:<me>`
+    home holding consent · compartments · `%Provisions` · the material shelf. `%Pools` and `%SoundPile` are
+     gone as mainkeys; faces read through `Ra_pool_stock`/`Ra_pool_provisions`, probed. Gated by the four
+      Pool Books + SwarmReboot + MusuHeard (residuals read: exactly the move) — re-sworn with `--allow`.
 6. **Hygiene, when someone owns it:** six Books' COMMITTED toc diges disagree with their own snaps
     (`SwarmBody` **22/23**, the `%Want` W1 gate) — no runner needed to fix, see `Story_hygiene_todo.md` §0.
-7. **The commit.** ~420 files stand uncommitted in the working tree: the circuit, the rename sweep, the
-    re-recorded fixtures, and the docs. Commits are the human's job; this is a commit point.
+7. ✅ **Committed** — `shbam` (2026-09-04 22:38) took the circuit, the rename, the fixtures and the docs. The
+    2026-09-05 work (unison, MusuBuddy fixes, rulings, bisect) is the next commit point.
 
 **The one thing that would detonate for a fresh session:** a red here is not evidence until it reproduces
  on a warm runner, and a caveat count is not a regression — but per the `self,round` ruling it IS a
@@ -659,12 +746,37 @@ Two policy facts, once: **berth is per-share** — a crewmate mounting the same 
     dispatch pier-less, so this is one frame kind + one `oai` at the landing, not a transport — but it is
      the network layer you said to leave alone, so it waits for your word. Without it a phone's ♥ can only
       pool lofi on the phone itself.
+    **RULED 2026-09-05 (the owner, verbatim):** *"the Captain needs to handover jobs to the Crew, basically…
+     and I'm thinking after you press heart the first time, you might get popped up asked about '[x] stash
+      tracks on your phone, then later from a Linked Device [x] downloading the [x] the whole album they're
+       from' — maybe… maybe that would be annoying. that might be the clearest way to present the whole
+        sound-trafficking-scheme."*
+    Read: (a) the road IS crew work — a ♥ on a Cave is a JOB the Captain hands to whichever crew body has the
+     folder, so it rides the same `/Crew` membership and the same-soul body↔body frames, not a friend wire;
+      (b) the FIRST ♥ is the consent moment for the whole scheme, presented as three checkboxes that ARE the
+       three roads — stash on this phone (the SoundPooling yes), let a linked device download it (the
+        handoff), and pull the whole album (the §C widen). One sheet, once, and every later ♥ is silent.
+         The owner's own doubt ("annoying") is real: keep it to the first heart only, never re-ask, and make
+          the ✕ on the Door the way back. Not built — the frame kind + the first-♥ sheet are the next cut.
 6. **`.c` → a visible sphere** — assumed by §6, not built here (`Repli_design` §5). First candidates from
     this doc: `radio.c.heard` (becomes `Mag:heard`), Lineup's `Card.c.rec` (becomes `Card,id,pub`).
 8. **Does the SoundPile exist on a device that HAS a folder?** Recommendation: no — FSA ⇒ hearts land
     originals in the collection and there is no pile; no FSA ⇒ the pile is the collection. See §1a's
      ⚠ block: on a laptop the pile is a strictly worse duplicate of the heist, and `take:'radio'` is
       sediment nobody chose. Not in this build; it is a SoundPooling change.
+    **RULED 2026-09-05 (the owner, verbatim):** *"I'm guessing no… when others wanted our SoundPooling they'd
+     cause fresh encodings, we'd simply listen to our folder… don't let this get weird though, maybe we're
+      always supposed to have SoundPooling, and sometimes its in FSA, sometimes OPFS, I don't know… or random
+       FSA tracks can transparently be SoundPooling as well? because SP doesn't have directory structure
+        right, it's just the Pool and then a big list of tracks…"*
+    Read: the leaning is NO pile where a folder stands — but the shape the owner reaches for is better than
+     a gate: **SoundPooling is always the one thing, and only its BACKING varies** (OPFS `pool/…` on a phone,
+      the FSA folder on a laptop). It has no directory structure of its own — one home, a flat list of
+       tracks — so a folder track can stand in it transparently and nothing is duplicated. The unison landed
+        2026-09-05 (SoundPooling_todo §0) makes that possible for free: the home is one particle either way,
+         and "which nav holds the bytes" is a property of the record's `path`, not of the shape. "Don't let
+          this get weird" is the constraint: no second pile, no per-backing mainkey, no gate that flips the
+           feature off — just a home that is always there and a path that says where the bytes are.
 
 7. **`Mag:heard` as the durable cursor** — §1b makes the six-week-old §8 ruling real by construction. Nod
     or veto: it means the dedup set survives reload and grows by `heard_ttl`, not by a 100 cap.

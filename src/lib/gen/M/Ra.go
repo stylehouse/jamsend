@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'f8cb2ff2cd4a7581~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '8d7b7f16e647e04e~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -720,12 +720,16 @@ async Ra_stock_peek(nav, name) {
 Ra_home_self(w, pub) {
     return this.Ra_home_shelf(w, w.oai({ Mine: 1, pub: pub }), pub, 'stock')
 },
-// Ra_home_pool — the SOUNDPOOL home (SoundPooling_todo §2.1): MY pressed lofi copies, a
-//  `%SoundPile,pub:<me>` home with the same paged stock shelf, its records rooted at `pool/…`
-//   OPFS paths.  A DISTINCT home on purpose: identity is per-shelf, so a pool %Record (same id,
-//    path pool/…) is a different holding from the library %Record — a cache row, never a dupe.
+// Ra_home_pool — the MATERIAL shelf of SoundPooling: MY pressed lofi copies, a paged `stock,pub` shelf
+//  UNDER the one `%SoundPooling,pub:<me>` home (Ra_pool_home_mint — the unison of 2026-09-04; it stood on
+//   its own `%SoundPile,pub` home on the world floor before), its records rooted at `pool/…` OPFS paths.
+//    A DISTINCT shelf on purpose: identity is per-shelf, so a pool %Record (same id, path pool/…) is a
+//     different holding from the library %Record — a cache row, never a dupe.  Mints; Ra_pool_stock probes.
 Ra_home_pool(w, pub) {
-    return this.Ra_home_shelf(w, w.oai({ SoundPile: 1, pub: pub }), pub, 'stock')
+    let home = this.Ra_pool_home_mint(w, pub)
+    let shelf = home.oai({ stock: 1, pub: pub })
+    shelf.c.up = home
+    return shelf
 },
 Ra_home_them(w, pub) {
     // NO self-guard here, deliberately (removed 2026-08-05).  A "last-line" guard reading
@@ -1134,11 +1138,9 @@ Ra_quarter_tally(shelf) {
 //  Order of declaration IS priority: earlier pools pick first, later pools never double-claim a
 //   track an earlier one took (dedup), so the composition adds up instead of overlapping.
 Ra_pool_define(w, name, take, cap, who) {
-    let home = this.Ra_pool_home(w)
-    let shelf = home.oai({ Pools: 1 })
-    shelf.c.up = home
-    let p = shelf.oai({ Pool: 1, name: String(name) })
-    p.c.up = shelf
+    let home = this.Ra_pool_home_mint(w)
+    let p = home.oai({ Pool: 1, name: String(name) })
+    p.c.up = home
     if (take) { p.sc.take = String(take) }
     // `who` — THE ONE REAL DECISION (owner 2026-09-03): 'friends' = random tracks to hear for the first time,
     //  'crew' = your own collection spread across your devices, 'all' = both.  Absent = all.
@@ -1147,14 +1149,75 @@ Ra_pool_define(w, name, take, cap, who) {
     p.bump()
     return p
 },
-// Ra_pool_home — WHERE the pools live (SoundPooling CRUD, 2026-09-03): on the live self's IDENTITY when `w`
-//  is the tab's radio world (so the account snap carries them and a phone keeps them through the stash —
-//   the pools pillar), on the world itself for a Book or a lone world.  One shape, two homes by ownership.
-Ra_pool_home(w) {
+// ── ONE HOME (SoundPooling_todo §0 — the owner, 2026-09-04: *"lets move all those into unison?
+//  SoundPooling/Pool/* should have its scheme and content|state and everything it has"*).  The feature stood
+//   in FOUR places: the declaration under a %Pools shelf on the identity, consent + budget beside it, the
+//    want-list under %Provisions on the WORLD FLOOR, and the material under a %SoundPile,pub home on the
+//     world.  Now it is ONE particle, `%SoundPooling,pub:<me>,budget_mb`, holding all four as children:
+//       %Consent,at · %Pool,name,take,cap,salt,who,share · %Provisions > %Want · stock,pub > Mag:shuffle > …
+//      ONE per owner — a budget is a fact about the device, never about a friend — so the PROBE ignores
+//       `pub`: it is the label the home wears, not a key.  It rides the account snap when the owner is the
+//        live identity (bump() does NOT propagate upward, so pool churn never rewrites the account file —
+//         checked, not assumed) and the stash pillar Swarm_restash_pools walks it, unchanged in shape.
+//          `SoundPooling` is an honest mainkey now that the compartments ARE underneath it (the objection to
+//           the -ing name was only ever that a reader would look for them there and not find them).
+// Ra_pool_owner — WHO OWNS the pooling: the live self's IDENTITY when `w` is the tab's radio world (so the
+//  account snap carries it and a phone keeps it through the stash), the world itself for a Book or a lone
+//   world.  One shape, two owners by ownership.
+Ra_pool_owner(w) {
     let top = this.top_House ? this.top_House() : null
     let self = this.Swarm_live_self ? this.Swarm_live_self() : null
     if (top && top.c && w && top.c.radio_w === w && self) { return self }
     return w
+},
+// Ra_pool_pub — the label the home wears: an explicit pub, else the owning identity's prepub, else 'me'.
+//  NEVER Radio_pub here: on a runner tab it answers with the tab's live prepub even inside a Book world, and
+//   the first gate run stamped `SoundPooling,pub:da060c94…` — a machine identity — into a fixture. A
+//    world-owned home is a Book's or a lone world's, and every fixture it ever wore said `me`.
+Ra_pool_pub(w, pub) {
+    if (pub) { return String(pub) }
+    let owner = this.Ra_pool_owner(w)
+    if (owner && owner !== w && owner.sc && owner.sc.prepub) { return String(owner.sc.prepub) }
+    return 'me'
+},
+// Ra_pool_home — PROBE the one home, never mint: the owner's first, then the world's (a define that ran before
+//  the live self hydrated wrote to the WORLD, and a read that only looked at the identity made that pool
+//   invisible and undroppable — the 2026-09-03 review).  Null while nothing is declared.
+Ra_pool_home(w) {
+    if (!w) { return null }
+    let owner = this.Ra_pool_owner(w)
+    let home = owner ? owner.o({ SoundPooling: 1 })[0] : null
+    if (!home && owner !== w) { home = w.o({ SoundPooling: 1 })[0] }
+    return home || null
+},
+// Ra_pool_homes — every home a drop or a taken-back consent must reach (both owners, deduped).
+Ra_pool_homes(w) {
+    let out = []
+    if (!w) { return out }
+    for (const own of [this.Ra_pool_owner(w), w]) {
+        let h = own ? own.o({ SoundPooling: 1 })[0] : null
+        if (h && !out.includes(h)) { out.push(h) }
+    }
+    return out
+},
+// Ra_pool_home_mint — find-or-create the one home on the owner (a standing home anywhere wins: never split).
+Ra_pool_home_mint(w, pub) {
+    let had = this.Ra_pool_home(w)
+    if (had) { return had }
+    let owner = this.Ra_pool_owner(w)
+    let home = owner.oai({ SoundPooling: 1, pub: this.Ra_pool_pub(w, pub) })
+    home.c.up = owner
+    return home
+},
+// Ra_pool_provisions / Ra_pool_stock — the two READ seams a face polls, the want-list and the material shelf,
+//  PROBED (the ShuffleFace law: a dial poll must not vivify a home).  Null while nothing stands.
+Ra_pool_provisions(w) {
+    let home = this.Ra_pool_home(w)
+    return home ? (home.o({ Provisions: 1 })[0] || null) : null
+},
+Ra_pool_stock(w, pub) {
+    let home = this.Ra_pool_home(w)
+    return home ? (home.o({ stock: 1, pub: this.Ra_pool_pub(w, pub) })[0] || null) : null
 },
 // ── CONSENT (owner 2026-09-03: "we should get consent to start SoundPooling and one-paragraph explain it,
 //  since it'll start putting big files in an obscure location on their phone, which might be low on space
@@ -1164,13 +1227,11 @@ Ra_pool_home(w) {
 //      pools pillar (a phone keeps it through a reload), and takeable back.  Declaring a pool is still free —
 //       it is a plan, and a plan costs nothing — but every act on bytes reads Ra_pool_consent first.
 Ra_pool_consent(w) {
-    let shelf = w ? (this.Ra_pool_home(w).o({ Pools: 1 })[0] || w.o({ Pools: 1 })[0]) : null
-    return shelf && shelf.o({ Consent: 1 })[0] ? 1 : 0
+    let home = this.Ra_pool_home(w)
+    return home && home.o({ Consent: 1 })[0] ? 1 : 0
 },
 Ra_pool_consent_give(w, now) {
-    let home = this.Ra_pool_home(w)
-    let shelf = home.oai({ Pools: 1 })
-    shelf.c.up = home
+    let shelf = this.Ra_pool_home_mint(w)
     let c = shelf.oai({ Consent: 1 })
     c.c.up = shelf
     if (now != null && !c.sc.at) { c.sc.at = String(now) }
@@ -1179,8 +1240,7 @@ Ra_pool_consent_give(w, now) {
 },
 Ra_pool_consent_take(w) {
     let n = 0
-    for (const shelf of [this.Ra_pool_home(w).o({ Pools: 1 })[0], w ? w.o({ Pools: 1 })[0] : null]) {
-        if (!shelf) { continue }
+    for (const shelf of this.Ra_pool_homes(w)) {
         let hit = 0
         for (const c of shelf.o({ Consent: 1 })) { shelf.drop(c); hit = hit + 1 }
         if (hit) { shelf.bump(); n = n + hit }
@@ -1192,13 +1252,11 @@ Ra_pool_consent_take(w) {
 //   out it all").  `budget_mb` rides the %Pools shelf; 0/absent with no consent = off.  v1 turns megabytes
 //    into a track cap at ~4 MB a lofi track (the byte-budget steward is v2 — Ra.g's own note above).
 Ra_pool_budget(w) {
-    let shelf = w ? (this.Ra_pool_home(w).o({ Pools: 1 })[0] || w.o({ Pools: 1 })[0]) : null
+    let shelf = this.Ra_pool_home(w)
     return shelf ? Number(shelf.sc.budget_mb || 0) : 0
 },
 Ra_pool_budget_set(w, mb) {
-    let home = this.Ra_pool_home(w)
-    let shelf = home.oai({ Pools: 1 })
-    shelf.c.up = home
+    let shelf = this.Ra_pool_home_mint(w)
     let v = Math.max(0, Math.floor(Number(mb) || 0))
     if (v) { shelf.sc.budget_mb = String(v) } else if (shelf.sc.budget_mb) { delete shelf.sc.budget_mb }
     shelf.bump()
@@ -1213,7 +1271,7 @@ Ra_pool_cap_of(mb) {
 //   budget × share ÷ ~4 MB — never set by hand any more.  Moving one share rescales the others so the gang
 //    always sums to 100.
 Ra_pool_caps_apply(w) {
-    let shelf = this.Ra_pool_home(w).o({ Pools: 1 })[0]
+    let shelf = this.Ra_pool_home(w)
     if (!shelf) { return 0 }
     let mb = Number(shelf.sc.budget_mb || 0)
     let n = 0
@@ -1225,7 +1283,7 @@ Ra_pool_caps_apply(w) {
     return n
 },
 Ra_pool_share_set(w, name, pct) {
-    let shelf = this.Ra_pool_home(w).o({ Pools: 1 })[0]
+    let shelf = this.Ra_pool_home(w)
     if (!shelf) { return 0 }
     let me = shelf.o({ Pool: 1, name: String(name) })[0]
     if (!me) { return 0 }
@@ -1314,8 +1372,7 @@ async Ra_pool_off(w) {
     this.Ra_pool_budget_set(w, 0)
     for (const d of this.Ra_pool_defs(w, 0)) { if (d.name) { out.pools = out.pools + this.Ra_pool_drop(w, d.name) } }
     let me = (this.Radio_pub ? this.Radio_pub(w) : null) || 'me'
-    let phome = w ? w.o({ SoundPile: 1, pub: me })[0] : null
-    let pshelf = phome ? phome.o({ stock: 1, pub: me })[0] : null
+    let pshelf = this.Ra_pool_stock(w, me)
     let nav = w ? (w.c.ra_nav || (this.Crate_nav ? this.Crate_nav() : null)) : null
     if (pshelf) {
         for (const r of this.Ra_recs(pshelf)) {
@@ -1331,9 +1388,8 @@ async Ra_pool_off(w) {
 //  re-derives the goal from what stands); its pooled copies are then 'evict' wants — the pool is expendable.
 Ra_pool_drop(w, name) {
     let n = 0
-    // drop from BOTH homes (see Ra_pool_defs): a pool minted before the self hydrated must still die.
-    for (const shelf of [this.Ra_pool_home(w).o({ Pools: 1 })[0], w ? w.o({ Pools: 1 })[0] : null]) {
-        if (!shelf) { continue }
+    // drop from BOTH homes (see Ra_pool_home): a pool minted before the self hydrated must still die.
+    for (const shelf of this.Ra_pool_homes(w)) {
         let hit = 0
         for (const p of shelf.o({ Pool: 1, name: String(name) })) { shelf.drop(p); hit = hit + 1 }
         if (hit) { shelf.bump(); n = n + hit }
@@ -1342,10 +1398,8 @@ Ra_pool_drop(w, name) {
 },
 // Ra_pool_defs — read the declared composition; fall back to the anonymous single pool.
 Ra_pool_defs(w, cap) {
-    // READ BOTH HOMES, prefer the identity (2026-09-03 review): a define that ran before the live self
-    //  hydrated wrote its %Pools to the WORLD, and reading only the identity afterwards made that pool
-    //   invisible and undroppable.  Probe-first either way — a read never mints a shelf.
-    let shelf = w ? (this.Ra_pool_home(w).o({ Pools: 1 })[0] || w.o({ Pools: 1 })[0]) : null
+    // both owners, identity first (Ra_pool_home) — probe-first: a read never mints a home.
+    let shelf = this.Ra_pool_home(w)
     let defs = shelf ? shelf.o({ Pool: 1 }).map((p) => ({ name: String(p.sc.name || ''), take: String(p.sc.take || 'taste'), cap: Number(p.sc.cap || 0), salt: String(p.sc.salt || ''), who: String(p.sc.who || 'all'), share: Number(p.sc.share || 0) })).filter((p) => p.name) : []
     if (!defs.length) { return [{ name: '', take: 'taste', cap: cap }] }
     return defs
@@ -1365,9 +1419,9 @@ Ra_pool_hash(s) {
 Ra_pool_sources(w) {
     let out = []
     if (!w || !w.o) { return out }
-    // crew or friend?  /Crew lives on the identity the pools live on (Ra_pool_home) — a holder whose routing
-    //  name prefix-matches a mate row is crew; everyone else sharing with me is a friend.
-    let crew = this.Ra_pool_home(w).o({ Crew: 1 })[0]
+    // crew or friend?  /Crew lives on the identity the pooling lives on (Ra_pool_owner) — a holder whose
+    //  routing name prefix-matches a mate row is crew; everyone else sharing with me is a friend.
+    let crew = this.Ra_pool_owner(w).o({ Crew: 1 })[0]
     let mates = crew ? crew.o({ mate: 1 }) : []
     let samec = (a, b) => a && b ? (String(a).startsWith(String(b)) || String(b).startsWith(String(a))) : false
     let crewish = (from) => mates.some((m) => samec(m.sc.mate, from) || (m.sc.pub && samec(m.sc.pub, from)))
@@ -1502,8 +1556,9 @@ Ra_quarter(w, shelf, pool, lib, cap, sources) {
     let recent = this.Heard_landed_ids ? this.Heard_landed_ids(w, this.Radio_pub(w) || '', lib) : []
     let goal = this.Ra_quarter_goal_pools(shelf, this.Ra_pool_defs(w, cap), sources, pool, recent)
     let diff = this.Ra_quarter_diff(goal, pool, lib)
-    let out = w.oai({ Provisions: 1 })
-    out.c.up = w
+    let phome = this.Ra_pool_home_mint(w)
+    let out = phome.oai({ Provisions: 1 })
+    out.c.up = phome
     let fresh = {}
     for (const d of diff) fresh[d.of + '|' + d.do] = d
     for (const want of out.o({ Want: 1 }).slice()) {
@@ -1539,7 +1594,7 @@ Ra_quarter(w, shelf, pool, lib, cap, sources) {
 //            yet, so it is inert exactly like the pool landing it feeds (Portability_doc §6).
 async Ra_quarter_serve(w, nav, shelf, pool, lib, cap, sources) {
     this.Ra_quarter(w, shelf, pool, lib, cap, sources)
-    let prov = w.o({ Provisions: 1 })[0]
+    let prov = this.Ra_pool_provisions(w)
     let out = { pressed: 0, evicted: 0, deferred: 0, fails: 0 }
     if (!prov) return out
     for (const want of prov.o({ Want: 1 }).slice()) {
@@ -4796,7 +4851,7 @@ Ra_pool_fill_book(w, ident, origId, to) {
 //   legible want (nobody to ask).  Idempotent (reach_book finds-or-creates on to·of·for).  Declaring a
 //    'random' pool IS the consent — the gesture is the compartment, not a button per track.
 Ra_pool_fill_wants(w, ident) {
-    let out = w ? w.o({ Provisions: 1 })[0] : null
+    let out = this.Ra_pool_provisions(w)
     if (!out || !ident) { return 0 }
     let n = 0
     // BUDGETED (2026-09-03 review): the %Reach shelf is capped and shared with the ceremony, the charter

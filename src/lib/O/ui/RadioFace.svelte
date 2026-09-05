@@ -9,6 +9,40 @@
     // the second-hand: sc.at is written WITHOUT a version bump (a bump/sec would re-tessellate
     //  the glass), so the face polls its own clock — H.version still folds in real changes.
     let tick = $state(0)
+
+    // HEART-SETTINGS (owner 2026-09-05: "long-press the heart to open heart-settings" — and before that,
+    //  "the fact that ♥ can lead to Pooling or Heisting at your Cave is odd… needs explaining in one sentence").
+    //   The sheet IS the explanation: one sentence, then the roads a ♥ can take on THIS device, each a line.
+    //    It opens itself ONCE, after the first ♥ ever (Heard_tipped on the heard Mag — durable, stashed, never
+    //     re-asked), and long-press is the way back forever.  The road switch (Heard_hand_set) and the tip are
+    //      scalars on the Mag; the sheet holds no state of its own beyond open/closed.
+    let sheet = $state(false)
+    let holdT: any = null
+    let held = false
+    const HOLD_MS = 450
+    const hold_start = () => { held = false; clearTimeout(holdT); holdT = setTimeout(() => { held = true; sheet = true }, HOLD_MS) }
+    const hold_end = () => { clearTimeout(holdT); holdT = null }
+    const like = () => {
+        if (held) { held = false; return }              // the long-press already opened the sheet; not a like
+        const ok = (H as any)?.Radio_like?.(n)
+        try { const w = n?.c?.w; const me = (H as any)?.Radio_pub?.(w); if (ok && w && me && !(H as any)?.Heard_tipped?.(w, me)) { (H as any)?.Heard_tip?.(w, me); sheet = true } } catch {}
+    }
+    let roads = $derived.by(() => {
+        void H?.version; void sheet
+        try {
+            const w = n?.c?.w; const me = (H as any)?.Radio_pub?.(w) || 'me'
+            const ident = (H as any)?.Swarm_live_self?.()
+            const targets = ident ? ((H as any)?.Heard_hand_targets?.(ident, (H as any)?.Heard_hand_myaddr?.(ident)) ?? []) : []
+            return {
+                copy: !!(w && (H as any)?.Ra_pool_consent?.(w)),
+                folder: !!((H as any)?.Crate_nav?.()),
+                hand: !!(w && (H as any)?.Heard_hand_on?.(w, me)),
+                to: targets.length ? String(targets[0].name) : '',
+            }
+        } catch { return { copy: false, folder: false, hand: true, to: '' } }
+    })
+    const hand_toggle = () => { try { const w = n?.c?.w; const me = (H as any)?.Radio_pub?.(w) || 'me'; (H as any)?.Heard_hand_set?.(w, me, roads.hand ? 0 : 1); H?.bump_version?.() } catch {} }
+    const hand_line = () => roads.hand ? (roads.to ? ' — ' + roads.to : ' — no linked device with a folder yet') : ' (off)'
     $effect(() => {
         const iv = setInterval(() => { tick++ }, 1000)
         return () => clearInterval(iv)
@@ -16,7 +50,7 @@
 
     // consent + want, read live (Ra_pool_consent / Radio_pool_wanted) so the source chip can say "needs setup"
     let pool_ok = $derived.by(() => { void H?.version; try { const w = n?.c?.w; return !!(w && (H as any)?.Ra_pool_consent?.(w)) } catch { return false } })
-    let pool_n = $derived.by(() => { void H?.version; try { const w = n?.c?.w; const pub = (H as any)?.Radio_pub?.(w) || 'me'; const sh = w?.o({ SoundPile: 1, pub })[0]?.o({ stock: 1, pub })[0]; return sh && (H as any)?.Ra_recs ? (H as any).Ra_recs(sh).length : 0 } catch { return 0 } })
+    let pool_n = $derived.by(() => { void H?.version; try { const w = n?.c?.w; const pub = (H as any)?.Radio_pub?.(w) || 'me'; const sh = (H as any)?.Ra_pool_stock?.(w, pub); return sh && (H as any)?.Ra_recs ? (H as any).Ra_recs(sh).length : 0 } catch { return 0 } })
     let pool_wanted = $derived.by(() => { void H?.version; try { const w = n?.c?.w; return !!(w && (H as any)?.Radio_pool_wanted?.(w, null)) } catch { return false } })
     let face = $derived.by(() => {
         void H?.version
@@ -157,11 +191,33 @@
             <button class="rf-btn rf-heart" onclick={() => (H as any)?.Radio_skip?.(n)} title="next">⏭</button>
         </div>
         {#if face.by}
-            <button class="rf-btn rf-like" class:liked={face.likedThis} onclick={() => { (H as any)?.Radio_like?.(n) }}
+            <button class="rf-btn rf-like" class:liked={face.likedThis} onclick={like}
+                onpointerdown={hold_start} onpointerup={hold_end} onpointerleave={hold_end} onpointercancel={hold_end}
+                oncontextmenu={(e) => { e.preventDefault(); sheet = true }}
                 title={face.likedThis ? 'liked — it comes when this friend\'s turn comes round (see Haul)' : 'like this — the track is asked for and fetched one at a time per friend'}>{face.likedThis ? '♥' : '♡'}</button>
 <!-- (the ⇊ keep button folded into ♥ — owner 2026-09-03: "turn the heist button into the like button") -->
         {/if}
     </div>
+    {#if sheet}
+        <!-- HEART-SETTINGS — the one sentence, then the roads.  Tap anywhere on it to close. -->
+        <div class="rf-sheet" role="dialog" aria-label="what the heart does" onclick={() => { sheet = false }}>
+            <div class="rf-sheet-law">♥ keeps it.</div>
+            <div class="rf-road" class:on={roads.copy}>
+                <span class="rf-road-tick">{roads.copy ? '✓' : '·'}</span>
+                <span>a copy this phone can play{roads.copy ? '' : ' — set up in SoundPool'}</span>
+            </div>
+            {#if roads.folder}
+                <div class="rf-road on"><span class="rf-road-tick">✓</span><span>the real file, into your music folder here</span></div>
+            {:else}
+                <button class="rf-road rf-road-btn" class:on={roads.hand} onclick={(e) => { e.stopPropagation(); hand_toggle() }}>
+                    <span class="rf-road-tick">{roads.hand ? '✓' : '·'}</span>
+                    <span>the real file, fetched by your linked device when it's around{hand_line()}</span>
+                </button>
+            {/if}
+            <div class="rf-road rf-road-dim"><span class="rf-road-tick">·</span><span>the whole album it came from — not yet</span></div>
+            <div class="rf-sheet-hint">hold ♥ to see this again</div>
+        </div>
+    {/if}
     <!-- provenance badge, unmistakably (the human 2026-08-07: "the UI in the player should be clear its
          remote, or local") — its own object like everything else here. -->
     <!-- THE SOURCE CHIP (Siphon_todo P2): the provenance badge is also the source selector —
@@ -238,6 +294,15 @@
 {/if}
 
 <style>
+    /* HEART-SETTINGS: a small card over the face, pointer-events re-armed (the overlay is none). */
+    .rf-sheet { position: absolute; left: 8px; right: 8px; bottom: 56px; z-index: 5; pointer-events: auto; background: rgba(18, 16, 24, 0.96); color: #eee; border: 1px solid rgba(255, 210, 120, 0.35); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.35; box-shadow: 0 6px 24px rgba(0,0,0,0.45); }
+    .rf-sheet-law { font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #ffd27a; }
+    .rf-road { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; opacity: 0.55; text-align: left; }
+    .rf-road.on { opacity: 1; }
+    .rf-road-dim { opacity: 0.35; font-style: italic; }
+    .rf-road-btn { background: none; border: 0; color: inherit; font: inherit; width: 100%; cursor: pointer; padding: 3px 0; }
+    .rf-road-tick { width: 1em; flex: 0 0 1em; color: #ffd27a; }
+    .rf-sheet-hint { margin-top: 6px; font-size: 11px; opacity: 0.5; }
     /* SMALL — THE PLAY BUTTON, and nothing else.  Intrinsic box on BOTH axes (no height:100%, which
        would measure the mold this face is sitting in and hand the layout an aspect that is not a fact
        about anything — see DoorFace's note, where that was a bug you could see). */

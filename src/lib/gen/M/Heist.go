@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '8e00ce451a98582a~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'ae80675e551f3781~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2292,6 +2292,8 @@ async Heist_keep_beat(w, ident) {
     let me = String(ident.sc.prepub)
     let rw = this.top_House().c.radio_w || w
     let nav = this.Crate_nav ? this.Crate_nav() : null
+    // NO FOLDER HERE — the hearts I cannot carry go to a crew body that can (Heard_hand_beat, Thursday).
+    if (!nav && this.Heard_hand_beat) { try { await this.Heard_hand_beat(w, rw, me, ident, nav) } catch (er) {} }
     // TRANSFER HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback but I don't see any"):
     //  a persistent dontSnap %Transfer cell in the radio world — the glass imposes TransferFace on it by mainkey
     //   (no snap byte).  It reads the live top_House().c.xfer (rates/pulls/serves/freed) on its own poll.  Here

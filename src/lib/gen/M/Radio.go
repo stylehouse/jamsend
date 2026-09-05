@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '48ab21ce91b54d8c~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '7d97790600e3ec85~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1167,8 +1167,7 @@ Radio_pool_catch(w, radio, rec) {
     for (const p of pools) { cap = cap + (+p.cap || 0) }
     if (cap < 1) { return 0 }
     let me = this.Radio_pub(w) || 'me'
-    let phome = w.o({ SoundPile: 1, pub: me })[0]          // probe-first: a read never mints a home
-    let pshelf = phome ? phome.o({ stock: 1, pub: me })[0] : null
+    let pshelf = this.Ra_pool_stock(w, me)                  // probe-first: a read never mints a home
     let seed = String(rec.sc.id || '')
     if (!seed) { return 0 }
     let shop = this.Ra_home_shop(w, me)
@@ -1433,8 +1432,7 @@ Radio_source_next(n) {
 //     starvation — the same law as the friend pool).
 Radio_dial_pool_local(w, radio, retry) {
     let pub = this.Radio_pub(w) || 'me'
-    let home = w.o({ SoundPile: 1, pub: pub })[0]
-    let shelf = home ? home.o({ stock: 1, pub: pub })[0] : null
+    let shelf = this.Ra_pool_stock(w, pub)
     if (!shelf) { return null }
     if (retry) { return this.Ra_dial_next(w, shelf, {}) }
     return this.Ra_dial_next(w, shelf, { skip_ids: this.Radio_heard(radio) })

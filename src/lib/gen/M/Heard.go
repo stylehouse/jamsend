@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return '45b8a3265ec534a1~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return 'b77d443f1899143d~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -127,7 +127,14 @@ Heard_mag_near(shelf) {
 //   have the facts in hand and no identity to resolve them through.  Idempotent by (id, pub).
 Heard_seed(container, e) {
     if (!container || !e || !e.id) { return null }
-    let mag = this.Heard_mag_at(container, e.pub)
+    // THE MAG WEARS ITS OWNER'S PUB, THE CARD WEARS THE HOLDER'S (fixed 2026-09-05).  This keyed the Mag by
+    //  the CARD's pub — `Mag:heard,pub:Cave` on an identity whose restash, wipe, rehydrate and every reader
+    //   look for `Mag:heard,pub:<prepub>` — so a seeded wish sat on a Mag nobody else could find: zero rows
+    //    stashed, nothing back after the wipe, and SwarmReboot's idempotence swear blocked on a count of ZERO
+    //     (`idem_heard_doubled`, misnamed for what it caught).  An identity owns by prepub, a `Mine,pub` home
+    //      by pub, a bare shelf by nothing.
+    let me = container.sc ? String(container.sc.prepub || container.sc.pub || '') : ''
+    let mag = this.Heard_mag_at(container, me)
     let card = this.Heard_find(mag, e.id, e.pub)
     if (!card) {
         let pg = this.Heard_page(mag, +(e.at || 0))
@@ -430,6 +437,7 @@ Heard_word(mag, card, now) {
     if (card.sc.unvouched) { return 'could not be verified' }
     if (card.sc.landfail) { return 'failed' }
     if (this.Heard_gave_up(mag, card, now)) { return 'gave up' }
+    if (card.sc.handed) { return 'handed to ' + String(card.sc.handed) }
     return 'waiting'
 
 },
@@ -658,6 +666,146 @@ Heard_carrying(row, of) {
     if (!of) { return 0 }
     for (const keep of row.keeps) { if (String(keep.sc.seed || '') === of) { return 1 } }
     return 0
+},
+//#endregion
+
+
+//#region THE HANDOFF — Thursday (Radio_circuit_todo §7.5, ruled 2026-09-05)
+// The owner: *"the Captain needs to handover jobs to the Crew, basically."*  A ♥ pressed on a body with NO
+//  folder cannot be carried where it was pressed — the phone holds the wish — and a crew body that HAS a
+//   folder (a roster %Body wearing %Organ,kind:trove, which the roster mile already replicates) does the
+//    carrying.  So the WISH travels, not the bytes: one `take` frame over the crew mile lands as the SAME
+//     Card on that body's own heard Mag (taken, `via` the body that pressed it), and its ordinary
+//      Heard_haul_beat keeps it like any heart pressed there.  A `take_got` comes back and the phone's Card
+//       wears `handed:<name>` — the Haul row's word turns from `waiting` to `handed to Laptop`.
+//  EVERY ROAD IS A SCALAR ON THE CARD (into:pool · handed · via · held · landfail): a face can draw the
+//   wires of love-heist-opfs-fsa-now-later straight off the Mag, with no state of its own.
+//  Store-and-forward like %Suggest: the Card IS the queue (durable — pillar 8 stashes takes), sent once
+//   per session (`card.c.hand_sent`), re-offered when a sibling announces itself on the roster mile
+//    (Heard_hand_wake), retired by the ack.  Live frames ride Swarm_sibling_send (body page + soul
+//     voucher — a forged `take` buys nothing at the far door); a Book has no station and takes
+//      Swarm_deliver's in-process mail.  Both behind Swarm_sibling_reach.
+//  NOT here, on purpose: un-taking (the fat-thumb second press) does not travel — a heart handed and then
+//   taken back within 10s stays handed; the ✕ on the laptop's Haul row is the way back.  §C's law.
+// Heard_hand_targets — the bodies that could carry for me: rostered, not me, wearing a trove.
+Heard_hand_targets(ident, mineaddr) {
+    let out = []
+    if (!ident || !this.Swarm_body_roster) { return out }
+    for (const b of this.Swarm_body_roster(ident)) {
+        let addr = this.Swarm_body_addr(b)
+        if (!addr || addr === mineaddr) { continue }
+        if (!this.Swarm_organ_of(b, 'trove')) { continue }
+        out.push({ body: b, addr: addr, name: String(b.sc.name || b.sc.post || 'a linked device') })
+    }
+    return out
+},
+// Heard_hand_body — the roster row at an address (the ack's return address; the `via`/`handed` name).
+Heard_hand_body(ident, addr) {
+    if (!ident || !addr || !this.Swarm_body_roster) { return null }
+    for (const b of this.Swarm_body_roster(ident)) { if (this.Swarm_body_addr(b) === String(addr)) { return b } }
+    return null
+},
+Heard_hand_name(ident, addr) {
+    let b = this.Heard_hand_body(ident, addr)
+    return b ? String(b.sc.name || b.sc.post || '') : ''
+},
+Heard_hand_myaddr(ident) {
+    let mine = this.Swarm_body_mine ? this.Swarm_body_mine(ident) : null
+    return mine ? String(this.Swarm_body_addr(mine) || ident.sc.prepub) : String(ident.sc.prepub)
+},
+// Heard_hand_beat — THE PHONE'S PASS: nothing to do where a folder stands (I carry my own); else every
+//  un-handed, un-sent, un-judged take goes to the first trove body, once.  Returns frames sent.  `nav` is
+//   PASSED, never read off Crate_nav here: a runner tab has its own share, and a Book must be able to say
+//    "no folder" on purpose (the same reason Heard_haul_beat takes its nav).
+async Heard_hand_beat(w, rw, me, ident, nav) {
+    if (!w || !rw || !me || !ident) { return 0 }
+    if (nav) { return 0 }
+    if (!this.Heard_mag_find(rw, me)) { return 0 }
+    if (!this.Heard_hand_on(rw, me)) { return 0 }   // the person switched the linked-device road off
+    let mineaddr = this.Heard_hand_myaddr(ident)
+    let targets = this.Heard_hand_targets(ident, mineaddr)
+    if (!targets.length) { return 0 }
+    let t = targets[0]
+    let sent = 0
+    for (const row of this.Heard_takes(rw, me, this.Heard_shelf(rw, me))) {
+        for (const card of row.cards) {
+            if (card.sc.handed || card.c.hand_sent || this.Heard_verdict(card)) { continue }
+            let frame = { kind: 'take', page: this.Swarm_page(ident), from: mineaddr, id: String(card.sc.id), pub: String(row.pub) }
+            if (card.sc.title) { frame.title = String(card.sc.title) }
+            if (card.sc.artist) { frame.artist = String(card.sc.artist) }
+            if (this.Swarm_sibling_reach(w, ident, t.body, frame)) { card.c.hand_sent = t.name; sent = sent + 1 }
+        }
+    }
+    return sent
+},
+// Heard_hand_land — THE LAPTOP'S LANDING: the same Card, taken, on MY heard Mag; then the ack.
+//  Returns 1 fresh, 2 already taken here (the laptop had ♥'d it itself), 0 nothing.
+Heard_hand_land(w, ident, frame) {
+    if (!w || !ident || !frame || !frame.id) { return 0 }
+    let me = String(ident.sc.prepub || '')
+    let pub = String(frame.pub || '')
+    if (!pub || pub === me) { return 0 }
+    let card = this.Heard_card(w, me, String(frame.id), pub)
+    if (!card) { return 0 }
+    let fresh = card.sc.take ? 0 : 1
+    if (fresh) { card.sc.take = '1'; card.sc.at = '' + this.Heard_now(w); this.Heard_strip(card, this.Heard_verdict_keys()) }
+    if (frame.title && !card.sc.title) { card.sc.title = this.Radio_clean(String(frame.title)) }
+    if (frame.artist && !card.sc.artist) { card.sc.artist = this.Radio_clean(String(frame.artist)) }
+    let from = String(frame.from || (frame.page ? frame.page.prepub : '') || '')
+    let who = this.Heard_hand_name(ident, from)
+    if (who && !card.sc.via) { card.sc.via = who }
+    card.bump()
+    let back = this.Heard_hand_body(ident, from)
+    if (back) { this.Swarm_sibling_reach(w, ident, back, { kind: 'take_got', page: this.Swarm_page(ident), from: this.Heard_hand_myaddr(ident), id: String(frame.id), pub: pub }) }
+    return fresh ? 1 : 2
+},
+// Heard_hand_got — THE PHONE HEARS BACK: the wish is in hands that can carry it.  The row's word changes.
+Heard_hand_got(w, ident, frame) {
+    if (!w || !ident || !frame || !frame.id) { return 0 }
+    let me = String(ident.sc.prepub || '')
+    let mag = this.Heard_mag_find(w, me)
+    let card = mag ? this.Heard_find(mag, String(frame.id), String(frame.pub || '')) : null
+    if (!card) { return 0 }
+    let from = String(frame.from || (frame.page ? frame.page.prepub : '') || '')
+    let who = this.Heard_hand_name(ident, from) || 'a linked device'
+    if (String(card.sc.handed || '') !== who) { card.sc.handed = who; card.bump() }
+    return 1
+},
+// Heard_hand_wake — a sibling just announced itself (the roster mile): re-offer what was never acked.
+Heard_hand_wake(w, ident) {
+    if (!w || !ident) { return 0 }
+    let mag = this.Heard_mag_find(w, String(ident.sc.prepub || ''))
+    if (!mag) { return 0 }
+    let n = 0
+    for (const card of this.Heard_cards(mag)) { if (card.c.hand_sent && !card.sc.handed) { delete card.c.hand_sent; n = n + 1 } }
+    return n
+},
+// ── HEART-SETTINGS (the owner 2026-09-05: *"long-press the heart to open heart-settings"*) — the roads a ♥
+//  can take on THIS device, and the one-time tip, as scalars on the heard Mag (durable, stashed with the
+//   eighth pillar, per person — never re-asked across reloads or devices):
+//    tipped      the sheet has shown itself once, after the first ♥ ever; long-press is the way back
+//    no_handoff  the person switched the "real file via your linked device" road OFF
+//  Absent = default (on / not yet tipped), so a snap stays clean.  A face reads these through the two
+//   probes and writes through the two setters; nothing else touches them.
+Heard_tipped(w, me) {
+    let mag = this.Heard_mag_find(w, me)
+    return mag && mag.sc.tipped ? 1 : 0
+},
+Heard_tip(w, me) {
+    let mag = this.Heard_mag(w, me)
+    if (!mag) { return 0 }
+    if (!mag.sc.tipped) { mag.sc.tipped = '1'; mag.bump() }
+    return 1
+},
+Heard_hand_on(w, me) {
+    let mag = this.Heard_mag_find(w, me)
+    return mag && mag.sc.no_handoff ? 0 : 1
+},
+Heard_hand_set(w, me, on) {
+    let mag = this.Heard_mag(w, me)
+    if (!mag) { return 0 }
+    if (on) { if (mag.sc.no_handoff) { delete mag.sc.no_handoff; mag.bump() } } else { if (!mag.sc.no_handoff) { mag.sc.no_handoff = '1'; mag.bump() } }
+    return 1
 },
 //#endregion
 

@@ -14,7 +14,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'b0ed5024c9a827bf~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return '4080621920b55021~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -4846,7 +4846,7 @@ async SwarmReboot_stand(w) {
     if (crow && cert) { grant_to_C(crow, cert) }
     // two POOL compartments — the seventh pillar's subject: what this device keeps of the crew's music.
     //  Declared on the IDENTITY (the live home Ra_pool_home picks on a real tab), in priority order.
-    let pools = reba.oai({ Pools: 1 })
+    let pools = reba.o({ SoundPooling: 1 })[0] || reba.oai({ SoundPooling: 1, pub: String(reba.sc.prepub) })
     pools.c.up = reba
     for (const pd of [['circulation', 'random', '12', '3'], ['liked', 'liked', '6', '']]) {
         let pp = pools.oai({ Pool: 1, name: pd[0] })
@@ -4903,7 +4903,7 @@ async SwarmReboot_wipe(w) {
     for (const child of peering.o()) { peering.drop(child) }
     for (const crew of reba.o({ Crew: 1 })) { reba.drop(crew) }
     for (const cr2 of reba.o({ ChainRoot: 1 })) { reba.drop(cr2) }
-    for (const ps of reba.o({ Pools: 1 })) { reba.drop(ps) }
+    for (const ps of reba.o({ SoundPooling: 1 })) { reba.drop(ps) }
     for (const hm of reba.o({ Mag: 'heard' })) { reba.drop(hm) }
     let row = { wiped: 1 }
     if (!reba.o({ ChainRoot: 1 }).length) { row.roots_gone = 1 }

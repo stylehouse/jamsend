@@ -43,7 +43,7 @@
             // POOL MODE: the OPFS SoundPool shelf ONLY — probe-first (oa) so a render never mints the
             //  home; `open` (chunk 0 present) here means the bytes are LOCAL, not a latency question.
             const me = A?.Radio_pub?.(w)
-            const pool = (me && w.oa?.({ SoundPile: 1, pub: me })) ? A?.Ra_home_pool?.(w, me) : null
+            const pool = me ? (A?.Ra_pool_stock?.(w, me) ?? null) : null
             shelves.push({ name: '♪ your pool', recs: pool ? (A?.Ra_recs?.(pool) ?? []) : [] })
         }
         // every shelf the dial can reach: the friend crates by default, plus my own when the listener
@@ -116,7 +116,7 @@
         //    surfaced in pool mode, where it is the composition the human is shaping.
         let wantGroups: { pool: string; wants: { of: string; do: string; why: string }[] }[] = []
         if (poolMode) {
-            const prov = w.o?.({ Provisions: 1 })?.[0]
+            const prov = A?.Ra_pool_provisions?.(w) ?? null
             const byPool: Record<string, { of: string; do: string; why: string }[]> = {}
             for (const want of (prov?.o?.({ Want: 1 }) ?? [])) {
                 const pool = String(want.sc?.pool ?? '')

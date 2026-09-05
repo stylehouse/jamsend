@@ -2207,6 +2207,8 @@ async Heist_keep_beat(w, ident):
     let me = String(ident.sc.prepub)
     let rw = this.top_House().c.radio_w || w
     let nav = this.Crate_nav ? this.Crate_nav() : null
+    // NO FOLDER HERE — the hearts I cannot carry go to a crew body that can (Heard_hand_beat, Thursday).
+    if (!nav && this.Heard_hand_beat) { try { await this.Heard_hand_beat(w, rw, me, ident, nav) } catch (er) {} }
     // TRANSFER HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback but I don't see any"):
     //  a persistent dontSnap %Transfer cell in the radio world — the glass imposes TransferFace on it by mainkey
     //   (no snap byte).  It reads the live top_House().c.xfer (rates/pulls/serves/freed) on its own poll.  Here
