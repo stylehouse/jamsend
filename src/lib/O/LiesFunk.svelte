@@ -2558,12 +2558,35 @@ await M.eatfunc({
                         if (a.stand) {
                             const name = String(a.stand)
                             const top  = H.top_House()
+                            // --fresh (2026-09-06): `stand` alone is oai — find-or-create — so an ALREADY-
+                            //  standing world (from an earlier ghost_load this session) is reused as-is,
+                            //   stale roster and all.  A ghost like Atlas whose `Atlas()` do_fn only walks
+                            //    its roster ONCE (`if (!w.c.rostered)`) then never re-rosters on its own —
+                            //     confirmed live 2026-09-06: re-standing after a code change that widened
+                            //      its own corpus (ATLAS_EXT/ATLAS_ROOTS) silently kept the OLD, narrower
+                            //       roster.  `--fresh` drops the old A: first, the same "clean glass each
+                            //        run" the Book convention already uses (VytoStaple/AtlasStaple's own
+                            //         `if (old) SH.drop(old)`) — now available from the CLI too.
+                            if (a.fresh) { const old = top.o({ A: name })[0]; if (old) top.drop(old) }
                             top.oai({ A: name }).oai({ w: name })
                             stood = name
                         }
                         H.i_elvisto(w, 'think')
                         result = { loaded: path, gen: H.Lies_gen_path(path), stood: stood ?? null }
                     }
+                } else if (op === 'atlas_callers') {
+                    // The reverse lookup owed since the Atlas census began (Stemdex_todo.md §0):
+                    //  "who calls X" WITH the doc it lives in — a wildcard minisnap path already
+                    //   returns every matching call/elvisto row, but prints them without their parent,
+                    //    so it is a count-and-line answer, not a which-file one.  Read-only; needs
+                    //     A:Atlas/w:Atlas already standing (ghost_load --stand=Atlas first) — refuses
+                    //      plainly rather than silently returning [] if it isn't.
+                    const a = ask as any
+                    const name = String(a.name ?? '')
+                    const atlas = H.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
+                    if (!atlas) { ok = false; result = { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' } }
+                    else if (!name) { ok = false; result = { error: 'atlas_callers: name required' } }
+                    else { result = { name, callers: (H as any).Atlas_callers(atlas, name) } }
                 } else if (op === 'minisnap') {
                     // TARGETED read of a pointer path (read-only; safe on a humdinger).  See H.minisnap above.
                     const a = ask as any
@@ -3207,6 +3230,9 @@ await M.eatfunc({
                         //  track can play — cards vs files on disk vs previews vs standing reaches.  Moves
                         //   nothing, seals nothing; the same console block the dial prints when the pool is dry.
                         Ra_pool_report: 'w',
+                        // let a body take itself out of circulation entirely (2026-09-06): a headless
+                        //  machine that can never listen has no taste to curate a pool with.
+                        Ra_pool_excuse: 'w',
                     }
                     const verb = String((ask as any).verb ?? '')
                     const kind = POKES[verb]

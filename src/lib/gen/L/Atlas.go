@@ -23,24 +23,49 @@ import { dig } from "$lib/Y.svelte"
 //       Its `parser.parse(state.doc.sliceString(0))` fallback parses the raw text directly, wholly
 //        bypassing CM6's cached-tree snapshot, so a plain headless build is correct with no forcing
 //         on this side.  Verified: LangHold.svelte → 49/49 members with a bare EditorState.create.
-const ATLAS_MAPPER = 'm4'
+//     m5 (2026-09-05): two more compile.ts collector fixes — top-level `export function` decls in
+//      `.ts` (were 0 defs; vyto_foam.ts → 7) and `via` on every .svelte/.ts %call (a def_spans
+//       side table + a post-pass; LangHold.svelte → 117/117 calls now carry via).  Bumped so the
+//        whole census re-derives with the richer Maps rather than serving stale m4 rows.
+//     m6 (2026-09-06): three added Map kinds — %elvisto (the deferred cross-ghost call), %mint
+//      (where a mainkey is first minted), %proves (a %see or %desc sentence).  Verified:
+//       Vytonation.g → 7 elvisto to Vyto/Vyto::Vyto_commission, 80 sees (deduped from the
+//        oa-guard/i-mint pair sharing one sentence), 70 descs; Vyto.g → 27 mints, Organ present,
+//         the A/H housing-shelf false positive excluded.
+//     m7 (2026-09-06): `via` for all three — a "last top-level def whose line ≤ this line" lookup,
+//      dialect-uniform (a .g method sits at column 0; its body runs until the next one) and built
+//       from the def words already collected, no new tree-walk.  100% via coverage verified on
+//        both a .g file (Vytonation.g's 7 elvisto calls attribute to 7 different enclosing beats)
+//         and a .svelte file (LangHold.svelte, 4 elvisto + 15 mint, all via).
+//     m8 (2026-09-06): `.md` docs — the doc-links census (`%link,kind:wiki|file`), the ORIGINAL
+//      high-value target from the very first census of this whole effort.  `spec/` un-skipped
+//       (`history/`/`shelved/` stay skipped — retired content, per CLAUDE.md's own convention);
+//        `md` added to ATLAS_EXT.  Verified: Radio_todo.md → 63 regions (headings, unaffected) +
+//         15 wiki-links + 70 file:line refs, matching the 2026-09-03 census (16/69) closely.
+//          Full corpus, live+headless: 585 docs (245 code + 340 markdown), 0 errors.
+//     m9 (2026-09-06): `region_path` for links — the enclosing heading chain, same "last entry
+//      before this line" trick as via, carrying the whole ancestor array (each heading word
+//       already recorded its own stack-at-that-moment).  100% coverage: Radio_todo.md's 85 links
+//        all carry a real 3-deep heading chain.
+const ATLAS_MAPPER = 'm9'
 // ATLAS_BUDGET — docs mapped per pass.  A %Map build is a real parse (the whole-doc tsstho tree
 //  walk on .svelte), so this is the Stemdex's "polite pass" idea: converge over passes, never thump.
 const ATLAS_BUDGET = 6
-// the corpus: the authored trees, not the generated ones.  gen/ is the compiler's output; spec/ is
-//  prose (owed — the Stemdex indexes it today, Atlas will once .md regions are wanted here).
+// the corpus: the authored trees, not the generated ones.  gen/ is the compiler's output.
 //  data/ + mostly/ are THE GROUND (TheC/TheX, Selection/resolve) — the substrate everything
 //   else calls into; a code model that cannot see `o()`'s home is not a model of this code.
+//  spec/ is prose, walked since m8 for its doc-links; history/+shelved/ stay excluded — retired,
+//   not living content (CLAUDE.md's own retirement convention: a moved-out doc is done being read).
 const ATLAS_ROOTS = ['Ghost', 'src/lib/O', 'src/lib/L', 'src/lib/V', 'src/lib/data', 'src/lib/mostly']
-const ATLAS_SKIP  = { gen: 1, node_modules: 1, spec: 1, history: 1, shelved: 1, '.git': 1, '.svelte-kit': 1 }
-const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1 }
+const ATLAS_SKIP  = { gen: 1, node_modules: 1, history: 1, shelved: 1, '.git': 1, '.svelte-kit': 1 }
+const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return 'e57d430743a83359~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return '269f64b01fc99f9d~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a
@@ -114,8 +139,13 @@ Atlas_nav() {
 //     this will add the hold.
 async Atlas_pass(w, req, nav) {
     if (!w.c.rostered) {
+        // w.c.roots — a TEST override (off-snap; a Book sets it before the first tick) so a Book can
+        //  point Atlas at a small, self-contained corpus (its own directory) instead of scanning the
+        //  whole live repo — the compiler's own correctness is already unit-tested headless; what a
+        //  Book should swear is the DRIVE (walk→map→converge, replace-not-pile, error handling).
+        let roots = w.c.roots ?? ATLAS_ROOTS
         let n = 0
-        for (const root of ATLAS_ROOTS) {
+        for (const root of roots) {
             n = n + await this.Atlas_walk(w, nav, root)
         }
         w.c.rostered = 1
@@ -191,14 +221,53 @@ async Atlas_map_one(nav, doc) {
         let map = doc.o({ Map: 1 })[0]
         if (map) {
             map.sc.dontSnap = 1
-            doc.sc.defs  = '' + map.o({ def: 1 }).length
-            doc.sc.calls = '' + map.o({ call: 1 }).length
+            // Every census field below is stamped ONLY when non-zero, so a plain doc's row stays as
+            //  legible as it was before each kind existed — a .g row never shows `links:0`, a .md row
+            //  never shows `defs:0,calls:0`.  Plain, explicit, boring — the .g compiler parse-storms on
+            //  closure/computed-key-heavy helpers, so this stays a flat list, not a loop over a table.
+            let defs  = map.o({ def: 1 }).length
+            let calls = map.o({ call: 1 }).length
+            let elv   = map.o({ elvisto: 1 }).length
+            let mnt   = map.o({ mint: 1 }).length
+            let prv   = map.o({ proves: 1 }).length
+            let rgn   = map.o({ region: 1 }).length
+            let lnk   = map.o({ link: 1 }).length
+            if (defs)  doc.sc.defs    = '' + defs
+            if (calls) doc.sc.calls   = '' + calls
+            if (elv)   doc.sc.elvisto = '' + elv
+            if (mnt)   doc.sc.mints   = '' + mnt
+            if (prv)   doc.sc.proves  = '' + prv
+            if (rgn)   doc.sc.regions = '' + rgn
+            if (lnk)   doc.sc.links   = '' + lnk
         } else {
             doc.sc.error = 'no map'
         }
     } catch (e) {
         doc.sc.error = ('' + (e && e.message ? e.message : e)).slice(0, 120)
     }
+
+},
+// Atlas_callers — the reverse lookup, owed since the first census (Stemdex_todo.md §0): "who calls
+//  X" answered WITH the doc it lives in, not just a count-and-line the way a wildcard minisnap path
+//  gives it (minisnap has no way to print a match's ancestry).  Walks every mapped Doc's `call` AND
+//  `elvisto` rows for the name — a plain o() per doc, no index: at 585 docs this is milliseconds, and
+//  building an actual reverse index would mean maintaining a SECOND structure in step with the first
+//  (exactly the sync-code smell the "five readings, nothing stored" design elsewhere here avoids).
+//  Returns [{doc, line, via, kind}], kind:'call'|'elvisto' so a caller can tell direct calls from
+//  deferred cross-ghost ones without a second query.
+Atlas_callers(w, name) {
+    let out = []
+    for (const doc of w.o({ Doc: 1 })) {
+        let map = doc.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const c of map.o({ call: 1, method: name })) {
+            out.push({ doc: doc.sc.Doc, line: c.sc.line, via: c.sc.via, kind: 'call' })
+        }
+        for (const e of map.o({ elvisto: 1, method: name })) {
+            out.push({ doc: doc.sc.Doc, line: e.sc.line, via: e.sc.via, target: e.sc.target, kind: 'elvisto' })
+        }
+    }
+    return out
 
 },
 // Atlas_report — the one summary row, replaced not piled (the Seem/%News idiom).

@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '8264fb2d322934c2~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'c54e406d87fc606b~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -6369,6 +6369,23 @@ Swarm_reach_standing(ident, to, of, forr) {
     //    re-stamped and RE-DISPATCHED it — and the tab printed 'booked 4 circulation fill(s)' hundreds of times
     //     a minute while re-sending the same six frames.  Only a terminal verdict ends a reach.
     return (st === 'refused' || st === 'dead') ? null : r
+},
+// Swarm_reach_terminal — is this exact want DONE, one way or the other, and worth never touching again?
+//  The mirror question to Swarm_reach_standing (which excludes terminals so live work isn't mistaken for
+//   settled): this one exists so a caller that treats "not standing" as "book it" doesn't re-book a
+//    terminal every pass.  Measured 2026-09-06: Ra_pool_fill_wants saw a 'refused' want as not-standing
+//     (correctly — it isn't live work) and called Ra_pool_fill_book on it every steward pass forever —
+//      Swarm_reach_book's oai found the same row and left its state alone, and Swarm_reach_dispatch's own
+//       terminal guard sent no wire frame, so nothing broke, but `reach.bump()` fired every pass on a
+//        particle that will never change again, and `pool_fill_fresh` counted it as news every time.  A
+//         quiet loop is still a loop; name the state once and stop touching it.
+Swarm_reach_terminal(ident, to, of, forr) {
+    let peering = this.Swarm_peering(ident)
+    if (!peering) { return null }
+    let r = peering.o({ Reach: 1, to: String(to), of: String(of || ''), for: String(forr) })[0]
+    if (!r) { return null }
+    let st = String(r.sc.state || '')
+    return (st === 'refused' || st === 'dead') ? r : null
 },
 Swarm_reach_addr(ident, reach) {
     if (!reach) { return null }

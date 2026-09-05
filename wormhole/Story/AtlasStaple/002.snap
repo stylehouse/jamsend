@@ -1,0 +1,13 @@
+Snap:H
+  H:AtlasStaple,Run
+    A:AtlasStaple
+      self,round=4	{"mung":["age"]}
+      w:AtlasStaple
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:seed_wait,finished
+        see:the Atlas ghost loads on demand — no CREDULER_GHOSTS manifest edit needed
+        see:Atlas maps a real doc in its fixture corpus
+        see:the Map lists every def the fixture actually declares
+        see:every call in the fixture carries its enclosing def as via
+        see:a re-map under a fresh mapper version replaces the Map — never piles a second one

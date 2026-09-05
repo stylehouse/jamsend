@@ -1,0 +1,164 @@
+// Atlantation.g — the Atlas.g proof.  Naming mirrors Voro→Voronation, Vyto→Vytonation: the model's
+//  own Books live in a `<Name>ation.g` beside it.
+//
+// CONVENTION (Musu*/Sounditron, restated from Vytonation.g): no Run_A_ recipe — the world MUST be
+//  named AtlasStaple (do_fn_for dispatches by w.sc.w) or the wrangle silently never fires.
+//
+// What this swears, and what it deliberately does NOT: the compiler's own correctness (defs/calls/
+//  via-attribution) is unit-tested HEADLESS already (Stemdex_todo.md §0) — a Book re-testing that
+//   would just be a slower, harder-to-read copy.  What only a live Book can prove is the DRIVE:
+//    ghost-load-on-demand, walk→map→converge, replace-not-pile on a stale mapper, and the error path
+//     for an unreadable Doc.  The corpus is Ghost/L/test_corpus/Sample.g — a FROZEN fixture, never
+//      Atlas.g's own directory, so editing Atlas.g (which will keep happening) never stales this
+//       Book's recorded snap the way a self-referential corpus would.
+
+IMPORT()
+
+AtlasStaple(A,w):
+    w oai %req:wrangle,eternal
+        await &AtlasStaple_drive,w,req
+        req%ok = 1
+
+async AtlasStaple_drive(w, req):
+    // A fresh (mode:'new') run's total starts at 1 and only grows when a HUMAN presses Resume in the
+    //  Storui editor — so a CLI-driven first recording of a multi-beat Book fires exactly ONE step and
+    //  records a hollow 1-step toc UNLESS the drive declares its own count (the Vytonation idiom).
+    //  4 = the implicit step 1 (settingoff) + beats 2/3/4.  A re-run against an already-recorded toc
+    //  takes its total FROM the toc, so this is a no-op past the first recording.
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.AtlasStaple_seed(w)
+        if (n === 3) this.AtlasStaple_bogus(w)
+        if (n === 4) this.AtlasStaple_stale(w)
+    }
+    this.AtlasStaple_witness(w)
+
+// ── the seam: reach Atlas beside the run, the VytoStaple way ──────────────────────────────────────
+AtlasStaple_SH(w):
+    return this.up ?? this.top_House()
+
+AtlasStaple_aw(w):
+    let SH = this.AtlasStaple_SH(w)
+    if (!SH) return null
+    return SH.o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0] ?? null
+
+// ── beat 2 — LOAD Atlas.g on demand (no manifest edit needed — Lies_ghost_set takes any path),
+//  mint A:Atlas FRESH beside the run (the story House persists across runs; a prior run's census
+//   would otherwise linger), and aim it at the frozen fixture directory instead of the live repo.
+//
+//  ALL of the real work runs INSIDE expecting()'s async_fn, never awaited directly from the drive.
+//   The drive runs under Story's belief-loop tick/mutex; `Lies_ghost_set`'s dynamic import only lands
+//    once Otro reactively mounts the new UI row and its onMount→eatfunc chain completes — WHICH NEEDS
+//     FURTHER BELIEF-LOOP TICKS TO HAPPEN.  Awaiting it directly from the drive would hold the very
+//      tick loop the load depends on (a circular wait) — the drive settled at step 1 and never
+//       advanced when this beat did `await this.AtlasStaple_seed(w)` (2026-09-06, live-observed: a
+//        clean, uninterrupted mode:'new' run still recorded total:1).  expecting() runs its async_fn
+//         OFF the mutex for exactly this reason — see its own header comment in Hovercraft.svelte. ──
+AtlasStaple_seed(w):
+    i %desc:'load Ghost/L/Atlas.g on demand — mint A:Atlas beside the run — aim it at the frozen fixture'
+    this.expecting(w, 'seed_wait', 20, async () => {
+        let top = this.top_House()
+        if (typeof top.Atlas !== 'function') {
+            await top.Lies_ghost_set('Ghost/L/Atlas.g')
+            await this.AtlasStaple_await(w, 12, () => typeof top.Atlas === 'function')
+        }
+        let SH = this.AtlasStaple_SH(w)
+        let old = SH.o({ A: 'Atlas' })[0]
+        if (old) SH.drop(old)
+        let A = SH.i({ A: 'Atlas' })
+        let aw = A.i({ w: 'Atlas' })
+        aw.c.roots = ['Ghost/L/test_corpus']
+        await this.AtlasStaple_await(w, 15, () => this.AtlasStaple_converged(w))
+    })
+
+// ── beat 3 — inject a Doc row for a file that will never exist, so the error path is exercised
+//  deterministically rather than hoping to catch a real race. ──
+AtlasStaple_bogus(w):
+    i %desc:'inject an unreadable Doc row — the error path must mark it and never spin forever'
+    let aw = this.AtlasStaple_aw(w)
+    if (aw) aw.oai({ Doc: 'Ghost/L/test_corpus/NoSuchFile.g' })
+    // 20s, not 8 — this runner is shared with another live session's own Book sweep, and an 8s
+    //  ceiling flaked once in 3 runs (a busy tick landed the ttlilt's TIMEOUT branch instead of its
+    //  RESOLVE branch — expecting()'s own contract: "size secs above the worst case and the picture
+    //  is always the completed one").  2026-09-06, caught by running ×3, not settling for ×1 green.
+    this.expecting(w, 'bogus_wait', 20, async () => {
+        await this.AtlasStaple_await(w, 20, () => this.AtlasStaple_bogus_ready(w))
+    })
+
+// ── beat 4 — simulate a mapper-version bump on the real doc (stamp a stale `by`) and confirm the
+//  re-map REPLACES its Map rather than piling a second one beside it. ──
+AtlasStaple_stale(w):
+    i %desc:'stamp a stale mapper on the real doc — a re-map must replace its Map and never pile a second'
+    let aw = this.AtlasStaple_aw(w)
+    let doc = aw?.o({ Doc: 'Ghost/L/test_corpus/Sample.g' })[0]
+    if (doc) doc.sc.by = 'm0'
+    this.expecting(w, 'stale_wait', 20, async () => {   // same headroom rationale as bogus_wait above
+        await this.AtlasStaple_await(w, 20, () => this.AtlasStaple_restale_ready(w))
+    })
+
+// ── ready-predicates (shared by expecting + witness) ──────────────────────────────────────────────
+AtlasStaple_converged(w):
+    let aw = this.AtlasStaple_aw(w)
+    if (!aw) return false
+    let docs = aw.o({ Doc: 1 })
+    if (docs.length < 1) return false
+    for (const d of docs) {
+        if (!d.oa({ Map: 1 }) && !d.sc.error) return false
+    }
+    return true
+
+AtlasStaple_bogus_ready(w):
+    let aw = this.AtlasStaple_aw(w)
+    let doc = aw?.o({ Doc: 'Ghost/L/test_corpus/NoSuchFile.g' })[0]
+    return !!doc?.sc.error
+
+AtlasStaple_restale_ready(w):
+    let aw = this.AtlasStaple_aw(w)
+    let doc = aw?.o({ Doc: 'Ghost/L/test_corpus/Sample.g' })[0]
+    if (!doc) return false
+    return doc.sc.by !== 'm0' && doc.o({ Map: 1 }).length === 1
+
+async AtlasStaple_await(w, secs, truth_fn):
+    let deadline = Date.now() + secs * 1000
+    while (Date.now() < deadline) {
+        if (truth_fn()) return
+        this.main()
+        await new Promise(r => setTimeout(r, 200))
+    }
+
+// ── the witness ────────────────────────────────────────────────────────────────────────────────────
+AtlasStaple_witness(w):
+    let aw = this.AtlasStaple_aw(w)
+    if (!aw) return
+
+    if (typeof this.Atlas === 'function') {
+        i %see:'the Atlas ghost loads on demand — no CREDULER_GHOSTS manifest edit needed'
+    }
+
+    let doc = aw.o({ Doc: 'Ghost/L/test_corpus/Sample.g' })[0]
+    if (doc && doc.oa({ Map: 1 })) {
+        i %see:'Atlas maps a real doc in its fixture corpus'
+    }
+
+    let names = doc?.o({ Map: 1 })[0]?.o({ def: 1 }).map(d => d.sc.method) ?? []
+    if (names.includes('Sample_alpha') && names.includes('Sample_beta') && names.includes('Sample_gamma')) {
+        i %see:'the Map lists every def the fixture actually declares'
+    }
+
+    let calls = doc?.o({ Map: 1 })[0]?.o({ call: 1 }) ?? []
+    let via_ok = calls.length > 0 && calls.every(c => !!c.sc.via)
+    if (via_ok) {
+        i %see:'every call in the fixture carries its enclosing def as via'
+    }
+
+    let bogus = aw.o({ Doc: 'Ghost/L/test_corpus/NoSuchFile.g' })[0]
+    if (bogus && bogus.sc.error === 'unreadable') {
+        i %see:'an unreadable path records an error and does not spin forever'
+    }
+
+    if (this.AtlasStaple_restale_ready(w)) {
+        i %see:'a re-map under a fresh mapper version replaces the Map — never piles a second one'
+    }

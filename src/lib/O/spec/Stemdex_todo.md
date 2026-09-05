@@ -105,36 +105,174 @@ w:Atlas
                   workarounds were removed from `Atlas.g` once the real fix landed; the ghost is simpler
                    for it.  **This also fixes the same latent short-Map for any big open `.svelte` dock
                     in the editor itself** whose idle parse hadn't caught up — not an Atlas-only bug.
-- **Rows carry the mapper version (`by:m4`).**  A row whose `by` lags is re-mapped even with an
+- **Rows carry the mapper version (`by:m5`).**  A row whose `by` lags is re-mapped even with an
    unchanged dige — the index changed, not the doc.  This is what let each mapper revision (through
-    the fix above) re-map all 226 docs with no reset.
+    the fixes below) re-map the whole corpus with no reset.
 - **Runner-side, FSA, one pass.**  Reads the tree through `A:Wormhole.c.nav` (the same handle the
-   editor's remote-wormhole serves from); polite budget of 6 docs per pass; converged in under a minute.
+   editor's remote-wormhole serves from); polite budget of 6 docs per pass.  Convergence time varies
+    with how busy the shared runner is (a concurrent `--watch` poller measurably slows it — seconds
+     when idle, a couple of minutes when another session is actively running Books on the same tab).
 - **The door:** `ghost_load` op in `LiesFunk` (`Lies_ghost_set` never consults the manifest;
    `--stand=Name` mints `A:/w:` so the worker ticks) — runner-only, bounded to `.go` files already on
     disk.  No `CREDULER_GHOSTS` edit needed.
+- **⚠ Ephemeral across a reload.**  `A:Atlas`/`w:Atlas` are minted at runtime on `top_House()`, never
+   persisted — a tab reload (a real page reload, distinct from HMR; console shows `"Restored directory
+    for share 'Mundo'"`) recreates Mundo from scratch and the census is gone, needing `ghost_load`
+     again.  On a shared, actively-edited dev runner this happens more often than one session's own
+      testing would suggest.  Not yet fixed — see the memory `two-runners-pin-with-runner-flag.md`.
+       A Dexie cache (the Stemdex's own pattern: one row per path, dige inside, warm-on-boot) would
+        make this instant instead of a full re-scan; not yet built, since re-scanning 245 docs is cheap
+         enough on an otherwise-idle runner that it hasn't been worth the extra machinery yet.
 
-**Corpus-wide after the fix** (defs ≤ 1 per doc): `.g` 7/47 (median 15 defs) · `.svelte` **65 → 20**/71
- (median 0 → 4; the remaining ~20 are UI components with no eatfunc — legitimately empty) · `.ts`
-  31 → 25/32 (median still 0 — see the next gap below, unrelated to the tree-forcing bug).
+**DONE 2026-09-05, both verified headless + live: the two `compile.ts` collector gaps.**
+1. **Top-level `function` declarations in `.ts`.**  The tsstho walk collected `PropertyDefinition` and
+    class names, not `FunctionDeclaration` — `vyto_foam.ts` mapped to 0 defs.  Fixed: a new
+     `FunctionDeclaration` case in the walk (`compile.ts:~404`), using the `VariableDefinition` child
+      for the name (jump-to point) and the whole node span for containment (item 2, below).  Verified:
+       `vyto_foam.ts` → **7 defs** (`sig_of, group_edges, bucket_key_of, focus_mag, budget_for,
+        fold_ladder, pull_step`).
+2. **`via` on TS-branch calls.**  `ctx.current_method` is stho-only, so every `.svelte`/`.ts` `%call`
+    was born via-less.  Fixed with a **`def_spans` side table + a post-pass**, not by threading
+     `ctx.current_method` through the tree walk: `Property`/`MethodDeclaration`/`FunctionDeclaration`
+      nodes all span their WHOLE body (confirmed: `e_Lang_lango` → `[2896,3219]`, exactly
+       `"async e_Lang_lango(...) {…},"`) — not just the identifier `words` already records — so each
+        def's full range is recorded once, and after the per-line call/controlflow sweep runs, every
+         via-less entry is attributed to the smallest containing span.  Verified: `LangHold.svelte`
+          **117/117 calls now carry `via`**; `upto_w`'s five call sites correctly report five distinct
+           enclosing methods (`req_workon`, `req_understanding`, `req_ingredients`, `req_furnishing`,
+            `req_instrumentation`).  A `.g`/stho file is provably untouched (`def_spans` stays empty on
+             that branch): `Heist.g` unchanged at 159 defs / 337 calls before and after.
 
-**Owed next, in order.**  The first is a `compile.ts` **collector gap confirmed by Atlas's own
- census** — small, O/, improves the editor's Maps too:
-1. **Top-level `function` declarations in `.ts`.**  The tsstho walk collects `PropertyDefinition` and
-    class names, not `FunctionDeclaration` — `vyto_foam.ts` (all `export function`) maps to **0 defs**.
-     One more branch in the walk (`compile.ts:371-411`).
-2. **`via` on TS-branch calls.**  Every `.svelte`/`.ts` `%call` lacks its enclosing def
-    (`ctx.current_method` is set only on the stho line branch), so "who calls X, from inside what"
-     works for `.g` only.  Verified: `LangHold.svelte>Map>call,method:Lang_set_interest` → no `via`.
-3. The three added kinds (`%elvisto`, `%mint`, `%see`); rescans on dige drift; `.md` docs.
-4. The reverse lookup.  A wildcard minisnap path (`Doc>Map>call,method:X`) already returns every call
-    site across docs — **minus the Doc ancestry** (minisnap prints matches without their parent), so
-     it is a count-and-line answer, not a which-file answer.  Either minisnap grows an ancestry option
-      or a small query op returns `{doc, line, via}`; either way no reverse *index* is needed.
-5. A Book that swears the census (`%see:'every roster doc carries a Map'`, `'LangHold maps 49 members'`).
+**DONE 2026-09-06: `AtlasStaple` — the Book that swears the DRIVE.**  `Ghost/L/Atlantation.g`
+ (naming: Voro→Voronation, Vyto→Vytonation, Atlas→Atlantation).  Green ×2 on the live runner,
+  `ok_pct:1, caveat:0` — 4 steps: load-on-demand, converge on a frozen fixture corpus
+   (`Ghost/L/test_corpus/Sample.g`, never Atlas.g's own directory — editing Atlas.g will keep
+    happening and a self-referential corpus would stale the fixture every time), inject an
+     unreadable Doc and confirm the error path marks it without spinning, and stamp a stale mapper
+      version to confirm a re-map REPLACES the Map rather than piling a second one.  All 5 `%see`s
+       fired and are visible directly in the step-4 snap.  Two real bugs found and fixed getting
+        here, both worth remembering for the NEXT `.g` Book authored from the CLI (neither is
+         Atlas-specific):
+1. **The hollow-1-step trap, twice over.**  The documented fix (`if (run.sc.mode==='new')
+    run.sc.total = N`, the Vytonation/VytoCrest idiom) is necessary but was not sufficient here —
+     the REAL first cause was that `Ghost/L/Atlantation.g` (the file DEFINING `AtlasStaple`) had
+      never itself been `ghost_load`ed onto the runner.  Story silently ran an empty step and
+       settled at n:1 with **no** `req:wrangle` particle even minted — do_fn_for found no handler.
+        **A new Book's OWN `.g` file must be `ghost_load`ed before `run`, same as any other L/
+         ghost — it does not become runnable just because a toc.snap and a matching world-name
+          exist.**  Every hollow recording along the way needs `rm -rf wormhole/Story/<Book>` +
+           a fresh toc seed before the next attempt (memory: `hollow-book-1step-green.md`).
+2. **Never `await` real, multi-tick-dependent work directly from the drive.**  An early version
+    `await`ed `Lies_ghost_set(...)` (a dynamic import whose eatfunc only lands once Otro reactively
+     mounts the new UI row — which needs FURTHER belief-loop ticks) directly inside a beat called
+      from the drive.  That holds the very tick loop the load depends on to complete — a circular
+       wait.  `expecting()` exists precisely so real async work runs OFF the mutex; every beat
+        function itself must stay fire-and-forget from the drive (matching every existing Book).
+3. **`%desc` text needs the same comma discipline as `%see`.**  A `%desc:'…a, b, c'` with literal
+    commas doesn't fault, but silently drops the step out of the normal `step=N,desc:…,dige:…`
+     peel notation into a raw JSON blob in the toc — harmless but inconsistent with every other
+      Book's fixture.  Use em-dashes, as `%see` already requires.
+4. The one genuine environmental cost: this runner is shared with another live session running an
+    automated Book sweep, and `run`/`accept` do not queue — a competing `run` request steals the
+     engagement lease mid-flight, corrupting an in-progress recording into a fresh hollow one.
+      Several attempts here were lost to exactly that interleaving; there is no fix from this side
+       beyond retrying once contention clears, and not fighting for the lease aggressively.
 
-Roots now include `src/lib/data` + `src/lib/mostly` (the ground — TheC/TheX, Selection) as of the
- next stand; the roster walks once per world.
+**DONE 2026-09-06: the three added kinds — `%elvisto`, `%mint`, `%proves`.**  Verified headless
+ against real files and live on the runner (Atlas's own census, `ATLAS_MAPPER='m6'`):
+ `Vytonation.g` → 7 `elvisto` rows (`Vyto/Vyto::Vyto_commission`, matching the 2026-09-05 census),
+  80 `proves` (deduped from 160 raw — see the bug below), 70 `proves,desc:1`; `Vyto.g` → 27 `mint`
+   rows, `Organ` present, the `A`/`H` housing-shelf false positive excluded.
+
+- **First attempt placed the sweep INSIDE `_collect_line` and it silently missed almost every
+   `%see`.**  `%see:'…'` overwhelmingly appears inside the "once-noticed" idiom —
+    `if (cond && !(oa %see:'X')) i %see:'X'` — a ControlFlow-shaped line, and `_collect_line`'s
+     ControlFlow branch **returns before** reaching a sweep placed after the existing CALL_RE section.
+      Headless test caught it immediately: 0 sees found, all 70 hits landed as `%desc` instead.
+       **Fix: a TRULY INDEPENDENT full-document pass**, iterating `doc.line(i).text` for every line
+        directly, placed after the main per-line while-loop — immune to any other branch's early
+         return.  First cut deliberately carries no `via`/`region_path` (a line number is already the
+          whole value here; enclosing-method attribution for these three is left owed).
+- **The "once-noticed" idiom writes the same sentence TWICE per line** (`oa` guard + `i` mint) — one
+   assertion, not two.  Deduped per-line by sentence text; `sees` dropped from 160 to the correct 80.
+- **`mint` excludes `A` and `H`**, not just `A` — `.i({A:'X'})`/`.i({H:'X'})`-shaped mints are housing
+   shelf tokens (a House/Actor), never a particle mainkey (2026-09-05 census finding).
+
+**DONE 2026-09-06 (same day, `ATLAS_MAPPER='m7'`): `via` for all three, dialect-uniform.**  Not
+ `def_spans` (character-range containment — tsstho-only, since only that branch populates it) but a
+  simpler, UNIVERSAL heuristic: **the last top-level `def` whose line is ≤ this line, from the
+   already-collected `def` words of EITHER branch.**  Sound because a `.g` method sits at column 0
+    and its body runs to the next column-0 def — defs never nest (a class's own members are separate
+     `def` words with their own line) — so "the nearest def above" is always the true enclosure, on
+      both dialects, with no new tree-walk.  Verified 100% coverage both ways: `Vytonation.g`'s 7
+       `elvisto` rows attribute to **7 different enclosing beats**
+        (`VytoStaple_commission, VytoCell_commission, Vyto_commission_on, VytoFreeze_stand,
+         VytoSeek_stand, VytoWeb_focus, VytoWeb_release`) — each Book's own commission call, correctly
+          told apart; `Vyto.g`'s `Organ` mints all attribute to `Vyto_board` (correct — that's the one
+           function that mints them); `LangHold.svelte`'s 4 `elvisto` + 15 `mint` rows all carry `via`.
+
+**A genuine timing flake surfaced by running ×3, not settling for ×1 green** (Coding_guide: "a race
+ is invisible in a single green run").  `AtlasStaple`'s `bogus_wait`/`stale_wait` beats held an 8s
+  ttlilt; on this shared, contended runner that occasionally wasn't "above the worst case"
+   (`expecting()`'s own contract), so Story sometimes snapped the ttlilt's TIMEOUT picture
+    (`req:bogus_wait` still open) instead of its RESOLVE picture (`req:bogus_wait,finished`) — a
+     structural presence/absence difference no `EntropyArrest` spay can paper over.  Fix: raised both
+      to 20s, matching `seed_wait`'s existing headroom.  Robustly green ×4 after.
+
+**DONE 2026-09-06, same day (`ATLAS_MAPPER='m8'`): `.md` docs — the doc-links census.**  This was the
+ ORIGINAL high-value target from the very first census of this whole effort (1,708 `file:line` + 903
+  `[[slug]]` refs measured in `spec/` on 2026-09-03) — code-side kinds came first only because they
+   were cheaper to prove.  New `%link,kind:wiki|file` kind, added to `Lang_collect_markdown_regions`
+    (a SEPARATE collector from `Lang_compile_collect` — headings, not defs — so this is its own small
+     independent sweep, same idiom).  `spec/` un-skipped in `Atlas.g` (`history/`/`shelved/` stay
+      excluded — retired, not living); `md` added to `ATLAS_EXT`.  **Full corpus, both live and
+       headless: 585 docs (245 code + 340 markdown), 0 errors.**  `Radio_todo.md`: 63 regions
+        (headings, unaffected) + 85 links (15 wiki + 70 file), matching the 2026-09-03 census closely
+         both headless and live.  Bare `Name.ext` mentions (no `:line`) deliberately excluded — the
+          census found them the noisiest of the three link forms.
+
+- **A real gap in `ghost_load --stand` found along the way, unrelated to markdown itself.**  `--stand`
+   is `oai` — find-or-create — so re-standing Atlas after widening its OWN corpus (this exact m8
+    change) silently kept the OLD, narrower roster: a ghost like Atlas whose `Atlas()` do_fn only
+     rosters once (`if (!w.c.rostered)`) never notices a code change that should have produced a
+      bigger roster.  **Fixed: a new `--fresh` flag** (`ghost_load ... --fresh`) that drops any
+       already-standing `A:<name>` before minting — the same "clean glass each run" the Book
+        convention already uses (`AtlasStaple`/`VytoStaple`'s own `if (old) SH.drop(old)`), now
+         available from the CLI.  Verified: without `--fresh`, a re-stand stayed at the stale 245;
+          with it, 585.
+
+**DONE 2026-09-06, same day (`ATLAS_MAPPER='m9'`): `region_path` for `link`.**  Same "last entry
+ before this line" trick as `via`, but carrying the WHOLE ancestor array, not just a name — each
+  heading word already recorded its own stack-at-that-moment as `region_path`, so the nearest heading
+   at-or-above a link's line names the section chain it lives under.  **100% coverage**: `Radio_todo.md`'s
+    85 links all carry a real chain (verified 3-deep for a `Heist.g` reference:
+     `["Radio_todo.md — the music-piracy cluster, reborn on Housing+req", "0. Latest handover — …",
+      "2026-08-24 — THE LOOP THAT NEVER GIVES UP…"]`).  `elvisto`/`mint`/`proves` (the code-side three)
+       do NOT get this — a `.g`/`.svelte` `//#region` chain is a much weaker signal than a markdown
+        heading (regions are sparse and often absent in code, ubiquitous in docs), so it stayed
+         deliberately out of scope; `via` already carries the equivalent code-side information.
+
+**DONE 2026-09-06, same day: the reverse lookup — `atlas_callers`.**  Not a reverse INDEX (a second
+ structure to keep in step with the first — exactly the sync-code smell "five readings, nothing
+  stored" avoids elsewhere here) but a plain query: `Atlas_callers(w, name)` walks every mapped
+   `%Doc`'s `call` + `elvisto` rows for `name` and returns `[{doc, line, via, kind}]` — a which-file
+    answer, not just minisnap's count-and-line.  At 585 docs this is milliseconds, no index needed.
+     New `atlas_callers <name>` op (`LiesFunk`, read-only, player-safe like `minisnap`) refuses plainly
+      if `A:Atlas` isn't standing yet, rather than silently returning `[]`.  CLI:
+       `runner_ask atlas_callers upto_w`.
+
+**Owed next, in order:**
+1. Rescans on dige drift — genuinely owed, but lower urgency than first thought: Atlas isn't a durable
+    daemon yet (item 2 below), so each `ghost_load` session gets a fresh scan anyway; the gap only
+     bites within one long-lived session where a file changes mid-session.
+2. Durability across a reload (the Dexie cache noted above), if reload frequency keeps making this
+    ghost annoying to keep warm on a shared runner.
+
+Roots now include `src/lib/data` + `src/lib/mostly` (the ground — TheC/TheX, Selection) and `spec/`
+ (the doc-links census, `history/`/`shelved/` excluded) — 585 docs total.  The roster walks ONCE per
+  world (`if (!w.c.rostered)`) — use `ghost_load --stand=Name --fresh` to force a genuine re-roster
+   after a corpus-widening code change, not a bare re-stand (which is find-or-create and silently
+    keeps the old roster).
 
 *(The regex probe `scripts/drawer.mjs` was deleted the same day — its regexes validated at 93.5%,
  its load inventory recorded in `Atheory_todo.md`, its one real find — `upto_w` byte-identical in

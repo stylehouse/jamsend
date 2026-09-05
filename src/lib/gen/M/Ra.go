@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '838873945b39ef1b~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'd5951035f2223b0c~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1231,6 +1231,44 @@ Ra_pool_consent(w) {
     return home && home.o({ Consent: 1 })[0] ? 1 : 0
 
 },
+// Ra_pool_excused / Ra_pool_excuse -- A BODY THAT WILL NOT HOLD A POOL FOR ANYONE (2026-09-06, the owner,
+//  tracing why the daemon's pool served eed the app's own testsounds fixtures alongside real music: "they're
+//   eed's local music then. the daemon can excuse itself from holding any pool.").  CONSENT is a different
+//    axis: it is the DEVICE's own yes to spend ITS bytes pooling FOR ITSELF, and it already gates the
+//     self-press paths (Radio_pool_catch, Radio_pool_steward).  But the serve side was WIDENED this same
+//      evening to press for a waiting friend REGARDLESS of the server's own consent (Swarm_reach_pump's
+//       "...OR A FRIEND IS WAITING ON ME") -- the daemon never consented for itself, yet kept serving, and a
+//        headless machine body has no taste to curate a pool with: whatever landed in its library (the
+//         digger's testsounds tour, a known gotcha) is exactly what it will press and hand onward.  excused
+//          is DURABLE (rides the %SoundPooling home like budget_mb) and orthogonal to consent -- it says
+//           "never serve, never self-press, never hold a pool at all", and wipes any pool already standing
+//            the moment it is set, the same way Ra_pool_off does (excusing IS an off that stays off).
+Ra_pool_excused(w) {
+    let home = this.Ra_pool_home(w)
+    return home && home.sc.excused ? 1 : 0
+},
+Ra_pool_excused_of(ident) {
+    let home = ident ? ident.o({ SoundPooling: 1 })[0] : null
+    return home && home.sc.excused ? 1 : 0
+},
+async Ra_pool_excuse(w) {
+    let home = this.Ra_pool_home_mint(w)
+    if (home.sc.excused) { return 0 }
+    await this.Ra_pool_off(w)
+    home.sc.excused = 1
+    home.bump()
+    console.log('🏊 SoundPooling excused -- this body will not hold or serve a circulation pool')
+    return 1
+},
+Ra_pool_unexcuse(w) {
+    let home = this.Ra_pool_home(w)
+    if (!home || !home.sc.excused) { return 0 }
+    delete home.sc.excused
+    home.bump()
+    console.log('🏊 SoundPooling un-excused -- this body may pool again')
+    return 1
+
+},
 // Ra_pool_census — CARDS vs READY, because the two counts say opposite things and the face was showing one
 //  while the dial obeyed the other (owner 2026-09-05: *"SoundPooling claims to have four but it says empty
 //   when I click next"*).  A Want that has been booked mints its CARD on the pool shelf at once; the BYTES
@@ -1440,9 +1478,10 @@ Ra_pocket_mirror(rw, host) {
 async Ra_pool_report(w, ident) {
     let homes = this.Ra_pool_fill_homes(w, ident)
     let pub = this.Radio_pub ? (this.Radio_pub(homes.mw) || 'me') : 'me'
-    let out = { consent: 0, budget_mb: 0, cards: 0, ready: 0, files: 0, uncatalogued: 0, tracks: [] }
+    let out = { consent: 0, excused: 0, budget_mb: 0, cards: 0, ready: 0, files: 0, uncatalogued: 0, tracks: [] }
     let owner = ident || (this.Ra_pool_owner ? this.Ra_pool_owner(homes.mw) : null)
     if (owner && this.Ra_pool_consent_of) { out.consent = this.Ra_pool_consent_of(owner) ? 1 : 0 }
+    if (owner && this.Ra_pool_excused_of) { out.excused = this.Ra_pool_excused_of(owner) ? 1 : 0 }
     let home = owner ? owner.o({ SoundPooling: 1 })[0] : null
     if (home && home.sc.budget_mb) { out.budget_mb = +home.sc.budget_mb }
     let paths = await this.Ra_pool_files(homes.nav, homes.mw)
@@ -1481,7 +1520,8 @@ async Ra_pool_report(w, ident) {
             out.reaches.push(r)
         }
     }
-    console.log('🏊 POOL REPORT — ' + pub.slice(0, 8) + ' · consent ' + (out.consent ? 'yes' : 'NO') +
+    console.log('🏊 POOL REPORT — ' + pub.slice(0, 8) + (out.excused ? ' · EXCUSED (holds no pool)' : '') +
+        ' · consent ' + (out.consent ? 'yes' : 'NO') +
         ' · budget ' + out.budget_mb + 'MB · ' + out.cards + ' card(s) · ' + out.ready + ' playable · ' +
         out.files + ' file(s) on disk · ' + out.uncatalogued + ' uncatalogued')
     for (const t of out.tracks) {
@@ -1616,6 +1656,14 @@ Ra_pool_gang(w, name, take, who, pct) {
 //      back, yet should claim its space back one day") is real and unsolved, and one pool makes it moot.
 //  Idempotent: a second call only moves the budget and the who.  Returns 1 the first time.
 Ra_pool_start(w, budget_mb, now, who) {
+    // AN EXCUSED BODY STAYS EXCUSED (2026-09-06 self-review): excuse is meant to be DURABLE ("never hold or
+    //  serve a pool at all"), and this was the one door that could quietly undo it — anything calling start
+    //   again (a re-press of the same button, a Book, a stray steward occasion) would re-give consent and
+    //    re-declare a pool with no memory that the body had opted out.  Un-excuse first if that is truly wanted.
+    if (this.Ra_pool_excused && this.Ra_pool_excused(w)) {
+        console.log('🏊⚠ SoundPool start refused — this body is excused (Ra_pool_unexcuse first)')
+        return -1
+    }
     this.Ra_pool_consent_give(w, now)
     this.Ra_pool_budget_set(w, budget_mb)
     let had = this.Ra_pool_defs(w, 0).filter((p) => p.name)
@@ -5234,6 +5282,11 @@ Ra_pool_fill_wants(w, ident) {
         //   swears the second pass reports the same three) — only the re-book, re-stamp and re-send are skipped;
         //    `w.c.pool_fill_fresh` carries how many were actually NEW so the steward's line fires only on news.
         if (this.Swarm_reach_standing && this.Swarm_reach_standing(ident, from, of, 'serve')) { n = n + 1; continue }
+        // A TERMINAL WANT IS DONE, NOT MERELY "NOT STANDING" (2026-09-06): Swarm_reach_standing correctly
+        //  excludes refused|dead (they are not live work), but that made this loop treat them as "book it" —
+        //   re-calling Ra_pool_fill_book on the same permanently-refused track every steward pass forever.
+        //    Skip it outright; the goal draw naming it again next sit-down is a separate, honest question.
+        if (this.Swarm_reach_terminal && this.Swarm_reach_terminal(ident, from, of, 'serve')) { continue }
         if (this.Ra_pool_fill_book(w, ident, of, from)) { n = n + 1; fresh = fresh + 1 }
     }
     if (w && w.c) { w.c.pool_fill_fresh = fresh }
@@ -5299,6 +5352,9 @@ Ra_pool_fill_from(w, ident, reach, homes) {
 //   for:) must be left standing for ITS doer — refusing here would bury someone else's intent.
 Ra_pool_fill_verdict(w, ident, reach) {
     if (String(reach.sc.for || '') !== 'serve') { return 0 }
+    // AN EXCUSED BODY REFUSES BEFORE IT EVEN LOOKS (2026-09-06) — cleanly, the same shape as
+    //  not_in_library, so the booker sees exactly why and never re-asks this holder for anything.
+    if (this.Ra_pool_excused_of ? this.Ra_pool_excused_of(ident) : this.Ra_pool_excused(w)) { return { refuse: 'excused' } }
     let of = String(reach.sc.of || '')
     if (!of) { return { refuse: 'no_content' } }
     let homes = this.Ra_pool_fill_homes(w, ident)
@@ -5317,6 +5373,9 @@ Ra_pool_fill_verdict(w, ident, reach) {
 //     report each terminal inbound ONCE to its booker (reach_done over the sibling lane; wire-inert
 //      in a Book) and graduate the arrived copies — scaffolding, not ledger.  Returns the serve count.
 async Ra_pool_fill_serve(w, ident) {
+    // DEFENCE IN DEPTH: the verdict above should already keep a reach off this identity, but a reach can
+    //  reach 'serving' the instant BEFORE excuse is set — never press a byte for an excused body regardless.
+    if (this.Ra_pool_excused_of ? this.Ra_pool_excused_of(ident) : this.Ra_pool_excused(w)) { return 0 }
     let peering = this.Swarm_peering ? this.Swarm_peering(ident) : null
     if (!peering) { return 0 }
     let serving = peering.o({ Reach: 1, state: 'serving' }).filter((r) => String(r.sc.for || '') === 'serve')
@@ -5357,6 +5416,16 @@ async Ra_pool_fill_serve(w, ident) {
 async Ra_pool_fill_land(w, ident) {
     let peering = this.Swarm_peering ? this.Swarm_peering(ident) : null
     if (!peering) { return 0 }
+    // AN EXCUSED BODY LANDS NOTHING FOR ITSELF EITHER (2026-09-06 self-review): excusing wipes consent and
+    //  every %Pool def (Ra_pool_off), but never touched a booker's own STANDING reaches — this loop would
+    //   still happily mint a %Heist,into:pool keep and pull bytes into a pool the body just declared it does
+    //    not hold.  Whatever arrived while unexcused is stale intent now; drop it rather than land it, so an
+    //     excuse actually means "holds no pool", not just "stops accepting new work".
+    if (this.Ra_pool_excused_of ? this.Ra_pool_excused_of(ident) : this.Ra_pool_excused(w)) {
+        let stale = peering.o({ Reach: 1, state: 'arrived' }).filter((r) => String(r.sc.for || '') === 'serve')
+        for (const r of stale) { peering.drop(r) }
+        return 0
+    }
     let mypub = String((this.Swarm_body_key ? this.Swarm_body_key(ident) : null)?.pub || '')
     let landed = 0
     let arrived = peering.o({ Reach: 1, state: 'arrived' }).filter((r) => String(r.sc.for || '') === 'serve')
@@ -5407,9 +5476,41 @@ async Ra_pool_fill_land(w, ident) {
             //    done holds the rest in the queue; the reach says so on its row and waits its turn.
             let inflight = shop.o({ Heist: 1 }).filter((h) => String(h.sc.into || '') === 'pool' && String(h.sc.state || '') !== 'done')
             if (inflight.length) {
-                let why = 'queued behind ' + inflight.length + ' pool heist' + (inflight.length === 1 ? '' : 's')
-                if (reach.sc.why !== why) { reach.sc.why = why; reach.bump() }
-                continue
+                // A STUCK SINGLE-TRACK KEEP MUST NOT HOLD THE QUEUE HOSTAGE (2026-09-06, the owner's live log:
+                //  "Giant Steps stalled 12/23" then nothing else ever landed).  The album heist's own bench
+                //   escape ("one bad pick won't hold the whole album") has nothing to fall back to here -- a pool
+                //    keep IS one pick -- so serialising to one-at-a-time turned one unreachable source into a
+                //     permanent halt.  The pool's own law is liquid and expendable ("music kept moving"), so a
+                //      keep that has sat 60s with no route AND no byte of progress is worth abandoning, not
+                //       nursing: drop it and let the next want take this pass.  pull_progress_ts / no_route_ts
+                //        are Heist_keep_step's own runtime fields (.c, never snapped) -- read, not duplicated.
+                let now = Date.now()
+                let stuck = inflight.find((h) => {
+                    let noRoute = +(h.c.no_route_ts || 0)
+                    if (noRoute && now - noRoute > 60000) { return true }
+                    let started = +(h.c.pull_started_ts || 0)
+                    if (!started) { return false }
+                    let progressed = +(h.c.pull_progress_ts || started)
+                    return (now - progressed) > 60000
+                })
+                if (stuck) {
+                    let name = String(stuck.sc.Heist || stuck.sc.seed || '?')
+                    console.log('🏊⚠ pool-fill: giving up on stalled heist "' + name.slice(0, 32) + '" (60s stuck) -- trying the next track instead')
+                    // THE PROPER ABANDON, NOT A RAW rm (2026-09-06 self-review): Heist_keep_cancel is the one road
+                    //  that also drops the in-flight %Caper (Heist_job_drop) — a bare shop.rm leaves that job
+                    //   pulling into an orphaned particle, the exact "close the Haul faster" bug Heist_keep_cancel's
+                    //    own header was written to fix.  It no-ops the Heard_untake branch here (a fill keep carries
+                    //     no `take`), so it is safe for a circulation keep, not just a human's ♥.
+                    if (typeof this.Heist_keep_cancel === 'function') {
+                        try { await this.Heist_keep_cancel(homes.mw, stuck) } catch (er) {}
+                    } else {
+                        try { (stuck.c.up || shop).rm({ Heist: 1, seed: stuck.sc.seed }) } catch (er) {}
+                    }
+                } else {
+                    let why = 'queued behind ' + inflight.length + ' pool heist' + (inflight.length === 1 ? '' : 's')
+                    if (reach.sc.why !== why) { reach.sc.why = why; reach.bump() }
+                    continue
+                }
             }
             if (!to) {
                 let miss = 'no holder to heist from'

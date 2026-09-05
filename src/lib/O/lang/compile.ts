@@ -216,8 +216,9 @@ export const LANG_COMPILE = {
         }
 
         const HEADING_RE = /^(?:ATX|Setext)Heading([1-6])$/
-        const words: Array<{ label: string, depth: number, from: number, to: number,
-                             line: number, region_path: string[] }> = []
+        const words: Array<{ label?: string, depth?: number, from: number, to: number,
+                             line: number, region_path?: string[],
+                             link?: 1, kind?: 'wiki' | 'file', target?: string, at_line?: number }> = []
         // the open-heading chain ({label, level} per ancestor in scope): a new heading
         //  pops every open heading of equal-or-deeper level, then becomes the innermost.
         const stack: Array<{ label: string, level: number }> = []
@@ -238,16 +239,64 @@ export const LANG_COMPILE = {
             return false              // a heading owns no nested heading inside its node
         }})
 
+        // link — the doc-links census (Stemdex_todo.md §0 "relation EDGES"): `[[wikilink]]` resolves
+        //  exactly to spec/ulative/memory-raw/<slug>.md (name ≡ filename stem, verified 2026-09-03 —
+        //  205 files, 192 with onward links), `file:line` is a prose pointer into the code.  Same
+        //  independent-per-line-sweep idiom as the elvisto/mint/proves kinds — a heading can appear on
+        //  the SAME line as a link, so this cannot ride the tree.iterate above without re-doing its
+        //  HEADING_RE dance; a plain text sweep is simpler and dialect-matches the code-side kinds.
+        //  Bare `Name.ext` mentions (no `:line`) are deliberately excluded — the 2026-09-05 census
+        //  found them the noisiest of the three link forms; `file:line` alone is ~0% false-positive.
+        const WIKI_RE = /\[\[([a-z0-9-]+)\]\]/g
+        const FILE_RE = /\b([A-Za-z_][A-Za-z0-9_./]*\.(?:svelte|ts|g|mjs|md)):(\d+)/g
+        for (let ln = 1; ln <= doc.lines; ln++) {
+            const dline = doc.line(ln)
+            const text  = dline.text
+            for (const m of text.matchAll(WIKI_RE)) {
+                words.push({ link: 1, kind: 'wiki', target: m[1], from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+            for (const m of text.matchAll(FILE_RE)) {
+                words.push({ link: 1, kind: 'file', target: m[1], at_line: +m[2], from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+        }
+
+        // region_path for links — same "last entry before this line" trick as compile.ts's via
+        //  post-pass, carrying the WHOLE ancestor chain (not just a name): each heading word already
+        //  recorded its own stack-at-that-moment as region_path, so the nearest heading AT OR ABOVE a
+        //  link's line names the section it lives under.  A link before the first heading gets none.
+        const heading_lines = words.filter(w => w.label && typeof w.line === 'number')
+            .map(w => ({ line: w.line as number, region_path: w.region_path as string[] }))
+            .sort((a, b) => a.line - b.line)
+        if (heading_lines.length) {
+            for (const w of words) {
+                if (!w.link || typeof w.line !== 'number') continue
+                let rp: string[] | undefined
+                for (const h of heading_lines) { if (h.line <= w.line) rp = h.region_path; else break }
+                if (rp) (w as any).region_path = rp
+            }
+        }
+
         // flush — regions carry absolute from/to (markdown has no children, so just the span).
+        //  link's region_path (an array — .c only, never .sc: an object/array in sc is an encode
+        //  fatal) gets the SAME relocation the heading branch below already does for its own.
         const Map_C = job.oai({ Map: 1 })
         Map_C.empty()
         for (const w of words) {
+            if (w.link) {
+                const rp = (w as any).region_path
+                delete (w as any).region_path
+                const wc = Map_C.i(w as any)
+                if (rp) wc.c.region_path = rp
+                continue
+            }
             const wc = Map_C.i({ region: 1, label: w.label, depth: w.depth,
                                  from: w.from, to: w.to, line: w.line })
             wc.c.region_path = w.region_path
         }
 
-        this.trace(`Lang`, `Markdown TOC regions x${words.length}`)
+        this.trace(`Lang`, `Markdown TOC regions x${words.filter(w => !(w as any).link).length}`)
     },
 
     // Per doc-line, find the first IOing|Sunpit node in its span → substitute
@@ -263,15 +312,23 @@ export const LANG_COMPILE = {
         // Fetched in the fallback branch only — the fast path never touches syntaxTree,
         //  so CodeMirror never fully parses (and error-recovers over) the whole document.
         let tree: any = null
+        // def_spans — populated only by the fallback (tsstho) branch; see its declaration site for why.
+        //  Declared here (not inside the branch) so the via-attribution post-pass below can read it
+        //  after the branch's block scope has closed.
+        const def_spans: Array<{ method: string, from: number, to: number }> = []
         const doc   = state.doc
         const out: Array<{ kind: 'translated' | 'raw' | 'header' | 'tail', text: string }> = []
-        // accumulates {def|call|region|controlflow:1, …} during the walk; flushed below.
-        //  via = enclosing method (for calls); class = enclosing class (tsstho defs only);
-        //   magic = IMPORT|RENDER (header/tail pseudo-methods, diverted out of the eatfunc);
-        //    region_path = snapshot of region_stack when the entry was recorded.
-        const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1,
+        // accumulates {def|call|region|controlflow|elvisto|mint|proves:1, …} during the walk; flushed
+        //  below.  via = enclosing method (for calls/elvisto/mint/proves); class = enclosing class
+        //   (tsstho defs only); magic = IMPORT|RENDER (header/tail pseudo-methods, diverted out of the
+        //    eatfunc); region_path = snapshot of region_stack when the entry was recorded.
+        //  elvisto: {method, target?} — the DEFERRED cross-ghost call; target only when literal.
+        //  mint:    {mainkey} — where a particle's mainkey is FIRST minted (.i/.oai({Mainkey:…})).
+        //  proves:  {sentence, desc?} — a %see (the sworn claim) or, with desc:1, a %desc (the beat).
+        const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1, elvisto?: 1, mint?: 1, proves?: 1,
                              method?: string, label?: string, keyword?: string, title?: string,
-                             via?: string, class?: string, magic?: 1,
+                             via?: string, class?: string, magic?: 1, target?: string, mainkey?: string,
+                             sentence?: string, desc?: 1,
                              from?: number, to?: number, rel_from?: number, rel_to?: number, line?: number,
                              region_path?: string[] }> = []
 
@@ -354,6 +411,14 @@ export const LANG_COMPILE = {
         //  (falling back to the lazy tree only if that fails), so this walk never silently mis-reports
         //  a large or unattached doc's defs/calls.  Cheap when the lazy tree already covers the doc.
         tree = this.Lang_full_tree(state)
+        // def_spans (declared above Lang_compile_collect's tree/const block) — the FULL body range of
+        //  every def found on this walk (Property/MethodDeclaration/FunctionDeclaration all span
+        //  name+params+block, confirmed 2026-09-05: e_Lang_lango → [2896,3219], the exact
+        //  "async e_Lang_lango(...) {…}," extent).  `words` only carries a def's NAME span (from/to,
+        //  for jump-to-def), so this side table is what lets the post-pass below attribute a `via` to a
+        //  call/controlflow entry found ANYWHERE inside a def's body — the tsstho walk has no per-line
+        //  `ctx.current_method` (that is stho-only), so without this every .svelte/.ts %call is born
+        //  via-less (confirmed: 117/117 on LangHold.svelte before this fix).
         tree.iterate({
             enter: (ref) => {
                 // ── stho expression hits ──────────────────────────────────────
@@ -398,6 +463,7 @@ export const LANG_COMPILE = {
                     if (class_name) word.class = class_name
                     if (name === 'IMPORT' || name === 'RENDER') word.magic = 1
                     words.push(word)
+                    def_spans.push({ method: name, from: parent.from, to: parent.to })
                     return false
                 }
 
@@ -413,6 +479,23 @@ export const LANG_COMPILE = {
                                         line: n_line, region_path: [...region_stack] }
                     if (name === 'IMPORT' || name === 'RENDER') word.magic = 1
                     words.push(word)
+                    def_spans.push({ method: name, from: prop.from, to: prop.to })
+                    return false
+                }
+
+                // Top-level `export function name(...) { … }` / `function name(...) { … }` — plain
+                //  functions outside any class or eatfunc object (a .ts module of exported helpers,
+                //  e.g. vyto_foam.ts: measured 0 defs before this branch existed).  ref.from/ref.to on
+                //  a FunctionDeclaration already spans the WHOLE declaration (name+params+block), so
+                //  it is both the def_spans body range and — via the name child — the jump-to point.
+                if (ref.name === 'FunctionDeclaration') {
+                    const nameNode = ref.node.getChild('VariableDefinition')
+                    const name = nameNode ? state.doc.sliceString(nameNode.from, nameNode.to) : undefined
+                    if (!name) return false
+                    const n_line = lineOf(nameNode!.from)
+                    words.push({ def: 1, method: name, from: nameNode!.from, to: nameNode!.to,
+                                line: n_line, region_path: [...region_stack] } as any)
+                    def_spans.push({ method: name, from: ref.from, to: ref.to })
                     return false
                 }
 
@@ -440,6 +523,83 @@ export const LANG_COMPILE = {
                 line_errors.push({ n: en, text, msg: String(err?.message ?? err) })
                 // Stop — output beyond a mis-parsed line is unreliable.
                 break
+            }
+        }
+
+        // via-attribution post-pass — tsstho-branch calls/controlflow have no `via` yet (they came
+        //  from _collect_line's unconditional CALL_RE regex sweep above, not from any per-line
+        //  enclosing-method tracking — that only exists on the stho fast path via ctx.current_method).
+        //  def_spans (populated only when the tsstho branch ran) gives each def's FULL body range;
+        //  attribute the SMALLEST containing span first, so a def nested inside another (a class
+        //  method inside a nested class body, say) wins over its outer enclosure.  A word already
+        //  carrying `via` (the stho branch) is untouched.
+        if (def_spans.length) {
+            const by_size = def_spans.slice().sort((a, b) => (a.to - a.from) - (b.to - b.from))
+            for (const word of words) {
+                if (!(word.call || word.controlflow) || word.via || typeof word.from !== 'number') continue
+                const span = by_size.find(s => s.from <= (word.from as number) && (word.from as number) < s.to)
+                if (span) word.via = span.method
+            }
+        }
+
+        // three more kinds, swept as a TRULY INDEPENDENT full-document pass — not from inside
+        //  _collect_line, which was the first attempt (2026-09-06) and silently missed almost every
+        //  %see: `%see:'…'` overwhelmingly appears inside `if (cond && !(oa %see:'X')) i %see:'X'` (the
+        //  "once-noticed" idiom, CLAUDE.md's own description) — a ControlFlow-shaped line, and
+        //  _collect_line's ControlFlow branch returns before ever reaching a sweep placed after the
+        //  MethodLike/CALL_RE section.  Plain text patterns, dialect-agnostic, one line at a time,
+        //  immune to any other branch's early return.  Design: Stemdex_todo.md §0 "relation EDGES".
+        //  No `region_path` yet (owed); `via` is attributed in a separate post-pass right below, once
+        //  every `def` word (from either branch) is known.
+        const ELVISTO_RE = /(?:i_elvisto|i_elvistwo|vaguely_ponder)\s*\(\s*(?:['"]([^'"]+)['"]|\w+)\s*,\s*['"]([^'"]+)['"]/g
+        const MINT_RE    = /\.(?:i|oai)\(\{\s*([A-Z][A-Za-z]*)\s*:/g
+        const SEE_RE     = /%see:'([^']*)'/g
+        const DESC_RE    = /%desc:'([^']*)'/g
+        for (let ln = 1; ln <= doc.lines; ln++) {
+            const dline = doc.line(ln)
+            const text  = dline.text
+            if (/^\s*\/\//.test(text)) continue   // a comment describing the pattern is not the pattern
+            for (const m of text.matchAll(ELVISTO_RE)) {
+                const word: any = { elvisto: 1, method: m[2], from: dline.from + m.index!,
+                                    to: dline.from + m.index! + m[0].length, line: ln }
+                if (m[1]) word.target = m[1]
+                words.push(word)
+            }
+            for (const m of text.matchAll(MINT_RE)) {
+                if (m[1] === 'A' || m[1] === 'H') continue   // housing shelf tokens, not mainkeys
+                words.push({ mint: 1, mainkey: m[1], from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+            // dedupe SEE_RE within the line: the "once-noticed" idiom writes the SAME sentence twice
+            //  on one line (`oa %see:'X'` guard, `i %see:'X'` mint) — one assertion, not two.
+            const seen_here = new Set<string>()
+            for (const m of text.matchAll(SEE_RE)) {
+                if (seen_here.has(m[1])) continue
+                seen_here.add(m[1])
+                words.push({ proves: 1, sentence: m[1], from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+            for (const m of text.matchAll(DESC_RE)) {
+                words.push({ proves: 1, sentence: m[1], desc: 1, from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+        }
+
+        // via for elvisto/mint/proves — a "last top-level def whose line is <= this line" lookup,
+        //  simpler than def_spans' character-range containment and DIALECT-UNIFORM: a .g method sits
+        //  at column 0 and its body runs until the next column-0 def, so the def immediately above a
+        //  given line IS its enclosing method for both stho and tsstho files alike (defs never nest —
+        //  a class's own members are separate `def` words with their own line).  Built from every
+        //  `def` word already collected by either branch, so no new tree-walk is needed.
+        const def_lines = words.filter(w => w.def && typeof w.line === 'number')
+            .map(w => ({ line: w.line as number, method: w.method as string }))
+            .sort((a, b) => a.line - b.line)
+        if (def_lines.length) {
+            for (const word of words) {
+                if (!(word.elvisto || word.mint || word.proves) || typeof word.line !== 'number') continue
+                let via: string | undefined
+                for (const d of def_lines) { if (d.line <= word.line) via = d.method; else break }
+                if (via) word.via = via
             }
         }
 

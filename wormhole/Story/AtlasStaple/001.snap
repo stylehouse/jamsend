@@ -1,0 +1,7 @@
+Snap:H
+  H:AtlasStaple,Run
+    A:AtlasStaple
+      self,round	{"mung":["age"]}
+      w:AtlasStaple
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok
