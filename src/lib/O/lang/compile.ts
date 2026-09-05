@@ -347,7 +347,13 @@ export const LANG_COMPILE = {
             }
         } else {
 
-        tree = syntaxTree(state)
+        // Lang_full_tree, not bare syntaxTree(state): CodeMirror parses lazily, so a freshly-built
+        //  or off-view state's incremental tree can stop partway through the doc (a headless Atlas
+        //  scan of LangHold.svelte, 89,519 chars, saw only the first 116 — one eatfunc member of 49 —
+        //  confirmed 2026-09-05 via Ghost/L/Atlas.g).  Lang_full_tree forces the parse to completion
+        //  (falling back to the lazy tree only if that fails), so this walk never silently mis-reports
+        //  a large or unattached doc's defs/calls.  Cheap when the lazy tree already covers the doc.
+        tree = this.Lang_full_tree(state)
         tree.iterate({
             enter: (ref) => {
                 // ── stho expression hits ──────────────────────────────────────

@@ -1008,6 +1008,17 @@ async Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size, held):
     if (rec.sc.body_hash) card.sc.body_hash = rec.sc.body_hash
     if (rec.sc.album) card.sc.album = rec.sc.album
     if (this.Heist_is_pool(mardir) && rec.sc.lofi) card.sc.lofi = 1
+    // THE POOL CARD MUST BE DIALABLE, and until 2026-09-05 it never was.  Everything above stamps what a
+    //  card SAYS; nothing stamped what a card needs to PLAY — `preview`, `total` and the chunk children —
+    //   so Ra_dial_next (which skips any record without preview > 0) could not pick a single pooled track
+    //    on any body that ever pooled.  The source record is right here in hand, its bytes are the bytes
+    //     that just landed, and its preview is therefore a true description of this copy: carry it.
+    //  Ra_rec_previews_carry declines a lofi rendition on its own (different bytes ⇒ someone else's
+    //   waveform), so the call needs no grade guard here; it is also idempotent and cheap when there is
+    //    nothing to take.  Library landings are untouched — they stock through Ra_record_from as always.
+    if (this.Heist_is_pool(mardir) && typeof this.Ra_rec_previews_carry === 'function') {
+        this.Ra_rec_previews_carry(card, rec)
+    }
     job.sc.landed = +(job.sc.landed || 0) + 1
     // SURFACE what the heist TOOK (the landing twin of the held/denied verdict rows): one compact
     //  `took,tune:<Artist — Title>` child per file that crossed and passed the byte gate, pointed at the

@@ -5,28 +5,28 @@ story:MusuHeist
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=4.191
-      sample=3.193,at=1788516471
-      sample=3.783,at=1788516618
-      sample=4.705,at=1788516764
-      sample=4.285,at=1788516788
-      sample=4.793,at=1788516828
+    TimeTotal:beliefs,avg=7.247
       sample=3.803,at=1788516857
       sample=3.315,at=1788516888
       sample=5.561,at=1788516919
       sample=4.773,at=1788516950
       sample=3.703,at=1788516979
-    TimeTotal:step,avg=0.191
-      sample=0.145,at=1788516471
-      sample=0.172,at=1788516618
-      sample=0.214,at=1788516764
-      sample=0.195,at=1788516788
-      sample=0.218,at=1788516828
+      sample=9.699,at=1788603048
+      sample=7.112,at=1788603567
+      sample=16.044,at=1788606088
+      sample=10.51,at=1788606251
+      sample=7.951,at=1788606445
+    TimeTotal:step,avg=0.329
       sample=0.173,at=1788516857
       sample=0.151,at=1788516888
       sample=0.253,at=1788516919
       sample=0.217,at=1788516950
       sample=0.168,at=1788516979
+      sample=0.441,at=1788603048
+      sample=0.323,at=1788603567
+      sample=0.729,at=1788606088
+      sample=0.478,at=1788606251
+      sample=0.361,at=1788606445
   step,dige:d2effa20514897c8
   step=2,dige:9d3ffd91317cb14f
   step=3,dige:142a2a384b8f5a73

@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'dffeec46f094c507~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '8264fb2d322934c2~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -3724,6 +3724,7 @@ Swarm_restash_all(ident, from, st) {
              crew: this.Swarm_restash_crew(ident, src, st),
              reaches: this.Swarm_restash_reaches(ident, src, st),
              pools: this.Swarm_restash_pools(ident, src, st),
+             radio: this.Swarm_restash_radio(ident, src, st),
              heard: this.Swarm_restash_heard(ident, src, st) }
 
 },
@@ -3997,6 +3998,122 @@ Swarm_pools_rehydrate(w, ident, st0) {
     }
     if (n) { console.log('🏊 pools rehydrated — ' + n + ' compartment(s) survive the reload') }
     return n
+},
+// ── the SOURCE CHOICE is the NINTH pillar (2026-09-05, the owner: *"can we get it to stay on
+//  SoundPooling if that was where its last source was pointed"* — and, in the same breath, *"unless a
+//   new friend is minted!"*) ──────────────────────────────────────────────────────────────────────
+//  WHO I AM LISTENING WITH is a DECISION — the pool rung, or one pinned holder (Radio_source_next /
+//   Radio_aim_set) — and it lived ONLY on the %Radio particle in a runtime world.  Nothing under a
+//    world is durable, so every reload silently walked the listener back to the friends-first ladder:
+//     they chose SoundPooling on purpose, refreshed, and the radio quietly stopped obeying them, with no
+//      line anywhere saying it had forgotten.  Same disease as the crew cert, the standing reach, the
+//       pool compartment and the heard Mag, ninth organ — and on a PHONE (no folder ⇒ no account snap)
+//        the stash is the only home there is.
+//  THE EXCEPTION, which is the whole reason this pillar is not three lines: a restored pin is a BLINDER.
+//   Meeting somebody new is the one event that should re-open the dial — a choice made when I had two
+//    friends must not hide the third from me forever.  So the entry carries the ROLL of friends I had at
+//     the moment I chose; a friend on today's roll who is not on that roll is NEW, and a new friend SPENDS
+//      the choice (deleted, not merely skipped — `saw` is never refreshed, so a skip would disable the
+//       restore for the rest of that stash's life and rot there unexplained).
+//  WHY THE ROLL AND NOT `pier.sc.since` ALONE: because since does NOT survive a reload.  A pier's stash
+//   entry is page(prepub|pub|friendly) + grants + nots, no `since`, and Swarm_piers_rehydrate re-seals
+//    through Swarm_seal, whose "a re-seal never resets it" guard sees an ABSENT since and stamps
+//     Swarm_now.  SwarmReboot's own fixture prints the proof: 003.snap carries `since:1751700000` and
+//      005.snap, after the reload, carries `since:1751700030`.  Comparing a stamp against those would
+//       find EVERY friend newer than the choice on EVERY boot and drop it every time.  `at` is stamped
+//        anyway (Swarm_now, never Date.now — a Book path must be pinnable) because it is the honest
+//         record of when the decision was taken, and it is what the console line has to say.
+// Swarm_radio_roll — the friends I have RIGHT NOW, as prepubs.  Device-link rails are excluded: my own
+//  second phone arriving is not "meeting someone new", and letting it spend the choice would re-open the
+//   dial on every link ceremony.
+Swarm_radio_roll(ident) {
+    let peering = ident ? this.Swarm_peering(ident) : null
+    let roll = []
+    for (const p of (peering ? peering.o({ Pier: 1 }) : [])) {
+        if (!p.sc.pub) { continue }
+        if (p.sc.link && this.Swarm_pier_linklive(p)) { continue }
+        roll.push(String(p.sc.pub))
+    }
+    roll.sort()
+    return roll
+},
+// Swarm_radio_face — the %Radio the choice lives on, and ONLY when it is mine.  `top.c.radio_w` is a
+//  LIVE-tab pin by law (Swarmation: "a Book must NEVER touch top_House().c.radio_w"), and the pub check
+//   makes a puppet identity answer null rather than mirroring whichever tab happens to be running — so a
+//    Book that walks every pillar reads no radio, and this pillar stays deterministic there.
+Swarm_radio_face(ident) {
+    let rw = this.top_House().c.radio_w
+    if (!rw || !ident || typeof this.Radio_pub !== 'function') { return null }
+    if (String(this.Radio_pub(rw) || '') !== String(ident.sc.prepub || '')) { return null }
+    return rw.o({ Radio: 1 })[0] || null
+},
+// Swarm_radio_stash — write the choice, but ONLY when it is a NEW choice.  A plain mirror (restash_all
+//  runs on graft, on seal, on plenty of seams) must not re-date the decision or refresh its roll: doing
+//   so would quietly swallow the very "a new friend was minted" event the exception exists to notice.
+//    Same live-self law as every sibling — the guard is inside Swarm_stash_of, so a caller with its own
+//     `st` may drive it anywhere and a Book's puppets can never reach the House's Dexie.
+Swarm_radio_stash(w, ident, radio, st0) {
+    let st = this.Swarm_stash_of(ident, st0)
+    if (!st || !ident || !radio || !radio.sc) { return 0 }
+    let want = {}
+    if (radio.sc.source) { want.source = String(radio.sc.source) }
+    if (radio.sc.aim) { want.aim = String(radio.sc.aim) }
+    if (radio.sc.aim_by) { want.aim_by = String(radio.sc.aim_by) }
+    if (!st.Swarm_radio) { st.Swarm_radio = {} }
+    // roaming the friends-first ladder is the DEFAULT, not a decision — nothing to remember, and an
+    //  entry left standing would out-live the person un-choosing it.
+    if (!want.source && !want.aim) {
+        if (st.Swarm_radio[ident.sc.prepub]) { delete st.Swarm_radio[ident.sc.prepub] }
+        return 0
+    }
+    let had = st.Swarm_radio[ident.sc.prepub]
+    if (had && String(had.source || '') === String(want.source || '') && String(had.aim || '') === String(want.aim || '')) { return 1 }
+    want.at = String(this.Swarm_now(w || radio.c.w))
+    want.saw = this.Swarm_radio_roll(ident)
+    st.Swarm_radio[ident.sc.prepub] = want
+    return 1
+},
+Swarm_restash_radio(ident, from, st0) {
+    let radio = this.Swarm_radio_face(from || ident)
+    if (!radio) { return 0 }
+    return this.Swarm_radio_stash(radio.c.w, ident, radio, st0)
+},
+// Swarm_radio_rehydrate — put the choice back on the %Radio face.  THREE ANSWERS, and the third is
+//  load-bearing: 1 = restored, 0 = settled (nothing stashed, or the choice was spent by a new friend),
+//   null = THE FACE IS NOT STANDING YET, so the caller must ask again.  The radio world is stamped by
+//    Stoker_ensure well after the station stands, and a latch that fired on "no radio yet" would drop
+//     the restore on the floor exactly on a cold boot — which is the only boot that matters here.
+//  Idempotent and value-guarded like Swarm_pools_rehydrate: a second pass writes nothing new.
+Swarm_radio_rehydrate(w, ident, st0, radio0) {
+    let st = st0 || this.top_House().stashed
+    let mine = st?.Swarm_radio?.[ident?.sc?.prepub]
+    let radio = radio0 || this.Swarm_radio_face(ident)
+    if (!radio || !radio.sc) { return null }
+    if (!mine) { return 0 }
+    // THE EXCEPTION — the owner: *"unless a new friend is minted!"*
+    let saw = {}
+    for (const p of (mine.saw || [])) { saw[String(p)] = 1 }
+    let fresh = []
+    for (const p of this.Swarm_radio_roll(ident)) { if (!saw[p]) { fresh.push(p) } }
+    if (fresh.length) {
+        let who = this.Radio_friendly ? this.Radio_friendly(radio.c.w, fresh[0]) : ''
+        console.log('📻 source NOT restored — ' + fresh.length + ' new friend(s) since the choice (' + (who || fresh[0].slice(0, 8)) + ') — the dial roams again')
+        if (st.Swarm_radio) { delete st.Swarm_radio[ident.sc.prepub] }
+        return 0
+    }
+    let said = ''
+    if (mine.aim) {
+        if (String(radio.sc.aim || '') !== String(mine.aim)) { radio.sc.aim = String(mine.aim) }
+        if (mine.aim_by && String(radio.sc.aim_by || '') !== String(mine.aim_by)) { radio.sc.aim_by = String(mine.aim_by) }
+        said = 'aimed at ' + String(mine.aim_by || String(mine.aim).slice(0, 8))
+    }
+    if (mine.source) {
+        if (String(radio.sc.source || '') !== String(mine.source)) { radio.sc.source = String(mine.source) }
+        said = said ? (said + ' + ' + String(mine.source)) : ('the ' + String(mine.source) + ' rung')
+    }
+    radio.bump()
+    console.log('📻 source restored — ' + said + ' survives the reload (chosen at ' + String(mine.at || '?') + ')')
+    return 1
 },
 Swarm_restash_reaches(ident, from, st0) {
     let st = this.Swarm_stash_of(ident, st0)
@@ -4669,6 +4786,18 @@ Swarm_share_up(w, ident) {
     if (w.c.share_up) return true
     let rw = this.top_House().c.radio_w
     if (!rw) return this.Swarm_share_no(w, 'radio world not standing yet')
+    // ⟨the NINTH pillar comes back HERE⟩ — this is the first moment on a live boot when BOTH halves of
+    //  the answer exist: the friends (Swarm_station_up rehydrated the piers before this effect was even
+    //   allowed to run) and the %Radio face (Stoker_ensure stamps top.c.radio_w, which is the line above).
+    //    Putting it in the station_up ladder beside its eight siblings would have been tidier and WRONG:
+    //     that ladder latches once the station stands, and the radio world stands later, so on a cold boot
+    //      the restore would have fired against no radio and latched itself off.  This caller is re-asked
+    //       until it takes (SwarmStandup's share effect retries on every tick), and the rehydrate answers
+    //        null for "the face is not standing yet" — so the latch below can only close on a real answer.
+    //  Live-only by construction: a Book never stamps top.c.radio_w, so no fixture world moves.
+    if (!w.c.radio_choice_back && this.top_House().stashed) {
+        if (this.Swarm_radio_rehydrate(w, ident) !== null) { w.c.radio_choice_back = 1 }
+    }
     if (typeof this.Repli_arm !== 'function') return this.Swarm_share_no(w, 'Repli verbs not deposited')
     this.Repli_arm(w)
     w.c.repli_mirror_pier = String(ident.sc.prepub)   // my addr — the pull's from-address (Ra_restock_beat)
@@ -5622,7 +5751,14 @@ Swarm_protocol(kind) {
     //   Tier-B truth — the old blanket `role:1` was silently stripping it from every ferried
     //    account, contradicting the %Body header's own "PERSISTENT, replicated" claim.
     let SESSION = { online: 1, active: 1, created_at: 1, new: 1, not_found: 1, stolen: 1, address: 1, duty: 1, role: 1 }
-    let skips = ['mail', 'rebuff', 'Sibling', 'Stolen']
+    // %Preview / %Stream ARE CHUNK BUFS, and a Uint8Array in .sc is fine on the snap plane but FATAL at
+    //  this one — the storage/toc encoder (Ra_record_from's header has carried that warning since the
+    //   library learned to hold its own chunks).  They reach the identity subtree now that a pool card
+    //    carries its source's preview (Ra_rec_previews_carry, 2026-09-05) and the SoundPooling home hangs
+    //     on the %Identity, so the account snap would walk straight into them.  They are also pure cache:
+    //      the bytes on disk are the durable fact, the encode is re-derivable, and nothing about an
+    //       account backup wants a megabyte of opus in it.  Skip, in every kind.
+    let skips = ['mail', 'rebuff', 'Sibling', 'Stolen', 'Preview', 'Stream']
     if (kind === 'page') skips = [...skips, 'Pier', 'Idzeug', 'SocialGraph', 'Key', 'Crew']
     if (kind === 'crew') skips = [...skips, 'Key']
     let rules = []
@@ -6227,7 +6363,12 @@ Swarm_reach_standing(ident, to, of, forr) {
     let r = peering.o({ Reach: 1, to: String(to), of: String(of || ''), for: String(forr) })[0]
     if (!r) { return null }
     let st = String(r.sc.state || 'booked')
-    return (st === 'arrived' || st === 'refused' || st === 'dead') ? null : r
+    // ⚠ 'arrived' IS STILL STANDING (2026-09-05, the flood).  The booker drops an arrived reach only once the
+    //  copy LANDS (Ra_pool_fill_land); until then the row is live work.  Counting it finished here meant the
+    //   wants pass saw "nothing booked", re-booked the same want — Swarm_reach_book is find-or-create, so it
+    //    re-stamped and RE-DISPATCHED it — and the tab printed 'booked 4 circulation fill(s)' hundreds of times
+    //     a minute while re-sending the same six frames.  Only a terminal verdict ends a reach.
+    return (st === 'refused' || st === 'dead') ? null : r
 },
 Swarm_reach_addr(ident, reach) {
     if (!reach) { return null }
@@ -6241,6 +6382,16 @@ Swarm_reach_addr(ident, reach) {
 //  pure).  Landed → 'dispatched'.  Did NOT land → stays as-is (the intent STANDS; there is no separate
 //   debt).  Idempotent — re-dispatching a standing reach IS the retry.  Returns the resolved address (so a
 //    Book proves routing without a wire), or null.
+// Swarm_reach_backoff — HOW LONG TO WAIT BEFORE SAYING IT AGAIN.  Doubling from the pump cadence to a
+//  one-minute ceiling, counted per reach.  A reach that gets an answer never reaches here; only silence backs off.
+Swarm_reach_backoff(w, reach) {
+    let base = (w && w.c.reach_cadence != null) ? +w.c.reach_cadence : 5000
+    let tries = +(reach.c.tries || 0)
+    if (tries > 4) { tries = 4 }
+    let wait = base * Math.pow(2, tries)
+    return wait > 60000 ? 60000 : wait
+
+},
 Swarm_reach_dispatch(w, ident, reach) {
     if (!reach) { return null }
     // TERMINAL GUARD (kill the zombie, W1): a SETTLED reach — arrived | refused | dead — never
@@ -6251,6 +6402,18 @@ Swarm_reach_dispatch(w, ident, reach) {
     let addr = this.Swarm_reach_addr(ident, reach)
     if (!addr) { return null }
     if (!w || !w.c.station_up) { return addr }        // Book / no station: routing proven, wire inert, intent stands
+    // ⚠ AN UNANSWERED REACH MUST BACK OFF, AND THIS IS WHY THE MUSIC STOPPED (2026-09-05, measured on eed:
+    //  seq 1720→1742 in ten seconds — SIX frames every couple of seconds to one peer that never answers, for
+    //   as long as the tab is open).  The settle loop re-dispatches every standing reach on every pump pass,
+    //    with no memory that it just said the same thing.  Those frames ride the SAME relay socket the audio
+    //     streams over, so the radio starved mid-track and re-dialled, over and over: "still not playing".
+    //  Silence is information — say it, then say it less often.  Any real answer settles the row (arrived |
+    //   refused | dead) and returns above, so nothing that is working is ever slowed by this.
+    //  Volatile on `.c`: a reload starts the asking afresh, which is right — a new session is a new attempt.
+    let now = Date.now()
+    if (reach.c.said_at && (now - reach.c.said_at) < this.Swarm_reach_backoff(w, reach)) { return addr }
+    reach.c.said_at = now
+    reach.c.tries = (+(reach.c.tries || 0)) + 1
     let wire = { of: String(reach.sc.of || ''), to: String(reach.sc.to || ''), for: String(reach.sc.for || ''), by: String(reach.sc.by || '') }
     // a NAMED holder that is a friend's pier (a circulation fill) rides the pier, not the sibling lane
     let fpier = (this.Swarm_body_for && this.Swarm_body_for(ident, String(reach.sc.to || ''))) ? null : (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => String(p.sc.pub || '') === addr)

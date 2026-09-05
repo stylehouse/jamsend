@@ -4,25 +4,30 @@ story:MusuPoolBytes
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.685
-      sample=1.645,at=1788438452
-      sample=0.141,at=1788496136
-      sample=1.561,at=1788498969
-      sample=0.135,at=1788499019
-      sample=0.829,at=1788585273
-      sample=0.728,at=1788586129
-      sample=0.346,at=1788586381
-      sample=0.096,at=1788590317
-    TimeTotal:step,avg=0.171
-      sample=0.411,at=1788438452
-      sample=0.035,at=1788496136
-      sample=0.39,at=1788498969
-      sample=0.034,at=1788499019
-      sample=0.207,at=1788585273
-      sample=0.182,at=1788586129
-      sample=0.086,at=1788586381
-      sample=0.024,at=1788590317
+    TimeTotal:beliefs,avg=0.612
+      sample=0.291,at=1788602882
+      sample=0.495,at=1788603754
+      sample=0.289,at=1788603872
+      sample=0.247,at=1788603989
+      sample=0.247,at=1788604014
+      sample=1.256,at=1788604023
+      sample=0.322,at=1788604990
+      sample=1.772,at=1788605990
+      sample=1.015,at=1788606257
+      sample=0.19,at=1788609890
+    TimeTotal:step,avg=0.124
+      sample=0.073,at=1788602882
+      sample=0.099,at=1788603754
+      sample=0.058,at=1788603872
+      sample=0.049,at=1788603989
+      sample=0.049,at=1788604014
+      sample=0.251,at=1788604023
+      sample=0.064,at=1788604990
+      sample=0.354,at=1788605990
+      sample=0.203,at=1788606257
+      sample=0.038,at=1788609890
   step,dige:c2a03cd0fd442b8a
   step=2,dige:332438624c02d652
   step=3,dige:622d63e94af7e31d
   step=4,dige:3ba9f8e76d48f9c1
+  step=5,dige:98091ca6433cae24

@@ -4,14 +4,24 @@ story:Siphonation
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.028
+    TimeTotal:beliefs,avg=0.023
       sample=0.026,at=1788076229
       sample=0.026,at=1788076267
       sample=0.031,at=1788076275
+      sample=0.024,at=1788602746
+      sample=0.018,at=1788602876
+      sample=0.013,at=1788605007
+      sample=0.024,at=1788606007
+      sample=0.02,at=1788610021
     TimeTotal:step,avg=0.004
       sample=0.004,at=1788076229
       sample=0.004,at=1788076267
       sample=0.005,at=1788076275
+      sample=0.004,at=1788602746
+      sample=0.003,at=1788602876
+      sample=0.002,at=1788605007
+      sample=0.004,at=1788606007
+      sample=0.003,at=1788610021
   step,dige:dbfbcf7858877f52
   step=2,dige:324161a785d16922
   step=3,dige:14979df517522dda

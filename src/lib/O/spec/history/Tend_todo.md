@@ -1,3 +1,56 @@
+# Tend_todo.md — HISTORICAL (retired 2026-09-05)
+
+**What this was.** A design for one new substance in `L/` — `%Tend` — holding attention as a single
+ particle with four axes (kind, qua, arity, grain) read five ways (field, terrain, accord queue,
+  wiring, diary). Written 2026-09-03→05 out of a long design conversation. **Nothing here was built.**
+
+**Why it was retired.** The owner, 2026-09-05: *"we never really understood %Tend/qua/grain"*. The
+ vocabulary never landed. And what it was reaching for turned out to be machinery that already
+  exists under other names — the **Ting** (`Waft/Ting`, the taker trail: attention globules per
+   Doc·region·method, with decayed heat and a walkable resume-where-you-were cloud), the
+    **`Waft/What/Doc/Point`** tree (named lines of investigation, with `Sidetrack` for a branch and
+     `Aside` for a dated scratch line), and the **Stemdex** (the corpus index). The design invented
+      parallel names for all three.
+
+**Where the living content went.**
+- Code-exploring / the index → `Stemdex_todo.md`: relation EDGES (calls, elvisto, `%see`, doc-links)
+   added to the existing Stemdex rather than a second index beside it.
+- "Code off the A", pluggable ghosts, the `.go` include lists → `Atheory_todo.md` ("the next rebuild
+   of Housing (that's just A**)"), which already opened with exactly that question.
+- The UI (drawers as stacked flaps, threads you can quit-and-keep, an AI narrative overlay winding a
+   cursor through posed code) → still unwritten. Its base is the Ting plus the engaged-Points
+    machinery: `Lang_apply_openness` already folds a doc around engaged Points and `pointFontField`
+     already swells the identifier, so "posed nicely" is built — what is missing is a *producer* of
+      Points (a narrative What) and a *winder* (a cursor that walks it).
+
+**Findings below that stay true and were verified against the code** — the reason this file is kept
+ rather than deleted:
+
+- **Refusals do not snap** (§6). Across fourteen accept-like mechanisms, every refusal lives off-snap:
+   `U%unaccepted` on `C.c.U` (and `Seem_toString` *requires* it never reach `.sc`), `mirror.c.breach`,
+    `ra_missed`, `ra_no_idspace`. Only Story's Accept reaches disk. So the machine snaps what it
+     accepted and forgets what it refused — and `o_Seem` `r()`-replaces the whole D-sphere each walk,
+      so the vote is written on a surface that gets wiped.
+- **LE and Repli share an organ, not a substance** (§7). Both stand a `Selection` and bottom out in the
+   same `resolve()` pairing; both dodge `est_D_T` the same way; both independently omitted
+    `resolve_strict`. But LE holds a *candidate version* (`Seem_clone_C`) and Repli does not — foreign
+     data goes straight into the live `%Theirs` shelf, and its soundness rests on a sole-writer axiom
+      that makes "whose version wins" unaskable. `Repli_design.md:15` already says Repli should be
+       rewritten onto `i_Seem`/`o_Seem`.
+- **`i_Seem`/`o_Seem` are generic and already used outside LE** — five call sites on non-Waft trees
+   (`Voro.g` ×3, `LiesFunk`, `LangGraft`). Only `LE_encode_compare → Seem_toString → enWaft` is
+    Waft-coupled, and it faults on any mainkey outside `%What`/`%Doc`/`%Point`. So the rule is **use
+     Seem, not LE**.
+- **Identity must be declared, not inferred.** `resolve()` pairs by unambiguity scoring, so identity
+   derived from content (a heading's text) makes every rename a goner+neu pair and every re-parse churn
+    the whole field. `c.vyto_tok` is the existing precedent for declaring it.
+- **The seed census** (§10) — the link-richest spec docs and the memory-raw resolution rates — was
+   measured and is reusable for the Stemdex edge work.
+
+---
+
+*(original follows unchanged)*
+
 # Tend — the land's one substance
 
 `Tend` is a **placeholder name** (attend + care for + lean toward; and one tends land). Rename while

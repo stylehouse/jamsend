@@ -1399,6 +1399,23 @@ Radio_sources(w, radio):
     }
     out.sort((a, b) => (b.live - a.live) || (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0)))
     return out
+// Radio_choice_keep — A CHOICE IS DURABLE MATTER (2026-09-05, the owner: *"can we get it to stay on
+//  SoundPooling if that was where its last source was pointed"*).  The two verbs below are the only
+//   places a PERSON says who they want to listen with, and until now that answer lived exactly as long
+//    as the tab did: `sc.source` / `sc.aim` sit on the %Radio particle in a runtime world, and a world
+//     is not persisted.  Refresh and the dial walked silently back to friends-first — the listener's
+//      deliberate choice undone by nothing more than a reload, with no line saying so.
+//  So every deliberate choice is mirrored into the House stash, the ONE durable home a device with no
+//   folder actually has (the ninth pillar — Swarm_radio_stash in Swarm.g holds the reasoning, the
+//    new-friend exception, and the live-self guard that keeps a Book's puppets out of it).  Fire-and-
+//     forget: no stash (a Book world, a runner, Swarm not yet deposited) simply means no mirror, and the
+//      radio behaves exactly as it did before.
+Radio_choice_keep(radio):
+    let M = this.top_House()
+    if (!radio || typeof M.Swarm_radio_stash !== 'function') { return 0 }
+    let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
+    if (!ident) { return 0 }
+    return M.Swarm_radio_stash(radio.c.w, ident, radio)
 // Radio_aim_set — PIN the radio to one holder, or let it roam again with an empty pub.  Choosing a friend
 //  also leaves SoundPool mode (the chip is one control: you cannot be aimed at a friend AND on the pool),
 //   and clears the note the empty-pool rung may have left.  Deletes rather than blanks — a snapped scalar
@@ -1412,6 +1429,7 @@ Radio_aim_set(n, pub):
         if (radio.sc.aim) { delete radio.sc.aim }
         if (radio.sc.aim_by) { delete radio.sc.aim_by }
         radio.bump()
+        this.Radio_choice_keep(radio)
         return ''
     }
     radio.sc.aim = want
@@ -1420,6 +1438,7 @@ Radio_aim_set(n, pub):
     if (radio.sc.source) { delete radio.sc.source }
     if (radio.sc.note) { delete radio.sc.note }
     radio.bump()
+    this.Radio_choice_keep(radio)
     console.log('📻 listening with ' + (nice || want.slice(0, 8)))
     return nice || want.slice(0, 8)
 Radio_source_next(n):
@@ -1431,6 +1450,7 @@ Radio_source_next(n):
         radio.sc.source = 'pool'
     }
     radio.bump()
+    this.Radio_choice_keep(radio)
     return radio.sc.source || ''
 // Radio_dial_pool_local — the SOUNDPOOL rung (SoundPooling_todo §3.2): the own-shelf dial walk
 //  (Ra_dial_next — heard-gated, stock-aware) pointed at MY OPFS pool shelf instead of the library.
@@ -1492,7 +1512,7 @@ async Radio_pool_steward(w, radio):
         got = await this.Ra_quarter_serve(w, nav, lib, pool, lib, cap, this.Ra_pool_sources(w))
         let self = this.Swarm_live_self ? this.Swarm_live_self() : null
         // the yes IS the fills switch — a consented pool books its pulls (the old reach_on knob stays as an override)
-        if (self && (w.c.reach_on || this.Ra_pool_consent(w))) { let b = this.Ra_pool_fill_wants(w, self); if (b) { console.log('🏊 steward: booked ' + b + ' circulation fill(s)') } }
+        if (self && (w.c.reach_on || this.Ra_pool_consent(w))) { let b = this.Ra_pool_fill_wants(w, self); if (b && w.c.pool_fill_fresh) { console.log('🏊 steward: booked ' + w.c.pool_fill_fresh + ' circulation fill(s) (' + b + ' standing)') } }
     } catch (er) { console.log('🏊 steward: press round failed — ' + String(er).slice(0, 140)) }
     delete top.c.pool_steward_busy
     if (got && (got.pressed || got.evicted || got.fails)) {
@@ -1538,14 +1558,38 @@ async Radio_dial(radio):
     //    way the old own-replay masked a dead share).  Dry pool ⇒ the replay pass, then an honest
     //     note — flip the chip back for the ordinary ladder.
     if (radio.sc.source === 'pool') {
+        // HEAL BEFORE GIVING UP (2026-09-05).  A pool card lands with its bytes and — until
+        //  Ra_rec_previews_carry existed — with no `preview`, and Ra_dial_next skips every record without
+        //   one.  So a full pocket dialled as "empty", which is the whole of what the owner has been
+        //    seeing.  THE DIAL IS THE RIGHT SEAM for the retro pass: it is the one place guaranteed to run
+        //     the moment a listener actually asks for their pool, it already mutates, and the sweep is
+        //      bounded reads over a shelf that is already in hand.  The pump does it too, for the tab that
+        //       is pooling in the background and never presses Next.
+        if (typeof this.Ra_pool_previews_heal === 'function' && typeof this.Ra_pool_owner === 'function') {
+            let powner = this.Ra_pool_owner(w)
+            // …AND FROM DISK FIRST (2026-09-05, the owner's "empty" after every reload): a tab with no folder
+            //  has no account snap, so the pool CATALOG dies on reload while the pool FILES do not.  Rebuild the
+            //   cards from pool/ before healing their previews — bounded, idempotent, silent when nothing is new.
+            if (typeof this.Ra_pool_resurrect === 'function') {
+                try { await this.Ra_pool_resurrect(w, powner) } catch (er) { console.log('🏊⚠ pool resurrect: ' + er) }
+            }
+            try { this.Ra_pool_previews_heal(w, powner) } catch (er) {}
+        }
+        // EVERY NEXT SAYS HOW IT WENT (the owner 2026-09-05): one line per click — the rung, the pick or the
+        //  give-up, and the pocket's own sentence (Ra_pool_whys) beside it so "empty" is never bare again.
+        let pw = (typeof this.Ra_pool_whys === 'function') ? this.Ra_pool_whys(w) : null
+        let pwl = pw ? '  (' + pw.line + ')' : ''
+        let pname = (r) => (r.sc.artist ? String(r.sc.artist) + ' — ' : '') + String(r.sc.title || r.sc.id || '?')
         let prec = this.Radio_dial_pool_local(w, radio)
-        if (prec) { return prec }
+        if (prec) { console.log('📻 next [pool] ✓ ' + pname(prec) + pwl); return prec }
         let pagain = this.Radio_dial_pool_local(w, radio, 1)
         if (pagain) {
             radio.sc.replays = (+(radio.sc.replays || 0)) + 1
             radio.bump()
+            console.log('📻 next [pool] ↻ replay ' + pname(pagain) + ' — everything playable was heard' + pwl)
             return pagain
         }
+        console.log('📻 next [pool] ✗ gave up — nothing the dial can play' + pwl)
         let pnote = 'empty'   // the most minimal effective comms (owner 2026-09-03)
         // …UNLESS IT IS NOT EMPTY, ONLY NOT READY (2026-09-05: *"claims to have four but it says empty"*).  The
         //  cards are there — the wants were booked — and the bytes have not landed; "empty" then contradicts
@@ -1553,6 +1597,14 @@ async Radio_dial(radio):
         let pc = this.Ra_pool_census ? this.Ra_pool_census(w, this.Radio_pub(w) || 'me') : null
         if (pc && pc.cards > 0 && pc.ready === 0) { pnote = pc.cards + ' pooled · none playable yet' }
         if (radio.sc.note !== pnote) { radio.sc.note = pnote; radio.bump() }
+        // SAY WHY, IN FULL, when the listener asked for the pool and got nothing — the one report (Ra_pool_report)
+        //  that a human at the console and a snap reader see identically.  Throttled to one a half-minute so a
+        //   held-down Next does not scroll the console; humdinger-only so no Book ever prints it.
+        let topD = this.top_House ? this.top_House() : null
+        if (topD && topD.c && topD.c.humdinger && typeof this.Ra_pool_report === 'function' && Date.now() - (+(w.c.pool_reported_at || 0)) > 30000) {
+            w.c.pool_reported_at = Date.now()
+            try { await this.Ra_pool_report(w, this.Ra_pool_owner ? this.Ra_pool_owner(w) : null) } catch (er) {}
+        }
         return null
     }
     // THE STANDING ORDER outranks the fallback ladder (2026-08-21): if peek placed a %Card on
@@ -2710,6 +2762,21 @@ async Stoker_look(st, era):
         }
         // backstop nudge for any later stands past the first
         if (+(st.sc.stood || 0) > stood0) this.Radio_nudge(w)
+    }
+    // THE POCKET RESURRECTS HERE TOO (2026-09-05).  This is the one seam that runs on EVERY body with a nav
+    //  — the preheat churn fires it once at boot even with the radio off — and it is already where the
+    //   library rebuilds itself from radiostock.  The pool catalog has no durable home on a folderless tab
+    //    and, measured on the daemon, does not even survive a restart WITH one (the account snap came back
+    //     with the pool shelf empty).  The files under pool/ are the fact; rebuild the cards from them,
+    //      bounded 4 a look, and keep coming back while `pool_resurrect_more` says there are more.
+    let topS = this.top_House ? this.top_House() : null
+    if (nav && topS && topS.c && topS.c.humdinger && typeof this.Ra_pool_resurrect === 'function' && (!st.c.pool_resurrected || w.c.pool_resurrect_more)) {
+        st.c.pool_resurrected = 1
+        // 8 a look here (the boot pass — a whole-file read+hash each): the daemon's 8 pressed records came back
+        //  4 at the default bound and its radio-off Stoker parks before a second look (measured 2026-09-05).
+        try { await this.Ra_pool_resurrect(w, this.Ra_pool_owner ? this.Ra_pool_owner(w) : null, 8) } catch (er) { console.log('🏊⚠ pool resurrect: ' + er) }
+        if (st.c.era !== era) return
+        if (typeof this.Ra_pool_previews_heal === 'function') { try { this.Ra_pool_previews_heal(w, this.Ra_pool_owner ? this.Ra_pool_owner(w) : null) } catch (er) {} }
     }
     this.Stoker_census(st, shelf, radio)
     this.Stoker_cull(st, shelf, radio)

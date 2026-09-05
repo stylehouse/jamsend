@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1788504619850
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1788591906465
   group:src/lib,dir:src/lib
     sub:src/lib/L,name:L
     sub:src/lib/O,name:O
@@ -179,6 +179,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Wire_spec.md,name:Wire_spec.md,noticed_at=1788504619850
     Doc:src/lib/O/spec/reactivity_docs.md,name:reactivity_docs.md,noticed_at=1788504619850
     Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md,noticed_at=1788504619850
+    Doc:src/lib/O/spec/Tend_todo.md,name:Tend_todo.md,noticed_at=1788591906465
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

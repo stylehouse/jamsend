@@ -2507,7 +2507,7 @@ await M.eatfunc({
                 //   reloading op. The CLI's PLAYER_OPS gate is advisory; THIS is the authority — a music
                 //    tab can be introspected but never made to run a Book or reload (owner 2026-09-01).
                 const ro_only = H.Lies_humdinger(w) && !H.Lies_is_runner(w)
-                if (ro_only && (op === 'run' || op === 'release' || op === 'retain' || op === 'accept' || op === 'declare' || op === 'reload')) {
+                if (ro_only && (op === 'run' || op === 'release' || op === 'retain' || op === 'accept' || op === 'declare' || op === 'reload' || op === 'ghost_load')) {
                     ok = false
                     result = { refused: `op '${op}' refused — this tab is a music-page listener (read-only introspection only)` }
                 } else if (op === 'ping') {
@@ -2540,6 +2540,30 @@ await M.eatfunc({
                     const a = ask as any
                     const lines = concap_read({ tail: a.tail != null ? Number(a.tail) : undefined, grep: a.grep != null ? String(a.grep) : undefined })
                     result = { total: concap_count(), returned: lines.length, lines }
+                } else if (op === 'ghost_load') {
+                    // LOAD a compiled ghost by its .g path and STAND its world (2026-09-05, for Ghost/L/).
+                    //  Lies_ghost_set takes any path — the CREDULER_GHOSTS manifest is only the default
+                    //   roster Creduler_ensure walks — so a new ghost can be brought up on a live runner
+                    //    without a manifest edit.  Bounded: Lies_gen_path admits only Ghost/**.g → gen/**.go
+                    //     already ON DISK, so this can load nothing the compiler did not write.  Runner-only
+                    //      (in the ro_only refusal above — a music page is never made to load code).  `stand`
+                    //       mints A:<name>/w:<name> on the top House so the ghost's worker ticks; the methods
+                    //        land a beat after the mount, and attend simply finds them next think.
+                    const a = ask as any
+                    const path = String(a.path ?? '')
+                    if (!/^Ghost\/[A-Za-z]+\/[A-Za-z_]+\.g$/.test(path)) { ok = false; result = { error: `ghost_load: not a Ghost/**/*.g path: '${path}'` } }
+                    else {
+                        await H.Lies_ghost_set(path)
+                        let stood: string | undefined
+                        if (a.stand) {
+                            const name = String(a.stand)
+                            const top  = H.top_House()
+                            top.oai({ A: name }).oai({ w: name })
+                            stood = name
+                        }
+                        H.i_elvisto(w, 'think')
+                        result = { loaded: path, gen: H.Lies_gen_path(path), stood: stood ?? null }
+                    }
                 } else if (op === 'minisnap') {
                     // TARGETED read of a pointer path (read-only; safe on a humdinger).  See H.minisnap above.
                     const a = ask as any
@@ -3179,6 +3203,10 @@ await M.eatfunc({
                         Radio_toggle: 'Radio', Radio_skip: 'Radio', Radio_source_toggle: 'Radio',
                         Sounditron_diag_toggle: 'w', Sounditron_seat_toggle: 'w',
                         Sounditron_focus_step: 'w', Sounditron_focus_home: 'w',
+                        // the pool REPORT (2026-09-05): a pure read that prints what decides whether a pooled
+                        //  track can play — cards vs files on disk vs previews vs standing reaches.  Moves
+                        //   nothing, seals nothing; the same console block the dial prints when the pool is dry.
+                        Ra_pool_report: 'w',
                     }
                     const verb = String((ask as any).verb ?? '')
                     const kind = POKES[verb]

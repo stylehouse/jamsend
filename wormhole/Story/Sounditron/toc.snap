@@ -99,46 +99,46 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.215
-      sample=0.157,at=1788582559
-      sample=0.298,at=1788584302
-      sample=0.125,at=1788584316
-      sample=0.124,at=1788584391
-      sample=0.099,at=1788584409
-      sample=0.338,at=1788584437
-      sample=0.1,at=1788584455
-      sample=0.312,at=1788585083
-      sample=0.291,at=1788588698
-      sample=0.305,at=1788590441
-    TimeTotal:step,avg=0.027
-      sample=0.02,at=1788582559
-      sample=0.037,at=1788584302
-      sample=0.016,at=1788584316
-      sample=0.016,at=1788584391
-      sample=0.012,at=1788584409
-      sample=0.042,at=1788584437
-      sample=0.012,at=1788584455
-      sample=0.039,at=1788585083
-      sample=0.036,at=1788588698
-      sample=0.038,at=1788590441
-  step,dige:6f2828d71f3a2536
-  step=2,dige:29a253cbeb428c52,desc:the machine stands
+    TimeTotal:beliefs,avg=0.343
+      sample=0.322,at=1788605205
+      sample=0.322,at=1788605208
+      sample=0.322,at=1788605209
+      sample=0.322,at=1788605210
+      sample=0.322,at=1788605212
+      sample=0.322,at=1788605214
+      sample=0.322,at=1788605215
+      sample=0.457,at=1788606043
+      sample=0.406,at=1788606899
+      sample=0.31,at=1788609764
+    TimeTotal:step,avg=0.043
+      sample=0.04,at=1788605205
+      sample=0.04,at=1788605208
+      sample=0.04,at=1788605209
+      sample=0.04,at=1788605210
+      sample=0.04,at=1788605212
+      sample=0.04,at=1788605214
+      sample=0.04,at=1788605215
+      sample=0.057,at=1788606043
+      sample=0.051,at=1788606899
+      sample=0.039,at=1788609764
+  step,dige:52167932a259cb79
+  step=2,dige:287488c201a6e4a9,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine
     Assertion:the-supervisor-stood,sentence:the supervisor stood — a roster of registered watches is being read
     Assertion:granted,sentence:granted — a sealed friendship holds Music grants in storage
     Assertion:a-peer-stood-reachable,sentence:a peer stood reachable — a channel opened beyond ourselves
     Assertion:a-friend-counted-their,sentence:a friend counted their shelf — records stand reachable
     Assertion:every-registered-watch-found,sentence:every registered watch found its probe — no blind spots in the roster
-  step=3,dige:6f71ba2665e00a0d,desc:the relay answers
+  step=3,dige:8f68e9913d2ed408,desc:the relay answers
     Assertion:relay-answers,sentence:the relay answers — the channel stood and frames can cross
-  step=4,dige:e563797a0631401e,desc:who could we reach
+  step=4,dige:f13d84920ca8a524,desc:who could we reach
     Assertion:possibilities-surveyed,sentence:the possibilities of peers were surveyed — every known address counted
     Assertion:the-collection-stirred,sentence:the collection stirred — real tracks wandered into the glass
-  step=5,dige:8efbc3e8a282a0bc,desc:reach for a peer
-  step=6,dige:62598b50e788aab2,desc:does sound run here
+  step=5,dige:d38ec5067caca9ef,desc:reach for a peer
+  step=6,dige:2d2cb55d96c4a9c6,desc:does sound run here
     Assertion:the-sound-system-answered,sentence:the sound system answered — a real AudioContext ran here
     Assertion:music-from-a-friend,sentence:music from a friend played — their track streamed off their shelf over Repli
-  step=7,dige:e45e688f6ce45c9c,desc:the music runs
+  step=7,dige:3648f5e37ac41857,desc:the music runs
     Assertion:music-runs,sentence:the music played — record chunks decoded onto the live timeline
-  step=8,dige:0d36dc094355170e,desc:sum and report
+  step=8,dige:68a76c02bc02fe79,desc:sum and report
     Assertion:report-stands,sentence:the session summed itself — a report stands ready to travel

@@ -1,22 +1,113 @@
 Snap:H
   H:Sounditron,Run
     A:Sounditron
-      self,round	{"mung":["age"]}
+      self,round=2	{"mung":["age"]}
       w:Sounditron
-        self,round	{"mung":["age"]}
+        self,round=2	{"mung":["age"]}
         req:wrangle,eternal,ok
-        Radio:off,face:Radio
+        Radio:off,face:Radio,aim:7950f300faa8a4f9,aim_by:S,source:pool
         Stoker:idle,face:Stoker,crew:Radio
         Tuner:glass,face:Tuner
         Riffle:shut,face:Riffle,crew:Riffle
-        Zine:Faves,face:Zine,crew:Radio
+        Zine:Faves,face:Zine,crew:Radio,count:0
         Door:open,face:Door
+        Link,face:Link
         Uptime,face:Uptime
         Beat,face:Beat
-        Mine,pub:f5da6599b8505881
-          shop,pub:f5da6599b8505881
-          stock,pub:f5da6599b8505881	{"dontSnap":1}
+        Mine,pub:eed831f1977c4e81
+          shop,pub:eed831f1977c4e81
+          stock,pub:eed831f1977c4e81	{"dontSnap":1}
+        Arrival,phase:arrival,reason:starting up
+        Share,mode:held
         Transfer,dontSnap
         Shuffle,dontSnap
+        Pooling,face:Pooling,dontSnap
         Diag,dontSnap
         Pose:wire,dontSnap
+        Theirs,pub:631300e88fa0b478
+          stock,pub:631300e88fa0b478
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:f43c80976a0dd276,title:Three Pieces for Lute -  Allemande,artist:Andres Segovia,album:The Segovia Collection Vol. 01,seconds=143.97,lufs=-12.71,gain=-1.4,capped,real,col,path:0 Classique/0 gat/andres segovia - the segovia collection vol. 01 (1987)/01 Three Pieces For Lute -  Allemande.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=38,pv_off=34,bytes=517443,src_size=2328253,un_n=3,un_size=9819622,un_d
+                Record,id:429b517c654d7e6a,title:Three Pieces for Lute - Sarabande,artist:Andres Segovia,album:The Segovia Collection Vol. 01,seconds=236.67,lufs=-12.69,gain=-1.57,capped,real,col,path:0 Classique/0 gat/andres segovia - the segovia collection vol. 01 (1987)/02 Three Pieces For Lute - Sarabande.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=45,pv_off=74,bytes=517358,src_size=3829161,un_n=3,un_size=9819622,un_d
+                Record,id:fb00570cd57a5082,title:the night,artist:MORPHINE,album:THE NIGHT-1999,seconds=288.67,lufs=-13.06,gain=-0.94,real,col,path:0 goth/morphine - the night (2000)/01-the night.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=95,pv_off=50,bytes=517381,src_size=4659954,un_n,un_size=4659954,un_d
+                Record,id:141af02c5f9a6563,title:For Solo Cello- Gigue,artist:Andres Segovia,album:The Segovia Collection Vol. 01,seconds=226.35,lufs=-14.03,gain=-1.54,capped,real,col,path:0 Classique/0 gat/andres segovia - the segovia collection vol. 01 (1987)/12 Suite no 3 for solo cello- Gigue.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=58,pv_off=56,bytes=517443,src_size=3662208,un_n=3,un_size=9819622,un_d
+                Record,id:97b1a81e3e6fba04,title:Loving You,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=285.93,lufs=-14.36,gain=-1.45,capped,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/04 - Loving You.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=95,pv_off=48,bytes=517363,src_size=4626140,un_n=7,un_size=41603226,un_d
+                Record,id:e057714ea582db4a,title:Sweet Georgia Brown,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=283.95,lufs=-14.01,gain=-1.69,capped,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/02 - Sweet Georgia Brown.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=70,pv_off=72,bytes=517280,src_size=4593893,un_n=7,un_size=41603226,un_d
+              Cloud,page:2
+                Record,id:e4241f2d6eb77e76,title:Goodbye Pork Pie Hat,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=376.49,lufs=-12.75,gain=-1.51,capped,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/05 - Goodbye Pork Pie Hat.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=99,pv_off=90,bytes=517443,src_size=6091012,un_n=7,un_size=41603226,un_d
+                Record,id:68ee832d1825ce87,title:I'll Be Seeing You,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=369.23,lufs=-12.05,gain=-1.95,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/03 - I'll Be Seeing You.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=87,pv_off=98,bytes=517443,src_size=5966190,un_n=7,un_size=41603226,un_d
+                Record,id:2b9f71ed840c8ef6,title:Giant Steps,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=373.31,lufs=-12.91,gain=-1.09,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/07 - Giant Steps.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=103,pv_off=84,bytes=517443,src_size=5999307,un_n=7,un_size=41603226,un_d
+                Record,id:f9430ebdff8688f7,title:There Will Never Be Another You,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=306.07,lufs=-13.1,gain=-0.9,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/06 - There Will Never Be Another You.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=94,pv_off=60,bytes=517364,src_size=4951927,un_n=7,un_size=41603226,un_d
+                Record,id:83e9d332912d317b,title:Theme For The Eulipions,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=579.47,lufs=-11.74,gain=-2.26,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/01 - Theme For The Eulipions.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=108,pv_off=182,bytes=517389,src_size=9374757,un_n=7,un_size=41603226,un_d
+                Record,id:c9247c1fe1e90a59,title:Jones The Rhythm,artist:Grace Jones,album:Slave To The Rhythm,seconds=385.93,lufs=-14.21,gain=0.21,real,col,path:Grace Jones/1985 - Slave To The Rhythm [2015 Remaster]/1. Jones The Rhythm.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=129,pv_off=64,bytes=517315,src_size=6243979,un_n,un_size=6243979,un_d
+        Theirs,pub:7950f300faa8a4f9
+          stock,pub:7950f300faa8a4f9
+            Mag:shuffle
+              Cloud,page:1
+              Cloud,page:2
+              Cloud,page:3
+              Cloud,page:4
+              Cloud,page:5
+              Cloud,page:6
+              Cloud,page:7
+              Cloud,page:8
+              Cloud,page:9
+              Cloud,page:10
+              Cloud,page:11
+              Cloud,page:12
+              Cloud,page:13
+              Cloud,page:14
+              Cloud,page:15
+              Cloud,page:16
+              Cloud,page:17
+              Cloud,page:18
+                Record,id:60a37854b1633ee3,title:Silk Reeling - Maiden's Dance,artist:Dr. Paul Lam,album:Tai Chi Music,seconds=471.88,lufs=-24.7,gain=10.7,real,col,path:music/0 themes/Tai Chi Music/Dr. Paul Lam - Tai Chi Music/02 - Dr. Paul Lam - Tai Chi Music - Silk Reeling - Maiden's Dance.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=110,pv_off=126,bytes=552938,src_size=28872462,un_n=4,un_size=28872462,un_d
+                Record,id:8b18dbb4b3f254a8,title:Visions Feat. Kieron Boothe,artist:Soccer96,album:Transmissions From Total Refreshment Centre,seconds=262.23,lufs=-11.85,gain=-2.15,real,col,path:music/0 chill/VA-Transmissions_From_Total_Refreshment_Centre-B003508702-CD-FLAC-2023-HOUND/01-soccer96-visions_feat._kieron_boothe.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=42,pv_off=90,bytes=506077,src_size=25760615,un_n=5,un_size=25760615,un_d
+                Record,id:3f6fc8c9d00a24ff,title:Earwax,artist:Association / Pierre Courbois,album:Earwax,seconds=438.42,lufs=-13.63,gain=-0.99,capped,real,col,path:music/0 Jazz/0 free/[1970] Association - Earwax/B1 - Earwax.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=152,pv_off=68,bytes=503364,src_size=17549533,un_n=7,un_size=17549533,un_d
+                {"Record":1,"id":"509901b9810e0e09","title":"Mars, the God of War","artist":"The Beths","album":"Jump Rope Gazers","seconds":173.63,"lufs":-11.62,"gain":-2.38,"real":1,"col":1,"path":"music/0 gaze/The Beths/Jump Rope Gazers (2020)/The Beths - Jump Rope Gazers - 08 - Mars, the God of War.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":57,"pv_off":30,"bytes":537162,"src_size":20127312,"un_n":10,"un_size":20127312,"un_d":1}
+                {"Record":1,"id":"8597fb6c7a59c454","title":"P.T.","artist":"Pål Thowsen, Jon Christensen, Terje Rypdal & Arild Andersen","album":"No Time for Time","seconds":466.15,"lufs":-13.12,"gain":-1.05,"capped":1,"real":1,"col":1,"path":"music/0 Jazz/Pal Thowsen, Jon Christensen, Terje Rypdal & Arild Andersen - No Time for Time(2005)/06 - P.T..flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":140,"pv_off":94,"bytes":503085,"src_size":60162745,"un_n":9,"un_size":60162745,"un_d":1}
+              Cloud,page:19
+                Record,id:c2b596e649ec333b,title:Somewhere in the East,artist:George Benson,album:Beyond the Blue Horizon,seconds=368.6,lufs=-16.57,gain=0.95,capped,real,col,path:music/0 Jazz/George Benson - Beyond the Blue Horizon (1971) [FLAC]/05 Somewhere in the East.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=65,pv_off=120,bytes=541666,src_size=31351668,un_n=8,un_size=31351668,un_d
+                Record,id:03bfb9693f262b1b,title:Flow My Ray,artist:MV & EE,album:The Zebulon- Disc 1- Center of the World,seconds=294.65,lufs=-8.7,gain=-5.3,real,col,path:music/0 chill/MV EE/MV & EE - Disc 1- Center of the World (2012) [v0]/09 Flow My Ray.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=86,pv_off=62,bytes=518471,src_size=8885903,un_n=6,un_size=8885903,un_d
+                Record,id:a1e4e8740ee829fb,title:Way Down Yonder In New Orleans,artist:Charlie Christian,album:Radioland 1939-1941,seconds=151.17,lufs=-23.59,gain=5.12,capped,real,col,path:music/0 Jazz/[2001] Charlie Christian - Radioland 1939-1941/05 Way Down Yonder In New Orleans.mp3,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=40,pv_off=36,bytes=506486,src_size=2420835,un_n=16,un_size=2420835,un_d
+                Record,id:a69260edfb39874f,title:Raid The Radio,artist:General Elektriks,album:Good City For Dreamers (Deluxe Edition),seconds=229.08,lufs=-7.33,gain=-6.67,real,col,path:music/0 indie/General Elektriks - 2009 - Good City For Dreamers (Deluxe Edition) (Web)/02 - Raid The Radio.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=47,pv_off=68,bytes=472389,src_size=26800415,un_n=18,un_size=26800415,un_d
+              Cloud,page:20
+                Record,id:97dc1f558c55a205,title:I Turn My Face To The Forest Floor (Original Mix),artist:Gravenhurst,album:Harbour Boat Trips 01 Copenhagen Mixed By Trentemoller,seconds=231.49,lufs=-10.42,gain=-3.58,real,col,path:music/0 chill/2009 - Harbour Boat Trips 01 Copenhagen Mixed By Trentemoller/02 - Gravenhurst - I Turn My Face To The Forest Floor (Original Mix).mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=38,pv_off=78,bytes=543878,src_size=9268016,un_n=20,un_size=9268016,un_d
+                Record,id:a42ac82cb471dcb1,title:Note Bleu,artist:Medeski Martin & Wood,album:Note Bleu: Best Of Blue Note Years 1998 - 2005,seconds=186.36,lufs=-10.3,gain=-3.7,real,col,path:music/0 Jazz/Medeski Martin & Wood/2006 - Note Bleu (Best of the Blue Note Years 1998-2005)/07. Note Bleu.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=30,pv_off=64,bytes=518697,src_size=19137237,un_n=15,un_size=19137237,un_d
+                Record,id:3e15d84d11e88592,title:Sines,artist:Jakob,album:Sines,seconds=327.59,lufs=-8.69,gain=-5.31,real,col,path:music/0 gaze/Jakob/Jakob - 2014 - Sines/07. Sines.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=56,pv_off=108,bytes=502743,src_size=24395407,un_n=7,un_size=24395407,un_d
+                Record,id:b8f22e6cd5368bf9,title:Bhaja Govindam,artist:Alice Coltrane,album:Transcendence,seconds=275.02,lufs=-14.34,gain=0.17,capped,real,col,path:music/0 Jazz/Alice Coltrane/Transcendence/06 Bhaja Govindam.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=78,pv_off=60,bytes=531840,src_size=11072665,un_n=7,un_size=11072665,un_d
+                Record,id:fa2e9aad89b65a5a,title:Captura De Lobos,artist:Los Orientales De Paramonga,album:Cumbia Beat Vol. 1,seconds=167.2,lufs=-9.54,gain=-4.46,real,col,path:music/0 Cumbia/Cumbia Beat Vol. 1/18 Los Orientales de Paramonga- Captura De Lobos.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=50,pv_off=34,bytes=555627,src_size=5638036,un_n=50,un_size=11865608,un_d
+              Cloud,page:21
+                Record,id:abd237c60af43631,title:Cabalgando Con Ella,artist:Los Mirlos,album:Cumbia Beat Vol. 1 (Experimental Guitar-Driven Tropical Sounds From Perú 1966/1976),seconds=191.15,lufs=-10.4,gain=-3.6,real,col,path:music/0 Cumbia/Cumbia Beat Vol. 1/Cumbia Beat Vol. 1-05-Los Mirlos-Cabalgando Con Ella.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=38,pv_off=58,bytes=610979,src_size=6227572,un_n=50,un_size=11865608,un_d
+                Record,id:b6c9727d7c3bca08,title:What Tomorrow Brings,artist:Fluxion,album:Haze,seconds=511.91,lufs=-11.04,gain=-2.96,real,col,path:0 electro/0 house/FLUXION/Fluxion - 2025 - Haze (Vibrant Music)/09. What Tomorrow Brings.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=150,pv_off=106,bytes=581720,src_size=44196589,un_n=10,un_size=44196589,un_d
+                {"Record":1,"id":"1b83003e64e90384","title":"Jupiter","artist":"Sufjan Stevens, Nico Muhly, Bryce Dessner, James McAlister","album":"Planetarium","seconds":430.39,"lufs":-14.24,"gain":-0.8,"capped":1,"real":1,"col":1,"path":"music/0 chill/Sufjan_Stevens,_Nico_Muhly,_Bryce_Dessner,_James_McAlister/Planetarium/02 Jupiter.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":122,"pv_off":94,"bytes":510380,"src_size":42054532,"un_n":17,"un_size":42054532,"un_d":1}
+                {"Record":1,"id":"40801afc20ca4470","title":"Moon Tune","artist":"Raoul Björkenheim, Bill Laswell & Morgan Ågren","album":"Blixt","seconds":130.21,"lufs":-8.33,"gain":-5.67,"real":1,"col":1,"path":"music/0 Jazz/Raoul Bjorkenheim, Bill Laswell & Morgan Ågren/2011 - Blixt/02 - Moon Tune.mp3","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":22,"pv_off":44,"bytes":491107,"src_size":5272725,"un_n":10,"un_size":5272725,"un_d":1}
+              Cloud,page:22
+                Record,id:afa6df31a720f760,title:Sleep Apnea,artist:Beach Fossils,album:Clash The Truth,seconds=146.37,lufs=-10.39,gain=-3.61,real,col,path:music/0 indie/Beach Fossils/Clash The Truth (13)/03 Sleep Apnea.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=36,pv_off=38,bytes=521654,src_size=6148121,un_n=14,un_size=6148121,un_d
+                Record,id:e7edefbbf2d70b13,title:Suspended In Gaffa,artist:Kate Bush,album:The Dreaming,seconds=234.55,lufs=-15.14,gain=1.14,real,col,path:music/0 art rock/Kate Bush/[1982] The Dreaming/04 Suspended In Gaffa.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=64,pv_off=54,bytes=527858,src_size=24298058,un_n=10,un_size=24298058,un_d
+                {"Record":1,"id":"adacbfd06cb7ee17","title":"The Natives Are Restless Tonight","artist":"Horace Silver","album":"Song for My Father","seconds":372.69,"lufs":-14.55,"gain":-0.77,"capped":1,"real":1,"col":1,"path":"music/0 Jazz/Horace Silver/Horace Silver - Song For My Father (1964, 2004, Japan-CD, FLAC)/02 - The Natives Are Restless Tonight.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":57,"pv_off":130,"bytes":522822,"src_size":41661819,"un_n":6,"un_size":41661819,"un_d":1}
+                {"Record":1,"id":"7d45cc562fd76a64","title":"It's All A Memory","artist":"Deserta","album":"Every Moment, Everything You Need","seconds":322.4,"lufs":-5.97,"gain":-8.03,"real":1,"col":1,"path":"music/0 chill/Deserta/Every Moment, Everything You Need (2022)/05 - It's All A Memory.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":104,"pv_off":58,"bytes":507410,"src_size":40592576,"un_n":8,"un_size":40592576,"un_d":1}
+              Cloud,page:23
+                {"Record":1,"id":"f76d3dd8e62ab8bc","title":"sun ra-atlantis-06-atlantis","artist":"sun ra, astro-infinity orchestra","album":"sun ra-atlantis","seconds":1311.97,"lufs":-26.88,"gain":7.36,"capped":1,"real":1,"col":1,"path":"music/0 Jazz/sun ra - Atlantis/sun_ra-atlantis-06-atlantis.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":278,"pv_off":378,"bytes":424376,"src_size":61180837,"un_n":6,"un_size":61180837,"un_d":1}
+                Record,id:6f45b6a1e798e4f4,title:Harmony Ascendant,artist:ponyphonic,album:Harmony Ascendant,seconds=384.68,lufs=-12.31,gain=-1.69,real,col,path:0 maybes/ponyphonic/Harmony Ascendant/01. Harmony Ascendant.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=127,pv_off=66,bytes=526796,src_size=11922998,un_n,un_size=11922998,un_d
+                {"Record":1,"id":"313b8fb220d29d50","title":"Adios Ayer [Paul Daley Mix]","artist":"Jose Padilla","album":"The Green Room - Summer 2005","seconds":290.04,"lufs":-13.6,"gain":-0.43,"capped":1,"real":1,"col":1,"path":"music/0 chill/green room, the ~ summer (2005)/11.  Jose Padilla - Adios Ayer [Paul Daley Mix].Mp3","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":92,"pv_off":54,"bytes":559528,"src_size":6990263,"un_n":14,"un_size":6990263,"un_d":1}
+                Record,id:ab21b458c8da10d8,title:Dream Baby Dream,artist:Neneh Cherry & The Thing,album:The Cherry Thing,seconds=504.56,lufs=-9.49,gain=-4.51,real,col,path:music/0 Jazz/Neneh Cherry and The Thing -The Cherry Thing (2012 - Japan Edition)/02 - Neneh Cherry & The Thing - Dream Baby Dream.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=151,pv_off=102,bytes=537129,src_size=53098335,un_n=9,un_size=53098335,un_d
+              Cloud,page:24
+                {"Record":1,"id":"f74cc19a77ddd297","title":"Crushing","artist":"lovesliescrushing","album":"Bloweyelashwish","seconds":214.07,"lufs":-13.6,"gain":-0.4,"real":1,"col":1,"path":"music/0 gaze/loveliescrushing/lovesliescrushing - bloweyelashwish [CD, PRO 44]/15. Crushing.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":66,"pv_off":42,"bytes":495265,"src_size":23269238,"un_n":20,"un_size":23269238,"un_d":1}
+                Record,id:067510b99c5f6ce0,title:The Thrill Is Gone,artist:Diamanda Galás,album:All the Way,seconds=439.61,lufs=-19.31,gain=-0.98,capped,real,col,path:music/0 Jazz/Diamanda Galás/2017 - All the Way/03 - The Thrill Is Gone.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=150,pv_off=70,bytes=531425,src_size=37199206,un_n=6,un_size=37199206,un_d
+                Record,id:ddd7ff37d9feb4c6,title:God Make Me Funky,artist:The Headhunters,album:Survival Of The Fittest,seconds=580.53,lufs=-11.3,gain=-2.7,real,col,path:music/0 Jazz/The Headhunters/Survival of the fittest (1975) [FLAC]/01 - God Make Me Funky.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=155,pv_off=136,bytes=570442,src_size=64080446,un_n=6,un_size=64080446,un_d
+              Cloud,page:25
+                Record,id:769ed42033b6b270,title:Intro (By Ece Dagistan),artist:Ece Dagistan; Orient Expressions,album:Istanbul 1:26 A.M.,seconds=121.63,lufs=-13.32,gain=-0.68,real,col,path:music/0 chill/Orient Expressions Istanbul 1-26 A.M/01 Intro (By Ece Dagistan).mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=29,pv_off=32,bytes=601625,src_size=4869520,un_n=11,un_size=4869520,un_d
+                {"Record":1,"id":"b6f8bf08ce17e08e","title":"Here It Is","artist":"Kirk Lightsey","album":"Habiba","seconds":713.61,"lufs":-11.47,"gain":-2.53,"real":1,"col":1,"path":"music/0 Jazz/Kirk Lightsey, Rudolph Johnson/Habiba [161166208] [2020]/02 - Kirk Lightsey, Rudolph Johnson - Here It Is.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":141,"pv_off":216,"bytes":510130,"src_size":69822537,"un_n":3,"un_size":69822537,"un_d":1}
+                {"Record":1,"id":"d231d56c1ea13b95","title":"golden hair","artist":"barrett, syd","album":"the madcap laughs [1970]","seconds":121.83,"lufs":-18.43,"gain":3.33,"capped":1,"real":1,"col":1,"path":"music/0 indie/Syd Barrett/barrett, syd.  [1970] the madcap laughs +/barrett, syd.  the madcap laughs [1970].  08.  golden hair.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":33,"pv_off":28,"bytes":517374,"src_size":11289581,"un_n":19,"un_size":11289581,"un_d":1}
+                Record,id:b42e0a0d5a388d0f,title:La Papita,artist:El Monje Loco,album:Cumbia Beat Vol. 2,seconds=153.48,lufs=-10.52,gain=-3.48,real,col,path:0 Cumbia/VA - Cumbia Beat Vol. 2 (2013) [FLAC]/12 El Monje Loco - La Papita.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=27,pv_off=50,bytes=574211,src_size=17212676,un_n=33,un_size=17212676,un_d
+              Cloud,page:26
+                Record,id:7a3f66754d5f2b24,title:Road Rage Breakdown,artist:Blockhead,album:Music By Cavelight,seconds=254.76,lufs=-10.83,gain=-3.17,real,col,path:music/0 chill/Blockhead - Music by Cavelight [FLAC] (2004)/06 - Road Rage Breakdown.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=40,pv_off=88,bytes=622784,src_size=22345856,un_n,un_size=22345856
+                Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,seconds=68,lufs=-8.25,gain=-5.75,real,col,path:testsounds/Fourier Four - Query E.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=24,pv_off=10,bytes=667565,src_size=1088104,un_n,un_size=1088104
+                Record,id:068fe2291e59a5f9,title:Tetraktys,artist:Homunculus Res,album:andiamo in giro di notte e ci consumiamo nel fuoco,seconds=212.95,lufs=-11.06,gain=-2.94,real,col,path:music/0 Jazz/0 prog/Homunculus Res/Homunculus Res - 2020 - Andiamo in giro di notte e ci consumiamo nel fuoco [Web]/09 - Tetraktys.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=69,pv_off=38,bytes=570110,src_size=24804108,un_n,un_size=24804108
+                {"Record":1,"id":"8b488f79d39d5220","title":"Black Coffee (Original Mix)","artist":"Marga Sol","album":"Coffee Chill Time, Vol. 3 (Smooth Jazz Music)","seconds":317.33,"lufs":-10.68,"gain":-3.32,"real":1,"col":1,"path":"music/0 chill/VA - Coffee Chill Time, Vol. 3 (Smooth Jazz Music) [2017]  +flac/17. Marga Sol - Black Coffee (Original Mix).flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":61,"pv_off":98,"bytes":567489,"src_size":34453527,"un_n":2,"un_size":60316100}
+                {"Record":1,"id":"dad1c5a2a8bd7b4b","title":"Let Him Love You (Original Mix)","artist":"St Project","album":"Coffee Chill Time, Vol. 3 (Smooth Jazz Music)","seconds":224.02,"lufs":-12.1,"gain":-1.9,"real":1,"col":1,"path":"music/0 chill/VA - Coffee Chill Time, Vol. 3 (Smooth Jazz Music) [2017]  +flac/16. St Project - Let Him Love You (Original Mix).flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":59,"pv_off":54,"bytes":553537,"src_size":25862573,"un_n":2,"un_size":60316100}
+              Cloud,page:27
+                {"Record":1,"id":"c86c7c3ebb66a767","title":"If I Could","artist":"Pat Metheny Group","album":"First Circle","seconds":412.53,"lufs":-25.36,"gain":8.73,"capped":1,"real":1,"col":1,"path":"music/0 Jazz/Pat Metheny Group - First Circle (ECM 1278, Germany, 24-96)/A4 If I Could.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":99,"pv_off":108,"bytes":525097,"src_size":128727964,"un_n":1,"un_size":128727964}
+                Record,id:b77bd3140f36449f,title:Tayyara Warak,artist:Charif Megarbane,album:Tayyara Warak,seconds=168.1,lufs=-10.33,gain=-3.67,real,col,path:music/0 Arabia/HABIBI 0XX - Charif Megarbane - Tayyara Warak ep [WEB 2022]/01. Tayyara Warak.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=59,pv_off=26,bytes=475279,src_size=6782976

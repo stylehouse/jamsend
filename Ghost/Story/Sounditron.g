@@ -3032,6 +3032,16 @@ async Sounditron_await(w, secs, truth_fn, note, why_fn):
 Sounditron_witness(w):
     let n = (this.c.run)?.c.step_n
     let self = this.Sounditron_self(w)
+    // THE POCKET, SNAP-VISIBLE (2026-09-05).  The camera (e_story_resnap) is the owner's instrument for
+    //  "what changed", and it could not see the pool: the stock shelf is dontSnap and the pooling home hangs
+    //   on the Identity outside this Run.  Ra_pocket_mirror keeps one %Pocket cell here — beside Census and
+    //    Audio, the same legibility idiom — absent while nothing is pooled, so a poolless runner's fixtures
+    //     never move and the cell's first appearance is itself the first legible change.
+    if (typeof this.Ra_pocket_mirror === 'function') {
+        let topP = this.top_House ? this.top_House() : null
+        let rwP = (topP && topP.c && topP.c.radio_w) ? topP.c.radio_w : w
+        try { this.Ra_pocket_mirror(rwP, w) } catch (er) {}
+    }
     // the meander's finds mint HERE (Atime; the wander itself was detached): the track name is
     //  the mainkey VALUE so a pane reads as the music, the directory a quiet facet.
     let found = w.c.muse_found

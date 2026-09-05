@@ -2,6 +2,82 @@
 
 ## 0. WHAT TO GET ON WITH NEXT — PUT THE FEATURE IN ONE PLACE (2026-09-04, the owner's)
 
+### ⚑⚑ 2026-09-05 (later) — THE FEATURE WAS DARK BY CONSTRUCTION: a pool card never had a `preview`
+
+Four live gates fell (below) and the face still said **"N pooled · none playable yet"**. That sentence was
+ not a transport symptom. It was literally true and it had been true of every pooled track ever landed, on
+  every body, since the pool existed.
+
+`Heist_catalog_land`'s pool branch stamps `title/artist/path/bytes/body_hash` on the pool %Record and
+ **nothing that lets it play** — no `preview`, no `total`, no `%Preview,seq` chunk children. `Ra_dial_next`
+  skips every record for which `preview > 0` is false. Both landing paths — the press (`Ra_press` v1) and
+   the radio keep (`Radio_pool_catch` → `%Heist,into:pool`) — go through that one tail. So **nothing that
+    ever entered a SoundPool could be dialled out of it.**
+
+**How it was measured, and the method worth keeping.** eed's tab was answering intermittently and
+ classifying `role:UNKNOWN`, so the tab was not the witness. The DAEMON is the other end of the same
+  feature and it answers HTTP: `http://172.17.0.1:9099/c?token=<tok>&depth=9` → its own
+   `%SoundPooling > stock` held **8 pressed records, every one with `preview` undefined**. When one end of
+    a two-ended feature won't talk, the other end is a full witness — the code is the same code.
+
+**Why no Book saw it.** A Book scene mints its pool source records by hand, without a stock pass, so they
+ carry no `preview` either — there was nothing for a carry to carry, and the fixture that recorded a
+  preview-less pool card recorded it as correct. Same disease as the four gates below, one layer deeper:
+   **SP was tested as a model and never as a machine.**
+
+**The fix (three edits that are ONE fix — never separate them):**
+- `Ra_rec_previews_carry(card, rec)` (Ghost/M/Ra.g) — carries the head scalars + `%Preview` children from
+   the source record onto the copy, called from `Heist_catalog_land`'s pool branch. Honest because a v1
+    press and a plain keep land the ORIGINAL's bytes (the id coincides — that is exactly why
+     `Ra_rec_pool` elides `of:`/`grade` for them) and an opus preview is a pure function of those bytes.
+      **Declines a lofi rendition**: different bytes, so it needs its own encode, and until that exists an
+       absent preview is the honest answer rather than someone else's waveform wearing its name.
+- `Ra_pool_previews_heal` + `Ra_pool_source_rec` — the RETRO sweep (bounded 4 a pass, pure reads over
+   records already standing in this world). A landing happens once, so without this everything pooled
+    before the carry existed stays dark forever. Wired into `Ra_pool_fill_pump` **and into the dial's own
+     pool rung** (`Radio_dial`) — the dial is the seam guaranteed to run the moment a listener asks for
+      their pool. It also covers arrival order: a keep can land its bytes before the source mirror's own
+       preview has finished crossing.
+- `Swarm_protocol` skips `Preview`/`Stream` — **the pool shelf hangs on the %Identity, which DOES ride
+   `.jamsend/account/<prepub>/toc.snap`**, and a Uint8Array in `.sc` is fine on the snap plane and FATAL at
+    the storage/toc encoder. Without this skip the carry would break every account save.
+
+**Then the rest of the same evening — three more organs, all in the owner's words:**
+
+- **"empty" after every reload → the pool CATALOG was not durable.** `Swarm_restash_pools` carries the
+   `%Pool` definitions + consent + budget, never the `stock` shelf; nothing re-censused `pool/`; the shelf's
+    only durable home is the account snap, which a folderless tab has not got — and which, measured on the
+     daemon, came back with the pool shelf EMPTY after a restart even with a folder. The files were the fact
+      all along. `Ra_pool_resurrect` rebuilds the cards from `pool/` (bounded, no chunks) — from the Stoker's
+       boot look (the one seam every body with a nav runs — the daemon's 8 came back), the dial's pool rung,
+        and the pump.
+- **"why can't you just get Story:Sounditron to take a resnap … as long as you have the relevant state
+   snap-visible, which is what my griping about .c is all about."** The camera was blind to the pool
+    (`Mine > stock` dontSnap; `%SoundPooling` on the Identity outside the Run). `Ra_pocket_mirror` keeps a
+     `%Pocket` cell in w:Sounditron — `cards/ready/files/uncatalogued` + one `%pooled,id,title,preview,chunks,why`
+      child per track — absent while nothing is pooled so poolless fixtures never move. **Anything we could
+       ever want to keep an eye on should be there.** `Ra_pool_report` (also `runner_ask poke Ra_pool_report`)
+        is the same facts as a console block; `Ra_pool_whys` the same facts as one line.
+- **"some indications in the console about how each NEXT button click is going."** The dial's pool rung now
+   says, per click: `📻 next [pool] ✓ Artist — Title (3 cards · 2 playable)` / `↻ replay …` /
+    `✗ gave up — nothing the dial can play (3 cards · 0 playable · 3 no preview · 2 files on disk uncatalogued)`.
+- **"there's no byte-lane because it's reusing Heist isn't it?"** — yes, and that was always the plan (§0.5:
+   *the carry-out delegates to the existing Heist doer, mardir 'pool', no second lane*). `Ra_pool_fill_land`
+    on `arrived` now mints a `%Heist,into:pool,seed:<of>,pub:<holder>,why:fill` keep — Radio_pool_catch's exact
+     shape — and the Heist keep beat routes, pulls the %Body chunks over Repli and lands through
+      `Heist_catalog_land`'s pool branch (where the preview carry lives). The reach stands with `why:heist
+       <state>` until the pool card stands, then drops. `Siphon_pull` remains as MusuPoolFill's stand-in only
+        (its world has no pier/Repli/relay; its lib IS local), gated by the same `fill_mw` override.
+
+**Owed:** a live walk of the keep road end-to-end (eed ← daemon) — the resurrect + carry + keep are each
+ gated, the chain is not. And a folderless body's pool still has no durable CATALOG beyond the disk rebuild,
+  which is fine as long as `pool/` is the fact.
+
+**What `Ra_press` v1 still is:** `nav.bin_read` on the SOURCE record's path using the LOCAL nav. For a circulation fill whose `lib` is a peer's `%Theirs` mirror, that is a path which
+  only exists on the peer's disk. `Ra_pool_fill_land`'s own header already admits it — *"the live byte-lane
+   is the named owed seam"*. The reach lifecycle is built; the bytes it asks for have no wire under them.
+    That is the next real piece, and it is a transport question, not a catalog one.
+
 ### ⚑ 2026-09-05 — THE LIVE WALK (eed → daemon), and the next move
 
 **The arc:** every Book was green and nothing filled, because every gate was a *live-only* fact. Walked by

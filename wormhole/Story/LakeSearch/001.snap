@@ -1,11 +1,11 @@
 Snap:H
   H:LakeSearch,Run
     A:Lies
-      self,round=7	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:Lies
         Opt
           dontSnapGhostList
-        self,round=7	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         SearchGate
           index_converged
           method_search_finds_def
@@ -28,9 +28,10 @@ Snap:H
         req:Cortex,eternal,maz=5,ok
         req:git
         req:wants
-          want=1784592282897,kind:cold,resolved
+          want=1788602000693,kind:cold,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,ok	{"ref":{"w":"%w:Lies"}}
+        see:🗂 3 docs
     A:Lang
       self,round=8	{"mung":["age"]}
       w:Lang
@@ -46,7 +47,7 @@ Snap:H
             Compile
               Map
                 region,label:Zorblender overview,depth,from=0,to=21,line
-              time,compile=0.002,all=0.002
+              time,compile=0.004,all=0.004
             Pmirrors
             Navicade
               Mapule,kind:region,key:Zorblender overview,depth,line,from=0,to=21,end_line=8
@@ -82,9 +83,9 @@ Snap:H
           encode,snap_origin:,snap_working:,dirty:0
         received,editorBegins,doc:SearchW/zorble.md
     A:Pantheate
-      self,round=2	{"mung":["age"]}
+      self,round=3	{"mung":["age"]}
       w:Pantheate
-        self,round=2	{"mung":["age"]}
+        self,round=3	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}

@@ -11,7 +11,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return '4e86dcd79c135c17~g1' },
+    Ghostmeta_Ghost_Story_Heistation(): string { return '6b12854faca63b19~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -6144,6 +6144,10 @@ async MusuPoolRandom_stand(w) {
 async MusuPoolRandom_book(w) {
     this.MusuPoolRandom_note(w, { reached: 'step_3' })
     if (!w.c.set_up) { return }
+    // this Book swears the FAN-OUT (three wants -> three correctly-addressed reaches), so it pins the pacing
+    //  knob rather than inheriting the live serial default (Ra_pool_fill_wants, 2026-09-05: the owner ruled
+    //   "do them serially").  Pacing is policy; addressing is law, and only the law is what this Book gates.
+    w.c.pool_fill_budget = 3
     w.sc.now = 1788400010
     let cap = w.c.cap
     let fay = w.c.fay
@@ -6533,13 +6537,14 @@ async MusuPoolBytes_drive(w, req) {
         return
     }
     let run = (this.c.run)
-    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 4 }
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 5 }
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) { await this.MusuPoolBytes_seed(w, nav) }
         if (n === 3) { await this.MusuPoolBytes_land(w, nav) }
         if (n === 4) { await this.MusuPoolBytes_off(w, nav) }
+        if (n === 5) { await this.MusuPoolBytes_dial(w, nav) }
     }
     this.MusuPoolBytes_witness(w)
     await this.Musu_float(w)
@@ -6632,6 +6637,66 @@ async MusuPoolBytes_off(w, nav) {
     this.MusuPoolBytes_note(w, row)
 
 },
+// beat 5 — A POOLED TRACK MUST BE DIALABLE, and until 2026-09-05 not one ever was.  The landing tail
+//  stamped everything a pool card SAYS and nothing it needs to PLAY — no preview, no chunks — and
+//   Ra_dial_next skips every record whose `preview > 0` is false.  So the whole feature was dark by
+//    construction on every body that ever pooled, and no fixture noticed: a Book scene mints its source
+//     records by hand without a stock pass, so THEY carry no preview either and there was nothing for the
+//      carry to carry.  This beat closes that hole the only way it can be closed — give the source a real
+//       preview the way a stocked record has one, land through the SAME door beat 3 uses, and then ask the
+//        DIAL rather than the shelf.  "There is a card" was never the question; "can it play" is.
+async MusuPoolBytes_dial(w, nav) {
+    this.MusuPoolBytes_note(w, { reached: 'step_5' })
+    if (!w.c.rec) { return }
+    w.sc.now = 1788400130
+    this.Ra_pool_start(w, 300, 1788400130, 'crew')
+    let rec = w.c.rec
+    // the source earns its preview the honest way a stocked one has it: head scalars + chunk children.
+    //  `total` IS NOT TOUCHED: on this record it is the count of WHOLE-FILE chunks the landing assembles,
+    //   and moving it to 2 made Heist_land breach on a body it could not complete (measured, first run of
+    //    this beat).  The preview boundary and the body chunk count are two different numbers that share
+    //     a shelf; the carry reads `total` from the source exactly as it finds it.
+    rec.sc.preview = 1
+    rec.sc.seg_secs = 2
+    rec.sc.nch = 1
+    rec.sc.sr = 48000
+    rec.sc.br = 128000
+    let ch = rec.oai({ Preview: 1, seq: '0' })
+    ch.c.up = rec
+    ch.sc.head = 1
+    ch.sc.preskip = 312
+    ch.sc.buf = new Uint8Array([1, 2, 3])
+    ch.sc.cid = 'cid0'
+    let shop = this.Ra_home_shop(w, 'me')
+    let job = this.Heist_job(w, 'friendo', [], { home: shop, seed: String(rec.sc.id) })
+    let pool = this.Ra_home_pool(w, 'me')
+    let row = { dialed: 1 }
+    // THROUGH THE ONE TAIL, not through Heist_land.  Beat 3 already swears the whole pull; what is under
+    //  test here is the CATALOG DOOR every pool landing passes through — press and keep alike — so call it
+    //   directly with the bytes already accounted for.  (Going back through Heist_land would re-verify the
+    //    body against the wire cids and BREACH on seq 0, because a %Preview shares the seq space with the
+    //     %Body chunks — measured twice while writing this beat, and worth leaving written down.)
+    try { await this.Heist_catalog_land(nav, 'pool', job, pool, w.c.src, rec, String(rec.sc.path), 8118) } catch (e) { row.land_threw = String(e).slice(0, 80) }
+    let card = this.Ra_recs(pool)[0]
+    if (card) {
+        row.pool_card_preview = +(card.sc.preview || 0)
+        row.pool_card_chunks = card.o({ Preview: 1 }).length
+    }
+    // THE DIAL, not the shelf — the exact predicate the listener's Next runs through.
+    let pick = this.Ra_dial_next(w, pool, {})
+    if (pick && card && pick.sc.id === card.sc.id) { row.the_dial_picks_it = 1 }
+    let census = this.Ra_pool_census(w, 'me')
+    row.ready = census ? census.ready : 0
+    // and the NEGATIVE half, which is the whole reason the carry is honest rather than a fake: a LOFI
+    //  rendition is DIFFERENT bytes, so it must never wear this preview — it needs its own encode, and
+    //   until that exists an absent preview is the true answer.
+    let lofi = pool.i({ Record: 1, id: 'lofitest', of: String(rec.sc.id), grade: 'ogg128' })
+    lofi.c.up = pool
+    row.lofi_refuses_the_carry = (this.Ra_rec_previews_carry(lofi, rec) === 0) ? 1 : 0
+    pool.drop(lofi)
+    this.MusuPoolBytes_note(w, row)
+
+},
 MusuPoolBytes_witness(w) {
     let T = this.MusuPoolBytes_T(w)
     let s = T.o({ seeded: 1 })[0]
@@ -6644,6 +6709,9 @@ MusuPoolBytes_witness(w) {
         this.story_swear(w, 'the last mile — a keep that says into:pool lands its bytes under pool and its card on the pool shelf through the very same landing the album heist ends in — and nothing touches the library')
     if (o && +o.sc.card_and_file_gone === 1 && +o.sc.nothing_left_under_pool === 1 && +o.sc.back_to_zero === 1)
         this.story_swear(w, 'off means the space comes back — the yes is taken — the budget is zero — and every pooled card goes with its file')
+    let d = T.o({ dialed: 1 })[0]
+    if (d && +d.sc.pool_card_preview === 1 && +d.sc.pool_card_chunks === 1 && +d.sc.the_dial_picks_it === 1 && +d.sc.ready === 1 && +d.sc.lofi_refuses_the_carry === 1)
+        this.story_swear(w, 'a pooled track is DIALABLE — the landing carries the source preview and its chunks onto the pool card so the dial itself picks it out of the pocket — and a lofi rendition refuses the carry because its bytes are not those bytes')
 
 },
 // ══ MusuHeard — THE HEARD MAG: what I heard of whom, what I took, and the heist as a QUERY over it ══

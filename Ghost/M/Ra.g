@@ -1173,6 +1173,248 @@ Ra_pool_census(w, pub):
     }
     return out
 
+// Ra_pool_files — WHAT IS ACTUALLY ON THIS DEVICE under pool/.  The bytes are the durable fact; the
+//  catalog is not, and on a device with no folder the catalog is not durable AT ALL (a browser tab has no
+//   `.jamsend/account/<prepub>/toc.snap`, so the pool shelf — which hangs on the %Identity — evaporates on
+//    every reload while the OPFS files sit there uncatalogued).  Everything below exists to close that gap.
+async Ra_pool_files(nav, w):
+    if (!nav) { return [] }
+    let paths = []
+    try { paths = await this.Crate_nav_paths(nav, 'pool') } catch (er) { paths = [] }
+    paths = paths || []
+    // the last disk listing rides the radio world's .c so a SYNC reader (Ra_pocket_mirror, the snap-visible
+    //  cell) can say "on disk" without a disk walk of its own.  Runtime cache, refreshed by every walk.
+    if (w && w.c) { w.c.pool_files = paths }
+    return paths
+
+// Ra_pool_resurrect — REBUILD the pool catalog from the pool/ files, the way the Stoker rebuilds the
+//  library from radiostock.  A pooled track that survives a reload as bytes but not as a card is
+//   indistinguishable from one that was never pooled: the pocket reads "empty" while the disk fills up.
+//  BOUNDED (default 4 a pass, `w.c.pool_resurrect_more` latches the rest) because each new file costs a
+//   whole-file read + hash — the same shape and the same reason as the unity look's cap of 4.
+//  MINTS NO CHUNKS, deliberately: the shelf rides the account snap where a Uint8Array in .sc is fatal, and
+//   the preview a pool card needs comes from the carry (Ra_rec_previews_carry), not from a re-encode here.
+async Ra_pool_resurrect(w, ident, cap):
+    // PROBE FIRST, MINT ONLY FOR FILES (2026-09-05, MusuHeist went caveat:13 the moment the Stoker rung landed):
+    //  Ra_pool_fill_homes MINTS the pool home on its live branch, so a resurrect that asked it for a shelf
+    //   vivified a %SoundPooling home in every Book world whose Stoker has a nav — a new subtree in 13 snaps
+    //    that never pooled a thing.  The files are the only reason a shelf should come to exist here.
+    let homes = (ident && ident.c && ident.c.fill_mw) ? this.Ra_pool_fill_homes(w, ident) : null
+    let rw = homes ? homes.mw : ((this.top_House && this.top_House().c && this.top_House().c.radio_w) ? this.top_House().c.radio_w : w)
+    let nav = homes ? homes.nav : (rw.c.ra_nav || (this.Crate_nav ? this.Crate_nav() : null))
+    if (!nav) { return 0 }
+    let paths = await this.Ra_pool_files(nav, rw)
+    if (!paths.length) { delete w.c.pool_resurrect_more; return 0 }
+    if (!homes) {
+        let pub = this.Radio_pub ? (this.Radio_pub(rw) || 'me') : 'me'
+        homes = { mw: rw, nav: nav, pool: this.Ra_pool_shelf_live(rw) || this.Ra_home_pool(rw, pub) }
+    }
+    if (!homes.pool) { return 0 }
+    // what the shelf already knows, by the path it was landed at (`rel` — the pool card's own sc.path)
+    let known = {}
+    for (const rec of this.Ra_recs(homes.pool)) {
+        if (rec.sc.path) { known[String(rec.sc.path)] = 1 }
+    }
+    let bound = (+(cap || 0) > 0) ? +cap : 4
+    let built = 0
+    let left = 0
+    for (const path of paths) {
+        if (known[String(path)]) { continue }
+        if (built >= bound) { left = left + 1; continue }
+        let parts = ('pool/' + path).split('/').filter(Boolean)
+        let filename = parts.pop()
+        let raw = null
+        try { raw = await nav.bin_read(parts.join('/'), filename) } catch (er) { raw = null }
+        if (!raw || !raw.byteLength) { continue }
+        let bytes = (raw instanceof Uint8Array) ? raw : new Uint8Array(raw)
+        let hash = await sha256_hex(bytes)
+        let meta = await this.Crate_meta_from_tags(bytes, path)
+        let card = this.Ra_rec_pool(homes.pool, hash.slice(0, 16), hash.slice(0, 16), String(path), null)
+        card.sc.title = meta.title
+        card.sc.artist = meta.artist
+        card.sc.bytes = bytes.length
+        card.sc.body_hash = hash
+        if (meta.album) { card.sc.album = meta.album }
+        let dot = filename.lastIndexOf('.')
+        if (dot >= 0) { card.sc.ext = filename.slice(dot + 1) }
+        card.bump()
+        built = built + 1
+    }
+    if (left > 0) { w.c.pool_resurrect_more = left } else { delete w.c.pool_resurrect_more }
+    if (built > 0) { console.log('🏊 pool: recovered ' + built + ' pooled track(s) from disk' + (left ? ' (' + left + ' more next pass)' : '')) }
+    return built
+
+// Ra_pool_shelf_live — THE POOL SHELF, FROM WHEREVER THIS BODY KEEPS IT.  Ra_pool_stock(w, pub) can only find
+//  the home through Ra_pool_owner, which resolves to the identity ONLY when w IS top.c.radio_w — and a body
+//   with no dial (the daemon: "no web audio here") never sets radio_w, so every probe from its Sounditron
+//    world answered "no pool" while its identity held eight pressed records (measured 2026-09-05: pool
+//     records 4 after resurrect, Pocket cell absent).  Probe the world's way first, then the live identity's
+//      own %SoundPooling > stock directly.  Pure read; mints nothing.
+Ra_pool_shelf_live(rw):
+    let pub = this.Radio_pub ? (this.Radio_pub(rw) || 'me') : 'me'
+    let shelf = rw ? this.Ra_pool_stock(rw, pub) : null
+    if (shelf) { return shelf }
+    let M = this.top_House ? this.top_House() : null
+    let ident = (M && M.Swarm_live_self) ? M.Swarm_live_self() : null
+    let home = ident ? ident.o({ SoundPooling: 1 })[0] : null
+    return home ? (home.o({ stock: 1 })[0] || null) : null
+
+// Ra_pool_whys — ONE SYNC SENTENCE of why the pocket is what it is (the owner 2026-09-05: *"some indications
+//  in the console about how each NEXT button click is going … surely it's an intent that gives up at some
+//   interesting point"*).  Counts the cards, the playable ones, and a histogram of the single reason each
+//    unplayable one is not — the same three facts the %Pocket cell carries, folded to a line.  Pure read.
+Ra_pool_whys(rw):
+    let shelf = this.Ra_pool_shelf_live(rw)
+    let files = (rw && rw.c && rw.c.pool_files) ? rw.c.pool_files : null
+    let out = { cards: 0, ready: 0, whys: {}, uncatalogued: 0, line: '' }
+    let carded = {}
+    for (const rec of (shelf ? this.Ra_recs(shelf) : [])) {
+        out.cards = out.cards + 1
+        if (rec.sc.path) { carded[String(rec.sc.path)] = 1 }
+        let why = ''
+        if (files && rec.sc.path && !files.includes(String(rec.sc.path))) { why = 'no file' }
+        if (!why && !(+(rec.sc.preview || 0) > 0)) { why = 'no preview' }
+        if (!why && !rec.o({ Preview: 1 }).length) { why = 'no chunks' }
+        if (why) { out.whys[why] = (out.whys[why] || 0) + 1 } else { out.ready = out.ready + 1 }
+    }
+    for (const path of (files || [])) { if (!carded[String(path)]) { out.uncatalogued = out.uncatalogued + 1 } }
+    let bits = [out.cards + ' card' + (out.cards === 1 ? '' : 's'), out.ready + ' playable']
+    for (const k of Object.keys(out.whys)) { bits.push(out.whys[k] + ' ' + k) }
+    if (out.uncatalogued) { bits.push(out.uncatalogued + ' file' + (out.uncatalogued === 1 ? '' : 's') + ' on disk uncatalogued') }
+    if (!files) { bits.push('disk not yet listed') }
+    out.line = bits.join(' · ')
+    return out
+
+// Ra_pocket_mirror — THE POOL, SNAP-VISIBLE (the owner 2026-09-05: *"why can't you just get Story:Sounditron
+//  to take a resnap … which should show you the C changed — as long as you have the relevant state
+//   snap-visible, which is what my griping about .c is all about"*).  The camera IS the instrument, and it
+//    was blind to the pool: `Mine > stock` is dontSnap and %SoundPooling hangs on the Identity under Mundo,
+//     outside H:Sounditron,Run — so a resnap diff showed nothing when the pocket changed.
+//  This mints ONE `%Pocket` cell in the Sounditron world (beside Census/Audio/Machine, the same legibility
+//   idiom) carrying the shelf counts, and one `%pooled` child per track with the facts that decide whether
+//    it plays: preview · chunks · disk · why.  A PURE MIRROR — reads the pool shelf (sync) and the cached
+//     disk listing (Ra_pool_files stamps it); mints nothing on the pool, moves no byte.  ABSENT when there is
+//      nothing to say (no cards, no files): the empty-pocket case snaps exactly as it always did, so no
+//       fixture on a poolless runner moves, and "the cell appeared" is itself the first legible change.
+//  `host` is the world the cell lives in (w:Sounditron); `rw` the radio world the shelf hangs off.
+Ra_pocket_mirror(rw, host):
+    if (!rw || !host) { return null }
+    let shelf = this.Ra_pool_shelf_live(rw)
+    let files = rw.c.pool_files || []
+    let recs = shelf ? this.Ra_recs(shelf) : []
+    let cell = host.o({ Pocket: 1 })[0]
+    if (!recs.length && !files.length) {
+        if (cell) { host.drop(cell) }
+        return null
+    }
+    if (!cell) {
+        cell = host.i({ Pocket: 1 })
+        cell.c.up = host
+    }
+    let ready = 0
+    let seen = {}
+    for (const rec of recs) {
+        let id = String(rec.sc.id || '')
+        if (!id) { continue }
+        seen[id] = 1
+        let P = +(rec.sc.preview || 0)
+        let chunks = rec.o({ Preview: 1 }).length
+        let disk = (rec.sc.path && files.includes(String(rec.sc.path))) ? 1 : 0
+        let why = ''
+        if (!disk) { why = 'no file' }
+        if (!why && !(P > 0)) { why = 'no preview' }
+        if (!why && !chunks) { why = 'no chunks' }
+        if (!why) { ready = ready + 1 }
+        let row = cell.oai({ pooled: 1, id: id })
+        row.c.up = cell
+        let title = String(rec.sc.title || '')
+        if (title && row.sc.title !== title) { row.sc.title = title }
+        if (+(row.sc.preview || 0) !== P) { if (P > 0) { row.sc.preview = P } else { delete row.sc.preview } }
+        if (+(row.sc.chunks || 0) !== chunks) { if (chunks > 0) { row.sc.chunks = chunks } else { delete row.sc.chunks } }
+        if (why) { if (row.sc.why !== why) { row.sc.why = why } } else { if (row.sc.why) { delete row.sc.why } }
+    }
+    // rows for cards that are gone
+    for (const row of cell.o({ pooled: 1 }).slice()) {
+        if (!seen[String(row.sc.id || '')]) { cell.drop(row) }
+    }
+    let uncat = 0
+    let carded = {}
+    for (const rec of recs) { if (rec.sc.path) { carded[String(rec.sc.path)] = 1 } }
+    for (const path of files) { if (!carded[String(path)]) { uncat = uncat + 1 } }
+    let facts = { cards: recs.length, ready: ready, files: files.length, uncatalogued: uncat }
+    let moved = 0
+    for (const k of ['cards', 'ready', 'files', 'uncatalogued']) {
+        let v = facts[k]
+        if (v > 0) { if (+(cell.sc[k] || 0) !== v) { cell.sc[k] = v; moved = 1 } } else { if (cell.sc[k] != null) { delete cell.sc[k]; moved = 1 } }
+    }
+    if (moved) { cell.bump() }
+    return cell
+
+// Ra_pool_report — THE ONE LEGIBLE DUMP (the owner 2026-09-05: *"how can I verify that SoundPool works at
+//  all — or give you feedback about how it doesn't"*).  Everything that decides whether a pooled track can
+//   PLAY, in one object and one console block, so a human at a tab and a machine reading a snap are looking
+//    at the SAME facts.  Pure read — it walks the shelf and the disk and touches nothing.
+//  Per card it answers the only question that matters — `why` is empty when the track is dialable, and
+//   otherwise names the single reason it is not.  The shelf-level counts sit beside the DISK count, because
+//    "files on disk with no card" is its own failure and was invisible until now.
+async Ra_pool_report(w, ident):
+    let homes = this.Ra_pool_fill_homes(w, ident)
+    let pub = this.Radio_pub ? (this.Radio_pub(homes.mw) || 'me') : 'me'
+    let out = { consent: 0, budget_mb: 0, cards: 0, ready: 0, files: 0, uncatalogued: 0, tracks: [] }
+    let owner = ident || (this.Ra_pool_owner ? this.Ra_pool_owner(homes.mw) : null)
+    if (owner && this.Ra_pool_consent_of) { out.consent = this.Ra_pool_consent_of(owner) ? 1 : 0 }
+    let home = owner ? owner.o({ SoundPooling: 1 })[0] : null
+    if (home && home.sc.budget_mb) { out.budget_mb = +home.sc.budget_mb }
+    let paths = await this.Ra_pool_files(homes.nav, homes.mw)
+    out.files = paths.length
+    let carded = {}
+    if (homes.pool) {
+        for (const rec of this.Ra_recs(homes.pool)) {
+            out.cards = out.cards + 1
+            if (rec.sc.path) { carded[String(rec.sc.path)] = 1 }
+            let P = +(rec.sc.preview || 0)
+            let chunks = rec.o({ Preview: 1 }).length
+            let why = ''
+            if (!(P > 0)) {
+                why = 'no preview — the dial cannot pick it'
+            } else {
+                if (!chunks) { why = 'preview claimed but no chunks stand behind it' } else { out.ready = out.ready + 1 }
+            }
+            let row = { id: String(rec.sc.id || ''), title: String(rec.sc.title || ''), artist: String(rec.sc.artist || ''), preview: P, chunks: chunks, on_disk: 0 }
+            if (rec.sc.path && paths.includes(String(rec.sc.path))) { row.on_disk = 1 }
+            if (why) { row.why = why }
+            if (!row.on_disk) { row.why = 'card with no file under pool/ — the bytes are gone' }
+            out.tracks.push(row)
+        }
+    }
+    for (const path of paths) {
+        if (!carded[String(path)]) { out.uncatalogued = out.uncatalogued + 1 }
+    }
+    // the standing circulation asks, because "nothing is arriving" is a different fault from "nothing plays"
+    let peering = (owner && this.Swarm_peering) ? this.Swarm_peering(owner) : null
+    if (peering) {
+        out.reaches = []
+        for (const reach of peering.o({ Reach: 1 })) {
+            let r = { of: String(reach.sc.of || '').slice(0, 8), state: String(reach.sc.state || ''),
+                      to: String(reach.sc.to || '').slice(0, 8) }
+            if (reach.sc.why) { r.why = String(reach.sc.why) }
+            out.reaches.push(r)
+        }
+    }
+    console.log('🏊 POOL REPORT — ' + pub.slice(0, 8) + ' · consent ' + (out.consent ? 'yes' : 'NO') +
+        ' · budget ' + out.budget_mb + 'MB · ' + out.cards + ' card(s) · ' + out.ready + ' playable · ' +
+        out.files + ' file(s) on disk · ' + out.uncatalogued + ' uncatalogued')
+    for (const t of out.tracks) {
+        console.log('   ' + (t.why ? '✗' : '✓') + ' ' + (t.artist ? t.artist + ' — ' : '') + t.title +
+            '  [preview ' + t.preview + ' · chunks ' + t.chunks + (t.on_disk ? '' : ' · NO FILE') + ']' +
+            (t.why ? '  ⟵ ' + t.why : ''))
+    }
+    if (out.uncatalogued) { console.log('   ⚠ ' + out.uncatalogued + ' file(s) under pool/ with no card — run Ra_pool_resurrect') }
+    for (const r of (out.reaches || [])) {
+        console.log('   ⇢ reach ' + r.of + ' → ' + r.to + ' : ' + r.state + (r.why ? ' — ' + r.why : ''))
+    }
+    return out
+
 // Ra_pool_consent_of — THE SAME YES, ASKED OF THE IDENTITY INSTEAD OF A WORLD.
 //  ⚠ WHY THIS EXISTS (2026-09-05, measured on eed831f1).  `Ra_pool_consent(w)` can only find the home
 //   through `Ra_pool_owner`, which resolves to the live identity ONLY when `w` IS the radio world
@@ -1303,11 +1545,21 @@ Ra_pool_who(w):
 //   or a nav without bin_rm (a Book's mock) is not an error — the card still goes.  Returns 1 if a file went.
 async Ra_pool_unfile(w, nav, rec):
     let path = String(rec && rec.sc && rec.sc.path || '')
-    if (!nav || typeof nav.bin_rm !== 'function' || !path) { return 0 }
+    // NAME THE MISS (2026-09-05, eed's log: "evicted 4" then "recovered 4 from disk" every pass — the card went,
+    //  the file did not, and this returned 0 in silence).  A file that will not go is a loop waiting to happen
+    //   with the resurrect; say which of the three ways it failed, once per path.
+    let say = (why) => { let k = 'unfile_said_' + path; if (w && w.c && !w.c[k]) { w.c[k] = 1; console.log('🏊⚠ pool evict: file not removed — ' + why + ' — ' + path) } }
+    if (!rec) { return 0 }
+    if (!path) { say('card has no path'); return 0 }
+    if (!nav || typeof nav.bin_rm !== 'function') { say('this nav has no bin_rm'); return 0 }
     let parts = path.split('/').filter(Boolean)
     let fname = parts.pop()
     if (!fname) { return 0 }
-    try { let ok = await nav.bin_rm('pool' + (parts.length ? '/' + parts.join('/') : ''), fname); return ok ? 1 : 0 } catch (e) { return 0 }
+    try {
+        let ok = await nav.bin_rm('pool' + (parts.length ? '/' + parts.join('/') : ''), fname)
+        if (!ok) { say('bin_rm answered false') }
+        return ok ? 1 : 0
+    } catch (e) { say('bin_rm threw ' + String(e).slice(0, 60)); return 0 }
 // Ra_pool_off — BACK TO ZERO: the yes taken back, the budget gone, every compartment dropped and every pooled
 //  card with it — AND its file (Ra_pool_unfile), so "off" means the space comes back.  Returns {pools, records, files}.
 async Ra_pool_off(w):
@@ -1474,8 +1726,15 @@ Ra_quarter_diff(goal, pool, lib):
         if (pooled[g.id]) continue
         diff.push({ of: g.id, do: held[g.id] ? 'press' : 'pull', why: g.why, pool: g.pool || '', from: g.from || '' })
     }
-    for (const id of Object.keys(pooled)) {
-        if (!wanted[id]) diff.push({ of: id, do: 'evict', why: 'not in the goal stash' })
+    // AN EMPTY GOAL EVICTS NOTHING (2026-09-05, eed measured live).  The random goal is drawn from LIVE mirrors,
+    //  and for the first minute after a reload there are none — so every reload read "goal: nothing" and evicted
+    //   the whole pool, cards AND files, including the one copy the circuit had just landed.  A goal that is
+    //    empty because nobody is reachable is not a wish for an empty pool; it is no information.  Keep the
+    //     sediment until a real goal says otherwise (the take:radio pool already guards its sediment this way).
+    if (goal.length) {
+        for (const id of Object.keys(pooled)) {
+            if (!wanted[id]) diff.push({ of: id, do: 'evict', why: 'not in the goal stash' })
+        }
     }
     return diff
 // Ra_quarter — the SIT-DOWN: goal → diff → provision, then rest.  Idempotent the way a steward must
@@ -2200,6 +2459,63 @@ Ra_record_from(lib, info, bufs):
     }
     rec.bump()
     return rec
+
+// Ra_rec_previews_carry — CARRY the playback head + the preview chunk children from a source %Record
+//  onto a copy whose bytes are IDENTICAL.  THE ONE THING A POOL LANDING NEVER HAD (measured live
+//   2026-09-05): Heist_catalog_land stamps title/artist/path/bytes on the pool card and nothing else, so
+//    `preview` was ABSENT — and Ra_dial_next skips every record for which `preview > 0` is false.  The
+//     daemon's own pool held 8 pressed records and not one was dialable; eed's face said "N pooled ·
+//      none playable yet" for the same reason on the other side of the wire.  SoundPooling was dark by
+//       construction, on every body that ever pooled, and no Book saw it (a Book scene mints its pool
+//        records through shelves that were stocked, so they carry a preview the live landing never mints).
+//  WHY CARRYING IS HONEST AND NOT A FAKE: a v1 press and a plain heist keep both land the ORIGINAL's
+//   bytes — the id COINCIDES, which is exactly why Ra_rec_pool elides of:/grade for them — and an opus
+//    preview is a pure function of those bytes.  The source's encode therefore describes the copy
+//     exactly; nothing is being claimed that is not true of the file now on this disk.  A LOFI rendition
+//      is DIFFERENT bytes and gets no carry: it needs its own encode, and until that exists an absent
+//       preview is the honest answer rather than someone else's waveform wearing its name.
+//  ⚠ THE BUFS ARE Uint8Arrays IN .sc — fine on the snap plane (enLine mutes them to "Uint8Array()"),
+//   FATAL at the STORAGE/toc encoder — and the pool shelf hangs on the %Identity, which DOES ride the
+//    account snap.  Swarm_protocol skips %Preview for exactly this reason: the two changes are ONE fix
+//     and must not be separated.  (Ra_record_from's own header carries the same warning for the library.)
+//  `bytes` is deliberately NOT carried: on a stocked %Record it is the preview chunk sum, on a pool card
+//   it is the landed FILE weight (Heist_catalog_land sets it from `size`), and the account snap already
+//    holds the file weight.  Two different questions that happen to share a key name — leave it alone.
+//  Returns 1 when it carried, 0 when it declined.  Idempotent: a card that already dials is left alone.
+Ra_rec_previews_carry(card, rec):
+    if (!card || !rec || card === rec) { return 0 }
+    if (rec.sc.lofi || card.sc.lofi || card.sc.grade) { return 0 }
+    if (+(card.sc.preview || 0) > 0) { return 0 }
+    let P = +(rec.sc.preview || 0)
+    if (!(P > 0)) { return 0 }
+    // the decoder's config + the head scalars — everything Ra_term_stream_open and the preview decoder
+    //  read off a %Record.  Guarded one by one: never stamp a maybe-undefined sc value (the mint-bug law).
+    for (const k of ['seconds', 'gain', 'lufs', 'sr', 'br', 'seg_secs', 'nch', 'pv_off']) {
+        if (rec.sc[k] != null && rec.sc[k] !== '') { card.sc[k] = rec.sc[k] }
+    }
+    card.sc.preview = P
+    card.sc.total = +(rec.sc.total ?? P)
+    let n = 0
+    for (const src of rec.o({ Preview: 1 })) {
+        if (!src.sc.buf) { continue }
+        let ch = card.oai({ Preview: 1, seq: String(src.sc.seq) })
+        ch.c.up = card
+        if (src.sc.head) { ch.sc.head = 1 }
+        if (src.sc.preskip != null) { ch.sc.preskip = src.sc.preskip }
+        ch.sc.buf = src.sc.buf
+        if (src.sc.cid) { ch.sc.cid = src.sc.cid }
+        ch.bump()
+        n = n + 1
+    }
+    if (!n) {
+        // the head said there is a preview and not one chunk stands behind it — carry nothing rather
+        //  than mint a record that dials and then plays silence.
+        delete card.sc.preview
+        delete card.sc.total
+        return 0
+    }
+    card.bump()
+    return 1
 
 // Ra_unity_stamp — THE HEISTABLE UNITY, PRICED (2026-08-13, the owner: *"so every track|Record knows
 //  how many MB its surrounding heistable unity is?"*).  Nobody heists a track alone — it comes with its
@@ -4717,10 +5033,17 @@ Ra_pool_fill_wants(w, ident):
     let out = this.Ra_pool_provisions(w)
     if (!out || !ident) { return 0 }
     let n = 0
+    let fresh = 0
     // BUDGETED (2026-09-03 review): the %Reach shelf is capped and shared with the ceremony, the charter
     //  and the heist, and a circulation booking stands for as long as its holder is away.  Book a few per
     //   pass — the next sit-down books the next few — so a cap-12 pool can never crowd the shelf out.
-    let budget = 4
+    // SERIALLY (the owner 2026-09-05: *"is it downloading 4 at once? that's silly, do them serially"*).  Four
+    //  in flight raced for the same wire the radio is streaming over, and four standing rows is four frames per
+    //   re-dispatch pass.  One want at a time: it lands, the reach is dropped, the next sit-down books the next.
+    //  A KNOB, DEFAULT ONE.  The live default is the owner's ruling; MusuPoolRandom pins it to 3 because what
+    //   that Book actually swears is the FAN-OUT — three wants addressed to the right three holders — which is a
+    //    different question from how many we choose to have in flight at once.  Pacing is policy; addressing is law.
+    let budget = (w && w.c && w.c.pool_fill_budget != null) ? +w.c.pool_fill_budget : 1
     for (const want of out.o({ Want: 1, do: 'pull' })) {
         if (n >= budget) { break }
         let from = String(want.sc.from || '')
@@ -4730,9 +5053,13 @@ Ra_pool_fill_wants(w, ident):
         //  times in a row).  This pass runs from the pump's null-dial retry — every 800ms on an empty pool — and
         //   Ra_pool_fill_book is find-or-create + dispatch, so the same four wants were re-booked, re-stamped and
         //    RE-SENT on every retry.  The settle loop already re-dispatches a standing reach on its own cadence.
-        if (this.Swarm_reach_standing && this.Swarm_reach_standing(ident, from, of, 'serve')) { continue }
-        if (this.Ra_pool_fill_book(w, ident, of, from)) { n = n + 1 }
+        //  The COUNT stays idempotent — a standing want is still a booked want (MusuPoolRandom's rebook_idempotent
+        //   swears the second pass reports the same three) — only the re-book, re-stamp and re-send are skipped;
+        //    `w.c.pool_fill_fresh` carries how many were actually NEW so the steward's line fires only on news.
+        if (this.Swarm_reach_standing && this.Swarm_reach_standing(ident, from, of, 'serve')) { n = n + 1; continue }
+        if (this.Ra_pool_fill_book(w, ident, of, from)) { n = n + 1; fresh = fresh + 1 }
     }
+    if (w && w.c) { w.c.pool_fill_fresh = fresh }
     return n
 
 // Ra_pool_fill_homes — WHERE the fill reads and lands, resolved once per pass.  A Book stands its
@@ -4853,20 +5180,146 @@ async Ra_pool_fill_land(w, ident):
     let arrived = peering.o({ Reach: 1, state: 'arrived' }).filter((r) => String(r.sc.for || '') === 'serve')
     for (const reach of arrived) {
         let by = String(reach.sc.by || '')
-        if (by && mypub && !(mypub.startsWith(by) || by.startsWith(mypub))) { continue }
+        // ⚠ THE BODY-KEY MISMATCH IS ALSO A SILENT SKIP, and it is the exact shape of drift this whole area is
+        //  full of: eed's console this session logged "another live body … name contested" and a fresh "founding
+        //   stamp" on EVERY reload.  If `Swarm_body_key` ever answers differently than the pub a reach was
+        //    booked under, this row would sit 'arrived' FOREVER with no diagnostic — indistinguishable from the
+        //     pool-fill homes miss below.  Name it the same way.
+        if (by && mypub && !(mypub.startsWith(by) || by.startsWith(mypub))) {
+            let miss = 'body key drifted (' + mypub.slice(0, 8) + ' vs booked-as ' + by.slice(0, 8) + ')'
+            if (reach.sc.why !== miss) { reach.sc.why = miss; reach.bump(); console.log('🏊⚠ pool-fill cannot land ' + String(reach.sc.of || '').slice(0, 8) + ' — ' + miss) }
+            continue
+        }
         let of = String(reach.sc.of || '')
         if (!of) { continue }
         let homes = this.Ra_pool_fill_homes(w, ident)
+        // ── LIVE: THE BYTES RIDE A HEIST KEEP (the plan, SoundPooling_todo §0.5 — the owner 2026-09-05: *"there's no
+        //  byte-lane because it's reusing Heist isn't it?"*).  Reach carries the STANDING INTENT; the carry-out was
+        //   always meant to delegate to the one byte doer every landing already rides — a `%Heist,into:pool` keep,
+        //    the exact shape Radio_pool_catch mints for what is playing.  Heist_keep_step routes it to the holder
+        //     (Swarm_station_pier), registers Repli, pulls the %Body chunks and lands through Heist_catalog_land's
+        //      pool branch — which is where the preview carry lives.  Siphon_pull below stays as the BOOK's
+        //       stand-in only (MusuPoolFill's world has no pier, no Repli, no relay — its lib IS local), gated by
+        //        the same `fill_mw` override Ra_pool_fill_homes reads; a live tab never takes that road again.
+        if (!(ident && ident.c && ident.c.fill_mw) && homes.pool && homes.mw) {
+            let standingCard = this.Ra_rec_find(homes.pool, { Record: 1, id: of }) || this.Ra_rec_find(homes.pool, { Record: 1, of: of })
+            if (standingCard) {
+                landed = landed + 1
+                peering.drop(reach)
+                continue
+            }
+            let to = String(reach.sc.to || '')
+            let me = this.Radio_pub ? (this.Radio_pub(homes.mw) || 'me') : 'me'
+            let shop = this.Ra_home_shop(homes.mw, me)
+            let keep = shop.o({ Heist: 1, seed: of })[0]
+            if (keep) {
+                // in flight — the keep's own state is the legible fact (HeistFace shows it); the reach waits.
+                let kst = String(keep.sc.state || '')
+                let why = 'heist ' + kst + (keep.sc.from_name ? ' from ' + String(keep.sc.from_name) : '')
+                if (reach.sc.why !== why) { reach.sc.why = why; reach.bump() }
+                continue
+            }
+            // ONE POOL HEIST AT A TIME (the owner 2026-09-05, reading the live log: six rehydrated reaches arrived in
+            //  one pass, six keeps were minted, and the one source stalled under all of them — "is it downloading
+            //   four at once? that's silly, do them serially", one layer up).  A standing into:pool keep that is not
+            //    done holds the rest in the queue; the reach says so on its row and waits its turn.
+            let inflight = shop.o({ Heist: 1 }).filter((h) => String(h.sc.into || '') === 'pool' && String(h.sc.state || '') !== 'done')
+            if (inflight.length) {
+                let why = 'queued behind ' + inflight.length + ' pool heist' + (inflight.length === 1 ? '' : 's')
+                if (reach.sc.why !== why) { reach.sc.why = why; reach.bump() }
+                continue
+            }
+            if (!to) {
+                let miss = 'no holder to heist from'
+                if (reach.sc.why !== miss) { reach.sc.why = miss; reach.bump(); console.log('🏊⚠ pool-fill cannot land ' + of.slice(0, 8) + ' — ' + miss) }
+                continue
+            }
+            let srec = null
+            if (homes.mw.oa({ Theirs: 1, pub: to })) { srec = this.Ra_rec_find(this.Ra_home_them(homes.mw, to), { Record: 1, id: of }) }
+            let title = srec && srec.sc.title ? String(srec.sc.title) : of.slice(0, 8)
+            let k = shop.i({ Heist: this.Radio_clean ? this.Radio_clean(title) : title, seed: of, pub: to, state: 'primed', into: 'pool', why: 'fill' })
+            k.c.up = shop
+            k.c.last_touch = Date.now()
+            if (this.Heist_keep_born) { this.Heist_keep_born(k, this.Swarm_now ? this.Swarm_now(w) : 0) }
+            if (this.Radio_friendly) { let fn = this.Radio_friendly(homes.mw, to); if (fn) { k.sc.from_name = fn } }
+            if (srec && srec.sc.artist) { k.sc.artist = this.Radio_clean ? this.Radio_clean(srec.sc.artist) : String(srec.sc.artist) }
+            let why = 'heist primed' + (k.sc.from_name ? ' from ' + String(k.sc.from_name) : '')
+            reach.sc.why = why
+            reach.bump()
+            console.log('🏊⇊ pool-fill: heisting ' + title.slice(0, 32) + ' from ' + String(k.sc.from_name || to.slice(0, 8)) + ' into the pool')
+            continue
+        }
         let from = this.Ra_pool_fill_from(w, ident, reach, homes)
-        if (!homes.pool || !homes.nav || !from) { continue }
+        // ⚠ NAME THE MISS (2026-09-05, eed measured live: four rows stuck 'arrived', pool empty, no line).
+        //  A silent `continue` here is indistinguishable from "nothing to do" — and it is the state a listener
+        //   experiences as "none playable". The holder pressed its copy, said arrived, and we had nowhere to pull
+        //    FROM: `Ra_pool_fill_from` needs a %Theirs mirror of that holder, and mirrors are session matter that
+        //     a reload sweeps. Stamp the reason on the row (legible in the snap) and say it once per reach.
+        if (!homes.pool || !homes.nav || !from) {
+            let miss = !homes.pool ? 'no pool shelf' : (!homes.nav ? 'no nav' : 'no mirror of ' + String(reach.sc.to || '').slice(0, 8) + ' to pull from')
+            if (reach.sc.why !== miss) { reach.sc.why = miss; reach.bump(); console.log('🏊⚠ pool-fill cannot land ' + of.slice(0, 8) + ' — ' + miss) }
+            continue
+        }
+        if (reach.sc.why) { delete reach.sc.why; reach.bump() }
         let got = await this.Siphon_pull(homes.mw, null, homes.pool, from, of, homes.nav)
         if (got && got.card) {
             landed = landed + 1
             peering.drop(reach)
+            continue
         }
+        // ⚠ AND A PULL FAILURE MUST NAME ITSELF TOO (2026-09-05).  `Siphon_pull` already hands back `{fail:'…'}`
+        //  on every dead end it knows about (no origId, no pool/lib shelf, no nav, already pulling) — this loop
+        //   was throwing that reason away and looping forever with the exact same silence the homes-miss fix
+        //    above was written to end.  `already pulling` is excluded: that is the NEXT pass about to succeed,
+        //     not a fault worth alarming the row over.
+        let why = got && got.fail ? String(got.fail) : 'pull returned nothing'
+        if (!why.startsWith('already pulling') && reach.sc.why !== why) { reach.sc.why = why; reach.bump(); console.log('🏊⚠ pool-fill cannot land ' + of.slice(0, 8) + ' — ' + why) }
     }
     if (landed > 0) { console.log('🏊 pool-fill: landed ' + landed + ' pool cop' + (landed === 1 ? 'y' : 'ies') + ' from the crew mirror') }
     return landed
+
+// Ra_pool_source_rec — WHO in this world holds a dialable %Record of this id: my own library first, then
+//  any %Theirs mirror.  Pure read, probe-first (never mints a home or a shelf).  "Dialable" is the point —
+//   a source with no preview of its own has nothing to lend.
+Ra_pool_source_rec(rw, id):
+    if (!rw || !id) { return null }
+    let pub = this.Radio_pub ? this.Radio_pub(rw) : null
+    if (pub && rw.oa({ Mine: 1, pub: pub })) {
+        let mine = rw.o({ Mine: 1, pub: pub })[0]
+        let stock = mine ? mine.o({ stock: 1 })[0] : null
+        let hit = stock ? this.Ra_rec_find(stock, { Record: 1, id: id }) : null
+        if (hit && +(hit.sc.preview || 0) > 0) { return hit }
+    }
+    for (const them of rw.o({ Theirs: 1 })) {
+        let stock = them.o({ stock: 1 })[0]
+        if (!stock) { continue }
+        let hit = this.Ra_rec_find(stock, { Record: 1, id: id })
+        if (hit && +(hit.sc.preview || 0) > 0) { return hit }
+    }
+    return null
+
+// Ra_pool_previews_heal — the RETRO half of the carry.  Every track pooled BEFORE Ra_rec_previews_carry
+//  existed is sitting on this device with its bytes present and no way to dial it, and nothing else will
+//   ever go back for them: a landing happens once.  So the pump sweeps its own shelf — bounded at 4 a
+//    pass, pure reads over records already standing in this world (never disk, never the wire) — and
+//     lends each dark pool card the preview of whichever standing record shares its id.
+//  It is also the ARRIVAL-ORDER fix, not only a migration: a keep can land its file before the source
+//   mirror's own preview has finished crossing, and the carry at the landing tail would find nothing to
+//    take.  This pass simply catches it on the next tick, so neither order strands a track.
+Ra_pool_previews_heal(w, ident):
+    let homes = this.Ra_pool_fill_homes(w, ident)
+    if (!homes.pool || !homes.mw) { return 0 }
+    let healed = 0
+    for (const card of this.Ra_recs(homes.pool)) {
+        if (healed >= 4) { break }
+        if (+(card.sc.preview || 0) > 0) { continue }
+        if (card.sc.grade || card.sc.lofi) { continue }
+        let src = this.Ra_pool_source_rec(homes.mw, String(card.sc.id || ''))
+        if (!src) { continue }
+        healed = healed + this.Ra_rec_previews_carry(card, src)
+    }
+    if (healed > 0) { console.log('🏊 pool: carried previews onto ' + healed + ' pooled track(s) — now dialable') }
+    return healed
 
 // Ra_pool_fill_pump — the ONE live tick (rides Swarm_reach_pump's cadence, knob-gated there by
 //  w.c.reach_on): serve what my crew booked on me, land what my crew served for me.  Re-entrant
@@ -4879,6 +5332,11 @@ async Ra_pool_fill_pump(w, ident):
     try {
         n = await this.Ra_pool_fill_serve(w, ident)
         await this.Ra_pool_fill_land(w, ident)
+        // and make what is ALREADY pooled dialable — the landing tail carries previews forward from now
+        //  on, this catches everything that landed before it existed (and any keep whose source preview
+        //   crossed after its bytes did).  Cheap when there is nothing dark: one shelf walk of scalars.
+        await this.Ra_pool_resurrect(w, ident)
+        this.Ra_pool_previews_heal(w, ident)
     } catch (er) { console.log('🏊⚠ pool-fill pump: ' + er) }
     delete w.c.pool_fill_busy
     return n

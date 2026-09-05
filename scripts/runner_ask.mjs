@@ -79,7 +79,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  never listed here, so the CLI refused the one op that makes a MIDDLE step inspectable: without it
 //   `snap 3` of a 9-step Book returns got_snap:null, trimmed 5 steps behind, and a flapping early step
 //    cannot be diffed at all.  `retain on` sticks on w:Story.c across runs.
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -169,7 +169,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
 
@@ -527,6 +527,13 @@ if (op === 'declare') ask.sentence = arg   // the explorer button's CLI twin (e_
 if (op === 'socklog') { ask.on = arg === 'off' ? 0 : 1; if (flags.has('--reload')) ask.reload = 1 }   // arm the tab's trace dump remotely (was: 🪪 hatch only)
 if (op === 'poke') ask.verb = arg          // allowlisted UI verb (runner-side allowlist is the authority)
 if (op === 'tidy') ask.what = arg          // crew | rebuffs | forget:<pub prefix> — refused tab-side unless socklog is armed
+if (op === 'ghost_load') {
+	// bring a compiled Ghost/**.g up on the live runner and (--stand=Name) mint A:Name/w:Name so its
+	//  worker ticks — the manifest-free door for a new ghost (Ghost/L/).  Runner-only tab-side.
+	const flagVal = (name) => { const f = argv.find(a => a.startsWith(name + '=')); return f ? f.split('=').slice(1).join('=') : undefined }
+	ask.path = arg
+	const s = flagVal('--stand'); if (s !== undefined) ask.stand = s
+}
 if (op === 'console') {
 	// pull the live tab's console ring; tail/grep applied RING-SIDE so the reply carries only the
 	//  wanted lines.  --follow polls below, streaming only lines newer than the last read.

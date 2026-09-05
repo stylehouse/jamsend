@@ -1,25 +1,521 @@
 Snap:H
   H:Sounditron,Run
     A:Sounditron
-      self,round=3	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:Sounditron
-        self,round=3	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
-        Radio:off,face:Radio
-        Stoker:idle,face:Stoker,crew:Radio,stood,stock,fresh
+        Radio:off,face:Radio,aim:7950f300faa8a4f9,aim_by:S,source:pool
+        Stoker:idle,face:Stoker,crew:Radio,last:Dorian D,stood,stock=2,fresh=2
         Tuner:glass,face:Tuner
         Riffle:shut,face:Riffle,crew:Riffle
-        Zine:Faves,face:Zine,crew:Radio,count:2
+        Zine:Faves,face:Zine,crew:Radio,count:0
         Door:open,face:Door
+        Link,face:Link
         Uptime,face:Uptime
         Beat,face:Beat
-        Mine,pub:f5da6599b8505881
-          shop,pub:f5da6599b8505881
-          stock,pub:f5da6599b8505881	{"dontSnap":1}
+        Mine,pub:eed831f1977c4e81
+          shop,pub:eed831f1977c4e81
+          stock,pub:eed831f1977c4e81	{"dontSnap":1}
+        Arrival,phase:arrival,reason:starting up
+        Share,mode:held
         Transfer,dontSnap
         Shuffle,dontSnap
+        Pooling,face:Pooling,dontSnap
         Diag,dontSnap
         Pose:wire,dontSnap
-        Machine,self:f5da6599,friendly:Righto
+        Theirs,pub:631300e88fa0b478
+          stock,pub:631300e88fa0b478
+            Mag:shuffle,warm
+              Cloud,page:1
+                Record,id:f43c80976a0dd276,title:Three Pieces for Lute -  Allemande,artist:Andres Segovia,album:The Segovia Collection Vol. 01,seconds=143.97,lufs=-12.71,gain=-1.4,capped,real,col,path:0 Classique/0 gat/andres segovia - the segovia collection vol. 01 (1987)/01 Three Pieces For Lute -  Allemande.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=38,pv_off=34,bytes=517443,src_size=2328253,un_n=3,un_size=9819622,un_d,stage:previewed
+                  Preview,seq:0,head,preskip=312,cid:24fd09b7ed77f17e889a56b746892cd6836f0eb105d1ef01613fa418e7cc7508	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:1d274984578b258912c1d05baf011e1710137b7e605e66c6c80c81631099b8cc	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:0000e8b79af24e8b42bfd2ea8faa5ca94c9cbed4d10c49363784a829358104e6	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:99947d602c676efcccf59c47484bae08ea657a502672d17dedf7b5cdc20f47c8	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:e12a6bc96d9bc317db150fa502a6f97dcfa6450808c761702eeab0a25d6697c6	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:ecaed8a04c75e9956e9e167e8fd45eca0570a354c286111e076108a347439f3d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:fffa5498ee12e48766bfb9f2fa2edbdfdc5634b159a6c7f16dbbde522a6c5b31	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:f6b56e3243ff757b0bcd1e1287b04c942e30ed9a69fe1573740db824ba2c74e5	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:adf6a675f3b1dde0820742a066ee48ca8018046dffa364b1d5ec0eaf9c9409b7	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:43051cb26b383fed5656f69e0e7006988a08351b690fabacc4a267d20e1fa7b2	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:8,cid:1fd9ce75e7eaa48fe89ce58a4e9f7668bee639dcb3e09219a49ea96a8df54c7a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:9,cid:feeb5a1f578f15064acf23d544d8265647147fa075e5a3afb9dbcabfe64fabde	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:f90f1b9da2734cb22d037623e7130f3773031b8cd0e00de3d39374e76b3f1d2b	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:8358a0864e1b16c48374cf4b5be8e5c0ec9a97b392dc6d0fb1ce178dcfc78986	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:10,cid:19223885902d0d5156ceecef1406caa6c01b2edd526e26eac20f5b699c9ad320	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:11,cid:6636ca23f8806cd819ef65be0838aa1d06e0438f6c3e3355fa7a48c79a183c49	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:12,cid:963003e3418f57c138b00a7e880cb0a8926a0960cb36ef6eb9f2a5cc6415265c	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:13,cid:773ac7e3d212323828d9b4befce07c7ab1d7d74368a62c721605ed8254754bbc	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:4,cid:274000ccb722d0aec417e09918aacefd7d8c9d2ebf3e3df0e4140058de9f8594	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:5,cid:2d5a3912617a07f750927e5145ba151bf7cc787f30855360df3bc6b7ecc63c6b	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:14,cid:15f7b7516ae2dae627e4d135ee5a8679f95fb4f8b40fd17c8b0f3ea467cbf395	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:15,cid:ee7a3c5de350c74c435c3e58a4e2d8ffee310f266a3c2e89c00139322fa35fa9	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:6,cid:b77fe1c3b1cb6783d5ecc29362c119881a758f13f6fe992eef880a36c7a4aa7d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:7,cid:6ff48187d07bf342353385c6e5c9240034fdc5bec64e05a6d9e0503cc35920d6	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:8,cid:085d3fca3f01b5f5c5c55a66f03423ae4affc654737faff99ffcd609df012398	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:9,cid:6fd52b05ebc029d3bc4bcb3fdf0490c230321b50ba6e3568348a0d0f53a266ec	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:10,cid:570e325fde25c322e04780e6de32bfebfba7799e94ac6f77836956bf9b9c125c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:11,cid:bf0169c6812793a942859215ca45eadedf86f4c4725f389e44b1a977f1f9655b	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:12,cid:a304af5a519763986cadf8a7710bf04c30fc8c64ec0d658609d59930d45b477f	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:13,cid:27fe05b0f46e16df036546e2fd21e09f946e62c02857ca484de45b806d82358d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:14,cid:30adae6c4bba6d164f5c7b6c3f10486e4b7c4ce1e752b0268a73b443d2c961d0	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:15,cid:195e30614c399a00ec5841fe5affda9845a19250db373d24cd2d41fb86e92c48	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:16,cid:d73f0e5a8f422c4f11c79b0c0888ab37070aa40e24373cef2810fc72dc51c6a0	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:17,cid:60bf94b2a9b66c0026ae43e21c8bc9c5e4bee55db46edae2291e6938a6dbe812	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:18,cid:1aa495e682eef782ce9a11d76ff4aa318f7c952edf28f6f993c76c72fcc6de66	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:19,cid:5e43c563d070d597b6f2f28fdf935ee5d57964f01948d086fc3475613537abff	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:20,cid:f291f3d296625ad4411242aafbea0264ee74aad5e4c9dbdd4b02b7a79eb42532	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:21,cid:fff937d675b3b1b95e17b9705575bf07c2ca7556f8563f886204ec67c148ac03	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:22,cid:0e9e61ee65763ce9bcb1f1b06082b16d5886d82ce79a00a765b5f5c56c05d2e6	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:23,cid:5f8d30e04da288f9b51d41a1a1a7f4650d3081377727fccd86c817de651cb5f4	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:24,cid:655e05d04abbbed25066cb851b54899263c4a29cb5cc7277af02d3013851af5e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:25,cid:2939063ba4cb9aca7e6d15a7bb8b909768cca286fd4b2186630d50adaf8a2e01	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:26,cid:f634f0091bbfe9778412d8a66257339b59206b1f0849f6fce4aca65f8fae7636	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:27,cid:c913b5d176c610c79d45120c3c4cd27507cf403be448333519e286c5978d3129	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:429b517c654d7e6a,title:Three Pieces for Lute - Sarabande,artist:Andres Segovia,album:The Segovia Collection Vol. 01,seconds=236.67,lufs=-12.69,gain=-1.57,capped,real,col,path:0 Classique/0 gat/andres segovia - the segovia collection vol. 01 (1987)/02 Three Pieces For Lute - Sarabande.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=45,pv_off=74,bytes=517358,src_size=3829161,un_n=3,un_size=9819622,un_d,stage:previewed
+                  Preview,seq:0,head,preskip=312,cid:3d9cf0a0f715f6aa8a44fbd0e58ad1965abfa97d75bf643695c99500c44baa8f	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:691ec3d208760fe11b5540471805ca27c7eec9ab395bb16e4db5059fd26e3a45	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:e5aaf07e92f9caff5cc6f4bd497ec53e8bc9b3f7906413c9ae9f7840f86bee54	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:ff6689e0c69d03c33d96ae800f675c1ced3f115f10a2823220706377313153e9	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:fd588617f22e403fc6db61b2f7928878869083252ff090a1bafdf5ccfa86beb5	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:cfbbb52bc5b8afb048d69fdee0999ec18974d90b1497be9208ffb6a8c926db52	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:4,cid:d745b1dbfbef5ac2b6e419a76609f0d7a008c2166ae33110e22256ccd9602981	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:5,cid:45fce2fd605325135c84a98ebb6add7a53d52307fd576703382696e362a82ef8	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:1867903c6640bf65c9564229891cf50b5451659b52b61c2ffd20b46a8d7f1bc8	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:e237a490e9171697e67b8b44543a85e9109f78eb9ffe97bdae9a29a6a15ddb81	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:6,cid:2e0833ac4fa8645a340065b98f0b40f118e7b2ba5f332cfdfe6f5a0c2e72a967	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:7,cid:5defa21b68d5efd85079976b37416a0bd149db70c091798d87dc9b5589f9ab6d	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:6e8d6fc80f014e286d76bda63e602eae4823dbddabb30fbb99e98481f8d601a5	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:ea2ac483dd44dc43a7c0a5d6b8adc3bf5ad3e3ddb9ed7dfc877afc458d91a905	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:bd0dbca14fce190e09d4dd45f27246b6fa188ef6e718aea44bc4bda88d824c04	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:328eb3141e6ee7dd7702d1b233a799d923281e8ae1e4d4d9ad91db6ea7f7be52	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:8,cid:8c932daa1743dc2f28445e57d2b5bb7f8fd3087b220320d133dd0ad44aa56911	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:9,cid:697a256e9a317cabfff3624f51ad3c4c7629001279337072279814209ad1b4c3	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:8,cid:d517837ba4598a93ec39163182f0336837ff0c3f514a27f5808d003b64e89552	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:9,cid:3b3ff58dc1ca9f0fcd3ae9d1aed57ade6e069d15b477ba7d669af19c39911a61	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:10,cid:c1561792754f3158e9c7ae6f59873f4fe8eb55fb2425b4ebebac132c5eca02cb	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:11,cid:27864c01601a1ce9fce042530896d53222e85b8ac455eecec5fd0a5bee2d5e44	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:10,cid:e3784424ed3e72e324f13667950656a7f9da8f22b19530006fd5dfd5f7367266	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:11,cid:22a8b7e975baac9180012af6ec67a16c5761e6255d50cb960f582d457e305fbe	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:12,cid:b822e4a53f35a18d791fac272fee2ffceecd77a51da8cb88716368c0a641a172	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:13,cid:790fe8a4f1f20ac3923b18a433e6369e3fb0f02ee844c238700bdc30c6c4ba39	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:14,cid:4690689ca1737b147e1566cf69066653e41b8b10674f912fb52a8e8850f4547c	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:15,cid:f669c1779ff31f539fc64d46b92ad26f5d52f5b4fc2215bcb562ecfd1bc1aad9	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:12,cid:a4bcd5435a2ac279e5e5d734b3dade7e13f01a345ea75c428f0a14d19aa1d1c0	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:13,cid:d2531ba7b113646e53ad171cfa17415a3a7aacf74f762976b2daec7dc0e00f0f	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:14,cid:d99189c2c97192b21af86e1bcc804a06a4ab244a0b8eb04757d15974504da57a	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:15,cid:aae6160e6c463fbcd4d20b9f2f3e4e7a56f0eef60e7fc186bd2d74f294ba695f	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:16,cid:5ad403cce4efd45c0f584486975ac10360f3b49435d36e93f4f836e12f88ab5a	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:17,cid:c9f5b6da90365d18fc2d1995094d25e1ca49300176e026a41ab6eab0c673d3c5	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:18,cid:4605629ba4e11557af3217dabaa42a037decef36ec7b0d9baa8d0ddf66eebf09	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:19,cid:fe3722cdfbeefa4a20704f35b366943f1cd27f8040c36dcd557550167c122ecd	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:20,cid:c79083bc7d4bc0d18317e609c1d0e405e286c538a341767c0e8b410756236f6b	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:21,cid:984e9d9e6d050ca342b3dcc22445e5acc3387f4f444e59b6d13783960daf9983	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:22,cid:8bfbfa79f24c4f35387c5c03459dde0308a2109315a3321c6c10bc3a2dc07c0c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:23,cid:39aa821154e49d02a0f2b15736f868c1894078693b5a0e7f62b1a066c064a0c9	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:24,cid:b0ca72df470d48cce4bbcb534e36f10baa99be1ff935d67cfd18de574e37cc0b	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:25,cid:d480dfb568d90fca2d3394f617c087e1212ea24e44073d9ef630b707800f2537	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:26,cid:1716ac990e76265d38f1764ac471a162fc6205119ec63af7ec105b98b42697e6	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:27,cid:b05c4847881afccb3ab6473c821bc03f14ac124a71e09d2ab5824d7705516bc6	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:fb00570cd57a5082,title:the night,artist:MORPHINE,album:THE NIGHT-1999,seconds=288.67,lufs=-13.06,gain=-0.94,real,col,path:0 goth/morphine - the night (2000)/01-the night.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=95,pv_off=50,bytes=517381,src_size=4659954,un_n,un_size=4659954,un_d,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:f31877f90508edba87caec506eb6247dcdf2a05cbb3325150e54ff19c0306dcf	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:36fcd3fb8e8c3c6896750344be05b16288bf4f0942e5f7d63b4f80042bf8e66b	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:63a0121da42bf62e06e990deab6df74c21be043f2fdec7081a9557de904beb9f	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:3142dae4619d2c41afed117f00618dc79d41b3f19908bccd7b2d18d79a5ccbcb	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:9134d26dd20fe230adb819140d6f1c1bc402bf55227f7298df5ae1dc56d906d1	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:b49f7efa0604b4afaf46667f480d47cd34d09bfac4cabf100760622f3c45e8e6	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:2193037f51c92a4133d91ce343a5b320b3a2e8b6e898def64b8a2213950c2aab	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:92503f8e22688f97e9bca61c5a96f1e9c720e71c87013606746f681a8c3ed67b	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:5fcfa6e27b79cc8efb578d1017df0a70527d03773deee07865f5a5835ed5807d	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:d12cfed027ab53da3ec176eb469f2052c5dbfc963959b4b64a9d206a8ef52506	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:5359cfc1206a1657411d230734f893c24fd433e0b66bb4c67795d1a1d0959477	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:f29ab489dbbf9818d368f40312a139afedcb0a0cb7cffbd233ccb90a56d00604	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:141af02c5f9a6563,title:For Solo Cello- Gigue,artist:Andres Segovia,album:The Segovia Collection Vol. 01,seconds=226.35,lufs=-14.03,gain=-1.54,capped,real,col,path:0 Classique/0 gat/andres segovia - the segovia collection vol. 01 (1987)/12 Suite no 3 for solo cello- Gigue.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=58,pv_off=56,bytes=517443,src_size=3662208,un_n=3,un_size=9819622,un_d,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:8ee990eea76cde8fcd6614ad880005438bfda1830732714b89d05d8f5d8756b3	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:052ea116cebc8334af97dacfaefdfef9cfc91aea75c3248ba1720c5653ea94be	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:12f2497775b493f2236edc37f6e96722a109e5c5e1a743f4601b9865ddc4e55c	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:ffaffa730ebed6d2e4efc251b4be69cd3a065a1172ad55851021af19900ddd7e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:b2b8d8d8891b9fda195178f157dc0c45fdca533ddfb08ee5b662cf2195ab9e6c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:2aeae6173da1c71db5d93429f4f90c578080c37b0f0e1d1a7c962caf3ca4d008	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:e142a10bfae784c4805d78fe3eb1cdc18e4f0b88a1cb4ef6fa45488da9938207	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:9748f2e64cc12dbdef2d68438df38820ab33489e8ed9d4a14a729f540d22f642	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:97b1a81e3e6fba04,title:Loving You,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=285.93,lufs=-14.36,gain=-1.45,capped,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/04 - Loving You.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=95,pv_off=48,bytes=517363,src_size=4626140,un_n=7,un_size=41603226,un_d,stage:landing
+                  Prehead,hseq:0,head,preskip=312,cid:21bb6c48cf03b2eb7838db2ce98cb436bbef9dd23f62bd20dfc7fb5eae84e387	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:38e2964643af70969a5f99c4972895a7bfbfaae7b03371cddf458227436dc14e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:0,head,preskip=312,cid:1f525791a29eed8d1265f860bcf766064e7a409911385463b72fe82a4e04f0af	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:901585992f93e654e5cf2a24bbc2fa2d9d9e24e84fab205a5b3b0e8d9740d017	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:4e374a59f7b04e39d4ed50fc794c2919843b3ede344a1fd56828688d624fa27a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:c3db739487ccc90932632d1f95930d6d4d30753e67957a8377190d124ab665c0	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:35f6f41341aa2fed2cdeed737838aa34ef1ab69aa9313bd7b941eae23f454d07	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:87af9c1f5852075ce89082eaaf905826b88b36398efbcd32fce4271d41b75224	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:4,cid:a02ea39b7f46705df2ff3f0636465361646cb9ab8c63e53d03bf66fbbf373963	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:5,cid:3fa9484c1dfb8a1a22dc6ed9fcf1ed992f5e832677c17c3ecacc12cdb94a6e5c	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:e057714ea582db4a,title:Sweet Georgia Brown,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=283.95,lufs=-14.01,gain=-1.69,capped,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/02 - Sweet Georgia Brown.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=70,pv_off=72,bytes=517280,src_size=4593893,un_n=7,un_size=41603226,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:e7dc863151a5bc79213f93dead4a27681e0229ee5c99e578c2b66526c0ebc6db	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:362c8f4476ee745e91697cbdd5094e26288dbd551511e19a7a86ded61d1c9238	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:142eaded5f20efff6c8c9fd334f59e0729ecd339c1b7e1c5d3a5963e34629a5d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:3bb464188e812a9ef309076e3551dfbe34b23807a5621de77bace4a2ac560f12	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:4,cid:94b7b980864efb69553e770d8f30d5f6a9c2622fa42b44fb7e9ce423b848b231	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:5,cid:ffb5ad2cb75a50b77705e8591c0fc0a39f4c8a73ff98f392ebb122d15b59ed6b	{"ref":{"buf":"Uint8Array()"}}
+              Cloud,page:2
+                Record,id:e4241f2d6eb77e76,title:Goodbye Pork Pie Hat,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=376.49,lufs=-12.75,gain=-1.51,capped,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/05 - Goodbye Pork Pie Hat.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=99,pv_off=90,bytes=517443,src_size=6091012,un_n=7,un_size=41603226,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:b9772fb327dbd55868ffe5a25bd9e59506e014e87de84a249387d6d2c7d01589	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:c6c46cdd8189b36d789c47d1329d3811c4072a230fd106f004a82444b973eb3c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:0c0a048357530e1dff9f0e03f25216d376de12eb4d3848221d1997fecdb34e1d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:f0b8387b8dce6fba17825428ad2ba85a66a6a688e864732fca6a7f627894b339	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:68ee832d1825ce87,title:I'll Be Seeing You,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=369.23,lufs=-12.05,gain=-1.95,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/03 - I'll Be Seeing You.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=87,pv_off=98,bytes=517443,src_size=5966190,un_n=7,un_size=41603226,un_d,stage:pulling
+                  Prehead,hseq:0,head,preskip=312,cid:0f665f3d384cdef80328e4c6c24b95c85a645de1e0743abc406b79028ee28364	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:a74fd66b041679c76807dbcbf8f2e112b97f11aec5aacdc5cfd01805d5169bec	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:91d71d522f6ba8078555f1e657a933ed9f9c7091eb465a69bcc7781f040e493f	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:f3e06abe0596580813309bbd7b5dd485c44daab0983bc10c5faff9665d2f3111	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:2b9f71ed840c8ef6,title:Giant Steps,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=373.31,lufs=-12.91,gain=-1.09,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/07 - Giant Steps.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=103,pv_off=84,bytes=517443,src_size=5999307,un_n=7,un_size=41603226,un_d,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:9f0016790fd9c730f15ee3e477d75ea7bc12459c9728e481d09337a560ffbecc	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:50faa826336896387c8dfbe985f41220c8248e5c47a3750daa5a238c757fba46	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:5d7ff2ccb566d7585a4f94bdd8ce9a9467f35278da2e74dc43f72fdbc190d9d5	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:16af4af4aca9ec1253c908ad19dfe2bb6b56fe9bf93d9ff87b05654b7417c3e9	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:c9b3835a2df308b5c0cc0785230c3ff63c726330a8ce2450392e6e41692072ae	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:a9f2ea69d6eeba790664337a4928ada9fc64bf2d96269c840361f34e82103895	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:f9430ebdff8688f7,title:There Will Never Be Another You,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=306.07,lufs=-13.1,gain=-0.9,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/06 - There Will Never Be Another You.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=94,pv_off=60,bytes=517364,src_size=4951927,un_n=7,un_size=41603226,un_d,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:7e030885a423ce52e2d770bc33853e8d68166ae3074b9c462b575151dd8c27ed	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:89f9f33de33eab245514ce183592533952516a359800505136eaa84bfaa4ecde	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:cbe64c5e8c3b246b457efaf6cfcac5b296e8ea041139d1d358cdb6a5775a0c59	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:29b323f1f7e3ed7d334e0811427d51ea1f2f89abf8bfd6f63b62d94f25f67b74	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:7497b41367da696793df5e673b67076bc7f583d6c712fc9317c32611af59276d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:5baf1435de0bb0a526cd86accfa79ff12750e01b6e52eceb293e8b9f30605a7e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:f53f822185a0a6e7e2cc92b73fc3b270e45b0358a7852623998bd03c2b46c34e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:2b7777eb0f61af2de94115c0aec42be172abba4ff0de3b953ac1c1b12fdeb797	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:628171c57b711f906a327d1acf6e411bfbc417f91fe5ad7759960280a78cbaf4	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:a05d55c3316755df1632e9c674afaaa40776ac3907326083d18817e6cc8a51c4	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:41bc62572596c724a88f981147e93e092986fa4253c534d7a3d0cf5f9dfa1bec	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:976eec0beb3b4c4a3895d02ef766814bb74723b9f86390f8fbdd1fb4ec0d9e16	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:4,cid:096d67368bdb1f6a21d3a4fba184fa704093e420d6303f50e3059ca74aee4961	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:5,cid:ba406798aa9df014fc180b8491648168e36c8c7ae71511e5c92d5c3b0735109c	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:83e9d332912d317b,title:Theme For The Eulipions,artist:Rahsaan Roland Kirk,album:Return of the 5000 lb. Man,seconds=579.47,lufs=-11.74,gain=-2.26,real,col,path:0 Jazz/Rahsaan Roland Kirk/Rahsaan Roland Kirk - 1976 - Return of the 5000 lb. Man [FLAC]/01 - Theme For The Eulipions.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=108,pv_off=182,bytes=517389,src_size=9374757,un_n=7,un_size=41603226,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:466b0bfa65cf63942a0b011e7ca4824e619a3d58ef686b45e26cea7423fe6258	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:3646eb972301581b762a2fa8642aa64d19cf9e40444f36ac9a4a65fc89ce29f1	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:5b3f3fc7c432fd5903f7993c7e2a34e5edd0c460f66e6799cec5c458451755ff	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:e41b290f17bb689d1f938615420d6a69463d9bb799bb23a8733e8ec855ceea2c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:4,cid:d996dc3d014d744a26b4ecb278d03462ae455de193a9fcd26e11504cc07804f1	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:5,cid:3ddb9a7f37ac9d68216b76549775e61151a74c64866f2e00dfb954f624a7d4ed	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:c9247c1fe1e90a59,title:Jones The Rhythm,artist:Grace Jones,album:Slave To The Rhythm,seconds=385.93,lufs=-14.21,gain=0.21,real,col,path:Grace Jones/1985 - Slave To The Rhythm [2015 Remaster]/1. Jones The Rhythm.ogg,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=129,pv_off=64,bytes=517315,src_size=6243979,un_n,un_size=6243979,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:5e051be91c87c8eea8a8b44570c6500cb5e8c34b3497f0ee90d338e6ce34af48	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:ad0fc190760b2e3c0ca13214ce205a824abf9269942d496c34cbdfc20ab5d8ce	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:dee831bdcd0f7147bade8a308485fc726886dde003b9397eccad602af968fdac	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:cf9ed3b9d5a3c204b4096f1ace9287cc0a44e8662df510d9129edc36e163dbf3	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:4,cid:702149c810bb1ec8df54b9b3e969dd4e66a20db17ed2dbbb28a97e1ef1a7c0c6	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:5,cid:5a2f81ba244caee151d50ae58a781bf20c421be7052b994b14f8c7b1ba8c92a1	{"ref":{"buf":"Uint8Array()"}}
+        Theirs,pub:7950f300faa8a4f9
+          stock,pub:7950f300faa8a4f9
+            Mag:shuffle,warm
+              Cloud,page:1
+              Cloud,page:2
+              Cloud,page:3
+              Cloud,page:4
+              Cloud,page:5
+              Cloud,page:6
+              Cloud,page:7
+              Cloud,page:8
+              Cloud,page:9
+              Cloud,page:10
+              Cloud,page:11
+              Cloud,page:12
+              Cloud,page:13
+              Cloud,page:14
+              Cloud,page:15
+              Cloud,page:16
+              Cloud,page:17
+              Cloud,page:18
+                Record,id:60a37854b1633ee3,title:Silk Reeling - Maiden's Dance,artist:Dr. Paul Lam,album:Tai Chi Music,seconds=471.88,lufs=-24.7,gain=10.7,real,col,path:music/0 themes/Tai Chi Music/Dr. Paul Lam - Tai Chi Music/02 - Dr. Paul Lam - Tai Chi Music - Silk Reeling - Maiden's Dance.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=110,pv_off=126,bytes=552938,src_size=28872462,un_n=4,un_size=28872462,un_d,stage:previewed
+                  Preview,seq:0,head,preskip=312,cid:5166cce3f2c142ec244c7b76938e03e11e611aed87dfccbecb38315ae333847a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:4ae4882967a7e53dd995cb501e2b200216694977b92dcc69d6beccc6ffeb49d5	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:696af7644b2b48d5d433f84567308a69ce03230d815764cc413ffe5f2012261a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:fc2856eaccbfa547db7bf8962e0fec8c1955e70cf8865914d8ba057565a48d6a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:9385f0a0b5aef2acdccaf15c4ea936a026801bf7d5b78f1165722bf97b7361fb	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:ed813e01fdc9490f4ac139ca0431737d3fde216477e357a39903af34e448c37b	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:0ce62ca81889deaa1cddacc4ab3b4640ec3f2a45ad68f2bc65f96c6cd7d6aeca	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:6248bf60fa21a9783a07e30c46854c7f9b98970eacfd396eaa217b6863d1174e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:a31d62eb041fff912171bffa5015d771c016ab2fa331468f156a01c528637aa3	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:3f2aa3bcb9e4f6df536fcb0ceb07bf19ad17d808f46a1b3356a744012ce07316	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:8,cid:a7dce907a514dfa6a40d4cebb9970e4b31566a29464920df8bdc141cb67e3461	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:9,cid:ea6295973c565d7e0355b7ffe4558a604e4278ffec64812ba426c8b6039cd2ba	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:aea585e53d05fbb9a8bb230da52aa914e87a5d350ad95a462762aa5b918ca0c5	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:cc2d6f90a0bb8a8c4fdbf196565ac3d063bc72049fcd31c2d9df312f9bd9f10f	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:10,cid:5a6fe132c2ebdc32c0c9b0fe59a64d426235f4581dd0129108411873d2a86c0d	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:11,cid:69dba9ac6d62cdf61fd25099a59a9ffe78baf6a1084c617bed7eae1e9104086f	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:12,cid:d8f89c6e355b9ad6a4a011913ab47498194df69ffe647455b996c514a72755e0	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:13,cid:2acd9d74c5b94b1b964e79d0e4a673ecc17095c494289aed1b150749e550dd92	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:4,cid:750ccea6fb57408bea14a021524fe769d37fd53e2a9c06d568eee97683542e6e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:5,cid:bc8edba924c333728dd625785da74a92fb0eb0b42730b8e7d578aa2beb87268d	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:14,cid:2ae3129c39aa1e70207aa912e31be889281aa29aabdd013d70e3fc4b3d6d0202	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:15,cid:2d2b6d5e2d6a3705d1a2c7d8f34a037a60842b38a0f2eb9a150c1c5bb6b0ad55	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:6,cid:604cf43094fe3aba3c87e959be7e0a06f12bc98bffde1bdbfc030713fd9984e0	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:7,cid:e94e450f590303ee01c642e0553597c9e2d8f259909a4b094f3ce9a5df576d2a	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:8,cid:6b3092b350747f9c4354be7b5e047232c057bbe405a07a2616f268a8fb4375ff	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:9,cid:1d919080bffed12c29db8c03341e6fe269eab17d425d9d7ae5468d10dc057679	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:10,cid:0160c73829a17362fec67ef48ca4bb04acafdca1bce9b440b57d54b2d3a185e6	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:11,cid:f4e83b0f58dea1891771758cb6f33e2d51dc796892cd905cff81e23e1e640e66	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:12,cid:07f37000fb250ee11f448da644eaf02726f907d4eff1e4f86b8c80c14126f214	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:13,cid:20e426e0acefcc113e2b8c63db114db545050fa28f071056ca945bb736da727a	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:14,cid:0d0c1928927f87fedb4b244f8f99664eee729e01f95bbf467c5b1405fa85d621	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:15,cid:f91f4513a6de69db3707362a9d0c8e37db2d5b203df686a71f9cc37659e62132	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:16,cid:920516f3b82c082fc7ccc870fb762ca594a40d722d389012dc31508cf4293196	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:17,cid:1903c9ec05ae85166cae14387ce85bcd2efb6d74ca433515c6e8640030586ea7	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:18,cid:493b35ce20ac59d3b58069fdaa0931a1e155aeb328fe52648d764a153885706e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:19,cid:ef2cf52feda5f0a49a88f02bfc2a250faa8ea1ea68b8c4d084a5e41137746c71	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:20,cid:3e5c6d7c6b4dc79bc49d6431d67c6ac321c23269654545bad9f2ceb577b60051	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:21,cid:e6ad5cdd7ebfc655f213ca4bffd70891fb1b42d32da3a53a1f20960a43834f1f	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:22,cid:d7cded58283818866d926d8499b26834c7de33ecd35cf8ca8201829a01ad0da9	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:23,cid:cebeffbfb2343cb8590b4aaaba4a247697ac6d526b5df3ffd890383438b41ea2	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:24,cid:bccb87e4ae13b678371086dcc87b9dd308054bf8010121d201d86e6777bc9e21	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:25,cid:df969bcb51e7a3031a31660eff49de337c16b66886d289250e12ae6b3b2828f1	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:26,cid:c3c86b3f7c952bbc501af879d032b8d3d3a58a9b3d60dcebe2d04e3beac98a9e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:27,cid:0808ac0f1630f0dc87c8230b9b857125bd6b637ce913657dcc02b05da1ddeab1	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:28,cid:9e7df82ce9f9c511ffecdd6b9b056c266223c5fc2a3cfdf8136dd9f37b351eb3	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:29,cid:12a3dd67dff0d013b3d5d7c85022630c325d98be56632ce9d5a5287f334084dc	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:30,cid:bfbfa731d74ad37211a425974596a7f0371490d3968bacbbc97206ce2cc1afa7	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:31,cid:8ecd7d11ccaa3a9e5f89dbcc5ff604fa4ec77e5052e78a3776d350e457674a2c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:32,cid:29db974dc39fef7bce7730811842c8f27c12c8eb3c92e9b5c4b7986b4ee0ce20	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:33,cid:d7b16722e470d4ed621631893cc9ef78e07b326881825db23d46a0540ceb0be7	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:34,cid:897bce6c0ccfecfb8790b1863b156ba69c421a5dcecf1d6773caa6c226864590	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:35,cid:0989014a421486abd13cd274b58413826986c35fc50106106fc017a5edaa34b4	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:36,cid:c4ac48b397a0b0ff97e2e10484ad7269e9f5011ffd7537cf9bbf28fca2c54a75	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:37,cid:c8c283f6be09eedfc41ffcbaaeb56aaa30faac9986f80236993d419424bc8c61	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:38,cid:490b7f6f5bb54111a49263e74cf64e5869752cdd141f781a7bfd7476fe5410c3	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:39,cid:5a0031a910c3bf4ba6d3672957b4f4d0fa7b867ff23b38e62438ac8773b73e66	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:8b18dbb4b3f254a8,title:Visions Feat. Kieron Boothe,artist:Soccer96,album:Transmissions From Total Refreshment Centre,seconds=262.23,lufs=-11.85,gain=-2.15,real,col,path:music/0 chill/VA-Transmissions_From_Total_Refreshment_Centre-B003508702-CD-FLAC-2023-HOUND/01-soccer96-visions_feat._kieron_boothe.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=42,pv_off=90,bytes=506077,src_size=25760615,un_n=5,un_size=25760615,un_d,stage:previewed
+                  Preview,seq:0,head,preskip=312,cid:e46deefd53e9f440286d6152faad6f7a60c000a91cb8028d84b414b0e426c52c	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:768c90303df457e6d4126c42d058d9274a6816c0893689b966d7d9cc86802824	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:803c6a6fd348de324762218e3e3764292c13e3154f318da8a2fed4366e437314	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:f78c961fefc97b2d3bba8c5cdc32f5433893aeba9939084abc9a408d4b38a31b	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:9770512dd527f89334bfdf537e902fdfffd19ae4968753d5e1b8e37fc1522a09	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:e02643be78e5fcdd4811ecac0309b42afbf64cb10436a4c095176c2421153860	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:4,cid:640af11db5ac1c9df48ed7608cdea2ba7391614520b366be70413fee9f828614	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:5,cid:aa96c16e5dd2faa46d455b6be6bc8a030d62c9ae2c9d34c7a5bdc0226c590ff8	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:a892a52453f7b955a984a4cf6a454981e8ab932c51aed8acd22beea74478fe46	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:8c666b4ca67c4892b67f7e1f0dda6a63d990345f6dda7112f06f15b498cbfb12	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:6,cid:4c09ec7f0dc2e26c0564c5cbe4a94b846447cdc14834cad051483e8c090a5fe7	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:7,cid:1a77d4cfa01050a670aa906cec97093bedb76926ef45e883e485db2e05405aef	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:4,cid:4436b7c406b941fb9c4829f72d7d52d1bf6d073b1bd08a7f91920e415712d5cd	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:5,cid:6773bb62723ac38e1cdec0369710378c25602a310befa405dc5f54ad488d3032	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:6,cid:a047017085eceb61c5d41dad96c87dce7abd6fb0ef0241c85042dc236ce9b9d0	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:7,cid:c50fcb969727ac6d330b4f4901c35c9c0d327f58dec0ef3ca700de99819631c4	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:8,cid:b6064104be5adb9511c569bc7eca3d79a20907cce3a16445644ad3eea777b19d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:9,cid:9f21b195ab1e7221f7c163e81dbdff063c44b7abcdeee0d52cfeb7d49928396c	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:8,cid:294956986d00d880af34e19eddc26da66392a6bfe1123667742ad1ebad43120b	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:9,cid:110b7473ac3796b91e645108ebd6b3c436dfd95672f36b77511fc3ea44d2553b	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:10,cid:583b49c9b75a4c72c9bf982be760e9c5a71895e90132fdfd5580fe6bb8ce9c34	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:11,cid:555aa43b10fb599b456438c884698483ed0440b7935f7414aa12dad364f81f53	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:10,cid:cd349de7d3ed92f56df022a831b5441765d0fc669f4f9f33ce7699a5636f3f5d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:11,cid:e7df472d25ff7f1994d911608d6ec817ee1299b73c5b87d14ad2fc7bb535f672	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:12,cid:878aac2c5a3601c9ed92789588bd3c3588199df3790ec608bd1d823e459e6a5e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:13,cid:580f8d5d694d1d6da6206abcba1e1155bc8daa11f6b6369a0fe7c255720d40c2	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:14,cid:a08756022c430435cdfefeaf27bc25593a64c301437fa459cdbdded43a75aa05	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:15,cid:aa9c90a3315b645bdfce09599c86de31e3fe6b153ebf5290a36bec4a8db1ef49	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:12,cid:4c030de9a10d2c34a9091de6cb5e1c20ce8e74de17e73eed42842ed6a6437a34	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:13,cid:79ca4d8b55fffe25ef83b858eaf28e7b414fdd4bc7b4adc09c444e7607c6a417	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:14,cid:e0f4a2e585965af64782ff7a2aea88fb59fc23464e06d4513c82ac829310bedd	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:15,cid:5118d1f3a4d95a895c4ab32ccb93724715354fb5a859fac13740b5b2ecb00f29	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:16,cid:19ddbcb90f8cd67e20c602818b267bebbefb21311858e75e14d7a9ab953567ba	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:17,cid:e1b738586d88abbd6f9bca5214b4da4ecdfe1a3f596aab1eaa0cacd1740feec3	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:18,cid:d7a0d6993bae71da6bc60cc8acdd173c08182ac17461c11c81148495c8bd020c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:19,cid:4edfe4fa0a850dd8d4a3ba2cad2e8d8f9a770b6976d915ece83a02f940c38610	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:20,cid:b6dc14a18276b6269f575621176d0bd6ff9718dcfcdc7a0fe5902ee5f637343a	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:21,cid:1bb8fd0bad887887e60ecc6949e9abff04394550f7f928f3451de0a0462352cd	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:22,cid:d404777a504068c171fee5cac0169af21cbab50fc7e527bdc7d2140245545b6c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:23,cid:2a1cad666107161470c01a4c4df76de7868545984863c628ef9c3b023fdef840	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:24,cid:33da6f5b38dee4e3e9fce39ddd04cc3f9a1d473f688f00a09129570c50ec1b53	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:25,cid:1eeba69843a486b3b2a8806eaa9e46bc70151453c9e27fe1a7ccf431745b6cf0	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:26,cid:21a17786495cc24329d9c2c820caec482f2840d496bf3bfe00a6a69b148139c0	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:27,cid:da0ca36f213924c9d2f6ae8c8b4846a98da5108f4882f406d5e7f81d96583bbb	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:28,cid:c9bb4222eb7f76c2a6a928db6e0e235f417ebae38ec348d8b2e025c21e586092	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:29,cid:6f5cbf49aa5f3594189207b43b3507d358bfaf55d8f8bfe18b2d889260db6251	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:30,cid:4117bb59c183e3d0b64a1aac19112f113a73507e4d6e6853ebe2def2ce4073a3	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:31,cid:3d3faedc7c2a412dd7b08f53ac1734a461f94b55b788ce80775a322872e5bc4c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:32,cid:922eda2be32a2f8d8b1750133e493bff262758e7cc95d1f6b2666b662c6a4ec8	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:33,cid:88cce7d48c16229419f2f86022348f8e56a9103730cfd43790d7773c0163828e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:34,cid:4285419cb016e0985f11e45f56ea13e01c515caf8cbe7d0f0c70cb2ef2390888	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:35,cid:8194568f5990abb878dd530496ed8baa4593c5425ed8aa7cc3199b6fb26586a1	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:36,cid:eebfbd4f8139b4e3103953a9db6da782c667167fec6e8239ca6d782dd56b091f	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:37,cid:5d7c8142f6bba1bba632e7798e94885cb3cecd6ac5a892cfcc3f6f330ce62e24	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:38,cid:77fb37164456d1b52ef2fb410a28a9c3e296a3510cf3b8128ce22fe02c10dfba	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:39,cid:4e6b61c3be8a3fd0b1d8aae5061897c7381444ca8acf3b4e83d90cfb1c455e97	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:3f6fc8c9d00a24ff,title:Earwax,artist:Association / Pierre Courbois,album:Earwax,seconds=438.42,lufs=-13.63,gain=-0.99,capped,real,col,path:music/0 Jazz/0 free/[1970] Association - Earwax/B1 - Earwax.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=152,pv_off=68,bytes=503364,src_size=17549533,un_n=7,un_size=17549533,un_d,stage:husk
+                {"Record":1,"id":"509901b9810e0e09","title":"Mars, the God of War","artist":"The Beths","album":"Jump Rope Gazers","seconds":173.63,"lufs":-11.62,"gain":-2.38,"real":1,"col":1,"path":"music/0 gaze/The Beths/Jump Rope Gazers (2020)/The Beths - Jump Rope Gazers - 08 - Mars, the God of War.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":57,"pv_off":30,"bytes":537162,"src_size":20127312,"un_n":10,"un_size":20127312,"un_d":1,"stage":"husk"}
+                  Prehead,hseq:0,head,preskip=312,cid:c41371d59eb35200bf3343f5e5088e21aa9e13042512be6803bc8b6ea34f5ff3	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:6b3282119d8fe14df6d085458753bf15253f4264004194604280e2826a3a281e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:1fbd4fb1350926ae34fe0b055e0695aea9ced164dd2202d67d159ba784112d25	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:1ae97c27934eda84a202f86a14b8cabbe594f853a4d78d93cf1cc85abd38165c	{"ref":{"buf":"Uint8Array()"}}
+                {"Record":1,"id":"8597fb6c7a59c454","title":"P.T.","artist":"Pål Thowsen, Jon Christensen, Terje Rypdal & Arild Andersen","album":"No Time for Time","seconds":466.15,"lufs":-13.12,"gain":-1.05,"capped":1,"real":1,"col":1,"path":"music/0 Jazz/Pal Thowsen, Jon Christensen, Terje Rypdal & Arild Andersen - No Time for Time(2005)/06 - P.T..flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":140,"pv_off":94,"bytes":503085,"src_size":60162745,"un_n":9,"un_size":60162745,"un_d":1,"stage":"landing"}
+                  Preview,seq:0,head,preskip=312,cid:5ef2f7cdd4313b0eb65499124c05e387e655d656c1ff522f7ff05164db7a2b3e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:f91112c00d79f5528e58227e289c2182d66f533465105f219e2023e1944f06ec	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:70f1a665fd47db698d4f795144a1c3fa6a9cc6c42547eb05f436885027559f93	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:e0102221f4595b398308ccdab2d7153539d9156b06941418413f95a0ef45a242	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:c416fd15d1da83ff6f8e14111128d08f404288a627951ae2b23a533edd847410	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:e3cc252ed4133d8c4e692caf2e318780ea0f3cb82ff768702db7eb696247ee59	{"ref":{"buf":"Uint8Array()"}}
+              Cloud,page:19
+                Record,id:c2b596e649ec333b,title:Somewhere in the East,artist:George Benson,album:Beyond the Blue Horizon,seconds=368.6,lufs=-16.57,gain=0.95,capped,real,col,path:music/0 Jazz/George Benson - Beyond the Blue Horizon (1971) [FLAC]/05 Somewhere in the East.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=65,pv_off=120,bytes=541666,src_size=31351668,un_n=8,un_size=31351668,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:a8559ed66b816de854bffe82817158ab5d41b24a10ba92891d5dd7de49c58d4d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:befdccc0ab41d5ad97d53e112e6daec35712213426c20f1b4a7989cbbdc87f9c	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:03bfb9693f262b1b,title:Flow My Ray,artist:MV & EE,album:The Zebulon- Disc 1- Center of the World,seconds=294.65,lufs=-8.7,gain=-5.3,real,col,path:music/0 chill/MV EE/MV & EE - Disc 1- Center of the World (2012) [v0]/09 Flow My Ray.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=86,pv_off=62,bytes=518471,src_size=8885903,un_n=6,un_size=8885903,un_d,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:5caaaa852abf1655f409ef217e893a816ab5a5f94894098497b41f6cc47ddad6	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:680e100f9f7593f47a2bde443fa4d087bd08a652bf071b3936f8915c9ae86a65	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:cc05ef36d31b75f36e4a28d8f17bacf018a663eea3b6291222171580f04a3e57	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:2bef2e98001ab98bc9ced0ddb3f91afcea1b7b61e653c2968774dc6cc38d326d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:a577ee7827601bde162bca577644cb518cdc4b3b53ed9d797422b99d124d74f5	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:a3f81c2b7b78c55bb18a72dc0e787b4ddd5777abd1d9ecd6b3bf7d60ff372431	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:a1e4e8740ee829fb,title:Way Down Yonder In New Orleans,artist:Charlie Christian,album:Radioland 1939-1941,seconds=151.17,lufs=-23.59,gain=5.12,capped,real,col,path:music/0 Jazz/[2001] Charlie Christian - Radioland 1939-1941/05 Way Down Yonder In New Orleans.mp3,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=40,pv_off=36,bytes=506486,src_size=2420835,un_n=16,un_size=2420835,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:ea0602d3988ef8fe8fadf1c49bcd0bd3edb6667006202d42f9b75708ba4758b3	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:fc1240de7617019af0bd438cb3123bb783a828b00b1cb31599218a67810bc5f9	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:1ebb34aba6461be1af35537045f7e81fea7734ca6aded46d629fd417b0a6ed8d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:64302f148744557c680ac57c9ee2760fef82f11f6555590b19d9cdbfc58ada80	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:a69260edfb39874f,title:Raid The Radio,artist:General Elektriks,album:Good City For Dreamers (Deluxe Edition),seconds=229.08,lufs=-7.33,gain=-6.67,real,col,path:music/0 indie/General Elektriks - 2009 - Good City For Dreamers (Deluxe Edition) (Web)/02 - Raid The Radio.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=47,pv_off=68,bytes=472389,src_size=26800415,un_n=18,un_size=26800415,un_d,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:293b3d4296f3a87b61f472633d4ea4f54ce518356e21bbe9b41ab9dfa89545d0	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:f5c354b1c73213960bcb0d122c6f539bd072ee2370b1a0fa1a4c69bff82fe059	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:43fa6d17f39353d95126d8d254e437383db0b0d042b9b77eef56886d10ca22bc	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:7c6d176492f6b5afd01a8d1627431782454603175ae276aa034796483e06b40e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:fa1796daa4cd80e0715d12d19f9b491da057b2d82c7398e0289c11cd72e92b7e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:e49114ff2da254f850e9f10b0db4cfe844a385e3837111a1b8bada03edbf3147	{"ref":{"buf":"Uint8Array()"}}
+              Cloud,page:20
+                Record,id:97dc1f558c55a205,title:I Turn My Face To The Forest Floor (Original Mix),artist:Gravenhurst,album:Harbour Boat Trips 01 Copenhagen Mixed By Trentemoller,seconds=231.49,lufs=-10.42,gain=-3.58,real,col,path:music/0 chill/2009 - Harbour Boat Trips 01 Copenhagen Mixed By Trentemoller/02 - Gravenhurst - I Turn My Face To The Forest Floor (Original Mix).mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=38,pv_off=78,bytes=543878,src_size=9268016,un_n=20,un_size=9268016,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:6f3ccebaa476fbf4653db5f76df0ed0679a1260f138f7926655e0fc9f64a321f	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:d6829d775a30c1e94a9a82e771a4f88da46c5698704ba58273e27f7de8277449	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:ab01bb3e8274e3af448d3eb9c28d4f8f0e3aa875eb8af30cb36c9a644bd3339a	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:f7d32eac43b8706a4b95334d504e9e130e2d330d5b547cd227172bf989d87634	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:a42ac82cb471dcb1,title:Note Bleu,artist:Medeski Martin & Wood,album:Note Bleu: Best Of Blue Note Years 1998 - 2005,seconds=186.36,lufs=-10.3,gain=-3.7,real,col,path:music/0 Jazz/Medeski Martin & Wood/2006 - Note Bleu (Best of the Blue Note Years 1998-2005)/07. Note Bleu.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=30,pv_off=64,bytes=518697,src_size=19137237,un_n=15,un_size=19137237,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:29213e299764df3db3d81c82bffe3a1e8ef01f046edb38139e12632d368e3d7b	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:42a7230a538f7fe2cea31d48434ab7d4193a7b7da909adabd9868c360c14280c	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:3e15d84d11e88592,title:Sines,artist:Jakob,album:Sines,seconds=327.59,lufs=-8.69,gain=-5.31,real,col,path:music/0 gaze/Jakob/Jakob - 2014 - Sines/07. Sines.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=56,pv_off=108,bytes=502743,src_size=24395407,un_n=7,un_size=24395407,un_d,stage:husk
+                Record,id:b8f22e6cd5368bf9,title:Bhaja Govindam,artist:Alice Coltrane,album:Transcendence,seconds=275.02,lufs=-14.34,gain=0.17,capped,real,col,path:music/0 Jazz/Alice Coltrane/Transcendence/06 Bhaja Govindam.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=78,pv_off=60,bytes=531840,src_size=11072665,un_n=7,un_size=11072665,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:742c6cd92c47d9bd35b6db0111f83cb7cb3ccf191794481642f3a03e1a19996e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:135a23339162cf4a13b8f6609e868e983d92d5fa160c8e0ed921bdfc8496f3a9	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:fa2e9aad89b65a5a,title:Captura De Lobos,artist:Los Orientales De Paramonga,album:Cumbia Beat Vol. 1,seconds=167.2,lufs=-9.54,gain=-4.46,real,col,path:music/0 Cumbia/Cumbia Beat Vol. 1/18 Los Orientales de Paramonga- Captura De Lobos.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=50,pv_off=34,bytes=555627,src_size=5638036,un_n=50,un_size=11865608,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:1c4e0fbee9b68bba69aef2c1fe32c73ab4482b1f2ab137b298492aadbb14c9eb	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:b2af91a29aacfc3f461515e3d2c7c5a5f0f6381bbcb5c3bfd3c9f8cd1d429ef0	{"ref":{"buf":"Uint8Array()"}}
+              Cloud,page:21
+                Record,id:abd237c60af43631,title:Cabalgando Con Ella,artist:Los Mirlos,album:Cumbia Beat Vol. 1 (Experimental Guitar-Driven Tropical Sounds From Perú 1966/1976),seconds=191.15,lufs=-10.4,gain=-3.6,real,col,path:music/0 Cumbia/Cumbia Beat Vol. 1/Cumbia Beat Vol. 1-05-Los Mirlos-Cabalgando Con Ella.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=38,pv_off=58,bytes=610979,src_size=6227572,un_n=50,un_size=11865608,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:0cf0c3ef5a9195db52a3ca24986af0577c7f0abaabb39f11386a42019e8389cd	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:a3709ba46df4f609b29e54d2db7911112339ef3cea53f982bd904e052ea19e0d	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:b6c9727d7c3bca08,title:What Tomorrow Brings,artist:Fluxion,album:Haze,seconds=511.91,lufs=-11.04,gain=-2.96,real,col,path:0 electro/0 house/FLUXION/Fluxion - 2025 - Haze (Vibrant Music)/09. What Tomorrow Brings.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=150,pv_off=106,bytes=581720,src_size=44196589,un_n=10,un_size=44196589,un_d,stage:husk
+                {"Record":1,"id":"1b83003e64e90384","title":"Jupiter","artist":"Sufjan Stevens, Nico Muhly, Bryce Dessner, James McAlister","album":"Planetarium","seconds":430.39,"lufs":-14.24,"gain":-0.8,"capped":1,"real":1,"col":1,"path":"music/0 chill/Sufjan_Stevens,_Nico_Muhly,_Bryce_Dessner,_James_McAlister/Planetarium/02 Jupiter.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":122,"pv_off":94,"bytes":510380,"src_size":42054532,"un_n":17,"un_size":42054532,"un_d":1,"stage":"landing"}
+                  Prehead,hseq:0,head,preskip=312,cid:075456b1d2cede585cf68542a79c5ac1ec54989e1500790cf67d24faadfdd86c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:855b7b281b81510f4267788a9d612371a823c2af09ebc216524b1051eabf6364	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:0,head,preskip=312,cid:bfffbfea586538c978783a4ec528727a4dfd81e9bd824e10b7a27a44e70dc50b	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:3526d65fbde29592ec01555ed469876c6ec3047793289dacfbff1a603aad5a9d	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:ae9def6f14190b58d39275ed2505804b349575f528d99649171023107ed40d47	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:c71e466a6582deb919a3e3a689300e19cae9c7def274c79fd57249bf647f430a	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:7c5b616176e9f01ca2a1123cfdd44314a2bc07244c48d5835aed871f7793ba4d	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:090848edccb76c38560c9ece62cec783084012e04fe9e6d7c744185d05753343	{"ref":{"buf":"Uint8Array()"}}
+                {"Record":1,"id":"40801afc20ca4470","title":"Moon Tune","artist":"Raoul Björkenheim, Bill Laswell & Morgan Ågren","album":"Blixt","seconds":130.21,"lufs":-8.33,"gain":-5.67,"real":1,"col":1,"path":"music/0 Jazz/Raoul Bjorkenheim, Bill Laswell & Morgan Ågren/2011 - Blixt/02 - Moon Tune.mp3","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":22,"pv_off":44,"bytes":491107,"src_size":5272725,"un_n":10,"un_size":5272725,"un_d":1,"stage":"husk"}
+              Cloud,page:22
+                Record,id:afa6df31a720f760,title:Sleep Apnea,artist:Beach Fossils,album:Clash The Truth,seconds=146.37,lufs=-10.39,gain=-3.61,real,col,path:music/0 indie/Beach Fossils/Clash The Truth (13)/03 Sleep Apnea.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=36,pv_off=38,bytes=521654,src_size=6148121,un_n=14,un_size=6148121,un_d,stage:landing
+                  Prehead,hseq:0,head,preskip=312,cid:f493b1e9245465fbb555528a8a636673f5727373f437a578903d3513d8283dd2	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:5a6cba7feb5ce66472722f6b01cf449b1d07173eb81a4e853a46866095ae165a	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:0,head,preskip=312,cid:dd9f91e58b474887991df80e7b1105e5e0e7d2d2edbbf48ca4c51ef1b30a701d	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:4b06a507b9c88d7e1fb3ec5c282b95511e46696b0e2935a9537c52a46c30a58f	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:bccfdb6c7494424e6ff6537248efc632344470b8aa4afbf2bb3c36c255359222	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:fcae78411f33b52e73fc51e255ce0fa1d048a2143231ea9c9f347205c604f9e0	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:100df2b7de4b91930c500a0c93ca396291dedcdbed10a85d46ccb13885d12d32	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:dadec0009edce7bfc819381eeababbb35f8b8eb39023db889f1bc2b9abcac42f	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:e7edefbbf2d70b13,title:Suspended In Gaffa,artist:Kate Bush,album:The Dreaming,seconds=234.55,lufs=-15.14,gain=1.14,real,col,path:music/0 art rock/Kate Bush/[1982] The Dreaming/04 Suspended In Gaffa.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=64,pv_off=54,bytes=527858,src_size=24298058,un_n=10,un_size=24298058,un_d,stage:husk
+                {"Record":1,"id":"adacbfd06cb7ee17","title":"The Natives Are Restless Tonight","artist":"Horace Silver","album":"Song for My Father","seconds":372.69,"lufs":-14.55,"gain":-0.77,"capped":1,"real":1,"col":1,"path":"music/0 Jazz/Horace Silver/Horace Silver - Song For My Father (1964, 2004, Japan-CD, FLAC)/02 - The Natives Are Restless Tonight.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":57,"pv_off":130,"bytes":522822,"src_size":41661819,"un_n":6,"un_size":41661819,"un_d":1,"stage":"landing"}
+                  Preview,seq:0,head,preskip=312,cid:69b863098255280c6542eaaeb2b7627a5443437fbb9fcd274c0b94ca35af2a2e	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:777aa9b129a1fee6ffa6888340ebb08e6895335b3754110bcc8699cb9e9b7486	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:9085cc81769491c84f23c215d62b0272c1da2af956ff887ecda02ba838573d7d	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:9fee3ded7982d89e5bce705c3a95da3b6889f08b7463796e6efac04decdbf861	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:09b848dbc8424089f5c00a433e50716f70b1ad1dc1ef2e762dbf5e1160505101	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:eacd46c21db4127355f282276c86af64049bf1eb2521552464661e1a3240fec6	{"ref":{"buf":"Uint8Array()"}}
+                {"Record":1,"id":"7d45cc562fd76a64","title":"It's All A Memory","artist":"Deserta","album":"Every Moment, Everything You Need","seconds":322.4,"lufs":-5.97,"gain":-8.03,"real":1,"col":1,"path":"music/0 chill/Deserta/Every Moment, Everything You Need (2022)/05 - It's All A Memory.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":104,"pv_off":58,"bytes":507410,"src_size":40592576,"un_n":8,"un_size":40592576,"un_d":1,"stage":"husk"}
+              Cloud,page:23
+                {"Record":1,"id":"f76d3dd8e62ab8bc","title":"sun ra-atlantis-06-atlantis","artist":"sun ra, astro-infinity orchestra","album":"sun ra-atlantis","seconds":1311.97,"lufs":-26.88,"gain":7.36,"capped":1,"real":1,"col":1,"path":"music/0 Jazz/sun ra - Atlantis/sun_ra-atlantis-06-atlantis.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":278,"pv_off":378,"bytes":424376,"src_size":61180837,"un_n":6,"un_size":61180837,"un_d":1,"stage":"husk"}
+                  Prehead,hseq:0,head,preskip=312,cid:fad1227b24878c78edf34f839f62024a3f82cdef4eb02966ac7f52b3d0060112	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:d17c71059b645e0cf12d466e4d14882f646fbaa1017f838336c4c34c791eaa4c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:342d2e478999c19ecd0e5789276f7783703a42403e7499dbf446733cd9377bdb	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:56ebcc076bbe531546e86103b48dd0ba38d562a7979237f1a2ae620c7c347060	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:6f45b6a1e798e4f4,title:Harmony Ascendant,artist:ponyphonic,album:Harmony Ascendant,seconds=384.68,lufs=-12.31,gain=-1.69,real,col,path:0 maybes/ponyphonic/Harmony Ascendant/01. Harmony Ascendant.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=127,pv_off=66,bytes=526796,src_size=11922998,un_n,un_size=11922998,un_d,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:40b7b9e3ffa6555a11cf2b4914e52ef16ba7fab64bba94d04a72754100125548	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:62a66cd224e4ab3c7ae144452e369fdde87e09fdd36dc847c2e3bc99a67ae774	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:865bc11d8ea09f1bf5ea7f6ef8b464103b3f764aaf5d0bc88d725bb9e7587e3f	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:dc55419c2939e63c271d47376473e9604f1775cfcd434270a109c6e76d926e2e	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:97c1164c13845d44cd98239fded8dcdc812fc78cefe413c1965a902393d17629	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:d9abbb5fef08c1b0babe20169a480731decf7c27ab1b8fd80f780c4a46d54b2d	{"ref":{"buf":"Uint8Array()"}}
+                {"Record":1,"id":"313b8fb220d29d50","title":"Adios Ayer [Paul Daley Mix]","artist":"Jose Padilla","album":"The Green Room - Summer 2005","seconds":290.04,"lufs":-13.6,"gain":-0.43,"capped":1,"real":1,"col":1,"path":"music/0 chill/green room, the ~ summer (2005)/11.  Jose Padilla - Adios Ayer [Paul Daley Mix].Mp3","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":92,"pv_off":54,"bytes":559528,"src_size":6990263,"un_n":14,"un_size":6990263,"un_d":1,"stage":"husk"}
+                  Prehead,hseq:0,head,preskip=312,cid:1fdf4db4fb116a3a95203b0e742cb08f118ad41deced361a3f79d51495f25073	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:e4944ba88f2cafea95a6923a89f33317d42abc0c1665f6be399886f7bbb716da	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:f1a4556ebe4b50cf7ac7a32ae88fcc5a94372d55203d501b6e2f2ea9a5e9b707	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:83ebc112e8fc06d09abe7b63ed88c73c3c42448e746ea8e766e011bca237931d	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:ab21b458c8da10d8,title:Dream Baby Dream,artist:Neneh Cherry & The Thing,album:The Cherry Thing,seconds=504.56,lufs=-9.49,gain=-4.51,real,col,path:music/0 Jazz/Neneh Cherry and The Thing -The Cherry Thing (2012 - Japan Edition)/02 - Neneh Cherry & The Thing - Dream Baby Dream.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=151,pv_off=102,bytes=537129,src_size=53098335,un_n=9,un_size=53098335,un_d,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:b6443c06c5bfca4810c66690daef322e9b63870f35ab2c737f272cd0fcafc7ef	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:2220ed12603c7e95061649f54179f8a1e8b132f64086a3a8efdb7f7a1289fa80	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:374671a65e0940f9879d3a7f0d26b14fd251172d6f6641b9f50417b2b8f01be3	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:688b1eea3d032e4407452fed0b95ee97c78c79ce050af72c15896366722e5346	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:a2271d69793ae1bfbb1ef26482fee2c4d85518a4c1ab17f35cc8d15cd6f69ab7	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:b32a27f903e11cccecdd4d547a9ee9d03e789fbb12d196290ef33ffa2b544a46	{"ref":{"buf":"Uint8Array()"}}
+              Cloud,page:24
+                {"Record":1,"id":"f74cc19a77ddd297","title":"Crushing","artist":"lovesliescrushing","album":"Bloweyelashwish","seconds":214.07,"lufs":-13.6,"gain":-0.4,"real":1,"col":1,"path":"music/0 gaze/loveliescrushing/lovesliescrushing - bloweyelashwish [CD, PRO 44]/15. Crushing.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":66,"pv_off":42,"bytes":495265,"src_size":23269238,"un_n":20,"un_size":23269238,"un_d":1,"stage":"landing"}
+                  Preview,seq:0,head,preskip=312,cid:355caff5f071880076438b9bb2b4528fae667577f89fe034e611955d55b85362	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:27ad8f2c86904c6dbdc9a6a3ea28c1fed9ec5041e2827a5bbcdaceb3914301ba	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:689dd4277fff0536de2b235226685ec52217154facf24d72861dd12d27ea3296	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:5bcb8e18da8c7493db0eda288fe8a55431219b3871952cd22ea3bf95999f9a70	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:3678743fb9039e6219b78ce56a0c8a1cbe3cf94ea64637d2812283ec750468e4	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:651d292c81b2bb5c650363a09240be3a7af87c34af510b18fcfe6ed53cbc0b10	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:067510b99c5f6ce0,title:The Thrill Is Gone,artist:Diamanda Galás,album:All the Way,seconds=439.61,lufs=-19.31,gain=-0.98,capped,real,col,path:music/0 Jazz/Diamanda Galás/2017 - All the Way/03 - The Thrill Is Gone.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=150,pv_off=70,bytes=531425,src_size=37199206,un_n=6,un_size=37199206,un_d,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:b06eef35b895d1a2393a6bc42549f5946715c7ce61d4ab64c43c799532d02ab0	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:ad8d9c4aa4784c80ffc86ad04e7e46a54264cf5a4f46fa5a47015a184fc94ff4	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:1d392e9d9f634cf9f884cedcec82598f2932d75d7283770430ece141c493f038	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:038c2b08e488d63023514a7874a2ec48fc2f5317189d9c556712b169c5dff178	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:586a2a835249687643dbf32d3b9385f4a22ec7b8196e96151a91a21fcc94b137	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:9d8b992575d9e74dda8aade83892ccfb151371626c58d75a4370e38852aaaf81	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:ddd7ff37d9feb4c6,title:God Make Me Funky,artist:The Headhunters,album:Survival Of The Fittest,seconds=580.53,lufs=-11.3,gain=-2.7,real,col,path:music/0 Jazz/The Headhunters/Survival of the fittest (1975) [FLAC]/01 - God Make Me Funky.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=155,pv_off=136,bytes=570442,src_size=64080446,un_n=6,un_size=64080446,un_d,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:5e3b6722c21986b0fe9b19e88e01a44beba621d45dd54ae01a763d5845135f84	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:9329ce312823a40861778c26fc1b9e5f43b4dbc0589f2b2434779b6496fd59d6	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:cb789fbfb3afd1fc5f28797609b6cb6a905cb2c9737f0aea3f7704d434e977c0	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:f6109414f4f83476fcb9335224e9fa0e79735af9683ee2428d707662af552bb6	{"ref":{"buf":"Uint8Array()"}}
+              Cloud,page:25
+                Record,id:769ed42033b6b270,title:Intro (By Ece Dagistan),artist:Ece Dagistan; Orient Expressions,album:Istanbul 1:26 A.M.,seconds=121.63,lufs=-13.32,gain=-0.68,real,col,path:music/0 chill/Orient Expressions Istanbul 1-26 A.M/01 Intro (By Ece Dagistan).mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=29,pv_off=32,bytes=601625,src_size=4869520,un_n=11,un_size=4869520,un_d,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:e74173b31f5eb568f0f4627945dcaa569c85e9191c72190ee98ea54ef2d9d3c2	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:41aa7c48409a241c5673f58db98617b6c39b676a51e49ec851a34ae3552d8916	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:5cd6a826ea3aa4ba542f792ba098b6696b3bcb5a4caf0e594088c6f092f7bf70	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:f956e3a9006c81783180e51158a4b253ebe00e8bc690f8614a6c8c52c5d0ca16	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:6b678471463fa849a9d2307d560e93088ab88543102b901b48057f8fe5219191	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:d37da30766b23675943784460f9c68d3ce45e2234bdcd37c7c88471de3d29512	{"ref":{"buf":"Uint8Array()"}}
+                {"Record":1,"id":"b6f8bf08ce17e08e","title":"Here It Is","artist":"Kirk Lightsey","album":"Habiba","seconds":713.61,"lufs":-11.47,"gain":-2.53,"real":1,"col":1,"path":"music/0 Jazz/Kirk Lightsey, Rudolph Johnson/Habiba [161166208] [2020]/02 - Kirk Lightsey, Rudolph Johnson - Here It Is.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":141,"pv_off":216,"bytes":510130,"src_size":69822537,"un_n":3,"un_size":69822537,"un_d":1,"stage":"husk"}
+                {"Record":1,"id":"d231d56c1ea13b95","title":"golden hair","artist":"barrett, syd","album":"the madcap laughs [1970]","seconds":121.83,"lufs":-18.43,"gain":3.33,"capped":1,"real":1,"col":1,"path":"music/0 indie/Syd Barrett/barrett, syd.  [1970] the madcap laughs +/barrett, syd.  the madcap laughs [1970].  08.  golden hair.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":33,"pv_off":28,"bytes":517374,"src_size":11289581,"un_n":19,"un_size":11289581,"un_d":1,"stage":"husk"}
+                  Prehead,hseq:0,head,preskip=312,cid:a05e1b11445492385f8d853d5ed90542a100512f82e4195a25af75dae62ff139	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:71cd4afb91ddf8c163ea6fec82808b3e7f5faaf35dc97f76cb9a2e4b6ff616c0	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:3785b1317323c00b6f3e9d5ba2ecb68ce049f0211159e061827cd2b86df7a0cb	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:5f0671c2726cd463cec9c39af4b13e7b56b98dad7979b7259ccb20c9aa0fe0b0	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:b42e0a0d5a388d0f,title:La Papita,artist:El Monje Loco,album:Cumbia Beat Vol. 2,seconds=153.48,lufs=-10.52,gain=-3.48,real,col,path:0 Cumbia/VA - Cumbia Beat Vol. 2 (2013) [FLAC]/12 El Monje Loco - La Papita.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=27,pv_off=50,bytes=574211,src_size=17212676,un_n=33,un_size=17212676,un_d,stage:husk
+              Cloud,page:26
+                Record,id:7a3f66754d5f2b24,title:Road Rage Breakdown,artist:Blockhead,album:Music By Cavelight,seconds=254.76,lufs=-10.83,gain=-3.17,real,col,path:music/0 chill/Blockhead - Music by Cavelight [FLAC] (2004)/06 - Road Rage Breakdown.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=40,pv_off=88,bytes=622784,src_size=22345856,un_n,un_size=22345856,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:078e2901334a7fd92fe1b4f3c571365b64a28e24d491d5a9ee325601eebceaf7	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:ce73720fbca9e8d78664fb8afc47d734bbeed08b15585c24b3bdb43b7182b633	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:370d870166ffe45f,title:Query E,artist:Fourier Four,seconds=68,lufs=-8.25,gain=-5.75,real,col,path:testsounds/Fourier Four - Query E.wav,sr=48000,br=128000,seg_secs=2,nch,preview=16,total=24,pv_off=10,bytes=667565,src_size=1088104,un_n,un_size=1088104,stage:husk
+                  Prehead,hseq:0,head,preskip=312,cid:72aa875d86379ba1157cd2a7f7249370a3424d6ecc4184868e59ab66cc521c76	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:0671fb9378ee9316301e95cd4001a474bce8f33b88014c8e752aa7a04e1a919b	{"ref":{"buf":"Uint8Array()"}}
+                Record,id:068fe2291e59a5f9,title:Tetraktys,artist:Homunculus Res,album:andiamo in giro di notte e ci consumiamo nel fuoco,seconds=212.95,lufs=-11.06,gain=-2.94,real,col,path:music/0 Jazz/0 prog/Homunculus Res/Homunculus Res - 2020 - Andiamo in giro di notte e ci consumiamo nel fuoco [Web]/09 - Tetraktys.flac,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=69,pv_off=38,bytes=570110,src_size=24804108,un_n,un_size=24804108,stage:pulling
+                  Prehead,hseq:0,head,preskip=312,cid:d2b02db3f54c4ffb74fcb257a337a81d928a3f7ca7ce48906d16c4622f3d6fe9	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:b2967a60b64b75fda7b34b09c7335f75994369378538d0c68fa4c6bb83d41e18	{"ref":{"buf":"Uint8Array()"}}
+                {"Record":1,"id":"8b488f79d39d5220","title":"Black Coffee (Original Mix)","artist":"Marga Sol","album":"Coffee Chill Time, Vol. 3 (Smooth Jazz Music)","seconds":317.33,"lufs":-10.68,"gain":-3.32,"real":1,"col":1,"path":"music/0 chill/VA - Coffee Chill Time, Vol. 3 (Smooth Jazz Music) [2017]  +flac/17. Marga Sol - Black Coffee (Original Mix).flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":61,"pv_off":98,"bytes":567489,"src_size":34453527,"un_n":2,"un_size":60316100,"stage":"husk"}
+                {"Record":1,"id":"dad1c5a2a8bd7b4b","title":"Let Him Love You (Original Mix)","artist":"St Project","album":"Coffee Chill Time, Vol. 3 (Smooth Jazz Music)","seconds":224.02,"lufs":-12.1,"gain":-1.9,"real":1,"col":1,"path":"music/0 chill/VA - Coffee Chill Time, Vol. 3 (Smooth Jazz Music) [2017]  +flac/16. St Project - Let Him Love You (Original Mix).flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":59,"pv_off":54,"bytes":553537,"src_size":25862573,"un_n":2,"un_size":60316100,"stage":"landing"}
+                  Prehead,hseq:0,head,preskip=312,cid:e209a2fe1447596e8464d5428577d86c69a75bbe2107404c98744338faf366f9	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:245d076694bcb5702b15ed4c838fe4261be1a1bae4ee87b5e7d3ee4af1f2bdc4	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:0,head,preskip=312,cid:a92cf43ed0e45a3402cf223b3eaf3ed01f0e59d37a5c816d0f9b2a8581719670	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:3672f4e5bb7306fc94ae668980341df8f06d23c5c8019b979843cfa6e14ff8dd	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:8370f1274b1a7539a8baee0cad40c95164ceca90601964db8331ca00dbda3bb4	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:e3848f36612d62a5cf9c1a15461d1f8f62e5ca80e2eb06a06b66a31ada2cc9ef	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:2,cid:8fa0934879b33e40fb3c10612cec0d88cb7a56c95845fbd4d698b87254d9876c	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:3,cid:c52776426506b23de3e9385e927ae1a75478e2cd59a6f7c5c3c015809591822a	{"ref":{"buf":"Uint8Array()"}}
+              Cloud,page:27
+                {"Record":1,"id":"c86c7c3ebb66a767","title":"If I Could","artist":"Pat Metheny Group","album":"First Circle","seconds":412.53,"lufs":-25.36,"gain":8.73,"capped":1,"real":1,"col":1,"path":"music/0 Jazz/Pat Metheny Group - First Circle (ECM 1278, Germany, 24-96)/A4 If I Could.flac","sr":48000,"br":128000,"seg_secs":2,"nch":2,"preview":16,"total":99,"pv_off":108,"bytes":525097,"src_size":128727964,"un_n":1,"un_size":128727964,"stage":"husk"}
+                Record,id:b77bd3140f36449f,title:Tayyara Warak,artist:Charif Megarbane,album:Tayyara Warak,seconds=168.1,lufs=-10.33,gain=-3.67,real,col,path:music/0 Arabia/HABIBI 0XX - Charif Megarbane - Tayyara Warak ep [WEB 2022]/01. Tayyara Warak.mp3,sr=48000,br=128000,seg_secs=2,nch=2,preview=16,total=59,pv_off=26,bytes=475279,src_size=6782976,stage:landing
+                  Preview,seq:0,head,preskip=312,cid:64950a56db75e129d0b753239b880cd23921b9ad9264513df437303705d08410	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:1,cid:95f464e481add7dce12ff5f24662cd8d8922667e0ad9212133d146be89e943e7	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:2,cid:bfef2b8135e7dd705dcf7b0bb930bd461919eac43866eaa23b811a1aabfaad2c	{"ref":{"buf":"Uint8Array()"}}
+                  Preview,seq:3,cid:737dcb036f5a122e815a30bc19e4f05031c9e6a0647e79a57ae1ea06603f6360	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:0,head,preskip=312,cid:defdf688189653484288de817de83469a3ccd55c8376982373f763e73b103153	{"ref":{"buf":"Uint8Array()"}}
+                  Prehead,hseq:1,cid:ce656265e7cca0348bc830798d1ac28128df0da7a1cbda9ede48c6437f34b29c	{"ref":{"buf":"Uint8Array()"}}
+        Machine,self:eed831f1,friendly:Grav
         req:stoker_wait,finished
         req:witness,eternal,ok
+        Hauls,dontSnap,n_all:51
