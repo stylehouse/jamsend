@@ -9,6 +9,27 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
 
 ## 0. What to get on with next
 
+✅ **BOOT FIXED 2026-09-05 — the daemon had been dead since 2026-08-30, and both faults were "near-copy drift".**
+ `scripts/daemon/daemon.vite.config.mjs` calls itself *"a near-copy of scripts/Story_cli.vitest.config.mjs"*, and
+  the daemon is a plain node process that does NOT run `Story_cli.setup.ts` — so anything that file stubs, the
+   daemon needs independently. Two gaps, the second hidden behind the first:
+ 1. **`$app/navigation` unresolvable** → `uncaughtException` → exit 5. It is a SvelteKit VIRTUAL module and both
+    configs load bare `svelte()` (no sveltekit plugin), so any `.svelte` importing it fails to TRANSFORM. The
+     daemon reaches two of them: `Daemonic → Ghost → Cyto → Cytui → glass_kinds → DoorFace → InvitePanel` (and
+      `LinkFace → LinkDevice`), where `replaceState` rewrites the `?Iz`/`?I` bar. Fixed by aliasing it to the
+       ALREADY-EXISTING `scripts/app_navigation_stub.mjs` — which `Story_cli.vitest.config.mjs` gained in the very
+        commit (`431f04df`) that introduced the imports, while this config was missed.
+ 2. **`window.matchMedia` missing** → `svelte/motion` builds a `prefers-reduced-motion` MediaQuery AT MODULE LOAD
+    (`Cellui` ← `Cello`), so merely importing `Spring`/`Tween` took the boot down. jsdom omits it, so main.ts's
+     copy-jsdom-globals loop could not bring it in either. Stubbed beside the existing rAF stubs in `main.ts`.
+ **Proof:** `B=MusuHeard SECS=40 node scripts/daemon/run.mjs` → identity minted, world up, `36 ghost(s) live`,
+  collection reachable via testsounds, `auto_reset_story → MusuHeard` + `story_analysis: the_steps=9` before the
+   timer. A BARE run exits 4 (*"no boot shape given"*) — that is the designed guard, not a failure.
+ ⚠ Two things the smoke run surfaced that are NOT this fix and stand unexplained: a startup `⚠ WEDGE 13s by
+  H:Mundo think` (inside `beliefs → attend → Aw Lies/Lies`) that then recovers, and `🪪… account mirror waiting —
+   %Identity … has no .c.keys`. Worth a look on a real box.
+
+
 > **🔴 LIVE 2026-08-21 — "daemon drops every frame from a fresh friend: `no Pier … DROPPED`". It is
 >  NOT a code regression; it is a two-STORE identity split. THE HANDSHAKE WORKS.**
 >

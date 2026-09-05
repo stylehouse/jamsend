@@ -189,6 +189,23 @@ for (const k of Object.getOwnPropertyNames(win)) {
 //     out here, which is exactly what a daemon wants.  Defining indexedDB would switch it back on.
 ;(globalThis as any).requestAnimationFrame ||= (cb: any) => setTimeout(() => cb(Date.now()), 16)
 ;(globalThis as any).cancelAnimationFrame  ||= (id: any) => clearTimeout(id)
+// matchMedia — jsdom omits it, so the copy loop above cannot bring it in.  svelte/motion builds a
+//  `prefers-reduced-motion` MediaQuery AT MODULE LOAD, so merely IMPORTING Spring/Tween throws
+//   `window.matchMedia is not a function` and takes the whole boot down (Cellui's Pixar swap does; the
+//    ghost tree reaches it through Cello.svelte).  matches:false = "no reduced motion", the right
+//     headless default; MediaQuery reads `.matches` and subscribes, so both must exist.  Same stub and
+//      same reason as Story_cli.setup.ts — which the daemon does not run, being a plain node process.
+;(globalThis as any).matchMedia ||= (query: string) => ({
+    matches: false,
+    media: String(query ?? ''),
+    onchange: null,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},        // deprecated alias some code still calls
+    removeListener() {},
+    dispatchEvent() { return false },
+})
+if (!win.matchMedia) win.matchMedia = (globalThis as any).matchMedia
 
 // RELATIVE FETCH.  jsdom gives us `location`, but node's global fetch is node's, and it rejects a
 //  relative URL outright: `TypeError: Failed to parse URL from /log?stream=Startup-anon` (seen for

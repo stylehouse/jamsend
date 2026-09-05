@@ -1,22 +1,42 @@
 [Unit]
-Description=Wait for Decrypted Music and Bind Mount
-After=local-fs.target
+Description=Keep the decrypted music bind-mounted (and re-verify it forever)
+After=local-fs.target network-online.target
+Wants=network-online.target
+
+# WHY THIS IS A LOOP AND NOT A ONESHOT (2026-09-05).  The first cut was Type=oneshot + RemainAfterExit: it waited
+#  ONCE for /mnt/music to fill, bound it under /mnt/jamsend-music, exited 0 and sat "active (exited)" for good.
+#   systemd never re-runs a succeeded oneshot, and Restart= does not apply to one — so the day /mnt/music
+#    (sshfs / the decrypted volume) dropped and came back, the bind under /mnt/jamsend-music went stale-empty,
+#     nothing noticed, and the daemon booted with "🎵 no music the meander can reach under /music" — its 30-record
+#      shelf was stash-restored, the originals gone, and every SoundPooling press refused `bin_read miss`.  The
+#       owner had to restart this unit BY HAND, then the daemon.  A gate that opens once is not a watchdog.
+#  So: Type=simple, Restart=always, and the body never returns — it re-verifies every 15s that the bind still
+#   shows files, re-binds when it does not, and restarts the jamserve container after a re-bind (a container
+#    started against the old bind keeps its stale mount view; `restart: always` alone never re-reads it).
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
-# < some day just do this, is on ubuntu24 but not debian13:
-#mount --bind -o ro /mnt/music /mnt/jamsend-music; \
+Type=simple
+Restart=always
+RestartSec=5
 ExecStart=/bin/bash -c ' \
-    until [ "$(ls -A /mnt/music 2>/dev/null)" ]; do \
-        echo "Waiting for /mnt/music to be decrypted and populated..."; \
-        sleep 5; \
-    done; \
-    echo "/mnt/music is ready. Performing bind mounts..."; \
-    mount --bind /mnt/music /mnt/jamsend-music; \
-    mount -o remount,bind,ro /mnt/jamsend-music; \
-    mount --bind /mnt/jamsend-appcache /mnt/jamsend-music/.jamsend; \
-    echo "Mounts complete."'
+    ready() { [ "$(ls -A "$1" 2>/dev/null)" ]; }; \
+    bind() { \
+        umount /mnt/jamsend-music/.jamsend 2>/dev/null; umount /mnt/jamsend-music 2>/dev/null; \
+        mount --bind /mnt/music /mnt/jamsend-music && \
+        mount -o remount,bind,ro /mnt/jamsend-music && \
+        mount --bind /mnt/jamsend-appcache /mnt/jamsend-music/.jamsend && \
+        echo "bind mounts (re)made"; }; \
+    restart_daemon() { \
+        c=$(docker ps -q -f name=jamserve 2>/dev/null | head -1); \
+        [ -n "$c" ] && { echo "restarting jamserve $c onto the fresh bind"; docker restart "$c" >/dev/null 2>&1; }; }; \
+    while :; do \
+        if ! ready /mnt/music; then echo "waiting for /mnt/music to be decrypted and populated..."; sleep 5; continue; fi; \
+        if ! ready /mnt/jamsend-music || ! mountpoint -q /mnt/jamsend-music; then \
+            echo "/mnt/jamsend-music is empty or unmounted while /mnt/music is ready — re-binding"; \
+            bind && restart_daemon; \
+        fi; \
+        sleep 15; \
+    done'
 ExecStop=/bin/bash -c ' \
     umount /mnt/jamsend-music/.jamsend; \
     umount /mnt/jamsend-music'

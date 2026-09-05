@@ -499,6 +499,8 @@ Swarm_crew_tidy(ident):
         if (backed(pub)) { continue }
         if (p.o({ Grant: 'Crew' })[0]) { continue }
         peering.drop(p); n = n + 1
+        // …AND FROM THE STASH, or it is back next boot (see Swarm_pier_unstash).  Live-self-guarded there.
+        try { this.Swarm_pier_unstash(ident, pub) } catch (e) {}
         console.log('🦑 🧹 link pier retired — ' + pub.slice(0, 8) + (p.sc.friendly ? ' (' + String(p.sc.friendly) + ')' : '') + ' — no crew row backs the bond')
     }
     if (n) { try { this.Swarm_account_settle(ident, 'crew_tidy') } catch (e) {} }
@@ -1786,7 +1788,13 @@ Swarm_arm(w):
         if (['pier_hello', 'pier_accept', 'pier_confirm', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'crew'].includes(frame.header.type)) this.Swarm_account_settle(ident, frame.header.type)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'roster', 'crew', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held']) w.c.on[kind] = hear
+    // …AND THE REACH PAIR (2026-09-05, eed→daemon measured live).  Swarm_reach_road grew a FRIEND arm on
+    //  09-03 ("a friend I share with may book a pool fill on me too") — but a friend's frame arrives through
+    //   THIS funnel, keyed by header.type, and neither kind was ever registered here: the sibling road
+    //    (the station funnel above, header.type === 'reach') was the only one that heard.  So eed re-sent the
+    //     same six seqs to the daemon every 5s for an hour and the daemon's 5600s log held ZERO reach
+    //      lines — not "ignored, unrostered", simply never dispatched.  reach_done rides back the same road.
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'roster', 'crew', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held', 'reach', 'reach_done']) w.c.on[kind] = hear
 
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
 //  (1) a cache hit — a voucher whose sign we already proved this era — passes without crypto.
@@ -3416,6 +3424,19 @@ Swarm_pier_stash(ident, page, grants, nots, st0):
         if (!a) continue
         if (!e.nots.some(h => h.sign === a.sign)) e.nots.push(a)
     }
+
+// Swarm_pier_unstash — THE DURABLE HALF OF A RETIREMENT (2026-09-05, the owner: *"lots of retirement though…
+//  every time?"*).  Swarm_pier_stash is UPSERT-ONLY, and nothing ever deleted a key — so Swarm_crew_tidy's drop
+//   reached the C tree and stopped there: the next boot rehydrated the same 15 link piers, Swarm_family_derive
+//    re-minted the same 4 bodies off their grants, and tidy retired them all again, every single boot, with 19
+//     lines of 🧹 to show for it.  A retirement that does not reach the stash is a retirement of one session.
+Swarm_pier_unstash(ident, prepub, st0):
+    let st = this.Swarm_stash_of(ident, st0)
+    if (!st || !st.Swarm_piers) { return 0 }
+    let mine = st.Swarm_piers[ident.sc.prepub]
+    if (!mine || !mine[prepub]) { return 0 }
+    delete mine[prepub]
+    return 1
 
 Swarm_piers_rehydrate(w, ident, st0):
     let st = st0 || this.top_House().stashed
@@ -5980,6 +6001,16 @@ Swarm_reach_book(w, ident, sc):
 // Swarm_reach_addr — RESOLVE where a reach is addressed (pure).  A role (a Post word) → the body that
 //  plays it off my own Charter (Swarm_body_for), else the Seat; an explicit address → itself.  Null when
 //   unresolvable.
+// Swarm_reach_standing — is this exact want already booked (any live state)?  A READ for callers that must
+//  not re-book: Swarm_reach_book is find-or-create and re-stamps `at` + bumps + (in Ra_pool_fill_book) RE-DISPATCHES,
+//   so a caller that books on every pass turns one want into a frame per pass.
+Swarm_reach_standing(ident, to, of, forr):
+    let peering = this.Swarm_peering(ident)
+    if (!peering) { return null }
+    let r = peering.o({ Reach: 1, to: String(to), of: String(of || ''), for: String(forr) })[0]
+    if (!r) { return null }
+    let st = String(r.sc.state || 'booked')
+    return (st === 'arrived' || st === 'refused' || st === 'dead') ? null : r
 Swarm_reach_addr(ident, reach):
     if (!reach) { return null }
     let to = String(reach.sc.to || '')
@@ -6012,8 +6043,26 @@ Swarm_reach_dispatch(w, ident, reach):
 // Swarm_reach_settle — the ONE loop (replaces owed_settle + the Heist stall + the charter-debt retry): on
 //  the presence edge, re-dispatch every standing (not-arrived) reach.  KNOB-GATED default-off (w.c.reach_on)
 //   — observe until flipped.
+// THE YES IS THE FILLS SWITCH, ON THIS HALF TOO (2026-09-05).  `reach_on` stayed the whole gate here while
+//  the BOOKING half was switched to consent on 2026-09-03 (Radio.g's steward: `w.c.reach_on || Ra_pool_consent(w)`,
+//   "a consented pool books its pulls").  Half-converted, the feature cannot work: a consented pool BOOKS its
+//    pulls, the first dispatch misses because the holder is offline, and nothing ever re-sends — the intent
+//     stands as the debt exactly as designed, with no loop left to pay it.  Measured on a live box
+//      (eed831f1, 2026-09-05): six `Reach,for:serve,state:booked` toward Grink dated 09-03 23:18 and 09-04
+//       05:34, never dispatched, and a pool still holding zero records.  Consent is a per-device yes to
+//        spending bytes, which is the same permission this loop needs; `reach_on` stays as the override for
+//         a node with no pool.  Books are unaffected: their worlds carry no %SoundPooling home, so
+//          Ra_pool_consent(w) is 0 and SwarmBody's settle_off assertion still reads 0.
+//  ⚠ ASK THE IDENTITY, NOT THE WORLD (corrected same day, on the same box).  The first cut of this gate
+//   called `Ra_pool_consent(w)` — and `w` here is the Swarm/Clustation world, not `top.c.radio_w`, so
+//    `Ra_pool_owner` handed the probe straight back the world it was given, found no `%SoundPooling`
+//     home on it, and answered a confident 0.  The gate read as "no consent" on a device that had said
+//      yes two days earlier: four fresh `state:booked` rows minted at boot, still booked ten minutes
+//       later, the daemon holding the bytes serving nobody.  A change that looks landed and gates
+//        nothing is worse than no change — it spends the belief.  `ident` is already in hand here and
+//         the home is minted on the identity, so `Ra_pool_consent_of(ident)` cannot miss it.
 Swarm_reach_settle(w, ident):
-    if (!w || !w.c.reach_on) { return 0 }
+    if (!w || !(w.c.reach_on || (this.Ra_pool_consent_of ? this.Ra_pool_consent_of(ident) : 0))) { return 0 }
     let peering = this.Swarm_peering(ident)
     if (!peering) { return 0 }
     let n = 0
@@ -6067,7 +6116,13 @@ Swarm_reach_pump(w, ident):
     //   the backpressure discipline) and M-SIDE (Ra_pool_fill_pump, Ghost/M/Ra.g), so the primitive
     //    stays verb-agnostic here and a Book drives the M seams directly.  Fire-and-forget: the tick
     //     is async (it may press bytes); a rejection logs loudly, never throws into the pump.
-    if (w.c.reach_on && typeof this.Ra_pool_fill_pump === 'function') {
+    // …OR A FRIEND IS WAITING ON ME (2026-09-05, the daemon measured live).  Consent is the BOOKER's yes to
+    //  spend bytes on its own device; it says nothing about SERVING.  The daemon never consented (it is
+    //   the source, not a pooler), so this gate never let the pump run there — and Ra_pool_fill_serve is
+    //    INSIDE the pump — so eed's two reaches sat `serving` on it for good: heard, authorised by the Music
+    //     grant the road already checked, and never pressed.  A standing `serving` row IS the authority for
+    //      the serve half; station-gated so a Book (mail wire, no station) keeps its fixtures.
+    if ((w.c.reach_on || (this.Ra_pool_consent_of ? this.Ra_pool_consent_of(ident) : 0) || (w.c.station_up && this.Swarm_reach_serving(ident))) && typeof this.Ra_pool_fill_pump === 'function') {
         let pf = this.Ra_pool_fill_pump(w, ident)
         if (pf && pf.catch) { pf.catch((er) => console.log('🏊⚠ pool-fill pump: ' + er)) }
     }
@@ -6112,6 +6167,10 @@ Swarm_reach_serve(w, ident, doer):
 // Swarm_reach_graduate — drop FULFILLED reaches (the transient-req rule: leave in the snap only the reaches
 //  whose in-flight state is worth SEEING).  Only 'arrived' (success) graduates; 'refused' STANDS as a
 //   terminal receipt the human sees ("your Cave couldn't serve that").  Returns how many dropped.
+// Swarm_reach_serving — how many reaches stand `serving` on me: the friend-asked work the fill pump owes.
+Swarm_reach_serving(ident):
+    let peering = this.Swarm_peering(ident)
+    return peering ? peering.o({ Reach: 1, state: 'serving' }).length : 0
 Swarm_reach_graduate(ident):
     let peering = this.Swarm_peering(ident)
     if (!peering) { return 0 }

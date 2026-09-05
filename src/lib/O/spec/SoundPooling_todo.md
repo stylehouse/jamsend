@@ -2,6 +2,38 @@
 
 ## 0. WHAT TO GET ON WITH NEXT — PUT THE FEATURE IN ONE PLACE (2026-09-04, the owner's)
 
+### ⚑ 2026-09-05 — THE LIVE WALK (eed → daemon), and the next move
+
+**The arc:** every Book was green and nothing filled, because every gate was a *live-only* fact. Walked by
+ Reach STATE on both ends (eed's mirror + the daemon's `/c?depth=9` tree), four silent gates fell, in order:
+ 1. `Swarm_reach_settle`/pump asked `Ra_pool_consent(w)` on the Swarm world → always 0. Now `Ra_pool_consent_of(ident)`.
+ 2. The friend hear-funnel never registered `reach`/`reach_done` (only the sibling station funnel heard them) —
+    eed re-sent the same seqs every 5s for an hour and the daemon never dispatched one. Now registered.
+ 3. `Ra_pool_fill_homes` read `rw.c.ra_nav || null` (Book-only pin; siblings read `|| Crate_nav()`) — both live
+    ends silently skipped serve/land. Now falls back like its siblings.
+ 4. The fill pump (serve+land) was gated on the BOOKER's consent, so a pure server never served. Now also runs
+    on `station_up && Swarm_reach_serving(ident)` — a standing `serving` row is the authority for the serve half.
+ Gated after each cut: SwarmBody 23 · MusuPoolFill 6 · MusuPoolRandom 4 · MusuPoolBytes 4 · MusuPoolRadio 6 ·
+  SwarmReboot 5 · MusuHandoff 6 — all `ok_pct:1, caveat:0` (they can't see any of this; that is the lesson).
+
+**Where it stands live (17:34):** eed books 25 wants → dispatches → the daemon hears, mints its pool home, presses
+ → **refuses, named: `bin_read miss music/0 Cumbia/…mp3`.** The daemon's `/music` is empty on its host (boot log:
+  *"no music the meander can reach under /music"*); its 31-record shelf is stash-restored, originals absent, so a
+   press has nothing to read. The other six bookings target Grink (631300e8), offline. Consent/budget/compartment
+    on eed are correct; the pool holds 1 record.
+
+**Next move:** mount `/music` (with files) on the daemon host → `/stop?token=` restart → re-walk: expect the two
+ daemon Reach rows `serving → arrived`, `reach_done` back to eed, `🏊 pool-fill: landed N` in eed's console.
+ Then decide whether a source holding only ENCODED chunks (no original) should serve from them rather than
+  press — today the design says press, so an original-less shelf can never be pooled from.
+ ⚠ The account mirror is settle-driven; a landing does not rewrite it — read the far end's Reach rows instead.
+ ⚠ **Re-dispatch reuses the SEQ** (seen in the daemon's docker stdout): eed re-sends a `booked` reach every 5s with the
+  same seq, and the target answers `🛰⚠ reused-seq collision … re-acked, not re-dispatched`. So a reach dropped ONCE on
+   the target (e.g. before its hear list knew `reach`) can never be re-heard until the target restarts — and a
+    restart, not the hot-swap (`👻 reswap gen/S/Swarm.go` landed live), is what finally let the daemon hear. Either
+     `Swarm_reach_dispatch` mints a fresh seq per re-send, or the target re-dispatches an idempotent kind on a reused
+      seq. Also seen there: Grink (631300e8) IS live — pulsing the daemon — but the daemon holds no Pier for it.
+
 ✅ **LANDED 2026-09-05 — the unison is built** (owner: *"yeah. all good?"* — yes). One particle now holds the
  whole feature, on the live identity when `w` is the tab's radio world and on the world for a Book:
 ```

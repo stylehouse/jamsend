@@ -50,8 +50,32 @@
 
     // consent + want, read live (Ra_pool_consent / Radio_pool_wanted) so the source chip can say "needs setup"
     let pool_ok = $derived.by(() => { void H?.version; try { const w = n?.c?.w; return !!(w && (H as any)?.Ra_pool_consent?.(w)) } catch { return false } })
-    let pool_n = $derived.by(() => { void H?.version; try { const w = n?.c?.w; const pub = (H as any)?.Radio_pub?.(w) || 'me'; const sh = (H as any)?.Ra_pool_stock?.(w, pub); return sh && (H as any)?.Ra_recs ? (H as any).Ra_recs(sh).length : 0 } catch { return 0 } })
+    // READY vs CARDS (owner 2026-09-05: "SoundPooling claims to have four but it says empty when I click next").
+    //  A booked want mints its card at once; the bytes land later or never.  The dial plays only `ready`, so that
+    //   is the number every surface here shows — `cards` rides beside it so "4 asked, 0 here yet" is sayable.
+    let pool_c = $derived.by(() => { void H?.version; try { const w = n?.c?.w; const pub = (H as any)?.Radio_pub?.(w) || 'me'; return (H as any)?.Ra_pool_census?.(w, pub) ?? { cards: 0, ready: 0 } } catch { return { cards: 0, ready: 0 } } })
+    let pool_n = $derived(pool_c.ready)
     let pool_wanted = $derived.by(() => { void H?.version; try { const w = n?.c?.w; return !!(w && (H as any)?.Radio_pool_wanted?.(w, null)) } catch { return false } })
+
+    // THE SOURCE CHOOSER (owner 2026-09-05: *"when multiple Pier are online we should make the Grink in
+    //  'from Grink' a dropdown (but upwards) chooser!"*).  `Radio_sources` is the model's answer — one row
+    //   per %Theirs mirror that actually holds playable tracks, live-first — so the face lists what the
+    //    dial can really reach rather than the friends list, which includes everyone with nothing to give.
+    //  NOT ON `tick`.  This walks every mirror through `Ra_recs`; on the 1s clock that is a per-second
+    //   crate walk for a menu nobody has opened.  `H.version` already folds in every real change to a
+    //    mirror, which is the only thing that can move a row.
+    let sources = $derived.by(() => { void H?.version; try { return (H as any)?.Radio_sources?.(n?.c?.w, n) ?? [] } catch { return [] } })
+    let aimed_by = $derived.by(() => { void H?.version; return (n?.sc?.aim ? String(n?.sc?.aim_by || '') : '') })
+    let menu = $state(false)
+    // picking a holder PINS the dial (`sc.aim`) and leaves pool mode in the same act — Radio_aim_set owns
+    //  both halves so the chip can never show "aimed at Grink" and "on the pool" at once.  '' = roam again.
+    const aim_to = (pub: string) => { try { (H as any)?.Radio_aim_set?.(n, pub); H?.bump_version?.() } catch {} ; menu = false }
+    // the pool is the one row that is not a holder, so it goes through the old flip rather than the aim —
+    //  and only when we are not already there (Radio_source_next is a toggle, not a setter).
+    const aim_pool = () => { try { if (face.source !== 'pool') (H as any)?.Radio_source_next?.(n); H?.bump_version?.() } catch {} ; menu = false }
+    // more than one place to listen from ⇒ the press is a chooser; else it stays the old flip.
+    let chooser = $derived(sources.length + (pool_ok ? 1 : 0) > 1)
+    const chip_press = () => { if (chooser) { menu = !menu } else { try { (H as any)?.Radio_source_next?.(n) } catch {} } }
     let face = $derived.by(() => {
         void H?.version
         void tick
@@ -223,21 +247,47 @@
     <!-- THE SOURCE CHIP (Siphon_todo P2): the provenance badge is also the source selector —
          pressing it cycles friends-first ⇄ SoundPool via Radio_source_next, which stamps
          sc.source on the %Radio particle; the dial obeys it (Radio_dial's pool rung). -->
-    {#if face.source === 'pool'}
-        <!-- THE MOST MINIMAL EFFECTIVE COMMS (owner 2026-09-03: "SOUNDPOOL / setup / is empty"): the word is the
-             switcher; the line under it is the state, and "setup" is itself the separate button to the cell. -->
-        <button class="rf-src rf-src-local rf-src-pool" onclick={() => (H as any)?.Radio_source_next?.(n)} title="press to flip to friends">♪ SOUNDPOOL</button>
-        {#if !pool_ok}<button class="rf-src-sub rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')} title="open SoundPool">setup</button>
-        {:else if !pool_n}<div class="rf-src-sub">empty</div>{/if}
-    {:else if face.by}
-        <button class="rf-src rf-src-remote" onclick={() => (H as any)?.Radio_source_next?.(n)}
-            title="the source — press to flip friends | SoundPool">from {face.byName || 'a friend'}</button>
-    {:else if face.solo && face.title && face.state !== 'off' && face.state !== 'digging'}
-        <button class="rf-src rf-src-local" onclick={() => (H as any)?.Radio_source_next?.(n)}
-            title="the source — press to flip friends | SoundPool">♪ LOCAL · {soloWhy(face)}</button>
-    {:else if face.title && face.state !== 'off' && face.state !== 'digging'}
-        <button class="rf-src rf-src-local" onclick={() => (H as any)?.Radio_source_next?.(n)}
-            title="the source — press to flip friends | SoundPool">♪ LOCAL — your own record</button>
+    <!-- ONE CHOOSER OVER EVERY CHIP (owner 2026-09-05: "not every sourcechangebutton click opens that menu").
+         The first cut hung the menu on the from-a-friend chip only, so on ♪ SOUNDPOOL or ♪ LOCAL a press still
+         did the old blind flip.  Now the wrapper + menu sit OUTSIDE the variant fork: whatever the chip says,
+         a press opens the chooser whenever there is more than one place to listen from (friends + the pool),
+         and only a one-source tab keeps the flip.  UPWARDS because the chip sits at the foot of the face. -->
+    {#if face.source === 'pool' || face.by || (face.title && face.state !== 'off' && face.state !== 'digging')}
+        <div class="rf-srcwrap">
+            {#if menu}
+                <div class="rf-menu">
+                    {#each sources as s}
+                        <button class="rf-menu-row" class:rf-menu-on={s.aimed && face.source !== 'pool'} onclick={() => aim_to(s.pub)}
+                            title={s.live ? 'online now' : 'not heard from lately — the dial will pass over them'}>
+                            <span class="rf-menu-dot" class:rf-menu-live={s.live}>●</span><span class="rf-menu-name">{s.name || s.pub.slice(0, 8)}</span><span class="rf-menu-n">{s.tracks}</span>
+                        </button>
+                    {/each}
+                    <!-- ROAMING IS A CHOICE TOO, and it is the default the pin overrides — so it is a row,
+                         not the absence of one.  Without it a listener who pinned Grink has no way back. -->
+                    <button class="rf-menu-row rf-menu-any" class:rf-menu-on={!aimed_by && face.source !== 'pool'} onclick={() => aim_to('')}>any friend</button>
+                    <!-- the pool wears its count like every holder row — the PLAYABLE count, the one the dial obeys;
+                         "4 asked, 1 here" reads as 1/4 so the row never claims more than next can deliver. -->
+                    {#if pool_ok}<button class="rf-menu-row rf-menu-any" class:rf-menu-on={face.source === 'pool'} onclick={aim_pool}
+                        title={pool_c.cards > pool_c.ready ? pool_c.ready + ' playable of ' + pool_c.cards + ' asked for' : pool_c.ready + ' playable'}>
+                        <span class="rf-menu-name">♪ SOUNDPOOL</span><span class="rf-menu-n">{pool_c.cards > pool_c.ready ? pool_c.ready + '/' + pool_c.cards : pool_c.ready}</span></button>{/if}
+                </div>
+            {/if}
+            {#if face.source === 'pool'}
+                <button class="rf-src rf-src-local rf-src-pool" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'press to flip to friends'}>♪ SOUNDPOOL{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
+                {#if !pool_ok}<button class="rf-src-sub rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')} title="open SoundPool">setup</button>
+                {:else if !pool_n}<div class="rf-src-sub">{pool_c.cards ? pool_c.cards + ' pooled · none playable yet' : 'empty'}</div>{/if}
+            {:else if face.by}
+                <button class="rf-src rf-src-remote" class:rf-src-aimed={aimed_by} onclick={chip_press}
+                    title={chooser
+                        ? (aimed_by ? 'pinned to ' + aimed_by + ' — press to choose someone else' : 'the source — press to choose who you are listening to')
+                        : 'the source — press to flip friends | SoundPool'}
+                    >{aimed_by ? '⦿ ' : 'from '}{aimed_by || face.byName || 'a friend'}{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
+            {:else if face.solo}
+                <button class="rf-src rf-src-local" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'the source — press to flip friends | SoundPool'}>♪ LOCAL · {soloWhy(face)}{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
+            {:else}
+                <button class="rf-src rf-src-local" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'the source — press to flip friends | SoundPool'}>♪ LOCAL — your own record{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
+            {/if}
+        </div>
     {/if}
     {#if !pool_ok && pool_wanted && face.source !== 'pool'}
         <button class="rf-src-sub rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')} title="open SoundPool">SOUNDPOOL setup</button>
@@ -368,6 +418,38 @@
     button.rf-src { pointer-events: auto; cursor: pointer; font-family: inherit; }
     button.rf-src:hover { filter: brightness(1.25); }
     .rf-src-remote { background: rgba(127, 200, 232, 0.16); color: #8fd0ee; border: 1px solid rgba(127, 200, 232, 0.4); }
+    /* PINNED reads as a filled chip, not a differently-worded one: "⦿ Grink" and "from Grink" must be
+       distinguishable at a glance from across the room, which is the whole point of a badge. */
+    .rf-src-aimed { background: rgba(127, 200, 232, 0.34); color: #d8f0ff; border-color: rgba(127, 200, 232, 0.75); }
+    .rf-src-caret { opacity: .7; font-size: .9em; }
+    /* the upward chooser.  `position:absolute; bottom:100%` is the "but upwards" — anchored to the chip so
+       it tracks wherever the glass puts the face, and pointer-events re-armed because the .rf overlay is
+       pointer-events:none (the glass must stay pannable; only controls opt back in). */
+    .rf-srcwrap { position: relative; display: inline-block; pointer-events: auto; }
+    .rf-menu {
+        position: absolute; bottom: 100%; left: 0; margin-bottom: 5px; z-index: 5;
+        display: flex; flex-direction: column; gap: 1px; min-width: 132px;
+        padding: 3px; border-radius: 8px;
+        background: rgba(6, 24, 32, 0.96); border: 1px solid rgba(127, 200, 232, 0.4);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+    }
+    .rf-menu-row {
+        pointer-events: auto; cursor: pointer; font-family: inherit;
+        display: flex; align-items: center; gap: 5px; width: 100%;
+        padding: 3px 6px; border: none; border-radius: 5px;
+        background: none; color: #8fd0ee; font-size: 0.72em; font-weight: 600;
+        letter-spacing: 0.04em; text-align: left; white-space: nowrap;
+    }
+    .rf-menu-row:hover { background: rgba(127, 200, 232, 0.18); color: #d8f0ff; }
+    .rf-menu-on { background: rgba(127, 200, 232, 0.26); color: #d8f0ff; }
+    .rf-menu-name { flex: 1; }
+    /* the dot is presence and nothing else — a dim dot is "not heard from lately", which is a real row
+       worth showing (their tracks are still mirrored) rather than one worth hiding. */
+    .rf-menu-dot { font-size: 0.7em; opacity: 0.28; line-height: 1; }
+    .rf-menu-live { opacity: 1; color: #7fd8a0; }
+    .rf-menu-n { opacity: 0.55; font-weight: 400; }
+    .rf-menu-any { color: #b6c9a8; }
+    .rf-menu-any:hover { background: rgba(182, 201, 168, 0.18); color: #e6f0dd; }
     .rf-src-local  { background: rgba(182, 201, 168, 0.13); color: #b6c9a8; border: 1px solid rgba(182, 201, 168, 0.32); }
     /* the peerless invite nudge — a plain sentence with a warm link in it ("no peers ever, invite some"),
        the link a real button that opts pointer-events back in through the .rf overlay's

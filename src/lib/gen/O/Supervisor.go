@@ -13,7 +13,7 @@ import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return '98120e82dc5b2eb9~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return 'f9efd6177e50fa09~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -676,6 +676,20 @@ Supervisor_arrived(w) {
     let unmet = rows.filter(x => !(x.sc.met || x.sc.verdict === 'ok'))
     if (unmet.every(x => x.c.deadline && !this.Supervisor_watch_waiting(x))) return 'gaveup'
     return 'coming'
+
+},
+// Supervisor_gaveup_advice — WHAT THE REGISTRAR SAID TO DO ABOUT IT, for whoever needs the give-up as
+//  a SENTENCE rather than as the word 'gaveup'.  Same law as `Supervisor_because` two regions up: a
+//   give-up needs a reason or the sentence it produces is a guess, and this file carries the registrar's
+//    reason rather than inventing one.  (Written 2026-09-05 because a caller HAD invented one — see
+//     Screen_decide's `gaveup` rung, which hardcoded "the invite did not finish — ask for a fresh QR"
+//      onto every give-up, invite or not.  That is the exact lie this rule exists to forbid, one layer up.)
+//  The FIRST unmet arrival's advice, not a join of all of them: `Supervisor_arrival` allows two
+//   registrars, but a one-line reason wants one voice, and the full set is already on `Supervisor_lines`.
+Supervisor_gaveup_advice(w) {
+    if (!w) return ''
+    let rows = w.o({ Watch: 1 }).filter(x => x.sc.arrival && !(x.sc.met || x.sc.verdict === 'ok') && x.sc.advice)
+    return rows.length ? String(rows[0].sc.advice) : ''
 },
 //#endregion
 

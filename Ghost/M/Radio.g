@@ -1370,6 +1370,58 @@ Radio_pub(w):
 //   first ladder) ⇄ 'pool' (the OPFS SoundPool rung); the <friend> aim-lock stop joins the cycle
 //    when the aimed dial grows a source face.  '' rides as ABSENT (the local delete idiom — see
 //     aim_by above), so an untouched radio snaps byte-identically.
+// ── WHO AM I LISTENING WITH — THE CHOOSER (the owner 2026-09-05: *"it's online but I can't switch to it
+//  yet! when multiple Pier are online we should make the Grink in 'from Grink' a dropdown (but upwards)
+//   chooser"*).  `radio.sc.aim` ALREADY narrowed the dial to one holder (Radio_dial_pool prefers the aimed
+//    records; Radio_pool_catch obeys it) — but nothing let a PERSON set it: the only writer was the
+//     aim_wish a just-sealed join stashes, so a friend who came online after the seal was unreachable
+//      except by luck of the draw.  These two verbs are the whole missing half: read the choices, pick one.
+// Radio_sources — the pickable holders, richest-first: one row per %Theirs crate that has something
+//  playable, wearing the friendly name, the count, whether they are LIVE right now (the same
+//   `ra_source_live` presence the restock uses — absent hook = assume live), and whether the aim
+//    is on them.  Pure: `o` throughout and no mints, so a face may call it every poll.
+Radio_sources(w, radio):
+    let out = []
+    if (!w || !w.o) { return out }
+    let aim = String(radio && radio.sc ? (radio.sc.aim || '') : '')
+    for (const home of w.o({ Theirs: 1 })) {
+        let pub = String(home.sc.pub || '')
+        if (!pub) { continue }
+        let shelf = home.o({ stock: 1, pub: pub })[0]   // probe-first: a poll must not vivify a shelf
+        if (!shelf) { continue }
+        let n = 0
+        for (const rec of this.Ra_recs(shelf)) { if (this.Radio_playable(rec)) { n = n + 1 } }
+        if (!n) { continue }
+        let live = w.c.ra_source_live ? (w.c.ra_source_live(pub) ? 1 : 0) : 1
+        let row = { pub: pub, name: this.Radio_friendly(w, pub), tracks: n, live: live }
+        if (aim && (pub.startsWith(aim) || aim.startsWith(pub))) { row.aimed = 1 }
+        out.push(row)
+    }
+    out.sort((a, b) => (b.live - a.live) || (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0)))
+    return out
+// Radio_aim_set — PIN the radio to one holder, or let it roam again with an empty pub.  Choosing a friend
+//  also leaves SoundPool mode (the chip is one control: you cannot be aimed at a friend AND on the pool),
+//   and clears the note the empty-pool rung may have left.  Deletes rather than blanks — a snapped scalar
+//    rides as a value or is ABSENT.  Returns the name now aimed at, or '' when roaming.
+Radio_aim_set(n, pub):
+    let w = n ? n.c.w : null
+    let radio = n
+    if (!w || !radio || !radio.sc) { return '' }
+    let want = String(pub || '')
+    if (!want) {
+        if (radio.sc.aim) { delete radio.sc.aim }
+        if (radio.sc.aim_by) { delete radio.sc.aim_by }
+        radio.bump()
+        return ''
+    }
+    radio.sc.aim = want
+    let nice = this.Radio_friendly ? this.Radio_friendly(w, want) : ''
+    if (nice) { radio.sc.aim_by = nice } else if (radio.sc.aim_by) { delete radio.sc.aim_by }
+    if (radio.sc.source) { delete radio.sc.source }
+    if (radio.sc.note) { delete radio.sc.note }
+    radio.bump()
+    console.log('📻 listening with ' + (nice || want.slice(0, 8)))
+    return nice || want.slice(0, 8)
 Radio_source_next(n):
     let radio = n
     if (!radio || !radio.sc) { return '' }
@@ -1495,6 +1547,11 @@ async Radio_dial(radio):
             return pagain
         }
         let pnote = 'empty'   // the most minimal effective comms (owner 2026-09-03)
+        // …UNLESS IT IS NOT EMPTY, ONLY NOT READY (2026-09-05: *"claims to have four but it says empty"*).  The
+        //  cards are there — the wants were booked — and the bytes have not landed; "empty" then contradicts
+        //   the count the chooser shows for the same shelf.  Same census the face reads (Ra_pool_census).
+        let pc = this.Ra_pool_census ? this.Ra_pool_census(w, this.Radio_pub(w) || 'me') : null
+        if (pc && pc.cards > 0 && pc.ready === 0) { pnote = pc.cards + ' pooled · none playable yet' }
         if (radio.sc.note !== pnote) { radio.sc.note = pnote; radio.bump() }
         return null
     }

@@ -4,24 +4,28 @@ story:MusuPoolRadio
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.049
-      sample=0.107,at=1788432734
-      sample=0.039,at=1788432754
+    TimeTotal:beliefs,avg=0.042
       sample=0.055,at=1788436805
       sample=0.054,at=1788496012
       sample=0.019,at=1788498975
       sample=0.02,at=1788498980
       sample=0.047,at=1788499159
       sample=0.047,at=1788499815
-    TimeTotal:step,avg=0.008
-      sample=0.018,at=1788432734
-      sample=0.006,at=1788432754
+      sample=0.051,at=1788584678
+      sample=0.05,at=1788585251
+      sample=0.047,at=1788586140
+      sample=0.028,at=1788590286
+    TimeTotal:step,avg=0.007
       sample=0.009,at=1788436805
       sample=0.009,at=1788496012
       sample=0.003,at=1788498975
       sample=0.003,at=1788498980
       sample=0.008,at=1788499159
       sample=0.008,at=1788499815
+      sample=0.009,at=1788584678
+      sample=0.008,at=1788585251
+      sample=0.008,at=1788586140
+      sample=0.005,at=1788590286
   step,dige:a9ab66df494fe28f
   step=2,dige:f3f4aebbfad49e8b
   step=3,dige:5c858f89823454c8

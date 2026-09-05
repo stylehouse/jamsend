@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '8d7b7f16e647e04e~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '5f87f634232ea8dd~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1228,6 +1228,39 @@ Ra_pool_stock(w, pub) {
 //       it is a plan, and a plan costs nothing — but every act on bytes reads Ra_pool_consent first.
 Ra_pool_consent(w) {
     let home = this.Ra_pool_home(w)
+    return home && home.o({ Consent: 1 })[0] ? 1 : 0
+
+},
+// Ra_pool_census — CARDS vs READY, because the two counts say opposite things and the face was showing one
+//  while the dial obeyed the other (owner 2026-09-05: *"SoundPooling claims to have four but it says empty
+//   when I click next"*).  A Want that has been booked mints its CARD on the pool shelf at once; the BYTES
+//    land later (or never — a refused serve), and `Ra_dial_next` only dials a record whose `preview > 0`.
+//     So `cards` is what the pool has ASKED for, `ready` is what it can PLAY — the same predicate the dial
+//      uses, factored out so the chip, the menu row and the empty-rung note can never disagree with it.
+Ra_pool_census(w, pub) {
+    let shelf = this.Ra_pool_stock(w, pub)
+    let out = { cards: 0, ready: 0 }
+    if (!shelf) { return out }
+    for (const rec of this.Ra_recs(shelf)) {
+        out.cards = out.cards + 1
+        if (+(rec.sc.preview || 0) > 0) { out.ready = out.ready + 1 }
+    }
+    return out
+
+},
+// Ra_pool_consent_of — THE SAME YES, ASKED OF THE IDENTITY INSTEAD OF A WORLD.
+//  ⚠ WHY THIS EXISTS (2026-09-05, measured on eed831f1).  `Ra_pool_consent(w)` can only find the home
+//   through `Ra_pool_owner`, which resolves to the live identity ONLY when `w` IS the radio world
+//    (`top.c.radio_w === w`) and otherwise hands back `w` itself.  So every caller holding some OTHER
+//     world — the reach lane on the Swarm/Clustation world is the one that bit — probes a world that
+//      never carries a `%SoundPooling` home and reads a confident 0.  That is a silent false NO: the
+//       reach gates were switched to consent and stayed shut anyway, four fresh `state:booked` rows sat
+//        undispatched for ten minutes, and the daemon holding the bytes served nobody.
+//  The home is minted ON THE IDENTITY (`Ra_pool_home_mint` → `Ra_pool_owner`), so an identity in hand is
+//   a STRICTLY better question than a world in hand — no `radio_w` coincidence required.  Books stay
+//    inert exactly as before: a Book's identity carries no home either.
+Ra_pool_consent_of(ident) {
+    let home = ident ? ident.o({ SoundPooling: 1 })[0] : null
     return home && home.o({ Consent: 1 })[0] ? 1 : 0
 },
 Ra_pool_consent_give(w, now) {
@@ -4863,6 +4896,11 @@ Ra_pool_fill_wants(w, ident) {
         let from = String(want.sc.from || '')
         let of = String(want.sc.of || '')
         if (!from || !of) { continue }
+        // ONLY WHAT IS NOT ALREADY IN FLIGHT (2026-09-05: *"steward: booked 4 circulation fill(s)"* hundreds of
+        //  times in a row).  This pass runs from the pump's null-dial retry — every 800ms on an empty pool — and
+        //   Ra_pool_fill_book is find-or-create + dispatch, so the same four wants were re-booked, re-stamped and
+        //    RE-SENT on every retry.  The settle loop already re-dispatches a standing reach on its own cadence.
+        if (this.Swarm_reach_standing && this.Swarm_reach_standing(ident, from, of, 'serve')) { continue }
         if (this.Ra_pool_fill_book(w, ident, of, from)) { n = n + 1 }
     }
     return n
@@ -4893,7 +4931,14 @@ Ra_pool_fill_homes(w, ident) {
     if (!pub) { return out }
     if (rw.oa({ Mine: 1, pub: pub })) { out.lib = this.Ra_home_self(rw, pub) }
     out.pool = this.Ra_home_pool(rw, pub)
-    out.nav = rw.c.ra_nav || null
+    // THE LIVE NAV, NOT ONLY THE BOOK'S (2026-09-05, eed→daemon measured live).  `w.c.ra_nav` is pinned
+    //  ONLY by Books (Heistation's MusuNeGrind_nav); a live tab never sets it.  Every sibling seam in this
+    //   file reads `ra_nav || Crate_nav()` (:839 :1304 :2058 :2726 :2790) — this one alone read `|| null`,
+    //    so on BOTH live ends `homes.nav` was null: the daemon's Ra_pool_fill_serve `continue`d every
+    //     serving reach (stuck `serving`, never `refused`, no line), and eed's Ra_pool_fill_land skipped
+    //      every arrival.  A silent skip on a missing nav is the worst shape — Siphon_pull already names
+    //       `no nav` as a fail; let it get that far.
+    out.nav = rw.c.ra_nav || (this.Crate_nav ? this.Crate_nav() : null)
     let cave = this.Swarm_body_for ? this.Swarm_body_for(ident, 'Cave') : null
     let cavename = cave ? this.Swarm_body_addr(cave) : ''
     if (cavename && rw.oa({ Theirs: 1, pub: cavename })) { out.from = this.Ra_home_them(rw, cavename) }

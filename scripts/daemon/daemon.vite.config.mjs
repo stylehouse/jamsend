@@ -23,6 +23,16 @@ export default defineConfig({
             //   the real Dexie everywhere else — so persistence works headlessly, durably, and with
             //    no npm install (which in this repo means no libc-drift risk).  See dexie-node.ts.
             dexie: path.join(APP, 'scripts/daemon/dexie-node.ts'),
+            // `$app/navigation` (a SvelteKit VIRTUAL module) is provided by the sveltekit vite plugin,
+            //  which this config deliberately does not load — so under bare svelte() it is unresolvable and
+            //   ANY .svelte importing it fails to transform.  The daemon reaches two such files through
+            //    Ghost → Cyto → Cytui → glass_kinds → DoorFace → InvitePanel (and LinkFace → LinkDevice),
+            //     so the whole boot died on it: "Failed to resolve import" → uncaughtException → exit 5.
+            //  Same stub, same reason, as Story_cli.vitest.config.mjs — which got this alias in the very
+            //   commit (431f04df, 2026-08-30) that introduced the imports, while this near-copy was missed.
+            //    The calls are `replaceState(url, {})` bar rewrites inside try/catch; headless has no address
+            //     bar, so no-ops are exactly right.
+            '$app/navigation': path.join(APP, 'scripts/app_navigation_stub.mjs'),
         },
         conditions: ['browser'],
     },

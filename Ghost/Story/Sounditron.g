@@ -1266,7 +1266,16 @@ Screen_decide(w):
             } else {
                 if (arr === 'gaveup') {
                     dominant = 'gaveup'
-                    reason = 'the invite did not finish — ask for a fresh QR'
+                    // THE REGISTRAR'S SENTENCE, NOT OURS (2026-09-05).  This rung hardcoded *"the invite did
+                    //  not finish — ask for a fresh QR"* onto EVERY give-up, which is a lie on the tab that
+                    //   never minted an invite — precisely the lie `Supervisor_because` was written to forbid
+                    //    ("nobody answered your invite" in the radio's mouth on a machine whose friend simply
+                    //     wasn't up).  This screen may not name a subsystem, so it may not name an invite
+                    //      either; it carries what the arrival's own registrar armed.  The fallback says only
+                    //       what `gaveup` MEANS — settling for less — and names nothing.
+                    let adv = ''
+                    try { adv = this.Supervisor_gaveup_advice ? this.Supervisor_gaveup_advice(w) : '' } catch (e) { adv = '' }
+                    reason = adv || 'nothing more is going to happen on its own'
                 }
             }
         }
@@ -2198,6 +2207,38 @@ Sounditron_press_play():
     }
     return 0
 
+// Sounditron_ac_live — IS THE AUDIOCONTEXT UNLOCKED, RIGHT NOW.  The keep-awake gat's `AC_ready`
+//  (Auto.svelte's `keep_awake_gat`, the one AC this tab ever unlocks) is the canonical live fact —
+//   it is what `LiesLies` advertises as the fleet's `ac` facet, so this is the reading the rest of
+//    the machine already trusts, not a second opinion.  Absent on a Book|headless boot (no gat is
+//     ever built there) ⇒ 0, which leaves every fixture's diagnosis exactly as it was.
+Sounditron_ac_live():
+    let M = this.top_House ? this.top_House() : null
+    let gat = M && M.c ? M.c.musu_gat : null
+    return gat && gat.AC_ready ? 1 : 0
+
+// Sounditron_ac_parked — is the press STILL parked on a gesture.  ONE definition, because the two
+//  readers of it (the why-sentence and the give-up remedy) disagreeing is how this screen starts
+//   lying — the same "two copies of one predicate" rule the music wait is built on.
+//  ⚠ WHY THIS IS NOT JUST `probe.realtime` (2026-09-05, the eed hang the owner hit: *"severely
+//   needAC but is mistaken"*).  `w.c.audio_probe` is a ONE-SHOT taken at boot beat 6 and NEVER
+//    refreshed — and on that tab beat 6 is exactly when Chrome logged "The AudioContext was not
+//     allowed to start", so it froze `{ok:1, realtime:0}`.  Ninety seconds later the AC came up
+//      (`Audio.svelte.ts: AudioContext initialized`) and nothing re-read it, so the give-up seam
+//       diagnosed a gesture that had already happened: it stamped `remedy:'gesture'`, wrote "your
+//        browser is waiting for a tap", AND — because the two branches there are complements —
+//         suppressed both the real why-sentence and the unstick nudge.  One stale fact silenced the
+//          whole diagnosis.  The file's own law is *"a suspended AudioContext is a FACT and the
+//           state word is an opinion"*; the correction is that a fact has an EXPIRY, and the live
+//            gat is the un-expiring half of it.  So: the probe still says what it saw, and the gat
+//             gets to say it is no longer true.
+Sounditron_ac_parked(w):
+    if (!w) { return 0 }
+    let probe = w.c.audio_probe
+    if (!probe || !probe.ok || probe.realtime) { return 0 }
+    if (this.Sounditron_ac_live()) { return 0 }
+    return 1
+
 Sounditron_music_why(w):
     let M = this.top_House()
     let radio = w.o({ Radio: 1 })[0]
@@ -2224,9 +2265,13 @@ Sounditron_music_why(w):
     //    and now that this runs in EVERY state that would misdiagnose every such world. Inside
     //     off|paused the old looser test stays, because there `{ok:0, why:'probe timeout — no gesture
     //      yet'}` really does mean what it says.
-    if (probe && probe.ok && !probe.realtime) return 'stock stands but the AudioContext never ticked — the press is parked on a gesture'
+    //  …AND IT IS CHECKED AGAINST THE LIVE GAT (2026-09-05).  `probe` is a boot-beat-6 snapshot; on a tab
+    //   whose AC was blocked at that instant and granted a minute later it says "parked" forever, and this
+    //    sentence then outranks every real diagnosis below it.  `Sounditron_ac_parked` is the same reading
+    //     with an expiry on it — see its header.
+    if (this.Sounditron_ac_parked(w)) return 'stock stands but the AudioContext never ticked — the press is parked on a gesture'
     if (s === 'off' || s === 'paused') {
-        if (probe && !probe.realtime) return 'stock stands but the AudioContext never ticked — the press is parked on a gesture'
+        if (probe && !probe.realtime && !this.Sounditron_ac_live()) return 'stock stands but the AudioContext never ticked — the press is parked on a gesture'
         return 'stock stands (friend=' + (friend ? 1 : 0) + ' own=' + own + ') but the radio is ' + s + ' — the press never took'
     }
     // DIGGING IS ITS OWN DIAGNOSIS and the first thing this wait ever caught (2026-08-08 — 20.2s of a
@@ -2477,12 +2522,22 @@ Sounditron_supervise(w):
         //    keeps refusing to grow.  'gesture' means a tap — any tap — is the whole cure.
         let pw = this.Supervisor_patient(sup, 'arrive.playing', 90, 'nothing has started playing...')
         if (pw && pw.c.deadline && Date.now() > pw.c.deadline - 5000) {
-            let probe = w.c.audio_probe
-            if (probe && probe.ok && !probe.realtime) {
+            // ONE READING, AND ITS EXACT COMPLEMENT (2026-09-05).  These two branches used to test
+            //  `probe` twice, by hand, in mirrored form — so the pair was only as good as the staleness
+            //   of the single fact they shared.  `Sounditron_ac_parked` re-checks that boot fact against
+            //    the LIVE gat, and taking `!parked` as the other branch makes them complements by
+            //     construction rather than by two hand-written negations that can drift.
+            //  ⚠ WHY THIS MATTERED (the eed hang): a tab whose AC was blocked at boot beat 6 and granted
+            //   a minute later kept `remedy:'gesture'` and the "waiting for a tap" sentence — while the
+            //    unstick nudge and `music_why` below, which name the ACTUAL failure (an empty pool, a
+            //     dial that found nothing), never ran at all.  A stale reading did not merely say the
+            //      wrong thing; it took the diagnosis off the table.
+            let parked = this.Sounditron_ac_parked(w)
+            if (parked) {
                 if (pw.sc.remedy !== 'gesture') { pw.sc.remedy = 'gesture'; pw.bump() }
                 this.Supervisor_patient(sup, 'arrive.playing', 90, 'your browser is waiting for a tap before it will make sound — press start and the music begins')
             }
-            if (!probe || !probe.ok || probe.realtime) {
+            if (!parked) {
                 if (pw.sc.remedy) { delete pw.sc.remedy; pw.bump() }
                 // TAKE THE OPPORTUNITY (the owner 2026-08-11, for the SECOND time in one night: *"all I
                 //  had to do in there was hit next-track to get it to play, of course… so, watch out for

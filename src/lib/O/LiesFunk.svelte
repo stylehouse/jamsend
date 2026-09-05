@@ -485,6 +485,23 @@ await M.eatfunc({
             const me   = cluster.oai({ HostedIdentity: self.prepub }) as TheC   // oai mints+bumps on first sight
             const role = H.Lies_role(w)
             if (me.sc.role !== role) { me.sc.role = role; changed = true }
+            // THE CURRENT EDITOR TAKES OVER (2026-09-05).  This registry is per-box (it describes only this
+            //  box's relay) and a box has ONE editor — yet the file had grown SEVEN role:editor rows, each
+            //   written once on its mint day and never again (an identity churn — a fresh stashed key or ?I=
+            //    claims a fresh row; four landed on 2026-08-04 alone).  Nothing addresses an editor row (no
+            //     pub) and nothing ever forgot one: claim is oai, the roster fold keeps the directory as the
+            //      authority, and there is no seen-stamp to TTL against.  So an editor row's first and last
+            //       touch are always the same day, and the directory only ever grows.  Rather than a TTL
+            //        (which would need a churning seen scalar), the editor that is claiming supersedes every
+            //         other editor row: the one editor is whoever is here now.  Runners|players (addressable,
+            //          pub-bearing) are untouched — the fold owns their liveness.  Editor-only, so a runner
+            //           claiming itself never culls the editor.
+            if (role === 'editor') {
+                for (const hi of cluster.o({ HostedIdentity: 1, role: 'editor' }) as TheC[]) {
+                    if (hi === me) continue
+                    cluster.drop(hi); changed = true
+                }
+            }
         }
         if (changed) cluster.bump_version()   // tracked: a raw delete|assign alone wouldn't fire watch_c → no save
     },
