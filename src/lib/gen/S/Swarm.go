@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'b99742036f3ddb35~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '40f2f86866f45d43~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -2556,6 +2556,14 @@ async Swarm_reaccept_incomplete(w, ident) {
         let theirPub = peer ? peer.sc.pub : null
         if (!theirPub) continue
         if (String(theirPub) === String(me)) continue                  // never re-drive the self-pier
+        // A RETIRED PIER IS NOT FORGOTTEN, IT IS FINISHED (2026-09-06, eed measured live: "pier heal:
+        //  re-offered standing grants to 7 forgotten pier(s)" every 120s, six of them closed Incognito windows
+        //   the owner had deleted from the Door weeks ago and one an ejected crew Cave).  The Door's ✕ mints a
+        //    signed NotGrant per feature and KEEPS the row as history; only DoorFace ever read that, so every
+        //     other walker -- this heal, the routes, the boast -- still saw fifteen live peers.  Re-offering a
+        //      grant to someone you revoked is not healing, it is pestering the dead: skip a pier with no live
+        //       feature left.  (The general repair is one accessor -- Social_demarcation_todo.md §2.)
+        if (this.Swarm_pier_live && !(this.Swarm_pier_live(pier, 'Music') || this.Swarm_pier_live(pier, 'MyCave') || this.Swarm_pier_live(pier, 'Crew'))) continue
         // never re-drive a HUSK either (the founding self-grant pier / the Linkee's ceremony husk):
         //  it is evidence of MY role, not a counterparty — rung 2 used to pier_accept-blast it forever
         //   (one face of the owner's storm) and hang %Owed junk on it.
@@ -6338,7 +6346,14 @@ Swarm_reach_book(w, ident, sc) {
     let existing = peering.o({ Reach: 1, to: String(sc.to), of: String(sc.of || ''), for: String(sc.for) })[0]
     if (!existing) {
         let cap = (w && w.c.reach_cap != null) ? +w.c.reach_cap : 32
-        if (peering.o({ Reach: 1 }).length >= cap) {
+        // ⚠ A SETTLED REACH IS NOT A STANDING CLAIM (2026-09-06, eed measured live: 32/32 with 6 dead and 5
+        //  refused among them, so every new booking was refused while a third of the shelf was rows that had
+        //   already finished).  The cap exists to bound OUTSTANDING WORK -- a runaway booking loop flooding a
+        //    peer -- and a terminal row is not work: nobody will act on it again, it is a receipt awaiting its
+        //     TTL sweep.  Counting receipts against the cap turns an hour of honest failures into a permanent
+        //      refusal to ask anyone anything, which is the opposite of backpressure.
+        let standing = peering.o({ Reach: 1 }).filter((r) => { let st = String(r.sc.state || ''); return st !== 'dead' && st !== 'refused' })
+        if (standing.length >= cap) {
             console.log('⨳🫱⚠ reach cap reached (' + cap + ') — booking refused for ' + String(sc.of || sc.to))
             return null
         }
@@ -6443,6 +6458,15 @@ Swarm_reach_dispatch(w, ident, reach) {
     let addr = this.Swarm_reach_addr(ident, reach)
     if (!addr) { return null }
     if (!w || !w.c.station_up) { return addr }        // Book / no station: routing proven, wire inert, intent stands
+    // AN ANSWERED REACH IS NOT RE-SAID (2026-09-06, the relay's own tally on eed↔S: `reach ×37–51` and
+    //  `reach_done ×11–18` EVERY TEN SECONDS, for hours -- four reaches a second at one daemon, each one
+    //   re-answered, each answer re-processed under both beliefs mutexes while the byte lane starved).
+    //    `serving` is the holder's receipt: it has booked the ask and its OWN pump carries it to arrived
+    //     or refused -- nothing this side re-sends can hurry that, and the holder must dedup + re-answer
+    //      every repeat.  Silence backs off; an answer ENDS the asking.  A holder that dies mid-serve
+    //       leaves the row `serving` until the deadline sweep above retires it -- the honest outcome.
+    //        (Below the station gate on purpose: a driven world's rows stand as intent, as every fixture expects.)
+    if (st0 === 'serving') { return addr }
     // A REACH MUST BE ABLE TO DIE (2026-09-06).  Below the station gate ONLY: a driven world has no ledger to
     //  read and its reaches stand as pure intent, which every fixture expects.  On a LIVE node, a target that
     //   is neither a crew body nor a live-granted pier is gone for good -- say so once, terminally, so the

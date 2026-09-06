@@ -2,6 +2,82 @@
 
 ## 0. WHAT TO GET ON WITH NEXT — PUT THE FEATURE IN ONE PLACE (2026-09-04, the owner's)
 
+### ⚑⚑⚑ 2026-09-06 evening — READ THIS FIRST: the pool was never broken; the SUBSTRATE under it was
+
+**The destination is unchanged and now close:** eed pools *from S (the daemon)*, and the daemon is a
+ SOURCE, not a pooler — the owner: *"I don't want the daemon to accumulate SP."* The whole chain
+  reach → serve → press → `arrived` has now run end to end from S to eed for the first time (daemon log:
+   `pool-fill: served 1 reach(es) from my own library` · `lofi: … .flac → ogg128 (4021KB from 92690KB)`).
+    **The one link never yet seen to complete is the last one: the Repli chunk pull landing those bytes**
+     (`⇊⟲ unanswered materialise asks` on eed while S is silent about them). That is the next thing to
+      look at, and the daemon's `◈` lines at the moment eed asks are the evidence nobody has caught yet.
+
+**What actually broke — four stacked faults, none inside SP** (spec/Social_demarcation_todo.md is the
+ full account; fixes ✓ committed in `quack`/`ooh` unless marked ⌛ uncommitted):
+1. ✓ **A closed Incognito window was eed's crew Cave** (`Body,post:Cave` + `/Crew mate`) and
+    `Ra_pool_fill_homes` asks the Cave first — every want, reach and `ws SEND` went to a ghost for 36h
+     while S was never addressed. Owner ejected it from the Door.
+2. ✓ **Reaches could not die** — `Swarm_reach_target_gone` (no crew row AND no live grant ⇒
+    `state:dead, why:'no such body any more'`; ledger-based, never presence). Live nodes only.
+3. ✓ **The serial budget was spent on standing reaches** (`if (n >= budget) break` counted a stale
+    reach) — now `fresh >= budget`; the tally `n` keeps the rebook_idempotent contract.
+4. ⌛ **The 32-cap counted corpses** — 11 of eed's 32 were dead/refused; cap now counts standing only.
+5. ⌛ **The give-up could not see a never-started keep** and timed a started one off `last_touch`, which
+    Heist.g rewinds in ten places ⇒ immortal. Now: `routeWait` 60s / `pressWait` 5 min
+     (`w.c.pool_press_patience_ms`) — a 92MB FLAC → ogg takes minutes and the old 60s cancelled the first
+      real fill mid-transcode — timed from `k.c.fill_born`, a clock only Ra.g winds.
+6. ⌛ **Pier heal pestered 7 revoked peers** every 120s — skips a pier with no live feature.
+
+**Then, the same evening, with the console ring finally readable (`runner_ask console --player=`) and the
+ relay's own per-type tally (`📊 <to> <type> ×n bytes`, listen bound as `?addr=editor`): the last link.**
+ The pool keep for "Peach, Plum, Pear" (seed `00bfacb6`, S's Mine id) sat `primed` for hours with
+  **eighteen picks — the whole Owen Pallett folder** (`un_n=18`) while S sent pages at 20–50KB/s that
+   never landed. `Heist_keep_pool_go` → `Heist_keep_solo(keep, seed)` looks for the pick with
+    `ref === seed`, but the picks are minted by the folder census under the source's **rummage ids**
+     (`64a77aae`), and the seed only appears as the mirror record's `re`. No match → `-1` → "wait for the
+      seed's husk" → forever. ⌛ Fixed: resolve seed → pick through `srcmir`'s `re` (the argument that was
+       passed and never read) — and then **ask by the seed**, not the rummage id: the solo pick went
+        `pulling` and was BENCHED at 0/16 because the holder resolves a rummage id only through its runtime
+         `w.c.rummage_libs`, wiped by every daemon restart; the seed is its Mine id, resolvable with no map,
+          and its opus stock IS the pool's rolling copy (the rummage id stays on the pick as `rref`).
+           A Book could not see it: a hand-minted mirror record's id IS the seed —
+        **the alias only exists against a live source that was rummaged**. Owed: a Book beat that mints a
+         mirror record `id:<rummage>,re:<seed>` and swears the pool keep goes `pulling` with one pick.
+ And the refusal storm (17 of 18 reaches `refused not_in_library`, ~4 reaches/s): the mirror of S also
+  carries the `husk,rummage` rows a folder describe left behind (a browsed folder, never stocked in S's
+   Mine); `Ra_pool_sources` ranked them like tracks. ⌛ Fixed asker-side (skip husks). **Owed holder-side:
+    press from a RummageLib husk** — it carries a `path` — so a browsed folder becomes servable; today the
+     verdict consults Mine only. Also owed: the reach storm itself (`said_at`/`tries` are `.c`; a
+      `reach_done` for a non-terminal state leaves the reach re-dispatching at the 5s base).
+
+**The bomb for the next person:** the Books stayed green through every one of these because a driven
+ world has no dead Cave, no reload, no cap, no transcode. Every fault was found in the owner's live
+  console. `Story_cli`/headless is a bubble; a Book is a regression net, not discovery. Read the
+   live tab or the daemon's `/c`. **A music page IS introspectable** (`runner_ask console
+    --player=<pub>`; arm `localStorage.socklog='1'` once) — the day it looked sealed was the relay's
+     own-door rule, not production: `deliverLocal` hands every `to:<prepub>` frame to the tab's STATION
+      socket alone, and the `runner_ask` handler lives on the `?addr=player` role socket, so an addressed
+       ask never arrived. Fixed CLI-side by asking the `player` SLOT with `ask.pub` (the tab filters,
+        `Lies_runner_ask_recv`). The relay's own comment promises the proper repair — a second map for
+         control-plane types — never built; `relay-test.ts` is its harness. (`production` is stamped only
+          for `jamsend.*`/`voula*` hosts on a non-dev build; djamsend.duckdns.org is a dev tab.)
+
+**Tooling landed this evening (⌛):** `concap` console ring installs on EVERY tab (was editor|book|grid
+ only — a plain music page had no ring) and stamps each line with its true callsite (`Swarm.go:6342 …`)
+  so the remote read matches DevTools; `runner_ask --unknown-ok` lets a read-only op reach a live tab
+   that missed the 8s `supervisor` classify. Owner's DevTools will now blame `sockcap.ts` — one-time
+    "Add script to ignore list" on it restores native attribution.
+
+**Owed, in order:** (a) the last link above; (b) `Social_demarcation_todo.md` §0 — the `Swarm_piers`
+ accessor (126 raw `o({Pier:1})` walks), `since` preserved across rehydrate (all 15 of eed's Piers carry
+  one identical `since`), a presence floor for the catalog offer (eed↔S starved each other: never heard
+   ⇒ never offered ⇒ never a candidate ⇒ never addressed); (c) cluster-signed `runner_ask` so
+    `Lies_player_seen` can gate on *who is asking* (`signHeader`/`verifyHeader`/`browserTrustedPubs` all
+     exist and are already imported in LiesLies) instead of the deployment stance — the owner's call,
+      and strictly stronger than today; (d) the daemon-as-source-not-pooler fork (§3.1 of the demarcation
+       doc: `Ra_pool_fill_serve` presses INTO its own pool to serve, so `Ra_pool_excuse` would silence it —
+        decide A: keep the pool as a serve cache, or B: serve from the library directly).
+
 ### ⚑⚑ 2026-09-05 (later) — THE FEATURE WAS DARK BY CONSTRUCTION: a pool card never had a `preview`
 
 Four live gates fell (below) and the face still said **"N pooled · none playable yet"**. That sentence was

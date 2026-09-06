@@ -107,10 +107,36 @@ function conArg(a: any): string {
     if (a instanceof Error) return a.stack ? String(a.stack) : `${a.name}: ${a.message}`
     try { const s = JSON.stringify(a); return s === undefined ? String(a) : s } catch { return String(a) }
 }
+// conSite — WHERE THE LOG ACTUALLY CAME FROM (2026-09-06, the owner: "can we keep them logging as from
+//  their original callsite in eg Swarm.go:6342").  A wrapper necessarily costs DevTools its attribution --
+//   the real console call now happens inside concap, so the panel blames sockcap.ts.  The REMOTE reader
+//    must not lose what the human keeps, so the callsite is recovered from the stack and stored ON the
+//     ring line: runner_ask console then shows "Swarm.go:6342 ⨳🫱⚠ reach cap reached", exactly the string
+//      a human reads in DevTools.  (For the human's OWN panel, one-time DevTools "Add script to ignore
+//       list" on sockcap.ts restores native attribution -- Chrome re-blames the first non-ignored frame.)
+//  Cheap on purpose: the stack limit is clamped for the capture and restored, and only the first frame
+//   outside this file is kept.  A failure to parse is silent -- a missing callsite must never cost a log.
+function conSite(): string {
+    const lim = (Error as any).stackTraceLimit
+    try {
+        ;(Error as any).stackTraceLimit = 6
+        const st = String(new Error().stack || '')
+        for (const raw of st.split('\n').slice(1)) {
+            if (raw.includes('sockcap')) continue
+            // Vite serves a module as `Story.svelte?t=1788…:2938` — the HMR query sits between the name and
+            //  the line, so it is skipped explicitly or every .svelte callsite goes missing while .go lines show.
+            const m = /([A-Za-z0-9_.-]+\.(?:go|ts|svelte|js|mjs))(?:\?[^:)\s]*)?:(\d+)/.exec(raw)
+            if (m) return m[1] + ':' + m[2]
+        }
+    } catch {} finally { try { (Error as any).stackTraceLimit = lim } catch {} }
+    return ''
+}
 function conPush(lv: Con['lv'], args: any[]) {
     let line: string
     try { line = args.map(conArg).join(' ') } catch { line = '(unserialisable console args)' }
     if (line.length > 2000) line = line.slice(0, 2000) + '…'
+    const at = conSite()
+    if (at) line = at + ' ' + line
     conRing.push({ t: Date.now(), lv, line })
     if (conRing.length > CON_MAX) conRing.splice(0, conRing.length - CON_MAX)
 }

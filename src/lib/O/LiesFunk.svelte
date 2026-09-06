@@ -2489,9 +2489,22 @@ await M.eatfunc({
         async Lies_runner_ask_recv(w: TheC, frame: any): Promise<boolean> {
             const H    = this as House
             const corr = (frame?.corr ?? frame?.header?.corr) as string | undefined
-            const ask  = (frame?.ask ?? {}) as { op?: string, book?: string, n?: number, ns?: number[], on?: boolean, uid?: string, client?: string }
+            const ask  = (frame?.ask ?? {}) as { op?: string, book?: string, n?: number, ns?: number[], on?: boolean, uid?: string, client?: string, pub?: string }
             const op   = ask.op
             if (!corr || !op) return false
+            // SLOT-ADDRESSED, PUB-FILTERED (2026-09-06).  The relay's own-door rule (relay.ts deliverLocal:
+            //  "an address may have several bound sockets, but a frame addressed to it is delivered to its
+            //   OWN door when it has one") hands every to:<prepub> frame to the STATION socket alone — and a
+            //    music page has one, so its Lies channel (?addr=player, the only socket with this handler
+            //     armed) never sees an addressed ask.  The `player` slot broadcast DOES reach it.  So the CLI
+            //      asks the slot and names the tab it means in `ask.pub`; a tab that is not that pub stays
+            //       silent, and the one that is answers as before.  An ask with no `pub` is the old
+            //        broadcast and is unchanged.  The relay-side repair its own comment promises — a second
+            //         map for control-plane types — is the proper fix; this needs no server restart.
+            if (ask.pub) {
+                const mine = String((H as any).Swarm_live_self?.()?.sc?.prepub ?? (H as any).Lies_self?.(w) ?? '')
+                if (!mine || !(mine.startsWith(String(ask.pub)) || String(ask.pub).startsWith(mine))) return false
+            }
             // reactap — the reactivity census, forwarded to the shared handler: NO lease touch (a
             //  census only READS the tree; everything below is run-driving and stays engagement-gated).
             if (op === 'reactap') return (H as any).Lies_reactap_recv(w, frame)

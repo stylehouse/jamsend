@@ -67,7 +67,10 @@
     //  Unlike the socket tap it is pure in-memory (bounded, never persisted, never snapped), so it is
     //   always ready when a bug happens and a human never has to pre-arm + reload to catch it.  Pulled
     //    read-only by `runner_ask console`.  Browser-guarded inside concap_install.
-    if (editor_book || book || on_grid) concap_install()
+    //  2026-09-06: the install moved to routes/+layout.svelte — Otro is the CLUSTER page, so a music page
+    //   (`/?I=`) never ran this line and its ring stayed empty.  Kept here as an idempotent no-op so a
+    //    direct /Otro mount without the layout still has a ring.
+    concap_install()
     if (typeof window !== 'undefined' && (editor_book || book || on_grid) && watch_min > 0) {
         onMount(() => {
             const id = setInterval(() => { try { location.reload() } catch {} }, watch_min * 60_000)

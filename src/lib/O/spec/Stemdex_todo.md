@@ -362,26 +362,42 @@ w:Atlas
          confirms**: a lint over a corpus this size will always need a human eye on "missing" before
           any edit — the two false positives above were as common as the five real fixes.
 - **The unproven-`%see` count (137 → 21) mostly resolved itself** as other work landed real Book
-   recordings in the meantime — evidence the lint tracks live state, not a snapshot.  Of the 21 left,
-    one is a genuinely diagnosed, well-scoped bug, left undone on purpose: **`SwarmCohort`'s fixture is
-     hollow** — `wormhole/Story/SwarmCohort/toc.snap` has never recorded past step 1 (`001.snap` has
-      zero `see:` lines) though `SwarmCohort_drive` dispatches five real beats (2–6, all authored,
-       Swarmation.g:1972); it never sets `run.sc.total` on a fresh run, the exact
-        `hollow-book-1step-green.md` trap.  Every one of its 7 assertions has been unverified since
-         authorship.  **Not fixed here**: recording a Book's first real fixture means certifying its
-          FIRST recording is correct, which needs the beats' author, not a re-reader of them — and
-           `Swarmation.g` is a live file another session's automated sweep is actively running Books
-            against right now.  The remaining 14 unproven sentences (`SwarmGot`×7, `SwarmPolicy`×1,
-             `VoroRadio`×2, `VoroMitosis`×2, `VytoMemo`×1, `VytoCrush`×2, `VytoOrchestra`×1) all belong
-              to Books with real, multi-step recordings already — "fixture never re-sworn" after the
-               code moved on, not "never recorded" — lower urgency and likewise not mine to re-record.
+   recordings in the meantime — evidence the lint tracks live state, not a snapshot.
+
+**DONE 2026-09-06 (owner's own call): `SwarmCohort` given its first real recording, and a genuine
+ bug found in the process, not just a missing fixture.**  `wormhole/Story/SwarmCohort/toc.snap` had
+  never recorded past step 1 (`001.snap`, zero `see:` lines) though `SwarmCohort_drive` dispatches
+   five real beats (2–6, `Swarmation.g:1972`); it never set `run.sc.total` on a fresh run — the exact
+    `hollow-book-1step-green.md` trap.  Fixed with the same `if (run.sc.mode==='new') run.sc.total=6`
+     idiom this same file already uses on `SwarmReboot_drive` a few hundred lines up.  Re-recording
+      surfaced a real bug the hollow fixture had hidden since authorship: beat 2's witness checked
+       `sibA.sc.role === 'cave'`, but `Swarm_sibling` (`Swarm.g:5828`) mints the field as `sc.duty` —
+        `Swarm_take_role` was renamed to `Swarm_take_duty` at some point (the alias comment right there
+         says so) and this one check was never updated, so that sentence could never have fired under
+          ANY recording.  Fixed the field name, not the fixture — recorded fresh, all 7 assertions
+           confirmed firing across the 6 snaps, green ×3 (`ok_pct:1, caveat:0, mode:check` on both
+            re-runs).  **The corollary this confirms**: a hollow fixture doesn't just mean "unverified"
+             — it can hide a real, silent, permanent break in the very thing it exists to check.
 
 **Owed next, in order:**
-1. `SwarmCohort`'s first real recording — needs an editor authoring pass (a fresh multi-step Plan
-    can't be bootstrapped from the CLI alone) plus its own author's judgment on beat correctness.
-2. The 14 "fixture never re-sworn" sentences across `SwarmGot`/`SwarmPolicy`/`VoroRadio`/
-    `VoroMitosis`/`VytoMemo`/`VytoCrush`/`VytoOrchestra` — a re-record + re-accept per Book, same
-     caveat as above.
+1. The remaining 14 unproven sentences (`SwarmGot`×7, `SwarmPolicy`×1, `VoroRadio`×2, `VoroMitosis`×2,
+    `VytoMemo`×1, `VytoCrush`×2, `VytoOrchestra`×1) belong to Books with real, multi-step recordings
+     already — "fixture never re-sworn" after the code moved on, not "never recorded" like
+      `SwarmCohort` was.  Lower urgency, same fix shape if the owner wants them chased: re-run, check
+       whether the gap is a stale fixture or another live `role`-style rename, re-accept.
+2. Mtime as the ADOPT gate has a real, narrower-than-first-thought hole (owner's own challenge,
+    2026-09-06): a same-nanosecond, same-byte-length edit — reproduced live only by deliberately
+     forging a file's mtime with `touch -r`, never by any normal save — passes the mtime+size check
+      with genuinely different content.  `Atlas_cache_adopt` now re-reads+diges before trusting a
+       COLD adopt (cheap next to the parse it skips; closes the "just reloaded" case for real).  The
+        STEADY-STATE case — a doc already mapped in the current world — never even reaches that check;
+         it's gated purely on `Atlas_walk`'s own mtime/size listing comparison, so the same collision
+          there is still live in principle.  Proposed, not built: a small rotating re-dige of already-
+           mapped docs each refresh (independent of mtime), self-healing any missed drift within a
+            bounded number of passes, in the same "polite budget" spirit as `ATLAS_BUDGET`/`ATLAS_ADOPT`.
+             Separately: `RemoteWormholeNav.dir()` carries no mtime/size at all (bare `{name}` entries)
+              — a real blind spot if Atlas is ever stood against a remote node's nav instead of the
+               local FSA one, though not a live risk today (every current use is local).
 3. `atlas_lint` reads for `--sees` could ride the census itself if `wormhole/Story/**/*.snap` were
     rostered as docs with a tiny `see:` collector — one read per snap per change instead of ~1000 per
      ask.  Only worth it if the lint gets asked often.

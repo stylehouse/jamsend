@@ -103,7 +103,7 @@ const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return '1565d1614530eadd~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return '0eb4c564dfbe18d6~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a
@@ -205,7 +205,7 @@ async Atlas_pass(w, req, nav) {
         let cold = doc.oa({ Map: 1 }) ? true : false
         if (!cold) {
             if (adopted >= ATLAS_ADOPT) { more = more + 1; continue }
-            if (await this.Atlas_cache_adopt(w, doc)) { adopted = adopted + 1; continue }
+            if (await this.Atlas_cache_adopt(w, nav, doc)) { adopted = adopted + 1; continue }
         }
         if (mapped >= ATLAS_BUDGET) { more = more + 1; continue }
         await this.Atlas_map_one(w, nav, doc)
@@ -284,7 +284,7 @@ async Atlas_refresh(w, nav) {
     for (const doc of w.o({ Doc: 1 })) {
         if (doc.sc.by === ATLAS_MAPPER && (doc.oa({ Map: 1 }) || doc.sc.error)) continue
         if (!doc.oa({ Map: 1 })) {
-            if (await this.Atlas_cache_adopt(w, doc)) continue
+            if (await this.Atlas_cache_adopt(w, nav, doc)) continue
         }
         if (mapped >= ATLAS_REFRESH_MAP) { pending = pending + 1; continue }
         await this.Atlas_map_one(w, nav, doc)
@@ -433,7 +433,7 @@ async Atlas_cache_put(w, doc) {
 // Atlas_cache_adopt — rebuild a Doc's Map from its row with no read and no parse.  Only when the
 //  row was made by THIS mapper and the file's mtime+size still match what the row saw; the Doc is
 //   stamped `warm` so a census row tells a cache adoption from a real parse (a real parse clears it).
-async Atlas_cache_adopt(w, doc) {
+async Atlas_cache_adopt(w, nav, doc) {
     let db = this.Atlas_db()
     if (!db || w.c.nocache) return false
     let row = null
@@ -444,6 +444,22 @@ async Atlas_cache_adopt(w, doc) {
     }
     if (!row || !row.sc || row.sc.by !== ATLAS_MAPPER) return false
     if (row.mtime !== (doc.c.mtime ?? 0) || row.size !== (doc.c.size ?? 0)) return false
+    // mtime+size matching is only a HINT the row might still be good, never proof — the owner's own
+    //  challenge 2026-09-06 ("I don't think we know the mtime"): two edits inside the same wall-clock
+    //   second that leave a file's byte length unchanged (a single-character substitution, exactly
+    //    the shape of bumping ATLAS_MAPPER's own version string this session) would pass this check
+    //     while genuinely changing content — a silent stale-adopt, the one class of bug this whole
+    //      project exists to refuse.  A real read+dige is cheap next to the PARSE this adopt exists
+    //       to skip, so pay it here and let the dige — the actual truth, never the listing metadata —
+    //        decide.  git's own index does the identical mtime+size-then-hash two-step for the same
+    //         reason; there is no daemon-side git integration to lean on instead (checked: neither the
+    //          runner tab, sandboxed to FSA, nor scripts/daemon/main.ts shells out to git today).
+    let path = doc.sc.Doc
+    let cut = path.lastIndexOf('/')
+    let text = await nav.read_file(path.slice(0, cut), path.slice(cut + 1))
+    if (text == null) return false
+    let dige = await dig(text)
+    if (dige !== row.sc.dige) return false
     let old = doc.o({ Map: 1 })[0]
     if (old) doc.drop(old)
     Object.assign(doc.sc, row.sc)

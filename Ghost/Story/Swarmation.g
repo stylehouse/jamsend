@@ -1969,8 +1969,16 @@ SwarmCohort(A,w):
 
 // SwarmCohort_drive — beat dispatch (req-local did_step), then re-sort. No pump: SwarmCohort is all
 //  model-layer (no mail, no frames) so there is nothing to deliver between beats.
+//   A BOOK DECLARES ITS OWN BEAT COUNT (the Vytonation idiom, matching SwarmReboot above): without
+//    this a Book with no recorded toc runs HOLLOW from the CLI — total 1, one step, green, zero beats
+//     fired — since a fresh Run only grows its total when a human presses Resume in the editor.
+//      Found live 2026-09-06 via the Atlas unproven-`%see` lint: every one of this Book's 7
+//       assertions had been unverified since authorship because the fixture never recorded past
+//        step 1.  'new' mode only: a recorded Book takes its total from the toc.
 async SwarmCohort_drive(w, req):
-    let n = (this.c.run)?.c.step_n
+    let run = (this.c.run)
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 6 }
+    let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) await this.SwarmCohort_stand(w)
@@ -2049,7 +2057,7 @@ SwarmCohort_witness(w):
     let prepub = alice.sc.prepub
     // beat 2: the discriminator — both vessels are known tabs (address + role landed) and a stranger is not.
     let sibA = peering.o({ Sibling: 'vessA' })[0]
-    if (n === 2 && this.Swarm_is_sibling(alice, 'vessA') && this.Swarm_is_sibling(alice, 'vessB') && !this.Swarm_is_sibling(alice, 'stranger9') && sibA && sibA.sc.address === prepub + '_1' && sibA.sc.role === 'cave' && !(oa %see:'the roster knows vessA and vessB as our own tabs — a stranger is no sibling')) i %see:'the roster knows vessA and vessB as our own tabs — a stranger is no sibling'
+    if (n === 2 && this.Swarm_is_sibling(alice, 'vessA') && this.Swarm_is_sibling(alice, 'vessB') && !this.Swarm_is_sibling(alice, 'stranger9') && sibA && sibA.sc.address === prepub + '_1' && sibA.sc.duty === 'cave' && !(oa %see:'the roster knows vessA and vessB as our own tabs — a stranger is no sibling')) i %see:'the roster knows vessA and vessB as our own tabs — a stranger is no sibling'
     // beat 3: the two answers — family is silence (false, no husk) while a foe is the alarm (true + husk).
     if (n === 3 && w.c.kin_alarm === false && !peering.o({ Stolen: 'vessA' })[0] && !(oa %see:'a sibling claiming the name is family — note_theft answers false and raises nothing')) i %see:'a sibling claiming the name is family — note_theft answers false and raises nothing'
     if (n === 3 && w.c.foe_alarm === true && this.Swarm_stolen(alice) && peering.o({ Stolen: 'evil99' })[0] && !(oa %see:'an unknown claimant is a theft — note_theft answers true and Identity Stolen rises for evil99')) i %see:'an unknown claimant is a theft — note_theft answers true and Identity Stolen rises for evil99'

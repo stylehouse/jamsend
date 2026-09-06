@@ -3,17 +3,9 @@ story:SwarmCohort
   Plan
   Opt
     For
-  TimeSpool
-    TimeTotal:beliefs,avg=0.004
-      sample=0.008,at=1787743290
-      sample=0.002,at=1787781032
-      sample=0.001,at=1787781174
-      sample=0.004,at=1787784611
-      sample=0.005,at=1788661102
-    TimeTotal:step,avg=0.004
-      sample=0.008,at=1787743290
-      sample=0.002,at=1787781032
-      sample=0.001,at=1787781174
-      sample=0.004,at=1787784611
-      sample=0.005,at=1788661102
   step,dige:0260ba620e595d67
+  step=2,dige:29a1eec9ee417329
+  step=3,dige:afd7ab749e730f1b
+  step=4,dige:7300bf786b6c991e
+  step=5,dige:e02733ba87d74502
+  step=6,dige:58dfe06e6fa3cb24

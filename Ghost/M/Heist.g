@@ -3257,8 +3257,38 @@ Heist_keep_solo(keep, seed):
 Heist_keep_pool_go(keep, srcmir, seed):
     if (String(keep.sc.into || '') !== 'pool') { return 0 }
     if (!keep.sc.lofi) { keep.sc.lofi = 1; keep.bump() }
-    let cut = this.Heist_keep_solo(keep, seed)
+    // THE SEED'S PICK WEARS THE FOLDER'S ID, NOT THE SEED'S (2026-09-06, eed measured live through the
+    //  console ring: a pool keep with EIGHTEEN picks -- the whole Owen Pallett session folder -- sitting
+    //   'primed' for hours, un_n=18, "NO PROGRESS after 1 asks", while S served pages for it at 50KB/s
+    //    that never landed).  `seed` is the Mine/opus id the reach asked by (00bfacb6); the picks are minted
+    //     by the folder census under the source's RUMMAGE ids (64a77aae), and the seed appears only as the
+    //      mirror record's `re`.  So `Heist_keep_solo` found no pick with ref===seed, answered -1 ("the
+    //       seed's husk has not landed yet -- wait"), and the keep waited forever with all its siblings
+    //        still attached.  No Book could see it: a hand-minted mirror record's id IS the seed.
+    //  Resolve through the mirror: the record wearing re:<seed> names the pick that is the seed.  `srcmir`
+    //   was passed here all along and never read -- this is what it was for.
+    let sid = String(seed)
+    if (srcmir && !keep.o({ Pick: 1, ref: sid })[0]) {
+        let alias = this.Ra_rec_find(srcmir, { Record: 1, re: sid })
+        let aref = alias ? String(alias.sc.id || '') : ''
+        if (aref && keep.o({ Pick: 1, ref: aref })[0]) { sid = aref }
+    }
+    let cut = this.Heist_keep_solo(keep, sid)
     if (cut < 0) { return 0 }   // the seed's own husk has not landed yet — wait
+    // ASK BY THE ID THE HOLDER CAN ANSWER (2026-09-06, the same live walk, an hour later: the solo pick
+    //  went 'pulling' and was BENCHED 60s at 0/16 -- S's serve.live stayed empty).  The pick's ref is the
+    //   rummage id, which the holder resolves only through its runtime `w.c.rummage_libs`; the daemon had
+    //    been restarted since it described that folder, so the id meant nothing to it and it served nothing
+    //     (the very "keep-id map is runtime-only and a reload wipes it" the re-census heal warns about).
+    //      The SEED is the holder's own Mine id -- the id its verdict said `arrived` to, the id its opus
+    //       stock stands under, resolvable through Repli_find_record's plain lookup with no runtime map at
+    //        all.  And its Mine catalog row (preview, total) is already in our mirror, so `{id: seed}` binds
+    //         the pick to a record with chunks.  A pool wants the rolling copy, and the opus stock IS that
+    //          copy.  So a pool pick asks by the seed; the rummage id stays as `rref` for the record it came from.
+    if (sid !== String(seed)) {
+        let pk = keep.o({ Pick: 1, ref: sid })[0]
+        if (pk) { pk.sc.rref = sid; pk.sc.ref = String(seed); pk.bump() }
+    }
     keep.sc.state = 'pulling'
     keep.bump()
     console.log('🏊▶ pooling ' + String(keep.sc.Heist || seed).slice(0, 32) + ' — one track, lofi' + (cut ? ' (' + cut + ' folder sibling(s) left behind — a pool takes the track, not the album)' : ''))

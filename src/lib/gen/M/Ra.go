@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '68a7408e97b2e20b~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'aa99dfac4638b93a~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1780,6 +1780,14 @@ Ra_pool_sources(w) {
         for (const r of this.Ra_recs(stock)) {
             let id = String(r.sc.id || '')
             if (!id) { continue }
+            // A BROWSED HUSK IS NOT A SOURCE (2026-09-06, eed measured live: 17 of 18 reaches to S refused
+            //  `not_in_library`, four reaches a second, forever).  A friend's mirror also carries the
+            //   `husk,rummage` rows a folder describe-ask left behind -- the listing of a folder someone
+            //    heisted from them, never stocked into their Mine.  The pool draw ranked those like tracks,
+            //     booked fills for them, and the holder's verdict (Mine only) refused every one.  Skip them:
+            //      a candidate must be something the holder has actually stocked.  (Owed on the holder's side:
+            //       press from the RummageLib husk -- it has a path -- so a browsed folder becomes servable.)
+            if (r.sc.husk || r.sc.rummage) { continue }
             let row = { id: id, from: from, title: String(r.sc.title || '') }
             if (crewish(from)) { row.crew = 1 }
             out.push(row)
@@ -5527,18 +5535,45 @@ async Ra_pool_fill_land(w, ident) {
                 //      keep that has sat 60s with no route AND no byte of progress is worth abandoning, not
                 //       nursing: drop it and let the next want take this pass.  pull_progress_ts / no_route_ts
                 //        are Heist_keep_step's own runtime fields (.c, never snapped) -- read, not duplicated.
+                // ⚠ PATIENCE MUST OUTLAST THE SOURCE'S OWN WORK (2026-09-06, measured the moment the circuit first
+                //  ran end to end).  The serving side answers a fill by TRANSCODING: the daemon's own log reads
+                //   "lofi: 10 Sons of Light and Darkness.flac -> ogg128 (4021KB from 92690KB)" -- a 92MB FLAC, which
+                //    takes minutes of ffmpeg, during which not one byte can move and the booker sees a frozen
+                //     frontier.  A 60s give-up cancelled the keep at exactly the moment the source was working
+                //      hardest, re-minted it, and cancelled it again forever: a livelock built out of impatience.
+                //  So the windows are split by WHAT the silence means.  No ROUTE at all is a fast fact -- nobody is
+                //   there, 60s is generous.  No PROGRESS while a route stands may be a source mid-encode, so it gets
+                //    PRESS_PATIENCE (5 min): long enough for a big lossless file to render, short enough that a
+                //     genuinely dead transfer still frees its slot within one sit-down.  The knob is world-side so a
+                //      Book can shorten it, and the owner can lengthen it for a slow box without a recompile.
                 let now = Date.now()
+                let routeWait = 60000
+                let pressWait = (w && w.c && w.c.pool_press_patience_ms != null) ? +w.c.pool_press_patience_ms : 300000
                 let stuck = inflight.find((h) => {
                     let noRoute = +(h.c.no_route_ts || 0)
-                    if (noRoute && now - noRoute > 60000) { return true }
+                    if (noRoute && now - noRoute > routeWait) { return true }
                     let started = +(h.c.pull_started_ts || 0)
-                    if (!started) { return false }
+                    if (!started) {
+                        // A KEEP THAT NEVER STARTS IS THE WORST KIND OF STUCK (2026-09-06, eed measured live:
+                        //  one keep sat 'primed' while TWENTY-ONE arrived reaches queued behind it, and the
+                        //   give-up could not see it -- it only knew how to time a pull that had BEGUN).  A
+                        //    keep with no route says so via no_route_ts above; this is the other silence, where
+                        //     everything looks fine and nothing has happened.  Time it from when it was minted.
+                        // …AND THE CLOCK MUST SURVIVE A RELOAD (2026-09-06, an hour later, the same keep: minted
+                        //  20:32, the tab reloaded at 20:33, and the keep came back through the Berth with its
+                        //   `.c` gone -- no fill_born, no pull timers -- so `born` read 0 and it was immortal
+                        //    AGAIN, exactly the shape this block was written to end.  `sc.at` is the mint time
+                        //     and it is snapped; it is the clock of last resort for a keep that has forgotten.
+                        let born = +(h.c.fill_born || 0) || ((+(h.sc.at || 0)) * 1000)
+                        return born > 0 && (now - born) > pressWait
+                    }
                     let progressed = +(h.c.pull_progress_ts || started)
-                    return (now - progressed) > 60000
+                    return (now - progressed) > pressWait
                 })
                 if (stuck) {
                     let name = String(stuck.sc.Heist || stuck.sc.seed || '?')
-                    console.log('🏊⚠ pool-fill: giving up on stalled heist "' + name.slice(0, 32) + '" (60s stuck) -- trying the next track instead')
+                    let stuckFor = Math.round((now - Math.max(+(stuck.c.pull_progress_ts || 0), +(stuck.c.pull_started_ts || 0), +(stuck.c.no_route_ts || 0))) / 1000)
+                    console.log('🏊⚠ pool-fill: giving up on stalled heist "' + name.slice(0, 32) + '" (' + stuckFor + 's without a byte) -- trying the next track instead')
                     // THE PROPER ABANDON, NOT A RAW rm (2026-09-06 self-review): Heist_keep_cancel is the one road
                     //  that also drops the in-flight %Caper (Heist_job_drop) — a bare shop.rm leaves that job
                     //   pulling into an orphaned particle, the exact "close the Haul faster" bug Heist_keep_cancel's
@@ -5566,6 +5601,12 @@ async Ra_pool_fill_land(w, ident) {
             let k = shop.i({ Heist: this.Radio_clean ? this.Radio_clean(title) : title, seed: of, pub: to, state: 'primed', into: 'pool', why: 'fill' })
             k.c.up = shop
             k.c.last_touch = Date.now()
+            // A BIRTH CLOCK NOBODY ELSE WINDS (2026-09-06).  The give-up below timed a never-started keep from
+            //  last_touch -- which Heist.g rewrites in ten places as its "recently touched" focus marker, so the
+            //   timer reset on every pass and a keep stuck at 'primed' was immortal.  eed measured it: ONE keep
+            //    holding twelve arrived reaches behind it indefinitely.  fill_born is written here, once, and
+            //     read only by the give-up; no other file touches it, so the age it reports is the real one.
+            k.c.fill_born = Date.now()
             if (this.Heist_keep_born) { this.Heist_keep_born(k, this.Swarm_now ? this.Swarm_now(w) : 0) }
             if (this.Radio_friendly) { let fn = this.Radio_friendly(homes.mw, to); if (fn) { k.sc.from_name = fn } }
             if (srec && srec.sc.artist) { k.sc.artist = this.Radio_clean ? this.Radio_clean(srec.sc.artist) : String(srec.sc.artist) }

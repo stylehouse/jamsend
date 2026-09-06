@@ -1,0 +1,17 @@
+Snap:H
+  H:SwarmCohort,Run
+    A:SwarmCohort
+      self,round=2	{"mung":["age"]}
+      w:SwarmCohort,now=1759200000
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Account,of:Alice
+          Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
+            Peering,name:32c1ce7a059129d1,friendly:Alice
+              Sibling:vessA,address:32c1ce7a059129d1_1,duty:cave
+              Sibling:vessB,address:32c1ce7a059129d1_3
+            Crew,soul:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+              mate:32c1ce7a059129d1,role:Captain,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+              Key,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213	{"mung":["secret"]}
+        req:witness,eternal,ok
+        see:the roster knows vessA and vessB as our own tabs — a stranger is no sibling

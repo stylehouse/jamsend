@@ -79,6 +79,10 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  never listed here, so the CLI refused the one op that makes a MIDDLE step inspectable: without it
 //   `snap 3` of a 9-step Book returns got_snap:null, trimmed 5 steps behind, and a flapping early step
 //    cannot be diffed at all.  `retain on` sticks on w:Story.c across runs.
+// --unknown-ok — permit a READ-ONLY ask against a live tab that will not classify.  See the resolver
+//  below for why this is safe (the tab, not the CLI, is the authority on what it will do).
+const UNKNOWN_OK = process.argv.includes('--unknown-ok')
+let PLAYER_PUB = ''   // set by --player=: the one music page a slot-addressed ask is for (sendAsk stamps it into ask.pub)
 const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
@@ -276,7 +280,7 @@ async function liveCensus({ classify = true,
 		for (const slot of ['runner', 'player']) {
 			const a = await askOne(slot, { op: 'ping' }, 3500)
 			const pub = a?.control === 'runner_ack' ? a.result?.self : null
-			if (pub && !found.has(pub)) { found.set(pub, { pub, ack: a.result ?? {}, role: 'unknown' }); added = true }
+			if (pub && !found.has(pub)) { found.set(pub, { pub, ack: a.result ?? {}, role: 'unknown', slot }); added = true }
 		}
 		if (added) quiet = 0; else quiet++
 		if (!found.size && r >= 1) break        // two silent rounds ⇒ nobody home; don't burn the cap
@@ -284,7 +288,9 @@ async function liveCensus({ classify = true,
 	}
 	if (classify && found.size) {
 		await Promise.all([...found.values()].map(async (f) => {
-			const s = await askOne(f.pub, { op: 'supervisor' }, 8000)
+			// a tab found on the `player` slot is classified THROUGH that slot (see probeLive: the relay's
+			//  own-door rule means an addressed ask never reaches a music page's role channel).
+			const s = await askOne(f.slot === 'player' ? 'player' : f.pub, f.slot === 'player' ? { op: 'supervisor', pub: f.pub } : { op: 'supervisor' }, 8000)
 			const h = s?.control === 'runner_ack' && s.ok !== false ? s.result?.humdinger : undefined
 			f.role = h === true ? 'player'
 				: h === false ? (f.ack.role === 'runner' ? 'runner' : String(f.ack.role ?? 'unknown'))
@@ -428,16 +434,36 @@ async function probeLive(id, want) {
 			//  (the relay's own `undeliverable`), so a dead candidate costs one round, not three.
 			let a = null
 			for (let t = 0; t < 3 && a?.control !== 'runner_ack'; t++) {
-				a = await askOne(pub, { op: 'ping' }, 4000)
+				// A MUSIC PAGE IS ASKED THROUGH ITS SLOT, NOT ITS PUB (2026-09-06).  The relay's own-door rule
+				//  (relay.ts deliverLocal) hands every to:<prepub> frame to the tab's STATION socket alone, and a
+				//   music page has one — so its Lies channel (?addr=player, the only socket that answers
+				//    runner_ask) never sees an addressed ask, and every --player= probe timed out for a day
+				//     while the tab was alive.  The `player` slot fan-out does reach it; `ask.pub` names the one
+				//      tab meant and every other player stays silent (Lies_runner_ask_recv).
+				a = await askOne(want === 'player' ? 'player' : pub, want === 'player' ? { op: 'ping', pub } : { op: 'ping' }, 4000)
 				if (a?.control === 'undeliverable') break
 			}
 			if (a?.control !== 'runner_ack') continue
-			const s = await askOne(pub, { op: 'supervisor' }, 8000)
+			const s = await askOne(want === 'player' ? 'player' : pub, want === 'player' ? { op: 'supervisor', pub } : { op: 'supervisor' }, 8000)
 			const h = s?.control === 'runner_ack' && s.ok !== false ? s.result?.humdinger : undefined
 			const role = h === true ? 'player'
 				: h === false ? (a.result?.role === 'runner' ? 'runner' : String(a.result?.role ?? 'unknown'))
 				: 'unknown'
 			if (role === want) return pub
+			// AN ADDRESSED ACK PROVES THE TAB IS THERE; only its self-description is missing (2026-09-06,
+			//  the owner's eed).  The census tells a music page from a test runner by asking `supervisor`
+			//   and reading `humdinger`; a tab that misses that 8s window classifies 'unknown' and is
+			//    refused for BOTH roles.  Right for a mutating op — but it also locked read-only
+			//     introspection out of the one tab where the bugs actually live, since a busy music page
+			//      (heavy Repli, a laggy panel) can be perfectly alive and still miss the window.
+			//  Safe because this gate was never the authority.  LiesFunk says so itself: "The CLI's
+			//   PLAYER_OPS gate is advisory; THIS is the authority — a music tab can be introspected but
+			//    never made to run a Book or reload."  The tab refuses run|release|retain|accept|declare|
+			//     reload|ghost_load on its own, so --unknown-ok can only widen READ-ONLY asks.
+			if (role === 'unknown' && UNKNOWN_OK && want === 'player' && PLAYER_OPS.includes(op)) {
+				console.error(`… ${pub.slice(0, 8)} answered but would not classify — proceeding read-only (--unknown-ok)`)
+				return pub
+			}
 			wrong = { wrong: pub, role }
 		}
 	} finally { try { w2.close() } catch {} }
@@ -494,7 +520,9 @@ if (playerSel !== undefined) {
 		console.error(`⇢ --player=${playerSel} not in wormhole/Cluster/toc.snap — asking the relay instead (--live)`)
 		return resolveLive(playerSel, 'player')
 	})())
-	TARGET = pub
+	// the main ask goes to the `player` SLOT with the pub in the ask (own-door rule — see probeLive)
+	PLAYER_PUB = pub
+	TARGET = 'player'
 }
 if (op === 'run' && !arg)  { console.error('run needs a Book: node scripts/runner_ask.mjs run <Book>'); process.exit(2) }
 if (op === 'tidy' && !arg) { console.error('tidy needs a target: node scripts/runner_ask.mjs tidy <crew|rebuffs|forget:<pub prefix>> --player=<id>   (the tab must be armed: socklog on --reload)'); process.exit(2) }
@@ -598,7 +626,7 @@ function sendAsk(ws, theAsk, to = undefined, timeoutMs = TIMEOUT_MS) {
 		}
 		const timer = setTimeout(() => settle({ ok: false, error: `no reply in ${Math.round(timeoutMs / 1000)}s (runner not connected or half-open?)` }), timeoutMs)
 		ws.on('message', onMsg)
-		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: to ?? TARGET, seq: Date.now(), corr }, ask: theAsk, corr }))
+		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: to ?? TARGET, seq: Date.now(), corr }, ask: PLAYER_PUB ? { ...theAsk, pub: PLAYER_PUB } : theAsk, corr }))
 	})
 }
 // collectAcks — the courting probe: ONE role-broadcast ping, but instead of settling on the first ack it
