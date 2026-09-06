@@ -412,9 +412,10 @@ Read the failing column and the rule falls out on its own: **`of:` is this codeb
     *holdings* — the things Ra mints — and covers **none of the referring particles**. So the wire
      can address what a peer HAS, and cannot address any statement a peer MAKES about it.
 
-**The instance that proves it is not theoretical: `%Spin`.** `Jam_event` (`Ghost/M/Jam.g:50`) mints
+**The instance that proves it is not theoretical: `%Spin`.** `Jam_event` (`Ghost/M/Jam.g:50`, deleted
+ 2026-09-04 with the whole ledger — kept here as the still-valid worked example) mints
  **one row per (kind, track)**, keyed on `of:rec.sc.id` — so one `%Jam` legitimately holds many
-  `%Spin`, one per distinct track, and `Jam_tally` (`Jam.g:128`) exists precisely to COUNT them.
+  `%Spin`, one per distinct track, and `Jam_tally` (`Jam.g:128`, likewise gone) existed precisely to COUNT them.
    The ledger crosses (`MusuBuddy/011.snap:266` — `Theirs,pub:… > stock,pub:… > Jam,with:… > Spin,of:…`).
     On arrival every `%Spin` upserts onto the first, so **a friend's ledger lands holding at most one
      Spin, one Like and one Grab no matter how many tracks were played**, and the mirror's

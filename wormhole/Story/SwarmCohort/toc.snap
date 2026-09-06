@@ -9,9 +9,11 @@ story:SwarmCohort
       sample=0.002,at=1787781032
       sample=0.001,at=1787781174
       sample=0.004,at=1787784611
+      sample=0.005,at=1788661102
     TimeTotal:step,avg=0.004
       sample=0.008,at=1787743290
       sample=0.002,at=1787781032
       sample=0.001,at=1787781174
       sample=0.004,at=1787784611
+      sample=0.005,at=1788661102
   step,dige:0260ba620e595d67

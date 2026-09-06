@@ -100,6 +100,8 @@ Four live gates fell (below) and the face still said **"N pooled · none playabl
       `Ra_pool_off` clears all, the report says `N evicted but file lingering`) stays as belt-and-braces.
        MusuPoolBytes beat 4 had RECORDED the bug (`left_bytes=8118, rm_again:true`) — re-sworn with real removal.
 
+- **The eviction bug is REAL-TESTED, not a live-only guess.** `Ra_quarter_diff` evicts anything not in the CURRENT sit-down goal, and the random pool draws its goal fresh from THIS SESSION's %Theirs mirrors — which rebuild one row at a time, so right after a reload a pooled track's own holder can be entirely absent from the candidate set with nothing about the track itself having changed. Fixed: a pooled id is re-added as its own ranking candidate before the goal is cut (Ra_pool_hash is a pure function of the id, so its rank never moves) — sediment only yields when a genuinely better-ranked arrival crowds it out, never merely because this session has not caught up. This is pure C-tree logic with **no live dependency** — MusuPoolRandom beat 5 proves it deterministically (Ra_pool_hash computed by hand: salt=1 ranks f4 < f3 < f2 < f1 < c1..c4 < f5 does NOT hold — f5 outranks all three, so it evicts exactly f2, the worst of the three, never f3/f4). The owner's 'shouldn't testing have caught that' was right: this bug was never live-only, nobody wrote the growing/thin-candidate scenario. Gated, declared, green.
+
 **Owed:** a live walk of the keep road end-to-end (eed ← daemon) — the resurrect + carry + keep are each
  gated, the chain is not. And a folderless body's pool still has no durable CATALOG beyond the disk rebuild,
   which is fine as long as `pool/` is the fact.
@@ -767,7 +769,7 @@ Wire: none — this is PURELY LOCAL. No peer exchange.
 ### 4.2 The Siphon (deliberate pull from a friend's share → OPFS)
 
 Source: a friend's share you are browsing (explicit lib, not ambient).
-Verb: `Siphon_pull(w, shelf, pool, lib, origId, nav)` in `Ghost/M/Siphon.g:152`.
+Verb: `Siphon_pull(w, shelf, pool, lib, origId, nav)` in `Ghost/M/Siphon.g:92`.
 Wire: uses the existing radio/Repli chunk machinery (the track is already streamable; the siphon
  reads the bytes that would have played and writes them to OPFS instead).
 State: `%Siphon,of:<origId>,phase` — legible, transient.

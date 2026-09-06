@@ -53,7 +53,15 @@ import { Dexie } from "dexie"
 //       early, so those calls were never recorded; the Atlas orphan lint listed every Book beat
 //        as uncalled.  Fixed in compile.ts with a whole-document CALL_GAP sweep (stho only,
 //         dedup by offset).  Bumped so every cached row re-derives with the missing calls.
-const ATLAS_MAPPER = 'm10'
+//     m11 (2026-09-06): FILE_RE's `\b` broke at a hyphen, so `relay-test.ts:55` truncated to
+//      `test.ts:55` — found by acting on the missing-link lint itself: two flagged "missing"
+//       targets were real, existing files (`scripts/relay-test.ts`, `scripts/runner-ask-test.ts`)
+//        misread by the regex, not stale docs.  Fixed with a negative lookbehind in compile.ts.
+//     (Atlas_lint itself changed the same day too, not the collector — no mapper bump needed for
+//      that: it now excludes a history/|shelved/ target from missing/beyond_eof, since Atlas
+//       never rosters those shelves and so cannot confirm or deny a link into one — CLAUDE.md's
+//        own corollary, "a referenced spec/X.md that isn't there is almost certainly history/X.md".)
+const ATLAS_MAPPER = 'm11'
 // ATLAS_BUDGET — docs mapped per pass.  A %Map build is a real parse (the whole-doc tsstho tree
 //  walk on .svelte), so this is the Stemdex's "polite pass" idea: converge over passes, never thump.
 const ATLAS_BUDGET = 6
@@ -95,7 +103,7 @@ const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return '2766267cacc1779d~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return '1565d1614530eadd~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a
@@ -501,6 +509,12 @@ Atlas_lint(w) {
             let target = l.sc.target
             let ext = target.split('.').pop()
             if (!ATLAS_EXT[ext]) continue                 // scripts/*.mjs this.c(). are not rostered — no verdict
+            // a target NAMING history/ or shelved/ points at a shelf Atlas deliberately never rosters
+            //  (CLAUDE.md's own corollary: "a referenced spec/X.md that isn't there is almost certainly
+            //   spec/history/X.md") — found live 2026-09-06 acting on this very lint's first findings:
+            //    `Vyto_sizing_todo.md`'s own `history/Voro_todo_parts_2026-07.md:392` is a well-formed,
+            //     deliberate reference this lint had no way to confirm and wrongly called missing.
+            if (/(^|\/)(history|shelved)\//.test(target)) continue
             file_links = file_links + 1
             let hit = this.Atlas_resolve(by_tail, target)
             if (!hit) {

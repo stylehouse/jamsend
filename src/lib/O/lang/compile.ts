@@ -248,7 +248,10 @@ export const LANG_COMPILE = {
         //  Bare `Name.ext` mentions (no `:line`) are deliberately excluded — the 2026-09-05 census
         //  found them the noisiest of the three link forms; `file:line` alone is ~0% false-positive.
         const WIKI_RE = /\[\[([a-z0-9-]+)\]\]/g
-        const FILE_RE = /\b([A-Za-z_][A-Za-z0-9_./]*\.(?:svelte|ts|g|mjs|md)):(\d+)/g
+        // \b breaks at a hyphen (not a word char), so `relay-test.ts` was truncated to `test.ts` —
+        //  found live 2026-09-06 via the Atlas missing-link lint flagging two real, existing files
+        //   as gone.  A lookbehind for "not a filename char right before" replaces the \b.
+        const FILE_RE = /(?<![A-Za-z0-9_./-])([A-Za-z_][A-Za-z0-9_./-]*\.(?:svelte|ts|g|mjs|md)):(\d+)/g
         for (let ln = 1; ln <= doc.lines; ln++) {
             const dline = doc.line(ln)
             const text  = dline.text

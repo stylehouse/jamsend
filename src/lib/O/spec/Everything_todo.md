@@ -147,7 +147,7 @@ Three overlapping forward designs:
         locator must survive its target renaming — the SAME reference-caretaking
          blocker behind Interest.md's "Rejoin the stack frame" Point-carry (#6).
    - **`bookmark_vanished` re-anchor unbuilt** — `Lang_bookmark_vanished`
-      (Lang.svelte:2142) warns + stamps `%vanished`; the re-anchor + copy-paste
+      (Lang.svelte:1796) warns + stamps `%vanished`; the re-anchor + copy-paste
        recovery passes are empty stubs (#8).
    - **push verify false-positives** — a dropped unaccepted clone reads as a goner
       on the origin walk, so `req:push/%dirty` stays open for a push that landed;
@@ -318,7 +318,7 @@ One low-priority unknown (`reactivity_docs.md`):
 Resolved (was a rumour): Stuffing no longer over-creates instances. One
  `Stuffing` per component lifetime (`Stuffing.svelte:30`); components
   `register_stuffing` into `H.stuffing_registry` for *unreactive* version-based
-   updates. A ~0.33Hz heartbeat (`Housing.svelte:415`, `setInterval … 3000`)
+   updates. A ~0.33Hz heartbeat (`Housing.svelte.ts:581`, `setInterval … 3000`)
     plus a 200ms throttle, a microtask kick on register, and a piggyback inside
      each `H.clear()` drive `check_stuffings()`, which content-diffs `stuff_matrix`
       per entry (`matrix_changed`) and notifies only changed ones, all in one

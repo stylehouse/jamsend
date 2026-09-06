@@ -321,14 +321,71 @@ w:Atlas
                 tab's own nav, refresh after each) and 6 (drop A:Atlas, re-stand, `warm` from the rows
                  beats 2-4 wrote) added.
 
+**DONE 2026-09-06 (later still): acted on the lints — 7 real dangling references fixed, 2 bugs found
+ IN THE LINT ITSELF, one real gap diagnosed and left for its owner.**  `ATLAS_MAPPER='m11'`.
+
+- **Two lint false positives, both caught by investigating "missing" hits before touching any doc**
+   (never trust a lint's own verdict without checking the target actually exists):
+   1. `FILE_RE`'s `\b` breaks at a hyphen, so `relay-test.ts:55` truncated to `test.ts:55` and read as
+       a dangling link to a file that never existed — `scripts/relay-test.ts` and
+        `scripts/runner-ask-test.ts` both exist right now.  Fixed with a negative lookbehind.
+   2. A target naming `history/` or `shelved/` (`Vyto_sizing_todo.md`'s own
+       `history/Voro_todo_parts_2026-07.md:392`) was flagged missing because Atlas never rosters those
+        shelves — it had no way to confirm OR deny the link, and guessed wrong.  `Atlas_lint` now skips
+         a target that names either shelf explicitly, rather than claiming it's gone.
+- **Five stale `file:line` references repaired to where the content actually lives now**, each verified
+   by finding the real definition/anchor before touching the doc, never by guessing a nearby line:
+    `Daemon_todo.md` → `BigQualand.svelte.ts:47` (the file gained a `.ts`, and the old 14-line range no
+     longer matched a 63-line function — cited the def line, not a fabricated range);
+      `Everything_todo.md` → `Housing.svelte.ts:581` (`setInterval … 3000` relocated) and
+       `Lang.svelte:1796` (`Lang_bookmark_vanished` moved 346 lines down the same file);
+        `SoundPooling_todo.md` → `Ghost/M/Siphon.g:92` (`Siphon_pull`, file shrank from >152 to 128
+         lines); `Perf_todo.md` → `Lang.svelte:734` (`Lang_build_mapules`, moved off the deleted
+          `LiesHold.svelte`).
+- **One stale CLAIM caught alongside the stale reference, in `Perf_todo.md`.**  The line said
+   `Lang_build_mapules` was ungated; its own current header comment says "Content-gated … Hashed once
+    per recompile" — the fix already shipped and the doc's own later `## Ranked levers` section already
+     says so (`§status: DONE`).  The earlier diagnosis paragraph just never got the same annotation.
+      Added `(§status: DONE — see lever 6 below.)`, matching the doc's own established convention rather
+       than inventing new phrasing.
+- **One stale claim in `Mag_todo.md`** cited `Jam_event`/`Jam_tally` as still-standing proof of a design
+   point, six other places in the SAME doc already note `Jam.g` was deleted 2026-09-04 — this one
+    paragraph just predated the deletion and was never touched.  Annotated in the doc's own existing
+     style ("kept here as the still-valid worked example") rather than rewriting the argument.
+- **Left alone, on purpose, after checking:** the remaining 14 missing + 1 beyond-EOF are either (a) a
+   `%Jam` reference already self-annotated as deleted inline in the SAME sentence (`Radio_todo.md`,
+    `Voromay_todo.md` — nothing to fix, the doc already says so), (b) inside
+     `spec/ulative/memory-raw/` — an explicitly-named raw archive, narrating a repo shape from before
+      the file existed to move; editing it would falsify the record it's keeping, or (c)
+       `Download_stall_handover.md`, a point-in-time diagnostic explicitly marked "retire to
+        `spec/history/` when triaged" — not evergreen prose, not mine to edit.  **The corollary this
+         confirms**: a lint over a corpus this size will always need a human eye on "missing" before
+          any edit — the two false positives above were as common as the five real fixes.
+- **The unproven-`%see` count (137 → 21) mostly resolved itself** as other work landed real Book
+   recordings in the meantime — evidence the lint tracks live state, not a snapshot.  Of the 21 left,
+    one is a genuinely diagnosed, well-scoped bug, left undone on purpose: **`SwarmCohort`'s fixture is
+     hollow** — `wormhole/Story/SwarmCohort/toc.snap` has never recorded past step 1 (`001.snap` has
+      zero `see:` lines) though `SwarmCohort_drive` dispatches five real beats (2–6, all authored,
+       Swarmation.g:1972); it never sets `run.sc.total` on a fresh run, the exact
+        `hollow-book-1step-green.md` trap.  Every one of its 7 assertions has been unverified since
+         authorship.  **Not fixed here**: recording a Book's first real fixture means certifying its
+          FIRST recording is correct, which needs the beats' author, not a re-reader of them — and
+           `Swarmation.g` is a live file another session's automated sweep is actively running Books
+            against right now.  The remaining 14 unproven sentences (`SwarmGot`×7, `SwarmPolicy`×1,
+             `VoroRadio`×2, `VoroMitosis`×2, `VytoMemo`×1, `VytoCrush`×2, `VytoOrchestra`×1) all belong
+              to Books with real, multi-step recordings already — "fixture never re-sworn" after the
+               code moved on, not "never recorded" — lower urgency and likewise not mine to re-record.
+
 **Owed next, in order:**
-1. Act on the lints: the 18 dangling `file:line` refs and 3 past-EOF lines in spec docs are a
-    mechanical sweep; the 137 unproven `%see`s are a real question per Book (dead beats? fixtures never
-     re-sworn?) — Voronation.g first.
-2. `atlas_lint` reads for `--sees` could ride the census itself if `wormhole/Story/**/*.snap` were
+1. `SwarmCohort`'s first real recording — needs an editor authoring pass (a fresh multi-step Plan
+    can't be bootstrapped from the CLI alone) plus its own author's judgment on beat correctness.
+2. The 14 "fixture never re-sworn" sentences across `SwarmGot`/`SwarmPolicy`/`VoroRadio`/
+    `VoroMitosis`/`VytoMemo`/`VytoCrush`/`VytoOrchestra` — a re-record + re-accept per Book, same
+     caveat as above.
+3. `atlas_lint` reads for `--sees` could ride the census itself if `wormhole/Story/**/*.snap` were
     rostered as docs with a tiny `see:` collector — one read per snap per change instead of ~1000 per
      ask.  Only worth it if the lint gets asked often.
-3. The `Atlas()` do_fn still calls `Atlas_pass` every tick once converged (an `o()` walk over all Docs,
+4. The `Atlas()` do_fn still calls `Atlas_pass` every tick once converged (an `o()` walk over all Docs,
     cheap but pointless); a `w.c.converged` latch cleared by refresh would quiet it.
 
 Roots are `Ghost`, `src`, `scripts` (687 docs; `gen/`, `history/`, `shelved/`, `node_modules`

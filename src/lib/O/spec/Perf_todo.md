@@ -86,8 +86,8 @@ Per-compile (gated behind the debounce, not per-tick, but O(points)):
     **always misses** and the full **O(points × (defs+regions))** resolve reruns
      (`LangGraft.svelte:412`). Tell: `Lang_Map_report` right beside it is correctly
       content-digest-gated (`Lang.svelte:706`). **← being fixed now (see §status).**
-- `Lang_build_mapules` ungated (`LiesHold.svelte:442`) though `Lang_Map_report` next
-   to it is digested.
+- `Lang_build_mapules` ungated (`Lang.svelte:734`, moved from the deleted `LiesHold.svelte`) though
+   `Lang_Map_report` next to it is digested. **(§status: DONE — see lever 6 below.)**
 - `%Map` emptied+rebuilt wholesale each compile, no region diffing (`lang/compile.ts`).
 - `Lies_resolve_wants` runs its reduce+relabel **every heartbeat** even at cap-12
    (`Lies.svelte:961`; the cap tamed the unbounded O(N), the per-tick run remains).

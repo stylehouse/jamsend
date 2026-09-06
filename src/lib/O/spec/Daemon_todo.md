@@ -589,7 +589,7 @@ Owner, 2026-08-07: *"it needs to take on a specific Identity, like the `?I=…` 
 
 **Answer: it is not different at all.** `/BigSoundland` is one line —
  `boot_qualand({ book: 'Sounditron', role: 'sound' })` (`V/BigSoundland.svelte:46`) — and
-  `boot_qualand` (`BigQualand.svelte:54-68`) does exactly what `Daemonic.svelte` already did, plus
+  `boot_qualand` (`BigQualand.svelte.ts:47`) does exactly what `Daemonic.svelte` already did, plus
    three stamps. Those three are now stamped (`ROLE=<name>`, default `daemon`; `ROLE=0` opts out):
 
 | stamp | what it buys |

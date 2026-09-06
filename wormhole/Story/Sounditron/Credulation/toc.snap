@@ -1,5 +1,5 @@
 Credulation,of_Book:Sounditron
-  run=0,at=1788652559.215,ok=0,ok_pct=0,mode:check
+  run=0,at=1788658394.748,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:176d03c1fb562ff9~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:b4c37f0c56f24f1a~g1
@@ -12,7 +12,7 @@ Credulation,of_Book:Sounditron
     uses:Ghost_M_Crate,dige:23184bd7b97119a6~g1
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3~g1
     uses:Ghost_M_Mesh,dige:2c1e6afdb90d9379~g1
-    uses:Ghost_M_Ra,dige:1d47c4ad9f215b40~g1
+    uses:Ghost_M_Ra,dige:5c59ade11b98d826~g1
     uses:Ghost_M_Booth,dige:29a57d8fed02b58e~g1
     uses:Ghost_M_Heist,dige:bd46e0831688a123~g1
     uses:Ghost_M_Heard,dige:0bfd6e1665386024~g1
@@ -21,7 +21,7 @@ Credulation,of_Book:Sounditron
     uses:Ghost_M_Siphon,dige:5f0e94a318c6d7fd~g1
     uses:Ghost_Story_Musuation,dige:d2366d4d9b4854bb~g1
     uses:Ghost_Story_Radiation,dige:a8e02e482b139e5c~g1
-    uses:Ghost_Story_Heistation,dige:6b12854faca63b19~g1
+    uses:Ghost_Story_Heistation,dige:ee093c61e603face~g1
     uses:Ghost_Story_Siphonation,dige:a51b38e9318b6f9b~g1
     uses:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
     uses:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1

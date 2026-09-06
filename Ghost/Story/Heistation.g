@@ -5729,13 +5729,14 @@ MusuPoolRandom_note(w, sc):
 
 async MusuPoolRandom_drive(w, req):
     let run = (this.c.run)
-    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 4 }
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 5 }
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) { await this.MusuPoolRandom_stand(w) }
         if (n === 3) { await this.MusuPoolRandom_book(w) }
         if (n === 4) { await this.MusuPoolRandom_crud(w) }
+        if (n === 5) { await this.MusuPoolRandom_sediment(w) }
     }
     this.MusuPoolRandom_witness(w)
     await this.Musu_float(w)
@@ -5876,6 +5877,53 @@ async MusuPoolRandom_crud(w):
     if (this.Ra_pool_drop(w, 'random') === 0) { row.drop_missing_is_zero = 1 }
     this.MusuPoolRandom_note(w, row)
 
+// beat 5 — SEDIMENT SURVIVES A THIN SESSION (2026-09-06, eed measured live: land two or three circulation
+//  tracks, then watch the very next steward pass evict every one of them — "2 pooled track(s) now dialable"
+//  then "evicted 3", forever, on every reload).  `sources` is drawn fresh from THIS session's %Theirs
+//  mirrors, which rebuild one row at a time as frames arrive — right after a reload, or while a friend is
+//  slow to answer, the pool's own already-landed tracks can be entirely ABSENT from the current sources,
+//  even though nothing about them changed.  The old diff evicted anything not in that instant's goal; this
+//  beat proves the fix — Ra_pool_hash(id) never changes, so a pooled id is re-added as its own candidate and
+//  keeps its earned rank — and, just as importantly, that eviction still fires when a REAL better candidate
+//  genuinely crowds the cap, so the fix is not "eviction never happens" but "eviction happens for cause."
+//  salt stays '1' (beat 2's own salt): Ra_pool_hash('random:1:<id>') ranks f4 < f3 < f2 < f1 < c1..c4 — the
+//  pool's sediment is exactly the three best of the eight Fay|Cavey candidates minted in beat 2.
+async MusuPoolRandom_sediment(w):
+    this.MusuPoolRandom_note(w, { reached: 'step_5' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788400030
+    let lib = w.c.lib
+    let pool = w.c.pool
+    let fay = w.c.fay
+    // beat 4's CRUD walked the composition down to the anonymous fallback — re-declare fresh rather than
+    //  depend on what it left behind.
+    this.Ra_pool_define(w, 'random', 'random', 3)
+    let pdef = this.Ra_pool_home(w).o({ Pool: 1, name: 'random' })[0]
+    pdef.sc.salt = '1'
+    pdef.bump()
+    // the sediment: three tracks an earlier, richer session already pooled.
+    for (const id of ['f2', 'f3', 'f4']) { let r = pool.i({ Record: 1, id: id, of: id }); r.c.up = pool }
+    // A THIN SESSION: Fay's mirror has only rebuilt f1 so far (its heard state is a fresh session, not a
+    //  fresh Fay — f2/f3/f4 are real, held, unchanged tracks that simply have not been re-mirrored yet).
+    let fstock = this.Ra_home_them(w, String(fay.sc.prepub))
+    for (const rec of this.Ra_recs(fstock).slice()) { if (String(rec.sc.id) !== 'f1') { fstock.rm({ Record: 1, id: rec.sc.id }) } }
+    let thin = this.Ra_pool_sources(w)
+    this.Ra_quarter(w, lib, pool, lib, 3, thin)
+    let out = this.Ra_pool_provisions(w)
+    let row = { thinned: 1, sources_n: thin.length }
+    if (out && out.o({ Want: 1, do: 'evict' }).length === 0) { row.no_evict_wants = 1 }
+    if (this.Ra_recs(pool).length === 3) { row.pool_still_holds_three = 1 }
+    // AND EVICTION STILL WORKS WHEN GENUINELY CROWDED OUT: Fay's mirror catches up AND grows a track, f5,
+    //  whose hash (1230fd6e) genuinely outranks all three sediment tracks — f2 is the WORST of the three
+    //  (15310227, the highest/worst value) and must yield; f3 and f4 (better-ranked) stand.
+    for (const t of [['f1', 'Fay One'], ['f2', 'Fay Two'], ['f3', 'Fay Three'], ['f4', 'Fay Four'], ['f5', 'Fay Five']]) { let r = fstock.i({ Record: 1, id: t[0], title: t[1] }); r.c.up = fstock }
+    let richer = this.Ra_pool_sources(w)
+    this.Ra_quarter(w, lib, pool, lib, 3, richer)
+    let out2 = this.Ra_pool_provisions(w)
+    if (out2 && out2.o({ Want: 1, of: 'f2', do: 'evict' }).length === 1 && out2.o({ Want: 1, of: 'f3', do: 'evict' }).length === 0 && out2.o({ Want: 1, of: 'f4', do: 'evict' }).length === 0) { row.worst_ranked_sediment_yields = 1 }
+    if (out2 && out2.o({ Want: 1, of: 'f5' }).length === 1) { row.better_candidate_enters = 1 }
+    this.MusuPoolRandom_note(w, row)
+
 // ── the witness — %see gated on TRUTH not beat number (no commas; em-dashes) ──
 MusuPoolRandom_witness(w):
     let T = this.MusuPoolRandom_T(w)
@@ -5892,6 +5940,11 @@ MusuPoolRandom_witness(w):
         this.story_swear(w, 'the reach road admits a Music-granted friend as it admits kin — the people\'s music — a stranger is still refused and the report finds its way back over the pier')
     if (c && +c.sc.resized_to_one === 1 && +c.sc.two_listed_in_order === 1 && +c.sc.dropped_pool_wants_gone === 1 && +c.sc.falls_back_to_anonymous === 1 && +c.sc.drop_missing_is_zero === 1)
         this.story_swear(w, 'pools are CRUD — resize in place — list in declaration order — drop one and its wants fall out at the next sit-down — drop the last and the composition is the anonymous taste pool again')
+    let d = T.o({ thinned: 1 })[0]
+    if (d && +d.sc.no_evict_wants === 1 && +d.sc.pool_still_holds_three === 1)
+        this.story_swear(w, 'sediment survives a thin session — a pooled track keeps its earned rank even when this session has not yet re-mirrored the holder who has it, so a reload cannot evict what nothing currently contradicts')
+    if (d && +d.sc.worst_ranked_sediment_yields === 1 && +d.sc.better_candidate_enters === 1)
+        this.story_swear(w, 'and eviction still fires for cause — a genuinely better-ranked arrival still crowds out the worst of the sediment, never the better-ranked tracks beside it')
 
 // ══ MusuPoolRadio — SOUNDPOOLING RIDES RADIO + HEIST (owner 2026-09-03: "ideally it works on top of a
 //  the Radio+Heist protocols, asking for Radio from a given area and then Heisting it all. saves us

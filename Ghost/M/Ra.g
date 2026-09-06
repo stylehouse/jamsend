@@ -1707,6 +1707,23 @@ Ra_quarter_goal_pools(shelf, pools, sources, pool, recent):
                 if (!holder[s.id]) { holder[s.id] = String(s.from || '') }
                 if (!ids.includes(s.id)) { ids.push(s.id) }
             }
+            // SEDIMENT SURVIVES A THIN SESSION (2026-09-06, eed measured live: "2 pooled track(s) now dialable"
+            //  then "evicted 3" the very next steward pass, forever -- the pool wiped every cycle with cap=25
+            //   and 3 held, nowhere near full).  sources is THIS SESSION's live %Theirs mirrors -- thin right
+            //    after a reload and growing as Repli discovers more of a friend's real library -- so an id pulled
+            //     in on an earlier, richer candidate set can rank outside today's still-forming top-cap window
+            //      purely because fewer candidates are known YET.  Ra_pool_hash is a pure function of the id, so
+            //       its rank never changes; add what is CURRENTLY POOLED to the candidate set before ranking --
+            //        it competes on the same hash as everything else and only falls out when genuinely crowded
+            //         past cap by better-ranked arrivals, never merely because this session's mirrors are still
+            //          catching up.  The 'radio' compartment above already keeps its own sediment this same way;
+            //           'random' never did.
+            if (pool) {
+                for (const r of this.Ra_recs(pool)) {
+                    let pid = String(r.sc.id || '')
+                    if (pid && !ids.includes(pid)) { ids.push(pid) }
+                }
+            }
             let key = {}
             for (const id of ids) { key[id] = this.Ra_pool_hash(String(pd.name) + ':' + String(pd.salt || '') + ':' + id) }
             ids.sort((a, b) => (key[a] < key[b] ? -1 : (key[a] > key[b] ? 1 : (a < b ? -1 : 1))))
@@ -5107,7 +5124,7 @@ Ra_pool_fill_wants(w, ident):
     //    different question from how many we choose to have in flight at once.  Pacing is policy; addressing is law.
     let budget = (w && w.c && w.c.pool_fill_budget != null) ? +w.c.pool_fill_budget : 1
     for (const want of out.o({ Want: 1, do: 'pull' })) {
-        if (n >= budget) { break }
+        if (fresh >= budget) { break }
         let from = String(want.sc.from || '')
         let of = String(want.sc.of || '')
         if (!from || !of) { continue }
@@ -5118,6 +5135,14 @@ Ra_pool_fill_wants(w, ident):
         //  The COUNT stays idempotent — a standing want is still a booked want (MusuPoolRandom's rebook_idempotent
         //   swears the second pass reports the same three) — only the re-book, re-stamp and re-send are skipped;
         //    `w.c.pool_fill_fresh` carries how many were actually NEW so the steward's line fires only on news.
+        // ⚠ A STANDING WANT MUST NOT SPEND THE BUDGET (2026-09-06, eed measured live).  The budget is SERIAL
+        //  (1 by the owner's ruling) and this line counted an ALREADY-STANDING reach against it — so the first
+        //   such want broke the loop and no fresh want was ever booked again.  eed sat on six reaches to a closed
+        //    Incognito window; they spent the whole budget every pass, forever, and the pool never filled from the
+        //     one peer that was actually alive.  Pacing is about how many pulls are IN FLIGHT AT ONCE, and a reach
+        //      to a dead peer is not a pull in flight: the budget bounds NEW bookings (fresh), never the tally.
+        //  n still counts standing wants — the caller's idempotence contract (MusuPoolRandom's rebook_idempotent
+        //   swears a second pass reports the same three) — it just no longer gates the loop.
         if (this.Swarm_reach_standing && this.Swarm_reach_standing(ident, from, of, 'serve')) { n = n + 1; continue }
         // A TERMINAL WANT IS DONE, NOT MERELY "NOT STANDING" (2026-09-06): Swarm_reach_standing correctly
         //  excludes refused|dead (they are not live work), but that made this loop treat them as "book it" —

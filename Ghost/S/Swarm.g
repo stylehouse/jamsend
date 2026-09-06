@@ -6163,6 +6163,29 @@ Swarm_reach_terminal(ident, to, of, forr):
     if (!r) { return null }
     let st = String(r.sc.state || '')
     return (st === 'refused' || st === 'dead') ? r : null
+// Swarm_reach_target_gone — IS THERE STILL ANYBODY THERE?  (2026-09-06, eed measured live: six reaches
+//  sat 'dispatched' for 36 hours to a closed Incognito window that had been its crew Cave.  A reach to a
+//   body that no longer exists is byte-identical to a reach to one that is merely slow -- so it never
+//    terminated, never freed its want-slot, and SoundPooling could not book a single fill past it.)
+//  GONE means: not one of my own crew bodies, AND no pier for that address bears a LIVE grant.  Presence
+//   is deliberately NOT consulted -- an offline friend is not a gone one, and this must never retire a
+//    relationship merely because its holder is asleep.  It is the LEDGER that says gone: a ✕ in the Door
+//     mints the NotGrant (Swarm_pier_forget), an eject drops the crew row, and this reads both.
+//  A retired Pier still STANDS as history (that is the design), so presence-of-a-Pier cannot be the test;
+//   liveness must be.  That is the whole thesis of Social_demarcation_todo.md, applied at one seam.
+Swarm_reach_target_gone(ident, reach):
+    let to = String(reach && reach.sc ? (reach.sc.to || '') : '')
+    if (!to) { return 0 }
+    if (this.Swarm_body_for && this.Swarm_body_for(ident, to)) { return 0 }
+    let peering = this.Swarm_peering(ident)
+    if (!peering) { return 0 }
+    for (const p of peering.o({ Pier: 1 })) {
+        let pub = String(p.sc.pub || '')
+        if (!pub || !(pub.startsWith(to) || to.startsWith(pub))) { continue }
+        if (!this.Swarm_pier_live) { return 0 }
+        if (this.Swarm_pier_live(p, 'Music') || this.Swarm_pier_live(p, 'MyCave') || this.Swarm_pier_live(p, 'Crew')) { return 0 }
+    }
+    return 1
 Swarm_reach_addr(ident, reach):
     if (!reach) { return null }
     let to = String(reach.sc.to || '')
@@ -6193,6 +6216,20 @@ Swarm_reach_dispatch(w, ident, reach):
     let addr = this.Swarm_reach_addr(ident, reach)
     if (!addr) { return null }
     if (!w || !w.c.station_up) { return addr }        // Book / no station: routing proven, wire inert, intent stands
+    // A REACH MUST BE ABLE TO DIE (2026-09-06).  Below the station gate ONLY: a driven world has no ledger to
+    //  read and its reaches stand as pure intent, which every fixture expects.  On a LIVE node, a target that
+    //   is neither a crew body nor a live-granted pier is gone for good -- say so once, terminally, so the
+    //    receipt sweep can retire it and its want-slot frees.  Silence backs off; absence ends.
+    if (this.Swarm_reach_target_gone && this.Swarm_reach_target_gone(ident, reach)) {
+        if (String(reach.sc.state || '') !== 'dead') {
+            reach.sc.state = 'dead'
+            reach.sc.why = 'no such body any more'
+            reach.sc.at = String(this.Swarm_now(w))
+            reach.bump()
+            console.log('⨳☠ reach ' + String(reach.sc.of || '').slice(0, 8) + ' → ' + String(reach.sc.to || '').slice(0, 8) + ' is dead — no such body any more (no crew row and no live grant)')
+        }
+        return null
+    }
     // ⚠ AN UNANSWERED REACH MUST BACK OFF, AND THIS IS WHY THE MUSIC STOPPED (2026-09-05, measured on eed:
     //  seq 1720→1742 in ten seconds — SIX frames every couple of seconds to one peer that never answers, for
     //   as long as the tab is open).  The settle loop re-dispatches every standing reach on every pump pass,
