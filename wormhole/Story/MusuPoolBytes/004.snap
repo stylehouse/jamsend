@@ -11,7 +11,7 @@ Snap:H
           reached:step_3
           landed,mardir:pool,card_on_the_pool_shelf,nothing_on_the_library_shelf,file_under_pool
           reached:step_4
-          offed,before,files,records,has_rm,card_and_file_gone,left_bytes=8118,rm_again:true,back_to_zero
+          offed,before,files,records,has_rm,card_and_file_gone,left_bytes=0,rm_again:false,nothing_left_under_pool,back_to_zero
         Theirs,pub:friendo
           stock,pub:friendo
             Mag:shuffle

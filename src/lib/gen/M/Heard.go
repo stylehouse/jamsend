@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return 'b77d443f1899143d~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return '0bfd6e1665386024~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -641,6 +641,9 @@ Heard_haul_piers(rw, me) {
         return rows[dj]
     }
     for (const keep of this.Heist_live_rows(rw)) {
+        // a POOL keep is the circulation fill's machinery, not something this person is bringing me (the owner
+        //  2026-09-06: "a Venus trying to download I never clicked on") — the Pocket cell owns its legibility.
+        if (String(keep.sc.into || '') === 'pool') { continue }
         if (String(keep.sc.state || 'primed') === 'done') { continue }
         // a keep with no `pub` has no holder to be a row of — it would open a nameless pier headed by the
         //  first 8 characters of nothing.  Every minted keep carries one; this is the guard, not a case.

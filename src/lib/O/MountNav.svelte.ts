@@ -187,8 +187,12 @@ export class MountNav {
     }
     // bin_rm — bin_read's deleting twin, routed the same way (SoundPooling "off" and the steward's evict).
     async bin_rm(dir_path: string, filename: string): Promise<boolean> {
+        // ⚠ THIS CALLED bin_read UNTIL 2026-09-06 — a copy-paste of the method above.  Every evict on the mount
+        //  READ the file back (bytes → truthy → "removed") and deleted nothing; the steward's evict and the pool
+        //   resurrect then fought forever ("evicted 6 → recovered 4 from disk" every pass on eed).  The named-miss
+        //    line in Ra_pool_unfile never fired because this always answered true.
         const { nav, rest } = this._pick(seg(dir_path))
-        return nav.bin_read ? nav.bin_read(rest.join('/'), filename) : null
+        return nav.bin_rm ? nav.bin_rm(rest.join('/'), filename) : false
     }
 
     async read_range(dir_path: string, filename: string, offset: number, len?: number) {

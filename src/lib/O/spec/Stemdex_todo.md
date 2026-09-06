@@ -261,18 +261,81 @@ w:Atlas
       if `A:Atlas` isn't standing yet, rather than silently returning `[]`.  CLI:
        `runner_ask atlas_callers upto_w`.
 
-**Owed next, in order:**
-1. Rescans on dige drift — genuinely owed, but lower urgency than first thought: Atlas isn't a durable
-    daemon yet (item 2 below), so each `ghost_load` session gets a fresh scan anyway; the gap only
-     bites within one long-lived session where a file changes mid-session.
-2. Durability across a reload (the Dexie cache noted above), if reload frequency keeps making this
-    ghost annoying to keep warm on a shared runner.
+**DONE 2026-09-06 (later): the census stays current, survives a reload, and answers three lints.**
+ The owner's question — *"does this not go out of date when things change? only if we use the
+  thing..?"* — is the design: **use nudges a pass** (the Stemdex's own searchbar rhythm; no second
+   timer, per the standing constraint above).  Verified live on both shared runners, under a reload
+    storm from another session's compiles (every gen write full-reloads every tab on :9091).
 
-Roots now include `src/lib/data` + `src/lib/mostly` (the ground — TheC/TheX, Selection) and `spec/`
- (the doc-links census, `history/`/`shelved/` excluded) — 585 docs total.  The roster walks ONCE per
-  world (`if (!w.c.rostered)`) — use `ghost_load --stand=Name --fresh` to force a genuine re-roster
-   after a corpus-widening code change, not a bare re-stand (which is find-or-create and silently
-    keeps the old roster).
+- **`Atlas_refresh(w, nav)` — every `atlas_*` query runs it first** (`--stale` skips).  Re-list the
+   roots with forced `expand()` (WormholeNav caches listings), mint the new, un-stamp `by` on any Doc
+    whose **mtime+size** moved (they ride `doc.c`, a cache — the dige stays the truth), drop the gone,
+     then map the movers INLINE up to `ATLAS_REFRESH_MAP=24` and hand a bulk remainder to the pass.
+      Before the first roster it IS the roster.  Measured: 0.8s round trip for a no-change refresh of
+       the full corpus; `touch` one spec → `changed:1,mapped:1`, its `warm` cleared, next refresh zeros.
+        Repeated `atlas_refresh` calls also converge a cold census from the CLI with no belief loop at
+         all (687 docs in 73s) — which is what made verification possible while the other session's
+          Books held both runners' tick loops.
+- **Dexie `atlas` cache — the Stemdex's own `Lies_stemdex_db` pattern** (PK `path`, row body = the
+   Doc's sc + every Map row's sc with `region_path`/`abs_from`/`abs_to` carried as plain fields; the
+    mapper version INSIDE the row invalidates, no schema bump).  A Doc with no Map is ADOPTED when the
+     row's mapper+mtime+size match (`ATLAS_ADOPT=40` per pass — mint-only, far cheaper than a parse) and
+      stamped `warm`; a Doc whose Map is merely stale is always a real re-map (the row IS what the stale
+       Map came from).  **After a tab reload the whole 587-doc census came back warm in 2.8s inside one
+        refresh call** (586 warm; the one cold doc was one the other session had edited since — correct).
+         IndexedDB is per-origin, so the rows written by one runner warm the other.
+- **Roster widened to `['Ghost', 'src', 'scripts']` (587 → 687 docs, 0 errors).**  The link lint's
+   first run showed most "missing" targets were not gone but merely unrostered (`src/lib/ghost`, `p2p`,
+    `scripts/daemon/main.ts`, the relay).  `.mjs` stays out — no grammar.  `gen/`, `history/`,
+     `shelved/` still skipped.
+- **`ATLAS_MAPPER='m10'` — one more collector gap, found BY the census.**  The stho per-line `CALL_RE`
+   sweep sits after `_collect_line` branches that return early, so a call on a ControlFlow line — the
+    Book drive idiom `if (n === 2) this.Beat(w)` — was never recorded; the orphan lint listed every
+     Book beat as uncalled.  Fixed in `compile.ts` with a whole-document `CALL_GAP` sweep (stho only,
+      dedup by offset, via + region_path from the enclosing def).  `atlas_callers AtlasStaple_seed` now
+       answers `Atlantation.g:33 via AtlasStaple_drive`.
+- **`atlas_lint` (+ `--sees`)** — three answers over what is held, no new state:
+   `missing` (a `file:line` whose target file is in no living root — 18 real ones after the widening:
+    `Ghost/M/Jam.g` ×6 (deleted 2026-09-04), `Interest.svelte`, `BigQualand.svelte`, `Housing.svelte`
+     (now `.svelte.ts`), `LiesHold/LiesEnd/LiesWaft/Runner.svelte`…), `beyond_eof` (3 — target exists,
+      cited line past its end), `orphans` (2084, a scan aid: do_fns named after their world, UI handlers
+       wired in markup and `this[name]` dispatch all read as orphans; `IMPORT` and `req_/e_/Run_A_`
+        excluded), and with `--sees` **`unproven`: 137 of 242 authored `%see` sentences are in NO Book
+         fixture** — Voronation.g 68, Swarmation.g 28, Vytonation.g 25, Radiation.g 11.  Reads every
+          numbered snap of every Book (~1000 reads, ~12s — sentences do NOT strictly accumulate across a
+           Book's snaps, VytoStaple's 006 holds 4 and 007 holds 3, so the union is the truth).
+- **`AtlasStaple` re-recorded at 6 beats, and the lint caught that the old 4-beat fixture was hollow
+   at beat 3:** its recorded `003.snap` held `req:bogus_wait` with the ttlilt still OPEN and the
+    'unreadable' sentence in no snap — every "green ×4" re-run had matched that broken picture.  Root
+     causes, all fixed: (a) an injected Doc only got mapped when Atlas's world ticked, which a Story run
+      does not pump — the beats now DRIVE `Atlas_pass`/`Atlas_refresh` directly (the logic under test);
+       (b) `AtlasStaple_restale_ready` was trivially true before beat 4 stamped `m0` (gated on
+        `w.c.stale_at` now); (c) the 'deleted' claim could fire off beat 3's NoSuchFile being dropped
+         (gated on 'found' now); (d) the unreadable path never stamped `by`, so the pass retried it every
+          tick — the very spin the sentence swears against; (e) **`Atlas_report`'s `w.r(...)` was an
+           un-awaited async replace, and until a replace commits `o()` on that world answers with only
+            what the replace has added so far** — one microtask after a pass the beats saw `docs: []`.
+             Awaited it, then removed the replace entirely (oai + stamp; a per-tick replace keeps a
+              partial-`o()` window open for every other do_fn on that tick).  Memory:
+               `r-replace-partial-o-window.md`.  Beats 5 (drift: write → change → delete through the
+                tab's own nav, refresh after each) and 6 (drop A:Atlas, re-stand, `warm` from the rows
+                 beats 2-4 wrote) added.
+
+**Owed next, in order:**
+1. Act on the lints: the 18 dangling `file:line` refs and 3 past-EOF lines in spec docs are a
+    mechanical sweep; the 137 unproven `%see`s are a real question per Book (dead beats? fixtures never
+     re-sworn?) — Voronation.g first.
+2. `atlas_lint` reads for `--sees` could ride the census itself if `wormhole/Story/**/*.snap` were
+    rostered as docs with a tiny `see:` collector — one read per snap per change instead of ~1000 per
+     ask.  Only worth it if the lint gets asked often.
+3. The `Atlas()` do_fn still calls `Atlas_pass` every tick once converged (an `o()` walk over all Docs,
+    cheap but pointless); a `w.c.converged` latch cleared by refresh would quiet it.
+
+Roots are `Ghost`, `src`, `scripts` (687 docs; `gen/`, `history/`, `shelved/`, `node_modules`
+ skipped; `.mjs` has no grammar).  The pass rosters ONCE per world (`if (!w.c.rostered)`) and every
+  query re-rosters via `Atlas_refresh` — so a corpus-widening code change is picked up by the next
+   query, or by `ghost_load --stand=Name --fresh` (a bare re-stand is find-or-create and keeps the
+    old world).
 
 *(The regex probe `scripts/drawer.mjs` was deleted the same day — its regexes validated at 93.5%,
  its load inventory recorded in `Atheory_todo.md`, its one real find — `upto_w` byte-identical in

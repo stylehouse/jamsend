@@ -2574,19 +2574,39 @@ await M.eatfunc({
                         H.i_elvisto(w, 'think')
                         result = { loaded: path, gen: H.Lies_gen_path(path), stood: stood ?? null }
                     }
-                } else if (op === 'atlas_callers') {
+                } else if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
                     // The reverse lookup owed since the Atlas census began (Stemdex_todo.md §0):
                     //  "who calls X" WITH the doc it lives in — a wildcard minisnap path already
                     //   returns every matching call/elvisto row, but prints them without their parent,
                     //    so it is a count-and-line answer, not a which-file one.  Read-only; needs
                     //     A:Atlas/w:Atlas already standing (ghost_load --stand=Atlas first) — refuses
                     //      plainly rather than silently returning [] if it isn't.
+                    //
+                    //  USE NUDGES A PASS (2026-09-06): every atlas_* query first runs Atlas_refresh —
+                    //   re-list the roots, mint the new, un-stamp the moved, drop the gone, map the
+                    //    movers inline — so an answer is as fresh as the disk at the moment of asking,
+                    //     with no second timer (the Stemdex's own searchbar-nudges-a-pass rhythm).
+                    //      `--stale` skips it for a cheap re-ask.  `fresh` in the reply is the tally.
                     const a = ask as any
-                    const name = String(a.name ?? '')
                     const atlas = H.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
                     if (!atlas) { ok = false; result = { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' } }
-                    else if (!name) { ok = false; result = { error: 'atlas_callers: name required' } }
-                    else { result = { name, callers: (H as any).Atlas_callers(atlas, name) } }
+                    else {
+                        const nav = (H as any).Atlas_nav()
+                        let fresh: any = null
+                        if (nav && !a.stale) fresh = await (H as any).Atlas_refresh(atlas, nav)
+                        const census = (atlas.o({ see: 'atlas' })[0] as TheC | undefined)?.sc ?? null
+                        if (op === 'atlas_refresh') result = { fresh, census }
+                        else if (op === 'atlas_callers') {
+                            const name = String(a.name ?? '')
+                            if (!name) { ok = false; result = { error: 'atlas_callers: name required' } }
+                            else result = { name, fresh, callers: (H as any).Atlas_callers(atlas, name) }
+                        } else {
+                            // atlas_lint — missing / beyond_eof file:line links, orphan defs; --sees adds
+                            //  the unproven %see sentences (one fixture read per Book, so it is opt-in)
+                            result = { fresh, census, ...(H as any).Atlas_lint(atlas) }
+                            if (a.sees && nav) (result as any).unproven = await (H as any).Atlas_unproven(atlas, nav)
+                        }
+                    }
                 } else if (op === 'minisnap') {
                     // TARGETED read of a pointer path (read-only; safe on a humdinger).  See H.minisnap above.
                     const a = ask as any

@@ -555,9 +555,26 @@ export const LANG_COMPILE = {
         const MINT_RE    = /\.(?:i|oai)\(\{\s*([A-Z][A-Za-z]*)\s*:/g
         const SEE_RE     = /%see:'([^']*)'/g
         const DESC_RE    = /%desc:'([^']*)'/g
+        // CALL_GAP — the stho per-line CALL_RE sweep (in _collect_line) sits AFTER branches that
+        //  `return n`, so a call on a ControlFlow line — `if (n === 2) this.Beat_two(w)`, the Book
+        //  drive idiom — was never recorded, and the Atlas orphan lint (2026-09-06) listed every Book
+        //  beat as uncalled.  Same regex, whole document, stho only (the tsstho branch reads calls
+        //  off the tree and already sees inside an if); dedup by `from` against what the per-line
+        //  sweep did record, so nothing doubles.  via/region_path land in the post-pass below.
+        const CALL_GAP_RE = /(?:this|H)\.(\w+)\s*\(/g
+        const call_froms  = new Set<number>()
+        if (sthoParser) for (const w of words) if (w.call && typeof w.from === 'number') call_froms.add(w.from)
         for (let ln = 1; ln <= doc.lines; ln++) {
             const dline = doc.line(ln)
             const text  = dline.text
+            if (sthoParser && !/^\s*\/\//.test(text)) {
+                for (const m of text.matchAll(CALL_GAP_RE)) {
+                    const from = dline.from + m.index!
+                    if (call_froms.has(from)) continue
+                    call_froms.add(from)
+                    words.push({ call: 1, method: m[1], from, to: from + m[0].length, line: ln, gap: 1 } as any)
+                }
+            }
             if (/^\s*\/\//.test(text)) continue   // a comment describing the pattern is not the pattern
             for (const m of text.matchAll(ELVISTO_RE)) {
                 const word: any = { elvisto: 1, method: m[2], from: dline.from + m.index!,
@@ -592,16 +609,22 @@ export const LANG_COMPILE = {
         //  a class's own members are separate `def` words with their own line).  Built from every
         //  `def` word already collected by either branch, so no new tree-walk is needed.
         const def_lines = words.filter(w => w.def && typeof w.line === 'number')
-            .map(w => ({ line: w.line as number, method: w.method as string }))
+            .map(w => ({ line: w.line as number, method: w.method as string, region_path: w.region_path as string[] | undefined }))
             .sort((a, b) => a.line - b.line)
         if (def_lines.length) {
             for (const word of words) {
-                if (!(word.elvisto || word.mint || word.proves) || typeof word.line !== 'number') continue
+                const gap_call = word.call && (word as any).gap
+                if (!(word.elvisto || word.mint || word.proves || gap_call) || typeof word.line !== 'number') continue
                 let via: string | undefined
-                for (const d of def_lines) { if (d.line <= word.line) via = d.method; else break }
+                let rp:  string[] | undefined
+                for (const d of def_lines) { if (d.line <= word.line) { via = d.method; rp = d.region_path } else break }
                 if (via) word.via = via
+                // a CALL_GAP call needs a region_path like every other call word (the flush keys
+                //  rel_from/rel_to off it) — the enclosing def's own stack is the right one
+                if (gap_call) { word.region_path = rp ? [...rp] : []; delete (word as any).gap }
             }
         }
+        for (const word of words) if ((word as any).gap) { word.region_path = []; delete (word as any).gap }
 
         // flush word index into Stuff — job%Compile/Map/ entries:
         //   {def:1, method, class?, magic?, …}   class present → method inside that class

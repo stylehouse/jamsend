@@ -635,10 +635,22 @@ async Peeroleum_deliver_do(w, frame):
     //     handler (armed by Swarm_arm) — the handler promotes the %Pier — then ack through the
     //      fresh route so the caller's outbox emit retires. A pier this node ALREADY holds falls
     //       through to the normal booked path below; every other no-pier frame still drops.
-    if (!pier && h.type === 'pier_hello') {
+    // …AND A FRIEND'S pier_accept, FOR THE SAME REASON (2026-09-06, the daemon's log: "no Pier for pier_accept
+    //  seq=938 from=631300e8 — DROPPED", re-sent by Grink's pier heal every 30s for two hours).  A node that LOST a
+    //   friend's %Pier (this daemon was restarted a dozen times that night) can only get it back from the friend's
+    //    re-offered accept — and that accept was being dropped for want of the very pier it carries.  Chicken and
+    //     egg, forever.  It proves itself exactly as the hello does: Swarm_accept verifies the grant is really theirs
+    //      and really FOR US, checks the page is key-bound, and only then seals (forged → accept_forged|mismatch|
+    //       spoofed rebuffs).  Nothing unsigned lands.
+    //  SCOPED TO WHAT THAT PROOF COVERS: a LIVE station (station_up — the voucher gate and verify_grant are enforced
+    //   there; a driven world has neither) and the FRIEND-GRANT arm ({grant, page}, no link).  A device-link accept
+    //    has its own strict road (an awaiting ceremony req + the scanned prepub) and never needs this door.
+    //   (An earlier draft blamed SwarmBody beat 23 for the narrowing; that red turned out to be run-volatile and
+    //    identical under HEAD — the scoping stands on its own reasoning, not on that measurement.)
+    if (!pier && (h.type === 'pier_hello' || (h.type === 'pier_accept' && w.c.station_up && frame.swarm && frame.swarm.grant && !frame.swarm.link))) {
         let on = w.c.on && w.c.on[h.type]
-        if (!on) { console.log(`🔦 first-contact pier_hello from=${String(h.from || '').slice(0, 8)} — NO handler armed on this world (w.c.on empty) — knock DIES here`); return }
-        console.log(`🔦 first-contact pier_hello from=${String(h.from || '').slice(0, 8)} → handler-direct (Swarm_hello should ENTER next)`)
+        if (!on) { console.log(`🔦 first-contact ${h.type} from=${String(h.from || '').slice(0, 8)} — NO handler armed on this world (w.c.on empty) — knock DIES here`); return }
+        console.log(`🔦 first-contact ${h.type} from=${String(h.from || '').slice(0, 8)} → handler-direct (${h.type === 'pier_hello' ? 'Swarm_hello' : 'Swarm_accept'} should ENTER next)`)
         await on(w, null, frame)
         let now = this.Peeroleum_route(w, h, 'to')
         if (now.pier) this.Peeroleum_send(w, {header: {type: 'ack', from: h.to, to: h.from, ack: h.seq}})
@@ -666,7 +678,15 @@ async Peeroleum_deliver_do(w, frame):
         //    it is worth SEEING.  Throttled per (type,from) on .c so a torn-down peer is a heartbeat, not a flood.
         let dnow = Date.now()
         let dwarn = (w.c.nopier_warn = w.c.nopier_warn || {})
-        let dkey = h.type + ':' + String(h.from || '').slice(0, 8)
+        // ONE LINE PER SOURCE PER MINUTE, WITH THE TALLY (the owner 2026-09-06: "daemon seems to blast a bit
+        //  of noise into the logs huh, can we cool this down").  Keyed per (type,from) at 2s this printed four
+        //   near-identical lines every couple of seconds for one torn-down peer.  The FIRST drop from a source
+        //    still says itself at once — the fact is never hidden — and after that the same fact repeats as a
+        //     count, not a scroll.  The counter above is untouched: it never throttled and still doesn't.
+        let dkey = String(h.from || '').slice(0, 8)
+        let dtally = (w.c.nopier_tally = w.c.nopier_tally || {})
+        let dt = (dtally[dkey] = dtally[dkey] || {})
+        dt[h.type] = (+(dt[h.type] || 0)) + 1
         // COUNT EVERY DROP — OUTSIDE the log throttle. A no-Pier drop is the most consequential silent
         //  failure on the wire (it eats acks and pull responses alike, so BOTH ends look merely slow), and
         //   until now it existed only as console spray — invisible to the glass, so the human's first clue
@@ -676,9 +696,15 @@ async Peeroleum_deliver_do(w, frame):
         if (!w.c.wire_drop) w.c.wire_drop = {}
         w.c.wire_drop[h.type] = (+(w.c.wire_drop[h.type] || 0)) + 1
         w.c.wire_drop_at = dnow
-        if (dnow - (dwarn[dkey] || 0) > 2000) {
+        if (!dwarn[dkey]) {
             dwarn[dkey] = dnow
-            console.log(`🛰☠ deliver: no Pier for ${h.type} seq=${h.seq} from=${String(h.from || '').slice(0, 8)} to=${String(h.to || '').slice(0, 8)} — DROPPED${h.type === 'ack' ? ' — a dropped ack strands the sender emit' : ''}`)
+            console.log(`🛰☠ deliver: no Pier for ${h.type} seq=${h.seq} from=${dkey} to=${String(h.to || '').slice(0, 8)} — DROPPED${h.type === 'ack' ? ' — a dropped ack strands the sender emit' : ''} (further drops from ${dkey} summarise once a minute)`)
+        } else if (dnow - dwarn[dkey] > 60000) {
+            dwarn[dkey] = dnow
+            let parts = Object.keys(dt).map((k) => k + '×' + dt[k])
+            let total = Object.keys(dt).reduce((a, k) => a + dt[k], 0)
+            console.log(`🛰☠ deliver: no Pier for ${dkey} → ${String(h.to || '').slice(0, 8)} — dropped ${total} in the last minute (${parts.join(' ')})${dt.ack ? ' — dropped acks strand the sender emit' : ''}`)
+            dtally[dkey] = {}
         }
         // transfer HUD (the human 2026-07-30 "track why it's not working great"): count the drops that STALL a
         //  transfer — a repli_want/data/ack dropped on a torn socket is exactly the "next piece hasn't arrived"

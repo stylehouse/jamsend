@@ -73,6 +73,8 @@
     // the pool is the one row that is not a holder, so it goes through the old flip rather than the aim —
     //  and only when we are not already there (Radio_source_next is a toggle, not a setter).
     const aim_pool = () => { try { if (face.source !== 'pool') (H as any)?.Radio_source_next?.(n); H?.bump_version?.() } catch {} ; menu = false }
+    // your own shelf, as a row (owner 2026-09-06: "LOCAL isn't in the source list") — a setter, not the flip.
+    const aim_own = () => { try { (H as any)?.Radio_own_set?.(n, 1); H?.bump_version?.() } catch {} ; menu = false }
     // more than one place to listen from ⇒ the press is a chooser; else it stays the old flip.
     let chooser = $derived(sources.length + (pool_ok ? 1 : 0) > 1)
     const chip_press = () => { if (chooser) { menu = !menu } else { try { (H as any)?.Radio_source_next?.(n) } catch {} } }
@@ -256,15 +258,22 @@
         <div class="rf-srcwrap">
             {#if menu}
                 <div class="rf-menu">
-                    {#each sources as s}
-                        <button class="rf-menu-row" class:rf-menu-on={s.aimed && face.source !== 'pool'} onclick={() => aim_to(s.pub)}
+                    {#each sources.filter((x: any) => !x.own) as s}
+                        <button class="rf-menu-row" class:rf-menu-on={s.aimed && face.source !== 'pool' && !face.own} onclick={() => aim_to(s.pub)}
                             title={s.live ? 'online now' : 'not heard from lately — the dial will pass over them'}>
                             <span class="rf-menu-dot" class:rf-menu-live={s.live}>●</span><span class="rf-menu-name">{s.name || s.pub.slice(0, 8)}</span><span class="rf-menu-n">{s.tracks}</span>
                         </button>
                     {/each}
                     <!-- ROAMING IS A CHOICE TOO, and it is the default the pin overrides — so it is a row,
                          not the absence of one.  Without it a listener who pinned Grink has no way back. -->
-                    <button class="rf-menu-row rf-menu-any" class:rf-menu-on={!aimed_by && face.source !== 'pool'} onclick={() => aim_to('')}>any friend</button>
+                    <button class="rf-menu-row rf-menu-any" class:rf-menu-on={!aimed_by && face.source !== 'pool' && !face.own} onclick={() => { try { (H as any)?.Radio_own_set?.(n, 0) } catch {} ; aim_to('') }}>any friend</button>
+                    <!-- YOUR OWN RECORDS, as a row (owner 2026-09-06: "LOCAL isn't in the source list — only friends and
+                         any friend and soundpool").  Radio_sources adds it last with own:1 when the shelf has something
+                         playable; it wires to Radio_own_set (a setter) rather than an aim. -->
+                    {#each sources.filter((x: any) => x.own) as s}
+                        <button class="rf-menu-row rf-menu-any" class:rf-menu-on={!!face.own && face.source !== 'pool'} onclick={aim_own} title={s.tracks + ' of your own records playable'}>
+                            <span class="rf-menu-name">♪ LOCAL</span><span class="rf-menu-n">{s.tracks}</span></button>
+                    {/each}
                     <!-- the pool wears its count like every holder row — the PLAYABLE count, the one the dial obeys;
                          "4 asked, 1 here" reads as 1/4 so the row never claims more than next can deliver. -->
                     {#if pool_ok}<button class="rf-menu-row rf-menu-any" class:rf-menu-on={face.source === 'pool'} onclick={aim_pool}

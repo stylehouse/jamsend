@@ -227,6 +227,13 @@
         try {
             if (PERMANENT_CAST.has(mk)) return true
             if (mk === 'Supervisor') return supervisor_amiss(n)
+            // A POOL KEEP IS MACHINERY, NOT A HAUL (the owner 2026-09-06: "now in Hauls there's a Venus trying to
+            //  download I never clicked on … a fullscreen-ish cell … all tiny").  A circulation fill rides the
+            //   same %Heist the ⇊ button mints (the byte-lane reuse) — but nobody pressed it, it is one track into
+            //    the pocket, and its album chooser is 1100px tall.  It earns no cell; it is legible in the Pocket
+            //     cell and Ra_pool_report instead.  The HeistBar chrome rides under the keep, so it goes too.
+            if (mk === 'Heist' && String((n as any)?.sc?.into ?? '') === 'pool') return false
+            if (mk === 'HeistBar' && String((n as any)?.c?.up?.sc?.into ?? '') === 'pool') return false
             return true
         } catch { return true }
     }

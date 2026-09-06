@@ -590,6 +590,9 @@ Heard_haul_piers(rw, me):
         return rows[dj]
     }
     for (const keep of this.Heist_live_rows(rw)) {
+        // a POOL keep is the circulation fill's machinery, not something this person is bringing me (the owner
+        //  2026-09-06: "a Venus trying to download I never clicked on") — the Pocket cell owns its legibility.
+        if (String(keep.sc.into || '') === 'pool') { continue }
         if (String(keep.sc.state || 'primed') === 'done') { continue }
         // a keep with no `pub` has no holder to be a row of — it would open a nameless pier headed by the
         //  first 8 characters of nothing.  Every minted keep carries one; this is the guard, not a case.

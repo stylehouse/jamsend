@@ -7,30 +7,9 @@ story:AtlasStaple
     Entcase:Self_round
       lematch,self,round
         means,spayer,re:self.round={INT},tol:any
-  TimeSpool
-    TimeTotal:beliefs,avg=0.015
-      sample=0.02,at=1788615013
-      sample=0.013,at=1788615052
-      sample=0.016,at=1788615083
-      sample=0.014,at=1788615216
-      sample=0.013,at=1788615264
-      sample=0.017,at=1788618787
-      sample=0.015,at=1788619138
-      sample=0.013,at=1788619224
-      sample=0.015,at=1788622614
-      sample=0.016,at=1788624602
-    TimeTotal:step,avg=0.004
-      sample=0.005,at=1788615013
-      sample=0.003,at=1788615052
-      sample=0.004,at=1788615083
-      sample=0.004,at=1788615216
-      sample=0.003,at=1788615264
-      sample=0.004,at=1788618787
-      sample=0.004,at=1788619138
-      sample=0.003,at=1788619224
-      sample=0.004,at=1788622614
-      sample=0.004,at=1788624602
   step,dige:c395d6a2c0dd07c7
-  step=2,desc:load Ghost/L/Atlas.g on demand — mint A:Atlas beside the run — aim it at the frozen fixture,dige:8ed9c444fa15f4d4
-  step=3,desc:inject an unreadable Doc row — the error path must mark it and never spin forever,dige:3d98241b80d1417c
+  step=2,desc:load Ghost/L/Atlas.g on demand — mint A:Atlas beside the run — aim it at the frozen fixture,dige:a8bb00bf502b7064
+  step=3,desc:inject an unreadable Doc row — the error path must mark it and never spin forever,dige:62a51f44fd8132f5
   step=4,desc:stamp a stale mapper on the real doc — a re-map must replace its Map and never pile a second,dige:d39c182c1998c8c0
+  step=5,desc:write a file into the corpus — change it — delete it: each refresh must find and re-map and drop,dige:2d4eae99f93ddbb7
+  step=6,desc:drop A:Atlas and stand it again — the fixture doc must come back warm from the cache with its Map intact,dige:6d709920fb06846d

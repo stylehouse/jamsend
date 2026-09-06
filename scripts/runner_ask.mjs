@@ -79,7 +79,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  never listed here, so the CLI refused the one op that makes a MIDDLE step inspectable: without it
 //   `snap 3` of a 9-step Book returns got_snap:null, trimmed 5 steps behind, and a flapping early step
 //    cannot be diffed at all.  `retain on` sticks on w:Story.c across runs.
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -169,7 +169,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh]|atlas_callers <name>> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
 
@@ -201,7 +201,7 @@ const live  = flags.has('--live') || !localHost
 // READ-ONLY verbs — the only ones that may target a role:'player' tab (someone's actual music page).
 //  Module-scope because it now gates TWO doors: explicit --player= targeting (below), and the
 //   auto-court's humdinger veto (a player can answer a to:'runner' broadcast — see the veto).
-const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy', 'atlas_callers']
+const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy', 'atlas_callers', 'atlas_refresh', 'atlas_lint']
 
 // ── liveCensus — learn who is on THIS relay, FROM the relay ─────────────────────────────────
 //  clusterRunners() above reads a LOCAL FILE.  Point RUNNER_URL at another host and that file is
@@ -540,6 +540,14 @@ if (op === 'ghost_load') {
 	if (flags.has('--fresh')) ask.fresh = 1
 }
 if (op === 'atlas_callers') ask.name = arg   // "who calls X" — {doc, line, via, kind} per site; needs A:Atlas standing first
+if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
+	// every atlas_* query REFRESHES first (re-list roots, map the movers inline) so the answer is as
+	//  fresh as the disk — use nudges a pass, no timer.  --stale skips that for a cheap re-ask.
+	//  atlas_lint: missing/beyond_eof file:line links + orphan defs; --sees adds the %see sentences no
+	//   Book fixture has recorded (one read per Book, so opt-in).
+	if (flags.has('--stale')) ask.stale = 1
+	if (flags.has('--sees'))  ask.sees  = 1
+}
 if (op === 'console') {
 	// pull the live tab's console ring; tail/grep applied RING-SIDE so the reply carries only the
 	//  wanted lines.  --follow polls below, streaming only lines newer than the last read.

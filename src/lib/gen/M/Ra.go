@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'd5951035f2223b0c~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '1d47c4ad9f215b40~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1329,6 +1329,10 @@ async Ra_pool_resurrect(w, ident, cap) {
     for (const rec of this.Ra_recs(homes.pool)) {
         if (rec.sc.path) { known[String(rec.sc.path)] = 1 }
     }
+    // an evicted path is not "uncatalogued", it is THROWN OUT — skip it until the session ends or a fresh
+    //  landing clears the mark (Ra_quarter_serve's evict branch stamps it).
+    let evicted = homes.mw.c.pool_evicted || {}
+    for (const p of Object.keys(evicted)) { known[p] = 1 }
     let bound = (+(cap || 0) > 0) ? +cap : 4
     let built = 0
     let left = 0
@@ -1506,7 +1510,10 @@ async Ra_pool_report(w, ident) {
             out.tracks.push(row)
         }
     }
+    let evictedMap = (homes.mw && homes.mw.c && homes.mw.c.pool_evicted) || {}
+    out.lingering = 0
     for (const path of paths) {
+        if (evictedMap[String(path)]) { out.lingering = out.lingering + 1; continue }
         if (!carded[String(path)]) { out.uncatalogued = out.uncatalogued + 1 }
     }
     // the standing circulation asks, because "nothing is arriving" is a different fault from "nothing plays"
@@ -1523,7 +1530,7 @@ async Ra_pool_report(w, ident) {
     console.log('🏊 POOL REPORT — ' + pub.slice(0, 8) + (out.excused ? ' · EXCUSED (holds no pool)' : '') +
         ' · consent ' + (out.consent ? 'yes' : 'NO') +
         ' · budget ' + out.budget_mb + 'MB · ' + out.cards + ' card(s) · ' + out.ready + ' playable · ' +
-        out.files + ' file(s) on disk · ' + out.uncatalogued + ' uncatalogued')
+        out.files + ' file(s) on disk · ' + out.uncatalogued + ' uncatalogued' + (out.lingering ? ' · ' + out.lingering + ' evicted but file lingering' : ''))
     for (const t of out.tracks) {
         console.log('   ' + (t.why ? '✗' : '✓') + ' ' + (t.artist ? t.artist + ' — ' : '') + t.title +
             '  [preview ' + t.preview + ' · chunks ' + t.chunks + (t.on_disk ? '' : ' · NO FILE') + ']' +
@@ -1707,6 +1714,7 @@ async Ra_pool_unfile(w, nav, rec) {
 //  card with it — AND its file (Ra_pool_unfile), so "off" means the space comes back.  Returns {pools, records, files}.
 async Ra_pool_off(w) {
     let out = { pools: 0, records: 0, files: 0 }
+    if (w && w.c && w.c.pool_evicted) { delete w.c.pool_evicted }
     this.Ra_pool_consent_take(w)
     this.Ra_pool_budget_set(w, 0)
     for (const d of this.Ra_pool_defs(w, 0)) { if (d.name) { out.pools = out.pools + this.Ra_pool_drop(w, d.name) } }
@@ -1951,7 +1959,17 @@ async Ra_quarter_serve(w, nav, shelf, pool, lib, cap, sources) {
             let r = await this.Ra_press(w, nav, lib, pool, of)
             if (r && r.fail) { out.fails = out.fails + 1 } else { out.pressed = out.pressed + 1 }
         } else if (doo === 'evict') {
-            await this.Ra_pool_unfile(w, nav, this.Ra_rec_find(pool, { Record: 1, id: of }))   // the bytes go with the card
+            let erec = this.Ra_rec_find(pool, { Record: 1, id: of })
+            let egone = await this.Ra_pool_unfile(w, nav, erec)   // the bytes go with the card
+            // REMEMBER THE EVICTION FOR THE SESSION (2026-09-06, eed's log: "evicted 6 → recovered 4 from disk →
+            //  encoded a preview → evicted 6 …" every pass, six whole-file encodes a cycle).  Whatever the reason
+            //   the file lingers (bin_rm answered true, the file was still there), the resurrect must not re-adopt
+            //    what the steward just threw out, or the two fight forever.  .c on the radio world (session
+            //     matter, never snapped); Ra_pool_off clears it; a fresh landing at the same path clears its mark.
+            if (erec && erec.sc.path) {
+                let ev = (w.c.pool_evicted = w.c.pool_evicted || {})
+                ev[String(erec.sc.path)] = egone ? 'gone' : 'lingering'
+            }
             let dropped = await this.Ra_rec_drop(pool, of)
             out.evicted = out.evicted + dropped
         } else {
@@ -5547,6 +5565,7 @@ async Ra_pool_fill_land(w, ident) {
         let got = await this.Siphon_pull(homes.mw, null, homes.pool, from, of, homes.nav)
         if (got && got.card) {
             landed = landed + 1
+            if (homes.mw && homes.mw.c && homes.mw.c.pool_evicted && got.card.sc.path) { delete homes.mw.c.pool_evicted[String(got.card.sc.path)] }
             peering.drop(reach)
             continue
         }
@@ -5591,19 +5610,44 @@ Ra_pool_source_rec(rw, id) {
 //  It is also the ARRIVAL-ORDER fix, not only a migration: a keep can land its file before the source
 //   mirror's own preview has finished crossing, and the carry at the landing tail would find nothing to
 //    take.  This pass simply catches it on the next tick, so neither order strands a track.
-Ra_pool_previews_heal(w, ident) {
+async Ra_pool_previews_heal(w, ident) {
     let homes = this.Ra_pool_fill_homes(w, ident)
     if (!homes.pool || !homes.mw) { return 0 }
     let healed = 0
+    let encoded = 0
     for (const card of this.Ra_recs(homes.pool)) {
         if (healed >= 4) { break }
         if (+(card.sc.preview || 0) > 0) { continue }
         if (card.sc.grade || card.sc.lofi) { continue }
         let src = this.Ra_pool_source_rec(homes.mw, String(card.sc.id || ''))
-        if (!src) { continue }
-        healed = healed + this.Ra_rec_previews_carry(card, src)
+        if (src) { healed = healed + this.Ra_rec_previews_carry(card, src); continue }
+        // NOTHING TO BORROW → ENCODE ONE OURSELVES (2026-09-06, eed's log: "12 cards · 8 playable · 4 no
+        //  preview" — and the four were exactly the daemon's real tracks).  The carry lends a preview from a
+        //   standing record with the same id, and a track this body has NEVER HEARD has none anywhere: the
+        //    mirror card for a circulation fill is a catalog row, its chunks only ever cross when you stream
+        //     it.  So the last rung of "a track you never heard becomes dialable" is the pool encoding its
+        //      OWN preview from the file it already holds — Ra_stock_one, the Stoker's per-file encoder,
+        //       pointed at the pool shelf and the pool mount.  ONE a pass (a whole-file read + decode +
+        //        opus encode), live only (a Book must never spin a real encoder), and only when the file is
+        //         actually on disk (a card whose bytes are gone has nothing to encode).
+        let top = this.top_House ? this.top_House() : null
+        if (!top || !top.c || !top.c.humdinger || encoded > 0 || !homes.nav || !card.sc.path) { continue }
+        let rel = String(card.sc.path)
+        let files = homes.mw.c.pool_files || []
+        if (!files.includes(rel)) { continue }
+        encoded = encoded + 1
+        let r = null
+        try { r = await this.Ra_stock_one(homes.mw, homes.pool, homes.nav, 'pool', rel) } catch (er) { console.log('🏊⚠ pool encode failed for ' + rel.slice(0, 40) + ' — ' + String(er).slice(0, 80)); r = null }
+        // Ra_record_from stamps path as base + '/' + path ('pool/<rel>'); a pool card's path is pool-relative
+        //  (<rel>) everywhere else — unfile, resurrect, the report — so put it back the way the shelf keeps it.
+        let again = this.Ra_rec_find(homes.pool, { Record: 1, id: String(card.sc.id || '') }) || card
+        if (again && again.sc.path !== rel) { again.sc.path = rel; again.bump() }
+        if (r && +(again.sc.preview || 0) > 0) {
+            healed = healed + 1
+            console.log('🏊 pool: ' + (r.stood ? 'resurrected the preview for ' : 'encoded a preview for ') + String(again.sc.title || rel).slice(0, 40) + ' — now dialable')
+        }
     }
-    if (healed > 0) { console.log('🏊 pool: carried previews onto ' + healed + ' pooled track(s) — now dialable') }
+    if (healed > 0) { console.log('🏊 pool: ' + healed + ' pooled track(s) now dialable') }
     return healed
 
 },
@@ -5622,7 +5666,7 @@ async Ra_pool_fill_pump(w, ident) {
         //  on, this catches everything that landed before it existed (and any keep whose source preview
         //   crossed after its bytes did).  Cheap when there is nothing dark: one shelf walk of scalars.
         await this.Ra_pool_resurrect(w, ident)
-        this.Ra_pool_previews_heal(w, ident)
+        await this.Ra_pool_previews_heal(w, ident)
     } catch (er) { console.log('🏊⚠ pool-fill pump: ' + er) }
     delete w.c.pool_fill_busy
     return n

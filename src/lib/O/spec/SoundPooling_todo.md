@@ -69,6 +69,37 @@ Four live gates fell (below) and the face still said **"N pooled · none playabl
        <state>` until the pool card stands, then drops. `Siphon_pull` remains as MusuPoolFill's stand-in only
         (its world has no pier/Repli/relay; its lib IS local), gated by the same `fill_mw` override.
 
+**2026-09-06 morning — the owner's "hardly anything overnight; what's owed?", and what the two live logs then said:**
+
+- **eed's pool played, but "none from the daemon".** The log had it: `12 cards · 8 playable · 4 no preview`, and the four
+   were exactly the daemon's real tracks. The carry LENDS a preview from a standing record with the same id; a track
+    this body has never heard has none anywhere (a circulation mirror card is a catalog row — its chunks only cross
+     when you stream it). Last rung: **the pool encodes its own preview from the file it holds** — `Ra_pool_previews_heal`
+      now falls back to `Ra_stock_one` (the Stoker's per-file encoder) pointed at the pool shelf + `pool/` mount, one
+       a pass, live only, only when the file is on disk; the card's path is put back pool-relative after (Ra_record_from
+        stamps `base/path`). The 8 "playable" were the app's own `static/testsounds` fixtures.
+- **Why the daemon never served, and why its pool held fixtures — both in ITS log.** `🛰☠ deliver: no Pier for pier_accept
+   seq=938 from=631300e8 … DROPPED` every 30s for hours: Grink kept re-offering the handshake that would RESTORE the pier
+    the daemon lost across a restart, and the daemon dropped it for want of the very pier it carried. Chicken and egg.
+     `Peeroleum_deliver` now admits `pier_accept` pier-less exactly like `pier_hello` — it proves itself (Swarm_accept
+      verifies the grant is theirs and FOR US, page key-bound; forged → rebuff). And `dig[idle] … base=testsounds
+       picks=2 got=2` between real tours: the digger's three-base rotation always included testsounds and the φ-pick
+        rewarded its yield. `Stoker_dig` drops it from the bases once a real base has ever yielded (live only; MusuStock's
+         driven rotation untouched). The drop log is now one line per source per minute with a tally, not a scroll.
+- **"LOCAL isn't in the source list."** The chooser was built from %Theirs crates only; `Radio_sources` now adds an
+   `own:1` row when your own shelf has something playable, wired to `Radio_own_set` (a setter — the flip cannot serve
+    a row). RadioFace renders it as ♪ LOCAL.
+- **Excuse is a full lifecycle now:** serve (`Ra_pool_fill_verdict`/`_serve`), self-land (`Ra_pool_fill_land` drops stale
+   arrivals), re-consent (`Ra_pool_start` refuses), and the report shows EXCUSED. Not yet fired on the daemon — its relay
+    address answers nothing, even `ping`; `/stop` restarts don't clear it. Open.
+
+- **The evict↔resurrect loop's real cause, midday:** `MountNav.bin_rm` called `nav.bin_read` (copy-paste,
+   MountNav.svelte.ts:191) — every evict on the mount READ the file back and reported "removed".  eed's log with the
+    self-encode in was `evicted 6 → recovered N from disk → encoded a preview → evicted 6 …` every pass.  Fixed to
+     route `bin_rm`; the session-scoped `rw.c.pool_evicted` mark (resurrect skips it, a fresh landing clears it,
+      `Ra_pool_off` clears all, the report says `N evicted but file lingering`) stays as belt-and-braces.
+       MusuPoolBytes beat 4 had RECORDED the bug (`left_bytes=8118, rm_again:true`) — re-sworn with real removal.
+
 **Owed:** a live walk of the keep road end-to-end (eed ← daemon) — the resurrect + carry + keep are each
  gated, the chain is not. And a folderless body's pool still has no durable CATALOG beyond the disk rebuild,
   which is fine as long as `pool/` is the fact.

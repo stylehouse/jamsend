@@ -23,16 +23,18 @@ async AtlasStaple_drive(w, req):
     // A fresh (mode:'new') run's total starts at 1 and only grows when a HUMAN presses Resume in the
     //  Storui editor — so a CLI-driven first recording of a multi-beat Book fires exactly ONE step and
     //  records a hollow 1-step toc UNLESS the drive declares its own count (the Vytonation idiom).
-    //  4 = the implicit step 1 (settingoff) + beats 2/3/4.  A re-run against an already-recorded toc
+    //  6 = the implicit step 1 (settingoff) + beats 2..6.  A re-run against an already-recorded toc
     //  takes its total FROM the toc, so this is a no-op past the first recording.
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.AtlasStaple_seed(w)
         if (n === 3) this.AtlasStaple_bogus(w)
         if (n === 4) this.AtlasStaple_stale(w)
+        if (n === 5) this.AtlasStaple_drift(w)
+        if (n === 6) this.AtlasStaple_warm(w)
     }
     this.AtlasStaple_witness(w)
 
@@ -65,6 +67,10 @@ AtlasStaple_seed(w):
             await top.Lies_ghost_set('Ghost/L/Atlas.g')
             await this.AtlasStaple_await(w, 12, () => typeof top.Atlas === 'function')
         }
+        // start COLD: forget the fixture's cache rows so beats 2-4 always exercise a real read+parse
+        //  (and their snaps never differ between a warm and a cold runner); beat 6 then proves the
+        //   warm path deliberately, from rows these very beats wrote.
+        await top.Atlas_forget(null, ['Ghost/L/test_corpus/Sample.g', 'Ghost/L/test_corpus/Drift.g'])
         let SH = this.AtlasStaple_SH(w)
         let old = SH.o({ A: 'Atlas' })[0]
         if (old) SH.drop(old)
@@ -80,12 +86,16 @@ AtlasStaple_bogus(w):
     i %desc:'inject an unreadable Doc row — the error path must mark it and never spin forever'
     let aw = this.AtlasStaple_aw(w)
     if (aw) aw.oai({ Doc: 'Ghost/L/test_corpus/NoSuchFile.g' })
-    // 20s, not 8 — this runner is shared with another live session's own Book sweep, and an 8s
-    //  ceiling flaked once in 3 runs (a busy tick landed the ttlilt's TIMEOUT branch instead of its
-    //  RESOLVE branch — expecting()'s own contract: "size secs above the worst case and the picture
-    //  is always the completed one").  2026-09-06, caught by running ×3, not settling for ×1 green.
+    // DRIVE THE PASS, don't wait for a tick.  A:Atlas stands on the top House, whose belief loop a
+    //  Story run does not pump — the first recording (2026-09-06) enshrined exactly that: 003.snap
+    //   held `req:bogus_wait` with its ttlilt still OPEN and the 'unreadable' sentence in no snap at
+    //    all, and every "green" re-run matched that broken picture.  Found by the Atlas unproven-
+    //     sentence lint, not by the fixture.  The pass is the logic under test; call it.
     this.expecting(w, 'bogus_wait', 20, async () => {
-        await this.AtlasStaple_await(w, 20, () => this.AtlasStaple_bogus_ready(w))
+        let top = this.top_House()
+        let nav = top.Atlas_nav()
+        if (aw && nav) await top.Atlas_pass(aw, null, nav)
+        await this.AtlasStaple_await(w, 10, () => this.AtlasStaple_bogus_ready(w))
     })
 
 // ── beat 4 — simulate a mapper-version bump on the real doc (stamp a stale `by`) and confirm the
@@ -95,11 +105,75 @@ AtlasStaple_stale(w):
     let aw = this.AtlasStaple_aw(w)
     let doc = aw?.o({ Doc: 'Ghost/L/test_corpus/Sample.g' })[0]
     if (doc) doc.sc.by = 'm0'
-    this.expecting(w, 'stale_wait', 20, async () => {   // same headroom rationale as bogus_wait above
-        await this.AtlasStaple_await(w, 20, () => this.AtlasStaple_restale_ready(w))
+    w.c.stale_at = Date.now()      // the ready-predicate needs this: before the stamp it was trivially true
+    this.expecting(w, 'stale_wait', 20, async () => {   // drive the pass — see bogus_wait above
+        let top = this.top_House()
+        let nav = top.Atlas_nav()
+        if (aw && nav) await top.Atlas_pass(aw, null, nav)
+        await this.AtlasStaple_await(w, 10, () => this.AtlasStaple_restale_ready(w))
+    })
+
+// ── beat 5 — DRIFT.  The census is a snapshot unless use refreshes it (Stemdex_todo.md §0: "use
+//  nudges a pass", never a timer).  Prove all three directions against the real disk: write a file
+//   the roster never saw → a refresh mints and maps it; change it → the mtime+size tell un-stamps it
+//    and the refresh re-maps it; delete it → the refresh drops its Doc.  The file is written INSIDE
+//     the frozen fixture directory and removed before the beat ends, so the recorded snap never
+//      carries it (a run that dies mid-beat leaves a stray Drift.g — harmless, and the next run's
+//       refresh simply maps it; delete it by hand if you notice one).  The injected NoSuchFile Doc
+//        from beat 3 is dropped by the first refresh here too — its file never existed. ──
+AtlasStaple_drift(w):
+    i %desc:'write a file into the corpus — change it — delete it: each refresh must find and re-map and drop'
+    this.expecting(w, 'drift_wait', 30, async () => {
+        let top = this.top_House()
+        let aw = this.AtlasStaple_aw(w)
+        let nav = top.Atlas_nav()
+        if (!aw || !nav) return
+        let dir = 'Ghost/L/test_corpus'
+        let path = dir + '/Drift.g'
+        // The very first refresh also drops beat 3's NoSuchFile Doc (gone:1 for a file that never
+        //  was) — so the gone-claim below is gated on found, or it fires for the wrong reason (the
+        //   first recording did exactly that: 'deleted' fired while 'found' never had).
+        await nav.write_file(dir, 'Drift.g', 'Drift_one(w):\n    return 1\n')
+        let r1 = await top.Atlas_refresh(aw, nav)
+        let d1 = aw.o({ Doc: path })[0]
+        if (d1 && d1.sc.defs === '1' && r1.added >= 1) w.c.drift_found = 1
+        await nav.write_file(dir, 'Drift.g', 'Drift_one(w):\n    return 1\n\nDrift_two(w):\n    return 2\n')
+        let r2 = await top.Atlas_refresh(aw, nav)
+        let d2 = aw.o({ Doc: path })[0]
+        if (d2 && d2.sc.defs === '2' && r2.changed >= 1) w.c.drift_changed = 1
+        let dl = await nav.dir_at(dir)
+        if (dl) await dl.deleteEntry('Drift.g')
+        let r3 = await top.Atlas_refresh(aw, nav)
+        if (w.c.drift_found && !aw.oa({ Doc: path }) && r3.gone >= 1) w.c.drift_gone = 1
+    })
+
+// ── beat 6 — WARM.  A tab reload loses A:Atlas (minted at runtime, never persisted), so the cache
+//  is what makes the next stand cheap: drop A:Atlas and stand it again on the same roots; the
+//   fixture doc must come back `warm` — its Map rebuilt from the Dexie row beats 2-4 wrote, with no
+//    read and no parse — and still list every def. ──
+AtlasStaple_warm(w):
+    i %desc:'drop A:Atlas and stand it again — the fixture doc must come back warm from the cache with its Map intact'
+    this.expecting(w, 'warm_wait', 20, async () => {
+        let SH = this.AtlasStaple_SH(w)
+        let old = SH.o({ A: 'Atlas' })[0]
+        if (old) SH.drop(old)
+        let A = SH.i({ A: 'Atlas' })
+        let aw = A.i({ w: 'Atlas' })
+        aw.c.roots = ['Ghost/L/test_corpus']
+        // a refresh is what a query does on a freshly stood Atlas: roster + adopt inline, no tick
+        let top = this.top_House()
+        let nav = top.Atlas_nav()
+        if (nav) await top.Atlas_refresh(aw, nav)
+        await this.AtlasStaple_await(w, 10, () => this.AtlasStaple_warm_ready(w))
     })
 
 // ── ready-predicates (shared by expecting + witness) ──────────────────────────────────────────────
+AtlasStaple_warm_ready(w):
+    let aw = this.AtlasStaple_aw(w)
+    let doc = aw?.o({ Doc: 'Ghost/L/test_corpus/Sample.g' })[0]
+    if (!doc || !doc.sc.warm) return false
+    return doc.o({ Map: 1 })[0]?.o({ def: 1 }).length === 3
+
 AtlasStaple_converged(w):
     let aw = this.AtlasStaple_aw(w)
     if (!aw) return false
@@ -118,7 +192,7 @@ AtlasStaple_bogus_ready(w):
 AtlasStaple_restale_ready(w):
     let aw = this.AtlasStaple_aw(w)
     let doc = aw?.o({ Doc: 'Ghost/L/test_corpus/Sample.g' })[0]
-    if (!doc) return false
+    if (!doc || !w.c.stale_at) return false     // only after beat 4 stamped m0 — the first recording noticed this at step 2
     return doc.sc.by !== 'm0' && doc.o({ Map: 1 }).length === 1
 
 async AtlasStaple_await(w, secs, truth_fn):
@@ -155,10 +229,26 @@ AtlasStaple_witness(w):
     }
 
     let bogus = aw.o({ Doc: 'Ghost/L/test_corpus/NoSuchFile.g' })[0]
-    if (bogus && bogus.sc.error === 'unreadable') {
+    // error AND the mapper stamp: the stamp is what stops the pass retrying it every tick (the
+    //  no-spin half of the claim); the exact error text is the nav's business, not this Book's
+    if (bogus && bogus.sc.error && bogus.sc.by) {
         i %see:'an unreadable path records an error and does not spin forever'
     }
 
     if (this.AtlasStaple_restale_ready(w)) {
         i %see:'a re-map under a fresh mapper version replaces the Map — never piles a second one'
+    }
+
+    if (w.c.drift_found) {
+        i %see:'a file written after the roster is found and mapped by the next refresh'
+    }
+    if (w.c.drift_changed) {
+        i %see:'a file that changed under a settled Doc is re-mapped by the next refresh'
+    }
+    if (w.c.drift_gone) {
+        i %see:'a file deleted from the corpus drops out of the census on the next refresh'
+    }
+
+    if (this.AtlasStaple_warm_ready(w)) {
+        i %see:'a re-stood Atlas warms its Map from the cache — no read and no parse'
     }

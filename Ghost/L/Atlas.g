@@ -27,19 +27,21 @@
 //   polite budget per pass so the runner stays responsive.  STANDING on a live runner 2026-09-05:
 //    226 docs, 0 errors, LangHold.svelte 49/49 eatfunc members (see ATLAS_MAPPER for the fix history —
 //     the bug and its real fix both ended up living in compile.ts, not here).
-//  Owed, in order — the second is a compile.ts collector gap CONFIRMED by this ghost's own census:
-//   · top-level `function` decls in .ts: the tsstho walk collects PropertyDefinition + class names,
-//      not FunctionDeclaration — vyto_foam.ts (all `export function`) maps to 0 defs.
-//   · `via` on TS-branch calls: every .svelte/.ts %call lacks its enclosing def (ctx.current_method is
-//      only set on the stho line branch), so "who calls X, from inside what" works for .g only.
-//   · the three added kinds (%elvisto, %mint, %see); rescans on dige drift; .md docs; the reverse
-//      lookup ("who calls X" across docs — a wildcard minisnap path already answers it minus the Doc
-//       ancestry; the one genuinely 12k-wide thing, so derive on demand or page it, never one flat X).
+//  Everything in that first-cut owed list has since landed (see ATLAS_MAPPER's history and
+//   spec/Stemdex_todo.md §0): FunctionDeclaration + via in .ts, the %elvisto/%mint/%proves kinds,
+//    .md docs with %link, the reverse lookup (Atlas_callers), and — 2026-09-06 — FRESHNESS and
+//     DURABILITY: `Atlas_refresh` (use nudges a pass: every query re-lists the roots, maps the movers
+//      inline; mtime+size on doc.c are the cheap tell, the dige stays the truth) and the Dexie
+//       `atlas` cache (adopt a Map from its row when mapper+mtime+size match, stamp it `warm`), plus
+//        `Atlas_lint`/`Atlas_unproven` — three answers over what is already held.
+//  What is deliberately NOT here: a timer (Stemdex_todo §0's standing constraint) and a reverse
+//   INDEX (a query over 687 docs is milliseconds; a second structure would need keeping in step).
 
 IMPORT()
     import { EditorState } from "@codemirror/state"
     import { lang, lang_for_path } from "$lib/O/lang/lang"
     import { dig } from "$lib/Y.svelte"
+    import { Dexie } from "dexie"
 
     // ATLAS_MAPPER — the mapper's own version, stamped on every %Doc as `by`.  A row whose `by` is
     //  behind gets re-mapped even though its text dige is unchanged: the INDEX changed, not the doc
@@ -81,16 +83,45 @@ IMPORT()
     //      before this line" trick as via, carrying the whole ancestor array (each heading word
     //       already recorded its own stack-at-that-moment).  100% coverage: Radio_todo.md's 85 links
     //        all carry a real 3-deep heading chain.
-    const ATLAS_MAPPER = 'm9'
+    //     m10 (2026-09-06): calls on a ControlFlow line in a .g file (`if (n === 2) this.Beat(w)`,
+    //      the Book drive idiom) — the stho per-line CALL_RE sweep sat after branches that return
+    //       early, so those calls were never recorded; the Atlas orphan lint listed every Book beat
+    //        as uncalled.  Fixed in compile.ts with a whole-document CALL_GAP sweep (stho only,
+    //         dedup by offset).  Bumped so every cached row re-derives with the missing calls.
+    const ATLAS_MAPPER = 'm10'
     // ATLAS_BUDGET — docs mapped per pass.  A %Map build is a real parse (the whole-doc tsstho tree
     //  walk on .svelte), so this is the Stemdex's "polite pass" idea: converge over passes, never thump.
     const ATLAS_BUDGET = 6
+    // ATLAS_ADOPT — cache adoptions per pass.  An adopt rebuilds a %Map from its Dexie row with no
+    //  read and no parse (mint-only), so it is far cheaper than a map and gets its own, wider lane.
+    const ATLAS_ADOPT = 40
+    // ATLAS_REFRESH_MAP — docs a refresh will map INLINE before handing the rest to the pass.  A
+    //  refresh runs inside a query op (the caller is waiting on the answer), so it settles the few
+    //   movers a working session produces itself and only defers a bulk change (a branch switch).
+    const ATLAS_REFRESH_MAP = 24
+    // ATLAS_DISPATCHED — def-name shapes that are reached by NAME, never by a call the parser sees
+    //  (req_<name> from the req machine, e_<name> from elvis, Run_A_<Book> from Story), so the orphan
+    //   lint leaves them out.  A do_fn named after its world (`Atlas(A,w)`) is dispatched the same way
+    //    but has no prefix to tell it by — those stay in the list, which is why it is a scan aid, not
+    //     a verdict.
+    const ATLAS_DISPATCHED = /^(req_|e_|Run_A_|_)/
+    // the fixture side of the unproven-sentence lint: a Book's LAST numbered snap carries every
+    //  sentence it has ever noticed (a %see is once-noticed and never dropped), so one read per Book
+    //   is the whole fixture corpus.  Sentences have no commas (the peel rule), so `see:` runs to
+    //    the next comma or line end.
+    const SNAP_NAME_RE = /^\d+\.snap$/
+    const SEE_LINE_RE  = /^\s*see:([^,\n]+)/gm
     // the corpus: the authored trees, not the generated ones.  gen/ is the compiler's output.
     //  data/ + mostly/ are THE GROUND (TheC/TheX, Selection/resolve) — the substrate everything
     //   else calls into; a code model that cannot see `o()`'s home is not a model of this code.
     //  spec/ is prose, walked since m8 for its doc-links; history/+shelved/ stay excluded — retired,
     //   not living content (CLAUDE.md's own retirement convention: a moved-out doc is done being read).
-    const ATLAS_ROOTS = ['Ghost', 'src/lib/O', 'src/lib/L', 'src/lib/V', 'src/lib/data', 'src/lib/mostly']
+    //  2026-09-06: widened to the whole of src/ + scripts/ (+100 docs → 687).  The link lint's first
+    //   run showed most "missing" targets were not gone but merely UNROSTERED (src/lib/ghost's
+    //    Radios.svelte, p2p's Peerily.svelte.ts, scripts/daemon/main.ts, the relay) — a census that
+    //     stops at src/lib/O cannot tell "moved to history/" from "lives one directory over".  The
+    //      skip list still keeps gen/, history/, shelved/ out.  .mjs stays out: no grammar for it.
+    const ATLAS_ROOTS = ['Ghost', 'src', 'scripts']
     const ATLAS_SKIP  = { gen: 1, node_modules: 1, history: 1, shelved: 1, '.git': 1, '.svelte-kit': 1 }
     const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
 
@@ -134,55 +165,130 @@ async Atlas_pass(w, req, nav):
             n = n + await this.Atlas_walk(w, nav, root)
         }
         w.c.rostered = 1
-        this.Atlas_report(w)
+        await this.Atlas_report(w)
         this.i_elvisto(w, 'think')
         return
     }
-    let todo = []
+    // Two lanes per pass.  A doc with NO Map yet may be ADOPTED from the Dexie cache (its row's
+    //  mtime+size+mapper all match — no read, no parse); a doc whose Map is merely STALE (a mapper
+    //   bump, a dige mover a refresh un-stamped) is always a real re-map — the cache row is what the
+    //    stale Map came from, so adopting it would re-serve the very thing being replaced.
+    let adopted = 0
+    let mapped = 0
+    let more = 0
     for (const doc of w.o({ Doc: 1 })) {
-        if (todo.length >= ATLAS_BUDGET) break
         if (doc.sc.by === ATLAS_MAPPER && doc.oa({ Map: 1 })) continue   // mapped by THIS mapper
         if (doc.sc.by === ATLAS_MAPPER && doc.sc.error) continue          // failed under this mapper — don't spin
-        todo.push(doc)
+        let cold = doc.oa({ Map: 1 }) ? true : false
+        if (!cold) {
+            if (adopted >= ATLAS_ADOPT) { more = more + 1; continue }
+            if (await this.Atlas_cache_adopt(w, doc)) { adopted = adopted + 1; continue }
+        }
+        if (mapped >= ATLAS_BUDGET) { more = more + 1; continue }
+        await this.Atlas_map_one(w, nav, doc)
+        mapped = mapped + 1
     }
-    for (const doc of todo) {
-        await this.Atlas_map_one(nav, doc)
-    }
-    this.Atlas_report(w)
-    if (todo.length) this.i_elvisto(w, 'think')
+    await this.Atlas_report(w)
+    if (adopted || mapped || more) this.i_elvisto(w, 'think')
 
 // Atlas_walk — recurse one root, minting %Doc:<path> for every file with a wanted extension.
 //  Plain recursion with a returned count (the .g compiler parse-storms on closure-heavy helpers).
 //   nav.dir(...parts) hands back a DirectoryListing: .files[], .directories[], lazily .expand()ed.
-async Atlas_walk(w, nav, path):
+//  `fresh` re-expands every listing (WormholeNav caches them, so a plain walk would re-read the
+//   roster as it stood at the FIRST walk); `seen` collects every path met so a refresh can drop the
+//    Docs whose file is gone.  Each file's mtime+size ride on doc.c — a cache, not truth (the dige
+//     is the truth; these are the cheap tell that it MAY have moved), so they never snap.
+async Atlas_walk(w, nav, path, fresh, seen):
     let dl = await nav.dir_at(path)
     if (!dl) return 0
-    if (!dl.expanded) await dl.expand()
+    if (fresh || !dl.expanded) await dl.expand()
     let n = 0
     for (const f of dl.files) {
         let ext = f.name.split('.').pop()
         if (!ATLAS_EXT[ext]) continue
-        w.oai({ Doc: path + '/' + f.name })
+        let p = path + '/' + f.name
+        let mtime = f.modified ? f.modified.getTime() : 0
+        let size = f.size ?? 0
+        let doc = w.o({ Doc: p })[0]
+        if (!doc) {
+            doc = w.i({ Doc: p })
+            if (fresh) w.c.refresh_added = w.c.refresh_added + 1
+        } else if (doc.c.mtime !== mtime || doc.c.size !== size) {
+            // the file moved under a settled Doc: un-stamp the mapper so the pass re-maps it (the
+            //  Map stays in place until then — a stale answer beats a missing one for a query that
+            //   lands between the un-stamp and the re-map)
+            if (doc.sc.by) {
+                delete doc.sc.by
+                w.c.refresh_changed = w.c.refresh_changed + 1
+            }
+        }
+        doc.c.mtime = mtime
+        doc.c.size = size
+        if (seen) seen[p] = 1
         n = n + 1
     }
     for (const d of dl.directories) {
         if (ATLAS_SKIP[d.name]) continue
-        n = n + await this.Atlas_walk(w, nav, path + '/' + d.name)
+        n = n + await this.Atlas_walk(w, nav, path + '/' + d.name, fresh, seen)
     }
     return n
+
+// Atlas_refresh — USE nudges a pass (the Stemdex's own rhythm: the searchbar nudges its scan; no
+//  second timer, Stemdex_todo.md §0's standing constraint).  Every query op calls this first, so
+//   an answer is as fresh as the disk at the moment of asking: re-walk the roots with forced
+//    listings, mint the new, un-stamp the moved, drop the gone, then map the movers INLINE up to
+//     ATLAS_REFRESH_MAP and hand any bulk remainder to the pass.  Before the first roster this IS
+//      the roster.  Returns the tally so the caller can print what changed.
+async Atlas_refresh(w, nav):
+    w.c.refresh_added = 0
+    w.c.refresh_changed = 0
+    let seen = {}
+    let roots = w.c.roots ?? ATLAS_ROOTS
+    for (const root of roots) {
+        await this.Atlas_walk(w, nav, root, 1, seen)
+    }
+    let gone = []
+    for (const doc of w.o({ Doc: 1 })) {
+        if (seen[doc.sc.Doc]) continue
+        gone.push(doc.sc.Doc)
+        w.drop(doc)
+    }
+    await this.Atlas_forget(w, gone)
+    let mapped = 0
+    let pending = 0
+    for (const doc of w.o({ Doc: 1 })) {
+        if (doc.sc.by === ATLAS_MAPPER && (doc.oa({ Map: 1 }) || doc.sc.error)) continue
+        if (!doc.oa({ Map: 1 })) {
+            if (await this.Atlas_cache_adopt(w, doc)) continue
+        }
+        if (mapped >= ATLAS_REFRESH_MAP) { pending = pending + 1; continue }
+        await this.Atlas_map_one(w, nav, doc)
+        mapped = mapped + 1
+    }
+    w.c.rostered = 1
+    await this.Atlas_report(w)
+    if (pending) this.i_elvisto(w, 'think')
+    return { added: w.c.refresh_added, changed: w.c.refresh_changed, gone: gone.length, mapped, pending }
 
 // Atlas_map_one — read, dige, parse, keep.  The %Map lands under the %Doc itself: Lang_compile_collect
 //  writes to job.oai({Map:1}) on whatever job it is handed, so the %Doc IS the job — no %Compile
 //   wrapper, no dock.  Markdown takes the heading collector; everything else the stho/tsstho one,
 //    gated on Lang_has_lang_parser so a grammar miss records an error rather than raw passthrough.
 //     dontSnap on the %Map: ~700 rows per big doc is truth worth keeping, not a snap worth reading.
-async Atlas_map_one(nav, doc):
+async Atlas_map_one(w, nav, doc):
     let path = doc.sc.Doc
     let cut = path.lastIndexOf('/')
     let dir_path = path.slice(0, cut)
     let filename = path.slice(cut + 1)
     let text = await nav.read_file(dir_path, filename)
-    if (text == null) { doc.sc.error = 'unreadable'; return }
+    if (text == null) {
+        // stamp `by` here too, or the pass retries this doc EVERY tick (its skip rule needs both
+        //  by and error) — the very spin the Book's beat 3 swears against.  A refresh drops a Doc
+        //   whose file is gone and un-stamps one whose file changed, so nothing is lost by resting.
+        doc.sc.error = 'unreadable'
+        doc.sc.by = ATLAS_MAPPER
+        return
+    }
     doc.sc.dige  = await dig(text)
     doc.sc.lines = '' + text.split('\n').length
     doc.sc.by    = ATLAS_MAPPER
@@ -222,6 +328,8 @@ async Atlas_map_one(nav, doc):
             if (prv)   doc.sc.proves  = '' + prv
             if (rgn)   doc.sc.regions = '' + rgn
             if (lnk)   doc.sc.links   = '' + lnk
+            delete doc.sc.warm                            // a real parse, not a cache adoption
+            await this.Atlas_cache_put(w, doc)
         } else {
             doc.sc.error = 'no map'
         }
@@ -251,8 +359,213 @@ Atlas_callers(w, name):
     }
     return out
 
+//#region the cache — Dexie 'atlas', one row per doc, the Map rows inside; strictly an accelerator
+// Atlas_db — the Stemdex's own pattern (Lies_stemdex_db): browser-only, one handle across HMR
+//  remixes, undefined where there is no indexedDB (a node runner) so every caller degrades to the
+//   cold path.  The row body is the projection; only the PK is indexed, so a shape change needs no
+//    schema bump — the mapper version INSIDE the row (sc.by) is what invalidates.
+Atlas_db():
+    if (typeof indexedDB === 'undefined') return undefined
+    let g = globalThis
+    if (!g.__atlas_db) {
+        let db = new Dexie('atlas')
+        db.version(1).stores({ doc: 'path' })
+        g.__atlas_db = db
+    }
+    return g.__atlas_db
+
+// Atlas_cache_put — after a real map: the Doc's census fields + every Map row's sc (a link's
+//  region_path array rides along as a plain field — it lives on .c in the tree, never in sc).
+//   mtime+size are the adopt key; the dige inside is the truth a future dige-check could use.
+async Atlas_cache_put(w, doc):
+    let db = this.Atlas_db()
+    if (!db || w.c.nocache) return
+    let map = doc.o({ Map: 1 })[0]
+    if (!map) return
+    let rows = []
+    for (const r of map.o()) {
+        let row = Object.assign({}, r.sc)
+        // the flush parks these on .c (region_path: an array; abs_from/abs_to: recomputed each
+        //  compile, never snapped) — carry them as plain fields so an adopt restores the same shape
+        if (r.c.region_path) row.region_path = r.c.region_path
+        if (r.c.abs_from != null) row.abs_from = r.c.abs_from
+        if (r.c.abs_to != null) row.abs_to = r.c.abs_to
+        rows.push(row)
+    }
+    let sc = Object.assign({}, doc.sc)
+    delete sc.warm
+    try {
+        await db.doc.put({ path: doc.sc.Doc, mtime: doc.c.mtime ?? 0, size: doc.c.size ?? 0, sc, rows })
+    } catch (e) {
+        console.warn('🗺 atlas cache put failed', e)
+    }
+
+// Atlas_cache_adopt — rebuild a Doc's Map from its row with no read and no parse.  Only when the
+//  row was made by THIS mapper and the file's mtime+size still match what the row saw; the Doc is
+//   stamped `warm` so a census row tells a cache adoption from a real parse (a real parse clears it).
+async Atlas_cache_adopt(w, doc):
+    let db = this.Atlas_db()
+    if (!db || w.c.nocache) return false
+    let row = null
+    try {
+        row = await db.doc.get(doc.sc.Doc)
+    } catch (e) {
+        return false
+    }
+    if (!row || !row.sc || row.sc.by !== ATLAS_MAPPER) return false
+    if (row.mtime !== (doc.c.mtime ?? 0) || row.size !== (doc.c.size ?? 0)) return false
+    let old = doc.o({ Map: 1 })[0]
+    if (old) doc.drop(old)
+    Object.assign(doc.sc, row.sc)
+    doc.sc.warm = 1
+    let map = doc.i({ Map: 1 })
+    map.sc.dontSnap = 1
+    for (const r of row.rows) {
+        let sc = Object.assign({}, r)
+        delete sc.region_path
+        delete sc.abs_from
+        delete sc.abs_to
+        let c = map.i(sc)
+        if (r.region_path) c.c.region_path = r.region_path
+        if (r.abs_from != null) c.c.abs_from = r.abs_from
+        if (r.abs_to != null) c.c.abs_to = r.abs_to
+    }
+    return true
+
+// Atlas_forget — drop cache rows (a refresh's gone docs; a Book clearing its fixture paths so a
+//  run starts cold and deterministic).
+async Atlas_forget(w, paths):
+    let db = this.Atlas_db()
+    if (!db || !paths.length) return
+    try {
+        await db.doc.bulkDelete(paths)
+    } catch (e) {
+        console.warn('🗺 atlas cache forget failed', e)
+    }
+//#endregion
+
+//#region the lints — queries over what is already held; no new state, no timer
+// Atlas_lint — three answers the census already contains.
+//  missing:    a `file:line` link in a doc whose target file is in NO living root — the tell that a
+//              spec moved to history/, was renamed, or never existed (CLAUDE.md's own corollary:
+//              "a referenced spec/X.md that isn't there is almost certainly spec/history/X.md").
+//  beyond_eof: the target exists but the cited line is past its end — the line drifted.
+//  orphans:    a def no call or elvisto anywhere names.  A scan aid, not a verdict: do_fns named
+//              after their world, UI handlers wired in markup and `this[name]` dispatch all read as
+//              orphans here.  Capped, with the total beside it.
+Atlas_lint(w):
+    let docs = w.o({ Doc: 1 })
+    let by_tail = {}
+    let lines_of = {}
+    for (const d of docs) {
+        let p = d.sc.Doc
+        lines_of[p] = +(d.sc.lines ?? 0)
+        let tail = p.slice(p.lastIndexOf('/') + 1)
+        if (!by_tail[tail]) by_tail[tail] = []
+        by_tail[tail].push(p)
+    }
+    let missing = []
+    let beyond = []
+    let file_links = 0
+    let called = {}
+    for (const d of docs) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const c of map.o({ call: 1 })) called[c.sc.method] = 1
+        for (const e of map.o({ elvisto: 1 })) called[e.sc.method] = 1
+        for (const l of map.o({ link: 1, kind: 'file' })) {
+            let target = l.sc.target
+            let ext = target.split('.').pop()
+            if (!ATLAS_EXT[ext]) continue                 // scripts/*.mjs &c. are not rostered — no verdict
+            file_links = file_links + 1
+            let hit = this.Atlas_resolve(by_tail, target)
+            if (!hit) {
+                missing.push({ doc: d.sc.Doc, line: l.sc.line, target, at_line: l.sc.at_line })
+                continue
+            }
+            let at = +(l.sc.at_line ?? 0)
+            if (at > (lines_of[hit] ?? 0)) beyond.push({ doc: d.sc.Doc, line: l.sc.line, target: hit, at_line: at, lines: lines_of[hit] })
+        }
+    }
+    let orphans = []
+    let orphans_total = 0
+    for (const d of docs) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const f of map.o({ def: 1 })) {
+            let name = f.sc.method
+            if (!name || called[name]) continue
+            if (name === 'IMPORT') continue                 // the .g IMPORT() block parses as a def; it is not one
+            if (ATLAS_DISPATCHED.test(name)) continue
+            orphans_total = orphans_total + 1
+            if (orphans.length < 400) orphans.push({ doc: d.sc.Doc, name, line: f.sc.line })
+        }
+    }
+    return { docs: docs.length, file_links, missing, beyond_eof: beyond, orphans_total, orphans }
+
+// Atlas_resolve — a link target (`Heist.g`, `M/Heist.g`, `src/lib/O/Lang.svelte`) to a rostered
+//  path: same tail, then the longest path-suffix match; a bare filename takes the first holder.
+Atlas_resolve(by_tail, target):
+    let tail = target.slice(target.lastIndexOf('/') + 1)
+    let cands = by_tail[tail]
+    if (!cands) return null
+    if (target.indexOf('/') < 0) return cands[0]
+    for (const c of cands) {
+        if (c === target || c.endsWith('/' + target)) return c
+    }
+    return cands[0]
+
+// Atlas_unproven — every %see sentence in code that NO Book fixture has ever recorded.  A %see is
+//  the assertion idiom, so an unfixtured one is a claim nothing swears; a single-word `see:atlas`
+//   is a summary row, not a claim, so only sentences with a space count.  One read per Book (see
+//    SEE_LINE_RE above for why the last snap is enough).
+async Atlas_unproven(w, nav):
+    let fixtured = {}
+    let books = await nav.dir_at('wormhole/Story')
+    if (!books) return { error: 'no wormhole/Story under this nav' }
+    await books.expand()
+    let read = 0
+    // EVERY numbered snap, not just the last: sentences do not strictly accumulate (VytoStaple's
+    //  006 holds 4, 007 holds 3 — a beat's world can be re-stood), so the union over the Book's
+    //   snaps is the fixture truth.  ~1000 reads at the current corpus; opt-in for that reason.
+    for (const b of books.directories) {
+        if (!b.expanded) await b.expand()
+        for (const f of b.files) {
+            if (!SNAP_NAME_RE.test(f.name)) continue
+            let text = await nav.read_file('wormhole/Story/' + b.name, f.name)
+            if (!text) continue
+            read = read + 1
+            for (const m of text.matchAll(SEE_LINE_RE)) fixtured[m[1].trim()] = 1
+        }
+    }
+    let unproven = []
+    let total = 0
+    for (const d of w.o({ Doc: 1 })) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const p of map.o({ proves: 1 })) {
+            if (p.sc.desc) continue
+            let s = p.sc.sentence
+            if (!s || s.indexOf(' ') < 0) continue
+            total = total + 1
+            if (fixtured[s]) continue
+            unproven.push({ doc: d.sc.Doc, line: p.sc.line, via: p.sc.via, sentence: s })
+        }
+    }
+    return { books_read: read, fixtured: Object.keys(fixtured).length, sees_total: total, unproven }
+//#endregion
+
 // Atlas_report — the one summary row, replaced not piled (the Seem/%News idiom).
-Atlas_report(w):
+//  AWAITED, and every caller awaits it: r() is an async replace(), and until it commits, o() on
+//   the world answers with only what the replace has added so far (Stuff.svelte.ts: "o() will only
+//    have what we've added so far").  Un-awaited, a caller that queries the world right after a
+//     pass — the AtlasStaple beats, a query op — saw NO Docs at all (2026-09-06, the Book's console:
+//      `docs: []` one microtask after a pass that had just iterated them).
+//   Even awaited, an r() per pass puts the world through a replace on EVERY tick, and any other
+//    world's do_fn that runs while it is in flight (the Book's witness) reads a partial o().  So:
+//     find-or-create the one row and stamp it, the way every other census field here is written —
+//      no replace, no partial window.  (Kept async so the awaiting callers need no change.)
+async Atlas_report(w):
     let docs = w.o({ Doc: 1 })
     let mapped = 0
     let errors = 0
@@ -260,5 +573,9 @@ Atlas_report(w):
         if (d.oa({ Map: 1 })) mapped = mapped + 1
         if (d.sc.error) errors = errors + 1
     }
-    w.r({ see: 'atlas' }, { docs: '' + docs.length, mapped: '' + mapped, errors: '' + errors })
+    let row = w.oai({ see: 'atlas' })
+    row.sc.docs   = '' + docs.length
+    row.sc.mapped = '' + mapped
+    row.sc.errors = '' + errors
+    delete row.sc.waiting
 //#endregion

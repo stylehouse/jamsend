@@ -1398,7 +1398,43 @@ Radio_sources(w, radio):
         out.push(row)
     }
     out.sort((a, b) => (b.live - a.live) || (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0)))
+    // YOUR OWN SHELF IS A PLACE TO LISTEN FROM TOO (the owner 2026-09-06: *"LOCAL isn't in the source list —
+    //  only friends and any friend and soundpool"*).  The dial has had an own rung behind sc.own all along
+    //   (Radio_source_toggle flips it), but the chooser was built from %Theirs crates only, so a listener
+    //    who wanted their own records had no row to press.  Probe-first like every other row; a body with
+    //     no playable record of its own (a bare Cave) gets no row, which is the honest answer.  Last, after
+    //      the friends, and marked own:1 so the face wires it to Radio_own_set rather than an aim.
+    let me = this.Radio_pub(w) || 'me'
+    let mineHome = w.o({ Mine: 1, pub: me })[0]
+    let mineShelf = mineHome ? mineHome.o({ stock: 1, pub: me })[0] : null
+    if (mineShelf) {
+        let own = 0
+        for (const rec of this.Ra_recs(mineShelf)) { if (this.Radio_playable(rec)) { own = own + 1 } }
+        if (own) { out.push({ pub: '', own: 1, name: 'LOCAL', tracks: own, live: 1, aimed: (radio && radio.sc && radio.sc.own) ? 1 : 0 }) }
+    }
     return out
+// Radio_own_set — PIN the dial to your own shelf, or release it, as a SETTER (Radio_source_toggle is a flip,
+//  which a chooser row cannot use — pressing LOCAL twice must not bounce you back to friends).  Choosing own
+//   is one control with the pool and the aim, the same law Radio_aim_set keeps: you cannot be on your own
+//    records AND aimed at a friend AND on the pool at once, so the other two clear.  Kept by Radio_choice_keep
+//     like every deliberate choice (sc.own rides the same radio stash the source and aim do).
+Radio_own_set(n, on):
+    let radio = n
+    if (!radio || !radio.sc) { return 0 }
+    let was = radio.sc.own ? 1 : 0
+    if (on && was) { return 1 }
+    if (!on && !was) { return 0 }
+    this.Radio_source_toggle(radio)
+    if (on) {
+        if (radio.sc.source) { delete radio.sc.source }
+        if (radio.sc.aim) { delete radio.sc.aim }
+        if (radio.sc.aim_by) { delete radio.sc.aim_by }
+        if (radio.sc.note) { delete radio.sc.note }
+        console.log('📻 listening to your own records')
+    }
+    radio.bump()
+    this.Radio_choice_keep(radio)
+    return on ? 1 : 0
 // Radio_choice_keep — A CHOICE IS DURABLE MATTER (2026-09-05, the owner: *"can we get it to stay on
 //  SoundPooling if that was where its last source was pointed"*).  The two verbs below are the only
 //   places a PERSON says who they want to listen with, and until now that answer lived exactly as long
@@ -1573,7 +1609,7 @@ async Radio_dial(radio):
             if (typeof this.Ra_pool_resurrect === 'function') {
                 try { await this.Ra_pool_resurrect(w, powner) } catch (er) { console.log('🏊⚠ pool resurrect: ' + er) }
             }
-            try { this.Ra_pool_previews_heal(w, powner) } catch (er) {}
+            try { await this.Ra_pool_previews_heal(w, powner) } catch (er) {}
         }
         // EVERY NEXT SAYS HOW IT WENT (the owner 2026-09-05): one line per click — the rung, the pick or the
         //  give-up, and the pocket's own sentence (Ra_pool_whys) beside it so "empty" is never bare again.
@@ -2776,7 +2812,7 @@ async Stoker_look(st, era):
         //  4 at the default bound and its radio-off Stoker parks before a second look (measured 2026-09-05).
         try { await this.Ra_pool_resurrect(w, this.Ra_pool_owner ? this.Ra_pool_owner(w) : null, 8) } catch (er) { console.log('🏊⚠ pool resurrect: ' + er) }
         if (st.c.era !== era) return
-        if (typeof this.Ra_pool_previews_heal === 'function') { try { this.Ra_pool_previews_heal(w, this.Ra_pool_owner ? this.Ra_pool_owner(w) : null) } catch (er) {} }
+        if (typeof this.Ra_pool_previews_heal === 'function') { try { await this.Ra_pool_previews_heal(w, this.Ra_pool_owner ? this.Ra_pool_owner(w) : null) } catch (er) {} }
     }
     this.Stoker_census(st, shelf, radio)
     this.Stoker_cull(st, shelf, radio)
@@ -3402,6 +3438,17 @@ async Stoker_dig(st, w, shelf, nav, skip):
     st.c.dig_bad = 0
     st.c.dig_err = ''
     let bases = ['music', '', 'testsounds']
+    // TESTSOUNDS IS A PLUMBING PROOF, NOT A COLLECTION (2026-09-06, the daemon's own log: "dig[idle] … base=
+    //  testsounds picks=2 got=2" between real tours, with 40 real records on the shelf — and those eight fixture
+    //   clips then rode the circulation fill into eed's pool as if they were music).  main.ts already rules it
+    //    for the muse ("finding those instead of a real collection is precisely the proves-plumbing-means-nothing
+    //     outcome MUSIC= exists to end"); the digger never got the memo.  LIVE ONLY, and only once a real base has
+    //      yielded even once: a dev checkout with nothing else still digs its eight so the plumbing proves, and a
+    //       driven world (no humdinger — MusuStock) keeps the plain three-base rotation its fixtures were cut from.
+    if (this.top_House().c.humdinger) {
+        let realDug = +(this.Stoker_base_stat('music').dug || 0) + +(this.Stoker_base_stat('').dug || 0)
+        if (realDug > 0) { bases = ['music', ''] }
+    }
     let start = (st.c.dig_i || 0) % bases.length
     st.c.dig_i = (st.c.dig_i || 0) + 1
     // LIVE PAGES ONLY (`humdinger`), the same predicate the weighting, the hop budget and the skip
