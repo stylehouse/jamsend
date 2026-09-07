@@ -36,6 +36,23 @@
     is theirs). **NEXT: the owner reloads eed** to pick up the reverted `Heist_keep_pool_go`; the pool pick
      will then bind `re:seed` → the 18-chunk lofi that is fully materialised and waiting on S, and land.
 
+**THE REGRESSION NET IT NEVER HAD — `scripts/ServeResolve.spec.ts`, 6/6 green, no runner.** This class was
+ unreachable by any Book (a fixture hand-mints its mirror, so a record's id IS the seed and the two
+  id-spaces collapse), but the resolver is *pure*, so a unit spec over fixture particles reaches it. It
+   pins the two defects separately, because they only looked like one — pick the wrong record, then say
+    nothing about it:
+- **the twin** — two `%Record`s under one id, and `Repli_find_record` must take the one that HAS BYTES,
+   whichever lib registered first (the old bug was literally "first lib wins").
+- **the silence** — `total:0` is neither servable nor parkable (`from < total` is `0 < 0`), and
+   `Repli_serve_miss` now speaks there, once per id per 5s so a re-ask storm is not a log storm.
+- **presence is fill state** — a promised chunk with no bytes is *not* servable, and unlike the husk it
+   IS parkable (`0 < 3`). That is the whole difference between "wait, bytes are coming" and silent death.
+ Writing it caught a wrong assumption of mine, not of the code: my first fixture minted byte-less chunks
+  and the positive control failed — `Repli_chunk_at` requires real bytes, correctly.
+```
+node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/ServeResolve.spec.ts
+```
+
 **GATE (runner e747cbed, reloaded to the new gen):** MusuPoolBytes 5/5, MusuPoolFill 6/6, MusuPoolRandom
  5/5, MusuPoolRadio 6/6, MusuReplica 14/14 — all **caveat 0**. MusuHeist 22/22 ok but caveat 1 on 20 steps
   — a broad PRE-EXISTING drift (it blankets handshake steps that touch no changed code, and the four pool

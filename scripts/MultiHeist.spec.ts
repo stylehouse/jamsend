@@ -78,7 +78,7 @@ test('a heist bud is pinned by PARTICLE, and naming an organ releases the pin', 
     // …and pressing the Radio must RELEASE it. `focused_keep` outranks `focused` on the belly ladder, so
     //  without the release this press would set `focused`, be outranked, and read as a dead button.
     expect(H.Sounditron_focus_to(w, 'Radio')).toBe(1)
-    expect(w.c.focused).toBe('Radio')
+    expect(H.Sounditron_focus_get(w)).toBe('Radio')
     expect(w.c.focused_keep).toBeUndefined()
     expect(H.commissions).toBe(2)
 
@@ -121,13 +121,13 @@ test('leaving an unstarted heist STARTS it — it does not cancel it (the owner\
     // THE RULING. The old behaviour was cancel, and a regression here silently throws away a setup the
     //  human meant to keep — no error, no trace, just a heist that never happened.
     expect(keep.sc.state).toBe('pulling')
-    expect(w.c.focused).toBe('Radio')
+    expect(H.Sounditron_focus_get(w)).toBe('Radio')
     expect(w.c.focused_keep).toBeUndefined()
 
     // …and leaving with no form in the belly is just a focus change: nothing to start, nothing to lose.
     const before = keep.sc.state
     expect(H.Sounditron_leave_keep(w, 'Door', null)).toBe(1)
-    expect(w.c.focused).toBe('Door')
+    expect(H.Sounditron_focus_get(w)).toBe('Door')
     expect(keep.sc.state).toBe(before)
 })
 
@@ -150,7 +150,7 @@ test('leaving starts EVERY standing form, but never one still waiting on you', a
     // …and the one with nothing ticked is left alone. Starting it would pull an empty selection, and it is
     //  the single case where the glass genuinely still needs an answer only the human has.
     expect(keeps[3].sc.state).toBe('choosing')
-    expect(w.c.focused).toBe('Radio')
+    expect(H.Sounditron_focus_get(w)).toBe('Radio')
 })
 
 test('a started heist is not re-started by leaving it again', async () => {

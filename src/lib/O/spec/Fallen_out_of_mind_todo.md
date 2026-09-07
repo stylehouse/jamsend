@@ -69,6 +69,33 @@ The husk bug is this law's fourth recurrence, and `Heist_todo §2` literally tab
 Related and unreconciled: `Cello_synthesis §R.8` — a `%Card` under a `%Library` may need a different prior
  than a `%Card` elsewhere: **the prior is keyed by context, not just mainkey**. The context *is* the referrer.
 
+### 2.1 SIZING THE MIGRATION — censused 2026-09-07, and it is far smaller than it looks
+
+Before anyone starts, the numbers, so the decision rests on facts rather than dread:
+
+| | count | where |
+|---|---|---|
+| **mint sites** | **1** | `Heist.g:1359` — `rec.sc.husk = 1`, the describe census |
+| **the un-mint** | 1 | `Heist.g:1543` — `delete rec.sc.husk`, where a materialise makes it real |
+| **product readers** | **1** | `Ra.g:1687` — `Ra_pool_sources` skipping browsed husks |
+| **committed fixtures carrying a husk `%Record`** | **0** | — |
+
+**Zero fixture blast radius**, which inverts the usual cost shape. 93 snap files match the word `husk` and
+ *not one* is a `%Record` wearing it: they are `%see` sentences using the word, Book tokens about a
+  completely different husk (`husk_is_me`, `husk_pier`, `no_keyless_husk` — a BODY husk in the crew
+   ceremony), and Sounditron's `stage:husk`. The reason is already known: **no Book can reach the
+    describe/rummage path**, so no fixture ever mints one. The husk exists only live.
+
+So it is **one mint, one un-mint, one reader, no fixtures** — the risk sits entirely in live behaviour,
+ which means it wants the live walk plus `ServeResolve.spec` extended, *not* a fixture re-swear.
+
+⚠ Two things the census does NOT make safe:
+- `Repli.g:534` passes `{husk: 1}` as a **fragment option** meaning "cross heads, not bytes". That is a
+   different word wearing the same spelling. Rename it in the same pass or the ambiguity survives the fix.
+- `%Card` already exists with its own meaning (`Radio_spec §2.3` — a listing; the heard-Mag ledger's
+   `Card,id,pub`). The describe's catalog entry must be checked against that shape, not assumed to fit it.
+    `Cello_synthesis §R.8` above is exactly this question asked from the render side.
+
 ## 3. ATTENTION — the req pile IS the standard; the transport opted out of the mutex, not the pile
 
 The fresh agent's finding, confirmed by three readers: `Datalayer_todo §1` answers your own question

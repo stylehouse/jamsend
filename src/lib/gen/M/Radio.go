@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '1762becce69d57a1~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '0f11793e7480e6a1~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -2123,7 +2123,13 @@ Radio_alone_why(w) {
     let anyPier = 0
     let me = String(ident?.sc?.prepub || '')
     if (ident && M.Swarm_peering) {
-        for (const p of M.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        // THE MEMBERSHIP DOOR (2026-09-07, Social_demarcation §2): `anyPier` decides between the tags
+        //  `offline` ("your friends are offline") and `alone` — so a RETIRED pier made this page claim a
+        //   relationship the human ended in the Door. That is the flaw the paragraph below names, in its
+        //    other half: a stored %Pier is not an expectation if the bond is over. Nascent piers still
+        //     count (a half-sealed friend really is someone to wait for) — which is what the door's
+        //      default means. Guarded: a world with no Swarm keeps the raw walk unchanged.
+        for (const p of (M.Swarm_peers ? M.Swarm_peers(ident) : (M.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []))) {
             if (!p.sc.pub) continue
             if (me && String(p.sc.pub) === me) continue   // skip the self-pier — "gathering from Righto" on Righto is the same self-mirror bug
             anyPier = 1

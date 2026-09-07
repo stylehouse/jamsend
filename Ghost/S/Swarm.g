@@ -1015,7 +1015,12 @@ Swarm_expect_friends(w, ident):
     //     Grauc says a friend came online : FAILED").  A Cave is your OWN device, not a friend.  So filter to
     //      friend piers — the `Grant:'Music'` child is the same tell the Door reads to draw a friend at all —
     //       which drops Cave|Captain body piers on BOTH ends and leaves every music friendship untouched.
-    let piers = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).filter(p => p.sc.pub && String(p.sc.pub) !== me && p.o({ Grant: 'Music' })[0])
+    //  …AND THE TELL WAS THE WRONG ONE (2026-09-07, the membership door): this read the PRESENCE of a
+    //   `Grant:'Music'` child, but a revoked friendship keeps its grant and adds a %NotGrant — so a peer
+    //    the human deleted in the Door still armed "a friend came online", and the Butler waited on a
+    //     ghost. The comment above is right that the Door's tell is the one to copy; the Door's tell is
+    //      `Swarm_pier_live`, not the child. Asking the door for `{live:'Music'}` is that, said once.
+    let piers = this.Swarm_peers(ident, { live: 'Music' }).filter(p => p.sc.pub && String(p.sc.pub) !== me)
     if (!piers.length) return
     // SHORT FORM (owner, 2026-08-11: *"lets get Butler to just say … friend is online vs friend came
     //  online"*).  This DELIBERATELY overrides the em-dash rule in Sounditron_supervise, which keeps a
@@ -2422,9 +2427,12 @@ Swarm_station_pier(w, ident, prepub):
 //   neither speak to nor hear (Peeroleum_deliver's no-pier drop swallowed every inbound frame):
 //    the friendship SURVIVED the reload, the link did not.  Idempotent (oai all the way down);
 //     runs at standup and on every socket (re)open.
+//  RETIRED PIERS GET NO ROUTE (2026-09-07, the membership door): re-minting transport for a friendship
+//   the human ended is how a ghost stays addressable — the 36h dead-Cave. NASCENT piers still route, which
+//    is why this asks the door and not `{live:'Music'}`: the seal heal below needs the incomplete ones.
 Swarm_station_routes(w, ident):
     let n = 0
-    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+    for (const pier of this.Swarm_peers(ident)) {
         if (!pier.sc.pub) continue
         if (this.Swarm_station_pier(w, ident, String(pier.sc.pub))) n = n + 1
     }
@@ -2661,9 +2669,12 @@ Swarm_hi_one(w, ident, prepub, reply):
     this.Peeroleum_send(w, { header: { type: 'swarm_hi', from: hi_from, to: prepub, seq: seq }, swarm: hi })
     return true
 
+//  Greets the not-retired (2026-09-07, the membership door): a rebirth greeting at a bond the human
+//   ended is the same pestering the pier heal was doing. NASCENT piers are greeted — the hi exchange is
+//    part of how a half-sealed pair finds each other, which is why this asks the door and not a feature.
 Swarm_hi_all(w, ident):
     let n = 0
-    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+    for (const pier of this.Swarm_peers(ident)) {
         if (pier.sc.pub && this.Swarm_hi_one(w, ident, String(pier.sc.pub), 0)) n = n + 1
     }
     return n
@@ -3903,7 +3914,9 @@ Swarm_pools_rehydrate(w, ident, st0):
 Swarm_radio_roll(ident):
     let peering = ident ? this.Swarm_peering(ident) : null
     let roll = []
-    for (const p of (peering ? peering.o({ Pier: 1 }) : [])) {
+    //  a retired friendship leaves the roll (2026-09-07, the membership door) — the dial should not carry
+    //   a bond the human ended. Nascent piers stay: they simply have no music yet, which the dial handles.
+    for (const p of (peering ? this.Swarm_peers(ident) : [])) {
         if (!p.sc.pub) { continue }
         if (p.sc.link && this.Swarm_pier_linklive(p)) { continue }
         roll.push(String(p.sc.pub))
@@ -4292,7 +4305,10 @@ Swarm_pulse_all(w, ident):
     //    Skip my self-husk by address (and my soul prepub); the stamp it exists for is untouched.
     let selfaddr = (this.Swarm_body_key(ident) || {}).prepub
     selfaddr = selfaddr ? String(selfaddr) : ''
-    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+    //  …AND NEVER PULSE A RETIRED FRIEND (2026-09-07, the membership door): a presence heartbeat at a
+    //   bond the human ended is the pier-heal pestering in another costume. Nascent piers still pulse —
+    //    the hi/pulse exchange is part of how a half-sealed pair finds each other.
+    for (const pier of this.Swarm_peers(ident)) {
         if (selfaddr && String(pier.sc.pub) === selfaddr) { continue }
         if (String(pier.sc.pub) === String(ident.sc.prepub)) { continue }
         if (typeof this.Presence_worth_sending === 'function' && !this.Presence_worth_sending(w, pier.sc.pub)) continue
@@ -5492,6 +5508,49 @@ Swarm_pier_linklive(pier):
         if (!pier.o({ NotGrant: 'MyCave' })[0] && !pier.o({ NotGrant: 'MyCaptain' })[0]) return true
     }
     return this.Swarm_pier_live(pier, 'MyCave') || this.Swarm_pier_live(pier, 'MyCaptain')
+
+//#region the membership door (Social_demarcation_todo §2 — "a store is not an interface")
+// THE DEFECT THIS CLOSES: `Swarm_pier_forget` does the right thing — a signed %NotGrant per feature,
+//  UnInvites, and the %Pier row KEPT as history — but "retired" was only ever implemented as a filter
+//   inside DoorFace, so 123 of ~126 readers walked the raw store and treated a revoked friend as a peer.
+//    Cost, measured live 2026-09-06: a closed Incognito window stayed eed's crew Cave for 36h and every
+//     want, reach and pulse went to a ghost. The ledger said the relationship was over; nothing could ask.
+//
+// ⚠ RETIRED IS NOT "NOT LIVE" — the distinction that makes this safe (2026-09-07).  A %Pier with no live
+//  grant is one of TWO things and they want opposite treatment:
+//    · NASCENT — minted at hello/accept, grants not landed yet.  It NEEDS a transport route or the
+//       handshake can never complete (Swarm_station_routes → Swarm_reaccept_incomplete is exactly the
+//        one-way-pairing heal).  Filtering it out would wedge every new friendship, silently.
+//    · RETIRED — it HAD a bond and the human ended it: a %NotGrant stands, or a link stamp was unlinked.
+//  So retirement is decided on POSITIVE EVIDENCE, never on the absence of a grant.  §2.1 of the doc
+//   proposed "default ⇒ live only"; that reading would have broken the seal path, so the default here is
+//    NOT-RETIRED (live + nascent) and a caller that truly means "granted for X" asks for the feature.
+Swarm_pier_retired(pier):
+    if (!pier || !pier.o) { return false }
+    // an unbonded link stamp is the human ending a device link — evidence enough on its own.
+    if (pier.sc && pier.sc.link && pier.sc.unlinked) { return true }
+    // no revocation ever recorded ⇒ nascent (or a plain live pier); NOT retired.
+    if (!pier.o({ NotGrant: 1 }).length) { return false }
+    // something was revoked: retired only once NOTHING stands — a Music revoke leaves a Cave live.
+    if (this.Swarm_pier_live(pier, 'Music')) { return false }
+    if (this.Swarm_pier_live(pier, 'Crew')) { return false }
+    if (this.Swarm_pier_linklive(pier)) { return false }
+    return true
+
+// Swarm_peers(ident, opts) — THE ONE DOOR onto membership.  Sweep `o({Pier:1})` to this unless you can
+//  say why you want the ledger.
+//   opts omitted        ⇒ not-retired (live + nascent) — the safe default; what transport wants.
+//   { live: 'Music' }   ⇒ granted for that feature, via Swarm_pier_live — what an OFFER wants.
+//   { live: 'all' }     ⇒ everything, history included — the Door's "show retired", an audit, a migration.
+//  Returns a plain array (never null), so a caller may iterate it directly.
+Swarm_peers(ident, opts):
+    let peering = this.Swarm_peering(ident)
+    let all = (peering && peering.o) ? peering.o({ Pier: 1 }) : []
+    let live = (opts && opts.live !== undefined) ? opts.live : null
+    if (live === 'all') { return all }
+    if (typeof live === 'string') { return all.filter((p) => this.Swarm_pier_live(p, live)) }
+    return all.filter((p) => !this.Swarm_pier_retired(p))
+//#endregion
 
 // Swarm_cave_forgive — DEVICE-LINK CONSENT IS NOT FRIEND-TRUST (5-fork panel + 2-critic review 2026-08-31,
 //  Ferry_rebuild_todo §0/§4 — the corrected Stage 0).  A MyCave link is a per-ceremony consent the human

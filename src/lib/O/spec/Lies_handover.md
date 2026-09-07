@@ -215,3 +215,27 @@ Most of these die from the one move: **one Interest per Waft ⇒ one LE scheme.*
 - [ ] `Interest:Ting` as a **background** Interest (twin of `Interest:Aside`) — right kind, or should the trail get its own?
 - [ ] Keep **`LE`** with its new definition, or rename it to a real word? (I lean keep — the `D`/`U`/`LE` letter-tag family; a rename is a ~40-snap re-record.)
 - [ ] Does the **kind vs attention** split (the kind-table, Backbone D6) belong in this arc, or is it a separate cut?
+
+---
+
+## ⚑ 2026-09-07 — `LakeRace.spec.ts` is RED, and it is the guard on the one-round-lag fix
+
+Found during a full unit sweep (31 specs). **Pre-existing** — reproduced with the generated ghosts restored
+ to HEAD, so it is not a working-tree artifact.
+
+The failing case is *"the real dock_content force_active handover (recv path) emits NEW"*. It drives
+ `e_Lang_dock_content` by hand against the real `Ghost/N/Peeroleum.g` and then reads
+  `dock > %Compile > %Output`. What happens: `compile_error` is **absent** (that assertion passes), but the
+   `%Output` is missing entirely, so `out?.sc.source_dige` is `undefined` where the fresh disk dige was
+    expected. A compile that neither errors nor emits.
+
+**Why this one matters more than a stray red.** This spec exists to prove the *"locked in at exactly one
+ round"* bug is dead — the channel-driven compile that read the editor's async-reseating CodeMirror buffer
+  and landed the PREVIOUS edit. `Lang_compile_source_state` + `Lang_compile_dock`'s `stateOverride` were the
+   fix. **While this test is red, that fix is unguarded**: the lag could return and nothing would say so.
+    A regression test that stopped proving its claim is worse than a missing one, because the file's
+     presence reads as coverage.
+
+**Owed:** decide whether the recv path stopped emitting, or the dock/compile shape moved under the reader
+ (`dock?.o({Compile:1})[0]?.o({Output:1})[0]`). The `err`-is-clean half says the handler ran. Read
+  `Coding_guide.md`'s all-holds compile→rerun chain before touching it, per CLAUDE.md.

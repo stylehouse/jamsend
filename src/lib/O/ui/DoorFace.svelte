@@ -111,7 +111,17 @@
                         // RETIRED = every feature NotGrant-revoked (Swarm_pier_forget).  The Pier row stays in
                         //  the ledger as history, but the Door stops SHOWING it — "we don't need too much in
                         //   there" (owner 2026-08-29, six dead Incognito link-test piers cluttering the list).
-                        retired: !((H as any).Swarm_pier_live?.(p, 'Music') || (H as any).Swarm_pier_live?.(p, 'MyCave')),
+                        // STATED ONCE (2026-09-07, Social_demarcation §2.0): this face used to carry its own
+                        //  definition, and it was NARROWER than the truth in two ways that HID LIVE ROWS —
+                        //   it tested only Music|MyCave, so a **MyCaptain** link rail (the Cave that adopted a
+                        //    Captain) and a **Crew**-granted pier with no Music both read as retired and
+                        //     vanished from the Door.  `Swarm_pier_retired` is the one definition: positive
+                        //      evidence only (a %NotGrant stands, or a link stamp was unlinked) AND nothing
+                        //       still live across Music|Crew|linklive — so a nascent pier mid-seal shows too,
+                        //        which is right: it is a friendship becoming, not one that ended.
+                        retired: (H as any).Swarm_pier_retired
+                            ? !!(H as any).Swarm_pier_retired(p)
+                            : !((H as any).Swarm_pier_live?.(p, 'Music') || (H as any).Swarm_pier_live?.(p, 'MyCave')),
                     }
                 }).filter((f: any) => !f.retired)
             }

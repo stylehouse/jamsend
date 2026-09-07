@@ -4,8 +4,7 @@ story:InvSeal
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.029
-      sample=0.026,at=1788131484
+    TimeTotal:beliefs,avg=0.036
       sample=0.027,at=1788131575
       sample=0.025,at=1788131677
       sample=0.022,at=1788131926
@@ -15,8 +14,8 @@ story:InvSeal
       sample=0.024,at=1788131994
       sample=0.014,at=1788132007
       sample=0.099,at=1788326830
-    TimeTotal:step,avg=0.006
-      sample=0.005,at=1788131484
+      sample=0.091,at=1788779989
+    TimeTotal:step,avg=0.007
       sample=0.005,at=1788131575
       sample=0.005,at=1788131677
       sample=0.004,at=1788131926
@@ -26,6 +25,7 @@ story:InvSeal
       sample=0.005,at=1788131994
       sample=0.003,at=1788132007
       sample=0.02,at=1788326830
+      sample=0.018,at=1788779989
   step,dige:140fec887de855ee
   step=2,dige:7c14503bf0c878e8
   step=3,dige:bdd22304c3677565

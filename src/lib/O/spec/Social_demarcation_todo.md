@@ -84,7 +84,138 @@ So the substrate records "this relationship is over" in a signed, durable, corre
 >  walk the storage yourself, then every caller re-implements the domain logic, and the ones written
 >   before the logic existed simply don't have it.
 
-### 2.1 The accessor (the proposal)
+### 2.0 BUILT 2026-09-07 — and §2.1's proposed default was WRONG
+
+`Swarm_pier_retired(pier)` + `Swarm_peers(ident, opts)` are in `Ghost/S/Swarm.g` (the membership-door
+ region, beside `Swarm_pier_live`). Two things changed from the proposal below, both found by reading the
+  call sites rather than the store:
+
+**⚠ RETIRED IS NOT "NOT LIVE".** A `%Pier` with no live grant is one of two things, wanting opposite
+ treatment:
+- **NASCENT** — minted at hello/accept, grants not landed yet. It *needs* a transport route, or the
+   handshake can never complete (`Swarm_station_routes` → `Swarm_reaccept_incomplete` is the one-way-pairing
+    heal). §2.1's "default ⇒ live only" would have filtered these out and **wedged every new friendship,
+     silently** — the worst kind of regression, since a Book that seals in one pass would still go green.
+- **RETIRED** — it had a bond and the human ended it: a `%NotGrant` stands, or a link stamp was unlinked.
+
+So retirement is decided on **positive evidence**, never on the absence of a grant, and the door's default
+ is **not-retired** (live + nascent). A caller that truly means "granted for X" asks for the feature:
+  `Swarm_peers(ident, { live: 'Music' })`. `{ live: 'all' }` returns the ledger.
+
+**Name:** `Swarm_peers`, not `Swarm_piers` — the latter is already a stash key (`st.Swarm_piers`,
+ `Swarm_piers_rehydrate`), exactly the collision §2.1's caution predicted.
+
+**Converted so far** (six sites; the rest of the ~126 are a later sweep). Chosen because a retired pier is
+ rare-to-absent in a Book, so these are fixture-inert by construction — they change what happens to a bond
+  the human ENDED, and nothing else:
+- `Swarm_station_routes` — a friendship the human ended no longer gets transport re-minted. This is the
+   36-hour dead-Cave, closed at its source.
+- `Swarm_pulse_all` — no presence heartbeat at a retired bond (the pier-heal pestering in another costume).
+- `Swarm_hi_all` — no rebirth greeting either. Nascent piers still greeted: the hi exchange is part of how
+   a half-sealed pair finds each other.
+- `Swarm_expect_friends` — **a real hole, not just noise.** It tested for the PRESENCE of a `Grant:'Music'`
+   child, and a revoked friendship keeps its grant and adds a `%NotGrant` — so a peer deleted in the Door
+    still armed *"a friend came online"* and the Butler waited on a ghost. Its own comment says to copy the
+     Door's tell; the Door's tell is `Swarm_pier_live`, not the child. Now `{live:'Music'}`.
+- `Swarm_radio_roll` — a retired friendship leaves the dial's roll.
+- `Radio_alone_why` — `anyPier` counted retired piers, so the radio said *"your friends are offline"* to a
+   human with no friends left. The function's own comment already named `anyPier` as its real flaw; this is
+    the other half of that repair. The honest tag is now `alone`.
+- Guarded everywhere: a world with no Swarm keeps the raw walk.
+
+**And the companion goal met — retirement is now STATED ONCE.** `DoorFace` carried its own definition, and
+ it was **narrower than the truth in two ways that HID LIVE ROWS**: it tested only `Music|MyCave`, so a
+  **`MyCaptain` link rail** (the Cave that adopted a Captain — exactly §8.10's case) and a **`Crew`-granted
+   pier with no Music** both read as retired and vanished from the Door. It now asks `Swarm_pier_retired`,
+    with the old expression kept as an explicit fallback for a gen that predates the door. Bonus of the
+     positive-evidence rule: a nascent pier mid-seal now *shows* in the Door, which is right — that is a
+      friendship becoming, not one that ended.
+
+**Judged and deliberately left:** `Swarm_dial_piers` / `Swarm_probe_arrival` are *diagnostic censuses* —
+ an audit view wants the ledger, not the roster (§2.1's `{live:'all'}` case). `Swarm_ive_got_tally` and
+  `Swarm_gossip_music` were already correct (below). `Peeroleum.g:568`'s sibling-admit wants a ruling.
+
+**⚠ `since` (§4.2) was attempted and deliberately deferred**: the fix is to carry `since` in the pier stash
+ and restore it on rehydrate, but `Swarm_seal`'s stamp is already guarded (`if (!pier.sc.since)`) — the
+  re-stamp happens because rehydrate re-seals into a fresh tree. Fixing it **moves a fixture**: SwarmReboot's
+   own snaps record the reload re-stamp as truth (`003.snap since:1751700000` → `005.snap since:1751700030`),
+    and `Swarm_radio_roll`'s comment leans on "since does NOT survive a reload". Not a blind edit — it wants
+     the Book running first, then a deliberate re-swear.
+
+**Two claims in §3.2 were wrong** — checked in the code: `Swarm_ive_got_tally` and `Swarm_gossip_music`
+ *already* gate on `Swarm_pier_live(p,'Music')`. The boast does not go to revoked peers. Left alone.
+
+**Deliberately not converted:** `Peeroleum.g`'s sibling-admit lookup (`:568`) asks "do we know this soul at
+ all" on a security-adjacent path where the real gates sit downstream — it wants its own ruling, not a
+  mechanical sweep.
+
+**VERIFIED ON LIVE ROWS TOO — `node scripts/door_census.mjs`.** The unit spec proves the rule against
+ fixtures; this points the same rule at a RUNNING host's real `%Pier` rows via `/c`, no browser needed
+  (the daemon is a live host running these ghosts, which is a verification path a missing runner tab does
+   not block). It restates the rule independently rather than importing the ghost, deliberately: a second
+    reading is what makes a disagreement meaningful — if the two ever differ on a real pier, one is wrong.
+     It prints WHY per row, never a bare verdict. Read-only.
+```
+node scripts/door_census.mjs                       # the local jamserve daemon
+node scripts/door_census.mjs http://host:9099 tok  # any host exposing /c
+```
+First run against the daemon (2026-09-07): **3 piers, 3 kept, 0 retired** — Antch and Agug plainly live on
+ Music, and **Grav (eed) live on Music with `Crew` REVOKED**. That last row is the `retired means NOTHING
+  stands` case occurring in production, not in a fixture: a Crew revoke must not retire a peer still
+   granted Music, and it does not. The safety direction is the one that matters — the new predicate retires
+    nobody the old reading kept, so the door cannot drop a live friend.
+⚠ Worth an owner's eye, surfaced by the census and not previously noticed: **the daemon holds eed as a
+ Music FRIEND with its Crew grant revoked.** `Ra_pool_sources`'s `crewish()` therefore ranks eed as a
+  friend, not crew — which is a live input to pool candidate ranking and to "a Cave pools by default".
+
+**GATED, without a runner — `scripts/MembershipDoor.spec.ts`, 7/7 green.** The door is pure logic over
+ particle children, so it needs no runner, peer, wire or clock: mount the real compiled `Swarm.go` on a
+  stub House (the `SupplyGuards.spec` trick, whose own preamble names this exact bottleneck) and call the
+   verbs against fixture particles. **This is the frontier claim in miniature (§7)** — a substrate
+    predicate drilled with no social world standing at all, which is what the whole separation is *for*.
+     What it pins: nascent ≠ retired (the wedge §2.1 would have caused); retired means NOTHING stands, so
+      a Music revoke leaves a Crew pier live; a `MyCaptain` rail is live (the Door bug); an unlinked stamp
+       retires on its own evidence; a revocation aimed at another pair does not retire this bond; and the
+        three `opts` modes, with `[]` never null. Run it:
+```
+node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/MembershipDoor.spec.ts
+```
+Read it as *"the predicate says what it means"*, never as *"the membership sweep works"* — the wiring
+ claims (does a retired pier really lose its route? does the Door really hide it?) are Book claims.
+
+## ✅ THE BOOK GATE — RUN AND GREEN (2026-09-07, runner da060c94 reloaded onto the new gen)
+
+Ran once a runner tab appeared. **Every Book the door could plausibly break is green, caveat 0:**
+
+| Book | result |
+|---|---|
+| SwarmStaple · SwarmPolicy · SwarmSteal · SwarmCohort | ok, 8/8/6/6, **caveat 0** |
+| InvWalk · InvSeal · InvFerry | ok, 8/5/6, **caveat 0** |
+| **SwarmBody** (the roster/body substrate, 23 beats) | ok, **caveat 0** |
+| SwarmReboot | ok, 5, **caveat 0** |
+| MusuPoolFill · PoolBytes · PoolRandom · PoolRadio | ok, 6/5/5/6, **caveat 0** |
+
+**Two reds/caveats investigated, both PRE-EXISTING — proven by restoring the generated ghosts to HEAD,
+ reloading the runner, and re-running:**
+- **`SwarmInvite` fails steps 4–5** — *identical at HEAD*, and then diffed: the entire difference is the
+   fixture recording `friendly:` as an empty string where the code correctly omits the key. The seal and
+    the spent-nonce tooth both HOLD in the live snap. A two-line fixture re-swear, not a broken door. See
+     `Crew_todo`. (My first read called it unguarded off an `ok:false` alone — diff the snap before alarming.)
+- **`SwarmShare` caveat 8** — *exactly 8 at HEAD too*. Pre-existing fixture drift.
+- **`MusuHeist` caveat count is RUN-VOLATILE and carries no signal**: measured 13 at HEAD, then **17 and
+   then 1 on the SAME gen back-to-back**. Do not read it as a diff. (`runner-steps-dige-is-run-volatile`
+    said so; this is the demonstration.) `ok:true` throughout.
+
+Method worth reusing: back up the generated `.go`, `git checkout --` them to HEAD, reload the runner, run,
+ then restore and byte-compare. It is the only way to tell "my diff broke it" from "it was already red",
+  and twice today the answer was the second one.
+
+⚑ **superseded — the gate below was owed and is now run:** compiled and esbuild parse-gated, and the Books have NOT run — no runner tab was booted
+ (`runner_ask runners` shows only music pages). The ceremony family is what this could break:
+  **SwarmStaple · SwarmInvite · SwarmPolicy · SwarmSteal · SwarmCohort · InvWalk · InvSeal · InvFerry ·
+   SwarmBody · SwarmShare · SwarmReboot · MusuHeist**, then the pool set. Run these before trusting it.
+
+### 2.1 The accessor (the original proposal — superseded above)
 
 One named door, with the default that is safe:
 
@@ -220,6 +351,27 @@ Two vocabularies face each other across one frontier. The LEFT army knows *who m
 
 ## 4. TWO REPAIRS THAT STOP THIS HIDING AGAIN
 
+### 4.0 GATED 2026-09-07 — `scripts/ReachTerminal.spec.ts`, 5/5, no runner
+
+The three repairs below are pure logic over particles, so they gate without a relay. What it pins:
+- **gone is LEDGER-based, never presence-based** — a live `Music`/`Crew`/`MyCave` grant or a crew row keeps
+   a target alive, and a friend who is merely *offline* is explicitly not gone. If this ever starts reading
+    `heard_at`, a quiet friend's reaches begin dying and the bug inverts; the test says so out loud.
+- **a target nothing vouches for IS gone** — and that is the main case, not an edge one: ejecting the dead
+   Cave removed its row, and that absence is what finally let its reaches die.
+- **two non-answers stay 0** — an empty `to` and a missing reach are malformed questions, not dead targets.
+   Answering "gone" to a malformed reach would let a booking bug quietly mark healthy intents dead.
+- **all three terminals stand still** — `arrived | refused | dead` never re-dispatch and are not mutated on
+   the way out (the guard used to test `arrived` alone, so a refused reach re-sent every pass and flipped
+    itself back to `dispatched`, dodging its own receipt sweep).
+- **the cap counts standing work, not receipts** — a shelf of three corpses still admits a new booking,
+   while three *standing* reaches correctly refuse the fourth, and re-booking an existing reach is always
+    honoured. This is the 32/32-with-eleven-corpses shape, pinned.
+
+Writing it caught a bad test of mine, not bad code: a case named "an unknown target is not declared gone"
+ asserted only the empty-and-null inputs and passed vacuously. The real behaviour is the opposite, and it
+  is the point of the feature. **A green test whose name contradicts its assertions is worse than no test.**
+
 ### 4.1 A reach must be able to die
 
 Today: `booked → dispatched → serving → arrived → landed`, plus `refused | dead` as terminals that
@@ -313,6 +465,43 @@ The mock Pier is where the "line of reality" is drawn. Today it sits *above* the
    instead of a Book that has to raise two armies to catch one deserter.
 
 ---
+
+## 7.5 THE SEAM GATE — 24 assertions, four specs, no runner (2026-09-07)
+
+Every repair this session made to the frontier is pure logic over particles, so the whole set gates with
+ no relay, no peer, no wire and no clock. **This is §7's thesis, executed**: the app army drilled against
+  fixture particles with no social world standing. Run the lot:
+```
+node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs \
+  scripts/MembershipDoor.spec.ts scripts/ServeResolve.spec.ts \
+  scripts/ReachTerminal.spec.ts scripts/PoolKeep.spec.ts
+```
+| spec | pins | reachable by a Book? |
+|---|---|---|
+| `MembershipDoor` (7) | retired ≠ nascent; retired means *nothing* stands; a `MyCaptain` rail is live | partly |
+| `ServeResolve` (6) | the twin (prefer bytes, order-independent); the silence (`0 < 0`); presence is fill state | **no** |
+| `ReachTerminal` (5) | gone is ledger-not-presence; three terminals stand still; the cap counts standing work | partly |
+| `PoolKeep` (6) | browsed husks are not candidates; the rummage-id alias solos via `re:<seed>` | **no** |
+
+Two of the four classes are **structurally invisible to fixtures** — a Book hand-mints its mirror, so a
+ record's id IS the seed and the two id-spaces collapse into one, which is precisely why these bugs
+  survived a green sweep for days. The unit layer is not a lesser Book; it reaches somewhere Books cannot.
+
+Read every green as *"the predicate says what it means"*, never *"the wiring works"*. Does a retired pier
+ really lose its route? Does the Door really hide it? Do the bytes really land? Those are Book claims and
+  they remain owed.
+
+**Regression swept over the WHOLE unit shelf** (31 specs, 217 assertions): **208 pass, 9 fail, and all 9
+ are PRE-EXISTING** — proven, not assumed, by restoring the five generated ghosts to HEAD, re-running, and
+  getting the identical nine, then restoring (byte-compared) . They are:
+- `MultiHeist` ×3 and `HaulFace` ×4 — every one is `w.c.focused` reading `undefined`. `Sounditron.g:1161`
+   still writes it, so this is the **`%Focus` migration** (`Statemap_todo`: "%Focus landed 2026-09-01")
+    half-arrived: the specs still assert the `.c` flag the migration was moving off. Fix the specs to read
+     the particle, or finish the migration — either way it is `Statemap_todo`'s debt, not this doc's.
+- `Presence` ×1 — its own name says *"a real relay answers `who`"*. No relay is up; environment, not code.
+- `LakeRace` ×1 — Lang/Lies dock handover, untouched by anything here.
+⚠ Worth knowing for the next sweep: **the unit shelf is not green at HEAD**, so "9 failures" is the
+ baseline, not a signal. Anyone running it cold will otherwise blame their own diff.
 
 ## 8. FLAWS AND WOBBLY BITS — gathered for the foundational fix (2026-09-07, with the owner)
 

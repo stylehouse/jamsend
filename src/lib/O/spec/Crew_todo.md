@@ -1304,3 +1304,35 @@ The asymmetry to design for: the friends' grants are `for` the **soul**, so a re
 isn't using a stolen credential of its own — it is impersonating. That is why the tombstone must reach the
 friend, not the Cave.
 
+
+---
+
+## ⚑ 2026-09-07 — `SwarmInvite` steps 4–5 are red on a STALE FIXTURE, not a broken door
+
+Measured on a live runner and reproduced with the generated ghosts restored to HEAD, so it predates this
+ session. **My first read was alarming and WRONG, and the correction matters more than the finding:** I
+  filed the seal and the spent-nonce tooth as unguarded. They are not. Both work.
+
+Diffing the live snap against the fixture, the ENTIRE difference at both steps is one cosmetic key:
+
+    live     Pier,pub:5c4b63609cd01594,since:1751800020
+    fixture  Pier,pub:5c4b63609cd01594,friendly:,since:1751800020
+
+The fixture records `friendly:` as an EMPTY STRING; the code now omits the key when there is no name. The
+ code is the right one — CLAUDE.md's *"never stamp a maybe-undefined sc value"*, and an empty-string key is
+  the same litter. `Swarm_page` still returns `friendly: … ?? ''`, but `Swarm_seal` guards the stamp, so the
+   empty never lands. Someone improved that and did not re-swear this Book.
+
+**Both claims hold in the live snap**, which is the thing worth stating plainly:
+- beat 4 — `see:the phone scans the URL and gains a Pier — a Music grant signed by the machine rides it
+   both ways`, with both Piers and both signed grants present.
+- beat 5 — `rebuff:rejected_spent` and `rebuff:hello_spent` stand, no Pier forms for Eve, and
+   `see:a photographed QR is dead after its first scan — the spent nonce refuses at the door` lands.
+
+So §7's "SwarmInvite 5" is honest about the BEHAVIOUR; only the fixture is stale.
+
+**Owed (owner's call — a fixture re-swear is not mine to make):** accept `004.snap` and `005.snap` with the
+ two `friendly:` keys dropped. Two lines, no behaviour change; `scripts/story_accept.mjs` is the road.
+
+⚠ **Lesson for the next alarm:** a red Book is not evidence of a broken feature until the snap is diffed.
+ I filed "the QR front door is unguarded" off an `ok:false` alone, and the door was fine the whole time.

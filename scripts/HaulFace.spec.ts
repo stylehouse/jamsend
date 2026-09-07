@@ -16,6 +16,12 @@ import { test, expect } from 'vitest'
 import { mount, flushSync } from 'svelte'
 import { TheC } from '../src/lib/data/Stuff.svelte'
 import Heist from '../src/lib/gen/M/Heist.go'
+// THE FACE GROUPS BY WHO IS BRINGING IT (2026-09-04: "they have to be per Pier"), so the live half now
+//  reaches `Heard_haul_piers` rather than `Heist_live_rows` directly. Mounting Heist alone left that verb
+//   undefined, the `?? []` swallowed it, and every row assertion read an empty list — which looked exactly
+//    like the cell being broken. Mount the ghost the face actually asks. (Diagnosed 2026-09-07; the verb
+//     layer was sound the whole time — `Heist_live_rows` resolved this fixture correctly.)
+import Heard from '../src/lib/gen/M/Heard.go'
 import HaulFace from '../src/lib/O/ui/HaulFace.svelte'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
@@ -30,7 +36,7 @@ async function ghost_house() {
     H.Radio_trace = () => {}
     H.c.humdinger = 1
     H.Radio_pub = () => 'me'
-    mount(Heist, { target: document.body, props: { H } })
+    for (const Ghost of [Heist, Heard]) mount(Ghost, { target: document.body, props: { H } })
     for (let i = 0; i < 80 && typeof H.Heist_live_rows !== 'function'; i++) await sleep(25)
     return H
 }
@@ -208,7 +214,13 @@ test('a capped bag says how many there really are, not how many it kept', async 
     //  albums that they have 20 — wrong in the one direction that never looks wrong, because nothing on
     //   screen resembles an omission.
     expect(el.querySelector('.hf-mkv')!.textContent).toBe(':317')
-    expect(el.querySelector('.hf-more')!.textContent!.trim()).toBe('…and 305 more')
+    // BOTH FOLD STATES, EXPLICITLY (2026-09-07). This asserted only `…and 305 more` — the OPEN number —
+    //  while `open_landed` defaults to false, so it was really asserting a default rather than the claim.
+    //   The claim is "the true total minus what is on screen", and it holds at either size; pinning both
+    //    means a change to the default reads as a design decision here, not as a red test.
+    expect(el.querySelector('.hf-more')!.textContent!.trim()).toBe('…and 314 more')   // folded: 3 shown
+    ;(el.querySelector('.hf-sepb') as HTMLElement).click(); flushSync()
+    expect(el.querySelector('.hf-more')!.textContent!.trim()).toBe('…and 305 more')   // opened: 12 shown
 
     // …and with no cap in play the two agree, so the honest case gains no phantom rows.
     const { bag: b2 } = scene(H, [])

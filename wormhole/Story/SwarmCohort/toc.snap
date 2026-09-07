@@ -3,6 +3,11 @@ story:SwarmCohort
   Plan
   Opt
     For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.036
+      sample=0.036,at=1788779858
+    TimeTotal:step,avg=0.006
+      sample=0.006,at=1788779858
   step,dige:0260ba620e595d67
   step=2,dige:29a1eec9ee417329
   step=3,dige:afd7ab749e730f1b

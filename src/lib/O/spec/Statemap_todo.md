@@ -148,3 +148,54 @@ Not near-term; the direction. The concrete first steps are §1→§3: get every 
 - (Boot/arrival fixes + the ONE OPEN SHARE button + the ceremony auto-drag are in `Arrival_todo.md`.)
 - **This map.** The state inventory (§1), the surface-locality design (§2), the sibling-sync gap + fix (§3),
    and the predictable-structure direction (§4) — so the locus is finally legible on paper.
+
+---
+
+## ⚑ 2026-09-07 — the `%Focus` migration is half-arrived, and it shows as 7 red unit tests
+
+Measured during a full unit sweep (31 specs at HEAD): `MultiHeist.spec` ×3 and `HaulFace.spec` ×4 all fail
+ on one assertion shape — `w.c.focused` reads `undefined` after `Sounditron_focus_to(w,'Radio')` returns 1.
+  `Sounditron.g:1161` still writes `w.c.focused = val`, so the write survives; what has moved is whatever
+   the specs' path now reaches. Since §0 records `%Focus` landing 2026-09-01 and this doc's whole thesis is
+    that state hiding in `.c` is untested state, these seven are that thesis billing itself: the specs
+     assert the flag, the model moved toward the particle, and nobody re-pointed them.
+**Owed:** either finish the migration (drop `w.c.focused`, have the faces and specs read `%Focus`) or
+ re-point the seven assertions at the particle. Until then the unit shelf is NOT green at HEAD — 208/217 —
+  and a newcomer running it cold will blame their own diff. Confirmed pre-existing by restoring the
+   generated ghosts to HEAD and reproducing the identical failures.
+
+**Update, same day — 3 of the 7 were `.c`-reaching TESTS, and are now fixed.** `MultiHeist.spec` asserted
+ `w.c.focused` directly; `Sounditron_focus_set` writes the `%Focus` PARTICLE when one exists and only falls
+  back to `.c`, so the specs were reading a store the model had moved past. Re-pointed at the accessor
+   `Sounditron_focus_get(w)` — **14/14 green**. This is this doc's thesis twice over: state that hides in
+    `.c` is untested state, AND *a test that walks the store breaks when the store moves; a test that asks
+     the accessor does not.* The remaining `.c` reads in that spec (`focused_keep`) are correct — that field
+      has not migrated, and `expect('focused' in w.c).toBe(false)` is now a genuine assertion that the
+       particle path is the one in use.
+
+**The other 4 (`HaulFace.spec`) are NOT this migration** — diagnosed and left. The verb layer is sound
+ (`Heist_live_rows` → `Heist_queue_order` → `Heist_shop_find` all resolve the spec's fixture correctly).
+  The face was REDESIGNED to group live rows by holder — *"WHO, then WHAT… the question this cell answers
+   is 'is my track coming', and the answer is a person"* — so rows now hang under `face.piers`, and the
+    spec's fixture mints keeps with `pub:'them'` but no %Pier, leaving the grouping empty. Spec drift from
+     a UI redesign, **not a live bug in the Hauls cell**. FIXED same day — see below.
+
+**Update 2 — the HaulFace 4 are fixed too, and none was a product bug.** Two causes, both spec drift behind
+ a redesign:
+1. **The face asks a different verb now.** The live half groups by holder via `Heard_haul_piers` (owner
+    2026-09-04: *"they have to be per Pier"*), but the spec mounted `Heist` alone, so the verb was undefined,
+     `?? []` swallowed it, and every row assertion read an empty list — which looks exactly like the cell
+      being broken. Mounting `Heard.go` beside `Heist.go` fixed three tests at a stroke. **The verb layer
+       was sound throughout**: `Heist_live_rows → Heist_queue_order → Heist_shop_find` resolved the fixture
+        correctly the whole time, which is why chasing the ghost first was wasted motion.
+2. **A test asserting a default instead of its claim.** The cap line asserted `…and 305 more` — the OPEN
+    count — while `open_landed` defaults false. Rewritten to press the fold and pin BOTH states (`314`
+     folded, `305` open), so the claim ("the true total minus what is on screen") is what is tested and a
+      future default change reads as a design decision rather than a red test.
+
+**Unit shelf now 215/217**, and the two remaining are NOT the same kind of thing — a distinction worth
+ keeping straight:
+- `Presence` — environmental. Its own name says *"a real relay answers `who`"*; no relay is up. Ignore it
+   when sweeping offline.
+- `LakeRace` — **a real red, and nobody has chased it.** See the note in `Lies_handover.md`. Do NOT file it
+   under "environmental" as an earlier draft of this section did.
