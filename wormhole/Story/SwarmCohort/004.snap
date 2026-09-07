@@ -15,4 +15,3 @@ Snap:H
               mate:32c1ce7a059129d1,role:Captain,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
               Key,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213	{"mung":["secret"]}
         req:witness,eternal,ok
-        see:next_suffix jumps past the bare name and the held tabs to the first free berth at prepub_2

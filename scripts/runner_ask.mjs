@@ -83,7 +83,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  below for why this is safe (the tab, not the CLI, is the authority on what it will do).
 const UNKNOWN_OK = process.argv.includes('--unknown-ok')
 let PLAYER_PUB = ''   // set by --player=: the one music page a slot-addressed ask is for (sendAsk stamps it into ask.pub)
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -173,7 +173,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
 
@@ -566,6 +566,10 @@ if (op === 'ghost_load') {
 	ask.path = arg
 	const s = flagVal('--stand'); if (s !== undefined) ask.stand = s
 	if (flags.has('--fresh')) ask.fresh = 1
+	// --swap: the gen is ALREADY imported on this tab (an L ghost you just recompiled) — re-import it
+	//  with a cache-busting query and re-enrol, the Creduler_reswap dance for one non-spine ghost, so a
+	//   recompiled L ghost takes without a tab reload.  Give it ~3s before you use the new methods.
+	if (flags.has('--swap'))  ask.swap = 1
 }
 if (op === 'atlas_callers') ask.name = arg   // "who calls X" — {doc, line, via, kind} per site; needs A:Atlas standing first
 if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
@@ -575,6 +579,17 @@ if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
 	//   Book fixture has recorded (one read per Book, so opt-in).
 	if (flags.has('--stale')) ask.stale = 1
 	if (flags.has('--sees'))  ask.sees  = 1
+}
+if (op === 'electrode') {
+	// Electrode (Ghost/L/Electrode.g) — both ends of every ghost call.  Needs A:Electrode standing
+	//  (ghost_load Ghost/L/Electrode.g --stand=Electrode).  top (default) prints the hottest flows by count
+	//   and by time; arm/disarm put the coats on/off every ghost method on the tab; reduce folds the
+	//    lossless tally into w:Electrode/%Graph (read it with minisnap 'mundo>A:Electrode>w:Electrode>Graph');
+	//     hangs lists frames entered and not exited, oldest first; film is the raw last-k marks with deltas.
+	const flagVal = (name) => { const f = argv.find(a => a.startsWith(name + '=')); return f ? f.split('=').slice(1).join('=') : undefined }
+	ask.verb = arg || 'top'
+	const k = flagVal('--k'); if (k !== undefined) ask.k = Number(k)
+	const o = flagVal('--older'); if (o !== undefined) ask.older = Number(o)
 }
 if (op === 'console') {
 	// pull the live tab's console ring; tail/grep applied RING-SIDE so the reply carries only the
@@ -940,6 +955,43 @@ else if (op === 'snap' && reply.result?.got_snap) {
 	}
 	if (r.world_snap) { writeFileSync('/tmp/runner_world.snap', r.world_snap); console.error(`  story world snap → /tmp/runner_world.snap  (${r.world_snap.length} bytes)`) }
 	if (r.resident_snap) { writeFileSync('/tmp/runner_resident.snap', r.resident_snap); console.error(`  RESIDENT (radio) world snap → /tmp/runner_resident.snap  (${r.resident_snap.length} bytes) — grep it for Radio/Theirs`) }
+} else if (op === 'electrode' && reply.result && !reply.result.error) {
+	const r = reply.result
+	const name = (x) => x == null ? '∅' : String(x)
+	if (Array.isArray(r.hangs)) {
+		console.log(`hangs: ${r.hangs.length} open frame(s), oldest first`)
+		for (const h of r.hangs) console.log(`  ${String(h.age_ms).padStart(8)}ms  ${h.m}${h.async ? '  (async)' : ''}  ← ${name(h.from)}`)
+	} else if (Array.isArray(r.film)) {
+		console.log(`film: last ${r.film.length} marks (Δ = ms since previous mark)`)
+		let prev = null
+		for (const e of r.film) {
+			const d = prev == null ? 0 : e.t - prev
+			prev = e.t
+			console.log(`  +${String(d).padStart(6)}ms  ${e.ev} ${e.m.padEnd(34)} #${e.id}${e.from ? ' ← ' + e.from : ''}${e.ms != null ? '  ' + e.ms + 'ms' : ''}${e.async ? ' async' : ''}${e.how === 'throw' ? ' THREW' : ''}`)
+		}
+	} else if (Array.isArray(r.never_ran_top)) {
+		console.log(`join: ${r.ran_methods} methods ran as callers (${r.unknown_callers} callers Atlas has no def for) · declared pairs ${r.declared_pairs}, ran ${r.pairs_ran} → coverage ${r.coverage}% · never-ran ${r.never_ran} · undeclared (dynamic) ${r.undeclared} · Atlas ${r.atlas_docs} docs / ${r.atlas_defs} defs the tap can see`)
+		if (r.never_ran_top.length) {
+			console.log('  declared but never ran this session (via → callee):')
+			let last = null
+			for (const x of r.never_ran_top) {
+				if (x.via !== last) { console.log(`    ${x.via}${x.doc ? '  (' + x.doc + ')' : ''}`); last = x.via }
+				console.log(`        ↛ ${x.callee}`)
+			}
+		}
+		if (r.undeclared_top.length) {
+			console.log('  measured but not declared (dispatch the static walk cannot follow):')
+			for (const x of r.undeclared_top) console.log(`    ${String(x.n).padStart(6)}  ${x.from} → ${x.to}`)
+		}
+	} else if (Array.isArray(r.by_n)) {
+		console.log(`electrode: ${r.armed ? 'ARMED' : 'disarmed'}${r.coated != null ? ' (coated ' + r.coated + ')' : ''} — ${r.calls} calls over ${r.flows} flows, ${r.marks} marks in the ring (${r.dropped} dropped), ${r.open} open`)
+		if (r.by_n.length) {
+			console.log('  hottest by count:')
+			for (const x of r.by_n) console.log(`    ${String(x.n).padStart(7)}  ${name(x.from).padEnd(34)} → ${x.to}  (${x.ms}ms)`)
+			console.log('  hottest by time:')
+			for (const x of r.by_ms) console.log(`    ${String(x.ms).padStart(7)}ms  ${name(x.from).padEnd(34)} → ${x.to}  ×${x.n} max ${x.max}ms${x.async ? ' async ' + x.async : ''}`)
+		}
+	} else console.log(`electrode: ${JSON.stringify(r)}`)
 } else if (op === 'console' && reply.result && Array.isArray(reply.result.lines)) {
 	// the live tab's console ring — the raw log/warn/error a human reads in DevTools, over the wire.
 	//  Each line prefixed with a wall-clock time + level, so ordering + severity read at a glance.

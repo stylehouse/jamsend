@@ -122,7 +122,7 @@ test('a revocation aimed at ANOTHER pair does not retire this bond', async () =>
     expect(H.Swarm_pier_retired(p)).toBe(false)
 })
 
-test('Swarm_peers sorts the roster three ways, and never returns null', async () => {
+test('Swarm_peers answers FOUR questions, and never returns null', async () => {
     const H = await stub_house()
     const ident = ident_with([
         (p: any) => grant(p, 'Music'),                                   // live music friend
@@ -130,8 +130,12 @@ test('Swarm_peers sorts the roster three ways, and never returns null', async ()
         (p: any) => { grant(p, 'Music'); notgrant(p, 'Music') },          // retired
         (p: any) => grant(p, 'Crew'),                                    // crew, no music
     ])
-    expect(H.Swarm_peers(ident).length).toBe(3)                          // default: live + nascent
+    expect(H.Swarm_peers(ident).length).toBe(3)                          // not-retired: live + nascent
     expect(H.Swarm_peers(ident, { live: 'Music' }).length).toBe(1)       // granted for the feature
+    // GRANTED FOR ANYTHING — the fourth question, and the one that used to fall through to the default.
+    //  It is not the default: a nascent pier is not yet an actual friend, so it drops out here and only
+    //   here. Music friend + Crew mate = 2; the nascent and the retired both fail.
+    expect(H.Swarm_peers(ident, { live: true }).length).toBe(2)
     expect(H.Swarm_peers(ident, { live: 'all' }).length).toBe(4)         // the ledger, history and all
     // an identity with no Peering at all is a legal question to ask, and the answer is an ARRAY —
     //  every caller iterates the result directly, so a null here would be a crash at 100 call sites.

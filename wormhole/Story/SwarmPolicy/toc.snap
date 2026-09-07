@@ -3,34 +3,17 @@ story:SwarmPolicy
   Plan
   Opt
     For
-  TimeSpool
-    TimeTotal:beliefs,avg=0.063
-      sample=0.025,at=1785075690
-      sample=0.069,at=1786506254
-      sample=0.034,at=1786518144
-      sample=0.034,at=1786519017
-      sample=0.087,at=1786521010
-      sample=0.071,at=1786521068
-      sample=0.063,at=1786521246
-      sample=0.063,at=1786521260
-      sample=0.039,at=1786521273
-      sample=0.144,at=1788779844
-    TimeTotal:step,avg=0.009
-      sample=0.004,at=1785075690
-      sample=0.011,at=1786506254
-      sample=0.006,at=1786518144
-      sample=0.006,at=1786519017
-      sample=0.011,at=1786521010
-      sample=0.009,at=1786521068
-      sample=0.008,at=1786521246
-      sample=0.008,at=1786521260
-      sample=0.005,at=1786521273
-      sample=0.018,at=1788779844
   step,dige:e5c5f344a350825c
   step=2,dige:c4039260a17f4fc5
   step=3,dige:d6453f50bf65d266
-  step=4,dige:3e13ffefed4de6a9
-  step=5,dige:1c1b0c8f91d132e0
-  step=6,dige:d4c6a511719ea6e5
-  step=7,dige:41ab48a1510f3638
-  step=8,dige:b86123047a411749
+  step=4,dige:a108853f15ec1d67
+    Assertion:a-second-invite-waits,sentence:a second invite waits — no clock on its face
+  step=5,dige:7f0ff16189a19d23
+    Assertion:the-clock-never-kills,sentence:the clock never kills an invite — a hundred seconds later it still seals and spends
+  step=6,dige:96ce76ab122dfba6
+    Assertion:the-old-garden-link,sentence:the old garden link parses at the new door — prepub and name and count lifted from the fragment
+    Assertion:a-mangled-relic-and,sentence:a mangled relic and a modern link both refuse cleanly — null never a crash
+  step=7,dige:329547bfa6731f20
+    Assertion:an-old-garden-link,sentence:an old garden link seals a real friendship at the new door — its number ticks off the migrated issuer
+  step=8,dige:f58b54fd3cd3172a
+    Assertion:a-relic-cannot-be,sentence:a relic cannot be torn twice nor re-aimed at another number — the replay and the serial swap both seal nothing

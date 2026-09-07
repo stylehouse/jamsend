@@ -3,31 +3,12 @@ story:SwarmInvite
   Plan
   Opt
     For
-  TimeSpool
-    TimeTotal:beliefs,avg=0.043
-      sample=0.05,at=1786516685
-      sample=0.027,at=1786518087
-      sample=0.03,at=1786518114
-      sample=0.053,at=1786518981
-      sample=0.053,at=1786518983
-      sample=0.027,at=1786518989
-      sample=0.048,at=1786521303
-      sample=0.066,at=1787306295
-      sample=0.022,at=1788326410
-      sample=0.057,at=1788326686
-    TimeTotal:step,avg=0.009
-      sample=0.01,at=1786516685
-      sample=0.005,at=1786518087
-      sample=0.006,at=1786518114
-      sample=0.011,at=1786518981
-      sample=0.011,at=1786518983
-      sample=0.005,at=1786518989
-      sample=0.01,at=1786521303
-      sample=0.013,at=1787306295
-      sample=0.004,at=1788326410
-      sample=0.011,at=1788326686
   step,dige:f1ec75beced2fe2a
-  step=2,dige:f3f099b9a508c279
-  step=3,dige:fa08c6c1f7155670
-  step=4,dige:9b8076180583bc83
-  step=5,dige:f42ada8a60cf601a
+  step=2,dige:7492917cd62e69fa
+    Assertion:the-machine-self-is,sentence:the machine self is made by its real maker — keys and nick and Peering — and only one identity is active
+  step=3,dige:a93b5bed5e0d2dfb
+    Assertion:the-invite-is-a,sentence:the invite is a URL — the compact token inside parses back to a Music offer under sixty characters
+  step=4,dige:ce726d6806ea1351
+    Assertion:the-phone-scans-the,sentence:the phone scans the URL and gains a Pier — a Music grant signed by the machine rides it both ways
+  step=5,dige:f19734abcc990524
+    Assertion:a-photographed-qr-is,sentence:a photographed QR is dead after its first scan — the spent nonce refuses at the door

@@ -1,8 +1,8 @@
 Snap:H
-  H:AtlasStaple,Run
-    A:AtlasStaple
+  H:ElectrodeStaple,Run
+    A:ElectrodeStaple
       self,round=3	{"mung":["age"]}
-      w:AtlasStaple
+      w:ElectrodeStaple
         self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
-        req:seed_wait,finished
+        req:arm_wait,finished

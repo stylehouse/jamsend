@@ -16,4 +16,3 @@ Snap:H
               Key,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213	{"mung":["secret"]}
         req:witness,eternal,ok
         Invite:cohort_1,prepub:32c1ce7a059129d1,to:Music,n:Music,state:redeeming
-        see:a re-note never resets a walked state — the Invite stays redeeming after the token knocks again

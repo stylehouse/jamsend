@@ -125,12 +125,15 @@ A **snap** is the text serialisation of the C tree which Story makes between ste
      a traced phase; `dige` is the change-sensitivity|digest used to decide what
       is worth re-emitting. A test may flag itself out of Cyto to spare the
        graph noise.
- New test assertions are authored as `%see:'sentence'` — a **once-noticed**,
-  self-describing claim emitted once the first pass a truth holds (no commas in
-   the sentence — the peel parser splits on them; use an em-dash). It supersedes
-    the older `%witnessed:step_N` latch (kept only for already-recorded gates);
-     the snap-fixture diff stays the gate and the place to notice un-asserted
-      detail.
+ New test assertions are SWORN: `this.story_swear(w, 'sentence')` — idempotent per run,
+  harvested off the world to the `ave/%Assertioning` shelf before encode, and DECLARED in the
+   Book's toc as `Assertion:<slug>,sentence:…` under its latch step, so an absence reds the run
+    by name even at `ok_pct:1` (`Cred_assertion_gaps` joins on the SENTENCE; slugs must be unique
+     per step or Story wedges at `begun`). No commas in a sentence — the peel parser splits on
+      them; use an em-dash. `%see:'sentence'` still exists but OBSERVES: it is expected to drop,
+       and a drop is signal, not failure (`Seen_split_todo.md` is the migration ledger; 2026-09-08
+        corrected — the older "authored as %see" reading here was stale). The snap-fixture diff
+         stays the gate and the place to notice un-asserted detail.
 
 **Cyto** (Cyto.svelte, view in Cytui): the live Cytoscape view. `cyto_scan`
  walks the particles, `cytyle_classify` returns skip|invisible|compound,
@@ -159,6 +162,14 @@ A **snap** is the text serialisation of the C tree which Story makes between ste
      editor through `Codebit%of_dock`. The document tree is Waft → What → Doc →
       Point (DocMinimap shows it, Lang_apply_openness folds it around engaged
        Points).
+
+**The land (Ghost/L, src/lib/L)**: the bet turned on the code itself. `Atlas.g` keeps
+ what the code SAYS (the compiler's `%Map` for every doc, headless, kept — `w:Atlas/Doc/Map`),
+  `Electrode.g` keeps what it DOES (both ends of every ghost call, reduced on demand to
+   `w:Electrode/Graph/Method/Flow`), `L/BigWordland.svelte` is the room. L ghosts are NOT in the
+    spine manifest: a runner gets them via `runner_ask ghost_load Ghost/L/X.g --stand=X`, and a
+     tab reload drops them (and makes their Books run hollow until re-loaded). Read
+      `spec/Wordland_todo.md` first; `Stemdex_todo.md §0` has Atlas's history.
 
 **elvis|elvisto**: the deferred cross-ghost call, as in
  `this.elvisto('Story/Story', 'fn', {...})`; a method on another ghost, run

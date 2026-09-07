@@ -149,10 +149,63 @@ The build order is DONE.  **The declare door is BUILT too (2026-07-19, the human
             sentence) → `phase:failed` with `ok_pct:1` (all steps green) + `caveat:1` STILL red on the
              named gap — the entropy-mask hole stays closed, `caveat` never short-circuits the roster.
               Phantom reverted, runner released.
-- Remaining fleet: the rest of the Swarm* Books (`Door`/`Got`/`Policy`/`Invite` untouched — `Wire`
-   DONE), the Musu*/Radiation/Voronation/Peregrination families (§5 inventory), and the `%witnessed`
-    retirement. `SwarmStaple`/`SwarmWire` are the two FULL-conversion worked examples (`SwarmSteal` is
-     the stand-beside/mixed example).
+- **2026-09-08 — `AtlasStaple` + four Swarm Books converted IN ONE BATCH.  READ THE CAVEATS: this pass
+   broke two of this doc's own rules, and one Book is left in an unconfirmed state.**
+  - `AtlasStaple` (Ghost/L/Atlantation.g) — FULL conversion, the clean one.  All 10 sentences were
+     happened-facts; `i %see:` → `this.story_swear(w, …)`.  10 `Assertion:` lines under their latch
+      steps, fixtures re-installed from the red run's `got_snap` (never Accept).  **GREEN 6/6 caveat:0,
+       declared 10 / sworn 10 / gaps 0, and SABOTAGE-PROVEN**: removing `doc.sc.warm = 1` from
+        `Atlas_cache_adopt` gave `phase:failed` with `ok_pct:1` — every step green, red only on the
+         named gap `«a-re-stood-atlas-warms»`.  Reverted, re-confirmed green.
+  - `SwarmCohort` (7), `SwarmPolicy` (6 of 7), `SwarmInvite` (4) — converted, contracts written,
+     fixtures re-installed, each verified locally AND live-green with gaps 0 (Invite: declared 4 /
+      sworn 4).  `SwarmCohort` also SABOTAGE-PROVEN separately (removing `sib.sc.duty` in
+       `Swarm_sibling` → `ok_pct:0.17`); reverted.
+  - `SwarmSteal` (7) — CONFIRMED 2026-09-08, live: 6/6 `ok`, `caveat:0`, declared 7 / sworn 7 / gaps 0.
+     **What had been wedging it was NOT the hollow flake: two `Assertion:` lines under step 6 carried
+      the SAME slug** (`identity-is-not-address`, both sentences begin with the same four words and the
+       install helper slugged by first-four-words).  Story keys contract children by slug, so the twin
+        collided and the run sat at `phase:begun, n:null` with `story_analysis … live=0 frontier=0` and
+         nothing further in the console — the same silent wedge a duplicate `step=N` line causes
+          (memory `toc-surgery-verify-counts`).  Renamed the second to `key-never-moved` and it ran
+           first time.  **Slugs must be unique per step; the join is still on the sentence.**  Check
+            after any toc surgery: `grep -o 'Assertion:[^,]*' toc.snap | sort | uniq -d` must be empty.
+  - **Born sworn, same night: `ElectrodeStaple`** (`Ghost/L/Electrodation.g`, the Electrode tap's Book) —
+     authored on `story_swear` from the first line, recorded 6/6 in `mode:new`, its 10-line contract
+      installed by hand, check-mode ×2 green at `caveat:0`, and SABOTAGE-PROVEN without a runner reload
+       (`ghost_load --swap` of a broken `Electrode.go` → `phase:failed` with exactly the two "closes"
+        gaps named; revert → green).  `AtlasStaple` re-sworn 10/10 the same night (`Wordland_todo.md`).
+  - ⚠ **This pass BATCHED, against the "one Book per pass … NO BATCHING" discipline above.**  It was
+     mechanically uniform (all 31 emitters had the identical `&& !(oa %see:'X')) i %see:'X'` shape, so
+      one regex covered them) — but the discipline exists because each Book needs its own live
+       re-record and sabotage, and only two of the five got a sabotage.  Do not read this as licence.
+  - ⚠ **`SwarmSteal`'s conversion may contradict this doc's own 2026-07-12 note** that its other
+     `%see` are *"genuine per-beat observations, kept"*.  Judged fresh, all five read as happened-facts
+      and *"identity is not address"* is quoted in §5 as a prime `%seen` candidate — but the earlier
+       ruling was not consulted before converting, which is precisely the failure this sweep documents.
+        **The owner should rule.**  Reverting is one regex away (`Swarmation.g.bak` shape).
+
+- **`SwarmGot` — NOT migrated, and DO NOT re-record it: it is PRE-EXISTING RED.**  Measured both ways
+   on 2026-09-08: `ok_pct:0.33, caveat:1` on the migrated code AND `ok_pct:0.33, caveat:1` on the
+    committed baseline — steps 2/4/5/7/8/9 fail identically, and its fixture holds only ONE `see:` line
+     (in `002.snap`) so the emitter change cannot account for five failing steps.  Its 8 sentences have
+      never latched, in the fixture or now.  Its emitters WERE converted (one file, one regex) but no
+       contract was written and no fixture touched.  **Fix the Book first, then declare.**
+
+- **Two findings worth keeping, both from doing this:**
+  - **`dige = sha256(<snap file bytes>)[:16]`** — verified against `AtlasStaple/002.snap`.  So a whole
+     fixture set can be checked OFFLINE against its toc with no runner at all, which is how the five
+      Books above were verified before ever re-running them.  Invaluable for fixture surgery.
+  - **A sabotage that stays green is a finding, not a failure.**  Removing `Atlas.g`'s
+     `if (old) doc.drop(old)` ("a re-map replaces, never piles") changed nothing, because
+      `Lang_compile_collect` already does `job.oai({Map:1})` + `Map_C.empty()` — the collector, not that
+       line, is what makes the claim true.  The line is redundant belt-and-braces.  Sabotage tells you
+        WHERE a behaviour actually lives, so pick a second target when the first stays green.
+
+- Remaining fleet: `SwarmDoor` untouched; `SwarmGot` blocked on its own red (above); the
+   Musu*/Radiation/Voronation/Peregrination families (§5 inventory); and the `%witnessed` retirement.
+    `SwarmStaple`/`SwarmWire` are the two FULL-conversion worked examples (`SwarmSteal` was the
+     stand-beside/mixed example until 2026-09-08 converted it — see the caveat above).
 
 Three concrete moves, sized honestly:
 

@@ -4,14 +4,30 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
  2026-09-06 in which SoundPooling was dead for two days for a reason that had nothing to do with
   SoundPooling.
 
-## 0. WHAT TO GET ON WITH NEXT
+## 0. WHAT TO GET ON WITH NEXT (refreshed 2026-09-08 for the morning slog)
 
-1. **The accessor** (§2) — `Swarm_piers(ident, {live})`, and stop 126 call sites deciding for themselves.
-2. **Reach terminality** (§4.1) — a reach addressed to a body that no longer exists must go `dead`
-    with a named why, not sit `dispatched` forever.
-3. **`since` and general timestamping** (§4.2) — every Pier on eed carries the SAME `since`, so the
-    data has no age at all. The owner: *"%since and general timestamping could do with a do up."*
-4. Then the sweep: §3's table is the list of things that read the boundary wrongly today.
+**Landed and gated (2026-09-07):** the membership door (§2.0 — `Swarm_peers` / `Swarm_pier_retired` /
+ `Swarm_pier_granted`, six call sites, DoorFace stated-once), reach terminality (§4.0), and the unit gate
+  (§7.5: 25 assertions, no runner) plus the Book gate (every ceremony/social/pool Book green, caveat 0).
+   Raw evidence + the sweep that found most of this was already ruled: `Fallen_out_of_mind_todo.md`.
+
+**The slog, in order:**
+1. **The sweep** — the remaining ~120 raw `o({Pier:1})` walks, each asked ONE question (§2.0.1: transport →
+    default · feature → `{live:'X'}` · actual-friend → `{live:true}` · audit → `{live:'all'}`). Mechanical
+     but not thoughtless; in doubt take the default (the asymmetry is written down). Books to re-run after:
+      the ceremony set + SwarmBody + the pool four. `scripts/door_census.mjs` checks a live host.
+2. **`since`** (§4.2) — now that a runner exists: carry `since` in the pier stash, restore on rehydrate,
+    and deliberately re-swear SwarmReboot (its fixture records the reload re-stamp as truth).
+3. **The `%Card` migration** (`Fallen_out_of_mind §2.1`) — one mint, zero fixtures, but WAIT for the
+    metaphysics agent's ruling on the three options first (one `%Card` with context-keyed prior · a distinct
+     mainkey for the scratch catalog · keep `%Record` with mandatory `total`).
+4. **Invite-as-rendezvous** (§8.10, `Crew_todo §6`) — the weld is ONE token field (`to`); the ceremony's own
+    Book is green again so it is safe ground. Design first: consent must not become a third ask.
+5. **`Ra_pool_fill_homes`** picks the Cave with no liveness — wants a live-preferring `Swarm_body_for`, which
+    moves SwarmBody's fixtures; do it with the runner up, not blind.
+
+**Known reds you did NOT cause:** `LakeRace` (real, unguarded compile fix — `Lies_handover.md`), `Presence`
+ (needs a relay). Everything else on the unit shelf is green. Diff the snap before alarming.
 
 **The arc:** the social substrate (identity · pier · grant · presence · transport) is a *platform*,
  and Radio/Heist/SoundPool/Story are *apps on it*. That layering is real and mostly good — SP owns no
@@ -104,6 +120,39 @@ So retirement is decided on **positive evidence**, never on the absence of a gra
 
 **Name:** `Swarm_peers`, not `Swarm_piers` — the latter is already a stash key (`st.Swarm_piers`,
  `Swarm_piers_rehydrate`), exactly the collision §2.1's caution predicted.
+
+### 2.0.1 THE SWEEP RULE — "does this caller want live, granted, or the ledger?" (2026-09-08)
+
+Every raw `o({Pier:1})` answers one of FOUR questions implicitly, usually by accident. Made explicit:
+
+| ask | `opts` | the question | who asks it | nascent? | retired? |
+|---|---|---|---|---|---|
+| **not-retired** | *(omitted)* | who might I be in a relationship with right now? | **transport** — a route, a greeting, a heartbeat | **in** | out |
+| **granted for X** | `{live:'Music'}` | who may do *this* with me? | **a feature** — offer a catalog, serve bytes, expect music | out | out |
+| **granted for anything** | `{live:true}` | who is an actual friend? | a badge count, a roster of real bonds | out | out |
+| **the ledger** | `{live:'all'}` | what is the history? | an audit, the Door's show-retired, a migration | in | **in** |
+
+(`{live:true}` was in §2.1's proposal but fell through to the default until 2026-09-08 — a different
+ question wearing the default's answer. `Swarm_pier_granted` now states it once; pinned in the spec.)
+
+**How to decide at a site — ask what breaks if you are wrong in each direction:**
+- Including a **retired** peer would pester someone who left → at least not-retired.
+  (`Swarm_pulse_all`, `Swarm_hi_all`.)
+- Excluding a **nascent** peer would break a handshake → the default, never a feature filter.
+  (`Swarm_station_routes` — filtering to granted-only would have wedged every new friendship.)
+- Including a **nascent** peer would claim a capability that does not exist yet → the feature.
+  (`Swarm_expect_friends` — armed *"a friend came online"* for a deleted peer.)
+- Filtering at all would hide history → the ledger. (`Swarm_dial_piers`, `Swarm_probe_arrival`.)
+
+**The errors are asymmetric, and that settles a close call.** Over-filtering (dropping a nascent pier)
+ breaks *silently and permanently*: the handshake never completes, nothing logs, and a Book that seals in
+  one pass still goes green. Under-filtering (keeping a retired one) is noisy but self-announcing — pointless
+   frames at a dead door, which is exactly how the 36-hour Cave was eventually spotted. **In doubt, take
+    the default. It fails loud rather than quiet.**
+
+⚠ One UX consequence to own: DoorFace now uses not-retired, so a **nascent pier shows in the Door** while
+ it seals ("a friendship becoming"). If the owner prefers the Door to list only actual friends, that is
+  `{live:true}` — one word, now available.
 
 **Converted so far** (six sites; the rest of the ~126 are a later sweep). Chosen because a retired pier is
  rare-to-absent in a Book, so these are fixture-inert by construction — they change what happens to a bond

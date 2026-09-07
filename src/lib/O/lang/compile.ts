@@ -564,7 +564,13 @@ export const LANG_COMPILE = {
         //  beat as uncalled.  Same regex, whole document, stho only (the tsstho branch reads calls
         //  off the tree and already sees inside an if); dedup by `from` against what the per-line
         //  sweep did record, so nothing doubles.  via/region_path land in the post-pass below.
-        const CALL_GAP_RE = /(?:this|H)\.(\w+)\s*\(/g
+        //  2026-09-08: also the CAST form `(H as any).X(` / `(this as House).X(` — found by Electrode's
+        //   declared-vs-measured join, which showed `Lies_role → Lies_inside_story` ×207 measured with
+        //    NO Atlas caller (`LiesLies.svelte:146` reads `(H as any).Lies_inside_story()`); 158 such
+        //     sites in src/lib/O beside 1,901 plain ones.  Same receivers, so no new false positives.
+        //  …and the optional forms `H?.X(` / `(H as any).X?.(` (the join's next row: `Lies_cluster_idento →
+        //   Clustation_active_identity`, source `(H as any).Clustation_active_identity?.(H)`).
+        const CALL_GAP_RE = /(?:this|H|\((?:this|H) as \w+\))\??\.(\w+)(?:\?\.)?\s*\(/g
         const call_froms  = new Set<number>()
         if (sthoParser) for (const w of words) if (w.call && typeof w.from === 'number') call_froms.add(w.from)
         for (let ln = 1; ln <= doc.lines; ln++) {
@@ -1139,8 +1145,11 @@ export const LANG_COMPILE = {
             return n
         }
 
-        // scan every line for this./H. calls MethodLike missed (inline, chained, in raw JS)
-        const CALL_RE = /(?:this|H)\.(\w+)\s*\(/g
+        // scan every line for this./H. calls MethodLike missed (inline, chained, in raw JS) — and, since
+        //  2026-09-08, the cast form `(H as any).X(` / `(this as House).X(` (see CALL_GAP_RE's note): the
+        //   .svelte/.ts branch gets ALL its call words from this sweep, so the cast form was ~8% of the
+        //    hand-written call edges silently missing from every Atlas census.
+        const CALL_RE = /(?:this|H|\((?:this|H) as \w+\))\??\.(\w+)(?:\?\.)?\s*\(/g
         for (const m of line.text.matchAll(CALL_RE)) {
             // m.index is the offset within the line; translate to doc offsets
             const from = line.from + m.index!

@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '4ee33373b0b99624~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '3793771b9fedaf6e~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -5730,11 +5730,37 @@ Swarm_pier_retired(pier) {
 //   { live: 'Music' }   ⇒ granted for that feature, via Swarm_pier_live — what an OFFER wants.
 //   { live: 'all' }     ⇒ everything, history included — the Door's "show retired", an audit, a migration.
 //  Returns a plain array (never null), so a caller may iterate it directly.
+// Swarm_pier_granted — live on ANY feature (Music | Crew | a link rail).  The fourth question the door
+//  answers, and the one the old DoorFace filter was asking: "is this an actual friend" — which EXCLUDES a
+//   nascent pier (no grant yet) where the not-retired default includes it.  Stated once, here, so the
+//    feature list lives in exactly one place beside Swarm_pier_retired's.
+Swarm_pier_granted(pier) {
+    if (!pier || !pier.o) { return false }
+    if (this.Swarm_pier_live(pier, 'Music')) { return true }
+    if (this.Swarm_pier_live(pier, 'Crew')) { return true }
+    return this.Swarm_pier_linklive(pier)
+
+},
+//  THE FOUR QUESTIONS (2026-09-08, the owner: "explain does this caller want live, granted, or the ledger"):
+//   omitted        ⇒ NOT-RETIRED: live + nascent.  "Who might I be in a relationship with right now?"
+//                     What TRANSPORT wants — a route, a greeting, a heartbeat — because a nascent pier needs
+//                      those to become live at all, and a retired one should get none of them.
+//   { live: 'X' }  ⇒ GRANTED FOR X.  "Who may do this particular thing with me?"  What a FEATURE wants —
+//                     offer a catalog, serve bytes, expect music.  A nascent pier correctly fails here.
+//   { live: true } ⇒ GRANTED FOR ANYTHING.  "Who is an actual friend?"  Feature-blind but excludes nascent —
+//                     a badge count, a roster of real bonds.  (The doc proposed this mode; until today it
+//                      fell through to the default, which is a different question.)
+//   { live: 'all'} ⇒ THE LEDGER.  "What is the history?"  Every row ever, ended ones included — an audit
+//                     view, the Door's show-retired, a migration.  Rare and deliberate.
+//  The errors are ASYMMETRIC, and that settles a close call: over-filtering (dropping a nascent pier) breaks
+//   silently and permanently — the handshake never completes and a one-pass Book still goes green; under-
+//    filtering (keeping a retired one) is noisy but self-announcing.  In doubt, take the default.
 Swarm_peers(ident, opts) {
     let peering = this.Swarm_peering(ident)
     let all = (peering && peering.o) ? peering.o({ Pier: 1 }) : []
     let live = (opts && opts.live !== undefined) ? opts.live : null
     if (live === 'all') { return all }
+    if (live === true) { return all.filter((p) => this.Swarm_pier_granted(p)) }
     if (typeof live === 'string') { return all.filter((p) => this.Swarm_pier_live(p, live)) }
     return all.filter((p) => !this.Swarm_pier_retired(p))
 },

@@ -1,0 +1,7 @@
+Snap:H
+  H:ElectrodeStaple,Run
+    A:ElectrodeStaple
+      self,round	{"mung":["age"]}
+      w:ElectrodeStaple
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

@@ -57,4 +57,3 @@ Snap:H
             mail
               frame:pier_reject,did
             rebuff:rejected_spent,say:5c4b63609cd01594
-        see:a photographed QR is dead after its first scan — the spent nonce refuses at the door

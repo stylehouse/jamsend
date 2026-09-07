@@ -70,8 +70,14 @@ retired `history/` — each retired doc's top notice says where its living conte
    define, then it helps present|track the details of that language, which is a mixed language (mainkey, etc
    type meanings)." Story's machinery (beliefs trace, dige, `%see`, snap/diff) made generally available to
    the protocol it examines, reading one declaration. What is the declaration's shape? (`Story_hygiene §0`.)
-2. **Card vs Record vs husk**, and whether the prior is keyed by context. Where else is a `%Record` doing a
-   `%Card`'s job? (Two mint sites found: `Heist_census_heads`, `Heist_blag_folder`.)
+2. **Card vs Record vs husk — now a concrete three-way ruling, and the owner wants YOUR read first.** The
+   migration is sized at one mint, one un-mint, one reader, zero fixtures (`Fallen §2.1`). The catch: a
+   heard-Mag `%Card` is `(id, pub)` under `Mag/Cloud`, a durable ledger row; a describe Card would be
+   keep-id'd under a swept `RummageLib`. Same mainkey, different container/key/lifetime — the very sin being
+   cured, moved one mainkey over. Options: (1) one `%Card`, context-keyed prior (makes `Cello_synthesis
+   §R.8` load-bearing); (2) a distinct mainkey for the scratch catalog (the owner's rename-at-once
+   precedent); (3) keep `%Record`, mandatory `total`. The session leans 2. Which is the same law, which is a
+   new word, and does "a reference is its own word" settle it?
 3. **Soul / Crew key / Body / Post** — the owner dislikes "soul"; a friendship as a Crew with a *set of doors*
    and a natural state machine per door (unknown → known → live → quiet → gone); whether a protocol resolves
    a post or the Crew does, once for all protocols (`Trust_todo`).

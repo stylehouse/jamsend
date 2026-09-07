@@ -14,7 +14,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'd1f7e621aaeb9e5b~g1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'bc2834c2ab133e05~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -458,16 +458,16 @@ SwarmSteal_witness(w) {
     if (!peering) return
     let prepub = alice.sc.prepub
     // beat 2: Alice stands alone — her key-derived name is her ONE address, no siblings yet.
-    if (n === 2 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub && !peering.o({ Sibling: 1 }).length && !(w.oa({see: 'Alice stands alone — her key-derived name is her one address'}))) w.i({see: 'Alice stands alone — her key-derived name is her one address'})
+    if (n === 2 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub && !peering.o({ Sibling: 1 }).length) this.story_swear(w, 'Alice stands alone — her key-derived name is her one address')
     // beat 3: cooperative tabs — a known sibling raised NO alarm and the places split the work.
     let sib = peering.o({ Sibling: 'tab_encode' })[0]
-    if (n === 3 && sib && peering.sc.duty === 'music' && sib.sc.duty === 'encode' && !this.Swarm_stolen(alice) && !(w.oa({see: 'sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes'}))) w.i({see: 'sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes'})
+    if (n === 3 && sib && peering.sc.duty === 'music' && sib.sc.duty === 'encode' && !this.Swarm_stolen(alice)) this.story_swear(w, 'sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes')
     // beat 4: a claimant that is NOT one of our tabs raises the LIVE alarm — Identity Stolen.
-    if (n === 4 && this.Swarm_stolen(alice) && peering.o({ Stolen: 'remote_copy' })[0] && !this.Swarm_is_sibling(alice, 'remote_copy') && !(w.oa({see: 'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name'}))) w.i({see: 'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name'})
+    if (n === 4 && this.Swarm_stolen(alice) && peering.o({ Stolen: 'remote_copy' })[0] && !this.Swarm_is_sibling(alice, 'remote_copy')) this.story_swear(w, 'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name')
     // beat 5: Steal Back re-presented at the next free suffix past thief + siblings and cleared the alarm.
-    if (n === 5 && this.Swarm_address(alice) === prepub + '_2' && !this.Swarm_stolen(alice) && !(w.oa({see: 'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm'}))) w.i({see: 'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm'})
+    if (n === 5 && this.Swarm_address(alice) === prepub + '_2' && !this.Swarm_stolen(alice)) this.story_swear(w, 'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm')
     // beat 6: identity is not address — the canonical name never moved while she is reachable at _2.
-    if (n === 6 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub + '_2' && peering.sc.online && !(w.oa({see: 'identity is not address — the key never moved — a Pier still verifies her at prepub_2'}))) w.i({see: 'identity is not address — the key never moved — a Pier still verifies her at prepub_2'})
+    if (n === 6 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub + '_2' && peering.sc.online) this.story_swear(w, 'identity is not address — the key never moved — a Pier still verifies her at prepub_2')
     // ── %sworn — the DURABLE assertions, via this.story_swear (idempotent per run). Stand beside the
     //  %see above; a sworn is a happened-FACT, latched once the first beat its truth holds — evidence
     //   on the Assertioning shelf (never snap bytes), contract under the toc step lines (the hosting
@@ -595,20 +595,20 @@ SwarmInvite_witness(w) {
     // beat 2: the REAL maker stood the self — keys on .c, nick stamped, Peering owned — and its
     //  only-one-active contract held: the older self stands by deactivated.
     let actives = acct.o({ Identity: 1 }).filter(i => i.sc.active)
-    if (n === 2 && ident && this.Swarm_keys(ident)?.key && ident.sc.nick && this.Swarm_peering(ident) && actives.length === 1 && acct.o({ Identity: 1 }).length === 2 && !(w.oa({see: 'the machine self is made by its real maker — keys and nick and Peering — and only one identity is active'}))) w.i({see: 'the machine self is made by its real maker — keys and nick and Peering — and only one identity is active'})
+    if (n === 2 && ident && this.Swarm_keys(ident)?.key && ident.sc.nick && this.Swarm_peering(ident) && actives.length === 1 && acct.o({ Identity: 1 }).length === 2) this.story_swear(w, 'the machine self is made by its real maker — keys and nick and Peering — and only one identity is active')
     // beat 3: the invite IS a URL — the compact token inside parses back to the Music offer from
     //  the active self AND stays small enough for an easy QR (the %minted stamp is the parse's own
     //   sighting; only the ISSUER could verify further, and beat 4 proves that at the door).
     let minted = w.o({ minted: 'parsed' })[0]
-    if (n === 3 && String(w.c.url).startsWith('https://jamsend.example/BigSoundland?Iz=') && minted && minted.sc.to === 'Music' && minted.sc.of === ident?.sc?.prepub && Number(minted.sc.chars) < 60 && !(w.oa({see: 'the invite is a URL — the compact token inside parses back to a Music offer under sixty characters'}))) w.i({see: 'the invite is a URL — the compact token inside parses back to a Music offer under sixty characters'})
+    if (n === 3 && String(w.c.url).startsWith('https://jamsend.example/BigSoundland?Iz=') && minted && minted.sc.to === 'Music' && minted.sc.of === ident?.sc?.prepub && Number(minted.sc.chars) < 60) this.story_swear(w, 'the invite is a URL — the compact token inside parses back to a Music offer under sixty characters')
     // beat 4: the scan sealed it — the Phone holds a Pier for the machine with the machine's signed
     //  Music grant, and the machine holds the mirror Pier for the Phone.
     let pPier = this.Swarm_peering(phone)?.o({ Pier: 1, pub: ident?.sc?.prepub })[0]
     let mPier = ident && this.Swarm_peering(ident)?.o({ Pier: 1, pub: phone.sc.prepub })[0]
-    if (n === 4 && pPier && pPier.o({ Grant: 'Music', by: this.Swarm_keys(ident)?.pub })[0] && mPier && !(w.oa({see: 'the phone scans the URL and gains a Pier — a Music grant signed by the machine rides it both ways'}))) w.i({see: 'the phone scans the URL and gains a Pier — a Music grant signed by the machine rides it both ways'})
+    if (n === 4 && pPier && pPier.o({ Grant: 'Music', by: this.Swarm_keys(ident)?.pub })[0] && mPier) this.story_swear(w, 'the phone scans the URL and gains a Pier — a Music grant signed by the machine rides it both ways')
     // beat 5: the photograph is dead — Eve rebuffed on the spent nonce, no Pier forms for her.
     let eve = this.SwarmStaple_ident(w, 'Eve')
-    if (n === 5 && eve && eve.o({ rebuff: 'rejected_spent' })[0] && !this.Swarm_peering(eve)?.o({ Pier: 1 }).length && !(w.oa({see: 'a photographed QR is dead after its first scan — the spent nonce refuses at the door'}))) w.i({see: 'a photographed QR is dead after its first scan — the spent nonce refuses at the door'})
+    if (n === 5 && eve && eve.o({ rebuff: 'rejected_spent' })[0] && !this.Swarm_peering(eve)?.o({ Pier: 1 }).length) this.story_swear(w, 'a photographed QR is dead after its first scan — the spent nonce refuses at the door')
 
 },
 // SwarmInvite_order — float A:SwarmInvite to the front of H/* so the Run snap stays readable.
@@ -922,31 +922,31 @@ SwarmGot_witness(w) {
     let ePier = this.Swarm_peering(ella)?.o({ Pier: 1, pub: fats.sc.prepub })[0]
     let fPier = this.Swarm_peering(fats)?.o({ Pier: 1, pub: ella.sc.prepub })[0]
     // beat 2: two shelves nobody else can count yet — five records total, no Piers, no facts.
-    if (n === 2 && cE.records === 3 && cE.artists === 2 && cF.records === 2 && cF.artists === 1 && !ePier && !fPier && !(w.oa({see: 'each side holds a shelf the other cannot count yet — five records across the two libraries'}))) w.i({see: 'each side holds a shelf the other cannot count yet — five records across the two libraries'})
+    if (n === 2 && cE.records === 3 && cE.artists === 2 && cF.records === 2 && cF.artists === 1 && !ePier && !fPier) this.story_swear(w, 'each side holds a shelf the other cannot count yet — five records across the two libraries')
     // beat 4: the seal stands (grants both ways) — the boasts are in flight this very beat.
     let eGot = ePier?.o({ Grant: 'Music', by: this.Swarm_keys(fats)?.pub })[0]
     let fGot = fPier?.o({ Grant: 'Music', by: this.Swarm_keys(ella)?.pub })[0]
-    if (n === 4 && eGot && fGot && !(w.oa({see: 'the door sealed the friendship — now each side may boast its shelf'}))) w.i({see: 'the door sealed the friendship — now each side may boast its shelf'})
+    if (n === 4 && eGot && fGot) this.story_swear(w, 'the door sealed the friendship — now each side may boast its shelf')
     // beat 5: the facts landed under each Pier — my view of THEIR shelf — and the tally folds my
     //  shelf plus every live friend into the same five from either end.
     let eFact = ePier?.o({ IveGot: 1, by: 'records' })[0]
     let fFact = fPier?.o({ IveGot: 1, by: 'records' })[0]
     let tE = this.Swarm_ive_got_tally(w, ella)
     let tF = this.Swarm_ive_got_tally(w, fats)
-    if (n === 5 && eFact?.sc?.count === '2' && fFact?.sc?.count === '3' && !(w.oa({see: 'the boasts landed as facts — Ella sees two records at Fats and Fats sees three at Ella'}))) w.i({see: 'the boasts landed as facts — Ella sees two records at Fats and Fats sees three at Ella'})
-    if (n === 5 && tE.records === 5 && tF.records === 5 && tE.artists === 3 && tF.artists === 3 && tE.piers === 1 && tF.piers === 1 && !(w.oa({see: 'the tally reads five records reachable from either end — my shelf plus every sealed friend'}))) w.i({see: 'the tally reads five records reachable from either end — my shelf plus every sealed friend'})
+    if (n === 5 && eFact?.sc?.count === '2' && fFact?.sc?.count === '3') this.story_swear(w, 'the boasts landed as facts — Ella sees two records at Fats and Fats sees three at Ella')
+    if (n === 5 && tE.records === 5 && tF.records === 5 && tE.artists === 3 && tF.artists === 3 && tE.piers === 1 && tF.piers === 1) this.story_swear(w, 'the tally reads five records reachable from either end — my shelf plus every sealed friend')
     // beat 7: the teeth bit. The spoof left ONLY a rebuff (no fact anywhere says 99, no Pier for
     //  the fake name); the fresh boast updated the standing fact in place (four, still one fact).
     let spoofPier = this.Swarm_peering(ella)?.o({ Pier: 1, pub: 'c0ffee0000000000' })[0]
     let spoofRebuff = ella.o({ rebuff: 'ive_got_stranger' })[0]
-    if (n === 7 && spoofRebuff && !spoofPier && eFact?.sc?.count === '2' && !(w.oa({see: 'a spoofed boast from an unsealed name left a rebuff and nothing else — no fact and no door opened'}))) w.i({see: 'a spoofed boast from an unsealed name left a rebuff and nothing else — no fact and no door opened'})
-    if (n === 7 && fFact?.sc?.count === '4' && fPier?.o({ IveGot: 1, by: 'records' }).length === 1 && tF.records === 6 && !(w.oa({see: 'a fresh boast updated the standing fact in place — four records now and still a single fact'}))) w.i({see: 'a fresh boast updated the standing fact in place — four records now and still a single fact'})
+    if (n === 7 && spoofRebuff && !spoofPier && eFact?.sc?.count === '2') this.story_swear(w, 'a spoofed boast from an unsealed name left a rebuff and nothing else — no fact and no door opened')
+    if (n === 7 && fFact?.sc?.count === '4' && fPier?.o({ IveGot: 1, by: 'records' }).length === 1 && tF.records === 6) this.story_swear(w, 'a fresh boast updated the standing fact in place — four records now and still a single fact')
     // beat 9: the revocation gate held. Ella shelves five yet Fats still sees FOUR (the boast never
     //  crossed a revoked Pier) and her tally let the friend go entirely — while HIS side still
     //   counts the last boast heard (revocation propagation is a later slice — SwarmStaple beat 7).
     let eNot = ePier?.o({ NotGrant: 'Music' })[0]
-    if (n === 9 && eNot && cE.records === 5 && fFact?.sc?.count === '4' && tE.records === 5 && tE.piers === 0 && !(w.oa({see: 'a revoked friendship goes quiet — the fresh boast never crossed and the tally lets the friend go'}))) w.i({see: 'a revoked friendship goes quiet — the fresh boast never crossed and the tally lets the friend go'})
-    if (n === 9 && eNot && tF.records === 6 && tF.piers === 1 && !(w.oa({see: 'revocation stays one sided for now — the friend still counts the last boast heard'}))) w.i({see: 'revocation stays one sided for now — the friend still counts the last boast heard'})
+    if (n === 9 && eNot && cE.records === 5 && fFact?.sc?.count === '4' && tE.records === 5 && tE.piers === 0) this.story_swear(w, 'a revoked friendship goes quiet — the fresh boast never crossed and the tally lets the friend go')
+    if (n === 9 && eNot && tF.records === 6 && tF.piers === 1) this.story_swear(w, 'revocation stays one sided for now — the friend still counts the last boast heard')
 
 },
 // SwarmGot_order — float A:SwarmGot to the front of H/* so the Run snap stays readable.
@@ -1091,20 +1091,20 @@ SwarmPolicy_witness(w) {
     //   pier_confirm receipt — the deferred reciprocal crossed.
     let vGot = vPier?.o({ Grant: 'Music', by: this.Swarm_keys(otto)?.pub })[0]
     let ttlLeak = vPier?.o({ Grant: 1, ttl: 1 })[0] ?? oPier?.o({ Grant: 1, ttl: 1 })[0]
-    if (n === 3 && vGot && oPier && !ttlLeak && !(w.oa({see: 'a fresh invite seals as ever — and no sealed grant carries any expiry'}))) w.i({see: 'a fresh invite seals as ever — and no sealed grant carries any expiry'})
+    if (n === 3 && vGot && oPier && !ttlLeak) this.story_swear(w, 'a fresh invite seals as ever — and no sealed grant carries any expiry')
     // beat 4: the second invite waits with NO clock on its face.
     let rec2 = this.Swarm_peering(vera)?.o({ Idzeug: 'pol_2' })[0]
-    if (n === 4 && rec2 && !rec2.sc.ttl && !rec2.sc.spent && !(w.oa({see: 'a second invite waits — no clock on its face'}))) w.i({see: 'a second invite waits — no clock on its face'})
+    if (n === 4 && rec2 && !rec2.sc.ttl && !rec2.sc.spent) this.story_swear(w, 'a second invite waits — no clock on its face')
     // beat 5: the leap changed nothing — a hundred seconds on and the invite still sealed and
     //  spent: infinite-until-first-claim IS the policy.
-    if (n === 5 && rec2 && rec2.sc.spent && !(w.oa({see: 'the clock never kills an invite — a hundred seconds later it still seals and spends'}))) w.i({see: 'the clock never kills an invite — a hundred seconds later it still seals and spends'})
+    if (n === 5 && rec2 && rec2.sc.spent) this.story_swear(w, 'the clock never kills an invite — a hundred seconds later it still seals and spends')
     // beat 6: the relics. The old garden link parses — prepub|name|n lifted, granted=ftp surfaced —
     //  while garbage and a modern ?Iz= link refuse with null.
     let relic = this.Swarm_legacy_of_url('https://jam.example/BigSoundland#############a1b2c3d4e5f60718-Elder+Gardener.n~7-deadbeefdeadbeef')
     let relicOk = relic && relic.prepub === 'a1b2c3d4e5f60718' && relic.friendly === 'Elder Gardener' && relic.n === 7 && relic.granted === 'ftp' && relic.legacy === 1
-    if (n === 6 && relicOk && !(w.oa({see: 'the old garden link parses at the new door — prepub and name and count lifted from the fragment'}))) w.i({see: 'the old garden link parses at the new door — prepub and name and count lifted from the fragment'})
+    if (n === 6 && relicOk) this.story_swear(w, 'the old garden link parses at the new door — prepub and name and count lifted from the fragment')
     let dead = !this.Swarm_legacy_of_url('https://jam.example/BigSoundland#garbage') && !this.Swarm_legacy_of_url('https://jam.example/BigSoundland?Iz=abcdef') && !this.Swarm_legacy_of_url(null) && !this.Swarm_legacy_of_url('https://jam.example/#############nothexadecimal-Name.n~1-signsignsignsign')
-    if (n === 6 && dead && !(w.oa({see: 'a mangled relic and a modern link both refuse cleanly — null never a crash'}))) w.i({see: 'a mangled relic and a modern link both refuse cleanly — null never a crash'})
+    if (n === 6 && dead) this.story_swear(w, 'a mangled relic and a modern link both refuse cleanly — null never a crash')
     // beat 7: rung 2 — the old link SEALS. Both halves of the friendship, and the number ticked off
     //  the migrated issuer, which is the ledger entry that makes it single-use from here on.
     let iz1 = this.Swarm_peering(vera)?.o({ Idzeug: '1', next: 1 })[0]
@@ -1112,12 +1112,12 @@ SwarmPolicy_witness(w) {
     let pVera = pia && this.Swarm_peering(pia)?.o({ Pier: 1, pub: vera.sc.prepub })[0]
     let vPia = pia && this.Swarm_peering(vera)?.o({ Pier: 1, pub: pia.sc.prepub })[0]
     let took7 = this.Swarm_claimed_has(iz1?.sc?.claimed, 7)
-    if (n === 7 && pVera && vPia && took7 && !(w.oa({see: 'an old garden link seals a real friendship at the new door — its number ticks off the migrated issuer'}))) w.i({see: 'an old garden link seals a real friendship at the new door — its number ticks off the migrated issuer'})
+    if (n === 7 && pVera && vPia && took7) this.story_swear(w, 'an old garden link seals a real friendship at the new door — its number ticks off the migrated issuer')
     // beat 8: the teeth. Quin gets nothing from either attempt, and number 9 — the one the swap
     //  aimed at with a genuine signature for number 7 — is still unclaimed.
     let quin = this.SwarmStaple_ident(w, 'Quin')
     let noQuin = quin && !(this.Swarm_peering(vera)?.o({ Pier: 1, pub: quin.sc.prepub }).length)
-    if (n === 8 && noQuin && took7 && !this.Swarm_claimed_has(iz1?.sc?.claimed, 9) && !(w.oa({see: 'a relic cannot be torn twice nor re-aimed at another number — the replay and the serial swap both seal nothing'}))) w.i({see: 'a relic cannot be torn twice nor re-aimed at another number — the replay and the serial swap both seal nothing'})
+    if (n === 8 && noQuin && took7 && !this.Swarm_claimed_has(iz1?.sc?.claimed, 9)) this.story_swear(w, 'a relic cannot be torn twice nor re-aimed at another number — the replay and the serial swap both seal nothing')
 
 },
 // SwarmPolicy_order — float A:SwarmPolicy to the front of H/* so the Run snap stays readable.
@@ -2218,19 +2218,19 @@ SwarmCohort_witness(w) {
     let prepub = alice.sc.prepub
     // beat 2: the discriminator — both vessels are known tabs (address + role landed) and a stranger is not.
     let sibA = peering.o({ Sibling: 'vessA' })[0]
-    if (n === 2 && this.Swarm_is_sibling(alice, 'vessA') && this.Swarm_is_sibling(alice, 'vessB') && !this.Swarm_is_sibling(alice, 'stranger9') && sibA && sibA.sc.address === prepub + '_1' && sibA.sc.duty === 'cave' && !(w.oa({see: 'the roster knows vessA and vessB as our own tabs — a stranger is no sibling'}))) w.i({see: 'the roster knows vessA and vessB as our own tabs — a stranger is no sibling'})
+    if (n === 2 && this.Swarm_is_sibling(alice, 'vessA') && this.Swarm_is_sibling(alice, 'vessB') && !this.Swarm_is_sibling(alice, 'stranger9') && sibA && sibA.sc.address === prepub + '_1' && sibA.sc.duty === 'cave') this.story_swear(w, 'the roster knows vessA and vessB as our own tabs — a stranger is no sibling')
     // beat 3: the two answers — family is silence (false, no husk) while a foe is the alarm (true + husk).
-    if (n === 3 && w.c.kin_alarm === false && !peering.o({ Stolen: 'vessA' })[0] && !(w.oa({see: 'a sibling claiming the name is family — note_theft answers false and raises nothing'}))) w.i({see: 'a sibling claiming the name is family — note_theft answers false and raises nothing'})
-    if (n === 3 && w.c.foe_alarm === true && this.Swarm_stolen(alice) && peering.o({ Stolen: 'evil99' })[0] && !(w.oa({see: 'an unknown claimant is a theft — note_theft answers true and Identity Stolen rises for evil99'}))) w.i({see: 'an unknown claimant is a theft — note_theft answers true and Identity Stolen rises for evil99'})
+    if (n === 3 && w.c.kin_alarm === false && !peering.o({ Stolen: 'vessA' })[0]) this.story_swear(w, 'a sibling claiming the name is family — note_theft answers false and raises nothing')
+    if (n === 3 && w.c.foe_alarm === true && this.Swarm_stolen(alice) && peering.o({ Stolen: 'evil99' })[0]) this.story_swear(w, 'an unknown claimant is a theft — note_theft answers true and Identity Stolen rises for evil99')
     // beat 4: the berth — past the bare name and the held _1|_3 to the first free suffix.
-    if (n === 4 && w.c.berth === prepub + '_2' && !(w.oa({see: 'next_suffix jumps past the bare name and the held tabs to the first free berth at prepub_2'}))) w.i({see: 'next_suffix jumps past the bare name and the held tabs to the first free berth at prepub_2'})
+    if (n === 4 && w.c.berth === prepub + '_2') this.story_swear(w, 'next_suffix jumps past the bare name and the held tabs to the first free berth at prepub_2')
     // beat 5: the autovivify — ONE particle stands at arrived even after two knocks; the offer legs on sc.
     let inv = w.o({ Invite: 'cohort_1' })[0]
     let invs = w.o({ Invite: 1 })
-    if (n === 5 && inv && inv.sc.state === 'arrived' && inv.sc.prepub === prepub && inv.sc.to === 'Music' && !(w.oa({see: 'a scanned token vivifies an Invite particle standing at state arrived with its offer legs on it'}))) w.i({see: 'a scanned token vivifies an Invite particle standing at state arrived with its offer legs on it'})
-    if (n === 5 && inv && invs.length === 1 && !(w.oa({see: 'noting the same token twice is idempotent — one Invite particle stands not two'}))) w.i({see: 'noting the same token twice is idempotent — one Invite particle stands not two'})
+    if (n === 5 && inv && inv.sc.state === 'arrived' && inv.sc.prepub === prepub && inv.sc.to === 'Music') this.story_swear(w, 'a scanned token vivifies an Invite particle standing at state arrived with its offer legs on it')
+    if (n === 5 && inv && invs.length === 1) this.story_swear(w, 'noting the same token twice is idempotent — one Invite particle stands not two')
     // beat 6: the walked state sticks — a re-note never resets it and still never twins the particle.
-    if (n === 6 && inv && inv.sc.state === 'redeeming' && invs.length === 1 && !(w.oa({see: 'a re-note never resets a walked state — the Invite stays redeeming after the token knocks again'}))) w.i({see: 'a re-note never resets a walked state — the Invite stays redeeming after the token knocks again'})
+    if (n === 6 && inv && inv.sc.state === 'redeeming' && invs.length === 1) this.story_swear(w, 'a re-note never resets a walked state — the Invite stays redeeming after the token knocks again')
 
 },
 // SwarmCohort_order — float A:SwarmCohort to the front of H/* so the Run snap stays readable.

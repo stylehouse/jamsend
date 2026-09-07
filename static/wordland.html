@@ -1,0 +1,282 @@
+<title>Wordland</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground: #0b0b12; --ground-2: #14151f; --panel: #171826; --line: rgba(120,140,195,.18);
+    --ink: #b8c2d8; --ink-strong: #e6ecf8; --ink-dim: #7e8aa6; --amber: #ffe0a8; --ember: #e0965a;
+    --sky: #8fa2c8; --green: #8fd3a5; --red: #f08c8c; --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+  }
+  body { margin:0; background: radial-gradient(120% 130% at 30% -10%, #191a26, var(--ground) 70%) fixed; color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 2.2rem 1.4rem 5rem; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 1.4rem; margin-bottom: 2rem; }
+  .eyebrow { font-family: var(--mono); font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: var(--sky); }
+  h1 { font-family: var(--mono); font-weight: 600; font-size: clamp(1.9rem, 4vw, 2.6rem); margin: .3rem 0 .4rem; color: var(--amber); letter-spacing: .02em; text-shadow: 0 0 22px rgba(255,224,168,.18); text-wrap: balance; }
+  .sub { color: var(--ink); max-width: 62ch; margin: 0; }
+  .chips { display:flex; flex-wrap:wrap; gap:.4rem; margin-top: 1rem; }
+  .chip { font-family: var(--mono); font-size:.74rem; padding:.18rem .6rem; border-radius: 6px; border:1px solid var(--line); color: var(--sky); }
+  .chip.on { color: var(--amber); background: rgba(224,180,110,.12); border-color: rgba(224,180,110,.35); }
+  h2 { font-family: var(--mono); font-weight: 600; font-size: 1.05rem; color: var(--ink-strong); margin: 2.6rem 0 .9rem; letter-spacing: .01em; }
+  h2 .n { color: var(--ember); margin-right: .5rem; }
+  p { max-width: 68ch; }
+  .strip { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; margin: 1rem 0 0; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: .7rem .8rem; }
+  .stat b { display:block; font-family: var(--mono); font-size: 1.25rem; color: var(--amber); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .stat span { font-size: .78rem; color: var(--ink-dim); }
+  .grid3 { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: .9rem; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.05rem; min-width: 0; }
+  .card h3 { margin: 0 0 .25rem; font-family: var(--mono); font-size: .95rem; color: var(--amber); font-weight: 600; }
+  .card .role { font-size: .78rem; color: var(--ink-dim); margin-bottom: .6rem; }
+  .card.room { grid-column: 1 / -1; display:grid; grid-template-columns: 1fr 1.4fr; gap: 1rem; align-items: start; }
+  @media (max-width: 720px) { .card.room { grid-template-columns: 1fr; } }
+  pre { font-family: var(--mono); font-size: .78rem; line-height: 1.5; background: var(--ground-2); border: 1px solid var(--line); border-radius: 8px; padding: .75rem .9rem; overflow-x: auto; margin: .5rem 0 0; color: var(--ink); }
+  code { font-family: var(--mono); font-size: .86em; color: var(--ink-strong); background: rgba(120,140,195,.1); padding: .05em .3em; border-radius: 4px; }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  .k { color: var(--sky); } .v { color: var(--amber); } .dim { color: var(--ink-dim); } .hot { color: var(--ember); } .ok { color: var(--green); } .bad { color: var(--red); }
+  table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+  .tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+  th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--sky); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; color: var(--amber); white-space: nowrap; }
+  td.m { font-family: var(--mono); font-size: .8rem; white-space: nowrap; }
+  .two { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: .9rem; }
+  ol.moves { padding-left: 1.3rem; max-width: 72ch; }
+  ol.moves li { margin: .55rem 0; }
+  ol.moves li b { color: var(--ink-strong); font-weight: 600; }
+  .status { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .6rem; }
+  .st { border-left: 3px solid var(--line); padding: .35rem .8rem; background: var(--panel); border-radius: 0 8px 8px 0; font-size: .88rem; }
+  .st.ok { border-left-color: var(--green); } .st.warn { border-left-color: var(--ember); } .st.wait { border-left-color: var(--sky); }
+  .st b { font-family: var(--mono); font-weight: 600; color: var(--ink-strong); }
+  footer { margin-top: 3rem; border-top: 1px solid var(--line); padding-top: 1rem; font-size: .8rem; color: var(--ink-dim); }
+  a { color: var(--sky); }
+  :focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">the coming /L/ · night of 2026‑09‑08 · uncommitted, in the working tree</div>
+  <h1>Wordland</h1>
+  <p class="sub">The one bet turned on the code itself: what the code <em>says</em> (Atlas), what it <em>does</em> (Electrode), what is <em>loaded where</em> (Atheory) — each kept as particles a Book can swear — and the room where a person looks at all three.</p>
+  <div class="chips">
+    <span class="chip on">src/lib/L/ · the room</span>
+    <span class="chip on">Ghost/L/Atlas.g · the census</span>
+    <span class="chip on">Ghost/L/Electrode.g · the tap (new)</span>
+    <span class="chip">Atheory · the bundles (design)</span>
+  </div>
+  <div class="strip">
+    <div class="stat"><b>3,595</b><span>ghost methods coated by one <code>arm</code></span></div>
+    <div class="stat"><b>7,577</b><span>calls in one AtlasStaple run · 356 caller→callee flows</span></div>
+    <div class="stat"><b>caveat 0</b><span>AtlasStaple green armed and unarmed — the tap is fixture‑invisible</span></div>
+    <div class="stat"><b>10 / 10</b><span>ElectrodeStaple sworn on its first recording</span></div>
+  </div>
+</header>
+
+<h2><span class="n">§0</span>Morning decisions — ranked</h2>
+<div class="st warn" style="border-radius:8px;border-left-width:3px;margin:0 0 1.1rem;padding:.6rem .9rem">
+  <b>⏸ RULED — the tap is parked and stays off.</b> <em>"we should keep teetering around with other bits before innovating further… since it's all leading to integration… we can leave it off for the moment? and play with it via the upcoming Atlas, perhaps?"</em> Item 1 and the Atlas half of item 2 are live; items 4 and 5 are held until Atheory has a shape. Two things the tap is <em>not</em>: it does not recompile or switch dialect (a runtime wrapper over the flat ghost bag, milliseconds to arm, disk untouched), and it is already per‑process. Line and branch tracing genuinely does wait on Atheory — it is a compiled <b>Variant</b>, the middle slot of <code>TheA_&lt;Name&gt;_&lt;Variant&gt;_&lt;dige&gt;</code>.
+</div>
+<ol class="moves">
+  <li><b>Put the pictures in the room.</b> BigWordland's searchbar hits are the Stemdex's regex defs; Atlas holds the compiler's real defs and calls for 585 docs, Electrode the measured flows. Neither reaches the room. First cut is not a new surface (the Lens prior‑art gate): feed the existing StemHive from Atlas rows and give the pin rail a <code>→ callers</code> glyph.</li>
+  <li><b>Rule the join.</b> Atlas <code>call,method:X,via:Y</code> and Electrode <code>Method:Y / Flow,of:X</code> are the same edge, declared vs measured. Their diff is dead code, untested paths and hot paths in one query — and it is what cuts the <code>TheA_</code> layers. Third L ghost, or a sub‑census inside Atlas?</li>
+  <li><b>The <code>Creduler_ensure</code> gate.</b> The loudest thing in every run and it is doing nothing: 720–1,152 version reads per run. A changed‑enrolment flag takes it to 36. It is the live spine, so your call.</li>
+  <li><b>HELD — fold at the Story seam.</b> <code>Electrode_reduce</code> is on demand; the natural automatic seam is the end of a step, where sworn evidence is already harvested — a per‑step picture for every Book. A few lines, parked with the rest of the tap.</li>
+  <li><b>HELD — line and branch tracing needs the compiler <em>and</em> Atheory.</b> A wrapper cannot see inside a body. The deep version is a compiled variant of a ghost, and its purpose is teaching the program's flow, not profiling it.</li>
+  <li><b>Atheory — the manifest as particles.</b> Three load lists still disagree (36 / 4 / 6). Electrode now gives the role dimension a measurement: arm on a humdinger, play a track, read which ghosts a music page actually touches.</li>
+</ol>
+
+<h2><span class="n">§1</span>Three instruments, one vocabulary</h2>
+<div class="grid3">
+  <div class="card">
+    <h3>Atlas — what the code says</h3>
+    <div class="role">static · the compiler's own <code>%Map</code>, built headless for every doc, kept · refreshed by use, never a timer</div>
+<pre><code><span class="k">w:Atlas</span>
+  see:atlas,<span class="v">docs:585</span>,mapped:585,errors:0
+  Doc:Ghost/M/Heist.g,dige,lines:5249,<span class="v">defs:159,calls:337</span>
+    Map,<span class="dim">dontSnap</span>
+      def,method:Heist_keep,line
+      call,method:Heist_has_body,<span class="hot">via:Heist_keep</span>
+      elvisto · mint · proves · link · controlflow</code></pre>
+  </div>
+  <div class="card">
+    <h3>Electrode — what the code does</h3>
+    <div class="role">measured · both ends of every ghost call · a runtime wrapper, no recompile · per‑tab · ring + lossless tally + the hang set on <code>.c</code> · <b>parked, stays off</b></div>
+<pre><code><span class="k">w:Electrode</span>
+  see:electrode,armed
+  Graph,<span class="dim">dontSnap</span>,<span class="v">methods:232,flows:356,calls:7737</span>
+    Method:Lies_drain_inbound,n:21,ms:43,async:21,<span class="hot">open:1</span>
+      Flow,of:Peeroleum_deliver,n:21,ms:42
+    Method:∅   <span class="dim">← detached: a resumed async body</span>
+      Flow,of:self_timekeeping,n:252</code></pre>
+  </div>
+  <div class="card">
+    <h3>Atheory — what is loaded where</h3>
+    <div class="role">design · <code>Atheory_todo.md</code> · the declared manifest and the layered prototypes; mechanics bench‑verified, nothing built</div>
+<pre><code>        House   <span class="dim">(the spine)</span>
+          ▲
+ TheA_&lt;Name&gt;_&lt;<span class="hot">Variant</span>&gt;_&lt;dige&gt;
+          ▲
+ TheA_&lt;Name&gt;_&lt;<span class="hot">Variant</span>&gt;_&lt;dige&gt;
+
+<span class="dim"> Name    = which bundle (core · a Book · a leaf ghost)
+ Variant = which BUILD — an </span>electroded build lives here
+<span class="dim"> dige    = what it IS, not what it was called
+
+ seam exists, unused: do_fn_for reads</span>
+ <span class="hot">w_inst[method]</span> before H[method]</code></pre>
+  </div>
+  <div class="card room">
+    <div>
+      <h3>BigWordland — the room</h3>
+      <div class="role"><code>src/lib/L/BigWordland.svelte</code> · route <code>/BigWordland</code> · boots <code>Educarium</code> by default</div>
+      <p style="font-size:.88rem;margin:.2rem 0 0">Today: the H** switcher, ⚙ action rack, ⌐Lies summon, ▦ sprawl, the searchbar with a pin rail. <em>"a big empty space, yet Lies+Lang in disguise."</em> It shows the editor; it does not yet show the census or the picture.</p>
+    </div>
+    <div>
+<pre><code><span class="dim">where the room reads from — two honest roads</span>
+(a) the relay: the room asks the runner exactly as
+    runner_ask does — <span class="k">atlas_callers</span>, <span class="k">electrode top</span>
+(b) the shared Dexie: Atlas's cache is per‑browser, so a
+    room tab beside a runner tab adopts the census with no wire
+<span class="dim">start with (a): it is the road the CLI proves every day</span></code></pre>
+    </div>
+  </div>
+</div>
+
+<h2><span class="n">§2</span>Tonight's picture — a real Book run under the tap</h2>
+<p>AtlasStaple, six steps, green with caveat 0 while armed. The hottest flows, by count and by time, straight off <code>runner_ask electrode top</code>:</p>
+<div class="two">
+  <div class="tblwrap"><table>
+    <thead><tr><th>calls</th><th>caller → callee</th></tr></thead>
+    <tbody>
+      <tr><td class="num hot">720</td><td class="m">Lies_ghost_get → Lang_ghostmeta_name</td></tr>
+      <tr><td class="num hot">720</td><td class="m">Creduler_ensure → Lies_ghost_get</td></tr>
+      <tr><td class="num">413</td><td class="m">enL → encode_stringies <span class="dim">(the snap encoder)</span></td></tr>
+      <tr><td class="num">360</td><td class="m">Creduler_ensure → Lies_gen_path</td></tr>
+      <tr><td class="num">333</td><td class="m">enLine → enL</td></tr>
+      <tr><td class="num">252</td><td class="m">∅ → self_timekeeping</td></tr>
+      <tr><td class="num">131</td><td class="m">∅ → w_forgets_problems</td></tr>
+      <tr><td class="num">55</td><td class="m">AtlasStaple_aw → AtlasStaple_SH</td></tr>
+      <tr><td class="num">53</td><td class="m">AtlasStaple_witness → story_swear</td></tr>
+    </tbody></table></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th>ms</th><th>caller → callee</th><th>×</th></tr></thead>
+    <tbody>
+      <tr><td class="num hot">3,819</td><td class="m">∅ → AtlasStaple_await <span class="dim">(the Book polling)</span></td><td class="num">4</td></tr>
+      <tr><td class="num">259</td><td class="m">∅ → Atlas_map_one <span class="dim">max 194</span></td><td class="num">4</td></tr>
+      <tr><td class="num">247</td><td class="m">∅ → Atlas_pass</td><td class="num">10</td></tr>
+      <tr><td class="num">89</td><td class="m">story_snap → snap_H</td><td class="num">6</td></tr>
+      <tr><td class="num">77</td><td class="m">∅ → Atlas_refresh</td><td class="num">4</td></tr>
+      <tr><td class="num">71</td><td class="m">∅ → agency_officing</td><td class="num">59</td></tr>
+      <tr><td class="num">52</td><td class="m">∅ → Lies_drain_inbound</td><td class="num">24</td></tr>
+      <tr><td class="num">44</td><td class="m">Atlas_pass → Atlas_map_one</td><td class="num">1</td></tr>
+      <tr><td class="num">14</td><td class="m">∅ → Atlas_cache_put</td><td class="num">4</td></tr>
+    </tbody></table></div>
+</div>
+<div class="two" style="margin-top:.9rem">
+  <div>
+    <div class="eyebrow" style="margin-bottom:.3rem">the Book's own shape, read back as particles</div>
+<pre><code>Method:AtlasStaple_drive,n:11,ms:4,async:11
+  Flow,of:AtlasStaple_witness,n:11
+  Flow,of:AtlasStaple_seed,n:1    Flow,of:AtlasStaple_bogus,n:1
+  Flow,of:AtlasStaple_stale,n:1   Flow,of:AtlasStaple_drift,n:1
+  Flow,of:AtlasStaple_warm,n:1
+Method:Atlas_pass,n:10,ms:247,async:10
+  Flow,of:Atlas_walk,n:1          Flow,of:Atlas_cache_adopt,n:2
+  Flow,of:Atlas_report,n:6        Flow,of:Atlas_map_one,n:1,ms:44
+Method:_collect_line,n:36
+  Flow,of:_collect_line,n:11      <span class="dim">← recursion, seen</span></code></pre>
+  </div>
+  <div>
+    <div class="eyebrow" style="margin-bottom:.3rem">what is hanging — the open set</div>
+<pre><code>hangs: 4 open frame(s), oldest first
+  Lies_drain_inbound        ← ∅
+  Peeroleum_deliver         ← Lies_drain_inbound
+  Peeroleum_deliver_do      ← Peeroleum_deliver
+  Lies_runner_ask_recv      ← Peeroleum_deliver_do
+<span class="dim">the four are the ask being answered — the tap watching
+itself be read; the film shows all four close ~1ms later</span></code></pre>
+    <p style="font-size:.86rem;margin:.6rem 0 0">Three readings: <b>Creduler_ensure</b> re‑reads every spine ghost's version twice per ready tick, for a swap boundary a flag would catch. <b>∅ dominates by time</b> because every belief‑loop continuation is a resumed async body — attribution past an <code>await</code> needs a frame id threaded through dispatch, not a smarter wrapper. <b>The Book spends 3.8 s polling</b> — the honest price of <code>expecting</code> over a loop the run does not pump.</p>
+  </div>
+</div>
+
+<h2><span class="n">§3</span>The join — built the same night, and its first run accuses Atlas</h2>
+<p><code>runner_ask electrode join</code> reads Atlas's <code>call,via</code> rows and the tap's tally over the universe the tap can see (the ghost bag). One AtlasStaple run, Atlas at 711 docs / 5,458 defs:</p>
+<div class="strip" style="margin-bottom:1rem">
+  <div class="stat"><b>120</b><span>methods ran as callers</span></div>
+  <div class="stat"><b>53.3 %</b><span>declared call pairs that ran — 202 of 379</span></div>
+  <div class="stat"><b>177</b><span>declared, never ran — path coverage per Book, never measured before</span></div>
+  <div class="stat"><b>60</b><span>measured, not declared — closures, dispatch… and one Atlas gap</span></div>
+</div>
+<div class="two">
+  <div>
+    <div class="eyebrow" style="margin-bottom:.3rem">declared but never ran (via ↛ callee)</div>
+<pre><code>Peeroleum_deliver_do   ↛ Repli_xfer_get · Peeroleum_book_unemit
+                         Peeroleum_rollup_faulty · Peeroleum_send … <span class="dim">(11)</span>
+Lies_runner_ask_recv   ↛ Lies_audio_probe · Lies_ghost_set · minisnap … <span class="dim">(8)</span>
+Lies_become_book_drive ↛ Lies_book_refuse · Lies_secure_audio … <span class="dim">(8)</span>
+Auto                   ↛ autovivify_Library · auto_reset_story · Cred_spool … <span class="dim">(10)</span>
+Story                  ↛ decode_toc_snap · The_frontier · entropy_forgive … <span class="dim">(12)</span>
+<span class="dim">= the branches this Book did not take: the transport's other frame
+  kinds, the music legs, the record/accept paths of a check‑mode run</span></code></pre>
+  </div>
+  <div>
+    <div class="eyebrow" style="margin-bottom:.3rem">measured but not declared</div>
+<pre><code><span class="hot">207  Lies_role → Lies_inside_story</span>      <span class="bad">← ATLAS GAP</span>
+ 34  Lies_is_runner → Lies_role
+ 32  story_harvest_sworn → story_assertioning  <span class="bad">← same gap</span>
+ 21  Peeroleum_deliver_do → Lies_heard  <span class="ok">← a closure, truly dynamic</span>
+
+<span class="dim">the source reads</span> (H as any).Lies_inside_story()
+<span class="dim">and</span> atlas_callers Lies_inside_story <span class="dim">returned []:
+the .svelte/.ts collector missed the cast form</span>
+(H as any).X( / (this as any).X( — <span class="v">158 sites</span>, ~8 % of
+hand‑written call edges, missing since the first census.
+
+<span class="ok">FIXED the same night</span> — compile.ts CALL_RE, ATLAS_MAPPER m12,
+711 docs re‑mapped in ~40 s; emitted .go byte‑identical (CHECK=1).
+same tally re‑joined: declared pairs <span class="v">379 → 444</span>,
+undeclared <span class="v">60 → 24</span> (what remains is closures + by‑name dispatch)</code></pre>
+  </div>
+</div>
+<div class="tblwrap" style="margin-top:1rem"><table>
+  <thead><tr><th>fleet taste — union after</th><th>methods ran</th><th>declared pairs</th><th>ran</th><th>coverage</th><th>never‑ran</th><th>undeclared</th></tr></thead>
+  <tbody>
+    <tr><td class="m">AtlasStaple</td><td class="num">122</td><td class="num">479</td><td class="num">256</td><td class="num">53.4 %</td><td class="num">223</td><td class="num">11</td></tr>
+    <tr><td class="m">+ SwarmSteal</td><td class="num">141</td><td class="num">522</td><td class="num">296</td><td class="num">56.7 %</td><td class="num">226</td><td class="num">11</td></tr>
+    <tr><td class="m">+ SwarmInvite</td><td class="num">184</td><td class="num">715</td><td class="num">403</td><td class="num">56.4 %</td><td class="num">312</td><td class="num">12</td></tr>
+    <tr><td class="m">+ SwarmCohort</td><td class="num hot">192</td><td class="num hot">739</td><td class="num hot">429</td><td class="num hot">58.1 %</td><td class="num hot">310</td><td class="num hot">12</td></tr>
+  </tbody></table></div>
+<p style="margin-top:.6rem;font-size:.88rem">All four green under the tap, caveat 0 each. Coverage climbs slowly because Books share a spine: the never‑ran list is the transport's other frame kinds, the runner's other ops, the refuse/secure legs — a fleet‑wide sweep would say which of them <em>no</em> Book reaches. The sweep also caught <code>Creduler_ensure → Creduler_reswap</code> ×48 at 7.6 s: the hot‑swap poll HEAD‑fetches all 36 spine <code>.go</code>s every 2 s — the same one‑flag gate as §0 item 3 quiets both.</p>
+<p style="margin-top:.8rem">Also new: <code>ghost_load Ghost/L/X.g --swap</code> — a recompiled L ghost now takes on a live tab with no reload (the spine's reswap dance for one gen). Proven twice tonight; it is also the sabotage road ElectrodeStaple was waiting for.</p>
+
+<h3 style="font-family:var(--mono);font-size:.95rem;color:var(--ink-strong);margin:1.6rem 0 .6rem">How to read a join row</h3>
+<div class="tblwrap"><table>
+  <thead><tr><th>Atlas says</th><th>Electrode says</th><th>reading</th></tr></thead>
+  <tbody>
+    <tr><td class="m">call,method:X,via:Y</td><td class="m">Method:Y / Flow,of:X</td><td>a declared call that ran — the normal case</td></tr>
+    <tr><td class="m">exists</td><td class="m bad">absent after a full sweep</td><td><b>never exercised</b> — dead branch or untested path</td></tr>
+    <tr><td class="m bad">absent</td><td class="m">exists</td><td><b>dispatch the static walk cannot follow</b> — <code>do_fn_for</code> by <code>w.sc.w</code>, elvisto by string, a <code>.svelte</code> eatfunc; the 6.5 % Atlas already leaves unresolved</td></tr>
+    <tr><td class="m">def, no call anywhere</td><td class="m bad">Method absent</td><td>the orphan — now with a second witness</td></tr>
+  </tbody></table></div>
+<p style="margin-top:.8rem">The static border (643 cross‑domain calls; 16 methods carrying 45 %) was a floor because it could not follow dispatch. The measured picture is the ceiling. The <code>TheA_</code> layers want to be cut between them.</p>
+
+<h2><span class="n">§4</span>Status — what is true right now</h2>
+<div class="status">
+  <div class="st warn"><b>Electrode.g</b> built, proven, and <b>parked — stays off</b>. Next contact is through Atlas (the join, area switches), not more tracing machinery</div>
+  <div class="st wait"><b>Area switches</b> want provenance the ghost bag lacks — but Atlas knows which file every method is defined in, so "arm only the transport" is a query, not new bookkeeping</div>
+  <div class="st wait"><b>Armed overhead unmeasured</b> — Books run green armed, but no wall‑clock comparison exists. ~20 minutes, and it gates "leave it on all session"</div>
+  <div class="st ok"><b>ElectrodeStaple</b> recorded 6/6, 10 sworn; contract installed with unique slugs; check‑mode ×2 green — declared 10 / sworn 10 / gaps 0, caveat 0</div>
+  <div class="st ok"><b>AtlasStaple</b> green 6/6 armed and unarmed, caveat 0</div>
+  <div class="st ok"><b>SwarmSteal</b> confirmed 7/7 — the wedge was a duplicate Assertion slug, now a recorded trap</div>
+  <div class="st ok"><b>ElectrodeStaple sabotage‑proven</b> via <code>--swap</code>, no reload: broken hang‑list → <code>phase:failed</code> with exactly the two "closes" gaps named; revert → green 10/10</div>
+  <div class="st ok"><b>Atlas collector fixed</b> (<code>m12</code>/<code>m13</code>): cast and optional call forms now counted; 711 docs re‑mapped; emitted <code>.go</code> byte‑identical</div>
+  <div class="st warn"><b>Creduler_ensure gate</b> measured, not applied — live spine, owner's call</div>
+  <div class="st wait"><b>Reload trap</b> — a tab reload drops every L ghost; every L Book runs hollow until <code>ghost_load</code> again (memory + Seen_split updated)</div>
+  <div class="st warn"><b>Gen‑write reload — measured, and my written cause was wrong.</b> A LocalGen write of <code>Tribunal.go</code> left the runner standing: no reload, no Vite event, one <code>👻 reswap</code>. What reloaded tabs on 09‑06/07 is still open; do not add an HMR accept to the <code>.go</code> template on the old paragraph's strength (corrected in Story_hygiene §0)</div>
+</div>
+
+<footer>
+  Docs: <code>spec/Wordland_todo.md</code> (this, in full) · <code>spec/Electrode_todo.md</code> · <code>spec/Atheory_todo.md</code> · <code>spec/Stemdex_todo.md</code> §0 (Atlas).
+  Verify: <code>ghost_load Ghost/L/Electrode.g --stand=Electrode</code> → <code>electrode arm</code> → <code>run &lt;Book&gt;</code> → <code>electrode top</code> · <code>hangs</code> · <code>reduce</code> → <code>minisnap 'mundo&gt;A:Electrode&gt;w:Electrode&gt;Graph' --depth=2</code> → <code>electrode disarm</code>.
+</footer>
+</div>

@@ -3,14 +3,16 @@ story:SwarmCohort
   Plan
   Opt
     For
-  TimeSpool
-    TimeTotal:beliefs,avg=0.036
-      sample=0.036,at=1788779858
-    TimeTotal:step,avg=0.006
-      sample=0.006,at=1788779858
   step,dige:0260ba620e595d67
-  step=2,dige:29a1eec9ee417329
-  step=3,dige:afd7ab749e730f1b
-  step=4,dige:7300bf786b6c991e
-  step=5,dige:e02733ba87d74502
-  step=6,dige:58dfe06e6fa3cb24
+  step=2,dige:8ac155e18ccea62d
+    Assertion:the-roster-knows-vessa,sentence:the roster knows vessA and vessB as our own tabs — a stranger is no sibling
+  step=3,dige:a5efa0844b8180e1
+    Assertion:a-sibling-claiming-the,sentence:a sibling claiming the name is family — note_theft answers false and raises nothing
+    Assertion:an-unknown-claimant-is,sentence:an unknown claimant is a theft — note_theft answers true and Identity Stolen rises for evil99
+  step=4,dige:76ffd0bc97042e84
+    Assertion:nextsuffix-jumps-past-the,sentence:next_suffix jumps past the bare name and the held tabs to the first free berth at prepub_2
+  step=5,dige:f193933956e224f0
+    Assertion:a-scanned-token-vivifies,sentence:a scanned token vivifies an Invite particle standing at state arrived with its offer legs on it
+    Assertion:noting-the-same-token,sentence:noting the same token twice is idempotent — one Invite particle stands not two
+  step=6,dige:0e16b3b54f5c2024
+    Assertion:a-re-note-never-resets,sentence:a re-note never resets a walked state — the Invite stays redeeming after the token knocks again

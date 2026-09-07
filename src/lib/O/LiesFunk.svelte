@@ -2566,6 +2566,30 @@ await M.eatfunc({
                     const path = String(a.path ?? '')
                     if (!/^Ghost\/[A-Za-z]+\/[A-Za-z_]+\.g$/.test(path)) { ok = false; result = { error: `ghost_load: not a Ghost/**/*.g path: '${path}'` } }
                     else {
+                        // --swap (2026-09-08): the gen is ALREADY enrolled on this tab (an L ghost that was
+                        //  just RECOMPILED).  Lies_ghost_set early-returns on an enrolled gen and import() is
+                        //   idempotent per URL, so without this a recompiled L ghost only takes after a tab
+                        //    reload — which also drops every runtime-minted A: on Mundo.  This is
+                        //     Creduler_reswap's dance for ONE non-spine gen: HEAD the .go for its ETag, re-
+                        //      import under a cache-busting ?swap= query, drop + re-enrol so Otro's keyed
+                        //       #each remounts it and its onMount→eatfunc lays the fresh methods on every
+                        //        House.  A run in flight is NOT guarded here (the CLI is the operator; the
+                        //         spine's reswap keeps its own safe-seam gate) — don't swap mid-Book.
+                        let swapped: string | null = null
+                        if (a.swap) {
+                            const gen = H.Lies_gen_path(path)
+                            const uis = H.oai_enroll(H, { watched: 'UIs' })
+                            if (gen && uis.oa({ UI: 'Pantheate-include', gen_path: gen })) {
+                                let etag = String(Date.now())
+                                try { const r = await fetch(`/src/lib/${gen}`, { method: 'HEAD', cache: 'no-store' }); etag = r.headers.get('etag') ?? etag } catch {}
+                                const module = await import(/* @vite-ignore */ `../../lib/${gen}?swap=${encodeURIComponent(etag)}`)
+                                if (module?.default) {
+                                    for (const old of uis.o({ UI: 'Pantheate-include', gen_path: gen }) as TheC[]) uis.drop(old)
+                                    uis.i({ UI: 'Pantheate-include', gen_path: gen, swap: etag, component: module.default })
+                                    swapped = etag
+                                }
+                            }
+                        }
                         await H.Lies_ghost_set(path)
                         let stood: string | undefined
                         if (a.stand) {
@@ -2585,7 +2609,7 @@ await M.eatfunc({
                             stood = name
                         }
                         H.i_elvisto(w, 'think')
-                        result = { loaded: path, gen: H.Lies_gen_path(path), stood: stood ?? null }
+                        result = { loaded: path, gen: H.Lies_gen_path(path), stood: stood ?? null, swapped }
                     }
                 } else if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
                     // The reverse lookup owed since the Atlas census began (Stemdex_todo.md §0):
@@ -2619,6 +2643,27 @@ await M.eatfunc({
                             result = { fresh, census, ...(H as any).Atlas_lint(atlas) }
                             if (a.sees && nav) (result as any).unproven = await (H as any).Atlas_unproven(atlas, nav)
                         }
+                    }
+                } else if (op === 'electrode') {
+                    // Electrode (Ghost/L/Electrode.g): both ends of every ghost call, kept as marks on
+                    //  top_House().c.electrode and REDUCED to particles under w:Electrode/%Graph,dontSnap.
+                    //   Needs A:Electrode/w:Electrode standing (ghost_load Ghost/L/Electrode.g --stand=Electrode).
+                    //   verbs: top (default) | arm | disarm | reset | reduce | hangs [--older=ms] | film [--k=N]
+                    //   Runner-only in the CLI's op tables: arming coats every ghost method on the tab.
+                    const a = ask as any
+                    const ew = H.top_House().o({ A: 'Electrode' })[0]?.o({ w: 'Electrode' })[0]
+                    if (!ew) { ok = false; result = { error: 'no A:Electrode standing — ghost_load Ghost/L/Electrode.g --stand=Electrode first' } }
+                    else {
+                        const E = H as any
+                        const verb = String(a.verb ?? 'top')
+                        if (verb === 'arm')          result = { coated: E.Electrode_arm(ew), ...E.Electrode_top(ew, 0) }
+                        else if (verb === 'disarm')  result = { uncoated: E.Electrode_disarm(ew) }
+                        else if (verb === 'reset')   result = { reset: E.Electrode_reset(ew) }
+                        else if (verb === 'reduce')  result = E.Electrode_reduce(ew)
+                        else if (verb === 'hangs')   result = { hangs: E.Electrode_hangs(ew, Number(a.older ?? 0)) }
+                        else if (verb === 'film')    result = { film: E.Electrode_film(ew, Number(a.k ?? 60)) }
+                        else if (verb === 'join')    { result = E.Electrode_join(ew, Number(a.k ?? 40)); if (result?.error) ok = false }
+                        else                         result = E.Electrode_top(ew, Number(a.k ?? 20))
                     }
                 } else if (op === 'minisnap') {
                     // TARGETED read of a pointer path (read-only; safe on a humdinger).  See H.minisnap above.

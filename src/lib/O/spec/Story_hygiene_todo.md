@@ -29,6 +29,43 @@ So: an **app declares its schema** — its mixed language: the mainkeys it mints
        declaration (a `%Schema` under the app's world? the Styles shelf grown meanings?), and one app —
         SoundPooling — declaring it first, since its vocabulary is freshest and its tests still speak tokens.
 
+### ⚠ TODO (2026-09-08, the owner: *"every gen write reloaded every tab — yeah that sucked, lets fix that"*)
+
+Every `src/lib/gen/**.go` write full-reloads EVERY tab on :9091 — observed all day 2026-09-06/07: a
+ ghost compile in one session wiped the other session's standing `A:Atlas`, interrupted in-flight Book
+  runs, and reset console rings mid-diagnosis.
+
+**⚠ CORRECTED 2026-09-08 — the cause written here the day before was WRONG, and the runner does NOT
+ reload on a gen write.**  Measured: a LocalGen rewrite of `gen/N/Tribunal.go` (a spine ghost) with the
+  runner tab up → 20s later the tab's runtime-minted `A:Electrode` was still standing (a reload recreates
+   Mundo and would have dropped it), `ping` unchanged, and the console showed exactly two lines —
+    `👻 reswap gen/N/Tribunal.go @ W/"34251-…"` and `👻 Creduler reswap: 1 ghost(s) hot-swapped (no
+     reload)` — and NO `[vite]` line at all.  So: a `.go` imported through `Lies_ghost_set`'s
+      `@vite-ignore` dynamic import is not in Vite's module graph, Vite never hears about it, and the
+       runner already has the right mechanism: `Creduler_reswap` (`LiesLies.svelte:1073`) HEAD-polls
+        each spine `.go`'s ETag every 2s at a safe seam (no run in flight) and re-imports + re-mounts on
+         change.  (Earlier the same night a `.go` DID show `[vite] hot updated: /src/lib/gen/S/Swarm.go`
+          followed by a reswap — a hot update, still no reload — because that one is statically imported
+           somewhere, so it IS in the graph; the svelte plugin self-accepts components.)
+ What the 09-06/07 reloads actually were is therefore still OPEN: candidates are a `.svelte`/`.ts`
+  module edit (`LiesFunk.svelte` edits tonight hot-swapped; so did an edit to `lang/compile.ts` — the
+   runner's runtime-minted `A:Electrode` and its tally survived it — so even a `.ts` under `O/lang` is
+    absorbed by a self-accepting component above it; `Housing.svelte.ts` is the one that plausibly
+     would not), `svelte-kit sync` regenerating `.svelte-kit/` under the server, or the EDITOR tab's own
+    compile path.  Next time it happens: note WHICH tab and what was written, and read that tab's
+     `runner_ask console --tail=40` right after — the first lines after a reload are the boot.  Do not
+      add an `import.meta.hot.accept` to the `.go` template on the strength of the paragraph below; it
+       would be solving a reload the runner does not have.
+ (Kept for the record — the shape written before the measurement:)  A `.go` is Svelte-shaped but is
+  imported dynamically by `Lies_ghost_set`, so the svelte plugin's component HMR does not save it.
+ The fix shape: give the ghost-module boundary an accept.  `ghostsHaunt` is already documented as the
+  merge point *"from a ghost doing onMount|HMR"* — the re-`eatfunc` path exists; it is just never
+   reached because no module accepts the update.  Two cautions: (1) the prototype-migration constraint
+    from `Atheory_todo` — an accepted HMR must `delete` own-props / prototype methods a bundle dropped,
+     since `Object.assign` only adds; (2) `Housing.svelte.ts` itself changing SHOULD still full-reload
+      (it is the spine; a stale spine under fresh bundles is the `#private`-field landmine).  So accept
+       at the `.go` boundary only, never at Housing.
+
 ### ⚠ TODO (2026-09-04, the owner: *"please push a TODO somewhere for that nondeterministic runner problem"*)
 
 **A VERIFICATION SWEEP CANNOT CURRENTLY BE TRUSTED, and it fails SILENTLY GREEN.** Measured over a

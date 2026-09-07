@@ -1,0 +1,21 @@
+story:ElectrodeStaple
+  Styles
+  Plan
+  Opt
+    For
+  step,dige:4a41046f1ce5d1b4
+  step=2,desc:load Ghost/L/Electrode.g on demand — stand A:Electrode beside the run — arm the tap,dige:cd4520418c21ceb3
+    Assertion:the-electrode-ghost-loads,sentence:the Electrode ghost loads on demand — no manifest edit needed
+    Assertion:arming-coats-every-ghost,sentence:arming coats every ghost method in the bag — the raw function kept underneath
+  step=3,desc:call ping three times — each ping calls pong twice — the reduced picture holds the edge with its count,dige:933c1ebd23d8a63c
+    Assertion:a-method-row-counts,sentence:a Method row counts its calls — ping three times
+    Assertion:a-flow-under-the,sentence:a Flow under the caller carries the count — ping to pong six times
+    Assertion:the-caller-is-the,sentence:the caller is the innermost synchronous frame — edges to ping
+  step=4,desc:an async method awaits — its frame stays open while it waits and closes when it settles — a throw closes too,dige:95a375fe6ffa3161
+    Assertion:an-async-frame-stays,sentence:an async frame stays open across its await — the hang list shows it
+    Assertion:the-open-frame-closes,sentence:the open frame closes when its promise settles
+    Assertion:a-method-that-throws,sentence:a method that throws still closes its frame — nothing hangs on an error
+  step=5,desc:cap the ring at fifty and call two hundred times — the ring stays bounded and the drops are counted,dige:ecf3cd547344f3e9
+    Assertion:two-hundred-calls-leave,sentence:two hundred calls leave a bounded ring — never a particle per call
+  step=6,desc:disarm — every coated method is its raw function again and a call leaves no mark,dige:e9a4dc0955d62c47
+    Assertion:disarming-restores-the-raw,sentence:disarming restores the raw functions and a call leaves no mark

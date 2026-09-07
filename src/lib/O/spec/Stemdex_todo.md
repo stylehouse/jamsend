@@ -58,6 +58,22 @@ The index knows NODES (defs, props, stems) and no EDGES.  Every navigation quest
    the flap mechanism (the lens "generalissimo" placement router, parked for want of proven need) and
     the AI-overlay idea (*"scribbles"* — an annotation/marginalia layer).  Read those first.
 
+### 2026-09-08 — `ATLAS_MAPPER m12`: the cast-form call gap, found by the measured twin
+
+Electrode (`Ghost/L/Electrode.g`, the runtime call tap — read with Atlas in `Wordland_todo.md`) joined
+ its measured caller→callee tally against Atlas's `call,via` rows and showed `Lies_role → Lies_inside_story`
+  ×207 measured with NO Atlas caller.  The source reads `(H as any).Lies_inside_story()` — and the
+   `.svelte`/`.ts` branch gets ALL its call words from the per-line `CALL_RE` sweep in `_collect_line`
+    (`compile.ts:532`'s own comment), whose `(?:this|H)\.` never matched a cast receiver.  158 such sites
+     in `src/lib/O` beside 1,901 plain ones: ~8% of hand-written call edges were missing from every census
+      since m1.  Fixed in `CALL_RE` and `CALL_GAP_RE` (`(?:this|H|\((?:this|H) as \w+\))\.`), mapper bumped,
+       711 docs re-mapped in ~40s; `atlas_callers Lies_inside_story` now answers.  Emitted `.go` unchanged
+        (`CHECK=1` LocalGen, two ghosts byte-identical).  `m13`, minutes later: the optional forms `H?.X(`
+         and `(H as any).X?.(…)` (the join's next row).  Still NOT matched, on purpose: other House aliases
+          as receivers (`top.X(`, `M.X(`, `SH.X(` beyond its accidental `H.` substring) — a design question
+           for whoever widens the receiver set.  The reverse-direction lesson for this doc: the census's
+            blind spots are cheapest to find by comparing it with what actually ran.
+
 ### LANDED 2026-09-05 (later the same day): `Ghost/L/Atlas.g` — every doc's `%Map`, kept
 
 The design above was superseded before it was built, by the owner's four-word correction *"that

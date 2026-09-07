@@ -96,7 +96,15 @@ IMPORT()
     //      that: it now excludes a history/|shelved/ target from missing/beyond_eof, since Atlas
     //       never rosters those shelves and so cannot confirm or deny a link into one — CLAUDE.md's
     //        own corollary, "a referenced spec/X.md that isn't there is almost certainly history/X.md".)
-    const ATLAS_MAPPER = 'm11'
+    //     m12 (2026-09-08): CALL_RE / CALL_GAP_RE now match the cast form `(H as any).X(` /
+    //      `(this as House).X(`.  Found by Electrode's join (Wordland_todo §4c): `Lies_role →
+    //       Lies_inside_story` ×207 measured, zero declared, the source reading
+    //        `(H as any).Lies_inside_story()`.  158 such sites in src/lib/O — ~8% of hand-written call
+    //         edges had been missing from every census.  Bumped so every cached row re-maps.
+    //     m13 (2026-09-08, same night): the OPTIONAL forms too — `H?.X(` and `(H as any).X?.(…)` — the
+    //      join's next undeclared row (`Lies_cluster_idento → Clustation_active_identity`, source
+    //       `(H as any).Clustation_active_identity?.(H)`).  Five sites; cheap; sound.
+    const ATLAS_MAPPER = 'm13'
     // ATLAS_BUDGET — docs mapped per pass.  A %Map build is a real parse (the whole-doc tsstho tree
     //  walk on .svelte), so this is the Stemdex's "polite pass" idea: converge over passes, never thump.
     const ATLAS_BUDGET = 6

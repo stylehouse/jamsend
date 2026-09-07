@@ -89,6 +89,21 @@ Before anyone starts, the numbers, so the decision rests on facts rather than dr
 So it is **one mint, one un-mint, one reader, no fixtures** — the risk sits entirely in live behaviour,
  which means it wants the live walk plus `ServeResolve.spec` extended, *not* a fixture re-swear.
 
+**The decision it leaves (2026-09-08) — and why "just do it" is the wrong instinct.** A heard-Mag `%Card`
+ is keyed `(id, pub)`, lives under `Mag/Cloud`, and is a durable ledger row. A describe Card would be keyed
+  by keep-id, live under a `RummageLib`, and be scratch that gets swept. Same mainkey, different container,
+   different key set, different lifetime. **That is uncomfortably close to the sin being fixed** — curing
+    two-shapes-one-mainkey on `%Record` and risking it on `%Card`. So it is a ruling, not a refactor:
+  1. **One `%Card`, superset of optional fields.** Cheapest. Accepts that CONTEXT keys the prior, and makes
+      `Cello_synthesis §R.8` load-bearing rather than theoretical.
+  2. **A distinct mainkey for the scratch catalog.** The describe's entries are genuinely a different kind
+      of thing — swept, keep-id'd, never a ledger. Costs a word. Matches the owner's precedent (`%Stream` →
+       `%Fill`, renamed at once when two shapes collided).
+  3. **Keep `%Record`, make `total` mandatory at mint.** Smallest diff; the describe stamps `total:0` and
+      the encoder brands it. But identity-without-bytes keeps wearing the holding's mainkey — the thing the
+       owner disliked.
+ Lean: 2. Awaiting the metaphysics agent's synthesis (brief Q2) before anyone touches the mint.
+
 ⚠ Two things the census does NOT make safe:
 - `Repli.g:534` passes `{husk: 1}` as a **fragment option** meaning "cross heads, not bytes". That is a
    different word wearing the same spelling. Rename it in the same pass or the ambiguity survives the fix.

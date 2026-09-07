@@ -209,46 +209,46 @@ AtlasStaple_witness(w):
     if (!aw) return
 
     if (typeof this.Atlas === 'function') {
-        i %see:'the Atlas ghost loads on demand — no CREDULER_GHOSTS manifest edit needed'
+        this.story_swear(w, 'the Atlas ghost loads on demand — no CREDULER_GHOSTS manifest edit needed')
     }
 
     let doc = aw.o({ Doc: 'Ghost/L/test_corpus/Sample.g' })[0]
     if (doc && doc.oa({ Map: 1 })) {
-        i %see:'Atlas maps a real doc in its fixture corpus'
+        this.story_swear(w, 'Atlas maps a real doc in its fixture corpus')
     }
 
     let names = doc?.o({ Map: 1 })[0]?.o({ def: 1 }).map(d => d.sc.method) ?? []
     if (names.includes('Sample_alpha') && names.includes('Sample_beta') && names.includes('Sample_gamma')) {
-        i %see:'the Map lists every def the fixture actually declares'
+        this.story_swear(w, 'the Map lists every def the fixture actually declares')
     }
 
     let calls = doc?.o({ Map: 1 })[0]?.o({ call: 1 }) ?? []
     let via_ok = calls.length > 0 && calls.every(c => !!c.sc.via)
     if (via_ok) {
-        i %see:'every call in the fixture carries its enclosing def as via'
+        this.story_swear(w, 'every call in the fixture carries its enclosing def as via')
     }
 
     let bogus = aw.o({ Doc: 'Ghost/L/test_corpus/NoSuchFile.g' })[0]
     // error AND the mapper stamp: the stamp is what stops the pass retrying it every tick (the
     //  no-spin half of the claim); the exact error text is the nav's business, not this Book's
     if (bogus && bogus.sc.error && bogus.sc.by) {
-        i %see:'an unreadable path records an error and does not spin forever'
+        this.story_swear(w, 'an unreadable path records an error and does not spin forever')
     }
 
     if (this.AtlasStaple_restale_ready(w)) {
-        i %see:'a re-map under a fresh mapper version replaces the Map — never piles a second one'
+        this.story_swear(w, 'a re-map under a fresh mapper version replaces the Map — never piles a second one')
     }
 
     if (w.c.drift_found) {
-        i %see:'a file written after the roster is found and mapped by the next refresh'
+        this.story_swear(w, 'a file written after the roster is found and mapped by the next refresh')
     }
     if (w.c.drift_changed) {
-        i %see:'a file that changed under a settled Doc is re-mapped by the next refresh'
+        this.story_swear(w, 'a file that changed under a settled Doc is re-mapped by the next refresh')
     }
     if (w.c.drift_gone) {
-        i %see:'a file deleted from the corpus drops out of the census on the next refresh'
+        this.story_swear(w, 'a file deleted from the corpus drops out of the census on the next refresh')
     }
 
     if (this.AtlasStaple_warm_ready(w)) {
-        i %see:'a re-stood Atlas warms its Map from the cache — no read and no parse'
+        this.story_swear(w, 'a re-stood Atlas warms its Map from the cache — no read and no parse')
     }

@@ -694,6 +694,24 @@ THE CREW  = the bodies that CARRY S.  Exactly one WIELDS it at a time (Captain =
               Cross-ref: `Social_demarcation_todo.md` §8.10, §8.2 (a Crew's set of doors — a rendezvous
                is how a door is first learned).
 
+ **The anatomy, so the design starts from the code (2026-09-08).** A token is `prepub * serial * n *
+  presig` (`Swarm_token_parse`). Three of those are already rendezvous facts — `prepub` is *find me*,
+   `serial` + `presig` are *this is a real, single-use claim*. The fourth, `n`, parses to `{to, params}`
+    and `to` is the feature offered (Music | MyCave | MyCaptain). **The weld is exactly one field.** So
+     the parse side is cheap: `to` already comes from its own `Swarm_token_n_parse`, and making it
+      optional is small. The ceremony and the face are the real work. Three things to settle first:
+  1. **Consent must not become a third ask.** §6 above is explicit — opening the link + "understand" IS the
+      consent. If direction moves to after the rendezvous, the consent moment moves with it: the proposal
+       page has to *be* the consent, not add a step in front of it.
+  2. **The single-use property becomes MORE load-bearing.** Today `to` bounds what a stolen scan can turn
+      into. Strip it and the `serial`/`presig` spend ledger is the only thing between a photographed QR and
+       an open door. It is proven (SwarmInvite beat 5, `rebuff:rejected_spent`, green 2026-09-07) — keep it
+        that way, and keep the Book that proves it.
+  3. **This is where mutual consent + SAS come back** (`Trust_todo`: Ferry lost what Adopt had). A
+      rendezvous-then-propose shape has a natural seat for a short authentication string, because both
+       parties are present and talking *before* anything is granted. Today there is no such moment — the
+        grant is decided before the second party exists.
+
 ---
 
 ## 7. BOOKS + GATES

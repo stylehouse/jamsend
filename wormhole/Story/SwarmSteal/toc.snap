@@ -3,34 +3,16 @@ story:SwarmSteal
   Plan
   Opt
     For
-  TimeSpool
-    TimeTotal:beliefs,avg=0.022
-      sample=0.021,at=1785095226
-      sample=0.027,at=1785097140
-      sample=0.018,at=1788299213
-      sample=0.018,at=1788299216
-      sample=0.018,at=1788299217
-      sample=0.018,at=1788299218
-      sample=0.018,at=1788299218
-      sample=0.018,at=1788299219
-      sample=0.014,at=1788299586
-      sample=0.045,at=1788779851
-    TimeTotal:step,avg=0.003
-      sample=0.003,at=1785095226
-      sample=0.004,at=1785097140
-      sample=0.003,at=1788299213
-      sample=0.003,at=1788299216
-      sample=0.003,at=1788299217
-      sample=0.003,at=1788299218
-      sample=0.003,at=1788299218
-      sample=0.003,at=1788299219
-      sample=0.002,at=1788299586
-      sample=0.007,at=1788779851
   step,dige:e4469f33b30ab529
-  step=2,dige:4899cfcb4b86d9d6
-  step=3,dige:db28ab9f87b2e0e6
-  step=4,dige:5874f941f634d371
-    Assertion:theft-contested,sentence:a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen
-  step=5,dige:204407b4f262d5b0
-  step=6,dige:34a941ac1ab65e44
-    Assertion:identity-not-address,sentence:identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2
+  step=2,dige:a60cd0a23681b096
+    Assertion:alice-stands-alone,sentence:Alice stands alone — her key-derived name is her one address
+  step=3,dige:6570892364181b52
+    Assertion:sibling-tabs-of-one,sentence:sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes
+  step=4,dige:a87d21feac5c92b3
+    Assertion:a-foreign-claimant-once,sentence:a foreign claimant once contested the name of Alice — a copy that was not one of our tabs raised Identity Stolen
+    Assertion:a-claimant-that-is,sentence:a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name
+  step=5,dige:30cc7a6add8ca6f7
+    Assertion:steal-back-jumps-past,sentence:Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm
+  step=6,dige:b23c2bf51708fd07
+    Assertion:identity-is-not-address,sentence:identity is not address — the key-derived name of Alice never changed while the address moved to prepub_2
+    Assertion:key-never-moved,sentence:identity is not address — the key never moved — a Pier still verifies her at prepub_2
