@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '32796fb09bc1727f~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'caeaad45a636c14a~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -853,14 +853,25 @@ Repli_find_record(w, id, lib) {
     //    Additive + safe: no rummage libs (every Book, the idle app) ⇒ byte-identical to the plain lookup.
     //     The libs are time-swept (Heist_keep_beat) so a served-original id can shadow the radio opus for
     //      at most the sweep window — bounded, and the seed the asker is streaming is excluded chooser-side.
+    // ONE ID, TWO LIBS (2026-09-07, eed↔S live: repli_want ×35/10s unanswered, no miss, no park, serve.live
+    //  empty).  The folder DESCRIBE lib holds the seed track as a chunkless husk under its keep-id, and a
+    //   content-id want materialised the SAME keep-id into a fresh lib of its own (Heist_materialise_one's
+    //    stocked branch, since fixed to land on the husk) — so the first-registered lib answered with the
+    //     husk (total 0) and Repli_serve_chunks returned without a word while 18 full chunks sat one lib
+    //      over.  Prefer a hit that carries a PROMISE (total > 0 — a released body still re-materialises
+    //       through the park); fall back to the first bare husk only when no lib holds better.
+    let husk = null
     for (const rl of (w.c.rummage_libs || [])) {
         for (const hk of this.Ra_holding_keys()) {
             let q = { id: id }
             q[hk] = 1
             let hit = this.Ra_rec_find(rl, q)
-            if (hit) return hit
+            if (!hit) continue
+            if (+(hit.sc.total || 0) > 0) return hit
+            if (!husk) husk = hit
         }
     }
+    if (husk) return husk
     let l = lib || w.c.repli_src
     if (!l) return null
     // Ra_rec_find walks the Mag model (paged self stock) AND the flat shape (mirrors, Book srcs).
@@ -1112,8 +1123,13 @@ async Repli_serve_chunks(w, pier, h, rec) {
     let from = +(h.from_idx || 0)
     let PAGE = +(w.c.repli_page || 2)
     let total = +(rec.sc.total || 0)
+    // NEITHER SERVABLE NOR PARKABLE used to return in silence — the exact shape Repli_serve_miss's
+    //  comment calls SILENT DEATH, reached live 2026-09-07 through a chunkless describe husk (total 0)
+    //   standing in for a materialised twin.  Name it, on the same 5s-per-id throttle (log only, no
+    //    tell: the asker's materialise ask is the repair, not a re-census).
     if (!this.Repli_page_ready(rec, from, PAGE)) {
-        if (from < total) await this.Repli_park_want(w, pier, h)
+        if (from < total) { await this.Repli_park_want(w, pier, h); return }
+        this.Repli_serve_miss(w, h, total > 0 ? ('want past the end (' + from + ' >= total ' + total + ')') : 'record is a chunkless husk (total 0) — not materialised')
         return
     }
     let end = Math.min(from + PAGE, total)

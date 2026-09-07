@@ -1434,11 +1434,23 @@ async Heist_materialise_one(w, nav, me, ref, lofi, hintPath):
         base = card.base || ''
         path = card.path
         let id = this.Heist_keep_id(me, base, path)
-        let lib = w.oai({ RummageLib: id, dontSnap: 1 })
-        lib.c.up = w
-        lib.c.base = base
-        this.Heist_register_serve_lib(w, lib)
-        rec = this.Ra_rec_home(lib, id)
+        // THE SEED IS ITS OWN FOLDER SIBLING (2026-09-07, eed↔S live).  Keep-ids are deterministic, so
+        //  when the folder DESCRIBE has already run, its lib holds THIS very id as a chunkless husk — and
+        //   minting a second %Record under the same id in a fresh lib left two shapes under one id, with
+        //    Repli_find_record answering whichever lib registered first (the husk: every want returned in
+        //     silence while 18 full chunks sat one lib over).  Materialise ONTO the standing husk when
+        //      there is one; a fresh lib only when there is not.
+        for (const rl of (w.c.rummage_libs || [])) {
+            let twin = this.Ra_rec_find(rl, { Record: 1, id: id })
+            if (twin) { rec = twin; break }
+        }
+        if (!rec) {
+            let lib = w.oai({ RummageLib: id, dontSnap: 1 })
+            lib.c.up = w
+            lib.c.base = base
+            this.Heist_register_serve_lib(w, lib)
+            rec = this.Ra_rec_home(lib, id)
+        }
         rec.sc.path = path
         rec.sc.re = String(ref)
         let pm = this.Crate_meta_from_path(path)
@@ -3275,20 +3287,13 @@ Heist_keep_pool_go(keep, srcmir, seed):
     }
     let cut = this.Heist_keep_solo(keep, sid)
     if (cut < 0) { return 0 }   // the seed's own husk has not landed yet — wait
-    // ASK BY THE ID THE HOLDER CAN ANSWER (2026-09-06, the same live walk, an hour later: the solo pick
-    //  went 'pulling' and was BENCHED 60s at 0/16 -- S's serve.live stayed empty).  The pick's ref is the
-    //   rummage id, which the holder resolves only through its runtime `w.c.rummage_libs`; the daemon had
-    //    been restarted since it described that folder, so the id meant nothing to it and it served nothing
-    //     (the very "keep-id map is runtime-only and a reload wipes it" the re-census heal warns about).
-    //      The SEED is the holder's own Mine id -- the id its verdict said `arrived` to, the id its opus
-    //       stock stands under, resolvable through Repli_find_record's plain lookup with no runtime map at
-    //        all.  And its Mine catalog row (preview, total) is already in our mirror, so `{id: seed}` binds
-    //         the pick to a record with chunks.  A pool wants the rolling copy, and the opus stock IS that
-    //          copy.  So a pool pick asks by the seed; the rummage id stays as `rref` for the record it came from.
-    if (sid !== String(seed)) {
-        let pk = keep.o({ Pick: 1, ref: sid })[0]
-        if (pk) { pk.sc.rref = sid; pk.sc.ref = String(seed); pk.bump() }
-    }
+    // THE PICK KEEPS THE ID IT WAS MINTED UNDER (2026-09-07, reverting the 2026-09-06 "ask by the seed"
+    //  retarget).  A pick whose ref is the SEED binds `{id: seed}` in the mirror — the holder's OPUS stock
+    //   we heard: full, `total` set, and the wrong bytes (the hazard the pull loop spells out at "A BLAGGED
+    //    PICK BINDS BY re") — so the pull chased the radio preview and froze at 0/16.  A wire pick asks by
+    //     its rummage id and a blag pick by content-id-with-re, and the HOLDER answers both (hintPath
+    //      self-certify, the stocked branch); the 2026-09-06 silence was the holder's twin-record bug in
+    //       Heist_materialise_one, now fixed at its source.
     keep.sc.state = 'pulling'
     keep.bump()
     console.log('🏊▶ pooling ' + String(keep.sc.Heist || seed).slice(0, 32) + ' — one track, lofi' + (cut ? ' (' + cut + ' folder sibling(s) left behind — a pool takes the track, not the album)' : ''))

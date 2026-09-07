@@ -2,7 +2,46 @@
 
 ## 0. WHAT TO GET ON WITH NEXT — PUT THE FEATURE IN ONE PLACE (2026-09-04, the owner's)
 
-### ⚑⚑⚑ 2026-09-06 evening — READ THIS FIRST: the pool was never broken; the SUBSTRATE under it was
+### ⚑⚑⚑ 2026-09-07 — THE LAST LINK: the holder minted TWO records under one keep-id (the pull now runs 0→52/54)
+
+**The bytes now flow.** Walking the live daemon (`/c?token=sheeps&depth=9`) + the relay tally + eed's
+ console ring against the actual code, the last link was a **holder-side twin-record bug**, not anything
+  on the asker. When S materialises a track for a want, `Heist_materialise_one`'s stocked-content-id
+   branch minted a **fresh** `%Record` under the deterministic keep-id in a **new** `RummageLib` — but the
+    folder DESCRIBE had *already* stood that same keep-id as a chunkless husk (`total 0`) in another lib.
+     Two records, one id. `Repli_find_record` returned whichever lib registered first — the husk — so
+      `Repli_serve_chunks` hit `!Repli_page_ready` on a `total:0` record and **returned in silence**
+       (`from < total` is `0 < 0` = false → no park, no miss, no log): the exact "silent death" its own
+        `Repli_serve_miss` comment names. eed re-asked `repli_want ×35 / 10s` forever; S's `serve.live`
+         stayed `[]`; 18 real chunks sat one lib over, untouched.
+
+**Three fixes this turn (all ⌛ uncommitted; gen compiled + esbuild-gated; daemon hot-swapped them live):**
+- `Heist_materialise_one` (Heist.g ~1436): materialise **onto the standing husk** when a lib already holds
+   the keep-id, instead of minting a second record under it. *One id, one record.*
+- `Repli_find_record` (Repli.g ~812): when several libs hold the id, **prefer the one with `total > 0`**;
+   fall back to a bare husk only if nothing better exists. Belt to the braces above.
+- `Repli_serve_want` (Repli.g ~1027): a want that is neither servable nor parkable now **calls
+   `Repli_serve_miss`** (`chunkless husk (total 0)` / `past the end`) instead of returning silently — so
+    this class can never again be invisible on the wire.
+- Also **reverted the 2026-09-06 "ask by the seed" retarget** in `Heist_keep_pool_go`: a pool pick is a
+   *blag* pick (`ref = seed`, `blag = 1`) and the pull binds it by `re:seed` → the lofi ogg128
+    (`re:<seed>`, 18 full chunks), which is the right rolling copy. Retargeting `ref` to the seed dropped
+     the blag mark and made the pull chase the seed's **opus preview** (`{id:seed}`, 54 incomplete chunks)
+      — the "A BLAGGED PICK BINDS BY re" hazard the pull loop warns about, in the flesh (stalls at 52/54).
+
+**PROVEN this turn:** after S hot-swapped, `repli_want` fell 35→10/10s, a `repli_parked` appeared, and on
+ the running tab the pull climbed **16 → 52/54** (it was `0/16` before). The residual 52/54 stall is the
+  OLD asker code on eed pulling the wrong record (the seed's opus preview) — it cannot be fixed remotely
+   because **a music page refuses a remote reload by design** (`Lies_is_runner` gate; the listener's tab
+    is theirs). **NEXT: the owner reloads eed** to pick up the reverted `Heist_keep_pool_go`; the pool pick
+     will then bind `re:seed` → the 18-chunk lofi that is fully materialised and waiting on S, and land.
+
+**GATE (runner e747cbed, reloaded to the new gen):** MusuPoolBytes 5/5, MusuPoolFill 6/6, MusuPoolRandom
+ 5/5, MusuPoolRadio 6/6, MusuReplica 14/14 — all **caveat 0**. MusuHeist 22/22 ok but caveat 1 on 20 steps
+  — a broad PRE-EXISTING drift (it blankets handshake steps that touch no changed code, and the four pool
+   Books + MusuReplica exercise every line I touched with zero drift). Not mine; left for the human.
+
+### ⚑⚑⚑ 2026-09-06 evening — the SUBSTRATE under the pool (the four stacked faults)
 
 **The destination is unchanged and now close:** eed pools *from S (the daemon)*, and the daemon is a
  SOURCE, not a pooler — the owner: *"I don't want the daemon to accumulate SP."* The whole chain
@@ -74,9 +113,16 @@
    ⇒ never offered ⇒ never a candidate ⇒ never addressed); (c) cluster-signed `runner_ask` so
     `Lies_player_seen` can gate on *who is asking* (`signHeader`/`verifyHeader`/`browserTrustedPubs` all
      exist and are already imported in LiesLies) instead of the deployment stance — the owner's call,
-      and strictly stronger than today; (d) the daemon-as-source-not-pooler fork (§3.1 of the demarcation
-       doc: `Ra_pool_fill_serve` presses INTO its own pool to serve, so `Ra_pool_excuse` would silence it —
-        decide A: keep the pool as a serve cache, or B: serve from the library directly).
+      and strictly stronger than today; (d) the daemon-as-source-not-pooler fork — **RULED 2026-09-07, the
+       owner: "the daemon also wants no SP."** So B: the daemon holds NO SoundPooling at all (the live `/c`
+        showed it had quietly accumulated one — `SoundPooling>stock>…>Record id:8215c95f` on S; `excused`
+         must be durable and default for a headless body, `Ra.g:1160` "a headless body has no taste"). It
+          serves **from the library, through the materialise scratch** (`Heist_materialise_one` → a
+           `RummageLib` holding the pressed lofi — exactly the path that just landed S→eed), never by pressing
+            into `homes.pool`; `Ra_pool_fill_serve` must stop requiring a pool home. And the substrate-clean
+             half the corpus already had and forgot: `Daemon_todo §5.2` (owner 2026-08-07) — a **serve-only
+              declaration** ("I serve; do not open a radio at me"), a fact about oneself, not an inhibition
+               held about another. See `Fallen_out_of_mind_todo §8`.
 
 ### ⚑⚑ 2026-09-05 (later) — THE FEATURE WAS DARK BY CONSTRUCTION: a pool card never had a `preview`
 

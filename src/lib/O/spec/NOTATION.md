@@ -68,3 +68,15 @@ In ordinary comment prose (distinct from type names above):
 - `→` is **inline flow** — "leads to", left-to-right on one line: `compile → settle → run`.
 - Don't randomly cap lengths for presentation; a reliable measurement is reported whole
   unless a limit is actually wanted.
+
+## `//` — sideways, through a Seem (owner, 2026-09-07)
+
+`/` descends within one tree (`Theirs/Rummage`, `U/req`). `//` steps **sideways** into another layer of
+ meaning that a Seem is holding up beside the first: a source C** mirrors into the Seem's trace D**, which
+  mirrors into an understandable U** (`i_Seem(…, use_Understandable:1)`; `_Seem_CDUsive` wires `C.c.D`,
+   `D.c.C`, `D.c.U`, `U.c.D`, `C.c.U`). So `C//D` is "this particle's trace", `D//U` is "the space the
+    machine owns beside it", and `D//U/req` is "down from that space to the req living there." The
+     sideways links exist only between corresponding nodes — **U/U parent–child links may not** — so to
+      travel from a U to a child's U you go `U//D/D//U`: sideways to the trace, down the trace, sideways
+       back. The owner: *"it's a join — your C** mirrors into a D** which mirrors a U**… `//` kind of
+        means going sideways through to another layer of meaning that a Seem is holding up to the D**."*

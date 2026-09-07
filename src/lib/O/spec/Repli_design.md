@@ -736,3 +736,17 @@ That is suggestive, not conclusive. **The clean way to settle it** is to revert 
  recompile, and run MusuRaStream. Tried once and ABORTED: `ghost_compile` went half-open mid-batch and left
   gen/ inconsistent (Crate reverted-compiled while Repli/Peeroleum were not). If you attempt it, back the
    files up first, compile ONE ghost at a time, and verify each hash before running anything.
+
+---
+
+## Addendum 2026-09-07 — gap #1 has a proposed shape on the ASK lane (owner)
+
+The twin-record silent-serve bug (SoundPooling_todo §0, 2026-09-07) led back here: the `%Rummage` ask is
+ replicated as a C (right) but its answer lifecycle is a per-beat mirror sweep plus `.c` counters
+  (`answered_epi`, `answers`, `answer_ts`) on a particle we do not own. The owner's proposal: a Seem over
+   the `%Theirs` mirror hosts the lifecycle — `i_Seem(…, use_Understandable:1)` gives every traced foreign
+    ask a `D` and a `U`; the source's own `req:Answer` lives at `D//U/req`; neu/survivor/goner from `o_Seem`
+     are mint / stand (epi drift off `bD`) / stall-then-destroy. That is §4 gap #1 closed on the ask lane,
+      with the req replacing the counters and landing in the snap. Design notes, caveats (topD is `r()`'d
+       per walk; D/** resumes via `resume_X`; Seems are snap-hostile by default) and the full shape:
+        `Fallen_out_of_mind_todo.md §3`. Backpressure_todo §4.2/§7 remains the req's ruling.

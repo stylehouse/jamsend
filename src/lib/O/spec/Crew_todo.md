@@ -677,6 +677,23 @@ THE CREW  = the bodies that CARRY S.  Exactly one WIELDS it at a time (Captain =
    third ask; the joiner's terminal line is "reload — wake up as crew". Owed: Stage-4 fail-closed
     (§0.5) and the %Reach offer so "nobody answered the door" is a named settlement.
 
+**An Invite is a rendezvous, not a direction (owner, 2026-09-07 — owed, the next ceremony shape):**
+ *"if a Cave LinkDevices a Captain (with a MyCave) it becomes that the Captain is inviting the device to
+  its Crew. Often it's easier to take the QR-code scan with a phone, which opens the app with that invite
+   — then we use it only to find the other's address and kick off the ceremony anew. On the 'you got
+    Invited' page we should be able to suddenly pivot to inviting them!"* Today the QR welds two facts at
+     mint: *find me* (the address it carries) and *join me as X* (role + direction). The owner already named
+      what a QR is — `Swarm.g:944`, 2026-08-09: an invite *"is essentially just saying 'come here'"* — a
+       rendezvous. Split them: a scanned Invite yields an **address + a warm door** and nothing more; what
+        follows is a fresh, mutual ceremony in which *either* side proposes the direction (I join your
+         Crew / you join mine / we become friends), and the "you got Invited" page carries the pivot as a
+          first-class verb. This is also where the **mutual consent + SAS** that Ferry lost (Trust_todo)
+           naturally returns — rendezvous-then-propose is the shape that has room for it. Beneath the app
+            by construction: an app never knows which way a QR was pointing. The invite's *kind* (MyCave /
+             MyCaptain — `Swarm.g:7345`) becomes a role question answered at the pivot, not at the mint.
+              Cross-ref: `Social_demarcation_todo.md` §8.10, §8.2 (a Crew's set of doors — a rendezvous
+               is how a door is first learned).
+
 ---
 
 ## 7. BOOKS + GATES
@@ -718,6 +735,9 @@ THE CREW  = the bodies that CARRY S.  Exactly one WIELDS it at a time (Captain =
    (relay binding lifetime); anchor-mint mystery (`Swarm_token_parse` refuses its own `#Iz` mint).
 - Stage 5, once crew proves the shape: `Grant:Music` ceremony gets the same
    one-particle/one-phase-walk/ends-on-a-screen treatment.
+- **Invite-as-rendezvous + the pivot** (§6, owner 2026-09-07): decouple *find me* from *join me as X*;
+   a scanned QR yields address + warm door; either side proposes direction; the "you got Invited" page
+    grows an "invite them instead" verb; mutual consent + SAS return at the propose step. Beneath the app.
 
 ---
 

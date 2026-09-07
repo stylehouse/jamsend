@@ -9,6 +9,26 @@ A NEW Story primitive: a declared, per-run **reset** of the disk working-area a 
 
 ## 0. What to get on with next
 
+### ⚑ TODO (2026-09-07, the owner) — Story's machinery made generally available to the protocol it examines
+
+The owner, reading the "explaining overlay" finds (`Fallen_out_of_mind_todo §5`): *"making Story's
+ machinery generally available to the protocol it's examining… is a natural expectation to level on the
+  Story todo. Whatever I'm going for there fits into a schema that particular apps can define, then it
+   helps present|track the details of that language, which is a mixed language (mainkey, etc type
+    meanings)."* And the picture it serves: *"some device floating around in the background of the Radio
+     UI, which pieces float up from to get on the Radio… stretching a cell over some series of nodes — a
+      lake of somethingness including a set of somethings."*
+
+So: an **app declares its schema** — its mixed language: the mainkeys it mints, the keys that carry meaning,
+ the relations (`of:`, `re:`, `id` joins), and the *situations worth a sentence* (Vyto_spec §9's
+  `%Situation`; Vyto_todo LAW B's "`%see` sentences written BEFORE the code"). Story, Matstyle, Vyto and the
+   overlay then read ONE declaration instead of each guessing: Matstyle already autovivifies a style per
+    mainkey (`The/Styles`); Cello_synthesis §R.2 already wants the prior keyed by mainkey **and reference
+     role**; the `%see` census (`Fallen_out_of_mind_todo §12`) is what that language looks like when spoken.
+      The schema is where "present" and "track" meet: what to draw, and what to swear. Owed: the shape of the
+       declaration (a `%Schema` under the app's world? the Styles shelf grown meanings?), and one app —
+        SoundPooling — declaring it first, since its vocabulary is freshest and its tests still speak tokens.
+
 ### ⚠ TODO (2026-09-04, the owner: *"please push a TODO somewhere for that nondeterministic runner problem"*)
 
 **A VERIFICATION SWEEP CANNOT CURRENTLY BE TRUSTED, and it fails SILENTLY GREEN.** Measured over a

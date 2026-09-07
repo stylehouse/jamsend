@@ -678,3 +678,12 @@ That is exactly `resolve()`'s pairing (`Selection.svelte.ts:306`: `a && !b` gone
     against the current behaviour before any flip. The `good.c.*` cluster and the disk-diff branch
      (`:777`) stay hand-rolled; they are not the smell. Lowest priority in the whole harvest, and a
       candidate for "never" if the isolation proof cannot match the two-pass timing exactly.
+
+---
+
+**2026-09-07 — a new Seem wants hosting: the ASK lane.** Owner: *"is some Se tracking which Theirs C are req
+ yet, and lifecycling them? … Seem could give it structure, simply by hosting `D//U/req`."* A Seem over the
+  `%Theirs` mirror, `use_Understandable:1`, so each landed foreign `%Rummage` gets a D and a U and the
+   source's `req:Answer` lives in U; neu/survivor/goner = mint / stand / stall-then-destroy. See
+    `Fallen_out_of_mind_todo.md §3` and `Repli_design.md` addendum. Caveat this doc already carries: the
+     Seem is snap-hostile and topD is regenerated per walk — the req must snap, the trace must not.

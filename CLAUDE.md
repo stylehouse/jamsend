@@ -274,9 +274,12 @@ Verify a Book by asking a LIVE runner to run it — not a headless boot.
      describes only this box's relay. The census broadcasts pings and sweeps: the relay spends
       an addr-less asker's `corr` on the FIRST ack, so one broadcast finds exactly one tab and
        only repeated rounds enumerate the flock (it can miss a wedged tab; it never invents one).
- A tab's ping ack says `role:'runner'` even when it is someone's music page — a Sounditron is
-  machine-role runner. The live tell is `supervisor`'s `humdinger`, so that is what decides
-   player-vs-runner off the wire, and a courted humdinger is now re-courted rather than run on.
+ A tab's ping ack carries a real `role` — `'runner'` or `'player'` (a music page answers `player`;
+  `LiesLies` stamps it at the one place a role is ever stamped, and `runner_ask` filters on the ack's own
+   value, so a player is never dispatched a Book; the transition is one-way). `supervisor`'s `humdinger`
+    stays the deeper tell (a Sounditron is machine-role runner; a courted humdinger is re-courted rather
+     than run on), but the ack is the first word. *(Corrected 2026-09-07 — the older "the ack always
+      says runner" reading was stale.)*
  `scripts/runner_shot.mjs` rides the same rails to SEE the render, the one thing a snap can't carry
   (pixels never round-trip a fixture): `shot <file.png>` = `cy.png()` of the live Cyto canvas; `--svg`
    = the voronoi glass as standalone greppable SVG; `--why` = the render telemetry film strip
