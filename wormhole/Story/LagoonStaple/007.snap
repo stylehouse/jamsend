@@ -1,0 +1,11 @@
+Snap:H
+  H:LagoonStaple,Run
+    A:LagoonStaple
+      w:LagoonStaple
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        aimed:fixture
+        saw:lint,docs:1
+        saw:seek,defs:3,atlas:1,fixture_only
+        saw:beads,beads:1,defs:3,inside:2,loose:1
+        saw:refuse,callers,lint

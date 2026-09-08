@@ -13,13 +13,16 @@ const LAGOON_TOKEN      = /[A-Z]+(?![a-z])|[A-Z][a-z]+|[a-z]+|[0-9]+/g
 const LAGOON_DISPATCHED = /^(req_|e_|Run_A_|_)/                  // twin: ATLAS_DISPATCHED
 const SNAP_NAME_RE      = /^\d+\.snap$/                          // twin: Atlas.g's own
 const SEE_LINE_RE       = /^\s*see:([^,\n]+)/gm                  // twin: Atlas.g's own
+// a Book toc's declared oath — `Assertion:<slug>,sentence:…` under its latch step (CLAUDE.md's
+//  Story section).  The SLUG is what a `«sworn»` link cites, so that is what this captures.
+const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return '9d41597178a045df~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return '7aab931e1b712576~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -86,8 +89,20 @@ Lagoon(A, w) {
 //  It lands wherever Lagoon stands, which is a RUNNER tab: L ghosts are outside the spine manifest and
 //   `ghost_load` is refused on a humdinger, so /BigWordland (role 'word') cannot host one.  Making it
 //    visible THERE is a manifest question, which is Atheory's (Lagoon_todo §4).
+// WHERE THE CENSUS STANDS AND WHERE ITS FACE MOUNTS ARE TWO QUESTIONS, and conflating them is what
+//  split the Hackarium room in half (the owner, 2026-09-09: *"UI:Lagoon appears to come out in H:Mundo
+//   but shouldn't… I can see H:Hackarium's UI:Langui there but not UI:Lagoon"*).
+//  The census MUST stand on the top House — `Lagoon_atlas()` looks it up there by name, `runner_ask`'s
+//   ops look there, and `LagoonStaple` paid a recording to learn "stand where the reader looks".  So
+//    `A:Lagoon` is minted on Mundo, its do_fn's `this` is Mundo, and enrolling the UI on `this` put the
+//     face on Mundo while the room's own Langui sat on `H:Hackarium`.  In a room that shows ONE House's
+//      UIs at a time, that is not a cosmetic split — it is the face being on another page.
+//  So a room may NAME ITSELF as the face's home: `w.c.face_on` is a runtime House ref (`.c` is exactly
+//   for runtime objects), set by whoever stands the world.  Absent — a CLI-stood Lagoon with no room —
+//    it falls back to `this`, which is the old behaviour and still right when there is no room to join.
 Lagoon_plan(w) {
-    let uis = this.oai_enroll(this, { watched: 'UIs' })
+    let home = w.c.face_on ?? this
+    let uis = this.oai_enroll(home, { watched: 'UIs' })
     uis.oai({ UI: 'Lagoon' }, { component: Lagui })
     w.c.faced = 1
 
@@ -99,6 +114,236 @@ Lagoon_atlas() {
 },
 Lagoon_electrode() {
     return this.top_House().o({ A: 'Electrode' })[0]?.o({ w: 'Electrode' })[0] ?? null
+
+},
+// THE STEMDEX IS A CENSUS TOO, and noticing that is the whole of the 2026-09-09 unification.
+//  `w:Lies` holds the Stemdex — every name and every line of freetext the machine has read off disk,
+//   kept fresh by a polite dige-gated scan.  That is a census by any definition this land uses: it
+//    KEEPS.  It was never treated as one only because it happened to arrive with a face attached.
+//  So it is looked up by name on the top House and never held, exactly like Atlas and Electrode, and
+//   `Lagoon_seek` asks over all three.  Three censuses, one reader, one answer.
+Lagoon_lies() {
+    return this.top_House().o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] ?? null
+},
+//#endregion
+
+//#region THE BEADCHAIN — a document as its own shape, not a screed (Lagoon_todo leg 4)
+// The owner, 2026-09-08: *"we then also want the code to not be so much of a screed but a beadchain,
+//  which could have clusters of stuff, compound nodes, etc… perhaps.  it's that world very soon now."*
+//
+// ATLAS ALREADY HELD THE BEADS AND NOBODY HAD DRAWN THEM — and it turned out to hold them more
+//  completely than the plan guessed.  A `//#region` is an author-declared bead with a name and a span,
+//   and the census keeps `region,label,depth,line` for every doc.  But it also keeps, on EVERY def,
+//    the enclosing region chain the collector recorded as it walked (`.c.region_path`) — and
+//     `Atlas_cache_put` carries it through the Dexie row, so it survives a warm adopt.  So there is no
+//      containment arithmetic to do and no span to intersect: each def already knows its beads.
+//
+// A CHAIN, NOT A GRAPH, and deliberately.  `Lens_posable` says not to invent a pose model yet, and the
+//  spec's own first cut is the honest one: beads in FILE ORDER, indented by region depth.  An order and
+//   an indent are things the corpus actually states; an arrangement is not, so it is not invented here.
+//
+// It returns ONE FLAT `chain`, because that is what a chain is — a face renders it by indenting on
+//  `depth` and needs no tree walk.  Defs outside every region sit at depth 0, which is the truth about
+//   a file whose author never drew a bead: it is one long bead, and saying so is better than pretending.
+Lagoon_beads(w, path) {
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let want = String(path ?? '').trim()
+    if (!want) return { error: 'Lagoon_beads: a doc path is required' }
+    let doc = atlas.o({ Doc: want })[0]
+    if (!doc) {
+        // a bare filename is the common way to ask, so resolve it the way every other reader does
+        let by_tail = {}
+        for (const d of atlas.o({ Doc: 1 })) {
+            let p = d.sc.Doc
+            let t = p.slice(p.lastIndexOf('/') + 1)
+            if (!by_tail[t]) by_tail[t] = []
+            by_tail[t].push(p)
+        }
+        let hit = this.Lagoon_resolve(by_tail, want)
+        if (hit) doc = atlas.o({ Doc: hit })[0]
+    }
+    if (!doc) return { error: 'no such Doc in the census — try the full path, or lagoon defs doc:<part>' }
+    let map = doc.o({ Map: 1 })[0]
+    if (!map) return { error: 'that Doc is rostered but not mapped yet — the census is still walking' }
+    let rows = []
+    for (const r of map.o({ region: 1 })) {
+        rows.push({ kind: 'region', label: r.sc.label, depth: +(r.sc.depth ?? 1), line: +(r.sc.line ?? 0), defs: 0 })
+    }
+    let beads = 0
+    for (const r of rows) beads = beads + 1
+    for (const d of map.o({ def: 1 })) {
+        let name = d.sc.method
+        if (!name || name === 'IMPORT') continue
+        let rp = d.c.region_path
+        let depth = (rp && rp.length) ? rp.length : 0
+        let row = { kind: 'def', label: name, depth: depth, line: +(d.sc.line ?? 0) }
+        if (rp && rp.length) row.bead = rp[rp.length - 1]
+        rows.push(row)
+    }
+    // FILE ORDER IS THE ORDER.  The chain is the document read top to bottom; a region sorts before the
+    //  defs it opens because its own line is the `//#region` line.  Nothing is re-arranged.
+    rows.sort((a, b) => (a.line - b.line) || (a.kind === 'region' ? -1 : 1))
+    // the count each bead carries — a bead's weight is how much of the file it holds
+    let by_label = {}
+    for (const r of rows) { if (r.kind === 'region') by_label[r.label] = r }
+    let loose = 0
+    for (const r of rows) {
+        if (r.kind !== 'def') continue
+        if (r.bead && by_label[r.bead]) {
+            by_label[r.bead].defs = by_label[r.bead].defs + 1
+        } else {
+            loose = loose + 1
+        }
+    }
+    return { doc: doc.sc.Doc, lines: +(doc.sc.lines ?? 0), beads: beads, defs: rows.length - beads,
+             loose: loose, chain: rows }
+},
+//#endregion
+
+//#region ONE ANSWER, MANY FACES — the seek (2026-09-09)
+// The owner, looking at their room: *"there's the `search — ƒ methods · % props` searchbar, which is
+//  kinda annoying… every search result should probably be 80% of the screen real estate, as usual"*
+//   and then *"unify it beautifully with the current effort as well."*
+//
+// WHAT WAS ACTUALLY WRONG, and it was not the placeholder.  The room had TWO seek machines: the
+//  Searchbar over the Stemdex (ƒ methods · % props · ≈ text) and Lagui over Atlas (families, defs,
+//   callers, mentions).  Two inputs, two hit lists, two glyph vocabularies, mounted on two different
+//    Houses — and both ending in the SAME act, `Lies_ghost_pick{path, point}`.  A person typing
+//     `Heist_keep` does not care which index answers.  The taxonomy in that placeholder was one
+//      index announcing itself at the seeker, which is why it read as annoying.
+//
+// THE UNIFICATION IS NOT ONE FACE.  IT IS ONE ANSWER.
+//  Atlas keeps.  The Stemdex keeps.  Lagoon asks — over both, and returns the readings a SEEKER wants
+//   in the order they want them, not the order the indexes are built in.  Then the Searchbar and Lagui
+//    are two renderings of one reply, which is the model this codebase already uses everywhere else.
+//     Two faces on one answer is fine.  Two answers behind two faces is the globulation.
+//
+// THE READINGS, in seeker order:
+//   families — the browse door, when the query is too short to rank.  *"I can't remember a method name
+//              to look up"* is the commonest way a seek starts, and a blind input asks you to already
+//              know the answer.  The unranked INDEX rides beside it, because a short query has two
+//              honest answers (the map, and everything) and picking between them is a face's job.
+//   defs     — the symbol itself.  Atlas is authoritative (it has the real doc:line); the Stemdex's
+//              own defs are merged in so a missing census degrades the answer instead of emptying it.
+//   mentions — the prose that NAMES it, once the query resolves to a real def.  Callers stay a
+//              SEPARATE ask (`Lagoon_callers`) because they are per-row and on demand — that is the
+//              erupting, and it should cost nothing until you climb.
+//   props / texts — the Stemdex's particle vocabulary and freetext.
+//
+// AND IT NAMES WHICH CENSUSES ANSWERED.  A partial answer that looks whole is the silent-empty law
+//  broken one layer up (Fallen_out_of_mind §2.9 Law 3): with Atlas down you get the Stemdex readings
+//   and `atlas:0`, so the face can SAY so rather than quietly showing you less.
+Lagoon_seek(w, q, cap) {
+    let atlas = this.Lagoon_atlas()
+    let lies = this.Lagoon_lies()
+    let needle = String(q ?? '').trim()
+    let kk = cap || 200
+    if (!atlas && !lies) {
+        return { error: 'no census standing — ghost_load Ghost/L/Atlas.g --stand=Atlas (and a w:Lies for the Stemdex)' }
+    }
+    let out = { q: needle, atlas: atlas ? 1 : 0, stemdex: lies ? 1 : 0,
+                families: [], defs: [], props: [], texts: [], mentions: [], mentions_total: 0 }
+    // THE BROWSE DOOR.  Under two characters there is nothing to RANK, so the honest answer is not an
+    //  empty list — it is the map, plus the index itself.
+    // THE ANSWER DOES NOT DECIDE WHAT A FACE SHOWS, and getting that wrong cost a regression before it
+    //  shipped.  A first cut returned families ALONE here, which suited the Searchbar (whose resting
+    //   state is the map) and quietly emptied Lagui (whose resting state is the INDEX — *"that thing
+    //    where all the methods are"*, the owner's own words for why it exists).  Two faces, two resting
+    //     states, one answer: so the reply carries BOTH readings and each face renders what it is for.
+    //      A reader that decides a face's layout has taken a decision that is not its to take.
+    if (needle.length < 2) {
+        if (atlas) {
+            let fam = this.Lagoon_families(w, 40)
+            if (fam && fam.families) out.families = fam.families
+            let a = this.Lagoon_defs(w, '', kk)
+            if (a && a.defs) {
+                for (const d of a.defs) {
+                    let row = { name: d.name, doc: d.doc, line: d.line, from: 'atlas' }
+                    if (d.bead) row.bead = d.bead
+                    out.defs.push(row)
+                }
+                out.defs_total = a.total
+            }
+        }
+        return out
+    }
+    // the Stemdex's three readings, verbatim — it is a census and this is a read of it
+    //  ONE FIELD NAME FOR ONE THING.  The Stemdex says `path`, Atlas says `doc`, and a face that had
+    //   to know which reading it was holding would be the split all over again in miniature.  Every
+    //    row that leaves here says `doc`, and a snippet rides along wherever the census had one.
+    if (lies) {
+        let s = this.Lies_search(lies, needle, kk)
+        if (s) {
+            for (const p of s.props ?? []) out.props.push({ name: p.name, doc: p.path, line: p.line ?? (p.lines ?? [])[0], from: 'stemdex' })
+            for (const t of s.texts ?? []) {
+                let row = { name: t.title ?? t.path, doc: t.path, line: t.line ?? 1, from: 'stemdex' }
+                if (t.snippet) row.snippet = t.snippet
+                out.texts.push(row)
+            }
+            out.done = s.done
+            out.total = s.total
+            if (s.missing) out.missing = s.missing
+            for (const d of s.defs ?? []) {
+                let row = { name: d.name, doc: d.path, line: d.line, from: 'stemdex' }
+                if (d.snippet) row.snippet = d.snippet
+                out.defs.push(row)
+            }
+        }
+    }
+    // Atlas's defs, merged over the top: it holds the real doc:line, so where both censuses know a
+    //  def Atlas wins the row and the Stemdex's copy is dropped rather than shown twice.
+    let seen = {}
+    for (const d of out.defs) seen[d.name + '@' + d.doc + ':' + d.line] = 1
+    if (atlas) {
+        let a = this.Lagoon_defs(w, needle, kk)
+        if (a && a.defs) {
+            for (const d of a.defs) {
+                let key = d.name + '@' + d.doc + ':' + d.line
+                if (seen[key]) continue
+                seen[key] = 1
+                out.defs.push({ name: d.name, doc: d.doc, line: d.line, from: 'atlas' })
+            }
+            out.defs_total = a.total
+        }
+    }
+    // RANK FOR A SEEKER, not for an index.  Both surfaces sorted by name or by path, which buries an
+    //  exact hit under thirty substring ones.  Exact first, then prefix, then the rest; path breaks
+    //   the tie so same-doc hits still sit together, which was the Stemhive's own good idea.
+    let low = needle.toLowerCase()
+    for (const d of out.defs) {
+        let n = String(d.name ?? '').toLowerCase()
+        d.rank = n === low ? 0 : (n.indexOf(low) === 0 ? 1 : 2)
+    }
+    out.defs.sort((a, b) => (a.rank - b.rank)
+        || String(a.doc).localeCompare(String(b.doc)) || ((a.line ?? 0) - (b.line ?? 0)))
+    // THE PROSE NEIGHBOURHOOD, and only when the query resolves to a real def.  A backticked phrase
+    //  that names nothing is a phrase, not a link (the m14 lesson), so mentions are offered for a
+    //   symbol the census can vouch for and stay quiet otherwise.
+    // THE BEADCHAIN AS A READING.  `doc:<part>` already scoped the defs index to a file, so when that
+    //  scope lands on exactly ONE document the honest answer to "show me this file" is its SHAPE, not a
+    //   list of its methods in alphabetical order.  One prefix in the same box, no second surface —
+    //    which is the whole point of §1.8.
+    if (atlas && needle.indexOf('doc:') === 0) {
+        let docs = {}
+        for (const d of out.defs) docs[d.doc] = 1
+        let names = Object.keys(docs)
+        if (names.length === 1) {
+            let b = this.Lagoon_beads(w, names[0])
+            if (b && !b.error) out.beads = b
+        } else if (names.length > 1) {
+            out.beads_ambiguous = names.length
+        }
+    }
+    if (atlas && out.defs.length && out.defs[0].rank === 0) {
+        let m = this.Lagoon_mentions(w, out.defs[0].name, 40)
+        if (m && m.mentions) {
+            out.mentions = m.mentions
+            out.mentions_total = m.total
+            out.mentions_of = out.defs[0].name
+        }
+    }
+    return out
 },
 //#endregion
 
@@ -155,10 +400,28 @@ Lagoon_defs(w, q, cap) {
             if (!name || name === 'IMPORT') continue
             if (needle && name.toLowerCase().indexOf(needle) < 0) continue
             total = total + 1
-            if (out.length < kk) out.push({ name: name, doc: path, line: d.sc.line })
+            // COLLECT ALL, SORT, THEN CUT — not cut-then-sort, which is what this did.  With a cap the
+            //  old order kept whichever rows the WALK reached first and sorted only those, so the index
+            //   looked alphabetical while actually being an arbitrary sample of the corpus — and which
+            //    sample you got moved as the census re-rostered.  This verb's own comment says "sorted
+            //     by name so the same query gives the same list twice — a browsable thing has to hold
+            //      still", and cut-then-sort cannot hold still.  Found 2026-09-09 by reading a capped
+            //       resting index and seeing four lowercase names from scripts/ where the As should be.
+            {
+                // THE BEAD, and it costs nothing (2026-09-09).  The collector already recorded each
+                //  def's enclosing `//#region` chain on `.c.region_path` — and `Atlas_cache_put`
+                //   carries it through the Dexie row — so the innermost named region a method lives in
+                //    is simply THERE, on the row.  `path:line` says where a thing is on disk; the bead
+                //     says where it is in the FILE'S OWN STRUCTURE, which is what the author meant.
+                let rp = d.c.region_path
+                let row = { name: name, doc: path, line: d.sc.line }
+                if (rp && rp.length) row.bead = rp[rp.length - 1]
+                out.push(row)
+            }
         }
     }
     out.sort((a, b) => a.name < b.name ? -1 : (a.name > b.name ? 1 : 0))
+    if (out.length > kk) out = out.slice(0, kk)
     return { defs: out, total: total, shown: out.length, docs: atlas.o({ Doc: 1 }).length }
 },
 //#endregion
@@ -352,9 +615,71 @@ Lagoon_lint(w) {
                 continue
             }
             let at = +(l.sc.at_line ?? 0)
-            if (at > (lines_of[hit] ?? 0)) beyond.push({ doc: d.sc.Doc, line: l.sc.line, target: hit, at_line: at, lines: lines_of[hit] })
+            // A DOC WHOSE LENGTH IS UNKNOWN CANNOT BE OVERSHOT.  `lines` is stamped by a real map, so
+            //  an as-yet-unmapped Doc reads 0 and EVERY link into it looked "past EOF" — 275 of them
+            //   mid-walk, falling to ~100 as the census converged.  A convergence artifact wearing a
+            //    verdict's clothes, and it predates tonight; the work queue is what made it visible
+            //     ("the line drifted — that file is 0 lines" for `RadioFace.svelte`, which is fine).
+            //  You cannot say a line is past the end of a file whose end you do not know.  Say nothing.
+            if (!lines_of[hit]) continue
+            if (at > lines_of[hit]) beyond.push({ doc: d.sc.Doc, line: l.sc.line, target: hit, at_line: at, lines: lines_of[hit] })
         }
     }
+    // ── the § lint (2026-09-08, ATLAS_MAPPER m15).  The corpus's real cross-reference form, and the
+    //  first one that can rot INSIDE a doc that still exists: `Radio_todo §0` is fine until Radio_todo
+    //   renumbers, and nothing has ever noticed.  Two verdicts, deliberately kept apart, because they
+    //    route to different work: `sect_nodoc` is the file-missing story the `file:line` lint already
+    //     tells (the doc moved to history/ or was renamed), while `sect_gone` is a LIVE doc whose §N
+    //      is not there any more — the section was renumbered, merged or dropped, and the pointer is
+    //       now aimed at nothing in a page that reads perfectly well.  Only the second is new signal.
+    //  A TARGET-LESS § IS COUNTED AND NEVER ACCUSED, and that ruling cost a measurement.  The obvious
+    //   reading is that a bare `see §9` means THIS doc's §9, and linting them that way produced 454
+    //    "dead" self-references.  Sampling them killed the reading: `Seemables_todo` has 38 bare §s and
+    //     numbers nothing but its own §0, because its §s point into whatever doc the sentence just
+    //      named — *"That work lives in `Voro_render_todo.md` §0"*.  A bare § has an AMBIGUOUS REFERENT
+    //       that only prose resolves, so the honest lint says nothing about it.  (The m14 `prose_rot`
+    //        lesson for the third time: "looks like rot" and "is rot" are different questions.  This one
+    //         was caught before publishing rather than after, which is the improvement.)
+    let sect_links = 0
+    let sect_self = 0
+    let sect_nodoc = []
+    let sect_gone = []
+    let sects_of = {}
+    for (const d of docs) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const l of map.o({ link: 1, kind: 'sect' })) {
+            sect_links = sect_links + 1
+            if (!l.sc.target) { sect_self = sect_self + 1; continue }
+            let home = d.sc.Doc
+            let t = l.sc.target
+            // A TARGET THAT NAMES THE SHELF IS NOT ROT, and this rule already existed one loop above —
+            //  the `file:line` lint has skipped `history/`|`shelved/` since it was written, because
+            //   Atlas deliberately never rosters those roots, so it can neither confirm nor deny them.
+            //    I did not carry it over when the § pass went in, and the corpus said so: a doc writing
+            //     `history/Reqdrop_todo §N` — a reference that is already CORRECT and explicitly points
+            //      at the shelf — was being reported as pointing at a doc nothing has.  Found by trying
+            //       to ACT on the work queue, which is the only way that kind of wrongness shows up.
+            if (/(^|\/)(history|shelved)\//.test(t)) continue
+            if (!/\.md$/.test(t)) t = t + '.md'
+            let hit = this.Lagoon_resolve(by_tail, t)
+            // THE SUFFIX THE CORPUS DROPS.  Docs are named `X_todo.md` / `X_spec.md` (CLAUDE.md's Docs
+            //  section) and prose cites them as plain `X` about a tenth of the time — `Social_demarcation
+            //   §7`, `Radio_circuit §0.5`, `Vyto_sizing §8`.  Without this fallback 38 of 470 links read
+            //    "no such doc" when the doc is right there under its full name; with it, 5.
+            if (!hit) hit = this.Lagoon_resolve(by_tail, t.replace(/\.md$/, '_todo.md'))
+            if (!hit) hit = this.Lagoon_resolve(by_tail, t.replace(/\.md$/, '_spec.md'))
+            if (!hit) {
+                sect_nodoc.push({ doc: home, line: l.sc.line, target: l.sc.target, sect: l.sc.sect })
+                continue
+            }
+            if (!sects_of[hit]) sects_of[hit] = this.Lagoon_sections(atlas, hit)
+            if (!sects_of[hit][l.sc.sect]) {
+                sect_gone.push({ doc: home, line: l.sc.line, target: hit, sect: l.sc.sect })
+            }
+        }
+    }
+
     let orphans = []
     let orphans_total = 0
     for (const d of docs) {
@@ -369,9 +694,175 @@ Lagoon_lint(w) {
             if (orphans.length < 400) orphans.push({ doc: d.sc.Doc, name, line: f.sc.line })
         }
     }
-    return { docs: docs.length, file_links, missing, beyond_eof: beyond, orphans_total, orphans }
+    return { docs: docs.length, file_links, missing, beyond_eof: beyond, orphans_total, orphans,
+             sect_links, sect_self, sect_nodoc, sect_gone }
 
 },
+// Lagoon_sections — every section NUMBER a markdown doc declares, as a set.  Atlas already keeps every
+//  heading (`%region,label,depth,line`), and a numbered heading wears its number at the front of the
+//   label — `## 2.5 THE AFTERNOON'S THREE BUGS`, `## 0. What to get on with next`.  So this is a read
+//    of held rows, not a parse: pull the leading `N(.N)*` off each label.
+//  A doc with no numbered headings returns an empty set, which means every § pointing INTO it reads
+//   gone.  That is the right answer rather than a special case — a doc that stopped numbering its
+//    sections really did break every pointer aimed at one.
+Lagoon_sections(atlas, path) {
+    let out = {}
+    let d = atlas.o({ Doc: path })[0]
+    if (!d) return out
+    let map = d.o({ Map: 1 })[0]
+    if (!map) return out
+    for (const r of map.o({ region: 1 })) {
+        // the corpus numbers its headings four ways and ALL of them must index, or the lint invents rot:
+        //  `## 3.`, `## 3.1`, `## 3b.`, `## 5a.2`.  A first cut read only the first two and reported 852
+        //   dead self-references, most of which were `§3.1b` pointing at a perfectly present `### 3.1b`.
+        //    That is the m14 `prose_rot` lesson again — "looks like rot" and "is rot" are different
+        //     questions — caught this time before it was published rather than after.
+        let m = /^(\d+[a-z]?(?:\.\d+[a-z]?)*)\.?(?:\s|$)/.exec(String(r.sc.label ?? ''))
+        if (!m) continue
+        // index the whole number AND every shorter prefix, letterless forms included: a doc whose only
+        //  section-3 headings are `3.1`/`3.2` still HAS a §3, and `§3.1` still names `### 3.1b`.
+        let parts = m[1].split('.')
+        for (let k = 1; k <= parts.length; k++) {
+            let pre = parts.slice(0, k).join('.')
+            out[pre] = 1
+            out[pre.replace(/[a-z]/g, '')] = 1
+        }
+    }
+    // %anchor rows — a numbered section that is NOT a heading (`**7.4 …**`), collected since m15 for
+    //  exactly this: the corpus points § at them and a heading-only index calls them rot.
+    for (const a of map.o({ anchor: 1 })) {
+        let s = String(a.sc.sect ?? '')
+        if (!s) continue
+        let parts = s.split('.')
+        for (let k = 1; k <= parts.length; k++) {
+            let pre = parts.slice(0, k).join('.')
+            out[pre] = 1
+            out[pre.replace(/[a-z]/g, '')] = 1
+        }
+    }
+    return out
+
+},
+//#region THE WORK QUEUE — rot routed, not rot listed (Lagoon_todo leg 6 / front 3)
+// The owner's ruling, 2026-09-08: *"having higher level pointers or sending you around fixing|
+//  obsoleting things is the way."*  So a lint's output is not a struck-through link in a margin.  It is
+//   a routed list — *this doc points at something that no longer exists: fix the pointer, or mark the
+//    doc obsolete* — and the environment's job is to send someone to it.
+//
+// THREE THINGS MAKE IT A QUEUE RATHER THAN A LIST, and they are the whole of this verb:
+//  1. IT GROUPS BY DOC.  You do not fix a link, you fix a document — one visit, N repairs.  A flat list
+//      of 200 rows sends you to 200 places; the same rows grouped send you to eleven.
+//  2. IT PROPOSES THE FIX where the census can compute one.  A § pointing at a section that is gone
+//      gets the nearest anchor the target doc actually has (`§3.7` → the doc has 3.1…3.4, so `§3`); a
+//       file link with no holder gets the `_todo`/`_spec` name the corpus keeps dropping.  A suggestion
+//        the census can stand behind is the difference between work and a complaint.
+//  3. IT PICKS THE LIKELY EXIT.  Two exits, per the ruling.  A doc with one dead pointer into a live
+//      doc wants `fix`.  A doc whose pointers rot in bulk INTO DOCS THAT ARE THEMSELVES GONE is not
+//       broken, it is stale — and the ruled move for a stale doc is `spec/history/` with a historicity
+//        notice (CLAUDE.md's Docs section), not a hundred pointer repairs.  So the queue says which.
+//
+// IT KEEPS NOTHING, and that is not an accident of implementation — it is the layer rule (`LagoonStaple`
+//  beat 6 reds if this ghost starts holding).  There is no "done" flag anywhere, because a queue item's
+//   disposition IS the edit: fix the pointer and the item stops being derived; retire the doc and every
+//    item under it goes with it.  A work queue over a census needs no state of its own.
+Lagoon_rotwork(w, cap) {
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let lint = this.Lagoon_lint(w)
+    if (lint.error) return lint
+    let by_tail = {}
+    for (const d of atlas.o({ Doc: 1 })) {
+        let p = d.sc.Doc
+        let tail = p.slice(p.lastIndexOf('/') + 1)
+        if (!by_tail[tail]) by_tail[tail] = []
+        by_tail[tail].push(p)
+    }
+    let items = []
+    // a file:line whose target no living root holds.  The census can often name the fix: the corpus
+    //  drops the `_todo`/`_spec` suffix in prose, so try the full names before giving up.
+    for (const m of lint.missing) {
+        let fix = this.Lagoon_resolve(by_tail, m.target.replace(/\.md$/, '_todo.md'))
+        if (!fix) fix = this.Lagoon_resolve(by_tail, m.target.replace(/\.md$/, '_spec.md'))
+        // "nothing rosters" is the phrase the exit rule counts (below), and a missing FILE target is
+        //  the same fact as a missing § target — the thing pointed at is gone.  The first cut phrased
+        //   this one differently and so the exit rule saw only half the dead targets it claimed to
+        //    weigh.  Same words for the same fact, or the rule quietly means something else.
+        let it = { doc: m.doc, line: m.line, kind: 'file', target: m.target,
+                   why: 'nothing rosters that file — no living root holds it' }
+        if (fix) it.fix = fix
+        items.push(it)
+    }
+    for (const b of lint.beyond_eof) {
+        items.push({ doc: b.doc, line: b.line, kind: 'file', target: b.target + ':' + b.at_line,
+                     why: 'the line drifted — that file is ' + b.lines + ' lines' })
+    }
+    // a § into a LIVE doc that has no such anchor — the kind of rot that hides in a page which still
+    //  reads perfectly.  The proposal is the longest prefix of the cited number the doc DOES have.
+    for (const s of lint.sect_gone) {
+        let have = this.Lagoon_sections(atlas, s.target)
+        let near = this.Lagoon_near_sect(have, s.sect)
+        let it = { doc: s.doc, line: s.line, kind: 'sect', target: s.target + ' §' + s.sect,
+                   why: 'that doc has no §' + s.sect }
+        if (near) it.fix = s.target + ' §' + near
+        items.push(it)
+    }
+    for (const s of lint.sect_nodoc) {
+        items.push({ doc: s.doc, line: s.line, kind: 'sect', target: s.target + ' §' + s.sect,
+                     why: 'nothing rosters that doc — try spec/history/' })
+    }
+    // group.  A visit is to a DOC, so the doc is the unit and the busiest goes first.
+    let groups = {}
+    for (const it of items) {
+        if (!groups[it.doc]) groups[it.doc] = { doc: it.doc, n: 0, dead: [], items: [] }
+        let g = groups[it.doc]
+        g.n = g.n + 1
+        if (it.why.indexOf('nothing rosters') === 0) g.dead.push(it.target.split(' ')[0])
+        g.items.push(it)
+    }
+    let out = []
+    for (const k of Object.keys(groups)) out.push(groups[k])
+    for (const g of out) {
+        g.items.sort((a, b) => a.line - b.line)
+        // THE EXIT, and the first cut of this rule was wrong in an instructive way.  It counted dead
+        //  pointers, so `Wire_spec.md` — 13 of them — read "stale, retire it".  But all thirteen name
+        //   ONE vanished doc: `Wire_spec` is not stale, its target moved, and the work is a single
+        //    retarget rather than thirteen repairs or a retirement.
+        //  So the signal is DISTINCT dead targets, not the count.  Many pointers at ONE gone doc = the
+        //   target moved (`same_target` names it, and that is the whole job, done once).  Pointers at
+        //    THREE OR MORE gone docs = the pointing doc has outlived its neighbourhood, which is what
+        //     stale looks like, and the ruled move is `spec/history/` with a historicity notice.
+        //  Blunt on purpose: this routes attention, it does not rule.  A human takes the other exit
+        //   whenever they like — which is why both exits are always named.
+        let distinct = {}
+        for (const d of g.dead) distinct[d] = 1
+        let names = Object.keys(distinct)
+        g.dead_targets = g.dead.length
+        if (names.length === 1 && g.dead.length > 1) g.same_target = names[0]
+        g.exit = names.length >= 3 ? 'obsolete' : 'fix'
+        delete g.dead
+    }
+    out.sort((a, b) => b.n - a.n)
+    let kk = cap || 12
+    return { docs_with_rot: out.length, rot_items: items.length,
+             to_fix: out.filter(g => g.exit === 'fix').length,
+             to_obsolete: out.filter(g => g.exit === 'obsolete').length,
+             queue: out.slice(0, kk) }
+
+},
+// Lagoon_near_sect — the closest anchor a doc actually has to a cited one: the longest dotted prefix of
+//  `3.7.2` the doc holds (`3.7`, then `3`).  Not fuzzy matching — a prefix of a section number names the
+//   section that CONTAINS it, so the proposal is always a real place, one level out from where the
+//    author meant.  Returns null when even the top number is gone, which is itself the answer.
+Lagoon_near_sect(have, sect) {
+    let parts = String(sect).split('.')
+    for (let k = parts.length - 1; k >= 1; k--) {
+        let pre = parts.slice(0, k).join('.')
+        if (have[pre]) return pre
+    }
+    return null
+},
+//#endregion
+
 // Lagoon_resolve — a link target (`Heist.g`, `M/Heist.g`, `src/lib/O/Lang.svelte`) to a rostered
 //  path: same tail, then the longest path-suffix match; a bare filename takes the first holder.
 Lagoon_resolve(by_tail, target) {
@@ -430,6 +921,61 @@ async Lagoon_unproven(w, nav) {
         }
     }
     return { books_read: read, fixtured: Object.keys(fixtured).length, sees_total: total, unproven }
+
+},
+// Lagoon_oaths — the OTHER two m15 link kinds, `book` and `sworn`, resolved against the Books themselves.
+//  It is async and lives here rather than in Lagoon_lint for one honest reason: a Book is not in the
+//   census.  Atlas rosters code and prose; `wormhole/Story/**` is a third shelf, and reaching for it is
+//    a disk read — the same shape as Lagoon_unproven above, which is why they are neighbours.
+//  ONE READ PER BOOK (the toc), not one per snap: a Book's declared oath lives in its toc as
+//   `Assertion:<slug>,sentence:…`, so ~80 reads rather than unproven's ~1000.
+//  Two verdicts, and the second is the one the owner asked for — *"pointers from the spec to the test
+//   assertion"*.  A `Book:Name` that names no Book, and a `«slug»` no Book declares any more.  The
+//    second is the sharper signal by far: a doc citing an assertion that has been renamed or dropped is
+//     a doc claiming the machine still swears something it does not.
+async Lagoon_oaths(w, nav) {
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let books = await nav.dir_at('wormhole/Story')
+    if (!books) return { error: 'no wormhole/Story under this nav' }
+    await books.expand()
+    let known_book = {}
+    let sworn_in = {}
+    let read = 0
+    for (const b of books.directories) {
+        known_book[b.name] = 1
+        let text = await nav.read_file('wormhole/Story/' + b.name, 'toc.snap')
+        if (!text) continue
+        read = read + 1
+        for (const m of text.matchAll(OATH_LINE_RE)) {
+            if (!sworn_in[m[1]]) sworn_in[m[1]] = b.name
+        }
+    }
+    let book_links = 0
+    let book_gone = []
+    let sworn_links = 0
+    let sworn_gone = []
+    let sworn_ok = []
+    for (const d of atlas.o({ Doc: 1 })) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const l of map.o({ link: 1, kind: 'book' })) {
+            book_links = book_links + 1
+            if (!known_book[l.sc.target]) book_gone.push({ doc: d.sc.Doc, line: l.sc.line, target: l.sc.target })
+        }
+        for (const l of map.o({ link: 1, kind: 'sworn' })) {
+            sworn_links = sworn_links + 1
+            let where = sworn_in[l.sc.target]
+            if (where) {
+                sworn_ok.push({ doc: d.sc.Doc, line: l.sc.line, slug: l.sc.target, book: where })
+            } else {
+                sworn_gone.push({ doc: d.sc.Doc, line: l.sc.line, slug: l.sc.target })
+            }
+        }
+    }
+    return { tocs_read: read, books: Object.keys(known_book).length,
+             oaths: Object.keys(sworn_in).length,
+             book_links, book_gone, sworn_links, sworn_ok, sworn_gone }
 },
 //#endregion
 

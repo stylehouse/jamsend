@@ -69,6 +69,34 @@ if (kv.runner) {
 }
 else { try { TARGET = readFileSync('/tmp/runner_ask.target', 'utf8').trim() || 'runner' } catch { /* no sticky — broadcast */ } }
 
+// ── --player=<full prepub> — address someone's MUSIC PAGE (2026-09-09) ────────────────────────────
+//  WHY THIS EXISTS.  The film strip Vytui now pushes can only report MOTION from a live page: a
+//   runner tab is `parked` (a driven world jumps to target and strikes no settle) and a hidden ?B=
+//    tab lands instantly, so `--why` against a runner is a census and never a movement.  The only
+//     surfaces that actually animate are role:'player' tabs — and runner_shot could not address one,
+//      so the instrument could not reach the only place worth measuring.  That was the last wall
+//       between the strip and its purpose (Glassbeast §0).
+//  HOW.  Same shape runner_ask uses: the ask goes to the `player` SLOT with the pub INSIDE the ask
+//   (the relay's own-door rule drops a to:<prepub> ask on a station socket), and sendAsk stamps it.
+//  READ-ONLY, LIKE runner_ask's PLAYER_OPS.  A player is somebody's actual music page, so only the
+//   reading modes may target one.  `--arm` MUTATES (it arms faces) and is refused — picking a
+//    stranger's tab by accident is exactly what that discipline prevents.
+//  FULL PREPUB ONLY.  The relay needs 16 hex; resolving a prefix means reading the cluster snap or
+//   sweeping the flock, which is runner_ask's job and not worth duplicating here.  Court it first:
+//    `node scripts/runner_ask.mjs runners` lists the ♪player rows with their full ids.
+let PLAYER_PUB = ''
+if (kv.player !== undefined) {
+    if (kv.runner !== undefined) { console.error('✗ pass --runner= or --player=, not both'); process.exit(2) }
+    if (flags.has("--arm")) { console.error("✗ --arm is not allowed on a --player (someone's music page) — the reading modes only: --why, --svg, or a plain shot"); process.exit(2) }
+    if (!/^[0-9a-f]{16}$/.test(kv.player)) {
+        console.error(`✗ --player needs a FULL 16-hex prepub (got '${kv.player}') — the relay cannot route a prefix.`)
+        console.error('  list them:  node scripts/runner_ask.mjs runners      (the ♪player rows)')
+        process.exit(2)
+    }
+    PLAYER_PUB = kv.player
+    TARGET = 'player'
+}
+
 const HTTP   = process.env.RUNNER_URL || 'http://172.17.0.1:9091'
 const WS_URL = HTTP.replace(/^http/, 'ws').replace(/\/$/, '') + '/relay'
 const stamp  = Date.now()
@@ -96,7 +124,11 @@ if (kv.bg)    ask.bg = kv.bg
 // print the render telemetry (the over-time model→cells story) — shared by `shot` (rides r.render)
 //  and `--why` (the whole reply IS it).  dt = ms from the last layout settle (the epoch the owner named).
 function printRender(cr) {
-    if (!cr) { console.log('  (no render telemetry — reload the runner tab so Cytui remounts)'); return }
+    if (!cr) { console.log('  (no render telemetry — reload the runner tab so the renderer remounts)'); return }
+    // TWO RENDERERS (2026-09-09): Vytui pushes its own film strip to vy_render and the runner serves
+    //  whichever renderer actually stood the Book.  The Vyto shape answers a different question — not
+    //   "did the model become cells" but "is it SMOOTH" — so it prints its own verdict line.
+    if (cr.renderer === "vytui") return printVyto(cr)
     const sy = (b) => b == null ? '?' : b ? 'yes' : 'no'
     console.log(`render gate: voronoi_on=${sy(cr.voronoi_on)} saw_stuffy=${sy(cr.saw_stuffy)} pref=${cr.voronoi_pref == null ? 'auto' : sy(cr.voronoi_pref)}`)
     console.log(`   now: seeds=${cr.seeds} cells=${cr.cells} nodes=${cr.nodes}${cr.since_settle_ms != null ? ` · ${cr.since_settle_ms}ms since last settle` : ''}${cr.diag_cures ? ` · ♒ diag cured ×${cr.diag_cures}` : ''}`)
@@ -107,6 +139,27 @@ function printRender(cr) {
         const { t, ev, dt, ...rest } = e
         const kv = Object.entries(rest).map(([k, v]) => `${k}:${v}`).join(' ')
         console.log(`     ${String(dt == null ? '·' : (dt >= 0 ? '+' + dt : dt)).padStart(6)}  ${ev.padEnd(9)} ${kv}`)
+    }
+}
+
+// the VYTO film strip: a smoothness verdict, not a model→cells story.  The four tells are forced
+//  watchdog landings (never settles), motion EPISODES (many short ones = flashing), jank frames
+//   (>32ms), and how soon after a settle something re-woke the loop (a small number repeated = chatter).
+function printVyto(r) {
+    const v = []
+    if (r.forced > 0) v.push(`\u25a3\u26a0 ${r.forced} FORCED landing(s) — the layout never settled on its own`)
+    if (r.jank > 0)   v.push(`${r.jank}/${r.frames} janky frames (>32ms)`)
+    console.log(`vyto render: ${r.worlds} world(s) · ${r.springs} springs · ${r.cells} cells · ${r.moving ? "MOVING" : "at rest"}`)
+    console.log(`   smoothness: ${r.episodes} motion episode(s) · ${r.forced} forced · ${r.jank} jank · mean frame ${r.ft_mean_ms ?? "?"}ms · worst ${r.ft_max_ms}ms`)
+    console.log(`   calm: disp ${r.last_disp} / drift ${r.last_drift} (floors ${r.calm_eps} / ${r.drift_eps}) · settle needs ${r.settle_frames} calm frames · watchdog at ${r.max_motion_frames}`)
+    if (r.since_settle_ms != null) console.log(`   ${r.since_settle_ms}ms since the last settle`)
+    for (const line of v) console.log(`   ${line}`)
+    if (!r.frames) console.log('   \u24d8 no frames integrated — a driven Book is PARKED (it jumps to target and strikes no settle); run --why on a LIVE page to see motion')
+    console.log('   log (dt ms from last settle):')
+    for (const e of r.log ?? []) {
+        const { t, ev, dt, ...rest } = e
+        const kv = Object.entries(rest).map(([k, v]) => `${k}:${v}`).join(' ')
+        console.log(`     ${String(dt == null ? '\u00b7' : (dt >= 0 ? '+' + dt : dt)).padStart(6)}  ${ev.padEnd(9)} ${kv}`)
     }
 }
 
@@ -124,7 +177,7 @@ const reply = await new Promise((resolve) => {
         if (m.control === 'undeliverable') resolve({ ok: false, error: 'no runner connected to the relay (frame dropped)' })
         else if (m.control === 'runner_ack') resolve(m)
     })
-    ws.send(JSON.stringify({ header: { type: 'runner_ask', from: addr, to: TARGET, seq: stamp, corr }, ask, corr }))
+    ws.send(JSON.stringify({ header: { type: 'runner_ask', from: addr, to: TARGET, seq: stamp, corr }, ask: PLAYER_PUB ? { ...ask, pub: PLAYER_PUB } : ask, corr }))
 })
 try { ws.close() } catch { /* already closing */ }
 

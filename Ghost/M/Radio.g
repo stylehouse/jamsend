@@ -1180,7 +1180,13 @@ Radio_pool_wanted(w, who):
 Radio_friendly(w, pub):
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
-    let pier = (ident && M.Swarm_peering) ? M.Swarm_peering(ident)?.o({ Pier: 1, pub: String(pub) })[0] : null
+    // THE LEDGER, deliberately (the four questions, Swarm.g:5540): naming a peer is not a permission.
+    //  A friend whose Music grant lapsed still has a NAME, and dropping to a hex prefix the moment a
+    //   grant ends would make the face lie about who we streamed from.  Guarded: a world with no Swarm
+    //    keeps the raw walk unchanged.
+    let pier = (ident && M.Swarm_peers)
+        ? M.Swarm_peers(ident, { live: 'all' }).find(p => String(p.sc.pub) === String(pub))
+        : ((ident && M.Swarm_peering) ? M.Swarm_peering(ident)?.o({ Pier: 1, pub: String(pub) })[0] : null)
     return pier?.sc?.friendly ? String(pier.sc.friendly) : String(pub).slice(0, 8)
 
 // Radio_heard — THE DEDUP SET THE DIAL SKIPS BY, {id:1}, read off the durable %Mag:heard (Heard.g).
@@ -2348,10 +2354,14 @@ Radio_lineup_errors(w, lu, pools):
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
     if (!ident || !M.Swarm_peering) return
     let me = String(ident.sc.prepub || '')
-    for (const p of M.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+    // GRANTED FOR MUSIC (the four questions, Swarm.g:5540): "the wire owes us their music" is only true
+    //  of a peer who granted it, so the door asks that question once instead of a raw walk plus a
+    //   hand-rolled Swarm_pier_live beneath it.  Guarded: a world with no Swarm keeps the raw walk.
+    for (const p of (M.Swarm_peers
+            ? M.Swarm_peers(ident, { live: 'Music' })
+            : (M.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).filter(q => M.Swarm_pier_live(q, 'Music')))) {
         if (!p.sc.pub) continue
         if (me && String(p.sc.pub) === me) continue   // never blame MYSELF for "no music coming across" (the self-pier)
-        if (!M.Swarm_pier_live(p, 'Music')) continue
         let hp = String(p.sc.pub)
         let has = 0
         for (const pl of pools) {
@@ -3665,7 +3675,11 @@ Riffle_homes(w):
     for (const home of w.o({ Theirs: 1 })) {
         let hp = String(home.sc.pub || '')
         if (!hp) continue
-        let pier = (ident && M.Swarm_peering) ? M.Swarm_peering(ident)?.o({ Pier: 1, pub: hp })[0] : null
+        // THE LEDGER, same reason as Radio_friendly: a crate I still hold keeps its owner's name even
+        //  after the grant that filled it ended.  The shelf is mine; the name is theirs.
+        let pier = (ident && M.Swarm_peers)
+            ? M.Swarm_peers(ident, { live: 'all' }).find(p => String(p.sc.pub) === hp)
+            : ((ident && M.Swarm_peering) ? M.Swarm_peering(ident)?.o({ Pier: 1, pub: hp })[0] : null)
         let name = pier?.sc?.friendly ? String(pier.sc.friendly) : hp.slice(0, 8)
         out.push({ key: hp, name: name, shelf: this.Ra_home_them(w, hp) })
     }

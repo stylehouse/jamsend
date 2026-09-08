@@ -1,9 +1,7 @@
 Snap:H
   H:LagoonStaple,Run
     A:LagoonStaple
-      self,round=3	{"mung":["age"]}
       w:LagoonStaple
-        self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
         req:stand_wait,finished
         aimed:fixture

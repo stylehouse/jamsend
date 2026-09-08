@@ -5,27 +5,27 @@ story:VytoCell
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.044
-      sample=0.026,at=1786278489
-      sample=0.08,at=1786278969
-      sample=0.029,at=1786320147
-      sample=0.03,at=1786320177
-      sample=0.066,at=1786323224
       sample=0.036,at=1786323256
       sample=0.03,at=1786323831
       sample=0.027,at=1786324134
       sample=0.086,at=1786325337
       sample=0.033,at=1788853983
+      sample=0.046,at=1788869709
+      sample=0.08,at=1788870480
+      sample=0.038,at=1788884699
+      sample=0.029,at=1788900856
+      sample=0.037,at=1788903097
     TimeTotal:step,avg=0.006
-      sample=0.004,at=1786278489
-      sample=0.011,at=1786278969
-      sample=0.004,at=1786320147
-      sample=0.004,at=1786320177
-      sample=0.009,at=1786323224
       sample=0.005,at=1786323256
       sample=0.004,at=1786323831
       sample=0.004,at=1786324134
       sample=0.012,at=1786325337
       sample=0.005,at=1788853983
+      sample=0.007,at=1788869709
+      sample=0.011,at=1788870480
+      sample=0.005,at=1788884699
+      sample=0.004,at=1788900856
+      sample=0.005,at=1788903097
   step,dige:7bb338130606d584
   step=2,dige:1902b2d06d07af4c,desc:seed three sibling cogs with distinct doses
   step=3,dige:13185f216eadbf34,desc:mint A:Vyto beside the run and commission it on the three cogs

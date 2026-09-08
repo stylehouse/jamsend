@@ -1,0 +1,29 @@
+Snap:H
+  H:VytoKindfold,Run
+    A:VytoKindfold
+      self,round=8	{"mung":["age"]}
+      w:VytoKindfold
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        {"diag":"kindfold","vw":"1","rows":"21","crests":"3","folded":"18","deck":"kindfold,saylaw","commissioned":"1"}
+        Cog:cog1,of:main,metal:brass,checked
+        Cog:cog2,of:main,metal:iron,checked
+        Cog:cog3,of:main,metal:brass,checked
+        Cog:cog4,of:main,metal:iron,checked
+        Cog:cog5,of:main,metal:brass,checked
+        Cog:cog6,of:main,metal:iron,checked
+        Cog:cog7,of:main,metal:brass,checked
+        Cog:cog8,of:main,metal:iron,checked
+        Vane:vane1,of:main,metal:brass,checked
+        Vane:vane2,of:main,metal:iron,checked
+        Vane:vane3,of:main,metal:brass,checked
+        Vane:vane4,of:main,metal:iron,checked
+        Vane:vane5,of:main,metal:brass,checked
+        Vane:vane6,of:main,metal:iron,checked
+        Hub:hub1,of:main,metal:brass,checked
+        Hub:hub2,of:main,metal:iron,checked
+        Hub:hub3,of:main,metal:brass,checked
+        Hub:hub4,of:main,metal:iron,checked
+        req:crowd_wait,finished
+        req:kind_wait,finished
+        req:say_wait,finished

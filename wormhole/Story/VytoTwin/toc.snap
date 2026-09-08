@@ -1,0 +1,18 @@
+story:VytoTwin
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.022
+      sample=0.024,at=1788902939
+      sample=0.02,at=1788902953
+      sample=0.023,at=1788905435
+    TimeTotal:step,avg=0.006
+      sample=0.006,at=1788902939
+      sample=0.005,at=1788902953
+      sample=0.006,at=1788905435
+  step,dige:d881d34dffabf1ea
+  step=2,desc:seed two byte-identical siblings beside one that differs,dige:b7f4c566863de265
+  step=3,desc:commission the glass — the twins share one cell and that cell says it stands for two,dige:f844e17bfc09be3f
+  step=4,desc:give a cog three hidden children and mark it flat — the cell must say how many it hides,dige:7bea38a32e6e6ae8

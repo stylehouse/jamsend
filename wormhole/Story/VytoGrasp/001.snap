@@ -1,0 +1,7 @@
+Snap:H
+  H:VytoGrasp,Run
+    A:VytoGrasp
+      self,round	{"mung":["age"]}
+      w:VytoGrasp
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

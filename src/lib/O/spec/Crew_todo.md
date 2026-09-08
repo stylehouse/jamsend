@@ -50,7 +50,25 @@ The owner linked a real second device and pasted ten minutes of its console. Eve
      durable pier takes its name: no scheme, no newlines, 24 chars, and an empty name stays absent rather
       than stamping undefined.
 
-Books re-run green on the fixed build, caveat 0: SwarmBody (23), SwarmSpread, SwarmHelm, SwarmStaple,
+⚠ **CORRECTED 2026-09-08 — SwarmSpread IS NOT GREEN, and has not been since the adopt road retired.**
+ The line below is stale. Measured on the live runner, **four runs** (two on a changed `Swarm.go`, two on
+  the committed one — a deliberate bisect, so this is not tonight's `since` work): every step's own
+   content matches its fixture (`ok:1`, `caveat:0`, 5/5) and the run still FAILS, because **five declared
+    `%Assertion`s never fire**: `a-blank-device-offers` (step 2), `the-soul-seals-across` and
+     `the-device-consents-to` (step 3), `the-ceremony-fails-closed` (4), `the-account-ferries-over` (5).
+ **Why:** four of those five sentences no longer exist anywhere in `Ghost/` — `git log -S` puts their
+  removal in **`4f3ce9cb`**, the very commit that retired the adopt road, and `Swarmation.g:4249` says as
+   much in its own header (*"re-authored 2026-09-03 when the adopt road retired"*). The re-author took the
+    ceremony out of the code and **left its oaths declared in the toc**. The fifth sentence survives, but
+     in `InvFerry.g` — a different Book.
+ **This is the sworn protocol working exactly as designed** — *"an absence reds the run by name even at
+  `ok_pct:1`"* — catching an oath whose subject was deleted. Nobody had run SwarmSpread since, so nobody
+   heard it. It is a REAL red that was invisible for five days, not a flake.
+ **The fix is toc surgery — five stale `Assertion:` lines — and it is the HUMAN'S**, because striking a
+  declared oath is deciding that a promise no longer applies. Verify `grep -c step=N` is 1 per step
+   afterwards; duplicate step lines wedge Story at `begun`.
+
+~~Books re-run green on the fixed build, caveat 0~~ (stale for SwarmSpread, see above): SwarmBody (23), SwarmSpread, SwarmHelm, SwarmStaple,
  SwarmPost, InvFerry, SwarmReboot, MusuPoolRandom, MusuPoolFill. **SwarmGot is unstable run-to-run
   (3c,6c / 4 / 3c,6c) and that is NOT from this work** — its dirty fixture carries only the keys-as-
    particles Crew block from earlier the same day, and the two %Crew blocks appear in a different order

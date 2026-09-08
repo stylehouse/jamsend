@@ -1,0 +1,28 @@
+Snap:H
+  H:VytoKindfold,Run
+    A:VytoKindfold
+      self,round=6	{"mung":["age"]}
+      w:VytoKindfold
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        diag:kindfold,vw:1,rows:21,crests:3,folded:18,deck:kindfold,commissioned:1
+        Cog:cog1,of:main,metal:brass
+        Cog:cog2,of:main,metal:iron
+        Cog:cog3,of:main,metal:brass
+        Cog:cog4,of:main,metal:iron
+        Cog:cog5,of:main,metal:brass
+        Cog:cog6,of:main,metal:iron
+        Cog:cog7,of:main,metal:brass
+        Cog:cog8,of:main,metal:iron
+        Vane:vane1,of:main,metal:brass
+        Vane:vane2,of:main,metal:iron
+        Vane:vane3,of:main,metal:brass
+        Vane:vane4,of:main,metal:iron
+        Vane:vane5,of:main,metal:brass
+        Vane:vane6,of:main,metal:iron
+        Hub:hub1,of:main,metal:brass
+        Hub:hub2,of:main,metal:iron
+        Hub:hub3,of:main,metal:brass
+        Hub:hub4,of:main,metal:iron
+        req:crowd_wait,finished
+        req:kind_wait,finished

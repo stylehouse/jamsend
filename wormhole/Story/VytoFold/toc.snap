@@ -4,28 +4,28 @@ story:VytoFold
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.019
-      sample=0.019,at=1786239557
-      sample=0.011,at=1786240784
-      sample=0.023,at=1786246114
-      sample=0.012,at=1786250317
+    TimeTotal:beliefs,avg=0.02
       sample=0.024,at=1786251102
       sample=0.016,at=1786256919
       sample=0.013,at=1786258843
       sample=0.043,at=1786278529
       sample=0.015,at=1786278994
       sample=0.015,at=1788854806
-    TimeTotal:step,avg=0.002
-      sample=0.002,at=1786239557
-      sample=0.001,at=1786240784
-      sample=0.003,at=1786246114
-      sample=0.002,at=1786250317
+      sample=0.032,at=1788870527
+      sample=0.013,at=1788893154
+      sample=0.014,at=1788898964
+      sample=0.017,at=1788905395
+    TimeTotal:step,avg=0.003
       sample=0.003,at=1786251102
       sample=0.002,at=1786256919
       sample=0.002,at=1786258843
       sample=0.005,at=1786278529
       sample=0.002,at=1786278994
       sample=0.002,at=1788854806
+      sample=0.004,at=1788870527
+      sample=0.002,at=1788893154
+      sample=0.002,at=1788898964
+      sample=0.002,at=1788905395
   step,dige:b5d16e38357626bf
   step=2,dige:0db474df303ae9ca,desc:the screen budget scales with the glass area
     Assertion:budget-scales-with-glass,sentence:the screen budget grows with the glass — a wall four times the area introduces four times as many cells

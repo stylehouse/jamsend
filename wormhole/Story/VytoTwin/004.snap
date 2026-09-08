@@ -1,0 +1,16 @@
+Snap:H
+  H:VytoTwin,Run
+    A:VytoTwin
+      self,round=6	{"mung":["age"]}
+      w:VytoTwin
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:twin,of:main
+        Cog:twin,of:main
+        Cog:lone,of:main
+        req:twin_wait,finished
+        Cog:box,of:main
+          Guts:a
+          Guts:b
+          Guts:c
+        req:flat_wait,finished

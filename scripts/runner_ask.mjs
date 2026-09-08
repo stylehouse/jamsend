@@ -173,7 +173,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|lagoon [defs|families|mentions|rot|callers|lint|join] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|lagoon [seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
 
@@ -780,11 +780,37 @@ let exitCode = 0
 //   stays single-shot.  --player joined 2026-08-13: its verbs are read-only by construction (PLAYER_OPS),
 //    so insisting is harmless, and a listening tab mid-decode legitimately misses a single 12s window.
 const INSIST = (runnerSel !== undefined || playerSel !== undefined) ? Number(process.env.RUNNER_INSIST_TRIES || 5) : 1
+// AUTO-STAND THE LAND, because a tab reload silently un-stands it and every L verb then refuses.
+//  `Ghost/L/*` are outside the spine manifest by design, so `A:Atlas`/`A:Lagoon`/`A:Electrode` exist
+//   only because someone stood them — and ANY edit to app source hot-reloads the tab and drops all
+//    three.  During a working session that happens constantly, and the refusal is always the same
+//     sentence naming the exact command that fixes it.  A CLI that can read that sentence and will not
+//      act on it is making a human retype what it already knows.
+//   ONE attempt, and it does NOT retry the op: standing Atlas starts a 700-doc walk that takes ~90s to
+//    converge, so an immediate retry would answer off an empty census — which is worse than refusing,
+//     because it looks like an answer.  Stand it, say so, say what it needs, and stop.
+const STANDABLE = { Atlas: 'Ghost/L/Atlas.g', Lagoon: 'Ghost/L/Lagoon.g', Electrode: 'Ghost/L/Electrode.g' }
+let auto_stood = null
 let reply
 for (let attempt = 1; ; attempt++) {
 	reply = await sendAsk(ws, ask)
 	const stuck = reply.control !== 'runner_ack' || reply.ok === false
 	if (!stuck || attempt >= INSIST) break
+	const why  = String(reply.result?.error ?? '')
+	const want = /no A:(\w+) standing/.exec(why)?.[1]
+	if (want && STANDABLE[want] && auto_stood !== want) {
+		auto_stood = want
+		console.error(`⇢ ${want} is not standing on ${TARGET.slice(0, 8)} (a tab reload drops the L ghosts) — standing it for you`)
+		const st = await sendAsk(ws, { op: 'ghost_load', path: STANDABLE[want], stand: want })
+		if (st.control === 'runner_ack' && st.ok !== false) {
+			console.error(`⇢ stood A:${want}. The census walks in the background (~90s for the real corpus) — re-run when it has settled:`)
+			console.error(`     node scripts/runner_ask.mjs lagoon lint --runner=${TARGET}   # 0 docs = still walking`)
+			exitCode = 1
+			ws.close()
+			process.exit(exitCode)
+		}
+		console.error(`⇢ could not stand it: ${st.result?.error ?? st.error ?? 'no reply'}`)
+	}
 	console.error(`… runner ${TARGET.slice(0, 8)} ${reply.ok === false ? `refused (${reply.result?.error ?? 'busy'})` : 'silent'} — insisting ${attempt}/${INSIST}`)
 	await new Promise(r => setTimeout(r, Number(process.env.RUNNER_INSIST_MS || 3000)))
 }
@@ -1000,6 +1026,95 @@ else if (op === 'snap' && reply.result?.got_snap) {
 			for (const x of r.by_ms) console.log(`    ${String(x.ms).padStart(7)}ms  ${name(x.from).padEnd(34)} → ${x.to}  ×${x.n} max ${x.max}ms${x.async ? ' async ' + x.async : ''}`)
 		}
 	} else console.log(`electrode: ${JSON.stringify(r)}`)
+} else if (op === 'lagoon' && reply.result && !reply.result.error && reply.result.atlas != null && reply.result.defs) {
+	// seek — the unified answer, printed in the seeker's own order.  The header says which censuses
+	//  replied, because a partial answer that looks whole is the silent-empty law one layer up.
+	const r = reply.result
+	// STANDING IS NOT THE SAME AS ANSWERING.  A runner has a `w:Lies` but never mounts a searchbar, so
+	//  its Stemdex is empty — and "stemdex" in this header would claim a reading that contributed
+	//   nothing.  Say which state it is in; a census that answered nothing should look different from
+	//    one that answered.
+	const dex = !r.stemdex ? 'stemdex NOT standing'
+		: !r.total ? 'stemdex standing but UNINDEXED here (0 docs — nothing has scanned on this tab)'
+		: `stemdex ${r.done}/${r.total} docs`
+	console.log(`seek "${r.q}" — ${r.atlas ? '◈ atlas' : '◈ atlas NOT standing'} · ${dex}`)
+	if (r.families?.length) {
+		console.log(`\n  ◈  families — the larger objects (${r.families.length})`)
+		console.log('    ' + r.families.map(f => `${f.head ?? f.stem}·${f.defs}`).join('   '))
+	}
+	// a `doc:` scope that lands on ONE document answers with its SHAPE first — the beadchain — and the
+	//  defs list below it is then the same content flattened, which is worth seeing both ways.
+	if (r.beads) {
+		const b = r.beads
+		console.log(`\n  ◆  ${b.doc} — ${b.lines} lines · ${b.beads} bead(s) · ${b.defs} def(s)${b.loose ? ` · ${b.loose} outside every bead` : ''}`)
+		for (const c of b.chain) {
+			const pad = '    ' + '  '.repeat(c.depth ?? 0)
+			if (c.kind === 'region') console.log(`${pad}◆ ${c.label}${c.defs ? `   (${c.defs})` : ''}`)
+			else console.log(`${pad}· ${String(c.label).padEnd(36 - pad.length)} :${c.line}`)
+		}
+	} else if (r.beads_ambiguous) {
+		console.log(`\n  ◆  ${r.beads_ambiguous} docs match that doc: prefix — narrow it for a beadchain`)
+	}
+	const sect = (title, rows, fmt) => { if (!rows?.length) return
+		console.log(`\n  ${title}  (${rows.length})`)
+		for (const x of rows.slice(0, 40)) console.log('    ' + fmt(x))
+		if (rows.length > 40) console.log(`    … ${rows.length - 40} more`) }
+	sect('ƒ  methods', r.defs, d => `${String(d.name).padEnd(34)} ${d.doc}:${d.line}${d.from === 'stemdex' ? '   (stemdex only)' : ''}`)
+	if (r.mentions?.length) sect(`¶  prose that names \`${r.mentions_of}\``, r.mentions, m => `${m.doc}:${m.line}`)
+	sect('%  properties', r.props, p => `${String(p.name).padEnd(34)} ${p.doc}:${p.line ?? ''}`)
+	sect('≈  text', r.texts, t => `${String(t.name).padEnd(34)} ${t.doc}:${t.line ?? ''}`)
+	if (!r.defs.length && !r.props?.length && !r.texts?.length && !r.families?.length) console.log('  nothing')
+} else if (op === 'lagoon' && reply.result && !reply.result.error && reply.result.chain) {
+	// beads — one document as its own shape.  Printed as a CHAIN: file order, indented by region
+	//  depth, region lines carrying how much of the file they hold.  No arrangement is invented; an
+	//   order and an indent are the two things the corpus actually states (Lagoon_todo leg 4).
+	const r = reply.result
+	console.log(`beads: ${r.doc} — ${r.lines} lines · ${r.beads} bead(s) · ${r.defs} def(s)${r.loose ? ` · ${r.loose} outside every bead` : ''}`)
+	for (const c of r.chain) {
+		const pad = '  '.repeat(1 + (c.depth ?? 0))
+		if (c.kind === 'region') console.log(`${pad}◆ ${c.label}${c.defs ? `   (${c.defs})` : ''}`)
+		else console.log(`${pad}· ${String(c.label).padEnd(38 - pad.length)} :${c.line}`)
+	}
+} else if (op === 'lagoon' && reply.result && !reply.result.error && reply.result.queue) {
+	// rotwork — the queue, printed as a round of visits rather than a list of links.  Doc, then its
+	//  items with a proposed fix where the census could compute one, then the exit it leans to.
+	const r = reply.result
+	console.log(`rotwork: ${r.rot_items} rotted pointer(s) over ${r.docs_with_rot} doc(s) — ${r.to_fix} to FIX, ${r.to_obsolete} that look STALE (retire to spec/history/)`)
+	for (const g of r.queue) {
+		console.log(`\n  ${g.exit === 'obsolete' ? '⌦ STALE?' : '✎ FIX   '}  ${g.doc}  — ${g.n} pointer(s)`)
+		for (const it of g.items) {
+			console.log(`      :${String(it.line).padEnd(5)} ${it.kind.padEnd(4)} ${it.target}`)
+			console.log(`             ${it.why}${it.fix ? `   →  try  ${it.fix}` : ''}`)
+		}
+	}
+	if (r.docs_with_rot > r.queue.length) console.log(`\n  … ${r.docs_with_rot - r.queue.length} more doc(s) — --k=N for a longer round`)
+} else if (op === 'lagoon' && reply.result && !reply.result.error
+           && (reply.result.sect_links != null || reply.result.sworn_links != null)) {
+	// the two LINT-shaped verbs print as a report, not a JSON wall — `lint` can carry hundreds of rot
+	//  rows and `oaths` a row per Book.  Everything else the reader answers stays raw JSON below (a
+	//   defs|families|mentions reply is a list a human greps, and shaping it would only lose fields).
+	const r = reply.result
+	const cap = (a, n) => a.slice(0, n)
+	if (r.sect_links != null) {
+		console.log(`lint: ${r.docs} docs · file:line ${r.file_links} (${r.missing.length} missing, ${r.beyond_eof.length} past EOF) · § ${r.sect_links} — ${r.sect_links - r.sect_self} doc-qualified (${r.sect_nodoc.length} no such doc, ${r.sect_gone.length} no such section), ${r.sect_self} bare (referent is prose — not linted) · orphan defs ${r.orphans_total}`)
+		if (r.sect_gone.length) {
+			// the NEW signal, and the reason § was worth collecting: the doc is alive and reads fine,
+			//  but the section it points at has been renumbered, merged or dropped.
+			console.log(`  § pointing at a section that is gone (live doc, dead anchor):`)
+			for (const x of cap(r.sect_gone, 40)) console.log(`    ${x.doc}:${x.line}  →  ${x.target} §${x.sect}`)
+			if (r.sect_gone.length > 40) console.log(`    … ${r.sect_gone.length - 40} more`)
+		}
+		if (r.sect_nodoc.length) {
+			console.log(`  § pointing at a doc nothing rosters (moved to history/, renamed, or never was):`)
+			for (const x of cap(r.sect_nodoc, 20)) console.log(`    ${x.doc}:${x.line}  →  ${x.target} §${x.sect}`)
+			if (r.sect_nodoc.length > 20) console.log(`    … ${r.sect_nodoc.length - 20} more`)
+		}
+	} else {
+		console.log(`oaths: ${r.tocs_read} toc(s) read over ${r.books} Book(s), ${r.oaths} declared assertion(s) · Book: links ${r.book_links} (${r.book_gone.length} gone) · «sworn» links ${r.sworn_links} (${r.sworn_ok.length} land, ${r.sworn_gone.length} gone)`)
+		for (const x of cap(r.sworn_ok, 40))   console.log(`    ✓ ${x.doc}:${x.line}  «${x.slug}»  → Book:${x.book}`)
+		for (const x of cap(r.sworn_gone, 40)) console.log(`    ✗ ${x.doc}:${x.line}  «${x.slug}»  — no Book declares it`)
+		for (const x of cap(r.book_gone, 40))  console.log(`    ✗ ${x.doc}:${x.line}  Book:${x.target}  — no such Book`)
+	}
 } else if (op === 'console' && reply.result && Array.isArray(reply.result.lines)) {
 	// the live tab's console ring — the raw log/warn/error a human reads in DevTools, over the wire.
 	//  Each line prefixed with a wall-clock time + level, so ordering + severity read at a glance.

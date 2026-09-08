@@ -218,7 +218,8 @@ export const LANG_COMPILE = {
         const HEADING_RE = /^(?:ATX|Setext)Heading([1-6])$/
         const words: Array<{ label?: string, depth?: number, from: number, to: number,
                              line: number, region_path?: string[],
-                             link?: 1, kind?: 'wiki' | 'file' | 'code', target?: string, at_line?: number }> = []
+                             link?: 1, kind?: 'wiki' | 'file' | 'code' | 'sect' | 'book' | 'sworn',
+                             target?: string, at_line?: number, sect?: string, anchor?: 1 }> = []
         // the open-heading chain ({label, level} per ancestor in scope): a new heading
         //  pops every open heading of equal-or-deeper level, then becomes the innermost.
         const stack: Array<{ label: string, level: number }> = []
@@ -266,9 +267,80 @@ export const LANG_COMPILE = {
         //   emits every candidate and the READER (Lagoon, over Atlas's def index) decides which are real
         //    links.  Atlas keeps; Lagoon asks — an unresolvable target is simply a mention, not rot.
         const CODE_RE = /`([A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]+)`/g
+        // SECT — `<Doc> §N.N` and a bare `§N.N` (2026-09-08, leg 2).  MEASURED FIRST, and the measurement
+        //  is the whole argument: this corpus makes 4,257 §-references in spec/ alone and NONE of them was
+        //   collected, while the `Doc#region` form the plan proposed appears TWICE.  The corpus already
+        //    has a section-link language; it just spells it §.  Same lesson as `code` — most of the link
+        //     language is already written, and the job is to notice which form people actually type.
+        //  THE SHAPE IS THE FILTER, again.  Naively "word before §" gives 1,793 hits topped by `the §3`,
+        //   `in §5` — English, not documents.  Requiring the qualifier to look like a doc NAME (Capitalised
+        //    with an underscore, optionally `.md`, optionally path-prefixed) gives 463 across 113 distinct
+        //     target docs.  The 943 BARE `§N` are not noise either: inside a doc they mean *this* doc's
+        //      §N, which resolves and lints exactly the same way — so they are emitted with NO target, and
+        //       the reader reads an absent target as "self".  (Never a `target: undefined`: an undefined sc
+        //        value encodes as an `{"undef":…}` brand, which is a mint bug, so the key is added only
+        //         when it exists — the album/body_hash idiom.)
+        //  A doc name qualifies two ways and BOTH are needed: it carries an underscore (`Lagoon_todo`,
+        //   the house style) or it ends `.md` (`Frontier.md`, `Interest.md` — the older single-word
+        //    docs).  Requiring the underscore alone silently demoted every `Frontier.md §1` to a SELF-
+        //     reference, which is worse than missing it: it lints the wrong document.
+        //  And the BACKTICK between them is optional-and-common: this corpus writes doc names in code
+        //   spans, so `` `Voro_render_todo.md` §0 `` has a backtick sitting between the name and the §.
+        //    Requiring a bare space demoted 189 of 469 doc-qualified links (40%) to self-references —
+        //     measured, not guessed, and the single largest correctness win in this pass.
+        const SECT_RE = /(?:\b((?:[A-Za-z0-9_.-]+\/)*[A-Z][A-Za-z0-9]*(?:(?:_[A-Za-z0-9]+)+(?:\.md)?|\.md))`?[ \t]+`?)?§(\d+(?:\.\d+)*[a-z]?)/g
+        // BOOK — `Book:<Name>` / `Book=<Name>`, the pointer from prose to a Story Book.  Only the explicit
+        //  colon|equals form: the bare prose `Book LakeSurprise` (71 in spec/) cannot be told from a
+        //   sentence that happens to start a name after the word "Book", and the `the §3` lesson above is
+        //    one page old.  18 live, which is small and honest — the value is that a Book link can ROT
+        //     (a Book gets renamed or retired) and until now nothing could see that.
+        //  THE TRAILING `*` IS A GLOB, NOT A NAME.  The corpus writes `Book:Voro*` for "every Voro
+        //   Book", and the first cut captured `Voro` from it and reported a Book that does not exist —
+        //    2 of its 3 dead links, found the first time `oaths` was ever run.  Every link form in this
+        //     corpus turns out to have a pattern-or-placeholder variant (`«slug»`, `the §3`, bare
+        //      `Name.ext`, backticked words without an underscore, and now this); assume yours does too.
+        //  The lookahead must forbid a following NAME CHARACTER as well as the `*`, or the regex simply
+        //   backtracks to a shorter capture — `Book:Voro*` would match `Vor`, which is worse than the
+        //    bug it fixes.
+        const BOOK_RE = /\bBook[:=]([A-Z][A-Za-z0-9]+)(?![A-Za-z0-9*])/g
+        // SWORN — `«assertion-slug»`, the spec→test-assertion pointer (the owner's own downgraded story 4:
+        //  *"pointers from the spec to the test assertion, sure"*).  The guillemets are not invented here:
+        //   they are what `runner_ask assertions` already prints, so an author pastes a line of CLI output
+        //    and has a link.  Filtered to the SLUG shape (three or more kebab words) because the other
+        //     guillemet uses in the corpus are prose placeholders — `«slug»`, `«X»`, `«uncoupled»`.
+        //  Four live links today.  Named anyway, because a form nobody can spell is a form nobody uses,
+        //   and this is the one that lets a doc's claim be checked against a Book's oath.
+        const SWORN_RE = /«([a-z0-9]+(?:-[a-z0-9]+){2,})»/g
+        // not a link — an ANCHOR a § can land on.  Line-anchored and non-global (one per line, tested
+        //  with exec rather than matchAll) because it is a line's OPENING, not something found in prose.
+        const ANCHOR_RE = /^\s*(?:[-*]\s+)?\*\*(\d+[a-z]?(?:\.\d+[a-z]?)*)[ .:]/
+        const FENCE_RE  = /^\s*(?:```|~~~)/
+        // FENCED CODE IS SKIPPED; INDENTED TEXT IS NOT, and the second half is the load-bearing one.
+        //  A ``` block holds EXAMPLES — a doc showing what a link looks like is not making one — and
+        //   skipping them costs 55 links across spec/ (51 §, 4 file:line, 0 code).  Small and right.
+        //  The tempting next step is to skip 4-space-indented lines too, since CommonMark would call
+        //   them code.  DO NOT.  This corpus indents PROSE deeply as its house style (hanging
+        //    continuations under a paragraph or a bullet), and by that rule 3,056 `code` links, 970 §
+        //     and 417 file:line — a third of every link in the corpus — are inside "code".  Measured
+        //      2026-09-08 before doing it.  CommonMark itself agrees with the corpus, not the heuristic:
+        //       an indented line continuing a paragraph is lazy continuation, not a code block.  The
+        //        parsed tree knows the difference; a line sweep does not, so the sweep does not guess.
+        //  THE TOGGLE IS STATEFUL, SO AN UNBALANCED FENCE WOULD SWALLOW THE REST OF THE FILE — one
+        //   stray ``` and every link below it vanishes with no error anywhere.  Measured: 0 of 391
+        //    docs in spec/ are unbalanced today, which is luck rather than safety, and silent loss is
+        //     the exact failure this whole layer exists to refuse.  So count first: if the fencing is
+        //      broken, collect EVERYTHING.  That trades silent under-collection for over-collection,
+        //       and over-collection is harmless here — resolution is the reader's, and an unresolvable
+        //        target is a mention, not rot (the m14 lesson).  A cheap pass over one document.
+        let fences = 0
+        for (let ln = 1; ln <= doc.lines; ln++) if (FENCE_RE.test(doc.line(ln).text)) fences++
+        const fencing_sound = fences % 2 === 0
+        let fenced = false
         for (let ln = 1; ln <= doc.lines; ln++) {
             const dline = doc.line(ln)
             const text  = dline.text
+            if (fencing_sound && FENCE_RE.test(text)) { fenced = !fenced; continue }
+            if (fenced) continue
             for (const m of text.matchAll(WIKI_RE)) {
                 words.push({ link: 1, kind: 'wiki', target: m[1], from: dline.from + m.index!,
                             to: dline.from + m.index! + m[0].length, line: ln } as any)
@@ -281,6 +353,30 @@ export const LANG_COMPILE = {
                 words.push({ link: 1, kind: 'code', target: m[1], from: dline.from + m.index!,
                             to: dline.from + m.index! + m[0].length, line: ln } as any)
             }
+            for (const m of text.matchAll(SECT_RE)) {
+                const w: any = { link: 1, kind: 'sect', sect: m[2], from: dline.from + m.index!,
+                                to: dline.from + m.index! + m[0].length, line: ln }
+                if (m[1]) w.target = m[1]
+                words.push(w)
+            }
+            for (const m of text.matchAll(BOOK_RE)) {
+                words.push({ link: 1, kind: 'book', target: m[1], from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+            for (const m of text.matchAll(SWORN_RE)) {
+                words.push({ link: 1, kind: 'sworn', target: m[1], from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+            // ANCHOR — a numbered section that is NOT a heading.  This corpus routinely numbers
+            //  sub-items in bold inside a section (`**7.4 Per-peer fairness: OUT OF SCOPE. RULED.**`,
+            //   `**0.2e DESIGNED …**`) and then points § at them, which is a perfectly good anchor and
+            //    invisible to a heading-only index.  Measured: counting these turned 2 of 10 cross-doc
+            //     "dead" § links and 78 self-references back into live ones — i.e. they were the lint
+            //      being wrong, not the docs.  Emitted as their own row so the heading tree (which
+            //       carries depth and region_path) stays exactly what it was.
+            const am = ANCHOR_RE.exec(text)
+            if (am) words.push({ anchor: 1, sect: am[1], line: ln,
+                                from: dline.from, to: dline.to } as any)
         }
 
         // region_path for links — same "last entry before this line" trick as compile.ts's via
@@ -312,12 +408,16 @@ export const LANG_COMPILE = {
                 if (rp) wc.c.region_path = rp
                 continue
             }
+            // an %anchor is a numbered NON-heading — it carries no label, depth or region_path, so it
+            //  must not fall into the region branch below (that would stamp `label: undefined`, and an
+            //   undefined sc value encodes as an `{"undef":…}` brand: a mint bug, not furniture).
+            if ((w as any).anchor) { Map_C.i({ anchor: 1, sect: (w as any).sect, from: w.from, to: w.to, line: w.line } as any); continue }
             const wc = Map_C.i({ region: 1, label: w.label, depth: w.depth,
                                  from: w.from, to: w.to, line: w.line })
             wc.c.region_path = w.region_path
         }
 
-        this.trace(`Lang`, `Markdown TOC regions x${words.filter(w => !(w as any).link).length}`)
+        this.trace(`Lang`, `Markdown TOC regions x${words.filter(w => !(w as any).link && !(w as any).anchor).length}`)
     },
 
     // Per doc-line, find the first IOing|Sunpit node in its span → substitute

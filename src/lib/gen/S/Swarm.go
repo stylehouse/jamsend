@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '3793771b9fedaf6e~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '837de709f0852d62~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1661,7 +1661,9 @@ async Swarm_arm(w) {
         if (frame.header.type === 'roster') await this.Swarm_roster_heard(w2, ident, frame.swarm)
         if (frame.header.type === 'crew') await this.Swarm_crew_heard(w2, ident, frame.swarm)
         // the cross-body procedure lane (Reach_todo): a sibling books work on me / tells me the outcome.
-        if (frame.header.type === 'reach') this.Swarm_reach_road(w2, ident, frame.swarm)
+        // the 4th argument is the WIRE's own answer to "who actually sent this" — bound to the reach's
+        //  claimed `by` inside the road (SoundPooling_todo:640).  The mail lane below passes none.
+        if (frame.header.type === 'reach') this.Swarm_reach_road(w2, ident, frame.swarm, frame.header.from)
         if (frame.header.type === 'reach_done') this.Swarm_reach_ack(w2, ident, frame.swarm)
         // the handoff lane (Heard.g, Radio_circuit_todo §7.5): a sibling hands me a heart to carry / confirms mine landed.
         if (frame.header.type === 'take' && this.Heard_hand_land) this.Heard_hand_land(w2, ident, frame.swarm)
@@ -3551,6 +3553,10 @@ Swarm_pier_stash(ident, page, grants, nots, st0) {
     if (page.prepub) e.page.prepub = page.prepub
     if (page.pub) e.page.pub = page.pub
     if (page.friendly) e.page.friendly = page.friendly
+    // FIRST WRITE WINS for `since` — the birth of a bond is a fact that only happens once, so a later
+    //  re-stash (a re-seal, a restash_all mirror, a graft convergence) must never move it forward.  The
+    //   partial callers that pass prepub alone simply leave it be, like every other page field here.
+    if (page.since && !e.page.since) e.page.since = String(page.since)
     for (const g of (grants || [])) {
         if (!g) continue
         let key = String(g.to) + '|' + String(g.by) + '|' + String(g.for || '')
@@ -3586,6 +3592,12 @@ Swarm_piers_rehydrate(w, ident, st0) {
             let e = mine[theirPrepub]
             if (!e?.page?.prepub) continue
             let pier = this.Swarm_seal(w, ident, e.page, e.grants?.[0] ?? null, e.grants?.[1] ?? null)
+            // RESTORE `since` AFTER the seal, deliberately.  Swarm_seal stamps Swarm_now when it finds the
+            //  key absent (3357) — which is right for a NEW bond and wrong for one we are merely standing
+            //   back up — so the durable value has to land on top of that stamp, not before it.  Order
+            //    matters and this is the only correct place: seal's own `re_seal` read (3345) happens
+            //     first and still sees the honest "this particle did not exist yet".
+            if (e.page.since) pier.sc.since = String(e.page.since)
             let gi = 2
             while (gi < (e.grants?.length || 0)) {
                 let g = e.grants[gi]
@@ -3626,6 +3638,11 @@ Swarm_piers_rehydrate(w, ident, st0) {
 Swarm_pier_entry(pier) {
     let peer = pier.o({ Peering: 1 })[0]
     let page = { prepub: pier.sc.pub, pub: peer?.sc?.pub, friendly: pier.sc.friendly }
+    // `since` TRAVELS NOW (§4.2, 2026-09-08).  It is when the BOND formed, and a bond does not re-form
+    //  because a tab reloaded — but the entry never carried it, so Swarm_seal's "a re-seal never resets
+    //   it" guard met an absent since on every standup and stamped Swarm_now instead.  Guarded, never
+    //    stamped undefined (the undef-marker law): a pier with no since leaves the key absent.
+    if (pier.sc.since) page.since = String(pier.sc.since)
     let grants = pier.o({ Grant: 1 }).map(g => grant_of_C(g))
     let nots = pier.o({ NotGrant: 1 }).map(a => ({ not: a.sc.NotGrant, by: a.sc.by, for: a.sc.for, time: a.sc.time, sign: a.sc.sign }))
     return { page: page, grants: grants, nots: nots }
@@ -4034,12 +4051,17 @@ Swarm_pools_rehydrate(w, ident, st0) {
 //     the moment I chose; a friend on today's roll who is not on that roll is NEW, and a new friend SPENDS
 //      the choice (deleted, not merely skipped — `saw` is never refreshed, so a skip would disable the
 //       restore for the rest of that stash's life and rot there unexplained).
-//  WHY THE ROLL AND NOT `pier.sc.since` ALONE: because since does NOT survive a reload.  A pier's stash
-//   entry is page(prepub|pub|friendly) + grants + nots, no `since`, and Swarm_piers_rehydrate re-seals
-//    through Swarm_seal, whose "a re-seal never resets it" guard sees an ABSENT since and stamps
-//     Swarm_now.  SwarmReboot's own fixture prints the proof: 003.snap carries `since:1751700000` and
-//      005.snap, after the reload, carries `since:1751700030`.  Comparing a stamp against those would
-//       find EVERY friend newer than the choice on EVERY boot and drop it every time.  `at` is stamped
+//  WHY THE ROLL AND NOT `pier.sc.since` ALONE.  ⚠ THE ORIGINAL REASON IS NOW FIXED, AND THE ROLL STILL
+//   STANDS — do not "simplify" it away on the strength of the repair.  It USED to be that since did not
+//    survive a reload: the stash entry was page(prepub|pub|friendly) + grants + nots with no `since`, and
+//     Swarm_piers_rehydrate re-seals through Swarm_seal, whose "a re-seal never resets it" guard met an
+//      ABSENT since and stamped Swarm_now — so a stamp comparison found EVERY friend newer than the
+//       choice on EVERY boot and dropped it every time.  `since` now travels (Swarm_pier_entry stashes it,
+//        rehydrate restores it over seal's stamp, §4.2 2026-09-08), so that specific trap is gone.
+//  THE ROLL IS STILL RIGHT, for the reason that was always the deeper one: `since` records when THE BOND
+//   formed, and the question here is when I MADE THE CHOICE.  Those are different events, and only the
+//    roll answers the second.  A friend sealed long ago but first seen by this decision is new TO IT.
+//  `at` is stamped
 //        anyway (Swarm_now, never Date.now — a Book path must be pinnable) because it is the honest
 //         record of when the decision was taken, and it is what the console line has to say.
 // Swarm_radio_roll — the friends I have RIGHT NOW, as prepubs.  Device-link rails are excluded: my own
@@ -6780,11 +6802,30 @@ Swarm_reach_ack(w, ident, frame) {
 //  book work on me (the sibling law — `by` must prefix-match a rostered %Body pub), so a stranger's
 //   frame lands nothing.  Passing the gate, the reach is heard (minted 'serving' on my %Peering) for
 //    the doer.  The relay is untrusted — this gate is the whole reason `by` rides the wire.
-Swarm_reach_road(w, ident, frame) {
+// `from` (optional, 2026-09-08 — SoundPooling_todo:640, "nothing binds a reach's `by` to the frame's
+//  actual sender").  `by` is a CLAIM carried in the body; `from` is the address the frame actually
+//   arrived under.  Until now only the claim was ever read, so a sealed peer could book work in a
+//    SIBLING's name — the voucher gate above proves the sender is *someone* we trust, and proves
+//     nothing about who they said they were.  When a sender is known (the wire lane, Swarm.g:1582
+//      passes `frame.header.from`) the two must agree.  ADDITIVE BY CONSTRUCTION: the mail/Book lane
+//       (Swarm_pump) and every hand-fed Book frame pass no `from` and keep exactly today's behaviour,
+//        so this cannot silently move a fixture — it can only close the wire.
+Swarm_reach_road(w, ident, frame, from) {
     let r = frame && frame.reach ? frame.reach : null
     if (!r || !r.by) { return null }
     let by = String(r.by)
     let same = (a, b) => a && b ? (a.startsWith(b) || b.startsWith(a) ? 1 : 0) : 0
+    // THE CLAIM MUST BE THE SENDER.  Prefix-compare like every other name compare here (a prepub is a
+    //  prefix of its pub), and demand a full key-derived name on BOTH sides first — `same()` matches
+    //   when either prefixes the other, so a one-character `from` would otherwise wave anything through,
+    //    the very footgun the friend arm below already had to be hardened against.
+    if (from) {
+        let f = String(from)
+        if (!/^[0-9a-f]{16}/.test(by) || !/^[0-9a-f]{16}/.test(f) || !same(by, f)) {
+            console.log('⨳🫱⚠ a reach CLAIMED to be from ' + by.slice(0, 8) + ' but arrived from ' + f.slice(0, 8) + ' — ignored')
+            return null
+        }
+    }
     let kin = this.Swarm_body_roster(ident).some((b) => same(String(b.sc.pub || ''), by))
     // THE PEOPLE'S MUSIC (SoundPooling_todo, 2026-09-03): a FRIEND I share with may book a pool fill on me
     //  too — the same Music grant that lets it stream from me lets it ask me to press.  Kin by roster, or
@@ -7193,10 +7234,30 @@ Swarm_body_page(ident) {
 // Swarm_body_pick — deterministic pick among post-matches on a page: the PRIMARY (bare address) first,
 //  else address ascending. `bare` is the soul's unsuffixed prepub. Shared by the own-roster and the
 //   peer-roster (Pier) lookups so both route identically.
-Swarm_body_pick(rows, post, bare) {
+// `now_s` (optional, 2026-09-08 — Social_demarcation §1, the 36-hour outage): when a clock is given,
+//  a body we have actually HEARD FROM outranks one we have not.  The precipitating fact was that
+//   `Ra_pool_fill_homes` drew every circulation fill from a crew Cave that had been a closed browser
+//    window for days — *"a reach to a dead Cave is byte-identical to a reach to a slow one"* — and the
+//     roster could not tell them apart because nothing ever asked.  `%Body.heard` is stamped on every
+//      inbound sibling frame (Swarm.g:1469) and was already sitting there unread.
+//  AWAY is borrowed from the Door's own vocabulary rather than invented: Swarm_crew_view calls a row
+//   'here' under 15s, 'fading' under 45, 'away' beyond — so a body the Door would draw as AWAY is one
+//    this pick now steps over.  One threshold, stated in one place, meaning the same thing in both.
+//  PREFERENCE, NOT A REQUIREMENT: if nothing is live the old order still answers, because a stale Cave
+//   is worth trying and silence is not. The caller is expected to SAY when it fell back — being unable
+//    to tell was the whole defect, not the choosing.
+//  ADDITIVE: no `now_s` (every Book, every existing caller) ⇒ byte-identical to the old sort.
+Swarm_body_pick(rows, post, bare, now_s) {
     let hits = rows.filter((b) => String(b.sc.post || '') === String(post))
     if (!hits.length) return null
+    let AWAY = 45
+    let away = (b) => (now_s && b.sc.heard) ? ((+now_s - +b.sc.heard) > AWAY ? 1 : 0) : (now_s ? 1 : 0)
     hits.sort((a, b) => {
+        if (now_s) {
+            let al = away(a)
+            let bl = away(b)
+            if (al !== bl) return al - bl
+        }
         let ap = (String(a.sc.address || '') === String(bare)) ? 0 : 1
         let bp = (String(b.sc.address || '') === String(bare)) ? 0 : 1
         if (ap !== bp) return ap - bp
@@ -7204,10 +7265,19 @@ Swarm_body_pick(rows, post, bare) {
     })
     return hits[0]
 },
+// Swarm_body_away — is this %Body one the Door would draw as AWAY (never heard, or silent past the
+//  45s mark)?  Exposed so a caller can SAY it fell back to a stale body instead of quietly using one.
+Swarm_body_away(row, now_s) {
+    if (!row || !now_s) { return 0 }
+    if (!row.sc.heard) { return 1 }
+    return ((+now_s - +row.sc.heard) > 45) ? 1 : 0
+},
 // Swarm_body_for — THE ROUTING QUERY: the soul's body playing `role` (the department that does that
 //  work). Returns the %Body row (address on its sc), or null. Paradigm-blind — `role` is opaque.
-Swarm_body_for(ident, role) {
-    return this.Swarm_body_pick(this.Swarm_body_roster(ident), role, ident.sc.prepub)
+//  `now_s` is passed straight through to the pick's liveness preference (optional — omit it and this is
+//   exactly the routing query it always was).
+Swarm_body_for(ident, role, now_s) {
+    return this.Swarm_body_pick(this.Swarm_body_roster(ident), role, ident.sc.prepub, now_s)
 },
 // Swarm_body_primary — the DivisionMaster: the body at the bare <prepub> (holds the unsuffixed address,
 //  rosters the rest). Null if no body has claimed the bare name yet.

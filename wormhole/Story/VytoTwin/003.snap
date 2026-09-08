@@ -1,0 +1,11 @@
+Snap:H
+  H:VytoTwin,Run
+    A:VytoTwin
+      self,round=4	{"mung":["age"]}
+      w:VytoTwin
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:twin,of:main
+        Cog:twin,of:main
+        Cog:lone,of:main
+        req:twin_wait,finished

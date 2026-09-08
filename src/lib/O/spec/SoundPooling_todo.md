@@ -637,9 +637,23 @@ Each: Heistation.g (the Musu* home), recorded on the LIVE runner, wormhole dir c
         cannot crowd the shared %Reach cap; a holder name must look like a key-derived prepub, so a Repli
          placeholder ('Crowd') can no longer vivify a station %Pier; PoolFace probes the pool home instead of
           minting it in a render effect, and its "sit down" cannot latch the steward on.
-   ⚠ STILL OPEN from that review: nothing binds a reach's `by` to the frame's actual sender — the friend arm
-    now demands a full key-derived prepub before it will prefix-match, which closes the one-character match,
-     but a real authentication of `by` is owed (it is the same shape as the voucher gate).
+   ✅ **CLOSED 2026-09-08 night — `by` is now bound to the frame's actual sender.** `by` is a CLAIM carried
+    in the frame body; the voucher gate above the road proves the sender is *someone we trust* and proves
+     nothing about *who they said they were*, so a sealed peer could book work on me in a SIBLING's name and
+      the ledger would record the sibling as the booker. The wire lane (`Swarm.g:1582`) now passes
+       `frame.header.from` as an optional 4th argument to `Swarm_reach_road`, which refuses when claim and
+        sender disagree, naming both: `⨳🫱⚠ a reach CLAIMED to be from … but arrived from … — ignored`.
+    **The full-name demand applies to BOTH sides.** `same()` matches when either string prefixes the other,
+     so a one-character `from` would wave everything through — the identical footgun the friend arm was
+      hardened against in the line above, trivially reintroduced on the other side of the same compare.
+       Both `by` and `from` must look like a key-derived prepub before the compare is even attempted.
+    **ADDITIVE BY CONSTRUCTION, and measured.** The mail lane (`Swarm_pump`) and every hand-fed Book frame
+     pass no sender and keep exactly today's behaviour. Gate: SwarmBody 23/23, MusuPoolFill 6/6,
+      MusuPoolRandom 5/5, MusuPoolBytes 5/5, MusuPoolRadio 6/6 — all caveat 0, and the refusal line appears
+       in **none** of them, including MusuPoolFill which hand-feeds `Swarm_reach_road` directly. Unit:
+        ReachTerminal 5/5, MembershipDoor 7/7, TwoFounder 1/1.
+    ⚑ Still owed on this shape: `reach_done` is guarded differently (`Swarm_reach_vouched`, a real signature
+     check) and was already sound; `runner_ask` asks remain unsigned entirely (Social_demarcation §3.4.3).
 - **Gate RECORDED + check-green** (2026-09-03 night): MusuPoolRandom 4 beats, 5/5 sworn, caveat 0 on a second
    run against its own fixtures.
 - ✅ **THE POOLS STASH PILLAR (the seventh) LANDED** the same night: `Swarm_restash_pools` +

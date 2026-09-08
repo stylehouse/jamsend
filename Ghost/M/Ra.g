@@ -5195,7 +5195,24 @@ Ra_pool_fill_homes(w, ident):
     //      every arrival.  A silent skip on a missing nav is the worst shape — Siphon_pull already names
     //       `no nav` as a fail; let it get that far.
     out.nav = rw.c.ra_nav || (this.Crate_nav ? this.Crate_nav() : null)
-    let cave = this.Swarm_body_for ? this.Swarm_body_for(ident, 'Cave') : null
+    // PREFER A CAVE WE HAVE ACTUALLY HEARD FROM (2026-09-08 — Social_demarcation §1).  This exact line is
+    //  where the 36-hour SoundPooling outage lived: it drew every circulation fill from a crew Cave that
+    //   was a browser window closed several sessions earlier, and nothing anywhere said so.  The clock
+    //    turns on the roster's liveness preference; with no Swarm (a Book) it is absent and the pick is
+    //     byte-identical to before.
+    let now_s = (typeof this.Swarm_now === 'function') ? this.Swarm_now(w) : 0
+    let cave = this.Swarm_body_for ? this.Swarm_body_for(ident, 'Cave', now_s) : null
+    // AND SAY IT, when the only Cave on the roster is one the Door would call away.  A preference that
+    //  falls back silently rebuilds the original defect one layer down: the fill still goes to a ghost,
+    //   and the log still reads exactly like a slow peer.  Throttled to once a minute per identity —
+    //    this resolves every pass, and a heartbeat is not a reason to shout.
+    if (cave && now_s && this.Swarm_body_away && this.Swarm_body_away(cave, now_s)) {
+        let said = ident.c ? (+ident.c.cave_away_said || 0) : 0
+        if (!said || (now_s - said) > 60) {
+            if (ident.c) { ident.c.cave_away_said = now_s }
+            console.log('🏊⚠ pool fill is drawing from a Cave we have not heard from (' + String(this.Swarm_body_addr(cave) || '?').slice(0, 8) + ') — it may be a closed tab')
+        }
+    }
     let cavename = cave ? this.Swarm_body_addr(cave) : ''
     if (cavename && rw.oa({ Theirs: 1, pub: cavename })) { out.from = this.Ra_home_them(rw, cavename) }
     return out

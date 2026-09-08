@@ -175,7 +175,13 @@ Presence_online(w):
 Presence_ask_roster(w, ident):
     if (typeof this.Swarm_peering !== 'function') return 0
     let me = String(ident?.sc?.prepub || '')
-    let piers = this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []
+    // THE DEFAULT — not-retired, live AND nascent (the four questions, Swarm.g:5540).  Presence is
+    //  TRANSPORT: a nascent pier is exactly who we most need an answer about (it cannot become live
+    //   without the frames presence saves), and a retired one should be asked nothing at all.  The
+    //    asymmetry rules the close call — over-filtering here would strand a friend in silence.
+    let piers = (typeof this.Swarm_peers === 'function')
+        ? this.Swarm_peers(ident)
+        : (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? [])
     let addrs = piers.map(p => String(p.sc.pub || '')).filter(a => a && a !== me)
     if (!addrs.length) return 0
     return this.Presence_ask(w, addrs)

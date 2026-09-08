@@ -5,7 +5,7 @@
 
 import Vytui from "$lib/O/Vytui.svelte"
 import { power_cells, poly_centroid, poly_area, pile_step, foam_cells } from "$lib/O/vyto_geometry"
-import { sig_of, group_edges, bucket_key_of, pull_step, budget_for, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK, AREA_BASE } from "$lib/O/vyto_foam"
+import { sig_of, group_edges, kin_of, kin_edges, bucket_key_of, fold_key_compat, fold_group_of, pull_step, budget_for, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK, AREA_BASE } from "$lib/O/vyto_foam"
 
 // HEAT_BUY — what a full purse of attention actually BUYS, as a multiplier on env_area.
 //  The owner, 2026-08-09, of a crushed cell's ⤢: *"that we can click to make that cell become a
@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '70b6a54be3abb0a8~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '9407afc76630a12e~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -370,6 +370,21 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen) {
         seed[mk] = nmk
         row = parentMirror.i(seed)
     }
+    // ── THE CARDINALITY DOOR (Meaningfold §0 step 5, doorless site #7 — 2026-09-09) ───────────────
+    //  Two byte-identical siblings map to ONE tok, so the second FINDS the first's row and overwrites
+    //   it: the glass shows one cell where two things exist.  The comment above accepts this as
+    //    "visually interchangeable"; `Cstructures §6.2`'s cardinality rule forbids it, and §1 forbids
+    //     it absolutely — a squish zone may lie about size, emphasis, order and colour, **never about
+    //      presence**.  Two things drawn as one is the presence lie in its purest form.
+    //  The cure is the census-before-drop template (`Cyto.svelte:443-452`): do not un-collapse them —
+    //   that is a layout question — but COUNT them, so the cell says how many it stands for.  A door
+    //    with a true number, exactly like a dip.  `same_n` is mirror-managed and must survive the sc
+    //     sweep below, the same exemption `departing` already takes.
+    //  Per-GENERATION, because the row persists across scans: the first source to claim a row this
+    //   gen resets the tally, each later collider bumps it.
+    if (row.c.same_gen !== gen) { row.c.same_gen = gen; row.c.same_n = 0 }
+    row.c.same_n = (row.c.same_n ?? 0) + 1
+    if (row.c.same_n > 1 && row.sc.same_n !== ('' + row.c.same_n)) { row.sc.same_n = '' + row.c.same_n }
     row.c.tok = tok
     row.c.source_n = n     // the Cyto source_n backlink — rides .c so there is no encode cost
     row.c.seen_at = gen
@@ -396,11 +411,21 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen) {
     for (const k of Object.keys(row.sc)) {
         // `departing` is mirror-managed (the escort mark) — never a source key, so leave it here
         if (k === 'departing') continue
+        // `same_n` and `flat_n` likewise: the two scan-level DOORS (how many identical sources share
+        //  this row · how many children a flat source is hiding).  A source never carries either, so
+        //   the sweep would delete them every scan without these exemptions.
+        //  ⚠ THIS LIST IS THE ABSORPTION SEAM (§0.2b).  Every mirror-owned key that must survive the
+        //   sweep is named here — `departing` since 2026-07, now two doors — and the whole landscape
+        //    becomes matter by widening exactly this, not by inventing a mechanism.
+        if (k === 'same_n') continue
+        if (k === 'flat_n') continue
         if (desired[k] === undefined) { delete row.sc[k]; changed = 1 }
     }
     // a source that vanished and came back sheds its escort (prefer the tracked path — bare
     //  delete of an sc key is query+snap safe, and this row never reaches a real snap anyway).
     if (row.sc.departing) { delete row.sc.departing; changed = 1 }
+    if (row.c.same_n === 1 && row.sc.same_n != null) { delete row.sc.same_n; changed = 1 }
+    if (!n.c.flat && row.sc.flat_n != null) { delete row.sc.flat_n; changed = 1 }
     if (changed) row.bump_version()
     // A FLAT GRAPPLE KEEPS ITS GUTS (the owner 2026-08-09: *"there's this `Heist:9.the one they
     //  play...` thing which is odd, has some Supervisor facts, I don't want to show most users
@@ -414,8 +439,18 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen) {
     //     source that does not wear it walks exactly as before — so no fixture can move.
     //  This is the right seam for it: what a thing shows is a property of the thing, not a rule the
     //   display invents per mainkey.
+    // ── THE FLAT DOOR (Meaningfold §0 step 5, doorless site #6 — 2026-09-09) ──────────────────────
+    //  A source wearing `.c.flat` keeps its guts: its children are not walked, so they get no row, no
+    //   count and — until now — NO DOOR.  The whole subtree simply was not there, which is the
+    //    silent-omission §1 forbids: a declared squish zone must say how many it hides.  The flatness
+    //     itself is right (the commissioner decides what a thing shows — the Heist's supervision
+    //      rows were never meant to be looked at); it is the SILENCE that is wrong.
+    //  So: census before drop.  A flat source with children stamps the true count on its row, and the
+    //   cell can say "and 7 more inside" instead of pretending to be a leaf.
+    let kids = n.o()
+    if (n.c.flat && kids.length && row.sc.flat_n !== ('' + kids.length)) { row.sc.flat_n = '' + kids.length }
     if (depth < 40 && !n.c.flat) {
-        for (const c of n.o()) this.Vyto_scan_walk(w, c, row, depth + 1, gen)
+        for (const c of kids) this.Vyto_scan_walk(w, c, row, depth + 1, gen)
     }
 
 },
@@ -498,11 +533,21 @@ Vyto_fold_scope(w, scope) {
     let budget = budget_for(800, 450)
     let groups = {}
     if (members.length > budget) {
-        let key = bucket_key_of(members.map(m => m.sc))
-        if (key) {
+        // WHERE THE WALL FALLS.  `foamereo:'kindfold'` elects by the LADDER — mainkey (what it IS),
+        //  then `of:` (whom it is ABOUT), then `id` (which holding it LISTS), and only then the
+        //   discovered key.  UNSET ⇒ bucket_key_of verbatim ⇒ byte-identical, which is why this is a
+        //    Vytocon token and not a rewrite: a glass wears the ladder or it does not, and every
+        //     existing Book keeps the configuration it was recorded under.
+        //  Proven pure offline before it was wired — scripts/VytoFoldLadder.spec.ts, 14 tests, incl.
+        //   a 500-case property test that on a ONE-mainkey ONE-`of` scope (which is every fold scope
+        //    in all 25 Vyto|Voro Books) the ladder returns bucket_key_of's own answer.  So the fleet
+        //     cannot tell the difference — and cannot witness the fix either, which is why a
+        //      mixed-kind Book is owed.
+        let el = fold_key_compat(members.map(m => m.sc), this.Vyto_fo(w, 'kindfold') ? 1 : 0)
+        if (el) {
             for (const m of members) {
-                if (m.sc[key] == null) continue
-                let ofk = key + '=' + m.sc[key]
+                let ofk = fold_group_of(m.sc, el)
+                if (ofk == null) continue
                 if (!groups[ofk]) groups[ofk] = []
                 groups[ofk].push(m)
             }
@@ -517,12 +562,17 @@ Vyto_fold_scope(w, scope) {
         let grp = groups[ofk]
         if (grp.length < 2) continue
         let crest = scope.o({ Vtuffing: 1, of: ofk })[0]
+        // `ofk` IS the election's group string (`metal=brass`, `@mainkey=Cog`), which is exactly the
+        //  predicate that re-runs this fold — so hand it to the dip as `q:`.  It duplicates the
+        //   crest's own `of:`, and deliberately: `of:` says WHICH GROUP this crest is, `q:` says the
+        //    door is RE-OPENABLE.  A distil with no election (a detached mint) carries neither.
+        let saylaw = this.Vyto_fo(w, 'saylaw') ? 1 : 0
         if (!crest) {
-            crest = this.Vyto_distil(scope, grp, ofk, [], 0)
+            crest = this.Vyto_distil(scope, grp, ofk, [], 0, ofk, saylaw)
         } else if (crest.sc.n !== grp.length) {
             for (const vr of crest.o()) crest.drop(vr)
             crest.sc.n = grp.length
-            this.Vyto_distil_fill(crest, grp, [], 0)
+            this.Vyto_distil_fill(crest, grp, [], 0, ofk, saylaw)
         }
         crest.c.seen_at = w.c.scan_gen
         if (crest.sc.dose !== '' + grp.length) { crest.sc.dose = '' + grp.length; crest.bump_version() }
@@ -542,29 +592,47 @@ Vyto_fold_scope(w, scope) {
 //          `Vyto_distil_free` mints DETACHED (new TheC · unreachable from H** · Books-invisible —
 //           the display side's working matter).  `Vyto_fold` above stays a stub until the
 //            mirror-side solver lands (the display refactor owns that half); these are its tools.
-Vyto_distil(into, members, kind, skips, coexist) {
+Vyto_distil(into, members, kind, skips, coexist, q, saylaw) {
     let root = into.i({ Vtuffing: 1, of: kind || 'stuff', n: members ? members.length : 0 })
-    return this.Vyto_distil_fill(root, members, skips, coexist)
+    return this.Vyto_distil_fill(root, members, skips, coexist, q, saylaw)
 
 },
-Vyto_distil_free(members, kind, skips, coexist) {
+Vyto_distil_free(members, kind, skips, coexist, q, saylaw) {
     let root = new TheC({ c: {}, sc: { Vtuffing: 1, of: kind || 'stuff', n: members ? members.length : 0 } })
-    return this.Vyto_distil_fill(root, members, skips, coexist)
+    return this.Vyto_distil_fill(root, members, skips, coexist, q, saylaw)
 
 },
-Vyto_distil_fill(root, members, skips, coexist) {
-    this.Vyto_dip_assign(root, members)
+Vyto_distil_fill(root, members, skips, coexist, q, saylaw) {
+    this.Vyto_dip_assign(root, members, q)
     if (!members || !members.length) return root
     let veined = this.Vyto_veinrows(root, members, skips)
     let hide = coexist ? null : veined
-    this.Vyto_keyrows(root, members, skips, hide)
+    this.Vyto_keyrows(root, members, skips, hide, saylaw)
     return root
 
 },
 // Vyto_dip_assign — the Dip_assign law as a method: the door rides FIRST with the true count and
 //  the members on `.c` (the dip a surf opens; the count present at EVERY register — injectivity).
-Vyto_dip_assign(root, members) {
-    let dip = root.i({ Vrow: 1, row: 'dip', n: members ? members.length : 0 })
+//
+// ── `q:` — THE WAY BACK, ON THE LINE (Meaningfold §0 step 2, 2026-09-09) ──────────────────────────
+//  Until now the way back into a fold was `dip.c.members` — a runtime ref list, so the door is REAL
+//   to the renderer and IMAGINARY to the proof harness: `.c` never encodes, and a Book cannot open
+//    what it cannot see.  `q:` is the predicate that RE-RUNS the fold: a Book reads it off the snap,
+//     applies it to the scope, and gets the very members the crest stands for.  That is the strongest
+//      form of `read(render(tree)) ≡ tree` — not "trust the count", but "reopen it and count again".
+//  ITS SHAPE is the election's group string, exactly as `fold_group_of` renders it —
+//   `metal=brass`, or `@mainkey=Cog` when the kind rung fired.  Split on the first `=`; the
+//    `@mainkey` sentinel means match the mainkey NAME rather than an sc key.
+//  ⚠ GUARDED, and the absence is MEANINGFUL rather than sloppy.  A dip only carries `q:` when a
+//   re-runnable predicate exists — the fold knows one; a detached `Vyto_distil_free` mint of
+//    arbitrary members does not.  So **a dip with no `q:` is a door that cannot be reopened**, which
+//     is strictly weaker than one that can, and §1's claim/squish regime should be able to SEE that
+//      difference.  Writing `q:undefined` instead would brand the line `{"undef":["q"]}` — a mint
+//       bug, not furniture (CLAUDE.md) — so the key is simply absent.
+Vyto_dip_assign(root, members, q) {
+    let seed = { Vrow: 1, row: 'dip', n: members ? members.length : 0 }
+    if (q) { seed.q = q }
+    let dip = root.i(seed)
     dip.c.members = members ? members.slice() : []
     return dip
 
@@ -605,7 +673,7 @@ Vyto_veinrows(root, members, skips) {
 },
 // Vyto_keyrows — the key-by-key pass: ONE value → a fact said once (a bare '1' → a COUNTED
 //  presence fact when some-not-all carry it) · MANY → a counted ranked spread capped at 3 + '+N'.
-Vyto_keyrows(root, members, skips, hide) {
+Vyto_keyrows(root, members, skips, hide, saylaw) {
     let keys = []
     let seen = {}
     for (const m of members) {
@@ -634,9 +702,24 @@ Vyto_keyrows(root, members, skips, hide) {
         if (!have) continue
         if (order.length === 1) {
             if (order[0] === '1') {
+                // ── THE UNIVERSAL PRESENCE (doorless site #5, 2026-09-09) ─────────────────────────
+                //  A presence key was emitted ONLY when SOME members carried it (`have < length`), so
+                //   a family whose EVERY member is `finished` said nothing about being finished — the
+                //    strongest possible agreement rendered as silence.  §1's line law: every key the
+                //     members carry is said by the cell, as a fact, a chip, a vein or a counted door,
+                //      and **never merely absent**.  Total agreement is the plainest fact there is.
+                //  Shape: a partial presence keeps its carrier count (`n:have` — "three of five"); a
+                //   UNIVERSAL one is said once with NO count, because a number would be noise when the
+                //    answer is "all of us".  That is findings §7's sentence: *a universal presence is
+                //     a fact — a family whose every member is finished says so once.*
+                //  Gated on `foamereo:'saylaw'` (threaded from the fold) so no recorded crest moves.
                 if (have < members.length) {
                     let fp = { Vrow: 1, row: 'fact', k: kk, n: have, wgt: 1 }
                     root.i(fp)
+                }
+                if (saylaw && have === members.length) {
+                    let fu = { Vrow: 1, row: 'fact', k: kk, wgt: 1 }
+                    root.i(fu)
                 }
             } else {
                 if (hide && hide[kk + '|' + order[0]]) continue
@@ -1119,9 +1202,25 @@ Vyto_relate(w) {
         let skips = SIG_JOINS.concat(['departing', this.mainkey(m)])
         sigs.push(sig_of(m.sc, skips))
     }
-    let edges = group_edges(sigs)
+    // ── STOP SUBTRACTING (Meaningfold §0 step 4), behind `foamereo:'kinweave'` ────────────────────
+    //  The skips above strike the mainkey and SIG_JOINS — which are exactly the three keys the
+    //   metaphysics says carry the meaning.  With the deck token on, each row ALSO contributes a KIN
+    //    atom set (its kind, and any `of`/`id` it points along), weighted KIN_WEIGHT above an
+    //     incidental shared scalar, and an edge carrying one is stamped `kind:kin` so the renderer can
+    //      draw a PLUG rather than a generic vine.  **The plug then draws itself** — no bespoke
+    //       Radio→Record cable; the weave simply stops ignoring the reference.
+    //  Proven pure first (scripts/VytoFoldLadder.spec.ts): with no kin shared the weight is
+    //   byte-identical to group_edges', and `Record,id:X` + `Card,id:X` — which the OLD rule scores as
+    //    ZERO edges, sharing no mainkey and no scalar — become kin across kinds.
+    //  UNSET ⇒ group_edges verbatim ⇒ every existing world byte-identical.
+    let kinning = this.Vyto_fo(w, 'kinweave') ? 1 : 0
+    let kins = []
+    if (kinning) { for (const m of members) { kins.push(kin_of(m.sc)) } }
+    let edges = kinning ? kin_edges(sigs, kins) : group_edges(sigs)
     for (const e of edges) {
-        w.c.relations.i({ Flow: 1, a: members[e.i].c.tok, b: members[e.j].c.tok, n: '' + e.w })
+        let flow = { Flow: 1, a: members[e.i].c.tok, b: members[e.j].c.tok, n: '' + e.w }
+        if (e.kind === 'kin') { flow.kind = 'kin' }
+        w.c.relations.i(flow)
     }
     if (!edges.length) return
     let organ = w.o({ Organ: 'Relate' })[0]
@@ -2067,6 +2166,95 @@ Vyto_omark(w, yore_n) {
 },
 //#endregion
 
+// ══ Vyto_grasp — THE SEEM LAYER FOR THE GLASS (2026-09-09, slice 0) ═══════════════════════════════
+//  `Voro_grasp` (Voro.g:338) stood this pattern over the flora and stopped at "Slice 0 — the render
+//   gift comes next."  The gift never came; the moult moved to Vyto; and Vyto re-derived a weaker
+//    reading WITHOUT the primitive (Vyto_relate has no identity across beats, no neighbourhood read,
+//     and writes nothing that snaps).  This is that organ, pointed at the new engine.
+//  WHAT THE PRIMITIVE GIVES FOR FREE: `Selection.process` pairs this walk against the last one, so
+//   `a && !b` is a goner, `!a && b` a neu, `a && b` a survivor — arrivals and departures BY IDENTITY,
+//    not by comparing counts.  That is the diff-bundle of Glassbeast §III.a, already built.
+//  WHY IT LIVES OFF-SNAP: a live `Selection` and functions ride `Seem.sc`, which is snap-hostile by
+//   construction (an object in sc is fatal at encode).  So the Seem sits on a free C** at
+//    `w.c.grasp_home` — persisting across beats, so its Selection can resolve beat-to-beat — and ONLY
+//     a distilled reading is projected into the world as `%Se:glass`.  Same discipline Voro_grasp
+//      proved.  STAMPS NO VERDICT: pure read.
+//  ⚠ NOT IN THE STIR CHAIN, deliberately.  `o_Seem` is async and parts of Vyto's stir are sync;
+//   where an awaited organ can sit without breaking the settle is unexamined (Glassbeast §III.d).
+//    A Book awaits this directly.  Nothing else calls it, so no existing rhythm can move.
+async Vyto_grasp(w) {
+    if (!w || !w.c.mirror) { return null }
+    if (!w.c.grasp_home) { w.c.grasp_home = new TheC({ c: {}, sc: { grasp_home: 1 } }) }
+    let home = w.c.grasp_home
+    let seem = home.o({ Seem: 'glass' })[0]
+    if (!seem) { seem = this.i_Seem(home, { Seem: 'glass', C: w.c.mirror, use_Understandable: 1 }) }
+    seem.sc.C = w.c.mirror
+    // STRICT RESOLVE, and it is the difference between a diff and a shrug.  `o_Seem(Seem, strict=0)`
+    //  is the default, and its own note says *"resolve_strict makes value-edits show up as goner+neu
+    //   rather than a survivor"* — so without it a row that VANISHED and a row that ARRIVED get paired
+    //    as one row whose value changed.  Measured: a scope losing `cog5` and gaining two cogs read
+    //     `neu:1 gone:0` non-strict (one survivor absorbed the departure) and only `neu:2 gone:1`
+    //      strict.  A glass asking "what arrived and what left" wants identity, not edit-distance.
+    let news = await this.o_Seem(seem, 1)
+    let rows = w.c.mirror.o().filter(r => !r.sc.departing)
+    // ── THE NEIGHBOURHOOD CENSUS — the Se proper.  Count how many rows make each (key,value) claim,
+    //  so a claim's loudness reads as how much it SETS ITS ROW APART: a value every row carries is
+    //   quiet, one only this row makes is loud.  This is the surroundings-read an isolation judge
+    //    cannot do — a row weighed against its neighbours rather than alone.
+    //  Tallied into a plain object keyed `key|value` — the same idiom Vyto_fold_scope's `groups`
+    //   uses, and deliberately not a parallel-array scan: the .g compiler parse-storms on
+    //    closure-heavy nesting (the note on Vyto_scan_walk says as much).  An sc KEY never contains
+    //     '|', so splitting on the first one recovers the pair exactly.
+    //  ⚠ THE MAINKEY IS SKIPPED HERE, and this does NOT contradict the fold ladder.  Two different
+    //   questions: the fold asks *what is this* and the mainkey NAME is the answer (Meaningfold §1 —
+    //    which is why fold_election reads it first).  The census asks *how much does this claim set
+    //     its row apart*, and the mainkey VALUE is IDENTITY — unique per row by construction, so it
+    //      is trivially "loud" and says nothing about distinctiveness.  Including it would make the
+    //       loudest claim always be somebody's own name.  Same skip Vyto_relate already takes
+    //        (`skips = SIG_JOINS.concat(['departing', this.mainkey(m)])`), for the same reason.
+    let tally = {}
+    for (const r of rows) {
+        let rmk = this.mainkey(r)
+        for (const kk of Object.keys(r.sc)) {
+            if (kk === 'departing') { continue }
+            if (kk === rmk) { continue }
+            let tag = kk + '|' + r.sc[kk]
+            if (tally[tag] == null) { tally[tag] = 0 }
+            tally[tag] = tally[tag] + 1
+        }
+    }
+    // loudest = fewest carriers, quietest = most.  Ties break on the tag TEXT so the reading is
+    //  deterministic and a fixture can hold it still (solver law 4 — never a clock, never a random).
+    let ltag = null
+    let qtag = null
+    for (const tag of Object.keys(tally)) {
+        if (ltag == null || tally[tag] < tally[ltag] || (tally[tag] === tally[ltag] && tag < ltag)) { ltag = tag }
+        if (qtag == null || tally[tag] > tally[qtag] || (tally[tag] === tally[qtag] && tag < qtag)) { qtag = tag }
+    }
+    // ── the projection: the ONLY thing that reaches the snap.  Counts ride as STRINGS — a bare
+    //  numeric 1 is a presence wildcard in a query (CLAUDE.md), so `n:1` would match any n.
+    let row = w.oai({ Se: 'glass' })
+    row.sc.rows = '' + rows.length
+    // how many ROOTS the glass is looking at.  Worth saying in the reading on its own terms — a
+    //  mirror row count that disagrees with the grapple count is the tell that a re-commission has
+    //   not reached the scan yet, which is otherwise invisible and reads as "the Seem is broken".
+    row.sc.grapples = '' + (w.c.grapples ? w.c.grapples.length : 0)
+    // HOW MANY COMMISSIONS THIS WORLD HAS ACTUALLY RECEIVED.  Vyto_commission stamps one
+    //  `see:📡 commissioned by … — N grapple(s)` row per run, so counting them separates "the
+    //   re-commission was never dispatched" from "it ran and derived the wrong set" — two faults that
+    //    look identical from the mirror, and which we were guessing between.
+    let comm = 0
+    for (const s of w.o({ see: 1 })) { if (String(s.sc.see).indexOf('📡') === 0) { comm = comm + 1 } }
+    row.sc.comms = '' + comm
+    row.sc.neu = '' + (news && news.neus ? news.neus.length : 0)
+    row.sc.gone = '' + (news && news.goners ? news.goners.length : 0)
+    for (const c of row.o()) { row.drop(c) }
+    if (ltag != null) { row.i({ Claim: 'loud', key: ltag.slice(0, ltag.indexOf('|')), val: ltag.slice(ltag.indexOf('|') + 1), n: '' + tally[ltag] }) }
+    if (qtag != null) { row.i({ Claim: 'quiet', key: qtag.slice(0, qtag.indexOf('|')), val: qtag.slice(qtag.indexOf('|') + 1), n: '' + tally[qtag] }) }
+    row.bump_version()
+    return row
+
+},
 
     })
     })

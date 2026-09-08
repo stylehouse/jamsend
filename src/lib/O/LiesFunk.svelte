@@ -2663,14 +2663,37 @@ await M.eatfunc({
                         const verb = String(a.verb ?? 'families')
                         const arg  = a.name != null ? String(a.name) : ''
                         const k    = Number(a.k ?? 0) || undefined
-                        if (verb === 'defs')          result = L.Lagoon_defs(lw, arg, k ?? 300)
+                        // `seek` is the UNIFIED answer over both censuses (Atlas + the Stemdex) — the
+                        //  one the Searchbar and Lagui both render.  Every other verb here is a single
+                        //   reading; this is the seeker's whole reply in one shape.
+                        if (verb === 'seek')          result = L.Lagoon_seek(lw, arg, k ?? 60)
+                        // `beads` — one document as its own shape: regions in file order, defs indented
+                        //  under the bead their author put them in.  `seek doc:<part>` carries it too.
+                        else if (verb === 'beads')    result = L.Lagoon_beads(lw, arg)
+                        else if (verb === 'defs')     result = L.Lagoon_defs(lw, arg, k ?? 300)
                         else if (verb === 'families') result = L.Lagoon_families(lw, k ?? 60)
                         else if (verb === 'mentions') result = L.Lagoon_mentions(lw, arg, k ?? 60)
                         else if (verb === 'rot')      result = L.Lagoon_prose_rot(lw, k ?? 60)
                         else if (verb === 'callers')  result = { name: arg, callers: L.Lagoon_callers(lw, arg) }
                         else if (verb === 'lint')     result = L.Lagoon_lint(lw)
                         else if (verb === 'join')     result = L.Lagoon_join(lw, k ?? 40)
-                        else { ok = false; result = { error: `lagoon: unknown verb '${verb}' — defs|families|mentions|rot|callers|lint|join` } }
+                        // `rotwork` is the lint ROUTED — grouped by doc, with a proposed fix and a
+                        //  likely exit per group (Lagoon_todo leg 6).  Same census, no extra source.
+                        else if (verb === 'rotwork')  result = L.Lagoon_rotwork(lw, k ?? 12)
+                        // `oaths` is the one verb that needs a nav: a Book is not in the census (Atlas
+                        //  rosters code and prose; wormhole/Story is a third shelf), so the `book` and
+                        //   `sworn` link kinds resolve off disk — one toc read per Book.
+                        //  the nav is fetched HERE, not inherited: the `atlas_*` block above declares its
+                        //   own `const nav` inside its else-branch, so referencing that name from this
+                        //    block is a ReferenceError — which is exactly what the first ever call to
+                        //     `oaths` returned ("nav is not defined").  A verb nobody has run is an
+                        //      unverified claim, however carefully it was written.
+                        else if (verb === 'oaths') {
+                            const onav = (H as any).Atlas_nav?.()
+                            result = onav ? await L.Lagoon_oaths(lw, onav)
+                                          : { error: 'no nav — oaths reads wormhole/Story/*/toc.snap off disk' }
+                        }
+                        else { ok = false; result = { error: `lagoon: unknown verb '${verb}' — seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths` } }
                         if (result?.error) ok = false
                     }
                 } else if (op === 'electrode') {
@@ -2714,8 +2737,15 @@ await M.eatfunc({
                     //       to skip the paged record clouds, but the human never agreed to a snap depth limit —
                     //        a silent cut is worse than a big reply, so it encodes the WHOLE tree now (uncapped).
                     const ident = (H as any).Swarm_live_self?.()
+                    // THE LEDGER, deliberately (the four questions, Swarm.g:5540).  A DIAGNOSTIC must see
+                    //  retired rows: the 2026-09-06 walk lost 36 hours to a Cave that was a closed browser
+                    //   window, and every face that filtered it out is why nothing said so.  The app asks
+                    //    who is live; the debug surface asks what is there.  Never swap these two.
                     const peering = ident ? (H as any).Swarm_peering?.(ident) : null
-                    const piers = peering ? ((peering.o({ Pier: 1 }) as TheC[]).map((p: TheC) => {
+                    const all_piers = ident && (H as any).Swarm_peers
+                        ? ((H as any).Swarm_peers(ident, { live: 'all' }) as TheC[])
+                        : ((peering?.o({ Pier: 1 }) ?? []) as TheC[])
+                    const piers = peering ? (all_piers.map((p: TheC) => {
                         const gs = (p.o({ Grant: 1 }) as TheC[])
                         return {
                             pub: String(p.sc.pub ?? '').slice(0, 16),
@@ -3072,9 +3102,16 @@ await M.eatfunc({
                     //   of wave/armed/remorph/morph/settle/diag events.  Render-side telemetry (NEVER
                     //    snapped — metaphysics #2), the Cyto twin of reactap; mirrored on top_House.c by
                     //     Cytui's vlog.  A `stuff:0` wave every beat = an empty world (the seed never fired).
-                    const cr = (H.top_House().c as any).cy_render
-                    if (!cr) { ok = false; result = { error: 'no render telemetry — is a useCyto Book mounted + the tab reloaded since this landed?' } }
-                    else result = cr
+                    // TWO RENDERERS, ONE OP (2026-09-09).  `cy_render` is written only by Cytui, so on a
+                    //  VYTO Book this branch used to answer "no render telemetry — is a useCyto Book mounted?"
+                    //   and there was no over-time witness for Vyto at all.  Vytui now pushes the same shape to
+                    //    `vy_render` (its film strip), so prefer whichever renderer actually stood this Book.
+                    //     Both carry `renderer` so a reader never has to guess which one answered.
+                    const cyr = (H.top_House().c as any).cy_render
+                    const vyr = (H.top_House().c as any).vy_render
+                    const cr = (vyr && (vyr.worlds > 0 || !cyr)) ? vyr : cyr
+                    if (!cr) { ok = false; result = { error: 'no render telemetry — is a Cyto or Vyto Book mounted + the tab reloaded since this landed?' } }
+                    else result = (cr === cyr) ? { renderer: 'cytui', ...cr } : cr
                 } else if (op === 'svg') {
                     // the GLASS itself (scripts/runner_shot.mjs --svg): serialize the voronoi SVG layer —
                     //  cells, tuple regions, sub-graph labels — the layer cy.png() can never carry (it
@@ -3284,7 +3321,11 @@ await M.eatfunc({
                     else {
                         const peering = (H as any).Swarm_peering?.(self) as TheC | null
                         const sc = (n: any) => ({ ...(n?.sc ?? {}) })
-                        const piers = (peering?.o({ Pier: 1 }) ?? []) as any[]
+                        // THE LEDGER (the four questions, Swarm.g:5540) — this op IS "what is this tab
+                        //  holding on to", so a filtered answer would be a lie by omission.
+                        const piers = ((H as any).Swarm_peers
+                            ? (H as any).Swarm_peers(self, { live: 'all' })
+                            : (peering?.o({ Pier: 1 }) ?? [])) as any[]
                         const gr = (p: any) => ({ grants: p.o({ Grant: 1 }).map((g: any) => g.sc.Grant), nots: p.o({ NotGrant: 1 }).map((g: any) => g.sc.NotGrant), heard_ago: p.c?.heard_at ? Math.round((Date.now() - p.c.heard_at) / 1000) : null })
                         result = {
                             self: { prepub: self.sc.prepub, friendly: self.sc.friendly ?? '', key: !!(H as any).Swarm_keys?.(self), soul: String((H as any).Swarm_soulpub?.(self) ?? '').slice(0, 16), soul_held: !!(H as any).Swarm_soul?.(self), wields: String((H as any).Swarm_signas?.(self)?.prepub ?? '') },
@@ -3309,7 +3350,11 @@ await M.eatfunc({
                     else if (what.startsWith('forget:')) {
                         const key = what.slice(7)
                         const peering = (H as any).Swarm_peering?.(self) as TheC | null
-                        const pier = ((peering?.o({ Pier: 1 }) ?? []) as any[]).find((p: any) => String(p.sc.pub).startsWith(key))
+                        // THE LEDGER (the four questions, Swarm.g:5540): forgetting is the one verb that
+                        //  MUST reach a retired row — a door that can only see live piers cannot tidy.
+                        const pier = (((H as any).Swarm_peers
+                            ? (H as any).Swarm_peers(self, { live: 'all' })
+                            : (peering?.o({ Pier: 1 }) ?? [])) as any[]).find((p: any) => String(p.sc.pub).startsWith(key))
                         if (!pier) { ok = false; result = { error: `no pier ${key}` } }
                         else { result = { forgot: String(pier.sc.pub), friendly: pier.sc.friendly ?? '', n: await (H as any).Swarm_pier_forget?.(null, String(pier.sc.pub)) } }
                     }

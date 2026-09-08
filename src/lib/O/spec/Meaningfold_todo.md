@@ -6,6 +6,10 @@ A **working `_todo`** (not self-promoted). The front door for the **visual** bra
    see §4) and not at the raw agent report (`ulative/visualisation-2026-09-08/findings.md`,
     which is the WORKING behind everything below and should be read second).
 
+**Its pair is `Glassbeast_todo.md`** — the essence of the animal and its NINE CONFUSION CENTERS,
+ written in a bestiary register. This doc holds the rulings; that one holds the doubt. Where they
+  disagree, rulings here, doubt there.
+
 ## 0. WHAT TO GET ON WITH NEXT
 
 **The arc.** The glass has always folded by COUNT and then subtracted meaning before it looked.
@@ -206,6 +210,8 @@ Once geometry is sc, a snap of the landscape carries the positions, and indent-a
 
 ### 0.2e THE ONE COST, stated plainly and NOT hidden
 
+*(Answered in §0.2h④ — the unit is a named **Vytocon**, not a gate.)*
+
 Attaching the landscape means every Vyto world begins appearing in snaps, and fixtures move across
  the fleet. That is not a side effect to minimise — the Books becoming Vyto-**sighted** is the whole
   point, and it is what would have caught the tessellation, the crush, and the flashing. But it is a
@@ -265,6 +271,144 @@ So the strata are already in the tree, already ordered, already at the right eve
     that a peek must be reconstructed by replay. The encoder's own instincts favour whole lines
      (one particle, one line, no factoring — `findings §2`), so **whole layers is the default**
       unless the owner wants the section to read as change. Not decided here.
+
+### 0.2g WHAT DRIVES THE CURL — attention moving on, and the decor that leaves behind
+
+> *"everything is space we can climb into, but also bend and squish and enlarge together…"*
+
+> *"what drives the curl indeed. **the need to keep going and focus on something else, but keep that
+>  around in a physically re-accessible representation that becomes the decor of the screen.**"*
+
+**The ruling: the curl is driven by ATTENTION MOVING ON — never by a clock, an age, or a position
+ in a set.** A thing curls because you had to keep going and look at something else. It is the
+  geometric residue of your own handling, and that is why the result reads as made rather than
+   generated.
+
+**Squishing is CURLING, not dooring.** Older parts of a set are *curled up and small* — present,
+ shrunken, shape intact — never hidden behind a counted door. Both are legal under §1 (a declared
+  zone *"may lie about size, emphasis, order and colour … never about presence"*), but they are
+   different instruments and history wants the curl:
+ - a **door** trades presence for a count. It destroys the SHAPE, and shape is the whole reason a
+    laid-down arrangement is recognisable at a glance (§0.2f — *the shape is the memory*).
+ - a **curl** spends size and keeps everything else. Legible all the way down, and honest by
+    construction: nothing was removed, so nothing can be missing.
+ - it is also the geologically true one — strata are thin at depth because they COMPACTED under
+    load, not because anyone summarised them.
+
+**The mechanism is already built and already forgets.** `FOCUS_BOOST = 3.2` / `FOCUS_SHRINK = 0.34`
+ (`vyto_foam.ts:74-76`): the member on the path to attention swells its power radius, every off-path
+  sibling compresses — *"the focus region dominates while context gathers at the margins — real
+   geometry, no camera tricks."* Squeeze-when-you-look-away IS the taper. What it does not do is
+    **keep**: every focus recomputes from the base cut (*"No focus ⇒ 1 ⇒ the untouched base cut,
+     byte-identical"*), so the compression evaporates the instant attention moves. Make the taper
+      **durable and cumulative** — squeezed once when you left it, tighter when you left it again —
+       and the curl falls out of the organ that already exists. The layout becomes the log of where
+        we have been *without a separate stack beside the tree.*
+
+**"Bend and squish and enlarge TOGETHER" is free here and nowhere else.** A voronoi has one wall per
+ pair, so a cell that swells necessarily squeezes its neighbours — coupling is the medium's own
+  property, not a behaviour to write (`Voro.g:12` — *"adjacency reads as shared WALLS not wires"*).
+   A box layout would have to simulate what this gets for nothing. **"Climb into"** is nesting,
+    already built and green (VytoNest/VytoNestRest).
+
+**"Physically re-accessible" rules out the lookup.** Getting back to a curled thing is a MOTION —
+ uncurl, enlarge, neighbours give way — not a query resolved against an archive. The way back is
+  that it never left. Note this is a *different* mechanism from the dip's `q:` (§0's step 2): a dip
+   reopens what was hidden; a curl was never hidden and needs no way back. **Both stand. They answer
+    different questions** — do not collapse them into one.
+
+**"Becomes the decor of the screen" is the aesthetic ruling this doc has been missing.** The curled
+ past is not clutter to be swept: it IS the ornament. The texture of the glass is the residue of use.
+  That closes two long-open items at once:
+ - `Vyto_todo §0.0`'s constraint — *"like a child's pasta and paint artwork"* — stops being a mood
+    to imitate. It is hand-made because a hand made it, by working. Decor ACCRUES; you cannot get it
+     from readouts, which is exactly why the dashboard instinct keeps failing the ruling.
+ - `Vyto_todo:3110`'s *"the conserved aesthetic"* — flagged 2026-08-09 as *"the one item no amount
+    of code fixes"*. It was unfixable while the look was a style to be recorded. As the residue of
+     handling, it is generated by the same organ that lays the glass out, and drifts only if the
+      handling does.
+
+**And it answers the unbounded-growth risk from §0.2f without a new rule.** The cull stops needing to
+ be a ring at ~60: a thing you never return to simply curls smaller until it is texture. Continuous,
+  presence-preserving, driven by disuse rather than by a count — the same shape as every other repair
+   in this doc, and the same reason: a threshold chatters, a fact about the data does not.
+ **The noise problem dissolves here too.** A node that fired 1152 times (Electrode's measured
+  `Creduler_ensure` figure) becomes a very tight, very thin coil that READS as *this thing churns* —
+   which is what studying noise wants. A threshold would need a prior on normality, and `findings §8`
+    establishes there is none: no `%Norm` particle is authored anywhere in matter. A curl needs no
+     prior. It just gets tighter. **The noise becomes texture — which is to say, it becomes decor.**
+
+**Prior art, and the near-miss.** `Vyto_todo:1771` reached for `register: icon | compact | full` —
+ a three-step discrete size ladder called *"what makes every other problem tractable"*. And
+  `departing` (`Vyto.g:415-425`) is the only mark in the system with a lifecycle: two-stir grace,
+   then drop. Both are the curl in buckets. The instinct has been arrived at twice and quantised
+    both times.
+
+**Open, and a real ruling rather than a detail:** does a curl ever fully relax? If returning to a
+ thing restores it to the base cut, the space forgets the visit; if it only partly relaxes, the
+  layout accumulates a *history of attention* rather than a state of it — which is closer to what
+   was asked for, and is the more interesting artefact. Not decided here.
+
+### 0.2h THE VYTOCON, THE BUNDLE, AND THE LADDER — the closing rulings, 2026-09-08
+
+> *"there's multiple layers of things we can balance layout pressure across… the structure includes
+>  space and time, folds the old into over-there. if revisited we should show it as a ladder from one
+>   place on the path to another, one day… that's if the particular **Vytocon** (configuration of
+>    Vyto) has the relevant algorithms set up to treat things like that… you see we want this to be
+>     the open-ended expression fibre bundle splatter voice coil."*
+
+**① Layout pressure is PLURAL.** Not one budget arbitrating one crowd — several pressures balanced
+ against each other across layers. The organs that already price the glass are exactly these: dose,
+  `Vyto_importance`'s kinship lift, `Vyto_need_of`'s floor, the focus taper, heat — and now
+   **curl-state** joins them as a standing pressure rather than a per-stir recomputation (§0.2g).
+    The design job is the BALANCE, not another knob. `budget_for(800,450)` is the degenerate
+     one-pressure case and it is the thing that chatters.
+
+**② The structure is SPACETIME, and the old folds into OVER-THERE.** The curl does not only shrink —
+ it **displaces**. Time becomes distance: old is small AND far. That is a sharper claim than §0.2g's
+  and it changes what the curl is: not a size channel but a *place* channel with size riding along.
+   It also makes the geology (§0.2f) spatial rather than stacked — you do not flip a pile, you look
+    over there.
+
+**③ REVISITING SHOWS A LADDER.** This answers §0.2g's open question, and with a third option neither
+ half of it had: a revisited thing does not simply relax in place, nor stay curled. **It shows the
+  ladder — the path from one place on the path to another.** The route is drawn, so returning
+   reveals the *connection* rather than merely restoring a state. Marked *"one day"* by the owner:
+    aspirational, not the next build. Note it needs §0.2b's absorption to be possible at all — a
+     ladder between two places requires both places to still exist as matter.
+
+**④ THE VYTOCON is the unit of configuration — and it settles §0.2e.** Vyto is not one glass with one
+ behaviour: a **Vytocon** is a named configuration with its own algorithm set, and a capability like
+  the curl, the ladder, or the fold-at-meaning is a property OF a Vytocon, not a universal law of the
+   glass. So the gated-vs-wholesale question §0.2e left to the owner has a better third answer than
+    either: **neither a boolean flag nor a fleet-wide switch — a named configuration.** The existing
+     Books keep their Vytocon and stay byte-identical because they are running a different one, not
+      because a gate is off.
+ **The mechanism already exists and already snaps.** `foamereo` — *"the composer's deck"*
+  (`Vyto.g:145`, `:1219`) — a comma deck of composer tokens (`foamereo:'room,seal,copperless'`,
+   `foamereo:'wave,seal,room:0.55'`) carried from the commission and stamped on **`w.sc.foamereo`**,
+    sc-side and therefore already in every snap. A Vytocon is that grown from a flat token list into
+     a named configuration. Two regimes already ride it (`'seat'`, `'room'`), so the seam is proven.
+
+**⑤ "OPEN-ENDED EXPRESSION FIBRE BUNDLE SPLATTER VOICE COIL"** — each word is load-bearing, and one
+ of them is the right name for a question asked earlier in this doc:
+ - **fibre bundle** — a base space with a fibre attached at every point. The C tree is the base
+    space; at each node hangs its fibre (geometry, curl-state, change marks, provenance, `%Map`,
+     `%Flow`). This is the exact answer to the owner's *"we have a lot of other stuff to hang off a
+      central A-theoretical tree of innards"* — and it comes with useful consequences for free:
+      **a LAYOUT is a SECTION of the bundle** (one choice of fibre element per node), a `%Moment` is
+       a stored section, the geology is a sequence of sections, and **a Vytocon is a rule for
+        choosing a section.** The vocabulary is coherent; use it.
+ - **splatter** — physical, paint-like, not neat. `Vyto_todo §0.0`'s pasta-and-paint, restated as a
+    property of the medium rather than a style to imitate.
+ - **voice coil** — an ACTUATOR: it converts live signal into motion, continuously. The glass is
+    driven, not drawn. Which is why interchange (§0.2c) is the right animation and a tween is not.
+ - **open-ended expression** — the vocabulary is not closed. No fixed set of cell kinds, no
+    enumerated faces; the base space is whatever C\*\* is, and the fibres are whatever gets hung.
+
+**Where this leaves the build order.** §0's five steps are still the correct small moves and are
+ unchanged. What §0.2 changes is what they are FOR: they are the first steps of the absorption, not
+  a tidy-up of the fold. A fresh session should read §0.2 before §0's list, then the list.
 
 ## 1. The definition (the owner's words, and the shape they name)
 

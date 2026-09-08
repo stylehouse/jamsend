@@ -69,6 +69,153 @@ export function bucket_key_of(members: Record<string, any>[]): string | null {
     return best ? best.k : null
 }
 
+// ── THE FOLD LADDER'S KEY ELECTION — where a wall falls (2026-09-09) ──────────────────────────────
+// PURE AND UNWIRED, like fold_ladder below it: proven here, driven by a Book, wired at the one call
+//  site (Vyto_fold_scope, Ghost/V/Vyto.g:476) when the human says so.
+//
+// THE PROBLEM IT FIXES.  bucket_key_of asks a statistical question — "which sc key happens to
+//  partition these 2..n-1 ways" — over a member set with the meaning-bearing keys already removed:
+//   it skips every bare '1' (:58), which is every presence mainkey in the tree, and the caller has
+//    already struck id/of/pub/page/seq as SIG_JOINS "plumbing" (:19-21).  So the glass folds at the
+//     crowd and colours at the meaning, and a cell's wall moves when a NEIGHBOUR is born, because the
+//      neighbour changed the count.  A boundary that is a fact about the data holds still; a boundary
+//       that is a fact about the crowd cannot.
+//
+// THE LADDER.  Ask what a thing IS before asking what it happens to differ by:
+//   1  mainkey     — what it IS            (the metaphysics' first key)
+//   2  of:         — whom it is ABOUT      (the many:1 reference)
+//   3  id          — which holding it LISTS(the 1:1 join)
+//   4  discovered  — bucket_key_of, unchanged, as the LAST resort — which is exactly where a
+//                     discovered key genuinely IS the finest meaning available (VytoStaple's eight
+//                      cogs partitioned by `metal` is that case, and keeps meaning what it meant).
+//
+// WHY IT IS PROVABLY ADDITIVE.  Every rung uses the SAME validity test bucket_key_of uses — a key
+//  must cut the set into 2..n-1 groups — so a rung that would make one big group (or n singletons)
+//   falls through instead of firing.  In every Vyto Book we own the fold scope is ONE mainkey family
+//    all wearing ONE `of:main` and no `id`, so rungs 1-3 each collapse to a single group and the
+//     ladder returns bucket_key_of's own answer, unchanged.  The fleet cannot tell the difference —
+//      which is also why no existing Book can WITNESS this, and a mixed-kind Book has to be written.
+//
+// A JOIN RUNG MUST BE TOTAL.  Rungs 2 and 3 require EVERY member to carry the key. bucket_key_of
+//  tolerates a partial key (it scores by how many carry it) because it is choosing a bucketing; a
+//   WALL is different — a member with no value has no side of the wall to be on. Partial ⇒ fall
+//    through, rather than quietly leaving members homeless. The mainkey rung is always total.
+export type FoldRung = 'mainkey' | 'of' | 'id' | 'discovered'
+export type FoldElection = { rung: FoldRung, key: string } | null
+
+// kind_of — a member's mainkey NAME (not its value).  This is the whole point of rung 1: the value
+//  of a presence mainkey is the bare '1' that bucket_key_of skips, but the NAME is the type tag.
+export function kind_of(sc: Record<string, any>): string | null {
+    const ks = Object.keys(sc || {})
+    return ks.length ? ks[0] : null
+}
+
+// distinct_ok — bucket_key_of's own validity test, factored out so every rung is judged identically:
+//  a partition is usable when it makes at least 2 groups and fewer than n (n groups = all-unique =
+//   no representative, which the honest answer calls "none" rather than forcing one).
+function distinct_ok(vals: string[], n: number): boolean {
+    const seen: Record<string, 1> = {}
+    for (const v of vals) seen[v] = 1
+    const d = Object.keys(seen).length
+    return d >= 2 && d < n
+}
+
+// fold_election — the ladder. Returns which rung fired and the key it fired on, or null when nothing
+//  partitions (the same "no representative" verdict bucket_key_of gives).
+export function fold_election(members: Record<string, any>[]): FoldElection {
+    const n = members.length
+    if (n < 2) return null
+    // rung 1 — mainkey. Always total: every particle has one.
+    const kinds: string[] = []
+    for (const m of members) { const k = kind_of(m); if (k == null) return null; kinds.push(k) }
+    if (distinct_ok(kinds, n)) return { rung: 'mainkey', key: '@mainkey' }
+    // rungs 2 and 3 — the joins, and they must be TOTAL (see the note above).
+    for (const jk of ['of', 'id'] as const) {
+        let total = true
+        const vals: string[] = []
+        for (const m of members) { const v = m?.[jk]; if (v == null) { total = false; break } vals.push('' + v) }
+        if (total && distinct_ok(vals, n)) return { rung: jk, key: jk }
+    }
+    // rung 4 — the discovered key, verbatim.
+    const bk = bucket_key_of(members)
+    return bk ? { rung: 'discovered', key: bk } : null
+}
+
+// fold_group_of — the group a member belongs to under an election. The caller groups on this string
+//  instead of reaching for m[key], because rung 1's "key" is the mainkey NAME, not an sc lookup.
+//   Returns null when the member carries no value for the election (only possible on rung 4, which
+//    tolerates a partial key — such a member stays OPEN, exactly as Vyto_fold_scope already does).
+export function fold_group_of(sc: Record<string, any>, e: FoldElection): string | null {
+    if (!e) return null
+    if (e.rung === 'mainkey') { const k = kind_of(sc); return k == null ? null : '@mainkey=' + k }
+    const v = sc?.[e.key]
+    return v == null ? null : e.key + '=' + v
+}
+
+// fold_key_compat — the drop-in shim for the ONE existing call site. With `ladder` off it is
+//  bucket_key_of byte-for-byte; with it on, the ladder. Gated so the fleet can prove itself
+//   unchanged before anything moves — the additive law, expressed as a parameter.
+export function fold_key_compat(members: Record<string, any>[], ladder = false): FoldElection {
+    if (!ladder) { const bk = bucket_key_of(members); return bk ? { rung: 'discovered', key: bk } : null }
+    return fold_election(members)
+}
+
+
+// ── THE KIN ATOM — putting the reference back into the weave (2026-09-09) ─────────────────────────
+// PURE AND GATED, like fold_election above.  Meaningfold §0 step 4: "stop subtracting".
+//
+// THE PROBLEM.  `Vyto_relate` builds each row's meaning signature with
+//  `skips = SIG_JOINS.concat(['departing', mainkey(m)])` — so the three keys the metaphysics says
+//   carry ALL of the meaning (the mainkey: what it IS · `of:`: whom it is ABOUT · `id`: which holding
+//    it LISTS) are exactly the three it removes.  The comment defends it — "of:main across a whole
+//     family is plumbing" — and on one authored gear bench that is true.  But in the APP, `of:` IS
+//      the many:1 reference and `id` IS the 1:1 join, so the weave is blind to the one relation the
+//       owner most wants drawn: *"we can see what the player is plugged into in the Mag."*
+//
+// THE FIX.  A second, stronger atom class alongside the incidental shared scalar.  Two rows sharing
+//  `of=trackA` are not coincidentally alike — one is ABOUT the other's subject.  So a kin atom is
+//   weighted well above a shared value, and an edge carrying one is marked `kind:'kin'` so the
+//    renderer can draw a plug rather than a generic vine.  **The plug then draws itself**: no bespoke
+//     Radio→Record cable, just the weave noticing a reference it was previously told to ignore.
+//
+// WHY MAINKEY-NAME AND NOT MAINKEY-VALUE.  `mk=Cog` says two rows are the same KIND; the mainkey's
+//  VALUE is identity, unique per row, and would never be shared (the same distinction Vyto_grasp's
+//   census draws).  So kin_of emits the NAME.
+//
+// WHY NOT pub/page/seq.  SIG_JOINS strips five keys; only `of` and `id` are references.  `pub` is a
+//  party, `page`/`seq` are pagination — genuinely plumbing, and sharing a page number is not kinship.
+//   Keeping them out is the difference between a kin atom and a coincidence.
+export const KIN_WEIGHT = 4
+
+// kin_of — the reference atoms a row carries: its KIND, and any join it points along.
+export function kin_of(sc: Record<string, any>): string[] {
+    const out: string[] = []
+    const mk = kind_of(sc)
+    if (mk) out.push('mk=' + mk)
+    for (const k of ['of', 'id'] as const) {
+        const v = sc?.[k]
+        if (v != null) out.push(k + '=' + v)
+    }
+    return out
+}
+
+// kin_edges — group_edges with the kin class folded in.  `w` stays the plain shared-atom count so an
+//  edge that shares no kin is BYTE-IDENTICAL to what group_edges already returned; a shared kin atom
+//   adds KIN_WEIGHT each and flips the edge to kind:'kin'.  Callers that ignore `kind` see only a
+//    heavier edge, which is the additive story.
+export function kin_edges(sigs: string[][], kins: string[][]): { i: number, j: number, w: number, kind: string }[] {
+    const edges: { i: number, j: number, w: number, kind: string }[] = []
+    for (let i = 0; i < sigs.length; i++) for (let j = i + 1; j < sigs.length; j++) {
+        let shared = 0
+        for (const s of sigs[i]) if (sigs[j].indexOf(s) >= 0) shared++
+        let kin = 0
+        for (const k of (kins[i] ?? [])) if ((kins[j] ?? []).indexOf(k) >= 0) kin++
+        if (shared === 0 && kin === 0) continue
+        edges.push({ i, j, w: shared + kin * KIN_WEIGHT, kind: kin > 0 ? 'kin' : 'sig' })
+    }
+    return edges
+}
+
 // ── the focus taper — attention as geometry ───────────────────────────────────────────────────────
 // The member on the path to focus swells its power radius by BOOST; every off-path sibling
 //  compresses by SHRINK.  Applied at every container along the path (the study's magOf), the focus

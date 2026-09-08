@@ -1,0 +1,16 @@
+Snap:H
+  H:VytoGrasp,Run
+    A:VytoGrasp
+      self,round=4	{"mung":["age"]}
+      w:VytoGrasp
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Cog:cog1,of:main,metal:brass,rare:yes
+        Cog:cog2,of:main,metal:brass
+        Cog:cog3,of:main,metal:brass
+        Cog:cog4,of:main,metal:iron
+        Cog:cog5,of:main,metal:iron
+        req:grasp_wait,finished
+        Se:glass,rows:5,grapples:5,comms:1,neu:5,gone:0
+          Claim:loud,key:rare,val:yes,n:1
+          Claim:quiet,key:of,val:main,n:5

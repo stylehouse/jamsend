@@ -1326,6 +1326,63 @@
     const settleCount  = new Map<TheC, number>()                 // consecutive calm frames
     const motionFrames = new Map<TheC, number>()                 // frames of continuous motion (watchdog)
     const settledState = new Map<TheC, boolean>()                // struck-this-rest latch
+    // ── THE FILM STRIP (2026-09-09) — Vytui's over-time render telemetry, the twin of Cytui's
+    //  `cy_render` push (`Cytui.svelte:332`).  It exists because there was NO over-time witness for
+    //   Vyto at all: `runner_shot --why` reads `top_House.c.cy_render`, which only Cytui writes, so on
+    //    a Vyto Book it answered "no render telemetry — is a useCyto Book mounted?" and every question
+    //     about settling, jank or flashing was unanswerable.  (Verified 2026-09-08 on a green
+    //      VytoNestRest.)  Only `--svg` worked, and it is a STATIC census — no time dimension.
+    //  Render-side, live `.c` only, NEVER snapped (metaphysics #2 — pixels do not round-trip a
+    //   fixture), so no fixture can move because of it.  Mirrored onto `top_House.c.vy_render`.
+    //  WHAT IT IS FOR — the owner wants smooth rendering, and these are the four tells that say
+    //   whether it is:
+    //    · forced        watchdog landings (`MAX_MOTION_FRAMES`) — the never-settles pathology
+    //    · episodes      wake→stop motion runs — many short ones IS the flashing
+    //    · jank          frames over 32ms (two frames' budget) — the stutter the eye reads
+    //    · woke_after_ms how soon after a settle something re-woke the loop — a small number
+    //                     repeated is the chatter (a threshold crossing back and forth)
+    type VLog = { t: number, ev: string, [k: string]: any }
+    let vy_log: VLog[] = []
+    const VY_LOG_MAX = 48
+    let vy_last_settle_t = 0          // performance.now() of the last settle strike
+    let vy_episodes = 0               // wake→stop runs since mount
+    let vy_forced = 0                 // watchdog forced landings since mount
+    let vy_jank = 0                   // frames over 32ms
+    let vy_frames = 0                 // frames integrated since mount
+    let vy_ft_sum = 0                 // summed frame time, for a mean
+    let vy_ft_max = 0                 // worst frame time seen
+    let vy_last_disp = 0, vy_last_drift = 0
+    const vy_parked_cells = new Map<TheC, number>()   // last logged cell count per parked world (ring throttle)
+    // PUBLISH ON MOUNT so `--why` can always answer.  Absent telemetry is indistinguishable from a
+    //  broken tab, which is the failure this whole organ exists to end: an empty-but-present strip
+    //   says "mounted, nothing has moved", and that is a real answer.
+    $effect(() => { try { (H.top_House().c as any).vy_render ??= vy_snapshot() } catch { /* pre-House */ } })
+    function vylog(ev: string, extra: Record<string, any> = {}) {
+        vy_log.push({ t: Math.round(performance.now()), ev, ...extra })
+        while (vy_log.length > VY_LOG_MAX) vy_log.shift()
+        try { (H.top_House().c as any).vy_render = vy_snapshot() } catch { /* best-effort mirror */ }
+    }
+    function vy_snapshot() {
+        const now = performance.now()
+        const base = vy_last_settle_t ? Math.round(vy_last_settle_t) : 0
+        let worlds = 0, cells = 0, sprung = 0
+        for (const w of springs.keys()) { worlds++; sprung += (springs.get(w)?.size ?? 0); cells += (paintMap.get(w)?.length ?? 0) }
+        return {
+            renderer: "vytui",
+            worlds, springs: sprung, cells,
+            moving: raf_id !== 0,
+            since_settle_ms: vy_last_settle_t ? Math.round(now - vy_last_settle_t) : null,
+            // the smoothness verdict
+            episodes: vy_episodes, forced: vy_forced, jank: vy_jank,
+            frames: vy_frames,
+            ft_mean_ms: vy_frames ? Math.round((vy_ft_sum / vy_frames) * 10) / 10 : null,
+            ft_max_ms: Math.round(vy_ft_max * 10) / 10,
+            last_disp: Math.round(vy_last_disp * 100) / 100,
+            last_drift: Math.round(vy_last_drift * 100) / 100,
+            calm_eps: CALM_EPS, drift_eps: DRIFT_EPS, settle_frames: SETTLE_FRAMES, max_motion_frames: MAX_MOTION_FRAMES,
+            log: vy_log.map(r => ({ ...r, dt: base ? r.t - base : null })),
+        }
+    }
     const lifted       = new Map<TheC, string>()                 // the hovered (z-lifted) tok
     const paintMap     = new Map<TheC, PaintCell[]>()            // the published snapshot
     // DIAGNOSTIC (2026-07-30, KeepFace mount/destroy thrash — Download_stall_handover.md "Evening 8"):
@@ -2560,7 +2617,17 @@
     function integrate_world(w: TheC, dt: number): boolean {
         const sp = springs.get(w)
         if (!sp || sp.size === 0) return false
-        if (parked(w)) { jump_to_target(w); paint_world(w); return false }   // no camera on a driven world
+        if (parked(w)) {
+            jump_to_target(w); paint_world(w)
+            // FILM STRIP on a DRIVEN world.  A Book is parked: it jumps to target and strikes no
+            //  settle, so wake/frame/settle never fire and the strip would be empty for exactly the
+            //   case a Book runs.  Log a beat whenever the CELL COUNT moves — the model→cells story a
+            //    Book can actually tell — and throttle on that count so a per-stir call cannot flood
+            //     the 48-entry ring with identical rows.
+            const pc = paintMap.get(w)?.length ?? 0
+            if (vy_parked_cells.get(w) !== pc) { vy_parked_cells.set(w, pc); vylog("park", { cells: pc, springs: sp.size }) }
+            return false
+        }   // no camera on a driven world
         // ONE TREE WALK PER FRAME (2026-08-08).  This walk and build_cells' were the same depth-first
         //  walk of the same tree, run back to back with nothing between them that touches the tree —
         //   the integration loop below writes spring scalars only.  Hand it down instead.
@@ -2647,6 +2714,8 @@
         // negated so a NON-finite disp/drift (a NaN that slipped past the radius clamp) counts as CALM and
         //  STOPS the loop, instead of `NaN < CALM_EPS === false` pinning requestAnimationFrame at 60fps forever
         //   (a dead-silent CPU burn that eventually OOM-kills the tab).  Finite frames behave identically.
+        vy_last_disp = Number.isFinite(disp) ? disp : -1
+        vy_last_drift = Number.isFinite(drift) ? drift : -1
         const calm_frame = !(disp >= CALM_EPS) && !(drift >= DRIFT_EPS)
         let cnt = (settleCount.get(w) ?? 0)
         cnt = calm_frame ? cnt + 1 : 0
@@ -2670,6 +2739,9 @@
             //  used to leave springs wherever the calm streak caught them (≤EPS off), which was fine at
             //   0.5px and would not be at 1.25 — so land exactly, always, and the widened floor costs
             //    zero pixel truth.  One ≤CALM_EPS snap in one frame, imperceptible.
+            if (mf >= MAX_MOTION_FRAMES && cnt < SETTLE_FRAMES) vy_forced++
+            vy_last_settle_t = performance.now()
+            vylog("settle", { frames: mf, calm: cnt, forced: (mf >= MAX_MOTION_FRAMES && cnt < SETTLE_FRAMES) ? 1 : 0, cells: (paintMap.get(w)?.length ?? 0) })
             jump_to_target(w); paint_world(w)
             motionFrames.set(w, 0)
             if (!(settledState.get(w) ?? false)) {
@@ -2687,17 +2759,35 @@
 
     function frame(ts: number) {
         const dt = last_ts ? Math.max(0, (ts - last_ts) / 1000) : 1 / 60
+        // FILM STRIP: frame-time census.  dt is seconds; jank is a frame over two frames' budget
+        //  (32ms) — the stutter an eye actually reads, counted rather than described.
+        if (last_ts) {
+            const ms = (ts - last_ts)
+            vy_frames++; vy_ft_sum += ms
+            if (ms > vy_ft_max) vy_ft_max = ms
+            if (ms > 32) vy_jank++
+        }
         last_ts = ts
         let moving = false
         for (const w of springs.keys()) if (integrate_world(w, dt)) moving = true
         raf_id = moving ? requestAnimationFrame(frame) : 0
-        if (!moving) last_ts = 0
+        if (!moving) { last_ts = 0; vylog("stop", { frames: vy_frames }) }
         paint_tick++
+    }
+
+    // ONE WAKE DOOR (2026-09-09).  The rAF loop is started from TWO places — `kick` and adopt's
+    //  visible-resident path — so a film strip that only counted `kick` would miss most real episodes
+    //   on a live page, which is the only place motion happens at all.  Both now come through here.
+    function wake_loop() {
+        if (raf_id !== 0) return
+        vy_episodes++
+        vylog("wake", { woke_after_ms: vy_last_settle_t ? Math.round(performance.now() - vy_last_settle_t) : null })
+        last_ts = 0; raf_id = requestAnimationFrame(frame)
     }
 
     function kick(w: TheC) {
         if (parked(w) || document.hidden) return
-        if (raf_id === 0) { last_ts = 0; raf_id = requestAnimationFrame(frame) }
+        wake_loop()
     }
 
     // adopt current targets: sync springs to the live member set, reset settle on a real move,
@@ -2787,7 +2877,7 @@
                 // the VISIBLE resident path: only a real move or a membership change is worth a
                 //  re-pull.  A move (re)starts the rAF loop, which paints every frame until settle;
                 //   a bare removal needs one paint to drop the departed cell.
-                if (moved && raf_id === 0) { last_ts = 0; raf_id = requestAnimationFrame(frame) }
+                if (moved && raf_id === 0) wake_loop()
                 if (moved || removed) changed = true
             }
         }

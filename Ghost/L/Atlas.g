@@ -119,7 +119,16 @@ IMPORT()
     //        the 8,834 containing one are almost purely real symbols, and the 6,000 without are `sc`,
     //         `true`, `ok`.  Resolution is Lagoon's, not the collector's: an unresolvable target is a
     //          mention, not rot.  Bumped so every cached row re-derives with its prose links.
-    const ATLAS_MAPPER = 'm14'
+    //     m15 (2026-09-08 night): THREE more link kinds — `sect`, `book`, `sworn` (Lagoon_todo leg 2).
+    //      The big one is `sect`: `<Doc> §N.N`, and it was found by MEASURING the corpus before choosing
+    //       a form rather than after.  spec/ makes 4,257 §-references and not one was collected, while
+    //        the `Doc#region` form the plan proposed appears twice — so the section-link language was
+    //         already here, spelled §.  463 doc-qualified (113 distinct target docs) + 943 bare (a bare
+    //          `§N` means THIS doc's §N and is emitted with no target at all).  `book` is `Book:<Name>`
+    //           (18, explicit form only) and `sworn` is `«assertion-slug»` (4) — both small and both
+    //            named anyway, because a form nobody can spell is a form nobody uses.
+    //       Bumped so every cached row re-derives with the new kinds.
+    const ATLAS_MAPPER = 'm15'
     // ATLAS_BUDGET — docs mapped per pass.  A %Map build is a real parse (the whole-doc tsstho tree
     //  walk on .svelte), so this is the Stemdex's "polite pass" idea: converge over passes, never thump.
     // ATLAS_SLICE_MS — THE POLITENESS BOUND, and it is a TIME not a count (2026-09-08).  The count-only

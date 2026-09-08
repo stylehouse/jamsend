@@ -1,10 +1,10 @@
 Snap:H
   H:LagoonStaple,Run
     A:LagoonStaple
-      self,round=7	{"mung":["age"]}
       w:LagoonStaple
-        self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         req:stand_wait,finished
         aimed:fixture
-        req:refuse_wait,finished
+        saw:lint,docs:1
+        saw:seek,defs:3,atlas:1,fixture_only
+        saw:beads,beads:1,defs:3,inside:2,loose:1

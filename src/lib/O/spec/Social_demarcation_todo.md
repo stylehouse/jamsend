@@ -6,25 +6,175 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
 
 ## 0. WHAT TO GET ON WITH NEXT (refreshed 2026-09-08 for the morning slog)
 
+### ⚑ THE NIGHT OF 2026-09-08 — three things are OWED TO THE HUMAN before this branch moves again
+
+Everything below that a session could do alone is done. What is left needs a person, because each one is
+ a decision about what is TRUE, not about what compiles. **Do these first; the rest of §0 waits on them.**
+
+1. **Re-swear SwarmReboot `005.snap`.** `since` now survives a reload (item 2), so step 5 fails against a
+    fixture that records the BUG as truth (`since:1751700030`, the re-stamp). The live runner shows
+     `since:1751700000` held across the reload — the correct value. Only a human accepts a fixture.
+2. **Rule on SwarmSpread's five orphaned oaths** (`Crew_todo §0`, corrected there). The Book is genuinely
+    red and has been since `4f3ce9cb` retired the adopt road: four of its five declared `%Assertion`
+     sentences no longer exist anywhere in `Ghost/`. Striking a declared oath is deciding a promise no
+      longer applies, so it is not a session's call. Toc surgery; verify `grep -c step=N` is 1 per step.
+3. **Decide whether the `%Card` migration's tolerant reader lands** (item 3). Ruled and unblocked by the
+    metaphysics branch, planned, and deliberately NOT started: a describe's mint also crosses the WIRE, so
+     it needs a reader that accepts either mainkey on BOTH ends before the mint can flip. Landing the mint
+      alone takes the pool dark until someone reloads eed by hand.
+
+**Landed and gated this night, all uncommitted — items 1, 2, 5 and `SoundPooling_todo:640`:** the Pier
+ sweep (seven sites, not the ~120 the doc claimed), `since` through the pier stash (plus a Door-freshness
+  bug nobody had noticed), the reach `by` binding (a reach's claimed booker is now checked against the
+   frame's actual sender), and the live-preferring body pick (the 36-hour outage's own line, which now
+    speaks when it falls back to a Cave nobody has heard from). Books: SwarmBody 23/23, MusuPoolFill 6/6,
+     MusuPoolRandom 5/5, MusuPoolBytes 5/5, MusuPoolRadio 6/6, MusuReplica 14/14, SwarmHelm, SwarmStaple,
+      InvWalk, InvFerry — all caveat 0. Unit: MembershipDoor 7/7, PoolKeep 6/6, ReachTerminal 5/5,
+       TwoFounder 1/1, SendTo 1/1.
+
+**The shape those four share, worth noticing before designing the next thing.** None was a broken
+ mechanism. In every case the FACT was already present and simply unread — a retired grant nobody asked
+  about, a `since` re-invented on each boot, a sender the gate never compared, a `heard` stamp sitting on
+   the roster. The substrate had the truth the whole time and no surface to state it through, which is
+    exactly this doc's thesis (§0 arc). **Look for the unread fact before adding a new one.**
+
+**Files touched:** `Ghost/S/Swarm.g`, `Ghost/M/Radio.g`, `Ghost/M/Ra.g`, `Ghost/N/Presence.g`,
+ `src/lib/O/LiesFunk.svelte` + their gen. Docs: this file, `Crew_todo.md` (a false green corrected),
+  `SoundPooling_todo.md` (:640 closed), and the new `Grantwalk_handover.md` for the Grant-mobility fork.
+
+**⚠ THE METHOD LESSON, because it cost hours and will again.** Twice this night a change looked like it
+ caused a regression, and twice the truth was that **no recent baseline existed**. MusuHeist's caveat count
+  was called "a fixed 4, every run" on the strength of ONE sample, and its real behaviour is a
+   documented-since-2026-09-07 broad drift that varies 1→21 run to run. SwarmSpread's "green" was five days
+    and many commits old. **Before attributing anything to a change: measure the same Book on the committed
+     build.** A bisect took ten minutes and settled both. `git stash` is unsafe here — another branch works
+      in this tree — so save the compiled `.go` aside, `git checkout HEAD --` the gen, reload, measure,
+       restore. Reload the runner between every gen swap or you are judging code that is not loaded.
+
 **Landed and gated (2026-09-07):** the membership door (§2.0 — `Swarm_peers` / `Swarm_pier_retired` /
  `Swarm_pier_granted`, six call sites, DoorFace stated-once), reach terminality (§4.0), and the unit gate
   (§7.5: 25 assertions, no runner) plus the Book gate (every ceremony/social/pool Book green, caveat 0).
    Raw evidence + the sweep that found most of this was already ruled: `Fallen_out_of_mind_todo.md`.
 
 **The slog, in order:**
-1. **The sweep** — the remaining ~120 raw `o({Pier:1})` walks, each asked ONE question (§2.0.1: transport →
-    default · feature → `{live:'X'}` · actual-friend → `{live:true}` · audit → `{live:'all'}`). Mechanical
-     but not thoughtless; in doubt take the default (the asymmetry is written down). Books to re-run after:
-      the ceremony set + SwarmBody + the pool four. `scripts/door_census.mjs` checks a live host.
-2. **`since`** (§4.2) — now that a runner exists: carry `since` in the pier stash, restore on rehydrate,
-    and deliberately re-swear SwarmReboot (its fixture records the reload re-stamp as truth).
+1. ~~**The sweep**~~ — **DONE 2026-09-08 night, and it was SEVEN sites, not ~120.** The count was the
+    error: **most `o({Pier:1})` in this repo is not membership at all.** Three shelves wear that mainkey,
+     legitimately, because identity is per-shelf:
+    - `Swarm_peering(ident).o({Pier:1})` — **membership**. The sweep's whole subject. Seven sites.
+    - `w.o({Peering:1})[0].o({Pier:1})` — the **transport world's** piers: the Lies editor/runner channel
+       and Peeroleum's carriers (Peeroleum 7 · LiesLies 6 · LiesFunk 4 · Tribunal 2 · Tyrant · RemoteWormholeNav).
+    - `H.Awo('Bearing').o({Pier:1})` &c. in **`MachPeerily`** (17) — live p2p `Pier` *instances* from
+       `p2p/Peerily.svelte.ts` standing in machine-test worlds. Not particles about friends at all.
+    Converting either of the last two to `Swarm_peers` would be a **bug**, not a tidy. Anyone re-counting
+     this must split by the container first; a grep for the mainkey answers the wrong question.
+
+    **The seven, and the question each turned out to be asking:**
+
+    | site | question | why |
+    |---|---|---|
+    | `Radio_friendly` | `{live:'all'}` | naming a peer is not a permission — a lapsed grant must not collapse a friend's name to a hex prefix |
+    | `Riffle_homes` | `{live:'all'}` | the shelf is mine, the name is theirs |
+    | `Radio_lineup_errors` | `{live:'Music'}` | "the wire owes us their music" is only true of someone who granted it — deleted a hand-rolled `Swarm_pier_live` under a raw walk |
+    | `Presence_ask_roster` | default | transport: a nascent pier is exactly who presence must ask about; a retired one gets nothing |
+    | LiesFunk `crew` · `dump` · `tidy forget:` | `{live:'all'}` ×3 | see the ruling below |
+
+    **THE RULING THIS SWEEP PRODUCED — the divide in one line:**
+    > **The app asks who is LIVE. The debug surface asks what is THERE. Never swap them.**
+    A diagnostic that filters retired rows is *precisely how* a Cave that was a closed browser window
+     stayed invisible for 36 hours (§1). The faces that hid it were being helpful. `crew`, `dump` and
+      `tidy forget:` therefore take the ledger deliberately — and `forget:` **must**, since a door that
+       can only see live piers cannot tidy a dead one.
+
+    **Six of the seven are provably no-ops** (`Swarm_peers(ident,{live:'all'})` is `return all` — the
+     identical array; `{live:'X'}` is exactly the hand-filter it replaced). The one real behaviour change
+      is `Presence_ask_roster`, which now excludes retired piers. That matters when reading the Book gate.
+
+    ✅ **RESOLVED — MusuHeist's caveat volatility is NOT the sweep, and was never new.** Recorded in full
+     because two of my own claims along the way were wrong and the retelling would repeat them.
+     **What was measured:** three pinned runs on a quiet, freshly-reloaded, contention-free runner gave
+      1 · 13 · 21 caveats, always `ok_pct 1`, 22/22, never a fail — and the onset crept monotonically
+       earlier (13 → 10 → 2), each block running contiguously to the last step.
+     **Why it is not the sweep, by construction:** the runner identity `da060c94` holds **zero piers**
+      (`runner_ask crew` → `friend_piers:[]`, `link_piers:[]`, `bodies:[]`). `Presence_ask_roster` — the
+       only one of the seven that can change a set — therefore filters an empty list either way. All seven
+        conversions are no-ops on this runner. *(Bonus: that `crew` reply came back through the very op
+         this sweep edited, so the LiesFunk change is live-proven too.)*
+     **Why it was never new:** `SoundPooling_todo.md:57` already records it, 2026-09-07, before the sweep
+      existed — *"MusuHeist 22/22 ok but caveat 1 on 20 steps — a broad PRE-EXISTING drift (it blankets
+       handshake steps that touch no changed code)"*. Twenty steps then; thirteen and twenty-one tonight.
+        Same phenomenon.
+     ⚠ **MY TWO ERRORS, so they are not inherited.** (1) I called the baseline *"a fixed 4 caveats, every
+      run"*. It was **one sample** — the baseline sweep ran MusuHeist once. A single run is not a
+       distribution, and treating it as one manufactured a regression out of noise. (2) I wrote that
+        MusuHeist "does not reach `Presence_ask_roster`"; it loads in every runner off the spine manifest.
+         The claim happened to survive for a different reason (no piers), but the reasoning was wrong.
+    **What is still worth someone's time:** the drift itself — a Book whose caveat onset creeps earlier
+     across consecutive runs on one tab is accumulating state between runs, and nobody has ever chased
+      that. It is a MusuHeist question, not a membership one. Old reasoning kept below for the record:
+     ~~Three reasons to suspect otherwise~~, all recorded here so the morning does not
+        re-derive them: (a) six of seven conversions cannot change a set — but the seventh is NOT out of
+         reach, and this is the honest candidate: **`Ghost/N/Presence.g` is in the spine manifest**
+          (`LiesLies.svelte:61`), so it loads in EVERY runner, and `Presence_ask_roster` fires on a ~10s
+           **wall-clock** pulse regardless of what the Book is doing. A wall-clock verb whose result now
+            depends on a membership filter, landing at a different point in a 22-step run each time, is a
+             mechanism that would produce exactly a contiguous caveat block from a varying start. Against
+              it: the pulse ran on the baseline too and the baseline was *stable*, so the change would have
+               to make its output vary, which requires a retired pier in the Book world — check whether one
+                exists before believing this. **Do not close this without checking it**; (b) a **second runner tab was
+          live and being driven by another branch** (Voronation/LagoonStaple/VytoNestRest) throughout,
+           and unpinned `runner_ask` lands on whichever tab answers first; (c) MusuHeist has a
+            **documented settle-round flake** — `Heist.g:1338`, step 2's `see:` on two collections
+             *"fires or does not depending on whether the world settles at round 5 or 6"* — and CPU
+              contention from a second runner is exactly what moves a settle round. The caveats also ran
+               in a **contiguous block from a varying start to the end**, which is the signature of one
+                early divergence cascading, not of a logic change. `git diff` shows **0 dige lines**
+                 changed in the fixture. ~~Next move: re-run MusuHeist ×3 on a single quiet runner~~ —
+                  **done; (b) was falsified, the volatility survives a quiet runner. See the resolution above.**
+2. ~~**`since`** (§4.2)~~ — **BUILT 2026-09-08 night; ONE FIXTURE RE-SWEAR OWED TO THE HUMAN.**
+    Three edits in `Ghost/S/Swarm.g`: `Swarm_pier_entry` stashes `since` (guarded — a pier without one
+     leaves the key absent, never `undefined` into sc); `Swarm_pier_stash` merges it **first-write-wins**,
+      because the birth of a bond happens once and a re-seal, a `restash_all` mirror or a graft
+       convergence must never move it forward; `Swarm_piers_rehydrate` restores it **after** the seal,
+        since `Swarm_seal` stamps `Swarm_now` on an absent key — right for a new bond, wrong for one being
+         stood back up. Seal's own `re_seal` read (3345) happens first and still sees the honest truth.
+    **PROVEN on the runner:** SwarmReboot step 5 now reads `Pier,pub:648f0a13…,friendly:Mate,since:1751700000`
+     while the world clock says `now=1751700030`. The bond kept its birthday across the reload.
+    ⚑ **OWED — the human re-swears SwarmReboot `005.snap`.** Its fixture currently records the BUG as truth
+     (`since:1751700030`, the re-stamp). Step 5 fails until it is re-sworn, and that failure is the fix
+      working. Nobody but the human accepts a fixture.
+    ⚑ **A SECOND BUG THIS INCIDENTALLY CURES, not previously noticed.** `Swarm_crew_view:451` computes
+     `fresh = since && (now_ms/1000 - since) < 240` — the Door's glow marking *"the receipt of a finished
+      link"*. Because a reload re-stamped `since` to now, **every bond looked freshly formed after every
+       reload**, however old. The Door has been glowing four-minute-old receipts for months-old
+        friendships, and nothing said so. It is honest now. Watch for a face that quietly depended on the
+         old always-fresh behaviour.
+    ⚠ Comment corrected in the same pass: `Swarm_radio_roll` justified itself with *"since does NOT survive
+     a reload"*, which this change falsifies. **The roll still stands** and the reason was rewritten rather
+      than deleted: `since` records when the BOND formed; the roll answers when I made the CHOICE. Two
+       different events, and only the roll answers the second.
 3. **The `%Card` migration** (`Fallen_out_of_mind §2.1`) — one mint, zero fixtures, but WAIT for the
     metaphysics agent's ruling on the three options first (one `%Card` with context-keyed prior · a distinct
      mainkey for the scratch catalog · keep `%Record` with mandatory `total`).
 4. **Invite-as-rendezvous** (§8.10, `Crew_todo §6`) — the weld is ONE token field (`to`); the ceremony's own
     Book is green again so it is safe ground. Design first: consent must not become a third ask.
-5. **`Ra_pool_fill_homes`** picks the Cave with no liveness — wants a live-preferring `Swarm_body_for`, which
-    moves SwarmBody's fixtures; do it with the runner up, not blind.
+5. ~~**`Ra_pool_fill_homes`** picks the Cave with no liveness~~ — **DONE 2026-09-08 night, and it moved NO
+    fixture.** `Swarm_body_pick` / `Swarm_body_for` take an optional clock; given one they prefer a `%Body`
+     we have actually HEARD from. The signal already existed — `%Body.heard` is stamped on every inbound
+      sibling frame (`Swarm.g:1469`) — and nothing had ever read it. This is the precise line §1 is about.
+    **`away` is BORROWED, not invented.** `Swarm_crew_view` already calls a row *here* under 15s, *fading*
+     under 45, *away* beyond, so the body the Door would draw as away is the one this pick steps over. One
+      threshold, one meaning, in both places; a fresh number would have made the Door and the router
+       disagree about the same body.
+    **It PREFERS, then SPEAKS.** A stale Cave is still worth trying and silence is not — but a preference
+     that falls back *silently* rebuilds the defect one layer down, the fill still going to a ghost and the
+      log still reading like a slow peer. So the fallback says so, throttled to once a minute per identity:
+       `🏊⚠ pool fill is drawing from a Cave we have not heard from (…) — it may be a closed tab`.
+        **The bug was never that the wrong Cave got chosen. It was that nothing said so.**
+    **Gate:** SwarmBody 23/23, MusuPoolFill 6/6, MusuPoolRandom 5/5, MusuPoolBytes 5/5, MusuPoolRadio 6/6,
+     MusuReplica 14/14 — all caveat 0, and the new line appears in NONE of them (a Book passes no clock, so
+      the away-check never fires). MusuHeist reached 22/22 `ok_pct 1` with no FAIL; its caveat count is the
+       known drift and was deliberately not read as a signal. Unit: MembershipDoor 7/7, PoolKeep 6/6,
+        ReachTerminal 5/5, TwoFounder 1/1.
 
 6. **The protocols and their gates — WRITTEN, §3.4** (owner 2026-09-08: *"we also need to clearly present how
     those extra protocols are defined there, and how permissions work — a lot comes under 'Music' at the

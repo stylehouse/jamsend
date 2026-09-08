@@ -5,7 +5,6 @@ story:SwarmReboot
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.084
-      sample=0.045,at=1788585262
       sample=0.032,at=1788585628
       sample=0.054,at=1788586392
       sample=0.066,at=1788590746
@@ -15,8 +14,8 @@ story:SwarmReboot
       sample=0.107,at=1788593711
       sample=0.256,at=1788603358
       sample=0.125,at=1788780049
+      sample=0.039,at=1788870717
     TimeTotal:step,avg=0.017
-      sample=0.009,at=1788585262
       sample=0.006,at=1788585628
       sample=0.011,at=1788586392
       sample=0.013,at=1788590746
@@ -26,6 +25,7 @@ story:SwarmReboot
       sample=0.021,at=1788593711
       sample=0.051,at=1788603358
       sample=0.025,at=1788780049
+      sample=0.008,at=1788870717
   step,dige:f508e4cd43e96afe
   step=2,dige:d10421cbdc176b08
   step=3,dige:a091bfc04dd10ac3

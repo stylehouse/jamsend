@@ -12,7 +12,7 @@ import { poly_area } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vytonation(): string { return '4b115424532783d7~g1' },
+    Ghostmeta_Ghost_V_Vytonation(): string { return 'd57c2b75837b5d48~g1' },
 
 // Vytonation.g — Vyto's demo Books (the Voronation.g sibling, one directory over in Ghost/V/).
 //  Where Voronation.g proves the CRUSH (the fold policy) on flora and libraries, Vytonation.g
@@ -302,10 +302,17 @@ VytoStaple_moment_ready(w) {
 //  (the witness does the seeing).  The ttlilt riding the expecting req holds the snap; a truth that
 //   lands early settles early, and an overrun times the ttlilt out (an honest RED — the drive never
 //    turned) rather than snapping a half-built picture.
+// ⚠ THE TRUTH IS AWAITED (2026-09-09).  This used to read `if (truth_fn()) return`, a SYNCHRONOUS
+//  test — so an `async` truth_fn returned a Promise, which is always truthy, and the wait returned
+//   on its very first poll having proved nothing.  Silent: the req finishes, the step passes, and the
+//    thing being waited for never happened.  (Cost: VytoGrasp's identity claim, read as a commission
+//     timing fault until the wait itself was re-read.)  `await` on a plain value is identity, so every
+//      existing synchronous truth_fn behaves exactly as before; only async ones change — from
+//       always-instantly-true to actually tested.
 async VytoStaple_await(w, secs, truth_fn) {
     let deadline = Date.now() + secs * 1000
     while (Date.now() < deadline) {
-        if (truth_fn()) return
+        if (await truth_fn()) return
         // NUDGE a belief cycle each poll.  Vyto's stir rides a debounced watch flush whose clear()
         //  needs a live belief cycle to run; between beats the Run House can sit quiescent under the
         //   ttlilt hold, so the LAST stir of a two-stir grace (the drop) may never fire and the
@@ -611,7 +618,7 @@ Vyto_plant(w, genus, dose) {
 //  A 4th arg `priced` (optional, default plain) commissions the glass on the global type-scale
 //   (Vyto_sizing_todo §9 ④+⑤ — cell area is a share of the frame, not an absolute dose box); every
 //    existing caller passes three args → undefined → the byte-identical plain cut.
-Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale, foamy) {
+Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale, foamy, deck) {
     let SH = this.VytoStaple_SH(w)
     if (!SH) return
     if (fresh) {
@@ -626,6 +633,11 @@ Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale, 
     if (needful) commission.sc.need_floor = 1
     if (depthscale) commission.sc.depth_scale = 1
     if (foamy) commission.sc.foam = 1
+    // THE COMPOSER'S DECK, carried from the Book (2026-09-09).  `deck` is a foamereo string —
+    //  `Vyto_commission` lands it on w.sc.foamereo, sc-side, so it snaps and a fixture records which
+    //   configuration the glass was wearing.  Additive: every existing caller passes nothing and the
+    //    commission is byte-identical.  This is how a Vytocon becomes Book-testable at all.
+    if (deck) commission.sc.foamereo = deck
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
 
@@ -2586,7 +2598,7 @@ async VytoCrush_fold(w) {
     w.i({desc: 'commission the glass folded on the twenty cogs — the crowd crushes to its crests'})
     this.Vyto_commission_on(w, w.c.cogs, 1, 0, 0, 1)
     w.c.last_vis = null
-    this.expecting(w, 'fold_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoCrush_crushed_ready(w)) })
+    this.expecting(w, 'fold_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoCrush_pumped(w)) })
 
 },
 // ── beat 4 — the control: re-commission PLAIN → all twenty draw as cells with no crest ─────────────
@@ -2598,6 +2610,28 @@ async VytoCrush_plain(w) {
 
 },
 // ── readers ────────────────────────────────────────────────────────────────────────────────────────
+// THE PUMP (2026-09-09) — why this Book stopped landing its fold, root-caused rather than guessed.
+//  `e_Vyto_commission` ends with `if (w.c.vw_frame) { this.Vyto_stir_soon(w) }`, described in its own
+//   comment as *"the commission's ONLY guaranteed stir"*.  `vw_frame` is a RENDER-only fact whose one
+//    writer is Vytui's publish_frame, so when no frame lands the commission never stirs, no scan runs,
+//     the mirror stays empty and a reader waiting on the fold waits forever — which is exactly this
+//      Book's `req:fold_wait` ttlilt sitting live in its step-3 snap.
+//  The 2026-08-28 commit (bfd828d7) fixed this for a live humdinger by stamping a default 800×450 and
+//   stirring — and DELIBERATELY excluded runners, on the reasoning that *"a runner has no humdinger —
+//    so the else below never fires there and every recorded rhythm stays byte-identical."*  The
+//     rhythm did not stay identical: a runner whose frame never publishes starves the same way, and
+//      the Books that survive are the ones that drive their own stirs (VytoWeb's Vyto_rest_reset,
+//       VytoCell, VytoStaple).  This Book relied on the commission's stir, so it starved.
+//  ⚠ THE DEEPER FIX belongs in `e_Vyto_commission` — a commission should not depend on a render fact
+//   to become real — but that changes the rhythm of EVERY Book at once and is the human's call.  This
+//    is the targeted cure: pump one stir per poll, the same shape VytoKindfold proved.
+VytoCrush_pumped(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return 0 }
+    this.Vyto_stir(vw)
+    return this.VytoCrush_crushed_ready(w)
+
+},
 // a crest cell for a genus group (minted by the fold, `of:genus=<g>`), or null.
 VytoCrush_crest(vw, g) {
     if (!vw || !vw.c.mirror) return null
@@ -2956,6 +2990,533 @@ VytoOrchestra_witness(w) {
     if (w.c.saw_depart) {
         this.story_swear(w, 'the dropped player left an escort for one stir then vanished from its bag')
         if (!(w.oa({see: 'the dropped player left an escort for one stir then vanished from its bag'}))) w.i({see: 'the dropped player left an escort for one stir then vanished from its bag'})
+    }
+
+},
+// ══ VytoKindfold — WHERE THE WALL FALLS: at the kind, or at the crowd's discovered key ════════════
+//   (Meaningfold_todo §0 step 3 · Glassbeast_todo §0 Book 1 · the ladder proven pure in
+//    scripts/VytoFoldLadder.spec.ts before a line of this was written.)
+//   THE FLEET IS STRUCTURALLY BLIND TO THIS, which is the only reason the Book has to exist.  Every
+//    fold scope in all 25 Vyto|Voro Books is ONE mainkey family all wearing ONE `of:main`, so the
+//     ladder's first three rungs each make a single group and it falls through to bucket_key_of —
+//      the fleet cannot tell the ladder from the old election, and cannot witness it either.  A
+//       MIXED-KIND scope is the only shape where the two disagree.
+//   THE DIFFERENTIAL: eighteen members across three kinds (8 %Cog · 6 %Vane · 4 %Hub), every one of
+//    them `of:main`, every one carrying a `metal` of brass or iron.  Kind and the discovered key
+//     deliberately DISAGREE — metal cuts the scope 2 ways ACROSS the kinds, so a wall drawn at metal
+//      puts Cogs, Vanes and Hubs behind one crest.
+//     · commissioned PLAIN  — the crowd's key wins: crests keyed `metal=…`, each mixing kinds.
+//     · commissioned with `foamereo:'kindfold'` — kind wins: crests keyed `@mainkey=…`, one per kind.
+//   The crest's own `of:` IS the election's group string, so the discriminating fact rides the SNAP
+//    and the fixture diff is the whole argument — no oath has to be rewritten when the default moves.
+//   World named VytoKindfold.
+VytoKindfold(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoKindfold_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoKindfold_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 5 }
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { this.VytoKindfold_seed(w) }
+        if (n === 3) { this.VytoKindfold_crowd(w) }
+        if (n === 4) { this.VytoKindfold_kind(w) }
+        if (n === 5) { this.VytoKindfold_saylaw(w) }
+    }
+    this.VytoKindfold_witness(w)
+
+},
+// ── beat 2 — seed a MIXED-KIND scope past the budget (budget_for(800,450) = 12) ────────────────────
+//  Three freshly minted mainkeys, each member a distinct mainkey VALUE so it takes its own cell.
+//   `metal` alternates within each kind, so it partitions the whole scope 2 ways and is present on
+//    every member — which is exactly what makes bucket_key_of prefer it (it scores by how many carry
+//     the key, and metal is carried by all eighteen while any single mainkey is carried by at most 8).
+VytoKindfold_seed(w) {
+    w.i({desc: 'seed eighteen members across three kinds — eight cogs six vanes four hubs all sharing a metal'})
+    let members = []
+    let spec = [['Cog', 8], ['Vane', 6], ['Hub', 4]]
+    for (const s of spec) {
+        let k = 0
+        while (k < s[1]) {
+            let sc = {}
+            sc[s[0]] = s[0].toLowerCase() + (k + 1)
+            sc.of = 'main'
+            sc.metal = (k % 2 === 0) ? 'brass' : 'iron'
+            members.push(w.i(sc))
+            k = k + 1
+        }
+    }
+    w.c.members = members
+
+},
+// ── beat 3 — the CROWD's wall: commissioned folded with no deck ───────────────────────────────────
+async VytoKindfold_crowd(w) {
+    w.i({desc: 'commission the glass folded with no deck — the wall falls on the discovered key'})
+    this.Vyto_commission_on(w, w.c.members, 1, 0, 0, 1)
+    this.expecting(w, 'crowd_wait', 20, async () => { await this.VytoStaple_await(w, 20, () => this.VytoKindfold_pumped(w, 'crowd')) })
+
+},
+// ── beat 4 — the KIND's wall: the same eighteen, commissioned with the ladder engaged ─────────────
+async VytoKindfold_kind(w) {
+    w.i({desc: 're-commission the same eighteen with the kind ladder engaged — the wall falls on kind'})
+    this.Vyto_commission_on(w, w.c.members, 1, 0, 0, 1, 0, 0, 0, 'kindfold')
+    this.expecting(w, 'kind_wait', 20, async () => { await this.VytoStaple_await(w, 20, () => this.VytoKindfold_pumped(w, 'kind')) })
+
+},
+// ── beat 5 — THE UNIVERSAL PRESENCE (doorless site #5) ────────────────────────────────────────────
+//  Every one of the eighteen gains `checked` as a bare presence marker.  Ungated, a key that ALL
+//   members carry is emitted by nobody — the strongest agreement in the family rendered as silence.
+//    With `saylaw` the crest says it once, with no count, because a number is noise when the answer
+//     is "all of us".  `kindfold` stays on so the walls are still drawn at kind.
+async VytoKindfold_saylaw(w) {
+    w.i({desc: 'mark every member checked and re-commission saying the law — total agreement must be said once'})
+    for (const m of w.c.members) { m.sc.checked = 1 }
+    this.Vyto_commission_on(w, w.c.members, 1, 0, 0, 1, 0, 0, 0, 'kindfold,saylaw')
+    this.expecting(w, 'say_wait', 20, async () => { await this.VytoStaple_await(w, 20, () => this.VytoKindfold_said(w)) })
+
+},
+// each kind-crest says `checked` ONCE, as a bare fact with no carrier count.
+VytoKindfold_said(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return 0 }
+    this.Vyto_stir(vw)
+    let crests = this.VytoKindfold_crests(vw)
+    if (crests.length !== 3) { return 0 }
+    for (const c of crests) {
+        let says = c.o({ Vrow: 1, row: 'fact', k: 'checked' })
+        if (says.length !== 1) { return 0 }
+        if (says[0].sc.n != null) { return 0 }
+    }
+    return 1
+
+},
+// ── readers ───────────────────────────────────────────────────────────────────────────────────────
+//  DELIBERATELY NOT VytoCrush's `board_ready` shape.  That reader demands EXACTLY ten Organ rows and
+//   seven Bar rows, and organs mint their row LAZILY (Vyto_scan stands `Organ:Scan` only when it
+//    first writes the mirror; Relate only once an edge exists).  An exact-count assertion on a board
+//     that fills in lazily is a reader that can hang forever, which is the leading suspect for
+//      VytoCrush's own red.  These readers ask only about the thing under test.
+VytoKindfold_crests(vw) {
+    if (!vw || !vw.c.mirror) return []
+    return vw.c.mirror.o().filter(r => r.sc.Vtuffing != null)
+
+},
+VytoKindfold_folded(vw) {
+    if (!vw || !vw.c.mirror) return 0
+    let n = 0
+    for (const r of vw.c.mirror.o()) { if (r.sc.Vtuffing == null && r.c.folded) { n = n + 1 } }
+    return n
+
+},
+// the crest counts sum to the scope — every folded member accounted for by exactly one crest.
+VytoKindfold_counts_sum(vw) {
+    let t = 0
+    for (const c of this.VytoKindfold_crests(vw)) { t = t + (Number(c.sc.n) || 0) }
+    return t
+
+},
+// crests keyed on a discovered key (`metal=brass`), i.e. the OLD election.
+VytoKindfold_crowd_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return 0 }
+    let crests = this.VytoKindfold_crests(vw)
+    if (crests.length !== 2) { return 0 }
+    for (const c of crests) { if (String(c.sc.of ?? '').indexOf('metal=') !== 0) { return 0 } }
+    return (this.VytoKindfold_folded(vw) === 18 && this.VytoKindfold_counts_sum(vw) === 18) ? 1 : 0
+
+},
+// crests keyed on the MAINKEY, one per kind — the ladder's first rung.
+VytoKindfold_kind_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return 0 }
+    let crests = this.VytoKindfold_crests(vw)
+    if (crests.length !== 3) { return 0 }
+    for (const c of crests) { if (String(c.sc.of ?? '').indexOf('@mainkey=') !== 0) { return 0 } }
+    return (this.VytoKindfold_folded(vw) === 18 && this.VytoKindfold_counts_sum(vw) === 18) ? 1 : 0
+
+},
+// THE PUMP — and the reason the first cut of this Book hung (2026-09-09).
+//  A commission does not build its mirror by itself under a driven Book: the stir chain rides a
+//   debounced watch flush, and between beats the Run House sits quiescent under the ttlilt hold, so
+//    a beat that commissions AND awaits its result in one breath waits for a stir that never comes.
+//     The green Books split it — VytoWeb commissions in one beat and drives `Vyto_rest_reset` in the
+//      next — and `VytoCrush_rested` stirs by hand for the same reason, but `VytoCrush_crushed_ready`
+//       does NOT, which is why that Book's `fold_wait` ttlilt is still live in its step-3 snap.
+//  So the truth_fn PUMPS before it reads: one stir per poll until the fold has landed. Side-effecting
+//   in a reader is not lovely, but the alternative is a Book that tests nothing and says so slowly.
+VytoKindfold_pumped(w, which) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return 0 }
+    this.Vyto_stir(vw)
+    if (which === 'crowd') { return this.VytoKindfold_crowd_ready(w) }
+    return this.VytoKindfold_kind_ready(w)
+
+},
+// A DIAGNOSTIC PARTICLE, not a console line.  When a Book's oath does not land, the question is
+//  always "how far did it get", and a `see:` or a log cannot be diffed. This stamps what the reader
+//   actually saw into the world, so the FIXTURE carries the answer and a later session reads it
+//    without a runner. Stamped via oai + field writes, never a bare `w.r(...)` — an async replace
+//     leaves a partial `o()` window (see memory: r-replace-partial-o-window).
+VytoKindfold_diag(w) {
+    let vw = this.VytoStaple_vw(w)
+    let d = w.oai({ diag: 'kindfold' })
+    d.sc.vw = vw ? '1' : '0'
+    d.sc.rows = '' + ((vw && vw.c.mirror) ? vw.c.mirror.o().length : -1)
+    d.sc.crests = '' + (vw ? this.VytoKindfold_crests(vw).length : -1)
+    d.sc.folded = '' + (vw ? this.VytoKindfold_folded(vw) : -1)
+    d.sc.deck = (vw && vw.sc.foamereo) ? String(vw.sc.foamereo) : 'none'
+    d.sc.commissioned = (vw && vw.c.commission) ? '1' : '0'
+
+},
+// ── REOPEN THE DOOR (Meaningfold §0 step 2) ───────────────────────────────────────────────────────
+//  A dip now carries `q:` — the predicate that re-runs its fold.  This is the reader that USES it:
+//   parse `key=value` (the `@mainkey` sentinel means match the mainkey NAME), sweep the scope, count
+//    what it recovers.  Asserting the count matches the dip's `n` is the strongest form of the
+//     round-trip law — not "trust the number", but **reopen it and count again.**
+//  Reads only the snap-visible line, never `.c.members`: that is the whole point.  A door provable
+//   only from the runtime ref list is not provable at all.
+VytoKindfold_reopen(vw, q) {
+    if (!vw || !vw.c.mirror || !q) { return -1 }
+    let at = q.indexOf('=')
+    if (at < 0) { return -1 }
+    let key = q.slice(0, at)
+    let val = q.slice(at + 1)
+    let n = 0
+    for (const r of vw.c.mirror.o()) {
+        if (r.sc.Vtuffing != null) { continue }
+        if (r.sc.departing) { continue }
+        let hit = 0
+        if (key === '@mainkey') { hit = (this.mainkey(r) === val) ? 1 : 0 } else { hit = (('' + r.sc[key]) === val) ? 1 : 0 }
+        if (hit) { n = n + 1 }
+    }
+    return n
+
+},
+// every crest's door reopens to exactly the count it claims — or 0 if any crest lacks a q: at all.
+VytoKindfold_doors_true(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return 0 }
+    let crests = this.VytoKindfold_crests(vw)
+    if (!crests.length) { return 0 }
+    for (const c of crests) {
+        let dip = c.o({ Vrow: 1, row: 'dip' })[0]
+        if (!dip || !dip.sc.q) { return 0 }
+        if (this.VytoKindfold_reopen(vw, dip.sc.q) !== Number(dip.sc.n)) { return 0 }
+    }
+    return 1
+
+},
+VytoKindfold_witness(w) {
+    if (this.VytoKindfold_said(w)) {
+        this.story_swear(w, 'a universal presence is a fact — a family whose every member is checked says so once and without a count because a number is noise when the answer is all of us')
+    }
+    if (this.VytoKindfold_doors_true(w)) {
+        this.story_swear(w, 'a door names the query that reopens it — re-running each crest saying off the snap alone returns exactly the members it stands for')
+    }
+    this.VytoKindfold_diag(w)
+    if (this.VytoKindfold_crowd_ready(w)) {
+        this.story_swear(w, 'with no deck the wall falls on the crowd — two crests keyed by metal stand for eighteen members of three different kinds')
+        w.c.saw_crowd = 1
+    }
+    if (this.VytoKindfold_kind_ready(w)) {
+        this.story_swear(w, 'with the kind ladder engaged the wall falls on kind — three crests one per kind stand for the very same eighteen members')
+        w.c.saw_kind = 1
+    }
+    if (w.c.saw_crowd && w.c.saw_kind) {
+        this.story_swear(w, 'the budget decides only whether a scope folds and never where its wall falls — the same eighteen members fold two ways under two decks')
+    }
+
+},
+// ══ VytoGrasp — THE SEEM LAYER, GATED: arrivals by identity, and a claim weighed against its field ═
+//   (Glassbeast_todo §III.d · Seemables_todo §0 "%Seem as the interface new algorithms are written
+//    in" · the pattern Voro_grasp proved at slice 0 and never carried into the moult.)
+//   TWO CLAIMS, and the first is the one Vyto has never been able to make:
+//    · ARRIVALS AND DEPARTURES BY IDENTITY.  `Selection.process` pairs this walk against the last,
+//       so two rows added and one dropped read as neu:2 gone:1 — not as a count that went 5→6 and
+//        could equally mean five different things.  Vyto_relate rebuilds whole every stir and can
+//         say nothing about what CHANGED; the primitive gives it away free.
+//    · THE NEIGHBOURHOOD READ.  A claim every row carries is quiet; one only a single row makes is
+//       loud.  A row weighed against its field rather than alone — the surroundings-read an
+//        isolation judge cannot do.
+//   And the discipline that makes it Book-able at all: the live Selection stays OFF-SNAP on a free
+//    C** (functions in sc are fatal at encode) while a distilled `%Se:glass` reading rides INTO the
+//     world, where a fixture can hold it.  World VytoGrasp.
+VytoGrasp(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoGrasp_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoGrasp_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 4 }
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { this.VytoGrasp_seed(w) }
+        if (n === 3) { this.VytoGrasp_stand(w) }
+        if (n === 4) { this.VytoGrasp_change(w) }
+    }
+    this.VytoGrasp_witness(w)
+
+},
+// ── beat 2 — a field with a designed loudness gradient ────────────────────────────────────────────
+//  five cogs · every one `of:main` (5 carriers — the QUIETEST claim, shared by the whole field)
+//   · metal split 3 brass / 2 iron (middling) · exactly one wearing `rare:yes` (1 carrier — the
+//    LOUDEST, the thing only one row says).  The mainkey is skipped by the census (it is identity,
+//     unique per row, so it would be trivially loudest and mean nothing) — see Vyto_grasp.
+VytoGrasp_seed(w) {
+    w.i({desc: 'seed a field of five cogs — all sharing one join one wearing a claim nobody else makes'})
+    let cogs = []
+    let k = 0
+    while (k < 5) {
+        let sc = {}
+        sc.Cog = 'cog' + (k + 1)
+        sc.of = 'main'
+        sc.metal = (k < 3) ? 'brass' : 'iron'
+        if (k === 0) { sc.rare = 'yes' }
+        cogs.push(w.i(sc))
+        k = k + 1
+    }
+    w.c.cogs = cogs
+
+},
+// ── beat 3 — commission, rest, and stand the grasp ────────────────────────────────────────────────
+async VytoGrasp_stand(w) {
+    w.i({desc: 'commission the glass and stand the grasp — the field reads its loud and quiet claims'})
+    this.Vyto_commission_on(w, w.c.cogs, 1)
+    this.expecting(w, 'grasp_wait', 20, async () => { await this.VytoStaple_await(w, 20, () => this.VytoGrasp_read(w)) })
+
+},
+// ── beat 4 — the change: two arrive one leaves.  The Seem must name them BY IDENTITY ──────────────
+async VytoGrasp_change(w) {
+    w.i({desc: 'two cogs arrive and one leaves — the grasp names the arrivals and the departure'})
+    let cogs = w.c.cogs.slice()
+    w.drop(cogs[4])
+    let rest = [cogs[0], cogs[1], cogs[2], cogs[3]]
+    let j = 0
+    while (j < 2) {
+        let sc = {}
+        sc.Cog = 'newcog' + (j + 1)
+        sc.of = 'main'
+        sc.metal = 'iron'
+        rest.push(w.i(sc))
+        j = j + 1
+    }
+    w.c.cogs = rest
+    this.Vyto_commission_on(w, rest, 0)
+    this.expecting(w, 'change_wait', 20, async () => { await this.VytoStaple_await(w, 20, () => this.VytoGrasp_changed(w)) })
+
+},
+// ── readers ───────────────────────────────────────────────────────────────────────────────────────
+//  Each PUMPS a stir before reading — a commission does not build its mirror by itself under a
+//   driven Book (its only guaranteed stir is gated on the render-side `vw_frame`; see the note on
+//    VytoCrush_pumped).  Then it awaits the grasp, which is async because o_Seem is.
+async VytoGrasp_read(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return 0 }
+    this.Vyto_stir(vw)
+    if (!vw.c.mirror) { return 0 }
+    await this.Vyto_grasp(vw)
+    let se = vw.o({ Se: 'glass' })[0]
+    if (!se) { return 0 }
+    return (se.sc.rows === '5') ? 1 : 0
+
+},
+// ⚠ A SEEM IS CONSUMED BY READING IT (2026-09-09).  `Selection.process` pairs THIS walk against the
+//  LAST one, so every call to Vyto_grasp resets the baseline.  The first version of this reader
+//   grasped on EVERY poll — a hundred walks across the wait — so by the time the fixture was taken
+//    the final walk was comparing two identical states and honestly reported `neu:0 gone:0`.  The
+//     diff was real; polling ate it.
+//  So: poll on CHEAP, NON-DESTRUCTIVE facts (has the re-commission landed, has the mirror caught up)
+//   and walk the Seem exactly ONCE, when the world is already in the shape under test.  This is a
+//    general law for any diff primitive, not a quirk of this Book: **do not poll a consumable.**
+async VytoGrasp_changed(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return 0 }
+    // EXPERIMENT (2026-09-09): pump the House that OWNS A:Vyto, not just the Run House.
+    //  `VytoStaple_await` nudges `this.main()` each poll, where `this` is the RUN House — but the
+    //   re-commission elvis is queued by `_find_house('Vyto/Vyto')` onto whichever House holds
+    //    A:Vyto.  If that House never ticks, its todo never drains and the commission is posted
+    //     forever without running, which is exactly the `comms:1` witness.  A `fresh=1` commission
+    //      escapes it because minting A:Vyto bumps a version and drives the House itself.
+    let SH = this.VytoStaple_SH(w)
+    if (SH && SH.main) { SH.main() }
+    this.Vyto_stir(vw)
+    if (!vw.c.mirror) { return 0 }
+    // the cheap gate: the re-commission has landed AND the scan has caught up to it.  Neither read
+    //  touches the Seem, so the pending diff survives however long this polls.
+    let gseen = (vw.c.grapples ? vw.c.grapples.length : 0)
+    let live = vw.c.mirror.o().filter(r => !r.sc.departing)
+    if (gseen !== 6) { return 0 }
+    if (live.length !== 6) { return 0 }
+    // ⚠ AND THE MIRROR MUST HAVE QUIESCED, not merely have the right LIVE count.  A dropped source
+    //  leaves its row standing for a two-stir grace wearing `departing:1` so the render can draw an
+    //   exit arc — and the Seem walks `w.c.mirror` RAW, escorts included.  Walk during the grace and
+    //    the departed row still looks PRESENT: measured `after:6/2/0` — the two arrivals found
+    //     correctly, the departure invisible, because at that instant the mirror held seven nodes.
+    //  **The departure escort hides the departure from the diff.**  A render affordance and an
+    //   identity diff disagree about when a thing is gone, and the diff has to wait for the render's
+    //    grace to expire.  So gate on the RAW child count too.
+    if (vw.c.mirror.o().length !== 6) { return 0 }
+    if (w.c.walked_change) { return 0 }
+    w.c.walked_change = 1
+    await this.Vyto_grasp(vw)
+    let se = vw.o({ Se: 'glass' })[0]
+    if (!se) { return 0 }
+    return (se.sc.rows === '6' && se.sc.neu === '2' && se.sc.gone === '1') ? 1 : 0
+
+},
+VytoGrasp_claim(vw, which) {
+    let se = vw ? vw.o({ Se: 'glass' })[0] : null
+    if (!se) { return null }
+    return se.o({ Claim: which })[0] ?? null
+
+},
+VytoGrasp_witness(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return }
+    let se = vw.o({ Se: 'glass' })[0]
+    if (!se) { return }
+    let loud = this.VytoGrasp_claim(vw, 'loud')
+    let quiet = this.VytoGrasp_claim(vw, 'quiet')
+    // MIRROR THE READING INTO THE BOOK'S OWN WORLD so the FIXTURE carries it.  `Vyto_grasp` projects
+    //  onto the Vyto world, which is right for a live glass but sits under a different House than
+    //   `w:VytoGrasp` — so the Book's snap would never see it.  That is Glassbeast §II's detached
+    //    landscape in miniature: the reading is real and unsnappable at the same time.  Copying it
+    //     across is the Book-side workaround; the real cure is attaching the landscape (§0.2b).
+    let mine = w.oai({ Se: 'glass' })
+    mine.sc.rows = se.sc.rows
+    mine.sc.grapples = se.sc.grapples
+    mine.sc.comms = se.sc.comms
+    mine.sc.neu = se.sc.neu
+    mine.sc.gone = se.sc.gone
+    for (const c of mine.o()) { mine.drop(c) }
+    if (loud) { mine.i({ Claim: 'loud', key: loud.sc.key, val: loud.sc.val, n: loud.sc.n }) }
+    if (quiet) { mine.i({ Claim: 'quiet', key: quiet.sc.key, val: quiet.sc.val, n: quiet.sc.n }) }
+    if (loud && loud.sc.key === 'rare' && loud.sc.n === '1' && quiet && quiet.sc.key === 'of' && quiet.sc.n === '5') {
+        this.story_swear(w, 'a claim only one row makes is loud and a claim the whole field shares is quiet — the grasp weighs a row against its neighbours and not alone')
+        w.c.saw_field = 1
+    }
+    if (se.sc.rows === '6' && se.sc.neu === '2' && se.sc.gone === '1') {
+        this.story_swear(w, 'the grasp names arrivals and departures by identity — two neu and one gone where two cogs arrived and one left')
+        w.c.saw_change = 1
+    }
+    if (w.c.saw_field || w.c.saw_change) {
+        this.story_swear(w, 'the selection stays off the snap while its reading rides into the world — a live Se never encodes and the distilled row always does')
+    }
+
+},
+// ══ VytoTwin — THE CARDINALITY DOOR: two identical things are never quietly drawn as one ══════════
+//   (Meaningfold §0 step 5 · Glassbeast doorless site #7 · Cstructures §6.2's cardinality rule.)
+//   Vyto_scan_walk keys a mirror row by `mainkey:value` plus the join set, so two BYTE-IDENTICAL
+//    siblings produce the same tok and the second FINDS the first's row — one cell where two things
+//     stand.  The code's own comment accepted that as "visually interchangeable"; §1 does not: a
+//      squish zone may lie about size, emphasis, order and colour and **never about presence**.
+//   The cure is not to un-collapse them (that is a layout question) but to COUNT them, the
+//    census-before-drop template — so the cell says how many it stands for, a door with a true
+//     number exactly like a dip.  World VytoTwin.
+VytoTwin(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoTwin_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoTwin_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 4 }
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { this.VytoTwin_seed(w) }
+        if (n === 3) { this.VytoTwin_stand(w) }
+        if (n === 4) { this.VytoTwin_flat(w) }
+    }
+    this.VytoTwin_witness(w)
+
+},
+// ── beat 2 — two indistinguishable siblings and one that differs ─────────────────────────────────
+//  `i()` mints, so these really are two particles; they simply carry the same mainkey value and the
+//   same join, which is all the identity token is made of.
+VytoTwin_seed(w) {
+    w.i({desc: 'seed two byte-identical siblings beside one that differs'})
+    let a = w.i({ Cog: 'twin', of: 'main' })
+    let b = w.i({ Cog: 'twin', of: 'main' })
+    let c = w.i({ Cog: 'lone', of: 'main' })
+    w.c.cogs = [a, b, c]
+
+},
+// ── beat 3 — commission and rest: two rows stand, and the collapsed one carries its count ────────
+async VytoTwin_stand(w) {
+    w.i({desc: 'commission the glass — the twins share one cell and that cell says it stands for two'})
+    this.Vyto_commission_on(w, w.c.cogs, 1)
+    this.expecting(w, 'twin_wait', 20, async () => { await this.VytoStaple_await(w, 20, () => this.VytoTwin_ready(w)) })
+
+},
+// ── readers ───────────────────────────────────────────────────────────────────────────────────────
+VytoTwin_rows(vw) {
+    if (!vw || !vw.c.mirror) { return [] }
+    return vw.c.mirror.o().filter(r => !r.sc.departing && r.sc.Vtuffing == null)
+
+},
+VytoTwin_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return 0 }
+    this.Vyto_stir(vw)
+    let rows = this.VytoTwin_rows(vw)
+    // three sources, two rows: the twins collapsed.  That is the behaviour under test, not a fault.
+    if (rows.length !== 2) { return 0 }
+    let twin = rows.find(r => r.sc.Cog === 'twin')
+    let lone = rows.find(r => r.sc.Cog === 'lone')
+    if (!twin || !lone) { return 0 }
+    // the collapsed cell wears its true count; the singular one wears none (a door only where a
+    //  hiding happened — an unconditional `same_n:1` would be noise on every row in the tree).
+    return (twin.sc.same_n === '2' && lone.sc.same_n == null) ? 1 : 0
+
+},
+// ── beat 4 — THE FLAT DOOR (doorless site #6).  A source wearing `.c.flat` keeps its guts: its
+//  children are never walked, so the whole subtree used to vanish with nothing counted.  The
+//   flatness is the commissioner's call and stays; the SILENCE is what §1 forbids.  Now the row
+//    carries the true number of what it is hiding.
+async VytoTwin_flat(w) {
+    w.i({desc: 'give a cog three hidden children and mark it flat — the cell must say how many it hides'})
+    let box = w.i({ Cog: 'box', of: 'main' })
+    box.i({ Guts: 'a' })
+    box.i({ Guts: 'b' })
+    box.i({ Guts: 'c' })
+    box.c.flat = 1
+    let cogs = w.c.cogs.slice()
+    cogs.push(box)
+    w.c.cogs = cogs
+    this.Vyto_commission_on(w, cogs, 1)
+    this.expecting(w, 'flat_wait', 20, async () => { await this.VytoStaple_await(w, 20, () => this.VytoTwin_flat_ready(w)) })
+
+},
+// the flat cog's row carries flat_n:3, and its children took no rows of their own.
+VytoTwin_flat_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) { return 0 }
+    this.Vyto_stir(vw)
+    let rows = this.VytoTwin_rows(vw)
+    let box = rows.find(r => r.sc.Cog === 'box')
+    if (!box) { return 0 }
+    if (box.o().length !== 0) { return 0 }
+    return (box.sc.flat_n === '3') ? 1 : 0
+
+},
+VytoTwin_witness(w) {
+    if (this.VytoTwin_flat_ready(w)) {
+        this.story_swear(w, 'a flattened source keeps a door — its hidden children ride a true number on the cell rather than vanishing from the glass unmentioned')
+    }
+    if (this.VytoTwin_ready(w)) {
+        this.story_swear(w, 'two identical siblings are one cell wearing a count and never a silent collapse — the cell says it stands for two while its singular neighbour says nothing')
     }
 
 },

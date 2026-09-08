@@ -8,8 +8,16 @@
     //    host them; see Lagoon_todo §4 and Wordland_todo §5.0).
     //
     //  DELIBERATELY NOT A NEW POSE MODEL (`Lens_posable_TODO`: "don't build until the pose model is
-    //   designed").  One panel, three stacked readings, no placement, no anchoring.  The erupting-
+    //   designed").  One panel, stacked readings, no placement, no anchoring.  The erupting-
     //    structures idea (things you climb to and then ARRANGE) waits for that model.
+    //
+    //  ⇢ 2026-09-09 — IT IS NOW A RENDERING, NOT A MACHINE.  It asks `Lagoon_seek`, the one reply over
+    //   both censuses, which the Searchbar renders too (Lagoon_todo §1.8: *two faces on one answer is
+    //    fine; two answers behind two faces is the globulation*).  The readings it draws are that
+    //     reply's: ranked defs (each with the BEAD its author drew it inside), a document's whole
+    //      beadchain under `doc:`, the prose that names a symbol, and callers erupting on demand.
+    //    Only the families rail is still its own ask, and deliberately: families do not depend on the
+    //     query, so asking them per keystroke would be waste and caching them would be KEEPING.
     //
     //  It KEEPS NOTHING — every number here is asked of the reader on the tick it is drawn, exactly as
     //   the CLI asks.  A face that cached would be the same two-truths mistake the layer exists to
@@ -60,6 +68,16 @@
     //      `A:Atlas`) keeps the last good list and dims it, instead of flipping the panel to an error.
     //       That flicker WAS the census being re-stood underneath; the panel was telling the truth
     //        several times a second, which is not the same as being useful.
+    //  ⇢ 2026-09-09 — IT ASKS THE SEEK NOW, not `Lagoon_defs`.  This face and the Searchbar were two
+    //   seek machines over two censuses, both ending in the same `Lies_ghost_pick` (Lagoon_todo §1.8).
+    //    `Lagoon_seek` is the single reply over Atlas AND the Stemdex, ranked exact ▸ prefix ▸ substring,
+    //     and both surfaces render it.  Lagui gains what it never had — the prose that names a symbol,
+    //      and a document's beadchain under `doc:` — for one changed call.
+    //   FAMILIES STAY THEIR OWN ASK, and that is not a leftover.  The seek answers "where is this
+    //    thing"; families answer "what is the corpus made of", which does not depend on the query at
+    //     all — so recomputing it per keystroke would be waste, and caching it inside Lagoon would be
+    //      KEEPING.  A face asking two questions at two cadences is right; two faces asking the same
+    //       question two ways was the thing wrong.
     let q = $state('')
     let index = $state<any>(null)
     let stale = $state(false)
@@ -68,7 +86,7 @@
     function ask_index() {
         const lw = lagoon_w()
         if (!lw) { stale = !!index; return }
-        const out = (H as any).Lagoon_defs?.(lw, q, 300) ?? null
+        const out = (H as any).Lagoon_seek?.(lw, q, 300) ?? null
         if (!out || out.error) { stale = !!index; if (!index) index = out; return }
         index = out
         stale = false
@@ -156,14 +174,35 @@
 
     <!-- the index — the resting state is the list itself -->
     <div class="lag-row">
-        <input class="lag-in" bind:value={q} placeholder="every method — type to narrow, or doc:Heist to scope" />
+        <input class="lag-in" bind:value={q} placeholder="seek — a method, a phrase, or doc:Heist for a file's shape" />
         {#if index && !index.error}
-            <span class="lag-note" class:stale>{index.shown === index.total ? index.total : `${index.shown} of ${index.total}`} defs · {index.docs} docs{stale ? ' · census re-standing…' : ''}</span>
+            <span class="lag-note" class:stale>
+                {index.defs?.length ?? 0}{index.defs_total && index.defs_total > (index.defs?.length ?? 0) ? ` of ${index.defs_total}` : ''} defs
+                · {index.atlas ? '◈ atlas' : 'no atlas'}{index.stemdex ? (index.total ? ` · stemdex ${index.done}/${index.total}` : ' · stemdex unindexed') : ''}{stale ? ' · census re-standing…' : ''}
+            </span>
         {/if}
     </div>
     {#if index?.error}
         <div class="lag-none bad">{index.error}</div>
     {:else if index}
+        <!-- a `doc:` scope on one file answers with its SHAPE — regions in file order, defs indented
+             under the bead their author drew.  Same reading the Searchbar renders (Lagoon_todo leg 4). -->
+        {#if index.beads}
+            <div class="lag-beadhead">◆ {index.beads.doc} — {index.beads.lines} lines · {index.beads.beads} bead(s) · {index.beads.defs} def(s){index.beads.loose ? ` · ${index.beads.loose} outside every bead` : ''}</div>
+            <div class="lag-out">
+                {#each index.beads.chain as c (c.kind + c.label + c.line)}
+                    <button class="lag-hit lag-bead" class:region={c.kind === 'region'}
+                            style="padding-left:{0.2 + (c.depth ?? 0) * 1.1}rem"
+                            onclick={() => goto(index.beads.doc, c.kind === 'region' ? undefined : c.label)}
+                            title="{index.beads.doc}:{c.line}">
+                        <span class="k">{c.kind === 'region' ? '◆' : '·'}</span>
+                        <span class="via">{c.label}</span>
+                        {#if c.kind === 'region' && c.defs}<span class="n">{c.defs}</span>{/if}
+                        <span class="doc">:{c.line}</span>
+                    </button>
+                {/each}
+            </div>
+        {/if}
         <div class="lag-out tall">
             {#each index.defs as d (d.doc + d.name + d.line)}
                 <div class="lag-grow">
@@ -171,6 +210,9 @@
                         <button class="lag-hit" onclick={() => goto(d.doc, d.name)} title="{d.doc}:{d.line} — open & land on it">
                             <span class="k">ƒ</span>
                             <span class="via">{d.name}</span>
+                            <!-- the bead a method lives in: `path:line` says where it is on disk, this
+                                 says where it is in the file's own declared structure (leg 4). -->
+                            {#if d.bead}<span class="bead">◆ {d.bead}</span>{/if}
                             <span class="doc">{tail(d.doc)}:{d.line}</span>
                         </button>
                         <button class="lag-climb" class:on={opened === d.name}
@@ -193,8 +235,24 @@
                     {/if}
                 </div>
             {/each}
-            {#if index.total > index.shown}<div class="lag-none">…{index.total - index.shown} more — narrow it</div>{/if}
+            {#if index.defs_total > (index.defs?.length ?? 0)}<div class="lag-none">…{index.defs_total - index.defs.length} more — narrow it</div>{/if}
         </div>
+        <!-- THE PROSE NEIGHBOURHOOD.  The twin of callers, and the reading only the census can give:
+             between them a method has both of its sides — the code that depends on it and the prose
+             that explains it.  Offered only once the query resolves to a real def, so a backticked
+             phrase that names nothing stays a phrase (the m14 lesson). -->
+        {#if index.mentions?.length}
+            <div class="lag-beadhead">¶ prose that names <code>{index.mentions_of}</code> — {index.mentions_total} mention(s)</div>
+            <div class="lag-out">
+                {#each index.mentions as m (m.doc + m.line)}
+                    <button class="lag-hit" onclick={() => goto(m.doc, 'text:' + index.mentions_of)} title="{m.doc}:{m.line}">
+                        <span class="k">¶</span>
+                        <span class="via">{tail(m.doc)}</span>
+                        <span class="doc">:{m.line}</span>
+                    </button>
+                {/each}
+            </div>
+        {/if}
     {/if}
 
     <!-- story 2 — the documents that are lying, as a work queue -->
@@ -306,4 +364,16 @@
     .lag-hit .k { color: #7a8fa8; flex: none; width: 1rem; }
     .lag-hit .via { color: #cfe0ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .lag-hit .doc { color: #6a7c99; margin-left: auto; white-space: nowrap; flex: none; }
+    /* the bead a def lives in — the file's own declared structure, beside its disk position */
+    .lag-hit .bead { color: rgba(224, 180, 110, 0.8); white-space: nowrap; flex: none;
+                     overflow: hidden; text-overflow: ellipsis; max-width: 14rem; }
+    .lag-hit .n { color: rgba(140, 160, 200, 0.55); margin-left: 0.3em; font-size: 0.9em; flex: none; }
+    /* a reading's own header — the beadchain and the prose neighbourhood each announce themselves,
+       because at this length a list with no heading is a list you cannot orient inside */
+    .lag-beadhead {
+        color: rgba(224, 180, 110, 0.85); padding: 0.4rem 0.25rem 0.15rem;
+        border-bottom: 1px solid rgba(120, 150, 210, 0.14);
+    }
+    .lag-bead.region { color: #cd9; }
+    .lag-bead.region .k { color: rgba(224, 180, 110, 0.9); }
 </style>

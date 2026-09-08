@@ -1233,7 +1233,17 @@
         H.post_do(async () => {
             H.diag(`post_do(activate ${bname}) fired`)
             const S = H.subHouse('Story')
-            S.sc.Run = undefined   // clear any stale flag
+            // CLEARING A SNAPPED FLAG IS A DELETE, NEVER AN ASSIGNMENT OF undefined.  `subHouse` is
+            //  get-or-create, so a re-activated H:Story really can carry a stale `Run` and clearing it
+            //   is right — but `= undefined` CREATES the key holding undefined, and the encoder
+            //    faithfully brands the line `{"undef":["Run"]}` (Text.svelte's objecties.undef).  That
+            //     marker was riding in every snap of the top House, and CLAUDE.md is explicit that an
+            //      `undef` in a snap is a MINT BUG rather than furniture.  Behaviour was never wrong
+            //       (undefined is falsy, and `H.sc.Run` is only ever tested for truth — Lies.svelte's
+            //        `!testrun` guards, LangHold's LE sentinel); the SNAP was lying about the shape.
+            //  A snapped boolean rides as `1` or ABSENT.  `delete` is this file's own idiom four lines
+            //   away (`delete old.sc.active`), so it is what the neighbours already do.
+            delete S.sc.Run
             S.i({ A: 'Story' }).i({ w: 'Story', Book: bname })
             // A:Cyto/w:Cyto is no longer created eagerly — Story_plan stands it up on demand
             //  only when the Book opts in via Opt/useCyto, so a Book that doesn't want its own

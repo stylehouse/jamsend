@@ -72,7 +72,14 @@
             for (const [path, name] of [['Ghost/L/Atlas.g', 'Atlas'], ['Ghost/L/Lagoon.g', 'Lagoon']] as const) {
                 top.Lies_ghost_set(path)
                     .then(() => {
-                        top.oai({ A: name }).oai({ w: name })
+                        // the census stands on the TOP House and must: every reader looks it up there
+                        //  by name (`Lagoon_atlas`, the `lagoon`/`atlas_*` CLI ops, `LagoonStaple`).
+                        //   But its FACE belongs to this room — `face_on` is the room naming itself, so
+                        //    `UI:Lagoon` enrolls on `H:Hackarium` beside `UI:Langui` instead of landing
+                        //     on `H:Mundo`, a different page of the show-one-thing switcher.  Two
+                        //      questions, two answers; before this they shared one and the room split.
+                        const gw = top.oai({ A: name }).oai({ w: name })
+                        gw.c.face_on = H
                         H.i_elvisto(w, 'think')
                         console.log(`🔎 ${H.name} Hackarium stood ${name}`)
                     })

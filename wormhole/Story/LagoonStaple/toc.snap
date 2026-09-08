@@ -3,35 +3,36 @@ story:LagoonStaple
   Plan
   Opt
     For
+  EntropyArrest
+    Entcase:Self_round
+      lematch,self,round
+        means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.019
-      sample=0.014,at=1788844854
-      sample=0.021,at=1788844952
-      sample=0.047,at=1788844987
-      sample=0.016,at=1788845023
-      sample=0.012,at=1788845068
-      sample=0.013,at=1788845104
-      sample=0.014,at=1788845139
-      sample=0.017,at=1788845174
-    TimeTotal:step,avg=0.003
-      sample=0.002,at=1788844854
-      sample=0.003,at=1788844952
-      sample=0.008,at=1788844987
-      sample=0.003,at=1788845023
-      sample=0.002,at=1788845068
-      sample=0.002,at=1788845104
-      sample=0.002,at=1788845139
-      sample=0.003,at=1788845174
-  step,dige:545dba1d808016d4
-  step=2,desc:load Atlas and Lagoon on demand — stand Atlas on the frozen corpus and the reader beside it,dige:99109fe81ea09ef6
+    TimeTotal:beliefs,avg=0.016
+      sample=0.019,at=1788897941
+      sample=0.018,at=1788897973
+      sample=0.012,at=1788897979
+      sample=0.014,at=1788897985
+    TimeTotal:step,avg=0.002
+      sample=0.002,at=1788897941
+      sample=0.002,at=1788897973
+      sample=0.002,at=1788897979
+      sample=0.002,at=1788897985
+  step,dige:11e5d0398a0133fc
+  step=2,desc:load Atlas and Lagoon on demand — stand Atlas on the frozen corpus and the reader beside it,dige:0237d87d658e884b
     Assertion:the-reader-ghost-loads,sentence:the reader ghost loads on demand beside the census — no manifest edit needed
     Assertion:the-reader-reports-which,sentence:the reader reports which censuses are standing — it looks them up and never holds them
+  step=3,desc:the reader answers over a census it does not own — who calls the fixture method — with its enclosing def,dige:0237d87d658e884b
     Assertion:a-reader-answers-over,sentence:a reader answers over a census it does not own — who calls this — with the enclosing def
-  step=3,desc:the reader answers over a census it does not own — who calls the fixture method — with its enclosing def,dige:3350616051fed8dd
-  step=4,desc:the lint answers over the same census — counting the corpus it was given and faulting on nothing,dige:630438d7ca1b946c
+  step=4,desc:the lint answers over the same census — counting the corpus it was given and faulting on nothing,dige:daa2964c11f5ab89
     Assertion:the-lint-answers-over,sentence:the lint answers over the same census and faults on nothing in a frozen corpus
-  step=5,desc:a reader with no census refuses BY NAME — never a throw and never a silent empty,dige:024a53e9c781584c
-  step=6,desc:the reader kept nothing — after every answer its world holds only its own report row,dige:9543280d1144fba8
+  step=5,desc:the seek is one answer over every standing census — and it names which ones replied,dige:e59b40795481d423
+    Assertion:the-seek-is-one,sentence:the seek is one answer over the censuses that are standing — and it names which replied
+    Assertion:a-census-that-is,sentence:a census that is standing but holds nothing is reported apart from one that answered
+  step=6,desc:the shape of a document is held not computed — the defs inside its bead and the one beyond it,dige:262b9d7faed01354
+    Assertion:a-document-declares-its,sentence:a document declares its own beads — what sits inside one is attributed to it and what sits beyond is left outside
+  step=7,desc:a reader with no census refuses BY NAME — never a throw and never a silent empty,dige:4b51f10f490f552b
     Assertion:a-reader-with-no,sentence:a reader with no census refuses by name — never a throw and never a silent empty
     Assertion:every-reader-refuses-the,sentence:every reader refuses the same way — the named exit is the layer rule and not one verb
+  step=8,desc:the reader kept nothing — after every answer its world holds only its own report row,dige:a469983f5545cefa
     Assertion:the-reader-kept-nothing,sentence:the reader kept nothing — after every answer its world holds only its own report row

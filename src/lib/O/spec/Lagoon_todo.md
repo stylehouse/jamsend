@@ -13,6 +13,64 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
 
 ## 0. What to get on with next
 
+### ☀ WHERE IT STANDS — 2026-09-09, ~03:00, after the overnight run.  READ THIS FIRST.
+
+*The blocks below this one are the RECORD: the course as plotted, then what each leg cost and taught.
+ They are worth reading and they are not a to-do list any more.  This is the to-do list.*
+
+**Everything on the overnight plan is built, gated, and verified live** — legs 1, 2, 3 and 4, plus one
+ thing the course did not contain at all.  Nothing is half-done and nothing is left broken.
+
+**The big one is not on the course: §1.8, ONE ANSWER MANY FACES.**  It came out of four remarks the owner
+ made in one night that read as four small complaints and were one.  The room had TWO seek machines — the
+  Searchbar over the Stemdex and Lagui over Atlas — both ending in the same `Lies_ghost_pick`.  The
+   Stemdex *is* a census; it keeps.  So it is looked up by name like Atlas and Electrode, `Lagoon_seek`
+    asks over both, and the two surfaces are now renderings of one reply.
+ **If you read one section before touching this land, read §1.8** — it is the concept line applied one
+  level up, and the next person's instinct will be to add a third surface.
+
+**What the night produced, in one list:** `Lagoon_seek` · `Lagoon_beads` · `Lagoon_rotwork` ·
+ `Lagoon_oaths` · `Lagoon_sections` · three link kinds + the `anchor` row (`ATLAS_MAPPER` m15) · the
+  `role:hacker` room · `scripts/LinkKinds.spec.ts` (7/7) · `scripts/SectResolve.spec.ts` (8/8) ·
+   `LagoonStaple` grown 6→8 beats, 10 sworn,
+   sabotage-proven · a Searchbar that is a surface rather than a dropdown · `runner_ask` auto-standing
+    the land.  **Four real bugs fell out of using the thing**: `beyond_eof` counting unmapped docs as
+     overshot (275→2), `Lagoon_defs` cutting before sorting, the § lint not inheriting the `history/`
+      skip, and an `undef` mint in `Auto.svelte`.  Every one was found by looking at output, not code.
+
+#### → THE NEXT MOVE, if you are the owner
+
+1. **Look at the two faces.**  Nothing about how they LOOK has been seen by anybody — the Searchbar
+    panel at 80vh, the beadchain, the families rail, `UI:Lagoon` landing beside `UI:Langui` in Hackarium
+     now that `face_on` exists.  Reload `/Otro?H=Hackarium` (or BigWordland, which defaults to it).
+2. **Rule on RETIRED vs GONE** (leg 3's entry below).  9 of 34 "no such doc" hits are docs on the
+    `spec/history/` shelf, which by CLAUDE.md's own corollary are *fine*, not rot.  Two ways to fix it,
+     both cheap; I did not pick because excluding the shelf was your ruling.
+3. **Decide what `Story_next_level` should say now.**  14 of the queue's 83 pointers name it and it
+    exists nowhere — not in `history/`, not anywhere.  That is the single biggest cluster and it needs a
+     human who remembers what happened to that doc.
+4. **The Waft flattening** is a real candidate for an attended session and you lean yes — contained, not
+    corpus-wide (one seam, `LiesCurse`, six Lake\* Books, Funk untouched).  Its gate is re-recording
+     `LakeSurprise`, `Interest.md`'s sole regression gate, and that wants reading rather than accepting.
+
+#### → THE NEXT MOVE, if you are a fresh session working alone
+
+- **Read §1.8, then the bombs.**  Three of the bombs are new tonight and all three make a healthy tab
+   look broken: the hollow-Book signature (3c), the starved start (3b), and the auto-stand (2b).
+- **`runner_ask lagoon rotwork --k=40` is a real work queue**, and the dead-anchor half of it (30 items,
+   live docs whose §N moved) carries a proposed fix the census computed.  **⚠ THE PROPOSAL MAKES A
+    POINTER RESOLVE; IT DOES NOT MAKE IT RIGHT** — and an earlier draft of this handover said these were
+     "safe to act on", which would have invited exactly the wrong thing.  `§3.7 → §3` aims at the section
+      CONTAINING what the author meant, which is one level vaguer than what they wrote; a dead pointer
+       that is specific still says *"something moved here"*, and a live pointer that is vague says
+        nothing at all.  So the proposal is a **starting point for a human**, per item, not a patch to
+         apply in bulk.  The "no such doc" half needs the ruling above before it can be touched at all.
+- **Do not add a fifth link kind without reading §1.7** — the plan's own proposal (`Doc#region`) appears
+   twice in the corpus while `§N.N` appears 3,873 times.  Measure the corpus before choosing a form.
+- **Leg 5 (coverage map) and leg 8 (attention stacks) both want the owner**: leg 5 needs the Electrode
+   tap armed on their own tab, leg 8 wants `Interest.md` read WITH them or it is the third design of a
+    live thing.  Leg 9 (the portal) needs a ruling on where asks live.
+
 ### ⛵ THE COURSE — plotted 2026-09-08 evening, the owner: *"I want allll these things. heaps."*
 
 **This is the handover.**  The owner is compacting and switching sessions to execute; everything a fresh
@@ -34,6 +92,27 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
 2. **`AtlasStaple` and `LagoonStaple` re-aim `A:Atlas` at `Ghost/L/test_corpus` (ONE doc) and never put
     it back.**  After any Book run the face honestly shows three methods.  Re-stand:
      `ghost_load Ghost/L/Atlas.g --stand=Atlas --fresh --runner=<id>` (~75s to 715/715).
+2b. **`runner_ask` now AUTO-STANDS the land** (2026-09-09).  Any `lagoon`/`atlas_*` op refused with
+     *"no A:X standing"* stands that ghost itself and says the census needs ~90s — because during a
+      working session **every edit to app source hot-reloads the tab and drops all three L ghosts**,
+       and the refusal always named the exact command that fixes it.  It does NOT retry the op: an
+        immediate answer off an empty census looks like an answer, which is worse than a refusal.
+3c. **⚑ A RED WHERE EVERY STEP SHARES ONE DIGE AND `sworn 0` IS NOT A FAILURE — the Book's own ghost is
+     not loaded** (2026-09-09, and it cost three runs plus a wrongly-reverted fix to recognise).
+     `Ghost/L/Lagoonation.g` is an L ghost like the rest: **any** edit to app source hot-reloads the tab
+      and drops it, `do_fn_for` then finds no handler for `w:LagoonStaple`, the world never ticks, and
+       all eight steps snap identical empty state.  The run even completes in ~11s and logs *"8 steps
+        clean"*.  `runner_ask`'s auto-stand covers Atlas|Lagoon|Electrode but NOT a Book's own ghost.
+     **Tell it apart from a real red by the SHAPE, before bisecting**: a real failure has per-step diges
+      and specific named gaps; this has one dige repeated and *every* declared assertion absent.  The
+       fix is `ghost_load Ghost/L/Lagoonation.g` and re-run — nothing to debug.
+     *(I chased this into `Auto.svelte` and reverted a correct change before spotting it.  The existing
+       rule — "a red that reproduces on a stale tab is still not real" — has a sibling: a red that
+        reproduces on a tab that has DROPPED the code under test is not real either.)*
+3b. **A Book started right after `--stand=Atlas --fresh` sits at `begun/n:null` for ~2 minutes and is
+     NOT wedged** (2026-09-09).  The 724-doc walk is hogging the belief loop, so the run cannot get
+      going; `--watch` gives up first and it looks exactly like bomb 3.  Poll `state` before bisecting —
+       it goes to `stepping` on its own.  Either wait for the census, or run the Book first.
 3. **Writing a gen `.go` while a tab is up can wedge Story at `begun/n:null` with NO console output.**
     `--swap` did not clear it.  `runner_ask reload` then re-stand the land is the reliable heal.  A Book
      recording after a recompile: compile → reload → re-stand → run.
@@ -49,10 +128,91 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
     (`top_House()`); gate claims on a snapped marker from an `expecting` beat, never on a flag a sync beat
      set; drive the passes, don't wait for a tick.  Four recordings paid for those.
 8. **`compile.ts` carries two NUL bytes** — plain `grep` finds nothing in it; use `grep -a`.
-9. **`LagoonStaple` flakes ~2 in 11**, both times in the run immediately after a fresh Atlas stand.  Not a
-    clean gate yet; if it flakes on a QUIET tab that is a new bug.
+9. ~~**`LagoonStaple` flakes ~2 in 11**~~ — **FIXED 2026-09-08 night, and SABOTAGE-PROVEN.**  See §1.6.
+    Two causes, one root (a step costing an extra belief round): an `expecting` beat whose in-flight-vs-
+     settled state was frozen into a fixture, and sworn sentences latching at whichever step they first
+      became true at.  Now 7 consecutive green runs including the exact trigger (a fresh `--stand=Atlas
+       --fresh` over the real 715-doc corpus immediately before).  **The lessons generalise — read §1.6
+        before writing any Book whose beats do real work.**
 10. **Atlas keeps; Lagoon asks.**  The test for any new feature: *does it change what is HELD, or ask a
      question OF what is held?*  Lagoon must never start keeping — `LagoonStaple` reds if it does.
+
+#### 🌙 THE OVERNIGHT PLAN — agreed 2026-09-08 night, before a compaction
+
+*What a session with no human and no browser can honestly finish, in order.  The rule that picks them:
+ **a leg is good overnight work iff its GATE is something I can run** — a spec, a measurement, a compile.
+  A leg whose only proof is "open the tab and look" is not, however easy the code is.*
+
+**DO, in this order:**
+1. ~~**The `LagoonStaple` flake** (bomb 9) and its **sabotage proof**.~~  ✅ **DONE 2026-09-08 night — §1.6.**
+2. ~~**Leg 7 — more link kinds.**~~  ✅ **DONE 2026-09-08 night — §1.7.**  Three kinds landed (`sect`,
+    `book`, `sworn`) plus a fourth row type (`anchor`), gated by `scripts/LinkKinds.spec.ts` 7/7.
+     **The plan's own proposal was wrong and the corpus said so** — read §1.7 before adding a fifth kind.
+3. ~~**Leg 6 — rot as a work queue.**~~  ✅ **DONE 2026-09-09 — `Lagoon_rotwork`, `runner_ask lagoon
+    rotwork`.**  Groups by DOC (you visit a document, not a link), proposes the fix where the census can
+     compute one (`§3.7` → the doc has 3.1…3.4, so `§3`), and picks the likely exit.  **It caught a real
+      bug in the existing lint within a minute of running**: `beyond_eof` compared against `doc.sc.lines`,
+       which only a real map stamps — so every link into an as-yet-unmapped doc read as overshooting a
+        0-line file (275 mid-walk, falling to ~100 as the census converged).  A convergence artifact
+         wearing a verdict's clothes; the old lint printed a list, the queue printed *"that file is 0
+          lines"* next to a file you know is fine.  Fixed.
+    Also ruled, from a first cut that was wrong in an instructive way: **the exit turns on DISTINCT dead
+     targets, not the count.**  `Wire_spec.md` has 13 dead pointers and read "stale, retire it" — but all
+      thirteen name ONE vanished doc, so it is a single retarget, not thirteen repairs or a retirement.
+    **Live over the whole 724-doc corpus: 83 rotted pointers over 43 docs — 42 to FIX, 1 STALE.**  Both
+     rulings visibly hold: `Wire_spec.md` reads FIX (13 pointers, one vanished target — one retarget),
+      and the single STALE is `ulative/memory-raw/music-cluster-kickoff.md`, which points into THREE
+       different docs that no longer exist.  Read it with `runner_ask lagoon rotwork --k=40`.
+    **AND ACTING ON IT FOUND TWO MORE THINGS, which is the point of a queue** (2026-09-09).  Trying to
+     repair the biggest cluster surfaced both — neither was visible from reading the code:
+    - **A rule I forgot to carry across.**  The `file:line` lint has always skipped targets naming
+       `history/`|`shelved/` (Atlas never rosters those roots, so it can neither confirm nor deny them);
+        the new § pass did not.  So a doc writing `history/Reqdrop_todo §N` — a reference that is already
+         CORRECT and explicitly points at the shelf — was reported as pointing at a doc nothing has.
+          Fixed; "no such doc" fell 37 → 35.
+    - **⚑ A RULING OWED: the lint cannot tell RETIRED from GONE, and they are different work.**
+       Cross-checking the 34 remaining "nothing rosters that doc" against `spec/history/`: **9 of them
+        are retired docs sitting on the shelf** — `Division_todo` ×5, `Waft_spec` ×3, one more.  By
+         CLAUDE.md's own corollary (*"a referenced `spec/X.md` that isn't there is almost certainly
+          `spec/history/X.md`"*) those references are **normal and readable, not rot** — the convention is
+           that a reader knows to look there.  The other 25 (`Story_next_level` ×14, `Cluster_design`,
+            `Vyto_normal`, `MobilenoFSA_todo`…) name docs that exist NOWHERE, shelf included.
+       Lagoon cannot separate them because Atlas deliberately excludes `history/` — *"retired"*, its own
+        comment says.  **Two ways to fix it, and the choice is the owner's, not mine:** roster the shelf
+         and stamp those Docs `retired` (the census then holds a fact instead of the rule living only in
+          prose, at the cost of ~27 more mapped docs), or give the queue a nav and check the shelf on
+           disk the way `Lagoon_oaths` does.  I did not pick, because excluding the shelf was a ruling.
+    **It is a QUERY, not a document, and that is deliberate** — there is no queue file to check in and no
+     "done" flag anywhere, because an item's disposition IS the edit: fix the pointer and it stops being
+      derived; retire the doc and every item under it goes with it.  A work queue over a census needs no
+       state of its own, which is the same layer rule one storey up.
+4. ~~**Leg 4 — the beadchain.**~~  ✅ **DONE 2026-09-09 — `Lagoon_beads`, `runner_ask lagoon beads <doc>`,
+    and `seek doc:<part>` when the scope lands on one file.**  It was cheaper than the plan guessed:
+     Atlas records each def's enclosing region chain on `.c.region_path` as the collector walks, and
+      `Atlas_cache_put` carries it through the Dexie row — so there is **no containment arithmetic and no
+       span to intersect**; every def already knows its beads.  A flat `chain` in FILE ORDER with a
+        `depth`, per the spec's own first cut: a chain, not a graph (no pose model invented).
+    Live: `Atlas.g` → 3 beads / 13 defs, with "the cache" nested inside "the pass" and its four verbs
+     under it.  `Lagoonation.g` → **0 beads, 16 defs, "16 outside every bead"** — which is the honest
+      answer for a file whose author never drew one, and doubles as a tell for which files are screeds.
+
+**DO NOT, and why:**
+- **The Waft flattening** — RE-SCOPED after the owner pushed back, and it is CONTAINED, not corpus-wide
+   (one seam, `LiesCurse`, six Lake\* Books, Funk untouched — see leg 3's note).  Still not an overnight
+    job, but for a different and better reason: its gate is re-recording `LakeSurprise`, which is
+     `Interest.md`'s sole regression gate for the Interest cluster, and that wants reading rather than
+      accepting.  **It is now a real candidate for the next attended session, and the owner leans yes.**
+- **Leg 9, the portal** — needs a ruling on where asks live.
+- **Leg 8, attention stacks** — wants `Interest.md` read WITH the owner; it is the third design of a live
+   thing if done alone.
+- **Leg 5, the coverage map** — needs the tap armed on the owner's own tab and a Book sweep; doable but it
+   touches their live tab while they sleep.  Ask first.
+- **Anything whose gate is "open it and look."**
+
+**THE ONE UNVERIFIED FOUNDATION, and it should be checked first thing:** legs 1 and 2 are gated in logic
+ (`HackerRole.spec.ts` 9/9) but NOT in life — nobody has yet confirmed that a working editor elsewhere
+  keeps its `%HostedIdentity` row while a hacker tab is open.  Everything visual now stands on that.  If
+   it turns out false, stop and fix it before building further.
 
 #### The legs, in order
 
@@ -180,11 +340,27 @@ The owner opened `/Otro?H=Hackarium`, clicked a stem, and it landed: *"lovely"*.
 >               declared manifest once Atheory lands.  Not designed further — flagged as the owner's, and
 >                leg 3 should build the flat shape from the start rather than migrate to it.
 
-> **⚠ THE FLATTENING IS A CORPUS-WIDE MIGRATION, not a tweak — measured 2026-09-08.**  `What > Doc >
->  Point` is not the Aside's shape, it is the UNIVERSAL Waft shape (`Interest.md`: "the document tree is
->   Waft → What → Doc → Point").  Changing it touches **12 walk sites, 20 `{Doc:1}` query points, and 53
->    recorded Story fixtures** that snap a Doc under a What.  So the owner's "perhaps" is a real ruling
->     with a real bill, and it should be taken deliberately rather than slipped in beside a trail feature.
+> **⚠ THE FLATTENING — PROPERLY SCOPED (2026-09-08 night, after the owner asked "have you properly
+>  scoped it?").  My first answer was a headline count and it OVERSTATED the job.**  The real shape:
+>  1. **There is ONE seam, not twelve.**  `Lies_walk_docs` is defined once (`LiesCurse.svelte`) and
+>      already recurses through Whats — it IS the abstraction over "find the Docs in this Waft".  The
+>       outside callers (Searchbar, DocWaftMap, LiesFunk, Lies) go through it and keep working.
+>  2. **The concentration is `LiesCurse.svelte`** — 8 of the 20 direct `{Doc:1}` queries plus the walk
+>      itself.  That is the CURSORING the owner named: *"it's got a cursoring looking it up… it wasn't
+>       working that fantastically!… I simply don't use this."*  So the file carrying most of the cost is
+>        the file whose behaviour is least loved.
+>  3. **The fixtures are not 53 things, they are SIX BOOKS in one family** — LakeNets 14, LakeSurprise 13,
+>      LakeTiles 10, LakeFlush 8, LakeWaftMap 3, LakeSurfer 3 (51 of the 53 files), plus one each from
+>       Hackarium and Editron.  All Lake\*: the editor/Waft machinery itself.  They would need re-recording
+>        because the thing they test changed, which is correct rather than collateral damage.  ⚠ Note
+>         `LakeSurprise` is `Interest.md`'s **sole regression gate** for the Interest cluster — it is the
+>          one to re-record carefully and read, not accept.
+>  4. **Funk is SAFE, which was the owner's stated worry** (*"Waft carries Funk though, which is
+>      important"*).  `Lies_instantiate_funkcions` walks with a generic `for (const k of c.o())` recursion
+>       — shape-blind, so it finds a `%Funkcion` wherever it sits.  Flattening cannot lose it.
+>  **Verdict: contained, not corpus-wide.**  One seam, one concentrated and unloved file, six Books in one
+>   family, Funk untouched.  It is a real leg, and it should be its OWN leg with the Lake\* re-record as
+>    its gate — but it is more tearable-up than I first said, and the owner's instinct was the right one.
 >  **What WAS done instead, because it answers most of the complaint for one line:** a moment is no longer
 >   anonymous.  `e_Lies_ghost_pick` now stamps `about:<the thing you were after>` on a fresh `What`
 >    (`Lies.svelte`), which is the owner's *"a context the Point is going for"* without moving anything.
@@ -448,7 +624,344 @@ The searchbar's dropdown was `right: 0`, so while a search was open it sat over 
   the run immediately after a fresh Atlas stand**, i.e. with 715 docs converging in the background; the
    nine steady-state runs were green.  So the flake is contention, which is the very thing §2.5(a) fixes,
     and it should now be rarer.  **It is not yet a clean gate** — if it recurs in a quiet tab, that is a
-     different bug and worth chasing properly.
+     different bug and worth chasing properly.  *(It was.  §1.6.)*
+
+## 1.6 THE FLAKE, CHASED PROPERLY — and two lessons that outlive this Book
+
+**Reproduced on the first try** (`ghost_load` the three L ghosts, then run): `ok_pct:0.83, caveat:1`, with
+ **step 5 a hard fail and step 6 a caveat**.  Then green twice more.  So it is not contention in general —
+  it is what a COLD census costs, and it cost it in two different currencies.
+
+**One root: a step that takes one more belief round than the recording did.**  Everything else follows.
+
+**Symptom A — the hard fail — a frozen MOMENT in a fixture.**  Beat 5 (`refuse`) ran inside an
+ `expecting`, and `005.snap` had recorded `req:refuse_wait` **still in flight, ttlilt armed**.  Whether a
+  beat is still in flight when Story snaps its step is a coin-flip against how long its async work takes;
+   on the cold run the beat settled first and step 5 snapped `refuse_wait,finished` instead.  **No spay
+    forgives a missing line**, so a timing difference presented as a structural fail.
+ The fix was to notice the async work was never needed: every part of the refusal is synchronous, and the
+  only `await` was a re-map of the census that **nothing downstream reads** (beat 6 reads the Lagoon
+   world).  Beat 5 is now a plain synchronous beat, exactly like beat 4's lint.
+ **The general rule: a fixture must not encode a DURATION.**  If a step's snap differs depending on
+  whether a beat has finished, that snap is a stopwatch, and it will read differently on a slower box.
+   Either the beat holds the step open until it settles (and snaps settled) or it is synchronous (and
+    snaps done) — never a race between the two.
+
+**Symptom B — the caveat — `self,round` is a clock.**  `round` is already spayed by a hardcoded Story
+ rule (`Story.svelte` ~:1096), and **a spay CREATES a caveat**; only an encode-time `drop` mutes one.  So
+  one extra round anywhere upstream shifted every later step's `round` and stamped a caveat on each.  A
+   test-scoped `Entcase:Self_round → means,drop` in the Book's own toc omits the line outright.
+ A side effect worth seeing rather than hiding: **steps 2–6 now share one dige.**  That is honest — the
+  world genuinely does not change shape between those steps, and what used to distinguish them was a
+   clock and one transient req, neither of which was ever signal.  **The gate here is the sworn contract,
+    and the snaps are furniture that proves nothing was minted.**
+
+**Symptom C, found while fixing the others — a sworn sentence latches at whatever step it first becomes
+ true at.**  A sworn sentence is DECLARED in the toc under its latch step, so if the same truth latches
+  one step earlier or later, the declared `%Assertion` is absent from its step and **the run reds by name
+   with no bug behind it**.  `a reader answers over a census` was true the tick beat 2's stand settled, so
+    it declared at step 2 and would have moved to step 3 the moment the stand cost one round more.
+ The fix is a **step floor**: `LagoonStaple_at(w, n)` — swear on truth **and** not before the step whose
+  desc the sentence belongs to.  This is not the "gate on a beat" mistake the Book's header warns about:
+   the floor never SUBSTITUTES for the truth check, it only refuses to swear early, and a fact that
+    arrives late still latches because the witness runs every tick.
+ The toc reads better for it — every `%Assertion` now sits under the step that describes it.
+
+**Measured after the fix: 7 consecutive green, `caveat:0`,** including one run immediately after
+ `ghost_load Ghost/L/Atlas.g --stand=Atlas --fresh` over the real 715-doc corpus — the exact trigger.
+
+### The Book grew to eight beats, and the gate refused a wrong premise
+
+Later the same night the seek (§1.8) and the beadchain (leg 4) went in as beats **5** and **6**, pushing
+ the refusal to 7 and keeps-nothing to 8.  **They sit there on purpose**: beat 8's claim is that the
+  reader's world holds only its report row *after every answer*, so every verb exercised above it makes
+   that claim stronger.  A new reader verb belongs above beat 8 for exactly that reason.
+
+**And the gate immediately caught me guessing.**  The beadchain beat first swore that `Sample.g` has
+ ZERO beads — written without reading the fixture — and it simply did not latch, with every step green.
+  `Sample.g` declares one region *on purpose* ("exercises the region kind too", its own comment), holding
+   two of its three defs.  The real fixture is **better than the assertion I invented**: it tests
+    attribution in both directions in one doc — the two inside are attributed to the bead their author
+     drew, the third is left outside rather than annexed.  That is the whole property of a shape reader.
+**10 sworn, 10 declared, 0 gaps; five consecutive green at `caveat:0`.**
+
+**Then reading the recorded fixtures showed the snap half of the gate was proving nothing.**  Steps 2–8
+ were BYTE-IDENTICAL — every beat put its result on `.c`, which does not snap, so the sworn contract was
+  carrying the whole Book and seven fixtures were redundant bytes.  CLAUDE.md calls the snap-fixture diff
+   *"the place to notice un-asserted detail"*; there was no detail to notice.
+Each beat now leaves a **`saw` row** — clean scalar strings, deterministic against the frozen corpus —
+ so a step's snap says what its beat FOUND and a change in an answer's shape shows as a diff rather than
+  only as a sentence that stopped latching:
+
+    saw:lint,docs:1
+    saw:seek,defs:3,atlas:1,fixture_only
+    saw:beads,beads:1,defs:3,inside:2,loose:1
+    saw:refuse,callers,lint
+    saw:kept,others:0
+
+Distinct fixture contents went **2 → 7 of 8**, and the beads row now carries in DATA the very fact I got
+ wrong by guessing (one bead, two defs inside it, one beyond).  Three consecutive green after re-record.
+
+### The sabotage proof — the gate was made to fail on purpose
+
+A green gate that has never been seen red is a decoration.  Two of Lagoon's concept laws were broken in
+ `Lagoon_callers` at once — `return []` instead of the named error (the silent-empty law), and a
+  `w.oai({Index: name})` cache (the keeps-nothing law) — then compiled, hot-swapped and run:
+
+    ✗ «a-reader-with-no»      step 5 — ABSENT: a reader with no census refuses by name …
+    ✗ «the-reader-kept-nothing» step 6 — ABSENT: the reader kept nothing …
+    ✓ «every-reader-refuses-the» step 5 — sworn
+
+**Two named gaps, and the third refusal sentence stayed green** — the one driven by `Lagoon_lint`, which
+ the sabotage did not touch.  So the reds are specific to the law broken, not a blanket collapse; the
+  Book can tell WHICH law went.  Reverted, recompiled, re-run: green.  *(The sabotage patch is not on
+   disk — it was two lines, and it is written out above so it can be repeated in a minute.)*
+
+## 1.7 THE LINK LANGUAGE GREW — `sect`, `book`, `sworn`, and one lesson learned four times
+
+**Built 2026-09-08 night (`ATLAS_MAPPER` m15).  Gate: `scripts/LinkKinds.spec.ts`, 7/7, no runner and no
+ browser** — a collector is a pure function of text, so it wants a spec, not a Book (the same reasoning
+  that put `role:hacker` in `HackerRole.spec.ts`).
+
+### The plan proposed `Doc#region`.  The corpus said §.
+
+The leg as written listed `a region (Atlas.g#the cache)` among the kinds to add.  **Measuring the corpus
+ before choosing the form killed that idea in one command**: `Doc#region` appears **twice** in `spec/`.
+  `§N.N` appears **3,270 times**, and not one of them was collected.
+
+    §                3,270   ← the corpus's actual cross-reference, uncollected until tonight
+    `code`           8,967   (m14 — bigger in raw count, but it fires on every backticked symbol)
+    file:line        1,569
+    [[wiki]]           175
+    Book:               18
+    «sworn»              4
+
+**This is the `code` insight a second time, and it should now be the DEFAULT MOVE: most of the link
+ language is already written, and the job is to notice which form people actually type — not to invent a
+  form and hope it catches on.**  A kind invented from the plan costs the same to build and collects
+   nothing.
+
+### The three kinds, and what each refuses
+
+- **`sect`** — `<Doc> §N.N`, or a bare `§N.N`.  **470 doc-qualified across 113 target docs; 2,800 bare.**
+- **`book`** — `Book:<Name>` / `Book=<Name>` only.  18 live.  The bare prose form (`Book LakeSurprise`,
+   71 live) is **deliberately not collected**: it cannot be told from a sentence that happens to name
+    something after the word "Book".
+- **`sworn`** — `«assertion-slug»`, the spec→test-assertion pointer the owner kept from story 4.  4 live.
+   The guillemets are not invented: they are what `runner_ask assertions` already prints, so an author
+    pastes a line of CLI output and has a link.  Filtered to the slug shape, so the corpus's prose
+     placeholders (`«slug»`, `«X»`, `«uncoupled»`) are left alone.
+- **`anchor`** — *not a link*: the thing a § LANDS on when it is not a heading.  See below.
+
+### Four corrections, each found by measuring rather than by reading the code
+
+**Every one of them was the same mistake in a different coat, and each was caught BEFORE publishing.**
+ That is the difference from m14's `prose_rot`, which over-claimed twice in public.
+
+1. **The backtick between the name and the §.**  This corpus code-spans doc names, so
+    `` `Voro_render_todo.md` §0 `` has a backtick sitting where the regex wanted a space.  Requiring a
+     bare space demoted **189 of 470** doc-qualified links (40%) to bare ones.  *The single largest
+      correctness win in the pass, and it was one character of regex.*
+2. **Doc names without an underscore.**  `Frontier.md §1`, `Interest.md §2` — the older single-word docs.
+    Requiring the house-style underscore silently linted the WRONG document, which is worse than a miss.
+3. **Numbered items that are not headings.**  The corpus writes `**7.4 Per-peer fairness: OUT OF SCOPE.
+    RULED.**` inside a section and then points § at it.  A heading-only index calls those rot: counting
+     them turned **2 of 10** cross-doc "dead" links and **78** self-references back into live ones.  Hence
+      the `anchor` row — kept separate from the heading tree, which carries depth and `region_path`.
+4. **The `_todo` suffix the corpus drops.**  Prose cites `Social_demarcation §7`, `Radio_circuit §0.5`,
+    `Vyto_sizing §8` — all real docs under their full `X_todo.md` names.  A tail-exact resolver reported
+     **38** missing docs; with a `_todo`/`_spec` fallback, **16**.
+
+### The ruling that matters most: a bare § is COUNTED, NEVER ACCUSED
+
+The obvious reading is that `see §9` means *this* doc's §9.  Linting them that way produced **454 dead
+ self-references** — and sampling killed the reading.  `Seemables_todo` has 38 bare §s and numbers
+  nothing but its own §0, because its §s point into whatever doc the sentence just named: *"That work
+   lives in `Voro_render_todo.md` §0"*.
+**A bare § has an ambiguous referent that only prose resolves, so the lint says nothing about it.**  It
+ is collected (it is a real reference) and counted, and the report says why it is not judged.
+
+### What the § lint actually finds — the honest number
+
+    § 3,270 over 133 docs — 470 doc-qualified, 2,800 bare (not linted)
+      LIVE DOC, DEAD ANCHOR : 13     ← the new signal
+      moved to history/     :  5     ← expected: CLAUDE.md's own corollary
+      nothing has that doc  : 16
+
+**Thirteen.**  Small enough to read, which is the point: after four corrections it is a list a human can
+ act on rather than a wall to ignore.  Three were checked by hand and all three were real —
+  `Backpressure_todo §3.7` (the doc goes 3.1…3.4 then 4), `Cello_todo §4` (Cello_todo numbers nothing past
+   §0), `Heist_todo §0.2` (no such anchor anywhere in it).  **This list is leg 3's seed work queue.**
+
+*And a wrinkle leg 3 has to answer, found immediately: quoting those three as evidence in this section
+ made THIS doc report three dead pointers.  A lint cannot tell a citation from a claim, so a work queue
+  needs a way to say "cited deliberately" — the routing question, not a regex question.*
+
+### `Lagoon_oaths` had never been RUN, and it threw on the first call
+
+Written, wired, documented, gated by nothing — and its first ever invocation returned **`nav is not
+ defined`**.  The `atlas_*` op above declares its own `const nav` inside an else-branch, so the name
+  simply did not exist in the `lagoon` block.  *A verb nobody has executed is an unverified claim,
+   however carefully it was written* — worth a standing habit: run each new verb once, immediately.
+Working, it gives the spec→assertion pointer the owner asked for:
+
+    oaths: 167 toc(s) over 168 Book(s), 250 declared assertion(s)
+           Book: links 9 (3 gone) · «sworn» links 4 (4 land, 0 gone)
+
+**One of those four was written before the kind existed** — `Seen_split_todo.md:159 «a-re-stood-atlas-
+ warms» → Book:AtlasStaple`, authored by somebody using guillemets as prose.  Collecting the form the
+  corpus already typed found a real link nobody had to write, which is §1.7's whole argument, confirmed.
+
+**And 2 of the 3 "gone" Book links were a GLOB** — `` `Book:Voro*` `` means *every* Voro Book, and the
+ regex captured `Voro` from it.  **Every link form in this corpus has a pattern-or-placeholder variant**
+  (`«slug»`, `the §3`, bare `Name.ext`, backticked words without an underscore, and now `Name*`): assume
+   the next one does too.  The lookahead has to forbid a following name character as well as the `*`, or
+    the regex just backtracks to `Vor` — worse than the bug.  Gated; corpus `book` links 6 → 4.
+
+### A latent silent-loss bug in the collector, closed before it ever bit
+
+Fenced blocks are skipped so a doc *showing* what a link looks like is not *making* one — but the skip
+ is a stateful toggle, and **one unbalanced fence would have swallowed every link below it, with no
+  error anywhere**.  Measured across `spec/`: 0 of 391 docs are unbalanced today, which is luck rather
+   than safety, and silent loss is precisely what this layer exists to refuse.
+So the sweep **counts fences first, and collects the whole document when the fencing does not balance** —
+ trading silent under-collection for over-collection, which is harmless here because resolution is the
+  reader's and an unresolvable target is a mention, not rot.  Gated in `LinkKinds` and sabotage-proven:
+   forcing the old always-toggle behaviour reds exactly that one test.
+
+### The resolution rules now have a gate of their own — `scripts/SectResolve.spec.ts`, 8/8
+
+`LinkKinds` gates the COLLECTOR (what `compile.ts` emits from a document's text).  Nothing gated the
+ READER (what `Lagoon_lint` concludes from what Atlas holds) — and **that is the half that was got wrong
+  five times in one night**: the backtick, the underscore-less doc name, the non-heading anchor, the
+   dropped `_todo` suffix, and the `history/` skip the § pass did not inherit.  Five near-misses, every
+    one caught by measuring rather than by reading, and nothing protecting any of them afterwards.
+**It uses hand-made particles, not the corpus, and that is the point.**  A census built in the test is
+ exact and cannot drift; a corpus-derived expectation moves every time somebody writes a doc.
+  `LinkKinds`'s corpus sweep is a floor on a RATIO; this asserts a RULE.
+It runs headless by mounting the generated `gen/L/Lagoon.go` directly — its `onMount` eatfunc deposits
+ the verbs onto the House, which is the same thing `Lies_ghost_set` does in a browser.
+**Sabotage-proven**: removing the `history/` skip and the `_todo` fallback reds exactly the two tests
+ that name them and leaves the others green.  A gate that has only ever been green is a decoration.
+
+**It also gates `face_on`** — the fix for the owner's own reported bug, and the last thing written that
+ night which had never been EXECUTED.  (An hour earlier that same question turned up `Lagoon_oaths`
+  throwing on its first call, so it was worth asking twice.)  Two tests: the face mounts where the ROOM
+   names, and with no room it falls back to where it always went — so a CLI-stood reader on a bare
+    runner cannot lose its face.  Sabotaged by forcing `home = this`: the room test reds, the fallback
+     stays green, which is what proves the two paths are actually distinct.
+
+### THE HABIT THIS NIGHT ARGUES FOR
+
+Nine defects, and **not one came from re-reading source**.  They came from three questions, in
+ descending order of yield: *what does the output actually say?* (the 0-line files, the arbitrary index,
+  the retired-vs-gone split) · *what have I written that has never been RUN?* (`oaths` threw; `face_on`
+   was fine but unknown) · *what does my newest code do on input the corpus does not happen to contain?*
+    (the unbalanced fence, the `Book:Voro*` glob).  Ask them in that order on anything built here.
+
+### Where it is wired
+
+`compile.ts`'s markdown sweep (three regexes + the anchor line-test) · `ATLAS_MAPPER` m14→**m15**, so
+ every cached row re-derives · `Lagoon_lint` gained the § pass and `Lagoon_sections` · new async
+  `Lagoon_oaths(w, nav)` resolves `book` and `sworn` against the Books themselves (one toc read per Book,
+   ~80, versus `Lagoon_unproven`'s ~1000 snap reads) · `runner_ask lagoon oaths`, and `lagoon lint` now
+    prints a report rather than a JSON wall.
+
+### ✅ SEEN LIVE, 2026-09-09, over a converged 724-doc census
+
+    724 docs · file:line 1,944 (14 missing, 2 past EOF)
+      § 3,873 — 669 doc-qualified (37 no such doc, 30 no such section), 3,204 bare (not linted)
+      orphan defs 2,042
+
+The whole corpus, not just `spec/`, so the counts are larger than the headless measurement above and
+ agree with it in shape.  **`past EOF` is the number to look at: 275 → 2.**  That is the convergence-
+  artifact fix (leg 3's entry in §0) validated at full scale — the old lint was calling hundreds of
+   perfectly good links rot because it compared against an unmapped doc's length of zero.  Two genuine
+    line drifts in 1,944 links is a believable answer; 275 never was.
+
+## 1.8 ONE ANSWER, MANY FACES — the seek, and the room stopped having two of everything
+
+**Built 2026-09-09, from four remarks the owner made in one night.**  They read as four small complaints
+ and they are one:
+
+- *"there's the `search — ƒ methods · % props` searchbar, which is kinda annoying"*
+- *"every search result should probably be 80% of the screen real estate, as usual"*
+- *"UI:Lagoon appears to come out in H:Mundo but shouldn't… I can see H:Hackarium's UI:Langui there but
+   not UI:Lagoon"*
+- *"unify it beautifully with the current effort as well" … "you'll have to figure out what I mean."*
+
+### What was actually wrong, and it was not the placeholder
+
+**The room had TWO seek machines.**  The Searchbar over the Stemdex (ƒ methods · % props · ≈ text) and
+ Lagui over Atlas (families, defs, callers, mentions).  Two inputs, two hit lists, two glyph
+  vocabularies, mounted on two different Houses — and **both ending in the same act**,
+   `Lies_ghost_pick{path, point}`.
+
+A person typing `Heist_keep` does not care which index answers.  That placeholder was **one index
+ announcing its own taxonomy at the seeker**, which is exactly why it read as annoying: it asks you to
+  know how the machine is built before you can ask it anything.
+
+### The unification is not one face.  It is one ANSWER.
+
+**`Lagoon_seek` is the whole move**, and it is this session's own law applied one level up.  The Stemdex
+ is a **census** — it keeps every name and every line of freetext the machine has read, kept fresh by a
+  polite scan.  It was never treated as one only because it happened to arrive with a face attached.  So
+   it is now looked up by name on the top House and never held, exactly like Atlas and Electrode
+    (`Lagoon_lies()`), and one verb asks over both.
+
+> **ATLAS KEEPS.  THE STEMDEX KEEPS.  LAGOON ASKS.**
+> Two faces on one answer is fine.  Two answers behind two faces is the globulation.
+
+The reply carries the readings in **the seeker's order, not the indexes' order**:
+
+| reading | from | when |
+|---|---|---|
+| **families** — the larger objects | Atlas | the query is under two characters.  *"I can't remember a method name to look up"* is the commonest way a seek starts, so the answer to an empty box is the **map**, not an empty list |
+| **ƒ defs** | Atlas ▸ Stemdex | always.  Atlas is authoritative (real `doc:line`); the Stemdex's own defs merge under it, so a missing census **degrades** the answer instead of emptying it |
+| **¶ mentions** — the prose that names it | Atlas | only once the query resolves to a real def.  A backticked phrase that names nothing is a phrase, not a link — the m14 lesson, held |
+| **% props · ≈ text** | Stemdex | always |
+| **← callers** | Atlas, on demand | not in the reply at all: a reverse lookup over 724 docs per keystroke would be a second index in all but name.  Nothing is asked until you climb, nothing kept after |
+
+**Ranking moved into the answer.**  Both surfaces used to sort by name or by path, which buries an exact
+ hit under thirty substring ones.  The seek ranks exact ▸ prefix ▸ substring; the faces only order the
+  *readings*.  A face that re-sorts throws the answer's own judgement away.
+
+**And it names which censuses replied** — the silent-empty law one layer up.  With Atlas down you get
+ the Stemdex readings and `atlas:0`, and the header says so.  A refinement found by running it: a runner
+  tab HAS a `w:Lies` but never mounts a searchbar, so its Stemdex is standing and **empty** — which must
+   not read the same as "answered".  *Standing is not the same as answering.*
+
+### What the two faces became
+
+- **The Searchbar is the handle.**  `/` still summons it, the input now says `search  ( / )` and nothing
+   else — the glyph legend moved into the panel, beside the glyph column it decodes, which is the only
+    place a legend is worth reading.  Its panel is a **surface**: `fixed`, measured off the input,
+     `min(1180px, …)` wide and `min(80vh, …)` tall, with a sticky header, sticky kind breaks, a
+      click-off backdrop, and a 24→200 result cap because a screenful can use them.  **A ƒ row climbs**:
+       a caret erupts its callers under it, indented, same idiom and same rail colour as Lagui's.
+- **Lagui is now genuinely the second rendering**, not just described as one.  It asked `Lagoon_defs`;
+   it asks `Lagoon_seek`, and for that one changed call it gained everything the bar has — ranked defs
+    (each carrying the **bead** its author drew it inside), the prose that names a symbol, and a whole
+     document's beadchain under `doc:`.  **One reading stayed its own ask, and deliberately**: families
+      do not depend on the query, so recomputing them per keystroke would be waste and caching them
+       inside Lagoon would be *keeping*.  A face asking two questions at two cadences is right; two
+        faces asking the same question two ways was the thing that was wrong.
+
+### The `H:Mundo` split, which was a real conflation and not cosmetic
+
+`Run_A_Hackarium` mints `A:Lies`/`A:Lang` on the **Hackarium sub-House**, so `UI:Langui` enrolls there.
+ But the recipe stands the land with `top.oai({A:'Lagoon'})` — on **Mundo**, and it must: `Lagoon_atlas()`
+  looks the census up on the top House by name, so do every `lagoon`/`atlas_*` CLI op and `LagoonStaple`
+   ("stand where the reader looks", §1.6's neighbour).  So the face followed the census onto Mundo, and
+    in a room that shows one House's UIs at a time **the face was on another page**.
+**Where a census stands and where its face mounts are two questions.**  A room may now name itself as the
+ face's home — `w.c.face_on`, a runtime House ref set by whoever stands the world — and `Lagoon_plan`
+  mounts there, falling back to `this` when there is no room.  `UI:Lagoon` lands beside `UI:Langui`.
+
+**Verified live** on a fresh 724-doc census: substring (`Heist_keep` → 12 ranked defs), exact (`Repli_serve_chunks`
+ → 1 def + 12 prose mentions), empty (40 families), and the verb finds itself (`Lagoon_seek` →
+  `Ghost/L/Lagoon.g:146`).  All three touched components svelte-compile with zero warnings.
+**Owed, and it needs a browser:** the panel at 80vh has not been *looked at*.
 
 ## 2.7 THE SEEK NEEDS SOMEWHERE TO LAND — and `role:hacker` is the way
 
@@ -554,10 +1067,10 @@ Before this, the corpus had **two** link kinds and Atlas collected both: `[[wiki
   vocabulary of two, and everything else a doc wants to point at has to be spelled out in prose:
 - ~~a **method**~~ — ✅ BUILT as the `code` kind, above
 - a **family** (the stem-buckets of §the index) — "the Heist family"
-- an **assertion / sworn sentence** — the owner's own downgraded story 4 was *"pointers from the spec to
-   the test assertion, sure"*, which is exactly this
-- a **Book**, and a **step** of one
-- a **region** (`Atlas.g#the cache`) — a bead, per the beadchain above
+- ~~an **assertion / sworn sentence**~~ — ✅ BUILT 2026-09-08 night as `«slug»`, §1.7
+- ~~a **Book**~~ — ✅ BUILT as `Book:<Name>`, §1.7.  A **step** of one is still unbuilt
+- ~~a **region** (`Atlas.g#the cache`)~~ — ❌ **RULED AGAINST BY THE CORPUS**, §1.7: that form appears
+   TWICE, while `§N.N` appears 3,270 times.  Built as the `sect` kind instead
 - a **particle shape** (`%Record,total`) — the `%Notation` the Stemdex already tokenises
 
 **Cheap, because the collector is one independent line-sweep** (`compile.ts`, the `WIKI_RE`/`FILE_RE`

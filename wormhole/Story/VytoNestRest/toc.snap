@@ -4,28 +4,28 @@ story:VytoNestRest
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.013
-      sample=0.006,at=1786232577
-      sample=0.01,at=1786238641
-      sample=0.006,at=1786239608
-      sample=0.019,at=1786240835
-      sample=0.006,at=1786246137
-      sample=0.018,at=1786250295
-      sample=0.022,at=1786278555
+    TimeTotal:beliefs,avg=0.014
       sample=0.012,at=1786279004
       sample=0.02,at=1788853441
       sample=0.011,at=1788854389
-    TimeTotal:step,avg=0.004
-      sample=0.002,at=1786232577
-      sample=0.003,at=1786238641
-      sample=0.002,at=1786239608
-      sample=0.006,at=1786240835
-      sample=0.002,at=1786246137
-      sample=0.006,at=1786250295
-      sample=0.007,at=1786278555
+      sample=0.027,at=1788869362
+      sample=0.012,at=1788869552
+      sample=0.019,at=1788869685
+      sample=0.013,at=1788882284
+      sample=0.008,at=1788893259
+      sample=0.01,at=1788900822
+      sample=0.012,at=1788903064
+    TimeTotal:step,avg=0.005
       sample=0.004,at=1786279004
       sample=0.007,at=1788853441
       sample=0.004,at=1788854389
+      sample=0.009,at=1788869362
+      sample=0.004,at=1788869552
+      sample=0.006,at=1788869685
+      sample=0.004,at=1788882284
+      sample=0.003,at=1788893259
+      sample=0.003,at=1788900822
+      sample=0.004,at=1788903064
   step,dige:643185e5f62fdbd4
   step=2,dige:23450ae230b169a9,desc:seed a two-level rig — three cogs under the root and two grandchildren under the first
   step=3,dige:7201a42d7286a5b9,desc:commission the glass nested on the rig and stir to rest
