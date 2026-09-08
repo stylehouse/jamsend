@@ -1,39 +1,5 @@
 Waft:Aside/2026-09-08,aside
   What
-    Doc:Ghost/M/Heard.g
-      Point	{"ref":{"method":"Object()"}}
-  What=2,FromWhat:Waft:Aside/2026-09-08/What:1
-    Doc:Ghost/L/test_corpus/Sample.g
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
-  What=3,FromWhat:Waft:Aside/2026-09-08/What:2
-    Doc:Ghost/L/Atlantation.g
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
-  What=4,FromWhat:Waft:Aside/2026-09-08/What:3
-    Doc:src/lib/O/Lang.svelte
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
-  What=5,FromWhat:Waft:Aside/2026-09-08/What:4
-    Doc:src/lib/O/Hovercraft.svelte
-      Point	{"ref":{"method":"Object()"}}
-  What=6,FromWhat:Waft:Aside/2026-09-08/What:4
-    Doc:src/lib/O/spec/Radio_todo.md
-      Point	{"ref":{"method":"Object()"}}
-  What=7,FromWhat:Waft:Aside/2026-09-08/What:6
-    Doc:src/lib/O/spec/Stemdex_todo.md
-      Point	{"ref":{"method":"Object()"}}
-  What=8,FromWhat:Waft:Aside/2026-09-08/What:7
-    Doc:src/lib/O/spec/ulative/memory-raw/clustation-identity-layer.md
-      Point	{"ref":{"method":"Object()"}}
-  What=9,FromWhat:Waft:Aside/2026-09-08/What:8
-    Doc:src/lib/O/spec/Voromay_todo.md
-      Point	{"ref":{"method":"Object()"}}
-      Point	{"ref":{"method":"Object()"}}
+    Doc:Ghost/M/Heist.g
+      Point,method:Musica_cards
+      Point,method:Musica_fold

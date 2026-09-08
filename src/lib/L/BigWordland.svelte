@@ -2,13 +2,17 @@
     // BigWordland — a second toplevel, rivaling Otro.  The SAME machine underneath (Ghost
     //  mounts every ghost; an editor Book boots exactly as under Otro) presented as a BIG
     //   EMPTY ROOM instead of Otro's NaviScroll column:
-    //    · ?E=<Book> parametrises which editor Book boots, DEFAULTING to Educarium — the
-    //      Editron-shaped recipe living beside this file (L/Educarium.svelte).  No ?B/?I
-    //      here: runners board through /Otro; this room is author chrome.
-    //    · a toc of H** across the top — Mundo · Story · Educarium (the Run named after the
+    //    · ?H=<Book> parametrises which Book boots, DEFAULTING to Hackarium — the code-wandering
+    //      recipe beside this file (L/Hackarium.svelte), which stands Atlas + Lagoon itself.  The
+    //      room's role is 'hacker': the editor's local surface (docks, Lang, Langui) with NONE of
+    //      its singular duties, so it is safe to open beside a working editor.  ?E=<Book> still
+    //      boots the old EDITOR room, which takes the one editor slot and will evict one elsewhere.
+    //      No ?B/?I here: runners board through /Otro; this room is author chrome.
+    //    · a toc of H** across the top — Mundo · Story · Hackarium (the Run named after the
     //      book) · … — each a chip.  This is a SWITCHER, not a spread: clicking a chip makes
-    //       that House the ONE fullscreen view (the show-one-thing policy).  Opens on Educarium
-    //        (⇒ Langui, its editor UI); click Story to watch the runner, Mundo for the root.
+    //       that House the ONE fullscreen view (the show-one-thing policy).  Opens on the booted
+    //        Book's Run (⇒ Langui, and the Lagoon panel); click Story to watch the runner, Mundo
+    //         for the root.  The fullscreen-er presentation is why the hacker Book moved in here.
     //    · a ⚙ cog rides beside the ACTIVE chip only; it toggles that House's action-button
     //       rack (+ the C** dump) — the buttons stay hidden until you ask, so the room is calm.
     //    · ONE House's UIs at a time, fullscreen — except UI:Lies, which stays hidden even in
@@ -34,20 +38,39 @@
     //#region H:Mundo — the shared boot (the aufheben's common bit) lives in BigQualand now; this
     //  room supplies only its knobs — the editor Book, the editor role — and reads H + houses back.
     //  The OOM trap (assign H once, never read it in the construction effect) is baked in over there.
-    const editor_book = boot_param('E') || 'Educarium'
-    const q = boot_qualand({ book: editor_book, role: 'word' })   // role 'word' ⇒ Lies%humdinger: an end-user page, never a dispatch target
+    // ── 2026-09-08: THE ROOM IS A HACKER ROOM NOW ────────────────────────────────────────────────
+    //  The owner, having opened /Otro?H=Hackarium and clicked a stem: *"it needs a fullscreen-er
+    //   presentation… BigWordland was it I think?  nothing else is happening with BW, we should probably
+    //    take this all there… they are very similar right?  unity a cleanse."*  They are: this room and
+    //     that tab both boot a Book and render `H.UIs`.  What this room has and that tab lacks is the
+    //      PRESENTATION — the H** switcher that makes one House fullscreen, the ▦ sprawl, the pin rail,
+    //       the searchbar.  So the room takes the Book rather than the Book growing a room.
+    //  What changes: default Book `Educarium` → `Hackarium`, and role `word` → `hacker`.  The room stops
+    //   being "an editor room that is a humdinger" (which is why the L ghosts could never live here —
+    //    `ghost_load` is refused on a humdinger) and becomes a room that STANDS ITS OWN LAND: Hackarium
+    //     loads Atlas + Lagoon itself, so nothing needs the CLI or the relay.
+    //  ?E=<Book> still boots the OLD editor behaviour for anyone who explicitly asks — but note it takes
+    //   the single editor slot (`LiesFunk` ~:499, the Cluster claim supersedes every other editor row),
+    //    so it will EVICT a working editor elsewhere.  The hacker default cannot.
+    const editor_book = boot_param('E')
+    const hacker_book = boot_param('H') || 'Hackarium'
+    const q = editor_book
+        ? boot_qualand({ book: editor_book, role: 'word' })     // explicit ?E= — the old editor room; takes the editor slot
+        : boot_qualand({ book: hacker_book, role: 'hacker' })   // the default — docks without the duties
+    // the Book actually booted, whichever road got us here — the switcher opens on its Run House
+    const the_book = editor_book || hacker_book
     let H      = $derived(q.H)
     let houses = $derived(q.houses)
     //#endregion
 
     //#region the room's own state
     // the fullscreen switcher.  `view` is the user's explicit pick (a House ip); undefined means
-    //  "auto", which resolves to the Educarium Run (opens on the editor, Langui) or, before it
+    //  "auto", which resolves to the booted Book's Run (opens on Langui + Lagoon) or, before it
     //   stands up, the deepest House so the boot is visible.  `active` is the House shown.
     let view = $state<string | undefined>(undefined)
     let active_ip = $derived(
         view
-        ?? houses.find(h => h.name === editor_book)?.c.ip
+        ?? houses.find(h => h.name === the_book)?.c.ip
         ?? houses[houses.length - 1]?.c.ip
     )
     let active = $derived(houses.find(h => h.c.ip === active_ip))
@@ -124,7 +147,7 @@
 <div class="bw">
     <!-- the top bar: room name · the H** toc · Lies summon · the searchbar -->
     <div class="bw-top">
-        <span class="bw-name" title="BigWordland — ?E={editor_book}">BigWordland</span>
+        <span class="bw-name" title="BigWordland — {editor_book ? '?E=' + editor_book + ' (editor: takes the editor slot)' : '?H=' + hacker_book + ' (hacker: docks without the duties)'}">BigWordland{#if !editor_book}<span class="bw-hack">hacker</span>{/if}</span>
         <div class="bw-toc">
             {#each houses as house (house.c.ip)}
                 <button class="bw-h" style="--d: {depth_of(house)}"
@@ -232,6 +255,12 @@
         padding: 0.45rem 0.2rem; margin: 0 -0.2rem;
         background: rgba(11, 11, 18, 0.92); backdrop-filter: blur(4px);
         border-bottom: 1px solid rgba(120, 140, 195, 0.18);
+    }
+    /* the hacker badge — this room does not hold the editor slot, and that should be visible */
+    .bw-hack {
+        font-size: 0.62rem; letter-spacing: 0.1em; margin-left: 0.5em;
+        color: #8fd3c8; border: 1px solid rgba(143, 211, 200, 0.4);
+        border-radius: 5px; padding: 0.02rem 0.3rem; vertical-align: 0.1em;
     }
     .bw-name {
         font-size: 0.85rem; letter-spacing: 0.14em; text-transform: uppercase;

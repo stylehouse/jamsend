@@ -3,3 +3,9 @@ story:Hackarium
   Plan
   Opt
     For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.125
+      sample=0.125,at=1788855742
+    TimeTotal:step,avg=0.125
+      sample=0.125,at=1788855742
+  step,dige:29c7975b74f8b5f9

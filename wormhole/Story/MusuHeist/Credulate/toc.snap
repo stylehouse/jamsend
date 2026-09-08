@@ -24,8 +24,8 @@ Credulate,of_Book:MusuHeist
   GhostInclude:Ghost_Story_Siphonation,dige:a51b38e9318b6f9b~g1
   GhostInclude:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
   GhostInclude:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1
-  GhostInclude:Ghost_S_Swarm,dige:4ee33373b0b99624~g1
-  GhostInclude:Ghost_Story_Swarmation,dige:d1f7e621aaeb9e5b~g1
+  GhostInclude:Ghost_S_Swarm,dige:3793771b9fedaf6e~g1
+  GhostInclude:Ghost_Story_Swarmation,dige:bc2834c2ab133e05~g1
   GhostInclude:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
   GhostInclude:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
   GhostInclude:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
@@ -35,7 +35,7 @@ Credulate,of_Book:MusuHeist
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
   GhostInclude:Ghost_Story_Sounditron,dige:e52afe7d185f51a8~g1
   GhostInclude:Ghost_O_Supervisor,dige:f9efd6177e50fa09~g1
-  last_ok,at=1788780403.902,ok_pct
+  last_ok,at=1788860959.237,ok_pct
     uses:Ghost_N_Peeroleum,dige:176d03c1fb562ff9~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:b4c37f0c56f24f1a~g1
@@ -61,8 +61,8 @@ Credulate,of_Book:MusuHeist
     uses:Ghost_Story_Siphonation,dige:a51b38e9318b6f9b~g1
     uses:Ghost_Story_Berthation,dige:673e8ef4144eeaec~g1
     uses:Ghost_Story_Errchannelation,dige:c8ba6767e2312230~g1
-    uses:Ghost_S_Swarm,dige:4ee33373b0b99624~g1
-    uses:Ghost_Story_Swarmation,dige:d1f7e621aaeb9e5b~g1
+    uses:Ghost_S_Swarm,dige:3793771b9fedaf6e~g1
+    uses:Ghost_Story_Swarmation,dige:bc2834c2ab133e05~g1
     uses:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
     uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
     uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1

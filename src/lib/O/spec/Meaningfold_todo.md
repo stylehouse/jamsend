@@ -84,6 +84,188 @@ Cog:5.B   /   of main   /   dose 1
   Meaning is displayed and not structural: the inversion of §2, in one screenshot, on a Book that
    already exists and is already green. Grep the `<text>` nodes of the before and after SVGs.
 
+## 0.2 THE THREE ORGANS — the owner's framing, 2026-09-08 (this supersedes §0's ordering)
+
+> *"there's a meditation, of the matter, occurring in a fengshui-ing, which lays it out nicely."*
+
+> *"I basically want you to figure out how to continuously absorb geometric information derived
+>  from the C\*\* we're looking into."*
+
+> *"like creeping through the jungle, moving bits around and carrying them with you, gardening…
+>  flower arranging… all these different poses and stuff."*
+
+Three organs, not one pipeline. The names are the owner's and they are better than the code's:
+
+1. **The meditation** — the pass over the matter that reveals what it IS. Folds, crests, the
+    distiller's sayings. **This one is built** (`Vyto_distil` mints real particles — `Vtuffing`,
+     `%Vrow,row:dip|vein|fact|spread`, `%Vbit`) and it is the half §1 below is about.
+2. **The fengshui-ing** — the continuous arrangement the meditation *occurs inside*. **This one
+    does not exist.** Geometry is computed and then ejected from the world every frame (§0.2a).
+3. **Which lays it out** — the fengshui-ing is the layer-out; the disposition in space IS its
+    product. *Nicely* is doing work there: it is a claim about COMPOSITION, not decoration. And it
+     lays things **down**, in order: a layout held to the face is later set in a stack where it
+      still peeks, so the pile reads as an index and a log of where we have been. **Geological** —
+       §0.2f. That is where the poses live (carrying, gardening, arranging), and nothing today
+        survives long enough to do any of it.
+
+**"Occurring in" is the load-bearing phrase, and it inverts the pipeline.** Today the order is
+ scan → express → relate → fold → solve → cut → render: meaning first, geometry last, geometry
+  discarded. The owner's shape puts the arrangement UNDERNEATH the meditation — so the fold can
+   read where things are while it decides. `Vyto_fold_scope` (`Vyto.g:475`) today knows exactly one
+    spatial fact: `members.length > budget_for(800,450)`. It cannot ask what is near what, or where
+     there is room.
+**That is also the flashing.** A global count is a CLIFF — cross it and a whole group crushes or
+ un-crushes at once (the comment at `Vyto.g:466-472` says so itself: *"a far bigger visual event
+  than the thing it would be tracking"*). Local room is continuous. Observed 2026-09-08: VytoCrush
+   fails its sworn `crushed`/`crest-counts` sentences INTERMITTENTLY on byte-identical input — three
+    gaps one run, two the next — which is a threshold chattering. The wall-is-a-query ruling (§1)
+     and the fengshui-ing arrive at the same repair from opposite sides: a boundary drawn by a count
+      cannot hold still; a boundary drawn by a fact about the data holds still by construction.
+
+### 0.2a WHY THERE IS NO FENGSHUI-ING — the landscape is outside the world, deliberately
+
+Two lines of source, both stating an intention that the owner's ask now reverses:
+
+- **`Vyto.g:277`** — *"The mirror lives DETACHED on `.c` … reachable from nothing in H\*\*, so it
+   **never snaps and the Books stay Vyto-blind**."*
+- **`Vyto_scan_walk:374-378`** — the sweep deletes every sc key the source does not have, so
+   `seed` (position), `T` (target), `env_area` (size), `imp`, `heat`, `folded` are all forced onto
+    `.c`. `Vyto.g:1099` states the reason outright: *"never row.sc: Vyto_scan_walk sweeps unknown sc
+     keys off mirror rows every scan."*
+
+So the meditation runs, reveals the landscape, and **throws the landscape away every frame.** It
+ cannot see itself because it is not there. This is not a missing feature; it is a decision, taken
+  for two sane local reasons — don't reserve a mainkey fleet-wide, don't pollute snaps with churn.
+   Both are answerable (below), and until they are, every pose in the owner's list is unbuildable.
+
+**The measured consequence.** 23 of the 25 Vyto|Voro Books contain not one `Vrow` in any fixture.
+ VytoCrest and VytoFoam are the only two, and they only manage it because their bench hand-attaches
+  a container (`Crush,fam:shoal` under `w:VytoCrest`) — the LIVE mirror can never be snapped. This
+   is the same blindness that let the tessellation die at 82% coverage with the fleet green, and it
+    is why VytoCrush can report `ok_pct 1, caveat 0` — every fixture passing, every digest matching —
+     while its sworn sentences say the crush is not crushing.
+
+### 0.2b THE ABSORPTION — four moves, three of which already half-exist
+
+**1 · Attach the landscape.** The mirror becomes a real container under `w:` wearing its own
+ mainkey. `Vyto.g:277`'s worry — *"no mainkey has to be reserved fleet-wide"* — is already moot: the
+  fleet reserves `Vtuffing`, `Vrow`, `Vbit`, `Flow`. Then the meditation's product is matter: it
+   snaps, Travel walks it, a Book asserts it.
+
+**2 · Let geometry be matter — AT THE SETTLE, never per frame.** This is the whole trick, and it
+ answers the churn objection before it is raised. Two kinds of geometry have been treated as one:
+ - **in-flight** — the spring's position mid-tween. Genuinely runtime, genuinely `.c`
+    (WebAudio-grade, per the state-home discipline). **Stays.**
+ - **resting** — where a thing came to rest, what size it settled at, where the hand PUT it. That is
+    a fact, and the admission test (`Homethink_todo.md:151` — would the community SEE it, PROVE it,
+     or REWRITE it while it runs?) scores it yes three times. It is on `.c` for a mechanical reason,
+      not a principled one.
+
+ The line between them is **the settle**, and `Vyto_todo.md §0.2` already established that at settle
+  `jump_to_target` makes model and pixels **byte-exact**. So the settle is precisely the moment the
+   geometry is TRUE. *Continuous absorption = every settle deposits a layer.* That is "lays it out" — and it persists, so the next meditation occurs INSIDE it.
+ The precedent for surviving the sweep exists already: `departing` is exempted at `Vyto.g:375`
+  because *"`departing` is mirror-managed (the escort mark) — never a source key"*. Widen that one
+   exemption to a mirror-owned geometry namespace and nothing else in Scan changes.
+
+**3 · Then it sees itself, literally.** `Vyto_scan_walk` takes any particle. Point a grapple at the
+ landscape and the meditation reveals the meditation. Not a metaphor — the same call, no new code.
+
+**4 · Then it works on itself — and the poses become buildable.** Each pose the owner named is a
+ POLICY OVER PERSISTED GEOMETRY, which is exactly why each came out half-built:
+
+| the pose | what it needs | today |
+|---|---|---|
+| **flower arranging** — place it, it stays | a placement that outlives the stir | `c.seed` + `%Hold` exist (`Vyto.g:745`) — die on reload |
+| **carrying bits with you** | geometry travels with the particle across scopes | impossible while it is `.c` |
+| **gardening** — tending over time | geometry that accumulates history | the spool already archives mirrors |
+| **creeping through the jungle** | depth-of-field on the walk | `.c.flat` (`Vyto.g:395`) is the seed of it |
+
+### 0.2c INTERCHANGEY ANIMATION is not the animation that got built
+
+*"arrange things like machinery for interchangey animation for truthy revelation."*
+
+`Cellui.svelte:60-138` already has interchange: send/receive maps paired by key — *"like Pixar
+ animated them"* — where a key present in BOTH maps is a **swap pair** that flies box→box, and a
+  lone key is a genuine join/leave taking the grow/shrink fallback. That animates **identity moving
+   between places**. Vyto instead springs **coordinates toward targets** (`Vytui.svelte:502`).
+ The difference is a truth claim, which is why it belongs in this doc and not in a style note: an
+  interchange can only show a thing that ACTUALLY WENT SOMEWHERE, whereas a spring can smoothly
+   interpolate a lie. Cellui has it; the glass does not.
+
+### 0.2d THE VISUAL LANGUAGE IS THE SNAP — *"snap, with care to indent spatialised"*
+
+Once geometry is sc, a snap of the landscape carries the positions, and indent-as-containment plus
+ the geometry keys make the snap **the picture's own notation**. The claim upgrades: not merely
+  *"the render must be as truthy as a snap"* (§1) but **the render and the snap are two readings of
+   one text**. That is also the recorded aesthetic the fleet has never had — `Vyto_todo.md:3110`,
+    *"Nothing in this repo records the visual direction… every round re-derives the aesthetic from
+     whatever the last sentence of feedback was, and drift is guaranteed"*, flagged 2026-08-09 as
+      *"the one item on this list that no amount of code fixes"*. A snap that IS the picture fixes
+       it, because a snap is a thing a session can be held against.
+
+### 0.2e THE ONE COST, stated plainly and NOT hidden
+
+Attaching the landscape means every Vyto world begins appearing in snaps, and fixtures move across
+ the fleet. That is not a side effect to minimise — the Books becoming Vyto-**sighted** is the whole
+  point, and it is what would have caught the tessellation, the crush, and the flashing. But it is a
+   real re-snap of real Books and **the owner decides whether it lands gated or wholesale.** Gated
+    keeps the additive law (§0's *"the Vyto fleet stays byte-identical with the gates off"*) at the
+     price of a second regime to maintain; wholesale is honest and noisy and done once.
+
+### 0.2f THE GEOLOGY — the layout progresses through time, and the stack is the index
+
+> *"and it's got to progress through time, like holding a picture up to your face, then putting it
+>  in a stack where each one is 15% peeking out at some angle, so they can be seen like an index…
+>   and a log of where we've been… as we lay them down… geological."*
+
+The fengshui-ing does not lay ONE thing out — it lays things DOWN, in order, and the pile is
+ readable. Three claims in that, all structural:
+
+- **Held to the face** — the current layout, foreground, full attention.
+- **Put in the stack, 15% peeking, at an angle** — a laid-down layout does not vanish; it becomes a
+   STRATUM. The peek is not decoration: it is how the stack reads as an **index** without opening
+    anything. You recognise a past arrangement by its shape, which is only possible because it is a
+     laid-out arrangement and not a label.
+- **A log of where we've been** — the stack is navigational history as visible matter. Depth is
+   pastness, order is time, and a section through it is readable. **Geological.**
+
+**This is the most nearly-built thing in the whole doc, and it stops one inch short.**
+
+| the piece | where | state |
+|---|---|---|
+| deposition happens **at the settle** | `Vyto.g:1804` — *"moments captured AT SETTLE"* | ✅ built — and it is the SAME seam §0.2b move 2 needs. One event, both jobs. |
+| a stratum is a real particle | `Vyto_spool_capture:1901` mints `w.i({Moment:n, step_n})` — **attached**, so it snaps | ✅ built |
+| two clocks | monotonic `yore_n` + the step-quantised `step_n` (`Vyto.g:1890-1891`) | ✅ built |
+| erosion | `Vyto_spool_cull` — ring ~60, drop-oldest | ✅ built |
+| "keep this stratum" | the **o-mark** exempts a moment from the cull (`:1930`) | ✅ built — *"the spool has the o-mark but nothing mints a blessing"* (`findings §8`) |
+| a fossil bed | `Vyto_spool_frozen` — a failed run freezes the spool, *"EVIDENCE: it must not cull"* | ✅ built |
+| seeking into a stratum | `Vyto_seek_to` + Storui's step pip; VytoSeek is green | ✅ built |
+| **the layers have contents** | `Vyto.g:1906` — the payload *"rides `.c`"* | ❌ **the stratum is an empty label** |
+| **the log survives** | `w.c.yore_n` is `.c` | ❌ the log's own clock dies on reload |
+| **the stack is visible** | nothing renders it; the spool surfaces as a scrubber pip | ❌ no peek, no angle, no index |
+
+So the strata are already in the tree, already ordered, already at the right event — and **every
+ one of them is hollow**, for the same single reason as everything else in §0.2a: the arrangement
+  is not matter, so an archive of arrangements archives nothing.
+
+**Which makes the geology the payoff of the absorption, not a separate build.** Once a laid-out
+ layout is sc (§0.2b), a `%Moment` carrying one is a stratum with real contents — and then:
+ - the **15% peek is real**: you are seeing an actual past arrangement, not a thumbnail of one.
+    The index works because the shape is the memory.
+ - the log is **greppable and diffable** — where we have been becomes a thing a Book can assert,
+    and the ordinary snap diff between two Moments IS the account of what moved.
+ - the o-mark finally has something to bless: *keep this layout* is the gardening verb, and
+    *carry it with you* (§0.2b move 4) is reading a blessed stratum back onto live matter.
+
+**The one open question, and it is a real design ruling, not a detail.** A stratum can be either
+ the whole laid-out arrangement or only its DIFF from the layer beneath. Whole layers make the
+  peek trivially truthful and the cull a real loss; diffs make the log cheap and the section
+   readable as *change* — which is closer to how a geologist actually reads strata — at the cost
+    that a peek must be reconstructed by replay. The encoder's own instincts favour whole lines
+     (one particle, one line, no factoring — `findings §2`), so **whole layers is the default**
+      unless the owner wants the section to read as change. Not decided here.
+
 ## 1. The definition (the owner's words, and the shape they name)
 
 Owner, 2026-09-08:

@@ -1,0 +1,140 @@
+Snap:H
+  H:Hackarium,Run
+    A:Hackarium
+      self,round=2	{"mung":["age"]}
+      w:Hackarium
+        self,round=2	{"mung":["age"]}
+    A:Lies
+      self,round=8	{"mung":["age"]}
+      w:Lies,hacker
+        self,round=8	{"mung":["age"]}
+        examining	{"loopy":0}
+          req:timemachine,playing=0	{"ref":{"w":"%w:Lies, hacker:1"}}
+        Opt
+        req:Cortex,eternal,maz=5,ok
+        req:Store,eternal,maz=7,ok
+          Good,type:text/Waft,path:wormhole/Ghost/Net/Easy/toc.snap,waft_path:Ghost/Net/Easy
+            known,dige:9cc2b4b871a02583,kind:read	{"mung":["at"]}
+          Good,type:text/Waft,path:wormhole/Cluster/toc.snap,waft_path:Cluster
+          Good,type:text/Waft,path:wormhole/Keep/toc.snap,waft_path:Keep
+          Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
+          req:LiesStore_read,rw_name:wormhole/Cluster/toc.snap,rw_op:read
+            req_sent
+            ttlilt,waiting:LiesStore_read	{"mung":["until_ts"]}
+        req:git
+        req:wants
+        o_elvis:dock_askies
+        req:Langoer,eternal,ok	{"ref":{"w":"%w:Lies, hacker:1"}}
+        Peering,name:editor
+          Pier,pub:runner
+            Ud
+        transport,type:websocket
+        active_transport,type:websocket,open
+        Waft:Ghost/Net/Easy
+          Funkcion:CreduFunk
+            Funkcion:Storying,of_Book:PereStaple
+            Funkcion:Storying,of_Book:PereProof
+            CreduCoherence:latest
+              Credulate,of_Book:PereStaple,vset:Ghost_L_Atlas@7d4a03208c1088af~g1|Ghost_L_Lagoon@9d41597178a045df~g1|Ghost_N_Peeroleum@831035f4b7de0927~g1|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1788855741108
+                GhostInclude:Ghost_N_Peeroleum,dige:831035f4b7de0927~g1
+                GhostInclude:Ghost_L_Atlas,dige:7d4a03208c1088af~g1
+                GhostInclude:Ghost_L_Lagoon,dige:9d41597178a045df~g1
+                GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+              Credulate,of_Book:PereProof,vset:Ghost_L_Atlas@7d4a03208c1088af~g1|Ghost_L_Lagoon@9d41597178a045df~g1|Ghost_N_Peeroleum@831035f4b7de0927~g1|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1788855741108
+                GhostInclude:Ghost_N_Peeroleum,dige:831035f4b7de0927~g1
+                GhostInclude:Ghost_L_Atlas,dige:7d4a03208c1088af~g1
+                GhostInclude:Ghost_L_Lagoon,dige:9d41597178a045df~g1
+                GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+            GhostLedger,head:L0-811c9dc51f2be47c,next_seq=6
+              Ledger:L0-811c9dc51f2be47c,seq=0,at=1784029316445,vset:
+              Ledger:L1-2cd467c565c3ef7a,seq,at=1784029331947,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1
+                GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
+              Ledger:L2-8ec51937f467b2be,seq=2,at=1784029336658,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1|Ghost/V/Voro.g@028c7be5c5a4d306~g1
+                GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
+                GhostInclude:Ghost/V/Voro.g,dige:028c7be5c5a4d306~g1
+              Ledger:L3-fe8f0faebb93f645,seq=3,at=1784031302839,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1|Ghost/N/Reliable.g@48e8948c7d8da3ed~g1|Ghost/V/Voro.g@028c7be5c5a4d306~g1
+                GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
+                GhostInclude:Ghost/V/Voro.g,dige:028c7be5c5a4d306~g1
+                GhostInclude:Ghost/N/Reliable.g,dige:48e8948c7d8da3ed~g1
+              Ledger:L4-0140d4dce96d848d,seq=4,at=1784031313491,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1|Ghost/N/Reliable.g@48e8948c7d8da3ed~g1|Ghost/Story/Swarmation.g@910b984e14e606aa~g1|Ghost/V/Voro.g@028c7be5c5a4d306~g1
+                GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
+                GhostInclude:Ghost/V/Voro.g,dige:028c7be5c5a4d306~g1
+                GhostInclude:Ghost/N/Reliable.g,dige:48e8948c7d8da3ed~g1
+                GhostInclude:Ghost/Story/Swarmation.g,dige:910b984e14e606aa~g1
+              Ledger:L0-811c9dc51f2be47c,seq=5,at=1788855741108,vset:
+            CreduCoherence:perfection
+              Credulate,of_Book:PereStaple,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1784029400158
+                GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
+                GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+          What:the peer
+            Doc:Ghost/N/Peeroleum.g
+            Point,method:Peeroleum
+            Point,method:req_handshake
+          What:the test
+            Doc:Ghost/Story/Peregrination.g
+            Point,method:Run_A_PereStaple
+            Point,method:Run_A_PereProof
+          What:transport
+            What:mock
+              Doc:Ghost/N/Peeroleum.g
+              Point,method:transport
+            What:webrtc-or-not
+              What:reliability
+                Doc:Ghost/N/Tribunal.g
+                Point,method:Tribunal_fall_to_websocket
+              What:the trial
+                Doc:Ghost/Story/Peregrination.g
+                Point,method:Lake_trial_fallback
+          What:healing
+            Doc:Ghost/N/Reliable.g
+            Point,method:inseq_admit
+            Point,method:retx_due
+            Point,method:make_lossy_partner
+          What:Security
+            Doc:Ghost/N/Tyrant.g
+            Point,method:Run_A_PereTyrant
+            Point,method:req_trust
+            What:Swarmily
+              Doc:Ghost/Story/Swarmation.g
+          What:the spec
+            Doc:src/lib/O/spec/Peeroleum_spec.md
+            Doc:src/lib/O/spec/Peeroleum_handover.md
+            Doc:src/lib/O/spec/Covenant_design.md
+        Funkcions
+          req:Waftica,waft:Ghost/Net/Easy,eternal,ok
+        see:⏳ loading Waft:Cluster…
+    A:Lang
+      self,round=2	{"mung":["age"]}
+      w:Lang
+        self,round=2	{"mung":["age"]}
+        model,cyto_dir
+        docks
+        scheme:req
+          lematch	{"ref":{"sc_has":"Object()"}}
+            lematch	{"ref":{"sc_has":"Object()"}}
+        Languinio,no_doc	{"loopy":1}
+        req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
+          req:understanding,maz=3,permanent,sig:0:0:0:0,finished
+          req:ingredients,maz=2,permanent,sig:,finished
+          req:instrumentation,permanent,sig:::0:0:0,finished
+        req:waft_roster,eternal,subscribed
+        o_elvis:Lies_compile_settled
+        o_elvis:dock_content
+    watched:ave
+      examining	{"loopy":0,"hid":1}
+      Languinio,no_doc	{"loopy":1,"hid":1}
+    watched:UIs
+      UI:Lies	{"ref":{"component":"Function()"}}
+      UI:Langui	{"ref":{"component":"Function()"}}
+      UI:Pantheate-include,gen_path:p2p/pinned_stable/Peeroleum.go	{"ref":{"component":"Function()"}}
+      UI:Pantheate-include,gen_path:p2p/pinned_stable/Tribunal.go	{"ref":{"component":"Function()"}}
+    watched:actions
+      action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
+      action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}
+      action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
+      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object(),Object()]","on_pick":"Function()"}}
+      action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
+      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
+      action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
+      action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
+    ttlilt,of_w:Lies,waiting:LiesStore_read	{"ref":{"req":"%req:LiesStore_read, rw_name:wormhole/Cluster/toc.snap, rw_op:read"},"mung":["until_ts"]}

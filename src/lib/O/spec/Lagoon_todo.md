@@ -84,11 +84,18 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
 3. **Not a humdinger** (that stamp comes from `boot_qualand`, which Otro does not use), so nothing is
     refused on it and `ghost_load` remains available if ever wanted.
 
-**Verified:** all five touched components svelte-compile clean; `/Otro?H=Hackarium` SSRs 200 with 390KB.
- **OWED — browser verification by the owner**, which is the only thing that can prove it: open it beside
-  the working editor and check (a) docks and Langui appear, (b) the Lagoon panel appears and its census
-   fills, (c) clicking a method LANDS in the Langui, and (d) **the working editor keeps its Cluster row**
-    — that last one is the whole safety claim.  A `HackStaple` Book swearing (d) is the gate to write next.
+**Verified:** all five touched components svelte-compile clean; `/Otro?H=Hackarium` SSRs 200 with 390KB;
+ **the owner opened it, clicked a stem, and it landed** ("lovely").
+**✅ GATED — `scripts/HackerRole.spec.ts`, 9/9, no runner and no browser.**  The safety claim is a PURE
+ FUNCTION OF ROLE, so it did not need a Book: every duty in the spine is an equality test against
+  `'editor'`, and one assertion that a hacker is not the editor therefore covers all seven of them at
+   once.  The spec also pins the no-channel path, that the write gates stayed editor-only while the
+    cursor RESUME became shared, that Creduler is gated on the flag rather than the role (so a hacker
+     still gets its ghosts), and that both rooms boot it without taking the editor slot.  Test 1 asserts
+      the source of `Lies_role` still matches the copy the tests reason over, so the gate cannot rot into
+       agreement with itself.
+**Still owed (browser-only):** that docks and Langui appear, and that a working editor elsewhere KEEPS
+ its Cluster row while a hacker tab is open.  The logic is gated; the lived behaviour is not.
 
 ---
 
@@ -119,7 +126,31 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
    `Lies_aim_setup` did nothing; no `%HostedIdentity,role:editor` row was claimed.  The last is the one
     that protects the owner.
 
-**LEG 2 — the seek lands.**  Needs leg 1.  On a hacker tab the tab's own Liesui/Langui exists, so
+### ✅ LEG 2 IS DONE, AND THE ROOM ABSORBED THE TAB — 2026-09-08 evening
+
+The owner opened `/Otro?H=Hackarium`, clicked a stem, and it landed: *"lovely"*.  Then: *"it needs a
+ fullscreen-er presentation… BigWordland was it I think?  nothing else is happening with BW, we should
+  probably take this all there… they are very similar right?  unity a cleanse."*
+
+**They are the same thing wearing different clothes** — both boot a Book and render `H.UIs`.  What the
+ room has that the tab lacks is PRESENTATION: the H\*\* switcher that makes one House fullscreen, the ▦
+  sprawl, the pin rail, the searchbar.  So the room took the Book, rather than the Book growing a room.
+
+- `/BigWordland` now defaults to **Book `Hackarium`, role `hacker`** (was `Educarium`, role `word`).
+   `?H=<Book>` overrides.  A `hacker` badge sits beside the room's name so it is visible that this tab
+    does not hold the editor slot.
+- `boot_qualand` gained `'hacker'` as a fifth role: it maps to the `editor` boot_role like `word` does
+   (so world layout and disk gating are inherited unchanged) and additionally stamps `H.c.role`.  It is
+    still stamped `humdinger` — a room is never a dispatch target — and that costs nothing now, because
+     **Hackarium stands Atlas and Lagoon ITSELF** rather than waiting for a `ghost_load` that a humdinger
+      would refuse.  That refusal is exactly what kept the L ghosts out of this room until today.
+- `?E=<Book>` still boots the old editor room for anyone who explicitly asks, with the eviction warning
+   written at the call site.
+
+**Verified:** `BigWordland` and `BigQualand` compile; `/BigWordland` serves 200 with 392KB of SSR.
+ **Owed:** the same browser check as leg 1, plus confirming the switcher opens on the Hackarium Run.
+
+**LEG 2 — the seek lands.**  *(the plan as written)*  Needs leg 1.  On a hacker tab the tab's own Liesui/Langui exists, so
  `Lies_ghost_pick` lands without any change to Lagui.  Verify by clicking a family → method → the editor
   moves.  Only if the owner wants the CodeMirror INSIDE the panel does Lagui mount its own `<Langui {H}/>`
    — and then it is the ONLY Langui on that tab, so the multi-editor bookmark/autosave races do not arise.
@@ -148,6 +179,33 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
 >              name the BUNDLE it sits in, which Atlas can supply from `Lagoon_families` today and from the
 >               declared manifest once Atheory lands.  Not designed further — flagged as the owner's, and
 >                leg 3 should build the flat shape from the start rather than migrate to it.
+
+> **⚠ THE FLATTENING IS A CORPUS-WIDE MIGRATION, not a tweak — measured 2026-09-08.**  `What > Doc >
+>  Point` is not the Aside's shape, it is the UNIVERSAL Waft shape (`Interest.md`: "the document tree is
+>   Waft → What → Doc → Point").  Changing it touches **12 walk sites, 20 `{Doc:1}` query points, and 53
+>    recorded Story fixtures** that snap a Doc under a What.  So the owner's "perhaps" is a real ruling
+>     with a real bill, and it should be taken deliberately rather than slipped in beside a trail feature.
+>  **What WAS done instead, because it answers most of the complaint for one line:** a moment is no longer
+>   anonymous.  `e_Lies_ghost_pick` now stamps `about:<the thing you were after>` on a fresh `What`
+>    (`Lies.svelte`), which is the owner's *"a context the Point is going for"* without moving anything.
+>     A day's trail reads as named moments from today.
+>
+> **The Aside junk IS this ruling, looked at (2026-09-08, the owner: *"check out these Waft:Aside though,
+>  they're full of junk"*).**  The object-in-`sc` bug is fixed and today's file proves it —
+>   `Point,method:Musica_cards` is a clean scalar, and `Musica_cards` really is in `Ghost/M/Heist.g`, so
+>    the landing is correct.  What remains is not corruption, it is the SHAPE, and it is small: twelve
+>     days, 58 lines total.  Three complaints, all of which the flat form above answers:
+>  1. **Every `What` is anonymous.**  A day reads `What`, `What`, `What` — a pile of unnamed moments with
+>      no idea what any of them was FOR.  The owner's *"a context the Point is going for"* is the missing
+>       field, and it belongs on the Point, not on a container.
+>  2. **`Doc` is a duplicated holding** (the identity-law break above), so the trail carries a second,
+>      thinner copy of something Atlas holds properly.
+>  3. **`FromWhat` is inconsistent across days** — a bare path (`Ghost/N/Peeroleum.g`) on 06-21, a full
+>      locator (`Waft:Aside/2026-07-03/What:1`) on 07-03.  Two forms for one relation, which is its own
+>       small identity smell; pick the locator.
+> **The cleanse:** do NOT migrate the old files.  They are pre-shape, tiny, and genuinely historical —
+>  leave them and let leg 3 write the new form from today.  A trail that changed shape is legible; a
+>   rewritten one has lost the only thing it was for.
 
 **LEG 4 — the beadchain.**  Needs leg 2.  Atlas holds `region,label,depth,from,to` for every doc — the
  beads, with depth as the clustering.  First cut: a doc rendered as its regions nested by depth with defs

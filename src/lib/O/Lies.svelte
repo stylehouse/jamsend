@@ -330,6 +330,19 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const moment  = prior ?? aside.i({ What: serial })
         if (!prior) {
             if (fromWhat) moment.sc.FromWhat = fromWhat
+            // `about` — WHAT THIS MOMENT WAS FOR (2026-09-08).  The owner, reading a day's Aside:
+            //  *"they're full of junk"* — and the junk was not corruption, it was that every moment is
+            //   an anonymous `What`, so a day's trail is a pile of unnamed containers with no record of
+            //    what any of them chased.  Their own words for the fix: *"just having a context the
+            //     Point is going for"*.  The thing you were after IS the label, so stamp it at mint.
+            //  (The deeper ruling — `What / Point,doc:,at:` instead of `What > Doc > Point` — is a
+            //   CORPUS-WIDE migration, not this: the shape is the universal Waft shape, walked from 12
+            //    sites and recorded in 53 Story fixtures.  Lagoon_todo §leg-3 has the cost.  This is the
+            //     part of the owner's complaint that is answerable without one.)
+            //  Comma-guarded: sc values ride the peel notation, which splits on commas (the `%see`/
+            //   `%desc` rule) — a `text:` query can contain one, a def name never does.
+            const about = point && point.indexOf(',') < 0 ? point : path.slice(path.lastIndexOf('/') + 1)
+            if (about) moment.sc.about = about
             moment.i({ Doc: path })
             moment.c.up = aside; moment.c.waft = aside      // back-refs so the want can land before re-link
         }

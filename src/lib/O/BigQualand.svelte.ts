@@ -32,7 +32,12 @@ export type QualandOpts = {
     //   word|sound is carried as H.c.id_role and drives the auto-assumed identity (a /BigSoundland tab is
     //    always the 'sound' identity, /BigWordland always 'word').  It NEVER reaches the machine, which
     //     only ever sees editor|runner — the whole spine's role checks stay two-valued.
-    role: 'editor' | 'runner' | 'word' | 'sound'
+    //  'hacker' (2026-09-08) is the FIFTH and it is the odd one out on purpose: it maps to the editor
+    //   boot_role like 'word' does, but it ALSO stamps `H.c.role='hacker'`, which the machine's role
+    //    checks DO see — and miss, because every editor duty is an equality test against `'editor'`.
+    //     That is what lets a room stand docks beside a working editor without evicting it from its
+    //      Cluster row.  Full account: `Lies_role`'s header in `LiesLies.svelte`; `Lagoon_todo §2.7`.
+    role: 'editor' | 'runner' | 'word' | 'sound' | 'hacker'
 }
 
 export type Qualand = {
@@ -59,12 +64,19 @@ export function boot_qualand(opts: QualandOpts): Qualand {
         //  for the identity layer, and assume_identity tells Auto this page always mints/resumes one.
         h.c.boot_role = (opts.role === 'sound' || opts.role === 'runner') ? 'runner' : 'editor'
         ;(h.c as any).id_role = opts.role
+        // the hacker's one extra stamp — see the type's note.  boot_role stays 'editor' so the world
+        //  layout and disk gating are inherited unchanged; this is the whole difference.
+        if (opts.role === 'hacker') h.c.role = 'hacker'
         // Lies%humdinger — a Big*land room is an END-USER page, never a dispatch target.  It's machine-role
         //  runner (sound) or editor (word) and uses the full Lies stack, but must stay invisible to the
         //   editor's grid: no advertise, no going-cold, and no `from` on its pings (else Lies_pong would
         //    enroll it as a runner off the 5s heartbeat and Story runs would land on someone's music page).
         //     Derived from role here so no call site can forget it; the guards live in Lies_humdinger.
-        if (opts.role === 'word' || opts.role === 'sound') (h.c as any).humdinger = true
+        //  'hacker' is stamped too: it is a room, never a dispatch target, and it stands no channel at
+        //   all anyway (Lies_channel_up returns bare for it), so the guard is belt to that brace.  It
+        //    also means `ghost_load` is refused on it — which costs nothing, because the Hackarium
+        //     recipe stands Atlas and Lagoon ITSELF rather than waiting to be handed them.
+        if (opts.role === 'word' || opts.role === 'sound' || opts.role === 'hacker') (h.c as any).humdinger = true
         // H.c.production — THE DEPLOYMENT STANCE, stamped once beside humdinger so every ghost can read it
         //  (a .g cannot see import.meta, and location is not a thing a model layer should be sniffing).
         //   The owner, 2026-08-08: "in production we want no participation in any Cluster beyond sending to
