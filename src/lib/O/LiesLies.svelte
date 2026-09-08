@@ -135,7 +135,25 @@
         //
         //   H.c.role (stamped on the Run House by Run_A_<Book>) wins; a passed-in
         //    w's own %editor/%runner flag is the fallback; bare → undefined.
-        Lies_role(w?: TheC): 'editor' | 'runner' | undefined {
+        // ── 'hacker' — the THIRD role (2026-09-08, the owner: "we should avoid being that kind of
+        //  editor? role:hacker for now?").  A code-WANDERING tab: it has the editor's local surface
+        //   (docks, Lang, Langui, FSA read) and none of its singular duties.
+        //  Why a new role rather than a flag: every duty in this file is gated by an EQUALITY test
+        //   (`=== 'editor'`), so a third value opts out of all of them for free and no future duty can
+        //    forget to exclude it.  The duties it must never take, and the two that enforce the "one
+        //     editor" rule the owner remembered: the `%HostedIdentity` claim (LiesFunk ~:499 — "the
+        //      editor that is claiming supersedes every other editor row") and `Lies_aim_setup`
+        //       (LiesFunk:432).  A second EDITOR tab evicts the human's; a hacker tab cannot.
+        //  It also stands NO CHANNEL AT ALL: `Lies_channel_up` below returns bare for any role that is
+        //   not editor|runner|armed-player, and `Lies.svelte:754` gates transport/channel/heartbeat the
+        //    same way.  So a hacker is local by construction — it never touches the relay, which is why
+        //     it cannot collide with anything.  (If it ever wants `runner_ask` reachability it joins
+        //      READ-ONLY through the `Lies_player_seen` door, never as an editor.)
+        //  A hacker READS.  The write gates stay `=== 'editor'`: Waft saves (Lies.svelte:833), the
+        //   compile `dock_source` (LangCompiling:274, LiesCortex:155), and the Keep's cursor WRITES
+        //    (Lies.svelte:1013/1018 — the Keep is single-writer like the editor; a hacker's own
+        //     where-was-I belongs in its trail, the Aside, which is per-day and append-only).
+        Lies_role(w?: TheC): 'editor' | 'runner' | 'hacker' | undefined {
             const H = this as House
             // Position decides nature: a Lies INSIDE a Story Run is a compiler-under-test (the
             //  canonical Lies+Lang the tests embed), NOT the channel participant — so it forgoes
@@ -145,9 +163,10 @@
             //      non-breaking until a top-level Creduler Lies is added alongside.
             if ((H as any).Lies_inside_story() && (H as any).Lies_count_in_top() > 1) return undefined
             const role = H.c.role
-            if (role === 'editor' || role === 'runner') return role
+            if (role === 'editor' || role === 'runner' || role === 'hacker') return role
             if (w?.sc?.editor) return 'editor'
             if (w?.sc?.runner) return 'runner'
+            if (w?.sc?.hacker) return 'hacker'
             return undefined
         },
 
@@ -173,6 +192,15 @@
         //   the mount-notify gates on !is_editor (bare mounts).
         Lies_is_runner(w?: TheC): boolean { return (this as House).Lies_role(w) === 'runner' },
         Lies_is_editor(w?: TheC): boolean { return (this as House).Lies_role(w) === 'editor' },
+        // Lies_has_docks — "this tab has the editor's local SURFACE", which is a different question
+        //  from "this tab IS the editor".  Use it for CAPABILITIES (docks, Lang, cursor resume);
+        //   keep `Lies_is_editor` for DUTIES (the relay, the Cluster claim, writes).  The split is the
+        //    whole of role:hacker — see Lies_role above.
+        Lies_has_docks(w?: TheC): boolean {
+            const r = (this as House).Lies_role(w)
+            return r === 'editor' || r === 'hacker'
+        },
+        Lies_is_hacker(w?: TheC): boolean { return (this as House).Lies_role(w) === 'hacker' },
 
         // Lies_humdinger — an end-user Big*land ROOM (a /BigSoundland music scape, a /BigWordland editor
         //  room; boot_qualand stamps H.c.humdinger for role word|sound).  It uses the FULL Lies stack —

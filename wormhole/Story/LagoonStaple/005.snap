@@ -1,0 +1,12 @@
+Snap:H
+  H:LagoonStaple,Run
+    A:LagoonStaple
+      self,round=6	{"mung":["age"]}
+      w:LagoonStaple
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        aimed:fixture
+        req:refuse_wait
+          ttlilt	{"mung":["until_ts"]}
+    ttlilt,of_w:LagoonStaple	{"ref":{"req":"%req:refuse_wait"},"mung":["until_ts"]}

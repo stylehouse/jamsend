@@ -31,6 +31,13 @@ Commissioned by the owner 2026-09-07, mid-SoundPooling: *"gather flaws so we can
 5. **Rule the contradictions** (§11) and **give the twelve standing laws a doc home** (§10, whittled from
     ~30 code-only rules, each judged at its line: 20 law · 8 already-documented · 6 done · 1 unclear · none
      superseded, none drifted). Two of the twelve settle §11's open contradictions on their own.
+6. **Read §2.9 first if you are about to design in this seam.** It is the smallest set — three laws that
+    would have made the SoundPooling twin-record bug unwritable, plus the one about our own tests that
+     explains why four green Books sat through it. §10.1's twelve are mostly instances of those three at
+      a particular altitude, which is what makes §10's homing job smaller than it looks. §2.9 also carries
+       one live criticism of code already in the tree (the `total > 0` preference in `Repli_find_record` is
+        ranking, and Law 2 says a finder may not rank) and one read awaiting your ruling (the fork's
+         Card-under-two-shelves question, which "identity is per-shelf" appears to settle).
 
 ## 1. THE HEADLINE TABLE — what §8 called open, and where you already ruled it
 
@@ -110,6 +117,90 @@ So it is **one mint, one un-mint, one reader, no fixtures** — the risk sits en
 - `%Card` already exists with its own meaning (`Radio_spec §2.3` — a listing; the heard-Mag ledger's
    `Card,id,pub`). The describe's catalog entry must be checked against that shape, not assumed to fit it.
     `Cello_synthesis §R.8` above is exactly this question asked from the render side.
+
+## 2.9 THE SMALLEST SET — three laws that would have made the SoundPooling bug unwritable
+
+*Written 2026-09-08 from the metaphysics read the owner set (`ulative/fallen-out-of-mind-2026-09-07/
+ metaphysics_brief.md`): read the corpus, say which remembered shapes are the SAME law, and propose the
+  smallest set that makes `SoundPooling §0`'s seam bug impossible to write. This section is that answer.
+   §10.1's twelve are downstream of these — most are an instance of one of them at a particular altitude.
+    Kept short on purpose; each law is one sentence, then what it forbids, then where it already lives.*
+
+**Take the seam bug as the exam paper.** One failure, three independent faults, and each fault is a
+ different law being absent. That is the whole argument for a small set: no single rule would have caught
+  it, and the corpus already half-knows all three.
+
+**Law 1 — a holding is minted only by the act that produces its substance.**
+ A *describe* learns that a thing exists; it may mint a name for it. Only a *materialise* produces bytes,
+  so only a materialise may mint the `%Record` that claims to hold them.
+ → *Forbids fault 1*: the describe stood a chunkless `%Record` (`total 0`) under the keep-id, then the
+    materialise minted a second under the same id. Two records, one id, and neither mint was wrong by any
+     rule then written down.
+ → Already in the corpus as §2's own invariant, one altitude lower: *"a `%Record` always has bytes or a
+    `total` that promises them; identity-without-bytes is a `%Card`."* Generalising it is the whole move —
+     §2 states it for audio; the law states it for anything that can be held. `Springcore_meander`'s
+      *"a reference is its own word"* is the same sentence facing the other way.
+ → The landed fix (materialise ONTO the standing husk) is pragmatic and correct in direction, but it
+    leaves the describe minting a `%Record`. §2's ruling — describe mints `%Card`, only materialise mints
+     `%Record`, two mint sites — is the law-shaped one and still owed.
+
+**Law 2 — a finder may not choose.**
+ If a lookup can return two things, the id space is wrong. Widen the key until it cannot; never rank the
+  candidates.
+ → *Forbids fault 2*: `Repli_find_record` returned whichever library registered first, which is not a
+    decision, it is an accident of load order wearing a decision's clothes.
+ → **This makes the second landed fix the wrong shape, and it is worth saying plainly.** "Prefer the one
+    with `total > 0`" is ranking. It works, and it should stay until the mint is fixed, but it teaches the
+     code that ambiguity is normal and survivable. Under Law 1 the ambiguity cannot arise, and then the
+      preference rule is dead code that should be deleted rather than kept as belt-and-braces — a
+       tie-break left standing is where the next twin-record bug will hide.
+ → The corpus ruled this already, in its own words, about addresses rather than records:
+    `ClusterAddressing §4` — widen, never rank. Same law, different shelf. §10.1's "a role is looked for,
+     not declared" is its sibling.
+
+**Law 3 — every ask leaves by a named exit.**
+ Served, parked, or missed. Falling off the end of a function is not an exit.
+ → *Forbids fault 3*: `Repli_serve_chunks` hit `from < total` as `0 < 0`, took no branch, and returned in
+    silence. No park, no miss, no log, and an asker re-asking 35 times in 10 seconds with nothing on the
+     wire to say why. The function's own `Repli_serve_miss` comment names this class as "silent death"; the
+      code simply had a path that reached neither.
+ → Landed correctly: an unservable, unparkable want now calls `Repli_serve_miss`. This is the one of the
+    three where the fix IS the law.
+ → Already stated at `Backpressure §4.2` — *"an ask is answered at the seam that learned the answer"* —
+    which is §10.1 item 3. The exhaustive-exits phrasing is that rule made checkable.
+
+**Why nothing caught it — Law 4, and it is about us, not the code.**
+ *A Book stands on the frontier it proves.* Four pool Books were green through the entire bug because they
+  proved the dial's choices, not the bytes' arrival; the frontier they sat on was one seam short of the
+   one that was broken. `Vyto_todo LAW B` (sentences written before the station's code) is the authoring
+    half of this; the missing half is that a green Book must be read as a claim about a *place*, and the
+     place must be named. `Social_demarcation §7` reaches the same conclusion from the twin-record
+      autopsy. This is why the SoundPooling reds were found by walking the daemon rather than by the suite.
+
+**The fifth law is from the other half of the reading, and does not belong to this bug.**
+ *No social fact is folded into an app identity.* Membership, grants and revocation are decision-facts in
+  the matter; an id may not encode one. It is the demarcation doc's whole thesis (`Social_demarcation §2`,
+   the raw query as the API) and the reason `%Body` is a routing cache and `/Crew` is membership. Recorded
+    here so the set is complete, and flagged as separate so nobody reads it as part of the seam argument.
+
+### 2.9.1 Two contradictions these settle, for §11
+
+- **§11.2, presence in `.c` or `.sc`** — `Statehome` wins: *churn is never a reason to hide*. `.c` is for
+   runtime OBJECTS (a WebAudio node, a socket, a live handle), not for scalars that are merely noisy or
+    merely secret. A presence fact is a scalar about the world, so it snaps. `Network_procedures` Phase 2's
+     "rides `.c`, never sc" was a performance instinct, and Law 4 is the argument against it: state in `.c`
+      is state no Book can stand on.
+- **The fork's open question in the brief** (Card under `Mag/Cloud` keyed `(id, pub)` versus Card under a
+   swept `RummageLib` keyed by keep-id: *"same mainkey, different container/key/lifetime — the very sin
+    being cured, moved one mainkey over"*). **It is not the same sin, and CLAUDE.md already says why:
+     identity is PER-SHELF.** A thing exists once *under a given container* as its mainkey. Two shelves,
+      two Cards, no collision — the sin is two different shapes under one mainkey *on one shelf*. So the
+       fork's option (1), one `%Card`, stands, and the consequence it flagged is real: `Cello_synthesis
+        §R.8`'s *prior keyed by context* becomes load-bearing, because the referrer is the context. That is
+         the same unreconciled note §2 ends on, now with a reason to reconcile it. **Settled by the
+          corpus's own words, not escalated** — CLAUDE.md already carries the governing clause, so this
+           needed a reader, not a ruler. The consequence that IS work: `Cello_synthesis §R.8` stops being
+            a curiosity and becomes a dependency of the Card migration.
 
 ## 3. ATTENTION — the req pile IS the standard; the transport opted out of the mutex, not the pile
 
@@ -491,6 +582,9 @@ Lift these and the ledger below can mostly be struck.
     `humdinger`; `LiesLies:1848` now stamps a real `role:'player'` and `runner_ask:676` filters on it.
 2. **Presence: `.c` or `.sc`?** `Network_procedures` Phase 2 rules "rides `.c`, never sc"; `Statehome §6`
     overturns it ("churn is never a reason to hide"). Two live docs, opposite rulings.
+    → **Read proposed 2026-09-08 in §2.9.1: `Statehome` wins.** `.c` is for runtime OBJECTS, not for
+       scalars that are merely noisy; a presence fact is a scalar about the world, so it snaps. Owner to
+        confirm and then strike this line.
 3. `LangHold max_child_depth:0` — an explicitly parked human ruling (`history/Snap_depth`).
 4. Snapped `kind` (Backbone P1 owner fork) — `LiesFunk:171` reads a never-set `waft.sc.kind`.
 5. `Waft` capped/sidebyside — contrary decision at `Waft.svelte:243`, unanswered.

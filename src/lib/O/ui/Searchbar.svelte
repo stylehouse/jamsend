@@ -157,7 +157,11 @@
     }
     .usb-q:focus { outline: none; border-color: #446; }
     .usb-panel {
-        position: absolute; top: 100%; left: 0; right: 0; z-index: 40;
+        /* `right` leaves a gutter rather than reaching the viewport edge: at right:0 this dropdown
+           sat over the EDITOR'S SCROLLBAR underneath it, which you then could not grab while a
+           search was open (the owner, 2026-09-08: "div.usb-panel is obscuring the scrollbar of the
+           editor").  The panel is left-anchored to the input, so the gutter costs it nothing. */
+        position: absolute; top: 100%; left: 0; right: 1.1rem; z-index: 40;
         background: #10101a; border: 1px solid #446; border-radius: 0 0 4px 4px;
         max-height: 45vh; overflow: auto; padding: 0.2rem;
     }

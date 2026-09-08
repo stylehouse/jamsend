@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1788591906465
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1788852667243
   group:src/lib,dir:src/lib
     sub:src/lib/L,name:L
     sub:src/lib/O,name:O
@@ -25,6 +25,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     sub:Ghost/Story,name:Story
     sub:Ghost/V,name:V
     sub:Ghost/test,name:test
+    sub:Ghost/L,name:L
   open_dir:Ghost/N
   group:Ghost/N,dir:Ghost/N
     Doc:Ghost/N/Peeroleum.g,name:Peeroleum,noticed_at=1788015917976
@@ -179,7 +180,11 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Wire_spec.md,name:Wire_spec.md,noticed_at=1788504619850
     Doc:src/lib/O/spec/reactivity_docs.md,name:reactivity_docs.md,noticed_at=1788504619850
     Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md,noticed_at=1788504619850
-    Doc:src/lib/O/spec/Tend_todo.md,name:Tend_todo.md,noticed_at=1788591906465
+    Doc:src/lib/O/spec/Electrode_todo.md,name:Electrode_todo.md,noticed_at=1788852667243
+    Doc:src/lib/O/spec/Fallen_out_of_mind_todo.md,name:Fallen_out_of_mind_todo.md,noticed_at=1788852667243
+    Doc:src/lib/O/spec/Lagoon_todo.md,name:Lagoon_todo.md,noticed_at=1788852667243
+    Doc:src/lib/O/spec/Social_demarcation_todo.md,name:Social_demarcation_todo.md,noticed_at=1788852667243
+    Doc:src/lib/O/spec/Wordland_todo.md,name:Wordland_todo.md,noticed_at=1788852667243
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

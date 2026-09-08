@@ -230,7 +230,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //  nib-foreground | boot re-lands on the last What, not the Waft's first.  A later want
         //   wins over Lies_desire_land_cursor's land-on-first; fall back to it when nothing is
         //    remembered (fresh Waft | the locator no longer resolves | runner has no Keep).
-        const resume = H.Lies_role(w) === 'editor' ? H.Lies_keep_resume_what(w, waft, path) : undefined
+        // has_docks, not is_editor: resuming where the cursor last sat is a CAPABILITY of any tab with
+        //  docks, and a hacker wandering code wants it most of all.  It is a READ of the Keep; the two
+        //   Keep WRITES below stay editor-only (the Keep is single-writer).  See Lies_role's header.
+        const resume = H.Lies_has_docks(w) ? H.Lies_keep_resume_what(w, waft, path) : undefined
         if (resume) H.i_elvisto(w, 'Lies_want', { src: resume, kind: deliberate ? 'click' : 'cold' })
         else await H.Lies_desire_land_cursor(w, waft, path, deliberate)
     },

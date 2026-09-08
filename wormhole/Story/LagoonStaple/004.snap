@@ -1,0 +1,9 @@
+Snap:H
+  H:LagoonStaple,Run
+    A:LagoonStaple
+      self,round=5	{"mung":["age"]}
+      w:LagoonStaple
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        aimed:fixture

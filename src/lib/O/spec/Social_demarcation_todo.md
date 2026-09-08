@@ -26,6 +26,32 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
 5. **`Ra_pool_fill_homes`** picks the Cave with no liveness — wants a live-preferring `Swarm_body_for`, which
     moves SwarmBody's fixtures; do it with the runner up, not blind.
 
+6. **The protocols and their gates — WRITTEN, §3.4** (owner 2026-09-08: *"we also need to clearly present how
+    those extra protocols are defined there, and how permissions work — a lot comes under 'Music' at the
+     moment"*). Every `header.type` → handler → the ACTUAL gate expression, the grant vocabulary, the `runner_ask`
+      ops by power. Five asymmetries surfaced (3.4.1) and `take`/`take_got` turn out unreachable over the wire.
+       The next grant word (`Serve`? `Reach`? `Pool`?) gets decided in 3.4.2, not by another `'Music'` check.
+7. **The debug surface is not behind the door (3.4.3).** `runner_ask` is dispatched pier-less at
+    `Peeroleum_deliver_do:623` — no Pier, no signature, no inbox; tab-side gates are a `pub` prefix match, a lease
+     that is refreshed but never checked, and the humdinger read-only rule. On a public relay that is an open
+      introspection port (`crew` returns prepubs, grants and rebuffs). The rail to close it exists — sign the ask
+       with the cluster key and verify tab-side as `ghost_compile` already does. File, then build; not tonight.
+
+**Crew_todo comes with us.** The owner (2026-09-08): *"Crew_todo should come with us into this movement."*
+ `Crew_todo.md` is the ONE living doc for membership words (crew · Cave · Captain · grant · charter · the theft
+  tripwire's blindness · the epoch); this doc is the SURFACE between that substrate and the apps. Read them as a
+   pair. Sibling rivalries are in an okay state: same-soul frames route, the alarm no longer screams at a Captain,
+    bodies own their address; the one way left to run into yourself is two tabs on one identity (the relay door is
+     first-come, the loser clamps bare). Open there: a second Captain is invisible to `Swarm_note_theft`.
+
+**THREE BRANCHES, THREE FRONT DOORS** (owner 2026-09-08: *"code, infra, visual is the development branching
+ I'm coming up with"* — after *"it's been far too one-track for the last few weeks"*). This doc is **infra**'s
+  door, paired with `Crew_todo.md`. Code|metaphysics reads `Fallen_out_of_mind_todo.md` + the metaphysics brief.
+   Visual reads the new **`Meaningfold_todo.md`** (the glass folds at the meaning and says everything it holds;
+    working at `ulative/visualisation-2026-09-08/findings.md`). What infra OWES visual: §3.4 is the census of
+     what actually crosses, and the `'Music'` bundle it names is a picture waiting to be drawn — one grant
+      covering streaming, gossip, routing and work-booking is exactly the kind of thing a glass makes obvious.
+
 **Known reds you did NOT cause:** `LakeRace` (real, unguarded compile fix — `Lies_handover.md`), `Presence`
  (needs a relay). Everything else on the unit shelf is green. Diff the snap before alarming.
 
@@ -395,6 +421,130 @@ Two vocabularies face each other across one frontier. The LEFT army knows *who m
 5. **A pick's binding** (`blag {re:seed}` vs `wire {id}`) depends on whether a *real describe* ran —
     a live/social precondition. Get it wrong and the pull chases the opus preview forever (the 52/54
      stall). No fixture can be wrong about it because a fixture collapses the two id-spaces into one.
+
+### 3.4 THE PROTOCOLS AND THEIR GATES (2026-09-08 census — every `header.type`, its handler, the ACTUAL gate)
+
+Owner: *"we also need to clearly present how those extra protocols are defined there, and how permissions work
+ (a lot comes under 'Music' at the moment)."* This is that presentation. Every gate below was read off the
+  handler body, not inferred from its name. Line numbers are 2026-09-08; the shape is the durable part.
+
+**3.4.0 How a frame reaches a handler.** The relay routes on `header.to` ONLY and never reads `from`
+ (`Swarm.g:1490`). It binds an identity address on a signed `hello` alone (`relay.ts:624-628`, `verifyHeader`
+  + 30s `ts` window); a `?addr=` bind is unauthenticated (`:568`). Then `Peeroleum_deliver_do` (`Peeroleum.g:595`)
+   is a ROUTER, not a verifier, in this order:
+
+| # | branch | line |
+|---|---|---|
+| 1 | `to:@channel` → per-Peering subs; no inbox, no ack | `:606` |
+| 2 | `runner_ask` / `ghost_compile` → by TYPE, pier-less, no ack, no inbox | `:623` |
+| 3 | `pier_hello` (and a granted non-link `pier_accept`) → handler-direct, `pier=null` | `:650` |
+| 4 | `Peeroleum_same_soul` (`:541`) or `Peeroleum_crew_road` (`:556`) → pier-less dispatch | `:669` |
+| 5 | no pier → DROP (`w.c.wire_drop`) | `:674` |
+| 6 | `ack` → `Peeroleum_take_ack`, never inboxed | `:728` |
+| 7 | ephemeral lane: `ping pong run_phase advertise swarm_hi pulse` | `:754` |
+| 8 | `no_protocol` · `repli_want` · `ferry_want`/`ferry_cancel` (direct) | `:769-790` |
+| 9 | everything else → `%req:unemit`, drained serially by `req_unemit` | `:796`, `:1140` |
+
+**"Verified" in the inbox means exactly two things** (`req_unemit:1147-1162`): the pre-Ud gate (no `%Ud` on
+ the Pier ⇒ only `hello|noop` pass; `%Ud` is set by `hear_hello` on a pubkey PREFIX compare, not a signature)
+  and body integrity (`sha256(buffer) === body_hash` when present). **There is no `header.sign` check anywhere
+   in Peeroleum.g.** Authenticity is the HANDLER's job: for the 24 swarm kinds it is `Swarm_arm`'s funnel
+    (`Swarm.g:1423`): recipient = `Swarm_account_of`; the crew-claim/theft drop for `pier_hello|swarm_hi|pulse`;
+     the VOUCHER gate (`sealed && station_up && type !== 'pier_hello'` ⇒ `Swarm_voucher_ok`, `:1497`); the reach
+      lane's own voucher (`:1535`). `Peeroleum_on` writes `w.c.on[type]`; the inbox prefers it for anything but
+       `hello|trust`; an unregistered type on a ready peer draws `no_protocol` back.
+
+**3.4.1 The table.** "funnel" = the Swarm_arm gates above. Families: spine · social · music-app · ferry ·
+ lies-control.
+
+| type | handler | family | gate | does |
+|---|---|---|---|---|
+| `hello` | `hear_hello` Peeroleum:147 | spine | pubkey prefix-match | sets `%Ud` |
+| `trust` | `hear_trust` :158 | spine | **NONE** | records `%heard` |
+| `noop` / `ack` / `no_protocol` | :1175 / :728 / :769 | spine | pre-Ud exempt / pier / **NONE** | ack · retire emit · "peer lacks type" |
+| `pier_hello` | `Swarm_hello` Swarm:2797 | social | Idzeug: `token_parse` · `prepub===mine` · `page_bound` · `iz_find` | first-contact seal |
+| `pier_accept` | `Swarm_accept` :3011 | social | `page_bound` + awaiting-ceremony prepub match, or `verify_grant` | seals the pier |
+| `pier_confirm` | `Swarm_confirmed` :3131 | social | `page_bound` + pier must already exist | reciprocal grant |
+| `pier_reject` | `Swarm_rejected` :3101 | social | funnel; folds only own `awaiting` + pub match | books a rebuff |
+| `reinvite` | `Swarm_reinvited` :3189 | social | `verify_reinvite` | routes a chain invite |
+| `reinvite_honour` / `reinvite_seal` | :3232 / :3261 | social | `page_bound` · `verify_grant` · `for===my pub` · no escalation | seals B–C / reciprocal |
+| `reinvite_ok` | :3288 | social | `verifyHeader(ok,[ok.pub])` + holder match | marks Idzeug spent |
+| `crew` | `Swarm_crew_heard` :241 | social | **soul-signed** `verifyHeader` over the ledger + `verify_revoke` per not | replaces the ledger |
+| `charter` | `Swarm_charter_heard` :7228 | social | funnel voucher; absorb verifies soul sig + highest era | absorbs family roster |
+| `roster` | `Swarm_roster_heard` :7002 | social | **funnel only — plain rows, unsigned** | writes `%Body` rows |
+| `swarm_hi` | `Swarm_heard_hi` :2687 | social | `page.prepub` + sealed pier must exist | epoch + presence |
+| `pulse` | funnel :1545 | social | funnel voucher | `heard_at`, era |
+| `reach` | `Swarm_reach_road` :6543 | social | rostered `%Body` prefix OR `Swarm_pier_live(p,'Music')` + `reach_vouched` | books work on me |
+| `reach_done` | `Swarm_reach_ack` :6513 | social | funnel `reach_vouched`; handler matches (to,of,for), **no sender check** | settles my reach |
+| `ive_got` | `Swarm_ive_got` :4469 | music-app | sealed pier OR crewmate, else rebuff | boast counts |
+| `suggest` / `suggest_got` | :4142 / :4160 | music-app | sealed pier (+ id match) | mints / retires a `%Suggest` |
+| `repli_ready` | `Swarm_repli_ready` :4595 | music-app | sealed pier + route; then `Swarm_pier_live(p,'Music')` | triggers a catalog offer |
+| `repli_want` | `Repli_serve_want` Repli:946 | music-app | `Repli_allowed` → `Swarm_share_granted` → `Swarm_pier_live(p,'Music')` | serves a page |
+| `repli_lines` / `repli_page` | :1172 / :1233 | music-app | `Repli_rx_ok(w,pier)` | merges mirror / stashes bytes |
+| `repli_parked` / `repli_missed` / `repli_no_idspace` | :670 / :715 / :756 | music-app | **NONE** (pier arg dropped at :1516-1518) | suspends RTO / notes miss / terminal |
+| `take` / `take_got` | `Heard_hand_land` / `_got` Heard:688/707 | music-app | **NOT REGISTERED** at Swarm:1802 — mail-path only | lands / marks a handed ♥ |
+| `ferry` | `Swarm_ferry_park` :7672 | ferry | funnel voucher only, no from-check; consume needs human + `#fc` | parks a sealed account |
+| `ferry_want` | funnel :1593 | ferry | `Swarm_pier_linklive` (MyCave∥MyCaptain) + secret + serial + not ferrying | re-raises the confirm |
+| `ferry_cancel` / `ferry_held` | :8251 / :1668 | ferry | phase + `pubmatch(from)` / own phase `sent|held` | folds "connecting…" / delivery ack |
+| `ferry_got` | funnel :1682 | ferry | `top.c.humdinger \|\| top.c.consenter` | closes ceremony, hands helm |
+| `rungo` / `become_book` / `ghost_ledger` | LiesLies:889 / LiesFunk:1981 / LiesLies:987 | lies-control | **role-only** (runner) + pier | run authority / drive a Book / replace ledger |
+| `run_result` / `run_phase` / `advertise` | LiesFunk:3772 / :3803 / LiesLies:1808 | lies-control | role-only (editor); `advertise` **NONE** | outcome / blip / runner roster |
+| `ghost_compile` | `Lies_ghost_compile_recv` LiesLies:831 | lies-control | **soul-signed**: `verifyHeader(…, browserTrustedPubs())` | forces a dock compile |
+| `grant_offer` | LiesFunk:596 | lies-control | `prepubOf(atom.for)===me` + issuer+sig verdict | installs a `%Grant` |
+| `wormhole_beg` / `wormhole_req` / `wormhole_reply` | :616 / :662 / :837 | lies-control | **NONE** / `verify_grant`+`to==='remoteWormhole'`+`by===idento.pub` / corr match | disk access ask / serve / bytes back |
+| `ping` / `pong` | LiesLies:1555 / :1631 | lies-control | **NONE** | heartbeat |
+| `runner_ask` | `Lies_runner_ask_recv` LiesFunk:2489 | lies-control | see 3.4.3 | the CLI control plane |
+
+**Asymmetries the table makes visible** (a gate missing where a sibling has one): `repli_parked|missed|no_idspace`
+ take no pier while `repli_lines|page` check `Repli_rx_ok`; `wormhole_beg` is open while `wormhole_req` verifies a
+  grant; `roster` writes `%Body` rows unsigned while `charter` demands a soul signature (the roster is a routing
+   cache — see `crew-answers-not-the-roster` — so unsigned is arguably fine, but say so); `take`/`take_got` are
+    dispatched at `:1585` but absent from the registration array at `:1802`, so a handed ♥ cannot arrive over the
+     wire at all.
+
+**3.4.2 The grant vocabulary.** ONE reader: `Swarm_pier_live(pier, feature)` (`Swarm.g:5485`) — a link-stamp
+ arm (`pier.sc.link && !unlinked && post === post_from_feature(f)`, no `NotGrant`), else `Grant:feature`
+  particles minus a matching `NotGrant` by `(by, for)`.
+
+| Grant | issued by | unlocks | revoked at |
+|---|---|---|---|
+| **`Music`** | mutual mint at `Swarm_seal` (`:3364`) from an `?Iz` invite; crew-shared at `Swarm_accept` | the WHOLE Repli transport (`Repli_allowed` every leg) · `Swarm_gossip_music` · `ive_got_tally` · `Swarm_offer_now` · `share_beat` · `serve_ask` · the friend arm of **`reach`** (`:6557`) · `Radio.g:2083,2354` · `Swarm_dial_piers` (`:1136`) · `Swarm_probe_station` (`:1194`) · `Swarm_pier_granted` | `Swarm_revoke` (`:5402`) → `NotGrant`; `Swarm_pier_forget` revokes every feature |
+| **`Crew`** | the Captain's soul key, `Swarm_crew_grant` (`:114`), homed on `/Crew/mate` | the cert-crew road in `Swarm_voucher_ok` · `pier_granted` · `pier_retired` · `Swarm_station_routes` | soul-signed `NotGrant:'Crew'` via `Swarm_crew_eject` (`:335`), absorbed in `crew_heard` |
+| **`MyCave`** / **`MyCaptain`** | the link ceremony (`LinkDevice.svelte:222` → `Swarm_ferry_link`), sealed at `Swarm_accept`'s link arm | `Swarm_pier_linklive` (`:5510`) ⇒ `ferry_want` service, `ferry_poke`, confirm parking; `MyCaptain` drives the helm hand-over at `ferry_got` | `Swarm_cave_unbond` (`:5618`); tombstone read at `:1645` |
+| **`link`** | not a Grant — the chrysalis STAMP `pier.sc.link=1, post` at `Swarm_seal:3375` | first arm of `pier_live` / `pier_linklive` | `pier.sc.unlinked` |
+| **`remoteWormhole`** | the editor's cluster idento (`Grant.ts`) | `wormhole_req` serve | `NotGrant` check is a TODO (`LiesFunk:716`) |
+
+**The `Music` bundle — the thing the owner named.** `'Music'` is the hardcoded gate for things that are not
+ music: the whole Repli transport, presence dialling, station probing, boast tallies, AND cross-node procedure
+  booking (`Swarm_reach_road:6557` — "the same Music grant that lets it stream from me lets it ask me to
+   press"). One friendship grant confers streaming + gossip + transport routing + remote work-booking together.
+    The fix is not more `'Music'` checks; it is deciding the next WORDS (candidates: `Serve` for repli legs,
+     `Reach` for work-booking, `Pool` for SP circulation — each a `Grant:<word>` minted at the same seal, so a
+      revoke can be partial) and declaring them HERE before any handler checks them. §2.0.1's `{live:'X'}` is
+       already shaped for it.
+
+**3.4.3 `runner_ask` — the ops by what they can do, and the exact gate.** Common preamble for every op
+ (`LiesFunk:2493-2517`): `corr` + `op` required; the optional `ask.pub` self-filter; `Lies_engage_touch` —
+  which REFRESHES the lease, never checks it. `client` is a self-asserted string. No signature, no grant.
+
+| group | ops | gate |
+|---|---|---|
+| read-only introspection | `reactap ping probe console minisnap world state supervisor rungos steps snap diff snaps trace assertions shot why svg face crew atlas_* electrode dump` | **NONE** beyond the `pub` filter — any tab, any relay socket, a humdinger included |
+| run-driving | `run release retain accept declare` | `ro_only` refusal (humdinger ∧ ¬runner); `run` also `Lies_engage_check` (the don't-steal lease, 10 min TTL, any client may name itself) |
+| mutating the account | `tidy` (crew · rebuffs · forget:<prefix> → `Swarm_pier_forget` mints signed NotGrants) · `poke` (hardcoded `POKES` allowlist) · `socklog` | `tidy`: `socklog_armed()` IS the consent + a live self; `poke`: allowlist; `socklog`: reload only if `Lies_is_runner` |
+| code-loading | `ghost_load` · `reload` | `ro_only` refusal; `ghost_load` path-bound `/^Ghost\/[A-Za-z]+\/[A-Za-z_]+\.g$/` (only a `.go` the compiler already wrote); `reload` runner-only |
+
+Upstream of all of it, code lands via the relay's `gen_write` (`relay.ts:711`): with `CLUSTER_TRUSTED_PUBS` set
+ it demands `body_hash` + `verifyHeader(header, trusted)`; unset it warn-and-allows — the relay's own comment
+  calls it "the relay's one RCE surface". `@channel` names are first-come; `who` answers only a hello-bound socket.
+
+**What this section decides.** (1) The debug plane is a fourth army — not spine, not social — and its gate
+ today is REACHABILITY of the relay. On localhost that is the machine; on djamsend it is the internet. The rail
+  to close it exists (`ghost_compile` already does it: sign the ask with the cluster key, verify tab-side against
+   `browserTrustedPubs()`); the read-only group can stay open on a LAN relay by policy, but say so in one place.
+    (2) No handler checks a signature in the spine — the voucher gate in `Swarm_arm` is the whole of wire
+     authenticity, so a new social kind MUST register through `Swarm_arm`'s array (`:1802`) or it is either
+      unreachable (`take`) or ungated. (3) The next grant word is decided in 3.4.2, not by another `'Music'`.
 
 ---
 

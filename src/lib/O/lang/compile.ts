@@ -218,7 +218,7 @@ export const LANG_COMPILE = {
         const HEADING_RE = /^(?:ATX|Setext)Heading([1-6])$/
         const words: Array<{ label?: string, depth?: number, from: number, to: number,
                              line: number, region_path?: string[],
-                             link?: 1, kind?: 'wiki' | 'file', target?: string, at_line?: number }> = []
+                             link?: 1, kind?: 'wiki' | 'file' | 'code', target?: string, at_line?: number }> = []
         // the open-heading chain ({label, level} per ancestor in scope): a new heading
         //  pops every open heading of equal-or-deeper level, then becomes the innermost.
         const stack: Array<{ label: string, level: number }> = []
@@ -252,6 +252,20 @@ export const LANG_COMPILE = {
         //  found live 2026-09-06 via the Atlas missing-link lint flagging two real, existing files
         //   as gone.  A lookbehind for "not a filename char right before" replaces the \b.
         const FILE_RE = /(?<![A-Za-z0-9_./-])([A-Za-z_][A-Za-z0-9_./-]*\.(?:svelte|ts|g|mjs|md)):(\d+)/g
+        // CODE — a `backticked_identifier` in prose (2026-09-08, the owner: *"we need a whole language of
+        //  links you can do in markdown"*).  The commonest reference in this corpus by far is a method or
+        //   a key named in backticks, and it had NO link form: the vocabulary was two (wiki, file:line)
+        //    while every doc points at code on every page.
+        //  The shape is the filter: an UNDERSCORE.  Measured over spec/'s 130 docs — 15,160 backticked
+        //   identifier-ish tokens, but only 8,834 (2,644 distinct, ~68/doc) contain an underscore, and
+        //    that subset is almost purely real symbols (`Peeroleum_deliver`, `snap_H`, `Ra_pull_beat`,
+        //     `CREDULER_GHOSTS`) because ordinary prose words do not have one.  The 6,000 without are
+        //      `sc`, `true`, `dige`, `ok` — the noise the 2026-09-05 census warned about for bare
+        //       `Name.ext` mentions, avoided the same way: pick the form that cannot be an English word.
+        //  RESOLUTION IS NOT DONE HERE and deliberately so: the collector cannot know the corpus, so it
+        //   emits every candidate and the READER (Lagoon, over Atlas's def index) decides which are real
+        //    links.  Atlas keeps; Lagoon asks — an unresolvable target is simply a mention, not rot.
+        const CODE_RE = /`([A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]+)`/g
         for (let ln = 1; ln <= doc.lines; ln++) {
             const dline = doc.line(ln)
             const text  = dline.text
@@ -261,6 +275,10 @@ export const LANG_COMPILE = {
             }
             for (const m of text.matchAll(FILE_RE)) {
                 words.push({ link: 1, kind: 'file', target: m[1], at_line: +m[2], from: dline.from + m.index!,
+                            to: dline.from + m.index! + m[0].length, line: ln } as any)
+            }
+            for (const m of text.matchAll(CODE_RE)) {
+                words.push({ link: 1, kind: 'code', target: m[1], from: dline.from + m.index!,
                             to: dline.from + m.index! + m[0].length, line: ln } as any)
             }
         }

@@ -46,6 +46,7 @@
     import LangCurse from "./LangCurse.svelte";   // %Interest cluster + Lang↔Lies channel (D7 rename of Interest.svelte)
     import Editron from "./Editron.svelte";
     import Educarium from "$lib/L/Educarium.svelte";   // BigWordland's Book recipe — Editron's sibling, living in L/
+    import Hackarium from "$lib/L/Hackarium.svelte";   // the HACKER room — Educarium's sibling, deliberately not an editor
     import Thangs from "./Thangs.svelte";
     import Census from "./Census.svelte";     // the wander's learned directory census, made durable (census_codec.ts)
 
@@ -92,3 +93,7 @@
 <!-- Educarium Book recipe (Run_A_Educarium) — the BigWordland room's editor, ?E=Educarium
      (and /BigWordland's default); same machine as Editron, its own observable boot story -->
 <Educarium {M} />
+<!-- Hackarium Book recipe (Run_A_Hackarium) — the code-wandering room, ?H=Hackarium.  Editor SURFACE,
+     none of the editor's duties, no relay channel: safe to open beside a working editor (which a second
+     ?E= tab is not — it evicts the human's Cluster row).  Stands Atlas + Lagoon itself. -->
+<Hackarium {M} />

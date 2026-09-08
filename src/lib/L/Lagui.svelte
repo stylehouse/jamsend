@@ -1,0 +1,309 @@
+<script lang="ts">
+    // Lagui — the Lagoon face.  The first SURFACE over the censuses, and the answer to the owner's
+    //  "where's all the work?" (2026-09-08): until this existed, everything Atlas and Lagoon know was
+    //   reachable only from the CLI, which is not a place anyone lives.
+    //
+    //  It mounts wherever Lagoon stands, which is a RUNNER tab (the L ghosts are not in the spine
+    //   manifest and `ghost_load` is refused on a humdinger, so /BigWordland — role 'word' — cannot
+    //    host them; see Lagoon_todo §4 and Wordland_todo §5.0).
+    //
+    //  DELIBERATELY NOT A NEW POSE MODEL (`Lens_posable_TODO`: "don't build until the pose model is
+    //   designed").  One panel, three stacked readings, no placement, no anchoring.  The erupting-
+    //    structures idea (things you climb to and then ARRANGE) waits for that model.
+    //
+    //  It KEEPS NOTHING — every number here is asked of the reader on the tick it is drawn, exactly as
+    //   the CLI asks.  A face that cached would be the same two-truths mistake the layer exists to
+    //    prevent, one storey up.
+    let { H } = $props()
+
+    // the three questions, asked live.  `version` is the reactive tripwire: every C bump re-runs these.
+    function lagoon_w(): any {
+        const A = H?.top_House?.()?.o?.({ A: 'Lagoon' })?.[0]
+        return A?.o?.({ w: 'Lagoon' })?.[0] ?? null
+    }
+    function atlas_w(): any {
+        const A = H?.top_House?.()?.o?.({ A: 'Atlas' })?.[0]
+        return A?.o?.({ w: 'Atlas' })?.[0] ?? null
+    }
+
+    // STICKY, for the same reason the index is (below): a re-stand drops and re-creates `A:Atlas`, and
+    //  a derived off its version flipped the header to "no A:Atlas standing" and back several times a
+    //   second.  Each frame was true; the sequence was useless.  Keep the last good reading and mark it.
+    let census = $state<any>(null)
+    function ask_census() {
+        const aw = atlas_w()
+        if (!aw) return
+        const row = aw.o({ see: 'atlas' })[0]?.sc ?? null
+        if (row) census = { docs: row.docs, mapped: row.mapped, errors: row.errors }
+    }
+
+    // ── the lint, folded to what a person can act on: rotted doc links first (the owner's ruling —
+    //  "higher level pointers or sending you around fixing|obsoleting things is the way"), so each row
+    //   is a piece of WORK with a location, not a marker. ──
+    let lint = $state<any>(null)
+    let lint_busy = $state(false)
+    function run_lint() {
+        const lw = lagoon_w()
+        if (!lw || lint_busy) return
+        lint_busy = true
+        try { lint = (H as any).Lagoon_lint(lw) } finally { lint_busy = false }
+    }
+
+    // ── THE INDEX, ASKED ON A LEASH.
+    //  The first cut made this a `$derived` off the world's `version`, which was a tailspin: Atlas bumps
+    //   its world on every mapped doc (715 of them) and Lagoon's report row bumped every tick, so a walk
+    //    over every Doc's every def re-ran on each bump.  The owner, watching: *"now it's tailspinning…
+    //     flicking from that to `no A:Atlas standing`"*.
+    //  Two rules, both of them the plant's:
+    //   · ASK ON A CADENCE, not on every twitch — a keystroke asks at once, ambient change asks at 1.2s.
+    //   · NOTHING VANISHES, IT THINS — a momentarily absent census (a re-stand drops and re-creates
+    //      `A:Atlas`) keeps the last good list and dims it, instead of flipping the panel to an error.
+    //       That flicker WAS the census being re-stood underneath; the panel was telling the truth
+    //        several times a second, which is not the same as being useful.
+    let q = $state('')
+    let index = $state<any>(null)
+    let stale = $state(false)
+    let asked_q = ''
+
+    function ask_index() {
+        const lw = lagoon_w()
+        if (!lw) { stale = !!index; return }
+        const out = (H as any).Lagoon_defs?.(lw, q, 300) ?? null
+        if (!out || out.error) { stale = !!index; if (!index) index = out; return }
+        index = out
+        stale = false
+        asked_q = q
+    }
+
+    $effect(() => {
+        q                                  // a keystroke is a human waiting: ask now
+        ask_index()
+    })
+    // ── THE LARGER OBJECTS.  The resting state is FAMILIES, not three thousand methods: names already
+    //  carry the structure, so stemming the first token buckets the corpus into its subsystems without
+    //   anyone declaring them.  Click one to narrow the list below it.  Same leash as the index. ──
+    let fams = $state<any>(null)
+    function ask_fams() {
+        const lw = lagoon_w()
+        if (!lw) return
+        const out = (H as any).Lagoon_families?.(lw, 60)
+        if (out && !out.error) fams = out
+    }
+    $effect(() => {
+        ask_fams(); ask_census()
+        const iv = setInterval(() => { ask_census(); if (q === asked_q) { ask_index(); ask_fams() } }, 1200)
+        return () => clearInterval(iv)
+    })
+
+    // ── who calls X — the little structure that ERUPTS when you climb: pick a row and its callers
+    //  grow under it, in place.  No panel, no placement (the pose model is still unbuilt). ──
+    let opened = $state('')
+    let callers = $state<any[] | null>(null)
+    function climb(nm: string) {
+        if (opened === nm) { opened = ''; callers = null; return }
+        const lw = lagoon_w()
+        if (!lw) return
+        const out = (H as any).Lagoon_callers(lw, nm)
+        callers = Array.isArray(out) ? out : []
+        opened = nm
+    }
+
+    // ── the measured picture, when the tap has been armed at all.  Absent is the normal state: the
+    //  tap ships disarmed and is parked (Electrode_todo §0), so this reads "not armed" almost always. ──
+    let join = $state<any>(null)
+    function run_join() {
+        const lw = lagoon_w()
+        if (!lw) return
+        join = (H as any).Lagoon_join(lw, 12)
+    }
+
+    const tail = (p: string) => (p ?? '').split('/').filter(Boolean).slice(-1)[0] ?? p
+    // A hit click is the SAME recorded delivery the searchbar makes — one elvisto, landed in today's
+    //  Aside (Wordland_todo §5: reuse the navigation, don't invent one).
+    //  ⚠ `point` IS A STRING and nothing else: a def NAME, or `text:<words>` for the text bridge
+    //   (`Searchbar.svelte:62-65`, and `e_Lies_ghost_pick` reads `e.sc.point as string`).  The first cut
+    //    passed `{ line }` — an OBJECT — straight into `sc`, and the encoder branded every Point it
+    //     recorded: `Point {"ref":{"method":"Object()"}}` in `wormhole/Aside/2026-09-08/toc.snap`.  That
+    //      is CLAUDE.md's "an object value in .sc is fatal" and its corollary that such a marker is a
+    //       MINT BUG, not furniture.  The trail was being written the whole time; every Point in it was
+    //        junk.  A landing target is a NAME.
+    const goto = (doc: string, point?: string) =>
+        H?.i_elvisto?.('Lies/Lies', 'Lies_ghost_pick', point ? { path: doc, point } : { path: doc })
+</script>
+
+<div class="lag">
+    <div class="lag-top">
+        <span class="lag-name">◈ Lagoon</span>
+        {#if census}
+            <span class="lag-census">{census.docs} docs · {census.mapped} mapped{#if +(census.errors ?? 0) > 0}<span class="bad"> · {census.errors} errors</span>{/if}</span>
+        {:else}
+            <span class="lag-census bad">no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas</span>
+        {/if}
+    </div>
+
+    <!-- the larger objects: the corpus bucketed by the stem of each name's first token -->
+    {#if fams}
+        <div class="lag-fams">
+            {#each fams.families as f (f.stem)}
+                <button class="lag-fam" class:on={q.toLowerCase().startsWith(f.stem)}
+                        title="{f.defs} defs across {f.docs} docs" onclick={() => q = (q.toLowerCase().startsWith(f.stem) ? '' : f.head)}>
+                    {f.head}<span class="n">{f.defs}</span>
+                </button>
+            {/each}
+            <span class="lag-note">{fams.total} families · {fams.defs_total} defs · {fams.regions} regions</span>
+        </div>
+    {/if}
+
+    <!-- the index — the resting state is the list itself -->
+    <div class="lag-row">
+        <input class="lag-in" bind:value={q} placeholder="every method — type to narrow, or doc:Heist to scope" />
+        {#if index && !index.error}
+            <span class="lag-note" class:stale>{index.shown === index.total ? index.total : `${index.shown} of ${index.total}`} defs · {index.docs} docs{stale ? ' · census re-standing…' : ''}</span>
+        {/if}
+    </div>
+    {#if index?.error}
+        <div class="lag-none bad">{index.error}</div>
+    {:else if index}
+        <div class="lag-out tall">
+            {#each index.defs as d (d.doc + d.name + d.line)}
+                <div class="lag-grow">
+                    <div class="lag-row2">
+                        <button class="lag-hit" onclick={() => goto(d.doc, d.name)} title="{d.doc}:{d.line} — open & land on it">
+                            <span class="k">ƒ</span>
+                            <span class="via">{d.name}</span>
+                            <span class="doc">{tail(d.doc)}:{d.line}</span>
+                        </button>
+                        <button class="lag-climb" class:on={opened === d.name}
+                                title="who calls {d.name}" onclick={() => climb(d.name)}>↰</button>
+                    </div>
+                    {#if opened === d.name}
+                        <div class="lag-sprout">
+                            {#if !callers || callers.length === 0}
+                                <div class="lag-none">nothing calls it — an orphan, or reached by name (a do_fn, a UI handler, <code>this[name]</code> dispatch)</div>
+                            {:else}
+                                {#each callers as c}
+                                    <button class="lag-hit" onclick={() => goto(c.doc, c.via)} title={c.doc}>
+                                        <span class="k">{c.kind === 'elvisto' ? '⇢' : '←'}</span>
+                                        <span class="via">{c.via ?? '—'}</span>
+                                        <span class="doc">{tail(c.doc)}:{c.line}</span>
+                                    </button>
+                                {/each}
+                            {/if}
+                        </div>
+                    {/if}
+                </div>
+            {/each}
+            {#if index.total > index.shown}<div class="lag-none">…{index.total - index.shown} more — narrow it</div>{/if}
+        </div>
+    {/if}
+
+    <!-- story 2 — the documents that are lying, as a work queue -->
+    <div class="lag-row">
+        <button class="lag-b" onclick={run_lint} disabled={lint_busy}>{lint_busy ? 'reading…' : 'rotted links'}</button>
+        {#if lint && !lint.error}
+            <span class="lag-note">{lint.file_links} links · <b class="bad">{lint.missing.length}</b> gone · <b>{lint.beyond_eof.length}</b> past EOF · {lint.orphans_total} orphan defs</span>
+        {/if}
+    </div>
+    {#if lint?.error}
+        <div class="lag-none bad">{lint.error}</div>
+    {:else if lint}
+        <div class="lag-out">
+            {#each lint.missing.slice(0, 24) as m}
+                <button class="lag-hit" onclick={() => goto(m.doc, 'text:' + m.target)} title="{m.doc}:{m.line} points at {m.target}">
+                    <span class="k bad">✕</span>
+                    <span class="via">{m.target}</span>
+                    <span class="doc">{tail(m.doc)}:{m.line}</span>
+                </button>
+            {/each}
+            {#if lint.missing.length > 24}<div class="lag-none">…and {lint.missing.length - 24} more</div>{/if}
+        </div>
+    {/if}
+
+    <!-- story 3 — what a run actually touched -->
+    <div class="lag-row">
+        <button class="lag-b" onclick={run_join}>declared vs measured</button>
+        {#if join && !join.error}
+            <span class="lag-note">{join.ran_methods} ran · {join.pairs_ran}/{join.declared_pairs} pairs → <b>{join.coverage}%</b> · {join.never_ran} never ran · {join.undeclared} dynamic</span>
+        {/if}
+    </div>
+    {#if join?.error}
+        <div class="lag-none">{join.error}</div>
+    {:else if join}
+        <div class="lag-out">
+            {#each join.never_ran_top.slice(0, 12) as n}
+                <div class="lag-hit flat"><span class="k">↛</span><span class="via">{n.via}</span><span class="doc">{n.callee}</span></div>
+            {/each}
+        </div>
+    {/if}
+</div>
+
+<style>
+    .lag {
+        font-family: monospace; font-size: 0.78rem; color: #b8c2d8;
+        background: rgba(18, 19, 30, 0.96);
+        border: 1px solid rgba(120, 140, 195, 0.22); border-radius: 10px;
+        padding: 0.6rem 0.75rem; display: flex; flex-direction: column; gap: 0.45rem; min-width: 0;
+    }
+    .lag-top { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+    .lag-name { color: #8fd3c8; letter-spacing: 0.08em; }
+    .lag-census { color: rgba(150, 170, 205, 0.8); }
+    .bad { color: #e08a8a; }
+    .lag-row { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+    .lag-in {
+        flex: 1; min-width: 10rem; max-width: 22rem; font-family: inherit; font-size: inherit;
+        background: rgba(11, 11, 18, 0.9); color: #dbe4f7;
+        border: 1px solid rgba(120, 140, 195, 0.28); border-radius: 6px; padding: 0.18rem 0.45rem;
+    }
+    .lag-in:focus { outline: none; border-color: rgba(150, 190, 240, 0.6); }
+    .lag-b {
+        font-family: inherit; font-size: inherit; cursor: pointer; flex: none;
+        background: none; color: rgba(160, 180, 215, 0.9);
+        border: 1px solid rgba(120, 140, 195, 0.28); border-radius: 6px; padding: 0.18rem 0.55rem;
+    }
+    .lag-b:hover { color: #e8f0ff; border-color: rgba(150, 190, 240, 0.6); }
+    .lag-b:disabled { opacity: 0.5; cursor: default; }
+    .lag-note { color: rgba(150, 170, 205, 0.75); }
+    .lag-out {
+        display: flex; flex-direction: column; gap: 0.05rem;
+        max-height: 15rem; overflow: auto; padding-left: 0.1rem;
+    }
+    .lag-out.tall { max-height: 26rem; }
+    /* the families — the larger objects, sized by nothing yet (dose comes later, Lagoon_todo §3) */
+    .lag-fams { display: flex; flex-wrap: wrap; gap: 0.2rem; align-items: baseline; max-height: 7rem; overflow: auto; }
+    .lag-fam {
+        background: none; cursor: pointer; font-family: inherit; font-size: 0.74rem;
+        border: 1px solid rgba(120, 140, 195, 0.22); border-radius: 6px;
+        color: rgba(165, 185, 215, 0.9); padding: 0.05rem 0.4rem;
+    }
+    .lag-fam:hover { color: #e8f0ff; border-color: rgba(150, 190, 240, 0.55); }
+    .lag-fam.on { color: #8fd3c8; border-color: rgba(143, 211, 200, 0.6); background: rgba(143, 211, 200, 0.1); }
+    .lag-fam .n { color: rgba(140, 160, 200, 0.55); margin-left: 0.3em; font-size: 0.9em; }
+    .lag-note.stale { color: rgba(224, 180, 110, 0.75); }
+    .lag-row2 { display: flex; align-items: baseline; gap: 0.2rem; }
+    /* the erupted structure: callers grow UNDER the row you climbed from, indented to show whose they
+       are.  No placement and no pose — the list's own order is the arrangement (Lens_posable's gate). */
+    .lag-sprout {
+        display: flex; flex-direction: column; gap: 0.02rem;
+        margin: 0.05rem 0 0.25rem 1.1rem; padding-left: 0.5rem;
+        border-left: 1px solid rgba(143, 211, 200, 0.35);
+    }
+    .lag-climb {
+        background: none; border: none; cursor: pointer; font-family: inherit;
+        font-size: 0.8rem; line-height: 1; color: rgba(140, 160, 200, 0.45);
+        padding: 0 0.3rem; flex: none; border-radius: 4px;
+    }
+    .lag-climb:hover { color: #8fd3c8; background: rgba(143, 211, 200, 0.12); }
+    .lag-climb.on { color: #8fd3c8; }
+    .lag-none { color: rgba(140, 160, 200, 0.6); padding: 0.15rem 0.25rem; }
+    .lag-hit {
+        display: flex; align-items: baseline; gap: 0.5rem; width: 100%;
+        background: none; border: none; font-family: inherit; font-size: inherit;
+        color: #aab; text-align: left; cursor: pointer;
+        padding: 0.1rem 0.3rem; border-radius: 4px;
+    }
+    .lag-hit.flat { cursor: default; }
+    .lag-hit:hover:not(.flat) { background: rgba(120, 150, 210, 0.14); color: #e8f0ff; }
+    .lag-hit .k { color: #7a8fa8; flex: none; width: 1rem; }
+    .lag-hit .via { color: #cfe0ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lag-hit .doc { color: #6a7c99; margin-left: auto; white-space: nowrap; flex: none; }
+</style>

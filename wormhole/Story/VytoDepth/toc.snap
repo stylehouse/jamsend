@@ -5,7 +5,6 @@ story:VytoDepth
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.01
-      sample=0.008,at=1786459226
       sample=0.006,at=1786459247
       sample=0.006,at=1786459258
       sample=0.007,at=1786459276
@@ -15,8 +14,8 @@ story:VytoDepth
       sample=0.009,at=1786471303
       sample=0.011,at=1786471381
       sample=0.011,at=1786471723
+      sample=0.012,at=1788854112
     TimeTotal:step,avg=0.004
-      sample=0.003,at=1786459226
       sample=0.002,at=1786459247
       sample=0.002,at=1786459258
       sample=0.002,at=1786459276
@@ -26,6 +25,7 @@ story:VytoDepth
       sample=0.003,at=1786471303
       sample=0.004,at=1786471381
       sample=0.004,at=1786471723
+      sample=0.004,at=1788854112
   step,dige:9a8e2eb69925ec37
   step=2,dige:4d052f82270cd646,desc:seed a rig — a modest six-child parent beside a heavy sibling and a mid one
   step=3,dige:3c5db30f538b18c6,desc:commission nested — six children must all take real cells inside the small parent

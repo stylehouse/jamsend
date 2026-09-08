@@ -1,0 +1,495 @@
+// Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
+//  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
+//   the behaviour: shallow enclosed water where structures ERUPT — reefs, atolls — and get arranged
+//    around the place.  *"little structures erupt when we go climbing call trees."*
+//
+//  WHY IT EXISTS — the concept line (Wordland_todo §1.1, ruled 2026-09-08):
+//
+//        ATLAS KEEPS.  LAGOON ASKS.
+//
+//   Atlas is a census: the compiler's index of every doc, kept fresh.  One idea.  But it had drifted to
+//    12 keeping / 4 asking, one convenience at a time — no single addition wrong, which is what
+//     globulation looks like from the inside.  The test for anything new is a single question: *does it
+//      change what is HELD, or ask a question OF what is held?*  Keeping is Atlas.  Asking is here.
+//
+//  MOVED IN, 2026-09-08, unchanged but for their names and where they look the world up:
+//    Lagoon_callers   ← Atlas_callers    who calls X, with the doc and the enclosing method
+//    Lagoon_lint      ← Atlas_lint       rotted file:line links, drifted lines, orphan defs
+//    Lagoon_resolve   ← Atlas_resolve    (lint's helper)
+//    Lagoon_unproven  ← Atlas_unproven   which %see sentences no Book fixture recorded
+//    Lagoon_join      ← Electrode_join   declared (Atlas) vs measured (Electrode) — belongs to neither
+//
+//   `Atlas_unproven` was the clearest misfit and the reason the line got drawn: it does not ask of the
+//    census at all, it opens `wormhole/Story/**/*.snap` off disk.  A second source and a second concern
+//     inside a code index, mitigated with an opt-in flag instead of being given a home.  This is the home.
+//
+//  THE TRAP THIS GHOST MUST NOT FALL INTO — *Lagoon must not start keeping.*  A reader may cache what it
+//   can throw away and rebuild; it may never hold something Atlas cannot recompute, or there are two
+//    truths.  Every verb here is a pure read over particles it does not own.
+//
+//  WHERE IT LOOKS: `A:Atlas/w:Atlas` and `A:Electrode/w:Electrode` on the top House, found by name and
+//   never held — so a re-stand of either census is picked up on the next ask with no invalidation.
+//    Nothing is minted; nothing here writes.
+
+IMPORT()
+    import Lagui from "$lib/L/Lagui.svelte"
+    // Copies of the constants the moved verbs need.  Module consts do not cross ghosts, and a shared
+    //  module for four regexes would be a third thing to keep in step — the duplication is deliberate
+    //   and each is annotated with its twin in Atlas.g so a drift is greppable.
+    const LAGOON_EXT        = { g: 1, svelte: 1, ts: 1, md: 1 }      // twin: ATLAS_EXT
+    // StemHive's camel|snake splitter, verbatim (LiesFunk.svelte:1484) — see Lagoon_families
+    const LAGOON_TOKEN      = /[A-Z]+(?![a-z])|[A-Z][a-z]+|[a-z]+|[0-9]+/g
+    const LAGOON_DISPATCHED = /^(req_|e_|Run_A_|_)/                  // twin: ATLAS_DISPATCHED
+    const SNAP_NAME_RE      = /^\d+\.snap$/                          // twin: Atlas.g's own
+    const SEE_LINE_RE       = /^\s*see:([^,\n]+)/gm                  // twin: Atlas.g's own
+
+// Lagoon(A, w) — the do_fn.  A reader has no work of its own: every verb is called by a query (the CLI
+//  op, a Book, later the room).  So the drive only reports what it can see, which is also the liveness
+//   tell a caller wants — `see:lagoon,atlas,electrode` says which censuses are standing.
+// WRITE ONLY ON CHANGE (2026-09-08).  This stamped `atlas:<count>` every single tick, and a write is a
+//  version bump whether or not the value moved — so the world bumped forever, and anything watching it
+//   (the face) re-derived forever with it.  The owner watching the panel: *"now it's tailspinning".*
+//  A report row is a REPORT: it may only move when what it reports moves.  Cheap to get right, and the
+//   same discipline `Atlas_report` already keeps ("replaced not piled, the Seem/%News idiom").
+Lagoon(A, w):
+    if (!w.c.faced) this.Lagoon_plan(w)
+    let row = w.oai({ see: 'lagoon' })
+    let atlas = this.Lagoon_atlas()
+    let elec = this.Lagoon_electrode()
+    let docs = atlas ? '' + atlas.o({ Doc: 1 }).length : null
+    if (docs !== null) {
+        if (row.sc.atlas !== docs) row.sc.atlas = docs
+    } else if (row.sc.atlas) {
+        delete row.sc.atlas
+    }
+    if (elec) {
+        if (!row.sc.electrode) row.sc.electrode = 1
+    } else if (row.sc.electrode) {
+        delete row.sc.electrode
+    }
+
+// Lagoon_plan — mount the face, the Cyto_plan idiom (`uis.oai({UI:…},{component})`).  Everything the
+//  reader knows was CLI-only until 2026-09-08 — the owner, looking for it in a room: "where's all the
+//   work?".  A reader layer nobody can look at is a library with no door.
+//  It lands wherever Lagoon stands, which is a RUNNER tab: L ghosts are outside the spine manifest and
+//   `ghost_load` is refused on a humdinger, so /BigWordland (role 'word') cannot host one.  Making it
+//    visible THERE is a manifest question, which is Atheory's (Lagoon_todo §4).
+Lagoon_plan(w):
+    let uis = this.oai_enroll(this, { watched: 'UIs' })
+    uis.oai({ UI: 'Lagoon' }, { component: Lagui })
+    w.c.faced = 1
+
+//#region the censuses it reads — found by name, never held
+Lagoon_atlas():
+    return this.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0] ?? null
+
+Lagoon_electrode():
+    return this.top_House().o({ A: 'Electrode' })[0]?.o({ w: 'Electrode' })[0] ?? null
+//#endregion
+
+//#region who calls X — moved from Atlas 2026-09-08
+// Walks every mapped Doc's `call` AND `elvisto` rows for the name — a plain o() per doc, no index: at
+//  711 docs this is milliseconds, and an actual reverse index would mean maintaining a SECOND structure
+//   in step with the first (and a reader that keeps an index has started keeping — see the header).
+//  Returns [{doc, line, via, kind}], kind:'call'|'elvisto' so a caller can tell direct calls from
+//   deferred cross-ghost ones without a second query.
+Lagoon_callers(w, name):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let out = []
+    for (const doc of atlas.o({ Doc: 1 })) {
+        let map = doc.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const c of map.o({ call: 1, method: name })) {
+            out.push({ doc: doc.sc.Doc, line: c.sc.line, via: c.sc.via, kind: 'call' })
+        }
+        for (const e of map.o({ elvisto: 1, method: name })) {
+            out.push({ doc: doc.sc.Doc, line: e.sc.line, via: e.sc.via, target: e.sc.target, kind: 'elvisto' })
+        }
+    }
+    return out
+//#endregion
+
+//#region the index — every def the census holds, browsable
+// Lagoon_defs — "that thing where all the methods are" (the owner, 2026-09-08, on the first face: *"I
+//  can't remember a method name to look up… Lagoon seems like it has nothing in it"*).  A blind input
+//   asks you to already know the answer, which is the opposite of an index.
+//  Substring match on the name, or on `doc:` to scope to a file; capped, with the true total beside it
+//   so a cut is never silent.  Sorted by name so the same query gives the same list twice — a browsable
+//    thing has to hold still.  Pure read; nothing minted, nothing cached (the layer rule).
+Lagoon_defs(w, q, cap):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let needle = String(q ?? '').trim().toLowerCase()
+    let doc_only = null
+    if (needle.indexOf('doc:') === 0) {
+        doc_only = needle.slice(4)
+        needle = ''
+    }
+    let out = []
+    let total = 0
+    let kk = cap || 300
+    for (const doc of atlas.o({ Doc: 1 })) {
+        let path = doc.sc.Doc
+        if (doc_only && path.toLowerCase().indexOf(doc_only) < 0) continue
+        let map = doc.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const d of map.o({ def: 1 })) {
+            let name = d.sc.method
+            if (!name || name === 'IMPORT') continue
+            if (needle && name.toLowerCase().indexOf(needle) < 0) continue
+            total = total + 1
+            if (out.length < kk) out.push({ name: name, doc: path, line: d.sc.line })
+        }
+    }
+    out.sort((a, b) => a.name < b.name ? -1 : (a.name > b.name ? 1 : 0))
+    return { defs: out, total: total, shown: out.length, docs: atlas.o({ Doc: 1 }).length }
+//#endregion
+
+// Lagoon_families — THE LARGER OBJECTS (the owner, 2026-09-08: *"I want the larger objects in the code
+//  picked up on somehow… we did this with stemming"*).  Three thousand method names is a phone book, not
+//   a map.  But the names already carry the structure: `Heist_keep`, `Heist_blag`, `Heist_census` are one
+//    thing seen three times.  So bucket every def by the STEM OF ITS FIRST TOKEN and the subsystems fall
+//     out of the corpus without anyone declaring them.
+//  Reuses the machine's own two pieces rather than inventing a third — `LAGOON_TOKEN` is StemHive's
+//   camel|snake splitter verbatim (`LiesFunk.svelte:1484`) and the stemming matches `Lies_stem`'s light
+//    suffix strip, so a family here and a search hit there agree about what a word is.
+//  A `region` count rides along: `//#region` blocks are the OTHER larger object, the one an author named
+//   by hand inside a file, and Atlas already holds them.
+Lagoon_families(w, cap):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let fam = new Map()
+    let defs_total = 0
+    let regions = 0
+    for (const doc of atlas.o({ Doc: 1 })) {
+        let map = doc.o({ Map: 1 })[0]
+        if (!map) continue
+        regions = regions + map.o({ region: 1 }).length
+        for (const d of map.o({ def: 1 })) {
+            let name = d.sc.method
+            if (!name || name === 'IMPORT') continue
+            let toks = String(name).match(LAGOON_TOKEN)
+            if (!toks || !toks.length) continue
+            let stem = this.Lagoon_stem(toks[0])
+            if (!stem) continue
+            defs_total = defs_total + 1
+            let row = fam.get(stem)
+            if (!row) {
+                row = { stem: stem, defs: 0, docs: new Set(), head: toks[0] }
+                fam.set(stem, row)
+            }
+            row.defs = row.defs + 1
+            row.docs.add(doc.sc.Doc)
+        }
+    }
+    let out = []
+    for (const row of fam.values()) {
+        out.push({ stem: row.stem, head: row.head, defs: row.defs, docs: row.docs.size })
+    }
+    out.sort((a, b) => b.defs - a.defs)
+    let kk = cap || 60
+    return { families: out.slice(0, kk), total: out.length, defs_total: defs_total, regions: regions }
+
+// Lagoon_stem — `Lies_stem`'s light strip, kept here rather than called across the ghost border so a
+//  reader has no dependency on the editor's Stemdex being loaded.  If the two ever disagree, THIS is the
+//   copy to change: the Stemdex's is the original and the contract is internal consistency, not English.
+Lagoon_stem(word):
+    let s = String(word ?? '').toLowerCase()
+    if (s.length > 4) {
+        if (/ies$/.test(s)) { s = s.slice(0, -3) + 'y' } else { s = s.replace(/(?:ings?|ers?|eds?|es|s)$/, '') }
+    }
+    return s
+//#endregion
+
+//#region the prose side — which docs TALK about a symbol
+// Lagoon_mentions — the twin of Lagoon_callers, and the reason the `code` link kind exists.  `callers`
+//  answers "what CALLS this"; this answers "what SAYS this" — every doc that names the symbol in
+//   backticks, with the line.  Between them a method has both of its neighbourhoods: the code that
+//    depends on it and the prose that explains it.
+//  RESOLUTION LIVES HERE, not in the collector (compile.ts's CODE_RE emits every candidate because it
+//   cannot know the corpus).  `resolved` says whether Atlas holds a def by that name: if it does, the
+//    mention is a LINK and a rot check applies; if not, it is just a phrase in backticks and no doc is
+//     wrong for containing it.  That split is the whole reason Atlas keeps and Lagoon asks.
+Lagoon_mentions(w, name, cap):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let needle = String(name ?? '').trim()
+    if (!needle) return { error: 'Lagoon_mentions: a name is required' }
+    let out = []
+    let total = 0
+    let resolved = false
+    let kk = cap || 60
+    for (const doc of atlas.o({ Doc: 1 })) {
+        let map = doc.o({ Map: 1 })[0]
+        if (!map) continue
+        if (!resolved && map.o({ def: 1, method: needle }).length) resolved = true
+        for (const l of map.o({ link: 1, kind: 'code', target: needle })) {
+            total = total + 1
+            if (out.length < kk) out.push({ doc: doc.sc.Doc, line: l.sc.line })
+        }
+    }
+    return { name: needle, resolved: resolved, mentions: out, total: total, shown: out.length }
+
+// Lagoon_prose_rot — the doc-rot work queue for SYMBOLS (front 3, the owner: "higher level pointers or
+//  sending you around fixing|obsoleting things is the way").  A `code` link whose target Atlas holds no
+//   def for, and which no OTHER doc resolves either, is a doc naming something that is not there any
+//    more — the prose twin of a dead `file:line`.  Capped and counted; a scan aid like the orphan lint,
+//     not a verdict, because a backticked word can legitimately be a key or a constant rather than a def.
+Lagoon_prose_rot(w, cap):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let defs = new Set()
+    let mentions = new Map()
+    let links = 0
+    // A doc's own NAME wears the same shape as a ghost method (`Daemon_todo`, `Identity_persist_todo`,
+    //  `Wire_spec`), and the corpus backticks doc names constantly.  Those are references to documents,
+    //   not to code, so they are not rot — and Atlas already holds every doc path, so excluding them
+    //    costs one set.  (This is the second time this verb over-claimed; the lesson is that "looks like
+    //     a symbol" and "is a symbol" are different questions, and only the census can tell them apart.)
+    let docnames = new Set()
+    for (const doc of atlas.o({ Doc: 1 })) {
+        let p = doc.sc.Doc
+        let base = p.slice(p.lastIndexOf('/') + 1)
+        docnames.add(base.replace(/\.(svelte\.ts|svelte|ts|g|mjs|md)$/, ''))
+    }
+    for (const doc of atlas.o({ Doc: 1 })) {
+        let map = doc.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const d of map.o({ def: 1 })) defs.add(d.sc.method)
+        for (const l of map.o({ link: 1, kind: 'code' })) {
+            links = links + 1
+            let t = l.sc.target
+            if (!mentions.has(t)) mentions.set(t, { target: t, n: 0, doc: doc.sc.Doc, line: l.sc.line })
+            mentions.get(t).n = mentions.get(t).n + 1
+        }
+    }
+    // SPLIT THE UNRESOLVED BY SHAPE, because the first cut of this verb over-claimed and the numbers say
+    //  so: 3,025 distinct targets, 1,343 unresolved — but the top of that list was `body_hash`,
+    //   `runner_ask`, `CREDULER_GHOSTS`, `repli_want`, `heard_at`, none of which is rot.  They are
+    //    particle keys, a CLI name, a constant, a wire verb.  A backticked word is not a promise that a
+    //     def exists.
+    //  The GHOST-METHOD shape — `Capitalised_lowercase…`, which is what every ghost method in this
+    //   codebase is named — is the subset where an unresolved target really does suggest the doc is
+    //    naming something gone.  Everything else is reported as `other`, counted but not accused.
+    let rot = []
+    let other = 0
+    for (const row of mentions.values()) {
+        if (defs.has(row.target)) continue
+        if (docnames.has(row.target)) { other = other + 1; continue }
+        if (/^[A-Z][A-Za-z0-9]*_[a-z]/.test(row.target)) { rot.push(row) } else { other = other + 1 }
+    }
+    rot.sort((a, b) => b.n - a.n)
+    let kk = cap || 60
+    return { code_links: links, distinct: mentions.size, resolved: mentions.size - rot.length - other, likely_rot: rot.length, other_unresolved: other, top: rot.slice(0, kk) }
+//#endregion
+
+//#region the lint — moved from Atlas 2026-09-08
+// Three answers the census already contains.
+//  missing:    a `file:line` link in a doc whose target file is in NO living root — the tell that a
+//              spec moved to history/, was renamed, or never existed (CLAUDE.md's own corollary:
+//              "a referenced spec/X.md that isn't there is almost certainly spec/history/X.md").
+//  beyond_eof: the target exists but the cited line is past its end — the line drifted.
+//  orphans:    a def no call or elvisto anywhere names.  A scan aid, not a verdict: do_fns named
+//              after their world, UI handlers wired in markup and `this[name]` dispatch all read as
+//              orphans here.  Capped, with the total beside it.
+// OWED (Lagoon_todo §0 front 3, the owner 2026-09-08): this returns a LIST, and the ruling is that doc
+//  rot should be a WORK QUEUE — "higher level pointers or sending you around fixing|obsoleting things".
+//   The rows below are the raw material for that; the routing is not built.
+Lagoon_lint(w):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let docs = atlas.o({ Doc: 1 })
+    let by_tail = {}
+    let lines_of = {}
+    for (const d of docs) {
+        let p = d.sc.Doc
+        lines_of[p] = +(d.sc.lines ?? 0)
+        let tail = p.slice(p.lastIndexOf('/') + 1)
+        if (!by_tail[tail]) by_tail[tail] = []
+        by_tail[tail].push(p)
+    }
+    let missing = []
+    let beyond = []
+    let file_links = 0
+    let called = {}
+    for (const d of docs) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const c of map.o({ call: 1 })) called[c.sc.method] = 1
+        for (const e of map.o({ elvisto: 1 })) called[e.sc.method] = 1
+        for (const l of map.o({ link: 1, kind: 'file' })) {
+            let target = l.sc.target
+            let ext = target.split('.').pop()
+            if (!LAGOON_EXT[ext]) continue                // scripts/*.mjs &c. are not rostered — no verdict
+            // a target NAMING history/ or shelved/ points at a shelf Atlas deliberately never rosters
+            if (/(^|\/)(history|shelved)\//.test(target)) continue
+            file_links = file_links + 1
+            let hit = this.Lagoon_resolve(by_tail, target)
+            if (!hit) {
+                missing.push({ doc: d.sc.Doc, line: l.sc.line, target, at_line: l.sc.at_line })
+                continue
+            }
+            let at = +(l.sc.at_line ?? 0)
+            if (at > (lines_of[hit] ?? 0)) beyond.push({ doc: d.sc.Doc, line: l.sc.line, target: hit, at_line: at, lines: lines_of[hit] })
+        }
+    }
+    let orphans = []
+    let orphans_total = 0
+    for (const d of docs) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const f of map.o({ def: 1 })) {
+            let name = f.sc.method
+            if (!name || called[name]) continue
+            if (name === 'IMPORT') continue                // the .g IMPORT() block parses as a def; it is not one
+            if (LAGOON_DISPATCHED.test(name)) continue
+            orphans_total = orphans_total + 1
+            if (orphans.length < 400) orphans.push({ doc: d.sc.Doc, name, line: f.sc.line })
+        }
+    }
+    return { docs: docs.length, file_links, missing, beyond_eof: beyond, orphans_total, orphans }
+
+// Lagoon_resolve — a link target (`Heist.g`, `M/Heist.g`, `src/lib/O/Lang.svelte`) to a rostered
+//  path: same tail, then the longest path-suffix match; a bare filename takes the first holder.
+Lagoon_resolve(by_tail, target):
+    let tail = target.slice(target.lastIndexOf('/') + 1)
+    let cands = by_tail[tail]
+    if (!cands) return null
+    if (target.indexOf('/') < 0) return cands[0]
+    for (const c of cands) {
+        if (c === target || c.endsWith('/' + target)) return c
+    }
+    return cands[0]
+//#endregion
+
+//#region unproven sentences — moved from Atlas 2026-09-08, and the move is the point
+// Every %see sentence in code that NO Book fixture has ever recorded.  A %see is the assertion idiom,
+//  so an unfixtured one is a claim nothing swears; a single-word `see:atlas` is a summary row, not a
+//   claim, so only sentences with a space count.
+// THIS is the verb that drew the concept line: it reads Book fixture FILES, not the census, so inside
+//  Atlas it was a second source and a second concern.  Here it is simply one reader among several that
+//   happens to need a nav.  (Downgraded as a FEATURE by the owner 2026-09-08 — "don't really care about
+//    this… pointers from the spec to the test assertion, sure" — but it is homeless either way, so it
+//     moves with the rest and stops being a headline.)
+async Lagoon_unproven(w, nav):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let fixtured = {}
+    let books = await nav.dir_at('wormhole/Story')
+    if (!books) return { error: 'no wormhole/Story under this nav' }
+    await books.expand()
+    let read = 0
+    // EVERY numbered snap, not just the last: sentences do not strictly accumulate (a beat's world can
+    //  be re-stood), so the union over the Book's snaps is the fixture truth.  ~1000 reads: opt-in.
+    for (const b of books.directories) {
+        if (!b.expanded) await b.expand()
+        for (const f of b.files) {
+            if (!SNAP_NAME_RE.test(f.name)) continue
+            let text = await nav.read_file('wormhole/Story/' + b.name, f.name)
+            if (!text) continue
+            read = read + 1
+            for (const m of text.matchAll(SEE_LINE_RE)) fixtured[m[1].trim()] = 1
+        }
+    }
+    let unproven = []
+    let total = 0
+    for (const d of atlas.o({ Doc: 1 })) {
+        let map = d.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const p of map.o({ proves: 1 })) {
+            if (p.sc.desc) continue
+            let s = p.sc.sentence
+            if (!s || s.indexOf(' ') < 0) continue
+            total = total + 1
+            if (fixtured[s]) continue
+            unproven.push({ doc: d.sc.Doc, line: p.sc.line, via: p.sc.via, sentence: s })
+        }
+    }
+    return { books_read: read, fixtured: Object.keys(fixtured).length, sees_total: total, unproven }
+//#endregion
+
+//#region the join — declared (Atlas) vs measured (Electrode); moved from Electrode 2026-09-08
+// For every method that RAN as a caller, Atlas's `call,via:<that method>` rows say what its body
+//  DECLARES it calls; Electrode's tally says what it actually called.
+//    declared − measured = paths this run never took (dead, or untested — coverage, per Book).
+//    measured − declared = dispatch the static walk cannot follow (closures, by-name dispatch).
+//  The universe is what the TAP can see (the ghost bag): Housing's class methods have Atlas defs but
+//   are never coated, so a declared call to one is not a path this instrument can judge — left out of
+//    both columns.  Declared callees are limited to names Atlas holds a def for, so `push`/`slice`
+//     never count as "never ran".
+//  It lived in Electrode because it needed the tally; it belongs to NEITHER census, which is exactly
+//   why the reader layer had to exist.  This is the worked example in Lagoon_todo §0.
+Lagoon_join(w, k):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let top = this.top_House()
+    let T = top.c.electrode
+    if (!T) return { error: 'no electrode tally — ghost_load Ghost/L/Electrode.g --stand=Electrode and arm it' }
+    let bag = top.ghosts || {}
+    let seeable = new Set(Object.keys(bag).filter(n => typeof bag[n] === 'function'))
+    let defs = new Set()
+    let declared = new Map()
+    let docs_of = new Map()
+    for (const doc of atlas.o({ Doc: 1 })) {
+        let map = doc.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const d of map.o({ def: 1 })) {
+            if (!seeable.has(d.sc.method)) continue
+            defs.add(d.sc.method)
+            if (!docs_of.has(d.sc.method)) docs_of.set(d.sc.method, doc.sc.Doc)
+        }
+        for (const c of map.o({ call: 1 })) {
+            if (!c.sc.via || !c.sc.method) continue
+            let set = declared.get(c.sc.via)
+            if (!set) {
+                set = new Set()
+                declared.set(c.sc.via, set)
+            }
+            set.add(c.sc.method)
+        }
+    }
+    let measured = new Map()
+    for (const row of T.tally.values()) {
+        if (!row.from) continue
+        let m = measured.get(row.from)
+        if (!m) {
+            m = new Map()
+            measured.set(row.from, m)
+        }
+        m.set(row.to, (m.get(row.to) || 0) + row.n)
+    }
+    let ran = 0
+    let pairs_declared = 0
+    let pairs_ran = 0
+    let never = []
+    let undeclared = []
+    let unknown_callers = 0
+    for (const [from, tos] of measured) {
+        if (!defs.has(from)) {
+            unknown_callers = unknown_callers + 1
+            continue
+        }
+        ran = ran + 1
+        let dec = declared.get(from) || new Set()
+        for (const callee of dec) {
+            if (!defs.has(callee)) continue
+            pairs_declared = pairs_declared + 1
+            if (tos.has(callee)) { pairs_ran = pairs_ran + 1 } else { never.push({ via: from, callee: callee, doc: docs_of.get(from) || null }) }
+        }
+        for (const [to, n] of tos) {
+            if (!dec.has(to) && defs.has(to)) undeclared.push({ from: from, to: to, n: n })
+        }
+    }
+    undeclared.sort((a, b) => b.n - a.n)
+    let kk = k || 40
+    return {
+        ran_methods: ran, unknown_callers: unknown_callers,
+        declared_pairs: pairs_declared, pairs_ran: pairs_ran,
+        coverage: pairs_declared ? Math.round(1000 * pairs_ran / pairs_declared) / 10 : null,
+        never_ran: never.length, never_ran_top: never.slice(0, kk),
+        undeclared: undeclared.length, undeclared_top: undeclared.slice(0, kk),
+        atlas_docs: atlas.o({ Doc: 1 }).length, atlas_defs: defs.size
+    }
+//#endregion
+// (a .g must end on a comment or a statement, never a method-final brace)

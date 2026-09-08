@@ -8,8 +8,9 @@
      (the H\*\* toc across the top is a switcher), hides Lies until summoned, and carries the universal
       searchbar with a pin rail.
 - **`Ghost/L/`** — the LAND's ghosts: `Atlas.g` (what the code SAYS — every doc's `%Map`, kept),
-   `Electrode.g` (what the code DOES — both ends of every call, reduced to a picture; built 2026-09-08
-    night), and their Books `Atlantation.g` / `Electrodation.g`.
+   `Electrode.g` (what the code DOES — both ends of every call; built 2026-09-08 night, then PARKED by
+    the owner), `Lagoon.g` (**the reader layer — every ANSWER asked of a census; built the next
+     afternoon, `Lagoon_todo.md`**), and their Books `Atlantation.g` / `Electrodation.g` / `Lagoonation.g`.
 - **Atheory** (`Atheory_todo.md`) — what code IS LOADED where: the declared manifest, and the `TheA_<dige>`
    layered prototypes that the two pictures above are meant to inform.
 
@@ -20,6 +21,10 @@ The arc: **the one bet, turned on the code itself.**  `Homethink §1` — *turn 
     where a person stands to look at all three; today it shows only the editor.
 
 ## 0. What to get on with next (the morning look-around, 2026-09-08)
+
+**⛵ EVENING UPDATE — THE COURSE IS PLOTTED IN `Lagoon_todo.md §0`.  Start there, not here.**  Ten legs
+ in dependency order, ten bombs first.  Leg 1 is `role:hacker` and everything visual waits on it.  This
+  doc stays the land's overview; that one is the working plan.
 
 **Landed overnight** (all uncommitted, in the working tree):
 
@@ -58,10 +63,12 @@ The arc: **the one bet, turned on the code itself.**  `Homethink §1` — *turn 
 
 **Next moves, ranked** — each is a morning's decision, not a night's build:
 
-1. **Put the pictures in the room.**  BigWordland has a searchbar whose hits are the Stemdex's regex
-    defs; Atlas holds the compiler's real defs + calls for 711 docs, and Electrode holds the measured
-     flows — neither reaches the room.  §5 says how without building a new surface (the Lens prior-art
-      gate): feed the existing StemHive from Atlas rows, and give the pin rail a `→ callers` glyph.
+1. **THE ONE THING — the code explorer, over Atlas, focused by `%Interest`.**  Ruled 2026-09-08 (§5.0):
+    Atlas is the protein-space the execution map will later live in, because it is the only structure that
+     holds docs, defs, call edges AND the 1,782 prose→code links as one substance.  Explorer first, map
+      second, or the coordinates get invented twice.  The first cut builds no new surface (the Lens
+       prior-art gate): feed the existing StemHive from Atlas rows, give the pin rail a `→ callers` glyph,
+        and let focus be an Interest rather than a new idea.  Read `Interest.md` first.
 2. **The join is BUILT and already paid for itself** (`electrode join`, §4c): its first run accused
     Atlas of missing the cast form `(H as any).X(`, the fix landed (`compile.ts`, `m12`/`m13`), and the
      undeclared column fell 60 → 24 — what remains is closures and by-name dispatch.  Still owner's:
@@ -87,12 +94,149 @@ The arc: **the one bet, turned on the code itself.**  `Homethink §1` — *turn 
 |---|---|---|---|
 | the room | `src/lib/L/BigWordland.svelte`, route `/BigWordland` | built 2026-07-03, browser-verified by owner since | `?E=<Book>` (default Educarium), `?W=<Waft>` |
 | its Book | `src/lib/L/Educarium.svelte` | Editron's sibling recipe — lays A:Educarium + Lies/Lang editor + Pantheate | boots with the room |
-| the census | `Ghost/L/Atlas.g` (`ATLAS_MAPPER=m11`) | 585 docs (245 code + 340 md), 0 errors, Dexie-warm, refresh-on-use | `runner_ask ghost_load … --stand=Atlas`, `atlas_callers`, `atlas_lint`, `atlas_refresh`, minisnap |
+| the census | `Ghost/L/Atlas.g` (`ATLAS_MAPPER=m13`) | 711 docs, 0 errors, Dexie-warm, refresh-on-use; **12 functions, all keeping** since the readers moved out | `runner_ask ghost_load … --stand=Atlas`, `atlas_refresh`, minisnap |
+| **the reader layer** | `Ghost/L/Lagoon.g` | **BUILT 2026-09-08** — callers · lint · unproven · join; keeps nothing | `ghost_load … --stand=Lagoon`, then `atlas_callers`, `atlas_lint`, `electrode join` |
+| its Book | `Ghost/L/Lagoonation.g` → `LagoonStaple` | 6 steps, 7 sworn, green ×2 (`caveat:0`, gaps 0) — gates the CONCEPT LINE | `runner_ask run LagoonStaple` |
 | its Book | `Ghost/L/Atlantation.g` → `AtlasStaple` | 6 steps, 10 sworn, green (re-swore under `story_swear` 2026-09-08) | `runner_ask run AtlasStaple` |
 | the tap | `Ghost/L/Electrode.g` | built + stood live 2026-09-08; off by default | `runner_ask electrode …` |
 | its Book | `Ghost/L/Electrodation.g` → `ElectrodeStaple` | compiles/parses; first recording pending | `runner_ask ghost_load Ghost/L/Electrodation.g` then `run` |
 | the fixture corpus | `Ghost/L/test_corpus/` | frozen (`Sample.g`); **never edit** | — |
 | the bundles | `Atheory_todo.md` | design + bench-verified mechanics; nothing built | — |
+
+### 1.1 THE CONCEPT LINE — Atlas KEEPS; everything else ASKS
+
+*The owner, 2026-09-08: "is Atlas something that's totally done now and we should build a separate thing
+ that interacts with it for its elements? I need you thinking about conceptual globulation as we go piling
+  on features to this new invention."  Yes to the separate thing — but "Atlas is done" is the wrong line
+   to draw, because it dates.  The line that does not date is what the ghost is FOR.*
+
+**Atlas has exactly one concept: the compiler's own index of every doc, kept fresh.**  A census.  The test
+ for any new feature is one question — *does it change what is HELD, or does it ask a question OF what is
+  held?*  Keeping and asking are different concepts, and only the first is Atlas.
+
+**It has already drifted, measurably.**  Sixteen functions today:
+
+| | |
+|---|---|
+| **keeping** (12) | `Atlas` · `_plan` · `_nav` · `_pass` · `_walk` · `_refresh` · `_map_one` · `_db` · `_cache_put` · `_cache_adopt` · `_forget` · `_report` |
+| **asking** (4) | `_callers` · `_lint` · `_resolve` · `_unproven` |
+
+A quarter of the ghost is answers, and it grew there one convenience at a time — which is what globulation
+ looks like from the inside: no single addition was wrong.
+
+**`Atlas_unproven` is the clearest tell, and the owner's disbelief is the diagnosis.**  Told that Atlas
+ opens Book fixture files off disk, the owner: *"I don't believe Atlas would… that's not code."*  It does,
+  at `Atlas.g:573` — `nav.read_file('wormhole/Story/' + b.name, f.name)`, walking every numbered `.snap`
+   under `wormhole/Story` to collect the `%see` sentences some fixture recorded:
+
+```
+    for (const b of books.directories) {
+        for (const f of b.files) {
+            if (!SNAP_NAME_RE.test(f.name)) continue
+            let text = await nav.read_file('wormhole/Story/' + b.name, f.name)
+```
+
+**The instinct that it shouldn't is right, and the code already half-knew.**  Its own comment reads
+ *"~1000 reads at the current corpus; opt-in for that reason"* — a previous session felt the wrongness and
+  paid for it with a flag instead of moving the function out.  That is the whole mechanism of globulation
+   in one line: the smell gets a mitigation rather than a home.  A second source (fixtures) and a second
+    concern (which claims are proven) living inside a code index.  It belongs in the reader layer, and
+     moving it is a cut-and-paste, since it takes only `nav` and the Doc rows it already reads publicly.
+
+**So the boundary, going forward:**
+- **In Atlas:** anything that changes what is held — a new kind in the `%Map`, a new root, freshness,
+   the cache.  Growth here is the census getting richer, and it stays one idea.
+- **Outside Atlas:** every answer.  `lint`, `callers`, `unproven`, the declared-vs-measured `join`, and
+   the explorer.  These are readers.  They need no privilege — a query over 711 doc rows is milliseconds,
+    and `minisnap` already reads inside a `dontSnap` — so there is no efficiency argument for putting them
+     in, only convenience, which is exactly the pressure to resist.
+- **The join is the worked example of doing it right.**  It reads BOTH censuses and belongs to neither, so
+   it went in the consumer (Electrode) rather than the keeper.  If a third reader wants it too, that is the
+    signal for a reader ghost of its own, not for pushing it down into Atlas.
+
+**Is Atlas done?**  The keeping half is *trustworthy*, which is the property that matters for building on
+ it: 711 docs, 0 errors, the collector's two blind spots closed the same night they were found (§4c), the
+  mapper version stamped in every row so a fix re-maps the corpus.  It is not *finished* — the steady-state
+   mtime hole is parked by the owner, the three swept kinds still carry no `region_path`, and the call
+    regex still matches only `this`/`H` receivers and not aliases like `top.`/`SH.`.  **None of those block
+     a reader**, which is the real answer: build beside it now, and let the census keep growing underneath.
+
+### 1.2 THE THING IN FRONT OF ATLAS — **`Lagoon`, and it is BUILT** (2026-09-08)
+
+*Named by the owner the afternoon it was proposed (`Legend` was the proposal; `Lagoon` replaced it on
+ sight and is better — shallow enclosed water where structures ERUPT, which is the owner's own picture of
+  the surface: "little structures erupt when we go climbing call trees… they might be arranged around the
+   place").  **Its doc is `Lagoon_todo.md`; read that, not this.**  Front 1 landed the same afternoon:
+    `Ghost/L/Lagoon.g` stands, five readers moved out of the two censuses, `LagoonStaple` green ×2 with
+     7/7 sworn and 0 gaps, and Atlas is back to 12 functions of pure census.*
+
+The reasoning, kept here because it is the land's shape:
+
+*The owner, 2026-09-08: "what's the next thing above Atlas that takes our complications going forward?…
+ what's the infront-of-Atlas device going to be called?"*
+
+**What it is, before what it is called.**  It is the one place every ANSWER lives, so that Atlas can stay a
+ census while the questions multiply.  It has four tenants on day one, and three of them already exist and
+  are homeless — this is not speculative surface, it is a move:
+
+| tenant | where it lives today | what it is |
+|---|---|---|
+| `callers` | ✅ moved to Lagoon | reverse lookup over held `call,via` rows |
+| `lint` | ✅ moved to Lagoon | missing / beyond-eof links, orphan defs |
+| `unproven` | ✅ moved to Lagoon | which claims no Book ever recorded (§1.1 — the misfit that drew the line) |
+| `join` | ✅ moved to Lagoon | declared vs measured; belongs to neither census |
+| *the explorer* | still nowhere | the surface all four answer into — `Lagoon_todo §0` fronts 2-4 |
+
+**Why it absorbs the complications rather than adding one.**  Every future question — coverage per Book,
+ which ghosts a role actually loads, where a mainkey is minted, which doc link rotted, where this sentence
+  is sworn — is a query over rows that are already held, and each one would otherwise be argued into Atlas
+   individually.  A reader ghost makes the answer to "where does this go?" boring and permanent.  It also
+    means the explorer is not a special case: **the UI is one more reader**, and the CLI ops become thin
+     calls into the same verbs rather than a parallel implementation, which is what they are today.
+
+**The name — RULED: `Lagoon`** (working title, the owner, 2026-09-08).  `Legend` was proposed here — the
+ key printed beside an atlas — and the owner replaced it on sight with the better image: a lagoon is
+  shallow enclosed water where structures erupt and settle, which is the behaviour rather than the
+   mechanism.  Everything about it now lives in `Lagoon_todo.md`.
+
+### 1.3 UX — five short stories
+
+*Written to the owner's ask ("outline how UX will be in some short stories"), each grounded in real data
+ from 2026-09-08 rather than invented.  They are ordered from the cheapest to the most distant.*
+
+**1 · "Who calls this?"**  You are reading `Lies_role` in the editor and want to know who depends on it.
+ The rail beside the code already holds pins; now it holds a caller list too, each row naming the
+  *enclosing method* and its file, because that is what Atlas stores.  You click one and land on the line
+   — the same one-elvisto delivery a search hit already makes, recorded in today's Aside.
+ *Grounded:* this is `atlas_callers` at the CLI tonight, which answered `Lies_role → Lies_inside_story`
+  only after the collector was fixed; before that the honest answer was an empty list, silently.
+
+**2 · "This document is lying to me."**  You open a design doc.  Three of its file links are struck
+ through.  Hovering says *target not found*.  You were about to follow one into a ghost that was deleted
+  four days ago.
+ *Grounded:* `atlas_lint` right now reports 1,782 file links across 711 docs, and several still point at
+  `Ghost/M/Jam.g`, deleted 2026-09-04.  The data exists; nothing shows it to a human.
+
+**3 · "What did this Book actually touch?"**  You run a Book, and the explorer shades every def the run
+ entered, leaving the untouched ones pale.  The pale regions are the honest picture of what the suite does
+  not exercise.  You are not reading a coverage percentage; you are looking at the map with the lights on
+   in some rooms.
+ *Grounded:* four Books under the tap reached 429 of 739 declared call pairs.  The shading is the join
+  (§3), which already computes exactly this, printed as text.
+
+**4 · "Where is this claim proven?"**  You are reading a sentence in a spec that asserts something.  You
+ ask where it is sworn, and get either the Book and step that swears it, or the word *unproven* — meaning
+  the corpus says it and nothing tests it.
+ *Grounded:* `Atlas_unproven` computes this today, in the wrong ghost (§1.1), and nobody has ever seen its
+  output outside a JSON blob.
+
+**5 · "I'm lost, put me back."**  You come back the next morning, open the room, and it is where you left
+ it: the same document, the same cursor, the same question half-asked.  Not a root listing, not a
+  dashboard.
+ *Grounded:* this is the one that needs no new invention and the one most likely to be reinvented.
+  `%Interest` already carries stance, foreground, and per-Waft cursor memory off the Keep (`Interest.md`,
+   `Keeping_spec`).  **Focus and intent are an Interest.**  If the explorer grows its own idea of "what am
+    I looking at", that is the tell we built the third one.
 
 Both L ghosts obey the same rules and it is worth saying them once: **truth in particles, caches in
  `.c`; never a particle per call/per line; `dontSnap` on the bulky picture so minisnap reads it and no
@@ -325,6 +469,39 @@ Reset, arm once, run `AtlasStaple · SwarmSteal · SwarmInvite · SwarmCohort` b
 
 ## 5. The room — what BigWordland becomes
 
+### 5.0 THE ORDER OF WORK, ruled by the owner 2026-09-08
+
+*"Electrode will help build some visual map of execution soon… but we need the protein-space that that
+ map lives in, some kind of editor… which is Atlas hopefully? or just a code explorer to begin with…
+  focus and intent is key."*
+
+**Yes — Atlas is that space, and it is the only thing in the repo that already is one.**  Not because it
+ is a nice index, but because of what it holds: 711 docs as particles, every def with its line, every
+  call with its enclosing method, and — the part that makes it a *space* rather than a list — **1,782
+   `%link` rows joining the prose to the code**.  Nothing else in the machine spans design docs and
+    ghosts in one structure.  A map of execution needs somewhere to be drawn, and the drawing surface has
+     to be the same substance as the thing drawn on it, or the two drift.  Atlas rows are particles, and
+      so is Electrode's picture, and so is everything else here.  That is the whole answer to "protein-
+       space": it is not a metaphor for a UI, it is the requirement that the medium be the same matter.
+
+**So the order is: explorer first, execution map second.**  Electrode's picture is a *layer over* the
+ explorer's space — `Method:` and `Flow` rows land on defs and call edges Atlas already holds (§3's join
+  is exactly that registration, proven at the CLI).  Building the map before the space would mean
+   inventing coordinates twice.  This is also why the tap is parked (`Electrode_todo §0`): not because it
+    is unfinished, but because its next useful step is downstream of this one.
+
+**"Focus and intent is key" already has a name here, and it is not new machinery.**  `%Interest` is the
+ corpus's own word for exactly this — *"Interests are attention channels: the IDE escalates state through
+  them"* (`Interest.md`).  It carries stances (giver / taker / lister / aside), a foreground rule (exactly
+   one Trail bears the LE), an `ActiveInterest`, and a cursor that resumes per Waft off the Keep.  An
+    explorer that invents its own notion of "what am I looking at and why" would be the third design of a
+     thing that is built and live.  **The explorer's focus IS an Interest; its intent is the Interest's
+      stance.**  Read `Interest.md` before writing a line of it.
+
+**What that makes the first cut** (and it is smaller than "a code explorer" sounds): Atlas rows entering
+ the surface that already exists, with focus carried by the Interest that already exists, and no new pose
+  model — which is also what the prior-art gate below demands.  The two bullets after it are that cut.
+
 Today (its own header): the H\*\* switcher, the ⚙ action rack, ⌐Lies summon, ▦ sprawl, the searchbar
  with a pin rail — *"a hit can be PINNED into the loose space at the right of the code."*  The owner's
   own next hop, unchanged: fold the pins into the DocMinimap proper.
@@ -351,18 +528,35 @@ Today (its own header): the H\*\* switcher, the ⚙ action rack, ⌐Lies summon,
      no wire.  (b) is faster and works offline; (a) is the general one.  Start with (a): it is the same
       shape the CLI already proves every day.
 
-## 6. Open for the owner
+## 6. Open for the owner — ONE thing, and it is naming
 
-- **Names.**  `Atlas` was declared a placeholder in its own header; `Electrode` was the owner's word;
-   `Wordland` is this doc's guess at the land's name (the room is BigWordland, so the land is the
-    Wordland).  `%Method`/`%Flow`/`%Graph` are the first mainkeys under `w:Electrode`.
-- **The join's home** (§0 item 2).
-- **Fold at the Story seam** (§0 item 4) — automatic per-step pictures, or keep it on demand.
-- **Housing's own methods are half in the bag.**  `w_forgets_problems`, `self_timekeeping`,
-   `reset_interval`, `agency_officing` were coated — they arrive via an eatfunc `.svelte`, so they ARE
-    ghost code by the machine's own definition, while `i_elvisto`/`main`/`expecting` (class methods) are
-     not.  The picture therefore shows the belief loop's overhead beside the ghosts' work.  Fine, and
-      worth knowing when reading it; an `ELECTRODE_SKIP` entry hides them if they drown the signal.
+*Trimmed 2026-09-08.  This section had grown four bullets, three of which were decisions this doc could
+ make and was handing upward instead.  The owner, reading them: "that's chasing stuff, apparently needing
+  me? I kind of doubt you need me for it… I don't know any context afaict."  Correct, and the general rule
+   it implies is worth keeping: **a question costs the owner context they may not have; only ask when the
+    answer is genuinely theirs — taste, product direction, or a risk only they can accept.**  What is left:*
+
+- **Names.**  `Atlas` says in its own header that it is a placeholder.  `Wordland` is this doc's guess
+   (the room is BigWordland, so the land is the Wordland).  `%Method` / `%Flow` / `%Graph` are the first
+    mainkeys under `w:Electrode` and would be cheapest to change now.  Naming is the owner's by
+     precedent — the rename-at-once pattern is theirs — and it is the one thing here nobody else can do.
+  - **`GhostElectrode`** — proposed by the owner 2026-09-08, *"to deconfuse"*.  It reads well and sits
+     beside `GhostList`; `Electrode` alone is a generic word wearing a ghost's slot.  **But it does not
+      deconfuse the axis that will actually need it.**  Line and branch electrodes are electrodes on
+       ghosts too, so `Ghost` does not separate them from what is built.  The real axis is *what a mark
+        can see*: `CallElectrode` (entry and exit, a wrapper, built) versus `LineElectrode` /
+         `BranchElectrode` (inside a body, compiled, a `Variant`).  So: take `GhostElectrode` if the
+          confusion being cured is "the word is too generic to name a ghost", and it is a good fix for
+           that.  If the confusion is "which electrodes are these", the split wants to be by sight, not
+            by subject.  Costed either way: renaming touches the `.g`, its Book, the world name, the gen
+             path, the CLI op and the `ElectrodeStaple` fixture directory — an hour, and cheapest now.
+  - **`Legend`** — proposed here for the reader layer (§1.2), for the owner to accept or replace.
+
+*Decided, not asked (each was in this list and should not have been):* the join lives in Electrode until
+ something needs it elsewhere; the Story-seam fold stays on demand while the tap is parked; the
+  eatfunc-deposited Housing methods (`w_forgets_problems`, `self_timekeeping`, `agency_officing`) stay
+   coated — they ARE ghost code by the machine's own definition, so the picture showing the belief loop's
+    overhead beside the ghosts' work is correct, and `ELECTRODE_SKIP` is there if it ever drowns a signal.
 
 ## 7. Verify (for whoever picks this up)
 

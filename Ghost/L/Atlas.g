@@ -33,9 +33,18 @@
 //     DURABILITY: `Atlas_refresh` (use nudges a pass: every query re-lists the roots, maps the movers
 //      inline; mtime+size on doc.c are the cheap tell, the dige stays the truth) and the Dexie
 //       `atlas` cache (adopt a Map from its row when mapper+mtime+size match, stamp it `warm`), plus
-//        `Atlas_lint`/`Atlas_unproven` — three answers over what is already held.
+//        the lints — answers over what is already held.
 //  What is deliberately NOT here: a timer (Stemdex_todo §0's standing constraint) and a reverse
-//   INDEX (a query over 687 docs is milliseconds; a second structure would need keeping in step).
+//   INDEX (a query over 711 docs is milliseconds; a second structure would need keeping in step).
+//
+//  ⇢ 2026-09-08 — THE ANSWERS MOVED OUT.  `Atlas_callers`, `Atlas_lint`, `Atlas_resolve` and
+//   `Atlas_unproven` now live in **`Ghost/L/Lagoon.g`**, the reader layer.  The line, ruled the same
+//    day (`Wordland_todo §1.1`, `Lagoon_todo.md`): **ATLAS KEEPS; LAGOON ASKS.**  The test for anything
+//     proposed here is one question — *does it change what is HELD, or ask a question OF what is held?*
+//      This ghost had drifted to 12 keeping / 4 asking, one convenience at a time, which is what
+//       globulation looks like from the inside: no single addition was wrong.  `Atlas_unproven` was the
+//        tell — it did not ask of the census at all, it opened `wormhole/Story/**/*.snap` off disk, a
+//         second source and a second concern inside a code index.  Keep this file a census.
 
 IMPORT()
     import { EditorState } from "@codemirror/state"
@@ -104,29 +113,38 @@ IMPORT()
     //     m13 (2026-09-08, same night): the OPTIONAL forms too — `H?.X(` and `(H as any).X?.(…)` — the
     //      join's next undeclared row (`Lies_cluster_idento → Clustation_active_identity`, source
     //       `(H as any).Clustation_active_identity?.(H)`).  Five sites; cheap; sound.
-    const ATLAS_MAPPER = 'm13'
+    //     m14 (2026-09-08): a THIRD link kind — `code`, a backticked_identifier in prose.  The corpus
+    //      points at methods and keys on every page and had no link form for it (the vocabulary was two:
+    //       wiki and file:line).  The underscore is the filter — of 15,160 backticked tokens in spec/,
+    //        the 8,834 containing one are almost purely real symbols, and the 6,000 without are `sc`,
+    //         `true`, `ok`.  Resolution is Lagoon's, not the collector's: an unresolvable target is a
+    //          mention, not rot.  Bumped so every cached row re-derives with its prose links.
+    const ATLAS_MAPPER = 'm14'
     // ATLAS_BUDGET — docs mapped per pass.  A %Map build is a real parse (the whole-doc tsstho tree
     //  walk on .svelte), so this is the Stemdex's "polite pass" idea: converge over passes, never thump.
+    // ATLAS_SLICE_MS — THE POLITENESS BOUND, and it is a TIME not a count (2026-09-08).  The count-only
+    //  budget below was measured hogging the beliefs mutex: the drain-lag electrode on the owner's own
+    //   editor tab read `why=beliefs mutex held 4s by H:Mundo think Atlas/Atlas`, repeatedly, while a
+    //    dozen of their Storui clicks sat undrained in H.todo behind it.  EVERY House drains under the
+    //     top House's single beliefs mutex (Housing.svelte.ts:230), so a pass that parses six files
+    //      without yielding freezes the whole tab for as long as that takes — and a count is the wrong
+    //       bound because docs differ by 40×: `Atlas_map_one` measured 50-194ms each (Wordland_todo §4b).
+    //  So: map until the slice is spent, then yield and re-poke.  A pass now holds the mutex for about
+    //   one document, whatever that document costs, and convergence still happens over passes exactly as
+    //    before — this changes the SHAPE of the hold, not the total work.
+    const ATLAS_SLICE_MS = 120
     const ATLAS_BUDGET = 6
     // ATLAS_ADOPT — cache adoptions per pass.  An adopt rebuilds a %Map from its Dexie row with no
     //  read and no parse (mint-only), so it is far cheaper than a map and gets its own, wider lane.
+    //  ⇢ 2026-09-08: this ceiling is now secondary to ATLAS_SLICE_MS — the adopt lane exits on the time
+    //     bound like the map lane does, so 40 is a cap that is rarely the thing that stops a pass.
     const ATLAS_ADOPT = 40
     // ATLAS_REFRESH_MAP — docs a refresh will map INLINE before handing the rest to the pass.  A
     //  refresh runs inside a query op (the caller is waiting on the answer), so it settles the few
     //   movers a working session produces itself and only defers a bulk change (a branch switch).
     const ATLAS_REFRESH_MAP = 24
-    // ATLAS_DISPATCHED — def-name shapes that are reached by NAME, never by a call the parser sees
-    //  (req_<name> from the req machine, e_<name> from elvis, Run_A_<Book> from Story), so the orphan
-    //   lint leaves them out.  A do_fn named after its world (`Atlas(A,w)`) is dispatched the same way
-    //    but has no prefix to tell it by — those stay in the list, which is why it is a scan aid, not
-    //     a verdict.
-    const ATLAS_DISPATCHED = /^(req_|e_|Run_A_|_)/
-    // the fixture side of the unproven-sentence lint: a Book's LAST numbered snap carries every
-    //  sentence it has ever noticed (a %see is once-noticed and never dropped), so one read per Book
-    //   is the whole fixture corpus.  Sentences have no commas (the peel rule), so `see:` runs to
-    //    the next comma or line end.
-    const SNAP_NAME_RE = /^\d+\.snap$/
-    const SEE_LINE_RE  = /^\s*see:([^,\n]+)/gm
+    // (ATLAS_DISPATCHED / SNAP_NAME_RE / SEE_LINE_RE MOVED OUT 2026-09-08 with the lints they served —
+    //  Ghost/L/Lagoon.g.  Atlas KEEPS; Lagoon ASKS: Wordland_todo §1.1, Lagoon_todo.md.)
     // the corpus: the authored trees, not the generated ones.  gen/ is the compiler's output.
     //  data/ + mostly/ are THE GROUND (TheC/TheX, Selection/resolve) — the substrate everything
     //   else calls into; a code model that cannot see `o()`'s home is not a model of this code.
@@ -175,10 +193,28 @@ async Atlas_pass(w, req, nav):
         //  point Atlas at a small, self-contained corpus (its own directory) instead of scanning the
         //  whole live repo — the compiler's own correctness is already unit-tested headless; what a
         //  Book should swear is the DRIVE (walk→map→converge, replace-not-pile, error handling).
-        let roots = w.c.roots ?? ATLAS_ROOTS
-        let n = 0
-        for (const root of roots) {
-            n = n + await this.Atlas_walk(w, nav, root)
+        // A RESUMABLE ROSTER (2026-09-08).  The roster was the last unbounded hold: one pass walked
+        //  every root — 715 docs — with the beliefs mutex held, measured at 4s and then 6s on the
+        //   owner's editor tab with their clicks queued behind it.  Chunking per ROOT was the first
+        //    attempt and was not enough: `src` alone is most of the corpus, so a fresh stand still
+        //     froze the tab for six seconds.
+        //  So the frontier is a QUEUE OF DIRECTORIES on `w.c`, and a pass drains it for one slice.
+        //   `Atlas_walk` itself is untouched and still recurses — `Atlas_refresh` NEEDS a complete walk
+        //    to compute `gone` by comparing its `seen` set, and a half-finished refresh would drop live
+        //     docs.  Only the roster, which has no such contract, is allowed to stop halfway.
+        if (!w.c.walk_q) w.c.walk_q = (w.c.roots ?? ATLAS_ROOTS).slice()
+        let q = w.c.walk_q
+        if (q.length) {
+            let until = Date.now() + ATLAS_SLICE_MS
+            let first = 1
+            while (q.length && (first || Date.now() < until)) {
+                first = 0
+                let dir = q.shift()
+                await this.Atlas_walk_one(w, nav, dir, q)
+            }
+            await this.Atlas_report(w)
+            this.i_elvisto(w, 'think')
+            return
         }
         w.c.rostered = 1
         await this.Atlas_report(w)
@@ -192,7 +228,10 @@ async Atlas_pass(w, req, nav):
     let adopted = 0
     let mapped = 0
     let more = 0
+    let slice_end = Date.now() + ATLAS_SLICE_MS
     for (const doc of w.o({ Doc: 1 })) {
+        // the time bound, checked before every unit of real work — see ATLAS_SLICE_MS
+        if ((adopted || mapped) && Date.now() > slice_end) { more = more + 1; continue }
         if (doc.sc.by === ATLAS_MAPPER && doc.oa({ Map: 1 })) continue   // mapped by THIS mapper
         if (doc.sc.by === ATLAS_MAPPER && doc.sc.error) continue          // failed under this mapper — don't spin
         let cold = doc.oa({ Map: 1 }) ? true : false
@@ -214,6 +253,33 @@ async Atlas_pass(w, req, nav):
 //   roster as it stood at the FIRST walk); `seen` collects every path met so a refresh can drop the
 //    Docs whose file is gone.  Each file's mtime+size ride on doc.c — a cache, not truth (the dige
 //     is the truth; these are the cheap tell that it MAY have moved), so they never snap.
+// Atlas_walk_one — ONE directory: mint its files' Doc rows and push its subdirectories onto the
+//  caller's frontier queue.  The non-recursive half of Atlas_walk, used only by the resumable roster
+//   (see Atlas_pass).  Deliberately a near-duplicate of the file loop below rather than a shared
+//    helper: the recursive walk owes `fresh`/`seen` semantics that the roster has no use for, and
+//     threading a mode flag through both would make the one function that must stay correct for
+//      refresh harder to read than two short ones.
+async Atlas_walk_one(w, nav, path, queue):
+    let dl = await nav.dir_at(path)
+    if (!dl) return 0
+    if (!dl.expanded) await dl.expand()
+    let n = 0
+    for (const f of dl.files) {
+        let ext = f.name.split('.').pop()
+        if (!ATLAS_EXT[ext]) continue
+        let p = path + '/' + f.name
+        let doc = w.o({ Doc: p })[0]
+        if (!doc) doc = w.i({ Doc: p })
+        doc.c.mtime = f.modified ? f.modified.getTime() : 0
+        doc.c.size = f.size ?? 0
+        n = n + 1
+    }
+    for (const d of dl.directories) {
+        if (ATLAS_SKIP[d.name]) continue
+        queue.push(path + '/' + d.name)
+    }
+    return n
+
 async Atlas_walk(w, nav, path, fresh, seen):
     let dl = await nav.dir_at(path)
     if (!dl) return 0
@@ -353,28 +419,6 @@ async Atlas_map_one(w, nav, doc):
         doc.sc.error = ('' + (e && e.message ? e.message : e)).slice(0, 120)
     }
 
-// Atlas_callers — the reverse lookup, owed since the first census (Stemdex_todo.md §0): "who calls
-//  X" answered WITH the doc it lives in, not just a count-and-line the way a wildcard minisnap path
-//  gives it (minisnap has no way to print a match's ancestry).  Walks every mapped Doc's `call` AND
-//  `elvisto` rows for the name — a plain o() per doc, no index: at 585 docs this is milliseconds, and
-//  building an actual reverse index would mean maintaining a SECOND structure in step with the first
-//  (exactly the sync-code smell the "five readings, nothing stored" design elsewhere here avoids).
-//  Returns [{doc, line, via, kind}], kind:'call'|'elvisto' so a caller can tell direct calls from
-//  deferred cross-ghost ones without a second query.
-Atlas_callers(w, name):
-    let out = []
-    for (const doc of w.o({ Doc: 1 })) {
-        let map = doc.o({ Map: 1 })[0]
-        if (!map) continue
-        for (const c of map.o({ call: 1, method: name })) {
-            out.push({ doc: doc.sc.Doc, line: c.sc.line, via: c.sc.via, kind: 'call' })
-        }
-        for (const e of map.o({ elvisto: 1, method: name })) {
-            out.push({ doc: doc.sc.Doc, line: e.sc.line, via: e.sc.via, target: e.sc.target, kind: 'elvisto' })
-        }
-    }
-    return out
-
 //#region the cache — Dexie 'atlas', one row per doc, the Map rows inside; strictly an accelerator
 // Atlas_db — the Stemdex's own pattern (Lies_stemdex_db): browser-only, one handle across HMR
 //  remixes, undefined where there is no indexedDB (a node runner) so every caller degrades to the
@@ -476,122 +520,6 @@ async Atlas_forget(w, paths):
     }
 //#endregion
 
-//#region the lints — queries over what is already held; no new state, no timer
-// Atlas_lint — three answers the census already contains.
-//  missing:    a `file:line` link in a doc whose target file is in NO living root — the tell that a
-//              spec moved to history/, was renamed, or never existed (CLAUDE.md's own corollary:
-//              "a referenced spec/X.md that isn't there is almost certainly spec/history/X.md").
-//  beyond_eof: the target exists but the cited line is past its end — the line drifted.
-//  orphans:    a def no call or elvisto anywhere names.  A scan aid, not a verdict: do_fns named
-//              after their world, UI handlers wired in markup and `this[name]` dispatch all read as
-//              orphans here.  Capped, with the total beside it.
-Atlas_lint(w):
-    let docs = w.o({ Doc: 1 })
-    let by_tail = {}
-    let lines_of = {}
-    for (const d of docs) {
-        let p = d.sc.Doc
-        lines_of[p] = +(d.sc.lines ?? 0)
-        let tail = p.slice(p.lastIndexOf('/') + 1)
-        if (!by_tail[tail]) by_tail[tail] = []
-        by_tail[tail].push(p)
-    }
-    let missing = []
-    let beyond = []
-    let file_links = 0
-    let called = {}
-    for (const d of docs) {
-        let map = d.o({ Map: 1 })[0]
-        if (!map) continue
-        for (const c of map.o({ call: 1 })) called[c.sc.method] = 1
-        for (const e of map.o({ elvisto: 1 })) called[e.sc.method] = 1
-        for (const l of map.o({ link: 1, kind: 'file' })) {
-            let target = l.sc.target
-            let ext = target.split('.').pop()
-            if (!ATLAS_EXT[ext]) continue                 // scripts/*.mjs &c. are not rostered — no verdict
-            // a target NAMING history/ or shelved/ points at a shelf Atlas deliberately never rosters
-            //  (CLAUDE.md's own corollary: "a referenced spec/X.md that isn't there is almost certainly
-            //   spec/history/X.md") — found live 2026-09-06 acting on this very lint's first findings:
-            //    `Vyto_sizing_todo.md`'s own `history/Voro_todo_parts_2026-07.md:392` is a well-formed,
-            //     deliberate reference this lint had no way to confirm and wrongly called missing.
-            if (/(^|\/)(history|shelved)\//.test(target)) continue
-            file_links = file_links + 1
-            let hit = this.Atlas_resolve(by_tail, target)
-            if (!hit) {
-                missing.push({ doc: d.sc.Doc, line: l.sc.line, target, at_line: l.sc.at_line })
-                continue
-            }
-            let at = +(l.sc.at_line ?? 0)
-            if (at > (lines_of[hit] ?? 0)) beyond.push({ doc: d.sc.Doc, line: l.sc.line, target: hit, at_line: at, lines: lines_of[hit] })
-        }
-    }
-    let orphans = []
-    let orphans_total = 0
-    for (const d of docs) {
-        let map = d.o({ Map: 1 })[0]
-        if (!map) continue
-        for (const f of map.o({ def: 1 })) {
-            let name = f.sc.method
-            if (!name || called[name]) continue
-            if (name === 'IMPORT') continue                 // the .g IMPORT() block parses as a def; it is not one
-            if (ATLAS_DISPATCHED.test(name)) continue
-            orphans_total = orphans_total + 1
-            if (orphans.length < 400) orphans.push({ doc: d.sc.Doc, name, line: f.sc.line })
-        }
-    }
-    return { docs: docs.length, file_links, missing, beyond_eof: beyond, orphans_total, orphans }
-
-// Atlas_resolve — a link target (`Heist.g`, `M/Heist.g`, `src/lib/O/Lang.svelte`) to a rostered
-//  path: same tail, then the longest path-suffix match; a bare filename takes the first holder.
-Atlas_resolve(by_tail, target):
-    let tail = target.slice(target.lastIndexOf('/') + 1)
-    let cands = by_tail[tail]
-    if (!cands) return null
-    if (target.indexOf('/') < 0) return cands[0]
-    for (const c of cands) {
-        if (c === target || c.endsWith('/' + target)) return c
-    }
-    return cands[0]
-
-// Atlas_unproven — every %see sentence in code that NO Book fixture has ever recorded.  A %see is
-//  the assertion idiom, so an unfixtured one is a claim nothing swears; a single-word `see:atlas`
-//   is a summary row, not a claim, so only sentences with a space count.  One read per Book (see
-//    SEE_LINE_RE above for why the last snap is enough).
-async Atlas_unproven(w, nav):
-    let fixtured = {}
-    let books = await nav.dir_at('wormhole/Story')
-    if (!books) return { error: 'no wormhole/Story under this nav' }
-    await books.expand()
-    let read = 0
-    // EVERY numbered snap, not just the last: sentences do not strictly accumulate (VytoStaple's
-    //  006 holds 4, 007 holds 3 — a beat's world can be re-stood), so the union over the Book's
-    //   snaps is the fixture truth.  ~1000 reads at the current corpus; opt-in for that reason.
-    for (const b of books.directories) {
-        if (!b.expanded) await b.expand()
-        for (const f of b.files) {
-            if (!SNAP_NAME_RE.test(f.name)) continue
-            let text = await nav.read_file('wormhole/Story/' + b.name, f.name)
-            if (!text) continue
-            read = read + 1
-            for (const m of text.matchAll(SEE_LINE_RE)) fixtured[m[1].trim()] = 1
-        }
-    }
-    let unproven = []
-    let total = 0
-    for (const d of w.o({ Doc: 1 })) {
-        let map = d.o({ Map: 1 })[0]
-        if (!map) continue
-        for (const p of map.o({ proves: 1 })) {
-            if (p.sc.desc) continue
-            let s = p.sc.sentence
-            if (!s || s.indexOf(' ') < 0) continue
-            total = total + 1
-            if (fixtured[s]) continue
-            unproven.push({ doc: d.sc.Doc, line: p.sc.line, via: p.sc.via, sentence: s })
-        }
-    }
-    return { books_read: read, fixtured: Object.keys(fixtured).length, sees_total: total, unproven }
-//#endregion
 
 // Atlas_report — the one summary row, replaced not piled (the Seem/%News idiom).
 //  AWAITED, and every caller awaits it: r() is an async replace(), and until it commits, o() on

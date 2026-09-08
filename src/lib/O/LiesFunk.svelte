@@ -2624,9 +2624,14 @@ await M.eatfunc({
                     //    movers inline — so an answer is as fresh as the disk at the moment of asking,
                     //     with no second timer (the Stemdex's own searchbar-nudges-a-pass rhythm).
                     //      `--stale` skips it for a cheap re-ask.  `fresh` in the reply is the tally.
+                    //  2026-09-08 — THE ANSWERS MOVED to `Ghost/L/Lagoon.g` (Atlas keeps; Lagoon asks —
+                    //   Lagoon_todo.md).  The op NAMES are unchanged so no script breaks, but the verbs
+                    //    are Lagoon's now and it finds the census itself, so this only needs to refresh.
                     const a = ask as any
                     const atlas = H.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
+                    const lagoon = H.top_House().o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
                     if (!atlas) { ok = false; result = { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' } }
+                    else if (!lagoon && op !== 'atlas_refresh') { ok = false; result = { error: 'no A:Lagoon standing — ghost_load Ghost/L/Lagoon.g --stand=Lagoon first (the readers moved there 2026-09-08)' } }
                     else {
                         const nav = (H as any).Atlas_nav()
                         let fresh: any = null
@@ -2636,13 +2641,37 @@ await M.eatfunc({
                         else if (op === 'atlas_callers') {
                             const name = String(a.name ?? '')
                             if (!name) { ok = false; result = { error: 'atlas_callers: name required' } }
-                            else result = { name, fresh, callers: (H as any).Atlas_callers(atlas, name) }
+                            else result = { name, fresh, callers: (H as any).Lagoon_callers(lagoon, name) }
                         } else {
                             // atlas_lint — missing / beyond_eof file:line links, orphan defs; --sees adds
                             //  the unproven %see sentences (one fixture read per Book, so it is opt-in)
-                            result = { fresh, census, ...(H as any).Atlas_lint(atlas) }
-                            if (a.sees && nav) (result as any).unproven = await (H as any).Atlas_unproven(atlas, nav)
+                            result = { fresh, census, ...(H as any).Lagoon_lint(lagoon) }
+                            if (a.sees && nav) (result as any).unproven = await (H as any).Lagoon_unproven(lagoon, nav)
                         }
+                    }
+                } else if (op === 'lagoon') {
+                    // The reader layer's own door (2026-09-08).  The `atlas_*` ops kept their names on the
+                    //  move so no script broke, but the verbs are Lagoon's now and it keeps growing them;
+                    //   one op per verb would be a second load-list.  So: `lagoon <verb>`, and the ghost
+                    //    stays the authority on what a verb means.
+                    //   defs [q] · families · mentions <name> · rot · callers <name> · lint · join
+                    const a = ask as any
+                    const lw = H.top_House().o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
+                    if (!lw) { ok = false; result = { error: 'no A:Lagoon standing — ghost_load Ghost/L/Lagoon.g --stand=Lagoon first' } }
+                    else {
+                        const L = H as any
+                        const verb = String(a.verb ?? 'families')
+                        const arg  = a.name != null ? String(a.name) : ''
+                        const k    = Number(a.k ?? 0) || undefined
+                        if (verb === 'defs')          result = L.Lagoon_defs(lw, arg, k ?? 300)
+                        else if (verb === 'families') result = L.Lagoon_families(lw, k ?? 60)
+                        else if (verb === 'mentions') result = L.Lagoon_mentions(lw, arg, k ?? 60)
+                        else if (verb === 'rot')      result = L.Lagoon_prose_rot(lw, k ?? 60)
+                        else if (verb === 'callers')  result = { name: arg, callers: L.Lagoon_callers(lw, arg) }
+                        else if (verb === 'lint')     result = L.Lagoon_lint(lw)
+                        else if (verb === 'join')     result = L.Lagoon_join(lw, k ?? 40)
+                        else { ok = false; result = { error: `lagoon: unknown verb '${verb}' — defs|families|mentions|rot|callers|lint|join` } }
+                        if (result?.error) ok = false
                     }
                 } else if (op === 'electrode') {
                     // Electrode (Ghost/L/Electrode.g): both ends of every ghost call, kept as marks on
@@ -2662,7 +2691,13 @@ await M.eatfunc({
                         else if (verb === 'reduce')  result = E.Electrode_reduce(ew)
                         else if (verb === 'hangs')   result = { hangs: E.Electrode_hangs(ew, Number(a.older ?? 0)) }
                         else if (verb === 'film')    result = { film: E.Electrode_film(ew, Number(a.k ?? 60)) }
-                        else if (verb === 'join')    { result = E.Electrode_join(ew, Number(a.k ?? 40)); if (result?.error) ok = false }
+                        else if (verb === 'join')    {
+                            // the join MOVED to Lagoon 2026-09-08 — it reads BOTH censuses and belongs to
+                            //  neither, which is the worked example for why the reader layer exists.
+                            const lw = H.top_House().o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
+                            if (!lw) { ok = false; result = { error: 'no A:Lagoon standing — ghost_load Ghost/L/Lagoon.g --stand=Lagoon first' } }
+                            else { result = E.Lagoon_join(lw, Number(a.k ?? 40)); if (result?.error) ok = false }
+                        }
                         else                         result = E.Electrode_top(ew, Number(a.k ?? 20))
                     }
                 } else if (op === 'minisnap') {

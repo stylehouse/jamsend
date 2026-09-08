@@ -7,6 +7,13 @@ story:AtlasStaple
     Entcase:Self_round
       lematch,self,round
         means,spayer,re:self.round={INT},tol:any
+  TimeSpool
+    TimeTotal:beliefs,avg=0.032
+      sample=0.029,at=1788844057
+      sample=0.035,at=1788844819
+    TimeTotal:step,avg=0.006
+      sample=0.005,at=1788844057
+      sample=0.006,at=1788844819
   step,dige:c395d6a2c0dd07c7
   step=2,desc:load Ghost/L/Atlas.g on demand — mint A:Atlas beside the run — aim it at the frozen fixture,dige:0c14a558d5c4c94a
     Assertion:the-atlas-ghost-loads,sentence:the Atlas ghost loads on demand — no CREDULER_GHOSTS manifest edit needed

@@ -11,7 +11,7 @@ const ELECTRODE_SKIP = /^(Ghostmeta_|Electrode_|Electrode$)/   // never coat the
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Electrode(): string { return 'ca3be7404682da03~g1' },
+    Ghostmeta_Ghost_L_Electrode(): string { return '1d0238dafea1fe01~g1' },
 
 // Electrode.g — both ends of every ghost call, kept as marks, reduced to a picture.  The second ghost
 //  in Ghost/L/ (the land); spec home: src/lib/O/spec/Electrode_todo.md.
@@ -286,87 +286,12 @@ Electrode_film(w, k) {
 },
 //#endregion
 
-//#region the join — declared (Atlas) vs measured (Electrode)
-// Electrode_join — the prize named in Wordland_todo §3.  For every method that RAN as a caller this
-//  session, Atlas's `call,via:<that method>` rows say what its body DECLARES it calls; the tally says
-//   what it actually called.  declared − measured = paths this run never took (dead or untested);
-//    measured − declared = dispatch the static walk could not follow.  Declared callees are limited
-//     to names Atlas holds a `def` for, so `push`/`slice`/`console.log` never count as "never ran".
-//      Reads particles only (needs A:Atlas standing beside A:Electrode on the top House); never mints.
-Electrode_join(w, k) {
-    let top = this.top_House()
-    let atlas = top.o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0]
-    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
-    let T = this.Electrode_T()
-    // The universe is what the tap CAN see: the ghost bag.  Housing's class methods (top_House, o, i,
-    //  tlog, post_do…) have Atlas defs but are never coated, so a declared call to one is not a path
-    //   this instrument can say ran or didn't — leave them out of both columns.
-    let bag = top.ghosts || {}
-    let seeable = new Set(Object.keys(bag).filter(n => typeof bag[n] === 'function' && !ELECTRODE_SKIP.test(n)))
-    let defs = new Set()
-    let declared = new Map()                      // via → Set(callee)
-    let docs_of = new Map()                       // method → doc path (for the report)
-    for (const doc of atlas.o({ Doc: 1 })) {
-        let map = doc.o({ Map: 1 })[0]
-        if (!map) continue
-        for (const d of map.o({ def: 1 })) {
-            if (!seeable.has(d.sc.method)) continue
-            defs.add(d.sc.method)
-            if (!docs_of.has(d.sc.method)) docs_of.set(d.sc.method, doc.sc.Doc)
-        }
-        for (const c of map.o({ call: 1 })) {
-            if (!c.sc.via || !c.sc.method) continue
-            let set = declared.get(c.sc.via)
-            if (!set) {
-                set = new Set()
-                declared.set(c.sc.via, set)
-            }
-            set.add(c.sc.method)
-        }
-    }
-    let measured = new Map()                      // from → Map(to → n)
-    for (const row of T.tally.values()) {
-        if (!row.from) continue
-        let m = measured.get(row.from)
-        if (!m) {
-            m = new Map()
-            measured.set(row.from, m)
-        }
-        m.set(row.to, (m.get(row.to) || 0) + row.n)
-    }
-    let ran = 0
-    let pairs_declared = 0
-    let pairs_ran = 0
-    let never = []
-    let undeclared = []
-    let unknown_callers = 0
-    for (const [from, tos] of measured) {
-        if (!defs.has(from)) {
-            unknown_callers = unknown_callers + 1
-            continue
-        }
-        ran = ran + 1
-        let dec = declared.get(from) || new Set()
-        for (const callee of dec) {
-            if (!defs.has(callee)) continue
-            pairs_declared = pairs_declared + 1
-            if (tos.has(callee)) { pairs_ran = pairs_ran + 1 } else { never.push({ via: from, callee: callee, doc: docs_of.get(from) || null }) }
-        }
-        for (const [to, n] of tos) {
-            if (!dec.has(to) && defs.has(to)) undeclared.push({ from: from, to: to, n: n })
-        }
-    }
-    undeclared.sort((a, b) => b.n - a.n)
-    let kk = k || 40
-    return {
-        ran_methods: ran, unknown_callers: unknown_callers,
-        declared_pairs: pairs_declared, pairs_ran: pairs_ran,
-        coverage: pairs_declared ? Math.round(1000 * pairs_ran / pairs_declared) / 10 : null,
-        never_ran: never.length, never_ran_top: never.slice(0, kk),
-        undeclared: undeclared.length, undeclared_top: undeclared.slice(0, kk),
-        atlas_docs: atlas.o({ Doc: 1 }).length, atlas_defs: defs.size
-    }
-},
+//#region the join — MOVED OUT 2026-09-08
+// `Electrode_join` now lives in **Ghost/L/Lagoon.g** as `Lagoon_join`.  It reads BOTH censuses — Atlas's
+//  declared `call,via` rows and this tap's measured tally — and so belongs to neither, which is the
+//   worked example for why the reader layer exists at all (Lagoon_todo.md §0; Wordland_todo §1.1).
+//  It was written here first because this is where the tally is; that was convenience, and convenience
+//   is exactly how a ghost globulates.  `runner_ask electrode join` still works and dispatches to Lagoon.
 //#endregion
 // (a .g must end on a comment or statement, never a method-final brace)
 

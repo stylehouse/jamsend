@@ -4,12 +4,16 @@ story:VytoMemo
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.014
+    TimeTotal:beliefs,avg=0.011
       sample=0.016,at=1786232336
       sample=0.011,at=1786232368
-    TimeTotal:step,avg=0.004
+      sample=0.009,at=1788854825
+      sample=0.008,at=1788854920
+    TimeTotal:step,avg=0.003
       sample=0.004,at=1786232336
       sample=0.003,at=1786232368
+      sample=0.002,at=1788854825
+      sample=0.002,at=1788854920
   step,dige:lie
   step=2,dige:lie,desc:seed a two-level rig — three cogs under the root and two grandchildren under the first
   step=3,dige:lie,desc:commission the glass nested on the rig and stir to rest
