@@ -13,7 +13,53 @@ Home of: the **reader layer** (every answer asked of a census, in one place) and
 
 ## 0. What to get on with next
 
-### ☀ WHERE IT STANDS — 2026-09-09, ~03:00, after the overnight run.  READ THIS FIRST.
+### ☀ 2026-09-09 EVENING — the day lined up, and where it is going.  READ THIS FIRST.
+
+The owner, tired, end of day: *"can we line up the rest of the day's work, and where are we going…"*
+ This block is that.  The ~03:00 block below it is still true and is the record of the night.
+
+**Where we are going, in one sentence:** the code is becoming the same legible living matter as
+ everything else here — a census that KEEPS (Atlas, Electrode, the Stemdex), one reader that ASKS
+  (Lagoon), and faces that are only renderings of one answer.  Every move today was that sentence
+   applied to a new seam.
+
+**What landed today, each a seam the bet crossed:**
+- **The include door** — `Lies_ghost_include` (LiesLies).  *The mount was the load*: a ghost could
+   only exist by being drawn, which is why the L ghosts kept evaporating.  Split.  A ghost can now be
+    HAD without being SHOWN, and every attempt leaves `%GhostInclude:<gen>,stood:yes|<why>` on the
+     shelf the Creduler already keeps — the spine and the hand-loaded land read off one list.
+      `ghost_load`'s ack stopped lying the same afternoon (it reported `stood` after a no-op).
+- **The served dige** — `src/lib/server/dige.ts` + `digePlugin` (vite.config.ts), `Atlas_diges`.
+   Atlas already memoized the PARSE (Dexie); the 723 file READS it deliberately refused to skip now
+    cost one conditional GET.  The dige still decides, and the tab CORROBORATES the server's stat
+     against its own before reusing a hash.  Measured warm: `cache_none:0, cache_moved:1,
+      dige_hit:722`.  The 1 was the corroboration catching a real mover on its first outing.
+- **The Testing border** — `src/lib/L/testing.ts`; `Voronation.g → VoroTesting.g`.  A Testing doc is
+   where the Book dialect meets a ghost's verbs — a place *"societies of language interact"* (the
+    owner).  One predicate: Atlas keeps `%Doc,testing`, the Searchbar and Lagui draw the row with a
+     teal border-rule + ⚗, runner_ask prints ⚗.  **Twelve `ation.g` files owe the same rename** and
+      are deliberately NOT matched by the old name, so the rename cannot be skipped.
+
+**Next, in order:**
+1. **Rename the other twelve** `<Name>ation.g → <Name>Testing.g` (Swarmation, Musuation, Radiation,
+    Atlantation, Lagoonation, Electrodation, Vytonation, Peregrination, Siphonation, Berthation,
+     Errchannelation, Heistation).  Mechanical: mv, `CREDULER_GHOSTS` in LiesLies, drop the old
+      `.go`, LocalGen.  Book names and fixtures do not move (a Book is named by its recipe, not its
+       file).  The Credulation/GhostList toc.snaps churn — the accepted class.
+2. **The figurines view** — the owner: *"figurines of things that are well connected… record runtime
+    data about which methods are top-most, popular."*  The DATA ALREADY EXISTS: `Electrode_top` gives
+     the hottest flows by count and by time; Atlas holds static popularity (`calls` per def and the
+      caller index).  *Top-most* = a flow whose `from` is ∅ or never appears as anyone's `to` — a
+       reduce over the tally, not a new tap.  So this is a Lagoon verb (`Lagoon_figurines`: joins
+        Electrode's runtime tally onto Atlas's defs, ranks by in-degree × recency) and a FACE that
+         sizes a figurine by that rank — `dose_drives` in Matstyle is the sizing idiom.  Ask first,
+          keep nothing: the concept line holds.  Gate: a Book that arms Electrode, runs a known
+           beat, and swears the top figurine by name.
+3. **Rule on RETIRED vs GONE** and **`Story_next_level`** — still owed from the ~03:00 block.
+4. **Style the Testing border in Cyto/Matstyle** if the owner wants it on the graph too — today it is
+    on the two faces and the CLI only.
+
+### ☀ WHERE IT STANDS — 2026-09-09, ~03:00, after the overnight run.
 
 *The blocks below this one are the RECORD: the course as plotted, then what each leg cost and taught.
  They are worth reading and they are not a to-do list any more.  This is the to-do list.*

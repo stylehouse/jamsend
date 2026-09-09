@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { is_testing } from "$lib/L/testing"
     // Lagui — the Lagoon face.  The first SURFACE over the censuses, and the answer to the owner's
     //  "where's all the work?" (2026-09-08): until this existed, everything Atlas and Lagoon know was
     //   reachable only from the CLI, which is not a place anyone lives.
@@ -207,7 +208,7 @@
             {#each index.defs as d (d.doc + d.name + d.line)}
                 <div class="lag-grow">
                     <div class="lag-row2">
-                        <button class="lag-hit" onclick={() => goto(d.doc, d.name)} title="{d.doc}:{d.line} — open & land on it">
+                        <button class="lag-hit" class:testing={is_testing(d.doc)} onclick={() => goto(d.doc, d.name)} title="{d.doc}:{d.line} — open & land on it">
                             <span class="k">ƒ</span>
                             <span class="via">{d.name}</span>
                             <!-- the bead a method lives in: `path:line` says where it is on disk, this
@@ -364,6 +365,10 @@
     .lag-hit .k { color: #7a8fa8; flex: none; width: 1rem; }
     .lag-hit .via { color: #cfe0ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .lag-hit .doc { color: #6a7c99; margin-left: auto; white-space: nowrap; flex: none; }
+    /* Testing docs (src/lib/L/testing.ts) — the same border the Searchbar draws: teal rule, ⚗ doc */
+    .lag-hit.testing { border-left: 2px solid rgba(90, 200, 190, 0.55); border-radius: 0 4px 4px 0; }
+    .lag-hit.testing .doc { color: #5ab; }
+    .lag-hit.testing .doc::before { content: '⚗ '; }
     /* the bead a def lives in — the file's own declared structure, beside its disk position */
     .lag-hit .bead { color: rgba(224, 180, 110, 0.8); white-space: nowrap; flex: none;
                      overflow: hidden; text-overflow: ellipsis; max-width: 14rem; }

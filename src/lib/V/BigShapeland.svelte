@@ -125,18 +125,23 @@
     <main class="bs-main">
         {#each houses as house (house.c.ip)}
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
-                {#if sprawl || GLASS_UIS.includes(uiC.sc.UI as string)}
-                    <section class="bs-piece" class:bs-glass={uiC.sc.UI === 'Vyto'}>
-                        <span class="bs-tag">{house.name} · {uiC.sc.UI}</span>
-                        <svelte:component this={uiC.sc.component} H={house} />
-                    </section>
-                {/if}
+                <!-- ⚠ MOUNT EVERY UI, HIDE THE ONES YOU ARE NOT LOOKING AT (2026-09-09).  The first
+                     cut filtered with `{#if}` and the Book would not START until you clicked "show
+                     every UI" — the owner: *"it must be addicted to having its UI tell it that it's
+                     ready."*  It is: a Book's Story world stands up through Storui MOUNTING, so a
+                     conditional block that never renders it never runs the Book.  Presence in the DOM
+                     is load-bearing, which is a real coupling and not one this room should try to
+                     break — so every UI mounts and the ones you did not ask for are hidden with CSS.
+                     Same instinct as a FaceSucker: cover it, do not unbuild it. -->
+                <section class="bs-piece" class:bs-glass={uiC.sc.UI === 'Vyto'}
+                         hidden={!sprawl && !GLASS_UIS.includes(uiC.sc.UI as string)}>
+                    <span class="bs-tag">{house.name} · {uiC.sc.UI}</span>
+                    <svelte:component this={uiC.sc.component} H={house} />
+                </section>
             {/each}
         {/each}
-        {#if !houses.some(h => h.UIs.ob({ UI: 1 }).some(u => sprawl || GLASS_UIS.includes(u.sc.UI as string)))}
-            <div class="bs-wait">
-                gathering the glass… {#if !sprawl}<button class="bs-link" onclick={() => sprawl = true}>show every UI</button>{/if}
-            </div>
+        {#if !houses.some(h => h.UIs.ob({ UI: 1 }).some(u => GLASS_UIS.includes(u.sc.UI as string)))}
+            <div class="bs-wait">gathering the glass…</div>
         {/if}
     </main>
 </div>

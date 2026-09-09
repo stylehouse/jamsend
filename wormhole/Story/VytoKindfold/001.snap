@@ -1,8 +1,0 @@
-Snap:H
-  H:VytoKindfold,Run
-    A:VytoKindfold
-      self,round	{"mung":["age"]}
-      w:VytoKindfold
-        self,round	{"mung":["age"]}
-        req:wrangle,eternal,ok
-        diag:kindfold,vw:0,rows:-1,crests:-1,folded:-1,deck:none,commissioned:0

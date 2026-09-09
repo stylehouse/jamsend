@@ -2590,7 +2590,17 @@ await M.eatfunc({
                                 }
                             }
                         }
+                        // BOTH DOORS, and the second one is the one that answers.  `Lies_ghost_set`
+                        //  only ENROLS: it early-returns the moment the gen is already in watched:UIs
+                        //   and otherwise waits for something to render the enrolment, because in this
+                        //    machine the mount is the load.  So a second ghost_load on a tab was a
+                        //     no-op that still replied `stood:"Atlas"` — an ack that cannot fail is an
+                        //      ack that carries no information, and it cost this session an hour of
+                        //       chasing a ghost that had never loaded.  The enrol is KEPT (a room that
+                        //        wants to draw the module still finds it); `Lies_ghost_include` then
+                        //         actually loads it, detached, and says so on the %GhostInclude shelf.
                         await H.Lies_ghost_set(path)
+                        const included = await H.Lies_ghost_include(path)
                         let stood: string | undefined
                         if (a.stand) {
                             const name = String(a.stand)
@@ -2609,7 +2619,16 @@ await M.eatfunc({
                             stood = name
                         }
                         H.i_elvisto(w, 'think')
-                        result = { loaded: path, gen: H.Lies_gen_path(path), stood: stood ?? null, swapped }
+                        // the reply says what HAPPENED, not what was attempted: `included` false means
+                        //  the methods are not on this tab, and `why` is the shelf's own reason
+                        const shelf = H.Lies_include_shelf()
+                        const grow  = shelf.o({ GhostInclude: H.Lies_gen_path(path) })[0] as TheC | undefined
+                        result = {
+                            loaded: path, gen: H.Lies_gen_path(path), included,
+                            why: included ? undefined : (grow?.sc.stood ?? 'unknown'),
+                            stood: stood ?? null, swapped,
+                        }
+                        ok = included
                     }
                 } else if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
                     // The reverse lookup owed since the Atlas census began (Stemdex_todo.md §0):

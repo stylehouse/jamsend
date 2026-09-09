@@ -1595,7 +1595,7 @@ export class House extends StorableHousing {
             // a directed/ambient think reached a w with no resolvable handler.  TWO causes, one
             //  benign, one real: an INERT report world (w:Voronoiology has no drive method by
             //   design — expected every crush beat) vs a genuinely MISSING method (a stale/partial
-            //    gen — e.g. the regroup that left VoroScape out of Voronation.go).  This warn can't
+            //    gen — e.g. the regroup that left VoroScape out of VoroTesting.go).  This warn can't
             //     tell them apart, so gate it like its two siblings above (V.beliefs) — the flood was
             //      drowning the console; a real miss still shows as broken behaviour + render telemetry.
             if (targeting === 2) {

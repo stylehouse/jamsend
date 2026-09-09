@@ -1,6 +1,7 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import { attachRelay } from './src/lib/server/relay';
+import { serve_diges } from './src/lib/server/dige';
 
 // Root .env/.env.local, merged under process.env (env_file injection wins).  This is how
 //  site-specific names/creds stay OUT of tracked files: PROD_DOMAIN &c. live in the
@@ -40,8 +41,24 @@ const allowedHosts = [
 	...env('ALLOWED_HOSTS').split(',').map(h => h.trim()).filter(Boolean),
 ];
 
+// Atlas's dige index, served from the process that holds the repo (src/lib/server/dige.ts explains
+//  why here and not a new container).  Same dev-only shape as relayPlugin: configureServer never
+//   runs in a build, so this adds no production surface.  A tab that cannot reach it simply falls
+//    back to reading + diging each file itself, which is what it did before.
+function digePlugin(): PluginOption {
+	return {
+		name: 'atlas-dige',
+		configureServer(server) {
+			server.middlewares.use((req, res, next) => {
+				try { if (serve_diges(process.cwd(), req, res)) return } catch { /* fall through to vite */ }
+				next();
+			});
+		},
+	};
+}
+
 export default defineConfig({
-	plugins: [sveltekit(), relayPlugin()],
+	plugins: [sveltekit(), relayPlugin(), digePlugin()],
 
 	// Bake the cluster's PUBLIC trust anchors into the client so the browser can VERIFY inbound
 	//  signed frames (this-dock-updated, etc.). Sourced from process.env (compose env_file

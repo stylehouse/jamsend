@@ -1059,10 +1059,12 @@ else if (op === 'snap' && reply.result?.got_snap) {
 		console.log(`\n  ${title}  (${rows.length})`)
 		for (const x of rows.slice(0, 40)) console.log('    ' + fmt(x))
 		if (rows.length > 40) console.log(`    … ${rows.length - 40} more`) }
-	sect('ƒ  methods', r.defs, d => `${String(d.name).padEnd(34)} ${d.doc}:${d.line}${d.from === 'stemdex' ? '   (stemdex only)' : ''}`)
-	if (r.mentions?.length) sect(`¶  prose that names \`${r.mentions_of}\``, r.mentions, m => `${m.doc}:${m.line}`)
-	sect('%  properties', r.props, p => `${String(p.name).padEnd(34)} ${p.doc}:${p.line ?? ''}`)
-	sect('≈  text', r.texts, t => `${String(t.name).padEnd(34)} ${t.doc}:${t.line ?? ''}`)
+	// ⚗ marks a Testing doc — the same predicate as src/lib/L/testing.ts (copied: an .mjs can't import $lib)
+	const T = p => /Testing\.g$/.test(p ?? '') ? '⚗ ' : '  '
+	sect('ƒ  methods', r.defs, d => `${T(d.doc)}${String(d.name).padEnd(34)} ${d.doc}:${d.line}${d.from === 'stemdex' ? '   (stemdex only)' : ''}`)
+	if (r.mentions?.length) sect(`¶  prose that names \`${r.mentions_of}\``, r.mentions, m => `${T(m.doc)}${m.doc}:${m.line}`)
+	sect('%  properties', r.props, p => `${T(p.doc)}${String(p.name).padEnd(34)} ${p.doc}:${p.line ?? ''}`)
+	sect('≈  text', r.texts, t => `${T(t.doc)}${String(t.name).padEnd(34)} ${t.doc}:${t.line ?? ''}`)
 	if (!r.defs.length && !r.props?.length && !r.texts?.length && !r.families?.length) console.log('  nothing')
 } else if (op === 'lagoon' && reply.result && !reply.result.error && reply.result.chain) {
 	// beads — one document as its own shape.  Printed as a CHAIN: file order, indented by region

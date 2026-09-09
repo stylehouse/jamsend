@@ -21,6 +21,7 @@
     //   DocWaftMap can hang the hits off its Doc chips.
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
+    import { is_testing } from "$lib/L/testing"
 
     //  onpin (optional) — a host with loose space (BigWordland's pin rail) can offer 📌 per
     //   row: pin the hit without navigating.  Liesui passes nothing and sees no pins.
@@ -263,7 +264,9 @@
             {/if}
             {#each hive as h (h.glyph + h.path + (h.name ?? '') + h.line)}
                 {#if h.heads}<div class="usb-kind">{KIND[h.rank]}</div>{/if}
-                <div class="usb-row" class:lit={hover_docs.has(h.path)}>
+                <!-- a Testing doc is the border where the Book dialect meets a ghost's verbs — drawn
+                     as a border: same row, one rule down its left, the doc in the lab hue -->
+                <div class="usb-row" class:lit={hover_docs.has(h.path)} class:testing={is_testing(h.path)}>
                     {#if h.rank === 0}
                         <!-- climb — erupts this method's callers under the row, on demand -->
                         <button class="usb-climb" class:on={climbed === h.name}
@@ -421,6 +424,12 @@
     .usb-g    { color: #7a8fa8; flex-shrink: 0; }
     .usb-name { color: #cd9; flex-shrink: 0; transition: color 0.12s, text-shadow 0.12s; }
     .usb-doc  { color: #679; flex-shrink: 0; }
+    /* Testing docs (src/lib/L/testing.ts) — a society-of-language border, so a border: a teal rule
+       down the row's left and the doc in the same hue, prefixed ⚗.  Quiet enough to scan past,
+       distinct enough that a column of hits shows where the Books are without reading a path. */
+    .usb-row.testing { border-left: 2px solid rgba(90, 200, 190, 0.55); padding-left: 0.3rem; margin-left: -0.3rem; }
+    .usb-row.testing .usb-doc { color: #5ab; }
+    .usb-row.testing .usb-doc::before { content: '⚗ '; }
         /* with a column layout the snippet gets its own line and may breathe — at 45vh it had to fight
        the path for one row and was usually an ellipsis. */
     .usb-snip { color: #667; padding-left: 1.2rem; overflow: hidden; text-overflow: ellipsis;

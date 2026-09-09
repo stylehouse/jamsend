@@ -8,3 +8,9 @@ Waft:Aside/2026-09-09,aside
   What=3,FromWhat:Waft:Ghost/Net/Easy/What:the peer,about:text:repli_allow
     Doc:Ghost/N/Repli.g
       Point,method:text:repli_allow
+  What=4,FromWhat:Waft:Ghost/Net/Easy/What:the peer,about:BootGateNoFSA
+    Doc:Ghost/Story/Sounditron.g
+      Point,method:BootGateNoFSA
+  What=5,FromWhat:Waft:Ghost/Net/Easy/What:the peer,about:VoroMitosis_seed
+    Doc:Ghost/Story/Voronation.g
+      Point,method:VoroMitosis_seed

@@ -50,6 +50,7 @@ IMPORT()
     import { EditorState } from "@codemirror/state"
     import { lang, lang_for_path } from "$lib/O/lang/lang"
     import { dig } from "$lib/Y.svelte"
+    import { is_testing } from "$lib/L/testing"
     import { Dexie } from "dexie"
 
     // ATLAS_MAPPER — the mapper's own version, stamped on every %Doc as `by`.  A row whose `by` is
@@ -226,6 +227,9 @@ async Atlas_pass(w, req, nav):
             return
         }
         w.c.rostered = 1
+        // the roster is complete, so the adopt lane starts next pass — pull the served dige index
+        //  now, once, while there is nothing else in flight
+        await this.Atlas_diges(w)
         await this.Atlas_report(w)
         this.i_elvisto(w, 'think')
         return
@@ -279,6 +283,10 @@ async Atlas_walk_one(w, nav, path, queue):
         let p = path + '/' + f.name
         let doc = w.o({ Doc: p })[0]
         if (!doc) doc = w.i({ Doc: p })
+        // `testing` is a fact of the PATH, so it is stamped at mint and costs no read: a snapped 1 or
+        //  absent, never 0.  Kept here so the census itself can be asked "which docs are the border
+        //   between the Book dialect and the ghosts" (src/lib/L/testing.ts is the one predicate).
+        if (is_testing(p)) doc.sc.testing = 1
         doc.c.mtime = f.modified ? f.modified.getTime() : 0
         doc.c.size = f.size ?? 0
         n = n + 1
@@ -303,6 +311,7 @@ async Atlas_walk(w, nav, path, fresh, seen):
         let doc = w.o({ Doc: p })[0]
         if (!doc) {
             doc = w.i({ Doc: p })
+            if (is_testing(p)) doc.sc.testing = 1
             if (fresh) w.c.refresh_added = w.c.refresh_added + 1
         } else if (doc.c.mtime !== mtime || doc.c.size !== size) {
             // the file moved under a settled Doc: un-stamp the mapper so the pass re-maps it (the
@@ -333,6 +342,15 @@ async Atlas_walk(w, nav, path, fresh, seen):
 async Atlas_refresh(w, nav):
     w.c.refresh_added = 0
     w.c.refresh_changed = 0
+    // A REFRESH IS THE MOMENT FILES MAY HAVE MOVED, so the served index is discarded and re-asked
+    //  before anything is adopted against it.  Holding the boot's copy here would be the one way
+    //   this accelerator could become the stale-adopt it exists beside; the walk below re-stats
+    //    every file anyway, so a fresh map is what its mtime+size are then corroborated against.
+    //  Clearing `asked_diges` too is what lets a tab that booted against a server with no endpoint
+    //   pick one up later without a reload.
+    w.c.dige_of = undefined
+    w.c.asked_diges = undefined
+    await this.Atlas_diges(w)
     let seen = {}
     let roots = w.c.roots ?? ATLAS_ROOTS
     for (const root of roots) {
@@ -428,6 +446,41 @@ async Atlas_map_one(w, nav, doc):
         doc.sc.error = ('' + (e && e.message ? e.message : e)).slice(0, 120)
     }
 
+//#region the served dige index — the read the cache could not skip
+// THE CACHE ALREADY SKIPS THE PARSE; THIS SKIPS THE READ.  `Atlas_cache_adopt` refuses to trust
+//  mtime+size and pays a real read+dige before adopting (see its own note — two edits in one second
+//   at the same byte length is exactly the silent stale-adopt this project exists to refuse).  Right,
+//    and unchanged.  But it means a WARM boot reads ~724 files through FSA, 40 per polite pass, only
+//     to learn that nothing moved.  That is the whole of "a ton of docs reading every time".
+//  So the dige is computed where the bytes already are.  The dev server holds the repo; it hashes it
+//   once and memoizes by mtime+size on ITS side, where a stale memo is cheap because that process
+//    owns the filesystem.  One conditional GET replaces 724 reads and the DECIDER IS STILL A CONTENT
+//     HASH — the same sha256-first-16 `dig` makes, just not made here.  Nothing is trusted that was
+//      not trusted before; the same fact simply costs a sentence instead of a corpus.
+//  (src/lib/server/dige.ts + `digePlugin` in vite.config.ts.  Dev-only, hashes never contents.)
+// FAILURE IS FREE.  A tab whose server lacks the endpoint — an older dev server, a remote node, a
+//  Book — gets null and every doc falls back to its own read+dige, which is exactly the old
+//   behaviour.  So this is an accelerator with no new way to be wrong, and it is asked ONCE: the
+//    `asked_diges` latch stops a missing endpoint costing a request per pass forever.  A refresh
+//     clears both so a re-walk re-asks.
+async Atlas_diges(w):
+    if (w.c.dige_of) return w.c.dige_of
+    if (w.c.asked_diges) return null
+    w.c.asked_diges = 1
+    let roots = (w.c.roots ?? ATLAS_ROOTS).join(',')
+    try {
+        let r = await fetch('/__atlas/dige?roots=' + roots, { signal: AbortSignal.timeout(4000) })
+        if (!r.ok) return null
+        let j = await r.json()
+        w.c.dige_of = j.dige
+        console.log('🗺 atlas dige index — ' + j.docs + ' docs, served in ' + j.ms + 'ms')
+        return w.c.dige_of
+    } catch (e) {
+        console.log('🗺 atlas dige index unavailable — reading each doc (' + String(e && e.message ? e.message : e) + ')')
+        return null
+    }
+//#endregion
+
 //#region the cache — Dexie 'atlas', one row per doc, the Map rows inside; strictly an accelerator
 // Atlas_db — the Stemdex's own pattern (Lies_stemdex_db): browser-only, one handle across HMR
 //  remixes, undefined where there is no indexedDB (a node runner) so every caller degrades to the
@@ -481,8 +534,24 @@ async Atlas_cache_adopt(w, nav, doc):
     } catch (e) {
         return false
     }
-    if (!row || !row.sc || row.sc.by !== ATLAS_MAPPER) return false
-    if (row.mtime !== (doc.c.mtime ?? 0) || row.size !== (doc.c.size ?? 0)) return false
+    // WHY THE THREE REFUSALS ARE COUNTED SEPARATELY (2026-09-09).  A cache that never hits and a
+    //  cache that always hits look identical from outside — both are "it ran and the answers were
+    //   right" — so the only honest way to know is a number.  This was learned the embarrassing way:
+    //    the memo was declared broken here on the strength of a grep for `warm:1`, which never
+    //     matches because a snapped 1 renders as a BARE KEY (`,warm`) — the census had been saying
+    //      so correctly all along and the reader was wrong.  Hence a tally, which cannot be misread.
+    //  Three, not one, because the three misses have completely different fixes: no row at all
+    //   (nothing was ever written, or a different db), a row from an older mapper (a version bump —
+    //    self-healing and expected), a row whose file genuinely moved (real work to redo).
+    //  First live measurement, warm runner, 723 docs: cache_none 0, cache_moved 1, dige_hit 722.
+    //   The 1 was Atlas.g itself, recompiled between the server's stat and the tab's — the
+    //    corroboration catching a real mover on its first outing, which is the best kind of proof.
+    if (!row || !row.sc) { w.c.cache_none = (w.c.cache_none ?? 0) + 1; return false }
+    if (row.sc.by !== ATLAS_MAPPER) { w.c.cache_old = (w.c.cache_old ?? 0) + 1; return false }
+    if (row.mtime !== (doc.c.mtime ?? 0) || row.size !== (doc.c.size ?? 0)) {
+        w.c.cache_moved = (w.c.cache_moved ?? 0) + 1
+        return false
+    }
     // mtime+size matching is only a HINT the row might still be good, never proof — the owner's own
     //  challenge 2026-09-06 ("I don't think we know the mtime"): two edits inside the same wall-clock
     //   second that leave a file's byte length unchanged (a single-character substitution, exactly
@@ -493,11 +562,37 @@ async Atlas_cache_adopt(w, nav, doc):
     //        decide.  git's own index does the identical mtime+size-then-hash two-step for the same
     //         reason; there is no daemon-side git integration to lean on instead (checked: neither the
     //          runner tab, sandboxed to FSA, nor scripts/daemon/main.ts shells out to git today).
+    //  ⇢ 2026-09-09: the read below is usually SERVED now — `Atlas_diges` holds a path→[dige,mtime,
+    //     size] map the dev server computed off the same bytes with the same sha256-first-16.
+    //  AND IT IS CORROBORATED, NOT BELIEVED.  A served dige is a claim about the file AT THE MOMENT
+    //   THE SERVER HASHED IT, where the read below was a claim about now — so taking it on its own
+    //    word would quietly reintroduce the stale-adopt this function's whole existence refuses.  It
+    //     is used only when the server's OWN stat agrees with the mtime+size this tab's FSA walk
+    //      recorded independently on doc.c — which the Dexie row above has already had to match too.
+    //       Three observers of the same metadata, from two processes, before a hash is reused.
+    //  The residual window is honest and worth stating: a write landing between the server's stat and
+    //   the tab's, that leaves byte length AND mtime identical, would pass.  That is git's index
+    //    heuristic exactly, it needs a same-second same-length edit to two observers at once, and
+    //     `Atlas_refresh` — which every query nudges — re-pulls the map and re-walks, so it closes.
+    //      Disagreement is not an error: it just falls through to the read, as before.
     let path = doc.sc.Doc
-    let cut = path.lastIndexOf('/')
-    let text = await nav.read_file(path.slice(0, cut), path.slice(cut + 1))
-    if (text == null) return false
-    let dige = await dig(text)
+    let served = w.c.dige_of ? w.c.dige_of[path] : null
+    let dige = null
+    if (served && served[1] === (doc.c.mtime ?? 0) && served[2] === (doc.c.size ?? 0)) dige = served[0]
+    if (dige) {
+        w.c.dige_hit = (w.c.dige_hit ?? 0) + 1
+    } else {
+        // COUNTED, not assumed.  Every corroboration this can fail — a clock precision mismatch, a
+        //  root the server does not walk, an endpoint that isn't there — fails the same silent way:
+        //   correct answers, no saving, and nothing on screen to say so.  So the two lanes are
+        //    tallied onto the census row (`see:atlas,dige_hit,dige_read`), and a hit rate near zero
+        //     is then a thing you can SEE rather than a speedup you assumed you had.
+        w.c.dige_read = (w.c.dige_read ?? 0) + 1
+        let cut = path.lastIndexOf('/')
+        let text = await nav.read_file(path.slice(0, cut), path.slice(cut + 1))
+        if (text == null) return false
+        dige = await dig(text)
+    }
     if (dige !== row.sc.dige) return false
     let old = doc.o({ Map: 1 })[0]
     if (old) doc.drop(old)
@@ -552,5 +647,14 @@ async Atlas_report(w):
     row.sc.docs   = '' + docs.length
     row.sc.mapped = '' + mapped
     row.sc.errors = '' + errors
+    // THE MEMO'S OWN VITAL SIGNS.  Each absent until it happens, so a cold snap stays as legible as
+    //  it was — but the moment the cache is doing nothing, the row SAYS which of the three ways.
+    //   `cache_none` climbing to the doc count is the tell that the memo is not memoizing at all.
+    if (w.c.cache_none) row.sc.cache_none = '' + w.c.cache_none
+    if (w.c.cache_old) row.sc.cache_old = '' + w.c.cache_old
+    if (w.c.cache_moved) row.sc.cache_moved = '' + w.c.cache_moved
+    // the served-dige tally — the two lanes of the corroboration, hit meaning a read was skipped
+    if (w.c.dige_hit) row.sc.dige_hit = '' + w.c.dige_hit
+    if (w.c.dige_read) row.sc.dige_read = '' + w.c.dige_read
     delete row.sc.waiting
 //#endregion

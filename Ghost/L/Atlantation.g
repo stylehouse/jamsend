@@ -1,4 +1,5 @@
-// Atlantation.g — the Atlas.g proof.  Naming mirrors Voro→Voronation, Vyto→Vytonation: the model's
+// Atlantation.g — the Atlas.g proof.  (Owed the `<Name>Testing.g` rename — VoroTesting.g led, 2026-09-09;
+//  see src/lib/L/testing.ts.)  Naming mirrored Voro→Voronation, Vyto→Vytonation: the model's
 //  own Books live in a `<Name>ation.g` beside it.
 //
 // CONVENTION (Musu*/Sounditron, restated from Vytonation.g): no Run_A_ recipe — the world MUST be

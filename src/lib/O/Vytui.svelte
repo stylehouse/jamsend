@@ -1285,12 +1285,32 @@
     //  ground via matstyle_ground (the Style subagent seeded the organs + a deterministic string-hash
     //   for any future mainkey).  Guarded — if Matstyle isn't mixed on yet it returns null and the cell
     //    keeps its default .cell.faced fill, so this can only ADD colour, never regress.
+    // ── A CREST IS COLOURED BY WHAT IT STANDS FOR (2026-09-09) ────────────────────────────────────
+    //  Two reasons every folded glass came out as identical grey blobs, and both are here:
+    //   ① `cell.source` is the scan's backlink (`row.c.source_n`), and a CREST is minted by the fold
+    //      rather than the scan — so it has none, `cell_ground` returned null, and the cell fell back
+    //       to the default `.cell.faced` fill.  Grey, every time.  Fall back to the row's OWN sc.
+    //   ② Even with a source, every crest's mainkey is `Vtuffing`, so all three kind-crests would hash
+    //      to ONE colour and the fold would look like three copies of the same thing.
+    //  So a crest is grounded on WHAT IT STANDS FOR, read off the `of:` the election wrote:
+    //   `@mainkey=Cog` → the Cog jewel · `metal=brass` → the brass jewel.  **The wall falling at the
+    //    kind becomes three DIFFERENT colours instead of three grey lumps** — the meaning made visible
+    //     rather than merely provable, which is the whole point of putting it on a glass.
+    const crest_key = (sc: any): string | null => {
+        const of = sc?.of
+        if (typeof of !== 'string') return null
+        const at = of.indexOf('=')
+        if (at < 0) return of || null
+        const key = of.slice(0, at), val = of.slice(at + 1)
+        return key === '@mainkey' ? val : (val || key)   // the KIND, or the discovered key's value
+    }
     const cell_ground = (cell: any): { bg: string, color: string, border: string } | null => {
         try {
-            const sc = cell?.source?.sc
+            const sc = cell?.source?.sc ?? cell?.row?.sc
             if (!sc) return null
             const mk = Object.keys(sc)[0]
-            return (H as any)?.matstyle_ground?.(mk) ?? null
+            const key = (mk === 'Vtuffing' ? crest_key(sc) : null) ?? mk
+            return (H as any)?.matstyle_ground?.(key) ?? null
         } catch { return null }
     }
 

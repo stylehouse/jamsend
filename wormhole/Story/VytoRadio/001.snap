@@ -1,7 +1,0 @@
-Snap:H
-  H:VytoRadio,Run
-    A:VytoRadio
-      self,round	{"mung":["age"]}
-      w:VytoRadio
-        self,round	{"mung":["age"]}
-        req:wrangle,eternal,ok

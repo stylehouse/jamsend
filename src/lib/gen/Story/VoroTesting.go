@@ -10,7 +10,7 @@ import { power_cells, poly_area, poly_centroid } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Voronation(): string { return 'a8a9737169608630~g1' },
+    Ghostmeta_Ghost_Story_VoroTesting(): string { return 'a8a9737169608630~g1' },
 
 
 //#region radio — VoroRadio: the tuner PROVEN (📻 drift as a deterministic Story Book)
