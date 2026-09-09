@@ -28,11 +28,13 @@
     // DO NOT auto-register UI:'Cello' on H:Mundo (owner 2026-08-30: "Cello is still appearing on
     //  /Otro?E=Editron").  That registration existed (task #43) ONLY so Otro's sprawl — which mounts EVERY
     //   house.UIs.ob({UI:1}) — would show Cello back when there was no other way to reach it.  There is now:
-    //    the player reaches Cello through SchemeSwitcher, which imports Cellui DIRECTLY (no UI-registration
+    //    the player reaches Cello through BigSoundland, which imports Cellui DIRECTLY (no UI-registration
     //     lookup), so registering it as a House UI does nothing for the player and everything for the leak —
     //      Otro (the editor at ?E=, a runner at ?B=, an idle grid at ?I=) auto-mounts it in its guts view.
     //       Cello_plan stays DEFINED above as an explicit opt-in (a future w:Cello commission can call it),
     //        but nothing fires it at boot, so a plain editor|runner tab never grows a Cello UI.
-    // (BigSoundland's own SchemeSwitcher is separately gated to the player via critique_surface = !?B=.)
+    // (BigSoundland mounts Cellui itself, gated to the player via critique_surface = !?B=.  It used to reach
+    //  it through SchemeSwitcher, a renderer picker deleted 2026-09-09 — "we use Cello only now" — but the
+    //   gate it carried is unchanged and is still the thing keeping Cello out of dispatch tabs.)
     })
 </script>

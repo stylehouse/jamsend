@@ -2243,6 +2243,61 @@ Radio_lineup_ensure(w):
     lu.c.w = w
     return lu
 
+// Radio_queue_dir — PLAY THIS ALBUM, in its own order (2026-09-09, the owner: *"we need to get this all
+//  built up like a CRUD thing. work heaps on Hauls"*).  HaulFace could show you what landed and, as of
+//   today, delete it — and there was no way to simply HEAR it, which is the one thing a list of your own
+//    music is for.  `Radio_lineup_fill` deals at RANDOM across contributors, correctly, for the dial; an
+//     album is the opposite request and wants its own verb rather than a mode flag inside that one.
+//  IN PATH ORDER, NOT RANDOM: a folder's track order is the order its files sort in, and an album played
+//   shuffled is not the thing that was asked for.  Front of the lineup, so it plays NEXT rather than in
+//    twenty minutes — the press means "this, now".
+//  `Radio_playable` gates each record exactly as the fill does (a husk with no bytes is not a track yet),
+//   so a half-landed album queues the part that actually arrived instead of stalling the dial on a hole.
+//  Returns how many cards went in — 0 is a real answer (nothing under that dir is playable yet) and the
+//   caller is expected to say so rather than look like a dead button.
+Radio_queue_dir(w, dir):
+    if (!w || !dir) { return 0 }
+    let M = this.top_House ? this.top_House() : null
+    let rw = (M && M.c.radio_w) || w
+    let me = this.Radio_pub(rw) || 'me'
+    let key = String(dir)
+    let mine = []
+    for (const rec of this.Ra_recs(this.Ra_home_self(rw, me))) {
+        let p = String(rec.sc.path || '')
+        if (!p || (p !== key && p.indexOf(key + '/') !== 0)) { continue }
+        if (!this.Radio_playable(rec)) { continue }
+        mine.push(rec)
+    }
+    if (!mine.length) { return 0 }
+    mine.sort((a, b) => String(a.sc.path || '') < String(b.sc.path || '') ? -1 : 1)
+    let lu = this.Radio_lineup_ensure(rw)
+    // AT THE FRONT.  `i()` appends, so the existing queue is re-seated behind the album rather than the
+    //  album being buried under twenty random cards the dial happened to have lined up already.
+    let standing = lu.o({ Card: 1 })
+    for (const c of standing) { lu.drop(c) }
+    let n = 0
+    for (const rec of mine) {
+        let card = lu.i({ Card: 1, id: String(rec.sc.id) })
+        card.c.up = lu
+        card.c.rec = rec
+        if (rec.sc.title) { card.sc.title = this.Radio_clean(String(rec.sc.title)) }
+        let artist = this.Radio_clean(String(rec.sc.artist || ''))
+        if (artist) { card.sc.artist = artist }
+        n = n + 1
+    }
+    for (const c of standing) {
+        let card = lu.i({ Card: 1, id: String(c.sc.id) })
+        card.c.up = lu
+        card.c.rec = c.c.rec
+        if (c.sc.title) { card.sc.title = String(c.sc.title) }
+        if (c.sc.artist) { card.sc.artist = String(c.sc.artist) }
+        if (c.sc.by) { card.sc.by = String(c.sc.by) }
+    }
+    lu.sc.up_next = String(lu.o({ Card: 1 }).length)
+    lu.bump()
+    console.log('📻⇉ album queued — ' + key + ' — ' + n + ' track' + (n === 1 ? '' : 's') + ' next')
+    return n
+
 // fill to 20 ahead: round-robin the contributor pools (mine + each friend crate with a
 //  playable record), skipping lined and heard ids.  Cheap when already full.
 Radio_lineup_fill(w, radio):

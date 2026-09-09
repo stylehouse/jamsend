@@ -12,10 +12,10 @@
 //      lands real fixtures while plain runs leave even toc.snap untouched.
 //
 //   The FULL nav contract the worker uses (see Housing.svelte.ts Wormhole / fs_op + rw_op):
-//    read_file / write_file / bin_read / bin_write / bin_append / read_range / dir / dir_at — kept at PARITY with
+//    read_file / write_file / bin_read / bin_write / bin_append / bin_rm / bin_writer / read_range / dir / dir_at — kept at PARITY with
 //     the browser WormholeNav / OpfsOverlayNav / RemoteWormholeNav so the harness is never a partial
 //      nav that a binary-writing Book trips over headlessly.
-import { readFileSync, writeFileSync, appendFileSync, mkdirSync, readdirSync, existsSync, statSync, openSync, readSync, closeSync, chmodSync, unlinkSync, symlinkSync } from 'node:fs'
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, readdirSync, existsSync, statSync, openSync, readSync, writeSync, closeSync, chmodSync, unlinkSync, symlinkSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 
@@ -298,6 +298,26 @@ export class NodeWormholeNav {
         this.writeSecure(abs, bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), false)
     }
 
+    // bin_rm — bin_read's DELETING twin, and the one verb this nav was missing (2026-09-09).  It arrived on
+    //  the browser navs with SoundPooling on 2026-09-03 and the parity list at the top of this file — written
+    //   before that — never grew it, so the DAEMON could not delete: `Ra_pool_unfile` guards with
+    //    `typeof nav.bin_rm !== 'function'` and simply says *"this nav has no bin_rm"*, once per path. The
+    //     card went, the bytes stayed, and the always-on node's pool grew without bound while its own log
+    //      politely explained why. A capability absent from ONE backend is invisible until that backend is
+    //       the one doing the work.
+    //  Contract, matched to OpfsOverlayNav.bin_rm exactly: a name that is not there answers **false** (a
+    //   sweep is not an error); anything else throws as a read would. Deletes reach disk ONLY through
+    //    `writeAbs`, so a read-only mount refuses LOUDLY (it throws, as a write to it does) rather than
+    //     quietly reporting "nothing to delete" — a delete that cannot happen must never look like one
+    //      that found nothing.
+    async bin_rm(dir_path: string, filename: string): Promise<boolean> {
+        const rel = [dir_path, filename].filter(Boolean).join('/')
+        const abs = this.writeAbs(rel)
+        if (!isFileAt(abs)) return false
+        unlinkSync(abs)
+        return true
+    }
+
     // bin_append — bin_write's STREAMING twin: extend a file at its END instead of replacing it whole, so a
     //  headless boot can stream a big asset chunk-at-a-time (the FSA WormholeNav.bin_append shape).  appendFileSync
     //   creates the file when absent (mode 'a'), so the FIRST append is the create — a caller appends from seq 0
@@ -308,6 +328,37 @@ export class NodeWormholeNav {
         const abs = this.writeAbs(rel)
         this.mkdirSecure(path.dirname(abs))
         this.writeSecure(abs, bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), true)
+    }
+
+    // bin_writer — bin_append's HELD twin, the last verb this nav was missing (2026-09-09).  Its absence
+    //  cost more than the daemon: `MountNav` presents the OPTIONAL capabilities as the INTERSECTION over
+    //   base + every mount, so ONE backend without `bin_writer` removes streaming writes from the whole
+    //    table — every other mount is narrowed down to this nav's shortfall.
+    //  On node the N²/2 problem the browser writers solve does not exist (appendFileSync does not copy),
+    //   so this is an honest fd held open across the landing: one open, N positioned writes, one close.
+    //  `write(bytes, at?)`: `at` names the offset explicitly (the wire session uses it so a re-emitted
+    //   chunk rewrites rather than duplicates); omitted, it appends at the writer's own running position.
+    //  `abort()` closes the fd without pretending to roll back — the browser's `.crswap` can be thrown
+    //   away, a real file cannot, and claiming otherwise would be the lie this whole parity pass is about.
+    async bin_writer(dir_path: string, filename: string): Promise<{ write(bytes: Uint8Array | ArrayBuffer, at?: number): Promise<void>, close(): Promise<void>, abort(): Promise<void> }> {
+        const rel = [dir_path, filename].filter(Boolean).join('/')
+        const abs = this.writeAbs(rel)
+        this.mkdirSecure(path.dirname(abs))
+        this.writeSecure(abs, new Uint8Array(0), false)      // create|truncate at 0600 under .jamsend, like every other write
+        const fd = openSync(abs, 'r+')
+        let position = 0
+        let done = false
+        return {
+            async write(bytes: Uint8Array | ArrayBuffer, at?: number) {
+                if (done) throw new Error('bin_writer: write after close')
+                const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
+                const pos = at == null ? position : at
+                writeSync(fd, b, 0, b.byteLength, pos)
+                position = pos + b.byteLength
+            },
+            async close() { if (done) return; done = true; closeSync(fd) },
+            async abort() { if (done) return; done = true; try { closeSync(fd) } catch (e) {} },
+        }
     }
 
     // read_range — bin_read's SEEKABLE twin: bytes [offset, offset+len) only (len omitted ⇒ to EOF), never

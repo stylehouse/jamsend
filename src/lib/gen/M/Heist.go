@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '6dca21c666bc9805~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '90e81b41faf3b39e~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -327,12 +327,55 @@ Heist_release_rec(rec) {
 //  track cycle unlink→restart with no console trace at all: every Heist_land breach path used to tally
 //   job.sc.breached and say nothing else). Sets rec.c.breach_at too — Heist_keep_pull reads that to hold
 //    off the next Heist_land attempt (BREACH_COOLDOWN) instead of re-hammering the very next beat.
-Heist_xfer_breach(rec, reason) {
+// ⚠ THIS ONLY EVER LOGGED, AND THAT WAS THE WHOLE BUG (2026-09-09, the owner's console: the same track
+//  pulled 19/19, breached, and re-pulled from chunk 0 — `job breach #87`, `#88`, ~5MB a lap, for ever).
+//  Every NEIGHBOURING failure on this path already gives up: a land throw quarantines at three
+//   (`rec.c.land_fails`), a stalled pull benches at five, an unanswered materialise gives up at ninety.
+//    A breach had no such counter, so it was the one failure the machine would repeat until the tab died.
+//  AND A BREACH IS THE LEAST TRANSIENT OF THEM.  The others are timing — a slow disk, a peer mid-reload,
+//   a want that has not been served yet — and retrying is exactly right. This one says the bytes that
+//    arrived do not hash to the body the mirror was PROMISED, and a re-pull fetches the same bytes
+//     against the same promise. Retrying it is not optimism; it is a loop with a wire bill.
+//  (The lofi road is how the two drift apart: a rendition is transcoded at serve time and its head
+//   carries its OWN body_hash, so a mirror still holding a promise from an earlier materialise — or from
+//    the original file — can never agree with what is now being served, however many laps it runs.)
+//  Three strikes, then the husk is quarantined with a legible verdict row, exactly as the land-throw path
+//   does it, and a re-rummage re-mints it if it is still wanted. HUMDINGER-GATED for the same reason that
+//    one is: this stamps the world on a timing-dependent path, and a Book keeps husks-that-never-drain as
+//     its honest stuck reading.
+//  ⚠ THIS VERB STAYS SYNCHRONOUS, AND THAT IS A MEASURED CONSTRAINT, NOT A STYLE (2026-09-09).  The first
+//   cut made it `async` so it could `rm` the husk itself, and every call site then `await`ed it — on the
+//    HOT path, breach or no breach.  One extra microtask inside the landing loop, under the beliefs mutex,
+//     was enough: MusuReplica step 6 went from rock-solid to caveating on 1 run in 3, which is the
+//      settle-at-round-5-versus-6 flake this codebase already knows by name.  So the counting and the
+//       verdict row are sync, and only the QUARANTINE — which happens at most once per record, on a path
+//        that is already ending — is awaited, at the call site, behind this returning 1.
+//  Returns 1 when the caller should drop the husk (via [[Heist_breach_drop]]), 0 to carry on as before.
+Heist_xfer_breach(rec, reason, job) {
     rec.c.breach_at = Date.now()
     let xf = this.Repli_xfer_get ? this.Repli_xfer_get() : null
     if (xf) { xf.ts = Date.now(); xf.breaches = +(xf.breaches || 0) + 1; xf.last_breach = String(rec.sc.title || rec.sc.id || ''); xf.breach_ts = Date.now() }
     if (this.Radio_trace) this.Radio_trace(null, { ev: 'heist-breach', id: String(rec.sc.id || '').slice(0, 8), why: reason.slice(0, 80) })
     console.log(`◈☠ breach: ${rec.sc.title || rec.sc.id} — ${reason}`)
+    rec.c.breach_n = (+(rec.c.breach_n || 0)) + 1
+    let MH = this.top_House ? this.top_House() : null
+    if (rec.c.breach_n < 3 || !(MH && MH.c.humdinger)) { return 0 }
+    console.log(`◈☠☠ breach gave up after ${rec.c.breach_n} — "${rec.sc.title || rec.sc.id}" — the promised body and the served bytes will not agree; a re-rummage re-mints it`)
+    if (job) {
+        job.sc.breachfails = +(job.sc.breachfails || 0) + 1
+        let row = job.i({ breachfail: 1, tune: String(rec.sc.artist || '') + ' — ' + String(rec.sc.title || ''), why: String(reason).slice(0, 120) })
+        row.c.up = job
+    }
+    return 1
+
+},
+// Heist_breach_drop — the quarantine half, split out so the counting above can stay synchronous (see its
+//  note: an await on the breach-free path cost MusuReplica its determinism).  Reached at most once per
+//   record, on a landing that is already over, so its await buys nothing back on the hot path.
+//  The card's TRUE holder, not the shelf — a paged record sits under a %Cloud (the scrub idiom).
+async Heist_breach_drop(rec) {
+    let home = rec && rec.c ? rec.c.up : null
+    if (home && home.rm) { try { await home.rm({ Record: 1, id: rec.sc.id }) } catch (er) {} }
 
 },
 // Heist_unlink — best-effort delete of one file (the breach cleanup: a streamed-but-wrong body must not
@@ -873,7 +916,7 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
                 //    says "chunk 2 is wrong" before chunks 3+ ever write.  A diagnostic scalar — flattens with
                 //     the job, never ledger.
                 job.sc.breach_seq = '' + s
-                this.Heist_xfer_breach(rec, `chunk ${s}/${total} failed the origin cid gate — job breach #${job.sc.breached}`)
+                if (this.Heist_xfer_breach(rec, `chunk ${s}/${total} failed the origin cid gate — job breach #${job.sc.breached}`, job)) { await this.Heist_breach_drop(rec) }
                 // drop the held writer BEFORE the unlink: the file can't be removed while a writable still
                 //  holds it, and leaving one open would poison every later attempt at this same path.
                 await this.Heist_writer_drop(writer)
@@ -920,7 +963,7 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
         //     mirror" as the disk gate below; just cheaper on the failure path.
         if (wire.hex() !== rec.sc.body_hash) {
             job.sc.breached = +(job.sc.breached || 0) + 1
-            this.Heist_xfer_breach(rec, `wire digest mismatch after ${total} chunks — job breach #${job.sc.breached}`)
+            if (this.Heist_xfer_breach(rec, `wire digest mismatch after ${total} chunks — job breach #${job.sc.breached}`, job)) { await this.Heist_breach_drop(rec) }
             await this.Heist_unlink(nav, dir, filename)
             return
         }
@@ -958,7 +1001,7 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
             //  %Caper), the bad file is DELETED (a streamed partial|wrong file must never linger as a
             //   landing), and the record stays in the mirror.  The engine stamps nothing on the world tree.
             job.sc.breached = +(job.sc.breached || 0) + 1
-            this.Heist_xfer_breach(rec, `disk read-back mismatch — bytes on disk don't hash to body_hash — job breach #${job.sc.breached}`)
+            if (this.Heist_xfer_breach(rec, `disk read-back mismatch — bytes on disk don't hash to body_hash — job breach #${job.sc.breached}`, job)) { await this.Heist_breach_drop(rec) }
             await this.Heist_unlink(nav, dir, filename)
             return
         }
@@ -981,7 +1024,7 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
             if (ch && ch.sc.cid && sha256_hex(cb) !== ch.sc.cid) {
                 job.sc.breached = +(job.sc.breached || 0) + 1
                 job.sc.breach_seq = '' + s
-                this.Heist_xfer_breach(rec, `chunk ${s}/${total} failed the origin cid gate (fallback path) — job breach #${job.sc.breached}`)
+                if (this.Heist_xfer_breach(rec, `chunk ${s}/${total} failed the origin cid gate (fallback path) — job breach #${job.sc.breached}`, job)) { await this.Heist_breach_drop(rec) }
                 return
             }
             bytes.set(cb, at)
@@ -991,7 +1034,7 @@ async Heist_land_stream(w, nav, job, own_lib, mir, rec, mardir, dir, filename, r
         let hash = await this.Heist_hash(bytes)
         if (hash !== rec.sc.body_hash) {
             job.sc.breached = +(job.sc.breached || 0) + 1
-            this.Heist_xfer_breach(rec, `whole-file hash mismatch (fallback path) — job breach #${job.sc.breached}`)
+            if (this.Heist_xfer_breach(rec, `whole-file hash mismatch (fallback path) — job breach #${job.sc.breached}`, job)) { await this.Heist_breach_drop(rec) }
             return
         }
         await nav.bin_write(dir, filename, bytes)
@@ -4472,9 +4515,16 @@ async Heist_newlyadded_note(nav, mardir, entry, held, id) {
 //   idempotence guard, the reader and the seq counter can never disagree about what "already logged"
 //    means.  Sync, and takes the open waft: every caller here already holds one, and opening is not free
 //     ([[a-read-helper-inherits-creation]] — this mints nothing, it only asks).
+// `gone:1` is a TOMBSTONE, not a deletion (2026-09-09, the delete verb).  The ledger is append-only and
+//  its own header says why — *"a ledger you REWRITE to change your mind is a ledger you can lose"* — and
+//   `Berth_append` already supersedes by `of`, so a re-appended row carrying `gone` replaces the arrival
+//    in the fold without any line ever being removed. The row stays on disk, honestly saying "this landed
+//     once and was deleted", which is a truer record than a hole where an arrival used to be.
+//  Filtered HERE, at the one reader every caller goes through (list → grouped → Heist_haul_look), so a
+//   deleted album cannot come back as today's news on the next slow beat.
 Heist_newlyadded_rows(waft) {
     if (!waft) return []
-    return waft.o({ Got: 1 }).concat(waft.o({ Probation: 1 }))
+    return waft.o({ Got: 1 }).concat(waft.o({ Probation: 1 })).filter((c) => !c.sc.gone)
 
 },
 // Heist_newlyadded_list — every arrival card, oldest first (seq is stamped in mint order already, but
@@ -4583,6 +4633,73 @@ async Heist_haul_look(w, nav, mardir) {
     // a dropped album leaves the list — the ledger is the truth, this bag only mirrors it
     for (const row of bag.o({ Haul: 1 })) { if (!live.has(String(row.sc.dir || ''))) bag.drop(row) }
     return n
+
+},
+// Heist_haul_delete — TAKE A WHOLE HAUL BACK OFF THE DISK (2026-09-09, the owner: *"the Cell:Hauls is
+//  quite underbuilt… I should be able to delete them there?"*).  HaulFace's ✕ only ever cancelled an
+//   INTENT — *"no file is deleted"*, as its own comment says — and the 🗑 that its comment promised
+//    *"stays in the cell, where it belongs"* was never built. This is that verb.
+//  It is the album-grained twin of [[Heist_scrub_one]] and does nothing that verb does not: per landed
+//   file, the bytes go and the catalog card retires. What it adds is the LEDGER half — without it the
+//    arrival rows survive on disk and `Heist_haul_look` re-mints the very row you just deleted on the
+//     next slow beat, which would read as "the delete did not work" and be indistinguishable from the
+//      OPFS silence this same pass fixed.
+//  DESTRUCTIVE AND NOT UNDOABLE — the caller owns the confirmation (HaulFace arms twice, the idiom its
+//   cancel already uses). Best-effort per file: one unreadable path never aborts the rest, and the
+//    count returned is what actually went, never what was attempted, so a partial delete cannot report
+//     as a whole one.
+//  Returns { files, cards, rows } — bytes removed, catalog cards retired, ledger rows tombstoned.
+async Heist_haul_delete(w, nav, own_lib, mardir, dir) {
+    let out = { files: 0, cards: 0, rows: 0 }
+    if (!w || !nav || !dir) { return out }
+    let waft = null
+    try { waft = await this.Heist_newlyadded_waft(nav, mardir) } catch (er) { waft = null }
+    if (!waft) { return out }
+    let key = String(dir)
+    // the same fold the face reads, so "what this row means" is decided in exactly one place
+    let rows = this.Heist_newlyadded_rows(waft).filter((c) => String(c.sc.dir || '') === key || String(c.sc.of || '') === key)
+    let doomed = []
+    for (const card of rows) {
+        let entry = String(card.sc.of || '')
+        if (!entry) { continue }
+        let went = 0
+        try { went = await this.Heist_scrub_one(nav, own_lib, mardir, entry) } catch (er) { went = 0 }
+        out.files = out.files + (went ? 1 : 0)
+        out.cards = out.cards + 1
+        // TOMBSTONE EVEN WHEN THE FILE WOULD NOT GO.  The card has retired either way, so leaving the
+        //  arrival row live would resurrect a haul whose catalog entry no longer exists — a row you
+        //   cannot delete because pressing it deletes nothing. A stuck file is a louder problem than a
+        //    missing row, and Heist_scrub_one now says so itself.
+        card.sc.gone = '1'
+        doomed.push(card)
+    }
+    if (doomed.length) {
+        try { await this.Berth_append(nav, waft, doomed, 'of'); out.rows = doomed.length } catch (er) {}
+    }
+    // and take the mirror row with it, so the cell answers on the press rather than on the next slow beat
+    let bag = w.o({ Hauls: 1 })[0]
+    if (bag) { for (const row of bag.o({ Haul: 1, dir: key })) { bag.drop(row) } }
+    let MH = this.top_House ? this.top_House() : null
+    if (MH) { MH.c.newly_seq = +(MH.c.newly_seq || 0) + 1 }
+    console.log('🧹 haul deleted — ' + key + ' — ' + out.files + ' file(s) ' + out.cards + ' card(s) ' + out.rows + ' row(s)')
+    return out
+
+},
+// Heist_haul_wipe — the FACE's door onto [[Heist_haul_delete]]: resolve nav, own crate and mardir the
+//  same way the cancel-and-scrub path does, so a cell presses ONE verb and never learns where the disk
+//   lives.  A face that resolved its own nav would be a second implementation of "where does music go",
+//    and the two would drift the first time either moved.
+//  `nav` falls back to Crate_nav() exactly like every other sibling seam in Ra.g — the one that read
+//   `|| null` instead is what made pool fills silently skip on both live ends (Ra.g:5190).
+async Heist_haul_wipe(w, dir) {
+    let M = this.top_House ? this.top_House() : null
+    let rw = (M && M.c.radio_w) || w
+    let nav = (rw && rw.c.ra_nav) || (this.Crate_nav ? this.Crate_nav() : null)
+    if (!nav) { console.log('🧹⚠ haul delete: no nav — nothing was touched'); return { files: 0, cards: 0, rows: 0 } }
+    let me = this.Radio_pub(rw) || 'me'
+    let own = this.Ra_home_self(rw, me)
+    let mardir = this.Heist_mardir(w) || this.Heist_mardir(rw)
+    return await this.Heist_haul_delete(rw, nav, own, mardir, dir)
 
 },
 // Heist_haul_rows — the bag, newest first, for a face.  Pure read: it mints NOTHING, because a reader
@@ -4756,12 +4873,30 @@ Heist_keep_flight(rw, keep) {
 async Heist_scrub_one(nav, own_lib, mardir, entry) {
     if (!nav || !entry) return 0
     let gone = 0
+    let cut = String(entry).split('/')
+    let filename = cut.pop()
+    let ddir = mardir + '/' + cut.join('/')
+    // BIN_RM FIRST, deleteEntry as the fallback (2026-09-09).  This asked ONLY for the FSA-shaped
+    //  `dl.deleteEntry` and, not finding it, returned 0 in silence — so on an OPFS-backed body the
+    //   catalog card retired and every byte stayed, and Cell:Hauls' delete looked like it worked.
+    //    `bin_rm` is the verb that now exists on every backend, so it leads; `deleteEntry` stays for
+    //     the FSA share, whose dir handle is the cheaper road when it is already open.
     try {
-        let cut = String(entry).split('/')
-        let filename = cut.pop()
-        let dl = await nav.dir_at(mardir + '/' + cut.join('/'))
-        if (dl && typeof dl.deleteEntry === 'function') { await dl.deleteEntry(filename); gone = 1 }
-    } catch (er) {}
+        if (typeof nav.bin_rm === 'function') { gone = (await nav.bin_rm(ddir, filename)) ? 1 : 0 }
+    } catch (er) { gone = 0 }
+    if (!gone) {
+        try {
+            let dl = await nav.dir_at(ddir)
+            if (dl && typeof dl.deleteEntry === 'function') { await dl.deleteEntry(filename); gone = 1 }
+        } catch (er) {}
+    }
+    // AND NAME THE MISS, once per path.  A delete that cannot happen must not read like one that found
+    //  nothing — that equivalence is the whole reason this was invisible for as long as it was.
+    if (!gone && typeof nav.bin_rm !== 'function') {
+        let MH = this.top_House ? this.top_House() : null
+        let k = 'scrub_said_' + entry
+        if (MH && MH.c && !MH.c[k]) { MH.c[k] = 1; console.log('🧹⚠ scrub: this nav can neither bin_rm nor deleteEntry — the card goes and the bytes stay — ' + entry) }
+    }
     if (own_lib) {
         // the card retires WITH the file — the track leaves the collection cleanly.  The rm goes to the
         //  card's TRUE holder (a paged card sits under a %Cloud, not the shelf).

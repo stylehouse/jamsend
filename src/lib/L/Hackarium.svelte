@@ -20,8 +20,10 @@
     //
     //  IT STANDS THE LAND ITSELF.  `Ghost/L/` ghosts are outside `CREDULER_GHOSTS` by design, and the
     //   usual door (`runner_ask ghost_load`) needs the relay — which a hacker does not have.  So this
-    //    recipe loads Atlas and Lagoon directly and mints their worlds, and the tab comes up whole with
-    //     no CLI, no relay and no editor.  That self-sufficiency is the point of the room.
+    //    recipe stands Atlas and Lagoon through `Lies_ghost_include` (LiesLies — the door that loads a
+    //     ghost WITHOUT drawing it, and leaves a `%GhostInclude,stood` row saying so) and mints their
+    //      worlds, and the tab comes up whole with no CLI, no relay and no editor.  That
+    //       self-sufficiency is the point of the room.
     //
     //  Boot: `/Otro?H=Hackarium`.  Home is `L/` — the land (`Wordland_todo`), beside `Educarium`.
     import { type House } from "$lib/O/Housing.svelte"
@@ -70,8 +72,10 @@
             w.c.Hackarium_stood = true
             const top = H.top_House()
             for (const [path, name] of [['Ghost/L/Atlas.g', 'Atlas'], ['Ghost/L/Lagoon.g', 'Lagoon']] as const) {
-                top.Lies_ghost_set(path)
-                    .then(() => {
+                top.Lies_ghost_include(path)
+                    .then((stood: boolean) => {
+                        if (!stood) return   // the shelf already says why — %GhostInclude,stood
+
                         // the census stands on the TOP House and must: every reader looks it up there
                         //  by name (`Lagoon_atlas`, the `lagoon`/`atlas_*` CLI ops, `LagoonStaple`).
                         //   But its FACE belongs to this room — `face_on` is the room naming itself, so

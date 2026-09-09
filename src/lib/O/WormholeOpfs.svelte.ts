@@ -170,13 +170,30 @@ export class OpfsOverlayNav {
     // a DirectoryListing-shaped probe: the worker calls .expand() then reads
     //  .directories / .files (rw_op 'list').  expand() re-reads each call so a
     //   listing taken after a write isn't stale.
-    async dir(...parts: string[]): Promise<{ name: string, directories: { name: string }[], files: { name: string }[], expand(): Promise<void> } | null> {
+    async dir(...parts: string[]): Promise<{ name: string, directories: { name: string }[], files: { name: string }[], expand(): Promise<void>, deleteEntry(name: string): Promise<void> } | null> {
+        const scratch = this.scratch
         const present = (await Promise.all([this.seed, this.scratch].map(r => walk(r, parts, false)))).filter(Boolean) as FileSystemDirectoryHandle[]
         if (!present.length) return null
         const listing = {
             name: parts[parts.length - 1] ?? '',
             directories: [] as { name: string }[],
             files: [] as { name: string }[],
+            // deleteEntry — the FSA DirectoryHandle method, at parity, and for exactly the reason
+            //  NodeWormholeNav.dir() already carries it (see its own note): a whole family of callers
+            //   opens with `if (!dl || typeof dl.deleteEntry !== 'function') return` and then does
+            //    NOTHING, quietly, on a backend that lacks it. `Heist_scrub_one` is one of them — so on
+            //     OPFS a scrubbed track retired its catalog card and left every byte on disk, and
+            //      Cell:Hauls' delete looked like it worked. The guard is honest; the absence was not.
+            //  Deletes reach the SCRATCH layer only, exactly like bin_rm|bin_write: the seed is the
+            //   read-only underlay and removing from it is not ours to do. A name that is not there is
+            //    NOT an error (a sweep is a sweep) — matching bin_rm's contract rather than FSA's throw,
+            //     because every caller here is sweeping, not asserting.
+            async deleteEntry(name: string) {
+                const d = await walk(scratch, parts, false)
+                if (!d) return
+                try { await d.removeEntry(name) }
+                catch (e: any) { if (e && e.name === 'NotFoundError') return; throw e }
+            },
             async expand() {
                 const seen = new Map<string, boolean>()   // name → isDir; scratch (last) shadows seed
                 for (const d of present) {

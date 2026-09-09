@@ -1365,11 +1365,20 @@
     function vy_snapshot() {
         const now = performance.now()
         const base = vy_last_settle_t ? Math.round(vy_last_settle_t) : 0
+        // ⚠ COUNT THE LIVE WORLDS, NOT THE TRACKED ONES (2026-09-09, third fix to this instrument).
+        //  `springs` is keyed by world C and NEVER forgets one, so a Book that re-commissions with
+        //   `fresh=1` leaves its old worlds in the map forever.  Counting `springs.keys()` therefore
+        //    mixed live cells with corpses' leftovers and made "8 cells" unattributable — exactly the
+        //     ambiguity that has to be resolved to say whether a folded glass draws.
+        //  `vyto_worlds()` walks H for ATTACHED A:Vyto/w:Vyto only, which is also what the template
+        //   iterates — so this is the picture as rendered.  `tracked` reports the leak beside it, so
+        //    the leak stays visible instead of being silently absorbed into the reading.
         let worlds = 0, cells = 0, sprung = 0
-        for (const w of springs.keys()) { worlds++; sprung += (springs.get(w)?.size ?? 0); cells += (paintMap.get(w)?.length ?? 0) }
+        for (const w of vyto_worlds()) { worlds++; sprung += (springs.get(w)?.size ?? 0); cells += (paintMap.get(w)?.length ?? 0) }
+        const tracked = springs.size
         return {
             renderer: "vytui",
-            worlds, springs: sprung, cells,
+            worlds, springs: sprung, cells, tracked, leaked: Math.max(0, tracked - worlds),
             moving: raf_id !== 0,
             since_settle_ms: vy_last_settle_t ? Math.round(now - vy_last_settle_t) : null,
             // the smoothness verdict
@@ -2624,8 +2633,15 @@
             //   case a Book runs.  Log a beat whenever the CELL COUNT moves — the model→cells story a
             //    Book can actually tell — and throttle on that count so a per-stir call cannot flood
             //     the 48-entry ring with identical rows.
+            // ⚠ PUBLISH THE SNAPSHOT EVERY TIME, throttle only the LOG RING (2026-09-09).  The first
+            //  cut published `vy_render` solely from `vylog`, which for a PARKED world fires only when
+            //   the cell count changes — so once a Book settled, `--why` returned a stale mount-time
+            //    reading and reported `0 worlds · 0 cells` on a glass that was demonstrably drawing six.
+            //     An instrument that says nothing-is-there about a working render is worse than none.
+            //      The ring stays throttled (identical rows would flood 48 entries); the READING does not.
             const pc = paintMap.get(w)?.length ?? 0
             if (vy_parked_cells.get(w) !== pc) { vy_parked_cells.set(w, pc); vylog("park", { cells: pc, springs: sp.size }) }
+            else { try { (H.top_House().c as any).vy_render = vy_snapshot() } catch { /* best-effort */ } }
             return false
         }   // no camera on a driven world
         // ONE TREE WALK PER FRAME (2026-08-08).  This walk and build_cells' were the same depth-first
@@ -2863,7 +2879,15 @@
 
             // parked (a Story run drives) and hidden (a ?B= runner) keep painting unconditionally —
             //  their determinism and jump-landing depend on it, and neither is a visible CPU burn.
-            if (parked(w)) { jump_to_target(w); paint_world(w); changed = true; continue }
+            if (parked(w)) {
+                jump_to_target(w); paint_world(w); changed = true
+                // FILM STRIP for a DRIVEN world, published HERE and not in integrate_world — adopt
+                //  handles a parked world itself and never calls that function, so the reading placed
+                //   there never ran and `--why` reported `0 worlds · 0 cells` about a glass drawing
+                //    seven.  This is the only path a Book's render actually takes.
+                try { (H.top_House().c as any).vy_render = vy_snapshot() } catch { /* best-effort */ }
+                continue
+            }
             if (moved) { settleCount.set(w, 0); settledState.set(w, false) }
             if (document.hidden) {
                 // rAF is frozen in a hidden tab (every ?B= runner): land at t→∞, paint, and strike

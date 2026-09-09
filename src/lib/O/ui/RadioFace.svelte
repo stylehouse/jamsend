@@ -43,6 +43,19 @@
     })
     const hand_toggle = () => { try { const w = n?.c?.w; const me = (H as any)?.Radio_pub?.(w) || 'me'; (H as any)?.Heard_hand_set?.(w, me, roads.hand ? 0 : 1); H?.bump_version?.() } catch {} }
     const hand_line = () => roads.hand ? (roads.to ? ' — ' + roads.to : ' — no linked device with a folder yet') : ' (off)'
+    // ── WHERE A ♥ LANDS, IN ONE GLYPH AND ONE SENTENCE.
+    //  The roads are not exclusive — a body with a share AND a pool takes both — so the glyph names the
+    //   STRONGEST one that is on: the real file beats a playable copy beats someone else fetching it.
+    //    `·` is an honest "nowhere yet", which is a real state (no share, no pool, no linked device) and
+    //     the one most worth seeing, because a ♥ pressed there keeps the heart and moves no bytes at all.
+    const road_glyph = () => roads.folder ? '⇊' : roads.copy ? '≋' : roads.hand ? '⇢' : '·'
+    const road_title = () => {
+        const where = roads.folder ? 'the real file lands in your music folder'
+            : roads.copy ? 'a copy this phone can play lands in your pool'
+            : roads.hand ? ('your linked device fetches it' + (roads.to ? ' — ' + roads.to : ''))
+            : 'nowhere yet — no folder, no pool, no linked device. The heart is kept; no bytes move.'
+        return '♥ keeps it · ' + where + '  (tap to change)'
+    }
     $effect(() => {
         const iv = setInterval(() => { tick++ }, 1000)
         return () => clearInterval(iv)
@@ -220,8 +233,20 @@
             <button class="rf-btn rf-like" class:liked={face.likedThis} onclick={like}
                 onpointerdown={hold_start} onpointerup={hold_end} onpointerleave={hold_end} onpointercancel={hold_end}
                 oncontextmenu={(e) => { e.preventDefault(); sheet = true }}
-                title={face.likedThis ? 'liked — it comes when this friend\'s turn comes round (see Haul)' : 'like this — the track is asked for and fetched one at a time per friend'}>{face.likedThis ? '♥' : '♡'}</button>
+                title={road_title()}>{face.likedThis ? '♥' : '♡'}</button>
 <!-- (the ⇊ keep button folded into ♥ — owner 2026-09-03: "turn the heist button into the like button") -->
+            <!-- THE ROAD, SHOWN (owner 2026-09-09: *"I can't figure out how to Heist anymore, I hate the
+                 `hold ♥ to see this again` popup"*).  Both complaints are one fact: ♥ IS the heist now, but
+                 WHERE its bytes go depends on three roads the face never drew, and the only explanation sat
+                 behind a 450ms hold — so the app had to ask you to memorise a gesture in order to find out
+                 what its main button does.  A hint that teaches a hidden control is the tell that the
+                 control should not have been hidden.
+                 So the road is a CHIP that is always visible and is itself the way in: it says where the
+                 next ♥ lands, and one ordinary tap opens the roads to change it.  The long-press still
+                 works for anyone who learned it; it is no longer the only door, so nothing has to nag. -->
+            <button class="rf-road-chip" class:rf-road-none={!roads.copy && !roads.folder && !roads.hand}
+                    onclick={(e) => { e.stopPropagation(); sheet = true }}
+                    title={road_title()}>{road_glyph()}</button>
         {/if}
     </div>
     {#if sheet}
@@ -241,7 +266,6 @@
                 </button>
             {/if}
             <div class="rf-road rf-road-dim"><span class="rf-road-tick">·</span><span>the whole album it came from — not yet</span></div>
-            <div class="rf-sheet-hint">hold ♥ to see this again</div>
         </div>
     {/if}
     <!-- provenance badge, unmistakably (the human 2026-08-07: "the UI in the player should be clear its
@@ -361,7 +385,17 @@
     .rf-road-dim { opacity: 0.35; font-style: italic; }
     .rf-road-btn { background: none; border: 0; color: inherit; font: inherit; width: 100%; cursor: pointer; padding: 3px 0; }
     .rf-road-tick { width: 1em; flex: 0 0 1em; color: #ffd27a; }
-    .rf-sheet-hint { margin-top: 6px; font-size: 11px; opacity: 0.5; }
+    /* THE ROAD CHIP — it rides beside ♥ as a label, not as a second verb, so the eye reads "♥ ⇊" as one
+       statement about where a like goes rather than as two buttons competing for the press.  Quiet by
+       default, legible on hover; `·` (no road at all) is the one state drawn in warning colour, because a
+       heart pressed there moves no bytes and that is exactly what a listener would never guess. */
+    .rf-road-chip {
+        background: none; border: 0; padding: 0 2px; cursor: pointer;
+        font-size: 11px; line-height: 1; color: rgba(150, 170, 200, 0.55);
+        transition: color 120ms;
+    }
+    .rf-road-chip:hover, .rf-road-chip:focus-visible { color: #d7e6f7; }
+    .rf-road-chip.rf-road-none { color: #c78a57; }
     /* SMALL — THE PLAY BUTTON, and nothing else.  Intrinsic box on BOTH axes (no height:100%, which
        would measure the mold this face is sitting in and hand the layout an aspect that is not a fact
        about anything — see DoorFace's note, where that was a bug you could see). */

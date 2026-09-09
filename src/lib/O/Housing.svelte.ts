@@ -2760,6 +2760,15 @@ export class House extends StorableHousing {
                     } else if (op === 'write') {
                         await nav.write_file(dir_path, filename, req.sc.rw_data as string)
                         return { ok: true }
+                    } else if (op === 'bin_rm') {
+                        // THE DELETING TWIN OVER THE WIRE (2026-09-09).  `Wormhole_park` below has always
+                        //  classified `/write|mkdir|delete/i` as a mutating op — the intent was written
+                        //   before the verb was, so a remote nav could fill a disk it could never sweep.
+                        //  A backend without the capability says so as a DECISION (fatal, never retried);
+                        //   `false` is reserved for "the file was not there", which is not an error.
+                        //    The `.jamsend` refusal above guards this exactly as it guards a write.
+                        if (typeof nav.bin_rm !== 'function') return { error: 'this nav cannot bin_rm', fatal: 1 }
+                        return { ok: true, removed: await nav.bin_rm(dir_path, filename) }
                     } else if (op === 'list') {
                         // rw_dir is the full directory path — no filename to pop.
                         //   expand() re-fetches from the filesystem each time so

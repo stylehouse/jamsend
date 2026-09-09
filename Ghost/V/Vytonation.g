@@ -2809,6 +2809,12 @@ VytoKindfold_saylaw(w):
     i %desc:'mark every member checked and re-commission saying the law — total agreement must be said once'
     for (const m of w.c.members) { m.sc.checked = 1 }
     this.Vyto_commission_on(w, w.c.members, 1, 0, 0, 1, 0, 0, 0, 'kindfold,saylaw')
+    // DRIVE THE SOLVE TO REST, not just the model.  Without this the crests exist and are never
+    //  given spring targets, so the glass draws NOTHING — caught by `runner_shot --svg` returning
+    //   `0 paths 0 labels · cands [2c/0t]` on a Book whose five sworn sentences were all green.
+    //    A Book that asserts only the model is snap-blind to the render, which is the exact blindness
+    //     this whole document is about; asserting a crest has a TARGET is the cheapest cure.
+    this.Vyto_rest_reset(w)
     this.expecting(w, 'say_wait', 20, async () => { await this.VytoStaple_await(w, 20, () => this.VytoKindfold_said(w)) })
 
 // each kind-crest says `checked` ONCE, as a bare fact with no carrier count.
@@ -2822,6 +2828,9 @@ VytoKindfold_said(w):
         let says = c.o({ Vrow: 1, row: 'fact', k: 'checked' })
         if (says.length !== 1) { return 0 }
         if (says[0].sc.n != null) { return 0 }
+        // AND THE CREST MUST HAVE A TARGET — i.e. the cut actually gave it geometry.  Model-only
+        //  readers pass on an empty glass; this one does not.
+        if (!c.c.T) { return 0 }
     }
     return 1
 

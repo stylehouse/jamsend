@@ -5,7 +5,6 @@ story:VytoSeek
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.023
-      sample=0.025,at=1786211065
       sample=0.016,at=1786218396
       sample=0.013,at=1786232587
       sample=0.018,at=1786238652
@@ -15,8 +14,8 @@ story:VytoSeek
       sample=0.035,at=1786278783
       sample=0.017,at=1788854411
       sample=0.027,at=1788893298
+      sample=0.033,at=1788907703
     TimeTotal:step,avg=0.006
-      sample=0.006,at=1786211065
       sample=0.004,at=1786218396
       sample=0.003,at=1786232587
       sample=0.004,at=1786238652
@@ -26,6 +25,7 @@ story:VytoSeek
       sample=0.009,at=1786278783
       sample=0.004,at=1788854411
       sample=0.007,at=1788893298
+      sample=0.008,at=1788907703
   step,dige:6db6faf7dfba3472
   step=2,dige:96615f483956ecd1,desc:stand a glass and stamp step-tagged and scrubber-only moments
   step=3,dige:dbaa87e1e838c0d5,desc:seek by step — the pip resolves to the yore of the moment carrying that step

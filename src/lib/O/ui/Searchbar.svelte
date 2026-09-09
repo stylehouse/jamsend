@@ -196,7 +196,7 @@
          decodes, which is the glyph column — so it moved into the panel's header (the owner,
          2026-09-09: "there's the `search - f methods - % props` searchbar, which is kinda annoying"). -->
     <input class="usb-q" bind:this={input_el} bind:value={q}
-           placeholder="search  ( / )"
+           placeholder="search code &amp; prose  ( / )"
            oninput={on_input}
            onfocus={() => { scan(); ask() }} />
     {#if open && results}

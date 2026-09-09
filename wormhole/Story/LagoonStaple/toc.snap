@@ -8,16 +8,18 @@ story:LagoonStaple
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.016
+    TimeTotal:beliefs,avg=0.019
       sample=0.019,at=1788897941
       sample=0.018,at=1788897973
       sample=0.012,at=1788897979
       sample=0.014,at=1788897985
+      sample=0.034,at=1788907758
     TimeTotal:step,avg=0.002
       sample=0.002,at=1788897941
       sample=0.002,at=1788897973
       sample=0.002,at=1788897979
       sample=0.002,at=1788897985
+      sample=0.004,at=1788907758
   step,dige:11e5d0398a0133fc
   step=2,desc:load Atlas and Lagoon on demand — stand Atlas on the frozen corpus and the reader beside it,dige:0237d87d658e884b
     Assertion:the-reader-ghost-loads,sentence:the reader ghost loads on demand beside the census — no manifest edit needed

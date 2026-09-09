@@ -30,12 +30,12 @@ Credulate,of_Book:VytoMemo
   GhostInclude:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
   GhostInclude:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
   GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-  GhostInclude:Ghost_V_Vyto,dige:45b83f8a4a232a6b~g1
-  GhostInclude:Ghost_V_Vytonation,dige:0d5cd7ec2ca9adae~g1
+  GhostInclude:Ghost_V_Vyto,dige:9407afc76630a12e~g1
+  GhostInclude:Ghost_V_Vytonation,dige:d57c2b75837b5d48~g1
   GhostInclude:Ghost_Story_Voronation,dige:a8a9737169608630~g1
   GhostInclude:Ghost_Story_Sounditron,dige:e52afe7d185f51a8~g1
   GhostInclude:Ghost_O_Supervisor,dige:f9efd6177e50fa09~g1
-  last_ok,at=1788903410.566,ok_pct
+  last_ok,at=1788907610.556,ok_pct
     uses:Ghost_N_Peeroleum,dige:176d03c1fb562ff9~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:b4c37f0c56f24f1a~g1
@@ -67,8 +67,8 @@ Credulate,of_Book:VytoMemo
     uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
     uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
-    uses:Ghost_V_Vyto,dige:45b83f8a4a232a6b~g1
-    uses:Ghost_V_Vytonation,dige:0d5cd7ec2ca9adae~g1
+    uses:Ghost_V_Vyto,dige:9407afc76630a12e~g1
+    uses:Ghost_V_Vytonation,dige:d57c2b75837b5d48~g1
     uses:Ghost_Story_Voronation,dige:a8a9737169608630~g1
     uses:Ghost_Story_Sounditron,dige:e52afe7d185f51a8~g1
     uses:Ghost_O_Supervisor,dige:f9efd6177e50fa09~g1

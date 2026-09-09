@@ -36,7 +36,7 @@
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { onMount } from "svelte"
+    import { onMount, mount } from "svelte"
     import { signHeader, verifyHeader, prepubOf, sha256hex, loadRoleKey, browserTrustedPubs, browserRole, mintClusterKey } from "$lib/p2p/cluster_trust"
     // the channel-liveness thresholds live in ONE place now (shared with the runner_ask CLI, which
     //  can't import a .ts) — see runner_liveness.mjs.  Was three inline literals that could drift.
@@ -1032,6 +1032,59 @@
             if (uis.oa({ UI: 'Pantheate-include', gen_path: gen })) return   // already enrolled
             const module = await import(/* @vite-ignore */ `../../lib/${gen}`)
             uis.oai({ UI: 'Pantheate-include', gen_path: gen }, { component: module.default })
+        },
+
+        // ── THE INCLUDE DOOR ──────────────────────────────────────────────────────────────────
+        //  Lies_ghost_set does not LOAD a ghost.  It enrols the generated module in `watched:UIs`
+        //   and relies on somebody RENDERING it — the module's onMount eatfunc is what deposits the
+        //    methods.  So in this machine **the mount is the load**, and existence hangs off the same
+        //     switch as visibility.  Three separate-looking frailties of the L ghosts are that one
+        //      fact: a reload drops them, a room that filters UIs kills them, a humdinger refuses
+        //       them.  A ghost you can only have by drawing it is a ghost no room can quietly keep.
+        //
+        //  Lies_ghost_include is the other door: import the module and mount it into a DETACHED node.
+        //   onMount fires, the eatfunc deposits, nothing is drawn, and no room has to cooperate.
+        //    (Proven headless by `scripts/SectResolve.spec.ts`, which loads Lagoon exactly this way.)
+        //
+        //  AND IT LEAVES A MARK.  The reason this was invisible for a day is that the only evidence a
+        //   ghost had loaded was a console line — the one thing you cannot see from anywhere else.  So
+        //    every attempt stamps the SAME `%GhostInclude:<gen>` shelf the Creduler already keeps for
+        //     the spine (LiesLies ~:1054), and the spine and the hand-loaded land now read off one
+        //      list.  `stood` carries the OUTCOME, not a flag: `stood:yes`, or the reason it didn't.
+        //       One key, always overwritten, so a retry can never leave a stale complaint behind it —
+        //        and `dige` lands beside it once the methods are actually live, which is the only
+        //         proof that matters (an ack can lie; a dige is the version you are running).
+        Lies_include_shelf(): TheC {
+            const top = (this as House).top_House()
+            return top.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] ?? top
+        },
+
+        // one line of sc: no commas (the peel parser splits on them), no newlines, bounded
+        Lies_include_why(e: any): string {
+            return String(e?.message ?? e ?? 'unknown').replace(/[\n,]+/g, ' ').slice(0, 120)
+        },
+
+        async Lies_ghost_include(path: string): Promise<boolean> {
+            const H     = this as House
+            const shelf = H.Lies_include_shelf()
+            const gen   = H.Lies_gen_path(path)
+            if (!gen) {
+                shelf.oai({ GhostInclude: path }, { stood: 'no gen path' })
+                return false
+            }
+            const row = shelf.oai({ GhostInclude: gen })
+            try {
+                const module = await import(/* @vite-ignore */ `../../lib/${gen}`)
+                // detached on purpose — the mount is the load, so we pay the mount and skip the draw
+                mount(module.default, { target: document.createElement('div'), props: { H } })
+                const dige = H.Lies_ghost_get(path)
+                shelf.oai({ GhostInclude: gen }, dige ? { stood: 'yes', dige } : { stood: 'yes' })
+                return true
+            } catch (e) {
+                shelf.oai({ GhostInclude: gen }, { stood: H.Lies_include_why(e) })
+                H.tlog(`🚪 ghost_include ${path} — ${row.sc.stood}`)
+                return false
+            }
         },
 
         // Creduler_ensure — the runner's bootstrap, driven by the Creduler (the Mundo runner

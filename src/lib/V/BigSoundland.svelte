@@ -38,7 +38,7 @@
     import Lens       from "$lib/O/ui/Lens.svelte"
     import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
     import SwarmStandup from "$lib/O/ui/SwarmStandup.svelte"
-    import SchemeSwitcher from "$lib/O/ui/SchemeSwitcher.svelte"
+    import Cellui from "$lib/O/Cellui.svelte"
     import { boot_param } from "$lib/boot"
     import { boot_qualand } from "$lib/O/BigQualand.svelte"
 
@@ -48,14 +48,17 @@
     //    ARE the graph the crusher folds.  ?B= overrides (?B=VoroScape for the music demo).
     const book = boot_param('B') || 'Sounditron'
 
-    // THE RENDERER CRITIQUE SURFACE IS THE PLAYER'S ALONE (owner 2026-08-30: "editor|runner tabs have taken
-    //  up Cello as well — it needs to be something about BigSoundland… the toplevel with the boot params").
-    //   SchemeSwitcher persists its pick in localStorage['cello:renderer'], which is per-ORIGIN, so the
-    //    owner flipping the music page to Cello colonised every OTHER tab on :9091 that mounts it — and a
-    //     ?B= tab is exactly a dispatch tab (?B=Editron = the editor, ?B=<Book> = a runner), which must show
-    //      the world's REAL commissioned glass so a Book verifies against what it actually renders.  So the
-    //       switcher (and its persisted Cello) is gated to the genuine end-user player: a plain BigSoundland
-    //        with NO ?B= override.  A ?B= boot renders the bare commissioned glass, no critique chrome.
+    // CELLO IS THE PLAYER'S ALONE (owner 2026-08-30: "editor|runner tabs have taken up Cello as well — it
+    //  needs to be something about BigSoundland… the toplevel with the boot params").
+    //   A ?B= tab is exactly a dispatch tab (?B=Editron = the editor, ?B=<Book> = a runner), and it must show
+    //    the world's REAL commissioned glass so a Book verifies against what it actually renders.  So Cello
+    //     is gated to the genuine end-user player: a plain BigSoundland with NO ?B= override.
+    //  ⚠ THIS GATE OUTLIVED ITS ORIGINAL REASON AND IS STILL LOAD-BEARING.  It was written when the renderer
+    //   was chosen by SchemeSwitcher, whose pick persisted in localStorage['cello:renderer'] — per-ORIGIN, so
+    //    flipping the music page to Cello colonised every other tab on :9091. The switcher is gone (2026-09-09,
+    //     "we use Cello only now") and that particular leak with it, but the gate is not about persistence:
+    //      it is about a dispatch tab having to render what the WORLD selected. Do not remove it as dead
+    //       scaffolding — a Book verifying against Cello instead of its commissioned glass is a silent lie.
     const critique_surface = !boot_param('B')
 
     //#region H:Mundo — the shared boot lives in BigQualand now (the aufheben's common bit): this
@@ -534,13 +537,23 @@
     {:else if cyto}
         {#key keyser(cyto.ui.sc)}
             <section class="scape-glass">
-                <!-- SchemeSwitcher wraps the live glass (owner's temporary critique surface): opens on the REAL
-                     selected renderer (`vyto` = cyto.ui.sc.component, correct house), a bar flips the SAME live
-                     House through every C** renderer.  Revert to the bare <svelte:component> to drop it.
-                     GATED to the player (critique_surface): a ?B= editor|runner tab renders the world's bare
-                     commissioned glass, so its persisted localStorage Cello pick can't colonise dispatch tabs. -->
+                <!-- CELLO, DIRECTLY (owner 2026-09-09: *"we use Cello only now… we could remove the switcher
+                     now, and the other attempts to make sense of anything"*).  SchemeSwitcher was a critique
+                     surface for comparing C** renderers side by side; four of the five alternatives were never
+                     looked at, and one of them (Residual) was throwing `state_unsafe_mutation` on every mount.
+                     A picker between one real answer and four abandoned ones is not a choice, it is upkeep.
+                     THE GATE STAYS, and it is the load-bearing part: only the genuine end-user player gets
+                     Cello. A ?B= editor|runner tab renders the world's own commissioned glass, because a
+                     dispatch tab must show what the WORLD selected — that is what a Book is looking at.
+                     The boundary stays too: it was the switcher's, and it is the reason a renderer that
+                     throws cannot take the whole page down with it. -->
                 {#if critique_surface}
-                    <SchemeSwitcher H={cyto.house} vyto={cyto.ui.sc.component} />
+                    <svelte:boundary>
+                        <Cellui H={cyto.house} />
+                        {#snippet failed(err)}
+                            <div class="glass-fail">Cello threw — {String((err as any)?.message ?? err)}</div>
+                        {/snippet}
+                    </svelte:boundary>
                 {:else}
                     {@const Glass = cyto.ui.sc.component}
                     <Glass H={cyto.house} />
@@ -667,6 +680,13 @@
     /* the glass badge — which stained glass actually mounted.  Cyto (◈, cool blue) is the standing
        default; Vyto (◇, warm amber) is the moult — deliberately a DIFFERENT hue + glyph so the two
         voronoi glasses are never confused at a glance.  `.waiting` = VY asked, nothing seated yet. */
+    /* the boundary's visible half — inherited from SchemeSwitcher's `switch-fail` when the picker went.
+       A renderer that throws must SAY so in the page rather than leaving an empty stage, which reads as
+       "the app is broken" instead of "this one renderer is". */
+    .glass-fail {
+        padding: 12px; font-size: 12px; color: #e0b0b0;
+        font-family: ui-monospace, monospace; white-space: pre-wrap;
+    }
     .scape-glass-badge {
         font-size: 0.72rem; letter-spacing: 0.12em; font-family: monospace;
         padding: 0.08rem 0.5rem; border-radius: 999px;

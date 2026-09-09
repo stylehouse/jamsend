@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '9407afc76630a12e~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '0eac4e915eedac07~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -574,6 +574,20 @@ Vyto_fold_scope(w, scope) {
             crest.sc.n = grp.length
             this.Vyto_distil_fill(crest, grp, [], 0, ofk, saylaw)
         }
+        // ── THE MIRROR-SIDE WIRING, first inch (2026-09-09) ──────────────────────────────────────
+        //  A crest had a spring TARGET and no `.c.tok`, and `Vytui.tree_nodes` opens with
+        //   `const tok = row.c.tok; if (!tok) return null` — so every crest was dropped on the
+        //    renderer's FIRST LINE and a folded glass drew nothing at all.  `Vyto_scan_walk` stamps a
+        //     tok on every row IT mints; a crest is minted by the fold instead, so it never got one.
+        //  The group string IS the crest's identity — stable across stirs by construction, which is
+        //   exactly what the renderer needs to morph a cell rather than blink it — so it makes the
+        //    honest tok.  Prefixed with the mainkey the same way scan_walk's is (`mk:value`).
+        //  This is the stub `Vyto.g:472` has been waiting on since 2026-07-27 (*"until the display
+        //   refactor … lands the mirror-side wiring"*).  It is the first inch of it, not the whole:
+        //    a crest now BECOMES A CELL.  Cytui speaks a crest's distilled voice off its Vtuffing
+        //     descs (`Cytui.svelte:2324`); Vytui does not yet, so the cell draws with its plain
+        //      identity rather than its saying.  That port is the next piece.
+        if (!crest.c.tok) crest.c.tok = 'Vtuffing:' + ofk
         crest.c.seen_at = w.c.scan_gen
         if (crest.sc.dose !== '' + grp.length) { crest.sc.dose = '' + grp.length; crest.bump_version() }
         for (const m of grp) { if (!m.c.folded) { m.c.folded = 1; m.c.T = null; m.bump_version() } }

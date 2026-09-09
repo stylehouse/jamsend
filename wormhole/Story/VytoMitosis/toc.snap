@@ -4,8 +4,7 @@ story:VytoMitosis
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.034
-      sample=0.028,at=1786218351
+    TimeTotal:beliefs,avg=0.039
       sample=0.036,at=1786232385
       sample=0.02,at=1786238620
       sample=0.033,at=1786239584
@@ -15,8 +14,8 @@ story:VytoMitosis
       sample=0.034,at=1788854371
       sample=0.034,at=1788893223
       sample=0.028,at=1788901134
-    TimeTotal:step,avg=0.006
-      sample=0.005,at=1786218351
+      sample=0.081,at=1788907625
+    TimeTotal:step,avg=0.007
       sample=0.006,at=1786232385
       sample=0.003,at=1786238620
       sample=0.006,at=1786239584
@@ -26,6 +25,7 @@ story:VytoMitosis
       sample=0.006,at=1788854371
       sample=0.006,at=1788893223
       sample=0.005,at=1788901134
+      sample=0.014,at=1788907625
   step,dige:c5d0a3c86638d554
   step=2,dige:81e902b6ae874330,desc:found a flora of three genera and commission the glass on them
   step=3,dige:16700e534f64fd5b,desc:grow the flora — newcomers arrive and the cut re-seats

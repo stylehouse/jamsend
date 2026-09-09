@@ -1547,8 +1547,14 @@
                         {:else}
                             <button class="sr-diffrange" onclick={start_diff_collect}>copy diff</button>
                         {/if}
-                        <button class="sr-seek" onclick={(e) => seek_to(e, 'pool')} title={SEEKS.pool.say + ' — next hit on repeat'}>🏊</button>
-                        <button class="sr-seek" onclick={(e) => seek_to(e, 'crew')} title={SEEKS.crew.say + ' — next hit on repeat'}>🏴</button>
+                        <!-- (the 🏊/🏴 snap-seek pair used to sit HERE too, and was deleted 2026-09-09 — the
+                             owner, finding it: *"very strange… in the Story step heading, next to the diff
+                             type buttons… they're in wildly wrong location"*.  Two faults, one line: it sat
+                             among the diff-RANGE controls (copy diff / pick end / trace), which is a
+                             different job, and unlike the popup's pair it rendered no `seek_say`, so a press
+                             scrolled the page and said nothing.  A mute button among strangers reads as a
+                             bug even when it works.  The labelled pair lives on in the 📸 first↔got popup
+                             header, where a diff is actually being read and the feedback line is beside it.) -->
                     {/if}
 
                     {#if Step?.sc.Run_trace?.length}

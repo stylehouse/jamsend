@@ -12,7 +12,7 @@ import { poly_area } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vytonation(): string { return 'd57c2b75837b5d48~g1' },
+    Ghostmeta_Ghost_V_Vytonation(): string { return '7211ceb0f8b0cbfb~g1' },
 
 // Vytonation.g — Vyto's demo Books (the Voronation.g sibling, one directory over in Ghost/V/).
 //  Where Voronation.g proves the CRUSH (the fold policy) on flora and libraries, Vytonation.g
@@ -3077,6 +3077,12 @@ async VytoKindfold_saylaw(w) {
     w.i({desc: 'mark every member checked and re-commission saying the law — total agreement must be said once'})
     for (const m of w.c.members) { m.sc.checked = 1 }
     this.Vyto_commission_on(w, w.c.members, 1, 0, 0, 1, 0, 0, 0, 'kindfold,saylaw')
+    // DRIVE THE SOLVE TO REST, not just the model.  Without this the crests exist and are never
+    //  given spring targets, so the glass draws NOTHING — caught by `runner_shot --svg` returning
+    //   `0 paths 0 labels · cands [2c/0t]` on a Book whose five sworn sentences were all green.
+    //    A Book that asserts only the model is snap-blind to the render, which is the exact blindness
+    //     this whole document is about; asserting a crest has a TARGET is the cheapest cure.
+    this.Vyto_rest_reset(w)
     this.expecting(w, 'say_wait', 20, async () => { await this.VytoStaple_await(w, 20, () => this.VytoKindfold_said(w)) })
 
 },
@@ -3091,6 +3097,9 @@ VytoKindfold_said(w) {
         let says = c.o({ Vrow: 1, row: 'fact', k: 'checked' })
         if (says.length !== 1) { return 0 }
         if (says[0].sc.n != null) { return 0 }
+        // AND THE CREST MUST HAVE A TARGET — i.e. the cut actually gave it geometry.  Model-only
+        //  readers pass on an empty glass; this one does not.
+        if (!c.c.T) { return 0 }
     }
     return 1
 

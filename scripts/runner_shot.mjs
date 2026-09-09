@@ -149,7 +149,7 @@ function printVyto(r) {
     const v = []
     if (r.forced > 0) v.push(`\u25a3\u26a0 ${r.forced} FORCED landing(s) — the layout never settled on its own`)
     if (r.jank > 0)   v.push(`${r.jank}/${r.frames} janky frames (>32ms)`)
-    console.log(`vyto render: ${r.worlds} world(s) · ${r.springs} springs · ${r.cells} cells · ${r.moving ? "MOVING" : "at rest"}`)
+    console.log(`vyto render: ${r.worlds} LIVE world(s) · ${r.springs} springs · ${r.cells} cells · ${r.moving ? "MOVING" : "at rest"}${r.leaked ? ` · \u26a0 ${r.leaked} dead world(s) still tracked` : ""}`)
     console.log(`   smoothness: ${r.episodes} motion episode(s) · ${r.forced} forced · ${r.jank} jank · mean frame ${r.ft_mean_ms ?? "?"}ms · worst ${r.ft_max_ms}ms`)
     console.log(`   calm: disp ${r.last_disp} / drift ${r.last_drift} (floors ${r.calm_eps} / ${r.drift_eps}) · settle needs ${r.settle_frames} calm frames · watchdog at ${r.max_motion_frames}`)
     if (r.since_settle_ms != null) console.log(`   ${r.since_settle_ms}ms since the last settle`)

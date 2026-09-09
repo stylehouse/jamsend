@@ -194,6 +194,29 @@
         arm = ''
         A?.Heard_untake?.(W, A?.Radio_pub?.(W), dj, q.of)
     }
+    // PLAY — the album goes to the front of the lineup, in its own track order.  `played` is a one-shot
+    //  acknowledgement so the row can SAY it took the press ("queued") instead of looking inert: the
+    //   lineup is elsewhere on screen and a press with no local answer reads as a dead button.
+    //  A count of 0 means nothing under that folder is playable yet (a half-landed album, all husks) —
+    //   that is a real answer and the row says so rather than pretending it queued.
+    let played = $state('')
+    let playedT: any = null
+    function play(a: any) {
+        const n_q = A?.Radio_queue_dir?.(A?.top_House?.()?.c?.radio_w ?? W, a.key) ?? 0
+        played = n_q ? a.key : ''
+        clearTimeout(playedT); playedT = setTimeout(() => { played = '' }, 4000)
+        if (!n_q) { console.log('📻⚠ nothing playable under ' + a.key + ' yet') }
+    }
+    // WIPE — the only verb in this cell that reaches the DISK.  Two presses, like the other two, and the
+    //  arm key is prefixed so an album can never arm a heist row that happens to share a name.
+    //  The ghost resolves nav|crate|mardir (Heist_haul_wipe); a face knowing where music lives would be a
+    //   second answer to that question, and the two would drift the first time either moved.
+    function wipe(a: any) {
+        const k = 'del|' + a.key
+        if (arm !== k) { arm = k; return }
+        arm = ''
+        A?.Heist_haul_wipe?.(W, a.key)
+    }
 </script>
 
 {#if bud}
@@ -299,20 +322,42 @@
             landed<span class="hf-fold">{open_landed ? '▾' : '▸'}</span>
         </button>
         <div class="hf-list">
-            {#each face.albums.slice(0, open_landed ? 12 : 3) as a (a.key)}
+            <!-- OPENING IT SHOWS WHAT WE HAVE.  The fold used to stop at 12 while the bag holds 40
+                 (Heist_haul_keep), so opening the list still hid 28 rows that were already in memory and
+                 the overflow line quoted a number you could not reach by any press. A cap inside a cap. -->
+            {#each face.albums.slice(0, open_landed ? face.albums.length : 3) as a (a.key)}
                 <div class="hf-row" class:fresh={a.fresh}>
                     <span class="hf-n">{a.tracks}</span>
-                    <span class="hf-name" title={a.key}>
-                        {#if a.above}<span class="hf-above">{a.above}/</span>{/if}{a.name}
-                    </span>
-                    <span class="hf-when">{a.when}</span>
+                    <!-- THE ROW IS THE DOOR, same law the live half above already follows: the name is
+                         the button and it PLAYS the album, in its own track order, next.  A list of your
+                         own music whose only verb was "delete" was a filing cabinet, not a player. -->
+                    <button class="hf-open hf-albumbtn" onclick={() => play(a)}
+                            title={played === a.key ? 'queued — playing next' : 'play this album next'}>
+                        <span class="hf-name" title={a.key}>
+                            {#if a.above}<span class="hf-above">{a.above}/</span>{/if}{a.name}
+                        </span>
+                    </button>
+                    <span class="hf-when">{played === a.key ? 'queued' : a.when}</span>
+                    <!-- THE 🗑 THIS FILE'S OWN CANCEL COMMENT PROMISED and nobody had built (the owner
+                         2026-09-09: *"I should be able to delete them there?"*).  The ✕ above cancels an
+                         INTENT and keeps every landed byte; this takes the album back off the disk.
+                         Same two-press arm as the ✕ and the wish-retire — armed per row, disarmed by any
+                         other press — because it is the most destructive verb in the cell and the row
+                         under your cursor moves as heists land. -->
+                    <button class="hf-b hf-x hf-trash" class:armed={arm === 'del|' + a.key}
+                            onclick={() => wipe(a)}
+                            title={arm === 'del|' + a.key ? 'press again to delete these files from your disk — this cannot be undone' : 'delete this album from your disk'}
+                    >{arm === 'del|' + a.key ? 'sure?' : '🗑'}</button>
                 </div>
             {/each}
             <!-- counted off `nAll`, not off the rendered list: the bag itself is capped at 40, so
                  `albums.length - 12` was an overflow line bounded by a cap it never mentioned — it would
                  sit at "…and 28 more" for ever while the real number climbed past 300. -->
-            {#if face.nAll > (open_landed ? 12 : 3)}
-                <div class="hf-more">…and {face.nAll - (open_landed ? 12 : 3)} more</div>
+            <!-- and when the fold is open the remainder is what the BAG cannot hold, not what the list
+                 chose not to draw — so the line now names the real reason it stops (the newlyadded log on
+                 disk has every one of them; this mirror is capped at 40 on purpose). -->
+            {#if face.nAll > (open_landed ? face.albums.length : 3)}
+                <div class="hf-more">…and {face.nAll - (open_landed ? face.albums.length : 3)} more{open_landed ? ' on disk' : ''}</div>
             {/if}
         </div>
     {/if}
@@ -353,10 +398,25 @@
     .hf-list { display: flex; flex-direction: column; gap: 2px; }
     /* the row is grid, not flex, so the counts line up down the left and a long album name truncates
        instead of pushing the "2h ago" off the cell — the one thing you scan this list for. */
+    /* the fourth column is the 🗑 — `auto` so it takes exactly its glyph, and the NAME column stays the
+       only 1fr, so a long album title elides instead of pushing the delete out of the cell (the same law
+       the live row above already follows for its ✕). */
     .hf-row {
-        display: grid; grid-template-columns: 1.6rem 1fr auto; align-items: baseline;
+        display: grid; grid-template-columns: 1.6rem 1fr auto auto; align-items: baseline;
         gap: 6px; font-size: 10.5px; line-height: 1.5;
     }
+    /* QUIET UNTIL WANTED.  This is the one press in the cell that destroys bytes, so it must not sit in
+       the eye like a verb you are being invited to use — it fades in on the row, and once armed it stops
+       being a glyph and says a word, which is `.hf-x.armed`'s existing job. */
+    /* the album name is a button now, so it must not look like one: no chrome, inherit the row's type,
+       and keep the ellipsis behaviour the plain span had (the grid column is still the only 1fr). */
+    .hf-albumbtn {
+        background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit;
+        text-align: left; cursor: pointer; min-width: 0; overflow: hidden;
+    }
+    .hf-albumbtn:hover .hf-name { color: #d7e6f7; }
+    .hf-trash { opacity: 0.25; transition: opacity 120ms; padding: 0 3px; }
+    .hf-row:hover .hf-trash, .hf-trash:focus-visible, .hf-trash.armed { opacity: 1; }
     .hf-n {
         font-variant-numeric: tabular-nums; text-align: right;
         color: #8fb4e8; font-weight: 600;

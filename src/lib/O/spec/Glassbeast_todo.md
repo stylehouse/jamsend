@@ -17,6 +17,219 @@ Read it as a field guide. The animal is real, most of its organs exist, and it i
 Everything below this section is the dated evidence trail, newest first. **This is the summary; read
  it first and dip into the rest only where you disagree.**
 
+### 🔎 2026-09-09 — TWO VIEWPORTS IN THE DOM, and the shot serialises the empty one
+
+The captured "blank" glass, element by element:
+
+```
+1 <svg class="viewport">   ·   1 <defs> (3 patterns)   ·   1 rect.ground-tex   ·   0 paths
+```
+
+**That is the copper ground and nothing else** — literally what the owner saw. But the same run's
+ telemetry reports the live world holding **3 cells**, and `runner_shot --svg` prints
+  `cands [2c/0t]`: **two candidate viewport elements**, neither satisfying it, and the one it
+   serialised is empty.
+
+**So the crests may already be drawing.** The evidence no longer supports "a folded glass renders
+ nothing" — it supports "there are two viewports and the scraper picks the wrong one". `--why` counts
+  LIVE worlds (1) while the DOM carries 2 viewport SVGs, which means a Svelte block for a departed
+   world is not being torn down — the same leak seen in `springs`, showing up in the DOM.
+
+⚠ **This is the fourth time tonight the instrument has been the thing that was wrong**, so it is
+ stated as a possibility and not a result. **The cheapest way to settle it is a human eye**: load
+  `/BigShapeland?B=VytoKindfold` and look. Three crest cells means the render works and only the shot
+   is broken; a copper ground means the face port is genuinely owed. **A person looking at the screen
+    is the one instrument tonight that has not lied.**
+
+**If it turns out the shot is at fault**, the fix is to make `--svg` pick the POPULATED viewport
+ rather than the first — and, separately, to tear down the DOM block for a departed world, which is
+  the visible half of the `springs` leak already recorded above.
+
+### 🏠 2026-09-09 — `/BigShapeland`: a room to look at the glass (and the mistake it took to get there)
+
+Third sibling to `/BigSoundland` and `/BigWordland`. Opens on **VytoOrchestra** — the Book its own
+ header already nominated as *"THE CANONICAL DEMO … the standing runner_shot subject"* — with `?B=`
+  override and a roster behind the Book name: every Vyto demo, one line saying what it is for, and a
+   **measured** `draws` column (◉ draws · ○ ends folded, no crest DOM yet · · unmeasured).
+
+**The mistake, because it is a general one.** The first cut mounted `<Ghost {H} />` and nothing else,
+ and rendered a `<main>` containing only empty comment markers. **`Ghost` mounts the ghost MODULES —
+  invisible logic — not anything to look at.** A House's visible pieces hang off `house.UIs` and are
+   mounted by their own `component`:
+
+```svelte
+{#each houses as house (house.c.ip)}
+    {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
+        <svelte:component this={uiC.sc.component} H={house} />
+```
+
+Both are needed: the UI loop for the picture, `<Ghost {H} />` outside the room so the machine
+ actually runs. /BigWordland does exactly this and I read past it.
+
+**What the room is FOR, beyond convenience.** The owner: *"there's been a ton of names and they all
+ just whizz by."* A `?B=` tab shows one Book and tells you nothing about what else exists or what it
+  was meant to show. The roster is the cure — and its `draws` column makes the render gap visible at
+   a glance instead of leaving someone staring at a copper ground wondering what they broke.
+
+### 🟡 2026-09-09 — THE CREST IS NOW A CELL. It is not yet DOM. (0 cells → 3 cells)
+
+Measured with the instrument finally counting **live** worlds rather than everything it has ever
+ tracked:
+
+```
+VytoKindfold   1 LIVE world · 3 springs · 3 cells · ⚠ 2 dead world(s) still tracked
+VytoOrchestra  1 LIVE world · 8 springs · 8 cells · ⚠ 1 dead world(s) still tracked
+```
+
+**Three cells, for three crests.** The `tok` fix did it: `Vytui.tree_nodes` opens with
+ `const tok = row.c.tok; if (!tok) return null`, and a crest — minted by the fold rather than by
+  `Vyto_scan_walk` — had none, so every crest was discarded on the renderer's first line. Giving the
+   crest the election's group string as its identity (stable across stirs, which is what morph-not-blink
+    needs) turned **0 cells into 3**.
+
+**And that is not yet a picture.** `--svg` still reports `0 paths` for VytoKindfold while
+ VytoOrchestra's 8 cells become 18 paths through the same call. So the remaining gap is precise:
+  **a crest becomes a paint cell and never becomes DOM.** Vytui's face/label path has no case for a
+   `%Vtuffing` row — no ident, no face, no distilled voice — and drops it between paint and render.
+
+**Which is exactly the port that never crossed the moult.** `Cytui.svelte:2324` builds *"one cell's
+ labels off its Vtuffing descs — the SAME distilled voice the panes speak"*, with a title line and
+  indented facts loud→quiet. That machinery exists, in the old renderer, and Vytui has none of it.
+   **This is the real remaining work**, and it is a build rather than a one-liner.
+
+#### Three corrections stacked in one tick, worth keeping as a shape
+
+1. *"A folded glass has never been renderable"* — wrong; Cytui renders crests. Found only because
+    the owner said **check the history**, which the current file could never have shown.
+2. *"`fresh=1` orphans the render"* — wrong mechanism. `vyto_worlds()` returns only ATTACHED worlds,
+    so the template cannot draw a corpse; what leaks is the renderer's per-world MAPS.
+3. *"8 cells exist"* — unattributable, because my own telemetry counted `springs.keys()` (live +
+    dead). Counting live worlds only gives 3, and 3 is the number that means something.
+
+**The instrument was wrong three times before the system was wrong once.** It reported `0 worlds` on a
+ drawing glass (published from an event that never fires for a parked Book), then again (published
+  from a path `adopt` bypasses), then mixed corpses into the count. Each fix changed the conclusion.
+   **A measurement that has never been checked against a known-good case is not evidence** — VytoNestRest
+    drawing 6 cells was the control that exposed all three, and it was available the whole time.
+
+#### Still open, in order
+
+1. **The Vtuffing face** — port the distilled voice so a crest DRAWS. The real work.
+2. **Reap dead worlds** from `springs`/`paintMap`/`settleCount`/`prevWalls` on adopt. A leak today; on
+    a live page that re-poses its glass, a growing one.
+
+### 🔴 CORRECTED 2026-09-09 — the glass is not unrenderable. **THREE GLASSES ARE STACKED AND YOU SEE A DEAD ONE.**
+
+**The owner pushed back on the claim below and was right.** I wrote *"a folded glass has never been
+ renderable"* off one grep — `Vytui.svelte` contains `Vtuffing` zero times. The grep was accurate and
+  the conclusion was wrong twice over:
+
+1. **`Cytui.svelte` renders `Vtuffing` — 7 occurrences**, including a crest's distilled voice
+    (`:2324`, *"one cell's labels off its Vtuffing descs — the SAME distilled voice the panes speak"*).
+     The capability exists; it is the OLD renderer that has it. **It did not cross the moult.** That is
+      the destructive specialisation the owner suspected — found by asking the history, not the file.
+2. **And a folded glass DOES draw cells today.** Measured with the fixed telemetry:
+
+```
+VytoKindfold  --why:  3 world(s) · 8 springs · 8 cells · at rest
+VytoKindfold  --svg:  0 paths · 0 labels · cands [2c/0t]
+```
+
+**Eight cells exist in the renderer. The SVG serialises none of them.**
+
+#### The actual cause: `fresh=1` stacks worlds and never tears the old ones down
+
+Every `Vyto_commission_on(…, fresh=1)` does `SH.drop(old); SH.i({A:'Vyto'}).i({w:'Vyto'})` — a NEW
+ Vyto world each time. Dropping the `A:` from the House does **not** remove the old world from
+  Vytui's `springs` map, which keys by the world C and never forgets one. So:
+
+```
+VytoKindfold   3 fresh commissions → 3 worlds mounted → the page shows a dead one → COPPER
+VytoOrchestra  2 fresh commissions → 2 worlds mounted → drew 7 of its 14 cells
+VytoNestRest   1 commission        → 1 world          → drew all 6
+```
+
+**The more times a Book re-commissions, the more likely you are looking at a corpse.** That is the
+ owner's copper screen, exactly: a live glass with eight cells sitting beside two dead ones, and the
+  view landing on a dead one.
+
+#### What this makes of the night's other conclusions
+
+- **"A folded glass has never been renderable"** — WRONG, retracted. It renders; you cannot see it.
+- **"`fresh=1` orphans the render"** — right instinct, wrong mechanism. Nothing is orphaned; the old
+   worlds are never *reaped*, and the renderer accumulates them.
+- **The crest `tok` fix stays** and is still correct — `tree_nodes` drops any row without `.c.tok`, and
+   a crest is minted by the fold rather than the scan so it had none. It is necessary and was not
+    sufficient, which is why the cell count is 8 rather than 0.
+
+#### The fix, and it is renderer-side lifecycle
+
+`springs` (and `paintMap`, `settleCount`, `prevWalls`, the rest of the per-world maps) need to forget
+ a world that is no longer attached to the House — a reap on adopt, keyed off the same detachment the
+  drop already performs. Until then **every re-commissioning Book leaves litter that the view can
+   land on**, which is a live-page fault and not merely a Book one: a Sounditron re-posing its glass
+    would stack worlds the same way.
+
+⚠ **And the instrument had to be fixed twice before any of this was visible.** `vy_render` was first
+ published only from `vylog` (never fires for a parked Book) and then from `integrate_world`'s parked
+  branch (which `adopt` bypasses entirely for parked worlds). It reported `0 worlds · 0 cells` about a
+   glass drawing seven. **Three separate times tonight the instrument lied before the system did** —
+    and this one lied in the direction of my own conclusion, which is the dangerous direction.
+
+### 🔴 2026-09-09 ⚠ SUPERSEDED BY THE CORRECTION ABOVE — WHY THE GLASS IS COPPER: **a folded glass has never been renderable**
+
+The owner, on a runner booted to `Book:VytoKindfold`: *"all I see is the copperannodes background."*
+ That is not a boot fault, not a stale tab and not a regression. **The fold's display half was never
+  built, and the code says so in its own comment.**
+
+```
+Vytui.svelte — occurrences of "Vtuffing":   0
+```
+
+**The renderer has no concept of a crest.** `Vyto_fold_scope` mints `%Vtuffing` crests with their
+ counted dips, marks every folded member `.c.folded = 1` and clears its `.c.T` — and nothing
+  downstream draws the crest that stands for them. So a folded scope removes N cells from the glass
+   and adds none. `Vyto.g:472` states it plainly: *"this stub stays until the display refactor (which
+    owns that half) lands the mirror-side wiring"*, and `:567` again: *"`Vyto_fold` above stays a stub
+     until the mirror-side solver lands."*
+ (The `folded` the renderer DOES know about — `Vytui.svelte:1150`, `cell.crushed` — is a different
+  thing entirely: a FACE folded down to an icon with more inside. Not the fold's crests.)
+
+**Measured, four Books through `runner_shot --svg`:**
+
+```
+VytoOrchestra   folded=0                       18 paths · 10 labels ·  7 cells   ✅ draws
+VytoNestRest    never folds                    14 paths · 12 labels ·  6 cells   ✅ draws
+VytoCrush       ends on its PLAIN control     119 paths · 60 labels · 20 cells   ✅ draws (unfolded)
+VytoKindfold    ends FOLDED (3 crests)          0 paths ·  0 labels ·  0 cells   ❌ blank
+```
+
+**Every glass that draws is an unfolded one.** No Book has ever shown a folded glass drawing — even
+ VytoCrush, the crush's own Book, only draws because its last beat is the plain control. **The
+  signature rosette has never been rendered.**
+
+#### What this means for the night's work, stated plainly
+
+The fold ladder, the kin atom, `q:` on the dip, the three doors, the universal presence — all of it
+ is **model-complete and picture-absent**. The wall now falls at the meaning, provably, in a fixture,
+  and *nobody can look at it*. That is this document's own §2 inversion in its purest form: the model
+   is honest and the render does not exist for it.
+
+**It also retires a hypothesis I carried for three ticks.** I blamed `fresh=1` re-commissioning for
+ orphaning the render. Wrong: VytoOrchestra re-commissions `fresh=1` **twice** and draws fine. The
+  variable was never `fresh` — it was `folded`. Recorded so nobody chases the teardown.
+
+#### The next move, and it is the biggest one left
+
+**Teach the renderer the crest.** A `%Vtuffing` row is already a first-class model particle carrying
+ `of:` (its group), `n` (its true count), a `%Vrow,row:dip` with `q:` (the query that reopens it) and
+  the distilled facts/veins/chips. Everything a cell needs is on it. What is missing is the seam that
+   gives it a spring target and a face — the "mirror-side wiring" the comment has been waiting on
+    since 2026-07-27.
+
+That is the one piece of work that would turn everything built last night from a proof into a
+ picture, and it is where I would start.
+
 ### ① WHAT IS OWED TO YOU — four decisions, nothing else blocks
 
 1. **Accept three stale fixtures** — VoroClinic · VoroScape · VytoOrchestra. Every delta is diffed
@@ -175,6 +388,45 @@ vyto render: 1 world(s) · 6 springs · 6 cells · at rest
       across a sweep. Flashing seen while Books run is that hard cut, **not** the spring loop, and no
        amount of settle-tuning will touch it. This is a strong candidate for what was observed
         2026-09-08 and it should be ruled in or out before anything else is tuned.
+
+### 👁 2026-09-09 — THE PIXEL WITNESS DISAGREES WITH THE MODEL, and the disagreement is the finding
+
+`Meaningfold §0.1` names `--svg` as the one thing a snap cannot carry. Pointed at VytoKindfold after
+ its run:
+
+```
+🩻 1364×767 · 0 paths 0 labels · cands [2c/0t]
+```
+
+**Nothing drawn**, on a Book whose five sworn sentences are all green and whose model holds three
+ crests standing for eighteen folded members.
+
+**My first reading was that my Book was model-only and snap-blind to the render** — the exact
+ blindness this document is about, committed by me. So I added the render-side requirement
+  (`if (!c.c.T) return 0` — a crest must have been given geometry) and drove the solve to rest.
+
+**And the Book still passes: `ok_pct 1 · caveat 0 · sworn 5`.** So the crests DO have targets during
+ the run. **The model is not the problem, and neither is the Book.** The glass is empty only when the
+  shot is taken, after the run settles.
+
+**The hypothesis, stated as one.** VytoKindfold's last beat re-commissions with `fresh=1`, which does
+ `SH.drop(old); SH.i({A:'Vyto'}).i({w:'Vyto'})` — the whole Vyto world destroyed and rebuilt. The
+  render very likely stays pointed at the torn-down world, which would explain `2 candidates, 0
+   targets` on a page whose live model has three well-targeted crests. **VytoNestRest, which never
+    re-commissions mid-run, shoots `14 paths 12 labels · 6 cells` through the same instrument** — so
+     the instrument is fine and the difference is the re-commission.
+ ⚠ **Untested directly.** Do not promote it past a hypothesis without pointing the render at the new
+  world and re-shooting.
+
+**Why this matters beyond one Book.** It is the same `fresh=1` teardown already suspected of the
+ flashing seen during a Book sweep — and here it is again, leaving a glass blank while the model is
+  healthy. **A model-side gate can be entirely green over an empty picture**, which is finding C4
+   restated with a measurement rather than an argument, and it is the strongest case yet for the
+    render-side witness being a permanent part of the fleet rather than a diagnostic.
+
+**What the Book gained regardless:** it now asserts that a crest was given GEOMETRY, not merely that
+ it exists. That is one line, it is the cheapest possible cure for model-only blindness, and every
+  Book that folds should carry it.
 
 ### 🚪 2026-09-09 — THE UNIVERSAL PRESENCE: site #5 closed. All three Vyto-half doorless sites are shut.
 

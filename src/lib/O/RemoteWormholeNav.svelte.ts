@@ -1,6 +1,6 @@
 // RemoteWormholeNav — the third w:Wormhole backend: method:remoteWormhole.
 //
-//  Same read_file / write_file / bin_write / bin_append / dir / bin_read / read_range contract as WormholeNav (FSA) and
+//  Same read_file / write_file / bin_write / bin_append / bin_rm / dir / bin_read / read_range contract as WormholeNav (FSA) and
 //   OpfsOverlayNav (cloud) — but rooted in NO local filesystem.  Every call round-trips an rw-op
 //    over the relay channel to a trusted EDITOR, which runs it against ITS own handle and replies.
 //     A headless runner (a dockerised Chrome — no DirectoryAccess, OPFS illegal under a dev boot)
@@ -197,6 +197,19 @@ export class RemoteWormholeNav {
     async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
         const r = await this.send('bin_write', { dir_path, filename }, bytes)
         if (r.error) throw r.error
+    }
+
+    // bin_rm — bin_read's DELETING twin over the wire, completing the parity this file's header claims
+    //  (2026-09-09).  Without it a remote nav could WRITE a pool it could never sweep: `Ra_pool_unfile`
+    //   probes `typeof nav.bin_rm` and, finding nothing, drops the card and leaves the bytes — the disk
+    //    grows and the log calmly explains why, forever.
+    //  `false` means the file was not there (a sweep is not an error); an OLD far end that does not know
+    //   the op answers `unknown rw op` and we THROW rather than reporting a delete that never happened —
+    //    a capability we cannot actually perform must never return the same value as a successful sweep.
+    async bin_rm(dir_path: string, filename: string): Promise<boolean> {
+        const r = await this.send('bin_rm', { dir_path, filename })
+        if (r.error) throw r.error
+        return !!r.removed
     }
 
     // bin_append — bin_write's STREAMING twin over the wire (op:'bin_append', bytes on a raw frame): the
