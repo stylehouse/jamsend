@@ -11,7 +11,7 @@ const ELECTRODE_SKIP = /^(Ghostmeta_|Electrode_|Electrode$)/   // never coat the
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Electrode(): string { return '1d0238dafea1fe01~g1' },
+    Ghostmeta_Ghost_L_Electrode(): string { return '17c99a17d4c03a7f~g1' },
 
 // Electrode.g — both ends of every ghost call, kept as marks, reduced to a picture.  The second ghost
 //  in Ghost/L/ (the land); spec home: src/lib/O/spec/Electrode_todo.md.
@@ -269,6 +269,10 @@ Electrode_hangs(w, older_ms) {
 
 },
 // Electrode_top — the headline: the hottest flows by count and by time, plus the census.
+//  WHAT IT IS ACTUALLY FOR, proven 2026-09-09: `Creduler_reswap` carried a comment calling its own
+//   38-serial-HEADs-every-2s sweep "correct + cheap", and it was the largest recurring cost on the tab
+//    at 280–315ms a pass.  Nobody could have read that off the source; `by_ms` printed it in one line.
+//     A claim about cost that no instrument has ever checked is a guess wearing a comment's clothes.
 Electrode_top(w, k) {
     let T = this.Electrode_T()
     let rows = [...T.tally.values()]

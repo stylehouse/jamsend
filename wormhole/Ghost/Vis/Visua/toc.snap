@@ -23,7 +23,7 @@ Waft:Ghost/Vis/Visua
     Point,method:Voro_crushable
     Point,method:Voro_crush_clear
   What:the demo Books
-    Doc:Ghost/Story/Voronation.g
+    Doc:Ghost/Story/VoroTesting.g
     Point,method:VoroMitosis_seed
     Point,method:Botany_plant
     Point,method:VoroScape_library
@@ -35,7 +35,7 @@ Waft:Ghost/Vis/Visua
     Point,method:Vyto_board
     Point,method:e_Vyto_commission
     Point,method:Vyto_spool_capture
-    Doc:Ghost/V/Vytonation.g
+    Doc:Ghost/V/VytoTesting.g
     Point,method:VytoStaple_seed
     Point,method:VytoCell_seed
     Point,method:VytoMitosis_found

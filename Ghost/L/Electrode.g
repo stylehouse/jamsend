@@ -246,6 +246,10 @@ Electrode_hangs(w, older_ms):
     return out
 
 // Electrode_top — the headline: the hottest flows by count and by time, plus the census.
+//  WHAT IT IS ACTUALLY FOR, proven 2026-09-09: `Creduler_reswap` carried a comment calling its own
+//   38-serial-HEADs-every-2s sweep "correct + cheap", and it was the largest recurring cost on the tab
+//    at 280–315ms a pass.  Nobody could have read that off the source; `by_ms` printed it in one line.
+//     A claim about cost that no instrument has ever checked is a guess wearing a comment's clothes.
 Electrode_top(w, k):
     let T = this.Electrode_T()
     let rows = [...T.tally.values()]

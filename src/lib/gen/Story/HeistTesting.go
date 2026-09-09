@@ -11,7 +11,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Heistation(): string { return 'ee093c61e603face~g1' },
+    Ghostmeta_Ghost_Story_HeistTesting(): string { return 'ee093c61e603face~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB

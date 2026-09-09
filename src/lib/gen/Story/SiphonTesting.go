@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Siphonation(): string { return 'a51b38e9318b6f9b~g1' },
+    Ghostmeta_Ghost_Story_SiphonTesting(): string { return 'a51b38e9318b6f9b~g1' },
 
 // Siphonation.g — the Siphon* Books: the deliberate SoundPool act gated at the MODEL layer
 //  (Siphon_todo.md rung 4).  A SPIN-OUT beside Heistation.g's press family (MusuPress /

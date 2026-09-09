@@ -12,7 +12,7 @@ import { poly_area } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vytonation(): string { return '7adb6416fc03f43e~g1' },
+    Ghostmeta_Ghost_V_VytoTesting(): string { return '7adb6416fc03f43e~g1' },
 
 // Vytonation.g — Vyto's demo Books (the VoroTesting.g sibling, one directory over in Ghost/V/; owed the
 //  same `<Name>Testing.g` rename — src/lib/L/testing.ts).

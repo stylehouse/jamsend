@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Berthation(): string { return '673e8ef4144eeaec~g1' },
+    Ghostmeta_Ghost_Story_BerthTesting(): string { return '673e8ef4144eeaec~g1' },
 
 // Berthation.g — the Berth* Books: the persistence door proven (Radio_todo §11.7).  A Berth homes one
 //  Pier's own mutable documents — Waft:Taste, Waft:Listening, Waft:Filings, Waft:Map — each a Waft (the

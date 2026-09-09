@@ -10,8 +10,14 @@ import { power_cells, poly_area, poly_centroid } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_VoroTesting(): string { return 'a8a9737169608630~g1' },
+    Ghostmeta_Ghost_Story_VoroTesting(): string { return 'ba7f8d826ff81866~g1' },
 
+
+// VoroTesting.g — the Voro* Books.  Né Voronation.g: the first file of the `<Name>Testing.g`
+//  convention (owner ruling 2026-09-09), which exists so that test code can be pattern-matched and
+//   styled apart rather than recognised from a list — `src/lib/L/testing.ts` is the one predicate.
+//    Book NAMES did not move with the file: a Book is named by its recipe do_fn, so `VoroRadio` and
+//     its fixtures under `wormhole/Story/` are untouched by the rename.
 
 //#region radio — VoroRadio: the tuner PROVEN (📻 drift as a deterministic Story Book)
 // ══ VoroRadio — six dwells of the tuner on a fixed flora: motion, aging, and the hand ═══════════

@@ -1,4 +1,10 @@
 
+// VoroTesting.g — the Voro* Books.  Né Voronation.g: the first file of the `<Name>Testing.g`
+//  convention (owner ruling 2026-09-09), which exists so that test code can be pattern-matched and
+//   styled apart rather than recognised from a list — `src/lib/L/testing.ts` is the one predicate.
+//    Book NAMES did not move with the file: a Book is named by its recipe do_fn, so `VoroRadio` and
+//     its fixtures under `wormhole/Story/` are untouched by the rename.
+
 //#region radio — VoroRadio: the tuner PROVEN (📻 drift as a deterministic Story Book)
 // ══ VoroRadio — six dwells of the tuner on a fixed flora: motion, aging, and the hand ═══════════
 //  The determinism gate the radio owed (spec/Voro_vtuffing.md §North stars): the SAME engine the

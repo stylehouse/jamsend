@@ -41,20 +41,37 @@ The owner, tired, end of day: *"can we line up the rest of the day's work, and w
       are deliberately NOT matched by the old name, so the rename cannot be skipped.
 
 **Next, in order:**
-1. **Rename the other twelve** `<Name>ation.g → <Name>Testing.g` (Swarmation, Musuation, Radiation,
-    Atlantation, Lagoonation, Electrodation, Vytonation, Peregrination, Siphonation, Berthation,
-     Errchannelation, Heistation).  Mechanical: mv, `CREDULER_GHOSTS` in LiesLies, drop the old
-      `.go`, LocalGen.  Book names and fixtures do not move (a Book is named by its recipe, not its
-       file).  The Credulation/GhostList toc.snaps churn — the accepted class.
-2. **The figurines view** — the owner: *"figurines of things that are well connected… record runtime
-    data about which methods are top-most, popular."*  The DATA ALREADY EXISTS: `Electrode_top` gives
-     the hottest flows by count and by time; Atlas holds static popularity (`calls` per def and the
-      caller index).  *Top-most* = a flow whose `from` is ∅ or never appears as anyone's `to` — a
-       reduce over the tally, not a new tap.  So this is a Lagoon verb (`Lagoon_figurines`: joins
-        Electrode's runtime tally onto Atlas's defs, ranks by in-degree × recency) and a FACE that
-         sizes a figurine by that rank — `dose_drives` in Matstyle is the sizing idiom.  Ask first,
-          keep nothing: the concept line holds.  Gate: a Book that arms Electrode, runs a known
-           beat, and swears the top figurine by name.
+1. ~~**Rename the other twelve**~~ — **DONE the same evening** (`/loop continue`).  Swarm · Musu · Ra
+    (né Radiation) · Peer (né Peregrination) · Siphon · Berth · Errchannel · Heist · Atlas · Lagoon ·
+     Electrode · Vyto, all `<Name>Testing.g`.  Beyond the manifest: the four WAFTS that name recipe
+      files as open docks (`wormhole/Ghost/{Net/Easy,Swarm/Easy,Vis/Visua,Music/Ality}/toc.snap` —
+       `Doc:` rows moved, ledger history rows left as record), two scripts importing the gen
+        (`RehealSmoke.spec.ts`, `Siphon_include.svelte`), two harness defaults (`FlockCompile`,
+         `LocalGen`).  Book names and fixtures did not move.  ⚠ Two names are judgment calls —
+          `PeerTesting`, `RaTesting` — rename again if wrong; it is one `mv` + one manifest line.
+2. **The figurines view — BUILT the same evening** (`/loop continue`).  `Lagoon_figurines(w, k)`
+    (Lagoon.g, its own region after the join): a READING over two censuses, nothing new tapped.
+     · *popular* = DISTINCT measured callers (Electrode), beside DISTINCT declared callers (Atlas
+        `call,via` + `elvisto,via`) — distinct, because a method one loop hammers is busy, not connected
+     · *top-most* = every flow in entered from OUTSIDE the coats (`from` null) — where the world enters
+     · *fan* = distinct callees; `dose` = callers / run max, 0..1, the size a face draws
+     · refuses by name (no Atlas / no tally); an UN-ARMED tally is an honest zero with `armed:0` on
+        the reply so a face says "arm it", never "nothing is connected"
+    Faces: Lagui grew a figurines strip above the index (font-size from dose — the first dose-driven
+     thing in the face; ⇡ on top-most; click seeks it); `runner_ask lagoon figurines [--k=]` prints a
+      dose bar per row.  Gate: `scripts/SectResolve.spec.ts` — two tests on a hand-made tally + census
+       pin each word to a number (beta with 2 callers outranks 501 calls from one; alpha top-most,
+        gamma not; keeps nothing; named refusal; honest zero).
+    **Proven live** (da06, Electrode armed across one `Siphonation` run, Atlas re-stood `--fresh` on the
+     real corpus): 235 methods ran · 65 top-most · `Lies_role` the most connected — 12 distinct
+      measured callers against 29 declared (`LiesLies.svelte:159`); `Siphonation_note` wears ⚗ from
+       `SiphonTesting.g`.  The first live run had EVERY row unjoined — Atlas was aimed at the fixture —
+        so the reply now carries `unjoined`+`atlas_docs` and the CLI says "aimed at a fixture?" once
+         instead of "no def" 235 times.  The same tell that bit twice today, made legible at the seam.
+    **Owed:** a LagoonStaple beat (before `keeps_nothing`, which must stay last) — it arms Electrode,
+     runs a known beat, swears the top figurine by name.  That is a re-record (`mode:new` + toc
+      surgery), so it waits for an attended session.  And the figurine is still a chip in a strip; the
+       "arranged around the place" version waits for the pose model (`Lens_posable`), as everything does.
 3. **Rule on RETIRED vs GONE** and **`Story_next_level`** — still owed from the ~03:00 block.
 4. **Style the Testing border in Cyto/Matstyle** if the owner wants it on the graph too — today it is
     on the two faces and the CLI only.

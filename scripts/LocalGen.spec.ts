@@ -20,7 +20,7 @@ import Story_cli from './Story_cli.svelte'
 const ROOT  = process.cwd()
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 const CHECK = !!process.env.CHECK
-const FILES = (process.env.GFILES || 'Ghost/N/Reliable.g Ghost/N/Peeroleum.g Ghost/N/Tribunal.g Ghost/Story/Peregrination.g')
+const FILES = (process.env.GFILES || 'Ghost/N/Reliable.g Ghost/N/Peeroleum.g Ghost/N/Tribunal.g Ghost/Story/PeerTesting.g')
     .split(/\s+/).filter(Boolean)
 
 test('LocalGen: compile each .g and write its real gen/.go', async () => {

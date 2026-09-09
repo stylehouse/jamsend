@@ -8,9 +8,10 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlantation(): string { return 'fd4204f0e367eb03~g1' },
+    Ghostmeta_Ghost_L_AtlasTesting(): string { return '6347977280cf1cc6~g1' },
 
-// Atlantation.g — the Atlas.g proof.  Naming mirrors Voro→Voronation, Vyto→Vytonation: the model's
+// Atlantation.g — the Atlas.g proof.  (Owed the `<Name>Testing.g` rename — VoroTesting.g led, 2026-09-09;
+//  see src/lib/L/testing.ts.)  Naming mirrored Voro→Voronation, Vyto→Vytonation: the model's
 //  own Books live in a `<Name>ation.g` beside it.
 //
 // CONVENTION (Musu*/Sounditron, restated from Vytonation.g): no Run_A_ recipe — the world MUST be

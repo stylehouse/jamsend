@@ -22,7 +22,7 @@ import Heist from '../src/lib/gen/M/Heist.go'
 // The two STORY ghosts that carry hand-compiled Books (ParkCull in Musuation, BootGateNoFSA in
 //  Sounditron, 2026-08-15) — same lesson as Heist above: the file being edited is the one most
 //   likely to be missing from this gate, and Story ghosts are compiled by LocalGen too.
-import Musuation from '../src/lib/gen/Story/Musuation.go'
+import Musuation from '../src/lib/gen/Story/MusuTesting.go'
 import Sounditron from '../src/lib/gen/Story/Sounditron.go'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))

@@ -2520,7 +2520,7 @@ await M.eatfunc({
                 //   reloading op. The CLI's PLAYER_OPS gate is advisory; THIS is the authority — a music
                 //    tab can be introspected but never made to run a Book or reload (owner 2026-09-01).
                 const ro_only = H.Lies_humdinger(w) && !H.Lies_is_runner(w)
-                if (ro_only && (op === 'run' || op === 'release' || op === 'retain' || op === 'accept' || op === 'declare' || op === 'reload' || op === 'ghost_load')) {
+                if (ro_only && (op === 'run' || op === 'release' || op === 'retain' || op === 'accept' || op === 'declare' || op === 'reload' || op === 'ghost_load' || op === 'pick')) {
                     ok = false
                     result = { refused: `op '${op}' refused — this tab is a music-page listener (read-only introspection only)` }
                 } else if (op === 'ping') {
@@ -2630,6 +2630,32 @@ await M.eatfunc({
                         }
                         ok = included
                     }
+                } else if (op === 'pick') {
+                    // FIRE THE DOC CHANGE FROM THE CLI — so the slow thing can be MEASURED instead of
+                    //  guessed at (the owner, 2026-09-09: *"unimpressed with its ability to change Doc
+                    //   quickly… same as Lies+Lang was"*).  `Lies_ghost_pick` is exactly the path a
+                    //    search hit takes when a human clicks it, and until now there was no way to
+                    //     trigger it except by being at the tab — which means no way to sit an
+                    //      instrument around it.  Recipe: `electrode arm` → `electrode reset` → `pick`
+                    //       → `electrode top`, and the cost of a Doc change is a number.
+                    //  NO NEW AUTHORITY, the same rule the poke allowlist states: this presses a button
+                    //   a human can already press, with the same two arguments the Searchbar sends.  It
+                    //    opens and reads; it writes only the Aside moment the click itself would write.
+                    //     Runner-only (in the ro_only refusal above).
+                    const a = ask as any
+                    const path = String(a.path ?? '')
+                    if (!path) { ok = false; result = { error: 'pick needs a path' } }
+                    else {
+                        const point = a.point != null ? String(a.point) : undefined
+                        const t0 = performance.now()
+                        H.i_elvisto('Lies/Lies', 'Lies_ghost_pick', point ? { path, point } : { path })
+                        // the elvisto is DEFERRED by design (it lands on a later tick under the beliefs
+                        //  mutex), so this `fired_ms` is the ask's own cost and NOT the pick's — say so
+                        //   in the reply rather than let a reader mistake one for the other.  The pick's
+                        //    real cost is what the electrode tally measures across the ticks that follow.
+                        result = { picked: path, point: point ?? null, fired_ms: Math.round((performance.now() - t0) * 100) / 100,
+                                   note: 'elvisto is deferred — read the cost from `electrode top`, not from fired_ms' }
+                    }
                 } else if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
                     // The reverse lookup owed since the Atlas census began (Stemdex_todo.md §0):
                     //  "who calls X" WITH the doc it lives in — a wildcard minisnap path already
@@ -2699,6 +2725,13 @@ await M.eatfunc({
                         // `rotwork` is the lint ROUTED — grouped by doc, with a proposed fix and a
                         //  likely exit per group (Lagoon_todo leg 6).  Same census, no extra source.
                         else if (verb === 'rotwork')  result = L.Lagoon_rotwork(lw, k ?? 12)
+                        // `figurines` — who is well connected: Electrode's measured callers beside Atlas's
+                        //  declared ones, top-most flagged, a dose for a face to size by (2026-09-09)
+                        else if (verb === 'figurines') result = L.Lagoon_figurines(lw, k ?? 40)
+                        // `errands` — the day's research trail read back off the Aside: what you went in
+                        //  there to look at, where you came from, how often you returned.  The shelf was
+                        //   always written; this is the first thing that reads it (Clerkdesk_todo §0).
+                        else if (verb === 'errands')  result = L.Lagoon_errands(lw, k ?? 40)
                         // `oaths` is the one verb that needs a nav: a Book is not in the census (Atlas
                         //  rosters code and prose; wormhole/Story is a third shelf), so the `book` and
                         //   `sworn` link kinds resolve off disk — one toc read per Book.

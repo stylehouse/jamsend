@@ -110,9 +110,75 @@ export function atlas_diges(repo_root: string, roots: string[]): Record<string, 
     return out
 }
 
+// ── THE GEN SWEEP — the same trick, aimed at the OTHER thing this box polls ──────────────────────
+//  `Creduler_reswap` (LiesLies) watches the compiled ghosts for a hot-swap by firing one HEAD per
+//   CREDULER_GHOST — 38 serial round trips — every 2 seconds, on every editor and runner tab, forever.
+//    Its own comment called that "correct + cheap"; measured on a live runner 2026-09-09 with the
+//     Electrode tap it is 280–315ms per sweep and the single largest recurring cost on the tab, which
+//      is the constant background tax behind *"unimpressed with its ability to change Doc quickly"*.
+//  Nothing about the watch was wrong except its shape: 38 questions where one answers.  The gen tree
+//   is a directory this process owns, so it can hash it once and hand back the whole map, and the
+//    ETag then makes the common case — nothing changed — a 304 with no body at all.
+//  DELIBERATELY A SECOND ENDPOINT, not a `roots=gen` on the first: `gen` is in the SKIP list above
+//   because Atlas must never index generated code, and widening the walk to please a second caller
+//    would put the generated tree back in the census.  Two callers, two questions, two doors.
+const GEN_DIR = 'src/lib/gen'
+const GEN_EXT: Record<string, 1> = { go: 1 }
+
+function walk_gen(root_abs: string, rel: string, out: Record<string, Served>) {
+    let entries: any[]
+    try {
+        entries = readdirSync(join(root_abs, rel), { withFileTypes: true }) as any
+    } catch {
+        return
+    }
+    for (const e of entries) {
+        if (e.name.startsWith('.')) continue
+        const child = `${rel}/${e.name}`
+        if (e.isDirectory()) { walk_gen(root_abs, child, out); continue }
+        if (!e.isFile()) continue
+        if (!GEN_EXT[e.name.split('.').pop() ?? '']) continue
+        const abs = join(root_abs, child)
+        let st
+        try { st = statSync(abs) } catch { continue }
+        const mtime = Math.floor(st.mtimeMs)
+        const size = st.size
+        const had = memo.get(child)
+        if (had && had.mtime === mtime && had.size === size) { out[child] = [had.dige, mtime, size]; continue }
+        let text: string
+        try { text = readFileSync(abs, 'utf8') } catch { continue }
+        const d = dig(text)
+        memo.set(child, { mtime, size, dige: d })
+        out[child] = [d, mtime, size]
+    }
+}
+
+// gen_diges — every compiled ghost's content hash, keyed the way `Lies_gen_path` names them
+//  (`gen/L/Atlas.go`), so the caller needs no path arithmetic.
+export function gen_diges(repo_root: string): Record<string, Served> {
+    const out: Record<string, Served> = {}
+    walk_gen(resolve(repo_root), GEN_DIR, out)
+    const keyed: Record<string, Served> = {}
+    for (const k of Object.keys(out)) keyed[k.replace(/^src\/lib\//, '')] = out[k]
+    return keyed
+}
+
 // serve_diges — the http half.  Returns true when it handled the request.
 export function serve_diges(repo_root: string, req: any, res: any): boolean {
     const url = new URL(req.url ?? '/', 'http://x')
+    if (url.pathname === '/__gen/dige') {
+        const t0g = Date.now()
+        const gd = gen_diges(repo_root)
+        const payload_g = JSON.stringify(gd)
+        const etag_g = `"${createHash('sha256').update(payload_g).digest('hex').slice(0, 16)}"`
+        if (req.headers['if-none-match'] === etag_g) { res.statusCode = 304; res.end(); return true }
+        res.statusCode = 200
+        res.setHeader('content-type', 'application/json')
+        res.setHeader('etag', etag_g)
+        res.setHeader('cache-control', 'no-cache')
+        res.end(`{"v":1,"gens":${Object.keys(gd).length},"ms":${Date.now() - t0g},"dige":${payload_g}}`)
+        return true
+    }
     if (url.pathname !== '/__atlas/dige') return false
     const asked = (url.searchParams.get('roots') ?? '').split(',').map(s => s.trim()).filter(Boolean)
     const roots = asked.length ? asked : DEFAULT_ROOTS

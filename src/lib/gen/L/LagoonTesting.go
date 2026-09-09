@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoonation(): string { return '8868742039d25192~g1' },
+    Ghostmeta_Ghost_L_LagoonTesting(): string { return '8868742039d25192~g1' },
 
 // Lagoonation.g — the Lagoon.g proof (Atlas→Atlantation, Electrode→Electrodation, Lagoon→Lagoonation).
 //

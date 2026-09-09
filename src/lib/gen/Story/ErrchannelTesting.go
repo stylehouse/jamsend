@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Errchannelation(): string { return 'c8ba6767e2312230~g1' },
+    Ghostmeta_Ghost_Story_ErrchannelTesting(): string { return 'c8ba6767e2312230~g1' },
 
 // Errchannelation.g — the Story ERROR CHANNEL proven (spec/Error_channel_todo.md).  The channel captures the
 //  INVISIBLE failure class — a swallowed throw — into the Book's run world as w/%Errlog/%Err at the snap seam,

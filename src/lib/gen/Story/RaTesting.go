@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return 'a8e02e482b139e5c~g1' },
+    Ghostmeta_Ghost_Story_RaTesting(): string { return 'a8e02e482b139e5c~g1' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.

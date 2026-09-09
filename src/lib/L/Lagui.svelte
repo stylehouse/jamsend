@@ -108,9 +108,24 @@
         const out = (H as any).Lagoon_families?.(lw, 60)
         if (out && !out.error) fams = out
     }
+    // ── THE FIGURINES — who is well connected, SIZED (the owner, 2026-09-09: *"figurines of things
+    //  that are well connected… which methods are top-most, popular"*).  `Lagoon_figurines` joins
+    //   Electrode's measured callers onto Atlas's defs and hands back a `dose` per row; this face does
+    //    the one thing a figurine needs, which is to be bigger when it is more connected.  The first
+    //     dose-driven thing in this face (the families rail is still "sized by nothing yet").
+    //  Runtime data, so it is only as alive as the tally: un-armed reads as an honest zero with the
+    //   instruction, never as "nothing is connected". ──
+    let figs = $state<any>(null)
+    function ask_figs() {
+        const lw = lagoon_w()
+        if (!lw) return
+        const out = (H as any).Lagoon_figurines?.(lw, 40)
+        figs = out ?? null
+    }
+    const fig_px = (dose: number) => (0.72 + 0.7 * (dose ?? 0)).toFixed(2) + 'rem'
     $effect(() => {
-        ask_fams(); ask_census()
-        const iv = setInterval(() => { ask_census(); if (q === asked_q) { ask_index(); ask_fams() } }, 1200)
+        ask_fams(); ask_census(); ask_figs()
+        const iv = setInterval(() => { ask_census(); if (q === asked_q) { ask_index(); ask_fams(); ask_figs() } }, 1200)
         return () => clearInterval(iv)
     })
 
@@ -170,6 +185,26 @@
                 </button>
             {/each}
             <span class="lag-note">{fams.total} families · {fams.defs_total} defs · {fams.regions} regions</span>
+        </div>
+    {/if}
+
+    <!-- the figurines — the well-connected, each sized by how many distinct callers reached it.
+         ⇡ = top-most: only ever entered from outside the coats.  Click one to seek it. -->
+    {#if figs && !figs.error}
+        <div class="lag-figs">
+            {#if figs.figurines.length}
+                {#each figs.figurines as f (f.name)}
+                    <button class="lag-fig" class:top={f.top} class:testing={is_testing(f.doc)}
+                            style="font-size: {fig_px(f.dose)}"
+                            title="{f.callers} distinct callers (declared {f.declared}) · reaches {f.fan} · ×{f.n} in {f.ms}ms{f.top ? ' · top-most' : ''}{f.doc ? ` · ${f.doc}:${f.line}` : ''}"
+                            onclick={() => q = f.name}>
+                        {#if f.top}<span class="up">⇡</span>{/if}{f.name}<span class="n">{f.callers}</span>
+                    </button>
+                {/each}
+                <span class="lag-note">{figs.ran} ran · {figs.tops} top-most{figs.armed ? '' : ' · electrode not armed'}</span>
+            {:else}
+                <span class="lag-note">no figurines yet — {figs.armed ? 'nothing has run under the coats' : 'arm the electrode (runner_ask electrode arm) and do something'}</span>
+            {/if}
         </div>
     {/if}
 
@@ -338,6 +373,19 @@
     .lag-fam.on { color: #8fd3c8; border-color: rgba(143, 211, 200, 0.6); background: rgba(143, 211, 200, 0.1); }
     .lag-fam .n { color: rgba(140, 160, 200, 0.55); margin-left: 0.3em; font-size: 0.9em; }
     .lag-note.stale { color: rgba(224, 180, 110, 0.75); }
+    /* the figurines — sized by dose (distinct measured callers over the run's max).  Baseline-aligned
+       so a big one and a small one read as one crowd, not two rows; top-most wear ⇡ in the warm hue. */
+    .lag-figs { display: flex; flex-wrap: wrap; gap: 0.15rem 0.35rem; align-items: baseline; max-height: 7.5rem; overflow: auto; }
+    .lag-fig {
+        background: none; cursor: pointer; font-family: inherit; line-height: 1.15;
+        border: none; border-bottom: 1px solid rgba(120, 140, 195, 0.18);
+        color: rgba(190, 205, 235, 0.92); padding: 0 0.15rem;
+    }
+    .lag-fig:hover { color: #e8f0ff; border-bottom-color: rgba(150, 190, 240, 0.6); }
+    .lag-fig.top { color: #ffe0a8; }
+    .lag-fig .up { color: rgba(224, 180, 110, 0.9); margin-right: 0.1em; }
+    .lag-fig .n { color: rgba(140, 160, 200, 0.55); margin-left: 0.25em; font-size: 0.7em; vertical-align: super; }
+    .lag-fig.testing { border-bottom-color: rgba(90, 200, 190, 0.55); }
     .lag-row2 { display: flex; align-items: baseline; gap: 0.2rem; }
     /* the erupted structure: callers grow UNDER the row you climbed from, indented to show whose they
        are.  No placement and no pose — the list's own order is the arrangement (Lens_posable's gate). */

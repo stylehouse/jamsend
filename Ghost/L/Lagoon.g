@@ -33,6 +33,7 @@
 
 IMPORT()
     import Lagui from "$lib/L/Lagui.svelte"
+    import Clerkdesk from "$lib/L/Clerkdesk.svelte"
     // Copies of the constants the moved verbs need.  Module consts do not cross ghosts, and a shared
     //  module for four regexes would be a third thing to keep in step — the duplication is deliberate
     //   and each is annotated with its twin in Atlas.g so a drift is greppable.
@@ -92,6 +93,11 @@ Lagoon_plan(w):
     let home = w.c.face_on ?? this
     let uis = this.oai_enroll(home, { watched: 'UIs' })
     uis.oai({ UI: 'Lagoon' }, { component: Lagui })
+    // TWO FACES, ONE READER, and they are two because they answer two questions — Lagui asks the
+    //  corpus "where is X", the desk asks the day "what was I doing".  Both are renderings of Lagoon
+    //   verbs over shelves it does not own, so this is not a second machine (Lagoon_todo §1.8's line);
+    //    it is the same reader wearing the face each question deserves.
+    uis.oai({ UI: 'Clerkdesk' }, { component: Clerkdesk })
     w.c.faced = 1
 
 //#region the censuses it reads — found by name, never held
@@ -1030,5 +1036,209 @@ Lagoon_join(w, k):
         undeclared: undeclared.length, undeclared_top: undeclared.slice(0, kk),
         atlas_docs: atlas.o({ Doc: 1 }).length, atlas_defs: defs.size
     }
+//#endregion
+
+//#region THE ERRANDS — what you went in there to look at (2026-09-09)
+// The owner: *"it forgets what it was going in there to look at if that takes too long. so where do we
+//  keep what to look at and what we're doing etc?"*
+//
+// IT WAS NEVER NOT KEPT.  Every search delivery already writes a moment into today's Aside Waft
+//  (`Lies.svelte` e_Lies_ghost_pick → `Lies_spawn_aside_waft`), and the moment already carries the
+//   answer to both halves of the question:
+//     %What:<serial>            one moment per ghost per day — repeat deliveries accumulate on it,
+//                                which the code itself calls "the day's research trail"
+//       ,about:<label>          WHAT THIS MOMENT WAS FOR — stamped at mint 2026-09-08 on the owner's
+//                                own words, *"just having a context the Point is going for"*
+//       ,FromWhat:<locator>     where you came from: `Waft:<key>/<mainkey>:<value>`, a loose STRING
+//                                so it survives the Aside being thrown away
+//       > %Doc:<path>           what you opened
+//         > %Point,method       where you landed — one per visit, so the count is how often you went
+//  And `Lies_resolve_locator` already resolves that locator form; its own comment calls itself "the
+//   reader %FromWhat was waiting for".  Shelf built, label built, resolver built, SURFACE NEVER DRAWN —
+//    the same shape as Atlas holding the beadchain for weeks with nobody rendering it.
+//  So this verb invents no store.  It READS a shelf it does not own, which is the whole layer rule.
+//
+// A STALE PATH IS HISTORY, NOT ROT, and this is the one judgement in here.  A moment records a visit
+//  that happened; a doc renamed since (today's Aside names `Ghost/Story/Voronation.g`, from before the
+//   Testing.g rename) has not invalidated the visit.  So `gone:1` is stamped when the census cannot
+//    place the path, and it is stamped as a FACT for the face to render quietly — never repaired here,
+//     never hidden, never called rot.  Atlas is consulted only if it is standing; absent, no doc is
+//      marked gone, because "I cannot see" must not render as "it is not there".
+Lagoon_errands(w, k):
+    let lies = this.Lagoon_lies()
+    if (!lies) return { error: 'no A:Lies standing — the Aside lives on w:Lies, so there is nothing to read' }
+    let atlas = this.Lagoon_atlas()
+    let known = null
+    if (atlas) {
+        known = new Set()
+        for (const d of atlas.o({ Doc: 1 })) known.add(d.sc.Doc)
+    }
+    let days = []
+    let moments = []
+    for (const wf of lies.o({ Waft: 1 })) {
+        if (!wf.sc.aside) continue
+        let key = wf.sc.Waft
+        let day = { day: key, moments: 0, visits: 0 }
+        for (const m of wf.o({ What: 1 })) {
+            let docs = []
+            let visits = 0
+            for (const d of m.o({ Doc: 1 })) {
+                let pts = []
+                for (const p of d.o({ Point: 1 })) {
+                    if (p.sc.method) pts.push(p.sc.method)
+                }
+                visits = visits + (pts.length || 1)
+                let row = { doc: d.sc.Doc, points: pts }
+                if (known && !known.has(d.sc.Doc)) row.gone = 1
+                docs.push(row)
+            }
+            let row = { day: key, what: m.sc.What, about: m.sc.about ?? null, docs: docs, visits: visits }
+            if (m.sc.FromWhat) {
+                row.from = m.sc.FromWhat
+                let cut = this.Lagoon_locator_split(m.sc.FromWhat)
+                if (cut) {
+                    row.from_waft = cut.waft
+                    row.from_tail = cut.tail
+                }
+            }
+            moments.push(row)
+            day.moments = day.moments + 1
+            day.visits = day.visits + visits
+        }
+        days.push(day)
+    }
+    // newest day first, and inside a day the most-returned-to moment first: the desk wants what you
+    //  kept coming back to at the top, not what you happened to open first
+    days.sort((a, b) => a.day < b.day ? 1 : (a.day > b.day ? -1 : 0))
+    moments.sort((a, b) => (a.day < b.day ? 1 : (a.day > b.day ? -1 : (b.visits - a.visits))))
+    let total = moments.length
+    let kk = k || 40
+    let gone = 0
+    for (const m of moments) {
+        for (const d of m.docs) {
+            if (d.gone) gone = gone + 1
+        }
+    }
+    if (moments.length > kk) moments = moments.slice(0, kk)
+    return { errands: moments, days: days, total: total, shown: moments.length, gone: gone,
+             atlas: atlas ? 1 : 0 }
+
+// Lagoon_locator_split — `Waft:<key>/<mainkey>:<value>` into its two halves.  GREEDY on the key half
+//  on purpose: a Waft key contains slashes (`Ghost/Net/Easy`) and so can a value, so the split has to
+//   be the LAST `/` that is followed by a `Mainkey:` — anything less greedy cuts a key in half.
+Lagoon_locator_split(loc):
+    let m = /^Waft:(.*)\/([A-Za-z][A-Za-z0-9_]*:[\s\S]*)$/.exec(loc || '')
+    if (!m) return null
+    return { waft: m[1], tail: m[2] }
+//#endregion
+
+//#region THE FIGURINES — who is well connected, measured beside declared (2026-09-09)
+// The owner, end of a long day: *"I want another view where figurines of things that are well
+//  connected are… I think we need to record a bunch of runtime data about which methods are top-most,
+//   popular, etc… that's about it actually."*
+//
+// THE DATA WAS ALREADY RECORDED.  Electrode's tally holds every (from → to) flow the coats saw, with
+//  counts and time; Atlas holds every `call,via` a body declares.  "Popular" and "top-most" are not new
+//   taps, they are two READINGS of what is kept — which is exactly the reader layer's job, and why this
+//    sits in Lagoon and not in either census (the same reason `Lagoon_join` does, one region up).
+//     · POPULAR  — how many DISTINCT callers actually reached it (measured), beside how many distinct
+//                  bodies declare a call to it (static).  Distinct, not raw count: a method one loop
+//                   hammers a thousand times is busy, not connected.
+//     · TOP-MOST — every flow into it entered from OUTSIDE the coats (`from` null: a do_fn dispatch, a
+//                  UI handler, a timer).  Nothing coated ever calls it; it is where the world enters.
+//     · FAN      — how many distinct methods it reaches, so a hub reads differently from a leaf.
+//  A `dose` rides on each row — popularity over the run's maximum, 0..1 — because the face the owner
+//   asked for is SIZED ("figurines"), and `dose_drives` (Matstyle) is the machine's own idiom for
+//    "interpolate a size from a dose".  Derived from the answer at answer time; nothing is held.
+// REFUSES BY NAME, like every reader verb: no Atlas, or no tally, is a named exit and never a silent
+//  empty.  An un-armed tally is NOT a refusal — it is an honest zero, with `armed` on the reply so a
+//   face can say "arm the electrode" rather than "nothing is connected".
+Lagoon_figurines(w, k):
+    let atlas = this.Lagoon_atlas()
+    if (!atlas) return { error: 'no A:Atlas standing — ghost_load Ghost/L/Atlas.g --stand=Atlas first' }
+    let top = this.top_House()
+    let T = top.c.electrode
+    if (!T) return { error: 'no electrode tally — ghost_load Ghost/L/Electrode.g --stand=Electrode and arm it' }
+    // the declared side: where each def lives, and who declares a call to it
+    let where = new Map()
+    let declared_in = new Map()
+    for (const doc of atlas.o({ Doc: 1 })) {
+        let map = doc.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const d of map.o({ def: 1 })) {
+            if (!d.sc.method || where.has(d.sc.method)) continue
+            where.set(d.sc.method, { doc: doc.sc.Doc, line: d.sc.line })
+        }
+        for (const c of map.o({ call: 1 })) {
+            if (!c.sc.via || !c.sc.method) continue
+            let set = declared_in.get(c.sc.method)
+            if (!set) {
+                set = new Set()
+                declared_in.set(c.sc.method, set)
+            }
+            set.add(c.sc.via)
+        }
+        for (const e of map.o({ elvisto: 1 })) {
+            if (!e.sc.via || !e.sc.method) continue
+            let set = declared_in.get(e.sc.method)
+            if (!set) {
+                set = new Set()
+                declared_in.set(e.sc.method, set)
+            }
+            set.add(e.sc.via)
+        }
+    }
+    // the measured side, folded per method
+    let seen = new Map()
+    let fan_of = new Map()
+    for (const row of T.tally.values()) {
+        let m = seen.get(row.to)
+        if (!m) {
+            m = { n: 0, ms: 0, froms: new Set(), bare: 0 }
+            seen.set(row.to, m)
+        }
+        m.n = m.n + row.n
+        m.ms = m.ms + row.ms
+        if (row.from) {
+            m.froms.add(row.from)
+            let f = fan_of.get(row.from)
+            if (!f) {
+                f = new Set()
+                fan_of.set(row.from, f)
+            }
+            f.add(row.to)
+        } else {
+            m.bare = m.bare + row.n
+        }
+    }
+    let rows = []
+    let max_pop = 0
+    for (const [name, m] of seen) {
+        let pop = m.froms.size
+        if (pop > max_pop) max_pop = pop
+        let at = where.get(name)
+        let row = { name: name, n: m.n, ms: Math.round(m.ms), callers: pop,
+                    declared: (declared_in.get(name) || new Set()).size,
+                    fan: (fan_of.get(name) || new Set()).size }
+        if (at) {
+            row.doc = at.doc
+            row.line = at.line
+        }
+        if (m.bare && pop === 0) row.top = 1
+        rows.push(row)
+    }
+    // connected first: distinct callers, then reach, then sheer traffic — a stable, readable order
+    rows.sort((a, b) => (b.callers - a.callers) || (b.fan - a.fan) || (b.n - a.n) || (a.name < b.name ? -1 : 1))
+    for (const r of rows) r.dose = max_pop ? Math.round(100 * r.callers / max_pop) / 100 : 0
+    let kk = k || 40
+    let tops = rows.filter(r => r.top).length
+    // how many measured methods the census could not place.  First live run: ALL of them — not
+    //  because the join was wrong but because a Book had left Atlas aimed at the frozen fixture
+    //   (Lagoon_todo §2.5b), so the census held one doc.  A per-row "no def" said that 235 times and
+    //    explained it never; `unjoined` beside `atlas_docs` says it once, with the cause in reach.
+    let unjoined = rows.filter(r => !r.doc).length
+    if (rows.length > kk) rows = rows.slice(0, kk)
+    return { figurines: rows, ran: seen.size, tops: tops, armed: T.armed ? 1 : 0, since: T.since || 0,
+             max_callers: max_pop, unjoined: unjoined, atlas_docs: atlas.o({ Doc: 1 }).length }
 //#endregion
 // (a .g must end on a comment or a statement, never a method-final brace)

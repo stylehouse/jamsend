@@ -27,7 +27,7 @@ Waft:Ghost/Swarm/Easy,active
     Point,method:Swarm_steal_back
     Point,method:Swarm_next_suffix
   What:the test
-    Doc:Ghost/Story/Swarmation.g
+    Doc:Ghost/Story/SwarmTesting.g
     Point,method:SwarmStaple_drive
     Point,method:SwarmStaple_witness
   What:the spec

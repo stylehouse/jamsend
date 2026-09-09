@@ -18,11 +18,11 @@
     //       deposit — without these mounts the Book's beats throw "this.Ra_rec_find is not a
     //        function" into the Errlog (seen on the first run of this Book, 2026-08-28).
     import SiphonGhost from '$lib/gen/M/Siphon.go'
-    import SiphonationGhost from '$lib/gen/Story/Siphonation.go'
+    import SiphonationGhost from '$lib/gen/Story/SiphonTesting.go'
     import RaGhost from '$lib/gen/M/Ra.go'
     import HeistGhost from '$lib/gen/M/Heist.go'
     import HeardGhost from '$lib/gen/M/Heard.go'
-    import MusuationGhost from '$lib/gen/Story/Musuation.go'
+    import MusuationGhost from '$lib/gen/Story/MusuTesting.go'
     let { M } = $props()
 </script>
 <RaGhost H={M} />

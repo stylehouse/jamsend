@@ -40,14 +40,30 @@
     //      half) lands the mirror-side wiring."*  Every Book below that draws is an UNFOLDED one; every
     //       blank one ends folded.  Measured through `runner_shot --svg`, not assumed.
     const roster = [
-        { book: 'VytoOrchestra', draws: true,  what: 'the canonical demo — a stuffed bag, kin songs, loose strays, a live re-weave, a focus swell (7 cells)' },
-        { book: 'VytoNestRest',  draws: true,  what: 'a two-level rig at rest — the simplest thing that draws (6 cells)' },
-        { book: 'VytoCrush',     draws: true,  what: 'twenty cogs — but it ENDS on its plain control, so what you see is the UNfolded twenty (20 cells)' },
-        { book: 'VytoWeb',       draws: null,  what: 'the weave — gang elects a key, relate draws the edges, focus tapers the cut' },
-        { book: 'VytoRadio',     draws: null,  what: 'drift — doses age, cells re-size and re-seat, a hand pins one' },
-        { book: 'VytoKindfold',  draws: false, what: 'the wall falls at KIND — 18 members, 2 crests by metal become 3 by kind. MODEL GREEN, GLASS BLANK: it ends folded' },
-        { book: 'VytoGrasp',     draws: false, what: 'the Seem layer — arrivals and departures by identity, a claim weighed against its field. Model-only for now' },
-        { book: 'VytoTwin',      draws: false, what: 'the scan’s doors — identical siblings carry a count, a flattened source says what it hides. Model-only for now' },
+        // ── the one you like ──────────────────────────────────────────────────────────────────────
+        { book: "VytoOrchestra", draws: true,  what: "THE DEMO — foam cut, a nested bag, kin songs, loose strays, a live re-weave, a focus swell, a pose flip, a departure. Groovy. Has fins. A bare unfurnished apartment." },
+        // ── Voro: the OLD renderer (Cytui). It has the crest voice and the words-along-the-wall that did not cross the moult — look here for what got lost ──
+        { book: "VoroMitosis",   draws: null,  what: "Voro · a flora of genera — newcomers arrive, the cut re-seats, a genus goes extinct and its cell escorts out" },
+        { book: "VoroScape",     draws: null,  what: "Voro · the graph-of-music: %Artist panes of %Track songs, peers sharing tracks as edges, a shared track blazing as a hub" },
+        { book: "VoroRadio",     draws: null,  what: "Voro · the tuner flora drifting — the radio as a crushed glass" },
+        { book: "VoroClinic",    draws: null,  what: "Voro · the crush clinic — artists and tracks, remasters and years, the distiller saying its rows" },
+        { book: "VoroTest",      draws: null,  what: "Voro · the render model under test — membership, semantic order, loudness, drift" },
+        // ── Vyto: the current renderer. Bench Books — same cog flora, differing in things you mostly cannot see. Try them; your eye is the instrument ──
+        { book: "VytoStaple",    draws: null,  what: "a gearbox beside a run — its mirror and spool turn; a Cog changes, morphs in place; a Cog drops, wears the departing escort" },
+        { book: "VytoCell",      draws: null,  what: "dosed cogs cut into distinct cells — express sizes, solve seats, calm pins one by pointer then eases it free" },
+        { book: "VytoMitosis",   draws: null,  what: "a dosed flora cuts into cells, grows, and a genus goes extinct" },
+        { book: "VytoBunch",     draws: null,  what: "the relate attraction — kin cells pulled together rest closer joined than severed" },
+        { book: "VytoBreathe",   draws: null,  what: "a relation lifts size — a cell tied by shared meaning is a bigger cell" },
+        { book: "VytoNest",      draws: null,  what: "the scope recursion — a nested glass cuts each cell into its childrens cells" },
+        { book: "VytoDepth",     draws: null,  what: "six children tile a small parent with no crowd-out — child radii scale to the parent share" },
+        { book: "VytoFold",      draws: null,  what: "the fold engine — budget scales with area, the ladder folds the least-dominant family first, the focus path shielded" },
+        { book: "VytoCrest",     draws: null,  what: "the distiller — a four-member shoal says its veins, facts and chips, and every hiding gets a counted door" },
+        { book: "VytoFoam",      draws: null,  what: "the seven algebra laws in one pass — distillation, type-scale, supersession, floor, nested cut, composition, read-back" },
+        { book: "VytoNeed",      draws: null,  what: "the browser measures the widget and the diagram honours the box — a fat label lifts its cell" },
+        { book: "VytoMemo",      draws: null,  what: "a settled glass cuts no new walls under forced repaints — the wall memo and its counter" },
+        { book: "VytoSeek",      draws: null,  what: "the spool — a step pip seeks to the moment carrying that step; a scrubber-only moment stays unreachable" },
+        { book: "VytoFreeze",    draws: null,  what: "the spool culls to its cap while green and FREEZES on a failed run so every moment survives as evidence" },
+        { book: "VytoTandem",    draws: null,  what: "two watchers ride one gear, then one decommissions — only the survivor fires" },
     ]
 
     // ?B= overrides; otherwise the canonical demo.  A change of Book is a RELOAD, because a room
@@ -64,7 +80,11 @@
     //     deliberately does not duplicate it — its job is to show the glass, not to be an IDE.)
     let picking = $state(false)
     // the glass-level UIs: the glass itself, and the step rail that seeks its spool.  ▦ shows the rest.
-    const GLASS_UIS = ['Vyto', 'Story']
+    // BOTH renderers are glass-level.  Voro is a layer on Cytui — the voronoi mode of the Cytoscape
+    //  view — and its UI is registered as `Cyto`, so a filter that only admitted `Vyto` hid every Voro
+    //  Book behind the ▦.  The owner: *"it's visible in the machine room under Story, it's a layer
+    //  on Cytui..?"*  Yes.
+    const GLASS_UIS = ['Vyto', 'Cyto', 'Story']
     let sprawl = $state(false)
 </script>
 
@@ -104,7 +124,7 @@
                     <span class="bs-what">{r.what}</span>
                 </a>
             {/each}
-            <div class="bs-note">◉ draws · ○ ends FOLDED, and a folded glass has no renderer yet (Vytui knows no crest) · · unmeasured — switching reloads the room</div>
+            <div class="bs-note">◉ draws · · not yet looked at — your eye is the instrument · Voro = the old renderer with the wall lettering · switching reloads the room</div>
         </div>
     {/if}
 
@@ -133,7 +153,7 @@
                      is load-bearing, which is a real coupling and not one this room should try to
                      break — so every UI mounts and the ones you did not ask for are hidden with CSS.
                      Same instinct as a FaceSucker: cover it, do not unbuild it. -->
-                <section class="bs-piece" class:bs-glass={uiC.sc.UI === 'Vyto'}
+                <section class="bs-piece" class:bs-glass={uiC.sc.UI === 'Vyto' || uiC.sc.UI === 'Cyto'}
                          hidden={!sprawl && !GLASS_UIS.includes(uiC.sc.UI as string)}>
                     <span class="bs-tag">{house.name} · {uiC.sc.UI}</span>
                     <svelte:component this={uiC.sc.component} H={house} />

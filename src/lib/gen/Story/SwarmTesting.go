@@ -14,7 +14,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'bc2834c2ab133e05~g1' },
+    Ghostmeta_Ghost_Story_SwarmTesting(): string { return 'bc2834c2ab133e05~g1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live

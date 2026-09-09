@@ -32,8 +32,7 @@ story:VoroScape
     dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.019
-      sample=0.072,at=1787992583
+    TimeTotal:beliefs,avg=0.015
       sample=0.013,at=1788853765
       sample=0.014,at=1788853952
       sample=0.016,at=1788854891
@@ -43,8 +42,8 @@ story:VoroScape
       sample=0.009,at=1788875586
       sample=0.013,at=1788878855
       sample=0.017,at=1788907175
+      sample=0.032,at=1788942661
     TimeTotal:step,avg=0.003
-      sample=0.012,at=1787992583
       sample=0.002,at=1788853765
       sample=0.002,at=1788853952
       sample=0.003,at=1788854891
@@ -54,6 +53,7 @@ story:VoroScape
       sample=0.002,at=1788875586
       sample=0.002,at=1788878855
       sample=0.003,at=1788907175
+      sample=0.005,at=1788942661
   step,dige:c61532ec59f1649a
   step=2,dige:949c6b72319bf5c4
   step=3,dige:356548407f1a0758

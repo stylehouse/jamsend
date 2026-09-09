@@ -6,6 +6,45 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
 
 ## 0. WHAT TO GET ON WITH NEXT (refreshed 2026-09-08 for the morning slog)
 
+### ⚑ NEXT BIG ONE — KILL THE `?addr=runner` SOCKET (owner 2026-09-09: *"remove entirely the second websocket for addr=runner and have some other way to find runners"*)
+
+**The case is already written, in five places in the code, by five different people fixing five symptoms
+ of one cause.** Nobody has to be persuaded; the arguments just need collecting:
+
+- `relay.ts` (the hello bind): *"`bind` is additive and `deliverLocal` fans to the whole Set, so every
+   `to:<prepub>` frame — swarm frames, MUSIC CHUNKS, wormhole replies — was delivered TWICE… the inbox
+    climbs to the 2000 cap and every per-frame query is O(depth), so the tab gets slower as it fills — a
+     runaway that reads as 'the app is broken'."* The cure was an **own-door rule at delivery**: prefer a
+      tab's station socket. A workaround for a tab having two sockets.
+- `Auto.svelte`: a **daemon** must take `creduler:1` WITHOUT `runner:1`, because *"a second claimant of
+   `runner` silently receives every frame meant for a human's tab"*.
+- `Auto.svelte` again: a **humdinger music page** must not claim the seat either — the owner's incognito
+   console *"drowning in 'pier editor holds 2050 unemits'"*, because every Big\*land tab was binding
+    `/relay?addr=runner` on the shared relay and drinking the editor's dispatch flood.
+- `runner_ask.mjs:685`: *"`to:'runner'` for everything, and the relay FANS a role frame to every runner
+   tab — so with two tabs up…"*, which is why `--runner=` pinning had to be invented.
+- The **census itself** is the workaround wearing a hat: it broadcasts to a role, the relay spends the
+   asker's `corr` on the FIRST ack, so enumerating the flock needs repeated stochastic rounds with a
+    minimum-round floor *"because an early-stopping census under-reports"*.
+
+**One shared well-known name, many claimants, and a growing list of who is forbidden to claim it.** Every
+ fix so far has been another exclusion. That list is the smell.
+
+**THE REPLACEMENT IS ALREADY HALF-BUILT.** `Cluster_spec §3.2b` layer 4 says it: *advertise → the
+ `%Runner` roster; engage `to:<prepub>`*. Engagement is ALREADY per-prepub. Only DISCOVERY leans on the
+  role name — and the relay does not need to be asked stochastically, because **it already knows**:
+   `locals: Map<addr → Set<WebSocket>>`, plus a per-socket `bound` Set and its `qaddr`. It can simply say.
+
+**The plan, additive first — land the new road, prove it, THEN delete the old one:**
+1. **`control:'census'` on the relay** — answer the bound addresses with their roles. Deterministic, one
+    round trip, replaces the stochastic sweep. Purely additive: no existing frame path changes.
+2. **`runner_ask` resolves a prepub FIRST**, then addresses `to:<prepub>` for every op. `--runner=` stops
+    being a workaround and becomes merely an override.
+3. **Then remove** the `runner:1` role claim, the `?addr=runner` dial, and — the actual prize — the
+    exclusion list and the own-door delivery rule that exist ONLY to police a shared name.
+4. Re-run the ceremony + pool Books, and walk one live dispatch, before deleting anything in step 3.
+**Do NOT do 3 before 1 and 2 are proven live.** A tab that cannot be found is a tab that cannot be fixed.
+
 ### ⚑ THE NIGHT OF 2026-09-08 — three things are OWED TO THE HUMAN before this branch moves again
 
 Everything below that a session could do alone is done. What is left needs a person, because each one is

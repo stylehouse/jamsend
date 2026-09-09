@@ -60,7 +60,7 @@
         'Ghost/N/Tyrant.g',             // cabinetry — trust + policy-gated admission (rides the floor)
         'Ghost/N/Presence.g',           // WHO IS ONLINE — the relay's `who` batch probe, asked once instead of a pulse per friend (Presence_todo.md)
         'Ghost/N/Repli.g',              // paginated streaming C** replication — offer/pull/pages, above the transport spine (ex-Musuation reality)
-        'Ghost/Story/Peregrination.g',  // the p2p test — first of a new kind; more pile on here
+        'Ghost/Story/PeerTesting.g',    // the p2p tests (né Peregrination.g) — first of a new kind; more pile on here
         
         'Ghost/M/Radiola.g',            // music-piracy spine — the ACK-backpressure spool (slice 1)
         'Ghost/M/Sound.g',              // audio engine — synth PCM / measure-entropy / the starving live-stream pump (ex-Musuation reality)
@@ -74,23 +74,26 @@
         'Ghost/M/Orig.g',               // the %Original / grade-dispatch layer — the ogg128 export writes a real RFC-7845 Ogg/Opus container BACK (phone-sync ships .ogg) + its structural reader
         'Ghost/M/Radio.g',              // the RADIO — continuous listening: dial → stream-decode → AudioContext timeline → auto-advance; the %Radio face the glass mounts RadioFace on
         'Ghost/M/Siphon.g',             // the DELIBERATE SoundPool act — tags-as-playlists + Siphon_pull, the one-track press into the OPFS pool (Siphon_todo rungs 2–3)
-        'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
-        'Ghost/Story/Radiation.g',      // the Ra* PRODUCT tests — RaStock; racast/raterm Books pile on here
-        'Ghost/Story/Heistation.g',     // the Heist* tests — MusuHeist rung 1; the cohort + cafe rungs pile on here
-        'Ghost/Story/Siphonation.g',    // the Siphon* tests — tag model + the pull press through the one landing door (Siphon_todo rung 4)
-        'Ghost/Story/Berthation.g',     // the Berth* tests — MusuBerth: the persistence door round-trips a doc through disk and resets with the Story (§11.7)
-        'Ghost/Story/Errchannelation.g',// the Story ERROR CHANNEL test — ErrChannel: a captured throw rides w/%Errlog/%Err into the fixture and gates it (spec/Error_channel_todo.md; needs a live runner to record + declare)
+        // Test recipes are `<Name>Testing.g` (owner ruling 2026-09-09; src/lib/L/testing.ts is the one
+        //  predicate every face styles them by).  Book NAMES did not move with the files — a Book is
+        //   named by its recipe do_fn, so `Siphonation`/`Radiation` fixtures under wormhole/Story/ stand.
+        'Ghost/Story/MusuTesting.g',    // the Musu* tests — MusuStaple; more pile on here
+        'Ghost/Story/RaTesting.g',      // the Ra* PRODUCT tests — RaStock; racast/raterm Books pile on here
+        'Ghost/Story/HeistTesting.g',   // the Heist* tests — MusuHeist rung 1; the cohort + cafe rungs pile on here
+        'Ghost/Story/SiphonTesting.g',  // the Siphon* tests — tag model + the pull press through the one landing door (Siphon_todo rung 4)
+        'Ghost/Story/BerthTesting.g',   // the Berth* tests — MusuBerth: the persistence door round-trips a doc through disk and resets with the Story (§11.7)
+        'Ghost/Story/ErrchannelTesting.g',// the Story ERROR CHANNEL test — ErrChannel: a captured throw rides w/%Errlog/%Err into the fixture and gates it (spec/Error_channel_todo.md; needs a live runner to record + declare)
 
         'Ghost/S/Swarm.g',              // swarm spine — identity/page/pier + the Idzeug invite (Swarm_spec.md)
-        'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here
+        'Ghost/Story/SwarmTesting.g',   // the Swarm* tests — SwarmStaple; more pile on here
         'Ghost/Story/InvSeal.g',        // the Inv* tests, rung 1 — the seal-seam warmth gate (cold refuses / warm parks the consent)
         'Ghost/Story/InvFerry.g',       // the Inv* tests, rung 2 — the WHOLE ferry exchange as a state machine (mint→carry→verify→claim→cross; double-spend + forged presig refuse)
         'Ghost/Story/InvWalk.g',        // the Inv* tests, rung 3 — the FULL WALK: consent-park→puppet-confirm→sent→held→got→done + decline + spent-retry (the Book-blindness seam)
 
         'Ghost/V/Voro.g',               // the Vis lens — the crush fold policy (Musu drives + ◈ imposition call it)
         'Ghost/V/Vyto.g',               // the NEW glass, model side — organs/board/spool as named stubs (Vyto_spec.md; the moult)
-        'Ghost/V/Vytonation.g',         // the Vyto demo Books — VytoStaple: commission the glass beside a run and watch its grapple→stir→mirror→moment drive turn
-        'Ghost/Story/VoroTesting.g',    // the Voro* tests — first of the `<Name>Testing.g` convention (src/lib/L/testing.ts); the other `ation.g` files are owed the same rename
+        'Ghost/V/VytoTesting.g',        // the Vyto demo Books — VytoStaple: commission the glass beside a run and watch its grapple→stir→mirror→moment drive turn
+        'Ghost/Story/VoroTesting.g',    // the Voro* tests — the first `<Name>Testing.g` (2026-09-09); the rest followed the same evening
 
         'Ghost/Story/Sounditron.g',     // the Sounditron — the real-environment diagnostic Book /BigSoundland runs (Opt/wild; assertions are the verdict)
 
@@ -1176,6 +1179,33 @@
         //
         //   First-seen ETags are recorded as the BASELINE (no swap) — a fresh boot already loaded the
         //    current bytes, so the first observation is "what's live", not "changed".
+        // Creduler_gen_diges — every compiled ghost's content hash in ONE conditional GET, or null if
+        //  this server has no such door (then the caller pays its old per-ghost HEAD sweep).
+        //  The ETag is held on `w.c` so a quiet tab — the overwhelmingly common case — spends one 304
+        //   per sweep and no body at all.  A 304 means "nothing in gen/ moved", which is exactly the
+        //    question the sweep asks, so it can answer from the map it already holds.
+        async Creduler_gen_diges(w: TheC): Promise<Record<string, string> | null> {
+            const H = this as House
+            if (w.c.gen_dige_off) return null                      // this server answered 404 once; don't ask again
+            try {
+                const headers: Record<string, string> = {}
+                if (w.c.gen_dige_etag) headers['if-none-match'] = w.c.gen_dige_etag as string
+                const r = await fetch('/__gen/dige', { headers, cache: 'no-store', signal: AbortSignal.timeout(4000) })
+                if (r.status === 304) return (w.c.gen_dige_map as Record<string, string>) ?? null
+                if (!r.ok) { w.c.gen_dige_off = 1; return null }
+                const j = await r.json()
+                const map: Record<string, string> = {}
+                for (const k of Object.keys(j.dige ?? {})) map[k] = j.dige[k][0]
+                w.c.gen_dige_etag = r.headers.get('etag') ?? undefined
+                w.c.gen_dige_map = map
+                return map
+            } catch {
+                // a timeout or a dev-server hiccup is NOT a missing endpoint — fall back for this sweep
+                //  only, and ask again next time rather than latching off on one bad round trip
+                return null
+            }
+        },
+
         async Creduler_reswap(w: TheC) {
             const H = this as House
             const POLL_MS = 2000                                   // throttle: at most one ETag sweep per 2s
@@ -1193,20 +1223,41 @@
                 return
             }
 
-            const etags = (w.c.reswap_etags ??= {}) as Record<string, string>
             const uis   = H.oai_enroll(H, { watched: 'UIs' })
             let swapped = 0
             let wanted  = false
 
+            // ONE QUESTION INSTEAD OF 38 (2026-09-09).  The loop below used to fire a HEAD per ghost,
+            //  serially, every 2s, on every tab — measured with the Electrode tap at 280–315ms a sweep
+            //   and the largest recurring cost on a live runner.  `Creduler_gen_diges` asks the dev
+            //    server for every compiled ghost's hash in one conditional GET; when nothing has moved
+            //     that is a 304 with no body, and the whole sweep costs one round trip.
+            //  It returns null when the endpoint is not there (an older dev server, a remote node), and
+            //   then every ghost falls through to its own HEAD exactly as before — so this is an
+            //    accelerator with no new way to be wrong, which is the same posture the Atlas dige
+            //     index takes.  A dige is also a STRONGER signal than the ETag it replaces: vite's
+            //      ETag moves with mtime, so a touched-but-identical .go used to force a re-import.
+            const served = await H.Creduler_gen_diges(w)
+            // TWO BASELINES, ONE PER SOURCE, and they must never be compared across.  A vite ETag and a
+            //  content dige are different alphabets for the same question, so a tab that answered from
+            //   HEADs and then got the served map — or lost it again, which one dev-server hiccup does —
+            //    would find every stored value "changed" and hot-swap all 38 ghosts at once, mid-session,
+            //     for nothing.  Keeping them apart makes a source flip cost one re-baseline (the
+            //      `!(gen in etags)` branch below) and no swap at all, which is the honest answer:
+            //       nothing on disk moved, only the way we asked.
+            const etags = served ? ((w.c.reswap_diges ??= {}) as Record<string, string>)
+                                 : ((w.c.reswap_etags ??= {}) as Record<string, string>)
             for (const p of CREDULER_GHOSTS) {
                 const gen = H.Lies_gen_path(p)
                 if (!gen) continue
                 const url = `/src/lib/${gen}`
-                let etag: string | null = null
-                try {
-                    const r = await fetch(url, { method: 'HEAD', cache: 'no-store' })
-                    etag = r.headers.get('etag')
-                } catch { continue }                               // dev server hiccup — try again next sweep
+                let etag: string | null = served ? (served[gen] ?? null) : null
+                if (!served) {
+                    try {
+                        const r = await fetch(url, { method: 'HEAD', cache: 'no-store' })
+                        etag = r.headers.get('etag')
+                    } catch { continue }                           // dev server hiccup — try again next sweep
+                }
                 if (!etag) continue
                 if (!(gen in etags)) { etags[gen] = etag; continue }   // baseline the first observation
                 if (etags[gen] === etag) continue                  // unchanged

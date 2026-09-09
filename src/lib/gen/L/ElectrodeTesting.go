@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Electrodation(): string { return '87a7e54872767b10~g1' },
+    Ghostmeta_Ghost_L_ElectrodeTesting(): string { return '87a7e54872767b10~g1' },
 
 // Electrodation.g — the Electrode.g proof (Atlas→Atlantation, Electrode→Electrodation).
 //

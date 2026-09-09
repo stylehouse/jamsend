@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '6d7465bfabab875e~g1' },
+    Ghostmeta_Ghost_Story_PeerTesting(): string { return '6d7465bfabab875e~g1' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a

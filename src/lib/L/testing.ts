@@ -13,8 +13,12 @@
 //
 //  The convention is `<Name>Testing.g` — it replaces `<Name>ation.g` (Voronation, Swarmation,
 //   Atlantation…), which said the same thing in a way nothing could pattern-match without a list.
-//    VoroTesting.g is the first; the other twelve `ation.g` files are owed the same rename and are
-//     NOT matched here on purpose: matching the old name too would mean the rename never has to happen.
+//    All thirteen were renamed 2026-09-09 (the L three, the Ghost/Story eight, Vyto's).  The old name
+//     is NOT matched here on purpose: a new recipe that forgets the suffix should stay unstyled until
+//      it is named, rather than pass on a spelling nothing else recognises.
+//  Two names were judgment calls, not derivations — say so if they are wrong: `Peregrination.g →
+//   PeerTesting.g` (the p2p Books) and `Radiation.g → RaTesting.g` (the Ra* product Books).  Book NAMES
+//    (`Siphonation`, `Radiation`, fixtures under wormhole/Story/) did not move; a Book is its do_fn.
 export const TESTING_RE = /Testing\.g$/
 
 export function is_testing(path: string | null | undefined): boolean {

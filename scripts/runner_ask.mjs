@@ -83,7 +83,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  below for why this is safe (the tab, not the CLI, is the authority on what it will do).
 const UNKNOWN_OK = process.argv.includes('--unknown-ok')
 let PLAYER_PUB = ''   // set by --player=: the one music page a slot-addressed ask is for (sendAsk stamps it into ask.pub)
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -173,7 +173,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|lagoon [seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|pick <Ghost/X/Y.g> [<point>]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|lagoon [seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths|figurines|errands] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
 
@@ -580,6 +580,15 @@ if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
 	if (flags.has('--stale')) ask.stale = 1
 	if (flags.has('--sees'))  ask.sees  = 1
 }
+if (op === 'pick') {
+	// fire the Doc change a search hit fires, so it can be MEASURED (Clerkdesk_todo leg 1):
+	//   electrode arm → electrode reset → pick <path> [<point>] → electrode top
+	const flagVal = (name) => { const f = argv.find(a => a.startsWith(name + '=')); return f ? f.split('=').slice(1).join('=') : undefined }
+	ask.path = arg
+	const pt = argv[argv.indexOf(arg) + 1]
+	if (pt && !pt.startsWith('-')) ask.point = pt
+	const p = flagVal('--point'); if (p !== undefined) ask.point = p
+}
 if (op === 'lagoon') {
 	// the reader layer over the censuses — see Ghost/L/Lagoon.g.  `lagoon <verb> [name]`.
 	const flagVal = (name) => { const f = argv.find(a => a.startsWith(name + '=')); return f ? f.split('=').slice(1).join('=') : undefined }
@@ -676,6 +685,33 @@ function collectAcks(ws, theAsk, graceMs = 900) {
 	})
 }
 
+// relayCensus — ASK THE RELAY WHO IS BOUND, instead of asking the flock to raise its hand.
+//  Every discovery path below this line was built on a role BROADCAST, and a broadcast cannot
+//   enumerate: the relay spends the asker's `corr` on the FIRST ack, so one round finds exactly one
+//    tab however many answered — which is why `census()` above has to sweep in stochastic rounds with a
+//     minimum floor "because an early-stopping census under-reports".  The relay never needed asking
+//      that way; it holds `locals` (addr → sockets) and knows the answer outright.
+//  ITS `roles` ARE BETTER EVIDENCE THAN AN ACK.  A row's role is the `?addr=` the socket DIALLED WITH,
+//   not what the tab says about itself — and the ack's self-report is exactly the fact the comment at
+//    `isRunner` calls useless ("both live tabs ack role:'runner'" because a Sounditron is machine-role
+//     runner).  The relay saw which door each tab came through; that is a harder fact.
+//  Returns null when the relay does not answer (an older relay, or a foreign node) so every caller
+//   falls through to the broadcast road unchanged — this is additive, and removes nothing yet.
+function relayCensus(ws, ms = 3000) {
+	const corr = `rc-${stamp}-${corrSeq++}`
+	return new Promise((resolve) => {
+		const t = setTimeout(() => { ws.off('message', onMsg); resolve(null) }, ms)
+		const onMsg = (data) => {
+			let m; try { m = JSON.parse(String(data)) } catch { return }
+			if (m.control !== 'census') return
+			if (m.corr && m.corr !== corr) return
+			clearTimeout(t); ws.off('message', onMsg); resolve(Array.isArray(m.rows) ? m.rows : [])
+		}
+		ws.on('message', onMsg)
+		try { ws.send(JSON.stringify({ control: 'census', corr })) } catch { clearTimeout(t); ws.off('message', onMsg); resolve(null) }
+	})
+}
+
 const ws = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(cliAddr)}`)
 ws.on('error', (e) => { console.error(`✗ relay ${WS_URL}: ${String(e?.code ?? e?.message ?? e)}`); process.exit(1) })
 const opened = await new Promise((resolve) => { const wd = setTimeout(() => resolve(false), 5000); ws.on('open', () => { clearTimeout(wd); resolve(true) }) })
@@ -725,7 +761,27 @@ if (TARGET === 'runner') {
 		// role-checked too: a stale stash can name a tab that has since been re-booted as a player.
 		if (a.control === 'runner_ack' && isRunner(a) && (op !== 'run' || isFree(a))) TARGET = sticky
 	}
-	// 2. no (usable) sticky — broadcast-court: one role ping, gather the acks, pick
+	// 2. THE RELAY'S OWN ANSWER, before any broadcast.  Ask which addresses are bound and which came
+	//     through the `runner` door, then ping each candidate DIRECTLY — deterministic, one round, and
+	//      it sees the whole flock rather than whichever tab the relay favoured with the corr.
+	//     Every runner is addressed by prepub from here on, which is the shape that survives deleting
+	//      the `?addr=runner` seat entirely (Social_demarcation_todo §0, step 2 of 4).
+	//     Silent fallthrough by design: no census (older relay, foreign node) ⇒ the broadcast below runs
+	//      exactly as before.  Nothing is removed until this road is proven.
+	if (TARGET === 'runner') {
+		const rows = await relayCensus(ws)
+		const cands = (rows ?? []).filter(r => r.identity && (r.roles ?? []).includes('runner')).map(r => r.addr)
+		if (cands.length) {
+			const acks = (await Promise.all(cands.map(p => sendAsk(ws, { op: 'ping', client: CLIENT }, p, 4000))))
+				.filter(a => a.control === 'runner_ack' && isRunner(a))
+			const pick = acks.find(isMine) ?? (op === 'run' ? (acks.find(isFree) ?? acks[0]) : acks[0])
+			if (pick?.result?.self) {
+				TARGET = pick.result.self
+				if (cands.length > 1) console.error(`⇢ relay census: ${cands.length} runner-door tabs — courting ${TARGET.slice(0, 8)}${isMine(pick) ? ' (holds our lease)' : ''}; the rest stay untouched`)
+			}
+		}
+	}
+	// 3. no (usable) sticky and no census — broadcast-court: one role ping, gather the acks, pick
 	//     our-lease ▸ (run) free ▸ first.
 	if (TARGET === 'runner') {
 		const allAcks = await collectAcks(ws, { op: 'ping', client: CLIENT })
@@ -1076,6 +1132,33 @@ else if (op === 'snap' && reply.result?.got_snap) {
 		const pad = '  '.repeat(1 + (c.depth ?? 0))
 		if (c.kind === 'region') console.log(`${pad}◆ ${c.label}${c.defs ? `   (${c.defs})` : ''}`)
 		else console.log(`${pad}· ${String(c.label).padEnd(38 - pad.length)} :${c.line}`)
+	}
+} else if (op === 'lagoon' && reply.result && !reply.result.error && reply.result.errands) {
+	// the day's research trail, read back off the Aside — what you went in there to look at.
+	//  ↩ is where you came from; ×N is how many times you returned; ⌦ marks a path the census cannot
+	//   place, which is HISTORY (the visit happened) and never presented as rot.
+	const r = reply.result
+	console.log(`errands — ${r.total} moment(s) across ${r.days.length} day(s)${r.gone ? ` · ${r.gone} doc(s) since renamed or gone` : ''}${r.atlas ? '' : ' · no Atlas standing, so nothing is checked'}`)
+	let day = ''
+	for (const m of r.errands) {
+		if (m.day !== day) { day = m.day; console.log(`\n  ▤ ${day}`) }
+		console.log(`    ${String('×' + m.visits).padStart(4)}  ${m.about ?? '(no label — an older moment)'}`)
+		for (const d of m.docs) console.log(`          ${d.gone ? '⌦' : ' '} ${d.doc}${d.points.length ? `  ${d.points.join(' · ')}` : ''}`)
+		if (m.from_waft) console.log(`           ↩ from ${m.from_waft} — ${m.from_tail}`)
+	}
+} else if (op === 'lagoon' && reply.result && !reply.result.error && reply.result.figurines) {
+	// the figurines — who is well connected.  callers = DISTINCT measured callers (the size), declared =
+	//  distinct bodies Atlas says call it, fan = distinct callees, ⇡ = top-most (only ever entered from
+	//   outside the coats).  An un-armed tally is an honest zero, not a refusal — say so.
+	const r = reply.result
+	console.log(`figurines — ${r.ran} methods ran · ${r.tops} top-most · max ${r.max_callers} distinct callers${r.armed ? '' : '   ⚠ electrode NOT armed — runner_ask electrode arm, then do something'}`)
+	// a census that cannot place most of what ran is almost always one a Book left aimed at its
+	//  fixture (Lagoon_todo §2.5b) — say it once here, not once per row
+	if (r.unjoined && r.unjoined * 2 > r.ran) console.log(`  ⚠ ${r.unjoined}/${r.ran} ran methods have no def in Atlas (census holds ${r.atlas_docs} doc${r.atlas_docs === 1 ? '' : 's'}) — aimed at a fixture?  ghost_load Ghost/L/Atlas.g --stand=Atlas --fresh`)
+	const T = p => /Testing\.g$/.test(p ?? '') ? '⚗ ' : '  '
+	for (const f of r.figurines) {
+		const bar = '█'.repeat(Math.max(1, Math.round(f.dose * 12))).padEnd(12)
+		console.log(`  ${bar} ${f.top ? '⇡' : ' '} ${T(f.doc)}${String(f.name).padEnd(34)} ←${String(f.callers).padStart(3)} (decl ${f.declared})  →${String(f.fan).padStart(3)}  ×${String(f.n).padStart(5)} ${String(f.ms).padStart(6)}ms  ${f.doc ? `${f.doc}:${f.line}` : '(no def in Atlas — a House method or by-name dispatch)'}`)
 	}
 } else if (op === 'lagoon' && reply.result && !reply.result.error && reply.result.queue) {
 	// rotwork — the queue, printed as a round of visits rather than a list of links.  Doc, then its

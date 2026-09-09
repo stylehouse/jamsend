@@ -173,3 +173,147 @@ test('a doc nothing has at all is a different verdict from a dead anchor', () =>
     expect(out.sect_nodoc[0].sect).toBe('13')
     expect(out.sect_gone, 'a doc that is gone cannot have a dead anchor').toEqual([])
 })
+
+// ── THE FIGURINES (2026-09-09).  `Lagoon_figurines` is a READING over two censuses — Electrode's
+//  measured flows and Atlas's declared calls — and the owner's ask was precise about the three words:
+//   popular (distinct callers), top-most (only ever entered from outside the coats), well connected
+//    (sized).  A hand-made tally + a hand-made census pin each word to a number. ─────────────────────
+function tally(rows: Array<{ from: string | null, to: string, n: number, ms?: number }>) {
+    const top = H.top_House()
+    const T: any = { armed: 1, seq: 0, cur: null, ring: [], tally: new Map(), open: new Map(), dropped: 0, cap: 4096, since: 1 }
+    for (const r of rows) T.tally.set((r.from ?? '') + '>' + r.to, { from: r.from, to: r.to, n: r.n, ms: r.ms ?? 1, async: 0, threw: 0, max: r.ms ?? 1 })
+    top.c.electrode = T
+    return T
+}
+
+test('figurines — popular is DISTINCT callers, top-most is entered only from outside, and both are sized', () => {
+    const lw = census([{ path: 'Ghost/X/Sample.g' }])
+    const aw = H.top_House().o({ A: 'Atlas' })[0].o({ w: 'Atlas' })[0]
+    const map = aw.o({ Doc: 'Ghost/X/Sample.g' })[0].o({ Map: 1 })[0]
+    map.i({ def: 1, method: 'Sample_alpha', line: 3 })
+    map.i({ def: 1, method: 'Sample_beta', line: 9 })
+    map.i({ def: 1, method: 'Sample_gamma', line: 15 })
+    map.i({ call: 1, via: 'Sample_alpha', method: 'Sample_beta', line: 5 })       // alpha DECLARES it calls beta
+    tally([
+        { from: null,           to: 'Sample_alpha', n: 5 },                      // alpha: entered from outside only
+        { from: 'Sample_alpha', to: 'Sample_beta',  n: 500 },                    // beta hammered by alpha…
+        { from: 'Sample_gamma', to: 'Sample_beta',  n: 1 },                      // …and touched once by gamma
+        { from: null,           to: 'Sample_gamma', n: 2 },
+        { from: 'Sample_beta',  to: 'Sample_gamma', n: 1 },                      // gamma is ALSO reached by beta — not top-most
+    ])
+    const r = H.Lagoon_figurines(lw, 10)
+    expect(r.error, 'answered').toBeUndefined()
+    const by = Object.fromEntries(r.figurines.map((f: any) => [f.name, f]))
+    expect(r.figurines[0].name, 'beta is the most connected — two DISTINCT callers beat five hundred calls from one').toBe('Sample_beta')
+    expect(by.Sample_beta.callers).toBe(2)
+    expect(by.Sample_beta.declared, 'Atlas declares one caller of beta (alpha); gamma reached it undeclared').toBe(1)
+    expect(by.Sample_beta.n, 'traffic is still reported, it just does not rank').toBe(501)
+    expect(by.Sample_alpha.top, 'alpha is top-most: every entry came from outside the coats').toBe(1)
+    expect(by.Sample_gamma.top, 'gamma is NOT top-most — beta reached it, even once').toBeUndefined()
+    expect(by.Sample_beta.top).toBeUndefined()
+    expect(by.Sample_alpha.fan, 'alpha reaches one distinct method').toBe(1)
+    expect(by.Sample_beta.dose, 'the most connected wears dose 1').toBe(1)
+    expect(by.Sample_alpha.dose, 'a method nobody coated calls wears dose 0 — it is where the world enters, not a hub').toBe(0)
+    expect(by.Sample_beta.doc, 'the def is joined on from Atlas').toBe('Ghost/X/Sample.g')
+    expect(by.Sample_beta.line).toBe(9)
+    expect(r.tops).toBe(1)
+    expect(r.ran).toBe(3)
+    // the layer rule: a reader keeps nothing — the Lagoon world holds nothing after answering
+    expect(lw.o().length, 'Lagoon_figurines minted nothing').toBe(0)
+})
+
+test('figurines — no tally is a NAMED refusal; an un-armed tally is an honest zero', () => {
+    const lw = census([{ path: 'Ghost/X/Sample.g' }])
+    const top = H.top_House()
+    top.c.electrode = undefined
+    const refused = H.Lagoon_figurines(lw, 10)
+    expect(String(refused.error), 'refuses by name, never a throw or a silent empty').toMatch(/no electrode tally/)
+    const T = tally([])
+    T.armed = 0
+    const zero = H.Lagoon_figurines(lw, 10)
+    expect(zero.error).toBeUndefined()
+    expect(zero.figurines.length).toBe(0)
+    expect(zero.armed, 'and the reply says WHY it is empty').toBe(0)
+})
+
+// ── THE ERRANDS (2026-09-09).  `Lagoon_errands` reads a shelf it does not own — the Aside moments
+//  `e_Lies_ghost_pick` has been writing all along (Clerkdesk_todo §0: shelf built, label built,
+//   resolver built, surface never drawn).  These pin the two judgements in it: a moment's WEIGHT is
+//    how often you returned, and a since-renamed path is HISTORY, not rot. ────────────────────────
+function aside(days: Array<{ day: string, moments: Array<{ what: number, about?: string, from?: string,
+                                                           docs: Array<{ doc: string, points?: string[] }> }> }>) {
+    const top = H.top_House()
+    for (const old of top.o({ A: 'Lies' })) top.drop(old)
+    const lw = top.i({ A: 'Lies' }).i({ w: 'Lies' })
+    for (const d of days) {
+        const wf = lw.i({ Waft: d.day })
+        wf.sc.aside = 1
+        for (const m of d.moments) {
+            const mc = wf.i({ What: m.what })
+            if (m.about) mc.sc.about = m.about
+            if (m.from) mc.sc.FromWhat = m.from
+            for (const dd of m.docs) {
+                const dc = mc.i({ Doc: dd.doc })
+                for (const p of dd.points ?? []) dc.i({ Point: 1, method: p })
+            }
+        }
+    }
+    return lw
+}
+
+test('errands — the day’s trail reads back: what it was for, how often you returned, where from', () => {
+    aside([
+        { day: 'Aside/2026-09-08', moments: [
+            { what: 1, about: 'old_thing', docs: [{ doc: 'Ghost/M/Ra.g', points: ['old_thing'] }] } ] },
+        { day: 'Aside/2026-09-09', moments: [
+            { what: 1, about: 'Heist_blag', from: 'Waft:Ghost/Music/Ality/What:the heist — a caper, §10',
+              docs: [{ doc: 'Ghost/M/Heist.g', points: ['Heist_blag'] }] },
+            { what: 2, about: 'Repli_serve_chunks',
+              docs: [{ doc: 'Ghost/N/Repli.g', points: ['Repli_serve_chunks', 'Repli_find_record', 'Repli_park'] }] } ] },
+    ])
+    const lw = H.top_House().o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0] ?? H.top_House().i({ A: 'Lagoon' }).i({ w: 'Lagoon' })
+    const r = H.Lagoon_errands(lw, 10)
+    expect(r.error, 'answered').toBeUndefined()
+    expect(r.total).toBe(3)
+    expect(r.days.length).toBe(2)
+    expect(r.days[0].day, 'newest day first').toBe('Aside/2026-09-09')
+    expect(r.errands[0].about, 'inside a day, the most-returned-to moment leads — three visits beats one').toBe('Repli_serve_chunks')
+    expect(r.errands[0].visits).toBe(3)
+    expect(r.errands[0].docs[0].points).toEqual(['Repli_serve_chunks', 'Repli_find_record', 'Repli_park'])
+    expect(r.errands[1].about).toBe('Heist_blag')
+    expect(r.errands[1].from_waft, 'the locator splits at the LAST slash before a Mainkey: — a Waft key has slashes in it').toBe('Ghost/Music/Ality')
+    expect(r.errands[1].from_tail).toBe('What:the heist — a caper, §10')
+    expect(r.errands[2].day, 'yesterday sorts under today').toBe('Aside/2026-09-08')
+    // the layer rule
+    expect(lw.o().length, 'a reader keeps nothing').toBe(0)
+})
+
+test('errands — a since-renamed path is HISTORY: marked, never hidden, and never marked unseen', () => {
+    aside([{ day: 'Aside/2026-09-09', moments: [
+        { what: 1, about: 'VoroMitosis_seed', docs: [{ doc: 'Ghost/Story/Voronation.g', points: ['VoroMitosis_seed'] }] },
+        { what: 2, about: 'Heist_blag', docs: [{ doc: 'Ghost/M/Heist.g', points: ['Heist_blag'] }] } ] }])
+    // no Atlas: "I cannot see" must not render as "it is not there"
+    for (const old of H.top_House().o({ A: 'Atlas' })) H.top_House().drop(old)
+    const lw = H.top_House().o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0] ?? H.top_House().i({ A: 'Lagoon' }).i({ w: 'Lagoon' })
+    const blind = H.Lagoon_errands(lw, 10)
+    expect(blind.atlas).toBe(0)
+    expect(blind.gone, 'with no census, nothing is accused').toBe(0)
+    expect(blind.errands.every((m: any) => m.docs.every((d: any) => !d.gone))).toBe(true)
+    // with a census that holds only the live file, the renamed one is marked — and still listed
+    const aw = H.top_House().i({ A: 'Atlas' }).i({ w: 'Atlas' })
+    aw.i({ Doc: 'Ghost/M/Heist.g' })
+    const seen = H.Lagoon_errands(lw, 10)
+    expect(seen.atlas).toBe(1)
+    expect(seen.gone).toBe(1)
+    expect(seen.total, 'the visit still happened — a stale path is never dropped from the trail').toBe(2)
+    const stale = seen.errands.find((m: any) => m.about === 'VoroMitosis_seed')
+    expect(stale.docs[0].gone).toBe(1)
+    expect(seen.errands.find((m: any) => m.about === 'Heist_blag').docs[0].gone).toBeUndefined()
+})
+
+test('errands — no Lies world is a NAMED refusal, not an empty list', () => {
+    const top = H.top_House()
+    for (const old of top.o({ A: 'Lies' })) top.drop(old)
+    const lw = top.o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0] ?? top.i({ A: 'Lagoon' }).i({ w: 'Lagoon' })
+    expect(String(H.Lagoon_errands(lw, 10).error)).toMatch(/no A:Lies standing/)
+})
