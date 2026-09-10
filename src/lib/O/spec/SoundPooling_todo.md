@@ -14,6 +14,22 @@
   — *"'you can't lose a heart' is only true if a stray tap cannot spend one"*. The trade was put to the
    owner (a stray tap can now unlove, which dis-includes from pool + heist) and the simpler model won.
 
+**✅ RESOLVED 2026-09-10 — owner: *"we have to keep a latest love|unlove to make matter"*.** The LATEST
+ press is the state, at any distance in time; nothing may quietly override it. So the toggle stands and
+  the retry road moves rather than dies.
+ **And it turned out to cost nothing, because the clearing was never in the button.** `Heard_take`
+  strips the verdict keys on EVERY fresh take. So retry is now **unlove, then love** — two presses
+   instead of one, and the love clears the failure exactly as the old single re-press did. Retry stopped
+    being a hidden second meaning of one button and became the ordinary act of loving something again,
+     which is what the latest-press rule wants anyway. No new control, no context-sensitive magic.
+ **Book updated to match** (`HeistTesting.g`): `a_re_press_clears_the_verdict` →
+  `loving_it_back_clears_the_verdict` (presses twice now), and the toggle beat gained
+   `loving_it_back_restores_the_ask` — ⚠ **because the unlove test must LEAVE THE WORLD LOVED.** Ending
+    that beat unloved silently rewrote every downstream beat's ground: measured in the step-9 residual,
+     no `Heist` minted and the whole `landeded` row gone. An assertion that changes the state later
+      beats stand on has to put it back.
+
+*(the fork below is kept for the reasoning; it is settled)*
 **⛔⛔ THE TOGGLE DESTROYS THE RETRY ROAD, WHICH IS SWORN AND LOAD-BEARING — OWNER MUST CHOOSE.**
  `HeistTesting.g:6722-6724`, verbatim: *"a re-press is the retry road: it clears the verdict and the wish
   is askable again"* → `row.a_re_press_clears_the_verdict`. Under a toggle that re-press UNLOVES, so

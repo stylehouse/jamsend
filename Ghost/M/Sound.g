@@ -1,4 +1,4 @@
-// Sound.g — the AUDIO ENGINE.  Extracted from Ghost/Story/Musuation.g's //#region reality (the
+// Sound.g — the AUDIO ENGINE.  Extracted from Ghost/Story/MusuTesting.g's //#region reality (the
 //  Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md §5): shared, real software,
 //   NO test scaffolding here, NO per-Book scenario.  The cursor spine is Radiola.g; THIS is the AUDIO
 //    (synth PCM / measure-entropy) + the rate-driven live-stream pump that actually STARVES.  A Book

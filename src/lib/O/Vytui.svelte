@@ -19,6 +19,7 @@
     import { gauge_box, gauge_pose, GAUGE_MS } from "$lib/O/vyto_gauge"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
+    import { pane_rows, rows_of, disc_poly, type Pane, type VrowDesc } from "$lib/O/vyto_pane"
     import { lifetell } from "$lib/O/ui/micro/lifetell"   // DIAGNOSTIC — strip with the rest of the remount probes
     import { hold_list, hold_true } from "$lib/O/ui/micro/hold"
     import { onMount, onDestroy } from 'svelte'
@@ -1706,6 +1707,81 @@
         }
         return out
     }
+
+    // ── THE FOLIO — foamereo stop `folio` (2026-09-10): a cell's words laid into its own shape ─────────
+    //  The owner, looking at the folded glass: *"it doesn't put the inlaid component (which is a label for
+    //   itself?) in a non-obscured location … putting the words along the wall of the cell was a
+    //    breakthrough in legibility"* — and, the standing ask, *"the whole magazine-layout job"*.  The old
+    //     Voro renderer had exactly that engine (Cytui's tuples pane) and it never crossed the moult; this
+    //      is it, ported pure (vyto_pane.ts, node-proven) and worn as a STOP so the owner's eye decides.
+    //  What a cell says, in the snap's own grammar: its ident as the title, then one line per scalar —
+    //   and a CREST says its distilled voice: the door (×N + the query that reopens it), the veins, the
+    //    facts, the spreads with their chips.  Rows flow along the cell's biggest top-left wall, seated
+    //     between the wall's chords, inflated to fill the room, then dropped to its middle.
+    //  RENDER-ONLY: reads the mirror row's sc and the crest's %Vrow children, writes nothing, no data-key
+    //   (so the need-floor measure pass never floors a cell to its folio) — a Book's fixtures cannot move.
+    //  On: it replaces the centred ident, the hallway, the wave band and the wall carve for FACELESS
+    //   cells.  A faced cell keeps its label-along-the-top: the face owns that room.
+    function folio_on(w: TheC): boolean { return !!fo(w, 'folio') }
+    const folioMemo = new Map<string, { sig: string, pane: Pane | null }>()
+    function guts_pairs(row: TheC, max: number): { k: string, v: string }[] {
+        const sc: any = row?.sc; if (!sc || max <= 0) return []
+        const keys = Object.keys(sc)
+        const out: { k: string, v: string }[] = []
+        for (let i = 1; i < keys.length && out.length < max; i++) {
+            const k = keys[i]
+            if (GUT_SKIP.has(k)) continue
+            const v = sc[k]
+            if (v == null || typeof v === 'object') continue
+            let t = String(v)
+            if (t.length > 24) t = t.slice(0, 23) + '…'
+            out.push({ k, v: t })
+        }
+        return out
+    }
+    function crest_vrows(row: TheC): VrowDesc[] {
+        const out: VrowDesc[] = []
+        for (const r of row.o({ Vrow: 1 }) as TheC[]) {
+            const sc: any = r.sc
+            const d: VrowDesc = { row: String(sc.row ?? 'fact') }
+            if (sc.k != null) d.k = String(sc.k)
+            if (sc.v != null) d.v = String(sc.v)
+            if (sc.n != null) d.n = Number(sc.n) || undefined
+            if (sc.q != null) d.q = String(sc.q)
+            const bits = r.o({ Vbit: 1 }) as TheC[]
+            if (bits.length) d.bits = bits.map(b => ({ k: b.sc.k != null ? String(b.sc.k) : undefined, v: b.sc.v != null ? String(b.sc.v) : undefined,
+                                                       n: b.sc.n != null ? Number(b.sc.n) || undefined : undefined, text: b.sc.text != null ? String(b.sc.text) : undefined }))
+            out.push(d)
+        }
+        return out
+    }
+    function folio_of(w: TheC, cell: PaintCell): Pane | null {
+        const poly = cell.poly && cell.poly.length > 2 ? cell.poly : (cell.r > 12 ? disc_poly(cell.x, cell.y, cell.r) : null)
+        if (!poly) return null
+        const sc: any = cell.row?.sc; if (!sc) return null
+        const mk = Object.keys(sc)[0]
+        const crest = mk === 'Vtuffing'
+        const g = cell_ground(cell)
+        const ident = crest ? (crest_key(sc) ?? cell.ident) : cell.ident
+        const vrows = crest ? crest_vrows(cell.row) : null
+        const guts = crest ? [] : guts_pairs(cell.row, 12)
+        const rows = rows_of(ident, guts, vrows, { hue: g?.color ?? undefined })
+        const sig = (cell.d || (cell.x.toFixed(1) + ',' + cell.y.toFixed(1) + ',' + cell.r.toFixed(1))) + '|' + rows.map(r => r.map(a => a.text).join('\u0001')).join('\u0002')
+        const m = folioMemo.get(cell.key)
+        if (m && m.sig === sig) return m.pane
+        const pane = pane_rows(poly, cell.x, cell.y, rows, { maxzoom: 1.8 })
+        folioMemo.set(cell.key, { sig, pane })
+        return pane
+    }
+    // THE DESK SPEAKS TO THE GLASS.  A room (BigShapeland) that flips a stop on `w.sc.foamereo` has no
+    //  reach into this component's paint tick, and `w.sc` is not reactive state — so it dispatches one
+    //   DOM event and every glass on the page repaints.  Render-only stops show at once; model stops the
+    //    room stirs itself (Vyto_stir), and the mirror change flows here the ordinary way.
+    onMount(() => {
+        const on_deck = () => { for (const w of vyto_worlds()) kick(w); paint_tick++ }
+        window.addEventListener('vyto-deck', on_deck)
+        return () => window.removeEventListener('vyto-deck', on_deck)
+    })
 
     // THE PARKED-RUN GATE (Book determinism depends on it).  While a Story run DRIVES this
     //  world the renderer is inert — target changes jump straight to target and NEVER strike a
@@ -3920,6 +3996,18 @@
                     {/if}
                     <!-- THE VINES, FIRST: the %Flow relations the solver already bunches by, drawn as
                          roots UNDER the cells they tie together.  Nothing when nothing relates. -->
+                    {#snippet folio(w: TheC, cell: PaintCell)}
+                        {@const fp = folio_of(w, cell)}
+                        {#if fp}
+                            <g class="folio" class:sunk={cell.sunk} data-fkey={cell.key}>
+                                {#each fp.seats as st, si (si)}
+                                    <text class="fo {st.cls}" x={st.x.toFixed(1)} y={st.y.toFixed(1)} font-size={st.fs.toFixed(1)}
+                                          style={st.hue ? `fill:${st.hue}` : undefined}
+                                          transform={st.rot ? `rotate(${st.rot} ${st.x.toFixed(1)} ${st.y.toFixed(1)})` : undefined}>{st.text}</text>
+                                {/each}
+                            </g>
+                        {/if}
+                    {/snippet}
                     {#each vines_of(w, viewport_cells(w)) as v (v.d)}
                         <path class="vine" d={v.d} style="stroke-width:{v.sw};"></path>
                     {/each}
@@ -3976,7 +4064,9 @@
                                             cx={cell.x} cy={cell.y} r={cell.r}
                                             onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                             onpointerleave={() => on_leave(w, cell.key, cell.tok)}></circle>
-                                    {#if !cell.face && !cell.hasKids}
+                                    {#if !cell.face && !cell.hasKids && folio_on(w)}
+                                        {@render folio(w, cell)}
+                                    {:else if !cell.face && !cell.hasKids}
                                         <text class="ident" class:sunk={cell.sunk} data-key={cell.key} x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
                                     {/if}
                                     </g>
@@ -4002,7 +4092,9 @@
                              measure pass stamps a cell's need off THIS text, grow-only, so a faceless
                              cell that shrinks out of the carve is measured against its own name again
                              and pushed back up.  The fallback is the floor; nothing had to be added. -->
-                        {#if !cell.face && !cell.hasKids && !cell.loose && cell.kind !== 'disc' && !wall_carve(w, cell)}
+                        {#if !cell.face && !cell.hasKids && !cell.loose && !cell.departing && folio_on(w)}
+                            {@render folio(w, cell)}
+                        {:else if !cell.face && !cell.hasKids && !cell.loose && cell.kind !== 'disc' && !wall_carve(w, cell)}
                             <text class="ident" class:sunk={cell.sunk} data-key={cell.key} x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
                         {:else if cell.face && !cell.hasKids && !cell.departing}
                             <!-- THE LABEL, ALONG ONE SIDE (the owner: "along one side of the cell, looking
@@ -4078,7 +4170,7 @@
                              the wall; small ones now say their name on the body and nothing else.  This
                              corridor belongs to the worlds with no wall law, where a cell's polygon does
                              reach its own corner. -->
-                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 30 && cell.bh > 40 && !fo(w, 'nohall') && !carveable(w)}
+                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && cell.bw > 30 && cell.bh > 40 && !fo(w, 'nohall') && !carveable(w) && !(folio_on(w) && !cell.face)}
                             <!-- ANCHOR THE CORRIDOR TO THE WALL, NOT THE BBOX.  A foam cell's bbox
                                  corner is off the disc entirely (a circle never reaches its own
                                  corner), which is why the corridor read as detached furniture.  On a
@@ -4114,7 +4206,7 @@
                              wall and its name floating in the middle in a different typeface.  Two
                              styles, one cell.  The wall is the label surface; whatever has a wall
                              wears its name in it. -->
-                        {#if !cell.hasKids && !cell.departing && wall_carve(w, cell)}
+                        {#if !cell.hasKids && !cell.departing && wall_carve(w, cell) && !(folio_on(w) && !cell.face)}
                             <!-- THE NAME IN THE WALL — the ball's upper arc doubles as a masonry
                                  band and the ident rides it as a textPath, so the label is drawn
                                  IN the cell wall (the owner: "drawing them properly in the cell
@@ -4178,7 +4270,7 @@
                              (not `layout`'s local `foam`, which focus already turns off), which is
                              exactly how this leaked into a regime it was never meant for.  The NAME
                              band keeps its carve — a cell still has to say which thing it is. -->
-                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && wall_carve(w, cell) && !fo(w, 'nohall') && !focus_on(w)}
+                        {#if cell.kind === 'poly' && !cell.hasKids && !cell.departing && wall_carve(w, cell) && !fo(w, 'nohall') && !focus_on(w) && !(folio_on(w) && !cell.face)}
                             {@const sp = spill_of(cell)}
                             {#if sp}
                                 <g class="wallwork" class:sunk={cell.sunk}>
@@ -4765,6 +4857,19 @@
     .ident.under.sub { font: 500 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace; fill: #7a7a9c; opacity: 0.42; }
     /* the crushed-cell mark: "folded, more inside" — pairs with .cell.crushed's dashed wall */
     .ident.crush { font-size: 15px; fill: #9a9ac8; opacity: 0.85; pointer-events: none; }
+    /* THE FOLIO — type set into the cell (foamereo 'folio').  A dark halo (paint-order stroke) keeps a line
+       legible over any jewel; the title wears the cell's own colour, keys recede, the door glows warm. */
+    .folio text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: #dcdcf0; pointer-events: none;
+                  paint-order: stroke; stroke: rgba(8, 8, 18, 0.62); stroke-width: 2.6px; stroke-linejoin: round; }
+    .folio .fo-title { font-weight: 700; letter-spacing: 0.25px; }
+    .folio .fo-key   { fill: #9c9cc6; font-weight: 600; }
+    .folio .fo-val   { fill: #ececf8; }
+    .folio .fo-dip   { fill: #ecc98e; font-weight: 700; }
+    .folio .fo-q     { fill: #bfa46e; opacity: 0.85; }
+    .folio .fo-vein  { fill: #cfa8ea; font-weight: 600; }
+    .folio .fo-chip  { fill: #bcbcda; opacity: 0.88; }
+    .folio .fo-more  { fill: #8e8eae; opacity: 0.8; }
+    .folio.sunk { opacity: 0.22; }
     /* THE GROUND — coarse copper under everything, barely there: the cells sit ON something. */
     .ground-tex { opacity: 0.055; pointer-events: none; }
     /* THE HALLWAY — the corridor let into the cell wall (fine copper, worked smaller than the

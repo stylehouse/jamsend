@@ -1,4 +1,6 @@
-// Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
+// SwarmTesting.g — né Swarmation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
+//  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file.
+// The Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
 //   BEFORE the Story begins (once it is in CREDULER_GHOSTS), so Ghost/S/Swarm.g's spine is on H.
 //  DETERMINISM is total: fixed selves (keys seeded off the person's name), a pinned clock

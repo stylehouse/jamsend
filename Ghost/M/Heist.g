@@ -70,7 +70,7 @@ Heist_meta_dir():
 //       namespace — a test tab, a probe, a Book driving the live path — sets ONE knob and inherits the
 //        whole existing landing + newlyadded + Heist_sweep story for free.
 //  SPELLING: `marrauding` (double-r) is a typo, carried by the on-disk directory name, this verb, and the
-//   literals in Heistation.g / Berthation.g.  NO recorded fixture contains the string (verified), so the
+//   literals in HeistTesting.g / BerthTesting.g.  NO recorded fixture contains the string (verified), so the
 //    rename is safe whenever someone wants it — it is left alone here only because those Book files are
 //     open in another thread and a cross-file rename would collide.
 Heist_marrauding(runid, nick):

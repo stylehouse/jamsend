@@ -1,4 +1,6 @@
-// Berthation.g — the Berth* Books: the persistence door proven (Radio_todo §11.7).  A Berth homes one
+// BerthTesting.g — né Berthation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
+//  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file.
+// The Berth* Books: the persistence door proven (Radio_todo §11.7).  A Berth homes one
 //  Pier's own mutable documents — Waft:Taste, Waft:Listening, Waft:Filings, Waft:Map — each a Waft (the
 //   project-standard robust document) at <root>/.jamsend/berth/<prepub>/<name>/toc.snap, the EXACT
 //    wormhole shape (a dir with a toc.snap) just homed under an identity.  The verbs are already built on

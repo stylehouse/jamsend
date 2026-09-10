@@ -12,11 +12,12 @@ import { poly_area } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_VytoTesting(): string { return '7adb6416fc03f43e~g1' },
+    Ghostmeta_Ghost_V_VytoTesting(): string { return '1a261b1aab5be1e5~g1' },
 
-// Vytonation.g — Vyto's demo Books (the VoroTesting.g sibling, one directory over in Ghost/V/; owed the
-//  same `<Name>Testing.g` rename — src/lib/L/testing.ts).
-//  Where VoroTesting.g (né Voronation.g) proves the CRUSH (the fold policy) on flora and libraries, Vytonation.g
+// VytoTesting.g — né Vytonation.g.  Vyto's demo Books (the VoroTesting.g sibling, one directory over
+//  in Ghost/V/), under the `<Name>Testing.g` convention (owner ruling 2026-09-09; the one predicate
+//   is src/lib/L/testing.ts).
+//  Where VoroTesting.g (né Voronation.g) proves the CRUSH (the fold policy) on flora and libraries, this file
 //   proves the NEW GLASS's model side: the commission door, the board of named organs, the
 //    grapple→stir→mirror DRIVE, the two-stir departure escort, and the spool's moment capture.
 //  It is the FIRST Book for Vyto and the first live sighting of its board.
@@ -743,7 +744,7 @@ Vyto_rest_poll(w, want) {
 
 },
 // ══ VytoMitosis — VoroMitosis ported: a flora is cut into cells then GROWS and one genus dies ══════
-//  The abstract-flora demo (Voronation.g #region mitosis) as a Vyto client.  Voro watched the crush
+//  The abstract-flora demo (VoroTesting.g #region mitosis) as a Vyto client.  Voro watched the crush
 //   DISCOVER clades from loose leaves; Vyto has no crush yet, so here each genus is grappled
 //    INDIVIDUALLY — one grapple = one top-level mirror row = one cell — and the SCENARIO is what
 //     ports: a cold batch cuts into distinct seats, the flora GROWS (a lone newcomer joins near the

@@ -10,10 +10,14 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_RaTesting(): string { return 'a8e02e482b139e5c~g1' },
+    Ghostmeta_Ghost_Story_RaTesting(): string { return 'c40f0fdc739dcdcf~g1' },
 
-// Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
-//  Musuation/Swarmation mould: the file is the artifact; MusuRaStream is the first Book identity.
+// RaTesting.g — né Radiation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
+//  src/lib/L/testing.ts is the one predicate).  ⚠ `Ra` was a JUDGMENT CALL, not a derivation — say
+//   so if it is wrong.  Book NAMES did not move: `Radiation` is still a Book and still names its
+//    fixture directory `wormhole/Story/Radiation/` — a Book is its do_fn, not its file.
+// The Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
+//  MusuTesting/SwarmTesting mould: the file is the artifact; MusuRaStream is the first Book identity.
 //   The Creduler loads this ghost live BEFORE the Story begins (once it is in CREDULER_GHOSTS),
 //    so Ghost/M/Ra.g's pipeline spine is on H.  These Books test the PRODUCT — a low-level Musu*
 //     Book retires only when its Ra* re-draw here is green (the consolidation rule).
@@ -139,7 +143,7 @@ async MusuRaStream_setup(w) {
     //   `n !== req.c.did_step` gate), while the transport pumps — peering.do, Ra_transcode_pump,
     //    MusuRaStream_flow — run on EVERY pass.  So "has the boundary chunk arrived by the time we
     //     snap?" was decided by how many passes happened to fit inside a step, i.e. by TAB WARMTH.
-    //      Radiation.g's `p.head > p.preview` test at the fed: row is a pure OBSERVATION with no hold
+    //      RaTesting.g's `p.head > p.preview` test at the fed: row is a pure OBSERVATION with no hold
     //       behind it: warm, the row is minted at step 14 and the %see fires; cold, self,round lands
     //        36 instead of 37, the row slips a step or two, and since w.c.fed_a also gates the track
     //         switch, B's whole cycle and the measure shift with it — steps 1-13 pass and 14-40 all
@@ -856,7 +860,7 @@ async MusuBuddy_drive(w, req) {
     //  `w.sc.now ?? wall clock`, and EVERY signed swarm fact flows through it — %Pier,since,
     //   %Edge,at, and %Grant,time with the ed25519 `sign` computed OVER that time.  Unpinned, this
     //    Book recorded a moment: its fixture could never match again, so it has been red since the
-    //     day it was written on everything except its subject.  Swarmation.g's law, its header:
+    //     day it was written on everything except its subject.  SwarmTesting.g's law, its header:
     //      "a pinned clock (w.sc.now stepped per beat) … so every signature, every grant, every snap
     //       byte repeats run to run".  Set EVERY pass, not only on a new beat — the pumps below run
     //        every pass and a Pier stamped before the first dispatch would take the wall clock.

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Siphon(): string { return '5f0e94a318c6d7fd~g1' },
+    Ghostmeta_Ghost_M_Siphon(): string { return '222c9a4992b2bc7d~g1' },
 
 // Siphon.g — the DELIBERATE SoundPool act (Siphon_todo.md rungs 2–3): tags + the siphon verb.
 //  A SPIN-OUT beside Ra.g's press economy (Portability_todo §"LIVE WIRING GAP"): Ra_press /
@@ -25,7 +25,7 @@
 //    pool, composing Ra_press v1 (the ENTIRE body — not a quarter goal, not a lofi grade).  In
 //     flight it is legible state (%Siphon,of:<origId>, phases asked→pulling→landed) and a landed
 //      siphon DROPS its scaffolding (transient reqs are scaffolding, not ledger — the awaitbuf
-//       lesson).  Pure verbs — no %req self-installs; a Book (Ghost/Story/Siphonation.g) or a
+//       lesson).  Pure verbs — no %req self-installs; a Book (Ghost/Story/SiphonTesting.g) or a
 //        face CALLS these.  NEW FILES ONLY (the spin-out doctrine): nothing standing is touched.
 
 //#region tags — %Tag once on the %Tags shelf; %Tagged,of: children; a tag IS a playlist

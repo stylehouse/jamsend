@@ -8,11 +8,12 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_LagoonTesting(): string { return '8868742039d25192~g1' },
+    Ghostmeta_Ghost_L_LagoonTesting(): string { return '445b42a19e4964f5~g1' },
 
-// Lagoonation.g — the Lagoon.g proof (Atlas→Atlantation, Electrode→Electrodation, Lagoon→Lagoonation).
+// LagoonTesting.g — né Lagoonation.g.  The Lagoon.g proof, under the `<Name>Testing.g` convention
+//  (owner ruling 2026-09-09; src/lib/L/testing.ts is the one predicate).
 //
-// CONVENTION (Atlantation.g): no Run_A_ recipe — the world MUST be named LagoonStaple (do_fn_for
+// CONVENTION (AtlasTesting.g): no Run_A_ recipe — the world MUST be named LagoonStaple (do_fn_for
 //  dispatches by w.sc.w).  This Book's OWN .g must be ghost_load'ed onto the runner before `run`.
 //
 // What it swears is the CONCEPT LINE, not just the code.  Lagoon is the reader layer — "Atlas keeps,
@@ -84,7 +85,7 @@ LagoonStaple_aw(w) {
 
 },
 // ── beat 2 — load both ghosts on demand, stand Atlas on the frozen corpus and Lagoon beside it.
-//  All real async work inside expecting()'s async_fn, never awaited from the drive (Atlantation.g
+//  All real async work inside expecting()'s async_fn, never awaited from the drive (AtlasTesting.g
 //   beat 2 explains the circular wait that costs a whole recording if you get it wrong). ──
 async LagoonStaple_stand(w) {
     w.i({desc: 'load Atlas and Lagoon on demand — stand Atlas on the frozen corpus and the reader beside it'})
@@ -107,7 +108,7 @@ async LagoonStaple_stand(w) {
         let aw = SH.i({ A: 'Atlas' }).i({ w: 'Atlas' })
         aw.c.roots = ['Ghost/L/test_corpus']
         let lw = SH.i({ A: 'Lagoon' }).i({ w: 'Lagoon' })
-        // DRIVE THE PASSES, don't wait for a tick — Atlantation.g beat 3's lesson, and it applies twice
+        // DRIVE THE PASSES, don't wait for a tick — AtlasTesting.g beat 3's lesson, and it applies twice
         //  as hard here.  Both worlds stand on the TOP House, whose belief loop a Story run does not pump;
         //   recording 6 stood them and waited, and the census was still the old 711-doc roster when the
         //    run ended while the freshly re-minted Lagoon world had never stamped its report row at all.

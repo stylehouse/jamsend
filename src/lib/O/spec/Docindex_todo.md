@@ -41,9 +41,14 @@
 
 **THE NEXT MOVE, if you want one:** the residue is the 5MB decode and 43,945 mints, so the only lever
  left is *not minting them all at stand* — a Map built lazily for the doc a reader actually asks about.
-  That is a design change, not a knob, and **nothing needs it yet**. Prefer finishing what is owed:
-   the Stemdex measured cold on a real editor tab (§ below), which is the last open question about
-    whether the two indexes should share a producer.
+  That is a design change, not a knob, and **nothing needs it yet**.
+ ✅ The last thing owed — *is the Stemdex a second corpus scan, and should the two share a producer?* —
+  was **measured and closed 2026-09-10 (late): Atlas 731, Stemdex 12, one tab, one minute. Don't merge.**
+   See the ✅ SETTLED block in §"a second FULL corpus walk" below for the two bombs inside those numbers
+    (12 is a floor, and a plain runner now rosters the whole corpus — the editor tab is no longer
+     required for an Atlas question, but `--fresh` is).
+ **So there is no owed measurement left.** Pick the lazy-Map lever above only if something starts
+  needing it.
 
 ### ☀ WHY THIS DOC EXISTS — the second sentence is a correction of the first day's work
 
@@ -206,6 +211,34 @@ So the tally of things that separately answer *"what is the hash of this doc"*:
      (`runner_ask stemdex`, repeatedly, on the tab that actually feels slow), not a finding.
  *Third time this session that an asserted cost turned out to be a guess. The instrument keeps winning.*
 
+✅ **SETTLED 2026-09-10 (late) — measured with BOTH censuses on ONE tab at ONE moment.** The open
+ question above ("is the Stemdex half the cost, and should the two share a producer?") is closed, and
+  the surprise is that it no longer needs an editor tab to answer:
+
+    see:atlas   docs:731  from_index:731  roster_ms:95   ← the whole corpus, no walk
+    stemdex     indexed:12  warmed:1  scanning:0         ← converged in 2 nudges, ~300ms each
+
+ **Atlas 731, Stemdex 12, same tab, same minute.** They are not two views of one corpus and must not
+  share a producer: merging means either the Stemdex suddenly parses 731 docs (a large new cost nobody
+   asked for) or Atlas shrinks to a session. This confirms by measurement what the subagent concluded
+    by reading — *don't merge; the only true duplication was `defs`.*
+
+ ⚠ **Two bombs in those numbers, both about what the instrument covers.**
+  1. **12 is a FLOOR, not the editor number.** That runner had NO Wafts loaded (`minisnap mundo>A:Lies`
+      → zero `Waft:` rows). The roster is *loaded Wafts + the whole GhostList* (`LiesFunk.svelte`:1576),
+       so a busy editor tab is bigger — bounded by the GhostList (~233) plus open docks. Still nowhere
+        near 731, so the verdict holds, but do not quote 12 as "the Stemdex's size".
+  2. **A plain runner now rosters the FULL corpus** — `from_index:731`, `roster_ms:95`. The old note
+      "the runner roster is only 12 docs, so this needs the editor tab" is STALE: the index Waft
+       removed the FSA dependency, which is exactly what had been blocking this measurement for a day.
+        A runner is now a valid stand for any Atlas question. **Atlas needs `--fresh` to census** —
+         without it `ghost_load --stand=Atlas` stands the ghost and does nothing, `w:Atlas` stays empty,
+          and that reads exactly like a hang. It is not one.
+
+ Incidental confirmation of the dige gate, from the same run: `super_took:702 super_stale:29
+  cache_moved:29 passes:29` on a tree where 22 `.g` + their `.go` had just been edited — 702 adopted
+   from the supermap untouched, 29 re-parsed because they really had moved. That is the gate working.
+
 #### THE MERGE QUESTION, ANSWERED — don't merge the censuses; merge the one thing actually duplicated
 
 An objective read of both indexes (2026-09-10) settled the "big unification" question, and corrected two
@@ -248,10 +281,12 @@ An objective read of both indexes (2026-09-10) settled the "big unification" que
     with under 2% false** (`scripts/StemdexDefs.spec.ts`, 3/3, counted against the corpus rather than a
      fixture). That is ~90% of the merge's benefit at ~5% of its cost.
 
-**VERDICT: keep two censuses, one producer eventually.** The evidence rules out "they are the same
- index". It does not rule out "they should have the same PRODUCER" — and the number that would decide
-  that is still the one this doc has been asking for since §0: **the Stemdex measured cold on a real
-   editor tab, with a real roster.** ⚠ Live measurement is currently blocked: no `role:runner` tab is up.
+**VERDICT: keep two censuses, and NOT one producer.** The evidence ruled out "they are the same index".
+ The number that would decide the producer question was owed since §0 — it has now been taken:
+  **Atlas 731 / Stemdex 12, one tab, one minute (2026-09-10 late; ✅ SETTLED block above).** A shared
+   producer would have to serve both a 731-doc corpus census and a ~12–233-doc session index; that is
+    not one producer with two readers, it is one producer doing the larger job twice as often. **Keep
+     them apart.** The `defs` extractor was the only true duplication and it is already fixed in place.
 
 **Which is the real shape of the plan, and it is better than the one below.** The index Waft should
  carry the whole reading of a doc — `%Doc` with its `%Map` (Atlas's vocabulary) *and* its stem

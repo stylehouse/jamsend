@@ -19,7 +19,7 @@
 //        switch it off, and the Story underneath never knows.
 
 //#region crush — fold big homogeneous collections behind ONE stuffed chunk each (all c-side)
-// ══ the data-crusher (grew up as Repli_crush_* in Musuation.g; the Vis family owns it now) ═════
+// ══ the data-crusher (grew up as Repli_crush_* in MusuTesting.g; the Vis family owns it now) ═════
 //  A busy world is mostly CONFETTI — 16 emits + 16 unemits per pier side, a Record per tone —
 //   drawn raw the graph is too big to read a label of.  The crush folds it: ANY non-structural
 //    container with children is stamped c.stuff — Cyto then draws it as one chunk hosting a live

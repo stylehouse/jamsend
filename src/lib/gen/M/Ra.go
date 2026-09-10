@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '41384d860343d026~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '8689bdec31bf3c2b~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -19,7 +19,7 @@ import { Idento } from "$lib/Y.svelte.ts"
 //    The casting DISSOLVED into Repli (2026-07-10 — the chunk-particle rebuild): a Record's chunks
 //     are REAL child particles, so the generic offer/want/park/serve machinery moves them with no
 //      Ra-shaped wire of its own; Ra owns only the pipeline — stock, transcode, terminal.
-//  Pure verbs — no %req self-installs; a Book (Ghost/Story/Radiation.g) or the app CALLS these.
+//  Pure verbs — no %req self-installs; a Book (Ghost/Story/RaTesting.g) or the app CALLS these.
 //
 //  THE CHUNK-PARTICLE MODEL (owner 2026-07-10: "I just want multiple real actual %Record/%Preview" /
 //   "lots of particles in snap+Cyto is fine" — what snaps, REPLICATES): a %Record carries its transport
@@ -2457,7 +2457,7 @@ Ra_unpack(raw) {
 //   LYING peer who recomputes a cid over bad bytes.  So an origin SIGNS the manifest of its chunk cids with
 //    its ed25519 secret; a receiver who knows the origin key verifies the vouch BEFORE trusting a byte.  The
 //     two gates together: cid keeps an honest peer honest, the signature keeps a dishonest peer out.  These
-//      were proven in isolation as MusuBreach_sign/verify/manifest (Heistation.g); promoted here so the .jam
+//      were proven in isolation as MusuBreach_sign/verify/manifest (HeistTesting.g); promoted here so the .jam
 //       wire (Seam A) and the Heist offer door (Seam B) share ONE implementation with the crypto test.
 //  KEYED ON THE MASTER'S CIDS: the Heist-path %Body cids are the original file bytes (deterministic across
 //   peers); the Ra-path transcode is NOT bit-reproducible (two transcodes → different bytes → different
@@ -5312,7 +5312,7 @@ async Ra_term_stream_beat(w, rx, mine, theirs, rec) {
 //       Heist_catalog_land (MusuPress / Siphonation) — and invents no transport: the artifact
 //        crosses through a nav read (a crew-mirror lib the Captain's nav can read), which is the
 //         same seam the live Repli byte-lane will stand behind when it lands.  Book-gated by
-//          MusuPoolFill (Ghost/Story/Heistation.g).
+//          MusuPoolFill (Ghost/Story/HeistTesting.g).
 
 // Ra_pool_fill_book — the Captain's booking seam: a standing %Reach toward my crew Cave asking it
 //  to make `origId` servable for my pool.  Role-addressed (to:'Cave' — Swarm_reach_addr resolves

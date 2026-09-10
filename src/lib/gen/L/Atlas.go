@@ -37,7 +37,7 @@ import { Dexie } from "dexie"
 //     m7 (2026-09-06): `via` for all three — a "last top-level def whose line ≤ this line" lookup,
 //      dialect-uniform (a .g method sits at column 0; its body runs until the next one) and built
 //       from the def words already collected, no new tree-walk.  100% via coverage verified on
-//        both a .g file (Vytonation.g's 7 elvisto calls attribute to 7 different enclosing beats)
+//        both a .g file (VytoTesting.g's 7 elvisto calls attribute to 7 different enclosing beats)
 //         and a .svelte file (LangHold.svelte, 4 elvisto + 15 mint, all via).
 //     m8 (2026-09-06): `.md` docs — the doc-links census (`%link,kind:wiki|file`), the ORIGINAL
 //      high-value target from the very first census of this whole effort.  `spec/` un-skipped
@@ -165,7 +165,7 @@ const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return '01ec694484e7fbdc~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return 'a8cc2a0369fb9eba~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a

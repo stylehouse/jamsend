@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '3ec986c4ef61ed7b~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '727602fc8f19bece~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -86,7 +86,7 @@ Heist_meta_dir() {
 //       namespace — a test tab, a probe, a Book driving the live path — sets ONE knob and inherits the
 //        whole existing landing + newlyadded + Heist_sweep story for free.
 //  SPELLING: `marrauding` (double-r) is a typo, carried by the on-disk directory name, this verb, and the
-//   literals in Heistation.g / Berthation.g.  NO recorded fixture contains the string (verified), so the
+//   literals in HeistTesting.g / BerthTesting.g.  NO recorded fixture contains the string (verified), so the
 //    rename is safe whenever someone wants it — it is left alone here only because those Book files are
 //     open in another thread and a cross-file rename would collide.
 Heist_marrauding(runid, nick) {

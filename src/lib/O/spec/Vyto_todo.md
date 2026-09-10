@@ -71,7 +71,8 @@ The human, handing Vyto back for rework: *"a really spastic system with almost n
      never reaches equilibrium, so the glass renders continuously. A standing battery drain
       independent of the network. Ledger item #12 / `Composition_todo` §4.7.
    **DIAGNOSED 2026-08-08 by source reading — not yet profiled, and not yet fixed. See §0.2.**
-3. **THE UNUSED CAPABILITY SURFACE** — the human believes they specified more than is wired. That is
+3. **THE UNUSED CAPABILITY SURFACE** — *(ANSWERED 2026-09-10: the gap list lives in `Glassbeast_todo.md §0`
+    "THE GAP LIST" — 17 rows, spec § → state → where.)*  The human believes they specified more than is wired. That is
     a checkable claim, not a vague one, and it should be answered with a **gap list**
      (specified-but-unused / specified-but-diverged / used-but-unspecified) *before* any redesign, so
       the design conversation can ask "the spec says X, the code does Y, which did you mean?" rather

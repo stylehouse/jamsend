@@ -1,4 +1,4 @@
-// Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
+// Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/MusuTesting.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
 //   real software, NO test scaffolding, NO per-Book scenario.  A general system for replicating a C** of
 //    scalars + buffers from one Pier to another, paginatedly — you COMMUNICATE ABOUT a thing (ship its
@@ -9,13 +9,13 @@
 //  Sits ABOVE the transport spine: it rides Peeroleum_send / Peeroleum_on / Pier_next_seq (Ghost/N/Peeroleum.g)
 //   and sha256-verifies each body via Peeroleum_body_digest.  The Se progress mirror is a real
 //    Selection.process (imported below).  The users are the demo Books MusuReplica / MusuReco (still in
-//     Ghost/Story/Musuation.g), which compose this protocol from the outside via this.Repli_*.
+//     Ghost/Story/MusuTesting.g), which compose this protocol from the outside via this.Repli_*.
 
 IMPORT()
     import { Selection } from "$lib/mostly/Selection.svelte.ts"
     import { sha256_hex } from "$lib/O/Hashly.ts"
 
-//#region repli — the PAGINATED STREAMING C** REPLICATION protocol (shared real software; users: the demo Books in Ghost/Story/Musuation.g)
+//#region repli — the PAGINATED STREAMING C** REPLICATION protocol (shared real software; users: the demo Books in Ghost/Story/MusuTesting.g)
 // ══ A general system for replicating a C** of scalars + buffers from one Pier to another, paginatedly.  You
 //  start by COMMUNICATING ABOUT a thing — ship a particle's HEAD (its identity + a few scalars) as an enWaft-
 //   shaped line fragment — and then DEAL OUT the rest of its content on demand.  The bulk (a track's audio) is

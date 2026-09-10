@@ -128,7 +128,7 @@ describe('MountNav', () => {
         await expect(mn.bin_writer('x/y', 'a.bin')).rejects.toThrow(/bin_writer/)
     })
 
-    // The probes in Heist.g:689 / Heist.g:3003 / Heistation.g:414 are path-BLIND: they ask the nav
+    // The probes in Heist.g:689 / Heist.g:3003 / HeistTesting.g:414 are path-BLIND: they ask the nav
     //  object whether it can stream before they have a path to route on.  An un-narrowed wrapper answers
     //   yes for a backend that cannot, and Heist lands zero-byte tracks with nothing thrown.
     it('presents optional capabilities as the intersection, so a typeof probe cannot be lied to', () => {

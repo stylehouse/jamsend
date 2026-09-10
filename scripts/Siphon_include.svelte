@@ -1,6 +1,6 @@
 <script lang="ts">
     // Siphon_include — the Story_cli `-I` shim for the Siphon spin-out (Siphon_todo.md).
-    //  Ghost/M/Siphon.g + Ghost/Story/Siphonation.g are deliberately NOT registered in
+    //  Ghost/M/Siphon.g + Ghost/Story/SiphonTesting.g are deliberately NOT registered in
     //   LiesLies.svelte's CREDULER_GHOSTS yet (the spin-out doctrine: new files only; the
     //    registration is a proposed patch at the bottom of Siphon_todo.md).  This shim mounts
     //     their generated .go components so a headless run deposits Siphon_* + Siphonation onto

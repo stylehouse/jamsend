@@ -1,4 +1,6 @@
-// Errchannelation.g — the Story ERROR CHANNEL proven (spec/Error_channel_todo.md).  The channel captures the
+// ErrchannelTesting.g — né Errchannelation.g (the `<Name>Testing.g` convention, owner ruling
+//  2026-09-09; src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file.
+// The Story ERROR CHANNEL proven (spec/Error_channel_todo.md).  The channel captures the
 //  INVISIBLE failure class — a swallowed throw — into the Book's run world as w/%Errlog/%Err at the snap seam,
 //   so the fixture diff GATES it and a run can never again silently stall on a caught exception.  Built in the
 //    House core (Story.svelte Story_error/Story_errlog_drain + the Housing beliefs/_Aw_think taps + the
@@ -12,7 +14,7 @@
 //      the capture broke, step 2's %Err would be ABSENT → dige mismatch → red — the Book fails exactly when
 //       the channel fails.
 //
-// CONVENTION (Musu*/Berth*, Berthation.g:27): no Run_A_ recipe — the world MUST be named ErrChannel (do_fn_for
+// CONVENTION (Musu*/Berth*, BerthTesting.g:27): no Run_A_ recipe — the world MUST be named ErrChannel (do_fn_for
 //  dispatches by w.sc.w) or the wrangle silently never fires.  Story_subHouse auto-stands-up A:ErrChannel/w:ErrChannel.
 
 // ══ ErrChannel — capture → snap → gate, proven end-to-end ═════════════════════════════════════════════════

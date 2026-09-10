@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '209a8ab75b496f01~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '6864147ac435cd52~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1304,7 +1304,7 @@ async Radio_supply_go(radio, era, rec) {
             //      unreadable" about a source it had not finished reading.  It is deterministic, not
             //       flaky: the first play of any track hits it.  It only ever LOOKED intermittent
             //        because a track whose PCM happened to be warm from an earlier play sailed through.
-            //  MusuOgg's driver had the identical bug and the identical cure (Heistation.g, found
+            //  MusuOgg's driver had the identical bug and the identical cure (HeistTesting.g, found
             //   2026-08-05): keep asking, and let a REAL death be the thing that caps.  There are
             //    exactly three real deaths, and each has its own tell — `pcm_dead` names the two silent
             //     ones (no card / no nav, stamped by Ra_source_pcm), `pcm_why` carries a decode that
@@ -2824,7 +2824,7 @@ Stoker_ensure(w) {
     //  Retried on every dial (Radio_dial calls this) and idempotent — share_up latches, so the cost
     //   after the first success is one property read.
     //  BOOK-GATED by w.sc.w, the same prod test Radio_prod_seed uses six lines up, and for a sharper
-    //   reason: Swarm_share_up starts a wall-clock setTimeout pump, which Swarmation.g:1000 names as
+    //   reason: Swarm_share_up starts a wall-clock setTimeout pump, which SwarmTesting.g:1000 names as
     //    a thing a Book must NEVER do.  A named Book run-world wears w.sc.w; only prod arms.
     //  …AND A HUMDINGER IS PROD (2026-08-11).  An end-user room's radio world IS a named Book world
     //   (the arrival Book, w:Sounditron), so the bare !w.sc.w test read the live listener's tab as a

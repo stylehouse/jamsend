@@ -13,7 +13,7 @@ import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return 'f9efd6177e50fa09~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return '0dd405fc7c0dc43b~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -1179,7 +1179,7 @@ Supervisor_line(watch) {
 //   is answered, a report that named a friend, a pub, a track or a path would be ANSWERING IT — a
 //    privacy decision arriving disguised as a telemetry feature, which §10.3 explicitly warns
 //     against.  So the payload is COUNTS AND VERDICTS ONLY.  Widening it is not a tidy-up; it is the
-//      owner's ruling, and `Heistation.g:635` is the fixture that goes red when it is made.
+//      owner's ruling, and `HeistTesting.g:635` is the fixture that goes red when it is made.
 //
 // IDENTITY: per-BOOT only.  Enough to group one session's reports together, gone on reload — no
 //  identifier follows a person across sessions, so aggregating never becomes tracking by accident.

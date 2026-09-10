@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '028c7be5c5a4d306~g1' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'e0323dccaf9924f8~g1' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -31,7 +31,7 @@
 //        switch it off, and the Story underneath never knows.
 
 //#region crush — fold big homogeneous collections behind ONE stuffed chunk each (all c-side)
-// ══ the data-crusher (grew up as Repli_crush_* in Musuation.g; the Vis family owns it now) ═════
+// ══ the data-crusher (grew up as Repli_crush_* in MusuTesting.g; the Vis family owns it now) ═════
 //  A busy world is mostly CONFETTI — 16 emits + 16 unemits per pier side, a Record per tone —
 //   drawn raw the graph is too big to read a label of.  The crush folds it: ANY non-structural
 //    container with children is stamped c.stuff — Cyto then draws it as one chunk hosting a live

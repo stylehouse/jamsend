@@ -8,12 +8,15 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_PeerTesting(): string { return '6d7465bfabab875e~g1' },
+    Ghostmeta_Ghost_Story_PeerTesting(): string { return '0f932bb96f66ab47~g1' },
 
 
+// PeerTesting.g — né Peregrination.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
+//  src/lib/L/testing.ts is the one predicate).  ⚠ `Peer` was a JUDGMENT CALL, not a derivation —
+//   say so if it is wrong.
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
-//  new kind of runtime test.  (The Book / actor / per-beat handler are all PereStaple;
-//   this source file stays Peregrination.g — the file is the artifact, the Book is the
+//  new kind of runtime test.  (The Book / actor / per-beat handler are all PereStaple —
+//   the file is the artifact, the Book is the
 //    identity.)  The Creduler (the runner Lies on H:Mundo) loads this ghost live BEFORE
 //     the Story begins, so its sibling methods are on H; there is no hand-written
 //      bootstrap anymore.  Run_A_PereStaple wires the Run, then the per-beat

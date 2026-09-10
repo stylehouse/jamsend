@@ -11,9 +11,12 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_HeistTesting(): string { return 'a640c2f7b4e88f33~g1' },
+    Ghostmeta_Ghost_Story_HeistTesting(): string { return '3a227df1388e1bb6~g1' },
 
-// Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
+// HeistTesting.g — né Heistation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
+//  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file — `MusuHeist`,
+//   `MusuPress`, `MusuQuarter` and their fixtures under `wormhole/Story/` are untouched.
+// The Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
 //   pointed at a Pier moves ORIGINAL FILE BYTES straight into a collection — the whole old
 //    Pirating flow (inflate → believe/disbelieve → spool → land) redrawn on Housing+Repli with the
@@ -6941,16 +6944,24 @@ async MusuHeard_take(w) {
     //   SP and Heisting to our Cave"*).  TWO presses, a minute apart: the first re-takes it, the second
     //    lands far outside the fat-thumb window and STILL takes it back.
     //  ⚠ THIS OATH REPLACES `later_it_re_affirms`, which swore the opposite (the second press re-armed
-    //   the gave-up clock and cleared a failure verdict instead of undoing).  That behaviour still
-    //    EXISTS in `Heard_take` — the toggle lives in `Radio_like`, the button — so nothing lost it;
-    //     what changed is what the ♥ MEANS.  ⓘ The re-affirm was also the RETRY ROAD, and the toggle
-    //      leaves no gesture that says "try again" without passing through unloved.  Where retry lives
-    //       is an open question (spec/SoundPooling_todo.md), deliberately not answered by this beat.
+    //   the gave-up clock and cleared a failure verdict instead of undoing).  Owner's ruling that
+    //    settled it: **"we have to keep a latest love|unlove to make matter"** — the most recent press
+    //     IS the state, at any distance in time, so nothing may quietly override it.
+    //  ⓘ THE RETRY ROAD SURVIVES, it just costs two presses now: `Heard_take` strips the verdict keys
+    //   on every fresh take, so unlove-then-love clears a failure exactly as the old single re-press
+    //    did.  Retry is no longer a hidden second meaning of one press — it is the ordinary act of
+    //     loving something again, which is also what the latest-press rule wants it to be.
     w.sc.now = 1788400100
     this.MusuHeard_press(w, r1, 'friendo')
     w.sc.now = 1788400150
     this.MusuHeard_press(w, r1, 'friendo')
     if (c1 && !c1.sc.take && !c1.sc.at) { row.later_it_unloves_too = 1 }
+    // …and love it back, so this beat leaves the world the way the later beats expect to find it.
+    //  The unlove above is the ASSERTION; leaving r1 unloved would silently rewrite every downstream
+    //   beat's ground (measured: no Heist minted, the whole `landeded` row gone from step 9).
+    w.sc.now = 1788400200
+    this.MusuHeard_press(w, r1, 'friendo')
+    if (c1 && String(c1.sc.take) === '1') { row.loving_it_back_restores_the_ask = 1 }
     // a track of my OWN is a taste fact nobody is owed — it names no holder to ask
     let mine = this.Ra_home_self(w, 'me')
     let own = this.Ra_rec_home(mine, 'own1')
@@ -7090,9 +7101,17 @@ async MusuHeard_clone(w) {
     let got = await this.Heard_haul_beat(w, w, 'me', {}, shop)
     let k2 = shop.o({ Heist: 1, seed: 'r1' })[0]
     if (got === 1 && k2) { row.the_queue_moves_on = 1 }
-    // a re-press is the retry road: it clears the verdict and the wish is askable again
-    this.MusuHeard_press(w, this.Ra_rec_find(them, { Record: 1, id: 'r2' }), 'friendo')
-    if (!card.sc.unvouched && card.sc.take) { row.a_re_press_clears_the_verdict = 1 }
+    // LOVING IT BACK IS THE RETRY ROAD (2026-09-10, after the heart became a toggle).  It used to be
+    //  ONE re-press: outside the fat-thumb window a press re-affirmed, clearing the verdict and making
+    //   the wish askable again.  Under the owner's latest-press rule that same press now UNLOVES, so
+    //    retry costs two: unlove, then love.  The clearing itself is unchanged and lives where it
+    //     always did — `Heard_take` strips the verdict keys on every fresh take.
+    //  This is the better shape anyway: retry stopped being a hidden second meaning of one button and
+    //   became the ordinary act of loving something again.
+    let r2rec = this.Ra_rec_find(them, { Record: 1, id: 'r2' })
+    this.MusuHeard_press(w, r2rec, 'friendo')   // unlove — the latest press is the state
+    this.MusuHeard_press(w, r2rec, 'friendo')   // love it back — and the take clears the verdict
+    if (!card.sc.unvouched && card.sc.take) { row.loving_it_back_clears_the_verdict = 1 }
     this.MusuHeard_note(w, row)
 
 },
@@ -7182,8 +7201,8 @@ MusuHeard_witness(w) {
         this.story_swear(w, 'a track played to an empty room earns nothing and a skip earns nothing — only sitting through it with someone there counts — and counting it never bumps the account because a track finishing is not worth a disk write')
     if (tk && +tk.sc.the_press_is_the_ask === 1 && +tk.sc.the_listing_starts_at_the_act === 1 && +tk.sc.the_press_mints_no_heist === 1 && +tk.sc.my_own_track_is_a_taste_fact === 1)
         this.story_swear(w, 'the heart is the whole ask and it mints no heist — the listing arrives with the act and not before — and a heart on a track of my own is a taste fact nobody is owed')
-    if (tk && +tk.sc.pressing_again_takes_it_back === 1 && +tk.sc.later_it_unloves_too === 1)
-        this.story_swear(w, 'the heart is a toggle — a second press takes the ask back whether it comes a moment later or a minute later — and the hearing survives either way because you did hear the track')
+    if (tk && +tk.sc.pressing_again_takes_it_back === 1 && +tk.sc.later_it_unloves_too === 1 && +tk.sc.loving_it_back_restores_the_ask === 1)
+        this.story_swear(w, 'the heart is a toggle and the latest press is what stands — a second press takes the ask back whether it comes a moment later or a minute later — loving it back restores the ask — and the hearing survives all of it because you did hear the track')
     if (q && +q.sc.grouped_by_holder === 1 && +q.sc.oldest_first === 1 && +q.sc.nobody_is_owed_my_own === 1 && +q.sc.a_row_per_holder === 1)
         this.story_swear(w, 'what I am owed is a query and not a store — take cards not yet on my shelf — oldest first — grouped by who could bring them — and nobody is ever owed a track of my own')
     if (f && +f.sc.a_hearing_nobody_wanted_is_forgotten === 1 && +f.sc.a_heart_is_never_dropped_by_a_clock === 1 && +f.sc.this_sitting_is_untouched === 1 && +f.sc.an_emptied_sitting_goes === 1)
@@ -7196,8 +7215,8 @@ MusuHeard_witness(w) {
         this.story_swear(w, 'a wish is a track so the described folder is pruned to the one that was asked for and started with no form at all — and three standing keeps is as many as the heart may ever open')
     if (cl && +cl.sc.the_listing_lands_on_the_card === 1 && +cl.sc.the_way_back_rides_the_line === 1 && +cl.sc.cloning_twice_writes_nothing === 1)
         this.story_swear(w, 'the original the describe answers with teaches the card its own keep id and its real size and hash — so everything a later reader needs for the way back rides the line — and re-reading it writes nothing')
-    if (cl && +cl.sc.the_verdict_lands_on_the_card === 1 && +cl.sc.the_wedged_keep_is_ended === 1 && +cl.sc.the_queue_moves_on === 1 && +cl.sc.a_re_press_clears_the_verdict === 1)
-        this.story_swear(w, 'a refusal takes the husk out of the mirror and would leave the keep pulling something that no longer exists — so the verdict is copied onto the card and the keep ended — the holder queue moves on and a re-press is the retry')
+    if (cl && +cl.sc.the_verdict_lands_on_the_card === 1 && +cl.sc.the_wedged_keep_is_ended === 1 && +cl.sc.the_queue_moves_on === 1 && +cl.sc.loving_it_back_clears_the_verdict === 1)
+        this.story_swear(w, 'a refusal takes the husk out of the mirror and would leave the keep pulling something that no longer exists — so the verdict is copied onto the card and the keep ended — the holder queue moves on and loving it back is the retry')
     if (ld && +ld.sc.the_original_answers_the_ask === 1 && +ld.sc.either_id_space_answers_it === 1)
         this.story_swear(w, 'done-ness is the collection answering by whatever road the track arrived — the original under its own keep id or the streamed bytes under theirs — one derived question and no landed flag anywhere')
     if (ld && +ld.sc.newest_wish_first === 1 && +ld.sc.the_pool_takes_the_newest === 1 && +ld.sc.nothing_landed_is_nothing_pooled === 1)

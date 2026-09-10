@@ -10,9 +10,9 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Sound(): string { return 'f5416c732f736632~g1' },
+    Ghostmeta_Ghost_M_Sound(): string { return '8261f31fc4c18e13~g1' },
 
-// Sound.g — the AUDIO ENGINE.  Extracted from Ghost/Story/Musuation.g's //#region reality (the
+// Sound.g — the AUDIO ENGINE.  Extracted from Ghost/Story/MusuTesting.g's //#region reality (the
 //  Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md §5): shared, real software,
 //   NO test scaffolding here, NO per-Book scenario.  The cursor spine is Radiola.g; THIS is the AUDIO
 //    (synth PCM / measure-entropy) + the rate-driven live-stream pump that actually STARVES.  A Book

@@ -1,15 +1,15 @@
 Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1789024901849,enthusiasm=0
-    Cursor,what:What:the peer,at=1789025425738
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1789024901566,enthusiasm
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1789036143250,enthusiasm=0
+    Cursor,what:What:the peer,at=1789036152174
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1789036142273,enthusiasm
     Cursor,what:What:the heist — %Heist at a pier moves ORIGINAL file bytes straight into the collection (Radio_todo §0 + §10 rung 1),at=1788936121784
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1789024901579
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1789036142280
     Cursor,what:What:cursor models,at=1783177002906
-  Cursor,waft:Ghost/Net/Easy,at=1789024901849
-  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1789024901605
+  Cursor,waft:Aside/2026-09-10,at=1789036161178
+  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1789036142295
   WaftTimes,of_Waft:Keep,minimised
-  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1789024901685,minimised
-  DocScroll,of_Doc:Ghost/N/Peeroleum.g,scroll_line=96
+  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1789036143112,minimised
+  DocScroll,of_Doc:Ghost/N/Peeroleum.g,scroll_line=40
   DocScroll,of_Doc:Ghost/N/Tyrant.g
   DocScroll,of_Doc:Ghost/M/Radiola.g,scroll_line=16
   DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2608
@@ -22,14 +22,14 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   DocScroll,of_Doc:Ghost/M/Crate.g,scroll_line=27
   DocScroll,of_Doc:src/lib/p2p/ftp/Audio.svelte.ts,scroll_line=19
   DocScroll,of_Doc:Ghost/N/Tribunal.g,scroll_line=3
-  WaftTimes,of_Waft:Aside/2026-07-03,discovered_at=1783055842350,accessed_at=1789024901713,minimised
+  WaftTimes,of_Waft:Aside/2026-07-03,discovered_at=1783055842350,accessed_at=1789036143128,minimised
     Cursor,what:What:1,at=1784032199665
   DocScroll,of_Doc:src/lib/O/Lies.svelte
-  WaftTimes,of_Waft:Aside/2026-07-04,discovered_at=1783080228115,accessed_at=1789024901739,minimised
+  WaftTimes,of_Waft:Aside/2026-07-04,discovered_at=1783080228115,accessed_at=1789036143168,minimised
     Cursor,what:What:1,at=1783776941376
   DocScroll,of_Doc:Ghost/M/Ra.g,scroll_line=16
   DocScroll,of_Doc:Ghost/Story/Radiation.g,scroll_line=519
-  WaftTimes,of_Waft:Ghost/Vis/Visua,discovered_at=1783421538699,accessed_at=1789024901766
+  WaftTimes,of_Waft:Ghost/Vis/Visua,discovered_at=1783421538699,accessed_at=1789036143178
     Cursor,what:What:the home,at=1784029329879
   DocScroll,of_Doc:Ghost/V/Voro.g,scroll_line=389
   DocScroll,of_Doc:Ghost/N/Repli.g,scroll_line=468
@@ -39,16 +39,19 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   DocScroll,of_Doc:src/lib/O/Cytui.svelte,scroll_line=173
   DocScroll,of_Doc:src/lib/O/spec/Radio_todo.md
   DocScroll,of_Doc:Ghost/N/Reliable.g
-  WaftTimes,of_Waft:Aside/2026-07-15,discovered_at=1784031306180,accessed_at=1789024901773
+  WaftTimes,of_Waft:Aside/2026-07-15,discovered_at=1784031306180,accessed_at=1789036143228
     Cursor,what:What:1,at=1787553840929
   DocScroll,of_Doc:Ghost/Story/Swarmation.g,scroll_line=7
-  WaftTimes,of_Waft:Aside/2026-09-08,discovered_at=1788842244590,accessed_at=1789024901788
+  WaftTimes,of_Waft:Aside/2026-09-08,discovered_at=1788842244590,accessed_at=1789036143234
     Cursor,what:What:3,at=1788856011093
   DocScroll,of_Doc:Ghost/M/Heist.g
   DocScroll,of_Doc:Ghost/L/Atlantation.g
-  WaftTimes,of_Waft:Aside/2026-09-09,discovered_at=1788870164841,accessed_at=1789024901804
+  WaftTimes,of_Waft:Aside/2026-09-09,discovered_at=1788870164841,accessed_at=1789036143244
     Cursor,what:What:6,at=1788942499342
   DocScroll,of_Doc:src/lib/O/spec/Daemon_todo.md,scroll_line=2164
   DocScroll,of_Doc:src/lib/O/spec/Backpressure_todo.md,scroll_line=157
   DocScroll,of_Doc:Ghost/Story/Sounditron.g,scroll_line=3129
   DocScroll,of_Doc:Ghost/L/Atlas.g,scroll_line=150
+  WaftTimes,of_Waft:Aside/2026-09-10,discovered_at=1789036161177,accessed_at=1789036161177
+    Cursor,what:What:1,at=1789036161178
+  DocScroll,of_Doc:Ghost/V/Vyto.g,scroll_line=616

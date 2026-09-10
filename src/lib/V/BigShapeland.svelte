@@ -33,12 +33,10 @@
     //  `draws` is the honest column: measured through `runner_shot --svg`, not assumed.  A Book that
     //   does not draw is not broken — its MODEL may be fully gated — it simply cannot be looked at,
     //    which is exactly the distinction this room exists to make visible.
-    //  ⚠ THE `draws` COLUMN IS THE HONEST ONE, and what it measures is a real hole: **a FOLDED glass
-    //   has never been renderable.**  `Vytui.svelte` contains the string "Vtuffing" exactly ZERO times
-    //    — the renderer has no concept of a crest — so `Vyto_fold_scope` removes N cells from the glass
-    //     and adds none.  `Vyto.g:472`: *"this stub stays until the display refactor (which owns that
-    //      half) lands the mirror-side wiring."*  Every Book below that draws is an UNFOLDED one; every
-    //       blank one ends folded.  Measured through `runner_shot --svg`, not assumed.
+    //  (2026-09-09, superseded the same night: "a FOLDED glass has never been renderable" was true when
+    //   this roster was written — crests had no `.c.tok` and no colour — and is not true now: a crest
+    //    carries `tok = 'Vtuffing:' + group` and is grounded on what it stands for.  The owner confirmed
+    //     crest cells draw.  What a crest SAYS on the glass is the folio stop, below.)
     const roster = [
         // ── the one you like ──────────────────────────────────────────────────────────────────────
         { book: "VytoOrchestra", draws: true,  what: "THE DEMO — foam cut, a nested bag, kin songs, loose strays, a live re-weave, a focus swell, a pose flip, a departure. Groovy. Has fins. A bare unfurnished apartment." },
@@ -86,6 +84,82 @@
     //  on Cytui..?"*  Yes.
     const GLASS_UIS = ['Vyto', 'Cyto', 'Story']
     let sprawl = $state(false)
+
+    // ── THE MIXING DESK — the deck of stops, each a toggle on the glass you are looking at ─────────────
+    //  spec/Glassbeast_todo.md §0: *"Twelve looks in twelve clicks.  The owner's eye is the selector."*
+    //   A stop is one token on the Vyto world's `foamereo` deck (`Vyto_fo` / Vytui's `fo` read it —
+    //    `wave,seal,room:0.55`).  RENDER stops change what Vytui draws and show at once; MODEL stops change
+    //     what the fold/relate write and need a stir.  `?deck=folio,seal` sets the deck at boot so a headless
+    //      eye (scripts/runner_eye.mjs) can photograph a look by URL.  The room writes `w.sc.foamereo`
+    //       directly: this is a humdinger page, nothing here records a fixture.
+    const RENDER_STOPS = [
+        { stop: 'folio',      what: 'type set INTO the cell — title, facts, a crest\'s distilled voice, along its biggest top-left wall' },
+        { stop: 'wave',       what: 'the label rides a scalloped wave band instead of the wall carve' },
+        { stop: 'seal',       what: 'the seat regime — cells seal to their molds' },
+        { stop: 'copperless', what: 'no copper ground' },
+        { stop: 'nohall',     what: 'no hallway corridor of guts' },
+        { stop: 'simmer',     what: 'the breath — a slow simmer on a live page' },
+        { stop: 'still',      what: 'no motion at all' },
+        { stop: 'seat',       what: 'the slab seat for faces' },
+        { stop: 'focus',      what: 'focus swell on' },
+        { stop: 'plump',      what: 'a sparse world inflates toward 0.45 fill' },
+    ]
+    const MODEL_STOPS = [
+        { stop: 'kindfold',   what: 'the fold ladder — mainkey, then of:, then id:, then a discovered key' },
+        { stop: 'kinweave',   what: 'joins as kin atoms — id/of/pub weave %Flow instead of being struck' },
+        { stop: 'saylaw',     what: 'the line law — a universal presence is said once, never merely absent' },
+        { stop: 'room',       what: 'opt-in room fill 0.55' },
+    ]
+    let deck_tick = $state(0)
+    function glass_worlds(): { house: any, w: any }[] {
+        void deck_tick
+        const out: { house: any, w: any }[] = []
+        for (const house of houses)
+            for (const A of house.ob({ A: 'Vyto' }))
+                for (const w of A.ob({ w: 'Vyto' })) out.push({ house, w })
+        return out
+    }
+    const tokens_of = (w: any): string[] => String(w?.sc?.foamereo ?? '').split(',').map((t: string) => t.trim()).filter(Boolean)
+    function stop_on(stop: string): boolean {
+        void deck_tick
+        return glass_worlds().some(({ w }) => tokens_of(w).some(t => t === stop || t.startsWith(stop + ':')))
+    }
+    function deck_string(): string { void deck_tick; const ws = glass_worlds(); return ws.length ? String(ws[0].w.sc.foamereo ?? '') : '' }
+    function set_deck(w: any, house: any, tokens: string[], model: boolean) {
+        const deck = tokens.join(',')
+        if (deck) w.sc.foamereo = deck
+        else delete w.sc.foamereo               // the snapped-boolean law: absent, never ''
+        w.bump?.()
+        if (model && house?.Vyto_stir) house.Vyto_stir(w)
+        deck_tick++
+        window.dispatchEvent(new CustomEvent('vyto-deck'))
+    }
+    function toggle_stop(stop: string, model: boolean) {
+        for (const { house, w } of glass_worlds()) {
+            const t = tokens_of(w)
+            const i = t.findIndex(x => x === stop || x.startsWith(stop + ':'))
+            if (i >= 0) t.splice(i, 1); else t.push(stop)
+            set_deck(w, house, t, model)
+        }
+    }
+    // `?deck=` — applied once, when the first glass world stands (a poll, deliberately: the world
+    //  arrives on the Book's own clock, and this room does not want an $effect reading ob() — the
+    //   Otro H-effect lesson, Vytui.svelte:70).
+    const url_deck = boot_param('deck')
+    if (url_deck) {
+        const poll = setInterval(() => {
+            const ws = glass_worlds()
+            if (!ws.length) return
+            clearInterval(poll)
+            const want = url_deck.split(',').map(t => t.trim()).filter(Boolean)
+            const model = want.some(t => MODEL_STOPS.some(m => t === m.stop || t.startsWith(m.stop + ':')))
+            for (const { house, w } of ws) {
+                const t = tokens_of(w)
+                for (const x of want) if (!t.includes(x)) t.push(x)
+                set_deck(w, house, t, model)
+            }
+        }, 400)
+    }
 </script>
 
 <BootGate {H} who="the shape room" audio_fullscreen={false} />
@@ -105,6 +179,19 @@
                       title="{house.name} — {house.started ? 'up' : 'not started'}">{house.name}</span>
             {/each}
         </div>
+    </div>
+
+    <!-- THE DESK: one chip per stop.  Lit = on the deck.  Render stops repaint at once; model stops stir. -->
+    <div class="bs-desk" title="the deck of stops on the glass — foamereo:{deck_string() || '(empty)'}">
+        <span class="bs-desk-lbl">render</span>
+        {#each RENDER_STOPS as s (s.stop)}
+            <button class="bs-stop" class:on={stop_on(s.stop)} onclick={() => toggle_stop(s.stop, false)} title={s.what}>{s.stop}</button>
+        {/each}
+        <span class="bs-desk-lbl">model</span>
+        {#each MODEL_STOPS as s (s.stop)}
+            <button class="bs-stop model" class:on={stop_on(s.stop)} onclick={() => toggle_stop(s.stop, true)} title={s.what}>{s.stop}</button>
+        {/each}
+        <span class="bs-deck">{deck_string()}</span>
     </div>
 
     {#if picking}
@@ -186,6 +273,14 @@
     .bs-h:hover { color: #d9cbb8; }
     .bs-h.on { color: #f0e3cd; border-color: #4a3826; }
     .bs-h.off { opacity: 0.35; }
+    .bs-desk { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 3px 8px; border-bottom: 1px solid #2e2318; flex: 0 0 auto; }
+    .bs-desk-lbl { font: 9px/1.4 ui-monospace, monospace; color: #6a5238; margin: 0 4px 0 2px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .bs-stop { background: none; border: 1px solid #3a2c1e; color: #8d7a63; font: 600 10px/1.4 ui-monospace, monospace;
+               padding: 1px 7px; border-radius: 10px; cursor: pointer; }
+    .bs-stop:hover { color: #e8d9c2; border-color: #6a5238; }
+    .bs-stop.on { color: #f0e3cd; background: #3a2a18; border-color: #a07a48; }
+    .bs-stop.model.on { background: #2a2338; border-color: #7a6aa8; }
+    .bs-deck { margin-left: auto; font: 10px/1.4 ui-monospace, monospace; color: #6a5238; }
     .bs-roster { border-bottom: 1px solid #2e2318; padding: 4px 0; flex: 0 0 auto; max-height: 45vh; overflow: auto; }
     .bs-row { display: grid; grid-template-columns: 140px 16px 1fr; gap: 8px; align-items: baseline;
               padding: 3px 10px; text-decoration: none; color: inherit; }

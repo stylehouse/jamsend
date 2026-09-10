@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '224c044b4a70d559~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'c2fd1db9f2315ba7~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -5354,7 +5354,7 @@ async Swarm_share_beat(w, ident) {
     let stock = this.Ra_home_self(rw, me)
     // BEFORE IT GOES OUT (the human's v1.0 ruling, 2026-08-06): check every Record in the shuffle
     //  Mag still has its source, and delete the ones that don't.  Here rather than inside
-    //   Ra_offer_stock deliberately — that verb is also a Book's (Radiation.g:904/1291), and a
+    //   Ra_offer_stock deliberately — that verb is also a Book's (RaTesting.g:904/1291), and a
     //    disk-touching cull in it would move fixtures; the share beat is live-only, so this stays
     //     out of every Book by construction.  Once per beat (self-throttled to 30s inside), ahead
     //      of the friend loop: the Mag is the same for every friend, so checking it per friend

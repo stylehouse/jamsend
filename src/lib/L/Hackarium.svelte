@@ -62,7 +62,7 @@
         // Hackarium(A,w) — the per-beat handler.  Stands the land and opens the Waft, once.
         //  FIRE AND FORGET, never awaited here: this runs under the belief loop, and `Lies_ghost_set`
         //   is a dynamic import whose eatfunc only lands after further ticks — awaiting it from a do_fn
-        //    holds the very mutex the load depends on (Atlantation.g beat 2 paid a whole recording to
+        //    holds the very mutex the load depends on (AtlasTesting.g beat 2 paid a whole recording to
         //     learn this).  Minting the worlds as each import resolves is safe and is exactly what
         //      `ghost_load --stand` does: `do_fn_for` simply finds no handler until the ghost is haunted,
         //       and the world starts ticking the moment it is.

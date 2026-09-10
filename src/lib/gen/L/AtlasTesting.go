@@ -8,13 +8,15 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_AtlasTesting(): string { return '6347977280cf1cc6~g1' },
+    Ghostmeta_Ghost_L_AtlasTesting(): string { return '2f30ba8a5aa3e285~g1' },
 
-// Atlantation.g — the Atlas.g proof.  (Owed the `<Name>Testing.g` rename — VoroTesting.g led, 2026-09-09;
-//  see src/lib/L/testing.ts.)  Naming mirrored Voro→Voronation, Vyto→Vytonation: the model's
-//  own Books live in a `<Name>ation.g` beside it.
+// AtlasTesting.g — né Atlantation.g.  The Atlas.g proof, under the `<Name>Testing.g` convention
+//  (owner ruling 2026-09-09; `src/lib/L/testing.ts` is the one predicate, and Atlas stamps
+//   `%Doc,testing` from it).  The old `<Name>ation.g` naming said the same thing in a way nothing
+//    could pattern-match without a list.  Book NAMES did not move: `AtlasStaple` and its fixtures
+//     under `wormhole/Story/` are untouched — a Book is named by its recipe do_fn, not its file.
 //
-// CONVENTION (Musu*/Sounditron, restated from Vytonation.g): no Run_A_ recipe — the world MUST be
+// CONVENTION (Musu*/Sounditron, restated from VytoTesting.g): no Run_A_ recipe — the world MUST be
 //  named AtlasStaple (do_fn_for dispatches by w.sc.w) or the wrangle silently never fires.
 //
 // What this swears, and what it deliberately does NOT: the compiler's own correctness (defs/calls/

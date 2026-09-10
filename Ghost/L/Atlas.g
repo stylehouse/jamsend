@@ -81,7 +81,7 @@ IMPORT()
     //     m7 (2026-09-06): `via` for all three — a "last top-level def whose line ≤ this line" lookup,
     //      dialect-uniform (a .g method sits at column 0; its body runs until the next one) and built
     //       from the def words already collected, no new tree-walk.  100% via coverage verified on
-    //        both a .g file (Vytonation.g's 7 elvisto calls attribute to 7 different enclosing beats)
+    //        both a .g file (VytoTesting.g's 7 elvisto calls attribute to 7 different enclosing beats)
     //         and a .svelte file (LangHold.svelte, 4 elvisto + 15 mint, all via).
     //     m8 (2026-09-06): `.md` docs — the doc-links census (`%link,kind:wiki|file`), the ORIGINAL
     //      high-value target from the very first census of this whole effort.  `spec/` un-skipped

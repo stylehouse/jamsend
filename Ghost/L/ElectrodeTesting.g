@@ -1,6 +1,7 @@
-// Electrodation.g — the Electrode.g proof (Atlas→Atlantation, Electrode→Electrodation).
+// ElectrodeTesting.g — né Electrodation.g.  The Electrode.g proof, under the `<Name>Testing.g`
+//  convention (owner ruling 2026-09-09; src/lib/L/testing.ts is the one predicate).
 //
-// CONVENTION (Atlantation.g): no Run_A_ recipe — the world MUST be named ElectrodeStaple (do_fn_for
+// CONVENTION (AtlasTesting.g): no Run_A_ recipe — the world MUST be named ElectrodeStaple (do_fn_for
 //  dispatches by w.sc.w).  This Book's OWN .g must be ghost_load'ed onto the runner before `run`.
 //
 // What it swears: the DRIVE of the tap — load on demand, coat the bag, an edge with its count, an
@@ -40,7 +41,7 @@ ElectrodeStaple_aw(w):
     return SH.o({ A: 'Electrode' })[0]?.o({ w: 'Electrode' })[0] ?? null
 
 // ── beat 2 — load on demand, stand A:Electrode fresh beside the run, arm.  All real async work inside
-//  expecting()'s async_fn, never awaited from the drive (Atlantation.g beat 2 explains the circular wait).
+//  expecting()'s async_fn, never awaited from the drive (AtlasTesting.g beat 2 explains the circular wait).
 ElectrodeStaple_arm(w):
     i %desc:'load Ghost/L/Electrode.g on demand — stand A:Electrode beside the run — arm the tap'
     this.expecting(w, 'arm_wait', 20, async () => {

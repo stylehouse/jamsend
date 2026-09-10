@@ -13,7 +13,7 @@
 //    pool, composing Ra_press v1 (the ENTIRE body — not a quarter goal, not a lofi grade).  In
 //     flight it is legible state (%Siphon,of:<origId>, phases asked→pulling→landed) and a landed
 //      siphon DROPS its scaffolding (transient reqs are scaffolding, not ledger — the awaitbuf
-//       lesson).  Pure verbs — no %req self-installs; a Book (Ghost/Story/Siphonation.g) or a
+//       lesson).  Pure verbs — no %req self-installs; a Book (Ghost/Story/SiphonTesting.g) or a
 //        face CALLS these.  NEW FILES ONLY (the spin-out doctrine): nothing standing is touched.
 
 //#region tags — %Tag once on the %Tags shelf; %Tagged,of: children; a tag IS a playlist

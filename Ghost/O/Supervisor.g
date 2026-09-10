@@ -1112,7 +1112,7 @@ Supervisor_line(watch):
 //   is answered, a report that named a friend, a pub, a track or a path would be ANSWERING IT — a
 //    privacy decision arriving disguised as a telemetry feature, which §10.3 explicitly warns
 //     against.  So the payload is COUNTS AND VERDICTS ONLY.  Widening it is not a tidy-up; it is the
-//      owner's ruling, and `Heistation.g:635` is the fixture that goes red when it is made.
+//      owner's ruling, and `HeistTesting.g:635` is the fixture that goes red when it is made.
 //
 // IDENTITY: per-BOOT only.  Enough to group one session's reports together, gone on reload — no
 //  identifier follows a person across sessions, so aggregating never becomes tracking by accident.

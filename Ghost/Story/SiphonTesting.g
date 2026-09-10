@@ -1,5 +1,8 @@
-// Siphonation.g — the Siphon* Books: the deliberate SoundPool act gated at the MODEL layer
-//  (Siphon_todo.md rung 4).  A SPIN-OUT beside Heistation.g's press family (MusuPress /
+// SiphonTesting.g — né Siphonation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
+//  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move: the Book below is still
+//   `Siphonation`, and scripts/Siphonation_asserts.spec.ts still names it — a Book is its do_fn.
+// The Siphon* Books: the deliberate SoundPool act gated at the MODEL layer
+//  (Siphon_todo.md rung 4).  A SPIN-OUT beside HeistTesting.g's press family (MusuPress /
 //   MusuPressLossy / MusuQuarter / MusuSteward) — NEW FILES ONLY, nothing standing touched.
 //  One Book so far: Siphonation — tags (def once / apply cheap / unapply / the playlist walk)
 //   and the siphon verb (whole-thing press of one named track from an explicit lib into the

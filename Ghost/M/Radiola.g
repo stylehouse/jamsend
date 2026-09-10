@@ -4,7 +4,7 @@
 //   (its STAY_AHEAD_OF_ACK_SEQ caster loop) into a pure particle simulation — no audio, no
 //    WebRTC, just the cursor arithmetic the old eatfunc machine tangled with codecs and the wire.
 //   The spine defines the reusable mechanism; the scenario (who is cast at whom, how acks move)
-//    lives in the Book, Ghost/Story/Musuation.g — exactly as Peeroleum.g/Peregrination.g split.
+//    lives in the Book, Ghost/Story/MusuTesting.g — exactly as Peeroleum.g/PeerTesting.g split.
 //
 //  The convention a Caster follows (the Book stands these up):
 //   %Caster  .sc.total = how many %Chunk the source holds | .sc.next = next seq to spool |

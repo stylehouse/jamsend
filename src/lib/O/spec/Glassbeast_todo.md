@@ -12,10 +12,112 @@ Read it as a field guide. The animal is real, most of its organs exist, and it i
 
 ---
 
-## 0. THE MORNING BRIEF — overnight pass, 2026-09-08 → 09
+## 0. HANDOVER — 2026-09-10, written at 92% context. Read this, then §I.
 
-Everything below this section is the dated evidence trail, newest first. **This is the summary; read
- it first and dip into the rest only where you disagree.**
+### THE DESTINATION (unchanged, restated in one line)
+A glass that folds at the meaning and looks like a made thing — and the look is a **deck of stops**
+ you compose, record and hand on, never a fourth engine.
+
+### THE NEXT MOVE — the mixing desk, not an algorithm
+**Do NOT write "another algorithm to solve everything."** Cyto → Voro → Vyto: three rewrites, each
+ lost things the last one had (the crest's voice, the words-along-the-wall) and each brought names
+  that whizzed by. A fourth does it again.
+
+**Twelve stops already exist** — render: `wave seal copperless nohall simmer still seat focus` ·
+ model: `kindfold kinweave saylaw room` (`foamereo:` on the world's sc, snapped, gated). So:
+
+1. **Make `/BigShapeland` the mixing desk**: each stop a toggle on **VytoOrchestra** (the one the
+    owner likes — *"groovy, has fins, a bare unfurnished apartment"*). Toggle, look, keep or drop.
+     Twelve looks in twelve clicks. **The owner's eye is the selector**; it is the only instrument
+      that did not lie this week.
+2. **Write down what each stop LOOKS like** as you go — one line + one shot. A deck string is the
+    first form the look has ever had that cannot drift; this closes the oldest open item in the
+     doc (the unrecorded aesthetic).
+3. **Port the two Voro things that did not cross the moult, as stops**: the crest's distilled voice
+    (`Cytui.svelte:2324`) and the wall lettering. That is *"drawing out into another algorithm"* done
+     without a rewrite.
+4. Only then: **jangly** (VoroMitosis — cells re-keyed so they leave+enter instead of morphing; the
+    `respawn` disease on the old renderer), if Voro's look is worth keeping.
+
+### THE BOMB — what detonates if the next session does not know it
+- **Instruments lied FOUR times before the system did.** `--why` reported 0 worlds on a drawing
+   glass (twice, two different publish bugs); `--svg` serialised a DEAD viewport and reported a
+    blank glass over three live cells; a roster listed tabs closed hours ago. **`runner_shot --svg`
+     still picks the wrong viewport when worlds are stacked — do not trust it until it picks the
+      populated one.** Check against a known-good (VytoNestRest drew 6 — now deleted; use Orchestra).
+- **`<Ghost {H} />` is NOT the UI.** It mounts ghost modules. Visible pieces come from
+   `house.UIs.ob({UI:1})` → `uiC.sc.component`. And **a Book only STARTS when Storui MOUNTS** — hide
+    UIs with CSS, never `{#if}`.
+- **Voro runs on Cytui and its UI name is `Cyto`.** `GLASS_UIS = ['Vyto','Cyto','Story']`.
+- **Crests are coloured by what they stand for** (`cell_ground` reads the `of:` — `@mainkey=Cog` →
+   the Cog jewel) and **have a tok** (`Vyto.g` fold: `crest.c.tok = 'Vtuffing:' + ofk`) — both
+    needed for a folded glass to show anything but grey. Both landed, uncommitted → now committed.
+- **Deleting a Book = three places**: its block in `Ghost/V/VytoTesting.g` (renamed from
+   `Vytonation.g` on 2026-09-09), `wormhole/Story/<Book>/`, AND its `Funkcion:Storying,of_Book:`
+    row in `wormhole/Credence/toc.snap`. Miss the third and a phantom fixture dir reappears when the
+     old tab runs it.
+- **The `springs` map in Vytui never forgets a world** — one dead world per Book run, stacked
+   viewports in the DOM. Harmless on a runner, a leak on a long-lived page. Unfixed.
+- **Every fleet red was accounting** (3 stale fixtures, 1 race, 14 clock caveats). Before believing
+   a red: n≥4 · does the live snap MISS or only ADD · only then is behaviour wrong.
+
+### THE GAP LIST — what Vyto was supposed to be and isn't (2026-09-10, from `Vyto_spec.md` vs the live code)
+The owner: *"Vyto was supposed to be a few things it wasn't."*  `Vyto_todo §0.1` item 3 asked for this list
+ on 2026-08-08 and it was never made.  Verified by grep against `Ghost/V/Vyto.g` + `Vytui.svelte` this
+  session — every organ row is minted `status:'stub'` (`Vyto.g:64-73`), which is honest and also why the
+   board would have told you nothing.
+
+| spec § | promised | state | where / what exists |
+|---|---|---|---|
+| §3 Calm, %Hold, settle | ✅ built | `Vyto_calm_held/_yield`, CALM_EPS, watchdog, %Settle |
+| §4 Focus as a SHIFT — collect·hold·choreograph·settle | ◐ | `Vyto_focus` swells/shrinks; **no choreography** (intermediary visuals: gather-before-merge, shrink-toward-rep) |
+| §5 scope recursion, envelope | ✅ | nested cut, VytoNest/Depth |
+| §5 the shape catalogue — cell slab band wedge ring mold body | ◐ | cell ✅ · slab (`slab_seat`) ✅ · mold (faces) ✅ · band ≈ the wave · **wedge ring body ✗** |
+| §5 THE PELT — hairs, combing, text baselines riding hairs, Wes-Wilson lettering | ✗ | 2 comment mentions. **The folio (2026-09-10) is the first text that fits its cell at all** — chords, not hairs |
+| §6 %Slope — meaning-owned positions, geometry is the value | ✗ | an Organ row, nothing solves |
+| §6 %Flow loud edges | ✅ | `Vyto_relate` → vines |
+| §6 %Frame quiet edges (old-map lines) | ✗ | never minted |
+| §6 bunching → shared expression said once | ◐ | attraction ✅ (VytoBunch); "said once" = the crest, but only on a FOLD, never on a neighbourhood |
+| §7 Express — declared %Express bindings from→to→curve | ◐ | `Vyto_express` does dose→area (+focus); **no declared rows**, no hue/weight/blur channels |
+| §8 Spool, o-mark, freeze | ✅ | `Vyto_omark`, cull exempts o/bless, freeze on fail (VytoFreeze) |
+| §8 bless / landmark / seek-to-landmark | ◐ | exemption honoured; no bless verb, no landmark-hold |
+| §9 THE BOARD — bar words live·depths·flows·frames·holds·pelt·o + the organ panel | ✗ | the chrome was DELETED (`Vytui.svelte:4320` comment). **Replaced from outside: the BigShapeland desk** (this session) |
+| §9 Situations / Sightings | ✗ | zero mentions |
+| §9 Gang, Mesh organs | ◐ | `Vyto_gang` decides, `Vyto_mesh` is a stub |
+| §10 recipe commission, Sunpit, IOexpr, transitive grapple | ✗ | `Vyto_sunpit` stub; commission is plain-form only |
+| §12 the shed — Storui seek → Vyto, runner_shot twin, Cyto retired | ◐ | seek ✅ (`Storui:1024`) · `--svg/--why` ✅ · **Cyto/Cytui NOT retired — Voro still lives there, with the lettering Vyto lacked** |
+
+**Read it as a shape, not a to-do.** The model organs that exist are the ones a SNAP can prove (fold, gang,
+ relate, spool); the ones missing are the ones only PIXELS can prove (pelt, board, choreography, %Frame,
+  Express channels) — F1 WITNESS ASYMMETRY (`Vyto_todo` autopsy) exactly.  Which is why this session built
+   an eye before building anything else.
+
+### THE EYE, THE FOLIO, THE DESK — built 2026-09-10
+- **`scripts/runner_eye.mjs`** — a headless chromium photographer of a LIVE page: `node scripts/runner_eye.mjs
+   "http://172.17.0.1:9091/BigShapeland?B=VytoOrchestra&deck=folio" out 8,20,35,50` → `out_8s.png …` plus a
+    per-tick census (viewports, cells, texts, folio seats).  It takes BootGate's listen-only door itself.  The
+     browser is playwright's headless shell in `~/.cache/ms-playwright`; its shared libraries and fonts were
+      pulled as .debs with a non-root apt and unpacked under `~/chromelibs/root` (the container has no root) —
+       `LD_LIBRARY_PATH` + `FONTCONFIG_FILE` are set inside the script.  **This is the instrument that lets a
+        session SEE a live glass with motion**, which `runner_shot --svg` (parked Books, one SVG layer) never could.
+- **`src/lib/O/vyto_pane.ts`** + **`scripts/VytoPane.spec.ts`** (11 tests, 600-cell property) — the folio: Cytui's
+   tuples pane ported pure.  Rows flow along the biggest top-left wall, seated between chords, inflated, unfolded.
+- **Vytui `foamereo:'folio'`** — render-only stop; a crest says its %Vrows (door · veins · facts · spreads).
+- **BigShapeland's desk** — every stop a chip; `?deck=` for the eye.  Vytui listens for one DOM event
+   (`vyto-deck`) to repaint.
+
+### WHAT WAS DELETED (owner's call, 2026-09-09) and what survives
+Gone: VytoNestRest · VytoCrush · VytoWeb · VytoRadio · VytoKindfold · VytoGrasp · VytoTwin — *"junk,
+ all the same grey goo"*, including the three built the night before (they proved invisible
+  things). Survives: **VytoOrchestra** + 15 Vyto bench Books + 5 Voro. `/BigShapeland`'s roster lists
+   all 21, Orchestra first, Voro marked as the old renderer.
+
+### OWED TO THE OWNER (unchanged)
+Accept VoroClinic · VoroScape · VytoOrchestra (stale, additive, diffed line by line below) ·
+ rule on the two owed leaks · whether a spay should raise a caveat.
+
+*Everything below is the dated evidence trail, newest first — dip in only where you disagree.*
+
 
 ### 🔎 2026-09-09 — TWO VIEWPORTS IN THE DOM, and the shot serialises the empty one
 
@@ -230,7 +332,9 @@ The fold ladder, the kin atom, `q:` on the dip, the three doors, the universal p
 That is the one piece of work that would turn everything built last night from a proof into a
  picture, and it is where I would start.
 
-### ① WHAT IS OWED TO YOU — four decisions, nothing else blocks
+### ⚠ THE 2026-09-09 BRIEF — superseded by the handover above; kept as trail. Names Books that were deleted 2026-09-09.
+
+### ① WHAT IS OWED TO YOU (as of 2026-09-09) — four decisions, nothing else blocks
 
 1. **Accept three stale fixtures** — VoroClinic · VoroScape · VytoOrchestra. Every delta is diffed
     line by line below; all three are **purely additive drift** from an intentional change that landed

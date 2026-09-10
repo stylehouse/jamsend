@@ -100,7 +100,7 @@ export class MountNav {
     //  Three real callers probe this object PATH-BLIND to choose a strategy before they have a path:
     //    Heist.g:689   `typeof nav.bin_append === 'function' || typeof nav.bin_writer === 'function'`
     //    Heist.g:3003  `typeof nav.read_range !== 'function'` → skip the cheap stat
-    //    Heistation.g:414, LiesFunk.svelte:751 — same shape.
+    //    HeistTesting.g:414, LiesFunk.svelte:751 — same shape.
     //   A class method always answers "function", so an un-narrowed MountNav promises Heist a streaming
     //    landing and then silently no-ops the append on any backend that cannot do it — every downloaded
     //     track a zero-byte file, with nothing thrown.  So the OPTIONAL capabilities are presented as the
