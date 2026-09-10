@@ -148,6 +148,53 @@ The three complaints are one mechanism. Changing Doc is slow; the wait is where 
   tab to answer). `e747` is live but belongs to another agent and was deliberately not touched. The app
    itself is healthy (`/BigWordland` 200). Open `:9091?B=<Book>` again and the flock is whole.
 
+### ✅ 2026-09-10 — "WHAT DO WE MEMOISE?" ANSWERED WITH NUMBERS, AND THE ANSWER WAS NOT WHAT I THOUGHT
+
+The owner: *"if I wait these 30s for a ridiculous amount of reads of 700 docs… then it parses them all
+ and stuff? what do we memoise?"* Both halves of that guess were already handled, and neither was the cost.
+
+| | memoised? | evidence |
+|---|---|---|
+| the 726 reads | **yes** | one served dige index — `dige_hit:709/726` |
+| the parses | **yes** | Dexie `%Map` adoption — only `cache_moved:17` re-parsed |
+| **the census assembly** | **no** | `passes:56 · ms:15026` |
+
+**The real cost was 709 separate IndexedDB `get`s** — one per adopt, ~10ms each, which is why barely a
+ dozen fitted in a 120ms slice and why a warm stand needed 56 belief-tick round-trips. `Atlas_cache_prefetch`
+  pulls a bounded window (`ATLAS_PREFETCH = 200`) in ONE `bulkGet` per pass and adopts out of memory.
+   **`ms:15026 → 3668`, 4.1×.** Bulk-first with a per-key fallback, and `cache_solo` counts any adopt
+    that had to go it alone, so a silent regression to the old shape would show on the census row.
+
+**Third instance of one disease in two days** — 726 file reads → one dige index · 38 HEADs every 2s →
+ one `/__gen/dige` · 709 IndexedDB gets → one bulk read. **Many small asks where one answers**, and each
+  site carried a comment asserting it was cheap. None had ever been measured. *A claim about cost that
+   no instrument has checked is a guess wearing a comment's clothes.*
+
+**Then the cap inverted, which is the part worth remembering.** With the round trip gone, `capped` went
+ 3-of-56 → 13-of-32: `ATLAS_ADOPT = 40` had become the binding constraint, sized for work that no longer
+  cost what it used to. Raised to 200 → `passes:32→16, capped:13→1` — the constraint provably gone — but
+   `ms:3668→3504`, ~4%, on runs that are not clean twins. **Written up as tidying an obsolete constant,
+    not as a speedup.** The pass count had already stopped being the dominant term.
+
+**Where the remaining ~3.5s lives:** the roster walk plus ~16 × 120ms of real adopting — work, not
+ waiting. The next honest gain is memoising the census ASSEMBLY, which is a design change, not a knob.
+  The politeness bound (`ATLAS_SLICE_MS = 120`) was never touched: it exists because a 4s mutex hold
+   froze the owner's editor tab, and raising it would trade today's complaint for that one.
+
+**New instrument, kept:** `see:atlas` now carries `passes · capped · pass_ms · ms · cache_solo` beside
+ `dige_hit · cache_none · cache_moved`, so the shape of a stand is readable from the census itself.
+
+**Also built (the owner, same evening): the HEADING band on the desk** — *"we need a heading where I can
+ track what we're really up to… which docs are we actively working on and just in the vicinity of?"*
+ One typed heading, persisted as `heading` on the day's Aside Waft (one key on a particle that already
+  exists — the day's Aside IS the day's work, so it needs no new shelf); written by `Lies_aside_heading`
+   because Lagoon reads and must never keep. Two rings under it, both from the trail and **today only**:
+    `working on` = docs you came BACK to, with the return count; `in the vicinity` = docs you passed
+     through once. Deliberately not derived from Atlas's call graph — one hop from the working set is a
+      claim about the CODE, and these rings are a claim about the WORK. The input holds a `draft` so the
+       1.5s poll cannot yank the caret mid-type, and a blank heading DELETES the key rather than storing
+        `''`, which would be furniture.
+
 **Still owed:** leg 4 (the desk visible during a Doc load — needs the editor-tab measurement first, so
  it is not built blind) · the LagoonStaple beat for errands · the foam ruling · the `né X` header note
   now on `VoroTesting.g` and `MusuTesting.g`, wanted on the other eleven.

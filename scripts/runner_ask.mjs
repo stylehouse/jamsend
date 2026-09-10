@@ -703,6 +703,12 @@ function relayCensus(ws, ms = 3000) {
 		const t = setTimeout(() => { ws.off('message', onMsg); resolve(null) }, ms)
 		const onMsg = (data) => {
 			let m; try { m = JSON.parse(String(data)) } catch { return }
+			// `census_error` is the relay REFUSING us: the bound list is presence, and presence answers
+			//  only to a hello-verified socket (relay.ts, gated as `who` is).  This CLI signs no hello,
+			//   so on a gated relay it lands here every time and falls through to the broadcast court
+			//    below — vaguer, but exactly what it did before the census existed.  Signing the ask
+			//     (§3.4.3) is what earns the deterministic road back.
+			if (m.control === 'census_error') { clearTimeout(t); ws.off('message', onMsg); return resolve(null) }
 			if (m.control !== 'census') return
 			if (m.corr && m.corr !== corr) return
 			clearTimeout(t); ws.off('message', onMsg); resolve(Array.isArray(m.rows) ? m.rows : [])
@@ -729,6 +735,11 @@ if (!opened) { console.error(`✗ relay ${WS_URL}: connect timeout (5s) — is t
 //   nothing on theirs, and a cross-node sticky just costs a wasted addressed ping before the court
 //    falls through.  The default origin keeps the historic path, so an existing stash still counts.
 const STICKY_PATH = `/tmp/runner_ask.target${HTTP === 'http://172.17.0.1:9091' ? '' : '.' + HTTP.replace(/[^A-Za-z0-9]+/g, '_')}`
+// the census's candidate list, kept for the re-court below: courting is DETERMINISTIC now, which is the
+//  whole point and also means a sick first candidate is chosen every single time.  The broadcast was
+//   accidentally better here — whichever tab answered first was at least answering.
+let courtCands = []
+let censusRefused = 0
 const eng    = (a) => a.result?.engagement
 const isMine = (a) => eng(a)?.client === CLIENT && eng(a)?.status === 'active' && !eng(a)?.stale
 const isFree = (a) => { const e = eng(a); return !e || e.status !== 'active' || e.stale || e.client === CLIENT }
@@ -770,7 +781,18 @@ if (TARGET === 'runner') {
 	//      exactly as before.  Nothing is removed until this road is proven.
 	if (TARGET === 'runner') {
 		const rows = await relayCensus(ws)
-		const cands = (rows ?? []).filter(r => r.identity && (r.roles ?? []).includes('runner')).map(r => r.addr)
+		if (rows === null) censusRefused = 1
+		// A TAB THAT ALSO DECLARED `player` IS A MUSIC PAGE, whatever else it declared (measured live
+		//  2026-09-09, the first thing role-keeping showed: eed had THREE sockets and one of them had
+		//   declared `runner`, so it was sitting in the shared runner seat — the exact thing Auto.svelte's
+		//    humdinger exclusion exists to prevent).  `includes('runner')` alone would court it, and the
+		//     downstream veto would then have to shoo it away on every single invocation.
+		//  Refuse it HERE, where the evidence is: `player` is a claim only an end-user room makes, and no
+		//   real runner makes it.  The veto stays as the deeper gate — this just stops us walking into it.
+		const cands = (rows ?? [])
+			.filter(r => r.identity && (r.roles ?? []).includes('runner') && !(r.roles ?? []).includes('player'))
+			.map(r => r.addr)
+		courtCands = cands
 		if (cands.length) {
 			const acks = (await Promise.all(cands.map(p => sendAsk(ws, { op: 'ping', client: CLIENT }, p, 4000))))
 				.filter(a => a.control === 'runner_ack' && isRunner(a))
@@ -788,10 +810,27 @@ if (TARGET === 'runner') {
 		const acks = allAcks.filter(isRunner)
 		const shooed = allAcks.length - acks.length
 		if (shooed > 0) console.error(`⇢ ignoring ${shooed} non-runner tab${shooed === 1 ? '' : 's'} that answered the runner broadcast (role≠runner — someone's music page)`)
+		// SAY WHY THE VAGUE ROAD IS THE ONE WE ARE ON (2026-09-09).  A broadcast court that comes home
+		//  empty is reported downstream as "no reply in 12s (runner not connected?)", which is a LIE when
+		//   two healthy runners are sitting right there — measured tonight, minutes after the census was
+		//    gated.  The mechanism is the seat itself: several sockets bind `runner` (one of them, live,
+		//     an end-user music page that had declared it), a broadcast fans to all of them, and the relay
+		//      spends our corr on whichever answers FIRST.  When that is the humdinger, the court comes
+		//       home with nothing and the flock is invisible to us.
+		//  The census could see straight through that and cannot be used here, because this CLI signs no
+		//   hello and the relay rightly refuses presence to unverified askers.  So name the real cause
+		//    rather than let a human read "no runner" and go looking for a dead tab.
+		if (!allAcks.length && censusRefused) {
+			console.error(`⇢ the relay refused a census (this CLI signs no hello) and the '${'runner'}' broadcast came home empty.`)
+			console.error(`   That is NOT proof no runner is up: several sockets share that seat and the relay spends our corr on the first answer.`)
+			console.error(`   Address one directly if you know it:  --runner=<prepub>   ·  list them:  node scripts/runner_ask.mjs runners`)
+		}
 		if (!acks.length && allAcks.length) {
 			console.error(`✗ no role:'runner' tab answered — only ${allAcks.length} player/other tab${allAcks.length === 1 ? '' : 's'} did.  Boot a runner (?B=<Book>); refusing to put a Book on a listener's page.`)
 			process.exit(3)
 		}
+		// keep every tab that answered, so a bad first pick is recoverable (see the re-court below).
+		courtCands = acks.map(a => a?.result?.self).filter(Boolean)
 		const pick = acks.find(isMine) ?? (op === 'run' ? (acks.find(isFree) ?? acks[0]) : acks[0])
 		if (pick?.result?.self) {
 			TARGET = pick.result.self
@@ -869,6 +908,63 @@ for (let attempt = 1; ; attempt++) {
 	}
 	console.error(`… runner ${TARGET.slice(0, 8)} ${reply.ok === false ? `refused (${reply.result?.error ?? 'busy'})` : 'silent'} — insisting ${attempt}/${INSIST}`)
 	await new Promise(r => setTimeout(r, Number(process.env.RUNNER_INSIST_MS || 3000)))
+}
+// ── RE-COURT A WEDGED RUNNER (2026-09-09) ────────────────────────────────────────────────────────
+//  A tab can answer `ping` instantly and still be unable to START anything — measured live the day the
+//   Story ghosts were renamed under a running tab: `run` came back `{accepted:true, uid:null}` and no
+//    phase ever appeared, on that tab, through a targeted reload.
+//  The old broadcast court stumbled into a working tab by accident (only a tab that answered got the
+//   corr).  Census courting is deterministic — its virtue — so it picks the SAME sick candidate every
+//    time, and a human sees a CLI that reliably does nothing.
+//  `accepted` with no `uid` is the signature, and it is available immediately, before the watch loop's
+//   20s dead-clock ever starts.  So: drop that candidate and dispatch to the next one.
+//  This is the same instinct the humdinger veto already has — *"a refusal RE-COURTS rather than
+//   dead-ending"* — applied to the other way a courted tab turns out to be the wrong one.
+//  Bounded by the candidate list and never re-tries a tab: worst case it tries each runner once and
+//   then reports exactly what it reports today.
+// ── A COURTED TAB THAT THEN ANSWERS NOTHING (2026-09-09, measured: 2 invocations in 3) ────────────
+//  The broadcast court commits to whichever tab acked first, and an ack proves almost nothing: a
+//   humdinger music page holding the shared `runner` seat answers `role:'runner'` too (the fact
+//    `isRunner` above already calls useless).  Address THAT by prepub and the relay's own-door rule
+//     drops it on the station socket — so the ask times out and the CLI reports "runner not connected"
+//      while two healthy runners sit beside it.  The humdinger veto does not save us here: it is
+//       skipped for read-only ops, which is most of them.
+//  So do for a silent target what we already do for a wedged one: drop it and try the next tab that
+//   answered.  Bounded by the acks we actually have, never re-tries a tab, and costs nothing when the
+//    first pick was right (the overwhelmingly common case).
+if (reply.control !== 'runner_ack' && !runnerSel && !playerSel) {
+	// WHERE THE ALTERNATES COME FROM, and why not from the court.  A broadcast court comes home with
+	//  exactly ONE ack however many tabs answered — the relay spends our corr on the first — so there is
+	//   never a second candidate sitting in `courtCands` to try.  (I built the re-court on that
+	//    assumption first, and it never fired once in 8 runs.  The one-ack rule is written down three
+	//     times in this file; I still coded past it.)
+	//  The stochastic sweep is the road that CAN enumerate — it is what `runners` prints and what the
+	//   humdinger veto already falls back to — so use it, and only here, on the failure path, where its
+	//    couple of seconds cost nothing against an invocation that was about to report a lie.
+	let others = courtCands.filter(p => p !== TARGET)
+	if (!others.length) {
+		const rs = ((await census({ classify: true })) ?? []).filter(f => f.role === 'runner' && f.pub !== TARGET)
+		others = rs.map(f => f.pub)
+	}
+	for (const next of others) {
+		console.error(`⇢ ${String(TARGET).slice(0, 8)} acked the court then answered nothing — trying ${next.slice(0, 8)}`)
+		TARGET = next
+		reply = await sendAsk(ws, ask)
+		if (reply.control === 'runner_ack') { try { writeFileSync(STICKY_PATH, TARGET + '\n') } catch { /* stash is best-effort */ } ; break }
+	}
+}
+if (op === 'run' && reply.control === 'runner_ack' && reply.ok !== false && !reply.result?.uid && courtCands.length > 1) {
+	const others = courtCands.filter(p => p !== TARGET)
+	for (const next of others) {
+		console.error(`⇢ ${TARGET.slice(0, 8)} accepted '${arg}' but started nothing (uid:null — a wedged tab) — re-courting ${next.slice(0, 8)}`)
+		TARGET = next
+		reply = await sendAsk(ws, ask)
+		if (reply.control === 'runner_ack' && reply.ok !== false && reply.result?.uid) {
+			try { writeFileSync(STICKY_PATH, TARGET + '\n') } catch { /* stash is best-effort */ }
+			break
+		}
+	}
+	if (!reply.result?.uid) console.error(`⇢ every runner-door tab accepted and started nothing — the Books may be unloadable on this build (a rename under a live tab does exactly this)`)
 }
 if (reply.control !== 'runner_ack') { console.error(`✗ ${op}: ${reply.error ?? 'no reply'}`); exitCode = 1 }
 else if (op === 'snap' && reply.result?.got_snap) {

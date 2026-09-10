@@ -51,7 +51,23 @@ The owner, log in hand: `⇊☠ heist NO PROGRESS 93905s — 10/13 landed after 
      Ra_source_pcm:2064), naming `pcm_dead|pcm_why` instead of the generic "frontier never reached
       it".  PURE DIAGNOSTICS — the 60s retry ladder stands (Ra_native_continuation:2812 blesses "one
        ffmpeg a minute" for a dead source; a re-stock revives it).  Humdinger-gated.
-- **STILL NOT DONE — the real NACK needs a frame-semantics bit.** A plain `repli_missed` means
+- ✅ **DONE 2026-09-10 — the distinguished disclaim landed.** `Repli_tell_miss(w, pier, h, dead)` carries
+   `dead:1`; the STREAM serve path disclaims instead of parking when `rec.c.pcm_dead` is set (Ra's own
+    verdict — `'card'` no stock card · `'nav'` the U+FFFD path that can never round-trip to disk ·
+     `'headless'` no decoder); `Repli_recv_missed` stamps `w.c.ra_dead` beside `ra_missed`; and Heist's
+      pull beat skips the re-census for a dead id, saying so once.
+  **The fact was already there and unread** — Ra had been stamping `pcm_dead` and nothing on the wire
+   lane ever looked at it, so a want for such a record parked (a park PROMISES bytes are coming), the
+    leash abandoned it ~90s later, the sink re-asked, and the pair cycled forever. That is this section's
+     own opening loop, and the cure was reading a mark rather than adding one.
+  The four negatives now read as one scale: **parked** (found it, bytes coming) · **missed** (cannot
+   resolve — re-census me) · **missed+dead** (resolved, unmakeable — a census cannot help) ·
+    **no_idspace** (never mine — stop forever). Carried as a FLAG on the existing frame, not a fourth
+     type, so an older sink ignores it and keeps today's retriable ladder.
+  **Gate:** MusuHeist 22/22 · MusuReplica 14/14 · MusuPoolBytes 5/5 · MusuPoolFill 6/6 · MusuPoolRandom
+   5/5 · MusuPoolRadio 6/6 · MusuBerth 7/7 — all caveat 0, identical to baseline, and the three new log
+    sentences appear in ZERO Books (a Book has no transcode, so the branch is unreachable there).
+- ~~**STILL NOT DONE — the real NACK needs a frame-semantics bit.**~~ (superseded above; kept for the reasoning) A plain `repli_missed` means
    "re-census me" to a Heist sink (Heist.g:2699), which is FUTILE for a resolvable-id / unreadable-
     FILE (the id resolves; the bytes can't be made) and would only add ~6min of census churn until
      `Heist_pull_giveup` fires.  The honest fix is a distinguished disclaim — `repli_missed` carrying

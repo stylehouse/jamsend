@@ -3,14 +3,58 @@
 Survey requested by the owner — "what else did we leave half done back along there?" — over design work in `src/lib/O/spec` from the last month, weighted toward Radio/dial, Heist, Reach, Siphon, Portability, Presence, Cluster, and the Sounditron glass/focus model.
 Compiled 2026-09-03/04 from every `*_todo.md` touched since 2026-08-01 (plus a skim of `history/` from that window); landed/retired threads are excluded; SoundPooling's own §0 (rewritten the same night) is excluded, but SoundPooling threads mentioned elsewhere are kept.
 
+## ⚑ STALE-CLAIM AUDIT (2026-09-10) — check before you build; five claims verified DEAD in one night
+
+A pattern showed up while working this list: **a doc says "there is no live caller" and there is one**,
+ because the work landed by a DIFFERENT road than the one that doc was watching, and nothing told it.
+  Nineteen spec files carry a claim of this shape (`no live caller` · `NOT DONE` · `nothing calls` ·
+   `zero live callers` · `never built`). Five were checked against the code tonight and **all five were
+    stale.** That is not a good hit rate to build on.
+
+| doc | the claim | what is actually true |
+|---|---|---|
+| `UI_seams_todo` S3 | *"the engine is built and green; there is no live caller"* (heist) | ♥ became the caller 2026-09-03 (`Radio_like`). The owner's *"I can't figure out how to Heist"* was an INVISIBLE caller, not a missing one |
+| `UI_seams_todo` S4 | now-playing provenance not wired | built — the source chip, `face.by`, `Radio_friendly` |
+| `Portability_todo` | *"no LOFI copy ever lands in the phone's OPFS SoundPool during real listening"* | SoundPooling lands them by another road (`Heist.g:2682` `into:'pool'` → `Heist_keep_pool_go` → `Ra_pool_fill_land`); watched live on eed. The AMBIENT press economy is still dormant — that half stands |
+| `Daemon_todo:909` | *"**Verified:** `Swarm_station_up` has no callers outside `InvitePanel.svelte`"* | **64 references outside it**, across `Auto.svelte` · `Tribunal.g` · `Swarm.g` · `Radio.g` · `LinkDevice` · `SwarmStandup` |
+| `Identity_persist_todo §6.1` | *"Gap 1 — nothing calls the write side"* | closed 2026-08-08. `Auto.svelte:435` says so in its own header — *"THE WRITE SIDE (2026-08-08, Identity_persist_todo §6.1 'gap 1')"* — with two live callers, and the daemon reports `mirror_at` stamped, `owed:0` |
+
+**Why it happens, and it is structural rather than sloppy.** A fix lands in the doc of the thread that
+ DID it, not the doc of the thread that was waiting. `Auto.svelte` even cites the section it closes, and
+  that section never heard. The corpus has no back-edge from code to the doc that was watching.
+**So the working rule:** a "not built" claim older than the last big thread in that area is a HYPOTHESIS.
+ Grep for the verb before you write one. The cost of checking is a minute; the cost of not checking is
+  rebuilding something that exists — twice tonight I nearly did.
+**THE REST OF THE SWEEP (2026-09-10, same night).** The remaining claims were checked. Final tally
+ across the corpus: **9 STALE · 5 TRUE · 0 unresolved.** Rule of thumb earned: rather more than half of
+  every "not built" sentence in these docs is wrong.
+
+| doc | the claim | verdict |
+|---|---|---|
+| `Siphon_todo:32` | `Ra_press`/`Ra_quarter`/`Ra_quarter_serve` *"DORMANT: no live caller"* | **STALE** — `Radio.g:421` calls `Radio_pool_steward` on the live playback tick; `:1554` calls `Ra_quarter_serve`. Its own header: *"the AMBIENT STEWARD OCCASION"* |
+| `SoundPooling_todo:491` | five verbs *"All DORMANT … no live caller anywhere"* | **STALE except one** — `Ra_rec_pool` has `Heist.g:1041`; the others as above. `Ra_upgrade_scan` (`Ra.g:1910`) is genuinely Book-only |
+| `Identity_persist_todo:604` | seven sibling/theft verbs have *"zero callers outside Swarm.g and the Book"* | **STALE except two** — `SwarmStandup.svelte:72`, `InvitePanel.svelte:89`, `DoorFace.svelte:295`, `scripts/daemon/main.ts:763` reach them. `Swarm_next_suffix`/`Swarm_steal_back` remain Book-only |
+| `Identity_persist_todo:696` | *"wire the address layer at all — it has no callers today"* | **STALE** — `Tribunal.g:66` dials `peering.sc.address`, set from `Swarm_address` at `Swarm.g:2181` |
+| `SoundPooling_todo:118` | relay's *"second map for control-plane types"* never built | **TRUE** — `relay.ts:190` promises it in a comment; `deliverLocal` implements the own-door preference instead |
+| `Radio_design:127` | the Booth taste organ has *"no live caller"* | **TRUE** — `Heist.g:513` says outright it *"is UNWIRED by the human's call"* |
+| `Peeroleum_spec:104/:353` | `%req:waiting` / `leave_running_until` never built | **TRUE** — absent everywhere; abandoned for `%ttlilt`, as the doc itself notes |
+| `Peeroleum_handover:165` | spec-only `prepub`/`prepri` hello fields never built | **TRUE** — self-resolved in the doc |
+
+⚠ **AND THE AUDIT CAUGHT ITS OWN AUTHOR.** The `Portability` correction above originally said the
+ ambient economy *"is still dormant"* — quoting `Siphon.g`'s header rather than grepping for callers.
+  **A stale COMMENT produced a stale correction to a stale doc.** Corrected within the hour, and it is
+   the sharpest form of the lesson: the rule is not "trust comments less than docs", it is **verify the
+    verb has callers, from the code, every time** — including when a comment right beside the code
+     agrees with the doc you are fixing.
+
 **The eight most worth picking up first (the surveyor's ranking):** 1 GhostHMR (the compile ack lies — blocks trusting any `.g` edit) · 16 Portability (the press/quarter economy has no live caller) · 2 Radio (wire-side tail-ahead want driver) · 9 UI_seams (Heist has no live caller) · 11 Reach (the cross-device byte lane) · 26 Composition (Cluster toc canonicity — live rows vanish, dead ones survive) · 28 Cello (durable refusal wiring) · 6 Sounditron (the solo-radio ruling, an owner's word).
 
 | # | doc | thread | where it stopped | next move (per the doc) | size |
 |---|---|---|---|---|---|
 | 1 | `GhostHMR_todo.md` | compile ack lies — a `.go` write can silently never land | "the editor acked ✓ compiled @ <the correct NEW dige> on TWO separate rounds, and the `.go` on disk … kept the OLD Ghostmeta" | ack `done` only after the write is read back (Ghostmeta flip); demote the ack to narration, let only the dige-flip settle a ticket | S |
 | 2 | `Radio_todo.md` | wire-side tail-ahead want driver for FRIEND records | "a wire record's tail still rides the playhead's own want window, so the tape-out still fires on wire finishes" | build the driver: "want the ordered record's un-held tail, gently, while comfortable" off `repli_want {id, stream, from_idx}` | M |
-| 3 | `Radio_todo.md` | distinguished NACK (`repli_dead`) for a resolvable-id/unreadable-file | "STILL NOT DONE — the real NACK needs a frame-semantics bit … `repli_missed` carrying a `dead:1`" | add the dead flag/frame; touches both directions + Book fixtures, its own pass | M |
-| 4 | `Radio_todo.md` | `runner_ask`'s player rail refused everything for an hour | "every `--player=` op acked `ok:false` with an EMPTY error … the rail wants its own diagnosis" | diagnose the refusal (concurrent census_codec/Auto edits were in flight at the time) | S |
+| 3 | `Radio_todo.md` | ✅ **DONE 2026-09-10** — distinguished NACK for a resolvable-id/unreadable-file | landed as `dead:1` on `repli_missed` (a flag, not a fourth frame): source disclaims instead of parking when `rec.c.pcm_dead`; sink stamps `ra_dead` and skips the futile re-census. Ra had been stamping that mark for weeks and nothing on the wire lane read it. 7 Books identical to baseline, caveat 0 | M |
+| 4 | `Radio_todo.md` | ✅ **NOT REPRODUCIBLE 2026-09-10** — the player rail answers | re-tested live: `ping`, `supervisor` and `crew` all answered cleanly over `--player=`. Consistent with the doc's own suspicion that concurrent edits were in flight at the time — i.e. transient, not a rail defect. ⚑ One oddity seen while testing, NOT chased: `ping --player=<eed>` answered `role:"editor"`, because the player SLOT is addressed and whichever tab holds it replies — the same address-ambiguity family as the `?addr=runner` work (Social_demarcation §0) | S |
 | 5 | `Radiation_determinism_todo.md` | MusuRaStream's `a_drops` is nondeterministic, blocking re-record | "the live runner gives 2 or 4, every time, on every run … that is a product regression" | chase §3, not `accept`; two candidate `.g` fixes need the human's call | M |
 | 6 | `Sounditron_todo.md` | solo-radio friend-exclusive ruling still wanted | "SO THE CONTRACT AS DECLARED CANNOT LATCH ON A SOLO MACHINE — a ruling is wanted" | owner picks (a) leave contracted / (b) undeclare / (c) let the probe flip `radio.sc.own` for itself | S |
 | 7 | `Phone_instrument_todo.md` | the dial itself — gesture layer, tag sync, pushed stream, knobscape | "A fresh session reads here. The overall arc is:" (nothing past the design listed as built) | §0.1: wire one tag verb (`Radio_tag_now`) behind the Media Session `previoustrack` handler, prove the particle model with zero sync machinery | L |
@@ -22,7 +66,7 @@ Compiled 2026-09-03/04 from every `*_todo.md` touched since 2026-08-01 (plus a s
 | 13 | `Reach_todo.md` | §7 forks — open `for` vocabulary, `%Owed` retirement schedule, Seem-over-Reach dashboard | listed under "Still owed (the owner's seams)" | design each fork | M |
 | 14 | `Reach_todo.md` | §4 migrations — charter/grant/pier-heal debts becoming reaches | "after the music slice proves live" | migrate bespoke machinery onto Reach one slice at a time; measure by "bespoke machinery REMOVED" | L |
 | 15 | `Siphon_todo.md` | controllable radio + face, and the connect-up seam (rungs 5–6) | "The connect-up seam (proposed, not applied) … Write the exact patch here; the human or the resident session applies it after review" | build the source-notion radio (`local \| pool \| <friend>`) + tag-chip face, then apply the connect-up patch — ⓘ the `pool` stop exists now (`Radio_source_next`); the `<friend>` stop is still reserved | L |
-| 16 | `Portability_todo.md` | THE LIVE WIRING GAP — the press/quarter economy has zero live callers | "Nothing in the LIVE flow calls them … no LOFI copy ever lands in the phone's OPFS SoundPool during real listening" | wire the driver seam: a live tick handing `Ra_quarter_serve` the phone's pool nav + a `lib` source — ⓘ 2026-09-03: `Radio_pool_steward` now sits for any consented pool, and the fills follow the consent; the live walk is what proves it | L |
+| 16 | `Portability_todo.md` | ⚑ **HALF STALE 2026-09-10** — the OUTCOME landed by another road (SoundPooling: `Heist.g:2682` `into:'pool'` → `Heist_keep_pool_go` → `Ra_pool_fill_land`; watched live on eed). Lofi copies DO reach the pool while listening. Still true: the AMBIENT press/quarter economy is dormant (`Siphon.g` header) and its `lib` question is the owner's. Original wording: THE LIVE WIRING GAP — the press/quarter economy has zero live callers | "Nothing in the LIVE flow calls them … no LOFI copy ever lands in the phone's OPFS SoundPool during real listening" | wire the driver seam: a live tick handing `Ra_quarter_serve` the phone's pool nav + a `lib` source — ⓘ 2026-09-03: `Radio_pool_steward` now sits for any consented pool, and the fills follow the consent; the live walk is what proves it | L |
 | 17 | `Portability_todo.md` | the pool exchange — phone↔phone LOFI swap, live, no Cave required | listed as missing item 4, "possibly the majority transport" (§0) | design §5 | L |
 | 18 | `Portability_todo.md` | the phone push field verification | "concrete risk: no nav in `listen_only` … radio silently no-ops on device while dev looks green — field trip only" | verify on a real phone that a friend's stream plays in listen_only | S |
 | 19 | `Portability_todo.md` | the smuggle / `%Invite:MyCave` / the Door dialogue (items 5, 6, 8) | all three still listed under "What is missing," none started | design the graft ceremony (%Invite:MyCave), the Captain→Cave backup, and the Door's invite-yourself explainer | M |

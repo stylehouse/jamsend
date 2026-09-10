@@ -18,7 +18,7 @@ Credulate,of_Book:VoroMitosis
   GhostInclude:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
   GhostInclude:Ghost_M_Radio,dige:af967c8213611cd1~g1
   GhostInclude:Ghost_M_Siphon,dige:5f0e94a318c6d7fd~g1
-  GhostInclude:Ghost_Story_MusuTesting,dige:d2366d4d9b4854bb~g1
+  GhostInclude:Ghost_Story_MusuTesting,dige:fea225346dcb19a0~g1
   GhostInclude:Ghost_Story_RaTesting,dige:a8e02e482b139e5c~g1
   GhostInclude:Ghost_Story_HeistTesting,dige:ee093c61e603face~g1
   GhostInclude:Ghost_Story_SiphonTesting,dige:a51b38e9318b6f9b~g1
@@ -32,10 +32,10 @@ Credulate,of_Book:VoroMitosis
   GhostInclude:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
   GhostInclude:Ghost_V_Vyto,dige:0eac4e915eedac07~g1
   GhostInclude:Ghost_V_VytoTesting,dige:7adb6416fc03f43e~g1
-  GhostInclude:Ghost_Story_VoroTesting,dige:a8a9737169608630~g1
+  GhostInclude:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
   GhostInclude:Ghost_Story_Sounditron,dige:e52afe7d185f51a8~g1
   GhostInclude:Ghost_O_Supervisor,dige:f9efd6177e50fa09~g1
-  last_ok,at=1788943815.396,ok_pct
+  last_ok,at=1788948078.814,ok_pct
     uses:Ghost_N_Peeroleum,dige:176d03c1fb562ff9~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:b4c37f0c56f24f1a~g1
@@ -55,7 +55,7 @@ Credulate,of_Book:VoroMitosis
     uses:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
     uses:Ghost_M_Radio,dige:af967c8213611cd1~g1
     uses:Ghost_M_Siphon,dige:5f0e94a318c6d7fd~g1
-    uses:Ghost_Story_MusuTesting,dige:d2366d4d9b4854bb~g1
+    uses:Ghost_Story_MusuTesting,dige:fea225346dcb19a0~g1
     uses:Ghost_Story_RaTesting,dige:a8e02e482b139e5c~g1
     uses:Ghost_Story_HeistTesting,dige:ee093c61e603face~g1
     uses:Ghost_Story_SiphonTesting,dige:a51b38e9318b6f9b~g1
@@ -69,6 +69,6 @@ Credulate,of_Book:VoroMitosis
     uses:Ghost_V_Voro,dige:028c7be5c5a4d306~g1
     uses:Ghost_V_Vyto,dige:0eac4e915eedac07~g1
     uses:Ghost_V_VytoTesting,dige:7adb6416fc03f43e~g1
-    uses:Ghost_Story_VoroTesting,dige:a8a9737169608630~g1
+    uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_Story_Sounditron,dige:e52afe7d185f51a8~g1
     uses:Ghost_O_Supervisor,dige:f9efd6177e50fa09~g1

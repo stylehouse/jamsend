@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '90e81b41faf3b39e~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'f4feb2c3230cd481~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2915,7 +2915,24 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
                     //      next beat.  Consumed (delete) so one telling buys one census, never a loop; if the
                     //       census does not fix it the source simply says it again and we are back on the
                     //        ladder — which is the correct fallback, not a regression.
-                    let told = w.c.ra_missed && w.c.ra_missed[String(ref)]
+                    // …AND A `dead` TELLING RETIRES THE CENSUS ALTOGETHER (2026-09-10, Radio_todo §0's
+                    //  "STILL NOT DONE").  A plain missed means "re-census me" and a census is the right
+                    //   repair: the id was probably re-minted or the lib swept.  `ra_dead` is the source
+                    //    saying the STRONGER thing — the id resolved and the bytes cannot be made (its
+                    //     producer is dead: an unreadable file, no decoder).  A census there re-mints the
+                    //      identical id off the identical broken file and fails identically, so it buys
+                    //       nothing and costs the ~6min of churn the doc names.  Skip it, say so once, and
+                    //        let the ordinary give-up ladder converge — which it now does without paying
+                    //         for a repair that cannot work.
+                    //  NOT consumed, unlike `told`: this is a standing fact about the source's disk, not a
+                    //   one-shot nudge.  It expires with the tab, and a source that regains the file simply
+                    //    serves the next ask (nothing here bans an id).
+                    let dead = w.c.ra_dead && w.c.ra_dead[String(ref)]
+                    if (dead) {
+                        let k = 'dead_said_' + String(ref)
+                        if (!w.c[k]) { w.c[k] = 1; console.log(`⇊☠ ${String(ref).slice(0, 8)} — the source says this one is unmakeable; not re-censusing (a census cannot rebuild a file it cannot read)`) }
+                    }
+                    let told = !dead && w.c.ra_missed && w.c.ra_missed[String(ref)]
                     if (told) delete w.c.ra_missed[String(ref)]
                     //  …BUT A REPEATED TELLING IS NOT A FRESH FACT (2026-08-08).  `told` used to bypass the
                     //   20s census throttle outright, and the claim above — "one telling buys one census,

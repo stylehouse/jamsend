@@ -23,6 +23,18 @@ Nothing here is applied. Nothing is committed.
 
 ## 0. What to get on with next
 
+⚠ **THIS LIST IS PARTLY STALE — CHECK BEFORE BUILDING (noted 2026-09-10).** Two of the four items below
+ describe gaps that have since been filled, and a session that trusts them will rebuild what exists:
+- **S4 (now-playing provenance) — DONE.** `RadioFace` reads the source and names it: the source chip,
+   `face.by`, and `Radio_friendly` (which resolves a pub to the friend's chosen name).
+- **S3 (make heist a real action, "there is *no live caller*") — ANSWERED 2026-09-03**, when the ⇊ was
+   folded into ♥ (`Radio_like` starts a background heist when a road is set up). `Loose_ends_todo` #9
+    already footnotes this; this file did not know.
+   ⚑ The owner's *"I can't figure out how to Heist anymore"* (2026-09-09) turned out to be the OPPOSITE
+    complaint — not a missing caller but an invisible one: ♥ heists, and where its bytes go depended on
+     three roads the face never drew. Cured by drawing the road as a chip beside the heart.
+- **S1 and S2 not re-checked** — treat them the same way: read the face before building it.
+
 Pick from, roughly in ascending effort:
 
 1. **S4 — now-playing provenance.** The smallest, and you explicitly asked for it

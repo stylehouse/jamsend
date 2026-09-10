@@ -45,10 +45,175 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
 4. Re-run the ceremony + pool Books, and walk one live dispatch, before deleting anything in step 3.
 **Do NOT do 3 before 1 and 2 are proven live.** A tab that cannot be found is a tab that cannot be fixed.
 
-### ⚑ THE NIGHT OF 2026-09-08 — three things are OWED TO THE HUMAN before this branch moves again
+**✅ 1, 2 and 4 LANDED AND PROVEN LIVE 2026-09-09** — `control:'census'` on the relay; `declaredRole`
+ kept per socket at `become` (the third thing a become means, which nothing recorded); `runner_ask`
+  courting by census and addressing by prepub; a re-court when a courted tab accepts a run and starts
+   nothing (`uid:null` — measured live the day the Story ghosts were renamed under a running tab).
+  Proof: two real Books to `done` unpinned (MusuPoolBytes 5/5, MusuPoolFill 6/6, both caveat 0), no
+   double dispatch, and the census caught a live fault on its first look — **eed, an end-user music
+    page, holding 3 sockets with one declaring `runner`**, i.e. sitting in the shared dispatch seat that
+     `Auto.svelte`'s humdinger exclusion exists to prevent.
 
-Everything below that a session could do alone is done. What is left needs a person, because each one is
- a decision about what is TRUE, not about what compiles. **Do these first; the rest of §0 waits on them.**
+⚠ **STEP 3 IS NOT A DELETION, AND THE PLAN ABOVE WAS WRONG ABOUT THAT.** The role name has a SECOND,
+ legitimate user that has nothing to do with discovery — the editor uses `to:'runner'` to mean
+  **"any runner of that kind"**, deliberately, in two places:
+- `LiesLies:1706` — the keepalive ping: *"a role-broadcast ping (`to:"runner"`, **correct** — the editor
+   wants ANY of that kind)"*. It is a CARRIER fact ("our send leg works"), not a request to a specific tab.
+- `LiesLies:2127` — `Lies_dispatch_target`: `if (!cands.length) return {}` — an empty roster falls back
+   to broadcast, to catch a runner that is up but has not advertised yet.
+**So the question step 3 actually asks is: what should "any runner" mean once no shared address exists?**
+ Both answers are the same move already made in the CLI — *stop shouting at the role, ask the relay*:
+ (a) the keepalive wants a live carrier, so it can ride the census or ping one rostered prepub;
+ (b) the dispatch fallback wants discovery, which is exactly what the census is for — and an empty census
+     is an honest "no runner", where a shout was only ever a guess with a timeout.
+**Ordering, CORRECTED AGAIN — and smaller than either earlier version.** *"Give the editor a census"* was
+ wrong: **the editor already has one.** A runner fires an immediate advertise the moment its socket opens,
+  first connect and every reconnect (`LiesLies:469`, deliberately not via the keepalive), so the `%Runner`
+   roster is populated within ONE RTT. The broadcast fallback therefore covers a sub-RTT window and
+    nothing else, and a second census cache beside the roster would be two sources for one fact.
+ So the real work is only this:
+ - **3a — the keepalive.** The editor pings `to:'runner'` every ~5s to learn "is anything of that kind
+    alive". Replace with a ping to each ROSTERED prepub: strictly more informative (per-runner liveness
+     instead of one aggregate), and the attribution machinery already exists — a pong carries `from`
+      precisely because one broadcast used to come home as N indistinguishable pongs (2026-08-04 socklog).
+       With 1–3 runners the cost is 1–3 frames per 5s instead of 1.
+ - **3b — the dispatch fallback.** `if (!cands.length) return {}` becomes an honest "no runner yet".
+    It is covering the window between a socket opening and its first advertise landing — under an RTT.
+ - **3c — stop binding `runner`.** Only then, and it is now genuinely a deletion.
+ ⚠ **3a is a HEARTBEAT change — do it with someone watching.** `Lies_ping` rides
+  `Peeroleum_send_consumer`, which sends to the transport world's single Pier, so per-runner pinging
+   means the editor addressing N rostered prepubs instead of its one pier. The failure mode is silent in
+    both directions: the editor stops seeing live runners, or keeps believing dead ones are alive. That
+     is the wrong thing to land unattended — everything else in step 3 is loud when it breaks.
+ - **3d — the own-door delivery rule and the two exclusions fall out**, having nothing left to police.
+ ⚠ **3d COLLIDES WITH AN OLDER, UNBUILT REPAIR — settle which one wins before touching either**
+  (found 2026-09-10 by the stale-claim audit; neither plan knew about the other).
+  `relay.ts:190` promises a repair that has never been built, and `SoundPooling_todo:118` records why it
+   was wanted: the own-door rule hands every `to:<prepub>` frame to the tab's STATION socket, while the
+    `runner_ask` handler lives on the ROLE socket — so an addressed ask never reached a music page and
+     *"the whole flock read as down for hours while every tab was alive and healthy"*. The CLI works
+      around it today by asking the `player` SLOT with `ask.pub`.
+  **The promised repair keeps role sockets and makes delivery smarter:** *"the distinction the first cut
+   was missing is not WHICH SOCKET but WHICH FRAME. A role socket has no business receiving a music chunk
+    and every business receiving a question about the tab. So it joins a SECOND map … consulted only for
+     the control-plane types."* Data frames unchanged, one delivery, on the station socket.
+  **3d does the opposite** — it removes a role socket so the own-door rule has nothing to arbitrate.
+  They are not both right. The question to settle first: **is a role socket a legitimate second door for
+   control-plane traffic, or an accident we are removing?** If the former, build the second map and 3d
+    shrinks to "stop binding `runner`" only. If the latter, the repair should never be built and
+     `SoundPooling_todo:118` wants retiring. `player` sockets survive either way, so the CLI's
+      slot+`ask.pub` workaround is not urgent — which is exactly why this can wait for a real answer.
+ `to:'editor'` STAYS: one editor per relay is a genuine singleton service address, and the runner→editor
+  direction (advertise, results) legitimately wants "the editor, whoever that is". `runner` never was.
+
+⚠ **A pattern in my own planning, worth naming:** twice tonight I proposed building something the codebase
+ already had — a Story search box (`Storui` has none, but the roster/seek question was already answered
+  elsewhere) and an editor census (the roster IS one, refreshed within an RTT). Both times the correction
+   came from reading the code rather than the plan. **Read for what exists before writing what to add**;
+    this repo is old enough that the second implementation of anything is usually the mistake.
+
+✅ **`control:'census'` IS NOW GATED, as `who` is — a gap I opened, then closed the same night.**
+ First cut shipped it ungated on the argument that it was "no worse than the debug surface §3.4.3 already
+  records". **That argument was wrong, and the way it was wrong is the lesson:** every op in §3.4.3 has to
+   reach a TAB, which can refuse, arm itself, or simply not be there. The census is answered by the RELAY,
+    to any socket that connects, with no tab in the path at all. Different door, not the same one.
+ **And it is not only the dev server.** `docker-compose.prod.yml:33` runs `npx vite`, so `relayPlugin()`
+  attaches in PRODUCTION — an ungated enumerator there is reachable by anyone who can open a WebSocket to
+   the public box, handing out the bound identity list, which is PRESENCE. That is precisely what `who`
+    refuses to unverified askers, and `who` gives strictly less (it only confirms names you already held).
+ **Now:** an asker with no verified hello bind gets `census_error` and zero rows. Proven on the real relay
+  code in a standalone harness — `unverified asker → census_error, rows leaked: 0`.
+ **Accepted cost, deliberately:** `runner_ask` signs no hello, so it cannot pass the gate and falls back to
+  the broadcast court it used before tonight. The CLI loses deterministic discovery — a convenience — until
+   asks are signed (§3.4.3); it does not lose the ability to work. Presence stays unreadable by strangers,
+    which is a property. **Signing the ask is what earns the deterministic road back**, and it now has a
+     second reason to happen beyond the one §3.4.3 gives.
+ **THE COST ARRIVED WITHIN MINUTES, AND IT NAMES THE WHOLE PROBLEM.** With the gate live the CLI fell
+  back to the broadcast court and started failing **2 invocations in 3** — reporting *"no reply in 12s
+   (runner not connected?)"* while two healthy runners sat there answering direct asks every time.
+  **Mechanism.** Several sockets bind the shared `runner` seat. A broadcast fans to all of them; the relay
+   spends the asker's corr on whichever answers FIRST; a humdinger answers `role:'runner'` too (the
+    self-report `isRunner` already calls useless); the CLI courts it, addresses it by prepub, and the ask
+     times out. The humdinger veto cannot save it — the veto is skipped for read-only ops, most of them.
+  ⚠ **I first told the owner this was "a music page holding the runner seat". That was an INFERENCE and it
+   was wrong.** The census aggregates roles per ADDRESS, and several sockets share one address — including
+    sockets belonging to DIFFERENT TABS on the same identity (the `<prepub>_NNNN` suffixed seats are family
+     seats from the hello arbiter). `roles:player,runner` on one identity row is equally consistent with a
+      music page and a runner tab both helloing as that identity, which is legitimate.
+  **The candidate filter (`!roles.includes('player')`) is still RIGHT, for a better reason.** An address
+   carrying a player's station socket is not reliably dispatchable whoever owns the other sockets, because
+    `deliverLocal` **prefers an address's own station socket** when one is bound — so a `to:<prepub>` ask
+     lands on the music page, and a runner tab sharing that identity is reachable only at its suffixed
+      seat. The address itself is ambiguous. That is a third argument for this whole cleanup, and it is
+       about identity-sharing plus the own-door rule, not about one tab misbehaving.
+  **Fixed by re-courting on a silent target** (`runner_ask`): drop a tab that acked and then answered
+   nothing, and try the next. Measured after: **6/6 pass, the re-court firing twice** — so it is the
+    mechanism working, not luck.
+  ⚠ **And the first version of that fix never fired once in 8 runs**, because I drew alternates from the
+   court's own acks — and a broadcast court comes home with exactly ONE ack however many tabs answered.
+    That one-ack rule is written down three times in `runner_ask.mjs` and I coded past all three. The
+     alternates have to come from the stochastic sweep, which is the only road that can enumerate.
+     **The same mistake shape as the plan corrections above: reasoning where I should have been reading.**
+ ~~NOT GATED — a gap I opened without noticing~~ (the original note, superseded above):
+ `who`, ten lines below it in `relay.ts`, refuses an asker with no verified hello bind (*"presence answers
+  only to verified identities"*). `census` reveals strictly MORE — the whole bound list including identity
+   prepubs, versus a yes/no about names the asker already held — and refuses nobody.
+ **Why it is still open:** `runner_ask` connects with a bare `?addr=` and never signs a hello, so gating
+  census now would remove the CLI's only deterministic discovery before its replacement exists. That
+   replacement is already filed at §3.4.3 — sign the ask with the cluster key, verify tab-side, as
+    `ghost_compile` already does — and closes this in the same stroke.
+ **It is the same exposure §3.4.3 already records for the whole debug surface** (`crew` returns prepubs,
+  grants and rebuffs to any caller), not a new class. It now logs when asked, so it is visible while it
+   stands. **The moment asks are signed, gate it on the hello bind exactly as `who` is.** Do not let it
+    become furniture: an ungated enumerator on a relay that prod also runs is the kind of thing that gets
+     rediscovered later by someone who assumes it was considered.
+
+### ⚑ MORNING OF 2026-09-10 — what landed overnight, and what is owed
+
+**The `wormhole/` diff is ALL NOISE this time — measured, not assumed.** 28 files changed by ~40 Book
+ runs, and **not one carries a `step=` or `dige:` change**: the 10 `toc.snap` diffs are `TimeTotal`
+  timing samples, the 18 `Credulate`/`Credulation` diffs are wall-clock `at=` stamps plus `uses:<ghost>`
+   dige lines (which did move — they record the `*ation.g`→`*Testing.g` rename and the `Repli.g` edit —
+    but those are provenance, not fixtures). Exactly what a night where every Book matched baseline
+     should produce. So `git checkout -- wormhole/` before committing loses nothing and turns a 28-file
+      noisy diff into a clean one. Verified with:
+      `for f in $(git status --short wormhole/ | awk '{print $2}' | grep -vE Credul); do git diff "$f" | grep -cE '^[+-].*(step=|dige:)'; done`
+
+**Nothing here is committed.** Working tree: `Ghost/N/Repli.g`, `Ghost/M/Heist.g` + their gen ·
+ `src/lib/server/relay.ts` · `scripts/runner_ask.mjs` · `scripts/ghost_compile.ts` · and doc edits to
+  this file, `Radio_todo`, `Loose_ends_todo`, `GhostHMR_todo`, `Composition_todo`, `Portability_todo`,
+   `UI_seams_todo`. All Book-gated where a Book can reach them; all parse-gated.
+
+**Built and gated overnight**
+- ⚠ **`repli_dead` NEEDS BOTH ENDS RESTARTED BEFORE IT DOES ANYTHING — do not read a surviving loop as
+   the fix failing.** The disclaim is **source-side** (the holder decides its producer is dead and says
+    so), and the daemon is the source in the eed↔S pair. At 05:49 the daemon had been up 603 minutes —
+     since ~19:46 — while the fix landed at 00:55, so **jamserve is running code from five hours before
+      it**. `docker compose up -d --build jamserve` puts the disclaim on the source; the sink half
+       (`ra_dead`, the skipped census) needs eed reloaded, which only the owner can do — a music page
+        refuses a remote reload by design. Same shape as the `%Card` wire bomb: a change that must land
+         on both ends before either end behaves differently.
+- **`repli_dead`** (`Radio_todo §0`, open since 2026-08-24) — a resolvable-but-unmakeable id now gets a
+   distinguished disclaim (`dead:1`) instead of "re-census me", because the record's producer being dead
+    was a fact Ra had been stamping (`rec.c.pcm_dead`) that the wire lane never read. 7 Books, caveat 0.
+- **GhostHMR fix B** — `ghost_compile` no longer settles a ticket on the editor's ack. Only the served
+   dige-flip can say `compiled`; an acked ticket that never flipped is now **`acked-no-write`**, a named
+    fault instead of a false green. Smoke-tested live.
+- **The relay census + role-keeping** (see the §0 block above) — deterministic runner discovery, gated
+   to hello-verified askers, with `declaredRole` kept as a fact so the `runner` ADDRESS can later go.
+
+**Measured, not built**
+- **Cluster toc canonicity** (`Composition_todo`) — carried "UNRUN" for a month. Run now, off git
+   history: the runner half of the fix holds; **the editor half does not**. Rows vanish and RETURN, which
+    only an overwrite can do, and the writer names itself `role:editor`. Two editors, no canonicity.
+- **A stale-claim audit** (`Loose_ends_todo`, top) — five "no live caller" claims checked, **five stale**.
+   Nineteen docs carry such claims. Treat any of them as a hypothesis until grepped.
+
+**OWED TO THE HUMAN — decisions, not code. Do these first; the rest waits on them.**
+
+Each of these needs a person, because each is a decision about what is TRUE rather than about what
+ compiles. (Plenty of buildable work remains — the ranked list in `Loose_ends_todo`, minus whatever the
+  stale-claim audit retires — but none of it is blocked on these, and none of these can start without you.)
 
 1. **Re-swear SwarmReboot `005.snap`.** `since` now survives a reload (item 2), so step 5 fails against a
     fixture that records the BUG as truth (`since:1751700030`, the re-stamp). The live runner shows

@@ -280,6 +280,26 @@
         return waft
     },
 
+    // ── Lies_aside_heading ────────────────────────────────────────────────────
+    //   WHAT WE ARE REALLY UP TO, in the human's own words (the owner, 2026-09-10:
+    //    *"we need a heading where I can track what we're really up to"*).  The day's
+    //     Aside already IS the day's work — every errand lands on it — so its heading is
+    //      one key on that Waft and not a new shelf.  A day is the right grain: it is
+    //       the grain the trail is already kept at, and a heading that outlived its
+    //        errands would be a label with nothing under it.
+    //   The WRITE lives here because this House owns the Aside.  `Lagoon_errands` reads
+    //    it back and the Clerkdesk renders it, and neither of them may write — a reader
+    //     that starts keeping things is the one way that layer rots (Lagoon_todo §2).
+    //   Blank CLEARS rather than storing an empty string: a snapped key whose value is
+    //    '' is furniture, and the absence is the honest way to say "unnamed".
+    Lies_aside_heading(w: TheC, text: string): TheC {
+        const waft = (this as House).Lies_spawn_aside_waft(w)
+        const t = String(text ?? '').replace(/[\n,]+/g, ' ').trim().slice(0, 160)
+        if (t) waft.sc.heading = t
+        else delete waft.sc.heading
+        return waft
+    },
+
     // ── Lies_spawn_ting_waft ──────────────────────────────────────────────────
     //
     //   Spawn or reuse the transient Ting for this page load — the taker Waft that

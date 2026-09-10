@@ -104,7 +104,38 @@ const ATLAS_BUDGET = 6
 //  read and no parse (mint-only), so it is far cheaper than a map and gets its own, wider lane.
 //  ⇢ 2026-09-08: this ceiling is now secondary to ATLAS_SLICE_MS — the adopt lane exits on the time
 //     bound like the map lane does, so 40 is a cap that is rarely the thing that stops a pass.
-const ATLAS_ADOPT = 40
+//  ⇢ 2026-09-10: 40 → 200, and the measurement is the whole argument.  A warm stand read
+//     `passes:56, capped:3` — the cap stopped 3 passes in 56, exactly as the note above says.  Then
+//      `Atlas_cache_prefetch` removed the per-adopt IndexedDB round trip and the same stand read
+//       `passes:32, capped:13, ms:15026→3668`: with the round trip gone the cap INVERTED into the
+//        binding constraint, stopping 13 passes in 32.  A ceiling sized for work that costs ~10ms
+//         is the wrong ceiling for work that now costs a map lookup and a mint.
+//  The politeness bound is still ATLAS_SLICE_MS and still 120ms — this does not let a pass hold the
+//   mutex any longer, it only stops an obsolete count from ending a slice that had time left.
+//  MEASURED AFTER, and the honest read is that it did its job WITHOUT being the win: `passes:32→16,
+//   capped:13→1` — the ceiling stopped binding, exactly as intended — but `ms:3668→3504`, about 4%,
+//    and the two runs are not clean twins (the first re-parsed 4 movers, the second none). So by
+//     this point the PASS COUNT had already stopped being the dominant term; the prefetch was the
+//      whole 4× and this is tidying an obsolete constant, not a speedup. Keep the distinction: a
+//       change that provably removes a constraint is worth making even when the clock barely moves,
+//        but it must not be written up as if the clock moved.
+//  What the remaining ~3.5s IS: the roster walk (FSA directory listings, docs 0→726) plus ~16 × the
+//   120ms slice of real adopting. That is WORK now rather than waiting, so the next honest gain is
+//    not a bigger budget — it is memoising the census ASSEMBLY itself (the owner's own question,
+//     2026-09-10: *"what do we memoise?"*), which is a design change and not a constant.
+const ATLAS_ADOPT = 200
+// ATLAS_PREFETCH — Dexie rows fetched in ONE call at the top of an adopt lane (2026-09-10).
+//  Measured warm stand before this: `passes:56, capped:3, ms:15026` for 726 docs — the adopt
+//   CEILING stopped only 3 passes, so the cap was never the bound and neither was the parse.  What
+//    bound it was that `Atlas_cache_adopt` did its own `db.doc.get(path)` — 709 separate IndexedDB
+//     round trips at ~10ms each, which is why barely a dozen fitted inside a 120ms slice and why a
+//      warm stand cost 56 belief-tick round-trips to converge.
+//  The same disease as the 726 file reads (fixed by the served dige index) and the 38 HEADs per
+//   reswap (fixed by /__gen/dige): MANY SMALL ASKS WHERE ONE ANSWERS.  Third instance in two days.
+//  Bounded on purpose rather than `toArray()`: a row carries every Map row's sc, so pulling the
+//   whole cache at once would spike memory for a corpus this size.  A window keeps the peak flat
+//    and still turns ~200 round trips into one.
+const ATLAS_PREFETCH = 200
 // ATLAS_REFRESH_MAP — docs a refresh will map INLINE before handing the rest to the pass.  A
 //  refresh runs inside a query op (the caller is waiting on the answer), so it settles the few
 //   movers a working session produces itself and only defers a bulk change (a branch switch).
@@ -130,7 +161,7 @@ const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return 'ee88d6028c95cc8e~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return '46d5b0a2bfca124a~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a
@@ -242,6 +273,8 @@ async Atlas_pass(w, req, nav) {
             return
         }
         w.c.rostered = 1
+        w.c.rostered_at = Date.now()
+        w.c.passes = 0
         // the roster is complete, so the adopt lane starts next pass — pull the served dige index
         //  now, once, while there is nothing else in flight
         await this.Atlas_diges(w)
@@ -256,7 +289,23 @@ async Atlas_pass(w, req, nav) {
     let adopted = 0
     let mapped = 0
     let more = 0
+    // COUNT THE PASSES AND TIME THEM.  The owner, 2026-09-10: *"if I wait these 30s for a ridiculous
+    //  amount of reads of 700 docs… then it parses them all and stuff? what do we memoise?"* — and the
+    //   honest answer needed a number nobody had.  The reads are memoised (one served dige index) and
+    //    the parses are memoised (the Dexie Map rows), and a warm boot still takes half a minute,
+    //     because neither of those is where the time goes: the census is re-installed 40 rows per
+    //      BELIEF TICK, so the wall clock is ~19 tick round-trips regardless of how cheap each row got.
+    //  A budget calibrated for expensive rows is the wrong budget once the rows are cheap, and nothing
+    //   said so out loud — so `see:atlas` now carries `passes` and `ms`, and the shape of the cost is
+    //    readable from the census itself instead of inferred from a stopwatch.
+    w.c.passes = (w.c.passes ?? 0) + 1
+    // ONE BULK READ PER PASS, before the lane starts.  Everything the pass could adopt is pulled in a
+    //  single Dexie call and adopted out of memory, so the 120ms slice buys hundreds of adoptions
+    //   instead of a dozen.  The politeness bound is untouched — this makes each slice WORTH more, it
+    //    does not let a pass hold the mutex any longer.
+    await this.Atlas_cache_prefetch(w)
     let slice_end = Date.now() + ATLAS_SLICE_MS
+    let pass_t0 = Date.now()
     for (const doc of w.o({ Doc: 1 })) {
         // the time bound, checked before every unit of real work — see ATLAS_SLICE_MS
         if ((adopted || mapped) && Date.now() > slice_end) { more = more + 1; continue }
@@ -271,6 +320,11 @@ async Atlas_pass(w, req, nav) {
         await this.Atlas_map_one(w, nav, doc)
         mapped = mapped + 1
     }
+    // the pass's own working time, and whether it stopped because it ran out of ALLOWANCE or out of
+    //  WORK — the tell for whether the caps are the bound (see ATLAS_ADOPT)
+    w.c.pass_ms = Date.now() - pass_t0
+    if (adopted >= ATLAS_ADOPT) w.c.capped = (w.c.capped ?? 0) + 1
+    if (!more && !w.c.settled_at) w.c.settled_at = Date.now()
     await this.Atlas_report(w)
     if (adopted || mapped || more) this.i_elvisto(w, 'think')
 
@@ -545,6 +599,36 @@ async Atlas_cache_put(w, doc) {
     }
 
 },
+// Atlas_cache_prefetch — pull up to ATLAS_PREFETCH cache rows for docs this pass might adopt, in ONE
+//  Dexie call, onto `w.c.cache_rows`.  Parked on `.c` because it is a transient runtime accelerator and
+//   never state: it is rebuilt every pass and nothing outside the pass may read it.
+//  Bulk-first with a per-key fallback: `bulkGet` is one transaction where `get` is one per key, and any
+//   Dexie that lacks it (or throws) simply leaves the map empty and every adopt pays its own get, which
+//    is exactly the old behaviour.  An accelerator must never become a dependency.
+async Atlas_cache_prefetch(w) {
+    let db = this.Atlas_db()
+    w.c.cache_rows = null
+    if (!db || w.c.nocache) return
+    let want = []
+    for (const doc of w.o({ Doc: 1 })) {
+        if (doc.oa({ Map: 1 })) continue
+        if (doc.sc.by === ATLAS_MAPPER && doc.sc.error) continue
+        want.push(doc.sc.Doc)
+        if (want.length >= ATLAS_PREFETCH) break
+    }
+    if (!want.length) return
+    try {
+        let got = await db.doc.bulkGet(want)
+        let map = new Map()
+        for (let i = 0; i < want.length; i = i + 1) {
+            if (got[i]) map.set(want[i], got[i])
+        }
+        w.c.cache_rows = map
+    } catch (e) {
+        w.c.cache_rows = null
+    }
+
+},
 // Atlas_cache_adopt — rebuild a Doc's Map from its row with no read and no parse.  Only when the
 //  row was made by THIS mapper and the file's mtime+size still match what the row saw; the Doc is
 //   stamped `warm` so a census row tells a cache adoption from a real parse (a real parse clears it).
@@ -552,10 +636,16 @@ async Atlas_cache_adopt(w, nav, doc) {
     let db = this.Atlas_db()
     if (!db || w.c.nocache) return false
     let row = null
-    try {
-        row = await db.doc.get(doc.sc.Doc)
-    } catch (e) {
-        return false
+    let pre = w.c.cache_rows
+    if (pre && pre.has(doc.sc.Doc)) {
+        row = pre.get(doc.sc.Doc)          // already in hand from this pass's one bulk read
+    } else {
+        if (pre) { w.c.cache_solo = (w.c.cache_solo ?? 0) + 1 }   // outside the window — counted, not hidden
+        try {
+            row = await db.doc.get(doc.sc.Doc)
+        } catch (e) {
+            return false
+        }
     }
     // WHY THE THREE REFUSALS ARE COUNTED SEPARATELY (2026-09-09).  A cache that never hits and a
     //  cache that always hits look identical from outside — both are "it ran and the answers were
@@ -681,6 +771,16 @@ async Atlas_report(w) {
     // the served-dige tally — the two lanes of the corroboration, hit meaning a read was skipped
     if (w.c.dige_hit) row.sc.dige_hit = '' + w.c.dige_hit
     if (w.c.dige_read) row.sc.dige_read = '' + w.c.dige_read
+    // THE WALL CLOCK, which is the number the owner actually feels.  `passes` × the belief tick is the
+    //  real cost of a warm stand; `pass_ms` is what one pass spends WORKING, and the gap between
+    //   (passes × pass_ms) and `ms` is time spent waiting for the next tick rather than doing anything.
+    //    `capped` counts passes that stopped on the adopt ceiling — if that tracks `passes`, the count
+    //     cap is the bound and the 120ms time slice is never getting a chance to be the bound.
+    if (w.c.passes) row.sc.passes = '' + w.c.passes
+    if (w.c.capped) row.sc.capped = '' + w.c.capped
+    if (w.c.cache_solo) row.sc.cache_solo = '' + w.c.cache_solo
+    if (w.c.pass_ms != null) row.sc.pass_ms = '' + w.c.pass_ms
+    if (w.c.rostered_at && w.c.settled_at) row.sc.ms = '' + (w.c.settled_at - w.c.rostered_at)
     delete row.sc.waiting
 },
 //#endregion

@@ -101,7 +101,31 @@ This doc exists because the failures below have **no other home**. Each subsyste
           `LiesFunk.svelte:480` already says the Cluster copy of a grant is display-only and never
            read back. **Not a one-liner:** `LiesFunk.svelte:1867` and `:3391` read Cluster under
             unknown gating — check those two first.
- - **LANDED 2026-08-08 (fork D), source-verified, UNRUN.** `LiesFunk.svelte` only — `LiesLies.svelte`
+ - ⚑⚑ **MEASURED AT LAST 2026-09-10 — THE FIX HOLDS FOR ITS SCOPE AND THE BUG IS STILL HERE.** The
+    "UNRUN" below is now run, off the committed history rather than a new tab, which turns out to be a
+     better instrument: the toc is committed often enough to be its own flight recorder.
+   **The runner half is fixed.** Only ONE site opens the Waft (`LiesFunk.svelte:440`, inside
+    `Lies_aim_setup`) and its caller is gated `role === 'editor' && !w.c.aim_setup` (`:962`), latch and
+     all, exactly as designed. A non-editor never has a `cluster` to claim, so it cannot write.
+   **The editor half is not, and here are the receipts.** Row sets across three consecutive commits:
+   ```
+   bc773d87  … 9d134474  da060c94  e747cbed …        (8 rows)
+   90e3ee43  … those three GONE; 9ecb3a5f appears    (6 rows)
+   ca0e4fb4  … all three BACK; 9ecb3a5f gone         (8 rows)
+   ```
+   **Rows that vanished came back.** A closed tab cannot return under the same prepub, so this is not a
+    fleet change — it is an overwrite by a writer publishing its own boot-time read plus itself. And the
+     writer names itself: `HostedIdentity:9ecb3a5f9ae4c424,role:editor`, while the toc today carries a
+      DIFFERENT editor, `9d1344745b2dfaf3,role:editor`.
+   **So the surviving fault is precisely the sentence this section already leads with — *"nothing decides
+    which editor is canonical"*.** Fork D removed runners from the writer set, which was real and which
+     the source now proves; it never claimed to arbitrate between editors, and two of them are writing.
+   **What NOT to do, restated because it will tempt whoever picks this up:** not a reaper (more writers
+    churning one file is the disease), and not "last write wins, but smarter". The question is who may
+     write, and `LiesFunk.svelte:970` is where a second answer would go — `Lies_cluster_claim_self` is
+      still called for any tab holding a cluster; today only an editor ever holds one, so the ungated
+       call is harmless *by luck of the opener gate*, not by its own contract.
+ - **LANDED 2026-08-08 (fork D), source-verified, ~~UNRUN~~ — run 2026-09-10, see above.** `LiesFunk.svelte` only — `LiesLies.svelte`
     needed nothing (`Lies_advertise_recv` was already editor-gated). Two hunks: the gate itself
      (`Lies_aim_setup` returns unless `Lies_role(w) === 'editor'`), and **the latch had to move with
       it** — `Lies_aim`'s `if (!w.c.aim_setup)` now reads `if (role === 'editor' && !w.c.aim_setup)`.

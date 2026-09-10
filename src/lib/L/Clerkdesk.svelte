@@ -61,6 +61,24 @@
     const cell_px = (m: any) => (0.74 + 0.5 * weight(m)).toFixed(2) + 'rem'
     const tail = (p: string) => (p ?? '').split('/').filter(Boolean).slice(-1)[0] ?? p
 
+    // ── THE HEADING — what we are really up to, in your words ────────────────────────────────────
+    //  The owner, 2026-09-10: *"we need a heading where I can track what we're really up to… which
+    //   docs are we actively working on and just in the vicinity of?"*  Three things, one band: the
+    //    name you give the day, and the two rings the trail already knows.
+    //  The heading is EDITED HERE and WRITTEN BY LIES — this face may not touch the shelf, and neither
+    //   may Lagoon (it reads).  `draft` holds what you are typing so a 1.5s re-ask cannot yank the
+    //    caret out from under you; it commits on blur or Enter and then lets the read own the value
+    //     again.  A field that fights its own poll is the classic version of this bug.
+    let draft = $state<string | null>(null)
+    const shown_heading = () => draft ?? held?.heading ?? ''
+    function commit() {
+        const w = (H as any).o?.({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0]
+            ?? (H as any).top_House?.()?.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0]
+        if (w && draft != null) (H as any).Lies_aside_heading?.(w, draft)
+        draft = null
+        ask()
+    }
+
     let open = $state('')
     const key = (m: any) => `${m.day}·${m.what}`
     // going back to an errand is the SAME delivery the searchbar makes, so it lands the same way and
@@ -82,6 +100,44 @@
             </span>
         {/if}
     </div>
+
+    <!-- the heading band: what we're up to, then the two rings.  `working` = docs you came BACK to
+         today; `vicinity` = docs you passed through once.  A claim about the work, not the code. -->
+    {#if held}
+        <input class="cd-heading" placeholder="what are we really up to?"
+               value={shown_heading()}
+               oninput={(e) => draft = (e.currentTarget as HTMLInputElement).value}
+               onblur={commit}
+               onkeydown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur() }} />
+        {#if held.working?.length || held.vicinity?.length}
+            <div class="cd-rings">
+                {#if held.working?.length}
+                    <div class="cd-ring">
+                        <span class="cd-ring-name">working on</span>
+                        {#each held.working as r (r.doc)}
+                            <button class="cd-chip work" class:gone={r.gone} class:testing={is_testing(r.doc)}
+                                    title="{r.visits} visits today — {r.about.join(' · ')}"
+                                    onclick={() => resume({ about: r.about[0] }, { doc: r.doc, points: r.about })}>
+                                {tail(r.doc)}<span class="n">{r.visits}</span>
+                            </button>
+                        {/each}
+                    </div>
+                {/if}
+                {#if held.vicinity?.length}
+                    <div class="cd-ring">
+                        <span class="cd-ring-name">in the vicinity</span>
+                        {#each held.vicinity as r (r.doc)}
+                            <button class="cd-chip near" class:gone={r.gone} class:testing={is_testing(r.doc)}
+                                    title="passed through once today — {r.about.join(' · ')}"
+                                    onclick={() => resume({ about: r.about[0] }, { doc: r.doc, points: r.about })}>
+                                {tail(r.doc)}
+                            </button>
+                        {/each}
+                    </div>
+                {/if}
+            </div>
+        {/if}
+    {/if}
 
     {#if refusal && !held}
         <div class="cd-none bad">{refusal}</div>
@@ -135,6 +191,30 @@
     .cd-gone-n { color: rgba(224, 180, 110, 0.8); }
     .cd-none { color: rgba(140, 160, 200, 0.6); padding: 0.3rem 0.1rem; }
     .cd-none.bad { color: rgba(224, 150, 130, 0.85); }
+    /* the heading — the one thing on the desk you WRITE.  Underlined rather than boxed: it is a
+       label on the day, not a form field, and a box would make the desk look like a dialog. */
+    .cd-heading {
+        background: none; border: none; border-bottom: 1px solid rgba(120, 140, 195, 0.3);
+        font-family: inherit; font-size: 0.94rem; color: #dce8ff;
+        padding: 0.1rem 0.15rem; width: 100%; outline: none;
+    }
+    .cd-heading::placeholder { color: rgba(140, 160, 200, 0.45); font-style: italic; }
+    .cd-heading:focus { border-bottom-color: rgba(143, 211, 200, 0.7); }
+    .cd-rings { display: flex; flex-direction: column; gap: 0.12rem; margin: 0.15rem 0 0.1rem; }
+    .cd-ring { display: flex; flex-wrap: wrap; gap: 0.15rem 0.28rem; align-items: baseline; }
+    .cd-ring-name { color: rgba(140, 160, 200, 0.5); font-size: 0.68rem; letter-spacing: 0.05em; flex: none; width: 6.4rem; }
+    .cd-chip {
+        background: none; border: none; font-family: inherit; cursor: pointer;
+        border-bottom: 1px solid transparent; padding: 0 0.1rem; font-size: 0.76rem;
+    }
+    /* the rings differ by WEIGHT, not by colour: one is what you are doing, the other is where you
+       happen to be, and that is a difference of emphasis rather than of kind. */
+    .cd-chip.work { color: #cfe0ff; border-bottom-color: rgba(143, 211, 200, 0.5); }
+    .cd-chip.near { color: rgba(150, 168, 200, 0.75); }
+    .cd-chip:hover { color: #e8f0ff; border-bottom-color: rgba(150, 190, 240, 0.6); }
+    .cd-chip.gone { color: rgba(140, 160, 200, 0.4); text-decoration: line-through; }
+    .cd-chip.testing { color: #5ab; }
+    .cd-chip .n { color: rgba(140, 160, 200, 0.5); font-size: 0.72em; vertical-align: super; margin-left: 0.15em; }
     .cd-day { color: rgba(140, 160, 200, 0.55); font-size: 0.72rem; margin-top: 0.25rem; }
     .cd-day .n { margin-left: 0.4em; color: rgba(140, 160, 200, 0.4); }
     /* the cells.  A re-ask only DIMS them — the desk must never go blank while something loads, which

@@ -23,7 +23,7 @@ const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return '8a17ac32ba98208b~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return '3a0b8237c4d0fac3~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -1110,7 +1110,7 @@ Lagoon_errands(w, k) {
     for (const wf of lies.o({ Waft: 1 })) {
         if (!wf.sc.aside) continue
         let key = wf.sc.Waft
-        let day = { day: key, moments: 0, visits: 0 }
+        let day = { day: key, moments: 0, visits: 0, heading: wf.sc.heading ?? null }
         for (const m of wf.o({ What: 1 })) {
             let docs = []
             let visits = 0
@@ -1151,9 +1151,44 @@ Lagoon_errands(w, k) {
             if (d.gone) gone = gone + 1
         }
     }
+    // ── TWO RINGS: WORKING, and IN THE VICINITY ────────────────────────────────────────────────────
+    //  The owner, 2026-09-10: *"which docs are we actively working on and just in the vicinity of?"*
+    //  The trail already knows, and it knows it the only way that is honest — by what you DID, not by
+    //   what is open.  A doc you went back to is a doc you are working on; a doc you opened once and
+    //    left is the neighbourhood you passed through.  So the split is RETURNS, from today only:
+    //     yesterday's obsession is not what we are up to now, and a ring that accumulated across days
+    //      would silt up into a list of everything ever touched, which is the same as no ring at all.
+    //  Deliberately NOT derived from Atlas's call graph.  "One hop from the working set" would be a
+    //   claim about the CODE; these two rings are a claim about the WORK, and the whole point of the
+    //    desk is to show what the person was doing rather than what the corpus is shaped like.
+    let today = days.length ? days[0].day : null
+    let working = []
+    let vicinity = []
+    if (today) {
+        let ret = new Map()
+        for (const m of moments) {
+            if (m.day !== today) continue
+            for (const d of m.docs) {
+                let row = ret.get(d.doc)
+                if (!row) {
+                    row = { doc: d.doc, visits: 0, about: [], gone: d.gone ? 1 : 0 }
+                    ret.set(d.doc, row)
+                }
+                row.visits = row.visits + (m.visits || 1)
+                if (m.about && row.about.indexOf(m.about) < 0) row.about.push(m.about)
+            }
+        }
+        for (const row of ret.values()) {
+            if (row.visits > 1) { working.push(row) } else { vicinity.push(row) }
+        }
+        working.sort((a, b) => b.visits - a.visits)
+        vicinity.sort((a, b) => a.doc < b.doc ? -1 : 1)
+    }
     if (moments.length > kk) moments = moments.slice(0, kk)
     return { errands: moments, days: days, total: total, shown: moments.length, gone: gone,
-             atlas: atlas ? 1 : 0 }
+             atlas: atlas ? 1 : 0,
+             heading: today && days[0] ? days[0].heading : null, today: today,
+             working: working, vicinity: vicinity }
 
 },
 // Lagoon_locator_split — `Waft:<key>/<mainkey>:<value>` into its two halves.  GREEDY on the key half

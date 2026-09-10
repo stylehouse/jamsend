@@ -66,6 +66,28 @@ Account portability — one **soul**, many **bodies**: carry an identity to a se
     (`Heist_catalog_land` → `Ra_rec_pool`, ✅ poolland, proven inert) and the mount routes
      `pool/…` to OPFS free; what remains is the PRESS driver that lights it (v1 byte-copy, §3). (§3)
 
+   > ⚑ **HALF OF THIS IS NOW STALE — re-checked live 2026-09-10.** The audit below predates
+   >  SoundPooling (landed 2026-09-03…07), which delivered the OUTCOME by a different road:
+   >   `Heist.g:2682` routes a keep carrying `into:'pool'` to `Heist_keep_pool_go`, and
+   >    `Ra_pool_fill_land` completes it. **Lofi copies DO now land in the pool during real listening** —
+   >     watched on eed the night of 2026-09-09: `⇊ landing "03 - Dirty Little Girl.ogg" →
+   >      pool/0 general/Elton John/…`. So *"no LOFI copy ever lands in the phone's OPFS SoundPool"*
+   >       is false as written, and the user-facing story below is no longer un-promisable in whole.
+   > ⚑⚑ **AND THE SECOND HALF OF THIS NOTE WAS WRONG TOO — corrected within the hour, 2026-09-10.**
+   >  I first wrote that the ambient press/quarter economy *"is still dormant"*, on the strength of
+   >   `Siphon.g`'s header (*"`Ra_press` / `Ra_quarter` / `Ra_quarter_serve` stand Book-proven and
+   >    DORMANT"*). **That comment is itself stale, and I quoted it instead of grepping for callers —
+   >     the exact mistake the stale-claim audit in `Loose_ends_todo` had just been written to prevent.**
+   > **The ambient economy IS wired.** `Radio.g:421` calls `Radio_pool_steward` on the live playback
+   >  tick, and `Radio_pool_steward:1554` calls `Ra_quarter_serve` — its own header names it *"the
+   >   AMBIENT STEWARD OCCASION (SoundPooling_todo §3.1)"*. So the dispose loop runs at a track advance,
+   >    in the live flow, not only in a Book.
+   > **What is left of the gap, precisely:** `Ra_upgrade_scan` (`Ra.g:1910`) still has no live caller —
+   >  only `Ghost/Story/HeistTesting.g`. And the §3/§4 QUESTION the warning below protects (the `lib`
+   >   mapping for a streaming phone: press-what-you-streamed vs press-from-a-held-library) is a design
+   >    ruling, which no amount of wiring settles. That warning stands; it just no longer describes an
+   >     unwired seam.
+   >
    > **⚠ THE LIVE WIRING GAP (audited 2026-08-28).** The press ECONOMY is fully built and
    >  Book-proven — `Ra_press` (v1 byte-copy + v2 ogg128), `Ra_quarter` (goal/diff/cap) and
    >   `Ra_quarter_serve` (the dispose loop: press + evict under cap) all live in `Ghost/M/Ra.g`.

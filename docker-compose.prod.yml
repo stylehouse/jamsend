@@ -18,6 +18,19 @@ services:
       - "172.17.0.1:19091:19091"
     environment:
       - NODE_ENV=production
+      # ⚠ PROD MUST NOT DIAL THE r2r BRIDGE — measured 2026-09-10, and it silently broke every
+      #  editor→runner dispatch on this box.  `relay.ts` falls back to DEFAULT_EDITOR_RELAY
+      #   (`ws://172.17.0.1:9092/relay?r2r=1`) when EDITOR_RELAY is unset, and its own note assumes
+      #    prod lives somewhere that address "will never answer".  On a box that ALSO runs dev (:9091)
+      #     and staging (:9092) it answers immediately — and the passive end keeps exactly ONE
+      #      `peerLink` (relay.ts, the `meta.r2r` inbound), set by whoever dialled LAST.  So prod
+      #       quietly won staging's bridge and every `become_book` the editor sent was forwarded to
+      #        PROD, which has no runners, and dropped there: `⚠ DROPPED bridge→ … no local socket is
+      #         bound`.  The editor showed "sent", the runner sat at "→EDITOR (dialing)", and the
+      #          Brink stuck on `calling` — with nothing wrong at either end.
+      #  Prod has no editor and nothing to bridge to, so say so explicitly rather than relying on the
+      #   default being unreachable.  `off|none|0|false|''` all mean "no bridge, ever".
+      - EDITOR_RELAY=off
     env_file:
       # ALLOWED_HOSTS — vite.config.ts reads it off process.env and refuses any other Host
       #  header, so WITHOUT this the public names get "Blocked request. This host is not

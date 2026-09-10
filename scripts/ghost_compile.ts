@@ -19,8 +19,16 @@
 // Each run: (1) compute each .g's dige off disk (no compiler); (2) send one signed `ghost_compile`
 //  ticket per .g to EDITOR_URL's relay (claude's cluster key) and STAY CONNECTED; (3) narrate every
 //   reply to stderr and settle each ticket on the FIRST of: the served .go's dige flipping (ground truth,
-//    HTTP-polled), a relay `undeliverable` (no editor on the relay), an editor `ghost_compile_ack`
-//     (started / done / error), or a TIMEOUT. The timeout is load-bearing: a half-open editor leaves the
+//    HTTP-polled), a relay `undeliverable` (no editor on the relay), an editor `ghost_compile_ack` **error**,
+//     or a TIMEOUT.
+//  ⚠ AN ACK OF `done` DOES NOT SETTLE ANYTHING (changed 2026-09-10, GhostHMR §0 fix B; it used to).
+//   "Compiled" and "landed" are two facts and this CLI used to conflate them: in August the editor acked
+//    `✓ compiled @ <the correct NEW dige>` twice while the `.go` kept its OLD Ghostmeta with mtimes
+//     untouched ten minutes later — the compile ran, the write was silently lost, and this reported
+//      success. Now `done` narrates, the dige-flip is the only thing that can say `compiled`, and a
+//       ticket that was acked but never flipped settles as **`acked-no-write`**, which is a named fault
+//        rather than a false green. An `error` ack still settles: there will be no flip to wait for.
+//     The timeout is load-bearing: a half-open editor leaves the
 //      relay falsely reporting delivery AND never acks, so silence-past-N is the only signal that catches
 //       it (observational liveness at the client — never close on send and exit 0 reporting unconfirmed
 //        success). `undeliverable` + the editor ack are relay/editor-side follow-ons; until they land the
@@ -112,7 +120,16 @@ async function pollServed(base: string, gen_path: string, dige: string, deadline
 	return false
 }
 
-type Status = 'compiled' | 'no-editor' | 'error' | 'timeout' | 'send-failed'
+// `acked-no-write` — THE EDITOR SAID DONE AND THE FILE NEVER CHANGED (2026-09-10, GhostHMR §0 fix B).
+//  Measured 2026-08-22: the editor acked `✓ compiled @ <the correct NEW dige>` on two separate rounds
+//   for Radio.g / Mesh.g / LakeTiles.g, and the `.go` on disk — and as served by vite — kept the OLD
+//    Ghostmeta, mtimes untouched ten minutes later.  So the compile RAN (it knew the new dige) and the
+//     WRITE was silently lost.  Because the ack settled the ticket, this CLI reported success, and every
+//      later step trusted a `.go` that had never moved.
+//  "Compiled" and "landed" are two facts.  Only the second one matters to a caller, and only the
+//   dige-flip proves it — so the ack is narration now, and this status names the gap between them
+//    instead of letting an ack paper over it.
+type Status = 'compiled' | 'no-editor' | 'error' | 'timeout' | 'send-failed' | 'acked-no-write'
 interface Verdict { path: string; status: Status; dige?: string; errors?: string[] }
 
 async function main() {
@@ -152,6 +169,9 @@ async function main() {
 	const resolvers = new Map<string, (v: Verdict) => void>()   // corr → resolve
 	const byPath    = new Map<string, string>()                  // path → corr (a reply may carry only path)
 	const settled   = new Set<string>()
+	// corrs whose editor ack said `done`.  Not a settle — a witness, so the timeout below can tell
+	//  "nobody answered" apart from "the editor claimed it compiled and the file never moved".
+	const acked     = new Set<string>()
 	const verdicts: Promise<Verdict>[] = []
 	for (const t of ok) {
 		byPath.set(t.path, t.corr)
@@ -178,7 +198,11 @@ async function main() {
 		if (msg.type === 'ghost_compile_ack' || msg.control === 'ghost_compile_ack') {
 			const p = path ?? '?'
 			if (msg.phase === 'started') { console.error(`· editor compiling ${p}`); return }
-			if (msg.phase === 'done')    { settle(target, { path: p, status: 'compiled', dige: msg.dige }); return }
+			// `done` NARRATES, IT NO LONGER SETTLES (GhostHMR §0 fix B).  An ack says the editor ran a
+			//  compile; only the served dige flipping says the bytes reached disk, and those came apart
+			//   for ten minutes in August with the ack claiming success throughout.  Record that we heard
+			//    it — so a timeout can say WHICH failure this is — and let the ground-truth poll close.
+			if (msg.phase === 'done')    { if (target) acked.add(target); console.error(`· editor acked done ${p} — waiting for the .go to actually flip`); return }
 			if (msg.phase === 'error')   { settle(target, { path: p, status: 'error', errors: msg.errors ?? [] }); return }
 		}
 	})
@@ -201,7 +225,15 @@ async function main() {
 	const deadline = stamp + 5000 + TIMEOUT_MS   // +5s for the connect window already spent on `opened`
 	for (const t of ok) if (t.gen_path)
 		void pollServed(EDITOR_URL, t.gen_path, t.dige, deadline).then(seen => { if (seen) settle(t.corr, { path: t.path, status: 'compiled', dige: t.dige }) })
-	const timer = setTimeout(() => { for (const t of ok) settle(t.corr, { path: t.path, status: 'timeout' }) }, TIMEOUT_MS)
+	//  …and the timeout now DISTINGUISHES the two silences.  A ticket nobody acked is a `timeout` (no
+	//   editor heard it, or it is half-open).  A ticket the editor acked `done` whose `.go` never flipped
+	//    is `acked-no-write` — a different fault with a different owner, and the one that used to be
+	//     reported as success.
+	const timer = setTimeout(() => {
+		for (const t of ok) settle(t.corr, acked.has(t.corr)
+			? { path: t.path, status: 'acked-no-write', dige: t.dige }
+			: { path: t.path, status: 'timeout' })
+	}, TIMEOUT_MS)
 
 	const results = await Promise.all(verdicts)
 	clearTimeout(timer)
@@ -212,6 +244,15 @@ async function main() {
 		else if (v.status === 'no-editor')   console.error(`✗ ${v.path}: no editor connected to the relay — frame dropped`)
 		else if (v.status === 'error')       console.error(`✗ ${v.path}: compile error — ${(v.errors ?? []).join('; ') || 'see editor'}`)
 		else if (v.status === 'send-failed') console.error(`✗ ${v.path}: relay send failed — ${(v.errors ?? []).join('; ')}`)
+		else if (v.status === 'acked-no-write') {
+			// the fault this status exists for: say what is true, what is not, and what to do — because
+			//  the tempting reading ("it compiled, the poll is just slow") is the one that lost ten
+			//   minutes in August.
+			console.error(`✗ ${v.path}: THE EDITOR ACKED A COMPILE THAT NEVER LANDED.`)
+			console.error(`   It reported done${v.dige ? ` @ ${v.dige}` : ''}, and the served .go still carries the OLD Ghostmeta after ${Math.round(TIMEOUT_MS / 1000)}s.`)
+			console.error(`   The compile ran; the WRITE was lost (a parked LiesStore write, a nav that is not the repo disk, or a post-ack throw).`)
+			console.error(`   Do NOT trust this .g edit. Compile it locally instead:  GFILES="${v.path}" node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/LocalGen.spec.ts`)
+		}
 		else                                 console.error(`✗ ${v.path}: no response in ${Math.round(TIMEOUT_MS / 1000)}s (editor not connected or half-open?)`)
 	}
 	const compiled = results.filter(v => v.status === 'compiled').length

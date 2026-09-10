@@ -14,9 +14,20 @@
       req for the gen path).
   - **fix A (editor)**: ack `done` only after the write is READ BACK (Ghostmeta flipped on its
      own nav) — "compiled" and "landed" are two facts and the ack currently conflates them.
-  - **fix B (script)**: `ghost_compile.ts` settles a ticket on the FIRST of ack|dige-flip — an
-     ack should never settle a ticket alone; demote it to narration and let only the dige-flip
-      poll (or timeout) close. (Claude memory `ghost-compile-verify-by-go-dige`, 2026-08-22.)
+  - ✅ **fix B (script) — DONE 2026-09-10.** An ack of `done` no longer settles anything: it narrates
+     (`· editor acked done <path> — waiting for the .go to actually flip`) and only the served
+      dige-flip can report `compiled`. An `error` ack still settles — there will be no flip to wait for.
+     **A ticket that was acked and never flipped now settles as `acked-no-write`**, a named fault
+      instead of a false green: it says the compile ran, the write was lost, names the three places it
+       can be lost (a parked LiesStore write · a nav that is not the repo disk · a post-ack throw), and
+        prints the LocalGen command to compile it locally instead. It already fails the exit code, since
+         `compiled` counts only true flips.
+     Smoke-tested live against the editor on an unchanged file: `· editor compiling` → `✓ compiled @
+      14efd88c08b5219c`, settled by the poll. (Claude memory `ghost-compile-verify-by-go-dige`.)
+     ⚑ **fix A (editor-side) is still open** — the editor should ack `done` only after reading the write
+      back on its own nav. Until then this CLI's `acked-no-write` is the only thing that can see the gap,
+       and it can only see it from outside, after a timeout.
+  - ~~**fix B (script)**~~ (superseded above; the original wording kept for its reasoning)
 
 The arc: a runner must acquire the editor's freshly-compiled `.go` **live, via Vite HMR** —
  never by a manual tab refresh (the current reality, which is absurdly broken). No new push

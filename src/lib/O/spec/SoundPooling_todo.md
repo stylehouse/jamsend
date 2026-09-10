@@ -115,7 +115,12 @@ node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/Serv
       socket alone, and the `runner_ask` handler lives on the `?addr=player` role socket, so an addressed
        ask never arrived. Fixed CLI-side by asking the `player` SLOT with `ask.pub` (the tab filters,
         `Lies_runner_ask_recv`). The relay's own comment promises the proper repair — a second map for
-         control-plane types — never built; `relay-test.ts` is its harness. (`production` is stamped only
+         control-plane types — never built (confirmed still unbuilt 2026-09-10); `relay-test.ts` is its harness.
+      ⚠ **AND IT NOW HAS A RIVAL — do not build it without reading `Social_demarcation_todo §0` step 3d.**
+       That thread is removing the shared `?addr=runner` seat, which would delete a role socket rather
+        than teach delivery to route to it. The two are opposite answers to one question: **is a role
+         socket a legitimate second door for control-plane traffic, or an accident being removed?**
+          Building the second map first would invest in a door the other thread is closing. (`production` is stamped only
           for `jamsend.*`/`voula*` hosts on a non-dev build; djamsend.duckdns.org is a dev tab.)
 
 **Tooling landed this evening (⌛):** `concap` console ring installs on EVERY tab (was editor|book|grid

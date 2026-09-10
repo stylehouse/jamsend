@@ -686,11 +686,25 @@ Repli_recv_parked(w, frame):
 //     answered and the other was not.
 //  Advisory and lossy BY DESIGN: dropping it costs nothing, the sink just falls back to the ladder it
 //   already has.  Throttling is the caller's — Repli_serve_miss's existing 5s-per-id gate.
-async Repli_tell_miss(w, pier, h):
+// `dead` (optional, 2026-09-10 — Radio_todo §0's "STILL NOT DONE", and Loose_ends #3).  A plain
+//  `repli_missed` means "I cannot resolve this id — RE-CENSUS ME", which is the right answer when the
+//   record is merely absent.  It is the WRONG answer for the case this flag names: the id resolves
+//    perfectly and the BYTES cannot be made — an unreadable source file, a producer that has died.
+//  A re-census there re-mints the identical id off the identical broken file and fails identically, so
+//   the sink pays ~6min of census churn to arrive back where it started (the doc: *"FUTILE … would only
+//    add ~6min of census churn until Heist_pull_giveup fires"*).
+//  It is NOT `no_idspace` either: that says "this id was never mine", and here it plainly is. The three
+//   negatives now read as one scale — **parked** (found it, bytes coming) · **missed** (can't resolve,
+//    re-census) · **missed+dead** (resolved, unmakeable — stop asking, a census will not help) ·
+//     **no_idspace** (never mine, stop forever).
+//  Carried as a flag on the existing frame rather than a fourth type, deliberately: an older sink
+//   ignores the flag and behaves exactly as it does today (the retriable ladder), which is the same
+//    lossy-by-design contract every tell on this lane already keeps.
+async Repli_tell_miss(w, pier, h, dead):
     let seq = this.Pier_next_seq(pier)
-    let body = new TextEncoder().encode('missed')
+    let body = new TextEncoder().encode(dead ? 'missed_dead' : 'missed')
     let bh = await this.Peeroleum_body_digest(body)
-    this.Peeroleum_send(w, { header: { type: 'repli_missed', from: h.to, to: h.from, id: h.id, stream: h.stream, from_idx: h.from_idx, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
+    this.Peeroleum_send(w, { header: { type: 'repli_missed', from: h.to, to: h.from, id: h.id, stream: h.stream, from_idx: h.from_idx, seq: seq, body_hash: bh, body_len: body.length, ...(dead ? { dead: 1 } : {}) }, buffer: body })
 
 // Repli_tell_no_idspace — the TERMINAL NEGATIVE (Repli_idspace_todo §4).  `repli_missed` is a
 //  retriable backoff: 60s window, consumed by Heist's told-miss census, wiped on rebirth — so an id
@@ -712,11 +726,21 @@ async Repli_tell_no_idspace(w, pier, h):
 //   itself — it drops a flag in the same `.c` neighbourhood as ra_parked, and Heist's pull beat reads it
 //    to skip straight past the ask-count and throttle gates that exist only to GUESS at what this frame
 //     states outright.  Guessing is what those gates were for; a fact retires them.
+//  `dead:1` on the frame is the DISTINGUISHED disclaim (see Repli_tell_miss): the id resolved and the
+//   bytes cannot be made.  Stamped in its own map, because it retires a different gate — `ra_missed`
+//    means "re-census me", and a re-census is exactly the thing that cannot help here.  Kept BESIDE the
+//     ordinary stamp rather than instead of it, so every existing reader keeps behaving as it does today
+//      and only a reader that knows the stronger word acts on it.
 Repli_recv_missed(w, frame):
     let h = frame.header
     if (h.id == null) return
     w.c.ra_missed = w.c.ra_missed || {}
     w.c.ra_missed[String(h.id)] = Date.now()
+    if (h.dead) {
+        w.c.ra_dead = w.c.ra_dead || {}
+        w.c.ra_dead[String(h.id)] = Date.now()
+        console.log(`◈☠ source disclaims id=${String(h.id).slice(0, 8)} — resolvable but unmakeable; a re-census will not help`)
+    }
 
 // Repli_missed_hot — "has the source recently told us, in as many words, that it does not have this?"
 //  Until 2026-08-08 `ra_missed` had exactly ONE reader (Heist's pull beat) and the MUSIC path had none,
@@ -1036,6 +1060,22 @@ async Repli_serve_want(w, pier, frame):
     //   fail — it PARKS, and Repli_serve_parked answers it the moment the frontier passes.  Eager by
     //    construction: the first full page serves the moment it exists; nobody waits for the set.
     if (!this.Repli_page_ready(rec, from, PAGE)) {
+        // A PARK PROMISES BYTES ARE COMING.  Do not promise that when the producer is DEAD (2026-09-10).
+        //  `rec.c.pcm_dead` is Ra's own verdict after a source has failed repeatedly — 'card' (no stock
+        //   card), 'nav' (the file cannot be read: the U+FFFD path that can never round-trip to disk),
+        //    'headless' (no decoder here).  It is stamped and then nothing on this lane ever read it, so
+        //     a want for such a record parked, the leash ABANDONED it ~90s later, the sink re-asked, and
+        //      the pair cycled `parked want ABANDONED → transcode STALLED` on one id for as long as both
+        //       tabs lived — the exact loop Radio_todo §0 opens with.
+        //  Say the true thing instead: resolved, unmakeable, and a re-census cannot help (`dead:1`).
+        //   The sink's give-up ladder still converges without this; what this buys is minutes instead of
+        //    minutes-per-track, and a REASON in place of silence.
+        if (rec.c.pcm_dead) {
+            if (this.Repli_serve_miss(w, h, `producer is dead (${rec.c.pcm_dead}) — resolvable but unmakeable`)) {
+                await this.Repli_tell_miss(w, pier, h, 1)
+            }
+            return
+        }
         if (from < +(rec.sc.nchunks || 0)) await this.Repli_park_want(w, pier, h)
         return
     }
