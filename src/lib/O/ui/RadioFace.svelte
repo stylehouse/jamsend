@@ -38,8 +38,12 @@
                 folder: !!((H as any)?.Crate_nav?.()),
                 hand: !!(w && (H as any)?.Heard_hand_on?.(w, me)),
                 to: targets.length ? String(targets[0].name) : '',
+                // is the heart actually held? — gates the retire line, so the sheet never offers to
+                //  undo nothing.  Reads the LEDGER (the durable fact) under the same `by || me` pub
+                //   the press writes with, exactly as likedThis does.
+                taken: !!(n?.c?.rec?.sc?.id && (H as any)?.Heard_taken?.(w, me, n?.sc?.by || me, n.c.rec.sc.id)),
             }
-        } catch { return { copy: false, folder: false, hand: true, to: '' } }
+        } catch { return { copy: false, folder: false, hand: true, to: '', taken: false } }
     })
     const hand_toggle = () => { try { const w = n?.c?.w; const me = (H as any)?.Radio_pub?.(w) || 'me'; (H as any)?.Heard_hand_set?.(w, me, roads.hand ? 0 : 1); H?.bump_version?.() } catch {} }
     const hand_line = () => roads.hand ? (roads.to ? ' — ' + roads.to : ' — no linked device with a folder yet') : ' (off)'
@@ -141,9 +145,20 @@
             //  so after a reload the heart went hollow while the ask it stood for was still standing — the
             //   button saying the opposite of the durable truth.  The mirror stays as the instant tell on
             //    the press itself (the ledger probe is a walk; the mirror is already in hand).
+            // ⚠ THE PROBE MUST USE THE PUB THE WRITE USED (2026-09-10 — "they should be lovable").
+            //  `Radio_like` records the take as `by = n.sc.by || me`, so a track with no `by` — a POOL
+            //   item, or anything of one's own, where there is no friend to name — lands in the ledger
+            //    under ME.  This probe used to be GATED on `n.sc.by`, so for exactly those tracks it
+            //     never ran: the heart lit from `n.c.liked` alone, which dies with the process, and the
+            //      love went hollow on the next reload while the durable take sat in the ledger
+            //       unread.  Mirror the write (`by || me`) instead of requiring `by`.
             likedThis: !!(
                 (n?.c?.liked && n?.c?.rec?.sc?.id && n.c.liked[n.c.rec.sc.id]) ||
-                (n?.sc?.by && n?.c?.rec?.sc?.id && (H as any)?.Heard_taken?.(n?.c?.w, (H as any)?.Radio_pub?.(n?.c?.w), n.sc.by, n.c.rec.sc.id))
+                (n?.c?.rec?.sc?.id && (H as any)?.Heard_taken?.(
+                    n?.c?.w,
+                    (H as any)?.Radio_pub?.(n?.c?.w),
+                    n?.sc?.by || (H as any)?.Radio_pub?.(n?.c?.w),
+                    n.c.rec.sc.id))
             ),
         }
     })
@@ -266,6 +281,16 @@
                 </button>
             {/if}
             <div class="rf-road rf-road-dim"><span class="rf-road-tick">·</span><span>the whole album it came from — not yet</span></div>
+            <!-- ONE DOOR, NOT TWO (2026-09-10).  A "retire this heart" line stood here for about an hour,
+                 back when the ♥ was not a toggle and the only way to unlove was the ✕ on a Haul row.
+                 The owner then ruled the heart a TOGGLE — "we love or unlove things, which includes or
+                 dis-includes them in SP and Heisting to our Cave" — so pressing ♥ again IS the unlove,
+                 and a second control saying the same thing in a hidden sheet is worse than none.
+                 The Haul row's ✕ stays: it can call off a keep that is already RUNNING, which the heart
+                 deliberately does not. -->
+            {#if roads.taken}
+                <div class="rf-road rf-road-dim"><span class="rf-road-tick">♥</span><span>loved — press the heart again to unlove</span></div>
+            {/if}
         </div>
     {/if}
     <!-- provenance badge, unmistakably (the human 2026-08-07: "the UI in the player should be clear its
@@ -384,6 +409,9 @@
     .rf-road.on { opacity: 1; }
     .rf-road-dim { opacity: 0.35; font-style: italic; }
     .rf-road-btn { background: none; border: 0; color: inherit; font: inherit; width: 100%; cursor: pointer; padding: 3px 0; }
+    /* the retire line sits apart from the roads: the roads say where a ♥ GOES, this one takes it back. */
+    .rf-road-retire { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 210, 120, 0.18); opacity: 0.75; }
+    .rf-road-retire:hover { opacity: 1; }
     .rf-road-tick { width: 1em; flex: 0 0 1em; color: #ffd27a; }
     /* THE ROAD CHIP — it rides beside ♥ as a label, not as a second verb, so the eye reads "♥ ⇊" as one
        statement about where a like goes rather than as two buttons competing for the press.  Quiet by

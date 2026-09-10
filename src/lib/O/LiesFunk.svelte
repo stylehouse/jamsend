@@ -1500,6 +1500,18 @@ await M.eatfunc({
             if (e.lines.length < 4 && e.lines[e.lines.length - 1] !== line) e.lines.push(line)
         }
         const is_md = /\.md$/i.test(path)
+        // THE GHOST DIALECT DECLARES A METHOD DIFFERENTLY, and until 2026-09-10 this scan could not see
+        //  one.  Measured over the whole ghost pile: 53 `.g` files, 2,822 real methods, and the three
+        //   regexes below found 714 "defs" of which **zero** were methods — `Ghost/L/Atlas.g` yielded
+        //    exactly one, `roots`, a local variable.  The middle regex wants a trailing `{`; a `.g`
+        //     method line ends in `:`.  So what actually matched was the `const|let X = (` alternative,
+        //      i.e. locals, which in this dialect is pure noise.
+        //  The instinct was to delete the extractor and let Atlas own defs — Atlas has the real grammar
+        //   and holds all 2,822.  But Atlas is FSA-only and refuses to stand without a granted handle,
+        //    while this scan rides LiesStore and works on any tab with an editor: deleting it would make
+        //     ghost-method search vanish exactly where Atlas cannot go.  Teaching it the dialect turns
+        //      0 correct into 2,822 and drops the 714 false ones, which is strictly better than either.
+        const is_g = /\.g$/i.test(path)
         for (let i = 0; i < lines_in.length; i++) {
             const raw = lines_in[i], ln = i + 1
             row.lines.push(raw.length > 120 ? raw.slice(0, 120) : raw)   // clipped, for snippets
@@ -1515,6 +1527,12 @@ await M.eatfunc({
             if (is_md) {
                 const h = /^#{1,6}\s+(.+)/.exec(raw)
                 if (h) push_def(h[1].trim(), ln, 'heading')
+            } else if (is_g) {
+                // `Name(args):` at column 0, optionally `async` — the whole declaration form.  The
+                //  `const|let X = (` alternative is deliberately NOT tried here: in this dialect it
+                //   only ever matches a local, which is what produced 714 false rows per pass.
+                const m = /^(?:async\s+)?([A-Za-z_][\w]*)\s*\(.*\)\s*:\s*$/.exec(raw)
+                if (m && !RESERVED.has(m[1])) push_def(m[1], ln, 'def')
             } else {
                 const m = /^\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/.exec(raw)
                     ?? /^\s*(?:export\s+)?(?:public\s+|private\s+|static\s+|async\s+)*([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*(?::[^{;=\n]+)?\{\s*$/.exec(raw)
@@ -1615,6 +1633,35 @@ await M.eatfunc({
             if (paths.size > 50)
                 try { await H.Stemdex_seem_mirror(w, dex) }
                 catch (err) { console.warn('🐝 stemdex seem mirror failed', err) }
+            // ── SELF-TRICKLE: converge ONCE, without needing to be watched ────────────────────────
+            //  Measured 2026-09-10: the whole corpus costs **3.8s of scanning** (661 files, 16.7MB,
+            //   5.8ms average, 183ms worst) — the owner's *"I'd expect the whole index would be picked
+            //    up in five seconds"* was almost exactly right.  And `SCAN_BUDGET = 8` is not the
+            //     problem either: 8 × 5.8ms ≈ 46ms, a sane politeness slice.
+            //  The problem was that NOTHING DROVE THE PASSES.  The only nudge was the searchbar while
+            //   its panel is open (`Searchbar.svelte:52`), so ~83 passes' worth of convergence advanced
+            //    only while someone sat looking at it, and stopped dead when they closed it — leaving
+            //     the index perpetually mid-first-scan for anyone who searches in short bursts, which
+            //      is everyone.  A first-time index that only advances while it is being watched is
+            //       never a first time; it is every time.  That is the "slow startup".
+            //  So: while there is work left, poke the next pass ourselves.  This is `Creduler_ensure`'s
+            //   own trickle idiom (LiesLies ~:1093), including the cleared-on-ready half — one timer,
+            //    never stacked, and it STOPS the moment the index is complete, so a converged tab pays
+            //     nothing.  Politeness is unchanged: each pass still spends only its two budgets.
+            //  ⚠ THE STOP CONDITION IS "DID THIS PASS DO ANYTHING", not `done < total`.  `done` counts
+            //   only docs with usable content: an unreadable or over-400KB doc increments `missing` and
+            //    an un-landed one increments neither, so `done` can never reach `total` on a corpus
+            //     holding a single such file — and the trickle would then fire every 120ms for the life
+            //      of the tab, turning a fix for a slow start into a permanent heartbeat.  A pass that
+            //       asked for nothing and scanned nothing is converged or stuck; either way, stop.
+            if ((asked || scanned) && !dex.trickle) {
+                dex.trickle = setTimeout(() => {
+                    dex.trickle = undefined
+                    H.i_elvisto(w, 'Lies_stemdex_scan', {})
+                }, 120)
+            } else if (!asked && !scanned && dex.trickle) {
+                clearTimeout(dex.trickle); dex.trickle = undefined
+            }
         } finally { dex.scanning = false }
     },
 
@@ -2615,7 +2662,14 @@ await M.eatfunc({
                             //        run" the Book convention already uses (VytoStaple/AtlasStaple's own
                             //         `if (old) SH.drop(old)`) — now available from the CLI too.
                             if (a.fresh) { const old = top.o({ A: name })[0]; if (old) top.drop(old) }
-                            top.oai({ A: name }).oai({ w: name })
+                            const gw = top.oai({ A: name }).oai({ w: name })
+                            // --nocache (2026-09-10): stand it COLD.  Every speed measurement so far has
+                            //  been the warm case — a tab whose Dexie already holds the corpus — while the
+                            //   complaint being chased is a cold start ("5 minutes of 80% CPU").  Those are
+                            //    different machines: warm skips the parse entirely, cold pays 726 of them.
+                            //     `w.c.nocache` already gates every cache path in Atlas; this just lets the
+                            //      CLI ask for it, so the expensive case can be measured instead of assumed.
+                            if (a.nocache) (gw as any).c.nocache = 1
                             stood = name
                         }
                         H.i_elvisto(w, 'think')
@@ -2655,6 +2709,22 @@ await M.eatfunc({
                         //    real cost is what the electrode tally measures across the ticks that follow.
                         result = { picked: path, point: point ?? null, fired_ms: Math.round((performance.now() - t0) * 100) / 100,
                                    note: 'elvisto is deferred — read the cost from `electrode top`, not from fired_ms' }
+                    }
+                } else if (op === 'stemdex') {
+                    // NUDGE + REPORT the Stemdex's corpus walk, so the SECOND full scan of the corpus
+                    //  can be measured the way Atlas's was (2026-09-10).  It had been invisible in every
+                    //   measurement for a mundane reason: nothing on a runner opens a searchbar, and the
+                    //    searchbar is what nudges the pass — so `lagoon seek` reports "stemdex standing
+                    //     but UNINDEXED here" and the cost of the walk never appeared in any number.
+                    //  One pass per call, idempotent and dige-gated exactly as the searchbar's nudge is;
+                    //   this presses the same button, from a place that can hold a stopwatch.
+                    const dex = (H as any).Lies_stemdex(w)
+                    H.i_elvisto(w, 'Lies_stemdex_scan', {})
+                    result = {
+                        indexed: dex?.docs?.size ?? 0,
+                        warmed: dex?.warmed ? 1 : 0,
+                        scanning: dex?.scanning ? 1 : 0,
+                        note: 'one polite pass per call — nudge repeatedly until `indexed` stops climbing',
                     }
                 } else if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
                     // The reverse lookup owed since the Atlas census began (Stemdex_todo.md §0):

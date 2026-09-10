@@ -1491,6 +1491,44 @@ The C tree is single-threaded under a mutex; ticks are serialised so a reader se
 - **Never stage, commit, or push.** The working tree is dirty by design; the human reviews the diff.
 - `_spec` promotion is the human's call. This doc stays `_todo` until they say otherwise.
 
+### 9.6b The unbounded-accumulation sweep (2026-09-10)
+
+The owner, on hearing that the doubled-delivery bug ended as *"a runaway that filled the inbox to its
+ 2000 cap"*: **"awful flaw. lets double-check we don't have a silly something else too."** The class is
+  specific and worth naming, because it is the one that keeps costing hours here: **a fault that
+   accumulates instead of failing.** Nothing throws, no log reddens, the thing just gets slower until a
+    human says "the app is broken" and starts looking in the wrong place.
+
+**Swept, and already bounded** — the transport is in better shape than the question assumed:
+
+| accumulator | bound | shed rule |
+|---|---|---|
+| Peeroleum inbox | 2000 live unemits | shed BULK oldest-first, control-plane spared |
+| Peeroleum outbox | 2000 un-acked emits | drop oldest; barks `🛰☠` naming the stalled pier |
+| Peeroleum acked | `ACKED_KEEP` | ring |
+| Repli `keep_memo` | 2000, disk-mirrored | ring |
+| Repli `%parked_want` | **lease, not a cap** | `asked_at` re-stamped by every re-ask; `Ra_transcode_pump` culls a lapsed lease |
+| Repli `serve_parked` | `repli_serve_parked_budget` (32) | the rest stay parked, dribble out on the next release or the sink's RTO re-ask |
+| relay `tally` | one 10s window | `tally.clear()` each dump |
+| relay `ackBack`, `claims` | asker/owner lifetime | swept on socket close |
+| relay `locals` | — | `unbind` deletes the Set when it empties |
+
+**One genuine hole found, and fixed here:** `relay.ts`'s `dropCounts`. It is keyed by `to` **taken
+ straight off an inbound frame header**, and an entry is removed only when that *exact* address later
+  delivers — so a peer addressing many short-lived or bogus names grows the map for the life of the dev
+   server. Small per entry, unbounded in principle, silent by construction, and driven by untrusted
+    input: the whole shape in one place. Now capped at `DROPCOUNT_MAX = 4096` distinct addrs, clearing
+     wholesale on overflow. Free, because the counter is *only* log-escalation state — a forgotten addr
+      simply warns as if for the first time, which is the honest thing to say once we stopped counting.
+
+**One stale comment worth not believing:** `Repli.g` still says of `Repli_serve_parked` *"This is the ONE
+ ask/serve path with no budget"*. It has had `BUDGET = 32` since the 2026-08-26 pass, twelve lines below
+  the sentence. The comment describes the problem, not the state — read the code.
+
+**Not swept:** the browser-side C tree at large (every `i()` without a matching drop is a candidate, and
+ the req sweep's *"an owner drops its finished transient reqs"* rule in CLAUDE.md is the standing cure).
+  A real pass there wants a live tab and a `minisnap` diff over time, not a grep.
+
 ### 9.7 Sources that will mislead if read as current
 
 `Download_stall_handover.md` is archaeology — the 2026-07-29→30 wedge hunt, much of it superseded

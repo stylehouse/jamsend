@@ -32,7 +32,7 @@
 //    No push, no subscription, no second socket: the question "has anything changed?" costs one
 //     conditional GET, and the answer, when it is yes, IS the new index.
 import { createHash } from 'node:crypto'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 // Atlas's own constants are the defaults; a caller may narrow them but never widen past this.
@@ -161,6 +161,55 @@ export function gen_diges(repo_root: string): Record<string, Served> {
     const keyed: Record<string, Served> = {}
     for (const k of Object.keys(out)) keyed[k.replace(/^src\/lib\//, '')] = out[k]
     return keyed
+}
+
+// ── THE STATUS WAFT — the whole corpus's dige+mtime+size as a particle tree on disk ──────────────
+//  The owner, 2026-09-10, correcting the plan twice in two sentences: *"one off-tab walk producing one
+//   Waft that carries the whole reading of ALL 700 documents, their mtime or even dige"* and *"the
+//    status-of-everything Waft is just dige + mtime + size"*.
+//  So: not an endpoint, not a Mag, not a page — ONE Waft, written to the wormhole, opened by the tab
+//   with `deWaft` — code the machine has had since the beginning.  `/__atlas/dige` was this same fact
+//    wearing a bespoke JSON shape; this is the fact as the machine's own matter, and it retires that.
+//  WHY A FILE AND NOT A RESPONSE: a response has to be asked for.  A file in the wormhole is simply
+//   there, the tab already knows how to open one, and the dev server already watches the tree that
+//    produces it — so "push" costs nothing but a rewrite on change.
+//
+//  THE FORMAT IS NOT INVENTED HERE.  It is what the real encoder emits, read off a live round-trip
+//   rather than inferred (2026-09-10):
+//        Waft:<key>
+//          Doc:<path>,dige:<hex>,mtime=<num>,size=<num>
+//   Two spaces per depth; a STRING value takes `key:value`, a NUMBER takes `key=value`.  Getting that
+//    backwards would decode as a string and nothing would complain, so `scripts/StatusWaft.spec.ts`
+//     gates this by decoding what THIS function writes with the tab's own decoder.
+const WAFT_KEY = 'Docindex'
+
+export function status_waft(repo_root: string, roots: string[]): { snap: string, docs: number, skipped: string[] } {
+    const dige = atlas_diges(repo_root, roots)
+    const paths = Object.keys(dige).sort()
+    const lines: string[] = [`Waft:${WAFT_KEY}`]
+    const skipped: string[] = []
+    for (const p of paths) {
+        // a comma or a newline in a path would be eaten by the peel parser, which splits sc on commas —
+        //  so such a path is SKIPPED and named, never silently emitted to corrupt every row after it
+        if (/[,\n\r]/.test(p)) { skipped.push(p); continue }
+        const [d, mtime, size] = dige[p]
+        lines.push(`  Doc:${p},dige:${d},mtime=${mtime},size=${size}`)
+    }
+    return { snap: lines.join('\n') + '\n', docs: paths.length - skipped.length, skipped }
+}
+
+// write_status_waft — emit it where a Waft lives, so the tab opens it with no new code at all.
+//  Returns null when nothing changed, so a watcher can call this on every event without churning disk.
+export function write_status_waft(repo_root: string, roots: string[] = DEFAULT_ROOTS): { path: string, docs: number, changed: boolean } {
+    const { snap, docs } = status_waft(repo_root, roots)
+    const dir = join(resolve(repo_root), 'wormhole', WAFT_KEY)
+    const file = join(dir, 'toc.snap')
+    let had: string | null = null
+    try { had = readFileSync(file, 'utf8') } catch { had = null }
+    if (had === snap) return { path: file, docs, changed: false }
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(file, snap, 'utf8')
+    return { path: file, docs, changed: true }
 }
 
 // serve_diges — the http half.  Returns true when it handled the request.

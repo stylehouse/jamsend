@@ -417,9 +417,58 @@
                 //   each open so an Id switch re-binds the new identity without a reload.
                 //  No key ⇒ skip: the unsigned ?addr= path still carries (add-only); errors swallowed —
                 //   relay down → reconnect re-dials, ?addr= meanwhile carries.
-                port.on_open(async () => {
+                // ⚑ THE HELLO MUST BE ACKNOWLEDGED, NOT MERELY SENT (2026-09-10 — "the lost identity bind").
+                //  `become` above re-binds our ROLE synchronously on every reopen. This hello re-binds our
+                //   IDENTITY — and it was fire-and-forget: it bails on a missing key, swallows everything in
+                //    a bare `catch {}`, and NOTHING checked that `hello_ok` came back. Miss one and the tab
+                //     talks OUT flawlessly (`Lies_ping` is addressed `to:'editor'`, a ROLE) while every
+                //      `to:<our prepub>` frame is dropped at the relay FOR THE LIFE OF THE SOCKET. Out is a
+                //       role, back is an identity; only the return leg can die, so nothing local notices.
+                //  The owner saw it as `→EDITOR (silent 94s)` beside `⚠ DROPPED bridge→ pong → '<prepub>'
+                //   ×60`, on a runner that was demonstrably alive and pinging the whole time. The badge goes
+                //    silent because `sc.last` is refreshed ONLY by `Lies_pong_recv` — the very pongs being
+                //     dropped. Repro + red/green proof: `scripts/relay-test.ts`.
+                //  THE CURE IS A LATCH, not a timer: cleared on every (re)open, stamped when `hello_ok`
+                //   lands, retried from the keepalive tick while it is unset. Idempotent by construction —
+                //    it stops the moment the bind is acknowledged, and a keyless tab never starts.
+                //  ⚠ Each attempt re-signs (the relay checks ts-freshness, so a replayed header is refused)
+                //   and mints a FRESH seat dodge, so a retry cannot collide with a seat an earlier attempt
+                //    actually won and get needlessly suffixed again.
+                //  ⚠ And the retry is NOT silent. The bug was never the missed message — it was that
+                //   nothing noticed. `catch {}` is what turned a one-RTT hiccup into a dead socket.
+                // Registered on the LIST, not the single `on_hello` slot — Swarm wants that hook too (it
+                //  adopts the relay's granted addr) and installs its own only `if (!on_hello)`, so an
+                //   assignment here would silently disable it the day these worlds merge. Own flag keeps
+                //    it idempotent across a channel re-standup.
+                if (!w.c.lies_hello_hooked) {
+                    w.c.lies_hello_hooked = 1
+                    ;((w.c as any).on_hello_list ??= []).push(() => {
+                        if (w.c.hello_tries) H.tlog(`🪪 hello_ok — identity bind recovered after ${w.c.hello_tries} retr${w.c.hello_tries === 1 ? 'y' : 'ies'}`)
+                        w.c.hello_ok_at = Date.now()
+                        delete w.c.hello_tries
+                    })
+                }
+                const send_hello = async (retry = false) => {
+                    // THE SOCKET MUST BE OPEN, NOT MERELY CONNECTING.  `Lies_channel_live` (the retry's
+                    //  gate) only asks whether the channel stood up and a carrier is wired — it says
+                    //   NOTHING about readyState, so it reads true during the connect window. Without this
+                    //    line the first retry fired mid-connect, threw `Still in CONNECTING state`, and
+                    //     then raced the real on_open hello — two hellos, two seat dodges, one wasted.
+                    //      (Measured on the first live reload after this fix landed; the retry log is what
+                    //       showed it, which is the argument for not making the retry silent.)
+                    //  readyState 1 = OPEN, compared numerically so this is safe wherever it is evaluated.
+                    if ((port.ws as any)?.readyState !== 1) return
                     const idento = H.Lies_cluster_idento(w)
                     if (!idento?.pub || !idento?.key) return
+                    if (retry) {
+                        w.c.hello_tries = Number(w.c.hello_tries ?? 0) + 1
+                        H.tlog(`🪪↻ identity bind not acknowledged — re-sending hello (attempt ${w.c.hello_tries})`)
+                        // Past a few attempts this is no longer a hiccup: ring the Relay Brink the same way
+                        //  the identity-divergence gate does, because a tab that never binds looks perfectly
+                        //   healthy from inside and only its INBOUND is dead — the whole point of this fix.
+                        if (Number(w.c.hello_tries) === 3)
+                            H.Lies_relay_note(w, `🪪↻ identity bind still unacknowledged after 3 tries — every to:<us> frame is being dropped at the relay; outbound looks fine`, true)
+                    }
                     // FATAL invariant (Robustness_plan Organ 4/H5 — the loud gate the 9→2 collapse earns):
                     //  the prepub we HELLO-BIND under (prepubOf signing pub) MUST equal the prepub we
                     //   ADVERTISE / the editor keys grants + dispatch on (Lies_self).  With Lies_self now a
@@ -453,10 +502,22 @@
                         //        the only thing arbitration fights over — becomes one no station will ever want.
                         //         `want` rides BESIDE the signed header (the signature stays over the 4 verified keys).
                         const want = header.from + '_9' + String(100 + Math.floor(Math.random() * 900))
+                        // Stamped so the retry can leave a round trip before deciding this one was lost.
+                        //  Without it the retry re-fires within milliseconds of the very first hello: on a
+                        //   fresh load `last_ping` is unset, so the first keepalive tick runs immediately
+                        //    after on_open and beats the ack home (measured 11ms, two hellos, two seats).
+                        w.c.hello_sent_at = Date.now()
                         port.ws?.send(JSON.stringify({ ...header, sign, want }))
                         H.tlog(`🪪 ws SEND control:hello ${header.from} (seat dodge → _${want.slice(header.from.length + 1)})`)
-                    } catch { /* no key | relay down — reconnect re-dials, ?addr= meanwhile carries */ }
-                })
+                    } catch (e) {
+                        // NOT swallowed any more — see the latch note above. A throw here leaves
+                        //  hello_ok_at unset, so the keepalive keeps trying; saying so is what turns an
+                        //   invisible dead socket into a visible retry.
+                        H.tlog(`🪪☠ hello send failed (${String((e as any)?.message ?? e)}) — will retry on the keepalive tick`)
+                    }
+                }
+                ;(w.c as any).lies_send_hello = send_hello
+                port.on_open(async () => { delete w.c.hello_ok_at; delete w.c.hello_tries; await send_hello() })
                 // The moment the socket OPENS — first connect AND every reconnect — fire an immediate
                 //  ping + (runner) advertise so the peer clears its "dialing ◌" face within one RTT
                 //   instead of waiting out the 5s keepalive tick (ping) or the 15s beacon (advertise).
@@ -1663,6 +1724,23 @@
             }
             if (w.c.last_ping && now - (w.c.last_ping as number) < 6000) return
             w.c.last_ping = now
+            // RETRY AN UNACKNOWLEDGED HELLO (2026-09-10 — the lost identity bind; the full account sits
+            //  beside `send_hello` at the channel standup).  The latch is cleared on every (re)open and
+            //   stamped by `hello_ok`, so this fires ONLY while our identity bind is genuinely missing and
+            //    stops itself the moment it lands.  Rides the existing 6s ping cadence rather than adding
+            //     a timer, so a tab that never binds costs one frame per keepalive, not a spin.
+            //  Sits BEFORE Lies_ping deliberately: a ping is `to:'editor'` (a ROLE) and will be answered
+            //   `to:<our prepub>` (an IDENTITY), so there is no point asking for a pong we cannot receive.
+            // The counting and the loud escalation live INSIDE send_hello, past its readyState gate, so a
+            //  skipped attempt during the connect window is not counted as a failed try.
+            // HELLO_GRACE: leave one generous round trip before calling a hello lost. The relay verifies
+            //  a signature before it answers, so an ack is not instant, and a retry that beats it home
+            //   just burns a second seat dodge for nothing.
+            const HELLO_GRACE = 3000
+            if (H.Lies_channel_live(w) && !w.c.hello_ok_at
+                && now - Number(w.c.hello_sent_at ?? 0) > HELLO_GRACE
+                && typeof (w.c as any).lies_send_hello === 'function')
+                void (w.c as any).lies_send_hello(true)
             H.Lies_ping(w)
         },
         Lies_ping(w: TheC) {

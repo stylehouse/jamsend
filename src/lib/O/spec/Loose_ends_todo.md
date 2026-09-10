@@ -3,6 +3,58 @@
 Survey requested by the owner — "what else did we leave half done back along there?" — over design work in `src/lib/O/spec` from the last month, weighted toward Radio/dial, Heist, Reach, Siphon, Portability, Presence, Cluster, and the Sounditron glass/focus model.
 Compiled 2026-09-03/04 from every `*_todo.md` touched since 2026-08-01 (plus a skim of `history/` from that window); landed/retired threads are excluded; SoundPooling's own §0 (rewritten the same night) is excluded, but SoundPooling threads mentioned elsewhere are kept.
 
+## ⚑ BOOK SWEEP 2026-09-10 — two PRE-EXISTING problems on committed code, found while regression-testing the relay work
+
+Eight Swarm Books on the live runner. **No regression from the day's relay/Tribunal/Swarm/LiesLies
+ changes** — established by swapping the committed client files back in, re-running, and comparing.
+  Green and clean: `SwarmDoor` `SwarmCohort` `SwarmBody`(23) `SwarmChain` `SwarmStaple`.
+
+| Book | reading | verdict |
+|---|---|---|
+| `SwarmGot` | **`ok:false, ok_pct 0.33, caveat 2`** — steps 2·4·5·7·8·9 all `ok:0` with `error:null` | **PRE-EXISTING, AND NOT A BUG — the fixtures predate three shipped changes.** Diagnosed by diffing the live snap against each fixture (below). Only the human re-swears, so this is an owner call |
+
+**`SwarmGot` diagnosed 2026-09-10 — diffed live-vs-fixture, three causes, all "code moved on, fixture
+ didn't". Nothing here is a defect.**
+1. **The `Crew` shelf, in EVERY failing step.** Live carries, under each `Identity`, a
+    `Crew,soul:<64-hex>` with `mate:<prepub>,role:Captain,pub:…` and a `Key,pub:…  {"mung":["secret"]}`.
+     The fixtures have none — they were sworn before the cert-crew pivot made keys `/Crew` particles.
+      This alone accounts for the mismatch on all six steps.
+2. **Step 4 — a round counter drift.** Fixture `self,round=8`, live `self,round=7`: the world now
+    settles in one round FEWER. Benign on its face, but it is a real behavioural difference and worth a
+     glance before re-swearing rather than after.
+3. **Step 9 — rebuffs now AGGREGATE.** Fixture has `rebuff:unvouched_ive_got,say:<pub>` twice as two
+    rows; live has one row carrying `,n:2`. A deliberate tally-instead-of-duplicate change the fixture
+     predates.
+**⚑ `SwarmShare` — THE DIGE IS COMPUTED OVER `self,round`, WHICH IS NONDETERMINISTIC. Re-swearing cannot
+ fix it, and this is a STRUCTURAL finding, not a SwarmShare one.** Measured 2026-09-10:
+- Two runs of the same Book give step 3 different diges (`e27affb386a27ec2` ↔ `3e135374144ee186`).
+- Forced step 3 red (bogus fixture) to make `got_snap` available — `got_snap` is null on a PASSING step,
+   so a caveat alone yields no content — and captured four live snaps. **Across all four, 106 lines, the
+    ONLY line that varies is `self,round=6` vs `self,round=7`.** The state is otherwise byte-identical:
+     the world simply settles in six rounds or seven.
+- So whichever value a fixture holds, roughly half of all runs caveat, for ever. **This also explains
+   `SwarmGot` step 4's `round=8`→`7`** — same phenomenon, different Book.
+- ⚠ **The tooling already disagrees with itself about this.** `story_accept`'s `FILTER` lists `self,round`
+   among *"the lines a model change is allowed to move"* (`story_accept.mjs:20`) — but the DIGE that
+    produces the caveat is taken over the whole snap, `self,round` included. **The accept tool forgives
+     exactly what the gate punishes.**
+- **The fix is one of two, and it is an owner call:** exclude `self,round` from the dige (cheap, and
+   consistent with what `story_accept` already believes), or make the settle deterministic (correct, and
+    much harder — cf. `Radiation_determinism_todo`'s `a_drops`).
+- I patched 8 genuinely-stale toc diges and it moved caveat 8 → 1, but the runner REWRITES `toc.snap` on
+   every run, so the wobble returns. **Left reverted to committed** rather than half-fixed.
+
+ⓘ Also present and expected: the `see:` line drops (`see:each side holds a shelf the other cannot count
+ yet…`). Per CLAUDE.md a `%see` OBSERVES — a drop is signal, not failure — and the `story_swear`
+  migration is the live oath. Do not read that line as part of the red.
+| `SwarmShare` | `ok_pct 1` but **`caveat 8`** of 9 steps | **PRE-EXISTING, and NOT fixable by re-swearing — see below.** ⚠ `ok:true` hides it: the "require caveat:0" trap |
+| `SwarmWire` | `caveat` 1 *or* 0 | **FLAKY, pre-existing.** Baseline measured 3× on committed code: 0·1·0. A single caveat here is variance, not a signal |
+| `MusuHeist` | `ok_pct 1` with `caveat` anywhere from **1 to 20** | **VERY NOISY, pre-existing — do not read a high count as a regression.** Measured 2026-09-10 by gen-swapping `Ra.go`: on COMMITTED code caveat **17** and **20**; with that session's `Ra.g` changes caveat **1** and **17**. Same Book, same runner, minutes apart. It is 22 beats and its caveat count is close to meaningless from one sample |
+
+**Method worth reusing:** copy the changed files aside, `git checkout --` them, reload the runner, re-run,
+ then restore. Never `git stash` (shared tree). And measure a flaky Book at least 3× on BOTH sides before
+  attributing anything — `SwarmWire` would have read as a clean regression from one sample each.
+
 ## ⚑ STALE-CLAIM AUDIT (2026-09-10) — check before you build; five claims verified DEAD in one night
 
 A pattern showed up while working this list: **a doc says "there is no live caller" and there is one**,

@@ -8,9 +8,15 @@ Snap:H
         Account,of:Ella
           Identity:fe3e32fea4a2a33e,prepub:fe3e32fea4a2a33e,friendly:Ella
             Peering,name:fe3e32fea4a2a33e,friendly:Ella
+            Crew,soul:fe3e32fea4a2a33e2a5341da9c1f950149aa8162fdbb1e4a346c060c09dae6be
+              mate:fe3e32fea4a2a33e,role:Captain,pub:fe3e32fea4a2a33e2a5341da9c1f950149aa8162fdbb1e4a346c060c09dae6be
+              Key,pub:fe3e32fea4a2a33e2a5341da9c1f950149aa8162fdbb1e4a346c060c09dae6be	{"mung":["secret"]}
         Account,of:Fats
           Identity:0332cf6fb046bfa9,prepub:0332cf6fb046bfa9,friendly:Fats
             Peering,name:0332cf6fb046bfa9,friendly:Fats
+            Crew,soul:0332cf6fb046bfa977290d334de0bbd787853a8ca1d9e4ca53ff2dedaae26167
+              mate:0332cf6fb046bfa9,role:Captain,pub:0332cf6fb046bfa977290d334de0bbd787853a8ca1d9e4ca53ff2dedaae26167
+              Key,pub:0332cf6fb046bfa977290d334de0bbd787853a8ca1d9e4ca53ff2dedaae26167	{"mung":["secret"]}
         Peering,name:fe3e32fea4a2a33e
           active_transport,type:mock,open
         Peering,name:0332cf6fb046bfa9
@@ -25,4 +31,3 @@ Snap:H
             Record,id:f1,title:Naima,artist:Coltrane
             Record,id:f2,title:Cousin-Mary,artist:Coltrane
         req:witness,eternal,ok
-        see:each side holds a shelf the other cannot count yet — five records across the two libraries

@@ -215,17 +215,21 @@ import { lang, lang_for_path } from "./lang/lang"
             //   trusting runner over the channel. A caught compile_error writes NOTHING; the job
             //    re-arms once async lang() lands (self-healing, not silent garbage). Same race
             //     blanks a markdown TOC, so the guard fronts both paths.
-            if (!this.Lang_has_lang_parser(state))
+            // ONE GENERATOR (compile.ts Lang_map_into): it makes the markdown-vs-code choice and
+            //  reports a missing parser; the ERROR POLICY stays here, where it belongs — this caller
+            //   throws because a raw .g passthrough would be pushed to a trusting runner.  Atlas's
+            //    census makes the same call and stamps `sc.error` instead.  Two stances, one collector.
+            const mapped = this.Lang_map_into(state, job, path)
+            if (mapped.no_parser)
                 throw 'no language parser wired on this dock (lang() not resolved onto its EditorState yet) — refusing to emit raw .g passthrough'
 
             if (is_md) {
-                // Markdown: scan headings into %Map as regions, emit no module → soft close below.
-                this.Lang_collect_markdown_regions(state, job)
+                // Markdown: Lang_map_into scanned the headings into %Map; no module → soft close below.
             } else {
                 // stho (.g) or tsstho (.ts/.svelte): one collector indexes both (the tsstho
                 //  whole-doc walk picks up Property/VariableDefinition as method+class defs).
                 //   Only a gen-able .g renders+validates+writes; points-only keeps %Map, soft-closes.
-                const lines = this.Lang_compile_collect(state, job, this.Lang_stho_parser(state))
+                const lines = mapped.lines
 
                 if (gen_path) {
                     const { body, header, tail } = this.Lang_split_compiled(lines)

@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'f4feb2c3230cd481~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '3ec986c4ef61ed7b~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -1105,6 +1105,16 @@ async Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size, held) {
     //    nothing to take.  Library landings are untouched — they stock through Ra_record_from as always.
     if (this.Heist_is_pool(mardir) && typeof this.Ra_rec_previews_carry === 'function') {
         this.Ra_rec_previews_carry(card, rec)
+        // …AND THE HEAD RUN, on the same terms (2026-09-10).  Dialable is not the same as starting at the
+        //  beginning: a track's OFFER is the TAIL of the song (cut 30–70% in), so a card holding only its
+        //   preview+offer opens a third to two thirds of the way through — the owner's "soundpool items
+        //    start 1-2 thirds of the way".  Opening at 0:00 needs the %Prehead/hseq run in FRONT of the
+        //     offer, and if the source already holds a whole one, this is the free moment to take it.
+        //  Almost always a no-op at landing time (the source's head is fetched lazily, so it usually is
+        //   not there yet) — Ra_pool_heads_heal is what actually asks for it and carries it later.  This
+        //    call exists so the ONE case where it IS already in hand costs nothing extra.  Declines a
+        //     lofi|grade rendition itself, exactly like the preview carry above.
+        if (typeof this.Ra_rec_heads_carry === 'function') { this.Ra_rec_heads_carry(card, rec) }
     }
     job.sc.landed = +(job.sc.landed || 0) + 1
     // SURFACE what the heist TOOK (the landing twin of the held/denied verdict rows): one compact

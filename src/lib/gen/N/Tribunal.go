@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return 'b4c37f0c56f24f1a~g1' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return '825a67dcb6cf7607~g1' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -81,10 +81,62 @@ async Socket_real(w) {
     //     editor|runner channels ride this same carrier with no ident at all, and for them
     //      address is simply never set).  Every reconnect — backoff, rehome(), relay restart —
     //       re-dials at the address the model holds NOW.
+    // A ROLE IS NOT AN ADDRESS (2026-09-10, the owner's call).  `?addr=` used to carry two
+    //  unrelated things: an IDENTITY's own front door (`?addr=<prepub>`, the station socket that
+    //   Swarm stands up) and a CHANNEL ROLE (`?addr=runner|editor|player`, the Lies channel, whose
+    //    %Peering is NAMED after the role).  The relay bound both into the one `locals` namespace,
+    //     so "address" quietly meant "or a role, sometimes" — and reading a role out of an address
+    //      is what made the flock unreadable more than once.
+    //  The role bind is pure REDUNDANCY.  `become <role>` (LiesLies on_open, sent on every open and
+    //   re-open) binds the SAME name one message later, and binds it better: `become` also records
+    //    `declaredRole` on the socket, so the relay can say which tabs are runners without anyone
+    //     being bound at a shared name at all.  So the role channel dials ADDR-LESS, and only a real
+    //      identity keeps a `?addr=`.
+    //  WHAT THIS BUYS BEYOND THE NAMING: `qaddr` stops being a mixed bag and becomes exactly one
+    //   fact — "this socket is that address's own front door" — which is the discriminator the relay's
+    //    own-door rule (deliverLocal) reads.  Delivery does not move.  For `to:'runner'` no socket
+    //     claims the door now, so `own` is false and the frame fans out to every bound socket — which
+    //      is precisely what it did before, when they ALL claimed it.  For `to:<prepub>` the station
+    //       socket still owns the door and the role channel is still skipped: that is the rule that
+    //        stopped every music chunk being delivered TWICE, the phantom copy landing in w:Lies where
+    //         no repli handler is armed, climbing to the 2000 inbox cap and reading as "the app is slow".
+    //  ⚠ Do NOT re-key that rule on the socket's `bound` set instead.  A role channel hellos too, so
+    //   its `bound` ALSO holds the prepub — both sockets would qualify and the doubling comes back.
+    //  The window between connect and `become` is one message long, and nothing can address the tab
+    //   inside it (it has not advertised; no peer knows it exists), so the addr-less gap costs nothing.
+    // The relay's own law for this, kept in step: IDENTITY_SHAPED = /^[0-9a-fA-F]{16,}$/ (relay.ts).
+    //  Spelled out longhand rather than as a literal so the .g compiler never has to hold a regex.
+    // ⚠⚠ STAGED, NOT ARMED — THIS IS A TWO-STAGE DEPLOY AND THE ORDER IS NOT OPTIONAL ⚠⚠
+    //  Flipping ROLE_IS_NOT_AN_ADDRESS to true BEFORE the relay carrying `ownsDoor` (relay.ts
+    //   deliverLocal, same date) is RUNNING silently splits the fleet in half.  Measured, not feared:
+    //    the own-door rule used to consult only `qaddr`, so ONE straggler still dialling `?addr=runner`
+    //     — an un-reloaded tab, a daemon on old code, a test harness — CLAIMS the door at `runner`,
+    //      `own` goes true, and every addr-less role channel is dropped from the `to:'runner'`
+    //       broadcast.  Nothing errors.  Dispatch just stops finding half the flock, which is the
+    //        symptom this entire thread has been paying for twice over.
+    //  THE ORDER: (1) restart the dev server so the relay's `ownsDoor` (which counts `declaredRole`
+    //   as a door, making old and new sockets equal claimants) is live; (2) flip this to true;
+    //    (3) recompile Tribunal.g; (4) reload the tabs, stragglers included.  Stage 1 is safe with
+    //     old AND new clients, which is what makes the order work at all.
+    //  `relay-test.ts` covers both sides — the addr-less become, the reconnect re-bind, and the
+    //   anti-doubling rule with an addr-less role channel.  Run it after touching either file.
+    // ARMED 2026-09-10, with the owner watching, once stage 1 was PROVEN live rather than assumed:
+    //  the relay's `ownsDoor` counts `declaredRole` as a door, so an old tab still dialling
+    //   `?addr=runner` and a new addr-less one are equal claimants and the `to:'runner'` bucket fans
+    //    out to both.  Proof it was actually running: `🌉 relay bridge UP` arrived ONCE in the live
+    //     console instead of three times — the broadcastControl dedupe from the same save.
+    let ROLE_IS_NOT_AN_ADDRESS = true
+    let is_addr = (s) => {
+        if (!s || s.length < 16) { return false }
+        for (const ch of s) { if ('0123456789abcdefABCDEF'.indexOf(ch) < 0) { return false } }
+        return true
+    }
     let home = () => {
         let peering = w.o({ Peering: 1 })[0]
         let addr = (peering && (peering.sc.address || peering.sc.name)) || ''
-        return scheme + '://' + location.host + '/relay?addr=' + encodeURIComponent(addr)
+        let base = scheme + '://' + location.host + '/relay'
+        if (ROLE_IS_NOT_AN_ADDRESS && !is_addr(addr)) { return base }
+        return base + '?addr=' + encodeURIComponent(addr)
     }
     // The socket AUTO-RECONNECTS (v1 had none — a relay/dev-server restart dropped both browsers at
     //  once and neither came back, so the heartbeat read "no pong" forever). connect() (below) opens
@@ -284,7 +336,22 @@ async Socket_real(w) {
             //     and rehomes if it moved. `taken` (present only when suffixed) is the 👥 material.
             if (frame.control === 'hello_ok') {
                 note(`🪪 hello_ok addr=${frame.addr}${frame.taken ? ' (suffixed — family holds ' + frame.taken.join(',') + ')' : ''}`)
-                if (w.c && w.c.on_hello) { try { w.c.on_hello(frame) } catch (e) { console.log('🪪☠ on_hello threw', e) } }
+                // A REGISTRY, NOT A SINGLE SLOT (2026-09-10).  `on_hello` was one assignable property, and
+                //  TWO ghosts want it for different jobs: Swarm adopts the granted addr and rehomes, Lies
+                //   stamps the hello-acknowledged latch.  Today they live in different worlds so nothing
+                //    collides — but `Swarm.g` guards with `if (!self_w.c.on_hello)`, i.e. it installs its
+                //     hook ONLY when the slot is empty.  The moment those worlds merge (the one-socket
+                //      ruling, Social_demarcation_todo §0) whichever ghost stands up first wins and the
+                //       other's hook is SILENTLY never installed — no error, no log, just an address that
+                //        quietly stops being adopted.  Fan out instead, exactly as `w.c.on[type]` is a
+                //         registry: every listener hears every hello_ok, and one throwing does not rob
+                //          the others.  `w.c.on_hello` stays supported for any caller still assigning it.
+                if (w.c) {
+                    let heard = []
+                    if (Array.isArray(w.c.on_hello_list)) { heard = w.c.on_hello_list }
+                    if (typeof w.c.on_hello === 'function') { heard = heard.concat([w.c.on_hello]) }
+                    for (const fn of heard) { try { fn(frame) } catch (e) { console.log('🪪☠ on_hello hook threw', e) } }
+                }
                 return
             }
             if (frame.control === 'hello_error') { note(`🪪☠ relay refused hello: ${frame.reason}`, true); return }

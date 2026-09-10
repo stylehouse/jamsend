@@ -4028,11 +4028,21 @@ async Radio_mag_pop(w, rec):
 //   2026-09-04 the durable thing was a %Like under a %Jam ledger, which the owner called *"cursed … a big
 //    cancer"*.  Both are gone.  The queueing that used to be invisible (ten cells, all "waiting its turn")
 //     is now a ledger you can read, on the Haul, grouped by who is bringing it.
-//  A SECOND PRESS INSIDE ~10s TAKES IT BACK — a fat thumb, not a second vote.  Later than that the press
-//   re-affirms (it re-arms the gave-up clock and clears a failure verdict, so pressing again is the retry
-//    road); RETIRING a heart is the ✕ on the Haul row, which is the whole content of "you can't lose a
-//     heart".  A keep already RUNNING is left running: calling off a half-finished download is a bigger
-//      act than this button looks, and the Haul row's ✕ is the place that says so.
+//  ⚑ THE HEART IS A TOGGLE (owner's ruling 2026-09-10: *"basically we love or unlove things, which
+//   includes or dis-includes them in SP and Heisting to our Cave"*).  Press to love, press again to
+//    unlove — one button, one meaning, at any distance in time.
+//  THIS SUPERSEDES the earlier shape, and the earlier reasoning is kept because it is not wrong, only
+//   outranked: `Heard_thumb` gave a ~10s UNDO window and OUTSIDE it a press RE-AFFIRMED (re-arming the
+//    gave-up clock, clearing a failure verdict — the retry road), with retiring reserved for the ✕ on
+//     the Haul row.  That guarded a real thing — "you can't lose a heart" is only true if a stray tap
+//      cannot spend one — and the trade is now deliberate: a stray tap CAN unlove, and unloving is what
+//       dis-includes a track from the pool and from heisting to the Cave.  The owner was told that and
+//        chose the simpler model.
+//  ⓘ `Heard_take` KEEPS both behaviours (undo inside the window, re-affirm outside) — the toggle lives
+//   here, in the button, not in the ledger primitive, so every other caller is untouched and the retry
+//    road still exists for whatever wants it.
+//  A keep already RUNNING is still left running: calling off a half-finished download is a bigger act
+//   than this button looks, and the Haul row's ✕ remains the place that says so.
 //  `n.c.liked` stays as the INSTANT tell on the press itself (the durable probe is a walk; the mirror is
 //   already in hand) — the face reads the Mag, and falls back to the mirror for the same-tick answer.
 Radio_like(n):
@@ -4041,7 +4051,18 @@ Radio_like(n):
     if (!w || !rec || !rec.sc.id) return false
     let me = this.Radio_pub(w) || 'me'
     let by = String(n.sc.by || me)
-    let got = this.Heard_take(w, me, rec, by)
+    // THE TOGGLE.  Already on the ledger under this holder ⇒ the press means UNLOVE, however long ago
+    //  it was loved.  `Heard_untake` is the same retirement the Haul row's ✕ performs (it strips the
+    //   ask, the verdict and the listing keys), so both doors do one thing.
+    //  ⚠ `by` must be the pub the take was WRITTEN under — `n.sc.by || me` — because a pool item, or
+    //   anything of one's own, has no `by` and lives on the ledger under ME.  Reading it under a
+    //    different pub than the write is the bug that made pool hearts go hollow on reload.
+    let got = 0
+    if (this.Heard_taken(w, me, by, String(rec.sc.id))) {
+        got = this.Heard_untake(w, me, by, String(rec.sc.id)) ? -1 : 0
+    } else {
+        got = this.Heard_take(w, me, rec, by)
+    }
     if (!got) return false
     n.c.liked = n.c.liked || {}
     if (got > 0) { n.c.liked[String(rec.sc.id)] = 1 } else { delete n.c.liked[String(rec.sc.id)] }

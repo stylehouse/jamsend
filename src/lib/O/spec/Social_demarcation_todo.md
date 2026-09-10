@@ -8,6 +8,229 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
 
 ### ⚑ NEXT BIG ONE — KILL THE `?addr=runner` SOCKET (owner 2026-09-09: *"remove entirely the second websocket for addr=runner and have some other way to find runners"*)
 
+> **✅ STEP 3c IS ARMED AND LIVE — 2026-09-10, both stages (owner: *"it's weird calling the role an
+>  address right? autistic"*).** `ROLE_IS_NOT_AN_ADDRESS = true`. A role channel now dials `/relay`
+>   bare; `become` binds the role, the signed `hello` binds the identity.
+>
+> **Proven, in this order, with the owner watching:**
+> 1. **Stage 1 was verified LIVE before arming, not assumed** — `🌉 relay bridge UP` arrived ONCE in the
+>     live console instead of three times, which is the `broadcastControl` dedupe from the same save, so
+>      `ownsDoor` was demonstrably running. *(The previous attempt armed on the assumption that a
+>       restart was still pending. It was not, and that is what split the fleet.)*
+> 2. **The dial changed** — `🛰 ws OPEN ws://localhost:9091/relay — flushing 0 buffered`. No `?addr=`.
+> 3. **The broadcast path works** — a bare `ping` (`to:'runner'`) answers. *This is the exact path that
+>     went silent last time; it is the check that matters, not the directed one.*
+> 4. **No Book regression** — `SwarmDoor` measured `ok_pct 1, caveat 0, 5/5` immediately BEFORE arming
+>     and identically after.
+> 5. **The mixed fleet holds** — four player tabs still on the old build (`?addr=player`) all answer
+>     alongside the addr-less runner. This was the failure last time and it is now the proof.
+> ⓘ **Bonus, unlooked-for:** the runner now appears in `runner_ask runners` as `✓ live`. It never did
+>  before — the census was falling back to `qaddr`; addr-less, it reads `declaredRole` and gets it right.
+>
+> **Still true and still the next step:** this only stops the role being *spelled* as an address. The
+>  second socket itself survives until the one-socket migration below.
+>
+> **What it does.** `Socket_real`'s `home()` (Ghost/N/Tribunal.g) emits `?addr=` **only for an
+>  identity-shaped name**; a role channel (`runner|editor|player`, whose `%Peering` is NAMED after the
+>   role) dials **addr-less** and is bound by its `become` a message later. One function, not a campaign —
+>    `become` already bound the same name *and* stamped `declaredRole` (added 2026-09-09 for exactly this).
+>  It sits behind `let ROLE_IS_NOT_AN_ADDRESS = false` in that function. **Flipping it early splits the
+>   fleet.**
+>
+> **⚠⚠ THE FAULT THAT DISARMED IT — measured, not feared.** The own-door rule consulted **only `qaddr`**.
+>  So ONE straggler still dialling `?addr=runner` — an un-reloaded tab, a daemon on old code, a test
+>   harness — **claims the door** at `runner`: `own` goes true and every addr-less role channel is dropped
+>    from the `to:'runner'` **broadcast**. Nothing errors. Dispatch just stops finding half the flock.
+>  I shipped the client half first and it bit within the hour: the runner I reloaded answered a directed
+>   `--runner=<prepub>` ping and ran `SwarmCohort` green, then a bare `ping` (which IS a `to:'runner'`
+>    broadcast) came back *"no runner connected"*. I had written "provably unmoved in all four cases" in
+>     this very banner an hour earlier. The trace was right about each case in isolation and wrong about
+>      the **mixed** fleet, which is the only state a rollout is ever actually in.
+>
+> **The relay-side cure (in the tree, stage 1).** `deliverLocal` now asks `ownsDoor(ws)`: a socket owns
+>  `to`'s door if `qaddr === to` **or** `declaredRole === to`. For a role, `become` *is* the front door —
+>   so old and new sockets are equal claimants and the bucket fans out to both, which is what a role
+>    bucket always meant. Safe with old **and** new clients, which is what makes the order work.
+>
+> **THE ORDER, not optional:** (1) restart the dev server so `ownsDoor` is live · (2) flip
+>  `ROLE_IS_NOT_AN_ADDRESS` to true · (3) recompile Tribunal.g · (4) reload the tabs, stragglers included.
+>
+> **⚠ AND THE REFACTOR THAT LOOKS RIGHT AND IS NOT.** I also proposed re-keying own-door off the socket's
+>  `bound` set — "use the bind it PROVED with a signed hello, not the `?addr=` it merely CLAIMED". That
+>   re-breaks the *original* bug: a role channel hellos too (the bind is unconditional), so its `bound`
+>    **also holds the prepub** — both sockets qualify and every music chunk is delivered twice again.
+>     Written beside `deliverLocal` so it does not get re-proposed.
+>
+> **Tests, which is what actually caught this.** `relay-test.ts` gained the new road's contracts: an
+>  addr-less socket bound by `become` receives `to:'runner'`; a station-less runner is still individuated
+>   through it; **it re-binds across a reconnect** (the old dial re-bound in the URL for free, the new one
+>    owes it entirely to `Socket_real` re-firing its open_hooks); and the anti-doubling rule still holds
+>     with an addr-less role channel. The two broadcast cases failed on first run — that is the whole
+>      finding. `relay-test.ts`, `runner-ask-test.ts`, `ceremony-addr-test.ts` all PASS now.
+> ⚠ **`scripts/Presence.spec.ts` is a DEAD GATE and has nothing to do with any of this.** It fails at
+>  `attachRelay` with `TypeError: WebSocketServer is not a constructor` (relay.ts:119, the `ws` import
+>   under the vitest/jsdom environment). Baselined against the COMMITTED `relay.ts`: identical failure, so
+>    it is pre-existing and environmental, not a regression. Worth knowing because a harness that cannot
+>     run is a gate silently lost — the same shape as everything else in this thread.
+>
+> **⚑ TWO MORE RELAY BUGS, found in the owner's own console 2026-09-10 and fixed — they ride the SAME
+>  dev-server restart as stage 1, so do them together.** Both were live all along; neither is from the
+>   `?addr` work. They surfaced when the owner said *"reloaded… everything's running slow as"*.
+>
+> **1. `broadcastControl` fanned per BINDING, not per socket.** `locals` is addr → Set<socket> and one
+>  socket is deliberately bound under several addrs (role · prepub · granted seat), so walking
+>   `locals.values()` visited it once per binding. Every control frame arrived **doubled or tripled** —
+>    `🌉 relay bridge DOWN` and `UP` logged 3× per event in the live console. It matters because
+>     `peer-relay` broadcasts on every failed r2r dial, so a reconnect storm gets multiplied by the
+>      bindings each tab holds — frames the tab parses on the belief path, exactly when it is already
+>       struggling. And it made the log **lie about how many events happened**, which is how it hid:
+>        three DOWN lines read as three drops, not one drop counted thrice. Now deduped by socket.
+> ⚠ **The first test I wrote for it PASSED with the bug in place.** It compared a 3-bound socket against
+>  BOB — but BOB is multiply bound too (`?addr=BOB` + `become runner`), so per-binding fan-out inflated
+>   both sides equally and read 3 vs 3. **A comparison between two affected things measures nothing.**
+>    The assertion is now absolute (one drop is ONE event, so the count must be exactly 1) and is
+>     verified in BOTH directions: green with the fix, red with the bug reintroduced.
+>
+> **2. `dialEditor` killed its own in-flight dial — a self-inflicted storm, fired by reloading.**
+>  `peerLink` is assigned when the socket is CREATED, well before it opens. A second `dialEditor()`
+>   during that connect window saw "not OPEN", concluded it was the stale half-open case, **closed it**
+>    and dialled again. And `relay.ts` calls `dialEditor()` on EVERY browser reconnect — so reloading a
+>     few tabs made each murder the previous one's dial. The tell is a burst of `🌉 relay bridge DOWN —
+>      error=WebSocket was closed before the connection was established` and `close:1006`, which is
+>       exactly what was on screen. Fixed by treating `CONNECTING` as alive. The stale-link cure still
+>        applies to CLOSING/CLOSED, and a CONNECTING link that never opens is still covered by the
+>         existing 5s watchdog (it broadcasts and calls `scheduleRedial`), so no "state stuckness"
+>          returns.
+>
+> **Diagnosed but NOT fixed — needs live eyes.** `⚠ DROPPED bridge→ pong seq=50 → '<prepub>' ×60 — no
+>  local socket is bound`, alongside a `→EDITOR (silent 94s)` Brink badge. Editor pongs to the runner's
+>   **bare** prepub are dropped while the live body sits at its granted seat (`<prepub>_9514`). I could
+>    not pin whether the bare name is unbound or squatted by a dead socket without watching it happen,
+>     and guessing at a delivery fix is how this thread lost hours before. ⓘ Related: the `_9514` suffix
+>      is a **random per-page body id**, not a duplicate count — `ceremony-addr-test.ts:112` mints rids
+>       exactly so (`ridA = '7011'`), and the relay's own collision counter would emit `_1`, not `_9514`.
+>
+> **Also fixed while in here:** `const TSEP` was a **raw NUL byte** in the source. Git therefore treated
+>  the whole of `relay.ts` as BINARY (`git diff` → `Bin 70329 -> …` and nothing else) and plain `grep`
+>   skipped it silently. On the file whose review matters most. Now written `'\u0000'` — same separator,
+>    same runtime value (the tally contracts still pass), source pure ASCII. ⓘ The diff of THIS change is
+>     still binary because the committed side holds the NUL; read it with `git diff --text
+>      src/lib/server/relay.ts` (`--stat` still says `Bin`). Every diff after it commits is normal text.
+>
+> **Deliberately NOT done.** The relay still **accepts** `?addr=<role>`. Removing the *second socket
+>  itself* — the actual prize in step 3 — is untouched. **3a (the keepalive) stays deferred**: see the
+>   warning below, it fails silently both ways and wants someone watching.
+>
+> **Next, if picked up:** `?addr=<prepub>` could go too, removing the parameter entirely — but only by
+>  giving own-door a new discriminator. The clean one is already on the socket: **a station is one that
+>   hello-bound an address having declared NO role** (`declaredRole == null`) — no new state, proof-based,
+>    and free of the `bound` trap. Not attempted; it is a delivery-rule change and wants its own live walk.
+
+### ⚑ SOLVED — THE ADDRESS DROP (`DROPPED bridge→ pong → '<prepub>'` / `→EDITOR (silent 94s)`)
+
+**THE LOST IDENTITY BIND. Out is a ROLE, back is an IDENTITY — so only the return leg can drop.**
+- The runner pings the **editor role**: `Lies_ping` → `to:'editor'` (`LiesLies.svelte:1671-1685`).
+   Role-addressed, so it survives a lost identity bind and the tab looks perfectly alive.
+- The editor answers **identity-addressed**: `Lies_pong` (`:1717-1719`) sends `to:<the ping's from>` —
+   the runner's **bare prepub**, never its seat.
+- A tab re-binds its ROLE synchronously on every reconnect (`become`, in `on_open`). It re-binds its
+   IDENTITY only through the signed `hello` — which is **fire-and-forget**: it bails on a missing key
+    (`if (!idento?.pub || !idento?.key) return`), swallows everything in a bare `catch {}`, and
+     **nothing ever checks that `hello_ok` came back** (`LiesLies.svelte:419-460`, verified).
+- Miss one hello and the socket talks OUT flawlessly while every `to:<its prepub>` frame is dropped at
+   the relay **for the life of that socket**, with nothing but a terminal warning to say so. The badge
+    goes `(silent Ns)` because `sc.last` is written ONLY by `Lies_pong_recv` (`:1763`) — the very pongs
+     being dropped are what would refresh it (`Rundar.svelte:126,131,146`).
+
+**The `locals:` listing was never a contradiction.** It is printed at **bind/unbind events only**
+ (`relay.ts:952` browser-bound · `:524` become · `:1004` disconnected) — never at a drop. So it is a
+  snapshot from a different moment. Hours went into that apparent paradox; the drop line now says which
+   kind of nothing it found (see the `bindState` hunk below), which would have ended it in a minute.
+
+**Also settled: `<prepub>_9NNN` is the LiesLies SEAT-DODGE, not a duplicate count.**
+ `LiesLies.svelte:455` — `header.from + '_9' + String(100 + Math.floor(Math.random() * 900))`. So the
+  live shape `role, <prepub>, <prepub>_9514` is **ONE socket wearing three binds**, not three tabs.
+
+**Reproduced and red/green proven.** `relay-test.ts` carries the repro and **exits 1 on purpose** — one
+ known red, everything else green. `RELAY_MOD=./_relay_rehello.ts npx tsx scripts/relay-test.ts` runs
+  the same suite against a patched copy and goes fully green. Kept red deliberately: a suite that goes
+   green while a known bug is live is the `ok:true`-hides-a-caveat failure this corpus already knows.
+
+**✅ FIXED CLIENT-SIDE AND LIVE 2026-09-10 — `LiesLies.svelte`, no dev-server restart needed.**
+ The latch shape below is what shipped. Proven on the live runner: a reload now logs one hello, one
+  seat dodge, one `hello_ok`, with the retry dormant; `SwarmDoor` measured `ok_pct 1, caveat 0, 5/5`
+   before and after. `relay-test.ts` is **green again** — its check was repointed from the relay-side
+    nudge to the relay CONTRACT the cure depends on (*a fresh hello on a NEW socket re-binds the
+     identity*), and verified to go red without the retry and green with it.
+ ⚠ **The first live run caught a flaw in the fix itself, and only because the retry is NOT silent:**
+  `🪪☠ hello send failed (Still in CONNECTING state)`. `Lies_channel_live` — the retry's gate — checks
+   only `channel_up && connection` and says **nothing about readyState**, so it reads true during the
+    connect window; the retry fired mid-connect, threw, and raced the real on_open hello (two hellos,
+     two seat dodges). Cured with an explicit `readyState !== 1 → return` inside the sender, and the
+      attempt counter moved behind that gate so a skipped attempt is not counted as a failed try.
+      *The lesson is the fix's own argument: a silent retry would have hidden this.*
+ ⓘ The relay-side `rehello` nudge below stays **unbuilt** — belt-and-braces, and it costs a restart.
+  `scripts/_relay_rehello.ts` (the scratch copy that proved it) has been deleted.
+
+**⚑ THE LATENT TWIN — `Swarm_station_up`'s hello has the same shape, on the socket that carries MUSIC.**
+ Found by sweeping for the pattern rather than the symptom, 2026-09-10. `Swarm.g:2271` (soul hello) and
+  `:2286` (body hello) both `port.ws?.send(...)` and hope.
+ - **Not vulnerable to the readyState flaw** — both sit inside an `on_open` hook, so the socket is OPEN.
+ - **But it has no acknowledgement check.** Swarm *does* set `on_hello` (`Swarm.g:2196-2197`) and uses
+    it to adopt the granted address and rehome — so it hears a `hello_ok` that arrives. **Nothing
+     detects one that never arrives, and there is no retry.** Same send-and-hope as `w:Lies` had.
+ - **Why it would be worse there:** this is the identity world's station socket, so a lost bind drops
+    `to:<prepub>` traffic — swarm frames and **music chunks** — not just editor pongs. It would read as
+     "the transfer stalled", not as a stale badge.
+ ⚠ **MEASURED shape, INFERRED consequence.** I verified the code path; I have NOT seen this fail live,
+  unlike the Lies one. Do not write it up as a known outage cause.
+ **Deliberately not fixed here:** it wants a `.g` recompile plus a tab reload on the music path, with
+  someone watching. The cure is the proven one — the same latch, cleared on open, stamped by
+   `on_hello`, retried on a tick — and `Swarm.g` already has the `on_hello` hook to hang it on.
+
+**The two fix options as they were assessed:**
+- **(preferred, no restart — THIS IS THE ONE THAT SHIPPED) Make the hello non-silent, client-side.** Retry it from the existing
+   keepalive tick until it is acknowledged — closes the hole at its source, touches only `LiesLies`,
+    and needs no dev-server restart (so it costs the flock nothing).
+  **The exact shape, which needs no socket-open timestamp** — a latch cleared on open, stamped on ack,
+   retried while unset. Idempotent by construction: it stops the moment `hello_ok` lands, and a tab
+    with no key never starts.
+  1. **Stamp the ack.** `w:Lies` does not currently listen for it, but `Tribunal.g:318-322` already
+      hands `hello_ok` to `w.c.on_hello(frame)`. So set, once, beside the channel standup:
+      `w.c.on_hello = () => { w.c.hello_ok_at = Date.now() }`
+      ⓘ Safe from collision: `on_hello` is the identity world's key (Swarm adopts the granted addr
+       through it); this is `w:Lies`, a different world. The 2026-09-10 key scan found the two worlds
+        share **no** `.c` name.
+  2. **Clear the latch on every (re)open**, at the top of the existing `port.on_open(async () => …)`
+      hello block (`LiesLies.svelte:419`): `delete w.c.hello_ok_at`
+  3. **Retry in the keepalive tick**, beside the existing 6s `last_ping` throttle
+      (`LiesLies.svelte:1664`): if `H.Lies_channel_live(w)` and `!w.c.hello_ok_at` and a key exists,
+       re-send the same signed hello. Re-sign each attempt — `handleHello` checks **ts-freshness**, so
+        a replayed stale header is refused.
+  ⚠ **Mint a FRESH seat-dodge `want` on each retry** (`LiesLies.svelte:455`), or a retry can collide
+   with the seat the earlier attempt actually won and get suffixed again for no reason.
+  ⚠ **Do not swallow the retry's errors too.** The bug is not the missing hello, it is that nothing
+   noticed — `catch {}` is what turned a one-RTT hiccup into a dead socket for the life of the tab. Log
+    the retry, and log when the latch has been unset for more than a few ticks.
+- **(relay-side) A `rehello` nudge.** On dropping an identity-shaped addr, `broadcastControl({control:
+   'rehello', addr})`, rate-limited per addr; the tab re-sends its signed hello and the bind is back
+    within one RTT. Belt-and-braces, but it is a wire-protocol addition AND a `relay.ts` save, i.e. a
+     dev-server restart. Do it second, if at all.
+- **Take the `bindState` logging hunk either way** — it distinguishes "addr not in locals at all" from
+   "addr IS in locals, sockets all dead", and names any family seats still bound.
+⚠ Both relay hunks ride a dev-server restart (`vite.config.ts:3` imports `relay.ts`). Land when idle.
+
+**⚑ SIDE-FINDING, measured, real today and unrelated to the drop:** an **unauthenticated
+ `?addr=<prepub>` socket CAPTURES a hello-verified identity's door.** `ownsDoor` reads the *claimed*
+  `qaddr`, not the *proven* `bound` set (`relay.ts:275-276`) — measured: the real hello-bound tab got
+   nothing, the squatter got everything, **zero drops and no log line at all**. A silent black hole that
+    produces the same `(silent Ns)` badge with nothing in the terminal. `ceremony-addr-test.ts §B`
+     already names the disease.
+ ⓘ The owner's one-socket ruling **dissolves this** — it deletes the own-door rule outright. Until then
+  it stands, and note the trap: keying `own` on `bound` instead does NOT fix it, it re-breaks the
+   doubling (a role channel hellos too, so its `bound` also holds the prepub). Neither field alone is
+    right, which is itself an argument that the rule should go rather than be tuned.
+
 **The case is already written, in five places in the code, by five different people fixing five symptoms
  of one cause.** Nobody has to be persuaded; the arguments just need collecting:
 
@@ -86,7 +309,100 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
     both directions: the editor stops seeing live runners, or keeps believing dead ones are alive. That
      is the wrong thing to land unattended — everything else in step 3 is loud when it breaks.
  - **3d — the own-door delivery rule and the two exclusions fall out**, having nothing left to police.
- ⚠ **3d COLLIDES WITH AN OLDER, UNBUILT REPAIR — settle which one wins before touching either**
+ ✅ **RULED 2026-09-10 BY THE OWNER — THE COLLISION IS SETTLED. The role socket is an ACCIDENT, and the
+  target is ONE SOCKET PER TAB.** Asked directly ("legitimate second door for control-plane traffic, or
+   an accident we're removing?"), the answer was *collapse to one socket*, consistent with the original
+    words that opened this section — *"remove entirely the second websocket for addr=runner"*.
+  **What the ruling DELETES:** `relay.ts:190`'s promised second control-plane map (never build it —
+   retire the promise, and `SoundPooling_todo:118` with it) · the whole **own-door rule** in
+    `deliverLocal`, which exists only to arbitrate between a tab's two sockets · **`?addr=` entirely**,
+     both halves, not just the role half · the `to:'runner'` broadcast bucket.
+  **What it REQUIRES, and this is the real work:** a tab keeps ONE socket, bound at its prepub by signed
+   hello. `become` survives but only to stamp `declaredRole` — it stops binding a name. Finding runners
+    becomes a **census over `declaredRole`**, not a frame to a shared address. And `runner_ask`'s op
+     handler must MOVE to wherever a `to:<prepub>` frame now lands, which is the part that broke it in
+      August (*"the whole flock read as down for hours"*) and the part to design most carefully.
+  ⚠ **A consequence worth seeing early:** with no `to:'runner'` bucket, the CLI can only find runners via
+   the relay `census` op — and that op is currently GATED to hello-bound askers, which the CLI is not.
+    The gate was right when census was a convenience beside a working broadcast. Under this ruling it
+     becomes the ONLY road, so the gate needs re-deciding BEFORE the bucket is removed, or the CLI goes
+      blind.
+  **Two options fall away on inspection, which leaves one.** A *roles-only listing naming no identities*
+   is useless: the identity IS the address the CLI must then dial, so a census without names answers
+    nothing. A *relay-issued token* is real work and needs somewhere to keep the secret.
+  **The remaining option is that the CLI mints an ephemeral keypair and hellos like anyone else** — it
+   already links `@noble/ed25519` (`relay-test.ts` signs helloes with it), so this is a few lines and
+    needs no change to the gate at all.
+  ⚠ **But be honest about what the gate is worth, because this makes it plain.** `hello` proves
+   *possession of a key*, not *authorisation* — and nothing stops any caller minting a fresh key a
+    moment before asking. So the gate is a hurdle, not an access control, and a self-minted ephemeral
+     key satisfies it exactly as a real identity does. That is *already true today* for every tab; the
+      CLI adopting it changes nothing about the security posture. It does mean: **do not let this gate
+       be the reason we believe presence is protected.** If presence should genuinely be restricted, that
+        wants a real decision about who may ask, not a signature check that everyone passes.
+  **Ordering note:** `ROLE_IS_NOT_AN_ADDRESS` (the addr-less role channel, staged in Tribunal.g) is a
+   waypoint on this road, not a detour — it stops the role being spelled as an address, and the socket
+    it addresses then disappears entirely. Owner's call 2026-09-10: **do not flip it unattended**; it
+     wants someone watching a live reload.
+
+ ### The one-socket migration — where the real difficulty is (drafted 2026-09-10, after the ruling)
+
+ **The crux is not the socket. It is that HANDLERS ARE REGISTERED PER WORLD.** `Peeroleum.g:200` is
+  `w.c.on[type] = fn`, and `Peeroleum_deliver` dispatches on `w.c.on[h.type]` where `w` is the world
+   owning the %Peering that received the frame. Two worlds register two disjoint sets today:
+ - **`w:Lies`** (16 registrations, `LiesLies.svelte:488-536`): `rungo · become_book · ghost_ledger ·
+    runner_ask · grant_offer · wormhole_reply · wormhole_beg · wormhole_req · run_result · run_phase ·
+     ghost_compile · advertise · ping · pong`
+ - **the identity world** (`Swarm.g:1804`): `pier_hello · pier_accept · pier_confirm · pier_reject ·
+    reinvite{,_honour,_seal,_ok} · ive_got · pulse · swarm_hi · suggest{,_got} · repli_ready · charter ·
+     roster · crew · ferry{,_want,_cancel,_got,_held} · reach{,_done}`
+
+ **One socket means one world, so the other world's handlers never fire.** An unhandled type falls
+  through `w.c.on[h.type]` as `undefined` and is dropped **in silence** — which is exactly the August
+   2026 outage the relay still carries a note about (*"every addressed ask — ping, state, steps, snap,
+    supervisor, run — went silent … the whole flock read as down for hours"*). Any plan that does not
+     answer this reproduces that failure.
+
+ **✅ MEASURED, and it is the good news: THE TWO TYPE SETS DO NOT OVERLAP.** Not one name is in both.
+  So a merge cannot silently shadow a handler, which is what would have made this dangerous.
+
+ **Option A — merge the registration onto the surviving world.** The one socket's %Peering lives in the
+  identity world; `LiesLies` registers its 16 handlers there too. `w.c.on` then holds both sets, and
+   nothing collides. Simplest, no new dispatch machinery.
+  ✅ **MEASURED 2026-09-10, then RE-MEASURED wider — and the second pass found the thing the first
+   missed.** Pass 1 matched only `w.` / `cw.` and reported **zero** shared keys. But the world is bound
+    under other names — `self_w` in Swarm, `lw` in Sounditron — and pass 2, including those, gives
+     **57 Lies keys · 82 identity keys · exactly ONE shared: `on_hello`.**
+  ⚠⚠ **`on_hello` IS A LIVE TRAP FOR OPTION A, and `Swarm.g` sets it defensively in a way that makes the
+   failure SILENT.** Both worlds want that hook for different jobs — Lies stamps the
+    hello-acknowledged latch (added 2026-09-10 with the lost-identity-bind fix; **before that fix the
+     sets really were disjoint, so this collision is newly created**), while Swarm adopts the relay's
+      granted address and rehomes. And `Swarm.g:2196` guards with **`if (self_w.c && !self_w.c.on_hello)`**
+       — it only installs its hook when the slot is empty. So on a merged world, whichever ghost stands
+        up FIRST wins, and if that is Lies, **Swarm silently never installs its adopt-and-rehome logic
+         at all.** No error, no log, just an address that stops being adopted.
+  **⇒ Option A must make `on_hello` a fan-out, not an assignment** — a list of hooks the carrier calls
+   in turn, exactly as `w.c.on[type]` is a registry rather than a single slot. That is a small change to
+    `Socket_real`'s control branch (`Tribunal.g:320`) and it should land BEFORE any merge, not with it.
+  ⓘ Scan is `scratchpad/ckeys.mjs`, seconds to re-run. It still cannot see a key written through a
+   helper — `on` is the known case (Lies registers via Peeroleum's helper, so it shows only in the Swarm
+    set) and is the deliberate merge point rather than a collision.
+
+ **Option B — a type router in `Peeroleum_deliver`.** Keep the worlds separate; when `w.c.on[h.type]`
+  misses, consult a registry of sibling worlds that claim that type. More machinery, but it keeps the
+   ghosts' state apart and makes "who handles what" explicit and inspectable instead of implicit in
+    whichever world happens to own the socket.
+  ⚠ It must **fault loudly on an unclaimed type**, never fall through silently. The silent fall-through
+   IS the August bug; a router that reproduces it has bought nothing.
+
+ **Suggested order** (each step separately provable, which is the whole lesson of this thread):
+  1. Enumerate the `.c` key sets; pick A or B on that evidence.
+  2. Land the handler reachability change FIRST, while both sockets still exist — so it can be proven
+     with everything else unchanged, and reverted alone.
+  3. Only then remove the second socket, `?addr=`, the own-door rule, and the `to:'runner'` bucket.
+  4. The census gate (above) must be re-decided before step 3, or the CLI goes blind.
+
+ ⚠ *(superseded, kept for the reasoning)* **3d COLLIDES WITH AN OLDER, UNBUILT REPAIR — settle which one wins before touching either**
   (found 2026-09-10 by the stale-claim audit; neither plan knew about the other).
   `relay.ts:190` promises a repair that has never been built, and `SoundPooling_todo:118` records why it
    was wanted: the own-door rule hands every `to:<prepub>` frame to the tab's STATION socket, while the
@@ -103,6 +419,22 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
     shrinks to "stop binding `runner`" only. If the latter, the repair should never be built and
      `SoundPooling_todo:118` wants retiring. `player` sockets survive either way, so the CLI's
       slot+`ask.pub` workaround is not urgent — which is exactly why this can wait for a real answer.
+  **⚑ A THIRD OPTION, cheaper than either, opened up on 2026-09-10 and did not exist when the above was
+   written.** The socket now carries `declaredRole` (stamped at `become`). That is the whole content of
+    the promised "second map" — *which sockets are role channels* — already recorded, per-socket, with no
+     second map to keep in step with `locals`. So the repair could be a **delivery-rule clause instead of
+      a data structure**: for a control-plane frame TYPE addressed to a prepub, prefer the bound socket
+       whose `declaredRole` is set over the station. Same outcome the note asks for — *"not WHICH SOCKET
+        but WHICH FRAME"* — with no new state and nothing to unbind on close.
+  ⚠ **Two things to check before believing that, because I got this wrong once already today.** (1) It
+   still needs the owner's ruling above: it is an implementation of "keep role sockets", so it LOSES if
+    the answer is "an accident we are removing". (2) `ownsDoor` (the 2026-09-10 own-door fix) does **NOT**
+     already do this — I assumed it might and it does not. For `to:<prepub>` a role channel's
+      `declaredRole` is `runner`, not the prepub, so it does not own that door and still receives nothing.
+       `ownsDoor` only made role BUCKETS (`to:'runner'`) safe for a mixed fleet. The prepub-addressed
+        control-plane hole is untouched and still open.
+  Verified 2026-09-10 that the second map is genuinely absent: `relay.ts` holds five Maps
+   (`tally`, `locals`, `ackBack`, `claims`, `dropCounts`) and none of them is it.
  `to:'editor'` STAYS: one editor per relay is a genuine singleton service address, and the runner→editor
   direction (advertise, results) legitimately wants "the editor, whoever that is". `runner` never was.
 
@@ -167,6 +499,34 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
    stands. **The moment asks are signed, gate it on the hello bind exactly as `who` is.** Do not let it
     become furniture: an ungated enumerator on a relay that prod also runs is the kind of thing that gets
      rediscovered later by someone who assumes it was considered.
+
+### ⚑⚑ 2026-09-10 midday — THE r2r BRIDGE HIJACK, fixed. Belongs in `Cluster_spec §3.3`'s ladder when the human next preens it.
+
+**Symptom:** the editor dispatches a Book, logs `📤 become_book → runner <prepub>`, and the Brink sits on
+ `☎ calling` for ever. The runner shows `→EDITOR (dialing)` and receives nothing. Restarting staging does
+  not help. Nothing anywhere names a cause.
+
+**Cause:** `relay.ts` holds exactly ONE `peerLink`, and the passive end sets it from whichever r2r socket
+ dialled in LAST. This box runs **three** relays — dev `:9091` (runners), staging `:9092` (the editor),
+  prod `:19091`. Prod had no `EDITOR_RELAY`, so it fell back to the hardcoded
+   `DEFAULT_EDITOR_RELAY = ws://172.17.0.1:9092/relay?r2r=1`, dialled staging, and **took the bridge**.
+    Every `become_book` was then forwarded to prod, which has no runners, and dropped there.
+
+**Fixed:** `EDITOR_RELAY=off` in `docker-compose.prod.yml` (prod has no editor and must never bridge), and
+ `relay.ts` now logs `⚠ peer relay REPLACED` when a second peer takes the bridge — the tell that was
+  missing. Verified: a `become_book` injected at `:9092` crossed and ran MusuBerth 7/7 caveat 0.
+
+⚠ **The comment in `relay.ts` predicted the risk and got one assumption wrong** — *"prod runs alone …
+ nothing on its box's :9092"*. On a box that DOES run staging the dial SUCCEEDS, and connecting to the
+  wrong peer is far worse than the `ECONNREFUSED` it was written for, because it looks like it works.
+
+**The diagnosis worth reusing — prove each hop, do not theorise.** I called this "the bridge is down"
+ twice from partial evidence and was wrong both times. What settled it: send `become_book` LOCALLY on the
+  runner's own relay. Three Books ran green — including one with the editor's exact `ledger_dige`+`pins`
+   and one with a deliberately low `seq` — clearing the handler, the version gate, the duplicate guard and
+    the reconnect-seq window in a single stroke, and leaving the bridge hop as the only suspect.
+ ⚑ Restarting **staging** can never fix a bridge fault: it is the passive end and cannot dial
+  (`scheduleRedial` returns unless `role === 'runner'`). **Restart DEV** to re-win the link.
 
 ### ⚑ MORNING OF 2026-09-10 — what landed overnight, and what is owed
 

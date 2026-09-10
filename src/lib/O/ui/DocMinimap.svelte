@@ -213,9 +213,32 @@
     //   zero UI work.  Known names keep their colours via .lmm-spin-$name rules;
     //   unknown names fall back to the default grey.
     //   333ms floor on the graft spinner so a fast graft doesn't strobe a frame.
+    // WHAT EACH ONE IS WAITING FOR, and HOW LONG (2026-09-10).  The owner: *"docks spend an awful long
+    //  time in the spinner state sometimes… there's various spinners aye, a few along the compiling
+    //   chain and one in the middle of the codemirror"*.  They were all drawn as an identical ⟳ whose
+    //    tooltip was the bare internal name, so a row of them said "something is happening" three times
+    //     and never which thing or for how long.  A name is a label; a name plus an age is a
+    //      measurement, and the whole point of noticing a slow dock is being able to say which part.
+    const SPINNER_SAYS: Record<string, string> = {
+        furnish:   'furnishing the dock — building Points from the compiled Map',
+        grafted:   'grafting Points onto the document',
+        stale:     'Understanding is stale — the remote moved under us',
+        text_load: 'loading the document text off disk',
+        compile:   'compiling the dock',
+    }
+    const says = (name: string) => SPINNER_SAYS[name] ?? `phase: ${name}`
+    let _now = $state(Date.now())
+    $effect(() => { const iv = setInterval(() => _now = Date.now(), 1000); return () => clearInterval(iv) })
+    // seconds only past 2s: a fast phase should not flash a number, a stuck one should shout
+    const age_of = (c: any) => {
+        const at = c?.c?.at as number | undefined
+        if (!at) return ''
+        const s = Math.round((_now - at) / 1000)
+        return s >= 2 ? ` ${s}s` : ''
+    }
     let _graft_spin = $state(false)
     let _stale_spin = $state(false)
-    let _spinners: string[] = $state([])
+    let _spinners: Array<{ name: string, c: any }> = $state([])
     $effect(() => {
         void languinio?.vers
         const grafting = !!languinio?.ob({ spinner: 'grafted' }).length
@@ -224,8 +247,8 @@
         _stale_spin = !!languinio?.ob({ spinner: 'stale' }).length
         // everything else, generically — grafted|stale keep their bespoke spots.
         _spinners = ((languinio?.ob({ spinner: 1 }) ?? []) as TheC[])
-            .map(s => s.sc.spinner as string)
-            .filter(name => name !== 'grafted' && name !== 'stale')
+            .filter(s => s.sc.spinner !== 'grafted' && s.sc.spinner !== 'stale')
+            .map(s => ({ name: s.sc.spinner as string, c: s }))
     })
 
     let total_lines = $derived.by(() => {
@@ -710,8 +733,9 @@
                 title="fold intensity — Q1 open … Q5 only method names">
             {#each [1, 2, 3, 4, 5] as q}<option value={q}>Q{q}</option>{/each}
         </select>
-        {#each _spinners as name (name)}
-            <span class="lmm-spin lmm-spin-{name}" title={name}>⟳</span>
+        {#each _spinners as s (s.name)}
+            <span class="lmm-spin lmm-spin-{s.name}" title="{says(s.name)}{age_of(s.c) ? ` — ${age_of(s.c).trim()} so far` : ''}"
+                  >⟳<span class="lmm-spin-age">{age_of(s.c)}</span></span>
         {/each}
         {#if _graft_spin}<span class="lmm-graft-spin" title="grafting Points">⟳</span>{/if}
         {#if _stale_spin}<span class="lmm-stale-spin" title="Understanding stale — remote moved">↻</span>{/if}
@@ -822,6 +846,10 @@
 
     /* generic phase spinners — one per %Languinio/{spinner:$name}.
        Default grey; named tints below for the phases we know about. */
+    /* the age rides beside the glyph, small and quiet — it only appears past 2s, so a healthy dock
+       looks exactly as it did and a stuck one starts counting where you can see it */
+    .lmm-spin-age { font-size: 9px; letter-spacing: 0.02em; opacity: 0.75; margin-left: 1px;
+                    font-variant-numeric: tabular-nums; }
     .lmm-spin {
         color: rgb(110, 125, 140);
         font-size: 12px; line-height: 1;

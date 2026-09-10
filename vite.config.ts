@@ -1,7 +1,7 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import { attachRelay } from './src/lib/server/relay';
-import { serve_diges } from './src/lib/server/dige';
+import { serve_diges, write_status_waft } from './src/lib/server/dige';
 
 // Root .env/.env.local, merged under process.env (env_file injection wins).  This is how
 //  site-specific names/creds stay OUT of tracked files: PROD_DOMAIN &c. live in the
@@ -53,6 +53,34 @@ function digePlugin(): PluginOption {
 				try { if (serve_diges(process.cwd(), req, res)) return } catch { /* fall through to vite */ }
 				next();
 			});
+
+			// THE STATUS WAFT, written on boot and kept fresh on change (Docindex_todo).
+			//  VITE IS ALREADY THE INOTIFY DAEMON — chokidar watching is how HMR works — so the
+			//   "watcher process" the design wanted is a process you are already running.  A separate
+			//    container was considered and refused: a third image sharing /app/node_modules is the
+			//     documented 2026-08-07 outage (Alpine/musl vs Debian/glibc native binaries), so the
+			//      cheapest option and the safest option are the same one here.
+			//  Debounced because a save storm (a branch switch, a LocalGen run writing 12 gen files)
+			//   would otherwise rewrite the file a dozen times; `write_status_waft` also no-ops when the
+			//    text is unchanged, so a touched-but-identical file costs a stat sweep and no disk write.
+			let pending: NodeJS.Timeout | null = null;
+			const refresh = (why: string) => {
+				if (pending) clearTimeout(pending);
+				pending = setTimeout(() => {
+					pending = null;
+					try {
+						const t0 = Date.now();
+						const r = write_status_waft(process.cwd());
+						if (r.changed) console.log(`🗂 status waft: ${r.docs} docs (${why}, ${Date.now() - t0}ms)`);
+					} catch (e) { console.warn('🗂 status waft failed', e); }
+				}, 400);
+			};
+			refresh('boot');
+			// only source changes matter — the file we write lives under wormhole/, so reacting to it
+			//  would be a loop that never settles
+			const interesting = (p: string) => /\.(g|svelte|ts|md)$/.test(p) && !p.includes('/wormhole/');
+			for (const ev of ['add', 'change', 'unlink'] as const)
+				server.watcher.on(ev, (p: string) => { if (interesting(p)) refresh(ev); });
 		},
 	};
 }

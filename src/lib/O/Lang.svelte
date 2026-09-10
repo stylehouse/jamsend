@@ -1105,11 +1105,22 @@
     //   < the old r({spinner:name}) collapsed to the {spinner:1} has-key wildcard, so setting
     //     any spinner replaced ALL and clearing one cleared all — every overlapping phase broke.
     //   DocMinimap renders the live set; unknown names get the default style.
+    //   ⇢ 2026-09-10: a spinner now carries WHEN IT STARTED.  The owner: *"docks spend an awful long
+    //     time in the spinner state sometimes"* — and the face could not say otherwise, because a
+    //      spinner was a bare name with no clock, so "a long time" was a feeling with nothing to check
+    //       it against.  `at` is stamped on the mint only (oai would otherwise re-stamp every call and
+    //        the age would reset to zero on each pass, which is precisely the bug that hides a stall).
+    //   `at` rides on .c: it is wall-clock, so snapping it would churn every fixture on every run —
+    //    the same reason %mo and ttlilt's until_ts are munged (Story.svelte's own note).
     Langspinner(w: TheC, spinner: string, not = false) {
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!languinio) return
         if (not) for (const s of languinio.o({ spinner }) as TheC[]) languinio.drop(s)
-        else     languinio.oai({ spinner })
+        else {
+            const had = languinio.o({ spinner })[0] as TheC | undefined
+            const s = languinio.oai({ spinner }) as TheC
+            if (!had) (s.c as any).at = Date.now()   // the START, not the latest touch
+        }
         languinio.bump_version()
     },
 

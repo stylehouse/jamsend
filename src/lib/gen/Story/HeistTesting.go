@@ -11,7 +11,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_HeistTesting(): string { return 'ee093c61e603face~g1' },
+    Ghostmeta_Ghost_Story_HeistTesting(): string { return 'a640c2f7b4e88f33~g1' },
 
 // Heistation.g — the Heist* Books: the rsync-job-creator proven (Radio_todo §0 2026-07-11 + §10
 //  rung 1).  MusuRaCast proved MUSIC crosses a sealed wire page by page; MusuHeist proves a JOB
@@ -6936,15 +6936,21 @@ async MusuHeard_take(w) {
     // the fat thumb: a second press inside the window takes it back, and the Card SURVIVES as a hearing
     this.MusuHeard_press(w, r1, 'friendo')
     if (c1 && !c1.sc.take && !c1.sc.at && String(c1.sc.mire) === '2') { row.pressing_again_takes_it_back = 1 }
-    // …and later than that it re-affirms rather than undoing.  TWO presses, a minute apart: the first
-    //  re-takes it, the second lands OUTSIDE the window and re-arms the clock instead of spending it.
-    //   (Pressing twice in the same second would undo it again, which is the rule, not a bug — and is
-    //    exactly the mistake the first draft of this beat made.)
+    // …AND LATER THAN THAT IT UNLOVES TOO — the heart is a TOGGLE at any distance in time (owner's
+    //  ruling 2026-09-10: *"basically we love or unlove things, which includes or dis-includes them in
+    //   SP and Heisting to our Cave"*).  TWO presses, a minute apart: the first re-takes it, the second
+    //    lands far outside the fat-thumb window and STILL takes it back.
+    //  ⚠ THIS OATH REPLACES `later_it_re_affirms`, which swore the opposite (the second press re-armed
+    //   the gave-up clock and cleared a failure verdict instead of undoing).  That behaviour still
+    //    EXISTS in `Heard_take` — the toggle lives in `Radio_like`, the button — so nothing lost it;
+    //     what changed is what the ♥ MEANS.  ⓘ The re-affirm was also the RETRY ROAD, and the toggle
+    //      leaves no gesture that says "try again" without passing through unloved.  Where retry lives
+    //       is an open question (spec/SoundPooling_todo.md), deliberately not answered by this beat.
     w.sc.now = 1788400100
     this.MusuHeard_press(w, r1, 'friendo')
     w.sc.now = 1788400150
     this.MusuHeard_press(w, r1, 'friendo')
-    if (c1 && String(c1.sc.take) === '1' && String(c1.sc.at) === '1788400150') { row.later_it_re_affirms = 1 }
+    if (c1 && !c1.sc.take && !c1.sc.at) { row.later_it_unloves_too = 1 }
     // a track of my OWN is a taste fact nobody is owed — it names no holder to ask
     let mine = this.Ra_home_self(w, 'me')
     let own = this.Ra_rec_home(mine, 'own1')
@@ -7176,8 +7182,8 @@ MusuHeard_witness(w) {
         this.story_swear(w, 'a track played to an empty room earns nothing and a skip earns nothing — only sitting through it with someone there counts — and counting it never bumps the account because a track finishing is not worth a disk write')
     if (tk && +tk.sc.the_press_is_the_ask === 1 && +tk.sc.the_listing_starts_at_the_act === 1 && +tk.sc.the_press_mints_no_heist === 1 && +tk.sc.my_own_track_is_a_taste_fact === 1)
         this.story_swear(w, 'the heart is the whole ask and it mints no heist — the listing arrives with the act and not before — and a heart on a track of my own is a taste fact nobody is owed')
-    if (tk && +tk.sc.pressing_again_takes_it_back === 1 && +tk.sc.later_it_re_affirms === 1)
-        this.story_swear(w, 'a second press within a moment is a fat thumb and takes the ask back while the hearing survives — later than that the same press re-affirms it instead of undoing something you meant')
+    if (tk && +tk.sc.pressing_again_takes_it_back === 1 && +tk.sc.later_it_unloves_too === 1)
+        this.story_swear(w, 'the heart is a toggle — a second press takes the ask back whether it comes a moment later or a minute later — and the hearing survives either way because you did hear the track')
     if (q && +q.sc.grouped_by_holder === 1 && +q.sc.oldest_first === 1 && +q.sc.nobody_is_owed_my_own === 1 && +q.sc.a_row_per_holder === 1)
         this.story_swear(w, 'what I am owed is a query and not a store — take cards not yet on my shelf — oldest first — grouped by who could bring them — and nobody is ever owed a track of my own')
     if (f && +f.sc.a_hearing_nobody_wanted_is_forgotten === 1 && +f.sc.a_heart_is_never_dropped_by_a_clock === 1 && +f.sc.this_sitting_is_untouched === 1 && +f.sc.an_emptied_sitting_goes === 1)

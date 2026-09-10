@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return 'a818cce30404ac42~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '41384d860343d026~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -2734,6 +2734,52 @@ Ra_rec_previews_carry(card, rec) {
         delete card.sc.total
         return 0
     }
+    card.bump()
+    return 1
+
+},
+// Ra_rec_heads_carry — THE HEAD RUN'S TWIN OF THE PREVIEW CARRY (2026-09-10, the owner: pool items
+//  "should start from the beginning in the same conditions a remote radio track does", and the head
+//   "should be generated like LOFI is").
+//  WHY A POOL CARD NEEDS THIS AT ALL.  A track's OFFER is the TAIL of the song — `Ra_preview_offset`
+//   cuts it in a 30–70% band, and measured over 54 real records the head is a median 47% of the song.
+//    So a pool card playing its own chunk 0 opens a third to two thirds of the way in, which is exactly
+//     what the owner reported.  Opening at 0:00 needs the HEAD RUN (`%Prehead`/`hseq`) prepended by
+//      `Radio_hbase`, gated on `Ra_head_whole` — and eed's pool cards were measured holding all 16
+//       preview chunks and ZERO head chunks.
+//  WHY NOTHING FIXED IT BY ITSELF: both head roads — the local make (Ra.g `!rec.c.from`) and the
+//   `opus_head` pull (the only sender) — live inside `Ra_restock_beat`, which walks the MIRROR shelf.
+//    Pool cards hang off the SoundPooling home and are never iterated, so neither road ever fires for
+//     them.  It was never a failing gate; nothing asked.
+//  A LOCAL ENCODE CANNOT SERVE HERE, which is why this is a carry and not an encode: the pooled file
+//   holds the offer, so segments [0, pv_off) are not on this disk to transcode from.  The bytes exist
+//    only where the original does, and they get here the same way the LOFI rendition does — the holder
+//     makes them on demand (`Repli_serve_head` kicks `Ra_head_ensure` there) and we copy them across.
+//  Same honesty rule as the preview carry: only when the bytes COINCIDE (same id ⇒ same audio), never
+//   onto a lofi|grade rendition, whose head would be a different waveform wearing this name.
+//  Idempotent: a card already holding a whole head is left alone.  Returns 1 when it carried.
+Ra_rec_heads_carry(card, rec) {
+    if (!card || !rec || card === rec) { return 0 }
+    if (rec.sc.lofi || card.sc.lofi || card.sc.grade) { return 0 }
+    let off = +(card.sc.pv_off || 0)
+    if (!(off > 0)) { return 0 }
+    if (this.Ra_head_whole(card)) { return 0 }
+    // the source must hold the WHOLE run — a partial head is a hole in the song's first minute, which
+    //  Ra_head_whole rightly refuses, so carrying half of one buys nothing and costs a snap.
+    if (!this.Ra_head_whole(rec)) { return 0 }
+    let n = 0
+    for (const src of rec.o({ Prehead: 1 })) {
+        if (!src.sc.buf) { continue }
+        let ch = card.oai({ Prehead: 1, hseq: String(src.sc.hseq) })
+        ch.c.up = card
+        if (src.sc.head) { ch.sc.head = 1 }
+        if (src.sc.preskip != null) { ch.sc.preskip = src.sc.preskip }
+        ch.sc.buf = src.sc.buf
+        if (src.sc.cid) { ch.sc.cid = src.sc.cid }
+        ch.bump()
+        n = n + 1
+    }
+    if (!n) { return 0 }
     card.bump()
     return 1
 
@@ -5731,7 +5777,82 @@ async Ra_pool_previews_heal(w, ident) {
         }
     }
     if (healed > 0) { console.log('🏊 pool: ' + healed + ' pooled track(s) now dialable') }
+    await this.Ra_pool_heads_heal(w, ident, homes)
     return healed
+
+},
+// Ra_pool_heads_heal — MAKE A POOLED TRACK START AT 0:00 (2026-09-10, the owner's two rulings: pool
+//  items should begin "in the same conditions a remote radio track does", and the head "should be
+//   generated like LOFI is" — i.e. holder-side, on demand).
+//  A dialable pool card still opens a third to two thirds in, because its bytes ARE the offer and the
+//   head run is a separate thing (`Ra_rec_heads_carry` carries the full account of why).  The head
+//    machinery lives in `Ra_restock_beat`, which walks the MIRROR shelf only — pool cards are never
+//     iterated by it, so nothing ever asked on their behalf.  This is that ask.
+//  TWO RUNGS, the same shape as the preview heal above:
+//   · the run already stands on a record of the same id here ⇒ CARRY it (free, no wire).
+//   · else ASK ITS HOLDER — a `stream:'opus_head'` want, which is what makes the holder generate the
+//      run (`Repli_serve_head` → `Ra_head_ensure` there), exactly the way the LOFI rendition is a
+//       holder-side transcode.  The carry then picks it up on a later pass.
+//  ONE CARD A PASS, deliberately.  A head is a median 47% of a song (measured over 54 records), so
+//   fetching them is roughly a 1.95× on the pool's bytes — this must trickle, never sweep.  It also
+//    rides the pool pump's own cadence rather than the streaming budget, which is the right pocket:
+//     a pool head must never take a slot from the track someone is listening to right now.
+async Ra_pool_heads_heal(w, ident, homes) {
+    if (!homes || !homes.pool || !homes.mw) { return 0 }
+    for (const card of this.Ra_recs(homes.pool)) {
+        if (+(card.sc.pv_off || 0) < 1) { continue }        // no cut point ⇒ the offer already starts at 0
+        if (card.sc.grade || card.sc.lofi) { continue }
+        if (this.Ra_head_whole(card)) { continue }          // already opens at the beginning
+        let id = String(card.sc.id || '')
+        let src = this.Ra_pool_source_rec(homes.mw, id)
+        if (src && this.Ra_rec_heads_carry(card, src)) {
+            if (w && w.c && w.c.ra_head_tries) { delete w.c.ra_head_tries[id] }   // it arrived — forget the count
+            console.log('🏊 pool: carried the head run for ' + String(card.sc.title || id).slice(0, 40) + ' — starts at the beginning now')
+            return 1
+        }
+        // GIVE UP EVENTUALLY (the restock beat's head ask has HEAD_ASK_CAP; this is its twin).  Without a
+        //  bound, a head its holder will never serve — the peer is gone, the original file was moved, the
+        //   encode fails there every time — costs one frame every pump pass, for ever, silently.  That
+        //    trickle is exactly the shape this corpus keeps getting bitten by: nothing errors, nothing is
+        //     obviously wrong, it simply never stops.  Bounded, and it SAYS SO when it stops, because a
+        //      silent surrender is how you end up re-diagnosing this from scratch in a month.
+        //  Cleared on success above, so a peer that comes back later is asked again from zero.
+        let GIVEUP = +((w && w.c && w.c.pool_head_giveup) || 12)
+        if (w && w.c) {
+            w.c.ra_head_tries = w.c.ra_head_tries || {}
+            let tries = +(w.c.ra_head_tries[id] || 0)
+            if (tries >= GIVEUP) { continue }
+            if (tries + 1 === GIVEUP) {
+                console.log('🏊☠ pool: giving up on the head run for ' + String(card.sc.title || id).slice(0, 40) + ' after ' + GIVEUP + ' asks — it will keep playing from its offer (a third to two thirds in). Its holder never served [0,' + card.sc.pv_off + ').')
+            }
+            w.c.ra_head_tries[id] = tries + 1
+        }
+        // ask the holder to make it.  Needs the source's live wire handles: a pool card is a local file
+        //  and carries none of its own, which is why this asks THROUGH the standing source record.
+        // ⚠ TWO WORLDS, AND THE WIRE IS NOT ON THE ONE THE SHELVES ARE ON.  `homes.mw` is the RADIO world
+        //  (`Ra_pool_fill_homes`: `out.mw = top.c.radio_w`) — that is where Mine/Theirs/pool stock lives,
+        //   which is why the lookup above uses it.  But `Repli_arm` and `repli_mirror_pier` are stamped on
+        //    the SWARM world (`Swarm.g`, beside `w.c.repli_mirror_w = rw` — it keeps only a POINTER to the
+        //     radio world).  So the ask must go through `w`, our own caller's world, not `homes.mw`.
+        //  Written the wrong way first: gating on `homes.mw.c.repli_mirror_pier` is always falsy, so the
+        //   ask would simply never fire — a silent no-op that looks exactly like "the feature does
+        //    nothing", with no error to find. Check which world holds a `.c` key before reading it.
+        if (!w || !w.c || !w.c.repli_mirror_pier) { continue }
+        if (!src || !src.c || !src.c.from || !src.c.rx) { continue }
+        let have = this.Ra_head_have(src)
+        let hoff = 0
+        let PAGE = +(w.c.repli_page || 2)
+        while (hoff < +(card.sc.pv_off || 0) && have[hoff] != null) { hoff = hoff + PAGE }
+        // one ask per id per 4s, the same throttle the restock beat's head ask uses
+        w.c.ra_want_ts = w.c.ra_want_ts || {}
+        let hkey = id + ':poolh' + hoff
+        if (Date.now() - (w.c.ra_want_ts[hkey] || 0) < 4000) { continue }
+        w.c.ra_want_ts[hkey] = Date.now()
+        await this.Repli_want_next(w, src.c.rx, w.c.repli_mirror_pier, src.c.from, id, 'opus_head', hoff)
+        console.log('🏊 pool: asked ' + String(src.c.from).slice(0, 8) + ' to make the head run for ' + String(card.sc.title || id).slice(0, 40) + ' (from ' + hoff + '/' + card.sc.pv_off + ')')
+        return 1
+    }
+    return 0
 
 },
 // Ra_pool_fill_pump — the ONE live tick (rides Swarm_reach_pump's cadence, knob-gated there by

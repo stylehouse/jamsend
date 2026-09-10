@@ -2193,8 +2193,15 @@ Swarm_station_up(w, ident):
     //      granted addr, which is now ours, so the next hello_ok matches and no further rehome
     //       fires.  Soft: a relay that never sends addr (older) leaves us exactly where we dialed.
     let self_w = w
-    if (self_w.c && !self_w.c.on_hello) {
-        self_w.c.on_hello = (frame) => {
+    // ON THE LIST, NOT THE SLOT (2026-09-10).  This used to be `if (!self_w.c.on_hello) self_w.c.on_hello =`
+    //  — install-only-if-empty, which is silent when it loses.  Lies wants the same hook (its
+    //   hello-acknowledged latch), so under the one-socket merge whichever ghost stood up first would
+    //    have won and THIS adopt-and-rehome would never have installed, with nothing said.  Carrier fans
+    //     the list (Tribunal.g Socket_real); the flag keeps it idempotent across a re-standup.
+    if (self_w.c && !self_w.c.swarm_hello_hooked) {
+        self_w.c.swarm_hello_hooked = 1
+        if (!Array.isArray(self_w.c.on_hello_list)) { self_w.c.on_hello_list = [] }
+        self_w.c.on_hello_list.push((frame) => {
             // THE DOOR YIELD (Phase D, land-of-prepub): the relay's arbiter answering anything but
             //  the bare name means another body of ours holds the DOOR (first-come, cooperative —
             //   never a theft; a stranger has a different name and cannot contest ours).  We do NOT
@@ -2237,7 +2244,7 @@ Swarm_station_up(w, ident):
             idp.bump()
             console.log('🪪 the door (' + String(ident.sc.prepub).slice(0, 8) + ') is held by a sibling body — standing at my own name ' + myname.slice(0, 8) + ' instead (cooperative, not a theft)')
             this.Swarm_rehome(ident)
-        }
+        })
     }
     let port = w.o({ transport: 1, type: 'websocket' })[0]?.c.port
     if (port?.on_open) {
@@ -5677,14 +5684,21 @@ Swarm_protocol(kind):
     //   Tier-B truth — the old blanket `role:1` was silently stripping it from every ferried
     //    account, contradicting the %Body header's own "PERSISTENT, replicated" claim.
     let SESSION = { online: 1, active: 1, created_at: 1, new: 1, not_found: 1, stolen: 1, address: 1, duty: 1, role: 1 }
-    // %Preview / %Stream ARE CHUNK BUFS, and a Uint8Array in .sc is fine on the snap plane but FATAL at
-    //  this one — the storage/toc encoder (Ra_record_from's header has carried that warning since the
-    //   library learned to hold its own chunks).  They reach the identity subtree now that a pool card
+    // %Preview / %Stream / %Prehead ARE CHUNK BUFS, and a Uint8Array in .sc is fine on the snap plane but
+    //  FATAL at this one — the storage/toc encoder (Ra_record_from's header has carried that warning since
+    //   the library learned to hold its own chunks).  They reach the identity subtree now that a pool card
     //    carries its source's preview (Ra_rec_previews_carry, 2026-09-05) and the SoundPooling home hangs
     //     on the %Identity, so the account snap would walk straight into them.  They are also pure cache:
     //      the bytes on disk are the durable fact, the encode is re-derivable, and nothing about an
     //       account backup wants a megabyte of opus in it.  Skip, in every kind.
-    let skips = ['mail', 'rebuff', 'Sibling', 'Stolen', 'Preview', 'Stream']
+    //  ⚠ %Prehead JOINED THEM 2026-09-10, and it is the same fix as the carry that mints it — a pool card
+    //   now carries the HEAD RUN too (Ra_rec_heads_carry, so a pooled track opens at 0:00 instead of the
+    //    30–70% point its offer starts at).  Those are `hseq` chunk bufs on the very same shelf.  The
+    //     preview note above says these two changes "must not be separated" and it means this literally:
+    //      mint head bufs onto the pool card without adding the skip here and the next account snap walks
+    //       into a Uint8Array.  If a FOURTH buf-bearing kind is ever carried onto a card, it belongs here
+    //        in the same commit as the carry that mints it.
+    let skips = ['mail', 'rebuff', 'Sibling', 'Stolen', 'Preview', 'Stream', 'Prehead']
     if (kind === 'page') skips = [...skips, 'Pier', 'Idzeug', 'SocialGraph', 'Key', 'Crew']
     if (kind === 'crew') skips = [...skips, 'Key']
     let rules = []

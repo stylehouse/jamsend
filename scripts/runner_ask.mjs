@@ -83,7 +83,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  below for why this is safe (the tab, not the CLI, is the authority on what it will do).
 const UNKNOWN_OK = process.argv.includes('--unknown-ok')
 let PLAYER_PUB = ''   // set by --player=: the one music page a slot-addressed ask is for (sendAsk stamps it into ask.pub)
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -570,6 +570,9 @@ if (op === 'ghost_load') {
 	//  with a cache-busting query and re-enrol, the Creduler_reswap dance for one non-spine ghost, so a
 	//   recompiled L ghost takes without a tab reload.  Give it ~3s before you use the new methods.
 	if (flags.has('--swap'))  ask.swap = 1
+	// --nocache: stand it COLD — no Dexie adopt, every doc really parsed.  The expensive case, and the
+	//  one every measurement had been silently skipping (see the note in LiesFunk's ghost_load).
+	if (flags.has('--nocache')) ask.nocache = 1
 }
 if (op === 'atlas_callers') ask.name = arg   // "who calls X" — {doc, line, via, kind} per site; needs A:Atlas standing first
 if (op === 'atlas_callers' || op === 'atlas_refresh' || op === 'atlas_lint') {
@@ -691,10 +694,14 @@ function collectAcks(ws, theAsk, graceMs = 900) {
 //    tab however many answered — which is why `census()` above has to sweep in stochastic rounds with a
 //     minimum floor "because an early-stopping census under-reports".  The relay never needed asking
 //      that way; it holds `locals` (addr → sockets) and knows the answer outright.
-//  ITS `roles` ARE BETTER EVIDENCE THAN AN ACK.  A row's role is the `?addr=` the socket DIALLED WITH,
-//   not what the tab says about itself — and the ack's self-report is exactly the fact the comment at
-//    `isRunner` calls useless ("both live tabs ack role:'runner'" because a Sounditron is machine-role
-//     runner).  The relay saw which door each tab came through; that is a harder fact.
+//  ITS `roles` ARE BETTER EVIDENCE THAN AN ACK.  A row's role is what the socket DECLARED at `become`
+//   (the relay stamps `declaredRole`), not what the tab says about itself when asked — and the ack's
+//    self-report is exactly the fact the comment at `isRunner` calls useless ("both live tabs ack
+//     role:'runner'" because a Sounditron is machine-role runner).
+//  ⚠ It USED to read the `?addr=` the socket dialled with, and that is why the census row survived the
+//   2026-09-10 "a role is not an address" change: role channels now dial ADDR-LESS (Tribunal.g
+//    `Socket_real`), so `qaddr` is empty for them and `declaredRole` is the whole answer.  The relay
+//     still falls back to `qaddr` for anything that dialled the old way.
 //  Returns null when the relay does not answer (an older relay, or a foreign node) so every caller
 //   falls through to the broadcast road unchanged — this is additive, and removes nothing yet.
 function relayCensus(ws, ms = 3000) {

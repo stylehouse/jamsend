@@ -206,6 +206,12 @@
     .bs-sprawl:hover { color: #d9cbb8; }
     .bs-sprawl.on { color: #e8d9c2; border-color: #4a3826; }
     .bs-glass { min-height: 60vh; }
+    /* Cytui hard-codes its own root at `height: 50vh` (Cytui.svelte:5507) with a stash-persisted
+       `tall` toggle for 100vh — a user preference, not a prop, so it is not reached into from here.
+       Instead this ROOM says how tall the glass is inside its own glass section, and nowhere else:
+       a scoped :global so no other page that mounts Cytui moves by a pixel.  Vytui is unaffected —
+       it sizes to its viewport already. */
+    .bs-glass :global(.cytui) { height: calc(100vh - 56px); min-height: 480px; }
     .bs-link { background: none; border: none; color: #9b8a72; text-decoration: underline; cursor: pointer; font: inherit; }
     .bs-wait { padding: 24px; font: 12px/1.5 system-ui, sans-serif; color: #6a5238; }
 </style>

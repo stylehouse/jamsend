@@ -191,6 +191,34 @@ export const LANG_COMPILE = {
         return lazy
     },
 
+    // ── Lang_map_into — THE ONE THING YOU RUN CHANGED BITS OF CODE AGAINST ────────────────────────
+    //  The owner, 2026-09-10: *"what is our Map generator? is it getting fractured? we should have one
+    //   thing we run changed bits of code against..."*  The COLLECTORS were never fractured — there are
+    //    two of them below, one per language family, and both write into whatever `job` they are handed,
+    //     which is why the editor's compile dock and Atlas's census have always shared them.  What HAD
+    //      forked was the dispatch: two call sites each deciding markdown-vs-code and each deciding what
+    //       to do with no parser, and they disagreed.  `LangCompiling.svelte` guarded BOTH paths and
+    //        threw; `Atlas.g` guarded only the code path and stamped `sc.error`.  A daemon-side scanner
+    //         (Docmag_todo) would have made that three.
+    //  So this is collector choice and NOTHING ELSE.  It holds no error policy — it reports `no_parser`
+    //   and lets each caller keep its own stance (the editor throws, the census stamps and rests, the
+    //    watcher will log and skip) — and it hands `lines` back untouched for the one caller that
+    //     renders them.  Adding a third caller must not add a third opinion about what markdown is.
+    //  ⚠ THE PARSER GUARD NOW FRONTS BOTH PATHS, which is `LangCompiling`'s behaviour and not Atlas's.
+    //   That is deliberate and it is a fix, not a merge artefact: the guard exists because `lang()` may
+    //    not have resolved onto the EditorState yet, and that same race "blanks a markdown TOC"
+    //     (LangCompiling's own note).  Atlas was collecting markdown through that window and quietly
+    //      keeping the empty result.  Any doc whose grammar is loaded is unaffected — the check is
+    //       deliberately weak (ANY grammar counts, see Lang_has_lang_parser).
+    Lang_map_into(state: EditorState, job: TheC, path: string): { lines?: any, no_parser?: true } {
+        if (!this.Lang_has_lang_parser(state)) return { no_parser: true }
+        if (/\.md$/.test(path)) {
+            this.Lang_collect_markdown_regions(state, job)
+            return {}
+        }
+        return { lines: this.Lang_compile_collect(state, job, this.Lang_stho_parser(state)) }
+    },
+
     // Scan a markdown dock's headings into %Compile/%Map as region entries — the same
     //  vocabulary Lang_compile_collect emits for //#region, so minimap|Mapulen|fold read
     //   a markdown TOC with no md-specific branch.  depth = heading LEVEL (1..6), not

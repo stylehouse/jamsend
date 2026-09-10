@@ -6,6 +6,16 @@
 //      unknown addressee is silently dropped (no crash).  Run:
 //        npx vite-node scripts/relay-test.ts
 //  Exits 0 on PASS, 1 on FAIL.
+//
+// ⓘ THE LOST IDENTITY BIND (2026-09-10) — the last block in this file.  A tab re-binds its ROLE
+//  synchronously on every reconnect (`become`) but its IDENTITY only via the signed `hello`, which was
+//   fire-and-forget.  Miss one and the tab talks OUT perfectly (`to:'editor'` is role-addressed) while
+//    every `to:<its prepub>` frame dies at the relay for the life of that socket: out is a role, back
+//     is an identity, so only the return leg can drop and nothing local notices.
+//  FIXED CLIENT-SIDE (LiesLies.svelte): a latch cleared on open, stamped by `hello_ok`, and the hello
+//   re-sent on the keepalive tick while it is unset.  The check here pins the RELAY CONTRACT that cure
+//    depends on — a fresh hello on a NEW socket re-binds the identity.  It cannot test the app's own
+//     code, because here the harness IS the client; see the note at the block itself.
 
 import { createServer, type Server } from 'node:http'
 import { WebSocket } from 'ws'
@@ -51,8 +61,12 @@ async function until(pred: () => boolean, ms = 2000): Promise<boolean> {
 // A browser ws-client that records every frame it receives. A binary message is a
 //  buffer-carrying frame ([header JSON]\n[raw buffer]) — decoded to {header, buffer}; a text
 //   message is the JSON frame (or a control frame). Mirrors Tribunal.g Socket_real / the relay.
-function browser(port: number, addr: string) {
-	const ws = new WebSocket(`ws://127.0.0.1:${port}/relay?addr=${addr}`)
+// `addr` names this socket for the frames it SENDS (header.from) and, by default, for the `?addr=`
+//  it dials with.  `{ addrless: true }` dials `/relay` with no query at all — the 2026-09-10 "a role
+//   is not an address" model, where a role channel is bound by its `become` instead.  The name is
+//    still used as `from`, so a caller reads the same either way.
+function browser(port: number, addr: string, o: { addrless?: boolean } = {}) {
+	const ws = new WebSocket(o.addrless ? `ws://127.0.0.1:${port}/relay` : `ws://127.0.0.1:${port}/relay?addr=${addr}`)
 	const got: any[] = []
 	const ctrl: any[] = []
 	ws.on('message', (d, isBinary) => {
@@ -215,6 +229,68 @@ async function main() {
 	check('to:runner broadcasts to runner A', bcastA)
 	check('to:runner broadcasts to runner B', bcastB)
 
+	// ── A ROLE IS NOT AN ADDRESS: the same contracts, on an ADDR-LESS role channel ────────────────
+	//  2026-09-10.  Clients stopped spelling a role as an address: `Socket_real`'s home() emits
+	//   `?addr=` only for an identity-shaped name, so `runner|editor|player` channels dial `/relay`
+	//    bare and are bound a message later by `become`.  Everything above still dials the old way
+	//     (the relay still ACCEPTS it), so without these cases the new road has no test at all.
+	//  THE ONE THAT ACTUALLY WORRIED ME IS THE RECONNECT.  The old dial re-bound the role in the URL
+	//   on every reopen, for free, before a single message was exchanged.  The new road owes that
+	//    entirely to `Socket_real` re-firing its open_hooks — and a role that silently fails to
+	//     re-bind after a drop is invisible until someone asks "why is nothing dispatching?", which
+	//      is the exact failure shape this whole thread has been paying for.
+	log('\n— addr-less role channel: become binds it, and keeps binding it across a reconnect —')
+	const alk = await mint(), alp = prepubOf(alk.pubHex)
+	let bare = browser(editorPort, 'runner', { addrless: true })
+	await bare.open
+	bare.send({ control: 'become', role: 'runner' })
+	await until(() => bare.ctrl.some((m) => m.control === 'become_ok' || m.control === 'role'), 1000)
+	alice.frame('runner', 'become_book', 60)
+	check('to:runner reaches an addr-less socket bound by `become`', await until(() => bare.got.some((m) => m.header?.seq === 60)))
+
+	// …and it is still individuated: hello binds the prepub, and a `?B=`/`?I=` runner with NO station
+	//  socket must stay directly addressable through this very channel (own-door: nobody claims the
+	//   door, so the frame fans to every bound socket — here, just this one).
+	const at = Date.now()
+	bare.send({ control: 'hello', from: alp, pub: alk.pubHex, ts: at, sign: await signHeader({ control: 'hello', from: alp, pub: alk.pubHex, ts: at }, alk.privHex) })
+	await until(() => bare.ctrl.some((m) => m.control === 'hello_ok'))
+	alice.frame(alp, 'rungo', 61)
+	check('to:<pub> reaches a station-less runner through its addr-less role channel', await until(() => bare.got.some((m) => m.header?.seq === 61)))
+
+	// THE RECONNECT.  Drop it and stand a fresh addr-less socket up exactly as Socket_real's backoff
+	//  does — new ws, then the open_hooks re-send `become`.  Nothing in the URL carries the role now.
+	bare.ws.close()
+	await until(() => !editor.localCount || true, 50); await wait(150)
+	bare = browser(editorPort, 'runner', { addrless: true })
+	await bare.open
+	bare.send({ control: 'become', role: 'runner' })
+	await wait(80)
+	alice.frame('runner', 'become_book', 62)
+	check('to:runner reaches it AGAIN after a reconnect (re-become re-binds)', await until(() => bare.got.some((m) => m.header?.seq === 62)))
+	bare.ws.close(); await wait(80)
+
+	// ── and the anti-doubling rule still holds when the role channel is addr-less ─────────────────
+	//  The own-door rule reads `qaddr`, which is now EMPTY on a role channel.  A tab with a station
+	//   (`?addr=<prepub>`) plus an addr-less role channel must still take each music frame exactly
+	//    once, on the station — the doubling that filled the inbox to its 2000 cap.
+	const ddk = await mint(), ddp = prepubOf(ddk.pubHex)
+	const dstation = browser(editorPort, ddp)
+	const dchannel = browser(editorPort, 'runner', { addrless: true })
+	await Promise.all([dstation.open, dchannel.open])
+	dchannel.send({ control: 'become', role: 'runner' })
+	for (const s of [dstation, dchannel]) {
+		const t = Date.now()
+		s.send({ control: 'hello', from: ddp, pub: ddk.pubHex, ts: t, sign: await signHeader({ control: 'hello', from: ddp, pub: ddk.pubHex, ts: t }, ddk.privHex) })
+	}
+	await until(() => dstation.ctrl.some((m) => m.control === 'hello_ok') && dchannel.ctrl.some((m) => m.control === 'hello_ok'))
+	const dchanBefore = dchannel.got.length
+	alice.frame(ddp, 'repli_page', 63)
+	check('music frame lands on the station even with an addr-less role channel', await until(() => dstation.got.some((m) => m.header?.seq === 63)))
+	await wait(120)
+	check('…and NOT on the addr-less role channel (no phantom copy)', dchannel.got.length === dchanBefore)
+	check('…exactly once', dstation.got.filter((m) => m.header?.seq === 63).length === 1)
+	dstation.ws.close(); dchannel.ws.close(); await wait(80)
+
 	// ── ONE DELIVERY DOOR: a tab with TWO sockets gets each frame ONCE ───────────────────────────
 	//  The other half of the individuation contract, and the one that had no test until it broke
 	//   something (2026-08-13).  A live tab opens TWO sockets that both hello-bind the SAME identity:
@@ -331,11 +407,38 @@ async function main() {
 	//  connected.  The runner must re-dial the bridge ON ITS OWN (no browser reload, no manual restart)
 	//   and cross-routing must resume.  This is the staging-restart bug: before the auto-redial loop,
 	//    the dropped bridge stayed down until something re-triggered dialEditor.
+	// ── a broadcast control frame reaches each SOCKET once, not each BINDING once ─────────────────
+	//  2026-09-10.  `locals` is addr → Set<socket> and one socket is deliberately bound under several
+	//   addrs (role, prepub, granted seat).  `broadcastControl` walked `locals.values()`, so a
+	//    multiply-bound socket got one copy PER BINDING — the owner's console showed `🌉 relay bridge
+	//     DOWN` three times for one drop.  It also made the log lie about how many events occurred,
+	//      which is how it hid for so long.  MULTI below is bound three ways; BOB is bound once; the
+	//       bridge drop just below broadcasts `peer-relay`, and both must count it exactly the same.
+	log('\n— broadcastControl: once per socket, not once per binding —')
+	const mk = await mint(), mp = prepubOf(mk.pubHex)
+	const multi = browser(runnerPort, 'MULTI')          // bind 1: ?addr=MULTI
+	await multi.open
+	multi.send({ control: 'become', role: 'runner' })    // bind 2: the role (same role = safe no-op)
+	const mt = Date.now()
+	multi.send({ control: 'hello', from: mp, pub: mk.pubHex, ts: mt, sign: await signHeader({ control: 'hello', from: mp, pub: mk.pubHex, ts: mt }, mk.privHex) })
+	await until(() => multi.ctrl.some((m) => m.control === 'hello_ok'))   // bind 3: the prepub
+	const peerRelayCount = (b: { ctrl: any[] }) => b.ctrl.filter((m) => m.control === 'peer-relay').length
+	const multiPrBefore = peerRelayCount(multi), bobPrBefore = peerRelayCount(bob)
+
 	log('\n— r2r reconnect: simulating editor/staging restart (BOB stays put) —')
 	editor.close()
 	editorSrv.close()
 	const wentDown = await until(() => !runner.peerReady, 3000)
 	check('bridge drops when editor/staging restarts', wentDown)
+	await wait(150)
+	const multiGot = peerRelayCount(multi) - multiPrBefore
+	const bobGot = peerRelayCount(bob) - bobPrBefore
+	// ⚠ ABSOLUTE, NOT COMPARATIVE.  The first cut of this asserted `multiGot === bobGot` and PASSED with
+	//  the bug in place (both read 3) — because BOB is multiply bound as well (`?addr=BOB` plus its
+	//   `become runner`), so per-binding fan-out inflates BOTH sides equally. A comparison between two
+	//    affected things measures nothing. One drop is ONE event: the count must be exactly 1.
+	check(`a multiply-bound socket gets exactly ONE copy of a broadcast control frame (multi=${multiGot} bob=${bobGot})`, multiGot === 1)
+	check('…and one really did arrive, so the check is not vacuous', multiGot > 0)
 
 	// Bring the editor relay back up on the SAME port (staging is back); its hardcoded url is unchanged.
 	const editorSrv2 = createServer()
@@ -357,6 +460,97 @@ async function main() {
 	alice3.frame('BOB', 'dock_push', 8)
 	const fwdAgain = await until(() => bob.got.some((m) => m.header?.to === 'BOB' && m.header?.from === 'ALICE' && m.header?.seq === 8), 3000)
 	check('cross-relay deliver resumes after reconnect (ALICE→BOB)', fwdAgain)
+
+	// ── THE LOST IDENTITY BIND: a reconnect that re-`become`s but never re-`hello`s ───────────────
+	//  2026-09-10, from the owner's live log: `⚠ DROPPED bridge→ pong seq=50 → 'da060c944e310adb' ×60`
+	//   beside a runner tab whose Brink badge read `→EDITOR (silent 94s)` — while that runner was
+	//    demonstrably ALIVE, because the pongs being dropped were answers to pings it had just sent.
+	//  THE ASYMMETRY THAT CAUSES IT.  A tab re-binds its ROLE synchronously on every (re)open
+	//   (`become`, LiesLies.svelte on_open — it cannot fail) and its IDENTITY only through the signed
+	//    `hello`, which is fire-and-forget: `if (!idento?.pub || !idento?.key) return` plus a bare
+	//     `catch {}` (LiesLies.svelte:419-460), with nothing checking that `hello_ok` ever came back.
+	//      Miss one and the socket is bound at `runner` but at NO prepub: outbound is perfect
+	//       (to:'editor' is role-addressed) and every to:<its prepub> frame dies at deliverLocal for
+	//        the life of the tab.  Half a channel, with no client-visible symptom but a stale badge.
+	//  THE ASSERTION IS ABSOLUTE, and it is about DELIVERY, not about logs: after the lost-bind
+	//   reconnect, a frame addressed to the tab's prepub must reach that tab.  Not "fewer drops than
+	//    before", not "the same as the role path" — a comparison between two affected things measures
+	//     nothing (the lesson the broadcastControl check above is written in).
+	//  ⓘ This block was RED when first written — it reproduced the live fault exactly, and that red is
+	//   what proved the diagnosis.  It is green now because the CLIENT-side cure shipped (the retried
+	//    hello, modelled below).  A relay-side `rehello` nudge — warnDrop asking the local flock to
+	//     re-assert identity instead of only complaining to the terminal — remains an unbuilt
+	//      belt-and-braces option; it is written up in `spec/Social_demarcation_todo.md §0` and is NOT
+	//       needed for this check to pass.
+	log('\n— the lost identity bind: role re-binds on reconnect, identity does not —')
+	{
+		const { attachRelay: attach2 } = await import(process.env.RELAY_MOD ?? '../src/lib/server/relay')
+		const eSrv = createServer(), rSrv = createServer()
+		const ePort = await listen(eSrv), rPort = await listen(rSrv)
+		const eRelay = attach2(eSrv)
+		const rRelay = attach2(rSrv, { editorRelayUrl: `ws://127.0.0.1:${ePort}/relay?r2r=1` })
+		const ek = await mint(), rkey = await mint()
+		const PR = prepubOf(rkey.pubHex)
+		// the seat-dodge hello the Lies channel really sends (LiesLies.svelte:455) — want=<prepub>_9NNN
+		const helloOn = async (b: any, k: any, rid: string) => {
+			const from = prepubOf(k.pubHex)
+			const h = { control: 'hello', from, pub: k.pubHex, ts: Date.now() }
+			b.send({ ...h, sign: await signHeader(h, k.privHex), want: `${from}_${rid}` })
+		}
+		// The CLIENT-SIDE CURE, which is the one that shipped (LiesLies.svelte, 2026-09-10): a latch
+		//  cleared on open, stamped by `hello_ok`, and a hello re-sent on the keepalive tick while it is
+		//   unset — with a FRESH seat dodge each attempt, so a retry cannot collide with a seat an
+		//    earlier attempt already won.  Modelled here on a fast tick because the harness has no 6s
+		//     keepalive.
+		//  ⚠ WHAT THIS CHECK IS AND IS NOT.  It cannot test the app's code — the harness IS the client.
+		//   What it pins is the RELAY CONTRACT the cure depends on: **a fresh signed hello on a NEW
+		//    socket re-binds the identity**, so a tab that lost its bind can recover it unaided. If the
+		//     relay ever stopped honouring a re-hello, the shipped fix would silently stop working and
+		//      this is what would catch it.
+		const armHelloRetry = (b: any, k: any) => {
+			let acked = false
+			b.ws.on('message', (d: any, isBin: boolean) => {
+				if (isBin) return
+				try { if (JSON.parse(String(d))?.control === 'hello_ok') acked = true } catch {}
+			})
+			const t = setInterval(() => {
+				if (acked || b.ws.readyState !== 1) return          // 1 = OPEN, the readyState gate the fix needs
+				void helloOn(b, k, String(9000 + Math.floor(Math.random() * 900)))
+			}, 150)
+			return () => clearInterval(t)
+		}
+		const eTab = browser(ePort, 'editor'); await eTab.open
+		eTab.send({ control: 'become', role: 'editor' })
+		await helloOn(eTab, ek, '9523')
+		let rTab = browser(rPort, 'runner'); await rTab.open
+		rTab.send({ control: 'become', role: 'runner' })
+		await helloOn(rTab, rkey, '9514')
+		await until(() => eRelay.peerReady && rRelay.peerReady, 8000)
+		await until(() => rTab.ctrl.some((m: any) => m.control === 'hello_ok'), 2000)
+		eTab.frame(PR, 'pong', 50)
+		check("baseline: a bridged pong to the runner's prepub lands while it is hello-bound",
+			await until(() => rTab.got.some((m: any) => m.header?.seq === 50), 2000))
+
+		// the reconnect that loses the identity bind: `become` re-fires, `hello` does not
+		rTab.ws.close(); await wait(200)
+		rTab = browser(rPort, 'runner'); await rTab.open
+		const stopRetry = armHelloRetry(rTab, rkey)
+		rTab.send({ control: 'become', role: 'runner' })
+		await wait(150)
+		// the tab is manifestly alive: its role-addressed ping still crosses the bridge
+		rTab.frame('editor', 'ping', 51)
+		check('the reconnected tab is ALIVE — its role-addressed ping still reaches the editor',
+			await until(() => eTab.got.some((m: any) => m.header?.seq === 51), 2000))
+		// …and now the answer, addressed to its prepub, exactly as Lies_pong addresses it
+		eTab.frame(PR, 'pong', 52)
+		await wait(600)
+		eTab.frame(PR, 'pong', 53)   // the transport re-asks; the SECOND round must land
+		check("the retried hello re-binds the identity — a pong to the tab's prepub lands again",
+			await until(() => rTab.got.some((m: any) => m.header?.seq === 53), 3000))
+		stopRetry()
+		eRelay.close(); rRelay.close(); await wait(50)
+		eSrv.close(); rSrv.close()
+	}
 
 	editor2.close()
 	runner.close()

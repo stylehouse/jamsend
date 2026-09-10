@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return 'fde354345e204a24~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return 'aa5aee9fc758fb88~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/Musuation.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,
@@ -848,7 +848,9 @@ async Repli_serve_parked(w, pier) {
     //  transcode-frontier advance can make HUNDREDS of accumulated parked wants ready at once, and this loop
     //   served EVERY one in a single synchronous pass — an un-paced burst of repli_page straight into the
     //    sink's SERIAL inbox drain (sha256-verify + mint per frame, under the beliefs mutex), which is exactly
-    //     the arrival rate the inbox backstop sheds at 2000.  This is the ONE ask/serve path with no budget:
+    //     the arrival rate the inbox backstop sheds at 2000.  This WAS the one ask/serve path with no budget
+    //      (⚠ the sentence read "is" until 2026-09-10 — twelve lines above the `BUDGET` that fixed it. A
+    //       comment describing the PROBLEM it was written about reads, later, as a description of the STATE):
     //      the sink's asks are already bounded (Ra_pull_beat INFLIGHT=2 × LEAD, Ra_restock_beat want<B), so a
     //       flood this deep can only come from the SOURCE dumping a backlog it accumulated while parked.  Cap
     //        the pages served per advance; the REST stay parked — still visible, re-served on the next release

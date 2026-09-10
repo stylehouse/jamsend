@@ -136,6 +136,10 @@ const ATLAS_ADOPT = 200
 //   whole cache at once would spike memory for a corpus this size.  A window keeps the peak flat
 //    and still turns ~200 round trips into one.
 const ATLAS_PREFETCH = 200
+// the protocol the supermap encodes under: the census vocabulary and nothing else.  `%Map` carries
+//  `dontSnap`, which only a rule acts on (MapEncode.spec.ts proved enWaft never folds by itself),
+//   and this protocol deliberately does NOT ask for that fold — the rows are the whole point here.
+const ATLAS_SUPER_PROTOCOL = [{ matching_any: [{ mk: 'Doc' }, { mk: 'Map' }], means: { omit_sc: {} } }]
 // ATLAS_REFRESH_MAP — docs a refresh will map INLINE before handing the rest to the pass.  A
 //  refresh runs inside a query op (the caller is waiting on the answer), so it settles the few
 //   movers a working session produces itself and only defers a bulk change (a branch switch).
@@ -161,7 +165,7 @@ const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return '46d5b0a2bfca124a~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return '01ec694484e7fbdc~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a
@@ -244,6 +248,13 @@ Atlas_nav() {
 //    on a runner with no Story run that is enough (Coding_guide "wake ≠ hold"); the Book that swears
 //     this will add the hold.
 async Atlas_pass(w, req, nav) {
+    // WHEN THE STAND BEGAN — and it is a different clock from `rostered_at` on purpose.  `ms` measures
+    //  `settled_at - rostered_at`, i.e. convergence AFTER the roster is complete, so it never contained
+    //   the roster walk at all.  That was fine while the walk was the only way to roster; the moment an
+    //    index Waft could replace the walk, the one number everybody reached for was structurally blind
+    //     to the thing being changed — a bench measuring the wrong interval reads as "no improvement"
+    //      just as convincingly as a real regression does.  `total_ms` is the honest headline.
+    if (!w.c.stood_at) w.c.stood_at = Date.now()
     if (!w.c.rostered) {
         // w.c.roots — a TEST override (off-snap; a Book sets it before the first tick) so a Book can
         //  point Atlas at a small, self-contained corpus (its own directory) instead of scanning the
@@ -258,6 +269,26 @@ async Atlas_pass(w, req, nav) {
         //   `Atlas_walk` itself is untouched and still recurses — `Atlas_refresh` NEEDS a complete walk
         //    to compute `gone` by comparing its `seen` set, and a half-finished refresh would drop live
         //     docs.  Only the roster, which has no such contract, is allowed to stop halfway.
+        // THE INDEX WAFT SHORT-CIRCUITS THE WALK (2026-09-10, Docindex_todo).  The dev server watches
+        //  the tree it already watches for HMR and writes the whole corpus's dige+mtime+size as ONE
+        //   Waft in the wormhole.  If it is there, the roster is one file read and a decode instead of
+        //    ~50 FSA directory listings spread across belief ticks — and it arrives complete, so there
+        //     is nothing to converge.  Absent (a remote node, no dev server, a Book with `w.c.roots`
+        //      pointed at a fixture) it falls through to the walk below, unchanged.
+        //  A Book that overrides `w.c.roots` must NOT get the whole repo, so the index is skipped
+        //   whenever roots are overridden — that override is the fixture contract.
+        if (!w.c.tried_index && !w.c.roots) {
+            w.c.tried_index = 1
+            let got = await this.Atlas_index_read(w, nav, 0, null)
+            if (got) {
+                w.c.rostered = 1
+                w.c.rostered_at = Date.now()
+                w.c.passes = 0
+                await this.Atlas_report(w)
+                this.i_elvisto(w, 'think')
+                return
+            }
+        }
         if (!w.c.walk_q) w.c.walk_q = (w.c.roots ?? ATLAS_ROOTS).slice()
         let q = w.c.walk_q
         if (q.length) {
@@ -303,9 +334,17 @@ async Atlas_pass(w, req, nav) {
     //  single Dexie call and adopted out of memory, so the 120ms slice buys hundreds of adoptions
     //   instead of a dozen.  The politeness bound is untouched — this makes each slice WORTH more, it
     //    does not let a pass hold the mutex any longer.
-    await this.Atlas_cache_prefetch(w)
-    let slice_end = Date.now() + ATLAS_SLICE_MS
+    // ONE DECODE BEFORE ANYTHING ELSE.  If this tab has a supermap for this mapper, the entire census
+    //  lands here and the per-doc adopt lane below finds nothing left to do.  Self-latching, so it is
+    //   attempted exactly once per stand and costs one IDB get when absent.
+    // pass_t0 FIRST: the supermap decode is the most expensive thing a pass can do (a 5MB snap), and
+    //  starting the clock after it would hide exactly the cost this change is meant to be judged on.
+    //   Twice already this session an instrument was placed where it could not see the thing it was
+    //    installed for; this is the same mistake declining to be made a third time.
     let pass_t0 = Date.now()
+    await this.Atlas_super_take(w)
+    await this.Atlas_cache_prefetch(w)
+    let slice_end = pass_t0 + ATLAS_SLICE_MS
     for (const doc of w.o({ Doc: 1 })) {
         // the time bound, checked before every unit of real work — see ATLAS_SLICE_MS
         if ((adopted || mapped) && Date.now() > slice_end) { more = more + 1; continue }
@@ -323,8 +362,22 @@ async Atlas_pass(w, req, nav) {
     // the pass's own working time, and whether it stopped because it ran out of ALLOWANCE or out of
     //  WORK — the tell for whether the caps are the bound (see ATLAS_ADOPT)
     w.c.pass_ms = Date.now() - pass_t0
+    // …and the SUM, because `pass_ms` is overwritten every pass and the last pass is always the empty
+    //  one that found nothing left to do.  Reporting it reads as "work is 0ms", which made the whole
+    //   stand look like pure waiting when a couple of seconds of it was real adopting.  A per-pass
+    //    gauge cannot answer a question about a whole stand; only the accumulator can.
+    w.c.work_ms = (w.c.work_ms ?? 0) + (Date.now() - pass_t0)
     if (adopted >= ATLAS_ADOPT) w.c.capped = (w.c.capped ?? 0) + 1
     if (!more && !w.c.settled_at) w.c.settled_at = Date.now()
+    // save at the SETTLED seam only: one encode of the whole census, once, when there is nothing left
+    //  to map.  Encoding mid-convergence would write a half-built census and pay for it every pass.
+    // SAVE WHEN THE CENSUS DIFFERS FROM WHAT IS STORED — which is not the same as "a doc was parsed".
+    //  First cut gated this on `supermap_dirty`, set only by a real `Atlas_map_one`; on a warm tab
+    //   every doc is ADOPTED and nothing parses, so the flag never rose and the supermap was never
+    //    written. It could only ever be created by a tab that did not need it. The condition that
+    //     actually holds is: something changed, OR this stand did not come from a supermap in the
+    //      first place (so there is none, or a partial one, to improve on).
+    if (!more && (w.c.supermap_dirty || !w.c.super_took)) await this.Atlas_super_put(w)
     await this.Atlas_report(w)
     if (adopted || mapped || more) this.i_elvisto(w, 'think')
 
@@ -422,11 +475,21 @@ async Atlas_refresh(w, nav) {
     //   pick one up later without a reload.
     w.c.dige_of = undefined
     w.c.asked_diges = undefined
-    await this.Atlas_diges(w)
     let seen = {}
-    let roots = w.c.roots ?? ATLAS_ROOTS
-    for (const root of roots) {
-        await this.Atlas_walk(w, nav, root, 1, seen)
+    // THE INDEX SERVES THE REFRESH TOO (2026-09-10).  Every `atlas_*` query runs a refresh first, and
+    //  a refresh was a full recursive walk of every root — so the tree was being re-listed on each
+    //   `lagoon lint`, each `atlas_callers`, each query of any kind.  The index Waft answers all three
+    //    of a refresh's questions at once (what is there, what is new, what moved) from one file read.
+    //  A Book with `w.c.roots` overridden must keep walking its fixture, and a tab with no index falls
+    //   through to exactly the code that ran before.
+    let via_index = 0
+    if (!w.c.roots) via_index = await this.Atlas_index_read(w, nav, 1, seen)
+    if (!via_index) {
+        await this.Atlas_diges(w)
+        let roots = w.c.roots ?? ATLAS_ROOTS
+        for (const root of roots) {
+            await this.Atlas_walk(w, nav, root, 1, seen)
+        }
     }
     let gone = []
     for (const doc of w.o({ Doc: 1 })) {
@@ -483,12 +546,11 @@ async Atlas_map_one(w, nav, doc) {
         // A plain, unforced state is now correct: Lang_compile_collect (compile.ts) reaches for
         //  Lang_full_tree internally, which forces its own complete parse (m4 above).  Nothing to
         //  do here but hand the state over.
-        if (/\.md$/.test(path)) {
-            this.Lang_collect_markdown_regions(state, doc)
-        } else {
-            if (!this.Lang_has_lang_parser(state)) { doc.sc.error = 'no parser'; return }
-            this.Lang_compile_collect(state, doc, this.Lang_stho_parser(state))
-        }
+        // ONE GENERATOR, shared with the editor's compile dock (compile.ts Lang_map_into).  The
+        //  markdown-vs-code choice used to be duplicated here and in LangCompiling, and the two had
+        //   already drifted apart on what to do with no parser — see that function's note.
+        let got = this.Lang_map_into(state, doc, path)
+        if (got.no_parser) { doc.sc.error = 'no parser'; return }
         let map = doc.o({ Map: 1 })[0]
         if (map) {
             map.sc.dontSnap = 1
@@ -511,6 +573,7 @@ async Atlas_map_one(w, nav, doc) {
             if (rgn)   doc.sc.regions = '' + rgn
             if (lnk)   doc.sc.links   = '' + lnk
             delete doc.sc.warm                            // a real parse, not a cache adoption
+            w.c.supermap_dirty = 1                        // this census now differs from the saved snap
             await this.Atlas_cache_put(w, doc)
         } else {
             doc.sc.error = 'no map'
@@ -520,6 +583,85 @@ async Atlas_map_one(w, nav, doc) {
     }
 
 },
+//#region the index Waft — the roster as one file, not fifty listings
+// `wormhole/Docindex/toc.snap`, written by the dev server (src/lib/server/dige.ts + digePlugin):
+//     Waft:Docindex
+//       Doc:<path>,dige:<hex>,mtime=<num>,size=<num>
+// It is READ LIKE ANY WAFT — one `read_file`, one `deWaft` — because it IS one, which is the whole
+//  point of the design (Docindex_todo: *"one off-tab walk producing one Waft that carries the whole
+//   reading of all 700 documents"*).  No endpoint, no Mag, no Repli, no new frame kind.
+//
+// ⚠ IT ALSO CARRIES THE DIGES, so it supersedes `Atlas_diges` and the `/__atlas/dige` endpoint on any
+//  tab that has it — `dige_of` is filled here and `asked_diges` latched, so the HTTP road is not even
+//   tried.  That endpoint stays for tabs without a dev-server-written index, and is the thing to delete
+//    once this proves out.
+// ⚠ AND IT COLLAPSES THE TWO-OBSERVER CHECK, which must be said out loud.  `Atlas_cache_adopt` only
+//  reuses a served dige when the server's mtime+size agree with the mtime+size THIS TAB stat'd during
+//   its own walk — two independent observers of the same file.  With the walk gone both numbers come
+//    from this one file, so that corroboration becomes a comparison with itself.  The guarantee changes
+//     shape rather than disappearing: the writer is a watcher on the same filesystem, rewriting within
+//      one debounce of any change, so it is not a second-hand opinion about disk — it is disk.  The
+//       exposure is a MISSED watch event (or a dev server that died holding a stale file), and the
+//        honest mitigation is that `Atlas_refresh` still walks for real: a nudge re-stats everything
+//         and un-stamps the movers.  If this ever bites, the fix is to stat the index file's own mtime
+//          and refuse it when it lags the newest doc it claims to describe.
+// `fresh`/`seen` mirror `Atlas_walk`'s refresh contract exactly, because a refresh has one job the
+//  roster does not: it must be COMPLETE, so `gone` can be computed by comparing what it saw against
+//   what the census holds.  The index Waft is complete by construction — it is the whole corpus in one
+//    file — so it can serve a refresh as honestly as a walk can, and every `atlas_*` query runs a
+//     refresh first (`LiesFunk`: "USE NUDGES A PASS"), which is a full recursive FSA walk per query.
+async Atlas_index_read(w, nav, fresh, seen) {
+    if (!nav) return 0
+    let text = null
+    try {
+        text = await nav.read_file('wormhole/Docindex', 'toc.snap')
+    } catch (e) {
+        text = null
+    }
+    if (!text) return 0
+    let got = null
+    try {
+        got = this.deWaft(text, 'Docindex')
+    } catch (e) {
+        return 0
+    }
+    if (!got || !got.Waft) return 0
+    let dige_of = {}
+    let n = 0
+    for (const d of got.Waft.o({ Doc: 1 })) {
+        let p = d.sc.Doc
+        if (!p) continue
+        let mt = d.sc.mtime ?? 0
+        let sz = d.sc.size ?? 0
+        let doc = w.o({ Doc: p })[0]
+        if (!doc) {
+            doc = w.i({ Doc: p })
+            if (is_testing(p)) doc.sc.testing = 1
+            if (fresh) w.c.refresh_added = (w.c.refresh_added ?? 0) + 1
+        } else if (doc.c.mtime !== mt || doc.c.size !== sz) {
+            // the file moved under a settled Doc — un-stamp the mapper so the pass re-maps it.  The
+            //  Map stays until then: a stale answer beats a missing one for a query that lands in
+            //   between (the same ruling Atlas_walk makes).
+            if (doc.sc.by) {
+                delete doc.sc.by
+                if (fresh) w.c.refresh_changed = (w.c.refresh_changed ?? 0) + 1
+            }
+        }
+        if (seen) seen[p] = 1
+        doc.c.mtime = mt
+        doc.c.size = sz
+        if (d.sc.dige) dige_of[p] = [d.sc.dige, mt, sz]
+        n = n + 1
+    }
+    if (!n) return 0
+    w.c.dige_of = dige_of
+    w.c.asked_diges = 1
+    w.c.from_index = n
+    console.log('🗂 atlas roster from the index Waft — ' + n + ' docs, no walk')
+    return n
+},
+//#endregion
+
 //#region the served dige index — the read the cache could not skip
 // THE CACHE ALREADY SKIPS THE PARSE; THIS SKIPS THE READ.  `Atlas_cache_adopt` refuses to trust
 //  mtime+size and pays a real read+dige before adopting (see its own note — two edits in one second
@@ -567,11 +709,112 @@ Atlas_db() {
     if (!g.__atlas_db) {
         let db = new Dexie('atlas')
         db.version(1).stores({ doc: 'path' })
+        // v2 adds the SUPERMAP: the whole census as ONE encoded snap, beside the per-doc rows.
+        //  Dexie versions are additive — the existing `doc` table is untouched, so a tab that has
+        //   only v1 data keeps working and simply has no supermap until it writes one.
+        db.version(2).stores({ doc: 'path', super: 'key' })
         g.__atlas_db = db
     }
     return g.__atlas_db
 
 },
+//#region THE SUPERMAP — the census as one snap, not 731 reconstructions
+// MEASURED FIRST, and this is the only reason it exists (2026-09-10).  Three separate accelerations of
+//  this cache had already landed — a served dige index, one bulkGet per pass, a raised adopt ceiling —
+//   and a warm stand still cost seconds.  The bench, once it was fixed to sum work over the whole stand
+//    rather than sample the last (always empty) pass, said why: the reads were gone (`731 skipped, 0
+//     paid`) and the roster was gone (`0.1s from the index Waft`), yet the tab still **rebuilt 43,945
+//      %Map particles, one document at a time**, on every single stand.
+//  No cache SHAPE fixes that.  Chunking 731 rows into 20 would have moved round trips that were already
+//   down to four, and left every particle still being minted by hand — which is why the chunked cache
+//    was not built when it was first asked for: there was no measurement behind it, and the measurement
+//     when it finally arrived pointed somewhere else.
+//  What DOES fix it: the census is a C tree, `enWaft` encodes it and `decode_wh_lines` reads it back
+//   (proven byte-for-byte by scripts/MapEncode.spec.ts).  So keep ONE snap and decode it once.
+//  ⚠ THE TAB STILL DOES THE WORK.  This is a memo of what this tab parsed, written by this tab — the
+//   watcher never parses and never ships a Map (the owner's ruling: *"the inotifydaemon just checks
+//    versions, tab always does the work… though it also memoises somehow… could do that in Dexie?"*).
+//  ⚠ AND THE DIGES ARE THE GATE.  A supermap is only adopted for docs whose dige still matches the
+//   index Waft; anything that moved is dropped from the adoption and re-maps normally.  A stale
+//    supermap can therefore never serve a stale Map — the worst it can do is serve nothing.
+Atlas_super_key() {
+    return 'census/' + ATLAS_MAPPER
+
+},
+// Atlas_super_take — one read, one decode, and the whole census lands.  Returns how many Docs it
+//  adopted, 0 for every failure (so the caller simply carries on adopting per-doc as before).
+//  THE DIGE GATE IS THE WHOLE SAFETY STORY: a snapped Doc is adopted only if the index Waft still
+//   reports the same dige for that path.  A doc that moved is skipped and re-maps normally, so the
+//    supermap can serve a stale Map for nothing — it either matches disk or it is not used.
+async Atlas_super_take(w) {
+    let db = this.Atlas_db()
+    if (!db || w.c.nocache || w.c.took_super) return 0
+    w.c.took_super = 1
+    let dige_of = w.c.dige_of
+    if (!dige_of) return 0                       // no index Waft ⇒ nothing to check freshness against
+    let row = null
+    try {
+        row = await db.super.get(this.Atlas_super_key())
+    } catch (e) {
+        return 0
+    }
+    if (!row || !row.snap) return 0
+    let got = null
+    try {
+        got = this.decode_wh_lines(row.snap)
+    } catch (e) {
+        return 0
+    }
+    if (!got || !got.C) return 0
+    let took = 0
+    let stale = 0
+    for (const sd of got.C.o({ Doc: 1 })) {
+        let p = sd.sc.Doc
+        if (!p) continue
+        let live = dige_of[p]
+        if (!live || live[0] !== sd.sc.dige) { stale = stale + 1; continue }
+        let doc = w.o({ Doc: p })[0]
+        if (!doc) continue                        // not in this roster — the corpus moved on
+        if (doc.oa({ Map: 1 })) continue          // already mapped this session
+        let smap = sd.o({ Map: 1 })[0]
+        if (!smap) continue
+        // the snapped Doc's own census fields, then its Map, moved across wholesale
+        Object.assign(doc.sc, sd.sc)
+        doc.sc.warm = 1
+        let map = doc.i({ Map: 1 })
+        map.sc.dontSnap = 1
+        for (const r of smap.o()) {
+            map.i(Object.assign({}, r.sc))
+        }
+        took = took + 1
+    }
+    w.c.super_took = took
+    w.c.super_stale = stale
+    console.log('🗂 supermap adopted ' + took + ' docs in one decode (' + stale + ' moved since)')
+    return took
+
+
+},
+async Atlas_super_put(w) {
+    let db = this.Atlas_db()
+    if (!db || w.c.nocache) return
+    w.c.supermap_dirty = 0
+    // never store a half-built census: a snap missing most of its Maps would be adopted next stand and
+    //  look like a complete answer with nothing in it
+    let docs = w.o({ Doc: 1 })
+    if (docs.length < 20) return
+    try {
+        let out = await this.enWaft(w, { matching: ATLAS_SUPER_PROTOCOL, max_child_depth: 9 })
+        if (out.errors.length) return
+        await db.super.put({ key: this.Atlas_super_key(), snap: out.snap, at: Date.now(),
+                             docs: w.o({ Doc: 1 }).length })
+        console.log('🗂 supermap saved — ' + Math.round(out.snap.length / 1024) + 'KB')
+    } catch (e) {
+        console.warn('🗂 supermap save failed', e)
+    }
+},
+//#endregion
+
 // Atlas_cache_put — after a real map: the Doc's census fields + every Map row's sc (a link's
 //  region_path array rides along as a plain field — it lives on .c in the tree, never in sc).
 //   mtime+size are the adopt key; the dige inside is the truth a future dige-check could use.
@@ -776,11 +1019,18 @@ async Atlas_report(w) {
     //   (passes × pass_ms) and `ms` is time spent waiting for the next tick rather than doing anything.
     //    `capped` counts passes that stopped on the adopt ceiling — if that tracks `passes`, the count
     //     cap is the bound and the 120ms time slice is never getting a chance to be the bound.
+    if (w.c.from_index) row.sc.from_index = '' + w.c.from_index
     if (w.c.passes) row.sc.passes = '' + w.c.passes
     if (w.c.capped) row.sc.capped = '' + w.c.capped
     if (w.c.cache_solo) row.sc.cache_solo = '' + w.c.cache_solo
     if (w.c.pass_ms != null) row.sc.pass_ms = '' + w.c.pass_ms
+    if (w.c.work_ms) row.sc.work_ms = '' + w.c.work_ms
+    if (w.c.super_took) row.sc.super_took = '' + w.c.super_took
+    if (w.c.super_stale) row.sc.super_stale = '' + w.c.super_stale
     if (w.c.rostered_at && w.c.settled_at) row.sc.ms = '' + (w.c.settled_at - w.c.rostered_at)
+    // the whole stand, roster included — the number a human actually waits through
+    if (w.c.stood_at && w.c.settled_at) row.sc.total_ms = '' + (w.c.settled_at - w.c.stood_at)
+    if (w.c.stood_at && w.c.rostered_at) row.sc.roster_ms = '' + (w.c.rostered_at - w.c.stood_at)
     delete row.sc.waiting
 },
 //#endregion

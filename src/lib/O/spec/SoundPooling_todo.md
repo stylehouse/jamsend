@@ -2,6 +2,249 @@
 
 ## 0. WHAT TO GET ON WITH NEXT — PUT THE FEATURE IN ONE PLACE (2026-09-04, the owner's)
 
+### ⚑⚑ 2026-09-10 — THE HEART IS NOW A TOGGLE, AND IT BREAKS ONE SWORN ASSERTION. OWNER'S CALL PENDING.
+
+**Owner's ruling:** *"basically we love or unlove things, which includes or dis-includes them in SP and
+ Heisting to our Cave."* So the ♥ is a toggle: press to love, press again to unlove, at any distance in
+  time. **Built** — in `Radio_like` (the button), NOT in `Heard_take` (the ledger primitive), so every
+   other caller keeps the old undo/re-affirm pair and the retry road still exists.
+
+**⚠ THIS SUPERSEDES A PRIOR RULING OF THE OWNER'S, deliberately.** `Heard.g`'s own words: the ~10s
+ `Heard_thumb` is a fat-thumb UNDO, outside it a press RE-AFFIRMS, and retiring is the ✕ on the Haul row
+  — *"'you can't lose a heart' is only true if a stray tap cannot spend one"*. The trade was put to the
+   owner (a stray tap can now unlove, which dis-includes from pool + heist) and the simpler model won.
+
+**⛔⛔ THE TOGGLE DESTROYS THE RETRY ROAD, WHICH IS SWORN AND LOAD-BEARING — OWNER MUST CHOOSE.**
+ `HeistTesting.g:6722-6724`, verbatim: *"a re-press is the retry road: it clears the verdict and the wish
+  is askable again"* → `row.a_re_press_clears_the_verdict`. Under a toggle that re-press UNLOVES, so
+   `card.sc.take` goes, the `Heist` never mints, and the later beats lose their ground. Measured in the
+    step-9 residual: fixture has `Card r1 take:1`, `Card r2 take:1 keep:keep2`, `Heist:Track One
+     state:primed`; live has `Card r1` and `Card r2` bare, no Heist, and the whole `landeded` row gone.
+ **This is why the earlier note asked "where does retry live now?" — it is not hypothetical.** The
+  second press carried TWO meanings and the toggle can only keep one:
+  - **on a healthy love** → "I have changed my mind" (unlove) ← the owner's ruling
+  - **on a FAILED love** → "try again" (clear the verdict, re-arm the gave-up clock) ← the sworn road
+ **Three ways out, and it is a design call, not a test-wording call:**
+ 1. **Context-sensitive press** — toggle when the wish is healthy, retry when it carries a failure
+     verdict. Keeps both gestures on one button and needs no new UI. ⚠ But it is a button that means
+      two things depending on invisible state, which is the "magic nobody can see" this corpus already
+       rejects elsewhere.
+ 2. **Toggle + an explicit retry control** (on the Haul row, beside the ✕, where a failed wish is
+     already visible). Honest, costs a control, and the Haul row is where a stuck wish is looked at.
+ 3. **Keep re-affirm** — revert the toggle. Simplest, but it is the model the owner just rejected.
+ ⓘ **NOT resolved, and MusuHeard is left RED on purpose.** Accepting these fixtures would bake in "the
+  heist no longer mints" as if it were intended. The oath rename (`later_it_re_affirms` →
+   `later_it_unloves_too`) IS done and correct for the toggle; it is `a_re_press_clears_the_verdict`
+    that has no honest new wording until the fork above is decided.
+
+**Also: it fails the renamed assertion's neighbours — `MusuHeard` is RED at `ok_pct 0.33`, steps 4–9, `error:null`.**
+ `HeistTesting.g` swears **`later_it_re_affirms`**: two presses a minute apart, then
+  `String(c1.sc.take) === '1' && String(c1.sc.at) === '1788400150'`. Under the toggle the second press
+   UNTAKES, so `take` is gone and the oath cannot be set. Every OTHER swear in the row still holds
+    (`took`, `the_press_is_the_ask`, `the_listing_starts_at_the_act`, `the_press_mints_no_heist`,
+     `pressing_again_takes_it_back`, `my_own_track_is_a_taste_fact`) — including the fat-thumb undo,
+      which the toggle happens to satisfy too.
+ **NOT rewritten, on purpose.** An oath is the owner's statement about what is true of the app; editing
+  one to match new code is editing the testimony to fit the verdict. The owner decides the wording.
+ **The mechanical change, if the ruling stands:** replace `later_it_re_affirms` with the toggle's truth
+  (a second press later UNLOVES — `!c1.sc.take`), update its declaration in `MusuHeard`'s toc, and
+   re-swear steps 4–9. Note the loss that oath was protecting: **the re-affirm was the RETRY ROAD** (it
+    re-armed the gave-up clock and cleared a failure verdict), so with a toggle there is no longer a
+     gesture that says "try again" — pressing twice now means unlove-then-love, which is not the same
+      thing. Worth deciding where retry lives before re-swearing.
+
+### ⚑ 2026-09-10 — "AND THEY SHOULD BE LOVABLE": the ♥ on a pool item went HOLLOW ON RELOAD
+
+Owner, alongside the start-position ask: *"and they should be lovable"*.
+
+**The write and the read-back disagreed about which pub the heart lives under.**
+- **Write** — `Radio_like` (`Radio.g`): `let by = String(n.sc.by || me)`. A pool item has **no `n.sc.by`**
+   (the pool is not a friend; there is nobody to name), so the take is recorded in the heard ledger
+    under **ME**.
+- **Read-back** — `RadioFace.svelte`'s `likedThis`: the ledger probe was **gated on `n?.sc?.by`**. For
+   exactly those tracks it therefore **never ran**.
+
+⇒ The heart lit from `n.c.liked` — a RUNTIME mirror, which the file's own note says "dies with the
+ process" — and went hollow on the next reload, while the durable take sat in the ledger unread. The
+  love was real and recorded; only the button forgot.
+
+**Fixed:** the probe now mirrors the write (`n.sc.by || Radio_pub(w)`) instead of requiring `by`.
+⚠ **WIDER THAN THE POOL, and worth knowing:** this affects **any** track with no `by` — one's OWN
+ library tracks included, not just pooled ones. The gate looked like "only a friend's track can be
+  loved", and quietly meant "only a friend's track stays loved".
+ⓘ NOT verified live — it needs a ♥ pressed on a pool item and then a reload. The reasoning is
+ code-traced end to end (`Radio_like` → `Heard_take` → `Heard_taken`), but no live walk has been done.
+
+### ⚑ 2026-09-10 — POOL ITEMS START 1–2 THIRDS IN BECAUSE **THE OFFER IS THE TAIL OF THE SONG**
+
+Owner: *"I need soundpool items to be full tracks… they seem to start at 1-2 thirds of the way… they
+ should start from the beginning in the same conditions a remote radio track does."*
+
+**Diagnosed, with live numbers off the daemon (`/c?token=sheeps&depth=9`).** A real record:
+`seconds=298.84, seg_secs=2, preview=16, total=58, pv_off=92`. That is ~149 segments of song;
+ **`pv_off=92` puts the offer's first byte at 62% in**, and `92 + 58 = 150` — so **the offer IS the tail
+  from 62% to the end**, not a whole track with a marker. `Ra_preview_offset` picks that cut in a
+   30–70% band (`lo = ceil(segs*0.3)`, `hi = floor(segs*0.7)`) — precisely the reported symptom.
+
+**So a pooled item is not mis-seeking; it is a SHORTER FILE.** The pool "keeps what played", and what
+ played was the offer. Nothing is skipping the beginning — the beginning was never fetched.
+
+**Two mechanisms live here and only one is the culprit — do not confuse them (the code says so at
+ `Radio.g:699`):**
+1. `Radio_start_seq` — the deliberate tune-in-mid-track feel. **NOT this.** It latches `c.tuned` and so
+    fires **ONCE A SITTING**; it cannot explain every pool item starting late. It also only bites on a
+     fully-held track (a remote one has too few chunks: `room < 1` ⇒ returns 0).
+2. **The offer cut** — every pooled item, for ever. **This one.**
+
+**Why a remote radio track does start at the beginning and a pool item never does.** Opening at the
+ song's real start is a *different mechanism*: a **head run concatenated in FRONT of the offer**, chosen
+  by `Radio_hbase`, gated on `Ra_head_whole(rec)` — which needs `rec.sc.pv_off > 0` **and** every head
+   chunk `0..pv_off-1` held as `%Prehead`/`hseq` children (`Ra.g:3696-3714`).
+
+**THE CHAIN, end to end (all code-verified):**
+1. The head can be PULLED from a peer — the wire has it: want `stream:'opus_head'` → `Repli_serve_head`
+    (`Repli.g:1055, :234`), which pages `[0, pv_off)` and kicks `Ra_head_ensure` on the holder.
+2. There is exactly **ONE** sender of that want, `Ra.g:4947`, gated at **`Ra.g:4936`**:
+    `rec.c.from && +(rec.sc.pv_off||0) > 0 && rec.c.rx && w.c.repli_mirror_pier && !Ra_head_whole(rec)`.
+     A pool card meets every clause **except `pv_off > 0`**.
+3. A record only makes its OWN head locally when **`!rec.c.from`** (`Ra.g:4919`) — it needs the original
+    file. A pooled record has `from` set, so it can never make one either. Pull or nothing.
+4. `pv_off` reaches a copied card only through **`Ra_rec_previews_carry`** (`Ra.g:2572`), which carries
+    `seconds · gain · lufs · sr · br · seg_secs · nch · pv_off` — **but declines outright at `:2574` for
+     `rec.sc.lofi || card.sc.lofi || card.sc.grade`.**
+5. **`Heist_keep_pool_go` sets `keep.sc.lofi = 1`** (`Heist.g:3330`) — the pool takes it LOFI on purpose
+    (holder-side transcode, fewer bytes on the wire).
+
+**⇒ THE POOL IS LOFI, LOFI GETS NO CARRY, SO NO `pv_off`, SO THE HEAD IS NEVER ASKED FOR.** And the
+ declining is *correct* as written — the carry's own note says a LOFI rendition is DIFFERENT bytes, so
+  borrowing the original's preview would be "someone else's waveform wearing its name".
+
+⚠⚠ **BOTH OF MY EARLIER STORIES WERE WRONG. THE MEASUREMENT REFUTED THEM — read this before the fix.**
+ Walked all **167 pool %Records** on the live daemon (`/c?token=sheeps&depth=9`, parsed as JSON):
+
+| group | count | `preview` | `pv_off` | `lofi` | `grade` | `stage` | `of` |
+|---|---|---|---|---|---|---|---|
+| carried | 63 | `16` | present | absent | absent | absent | absent |
+| **NOT carried** | **104** | **absent** | **absent** | absent | absent | absent | absent |
+
+1. **Story 1 — "`pv_off` is stamped nowhere in the pool path" — WRONG.** 63 pool cards have it.
+2. **Story 2 — "the LOFI decline is the gate" — ALSO WRONG.** **Not one** landed pool card carries
+    `lofi`, `grade`, `stage` or `of`. The lofi flag lives on the KEEP (`stage:"husk"` keeps on the
+     daemon do show `lofi:1`), not on the landed record, so `Ra_rec_previews_carry`'s `:2574` decline
+      cannot be what separates these two groups.
+3. **What the data actually says:** `preview` and `pv_off` are stamped together by the carry
+    (`Ra.g:2580-2583`), and they are present or absent together, perfectly, 167 for 167. So the split is
+     simply **carried vs never carried** — and **104 of 167 (62%) never were.**
+ ⇒ Those 104 have no `preview`, so `Ra_dial_next` (which needs `preview > 0`) **cannot dial them at
+  all** — that is the `pool-cards-had-no-preview` bug of 2026-09-05, still true of most of the shelf.
+   The 2026-09-07 "carry+heal" fix evidently did not reach them.
+ ⇒ The 63 that WERE carried do have `pv_off > 0`, so for them the head question is NOT `pv_off` — it is
+  whichever of `rec.c.from` / `rec.c.rx` / `w.c.repli_mirror_pier` fails at `Ra.g:4936`. **`.c` is
+   runtime-only and never snapped, so the daemon dump cannot answer that** — it needs a live tab.
+ ⚠ Note the two populations are probably different questions: "never carried ⇒ never playable" and
+  "carried but starts mid-song". The owner reports items that DO play, so their complaint is about the
+   63, not the 104. Do not let one fix be claimed for both.
+
+**⇒ SO THERE ARE TWO SEPARATE PROBLEMS ON THIS SHELF, and the owner's complaint is only the second.**
+
+**(1) 104 of 167 pool cards were never carried — no `preview`, so not dialable.** ⚠⚠ **BUT I MEASURED
+ THE WRONG BODY, and the number should not be quoted as the owner's shelf.** Those 167 are the
+  **daemon's** cards, and the daemon has `Radio:off … no web audio here` — **it never dials anything.**
+   The owner's symptom lives on eed, whose shelf I could not read from this container.
+
+**Why the daemon's cards stay dark is nevertheless understood, and it is NOT a bug.**
+ `Ra_pool_previews_heal` (`Ra.g:5508`) has two rungs — borrow a preview from a standing record of the
+  same id, else encode one from the file it holds — and the encode rung is gated at `:5529` on
+   **`top.c.humdinger`**, i.e. music pages only. The daemon has no WebCodecs, so it genuinely cannot
+    encode; the gate is right. Its dark cards can only ever be healed by borrowing, and for a body that
+     never plays, being undialable costs nothing.
+ ⇒ **So "62% of the shelf is dark" is true of a server that does not care.** Whether it is true of eed
+  is UNMEASURED. Re-run the same walk against eed's tree before treating this as the owner's problem.
+ ⓘ Worth knowing when you do: the heal is bounded at **4 carries and 1 encode per pass**, so a large
+  dark shelf converges slowly even on a humdinger — a shelf that looks stuck may simply be draining.
+
+**(2) ✅ SOLVED 2026-09-10 — MEASURED ON EED ITSELF, then closed in the code. NOTHING ASKS.**
+
+**Measured on the owner's own body** (`runner_ask minisnap 'self>SoundPooling' --depth=5
+ --player=eed831f1977c4e81`):
+- All 5 pool cards carry **`preview:16` AND `pv_off`** (60 · 94 · 86 · 6 · 682) — so problem (1) is NOT
+   eed's problem and a missing `pv_off` is NOT the cause.
+- **80 `Preview,seq` chunks (5 × 16, every set complete) and ZERO `Prehead`/`hseq`.** The cards hold no
+   head at all ⇒ `Ra_head_whole` false ⇒ `hbase` 0 ⇒ playback opens at the offer's first chunk, which
+    for these five is 36% · 56% · 66% · 27% · 63% into the song. Exactly the reported symptom.
+
+**And the reason no head is ever made or fetched: THE HEAD MACHINERY NEVER LOOKS AT POOL CARDS.** Both
+ branches — the local make (`Ra.g:4919`) and the `opus_head` pull (`Ra.g:4936`, the only sender) — live
+  inside **`Ra_restock_beat(w, mirror, budget)`**, whose first act is `let recs = this.Ra_recs(mirror)`
+   (`Ra.g:4804`). It walks the **MIRROR** shelf — records being streamed from friends. Pool cards hang
+    off the **SoundPooling** home. They are never iterated, so neither branch can ever fire for them.
+ ⇒ It is not a failing gate. **Nothing asks.**
+
+**⇒ THE OWNER'S RULING 2026-09-10: *"should be generated like LOFI is."*** The pool's LOFI rendition is
+ already produced **holder-side, on demand**, and the head has exactly that shape available already:
+  a want of `stream:'opus_head'` makes `Repli_serve_head` kick `Ra_head_ensure` on the holder and page
+   `[0, pv_off)` back. The generator exists; only the ask is missing.
+
+**✅ BUILT 2026-09-10 — compiled, parse-gated, and Book-verified. NOT yet walked live** (that needs a
+ real pooled track whose holder is online; nothing here proves the wire round trip).
+ Final suite, all on the shipped build: `MusuPoolBytes` 5/5 · `MusuPoolFill` 6/6 · `MusuPoolRadio` 6/6 ·
+  `MusuPoolRandom` 5/5 · `MusuReplica` 14/14 — **every one caveat 0**, step counts checked so a hollow
+   run cannot read as a pass. `MusuHeist` 22/22 caveat 15, inside its own measured baseline spread
+    (17·20 on committed code, 1·17·15 on this one — see `Loose_ends_todo`; that Book is simply noisy).
+ ⓘ A `MusuPoolBytes` caveat 3 appeared once and was **flake** — 0·0·0 on three re-runs. Two separate
+  single-sample scares in one session; measure three times before believing a pool caveat.
+ FOUR pieces, and they are ONE change — do not land them apart:
+ 1. **`Ra_rec_heads_carry(card, rec)`** (`Ra.g`, beside the preview carry) — carries `%Prehead`/`hseq`
+     children across when a record of the same id already holds a WHOLE head. Same honesty rule as the
+      preview carry: never onto a `lofi`/`grade` rendition, and all-or-nothing (a partial head is a hole
+       in the song's first minute, which `Ra_head_whole` rightly refuses).
+ 2. **`Ra_pool_heads_heal(w, ident, homes)`** — the ask, hung off `Ra_pool_previews_heal`'s tail so it
+     rides the pool pump's cadence. Two rungs, mirroring the preview heal: carry a standing run if there
+      is one, else send the holder a `stream:'opus_head'` want THROUGH the standing source record (a pool
+       card is a local file and carries no wire handles of its own). **ONE card a pass** — heads are a
+        median 47% of a song, so this must trickle, never sweep.
+     **BOUNDED, and loud when it stops** (`pool_head_giveup`, default 12): a head its holder will never
+      serve — peer gone, original moved, encode failing there — would otherwise cost one frame every
+       pump pass for ever, silently. It gives up and SAYS which track and which range went unserved.
+        Cleared on success, so a peer that returns is asked again from zero.
+     ⚠ **TWO WORLDS.** `homes.mw` is the RADIO world (shelves live there — that is what the lookup
+      uses), but `Repli_arm`/`repli_mirror_pier` are on the SWARM world, which keeps only a POINTER
+       (`repli_mirror_w`) to the radio one. The ask must go through the caller's `w`. Gating on
+        `homes.mw.c.repli_mirror_pier` is ALWAYS falsy — written that way first, and it is a perfect
+         silent no-op: no error, the feature simply never fires. **Ask which world holds a `.c` key
+          before reading it.**
+ 3. **`'Prehead'` added to `Swarm_protocol`'s `skips`** (`Swarm.g`) — ⚠ **THE HALF THAT IS EASY TO
+     FORGET.** The preview note there says these changes "must not be separated" and it means it
+      literally: `%Prehead` bufs are Uint8Arrays in `.sc`, the pool shelf hangs on the `%Identity`, and
+       the account snap would walk straight into them — fine on the snap plane, **fatal at the
+        storage/toc encoder**. Minting head bufs onto a card without this skip breaks account export.
+        (Verified `'Preview'` is named in exactly one place in the corpus, so one skip is the whole fix.)
+
+**Where the ask belongs: `Ra_pool_previews_heal` (`Ra.g:5508`), not the restock beat.** It already
+ sweeps the pool shelf, is already bounded (4 carries + 1 encode a pass), and already has precisely the
+  "borrow it, else generate it" two-rung shape this needs. Add the head as a third rung: for a pool card
+   with `pv_off > 0` and `!Ra_head_whole(card)`, ask its holder for `opus_head`. Extending the restock
+    beat instead would put pool traffic inside the streaming budget, which is the wrong pocket.
+ ⚠ **A local encode will NOT do here** — a pooled file holds the OFFER, so segments `[0, pv_off)` are
+  not on this disk to transcode from. It must be the holder-side generation, which is what the ruling
+   says anyway.
+ ⓘ Cost, measured over 54 records: the head is a median 47% of the song, so heads roughly **1.95×** the
+  pool. See the sizing note above before choosing to fetch them eagerly rather than on first play.
+
+**ⓘ WHAT IT COSTS, measured over all 54 distinct records on the daemon (not one).** Head fraction:
+ **min 27% · median 47% · mean 49% · max 69%.** Summed: **4194 head segments vs 4401 offer segments ⇒
+  adding the head multiplies pool bytes by 1.95×.** So "full tracks" roughly **DOUBLES** the pool, and
+   the per-track spread is wide enough that no single number describes it.
+ ⚠ My first note here said "the head is the larger part" and "roughly triples" — that was extrapolated
+  from ONE record (the 62% one). It is wrong: the median is 47%, i.e. the head is usually slightly
+   *smaller* than the offer. Same one-sample error this corpus keeps paying for; corrected by measuring
+    the whole shelf.
+ ⓘ `preview=16` is constant on every record — the 16-chunk taster is a fixed size and is NOT the offer;
+  don't confuse the two when sizing this.
+
+⚠ MEASURED: the offsets, the absent `pv_off`, the two mechanisms, the 1.95× cost. INFERRED: that adding
+ the head run is sufficient — not yet built or walked.
+
 ### ⚑⚑⚑ 2026-09-07 — THE LAST LINK: the holder minted TWO records under one keep-id (the pull now runs 0→52/54)
 
 **The bytes now flow.** Walking the live daemon (`/c?token=sheeps&depth=9`) + the relay tally + eed's
@@ -116,11 +359,16 @@ node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/Serv
        ask never arrived. Fixed CLI-side by asking the `player` SLOT with `ask.pub` (the tab filters,
         `Lies_runner_ask_recv`). The relay's own comment promises the proper repair — a second map for
          control-plane types — never built (confirmed still unbuilt 2026-09-10); `relay-test.ts` is its harness.
-      ⚠ **AND IT NOW HAS A RIVAL — do not build it without reading `Social_demarcation_todo §0` step 3d.**
-       That thread is removing the shared `?addr=runner` seat, which would delete a role socket rather
-        than teach delivery to route to it. The two are opposite answers to one question: **is a role
-         socket a legitimate second door for control-plane traffic, or an accident being removed?**
-          Building the second map first would invest in a door the other thread is closing. (`production` is stamped only
+      ✅ **RULED 2026-09-10 — DO NOT BUILD THE SECOND MAP. The claim above is retired.** The question
+       these two threads answered oppositely — *is a role socket a legitimate second door for
+        control-plane traffic, or an accident being removed?* — was put to the owner directly, and the
+         answer is **an accident**: the target is **one socket per tab**, bound at its prepub, with
+          `?addr=` and the own-door rule deleted outright. So the second map is not "unbuilt", it is
+           **cancelled** — it would invest in a door that is being closed. The live plan, including why
+            the hard part is that handlers are registered PER WORLD (`w.c.on[type]`, two disjoint
+             registries) and how the CLI finds runners once `to:'runner'` is gone, is
+              `Social_demarcation_todo §0`. Keep the CLI's `player` SLOT + `ask.pub` workaround above:
+               under the ruling it stops being a workaround and becomes the shape. (`production` is stamped only
           for `jamsend.*`/`voula*` hosts on a non-dev build; djamsend.duckdns.org is a dev tab.)
 
 **Tooling landed this evening (⌛):** `concap` console ring installs on EVERY tab (was editor|book|grid
