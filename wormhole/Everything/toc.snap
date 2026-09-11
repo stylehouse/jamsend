@@ -1,0 +1,49 @@
+Waft:Everything,desc:READ THIS FIRST — one Waft per area of the program lists its main functions with keywords — this Waft locates them all — the policy is the last What
+  What:the wire,desc:Ghost/Net/Easy — Peeroleum Tribunal Reliable Tyrant Presence Repli — the relay — the cluster channel,FromWhat:Waft:Ghost/Net/Easy
+    Doc:Ghost/N/Peeroleum.g
+    Doc:src/lib/server/relay.ts
+    Doc:src/lib/O/spec/Peeroleum_spec.md
+  What:the swarm,desc:Ghost/Swarm/Easy — soul crew invite door reach ferry bodies gossip stash theft,FromWhat:Waft:Ghost/Swarm/Easy
+    Doc:Ghost/S/Swarm.g
+    Doc:src/lib/O/spec/Swarm_spec.md
+    Doc:src/lib/O/spec/Crew_todo.md
+  What:the music,desc:Ghost/Music/Ality — Ra Radio Radiola Sound Crate Orig Mixer Mesh — stock cast term — the pool,FromWhat:Waft:Ghost/Music/Ality
+    Doc:Ghost/M/Ra.g
+    Doc:Ghost/M/Radio.g
+    Doc:src/lib/O/spec/Radio_todo.md
+  What:the cave,desc:Ghost/Music/Cave — Heist Heard Siphon — the keep the Mag the hand road,FromWhat:Waft:Ghost/Music/Cave
+    Doc:Ghost/M/Heist.g
+    Doc:Ghost/M/Heard.g
+    Doc:src/lib/O/spec/Heist_todo.md
+  What:the visual,desc:Ghost/Vis/Visua — Voro Vyto Vytui Cyto Matstyle — crush glass solve attention,FromWhat:Waft:Ghost/Vis/Visua
+    Doc:Ghost/V/Vyto.g
+    Doc:src/lib/O/Vytui.svelte
+    Doc:src/lib/O/spec/Glassbeast_todo.md
+  What:the land,desc:Ghost/Land/Wordland — Atlas Electrode Lagoon — BigWordland Hackarium Clerkdesk,FromWhat:Waft:Ghost/Land/Wordland
+    Doc:Ghost/L/Lagoon.g
+    Doc:src/lib/L/BigWordland.svelte
+    Doc:src/lib/O/spec/Wordland_todo.md
+  What:the foundation,desc:Ghost/Lake/Easy — the particle the House the req machine the Story Lies Lang the faces,FromWhat:Waft:Ghost/Lake/Easy
+    Doc:src/lib/data/Stuff.svelte.ts
+    Doc:src/lib/O/Housing.svelte.ts
+    Doc:src/lib/O/Hovercraft.svelte
+    Doc:src/lib/O/spec/Coding_guide.md
+  What:the Books,desc:Credence — every Book grouped by What with a desc naming what the group tests — run one from its Storying,FromWhat:Waft:Credence
+    Doc:src/lib/O/Funk/CreduFunk.svelte
+    Doc:scripts/runner_ask.mjs
+    Doc:scripts/story_accept.mjs
+  What:the shelves,desc:GhostList lists the repo — Keep remembers what you had open — Aside/YMD is where errands land — Look and Ting are session-only
+    Doc:src/lib/O/Funk/DocGhostList.svelte
+    Doc:src/lib/O/LiesKeep.svelte
+    Doc:src/lib/O/LiesStore.svelte
+    Doc:src/lib/O/spec/Keeping_spec.md
+    Doc:src/lib/O/spec/Clerkdesk_todo.md
+  What:the policy,desc:how this map is kept — each rule is one What below with the rule as its desc
+    What:one Waft per area,desc:a ghost lives in ONE area Waft — a Doc may be cited from another area only under a What that says why
+    What:Points are the main functions,desc:a Point method is an entry the reader should know — with keywords as its desc — not every def — the code is the full list
+    What:no commas in a desc,desc:the peel parser splits on commas — use an em-dash
+    What:Books live in CreduFunk,desc:an area Waft lists its FIXTURED Books under Funkcion:CreduFunk so they run from there — Credence stays the full index
+    What:the spec What is last,desc:specs and todos sit under What:the spec at the tail — a _todo opens with §0 what to get on with next — only the human promotes a doc to _spec
+    What:rebalance when an area splits,desc:when a Waft passes about 150 lines or two stories live in it — split it and add the new Waft here
+    What:stale names are bugs,desc:a Doc path or Point that no longer resolves is a mint bug — scripts/wafts_everything.mjs validates every one before writing — re-run it after a rename
+    What:new sessions read this Waft first,desc:then the area Waft for the work at hand — then its _todo §0

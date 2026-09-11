@@ -12,7 +12,7 @@ import { poly_area } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_VytoTesting(): string { return '1a261b1aab5be1e5~g1' },
+    Ghostmeta_Ghost_V_VytoTesting(): string { return 'fc4eee7b5dc5faba~g1' },
 
 // VytoTesting.g — né Vytonation.g.  Vyto's demo Books (the VoroTesting.g sibling, one directory over
 //  in Ghost/V/), under the `<Name>Testing.g` convention (owner ruling 2026-09-09; the one predicate
@@ -88,8 +88,19 @@ async VytoStaple_drive(w, req) {
 //    only carries a resident glass like Sounditron's live tab).  top_House() is the guaranteed
 //     fallback.  A:Vyto is minted HERE, beside the Run House (which is `this`), so w:Vyto sits
 //      OUTSIDE the Run House subtree snap_H walks — Vyto-blind by placement.
+// VytoStaple_SH — DRIFT-SAFE (2026-09-11).  `this.up` is ambient dispatch context, correct only
+//  at the moment a ghost method is invoked SYNCHRONOUSLY by the framework — a long async poll
+//  (VytoStaple_await's own "this.main() NUDGE" runs a belief cycle across every live world) can
+//  leave it pointed somewhere else by the time a LATER tick reads it, so a Book whose truth_fn
+//  takes many polls to resolve can silently commission onto one House and read back from another —
+//  same w, different SH, no error, just an eternally-unsatisfiable truth_fn (found chasing
+//  VytoPosed's beat 4 never resolving: Vytui's own tracked world identity was provably stable and
+//  correct throughout, while VytoStaple_vw(w) resolved a real but DIFFERENT, never-rendered world).
+//  `w` never drifts — it is the one thing passed explicitly through the whole chain — so prefer a
+//  House stashed directly on it (Vyto_commission_on caches the SH it resolved AT MINT TIME, the one
+//  moment this.up is trustworthy) and fall back to the old ambient path for a Book that never minted.
 VytoStaple_SH(w) {
-    return this.up ?? this.top_House()
+    return w?.c?.vyto_SH ?? this.up ?? this.top_House()
 
 },
 // vw — this Book's commissioned w:Vyto (or null before the commission mints it).  Read-only probe:
@@ -623,6 +634,9 @@ Vyto_plant(w, genus, dose) {
 Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale, foamy, deck) {
     let SH = this.VytoStaple_SH(w)
     if (!SH) return
+    // stash it while this.up is still trustworthy (see VytoStaple_SH) — the one write, at the one
+    //  moment ambient context is known-correct, so every later async read of w's own SH is stable
+    w.c.vyto_SH = SH
     if (fresh) {
         let old = SH.o({ A: 'Vyto' })[0]
         if (old) SH.drop(old)
@@ -2220,9 +2234,17 @@ VytoOrchestra_seed(w) {
 
 },
 // ── beat 3 — stand the glass: FOAM + NESTED, every regime seated at once ──────────────────────────
+//  DEPTH-SCALED (2026-09-11, the render side made this visible: the owner watched the Band's own
+//   Players sit as a squished, near-invisible pink ghost — never truly unseated, both DID solve a
+//    real .c.poly, but Vyto_solve_scope sized them with the ABSOLUTE frame-wide radius formula
+//     (env_area unscaled) inside a Band cell an order of magnitude smaller than the frame, so two
+//      same-sized-as-their-parent circles fought for a sliver of room.  `depthscale` is exactly the
+//       fix Vyto.g already carries for this (Vyto_sizing_todo P3, proven by VytoDepth) — Orchestra
+//        turned on `nested` without it.  `.c` fields only (T/poly/depth_scale), never `.sc` — checked
+//         against 008.snap, which mentions none of them — so this cannot move a byte of the fixture.
 async VytoOrchestra_stand(w) {
     w.i({desc: 'commission the glass foam-cut and nested — six top cells with the band carrying three'})
-    this.Vyto_commission_on(w, [w.c.band].concat(w.c.songs).concat(w.c.strays), 1, 0, 1, 0, 0, 0, 1)
+    this.Vyto_commission_on(w, [w.c.band].concat(w.c.songs).concat(w.c.strays), 1, 0, 1, 0, 0, 1, 1)
     this.Vyto_rest_reset(w)
     this.expecting(w, 'stand_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoOrchestra_stand_ready(w)) })
 
@@ -2338,7 +2360,7 @@ async VytoOrchestra_pose(w) {
     w.i({desc: 're-pose the commission — drop a stray and admit a pull'})
     let pull = w.i({ Pull: 'Driftline', lane: 'wire' })
     w.c.pull = pull
-    this.Vyto_commission_on(w, [w.c.band].concat(w.c.songs).concat([w.c.strays[0], pull]), 1, 0, 1, 0, 0, 0, 1)
+    this.Vyto_commission_on(w, [w.c.band].concat(w.c.songs).concat([w.c.strays[0], pull]), 1, 0, 1, 0, 0, 1, 1)
     this.Vyto_rest_reset(w)
     this.expecting(w, 'pose_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoOrchestra_pose_ready(w)) })
 
@@ -2412,6 +2434,196 @@ VytoOrchestra_witness(w) {
     if (w.c.saw_depart) {
         this.story_swear(w, 'the dropped player left an escort for one stir then vanished from its bag')
         if (!(w.oa({see: 'the dropped player left an escort for one stir then vanished from its bag'}))) w.i({see: 'the dropped player left an escort for one stir then vanished from its bag'})
+    }
+
+},
+// ══ VytoPosed — FACES ARE ALREADY POSABLE (proven on the render side; NOT yet proven by this Book) ═══
+//   The owner, 2026-09-11: *"might faces have some posability... want to keep their eyes-nose-mouth
+//    structure, but allow them to be posed to match the cell nicely."*  The mechanism already existed
+//     (Vytui.svelte's slab_seat/ang, unconditional — no foamereo opt-in) and had never been Book-proven:
+//      every bench Book mints a `Cog` or similar bare mainkey, and `face_of` finds no `FACE_MAINKEYS`
+//       entry for those, so `face` is always null and the whole seat-branch had zero fixture coverage —
+//        exactly the F1 WITNESS ASYMMETRY this doc keeps finding (Vyto_todo's own name for it).  This
+//         Book mints real `%Tree` particles (`glass_faces.ts` FACE_MAINKEYS.Tree → TreeFace), so `face`
+//          is finally truthy and the seat machinery actually runs.  Vytui now stamps what it decided
+//           onto `row.c.pose` (`{ang, seat}` — the same idiom as `need_area`/`stretch_rect`).
+//
+//   ⚠ STATUS 2026-09-11 — THE FEATURE IS REAL; THIS BOOK'S OWN PROOF IS NOT YET.  Targeted console
+//    instrumentation on the RENDER side (temporary, since removed) directly confirmed Vytui stamps a
+//     real, correct `row.c.pose = {ang, seat}` for every Tree cell, repeatedly, across both beats.  But
+//      THIS BOOK's own read of that same fact (`r.c.pose` off `Vyto_cells(vw)`) sees `undefined` on
+//       every row, every run (ten attempts, `runner_ask assertions` → "sworn 0" throughout) — so
+//        neither beat's `_ready` function has ever genuinely returned 1; both only ever settle via the
+//         `expecting` ttlilt's bounded TIMEOUT escape (Coding_guide.md's own words), which looks
+//          identical to success in `runner_ask run`'s summary (phase:done, no caveat) and is NOT.
+//   Ruled out: `VytoStaple_vw`/`VytoStaple_SH` DID diverge from what Vytui renders (confirmed by tagging
+//    both sides with random probe ids — Vytui's tracked world id was stable and correct across the
+//     fresh re-commission; the Book's own `vw` resolved a real, plausible, but DIFFERENT, never-rendered
+//      world) — traced to `this.up` being ambient dispatch context that can drift during a long async
+//       poll (`VytoStaple_await`'s own "NUDGE a belief cycle" `this.main()` call).  FIXED below
+//        (`Vyto_commission_on` now stashes the SH it resolved onto `w.c.vyto_SH` at mint time, and
+//         `VytoStaple_SH` prefers that stash) — a real, generally-useful fix, kept regardless — but it
+//          did NOT fix this Book: post-fix, both beats STILL show "sworn 0".
+//   NOT YET FOUND, but NARROWED (2026-09-11, second pass): a probe reading `.c.pose` on the very FIRST
+//    poll where the mirror already has all 5 rows — BEFORE this Book's own `Vyto_rest_poll` has stirred
+//     even once — swore "pre-stir pose count 0 of 5".  That RULES OUT hypothesis (a) below cleanly:
+//      the mismatch exists from the first instant, not something repeated stirring causes.
+//   Leading theory now: `w.c.mirror` is a plain `.c` field — never `$state`, never version-bumped, so
+//    Svelte's reactivity cannot see it change, and Vytui's `build_cells` runs only on an EXPLICIT
+//     `kick(w)`/`paint_tick++` (adopt, focus, hover, a settle …), never generically "the model mutated
+//      the mirror."  While a Story run drives (`parked(w)`), the render's own continuous rAF loop is
+//       documented as "inert" — it may take exactly one real paint pass and then never resync, while
+//        this Book's OWN `Vyto_stir` calls (needed to advance the model's solve for the Book's settle
+//         check, nothing to do with painting) can regenerate mirror rows via `Vyto_scan` in the
+//          meantime.  If `Vyto_scan` mints a mirror generation Vytui never gets kicked to repaint, the
+//           Book ends up reading a real, current, but never-painted (never-posed) generation forever.
+//   (b), ruled out as literally stated (repaint happens at least once, confirmed by console logs), but
+//    survives in this refined form: **a Book has no way to force a repaint and confirm it landed** — a
+//     structural gap in the render-proof channel, not a bug local to this one field.  The fix, if
+//      taken up, likely belongs in `expecting`/`VytoStaple_await` itself (call `kick(w)`+`paint_tick++`
+//       — reaching into Vytui.svelte from a .g Book is not possible directly; this would need a ghost-
+//        side hook Vytui installs, e.g. `w.c.request_repaint`, that the render effect checks) rather
+//         than in this Book. Filed, not fixed — a genuinely new find, not a quick patch.
+//   Two swears below are consequently UNDECLARED and UNVERIFIED by design until this is resolved — do
+//    not declare them, and do not trust a green `runner_ask run` on this Book as proof of anything.
+//   Beat 2: seed five Trees at uneven dose — a generic power-cut of five unequal seeds is a fair bet
+//    against landing perfectly axis-aligned on every wall, and the assertion is written to accept
+//     whichever cells actually tilt rather than naming one in advance.  (First cut used eight — see
+//     the seed function's own note: crowded that far, two cells crushed under the ball-seat's own
+//      radius floor and the ball case could never be witnessed at all.)
+//   Beat 3: commission POLYGON (no foam) — the regime every existing bench Book already runs, just
+//    with faces attached for the first time.  Asserts every Tree cell got a pose stamp, AT LEAST one
+//     shows a genuine tilt (|ang| > the render's own 8° level-snap), and NONE exceeds the render's own
+//      30° MAX_TILT — the discipline holds, not just "something moved."
+//   Beat 4: RE-commission the SAME particles FOAM-CUT (a ball, no walls to lean into) — AT LEAST one
+//    cell reports the ball seat with ang exactly 0 (a circle has no wall to lean into), the level case
+//     the owner also asked about; a cell crushed small enough to fall to the slab/AABB branch instead
+//      is not a violation — that is the renderer's own crowding law, orthogonal to posability.
+//   World VytoPosed.
+
+VytoPosed(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoPosed_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoPosed_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoPosed_seed(w)
+        if (n === 3) this.VytoPosed_slab(w)
+        if (n === 4) this.VytoPosed_ball(w)
+    }
+    this.VytoPosed_witness(w)
+
+},
+// ── beat 2 — eight Trees, uneven dose so the power-cut is generically asymmetric ────────────────────
+VytoPosed_seed(w) {
+    w.i({desc: 'seed five Tree faces at uneven dose'})
+    // FIVE, not eight (2026-09-11) — eight real faces crowded a small foam bag enough to crush two
+    //  cells under the ball-seat's own s.r > 8 gate (Vytui.svelte), so the branch this Book means to
+    //   witness never fired for them.  Five leaves comfortable room for the ball case in beat 4 while
+    //    still being generically asymmetric enough for beat 3's polygon cut to produce a real tilt.
+    let doses = ['0', '1', '2', '1', '2']
+    let trees = []
+    let i2 = 0
+    while (i2 < doses.length) {
+        trees.push(w.i({ Tree: 'leaf' + i2, of: 'grove', dose: doses[i2] }))
+        i2 = i2 + 1
+    }
+    w.c.trees = trees
+
+},
+// ── beat 3 — commission polygon (no foam): the regime every other bench Book already runs ──────────
+async VytoPosed_slab(w) {
+    w.i({desc: 'commission the glass polygon-cut — five real faces, walls to lean into'})
+    this.Vyto_commission_on(w, w.c.trees, 1)
+    this.Vyto_rest_reset(w)
+    // WIDENED past the 18s the rest of the bench uses (2026-09-11): eight REAL HTML faces
+    //  (TreeFace) mounting + measuring + a power-cut re-solve is slower than the bare-Cog
+    //   benches every other timing here was tuned against — Coding_guide.md's own words,
+    //    "size secs above the worst case and the picture is always the completed one." The
+    //     first cut at 18s recorded a fixture mid-flight (req:ball_wait still an open ttlilt,
+    //      never finished) — a bounded-escape snapshot, not a resolved one — and every later
+    //       run's dige disagreed with it depending on whether IT ALSO happened to time out.
+    this.expecting(w, 'slab_wait', 40, async () => { await this.VytoStaple_await(w, 40, () => this.VytoPosed_slab_ready(w)) })
+
+},
+// a Tree row wearing a live face — the only rows this Book cares to pose-check
+VytoPosed_faced(vw) {
+    let out = []
+    for (const r of this.Vyto_cells(vw)) { if (r.sc.Tree != null) out.push(r) }
+    return out
+
+},
+VytoPosed_slab_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || vw.c.foam) return 0
+    if (!this.Vyto_rest_poll(w, 6)) return 0
+    let faced = this.VytoPosed_faced(vw)
+    if (faced.length !== 5) return 0
+    let tilted = 0
+    for (const r of faced) {
+        let p = r.c.pose
+        if (!p) return 0
+        // the render's own discipline (Vytui.svelte MAX_TILT = 30°): a seat past this falls back to
+        //  axis-aligned rather than lean into an unreadable slant — mirrored here, not re-derived
+        if (Math.abs(p.ang) > 0.535) return 0
+        if (Math.abs(p.ang) > 0.01) tilted = tilted + 1
+    }
+    if (tilted < 1) return 0
+    w.c.saw_slab = 1
+    w.c.saw_slab_n = tilted
+    return 1
+
+},
+// ── beat 4 — re-commission the SAME particles FOAM-CUT: a ball has no wall to lean into ─────────────
+async VytoPosed_ball(w) {
+    w.i({desc: 're-commission the same faces foam-cut — a ball poses level'})
+    this.Vyto_commission_on(w, w.c.trees, 1, 0, 0, 0, 0, 0, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'ball_wait', 40, async () => { await this.VytoStaple_await(w, 40, () => this.VytoPosed_ball_ready(w)) })
+
+},
+VytoPosed_ball_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.foam) return 0
+    if (!this.Vyto_rest_poll(w, 5)) return 0
+    let faced = this.VytoPosed_faced(vw)
+    if (faced.length !== 5) return 0
+    // NOT every faced cell needs the ball seat — a crowded pile can still crush a cell's radius below
+    //  the ball-seat's own floor (Vytui.svelte s.r > 8), and that cell legitimately falls to the slab/
+    //   AABB branch instead — that is the renderer working correctly under crowding, not a violation
+    //    of posability.  What this beat claims is narrower and still real: AT LEAST ONE round cell
+    //     poses level, and NO cell reports the ball seat with a nonzero angle (a circle has no wall to
+    //      lean into — if the seat says ball, ang must be exactly 0, always).
+    let balls = 0
+    for (const r of faced) {
+        let p = r.c.pose
+        if (!p) return 0
+        if (p.seat === 'ball') {
+            if (p.ang !== 0) return 0
+            balls = balls + 1
+        }
+    }
+    if (balls < 1) return 0
+    w.c.saw_ball = 1
+    return 1
+
+},
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ───────────────────
+VytoPosed_witness(w) {
+    if (w.c.saw_slab) {
+        this.story_swear(w, 'a genuinely slanted wall leans its face to match — the pose never strays past thirty degrees')
+        if (!(w.oa({see: 'a genuinely slanted wall leans its face to match — the pose never strays past thirty degrees'}))) w.i({see: 'a genuinely slanted wall leans its face to match — the pose never strays past thirty degrees'})
+    }
+    if (w.c.saw_ball) {
+        this.story_swear(w, 'a round cell poses its face level — a circle has no wall to lean into')
+        if (!(w.oa({see: 'a round cell poses its face level — a circle has no wall to lean into'}))) w.i({see: 'a round cell poses its face level — a circle has no wall to lean into'})
     }
 
 },

@@ -663,6 +663,11 @@
             const good = ev.sc.Good as TheC | undefined
             if (!good) continue
             const path = good.sc.path    as string
+            // ⏱ hop 4: Lang has RECEIVED the content. The gap from `good→Lang` to here is the elvis
+            //  sitting in w:Lang's queue waiting for a Lang tick; from here to `set_active_dock` is
+            //   req_text_loaded's own turn. Together with `want` and `provide_dock` these five stamps
+            //    place the owner's ~3s click→dock gap on exactly one hop.
+            console.log(`⏱ dock_content @${(performance.now() / 1000).toFixed(2)}s ${path}`)
             const text = (good.c.content as string | null) ?? ''
             const dige = good.o({ known: 1 })[0]?.sc.dige as string | undefined
 

@@ -1,35 +1,143 @@
-Waft:Ghost/Swarm/Easy,active
+Waft:Ghost/Swarm/Easy,desc:the social layer — one soul many bodies — crew by grant — the door the reach the ferry — what survives a reload
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:SwarmStaple
     Funkcion:Storying,of_Book:SwarmWire
     Funkcion:Storying,of_Book:SwarmSteal
-  What:the self
+    Funkcion:Storying,of_Book:SwarmInvite
+    Funkcion:Storying,of_Book:SwarmDoor
+    Funkcion:Storying,of_Book:SwarmGot
+    Funkcion:Storying,of_Book:SwarmPolicy
+    Funkcion:Storying,of_Book:SwarmShare
+    Funkcion:Storying,of_Book:SwarmChain
+    Funkcion:Storying,of_Book:SwarmBlotter
+    Funkcion:Storying,of_Book:SwarmSpoof
+    Funkcion:Storying,of_Book:SwarmDisk
+    Funkcion:Storying,of_Book:SwarmCohort
+    Funkcion:Storying,of_Book:SwarmFerry
+    Funkcion:Storying,of_Book:EmojiConfirm
+    Funkcion:Storying,of_Book:SwarmBody
+    Funkcion:Storying,of_Book:SwarmCharter
+    Funkcion:Storying,of_Book:SwarmGossip
+    Funkcion:Storying,of_Book:SwarmPost
+    Funkcion:Storying,of_Book:SwarmServe
+    Funkcion:Storying,of_Book:SwarmSpread
+    Funkcion:Storying,of_Book:SwarmReboot
+    Funkcion:Storying,of_Book:SwarmHelm
+    Funkcion:Storying,of_Book:Swarmation
+    Funkcion:Storying,of_Book:InvSeal
+    Funkcion:Storying,of_Book:InvFerry
+    Funkcion:Storying,of_Book:InvWalk
+  What:the soul,desc:one signing key is who you are — bodies wear their own keys — the prepub is the routing face
     Doc:Ghost/S/Swarm.g
-    Point,method:Swarm_mint_keys
-    Point,method:Swarm_identity
-    Point,method:Swarm_page
-  What:the Idzeug
+    Point,method:Swarm_identity,desc:the active identity particle
+    Point,method:Swarm_keys,desc:mint or load the keypair
+    Point,method:Swarm_soul,desc:the soul key behind every body
+    Point,method:Swarm_body_key,desc:this body — its own key-derived name
+    Point,method:Swarm_live_self,desc:who we are right now on the wire
+    Point,method:Swarm_address,desc:the address we stand at
+  What:the crew,desc:membership is a Grant — the Charter is display and recovery only — a Cave carries the soul key and a Captain wields it
     Doc:Ghost/S/Swarm.g
-    Point,method:Swarm_mint_idzeug
-    Point,method:Swarm_verify_idzeug
-  What:the handshake
+    Point,method:Swarm_crew,desc:the /Crew shelf — membership
+    Point,method:Swarm_crew_grant,desc:mint a crew grant
+    Point,method:Swarm_crew_join,desc:take a grant — join
+    Point,method:Swarm_crew_leave,desc:leave — the grant retires
+    Point,method:Swarm_captain_here,desc:is the Captain this body
+    Point,method:Swarm_charter_wire,desc:the Charter as a frame
+    Point,method:Swarm_charter_gossip,desc:the Charter crosses on hi
+  What:the invite,desc:a token or a printed blotter — the Idzeug — a ReInvite chain where the tip grants
     Doc:Ghost/S/Swarm.g
-    Point,method:Swarm_redeem
-    Point,method:Swarm_hello
-    Point,method:Swarm_seal
-  What:revocation
+    Point,method:Swarm_token,desc:mint the invite token
+    Point,method:Swarm_token_parse,desc:read one back
+    Point,method:Swarm_iz_claim,desc:claim an Idzeug — once
+    Point,method:Swarm_iz_spent,desc:was it spent
+    Point,method:Swarm_iz_issuer,desc:who issued it
+    Point,method:Swarm_chain_root_ok,desc:the chain root verifies
+    Point,method:Swarm_invite_note,desc:what the invite says about itself
+    Doc:src/lib/O/Funk/Emojiconfirm.ts
+    Doc:src/lib/O/ui/InvitePanel.svelte
+    Doc:src/lib/O/ui/InviteYourself.svelte
+  What:the door,desc:first contact — hello then seal — a rebuff and its forgiveness — the station socket at the bare prepub
     Doc:Ghost/S/Swarm.g
-    Point,method:Swarm_revoke
-    Point,method:Swarm_pier_live
-  What:the places
+    Point,method:Swarm_station_up,desc:stand the station socket — the hello and the arbiter adopt hook
+    Point,method:Swarm_deliver,desc:the swarm frame dispatcher
+    Point,method:Swarm_seal,desc:seal a Pier — the ceremony completes
+    Point,method:Swarm_rebuff,desc:refuse and say why
+    Point,method:Swarm_rebuff_forgive,desc:let a rebuffed peer knock again
+    Point,method:Swarm_hi_one,desc:greet one peer
+    Point,method:Swarm_heard_hi,desc:a greeting landed
+    Point,method:Swarm_pier_live,desc:is this Pier live
+    Point,method:Swarm_pier_granted,desc:is this Pier granted
+    Doc:src/lib/O/ui/DoorFace.svelte
+    Doc:src/lib/O/ui/SwarmStandup.svelte
+  What:reach,desc:the Want middleware — a Reach books an intent and pumps it until the far side serves or refuses
     Doc:Ghost/S/Swarm.g
-    Point,method:Swarm_note_theft
-    Point,method:Swarm_steal_back
-    Point,method:Swarm_next_suffix
-  What:the test
+    Point,method:Swarm_reach_book,desc:book a Reach
+    Point,method:Swarm_reach_pump,desc:the beat — dispatch what is due
+    Point,method:Swarm_reach_dispatch,desc:send one
+    Point,method:Swarm_reach_serve,desc:the far side serves
+    Point,method:Swarm_reach_settle,desc:settle on receipt
+    Point,method:Swarm_reach_report,desc:the state of every Reach
+  What:the ferry,desc:LinkDevice — the soul crosses to a second body with a secret and a serial — cancel and reheal
+    Doc:Ghost/S/Swarm.g
+    Point,method:req_Ferry_soul,desc:the soul side of the ceremony
+    Point,method:req_Ferry_cave,desc:the cave side
+    Point,method:Swarm_ferry_ask,desc:ask to be ferried
+    Point,method:Swarm_ferry_secret,desc:the shared secret
+    Point,method:Swarm_ferry_done,desc:the crossing completes
+    Point,method:Swarm_ferry_cancel,desc:abort
+    Point,method:Swarm_ferry_reheal,desc:resume a broken crossing
+    Doc:src/lib/O/ui/LinkDevice.svelte
+    Doc:src/lib/O/ui/LinkFace.svelte
+  What:bodies and siblings,desc:many bodies of one soul — the primary — sibling delivery needs no Pier
+    Doc:Ghost/S/Swarm.g
+    Point,method:Swarm_body_roster,desc:the bodies we know of ourselves
+    Point,method:Swarm_body_primary,desc:which body is primary
+    Point,method:Swarm_body_pick,desc:pick a body for a job
+    Point,method:Swarm_sibling_send,desc:send to a sibling body
+    Point,method:Swarm_is_sibling,desc:same soul?
+    Point,method:Swarm_take_role,desc:a body takes a role
+    Doc:Ghost/N/Peeroleum.g
+    Point,method:Peeroleum_same_soul,desc:a frame from our own soul — no Pier needed
+    Point,method:Peeroleum_crew_road,desc:a frame from a crew mate — the crew road
+  What:gossip,desc:the pulse — what music I have got — suggest and boast — the roster crosses on hi
+    Doc:Ghost/S/Swarm.g
+    Point,method:Swarm_pulse_all,desc:the heartbeat to every Pier
+    Point,method:Swarm_gossip_music,desc:tell friends what we hold
+    Point,method:Swarm_ive_got,desc:the ive_got fact
+    Point,method:Swarm_suggest,desc:suggest a track
+    Point,method:Swarm_suggest_got,desc:a suggestion landed
+    Point,method:Swarm_roster_gossip,desc:the roster crosses
+    Point,method:Swarm_music_census,desc:count what is reachable
+  What:the stash,desc:what survives a reload — piers izzes chainroots crew pools heard radio reaches — a phone has no folder so this is its only home
+    Doc:Ghost/S/Swarm.g
+    Point,method:Swarm_restash_all,desc:write every durable shelf
+    Point,method:Swarm_piers_rehydrate,desc:piers back from the stash
+    Point,method:Swarm_crew_rehydrate,desc:crew back
+    Point,method:Swarm_heard_rehydrate,desc:the Heard Mag back
+    Point,method:Swarm_pools_rehydrate,desc:pools back
+    Point,method:Swarm_radio_rehydrate,desc:radio state back
+    Point,method:Swarm_account_settle,desc:the account snap settles
+    Point,method:Swarm_protocol,desc:which mainkeys cross the wire — the skips
+  What:theft and home,desc:a stolen name — steal back — rehome and reinstate — the cohort vessel
+    Doc:Ghost/S/Swarm.g
+    Point,method:Swarm_note_theft,desc:someone else holds our name
+    Point,method:Swarm_steal_back,desc:take it back
+    Point,method:Swarm_rehome,desc:the address changed — redial
+    Point,method:Swarm_reinstate,desc:stand at the bare name again
+    Point,method:Swarm_cohort_vessel,desc:which tab of ours carries the cohort
+    Point,method:Swarm_next_suffix,desc:the _N collision fallback
+  What:the tests
     Doc:Ghost/Story/SwarmTesting.g
-    Point,method:SwarmStaple_drive
-    Point,method:SwarmStaple_witness
+    Doc:Ghost/Story/InvSeal.g
+    Doc:Ghost/Story/InvFerry.g
+    Doc:Ghost/Story/InvWalk.g
   What:the spec
     Doc:src/lib/O/spec/Swarm_spec.md
-    Doc:src/lib/O/spec/Cluster_spec.md
+    Doc:src/lib/O/spec/Crew_todo.md
+    Doc:src/lib/O/spec/Reach_todo.md
+    Doc:src/lib/O/spec/Portability_todo.md
+    Doc:src/lib/O/spec/Statehome_todo.md
+    Doc:src/lib/O/spec/Identity_persist_todo.md
+    Doc:src/lib/O/spec/Swarm_compact_invite_todo.md
+    Doc:src/lib/O/spec/Sharing_design.md
+    Doc:src/lib/O/spec/Trust_todo.md

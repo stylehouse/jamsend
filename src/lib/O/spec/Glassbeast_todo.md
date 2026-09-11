@@ -18,7 +18,139 @@ Read it as a field guide. The animal is real, most of its organs exist, and it i
 A glass that folds at the meaning and looks like a made thing — and the look is a **deck of stops**
  you compose, record and hand on, never a fourth engine.
 
-### WHERE IT STANDS — 2026-09-10 evening (the desk is built; now it is looked at)
+### THE SQUISHED-BAND CHASE — 2026-09-11, session 2 continued: root cause found, landed the safe half,
+###  the taste half is a this-or-that in flight
+Chased item 1's leftover (the Band's Players never legible) to ground with the live `--eval` probe.
+ **Two separate, stacked causes**, both in `Ghost/V/Vyto.g`:
+
+1. **LANDED, safe, verified.** `Vyto_solve_scope` sizes a nested child's radius from its OWN
+    `env_area`, scaled by `depth_k = √(parent poly area / frame area)` — but only when the world's
+     `depth_scale` commission flag is on. VytoOrchestra turned on `nested` without it, so both Players
+      requested a radius sized for the WHOLE FRAME inside a Band cell an order of magnitude smaller —
+       two same-sized circles fighting over a sliver, rendered as a near-degenerate overlapping ghost.
+        Fixed: `VytoOrchestra_stand`/`_pose` now pass `depthscale=1` to `Vyto_commission_on` (both call
+         sites, `VytoTesting.g`). `.c` fields only (`T`/`poly`/`depth_scale`) — checked against
+          `008.snap`, none of them appear there, so this cannot move a byte of any fixture. Verified on
+           the REAL runner, not just the eye: `VytoDepth` (the Book that proves this exact law) ran
+            `--watch` green with `runner_ask assertions` showing both its assertions genuinely
+             **sworn** (not a ttlilt timeout wearing a green summary — Coding_guide's own warning).
+              `VytoOrchestra` also re-run clean: all 7 assertions sworn, and `snap <n>` diffed against
+               every one of its 8 fixtures by hand — the ONLY differences anywhere are the pre-existing,
+                already-flagged `Stray:*,loose` drift (owed to the owner, see below), nothing new.
+2. **A real taste question — FOUR candidates tried, landed a good one, still not the owner's final word.**
+    Fixing (1) exposed the DEEPER cause: `Vyto_express_rows` prices a scope's own `env_area` exactly
+     like a leaf's, blind to how many children it must then divide that top-level room among — a Band
+      holding 3 Players got the SAME base room as a single Song.
+    - `seq_0021` no fix — Players squished/illegible (the original bug).
+    - `seq_0024` `claim=live_kids` (linear) — Band swallows the frame, crowds a Song out entirely.
+    - `seq_0027` `claim=√live_kids` — better, but Band is still the single biggest shape and one
+       Player label isn't fully legible. **Why sqrt still overshot**: a power diagram amplifies a
+        radius edge far past the area ratio that produced it (power distance is `|P-seed|² - r²`, so a
+         modest r bump shoves smaller-r neighbours away hard) — the lesson worth keeping for the NEXT
+          time something here needs "a bit more room."
+    - `seq_0033` **`claim = 1 + 0.15·(live_kids−1)`, gentle additive — landed as the new default.**
+       All three Players AND all three Songs read cleanly at once, Band no longer dominates, nothing
+        crowds out. Re-verified fixture-safe across all three nested Books the same session
+         (`VytoDepth`/`VytoNest`/`VytoOrchestra` — every assertion still genuinely sworn, not just a
+          green summary).
+    Sent to the owner as the presumptive answer, not a forced one — the 0.15 coefficient and the
+     crest-style-collapse alternative (a scope too small to seat its kids shows one cell + a "×N" door
+      count instead of trying to give everyone wall room, unbuilt, filed) are both still open if the
+       owner's eye disagrees.
+3. **Two of the original four "crunchy things" are independently confirmed CLOSED by the folio flip
+    alone** (checked live post-flip, not assumed): labels crossing (item 1) and the orphaned `Stray:
+     moth` landing inside a neighbour's cell (item 3) — Strays now draw in their own clearly separate
+      spot every time. Truncation (item 2) is also gone in every shot taken this session.
+
+### THE SEEM POPUP GREW UP — universal k:v title + bi-directional hover-glow (2026-09-11, landed)
+Two more of the owner's own asks, landed and verified live (not screenshotted-and-guessed — the eye
+ dispatched real `dblclick`/`pointerenter` events and the resulting DOM was inspected each time):
+- **"a more universal k:v style, like artist:Yara is... to Song too."** A cell's title used to be one
+   flat bold string (`Song:LowTide`); `ident_parts_of` (new, `Vytui.svelte`) splits mainkey from value
+    and `rows_of` (`vyto_pane.ts`) now draws the title as TWO atoms — mainkey lilac, value white — the
+     exact palette every fact line already wore. `seq_0030`.
+- **"the snap-looking C** explainer beside it? with bi-directional on-hover-glow effects... so we can
+   figure out what part of what we're looking at."** One shared `glow_key` (`$state`), read by both the
+    folio's SVG text atoms (each already carrying its field name via `Atom`/`Seat.k`) and the Seem
+     popup's per-field spans (`raw_snap_parts`, replacing the old single-string `raw_snap_line`).
+      Hovering EITHER side glows the other. A nice emergent bonus: hovering a field name that appears on
+       several cells (like `artist`) glows it everywhere on the glass at once, not just the one cell you
+        started from — `seq_0031` (folio→popup direction) and `seq_0032` (popup→folio direction), both
+         confirmed live via the eye, not assumed from the code.
+
+### GENUINELY OWED TO THE OWNER, running list (nothing here is mine to resolve)
+- **Accept `wormhole/Story/VytoOrchestra/*.snap`** — the `Stray:*,loose` scalar + a new `see:` sentence,
+   both purely additive drift, advised safe every time it's been checked this session (three times now).
+- **The scope-claim curve** — a gentle additive is landed and looks good; confirm, tune the coefficient,
+   or reject the whole approach for the crest-collapse alternative above.
+- **Rule on `n:have` leak** (carried over from the prior handover, not re-investigated this session).
+- **Rule whether CLI-driven Books should ever capture Moments**, unblocking the Story-step-nav fix
+   (also carried over — [[vyto-spool-never-captures-under-a-driven-run]]).
+
+### THE NEXT MOVE — 2026-09-11, session 2: the flip landed, three more bugs/asks landed live
+The owner ran VytoOrchestra, saw *"crunchy things"*, and the earlier session photographed the same run to
+ prove it too: `wormhole/shots/orchpic_*` (pre-flip, since renamed into the numbered series below).  The
+  owner: *"yeah that's it! I like how the cells jiggle gently and the outside label orbits slowly... now
+   you can really iterate."*  Four problems were named (labels cross, truncation, an orphaned name, the
+    Band's Players never seated) and the ruling was made by eye: the earlier `folio` shot of this SAME
+     Book had none of the collisions, so **`folio` becomes the default and the wall-carve becomes the
+      stop, not the other way round.**
+
+**LANDED this session, all in `Vytui.svelte`, all verified live with the eye:**
+
+1. **The flip itself.** `folio_on(w)` was `!!fo(w,'folio')`; it is now `!fo(w,'wallcarve')` — folio by
+    default, `wallcarve` is the new opt-out stop (BigShapeland's `RENDER_STOPS` updated to match). Labels
+     no longer cross and nothing truncates on a fresh VytoOrchestra run — confirmed by eye, not assumed
+      (`wormhole/shots/seq_0001..0014`). The Band's-Players-unseated problem (#4) is STILL THERE — the
+       faint pink `Player:bass / of main` ghost is real and reproducible (`seq_0007`, `seq_0015`), not
+        fixed, not yet designed against.
+2. **A new bug the flip itself caused, found live, fixed live.** `folio_of` can decline to fit a row
+    along its wall (too small a room, a poly mid-physics-settle) and `{#snippet folio}` had NO floor under
+     that — a cell with a real wall and zero words, wherever the previous non-folio path had always had a
+      centred-ident fallback. The owner caught it live (*"what's with this blank bit"*) while watching a
+       fresh run on his own tab (I was not shown this — he was reading the live page directly). Fixed: the
+        snippet's `{:else}` now falls to the plain centred `<text class="ident">`, same floor the old path
+         had. Verified: `Song:SaltAir` (previously blank) now reads plainly, same for `Player:keys` and
+          `Stray:moth` (`seq_0015..0019`).
+3. **The ident notation, corrected TWICE.** First pass replaced the confusing `Song:6.Undertow` (a
+    purely-local render-time serial with no meaning in the snap) with `%Song,Undertow`, reading CLAUDE.md's
+     `%Spotlight,src` example too literally — that's prose shorthand for TALKING ABOUT a mainkey, never the
+      wire format. The owner caught this too (*"is that actually supposed to be %Song:Lowtide? … I'm
+       hoping the cell itself can be enough to represent C-ness, so we don't need the % sigil"*). Checked
+        the real wire syntax directly against `wormhole/Story/VytoOrchestra/008.snap` (`Song:LowTide,
+         artist:Yara,mood:brine` — colon for key:value, comma between pairs, no `%`) and `ident_of` now
+          emits exactly that: `mk:value`, or bare `mk` for a true presence marker, or `mk #n` (a badge, not
+           glued in) for the rare row with no name and no id/seed/of/title/name at all.
+4. **The Seem popup — a first cut of a bigger idea.** The owner: *"perhaps we can pop up the original
+    snap-looking data on some kind of click"*, then, naming the fuller shape: *"it's kind of a Seem
+     explorer we should build actually, the source layer of C**, and the squished, and any later
+      jointed-on C about C."* Shipped 1.5 of the three layers, on a **double-click** (single click is
+       already owned by `.c.press`/`cell_click`, the owner's own 2026-08-10 ruling — this rides the free
+        gesture rather than fighting it): `raw_snap_line` (the row's `sc`, real wire syntax) and
+         `jointed_pairs` (the row's live `.c` scalars — a stamped `pose`, `heat`, internal bookkeeping like
+          `seed`/`T`/`env_area`, everything a render or model pass left on this SAME particle after minting,
+           refs/functions excluded). Verified live (`seq_0020_seempopup_20s.png`, dispatched via the eye's
+            `--eval`, not guessed at). **Not built**: "the squished" — a crest's folded view of what it
+             absorbed, which needs the crest's own `%Vrow` children read a different way; filed, not faked.
+
+**NOT YET ACTED ON — the owner's own next design idea, recorded so it isn't lost:**
+*"putting the %Song etc in the cell wall would be cool... even better is sharing it amongst these three
+ cells, at the junction, with the value of Song leading away..."* — i.e. sibling cells sharing a mainkey
+  (the three `Song:*` cells here) would share ONE mainkey label sat at their shared wall junction, with
+   each cell's own value (`LowTide`/`Undertow`/`SaltAir`) leading away from that shared point, rather than
+    every cell repeating `Song:` in full. This is real geometry work (finding the shared vertex/edge among
+     N sibling polygons of the same mainkey) — not attempted this session, next thing to design toward
+      once the Band-seating gap (item 1's leftover) has a plan.
+
+**The method still stands** (the owner's ask): *"give me this-or-that pictures... and I'll pick my
+ favourite."* Shots now live as ONE running numbered series, `wormhole/shots/seq_NNNN_<label>_<Ns>.png`
+  (the owner: *"keep all these in a serial numbered series... they'll make interesting animation"* — a
+   `.seq` counter file holds the running number; a tick that lands before the page has even gated open,
+    e.g. "gathering the glass…", gets deleted rather than kept, per the owner: *"delete any shots that are
+     blank, it's a bit odd they'd still be blank after 12s"*). `wormhole/shots/` and `host-firewall.sh`
+      (this container's own network setup) are now gitignored.
+
+### WHERE IT STOOD — 2026-09-10 evening (the desk is built; now it is looked at)
 The owner, opening the day: *"Vyto was supposed to be a few things it wasn't … lots of layout … the whole
  magazine-layout job."*  Three things were built in answer, in this order, each because the one before it
   could not be trusted without it:
@@ -48,6 +180,97 @@ Then, in order: (a) the owner's eye on `/BigShapeland` with `folio` lit — keep
  voice through the `fold` chip; (c) the fold ladder's labels (kind crests) — the morning complaint that
   started this (*"the inlaid component in a non-obscured location"*) is answered by the folio's wall-seat IF
    the crest's rows read; (d) only then jangly on the old renderer.
+
+### STORY STEP NAV DOES NOT DRIVE THE LIVE VYTO GLASS — root cause found and proven (2026-09-11)
+The owner's own suspicion from the earlier session (*"I don't think nav from Story steps is working"*),
+ checked directly and traced to ground.  On `/BigShapeland?B=VytoOrchestra`, letting the run settle at
+  step 8, then clicking the step-3 pip (`.sr-pip`) and closing the diff panel that opens over it — **the
+   glass shows the byte-identical fully-settled picture, before and after.**  The click itself works
+    (Storui's own explorer opens on the right step, proving `pick(n)` and the dispatch to `e_Vyto_seek`
+     both fire) — the GLASS simply never responds, because **it has nothing to seek to.**
+
+**Proven with a new tool, not guessed.** `/BigShapeland` now exposes `window.__H` (a small, permanent,
+ read-only debug hook — see below), and `scripts/runner_eye.mjs` gained `--eval=<js>`, evaluated in-page
+  at a tick with `H` bound to that hook — a live-state question answered in one round trip instead of
+   another console.log-plus-compile-plus-reload cycle.  Querying the live, fully-settled Orchestra
+    world's own `w.o({Moment:1})` returns **`n:0` — zero Moments, not merely zero step-tagged ones.**
+
+**The exact mechanism, read to ground.** `Vyto_settle` (the ONLY caller of `Vyto_spool_capture`, which
+ unconditionally mints a Moment whenever it runs — no opt-in gate exists) is invoked from exactly one
+  live call site inside `integrate_world`, guarded `if (!parked(w))`.  `parked(w)` is true for the
+   WHOLE DURATION of a driving Story run.  And the render's own comment settles the rest: *"adopt
+    handles a parked world itself and never calls `integrate_world`... This is the only path a Book's
+     render actually takes."*  So while `run.c.driving` is true, the ONE code path that could ever call
+      `Vyto_settle` is categorically unreachable — the driven glass takes the jump-to-target/adopt path
+       instead, which never checks settle at all.  Once the run finishes and `driving` clears, the glass
+        is usually ALREADY at its final rest (no further movement to re-enter `integrate_world`'s
+         checking loop in the first place), so no post-run settle ever strikes either.  **A Story-driven
+          Vyto glass can never capture a single Moment, tagged or not** — this is not a step_n tagging
+           bug, it is the spool never running at all under exactly the condition Storui's step-nav needs
+            it to.
+   Untouched by this: the `VytoSeek` Book (still green) proves `Vyto_seek_to`'s RESOLVER logic correctly
+    — it hand-seeds Moments directly (`w.i({Moment:...})`) rather than going through `Vyto_settle` at
+     all, so it never exercised the broken path.
+   **Attempted the obvious fix, reverted — a real lesson, not just a plan.**  Firing `Vyto_settle`
+    once per distinct `step_n` off the SAME jump-to-target `adopt`'s parked branch already does (deduped
+     via a per-world `Map`, so it could never double-mint) looked exactly right and compiled clean.  The
+      very next fleet run regressed THREE Books to red — `VytoSeek` 0.25, `VytoOrchestra` 0.13,
+       `VytoStaple` 0.38 — reverting made all three green again on the next run, confirming the fix
+        itself was the cause, not coincidence.  **Root cause of the regression**: `Vyto_spool_capture`
+         `await`s `snap_H` (a full Run-House snapshot walk) — real async work, now landing on a path
+          EVERY driven Book takes through on EVERY settled step, unconditionally, no opt-in gate.  This
+           is exactly `[[await-on-hot-path-flakes-books]]`'s class of bug: a slow microtask under the
+            belief loop moves a settle round, and a Book downstream of that tick catches a different
+             (or partial) snap than its fixture recorded.  **The fix still belongs near `integrate_world`/
+              `parked`, but needs a capture that does not perturb the SAME belief-tick a step transition
+               is landing on** — deferred far enough to be outside that tick (a real `setTimeout`, not a
+                microtask, was not tried), or gated so it only fires on a HUMDINGER page and never on a
+                 driven CLI/Book run at all (the two paths currently share one `if (parked(w))` branch
+                  with no way to tell them apart — worth adding one).  Not re-attempted this session.
+
+### POSABLE FACES — real, proven on the render side; the Book-level proof is NOT there yet (2026-09-11)
+The owner: *"might faces have some posability... want to keep their eyes-nose-mouth structure, but allow
+ them to be posed to match the cell nicely."*  Answer: **it already existed.**  `Vytui.svelte`'s
+  slab-seat (`ang`/`slab_seat`) rotates a face's WHOLE BOX about its own centre to lie along a gently-
+   slanted wall (≤30°, level-snapped under 8°) — a rigid CSS transform, so the face's own internal
+    layout never reflows, it just leans.  A round (foam-ball) cell inscribes its face level instead —
+     a circle has no wall to lean into.  **Neither had EVER been Book-proven**: every bench Book mints a
+      bare mainkey (`Cog` etc.) that `face_of` cannot match to a `FACE_MAINKEYS` entry, so `face` is
+       always null and the whole seat machinery had zero fixture coverage — F1 WITNESS ASYMMETRY again,
+        this time for a mechanism nobody knew was already built.
+
+**What was built.**  `Vytui.svelte` now stamps `row.c.pose = {ang, seat}` on every faced cell (the same
+ idiom as `need_area`/`stretch_rect`) — **confirmed correct by direct console instrumentation**, temporarily
+  added and removed this session: real `ang`/`seat` values, computed and re-computed correctly, tick
+   after tick, for real `TreeFace`-bearing cells.  **A live screenshot exists too** (`/BigShapeland?B=
+    VytoOrchestra&deck=folio,fold`'s crest work, and `/BigSoundland`'s real RadioFace ball) — the feature
+     is not speculative.
+
+**`VytoPosed` (`Ghost/V/VytoTesting.g`)** was written to Book-prove it and, after ten live runs, does
+ **not** — its own header carries the full autopsy (read it before touching this Book again).  In short:
+  the Book's own read of `r.c.pose` off `Vyto_cells(vw)` sees `undefined` on every row, every run,
+   despite the render side demonstrably stamping the fact correctly on what LOOKS like the same object.
+    One real, separate bug was found and fixed along the way — **`VytoStaple_SH`/`VytoStaple_vw` relied
+     on ambient `this.up`, which can drift during a long async poll** (confirmed by tagging both sides
+      with random probe ids: Vytui's tracked world was stable and correct throughout; the Book's own
+       `vw` resolved a different, real, never-rendered world) — fixed by stashing the correct `SH` onto
+        `w.c.vyto_SH` at mint time, when ambient context is still trustworthy (`VytoTesting.g`, kept,
+         verified harmless: `VytoStaple` and `VytoNeed` still run `ok_pct:1`/`sworn 2` after the change).
+          **That fix did not resolve VytoPosed** — the row-identity mismatch survives it, for a reason
+           not yet found.  Registered in Credence honestly (`unusual:UNPROVEN`), not deleted — the seed/
+            assertion logic is sound and worth keeping for whoever picks up the real bug.
+
+**RESOLVED which, 2026-09-11 second pass**: a one-shot probe reading `.c.pose` on the very FIRST poll
+ with all 5 rows present, BEFORE any of this Book's own stirring, swore "pre-stir pose count 0 of 5" —
+  cleanly ruling out "repeated `Vyto_stir` replaces rows."  Current theory: `w.c.mirror` is a plain
+   `.c` field, invisible to Svelte reactivity; Vytui's `build_cells` runs only on an EXPLICIT
+    `kick(w)`/`paint_tick++`, never generically on "the model changed the mirror."  A driven/parked
+     Story run's render loop is documented as "inert" and may paint exactly once; this Book's own
+      `Vyto_stir` (needed only to advance the model's own settle-detection) can regenerate mirror rows
+       via `Vyto_scan` afterward with nobody ever kicking a repaint of them.  **The gap is structural**:
+        a Book has no way to force a repaint and confirm it landed — likely needs a ghost-side hook
+         (`w.c.request_repaint`, checked by Vytui's render effect) that `expecting`/`VytoStaple_await`
+          could set. Filed in `[[vyto-book-vs-render-row-identity-mismatch]]`, not fixed this session.
 
 ### THE STOP LEDGER — every stop photographed on Orchestra at 60s, 2026-09-10 (a subagent's eye, checked by mine)
 Baseline (`deck=`): the wedge pie on the copper ground — Songs titled along the rim, `artist Yara · mood`

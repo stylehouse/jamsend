@@ -31,11 +31,11 @@ Credulate,of_Book:VytoStaple
   GhostInclude:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
   GhostInclude:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
   GhostInclude:Ghost_V_Vyto,dige:d4a1183f26a14e76~g1
-  GhostInclude:Ghost_V_VytoTesting,dige:1a261b1aab5be1e5~g1
+  GhostInclude:Ghost_V_VytoTesting,dige:17b8154c36b840ae~g1
   GhostInclude:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
   GhostInclude:Ghost_Story_Sounditron,dige:e52afe7d185f51a8~g1
   GhostInclude:Ghost_O_Supervisor,dige:0dd405fc7c0dc43b~g1
-  last_ok,at=1789087804.909,ok_pct
+  last_ok,at=1789099665.764,ok_pct
     uses:Ghost_N_Peeroleum,dige:176d03c1fb562ff9~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:825a67dcb6cf7607~g1
@@ -68,7 +68,7 @@ Credulate,of_Book:VytoStaple
     uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
     uses:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
     uses:Ghost_V_Vyto,dige:d4a1183f26a14e76~g1
-    uses:Ghost_V_VytoTesting,dige:1a261b1aab5be1e5~g1
+    uses:Ghost_V_VytoTesting,dige:17b8154c36b840ae~g1
     uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_Story_Sounditron,dige:e52afe7d185f51a8~g1
     uses:Ghost_O_Supervisor,dige:0dd405fc7c0dc43b~g1

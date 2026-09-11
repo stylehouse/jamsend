@@ -1,57 +1,111 @@
-Waft:Ghost/Vis/Visua
+Waft:Ghost/Vis/Visua,desc:the visual — the crush that gangs leaves — the glass that cuts cells from the model — what a Book looks like while it runs
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:VoroMitosis
     Funkcion:Storying,of_Book:VoroScape
-    Funkcion:Storying,of_Book:MusuReplica
-    CreduCoherence:latest
-      Credulate,of_Book:VoroMitosis,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1783516163032
-        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
-        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
-      Credulate,of_Book:VoroScape,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1783516163032
-        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
-        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
-      Credulate,of_Book:MusuReplica,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1783516163032
-        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
-        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
-  What:the home
+    Funkcion:Storying,of_Book:VoroRadio
+    Funkcion:Storying,of_Book:VoroClinic
+    Funkcion:Storying,of_Book:VoroTest
+    Funkcion:Storying,of_Book:VytoStaple
+    Funkcion:Storying,of_Book:VytoCell
+    Funkcion:Storying,of_Book:VytoMitosis
+    Funkcion:Storying,of_Book:VytoTandem
+    Funkcion:Storying,of_Book:VytoFreeze
+    Funkcion:Storying,of_Book:VytoSeek
+    Funkcion:Storying,of_Book:VytoCrest
+    Funkcion:Storying,of_Book:VytoFold
+    Funkcion:Storying,of_Book:VytoBunch
+    Funkcion:Storying,of_Book:VytoFoam
+    Funkcion:Storying,of_Book:VytoBreathe
+    Funkcion:Storying,of_Book:VytoNest
+    Funkcion:Storying,of_Book:VytoMemo
+    Funkcion:Storying,of_Book:VytoNeed
+    Funkcion:Storying,of_Book:VytoDepth
+    Funkcion:Storying,of_Book:VytoOrchestra
+  What:the crush,desc:Voro — the census that gangs loose leaves behind a representative — the model and its facts
     Doc:Ghost/V/Voro.g
-    Point,method:Voro_books
-    Point,method:Voro_render_map
-  What:the crush
+    Point,method:Voro_crush_scan,desc:scan the worlds
+    Point,method:Voro_crush_pass,desc:one pass — escalate a level
+    Point,method:Voro_crushable,desc:may this gang
+    Point,method:Voro_crush_clear,desc:undo
+    Point,method:Voro_model,desc:the model of a family
+    Point,method:Voro_model_family,desc:one family
+    Point,method:Voro_gang_fold,desc:fold a gang behind a representative
+  What:the stuffing,desc:Vtuff — what a cell says about itself — title rows member rows and the bamboo
     Doc:Ghost/V/Voro.g
-    Point,method:Voro_crush_scan
-    Point,method:Voro_crushable
-    Point,method:Voro_crush_clear
-  What:the demo Books
-    Doc:Ghost/Story/VoroTesting.g
-    Point,method:VoroMitosis_seed
-    Point,method:Botany_plant
-    Point,method:VoroScape_library
-  What:the render
-    Doc:src/lib/O/Cytui.svelte
-    Doc:src/lib/O/Cyto.svelte
-  What:the new glass
+    Point,method:Vtuff_build,desc:build the stuffing
+    Point,method:Vtuff_name,desc:a name for a cell
+    Point,method:Vtuff_title_row,desc:the title row
+    Point,method:Vtuff_member_rows,desc:the members
+    Point,method:Vtuff_bamboo,desc:the bamboo axis
+  What:the glass,desc:Vyto — the power-diagram foam cut and sprung from the model with no cytoscape — a board is commissioned beside a run
     Doc:Ghost/V/Vyto.g
-    Point,method:Vyto_board
-    Point,method:e_Vyto_commission
-    Point,method:Vyto_spool_capture
-    Doc:Ghost/V/VytoTesting.g
-    Point,method:VytoStaple_seed
-    Point,method:VytoCell_seed
-    Point,method:VytoMitosis_found
-    Point,method:VytoRadio_seed
-    Point,method:VytoTandem_found
-    Point,method:VytoFreeze_stand
-    Point,method:VytoSeek_stand
+    Point,method:Vyto_board,desc:the board particle
+    Point,method:e_Vyto_commission,desc:commission a glass beside a run
+    Point,method:Vyto_watch,desc:watch a world
+    Point,method:Vyto_decommission,desc:take it down
+    Point,method:Vyto_stir,desc:the stir — re-cut
+    Point,method:Vyto_scan,desc:scan the model
+    Point,method:Vyto_fold,desc:fold the least dominant family
+    Point,method:Vyto_distil,desc:distil rows to cells
+  What:the solve,desc:seats and sizes — express solves the seats and calm pins one — relate and importance
+    Doc:Ghost/V/Vyto.g
+    Point,method:Vyto_solve,desc:solve the seats
+    Point,method:Vyto_express,desc:express sizes
+    Point,method:Vyto_relate,desc:kin attraction
+    Point,method:Vyto_importance,desc:graph-global importance
+    Point,method:Vyto_need_of,desc:what a widget needs
+    Point,method:Vyto_slope,desc:the slope
+    Point,method:Vyto_mesh,desc:the mesh
+    Doc:src/lib/O/vyto_foam.ts
+    Doc:src/lib/O/vyto_seat.ts
+    Doc:src/lib/O/vyto_geometry.ts
+    Doc:src/lib/O/vyto_gauge.ts
+  What:attention,desc:focus attend release — the pointer enters and the calm yields — the spool and the seek
+    Doc:Ghost/V/Vyto.g
+    Point,method:Vyto_focus,desc:focus a cell
+    Point,method:Vyto_attend,desc:attend
+    Point,method:Vyto_release,desc:release
+    Point,method:Vyto_pointer_enter,desc:the pointer arrives
+    Point,method:Vyto_calm_yield,desc:calm yields to motion
+    Point,method:Vyto_spool_cull,desc:cull the spool to its cap
+    Point,method:Vyto_seek_to,desc:seek to a moment
+    Doc:src/lib/O/vyto_focus.ts
+    Doc:src/lib/O/vyto_pane.ts
+  What:the render,desc:Vytui paints the glass — Cyto and Cytui are the older force layout — Matstyle is the auto swatch
     Doc:src/lib/O/Vytui.svelte
+    Doc:src/lib/O/Cyto.svelte
+    Point,method:cyto_scan,desc:walk the particles into nodes
+    Point,method:cytyle_classify,desc:skip invisible compound
+    Point,method:cyto_update_wave,desc:the animation wave
+    Doc:src/lib/O/Cytui.svelte
+    Doc:src/lib/O/Matstyle.svelte
+    Point,method:matstyle_for,desc:a swatch for a mainkey
+    Point,method:matstyle_apply,desc:apply
+    Doc:src/lib/O/glass_faces.ts
+    Doc:src/lib/O/glass_kinds.ts
+    Doc:src/lib/V/BigShapeland.svelte
+    Doc:scripts/runner_shot.mjs
+    Doc:scripts/runner_eye.mjs
+  What:the tests
+    Doc:Ghost/Story/VoroTesting.g
+    Point,method:VoroMitosis_seed,desc:a flora that divides
+    Point,method:VoroScape_library,desc:a library scape
+    Doc:Ghost/V/VytoTesting.g
+    Point,method:VytoStaple_seed,desc:the glass beside a run
+    Point,method:VytoCell_seed,desc:dosed cogs into cells
+    Point,method:VytoMitosis_found,desc:grow and go extinct
+    Point,method:VytoTandem_found,desc:two watchers one gear
+    Point,method:VytoFreeze_stand,desc:freeze on a failed run
+    Point,method:VytoSeek_stand,desc:seek a step pip
+  What:the spec
+    Doc:src/lib/O/spec/Glassbeast_todo.md
     Doc:src/lib/O/spec/Vyto_spec.md
     Doc:src/lib/O/spec/Vyto_todo.md
-  What:docs
-    Doc:src/lib/O/spec/Voro_vtuffing.md
+    Doc:src/lib/O/spec/Vyto_sizing_todo.md
+    Doc:src/lib/O/spec/Vyto_perf_todo.md
+    Doc:src/lib/O/spec/Cellsizing_todo.md
     Doc:src/lib/O/spec/Voro_todo.md
-    Doc:src/lib/O/spec/Voro_microcosm.md
-    Doc:src/lib/O/spec/Voro_pinch.md
+    Doc:src/lib/O/spec/Voro_vtuffing.md
     Doc:src/lib/O/spec/Voro_svg_stuffing.md
-    What:further-reading
-      Doc:src/lib/O/spec/Lens_posable_TODO.md
-      Doc:src/lib/O/spec/Waft_styling_todo.md
+    Doc:src/lib/O/spec/Lens_posable_TODO.md
+    Doc:src/lib/O/spec/Waft_styling_todo.md

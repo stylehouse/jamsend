@@ -201,9 +201,18 @@ export type VrowDesc = { row: string, k?: string, v?: string, n?: number, q?: st
                          bits?: { k?: string, v?: string, n?: number, text?: string }[] }
 export type RowsOpts = { title_fs?: number, fact_fs?: number, chip_fs?: number, max_facts?: number, hue?: string, key_hue?: string }
 
-export function rows_of(ident: string, guts: { k: string, v: string }[], vrows: VrowDesc[] | null, o?: RowsOpts): Atom[][] {
+// ident: a plain string (a crest key, or anything with no clean mainkey:value split — drawn as one
+//  bold run), or a { mk, v } pair (the ordinary case) drawn as TWO atoms so the title wears the SAME
+//   key-lilac/value-white convention every fact line already does (the owner: "a more universal k:v
+//    style, like artist:Yara is... to Song too") — and so the title's own atoms carry `k` (the
+//     mainkey name), the same field every fact atom already carries, letting a caller glow the title
+//      and its matching fact/source line together on hover without caring which one it started from.
+export function rows_of(ident: string | { mk: string, v: string }, guts: { k: string, v: string }[], vrows: VrowDesc[] | null, o?: RowsOpts): Atom[][] {
     const T = o?.title_fs ?? 14, F = o?.fact_fs ?? 10, C = o?.chip_fs ?? 9
-    const rows: Atom[][] = [[atom(ident, T, 'fo-title', o?.hue)]]
+    const titleRow: Atom[] = (typeof ident === 'object' && ident.v)
+        ? [atom(ident.mk, T, 'fo-title fo-title-key', o?.key_hue ?? o?.hue, ident.mk), atom(ident.v, T, 'fo-title fo-title-val', o?.hue, ident.mk)]
+        : [atom(typeof ident === 'object' ? ident.mk : ident, T, 'fo-title', o?.hue, typeof ident === 'object' ? ident.mk : undefined)]
+    const rows: Atom[][] = [titleRow]
     if (vrows && vrows.length) {
         const dip = vrows.find(r => r.row === 'dip')
         if (dip) {

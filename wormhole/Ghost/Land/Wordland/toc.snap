@@ -1,0 +1,54 @@
+Waft:Ghost/Land/Wordland,desc:the land — the bet turned on the code itself — what the code says what it does and who asks
+  Funkcion:CreduFunk
+    Funkcion:Storying,of_Book:AtlasStaple
+    Funkcion:Storying,of_Book:ElectrodeStaple
+    Funkcion:Storying,of_Book:LagoonStaple
+    Funkcion:Storying,of_Book:Hackarium
+    Funkcion:Storying,of_Book:Educarium
+  What:what the code says,desc:Atlas keeps the compiler Map for every doc headless — the corpus rostered in full on a runner
+    Doc:Ghost/L/Atlas.g
+    Point,method:Atlas,desc:the ghost
+    Point,method:Atlas_plan,desc:the plan — roster and census
+    Point,method:Atlas_nav,desc:the nav it reads through
+    Point,method:Atlas_db,desc:the map store
+    Doc:src/lib/server/dige.ts
+    Doc:src/lib/O/lang/compile.ts
+  What:what the code does,desc:Electrode taps both ends of every ghost call and reduces on demand to a Flow
+    Doc:Ghost/L/Electrode.g
+    Point,method:Electrode_arm,desc:arm the tap
+    Point,method:Electrode_mark,desc:one call marked
+    Point,method:Electrode_reduce,desc:reduce to Method and Flow
+    Point,method:Electrode_top,desc:the busiest
+    Point,method:Electrode_hangs,desc:calls that never returned
+    Point,method:Electrode_film,desc:the film strip
+  What:the reader,desc:Lagoon asks and Atlas keeps — seek callers defs families mentions rot — the errands off the Aside
+    Doc:Ghost/L/Lagoon.g
+    Point,method:Lagoon_seek,desc:find a name
+    Point,method:Lagoon_callers,desc:who calls it
+    Point,method:Lagoon_defs,desc:where it is defined
+    Point,method:Lagoon_families,desc:the name families
+    Point,method:Lagoon_mentions,desc:prose mentions
+    Point,method:Lagoon_prose_rot,desc:comments gone stale
+    Point,method:Lagoon_lint,desc:the lint
+    Point,method:Lagoon_errands,desc:the Aside read back newest first
+    Point,method:Lagoon_figurines,desc:distinct-caller size
+  What:the rooms,desc:BigWordland is the room — the Hackarium the Clerkdesk the Educarium
+    Doc:src/lib/L/BigWordland.svelte
+    Doc:src/lib/L/Hackarium.svelte
+    Doc:src/lib/L/Clerkdesk.svelte
+    Doc:src/lib/L/Educarium.svelte
+    Doc:src/lib/L/Lagui.svelte
+    Doc:src/lib/L/testing.ts
+  What:the tests
+    Doc:Ghost/L/AtlasTesting.g
+    Doc:Ghost/L/ElectrodeTesting.g
+    Doc:Ghost/L/LagoonTesting.g
+  What:the spec
+    Doc:src/lib/O/spec/Wordland_todo.md
+    Doc:src/lib/O/spec/Lagoon_todo.md
+    Doc:src/lib/O/spec/Electrode_todo.md
+    Doc:src/lib/O/spec/Stemdex_todo.md
+    Doc:src/lib/O/spec/Stemdex_spec.md
+    Doc:src/lib/O/spec/Clerkdesk_todo.md
+    Doc:src/lib/O/spec/Docindex_todo.md
+    Doc:src/lib/O/spec/Meaningfold_todo.md

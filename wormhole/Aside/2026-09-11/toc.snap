@@ -2,3 +2,12 @@ Waft:Aside/2026-09-11,aside
   What,FromWhat:Waft:Ghost/Net/Easy/What:the peer,about:Berth_open
     Doc:Ghost/M/Heist.g
       Point,method:Berth_open
+  What=2,FromWhat:Waft:Ghost/Net/Easy/What:the peer,about:Atlas_plan
+    Doc:Ghost/L/Atlas.g
+      Point,method:Atlas_plan
+  What=3,FromWhat:Waft:Aside/2026-09-11/What:2,about:Crate_nav
+    Doc:Ghost/M/Crate.g
+      Point,method:Crate_nav
+  What=4,FromWhat:Waft:Aside/2026-09-11/What:3,about:Clustation_ensure_identity
+    Doc:src/lib/O/Auto.svelte
+      Point,method:Clustation_ensure_identity

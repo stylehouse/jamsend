@@ -848,3 +848,94 @@ It is already instrumented (`Langui.svelte` `build_editor`) and prints itself on
   wasted time. If that line comes back small too, then the wait is not in opening a doc at all and the
    next thing to suspect is the ~4.5s of app boot before Lies first ticks (8.4MB of eagerly-imported
     modules, `Cytui.svelte` alone 1MB) — which the owner has parked for **Atheory** to regroup.
+
+## ☀ ROOT CAUSE FOUND — 2026-09-11 midday, from the owner's own trace and fix
+
+**The doc is never slow. The ROOM has no heartbeat.**
+
+Every stage of a doc open measures fast (the table above). The 8–33s the owner waits is the
+ `text_load` overlay held over an ALREADY-RENDERED editor by `req_text_loaded`, which clears it only
+  when `dock.c.state` appears — and that req holds on a **ttlilt**, a TIME hold. A ttlilt is advisory
+   data; it schedules nothing. A req holding on one is re-run only when a tick arrives. The ambient
+    heartbeat should bring one every 3.6s. It never came:
+
+    ⏱ set_active_dock @26.64s Ghost/N/Peeroleum.g · bumped:yes · no_ambient:HERE · House:Hackarium
+
+ `Story_subHouse` sets `Run.c.no_ambient = true` (and `no_interval`) on every Run House, every tick,
+  and nothing ever cleared it. That is CORRECT for a test Book — *"story_drive owns the clock."* It is
+   wrong for a Book that stands a ROOM and then finishes: Hackarium runs to completion, the human is
+    then simply in BigWordland, Lies and Lang live on that Run House, and `main()` returns silently
+     (`if (this.c.no_ambient && !ambient_anyway) return`). The only thinks left are the human's clicks.
+
+**The owner had already found the cure before the instrument named the cause:** *"I went over to
+ H:Story and turned on trickle think() and that fixed it… having extra random goes at the %w involved
+  seems to help."* Trickle-think bypasses `no_ambient`. So does a click — which is why Heard.g's
+   overlay cleared 0.45s after the NEXT click, and why `re-arms:3` in 33s.
+
+**The fix (Story.svelte):** the Run owns the clock WHILE IT DRIVES, and hands it back when the run
+ reports complete (`run.sc.paused === 2`, the value both completion branches set). Two halves:
+  the per-tick set in `Story_subHouse` is now gated on the run not being complete (so it stops
+   re-asserting the flag after the end), and `Story_release_clock(Run)` at both completion branches
+    clears `no_ambient`/`no_interval` and arms `reset_interval` so the heartbeat restarts at once.
+     A new run on the same House re-takes the clock the tick it starts. ✅ VERIFIED with trickle OFF (2026-09-11
+      ~14:00): Peeroleum 8.17s → 0.46s, Atlas.g 0.15s, `no_ambient:no`, release line fired. (A first
+       0.42s reading was taken with trickle ON and was retracted — it did not count.) Prints
+      `⏱ Story: run complete on <House> — ambient heartbeat released`.
+
+**Verification state, honestly:** spec gate 22/22 and type-clean. A live SwarmChain went 5/5 on the
+ runner but that tab is on OLD code (no `Liesui ready` in its last 400 lines — it booted before any of
+  this), so that green is a stale-tab green ([[reload-runner-after-recompile]]) and does NOT verify the
+   change. **The real test is the owner's BigWordland:** reload → Hackarium completes → the release
+    line prints → open Heist.g → `text_load spinner` should read well under 2s with `re-arms:≤1`.
+
+**Retired by this finding (all were wrong, all mine, all corrected above):** the 3.0s-ttlilt-timeout
+ theory, the wrong-dock theory, the missing-`bump_version` theory. The instruments that killed each
+  were the right move; the verdicts I hung on them before the data came back were not.
+
+**Two things noted, not started:** Lagoon's scrollspace jumps to the top on click (`arm_scroll_restore`
+ sits beside the switch $effect — suspicious neighbour); and "aiming" should land the target method IN
+  view, not off the bottom — the right seam is CM's `requestMeasure` read/write phase, once, after
+   layout settles, not a layout-change listener.
+
+**Verified trickle-OFF, 2026-09-11 ~14:00.** Peeroleum `text_load` 8.17s → **0.46s**, Atlas.g 0.15s.
+
+**What is left is the heartbeat's own cadence, not a bug.** The owner's trace shows ~1.6–3.1s between
+ `want` (the click) and `set_active_dock` — the `want → provide_dock → Store read → dock_content →
+  text_loaded` chain waiting for the next ambient tick, and 3.1s is one `%mo:main,interval` (3.6s,
+   "may be adjusted"). For a live room that is a slow pulse. A shorter interval for rooms is a
+    one-line dial and the obvious next move; it is a tuning question, a different scale of problem
+     from the one just closed.
+
+### 2026-09-11 afternoon — the chain read hop by hop; the aim is now HELD; two probes wait for a trace
+
+**The `want → set_active_dock` gap, read offline (no trace yet).** Every hop has its own wake, on paper:
+ `e_Lies_want` ends with `i_elvisto(w,'think')`; `Lies_resolve_wants` runs in THAT think and calls
+  `Lies_provide_dock` (COLD → `LiesStore_read` fires the Wormhole `rw_op` elvis at once; settle →
+   `ponder_now`); Phase-2 `LiesStore_drain_good` hands `dock_content` to `Lang/Lang` (an Aw-targeted
+    elvis is ATTENDED — `_Aw_think` runs the target ghost's think with it, so `e_Lang_dock_content`
+     runs on delivery); it ends with `i_elvisto(w,'think')` which drives `req_text_loaded` →
+      `Lang_set_active_dock`. So no hop *should* wait for the 3.6s interval — which means the gap the
+       owner saw is either a lost wake on ONE of these (the five `⏱` stamps name it by subtraction) or
+        the `LiesStore` read itself (disk|FSA time, honest cost). **Don't tune the interval blind:**
+         the trace decides. Ask: open a doc from Lagoon, paste `want / provide_dock / good→Lang /
+          dock_content / set_active_dock` together.
+
+**Aiming — done, not yet seen live.** `Langui.svelte` `fire_seek` now HOLDS the aim: `_aim{pos,
+ scroll(), until: +1.5s, fired}`; the updateListener calls `hold_aim` on `geometryChanged |
+  viewportChanged | docChanged`, which `requestMeasure`s (read: `coordsAtPos` vs `scrollDOM` rect;
+   write: re-dispatch the same scroll a task later, ≤6 times). `wheel|mousedown|touchstart|keydown`
+    drop the hold — the human's hand wins. This IS the "react to every layout change" the owner
+     wondered about, bounded so it cannot loop or fight. (The earlier note above saying "once, after
+      layout settles, not a listener" was the wrong instinct: the folds land a belief tick later,
+       there is no single settle moment to wait for.) Gate 23/23, type-clean on the edited range.
+        Known gap: a scrollbar DRAG lands on scrollDOM not contentDOM, so it doesn't drop the hold —
+         the 1.5s window bounds the worst case.
+
+**Lagoon unscroll — probe in, cause not found by reading.** The list is `.lag-out.tall` (max-height
+ 26rem, its own scroller) keyed per row by `doc+name+line`; `index` is reassigned every 1.2s and on
+  click nothing here touches scroll. Candidates the `📜` probe separates: element REMOUNTED (the
+   BigWordland `{#each houses.filter(active_ip)}` → `house.UIs.ob()` → `keyser(uiC.sc)` chain re-keyed
+    the Lagoon piece), rows dropped to 0 (a transient empty index → scrollTop clamps), or a same-element
+     scrollTop write from elsewhere. A `display:none` flip would ALSO zero scrollTop and fire NO scroll
+      event — if the probe prints nothing while the list visibly jumps, that is the tell, and the
+       place to look is whatever hides the piece during a click.

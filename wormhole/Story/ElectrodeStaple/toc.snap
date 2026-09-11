@@ -3,6 +3,13 @@ story:ElectrodeStaple
   Plan
   Opt
     For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.025
+      sample=0.028,at=1789108219
+      sample=0.021,at=1789109378
+    TimeTotal:step,avg=0.004
+      sample=0.005,at=1789108219
+      sample=0.003,at=1789109378
   step,dige:4a41046f1ce5d1b4
   step=2,desc:load Ghost/L/Electrode.g on demand — stand A:Electrode beside the run — arm the tap,dige:cd4520418c21ceb3
     Assertion:the-electrode-ghost-loads,sentence:the Electrode ghost loads on demand — no manifest edit needed

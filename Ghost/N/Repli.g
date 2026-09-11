@@ -531,6 +531,9 @@ Repli_rx_ok(w, pier):
 //    no card at all.  Returns did-it-cross (a revoke probe counts the falses).
 async Repli_offer(w, tx, from, to, rec):
     if (!this.Repli_allowed(w, to, from)) return false
+    // the same offline gate as Swarm_deliver (2026-09-11): a standing publish re-offered the Mag
+    //  (repli_lines) to two long-gone peers every change, dropped at the relay.  null (unknown) sends.
+    if (typeof this.Presence_offline === 'function' && this.Presence_offline(String(to))) return false
     let frag = this.Repli_fragment(rec, tx, { husk: 1 })
     await this.Repli_send_lines(w, tx, from, to, frag.text, frag.bufmap)
     return true

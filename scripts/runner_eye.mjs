@@ -14,6 +14,10 @@ if (fs.existsSync(libs)) {
     if (fs.existsSync(fc)) process.env.FONTCONFIG_FILE = fc
 }
 const argv = process.argv.slice(2)
+// --eval='js expression string' — evaluated in-page at each tick (after window.__H exists on a dev
+//  room like BigShapeland) and printed; the cheap way to answer a live-state question without another
+//  console.log + compile + reload round trip. The expression runs with (H) in scope as window.__H.
+const evalExprs = argv.filter(a => a.startsWith('--eval=')).map(a => a.slice(7))
 // --click=<selector>@<sec>  press a thing at that second (repeatable); selector is a playwright locator string,
 //   e.g. --click='.bs-stop:has-text("wave")@20'
 const clicks = argv.filter(a => a.startsWith('--click=')).map(a => { const v = a.slice(8); const at = v.lastIndexOf('@'); return { sel: v.slice(0, at), sec: +v.slice(at + 1) } })
@@ -63,13 +67,21 @@ for (const s of marks) {
         try { await p.locator(c.sel).first().click({ timeout: 3000 }); console.log(s + 's click', c.sel) } catch (e) { console.log(s + 's click FAILED', c.sel, String(e).slice(0, 80)) }
     }
     if (!ticks.split(',').map(Number).includes(s)) continue
+    for (const expr of evalExprs) {
+        try { const r = await p.evaluate((e) => { const H = window.__H; return eval(e) }, expr); console.log(s + 's eval', expr, '=>', JSON.stringify(r)) }
+        catch (e) { console.log(s + 's eval FAILED', expr, String(e).slice(0, 150)) }
+    }
     await p.screenshot({ path: `${out}_${s}s.png` })
     const st = await p.evaluate(() => {
-        const svgs = [...document.querySelectorAll('svg.viewport')]
-        return { viewports: svgs.length, paths: svgs.map(s => s.querySelectorAll('path.cell').length), texts: svgs.map(s => s.querySelectorAll('text').length),
+        // any SVG standing in for the glass, whatever class it wears on THIS page (BigShapeland's is
+        //  `svg.viewport`; other rooms may mount Vytui/Cytui inside their own wrapper) — fall back to
+        //  every <svg> in the doc so the eye reports something real instead of a silent zero.
+        let svgs = [...document.querySelectorAll('svg.viewport')]
+        if (!svgs.length) svgs = [...document.querySelectorAll('svg')].filter(s => s.querySelector('path, text, ellipse, circle'))
+        return { viewports: svgs.length, paths: svgs.map(s => s.querySelectorAll('path.cell, path').length), texts: svgs.map(s => s.querySelectorAll('text').length),
                  folio: document.querySelectorAll('.folio text').length,
-                 deck: [...document.querySelectorAll('.bs-deck')].map(e => e.textContent).join('|'),
-                 step: document.querySelector('.bs-desk')?.nextElementSibling?.textContent?.slice(0, 0) }
+                 faces: document.querySelectorAll('[class*="face" i], [class*="Face" i]').length,
+                 deck: [...document.querySelectorAll('.bs-deck')].map(e => e.textContent).join('|') }
     }).catch(e => String(e))
     console.log(`${s}s`, JSON.stringify(st))
 }

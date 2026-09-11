@@ -1,0 +1,177 @@
+Waft:Ghost/Lake/Easy,desc:the foundation — particles in a House — the req machine — the Story that proves — the Lies pipeline that compiles and runs — the language of Wafts
+  Funkcion:CreduFunk
+    Funkcion:Storying,of_Book:LakeSurfer
+    Funkcion:Storying,of_Book:LakeNets
+    Funkcion:Storying,of_Book:LakeFlush
+    Funkcion:Storying,of_Book:LakeTiles
+    Funkcion:Storying,of_Book:LakeSurprise
+    Funkcion:Storying,of_Book:LakeLocate
+    Funkcion:Storying,of_Book:LakeFunk
+    Funkcion:Storying,of_Book:LakeKeep
+    Funkcion:Storying,of_Book:LakeLango
+    Funkcion:Storying,of_Book:LakeWaftMap
+    Funkcion:Storying,of_Book:LakeSearch
+    Funkcion:Storying,of_Book:LakeTtlilt
+    Funkcion:Storying,of_Book:PortPlan
+    Funkcion:Storying,of_Book:PortPlanet
+    Funkcion:Storying,of_Book:PortPlant
+    Funkcion:Storying,of_Book:PortPain
+    Funkcion:Storying,of_Book:StuffFlipping
+    Funkcion:Storying,of_Book:StuffResolving
+    Funkcion:Storying,of_Book:LeafFarm
+    Funkcion:Storying,of_Book:LeafJuggle
+    Funkcion:Storying,of_Book:Diffmatication
+    Funkcion:Storying,of_Book:Editron
+    Funkcion:Storying,of_Book:Interesting
+    Funkcion:Storying,of_Book:MundaneStation
+    Funkcion:Storying,of_Book:MundaneStaying
+    Funkcion:Storying,of_Book:ReactiveWaft
+    Funkcion:Storying,of_Book:Snapmigrating
+    Funkcion:Storying,of_Book:Snaptesting
+    Funkcion:Storying,of_Book:TextInca
+    Funkcion:Storying,of_Book:Understandication
+    Funkcion:Storying,of_Book:Understandity
+    Funkcion:Storying,of_Book:Understandium
+    Funkcion:Storying,of_Book:Engage
+    Funkcion:Storying,of_Book:WaftMapPacked
+    Funkcion:Storying,of_Book:ErrChannel
+    Funkcion:Storying,of_Book:RehealSmoke
+    Funkcion:Storying,of_Book:Nestcut
+    Funkcion:Storying,of_Book:GhoghoDrone
+    Funkcion:Storying,of_Book:BootGateNoFSA
+  What:the particle,desc:everything is a C — the mainkey is what a thing IS — sc snaps and c is runtime only — o finds i creates oai finds-or-creates
+    Doc:src/lib/data/Stuff.svelte.ts
+    Point,method:o,desc:find children matching sc
+    Point,method:i,desc:create a child
+    Point,method:oai,desc:find or create
+    Point,method:oa,desc:boolean probe
+    Point,method:r,desc:async replace — never read after a bare r
+    Point,method:drop,desc:detach a child
+    Point,method:bump,desc:version up — watchers react
+    Point,method:resolve,desc:pair a particle across past and future
+    Doc:src/lib/O/Text.svelte
+    Point,method:enWaft,desc:encode a Waft tree
+    Point,method:deWaft,desc:decode one
+    Point,method:enLine,desc:one line
+    Point,method:deL,desc:one line back
+    Point,method:make_diff,desc:the snap diff
+    Point,method:spay_classify_line,desc:what a diff line means — graft blown mung
+    Doc:src/lib/O/spec/NOTATION.md
+    Doc:src/lib/O/spec/Cstructures_todo.md
+  What:the House,desc:the container hierarchy — Mundo actors and worlds — the beliefs mutex — the Wormhole park
+    Doc:src/lib/O/Housing.svelte.ts
+    Point,method:beliefs,desc:one tick under the mutex
+    Point,method:main,desc:wake a tick
+    Point,method:post_do,desc:run later under the mutex
+    Point,method:eatfunc,desc:a ghost deposits its methods on H
+    Point,method:i_elvisto,desc:the deferred cross-ghost call
+    Point,method:subHouse,desc:a nested House
+    Point,method:top_House,desc:walk up to Mundo
+    Point,method:Wormhole,desc:the disk actor
+    Point,method:Wormhole_park,desc:park an op — timeout retry generation
+    Point,method:read_file,desc:read through the nav
+    Point,method:write_file,desc:write through the nav
+    Doc:src/lib/O/Ghost.svelte
+    Doc:src/lib/O/Auto.svelte
+    Point,method:auto_reset_story,desc:tear down and re-post a Book
+    Point,method:Clustation_ensure_identity,desc:the ?I= identity
+    Point,method:Cred_assertion_gaps,desc:sworn sentences the run did not say
+    Doc:src/lib/O/MountNav.svelte.ts
+    Doc:src/lib/O/WormholeOpfs.svelte.ts
+    Doc:src/lib/O/RemoteWormholeNav.svelte.ts
+  What:the req machine,desc:Hovercraft — a stack of requirements at maz levels — a ttlilt bows out — eternal and permanent — the EntropyArrest
+    Doc:src/lib/O/Hovercraft.svelte
+    Point,method:reqyoncile,desc:ensure a req exists at its level
+    Point,method:i_req_ttlilt,desc:arm a wait — bow out — come back
+    Point,method:Runstepped,desc:a step of runnable work
+    Point,method:whittle_N,desc:keep the last N children
+    Point,method:The_EntropyArrest,desc:the arrest — spay and forgive
+    Point,method:entropy_diagnose,desc:why the snap churns
+    Doc:src/lib/O/spec/Hovercraft.design.md
+    Doc:src/lib/O/spec/Coding_guide.md
+    Doc:src/lib/O/spec/EntropyArrest.md
+  What:the Story,desc:the test runner — a Book of steps — snap diff and dige — sworn assertions — the Supervisor watches a run
+    Doc:src/lib/O/Story.svelte
+    Point,method:story_drive,desc:drive the steps
+    Point,method:story_snap,desc:snap the world between steps
+    Point,method:story_swear,desc:swear a sentence — an oath the Book must say
+    Point,method:story_harvest_sworn,desc:gather oaths to the Assertioning shelf
+    Point,method:story_save,desc:write the fixture
+    Point,method:story_analysis,desc:the verdict
+    Point,method:The_step_dige,desc:the change-sensitivity digest
+    Point,method:e_story_accept,desc:accept a step as the new fixture
+    Doc:src/lib/O/Storui.svelte
+    Doc:Ghost/O/Supervisor.g
+    Point,method:Supervisor,desc:the ghost
+    Point,method:Supervisor_beat,desc:the beat
+    Point,method:Supervisor_watch,desc:watch a runner
+    Point,method:Supervisor_verdict,desc:the verdict on a run
+    Point,method:Supervisor_summary,desc:one line
+    Doc:src/lib/O/Funk/CreduFunk.svelte
+    Doc:src/lib/O/Funk/Storying.svelte
+    Doc:scripts/story_accept.mjs
+  What:the compile pipeline,desc:Lies — Store Cortex Codebit Rundown — the dock compiles to a .go and a runner runs it
+    Doc:src/lib/O/Lies.svelte
+    Point,method:Lies_resolve_locator,desc:Waft:x/What:y — the loose locator
+    Point,method:Lies_focus_waft,desc:which Waft is in focus
+    Point,method:e_Lies_open_Waft,desc:open a Waft
+    Point,method:e_Lies_ghost_pick,desc:jump if open else today Aside
+    Point,method:e_Lies_want,desc:a want lands
+    Doc:src/lib/O/LiesStore.svelte
+    Point,method:req_Store,desc:the IO pump
+    Point,method:LiesStore_read,desc:read
+    Point,method:LiesStore_write,desc:write
+    Point,method:LiesStore_listing,desc:list a dir
+    Point,method:Lies_waft_save,desc:persist a Waft
+    Point,method:Lies_spawn_aside_waft,desc:today Aside
+    Doc:src/lib/O/LiesCortex.svelte
+    Point,method:req_Cortex,desc:the compile foreman
+    Point,method:req_Codebit,desc:one per dock — owns the generated write
+    Doc:src/lib/O/LiesRun.svelte
+    Point,method:req_Rundown,desc:the runner
+    Doc:src/lib/O/LiesFunk.svelte
+    Doc:src/lib/O/LiesKeep.svelte
+    Point,method:Lies_keep_reopen,desc:reopen every Waft in the ledger at boot
+    Point,method:Lies_keep_note,desc:a Waft was found
+    Point,method:Lies_keep_resume_waft,desc:the last Waft focused
+    Doc:src/lib/O/LiesCurse.svelte
+    Doc:src/lib/O/Liesui.svelte
+  What:the language,desc:Lang — the .g grammar — Waft What Doc Point — the minimap folds around engaged Points
+    Doc:src/lib/O/Lang.svelte
+    Point,method:Lang_open_dock,desc:open a dock
+    Point,method:Lang_build_mapules,desc:the minimap rows
+    Point,method:e_Lang_goto_point,desc:go to a Point
+    Point,method:req_Languish,desc:the dock req
+    Doc:src/lib/O/LangCompiling.svelte
+    Point,method:Lang_compile,desc:compile a .g
+    Point,method:Lang_compile_dock,desc:compile the mounted dock
+    Doc:src/lib/O/LangHold.svelte
+    Point,method:LE_arm,desc:the understanding
+    Point,method:LE_push,desc:push the working Seem back
+    Point,method:LE_pull,desc:pull
+    Point,method:req_understanding,desc:the checkout
+    Doc:src/lib/O/LangPoint.svelte
+    Doc:src/lib/O/LangWhatwhere.svelte
+    Doc:src/lib/O/Langui.svelte
+    Doc:src/lib/O/lang/lang.ts
+    Doc:src/lib/O/spec/stho_primer.md
+  What:the faces,desc:the Waft body and its Funkcions — the Searchbar the Aside the Keep
+    Doc:src/lib/O/ui/Waft.svelte
+    Doc:src/lib/O/ui/NaviCado.svelte
+    Doc:src/lib/O/ui/Searchbar.svelte
+    Doc:src/lib/O/Funk/DocGhostList.svelte
+    Doc:src/lib/O/Funk/DocWaftMap.svelte
+    Doc:src/lib/O/Funk/Shelver.svelte
+    Doc:src/lib/O/Editron.svelte
+    Doc:src/lib/O/Otro.svelte
+  What:the spec
+    Doc:src/lib/O/spec/Homethink_todo.md
+    Doc:src/lib/O/spec/Story_future.md
+    Doc:src/lib/O/spec/Story_hygiene_todo.md
+    Doc:src/lib/O/spec/Seen_split_todo.md
+    Doc:src/lib/O/spec/Editron.md
+    Doc:src/lib/O/spec/Supervisor_todo.md
+    Doc:src/lib/O/spec/Keeping_spec.md
+    Doc:src/lib/O/spec/Interest.md
+    Doc:src/lib/O/spec/Loose_ends_todo.md
+    Doc:src/lib/O/spec/Everything_todo.md

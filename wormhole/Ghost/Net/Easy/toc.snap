@@ -1,65 +1,110 @@
-Waft:Ghost/Net/Easy
+Waft:Ghost/Net/Easy,desc:the wire — one spine and its carriers — the relay in the middle — the cluster channel the editor and its runners ride
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:PereStaple
     Funkcion:Storying,of_Book:PereProof
-    CreduCoherence:latest
-      Credulate,of_Book:PereStaple,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1784029316445
-        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
-        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
-      Credulate,of_Book:PereProof,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1784029316445
-        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
-        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
-    GhostLedger,head:L4-0140d4dce96d848d,next_seq=5
-      Ledger:L0-811c9dc51f2be47c,seq=0,at=1784029316445,vset:
-      Ledger:L1-2cd467c565c3ef7a,seq,at=1784029331947,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1
-        GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
-      Ledger:L2-8ec51937f467b2be,seq=2,at=1784029336658,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1|Ghost/V/Voro.g@028c7be5c5a4d306~g1
-        GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
-        GhostInclude:Ghost/V/Voro.g,dige:028c7be5c5a4d306~g1
-      Ledger:L3-fe8f0faebb93f645,seq=3,at=1784031302839,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1|Ghost/N/Reliable.g@48e8948c7d8da3ed~g1|Ghost/V/Voro.g@028c7be5c5a4d306~g1
-        GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
-        GhostInclude:Ghost/V/Voro.g,dige:028c7be5c5a4d306~g1
-        GhostInclude:Ghost/N/Reliable.g,dige:48e8948c7d8da3ed~g1
-      Ledger:L4-0140d4dce96d848d,seq=4,at=1784031313491,vset:Ghost/N/Peeroleum.g@3b44c41dc8f08af3~g1|Ghost/N/Reliable.g@48e8948c7d8da3ed~g1|Ghost/Story/Swarmation.g@910b984e14e606aa~g1|Ghost/V/Voro.g@028c7be5c5a4d306~g1
-        GhostInclude:Ghost/N/Peeroleum.g,dige:3b44c41dc8f08af3~g1
-        GhostInclude:Ghost/V/Voro.g,dige:028c7be5c5a4d306~g1
-        GhostInclude:Ghost/N/Reliable.g,dige:48e8948c7d8da3ed~g1
-        GhostInclude:Ghost/Story/Swarmation.g,dige:910b984e14e606aa~g1
-    CreduCoherence:perfection
-      Credulate,of_Book:PereStaple,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1784029400158
-        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
-        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
-  What:the peer
+    Funkcion:Storying,of_Book:PereTyrant
+    Funkcion:Storying,of_Book:PereReborn
+    Funkcion:Storying,of_Book:PereComplain
+    Funkcion:Storying,of_Book:Peregrination
+    Funkcion:Storying,of_Book:RepliUpsert
+    Funkcion:Storying,of_Book:RepliSplit
+    Funkcion:Storying,of_Book:RepliShadow
+    Funkcion:Storying,of_Book:ParkCull
+    Funkcion:Storying,of_Book:RaBreach
+    Funkcion:Storying,of_Book:PeeringLive
+    Funkcion:Storying,of_Book:Sounditron
+  What:the spine,desc:Peeroleum — an envelope with a seq and an ack — a Pier per peer with an outbox and an inbox — every frame books an unemit served under the beliefs mutex
     Doc:Ghost/N/Peeroleum.g
-    Point,method:Peeroleum
-    Point,method:req_handshake
-  What:the test
-    Doc:Ghost/Story/PeerTesting.g
-    Point,method:Run_A_PereStaple
-    Point,method:Run_A_PereProof
-  What:transport
-    What:mock
-      Doc:Ghost/N/Peeroleum.g
-      Point,method:transport
-    What:webrtc-or-not
-      What:reliability
-        Doc:Ghost/N/Tribunal.g
-        Point,method:Tribunal_fall_to_websocket
-      What:the trial
-        Doc:Ghost/Story/PeerTesting.g
-        Point,method:Lake_trial_fallback
-  What:healing
+    Point,method:Peeroleum_send,desc:outbound — allocate seq — book the emit — hand to the carrier
+    Point,method:Peeroleum_deliver,desc:inbound gate — timing dose — calls deliver_do
+    Point,method:Peeroleum_deliver_do,desc:route by header — ack ping pulse fast paths — book the unemit — pier-less roads
+    Point,method:req_unemit,desc:the inbox worker — dispatch a booked frame to its handler — ack or fault
+    Point,method:Peeroleum_take_ack,desc:an ack retires an emit — hello and trust acked here too
+    Point,method:Peeroleum_on,desc:register an app handler for a frame type on this world
+    Point,method:Peeroleum_route,desc:header.to → Peering + Pier
+    Point,method:Peeroleum_bound_inbox,desc:the cap — shed and whittle so an inbox never grows without bound
+  What:the handshake,desc:say and hear — hello then trust — a Ud is the pre-trust gate on the inbox
+    Doc:Ghost/N/Peeroleum.g
+    Point,method:say_hello,desc:first word to a Pier — once — seq from Pier_next_seq
+    Point,method:hear_hello,desc:verify the pubkey matches the Pier — reply hello — mint the Ud
+    Point,method:say_trust,desc:the second word — trust everything v1
+    Point,method:hear_trust,desc:accept trust — the Pier is ready
+    Point,method:Peeroleum_peer_ready,desc:handshake complete? — gates app frames
+    Point,method:Peeroleum_reset_handshake,desc:a reborn peer — drop protocol outbox inbox faulty and start over
+  What:the carriers,desc:Tribunal — the real websocket to the relay with auto-reconnect and backoff — mock and webrtc beside it
+    Doc:Ghost/N/Tribunal.g
+    Point,method:Socket_real,desc:the websocket carrier — dial reconnect bulk lane control frames hello_ok fan-out
+    Point,method:Socket,desc:the mock carrier — loopback for Books
+    Point,method:Tribunal_activate_websocket,desc:stamp the active transport on the world
+    Point,method:Tribunal_fall_to_websocket,desc:webrtc failed — fall back
+    Point,method:Tribunal_redial,desc:a Peering whose socket died — when to try again
+    Doc:src/lib/server/relay.ts
+    Point,method:attachRelay,desc:the relay — locals map — bind by addr role or hello — r2r bridge to the other dev server
+    Point,method:deliverLocal,desc:own-door rule — a socket that dialled or declared the address is the door
+    Point,method:handleHello,desc:signed identity bind — the seat arbiter — want and grant
+    Point,method:routeFromBrowser,desc:deliver local else forward once over the bridge
+    Point,method:dialEditor,desc:the runner relay dials the editor relay — one peerLink — last dialer wins
+    Doc:src/lib/p2p/pinned_stable/Tribunal.go
+    Doc:src/lib/p2p/pinned_stable/Peeroleum.go
+  What:the healing floor,desc:Reliable — inbound sequencing and retransmit — the lossy partner is the adversary the floor is proven against
     Doc:Ghost/N/Reliable.g
-    Point,method:inseq_admit
-    Point,method:retx_due
-    Point,method:make_lossy_partner
-  What:Security
+    Point,method:inseq_admit,desc:in-order admission — buffer the gap — release what is ready
+    Point,method:retx_due,desc:which emits to resend and which are dead
+    Point,method:retx_delay,desc:backoff per attempt
+    Point,method:make_lossy_partner,desc:a carrier that drops and reorders on purpose
+    Doc:Ghost/N/Peeroleum.g
+    Point,method:Peeroleum_retx_sweep,desc:the resend clock over every outbox
+    Point,method:Peeroleum_liveness_sweep,desc:no inbound for dead ms → mark the Pier silent
+  What:admission,desc:Tyrant — trust and policy-gated admission on the floor
     Doc:Ghost/N/Tyrant.g
-    Point,method:Run_A_PereTyrant
-    Point,method:req_trust
-    What:Swarmily
-      Doc:Ghost/Story/SwarmTesting.g
+    Point,method:req_admit,desc:is this Pier admitted under policy
+    Point,method:req_policy,desc:the standing policy req
+    Point,method:say_vouch,desc:vouch for a peer
+    Point,method:hear_vouch,desc:take a vouch
+    Point,method:Tyrant_grant,desc:mint the grant admission rides on
+  What:presence,desc:who is online — one batch who probe per round instead of a pulse per friend
+    Doc:Ghost/N/Presence.g
+    Point,method:Presence_arm,desc:install the who_ok hook before the socket can answer
+    Point,method:Presence_ask,desc:send the who batch
+    Point,method:Presence_take,desc:land the answer — online offline
+    Point,method:Presence_online,desc:is this addr live right now
+    Point,method:Presence_ask_roster,desc:ask about everyone we know
+  What:replication,desc:Repli — a C** subtree becomes wire lines and back — offer a Record then deal its Stream page by page — the want and the park
+    Doc:Ghost/N/Repli.g
+    Point,method:Repli_lines_of,desc:a subtree as wire lines
+    Point,method:Repli_fragment,desc:cut a record into sendable fragments
+    Point,method:Repli_pack_chunks,desc:chunks into a page
+    Point,method:Repli_unpack_page,desc:a page back into chunk particles
+    Point,method:Repli_page_ready,desc:the sender says a page is there
+    Point,method:Repli_recv_page,desc:a page lands — cid gate — attach
+    Point,method:Repli_recv_parked,desc:the want waits for a record that is not here yet
+    Point,method:Repli_serve_miss,desc:a want for something we do not hold — say so
+    Point,method:Repli_open_awaitbuf,desc:a receiver buffer per pull
+    Point,method:Repli_awaitbuf_do,desc:the pull loop — re-ask every wanted offset
+    Point,method:Repli_meter,desc:the coalesced transfer meter — bytes and pace
+    Point,method:Repli_rto,desc:retransmit timeout from the smoothed rtt
+    Point,method:Repli_arm,desc:arm the protocol on a world each beat
+  What:the cluster channel,desc:Lies rides the same spine — become binds a role and a signed hello binds an identity — the keepalive and the hello latch
+    Doc:src/lib/O/LiesLies.svelte
+    Doc:src/lib/O/LiesRun.svelte
+    Point,method:req_Rundown,desc:the runner — a rungo lands and the Book runs
+    Point,method:Pantheate,desc:where a run lands — the include is mounted
+    Doc:src/lib/p2p/cluster_trust.ts
+    Doc:scripts/runner_ask.mjs
+    Doc:scripts/relay-test.ts
+  What:the tests
+    Doc:Ghost/Story/PeerTesting.g
+    Point,method:Run_A_PereStaple,desc:the canonical spine over loopback
+    Point,method:Run_A_PereProof,desc:proven delivery
+    Point,method:Run_A_PereReborn,desc:the reconnect epoch
+    Doc:Ghost/Story/Sounditron.g
   What:the spec
     Doc:src/lib/O/spec/Peeroleum_spec.md
-    Doc:src/lib/O/spec/Peeroleum_handover.md
-    Doc:src/lib/O/spec/Covenant_design.md
+    Doc:src/lib/O/spec/Wire_spec.md
+    Doc:src/lib/O/spec/Repli_design.md
+    Doc:src/lib/O/spec/Cluster_spec.md
+    Doc:src/lib/O/spec/Social_demarcation_todo.md
+    Doc:src/lib/O/spec/Backpressure_todo.md
+    Doc:src/lib/O/spec/Presence_todo.md
+    Doc:src/lib/O/spec/Network_procedures_todo.md
+    Doc:src/lib/O/spec/Networky_directions_todo.md

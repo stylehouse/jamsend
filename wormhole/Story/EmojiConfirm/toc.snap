@@ -4,8 +4,12 @@ story:EmojiConfirm
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.007
+    TimeTotal:beliefs,avg=0.006
       sample=0.007,at=1789085659
-    TimeTotal:step,avg=0.007
+      sample=0.003,at=1789108240
+      sample=0.008,at=1789109417
+    TimeTotal:step,avg=0.006
       sample=0.007,at=1789085659
+      sample=0.003,at=1789108240
+      sample=0.008,at=1789109417
   step,dige:3d624edc1861c31c

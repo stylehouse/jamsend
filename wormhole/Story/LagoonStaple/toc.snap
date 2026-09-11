@@ -15,6 +15,7 @@ story:LagoonStaple
       sample=0.014,at=1788897985
       sample=0.034,at=1788907758
       sample=0.047,at=1788937487
+      sample=0.026,at=1789108496
     TimeTotal:step,avg=0.003
       sample=0.002,at=1788897941
       sample=0.002,at=1788897973
@@ -22,6 +23,7 @@ story:LagoonStaple
       sample=0.002,at=1788897985
       sample=0.004,at=1788907758
       sample=0.006,at=1788937487
+      sample=0.003,at=1789108496
   step,dige:11e5d0398a0133fc
   step=2,desc:load Atlas and Lagoon on demand — stand Atlas on the frozen corpus and the reader beside it,dige:0237d87d658e884b
     Assertion:the-reader-ghost-loads,sentence:the reader ghost loads on demand beside the census — no manifest edit needed

@@ -81,6 +81,16 @@
     //       question two ways was the thing wrong.
     let q = $state('')
     let index = $state<any>(null)
+    // 📜 PROBE for "the list in Lagoon unscrolls" (owner, 2026-09-11). A scroll-to-top has exactly two
+    //  mechanical causes and they need different fixes: the element was REMOUNTED (new DOM node — an
+    //   ancestor {#if}/{#key} flipped, or the whole face re-rendered), or the content briefly EMPTIED
+    //    so the browser clamped scrollTop to 0 (a transient index with zero rows). The onscroll below
+    //     prints which: `same element:false` = remount; `rows:0` = emptied; both false = something
+    //      called scrollTo/scrollIntoView. Remove once the cause is fixed.
+    let defs_el = $state<HTMLDivElement | null>(null)
+    let _last_top = 0
+    let _last_el: HTMLDivElement | null = null
+    $effect(() => { if (defs_el && defs_el !== _last_el) { if (_last_el) console.log(`📜 Lagoon defs list element REMOUNTED`); _last_el = defs_el } })
     let stale = $state(false)
     let asked_q = ''
 
@@ -239,7 +249,7 @@
                 {/each}
             </div>
         {/if}
-        <div class="lag-out tall">
+        <div class="lag-out tall" bind:this={defs_el} onscroll={() => { if (defs_el && defs_el.scrollTop === 0 && _last_top > 40) console.log(`📜 Lagoon defs list UNSCROLLED to 0 (was ${_last_top}) · rows:${index?.defs?.length ?? 0} · same element:${defs_el === _last_el}`); _last_top = defs_el?.scrollTop ?? 0 }}>
             {#each index.defs as d (d.doc + d.name + d.line)}
                 <div class="lag-grow">
                     <div class="lag-row2">

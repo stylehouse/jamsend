@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return 'd4a1183f26a14e76~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '6a4395ff9a9e2571~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -1353,8 +1353,24 @@ Vyto_express(w) {
 Vyto_express_rows(w, rows) {
     for (const row of rows) {
         if (row.sc.departing) continue
-        row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * (1 + (Number(row.sc.dose) || 0)) * (1 + HEAT_BUY * (row.c.heat ?? 0)))
         let kids = row.o()
+        // A SCOPE CLAIMS ROOM FOR WHAT IT HOLDS (2026-09-11, "the squished bits... a crazy algorithm" —
+        //  a scope's OWN env_area used to be priced exactly like a leaf's, ignorant of how many children
+        //   it must then divide that top-level room among.  depth_scale (just landed) makes a nested
+        //    child's radius honestly PROPORTIONAL to its parent's actual area — which then exposes THIS
+        //     as the real remaining cause of a squished bag: 3 Players correctly scaled to fit a Band
+        //      cell sized like a single leaf is still 3 things in one leaf's room.  A live 2+-child
+        //       scope now claims room roughly for its members, same one-variable-at-a-time spirit as the
+        //        dose/heat terms beside it; a leaf or single-child row (claim=1) is byte-identical.
+        let live_kids = kids.filter(k => !k.sc.departing).length
+        // a LINEAR claim (tried first, live) let a 3-child Band swallow the whole frame and crowd
+        //  a Song out entirely — the scope's share needs to grow slower than its member count.
+        // sqrt tried, live: still made a 3-child Band the single biggest shape in the frame — a power
+        //  diagram amplifies a radius edge far past the area ratio that produced it (power distance is
+        //   |P-seed|² - r², so a modest r bump pushes smaller-r neighbours away hard).  A gentler,
+        //    additive bump next.
+        let claim = live_kids > 1 ? 1 + 0.15 * (live_kids - 1) : 1
+        row.c.env_area = Math.max(1, Math.max(AREA_BASE, this.Vyto_need_of(w, row)) * claim * (1 + (Number(row.sc.dose) || 0)) * (1 + HEAT_BUY * (row.c.heat ?? 0)))
         if (kids.length) this.Vyto_express_rows(w, kids)
     }
 

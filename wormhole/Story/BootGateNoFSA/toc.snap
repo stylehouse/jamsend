@@ -4,18 +4,22 @@ story:BootGateNoFSA
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.01
+    TimeTotal:beliefs,avg=0.014
       sample=0.013,at=1786757147
       sample=0.013,at=1786757160
       sample=0.013,at=1786757165
       sample=0.005,at=1786757169
       sample=0.006,at=1788584328
-    TimeTotal:step,avg=0.002
+      sample=0.019,at=1789108120
+      sample=0.031,at=1789109215
+    TimeTotal:step,avg=0.003
       sample=0.003,at=1786757147
       sample=0.003,at=1786757160
       sample=0.003,at=1786757165
       sample=0.001,at=1786757169
       sample=0.001,at=1788584328
+      sample=0.005,at=1789108120
+      sample=0.008,at=1789109215
   step,dige:1c8e36003da56342
   step=2,dige:6cca2f20f9e2edc1
     Assertion:with-no-picker-the,sentence:with no picker the gate knew up front and held a sentence naming Chrome

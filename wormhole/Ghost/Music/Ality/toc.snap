@@ -1,4 +1,4 @@
-Waft:Ghost/Music/Ality,active
+Waft:Ghost/Music/Ality,desc:the music pipeline — rastock racast raterm — stock a track then cast it then play it at the terminal — the radio dials and the pool keeps what played
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:MusuStaple
     Funkcion:Storying,of_Book:MusuStream
@@ -19,377 +19,139 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuConceal
     Funkcion:Storying,of_Book:MusuBounce
     Funkcion:Storying,of_Book:MusuReplica
+    Funkcion:Storying,of_Book:MusuReco
     Funkcion:Storying,of_Book:MusuRaStream
     Funkcion:Storying,of_Book:MusuRaChase
-    Funkcion:Storying,of_Book:MusuBuddy
-    Funkcion:Storying,of_Book:MusuHeist
-    Funkcion:Storying,of_Book:MusuBerth
-    Funkcion:Storying,of_Book:MusuVend
-    Funkcion:Storying,of_Book:MusuDoor
-    Funkcion:Storying,of_Book:MusuCursor
-    Funkcion:Storying,of_Book:MusuHeal
-    Funkcion:Storying,of_Book:MusuResume
-    Funkcion:Storying,of_Book:MusuRename
-    Funkcion:Storying,of_Book:MusuRecast
-    Funkcion:Storying,of_Book:MusuStanding
-  What:the heist — %Heist at a pier moves ORIGINAL file bytes straight into the collection (Radio_todo §0 + §10 rung 1)
-    Doc:Ghost/M/Heist.g
-    Point,method:Heist_census
-    Point,method:Heist_job
-    Point,method:Heist_beat
-    Point,method:Heist_land
-    Point,method:Heist_feel
-    Doc:Ghost/Story/HeistTesting.g
-    Point,method:MusuHeist_drive
-    Point,method:MusuHeist_flow
-    Point,method:MusuHeist_witness
-  What:the pipeline — rastock → racast → raterm (Radio_todo §3 — the product itself)
-    What:the stock pass (Ghost/M/Ra.g — needles LUFS → baked gain → 2s Opus segments → Ogg mux → disk)
-      Doc:Ghost/M/Ra.g
-      Point,method:Ra_stock
-      Point,method:Ra_stock_one
-      Point,method:Ra_lufs
-      Point,method:Ra_gain_for
-      Point,method:Ra_encode_opus
-      Point,method:Ra_ogg_opus
-      Point,method:Ra_stock_standing
-      Point,method:Ra_proof
-    What:the preview economy — %Preview caches in radiostock/ and %Stream continues right after it
-      Doc:Ghost/M/Ra.g
-      Point,method:Ra_preview_secs
-      Point,method:Ra_record_from
-      Point,method:Ra_cast_transcode
-      Point,method:Ra_cast_serve_want
-      Point,method:Ra_term_stream_beat
-      Point,method:Ra_term_decode_pulled
-      Point,method:Ra_term_stash
-      Doc:Ghost/Story/RaTesting.g
-      Point,method:MusuRaStream_beat
-      Point,method:MusuRaStream_measure
-      Doc:src/lib/ghost/Radios.svelte
-      Point,text:radiopreview
-      Point,text:want_streaming
-  What:the machine
-    What:1 the spool
-      Doc:Ghost/M/Radiola.g
-      Point,method:req_cast
-      Point,method:Radiola_window
-    What:2 the preview-stream handoff
-      Doc:Ghost/M/Radiola.g
-      Point,method:req_streamability
-      Point,method:req_cast
-    What:3 the radiostock fan-out
-      Doc:Ghost/M/Radiola.g
-      Point,method:req_restock
-      Point,method:Radiola_keep_ahead
-    What:4 live-edge playback
-      Doc:Ghost/M/Radiola.g
-      Point,method:req_progress
-      Point,method:Radiola_live_back
-    What:5 record wear / GC
-      Doc:Ghost/M/Radiola.g
-      Point,method:req_reap
-      Point,method:Radiola_wear_enough
-      Point,method:Radiola_wear_delay
-    What:6 skip-track
-      Doc:Ghost/M/Radiola.g
-      Point,method:Radiola_skip
-  What:the real audio — REAL muted Web Audio now drives MusuSignal (was cursor-sim)
-    What:the reused voice (SoundSystem + Audiolet)
-      Doc:src/lib/p2p/ftp/Audio.svelte.ts
-      Point,text:class Audiolet
-      Point,text:setupAudiolet
-      Point,text:getFloatTimeDomainData
-      Point,text:pcm_buffer
-      Point,text:unmute
-    What:the audio engine — now Ghost/M/Sound.g (synth + measure + device + stream)
-      Doc:Ghost/M/Sound.g
-      Point,method:Sound_gat
-      Point,method:Sound_real_stream
-      Point,method:Sound_synth
-      Point,method:Sound_measure
-      Point,method:Sound_silence
-    What:Glide — live-edge rate slew + hysteresis (re-models Radios 0.8x)
-      Doc:Ghost/M/Radiola.g
-      Point,method:Glide_decide
-      Doc:src/lib/p2p/ftp/Audio.svelte.ts
-      Point,text:playbackRate
-      Point,text:linearRampToValueAtTime
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuGlide_drive
-      Point,method:MusuGlide_witness
-  What:the replication spine — now Ghost/N/Repli.g (offer a %Record then deal its %Stream page by page)
-    What:fragment + merge — a C** subtree becomes wire lines and back
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_lines_of
-      Point,method:Repli_fragment
-      Point,method:Repli_merge
-    What:the sender side — offer / recommend / retire / send lines / send the Se
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_offer
-      Point,method:Repli_recommend
-      Point,method:Repli_retire
-      Point,method:Repli_send_lines
-      Point,method:Repli_sent_se
-    What:pages — pack / unpack / ready / want-next
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_pack_chunks
-      Point,method:Repli_unpack_page
-      Point,method:Repli_page_ready
-      Point,method:Repli_want_next
-    What:serve + park — a want with no record yet waits for it
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_serve_want
-      Point,method:Repli_park_want
-      Point,method:Repli_serve_parked
-    What:the receiver — recv-lines / recv-page / await-buffer
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_recv_lines
-      Point,method:Repli_recv_page
-      Point,method:Repli_open_awaitbuf
-      Point,method:Repli_attach_page
-      Point,method:Repli_awaitbuf_do
-    What:the pump — arm the protocol each beat
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_arm
+    Funkcion:Storying,of_Book:MusuRaStock
+    Funkcion:Storying,of_Book:MusuRaTerm
+    Funkcion:Storying,of_Book:MusuOgg
+    Funkcion:Storying,of_Book:MusuLossy
+    Funkcion:Storying,of_Book:MusuPress
+    Funkcion:Storying,of_Book:MusuQuarter
+    Funkcion:Storying,of_Book:MusuNeGrind
+    Funkcion:Storying,of_Book:MusuPoolFill
+    Funkcion:Storying,of_Book:MusuPoolRadio
+    Funkcion:Storying,of_Book:MusuPoolRandom
+    Funkcion:Storying,of_Book:MusuPoolBytes
+    Funkcion:Storying,of_Book:MusuGenerateTestsMusic
+  What:the stock pass,desc:Ra — needles LUFS then a baked gain then Opus segments cut into chunk particles — the preview is the tail of the song and the head run is separate
+    Doc:Ghost/M/Ra.g
+    Point,method:Ra_gain_for,desc:loudness → gain
+    Point,method:Ra_bake,desc:apply the gain to pcm
+    Point,method:Ra_encode_feed,desc:pcm into the opus encoder
+    Point,method:Ra_chunk_cut,desc:segments into chunk particles
+    Point,method:Ra_chunk_mint,desc:one chunk particle — seq bytes cid
+    Point,method:Ra_preview_offset,desc:where the preview cuts — 30 to 70 percent in
+    Point,method:Ra_head_whole,desc:is the head run complete
+    Point,method:Ra_record_from,desc:a Record from a file
+    Doc:Ghost/M/Orig.g
+    Point,method:Orig_ogg_mux,desc:chunks back into an ogg file
+    Point,method:Orig_ogg_parse,desc:an ogg file into packets
+  What:the homes,desc:Mine Theirs the shop the bay and the pool — records live once per shelf and a Card refers
+    Doc:Ghost/M/Ra.g
+    Point,method:Ra_home_self,desc:my shelf
+    Point,method:Ra_home_them,desc:a friend shelf
+    Point,method:Ra_home_pool,desc:the pool shelf
+    Point,method:Ra_home_shelf,desc:any shelf by name
+    Point,method:Ra_library,desc:the Library under a home
+    Point,method:Ra_rec_find,desc:a Record by id
+    Point,method:Ra_recs,desc:every Record on a shelf
+    Point,method:Ra_mag_page,desc:a page of a Mag
+  What:the pool,desc:SoundPooling — the dial already chooses so the pool keeps what played — consent budget caps and the quarter goal
+    Doc:Ghost/M/Ra.g
+    Point,method:Ra_pool_define,desc:a pool — who owns it
+    Point,method:Ra_pool_stock,desc:what the pool holds
+    Point,method:Ra_pool_consent,desc:who consented to pool
+    Point,method:Ra_pool_budget,desc:bytes allowed
+    Point,method:Ra_pool_census,desc:count the pool
+    Point,method:Ra_quarter_goal,desc:the quarter — how much each source should give
+    Point,method:Ra_pool_fill_book,desc:book a fill
+    Point,method:Ra_pool_fill_homes,desc:where a fill comes from and lands
+    Point,method:Ra_pool_fill_verdict,desc:did the fill land
+    Doc:src/lib/O/ui/PoolFace.svelte
+  What:the terminal,desc:the listener end — pcm admission and the fly — the spool and the stream open — the dial picks the next
+    Doc:Ghost/M/Ra.g
+    Point,method:Ra_pcm_admit,desc:may this chunk decode now
+    Point,method:Ra_pcm_sweep,desc:drop pcm we are past
+    Point,method:Ra_term_spool,desc:the playback spool
+    Point,method:Ra_term_stream_open,desc:open a stream at the terminal
+    Point,method:Ra_dial_next,desc:pick the next track
+    Point,method:Ra_page_hole,desc:a missing chunk in a page — re-ask page-wide
+    Point,method:Ra_clock_arm,desc:the pull clock
+  What:the radio,desc:Radio — ensure toggle skip and like — sources and the dial — the lineup — the head run decoded ahead
+    Doc:Ghost/M/Radio.g
+    Point,method:Radio_ensure,desc:the radio particle
+    Point,method:Radio_toggle,desc:play pause
+    Point,method:Radio_skip,desc:next
+    Point,method:Radio_like,desc:the heart — love toggles the Heard take
+    Point,method:Radio_sources,desc:where music can come from
+    Point,method:Radio_source_next,desc:rotate the source
+    Point,method:Radio_dial_remote,desc:dial a friend
+    Point,method:Radio_dial_pool,desc:dial the pool
+    Point,method:Radio_lineup_fill,desc:fill the lineup
+    Point,method:Radio_playable,desc:can this card play now
+    Point,method:Radio_hbase,desc:prepend the head run
+    Point,method:Radio_dec_open,desc:open the decoder
+    Doc:src/lib/O/ui/RadioFace.svelte
+    Doc:src/lib/O/ui/LineupFace.svelte
+    Doc:src/lib/O/ui/TunerFace.svelte
+  What:the stoker and the riffle,desc:what warms the next play — churn preheat cull — a card dealt from a shelf
+    Doc:Ghost/M/Radio.g
+    Point,method:Stoker_ensure,desc:the stoker particle
+    Point,method:Stoker_churn,desc:the beat
+    Point,method:Stoker_preheat,desc:warm the next
+    Point,method:Stoker_cull,desc:drop the cold
+    Point,method:Stoker_mag_draw,desc:draw from a Mag
+    Point,method:Riffle_ensure,desc:the riffle
+    Point,method:Riffle_deal_shelf,desc:deal a card off a shelf
+    Point,method:Riffle_deal_deep,desc:deal from deep
+    Doc:src/lib/O/ui/StokerFace.svelte
+    Doc:src/lib/O/ui/RiffleFace.svelte
+  What:the machine,desc:Radiola — the cursor models the streaming spine was first proven on — streamability keep-ahead wear and the live edge
+    Doc:Ghost/M/Radiola.g
+    Point,method:req_streamability,desc:enough ahead to play
+    Point,method:Radiola_keep_ahead,desc:how far ahead to stock
+    Point,method:req_restock,desc:make more
+    Point,method:req_reap,desc:wear out the old
+    Point,method:Glide_decide,desc:live-edge rate slew
+    Point,method:LiveEdge_decide,desc:the safe margin off the frontier
+  What:the audio engine,desc:Sound — synth silence measure and the starving live-stream pump — real muted Web Audio
+    Doc:Ghost/M/Sound.g
+    Point,method:Sound_synth,desc:synth pcm
+    Point,method:Sound_measure,desc:measure entropy of pcm
+    Point,method:Sound_radiostock,desc:the stock pump
+    Point,method:Sound_stock_chunk,desc:one chunk to the graph
+    Point,method:Sound_panic,desc:stop everything
+    Doc:src/lib/O/Funk/Sound.svelte
+  What:the crate,desc:digging a music collection — meta from a name or a path — the transcode and the radiostock override
+    Doc:Ghost/M/Crate.g
+    Point,method:Crate_nav,desc:the nav over the collection
+    Point,method:Crate_radiostock,desc:stock from the crate
+    Point,method:Crate_meta_from_path,desc:artist title from a path
+    Point,method:Crate_transcode_release,desc:let a transcode go
+    Point,method:Crate_pile_draw,desc:draw from the pile
+    Doc:src/lib/O/ui/CrateFace.svelte
+  What:the mixer and the mesh,desc:beat detection beatmatch crossfade and the DJ cue — the sync that sees itself
+    Doc:Ghost/M/Mixer.g
+    Point,method:Mix_tempo,desc:beats per minute
+    Point,method:Mix_beatmatch,desc:align two decks
+    Point,method:Mix_crossfade,desc:fade between
+    Point,method:Mix_align,desc:phase align
+    Doc:Ghost/M/Mesh.g
+    Point,method:Mesh_route,desc:cheapest route
+    Point,method:Mesh_broadcast_stretch,desc:multicast stretch
+    Doc:Ghost/M/Booth.g
+    Point,method:Tune_of,desc:a tune key
+    Point,method:Booth_bans,desc:what the booth bans
   What:the tests
-    What:MusuStaple (the spool)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuStaple
-      Point,method:Musu_sides_up
-      Point,method:Musu_drive
-      Point,method:Musu_witness
-    What:MusuStream (the handoff)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuStream_drive
-      Point,method:MusuStream_witness
-    What:MusuStock (the fan-out)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuStock_drive
-      Point,method:MusuStock_witness
-    What:MusuLive (live-edge playback)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuLive_drive
-      Point,method:MusuLive_witness
-    What:MusuWear (wear / GC)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuWear_drive
-      Point,method:MusuWear_witness
-    What:MusuSkip (skip-track)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuSkip_drive
-      Point,method:MusuSkip_witness
-    What:MusuCrowd (multi-client fan-out)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuCrowd_drive
-      Point,method:MusuCrowd_witness
-    What:MusuSignal (real-audio starvation — the listener's naff time)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuSignal_drive
-      Point,method:MusuSignal_run
-      Point,method:MusuSignal_witness
-    What:MusuGlide (live-edge rate control — backs off then recovers)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuGlide_drive
-      Point,method:MusuGlide_run
-      Point,method:MusuGlide_witness
-    What:MusuTune (self-tuning Glide — descends params to least show-wreckage)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:Musu_descend
-      Point,method:Musu_render_offline
-      Point,method:MusuTune_witness
-    What:MusuRadio (~a minute of live activity over ready synth records)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:Musu_synth_records
-      Point,method:MusuRadio_play
-      Point,method:MusuRadio_animate
-      Point,method:MusuRadio_witness
-    What:MusuMix (the cellular mixer — beat detection / beatmatch / multi-cell sum / crossfade)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuMix_load
-      Point,method:MusuMix_match
-      Point,method:MusuMix_mix
-      Point,method:MusuMix_fade
-      Point,method:MusuMix_witness
-      Doc:Ghost/M/Mixer.g
-      Point,method:Mix_tempo
-      Point,method:Mix_beatmatch
-      Point,method:Mix_render_sum
-      Point,method:Mix_crossfade
-    What:MusuMesh (the sync that sees itself — replicas / cheapest-route / multicast stretch)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuMesh_build
-      Point,method:MusuMesh_cast
-      Point,method:MusuMesh_scale
-      Point,method:MusuMesh_witness
-      Doc:Ghost/M/Mesh.g
-      Point,method:Mesh_route
-      Point,method:Mesh_broadcast_naive
-      Point,method:Mesh_broadcast_stretch
-      Point,method:Mesh_cafe_spec
-    What:MusuCue (the DJ headset — replica phone monitors the off-air deck / beatmatches / brings it in)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuCue_setup
-      Point,method:MusuCue_monitor
-      Point,method:MusuCue_match
-      Point,method:MusuCue_bring_in
-      Point,method:MusuCue_witness
-      Doc:Ghost/M/Mixer.g
-      Point,method:Mix_align
-    What:MusuEdge (the live edge — hold a safe low-latency margin off the broadcast frontier)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuEdge_run
-      Point,method:Musu_render_liveedge
-      Point,method:MusuEdge_witness
-      Doc:Ghost/M/Radiola.g
-      Point,method:LiveEdge_decide
-    What:MusuPier (the synapse — real audio frames over the Peeroleum transport / loss-healed)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuPier_setup
-      Point,method:MusuPier_send_audio
-      Point,method:MusuPier_perturb
-      Point,method:MusuPier_witness
-      Doc:Ghost/N/Peeroleum.g
-      Point,method:Peeroleum_send
-      Point,method:Peeroleum_on
-    What:MusuConceal (the concealment ladder — fill a gap with repeat / reverse-pingpong not silence)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuConceal_build
-      Point,method:MusuConceal_measure
-      Point,method:MusuConceal_witness
-      Doc:Ghost/M/Mixer.g
-      Point,method:Mix_reverse
-    What:MusuBounce (two-context audio bounce — the seed MusuReplica grew from)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuBounce_setup
-      Point,method:MusuBounce_bounce
-      Point,method:MusuBounce_witness
-    What:MusuReplica (paginated streaming C** replication — offer a %Record then deal out its %Stream page by page)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuReplica_drive
-      Point,method:MusuReplica_offer
-      Point,method:MusuReplica_pull
-      Point,method:MusuReplica_drop
-      Point,method:MusuReplica_retire
-      Point,method:MusuReplica_witness
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_fragment
-      Point,method:Repli_merge
-      Point,method:Repli_serve_want
-      Point,method:Repli_recv_lines
-      Point,method:Repli_retire
-      Point,method:Repli_sent_se
-    What:MusuReco (a %Reco rides the knowledge graph — recommend started music and stream it off the transcoder's bow wave)
-      Doc:Ghost/Story/MusuTesting.g
-      Point,method:MusuReco_drive
-      Point,method:MusuReco_pull
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_recommend
-      Point,method:Repli_page_ready
-      Point,method:Repli_park_want
-      Point,method:Repli_serve_parked
-      Doc:Ghost/M/Crate.g
-      Point,method:Crate_transcode_begin
-      Point,method:Crate_transcode_release
-  What:Pier reality (spec §9 — the replication goes real)
+    Doc:Ghost/Story/MusuTesting.g
+    Doc:Ghost/Story/RaTesting.g
+  What:the spec
     Doc:src/lib/O/spec/Radio_todo.md
-    Point,text:9.1
-    What:the real library (FSA share gate → Records off /music)
-      Doc:Ghost/Story/MusuTesting.g
-      Doc:Ghost/M/Crate.g
-      Point,method:Crate_transcode_begin
-    What:Selections sendable to Piers (the oldest note meets the Se)
-      Doc:src/lib/mostly/Selection.svelte.ts
-      Point,text:sendable
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_sent_se
-      Point,method:Repli_lines_of
-    What:the pull rides the playhead (replication rate = listening rate)
-      Doc:Ghost/M/Radiola.g
-      Point,method:req_streamability
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_want_next
-    What:availability map + multi-source (a tree per peer routes the want)
-      Doc:Ghost/M/Mesh.g
-      Point,method:Mesh_route
-      Doc:Ghost/N/Repli.g
-      Point,method:Repli_serve_want
-    What:wear makes the mirror a cache
-      Doc:Ghost/M/Radiola.g
-      Point,method:req_reap
-    What:the Keep gates what enters (grants before wants)
-      Doc:Ghost/S/Swarm.g
-      Point,text:verify_grant
-      Doc:src/lib/O/spec/Backbone_plan.md
-  What:the source it reimagines
-    Doc:src/lib/ghost/Radios.svelte
-    Point,method:listening
-    Point,method:progress
-    Point,method:enqueue
-    Point,method:raterminal_recordWear
-    Point,method:turn_knob
-  What:the spec (split 2026-07-07 — todo carries the spring + §3 pipeline / lowlevel keeps the ladder)
-    Doc:src/lib/O/spec/Radio_todo.md
+    Doc:src/lib/O/spec/Radio_circuit_todo.md
+    Doc:src/lib/O/spec/SoundPooling_todo.md
+    Doc:src/lib/O/spec/Radio_spec.md
+    Doc:src/lib/O/spec/Radio_design.md
     Doc:src/lib/O/spec/Radio_lowlevel.md
-  What:bridges
-    What:STAY_AHEAD_OF_ACK_SEQ
-      Doc:src/lib/O/spec/Radio_lowlevel.md
-      Point,text:STAY_AHEAD_OF_ACK_SEQ
-      Doc:Ghost/M/Radiola.g
-      Point,text:STAY_AHEAD_OF_ACK_SEQ
-      Doc:src/lib/ghost/Radios.svelte
-      Point,text:STAY_AHEAD_OF_ACK_SEQ
-    What:KEEP_AHEAD
-      Doc:src/lib/O/spec/Radio_lowlevel.md
-      Point,text:KEEP_AHEAD
-      Doc:src/lib/ghost/Radios.svelte
-      Point,text:KEEP_AHEAD
-      Doc:Ghost/M/Radiola.g
-      Point,text:keep_ahead
-    What:MIN_LEFT_TO_WANT_STREAMING
-      Doc:src/lib/O/spec/Radio_lowlevel.md
-      Point,text:MIN_LEFT_TO_WANT_STREAMING
-      Doc:src/lib/ghost/Radios.svelte
-      Point,text:MIN_LEFT_TO_WANT_STREAMING
-      Doc:Ghost/M/Radiola.g
-      Point,text:want_left
-    What:streamability
-      Doc:src/lib/O/spec/Radio_lowlevel.md
-      Point,text:streamability
-      Doc:Ghost/M/Radiola.g
-      Point,text:req_streamability
-      Doc:src/lib/ghost/Radios.svelte
-      Point,text:streamability
-    What:radiostock
-      Doc:src/lib/O/spec/Radio_lowlevel.md
-      Point,text:radiostock
-      Doc:Ghost/M/Radiola.g
-      Point,text:radiostock
-      Doc:src/lib/ghost/Radios.svelte
-      Point,text:radiostock
-    What:preview
-      Doc:src/lib/O/spec/Radio_lowlevel.md
-      Point,text:preview
-      Doc:Ghost/M/Radiola.g
-      Point,text:preview
-      Doc:src/lib/ghost/Radios.svelte
-      Point,text:radiopreview
-    What:playhead
-      Doc:src/lib/O/spec/Radio_lowlevel.md
-      Point,text:playhead
-      Doc:Ghost/M/Radiola.g
-      Point,text:playhead
-      Doc:src/lib/ghost/Radios.svelte
-      Point,text:playhead
-    What:not_too_far_ahead
-      Doc:src/lib/O/spec/Radio_lowlevel.md
-      Point,text:not_too_far_ahead
-      Doc:src/lib/ghost/Radios.svelte
-      Point,text:not_too_far_ahead
-    What:wore_out
-      Doc:src/lib/O/spec/Radio_lowlevel.md
-      Point,text:wore_out
-      Doc:Ghost/M/Radiola.g
-      Point,text:wore_out
-      Doc:src/lib/ghost/Radios.svelte
-      Point,text:wore_out
+    Doc:src/lib/O/spec/Radio_multicast_todo.md
+    Doc:src/lib/O/spec/Backpressure_todo.md

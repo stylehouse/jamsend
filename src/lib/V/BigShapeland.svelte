@@ -70,6 +70,11 @@
     const q = boot_qualand({ book, role: 'sound' })   // 'sound' ⇒ a humdinger: an end-user page, never a dispatch target
     let H      = $derived(q.H)
     let houses = $derived(q.houses)
+    // DEBUG HOOK (2026-09-11) — the eye (scripts/runner_eye.mjs) can drive pixels but never see WHY;
+    //  this room is a dev room already (never dispatched), so expose the House read-only for a
+    //  page.evaluate() investigation to walk with House.minisnap or ob()/o() directly — cheaper than
+    //  another round of console.log + compile + reload every time a question needs the live C tree.
+    $effect(() => { if (H && typeof window !== 'undefined') (window as any).__H = H })
 
     // `Ghost` takes the ROOT House and renders the whole tree — the same mount /BigWordland and
     //  /BigSoundland use.  The House chips below are therefore a BOOT INDICATOR, not a switcher:
@@ -89,12 +94,12 @@
     //  spec/Glassbeast_todo.md §0: *"Twelve looks in twelve clicks.  The owner's eye is the selector."*
     //   A stop is one token on the Vyto world's `foamereo` deck (`Vyto_fo` / Vytui's `fo` read it —
     //    `wave,seal,room:0.55`).  RENDER stops change what Vytui draws and show at once; MODEL stops change
-    //     what the fold/relate write and need a stir.  `?deck=folio,seal` sets the deck at boot so a headless
+    //     what the fold/relate write and need a stir.  `?deck=wallcarve,seal` sets the deck at boot so a headless
     //      eye (scripts/runner_eye.mjs) can photograph a look by URL.  The room writes `w.sc.foamereo`
     //       directly: this is a humdinger page, nothing here records a fixture.
     const RENDER_STOPS = [
-        { stop: 'folio',      what: 'type set INTO the cell — title, facts, a crest\'s distilled voice, along its biggest top-left wall' },
-        { stop: 'wave',       what: 'the label rides a scalloped wave band instead of the wall carve' },
+        { stop: 'wallcarve',  what: 'OPT OUT of the folio — back to the old wall-carve masonry / centred ident (folio is now the default)' },
+        { stop: 'wave',       what: 'with wallcarve on: the label rides a scalloped wave band instead of the wall carve' },
         { stop: 'seal',       what: 'the seat regime — cells seal to their molds' },
         { stop: 'copperless', what: 'no copper ground' },
         { stop: 'nohall',     what: 'no hallway corridor of guts' },

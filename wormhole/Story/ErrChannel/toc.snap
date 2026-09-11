@@ -5,20 +5,24 @@ story:ErrChannel
     For
     expect_errors
   TimeSpool
-    TimeTotal:beliefs,avg=0.004
+    TimeTotal:beliefs,avg=0.009
       sample=0.004,at=1786107605
       sample=0.004,at=1786107660
       sample=0.004,at=1786107661
       sample=0.004,at=1786107661
       sample=0.004,at=1786107673
       sample=0.003,at=1786107702
-    TimeTotal:step,avg=0.001
+      sample=0.029,at=1789108274
+      sample=0.018,at=1789109555
+    TimeTotal:step,avg=0.003
       sample=0.001,at=1786107605
       sample=0.001,at=1786107660
       sample=0.001,at=1786107661
       sample=0.001,at=1786107661
       sample=0.001,at=1786107673
       sample=0.001,at=1786107702
+      sample=0.01,at=1789108274
+      sample=0.006,at=1789109555
   step,dige:1f04f2210781862b,desc:a clean step — nothing has been captured so the channel is not minted at all
     Assertion:a-clean-step-shows,sentence:a clean step shows no error channel — lazy-minted so an untroubled run carries not one Errlog byte
   step=2,dige:e9167bfcb05aa1c3,desc:push a deliberate error and a warning through the real Story_error door

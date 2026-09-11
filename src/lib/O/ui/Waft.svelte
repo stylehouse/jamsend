@@ -312,6 +312,11 @@
     //     edit the Funkcion node itself, then ◉ back to the live inline view.  struct_what holds
     //      the Whats currently flipped to that editing presentation (session-local).
     let struct_what = new SvelteSet<TheC>()
+    // jump_fromwhat — go to the Waft a FromWhat locator names (open it cold, then foreground it).
+    function jump_fromwhat(key: string) {
+        if (!w.o({ Waft: key })[0]) H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: key })
+        H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path: key, deliberate: 1 })
+    }
     function toggle_struct(C: TheC) {
         if (struct_what.has(C)) struct_what.delete(C); else struct_what.add(C)
         waft.bump_version()
@@ -856,6 +861,15 @@
                      flex-basis-0 PeelInput to ~0 wide (the "pi-row is 0 wide" collapse). Editing needs
                      the row for the inputs; the desc returns once the orb closes. -->
                 {#if C.sc?.desc && !editing.has(C)}<span class="ls-desc" title={C.sc.desc as string}>{C.sc.desc}</span>{/if}
+                <!-- a What that came FROM somewhere (FromWhat:Waft:<key>[/What:<name>] — the Aside's
+                     back-pop locator, and what Waft:Everything uses to point at each area Waft) gets
+                     a ≋ that takes you THERE: open the Waft if cold, then foreground it. Same road the
+                     WaftMap's search hit takes (DocWaftMap jumpWaft). Only a Waft: locator is hot —
+                     any other FromWhat shape stays a note. -->
+                {#if is_what && typeof C.sc?.FromWhat === 'string' && (C.sc.FromWhat as string).startsWith('Waft:') && !editing.has(C)}
+                    {@const fw_key = (C.sc.FromWhat as string).slice(5).split('/')[0]}
+                    <button class="ls-fromwhat" onclick={() => jump_fromwhat(fw_key)} title="go to Waft:{fw_key}">≋</button>
+                {/if}
             </div>
             {#if td.child_types}
                 {#if editing.has(C) && (add_type_C.has(C) || add_raw_C.has(C))}
@@ -1009,6 +1023,12 @@
         transition: color 0.1s;
     }
     .ls-inline-tog:hover { color: #8fa6d0; }
+    /* ≋ the FromWhat jump — a What that points at another Waft */
+    .ls-fromwhat {
+        background: none; border: none; cursor: pointer; padding: 0 0.2rem; margin-left: 0.3rem;
+        color: #5a7aa0; font-size: 0.8rem; line-height: 1; flex: none;
+    }
+    .ls-fromwhat:hover { color: #9fc0e8; }
     /* a Funkcion edited as plain C — same muted register as a Point row */
     .ls-item-funkc :global(.pi-label) { color: #6a6a8a; }
     /* a generic un-schema'd C (Keep/Cluster registry rows, …) — muted, raw-data register */

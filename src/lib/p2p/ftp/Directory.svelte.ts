@@ -291,39 +291,56 @@ export class DirectoryListing {
         //       than caching a mid-rename listing — the exact race the comment below warns about.
         let saw_flux = false
         // < tabulates|reduces into a Selection later
+        // TWO PASSES, THE STATS IN PARALLEL (2026-09-11 — "wormhole list src/lib/O/spec overran
+        //  5000ms" on every 8s GhostList walk).  This used to `await entry.getFile()` INSIDE the
+        //   `for await`, i.e. one browser-process round trip per file, strictly serial: 139 files
+        //    in spec/ at ~40ms each is the whole 5s Wormhole budget, so the op was abandoned and
+        //     retried four times a cycle, forever, while the abandoned expands kept running
+        //      underneath.  Enumerate first (one stream), then stat every file at once — the
+        //       browser pipelines the handles and the listing costs about one round trip.
+        //        The listing is sorted after, so the settle order never mattered.
+        const seen: FileSystemHandle[] = []
         for await (const entry of this.handle.values()) {
             if (entry.name.endsWith('.crswap')) { saw_flux = true; continue }
-            try {
-                let generally = {
-                    up: this,
-                    name: entry.name,
-                }
-                if (entry.kind === 'file') {
-                    const file = await entry.getFile();
-                    files.push(new FileListing({
-                        ...generally,
-                        size: file.size,
-                        modified: new Date(file.lastModified),
-                    }));
-                } else {
-                    // < dirs don't have mtime. put a cache of Stuff in each one?
-                    // reuse the existing child listing: cached walkers (WormholeNav._cache)
-                    //  and open UIs keep their object, its expanded state, its own children
-                    const prior = this.directories.find(d => d.name === entry.name)
-                    if (prior) { prior.handle = entry; directories.push(prior) }
-                    else directories.push(new DirectoryListing({
-                        handle: entry,
-                        ...generally,
-                    }));
-                }
-            } catch (err) {
+            seen.push(entry)
+        }
+        const stats = await Promise.all(seen.map(async (entry) => {
+            if (entry.kind !== 'file') return null
+            try { return await (entry as FileSystemFileHandle).getFile() }
+            catch (err: any) {
                 // An entry can vanish between values() yielding it and our getFile() — a concurrent
                 //  delete/rename completing.  Benign churn, not a corrupt entry: note the flux (the
                 //   re-expand picks up the settled truth) and stay quiet.  Warn only on a real surprise.
-                if (err?.name === 'NotFoundError') { saw_flux = true; continue }
-                console.warn(`Skipping problematic entry ${entry.name}:`, err);
+                if (err?.name === 'NotFoundError') { saw_flux = true; return null }
+                console.warn(`Skipping problematic entry ${entry.name}:`, err)
+                return null
             }
-        }
+        }))
+        seen.forEach((entry, i) => {
+            let generally = {
+                up: this,
+                name: entry.name,
+            }
+            if (entry.kind === 'file') {
+                const file = stats[i]
+                if (!file) return
+                files.push(new FileListing({
+                    ...generally,
+                    size: file.size,
+                    modified: new Date(file.lastModified),
+                }));
+            } else {
+                // < dirs don't have mtime. put a cache of Stuff in each one?
+                // reuse the existing child listing: cached walkers (WormholeNav._cache)
+                //  and open UIs keep their object, its expanded state, its own children
+                const prior = this.directories.find(d => d.name === entry.name)
+                if (prior) { prior.handle = entry as FileSystemDirectoryHandle; directories.push(prior) }
+                else directories.push(new DirectoryListing({
+                    handle: entry as FileSystemDirectoryHandle,
+                    ...generally,
+                }));
+            }
+        })
         this.files = files.sort(sort_by_name)
         this.directories = directories.sort(sort_by_name)
         this.expanded = true

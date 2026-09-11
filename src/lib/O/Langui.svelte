@@ -1409,15 +1409,52 @@
         //  header — scroll it ~a quarter down so the body fills the view below it.
         //  Small targets centre as before.
         const span   = block_lines(doc, line.number)
-        const scroll = span > 8
+        const big    = span > 8
+        const scroll = () => big
             ? EditorView.scrollIntoView(from, { y: 'start', yMargin: Math.round(v.scrollDOM.clientHeight * 0.25) })
             : EditorView.scrollIntoView(from, { y: 'center' })
         v.dispatch({
             selection: { anchor: from, head: to },
-            effects: [ ...opens.map(r => unfoldEffect.of(r)), scroll ],
+            effects: [ ...opens.map(r => unfoldEffect.of(r)), scroll() ],
         })
         v.focus()
         bloom_at(v, from)
+        // HOLD THE AIM.  The scroll above is right for the geometry it measured, but a goto is
+        //  followed by a tick's worth of layout: Point folds land (Lang_apply_openness), the minimap
+        //   and error rails appear, fonts settle — and each moves the target, usually off the bottom
+        //    (the owner, 2026-09-11: *"aiming is a bit bouncy… we have to react to every layout
+        //     change or so"*).  So for a short while the target is PINNED: every geometry change
+        //      re-measures it and, if it has left the scroller, fires the same scroll again.  The
+        //       hold ends on time, or the moment the human scrolls|types|clicks — their hand wins.
+        _aim = { pos: from, scroll, until: performance.now() + AIM_HOLD_MS, fired: 0 }
+    }
+
+    const AIM_HOLD_MS = 1500
+    let _aim: { pos: number, scroll: () => StateEffect<unknown>, until: number, fired: number } | null = null
+    const drop_aim = () => { _aim = null }
+    // Called from the updateListener on a geometry|viewport change while an aim is held: measure
+    //  (read phase, post-layout) whether the target still sits inside the scroller, and if not,
+    //   re-fire the scroll from the write phase — deferred a task, because a dispatch from inside
+    //    a measure write re-enters the update cycle.  Bounded to 6 re-fires so a target that CAN'T
+    //     be shown (a doc shorter than the view, a hidden editor) never loops.
+    function hold_aim(v: EditorView) {
+        const aim = _aim
+        if (!aim) return
+        if (performance.now() > aim.until || aim.fired > 6) { _aim = null; return }
+        v.requestMeasure({
+            key: 'lte-aim',
+            read: (v) => {
+                const c = v.coordsAtPos(aim.pos)
+                if (!c) return false
+                const r = v.scrollDOM.getBoundingClientRect()
+                return c.top < r.top || c.bottom > r.bottom
+            },
+            write: (out, v) => {
+                if (!out || _aim !== aim) return
+                aim.fired++
+                setTimeout(() => { if (_aim === aim) v.dispatch({ effects: aim.scroll() }) }, 0)
+            },
+        })
     }
 
     // Line-count of the indent block headed by startLine (header + deeper-indented body
@@ -1687,12 +1724,16 @@
                 copy: (e, v) => copy_clean(e, v, false),
                 cut:  (e, v) => copy_clean(e, v, true),
                 scroll: () => schedule_scroll_save(),   // #11: persist the top line (debounced) so a reload resumes scroll
+                // the human's hand ends a held aim — never fight a scroll they made
+                wheel: drop_aim, mousedown: drop_aim, touchstart: drop_aim, keydown: drop_aim,
             }),
             Keys,
             EditorView.updateListener.of((v: ViewUpdate) => {
                 const sel = v.state.selection.main
                 sel_from = sel.from
                 sel_to   = sel.to
+                // a held goto aim re-checks itself on any layout movement (see hold_aim)
+                if (_aim && (v.geometryChanged || v.viewportChanged || v.docChanged)) hold_aim(v.view)
                 // where-you-look tap: when the cursor lands on a new line, fire the
                 //  lightest tap (weight 1) at it after a short settle, so the Ting
                 //  accumulates where attention actually goes — line-gated + debounced so

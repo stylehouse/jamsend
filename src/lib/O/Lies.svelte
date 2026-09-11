@@ -652,9 +652,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   them as boundaries, not durations, and subtract to get a stage.  `ticks` is the structural
     //    number and the one to quote: wall clocks vary 3x run to run on identical code, tick COUNTS
     //     do not.
+    //  ⚠ THE MARKS LIVE ON .c, NOT .sc (2026-09-11 night sweep).  As `sc` keys they were SNAPPED — a
+    //   wall clock inside every Lake Book's fixture — and the whole family (LakeKeep LakeLocate LakeFunk
+    //    LakeLango Interesting Engage Diffmatication Educarium Hackarium …) went red with a dige that
+    //     differed every run and one diff line: `see:lies,boot:63467,…`.  The row stays (docs · wafts ·
+    //      ticks are structural and worth seeing); the milliseconds ride beside it off-snap, where the
+    //       console line below still reads them.
     Lies_mark(w: TheC, k: string) {
         const row = w.oai({ see: 'lies' }) as TheC
-        if (!row.sc[k]) row.sc[k] = '' + Math.round(performance.now())
+        const marks = ((row.c as any).marks ??= {}) as Record<string, number>
+        if (!marks[k]) marks[k] = Math.round(performance.now())
     },
 
     async Lies(A: TheC, w: TheC) {
@@ -726,7 +733,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!w.c.lies_said) {
             w.c.lies_said = 1
             const r = w.oai({ see: 'lies' }) as TheC
-            const at = (k: string) => +((r.sc[k] as string) ?? 0)
+            const at = (k: string) => +((((r.c as any).marks ?? {})[k]) ?? 0)
             console.log(`⏱ Liesui ready in ${(at('ready') / 1000).toFixed(1)}s`
                 + ` — app→Lies ${at('boot')}ms`
                 + ` · ghosts ${at('ghosts') - at('boot')}ms`

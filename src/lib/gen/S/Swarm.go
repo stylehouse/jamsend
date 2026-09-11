@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'c2fd1db9f2315ba7~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'ebd4d01990a00da3~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -1440,6 +1440,14 @@ Swarm_account_of(w, prepub) {
 //     .c.frame|the envelope (never snapped); the kind alone is the visible face.
 Swarm_deliver(w, ident, prepub, frame) {
     if (!prepub) return false
+    // THE OFFLINE GATE (2026-09-11 — the ×6200 dropped frames on the staging relay).  Two identities
+    //  last seen in August were still being sent pier_accept (the heal sweep) + ive_got (the boast)
+    //   every beat: every sender here checks the CARRIER, and with a relay the carrier is always up —
+    //    the relay just drops the frame at the far door and counts it.  Presence_offline is the one
+    //     test the Presence design names for suppression: TRUE only when the relay positively said
+    //      this peer is not there (null = unknown → send as before; a Book replay reads null too,
+    //       so fixtures do not move).  A refused deliver is what the %Owed ledger is for.
+    if (typeof this.Presence_offline === 'function' && this.Presence_offline(String(prepub))) { return false }
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     let route = station && station.o({ Pier: 1 }).find(p => p.sc.pub === prepub)
     if (route) {
@@ -2305,6 +2313,17 @@ async Swarm_station_up(w, ident) {
             //        door fails over with no ceremony at all.
             let granted = frame && frame.addr
             if (!granted) { return }
+            // THE ACK LATCH (2026-09-11 — the latent twin of Lies' lost identity bind, Social_demarcation
+            //  §"THE LATENT TWIN").  This socket carries MUSIC; a hello whose ack never came leaves every
+            //   to:<prepub> frame — swarm frames and chunks — dropped at the relay for the life of the
+            //    socket, and nothing local notices.  Stamp which hello this ack answers; Swarm_hello_retry
+            //     (the 2s watch loop) re-sends whichever is still unstamped.  The body ack is out of the
+            //      soul family and would return below — stamp it FIRST.
+            let bk_ack = this.Swarm_body_key(ident)
+            let bname_ack = bk_ack && bk_ack.pub ? String(bk_ack.prepub || prepubOf(String(bk_ack.pub))) : ''
+            // (a fresh identity's body name IS its soul name — then one ack answers both hellos; only a
+            //  distinct body name returns here, or the soul latch below would never stamp)
+            if (bname_ack && String(granted) === bname_ack) { self_w.c.body_hello_ok_at = Date.now(); if (bname_ack !== String(ident.sc.prepub)) { return } }
             // ONLY A SOUL-FAMILY ANSWER MOVES THE DOOR (2026-09-02 night — the rehome ping-pong).
             //  This hook hears EVERY hello_ok on the socket, and the station sends TWO hellos: the
             //   soul's and the BODY key's. The body hello's own ack (its key-derived name, a foreign
@@ -2314,6 +2333,8 @@ async Swarm_station_up(w, ident) {
             //       someone else's conversation: ignore them.
             let fam0 = String(ident.sc.prepub)
             if (String(granted) !== fam0 && !String(granted).startsWith(fam0 + '_')) { return }
+            self_w.c.soul_hello_ok_at = Date.now()
+            if (self_w.c.hello_tries) { console.log('⨳ station hello acknowledged after ' + self_w.c.hello_tries + ' retr' + (self_w.c.hello_tries === 1 ? 'y' : 'ies')); delete self_w.c.hello_tries }
             if (granted === ident.sc.prepub) {
                 // THE DOOR RECLAIM (2026-09-02): the arbiter granted us our own bare name — so heal a
                 //  stale body-name address a PAST yield persisted into sc.address (the poison that kept
@@ -2350,42 +2371,12 @@ async Swarm_station_up(w, ident) {
             //  hellos the SOUL name — that name is the crew's DOOR and contending for it is the whole
             //   collision this rebuild retires.  A cert-crew CAVE has no soul key; it hellos ONLY its own
             //    body name (the block just below), so it can never fight for the door.  Guard, don't crash.
-            try {
-              if (this.Swarm_keys(ident)) {
-                let header = { control: 'hello', from: ident.sc.prepub, pub: this.Swarm_keys(ident).pub, ts: Date.now() }
-                let sign = await signHeader(header, this.Swarm_keys(ident).key)
-                // WANT (Portability §4 hello-v2): the address this body wishes to hold — the cohort's
-                //  local choice (bare, or a suffix if a same-profile sibling holds bare).  It rides
-                //   BESIDE the signed header, never inside it (the signature stays over the 4 keys the
-                //    relay verifies), and the relay may hand back a DIFFERENT addr (a cross-machine
-                //     body held it — the case the local census cannot see); on_hello adopts the answer.
-                let want = this.Swarm_address(ident)
-                // THE IN-FAMILY CLAMP (2026-09-02, the self-collision kill-chain — ceremony-addr-test §D):
-                //  after a door-yield Swarm_address is the BODY-KEY name, a FOREIGN prepub family — and a
-                //   foreign want refuses the WHOLE hello, costing this socket its courtesy soul bind, so
-                //    to:<soul> dead-ends in the sibling socket's w:Lies.  A soul hello may only want what
-                //     the soul key can hold: in-family, else clamp to the bare name (a held bare answers
-                //      with a suffix — never a refusal, never a lost bind).
-                let fam = String(ident.sc.prepub)
-                if (want && String(want) !== fam && !String(want).startsWith(fam + '_')) { want = fam }
-                port.ws?.send(JSON.stringify(Object.assign({}, header, { sign: sign, want: want })))
-              }
-            } catch (e) { console.log('⨳⚠ station hello failed (relay down?)', e) }
-            // LAND-OF-PREPUB (Division §0 ⚑⚑⚑, 2026-09-02): the body ALSO binds its own key-derived
-            //  name on the same socket — NO want (a body IS its address; there is nothing to
-            //   arbitrate, a collision is impossible by construction), and handleHello already binds
-            //    prepubOf(pub) for any self-signed key. The soul hello above stays: the soul name is
-            //     the DOOR (first-come — the Seat is whoever holds that one binding). Sibling frames
-            //      and a friend's body-dials land here from now on. Body key not hydrated yet →
-            //       skip; the next (re)open re-runs this hook and the hydrate races it there.
-            try {
-                let bk = this.Swarm_body_key(ident)
-                if (bk && bk.pub && bk.key) {
-                    let bh = { control: 'hello', from: String(bk.prepub || prepubOf(String(bk.pub))), pub: bk.pub, ts: Date.now() }
-                    let bsign = await signHeader(bh, bk.key)
-                    port.ws?.send(JSON.stringify(Object.assign({}, bh, { sign: bsign })))
-                }
-            } catch (e) { console.log('⨳⚠ body hello failed', e) }
+            // THE HELLOS — soul then body — moved to Swarm_station_hello so the 2s watch loop can
+            //  RE-SEND an unacknowledged one (the latch above).  Cleared on every (re)open: a new socket
+            //   has no binds, whatever the old one had.
+            delete w.c.soul_hello_ok_at; delete w.c.body_hello_ok_at; delete w.c.hello_tries
+            w.c.station_ident = ident
+            await this.Swarm_station_hello(w, ident, port, false)
             // the per-era VOUCHER: the relay authenticates the LINK (the hello above) but ROUTES
             //  on header.to alone and never checks header.from against the key we sealed, so a
             //   spoofer on any socket could forge a friend's prepub.  We sign a tiny proof our
@@ -2516,6 +2507,76 @@ async Swarm_station_up(w, ident) {
 //  their prepub, %Ud stamped (v1 trust — the pre-Ud inbox gate books their frames; the swarm layer
 //   above re-verifies every signature itself). The Lies_runner_pier shape. No-op without a station,
 //    so the Books' mail-wire worlds (and their fixtures) never see it.
+// Swarm_station_hello — the soul hello (with its in-family WANT) and the body hello (no want), each
+//  sent only while its ack latch is unstamped.  First called from on_open; re-called by
+//   Swarm_hello_retry.  The soul want is Swarm_address — deterministic, so a retry re-asks the SAME
+//    seat and the relay's own rule makes that idempotent (the asker's binds never block itself).
+//     Never mint a fresh seat per attempt: that is the 139-seat leak of 2026-09-11 in LiesLies.
+async Swarm_station_hello(w, ident, port, retry) {
+    if (!port || !port.ws || port.ws.readyState !== 1) { return }
+    if (retry) {
+        w.c.hello_tries = (w.c.hello_tries || 0) + 1
+        console.log('⨳↻ station hello not acknowledged — re-sending (attempt ' + w.c.hello_tries + ')' + (w.c.soul_hello_ok_at ? ' body' : ' soul'))
+        if (w.c.hello_tries === 3) { console.log('⨳🔥 station hello still unacknowledged after 3 tries — every to:<us> frame (swarm and music) is being dropped at the relay; outbound looks fine') }
+    }
+    w.c.hello_sent_at = Date.now()
+    try {
+      if (this.Swarm_keys(ident) && !w.c.soul_hello_ok_at) {
+        let header = { control: 'hello', from: ident.sc.prepub, pub: this.Swarm_keys(ident).pub, ts: Date.now() }
+        let sign = await signHeader(header, this.Swarm_keys(ident).key)
+        // WANT (Portability §4 hello-v2): the address this body wishes to hold — the cohort's
+        //  local choice (bare, or a suffix if a same-profile sibling holds bare).  It rides
+        //   BESIDE the signed header, never inside it (the signature stays over the 4 keys the
+        //    relay verifies), and the relay may hand back a DIFFERENT addr (a cross-machine
+        //     body held it — the case the local census cannot see); on_hello adopts the answer.
+        let want = this.Swarm_address(ident)
+        // THE IN-FAMILY CLAMP (2026-09-02, the self-collision kill-chain — ceremony-addr-test §D):
+        //  after a door-yield Swarm_address is the BODY-KEY name, a FOREIGN prepub family — and a
+        //   foreign want refuses the WHOLE hello, costing this socket its courtesy soul bind, so
+        //    to:<soul> dead-ends in the sibling socket's w:Lies.  A soul hello may only want what
+        //     the soul key can hold: in-family, else clamp to the bare name (a held bare answers
+        //      with a suffix — never a refusal, never a lost bind).
+        let fam = String(ident.sc.prepub)
+        if (want && String(want) !== fam && !String(want).startsWith(fam + '_')) { want = fam }
+        port.ws?.send(JSON.stringify(Object.assign({}, header, { sign: sign, want: want })))
+      }
+    } catch (e) { console.log('⨳⚠ station hello failed (relay down?)', e) }
+    // LAND-OF-PREPUB (Division §0 ⚑⚑⚑, 2026-09-02): the body ALSO binds its own key-derived
+    //  name on the same socket — NO want (a body IS its address; there is nothing to
+    //   arbitrate, a collision is impossible by construction), and handleHello already binds
+    //    prepubOf(pub) for any self-signed key. The soul hello above stays: the soul name is
+    //     the DOOR (first-come — the Seat is whoever holds that one binding). Sibling frames
+    //      and a friend's body-dials land here from now on. Body key not hydrated yet →
+    //       skip; the next (re)open re-runs this hook and the hydrate races it there.
+    try {
+        let bk = this.Swarm_body_key(ident)
+        if (bk && bk.pub && bk.key && !w.c.body_hello_ok_at) {
+            let bh = { control: 'hello', from: String(bk.prepub || prepubOf(String(bk.pub))), pub: bk.pub, ts: Date.now() }
+            let bsign = await signHeader(bh, bk.key)
+            port.ws?.send(JSON.stringify(Object.assign({}, bh, { sign: bsign })))
+        }
+    } catch (e) { console.log('⨳⚠ body hello failed', e) }
+
+},
+// Swarm_hello_retry — from the 2s watch loop: while a hello's latch is unstamped past one round trip
+//  (HELLO_GRACE) re-send it, capped (HELLO_TRIES) so a relay that will never answer cannot be asked
+//   forever.  Real sockets only — a Book's mock port has no ws and nothing to bind.
+Swarm_hello_retry(w) {
+    let HELLO_GRACE = 3000
+    let HELLO_TRIES = 6
+    if (!w || !w.c || !w.c.station_up) { return }
+    let ident = w.c.station_ident
+    let port = w.o({ transport: 1, type: 'websocket' })[0]?.c.port
+    if (!ident || !port || !port.real || !port.ws || port.ws.readyState !== 1) { return }
+    let need_soul = !!this.Swarm_keys(ident) && !w.c.soul_hello_ok_at
+    let bk = this.Swarm_body_key(ident)
+    let need_body = !!(bk && bk.pub && bk.key) && !w.c.body_hello_ok_at
+    if (!need_soul && !need_body) { return }
+    if (Date.now() - (w.c.hello_sent_at || 0) < HELLO_GRACE) { return }
+    if ((w.c.hello_tries || 0) >= HELLO_TRIES) { return }
+    this.Swarm_station_hello(w, ident, port, true).catch((er) => console.log('⨳⚠ station hello retry threw', er))
+
+},
 Swarm_station_pier(w, ident, prepub) {
     if (!w || !ident || !prepub) return null
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
@@ -5161,6 +5222,7 @@ Swarm_watch_loop(w) {
 // Swarm_watch_look — one pass. Transition-triggered, never a repeating shout: a supervisor that
 //  reprints every 2s trains people to filter it out, which is how the ⏳ skip line became furniture.
 Swarm_watch_look(w) {
+    this.Swarm_hello_retry(w)
     let v = this.Swarm_beat_health(w)
     let bad = v.state === 'stuck' ? v : null
     if (!bad) {

@@ -8,11 +8,19 @@ story:Interesting
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.004
+    TimeTotal:beliefs,avg=0.006
       sample=0.002,at=1781750526
       sample=0.008,at=1783157731
       sample=0.001,at=1785996958
-    TimeTotal:step,avg=0.005
+      sample=0.002,at=1789108404
+      sample=0.002,at=1789108859
+      sample=0.024,at=1789108910
+      sample=0.002,at=1789109702
+    TimeTotal:step,avg=0.007
       sample=0.008,at=1783157731
       sample=0.001,at=1785996958
+      sample=0.002,at=1789108404
+      sample=0.002,at=1789108859
+      sample=0.024,at=1789108910
+      sample=0.002,at=1789109702
   step,dige:b6fbf4859e4bec30

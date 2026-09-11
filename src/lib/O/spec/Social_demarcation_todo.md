@@ -4,7 +4,45 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
  2026-09-06 in which SoundPooling was dead for two days for a reason that had nothing to do with
   SoundPooling.
 
-## 0. WHAT TO GET ON WITH NEXT (refreshed 2026-09-08 for the morning slog)
+## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night — the log it replaced is §0.9 below, intact)
+
+**Destination.** One socket per tab, bound by a signed hello to the tab's identity and to its role,
+ delivering to every world on that tab through per-world handler registration — so "is this peer
+  reachable" has one answer, the relay's own-door rule has one claimant, and the membership door
+   (§2) is the only place a *social* decision is made. The wire stays dumb; the door stays legible.
+
+**Where it stands (all landed, all live, editor AND runners on the same spine as of 2026-09-11):**
+- `?addr=<role>` is gone: a role channel dials `/relay` bare; `become` binds the role, the signed
+   `hello` binds the identity; the relay's own-door rule counts a declared role as a door.
+- The hello is ACKNOWLEDGED in both worlds: `w:Lies` (latch + capped retry, one seat per socket) and
+   the Swarm station (`Swarm_station_hello`/`Swarm_hello_retry`). A lost bind now re-sends and shouts.
+- The editor rides `gen/N/` via `pinned_stable/` re-copied today. **Re-copy it whenever the spine
+   moves** — that two-month skew is what made every "proven on the runner" claim false on the editor.
+- The relay: one `peerLink` (last dialer wins, prod must run `EDITOR_RELAY=off`), control frames
+   deduped per socket, dial storm guarded, `dropCounts` capped.
+- Outbound to a peer the relay has POSITIVELY said is offline is refused at `Swarm_deliver` and
+   `Repli_offer` (Presence three-valued; unknown still sends; Books read null).
+
+**What detonates if the next person doesn't know it:**
+1. A relay.ts save restarts the dev server and drops every websocket — batch relay edits, and never
+    mid-sweep. A LiesLies/src edit HMR-reloads runner tabs (wedge risk) — same rule.
+2. A network fix verified on a runner is NOT verified on the editor until the pinned spine carries it.
+    Verify editor-side with a headless editor (`?E=Editron&I=new`, console grepped), never a runner.
+3. Never mint a fresh seat/name per retry — the relay binds additively and releases only on close
+    (139 seats on one socket). Retries re-ask the SAME want; the relay makes that idempotent.
+4. A fresh identity's body name IS its soul name: one hello_ok answers both hellos.
+5. Presence is three-valued. Suppress on `Presence_offline(x)` (=== false) only; a bare falsy read
+    collapses "unknown" into "offline" and starves boot.
+
+**Next moves, in order:**
+1. The one-socket-per-tab migration — crux is per-world handler registration on one carrier
+    (`w.c.on[type]` today is per world; the carrier must fan by `header.to` → world). Design in §0.9
+     "NEXT BIG ONE"; nothing built yet. Flag-gated, mixed-fleet safe, or it splits the fleet again.
+2. Cluster_spec §3.3's ladder should absorb §0.9's bridge-hijack + ownsDoor accounts when the human
+    next preens it.
+3. The `📊` route rollup behind `socklog`; a player's Lies keepalive should ping nobody.
+
+## 0.9 THE LOG — 2026-09-06 → 09-11, as it happened (was §0; kept whole, read when §0 is not enough)
 
 > **⚠ 2026-09-11 — the EDITOR was never on the new spine.** Its channel rides the frozen
 >  `p2p/pinned_stable/*.go` (promoted 2026-07-19), not `gen/N/`; every "proven on the runner" line
@@ -204,6 +242,12 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
   session: a probe's `to:'runner'` ping from :9092 logged `runner ping ×3 (bridge)` and runners were
    ponging the editor throughout. Closed unless it recurs; if it does, tap the relay log by
     `become editor` on :9092 (relayLog fans `control:log` to that door) before theorising.
+
+**✅ THE LATENT TWIN IS FIXED (night of 2026-09-11).** `Swarm_station_hello` sends whichever of the
+ soul/body hellos is still unacknowledged; `Swarm_hello_retry` re-sends from the 2s watch loop
+  (grace 3s, cap 6, real sockets only); the arbiter hook stamps `soul_hello_ok_at` / `body_hello_ok_at`.
+   ⚠ A fresh identity's body name IS its soul name — one ack answers both; the hook must stamp both
+    or the soul retries to the cap (measured, then fixed). Verified on a headless music page.
 
 **⚑ THE LATENT TWIN — `Swarm_station_up`'s hello has the same shape, on the socket that carries MUSIC.**
  Found by sweeping for the pattern rather than the symptom, 2026-09-10. `Swarm.g:2271` (soul hello) and

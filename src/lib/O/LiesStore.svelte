@@ -224,6 +224,10 @@
     async Lies_provide_dock(w: TheC, path: string, opts?: { force_compile?: boolean }): Promise<void> {
         const H    = this as House
         const good = await H.LiesStore_read_good(w, 'text/Doc', path)
+        // ⏱ hop 2 of the doc-open chain (want → provide → good lands → dock_content → set_active_dock).
+        //  Placed to split the owner's ~3s click→dock gap: everything AFTER the click measures fast,
+        //   so the wait is between hops, and a duration cannot say which — a timestamp can.
+        console.log(`⏱ provide_dock @${(performance.now() / 1000).toFixed(2)}s ${path} · ${good.c.content === undefined ? 'COLD (read pending)' : 'warm'}`)
         if (good.c.content === undefined) {
             // cold — register where to push when the read lands (Aw + wake, not
             //  a held ref); oai keeps it single across repeated provides.
@@ -241,6 +245,7 @@
     //   fires a single handback for the standing Lang/Lang dock_content seam.
     LiesStore_drain_good_now(_w: TheC, good: TheC, opts?: { force_compile?: boolean }): void {
         const H = this as House
+        console.log(`⏱ good→Lang (warm) @${(performance.now() / 1000).toFixed(2)}s ${String(good.sc.path ?? '?')}`)
         // drop any pending cold subscribe (we are about to satisfy it), then push.
         for (const sub of good.o({ subscribe: 1 }) as TheC[]) good.drop(sub)
         // feebly: with no Lang up the tree (runner, no editor) there's no dock to hand to.
@@ -1051,6 +1056,8 @@
     //   the only trigger, so we drop each subscribe after firing.
     LiesStore_drain_good(good: TheC): void {
         const H = this as House
+        // ⏱ hop 3 (cold path): the read has LANDED and is being handed to its subscribers.
+        if (good.o({ subscribe: 1 }).length) console.log(`⏱ good→Lang (cold) @${(performance.now() / 1000).toFixed(2)}s ${String(good.sc.path ?? '?')}`)
         for (const sub of good.o({ subscribe: 1 }) as TheC[]) {
             const Aw   = sub.sc.Aw   as string | undefined
             const wake = sub.sc.wake as string | undefined

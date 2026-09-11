@@ -25,26 +25,37 @@ A **working `_todo`** (not self-promoted). The front door for the **visual** bra
 2. **The line law.** Every sc key a cell's members carry is said by the cell: a fact, a chip, a
     vein, or a **counted door**. Never merely absent.
 
-**Start here, in this order:**
+**Start here, in this order** (refreshed 2026-09-11 — items 2–4 landed earlier this session, verified
+ against the live code; the "findings" doc these five items were written against could not be located
+ by that name — moved, renamed, or retired to `spec/history/` under a different title. Where a claim
+  below can't be checked against it, it's checked against the code directly and said so):
 
 1. **The two owed leaks** (`findings §6.7`) — `n:have` on valued facts and on spread tails. The
     ruling was asked for on **2026-07-22** (*"HUMAN ruling owed (morning)"*) and never given; it is
      the exact mechanism of the owner's *"randomly leave something off."* It re-snaps three Books
       (Stuffing · Floorlaw · Deepcrest) and touches the crush's live voice, which is why it stalled.
        **This is a preen-hour decision, not a build** — it wants the human, and it unblocks the rest.
-2. **`q:` on the dip** (`findings §4`) — one key on `%Vrow,row:dip` carrying the query that reopens
-    the door, so a Book can assert a door by RE-RUNNING it. Today the way back lives only on `.c`:
-     real to the renderer, imaginary to the proof harness. One key, and the claim/squish regimes
-      become enumerable rather than a mood.
-3. **The fold ladder** (`findings §6.2`) — `Vyto_fold_scope` (`Vyto.g:476`) tries mainkey → `of:` →
-    `id:` → `bucket_key_of` LAST. One call site carries the whole ruling, and VytoStaple's eight
-     cogs partitioned by `metal` keep meaning what they meant (a discovered key genuinely IS the
-      finest meaning available there).
-4. **Stop subtracting** (`findings §6.1`) — `SIG_JOINS` strikes `id`/`of`/`pub`/`page`/`seq` as
-    *"plumbing"* (`vyto_foam.ts:19-21`) and `Vyto_relate` strikes the mainkey too (`Vyto.g:1059`).
-     Put them back as a weighted **kin atom**, emit `%Flow,kind:kin`, and **the plug draws itself**.
+       **Still open** — no sign this was ruled on.
+2. **✅ LANDED — `q:` on the dip.** `Vyto_dip_assign(root, members, q)` (`Vyto.g`) carries `q:` on
+    `%Vrow,row:dip` — the election's group string, re-runnable to reopen the door. A dip with no
+     election carries no `q:` (absence is meaningful, not a mint bug).
+3. **✅ LANDED — the fold ladder.** `Vyto_fold_scope` elects via `fold_key_compat` (`vyto_foam.ts`) —
+    mainkey (the kind rung) → `of:` → `id:` → a discovered key last, threaded from `foamereo:'kindfold'`.
+     Proven offline first (`scripts/VytoFoldLadder.spec.ts`, 27 tests incl. a 500-case property test),
+      wired live, and witnessed on a live glass via `/BigShapeland`'s `fold` desk chip on VytoOrchestra
+       (a Song crest genuinely forms — `Song · ×3 @mainkey=Song · artist Yara · …`).
+4. **✅ LANDED — stop subtracting.** `Vyto_relate`'s kinweave branch, behind `foamereo:'kinweave'`
+    (`vyto_foam.ts`'s `kin_of`/`kin_edges`/`KIN_WEIGHT`) — a shared `id`/`of`/`pub` now contributes a
+     weighted **kin atom** rather than being struck as plumbing, and an edge carrying one is stamped
+      `kind:kin` so the renderer draws a plug. Additive — unset, byte-identical.
 5. **The seven doorless sites** (`findings §3`) — each mints a dip with a true count, a `rule:` and
-    a `q:`. `Cyto.svelte:443-452` is the template: census before drop.
+    a `q:`. `Cyto.svelte:443-452` is the template: census before drop. **Partially landed, count
+     unverified**: three sites are dated and named in `Vyto.g` — "doorless site #5" (the universal
+      presence fact, `Vyto_keyrows`), "#6" (THE FLAT DOOR), "#7" (THE CARDINALITY DOOR) — all
+       2026-09-09. Sites #1–#4 are not identifiably named anywhere found this session; if picked up,
+        first try to recover or re-derive the original seven-item enumeration before assuming 1–4 are
+         still open — they may already be covered under different names (the fold ladder and kinweave
+          work above touch adjacent ground).
 
 Then the gate: the sworn sentences are already written (`findings §7`), first among them
 

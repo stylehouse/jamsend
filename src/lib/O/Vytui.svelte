@@ -151,6 +151,76 @@
         return typeof (src?.c?.press ?? src?.c?.onclick) === 'function'
     }
 
+    // ── THE SEEM — a first cut (2026-09-11, the owner: "it's kind of a Seem explorer we should build
+    //  actually, the source layer of C**, and the squished, and any later jointed-on C about C" —
+    //  and, plainer, "perhaps we can pop up the original snap-looking data on some kind of click").
+    //  Three layers were named; this ships ONE AND A HALF of them — source (the row's own sc, in the
+    //   real snap wire syntax — checked against wormhole/Story/VytoOrchestra/008.snap: `mk:value,
+    //    key:value`, comma-joined, no `%`) and jointed-on (the live `.c` scalars something stamped onto
+    //     this SAME row after the fact — `pose`, `heat`, `press`, whatever a render or a model pass
+    //      left behind — refs and functions excluded, they are not "about" the row in a way that
+    //       prints).  "The squished" — a crest's folded view of what it absorbed — is NOT here yet; it
+    //        needs the crest's own %Vrow children, a different shape, filed rather than guessed at.
+    //  Double-click, not click: `cell_click`/`.c.press` already OWN single-click (the owner killed the
+    //   old click-to-enlarge in the same breath that gave presses the role), so this rides the one
+    //    gesture left free rather than fighting that ruling.
+    let inspect_w: TheC | null = $state(null)
+    let inspect_cell: PaintCell | null = $state(null)
+    function open_inspect(w: TheC, cell: PaintCell, ev?: Event) { ev?.stopPropagation(); inspect_w = w; inspect_cell = cell }
+    function close_inspect() { inspect_w = null; inspect_cell = null }
+    // BESIDE IT, not a fixed corner (2026-09-11, the owner: "the snap-looking C** explainer beside
+    //  it?").  The same cam-relative percentage `.face-mold` already anchors an HTML overlay to a
+    //   world-space point with (Vytui.svelte's own `left:{(cell.mx-cam.x)/cam.w*100}%` idiom) — reused
+    //    here for the cell's OWN centre.  Flips to the LEFT of a cell past the frame's midline so the
+    //     popup never has to run off the right edge of the glass.
+    function inspect_style(cell: PaintCell, cam: { x: number, y: number, w: number, h: number }): string {
+        const px = ((cell.x - cam.x) / cam.w) * 100
+        const py = ((cell.y - cam.y) / cam.h) * 100
+        const leftSide = px > 55
+        return `left:${px.toFixed(2)}%; top:${py.toFixed(2)}%; `
+             + `transform: translate(${leftSide ? 'calc(-100% - 16px)' : '16px'}, -50%);`
+    }
+    // THE SHARED GLOW KEY (2026-09-11, the owner: "the snap-looking C** explainer beside it? with
+    //  bi-directional on-hover-glow effects... so we can figure out what part of what we're looking
+    //   at").  One field name, set by whichever side is hovered — a folio atom (fo-linkable, tagged
+    //    with the SAME key name via `k` on its Atom/Seat) or a Seem-popup row — and read by BOTH, so
+    //     each lights the other without either owning the relationship.
+    let glow_key: string | null = $state(null)
+    // THE SOURCE LAYER — the real wire syntax, not a paraphrase (see ident_of's own note just below:
+    //  the doc's `%mk` is prose shorthand, never the snap's own line).  A bare presence marker (`1`)
+    //   prints bare, exactly as it would in the file.  Parts, not one string, so the popup can make
+    //    each `key:value` its own hoverable span for the glow above.
+    function raw_snap_parts(row: TheC | null): { k: string, text: string }[] {
+        const sc: any = row?.sc; if (!sc) return []
+        const keys = Object.keys(sc); if (!keys.length) return []
+        const part = (k: string, v: any) => k + ((v == null || v === 1 || v === '1') ? '' : ':' + String(v))
+        const out: { k: string, text: string }[] = [{ k: keys[0], text: part(keys[0], sc[keys[0]]) }]
+        for (let i = 1; i < keys.length; i++) {
+            const v = sc[keys[i]]
+            if (v == null || typeof v === 'object') continue   // refs live in .c, never .sc — nothing to say here
+            out.push({ k: keys[i], text: part(keys[i], v) })
+        }
+        return out
+    }
+    // THE JOINTED-ON LAYER — live `.c` facts a render or model pass stamped onto this SAME particle
+    //  after it was minted (a pose, a heat, a press).  Scalars only; a ref/function is a MECHANISM,
+    //   not a fact worth reading in a popup, and would not stringify into anything a human wants.
+    function jointed_pairs(row: TheC | null): { k: string, v: string }[] {
+        const c: any = row?.c; if (!c) return []
+        const out: { k: string, v: string }[] = []
+        for (const k of Object.keys(c)) {
+            const v = c[k]
+            if (v == null || typeof v === 'function') continue
+            if (typeof v === 'object') {
+                if (v.sc || v.c || Array.isArray(v)) continue   // a C ref or a list of them — structure, not a fact
+                try { out.push({ k, v: JSON.stringify(v) }) } catch { /* not plain data */ }
+                continue
+            }
+            out.push({ k, v: String(v) })
+        }
+        return out
+    }
+
     // THE A IS GONE (2026-08-10, the focus pivot).  It was the honest cure for a foam that guessed
     //  sizes — a handle on the same knob the model reads.  Under focus, size is ASSIGNED by the
     //   commission, so the handle came off with the guessing: `dose` remains a model fact the
@@ -1650,9 +1720,24 @@
         let n = m.get(tok); if (n == null) { n = m.size + 1; m.set(tok, n) }
         return n
     }
-    function ident_of(row: TheC, w?: TheC | null, tok?: string): string {
-        const sc: any = row?.sc; if (!sc) return '?'
-        const mk = Object.keys(sc)[0]; if (!mk) return '?'
+    // THE REAL SNAP SYNTAX, not the doc's talking-ABOUT-a-particle prose shorthand (2026-09-11, the
+    //  owner caught the mistake: *"is that actually supposed to be %Song:Lowtide? … I'm hoping the cell
+    //   itself can be enough to represent C-ness, so we don't need the % sigil"*).  A real snap line
+    //    reads `Song:LowTide,artist:Yara,mood:brine` — colon between key and value, comma between pairs,
+    //     no `%` (checked straight off wormhole/Story/VytoOrchestra/008.snap).  `%Text` / `%Spotlight,src`
+    //      in CLAUDE.md is how the DOCS refer to a mainkey in prose; it was never the wire format, and a
+    //       glass that claims to show "the cell itself as C-ness" should show the wire format.  So: plain
+    //        `mk:value`, never `mk:serial.name` (the earlier "Song:6.Undertow" the owner couldn't read —
+    //         the `6` was a purely-local render-side disambiguator, no meaning in the snap at all).
+    // ident_parts_of — the SAME resolution as ident_of, unglued, so a caller who wants to STYLE the
+    //  mainkey and its value differently (the owner: "I'd like a more universal k:v style, like
+    //   artist:Yara is... to Song too" — a folio already colours a fact's key lilac and its value white;
+    //    the title should wear that SAME convention, not a flat bold string) can do so.  `badge` marks
+    //     the rare bare-mainkey `#n` case, which is a render-order tag, not a `k:v` pair — a caller
+    //      should never colour it like one.
+    function ident_parts_of(row: TheC, w?: TheC | null, tok?: string): { mk: string, v: string, badge?: boolean } {
+        const sc: any = row?.sc; if (!sc) return { mk: '?', v: '' }
+        const mk = Object.keys(sc)[0]; if (!mk) return { mk: '?', v: '' }
         const v = sc[mk]
         // a bare presence marker is not a name; anything else the mainkey carries IS one
         let name = (v == null || v === 1 || v === '1') ? '' : String(v)
@@ -1661,8 +1746,17 @@
             if (alt != null) name = String(alt)
         }
         if (name.length > 18) name = name.slice(0, 17) + '…'
+        if (name) return { mk, v: name }
+        // truly bare (no name, no id/seed/of/title/name at all) — keep the 2026-08-09 disambiguator
+        //  for the case it was actually for, but as a render-order BADGE, never glued in with a `:`
+        //  like it was a real field
         const n = tok != null ? serial_of(w ?? null, tok) : 0
-        return n ? `${mk}:${n}${name ? '.' + name : ''}` : `${mk}${name ? ':' + name : ''}`
+        return n ? { mk, v: '#' + n, badge: true } : { mk, v: '' }
+    }
+    function ident_of(row: TheC, w?: TheC | null, tok?: string): string {
+        const { mk, v, badge } = ident_parts_of(row, w, tok)
+        if (!v) return mk
+        return mk + (badge ? ' ' : ':') + v
     }
 
     // THE UNDER-LAYER (the human 2026-08-08: "Components won't be snapped by your picture-taker, but
@@ -1705,12 +1799,15 @@
         return out
     }
 
-    // ── THE FOLIO — foamereo stop `folio` (2026-09-10): a cell's words laid into its own shape ─────────
-    //  The owner, looking at the folded glass: *"it doesn't put the inlaid component (which is a label for
-    //   itself?) in a non-obscured location … putting the words along the wall of the cell was a
-    //    breakthrough in legibility"* — and, the standing ask, *"the whole magazine-layout job"*.  The old
-    //     Voro renderer had exactly that engine (Cytui's tuples pane) and it never crossed the moult; this
-    //      is it, ported pure (vyto_pane.ts, node-proven) and worn as a STOP so the owner's eye decides.
+    // ── THE FOLIO — now the DEFAULT render, `wallcarve` is the opt-in stop back to the old look
+    //   (2026-09-11, the owner has LOOKED: "I like how the cells jiggle gently and the outside label
+    //    orbits slowly … now you can really iterate" — folio was the look he was seeing and preferring,
+    //     so it becomes what a fresh glass shows without a chip).  History: born 2026-09-10 as an opt-in
+    //      stop (the owner, looking at the folded glass: *"it doesn't put the inlaid component … in a
+    //       non-obscured location … putting the words along the wall of the cell was a breakthrough in
+    //        legibility"* — and, the standing ask, *"the whole magazine-layout job"*).  The old Voro
+    //         renderer had exactly that engine (Cytui's tuples pane) and it never crossed the moult; this
+    //          is it, ported pure (vyto_pane.ts, node-proven).
     //  What a cell says, in the snap's own grammar: its ident as the title, then one line per scalar —
     //   and a CREST says its distilled voice: the door (×N + the query that reopens it), the veins, the
     //    facts, the spreads with their chips.  Rows flow along the cell's biggest top-left wall, seated
@@ -1719,7 +1816,7 @@
     //   (so the need-floor measure pass never floors a cell to its folio) — a Book's fixtures cannot move.
     //  On: it replaces the centred ident, the hallway, the wave band and the wall carve for FACELESS
     //   cells.  A faced cell keeps its label-along-the-top: the face owns that room.
-    function folio_on(w: TheC): boolean { return !!fo(w, 'folio') }
+    function folio_on(w: TheC): boolean { return !fo(w, 'wallcarve') }
     const folioMemo = new Map<string, { sig: string, pane: Pane | null }>()
     function guts_pairs(row: TheC, max: number): { k: string, v: string }[] {
         const sc: any = row?.sc; if (!sc || max <= 0) return []
@@ -1759,7 +1856,10 @@
         const mk = Object.keys(sc)[0]
         const crest = mk === 'Vtuffing'
         const g = cell_ground(cell)
-        const ident = crest ? (crest_key(sc) ?? cell.ident) : cell.ident
+        // a crest's key is its own distilled string (not a plain mainkey:value) — keep it a single
+        //  bold run; an ordinary row's ident goes in SPLIT (see ident_parts_of/rows_of) so the title
+        //   wears the same key:value convention as every fact line below it.
+        const ident = crest ? (crest_key(sc) ?? cell.ident) : ident_parts_of(cell.row, w, cell.tok)
         // a SCOPE (its children tile it) wears a RUNNING HEAD: its name alone along its top wall, small and
         //  un-inflated, the way a magazine section carries its title above the pieces inside it
         const head = cell.hasKids
@@ -1767,7 +1867,7 @@
         const guts = crest || head ? [] : guts_pairs(cell.row, 12)
         const rows = head ? rows_of(ident, [], null, { hue: g?.color ?? undefined, title_fs: 11 }).slice(0, 1)
                           : rows_of(ident, guts, vrows, { hue: g?.color ?? undefined })
-        if (head) rows[0][0].cls = 'fo-title fo-head'
+        if (head) for (const a of rows[0]) a.cls = a.cls + ' fo-head'
         const sig = (cell.d || (cell.x.toFixed(1) + ',' + cell.y.toFixed(1) + ',' + cell.r.toFixed(1))) + '|' + rows.map(r => r.map(a => a.text).join('\u0001')).join('\u0002')
         const m = folioMemo.get(cell.key)
         if (m && m.sig === sig) return m.pane
@@ -2277,6 +2377,16 @@
                     //  Angle discipline: normalised so text never reads upside down; snapped level
                     //   within 8° — a 3° tilt reads as a bug where a 20° tilt reads as a seat.
                     let mx = bb.bx, my = bb.by, mw = bb.bw, mh = bb.bh, ang = 0
+                    // POSABLE FACES (2026-09-11, the owner: "might faces have some posability... want to
+                    //  keep their eyes-nose-mouth structure, but allow them to be posed to match the cell
+                    //   nicely").  This ALREADY EXISTS and always has, two branches below: a round body
+                    //    (ball) inscribes its face level (ang stays 0 — a circle has no direction to lean
+                    //     into); a POLYGON with a gently-slanted wall (slab, ≤ MAX_TILT) rotates the WHOLE
+                    //      face box about its own centre to lie along it — the box is a rigid CSS
+                    //       transform, so a face's internal layout (its own eyes-nose-mouth) never reflows,
+                    //        it just leans.  `poseKind` records which regime fired, purely for the stamp
+                    //         below — it changes no geometry.
+                    let poseKind: 'ball' | 'flat' = 'flat'
                     // A BLOB NEEDS THE INSCRIBED SEAT TOO (2026-08-10, `focusR` added).  This branch
                     //  ray-casts the mold INSIDE the polygon; the `else` below falls back to a slab
                     //   or the AABB, which for a round body means a rect inscribed in its BOUNDING
@@ -2287,6 +2397,7 @@
                     //   seat; the `s.r > 8` gate is dropped for it because a focus cell's radius is
                     //    the spring's, which the assigned layout does not use.
                     if (!hasKids0 && face && (foam || focusR) && (focusR || s.r > 8) && nw && nh) {
+                        poseKind = 'ball'
                         // THE FOAM SEAT (2026-08-09, the owner: "things aren't positioned in the
                         //  cells properly").  A foam cell is a BALL, and the ball answers the seat
                         //   question exactly: the largest rectangle of the face's aspect inscribed
@@ -2579,6 +2690,13 @@
                     if (focusR && stretchPose && mw > 8 && mh > 8) {
                         (row.c as any).stretch_rect = { x: mx + mw / 2, y: my + mh / 2, w: mw, h: mh }
                     }
+                    // THE POSE, STAMPED (2026-09-11) — the render-derived fact a Book can actually read,
+                    //  the same idiom as need_area/stretch_rect: `.c` never snaps, but it is live memory
+                    //   on the very row a Book already holds a reference to.  `ang` in RADIANS (the raw
+                    //    value this file computes in); a Book asserting "genuinely tilted" wants
+                    //     `Math.abs(ang) > 0.01` — well past the 0.14 rad level-snap already in the slab
+                    //      branch above, so a false positive from float noise is not this stamp's problem.
+                    if (face) (row.c as any).pose = { ang, seat: poseKind }
                     cells.push({ tok: n.tok, key: n.key, depth: n.depth, hasKids, ident, spike: sp,
                                  x: ax, y: ay, r: s.r, kind: 'poly', d: path_round(sp ? sp.poly : poly), departing: false, lift,
                                  bx: vx, by: vy, bw: vw, bh: vh,
@@ -2985,6 +3103,16 @@
                 //   there never ran and `--why` reported `0 worlds · 0 cells` about a glass drawing
                 //    seven.  This is the only path a Book's render actually takes.
                 try { (H.top_House().c as any).vy_render = vy_snapshot() } catch { /* best-effort */ }
+                // ATTEMPTED 2026-09-11, REVERTED (see Glassbeast_todo.md and the memory file
+                //  vyto-spool-never-captures-under-a-driven-run.md): firing Vyto_settle here — once
+                //   per distinct step_n, deduped via a per-world Map, off this same jump-to-target —
+                //    regressed VytoSeek/VytoOrchestra/VytoStaple to red
+                //    (ok_pct 0.25/0.13/0.38) on the very next fleet run.  Vyto_spool_capture awaits
+                //     snap_H, and that extra async work on a path every driven Book takes through on
+                //      EVERY step is exactly the "await on the hot path flakes Books" class of bug —
+                //       confirmed by reverting and watching the fleet return to green.  The real fix
+                //        needs a way to capture that does not perturb the SAME belief-tick a step
+                //         transition is landing on; not attempted again this session.
                 continue
             }
             if (moved) { settleCount.set(w, 0); settledState.set(w, false) }
@@ -3901,6 +4029,35 @@
                         {/each}
                     </div>
                 {/if}
+                <!-- THE SEEM POPUP — double-click a cell to see its source line + jointed-on .c facts
+                     (2026-09-11, see the note by open_inspect/raw_snap_parts). One inspector per world;
+                     a stale reference (the row departed mid-look) just prints nothing rather than
+                     throwing. Every field is a hoverable span sharing `glow_key` with the folio's own
+                     atoms (see the CSS note by .fo-linkable) — hover either side, both light up. -->
+                {#if inspect_w === w && inspect_cell}
+                    <div class="seem-pop" role="dialog" aria-label="particle inspector" style={inspect_style(inspect_cell, cam)}>
+                        <div class="seem-head">
+                            <span class="seem-ident">{inspect_cell.ident}</span>
+                            <button class="seem-close" onclick={close_inspect} aria-label="close">×</button>
+                        </div>
+                        <div class="seem-label">source</div>
+                        <div class="seem-line">
+                            {#each raw_snap_parts(inspect_cell.row) as p, pi (p.k + pi)}
+                                {#if pi}<span class="seem-comma">,</span>{/if}<span class="seem-part" class:seem-glow={p.k === glow_key}
+                                      onpointerenter={() => glow_key = p.k} onpointerleave={() => { if (glow_key === p.k) glow_key = null }}>{p.text}</span>
+                            {/each}
+                        </div>
+                        {#if jointed_pairs(inspect_cell.row).length}
+                            <div class="seem-label">jointed-on</div>
+                            {#each jointed_pairs(inspect_cell.row) as jp (jp.k)}
+                                <div class="seem-line seem-part" class:seem-glow={jp.k === glow_key}
+                                     onpointerenter={() => glow_key = jp.k} onpointerleave={() => { if (glow_key === jp.k) glow_key = null }}>
+                                    <span class="seem-key">{jp.k}</span>:{jp.v}
+                                </div>
+                            {/each}
+                        {/if}
+                    </div>
+                {/if}
                 <!-- THE AWAIT RING (the owner 2026-08-09: "look a bit more spinnery before the data
                      comes in").  An empty glass used to be a blank plate — indistinguishable from a
                      broken one, for up to ~30s while the share arms.  While there is NOTHING to cut,
@@ -4004,11 +4161,25 @@
                         {#if fp}
                             <g class="folio" class:sunk={cell.sunk} data-fkey={cell.key}>
                                 {#each fp.seats as st, si (si)}
-                                    <text class="fo {st.cls}" x={st.x.toFixed(1)} y={st.y.toFixed(1)} font-size={st.fs.toFixed(1)}
+                                    <text class="fo {st.cls}" class:fo-linkable={!!st.k} class:fo-glow={!!st.k && st.k === glow_key}
+                                          x={st.x.toFixed(1)} y={st.y.toFixed(1)} font-size={st.fs.toFixed(1)}
+                                          data-fk={st.k ?? undefined}
                                           style={st.hue ? `fill:${st.hue}` : undefined}
-                                          transform={st.rot ? `rotate(${st.rot} ${st.x.toFixed(1)} ${st.y.toFixed(1)})` : undefined}>{st.text}</text>
+                                          transform={st.rot ? `rotate(${st.rot} ${st.x.toFixed(1)} ${st.y.toFixed(1)})` : undefined}
+                                          onpointerenter={st.k ? () => glow_key = st.k! : undefined}
+                                          onpointerleave={st.k ? () => { if (glow_key === st.k) glow_key = null } : undefined}>{st.text}</text>
                                 {/each}
                             </g>
+                        {:else}
+                            <!-- THE BLANK BIT (2026-09-11, folio became the default and this started
+                                 showing up: the owner, looking live: *"what's with this blank bit"*).
+                                 `folio_of`'s `pane_rows` can decline to fit ANY row along the wall —
+                                 too small a room, a poly mid-physics-settle with an odd chord — and
+                                 unlike the old wall-carve path this had no floor under it at all: a
+                                 cell with a real wall and zero words.  Fall to the plain centred ident,
+                                 same floor a non-folio cell already had — never nothing. -->
+                            <text class="ident" class:sunk={cell.sunk} data-key={cell.key} x={cell.x} y={cell.y}
+                                  text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
                         {/if}
                     {/snippet}
                     {#each vines_of(w, viewport_cells(w)) as v (v.d)}
@@ -4051,6 +4222,7 @@
                                   onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                   onpointerleave={() => on_leave(w, cell.key, cell.tok)}
                                   onclick={() => cell_click(w, cell)}
+                                  ondblclick={(e) => open_inspect(w, cell, e)}
                                   role="button" tabindex={0} aria-label={cell.ident}
                                   onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cell_click(w, cell) } }}></path>
                         {:else}
@@ -4065,8 +4237,10 @@
                                     <circle class="cell disc loose" class:departing={cell.departing} class:lift={cell.lift}
                                             class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'}
                                             cx={cell.x} cy={cell.y} r={cell.r}
+                                            role="button" tabindex={0}
                                             onpointerenter={() => on_enter(w, cell.key, cell.tok)}
-                                            onpointerleave={() => on_leave(w, cell.key, cell.tok)}></circle>
+                                            onpointerleave={() => on_leave(w, cell.key, cell.tok)}
+                                            ondblclick={(e) => open_inspect(w, cell, e)}></circle>
                                     {#if !cell.face && !cell.hasKids && folio_on(w)}
                                         {@render folio(w, cell)}
                                     {:else if !cell.face && !cell.hasKids}
@@ -4553,6 +4727,31 @@
     }
     .unseat-chip:hover { color: #fff; background: rgba(52, 52, 74, 0.9); border-color: rgba(190, 190, 235, 0.8); }
     /* (.stageband went with the drag, 2026-08-10.) */
+    /* THE SEEM POPUP — a plain reader, not another styled organ: it exists to show the RAW thing
+       under the paint, so it deliberately looks like a terminal, not like the glass. */
+    .seem-pop {
+        position: absolute; z-index: 8; pointer-events: auto;
+        min-width: 180px; max-width: 320px;
+        background: rgba(12, 12, 18, 0.94); border: 1px solid rgba(150, 150, 190, 0.4); border-radius: 8px;
+        padding: 8px 10px; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: #d6d6ec;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    }
+    .seem-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .seem-ident { font-weight: 700; color: #ececf8; }
+    .seem-close {
+        background: none; border: none; color: #9c9cc6; font-size: 14px; line-height: 1; cursor: pointer;
+        padding: 0 2px;
+    }
+    .seem-close:hover { color: #fff; }
+    .seem-label { color: #7a7a9c; text-transform: uppercase; letter-spacing: 0.08em; font-size: 9px; margin-top: 6px; }
+    .seem-line { color: #cfcfe8; word-break: break-word; }
+    .seem-key { color: #9c9cc6; }
+    .seem-comma { color: #56566e; }
+    /* THE BI-DIRECTIONAL GLOW, popup side (see the matching .fo-linkable/.fo-glow note in the folio
+       CSS above — one `glow_key`, two places it can light up). */
+    .seem-part { cursor: help; border-radius: 3px; padding: 0 1px; }
+    .seem-part.seem-glow { background: rgba(255, 233, 168, 0.16); color: #ffe9a8; box-shadow: 0 0 0 1px rgba(255, 233, 168, 0.4); }
+    .seem-part.seem-glow .seem-key { color: #ffe9a8; }
     /* THE LOOSE LAYER — drifters off the pile: dim, small, owing no wall.  Rim seats are static
        (tok-hashed) — a stir-clock drift was cut because rest_poll stirs in a loop; renderer-side
        drift waits on a <g> wrapper so a disc and its label revolve together. */
@@ -4865,6 +5064,11 @@
     .folio text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: #dcdcf0; pointer-events: none;
                   paint-order: stroke; stroke: rgba(8, 8, 18, 0.62); stroke-width: 2.6px; stroke-linejoin: round; }
     .folio .fo-title { font-weight: 700; letter-spacing: 0.25px; }
+    /* THE TITLE WEARS THE SAME k:v CONVENTION AS A FACT (2026-09-11, the owner: "a more universal k:v
+       style, like artist:Yara is... to Song too") — the mainkey muted lilac, its value bright, same
+       palette as fo-key/fo-val below, just at title weight/size (rows_of sizes both at title_fs). */
+    .folio .fo-title-key { fill: #9c9cc6; }
+    .folio .fo-title-val { fill: #ececf8; }
     .folio .fo-head  { font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8; }
     .folio .fo-key   { fill: #9c9cc6; font-weight: 600; }
     .folio .fo-val   { fill: #ececf8; }
@@ -4874,6 +5078,14 @@
     .folio .fo-chip  { fill: #bcbcda; opacity: 0.88; }
     .folio .fo-more  { fill: #8e8eae; opacity: 0.8; }
     .folio.sunk { opacity: 0.22; }
+    /* THE BI-DIRECTIONAL GLOW (2026-09-11, the owner: "the snap-looking C** explainer beside it? with
+       bi-directional on-hover-glow effects... so we can figure out what part of what we're looking at").
+       A folio atom that carries a field name (`data-fk`) is made hoverable (auto over the folio's own
+       pointer-events:none default) and, on hover OR when the Seem popup's matching field is hovered,
+       gets the SAME glow — one shared `glow_key` in the script drives both directions from one state. */
+    .folio .fo-linkable { pointer-events: auto; cursor: help; }
+    .folio .fo-linkable.fo-glow, .folio .fo-glow { fill: #ffe9a8 !important;
+        filter: drop-shadow(0 0 3px #ffe9a8) drop-shadow(0 0 7px rgba(255, 220, 130, 0.75)); }
     /* THE GROUND — coarse copper under everything, barely there: the cells sit ON something. */
     .ground-tex { opacity: 0.055; pointer-events: none; }
     /* THE HALLWAY — the corridor let into the cell wall (fine copper, worked smaller than the

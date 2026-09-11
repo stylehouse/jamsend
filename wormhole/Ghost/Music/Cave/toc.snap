@@ -1,0 +1,108 @@
+Waft:Ghost/Music/Cave,desc:the collection — heist original bytes into the Cave — the keep chooses — the Heard Mag is the ledger of love — a phone hands its loves to the laptop
+  Funkcion:CreduFunk
+    Funkcion:Storying,of_Book:MusuHeist
+    Funkcion:Storying,of_Book:MusuHeard
+    Funkcion:Storying,of_Book:MusuHandoff
+    Funkcion:Storying,of_Book:MusuBerth
+    Funkcion:Storying,of_Book:MusuVend
+    Funkcion:Storying,of_Book:MusuDoor
+    Funkcion:Storying,of_Book:MusuCursor
+    Funkcion:Storying,of_Book:MusuHeal
+    Funkcion:Storying,of_Book:MusuResume
+    Funkcion:Storying,of_Book:MusuRename
+    Funkcion:Storying,of_Book:MusuRecast
+    Funkcion:Storying,of_Book:MusuStanding
+    Funkcion:Storying,of_Book:MusuFreeze
+    Funkcion:Storying,of_Book:MusuReap
+    Funkcion:Storying,of_Book:MusuSoft
+    Funkcion:Storying,of_Book:MusuBay
+    Funkcion:Storying,of_Book:MusuBreach
+    Funkcion:Storying,of_Book:MusuMag
+    Funkcion:Storying,of_Book:MusuBuddy
+    Funkcion:Storying,of_Book:MusuSteward
+    Funkcion:Storying,of_Book:MusuSmuggle
+    Funkcion:Storying,of_Book:Heistation
+    Funkcion:Storying,of_Book:Siphonation
+  What:the heist,desc:Heist — ORIGINAL file bytes move straight into the collection — a job a filing a body
+    Doc:Ghost/M/Heist.g
+    Point,method:Heist_job,desc:one heist — what to pull and where
+    Point,method:Heist_body_new,desc:a body to receive bytes
+    Point,method:Heist_has_body,desc:is the whole body here
+    Point,method:Heist_filing_for,desc:where a track files
+    Point,method:Heist_manifest,desc:what a heist will take
+    Point,method:Heist_release_rec,desc:let a record go
+    Point,method:Heist_xfer_breach,desc:bytes that do not hash — refused
+    Doc:src/lib/O/ui/HeistFace.svelte
+    Doc:src/lib/O/ui/HeistBarFace.svelte
+    Doc:src/lib/O/Funk/HeistSetup.svelte
+  What:the keep,desc:what we choose to take — picks genre lofi dirs — the memo — pause resume and the haul
+    Doc:Ghost/M/Heist.g
+    Point,method:Heist_keep_id,desc:the keep id
+    Point,method:Heist_keep_remember,desc:remember the keep
+    Point,method:Heist_keep_pick_toggle,desc:pick or unpick
+    Point,method:Heist_keep_set_genre,desc:a genre filter
+    Point,method:Heist_keep_pause,desc:pause
+    Point,method:Heist_keep_resume,desc:resume
+    Point,method:Heist_keep_commit,desc:commit the choices
+    Point,method:Heist_haul_rows,desc:the haul — what is coming
+    Point,method:Heist_keep_gist,desc:one line about the keep
+    Doc:src/lib/O/ui/HaulFace.svelte
+    Doc:src/lib/O/ui/PickFace.svelte
+  What:the rummage,desc:soft heist — words and leads — a wish hardens into a pull
+    Doc:Ghost/M/Heist.g
+    Point,method:Heist_wish,desc:a wish for music
+    Point,method:Heist_soft,desc:soft search
+    Point,method:Heist_words,desc:the words of a wish
+    Point,method:Heist_match,desc:does a record match
+    Point,method:Heist_leads,desc:where to look
+    Point,method:Heist_rummage_recs,desc:rummage a shelf
+    Point,method:Heist_rummage_wire,desc:rummage over the wire
+    Point,method:Heist_blag_folder,desc:take a whole folder
+  What:the berth,desc:the magazine on disk — parts and the fold — Musica the zine — a cursor names a spot and heals across a rename
+    Doc:Ghost/M/Heist.g
+    Point,method:Berth_dir,desc:where a berth lives
+    Point,method:Berth_fold,desc:fold parts
+    Point,method:Musica_zine_ensure,desc:the zine
+    Point,method:Musica_cards,desc:cards of the zine
+    Point,method:Musica_rename,desc:rename with a redirect
+    Point,method:Cursor_make,desc:a cursor into a magazine
+    Point,method:Cursor_resolve,desc:find the spot
+    Point,method:Cursor_heal,desc:heal across a rename
+    Doc:src/lib/O/ui/ZineFace.svelte
+  What:the heard,desc:the Heard Mag is the ledger — a Card per track per pub — love takes and unlove unwants — verdicts and the unseen mark
+    Doc:Ghost/M/Heard.g
+    Point,method:Heard_mag,desc:the Mag per pub
+    Point,method:Heard_card,desc:the Card per track
+    Point,method:Heard_take,desc:love — take it
+    Point,method:Heard_unwant,desc:unlove — drop the ask keep the listing
+    Point,method:Heard_taken,desc:is it loved
+    Point,method:Heard_verdict,desc:what happened to the take
+    Point,method:Heard_notice,desc:mark unseen on arrival
+    Point,method:Heard_unseen,desc:how many unseen
+    Point,method:Heard_gc,desc:the clock that forgets
+    Point,method:Heard_clone_beat,desc:copy verdicts across
+  What:the hand road,desc:a phone hands its loved tracks to the laptop — land got and wake
+    Doc:Ghost/M/Heard.g
+    Point,method:Heard_hand_targets,desc:who to hand to
+    Point,method:Heard_hand_land,desc:a hand lands
+    Point,method:Heard_hand_got,desc:the laptop says got
+    Point,method:Heard_hand_wake,desc:re-offer
+    Point,method:Heard_tip,desc:tip a card over
+  What:the siphon,desc:tags and playlists over the collection
+    Doc:Ghost/M/Siphon.g
+    Point,method:Siphon_tags,desc:the tag set
+    Point,method:Siphon_tag_apply,desc:tag a track
+    Point,method:Siphon_playlist,desc:a playlist from tags
+    Point,method:Siphon_home,desc:where siphons live
+  What:the tests
+    Doc:Ghost/Story/HeistTesting.g
+    Doc:Ghost/Story/BerthTesting.g
+    Doc:Ghost/Story/SiphonTesting.g
+  What:the spec
+    Doc:src/lib/O/spec/Heist_todo.md
+    Doc:src/lib/O/spec/Heist_design.md
+    Doc:src/lib/O/spec/Mag_todo.md
+    Doc:src/lib/O/spec/Mag_design.md
+    Doc:src/lib/O/spec/Siphon_todo.md
+    Doc:src/lib/O/spec/Fallen_out_of_mind_todo.md
+    Doc:src/lib/O/spec/Radio_circuit_todo.md
