@@ -4,10 +4,7 @@ story:RepliSplit
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.01
-      sample=0.009,at=1785890814
-      sample=0.007,at=1785890864
-      sample=0.007,at=1785905151
+    TimeTotal:beliefs,avg=0.013
       sample=0.016,at=1785907078
       sample=0.009,at=1785941562
       sample=0.007,at=1785966730
@@ -15,10 +12,10 @@ story:RepliSplit
       sample=0.014,at=1786005380
       sample=0.01,at=1786005472
       sample=0.011,at=1786069794
-    TimeTotal:step,avg=0.002
-      sample=0.002,at=1785890814
-      sample=0.001,at=1785890864
-      sample=0.001,at=1785905151
+      sample=0.024,at=1789115996
+      sample=0.02,at=1789118057
+      sample=0.015,at=1789118563
+    TimeTotal:step,avg=0.003
       sample=0.003,at=1785907078
       sample=0.002,at=1785941562
       sample=0.001,at=1785966730
@@ -26,6 +23,9 @@ story:RepliSplit
       sample=0.003,at=1786005380
       sample=0.002,at=1786005472
       sample=0.002,at=1786069794
+      sample=0.005,at=1789115996
+      sample=0.004,at=1789118057
+      sample=0.003,at=1789118563
   step,dige:60ef9808456910e1
   step=2,dige:5cb54eeceaa8482e
     Assertion:spine-crosses-whole,sentence:the fragment climbed in whole — one mag one cloud one card stand at the mirror

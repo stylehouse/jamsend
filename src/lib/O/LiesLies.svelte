@@ -1794,6 +1794,14 @@
         Lies_ping(w: TheC) {
             const H = this as House
             if (!H.Lies_channel_live(w)) return
+            // A MUSIC PAGE PINGS NOBODY (2026-09-11 night).  Its peer role is 'editor' by the
+            //  `role === 'editor' ? 'runner' : 'editor'` fork at standup, so every humdinger on the box
+            //   pinged the editor every 5s and the editor dropped each one — `🛰☠ deliver: no Pier for
+            //    ping from=player to=editor` in the owner's console, one line a minute, forever.  The
+            //     player's channel exists for runner_ask diagnostics, which the CLI addresses by prepub;
+            //      the keepalive it needs is the socket's own.  A runner keeps pinging (the editor's
+            //       liveness badge reads the pong); an editor keeps pinging its runners.
+            if (H.Lies_humdinger(w) && H.Lies_role(w) !== 'editor' && H.Lies_role(w) !== 'runner') return
             // a runner stamps its addressable prepub (the hello-bind identity = Lies_self) on the ping:
             //  the 5s ping is a faster, identity-robust liveness pulse than the 15s advertise, so the editor
             //   keeps the runner's roster row fresh off the heartbeat (Lies_pong) — even between advertises,

@@ -11,3 +11,12 @@ Waft:Aside/2026-09-11,aside
   What=4,FromWhat:Waft:Aside/2026-09-11/What:3,about:Clustation_ensure_identity
     Doc:src/lib/O/Auto.svelte
       Point,method:Clustation_ensure_identity
+  What=5,FromWhat:Waft:Ghost/Music/Ality/What:the stock pass,about:rescan
+    Doc:src/lib/O/Funk/Shelver.svelte
+      Point,method:rescan
+  What=6,FromWhat:Waft:Aside/2026-09-11/What:5,about:dropstashedPiers
+    Doc:src/lib/p2p/ui/repro-reactive-stashed-hierarchy/NotPeering.svelte
+      Point,method:dropstashedPiers
+  What=7,FromWhat:Waft:Aside/2026-09-11/What:6,about:PierSharing
+    Doc:src/lib/p2p/ftp/Sharing.svelte.ts
+      Point,method:PierSharing

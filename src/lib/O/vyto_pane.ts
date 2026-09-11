@@ -27,7 +27,7 @@
 export type Pt = { x: number, y: number }
 
 // one atom of text — `len` is its width estimate in glyphs (filled by `atom`), `afs` its asked size
-export type Atom = { text: string, afs: number, cls: string, hue?: string, len: number, k?: string }
+export type Atom = { text: string, afs: number, cls: string, hue?: string, len: number, k?: string, pair?: boolean }
 // one atom landed — (x,y) is the START of the baseline, in the caller's coordinates, rotated `rot`°
 export type Seat = { text: string, x: number, y: number, fs: number, rot?: number, cls: string, hue?: string, k?: string, line: number }
 
@@ -111,39 +111,52 @@ export function pane_rows(poly: Pt[], cx: number, cy: number, rows: Atom[][], op
     for (let i = 1; i < 10; i++) { const c = poly_chord(rpoly, ry0 + (ry1 - ry0) * i / 10); if (c && c[1] - c[0] > widest) widest = c[1] - c[0] }
     widest = Math.max(6, widest - 2 * pad)
     const toppad = opts?.toppad ?? 4
-    const line_span = (ytop: number, lh: number): [number, number] | null => {
+    const line_span = (ytop: number, lh: number, padx = pad): [number, number] | null => {
         // the chords are read at the line box's TRUE top and bottom (1px in), so a glyph's ascender
         //  and descender are inside the wall by construction — the test's seat_box is this same box
         const a = poly_chord(rpoly, ytop + 1), b = poly_chord(rpoly, ytop + lh - 1)
         if (!a || !b) return null
-        const lo = Math.max(a[0], b[0]) + pad, hi = Math.min(a[1], b[1]) - pad
+        const lo = Math.max(a[0], b[0]) + padx, hi = Math.min(a[1], b[1]) - padx
         return hi - lo > 6 ? [lo, hi] : null
     }
     const layout = (zoom: number, tp = toppad): Pane | null => {
         const seats: Seat[] = []
         let cap = opts?.capfs ?? Infinity
         let ycur = ry0 + tp, hid = 0, dry = false, line = 0
-        const flow = (atoms: Atom[]) => {
+        // tight: the TITLE row — its value wrapping under its mainkey is not a treeing continuation, so no
+        //  indent and a 2-unit wall pad; in a slim wedge that is the difference between 'SaltA…' and 'SaltAir'
+        const flow = (atoms: Atom[], tight = false) => {
             if (!atoms.length) return
             if (dry) { hid += atoms.length; return }
-            const lh = Math.max(...atoms.map(a => Math.min(a.afs * zoom, cap))) * 1.24
+            // the line box is as tall as the atoms will actually BE, not as tall as they asked: an atom the
+            //  widest chord will only hold at 8px must not hunt for a 17-unit-tall band (SaltAir never found one)
+            const lh = Math.max(...atoms.map(a => Math.min(a.afs * zoom, cap, Math.max(FS_FLOOR, widest / (a.len * GLY))))) * 1.24
             // the room a line NEEDS before it will sit: its first atom at its asked size, capped at 60px —
             //  so the lead row steps past a wedge's tip to where it can be read, rather than seating a
             //   7px smudge at the apex and capping everything under it.
-            const need = Math.min(60, widest * 0.85, atoms[0].len * GLY * Math.min(atoms[0].afs * zoom, cap))
+            // ...but never LESS than the atom needs at the 7px floor when the cell can give it (up to 95%
+            //  of its widest chord) — stopping at the first 85% chord left 'SaltAi…' one glyph short of a word
+            const floorW = atoms[0].len * GLY * FS_FLOOR
+            const need = Math.min(60, Math.max(widest * 0.85, Math.min(widest * 0.95, floorW)), atoms[0].len * GLY * Math.min(atoms[0].afs * zoom, cap))
             let ch = line_span(ycur, lh)
             while ((!ch || ch[1] - ch[0] < need) && ycur + lh < ry1 - 3) { ycur += lh * 0.5; ch = line_span(ycur, lh) }
             if (!ch || ycur + lh > ry1 - 3) { dry = true; hid += atoms.length; return }
             let x = ch[0], right = ch[1], fresh = true
             const indent = Math.min(atoms[0].afs * zoom, cap) * 1.4
-            for (const a of atoms) {
+            for (let ai = 0; ai < atoms.length; ai++) {
+                const a = atoms[ai]
                 if (dry) { hid++; continue }
                 let afs = Math.min(a.afs * zoom, cap), w = a.len * GLY * afs
-                if (!fresh && x + w > right) {                     // wrap — the treeing indent
+                // a key that owns the next atom wraps as a UNIT: measure key + gap + value before placing the key
+                const nx = a.pair && atoms[ai + 1] ? atoms[ai + 1] : null
+                const wpair = nx ? w + afs * 0.55 + nx.len * GLY * Math.min(nx.afs * zoom, cap) : w
+                if (!fresh && x + wpair > right) {                 // wrap — the treeing indent
                     ycur += lh; line++
-                    const nch = line_span(ycur, lh)
+                    const nch = line_span(ycur, lh, tight ? 2 : pad)
                     if (!nch || ycur + lh > ry1 - 3) { dry = true; hid++; continue }
-                    x = nch[0] + indent; right = nch[1]
+                    // the treeing indent is for a WIDE cell; in a narrow one it eats the line — cap it to a
+                    //  slice of the chord so a wrapped value still has room to be a word
+                    x = nch[0] + (tight ? 0 : Math.min(indent, (nch[1] - nch[0]) * 0.15)); right = nch[1]
                 }
                 const room = right - x
                 let text = a.text
@@ -169,7 +182,7 @@ export function pane_rows(poly: Pt[], cx: number, cy: number, rows: Atom[][], op
             ycur += lh + 1.5; line++
         }
         for (let ri = 0; ri < rows.length; ri++) {
-            flow(rows[ri])
+            flow(rows[ri], ri === 0)
             if (ri === 0) {
                 if (!seats.length) return null                      // the lead line didn't seat — degrade
                 cap = Math.min(cap, Math.max(FS_FLOOR + 1, Math.max(...seats.map(s => s.fs)) * 0.92))
@@ -178,11 +191,19 @@ export function pane_rows(poly: Pt[], cx: number, cy: number, rows: Atom[][], op
         return { seats, hid, used: ycur - ry0 - tp + toppad, avail: availH, rot: deg ?? 0, zoom }
     }
     let res = layout(1), zused = 1
-    if (!res) return null
+    // the wall-aligned frame is a PREFERENCE, not a law: a slim wedge whose chords shrink further once
+    //  rotated (SaltAir on Orchestra, 50×51 units, said nothing) still seats its title upright — try
+    //   that before degrading to no words at all (the blank-bit floor is a worse look than a level title)
+    if (!res) return (opts?.norot || Math.abs(th) < 1e-3) ? null : pane_rows(poly, cx, cy, rows, { ...opts, norot: true })
+    // INFLATE BY LADDER (2026-09-11, the owner: "maxing out left-right top-bottom-ness and available
+    //  space"): one guess at a zoom, rejected whole if a single atom then hid, left big cells half empty.
+    //   Walk down from the ceiling and keep the LARGEST zoom that seats everything the 1× layout seated.
     if (opts?.inflate !== false && res.hid === 0 && res.used > 8 && availH / res.used > 1.15) {
-        const zoom = Math.min(opts?.maxzoom ?? 2.0, 1 + (availH / res.used - 1) * 0.7)
-        const up = layout(zoom)
-        if (up && up.seats.length && up.hid === 0) { res = up; zused = zoom }
+        const top = Math.min(opts?.maxzoom ?? 2.0, 1 + (availH / res.used - 1) * 0.85)
+        for (let zoom = top; zoom > 1.05; zoom -= 0.1) {
+            const up = layout(zoom)
+            if (up && up.seats.length === res.seats.length && up.hid === 0) { res = up; zused = zoom; break }
+        }
     }
     const spare = availH - res.used
     if (spare > 10 && !opts?.top) {
@@ -207,10 +228,15 @@ export type RowsOpts = { title_fs?: number, fact_fs?: number, chip_fs?: number, 
 //    style, like artist:Yara is... to Song too") — and so the title's own atoms carry `k` (the
 //     mainkey name), the same field every fact atom already carries, letting a caller glow the title
 //      and its matching fact/source line together on hover without caring which one it started from.
-export function rows_of(ident: string | { mk: string, v: string }, guts: { k: string, v: string }[], vrows: VrowDesc[] | null, o?: RowsOpts): Atom[][] {
+export function rows_of(ident: string | { mk: string, v: string, hide_mk?: boolean }, guts: { k: string, v: string }[], vrows: VrowDesc[] | null, o?: RowsOpts): Atom[][] {
     const T = o?.title_fs ?? 14, F = o?.fact_fs ?? 10, C = o?.chip_fs ?? 9
+    // hide_mk: the mainkey is said elsewhere (a shared junction label) — the title is the value alone,
+    //  still tagged k=mk so it glows with the junction and every sibling's value together
     const titleRow: Atom[] = (typeof ident === 'object' && ident.v)
-        ? [atom(ident.mk, T, 'fo-title fo-title-key', o?.key_hue ?? o?.hue, ident.mk), atom(ident.v, T, 'fo-title fo-title-val', o?.hue, ident.mk)]
+        ? (ident.hide_mk ? [atom(ident.v, T, 'fo-title fo-title-val', o?.hue, ident.mk)]
+                         // the mainkey wears the FACT-KEY look (artist, mood — size F, lilac, 600), not the title's: the owner,
+                         //  2026-09-11: "Song (mainkey) could look more like the other keys"; only the value is the title
+                         : [atom(ident.mk, F, 'fo-key fo-title-key', o?.key_hue, ident.mk), atom(ident.v, T, 'fo-title fo-title-val', o?.hue, ident.mk)])
         : [atom(typeof ident === 'object' ? ident.mk : ident, T, 'fo-title', o?.hue, typeof ident === 'object' ? ident.mk : undefined)]
     const rows: Atom[][] = [titleRow]
     if (vrows && vrows.length) {
@@ -247,7 +273,14 @@ export function rows_of(ident: string | { mk: string, v: string }, guts: { k: st
         }
     } else {
         const max = o?.max_facts ?? 8
-        for (const g of guts.slice(0, max)) rows.push([atom(g.k, F, 'fo-key', o?.key_hue, g.k), atom(g.v, F, 'fo-val', o?.hue)])
+        // FACTS FLOW (2026-09-11, the owner: "a bit more thinking about where the words go, maxing out
+        //  left-right top-bottom-ness and available space") — one line per fact wasted a wide cell's width
+        //   and a small cell's height (a Player's third line, `of main`, never fit).  All facts are ONE row
+        //    of key/value PAIRS: pane_rows wraps when the chord runs out, and a key never strands from its
+        //     value (`pair` — the key is placed only where its value fits beside it).
+        const line: Atom[] = []
+        for (const g of guts.slice(0, max)) { const ka = atom(g.k, F, 'fo-key', o?.key_hue, g.k); ka.pair = true; line.push(ka, atom(g.v, F, 'fo-val', o?.hue, g.k)) }
+        if (line.length) rows.push(line)
         if (guts.length > max) rows.push([atom('+' + (guts.length - max), C, 'fo-more', o?.key_hue)])
     }
     return rows

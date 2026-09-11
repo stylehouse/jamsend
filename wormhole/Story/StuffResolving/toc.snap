@@ -28,7 +28,6 @@ story:StuffResolving
     useCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.006
-      sample=0.009,at=1781080327
       sample=0.009,at=1781080336
       sample=0.004,at=1781947668
       sample=0.004,at=1781947737
@@ -38,7 +37,8 @@ story:StuffResolving
       sample=0.003,at=1781947791
       sample=0.005,at=1782308224
       sample=0.002,at=1785996790
-    TimeTotal:step,avg=0.006
+      sample=0.002,at=1789116046
+    TimeTotal:step,avg=0.005
       sample=0.004,at=1781947668
       sample=0.004,at=1781947737
       sample=0.004,at=1781947756
@@ -47,4 +47,5 @@ story:StuffResolving
       sample=0.003,at=1781947791
       sample=0.005,at=1782308224
       sample=0.002,at=1785996790
+      sample=0.002,at=1789116046
   step,dige:904f453593d439e7

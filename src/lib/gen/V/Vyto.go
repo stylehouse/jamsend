@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '6a4395ff9a9e2571~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '4764ffb3986dc6af~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -1362,7 +1362,10 @@ Vyto_express_rows(w, rows) {
         //      cell sized like a single leaf is still 3 things in one leaf's room.  A live 2+-child
         //       scope now claims room roughly for its members, same one-variable-at-a-time spirit as the
         //        dose/heat terms beside it; a leaf or single-child row (claim=1) is byte-identical.
-        let live_kids = kids.filter(k => !k.sc.departing).length
+        // MEMBERS only — a mirror row wears `.c.tok` (Vyto_scan_walk); a crest's %Vrow/%Vbit children
+        //  are its VOICE, not seated members, and must not buy it room (seen live: a folded Song crest
+        //   claimed 1.45× for its four Vrows)
+        let live_kids = kids.filter(k => !k.sc.departing && k.c.tok).length
         // a LINEAR claim (tried first, live) let a 3-child Band swallow the whole frame and crowd
         //  a Song out entirely — the scope's share needs to grow slower than its member count.
         // sqrt tried, live: still made a 3-child Band the single biggest shape in the frame — a power

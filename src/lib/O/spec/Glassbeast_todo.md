@@ -77,6 +77,75 @@ Two more of the owner's own asks, landed and verified live (not screenshotted-an
        several cells (like `artist`) glows it everywhere on the glass at once, not just the one cell you
         started from — `seq_0031` (folio→popup direction) and `seq_0032` (popup→folio direction), both
          confirmed live via the eye, not assumed from the code.
+- **"beside it"** — taken literally in a later tick: the popup now hangs off the cell's own wall
+   (`inspect_style`, the `.face-mold` cam-percentage idiom on the cell's bbox edge, flipping to the left
+    side past the frame midline) instead of a fixed corner, so the words it explains stay uncovered
+     for the glow. `seq_0035`. Two wrong tries on the way — centre-anchored buried the cell's text, and
+      `cell.r` is the pile's spring radius, not the polygon's real extent; `bx+bw` is.
+
+- **"the squished" — the third layer, landed** (a later tick). A `%Vtuffing` crest's popup now has a
+   SQUISHED section: its `%Vrow`/`%Vbit` subtree in wire syntax, indented as the snap indents it
+    (`squished_lines`), each line glowing with the folio atom that says the same fact (`seq_0036`, the
+     `mood` line and the crest's `mood` atom lit together). Two things this made visible at once:
+     (a) the popup's readers now follow `paint_tick` — the mirror is not reactive state, so a popup
+      opened before a crest's Vrows were distilled stayed empty forever; (b) **the owed `n:have` leak
+       is now literally readable**: `Vrow,row:fact,k:mood,v:brine,wgt` carries no carrier count though
+        only two of the three Songs wear a mood — exactly Cstructures_todo §6.4's finding, on screen.
+     And a bug in MY sizing formula, caught by the same view: the crest's Vrows were being counted as
+      "live kids" (1.45× room for its own voice). `live_kids` now counts only rows wearing `.c.tok`
+       (mirror members) — crest back to dose-only 9600, `seq_0037`. Compiled, and **fleet re-checked on the
+        reloaded runner**: VytoDepth 2/2, VytoNest 5/5, VytoOrchestra 7/7 sworn — same as before the
+         change. (First attempt was mid-way through someone's Musu sweep and reported THAT sweep's
+          outcomes under my Book names — never trust a `--watch` while `ping` shows another Book.)
+
+- **The eye leaked — fixed.** `scripts/runner_eye.mjs` never exited: its localhost TCP proxy held the
+   event loop open past `b.close()`. A `/proc` sweep found 22 headless Chromiums from this one session
+    still alive (plus two polling loops from before compaction). Killed them all (own-session cmdline
+     match only); the script now closes the proxy and `process.exit(0)`s — verified: an 8s-tick run exits
+      in 11s with nothing left behind.
+
+- **Slim cells say their name now (`vyto_pane.ts`, three general fixes, 11 node tests still green,**
+   **`seq_0039`).** SaltAir's 50×51 wedge fell to the plain `Song:SaltAir` overlay every run. Probed
+    offline with its live polygon: (1) the line box was sized to the ASKED 14px even though the atom
+     would render at 7px, so a 17-unit-tall box hunted for a chord the wedge never has — now sized to
+      what the widest chord can hold; (2) the wall-aligned frame is a preference — if it fails, retry
+       upright before degrading to nothing; (3) a split title whose VALUE did not seat whole showed the
+        wrong half (`Song` alone) — the value is the identity, re-flow it alone; the wrap indent is also
+         capped to 15% of a narrow chord, and the lead line may step down to 95% of the widest chord when
+          the floor-size word needs it (was `SaltAi…`). Only the loose Stray disc is plain text now.
+
+- **The owner looked at `seq_0039` and ruled twice (`seq_0040`):** *"SaltAir is missing the Song key"* —
+   my value-alone retry dropped the mainkey; reverted, and a title wrap now hugs the wall instead (no
+    treeing indent, 2-unit pad) so `Song / SaltAir` both seat whole in the wedge. *"Song (mainkey) could
+     look more like the other keys"* — the title's mainkey atom is now a FACT-KEY atom (size F, `fo-key`
+      lilac 600), only the value is title-sized. And *"how do I get the C viewer to pop up? … on keys, but
+       nothing much happens"* — the hoverable words had started swallowing the double-click meant for
+        the cell under them; the folio's text atoms now forward `dblclick` to `open_inspect` too. The
+         `?` cursor is `cursor: help` on any word that glows.
+
+- **Facts flow + inflate by ladder (`seq_0041`).** The owner: *"this %of:main isn't on there at all! …
+   just a bit more thinking about where the words go, maxing out left-right top-bottom-ness and
+    available space."* One-fact-per-line wasted a wide cell's width and a small cell's height (the
+     Player's third line, `of main`, never fit). `rows_of` now emits the facts as ONE row of key/value
+      PAIRS (`Atom.pair`: a key is placed only where its value fits beside it, so they wrap as a unit);
+       and the inflate walks a ladder down from the ceiling keeping the largest zoom that seats
+        everything, instead of one guess rejected whole. Spec updated to the new contract, 11/11 green.
+         Still open on the same ask: the block is pinned top-left with a half-spare drop — a wedge's
+          lower-right stays empty; true "maxing out" wants the text block to follow the widest chords.
+
+- **THE LAND POPUP (`seq_0042`).** The owner: *"I need not only this popup, but one for the whole land,
+   showing everything that's supposed to be there."* Double-click the bare ground: every mirror row, walked
+    and indented as the snap indents it, in wire syntax, each with its RENDER STATUS (seated · loose · rim
+     · no room · no wall · crest ×n · folded into a crest · departing) and a tally line. A line and its
+      cell light each other (`land_glow` by cell key — the cell wall goes gold). `land_lines` in
+       Vytui.svelte; `.land-pop` sits left, scrolls. The field popup (double-click a cell or its words)
+        and the land popup can be open together.
+
+- **Junction veins (`seq_0043`).** The owner: *"do we have the ability to merge the artist:Yara and
+   mood:brine parts of that?"* Yes — it is the crest's vein, done live under the `junction` stop: a fact
+    EVERY member of a junction carries with the same value is said once under the pill (`Junction.shared`)
+     and dropped from each member's lines. LowTide/Undertow become bare names; SaltAir, not at that
+      vertex, keeps its own. Field-glow still ties them all. Model untouched — render only.
 
 ### GENUINELY OWED TO THE OWNER, running list (nothing here is mine to resolve)
 - **Accept `wormhole/Story/VytoOrchestra/*.snap`** — the `Stray:*,loose` scalar + a new `see:` sentence,
@@ -133,7 +202,14 @@ The owner ran VytoOrchestra, saw *"crunchy things"*, and the earlier session pho
             `--eval`, not guessed at). **Not built**: "the squished" — a crest's folded view of what it
              absorbed, which needs the crest's own `%Vrow` children read a different way; filed, not faked.
 
-**NOT YET ACTED ON — the owner's own next design idea, recorded so it isn't lost:**
+**BUILT as a stop (a later tick) — the owner's own design idea, `junction`:**
+*(`seq_0038`, `?deck=junction`.)* Sibling leaf cells of one mainkey that share a polygon vertex say it
+ ONCE — a small pill at the meeting point (`junctions_of`, Vytui.svelte: vertex-to-vertex match within
+  2.5 units, most members wins, interior end of a shared wall beats the rim end) — and each member's
+   title keeps only its value (`hide_mk` through `rows_of`). The pill carries the mainkey as its glow
+    key, so hovering `Song` lights every Song value on the glass. Off by default; the owner's eye decides.
+     Known limits: a member with no folio fit (SaltAir here, a slim cell) still shows its plain
+      `mk:value` fallback; a family whose cells never touch gets no pill. The original ask, verbatim:
 *"putting the %Song etc in the cell wall would be cool... even better is sharing it amongst these three
  cells, at the junction, with the value of Song leading away..."* — i.e. sibling cells sharing a mainkey
   (the three `Song:*` cells here) would share ONE mainkey label sat at their shared wall junction, with

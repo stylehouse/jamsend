@@ -8,8 +8,7 @@ story:Understandication
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.108
-      sample=0.12,at=1780249409
+    TimeTotal:beliefs,avg=0.104
       sample=0.131,at=1780528472
       sample=0.131,at=1780528488
       sample=0.123,at=1781079869
@@ -19,10 +18,12 @@ story:Understandication
       sample=0.056,at=1783255954
       sample=0.056,at=1783255961
       sample=0.056,at=1783255965
+      sample=0.077,at=1789116581
     TimeTotal:step,avg=0.004
       sample=0.004,at=1783255954
       sample=0.004,at=1783255961
       sample=0.004,at=1783255965
+      sample=0.005,at=1789116581
   step,dige:02ec98e9f815fd83
   step=2,dige:9e8a727c71bcf6c1
   step=3,dige:392d0452c0035ccf

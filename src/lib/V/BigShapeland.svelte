@@ -100,6 +100,7 @@
     const RENDER_STOPS = [
         { stop: 'wallcarve',  what: 'OPT OUT of the folio — back to the old wall-carve masonry / centred ident (folio is now the default)' },
         { stop: 'wave',       what: 'with wallcarve on: the label rides a scalloped wave band instead of the wall carve' },
+        { stop: 'junction',   what: 'sibling cells of one mainkey say it ONCE where they meet — each keeps only its value (the owner\'s idea)' },
         { stop: 'seal',       what: 'the seat regime — cells seal to their molds' },
         { stop: 'copperless', what: 'no copper ground' },
         { stop: 'nohall',     what: 'no hallway corridor of guts' },

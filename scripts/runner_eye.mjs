@@ -33,9 +33,10 @@ const [url, out, ticks = '4,12,25,40', W = '1280', H = '820'] = argv.filter(a =>
 import net from 'node:net'
 let target = new URL(url)
 let visit = url
+let proxy = null
 if (target.hostname !== 'localhost' && target.hostname !== '127.0.0.1') {
     const [thost, tport] = [target.hostname, +(target.port || 80)]
-    const proxy = net.createServer(c => { const up = net.connect(tport, thost); c.pipe(up); up.pipe(c); c.on('error', () => up.destroy()); up.on('error', () => c.destroy()) })
+    proxy = net.createServer(c => { const up = net.connect(tport, thost); c.pipe(up); up.pipe(c); c.on('error', () => up.destroy()); up.on('error', () => c.destroy()) })
     await new Promise(r => proxy.listen(0, '127.0.0.1', r))
     const port = proxy.address().port
     target.hostname = 'localhost'; target.port = String(port)
@@ -87,3 +88,7 @@ for (const s of marks) {
 }
 console.log('--- console:'); for (const l of logs.slice(process.env.EYE_LOG === 'all' ? -120 : -25)) console.log(' ', l)
 await b.close()
+// the proxy server holds the event loop open — without this the eye NEVER exits (22 leaked headless
+//  Chromiums found on 2026-09-11, one per tick-run of the session)
+if (proxy) proxy.close()
+process.exit(0)

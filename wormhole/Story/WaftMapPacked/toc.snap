@@ -13,6 +13,7 @@ story:WaftMapPacked
       sample=0.002,at=1783484894
       sample=0.004,at=1785833436
       sample=0.002,at=1785835357
+      sample=0.001,at=1789117228
     TimeTotal:step,avg=0.003
       sample=0.003,at=1782987727
       sample=0.004,at=1782987735
@@ -22,4 +23,5 @@ story:WaftMapPacked
       sample=0.002,at=1783484894
       sample=0.004,at=1785833436
       sample=0.002,at=1785835357
+      sample=0.001,at=1789117228
   step,dige:edb08ebe85892af6

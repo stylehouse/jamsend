@@ -13,7 +13,8 @@ story:ParkCull
       sample=0.04,at=1786757082
       sample=0.04,at=1786757083
       sample=0.014,at=1786757090
-    TimeTotal:step,avg=0.007
+      sample=0.043,at=1789115156
+    TimeTotal:step,avg=0.008
       sample=0.008,at=1786757048
       sample=0.008,at=1786757078
       sample=0.008,at=1786757080
@@ -22,6 +23,7 @@ story:ParkCull
       sample=0.008,at=1786757082
       sample=0.008,at=1786757083
       sample=0.003,at=1786757090
+      sample=0.009,at=1789115156
   step,dige:e0065df38451e18e
   step=2,dige:585211b646c2fce7
     Assertion:the-pump-culled-the,sentence:the pump culled the want nobody had asked about and kept the fresh one beside it

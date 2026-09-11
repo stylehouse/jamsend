@@ -11,6 +11,7 @@ story:MusuSteward
       sample=0.006,at=1788496007
       sample=0.012,at=1788603016
       sample=0.002,at=1788610012
+      sample=0.01,at=1789114728
     TimeTotal:step,avg=0.005
       sample=0.004,at=1788079242
       sample=0.001,at=1788079245
@@ -18,4 +19,5 @@ story:MusuSteward
       sample=0.006,at=1788496007
       sample=0.012,at=1788603016
       sample=0.002,at=1788610012
+      sample=0.01,at=1789114728
   step,dige:dfae456ac2000ab8

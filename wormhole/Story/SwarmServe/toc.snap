@@ -13,6 +13,7 @@ story:SwarmServe
       sample=0.021,at=1788299406
       sample=0.021,at=1788299408
       sample=0.02,at=1788299419
+      sample=0.028,at=1789116436
     TimeTotal:step,avg=0.007
       sample=0.006,at=1787815251
       sample=0.006,at=1787815266
@@ -22,6 +23,7 @@ story:SwarmServe
       sample=0.005,at=1788299406
       sample=0.005,at=1788299408
       sample=0.005,at=1788299419
+      sample=0.007,at=1789116436
   step,dige:278efe1f002db715
   step=2,dige:3b3361fdab9313e2
   step=3,dige:cf13068c982912d4

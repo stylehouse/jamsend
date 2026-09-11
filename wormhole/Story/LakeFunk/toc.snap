@@ -9,8 +9,7 @@ story:LakeFunk
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.042
-      sample=0.03,at=1782899843
+    TimeTotal:beliefs,avg=0.046
       sample=0.029,at=1782899848
       sample=0.036,at=1782899920
       sample=0.041,at=1782905554
@@ -20,8 +19,8 @@ story:LakeFunk
       sample=0.022,at=1783416311
       sample=0.019,at=1785995481
       sample=0.051,at=1789108565
-    TimeTotal:step,avg=0.042
-      sample=0.03,at=1782899843
+      sample=0.073,at=1789110238
+    TimeTotal:step,avg=0.046
       sample=0.029,at=1782899848
       sample=0.036,at=1782899920
       sample=0.041,at=1782905554
@@ -31,4 +30,5 @@ story:LakeFunk
       sample=0.022,at=1783416311
       sample=0.019,at=1785995481
       sample=0.051,at=1789108565
+      sample=0.073,at=1789110238
   step,dige:78866646342cbf65

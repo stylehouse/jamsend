@@ -1,8 +1,8 @@
 Credulation,of_Book:VytoOrchestra
-  run=0,at=1789108963.807,ok=0,ok_pct=0.13,mode:check
+  run=0,at=1789121441.401,ok=0,ok_pct=0.13,mode:check
     uses:Ghost_N_Peeroleum,dige:176d03c1fb562ff9~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
-    uses:Ghost_N_Tribunal,dige:825a67dcb6cf7607~g1
+    uses:Ghost_N_Tribunal,dige:5b157436e5e8bf4a~g1
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a~g1
     uses:Ghost_N_Presence,dige:14efd88c08b5219c~g1
     uses:Ghost_N_Repli,dige:bae823a909f45aa5~g1
@@ -25,13 +25,13 @@ Credulation,of_Book:VytoOrchestra
     uses:Ghost_Story_SiphonTesting,dige:e06a0d896fbe5b3e~g1
     uses:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
     uses:Ghost_Story_ErrchannelTesting,dige:55f4a7dd9c9193f1~g1
-    uses:Ghost_S_Swarm,dige:f70af1b717cf10f4~g1
+    uses:Ghost_S_Swarm,dige:713a9ee19839d0a8~g1
     uses:Ghost_Story_SwarmTesting,dige:8c182fea63e09a10~g1
     uses:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
     uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
     uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
     uses:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
-    uses:Ghost_V_Vyto,dige:e5d50e3f7eff0923~g1
+    uses:Ghost_V_Vyto,dige:4764ffb3986dc6af~g1
     uses:Ghost_V_VytoTesting,dige:fc4eee7b5dc5faba~g1
     uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_Story_Sounditron,dige:e52afe7d185f51a8~g1

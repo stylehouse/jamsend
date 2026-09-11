@@ -52,8 +52,7 @@ story:LakeSurprise
         nogen
         nopush
   TimeSpool
-    TimeTotal:beliefs,avg=0.582
-      sample=1.189,at=1783450502
+    TimeTotal:beliefs,avg=0.493
       sample=1.105,at=1784436553
       sample=0.404,at=1785995780
       sample=0.309,at=1785998344
@@ -63,8 +62,8 @@ story:LakeSurprise
       sample=0.309,at=1785998360
       sample=0.432,at=1785998505
       sample=1.149,at=1789108829
-    TimeTotal:step,avg=0.053
-      sample=0.108,at=1783450502
+      sample=0.3,at=1789110700
+    TimeTotal:step,avg=0.045
       sample=0.1,at=1784436553
       sample=0.037,at=1785995780
       sample=0.028,at=1785998344
@@ -74,6 +73,7 @@ story:LakeSurprise
       sample=0.028,at=1785998360
       sample=0.039,at=1785998505
       sample=0.104,at=1789108829
+      sample=0.027,at=1789110700
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   step,dige:b0c58a4198079ac5
   step=2,dige:c5a1f8292e64b3d3

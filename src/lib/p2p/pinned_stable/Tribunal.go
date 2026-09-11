@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '825a67dcb6cf7607~g1' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return '5b157436e5e8bf4a~g1' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -316,7 +316,18 @@ async Socket_real(w) {
         //   DELIVER, so handle it INLINE here — never the belief queue.  control:log especially: the relay echoes
         //    one per routing line, and post_do-ing a console note per packet was a death-spiral feeder.
         if (frame && frame.control) {
-            if (frame.control === 'log') { note(frame.line); return }
+            // THE RELAY'S ROUTE ROLLUP IS WALLPAPER (2026-09-11 night — the owner's console: six
+            //  `📊 editor pong ×4 390B (from-bridge, 10s)` lines every 10s, forever).  The relay fans its
+            //   noteRoute rollup to every socket at the editor door by design (relayLog → control:log) and
+            //    it stays useful under `w.c.wire_verbose`; unarmed, it goes to the relay_log ring ONLY
+            //     (the Relay Brink still shows it) and off the console.  Drops and binds keep printing.
+            if (frame.control === 'log') {
+                if (!(w && w.c && w.c.wire_verbose) && String(frame.line).indexOf('📊 ') >= 0) {
+                    try { let lg = (w.c.relay_log = w.c.relay_log || []); lg.push({ line: String(frame.line), at: Date.now() }); if (lg.length > 60) lg.shift() } catch (e) {}
+                    return
+                }
+                note(frame.line); return
+            }
             if (frame.control === 'peer-relay') {
                 let m = frame.up ? `🌉 relay bridge UP${frame.target ? ' → ' + frame.target : ''}` : `🌉 relay bridge DOWN — error=${frame.error || '?'}${frame.detail ? ' — ' + frame.detail : ''}`
                 note(m, !frame.up)

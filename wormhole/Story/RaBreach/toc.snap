@@ -4,8 +4,7 @@ story:RaBreach
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.034
-      sample=0.026,at=1786169124
+    TimeTotal:beliefs,avg=0.033
       sample=0.03,at=1787876410
       sample=0.117,at=1787878350
       sample=0.006,at=1787878358
@@ -15,8 +14,8 @@ story:RaBreach
       sample=0.014,at=1787882403
       sample=0.04,at=1787882639
       sample=0.034,at=1787889552
-    TimeTotal:step,avg=0.009
-      sample=0.007,at=1786169124
+      sample=0.017,at=1789115833
+    TimeTotal:step,avg=0.008
       sample=0.007,at=1787876410
       sample=0.029,at=1787878350
       sample=0.001,at=1787878358
@@ -26,6 +25,7 @@ story:RaBreach
       sample=0.004,at=1787882403
       sample=0.01,at=1787882639
       sample=0.009,at=1787889552
+      sample=0.004,at=1789115833
   step,dige:1632dafcb9be88e0
   step=2,dige:aa6ead12c4b19fc8
   step=3,dige:e0e6ee0a68dceab5

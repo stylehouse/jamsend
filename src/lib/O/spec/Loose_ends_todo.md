@@ -34,6 +34,21 @@ Owner asleep; queue gathered in the evening. Everything below is in the working 
 7. Sweep: `scratchpad/sweep_post.log` (full, post-change) vs `sweep_pre.log` (21 Books, pre-change).
     L Books (Atlas/Electrode/Lagoon Staple) red as always on a reloaded runner — they need `ghost_load`.
 
+8. **The newcomer walk — the night's real find** (`Arrival_todo` §top, `scripts/arrival_eye.mjs`): a
+    friend's music reached a fresh arrival 2 times in 5 — `Swarm_share_up` greeted only the piers alive at
+     share-up; a friend sealed a second later was never greeted. `Swarm_share_greet` now runs from the
+      seal too. After: 5/5, and a poked play gives *Baseball Diamond — Beach House* from a QR in a minute.
+       Also fixed: the splash's "opening the wire…" (read the wrong world), the player's 5s ping at the
+        editor, the `📊` rollup off the console (relay_log ring keeps it). All client-side — no relay save.
+9. **THE SWEEP** (`scratchpad/sweep_report.md`, 155 Books): 87 green · 21 caveat-only · 17 `see:lies` (5)
+    · 3 L-ghost (a) · 11 flakes (green on re-run) · 16 stay red. Of the 16, ONE candidate regression —
+     **MusuHandoff** step 4: a handed Card now carries `unseen:1` (`Heard_notice` at `Heard_hand_got`,
+      by design: "attention on the Haul when a love syncs over") — re-swear. **MusuBuddy** step 8 (11 `parked_want` rows, rounds 23→20) — the owner looked 2026-09-12: fine. The rest are stale fixtures: `now=` clock pins
+         (ca0e4fb4), `loose:1` on Strays, Crew subtrees + `testsounds/` paths, SwarmSpread's five
+          pre-re-author assertion sentences, and four June/July fixtures (Peeringinst, PortPain — whose
+           fixture is a PortPlan snap —, ReactiveWaft, MundaneStaying) long red. ⚠ Another client used the
+            runner mid-sweep (19:47–20:45); those six were re-run clean.
+
 **Still noise you will see:** the relay's `📊` six-pack every 10s (by design, fans to the editor door)
  and `no Pier for ping from=player` (a music page pings `to:'editor'`). Not touched — a relay save
   restarts the dev server and was not worth the sweep.

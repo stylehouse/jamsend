@@ -4,7 +4,7 @@ Credulate,of_Book:LakeFunk
   GhostInclude:Ghost_N_Tribunal,dige:825a67dcb6cf7607~g1
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a~g1
   GhostInclude:Ghost_N_Presence,dige:14efd88c08b5219c~g1
-  GhostInclude:Ghost_N_Repli,dige:7cdf2ee06ee98bb7~g1
+  GhostInclude:Ghost_N_Repli,dige:bae823a909f45aa5~g1
   GhostInclude:Ghost_Story_PeerTesting,dige:0f932bb96f66ab47~g1
   GhostInclude:Ghost_M_Radiola,dige:b097a7b4435b144e~g1
   GhostInclude:Ghost_M_Sound,dige:8261f31fc4c18e13~g1
@@ -24,7 +24,7 @@ Credulate,of_Book:LakeFunk
   GhostInclude:Ghost_Story_SiphonTesting,dige:e06a0d896fbe5b3e~g1
   GhostInclude:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
   GhostInclude:Ghost_Story_ErrchannelTesting,dige:55f4a7dd9c9193f1~g1
-  GhostInclude:Ghost_S_Swarm,dige:c2fd1db9f2315ba7~g1
+  GhostInclude:Ghost_S_Swarm,dige:ebd4d01990a00da3~g1
   GhostInclude:Ghost_Story_SwarmTesting,dige:8c182fea63e09a10~g1
   GhostInclude:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
   GhostInclude:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
@@ -35,5 +35,5 @@ Credulate,of_Book:LakeFunk
   GhostInclude:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
   GhostInclude:Ghost_Story_Sounditron,dige:e52afe7d185f51a8~g1
   GhostInclude:Ghost_O_Supervisor,dige:0dd405fc7c0dc43b~g1
-  GhostInclude:Ghost_L_Lagoon,dige:3a0b8237c4d0fac3~g1
   GhostInclude:Ghost_L_Atlas,dige:9275405d36950b44~g1
+  GhostInclude:Ghost_L_Lagoon,dige:3a0b8237c4d0fac3~g1

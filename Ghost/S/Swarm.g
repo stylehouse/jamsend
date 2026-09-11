@@ -3479,6 +3479,11 @@ Swarm_seal(w, ident, page, theirGrant, myGrant):
     if (top_seam && top_seam.c && seam_secret && !(seam_soul && seam_soul.c.ferrying)) {
         try { this.Swarm_ferry_on_seal(w, ident, pier) } catch (er) {}
     }
+    // THE LATE SEAL (2026-09-11): share_up greeted only the piers that existed at share-up; a friend
+    //  sealed afterwards must be greeted here or their music never crosses (see Swarm_share_greet).
+    if (!re_seal && w && w.c && w.c.share_up && w.c.station_up && pier.o({ Grant: 'Music' })[0]) {
+        try { this.Swarm_share_greet(w, ident, pier) } catch (er) { console.log('⨳⚠ late-seal greet threw', er) }
+    }
     return pier
 
 // ── the FRIENDSHIP survives reload (the iz-ledger disease, second organ) ────────────────────
@@ -4636,6 +4641,21 @@ Swarm_socket_fresh(p, ms):
     let M = this.top_House ? this.top_House() : null
     return !!(M && M.c.socket_heard && (Date.now() - M.c.socket_heard) < (+ms || 20000))
 
+// Swarm_share_greet — tell ONE pier our share is up: arm the rx for its route and send repli_ready.
+//  Was the body of Swarm_share_up's loop, which ran ONCE at share-up over the piers that existed
+//   THEN.  A friend sealed AFTER share_up never got it — no rx armed, no repli_ready — so their Mag
+//    landed and nothing wanted a single chunk: the newcomer sat at "nothing on the shelf yet" beside
+//     a friend with 41 records (2026-09-11 night, headless arrivals: 2 of 5 pulled — the other 3 had
+//      sealed a second after share_up).  Now the seal calls it too (Swarm_seal, when share_up already
+//       stands).  Idempotent: register_rx guards on route.c.repli_rx and repli_ready dedups at the far end.
+Swarm_share_greet(w, ident, p):
+    if (!p || !p.sc || !p.sc.pub) { return false }
+    if (this.Swarm_pier_husk(ident, p)) { return false }   // a husk is me — no repli_ready, no %Owed junk
+    let route = this.Swarm_station_pier(w, ident, String(p.sc.pub))
+    if (route && !route.c.repli_rx) { this.Repli_register_rx(w, route) }
+    if (!this.Swarm_deliver(w, ident, String(p.sc.pub), { kind: 'repli_ready', page: this.Swarm_page(ident) })) { this.Swarm_owed_note(w, p, 'repli_ready'); return false }
+    return true
+
 Swarm_share_present(from, w):
     let me = this.Swarm_live_self ? this.Swarm_live_self() : null
     let p = me ? this.Swarm_peering(me)?.o({ Pier: 1, pub: String(from) })[0] : null
@@ -4772,19 +4792,7 @@ Swarm_share_up(w, ident):
     //   the in-process %mail drop, which leaves %frame husks in every share fixture.  The startup
     //    window this heals is a live-relay fact; a fixture has no startup window to lose frames in.
     if (w.c.station_up) {
-        for (const p of (this.Swarm_peering(ident)?.o({ Pier: 1 }) || [])) {
-            if (!p.sc.pub) continue
-            if (this.Swarm_pier_husk(ident, p)) continue   // a husk is me — no repli_ready, no %Owed junk
-            // ARM THE DOOR BEFORE KNOCKING: the reply (Swarm_offer_now at the friend) comes back
-            //  within one round trip, but our per-route rx registration used to wait for our own
-            //   first share beat — so the immediate reply would die in the exact dead window this
-            //    announce exists to close.  Register the rx here, then speak.
-            let route = this.Swarm_station_pier(w, ident, String(p.sc.pub))
-            if (route && !route.c.repli_rx) this.Repli_register_rx(w, route)
-            // a blast that missed is a DEBT, not noise: the %Owed on the pier row makes the offline
-            //  fan-out visible (the eed storm) and Swarm_owed_settle re-fires it on the presence edge.
-            if (!this.Swarm_deliver(w, ident, String(p.sc.pub), { kind: 'repli_ready', page: this.Swarm_page(ident) })) { this.Swarm_owed_note(w, p, 'repli_ready') }
-        }
+        for (const p of (this.Swarm_peering(ident)?.o({ Pier: 1 }) || [])) { this.Swarm_share_greet(w, ident, p) }
     }
     this.Swarm_share_loop(w, ident)
     // the SoundSupervisor rides alongside, on its own timer, deliberately NOT inside the beat it

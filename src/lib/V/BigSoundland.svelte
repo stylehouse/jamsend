@@ -297,8 +297,13 @@
         // the spine: %Creduler_pending rides as a particle on H:Mundo while ghosts import; gone once all live.
         const spine_pending = (() => { try { return top?.oa?.({ Creduler_pending: 1 }) } catch { return false } })()
         if (spine_pending) return { label: 'starting engines…', frac: 0.15 }
-        if (!c.station_up)  return { label: 'opening the wire…', frac: 0.35 }
-        if (!c.roster_rehydrated) return { label: 'finding your people…', frac: 0.5 }
+        // station_up + roster_rehydrated are stamped on the SWARM WORLD's .c (Swarm_station_up:
+        //  `w.c.station_up = 1`), never on the top House — read as `c.station_up` this label said
+        //   "opening the wire…" for the life of every boot, long after hello_ok (2026-09-11, fourteen
+        //    headless arrivals, every one).  Read the world the stamps live on.
+        const sw: any = (() => { try { return (H as any)?.Swarm_station_world?.()?.c } catch { return null } })()
+        if (!(sw?.station_up ?? c.station_up))  return { label: 'opening the wire…', frac: 0.35 }
+        if (!(sw?.roster_rehydrated ?? c.roster_rehydrated)) return { label: 'finding your people…', frac: 0.5 }
         if (c.census_phase === 'restoring' || (!c.census_phase && !c.glass_stood)) {
             const n = +(c.census_music || 0)
             return { label: n ? `restoring your library (${n})…` : 'restoring your library…', frac: 0.7 }

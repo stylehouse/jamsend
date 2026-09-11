@@ -1,6 +1,40 @@
 # SoundPooling_todo.md — the pool: press + reach into it, pool-first radio out, cells over it
 
-## 0. WHAT TO GET ON WITH NEXT — PUT THE FEATURE IN ONE PLACE (2026-09-04, the owner's)
+## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night; the older §0s are §0.6–§0.8 below, intact)
+
+**Destination.** The dial already chooses, so the pool KEEPS what played; **love** is the one control —
+ press to love (into the pool, and heisted to the Cave), press again to unlove — and every pooled
+  track plays from 0:00 like a remote one. The Heard Mag is the ledger of that; the Haul cell shows
+   what is new; it all works ambiently in the background and across a LinkDevice.
+
+**Where it stands:**
+- ♥ is a toggle (`Radio_like`); the latest press is the state; retry = unlove then love. Book-green
+   (`MusuHeard` 9/9), fixtures accepted 2026-09-11 with the owner's say-so.
+- The pool card had no preview (`Ra_dial_next` skipped every pooled track) — carry + heal + skip fixed;
+   `Ra_rec_heads_carry` / `Ra_pool_heads_heal` bring the **head run** (`%Prehead`) so a pooled track can
+    start at 0:00. **Book-green, never walked live** — the one listen the owner still owes (the account: §0.8 → "THE OFFER IS THE TAIL OF THE SONG").
+- The offer is the TAIL of the song (30–70% in, median 47%); the head is a separate run; adding it is
+   1.95× pool bytes — measured over 54 records, not one.
+- Arrival attention: `Heard_notice`/`Heard_seen`/`Heard_unseen` — the Haul cell's `N new`.
+
+**What detonates if the next person doesn't know it:**
+1. `Ra_pool_fill_homes` sets `out.mw = radio_w` — the RADIO world. `Repli_arm`/`repli_mirror_pier` live on
+    the SWARM world. Gate on the wrong world and the heal is a silent no-op (it was, for a day).
+2. `'Prehead'` MUST stay in `Swarm_protocol`'s skips — buf kinds are Uint8Arrays in `.sc`, fine on the
+    snap plane, FATAL at the storage/toc encoder. The preview carry's own header says the two changes
+     must never be separated.
+3. Any pool re-ask needs a give-up (`GIVEUP = 12`, loud) — unbounded re-asks are the disease this
+    corpus keeps catching.
+4. A Book beat that unloves must leave the world LOVED, or every later beat loses its ground.
+
+**Next moves, in order:**
+1. Hear a pooled track start at 0:00 on the music page (owner + one listen). Until then the head-run
+    road is Book-true only.
+2. The five §9.9 rulings in `Radio_circuit_todo` (unpool on unlove; a loved compartment; unlove →
+    laptop; a remote running keep; listing sync-back) — the owner's, nothing moves without them.
+3. Then the LinkDevice ambient path: a love on the phone reaching the laptop's Haul without a ceremony.
+
+## 0.8 PUT THE FEATURE IN ONE PLACE (2026-09-04, the owner's — was §0)
 
 ### ⚑⚑ 2026-09-10 — THE HEART IS NOW A TOGGLE, AND IT BREAKS ONE SWORN ASSERTION. OWNER'S CALL PENDING.
 
@@ -699,7 +733,7 @@ See also **`Acquisition_todo.md`** — likes → heists → batch per holder, wh
   crew's Likes and hauling them); "how full is it" on the sentence; the aim on the source chip as the day-one
    "point it places"; the Radio busy-loop's cousin, Stoker_churn resetting on every dry pass.
 
-## 0.1 THE RADIO CRUX (owner, 2026-09-03 night — kept verbatim-ish; the design in §0 came out of it)
+## 0.2 THE RADIO CRUX (owner, 2026-09-03 night — kept verbatim-ish; the design in §0 came out of it)
 
 - **The unit of consent is SPACE, not a track count.** "Aim for 3GB… or less than 1/3rd of what Chrome thinks
    it can use." The first visit sets a byte budget; the same control must go back to **0 = off, and clean it
@@ -775,7 +809,7 @@ See also **`Acquisition_todo.md`** — likes → heists → batch per holder, wh
 
 ---
 
-## 0. Where to start, and the arc
+## 0.7 Where to start, and the arc (the 2026-08 front, kept)
 
 **The destination.** Stream a friend's track; a small LOFI copy quietly lands on your phone.
  Next session, no friend online: the radio plays from the pool. Two phones meet: they swap

@@ -174,11 +174,16 @@
     //    here for the cell's OWN centre.  Flips to the LEFT of a cell past the frame's midline so the
     //     popup never has to run off the right edge of the glass.
     function inspect_style(cell: PaintCell, cam: { x: number, y: number, w: number, h: number }): string {
-        const px = ((cell.x - cam.x) / cam.w) * 100
+        const cx = ((cell.x - cam.x) / cam.w) * 100
+        const leftSide = cx > 55
+        // hang off the cell's WALL, not its centre — over the centre the popup buries the very words
+        //  it explains, and the glow has nothing left to light.  The bbox, not `r`: `r` is the pile's
+        //   spring radius, and a foam-cut polygon runs well past it.
+        const edge = leftSide ? cell.bx : cell.bx + cell.bw
+        const px = ((edge - cam.x) / cam.w) * 100
         const py = ((cell.y - cam.y) / cam.h) * 100
-        const leftSide = px > 55
         return `left:${px.toFixed(2)}%; top:${py.toFixed(2)}%; `
-             + `transform: translate(${leftSide ? 'calc(-100% - 16px)' : '16px'}, -50%);`
+             + `transform: translate(${leftSide ? 'calc(-100% - 12px)' : '12px'}, -50%);`
     }
     // THE SHARED GLOW KEY (2026-09-11, the owner: "the snap-looking C** explainer beside it? with
     //  bi-directional on-hover-glow effects... so we can figure out what part of what we're looking
@@ -186,11 +191,54 @@
     //    with the SAME key name via `k` on its Atom/Seat) or a Seem-popup row — and read by BOTH, so
     //     each lights the other without either owning the relationship.
     let glow_key: string | null = $state(null)
+    // ── THE LAND POPUP (2026-09-11, the owner: "I need not only this popup, but one for the whole land,
+    //  showing everything that's supposed to be there") — every mirror row the world holds, in wire
+    //   syntax, indented as the snap indents it, each with its RENDER STATUS: seated · loose · no room ·
+    //    departing · crest ×n · folded-into.  Double-click the ground to open it.  A line and its cell
+    //     light each other (`land_glow`, by cell key) — the same two-way glow the field popup has.
+    let land_w: TheC | null = $state(null)
+    let land_glow: string | null = $state(null)
+    function toggle_land(w: TheC, ev?: Event) {
+        // only the bare ground (the svg itself or the copper rect) — a cell's own dblclick is the field popup
+        const t = ev?.target as Element | undefined
+        if (t && !(t.tagName === 'svg' || t.classList.contains('ground-tex'))) return
+        land_w = land_w === w ? null : w
+    }
+    type LandLine = { key: string, tok: string, depth: number, parts: { k: string, text: string }[], status: string, cls: string }
+    function land_lines(w: TheC): LandLine[] {
+        void paint_tick
+        const out: LandLine[] = []
+        const mirror: any = (w.c as any).mirror; if (!mirror) return out
+        const walk = (row: TheC, parentKey: string, depth: number) => {
+            const c: any = row.c, sc: any = row.sc
+            const tok: string = c.tok; if (!tok) return
+            const key = parentKey ? parentKey + '>' + tok : tok
+            let status = 'seated', cls = 'ok'
+            const mk = Object.keys(sc ?? {})[0]
+            if (sc.departing) { status = 'departing'; cls = 'gone' }
+            else if (mk === 'Vtuffing') { status = 'crest ×' + (sc.n ?? '?'); cls = 'crest' }
+            else if (c.folded) { status = 'folded into a crest'; cls = 'folded' }
+            else if (sc.loose) { status = c.T ? 'loose · rim' : 'loose'; cls = 'loose' }
+            else if (!c.poly && !c.T) { status = 'no room'; cls = 'noroom' }
+            else if (!c.poly) { status = 'no wall'; cls = 'noroom' }
+            out.push({ key, tok, depth, parts: raw_snap_parts(row), status, cls })
+            for (const k of row.o() as TheC[]) if ((k.c as any).tok) walk(k, key, depth + 1)
+        }
+        for (const row of mirror.o() as TheC[]) walk(row, '', 0)
+        return out
+    }
+    function land_tally(lines: LandLine[]): string {
+        const n = (c: string) => lines.filter(l => l.cls === c).length
+        const bits = [lines.length + ' rows', n('ok') + ' seated']
+        for (const [c, name] of [['loose', 'loose'], ['noroom', 'no room'], ['crest', 'crests'], ['folded', 'folded'], ['gone', 'departing']] as const) if (n(c)) bits.push(n(c) + ' ' + name)
+        return bits.join(' · ')
+    }
     // THE SOURCE LAYER — the real wire syntax, not a paraphrase (see ident_of's own note just below:
     //  the doc's `%mk` is prose shorthand, never the snap's own line).  A bare presence marker (`1`)
     //   prints bare, exactly as it would in the file.  Parts, not one string, so the popup can make
     //    each `key:value` its own hoverable span for the glow above.
     function raw_snap_parts(row: TheC | null): { k: string, text: string }[] {
+        void paint_tick   // the mirror is not reactive state — re-read on every repaint so the popup tracks the live row
         const sc: any = row?.sc; if (!sc) return []
         const keys = Object.keys(sc); if (!keys.length) return []
         const part = (k: string, v: any) => k + ((v == null || v === 1 || v === '1') ? '' : ':' + String(v))
@@ -202,10 +250,26 @@
         }
         return out
     }
+    // THE SQUISHED LAYER — the owner's third layer ("the squished"): what a CREST absorbed, as the
+    //  crest's own %Vrow/%Vbit children in the same wire syntax, indented the way the snap indents them.
+    //   Empty for an ordinary row; a %Vtuffing wears its distilled voice here.  Each line carries the
+    //    Vrow's `k` so it glows with the folio atom that says the same fact.
+    function squished_lines(row: TheC | null): { depth: number, k: string | null, parts: { k: string, text: string }[] }[] {
+        const out: { depth: number, k: string | null, parts: { k: string, text: string }[] }[] = []
+        void paint_tick
+        if (!row) return out
+        for (const r of row.o({ Vrow: 1 }) as TheC[]) {
+            const k = (r.sc as any).k != null ? String((r.sc as any).k) : null
+            out.push({ depth: 1, k, parts: raw_snap_parts(r) })
+            for (const b of r.o({ Vbit: 1 }) as TheC[]) out.push({ depth: 2, k, parts: raw_snap_parts(b) })
+        }
+        return out
+    }
     // THE JOINTED-ON LAYER — live `.c` facts a render or model pass stamped onto this SAME particle
     //  after it was minted (a pose, a heat, a press).  Scalars only; a ref/function is a MECHANISM,
     //   not a fact worth reading in a popup, and would not stringify into anything a human wants.
     function jointed_pairs(row: TheC | null): { k: string, v: string }[] {
+        void paint_tick
         const c: any = row?.c; if (!c) return []
         const out: { k: string, v: string }[] = []
         for (const k of Object.keys(c)) {
@@ -1817,6 +1881,68 @@
     //  On: it replaces the centred ident, the hallway, the wave band and the wall carve for FACELESS
     //   cells.  A faced cell keeps its label-along-the-top: the face owns that room.
     function folio_on(w: TheC): boolean { return !fo(w, 'wallcarve') }
+
+    // ── THE JUNCTION — foamereo stop `junction` (2026-09-11, the owner's own idea: "putting the %Song etc
+    //  in the cell wall would be cool... even better is sharing it amongst these three cells, at the
+    //   junction, with the value of Song leading away").  Sibling leaf cells of ONE mainkey that meet at
+    //    a common vertex say that mainkey ONCE, at the meeting point; each member's title keeps only its
+    //     value, which already runs away from the wall toward its own middle.  A power-diagram cut hands
+    //      touching cells the SAME vertex (to the float), so "common" is a vertex-to-vertex match within
+    //       JUNCTION_EPS — no polygon intersection.  The point shared by the MOST members wins (≥2); a
+    //        member that touches none of its kin keeps its full title.  Render-only, a stop, off by default.
+    const JUNCTION_EPS = 2.5
+    type Junction = { mk: string, x: number, y: number, keys: Set<string>, shared: { k: string, v: string }[] }
+    function junction_on(w: TheC): boolean { return !!fo(w, 'junction') && folio_on(w) }
+    function junctions_of(w: TheC): Junction[] {
+        void paint_tick
+        const out: Junction[] = []
+        if (!junction_on(w)) return out
+        const groups = new Map<string, PaintCell[]>()
+        for (const c of viewport_cells(w)) {
+            if (c.kind !== 'poly' || c.hasKids || c.departing || c.loose || c.face || !c.poly || c.poly.length < 3) continue
+            const mk = Object.keys((c.row.sc as any) ?? {})[0]; if (!mk) continue
+            const g = groups.get(mk); if (g) g.push(c); else groups.set(mk, [c])
+        }
+        for (const [mk, cells] of groups) {
+            if (cells.length < 2) continue
+            let best: Junction | null = null, bestD = Infinity
+            const cx = cells.reduce((t, c) => t + c.x, 0) / cells.length, cy = cells.reduce((t, c) => t + c.y, 0) / cells.length
+            for (const a of cells) for (const v of a.poly!) {
+                const keys = new Set<string>([a.key])
+                for (const b of cells) {
+                    if (b === a) continue
+                    if (b.poly!.some(u => Math.abs(u.x - v.x) <= JUNCTION_EPS && Math.abs(u.y - v.y) <= JUNCTION_EPS)) keys.add(b.key)
+                }
+                if (keys.size < 2) continue
+                // more members wins; at a tie the INTERIOR end of a shared wall (nearer the kin's centre) beats
+                //  the rim end — a label on the pile's outer edge reads as a stray, not a meeting
+                const d = Math.hypot(v.x - cx, v.y - cy)
+                if (!best || keys.size > best.keys.size || (keys.size === best.keys.size && d < bestD)) { best = { mk, x: v.x, y: v.y, keys, shared: [] }; bestD = d }
+            }
+            if (best) {
+                // THE SHARED FACTS (the owner: "do we have the ability to merge the artist:Yara and mood:brine
+                //  parts of that?") — a fact EVERY member carries with the same value is a vein (the crest's word
+                //   for it), said once at the meeting point and dropped from each member's own lines.
+                const members = cells.filter(c => best!.keys.has(c.key))
+                const first: any = members[0].row.sc
+                for (const k of Object.keys(first)) {
+                    if (k === mk || GUT_SKIP.has(k) || first[k] == null || typeof first[k] === 'object') continue
+                    const v = String(first[k])
+                    if (members.every(m => String((m.row.sc as any)[k] ?? '\u0000') === v)) best.shared.push({ k, v })
+                }
+                out.push(best)
+            }
+        }
+        return out
+    }
+    function junction_of(w: TheC, cell: PaintCell): Junction | null {
+        for (const j of junctions_of(w)) if (j.keys.has(cell.key)) return j
+        return null
+    }
+    function junction_member(w: TheC, cell: PaintCell): boolean {
+        for (const j of junctions_of(w)) if (j.keys.has(cell.key)) return true
+        return false
+    }
     const folioMemo = new Map<string, { sig: string, pane: Pane | null }>()
     function guts_pairs(row: TheC, max: number): { k: string, v: string }[] {
         const sc: any = row?.sc; if (!sc || max <= 0) return []
@@ -1859,12 +1985,13 @@
         // a crest's key is its own distilled string (not a plain mainkey:value) — keep it a single
         //  bold run; an ordinary row's ident goes in SPLIT (see ident_parts_of/rows_of) so the title
         //   wears the same key:value convention as every fact line below it.
-        const ident = crest ? (crest_key(sc) ?? cell.ident) : ident_parts_of(cell.row, w, cell.tok)
+        const ident = crest ? (crest_key(sc) ?? cell.ident) : { ...ident_parts_of(cell.row, w, cell.tok), hide_mk: junction_member(w, cell) }
         // a SCOPE (its children tile it) wears a RUNNING HEAD: its name alone along its top wall, small and
         //  un-inflated, the way a magazine section carries its title above the pieces inside it
         const head = cell.hasKids
         const vrows = crest && !head ? crest_vrows(cell.row) : null
-        const guts = crest || head ? [] : guts_pairs(cell.row, 12)
+        const jn = crest || head ? null : junction_of(w, cell)
+        const guts = crest || head ? [] : guts_pairs(cell.row, 12).filter(g => !jn || !jn.shared.some(sh => sh.k === g.k))
         const rows = head ? rows_of(ident, [], null, { hue: g?.color ?? undefined, title_fs: 11 }).slice(0, 1)
                           : rows_of(ident, guts, vrows, { hue: g?.color ?? undefined })
         if (head) for (const a of rows[0]) a.cls = a.cls + ' fo-head'
@@ -4047,6 +4174,15 @@
                                       onpointerenter={() => glow_key = p.k} onpointerleave={() => { if (glow_key === p.k) glow_key = null }}>{p.text}</span>
                             {/each}
                         </div>
+                        {#if squished_lines(inspect_cell.row).length}
+                            <div class="seem-label">squished</div>
+                            {#each squished_lines(inspect_cell.row) as sl, si (si)}
+                                <div class="seem-line seem-part seem-depth{sl.depth}" class:seem-glow={!!sl.k && sl.k === glow_key}
+                                     onpointerenter={() => { if (sl.k) glow_key = sl.k }} onpointerleave={() => { if (sl.k && glow_key === sl.k) glow_key = null }}>
+                                    {#each sl.parts as p, pi (p.k + pi)}{#if pi}<span class="seem-comma">,</span>{/if}{p.text}{/each}
+                                </div>
+                            {/each}
+                        {/if}
                         {#if jointed_pairs(inspect_cell.row).length}
                             <div class="seem-label">jointed-on</div>
                             {#each jointed_pairs(inspect_cell.row) as jp (jp.k)}
@@ -4056,6 +4192,25 @@
                                 </div>
                             {/each}
                         {/if}
+                    </div>
+                {/if}
+                <!-- THE LAND POPUP — double-click the bare ground (see toggle_land / land_lines). -->
+                {#if land_w === w}
+                    {@const lines = land_lines(w)}
+                    <div class="land-pop" role="dialog" aria-label="the whole land">
+                        <div class="seem-head">
+                            <span class="seem-ident">{String((w.sc as any)?.w ?? 'w')} · the land</span>
+                            <button class="seem-close" onclick={() => land_w = null} aria-label="close">×</button>
+                        </div>
+                        <div class="seem-label">{land_tally(lines)}</div>
+                        {#each lines as ln (ln.key)}
+                            <div class="seem-line seem-part land-line land-{ln.cls}" class:seem-glow={land_glow === ln.key}
+                                 style="padding-left:{ln.depth * 2}ch"
+                                 onpointerenter={() => land_glow = ln.key} onpointerleave={() => { if (land_glow === ln.key) land_glow = null }}>
+                                <span class="land-status">{ln.status}</span>
+                                {#each ln.parts as p, pi (p.k + pi)}{#if pi}<span class="seem-comma">,</span>{/if}{p.text}{/each}
+                            </div>
+                        {/each}
                     </div>
                 {/if}
                 <!-- THE AWAIT RING (the owner 2026-08-09: "look a bit more spinnery before the data
@@ -4107,7 +4262,7 @@
                 <!-- and the seat's own three numbers, for the same reason: whether the regime is on at
                      all, how many rows are on its waiting list, and how sour the standing deal has
                      gone (the re-deal trigger).  A capture that cannot see these cannot judge it. -->
-                <svg class="viewport" data-foamereo={String((w.sc as any)?.foamereo ?? '')}
+                <svg class="viewport" data-foamereo={String((w.sc as any)?.foamereo ?? '')} ondblclick={(e) => toggle_land(w, e)}
                      data-noroom={unseated_cells(w).length}
                      data-seat={seat_on(w) ? '1' : '0'}
                      data-seatwait={(w.c as any).seat_wait ?? 0}
@@ -4167,7 +4322,8 @@
                                           style={st.hue ? `fill:${st.hue}` : undefined}
                                           transform={st.rot ? `rotate(${st.rot} ${st.x.toFixed(1)} ${st.y.toFixed(1)})` : undefined}
                                           onpointerenter={st.k ? () => glow_key = st.k! : undefined}
-                                          onpointerleave={st.k ? () => { if (glow_key === st.k) glow_key = null } : undefined}>{st.text}</text>
+                                          onpointerleave={st.k ? () => { if (glow_key === st.k) glow_key = null } : undefined}
+                                          ondblclick={st.k ? (e) => open_inspect(w, cell, e) : undefined}>{st.text}</text>
                                 {/each}
                             </g>
                         {:else}
@@ -4214,7 +4370,7 @@
                                   class:crushed={!!cell.face && !cell.hasKids && cell.fit <= 0.34 && !posed_cell(cell)}
                                   class:breathe={cell.fx === '' && foam_breathes(w) && !focus_on(w)}
                                   class:hot={((cell.row.c as any).heat ?? 0) > 0.25}
-                                  class:pressy={pressy(cell)} class:staged={cell.tok === staged_tok(w)}
+                                  class:pressy={pressy(cell)} class:staged={cell.tok === staged_tok(w)} class:land-glow={land_glow === cell.key}
                                   class:selfseat={cell.selfseat} class:sat={sat_row(cell.row)}
                                   class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} d={cell.d}
                                   data-key={cell.key}
@@ -4234,7 +4390,7 @@
                             {#if cell.loose}
                                 <g class="orbit" class:adrift={foam_breathes(w)}>
                                     <g class="orbiter">
-                                    <circle class="cell disc loose" class:departing={cell.departing} class:lift={cell.lift}
+                                    <circle class="cell disc loose" class:departing={cell.departing} class:lift={cell.lift} class:land-glow={land_glow === cell.key}
                                             class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'}
                                             cx={cell.x} cy={cell.y} r={cell.r}
                                             role="button" tabindex={0}
@@ -4375,6 +4531,22 @@
                          ("on top of the A labels"), so a big neighbour drawn later in the occlusion
                          order can never bury another cell's name or its handle.  Gates last of all:
                          the working part rides highest. -->
+                    <!-- THE JUNCTION LABELS (stop `junction`, see junctions_of): one mainkey where its
+                         sibling cells meet, on a small dark seat so it reads across three walls.  Same
+                         k as every member's value atom, so hovering it glows the whole family. -->
+                    {#each junctions_of(w) as j (j.mk + '@' + j.x.toFixed(0) + ',' + j.y.toFixed(0))}
+                        <g class="junction">
+                            <rect class="junction-seat" x={(j.x - (j.mk.length * 6.6 + 10) / 2).toFixed(1)} y={(j.y - 8).toFixed(1)} width={(j.mk.length * 6.6 + 10).toFixed(1)} height="16" rx="8"></rect>
+                            {#each j.shared as sh, si (sh.k)}
+                                <text class="junction-fact fo-linkable" class:fo-glow={glow_key === sh.k} x={j.x.toFixed(1)} y={(j.y + 14 + si * 11).toFixed(1)}
+                                      text-anchor="middle" dominant-baseline="middle" data-fk={sh.k}
+                                      onpointerenter={() => glow_key = sh.k} onpointerleave={() => { if (glow_key === sh.k) glow_key = null }}><tspan class="jf-key">{sh.k}</tspan> {sh.v}</text>
+                            {/each}
+                            <text class="junction-label fo-linkable" class:fo-glow={glow_key === j.mk}
+                                  x={j.x.toFixed(1)} y={j.y.toFixed(1)} text-anchor="middle" dominant-baseline="middle" data-fk={j.mk}
+                                  onpointerenter={() => glow_key = j.mk} onpointerleave={() => { if (glow_key === j.mk) glow_key = null }}>{j.mk}</text>
+                        </g>
+                    {/each}
                     {#each viewport_cells(w) as cell (cell.key)}
                         <!-- NOT GATED ON THE FACE (2026-08-10).  The SPILL beside this name was un-nested
                              from this block on 2026-08-09 precisely because the face gate was silently
@@ -4747,6 +4919,25 @@
     .seem-line { color: #cfcfe8; word-break: break-word; }
     .seem-key { color: #9c9cc6; }
     .seem-comma { color: #56566e; }
+    /* THE LAND POPUP — the whole mirror, one line a row, status first.  Left side, scrolls. */
+    .land-pop {
+        position: absolute; left: 10px; top: 40px; max-height: calc(100% - 70px); z-index: 8; pointer-events: auto; overflow: auto;
+        min-width: 260px; max-width: 46%;
+        background: rgba(12, 12, 18, 0.94); border: 1px solid rgba(150, 150, 190, 0.4); border-radius: 8px;
+        padding: 8px 10px; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: #d6d6ec;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    }
+    .land-line { white-space: nowrap; }
+    .land-status { display: inline-block; min-width: 9ch; margin-right: 1ch; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: #7a7a9c; }
+    .land-loose .land-status { color: #8fa8c8; }
+    .land-noroom .land-status { color: #e0a070; }
+    .land-crest .land-status { color: #ecc98e; }
+    .land-folded .land-status { color: #9c8cc6; }
+    .land-gone { opacity: 0.5; } .land-gone .land-status { color: #c08080; }
+    /* the cell lit from the land list */
+    .cell.land-glow { stroke: #ffe9a8 !important; stroke-width: 3 !important; filter: drop-shadow(0 0 6px rgba(255, 233, 168, 0.8)); }
+    .seem-depth1 { padding-left: 1ch; }
+    .seem-depth2 { padding-left: 2ch; color: #a8a8c8; }
     /* THE BI-DIRECTIONAL GLOW, popup side (see the matching .fo-linkable/.fo-glow note in the folio
        CSS above — one `glow_key`, two places it can light up). */
     .seem-part { cursor: help; border-radius: 3px; padding: 0 1px; }
@@ -5067,9 +5258,11 @@
     /* THE TITLE WEARS THE SAME k:v CONVENTION AS A FACT (2026-09-11, the owner: "a more universal k:v
        style, like artist:Yara is... to Song too") — the mainkey muted lilac, its value bright, same
        palette as fo-key/fo-val below, just at title weight/size (rows_of sizes both at title_fs). */
-    .folio .fo-title-key { fill: #9c9cc6; }
+    .folio .fo-title-key { fill: #9c9cc6; font-weight: 600; letter-spacing: 0; }
     .folio .fo-title-val { fill: #ececf8; }
-    .folio .fo-head  { font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8; }
+    /* a scope's running head: small and spaced, but NOT uppercased — the owner, 2026-09-11: "Band:main seems
+       to have been capitalised somehow... what a weird algorithm".  The wire says Band, so the glass says Band. */
+    .folio .fo-head  { font-weight: 600; letter-spacing: 0.1em; opacity: 0.85; }
     .folio .fo-key   { fill: #9c9cc6; font-weight: 600; }
     .folio .fo-val   { fill: #ececf8; }
     .folio .fo-dip   { fill: #ecc98e; font-weight: 700; }
@@ -5083,8 +5276,17 @@
        A folio atom that carries a field name (`data-fk`) is made hoverable (auto over the folio's own
        pointer-events:none default) and, on hover OR when the Seem popup's matching field is hovered,
        gets the SAME glow — one shared `glow_key` in the script drives both directions from one state. */
+    /* THE JUNCTION LABEL — one mainkey at the meeting point of its sibling cells (stop `junction`). */
+    .junction-seat { fill: rgba(10, 10, 18, 0.82); stroke: rgba(156, 156, 198, 0.55); stroke-width: 1; }
+    .junction-label { font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; fill: #b8b8e0; letter-spacing: 0.04em;
+                      pointer-events: auto; cursor: help; }
+    /* the shared facts under the pill — a vein said once; same halo as folio text so it reads across walls */
+    .junction-fact { font: 600 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace; fill: #ececf8; pointer-events: auto; cursor: help;
+                     paint-order: stroke; stroke: rgba(8, 8, 18, 0.75); stroke-width: 2.4px; stroke-linejoin: round; }
+    .junction-fact .jf-key { fill: #9c9cc6; }
+    .junction-fact.fo-glow { fill: #ffe9a8 !important; }
     .folio .fo-linkable { pointer-events: auto; cursor: help; }
-    .folio .fo-linkable.fo-glow, .folio .fo-glow { fill: #ffe9a8 !important;
+    .folio .fo-linkable.fo-glow, .folio .fo-glow, .junction-label.fo-glow { fill: #ffe9a8 !important;
         filter: drop-shadow(0 0 3px #ffe9a8) drop-shadow(0 0 7px rgba(255, 220, 130, 0.75)); }
     /* THE GROUND — coarse copper under everything, barely there: the cells sit ON something. */
     .ground-tex { opacity: 0.055; pointer-events: none; }

@@ -9,8 +9,7 @@ story:LakeLocate
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.034
-      sample=0.03,at=1782899808
+    TimeTotal:beliefs,avg=0.038
       sample=0.03,at=1782899811
       sample=0.022,at=1782899815
       sample=0.035,at=1782899917
@@ -20,8 +19,8 @@ story:LakeLocate
       sample=0.018,at=1783416308
       sample=0.026,at=1785995493
       sample=0.066,at=1789108606
-    TimeTotal:step,avg=0.034
-      sample=0.03,at=1782899808
+      sample=0.073,at=1789110416
+    TimeTotal:step,avg=0.038
       sample=0.03,at=1782899811
       sample=0.022,at=1782899815
       sample=0.035,at=1782899917
@@ -31,4 +30,5 @@ story:LakeLocate
       sample=0.018,at=1783416308
       sample=0.026,at=1785995493
       sample=0.066,at=1789108606
+      sample=0.073,at=1789110416
   step,dige:d8524af3e4b6adc6

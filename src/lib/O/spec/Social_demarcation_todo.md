@@ -35,12 +35,82 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
     collapses "unknown" into "offline" and starves boot.
 
 **Next moves, in order:**
-1. The one-socket-per-tab migration — crux is per-world handler registration on one carrier
-    (`w.c.on[type]` today is per world; the carrier must fan by `header.to` → world). Design in §0.9
-     "NEXT BIG ONE"; nothing built yet. Flag-gated, mixed-fleet safe, or it splits the fleet again.
+1. The one-socket-per-tab migration — DESIGNED in §0.5 (2026-09-12): one carrier on the top House,
+    fan by `header.to` → world, one latch triple, flag-gated, headless-walk-gated. A full session to
+    build; the APP comes first (the owner's ruling), so it waits.
 2. Cluster_spec §3.3's ladder should absorb §0.9's bridge-hijack + ownsDoor accounts when the human
     next preens it.
 3. The `📊` route rollup behind `socklog`; a player's Lies keepalive should ping nobody.
+
+## 0.5 ONE SOCKET PER TAB — THE DESIGN (2026-09-12 morning, written with the whole thread loaded; nothing built)
+
+**The ruling** (owner 2026-09-09): *"remove entirely the second websocket for addr=runner and have some
+ other way to find runners."* Today a tab holds TWO relay sockets to the same relay, both hello-binding
+  the same identity: the Lies channel (`w:Lies`, `become <role>`, dials bare since 09-10) and the Swarm
+   station (`w:Swarm`, dials `?addr=<prepub>`). Each has its own `Socket_real(w)` closure, its own
+    `w.c.on[type]` handler table, its own hello latch, its own reconnect backoff, its own keepalive.
+
+### What is actually coupled to "the socket" today (the inventory the build must not miss)
+| thing | where | per-what |
+|---|---|---|
+| carrier + reconnect + bulk lane | `Socket_real(w)` closure | per WORLD |
+| `transport` / `active_transport` particles | `w.o({transport:1})` | per world |
+| handler table `w.c.on[type]` | `Peeroleum_on(w,…)` | per world |
+| control-frame hooks `on_hello_list` `on_who` | `w.c` | per world |
+| `Peeroleum_route(w,h,…)` → Peering/Pier | `w.o({Peering:1})` | per world (Lies: name=role; Swarm: name=prepub) |
+| seq / ack / outbox / inbox | per `%Pier` | per world |
+| hello latch + retry | Lies: `w.c.hello_ok_at`; Swarm: `soul/body_hello_ok_at` | per world |
+| the relay's view | `locals: addr → Set<ws>` — role, prepub, seat | per SOCKET |
+| own-door rule | `deliverLocal` — qaddr or declaredRole | per socket |
+
+The relay side already tolerates one socket wearing several binds (`become` + two hellos on one ws is
+ legal and is exactly what the station does with soul+body). **The relay needs no change.** The whole
+  migration is client-side.
+
+### The shape
+1. **One carrier per TAB, owned by the top House**: `Socket_real(top)` stands ONE ws; `top.c.carrier`.
+    Worlds no longer each call `Socket_real(w)`; they call `Carrier_join(w)`, which records the world
+     as a tenant and returns the same port.
+2. **Fan by `header.to`, then by world**: on message, the carrier resolves the world FIRST —
+    `to` ∈ {role names} → the Lies world; `to` ∈ {prepub, prepub_N, body names} → the Swarm world;
+     `@channel` → every tenant that subscribed. Then the existing `Peeroleum_deliver(w, frame)` runs
+      unchanged for that world. **The per-world handler tables stay per-world** — nothing in Peeroleum
+       changes; only `deliver_soon` grows a world-lookup in front. (A frame whose `to` no world claims
+        is dropped LOUDLY — today it is silently mis-delivered to whichever socket was bound.)
+3. **One hello, one become, on open**: the carrier's on_open sends `become <role>` (if the tab has a
+    role) then the soul hello (with the station's want), then the body hello. ONE latch triple
+     (`role_ok`, `soul_ok`, `body_ok`), one capped retry, one seat — merging the two latches built
+      this week. The arbiter adopt hook (Swarm) and the Lies latch both hang off the same
+       `on_hello_list` — which is why that registry was made a LIST on 09-10.
+4. **Outbound is already fine**: `Peeroleum_send(w, …)` finds the carrier via `Peeroleum_carrier(peering,
+    w)` → `w.o({transport:1})`. Give every tenant world a `transport` particle whose `.c.port` is the
+     shared port and nothing above it notices.
+5. **"Some other way to find runners"** — the census already exists: `who`/Presence answers by prepub,
+    `advertise` beacons carry role. A runner is found by its ADVERTISE, dispatched by prepub; the
+     `to:'runner'` broadcast becomes a relay convenience, not the way. `runner_ask` already pins by
+      prepub; `runners --live` already sweeps acks. Keep `become` for the one broadcast door.
+
+### The crux, named
+Ordering. Tonight's seal/share-up race is the same disease in miniature: two worlds each assume the
+ other's standup happened first. With one carrier the open→become→hello→ready sequence is ONE place,
+  and every world's "am I up" reads `top.c.carrier_ready` instead of its own latch. The Swarm world's
+   `station_up` and Lies' `channel_up` become derived, not stamped — which also fixes the splash
+    ladder for good (it read `top.c.station_up`, which nothing stamped).
+
+### Rollout — mixed fleet is the only real state
+- Stage 0 (design, this): no code.
+- Stage 1: `Carrier_join` + world lookup behind `ONE_SOCKET = false`; both paths compiled; relay-test
+   gains "one ws, three binds, frames to role AND prepub AND body all land in the right world".
+- Stage 2: flip on the HEADLESS newcomer only (`scripts/arrival_eye.mjs` ×5: seal, music, play) — the
+   walk that found the race is the gate. Then a runner. Then the editor (re-copy the pinned spine!).
+- Stage 3: delete the second dial. Stragglers on old code keep working: the relay sees two sockets
+   from an old tab and one from a new, and both shapes are legal to it.
+⚠ Do not arm before the relay-test contract and the five headless walks are green on the same build.
+ Verify editor-side on a headless EDITOR, never a runner (the spine skew lesson).
+
+### Not this
+- Not a relay protocol change. Not a Peeroleum change. Not the addressing model (roles vs identities
+   stays as ruled on 09-10). Not the r2r bridge.
 
 ## 0.9 THE LOG — 2026-09-06 → 09-11, as it happened (was §0; kept whole, read when §0 is not enough)
 

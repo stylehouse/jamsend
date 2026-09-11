@@ -9,6 +9,43 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
  legible C particles, that every boot surface (Splash, BootGate, Butler, LinkDevice, BigSoundland)
   READS instead of each deriving its own truth from a pile of `.c` flags.
 
+## ⚑ THE NEWCOMER, WALKED HEADLESS (2026-09-11 night — "what's the app lacking?")
+
+**Method.** A headless Chrome (`scratchpad/arrival.mjs` — the eye with clicks, typed input, body text
+ and every relay frame decoded) opened the music page cold on :9091 as a stranger: no folder, no
+  friends, no identity. Then again on an invite minted by the daemon (`/invite?base=…`, 41 records).
+   Fourteen arrivals in all. The screen text and the wire are the evidence; nothing below is inferred
+    from code alone.
+
+**What a stranger meets, in order:**
+1. Splash: a photo, OPEN SHARE, "🎧 listen without a folder", and a progress label that says
+    **"opening the wire…" forever** — even after the relay has said hello_ok. `BigSoundland.svelte`
+     reads `top.c.station_up`; nobody stamps it there (`Swarm_station_up` stamps the Swarm world's
+      `w.c`). So the label lies from step 2 of 6 on every boot. Three-line fix, not done tonight
+       (a live music-page HMR while you slept).
+2. After "listen without a folder": a Radio cell saying **"▶ nothing on the shelf yet"** and a small
+    Door cell. Then silence. Nothing says "press the Door" — the one thing that leads anywhere.
+3. The Door: "name yourself to begin". Then **invite a friend** (QR, fill screen, fresh QR), Link
+    Device, README. Good. ⚠ The invite tells the friend only your HEX: "an invite from
+     f24e69f4f3f0cca9 — Music". The panel promised "your name rides your invites"; it doesn't until
+      the seal (then "your inviter came online : Alba"). First impression is a hash.
+4. The seal itself: pier_hello → accept → confirm in ~200 ms, both sides, every time. Solid.
+5. **✅ FIXED — a friend's music arrived for only 2 arrivals in 5.** The other three sat at
+    "nothing on the shelf yet" beside a sealed friend with 41 records, forever. Cause: `Swarm_share_up`
+     greeted (armed the rx + sent `repli_ready`) only the piers that EXISTED at share-up; a friend
+      sealed a second later was never greeted, so their Mag landed and nothing wanted a chunk. Now
+       `Swarm_share_greet` runs from the seal too (`Swarm_seal`, when share_up already stands).
+        Measured after: **5 of 5** — "▶ plays your friends' music — 41 tracks ready" in ~30 s.
+6. Play (poked `Radio_toggle`): **"Baseball Diamond — Beach House" playing, up_next 20.** A stranger
+    with a QR is listening to a friend's music inside a minute. That is the product, and it works.
+    ⚠ It starts at `skip=128s` of 148 — the tail. `hbase:0`: the head run was not there on the first
+     play of a cold mirror. Your "pooled tracks should start from the beginning like a remote one" —
+      a remote one does NOT, on first play. SoundPooling §0 owes you the listen either way.
+
+**Instrument notes.** `poke Ra_pool_report` throws (`reading 'sc'`) on a player — its arg shape is
+ wrong for a live tab. A player with `socklog` armed answers `runner_ask ping` as `role:"editor"`.
+  Playwright clicks inside a Cello cell need `force` (the overlay intercepts); a real tap does not.
+
 ## LIVE CONFIRMED + the symmetry residue (2026-08-31, night — supersedes the brief below)
 
 The owner reloaded after the family-heal build: **"hey this looks much more there!"** — the heal derived

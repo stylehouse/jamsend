@@ -18,8 +18,7 @@ story:Understandium
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.085
-      sample=0.054,at=1780206722
+    TimeTotal:beliefs,avg=0.091
       sample=0.11,at=1780528501
       sample=0.099,at=1780529551
       sample=0.099,at=1780529586
@@ -29,9 +28,11 @@ story:Understandium
       sample=0.107,at=1781610192
       sample=0.055,at=1783255924
       sample=0.055,at=1783255932
-    TimeTotal:step,avg=0.004
+      sample=0.109,at=1789116631
+    TimeTotal:step,avg=0.005
       sample=0.004,at=1783255924
       sample=0.004,at=1783255932
+      sample=0.008,at=1789116631
   step,dige:f7427544f99f3476
   step=2,dige:91b02579a8f588b3
   step=3,dige:84a115e09cb1b9cc

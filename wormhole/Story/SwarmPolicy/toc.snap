@@ -3,6 +3,11 @@ story:SwarmPolicy
   Plan
   Opt
     For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.08
+      sample=0.08,at=1789116401
+    TimeTotal:step,avg=0.01
+      sample=0.01,at=1789116401
   step,dige:e5c5f344a350825c
   step=2,dige:c4039260a17f4fc5
   step=3,dige:d6453f50bf65d266

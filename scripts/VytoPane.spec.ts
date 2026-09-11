@@ -137,13 +137,21 @@ describe('pane_rows — every seated glyph box lies inside its cell', () => {
 })
 
 describe('rows_of — what a cell says, in the snap\'s own grammar', () => {
-    it('a plain row: title, then one k v line per scalar, capped with +N', () => {
+    it('a plain row: title, then the scalars as ONE flowing row of key/value pairs, capped with +N', () => {
         const guts = Array.from({ length: 11 }, (_, i) => ({ k: 'k' + i, v: 'v' + i }))
         const rows = rows_of('Cog:3.B', guts, null, { max_facts: 8 })
         expect(rows[0][0].text).toBe('Cog:3.B')
-        expect(rows.length).toBe(1 + 8 + 1)
-        expect(rows[9][0].text).toBe('+3')
-        expect(rows[1].map(a => a.text)).toEqual(['k0', 'v0'])
+        expect(rows.length).toBe(1 + 1 + 1)                       // title · the facts line · the +N tail
+        expect(rows[2][0].text).toBe('+3')
+        expect(rows[1].length).toBe(16)                          // 8 pairs
+        expect(rows[1].slice(0, 4).map(a => a.text)).toEqual(['k0', 'v0', 'k1', 'v1'])
+        expect(rows[1][0].pair).toBe(true)                        // a key owns its value — they wrap as a unit
+        expect(rows[1][1].pair).toBeFalsy()
+        // and a split title wears the fact-key look on its mainkey, title size on its value
+        const t = rows_of({ mk: 'Song', v: 'LowTide' }, [], null, {})[0]
+        expect(t.map(a => a.text)).toEqual(['Song', 'LowTide'])
+        expect(t[0].afs).toBeLessThan(t[1].afs)
+        expect(t[0].k).toBe('Song'); expect(t[1].k).toBe('Song')
     })
     it('a crest: the door first (×N + the query), then veins, facts, spreads with chips', () => {
         const rows = rows_of('Vtuffing:Cog', [], [

@@ -4,10 +4,12 @@ story:Nestcut
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.001
+    TimeTotal:beliefs,avg=0.003
       sample=0.001,at=1785237058
       sample=0.001,at=1785996829
-    TimeTotal:step,avg=0.001
+      sample=0.006,at=1789115096
+    TimeTotal:step,avg=0.003
       sample=0.001,at=1785237058
       sample=0.001,at=1785996829
+      sample=0.006,at=1789115096
   step,dige:9f7d15e86d9f8a94

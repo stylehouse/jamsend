@@ -4,8 +4,7 @@ story:SwarmCharter
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.028
-      sample=0.036,at=1787813974
+    TimeTotal:beliefs,avg=0.031
       sample=0.036,at=1787813986
       sample=0.043,at=1787814095
       sample=0.018,at=1787814106
@@ -15,8 +14,8 @@ story:SwarmCharter
       sample=0.026,at=1788299156
       sample=0.026,at=1788299156
       sample=0.03,at=1788299166
-    TimeTotal:step,avg=0.007
-      sample=0.009,at=1787813974
+      sample=0.063,at=1789119161
+    TimeTotal:step,avg=0.008
       sample=0.009,at=1787813986
       sample=0.011,at=1787814095
       sample=0.005,at=1787814106
@@ -26,6 +25,7 @@ story:SwarmCharter
       sample=0.006,at=1788299156
       sample=0.006,at=1788299156
       sample=0.007,at=1788299166
+      sample=0.016,at=1789119161
   step,dige:5107cecb3759df02
   step=2,dige:eb5595aeebf549df
     Assertion:the-soul-signs-its,sentence:the soul signs its division into one era-stamped Charter that verifies against its own pub — and routing reads the address for a Post off it the Cave at its suffix the Captain at the bare name an unheld Post nothing

@@ -10,7 +10,6 @@ story:Diffmatication
     trickle
   TimeSpool
     TimeTotal:beliefs,avg=5.128
-      sample=0.026,at=1781056401
       sample=0.006,at=1781590990
       sample=50.674,at=1781592112
       sample=0.093,at=1781592703
@@ -20,9 +19,11 @@ story:Diffmatication
       sample=0.081,at=1782449757
       sample=0.07,at=1785995848
       sample=0.012,at=1789108133
-    TimeTotal:step,avg=0.064
+      sample=0.024,at=1789117361
+    TimeTotal:step,avg=0.056
       sample=0.091,at=1782440294
       sample=0.081,at=1782449757
       sample=0.07,at=1785995848
       sample=0.012,at=1789108133
+      sample=0.024,at=1789117361
   step,dige:c5c6885fda40ce1e

@@ -3,6 +3,11 @@ story:SwarmSteal
   Plan
   Opt
     For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.018
+      sample=0.018,at=1789116523
+    TimeTotal:step,avg=0.003
+      sample=0.003,at=1789116523
   step,dige:e4469f33b30ab529
   step=2,dige:a60cd0a23681b096
     Assertion:alice-stands-alone,sentence:Alice stands alone — her key-derived name is her one address

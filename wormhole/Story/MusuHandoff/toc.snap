@@ -4,8 +4,7 @@ story:MusuHandoff
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.037
-      sample=0.025,at=1788573578
+    TimeTotal:beliefs,avg=0.047
       sample=0.034,at=1788573759
       sample=0.039,at=1788573957
       sample=0.034,at=1788574515
@@ -13,8 +12,10 @@ story:MusuHandoff
       sample=0.024,at=1788586175
       sample=0.03,at=1788586404
       sample=0.07,at=1788593907
-    TimeTotal:step,avg=0.006
-      sample=0.004,at=1788573578
+      sample=0.082,at=1789112234
+      sample=0.078,at=1789117941
+      sample=0.038,at=1789118756
+    TimeTotal:step,avg=0.008
       sample=0.006,at=1788573759
       sample=0.006,at=1788573957
       sample=0.006,at=1788574515
@@ -22,6 +23,9 @@ story:MusuHandoff
       sample=0.004,at=1788586175
       sample=0.005,at=1788586404
       sample=0.012,at=1788593907
+      sample=0.014,at=1789112234
+      sample=0.013,at=1789117941
+      sample=0.006,at=1789118756
   step,dige:f5d953e52433c61c
   step=2,dige:06e020df8c5094ad
   step=3,dige:22ba88dd70c41de4

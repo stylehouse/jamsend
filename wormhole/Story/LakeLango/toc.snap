@@ -9,8 +9,7 @@ story:LakeLango
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.063
-      sample=0.032,at=1782898887
+    TimeTotal:beliefs,avg=0.065
       sample=0.056,at=1782899672
       sample=0.035,at=1782899679
       sample=0.045,at=1782899953
@@ -20,8 +19,8 @@ story:LakeLango
       sample=0.021,at=1783416317
       sample=0.067,at=1785995487
       sample=0.094,at=1789108589
-    TimeTotal:step,avg=0.063
-      sample=0.032,at=1782898887
+      sample=0.054,at=1789110363
+    TimeTotal:step,avg=0.065
       sample=0.056,at=1782899672
       sample=0.035,at=1782899679
       sample=0.045,at=1782899953
@@ -31,4 +30,5 @@ story:LakeLango
       sample=0.021,at=1783416317
       sample=0.067,at=1785995487
       sample=0.094,at=1789108589
+      sample=0.054,at=1789110363
   step,dige:f657a4b3f65fa87a
