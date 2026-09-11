@@ -362,6 +362,9 @@
     const hash_iz = (() => { try { return typeof location !== 'undefined' ? (new URLSearchParams(String(location.hash || '').slice(1)).get('Iz') || '') : '' } catch { return '' } })()
     const landed_url = !!boot_param('Iz') || !!hash_iz
     let iz = $state<string>(boot_param('Iz') || hash_iz || '')
+    // the inviter's NAME, as the invite URL carries it (`&From=`, Swarm_invite_url) — display only, worn
+    //  until the seal brings the signed one; without it the landing greeted a stranger with a hex.
+    const url_from = (() => { try { return boot_param('From') || (typeof location !== 'undefined' ? (new URLSearchParams(String(location.hash || '').slice(1)).get('From') || '') : '') } catch { return '' } })()
     let invite = $state<any>(null)       // the parsed token {prepub, serial, to, params} — the offer's face
     // ANY My<Post> token is a DEVICE link (Division_todo §0a role-aware helm): MyCave grows a Cave,
     //  MyCaptain resurrects the Captain — both ride the ferry path, never the friend-redeem.  One
@@ -388,7 +391,7 @@
         if (!iz || invite || iz_err || typeof H?.Swarm_token_parse !== 'function') return
         const t = H.Swarm_token_parse(iz)
         if (t) {
-            invite = t
+            invite = (landed_url && url_from && !t.friendly) ? { ...t, friendly: url_from } : t
             // the %Invite AUTOVIVIFY (Portability §7): the token the URL carried becomes a
             //  particle with a lifecycle on the station world — the Door and the glass can
             //   show the offer as a thing, not a string. Soft: pre-station, the next parse
@@ -510,6 +513,7 @@
         const had_hash_iz = (() => { try { return !!new URLSearchParams(String(u.hash || '').slice(1)).get('Iz') } catch { return false } })()
         if (!u.searchParams.has('Iz') && !had_relic && !had_hash_iz) return
         u.searchParams.delete('Iz')
+        u.searchParams.delete('From')
         if (had_relic || had_hash_iz) u.hash = ''
         if (pin_prepub) u.searchParams.set('I', pin_prepub)
         try { replaceState(u.pathname + u.search + u.hash, {}) } catch {}
@@ -606,7 +610,7 @@
         //  %rebuff,rejected_<why>; naming the why beats "is the tab still open?" every time.
         const denied = (self.o({ rebuff: 1 }) as any[]).filter(r => String(r.sc.rebuff).startsWith('rejected_')).at(-1)
         joined = sealed
-            ? '✓ joined — ' + (claim.friendly || claim.prepub) + ' is a music Pier now'
+            ? '✓ joined — ' + (claim.friendly || invite?.friendly || claim.prepub) + ' is a music Pier now'
             : denied
                 ? '✗ the inviter denied the invite: ' + String(denied.sc.rebuff).slice(9) + ' — ask for a fresh QR'
                 : '… hello delivered, but no accept yet — is the inviter tab still open?'

@@ -938,7 +938,13 @@ Swarm_live_self():
 async Swarm_invite_url(w, ident, feature, base):
     let iz = await this.Swarm_mint_invite(w, ident, feature)
     this.Swarm_expect_arrival(w)
-    return base + '?Iz=' + encodeURIComponent(iz)
+    // THE NAME RIDES THE INVITE (2026-09-12, the newcomer walk): the Door promises "your name rides your
+    //  invites" and the landing said only "an invite from f24e69f4…" until the seal.  `From` is DISPLAY,
+    //   unsigned — the token proves the prepub, the hello brings the real name at the seal; this is the
+    //    first impression only, and a stranger's first impression of you should not be a hash.
+    let from = ident && ident.sc && ident.sc.friendly ? String(ident.sc.friendly) : ''
+    //  ('&' + 'From=') split on purpose — .g's `&name` interpolation is not string-aware (see :7631).
+    return base + '?Iz=' + encodeURIComponent(iz) + (from ? ('&' + 'From=') + encodeURIComponent(from) : '')
 
 // Swarm_expect_arrival — AN INVITE MEANS "COME HERE", so minting one is the moment we start
 //  expecting somebody (the owner 2026-08-09: *"the cases when we'd expect a Pier are just right

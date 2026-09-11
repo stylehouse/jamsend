@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '8689bdec31bf3c2b~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '1619369d43c21ddf~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1480,6 +1480,9 @@ Ra_pocket_mirror(rw, host) {
 //   otherwise names the single reason it is not.  The shelf-level counts sit beside the DISK count, because
 //    "files on disk with no card" is its own failure and was invisible until now.
 async Ra_pool_report(w, ident) {
+    // a world-only call (the CLI `poke Ra_pool_report` hands the radio world and nothing else) reports the
+    //  LIVE owner — the same identity the dial's own dry-pool call passes (2026-09-12; it threw for a week)
+    if (!ident) { let o = this.Ra_pool_owner(w); if (o && o !== w) { ident = o } }
     let homes = this.Ra_pool_fill_homes(w, ident)
     let pub = this.Radio_pub ? (this.Radio_pub(homes.mw) || 'me') : 'me'
     let out = { consent: 0, excused: 0, budget_mb: 0, cards: 0, ready: 0, files: 0, uncatalogued: 0, tracks: [] }
@@ -5429,7 +5432,8 @@ Ra_pool_fill_homes(w, ident) {
     //    turns on the roster's liveness preference; with no Swarm (a Book) it is absent and the pick is
     //     byte-identical to before.
     let now_s = (typeof this.Swarm_now === 'function') ? this.Swarm_now(w) : 0
-    let cave = this.Swarm_body_for ? this.Swarm_body_for(ident, 'Cave', now_s) : null
+    // (no ident ⇒ no roster to pick from; a world-only caller — the CLI poke — used to throw here)
+    let cave = (ident && this.Swarm_body_for) ? this.Swarm_body_for(ident, 'Cave', now_s) : null
     // AND SAY IT, when the only Cave on the roster is one the Door would call away.  A preference that
     //  falls back silently rebuilds the original defect one layer down: the fill still goes to a ghost,
     //   and the log still reads exactly like a slow peer.  Throttled to once a minute per identity —

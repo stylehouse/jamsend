@@ -112,8 +112,14 @@
             const stock = home?.o?.({ stock: 1 })?.[0]
             pool += ((H as any)?.Ra_recs ? (H as any).Ra_recs(stock) : (stock?.o?.({ Record: 1 }) ?? [])).length
         }
+        // FRIENDS SEALED (the newcomer walk, 2026-09-11): with nothing on any shelf the chip used to stop
+        //  at "nothing on the shelf yet" — a dead end beside the one cell that leads anywhere.  The count
+        //   splits the two honest next lines: no friend yet ⇒ the Door; friends but no music yet ⇒ wait.
+        let friends = 0
+        try { for (const p of ((H as any)?.Swarm_live_self?.()?.o?.({ Peering: 1 })?.[0]?.o?.({ Pier: 1 }) ?? [])) { if (p?.o?.({ Grant: 'Music' })?.[0]) friends++ } } catch {}
         return {
             pool,
+            friends,
             state:  (sc.Radio as string) ?? 'off',
             title:  sc.title as string | undefined,
             artist: sc.artist as string | undefined,
@@ -395,7 +401,7 @@
         {:else if face.first}
             <!-- OWN-RADIO FIRST (the owner 2026-08-28: "should just get on with your own Radio ASAP") —
                  a stocked shelf is an invitation to press play NOW, never a waiting room for a friend. -->
-            <span class="rf-chip">{face.pool > 0 ? `▶ plays your friends' music — ${face.pool} ${face.pool === 1 ? 'track' : 'tracks'} ready` : face.stock > 0 ? `▶ your own records — ${face.stock} ready to play` : '▶ nothing on the shelf yet'}</span>
+            <span class="rf-chip">{face.pool > 0 ? `▶ plays your friends' music — ${face.pool} ${face.pool === 1 ? 'track' : 'tracks'} ready` : face.stock > 0 ? `▶ your own records — ${face.stock} ready to play` : face.friends > 0 ? `nothing on the shelf yet — ${face.friends === 1 ? 'your friend\'s' : 'your friends\''} music is on its way` : 'nothing on the shelf yet — the Door invites a friend, or opens a folder of your own'}</span>
         {/if}
     </div>
 </div>

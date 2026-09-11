@@ -19,7 +19,7 @@
     import { gauge_box, gauge_pose, GAUGE_MS } from "$lib/O/vyto_gauge"
     import { GLASS_KINDS } from "$lib/O/glass_kinds"
     import { FACE_MAINKEYS } from "$lib/O/glass_faces"
-    import { pane_rows, rows_of, disc_poly, type Pane, type VrowDesc } from "$lib/O/vyto_pane"
+    import { pane_rows, rows_of, disc_poly, inside, type Pane, type VrowDesc } from "$lib/O/vyto_pane"
     import { lifetell } from "$lib/O/ui/micro/lifetell"   // DIAGNOSTIC — strip with the rest of the remount probes
     import { hold_list, hold_true } from "$lib/O/ui/micro/hold"
     import { onMount, onDestroy } from 'svelte'
@@ -1891,21 +1891,26 @@
     //       JUNCTION_EPS — no polygon intersection.  The point shared by the MOST members wins (≥2); a
     //        member that touches none of its kin keeps its full title.  Render-only, a stop, off by default.
     const JUNCTION_EPS = 2.5
-    type Junction = { mk: string, x: number, y: number, keys: Set<string>, shared: { k: string, v: string }[] }
+    type Junction = { mk: string, x: number, y: number, keys: Set<string>, shared: { k: string, v: string }[], rays: number[],
+                      interior: number[], exterior: number[], members: { key: string, v: string, hue?: string, ang: number, reach: number }[],
+                      placed: { k: string, text: string, v?: string, kind: 'mk' | 'fact' | 'value', hue?: string, ang: number, key?: string, reach?: number }[], hidden: Set<string>,
+                      ridge: number, bx: number, by: number, rx: number, ry: number }
     function junction_on(w: TheC): boolean { return !!fo(w, 'junction') && folio_on(w) }
     function junctions_of(w: TheC): Junction[] {
         void paint_tick
         const out: Junction[] = []
         if (!junction_on(w)) return out
         const groups = new Map<string, PaintCell[]>()
+        const allPoly: PaintCell[] = []
         for (const c of viewport_cells(w)) {
             if (c.kind !== 'poly' || c.hasKids || c.departing || c.loose || c.face || !c.poly || c.poly.length < 3) continue
+            allPoly.push(c)
             const mk = Object.keys((c.row.sc as any) ?? {})[0]; if (!mk) continue
             const g = groups.get(mk); if (g) g.push(c); else groups.set(mk, [c])
         }
         for (const [mk, cells] of groups) {
             if (cells.length < 2) continue
-            let best: Junction | null = null, bestD = Infinity
+            let best: Junction | null = null, bestD = Infinity, bestScore = -Infinity
             const cx = cells.reduce((t, c) => t + c.x, 0) / cells.length, cy = cells.reduce((t, c) => t + c.y, 0) / cells.length
             for (const a of cells) for (const v of a.poly!) {
                 const keys = new Set<string>([a.key])
@@ -1914,34 +1919,111 @@
                     if (b.poly!.some(u => Math.abs(u.x - v.x) <= JUNCTION_EPS && Math.abs(u.y - v.y) <= JUNCTION_EPS)) keys.add(b.key)
                 }
                 if (keys.size < 2) continue
-                // more members wins; at a tie the INTERIOR end of a shared wall (nearer the kin's centre) beats
-                //  the rim end — a label on the pile's outer edge reads as a stray, not a meeting
+                // a family's meeting point should not sit on ANOTHER family's wall (the owner: the Player junction
+                //  "needs to not be right on the Song edge like it has something to do with it")
+                let strangers = 0
+                for (const o of allPoly) if (!groups.get(mk)!.includes(o) && o.poly!.some(u => Math.abs(u.x - v.x) <= JUNCTION_EPS && Math.abs(u.y - v.y) <= JUNCTION_EPS)) strangers++
+                // a REAL junction has a third wall (three or more polygons meet); the far end of a two-member
+                //  wall on the pile's rim is not a meeting, it is an edge.  Then every stranger costs more than
+                //  that bonus is worth for one of them, so a vertex on two strangers' walls loses to a clean one.
                 const d = Math.hypot(v.x - cx, v.y - cy)
-                if (!best || keys.size > best.keys.size || (keys.size === best.keys.size && d < bestD)) { best = { mk, x: v.x, y: v.y, keys, shared: [] }; bestD = d }
+                const meets = keys.size + strangers >= 3 ? 1.5 : 0
+                const score = keys.size + meets - 1.2 * strangers - d / 400
+                if (!best || score > bestScore + 1e-9 || (Math.abs(score - bestScore) < 1e-9 && d < bestD)) { best = { mk, x: v.x, y: v.y, keys, shared: [], rays: [], interior: [], exterior: [], members: [], placed: [], hidden: new Set(), ridge: 0, bx: v.x, by: v.y, rx: 0, ry: 0 }; bestD = d; bestScore = score }
             }
             if (best) {
                 // THE SHARED FACTS (the owner: "do we have the ability to merge the artist:Yara and mood:brine
                 //  parts of that?") — a fact EVERY member carries with the same value is a vein (the crest's word
                 //   for it), said once at the meeting point and dropped from each member's own lines.
-                const members = cells.filter(c => best!.keys.has(c.key))
+                const touching = cells.filter(c => best!.keys.has(c.key))
+                const members = touching
                 const first: any = members[0].row.sc
                 for (const k of Object.keys(first)) {
                     if (k === mk || GUT_SKIP.has(k) || first[k] == null || typeof first[k] === 'object') continue
                     const v = String(first[k])
                     if (members.every(m => String((m.row.sc as any)[k] ?? '\u0000') === v)) best.shared.push({ k, v })
                 }
+                // THE RAYS — every wall that leaves the meeting point (the two edges beside the shared vertex in
+                //  each member polygon; a shared wall shows up twice and is merged).  The labels FAN along them
+                //   (the owner: "fanned-out looking Song,artist,mood would be awesome").
+                const rays: number[] = [], rayN: number[] = []
+                for (const m of members) {
+                    const P = m.poly!, n = P.length
+                    for (let i = 0; i < n; i++) {
+                        if (Math.abs(P[i].x - best.x) > JUNCTION_EPS || Math.abs(P[i].y - best.y) > JUNCTION_EPS) continue
+                        for (const q of [P[(i + 1) % n], P[(i + n - 1) % n]]) {
+                            const a = Math.atan2(q.y - best.y, q.x - best.x)
+                            const ri = rays.findIndex(r => Math.abs(Math.atan2(Math.sin(r - a), Math.cos(r - a))) < 0.14)
+                            if (ri < 0) { rays.push(a); rayN.push(1) } else rayN[ri]++
+                        }
+                    }
+                }
+                best.rays = rays.slice().sort((a, b) => a - b)
+                // a wall two members share is INTERIOR to the family; a wall one member owns faces a stranger
+                best.interior = rays.filter((_, i) => rayN[i] >= 2)
+                best.exterior = rays.filter((_, i) => rayN[i] < 2)
+                // PLACE, ONE LABEL PER CLEAR RAY (the owner: "what else can you do if the junction's wills to make
+                //  stuff line up are thus complicated") — a label takes a ray only if it is ≥ SEP from every label
+                //   already placed; what finds no clear ray STAYS IN ITS CELL (a member keeps its title, a fact
+                //    keeps its line).  Order of claim: the mainkey (interior wall first), each member's value
+                //     (its own ray into its cell), then the shared facts on what walls remain.
+                // THE PROTRUSION (the owner: "like it's stretched over a protrusion, and that protrusion has some
+                //  shoulders, and everything's a fan-out bit") — the shared word pushes the membrane out: a lozenge
+                //   along the shared wall (the ridge), the mainkey on its ridge, the values and facts fanning off its
+                //    shoulders.  Render-side sketch: the polygon is not warped yet, the bump is painted over the wall.
+                best.ridge = best.interior[0] ?? Math.atan2(members[0].y - best.y, members[0].x - best.x) + Math.PI
+                best.rx = mk.length * 3.6 + 8; best.ry = 8
+                best.bx = best.x + (best.rx + 2) * Math.cos(best.ridge); best.by = best.y + (best.rx + 2) * Math.sin(best.ridge)
+                // EVERY MEMBER OF THE FAMILY BRANCHES OFF THE BUMP (the owner: "the Song key breaking into three
+                //  values should be very clear") — not only the cells touching the vertex: the ray runs from the
+                //   bulge toward the cell's centre and the value lands just inside that cell's own wall (`reach`).
+                for (const m of cells) {
+                    const ang = Math.atan2(m.y - best.by, m.x - best.bx)
+                    let reach = best.rx + 10                      // never inside the bulge itself
+                    for (let t = reach; t < 400; t += 3) { if (inside(m.poly!, { x: best.bx + t * Math.cos(ang), y: best.by + t * Math.sin(ang) }, 0.5)) { reach = Math.max(reach, t + 7); break } }
+                    best.members.push({ key: m.key, v: ident_parts_of(m.row, w, m.tok).v, hue: cell_ground(m)?.color ?? undefined, ang, reach })
+                }
+                const SEP = 0.42
+                const sep = (a: number) => best!.placed.every(pl => Math.abs(Math.atan2(Math.sin(pl.ang - a), Math.cos(pl.ang - a))) >= SEP)
+                const walls = [...best.interior, ...best.exterior]
+                best.placed.push({ k: mk, text: mk, kind: 'mk', ang: best.ridge })
+                for (const m of best.members) if (sep(m.ang)) { best.placed.push({ k: mk, text: m.v, kind: 'value', hue: m.hue, ang: m.ang, key: m.key, reach: m.reach }); best.hidden.add(m.key) }
+                const keptShared: { k: string, v: string }[] = []
+                // a shared fact only ever takes an INTERIOR wall — an exterior one runs into a stranger's room
+                for (const sh of best.shared) { const a = best.interior.find(x => sep(x)); if (a != null) { best.placed.push({ k: sh.k, text: sh.k + ' ' + sh.v, v: sh.v, kind: 'fact', ang: a }); keptShared.push(sh) } }
+                best.shared = keptShared
                 out.push(best)
             }
         }
         return out
     }
-    function junction_of(w: TheC, cell: PaintCell): Junction | null {
-        for (const j of junctions_of(w)) if (j.keys.has(cell.key)) return j
-        return null
+    // one angle per label: the walls themselves when there are enough, else an even fan across the span
+    //  they cover (a lone ray fans the labels around itself)
+    // the walls carry the mainkey and the shared facts, interior walls first (a shared wall reads as the
+    //  family's own); a member's VALUE takes its own ray into its cell (see Junction.members)
+    function wall_angles(j: Junction, n: number): number[] {
+        const R = [...j.interior, ...j.exterior]
+        if (!n) return []
+        if (R.length >= n) return R.slice(0, n)
+        return fan_angles(j, n)
     }
-    function junction_member(w: TheC, cell: PaintCell): boolean {
-        for (const j of junctions_of(w)) if (j.keys.has(cell.key)) return true
-        return false
+    function fan_angles(j: Junction, n: number): number[] {
+        const R = j.rays
+        if (!n) return []
+        if (R.length >= n) { const out: number[] = []; for (let i = 0; i < n; i++) out.push(R[Math.round(i * (R.length - 1) / Math.max(1, n - 1))]); return out }
+        if (R.length <= 1) { const base = R[0] ?? -Math.PI / 2; const out: number[] = []; for (let i = 0; i < n; i++) out.push(base + (i - (n - 1) / 2) * 0.6); return out }
+        const out: number[] = []; const a0 = R[0], a1 = R[R.length - 1]
+        for (let i = 0; i < n; i++) out.push(a0 + (a1 - a0) * i / (n - 1))
+        return out
+    }
+    // a label along a ray reads left-to-right: a ray pointing left is drawn flipped and end-anchored
+    function ray_pose(j: Junction, a: number, d: number): { x: number, y: number, deg: number, anchor: 'start' | 'end' } {
+        const flip = Math.cos(a) < 0
+        return { x: j.x + d * Math.cos(a), y: j.y + d * Math.sin(a), deg: (a * 180 / Math.PI) + (flip ? 180 : 0), anchor: flip ? 'end' : 'start' }
+    }
+    function junction_of(w: TheC, cell: PaintCell): Junction | null {
+        for (const j of junctions_of(w)) if (j.keys.has(cell.key) || j.hidden.has(cell.key)) return j
+        return null
     }
     const folioMemo = new Map<string, { sig: string, pane: Pane | null }>()
     function guts_pairs(row: TheC, max: number): { k: string, v: string }[] {
@@ -1985,7 +2067,8 @@
         // a crest's key is its own distilled string (not a plain mainkey:value) — keep it a single
         //  bold run; an ordinary row's ident goes in SPLIT (see ident_parts_of/rows_of) so the title
         //   wears the same key:value convention as every fact line below it.
-        const ident = crest ? (crest_key(sc) ?? cell.ident) : { ...ident_parts_of(cell.row, w, cell.tok), hide_mk: junction_member(w, cell) }
+        const jm = !!junction_of(w, cell)?.hidden.has(cell.key)
+        const ident = crest ? (crest_key(sc) ?? cell.ident) : { ...ident_parts_of(cell.row, w, cell.tok), hide_mk: jm, hide_title: jm }
         // a SCOPE (its children tile it) wears a RUNNING HEAD: its name alone along its top wall, small and
         //  un-inflated, the way a magazine section carries its title above the pieces inside it
         const head = cell.hasKids
@@ -4326,7 +4409,8 @@
                                           ondblclick={st.k ? (e) => open_inspect(w, cell, e) : undefined}>{st.text}</text>
                                 {/each}
                             </g>
-                        {:else}
+                        {:else if !junction_of(w, cell)?.hidden.has(cell.key)}
+                            <!-- (a junction member with nothing left to say inside says its name at the dot — no fallback) -->
                             <!-- THE BLANK BIT (2026-09-11, folio became the default and this started
                                  showing up: the owner, looking live: *"what's with this blank bit"*).
                                  `folio_of`'s `pane_rows` can decline to fit ANY row along the wall —
@@ -4536,15 +4620,30 @@
                          k as every member's value atom, so hovering it glows the whole family. -->
                     {#each junctions_of(w) as j (j.mk + '@' + j.x.toFixed(0) + ',' + j.y.toFixed(0))}
                         <g class="junction">
-                            <rect class="junction-seat" x={(j.x - (j.mk.length * 6.6 + 10) / 2).toFixed(1)} y={(j.y - 8).toFixed(1)} width={(j.mk.length * 6.6 + 10).toFixed(1)} height="16" rx="8"></rect>
-                            {#each j.shared as sh, si (sh.k)}
-                                <text class="junction-fact fo-linkable" class:fo-glow={glow_key === sh.k} x={j.x.toFixed(1)} y={(j.y + 14 + si * 11).toFixed(1)}
-                                      text-anchor="middle" dominant-baseline="middle" data-fk={sh.k}
-                                      onpointerenter={() => glow_key = sh.k} onpointerleave={() => { if (glow_key === sh.k) glow_key = null }}><tspan class="jf-key">{sh.k}</tspan> {sh.v}</text>
+                            <!-- the bump: a lozenge stretched along the shared wall; the wall's own stroke runs under it -->
+                            <ellipse class="junction-bulge" cx={j.bx.toFixed(1)} cy={j.by.toFixed(1)} rx={j.rx.toFixed(1)} ry={j.ry.toFixed(1)}
+                                     transform="rotate({(j.ridge * 180 / Math.PI).toFixed(1)} {j.bx.toFixed(1)} {j.by.toFixed(1)})"></ellipse>
+                            {#each j.placed as it (it.kind + ':' + it.k + ':' + it.text)}
+                                {#if it.kind === 'mk'}
+                                    {@const flip = Math.cos(j.ridge) < 0}
+                                    <text class="junction-label fo-linkable" class:fo-glow={glow_key === it.k}
+                                          x={j.bx.toFixed(1)} y={j.by.toFixed(1)} text-anchor="middle" dominant-baseline="middle" data-fk={it.k}
+                                          transform="rotate({((j.ridge * 180 / Math.PI) + (flip ? 180 : 0)).toFixed(1)} {j.bx.toFixed(1)} {j.by.toFixed(1)})"
+                                          onpointerenter={() => glow_key = it.k} onpointerleave={() => { if (glow_key === it.k) glow_key = null }}>{it.text}</text>
+                                {:else}
+                                    <!-- off a SHOULDER: the label starts at the bulge's edge on its own ray, not at the vertex -->
+                                    {@const shx = j.bx + j.ry * 1.2 * Math.cos(it.ang)}
+                                    {@const shy = j.by + j.ry * 1.2 * Math.sin(it.ang)}
+                                    {@const pz = it.kind === 'value' && it.reach ? ray_pose({ ...j, x: j.bx, y: j.by }, it.ang, it.reach) : ray_pose({ ...j, x: shx, y: shy }, it.ang, 4)}
+                                    <line class="junction-shoulder" x1={j.bx.toFixed(1)} y1={j.by.toFixed(1)} x2={pz.x.toFixed(1)} y2={pz.y.toFixed(1)}></line>
+                                    <text class="fo-linkable" class:junction-fact={it.kind === 'fact'} class:junction-value={it.kind === 'value'} class:fo-glow={glow_key === it.k}
+                                          x={pz.x.toFixed(1)} y={pz.y.toFixed(1)} text-anchor={pz.anchor} dominant-baseline="middle" data-fk={it.k}
+                                          style={it.hue ? `fill:${it.hue}` : undefined}
+                                          transform="rotate({pz.deg.toFixed(1)} {pz.x.toFixed(1)} {pz.y.toFixed(1)})"
+                                          onpointerenter={() => glow_key = it.k} onpointerleave={() => { if (glow_key === it.k) glow_key = null }}
+                                    >{#if it.kind === 'fact'}<tspan class="jf-key">{it.k}</tspan> {it.v}{:else}{it.text}{/if}</text>
+                                {/if}
                             {/each}
-                            <text class="junction-label fo-linkable" class:fo-glow={glow_key === j.mk}
-                                  x={j.x.toFixed(1)} y={j.y.toFixed(1)} text-anchor="middle" dominant-baseline="middle" data-fk={j.mk}
-                                  onpointerenter={() => glow_key = j.mk} onpointerleave={() => { if (glow_key === j.mk) glow_key = null }}>{j.mk}</text>
                         </g>
                     {/each}
                     {#each viewport_cells(w) as cell (cell.key)}
@@ -5277,9 +5376,12 @@
        pointer-events:none default) and, on hover OR when the Seem popup's matching field is hovered,
        gets the SAME glow — one shared `glow_key` in the script drives both directions from one state. */
     /* THE JUNCTION LABEL — one mainkey at the meeting point of its sibling cells (stop `junction`). */
-    .junction-seat { fill: rgba(10, 10, 18, 0.82); stroke: rgba(156, 156, 198, 0.55); stroke-width: 1; }
-    .junction-label { font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; fill: #b8b8e0; letter-spacing: 0.04em;
-                      pointer-events: auto; cursor: help; }
+    .junction-bulge { fill: rgba(14, 14, 22, 0.9); stroke: rgba(200, 200, 236, 0.55); stroke-width: 1.2; }
+    .junction-shoulder { stroke: rgba(200, 200, 236, 0.45); stroke-width: 1.2; }
+    .junction-value { font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; fill: #ececf8; pointer-events: auto; cursor: help;
+                      paint-order: stroke; stroke: rgba(8, 8, 18, 0.75); stroke-width: 2.6px; stroke-linejoin: round; }
+    .junction-label { font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; fill: #c8c8ec; letter-spacing: 0.04em;
+                      pointer-events: auto; cursor: help; paint-order: stroke; stroke: rgba(8, 8, 18, 0.75); stroke-width: 2.6px; stroke-linejoin: round; }
     /* the shared facts under the pill — a vein said once; same halo as folio text so it reads across walls */
     .junction-fact { font: 600 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace; fill: #ececf8; pointer-events: auto; cursor: help;
                      paint-order: stroke; stroke: rgba(8, 8, 18, 0.75); stroke-width: 2.4px; stroke-linejoin: round; }

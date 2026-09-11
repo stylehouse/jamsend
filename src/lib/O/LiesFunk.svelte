@@ -3560,7 +3560,13 @@ await M.eatfunc({
                         }
                     }
                 } else { ok = false; result = { error: `unknown op ${op}` } }
-            } catch (e) { ok = false; result = { error: String((e as Error).message) } }
+            } catch (e) {
+                // the first two frames of the stack ride along: a bare `reading 'sc'` from a poke names
+                //  nothing (Ra_pool_report's arg-shape bug sat a week behind one), and the CLI is the
+                //   only eye a headless tab has.
+                const st = String((e as Error).stack || '').split('\n').slice(1, 3).map((l) => l.trim()).join(' < ')
+                ok = false; result = { error: String((e as Error).message) + (st ? ` @ ${st}` : '') }
+            }
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
             const ws   = port?.ws as any
             if (ws && ws.readyState === 1 /* OPEN */) {

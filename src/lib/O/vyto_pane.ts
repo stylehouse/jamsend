@@ -228,7 +228,7 @@ export type RowsOpts = { title_fs?: number, fact_fs?: number, chip_fs?: number, 
 //    style, like artist:Yara is... to Song too") — and so the title's own atoms carry `k` (the
 //     mainkey name), the same field every fact atom already carries, letting a caller glow the title
 //      and its matching fact/source line together on hover without caring which one it started from.
-export function rows_of(ident: string | { mk: string, v: string, hide_mk?: boolean }, guts: { k: string, v: string }[], vrows: VrowDesc[] | null, o?: RowsOpts): Atom[][] {
+export function rows_of(ident: string | { mk: string, v: string, hide_mk?: boolean, hide_title?: boolean }, guts: { k: string, v: string }[], vrows: VrowDesc[] | null, o?: RowsOpts): Atom[][] {
     const T = o?.title_fs ?? 14, F = o?.fact_fs ?? 10, C = o?.chip_fs ?? 9
     // hide_mk: the mainkey is said elsewhere (a shared junction label) — the title is the value alone,
     //  still tagged k=mk so it glows with the junction and every sibling's value together
@@ -238,7 +238,9 @@ export function rows_of(ident: string | { mk: string, v: string, hide_mk?: boole
                          //  2026-09-11: "Song (mainkey) could look more like the other keys"; only the value is the title
                          : [atom(ident.mk, F, 'fo-key fo-title-key', o?.key_hue, ident.mk), atom(ident.v, T, 'fo-title fo-title-val', o?.hue, ident.mk)])
         : [atom(typeof ident === 'object' ? ident.mk : ident, T, 'fo-title', o?.hue, typeof ident === 'object' ? ident.mk : undefined)]
-    const rows: Atom[][] = [titleRow]
+    // hide_title: the whole title is said at a junction (mainkey on a wall, value on a ray into the cell) —
+    //  the cell itself carries only its remaining facts
+    const rows: Atom[][] = (typeof ident === 'object' && ident.hide_title) ? [] : [titleRow]
     if (vrows && vrows.length) {
         const dip = vrows.find(r => r.row === 'dip')
         if (dip) {

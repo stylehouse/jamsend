@@ -23,12 +23,19 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
      reads `top.c.station_up`; nobody stamps it there (`Swarm_station_up` stamps the Swarm world's
       `w.c`). So the label lies from step 2 of 6 on every boot. Three-line fix, not done tonight
        (a live music-page HMR while you slept).
-2. After "listen without a folder": a Radio cell saying **"▶ nothing on the shelf yet"** and a small
-    Door cell. Then silence. Nothing says "press the Door" — the one thing that leads anywhere.
-3. The Door: "name yourself to begin". Then **invite a friend** (QR, fill screen, fresh QR), Link
-    Device, README. Good. ⚠ The invite tells the friend only your HEX: "an invite from
-     f24e69f4f3f0cca9 — Music". The panel promised "your name rides your invites"; it doesn't until
-      the seal (then "your inviter came online : Alba"). First impression is a hash.
+2. ✅ After "listen without a folder": a Radio cell saying **"▶ nothing on the shelf yet"** and a small
+    Door cell. Then silence. Nothing said "press the Door" — the one thing that leads anywhere. Now the
+     chip reads *"nothing on the shelf yet — the Door invites a friend, or opens a folder of your own"*,
+      and with a sealed friend whose music has not landed, *"— your friend's music is on its way"*
+       (`RadioFace` counts Music-granted piers). Walked headless 2026-09-12: the line shows.
+3. ✅ The Door: "name yourself to begin". Then **invite a friend** (QR, fill screen, fresh QR), Link
+    Device, README. Good. ⚠ The invite told the friend only your HEX: "an invite from
+     f24e69f4f3f0cca9 — Music" — the panel promised "your name rides your invites" and it didn't until
+      the seal. Now `Swarm_invite_url` appends `&From=<friendly>` (display only, unsigned — the token
+       proves the prepub, the seal brings the signed name) and the landing wears it: walked 2026-09-12,
+        *"📨 an invite from Alba — Music"* cold, and the joined line reads the same name. ⚠ `.g` trap
+         hit on the way: a literal `'&From='` compiles to `this.From()=` — split it `('&' + 'From=')`
+          like `&fc=` (Swarm.g §device-link).
 4. The seal itself: pier_hello → accept → confirm in ~200 ms, both sides, every time. Solid.
 5. **✅ FIXED — a friend's music arrived for only 2 arrivals in 5.** The other three sat at
     "nothing on the shelf yet" beside a sealed friend with 41 records, forever. Cause: `Swarm_share_up`
@@ -42,8 +49,9 @@ This is that machine. It is NOT a new page/toplevel — it is one **arrival auth
      play of a cold mirror. Your "pooled tracks should start from the beginning like a remote one" —
       a remote one does NOT, on first play. SoundPooling §0 owes you the listen either way.
 
-**Instrument notes.** `poke Ra_pool_report` throws (`reading 'sc'`) on a player — its arg shape is
- wrong for a live tab. A player with `socklog` armed answers `runner_ask ping` as `role:"editor"`.
+**Instrument notes.** ✅ `poke Ra_pool_report` threw (`reading 'sc'`) on a player — `Ra_pool_fill_homes`
+ called `Swarm_body_for(undefined)`; the report now resolves the live owner when handed only the world, and
+  runner_ask op errors carry two stack frames (which is how this took two minutes instead of a week). A player with `socklog` armed answers `runner_ask ping` as `role:"editor"`.
   Playwright clicks inside a Cello cell need `force` (the overlay intercepts); a real tap does not.
 
 ## LIVE CONFIRMED + the symmetry residue (2026-08-31, night — supersedes the brief below)

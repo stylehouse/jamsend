@@ -49,6 +49,11 @@ Owner asleep; queue gathered in the evening. Everything below is in the working 
            fixture is a PortPlan snap —, ReactiveWaft, MundaneStaying) long red. ⚠ Another client used the
             runner mid-sweep (19:47–20:45); those six were re-run clean.
 
+10. **2026-09-12, unattended follow-ups from the walk** — the empty-shelf chip points at the Door (or says
+    a friend's music is on its way); the invite URL carries `&From=<name>` so a landing says "an invite
+     from Alba" not a hex; `poke Ra_pool_report` works on a player; runner_ask op errors carry two stack
+      frames. Each walked headless (`scratchpad/pair.mjs`, `cold_chip`/`cold_poke`); SwarmInvite 5/5 and the Swarm family (Door Cohort Body Chain Staple Reboot Heist Heard) green after.
+
 **Still noise you will see:** the relay's `📊` six-pack every 10s (by design, fans to the editor door)
  and `no Pier for ping from=player` (a music page pings `to:'editor'`). Not touched — a relay save
   restarts the dev server and was not worth the sweep.

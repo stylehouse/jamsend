@@ -147,6 +147,70 @@ Two more of the owner's own asks, landed and verified live (not screenshotted-an
      and dropped from each member's lines. LowTide/Undertow become bare names; SaltAir, not at that
       vertex, keeps its own. Field-glow still ties them all. Model untouched — render only.
 
+- **The junction FANS (`seq_0044`).** The owner: *"figuring out those groupings so we have fanned-out
+   looking Song,artist,mood would be awesome."* The pill and the stack are gone: the walls that leave the
+    meeting point are the rays (`Junction.rays` — the two polygon edges beside the shared vertex in each
+     member, a shared wall merged), the mainkey and each shared fact lie along one ray each
+      (`fan_angles`: the walls themselves when there are enough, else an even fan across their span;
+       `ray_pose` flips a left-pointing ray so it still reads left-to-right), a gold dot marks the vertex.
+        Wart to look at: a fact can land on an EXTERIOR wall (owned by one member only) and run into the
+         neighbour's text — `mood brine` into SaltAir here. Next: prefer interior rays (walls that appear
+          in two members), push exterior ones further out.
+
+- **Junction placement, third pass (`seq_0045`) — and where render-only stops.** The owner's asks in order:
+   (1) *"the Player,of:main junction needs to not be right on the Song edge"* — a vertex now scores
+    `members + 1.5·(a third wall meets here) − 1.2·strangers − d/400`, so a family's meeting point avoids
+     another family's walls but still prefers a real junction over the rim end of a wall. (2) *"keys …
+      need to be similarly blob-coloured as the cell it's leading into, and lead left-right top-bottom out
+       into the value"* — each member's VALUE now leads out of the dot into its own cell along the ray to
+        its centre, in the cell's Matstyle hue, and that member's title comes off the cell (`hide_title`
+         through `rows_of`); the mainkey takes an interior wall, shared facts take remaining INTERIOR walls
+          only. (3) *"what else can you do if the junction's wills to make stuff line up are thus
+           complicated"* — one label per clear ray (`SEP` = 0.42 rad); what finds no clear ray STAYS IN
+            ITS CELL (mood brine did; bass/keys kept their titles). Honest remainder: a value ray still runs
+             into its cell's own facts (Undertow), and a small scope (the Band) cannot host a junction at all.
+   **The owner's own diagnosis, recorded as the direction:** *"those sketches are pretty great though.
+    some overlap problems, they basically want cells warped to reflect what's going on info-groupily."*
+     i.e. MODEL-side: the cut should bring kin together and hand them shared walls (kinweave/relate
+      already pull kin; the junction is where that should become geometry), and the folio's frame should
+       align to its junction ray and start AWAY from it. Not attempted; it is the next real move.
+
+- **THE MEMBRANE — the owner's design, in his words, and the first sketch (`seq_0046`).** *"it needs to be
+   a whole nother level of stuff going on in the cell membrane… like it's stretched over a protrusion, and
+    that protrusion has some shoulders, and everything's a fan-out bit."* Read: a wall is a THING (a
+     %Membrane per shared edge — two sides, length, normal, what both sides agree on); what both sides share
+      PUSHES the membrane out into a bump (the ridge carries the mainkey), with shoulders either side that
+       the values and facts fan off into their cells; the cut should give kin longer walls to bump, and a
+        cell's folio should start from its membrane inward. Sketched render-side under `junction`: a lozenge
+         along the shared wall (`Junction.ridge/bx/by/rx/ry`), mainkey on the ridge, other labels start at
+          the bulge's edge on their own rays with a thin shoulder line. The polygon is NOT warped and the
+           cell's own text does not yet yield to the bump — that is the model-side layer, next.
+
+- **Three branches (`seq_0047`) — and the ceiling of the render-side sketch.** *"the Song key breaking
+   into three values should be very clear"* — every family member now branches off the bump, not only
+    the cells touching the vertex: the ray runs from the bulge toward the cell and the value lands just
+     inside its own wall (`Junction.members[].reach`, marched with `inside()`), its title leaving the cell.
+      SaltAir joins LowTide/Undertow. But a branch crosses the neighbouring Player bump and another runs into
+       its own cell's facts — the cells are not SHAPED as a fan. *"visually, the cluster should be overall
+        about that shape."* That is the membrane layer proper: (a) the cut arranges kin as petals around
+         their shared bump (longer shared walls, the bump as a seed the pile respects), (b) each petal's
+          folio starts from its membrane inward and yields to the bump. Model-side. STOP tweaking pixels
+           here — the next commit of effort goes to Vyto.g, not Vytui.
+
+- **THE MEMBRANE PLAN, ruled (2026-09-11, late) — the owner's one-line brief: *"a clear expression of what's
+   joined to what"*, *"natural and readable without much eye-fuss"*.** The owner, in order: *"not just overlapping randomly,
+   obviously, but altogether things should be shaped for that structure of the merge we stitch|warp into
+    it"* → *"cells have to be made with pinches tucked into these merges."* Three bounded steps, each a Book
+     (`VytoMembrane`), model-side in Vyto.g: (1) the membrane becomes C — a `%Membrane` row per family on
+      the mirror (meeting point, members, what they share), so it snaps and a Book can swear on it; (2) THE
+       STITCH — the membrane is a seed in the power cut with the bump's radius, kin attraction strengthened
+        so the family sits as contiguous petals, and then THE PINCH: a post-cut carve where each member's two
+         wall vertices beside the bump are pulled in toward its ray with the bump's arc stitched between —
+          a neck tucked into the merge (cells stop being convex there; the renderer already takes any
+           polygon, the folio seats by chord); (3) THE WARP — each petal's folio frame aligns to its ray
+            from the bump, starting from the membrane inward, so value + facts run out along the neck. Not
+             started; it is the next thing, fresh.
+
 ### GENUINELY OWED TO THE OWNER, running list (nothing here is mine to resolve)
 - **Accept `wormhole/Story/VytoOrchestra/*.snap`** — the `Stray:*,loose` scalar + a new `see:` sentence,
    both purely additive drift, advised safe every time it's been checked this session (three times now).
