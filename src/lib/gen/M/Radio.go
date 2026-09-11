@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '6864147ac435cd52~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'aee912a9f63d8cce~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -4164,14 +4164,16 @@ Radio_like(n) {
     let me = this.Radio_pub(w) || 'me'
     let by = String(n.sc.by || me)
     // THE TOGGLE.  Already on the ledger under this holder ⇒ the press means UNLOVE, however long ago
-    //  it was loved.  `Heard_untake` is the same retirement the Haul row's ✕ performs (it strips the
-    //   ask, the verdict and the listing keys), so both doors do one thing.
+    //  it was loved (the owner's rule: the LATEST press is what stands).
+    //  ⚠ `Heard_unwant`, NOT `Heard_untake`.  The heart drops the WANTING and keeps the KNOWLEDGE; the
+    //   Haul row's ✕ is the full retirement.  The account of why is on Heard_unwant — the short version
+    //    is that `keep` is a handle on a running download and stripping it orphans one.
     //  ⚠ `by` must be the pub the take was WRITTEN under — `n.sc.by || me` — because a pool item, or
     //   anything of one's own, has no `by` and lives on the ledger under ME.  Reading it under a
     //    different pub than the write is the bug that made pool hearts go hollow on reload.
     let got = 0
     if (this.Heard_taken(w, me, by, String(rec.sc.id))) {
-        got = this.Heard_untake(w, me, by, String(rec.sc.id)) ? -1 : 0
+        got = this.Heard_unwant(w, me, by, String(rec.sc.id)) ? -1 : 0
     } else {
         got = this.Heard_take(w, me, rec, by)
     }

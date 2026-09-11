@@ -1763,13 +1763,19 @@
         const crest = mk === 'Vtuffing'
         const g = cell_ground(cell)
         const ident = crest ? (crest_key(sc) ?? cell.ident) : cell.ident
-        const vrows = crest ? crest_vrows(cell.row) : null
-        const guts = crest ? [] : guts_pairs(cell.row, 12)
-        const rows = rows_of(ident, guts, vrows, { hue: g?.color ?? undefined })
+        // a SCOPE (its children tile it) wears a RUNNING HEAD: its name alone along its top wall, small and
+        //  un-inflated, the way a magazine section carries its title above the pieces inside it
+        const head = cell.hasKids
+        const vrows = crest && !head ? crest_vrows(cell.row) : null
+        const guts = crest || head ? [] : guts_pairs(cell.row, 12)
+        const rows = head ? rows_of(ident, [], null, { hue: g?.color ?? undefined, title_fs: 11 }).slice(0, 1)
+                          : rows_of(ident, guts, vrows, { hue: g?.color ?? undefined })
+        if (head) rows[0][0].cls = 'fo-title fo-head'
         const sig = (cell.d || (cell.x.toFixed(1) + ',' + cell.y.toFixed(1) + ',' + cell.r.toFixed(1))) + '|' + rows.map(r => r.map(a => a.text).join('\u0001')).join('\u0002')
         const m = folioMemo.get(cell.key)
         if (m && m.sig === sig) return m.pane
-        const pane = pane_rows(poly, cell.x, cell.y, rows, { maxzoom: 1.8 })
+        const pane = head ? pane_rows(poly, cell.x, cell.y, rows, { inflate: false, toppad: 3, pad: 8, top: true })
+                          : pane_rows(poly, cell.x, cell.y, rows, { maxzoom: 1.8 })
         folioMemo.set(cell.key, { sig, pane })
         return pane
     }
@@ -4092,7 +4098,7 @@
                              measure pass stamps a cell's need off THIS text, grow-only, so a faceless
                              cell that shrinks out of the carve is measured against its own name again
                              and pushed back up.  The fallback is the floor; nothing had to be added. -->
-                        {#if !cell.face && !cell.hasKids && !cell.loose && !cell.departing && folio_on(w)}
+                        {#if !cell.face && !cell.loose && !cell.departing && folio_on(w)}
                             {@render folio(w, cell)}
                         {:else if !cell.face && !cell.hasKids && !cell.loose && cell.kind !== 'disc' && !wall_carve(w, cell)}
                             <text class="ident" class:sunk={cell.sunk} data-key={cell.key} x={cell.x} y={cell.y} text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
@@ -4862,6 +4868,7 @@
     .folio text { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; fill: #dcdcf0; pointer-events: none;
                   paint-order: stroke; stroke: rgba(8, 8, 18, 0.62); stroke-width: 2.6px; stroke-linejoin: round; }
     .folio .fo-title { font-weight: 700; letter-spacing: 0.25px; }
+    .folio .fo-head  { font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8; }
     .folio .fo-key   { fill: #9c9cc6; font-weight: 600; }
     .folio .fo-val   { fill: #ececf8; }
     .folio .fo-dip   { fill: #ecc98e; font-weight: 700; }

@@ -13,25 +13,56 @@ if (fs.existsSync(libs)) {
     const fc = os.homedir() + '/chromelibs/fonts.conf'
     if (fs.existsSync(fc)) process.env.FONTCONFIG_FILE = fc
 }
-const [url, out, ticks = '4,12,25,40', W = '1280', H = '820'] = process.argv.slice(2)
+const argv = process.argv.slice(2)
+// --click=<selector>@<sec>  press a thing at that second (repeatable); selector is a playwright locator string,
+//   e.g. --click='.bs-stop:has-text("wave")@20'
+const clicks = argv.filter(a => a.startsWith('--click=')).map(a => { const v = a.slice(8); const at = v.lastIndexOf('@'); return { sel: v.slice(0, at), sec: +v.slice(at + 1) } })
+const [url, out, ticks = '4,12,25,40', W = '1280', H = '820'] = argv.filter(a => !a.startsWith('--'))
+// 172.17.0.1 IS NOT A TRUSTWORTHY ORIGIN, and that alone blanked the room: Chrome sends no Sec-Fetch-* headers
+//  to a plain-http non-localhost origin, and vite's transform middleware only compiles a `.go` (a Svelte
+//   extension) into a module when `sec-fetch-dest: script` says a module asked — so every ghost came back
+//    RAW with no MIME type ("Failed to load module script" ×36) and no Book ever stood.  Same reason the
+//     dev server "must be reachable on localhost" (CLAUDE.md).  Tell Chrome the origin is secure.
+//  The flag alone does not make Chrome SEND those headers (they go only to https/localhost), so the eye also
+//   stands a TCP proxy on the container's own localhost and visits THROUGH it — the page then lives at
+//    http://localhost:<port>, a trustworthy origin, exactly as the owner's tab does on the host.
+import net from 'node:net'
+let target = new URL(url)
+let visit = url
+if (target.hostname !== 'localhost' && target.hostname !== '127.0.0.1') {
+    const [thost, tport] = [target.hostname, +(target.port || 80)]
+    const proxy = net.createServer(c => { const up = net.connect(tport, thost); c.pipe(up); up.pipe(c); c.on('error', () => up.destroy()); up.on('error', () => c.destroy()) })
+    await new Promise(r => proxy.listen(0, '127.0.0.1', r))
+    const port = proxy.address().port
+    target.hostname = 'localhost'; target.port = String(port)
+    visit = target.toString()
+    console.log('proxy: localhost:' + port + ' → ' + thost + ':' + tport)
+}
 const b = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream'] })
 const ctx = await b.newContext({ viewport: { width: +W, height: +H }, deviceScaleFactor: 1 })
 const p = await ctx.newPage()
 const logs = []
-p.on('console', m => { const t = m.text(); if (/error|warn|▣|Vyto|Voro|Story/i.test(t)) logs.push(t.slice(0, 200)) })
+p.on('console', m => { const t = m.text(); if (process.env.EYE_LOG === 'all' || /error|warn|▣|Vyto|Voro|Story/i.test(t)) logs.push(t.slice(0, 220)) })
 p.on('pageerror', e => logs.push('PAGEERROR ' + e.message.slice(0, 200)))
+p.on('requestfailed', r => logs.push('REQFAIL ' + r.url().slice(0, 160) + ' ' + (r.failure()?.errorText ?? '')))
+p.on('response', r => { const ct = r.headers()['content-type'] ?? ''; const u = r.url(); if ((r.status() >= 400 || !ct) && !/\.(png|ico|woff2?)$/.test(u)) logs.push('RESP ' + r.status() + ' ct=' + JSON.stringify(ct) + ' ' + u.slice(0, 160)) })
 // A headless shell has no directory picker, and the gate answers that with "use Chrome" and HIDES the
 //  listen-only door (boot_gate.svelte.ts: no_fsa ⇒ fsa_advice).  Wear a picker that always cancels, so
 //   the gate offers the door it offers a real Chrome, and the eye takes it.
 await p.addInitScript(() => { window.showDirectoryPicker = async () => { throw new DOMException('cancelled', 'AbortError') } })
-await p.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 })
+await p.goto(visit, { waitUntil: 'domcontentloaded', timeout: 60000 })
 let t0 = Date.now()
 // THE BOOT GATE: a room opens behind BootGate's "🎧 listen without a folder" — a headless eye has no folder
 //  to pick, so it takes the listen-only door the moment it appears (up to 20s), like a first-time visitor.
 try { const gate = p.locator('.bg-listen'); await gate.waitFor({ state: 'visible', timeout: 20000 }); await gate.click(); console.log('gate: listen-only, at', ((Date.now() - t0) / 1000).toFixed(1) + 's') }
 catch { console.log('gate: none seen (already open, or a different gate)') }
-for (const s of ticks.split(',').map(Number)) {
+const marks = [...new Set([...ticks.split(',').map(Number), ...clicks.map(c => c.sec)])].sort((a, b) => a - b)
+for (const s of marks) {
     const wait = s * 1000 - (Date.now() - t0); if (wait > 0) await p.waitForTimeout(wait)
+    for (const c of clicks.filter(c => c.sec === s)) {
+        try { await p.locator(c.sel).first().click({ timeout: 3000 }); console.log(s + 's click', c.sel) } catch (e) { console.log(s + 's click FAILED', c.sel, String(e).slice(0, 80)) }
+    }
+    if (!ticks.split(',').map(Number).includes(s)) continue
     await p.screenshot({ path: `${out}_${s}s.png` })
     const st = await p.evaluate(() => {
         const svgs = [...document.querySelectorAll('svg.viewport')]
@@ -42,5 +73,5 @@ for (const s of ticks.split(',').map(Number)) {
     }).catch(e => String(e))
     console.log(`${s}s`, JSON.stringify(st))
 }
-console.log('--- console:'); for (const l of logs.slice(-25)) console.log(' ', l)
+console.log('--- console:'); for (const l of logs.slice(process.env.EYE_LOG === 'all' ? -120 : -25)) console.log(' ', l)
 await b.close()

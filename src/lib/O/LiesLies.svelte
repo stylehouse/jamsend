@@ -147,11 +147,14 @@
         //     editor" rule the owner remembered: the `%HostedIdentity` claim (LiesFunk ~:499 — "the
         //      editor that is claiming supersedes every other editor row") and `Lies_aim_setup`
         //       (LiesFunk:432).  A second EDITOR tab evicts the human's; a hacker tab cannot.
-        //  It also stands NO CHANNEL AT ALL: `Lies_channel_up` below returns bare for any role that is
-        //   not editor|runner|armed-player, and `Lies.svelte:754` gates transport/channel/heartbeat the
-        //    same way.  So a hacker is local by construction — it never touches the relay, which is why
-        //     it cannot collide with anything.  (If it ever wants `runner_ask` reachability it joins
-        //      READ-ONLY through the `Lies_player_seen` door, never as an editor.)
+        //  It takes NO SEAT: `Lies_channel_up` below binds `?addr=runner` only for editor|runner, so a
+        //   hacker cannot collide with the editor's dispatch target or evict anyone.  ⚠ UPDATED
+        //    2026-09-10 — it is no longer channel-LESS.  It stands the read-only PLAYER channel that the
+        //     parenthesis here always pointed at ("if it ever wants `runner_ask` reachability it joins
+        //      READ-ONLY through the `Lies_player_seen` door, never as an editor") — and that door now
+        //       admits role:hacker without a separate arm, because a code room has no ordinary end-user
+        //        to protect.  See `Lies_player_seen`.  So: VISIBLE to `runner_ask minisnap`/`console`
+        //         over `--player=`, never DISPATCHABLE (every consumer filters `role === 'runner'`).
         //  A hacker READS.  The write gates stay `=== 'editor'`: Waft saves (Lies.svelte:833), the
         //   compile `dock_source` (LangCompiling:274, LiesCortex:155), and the Keep's cursor WRITES
         //    (Lies.svelte:1013/1018 — the Keep is single-writer like the editor; a hacker's own
@@ -245,10 +248,22 @@
         //    peers over the relay and takes no part in any Cluster, full stop, and no localStorage key a
         //     user could acquire can change that.  The diagnostic arm is then the per-tab opt-in WITHIN a
         //      dev build, so an ordinary dev tab is still invisible until someone deliberately arms it.
+        //  ROLE:HACKER IS ARMED BY CONSTRUCTION (2026-09-10, the owner: *"this is silly! lets get that
+        //   fixed"* — a code room I could not read the timings of).  The arm above exists to protect an
+        //    ORDINARY END-USER's page from being enrolled without them asking; a hacker room has no such
+        //     user.  You only reach it by deliberately opening /BigWordland as a developer, its whole
+        //      purpose is to be worked on, and it already carries the editor's local surface.  Requiring
+        //       a separate localStorage arm on it protected nobody and cost exactly what the humdinger
+        //        blindness above cost: every question about the room had to go through the human.
+        //  The safety argument is unchanged and is the one made at length above — it joins as
+        //   `role:'player'`, and EVERY dispatch consumer filters `role === 'runner'`, so a hacker room
+        //    still cannot be sent a Book.  It becomes VISIBLE, not DISPATCHABLE.  `production` remains
+        //     fail-closed above it, so this widens the diagnostic population inside a dev build only.
         Lies_player_seen(w?: TheC): boolean {
             const H = this as House
             if (!H.Lies_humdinger(w)) return false
             if (H.top_House().c.production) return false
+            if (H.Lies_role(w) === 'hacker') return true
             try { return socklog_armed() || sockcap_count() > 0 } catch { return false }
         },
 
@@ -347,7 +362,16 @@
             //        here exactly as before (owner 2026-09-01: "get you into the app instances").
             const player = role !== 'editor' && role !== 'runner' && H.Lies_player_seen(w)
             if (role !== 'editor' && role !== 'runner' && !player) return   // bare: no channel
-            const chrole = role ?? 'player'
+            // ⚠ THE PLAYER DOOR BINDS `player`, WHATEVER THE ROLE VALUE IS.  `role ?? 'player'` was
+            //  correct while the only tabs reaching here were role-LESS armed music pages, so the
+            //   nullish fallback did the job. role:hacker broke that assumption the moment
+            //    `Lies_player_seen` began admitting it (2026-09-10): `role` is the string 'hacker',
+            //     so the fallback never fired and the tab bound `?addr=hacker` — an address nothing
+            //      on the relay routes, so BigWordland silently stopped getting a websocket at all.
+            //  Gate on the DOOR (`player`), not on the absence of a role. The comment above already
+            //   promised this behaviour ("binds ?addr=player … never the runner slot"); the code just
+            //    happened to agree with it for the one role that used to arrive.
+            const chrole = player ? 'player' : (role ?? 'player')
             // ARREST (Auto.svelte, 2026-08-04): a named ?I=<tag> this browser can't resume leaves the
             //  top House flagged identity_pending until a human resolves it via the IdHatch the miss
             //   popped. Stay dark here too — Lies_cluster_idento would otherwise sign the hello with
@@ -501,7 +525,16 @@
                         //       presence and control-plane reach ride on — delivery is unchanged), but the SEAT —
                         //        the only thing arbitration fights over — becomes one no station will ever want.
                         //         `want` rides BESIDE the signed header (the signature stays over the 4 verified keys).
-                        const want = header.from + '_9' + String(100 + Math.floor(Math.random() * 900))
+                        // ⚠ ONE SEAT PER SOCKET, NOT ONE PER HELLO (2026-09-11 — a live leak on staging).
+                        //  This minted a FRESH random seat on every send.  With the hello RETRY below that
+                        //   is one new `want` every keepalive tick, and `handleHello` binds each grant
+                        //    additively — nothing releases a seat until the socket closes.  Measured on
+                        //     staging: ONE editor socket holding ~95 seats in the relay's `locals`, still
+                        //      climbing.  Unbounded growth in the routing map, no error anywhere.
+                        //  The dodge only ever needed to be a name no station would want; it does not need
+                        //   to be a new one each time.  Cache it on the socket's own latch, cleared on open.
+                        if (!w.c.hello_want) { w.c.hello_want = header.from + '_9' + String(100 + Math.floor(Math.random() * 900)) }
+                        const want = w.c.hello_want as string
                         // Stamped so the retry can leave a round trip before deciding this one was lost.
                         //  Without it the retry re-fires within milliseconds of the very first hello: on a
                         //   fresh load `last_ping` is unset, so the first keepalive tick runs immediately
@@ -517,7 +550,7 @@
                     }
                 }
                 ;(w.c as any).lies_send_hello = send_hello
-                port.on_open(async () => { delete w.c.hello_ok_at; delete w.c.hello_tries; await send_hello() })
+                port.on_open(async () => { delete w.c.hello_ok_at; delete w.c.hello_tries; delete w.c.hello_want; await send_hello() })
                 // The moment the socket OPENS — first connect AND every reconnect — fire an immediate
                 //  ping + (runner) advertise so the peer clears its "dialing ◌" face within one RTT
                 //   instead of waiting out the 5s keepalive tick (ping) or the 15s beacon (advertise).
@@ -1737,8 +1770,13 @@
             //  a signature before it answers, so an ack is not instant, and a retry that beats it home
             //   just burns a second seat dodge for nothing.
             const HELLO_GRACE = 3000
+            // ⚠ AND IT MUST GIVE UP.  Written without a cap first, which is the same unbounded-trickle
+            //  shape this codebase keeps getting bitten by: if `hello_ok` never lands, this re-sent for
+            //   ever.  Cap it, and SAY SO when it stops — a silent surrender is unfindable later.
+            const HELLO_TRIES = 6
             if (H.Lies_channel_live(w) && !w.c.hello_ok_at
                 && now - Number(w.c.hello_sent_at ?? 0) > HELLO_GRACE
+                && Number(w.c.hello_tries ?? 0) < HELLO_TRIES
                 && typeof (w.c as any).lies_send_hello === 'function')
                 void (w.c as any).lies_send_hello(true)
             H.Lies_ping(w)
@@ -1937,7 +1975,13 @@
             //    going-cold beacon's facet-omission (which would silently promote a player to runner and
             //     put a music page back in the dispatch pool — the exact leak).  Same shape as `pub`.
             const player = H.Lies_player_seen(w) ? 1 : 0
-            ;(H as any).Peeroleum_send_consumer(w, 'advertise', { from: self.prepub, ...(full_pub ? { pub: full_pub } : {}), ready: 1, ...(player ? { player: 1 } : {}), ...facets })
+            // `hacker:1` rides beside `player:1` and is the same SHAPE of fact — durable, out of the
+            //  throttle sig, never cleared by omission.  It is a SUB-KIND, not a second role: the row's
+            //   role stays 'player' so every dispatch filter still excludes it by construction.  Without
+            //    it the census can only say "someone's music page" about a code room, which is a census
+            //     that lies — and an instrument that mislabels is one you stop trusting.
+            const hacker = H.Lies_role(w) === 'hacker' ? 1 : 0
+            ;(H as any).Peeroleum_send_consumer(w, 'advertise', { from: self.prepub, ...(full_pub ? { pub: full_pub } : {}), ready: 1, ...(player ? { player: 1 } : {}), ...(hacker ? { hacker: 1 } : {}), ...facets })
         },
         // Lies_ac_nudge — the Sound Brink calls this the instant a gesture unlocks (or an init settles)
         //  the AudioContext, so the runner re-advertises ac:1 to the editor NOW rather than waiting for
@@ -2029,6 +2073,7 @@
             for (const f of RUNNER_FACETS) b[f.k] = f.kind === 'text' ? (fr?.[f.k] ? String(fr[f.k]) : '') : !!fr?.[f.k]
             if (fr?.pub) b.pub = String(fr.pub)   // the runner's FULL pub (Organ 4 part 3) — prepubOf(pub) === from
             if (fr?.player) b.player = 1          // a diagnostic-armed end-user room: seen, never dispatched
+            if (fr?.hacker) b.hacker = 1          // …and this one is a CODE room, not a music page
             beacons[from] = b
             // no snap mutation, no bump here — the in-think projection owns the snapped tree.
         },
@@ -2067,6 +2112,10 @@
                 //      prevent, so it may not happen by omission.
                 const want_role = (beacons[pub]?.player || hi.sc.role === 'player') ? 'player' : 'runner'
                 if (hi.sc.role !== want_role) { hi.sc.role = want_role; changed = true }
+                // The SUB-KIND, snapped beside the role so the census can say WHAT a player row is.
+                //  Sticky like the role and for the same reason (a going-cold beacon omits facets), and
+                //   deliberately a separate key: nothing may branch dispatch on it, only presentation.
+                if (beacons[pub]?.hacker && hi.sc.kind !== 'hacker') { hi.sc.kind = 'hacker'; changed = true }
                 // Record the runner's FULL pub (Organ 4 part 3) beside its prepub key, so a grant we mint
                 //  for it carries a verifiable `for` (prepubOf(pub) === the HostedIdentity key).  Durable
                 //   identity fact, not a live facet — set once, never cleared on silence.

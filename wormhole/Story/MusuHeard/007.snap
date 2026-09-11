@@ -9,7 +9,7 @@ Snap:H
           reached:step_2
           marked,one_card_per_track,oblique,hearing_again_is_the_same_card,one_page_per_sitting,the_set_is_the_mag,never_crosses
           throughed,an_empty_room_earns_nothing,present_is_a_play_through,it_accrues,never_bumps_the_account,a_skip_is_nothing
-          took,the_press_is_the_ask,the_listing_starts_at_the_act,the_press_mints_no_heist,pressing_again_takes_it_back,later_it_re_affirms,my_own_track_is_a_taste_fact
+          took,the_press_is_the_ask,the_listing_starts_at_the_act,the_press_mints_no_heist,pressing_again_takes_it_back,later_it_unloves_too,loving_it_back_restores_the_ask,my_own_track_is_a_taste_fact
           queried,grouped_by_holder,oldest_first,nobody_is_owed_my_own,a_row_per_holder
           forgot,a_hearing_nobody_wanted_is_forgotten,a_heart_is_never_dropped_by_a_clock,this_sitting_is_untouched,gave_up_is_a_word,only_a_person_retires_a_heart,an_emptied_sitting_goes
           carried,one_mint,oldest_wish_first,the_shape_the_button_made,a_busy_holder_waits,no_share_no_haul,a_wish_is_a_track,the_cell_cap_holds
@@ -21,10 +21,10 @@ Snap:H
         Mine,pub:me
           Mag:heard,pub:me,heard_ttl:30,take_ttl:90
             Cloud,page:1,created_at:1788400000
-              Card,id:r1,pub:friendo,mire:2,title:Track One,artist:Friendo,take:1,at:1788400150
+              Card,id:r1,pub:friendo,mire:2,title:Track One,artist:Friendo,take:1,at:1788400200
               Card,id:r2,pub:friendo,take:1,at:1788400000,title:Track Two,artist:Friendo
               Card,id:r3,pub:friendo
-              Card,id:own1,pub:me,take:1,at:1788400150,title:Mine
+              Card,id:own1,pub:me,take:1,at:1788400200,title:Mine
               Card,id:o1,pub:otherfriend,take:1,at:1788400200,title:Over There
           shop,pub:me
             Heist:Track Two,seed:r2,pub:friendo,state:pulling,take,at:1788400300,from_name:friendo,artist:Friendo,pick_edited

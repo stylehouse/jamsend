@@ -1,0 +1,22 @@
+Waft:Aside/2026-09-11,aside
+  What,FromWhat:Waft:Ghost/Net/Easy/What:the peer,about:Cursor_push
+    Doc:Ghost/M/Heist.g
+      Point,method:Cursor_push
+  What=2,FromWhat:Waft:Ghost/Net/Easy/What:the peer,about:AtlasStaple_restale_ready
+    Doc:Ghost/L/AtlasTesting.g
+      Point,method:AtlasStaple_restale_ready
+  What=3,FromWhat:Waft:Aside/2026-09-11/What:2,about:Agency
+    Doc:src/lib/mostly/Structure.svelte.ts
+      Point,method:Agency
+  What=4,FromWhat:Waft:Aside/2026-09-11/What:3,about:Heard_cards
+    Doc:Ghost/M/Heard.g
+      Point,method:Heard_cards
+  What=5,FromWhat:Waft:Aside/2026-09-11/What:4,about:Clustation_mint_named
+    Doc:src/lib/O/Auto.svelte
+      Point,method:Clustation_mint_named
+  What=6,FromWhat:Waft:Aside/2026-09-11/What:5,about:Radio_tune
+    Doc:Ghost/M/Radio.g
+      Point,method:Radio_tune
+  What=7,FromWhat:Waft:Aside/2026-09-11/What:6,about:toggle_radio
+    Doc:src/lib/O/Cytui.svelte
+      Point,method:toggle_radio

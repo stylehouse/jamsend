@@ -89,7 +89,7 @@ export function disc_poly(cx: number, cy: number, r: number, n = 24): Pt[] {
     return out
 }
 
-export type PaneOpts = { toppad?: number, inflate?: boolean, capfs?: number, norot?: boolean, maxzoom?: number, pad?: number }
+export type PaneOpts = { toppad?: number, inflate?: boolean, capfs?: number, norot?: boolean, maxzoom?: number, pad?: number, top?: boolean }
 
 // pane_rows — flow ROWS of atoms into a convex polygon.  rows[0] is load-bearing: if it cannot
 //  seat, the pane degrades (null).  Seats return in ORIGINAL coordinates, pivoted about (cx, cy).
@@ -105,6 +105,11 @@ export function pane_rows(poly: Pt[], cx: number, cy: number, rows: Atom[][], op
     const ry0 = Math.min(...rys), ry1 = Math.max(...rys)
     const pad = opts?.pad ?? 5                 // breathing room off the wall, both sides of a chord
     const availH = ry1 - ry0 - 6
+    // the widest chord the cell has at all (9 samples) — a SMALL cell seats its title there, shrunk, rather
+    //  than asking for room it can never have and saying nothing (the strays came up mute)
+    let widest = 0
+    for (let i = 1; i < 10; i++) { const c = poly_chord(rpoly, ry0 + (ry1 - ry0) * i / 10); if (c && c[1] - c[0] > widest) widest = c[1] - c[0] }
+    widest = Math.max(6, widest - 2 * pad)
     const toppad = opts?.toppad ?? 4
     const line_span = (ytop: number, lh: number): [number, number] | null => {
         // the chords are read at the line box's TRUE top and bottom (1px in), so a glyph's ascender
@@ -125,7 +130,7 @@ export function pane_rows(poly: Pt[], cx: number, cy: number, rows: Atom[][], op
             // the room a line NEEDS before it will sit: its first atom at its asked size, capped at 60px —
             //  so the lead row steps past a wedge's tip to where it can be read, rather than seating a
             //   7px smudge at the apex and capping everything under it.
-            const need = Math.min(60, atoms[0].len * GLY * Math.min(atoms[0].afs * zoom, cap))
+            const need = Math.min(60, widest * 0.85, atoms[0].len * GLY * Math.min(atoms[0].afs * zoom, cap))
             let ch = line_span(ycur, lh)
             while ((!ch || ch[1] - ch[0] < need) && ycur + lh < ry1 - 3) { ycur += lh * 0.5; ch = line_span(ycur, lh) }
             if (!ch || ycur + lh > ry1 - 3) { dry = true; hid += atoms.length; return }
@@ -180,7 +185,7 @@ export function pane_rows(poly: Pt[], cx: number, cy: number, rows: Atom[][], op
         if (up && up.seats.length && up.hid === 0) { res = up; zused = zoom }
     }
     const spare = availH - res.used
-    if (spare > 10) {
+    if (spare > 10 && !opts?.top) {
         const down = layout(zused, toppad + spare / 2)
         if (down && down.hid === res.hid && down.seats.length === res.seats.length) res = down
     }

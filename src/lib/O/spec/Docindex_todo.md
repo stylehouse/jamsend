@@ -33,8 +33,12 @@
     looks ~5× busier purely from a cold IndexedDB. It is not CPU.
 3. **`runner_ask runners` needs 3–5 rounds** before you believe "nothing is live" — the relay spends an
     addr-less `corr` on the first ack. I blocked on a phantom "no runners" for an hour; round 4 found
-     two. And a `role:hacker` tab (BigWordland) stands no relay channel at all, so the owner being in
-      the room gives you no runner — that needs a separate `?B=` tab.
+     two. ⚠ **The second half of this bomb is now FIXED (2026-09-10 late)** — it used to say a
+      `role:hacker` tab (BigWordland) stands no relay channel at all. It does now: `Lies_player_seen`
+       admits role:hacker without the socklog arm, so a code room joins the READ-ONLY player door and
+        is addressable with `--player=` (visible, never dispatchable — every dispatch consumer filters
+         `role === 'runner'`). The census labels it `⌨ hacker (a code room)`. It still takes no runner
+          seat, so a Book still needs a separate `?B=` tab.
 4. **The supermap's safety is the dige gate, not the mapper key.** A snapped Doc is adopted only if the
     index Waft still reports the same dige. Weaken that and a stale Map serves silently — the failure
      mode where a cache makes things WRONG rather than slow.
@@ -553,3 +557,294 @@ Step 1 below is no longer "scan into the Mag". **Make the Map encode first** —
    identical tree, the rest is plumbing that already exists. If it cannot, nothing else is worth starting.
  Gate: a spec that builds a `%Doc`+`%Map` by hand, encodes, decodes, and asserts the tree round-trips
   including `region_path`/`abs_*` — the same hand-made-particle discipline as `SectResolve.spec.ts`.
+
+---
+
+## ☀ WHY OPENING ONE DOC IS SLOW — measured 2026-09-11, IN PROGRESS
+
+The thread that started this doc was *"I'm unimpressed with its ability to change Doc quickly"*, and
+ every measurement since went to the CENSUS (Atlas, the Stemdex) rather than to the thing being waited
+  on. These two harnesses measure the doc itself. **Neither existed before; both are green.**
+
+**`scripts/DocLoad.spec.ts` — the compiler is NOT the bottleneck.** Calling it directly, over a 50×
+ size ladder:
+
+    file              KB   parse  compile  total  ms/KB
+    L/Electrode.g     12    106     158     264   22
+    N/Peeroleum.g    113    101     214     315   2.79      ← the owner's example
+    M/Radio.g        273     75     362     437   1.6
+    S/Swarm.g        610     56     842     898   1.47
+
+ Sublinear in size: a ~250ms fixed cost plus a shallow linear term. **Peeroleum compiles in 315ms**,
+  and the largest ghost in the repo is under a second. Whatever the wait is, it is not this.
+
+**`scripts/DocOpen.spec.ts` — drives the REAL `Lies_want` path** (the same elvis a click fires), which
+ the owner named as the suspect: *"there's just a lot of w:Lies elvises to get done to open a doc"*.
+  ⚠ Story_cli's driver pumps `_really_answer_calls()` in a tight loop, **bypassing the drain gate**, so
+   headless gives a true tick COUNT and meaningless seconds. The owner's cost is `ticks × gate`
+    (`ANSWER_CALLS_TICK_MS`=50 busy, `AMBIENT_MAIN_TICK_MS`=200 ambient). Count here, multiply there.
+
+    boot settled after 111 Lies ticks · wafts:13 · docs visible:130
+    turn   0   ticks:3      dock:yes  job:0      ← the dock APPEARS after 3 ticks
+    turn  25   ticks:43     dock:yes  job:0
+    turn  50   ticks:949    dock:yes  job:0
+    turn  75   ticks:2808   dock:yes  job:0
+    turn 100   ticks:4672   dock:yes  job:0
+
+**Two findings, one solid and one to confirm.**
+1. **The open itself is CHEAP — 3 ticks to a standing dock.** So the chain of elvises to *open* is not
+    where the time goes either.
+2. **An open dock leaves `w:Lies` re-thinking continuously** — the rate climbs to ~74 Lies ticks per
+    drain turn and plateaus there, never quiescing. A machine that never goes quiet is the shape of
+     the owner's "5 minutes of 80% CPU", and it would tax everything else on the tab, not just the doc.
+
+⚠ **DO NOT bank finding 2 yet.** `job:0` throughout — the Compile job is never created headless, so the
+ spin may be a req that cannot complete here re-arming `think` every pass, rather than a real defect.
+  **NEXT: dump the req tree after the loop and name which req has `needs_work` forever.** If it is a req
+   that WOULD complete in a live tab, this is a harness artifact; if it re-arms unconditionally, it is
+    the bug. Do not touch `Housing._gallop_gate_ms` to find out ([[drain-gate-resists-instrumentation]]).
+
+### iteration 2 (2026-09-11 ~01:35) — the req tree, and two corrections
+
+**⚠ CORRECTION to iteration 1's numbers above.** Tick counts here are RUN-VOLATILE, exactly like the
+ wall clocks this doc keeps warning about. Three runs of identical code:
+
+    run A   turn 25: 43    turn 50: 949   turn 75: 2808   turn 100: 4672
+    run B   turn 25: 41    turn 50: 72    turn 75: 103    turn 100: 645
+    run C   turn 50: 70    turn 100: 1018
+
+ What DOES reproduce is the **plateau: ~75 Lies ticks per drain turn** in every run once the spin
+  engages. What varies is *when* it engages (turn 25 → turn 100). So quote the plateau, never the
+   series. **`dock appeared after 3 ticks` reproduced in all three runs** and is the solid number.
+
+**⚠ CORRECTION to my own harness — it fabricated a figure.** The first cut printed *"compiled after
+ 2289 ticks"* and derived *"2289 × 50ms = 114.5s busy"* on a run where **the compile never happened**:
+  the loop had hit its deadline and `ticks` was the deadline's count. `compile work (self) —s` was the
+   only honest cell on the page and it was three lines further down. Fixed — completion is now reported
+    as a separate fact and the gate arithmetic is suppressed entirely when nothing compiled. *A
+     fabricated number in a fresh instrument is worse than no instrument.*
+
+**THE REQ DUMP — who never finishes** (`needs_work = !finished && !ok`):
+
+    w:Lies — 5 reqs        done  req:Cortex     ok:1   ·  done  req:Store  ok:1 kids:21
+                           done  req:Langoer    ok:1
+                         ● BUSY  req:git        kids:0
+                         ● BUSY  req:wants      kids:2      ← the want is never consumed
+    w:Lang — 2 reqs      ● BUSY  req:workon     kids:3
+                         ● BUSY  req:waft_roster kids:0
+    dock children:  req:Languish   Text:1
+
+**WHY NOTHING COMPILES HEADLESS — mechanism found.** The compile is driven by text ARRIVING, not by
+ the dock opening. `e_Lang_texting` fires from the UI (80ms throttle) or `machine:1`, and drives
+  `req:text_mutated` under the dock's `req:Languish`. The open path's own delivery is
+   `e:dock_content` — *"the one dock content-writer (Lies/Lies → e:dock_content%Good)"*, `Lang.svelte`
+    :606. So: **dock opens (3 ticks) → Lies must hand Lang a `%Good` → Languish → compile.** The
+     harness stands the dock but never delivers the `%Good`, so `job:0` forever.
+
+**NEXT:** make the harness deliver `e:dock_content` (or get req:Store to fetch the Doc's `%Good`) so
+ the chain completes and the tick count from click→compiled becomes real. Then the four BUSY reqs can
+  be judged: `req:wants` holding 2 children after the want was served looks like the
+   "an owner drops its finished transient reqs" rule (CLAUDE.md) not being applied; `req:git` with no
+    kids on a headless boot is the most likely harness artifact. Judge them only once the chain closes.
+
+### iteration 3 (2026-09-11 ~01:55) — THE CHAIN CLOSES, and it is FAST
+
+`Lies_provide_dock(w, path, { force_compile: true })` was the missing piece. The want stands the dock,
+ but the COMPILE is driven by text arriving; `force_compile` is the seam built for exactly this case —
+  *"a BACKGROUND compile that furnishes the dock and compiles it off disk text WITHOUT taking the
+   active seat or mounting CodeMirror"* (`LiesStore.svelte`:220). It is the same producer the cursor
+    push calls; it only skips the editor seat a headless harness cannot occupy.
+
+    doc                size    ticks   compile work
+    Ghost/N/Peeroleum.g 113KB     3       0.282s
+    Ghost/S/Swarm.g     610KB     2       1.245s
+
+**THE TICK COUNT IS INDEPENDENT OF FILE SIZE — 2–3 ticks, whether the doc is 113KB or 610KB.** The
+ chain from click to compiled is SHORT and FIXED; only the work inside it scales. At a real tab's gate
+  that is 0.1–0.6s of gate plus the work: **under a second for the whole model side, for the biggest
+   ghost in the repo.**
+
+**⇒ SO THE MODEL SIDE IS EXONERATED, AND THE SEARCH NARROWS TO ONE PLACE.** Three suspects have now
+ been measured and cleared in turn: the compiler (315ms), the open chain (3 ticks), and the elvis
+  round-trips (2–3, not dozens). The one thing every one of these measurements deliberately steps
+   around is **the editor seat and the CodeMirror mount** — which is exactly where the owner said the
+    spinner is: *"a few along the compiling chain and one in the middle of the codemirror"*.
+
+**NEXT: measure the CM6 mount.** That cannot be done headless (no layout, no paint), so it needs a
+ live tab and `performance.now()` marks around the seat-taking + `EditorView` construction, reported
+  on the console like the `⏱ Liesui ready` line. Note `Lang_compile_source_state` — the lezer parse —
+   already showed a flat ~60–105ms in DocLoad regardless of size, so the grammar is not it either.
+
+**The four never-finishing reqs are STABLE across every run** (`req:git` kids:0, `req:wants` kids:2,
+ `req:workon` kids:3, `req:waft_roster` kids:0) — the same four with the same shapes on both the
+  Peeroleum and Swarm runs, so they are a feature of the machine, not run noise. They do NOT block the
+   open (which completes in 2–3 ticks), so they are a separate question: a House that never quiesces
+    burns ambient ticks forever. `req:wants` still holding 2 children after its want was served is the
+     one that looks wrong against CLAUDE.md's *"an owner drops its finished transient reqs"*.
+
+### iteration 4 (2026-09-11 ~02:15) — the CM6 mount instrumented; a dead fast path found; my hypothesis WRONG
+
+**Instrument landed:** `build_editor` (`Langui.svelte`:1633) now prints one staged line beside the
+ existing `🏗 EditorView created` —
+
+    ⏱ CM6 mount 1.23s — grammar 71ms · exts 4ms · EditorView 1150ms  [stho, 113KB] Ghost/N/Peeroleum.g
+
+ Three stages because the fixes live in different files: `grammar` is `await lang(name)`, `exts` is our
+  own extension assembly, `EditorView` is CM6 constructing and first-measuring. **Not yet read on a
+   live tab** — a headless BigWordland has no FSA grant, so no Waft loads, no cursor resumes, no dock
+    is opened and `build_editor` never runs. The numbers above are the FORMAT, not a measurement.
+
+**A REAL DEFECT, of the boring kind: a fast path that has never once run.** `stho`'s `resolve()`
+ (`grammars/stho/index.ts`:130) tries a generated parser artifact via
+  `import.meta.glob('./stho.grammar.ts')` before falling back to a live `buildParser()`. **That file
+   does not exist** — not in the repo, not gitignored, and no script anywhere produces it. So the glob
+    is empty, `generated` is always null, and **every editor mount generates the LR parser from
+     grammar source at runtime**. It is also the reason `@lezer/generator` (142KB) is in the page's
+      boot bill at all. `scripts/GrammarBuild.spec.ts` confirms it: `source:live` on every resolve.
+
+**⚠ BUT THE HYPOTHESIS WAS WRONG, and the measurement is what said so.** I expected the rebuild to be
+ the bottleneck. It is not:
+
+    resolve #1 139ms · #2 76ms · #3 37ms · #4 42ms   (all source:live)
+    lang('stho') through the editor's own entry: 24ms
+    ⇒ cold 139ms · warm ~71ms
+
+ **~71ms per mount against a 282ms compile.** Real, worth fixing eventually (generate the artifact, or
+  memoise `lang()` — there is no memo, `resolve()` runs unconditionally per mount), but **not the
+   thing the owner is waiting for.** Do not spend the night on it.
+
+ *Second-order lesson, and the reason this paragraph exists:* the first version of `GrammarBuild.spec.ts`
+  printed **"something is memoising it"** off a first-vs-last ratio — reading a V8 warm-up curve as a
+   cache, in a test written to prove there is no cache. Its own honest data, given the wrong verdict by
+    a lazy heuristic. Fixed to report cold/warm and state the conclusion in full. That is now **four**
+     instruments in three sessions that lied in their summary line while their raw numbers were fine.
+
+**WHERE THAT LEAVES THE HUNT.** Cleared so far, each by measurement: the compiler (315ms), the open
+ chain (3 ticks), the elvis round-trips (2–3), and now the grammar (~71ms). Still unmeasured and now
+  the ONLY candidate left in the open path: **`EditorView` construction itself** — CM6 building its
+   view, decorations and first measurement over a 113KB document. The instrument for it is in place and
+    needs one live tab that actually opens a doc. **NEXT: get that number**, either from the owner's
+     console (the line prints itself on any doc open) or by finding a way to grant FSA headless.
+
+### iteration 5 (2026-09-11 ~02:30) — EVERY STAGE IS NOW MEASURED, AND THEY ARE ALL FAST
+
+`scripts/CM6Mount.spec.ts` — CodeMirror construction, over the same 50× size ladder:
+
+    file              KB   State.create   new View   total   ms/KB
+    L/Electrode.g     12         30          113      142    11.87      ← JIT warm-up, not size
+    N/Peeroleum.g    113         11           42       53     0.47
+    M/Radio.g        273          4           48       53     0.19
+    S/Swarm.g        610         10           43       53     0.09
+
+**Flat at ~53ms from 12KB to 610KB.** CM6 parses lazily by viewport exactly as designed. (⚠ jsdom has
+ no layout, so this is a FLOOR — the live `⏱ CM6 mount` line is still needed to see layout/paint.)
+
+**THE WHOLE OPEN, SUMMED, FOR THE OWNER'S OWN EXAMPLE (Peeroleum.g, 113KB):**
+
+| stage | cost | measured by |
+|---|---|---|
+| belief ticks, click→compiled | 3 ticks = 0.15–0.6s at the gate | `DocOpen.spec.ts` |
+| grammar resolve | ~71ms | `GrammarBuild.spec.ts` |
+| CM6 construct | ~53ms (floor) | `CM6Mount.spec.ts` |
+| compile + %Map | 282ms | `DocLoad.spec.ts` |
+| **total** | **≈0.6–1.0s** | |
+
+**Nothing in the open path accounts for the wait.** Five stages, five measurements, all fast, none
+ scaling badly with size. So the premise has to change, and there are exactly two live possibilities:
+
+**(a) LAYOUT/PAINT** — the one thing jsdom cannot see. Still open; needs the live `⏱ CM6 mount` line,
+ which prints itself on any doc open in a real tab.
+
+**(b) CONTENTION — and this is now the strong one.** *The open is not slow; the machine is busy.* A
+ doc open takes the beliefs mutex like everything else, so if the House never goes quiet the open
+  QUEUES behind whatever is spinning. And we already found the spin, twice, and filed it as a separate
+   question both times:
+   - **four reqs NEVER finish**, stable across every run and both docs: `w:Lies` `req:git` (kids:0) and
+      `req:wants` (kids:2), `w:Lang` `req:workon` (kids:3) and `req:waft_roster` (kids:0)
+   - **~75 Lies ticks per drain turn**, forever, once a dock is open — the one number that reproduced
+      in every run
+
+ **That single cause would explain BOTH of the owner's complaints at once** — *"it takes 5 minutes of
+  80% CPU to start up"* and *"unimpressed with its ability to change Doc quickly"* are the same
+   sentence if the machine never stops thinking. A never-quiescing House burns the ambient tick
+    forever AND makes every interaction wait its turn.
+
+**NEXT: stop treating the spin as a side issue and make it the target.** Find what re-arms `think`
+ unconditionally. `req:wants` still holding 2 children after its want was served is the concrete
+  thread to pull first — CLAUDE.md is explicit that *"an owner drops its finished transient reqs"*, and
+   a `%want` that is never dropped is a req that never stops wanting.
+
+### iteration 6 (2026-09-11 ~02:45) — I WAS WRONG ABOUT THE SPIN. One real fix landed.
+
+**⚠ RETRACTION — "four reqs never finish" was my own instrument mislabelling correct behaviour.**
+ `DocOpen.spec.ts`'s dump printed `● BUSY` for `!finished && !ok`, which is **the normal permanent
+  state of a standing req**. All four are standing by design: `req:waft_roster` is declared
+   `eternal:1`; `req:git`, `req:wants` and `req:workon` are open-ended `doai` reqs (`doai` sets
+    `n.c.do_fn`, a do-function that runs each pass — Lies.svelte:1021 literally comments
+     `/* open-ended */`). And `req:wants` holding children is **also by design** — a `%want` is
+      cursor-intent history, deliberately kept and bounded to 12 (Lies.svelte ~:1066), with the
+       resolver returning early once `newest.sc.resolved`. Nothing there leaks and nothing is stuck.
+ The dump now prints an `eternal` column and labels rows `done` / `standing` / `● STUCK?`.
+
+**⚠ AND THE SPIN ITSELF IS PROBABLY A HARNESS ARTIFACT.** The ~75-ticks-per-drain-turn plateau
+ reproduces — but the crank loop calls `i_elvisto(h,'think')` on every House every turn and then
+  drains to exhaustion, which is a machine with no gate and no idle. **The disproof was already in
+   hand hours earlier and I did not join it up:** on the live runner, `see:lies … ticks:10` sat
+    **frozen across 18 seconds**, and `ticks:8` after a reload. A real tab quiesces. So iteration 5's
+     "the machine is busy" conclusion is NOT supported, and the doc-open hunt has no live suspect
+      left except layout/paint.
+
+*That is the fifth instrument in this hunt to mislead in its summary while its raw rows were fine.
+ The pattern is now unmistakable: I write a verdict line that encodes what I expect, and the verdict
+  outlives the data. Every one was caught by re-reading the raw rows.*
+
+**LANDED — the grammar memo (a real fix, honestly a small one).** `grammars/stho/index.ts` `resolve()`
+ is now memoised **keyed on the grammar hash** — not a session flag, because the live-build path
+  exists precisely so the editor stays honest about the current `.grammar` text, and a flat memo would
+   pin a stale parser the moment someone edits it in-app. Hashing 4.3KB is cheap; generating the
+    parser is not.
+
+    before   resolve #1 139ms · #2 76ms · #3 37ms · #4 42ms   → warm ~71ms, lang() 24ms
+    after    resolve #1 168ms · #2  7ms · #3  1ms · #4  0ms   → warm  ~3ms, lang()  1ms
+
+ **~71ms → ~3ms per editor mount**, and `get_inner_parser()` (tsstho's nested parse, which called
+  `resolve()` a second time) is fixed by the same memo. Gate: **23/23 green.**
+
+**WHERE THE HUNT ACTUALLY STANDS — honestly.** Every stage of a doc open has been measured and every
+ one is fast (≈0.6–1.0s total). Two hypotheses beyond that were mine and both were wrong: the grammar
+  rebuild (real, but 71ms) and the never-quiescing House (an artifact of my own pump). **The single
+   remaining candidate is layout/paint**, which no headless harness can see. The instrument is already
+    in place and prints itself on any doc open in a real tab:
+
+    ⏱ CM6 mount Xs — grammar Nms · exts Nms · EditorView Nms  [stho, NKB] <path>
+
+ **Do not invent a sixth hypothesis. Get that line.**
+
+### iteration 7 (2026-09-11 ~03:00) — the sibling grammars need nothing; the hunt is out of headless road
+
+Checked before touching, having twice "fixed" something unmeasured:
+
+    lang('stho')      first  1ms · again 0ms · again 0ms     ← the memo
+    lang('tsstho')    first 12ms · again 1ms · again 1ms
+    lang('markdown')  first 84ms · again 0ms · again 0ms
+
+`tsstho` rebuilds `configure()` + `parseMixed` + `LRLanguage.define` per call and `markdown` does a
+ dynamic import — both LOOK like the stho problem and neither IS one: the module cache covers the
+  imports and the rebuild is ~1ms. **No memo needed for either.** (Kept in `GrammarBuild.spec.ts` so
+   the next person can see that it was checked rather than assumed.)
+
+**That exhausts the headless road.** Every stage of a doc open is measured and fast; both of my own
+ further hypotheses were wrong; the sibling grammars are fine. The one unmeasured thing left is
+  **layout/paint inside the CM6 mount**, and no jsdom harness can see it.
+
+## ☀ WHAT THE NEXT SESSION SHOULD DO — one line, and do not re-derive the rest
+
+**Get this line off a real tab**, then act on whichever stage is large:
+
+    ⏱ CM6 mount Xs — grammar Nms · exts Nms · EditorView Nms  [stho, NKB] <path>
+
+It is already instrumented (`Langui.svelte` `build_editor`) and prints itself on any doc open in a
+ live browser. Everything else in this hunt is DONE and written up above; re-running any of it is
+  wasted time. If that line comes back small too, then the wait is not in opening a doc at all and the
+   next thing to suspect is the ~4.5s of app boot before Lies first ticks (8.4MB of eagerly-imported
+    modules, `Cytui.svelte` alone 1MB) — which the owner has parked for **Atheory** to regroup.

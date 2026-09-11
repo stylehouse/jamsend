@@ -165,7 +165,7 @@ const ATLAS_EXT   = { g: 1, svelte: 1, ts: 1, md: 1 }
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Atlas(): string { return 'a8cc2a0369fb9eba~g1' },
+    Ghostmeta_Ghost_L_Atlas(): string { return '9275405d36950b44~g1' },
 
 // Atlas.g — every doc's %Map, kept.  The first ghost in Ghost/L/ (the land; spec home for now:
 //  Stemdex_todo.md §0 "relation EDGES", 2026-09-05).  `Atlas` is a PLACEHOLDER name — an atlas is a
@@ -1014,6 +1014,15 @@ async Atlas_report(w) {
     // the served-dige tally — the two lanes of the corroboration, hit meaning a read was skipped
     if (w.c.dige_hit) row.sc.dige_hit = '' + w.c.dige_hit
     if (w.c.dige_read) row.sc.dige_read = '' + w.c.dige_read
+    // ⚠ DON'T INSTRUMENT THE DRAIN GATE FROM HERE — or from Housing (2026-09-10).  The question
+    //  "are these passes gate-bound?" is already answered by the two numbers below: `total_ms` minus
+    //   `work_ms` IS the waiting, and on a 733-doc warm stand it came to 1.2s of 13.4s — ~9%, with
+    //    ~120ms per pass.  Atlas is WORK-bound, not tick-bound, so the gate is not the lever.
+    //  Getting that number the direct way cost an afternoon: adding five counter fields and four
+    //   lines to `_gallop_gate_ms` stopped the House thinking altogether — Atlas stood, `w:Atlas`
+    //    stayed empty, no error anywhere, and the tab still answered every ping. Reverting Housing to
+    //     HEAD restored it immediately. Whatever the mechanism, the drain gate does not tolerate
+    //      being measured from the inside; measure it by DIFFERENCE from out here instead.
     // THE WALL CLOCK, which is the number the owner actually feels.  `passes` × the belief tick is the
     //  real cost of a warm stand; `pass_ms` is what one pass spends WORKING, and the gap between
     //   (passes × pass_ms) and `ms` is time spent waiting for the next tick rather than doing anything.

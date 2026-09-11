@@ -227,7 +227,7 @@ Heard_take(w, me, rec, by):
     if (!card) { return 0 }
     let now = this.Heard_now(w)
     if (card.sc.take && (now - (+(card.sc.at || 0))) < this.Heard_thumb()) {
-        this.Heard_strip(card, ['take', 'at'])
+        this.Heard_strip(card, ['take', 'at', 'unseen'])   // stop wanting it ⇒ stop nagging about it
         card.bump()
         return -1
     }
@@ -257,11 +257,75 @@ Heard_untake(w, me, pub, id):
     let mag = this.Heard_mag_find(w, me)
     let card = this.Heard_find(mag, id, pub)
     if (!card || !card.sc.take) { return 0 }
-    this.Heard_strip(card, ['take', 'at'])
+    this.Heard_strip(card, ['take', 'at', 'unseen'])   // stop wanting it ⇒ stop nagging about it
     this.Heard_strip(card, this.Heard_verdict_keys())
     this.Heard_strip(card, this.Heard_listing_keys())
     card.bump()
     return 1
+
+// Heard_unwant — DROP THE WANTING, KEEP THE KNOWLEDGE.  The HEART's unlove (Radio_like), as against
+//  Heard_untake's full retirement above.  The owner made the heart a TOGGLE 2026-09-10 — *"we love or
+//   unlove things, which includes or dis-includes them in SP and Heisting to our Cave"* — and a toggle
+//    presses far more often than a ✕ ever did, so what it destroys matters much more.
+//  WHAT GOES: the ask (`take`/`at`) and its verdict.  A verdict is a word about an ask that no longer
+//   stands, so keeping it would leave a failure hanging off a track nobody is asking for.
+//  WHAT STAYS: the LISTING (`title` `artist` `dir` `path` `bytes` `body_hash` `keep`).  Those are facts
+//   about the TRACK, learned off a friend's describe answer; desire is the only thing a heart states.
+//  THREE REASONS, and the third is a bug rather than a preference:
+//   1. unlove→love IS the retry road now, and it must not re-ask a friend for what we already know;
+//   2. a Haul row that forgets its own title goes bare while you are looking at it;
+//   3. ⚠ `keep` is the card's handle on a RUNNING download, and the heart deliberately does NOT stop one
+//      (Radio_like: that is the ✕'s job).  Stripping it ORPHANS the keep — the download runs on with
+//       nothing pointing at it and no ✕ able to reach it.
+//  The ✕ keeps its full-clear meaning: a deliberate act on one visible row, free to forget everything.
+Heard_unwant(w, me, pub, id):
+    let mag = this.Heard_mag_find(w, me)
+    let card = this.Heard_find(mag, id, pub)
+    if (!card || !card.sc.take) { return 0 }
+    this.Heard_strip(card, ['take', 'at', 'unseen'])   // stop wanting it ⇒ stop nagging about it
+    this.Heard_strip(card, this.Heard_verdict_keys())
+    card.bump()
+    return 1
+
+// ── ATTENTION (the owner 2026-09-10: *"we might like to get attention on the Haul cell when that
+//  happens, or some new loved track info is synced over, but it should also ambiently work in the
+//   background"*).  Design: Radio_circuit_todo §9.6.
+//  AMBIENT MEANS THE CELL SIMPLY KNOWS.  No notification, no sound, no interruption — one `unseen`
+//   mark on the Card, a count on the cell, and you find out when you look.  It is a scalar on the
+//    Card exactly like the ask, so it stashes, snaps and GCs with everything else and needs no new
+//     home (a mark that outlived its Card would be a row pointing at nothing).
+//  ⚠ MARK IT WHERE THE TAKE WAS MADE, NOT WHERE THE WORK HAPPENED.  A landing on the laptop you are
+//   sitting at is not news; the same landing seen from the phone is.  `via` is already stamped by
+//    Heard_hand_land on a take that was CARRIED here from a sibling — so no `via` means this body
+//     pressed the heart itself, and only that body is told.  Without this the device doing the work
+//      is the one that nags, which is exactly backwards.
+Heard_notice(card):
+    if (!card || !card.sc.take) { return 0 }
+    if (card.sc.via) { return 0 }        // carried here from a sibling — that body is the one waiting
+    if (card.sc.unseen) { return 0 }
+    card.sc.unseen = '1'
+    card.bump()
+    return 1
+
+// Heard_seen — one row was actually LOOKED AT.  ⚠ Per ROW, never per cell: clearing on the cell merely
+//  being visible means a glance at a busy screen silently spends every mark, which is the same mistake
+//   `Heard_through` avoids by asking whether a person is in the room rather than whether audio ran.
+Heard_seen(w, me, pub, id):
+    let mag = this.Heard_mag_find(w, me)
+    let card = mag ? this.Heard_find(mag, id, pub) : null
+    if (!card || !card.sc.unseen) { return 0 }
+    delete card.sc.unseen
+    card.bump()
+    return 1
+
+// Heard_unseen — what the Haul cell shows.  A COUNT, nothing more; the rows themselves say what changed
+//  (Heard_word already turns a verdict into a sentence a person reads).
+Heard_unseen(w, me):
+    let mag = this.Heard_mag_find(w, me)
+    if (!mag) { return 0 }
+    let n = 0
+    for (const card of this.Heard_cards(mag)) { if (card.sc.unseen) { n = n + 1 } }
+    return n
 
 // Heard_taken — IS THIS TRACK ON MY LEDGER WITH THIS HOLDER?  The ♥ glyph reads the durable thing, not a
 //  runtime mirror: a mirror dies with the process, so after a reload the heart went hollow while the ask
@@ -498,7 +562,7 @@ Heard_clone_beat(w, rw, me, shop):
         let mir = rw.o({ Theirs: 1, pub: dj })[0]
         let mirstock = mir ? mir.o({ stock: 1, pub: dj })[0] : null
         let head = mirstock ? this.Ra_rec_find(mirstock, { Record: 1, re: seed }) : null
-        if (head) { n = n + this.Heard_clone_head(card, head) }
+        if (head) { let learned = this.Heard_clone_head(card, head); if (learned) { this.Heard_notice(card) }; n = n + learned }
         let v = this.Heard_verdict_of(this.Heist_job_of ? this.Heist_job_of(shop, keep) : null)
         if (v && String(keep.sc.state || 'primed') !== 'done') {
             card.sc[v.key] = '1'
@@ -507,6 +571,7 @@ Heard_clone_beat(w, rw, me, shop):
             keep.sc.state = 'done'
             keep.bump()
             try { this.Heist_job_drop(shop, keep) } catch (er) {}
+            this.Heard_notice(card)   // a verdict is exactly the 'look at this' case
             console.log('♥⚠ ' + String(card.sc.title || seed).slice(0, 32) + ' — ' + this.Heard_word(mag, card, this.Heard_now(w)))
             n = n + 1
         }
@@ -712,7 +777,7 @@ Heard_hand_got(w, ident, frame):
     if (!card) { return 0 }
     let from = String(frame.from || (frame.page ? frame.page.prepub : '') || '')
     let who = this.Heard_hand_name(ident, from) || 'a linked device'
-    if (String(card.sc.handed || '') !== who) { card.sc.handed = who; card.bump() }
+    if (String(card.sc.handed || '') !== who) { card.sc.handed = who; this.Heard_notice(card); card.bump() }
     return 1
 // Heard_hand_wake — a sibling just announced itself (the roster mile): re-offer what was never acked.
 Heard_hand_wake(w, ident):

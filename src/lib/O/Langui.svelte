@@ -830,7 +830,11 @@
     //   state.doc (CM Text) is separate from the dock particle — `cmdoc` when
     //   disambiguating in code; `state.doc` as CM's own property name.
     function Lang_i_elvis(view, method, sc) {
-        sc = { dock: active_path, view, state: view.state, ...(sc || {}) }
+        // sent_at: the moment the UI fired, so the handler can report how long the elvis spent in
+        //  the queue. Every stage of a doc open measures fast and the owner's own reading was that
+        //   the time is BETWEEN the stages — an elvis is the join between them, and nothing had ever
+        //    timed one. (2026-09-11; the owner: *"is it just an elvis?"*)
+        sc = { dock: active_path, view, state: view.state, sent_at: performance.now(), ...(sc || {}) }
         H.i_elvisto('Lang/Lang', method, sc)
     }
 
@@ -1635,6 +1639,19 @@
         captured_path:      string,
         captured_dock:      TheC | undefined
     ) {
+        // ── THE CM6 MOUNT INSTRUMENT (2026-09-11) ────────────────────────────────────────────
+        //  The owner: *"canwe chase why it takes so long for eg Doc:Peeroleum.g to load"*, and
+        //   *"one [spinner] in the middle of the codemirror"*.  Everything on the MODEL side has
+        //    now been measured and cleared — the compiler is 315ms for Peeroleum (898ms for the
+        //     610KB Swarm.g), and click→compiled is 2-3 belief ticks REGARDLESS of file size
+        //      (scripts/DocLoad.spec.ts, scripts/DocOpen.spec.ts).  Every one of those measurements
+        //       skipped this function, because `force_compile` exists precisely to compile "WITHOUT
+        //        taking the active seat or mounting CodeMirror".  So this is the last place the wait
+        //         can be hiding, and it cannot be measured headless — no layout, no paint.
+        //  Three stages, because the fixes live in different places: `lang` is a GRAMMAR load (and
+        //   `await lang()` may be a dynamic import — network + parse), `exts` is our own extension
+        //    assembly, and `view` is CM6 constructing and first-measuring the document.
+        const _t0 = performance.now()
         // Read dock fresh — text may have arrived during the setTimeout delay.
         // Prefer active_dock.c.initial_text (set synchronously by req_text_loaded
         // reqonce onto the dock particle — arrives with Languinio before the oai).
@@ -1648,6 +1665,7 @@
         // sees active_dock.sc.lang_override.
         const initial_lang_name = lang_for_path(captured_path)
         const initial_lang_exts = await lang(initial_lang_name)
+        const _t_lang = performance.now()
         if (initial_lang_exts.warnings?.length) {
             console.warn(`lang(${initial_lang_name}) warnings:`, initial_lang_exts.warnings)
         }
@@ -1719,10 +1737,12 @@
             usualSetup,
         ]
 
+        const _t_exts = performance.now()
         view = new EditorView({
             parent: captured_container,
             state: EditorState.create({ doc: initial, extensions: editorExtensions }),
         })
+        const _t_view = performance.now()
         // the editor owns its scrollbar entirely in its style block (.lte-cm .cm-scroller::-webkit-
         //  scrollbar*).  NOT the global .scrollbig class: one class (0,1,1) is too weak to beat
         //   CodeMirror's own injected scroller styles on this element, so the copper handle has to ride
@@ -1732,6 +1752,21 @@
         ;(view as any).lte_dock_path = captured_path
         last_applied_lang = initial_lang_name
         baked_lang_name   = initial_lang_name   // the grammar editorExtensions baked in
+        // ONE LINE, STAGED — a total cannot say which of the three to go and fix.  KB is carried
+        //  because the model side proved cost sublinear in size; if THIS is linear in size, that is
+        //   the difference that names the culprit.
+        // @Xs = WALL CLOCK SINCE PAGE START, on every line, because the owner's own reading of the
+        //  first output was the finding: *"there was extra time between these, if you had the
+        //   from-page-start delta you'd be amazed"*.  Every instrument in this hunt measured a STAGE
+        //    and none measured the GAP BETWEEN stages — and the stages all came back fast. A duration
+        //     alone cannot place itself on the timeline; a timestamp can, and the gaps then read off
+        //      by subtraction against `⏱ Liesui ready` and each other.
+        console.log(`⏱ CM6 mount @${(_t0 / 1000).toFixed(2)}s→${(_t_view / 1000).toFixed(2)}s`
+            + ` ${((_t_view - _t0) / 1000).toFixed(2)}s`
+            + ` — grammar ${Math.round(_t_lang - _t0)}ms`
+            + ` · exts ${Math.round(_t_exts - _t_lang)}ms`
+            + ` · EditorView ${Math.round(_t_view - _t_exts)}ms`
+            + `  [${initial_lang_name}, ${Math.round(initial.length / 1024)}KB] ${captured_path}`)
         console.log(`🏗 EditorView created: dom.clientHeight=${view.dom.clientHeight} scrollDOM.clientHeight=${view.scrollDOM.clientHeight}`)
 
         // Seed the spool with the initial text so the very first echo

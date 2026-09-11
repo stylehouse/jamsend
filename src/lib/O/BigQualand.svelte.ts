@@ -72,10 +72,17 @@ export function boot_qualand(opts: QualandOpts): Qualand {
         //   editor's grid: no advertise, no going-cold, and no `from` on its pings (else Lies_pong would
         //    enroll it as a runner off the 5s heartbeat and Story runs would land on someone's music page).
         //     Derived from role here so no call site can forget it; the guards live in Lies_humdinger.
-        //  'hacker' is stamped too: it is a room, never a dispatch target, and it stands no channel at
-        //   all anyway (Lies_channel_up returns bare for it), so the guard is belt to that brace.  It
-        //    also means `ghost_load` is refused on it — which costs nothing, because the Hackarium
-        //     recipe stands Atlas and Lagoon ITSELF rather than waiting to be handed them.
+        //  'hacker' is stamped too: it is a room and never a dispatch target.  It also means
+        //   `ghost_load` is refused on it — which costs nothing, because the Hackarium recipe stands
+        //    Atlas and Lagoon ITSELF rather than waiting to be handed them.
+        //  ⚠ UPDATED 2026-09-10: this used to add "and it stands no channel at all anyway".  That is
+        //   no longer true — `Lies_player_seen` now admits role:hacker without the socklog arm, so a
+        //    code room stands the READ-ONLY player channel (visible to `runner_ask --player=`, never
+        //     dispatchable).  Two gates still stop it dead, and BOTH sit above the role check:
+        //      `Lies_humdinger` and, decisively, `production` stamped just below — so on any
+        //       production build, or any host that is not a dev build, a hacker room still stands no
+        //        channel whatever. That is the intended stance ("no participation in any Cluster"),
+        //         not a fault, and it is the first thing to check when a deployed room has no socket.
         if (opts.role === 'word' || opts.role === 'sound' || opts.role === 'hacker') (h.c as any).humdinger = true
         // H.c.production — THE DEPLOYMENT STANCE, stamped once beside humdinger so every ghost can read it
         //  (a .g cannot see import.meta, and location is not a thing a model layer should be sniffing).

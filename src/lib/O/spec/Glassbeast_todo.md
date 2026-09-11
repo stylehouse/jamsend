@@ -18,7 +18,60 @@ Read it as a field guide. The animal is real, most of its organs exist, and it i
 A glass that folds at the meaning and looks like a made thing — and the look is a **deck of stops**
  you compose, record and hand on, never a fourth engine.
 
-### THE NEXT MOVE — the mixing desk, not an algorithm
+### WHERE IT STANDS — 2026-09-10 evening (the desk is built; now it is looked at)
+The owner, opening the day: *"Vyto was supposed to be a few things it wasn't … lots of layout … the whole
+ magazine-layout job."*  Three things were built in answer, in this order, each because the one before it
+  could not be trusted without it:
+
+1. **THE EYE** (`scripts/runner_eye.mjs`) — the first instrument this doc has that photographs a LIVE glass
+    with motion and faces.  Two traps it had to climb out of, both recorded in the script: BootGate hides
+     the listen-only door from a browser without a directory picker (the eye wears a cancelling one), and
+      **`172.17.0.1` is not a trustworthy origin** — Chrome sends no `sec-fetch-dest` there, vite serves every
+       `.go` ghost RAW, and no Book ever stands (36 × "Failed to load module script").  The eye proxies through
+        the container's own `localhost`, which is why the owner's tab (on localhost) never saw this.
+2. **THE FOLIO** (`foamereo:'folio'` · `src/lib/O/vyto_pane.ts` · `scripts/VytoPane.spec.ts`) — the magazine
+    layout: Cytui's tuples pane ported pure.  A cell's words flow along its biggest top-left wall, seated
+     between the wall's chords, inflated to fill, dropped to the middle; a scope wears a running head; a crest
+      says its distilled voice (door · veins · facts · spreads).  Seen through the eye on Orchestra: three
+       Songs titled along their walls with `artist Yara` / `mood brine` under, a Pull in gold — legible at a
+        glance, nothing clipped.  Nested Players come up at the 7px floor with an ellipsis: honest, small.
+3. **THE DESK** (`/BigShapeland`) — every stop a chip, `?deck=` for the eye, a `fold` chip that sets
+    `w.c.folded` + `budget:3` so the canonical six-cell demo folds and a crest can be LOOKED AT (the only
+     surviving fold Books are model-only benches).  The desk remembers its wants across a `fresh`
+      re-commission — the eye watched `folio` vanish at Orchestra's beat 7 before that was fixed.
+
+### THE NEXT MOVE — look, keep, drop
+The stop ledger (every stop photographed on Orchestra, one line each, by a subagent's eye) is pasted below
+ as **THE STOP LEDGER** the moment it lands; if it is not there, the batch died — rerun:
+ `for st in none wave …; do node scripts/runner_eye.mjs "…BigShapeland?B=VytoOrchestra&deck=$st" out/$st 30,60; done`.
+Then, in order: (a) the owner's eye on `/BigShapeland` with `folio` lit — keep or drop; (b) the crest's
+ voice through the `fold` chip; (c) the fold ladder's labels (kind crests) — the morning complaint that
+  started this (*"the inlaid component in a non-obscured location"*) is answered by the folio's wall-seat IF
+   the crest's rows read; (d) only then jangly on the old renderer.
+
+### THE STOP LEDGER — every stop photographed on Orchestra at 60s, 2026-09-10 (a subagent's eye, checked by mine)
+Baseline (`deck=`): the wedge pie on the copper ground — Songs titled along the rim, `artist Yara · mood`
+ under, a Player mostly hidden under the bag.  "no difference" means no difference AT 60s ON THIS BOOK.
+
+| stop | what it looks like | verdict |
+|---|---|---|
+| **folio** | type set INTO the cell: bold title, then `key value` lines, keys lilac, along the biggest top-left wall; every solid cell labelled incl. a `BAND:1.MAIN` running head; the nested Player is the one illegible label (crossed by the bag's wall) | **keep** |
+| **fold** (`folded` + `budget:3` + `kindfold`) | three Songs become ONE crest that SAYS: `Song · ×3 @mainkey=Song · artist Yara · mood brine · Song LowTide Undertow SaltAir` — the distilled voice, legible.  ⚠ `mood brine` prints as a plain fact though only 2 of 3 carry it: **that is the owed `n:have` leak, visible** | **keep**; the leak now has a picture |
+| wave | labels horizontal on a scalloped band — they pile up in the centre (5 names stacked) | drop on this Book |
+| nohall | the corridor of guts gone: titles only | keep as a quiet mode |
+| seat | rectangular tile grid instead of wedges; **labels duplicated** (`of main` ×2, `artist Yara` ×2) — a bug | fix before judging |
+| focus | at 30s a hub-and-spoke with one huge Player; at 60s blank (an HMR reload mid-capture — retake) | retake |
+| plump | bigger cells, full titles legible | keep |
+| room | bigger cells, blockier tops | either |
+| kinweave | thicker, whiter borders (the kin edges) | keep |
+| seal · copperless · simmer · still · kindfold · saylaw | no visible difference at 60s on Orchestra (kindfold/saylaw only speak through a fold; simmer/still are motion, a still frame cannot see them) | need motion or a fold to judge |
+
+**What the picture says about layout.** The folio answers the morning's *"inlaid component in a non-obscured
+ location"*: the crest's rows sit inside the wall, never across it.  What it does not yet do: the crest's cell
+  is a swollen ball (focus) and its type sits low-left; a magazine would set the title at the top of the cell
+   and let the rows hang from it — `pane_rows` has the `top` option, unused for crests, one line to try.
+
+### THE OLD NEXT MOVE (2026-09-10 morning) — the mixing desk, not an algorithm
 **Do NOT write "another algorithm to solve everything."** Cyto → Voro → Vyto: three rewrites, each
  lost things the last one had (the crest's voice, the words-along-the-wall) and each brought names
   that whizzed by. A fourth does it again.

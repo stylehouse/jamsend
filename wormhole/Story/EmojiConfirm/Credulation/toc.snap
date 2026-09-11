@@ -1,5 +1,5 @@
-Credulation,of_Book:SwarmSpread
-  run=0,at=1789081478.266,ok=0,ok_pct,mode:check
+Credulation,of_Book:EmojiConfirm
+  {"run":0,"at":1789085660.082,"ok":1,"ok_pct":null,"mode":"new"}
     uses:Ghost_N_Peeroleum,dige:176d03c1fb562ff9~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:825a67dcb6cf7607~g1

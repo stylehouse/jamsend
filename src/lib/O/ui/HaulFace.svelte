@@ -84,6 +84,13 @@
         }))
         let tracks = 0
         for (const a of albums) tracks += a.tracks
+        // ATTENTION, AMBIENTLY (owner 2026-09-10: attention on this cell when a hand lands or new loved
+        //  track info syncs over — *"but it should also ambiently work in the background"*).  A COUNT and
+        //   nothing else: no notification, no sound, nothing that pulls you mid-track.  The cell simply
+        //    knows, and you find out when you look.  Marked in the ghost at the three ARRIVAL seams
+        //     (a verdict, a listing learned, a hand coming back) and only on the body that pressed the
+        //      heart — see Heard_notice.  Design: Radio_circuit_todo §9.6.
+        const unseen = Number(A?.Heard_unseen?.(W, A?.Radio_pub?.(W)) ?? 0)
         // TODAY is the number worth leading with: a list that only ever grows stops being news, and the
         //  one question you come back to this cell with is "did the ones I left running land?".
         const dayAgo = Math.floor(Date.now() / 1000) - 86400
@@ -145,7 +152,7 @@
         const nAll = Math.max(+((n as any)?.sc?.n_all ?? 0), albums.length)
 
         return {
-            albums, tracks, nAll, today: today.length, todayTracks: today.reduce((s, a) => s + a.tracks, 0),
+            albums, tracks, nAll, unseen, today: today.length, todayTracks: today.reduce((s, a) => s + a.tracks, 0),
             piers, waitingN,
             // (no `anyPausable` — it was minted for a "pause all" that has not been asked for.  A derive
             //  nothing renders is a fact thrown away every pass; if pause-all lands, it wants a real verb
@@ -207,6 +214,21 @@
         clearTimeout(playedT); playedT = setTimeout(() => { played = '' }, 4000)
         if (!n_q) { console.log('📻⚠ nothing playable under ' + a.key + ' yet') }
     }
+    // READING A ROW SPENDS ITS MARK — and only a row that is really on screen (Radio_circuit_todo §9.6).
+    //  ⚠ NOT on the cell being visible.  In the BUD pose this face draws a badge and NO rows, so
+    //   clearing on visibility would let a collapsed cell silently spend every mark the moment the glass
+    //    laid it out — the person never saw a thing.  Gated on NOT-bud, and walked per listed row.
+    //  The waiting rows are the right and complete set: all three arrival seams (a verdict, a listing
+    //   learned, a hand coming back) happen while the wish is still OUTSTANDING, so a marked card is a
+    //    waiting card.  A row carries its own word, so reading the list IS reading the news.
+    $effect(() => {
+        if (bud) return
+        void tick
+        const me = A?.Radio_pub?.(W)
+        if (!W || !me) return
+        for (const p of face.piers) for (const q of p.waiting) { try { A?.Heard_seen?.(W, me, p.dj, q.of) } catch {} }
+    })
+
     // WIPE — the only verb in this cell that reaches the DISK.  Two presses, like the other two, and the
     //  arm key is prefixed so an album can never arm a heist row that happens to share a name.
     //  The ghost resolves nav|crate|mardir (Heist_haul_wipe); a face knowing where music lives would be a
@@ -222,13 +244,17 @@
 {#if bud}
     <!-- the whole cell is the button (Vytui draws a pressable organ as one and runs `.c.press` on click),
          so this needs no handler of its own — pressing it makes Haul the belly like any other bud. -->
-    <div class="hf hf-bud"><span class="hf-badge going">⇊</span></div>
+    <div class="hf hf-bud"><span class="hf-badge going">⇊</span>{#if face.unseen}<span class="hf-newdot" title="{face.unseen} changed since you last looked"></span>{/if}</div>
 {:else}
 <div class="hf">
     <div class="hf-head">
         <!-- the badge follows the TENSE: something in flight makes this a live cell, not an archive -->
         <span class="hf-badge" class:going={face.live.length}>{face.live.length ? '⇊' : '✓'}</span>
         <span class="hf-mk">Haul{#if face.nAll}<span class="hf-mkv">:{face.nAll}</span>{/if}</span>
+        <!-- the unseen mark: what changed while you were not looking.  Ambient — it never asks for
+             you, it is just there when you arrive.  Cleared per ROW as rows are read, never by the cell
+             being visible (a glance at a busy screen would otherwise spend every mark silently). -->
+        {#if face.unseen}<span class="hf-new" title="changed since you last looked">{face.unseen} new</span>{/if}
         <!-- NO "nothing yet" TAIL BRANCH: with nothing landed the .hf-empty line below already says the
              cell is empty, and says it better (it says what WOULD be here).  Two ways of saying nothing
              happened is the cheapest kind of furniture and the easiest to miss. -->
@@ -390,6 +416,9 @@
         padding: 6px 8px; max-width: 320px;
     }
     .hf-head { display: flex; align-items: baseline; gap: 6px; }
+    /* quiet on purpose: it reads as information, never as an alarm */
+    .hf-newdot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #ffd27a; margin-left: 3px; vertical-align: top; }
+    .hf-new { margin-left: 6px; font-size: 11px; padding: 1px 6px; border-radius: 8px; background: rgba(255, 210, 120, 0.16); color: #ffd27a; border: 1px solid rgba(255, 210, 120, 0.3); }
     .hf-badge { color: #6fd08a; font-size: 12px; flex: none; }
     .hf-mk { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
     .hf-mkv { color: #8fb4e8; }

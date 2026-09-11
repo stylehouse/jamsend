@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '0eac4e915eedac07~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'fdba06d100797880~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -531,6 +531,11 @@ Vyto_fold_scope(w, scope) {
     //      cell crossing that threshold CRUSHES or UNCRUSHES a whole group — a far bigger visual event
     //       than the thing it would be tracking.  Not measured; reasoned from the arithmetic above.
     let budget = budget_for(800, 450)
+    // `foamereo:'budget:N'` — a DESK stop (2026-09-10): the legibility budget said outright, so a scope of
+    //  six can be made to fold on the canonical demo and the crest can be LOOKED AT, rather than only
+    //   reached through a Book that crowds the frame.  Unset ⇒ the arithmetic above, byte-identical.
+    let bo = this.Vyto_fo(w, 'budget')
+    if (bo && Number(bo) > 0) budget = Number(bo)
     let groups = {}
     if (members.length > budget) {
         // WHERE THE WALL FALLS.  `foamereo:'kindfold'` elects by the LADDER — mainkey (what it IS),

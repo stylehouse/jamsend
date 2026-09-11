@@ -30,7 +30,7 @@ story:SwarmReboot
   step=2,dige:d10421cbdc176b08
   step=3,dige:a091bfc04dd10ac3
   step=4,dige:024c5ed9afdf3648
-  step=5,dige:9bd55a4391443805
+  step=5,dige:ede46a78d06eb629
     Assertion:the-crew-ledger-and,sentence:the crew ledger and its cert survive a reload through the stash alone — the home a device with no folder actually has
     Assertion:the-reload-is-real,sentence:the reload is real — the peering stands bare and the crew grant answers nothing until the rehydrate runs
     Assertion:a-standing-booking-outlives,sentence:a standing booking outlives the boot that made it — reach comes back booked so book-it-and-walk-away is true on a phone

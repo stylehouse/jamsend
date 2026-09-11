@@ -6723,6 +6723,18 @@ async MusuHeard_clone(w):
     this.Heard_clone_beat(w, w, 'me', shop)
     if (String(card.sc.unvouched) === '1' && this.Heard_word(mag, card, 1788400300) === 'could not be verified') { row.the_verdict_lands_on_the_card = 1 }
     if (String(keep.sc.state) === 'done' && !this.Heist_job_of(shop, keep)) { row.the_wedged_keep_is_ended = 1 }
+    // ── ATTENTION: the arrival asked to be looked at, and reading it spends the mark (Radio_circuit
+    //  _todo §9.6).  The verdict that just landed IS the "look at this" case, so the mark is checked
+    //   right here rather than in a beat of its own.
+    if (String(card.sc.unseen) === '1') { row.an_arrival_asks_to_be_looked_at = 1 }
+    if (this.Heard_seen(w, 'me', 'friendo', 'r2') === 1 && !card.sc.unseen) { row.reading_a_row_spends_its_mark = 1 }
+    // …and a take CARRIED here from a sibling never nags: that body pressed the heart and is the one
+    //  waiting to hear.  `via` is the stamp Heard_hand_land leaves; without this guard the device doing
+    //   the work is the one that interrupts, which is exactly backwards.
+    let carried = this.Heard_card(w, 'me', 'r1', 'friendo')
+    if (carried) { carried.sc.via = 'a linked device'; carried.bump() }
+    if (this.Heard_notice(carried) === 0 && !carried.sc.unseen) { row.a_carried_take_does_not_nag = 1 }
+    if (carried && carried.sc.via) { this.Heard_strip(carried, ['via']); carried.bump() }
     // …and the holder's queue moves on to the next wish rather than sitting behind a dead one
     let rows = this.Heard_takes(w, 'me', this.Heard_shelf(w, 'me'))
     let fr = rows.find((r) => r.pub === 'friendo')
@@ -6844,6 +6856,8 @@ MusuHeard_witness(w):
         this.story_swear(w, 'the original the describe answers with teaches the card its own keep id and its real size and hash — so everything a later reader needs for the way back rides the line — and re-reading it writes nothing')
     if (cl && +cl.sc.the_verdict_lands_on_the_card === 1 && +cl.sc.the_wedged_keep_is_ended === 1 && +cl.sc.the_queue_moves_on === 1 && +cl.sc.loving_it_back_clears_the_verdict === 1)
         this.story_swear(w, 'a refusal takes the husk out of the mirror and would leave the keep pulling something that no longer exists — so the verdict is copied onto the card and the keep ended — the holder queue moves on and loving it back is the retry')
+    if (cl && +cl.sc.an_arrival_asks_to_be_looked_at === 1 && +cl.sc.reading_a_row_spends_its_mark === 1 && +cl.sc.a_carried_take_does_not_nag === 1)
+        this.story_swear(w, 'an arrival marks its row as unseen and reading that row spends the mark — and a take carried here from a linked device never nags because the body that pressed the heart is the one waiting to hear')
     if (ld && +ld.sc.the_original_answers_the_ask === 1 && +ld.sc.either_id_space_answers_it === 1)
         this.story_swear(w, 'done-ness is the collection answering by whatever road the track arrived — the original under its own keep id or the streamed bytes under theirs — one derived question and no landed flag anywhere')
     if (ld && +ld.sc.newest_wish_first === 1 && +ld.sc.the_pool_takes_the_newest === 1 && +ld.sc.nothing_landed_is_nothing_pooled === 1)

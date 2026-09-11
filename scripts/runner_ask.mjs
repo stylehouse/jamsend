@@ -111,7 +111,10 @@ function clusterRunners() {
 		//      "latest player" convenience and no bare --player, because picking someone's music tab by
 		//       accident is precisely the mistake this shape exists to prevent.
 		if (props.role === 'runner') out.push({ pub, favourite_client: props.favourite_client })
-		if (props.role === 'player') players.push({ pub })
+		// `kind:hacker` marks a role:player row that is a CODE room (/BigWordland), not a music page:
+		//  same door, same exclusion from dispatch, but it is the developer's OWN tab and saying
+		//   "someone's music page" about it sent me looking for a channel that was already there.
+		if (props.role === 'player') players.push({ pub, kind: props.kind })
 	}
 	return out
 }
@@ -332,7 +335,9 @@ if (op === 'runners') {
 		}
 		console.error(`⇢ LIVE census off ${WS_URL} — ${found.length} tab(s) answered; wormhole/Cluster/toc.snap was NOT read`)
 		for (const f of found) {
-			const tag = f.role === 'player' ? `  ♪player (someone's music page — --player= to address)`
+			const tag = f.role === 'player' ? (f.kind === 'hacker'
+					? `  ⌨ hacker (a code room — --player= to address)`
+					: `  ♪player (someone's music page — --player= to address)`)
 				: f.role === 'runner' ? '' : `  ⚠ role UNKNOWN (this tab won't say — refused for --runner=/--player=)`
 			const busy = f.ack?.running?.book ? `  running:${f.ack.running.book}/${f.ack.running.phase}` : ''
 			const lease = f.ack?.engagement?.status === 'active' ? `  lease:${String(f.ack.engagement.client).slice(0, 8)}` : ''
@@ -371,7 +376,7 @@ if (op === 'runners') {
 	} catch { /* relay unreachable — cold listing below */ }
 	const mark = (pub) => alive == null ? '' : (alive.has(pub) ? '  ✓ live' : '  ✗ not answering')
 	for (const r of rs) console.log(`${r.pub}${r.favourite_client ? `  ★${r.favourite_client.slice(0, 8)}` : ''}${mark(r.pub)}`)
-	for (const p of players) console.log(`${p.pub}  ♪player (someone's music page — --player= to address)${alive != null && alive.has(p.pub) ? '  ✓ live' : ''}`)
+	for (const p of players) console.log(`${p.pub}  ${p.kind === 'hacker' ? `⌨ hacker (a code room — --player= to address)` : `♪player (someone's music page — --player= to address)`}${alive != null && alive.has(p.pub) ? '  ✓ live' : ''}`)
 	if (alive == null) console.error('⚠ relay unreachable — cold registry listing, liveness unknown')
 	else {
 		const dead = rs.filter(r => !alive.has(r.pub))

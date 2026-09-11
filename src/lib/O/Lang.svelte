@@ -314,7 +314,19 @@
         const dock = docks?.o({dock: path})[0] as TheC | undefined
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (languinio && dock) {
+            const v0 = languinio.version
             await languinio.place({ dock: 1 }, dock)
+            // ⏱ THE JOIN THAT MAY NOT WAKE.  Langui's own header says the chain is
+            //  "Lang_set_active_dock → languinio.bump_version" → signal $effect writes active_path
+            //   → switch $effect fires Lang_editorBegins → e_Lang_editorBegins stamps dock.c.state
+            //    → req_text_loaded clears the big overlay. But this function calls place(), not
+            //     bump_version, and if place() leaves the version untouched the signal $effect never
+            //      re-runs and the overlay sits over a perfectly good editor until some LATER action
+            //       bumps it. The owner's trace showed exactly that shape: Heard.g spun 23.91s and
+            //        cleared 0.45s after the NEXT click, with no editorBegins line in between.
+            //  So: print whether the version actually moved. `bumped:no` on a slow open is the proof.
+            console.log(`⏱ set_active_dock @${(performance.now() / 1000).toFixed(2)}s ${path}`
+                + ` · version ${v0}→${languinio.version} ${languinio.version !== v0 ? 'bumped:yes' : 'bumped:NO ⚠'}`)
         }
         // Tell w:Lies the foregrounded doc changed — direct Atime elvis.
         H.i_elvisto('Lies/Lies', 'Lies_active_doc_changed', { path })
@@ -328,6 +340,21 @@
     //   router and reconciles live bookmark positions from the CM state.
     async e_Lang_editorBegins(A, w, e) {
         const dock = this.Lang_dock_from_event(w, e)
+        // ⏱ THE JOIN. Two things can put 14 seconds between "CM6 mounted" and "the overlay cleared",
+        //  and they need telling apart because the fixes are nowhere near each other:
+        //   queue  — the elvis was fired at mount and sat unprocessed (the machine was busy)
+        //   dock   — it was processed promptly but stamped state on the WRONG dock particle, so
+        //             req_text_loaded's own dock never saw `c.state` and crawled on its ttlilt.
+        //  `Lang_i_elvis` stamps `dock: active_path` (a $state var), NOT the `captured_path` the
+        //   mount was built for, so the second is a real possibility and not paranoia.
+        if (e.sc.sent_at != null) {
+            const q = performance.now() - (e.sc.sent_at as number)
+            console.log(`⏱ editorBegins @${(performance.now() / 1000).toFixed(2)}s`
+                + ` queued ${Math.round(q)}ms · dock:${String(e.sc.dock ?? '∅')}`
+                + ` · state:${e.sc.state ? 'yes' : 'NO'}`
+                + ` · active:${String(w.c.active_dock_path ?? '∅')}`
+                + `${e.sc.dock && w.c.active_dock_path && e.sc.dock !== w.c.active_dock_path ? '  ⚠ MISMATCH' : ''}`)
+        }
 
         // CM StateEffects are per-view, so they live on dock.c — not w.c.
         dock.c.addBookmarkMark    = e.sc.addBookmarkMark
@@ -402,7 +429,19 @@
 
         // dock.c.state just got stamped — a req:text_loaded ttlilt may be waiting on exactly
         //  this; wake a think so its monitor re-checks and descends to compile.
-        ;(this as House).feebly_ponder()
+        // ⚠ `ponder_now`, NOT `feebly_ponder` (2026-09-11).  `req_text_loaded` holds the big centred
+        //  "opening" overlay and clears it only once `dock.c.state` exists — which is stamped HERE.
+        //   Under that hold sits a 3.0s `cm_mount` ttlilt, so if this wake is lost the spinner stays
+        //    over already-rendered text until the timeout expires. The owner saw exactly that:
+        //     *"after CM6 mount there's another 5s with a spinner over the loaded text"*.
+        //  `feebly_ponder` is the wrong instrument for it twice over: it funnels through
+        //   `main_throttle` at AMBIENT_MAIN_TICK_MS (200ms), and it returns SILENTLY when
+        //    `!c.runtime` — a dropped wake, with the ttlilt left as the only clock.
+        //  CM handing back its EditorState is a genuine SETTLE, not ambient chatter, which is the
+        //   exact case `ponder_now` documents itself for: *"'the disk answered' is not chatter …
+        //    Use ONLY on a genuine settle"*. Storm-safe by its own account (adjacent %think collapse
+        //     at the head of the todo), and it bypasses no_ambient just as the main(true) it replaces.
+        ;(this as House).ponder_now()
     },
     // ── e:Lang_texting ── text arrived from the UI (80ms throttle) or from
     //   e_Lang_i_alterationStation (machine:true, fires immediately).  Updates dock.c.text +
@@ -1069,6 +1108,10 @@
         if (H.reqonce(req, 'opening')) {
             // one chance: install text into the dock.
             H.Langspinner(w, 'text_load')
+            // ⏱ when the big centred spinner went up, so the wait below can report itself.
+            //  The owner, 2026-09-11: *"after CM6 mount there's another 5s with a spinner over the
+            //   loaded text"* — i.e. the text is rendered and THIS req is still holding the overlay.
+            req.c.spin_t0 = performance.now()
 
             const text = (languish.c.open_text as string) ?? ''
 
@@ -1092,10 +1135,23 @@
         // monitor: nothing to compile until CM mounts and hands us its EditorState;
         //  e_Lang_editorBegins feebly_ponders when it stamps dock.c.state, re-entering here.
         if (!dock.c.state) {
+            req.c.spin_waits = ((req.c.spin_waits as number) ?? 0) + 1
             H.i_req_ttlilt(req, 3.0, { waiting: 'cm_mount' })
             return
         }
         // CM mounted — the text_load phase is over; clear its spinner.
+        // ⏱ REPORT THE WAIT, and specifically whether it was WOKEN or TIMED OUT.  A 3.0s ttlilt
+        //  sits under this hold, so if the wake from e_Lang_editorBegins is lost the spinner stays
+        //   up until that timeout expires — which is indistinguishable, to a person watching, from
+        //    "the editor is slow". `waits` is the number of times we re-armed: 0-1 means the wake
+        //     landed, and a wait near a multiple of 3s means it did not and the timeout is the clock.
+        const spin_ms = req.c.spin_t0 ? Math.round(performance.now() - (req.c.spin_t0 as number)) : -1
+        // @Xs→Ys = absolute, since page start. See the note on the CM6 line: the stages are all fast
+        //  and the GAPS between them are unmeasured, which is where the owner says the time is.
+        if (spin_ms >= 0) console.log(`⏱ text_load spinner @${((req.c.spin_t0 as number) / 1000).toFixed(2)}s`
+            + `→${(performance.now() / 1000).toFixed(2)}s ${(spin_ms / 1000).toFixed(2)}s`
+            + ` · re-arms:${(req.c.spin_waits as number) ?? 0}`
+            + ` ${path}`)
         H.Langspinner(w, 'text_load', true)
         languish.finish(req)
     },

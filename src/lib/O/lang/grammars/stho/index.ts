@@ -127,8 +127,34 @@ const generated_loaders = import.meta.glob<{
     grammar_hash: string,
 }>('./stho.grammar.ts')
 
+// ── THE PER-MOUNT REBUILD, memoised (2026-09-11) ──────────────────────────────────────────────
+//  `lang()` (lang.ts:36) calls `entry.resolve()` UNCONDITIONALLY, and `build_editor`
+//   (Langui.svelte) calls `lang()` once per editor mount — so before this memo, EVERY doc open
+//    generated the whole LR parser from grammar source again. `get_inner_parser()` below calls
+//     `resolve()` a second time for tsstho's nested parse, doubling it.
+//  It was never noticed because the generated-artifact fast path above LOOKS like the answer —
+//   except `import.meta.glob('./stho.grammar.ts')` matches a file that has never existed anywhere
+//    in the repo, is not gitignored, and no script produces it. The glob is empty, `generated` is
+//     always null, and every resolve falls through to the live `buildParser`. (It is also the
+//      reason @lezer/generator, 142KB, is in the page's boot bill at all.)
+//  Measured cost: ~71ms warm per mount, ~139ms cold (scripts/GrammarBuild.spec.ts). Real, though
+//   NOT the bottleneck the owner feels — the whole doc-open path measures ≈0.6-1.0s and every
+//    stage of it is fast. This is a clean win, not the cure.
+//  ⚠ KEYED ON THE GRAMMAR HASH, deliberately, NOT a bare once-per-session flag. The live-build
+//   path exists so the editor is always honest about the CURRENT .grammar text; a flat memo would
+//    silently pin a stale parser the moment someone edits stho.grammar in the app. Hashing 4.3KB
+//     is cheap; generating the parser is not. Same key the artifact check already uses.
+let _memo: { hash: string, result: LangResolve } | null = null
+
 export async function resolve(): Promise<LangResolve> {
     const live_hash = await sha_hex(grammar)
+    if (_memo && _memo.hash === live_hash) return _memo.result
+    const result = await resolve_uncached(live_hash)
+    _memo = { hash: live_hash, result }
+    return result
+}
+
+async function resolve_uncached(live_hash: string): Promise<LangResolve> {
 
     // Try the generated artifact first.
     let generated: { parser: any, grammar_hash: string } | null = null

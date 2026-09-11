@@ -109,6 +109,8 @@
         { stop: 'kinweave',   what: 'joins as kin atoms — id/of/pub weave %Flow instead of being struck' },
         { stop: 'saylaw',     what: 'the line law — a universal presence is said once, never merely absent' },
         { stop: 'room',       what: 'opt-in room fill 0.55' },
+        // not a foamereo token but a commission flag + a budget: the one way to SEE a crest on Orchestra
+        { stop: 'fold',       what: 'FOLD the glass — w.c.folded on and budget:3, so six root cells crush to crests (three Songs → one Song crest with its distilled voice)' },
     ]
     let deck_tick = $state(0)
     function glass_worlds(): { house: any, w: any }[] {
@@ -122,6 +124,7 @@
     const tokens_of = (w: any): string[] => String(w?.sc?.foamereo ?? '').split(',').map((t: string) => t.trim()).filter(Boolean)
     function stop_on(stop: string): boolean {
         void deck_tick
+        if (stop === 'fold') return glass_worlds().some(({ w }) => !!w.c.folded)
         return glass_worlds().some(({ w }) => tokens_of(w).some(t => t === stop || t.startsWith(stop + ':')))
     }
     function deck_string(): string { void deck_tick; const ws = glass_worlds(); return ws.length ? String(ws[0].w.sc.foamereo ?? '') : '' }
@@ -134,32 +137,46 @@
         deck_tick++
         window.dispatchEvent(new CustomEvent('vyto-deck'))
     }
-    function toggle_stop(stop: string, model: boolean) {
+    function toggle_stop(stop: string, _model: boolean) {
+        deck_want.set(stop, !stop_on(stop))
+        enforce_deck()
+        deck_tick++
+    }
+    // THE DESK REMEMBERS.  A Book that re-commissions `fresh` (Orchestra's beat 7) tears the world down and
+    //  mints a new one — with the commission's own deck, not the one you set: the eye watched `folio` vanish
+    //   at beat 7.  So the room keeps its OWN word on every known stop (`deck_want`: on | off | unsaid) and a
+    //    slow poll enforces it on whatever world is standing.  `?deck=` seeds the wants; a chip changes one.
+    //     Unsaid stops are left exactly as the commission set them.  (A poll, deliberately: the world arrives
+    //      on the Book's own clock, and this room does not want an $effect reading ob() — the Otro H-effect
+    //       lesson, Vytui.svelte:70.)
+    const deck_want = new Map<string, boolean>()
+    const is_model = (stop: string) => MODEL_STOPS.some(m => stop === m.stop)
+    for (const x of (boot_param('deck') ?? '').split(',').map(t => t.trim()).filter(Boolean)) deck_want.set(x.split(':')[0], true)
+    function enforce_deck() {
         for (const { house, w } of glass_worlds()) {
             const t = tokens_of(w)
-            const i = t.findIndex(x => x === stop || x.startsWith(stop + ':'))
-            if (i >= 0) t.splice(i, 1); else t.push(stop)
-            set_deck(w, house, t, model)
+            let changed = false, model = false
+            // `fold` is the commission's `folded` flag (Vyto.g:128 stamps w.c.folded) plus a `budget:3` token —
+            //  the desk sets both, so the chip is one word and the fold is visible on a six-cell glass
+            if (deck_want.has('fold')) {
+                const on = deck_want.get('fold')
+                const bi = t.findIndex(x => x.startsWith('budget:'))
+                // …and `kindfold`: without the ladder the election looks for a DISCOVERED partition key, and
+                //  Orchestra's six have none (artist is all Yara, loose is all 1) — so nothing folded and the
+                //   eye saw folio twice.  The kind rung is what makes three Songs one Song crest.
+                if (on && (!w.c.folded || bi < 0)) { w.c.folded = 1; if (bi < 0) t.push('budget:3'); if (!t.includes('kindfold')) t.push('kindfold'); changed = true; model = true }
+                if (!on && (w.c.folded || bi >= 0)) { w.c.folded = 0; if (bi >= 0) t.splice(bi, 1); changed = true; model = true }
+            }
+            for (const [stop, on] of deck_want) {
+                if (stop === 'fold') continue
+                const i = t.findIndex(x => x === stop || x.startsWith(stop + ':'))
+                if (on && i < 0) { t.push(stop); changed = true; model = model || is_model(stop) }
+                if (!on && i >= 0) { t.splice(i, 1); changed = true; model = model || is_model(stop) }
+            }
+            if (changed) set_deck(w, house, t, model)
         }
     }
-    // `?deck=` — applied once, when the first glass world stands (a poll, deliberately: the world
-    //  arrives on the Book's own clock, and this room does not want an $effect reading ob() — the
-    //   Otro H-effect lesson, Vytui.svelte:70).
-    const url_deck = boot_param('deck')
-    if (url_deck) {
-        const poll = setInterval(() => {
-            const ws = glass_worlds()
-            if (!ws.length) return
-            clearInterval(poll)
-            const want = url_deck.split(',').map(t => t.trim()).filter(Boolean)
-            const model = want.some(t => MODEL_STOPS.some(m => t === m.stop || t.startsWith(m.stop + ':')))
-            for (const { house, w } of ws) {
-                const t = tokens_of(w)
-                for (const x of want) if (!t.includes(x)) t.push(x)
-                set_deck(w, house, t, model)
-            }
-        }, 400)
-    }
+    setInterval(enforce_deck, 400)
 </script>
 
 <BootGate {H} who="the shape room" audio_fullscreen={false} />

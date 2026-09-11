@@ -9,6 +9,13 @@ The owner, 2026-09-04: *"think long and hard about the datasplatter behind Radio
 
 ## 0. WHAT IS BUILT — and what to get on with next (2026-09-04)
 
+> ⚑ **2026-09-10/11 — READ §9 FIRST if you are here about the ♥.** The owner made the heart
+>  the control surface for SoundPooling and for what the Cave heists, and §9 cooks that into a shape
+>   (what is already built, seven facets with the thing that bites in each, six rulings owed, and a
+>    build order). ⚠ Two rulings on THIS section are superseded by it: **"no phone→laptop frame"** (the
+>     hand road was built afterwards and is live) and the heart being a one-way press outside a 10s undo
+>      (it is a **toggle** now — the latest press stands, and retry is loving it back).
+
 **BUILT AND GATED.** The circuit below is in the working tree, uncommitted, gated on the live runner by
  **`MusuHeard`** — 9 beats, 15 sworn, caveat 0. The rulings §7 owed were taken as this doc's own
   recommendations so the owner vetoes in the diff rather than answering a questionnaire: **♥ only, no
@@ -248,6 +255,181 @@ The owner, 2026-09-04: *"think long and hard about the datasplatter behind Radio
  on a warm runner, and a caveat count is not a regression — but per the `self,round` ruling it IS a
   symptom. Read §0's last two ⚠ blocks before believing any sweep, and never mute a value to make a
    Book green — that is how the instrument gets deleted (I did it once; the owner reversed it).
+
+---
+
+## 9. LOVE AS THE CONTROL SURFACE — the cooked design (2026-09-10/11)
+
+Owner, 2026-09-10, in three moves: **"we love or unlove things, which includes or dis-includes them in
+ SP and Heisting to our Cave"** · **"the latter occurs probably on a laptop now after a LinkDevice
+  ceremony"** · **"we might like to get attention on the Haul cell when that happens, or some new loved
+   track info is synced over, but it should also ambiently work in the background."**
+
+This section cooks that into a shape. §9.1 is what already exists (do not rebuild it). §9.2–9.8 are the
+ facets, each with the thing that bites. §9.9 is what only the owner can rule.
+
+### 9.1 ALREADY BUILT — the whole hand road
+
+**The ♥ is one intent with three roads**, and `RadioFace`'s long-press sheet already names all three:
+ `copy` (a pool copy this device can play, gated on `Ra_pool_consent`) · `folder` (the real file, here,
+  gated on `Crate_nav`) · `hand` (the real file, fetched by a linked device, gated on `Heard_hand_on`).
+   A body with several roads takes them all; the sheet's one sentence is the explanation.
+
+**The phone→laptop round trip is complete and ambient:**
+ `Heard_hand_beat` (phone: no folder here ⇒ every un-handed, un-judged take goes to the first trove body,
+  once) → `Heard_hand_land` (laptop: the same Card, taken, on ITS heard Mag; returns 2 if the laptop had
+   already ♥'d it itself) → `take_got` → `Heard_hand_got` (phone: stamps `card.sc.handed = <device name>`,
+    *"the row's word changes"*) · `Heard_hand_wake` re-offers anything unacked when a sibling reappears.
+
+⚠ **§0's ruling "no phone→laptop frame" is SUPERSEDED** — that road was built afterwards and is live.
+ Read §0's ruling list as of its date, not as current law.
+
+⇒ **"Love controls what to Heist, on the laptop, after LinkDevice" is DONE.** What follows is the rest.
+
+### 9.2 THE POOL HAS TWO POPULATIONS, and love only governs one
+
+A pool compartment declares a `take` policy (`Ra_pool_define`: `%Pool,name,take,cap`). eed's is
+ `Pool,name:random,take:random,cap:25` — **the pool fills by random draw. Its contents are try-outs, not
+  loves.** Love can also copy into it (the `copy` road). So the shelf holds two kinds:
+
+| | how it got there | what unlove means | evictable by the cull? |
+|---|---|---|---|
+| **try-out** | random draw | nothing — you never loved it | **yes**, that is what the cap is for |
+| **loved** | you pressed ♥ | dis-include it: free the bytes | **no** — a cull that eats a love is a bug |
+
+**The bite:** if loved and random share ONE compartment and ONE cap, loving 25 tracks fills the pool and
+ **discovery dies silently**. The pool stops being a way to meet music and becomes a small library.
+**The shape that avoids it:** loved gets its OWN compartment with its own share of the budget —
+ `Ra_pool_recent_set` is the exact precedent (a second compartment taking half the budget, and when it
+  goes the rolling one takes the room back so the number the human typed always means the same thing).
+
+### 9.3 UNLOVE MAY FREE A CACHE, NEVER A POSSESSION
+
+The roads differ in kind and the rule falls out of that:
+- the **pool copy is a CACHE** — derived, re-fetchable, sized by a budget the human set. Unlove may
+   delete it (`Ra_pool_unfile` already removes the card AND the file; nothing calls it from unlove).
+- the **file in your music folder is a POSSESSION** — it is yours, it is in a folder you chose, and no
+   press of a heart should ever delete it. Unlove stops the ASKING; it does not reach into the library.
+
+**The bite:** you love a track on the phone, the laptop heists the real file, you unlove on the phone a
+ week later. If unlove propagated as "delete", a gesture on a device that never held the file would
+  delete it from a device that does. **Unlove must never cross that line.** State it as law, because
+   every "dis-include" instinct wants to be symmetric and this one must not be.
+
+### 9.4 UNLOVE DOES NOT PROPAGATE — the missing retraction
+
+`Heard_hand_beat` sends takes. **There is no frame for an untake.** So: phone loves → laptop takes it up
+ → phone unloves → the laptop still wants it and will still fetch it. The two ledgers silently disagree.
+
+The honest shape is a `take_off` frame, and it splits on whether the bytes have arrived:
+- **not landed yet** ⇒ retract: the laptop untakes, and a keep not yet running simply never starts.
+- **already landed** ⇒ do NOT delete (§9.3). The laptop keeps the file; the phone's row goes quiet.
+- **landing right now** ⇒ see §9.5.
+
+### 9.5 A RUNNING KEEP IS NOT STOPPED BY THE HEART — on purpose, and it has an edge
+
+`Radio_like`'s own note: a keep already RUNNING is left running, because *"calling off a half-finished
+ download is a bigger act than this button looks"*, and the Haul row's ✕ is where that lives.
+**The edge that creates:** unloving mid-flight leaves a download running for something no longer wanted.
+ Tolerable on one device (the ✕ is right there). Across devices it is worse: the phone unloves, the
+  laptop finishes a download nobody wants, and the phone has no ✕ for a keep it cannot see.
+**Options:** let it finish (bytes are cheap, a file is a possession, §9.3) — or have `take_off` mark the
+ remote keep so the laptop's own Haul shows it as unwanted and the human ends it there. **The second is
+  more honest and costs a word on the row.** Not a decision this section can make alone.
+
+### 9.6 ATTENTION — the thing that does not exist yet
+
+Searched: `Heard.g` holds exactly two durable person-scalars, `tipped` and `no_handoff`. **There is no
+ unseen/attention/badge concept anywhere in the circuit.** `handed` changes a row's word, but nothing
+  ever says *"something happened while you were not looking."* That is what the owner's sketch needs.
+
+**The shape, matching what is already there** (durable scalars on the heard Mag, absent = default, so a
+ snap stays clean):
+- a `%Card,unseen:1` mark, set by the three ARRIVAL paths — `handed` coming back · a landing · a verdict.
+- the **Haul cell shows a count**, nothing more. No notification, no interruption, no sound. Ambient
+   means the cell simply knows, and you find out when you look.
+- cleared when the Haul is actually LOOKED AT — see the bite below.
+- swept by the existing `Heard_gc` clock, so an unseen mark cannot outlive its Card.
+
+**Bite 1 — mark it where the take was MADE, not where it was carried.** A landing on the laptop you are
+ sitting at is not news; the same landing seen from the phone is. Key `unseen` to the body that pressed
+  ♥, so the phone lights up and the laptop stays quiet. Without this, the device doing the work is the
+   one that nags, which is exactly backwards.
+**Bite 2 — "looked at" needs a definition, and the obvious one is wrong.** Clearing on the Haul cell
+ merely being VISIBLE means a glance at a busy screen silently spends every mark. Clear per-ROW, on the
+  row actually being shown expanded — the same distinction `Heard_through`'s humdinger gate already
+   draws between a room with a person in it and a room without.
+**Bite 3 — a humdinger should be quieter than a Cave.** A music page is for listening. The count belongs
+ there too, but nothing on it should ever pull attention mid-track.
+
+### 9.7 WHAT SYNCS BACK — "some new loved track info is synced over"
+
+The laptop learns things the phone never will: `title · artist · dir · path · bytes · body_hash · keep`
+ (`Heard_listing_keys`) cloned off the friend's describe answer. **Today `take_got` carries only the
+  ack** — the phone learns *that* a device took it up, never *what it turned out to be*.
+
+So the phone's row can sit reading `Track One` with no artist while the laptop knows the album, the size
+ and where it landed. **Sending the listing back on `take_got` (or a later `take_learned`) is what makes
+  the owner's "new loved track info is synced over" true.** It is also the natural thing to raise
+   `unseen` for: the row you loved just became a real thing with a name.
+⚠ Keep it to the LISTING. `keep` is a local handle to a local download and means nothing on the phone.
+
+### 9.8 UNLOVE AND THE LISTING — settled 2026-09-10
+
+`Heard_untake` strips three sets: `take`/`at`, the verdict keys, **and the listing keys**. Under a toggle
+ that made unlove→love lossy, and worse, it orphaned a running keep (the card forgets the `keep` handle
+  while the download continues). **Ruled: the heart's unlove drops the wanting, not the knowledge.** The
+   listing is a fact about the track; desire is the only thing a heart states. The Haul row's ✕ keeps its
+    full-clear meaning — it is a deliberate act on a specific row and may forget everything.
+
+### 9.8b WHAT A CARD IS FOR — and why notes do not go on one (owner's doubt, 2026-09-10)
+
+Owner, on hearing the Card already carries `title · artist · path · bytes`: *"its going to use Mag to
+ store semantic data is it? along with whatever we jot down about the track. hmm…"*
+
+**The doubt is right, and the line is worth stating before anything else accretes there.**
+A `%Card` is keyed **`(id, pub)` — per HOLDER** — and holds three things, all of one kind:
+- **the ask** — `take` / `at`. Desire.
+- **the transport** — `keep` · `handed` · `via` · the verdicts (`held` · `unvouched` · `landfail` · `why`).
+- **a CACHE of what was learned** — the listing keys, cloned off that holder's describe answer.
+
+It is also on a forgetting clock: `Heard_gc` drops hearings nobody wanted, and §5's persistence carries
+ **takes only** — *"a bare hearing is a 30-day dedup mark, worthless after a reload"*.
+
+**A note you jot about a track is neither.** It is about the TRACK, not about you-wanting-it-from-Fred,
+ and it must outlive both the ask and the GC. Put it on a Card and it is duplicated once per holder,
+  disagrees with itself when two holders' rows drift, and is deleted by a clock built to forget hearings.
+
+**Two tests that keep the line clean, and they are cheap enough to apply every time:**
+1. **Does it depend on WHO holds it?** If no, it does not belong on a Card.
+2. **Would losing it to `Heard_gc` be a bug?** If yes, it cannot live there.
+
+⇒ Notes, tags, ratings, anything semantic wants its **own particle keyed by the track**, many:1, wearing
+ its own mainkey with an `of:` pointer — the shape CLAUDE.md already names (`Reco,by:X` · `Heist,of:X`).
+  Not a Card, and not a second `%Record` (a Record is the HOLDING; identity is per-shelf).
+⚠ Note the listing keys on a Card are a **cache and not the truth** — that is exactly why the heart's
+ unlove keeps them (§9.8) and why re-learning them from a describe answer is always allowed.
+
+### 9.9 RULINGS OWED (yours)
+
+1. **Does unlove free the pooled bytes?** (§9.2/9.3) The owner's words say yes for a LOVED pool copy.
+    Confirm — it is the one place a heart deletes something.
+2. **Loved gets its own compartment?** (§9.2) Otherwise loving enough tracks quietly ends discovery.
+3. **Does unlove propagate to the linked device?** (§9.4) Retract-if-unlanded is the proposal; never
+    delete a landed file.
+4. **A remote running keep: let it finish, or mark it unwanted on the laptop's Haul?** (§9.5)
+5. **Does the listing sync back?** (§9.7) It is what makes "new loved track info synced over" real.
+6. **Attention: per-row clearing, marked at the pressing body?** (§9.6) Confirm the two bites.
+
+### 9.10 WHAT TO BUILD FIRST, IF THE RULINGS GO THE OBVIOUS WAY
+
+Order chosen so each step is provable alone and none of them strands the next:
+1. **the `unseen` mark + the Haul count** — self-contained, no wire, no new frames. Book: extend
+    `MusuHeard`. This is the whole of the owner's "attention" ask.
+2. **the listing on `take_got`** — one frame field, and it gives `unseen` something worth showing.
+3. **`take_off`** — the retraction. Needs §9.9.3 and §9.9.4 answered first.
+4. **unlove → `Ra_pool_unfile`** — needs §9.9.1, and it is the only step that deletes; do it last and
+    alone, where a mistake is obvious.
 
 ---
 

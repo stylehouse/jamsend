@@ -634,12 +634,42 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
 //#region w:Lies — main tick
 
+    // ── Lies_mark — the startup instrument (2026-09-10, the owner: *"Liesui still takes a while to
+    //   start up, give things a measure"*).  Mirrors `see:atlas` deliberately rather than inventing a
+    //    second shape: ONE row, replaced not piled (`oai`, never `i` — the line at the bottom of Lies()
+    //     uses `i` and would pile a row per doc-count change on a busy tab), each key ABSENT until its
+    //      milestone happens, so a boot that never gets there says so by omission.
+    //  ⚠ THE ZERO IS `performance.now()` — milliseconds since the page began loading, NOT since this
+    //   ghost first ticked.  That is the only zero that answers the question actually asked: a clock
+    //    started at Lies's own first tick cannot see the time before Lies existed, which on a cold tab
+    //     is most of the wait.  Three instruments this week were placed where they could not see the
+    //      thing they measured; this one is placed at the navigation.
+    //  ⚠ AFTER AN HMR RELOAD THE ABSOLUTE NUMBERS ARE MEANINGLESS.  Editing src/** rebuilds the C tree
+    //   but `performance.now()` keeps counting from the ORIGINAL navigation, so a tab open 45 minutes
+    //    reports `boot:2681020` for a world that was seconds old.  Only the GAPS survive an HMR; the
+    //     absolute zero is trustworthy on a genuine page load only.  Reload before quoting `boot`.
+    //  Every mark is therefore an ABSOLUTE milestone and the GAPS between them are the stages — read
+    //   them as boundaries, not durations, and subtract to get a stage.  `ticks` is the structural
+    //    number and the one to quote: wall clocks vary 3x run to run on identical code, tick COUNTS
+    //     do not.
+    Lies_mark(w: TheC, k: string) {
+        const row = w.oai({ see: 'lies' }) as TheC
+        if (!row.sc[k]) row.sc[k] = '' + Math.round(performance.now())
+    },
+
     async Lies(A: TheC, w: TheC) {
         const H = this as House
+
+        // FIRST LINE OF THE FIRST TICK — before Creduler, before setup, before anything this ghost
+        //  does can colour it.  `boot` is when Lies got its first turn; the gap from 0 to it is the
+        //   app's own startup, which is not Lies's fault but IS part of what the owner feels.
+        w.c.lies_ticks = ((w.c.lies_ticks as number) ?? 0) + 1
+        H.Lies_mark(w, 'boot')
 
         // Creduler bootstrap: the runner Lies on Mundo loads the runtime ghosts (editor-
         //  compiled) live onto H, gating Story behind %Creduler_pending until they are.
         if (w.sc.creduler) await H.Creduler_ensure(w)
+        H.Lies_mark(w, 'ghosts')
 
         // ── one-time setup ────────────────────────────────────────────────────
         let examining = w.oai({ examining: 1 })
@@ -662,6 +692,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 examining.bump_version()
             })
         }
+        // the one-time setup is done: Cortex armed, the Liesui component mounted.  Everything after
+        //  this is per-tick work, so this is the boundary between "the ghost exists" and "the ghost
+        //   is working".
+        H.Lies_mark(w, 'setup')
 
         // ── opts — every tick ─────────────────────────────────────────────────
         const Opt = w.o({ Opt: 1 })[0] as TheC
@@ -673,9 +707,34 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // ── req:Store — all disk IO; must settle before LiesRealised runs ────
         const settled = await this.LiesPersist(A, w)
         if (!settled) return
+        // ALL DISK IO HAS SETTLED.  Expect this to be the big gap on a cold tab — it is every Waft
+        //  and every dock read.  If `store` is where the wait lives, the fix is in LiesStore, not here.
+        H.Lies_mark(w, 'store')
 
         // ── LiesRealised — cursor wiring, desire, git, wants, Open ──────────
         await this.LiesRealised(A, w)
+        // the first tick that got all the way through Realised — cursor wired, wants resolved, docks
+        //  open.  THIS is "Liesui has started up" as a person would mean it.
+        H.Lies_mark(w, 'ready')
+        // …and SAY IT ONCE, out loud, on the console.  The C-tree row above is the durable record, but
+        //  it can only be read by something that can reach the tree — and the room that most needs this
+        //   number is a hacker room whose whole complaint is that it is hard to read from outside.  The
+        //    console is the one channel that is already there for BOTH readers: the owner's devtools and
+        //     `runner_eye`'s capture.  Reusing it beats standing a new door (owner, 2026-09-09: *"we keep
+        //      building variations of the perfect metaphysical system, try to reuse the parts"*).
+        //  Stages, not one wall clock — a total alone cannot say WHICH stage to go and fix.
+        if (!w.c.lies_said) {
+            w.c.lies_said = 1
+            const r = w.oai({ see: 'lies' }) as TheC
+            const at = (k: string) => +((r.sc[k] as string) ?? 0)
+            console.log(`⏱ Liesui ready in ${(at('ready') / 1000).toFixed(1)}s`
+                + ` — app→Lies ${at('boot')}ms`
+                + ` · ghosts ${at('ghosts') - at('boot')}ms`
+                + ` · setup ${at('setup') - at('ghosts')}ms`
+                + ` · store ${at('store') - at('setup')}ms`
+                + ` · realise ${at('ready') - at('store')}ms`
+                + ` · ${w.c.lies_ticks} ticks`)
+        }
 
         // ── LiesCurse — cursor wiring (runs every post-settle tick) ──────────
         await this.LiesCurse(A, w)
@@ -693,6 +752,18 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             .filter(g => g.c.content !== undefined).length
         const wafts  = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !wf.sc.equip).length   // %equip Wafts (Keep/Cluster) uncounted
         w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wafts ? ` · ${wafts} Waft${wafts === 1 ? '' : 's'}` : ''}` })
+        // …and the live tallies onto the instrument row, refreshed every tick (not `if absent` like
+        //  the milestones — these are a CURRENT state, and `ticks` is the number to quote).
+        // ⚠ WRITE ONLY ON CHANGE.  The first cut stamped all three EVERY TICK, and `ticks` changes
+        //  every tick by definition — so the instrument churned the tree it was measuring, forever.
+        //   An instrument that perturbs its subject is worse than none; this one is a read.
+        const inst = w.oai({ see: 'lies' }) as TheC
+        const put = (k: string, v: string) => { if (inst.sc[k] !== v) inst.sc[k] = v }
+        put('docs', '' + loaded)
+        put('wafts', '' + wafts)
+        // `ticks` is the one number that MUST move every tick, so it is not snapped at all — it lives
+        //  on .c (runtime only) and is folded into the row only when something else already changed.
+        if (inst.sc.docs !== '' + loaded || inst.sc.wafts !== '' + wafts) put('ticks', '' + (w.c.lies_ticks ?? 0))
     },
 
     // ── e_Lies_subscribe_waft_roster — Lang hands us its standing req ─────────
@@ -1338,6 +1409,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const want = wants.i({ want: ts, kind })
         want.c.src = src
         wants.bump_version()
+        // @Xs — THE CLICK, the zero of the timeline everything else is measured against. Without it
+        //  the CM6 and text_load stamps float: you can see they are fast but not how long the user
+        //   waited before either of them started, which is exactly the interval that turned out to
+        //    matter (owner, 2026-09-11: *"there was extra time between these"*).
+        console.log(`⏱ want @${(performance.now() / 1000).toFixed(2)}s ${kind} → ${String((src as any).sc?.Doc ?? (src as any).sc?.What ?? '?')}`)
         this.i_elvisto(w, 'think')
     },
 
