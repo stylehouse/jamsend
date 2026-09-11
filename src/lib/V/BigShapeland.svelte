@@ -121,21 +121,22 @@
                 for (const w of A.ob({ w: 'Vyto' })) out.push({ house, w })
         return out
     }
-    const tokens_of = (w: any): string[] => String(w?.sc?.foamereo ?? '').split(',').map((t: string) => t.trim()).filter(Boolean)
+    // THE DECK IS A PARTICLE, NOT A STRING (2026-09-11, the owner: "Vyto_fo() looks like hacky crap").
+    //  A %Vytocon particle under the world carries one flat sc key per stop -- Vyto.g's Vyto_vytocon_seed
+    //   mints it from the commission's `foamereo:` string once; from here on the desk reads and writes
+    //    that particle directly (a property, never a comma-split).  `.o()` PROBES (never creates) so a
+    //     mere read of an unset world mints nothing; `.oai()` is used only where the desk WRITES.
+    function vytocon_of(w: any): any { return (w.o({ Vytocon: 1 }) as any[])[0] ?? null }
     function stop_on(stop: string): boolean {
         void deck_tick
         if (stop === 'fold') return glass_worlds().some(({ w }) => !!w.c.folded)
-        return glass_worlds().some(({ w }) => tokens_of(w).some(t => t === stop || t.startsWith(stop + ':')))
+        return glass_worlds().some(({ w }) => vytocon_of(w)?.sc[stop] != null)
     }
-    function deck_string(): string { void deck_tick; const ws = glass_worlds(); return ws.length ? String(ws[0].w.sc.foamereo ?? '') : '' }
-    function set_deck(w: any, house: any, tokens: string[], model: boolean) {
-        const deck = tokens.join(',')
-        if (deck) w.sc.foamereo = deck
-        else delete w.sc.foamereo               // the snapped-boolean law: absent, never ''
-        w.bump?.()
-        if (model && house?.Vyto_stir) house.Vyto_stir(w)
-        deck_tick++
-        window.dispatchEvent(new CustomEvent('vyto-deck'))
+    function deck_string(): string {
+        void deck_tick
+        const vc = glass_worlds().length ? vytocon_of(glass_worlds()[0].w) : null
+        if (!vc) return ''
+        return Object.keys(vc.sc).slice(1).map(k => vc.sc[k] === '1' ? k : (k + ':' + vc.sc[k])).join(',')
     }
     function toggle_stop(stop: string, _model: boolean) {
         deck_want.set(stop, !stop_on(stop))
@@ -154,26 +155,42 @@
     for (const x of (boot_param('deck') ?? '').split(',').map(t => t.trim()).filter(Boolean)) deck_want.set(x.split(':')[0], true)
     function enforce_deck() {
         for (const { house, w } of glass_worlds()) {
-            const t = tokens_of(w)
+            const vc = w.oai({ Vytocon: 1 })
             let changed = false, model = false
-            // `fold` is the commission's `folded` flag (Vyto.g:128 stamps w.c.folded) plus a `budget:3` token —
+            // `fold` is the commission's `folded` flag (Vyto.g:128 stamps w.c.folded) plus a `budget:3` stop --
             //  the desk sets both, so the chip is one word and the fold is visible on a six-cell glass
             if (deck_want.has('fold')) {
                 const on = deck_want.get('fold')
-                const bi = t.findIndex(x => x.startsWith('budget:'))
-                // …and `kindfold`: without the ladder the election looks for a DISCOVERED partition key, and
-                //  Orchestra's six have none (artist is all Yara, loose is all 1) — so nothing folded and the
+                // ...and `kindfold`: without the ladder the election looks for a DISCOVERED partition key, and
+                //  Orchestra's six have none (artist is all Yara, loose is all 1) -- so nothing folded and the
                 //   eye saw folio twice.  The kind rung is what makes three Songs one Song crest.
-                if (on && (!w.c.folded || bi < 0)) { w.c.folded = 1; if (bi < 0) t.push('budget:3'); if (!t.includes('kindfold')) t.push('kindfold'); changed = true; model = true }
-                if (!on && (w.c.folded || bi >= 0)) { w.c.folded = 0; if (bi >= 0) t.splice(bi, 1); changed = true; model = true }
+                if (on && (!w.c.folded || vc.sc.budget == null)) {
+                    w.c.folded = 1
+                    if (vc.sc.budget == null) { vc.sc.budget = '3'; changed = true }
+                    if (vc.sc.kindfold == null) { vc.sc.kindfold = '1'; changed = true }
+                    model = true
+                }
+                // un-fold cleans up BOTH stops it set (the original code left `kindfold` lit forever --
+                //  fixed here, in the same block, rather than carried forward as a known latent bug)
+                if (!on && (w.c.folded || vc.sc.budget != null || vc.sc.kindfold != null)) {
+                    w.c.folded = 0
+                    if (vc.sc.budget != null) { delete vc.sc.budget; changed = true }
+                    if (vc.sc.kindfold != null) { delete vc.sc.kindfold; changed = true }
+                    model = true
+                }
             }
             for (const [stop, on] of deck_want) {
                 if (stop === 'fold') continue
-                const i = t.findIndex(x => x === stop || x.startsWith(stop + ':'))
-                if (on && i < 0) { t.push(stop); changed = true; model = model || is_model(stop) }
-                if (!on && i >= 0) { t.splice(i, 1); changed = true; model = model || is_model(stop) }
+                const has = vc.sc[stop] != null
+                if (on && !has) { vc.sc[stop] = '1'; changed = true; model = model || is_model(stop) }
+                if (!on && has) { delete vc.sc[stop]; changed = true; model = model || is_model(stop) }
             }
-            if (changed) set_deck(w, house, t, model)
+            if (changed) {
+                vc.bump?.()
+                if (model && house?.Vyto_stir) house.Vyto_stir(w)
+                deck_tick++
+                window.dispatchEvent(new CustomEvent('vyto-deck'))
+            }
         }
     }
     setInterval(enforce_deck, 400)

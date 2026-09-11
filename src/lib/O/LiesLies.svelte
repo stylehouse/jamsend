@@ -460,6 +460,16 @@
                 //    actually won and get needlessly suffixed again.
                 //  ⚠ And the retry is NOT silent. The bug was never the missed message — it was that
                 //   nothing noticed. `catch {}` is what turned a one-RTT hiccup into a dead socket.
+                // ⚠ THE EDITOR RIDES THE FROZEN SPINE (2026-09-11 — the 139-seat leak on staging).  This
+                //  hook is fanned by Socket_real's `hello_ok` branch — which lives in gen/N/Tribunal.go,
+                //   the spine only RUNNERS load (CREDULER_GHOSTS).  The editor's channel mounts
+                //    p2p/pinned_stable/Tribunal.go (Lies_transport_up), and that copy was promoted
+                //     2026-07-19 — no hello_ok branch at all, so the ack fell through to the generic
+                //      control note, nothing fanned, the latch never stamped, and the retry below fired
+                //       on EVERY keepalive tick for the life of the socket.  Reproduced on a headless
+                //        editor against staging (hello_ok RECEIVED, then attempt 1, 2, 3…).  Any feature
+                //         this file expects of Socket_real must ALSO be in pinned_stable/ — re-copy
+                //          gen/N/{Peeroleum,Tribunal}.go there when the spine moves (Lies_transport_up).
                 // Registered on the LIST, not the single `on_hello` slot — Swarm wants that hook too (it
                 //  adopts the relay's granted addr) and installs its own only `if (!on_hello)`, so an
                 //   assignment here would silently disable it the day these worlds merge. Own flag keeps

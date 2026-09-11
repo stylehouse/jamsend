@@ -6,6 +6,12 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
 
 ## 0. WHAT TO GET ON WITH NEXT (refreshed 2026-09-08 for the morning slog)
 
+> **⚠ 2026-09-11 — the EDITOR was never on the new spine.** Its channel rides the frozen
+>  `p2p/pinned_stable/*.go` (promoted 2026-07-19), not `gen/N/`; every "proven on the runner" line
+>   in this section was true of runners only. Promoted today (`cp gen/N/{Peeroleum,Tribunal}.go →
+>    pinned_stable/`); the live editor tab must be RELOADED. Full account under "THE FIX WAS BROKEN ON
+>     EVERY EDITOR" below. The staging `to:'runner'` anomaly did not reproduce — closed unless it recurs.
+
 ### ⚑ NEXT BIG ONE — KILL THE `?addr=runner` SOCKET (owner 2026-09-09: *"remove entirely the second websocket for addr=runner and have some other way to find runners"*)
 
 > **✅ STEP 3c IS ARMED AND LIVE — 2026-09-10, both stages (owner: *"it's weird calling the role an
@@ -172,6 +178,33 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
  ⓘ The relay-side `rehello` nudge below stays **unbuilt** — belt-and-braces, and it costs a restart.
   `scripts/_relay_rehello.ts` (the scratch copy that proved it) has been deleted.
 
+**⚑⚑ THE FIX WAS BROKEN ON EVERY EDITOR AND GREEN ON EVERY RUNNER (2026-09-11 — the 139-seat leak).**
+ Staging's relay showed ONE editor socket (`9d13…`) holding `_9774, _9334, _9393 …` — 95 seats when the
+  owner pasted it, 139 by the time it was understood, one new seat every keepalive tick. Two faults in
+   the shape above: **no cap**, and the "fresh `want` per retry" note, which was exactly backwards.
+    Capped (`HELLO_TRIES = 6`) and the seat cached per socket, but that only bounds the symptom.
+ **The cause, reproduced and not inferred:** the editor's channel does not run `gen/N/Tribunal.go` at
+  all. `Lies_transport_up` mounts the FROZEN `p2p/pinned_stable/{Peeroleum,Tribunal}.go` (so editing
+   the spine cannot HMR-flap the editor's own channel); `CREDULER_GHOSTS` — the live spine — is
+    RUNNER-only. The pinned copy was last promoted **2026-07-19**: no `hello_ok` branch, no `who`,
+     no bulk lane, no `STABLE_MS`, no rehome, still dialling `?addr=editor`. So on the editor the
+      ack fell through to the generic `🛰 ws RECV control:hello_ok` note, nothing fanned
+       `on_hello_list`, the latch never stamped, and the retry fired forever. Step 1 above ("Tribunal
+        already hands `hello_ok` to the hook") was true of the runner's Tribunal only.
+ **Reproduced** with a headless editor (`?E=Editron&I=new` against :9092, console grepped): `hello_ok`
+  RECEIVED at 11.4s, then `attempt 1, 2, 3, 4, 5` regardless. **Cured** by the documented promotion —
+   `cp src/lib/gen/N/{Peeroleum,Tribunal}.go src/lib/p2p/pinned_stable/` — and re-run: one hello,
+    `🪪 hello_ok addr=…`, retry dormant for 50s, and the new editor dials addr-less like the runners.
+ ⚠ The promotion HMRs a LIVE editor tab into a mixed-version zombie (channel re-stood, latch cleared,
+  the OLD `send_hello` closure minting fresh seats again — measured 130→139 in 90s). **Reload it.**
+ ⚑ The lesson generalises: anything `LiesLies`/`Swarm` expects of `Socket_real` must be grepped
+  in `pinned_stable/` too, and an editor-side network fix is verified with a headless EDITOR, never a
+   runner. Memory: `editor-rides-the-frozen-spine`.
+ ✅ **The "staging anomaly" (`to:'runner'` not crossing the bridge) did NOT reproduce** in the same
+  session: a probe's `to:'runner'` ping from :9092 logged `runner ping ×3 (bridge)` and runners were
+   ponging the editor throughout. Closed unless it recurs; if it does, tap the relay log by
+    `become editor` on :9092 (relayLog fans `control:log` to that door) before theorising.
+
 **⚑ THE LATENT TWIN — `Swarm_station_up`'s hello has the same shape, on the socket that carries MUSIC.**
  Found by sweeping for the pattern rather than the symptom, 2026-09-10. `Swarm.g:2271` (soul hello) and
   `:2286` (body hello) both `port.ws?.send(...)` and hope.
@@ -207,8 +240,11 @@ A **working `_todo`** (not self-promoted — the owner reads + preens). Precipit
       (`LiesLies.svelte:1664`): if `H.Lies_channel_live(w)` and `!w.c.hello_ok_at` and a key exists,
        re-send the same signed hello. Re-sign each attempt — `handleHello` checks **ts-freshness**, so
         a replayed stale header is refused.
-  ⚠ **Mint a FRESH seat-dodge `want` on each retry** (`LiesLies.svelte:455`), or a retry can collide
-   with the seat the earlier attempt actually won and get suffixed again for no reason.
+  ~~⚠ Mint a FRESH seat-dodge `want` on each retry~~ **WRONG, and it leaked live (2026-09-11, below).**
+   The relay binds every grant additively and releases nothing until the socket closes, so a fresh
+    `want` per attempt is one leaked seat per attempt. ONE seat per socket, cached on the latch and
+     cleared on open; a re-hello asking the same `want` down the same socket is idempotent by the
+      relay's own rule (the asker's binds never block itself).
   ⚠ **Do not swallow the retry's errors too.** The bug is not the missing hello, it is that nothing
    noticed — `catch {}` is what turned a one-RTT hiccup into a dead socket for the life of the tab. Log
     the retry, and log when the latch has been unset for more than a few ticks.

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return 'df09d03ad06f3d71' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return '825a67dcb6cf7607~g1' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -54,7 +54,7 @@ async Socket(peering) {
     // < the live port is an object on .c (a transport seam): a working shared-queue
     //    port, partner paired across the two sides by the wrangler (cf the mock carrier).
     let port = { type: 'websocket', partner: null,
-        send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }) },
+        send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }, { see: 'tribunal_ws_send' }) },
         recv(frame) { return H.Peeroleum_deliver(w, frame) } }
     peering.o({ transport: 1, type: 'websocket' })[0].c.port = port
 
@@ -73,19 +73,84 @@ async Socket_real(w) {
     w.i({transport: 1, type: "websocket"})
     // < the live port is a real WebSocket on .c (the transport seam). send buffers until OPEN;
     //    onmessage parses a frame and delivers it through the same Peeroleum_deliver path.
-    let peering = w.o({ Peering: 1 })[0]
-    let addr = (peering && peering.sc.name) || ''
     let scheme = (location.protocol === 'https:') ? 'wss' : 'ws'
-    let url = scheme + '://' + location.host + '/relay?addr=' + encodeURIComponent(addr)
+    // THE DIAL READS THE LIVE ADDRESS, per connect — not a name captured once (Portability §4
+    //  item 1: a Steal Back used to move a model field the relay never heard, because this url
+    //   was built a single time from `sc.name`).  `address ?? name` is the Swarm_address read
+    //    done directly on this w's own Peering (no Swarm-ghost dependency — the Lies
+    //     editor|runner channels ride this same carrier with no ident at all, and for them
+    //      address is simply never set).  Every reconnect — backoff, rehome(), relay restart —
+    //       re-dials at the address the model holds NOW.
+    // A ROLE IS NOT AN ADDRESS (2026-09-10, the owner's call).  `?addr=` used to carry two
+    //  unrelated things: an IDENTITY's own front door (`?addr=<prepub>`, the station socket that
+    //   Swarm stands up) and a CHANNEL ROLE (`?addr=runner|editor|player`, the Lies channel, whose
+    //    %Peering is NAMED after the role).  The relay bound both into the one `locals` namespace,
+    //     so "address" quietly meant "or a role, sometimes" — and reading a role out of an address
+    //      is what made the flock unreadable more than once.
+    //  The role bind is pure REDUNDANCY.  `become <role>` (LiesLies on_open, sent on every open and
+    //   re-open) binds the SAME name one message later, and binds it better: `become` also records
+    //    `declaredRole` on the socket, so the relay can say which tabs are runners without anyone
+    //     being bound at a shared name at all.  So the role channel dials ADDR-LESS, and only a real
+    //      identity keeps a `?addr=`.
+    //  WHAT THIS BUYS BEYOND THE NAMING: `qaddr` stops being a mixed bag and becomes exactly one
+    //   fact — "this socket is that address's own front door" — which is the discriminator the relay's
+    //    own-door rule (deliverLocal) reads.  Delivery does not move.  For `to:'runner'` no socket
+    //     claims the door now, so `own` is false and the frame fans out to every bound socket — which
+    //      is precisely what it did before, when they ALL claimed it.  For `to:<prepub>` the station
+    //       socket still owns the door and the role channel is still skipped: that is the rule that
+    //        stopped every music chunk being delivered TWICE, the phantom copy landing in w:Lies where
+    //         no repli handler is armed, climbing to the 2000 inbox cap and reading as "the app is slow".
+    //  ⚠ Do NOT re-key that rule on the socket's `bound` set instead.  A role channel hellos too, so
+    //   its `bound` ALSO holds the prepub — both sockets would qualify and the doubling comes back.
+    //  The window between connect and `become` is one message long, and nothing can address the tab
+    //   inside it (it has not advertised; no peer knows it exists), so the addr-less gap costs nothing.
+    // The relay's own law for this, kept in step: IDENTITY_SHAPED = /^[0-9a-fA-F]{16,}$/ (relay.ts).
+    //  Spelled out longhand rather than as a literal so the .g compiler never has to hold a regex.
+    // ⚠⚠ STAGED, NOT ARMED — THIS IS A TWO-STAGE DEPLOY AND THE ORDER IS NOT OPTIONAL ⚠⚠
+    //  Flipping ROLE_IS_NOT_AN_ADDRESS to true BEFORE the relay carrying `ownsDoor` (relay.ts
+    //   deliverLocal, same date) is RUNNING silently splits the fleet in half.  Measured, not feared:
+    //    the own-door rule used to consult only `qaddr`, so ONE straggler still dialling `?addr=runner`
+    //     — an un-reloaded tab, a daemon on old code, a test harness — CLAIMS the door at `runner`,
+    //      `own` goes true, and every addr-less role channel is dropped from the `to:'runner'`
+    //       broadcast.  Nothing errors.  Dispatch just stops finding half the flock, which is the
+    //        symptom this entire thread has been paying for twice over.
+    //  THE ORDER: (1) restart the dev server so the relay's `ownsDoor` (which counts `declaredRole`
+    //   as a door, making old and new sockets equal claimants) is live; (2) flip this to true;
+    //    (3) recompile Tribunal.g; (4) reload the tabs, stragglers included.  Stage 1 is safe with
+    //     old AND new clients, which is what makes the order work at all.
+    //  `relay-test.ts` covers both sides — the addr-less become, the reconnect re-bind, and the
+    //   anti-doubling rule with an addr-less role channel.  Run it after touching either file.
+    // ARMED 2026-09-10, with the owner watching, once stage 1 was PROVEN live rather than assumed:
+    //  the relay's `ownsDoor` counts `declaredRole` as a door, so an old tab still dialling
+    //   `?addr=runner` and a new addr-less one are equal claimants and the `to:'runner'` bucket fans
+    //    out to both.  Proof it was actually running: `🌉 relay bridge UP` arrived ONCE in the live
+    //     console instead of three times — the broadcastControl dedupe from the same save.
+    let ROLE_IS_NOT_AN_ADDRESS = true
+    let is_addr = (s) => {
+        if (!s || s.length < 16) { return false }
+        for (const ch of s) { if ('0123456789abcdefABCDEF'.indexOf(ch) < 0) { return false } }
+        return true
+    }
+    let home = () => {
+        let peering = w.o({ Peering: 1 })[0]
+        let addr = (peering && (peering.sc.address || peering.sc.name)) || ''
+        let base = scheme + '://' + location.host + '/relay'
+        if (ROLE_IS_NOT_AN_ADDRESS && !is_addr(addr)) { return base }
+        return base + '?addr=' + encodeURIComponent(addr)
+    }
     // The socket AUTO-RECONNECTS (v1 had none — a relay/dev-server restart dropped both browsers at
     //  once and neither came back, so the heartbeat read "no pong" forever). connect() (below) opens
     //   the ws; onclose re-dials with backoff; the relay re-binds our addr and the consumer's on_open
     //    hook re-sends `become`, so the channel self-heals. ws is reassigned each reconnect — wire/send
     //     read it live; port.ws tracks the current socket for direct readers (Lies_send_gen_write).
     let pending = []
+    let last_who = null   // the last presence answer's signature — who_ok is noted on CHANGE only
     let ws = null
     let intentional = false   // port.close() was called — stay down, do not re-dial
     let tries = 0             // reconnect attempt counter (drives the backoff)
+    let stable_timer = null   // set on open; fires tries=0 ONLY if the socket survives STABLE_MS, so a
+    //                           flapping open→die never resets the backoff (cleared by onclose)
+    let STABLE_MS = 10000     // a connection must live this long to count "stable" and clear the backoff
     let open_hooks = []       // consumer callbacks fired on every (re)open (e.g. the relay `become`)
     // Wire framing (spec §4.2). A frame with no buffer rides as text JSON (the common case —
     //  hello/trust/ack/control, unchanged). A buffer-carrying frame rides as a text header LINE
@@ -109,10 +174,46 @@ async Socket_real(w) {
         return { header, buffer: bytes.subarray(nl + 1) }   // buffer is a view — near-zero-copy
     }
     let wire = (frame) => { if (frame && frame.buffer) ws.send(encode_binary(frame)); else ws.send(JSON.stringify(frame)) }
-    // Heartbeat traffic floods the console once the channel is healthy — log everything BUT
-    //  ping/pong/ack, so dock_push/run_result/hello/trust still show. (A buffered send is
-    //   always logged: it only happens before the socket opens, which is worth seeing.)
-    let noisy = (h) => h && (h.type === 'ping' || h.type === 'pong' || h.type === 'ack')
+    // AMBIENT RADIATION is filtered by default (it floods the console once the channel is healthy) but
+    //  re-shown when w.c.wire_verbose is set — a live console toggle for deep wire debugging (the human
+    //   2026-07-29 "these transport messages ... could be behind a verbosity flag").  Two families:
+    //    presence (pulse = Swarm_pulse_all heartbeat, swarm_hi = rebirth greeting, advertise = beacon) and
+    //     self-correcting transport (ping/pong/ack + repli_want, the PULL re-asks every wanted offset every
+    //      4s so logging each buried the real events — ~3000 info lines/min drowned the console).  The DATA
+    //       frames themselves (repli_page/repli_lines) are gated too now — one line per 32KB chunk drowned
+    //        everything (the human 2026-07-29 "quiet all them ... say higher level things about Repli") — and
+    //         are REPLACED by the coalesced Repli meter + the per-track ◈ cursor (Repli_meter / Ra_pull_beat).
+    //          Real EVENTS (hello/trust/run_result/dock_push) always log.  (A buffered send is always logged:
+    //           it only happens before the socket opens, which is worth seeing.)
+    let verbose = !!(w && w.c && w.c.wire_verbose)
+    // AMBIENT = the chatty gossip/heal/replication frames that fire every beat and drown the console
+    //  (owner 2026-09-02 "does this crap really cover what we're doing anymore").  Suppressed unless
+    //   w.c.wire_verbose.  The CEREMONY frames (pier_hello/pier_accept/pier_confirm/pier_reject/ferry*)
+    //    are deliberately NOT here — those are the signal.  Added this pass: ive_got, repli_ready,
+    //     roster, run_phase, suggest/suggest_got (all high-volume, none user-legible).
+    let ambient = { ping: 1, pong: 1, ack: 1, repli_want: 1, repli_page: 1, repli_lines: 1, repli_parked: 1, repli_ready: 1, pulse: 1, swarm_hi: 1, advertise: 1, ive_got: 1, roster: 1, run_phase: 1, suggest: 1, suggest_got: 1 }
+    let noisy = (h) => !verbose && h && !!ambient[h.type]
+    // ── bulk lane (Backpressure_todo.md §5.1) — the only type carrying six-figure byte bodies is
+    //  repli_page (folder-describe rides repli_lines, not this — see the doc's classification note),
+    //   so it is the only type that may queue LOCALLY behind ws.bufferedAmount; every other frame is
+    //    EXPRESS, sent unconditionally, never behind a page. This is the actual cure for pong
+    //     starvation → the 15s reaper → the reconnect storm: a pong no longer sits in ws's OWN send
+    //      buffer behind a queued page, because it never enters that buffer at all. "You can only
+    //       reorder a queue you hold" — ws.bufferedAmount is the one real queue on this path, and this
+    //        lane is how we hold it instead of handing everything straight to it.
+    let BULK_HIGH = +(w && w.c && w.c.relay_bulk_high || 1048576)   // unflushed bytes before new bulk queues locally
+    let BULK_CAP = 96          // bounded + shed, like the outbox/inbox — a dropped page self-heals (the sink re-asks)
+    let bulkQ = []
+    let bulk_dropped = 0       // cumulative shed count — the gap between "sent" and "arrived"
+    let bulk_pump_armed = false
+    let note_bulk_depth = () => { if (w && w.c) w.c.relay_bulk_queued = bulkQ.length }   // off-snap congestion signal for §5.2
+    let pump_bulk = () => {
+        bulk_pump_armed = false
+        if (!ws || ws.readyState !== WebSocket.OPEN) return   // socket is down; onclose already cleared bulkQ
+        while (bulkQ.length && ws.bufferedAmount < BULK_HIGH) wire(bulkQ.shift())
+        note_bulk_depth()
+        if (bulkQ.length) { bulk_pump_armed = true; setTimeout(pump_bulk, 30) }
+    }
     // note — mirror a carrier event to the browser console AND ring it onto w.c.relay_log (off-snap,
     //  capped) so the Relay Brink can surface a live event log in-UI. NO version bump: the Brink polls the
     //   ring on its 1s tick, so high-frequency traffic never re-pumps the House (the run_phase lesson).
@@ -132,7 +233,36 @@ async Socket_real(w) {
                 if (!noisy(h) && !(h && h.type === 'run_phase')) { pending.push(frame); if (pending.length > 200) pending.shift(); console.log(`🛰 ws SEND buffered (socket not open): ${h && h.type}`) }
                 return
             }
-            if (!noisy(h)) note(`🛰 ws SEND ${h ? h.type + (frame.buffer ? ' +buf=' + frame.buffer.length : '') + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
+            // bulk lane: a repli_page queues locally rather than piling into ws's own send buffer, so a
+            //  page never sits ahead of a pong there. Order preserved — once anything is queued, later
+            //   pages queue too even if bufferedAmount has since dipped, so pages never reorder past
+            //    each other (Repli's cid gate would refuse a reordered page anyway, but no sense inviting it).
+            if (h && h.type === 'repli_page' && (bulkQ.length || ws.bufferedAmount >= BULK_HIGH)) {
+                bulkQ.push(frame)
+                if (bulkQ.length > BULK_CAP) {
+                    // SHED, AND SAY SO. The shed itself is sound (bounded like the outbox/inbox; the sink
+                    //  re-asks). What was NOT sound was doing it silently: port.send has already returned
+                    //   "sent" to Repli, which counts the page as away, so a silent shed makes the source
+                    //    read "273/300 sent" while the sink holds 25 — the counters disagree by exactly the
+                    //     frames we dropped and NOTHING says so. A shed that is invisible is indistinguishable
+                    //      from a bug in the sink, and that is where the hunt goes. Count it and name it.
+                    bulkQ.shift()
+                    bulk_dropped = bulk_dropped + 1
+                    if (w && w.c) w.c.relay_bulk_dropped = bulk_dropped
+                    // "the sink re-asks" is a PROMISE THIS LANE DEPENDS ON, and it was false for a month
+                    //  (fixed 2026-08-06, Ra_page_hole in Ra.g).  Each chunk rides its OWN repli_page frame,
+                    //   so a shed takes chunks out of the MIDDLE of a page — and every pull loop tested only
+                    //    the stride-aligned chunk, read the page as held, and never asked again.  Shedding is
+                    //     only sound while the re-ask is page-wide; if that ever regresses, this lane silently
+                    //      becomes permanent data loss again.  Say so here, where the shedding happens.
+                    if (bulk_dropped === 1 || bulk_dropped % 25 === 0) note(`🛰⚠ ws bulk lane SHED ${bulk_dropped} page(s) — queue over ${BULK_CAP} while the wire is behind; the sink re-asks PAGE-WIDE (Ra_page_hole), so this is congestion not loss — but "sent" now overcounts by this much`)
+                }
+                note_bulk_depth()
+                if (!bulk_pump_armed) { bulk_pump_armed = true; setTimeout(pump_bulk, 30) }
+                return
+            }
+            if (h && !noisy(h)) note(`🛰 ws SEND ${h.type + (frame.buffer ? ' +buf=' + frame.buffer.length : '') + ' seq=' + h.seq + ' → ' + h.to}`)
+            else if (!h && verbose) note(`🛰 ws SEND (control)`)
             wire(frame)
         },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
@@ -145,10 +275,21 @@ async Socket_real(w) {
         claim(channel) { this.send({ control: 'claim', channel }) },
         subscribe(channel) { this.send({ control: 'subscribe', channel }) },
         unsubscribe(channel) { this.send({ control: 'unsubscribe', channel }) },
+        // who — batch presence probe: which of these addrs have a live hello-verified socket on the
+        //  relay right now?  The reply (who_ok {online, asked, corr} | who_error) comes back on THIS
+        //   socket as a control frame and is handed to w.c.on_who inline (see on_message) — never the
+        //    belief queue.  Refused by the relay unless OUR socket is itself hello-bound, so ask only
+        //     after hello_ok.  This is what replaces the per-friend speculative pulse fan-out.
+        who(addrs, corr) { this.send({ control: 'who', addrs, corr }) },
         // on_open — register a callback fired on EVERY (re)connect (fires immediately if already open).
         //  The consumer (Lies) re-sends the relay `become` through this so a reconnected socket re-binds.
         on_open(cb) { open_hooks.push(cb); if (ws && ws.readyState === WebSocket.OPEN) { try { cb() } catch (e) {} } },
         reconnect() { try { if (ws) ws.close() } catch (e) {} },   // force a drop → onclose re-dials (for a half-open socket)
+        // rehome — the address changed (Steal Back / Reinstate stamped the Peering): drop the
+        //  socket WITHOUT the intentional latch so onclose re-dials — and connect() reads home()
+        //   fresh, so the new dial binds the new place.  tries resets so the re-dial is the fast
+        //    first-step backoff, not wherever a flaky night left the counter.
+        rehome() { tries = 0; note(`🛰 ws REHOME — address changed, re-dialling as the current place`); try { if (ws) ws.close() } catch (e) {} },
         close() { intentional = true; try { if (ws) ws.close() } catch (e) {} },
     }
     // deliver_soon — hand an envelope frame to the coalescing batcher (Lies_deliver_soon: append to a per-w
@@ -156,15 +297,15 @@ async Socket_real(w) {
     //   packet.  Every inbound frame USED to ride its own H.post_do → H.todo, drained one-per-50ms under the
     //    beliefs mutex — the pile that death-spiralled the editor.  Fallback to the old per-frame post_do if
     //     the app half hasn't deposited Lies_deliver_soon yet (the boot window before LiesLies mounts).
-    let deliver_soon = (frame) => H.Lies_deliver_soon ? H.Lies_deliver_soon(w, frame) : H.post_do(async () => { await port.recv(frame) })
+    let deliver_soon = (frame) => H.Lies_deliver_soon ? H.Lies_deliver_soon(w, frame) : H.post_do(async () => { await port.recv(frame) }, { see: 'tribunal_deliver_frame' })
     let on_message = (ev) => {
         // A binary message is a buffer-carrying frame ([header JSON]\n[raw buffer]); decode it and batch it
         //  (a booked frame — Peeroleum_deliver books + inbox.do() under the mutex, which the batcher provides).
         if (ev.data instanceof ArrayBuffer) {
             let frame
-            try { frame = decode_binary(ev.data) } catch (e) { console.warn('🛰 ws RECV binary decode failed', e); return }
+            try { frame = decode_binary(ev.data) } catch (e) { console.log('🛰☠ ws RECV binary decode failed', e); return }
             let bh = frame.header
-            console.log(`🛰 ws RECV ${bh.type} seq=${bh.seq} +buf=${frame.buffer.length} ← ${bh.from}`)
+            if (!noisy(bh)) console.log(`🛰 ws RECV ${bh.type} seq=${bh.seq} +buf=${frame.buffer.length} ← ${bh.from}`)
             deliver_soon(frame)
             return
         }
@@ -181,8 +322,50 @@ async Socket_real(w) {
                 note(m, !frame.up)
                 return
             }
+            // who_ok|who_error — the presence answer, handed to the consumer's w.c.on_who hook right
+            //  here (inline, like every control frame). The hook is a plain function on .c (transport
+            //   seam); absent hook → the note alone, which is still a live diagnostic.
+            // who_ok|who_error — the presence answer.  NOTED ON CHANGE ONLY: the ask rides the ~10s
+            //  pulse round forever, so noting each answer is the same firehose the `ambient` filter
+            //   exists to stop (and note() also rings relay_log, so it would evict real events at 6/min).
+            //    A friend arriving or leaving is the event; a steady answer is wallpaper.
+            // hello_ok — the relay's address ARBITER answer (Portability §4, hello-v2): the addr
+            //  we were GRANTED, which may differ from the addr we asked for (another body of our
+            //   soul held it, cross-machine, where the local cohort census could not see it). Hand
+            //    it to the consumer's hook inline, exactly like who_ok — Swarm_station_up adopts it
+            //     and rehomes if it moved. `taken` (present only when suffixed) is the 👥 material.
+            if (frame.control === 'hello_ok') {
+                note(`🪪 hello_ok addr=${frame.addr}${frame.taken ? ' (suffixed — family holds ' + frame.taken.join(',') + ')' : ''}`)
+                // A REGISTRY, NOT A SINGLE SLOT (2026-09-10).  `on_hello` was one assignable property, and
+                //  TWO ghosts want it for different jobs: Swarm adopts the granted addr and rehomes, Lies
+                //   stamps the hello-acknowledged latch.  Today they live in different worlds so nothing
+                //    collides — but `Swarm.g` guards with `if (!self_w.c.on_hello)`, i.e. it installs its
+                //     hook ONLY when the slot is empty.  The moment those worlds merge (the one-socket
+                //      ruling, Social_demarcation_todo §0) whichever ghost stands up first wins and the
+                //       other's hook is SILENTLY never installed — no error, no log, just an address that
+                //        quietly stops being adopted.  Fan out instead, exactly as `w.c.on[type]` is a
+                //         registry: every listener hears every hello_ok, and one throwing does not rob
+                //          the others.  `w.c.on_hello` stays supported for any caller still assigning it.
+                if (w.c) {
+                    let heard = []
+                    if (Array.isArray(w.c.on_hello_list)) { heard = w.c.on_hello_list }
+                    if (typeof w.c.on_hello === 'function') { heard = heard.concat([w.c.on_hello]) }
+                    for (const fn of heard) { try { fn(frame) } catch (e) { console.log('🪪☠ on_hello hook threw', e) } }
+                }
+                return
+            }
+            if (frame.control === 'hello_error') { note(`🪪☠ relay refused hello: ${frame.reason}`, true); return }
+            if (frame.control === 'who_ok' || frame.control === 'who_error') {
+                let sig = frame.control + ':' + ((frame.online || []).join(',')) + ':' + (frame.reason || '')
+                if (sig !== last_who) {
+                    last_who = sig
+                    note(`👥 ws RECV ${frame.control}${frame.online ? ' ' + frame.online.length + '/' + frame.asked + ' online' : ''}${frame.reason ? ' — ' + frame.reason : ''}`)
+                }
+                if (w.c && w.c.on_who) { try { w.c.on_who(frame) } catch (e) { console.log('👥☠ on_who threw', e) } }
+                return
+            }
             note(`🛰 ws RECV control:${frame.control}${frame.role ? ' role=' + frame.role : ''}`)
-            if (frame.control === 'error') console.warn('relay refused:', frame.error)
+            if (frame.control === 'error') console.log('🛰☠ relay refused:', frame.error)
             return
         }
         let h = frame && frame.header
@@ -191,17 +374,30 @@ async Socket_real(w) {
         deliver_soon(frame)
     }
     let connect = () => {
+        let url = home()
         ws = new WebSocket(url)
         port.ws = ws
         ws.binaryType = 'arraybuffer'   // so a binary frame arrives as ArrayBuffer (sync-decodable), not a Blob
         ws.onopen = () => {
-            tries = 0
+            // DON'T reset `tries` here (2026-08-29).  A socket that opens then dies in <STABLE_MS never
+            //  accumulates backoff, so a flapping relay (live: ws 1006 every ~600ms under bulk) pinned us
+            //   at attempt-1 and hammered a ~600ms reconnect STORM — which also re-fires this open hook →
+            //    re-`become` → gossip, amplifying the flood.  Reset only once the connection PROVES stable
+            //     (survives STABLE_MS), so real flapping backs off (0.5→1→2…→15s) while a healthy reconnect
+            //      still clears the counter a beat later.  onclose cancels the timer so it can't fire post-drop.
+            clearTimeout(stable_timer)
+            stable_timer = setTimeout(() => { tries = 0 }, STABLE_MS)
             note(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`)
             let q = pending.splice(0); for (const f of q) wire(f)
             for (const cb of open_hooks) { try { cb() } catch (e) {} }   // re-run consumer open work (relay `become`) on every (re)connect
         }
         ws.onclose = (ev) => {
+            clearTimeout(stable_timer)   // a pending "proved stable" reset must not fire after a drop
             note(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}${intentional ? ' (intentional)' : ''}`)
+            // the bulk lane is pure repli_page — ephemeral, worthless once stale, self-heals via the
+            //  sink's own re-ask — so it drops on close exactly like the noisy/run_phase frames above,
+            //   rather than surviving into `pending` and re-sending stale pages after a long outage.
+            if (bulkQ.length) { note(`🛰 ws bulk lane dropped ${bulkQ.length} queued page(s) on close (ephemeral — the sink re-asks)`); bulkQ.length = 0; note_bulk_depth() }
             if (intentional) return
             // backoff 0.5s→1→2…capped 15s, + jitter so a relay/dev-server restart (which drops every
             //  browser at once) doesn't thunder back in lockstep. The relay re-binds our addr on the

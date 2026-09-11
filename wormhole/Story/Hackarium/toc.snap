@@ -3,10 +3,9 @@ story:Hackarium
   Plan
   Opt
     For
+    trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.267
-      sample=0.085,at=1789080659
-      sample=0.144,at=1789081104
+    TimeTotal:beliefs,avg=0.276
       sample=0.195,at=1789081979
       sample=1.308,at=1789082168
       sample=0.116,at=1789082684
@@ -15,9 +14,9 @@ story:Hackarium
       sample=0.2,at=1789084773
       sample=0.129,at=1789084890
       sample=0.226,at=1789084940
-    TimeTotal:step,avg=0.267
-      sample=0.085,at=1789080659
-      sample=0.144,at=1789081104
+      sample=0.202,at=1789086938
+      sample=0.108,at=1789089716
+    TimeTotal:step,avg=0.276
       sample=0.195,at=1789081979
       sample=1.308,at=1789082168
       sample=0.116,at=1789082684
@@ -26,4 +25,6 @@ story:Hackarium
       sample=0.2,at=1789084773
       sample=0.129,at=1789084890
       sample=0.226,at=1789084940
+      sample=0.202,at=1789086938
+      sample=0.108,at=1789089716
   step,dige:29c7975b74f8b5f9

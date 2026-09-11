@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return 'fdba06d100797880~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'd4a1183f26a14e76~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -156,14 +156,14 @@ e_Vyto_commission(A, w, e) {
     //   (VytoDepth proves it).  Default off ⇒ Vyto_solve_scope's depth_k is 1 (no-op), so every
     //    EXISTING nested Book (VytoNestRest predates P3) keeps its byte-identical recorded geometry.
     w.c.depth_scale = req.sc.depth_scale ? 1 : 0
-    // FOAMEREO — the composer's deck (`foamereo:'room,seal,copperless'`), carried from the commission
-    //  onto the world's OWN sc so the model (Vyto_fo) and the render (Vytui's fo) read one key from one
-    //   place.  It rides sc rather than .c on purpose: a composer's declaration is worth SEEING in a
-    //    snap, and it is the one piece of the glass a Book may legitimately state about itself.
-    //  GUARDED — an unset commission writes NOTHING.  Assigning `req.sc.foamereo` unconditionally would
-    //   stamp `undefined` into sc and the encoder would faithfully brand the line `{"undef":["foamereo"]}`,
-    //    which is a mint bug, not furniture.  So every existing world stays byte-identical.
-    if (req.sc.foamereo) w.sc.foamereo = req.sc.foamereo
+    // FOAMEREO — the composer's deck (`foamereo:'room,seal,copperless'`), carried from the commission.
+    //  RESTRUCTURED 2026-09-11 (the owner: "Vyto_fo() looks like hacky crap") — the wire-in string is
+    //   parsed ONCE, here, into a `%Vytocon` particle under the world (Vyto_vytocon_seed): each stop
+    //    becomes a flat sc key on it (`wave:1`, `budget:'3'`), the same notation as `%Spotlight,src`.
+    //     The model (Vyto_fo) and the render (Vytui's fo) each became a ONE-LINE property lookup instead
+    //      of a comma-string re-split on every call — the hacky part is gone, the wire is unchanged.
+    //  GUARDED — an unset commission mints nothing.  So every existing world stays byte-identical.
+    if (req.sc.foamereo) this.Vyto_vytocon_seed(w, req.sc.foamereo)
     // PLAIN — the commissioner is handing over particles with no faces behind them, so the glass
     //  should draw the C** itself (bare's typographic set) instead of leaving quiet frames waiting
     //   for components that will never mount.  Same carry as foamereo: a capture can read it.
@@ -1398,22 +1398,37 @@ Vyto_need_of(w, row) {
     return Math.max(flat, round)
 
 },
-// Vyto_fo — THE FOAMEREO READER, model side (the twin of Vytui's `fo`).  One scalar sc key holds a
-//  comma deck of composer tokens: `foamereo:'wave,seal,room:0.55'`.  Returns null when the token is
-//   absent (so every gate reading it is byte-invisible on an unset world — the additive-gate law),
-//    '1' for a bare token, and the value string for a `key:value` one.  Kept as a verb rather than
-//     an inline `includes()` because the inline form cannot carry a value and cannot tell `room`
-//      from `roomy`, and the deck is going to keep growing — the owner asked for "a lot of options
-//       on the foamereo", which only stays workable if reading one is a single honest call.
-Vyto_fo(w, key) {
-    let s = String(w.sc.foamereo ?? '')
-    if (!s) return null
-    for (const raw of s.split(',')) {
+// Vyto_vytocon — the composer's deck, as a PARTICLE (2026-09-11).  One %Vytocon child of the world;
+//  each stop is a flat sc key on it, exactly the `%Spotlight,src` notation — bare presence ('1', the
+//   snapped-boolean law) or a valued stop ('3', 'brass').  Probed, never minted, by a plain read: asking
+//    "is a stop set" must not grow the tree just by asking (Vyto_fo below never creates one).
+Vyto_vytocon(w) {
+    return w.oai({ Vytocon: 1 })
+
+},
+// Vyto_vytocon_seed — the ONE place a commission's `foamereo:'wave,seal,room:0.55'` string BECOMES the
+//  particle.  Parsed once, at commission time (e_Vyto_commission); every organ and Vytui read the
+//   particle from here on, never the string.  Re-seeding (a live desk re-commissioning `fresh`) is
+//    additive: a token already on the particle is simply overwritten, never duplicated.
+Vyto_vytocon_seed(w, deck) {
+    if (!deck) return
+    let vc = this.Vyto_vytocon(w)
+    for (const raw of String(deck).split(',')) {
         let t = raw.trim()
-        if (t === key) return '1'
-        if (t.startsWith(key + ':')) return t.slice(key.length + 1)
+        if (!t) continue
+        let at = t.indexOf(':')
+        if (at < 0) { vc.sc[t] = '1' } else { vc.sc[t.slice(0, at)] = t.slice(at + 1) }
     }
-    return null
+
+},
+// Vyto_fo — THE FOAMEREO READER, model side (the twin of Vytui's `fo`).  One property lookup on the
+//  %Vytocon particle — null when the stop is absent (so every gate reading it is byte-invisible on an
+//   unset world — the additive-gate law), the stop's own string otherwise ('1' for a bare token).
+Vyto_fo(w, key) {
+    let vc = w.o({ Vytocon: 1 })[0]
+    if (!vc) return null
+    let v = vc.sc[key]
+    return v == null ? null : String(v)
 
 },
 // Vyto_solve — the cut.  For now ONE root scope (the scope milestone comes later): a fixed
@@ -1573,7 +1588,7 @@ Vyto_solve(w) {
         // PLUMP — the one place the frame may GRANT coverage, and only because the composer
         //  asked (foamereo token `plump`): a sparse world inflates toward 0.45 fill, capped at
         //   ×3 so a lone dot never becomes the bag.  Off by default — the foam law stands.
-        if (String(w.sc.foamereo ?? '').includes('plump') && total > 0 && total < 0.45 * fw * fh) {
+        if (this.Vyto_fo(w, 'plump') && total > 0 && total < 0.45 * fw * fh) {
             let pk2 = Math.min(3, Math.sqrt((0.45 * fw * fh) / total))
             ri = 0
             while (ri < radii.length) { radii[ri] = radii[ri] * pk2; ri = ri + 1 }

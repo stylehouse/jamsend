@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '831035f4b7de0927~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '176d03c1fb562ff9~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -359,8 +359,8 @@ async transport(A,w) {
             let to = frame && frame.header && frame.header.to
             // a to:@channel publish has no single partner — fan it into the in-process relay (Peeroleum_deliver's
             //  channel branch scans subscribed Peerings). One post_do keeps it in Atime, exactly like a 1:1 send.
-            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }); return }
-            H.post_do(async () => { await this.partner?.recv(frame) })
+            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }, { see: 'peeroleum_fan_channel' }); return }
+            H.post_do(async () => { await this.partner?.recv(frame) }, { see: 'peeroleum_send' })
         },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
     }
@@ -422,12 +422,121 @@ Peeroleum_send(w, frame) {
     //              ANNOUNCES the restart cannot itself be the frame the stale history swallows.)
     let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase')
     ephemeral = ephemeral || h.type === 'advertise' || h.type === 'swarm_hi'
+    // pulse (Swarm_pulse_all's presence heartbeat) joins them: best-effort by contract, re-sent every other
+    //  tick, worthless once stale — booking a reliability emit per pulse against a slow/stalled peer piled the
+    //   SAME unbounded %outbox the repli_want storm did (culled only on ack).  Ephemeral = no emit, no per-send
+    //    log.  Still sent + still dispatched (stamps the far side's heard_at); only reliability-tracking drops.
+    ephemeral = ephemeral || h.type === 'pulse'
+    // repli_want joins the fire-and-forget set: the PULL re-asks every wanted offset every 4s at the app
+    //  layer (Ra ra_want_ts), so a transport-level retransmit emit is pure dead weight — and booking one
+    //   per want against a STALLED source (not acking) is what flooded the %outbox to 6011 live rows
+    //    ("giant stuff") AND spammed the console ~3000/min.  Ephemeral = no emit booked, no per-send log.
+    //     The receiver still DISPATCHES it (it is NOT in the receive-side bypass at Peeroleum_deliver), so
+    //      the want is still served — only its reliability-tracking + logging drop.
+    ephemeral = ephemeral || h.type === 'repli_want'
+    // ferry_want / ferry_cancel (the device-link's self-re-asking "I want linkage" beacon + one-shot teardown)
+    //  join the fire-and-forget set for the SAME reason as pulse/repli_want: Swarm_ferry_ask re-asks every ~3s
+    //   (floored at 1.1s in Swarm.g) while a Linkee awaits its soul, so a transport retransmit emit is dead
+    //    weight — and booking one per ask against a Linkor that doesn't ack piled the %outbox and RE-BLASTED
+    //     every buffered ferry_want on each relay reconnect (the owner's live "SEND ferry_want seq=18,61,83…"
+    //      storm right after a "(control)").  Ephemeral = no emit booked, no retransmit; still SENT + still
+    //       dispatched (they ride the receive-side bypass too, so the Linkor still hears them and re-parks its
+    //        confirm).  Book-inert: no Book emits ferry_want/ferry_cancel (send is pulse-/humdinger-gated).
+    ephemeral = ephemeral || h.type === 'ferry_want' || h.type === 'ferry_cancel'
+    // ive_got (Swarm_gossip_music's shelf boast, re-sent to every sealed friend each gossip beat) is the
+    //  THIRD unbounded-%outbox culprit after repli_want and pulse — and the one that actually DETONATED in
+    //   the live heist.  A serving source booked one reliability %emit per boast, culled only on ack; against
+    //    a busy peer that never acks the gossip the outbox climbed to 6036 LIVE rows and threw "giant stuff"
+    //     inside Swarm_deliver — which killed the deliver pump, so the source STOPPED answering repli_wants
+    //      and every download plateaued mid-track (the sink pulled He Lays 64/95, Prison 29/94, then froze:
+    //       the wire went silent because the FAR END had crashed, not because the pull was wrong).  Gossip
+    //        "never opens a door" (Swarm.g's own law) and re-boasts every beat, so a retransmit emit buys
+    //         nothing.  Ephemeral = no emit booked, no per-send log; still sent + still dispatched (the tally
+    //          still updates).  This is the load-bearing half of the download fix.
+    ephemeral = ephemeral || h.type === 'ive_got'
+    // no_protocol (the "I have no handler for X" back-signal, sent from req_unemit) joins the set as this
+    //  pass's addition — a DIFFERENT class from the beacons above but the same %outbox hazard.  It is
+    //   fire-and-forget BY CONTRACT (the receiver never acks it and never answers — "never complain about a
+    //    complaint"), and it carries NO seq, so today it books a MALFORMED {emit:undefined} row that no ack
+    //     can ever match and cull.  The live station arms no retx sweep (Peeroleum_arm_whittle is Book-only —
+    //      see the policy note below), so that row leaks forever.  Ephemeral = no emit, no per-send log; the
+    //       frame is still sent + still dispatched (its inline handler runs on the far side).
+    ephemeral = ephemeral || h.type === 'no_protocol'
+    // repli_lines / repli_page (the PULL RESPONSE data — chunk-header text + chunk bytes) join the set as of
+    //  2026-07-29, closing the download-stall loop the ive_got fix only unmasked.  They read like "app data →
+    //   reliable", but under the PULL protocol reliability is REDUNDANT and, live, pure liability: (1) the sink
+    //    re-asks every un-merged offset every 4s (Ra ra_want_ts) and advances its frontier ONLY on a chunk that
+    //     truly landed (Ra_chunk_map reads bytes-present), so a dropped response self-heals; (2) delivery is
+    //      idempotent + order-free — lines UPSERT by loc-key (Repli_merge), pages stash by bufferid behind a
+    //       RUNG-0 cid gate that refuses wrong bytes, so redelivery-in-order buys nothing; (3) the source
+    //        advances rec.c.sent at SEND time, never ack time (Repli_serve_want/_chunks), and NOTHING reads the
+    //         emit's %acked.  With no live retx sweep a reliable data-frame emit is retransmitted by nothing —
+    //          it only piled the %outbox until the backstop dropped REAL in-flight bytes (the sink stuck at "2
+    //           of 95").  Ephemeral = no emit, no flood; the receiver still inboxes + sha256-verifies + acks.
+    ephemeral = ephemeral || h.type === 'repli_lines' || h.type === 'repli_page'
+    // repli_parked (Backpressure_todo.md §5.3) joins for the identical reason repli_page/repli_lines
+    //  do: it is the RESPONSE to a self-re-asking want (Repli_park_want), so a reliability emit against
+    //   it would buy nothing the sink's own 4s re-ask timer doesn't already provide, and — with no live
+    //    retx sweep — would only be one more unbounded-%outbox hazard. Ephemeral = no emit, no per-send
+    //     log; still sent + still dispatched (the sink still suspends its RTO for that offset).
+    ephemeral = ephemeral || h.type === 'repli_parked'
+    // repli_missed (2026-08-06) rides the identical policy for the identical reason: it is the OTHER
+    //  response to a self-re-asking want ("I cannot resolve this id"), so the sink's own re-ask timer is
+    //   already the reliability layer.  Losing one costs a return to the old blind ladder, nothing more.
+    ephemeral = ephemeral || h.type === 'repli_missed'
+    // ── FRAME RELIABILITY POLICY (the full classification; the `ephemeral = …` lines above ARE the gate) ──
+    //  ONE law: a frame that OPENS A DOOR (a handshake) or carries PUSHED APP DATA (no re-ask behind it) is
+    //   RELIABLE (books an %outbox/emit, culled on ack, retransmitted until acked); a frame that is GOSSIP /
+    //    A BEACON / SELF-RE-ASKING — OR the RESPONSE to a self-re-asking pull — is EPHEMERAL (no emit, no log —
+    //     best-effort, self-healing).  "Gossip never opens a door" (Swarm.g); a pull answers its own re-ask.
+    //   The teeth: the LIVE station arms NO retx sweep (Peeroleum_arm_whittle runs only in Books), so live an
+    //    un-acked reliable emit is culled by NOTHING — any type that re-sends unboundedly and is never acked
+    //     climbs the %outbox to the 6000 "giant stuff" cliff and kills the deliver pump.  Hence every
+    //      re-sending beacon is ephemeral, AND the structural backstop just below caps the outbox regardless.
+    //  RELIABLE · door-opening handshakes:  hello, trust (spine);  pier_hello, pier_accept, pier_confirm,
+    //   pier_reject, reinvite, reinvite_honour, reinvite_seal, reinvite_ok (Swarm).
+    //  RELIABLE · app data:  dock_push, run_result, stream_offer (Lies);  suggest, suggest_got (Swarm — durable
+    //   store-and-forward, NOT per-beat, bounded (~24 un-got/friend) and acked-then-culled on delivery; needs
+    //    in-session redelivery, so it stays reliable — see the note at Swarm_suggest_send; the backstop guards
+    //     the pathological case).  (repli_page/repli_lines USED to sit here — moved to EPHEMERAL: the pull heals.)
+    //  EPHEMERAL · gossip / beacon / self-re-asking / PULL-response (the gate above):  ack, ping, pong
+    //   (heartbeat);  run_phase (progress blip);  advertise (grid beacon);  swarm_hi (rebirth greeting);  pulse
+    //    (presence heartbeat);  repli_want (pull re-asks every 4s);  ive_got (shelf boast, re-sent every gossip
+    //     beat — the frame that DETONATED the live heist);  no_protocol (fire-and-forget control back-signal);
+    //      repli_lines, repli_page (the pull RESPONSE data — the pull re-asks any un-merged offset every 4s, so
+    //       a transport retransmit is redundant and, with no live retx sweep, pure %outbox flood);  repli_parked
+    //        (the PARK response — "not lost, stop spending"; the sink's own re-ask timer is the fallback).
+    //  CLI control (runner_ask, ghost_compile) is dispatched ephemerally on RECEIVE (no Pier to ack through);
+    //   its reply rides the relay's corr-route, never a per-Pier outbox.
     if (pier && !ephemeral) {
         // a binary frame records body_hash + body_len on its emit so the snap shows
         //  "a test_binary of N bytes, hash X, sent" (the body itself rides off-snap on the frame).
         let esc = {emit: h.seq, type: h.type, seq: h.seq, sent: 1}
         if (h.body_hash != null) { esc.body_hash = h.body_hash; esc.body_len = h.body_len }
-        let emit = pier.oai({outbox: 1}).i(esc)
+        let box = pier.oai({outbox: 1})
+        // ── STRUCTURAL BACKSTOP (2026-07-29): no single Pier outbox can ever reach the "giant stuff" cliff ──
+        //  The ephemeral classification above stops the KNOWN runaway beacons booking emits; this is the
+        //   belt-and-suspenders for an UNKNOWN one — a future reliable type that misbehaves, or a peer that
+        //    stalls while genuine app data is in flight.  Live there is no retx sweep to cull un-acked emits
+        //     (Peeroleum_arm_whittle is Book-only), so a never-acking peer would otherwise let the outbox climb
+        //      unbounded to the 6000 index ceiling (Stuff.i_z), throw inside this very send, and kill the pump.
+        //   HIGH cap = 2000 live emits: a healthy outbox is single digits (it drains on ack within a beat or
+        //    two), so this NEVER bites in normal operation — it only trips on the pathological runaway.  On a
+        //     trip: drop the OLDEST un-acked emit (o({emit:1}) is z-order, oldest first — it has waited longest,
+        //      so its retransmit value is already lost) to make room, keeping the outbox pinned AT the cap
+        //       instead of past the cliff.  drop() feeds the auto-compactor (Stuff.drop → compact @500), so the
+        //        index never even accretes dead rows.  The warn is throttled ~1/s per w so a runaway degrades to
+        //         a quiet heartbeat, never a flood.
+        let live = box.o({emit: 1})
+        if (live.length >= 2000) {
+            if (live[0]) box.drop(live[0])
+            let nowms = Date.now()
+            if (nowms - (w.c.outbox_cap_warn_ts || 0) > 1000) {
+                w.c.outbox_cap_warn_ts = nowms
+                console.log(`🛰☠ outbox backstop: pier ${h.to} holds ${live.length} un-acked emits (cap 2000) — dropped oldest seq=${live[0]?.sc?.seq} type=${live[0]?.sc?.type}; a reliable type is not being acked (peer stalled/gone)`)
+            }
+        }
+        let emit = box.i(esc)
         // retransmit bookkeeping (off-snap): the raw frame to re-hand the transport, the logical tick
         //  of this first send, the attempt count (Reliable.g retx_due reads these). Clean streams ack
         //   before a sweep tick elapses, so they stay attempts:1 and never re-send.
@@ -436,10 +545,12 @@ Peeroleum_send(w, frame) {
         emit.c.attempts = 1
     }
     let conn = peering && this.Peeroleum_carrier(peering, w)
-    // No transport is a real fault (the frame is lost) — always say so, clearly.  A live+loud
-    //  frame logs normally; a live heartbeat stays quiet so a healthy channel doesn't spam.
+    // No transport is a real fault (the frame is lost) — always say so, clearly.  The healthy-send
+    //  confirmation ("(transport live)") is per-FRAME noise — it fired for every repli_page/repli_lines,
+    //   the flood the human wants gone — so it now rides w.c.wire_verbose like the wire logs; the coalesced
+    //    Repli meter carries the throughput at a human altitude instead.  The DROPPED fault always shows.
     if (!conn) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} ⚠ DROPPED — no live transport (channel down / re-establishing)`)
-    if (conn && !ephemeral) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport live)`)
+    if (conn && !ephemeral && w && w.c && w.c.wire_verbose) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport live)`)
     conn?.send(frame)
 
 },
@@ -449,7 +560,84 @@ Peeroleum_send(w, frame) {
 //    serial inbox as %unemit,queued (its raw frame stashed on .c for the handler) and
 //     inbox.do() drains it (req_unemit per frame). feebly_ponder re-drives a think (Runtime asserted —
 //      we run inside the carrier's post_do) so a watching do_fn reacts this same run.
+// ── THE DELIVER ELECTRODE (2026-08-06, the human: "still burning CPU (downloader side) and likes pausing
+//     in Peeroleum_deliver / Peeroleum_book_unemit").  Pausing DevTools at random and landing in a function
+//      is a SAMPLE: it says where the time is without saying how much, or why — and the two candidate whys
+//       here want opposite fixes.  If the cost is per-FRAME work (the body digest, the inbox req drain) the
+//        answer is to move or batch it.  If it scales with INBOX DEPTH the answer is the bound, because
+//         `oai`/`served_before` both search that inbox per frame and the whole shape goes quadratic again
+//          exactly as it did before the 2026-08-05 pass — which is the failure mode worth catching early,
+//           since it looks identical from a stack sample and is a completely different bug.
+//  So report both together on the supply ring: frames/s, mean+max ms inside, inbox depth, and the percentage
+//   of wall clock this function owned.  Once a second, only while the wire is genuinely busy (>8 frames), and
+//    the per-frame cost is two Date.now() calls — a probe must never become the load it is measuring.
+//  A WRAPPER, not inline accounting: the body has a dozen early `return`s (ack, ephemeral, repli_want, the
+//   no-Pier drop, the inseq hold), and instrumenting each is how a probe ends up measuring five of them and
+//    silently missing the sixth — which would be the expensive one.  try/finally catches every exit, thrown
+//     ones included.  A nested delivery (a handler that delivers) double-counts into `ms`; none does today.
+// Peeroleum_same_soul — is this no-Pier frame a SIBLING frame (same soul, body→body)?  from and to must
+//  share a root (the part before `_`), that root must look like a soul prepub (16+ hex — never a role name
+//   like runner|editor|player), and THIS node must hold a station %Peering named that soul (so we don't
+//    pier-less-dispatch arbitrary same-root traffic we're not a body of).  Used to let sibling frames past
+//     the no-Pier drop so the Swarm hear funnel can promote a station route + verify (see deliver_do).
+Peeroleum_same_soul(w, h) {
+    let root = (a) => String(a || '').split('_')[0]
+    let from = root(h && h.from), to = root(h && h.to)
+    if (!from || from !== to) return false
+    if (from.length < 16 || !/^[0-9a-f]+$/.test(from)) return false
+    return !!w.o({ Peering: 1 }).find((p) => String(p.sc.name) === from)
+
+},
+// Peeroleum_crew_road — land-of-prepub (Division §0 ⚑⚑⚑, 2026-09-02): a frame from a BODY arrives
+//  from:<its-own-body-prepub> — no %Pier is ever keyed by that name (a body is not a friend; the
+//   SOUL is). Its voucher names its soul (vh.pub = the soul pub every body holds — membership IS
+//    the ability to sign as the soul): dispatch pier-less when we hold that soul's station (a
+//     sibling of an identity we serve) or a route pier for it (a friend's body), and let the Swarm
+//      hear funnel verify the signature before anything lands — an unvouched claim rebuffs there,
+//       exactly as a forged soul-from does today. Voucher-less frames never match (strangers keep
+//        hitting the drop below); prepubOf is a slice, done inline to keep this ghost import-free.
+Peeroleum_crew_road(w, frame) {
+    let vpub = frame && frame.swarm && frame.swarm.voucher ? String(frame.swarm.voucher.pub || '') : ''
+    if (vpub.length < 16 || !/^[0-9a-f]+$/.test(vpub)) return false
+    let soul = vpub.slice(0, 16)
+    let from = String((frame.header && frame.header.from) || '')
+    // THE DOOR-HOLDER FIX (2026-09-02, live: 🛰☠ no Pier for swarm_hi from=eed831f1 to=5ade3510 DROPPED):
+    //  the old guard `from.split('_')[0] === soul` REJECTED any sender whose name shared the soul root —
+    //   but under land-of-prepub ONE body holds the bare soul name (from=<soul>) and others hold <soul>_N
+    //    suffixes, so their presence to a distinct-named sibling (5ade3510) was dropped and the cohort could
+    //     never warm.  A sender sharing the soul root is a SIBLING to admit, not a stranger to reject — the
+    //      real gates remain: we must SERVE that soul (the find below) and the handler re-verifies the sig.
+    if (!from) return false
+    return !!w.o({ Peering: 1 }).find((p) => String(p.sc.name) === soul || p.o({ Pier: 1 }).find((q) => String(q.sc.pub) === soul))
+
+},
 async Peeroleum_deliver(w, frame) {
+    let dv = (w.c.dv = w.c.dv || { n: 0, ms: 0, max: 0, since: Date.now(), deep: 0, probe: 0 })
+    let dv_t0 = Date.now()
+    if (dv_t0 - dv.since >= 1000) {
+        // SILENT WHEN HEALTHY.  The ring is capped at 300 marks and it is the instrument every OTHER
+        //  diagnosis reads — a mark per second through a five-minute download would evict the heist
+        //   marks with its own telemetry and blind the next investigation to buy this one nothing.
+        //    So report only what is worth reporting: this function owning ≥10% of wall clock, or a
+        //     single delivery blocking ≥50ms (a frame-drop's worth). A healthy wire says nothing.
+        let busy = Math.round(dv.ms * 100 / (dv_t0 - dv.since))
+        if (dv.n > 8 && (busy >= 10 || dv.max >= 50) && typeof this.Radio_trace === 'function') {
+            this.Radio_trace(null, { ev: 'deliver', n: dv.n, ms: Math.round(dv.ms), mean: +(dv.ms / dv.n).toFixed(2),
+                                     max: Math.round(dv.max), inbox: dv.deep, busy: busy })
+        }
+        dv.n = 0; dv.ms = 0; dv.max = 0; dv.since = dv_t0; dv.probe = 1
+    }
+    dv.n = dv.n + 1
+    try {
+        return await this.Peeroleum_deliver_do(w, frame)
+    } finally {
+        let d = Date.now() - dv_t0
+        dv.ms = dv.ms + d
+        if (d > dv.max) dv.max = d
+    }
+
+},
+async Peeroleum_deliver_do(w, frame) {
     const H = this
     let h = frame.header
     // ── multicast: a to:@channel frame is a TOPIC broadcast, not a 1:1 Pier message (spec §18) ──
@@ -479,6 +667,12 @@ async Peeroleum_deliver(w, frame) {
     //         0, 1, or N Piers, editor or runner alike.
     if (h.type === 'runner_ask' || h.type === 'ghost_compile') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, null, frame); return }
     let {peering, pier} = this.Peeroleum_route(w, h, 'to')
+    // 🔦 CEREMONY TRACE (2026-09-02, temporary floodlight): the live device-link died SILENTLY between
+    //  "knock dispatched fresh" and Swarm_hello — every ceremony frame's routing verdict now prints, so
+    //   a console paste shows exactly which branch ate it.  pier_*/ferry* only — pulses stay quiet.
+    if (/^(pier_|ferry)/.test(String(h.type || ''))) {
+        console.log(`🔦 deliver ${h.type} seq=${h.seq} from=${String(h.from || '').slice(0, 8)} to=${String(h.to || '').slice(0, 8)} pier=${pier ? 'yes' : 'NO'}${pier && pier.oa && !pier.oa({ Ud: 1 }) ? ' PRE-UD' : ''} hiseq=${pier && pier.c ? +(pier.c.hiseq || 0) : '-'}`)
+    }
     // first-contact: a pier_hello arrives BY DESIGN from a prepub no %Pier exists for yet — the
     //  invite front door (Swarm_spec §6.3/§10.1). The Pier/Ud booking discipline can't apply to a
     //   caller we haven't met, and doesn't need to: the Idzeug echoed inside is its own credential
@@ -486,16 +680,86 @@ async Peeroleum_deliver(w, frame) {
     //     handler (armed by Swarm_arm) — the handler promotes the %Pier — then ack through the
     //      fresh route so the caller's outbox emit retires. A pier this node ALREADY holds falls
     //       through to the normal booked path below; every other no-pier frame still drops.
-    if (!pier && h.type === 'pier_hello') {
+    // …AND A FRIEND'S pier_accept, FOR THE SAME REASON (2026-09-06, the daemon's log: "no Pier for pier_accept
+    //  seq=938 from=631300e8 — DROPPED", re-sent by Grink's pier heal every 30s for two hours).  A node that LOST a
+    //   friend's %Pier (this daemon was restarted a dozen times that night) can only get it back from the friend's
+    //    re-offered accept — and that accept was being dropped for want of the very pier it carries.  Chicken and
+    //     egg, forever.  It proves itself exactly as the hello does: Swarm_accept verifies the grant is really theirs
+    //      and really FOR US, checks the page is key-bound, and only then seals (forged → accept_forged|mismatch|
+    //       spoofed rebuffs).  Nothing unsigned lands.
+    //  SCOPED TO WHAT THAT PROOF COVERS: a LIVE station (station_up — the voucher gate and verify_grant are enforced
+    //   there; a driven world has neither) and the FRIEND-GRANT arm ({grant, page}, no link).  A device-link accept
+    //    has its own strict road (an awaiting ceremony req + the scanned prepub) and never needs this door.
+    //   (An earlier draft blamed SwarmBody beat 23 for the narrowing; that red turned out to be run-volatile and
+    //    identical under HEAD — the scoping stands on its own reasoning, not on that measurement.)
+    if (!pier && (h.type === 'pier_hello' || (h.type === 'pier_accept' && w.c.station_up && frame.swarm && frame.swarm.grant && !frame.swarm.link))) {
         let on = w.c.on && w.c.on[h.type]
-        if (!on) return
+        if (!on) { console.log(`🔦 first-contact ${h.type} from=${String(h.from || '').slice(0, 8)} — NO handler armed on this world (w.c.on empty) — knock DIES here`); return }
+        console.log(`🔦 first-contact ${h.type} from=${String(h.from || '').slice(0, 8)} → handler-direct (${h.type === 'pier_hello' ? 'Swarm_hello' : 'Swarm_accept'} should ENTER next)`)
         await on(w, null, frame)
         let now = this.Peeroleum_route(w, h, 'to')
         if (now.pier) this.Peeroleum_send(w, {header: {type: 'ack', from: h.to, to: h.from, ack: h.seq}})
         H.feebly_ponder()
         return
     }
-    if (!pier) return
+    // A SIBLING frame — same soul, body→body, from and to sharing the soul-prepub root and differing only
+    //  by the _N seat (Swarm_sibling_send's road: pulse/charter/reach/ferry ack) — arrives with NO %Pier,
+    //   because a body is not a friend.  Before 2026-09-01 it hit the drop below ("no Pier from=eed to=eed"),
+    //    which was the root under the ceremony ack stall AND the roster-divergence: siblings could never
+    //     talk.  Dispatch it pier-less exactly like pier_hello — the Swarm hear funnel promotes a station
+    //      route (so the sibling Pier self-heals after this first frame) and the handler (charter_heard &c.)
+    //       re-verifies the soul signature, so nothing unsigned lands.  Scoped hard: from/to must share a
+    //        16+hex root AND we must hold a station Peering named that soul, so role channels (runner/editor/
+    //         player) and any non-soul addr never match.
+    if (!pier && (this.Peeroleum_same_soul(w, h) || this.Peeroleum_crew_road(w, frame))) {
+        let on = w.c.on && w.c.on[h.type]
+        if (on) { await on(w, null, frame); H.feebly_ponder() }
+        return
+    }
+    if (!pier) {
+        // A frame we can't route to a Pier is DROPPED here — and an ACK dropped here strands the sender's emit
+        //  (the exact un-ack the heist chased).  The benign no-Pier cases — CLI asks, pier_hello first-contact,
+        //   multicast — all returned ABOVE; reaching here is a real frame for a peer this node doesn't hold, so
+        //    it is worth SEEING.  Throttled per (type,from) on .c so a torn-down peer is a heartbeat, not a flood.
+        let dnow = Date.now()
+        let dwarn = (w.c.nopier_warn = w.c.nopier_warn || {})
+        // ONE LINE PER SOURCE PER MINUTE, WITH THE TALLY (the owner 2026-09-06: "daemon seems to blast a bit
+        //  of noise into the logs huh, can we cool this down").  Keyed per (type,from) at 2s this printed four
+        //   near-identical lines every couple of seconds for one torn-down peer.  The FIRST drop from a source
+        //    still says itself at once — the fact is never hidden — and after that the same fact repeats as a
+        //     count, not a scroll.  The counter above is untouched: it never throttled and still doesn't.
+        let dkey = String(h.from || '').slice(0, 8)
+        let dtally = (w.c.nopier_tally = w.c.nopier_tally || {})
+        let dt = (dtally[dkey] = dtally[dkey] || {})
+        dt[h.type] = (+(dt[h.type] || 0)) + 1
+        // COUNT EVERY DROP — OUTSIDE the log throttle. A no-Pier drop is the most consequential silent
+        //  failure on the wire (it eats acks and pull responses alike, so BOTH ends look merely slow), and
+        //   until now it existed only as console spray — invisible to the glass, so the human's first clue
+        //    was a heist that never finished. The throttle below is a LOG-VOLUME policy; letting it also
+        //     gate the counter would make the tally undercount by the throttle ratio and quietly reproduce
+        //      the very "sent ≠ arrived" lie this counter exists to expose. .c, so the snap pays nothing.
+        if (!w.c.wire_drop) w.c.wire_drop = {}
+        w.c.wire_drop[h.type] = (+(w.c.wire_drop[h.type] || 0)) + 1
+        w.c.wire_drop_at = dnow
+        if (!dwarn[dkey]) {
+            dwarn[dkey] = dnow
+            console.log(`🛰☠ deliver: no Pier for ${h.type} seq=${h.seq} from=${dkey} to=${String(h.to || '').slice(0, 8)} — DROPPED${h.type === 'ack' ? ' — a dropped ack strands the sender emit' : ''} (further drops from ${dkey} summarise once a minute)`)
+        } else if (dnow - dwarn[dkey] > 60000) {
+            dwarn[dkey] = dnow
+            let parts = Object.keys(dt).map((k) => k + '×' + dt[k])
+            let total = Object.keys(dt).reduce((a, k) => a + dt[k], 0)
+            console.log(`🛰☠ deliver: no Pier for ${dkey} → ${String(h.to || '').slice(0, 8)} — dropped ${total} in the last minute (${parts.join(' ')})${dt.ack ? ' — dropped acks strand the sender emit' : ''}`)
+            dtally[dkey] = {}
+        }
+        // transfer HUD (the human 2026-07-30 "track why it's not working great"): count the drops that STALL a
+        //  transfer — a repli_want/data/ack dropped on a torn socket is exactly the "next piece hasn't arrived"
+        //   the human sees.  Skip the benign presence chatter (pulse/pong/swarm_hi).  Runtime .c, no snap byte.
+        if (h.type !== 'pulse' && h.type !== 'pong' && h.type !== 'swarm_hi' && h.type !== 'advertise') {
+            let xd = this.Repli_xfer_get ? this.Repli_xfer_get() : null
+            if (xd) { xd.drops = (xd.drops || 0) + 1; xd.last_drop = h.type; xd.drop_ts = dnow }
+        }
+        return
+    }
     // inbound-silence liveness (Reliable.g twin of the outbound %stalled): stamp the LOGICAL tick we last
     //  heard ANYTHING on this Pier — every frame, acks included (an ack is the cheapest liveness proof, so
     //   counting it closes the watchdog's ack-blindness). Replay-safe (logical tick, never ms), off-snap on
@@ -515,7 +779,60 @@ async Peeroleum_deliver(w, frame) {
     //      endless wedge (the 48s).  advertise joins them so a beacon never books/acks either — and the
     //       feebly_ponder is safe because advertise is editor-inbound only (runners send it to:'editor';
     //        the editor has no Story drive to re-wedge), and it nudges Lies_aim to refresh the roster Brink.
-    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise' || h.type === 'swarm_hi') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
+    //  pulse (Swarm_pulse_all's presence heartbeat) JOINS THEM (2026-08-04) — it was already ephemeral
+    //   on SEND but still booked an inbox unemit here, which cost it three ways.  (i) THE RELOAD BUG: a
+    //    reborn peer restarts its per-Pier seq at 1, so its pulses land on our stale finished %unemit
+    //     rows, hit the reused-seq collision path below, get re-acked and NEVER DISPATCHED — so
+    //      heard_at was never stamped, the friend read as dead, and Swarm_share_beat's presence gate
+    //       skipped them: "A stops sending B new music", from the presence side rather than the era
+    //        side.  Ephemeral is collision-immune by lane, so the heartbeat always lands.  (ii) it now
+    //         CARRIES THE EPOCH (Swarm_deliver stamps era+saw on every swarm frame), and the era check
+    //          may run Peeroleum_reset_handshake — which drops this Pier's inbox.  Doing that from
+    //           inside inbox.do() would tear down the container mid-drain and strand every later frame;
+    //            on the ephemeral lane it is outside any drain, exactly like swarm_hi.  (iii) it was
+    //             costing an unemit + an ack + a whole-inbox Peeroleum_rollup_faulty walk per friend
+    //              per 5s, forever, for a frame that is best-effort by contract and asks nothing.
+    //  AWAITED now (it was not): these handlers are async (the Swarm hear funnel awaits its voucher
+    //   verify), so the old bare call let the epoch reset land in an unsequenced microtask — a frame
+    //    delivered right behind a rebirth pulse could book BEFORE the reset that was meant to clear the
+    //     way for it.  Awaiting keeps the delivery path serial, which is what the rest of it assumes.
+    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise' || h.type === 'swarm_hi' || h.type === 'pulse') { let on = w.c.on && w.c.on[h.type]; if (on) await on(w, pier, frame); H.feebly_ponder(); return }
+    // ive_got is DELIBERATELY NOT in this list, though it IS ephemeral on SEND (:420).  Adding it here —
+    //  tried 2026-08-06, backed out the same evening — turned SwarmGot (the Book that IS this frame) to
+    //   0.33 while SwarmShare/SwarmWire/SwarmChain stayed green, which is well past the fixture drift the
+    //    move alone would explain.  The asymmetry is the point and it is not an oversight: the SENDER may
+    //     skip reliability for a boast that supersedes itself, but the RECEIVER still books it, so the
+    //      reused-seq guard keeps its memory of having served it.  Before trying this again, settle whether
+    //       SwarmGot asserts on the boast being BOOKED (then Book and change move together) or on it being
+    //        DELIVERED (then this is simply wrong).  The duplicate-RECV storm in the human's log is NOT
+    //         sender retransmits — :420 already ruled those out — so look for it in the relay fan-out or in
+    //          Swarm_gossip_music, which fires on EVERY swarm_hi (Swarm_hi_hear) and is unthrottled.
+    // no_protocol — the back-signal RETURNING (a peer telling us it has NO handler for a type WE sent).
+    //  Ephemeral like ack: dispatch to an optional handler (a consumer surfaces "peer lacks X" + stands
+    //   its own retry down) and RETURN. Critically it books NO inbox item and sends NOTHING back — never
+    //    complain about a complaint, else two handler-less peers ping-pong no_protocol forever.
+    if (h.type === 'no_protocol') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
+    // repli_want is fire-and-forget on the RECEIVE side too (it already is on SEND — no outbox emit): the PULL
+    //  re-asks every offset every 4s (Ra ra_want_ts), so an inbox booking buys ZERO reliability.  And it cost
+    //   dearly — under a want-storm (a sink that never converges) each booked want ran a full inbox.do() AND
+    //    Peeroleum_rollup_faulty, which walks the WHOLE inbox: the inbox grew and the rollup went O(N²), melting
+    //     the uploader's CPU in Peeroleum_deliver (the human 2026-07-29).  Dispatch it STRAIGHT to the serve
+    //      handler — still served, still ships its page — with no inbox booking, no rollup, and no feebly_ponder
+    //       (the serve sends its own frame; a ponder-per-want would re-melt).  Ordering doesn't matter for a
+    //        self-re-asking want, so skipping the inseq path on a lossy carrier is safe too.
+    if (h.type === 'repli_want') { let on = w.c.on && w.c.on[h.type]; if (on) await on(w, pier, frame); return }
+    // ferry_want / ferry_cancel — the device-link's self-re-asking presence frames (Swarm_ferry_ask re-asks the
+    //  soul every ~3s while a Linkee awaits; ferry_cancel is a one-shot teardown).  Ephemeral on SEND already
+    //   (Swarm.g ephemeral_lane), and — like repli_want — they gain NOTHING from inbox booking.  Worse: booking
+    //    "I want linkage" behind the pre-Ud gate on a RELOADED Cave pier wedges the whole Adopt.  A Cave pier is
+    //     not a "sealed friendship", so Swarm_station_routes never re-stamps its %Ud after a reload; the demand
+    //      then sits un-drained forever, the Linkor never re-parks its ferry_confirm, and eed "is not at the
+    //       party" (owner 2026-08-29).  Dispatch STRAIGHT to the hear funnel — still voucher-verified there, just
+    //        not inbox-gated — so a half-thawed Cave pier still hears the demand and the ceremony completes.
+    //         feebly_ponder (unlike repli_want) so the re-parked confirm wakes the glass and the "give my soul"
+    //          button turns up at once.  Book-inert: no Book emits ferry_want/ferry_cancel (send is pulse-/
+    //           humdinger-gated), so this branch is never taken on a mail-wire fixture.
+    if (h.type === 'ferry_want' || h.type === 'ferry_cancel') { let on = w.c.on && w.c.on[h.type]; if (on) await on(w, pier, frame); H.feebly_ponder(); return }
     // The inbox is a serial %req drain: a booked frame is a %req:unemit (discriminated by the sender's
     //  per-Pier seq) and inbox.do() runs each unemit-req's do_fn (req_unemit) one at a time, in arrival
     //   order, awaiting each — that IS the serial async drain, so the hand-rolled %queued/%handling lock
@@ -523,6 +840,10 @@ async Peeroleum_deliver(w, frame) {
     //     drains overlap, so no in-flight guard is needed. The inseq gate below decides WHICH frames book.
     let inbox = pier.oai({inbox: 1})
     inbox.c.up = pier   // do() climbs c.up to the House to resolve req_unemit; stamp the inbox→pier link
+    // the depth half of the electrode: ONE walk per second (the window sets `probe`, this consumes it), not
+    //  one per frame — a depth probe that walked the inbox per frame would be the very cost it is looking for.
+    let dvd = w.c.dv
+    if (dvd && dvd.probe) { dvd.probe = 0; dvd.deep = inbox.o({req: 'unemit'}).length }
     // ── transport-gating: engage the seq discipline ONLY on a lossy carrier ──
     // A reliable+ordered carrier (the ws relay, the clean mock) already delivers in order, exactly once,
     //  so an ordering layer on top is redundant — and the redundancy is what bites. An ephemeral (ack/ping/
@@ -538,19 +859,80 @@ async Peeroleum_deliver(w, frame) {
     let reliable = conn?.reliable !== false   // default reliable; only an explicit false engages inseq
     let seq = Number(h.seq)
     if (reliable || !Number.isFinite(seq)) {   // reliable carrier, or a frame with no seq → book straight, never hold
-        let ureq = H.Peeroleum_book_unemit(inbox, w, pier, frame)
-        if (ureq.sc.finished) {
+        // ── MONOTONIC-SEQ FAST PATH (2026-08-29, the 10-20s belief-mutex FREEZE under a repli_page flood) ──
+        //  Pier_next_seq is a per-pier MONOTONE counter (spec §7.1), so a seq strictly higher than any we've
+        //   booked from this pier is provably NEW: it cannot be a re-delivery or a reused-seq collision (both
+        //    carry seq ≤ our high-water).  So skip BOTH O(inbox-depth) scans — the ledger probe
+        //     (Peeroleum_served_before) AND the `oai` find (book_unemit) — and create the unemit directly.  Under
+        //      a flood (monotone seqs) that turns O(N²)-per-tick booking into O(1), which WAS the freeze.  A seq
+        //       that is NOT strictly higher (a reborn peer restarting at 1, a transport re-delivery) falls
+        //        through to the SLOW PATH below, whose reused-seq guard is UNCHANGED.  `hiseq` is off-snap `.c`
+        //         (a runtime counter, like `c.inseq.last`), so it never snaps and Books stay byte-identical.
+        if (Number.isFinite(seq) && seq > +(pier.c.hiseq || 0)) {
+            pier.c.hiseq = seq
+            H.Peeroleum_book_unemit(inbox, w, pier, frame, 1)   // fresh=1 → direct create, no O(depth) find
+            await inbox.do(); await H.Peeroleum_rollup_faulty(pier); H.Peeroleum_bound_safe(inbox, w, pier); H.feebly_ponder(); return
+        }
+        // ── SLOW PATH (seq ≤ high-water: a rebirth or a re-delivery) — the FULL reused-seq guard, unchanged ──
+        // THE LEDGER HALF OF THE REUSED-SEQ GUARD, checked BEFORE booking.  Once the inbox bound
+        //  promotes a served req onto %inbox/recent and drops it, `ureq.sc.finished` below can no
+        //   longer see it — and booking first would mint a FRESH req for an already-served frame and
+        //    dispatch it (the re-dispatch this guard exists to stop).  So ask the ledger first, and
+        //     don't book at all on a hit.
+        let served = H.Peeroleum_served_before(inbox, h)
+        let ureq = served ? null : H.Peeroleum_book_unemit(inbox, w, pier, frame)
+        if (served || ureq.sc.finished) {
+            // THE KNOCK RESETS THE EPOCH (the live incognito wedge, owner 2026-09-02 "stuck at
+            //  receiving from eed"): a reborn first-contact knocker restarts at seq=1 and its
+            //   pier_hello landed HERE forever — swallowed as a replay, Swarm_hello never ran, no
+            //    pier_accept, the ceremony dead.  The era-borne reset below only exists for SEALED
+            //     friends (swarm_hi rides a relationship); a knocker has no era lane, so the KNOCK
+            //      ITSELF is the rebirth proof: pier_hello carries its whole authority IN the frame
+            //       (?Iz presig + the serial spend ledger, re-verified by Swarm_hello every time —
+            //        a replayed spent token draws 'spent'/'held', benign), so stale seq history must
+            //         not gate it.  Reset this pier's dead stream and dispatch the knock the way FIRST
+            //          CONTACT does — handler-direct, NO inbox booking: a stale knock pier never earned
+            //           a %Ud, so a booked unemit dies silently in req_unemit's pre-Ud gate (the live
+            //            2026-09-02 second wedge: the reborn line printed, then nothing — no rebuff, no
+            //             accept).  The first-contact branch above is the proof this lane is sound.
+            if (h.type === 'pier_hello') {
+                H.Peeroleum_reset_handshake(pier)
+                pier.c.hiseq = Number.isFinite(seq) ? seq : 0   // the stream is REBORN — the old high-water dies with it
+                console.log(`🛰 pier_hello from a reborn knocker (seq=${h.seq} from=${h.from}) — stale stream RESET, knock dispatched fresh`)
+                let kon = w.c.on && w.c.on[h.type]
+                // NEVER SWALLOW A REBORN-KNOCK THROW (live 2026-09-02: the reborn line printed, then the
+                //  ceremony died with no rebuff/no accept/no seal — a swallowed exception in the hear→
+                //   Swarm_hello chain, invisible because this handler-direct call is OUTSIDE req_unemit's
+                //    try/catch).  Make it LOUD: a bail this deep must name itself, or every debug session
+                //     is a copy-paste hunt for a line that never printed.
+                if (!kon) { console.log(`🔦 reborn pier_hello from=${String(h.from || '').slice(0, 8)} — NO handler armed on this world (w.c.on empty) — knock DIES here`) }
+                if (kon) { try { let kres = await kon(w, null, frame); console.log(`🔦 reborn pier_hello dispatched → handler returned ${kres === null ? 'null (refused/denied — a 🚪 rebuff above says why)' : kres === undefined ? 'undefined' : 'truthy (processed)'}`) } catch (er) { console.log(`🛰⚠ reborn pier_hello handler THREW (from=${h.from}): ${String((er && er.stack) || (er && er.message) || er).slice(0, 240)}`) } }
+                let know = this.Peeroleum_route(w, h, 'to')
+                if (know.pier) H.Peeroleum_send(w, {header: {type: 'ack', from: h.to, to: h.from, ack: h.seq}})
+                H.feebly_ponder()
+                return
+            }
             // reused-seq collision: this (seq,type) already served a PREVIOUS incarnation (or the
             //  transport re-delivered a served frame).  Silence here was the 20s wormhole mute —
             //   RE-ACK so the sender's ack-gated retry stands down; the boot-epoch reset (ping-borne
             //    Lies_pong / the swarm channel's swarm_hi) is what re-opens a reborn peer's stream.
             let me = pier.c.up.sc.name
             H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier.sc.pub, ack:h.seq}})
-            console.warn(`🛰⚠ reused-seq collision seq=${h.seq} type=${h.type} from=${h.from} — re-acked, not re-dispatched (stale inbox history; a reborn peer wants the epoch reset)`)
+            // THROTTLE the warn to ~1/s per (pier,type): a reborn peer re-uses seqs per type, so a stale-inbox
+            //  burst (the live heist saw thousands of identical `type=ive_got` lines) drowns the console.  The
+            //   re-ack above STILL fires every collision (it must, to stand the sender's retry down) — only the
+            //    log degrades to a heartbeat.  Keyed on .c (off-snap) — a harmless throttle cursor whose
+            //     persistence across a reset costs nothing (it only ever gates a console line).
+            let nowms = Date.now()
+            pier.c.reseq_warn_ts = pier.c.reseq_warn_ts || {}
+            if (nowms - (pier.c.reseq_warn_ts[h.type] || 0) > 1000) {
+                pier.c.reseq_warn_ts[h.type] = nowms
+                console.log(`🛰⚠ reused-seq collision seq=${h.seq} type=${h.type} from=${h.from} — re-acked, not re-dispatched (stale inbox history; a reborn peer wants the epoch reset)`)
+            }
             H.feebly_ponder()
             return
         }
-        await inbox.do(); H.feebly_ponder(); return
+        await inbox.do(); await H.Peeroleum_rollup_faulty(pier); H.Peeroleum_bound_safe(inbox, w, pier); H.feebly_ponder(); return
     }
     // ── inbound seq discipline (Reliable.g: inseq_admit) — LOSSY carriers only ──
     pier.c.inseq = pier.c.inseq || {last: 0, buffered: []}
@@ -566,7 +948,7 @@ async Peeroleum_deliver(w, frame) {
             pier.c.held[seq] = frame
             // a hold must be LOUD, never silent: on a lossy carrier it is legitimate (retransmit will fill the
             //  gap), but on anything else it is the wedge this whole gate exists to prevent — so it screams.
-            console.warn(`⚠ inseq HOLDING seq=${seq} type=${h.type} — gap above last=${pier.c.inseq.last} (need ${pier.c.inseq.last + 1}); legitimate only on a lossy carrier, else a wedge`)
+            console.log(`🛰⚠ inseq HOLDING seq=${seq} type=${h.type} — gap above last=${pier.c.inseq.last} (need ${pier.c.inseq.last + 1}); legitimate only on a lossy carrier, else a wedge`)
         }
         H.feebly_ponder()
         return
@@ -578,6 +960,8 @@ async Peeroleum_deliver(w, frame) {
         if (f) H.Peeroleum_book_unemit(inbox, w, pier, f)
     }
     await inbox.do()
+    await H.Peeroleum_rollup_faulty(pier)
+    H.Peeroleum_bound_safe(inbox, w, pier)
     H.feebly_ponder()
 
 },
@@ -585,15 +969,215 @@ async Peeroleum_deliver(w, frame) {
 //  the sender's per-Pier seq) and stash its w/pier/raw-frame on .c for req_unemit (avoids the deep
 //   c.up walk). Booking only; the caller drains with inbox.do(). Split out of Peeroleum_deliver so the
 //    inseq path can book a whole gap-released run before a single drain.
-Peeroleum_book_unemit(inbox, w, pier, frame) {
+Peeroleum_book_unemit(inbox, w, pier, frame, fresh) {
     let h = frame.header
     let usc = {req: 'unemit', seq: h.seq, type: h.type}
     if (h.body_hash != null) { usc.body_hash = h.body_hash; usc.body_len = h.body_len }
-    let ureq = inbox.oai(usc)
+    // `fresh` — the monotonic-seq fast path (Peeroleum_deliver, 2026-08-29): the caller PROVED this (seq,type)
+    //  is new (seq strictly above pier.c.hiseq), so a find is a guaranteed miss — skip the O(inbox-depth) `oai`
+    //   scan and create directly.  That skip is the whole point: under a repli_page flood the oai went O(N²).
+    //  ⚠ A %req needs the req-pump WIRING oai() stamps AFTER its create (Stuff.svelte.ts oai's named-req branch:
+    //   `req.c.up = host` + `req.c.initialdo = 1`).  Plain `i()` skips it, leaving `req.c.up` undefined so
+    //    req_unemit throws at `(req.c.up).finish(req)` (caught 2026-08-29 by MusuNeGrind going red — the unemit
+    //     stayed `done` but never `finished`).  So replicate exactly those two `.c` stamps; everything else oai
+    //      does for a NAMED req is the find (skipped) or a no-op (usc carries no `maz`, book passes no merge `c`).
+    let ureq = fresh ? inbox.i(usc) : inbox.oai(usc)
+    if (fresh) { ureq.c.up = inbox; ureq.c.initialdo = 1 }
     ureq.c.frame = frame
     ureq.c.w = w
     ureq.c.pier = pier
     return ureq
+
+},
+// ── THE INBOX BOUND (2026-08-05) and the guard it must not weaken ──────────────────────────────
+// The inbox books a %req:unemit per arriving frame and, until now, NOTHING bounded it: the outbox
+//  got both its bounds in the 2026-07-29 pass (ACKED_KEEP + the 2000 backstop) and the inbox got
+//   neither.  Its only cull was Peeroleum_runstepped, reachable solely via Peeroleum_arm_whittle,
+//    which is Book-only by design — so LIVE, a Pier's inbox grew forever, and since every arrival
+//     also runs Peeroleum_rollup_faulty (a WHOLE-inbox scan) the cost went O(N²) on the sink side:
+//      exactly the melt the want-bypass fixed on the source side, still live on the response leg.
+//
+// WHY BOUND RATHER THAN BYPASS (the owner's call, 2026-08-05: "cap it dont bypass").  repli_want
+//  could skip the inbox entirely because a want re-asks itself every 4s, so ordering and delivery
+//   are both free.  repli_lines / repli_page are NOT self-re-asking — they ride the inseq ordering
+//    path and the body_hash verify — so bypassing them would trade a memory leak for a correctness
+//     hole.  Bounding keeps every frame on the same verified, ordered path and simply stops the
+//      SERVED ones from accumulating.
+//
+// THE GUARD THIS MUST NOT BREAK ("it must work as perfectly as possible" — the owner).  The reused-
+//  seq collision check in Peeroleum_deliver works by finding a FINISHED %req:unemit still standing
+//   on the inbox: that standing req IS the memory of "I already served this frame", and re-acking
+//    off it is what stands a sender's retry down instead of re-dispatching (a 2nd hear_trust /
+//     dock_push is the corruption at stake).  Culling those reqs would blind that check — so the
+//      cull PROMOTES each one into the %inbox/recent ledger first, and the check consults the
+//       ledger too (Peeroleum_served_before).  The guard's reach is therefore unchanged by the
+//        bound; only where it reads from changes.
+//   KEEP THE TWO BOUNDS IN STEP: RECENT_KEEP >= DONE_KEEP, always.  If the ledger were the shorter
+//    of the two, a served req could fall off it while its retransmit window is still open, which is
+//     precisely the blindness this exists to prevent.
+
+// Peeroleum_inbox_ledger — the ONE promotion path from a served %req:unemit onto %inbox/recent.
+//  Both cullers route through here, so the two can never disagree about what the ledger holds.
+//   Rows carry (seq, type, body_len).  DELIBERATELY NOT body_hash: 64 hex chars × the retained set
+//    would bloat every snap to sharpen a single vanishing case — a reborn peer re-issuing a
+//     DIFFERENT frame at an identical seq AND type AND byte-length.  That case degrades to "treated
+//      as already served" → re-acked, not re-dispatched, which is the SAFE direction: the failure
+//       this guards is a re-DISPATCH, and a wrongly-suppressed frame is recovered by the sender's
+//        app-layer re-ask.  body_len rides along free and kills the accidental half of that overlap.
+Peeroleum_inbox_ledger(inbox, u) {
+    let recent = inbox.oai({recent: 1})
+    // seq rides as a STRING in mint and probe alike, so a seq of 1 can never read as the {k:1}
+    //  presence wildcard (the house idiom — Repli_chunk_at:195, Repli_park_want:475).
+    let row = {unemit: String(u.sc.seq), type: u.sc.type, seq: String(u.sc.seq)}
+    if (u.sc.body_len != null) row.body_len = String(u.sc.body_len)
+    recent.i(row)
+    return recent
+
+},
+// Peeroleum_served_before — the ledger half of the reused-seq guard: has this exact frame already
+//  been served AND culled off the live inbox?  Returns true only on a full identity match, so a
+//   genuinely new frame is never suppressed by it.
+Peeroleum_served_before(inbox, h) {
+    let recent = inbox.o({recent: 1})[0]
+    if (!recent) return false
+    let probe = {unemit: String(h.seq), type: h.type, seq: String(h.seq)}
+    if (h.body_len != null) probe.body_len = String(h.body_len)
+    return recent.oa(probe)
+
+},
+// Peeroleum_bound_inbox — the live-path bound, mirroring the outbox's two exactly (:835 and :469).
+//  DONE_KEEP whittles only the SERVED (%done) reqs, promoting each onto the ledger on its way out;
+//   the structural backstop counts everything and is the belt-and-suspenders for a pathological
+//    peer.  Faulty reqs are never culled here — Peeroleum_rollup_faulty rebuilds %faulty from them.
+//  DONE_KEEP is generous ON PURPOSE (200): spec §12.1 promises that the snap taken BEFORE a step
+//   boundary shows that step's whole traffic, and Story fixtures assert it.  The heaviest Book step
+//    on record books 46, so this bound never fires in a Book — it is a production-only ceiling, and
+//     the boundary cull stays the thing Books actually exercise.
+// Peeroleum_bound_safe — the ONE way the delivery path is allowed to call the bound.  Trimming is
+//  BOOKKEEPING, not correctness — the bound's own header says so ("it is allowed to run LATE, just
+//   never never") — so a throw in it must not be able to damage the delivery it runs beside.  One bad
+//    log line threw a ReferenceError and did exactly that (see the note at the backstop below).
+//  WHAT IT ACTUALLY COST, corrected 2026-08-06 after review — the first write-up of this said "every
+//   arriving frame died with it", and that is WRONG.  Both call sites (:739, :768) run this AFTER
+//    `await inbox.do()` and `Peeroleum_rollup_faulty`, so the frame was already booked, dispatched and
+//     acked; the throw lost the TRIMMING, the trailing `feebly_ponder()` wake, and left the deliver
+//      promise rejected.  That is still bad — untrimmed is how the inbox ran to 3400 unemits and every
+//       per-frame inbox query went O(depth) — but it is a slow strangle, not frame loss.
+//  Worth naming plainly: that first write-up was a comment asserting a property the code did not
+//   support, which is the exact failure Composition_todo §2 warns about in its own last line ("the
+//    comment is not evidence").  Written by the person who wrote the rule, one file away from it.
+//  The asymmetry is deliberate and worth keeping straight: `inbox.do()` and `Peeroleum_rollup_faulty`
+//   above are NOT wrapped, because those ARE the delivery — a throw there is a real failure and must
+//    stay loud. This one is housekeeping running in the same breath, and housekeeping gets a net.
+//  The catch is loud + throttled, never silent: a permanently-throwing bound means the inbox is no
+//   longer being trimmed, which is a slow leak toward the 6000 index ceiling — survivable for now,
+//    but nobody should have to find it by watching memory.
+Peeroleum_bound_safe(inbox, w, pier) {
+    try { this.Peeroleum_bound_inbox(inbox, w, pier) }
+    catch (er) {
+        let nowms = Date.now()
+        if (nowms - (w.c.bound_throw_ts || 0) > 5000) {
+            w.c.bound_throw_ts = nowms
+            console.log(`🛰⚠ inbox bound THREW (delivery survived — trimming did not): ${er && er.message || er}`)
+        }
+    }
+
+},
+Peeroleum_bound_inbox(inbox, w, pier) {
+    const H = this
+    // THE STRIDE (2026-08-05, the same DevTools-pause hunt as the rollup gate).  This does THREE
+    //  whole-inbox walks — two `o({req:'unemit'})` scans plus the `recent` whittle — and it ran after
+    //   EVERY booked frame.  A booked frame includes every 256KB `repli_page`, so at heist rates that is
+    //    thousands of full particle walks per second, each allocating its own array, purely to discover
+    //     that nothing needs trimming yet.  Trimming is bookkeeping, not correctness: it is allowed to
+    //      run LATE, just never never.
+    //  So amortise it.  Both bounds keep their meaning, they just overshoot by at most one stride: `done`
+    //   settles around 200-250 instead of exactly 200, and the 2000 backstop can reach ~2050 — still an
+    //    order of magnitude below the 6000 index ceiling (Stuff.i_z) it exists to stay under, which is
+    //     the only hard limit in here.  Everything else was a preference expressed once per frame.
+    let stride = +(pier.c.bound_stride || 0) + 1
+    if (stride < 50) { pier.c.bound_stride = stride; return }
+    pier.c.bound_stride = 0
+    let DONE_KEEP = 200
+    let done = inbox.o({req: 'unemit'}).filter(u => u.sc.done)
+    if (done.length > DONE_KEEP) {
+        let cull = done.slice(0, done.length - DONE_KEEP)      // o() is z-order: oldest first
+        for (const u of cull) { H.Peeroleum_inbox_ledger(inbox, u); inbox.drop(u) }
+    }
+    let recent = inbox.o({recent: 1})[0]
+    // RECENT_KEEP — must be >= the HIGH-WATER `done` reaches, which with the stride above is
+    //  DONE_KEEP + one stride, not DONE_KEEP.  Sized well clear of it: the ledger is what
+    //   Peeroleum_served_before reads once a served req has been dropped from the live inbox, so a
+    //    recent shorter than the done window would open a re-dispatch hole for exactly the frames
+    //     that just fell out of it.  Cheap to be generous — these are seq+type rows, not frames.
+    if (recent) H.whittle_N(recent.o({unemit: 1}), 400)
+    // structural backstop: no single Pier inbox reaches the 6000 index ceiling (Stuff.i_z) and
+    //  throws inside the delivery that is trying to drain it.  Drops the OLDEST regardless of
+    //   state, so a flood of never-finishing reqs can still not pin the pump.
+    let live = inbox.o({req: 'unemit'})
+    // §5.6 receive-side backpressure signal (Backpressure_todo.md): stash the inbox depth for O(0) (live is
+    //  already in hand) so the PULL side can read "am I drain-bound?" in O(1). Ra_pull_beat suppresses a
+    //   RE-ask when this is high, because a "missing" page is then far likelier sitting UNDRAINED in this
+    //    very inbox than lost on the wire — re-asking it is the flood (the source re-serves a page we already
+    //     hold, deepening the inbox, slowing the drain, firing more re-asks: a collapse inside a BOUNDED
+    //      window). ts-stamped so a stale-high reading (a flood that ended during a quiet spell with no fresh
+    //       stride) is IGNORED rather than wedging re-asks forever.
+    pier.c.inbox_depth = live.length
+    pier.c.inbox_depth_ts = Date.now()
+    if (live.length >= 2000) {
+        // DRAIN TO THE CAP, not one row per visit (2026-08-06, from the human's own `deliver` electrode:
+        //  `inbox` climbing 3071 → 3431 monotonically across 22 minutes, i.e. 70% past a cap that was
+        //   supposedly enforced).  This dropped exactly ONE unemit, and only on the 1-in-50 stride above,
+        //    so the backstop's maximum drain rate was one row per fifty frames — while the very line it
+        //     prints says "frames are arriving faster than they finish".  It diagnosed the flood correctly
+        //      and then shed at ~2% of the rate needed to answer it, so depth grew without bound.
+        //  That is a RUNAWAY, not a leak: every per-frame inbox query is O(depth) (the first key hits the
+        //   X index, every later key is a linear filter over the result — Stuff.o_query), so a deeper
+        //    inbox makes each frame slower, which makes the inbox deeper.  The electrode's other half is
+        //     the same story from the other end — one deliver call blocking 3–5s with `max ≈ ms`.
+        //  A bound whose drain rate does not scale with the overshoot is decorative.  Shed the whole
+        //   excess in one pass: it is O(excess) once, against O(depth) on every frame forever.
+        let excess = live.length - 2000
+        // CONTROL-PLANE CARVE-OUT (owner 2026-08-30, "for the fifth time now, the transfer looks like it's
+        //  going like shit from the eed side"): the cull was indiscriminate, so the tiny, rare ceremony
+        //   frames — ferry_held / ferry_got / adopt_* / pier_* handshakes — died in the same shed as the
+        //    Repli bulk that CAUSED the flood, and the device-link succeeded while its acks starved: the
+        //     soul crossed, eed read failure.  A ceremony ack is a hand-signed letter; Repli is gravel.
+        //      Never shed the letters to make room for gravel — skip frames whose type marks them
+        //       control-plane, shed everything else oldest-first.  One O(depth) pass, still once per visit.
+        let k = 0
+        let shed = 0
+        while (k < live.length && shed < excess) {
+            let u = live[k]
+            let ut = u ? String(u.sc.type || '') : ''
+            if (u && !(ut.startsWith('ferry') || ut.startsWith('adopt') || ut.startsWith('pier_'))) { inbox.drop(u); shed = shed + 1 }
+            k = k + 1
+        }
+        let nowms = Date.now()
+        if (nowms - (w.c.inbox_cap_warn_ts || 0) > 1000) {
+            w.c.inbox_cap_warn_ts = nowms
+            // `%` SUGAR DOES NOT SURVIVE A TEMPLATE LITERAL (the human 2026-08-06, live crash:
+            //  `deliver threw ReferenceError: pub is not defined at Peeroleum_bound_inbox`).  This read
+            //   `${pier%pub}`; the compiler leaves `%` alone inside a backtick string, so it emitted the
+            //    JS `pier % pub` — modulo against an undeclared name — and THREW.  Lift it to a plain
+            //     local first; `%` outside a literal compiles fine, which is why every other use is safe
+            //      (a repo-wide grep finds this was the only one).
+            //  WHY IT MATTERED SO MUCH FOR ONE LOG LINE: this branch runs ONLY at the 2000 cap, i.e. only
+            //   once the inbox is already melting — no Book ever reaches it. So the STRUCTURAL BACKSTOP,
+            //    the thing whose whole job is to keep the pump alive through a flood, instead threw on
+            //     every visit once the flood arrived — and the one thing it exists to do, TRIM, was the
+            //      one thing that stopped happening. The inbox then grew unbounded, and since every
+            //       per-frame inbox query is O(depth), each frame got slower as it grew. A safety net
+            //        that only runs in the emergency is a safety net nothing ever tests.
+            //  (Corrected 2026-08-06: the first version of this note claimed the frame was LOST. It was
+            //   not — :739/:768 call the bound after `inbox.do()`, so the frame was already dispatched
+            //    and acked. The damage was the missing trim, not a dropped frame. See Peeroleum_bound_safe.)
+            let who = String(pier.sc.pub || '').slice(0, 8)
+            // say what was actually SHED (the carve-out spares ferry/adopt/pier_* — reporting live[0] here
+            //  once claimed "dropped … type=pier_confirm" for a frame the shed had spared, owner 2026-08-30).
+            console.log(`🛰☠ inbox backstop: pier ${who} holds ${live.length} unemits (cap 2000) — shed ${shed} bulk frame(s), control-plane spared; frames are arriving faster than they finish`)
+        }
+    }
 
 },
 // req_unemit — the inbox do_fn (spec §7.3): handle ONE inbound frame, booked as %req:unemit by
@@ -614,6 +1198,12 @@ async req_unemit(req) {
     let pre_ud = !pier.oa({Ud:1})
     let ok = !(pre_ud && h.type !== 'hello' && h.type !== 'noop')
     let reason = pre_ud ? 'pre-Ud' : 'not-them'
+    // 🔦 CEREMONY TRACE: the pre-Ud/startup-hold refusals below are quiet BY DESIGN (the boot path) —
+    //  but for ceremony kinds that silence ate a live device-link knock un-diagnosably.  Ceremony
+    //   frames print their verdict here, silence policy notwithstanding.
+    if (/^(pier_|ferry)/.test(String(h.type || ''))) {
+        console.log(`🔦 unemit ${h.type} seq=${h.seq} from=${String(h.from || '').slice(0, 8)} pre_ud=${pre_ud ? 1 : 0} → ${ok ? 'dispatching to handler' : 'REFUSED:' + reason + ' (silently eaten — THIS is where the knock died)'}`)
+    }
     // body integrity (spec §4.2: header.body_hash covers the body) is part of verify, checked
     //  BEFORE delivery so a corrupt body fails identically to a tweaked header-sign — same
     //   %error→%faulty path. The digest is an AWAITED sha256 over the off-snap raw buffer
@@ -622,13 +1212,50 @@ async req_unemit(req) {
         ok = false; reason = 'bad-body-hash'
     }
     if (ok) {
+      // HANDLER GUARD (Error channel + inbox-wedge fix, spec/Error_channel_todo.md): a consumer handler that
+      //  THROWS — the classic vector being Repli_merge's delete → replace() INSIDE this do_fn (the nested-
+      //   replace throw) — used to propagate out of inbox.do() and leave THIS req unfinished → the serial inbox
+      //    WEDGED forever (every later frame from the peer stranded, the download silently dead).  Catch it:
+      //     record in the Story channel, fail the req cleanly (ok=false → finished + no-ack below), and the
+      //      sender's app-layer re-ask re-delivers.  The inbox drains on.
+      try {
         let on = w.c.on && w.c.on[h.type]
         if (h.type === 'hello') ok = (await H.hear_hello(w, pier, frame)) !== false
         else if (h.type === 'trust') ok = (await H.hear_trust(w, pier, frame)) !== false
         else if (on) ok = (await on(w, pier, frame)) !== false
-        else if (h.type !== 'noop') console.warn(`🛰⚠ Peeroleum: NO handler for frame type '${h.type}' from ${h.from} — acked but the work is LOST (typo'd handler? an editor-only frame reached a runner or vice-versa?). Robustness_plan Organ 2 — escalate to faulty/dont-ack once a live run proves no legit send-without-handler type retx-wedges.`)
-        // else (noop): nothing to deliver — legitimately done, then acked.  An UNREGISTERED type now
-        //  warns loudly above (was a silent ack — the "lies upward" bug); delivery is unchanged for now.
+        else if (h.type !== 'noop' && h.type !== 'no_protocol') {
+            // an UNREGISTERED app type — the protocol back-signal (Robustness Organ 2), replacing the
+            //  old silent ack-and-lose (the "lies upward" bug). Two regimes, split by whether the
+            //   hello+trust handshake has FINISHED (Peeroleum_peer_ready):
+            //  · DURING startup (peer not ready) — HOLD it: not-ok → no ack, so the sender's ack-gated
+            //     retry re-delivers once our consumer attaches its handler. A protocol we simply have
+            //      not enabled YET must never draw a complaint (nor a loss); the pre-Ud gate already
+            //       holds the earliest frames, this extends the hold to the whole handshake window.
+            //  · OUTSIDE it (ready) — we genuinely lack the protocol: ACK it (stand the retry down;
+            //     retransmitting a protocol we will never have only wedges — the risk the old note
+            //      feared) and send a no_protocol complaint naming the type + seq, so the sender LEARNS
+            //       instead of losing silently. no_protocol is a control frame (handled inline above,
+            //        never inboxed, never itself complained about).
+            // KNOWN SEAM (2026-08-11, Radio_todo §0): the hold is sound only while "the sender's ack-gated
+            //  retry re-delivers" is TRUE, and that stopped being true for repli_lines on 2026-07-29 when
+            //   it was made ephemeral.  A PUSHED catalog (Repli_offer) into a peer's startup window is
+            //    silently lost and only the 60s re-offer floor recovers it.  A no_protocol back-complaint
+            //     here was tried and MEASURED A NO-OP (65s either way): the complaint CEASES the moment the
+            //      peer becomes ready, so it can never carry the "ready now" that the re-offer must land on.
+            //       The real fix is upstream: don't push until the peer's grant is ACTIVE — Radio_todo §0.
+            if (!H.Peeroleum_peer_ready(pier)) { ok = false; reason = 'startup-hold' } else {
+                let me = pier.c.up.sc.name
+                H.Peeroleum_send(w, {header: {type: 'no_protocol', from: me, to: pier.sc.pub, about: h.type, re_seq: h.seq}})
+                console.log(`🛰⚠ Peeroleum: no handler for '${h.type}' from ${h.from} — sent no_protocol back (unsupported protocol) instead of losing it silently.`)
+            }
+        }
+        // noop / no_protocol reaching here: nothing to deliver — ok stays true → done + acked below.
+      } catch (err) {
+        ok = false
+        reason = 'handler-threw'
+        req.c.threw_msg = String((err && err.message) || err).slice(0, 120)
+        if (H.Story_error) H.Story_error('error', 'unemit:' + h.type, err)
+      }
     }
     if (ok) {
         req.sc.done = 1
@@ -636,10 +1263,40 @@ async req_unemit(req) {
         inbox.finish(req)
         let me = pier.c.up.sc.name
         H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier.sc.pub, ack:h.seq}})
+        if (/^(pier_|ferry)/.test(String(h.type || ''))) { console.log(`🔦 unemit ${h.type} seq=${h.seq} handled + acked`) }
     } else {
+        if (/^(pier_|ferry)/.test(String(h.type || ''))) { console.log(`🔦 unemit ${h.type} seq=${h.seq} FAILED after dispatch — reason=${reason}${req.c.threw_msg ? ' threw=' + req.c.threw_msg : ''}`) }
         req.sc.error = reason
+        // ARM THE ROLLUP (2026-08-05).  This is the ONLY place an unemit is ever stamped with an error, so
+        //  it is the only place a %faulty rollup can become owed.  Peeroleum_rollup_faulty reads this and
+        //   skips its whole-inbox walk when nothing is owed — see the note there for why that walk was
+        //    burning the downloader's CPU.  `.c`, off-snap: it is a cursor, not a fact about the peer.
+        pier.c.faulty_owed = 1
         inbox.finish(req)
-        H.Peeroleum_rollup_faulty(pier)
+        // LOUD no-ack (2026-07-29): the error branch draws NO ack, so the sender's emit strands — the exact
+        //  SILENT "frame not acked" that stalled the heist download (chunks re-asked forever, the console quiet,
+        //   the only eventual signal a far-tab outbox-backstop warn much later).  pre-Ud / startup-hold are the
+        //    DESIGNED handshake hold (a not-yet-enabled protocol, re-delivered once our consumer attaches), so
+        //     they stay quiet — no noise on the normal boot path.  Any OTHER reason (bad-body-hash, not-them) is
+        //      a genuine drop worth SEEING: shout it, throttled per (pier,reason,type) on .c so a persistent
+        //       fault is a heartbeat not a flood; bad-body-hash names the length gap — the tell of a truncated
+        //        or over-large body.  Pure side-effect + a .c write (no C mutation), so it is safe inside the
+        //         req machine's replace() transaction.
+        if (reason !== 'pre-Ud' && reason !== 'startup-hold') {
+            let warned = (pier.c.noack_warn = pier.c.noack_warn || {})
+            let wkey = reason + ':' + h.type
+            let nowms = Date.now()
+            if (nowms - (warned[wkey] || 0) > 1000) {
+                warned[wkey] = nowms
+                let extra = reason === 'bad-body-hash' ? ` got_len=${frame.buffer && frame.buffer.length} want=${h.body_len}` : (reason === 'handler-threw' ? ` — ${req.c.threw_msg || ''}` : '')
+                console.log(`🛰⚠ unemit NOT acked seq=${h.seq} type=${h.type} from=${String(h.from || '').slice(0, 8)} — ${reason}${extra}; sender's emit strands (self-heals via the app-layer re-ask)`)
+            }
+        }
+        // the %faulty roll-up is NOT done here: req_unemit is inbox.do()'s do_fn, so it runs INSIDE the
+        //  req machine's replace() transaction, and Peeroleum_rollup_faulty does a faulty.r() — a nested
+        //   replace (the "nested replace() transactions" throw). Peeroleum_deliver rolls up ONCE after
+        //    inbox.do() returns (outside the transaction), which also rebuilds %faulty from the WHOLE
+        //     drain's error items in one pass, as spec §9 intends.
     }
 
 },
@@ -647,8 +1304,37 @@ async req_unemit(req) {
 //  %outbox/emit %acked, and the matching protocol %said too (spec §6, so the handshake's
 //   acked-ness is visible). Acks book no inbox item and run no protocol handler.
 Peeroleum_take_ack(w, pier, h) {
-    let emit = pier.o({outbox:1})[0]?.o({emit:1}).find(e => e.sc.seq == h.ack)
-    if (emit) { emit.sc.acked = 1; pier.bump() }
+    let box = pier.o({outbox:1})[0]
+    let emit = box?.o({emit:1}).find(e => e.sc.seq == h.ack)
+    // stamp acked and LEAVE the emit on the outbox — Peeroleum_runstepped promotes it to %outbox/recent
+    //  at the step boundary.  The two-phase shape is spec §12.1 and it is load-bearing: the snap taken
+    //   *before* the boundary shows the step's traffic in full (flags and all), the one after shows the
+    //    whittled ledger.  A Story fixture asserts BOTH halves (SwarmDoor 004 wants `emit,…,sent,acked`
+    //     still in the outbox; 005 wants it under %recent), so collapsing them loses real test signal.
+    //
+    // WHY THIS IS NOT A PLAIN box.drop(emit) ANY MORE (2026-08-04).  It used to be, and that drop
+    //  silently killed the ledger it was meant to feed.  runstepped's cull reads
+    //   `outbox.o({emit:1}).filter(e => e.sc.acked)` — but nothing acked was ever still ON the outbox by
+    //    then, so the filter matched NOTHING.  Two things fell out, both invisible for a month:
+    //     - the cull was dead code and %outbox/recent (spec §7.4) quietly stopped existing;
+    //     - the Story snap lost its send-side evidence outright — a Pier that sent and got acked 60
+    //        chunks snapped an EMPTY outbox, indistinguishable from one that never sent anything.
+    //
+    // THE PILE-UP THE DROP WAS RIGHT ABOUT.  Acked rows really did pile forever in the live app (no
+    //  Story-step reset ever runs there), a co-cause of the 6000 giant-stuff.  So bound the ACKED set
+    //   here instead of evicting it: whittle acked emits to ACKED_KEEP, oldest-first.  This is NOT the
+    //    2000 structural backstop's job — that one counts every emit and drops the OLDEST regardless of
+    //     state, so letting acked rows accumulate toward it would crowd out genuinely in-flight un-acked
+    //      bytes.  Whittling only the acked ones keeps the backstop's headroom for real traffic.
+    //   ACKED_KEEP is generous (a step's whole traffic survives to be snapped — MusuBounce books 60) and
+    //    still hard-bounded per Pier, an order of magnitude under the backstop.
+    if (emit) {
+        emit.sc.acked = 1
+        let ACKED_KEEP = 200
+        let done = box.o({emit:1}).filter(e => e.sc.acked)
+        if (done.length > ACKED_KEEP) this.whittle_N(done, ACKED_KEEP)
+        pier.bump()
+    }
     let hit = !!emit
     let proto = pier.o({protocol:1})[0]
     for (const kind of ['hello','trust']) {
@@ -661,13 +1347,33 @@ Peeroleum_take_ack(w, pier, h) {
 // Peeroleum_rollup_faulty — rebuild %faulty from the inbox's %error items (spec §9).
 //  A roll-up present only while something is wrong; the detail stays on the unemit. Run
 //   on every fault and at the step boundary, so a cleared inbox drops a stale %faulty.
-Peeroleum_rollup_faulty(pier) {
+//  ASYNC and MUST be awaited by every caller. It does a faulty.r() (a replace transaction),
+//   and faulty is replaced HERE and nowhere else — so two un-awaited rollups on the same
+//    faulty overlap into a "nested replace() transactions" throw (the batch-drain in
+//     Lies_deliver_soon fires deliver per frame; back-to-back frames from one peer race).
+//    The internal await matters too: r() clears {unemit:1} then the loop refills, so the
+//     clear must SETTLE before the refill or the rebuild races its own transaction.
+//  THE HOT-PATH GATE (2026-08-05, the human pausing DevTools at random and landing here).  This walk is
+//   O(inbox) and it ran after EVERY booked frame — and `repli_page` (the 256KB bulk data frames, hundreds
+//    per track) is a booked frame.  That is precisely the O(N²) melt the repli_want note in
+//     Peeroleum_deliver describes ("the inbox grew and the rollup went O(N²), melting the uploader's CPU
+//      in Peeroleum_deliver"): the 2026-07-29 pass cured it for the little control frame and left it
+//       standing on the bulk one, which is the path that actually carries the bytes.
+//  Nothing is owed unless an unemit has been stamped with an error (req_unemit, the ONE site) or a
+//   %faulty already stands and might now want dropping.  In the overwhelmingly common case — a healthy
+//    transfer — both are false and we return without touching the inbox at all.  Semantics are unchanged:
+//     every path that could make a rollup owed sets the flag first, and the flag is only cleared here,
+//      after the rebuild that consumes it.
+async Peeroleum_rollup_faulty(pier) {
+    let faulty0 = pier.o({faulty:1})[0]
+    if (!pier.c.faulty_owed && !faulty0) return
+    pier.c.faulty_owed = 0
     let inbox = pier.o({inbox:1})[0]
     let errs = inbox ? inbox.o({req:'unemit'}).filter(u => u.sc.error) : []
-    let faulty = pier.o({faulty:1})[0]
+    let faulty = faulty0
     if (!errs.length) { if (faulty) pier.drop(faulty); return }
     faulty ||= pier.i({faulty:1})
-    faulty.r({unemit:1}, {})
+    await faulty.r({unemit:1}, {})
     for (const u of errs) faulty.i({unemit:u.sc.seq, error:u.sc.error, seq:u.sc.seq})
 
 },
@@ -793,13 +1499,23 @@ Peeroleum_liveness_sweep(w) {
 //  The body is try/caught so a throw in any sweep can NEVER skip rearm(): a frozen heartbeat silently
 //   strands every later frame on this w (the freeze-scare, handover §8). The cause surfaces (console), and
 //    the next boundary still sweeps — strictly safer than the bare chain that froze once.
-Peeroleum_arm_whittle(w) {
+async Peeroleum_arm_whittle(w) {
     const H = this
     if (w.c._whittle_armed) return
     w.c._whittle_armed = 1
     let rearm = () => H.Runstepped(async () => {
-        try { H.Peeroleum_retx_sweep(w); H.Peeroleum_liveness_sweep(w); H.Peeroleum_runstepped(w) }
-        catch (e) { console.error('⚠ Peeroleum whittle sweep threw — rearming anyway', e) }
+        try { H.Peeroleum_retx_sweep(w); H.Peeroleum_liveness_sweep(w); await H.Peeroleum_runstepped(w) }
+        catch (e) {
+            // STAMP IT, don't just log it (2026-08-05).  A sweep that throws every boundary strands
+            //  the cull silently: MusuReplica's inbox climbed to 17 rows over 14 steps with %recent
+            //   never once appearing, and NOTHING in any snap said why — the cause lived in a console
+            //    nobody reads during a recorded run.  Peeroleum_retx_sweep already stamps %stall_err
+            //     for its own inner throw (:945); this is the same courtesy for the outer chain.  One
+            //      stamp per w (not per boundary) so a persistent thrower is a fact, not a flood.
+            let msg = (e && e.message || String(e)).slice(0, 80)
+            if (!w.o({sweep_err:1})[0]) w.i({sweep_err:1, msg})
+            console.error('⚠ Peeroleum whittle sweep threw — rearming anyway', e)
+        }
         rearm()
     })
     rearm()
@@ -811,7 +1527,13 @@ Peeroleum_arm_whittle(w) {
 //    %recent items carry only their emit|unemit/type/seq — no flags, no time (record order
 //     is the order). This is the one place outbox/inbox items vanish, so the snap taken
 //      *before* this boundary always shows the step's traffic (spec §12.1).
-Peeroleum_runstepped(w) {
+//  THIS IS LIVE CODE AGAIN AS OF 2026-08-04 — it was dead for a month.  Peeroleum_take_ack
+//   had started dropping the acked emit on the spot, so the `.filter(e => e.sc.acked)` below
+//    could never match and %outbox/recent was never built.  take_ack now leaves the emit in
+//     place (bounding the acked set instead), so the promote below is once more the ONLY path
+//      onto the ledger.  If you are tempted to reclaim an acked emit earlier than this
+//       boundary, read spec §12.1 first: a Story fixture asserts the pre-boundary shape too.
+async Peeroleum_runstepped(w) {
     const H = this
     for (const peering of w.o({Peering:1})) {
         for (const pier of peering.o({Pier:1})) {
@@ -826,14 +1548,17 @@ Peeroleum_runstepped(w) {
             }
             let inbox = pier.o({inbox:1})[0]
             if (inbox) {
-                let recent = inbox.oai({recent:1})
+                // routed through Peeroleum_inbox_ledger so the boundary cull and the live bound
+                //  (Peeroleum_bound_inbox) can never disagree about the ledger's shape — the ledger
+                //   is the reused-seq guard's memory once a req leaves the live inbox.
                 for (const u of inbox.o({req:'unemit'}).filter(u => u.sc.done)) {
-                    recent.i({unemit:u.sc.seq, type:u.sc.type, seq:u.sc.seq})
+                    H.Peeroleum_inbox_ledger(inbox, u)
                     inbox.drop(u)
                 }
-                H.whittle_N(recent.o({unemit:1}), 20)
+                let recent = inbox.o({recent:1})[0]
+                if (recent) H.whittle_N(recent.o({unemit:1}), 200)   // RECENT_KEEP, in step with DONE_KEEP
             }
-            H.Peeroleum_rollup_faulty(pier)
+            await H.Peeroleum_rollup_faulty(pier)
         }
     }
 

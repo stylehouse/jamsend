@@ -1457,6 +1457,19 @@
 
 //#region Story_plan
 
+    // Story_release_clock — the run has completed; give the Run House its ambient heartbeat back.
+    //  Pairs with the guarded set in Story_subHouse (read the note there). Clearing the flags is
+    //   half of it; arming reset_interval is the other half, because no_interval had stopped the
+    //    %mo:main timer from ever being armed on this House, so nothing would tick on its own.
+    //     Idempotent and cheap: reset_interval clears any prior timer before arming.
+    Story_release_clock(Run: House) {
+        if (!Run.c.no_ambient && !Run.c.no_interval) return
+        delete Run.c.no_ambient
+        delete Run.c.no_interval
+        void (Run as any).reset_interval?.()
+        console.log(`⏱ Story: run complete on ${(Run as any).name ?? '?'} — ambient heartbeat released`)
+    },
+
     Story_subHouse(A: TheC, w: TheC) {
         // Get-or-create the Run sub-House for this Book and wire its actors.
         // Called every tick from Story() — cheap when the House and actors already exist.
@@ -1466,6 +1479,27 @@
 
         const Run  = this.subHouse(book)
         Run.sc.Run = 1
+        // THE RUN OWNS THE CLOCK WHILE IT DRIVES — AND ONLY WHILE IT DRIVES (2026-09-11).
+        //  These two flags used to be set unconditionally, here, every tick, and nothing ever cleared
+        //   them. That is correct for a test Book: story_drive owns the clock and the ambient tick must
+        //    not interleave with snapping. It is WRONG for a Book that stands a ROOM and then finishes
+        //     — Hackarium (BigWordland) runs to completion and the human is then simply IN the room,
+        //      with Lies and Lang living on this Run House, and no heartbeat. Every req that holds on a
+        //       ttlilt (a TIME hold, not an event) is then re-run only when the human next clicks.
+        //  The owner found it before the instrument did: *"I went over to H:Story and turned on
+        //   trickle think() and that fixed it… having extra random goes at the %w involved seems to
+        //    help."* Trickle-think bypasses no_ambient. So does a click. The measured shape was a doc's
+        //     `text_load` overlay held 8–33s over an already-rendered editor (`re-arms:3` in 33s — the
+        //      req ran only when an event happened to arrive), with the deciding line
+        //       `no_ambient:HERE · House:Hackarium`.
+        //  So: hold the clock while the run is live; release it when the run reports complete
+        //   (`run.sc.paused === 2`, the value both completion branches in story_drive set). Because
+        //    this runs every tick, a NEW run on the same House re-takes the clock automatically the
+        //     tick it starts. Story_release_clock (above) does the immediate hand-back at completion
+        //      so the room's heartbeat restarts without waiting for anything to tick first.
+        const run_now  = w.o({ run: 1 })[0] as TheC | undefined
+        const complete = run_now?.sc.paused === 2
+        if (!complete) {
         Run.c.no_ambient  = true   // story_drive owns the clock; suppress ambient tick
         Run.c.no_interval = true   // …so don't even arm the ambient %mo:main timer: it
                                    //  would re-fire main() every interval into a no-op
@@ -1474,6 +1508,7 @@
                                    //     reset_interval means no dead timer and nothing to
                                    //      draw (snap/Cyto/inspector); the %mo skip rule
                                    //       stays only as a net for other houses.
+        }
         // Inherit the boot-param role (?E=editor / ?B=runner) onto the Run House before its recipe
         //  runs — H.c.role is read here (the Run House), not on Mundo.  ??= so a Book booted from
         //   the Library (no param) still gets its recipe's own default.
@@ -2325,6 +2360,7 @@
             
             if (run.sc.mode === 'new' && n > ((run.sc.total ?? 30) as number)) {
                 run.c.driving = false; run.sc.paused = 2
+                H.Story_release_clock(Run)   // the run is over — hand the heartbeat back to the room
                 H.collect_time_sample(w)   // append to The/TimeSpool before save
                 H.story_analysis(w)
                 H.story_save()
@@ -2335,6 +2371,7 @@
             }
             if (run.sc.mode === 'check' && !H.The_step_dige(w, n)) {
                 run.c.driving = false; run.sc.paused = 2
+                H.Story_release_clock(Run)   // the run is over — hand the heartbeat back to the room
                 // clear frontier when we reach the end — no outstanding mismatch
                 run.sc.frontier = 0
                 H.The_set_frontier(w, 0)

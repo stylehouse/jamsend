@@ -325,8 +325,18 @@
             //       bumps it. The owner's trace showed exactly that shape: Heard.g spun 23.91s and
             //        cleared 0.45s after the NEXT click, with no editorBegins line in between.
             //  So: print whether the version actually moved. `bumped:no` on a slow open is the proof.
+            // + the two facts that decide whether the AMBIENT heartbeat can ever reach this req:
+            //  `main()` returns silently when `c.no_ambient` is set (a Story Run sets it), and the
+            //   heartbeat's period is `%mo:main,interval` (default 3.6s, "may be adjusted"). A req
+            //    holding on a ttlilt is re-run ONLY by a tick, so if no ambient tick arrives it waits
+            //     for the next user EVENT — which is the 8-33s gap, and why trickle-think cures it.
+            const top = H.top_House() as any
+            const mo = (top.o({ mo: 'main', interval: 1 })[0] as TheC | undefined)?.sc.interval
             console.log(`⏱ set_active_dock @${(performance.now() / 1000).toFixed(2)}s ${path}`
-                + ` · version ${v0}→${languinio.version} ${languinio.version !== v0 ? 'bumped:yes' : 'bumped:NO ⚠'}`)
+                + ` · version ${v0}→${languinio.version} ${languinio.version !== v0 ? 'bumped:yes' : 'bumped:NO ⚠'}`
+                + ` · no_ambient:${H.c.no_ambient ? 'HERE' : top.c.no_ambient ? 'TOP' : 'no'}`
+                + ` · ambient_interval:${mo ?? '3.6(default)'}s`
+                + ` · House:${(H as any).name ?? '?'}`)
         }
         // Tell w:Lies the foregrounded doc changed — direct Atime elvis.
         H.i_elvisto('Lies/Lies', 'Lies_active_doc_changed', { path })

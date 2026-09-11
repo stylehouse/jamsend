@@ -158,24 +158,21 @@
 
     // ── THE FOAMEREO (the owner 2026-08-09: "are much of these differences available to the
     //  composer of future machines like this? we'd like to have a lot of options on the foamereo").
-    //  One scalar sc key on the world — `foamereo:"wave,seal,copperless"` — a comma deck of decor
-    //   stops a COMPOSER pulls when commissioning a glass.  A plain scalar string, so it snaps
-    //    clean and a Book (or a machine recipe) sets it like any other line; `key:value` tokens
-    //     carry a setting.  UNSET ⇒ every default ⇒ byte-identical renders, which is the fixture
-    //      contract.  The deck so far:
+    //  RESTRUCTURED 2026-09-11 (the owner: "Vyto_fo() looks like hacky crap") — a composer's
+    //   `foamereo:"wave,seal,copperless"` wire-in string is now parsed ONCE at commission
+    //    (Vyto.g's `Vyto_vytocon_seed`) into a `%Vytocon` particle under the world; every stop is a
+    //     flat sc key on it, and reading one here is a single property lookup, not a string re-split
+    //      on every call.  UNSET ⇒ no particle ⇒ every default ⇒ byte-identical renders, unchanged.
+    //  The deck so far:
     //        wave        label rides the scalloped waveband instead of the wall carve
     //        seal        the A is the round HTML thumb-seal instead of the wall gate
     //        copperless  no ground grain          nohall   no corridor of guts
     //        simmer      layout keeps negotiating from first mount (live pages only)
     function fo(w: TheC, key: string): string | null {
-        const s = String((w.sc as any)?.foamereo ?? '')
-        if (!s) return null
-        for (const t of s.split(',')) {
-            const tt = t.trim()
-            if (tt === key) return '1'
-            if (tt.startsWith(key + ':')) return tt.slice(key.length + 1)
-        }
-        return null
+        const vc: any = (w.o({ Vytocon: 1 }) as TheC[])[0]
+        if (!vc) return null
+        const v = vc.sc[key]
+        return v == null ? null : String(v)
     }
 
     // ── THE WALL CARVE (the owner: "the A I'm thinking of is built in to the vector graphic in
