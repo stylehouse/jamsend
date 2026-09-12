@@ -3513,6 +3513,9 @@ await M.eatfunc({
                         // let a body take itself out of circulation entirely (2026-09-06): a headless
                         //  machine that can never listen has no taste to curate a pool with.
                         Ra_pool_excuse: 'w',
+                        // FORGET EVERYTHING THE HEIST MACHINE THINKS IT HAS DONE (2026-09-12): ledgers, keeps, pool
+                        //  copies — never the music.  A human-pressable reset for a polluted Haul.
+                        Heist_start_over: 'w',
                     }
                     const verb = String((ask as any).verb ?? '')
                     const kind = POKES[verb]

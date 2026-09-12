@@ -64,6 +64,107 @@
 - Only 10 in the pool at 100 MB: the heists from S stalled ("NO PROGRESS … 0/1 landed after 7 asks") while S
    transcoded; the pile grows at S's rate, serially, and the 60 s stuck-keep escape keeps the queue moving.
 
+**2026-09-12 evening — three more churns under "only 1 SP", and the robustness read the owner asked for.**
+- **Twin chunk sets on the holder.** `Heist_body_new` is a bare mint; the daemon re-materialises after a release
+   sweep and minted a SECOND set of %Original chunks beside the first (16 under an 8-chunk lofi). `Repli_chunk_at`
+    served whichever `seq` it met first → pages from two presses → the whole-file digest could never match → breach
+     #124 → "re-rummage re-mints it" → re-land every 5 s. Fixed: a materialise REPLACES the body. ⚠ Daemon-side —
+      needs a jamserve restart to take.
+- **Ragged last page.** A lofi's last chunk (253301 B, not ÷4) hit the Float32 refusal because the page arrived
+   without `bufk`; the receiver now lands a seq'd/cid'd chunk as bytes by its shape (`Repli_attach_page`).
+- **Landed under the copy's id, no `of`.** The holder serves its rummage row (`re:<seed>`), so the pool card
+   now takes `of` from `rec.of || rec.re || keep seed` (`Heist_catalog_land`).
+- **`Heist_start_over`** (poke) — ledgers (Newlyadded ×2, Heists berth), keeps, pool copies; re-consents.
+   Run on eed 21:32: 3 keeps, 2 ledgers, 4 cards. The Haul's "282 tracks kept" was the Newlyadded ledger, honest
+    about a day of re-landings.
+
+**Does Heisting/SoundPooling "always get up again"? Read 2026-09-12 — NO, and the shape of why:**
+1. Every retry ladder exists (breach ×3, head asks ×12, stuck-keep 60 s/5 min, reach re-dispatch, steward
+    re-book) but **none remembers a verdict across the next pass** — a permanent failure (bad hash, no head,
+     id mismatch) is retried at full speed forever: 5 s re-landings, 5 MB churn per pass, 124 breaches. What is
+      missing is a per-(track, holder) FAILURE MEMORY with backoff (say 1 min → 5 → 30, durable enough to survive
+       a reload), consulted by the booker, the heal and the landing alike. The Nohead tombstone is the first one.
+2. **Nothing is idempotent by construction.** Body chunks, pool cards, keeps and ledger rows are all minted beside
+    what stands (twin chunks, twin records — the 2026-09-06 husk — twin keeps). Every mint that can re-run must be
+     find-or-replace. That is the single biggest source of "it ran, then it lied".
+3. **Give-ups that don't terminate.** "Breach gave up after 3 — a re-rummage re-mints it" re-arms itself; the head
+    give-up used to count passes. A give-up must end in a REMEMBERED state, or it is a loop with a log line.
+4. **Ledgers are written on landing, not on verification staying true** — a landed row outlives its eviction,
+    hence 282. Ledger rows need the same eviction sweep the pool has, or the Haul should read the shelf, not the log.
+5. The daemon's ghosts are the tree's but only at its start; a fix on the holder side needs a restart, and there
+    is no /restart (only /stop). Worth one endpoint.
+Not built tonight — the ruling needed is (1): where the failure memory lives (the %Reach row has `why`; the pool
+ home could carry `%Refused,id,holder,at,why`) and how long it holds.
+
+**Love is per Pier (the owner 2026-09-12):** "model what the user likes amongst a certain Pier's collection — the Love
+ data should be per Pier". The Heard Mag already keys `%Card,id,pub` (the pub = whose track); the ruling is that the
+  DRAW should read it that way (a taste compartment per holder, not one global love list). Carry into §9.9.
+
+**2026-09-12 late — THE ACTUAL "0 playable" CAUSE, found by watching not guessing (the owner called out the
+ churn: "is this effective debugging?" — this is the answer that survived).**
+
+A lofi pool card (`card.sc.grade='ogg128'`) could NEVER get a preview, through EITHER of its two roads:
+ `Ra_rec_previews_carry` (called at landing) declines whenever `rec.sc.lofi` is set — true for every fresh lofi
+  press — and `Ra_pool_previews_heal`'s own loop skipped a `grade`/`lofi` card OUTRIGHT, before it ever reached
+   the ENCODE rung (`Ra_stock_one` — re-read the file, decode, WebCodecs-encode a fresh local Opus preview).
+ The "carry" guard is right (never steal a foreign lofi's waveform); the "skip encoding too" was the bug — an
+  encode reads the card's OWN bytes and owes nobody anything. Fixed: the loop now skips carrying for a lofi/
+   graded card but always falls through to encoding.  Verified live on eed: 3/3 cards went 0→playable in one
+    pass, `preview=16` segments ready, `pv_off` ABSENT (see next), `total` full-length (streams the rest during
+     play, same as any other record — nothing new built for that).
+
+**And forced `pv_off:0` for every pool encode** (`Ra_stock_one`, both the cache-check and the fresh-encode
+ branch) — a pool card is yours, on disk; it should never get the live 30-70% "tune in mid-song" offer cut a
+  library/friend track gets.  Before this, the ENCODE rung (when it ran at all, pre-tonight, for the rare
+   non-lofi fallback case) still gave pool cards a random offer cut — same "starts a third in" symptom as the
+    carried case, from a second, independent cause.  Confirmed absent on all 3 live cards.
+
+**The Opus-vs-Vorbis question, answered plainly (the owner asked directly):** it was never the blocker. Vorbis
+ on the daemon's lofi press (`ra_native.ts`, deliberate, 2026-08-08, for old-phone compatibility) is INVISIBLE
+  to the fix above — `Ra_stock_one`'s encode rung re-decodes the file with the browser's native codec support
+   (which reads Vorbis fine) and re-encodes its OWN Opus preview locally, regardless of what the source file's
+    codec is. So: no reason to touch the daemon's codec choice for playability. `level_to_ogg` already supports
+     `'opus'` as an option (it's the default parameter) if the export-as-file idea below ever wants it.
+
+**Raised, not built — "perhaps it could leave SoundPooling, as random individual files"** (the owner): today a
+ pool copy never leaves the OPFS sandbox. A "save this pooled track to your Downloads" verb is a real, separate
+  feature — worth its own line whenever it's wanted; Vorbis (today's daemon choice) would matter again there,
+   for the same old-phone reason.
+
+**2026-09-12, past midnight — THE REAL WALL, found live after 25 minutes of zero growth (not slow — stuck).**
+
+Three pool keeps sat 'primed' forever, cycling: mint → 5min give-up (broken — `fill_born` reset every re-mint,
+ so it never actually reached 5min the FIRST time either, see below) → cancel → re-mint the SAME seed →
+  repeat, for 25+ minutes, while 20-28 OTHER 'arrived' reaches sat "queued behind 3 pool heists" untouched.
+
+**Layer 1 — the keep truly never starts.** Every sibling in each stuck track's album arrived as a `%Pick`
+ EXCEPT the keep's own seed track — the folder census discovers everything else and never this one file,
+  under any name (the `re:` alias road, `Heist_keep_pool_go`'s existing 2026-09-06/07 fix for exactly this
+   shape, ALSO finds nothing). `Heist_keep_solo` returns -1 forever; `Heist_keep_pool_go` returns 0 forever;
+    state never leaves 'primed'. **The census/materialise-ask gap itself (why does one specific file never
+     get discovered) is real, separate, and NOT fixed tonight** — it needs its own focused session.
+ What IS fixed: a wall-clock timer inside `Heist_keep_pool_go` (`.c.solo_wait_since`) escalates to the fast
+  no-route give-up after 45s of real waiting, instead of the slow 5-minute PRESS_PATIENCE class (meant for
+   "actively transcoding", wrong class for "cannot even locate the file").
+
+**Layer 2 — the REAL wall, one level up: `⨳🫱⚠ reach cap reached (32)`.** `Swarm_reach_book` refuses every
+ NEW booking once 32 reaches stand in any state but dead/refused — and 'arrived' never left that set. Every
+  give-up above cancelled the LOCAL KEEP but never told its REACH the track was unrecoverable, so the reach
+   stayed 'arrived' FOREVER and permanently occupied a cap slot. Once ~28-32 reaches piled up this way (every
+    circulation want the steward had ever drawn), the pool couldn't book ANY track, new or old, ever again —
+     the console showed it plainly, flooding with cap-refused lines for tracks that had nothing to do with
+      the 3 stuck keeps. **This is why growth looked "slow" earlier and then went to exactly zero: the cap
+       fills gradually as the census gap claims more tracks, then the wall is total.**
+ Fixed: when a keep's give-up was the PERMANENT kind (`no_route_ts` — Layer 1's signal, not a retriable
+  mid-pull stall), `Ra_pool_fill_land` now also `Swarm_reach_refuse`s the reach that spawned it, freeing
+   its cap slot. **Verified live:** three genuinely NEW tracks landed in the 90 seconds right after this
+    HMR'd in (none of the four seeds that had been recycling for 25+ minutes), card count climbing again.
+ A mid-pull stall (no `no_route_ts`) stays retriable — only the permanently-unlocatable class gets refused.
+
+**The lesson, for the next person:** a give-up that frees a LOCAL resource but leaves a SHARED counter
+ (the reach cap) untouched is not a give-up — it is a slow leak that reads as "fine" until the counter
+  is full, at which point everything looks broken at once with no obvious connection to the actual cause.
+
 **Next moves, in order:**
 1. ✅ Heard. Next: the crew (Cave) road walked live — every measurement so far is eed→daemon.
 2. The five §9.9 rulings in `Radio_circuit_todo` (unpool on unlove; a loved compartment; unlove →

@@ -1342,7 +1342,19 @@ Repli_attach_page(w, pier, id, bytes):
         return
     }
     let landed = 0
-    if (mirror.c.await_bufk) {
+    // A CHUNK PARTICLE IS BYTES, WHATEVER THE LINE SAID (2026-09-12, eed pulling lofi copies off the daemon: the last
+    //  page of every track — 253301 bytes, "not a multiple of 4" — was refused as a ragged Float32 page, so the
+    //   landing's digest never matched, the keep breached (#29 and counting) and re-landed every five seconds).
+    //    The mirror already wore `Original,seq,cid,buf` — a content-addressed chunk — and only `await_bufk` was
+    //     missing on the line.  The particle's own shape is the better witness: a seq'd, cid'd chunk under a Record
+    //      lands as opaque bytes on `buf` and is checked against its cid; the Float32 road is for %Fill pages only.
+    let bufk = mirror.c.await_bufk
+    if (!bufk && mirror.sc && mirror.sc.seq != null && mirror.sc.Fill == null && (mirror.sc.cid != null || mirror.sc.buf !== undefined)) {
+        bufk = 'buf'
+        if (!w.c.repli_bufk_inferred) { w.c.repli_bufk_inferred = 1; console.log('◈ page for a chunk particle arrived without bufk — landing on buf by its shape (seq/cid); the serving side should say bufk') }
+    }
+    if (bufk) {
+        mirror.c.await_bufk = bufk
         let u8 = new Uint8Array(bytes.length)
         u8.set(bytes)
         // RUNG-0 GATE (the arrival twin of Heist's landing check, Heist.g:130): the bytes MUST hash to
@@ -1380,6 +1392,7 @@ Repli_attach_page(w, pier, id, bytes):
             //    chase.  Loud, because a silent refusal here reads exactly like a slow wire.
             mirror.c.breach = 'ragged'
             this.Repli_land_warn(w, 'ragged-page', `ragged page seq=${mirror.sc.seq} bytes=${bytes.length} (not a multiple of 4) — bytes REFUSED, chunk unfilled → want stands for re-ask`)
+            console.log('◈✗ ragged-page mirror: ' + Object.keys(mirror.sc || {}).join(',') + ' bufk=' + String(mirror.c.await_bufk) + ' up=' + String(mirror.c && mirror.c.up && mirror.c.up.sc ? (mirror.c.up.sc.id || '?') : '?').slice(0, 8))
         } else {
             mirror.c.pages = mirror.c.pages || []
             mirror.c.pages.push(pcm)

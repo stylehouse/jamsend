@@ -339,6 +339,34 @@ Heist_xfer_breach(rec, reason, job):
         job.sc.breachfails = +(job.sc.breachfails || 0) + 1
         let row = job.i({ breachfail: 1, tune: String(rec.sc.artist || '') + ' — ' + String(rec.sc.title || ''), why: String(reason).slice(0, 120) })
         row.c.up = job
+        // A GIVE-UP MUST END IN A REMEMBERED STATE (2026-09-12, SoundPooling_todo §0 "always gets up again? no").
+        //  For a POOL keep the "re-rummage re-mints it" road re-armed itself forever (breach #124, a landing every
+        //   five seconds): the reach that booked it stood 'arrived', so Ra_pool_fill_land minted a fresh keep each
+        //    pass.  Refuse that reach — terminal, so Ra_pool_fill_wants skips it — with the reason on its row; the
+        //     next sit-down's goal may still name the track, but nobody re-books a refused holder for it.
+        try {
+            let keep = job.c && job.c.keep ? job.c.keep : null
+            let seedv = String(job.sc.seed || (keep && keep.sc ? keep.sc.seed : '') || '')
+            let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+            let peering = (ident && this.Swarm_peering) ? this.Swarm_peering(ident) : null
+            let alias = String(rec.sc.re || rec.sc.of || '')
+            let seeds = [seedv, alias, String(rec.sc.id || '')].filter((x) => x)
+            console.log('🏊✗ pool-fill breach memo: job=' + (job ? 'yes' : 'no') + ' seed=' + seedv.slice(0, 8) + ' alias=' + alias.slice(0, 8) + ' reaches=' + (peering ? peering.o({ Reach: 1, for: 'serve' }).map((r) => String(r.sc.of || '').slice(0, 8) + ':' + String(r.sc.state || '')).join(' ') : 'nopeering').slice(0, 200))
+            if (peering && seeds.length) {
+                for (const reach of peering.o({ Reach: 1, for: 'serve' }).filter((r) => seeds.includes(String(r.sc.of || '')))) {
+                    if (String(reach.sc.state || '') === 'refused') { continue }
+                    this.Swarm_reach_refuse(null, ident, reach, 'body mismatch — the holder serves bytes that do not hash to its promise (breach ×' + rec.c.breach_n + ')')
+                    console.log('🏊✗ pool-fill: refusing ' + String(rec.sc.title || seedv).slice(0, 32) + ' from ' + String(reach.sc.to || '').slice(0, 8) + ' — not re-booked this session')
+                }
+            }
+            // …AND THE KEEP GOES WITH IT.  The re-rummage road below re-mints the mirror and lands again off the
+            //  SAME keep (a landing every five seconds, refused reach or not); a pool keep whose holder cannot
+            //   serve a matching body is abandoned the proper way (Heist_keep_cancel drops its %Caper too).
+            if (keep && String(keep.sc.into || '') === 'pool') {
+                let rw = (MH && MH.c && MH.c.radio_w) || null
+                if (rw) { this.Heist_keep_cancel(rw, keep).catch((er) => 0) }
+            }
+        } catch (er) {}
     }
     return 1
 
@@ -1038,7 +1066,22 @@ async Heist_catalog_land(nav, mardir, job, own_lib, mir, rec, rel, size, held):
         //    the original, so its id coincides and Ra_rec_pool elides both of: and grade.
         let lofiId = (rec.sc.lofi && rec.sc.body_hash) ? String(rec.sc.body_hash).slice(0, 16) : rid
         let grade = rec.sc.lofi ? 'ogg128' : null
-        card = this.Ra_rec_pool(own_lib, rid, lofiId, rel, grade)
+        // THE ORIGINAL IS THE KEEP'S SEED (2026-09-12, eed: "Ka Wa Mo" landed four times in three minutes).  A
+        //  holder that presses lofi serves ITS pool card — a different id from the original the reach named —
+        //   and the lofi flag rides the keep, not the served record, so `rid` here was already the copy's id and
+        //    the card wore no `of`.  The steward's goal names originals; a card that cannot say which original it
+        //     stands for reads "not in the goal stash", is evicted, and its reach pulls it straight back.  The
+        //      served row's own `of` first (a mirrored pool card carries it), else the single-track keep's seed.
+        //  (`re:` is the rummage row's alias to the seed — the daemon serves that row for a pool pull.)
+        let origId = String(rec.sc.of || rec.sc.re || (job && job.sc && job.sc.seed) || rid)
+        // …ON THE POOL SHELF (2026-09-12, the last link of the "only 1 SP" chain): every caller hands `own_lib` =
+        //  Ra_home_self — the LIBRARY — so a pool card was minted into Mine with a pool/ path, the fill's landing
+        //   never found it on the pool shelf, re-booked it, and the resurrect adopted the file as a second card
+        //    with no `of` that the steward then evicted.  The pool holding belongs on the pool stock, full stop.
+        let ptop = this.top_House ? this.top_House() : null
+        let prw = ptop && ptop.c && ptop.c.radio_w ? ptop.c.radio_w : null
+        let pshelf = (prw && this.Ra_home_pool) ? this.Ra_home_pool(prw, this.Radio_pub(prw) || 'me') : own_lib
+        card = this.Ra_rec_pool(pshelf, origId, lofiId, rel, grade)
     } else {
         card = this.Ra_rec_home(own_lib, rec.sc.id)
         card.sc.path = rel
@@ -1580,6 +1623,13 @@ async Heist_materialise_one(w, nav, me, ref, lofi, hintPath):
     //    so cids + body_hash keep matching source→sink.  Per-chunk cid stays in the loop; the whole-file
     //     body_hash replaces the noble streaming hasher — the slices tile `bytes` exactly (contiguous,
     //      non-overlapping, covering [0,len)), so sha256(concat(slices)) === sha256(bytes), ONE native call.
+    // ONE BODY PER RECORD (2026-09-12, the daemon's Ka Wa Mo row held SIXTEEN chunk particles for an 8-chunk
+    //  lofi — two presses' worth under one record, because Heist_body_new is a bare mint and a re-materialise
+    //   after a release sweep minted a second set beside the first).  Repli_chunk_at serves whichever `seq`
+    //    it meets first, so the pages came from two different presses and the whole-file digest could never
+    //     match: eed breached 124 times on one track, re-landing it every five seconds.  A materialise REPLACES
+    //      the body: drop every %Original/%Lossy chunk standing, then mint this press's set.
+    for (const old of rec.o({ Original: 1 }).concat(rec.o({ Lossy: 1 }))) { rec.drop(old) }
     let s = 0
     while (s < total) {
         let slice = bytes.slice(s * CH, Math.min(bytes.length, (s + 1) * CH))
@@ -3355,7 +3405,21 @@ Heist_keep_pool_go(keep, srcmir, seed):
         if (aref && keep.o({ Pick: 1, ref: aref })[0]) { sid = aref }
     }
     let cut = this.Heist_keep_solo(keep, sid)
-    if (cut < 0) { return 0 }   // the seed's own husk has not landed yet — wait
+    if (cut < 0) {
+        // A WAIT THAT NEVER ENDS IS A WAIT THAT NEVER HAPPENED (2026-09-12, eed: three pool keeps sat 'primed'
+        //  through repeated 5-minute give-up/re-mint cycles, each restarting fresh and never once resolving —
+        //   every sibling in the album arrived as a Pick except the keep's OWN seed track, and the mirror carried
+        //    no re:<seed> alias either, so BOTH resolution roads above stay exhausted forever.  That is a real,
+        //     separate census/rummage gap (why does this one track never get discovered under any name?) — not
+        //      fixed here.  What IS fixed: the pool-fill watchdog's slow 5-minute PRESS_PATIENCE class is for a
+        //       source actively transcoding; a keep that cannot even locate its own file after real wall-clock
+        //        waiting is the FAST no-route class instead, so it frees its slot in ~60s and lets a track that
+        //         CAN be found take the turn, rather than a few permanently-stuck tracks starving the whole pool.
+        if (!keep.c.solo_wait_since) { keep.c.solo_wait_since = Date.now() }
+        else if (!keep.c.no_route_ts && Date.now() - keep.c.solo_wait_since > 45000) { keep.c.no_route_ts = Date.now() }
+        return 0
+    }   // the seed's own husk has not landed yet — wait
+    delete keep.c.solo_wait_since
     // THE PICK KEEPS THE ID IT WAS MINTED UNDER (2026-09-07, reverting the 2026-09-06 "ask by the seed"
     //  retarget).  A pick whose ref is the SEED binds `{id: seed}` in the mirror — the holder's OPUS stock
     //   we heard: full, `total` set, and the wrong bytes (the hazard the pull loop spells out at "A BLAGGED
@@ -4597,6 +4661,52 @@ async Heist_haul_wipe(w, dir):
 
 // Heist_haul_rows — the bag, newest first, for a face.  Pure read: it mints NOTHING, because a reader
 //  built on `oai` mints by being asked and a face asks every poll.
+// Heist_start_over — FORGET EVERYTHING THE HEIST MACHINE THINKS IT HAS DONE (the owner 2026-09-12, the Haul
+//  reading "282 tracks kept" after a day of breach re-landings: "delete everything it thinks it has done to
+//   start over").  Wipes the LEDGERS and the SCAFFOLDING, never the music: the Newlyadded berths (library
+//    and pool), every %Heist keep in the shop (Heist_keep_cancel, the proper abandon), the durable Heists
+//     berth those keeps re-hydrate from, and the pool's copies (Ra_pool_off — cards and files), then re-says
+//      the same pool yes so the fill starts again clean.  Reachable as `runner_ask poke Heist_start_over`.
+async Heist_start_over(w):
+    let M = this.top_House ? this.top_House() : null
+    let rw = (M && M.c.radio_w) || w
+    let nav = (rw && rw.c.ra_nav) || (this.Crate_nav ? this.Crate_nav() : null)
+    let out = { keeps: 0, ledgers: 0, pool: null }
+    if (!nav) { console.log('🧹⚠ start over: no nav — nothing was touched'); return out }
+    let me = this.Radio_pub(rw) || 'me'
+    let shop = this.Ra_home_shop(rw, me)
+    for (const keep of shop.o({ Heist: 1 }).slice()) {
+        try { await this.Heist_keep_cancel(rw, keep) } catch (er) {}
+        try { shop.drop(keep) } catch (er) {}
+        out.keeps = out.keeps + 1
+    }
+    let mardir = this.Heist_mardir(w) || this.Heist_mardir(rw) || ''
+    for (const root of [mardir, 'pool']) {
+        try { await this.Berth_reset(nav, root, '', 'Newlyadded'); out.ledgers = out.ledgers + 1 } catch (er) { console.log('🧹⚠ start over: ledger ' + root + ' — ' + String(er).slice(0, 80)) }
+    }
+    let ident = this.Swarm_live_self ? this.Swarm_live_self() : null
+    if (ident && ident.sc && ident.sc.prepub) {
+        try { await this.Berth_reset(nav, '', String(ident.sc.prepub), 'Heists') } catch (er) {}
+    }
+    if (M && M.c) { delete M.c.newly_seq }
+    // pool copies that landed in the LIBRARY (the own_lib mis-shelving, fixed 2026-09-12) — a library holding never
+    //  wears `of` or `grade`; anything in Mine that does is a stray pool card and goes with the rest.
+    let own = this.Ra_home_self(rw, me)
+    out.strays = 0
+    for (const r of this.Ra_recs(own).slice()) {
+        if (r.sc.of || r.sc.grade) { try { await this.Ra_rec_drop(own, String(r.sc.id)) } catch (er) {} out.strays = out.strays + 1 }
+    }
+    if (this.Ra_pool_consent && this.Ra_pool_consent(rw)) {
+        let mb = this.Ra_pool_budget(rw)
+        let who = this.Ra_pool_who(rw)
+        try { out.pool = await this.Ra_pool_off(rw) } catch (er) { console.log('🧹⚠ start over: pool off — ' + String(er).slice(0, 80)) }
+        if (mb > 0) { this.Ra_pool_start(rw, mb, Math.floor(Date.now() / 1000), who) }
+    }
+    if (typeof this.Heist_haul_refresh === 'function') { try { this.Heist_haul_refresh(rw) } catch (er) {} }
+    rw.bump()
+    console.log('🧹 start over — ' + out.keeps + ' keep(s) cancelled, ' + out.ledgers + ' ledger(s) wiped, ' + out.strays + ' stray pool card(s) out of the library' + (out.pool ? ', pool emptied (' + out.pool.records + ' card(s), ' + out.pool.files + ' file(s)) and re-consented' : ''))
+    return out
+
 Heist_haul_rows(w):
     let bag = w ? w.o({ Hauls: 1 })[0] : null
     if (!bag) return []

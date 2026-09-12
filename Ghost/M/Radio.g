@@ -1541,7 +1541,8 @@ async Radio_pool_steward(w, radio):
     let top = this.top_House ? this.top_House() : null
     if (!top || !top.c || !top.c.humdinger) { return null }
     if (!this.Ra_pool_consent(w)) { return null }     // nothing touches bytes before the device said yes
-    if (top.c.pool_steward_busy) { return null }
+    // the same expiring latch as Ra_pool_fill_pump (2026-09-12): a sit-down that never came back is dead, not busy
+    if (top.c.pool_steward_busy && Date.now() - (+top.c.pool_steward_busy) < 120000) { return null }
     let pub = this.Radio_pub(w) || 'me'
     let lhome = w.o({ Mine: 1, pub: pub })[0]
     let lib = lhome ? lhome.o({ stock: 1, pub: pub })[0] : null
@@ -1566,7 +1567,7 @@ async Radio_pool_steward(w, radio):
     if (!nav) { return null }
     let pool = this.Ra_home_pool(w, pub)
     let cap = +(top.c.pool_steward_cap || 24)
-    top.c.pool_steward_busy = 1
+    top.c.pool_steward_busy = Date.now()
     let got = null
     try {
         // CIRCULATION (SoundPooling_todo, 2026-09-03): a 'random' pool draws from every mirrored catalog;

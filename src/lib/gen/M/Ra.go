@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '2f4b05e13445da71~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '650caa9c5be3db81~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -3044,7 +3044,10 @@ async Ra_stock_one(w, lib, nav, src_base, path) {
         //   mid-track offset and REBUILD themselves once — the same one-rebuild heal the preview_secs
         //    check above does for a moved boundary.  segs comes back off the card (total + pv_off).
         let ssegs = +(stand.info.total || 0) + +(stand.info.pv_off || 0)
-        let want_off = this.top_House().c.humdinger ? this.Ra_preview_offset(enid, ssegs, +(stand.info.segs || 0)) : 0
+        // A POOL CARD NEVER WANTS THE OFFER CUT (2026-09-12, the owner: "every pooled track plays from 0:00
+        //  like a remote one").  Everywhere else Ra_preview_offset gives a live listener the 30-70% "tune in
+        //   mid-song" feel; a pool copy is yours, on disk, and should open the same way a library track does.
+        let want_off = (this.top_House().c.humdinger && src_base !== 'pool') ? this.Ra_preview_offset(enid, ssegs, +(stand.info.segs || 0)) : 0
         if (+(stand.info.pv_off || 0) === want_off) {
             this.Ra_record_from(lib, stand.info, stand.bufs)
             return { stood: 1, id: enid }
@@ -3114,7 +3117,7 @@ async Ra_stock_one(w, lib, nav, src_base, path) {
     let P = Math.min(segs, Math.ceil(this.Ra_preview_secs() / this.Ra_seg_secs()))
     // THE CUT POINT (Ra_preview_offset): live, the offer starts 30–70% into the track; driven, at 0 —
     //  so every Book stocks the byte-identical card it always did and no fixture re-records.
-    let OFF = this.top_House().c.humdinger ? this.Ra_preview_offset(enid, segs, P) : 0
+    let OFF = (this.top_House().c.humdinger && src_base !== 'pool') ? this.Ra_preview_offset(enid, segs, P) : 0
     let start = OFF * SEG
     let end = Math.min(total, start + P * SEG)
     // — measure loudness on the PREVIEW WINDOW ONLY, then BAKE that gain (the human 2026-07-28: "we cannot
@@ -5656,6 +5659,10 @@ async Ra_pool_fill_land(w, ident) {
                     let progressed = +(h.c.pull_progress_ts || started)
                     return (now - progressed) > pressWait
                 })
+                if (!w.c.pool_stuck_dbg_at || Date.now() - w.c.pool_stuck_dbg_at > 15000) {
+                    w.c.pool_stuck_dbg_at = Date.now()
+                    console.log('🏊? stuck-check now=' + now + ' pressWait=' + pressWait + ' inflight=' + inflight.map((h) => String(h.sc.Heist || h.sc.seed).slice(0, 16) + ':' + h.sc.state + ':born=' + (h.c.fill_born || 0) + ':started=' + (h.c.pull_started_ts || 0) + ':prog=' + (h.c.pull_progress_ts || 0) + ':noroute=' + (h.c.no_route_ts || 0)).join(' | ') + ' STUCK=' + (stuck ? String(stuck.sc.Heist || stuck.sc.seed).slice(0, 16) : 'none'))
+                }
                 if (stuck) {
                     let name = String(stuck.sc.Heist || stuck.sc.seed || '?')
                     let stuckFor = Math.round((now - Math.max(+(stuck.c.pull_progress_ts || 0), +(stuck.c.pull_started_ts || 0), +(stuck.c.no_route_ts || 0))) / 1000)
@@ -5665,10 +5672,29 @@ async Ra_pool_fill_land(w, ident) {
                     //   pulling into an orphaned particle, the exact "close the Haul faster" bug Heist_keep_cancel's
                     //    own header was written to fix.  It no-ops the Heard_untake branch here (a fill keep carries
                     //     no `take`), so it is safe for a circulation keep, not just a human's ♥.
+                    // THE REACH CAP EXPLAINED THE WALL (2026-09-12, eed: "reach cap reached (32)" flooding the
+                    //  console — every NEW track was refused a booking outright, forever, because 32 standing
+                    //   reaches never leaves 'arrived' — Swarm_reach_book counts anything not dead/refused, and
+                    //    cancelling the LOCAL keep here never told the reach it was over.  A keep whose OWN husk
+                    //     never arrived (no_route_ts — Heist_keep_pool_go's 45s wall-clock wait, tonight's other
+                    //      fix) is not a transient failure to retry: the census genuinely cannot locate this
+                    //       track under any name, and retrying changes nothing about that gap.  Refuse the reach
+                    //        too, so it leaves 'arrived' and frees its cap slot for a track that CAN be found.
+                    //  A mid-pull stall (PRESS_PATIENCE, no no_route_ts) stays retriable — that failure class can
+                    //   be transient (a network hiccup), so only cancel+re-mint, same as before.
+                    let permanent = !!stuck.c.no_route_ts
+                    let stuckSeed = String(stuck.sc.seed || '')
                     if (typeof this.Heist_keep_cancel === 'function') {
                         try { await this.Heist_keep_cancel(homes.mw, stuck) } catch (er) {}
                     } else {
                         try { (stuck.c.up || shop).rm({ Heist: 1, seed: stuck.sc.seed }) } catch (er) {}
+                    }
+                    if (permanent && stuckSeed) {
+                        let deadReach = peering.o({ Reach: 1, of: stuckSeed, for: 'serve' }).filter((r) => String(r.sc.state || '') !== 'refused')[0]
+                        if (deadReach) {
+                            this.Swarm_reach_refuse(w, ident, deadReach, 'never found on the source — census gave up locating it')
+                            console.log('🏊✗ pool-fill: refusing ' + stuckSeed.slice(0, 8) + ' — its own file never turned up on the source, freeing the reach slot')
+                        }
                     }
                 } else {
                     let why = 'queued behind ' + inflight.length + ' pool heist' + (inflight.length === 1 ? '' : 's')
@@ -5770,9 +5796,16 @@ async Ra_pool_previews_heal(w, ident) {
     for (const card of this.Ra_recs(homes.pool)) {
         if (healed >= 4) { break }
         if (+(card.sc.preview || 0) > 0) { continue }
-        if (card.sc.grade || card.sc.lofi) { continue }
-        let src = this.Ra_pool_source_rec(homes.mw, String(card.sc.id || ''))
-        if (src) { healed = healed + this.Ra_rec_previews_carry(card, src); continue }
+        // A LOFI/GRADED CARD MAY NEVER *CARRY* A PREVIEW (2026-09-12, "SoundPool is a meagre 3" — found by
+        //  watching, not guessing): carrying steals another record's waveform, wrong for a lofi rendition
+        //   whose bytes genuinely differ (the comment on Ra_rec_previews_carry's own guard).  But that guard
+        //    used to skip the card ENTIRELY, before the ENCODE rung below ever got a look — and encoding is
+        //     exactly right for a lofi card: it re-reads THIS card's own bytes off disk and makes its own
+        //      preview, no theft involved.  So: skip carrying, never skip encoding.
+        if (!(card.sc.grade || card.sc.lofi)) {
+            let src = this.Ra_pool_source_rec(homes.mw, String(card.sc.id || ''))
+            if (src) { healed = healed + this.Ra_rec_previews_carry(card, src); continue }
+        }
         // NOTHING TO BORROW → ENCODE ONE OURSELVES (2026-09-06, eed's log: "12 cards · 8 playable · 4 no
         //  preview" — and the four were exactly the daemon's real tracks).  The carry lends a preview from a
         //   standing record with the same id, and a track this body has NEVER HEARD has none anywhere: the
@@ -5917,8 +5950,12 @@ Ra_pool_nohead(w, id) {
 //   guard on .c (the async passes may outlive a 5s cadence under a real press).
 async Ra_pool_fill_pump(w, ident) {
     if (!w || !ident) { return 0 }
-    if (w.c.pool_fill_busy) { return 0 }
-    w.c.pool_fill_busy = 1
+    // A BUSY LATCH MUST EXPIRE (2026-09-12, eed after Heist_start_over: the pump sat "busy" for ten minutes — an
+    //  await inside outlived the files it was waiting on — and nothing booked, landed or healed again until a
+    //   reload).  A tick that has held the latch past two minutes is not busy, it is dead; the next tick takes over.
+    if (w.c.pool_fill_busy && Date.now() - (+w.c.pool_fill_busy) < 120000) { return 0 }
+    if (w.c.pool_fill_busy) { console.log('🏊⚠ pool-fill pump: the last tick never finished (' + Math.round((Date.now() - (+w.c.pool_fill_busy)) / 1000) + 's) — taking the latch back') }
+    w.c.pool_fill_busy = Date.now()
     let n = 0
     try {
         n = await this.Ra_pool_fill_serve(w, ident)
@@ -5928,6 +5965,17 @@ async Ra_pool_fill_pump(w, ident) {
         //   crossed after its bytes did).  Cheap when there is nothing dark: one shelf walk of scalars.
         await this.Ra_pool_resurrect(w, ident)
         await this.Ra_pool_previews_heal(w, ident)
+        // THE STEWARD SITS DOWN WHILE THE MUSIC PLAYS, TOO (2026-09-12, eed: wants wiped by a start-over, the radio
+        //  mid-track — and the pool stayed at 1 for ten minutes, because Radio_pump_tick only seats the steward on
+        //   its `!rec` branch, i.e. between tracks.  A pool that refills only at the seams is not "always up".
+        //    Once a minute from the fill pump is enough: the goal draw is cheap and the booking is budgeted.)
+        let top = this.top_House ? this.top_House() : null
+        let rw = top && top.c ? top.c.radio_w : null
+        let radio = rw ? rw.o({ Radio: 1 })[0] : null
+        if (rw && radio && typeof this.Radio_pool_steward === 'function' && Date.now() - (+(rw.c.pool_steward_at || 0)) > 60000) {
+            rw.c.pool_steward_at = Date.now()
+            await this.Radio_pool_steward(rw, radio)
+        }
     } catch (er) { console.log('🏊⚠ pool-fill pump: ' + er) }
     delete w.c.pool_fill_busy
     return n
