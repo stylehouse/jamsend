@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'aee912a9f63d8cce~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '9caf27c946cf1124~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -409,7 +409,11 @@ Radio_media_off() {
 
 //#region pump — the detached listen loop (never under beliefs; era-guarded)
 Radio_pump_soon(radio, era, ms) {
-    setTimeout(() => { this.Radio_pump(radio, era) }, ms)
+    // ONE TIMER (2026-09-12, eed: nineteen "gave up" lines in five milliseconds — every caller that ever
+    //  asked for a soon-tick started its own chain, and each null tick re-armed its own).  The latest ask
+    //   replaces the pending one; a tick in flight (below) swallows the extra.
+    if (radio.c.pump_timer) { clearTimeout(radio.c.pump_timer) }
+    radio.c.pump_timer = setTimeout(() => { radio.c.pump_timer = null; this.Radio_pump(radio, era) }, ms)
 
 },
 // Radio_pump — the self-perpetuating loop's entry point: run one look, catch anything it throws.  The
@@ -418,9 +422,15 @@ Radio_pump_soon(radio, era, ms) {
 //  that tail call never runs, so "the radio that never stops" would silently, permanently stop.  Reschedule
 //  on catch instead of dying; the next look gets a fresh look at whatever state caused the throw.
 async Radio_pump(radio, era) {
+    // a tick of THIS era is mid-await (the dial's heal, a decode) and re-arms itself; a new era (start/skip/
+    //  stop bump it) must never be swallowed by the old era's tick, so the guard is per era.
+    if (radio.c.pump_busy === era) { return }
+    radio.c.pump_busy = era
     try {
         await this.Radio_pump_tick(radio, era)
+        radio.c.pump_busy = 0
     } catch (er) {
+        radio.c.pump_busy = 0
         console.log(`📻⚠ Radio_pump threw — rescheduling instead of stopping silently:`, er)
         if (this.Story_error) this.Story_error('error', 'Radio_pump', er)
         if (radio.c.era === era) this.Radio_pump_soon(radio, era, 400)
@@ -783,6 +793,15 @@ Radio_peek_next(radio) {
         }
     }
     let rec = null
+    if (radio.sc.source === 'pool') {
+        // THE POOL SOURCE PEEKS THE POOL (2026-09-12, eed's log: every prime was for one Lineup card, 89e8759b,
+        //  that the pool dial never picks — so on the pool every Next decoded cold).  Peek where the dial will
+        //   dial, and leave the standing order there; the pool rung of Radio_dial consumes it first.
+        rec = this.Radio_dial_pool_local(w, radio)
+        if (!rec) return null
+        this.Radio_stream_order(radio, rec, 0)
+        return rec
+    }
     if (own) {
         // the own shelf, PROBED not minted (Ra_home_self is an oai — the Radio_head_ahead scar):
         //  Ra_dial_next is a pure read and the same picker the dial's own rung uses.
@@ -924,9 +943,10 @@ async Radio_prime(radio, era) {
     //     from policy and DROPS a prime whose hbase disagrees, so a finish can never be handed the
     //      mid-song PCM by accident.
     if (!radio.c.ready) {
-        let hbase = 0
+        // a POOLED record's skip shape IS the head shape (Radio_hbase) — prime it so the open keeps the prime
+        let hbase = (this.Radio_rec_pooled(radio, rec) && this.Ra_head_whole && this.Ra_head_whole(rec)) ? +(rec.sc.pv_off || 0) : 0
         let m = this.Radio_map(rec, hbase)
-        let start = this.Radio_start_seq(radio, rec)
+        let start = hbase ? 0 : this.Radio_start_seq(radio, rec)
         if (m.bytes[start] == null) return
         let nch = Math.min(2, +(rec.sc.nch || 1))
         let dec = this.Radio_dec_open(nch)
@@ -1658,6 +1678,34 @@ async Radio_dial(radio) {
         //     the moment a listener actually asks for their pool, it already mutates, and the sweep is
         //      bounded reads over a shelf that is already in hand.  The pump does it too, for the tab that
         //       is pooling in the background and never presses Next.
+        // EVERY NEXT SAYS HOW IT WENT (the owner 2026-09-05): one line per click — the rung, the pick or the
+        //  give-up, and the pocket's own sentence (Ra_pool_whys) beside it so "empty" is never bare again.
+        let pw = (typeof this.Ra_pool_whys === 'function') ? this.Ra_pool_whys(w) : null
+        let pwl = pw ? '  (' + pw.line + ')' : ''
+        let pname = (r) => (r.sc.artist ? String(r.sc.artist) + ' — ' : '') + String(r.sc.title || r.sc.id || '?')
+        // WHAT IS READY, FIRST — A CLICK MUST NOT WAIT ON DISK (2026-09-12, eed: "doesn't seem to respond to me
+        //  clicking next track very well").  This rung used to await the resurrect (a pool/ walk + hash of every
+        //   new file) and the preview heal (up to 4 carries + ONE WHOLE-FILE ENCODE) BEFORE looking at the shelf —
+        //    on every Next, while the pool was filling.  Eight dial ticks queued behind one encode; the eighth
+        //     opened.  The heal was built for the "empty" pocket (cards with no preview), so it belongs on the
+        //      empty road only: dial what stands; heal; dial again.  The pump keeps healing in the background.
+        // THE STANDING ORDER FIRST — the prime decoded THIS record's opening (Radio_peek_next on the pool
+        //  source); dialling anything else wastes it.  Drop, then validate, exactly as the ladder below does.
+        let pheard = this.Radio_heard(radio)
+        let pmag = w.o({ Mag: 'Streams' })[0]
+        if (pmag) {
+            for (const oc of pmag.o({ Card: 1 })) {
+                let orec = oc.c.rec
+                pmag.drop(oc)
+                pmag.bump()
+                if (!orec || oc.sc.own || pheard[String(orec.sc.id)]) continue
+                if (!this.Radio_rec_pooled(radio, orec) || !this.Radio_playable(orec)) continue
+                console.log('📻 next [pool] ✓ ' + pname(orec) + ' (primed)' + pwl)
+                return orec
+            }
+        }
+        let prec = this.Radio_dial_pool_local(w, radio)
+        if (prec) { console.log('📻 next [pool] ✓ ' + pname(prec) + pwl); return prec }
         if (typeof this.Ra_pool_previews_heal === 'function' && typeof this.Ra_pool_owner === 'function') {
             let powner = this.Ra_pool_owner(w)
             // …AND FROM DISK FIRST (2026-09-05, the owner's "empty" after every reload): a tab with no folder
@@ -1667,14 +1715,9 @@ async Radio_dial(radio) {
                 try { await this.Ra_pool_resurrect(w, powner) } catch (er) { console.log('🏊⚠ pool resurrect: ' + er) }
             }
             try { await this.Ra_pool_previews_heal(w, powner) } catch (er) {}
+            prec = this.Radio_dial_pool_local(w, radio)
+            if (prec) { console.log('📻 next [pool] ✓ ' + pname(prec) + ' (after the heal)' + pwl); return prec }
         }
-        // EVERY NEXT SAYS HOW IT WENT (the owner 2026-09-05): one line per click — the rung, the pick or the
-        //  give-up, and the pocket's own sentence (Ra_pool_whys) beside it so "empty" is never bare again.
-        let pw = (typeof this.Ra_pool_whys === 'function') ? this.Ra_pool_whys(w) : null
-        let pwl = pw ? '  (' + pw.line + ')' : ''
-        let pname = (r) => (r.sc.artist ? String(r.sc.artist) + ' — ' : '') + String(r.sc.title || r.sc.id || '?')
-        let prec = this.Radio_dial_pool_local(w, radio)
-        if (prec) { console.log('📻 next [pool] ✓ ' + pname(prec) + pwl); return prec }
         let pagain = this.Radio_dial_pool_local(w, radio, 1)
         if (pagain) {
             radio.sc.replays = (+(radio.sc.replays || 0)) + 1
@@ -2807,10 +2850,19 @@ Stoker_ensure(w) {
     //  needs the world where the stoker actually shelves — stock served out, mirrors minted in.
     // TRACED on first stand: the share (and so the whole friend re-crate) queues behind this
     //  stamp, and a reload where it lands late reads as a jammed tab — the ring must date it.
-    if (this.top_House().c.radio_w !== w && typeof this.Radio_trace === 'function') {
+    // A BOOK WORLD MUST NOT STEAL THE BEACON FROM THE LIVE ONE (2026-09-12, eed: "Pool is empty" while the
+    //  Pooling cell said 1 — the boot-time Sounditron check-run's Stoker stamped ITS world here, so the live
+    //   dial's `Ra_pool_owner(radio.c.w)` no longer matched `top.c.radio_w`, resolved to the bare world and
+    //    read an empty shelf while the heal wrote the identity's).  A world under a Story run (`w.c.Run`)
+    //     stamps only when nothing live stands; the live page always wins and keeps it.
+    let top0 = this.top_House()
+    let driven = !!(w.c && w.c.Run)
+    let stood = top0.c.radio_w
+    if (driven && stood && stood !== w && !(stood.c && stood.c.Run)) { return st }
+    if (stood !== w && typeof this.Radio_trace === 'function') {
         try { this.Radio_trace(null, { ev: 'radio-w-stood', w: String(w.sc.w || 'prod') }) } catch (er) {}
     }
-    this.top_House().c.radio_w = w
+    top0.c.radio_w = w
     // ARM THE SHARE HERE (2026-08-06) — at the moment its precondition becomes true, rather than
     //  leaving a UI component to poll for it.  The line above is the ONLY place radio_w is stamped,
     //   and until now Swarm_share_up's only caller was InvitePanel.svelte's $effect, which re-asks on
@@ -4381,10 +4433,24 @@ Radio_head_note(radio, o) {
 
 },
 Radio_hbase(radio, rec) {
-    if (radio.c.went !== 'finish') return 0
     if (!this.Ra_head_whole) return 0
+    // A POOLED TRACK IS YOURS, ON DISK — it opens at 0:00 like an own record whenever its head is whole,
+    //  tune-in or skip (the owner 2026-09-12, eed: "it still seems to play them from part way through").
+    //   The tune-in feel (mid-song on a skip) is a BROADCAST feel and stays for a friend's live offer.
+    if (radio.c.went !== 'finish' && !this.Radio_rec_pooled(radio, rec)) return 0
     if (!this.Ra_head_whole(rec)) return 0
     return +(rec.sc.pv_off || 0)
+
+},
+// Radio_rec_pooled — is this record a card on MY pool shelf?  Probe-first (never mints a home); by id, so a
+//  pool card and the mirror card it was pressed from answer alike.  Uncached on purpose: a mirror card's answer
+//   flips the moment its id lands in the pool, and this is asked once per open, not per chunk.
+Radio_rec_pooled(radio, rec) {
+    if (!rec || !rec.sc || !rec.sc.id) return false
+    let w = radio && radio.c ? radio.c.w : null
+    if (!w || !this.Ra_pool_stock) { return false }
+    let shelf = this.Ra_pool_stock(w, this.Radio_pub(w) || 'me')
+    return !!(shelf && this.Ra_rec_find && this.Ra_rec_find(shelf, { Record: 1, id: String(rec.sc.id) }))
 
 },
 Radio_dec_open(nch) {

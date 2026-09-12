@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '1619369d43c21ddf~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '2f4b05e13445da71~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1731,6 +1731,7 @@ async Ra_pool_off(w) {
             if (await this.Ra_rec_drop(pshelf, String(r.sc.id))) { out.records = out.records + 1 }
         }
     }
+    if (w && w.c) { delete w.c.pool_nohead }   // a fresh yes forgives the headless
     console.log('🏊 SoundPooling off — ' + out.pools + ' pool(s), ' + out.records + ' pooled card(s) and ' + out.files + ' file(s) gone')
     return out
 },
@@ -1791,6 +1792,7 @@ Ra_pool_sources(w) {
             //      a candidate must be something the holder has actually stocked.  (Owed on the holder's side:
             //       press from the RummageLib husk -- it has a path -- so a browsed folder becomes servable.)
             if (r.sc.husk || r.sc.rummage) { continue }
+            if (this.Ra_pool_nohead(w, id)) { continue }     // culled once for a head its holder never served
             let row = { id: id, from: from, title: String(r.sc.title || '') }
             if (crewish(from)) { row.crew = 1 }
             out.push(row)
@@ -1835,7 +1837,7 @@ Ra_quarter_goal_pools(shelf, pools, sources, pool, recent) {
             //           'random' never did.
             if (pool) {
                 for (const r of this.Ra_recs(pool)) {
-                    let pid = String(r.sc.id || '')
+                    let pid = String(r.sc.of || r.sc.id || '')   // a lofi copy competes as its ORIGINAL (the goal's name for it)
                     if (pid && !ids.includes(pid)) { ids.push(pid) }
                 }
             }
@@ -1901,8 +1903,19 @@ Ra_quarter_goal(shelf, cap) {
 //  it locally — the v1 byte-copy; pull when it is known only by reputation — the Cave/friend flow);
 //   pooled but out of the goal wants OUT (evict).  Pooled AND in the goal is the quiet case: nothing.
 Ra_quarter_diff(goal, pool, lib) {
+    // A POOL CARD STANDS FOR ITS ORIGINAL (2026-09-12, eed: every lofi landing was evicted on the next steward pass
+    //  and re-pulled — "only 1 SP after ten minutes").  A landed lofi copy wears the LOFI enid as its id and the
+    //   original's id as `of` (Ra_rec_pool, the identity-is-per-shelf law); the goal names ORIGINALS.  Keyed by id
+    //    alone, every such card read "not in the goal stash", went, and its reach stood 'arrived' forever — a 5 MB
+    //     churn per track per pass.  So: a card is pooled under BOTH names, and is evicted only when neither is wanted.
     let pooled = {}
-    for (const r of this.Ra_recs(pool)) { if (r.sc.id) pooled[String(r.sc.id)] = 1 }
+    let cards = []
+    for (const r of this.Ra_recs(pool)) {
+        if (!r.sc.id) { continue }
+        pooled[String(r.sc.id)] = 1
+        if (r.sc.of) { pooled[String(r.sc.of)] = 1 }
+        cards.push(r)
+    }
     let held = {}
     for (const r of this.Ra_recs(lib)) { if (r.sc.id) held[String(r.sc.id)] = 1 }
     let wanted = {}
@@ -1918,8 +1931,9 @@ Ra_quarter_diff(goal, pool, lib) {
     //    empty because nobody is reachable is not a wish for an empty pool; it is no information.  Keep the
     //     sediment until a real goal says otherwise (the take:radio pool already guards its sediment this way).
     if (goal.length) {
-        for (const id of Object.keys(pooled)) {
-            if (!wanted[id]) diff.push({ of: id, do: 'evict', why: 'not in the goal stash' })
+        for (const r of cards) {
+            let id = String(r.sc.id)
+            if (!wanted[id] && !(r.sc.of && wanted[String(r.sc.of)])) diff.push({ of: id, do: 'evict', why: 'not in the goal stash' })
         }
     }
     return diff
@@ -5360,7 +5374,10 @@ Ra_pool_fill_wants(w, ident) {
     //  A KNOB, DEFAULT ONE.  The live default is the owner's ruling; MusuPoolRandom pins it to 3 because what
     //   that Book actually swears is the FAN-OUT — three wants addressed to the right three holders — which is a
     //    different question from how many we choose to have in flight at once.  Pacing is policy; addressing is law.
-    let budget = (w && w.c && w.c.pool_fill_budget != null) ? +w.c.pool_fill_budget : 1
+    // SLOSH, DON'T TRICKLE (the owner 2026-09-12: "ten minutes and eed has only 1 SP, far too slow… I want it to
+    //  slosh in. we have consented to 3gb").  Supersedes the 2026-09-05 "do them serially": three in flight, and
+    //   the landing's in-flight gate below matches (POOL_PARALLEL).  `w.c.pool_fill_budget` still pins a Book.
+    let budget = (w && w.c && w.c.pool_fill_budget != null) ? +w.c.pool_fill_budget : 3
     for (const want of out.o({ Want: 1, do: 'pull' })) {
         if (fresh >= budget) { break }
         let from = String(want.sc.from || '')
@@ -5588,12 +5605,14 @@ async Ra_pool_fill_land(w, ident) {
                 if (reach.sc.why !== why) { reach.sc.why = why; reach.bump() }
                 continue
             }
-            // ONE POOL HEIST AT A TIME (the owner 2026-09-05, reading the live log: six rehydrated reaches arrived in
+            // K POOL HEISTS AT A TIME — three (the owner 2026-09-12: "I want it to slosh in"; was ONE, the owner 2026-09-05
+            //  reading the live log: six rehydrated reaches arrived in
             //  one pass, six keeps were minted, and the one source stalled under all of them — "is it downloading
             //   four at once? that's silly, do them serially", one layer up).  A standing into:pool keep that is not
             //    done holds the rest in the queue; the reach says so on its row and waits its turn.
             let inflight = shop.o({ Heist: 1 }).filter((h) => String(h.sc.into || '') === 'pool' && String(h.sc.state || '') !== 'done')
-            if (inflight.length) {
+            let K = (w && w.c && w.c.pool_fill_parallel != null) ? +w.c.pool_fill_parallel : 3
+            if (inflight.length >= K) {
                 // A STUCK SINGLE-TRACK KEEP MUST NOT HOLD THE QUEUE HOSTAGE (2026-09-06, the owner's live log:
                 //  "Giant Steps stalled 12/23" then nothing else ever landed).  The album heist's own bench
                 //   escape ("one bad pick won't hold the whole album") has nothing to fall back to here -- a pool
@@ -5822,15 +5841,6 @@ async Ra_pool_heads_heal(w, ident, homes) {
         //      silent surrender is how you end up re-diagnosing this from scratch in a month.
         //  Cleared on success above, so a peer that comes back later is asked again from zero.
         let GIVEUP = +((w && w.c && w.c.pool_head_giveup) || 12)
-        if (w && w.c) {
-            w.c.ra_head_tries = w.c.ra_head_tries || {}
-            let tries = +(w.c.ra_head_tries[id] || 0)
-            if (tries >= GIVEUP) { continue }
-            if (tries + 1 === GIVEUP) {
-                console.log('🏊☠ pool: giving up on the head run for ' + String(card.sc.title || id).slice(0, 40) + ' after ' + GIVEUP + ' asks — it will keep playing from its offer (a third to two thirds in). Its holder never served [0,' + card.sc.pv_off + ').')
-            }
-            w.c.ra_head_tries[id] = tries + 1
-        }
         // ask the holder to make it.  Needs the source's live wire handles: a pool card is a local file
         //  and carries none of its own, which is why this asks THROUGH the standing source record.
         // ⚠ TWO WORLDS, AND THE WIRE IS NOT ON THE ONE THE SHELVES ARE ON.  `homes.mw` is the RADIO world
@@ -5851,12 +5861,55 @@ async Ra_pool_heads_heal(w, ident, homes) {
         w.c.ra_want_ts = w.c.ra_want_ts || {}
         let hkey = id + ':poolh' + hoff
         if (Date.now() - (w.c.ra_want_ts[hkey] || 0) < 4000) { continue }
+        // THE POOL KEEPS ONLY WHAT STARTS AT THE BEGINNING (the owner 2026-09-12: "delete the non-full SP").  A copy
+        //  its holder will not serve the head of is not worth its slot: bytes, card, and a session tombstone so the
+        //   draw does not fetch the same id straight back (hash order never changes — it would churn 5 MB a pass).
+        //  ⚠ COUNT ASKS, NOT PASSES (2026-09-12, the first cut emptied eed's whole pool within minutes of a reload):
+        //   %Prehead never survives a reload (the protocol skips it by design), so every card is head-less at boot
+        //    and the carry from the mirror takes a while; a counter that ticked on every pass — including passes
+        //     where no holder could even be asked — reached 12 before anything had a chance.  The count now
+        //      stands HERE, on a real ask to a live holder, 4 s apart: twelve unanswered asks is the verdict.
+        w.c.ra_head_tries = w.c.ra_head_tries || {}
+        let tries = +(w.c.ra_head_tries[id] || 0)
+        if (tries + 1 >= GIVEUP) {
+            await this.Ra_pool_cull_headless(w, homes, card, ident)
+            delete w.c.ra_head_tries[id]
+            return 1
+        }
+        w.c.ra_head_tries[id] = tries + 1
         w.c.ra_want_ts[hkey] = Date.now()
         await this.Repli_want_next(w, src.c.rx, w.c.repli_mirror_pier, src.c.from, id, 'opus_head', hoff)
         console.log('🏊 pool: asked ' + String(src.c.from).slice(0, 8) + ' to make the head run for ' + String(card.sc.title || id).slice(0, 40) + ' (from ' + hoff + '/' + card.sc.pv_off + ')')
         return 1
     }
     return 0
+
+},
+// Ra_pool_cull_headless — drop a pooled copy whose head run its holder never served, and tombstone the id
+//  (`%Nohead,id` under the pool home — durable, so it rides the account snap with the rest of the shelf).
+//   The pool's law is liquid and expendable; a track that can only ever open mid-song is the one thing the
+//    listener said they do not want in it.  Bytes first, then the card, then the mark.
+async Ra_pool_cull_headless(w, homes, card, ident) {
+    let id = String(card.sc.id || '')
+    let nav = homes.nav || (w && w.c ? w.c.ra_nav : null) || (this.Crate_nav ? this.Crate_nav() : null)
+    let gone = 0
+    try { gone = await this.Ra_pool_unfile(w, nav, card) } catch (er) { gone = 0 }
+    if (card.sc.path && w && w.c) {
+        let ev = (w.c.pool_evicted = w.c.pool_evicted || {})
+        ev[String(card.sc.path)] = gone ? 'gone' : 'lingering'
+    }
+    await this.Ra_rec_drop(homes.pool, id)
+    if (w && w.c) { (w.c.pool_nohead = w.c.pool_nohead || {})[id] = 1 }
+    console.log('🏊✂ pool: dropped ' + String(card.sc.title || id).slice(0, 40) + ' — its holder never served the head run; the pool keeps only tracks that start at the beginning')
+    return 1
+},
+// Ra_pool_nohead — is this id tombstoned as headless THIS SESSION?  The draw (Ra_pool_sources) skips it; a reload
+//  forgives (the holder may serve it next time).  Any durable %Nohead row (the 2026-09-12 first cut) is dropped
+//   on sight — those were minted by the pass-counting bug, not by a holder's silence.
+Ra_pool_nohead(w, id) {
+    let home = this.Ra_pool_home(w)
+    if (home) { for (const t of home.o({ Nohead: 1 })) { home.drop(t) } }
+    return !!(w && w.c && w.c.pool_nohead && w.c.pool_nohead[String(id)])
 
 },
 // Ra_pool_fill_pump — the ONE live tick (rides Swarm_reach_pump's cadence, knob-gated there by

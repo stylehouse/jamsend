@@ -27,9 +27,45 @@
     corpus keeps catching.
 4. A Book beat that unloves must leave the world LOVED, or every later beat loses its ground.
 
+**Cave → Captain, read end to end (2026-09-12, the owner: "make sure SP is going to pile up on the Captain
+ from his Cave").** The chain is wired, every link by name: a crew redeem mints `Grant:Music` on the mate's pier
+  ("CREW SHARES MUSIC", Swarm.g `Swarm_hello`) ⇒ `Swarm_share_granted` passes ⇒ Repli offers the Cave's catalog
+   and a `%Theirs` crate of it stands in the Captain's radio world ⇒ `Ra_pool_sources` rows it `crew:1` ⇒ the
+    `rolling` compartment (`who:'crew'` by default) draws top-cap by hash ⇒ `Ra_pool_fill_wants` books ONE
+     reach at a time to the Cave's routing name (a named holder rides the pier) ⇒ the Cave presses lofi into its
+      own pool (`Ra_pool_fill_serve`) ⇒ the Captain lands it through a `%Heist,into:pool` keep over Repli.
+ What decides "lots": `budget_mb` on the Pooling cell — 0 = off, `cap = budget × share ÷ 4 MB`, the recent
+  compartment takes half at the first yes. Two things to know: (1) the salt never moves live, so "rolling"
+   means "holds a fixed random slice of the Cave's library", refilled only as candidates change — not churn;
+    (2) the pile grows at the Cave's transcode rate, serially. Not yet walked live on a CREW pair — the
+     2026-09-06 end-to-end measurement was eed→daemon (a Music friend); crew differs only in the grant's mint
+      site and the roster row, which is why the reading above is a reading.
+
+**2026-09-12, the listen happened (eed, ten pooled tracks) and it found four things, all landed:**
+- **Pooled tracks opened mid-song on every skip.** `Radio_hbase` allowed the head only after a play-through
+   (`went:'finish'` — the tune-in feel, right for a friend's broadcast). A pooled copy is yours on disk, so it
+    now opens at 0:00 whenever its head is whole (`Radio_rec_pooled`); the skip-shape prime agrees.
+- **Next was slow** — the pool rung awaited the resurrect + preview heal (up to a whole-file encode) BEFORE
+   looking at the shelf; eight dial ticks queued behind one encode. Now: dial what stands, heal on the empty
+    road only. And every prime was for one Lineup card the pool dial never picks: `Radio_peek_next` peeks
+     the pool on the pool source and the pool rung consumes the standing order first.
+- **"Delete the non-full SP"** (the owner): at the 12th unanswered head ask the copy is culled — bytes,
+   card — and `%Nohead,id` on the pool home keeps the draw off it (`Ra_pool_cull_headless`,
+    `Ra_pool_nohead` in `Ra_pool_sources`; `Ra_pool_off` forgives). ⚠ 12 asks ≈ 50 s is short patience
+     for a holder mid-transcode — the owner chose delete over wait.
+   **⚠ THE FIRST CUT EMPTIED eed's POOL (found 2026-09-12 midday: "Pool is empty again", 0 cards · 0 files).**
+    `%Prehead` never survives a reload (the protocol skips it by design), so every card is head-less at boot
+     until the carry re-runs — and the give-up counter ticked on every PASS, including passes where no holder
+      could be asked. Twelve passes ≈ a minute; then every card went, files and all, and a durable `%Nohead`
+       tombstone kept the draw off it. Fixed: the count stands on a REAL ask to a live holder (4 s apart, so
+        twelve unanswered asks ≈ a minute of the holder's silence); the tombstone is session-only (`.c`), a
+         reload forgives; stray durable `%Nohead` rows are dropped on sight. Lesson, again: a destructive
+          give-up needs a counter that measures the thing it punishes.
+- Only 10 in the pool at 100 MB: the heists from S stalled ("NO PROGRESS … 0/1 landed after 7 asks") while S
+   transcoded; the pile grows at S's rate, serially, and the 60 s stuck-keep escape keeps the queue moving.
+
 **Next moves, in order:**
-1. Hear a pooled track start at 0:00 on the music page (owner + one listen). Until then the head-run
-    road is Book-true only.
+1. ✅ Heard. Next: the crew (Cave) road walked live — every measurement so far is eed→daemon.
 2. The five §9.9 rulings in `Radio_circuit_todo` (unpool on unlove; a loved compartment; unlove →
     laptop; a remote running keep; listing sync-back) — the owner's, nothing moves without them.
 3. Then the LinkDevice ambient path: a love on the phone reaching the laptop's Haul without a ceremony.

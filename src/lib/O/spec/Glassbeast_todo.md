@@ -197,6 +197,60 @@ Two more of the owner's own asks, landed and verified live (not screenshotted-an
           folio starts from its membrane inward and yields to the bump. Model-side. STOP tweaking pixels
            here — the next commit of effort goes to Vyto.g, not Vytui.
 
+### THE MEMBRANE — LANDED (2026-09-12): the family is a scope, the bump is its self seat, Book green 6/6
+Start here next session. The plan below is superseded by what actually worked; the owner has the this-or-that
+ (`wormhole/shots/seq_0049_membrane`, `seq_0050_membranepinch`) and has NOT yet ruled.
+
+**What stands (all stop-gated on `membrane`; nothing moves a byte with it off — VytoNest/Depth/Fold green,
+ Orchestra its known 0.13 drift with 7/7 sworn):**
+- **Vyto.g `Vyto_membrane` station** (stir order Scan → Fold → Gang → **Membrane** → Relate → Express → Solve).
+   A family = siblings of one mainkey in one scope (≥2, not crest, not folded, not loose). Each family gets ONE
+    `Membrane:<mainkey>,n:<count>` row IN THAT SCOPE carrying every fact all members share (`artist:Yara`;
+     a shared JOIN counts — `of:main` on the Player bump, which is where the owner's "%of:main isn't on
+      there at all" finally lands). **The family moves in**: the membrane is a SCOPE and the members are its
+       kids. `Vyto_scan_walk` HOMES a source under its family's membrane when one stands, so a re-scan finds
+        the rows where they live; `Vyto_rehome` moves a row (drop → compact → un-flag → i(); C has no move).
+         Runtime handles: `mem.c.membrane`, `mem.c.members`, `member.c.family`. NESTED-only.
+- **Why a scope and not a sibling body** (tried first, twice): as a sibling wired to its petals the Band sat
+   dead centre of the Song rosette — a power cut hands territory to the BIGGER RADIUS, not the nearer
+    neighbour, and the render's fill scaling makes every top body overlap the pile. As a scope the family is
+     one body among strangers; strangers cannot reach the bump.
+- **Vytui**: the bump is the membrane scope's SELF SEAT (the existing "parent enters its own child
+   tessellation" machinery, now taken face-or-no-face for a membrane), dealt its DISC by
+    `membrane_carve` (vyto_geometry — the cut cannot be trusted to seat a small body among big petals) and
+     sized by what it must SAY (widest of mainkey / shared pairs); petals are clipped to a tangent wall onto
+      it, or with the **`pinch`** stop to a NECK wrapped onto the arc. The bump's folio = mainkey alone in the
+       key look (`rows_of` `bare_key`) + shared facts; a petal's folio = value only (`hide_mk`) minus what
+        the bump says. Membrane outer wall drawn as nothing (petals' outer walls ARE the membrane); the
+         junction sketch skips stitched families; `cell_ground` gives the bump the family's hue; petals are
+          not "sunk" stuffing. Bump exempt from `seat_floor`/repair (a floor protecting it CAPPED the petals
+           to shards).
+- **THE STUFFING SPREADS WITH ITS BAG** — the real find under all of this, and it is the old "squished Players"
+   bug by another name: the model solves a nested scope inside the MODEL's cut of the parent (a ~30px foam
+    disc), the render inflates the parent's cell ~10× and cuts the children at their model positions → a knot
+     at the centre of an empty bag. Now (membrane-gated) a child's seat is its model offset scaled by the
+      parent's inflation about the parent cell's CENTROID, capped so the farthest child sits ≤ half the bag's
+       radius out. **This should become the default for every nested foam glass** — it is render-only and
+        changes the cut the pose Book photographs, so it needs the owner's word.
+- **`VytoMembrane` Book** (Ghost/V/VytoTesting.g tail; registered in wafts_everything + Credence): seed the
+   Orchestra world → stand with `'membrane'` on the commission deck (4 top cells: Band, Membrane:Song, 2
+    strays; the Song bump `n:3,artist:Yara`, the Player bump `n:3,of:main`, every petal `.c.family` + seated)
+     → an artist diverges (fact leaves the bump, family stands) → a song leaves (`n:2`) → a second leaves (the
+      membrane dissolves, the survivor moves back to the top). Green on the live runner 6/6, **4 sworn,
+       undeclared** — declaring is the owner's.
+
+**Owed / next:**
+- The owner's ruling on `seq_0049` (tangent) vs `seq_0050` (pinch), and whether `membrane` becomes default
+   (it needs `nested` — Orchestra has it).
+- **Declare** the 4 VytoMembrane assertions in its toc.
+- A desk deck on a Book with a fixed cell count (`?B=VytoOrchestra&deck=membrane`) never rests: Orchestra's
+   `Vyto_rest_poll(w, 6)` wants six top cells and the membrane makes four, so stand_wait times out (18s) and
+    every later beat is late. Not a bug in either; the eye's shots of Orchestra+membrane are mid-Book.
+- THE WARP (petal folio frame aligned to its ray from the bump) is NOT done — with the rosette this compact
+   it may not be needed; look first.
+- Fold × membrane: a folded glass's crest is its own merge; the station ignores folded rows, so a family
+   under budget gets no membrane. Untested together.
+
 - **THE MEMBRANE PLAN, ruled (2026-09-11, late) — the owner's one-line brief: *"a clear expression of what's
    joined to what"*, *"natural and readable without much eye-fuss"*.** The owner, in order: *"not just overlapping randomly,
    obviously, but altogether things should be shaped for that structure of the merge we stitch|warp into

@@ -329,7 +329,41 @@
         requestAnimationFrame(() => {
             if (!view || active_path !== path) return
             const pos = view.state.doc.line(Math.max(1, Math.min(line, view.state.doc.lines))).from
-            view.dispatch({ effects: EditorView.scrollIntoView(pos, { y: 'start' }) })
+            // the editor's OWN scroller only — never the page (see scroll_scroller_to)
+            scroll_scroller_to(view, pos, 'start')
+        })
+    }
+
+    // ── scroll_scroller_to — move the editor's scroller, and ONLY the editor's scroller ────────
+    //
+    //   `EditorView.scrollIntoView` walks every scrollable ancestor up to the WINDOW and applies
+    //    its `y` mode to each — so a `center` goto re-centred the whole room on the editor and a
+    //     `start` restore pinned the doc's top line to the top of the SCREEN, every doc switch and
+    //      every Point switch (the owner, 2026-09-12: *"it's scrolling back to the first non-top
+    //       scroll position each time"* — the page, landing on the same y each time; the Lagoon
+    //        list below it left the screen with it).  The page is the room's; the editor may ask
+    //         it, at most, to bring the target ON screen (`nearest`, in fire_seek) — never to move
+    //          when the editor is already visible.
+    //   Measured in CM's read phase (post-layout, after any unfold in the same beat has been
+    //    measured), written in its write phase.  `documentTop` is screen-space, so the document's
+    //     y in scroller space is `documentTop - scrollerRect.top + scrollTop`.
+    function scroll_scroller_to(v: EditorView, pos: number, mode: 'start' | 'center' | 'quarter', after?: (v: EditorView) => void) {
+        v.requestMeasure({
+            key: 'lte-scroller-to',
+            read: (v) => {
+                if (pos < 0 || pos > v.state.doc.length) return null
+                const b   = v.lineBlockAt(pos)
+                const sd  = v.scrollDOM
+                const ch  = sd.clientHeight
+                const doc = v.documentTop - sd.getBoundingClientRect().top + sd.scrollTop
+                const off = mode === 'start' ? 0 : mode === 'quarter' ? Math.round(ch * 0.25) : (ch - b.height) / 2
+                return Math.max(0, doc + b.top - off)
+            },
+            write: (top, v) => {
+                if (top == null) return
+                v.scrollDOM.scrollTop = top
+                if (after) setTimeout(() => after(v), 0)
+            },
         })
     }
 
@@ -1409,14 +1443,16 @@
         //  header — scroll it ~a quarter down so the body fills the view below it.
         //  Small targets centre as before.
         const span   = block_lines(doc, line.number)
-        const big    = span > 8
-        const scroll = () => big
-            ? EditorView.scrollIntoView(from, { y: 'start', yMargin: Math.round(v.scrollDOM.clientHeight * 0.25) })
-            : EditorView.scrollIntoView(from, { y: 'center' })
+        const mode: 'quarter' | 'center' = span > 8 ? 'quarter' : 'center'
         v.dispatch({
             selection: { anchor: from, head: to },
-            effects: [ ...opens.map(r => unfoldEffect.of(r)), scroll() ],
+            effects: opens.map(r => unfoldEffect.of(r)),
         })
+        // the editor's scroller takes the aim; the PAGE is asked only to bring the line on screen
+        //  if the editor itself is off it (`nearest` — a no-op when the editor is visible)
+        const scroll = (v: EditorView) => scroll_scroller_to(v, from, mode,
+            v => v.dispatch({ effects: EditorView.scrollIntoView(from, { y: 'nearest' }) }))
+        scroll(v)
         v.focus()
         bloom_at(v, from)
         // HOLD THE AIM.  The scroll above is right for the geometry it measured, but a goto is
@@ -1430,7 +1466,7 @@
     }
 
     const AIM_HOLD_MS = 1500
-    let _aim: { pos: number, scroll: () => StateEffect<unknown>, until: number, fired: number } | null = null
+    let _aim: { pos: number, scroll: (v: EditorView) => void, until: number, fired: number } | null = null
     const drop_aim = () => { _aim = null }
     // Called from the updateListener on a geometry|viewport change while an aim is held: measure
     //  (read phase, post-layout) whether the target still sits inside the scroller, and if not,
@@ -1452,7 +1488,7 @@
             write: (out, v) => {
                 if (!out || _aim !== aim) return
                 aim.fired++
-                setTimeout(() => { if (_aim === aim) v.dispatch({ effects: aim.scroll() }) }, 0)
+                setTimeout(() => { if (_aim === aim) aim.scroll(v) }, 0)
             },
         })
     }

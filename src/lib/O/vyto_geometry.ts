@@ -234,3 +234,68 @@ export function poly_centroid(poly: Pt[]): Pt {
     const n = poly.length || 1
     return { x: poly.reduce((a, q) => a + q.x, 0) / n, y: poly.reduce((a, q) => a + q.y, 0) / n }
 }
+
+// distance from p to the segment ab
+function seg_dist(a: Pt, b: Pt, p: Pt): number {
+    const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy
+    let t = l2 > 0 ? ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2 : 0
+    t = Math.max(0, Math.min(1, t))
+    return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
+}
+
+// THE MEMBRANE CARVE (2026-09-12, the owner: *"cells have to be made with pinches tucked into these
+//  merges… like it's stretched over a protrusion, and that protrusion has some shoulders"*).  A post-cut
+//   carve on one family: `mi` is the membrane's seat (Vyto_membrane — the small body at the family's
+//    heart), `petals` its members.  The cut cannot be trusted to seat the bump — the fill economy scales
+//     every radius but no distance, so three big petals pressing at kissing distance swallow a small
+//      body between them outright (seen live: "NO ROOM Membrane:Song" at the heart of a perfect
+//       rosette).  So the bump is DEALT, not solved: its cell is the disc (centre, rb), and each petal
+//        is clipped to the tangent line at rb along its own ray from the centre — the tip it loses is
+//         the room the bump takes.  With `pinch` > 0 the straight tangent wall becomes a NECK: its two
+//          ends A, B (the shoulders) are kept and the wall is re-drawn from A in to A′ on the disc,
+//           along the arc to B′, and out to B — A′/B′ being A/B's angles pulled toward the ray by
+//            `pinch` (0.55 ⇒ the neck wraps 55% of the wall's sweep onto the bump).  Between two
+//             necks a wedge of the disc shows through: the pinch, and the eye reads each petal as
+//              narrowing INTO the bump — what is joined to what, said by shape.
+//  In place on `polys`.  A petal the tangent line does not cross (it stands off the bump) is left
+//   whole — it is not stitched, and the shape should say so honestly.
+export function membrane_carve(polys: (Pt[] | null)[], mi: number, petals: number[], centre: Pt, rb: number, pinch = 0.55, segs = 6): boolean {
+    if (!(rb > 3)) return false
+    const c = centre
+    const wrap = (a: number): number => { while (a > Math.PI) a -= 2 * Math.PI; while (a <= -Math.PI) a += 2 * Math.PI; return a }
+    let carved = 0
+    for (const k of petals) {
+        if (k === mi) continue
+        const P = polys[k]
+        if (!P || P.length < 3) continue
+        const pc = poly_centroid(P)
+        const th = Math.atan2(pc.y - c.y, pc.x - c.x)
+        const u = { x: Math.cos(th), y: Math.sin(th) }
+        // keep dot(p − c, u) ≥ rb: the wall is the tangent line at rb, the seed side is the far side
+        const m = { x: c.x + u.x * rb, y: c.y + u.y * rb }
+        const Q = clip_halfplane(P, m, { x: -u.x, y: -u.y })
+        if (Q.length < 3 || Q.length === P.length && Q.every((q, i) => q === P[i])) continue
+        carved++
+        if (!(pinch > 0)) { polys[k] = Q; continue }
+        // the two vertices on the tangent line, consecutive in the ring: A then B
+        const onl = Q.map(q => Math.abs((q.x - m.x) * u.x + (q.y - m.y) * u.y) <= 0.5)
+        const n = Q.length
+        let ia = -1
+        for (let i = 0; i < n; i++) if (onl[i] && onl[(i + 1) % n]) { ia = i; break }
+        if (ia < 0) { polys[k] = Q; continue }
+        const A = Q[ia], B = Q[(ia + 1) % n]
+        const dA = wrap(Math.atan2(A.y - c.y, A.x - c.x) - th), dB = wrap(Math.atan2(B.y - c.y, B.x - c.x) - th)
+        const ta = dA * pinch, tb = dB * pinch
+        const out: Pt[] = [A]
+        for (let s = 0; s <= segs; s++) {
+            const t = ta + (tb - ta) * s / segs
+            out.push({ x: c.x + rb * Math.cos(th + t), y: c.y + rb * Math.sin(th + t) })
+        }
+        for (let i = 1; i < n; i++) out.push(Q[(ia + i) % n])
+        polys[k] = out
+    }
+    const disc: Pt[] = []
+    for (let s = 0; s < 24; s++) disc.push({ x: c.x + rb * Math.cos(s * Math.PI / 12), y: c.y + rb * Math.sin(s * Math.PI / 12) })
+    polys[mi] = disc
+    return carved > 0
+}

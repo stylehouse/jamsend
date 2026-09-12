@@ -2401,3 +2401,160 @@ VytoPosed_witness(w):
         this.story_swear(w, 'a round cell poses its face level — a circle has no wall to lean into')
         if (!(oa %see:'a round cell poses its face level — a circle has no wall to lean into')) i %see:'a round cell poses its face level — a circle has no wall to lean into'
     }
+
+// ══ VytoMembrane — THE MEMBRANE: a family of siblings becomes one scope with a bump at its heart ═══
+//  (Glassbeast_todo §0 "THE MEMBRANE PLAN" — the owner 2026-09-11: *"cells have to be made with pinches
+//   tucked into these merges… ie a clear expression of what's joined to what"*.)  Vyto_membrane, under
+//    the `membrane` stop on a FOAM + NESTED glass: siblings of one mainkey are homed under ONE
+//     `Membrane:<mainkey>,n:<count>` row in their scope, which carries every fact they all share.  The
+//      Orchestra's world, stood with the stop on the deck: the three Songs become one family (sharing
+//       `artist:Yara`), the Band's three Players another (sharing `of:main`), the strays stay loose.
+//        Then the LIVE questions: a song whose artist changes takes the shared fact OFF the bump; a
+//         departing song shrinks the family; a second departure dissolves it and the survivor moves
+//          back out to the top.  World VytoMembrane.
+VytoMembrane(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoMembrane_drive,w,req
+        req%ok = 1
+
+async VytoMembrane_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoMembrane_seed(w)
+        if (n === 3) this.VytoMembrane_stand(w)
+        if (n === 4) this.VytoMembrane_diverge(w)
+        if (n === 5) this.VytoMembrane_shrink(w)
+        if (n === 6) this.VytoMembrane_dissolve(w)
+    }
+    this.VytoMembrane_witness(w)
+
+// ── beat 2 — the Orchestra's world: a stuffed band beside three kin songs and two loose strays ────
+VytoMembrane_seed(w):
+    i %desc:'seed the orchestra world — a band of three players beside three songs of one artist and two strays'
+    let band = w.i({ Band: 'main' })
+    band.i({ Player: 'keys', of: 'main' })
+    band.i({ Player: 'bass', of: 'main' })
+    band.i({ Player: 'drums', of: 'main' })
+    let s1 = w.i({ Song: 'LowTide', artist: 'Yara' })
+    let s2 = w.i({ Song: 'Undertow', artist: 'Yara' })
+    let s3 = w.i({ Song: 'SaltAir', artist: 'Yara' })
+    let x1 = w.i({ Stray: 'moth', loose: 1 })
+    let x2 = w.i({ Stray: 'lint', loose: 1 })
+    w.c.band = band
+    w.c.songs = [s1, s2, s3]
+    w.c.strays = [x1, x2]
+
+// ── beat 3 — stand it with `membrane` on the deck: two families become two scopes ─────────────────
+VytoMembrane_stand(w):
+    i %desc:'commission foam-cut and nested with membrane on the deck — the songs and the players each become one family scope'
+    this.Vyto_commission_on(w, [w.c.band].concat(w.c.songs).concat(w.c.strays), 1, 0, 1, 0, 0, 1, 1, 'membrane')
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'stand_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoMembrane_stand_ready(w)) })
+
+VytoMembrane_stand_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.foam || !vw.c.nested) return 0
+    // four top cells now: the band · the song family · two strays
+    if (!this.Vyto_rest_poll(w, 4)) return 0
+    let songs = this.VytoMembrane_family(vw.c.mirror, 'Song')
+    if (!songs) return 0
+    if (songs.sc.n !== '3' || songs.sc.artist !== 'Yara') return 0
+    if (songs.o().filter(r => !r.sc.departing && r.sc.Song).length !== 3) return 0
+    // every petal knows its family and has a seat inside it
+    for (const r of songs.o()) { if (r.c.family !== songs || !r.c.T) return 0 }
+    let band = this.VytoOrchestra_band(vw)
+    if (!band) return 0
+    let players = this.VytoMembrane_family(band, 'Player')
+    if (!players) return 0
+    if (players.sc.n !== '3' || players.sc.of !== 'main') return 0
+    if (band.o().filter(r => !r.sc.departing && r.sc.Player).length !== 0) return 0
+    w.c.saw_stand = 1
+    return 1
+
+// ── beat 4 — a song's artist diverges: the shared fact leaves the bump and the family stands ──────
+VytoMembrane_diverge(w):
+    i %desc:'change one song artist — the shared artist must leave the bump while the family stands'
+    w.c.songs[2].sc.artist = 'Nell'
+    w.c.songs[2].bump_version()
+    this.expecting(w, 'diverge_wait', 12, async () => { await this.VytoStaple_await(w, 12, () => this.VytoMembrane_diverge_ready(w)) })
+
+VytoMembrane_diverge_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    this.Vyto_stir(vw)
+    let songs = this.VytoMembrane_family(vw.c.mirror, 'Song')
+    if (!songs) return 0
+    if (songs.sc.artist != null) return 0
+    if (songs.sc.n !== '3') return 0
+    w.c.saw_diverge = 1
+    return 1
+
+// ── beat 5 — a song departs: the family counts two ────────────────────────────────────────────────
+VytoMembrane_shrink(w):
+    i %desc:'drop one song — the family must count two and still stand'
+    this.VytoMembrane_ungrapple(w, w.c.songs[2])
+    this.expecting(w, 'shrink_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoMembrane_shrink_ready(w)) })
+
+VytoMembrane_shrink_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    this.Vyto_stir(vw)
+    let songs = this.VytoMembrane_family(vw.c.mirror, 'Song')
+    if (!songs) return 0
+    if (songs.sc.n !== '2') return 0
+    if (songs.o().filter(r => !r.sc.departing && r.sc.Song).length !== 2) return 0
+    w.c.saw_shrink = 1
+    return 1
+
+// ── beat 6 — a second departure: one song is no family — the membrane dissolves and it moves out ──
+VytoMembrane_dissolve(w):
+    i %desc:'drop a second song — one song is no family so the membrane dissolves and the survivor moves back to the top'
+    this.VytoMembrane_ungrapple(w, w.c.songs[1])
+    this.expecting(w, 'dissolve_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoMembrane_dissolve_ready(w)) })
+
+VytoMembrane_dissolve_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    this.Vyto_stir(vw)
+    if (this.VytoMembrane_family(vw.c.mirror, 'Song')) return 0
+    let top = vw.c.mirror.o().filter(r => !r.sc.departing && r.sc.Song === 'LowTide')
+    if (top.length !== 1) return 0
+    if (top[0].c.family) return 0
+    if (!top[0].c.T) return 0
+    w.c.saw_dissolve = 1
+    return 1
+
+// a top-level source leaves: dropped from the world AND off the grapple list (a dropped grapple is
+//  still walked — the sweep only notices a source the scan no longer reaches)
+VytoMembrane_ungrapple(w, n):
+    w.drop(n)
+    let vw = this.VytoStaple_vw(w)
+    if (vw && vw.c.grapples) vw.c.grapples = vw.c.grapples.filter(g => g !== n)
+
+// the family scope for a mainkey in a scope — null when none stands
+VytoMembrane_family(scope, mk):
+    if (!scope) return null
+    for (const r of scope.o()) { if (r.sc.Membrane === mk && !r.sc.departing) return r }
+    return null
+
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ───────────────────
+VytoMembrane_witness(w):
+    if (w.c.saw_stand) {
+        this.story_swear(w, 'two families stand as two scopes — the songs share their artist on the bump and the players their of')
+        if (!(oa %see:'two families stand as two scopes — the songs share their artist on the bump and the players their of')) i %see:'two families stand as two scopes — the songs share their artist on the bump and the players their of'
+    }
+    if (w.c.saw_diverge) {
+        this.story_swear(w, 'a diverging artist leaves the bump — what is shared is only what every member says')
+        if (!(oa %see:'a diverging artist leaves the bump — what is shared is only what every member says')) i %see:'a diverging artist leaves the bump — what is shared is only what every member says'
+    }
+    if (w.c.saw_shrink) {
+        this.story_swear(w, 'a departed song shrinks the family to two — the membrane counts what it holds')
+        if (!(oa %see:'a departed song shrinks the family to two — the membrane counts what it holds')) i %see:'a departed song shrinks the family to two — the membrane counts what it holds'
+    }
+    if (w.c.saw_dissolve) {
+        this.story_swear(w, 'one song is no family — the membrane dissolves and the survivor moves back out to the top')
+        if (!(oa %see:'one song is no family — the membrane dissolves and the survivor moves back out to the top')) i %see:'one song is no family — the membrane dissolves and the survivor moves back out to the top'
+    }

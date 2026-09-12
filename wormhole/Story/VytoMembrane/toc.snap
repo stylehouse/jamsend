@@ -1,0 +1,16 @@
+story:VytoMembrane
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.04
+      sample=0.04,at=1789131851
+    TimeTotal:step,avg=0.007
+      sample=0.007,at=1789131851
+  step,dige:6bdaa5b9553a2ab9
+  step=2,desc:seed the orchestra world — a band of three players beside three songs of one artist and two strays,dige:02c5aac1a6756880
+  step=3,desc:commission foam-cut and nested with membrane on the deck — the songs and the players each become one family scope,dige:dc17a739b4f9e82f
+  step=4,desc:change one song artist — the shared artist must leave the bump while the family stands,dige:6356f0f8e032ec54
+  step=5,desc:drop one song — the family must count two and still stand,dige:89a6b6dc72cec04b
+  step=6,desc:drop a second song — one song is no family so the membrane dissolves and the survivor moves back to the top,dige:ab46ab38a4ac4035

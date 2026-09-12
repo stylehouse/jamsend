@@ -255,6 +255,7 @@ Vyto_stir(w):
     this.Vyto_scan(w)
     this.Vyto_fold(w)
     this.Vyto_gang(w)
+    this.Vyto_membrane(w)
     this.Vyto_relate(w)
     this.Vyto_express(w)
     this.Vyto_solve(w)
@@ -336,7 +337,12 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen):
     if (n.c.vyto_tok) tok = String(n.c.vyto_tok)
     // find-or-create by the token on `.c` (a string compare) — NOT an sc query, whose numeric-1
     //  values wildcard ({seq:1} matches any seq) and would merge distinct siblings.
-    let row = parentMirror.o().find(r => r.c.tok === tok)
+    // THE FAMILY'S HOME (Vyto_membrane): when this scope holds a %Membrane for the source's mainkey,
+    //  the row lives UNDER it — find it there, mint it there.  No membrane ⇒ parentMirror, verbatim.
+    let home = parentMirror
+    let mem = parentMirror.o({ Membrane: mk })[0]
+    if (mem && mem.c.membrane) home = mem
+    let row = home.o().find(r => r.c.tok === tok)
     if (!row) {
         // DIAGNOSTIC (2026-07-30, chasing the KeepFace mount/destroy thrash — see
         //  Download_stall_handover.md "Evening 8"): a Keep should mint its mirror row ONCE and then be
@@ -346,7 +352,7 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen):
         if (mk === 'Heist') console.log('◈ Vyto mirror MINT (no existing row matched)', tok, 'gen', gen)
         let seed = {}
         seed[mk] = nmk
-        row = parentMirror.i(seed)
+        row = home.i(seed)
     }
     // ── THE CARDINALITY DOOR (Meaningfold §0 step 5, doorless site #7 — 2026-09-09) ───────────────
     //  Two byte-identical siblings map to ONE tok, so the second FINDS the first's row and overwrites
@@ -440,6 +446,9 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen):
 Vyto_scan_sweep(w, parentMirror, gen):
     for (const row of parentMirror.o()) {
         this.Vyto_scan_sweep(w, row, gen)
+        // a %Membrane is minted by the Membrane station, never walked from a source — it keeps its own
+        //  house (Vyto_membrane_scope drops a stale one), so the sweep leaves it be
+        if (row.c.membrane) continue
         if (row.c.seen_at === gen) continue
         // DIAGNOSTIC twin of the MINT log above — a Keep row missed this scan (its source wasn't
         //  re-walked): first miss marks departing, second miss (still departing) actually drops it.
@@ -496,7 +505,7 @@ Vyto_fold(w):
 //        and lose their `.c.T`, so Solve skips them and the renderer never springs them.
 Vyto_fold_scope(w, scope):
     let all = scope.o()
-    let members = all.filter(r => !r.sc.departing && r.sc.Vtuffing == null)
+    let members = all.filter(r => !r.sc.departing && r.sc.Vtuffing == null && !r.c.membrane)
     for (const m of members) { if (m.c.folded) { m.c.folded = 0; m.c.T = null; m.bump_version() } }
     // DELIBERATELY STILL 800×450, unlike Vyto_solve's frame (which now follows w.c.vw_frame — see
     //  the note there).  This is a legibility BUDGET — how many cells fit before they read as specks —
@@ -1141,6 +1150,129 @@ Vyto_simmer_walk(w, n, tick, base):
         this.Vyto_simmer_walk(w, m, tick, i * 31)
     }
 
+// ══ THE MEMBRANE (2026-09-12) — the merge becomes C ══════════════════════════════════════════════
+//  The owner, ruling by eye on the render-side `junction` sketch (2026-09-11): *"it needs to be a
+//   whole nother level of stuff going on in the cell membrane... like it's stretched over a
+//    protrusion, and that protrusion has some shoulders, and everything's a fan-out bit"* → *"cells
+//     have to be made with pinches tucked into these merges"* → *"ie a clear expression of what's
+//      joined to what."*  The sketch drew labels ON TOP of a cut that knew nothing about families,
+//       so branches crossed neighbours; the fix is to make the cut KNOW.
+//  A FAMILY is a set of sibling rows in one scope sharing a mainkey (three %Songs at the top; three
+//   %Players inside the Band).  Each family gets ONE `Membrane:<mainkey>,n:<count>` row in that
+//    scope, carrying every fact ALL its members agree on (`artist:Yara`) — what is shared is said
+//     once, on the thing that joins them, and it snaps like any row — and THE FAMILY MOVES IN: the
+//      membrane is a SCOPE, its members its children.  So the cut sees the family as ONE body among
+//       strangers (the Band can no longer wedge into the middle of the Songs — tried as a sibling
+//        body first, wired to its petals, and the Band sat dead centre of the rosette because a
+//         power cut hands territory to the bigger radius, not the nearer neighbour), and inside it
+//          the petals tile around the bump — the membrane's own SELF SEAT in the renderer (Vytui:
+//           "the parent enters its own child tessellation as one more body"), dealt its disc and
+//            wearing the mainkey; the `pinch` stop carves each petal's neck onto it (membrane_carve).
+//  The scan HOMES a source under its family's membrane when one stands (Vyto_scan_walk), so a
+//   re-scan finds the moved rows where they live; the station itself moves a family in when a
+//    membrane is first minted and moves it back out when the family dissolves or the stop goes off
+//     (Vyto_rehome — C has no move, only a drop flag; see there).
+//  Stop-gated (`membrane` on the Vytocon deck) and NESTED-only (a flat glass draws no children):
+//   unset ⇒ any standing membrane is dissolved and every recorded fixture stands to the byte.
+//    Runtime handles: `mem.c.membrane = 1` (what it is), `mem.c.members` (refs), `m.c.family = mem`
+//     on each member (the renderer's one-hop question "am I stitched?").
+Vyto_membrane(w):
+    if (!w.c.mirror) return
+    let on = (w.c.nested && this.Vyto_fo(w, 'membrane')) ? 1 : 0
+    this.Vyto_membrane_scope(w, w.c.mirror, on)
+
+Vyto_membrane_scope(w, scope, on):
+    let all = scope.o()
+    // who can be family: a live, seated, scanned row (a crest stands for a folded group and is its
+    //  own kind of merge; a loose row sits on the rim by choice and joins no pile)
+    let fit = r => !r.sc.departing && !r.c.membrane && r.sc.Vtuffing == null && !r.c.folded && r.c.tok && !(w.c.foam && r.sc.loose)
+    let fams = {}
+    for (const r of all) {
+        if (r.c.membrane) {
+            for (const k of r.o()) { if (fit(k)) { if (!fams[r.sc.Membrane]) fams[r.sc.Membrane] = []; fams[r.sc.Membrane].push(k) } }
+            continue
+        }
+        if (!fit(r)) continue
+        let mk = this.mainkey(r)
+        if (!fams[mk]) fams[mk] = []
+        fams[mk].push(r)
+    }
+    // a standing membrane whose family dissolved (or the stop went off) moves its rows back out and
+    //  leaves; a row that no longer fits (folded, loose, departing) moves out on its own
+    for (const r of all) {
+        if (!r.c.membrane) continue
+        let fam = on ? fams[r.sc.Membrane] : null
+        let keep = fam && fam.length >= 2
+        for (const k of r.o()) {
+            if (!keep || !fit(k)) { this.Vyto_rehome(w, r, scope, k); k.c.family = null }
+        }
+        if (!keep) { r.c.members = null; scope.drop(r) }
+    }
+    if (on) {
+        for (const mk of Object.keys(fams)) {
+            let fam = fams[mk]
+            if (fam.length < 2) continue
+            let mem = scope.o({ Membrane: mk })[0]
+            if (!mem) {
+                mem = scope.i({ Membrane: mk, n: '' + fam.length })
+                mem.c.membrane = 1
+                mem.c.tok = 'Membrane:' + mk
+                // the family's scope enters the cut at the family's own heart, sized for the family
+                let sx = 0
+                let sy = 0
+                let seeded = 0
+                for (const r of fam) { if (r.c.seed) { sx = sx + r.c.seed.x; sy = sy + r.c.seed.y; seeded = seeded + 1 } }
+                if (seeded) mem.c.seed = { x: sx / seeded, y: sy / seeded }
+            }
+            mem.c.seen_at = w.c.scan_gen
+            mem.c.members = fam
+            for (const r of fam) {
+                r.c.family = mem
+                if (!mem.o().includes(r)) this.Vyto_rehome(w, scope, mem, r)
+            }
+            // the shared facts: every key all members carry with ONE value — never the mainkey (the
+            //  membrane's own value says it), never a mirror-managed key.  A shared JOIN counts (three
+            //   Players all `of:main` — the owner: "this %of:main isn't on there at all!")
+            let shared = {}
+            let first = fam[0].sc
+            for (const k of Object.keys(first)) {
+                if (k === mk || k === 'departing' || k === 'loose' || k === 'dose' || k === 'same_n' || k === 'flat_n') continue
+                let v = first[k]
+                let agree = 1
+                for (const r of fam) { if (r.sc[k] !== v) agree = 0 }
+                if (agree) shared[k] = v
+            }
+            let changed = 0
+            if (mem.sc.n !== '' + fam.length) { mem.sc.n = '' + fam.length; changed = 1 }
+            for (const k of Object.keys(mem.sc)) {
+                if (k === 'Membrane' || k === 'n') continue
+                if (shared[k] == null) { delete mem.sc[k]; changed = 1 }
+            }
+            for (const k of Object.keys(shared)) {
+                if (mem.sc[k] !== shared[k]) { mem.sc[k] = shared[k]; changed = 1 }
+            }
+            if (changed) mem.bump_version()
+        }
+    }
+    for (const r of all) {
+        if (r.c.membrane || r.sc.departing) continue
+        this.Vyto_membrane_scope(w, r, on)
+    }
+
+// Vyto_rehome — move a mirror row from one scope to another.  TheC has no move: `drop` only FLAGS
+//  the row (`c.drop`) and leaves it in the old index, hidden; `i(row)` many-places the same ref.  So:
+//   drop it, compact the old parent so the flagged row is actually gone from that index, clear the
+//    flag, place it under the new parent.  The row keeps its identity (`.c.tok`, `.c.T` — the
+//     renderer morphs rather than blinks) but its SEED is dropped: a seed is a position in the OLD
+//      scope's frame, and the new scope spreads a seedless child on its own perimeter.
+Vyto_rehome(w, from, to, row):
+    from.drop(row)
+    from.compact()
+    row.c.drop = 0
+    row.c.seed = null
+    to.i(row)
+    row.bump_version()
+
 // Vyto_relate — scribe: reads meaning and writes %Flow edges (same Artist, played-together,
 //  co-heisted).  A Relate edge is also an ATTRACTION the solver honors — the first link of
 //   the bunching chain (spec §6; the solver's spring read is the next milestone — the edges
@@ -1153,7 +1285,8 @@ Vyto_simmer_walk(w, n, tick, base):
 //          tiny, and a rebuild can never leak a stale affinity.
 Vyto_relate(w):
     if (!w.c.mirror) return
-    let members = w.c.mirror.o().filter(r => !r.sc.departing)
+    // a membrane (Vyto_membrane — a family's scope) is not in the sig weave: its facts are its family's
+    let members = w.c.mirror.o().filter(r => !r.sc.departing && !r.c.membrane)
     if (!w.c.relations) w.c.relations = new TheC({ c: {}, sc: { Relations: 1 } })
     for (const e of w.c.relations.o()) w.c.relations.drop(e)
     let sigs = []
@@ -1204,6 +1337,7 @@ Vyto_importance(w, row):
     if (w.c.relations) {
         let tie = 0
         for (const e of w.c.relations.o()) {
+            if (e.sc.kind === 'membrane') continue
             if (e.sc.a === row.c.tok) tie = tie + (Number(e.sc.n) || 1)
             if (e.sc.b === row.c.tok) tie = tie + (Number(e.sc.n) || 1)
         }
@@ -1302,7 +1436,13 @@ Vyto_express_rows(w, rows):
         // MEMBERS only — a mirror row wears `.c.tok` (Vyto_scan_walk); a crest's %Vrow/%Vbit children
         //  are its VOICE, not seated members, and must not buy it room (seen live: a folded Song crest
         //   claimed 1.45× for its four Vrows)
-        let live_kids = kids.filter(k => !k.sc.departing && k.c.tok).length
+        let live_kids = kids.filter(k => !k.sc.departing && k.c.tok && !k.c.membrane).length
+        // a family's membrane (Vyto_membrane) is a scope like any other and claims like one — for its
+        //  members, who are its kids; a scope HOLDING a family counts the family's members as its own.
+        //   Summing the members' room was tried first and the family swallowed the Band outright: a
+        //    power cut hands the bigger radius far more than its area ratio, so a scope asks for a
+        //     SHARE, never for its contents' total.
+        for (const k of kids) { if (k.c.membrane && k.c.members) live_kids = live_kids + k.c.members.length }
         // a LINEAR claim (tried first, live) let a 3-child Band swallow the whole frame and crowd
         //  a Song out entirely — the scope's share needs to grow slower than its member count.
         // sqrt tried, live: still made a 3-child Band the single biggest shape in the frame — a power

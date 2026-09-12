@@ -12,7 +12,7 @@
     //   H={house}), so a House with no w:Vyto renders nothing at all.
     import { TheC }   from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { power_cells, foam_cells, slab_seat, poly_area, type Pt } from "$lib/O/vyto_geometry"
+    import { power_cells, foam_cells, slab_seat, poly_area, poly_centroid, membrane_carve, type Pt } from "$lib/O/vyto_geometry"
     import { deal_rows, seat_on_deal, deal_fits, deal_badness, box_poly,
              type Deal, type SeatRow } from "$lib/O/vyto_seat"
     import { focus_polys, fill_body, BELLY_SWELL, type FocusRole } from "$lib/O/vyto_focus"
@@ -1441,7 +1441,8 @@
             const sc = cell?.source?.sc ?? cell?.row?.sc
             if (!sc) return null
             const mk = Object.keys(sc)[0]
-            const key = (mk === 'Vtuffing' ? crest_key(sc) : null) ?? mk
+            // a %Membrane is the joint of a family and wears the FAMILY's hue (its value), never its own
+            const key = (mk === 'Vtuffing' ? crest_key(sc) : null) ?? (mk === 'Membrane' ? String(sc.Membrane) : mk)
             return (H as any)?.matstyle_ground?.(key) ?? null
         } catch { return null }
     }
@@ -1905,6 +1906,9 @@
         for (const c of viewport_cells(w)) {
             if (c.kind !== 'poly' || c.hasKids || c.departing || c.loose || c.face || !c.poly || c.poly.length < 3) continue
             allPoly.push(c)
+            // a family the model already STITCHED (Vyto_membrane — a %Membrane row at its heart) has its
+            //  mainkey on the bump; the label sketch is for the un-stitched
+            if ((c.row.c as any).family || (c.row.c as any).membrane) continue
             const mk = Object.keys((c.row.sc as any) ?? {})[0]; if (!mk) continue
             const g = groups.get(mk); if (g) g.push(c); else groups.set(mk, [c])
         }
@@ -2067,14 +2071,25 @@
         // a crest's key is its own distilled string (not a plain mainkey:value) — keep it a single
         //  bold run; an ordinary row's ident goes in SPLIT (see ident_parts_of/rows_of) so the title
         //   wears the same key:value convention as every fact line below it.
-        const jm = !!junction_of(w, cell)?.hidden.has(cell.key)
-        const ident = crest ? (crest_key(sc) ?? cell.ident) : { ...ident_parts_of(cell.row, w, cell.tok), hide_mk: jm, hide_title: jm }
+        // THE MEMBRANE (Vyto_membrane, stop `membrane`): the bump says the family's mainkey alone, in the
+        //  key look, plus what every member shares; a stitched member says only its VALUE (the mainkey
+        //   is on the bump it is joined to) and drops the facts the bump already carries
+        const mem = !!(cell.row.c as any).membrane
+        if (mem && cell.hasKids) return null
+        const fam = ((cell.row.c as any).family ?? null) as TheC | null
+        const jm = !fam && !mem && !!junction_of(w, cell)?.hidden.has(cell.key)
+        const ident = crest ? (crest_key(sc) ?? cell.ident)
+                    : mem ? { mk: String(sc.Membrane ?? '?'), v: '', bare_key: true }
+                    : { ...ident_parts_of(cell.row, w, cell.tok), hide_mk: jm || !!fam, hide_title: jm }
         // a SCOPE (its children tile it) wears a RUNNING HEAD: its name alone along its top wall, small and
         //  un-inflated, the way a magazine section carries its title above the pieces inside it
         const head = cell.hasKids
         const vrows = crest && !head ? crest_vrows(cell.row) : null
-        const jn = crest || head ? null : junction_of(w, cell)
-        const guts = crest || head ? [] : guts_pairs(cell.row, 12).filter(g => !jn || !jn.shared.some(sh => sh.k === g.k))
+        const jn = crest || head || fam || mem ? null : junction_of(w, cell)
+        const said = fam ? new Set(Object.keys(fam.sc as any).filter(k => k !== 'Membrane' && k !== 'n')) : null
+        const guts = crest || head ? []
+                   : mem ? guts_pairs(cell.row, 12).filter(g => g.k !== 'n')
+                   : guts_pairs(cell.row, 12).filter(g => (!jn || !jn.shared.some(sh => sh.k === g.k)) && !(said && said.has(g.k)))
         const rows = head ? rows_of(ident, [], null, { hue: g?.color ?? undefined, title_fs: 11 }).slice(0, 1)
                           : rows_of(ident, guts, vrows, { hue: g?.color ?? undefined })
         if (head) for (const a of rows[0]) a.cls = a.cls + ' fo-head'
@@ -2246,6 +2261,8 @@
         //   wears the parent's fill and no wall of its own, so it reads as the parent showing
         //    through its own stuffing rather than as a sibling of its children.
         const SELF_KEY = '»self'
+    // the bump's radius floor, as a share of its petals' mean cut radius (membrane_carve)
+    const MEMBRANE_SHARE = 0.36
         const layout = (nodes: Node[], framePoly: Pt[], gap: number, scopeKey: string, selfOf?: Node): void => {
             // the seat is its own regime: it never runs the fill economy, the seat floor, the repair
             //  loop or the vanish floor, because it cannot produce the faults those exist to repair.
@@ -2271,15 +2288,69 @@
             //   invented — and its weight is the mean child radius, i.e. "an equal share among your
             //    stuffing".  A bigger claim would starve the children the nesting exists to show; a
             //     smaller one would crush the component the seat exists to hold.
+            // THE STUFFING SPREADS WITH ITS BAG (2026-09-12, found chasing the membrane: the family's petals
+            //  sat in a cluster a fifth the size of the family's own cell, and so did the Band's Players —
+            //   "the squished bits" again).  A nested scope is solved by the MODEL inside the model's cut of
+            //    the parent — a foam disc of the parent's model radius (~30px) — so every child's target
+            //     lies within that disc of the parent's seed.  The RENDER then inflates the parent's cell to
+            //      fill its share of the frame (ten times the model disc) and cuts the children at their
+            //       model positions: a knot at the centre of a big empty bag, discs overlapping almost
+            //        entirely, the fill law satisfied by disc AREA and the eye unsatisfied by the room.
+            //  So a child's seat here is its model offset from the parent, scaled by how much the parent's
+            //   cell was inflated over the model's: the stuffing spreads with its bag.  Membrane-gated for
+            //    now (a render-side move on every nested foam glass changes cuts every recorded pose Book
+            //     photographs — the owner rules whether it becomes the default; it should).
+            //  Spread about the parent cell's CENTROID, not its seed: a foam cell is its disc with a
+            //   neighbour's press cut off, so the seed can sit hard against that wall and the rosette
+            //    would lean into it (seen: the Song bump jammed on the Band's wall, the top petal gone).
+            let bagCentre: Pt | null = null
+            if (selfOf && seeds.length && fo(w, 'membrane')) {
+                const mpoly = (selfOf.row.c as any).poly as Pt[] | null | undefined
+                const ps0 = sp.get(selfOf.key)
+                const ma = mpoly && mpoly.length > 2 ? Math.abs(poly_area(mpoly)) : 0
+                const fa = Math.abs(poly_area(framePoly))
+                if (ps0 && ma > 1 && fa > ma) {
+                    let sc = Math.min(20, Math.sqrt(fa / ma))
+                    // ...but never so far that the stuffing leaves the heart: the farthest child sits at
+                    //  most half the bag's radius out, so every petal's disc still reaches the bump
+                    //   (seen: a Player spread to the bag's rim, its disc touching nothing)
+                    let far = 0
+                    for (const s0 of seeds) far = Math.max(far, Math.hypot(s0.x - ps0.x, s0.y - ps0.y))
+                    const R = Math.sqrt(fa / Math.PI)
+                    if (far > 0) sc = Math.min(sc, (0.5 * R) / far)
+                    bagCentre = poly_centroid(framePoly)
+                    for (let i = 0; i < seeds.length; i++) seeds[i] = { x: bagCentre.x + (seeds[i].x - ps0.x) * sc, y: bagCentre.y + (seeds[i].y - ps0.y) * sc }
+                }
+            }
             let selfSeed: Pt | null = null
             const selfFace = selfOf ? (bare_on(w) ? null : face_of(selfOf.row)) : null
-            if (selfOf && selfFace && live.length) {
+            // THE BUMP (Vyto_membrane): a family's membrane is a scope whose self seat is the joint itself —
+            //  it always takes a seat, face or no face, at MEMBRANE_SHARE of its petals' mean so the mainkey
+            //   can be said on it; membrane_carve below deals it its disc and necks the petals onto it
+            const bumpOf = !!(selfOf?.row.c as any)?.membrane
+            if (selfOf && (selfFace || bumpOf) && live.length) {
                 const ps = sp.get(selfOf.key)
                 if (ps) {
                     const mean = radii.reduce((a, r) => a + r, 0) / radii.length
-                    selfSeed = { x: ps.x, y: ps.y }
+                    selfSeed = bumpOf && bagCentre ? bagCentre : { x: ps.x, y: ps.y }
                     live.push(selfOf); keys.push(selfOf.key + SELF_KEY)
-                    seeds.push(selfSeed); radii.push(mean)
+                    // a bump is as big as what it has to SAY: its mainkey, and the facts its family shares
+                    //  (`of main` fell off a Player bump sized by share alone) — the widest line, in the
+                    //   unit the fill scale is about to multiply (the petals' mean, before scaling)
+                    let bumpR = mean * MEMBRANE_SHARE
+                    if (bumpOf) {
+                        const msc: any = selfOf.row.sc
+                        let widest = String(msc.Membrane ?? '').length * 12
+                        for (const k of Object.keys(msc)) if (k !== 'Membrane' && k !== 'n') widest = Math.max(widest, (k.length + 1 + String(msc[k]).length) * 10)
+                        // the fill scale k is not known yet; it is the same for every seat, so state the need as
+                        //  a share of the petals' mean via the frame: the frame's area is what the petals will
+                        //   fill, so mean·(need_px / expected mean px) with expected mean px from the fill
+                        const A = Math.abs(poly_area(framePoly))
+                        const expect = Math.sqrt((A * FOAM_FILL_NESTED) / (radii.length + 1) / Math.PI)
+                        const need = (0.62 * widest * 0.6 + 6) / Math.max(1, expect)
+                        bumpR = Math.max(bumpR, mean * need)
+                    }
+                    seeds.push(selfSeed); radii.push(bumpR)
                 }
             }
             // THE FRAME SEAT — applied before anything reads a seed, because the stage's room
@@ -2347,13 +2418,25 @@
             //  `askRadii` is kept because the REPAIR PASS below re-derives from the ASK, never from an
             //   already-floored array — escalating on top of a previous escalation compounds.
             const askRadii = cutRadii
-            if (foam && askRadii.length) cutRadii = seat_floor(seeds, askRadii, gap, null, 1)
+            // THE BUMP NEEDS NO FLOOR (Vyto_membrane): it is dealt its disc by membrane_carve, and a floor
+            //  that protects it CAPS its petals instead (seen live: three petals capped to 41px around a
+            //   26px bump 20px away — the family a cluster of shards in a cell ten times their size).
+            //    So the floor, and the repair below, run on the petals alone; the bump rides its ask.
+            const floored = (r: number[], victims: Set<number> | null, mult: number): number[] => {
+                if (!bumpOf) return seat_floor(seeds, r, gap, victims, mult)
+                const n = seeds.length - 1
+                return seat_floor(seeds.slice(0, n), r.slice(0, n), gap, victims, mult).concat([r[n]])
+            }
+            if (foam && askRadii.length) cutRadii = floored(askRadii, null, 1)
             // the memo consult: unchanged inputs reuse the standing polys (same references — the drift
             //  judge shortcuts them to zero); changed inputs cut fresh and count one REAL cut.
             //  Keyed on the PRE-repair sig, which is correct rather than a shortcut: the repair is a
             //   deterministic function of the same inputs, so a sig hit implies the same repair.
             seenScopes.add(scopeKey)
-            const sig = (foam ? 'F' : '') + cut_sig(framePoly, keys, seeds, cutRadii, gap)
+            // THE MEMBRANE CARVE (membrane_carve, vyto_geometry) rides the memo — a post-cut carve on the
+            //  fresh polys, so the `pinch` stop is in the sig and a toggle re-cuts
+            const pinchR = !!fo(w, 'pinch')
+            const sig = (foam ? 'F' : '') + (pinchR ? 'P' : '') + cut_sig(framePoly, keys, seeds, cutRadii, gap)
             const had = wm.get(scopeKey)
             let polys: (Pt[] | null)[]
             if (focusR) {
@@ -2385,9 +2468,9 @@
                 if (foam) {
                     for (let tryn = 1; tryn <= 6; tryn++) {
                         const victims = new Set<number>()
-                        for (let i = 0; i < polys.length; i++) if (!polys[i]) victims.add(i)
+                        for (let i = 0; i < polys.length; i++) if (!polys[i] && !(bumpOf && i === polys.length - 1)) victims.add(i)
                         if (!victims.size) break
-                        cutRadii = seat_floor(seeds, askRadii, gap, victims, 1 + tryn * 1.6)
+                        cutRadii = floored(askRadii, victims, 1 + tryn * 1.6)
                         polys = foam_cells(seeds, cutRadii, gap, framePoly)
                         ;(w.c as any).wall_cuts = (((w.c as any).wall_cuts as number) || 0) + 1
                     }
@@ -2448,6 +2531,18 @@
                         ;(w.c as any).vanished = (((w.c as any).vanished as number) || 0) + doomed.size
                     }
                 }
+                // THE BUMP IS DEALT (membrane_carve): inside a family's membrane the self seat (last in `live`)
+                //  takes the disc at its seat — its ASKED radius, never the repaired one (the repair pass
+                //   escalates a swallowed body hard, and a small bump among big petals is always the swallowed
+                //    one: seen live as a bump the size of the pile) — and every petal is carved to it: a
+                //     tangent wall each, or with the `pinch` stop a neck onto the arc.  In place on the fresh
+                //      cut, before the memo keeps it.
+                if (bumpOf && selfSeed) {
+                    const mi = live.length - 1
+                    const petals: number[] = []
+                    for (let k = 0; k < mi; k++) petals.push(k)
+                    if (petals.length) membrane_carve(polys, mi, petals, selfSeed, askRadii[mi], pinchR ? 0.55 : 0)
+                }
                 wm.set(scopeKey, { sig, polys })
             }
             const polyByKey = new Map<string, Pt[] | null>()
@@ -2478,7 +2573,10 @@
                 // heat holds a body SURFACED after the pointer moves on — the attention trail
                 //  stays lit and sinks only as the currency taxes away (heat 0 in every Book,
                 //   so driven worlds read exactly as before).
-                const sunk = n.depth > 0 && !near_key(liftKey, n.key) && !near_key(engKey, n.key)
+                // a family's petal sits one deeper than its membrane but IS the thing (Vyto_membrane): it
+                //  reads at the ink its family's scope would
+                const eff_depth = (row.c as any).family ? n.depth - 1 : n.depth
+                const sunk = eff_depth > 0 && !near_key(liftKey, n.key) && !near_key(engKey, n.key)
                           && !(((row.c as any).heat ?? 0) > 0.25)
                 // BARE: the face is dropped at the source, so nothing downstream — mold, measure, seat,
                 //  need floor, icon register — has anything to do.  One gate, not six opt-outs.
@@ -2941,7 +3039,7 @@
             //  seam it shares with them is the thing that should not read as a border).  It carries
             //   the PARENT's face, source and row — pressing it is pressing the parent, which is what
             //    "not separate to the cell itself" has to mean for the pointer as well as the eye.
-            if (selfOf && selfFace && selfSeed) {
+            if (selfOf && (selfFace || bumpOf) && selfSeed) {
                 const spoly = polyByKey.get(selfOf.key + SELF_KEY)
                 const ps = sp.get(selfOf.key)
                 if (spoly && ps) {
@@ -2971,13 +3069,13 @@
                                  //    its children — carried `ident: ''`, so the name fell off the world
                                  //     entirely.  It already wears the parent's face, source and row;
                                  //      wearing the parent's NAME is the same sentence finished.
-                                 hasKids: false, ident: ident_of(selfOf.row, w, selfOf.tok),
+                                 hasKids: false, ident: bumpOf ? String((selfOf.row.sc as any).Membrane) : ident_of(selfOf.row, w, selfOf.tok),
                                  x: selfSeed.x, y: selfSeed.y,
                                  r: Math.max(6, Math.min(sbb.bw, sbb.bh) / 2), kind: 'poly',
                                  d: path_round(spoly), departing: false, lift: false,
                                  bx: sbb.bx, by: sbb.by, bw: sbb.bw, bh: sbb.bh,
                                  mx: sbb.bx, my: sbb.by, mw: sbb.bw, mh: sbb.bh, ang: 0,
-                                 clip: clip_of(spoly, sbb), face: selfFace.comp, source: selfFace.source,
+                                 clip: clip_of(spoly, sbb), face: selfFace?.comp ?? null, source: selfFace?.source ?? null,
                                  row: selfOf.row, fx: '', fxi: 0, fit: sfit, sunk: false,
                                  poly: spoly, room: Math.abs(poly_area(spoly)), selfseat: true })
                 }
@@ -4409,7 +4507,7 @@
                                           ondblclick={st.k ? (e) => open_inspect(w, cell, e) : undefined}>{st.text}</text>
                                 {/each}
                             </g>
-                        {:else if !junction_of(w, cell)?.hidden.has(cell.key)}
+                        {:else if !junction_of(w, cell)?.hidden.has(cell.key) && !(cell.hasKids && (cell.row.c as any).membrane)}
                             <!-- (a junction member with nothing left to say inside says its name at the dot — no fallback) -->
                             <!-- THE BLANK BIT (2026-09-11, folio became the default and this started
                                  showing up: the owner, looking live: *"what's with this blank bit"*).
@@ -4455,7 +4553,7 @@
                                   class:breathe={cell.fx === '' && foam_breathes(w) && !focus_on(w)}
                                   class:hot={((cell.row.c as any).heat ?? 0) > 0.25}
                                   class:pressy={pressy(cell)} class:staged={cell.tok === staged_tok(w)} class:land-glow={land_glow === cell.key}
-                                  class:selfseat={cell.selfseat} class:sat={sat_row(cell.row)}
+                                  class:selfseat={cell.selfseat} class:sat={sat_row(cell.row)} class:membrane={!!(cell.row.c as any).membrane}
                                   class:arrive={cell.fx === 'arrive'} class:erupt={cell.fx === 'erupt'} d={cell.d}
                                   data-key={cell.key}
                                   style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (wallpaper_of(cell) ? ` fill:url(#${wallpaper_of(cell)});` : '') + (cdv > 0 ? ` stroke-width:${(1.2 + Math.min(3, cdv) * 0.55).toFixed(2)};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : ` --bd:-${ci * 430}ms;`)}
@@ -4975,6 +5073,12 @@
        be honestly divided — so everything that says "separate thing" has to come off: no wall of its
        own, and the scope's own quiet ground rather than a child's.  What is left is a shaped opening
        in the tiling, which is exactly what a parent still visible among its children looks like. */
+    /* THE BUMP (Vyto_membrane): the joint of a family — its family's hue, a heavier wall, no press */
+    /* a family's membrane has no wall of its own — its petals' outer walls ARE the membrane; the bag's
+       unfilled margin is empty, as foam's margins are */
+    .cell.scope.membrane { fill: none !important; stroke: none !important; pointer-events: none; }
+    .cell.selfseat.membrane { stroke-width: 2.2; fill-opacity: 0.92; }
+    .cell.selfseat.membrane:hover { fill-opacity: 1; }
     .cell.selfseat { stroke: none; fill: #14141c; }
     .cell.selfseat.pressy { stroke: none; }
     .cell.selfseat:hover { fill: #1a1a26; }

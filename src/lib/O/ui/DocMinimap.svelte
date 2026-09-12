@@ -501,6 +501,12 @@
     // reconciles the rest.
     function seek(from: number, to: number) {
         if (!view) return
+        // the editor's own seek (Langui fire_seek) when it is up: it scrolls the editor's scroller
+        //  and never the page, and holds the aim across the folds that land after — a duplicate
+        //   `EditorView.scrollIntoView` here walked every ancestor and re-centred the ROOM on each
+        //    Point switch (2026-09-12).  The inline fallback below is for a dock without a seek yet.
+        const dseek = lang_dock?.c.seek as ((v: EditorView, from: number, to: number) => void) | undefined
+        if (dseek) { dseek(view, from, to); return }
         const doc  = view.state.doc
         const line = doc.lineAt(from)
         const opens: Array<{ from: number, to: number }> = []

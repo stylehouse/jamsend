@@ -4,18 +4,22 @@ story:MusuQuarter
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.012
+    TimeTotal:beliefs,avg=0.01
       sample=0.031,at=1788079234
       sample=0.004,at=1788079236
       sample=0.007,at=1788436836
       sample=0.005,at=1788496776
       sample=0.007,at=1788604232
       sample=0.015,at=1789113568
-    TimeTotal:step,avg=0.012
+      sample=0.004,at=1789129360
+      sample=0.009,at=1789178374
+    TimeTotal:step,avg=0.01
       sample=0.031,at=1788079234
       sample=0.004,at=1788079236
       sample=0.007,at=1788436836
       sample=0.005,at=1788496776
       sample=0.007,at=1788604232
       sample=0.015,at=1789113568
+      sample=0.004,at=1789129360
+      sample=0.009,at=1789178374
   step,dige:6982c323e929bc0c

@@ -1,0 +1,13 @@
+Waft:Aside/2026-09-12,aside
+  What,FromWhat:Waft:Ghost/Net/Easy/What:the spine,about:BootGateNoFSA
+    Doc:Ghost/Story/Sounditron.g
+      Point,method:BootGateNoFSA
+  What=2,FromWhat:Waft:Aside/2026-09-12/What:1,about:D_to_name
+    Doc:src/lib/mostly/Selection.svelte.ts
+      Point,method:D_to_name
+  What=3,FromWhat:Waft:Aside/2026-09-12/What:2,about:De_handshake
+    Doc:src/lib/O/MachPeerily.svelte
+      Point,method:De_handshake
+  What=4,FromWhat:Waft:Aside/2026-09-12/What:3,about:Electrode_T
+    Doc:Ghost/L/Electrode.g
+      Point,method:Electrode_T

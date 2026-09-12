@@ -101,6 +101,7 @@
         { stop: 'wallcarve',  what: 'OPT OUT of the folio — back to the old wall-carve masonry / centred ident (folio is now the default)' },
         { stop: 'wave',       what: 'with wallcarve on: the label rides a scalloped wave band instead of the wall carve' },
         { stop: 'junction',   what: 'sibling cells of one mainkey say it ONCE where they meet — each keeps only its value (the owner\'s idea)' },
+        { stop: 'pinch',      what: 'with membrane on: each petal is carved to a NECK onto its family\'s bump — the disc shows through the pinches between necks' },
         { stop: 'seal',       what: 'the seat regime — cells seal to their molds' },
         { stop: 'copperless', what: 'no copper ground' },
         { stop: 'nohall',     what: 'no hallway corridor of guts' },
@@ -112,6 +113,7 @@
     ]
     const MODEL_STOPS = [
         { stop: 'kindfold',   what: 'the fold ladder — mainkey, then of:, then id:, then a discovered key' },
+        { stop: 'membrane',   what: 'THE MEMBRANE — a family (siblings of one mainkey) gets a %Membrane row at its heart: a small bump in the cut wearing the mainkey + the shared facts, every member wired to it; petals say only their value' },
         { stop: 'kinweave',   what: 'joins as kin atoms — id/of/pub weave %Flow instead of being struck' },
         { stop: 'saylaw',     what: 'the line law — a universal presence is said once, never merely absent' },
         { stop: 'room',       what: 'opt-in room fill 0.55' },

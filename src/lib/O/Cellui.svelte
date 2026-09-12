@@ -871,19 +871,19 @@
     //    edge (the clip-path trims only the rounded CORNERS, which carry no centred text), and the
     //     stretched-cap below (min 1) still stops a full-width face scaling out past its own sides into
     //      the wall — so this enlarges without reviving the clipped-letter.  One knob: retune here.
-    const INLAY_SCALE = 1.2
+    const INLAY_SCALE = 1.44   // ×1.2 again (owner 2026-09-12: "it all could be 20% bigger")
     //  THE CAP IS PER-ROLE (the owner, 2026-08-29: "it needs to resize the overlay glass, the
     //   Radio controls are taking up 1/5th of the area of the cell").  A compact-natural face
     //    (RadioFace's pill cluster) in an 860px belly needs to SCALE UP to fill its inscribed
     //     box — the screenshot's player is BIG in the big cell — so the main's cap must be well
     //      above 1.  Satellites keep the low cap: a bud glyph ballooned 3× is a cartoon.
-    const FIT_MIN = 0.3, FIT_MAX_MAIN = 4.5, FIT_MAX_SAT = 1.85   // caps ×1.6 so INLAY_SCALE isn't clamped
+    const FIT_MIN = 0.3, FIT_MAX_MAIN = 5.4, FIT_MAX_SAT = 2.2    // caps ×1.2 with INLAY_SCALE (2026-09-12) so it isn't clamped
     // STRETCHED CAP (owner 2026-08-30: "the Link innard is much smaller than it was, was looking really
     //  good").  A full-width (block-layout) face can't scale UP without its sides crossing the wall, but
     //   capping it at 1 shrank the Link badly.  1.3 lets it fill to the blob's widest point (~the cell
     //    edge at mid-height, where the column at 0.76·cell × 1.3 ≈ 1.0·cell) — big again — while still
     //     stopping the gross overflow that clipped whole letters.  Below the wall, not past it.
-    const STRETCH_CAP = 1.3
+    const STRETCH_CAP = 1.56   // ×1.2 (2026-09-12) — the mold no longer clips, so a wider face overflows visibly rather than losing glyphs
     // DEAD-BAND WIDER (owner 2026-08-30: "Link's overlay glass … constantly re-measuring").  A live
     //  Face animates (LinkDevice's spinner/pills/SAS), and each pulse fired the fit at 2% — visible
     //   thrash.  6% + rounding the natural box to 6px absorbs the animation while still catching a
@@ -900,7 +900,10 @@
                 if (!child || typeof child.offsetWidth !== 'number') continue
                 const mold = scroll.parentElement as HTMLElement | null
                 if (!mold) continue
-                const iw = mold.clientWidth * INSCRIBE_W * INLAY_SCALE, ih = mold.clientHeight * INSCRIBE_H * INLAY_SCALE
+                // the target may exceed the blob (the mold is unclipped now) but never the PAGE: a face wider than
+                //  the viewport is a face with its ends off-screen, which no amount of overflow makes legible.
+                const vw = (typeof window !== 'undefined' ? window.innerWidth : 0) || Infinity
+                const iw = Math.min(mold.clientWidth * INSCRIBE_W * INLAY_SCALE, vw * 0.94), ih = mold.clientHeight * INSCRIBE_H * INLAY_SCALE
                 // round the natural box to 6px so a 1-2px animation wobble in the Face can't nudge the fit
                 const nw = Math.round(child.offsetWidth / 6) * 6, nh = Math.round(child.offsetHeight / 6) * 6
                 if (!(nw > 0 && nh > 0 && iw > 0 && ih > 0)) continue
@@ -1115,7 +1118,7 @@
             <!-- the Face, declarative mount inside the clipped mold -->
             {#if main_cell.face}
                 {@const Face = main_cell.face}
-                <div class="cello-face-mold" style="clip-path: {main_blob};">
+                <div class="cello-face-mold">
                     <!-- sizewatch observes the Face's OWN root; --fit inscribes the guts into the
                          blob (lay out at 100%/--fit, scale back by --fit — Vytui:1258). -->
                     <div class="cello-face-scroll" class:scrollbig={main_offedge} use:sizewatch={main_cell.key}
@@ -1213,7 +1216,7 @@
                         {@const Face = cell.face}
                         <!-- a satellite is small — pose 'small' already stamped in the satellites derived,
                              so the Face renders its bud glyph, not a folded player. -->
-                        <div class="cello-sat-face" style="clip-path: {cell.blob};">
+                        <div class="cello-sat-face">
                             <!-- same fitting seam as the main: the bud glyph centres in ITS inscribed box -->
                             <div class="cello-face-scroll" use:sizewatch={cell.key}
                                  style="--fit: {fits.get(cell.key) ?? 1};">
@@ -1268,7 +1271,7 @@
     width: 100%;
     min-height: 100vh;
     box-sizing: border-box;
-    padding: 4vh 3vw;
+    padding: 1vh 0.5vw;            /* 20% closer to the page edges (owner 2026-09-12) — was 4vh 3vw */
     background-color: #6e4e2e;
     background-image:
         radial-gradient(135% 120% at 50% 42%, rgba(12, 15, 26, 0.82), rgba(4, 5, 10, 0.96) 72%),
@@ -1286,11 +1289,11 @@
    .cello-main box is a plain rectangle that the pieces clip/trace themselves. */
 .cello-main {
     position: relative;
-    flex: 0 1 min(96vw, 1452px);   /* 10% wider (owner 2026-08-30); DOMINATES + WIDE like Vyto */
+    flex: 0 1 min(100vw, 1742px);  /* +20% (owner 2026-09-12: "closer to the edges of the page"); was min(96vw,1452px) */
     aspect-ratio: 1.25 / 1;        /* 20% taller (owner 2026-08-30): lowered from 1.5 so the cell rises;
                                        still wide enough that a rectangular Face inscribes without its
                                         corners poking past the blob curve */
-    max-height: 94vh;
+    max-height: 99vh;              /* was 94vh — the cell may reach the page edge */
     color: var(--cell-fg, #a8a8cc);
     transition: flex-basis 0.4s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.4s ease;
     filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.55));
@@ -1383,7 +1386,7 @@
 /* ── SATELLITE BLOB ─────────────────────────────────────────────────────────── */
 .cello-sat {
     position: relative;
-    width: clamp(96px, 10vw, 150px);   /* satellites clearly SMALL — widen the gap to the main */
+    width: clamp(115px, 12vw, 180px);  /* satellites clearly SMALL (×1.2, 2026-09-12) — widen the gap to the main */
     aspect-ratio: 1 / 1;
     background: transparent;
     color: var(--cell-fg, #a8a8cc);
@@ -1610,8 +1613,12 @@
    wall.  pointer-events:none on the mold (Vytui contract — the mold rectangle must
     never eat a press meant for a neighbour); the face's own buttons re-arm auto. */
 .cello-face-mold {
+    /* UNCLIPPED (owner 2026-09-12: "make the component inlaid into each cell able to overflow the edges
+       of the cell") — the blob's clip-path stays on the WALL and BODY only; a face may now poke past the
+        wobbly wall instead of losing its first and last glyph to it. */
     position: absolute;
     inset: 0;
+    overflow: visible;
     display: flex;
     align-items: center;
     justify-content: center;

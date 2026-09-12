@@ -228,11 +228,15 @@ export type RowsOpts = { title_fs?: number, fact_fs?: number, chip_fs?: number, 
 //    style, like artist:Yara is... to Song too") — and so the title's own atoms carry `k` (the
 //     mainkey name), the same field every fact atom already carries, letting a caller glow the title
 //      and its matching fact/source line together on hover without caring which one it started from.
-export function rows_of(ident: string | { mk: string, v: string, hide_mk?: boolean, hide_title?: boolean }, guts: { k: string, v: string }[], vrows: VrowDesc[] | null, o?: RowsOpts): Atom[][] {
+export function rows_of(ident: string | { mk: string, v: string, hide_mk?: boolean, hide_title?: boolean, bare_key?: boolean }, guts: { k: string, v: string }[], vrows: VrowDesc[] | null, o?: RowsOpts): Atom[][] {
     const T = o?.title_fs ?? 14, F = o?.fact_fs ?? 10, C = o?.chip_fs ?? 9
     // hide_mk: the mainkey is said elsewhere (a shared junction label) — the title is the value alone,
     //  still tagged k=mk so it glows with the junction and every sibling's value together
-    const titleRow: Atom[] = (typeof ident === 'object' && ident.v)
+    // bare_key: the title IS a mainkey, said alone in the key look (a family's membrane bump) — a key's
+    //  size, a touch up, since the bump is small and the word must fit it
+    const titleRow: Atom[] = (typeof ident === 'object' && ident.bare_key)
+        ? [atom(ident.mk, Math.min(T, F + 2), 'fo-title fo-title-key', o?.key_hue, ident.mk)]
+        : (typeof ident === 'object' && ident.v)
         ? (ident.hide_mk ? [atom(ident.v, T, 'fo-title fo-title-val', o?.hue, ident.mk)]
                          // the mainkey wears the FACT-KEY look (artist, mood — size F, lilac, 600), not the title's: the owner,
                          //  2026-09-11: "Song (mainkey) could look more like the other keys"; only the value is the title

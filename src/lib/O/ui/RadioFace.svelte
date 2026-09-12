@@ -543,7 +543,7 @@
     /* the small facts file in a wrapping row of chips, each its own object */
     .rf-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; max-width: 100%; }
     .rf-chip {
-        font-size: 9px; opacity: 0.85; white-space: nowrap;
+        font-size: 9px; opacity: 0.85; white-space: normal; text-align: center; max-width: 30em;   /* a long teaching line wraps rather than spilling off the page */
         background: rgba(16, 28, 36, 0.6); border: 1px solid rgba(217, 160, 38, 0.16);
         border-radius: 999px; padding: 1px 7px;
     }

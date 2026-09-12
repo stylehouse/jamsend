@@ -89,8 +89,27 @@
     //      called scrollTo/scrollIntoView. Remove once the cause is fixed.
     let defs_el = $state<HTMLDivElement | null>(null)
     let _last_top = 0
+    let _last_sh  = 0          // scrollHeight at the last scroll event — a drop means the CONTENT shrank
+    let _muts     = 0          // childList mutations on the list since the last scroll event
     let _last_el: HTMLDivElement | null = null
-    $effect(() => { if (defs_el && defs_el !== _last_el) { if (_last_el) console.log(`📜 Lagoon defs list element REMOUNTED`); _last_el = defs_el } })
+    $effect(() => {
+        if (!defs_el || defs_el === _last_el) return
+        if (_last_el) console.log(`📜 Lagoon defs list element REMOUNTED`)
+        _last_el = defs_el
+        const mo = new MutationObserver(ms => { _muts += ms.length })
+        mo.observe(defs_el, { childList: true })
+        return () => mo.disconnect()
+    })
+    function probe_scroll() {
+        const el = defs_el
+        if (!el) return
+        if (el.scrollTop === 0 && _last_top > 40)
+            console.log(`📜 Lagoon defs list UNSCROLLED to 0 (was ${Math.round(_last_top)}) · rows:${index?.defs?.length ?? 0}`
+                + ` · scrollHeight ${_last_sh}→${el.scrollHeight} · clientHeight ${el.clientHeight}`
+                + ` · childList mutations since last scroll:${_muts} · display:${getComputedStyle(el).display}`
+                + ` · focus inside:${el.contains(document.activeElement)}`)
+        _last_top = el.scrollTop; _last_sh = el.scrollHeight; _muts = 0
+    }
     let stale = $state(false)
     let asked_q = ''
 
@@ -249,7 +268,7 @@
                 {/each}
             </div>
         {/if}
-        <div class="lag-out tall" bind:this={defs_el} onscroll={() => { if (defs_el && defs_el.scrollTop === 0 && _last_top > 40) console.log(`📜 Lagoon defs list UNSCROLLED to 0 (was ${_last_top}) · rows:${index?.defs?.length ?? 0} · same element:${defs_el === _last_el}`); _last_top = defs_el?.scrollTop ?? 0 }}>
+        <div class="lag-out tall" bind:this={defs_el} onscroll={probe_scroll}>
             {#each index.defs as d (d.doc + d.name + d.line)}
                 <div class="lag-grow">
                     <div class="lag-row2">
@@ -371,7 +390,7 @@
         display: flex; flex-direction: column; gap: 0.05rem;
         max-height: 15rem; overflow: auto; padding-left: 0.1rem;
     }
-    .lag-out.tall { max-height: 26rem; }
+    .lag-out.tall { max-height: 26rem; overflow-anchor: none; }
     /* the families — the larger objects, sized by nothing yet (dose comes later, Lagoon_todo §3) */
     .lag-fams { display: flex; flex-wrap: wrap; gap: 0.2rem; align-items: baseline; max-height: 7rem; overflow: auto; }
     .lag-fam {

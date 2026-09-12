@@ -611,7 +611,10 @@
         const { regions } = this.Lang_build_regions(state)
         this.Lang_apply_openness(view, regions, result.from)
 
-        view.dispatch({
+        // dock.c.seek scrolls the editor's scroller only (a raw scrollIntoView walks up to the
+        //  window and re-centres the page — see Langui scroll_scroller_to); fall back when absent.
+        if (dock.c.seek) (dock.c.seek as (v: EditorView, a: number, b: number) => void)(view, result.from, result.to)
+        else view.dispatch({
             selection: { anchor: result.from, head: result.to },
             effects:   EditorView.scrollIntoView(result.from, { y: 'center' }),
         })

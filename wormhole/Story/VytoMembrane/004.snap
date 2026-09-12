@@ -1,0 +1,20 @@
+Snap:H
+  H:VytoMembrane,Run
+    A:VytoMembrane
+      self,round=6	{"mung":["age"]}
+      w:VytoMembrane
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Band:main
+          Player:keys,of:main
+          Player:bass,of:main
+          Player:drums,of:main
+        Song:LowTide,artist:Yara
+        Song:Undertow,artist:Yara
+        Song:SaltAir,artist:Nell
+        Stray:moth,loose
+        Stray:lint,loose
+        req:stand_wait,finished
+        req:diverge_wait,finished
+        see:two families stand as two scopes — the songs share their artist on the bump and the players their of
+        see:a diverging artist leaves the bump — what is shared is only what every member says

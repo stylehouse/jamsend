@@ -1,0 +1,22 @@
+Snap:H
+  H:VytoMembrane,Run
+    A:VytoMembrane
+      self,round=10	{"mung":["age"]}
+      w:VytoMembrane
+        self,round=10	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Band:main
+          Player:keys,of:main
+          Player:bass,of:main
+          Player:drums,of:main
+        Song:LowTide,artist:Yara
+        Stray:moth,loose
+        Stray:lint,loose
+        req:stand_wait,finished
+        req:diverge_wait,finished
+        req:shrink_wait,finished
+        req:dissolve_wait,finished
+        see:two families stand as two scopes — the songs share their artist on the bump and the players their of
+        see:a diverging artist leaves the bump — what is shared is only what every member says
+        see:a departed song shrinks the family to two — the membrane counts what it holds
+        see:one song is no family — the membrane dissolves and the survivor moves back out to the top
