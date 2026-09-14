@@ -8567,6 +8567,7 @@ Swarm_note_theft(ident, by, at):
     if (this.Swarm_is_sibling(ident, by)) return false
     let peering = this.Swarm_peering(ident)
     peering.sc.stolen = 1
+    peering.c.stolen_at = Date.now()
     let husk = peering.oai({ Stolen: by })
     husk.c.up = peering
     husk.sc.at = String(at ?? this.Swarm_now(H))
@@ -8575,8 +8576,21 @@ Swarm_note_theft(ident, by, at):
     return true
 
 // Swarm_stolen — is our name currently contested by an unrecognized place? (the banner's gate).
+//  LIVE, NOT STICKY (2026-09-13: eed wore "two of you" all day off ONE claim frame at 09:41 from its
+//   own address — a second tab of the same profile, briefly — because nothing but Steal Back ever
+//    cleared the flag).  A theft is evidenced by claim FRAMES: Swarm_note_theft stamps a RUNTIME
+//     `.c.stolen_at` on each one (never snapped, so a Book's fixture `at` stays what it is and a reload
+//      starts without it).  No fresh stamp in the window = the other body is gone: clear and say no.
 Swarm_stolen(ident):
-    return !!this.Swarm_peering(ident)?.sc?.stolen
+    let peering = this.Swarm_peering(ident)
+    if (!peering || !peering.sc.stolen) return false
+    let at = +(peering.c.stolen_at || 0)
+    if (!at || (Date.now() - at) > 120000) {
+        delete peering.sc.stolen
+        peering.bump()
+        return false
+    }
+    return true
 
 // Swarm_steal_back — concede the contested name and re-present at the next free suffix, SAME key.
 //  `taken` is every address we can see held (the thief's + our siblings'); we jump past all of them,

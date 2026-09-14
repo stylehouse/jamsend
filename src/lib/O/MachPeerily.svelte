@@ -632,7 +632,8 @@
     //   protocol_faulty on any Pier ends the exchange definitively — De won't complete.
     _PeeringLive_settled(side_w: TheC): boolean {
         if ((side_w.o({ Pier: 1 }) as TheC[]).some(n => n.oa({ protocol_faulty: 1 }))) return true
-        return !side_w.o({ req: 1 }).some(n => !n.sc.finished)
+        // needs_work, not merely !finished — an eternal that exhaled %ok is settled, not pending
+        return !side_w.o({ req: 1 }).some(n => !n.sc.finished && !n.sc.ok)
     },
 
 

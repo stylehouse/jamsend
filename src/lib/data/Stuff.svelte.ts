@@ -751,6 +751,12 @@ abstract class StuffAware extends StuffIO {
     //  pump this host's reqs, highest maz first.  %ok is a pass-local satisfied
     //   signal for eternal reqs — re-armed each pass, cleared on entry.  A req that
     //    arms a ttlilt and bows out (stays needs_work) halts the descent.
+    //  %ok is %finished-for-an-eternal: "nothing left for me this pass".  It STANDS until
+    //   the next do() entry clears it, so between passes it is last pass's verdict and may
+    //    be read (and snapped) as such.  Anything asking "is there live work here?" must use
+    //     needs_work — `!finished && !ok` — never `!finished` alone, which counts every
+    //      standing eternal as unfinished work (Housing organise + MachPeerily settled, 2026-09-13).
+    //       An eternal that forgets to stamp %ok holds every lower maz, silently.
     async do(fn?: Function): Promise<void> {
         for (const req of this.o({ req: 1 }) as TheC[]) if (req.sc.ok) delete req.sc.ok
         while (true) {
@@ -811,6 +817,8 @@ abstract class StuffAware extends StuffIO {
         child.bump_version()
     }
 
+    // all_finished — every child req %finished.  Deliberately `finished`, not needs_work: an
+    //  eternal child (req:Languish's text_mutated) is MEANT to keep its parent from finishing.
     all_finished(): boolean {
         const all = this.o({ req: 1 }) as TheC[]
         return all.length > 0 && all.every(r => r.sc.finished)

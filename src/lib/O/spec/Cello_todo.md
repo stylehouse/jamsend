@@ -45,6 +45,95 @@ Next moves (ripe first):
    belly intent from `stage_want` only — deliberately diverging from Vytui's pose-first ladder
     (Vytui:791-812) because reading pose back would be reading our own writes.
 
+## 0.1 THE ROSTER ISLAND — survey (2026-09-13)
+
+The owner, on learning the Pooling cell was pushed by one gate and dropped by another: *"sounds like some weird
+ design has crept in. wanna do a big survey of straightening this out... I want a nice island of SP policy in the
+  middle."* SP = the SEAT/POSE policy: which organ becomes a cell, in which pose, when. Today it is smeared over
+   FOUR files and two authorities. This section is the map, the contradictions, and the island.
+
+### (a) Every gate on the road organ → cell (read in order; `hd` = humdinger-only, `B` = Books too)
+
+| # | where | decides | on what facts | scope | stated reason |
+|---|---|---|---|---|---|
+| 1 | Sounditron.g:338-341 `keeps`/`anyKeep`/`setups` | the ONE fact most gates below hang on | shop `%Heist`s minus `into:'pool'` (09-13) | B | "a pool keep is machinery, not a haul" (Cellui's 09-06 ruling, copied here 09-13) |
+| 2 | :362-366 Door/Radio push | Radio pushed only when `!anyKeep`; Door always | anyKeep | B | "up-next already folded on anyKeep; the Radio did not" |
+| 3 | :508 Link push | `link_up` = surfaced ∨ focus==='Link' (hd) / active ∨ focus (B) | ferry phase, warmth, `link_surfaced`, 10s unlive grace | both | *"FaceSucker? I want a Cell, that keeps hijacking us until we click no"* (08-27) |
+| 4 | :524 Transfer | minted, never pushed | — | — | Glass_reduction: "already off (2026-08-09)" |
+| 5 | :563 Supervisor | pushed iff `w.c.show_diag` | show_diag | B | quiet-when-healthy → "quiet always, unless you asked for the machinery" |
+| 6 | :583-590 Caper | pushed iff `!anyKeep` | anyKeep | B | the heist gets the room |
+| 7 | :594-646 the pier block: Riffle / Shuffle / Pooling | Riffle iff piers>1; Shuffle iff **NOT** humdinger; Pooling iff humdinger ∧ piers≥1 — ALL inside `if (!anyKeep)` | anyKeep, piers, humdinger | mixed | Shuffle: "a runner tab WITHOUT humdinger keeps the push, every Sounditron fixture…"; Pooling: "LIVE TABS ONLY" |
+| 8 | :681-703 Tree / suptree | iff `show_diag` | show_diag | B | "the underworld, literally" |
+| 9 | :730 every keep | all pushed; `stage_want` on the stager | keeps | B | the belly claim |
+| 10 | :738 `Sounditron_pose(w)` parts, :761 `Sounditron_junk` | appended | pose_fp / w.c.junk | B / hd | *"but definitely subcells! I want subcells!"* (08-09) |
+| 11 | :752 `Sounditron_plain(w)` | REPLACES organs | `w.c.plain` — **set nowhere** (SwarmTesting's `w.c.plain` is an unrelated string) | hd | "the plain glass … w.c.fullfat puts the old glass back" |
+| 12 | :783-827 hd block: Radio re-push when anyKeep; Hauls iff fresh<24h ∨ anyKeep ∨ focus==='Hauls' | anyKeep, hbag_fresh, focus | hd | *"think about presenting them ALL on Haul"* (08-13) |
+| 13 | :838-857 **fmain ladder** | belly = open keep (pin/setup) → `w.c.focused` organ → Radio → Door | setups, pin, focus | hd | THE FOCUS CUT (08-10, Sounditron_todo §0) |
+| 14 | :875-899 **the bud list** | Hauls (fresh∨anyKeep) · keeps (only if NO Hauls bag) · Supervisor (show_diag) · Door · Radio · Pooling (09-13) — nothing else, ever | as left | hd | *"we never want to list Heist as cells, we only avail them through Haul"* (08-13); *"Always Door|Player, sometimes others"* (08-29) |
+| 15 | :900-935 presses | bud.c.press → focus_to; Heist bud → focus_keep; Door/Radio → leave_keep when a form stands | setups | hd | wandering off is consent |
+| 16 | :971-985 **poses** | buds `small`; belly `pose_want` ∨ (form∨Link ? `stretched` : `big`) | bellyForm, bellyLink | hd | *"Stretched (when Heist…)"* (08-10), *"the title is way up in the top left"* (08-28) |
+| 17 | :1001 `organs = focusOrgans` | the cut REPLACES the list; then the way-back ensure refuses a list with neither Radio nor Door | — | hd | *"there's no way back to the Radio from there!"* (08-28) |
+| 18 | :1026-1103 commission particle | `grapples: organs`, `foamereo` room→room,seat→room,focus (hd wins) | seat_ui, humdinger | both | the seat regime is switchable, the focus regime is the live default |
+| 19 | Vyto.g:210-289 `Vyto_grapples`/`Vyto_scan` | every grapple AND ITS CHILDREN become mirror rows (`w.c.mirror`), tok = mainkey:value+joins (Radio/Door pinned via `c.vyto_tok`) | — | both | no policy here — but children ride through |
+| 20 | Cellui.svelte:318 `scan_cells` → :277 `cell_of` | a mirror row is a cell iff `sc.face` ∨ `FACE_MAINKEYS[mk]` ∧ `keep_cell` | glass_faces + glass_kinds | view | face-bearing = cell |
+| 21 | Cellui:210 `PERMANENT_CAST` = {Door, Radio}; :223 `keep_cell` | Supervisor iff amiss; pool Heist/HeistBar never; everything else yes | amiss, into:'pool' | view | *"Always Door|Player"*; *"a Venus trying to download I never clicked on"* (09-06) |
+| 22 | Cellui:412 `cells` | set-storm arrest (>8 reshapes/s → hold 2s/15s), focus-entrance bypass | time | view | the 08-31 popping loop |
+| 23 | Cellui:612 main effect | main = `insistent` (stage_want, not refused) → commissioner focus → keep current → `resting_main` (Radio→Door→non-Supervisor) | stage_want, focus | view | a SECOND fmain ladder, roughly the same order |
+| 24 | Cellui:705 `satellites` | permanent (Door, Radio, +Pooling 09-13) always; extras capped at **2** unless a Heist/HeistBar cell stands; order Door, Radio, then mint order | heisting | view | *"one or two minicells"* |
+| 25 | Cellui:720 switcheroo | tap bud → `set_focus(mk)` → Sounditron_focus_to → re-commission | — | view→hd | the promote-swap |
+| 26 | Cellui:497 `TAKEOVER` = {Heist, HeistBar} → off-edge main; :812 `NARROW_FLOOR` 640px → sats under | mk, stage_w | view | the belly look; narrow embeds |
+| 27 | Sounditron.g:1240 `Screen_decide` (fullscreen authority) | dominant = ceremony / thin / arrival / gaveup / glass, published on `MH.c.screen`; read by Butler only | link_fresh, `Supervisor_arrived` (Supervisor.g:625, now world-agnostic 09-13), listen_only, guts | hd | "one place, one decision" — beside, not inside, the roster |
+
+### (b) Contradictions and dead paths
+
+1. **Pushed then cut.** Rows 7 → 14: Pooling (and Riffle, Shuffle, Caper, Tree, Transfer) can be pushed at the top and are NOT in the hand-picked bud list, and `fmain` ALWAYS resolves on a live page (falls back to Radio/Door), so the cut always applies: an organ not named in row 14 has never been reachable on a live tab. Pooling was added to row 14 on 09-13; the others are still dead on a humdinger.
+2. **Shuffle is inverted.** Row 7: pushed only WITHOUT humdinger — a live tab never has it; `Sounditron_focus_step`'s comment still says the ring is Door→Radio→Shuffle (the code ring is Radio, Door).
+3. **anyKeep hides organs** (rows 2, 6, 7): one haul in flight removes Caper, Riffle, Pooling AND the Radio push (row 12 re-pushes Radio on hd — a second push to undo the first).
+4. **Two fmain ladders** (row 13 in the commission, row 23 in Cellui) plus `insistent`, plus the Cellui storm arrests that exist only because the two fight (the 08-31 "infinite loop of Link/Door popping").
+5. **Two seat gates** for the same fact: the commission's bud list (row 14) AND Cellui's PERMANENT_CAST/keep_cell/extras cap (rows 21, 24). The pool-keep ruling now lives in BOTH (Cellui 09-06, Sounditron 09-13). The extras cap of 2 competes by mint order, so an organ's seat depends on its line number.
+6. **`w.c.plain` is never set** — row 11 is dead code with a whole `Sounditron_plain` family behind it.
+7. **Children ride the mirror** (row 19): a face-bearing child of a grapple (Pick, Riff, Haul, HeistBar) becomes a cell candidate in Cellui; only HeistBar has a keep_cell rule.
+8. **The re-commission triggers are scattered**: pose_fp change, focus verbs, link phase, `focus_commissioned`, and (09-13) a change in friend COUNT — nothing re-commissions on pier arrival, pool consent, or a haul landing except by side effect.
+9. **Books vs live**: rows 7, 11, 12, 13-17 are humdinger-gated so fixtures stand — which means the live roster is exactly the part NO Book sees. VytoOrchestra/Sounditron fixtures prove the top half of the list and nothing about the cut.
+
+### (c) The island — `Sounditron_roster(facts) → { main, buds[], pose }`
+
+ONE pure function, no world reads inside it, fed by DECLARED FACTS gathered once by the commission:
+
+| fact | from |
+|---|---|
+| `humdinger`, `narrow` | top House `.c`, Cellui's stage_w (passed in) |
+| `piers` | `Swarm_peering(self).o({Pier})`.length |
+| `keeps`, `setups`, `pin` | shop `%Heist` minus `into:'pool'` |
+| `hauls_fresh` | newlyadded ledger <24h |
+| `pool_consent` | `Ra_pool_consent_of(self)` |
+| `focus`, `focused_keep` | `Sounditron_focus_get` |
+| `amiss`, `show_diag` | Supervisor row, w.c |
+| `link` = none / surfaced / live | Swarm_link_fresh / _active |
+| `stage_want` (+ refused) | keep.c / the durable refusal (§0) |
+
+The policy as the function's body — a readable table, every row an owner ruling:
+
+| main (first that applies) | buds (always in this order) | pose |
+|---|---|---|
+| link live/surfaced → **Link** | Door, Radio | stretched |
+| stage_want not refused → that **keep** | Hauls?, Door, Radio | big (stretched if a form) |
+| a setup form → that **Heist** | Hauls?, Door, Radio | stretched |
+| focus names a present organ → **it** | the standing set minus it | big |
+| else **Radio**, else **Door** | Door|Radio (the other), Hauls if fresh∨keeps, Pooling if consent∧piers≥1, Supervisor if amiss∨show_diag | big |
+
+Rulings that survive as rows: *"one big thing… Always Door|Player, sometimes others"*; *"we never want to list Heist as cells, we only avail them through Haul"*; *"one or two minicells"* (= the bud list is short BY CONSTRUCTION, no cap needed); *"a pool keep is machinery, not a haul"* (= keeps exclude pool at the fact, once); *"there's no way back"* (= Door|Radio is always a bud or main, by the table); the pose rulings of 08-10/08-28.
+
+Then **Cellui is a renderer**: it draws `{main, buds, pose}` off the commission (one `%Roster` row or three `.c` fields on the commission), and PERMANENT_CAST, keep_cell, the extras cap, resting_main, `insistent`, and both storm arrests go — there is one ladder, so nothing fights. The Vyto mirror stays for the Vyto renderer; Cellui stops scanning it.
+
+What each Book needs to keep meaning what it meant: **Sounditron** — the top-half pushes are what its fixtures snap; keep the organ MINTS (rows 4, 7, 11's oai) so the snap is byte-identical, and have the Book run the roster with `humdinger:0` facts (which yields the old un-cut list). **VytoOrchestra** — commissions its own grapples, never through the roster; untouched. **MusuPoolRadio / MusuHeard** — no glass; untouched. A new **SounditronRoster** Book: the table above as sworn rows, driven by facts, no world — the island's own gate.
+
+Migration, in order:
+1. Extract the FACTS (one `Sounditron_facts(w)`), leave every gate as is; commission logs the facts. Fixtures unmoved.
+2. Write `Sounditron_roster(facts)` + the SounditronRoster Book; run it BESIDE the old cut and log where they differ on a live tab for a day.
+3. Flip the commission to the roster (hd only); delete the bud list, the Shuffle/Riffle/Caper gates, `Sounditron_plain`; keep the mints.
+4. Cellui reads the roster; delete PERMANENT_CAST, keep_cell, extras cap, resting_main, both ladders' storm arrests. Then the 08-31 popping class is gone by construction.
+
 ## The picture we're reproducing (from the live screenshot, 2026-08-29 20-23-12)
 
 Two live tabs, and BOTH already show Cello's target shape — we're formalising what Vyto stumbled into:

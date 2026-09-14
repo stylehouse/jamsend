@@ -13,7 +13,7 @@ import SupervisorPanel from "$lib/O/ui/SupervisorPanel.svelte"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_O_Supervisor(): string { return '0dd405fc7c0dc43b~g1' },
+    Ghostmeta_Ghost_O_Supervisor(): string { return '4efe70cdd7ae19ac~g1' },
 
 // Supervisor.g — THE WATCHER.  One world holding a ROSTER of watches that other processes hand it.
 //  It reads every watch each pass, folds ONE verdict, and stays QUIET while they all read ok.
@@ -667,6 +667,11 @@ Supervisor_arrival(w, key) {
 //     hand-written headline again).  Both were tried.  The registrar armed the patience, so the
 //      registrar's clock is the one with the standing to expire.
 Supervisor_arrived(w) {
+    // the WATCHES LIVE ON THE SUPERVISOR WORLD, whatever world the asker holds (2026-09-13: Screen_decide is
+    //  called from here with w:Supervisor and from Sounditron's commission with w:Sounditron; the second
+    //   found no rows → 'none' → "arrival", and the screen flapped arrival↔glass 100+ times an hour)
+    let sw = this.Supervisor_w ? this.Supervisor_w(this) : null
+    if (sw && (!w || !w.o({ Watch: 1 }).length)) { w = sw }
     if (!w) return 'none'
     let rows = w.o({ Watch: 1 }).filter(x => x.sc.arrival)
     if (!rows.length) return 'none'

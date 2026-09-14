@@ -335,7 +335,11 @@ Sounditron_commission(w):
     let krw = this.top_House().c.radio_w || w
     let kme = this.Radio_pub ? this.Radio_pub(krw) : null
     let kshop = kme ? this.Ra_home_shop(krw, kme) : null
-    let keeps = kshop ? kshop.o({ Heist: 1 }) : []
+    // a POOL KEEP IS MACHINERY, NOT A HAUL (Cellui's keep_cell ruling, 2026-09-06) — and it was hiding the
+    //  Pooling cell: with the pool filling there are always ~3 into:'pool' keeps in the shop, so the pool's
+    //   own fill kept `anyKeep` true and the pool's own cell off the glass (the owner 2026-09-13: "how do I
+    //    get to Cell:Pooling?").  Nobody pressed those; they earn no focus and hide nothing.
+    let keeps = kshop ? kshop.o({ Heist: 1 }).filter((k) => String(k.sc.into || '') !== 'pool') : []
     let anyKeep = keeps.length > 0
     // SETTING ONE UP vs LEAVING ONE RUNNING (the owner 2026-08-13: *"we also need to make multiple
     //  Heists doable, I can't be hanging around waiting for each one in fullscreen"*).  The ENGINE was
@@ -889,6 +893,9 @@ Sounditron_commission(w):
         //   pair is a toggle you can work from either side, with no control that is not a cell.
         for (const org of organs) if (Object.keys(org.sc)[0] === 'Door' && org !== fmain) buds.push(org)
         for (const org of organs) if (Object.keys(org.sc)[0] === 'Radio' && org !== fmain) buds.push(org)
+        // the SoundPool buds too (2026-09-13, "where's the 🏊 bud?") — it is pushed pier-gated above, and it was
+        //  the one organ this cut never carried, so a live page could never reach Cell:Pooling at all.
+        for (const org of organs) if (Object.keys(org.sc)[0] === 'Pooling' && org !== fmain) buds.push(org)
         if (fmain && fmain.c.press) delete fmain.c.press
         for (const bud of buds) {
             // handed the SOURCE particle, so the handler reads its own identity — no closure over
@@ -1810,6 +1817,24 @@ Sounditron_trickle(w):
     //  re-commission the glass NOW with the correct `this` binding — the resident cell mounts on the gesture
     //   instead of waiting for the next trickle (the human 2026-07-29 "the heist UI cell isn't popping up").
     M.c.sounditron_run = this
+    M.c.trickle_w = w
+    // THE DOG (2026-09-13, eed went silent at 10:51:54 for 15 min with no error): every pump in the
+    //  app — Swarm pulse, reach, pool fill, steward — rides this one chain, and one hung await in it
+    //   killed them all for the session.  A stale beat restarts the chain under a NEW era; the stuck
+    //    look is orphaned by its own era check if it ever resolves.  It names the await it died in.
+    //  HUMDINGER ONLY: a Book's pass may legitimately sit 30s+ in a stepped handshake, and a restart there
+    //   orphans the swears after the await (Sounditron went 8/8 red under the first cut).
+    if (!M.c.trickle_dog && M.c.humdinger) {
+        M.c.trickle_dog = setInterval(() => {
+            let beat = +(M.c.trickle_beat || 0)
+            if (!beat || !M.c.trickle_w || !M.c.sounditron_run) return
+            let stale = Date.now() - beat
+            if (stale < 30000) return
+            console.log('⏳⚠ trickle stalled ' + Math.round(stale / 1000) + 's in ' + (M.c.trickle_at || '?') + ' (era ' + M.c.trickle_era + ') — restarting the pulse')
+            M.c.trickle_beat = Date.now()
+            try { M.c.sounditron_run.Sounditron_trickle(M.c.trickle_w) } catch (er) { console.log('⏳⚠ trickle restart failed: ' + (er && er.message || er)) }
+        }, 10000)
+    }
     this.Sounditron_trickle_look(w, era)
 
 async Sounditron_trickle_look(w, era):
@@ -1845,19 +1870,30 @@ async Sounditron_trickle_look(w, era):
                 try {
                     M.Peeroleum_retx_sweep(sw)
                     if (M.Peeroleum_liveness_sweep) M.Peeroleum_liveness_sweep(sw)
+                    M.c.trickle_at = 'Peeroleum_runstepped'
                     if (M.Peeroleum_runstepped) await M.Peeroleum_runstepped(sw)
                 } catch (er) {}
             }
         }
+        M.c.trickle_at = 'Sounditron_friends'
         try { await this.Sounditron_friends(w) } catch (er) {}
         if (M.c.trickle_era !== era) return
+        M.c.trickle_at = 'look'
         let fp = ''
         for (const f of w.o({ Friend: 1 })) {
             fp = fp + f.sc.Friend + ':' + (f.sc.here || 0) + ':' + (f.sc.records || 0) + ':' + (f.sc.music || 0) + ' '
         }
         if (w.c.trickle_fp !== fp) {
+            let had = w.c.trickle_fp
             w.c.trickle_fp = fp
             w.bump()
+            // the roster CHANGED SHAPE — re-commission, because organs are pier-gated (the Pooling cell
+            //  needs ≥1 pier, the Riffle >1) and at boot there are none: a glass commissioned before the
+            //   friends arrived never grew them (2026-09-13, "where's the 🏊 bud?").  Only on a change in
+            //    the NUMBER of friends, not their counts, so this stays a rare walk.
+            let nf = fp.split(' ').filter((x) => x).length
+            let nh = had ? String(had).split(' ').filter((x) => x).length : -1
+            if (nf !== nh) { try { this.Sounditron_commission(w) } catch (er) {} }
         }
         // (a friend arriving no longer mints its own cell — the glass is the fixed organ set now — so
         //  there's no growth re-commission here; the fp-bump above already refreshes the friend liveness
@@ -1887,6 +1923,7 @@ async Sounditron_trickle_look(w, era):
         }
         this.Sounditron_keeps_look(w)
     }
+    M.c.trickle_at = 'armed'
     setTimeout(() => { this.Sounditron_trickle_look(w, era) }, 2500)
 
 // Sounditron_keeps_look — the KEEP-SET REACTION, one verb.  The ⇊ KEEP cells come + go: when the keep

@@ -709,8 +709,11 @@
         const rank = (c: Cell) => c.mk === 'Door' ? 0 : c.mk === 'Radio' ? 1 : 2
         const ordered = [...rest].sort((a, b) => rank(a) - rank(b))
         // permanent cast is always kept; the extras are capped unless we're heisting.
-        const permanent = ordered.filter(c => PERMANENT_CAST.has(c.mk))
-        const extras = ordered.filter(c => !PERMANENT_CAST.has(c.mk))
+        // a consented SoundPool keeps its seat (owner 2026-09-13: "where's the 🏊 bud?") — Sounditron only
+        //  mints the organ on a music page with a pier, so it is standing furniture there, not an extra.
+        const seated = (c: Cell) => PERMANENT_CAST.has(c.mk) || c.mk === 'Pooling'
+        const permanent = ordered.filter(seated)
+        const extras = ordered.filter(c => !seated(c))
         const extra_cap = heisting ? extras.length : Math.min(extras.length, 2)
         const list = [...permanent, ...extras.slice(0, extra_cap)]
         for (const c of list) if (c?.n?.c) c.n.c.pose = 'small'   // satellites are bud glyphs

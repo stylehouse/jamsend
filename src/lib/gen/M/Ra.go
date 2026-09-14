@@ -11,7 +11,7 @@ import { Idento } from "$lib/Y.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '650caa9c5be3db81~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return 'ff259924163f88ac~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -1479,7 +1479,7 @@ Ra_pocket_mirror(rw, host) {
 //  Per card it answers the only question that matters — `why` is empty when the track is dialable, and
 //   otherwise names the single reason it is not.  The shelf-level counts sit beside the DISK count, because
 //    "files on disk with no card" is its own failure and was invisible until now.
-async Ra_pool_report(w, ident) {
+async Ra_pool_report(w, ident, quiet) {
     // a world-only call (the CLI `poke Ra_pool_report` hands the radio world and nothing else) reports the
     //  LIVE owner — the same identity the dial's own dry-pool call passes (2026-09-12; it threw for a week)
     if (!ident) { let o = this.Ra_pool_owner(w); if (o && o !== w) { ident = o } }
@@ -1530,18 +1530,21 @@ async Ra_pool_report(w, ident) {
             out.reaches.push(r)
         }
     }
-    console.log('🏊 POOL REPORT — ' + pub.slice(0, 8) + (out.excused ? ' · EXCUSED (holds no pool)' : '') +
-        ' · consent ' + (out.consent ? 'yes' : 'NO') +
-        ' · budget ' + out.budget_mb + 'MB · ' + out.cards + ' card(s) · ' + out.ready + ' playable · ' +
-        out.files + ' file(s) on disk · ' + out.uncatalogued + ' uncatalogued' + (out.lingering ? ' · ' + out.lingering + ' evicted but file lingering' : ''))
-    for (const t of out.tracks) {
-        console.log('   ' + (t.why ? '✗' : '✓') + ' ' + (t.artist ? t.artist + ' — ' : '') + t.title +
-            '  [preview ' + t.preview + ' · chunks ' + t.chunks + (t.on_disk ? '' : ' · NO FILE') + ']' +
-            (t.why ? '  ⟵ ' + t.why : ''))
-    }
-    if (out.uncatalogued) { console.log('   ⚠ ' + out.uncatalogued + ' file(s) under pool/ with no card — run Ra_pool_resurrect') }
-    for (const r of (out.reaches || [])) {
-        console.log('   ⇢ reach ' + r.of + ' → ' + r.to + ' : ' + r.state + (r.why ? ' — ' + r.why : ''))
+    // the glass polls this every few seconds (PoolFace) — a quiet read returns the object and says nothing
+    if (!quiet) {
+        console.log('🏊 POOL REPORT — ' + pub.slice(0, 8) + (out.excused ? ' · EXCUSED (holds no pool)' : '') +
+            ' · consent ' + (out.consent ? 'yes' : 'NO') +
+            ' · budget ' + out.budget_mb + 'MB · ' + out.cards + ' card(s) · ' + out.ready + ' playable · ' +
+            out.files + ' file(s) on disk · ' + out.uncatalogued + ' uncatalogued' + (out.lingering ? ' · ' + out.lingering + ' evicted but file lingering' : ''))
+        for (const t of out.tracks) {
+            console.log('   ' + (t.why ? '✗' : '✓') + ' ' + (t.artist ? t.artist + ' — ' : '') + t.title +
+                '  [preview ' + t.preview + ' · chunks ' + t.chunks + (t.on_disk ? '' : ' · NO FILE') + ']' +
+                (t.why ? '  ⟵ ' + t.why : ''))
+        }
+        if (out.uncatalogued) { console.log('   ⚠ ' + out.uncatalogued + ' file(s) under pool/ with no card — run Ra_pool_resurrect') }
+        for (const r of (out.reaches || [])) {
+            console.log('   ⇢ reach ' + r.of + ' → ' + r.to + ' : ' + r.state + (r.why ? ' — ' + r.why : ''))
+        }
     }
     return out
 

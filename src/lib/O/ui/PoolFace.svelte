@@ -48,6 +48,26 @@
     let draft = $state(300)
     $effect(() => { if (consent) draft = budget })
     const bump = () => { try { top()?.bump_version?.() } catch {} }
+
+    // ── live fill readout (owner 2026-09-13: *"we have bad visibility… I just want this thing
+    //  to fill up with tracks"*) — Ra_pool_report is already the ONE legible dump (console-only
+    //   till now); mirror it into the glass as one more dim line, polled while the cell is big
+    //    and consent stands.  Pure read, so polling costs nothing but a disk listing.
+    let report = $state<any>(null)
+    $effect(() => {
+        if (small || !consent) { report = null; return }
+        const w = world(); if (!w) return
+        let gone = false
+        const pull = () => { try { const p = H.Ra_pool_report?.(w, null, 1); if (p && p.then) p.then((r: any) => { if (!gone) report = r }).catch(() => {}) } catch {} }
+        pull()
+        const id = setInterval(pull, 8000)
+        return () => { gone = true; clearInterval(id) }
+    })
+    const inflight = $derived.by(() => {
+        const rs = report?.reaches as any[] | undefined
+        if (!rs || !rs.length) return 0
+        return rs.filter(r => r.state !== 'dead' && r.state !== 'refused').length
+    })
     const friends = $derived(who === 'all' || who === 'friends')
     const crew = $derived(who === 'all' || who === 'crew')
     function set_mb(v: number) {
@@ -82,24 +102,35 @@
 {#if small}
     <div class="pf pf-bud" class:on={consent} title={consent ? budget + ' MB rolling · ' + pooled + ' pooled' : 'SoundPool — off'}>🏊</div>
 {:else}
-    <div class="pf">
+    <div class="pf pf-big">
         <p class="pf-sentence">
             <b>SoundPool</b> keeps rolling
             <input class="pf-mb" type="number" min="0" step="100" value={draft} onchange={(e) => set_mb(num(e))} title="megabytes of music to keep — 0 switches it off and clears it out" />
-            MB of music in browser storage{#if free_gb != null} <span class="pf-dim">({free_gb} GB free)</span>{/if}, sourced from
+            <span class="pf-nb">MB of music</span> in browser storage{#if free_gb != null} <span class="pf-dim pf-nb">({free_gb} GB free)</span>{/if}, sourced from
             <label class="pf-ck"><input type="checkbox" checked={friends} onchange={(e) => set_who((e.currentTarget as HTMLInputElement).checked, crew)} /> friends <span class="pf-dim">(less predictable)</span></label>
             <label class="pf-ck"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => (H as any)?.Sounditron_focus?.('Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>
             and
-            <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label>{#if consent}<span class="pf-dim"> · {pooled} pooled so far</span>{/if}
+            <label class="pf-ck"><input type="checkbox" checked={recent} onchange={(e) => set_recent((e.currentTarget as HTMLInputElement).checked)} /> recent acquisitions <span class="pf-dim">(what you just downloaded)</span></label>{#if consent}<span class="pf-dim pf-nb"> · {pooled} pooled so far</span>{/if}
         </p>
+        {#if report}
+            <p class="pf-live pf-dim">
+                <span class="pf-nb">{report.ready}/{report.cards} playable</span> · <span class="pf-nb">{report.files} file(s) on disk</span>{#if report.uncatalogued} · <span class="pf-nb">{report.uncatalogued} uncatalogued</span>{/if}{#if report.lingering} · <span class="pf-nb">{report.lingering} evicted, lingering</span>{/if}{#if inflight} · <span class="pf-nb">{inflight} in flight</span>{/if}
+            </p>
+        {/if}
     </div>
 {/if}
 
 <style>
     .pf { pointer-events: none; display: flex; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; padding: 1rem 2.2rem; color: #f4e6c8; overflow: hidden; font-size: .95rem; }
+    /* a NATURAL width, not a stretch: Cellui fits a stretched face by height alone (STRETCH_CAP), and a
+       wide-but-short sentence then walks off the blob's walls (owner 2026-09-13: "it goes off the left
+        side of the cell").  Bounded, it is fitted on both axes like the Door. */
+    .pf-big { width: auto; height: auto; max-width: min(100%, 38em); margin: 0 auto; }
     .pf-bud { align-items: center; justify-content: center; padding: 0; font-size: clamp(1.5rem, 5vw, 2.8rem); line-height: 1; }
     .pf-bud.on { filter: drop-shadow(0 0 6px rgba(120, 220, 255, 0.55)); }
-    .pf-sentence { margin: 0; line-height: 1.7; max-width: 100%; overflow-wrap: anywhere; pointer-events: auto; }
+    .pf-sentence { margin: 0; line-height: 1.7; max-width: 100%; pointer-events: auto; }
+    .pf-nb { white-space: nowrap; }
+    .pf-live { margin: .3rem 0 0; font-size: .82em; }
     .pf-dim { opacity: .6; font-size: .85em; }
     .pf-mb { width: 4.5em; box-sizing: border-box; background: rgba(0, 0, 0, .35); color: inherit; border: 1px solid rgba(244, 230, 200, .35); border-radius: 6px; padding: .1rem .3rem; font: inherit; font-weight: 700; text-align: right; vertical-align: baseline; }
     .pf-ck { white-space: nowrap; cursor: pointer; }

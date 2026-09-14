@@ -2,6 +2,63 @@
 
 ## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night; the older §0s are §0.6–§0.8 below, intact)
 
+### 0.0 2026-09-13 morning — the pulse has a dog now; the glass shows the fill
+
+- **"I reloaded and the tally went to 0" was not loss.** `Ra_pool_resurrect` re-catalogues from disk in
+   passes ~35s apart (4 → 6 → 9 cards over 3 min); the owner looked between passes. Overnight it went
+    10 → **26 cards / 22 playable / 25 files**. The gap was visibility, which is the next point.
+- **PoolFace shows the fill live** (`src/lib/O/ui/PoolFace.svelte`): one dim line under the sentence —
+   `22/26 playable · 25 file(s) on disk · N uncatalogued · N in flight` — polled every 8s off
+    `Ra_pool_report(w, null, quiet=1)` (new third arg: the object without the console block) while the
+     cell is big and consent stands. Nothing new in Cellui; the pool-keep-earns-no-cell ruling of 09-06 holds.
+- **THE STALL (10:51:54 → 11:15+, no error).** Every pump — Swarm pulse, reach, pool fill, steward, Vyto
+   scan — rides ONE async chain, `Sounditron_trickle_look` (Ghost/Story/Sounditron.g), which awaits
+    `Peeroleum_runstepped` and `Sounditron_friends` then re-arms by setTimeout. One hung await = every
+     pump dead for the session, silently. Now: `M.c.trickle_beat`/`trickle_at` stamps, and a 10s dog
+      armed once in `Sounditron_trickle` that restarts under a new era when the beat is 30s stale and
+       logs `⏳⚠ trickle stalled Ns in <await>`. Suspect: `Crate_nav_meander` (a disk walk) inside
+        `Sounditron_friends` — the nav was churning at that second. NOT proven; the stamp will name it.
+- **"👥 two of you" on eed was stale, not a second body.** `Swarm_note_theft` raises `peering.sc.stolen`
+   and nothing but Steal Back cleared it. eed's husk was `Stolen:<its own address>,at:09:41` — one claim
+    frame from a same-profile second tab, hours earlier, in the SAME page-life (the tab was never reloaded;
+     the 15:47 "arrival" lines are soft re-arrivals — the console ring runs straight through them). Now
+      `Swarm_stolen` reads a RUNTIME `.c.stolen_at` (stamped per claim frame) and clears the flag after
+       120s without one; a real thief re-raises within a pulse. SwarmSteal 6/6.
+- **The stall recurred** at ~15:18 on the same (old-build) tab: radio dialing the pool fine, zero 🏊 lines
+   for 80+ min. The dog is in the tree; it needs a REAL reload of eed to be live. Two stalls in one day —
+    when the dog names the await, fix the await.
+- **Cell:Pooling was hidden by its own machinery**: `Sounditron.g` `anyKeep` counted `into:'pool'` keeps,
+   and with the pool filling there are always ~3, so the block that mints the `%Pooling` organ never ran.
+    Now excluded (Cellui's 09-06 ruling). It shows as a 🏊 bud on a music page with ≥1 pier; tap → main.
+- **Cell:Pooling was ALSO cut by the focus cut** (`Sounditron_commission` ~l.895): on a live page `organs` is
+   replaced by `fmain + buds`, and the bud list was hand-picked (Hauls/keeps/sanity/Door/Radio) — Pooling
+    never in it, so never reachable regardless of the pier/anyKeep gates. Now budded beside Door/Radio;
+     the trickle re-commissions when the FRIEND COUNT changes (at boot there are 0 piers, so a glass
+      commissioned before the friends arrived never grew the pier-gated organs); Cellui seats a Pooling
+       cell with the permanent cast (the extras cap of 2 competes by mint order). Verified live:
+        `cells=3 [Radio,Door,Pooling]`. The owner asked for a SURVEY of this whole seat/pose policy —
+         "a nice island of SP policy in the middle" — see the roster survey (doc named in its own §0).
+- **The screen flapped arrival↔glass 100+/hour**: `Screen_decide` is called with w:Supervisor (Watches
+   there → glass) and with w:Sounditron (no Watches → 'none' → arrival). `Supervisor_arrived` now reads
+    the Supervisor world whatever world the asker holds.
+- **The trickle dog is HUMDINGER-ONLY** — under a Book a pass may sit 30s+ in a stepped handshake.
+- **Sounditron Book reads 8/8 red on the runner tonight** with `granted` / `a friend counted their shelf` /
+   `a real AudioContext ran` ABSENT — environment after programmatic `runner_ask reload`s (no user
+    gesture ⇒ no realtime audio; the runner's friendship re-courts). Not attributed to today's edits (same
+     red with the dog disabled); needs a human-tapped runner tab and a baseline run before believing either way.
+- **25 is the budget**: 100 MB / ~4 MB per lofi copy. `evicted 1 · deferred 1` per pass = at cap, rolling.
+- **OPEN — S streams ~24 KB/s to eed with no live serve** (`/status` serve: `live:[]`, `tx_kbps:24`;
+   eed's Repli meter: 177 MB in 80 min, nothing landing, pool at cap; not over the relay ws — WebRTC).
+    Suspect a `repli_lines`/page re-cast on the share beat with no change gate — the `(re×157)` waste from
+     09-12 wearing a new face. Next: log inbound `repli_lines` vs `repli_page` counts on eed
+      (`Repli_recv_lines`/`Repli_recv_page`, Ghost/N/Repli.g:1216/1278) for one minute and read the daemon's
+       caster loop from that.
+- **Loose:** a twin card for "Went to Hermes" (evicted card whose file is gone, beside its fresh re-pull) —
+   the evict sweep dropped the file and not the card; one of anything. Last night's ~60KB/s Repli rx
+    into eed with nothing landing came from the crew mirror, not S (S was idle) — unexplained.
+- **Diagnostic logs still in the tree** from 09-12 (`🏊? stuck-check`, `◈✗ ragged-page mirror`): remove
+   once the pool has filled for a day without a stuck keep.
+
 **Destination.** The dial already chooses, so the pool KEEPS what played; **love** is the one control —
  press to love (into the pool, and heisted to the Cave), press again to unlove — and every pooled
   track plays from 0:00 like a remote one. The Heard Mag is the ledger of that; the Haul cell shows

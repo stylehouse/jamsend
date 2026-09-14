@@ -260,6 +260,8 @@ The owner, 2026-09-04: *"think long and hard about the datasplatter behind Radio
 
 ## 9. LOVE AS THE CONTROL SURFACE — the cooked design (2026-09-10/11)
 
+*(Front door: `Love_todo.md` — the road map in notation, 2026-09-14. This section stays the design.)*
+
 Owner, 2026-09-10, in three moves: **"we love or unlove things, which includes or dis-includes them in
  SP and Heisting to our Cave"** · **"the latter occurs probably on a laptop now after a LinkDevice
   ceremony"** · **"we might like to get attention on the Haul cell when that happens, or some new loved

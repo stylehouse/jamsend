@@ -1338,10 +1338,14 @@ export class House extends StorableHousing {
                     if (!lv.sc_has) return []
                     let kids = n.o(lv.sc_has) as TheC[]
                     // req** are the transient level, opt-in for now; when on,
-                    //  skip %finished reqs so the walk stays on live work.
+                    //  skip reqs that are not live work: %finished, AND an eternal that
+                    //   exhaled %ok on its last pass (ok = "nothing left for me"; it stands
+                    //    until the next do() entry clears it, so it is readable here).
+                    //     `!finished` alone kept every standing eternal in the walk forever —
+                    //      the same misreading as needs_work without its second half.
                     if (lv.ark === 'req') {
                         if (!V.req_legs) return []
-                        kids = kids.filter(r => !r.sc.finished)
+                        kids = kids.filter(r => !r.sc.finished && !r.sc.ok)
                     }
                     return kids
                 })
