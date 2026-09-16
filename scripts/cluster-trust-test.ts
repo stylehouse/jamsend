@@ -1,4 +1,4 @@
-// Node proof for the cluster-trust signing contract (src/lib/p2p/cluster_trust.ts), the
+// Node proof for the cluster-trust signing contract (src/lib/cluster_trust.ts), the
 //  authentication the relay's gen_write gate (relay.ts) and the editor/runner/claude clients
 //   rely on. No relay, no disk: it exercises the sign→verify roundtrip and every fail-closed
 //    path a forged gen_write would take. Mirrors the signed-frame shape in
@@ -7,7 +7,7 @@
 //  Exits 0 on PASS, 1 on FAIL.
 import * as ed from '@noble/ed25519'
 import { createHash } from 'node:crypto'
-import { signHeader, verifyHeader, loadTrustedPubs, prepubOf } from '../src/lib/p2p/cluster_trust'
+import { signHeader, verifyHeader, loadTrustedPubs, prepubOf } from '../src/lib/cluster_trust'
 
 const enhex = ed.etc.bytesToHex
 let failures = 0

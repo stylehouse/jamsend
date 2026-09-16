@@ -1,3 +1,6 @@
+// cluster_trust — the relay's admission crypto: signed headers, the trusted-pub roster, role keys.
+//  A LEAF on purpose (noble only, no Stuff/svelte): src/lib/server/relay.ts runs it inside vite.config's
+//   node process. Lived in src/lib/p2p/ until 2026-09-16; spec = spec/Cluster_spec.md §2.
 // cluster_trust — sign/verify privileged frames against the secret cluster Idento flock.
 //
 //  The authentication the relay/editor channel lacks today: a privileged frame (gen_write, the

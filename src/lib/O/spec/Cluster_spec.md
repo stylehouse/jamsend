@@ -5,7 +5,11 @@ The cluster is the layer **above** the Peeroleum spine where identity, trust, me
   `ClusterTrust_handover.md` (a two-job handover that is now mostly DONE — folded in below as the
    **trust substrate**), and absorbs the runner-fleet ops notes.
 
-Pair it with **`spec/Peeroleum_handover.md`** (the spine: frames, inseq, retx, fault, multicast).
+Pair it with **`spec/Peeroleum_spec.md`** (the spine: frames, inseq, retx, fault, multicast; `Peeroleum_handover.md`
+ is its build log) and, below the spine, **`spec/Netsitu_todo.md`** (the carriers: mock wire, relay websocket, and the
+  parked WebRTC port — its §6 is the map of all the networking docs). Code: the trust substrate (§2) is
+   `src/lib/cluster_trust.ts`; the editor's frozen spine is `src/lib/pinned_stable/` (both moved up out of `p2p/`
+    2026-09-16 when the Peerily prototype was deleted).
  The shorthand is **Peeroleum + Trusting**: Peeroleum is the transport, *Trusting* is everything
   cluster — the reborn lineage of the old `MTrusting`/`Trusting`/`Gardening` garden (heading 1).
 
@@ -155,7 +159,7 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
     have and use the trust."
 
 ### 2.2 The pieces that exist
-- `src/lib/p2p/cluster_trust.ts` — the primitives (node AND browser; only the PUBLIC half is
+- `src/lib/cluster_trust.ts` — the primitives (node AND browser; only the PUBLIC half is
    browser-safe):
   - `signHeader(header, privHex)` → hex sig. **Node-only** (needs a private key).
   - `verifyHeader(header, trustedPubs)` → the matching full pubkey, or `null`. **Fail-closed**:
@@ -169,7 +173,7 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
 - `scripts/gen-cluster-identos.ts` — **REMOVED 2026-07-01.** Key genesis is now the editor's 🪪 “Set up
    cluster trust” (`Lies_cluster_setup`): it writes `.env.cluster-pubs` (PUBLIC) + mints `.env.cluster-claude`
     (the only remaining SECRET role key). Runners self-mint via `?I=`; no per-role flock file is handed out.
-- `src/lib/p2p/Identos.ts` — the PUBLIC deterministic pool (peer NAMES for flock tests). **Distinct
+- `src/lib/Identos.ts (deleted 2026-09-16)` — the PUBLIC deterministic pool (peer NAMES for flock tests). **Distinct
    from cluster_trust**: Identos = public addresses, no secrecy; cluster_trust = secret signing keys.
 - `src/lib/server/relay.ts` — the `/relay` forwarder; `header.sign` already crosses the wire (binary
    frame `[header JSON]\n[raw buffer]`, header cleartext so the relay routes on `to`; signed ≠ encrypted).
@@ -510,7 +514,7 @@ Now both cases (no row, **and** a row whose stored `prepub` ≠ its tag) stamp `
 Load-bearing: `LiesLies.svelte` (`Lies_self`, `Lies_channel_up` hello, `Lies_advertise`/`_recv`,
  `Lies_runner_roster`), `LiesFunk.svelte` (`Lies_grant_wormhole`, `Lies_grant_offer_recv`,
   `Lies_wormhole_req_recv`), `Auto.svelte` (boot adopt), `Funk/Grant.ts` (`mint_grant` already took the full
-   pub — the bug was the caller), `p2p/cluster_trust.ts` (`prepubOf`).
+   pub — the bug was the caller), `cluster_trust.ts` (`prepubOf`).
 
 ### 3.2b The connection substrate — how the channel stands up and stays honest
 *(Folded from the retired `Runner_network.md`; the diagnostic ladder that reads these layers lives in §3.3.)*
@@ -538,7 +542,7 @@ Load-bearing: `LiesLies.svelte` (`Lies_self`, `Lies_channel_up` hello, `Lies_adv
     rebinds without a reload.
 
 **The LIVE-vs-FROZEN asymmetry — the cross-wired-gen tell.** A runner rides **live** `gen/N/*.go`; the editor
- rides the **frozen** `p2p/pinned_stable/*.go`. So a broken `gen/N/Tribunal.go` breaks EVERY runner while the
+ rides the **frozen** `pinned_stable/*.go`. So a broken `gen/N/Tribunal.go` breaks EVERY runner while the
   editor stays green — *editor-green-while-all-runners-down IS the tell* (diagnosis ladder, §3.3). It also means
    the editor-receives direction (e.g. the reconnect-epoch cure) can't be isolate-tested from a runner.
 
@@ -781,7 +785,7 @@ When the app needs to act on the **host** — restart a crashed Chrome profile, 
      the circular dep (Waft:Cluster itself loads *through* the Wormhole the grant unlocks).
 
 **SPINE PROMOTED + BINARY (2026-07-01).** The editor's pinned spine was promoted (`cp gen/N/{Peeroleum,
- Tribunal}.go → p2p/pinned_stable/`, backup `/tmp/pin_*_jun23.go.bak`) — it now has `Peeroleum_send_to`
+ Tribunal}.go → pinned_stable/`, backup `/tmp/pin_*_jun23.go.bak`) — it now has `Peeroleum_send_to`
   (per-pub addressing), `offer_stream`, multicast, retx/liveness sweeps. So **base64 is GONE**: a `bin`/
    `read_range` reply now rides an **addressed binary frame** — `Lies_send_binary_to(w, claim.for, …)` puts
     bytes on `frame.buffer` (the `[header]\n[raw buffer]` wire, body_hash-integrity, near-zero-copy), corr +

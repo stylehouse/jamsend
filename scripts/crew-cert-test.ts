@@ -9,7 +9,7 @@
 //   /app/node_modules/.bin/esbuild scripts/crew-cert-test.ts --bundle --platform=node --format=esm \
 //      --packages=external --outfile=/app/scratchpad/crew-cert-test.mjs && node /app/scratchpad/crew-cert-test.mjs
 import * as ed from '@noble/ed25519'
-import { signHeader, verifyHeader, prepubOf } from '../src/lib/p2p/cluster_trust'
+import { signHeader, verifyHeader, prepubOf } from '../src/lib/cluster_trust'
 // mint_grant/verify_grant live inside Svelte (Idento uses runes), so replicate the SHAPE with the same
 //  ed25519 primitive: a grant is a claim {to,by,for,time} signed by `by`.  The REAL verify_grant path is
 //   Book-proven in the ghost; this locks the crew-arm LOGIC (issuer + for + body-sig).

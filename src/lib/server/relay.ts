@@ -27,7 +27,7 @@ import type { Server } from 'node:http'
 import { writeFile, mkdir } from 'node:fs/promises'
 import { resolve, dirname, sep } from 'node:path'
 import { createHash } from 'node:crypto'
-import { loadTrustedPubs, verifyHeader, prepubOf } from '../p2p/cluster_trust'
+import { loadTrustedPubs, verifyHeader, prepubOf } from '../cluster_trust'
 
 // gen_write lands here: the editor compiles a ghost and, rather than pay the browser's
 //  ~0.5s File-System-Access write, ships the .go down its relay socket for Node to write

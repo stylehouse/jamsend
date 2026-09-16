@@ -55,6 +55,12 @@ Books proving it: PereStaple steps 4–6 (trial), PereProof (heal / stall / redi
     :65). The dev vite server has NO `/peerjs-server` proxy — add one (or point `Peer_OPTIONS` at :9995
      directly in dev).
 
+- **The frozen Idento pool** — `src/lib/p2p/Identos.ts` + `scripts/gen-identos.ts` (deleted 2026-09-16; `git show
+   c04544d5:src/lib/p2p/Identos.ts`): 100 deterministic ed25519 keypairs (`jamsend-pool-<i>`) with a friendly name
+    each, meant for a round-robin `Identos_draw` so consecutive Story runs claim FRESH prepubs that PeerServer's
+     name table hasn't still got registered from the last run. `Identos_draw` was never written; nothing read the
+      pool. The need returns with a live PeerServer (a name collides until its lease expires) — regenerate then.
+
 ## 3. The port, in Peeroleum terms (the ~40 lines to write)
 
 Replace `PeerJS(peering)`'s black hole:
@@ -89,3 +95,19 @@ The mock wire in `Ghost/Story/PeerTesting.g` is `Lake_link / Lake_peer / Lake_po
    and could take the abstraction's name; the wranglers are test code and can stay. The `Lake*` BOOKS
     (`Ghost/test/Story/Lake/`) are Housing + compiler tests and are becoming **Hoho\*** — a different
      rename, same day, not to be confused.
+
+## 6. Where the networking docs are (and what each owns)
+
+The layers, bottom up — read the one for the layer you are touching:
+- **carriers** (this doc) — ports under `%active_transport`; the mock wire, the relay websocket, WebRTC parked.
+- **the spine** — `Peeroleum_spec.md` (frames, outbox/inbox, inseq, retx, fault, multicast; §5 is the relay
+   topology, §11 the retired p2pman/p2paddy). `Peeroleum_handover.md` is its build log.
+- **admission + the runner flock** — `Cluster_spec.md` (§2 trust substrate = `src/lib/cluster_trust.ts`; §3.2b the
+   boot→channel map and standup guards; §3.3 Brink badges + the diagnostic ladder for "runner won't connect").
+    `ClusterAddressing_todo.md` is superseded 2026-09-02 (read its ⓘ first).
+- **who's on it** — `Swarm_spec.md` (identity, presence, friendship, sharing) + `Crew_todo.md` (grant-gated crew);
+   `Swarm_compact_invite_todo.md`. `Social_demarcation_todo.md` is the editor|runner|player role split.
+- **how to build a multi-party feature** — `Network_procedures_todo.md` (the recipe); `Networky_directions_todo.md`
+   (the missing bulk/gossip pattern, an arc not a task list); `Backpressure_todo.md`.
+- **the frozen editor spine** — `src/lib/pinned_stable/{Peeroleum,Tribunal}.go` (was `p2p/pinned_stable/`): the
+   editor's own channel rides this copy, never the `gen/N/` it is editing — `LiesLies.svelte` names it.

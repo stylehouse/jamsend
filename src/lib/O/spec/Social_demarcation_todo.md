@@ -115,7 +115,7 @@ Ordering. Tonight's seal/share-up race is the same disease in miniature: two wor
 ## 0.9 THE LOG — 2026-09-06 → 09-11, as it happened (was §0; kept whole, read when §0 is not enough)
 
 > **⚠ 2026-09-11 — the EDITOR was never on the new spine.** Its channel rides the frozen
->  `p2p/pinned_stable/*.go` (promoted 2026-07-19), not `gen/N/`; every "proven on the runner" line
+>  `pinned_stable/*.go` (promoted 2026-07-19), not `gen/N/`; every "proven on the runner" line
 >   in this section was true of runners only. Promoted today (`cp gen/N/{Peeroleum,Tribunal}.go →
 >    pinned_stable/`); the live editor tab must be RELOADED. Full account under "THE FIX WAS BROKEN ON
 >     EVERY EDITOR" below. The staging `to:'runner'` anomaly did not reproduce — closed unless it recurs.
@@ -292,7 +292,7 @@ Ordering. Tonight's seal/share-up race is the same disease in miniature: two wor
    the shape above: **no cap**, and the "fresh `want` per retry" note, which was exactly backwards.
     Capped (`HELLO_TRIES = 6`) and the seat cached per socket, but that only bounds the symptom.
  **The cause, reproduced and not inferred:** the editor's channel does not run `gen/N/Tribunal.go` at
-  all. `Lies_transport_up` mounts the FROZEN `p2p/pinned_stable/{Peeroleum,Tribunal}.go` (so editing
+  all. `Lies_transport_up` mounts the FROZEN `pinned_stable/{Peeroleum,Tribunal}.go` (so editing
    the spine cannot HMR-flap the editor's own channel); `CREDULER_GHOSTS` — the live spine — is
     RUNNER-only. The pinned copy was last promoted **2026-07-19**: no `hello_ok` branch, no `who`,
      no bulk lane, no `STABLE_MS`, no rehome, still dialling `?addr=editor`. So on the editor the
@@ -301,7 +301,7 @@ Ordering. Tonight's seal/share-up race is the same disease in miniature: two wor
         already hands `hello_ok` to the hook") was true of the runner's Tribunal only.
  **Reproduced** with a headless editor (`?E=Editron&I=new` against :9092, console grepped): `hello_ok`
   RECEIVED at 11.4s, then `attempt 1, 2, 3, 4, 5` regardless. **Cured** by the documented promotion —
-   `cp src/lib/gen/N/{Peeroleum,Tribunal}.go src/lib/p2p/pinned_stable/` — and re-run: one hello,
+   `cp src/lib/gen/N/{Peeroleum,Tribunal}.go src/lib/pinned_stable/` — and re-run: one hello,
     `🪪 hello_ok addr=…`, retry dormant for 50s, and the new editor dials addr-less like the runners.
  ⚠ The promotion HMRs a LIVE editor tab into a mixed-version zombie (channel re-stood, latch cleared,
   the OLD `send_hello` closure minting fresh seats again — measured 130→139 in 90s). **Reload it.**

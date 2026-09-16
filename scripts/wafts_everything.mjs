@@ -41,7 +41,7 @@ W.push(['Ghost/Net/Easy', 'the wire — one spine and its carriers — the relay
   P('handleHello', 'signed identity bind — the seat arbiter — want and grant'),
   P('routeFromBrowser', 'deliver local else forward once over the bridge'),
   P('dialEditor', 'the runner relay dials the editor relay — one peerLink — last dialer wins'),
-  'Doc:src/lib/p2p/pinned_stable/Tribunal.go', 'Doc:src/lib/p2p/pinned_stable/Peeroleum.go'],
+  'Doc:src/lib/pinned_stable/Tribunal.go', 'Doc:src/lib/pinned_stable/Peeroleum.go'],
  ['What:the healing floor', 'Reliable — inbound sequencing and retransmit — the lossy partner is the adversary the floor is proven against',
   'Doc:Ghost/N/Reliable.g',
   P('inseq_admit', 'in-order admission — buffer the gap — release what is ready'), P('retx_due', 'which emits to resend and which are dead'),
@@ -57,7 +57,7 @@ W.push(['Ghost/Net/Easy', 'the wire — one spine and its carriers — the relay
   P('Repli_meter', 'the coalesced transfer meter — bytes and pace'), P('Repli_rto', 'retransmit timeout from the smoothed rtt'), P('Repli_arm', 'arm the protocol on a world each beat')],
  ['What:the cluster channel', 'Lies rides the same spine — become binds a role and a signed hello binds an identity — the keepalive and the hello latch',
   'Doc:src/lib/O/LiesLies.svelte', 'Doc:src/lib/O/LiesRun.svelte', P('req_Rundown', 'the runner — a rungo lands and the Book runs'), P('Pantheate', 'where a run lands — the include is mounted'),
-  'Doc:src/lib/p2p/cluster_trust.ts', 'Doc:scripts/runner_ask.mjs', 'Doc:scripts/relay-test.ts'],
+  'Doc:src/lib/cluster_trust.ts', 'Doc:scripts/runner_ask.mjs', 'Doc:scripts/relay-test.ts'],
  ['What:the tests', 'Doc:Ghost/Story/PeerTesting.g', P('Run_A_PereStaple', 'the canonical spine over loopback'), P('Run_A_PereProof', 'proven delivery'), P('Run_A_PereReborn', 'the reconnect epoch'), 'Doc:Ghost/Story/Sounditron.g'],
  ['What:the spec', 'Doc:src/lib/O/spec/Peeroleum_spec.md', 'Doc:src/lib/O/spec/Wire_spec.md', 'Doc:src/lib/O/spec/Repli_design.md', 'Doc:src/lib/O/spec/Cluster_spec.md', 'Doc:src/lib/O/spec/Social_demarcation_todo.md', 'Doc:src/lib/O/spec/Backpressure_todo.md', 'Doc:src/lib/O/spec/Presence_todo.md', 'Doc:src/lib/O/spec/Network_procedures_todo.md', 'Doc:src/lib/O/spec/Networky_directions_todo.md'],
 ]])

@@ -55,7 +55,7 @@
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { WebSocket } from 'ws'
-import { signHeader, prepubOf, loadRoleKey } from '../src/lib/p2p/cluster_trust'
+import { signHeader, prepubOf, loadRoleKey } from '../src/lib/cluster_trust'
 
 // dig() — byte-for-byte the editor's src/lib/Y.svelte.ts dig (sha256 hex, first 16 chars), so the
 //  ticket dige equals the source_dige the editor's compile bakes into Ghostmeta_<name>().  Inlined

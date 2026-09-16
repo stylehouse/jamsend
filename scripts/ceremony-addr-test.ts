@@ -20,7 +20,7 @@ import { createServer, type Server } from 'node:http'
 import { WebSocket } from 'ws'
 import * as ed from '@noble/ed25519'
 import { attachRelay } from '../src/lib/server/relay'
-import { signHeader, prepubOf } from '../src/lib/p2p/cluster_trust'
+import { signHeader, prepubOf } from '../src/lib/cluster_trust'
 
 const enhex = ed.etc.bytesToHex
 async function mint() {

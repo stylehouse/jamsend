@@ -5,7 +5,7 @@
 
 import { Idento, peel } from "$lib/Common"
 import { mint_grant, verify_grant, grant_to_C, grant_of_C, mint_revoke, verify_revoke } from "$lib/O/Funk/Grant.ts"
-import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
+import { signHeader, verifyHeader, prepubOf } from "$lib/cluster_trust"
 import { vessel_register, vessel_subnet, vessel_drop, vessel_sweep } from "$lib/O/vessel_store"
 import { crew_keys, crew_soul, crew_soulpub, crew_keys_home, crew_key_hold, crew_of, crew_myrow, prepub_of } from "$lib/O/Funk/Crewkeys"
 import { seal, unseal } from "$lib/O/Funk/Sealbox"
@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'dc5ccaecf2eaa46c~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'c368062068753aad~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and

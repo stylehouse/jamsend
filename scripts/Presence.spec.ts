@@ -15,7 +15,7 @@ import { createRequire } from 'node:module'
 import * as ed from '@noble/ed25519'
 import Runner from './Story_cli_runner.svelte'
 import { attachRelay } from '../src/lib/server/relay'
-import { signHeader, prepubOf } from '../src/lib/p2p/cluster_trust'
+import { signHeader, prepubOf } from '../src/lib/cluster_trust'
 
 // This spec boots the machine in JSDOM (Story_cli needs a document), and under that environment vite
 //  resolves bare `ws` to its BROWSER shim — whose WebSocketServer is not a constructor.  We need the

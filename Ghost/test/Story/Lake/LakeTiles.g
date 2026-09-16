@@ -290,7 +290,7 @@ captureOutTiles(A,w):
 
 IMPORT()
     import Peeroleum from "$lib/gen/N/Peeroleum.go"
-    import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
+    import { browserTrustedPubs, prepubOf } from "$lib/cluster_trust"
 
 RENDER()
     <Peeroleum {H} />

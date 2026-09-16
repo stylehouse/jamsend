@@ -55,7 +55,7 @@
     import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Common";
     import { boot_param }   from "$lib/boot"
     import { Idento }       from "$lib/Common"
-    import { prepubOf }     from "$lib/p2p/cluster_trust"
+    import { prepubOf }     from "$lib/cluster_trust"
     import { crew_keys, crew_keys_home } from "$lib/O/Funk/Crewkeys"
     import { cluster_name } from "$lib/cluster_name"
     import { SoundSystem }  from "$lib/O/Audio.svelte"

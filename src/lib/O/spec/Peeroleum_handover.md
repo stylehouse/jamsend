@@ -664,8 +664,8 @@ a tweaked hello-sign. Spec §4.2, §15.
       non-OPEN `peerLink` counts as down — closed and re-dialed on the next runner browser (re)connect. The
        heartbeat round also **keepalive-pings the outbound `peerLink`** itself now (was `wss.clients`-only), so a
         half-open outbound bridge is terminated+nulled proactively, not only on the next browser reconnect.
-  - **Editor needs the re-freeze**: it runs the FROZEN `p2p/pinned_stable/*.go`, so reconnect only reaches it after
-     `cp src/lib/gen/N/*.go src/lib/p2p/pinned_stable/` (done this session). A runner-only fix leaves the editor's
+  - **Editor needs the re-freeze**: it runs the FROZEN `pinned_stable/*.go`, so reconnect only reaches it after
+     `cp src/lib/gen/N/*.go src/lib/pinned_stable/` (done this session). A runner-only fix leaves the editor's
       socket dead — the channel needs BOTH ends reconnecting. Browser-unverified; confirm two-origin on :9091/:9092.
 
 ### 9/10 — transport trial: webrtc → websocket fallback (mocked)  `[~]`  PROVEN in-app thru step 5

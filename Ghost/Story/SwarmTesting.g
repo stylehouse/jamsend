@@ -29,7 +29,7 @@
 //   Idzeug from. REAL dep (the .g→.ts import idiom), used only to STAGE the attack, never the spine.
 IMPORT()
     import { mint_grant, verify_grant, grant_to_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
-    import { signHeader } from "$lib/p2p/cluster_trust"
+    import { signHeader } from "$lib/cluster_trust"
     import { crew_key_hold } from "$lib/O/Funk/Crewkeys"
     import { seal, unseal } from "$lib/O/Funk/Sealbox.ts"
     import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"

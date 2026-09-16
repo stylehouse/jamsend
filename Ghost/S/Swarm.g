@@ -15,7 +15,7 @@
 IMPORT()
     import { Idento, peel } from "$lib/Common"
     import { mint_grant, verify_grant, grant_to_C, grant_of_C, mint_revoke, verify_revoke } from "$lib/O/Funk/Grant.ts"
-    import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
+    import { signHeader, verifyHeader, prepubOf } from "$lib/cluster_trust"
     import { vessel_register, vessel_subnet, vessel_drop, vessel_sweep } from "$lib/O/vessel_store"
     import { crew_keys, crew_soul, crew_soulpub, crew_keys_home, crew_key_hold, crew_of, crew_myrow, prepub_of } from "$lib/O/Funk/Crewkeys"
     import { seal, unseal } from "$lib/O/Funk/Sealbox"

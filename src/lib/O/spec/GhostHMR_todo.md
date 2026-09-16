@@ -202,7 +202,7 @@ The ledger (editor-minted pins over the recompiled Codebit set; become_book carr
 
 ## Traps (the bomb-defusal list)
 
-- **The editor must NEVER ride the live spine** — `p2p/pinned_stable/*.go` is a deliberate
+- **The editor must NEVER ride the live spine** — `pinned_stable/*.go` is a deliberate
    frozen copy (LiesLies ~442). An *eager* glob, or importing `Ghosts.svelte` (or anything
     with static gen edges) into LiesLies/core, statically drags `gen/**` into the editor
      graph. Lazy globs + literal dynamic import behind runner role, only.

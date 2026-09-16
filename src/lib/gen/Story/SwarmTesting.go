@@ -4,7 +4,7 @@
     import { onMount } from "svelte"
 
 import { mint_grant, verify_grant, grant_to_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
-import { signHeader } from "$lib/p2p/cluster_trust"
+import { signHeader } from "$lib/cluster_trust"
 import { crew_key_hold } from "$lib/O/Funk/Crewkeys"
 import { seal, unseal } from "$lib/O/Funk/Sealbox.ts"
 import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
@@ -14,7 +14,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_SwarmTesting(): string { return '8c182fea63e09a10~g1' },
+    Ghostmeta_Ghost_Story_SwarmTesting(): string { return '3810aaab985d5524~g1' },
 
 // SwarmTesting.g — né Swarmation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file.

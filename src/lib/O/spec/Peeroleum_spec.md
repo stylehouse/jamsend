@@ -131,7 +131,7 @@ A signed `header` (`type,from,to,seq,time[,body_hash,body_len][,ack]`) + `header
 - **One signature, header only**, key-sorted (`cluster_trust.ts` `canonicalHeader`); the header commits
    to the buffer via `header.body_hash`, so verifying the header authenticates the buffer transitively.
     Corrupting body bytes fails verify identically to a tweaked hello-sign — **no bifurcated error
-     paths.** Signing primitives: `signHeader`/`verifyHeader` in `src/lib/p2p/cluster_trust.ts`.
+     paths.** Signing primitives: `signHeader`/`verifyHeader` in `src/lib/cluster_trust.ts`.
 - `body_hash` is **sha256** (`crypto.subtle`). *Gravestone:* it was briefly a sync FNV digest, the only
    reason being to keep the inbox synchronous inside Atime; the inbox went fully async this session
     (awaited drain), so the sync hack is retired and sha256 — signable for the trust layer — replaces it.
@@ -184,7 +184,7 @@ editor browser ─ws→ editor /relay ←relay↔relay (plain ws)→ staging /re
     (reads both Piers' handshake/`%Ud`), and the real WS server above.
 - **Security v1 = trust-everything** — *(2026-09-16: the "Tyrant.g seam" this once named is gone. Transport
    admission is the `Cluster_trust*` posture — trust the relay, verify every peer's key yourself
-    (`p2p/cluster_trust.ts`: signHeader/verifyHeader/prepubOf). Friendship admission is Swarm.g. The mock
+    (`cluster_trust.ts`: signHeader/verifyHeader/prepubOf). Friendship admission is Swarm.g. The mock
      society file `Ghost/N/Tyrant.g` was retired with its Book PereTyrant — see §11.)* The runner HAS an Id
       (Peering/Pier are keyed by it); accept the one runner that connects. `%Ud` verification / per-runner
        authz / Thangs persistence are future.

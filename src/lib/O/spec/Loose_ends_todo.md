@@ -7,7 +7,7 @@ Compiled 2026-09-03/04 from every `*_todo.md` touched since 2026-08-01 (plus a s
 
 Owner asleep; queue gathered in the evening. Everything below is in the working tree, uncommitted.
 
-1. **The editor was on a July spine** (`p2p/pinned_stable/*.go`, promoted 2026-07-19). Promoted to
+1. **The editor was on a July spine** (`pinned_stable/*.go`, promoted 2026-07-19). Promoted to
     the live `gen/N/` pair. Cause of the 139-seat hello leak on staging; full account in
      `Social_demarcation_todo` §"THE FIX WAS BROKEN ON EVERY EDITOR".
 2. **FSA `expand()` stat'd files serially** — 139 files in `spec/` ≈ the 5s Wormhole budget, so the

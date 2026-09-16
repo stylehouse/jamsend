@@ -22,7 +22,7 @@ The ONE Lens doc.  `Lens_handover.md` was finished and folded in here 2026-07-03
       per state** — never persist input buffers, confirm-guards, DOM refs, geometry, or live
        selection; CM selection restores via its own EditorState.  (Old Near-TODO-1 — Waft:Cluster
         layout-state — was superseded by exactly this; the Keep is the home.)
-- **pinned_stable doctrine** (transport reliability lands in `p2p/pinned_stable/`, never O/*):
+- **pinned_stable doctrine** (transport reliability lands in `pinned_stable/`, never O/*):
    Editron.md §3.
 
 ## The far vision — Lens becomes a posable container (NEEDS COOKING)

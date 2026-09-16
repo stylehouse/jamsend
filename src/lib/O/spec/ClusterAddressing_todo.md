@@ -320,7 +320,7 @@ Make `header.from` carry the **hello-bound prepub** on every frame (same namespa
   per-runner and closes findings 1–3 at once. Two things to settle first:
 - **First-contact Pier promotion** for an unknown prepub on the RECEIVE side — transport-level only, so
    roster enrollment stays advertise's job and the humdinger leak does not reopen.
-- **It is spine surgery.** `Peeroleum.g` → ghost-compile → `gen/N/` → hand-copy to `p2p/pinned_stable/`,
+- **It is spine surgery.** `Peeroleum.g` → ghost-compile → `gen/N/` → hand-copy to `pinned_stable/`,
    and every wire Book's fixtures re-baseline. This is exactly the pre-production networking churn to
     avoid on a go-live week — and it lands dead-center in §4.5's shared-prepub-address ambiguity, which
      §4 already parks as an unresolved routing decision. Decide the address model there FIRST; unifying

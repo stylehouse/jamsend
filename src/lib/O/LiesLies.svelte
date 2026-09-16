@@ -37,7 +37,7 @@
     import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount, mount } from "svelte"
-    import { signHeader, verifyHeader, prepubOf, sha256hex, loadRoleKey, browserTrustedPubs, browserRole, mintClusterKey } from "$lib/p2p/cluster_trust"
+    import { signHeader, verifyHeader, prepubOf, sha256hex, loadRoleKey, browserTrustedPubs, browserRole, mintClusterKey } from "$lib/cluster_trust"
     // the channel-liveness thresholds live in ONE place now (shared with the runner_ask CLI, which
     //  can't import a .ts) — see runner_liveness.mjs.  Was three inline literals that could drift.
     import { SLUGGISH_MS, DEAD_MS, LIVE_MS, PIER_CULL_MS } from "$lib/O/runner_liveness.mjs"
@@ -50,7 +50,7 @@
     //  gen .go) onto H so the runner runs the editor's CURRENT code.  Grouped + ordered like
     //   Ghost.svelte's O/* mount list — extend it by adding a line (easier than building a way
     //    for the editor to flush the set to its runners live; the runner owns its own MO).
-    //     These TAKE OVER from the frozen p2p/pinned_stable/*.go, which is now only the EDITOR's
+    //     These TAKE OVER from the frozen pinned_stable/*.go, which is now only the EDITOR's
     //      bootstrap — the editor can't ride the spine it's editing, but the runner can and
     //       should.  The runner's channel flaps on each push; fine, the runner re-runs anyway.
     const CREDULER_GHOSTS = [
@@ -462,7 +462,7 @@
                 // ⚠ THE EDITOR RIDES THE FROZEN SPINE (2026-09-11 — the 139-seat leak on staging).  This
                 //  hook is fanned by Socket_real's `hello_ok` branch — which lives in gen/N/Tribunal.go,
                 //   the spine only RUNNERS load (CREDULER_GHOSTS).  The editor's channel mounts
-                //    p2p/pinned_stable/Tribunal.go (Lies_transport_up), and that copy was promoted
+                //    pinned_stable/Tribunal.go (Lies_transport_up), and that copy was promoted
                 //     2026-07-19 — no hello_ok branch at all, so the ack fell through to the generic
                 //      control note, nothing fanned, the latch never stamped, and the retry below fired
                 //       on EVERY keepalive tick for the life of the socket.  Reproduced on a headless
@@ -679,14 +679,14 @@
             //  Peeroleum.go we're actively editing: importing gen/N/Peeroleum.go put it in the
             //   editor's module graph, so every compile HMR-reloaded the channel out from under
             //    itself (the "channel down / re-establishing" flap, and the settle stalls behind it).
-            //   p2p/pinned_stable/*.go are a deliberate frozen copy of the working spine+carriers: the
+            //   pinned_stable/*.go are a deliberate frozen copy of the working spine+carriers: the
             //    editor's channel rides this stable copy and never reloads.  The RUNNER dogfoods the
             //     LIVE spine (CREDULER_GHOSTS loads gen/N/*.go), so it tests current code; only the
             //      editor stays frozen, because it can't ride the spine it's actively editing.  To
-            //       promote a new spine into the EDITOR's channel, re-copy gen/N/ → p2p/pinned_stable/ by
+            //       promote a new spine into the EDITOR's channel, re-copy gen/N/ → pinned_stable/ by
             //        hand (now: ghost-compile the spine .g so the editor writes gen/N/*.go, then cp).
             const uis = H.oai_enroll(H, { watched: 'UIs' })
-            for (const gen of ['p2p/pinned_stable/Peeroleum.go', 'p2p/pinned_stable/Tribunal.go']) {
+            for (const gen of ['pinned_stable/Peeroleum.go', 'pinned_stable/Tribunal.go']) {
                 if (uis.oa({ UI: 'Pantheate-include', gen_path: gen })) continue   // already mounted
                 const module = await import(/* @vite-ignore */ `../../lib/${gen}`)
                 uis.oai({ UI: 'Pantheate-include', gen_path: gen }, { component: module.default })

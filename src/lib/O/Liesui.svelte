@@ -26,7 +26,7 @@
     import Lens            from "$lib/O/ui/Lens.svelte"
     import Plank           from "$lib/O/ui/Plank.svelte"
     import Searchbar       from "$lib/O/ui/Searchbar.svelte"
-    import { browserTrustedPubs } from "$lib/p2p/cluster_trust"
+    import { browserTrustedPubs } from "$lib/cluster_trust"
 
     let { H }: { H: House } = $props()
 

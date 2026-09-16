@@ -3564,12 +3564,12 @@ Lefto's ring is the mirror image (seal +20.5s, share-up +28.0s, true advertise +
          `Swarm.g` (`swarm_share_beat` — the suspect), `Tribunal.g` ×2, `Peeroleum.g` ×2,
           `Peregrination.g` ×2, `Swarmation.g` ×2, `MachPeerily.svelte` (`keygen_<side>`).
            Five `.g` ghost-compiled, 5/5 ✓.
-  **AND A TRAP WORTH THE TRIP: `src/lib/p2p/pinned_stable/{Peeroleum,Tribunal}.go`.**  A deliberately
+  **AND A TRAP WORTH THE TRIP: `src/lib/pinned_stable/{Peeroleum,Tribunal}.go`.**  A deliberately
    FROZEN copy of the spine, still untagged and left that way on purpose.  `Lies_transport_up`
     returns early on `role !== 'editor'`, so it is the **editor's bootstrap alone** — the editor
      cannot ride the spine it is editing.  Consequences to hold on to: a `.g` edit to
       Peeroleum/Tribunal **never reaches the editor's own channel** (promotion is a hand
-       `cp gen/N/ → p2p/pinned_stable/`), and conversely a player tab is unaffected by it.
+       `cp gen/N/ → pinned_stable/`), and conversely a player tab is unaffected by it.
   **Why the tag did not appear immediately on Righto:** HMR swaps the module, not the live closure —
    the transport `port` object was built at boot from the pre-tag code, so the running `send`/
     `deliver_soon` are still the old ones.  **The holder names itself on the next reload**, not before.
