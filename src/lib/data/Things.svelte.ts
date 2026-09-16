@@ -2,7 +2,7 @@ import { SvelteMap } from "svelte/reactivity"
 import { CollectionStorage, KVStore } from "./IDB.svelte"
 import { ActionsAndModus, type PeeringFeature } from "$lib/p2p/Peerily.svelte"
 import { erring } from "$lib/Y.svelte"
-import type Modus from "$lib/mostly/Modus.svelte"
+import type { Modus } from "$lib/mostly/Modus.svelte.ts"
 
 //#region ThingIsms
 export type ThingAction = {

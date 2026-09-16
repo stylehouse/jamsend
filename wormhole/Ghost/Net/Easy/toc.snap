@@ -2,7 +2,6 @@ Waft:Ghost/Net/Easy,desc:the wire — one spine and its carriers — the relay i
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:PereStaple
     Funkcion:Storying,of_Book:PereProof
-    Funkcion:Storying,of_Book:PereTyrant
     Funkcion:Storying,of_Book:PereReborn
     Funkcion:Storying,of_Book:PereComplain
     Funkcion:Storying,of_Book:Peregrination
@@ -11,7 +10,6 @@ Waft:Ghost/Net/Easy,desc:the wire — one spine and its carriers — the relay i
     Funkcion:Storying,of_Book:RepliShadow
     Funkcion:Storying,of_Book:ParkCull
     Funkcion:Storying,of_Book:RaBreach
-    Funkcion:Storying,of_Book:PeeringLive
     Funkcion:Storying,of_Book:Sounditron
   What:the spine,desc:Peeroleum — an envelope with a seq and an ack — a Pier per peer with an outbox and an inbox — every frame books an unemit served under the beliefs mutex
     Doc:Ghost/N/Peeroleum.g
@@ -55,13 +53,6 @@ Waft:Ghost/Net/Easy,desc:the wire — one spine and its carriers — the relay i
     Doc:Ghost/N/Peeroleum.g
     Point,method:Peeroleum_retx_sweep,desc:the resend clock over every outbox
     Point,method:Peeroleum_liveness_sweep,desc:no inbound for dead ms → mark the Pier silent
-  What:admission,desc:Tyrant — trust and policy-gated admission on the floor
-    Doc:Ghost/N/Tyrant.g
-    Point,method:req_admit,desc:is this Pier admitted under policy
-    Point,method:req_policy,desc:the standing policy req
-    Point,method:say_vouch,desc:vouch for a peer
-    Point,method:hear_vouch,desc:take a vouch
-    Point,method:Tyrant_grant,desc:mint the grant admission rides on
   What:presence,desc:who is online — one batch who probe per round instead of a pulse per friend
     Doc:Ghost/N/Presence.g
     Point,method:Presence_arm,desc:install the who_ok hook before the socket can answer

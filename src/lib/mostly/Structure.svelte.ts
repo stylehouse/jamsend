@@ -1,5 +1,5 @@
 import type { TheC, TheUniversal } from "$lib/data/Stuff.svelte";
-import type { Selection, Travel } from "./Selection.svelte";
+import type { Selection, Travel } from "$lib/data/Selection.svelte";
 import { hak, hashkv, Parserify } from '$lib/Y.svelte'
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 

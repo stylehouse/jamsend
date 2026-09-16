@@ -1,8 +1,0 @@
-Snap:H
-  H:PereTyrant,Run
-    A:PereTyrant
-      self,round	{"mung":["age"]}
-      w:PereTyrant
-        self,round	{"mung":["age"]}
-        see:y Tyrant — yyyyar!
-        req:wrangle,eternal,ok

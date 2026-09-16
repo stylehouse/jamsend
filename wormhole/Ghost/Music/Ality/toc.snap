@@ -65,7 +65,7 @@ Waft:Ghost/Music/Ality,desc:the music pipeline — rastock racast raterm — sto
     Point,method:Ra_pool_consent,desc:who consented to pool
     Point,method:Ra_pool_budget,desc:bytes allowed
     Point,method:Ra_pool_census,desc:count the pool
-    Point,method:Ra_quarter_goal,desc:the quarter — how much each source should give
+    Point,method:Ra_quarter_goal_pools,desc:the quarter — how much each source should give — per compartment off one tally
     Point,method:Ra_pool_fill_book,desc:book a fill
     Point,method:Ra_pool_fill_homes,desc:where a fill comes from and lands
     Point,method:Ra_pool_fill_verdict,desc:did the fill land

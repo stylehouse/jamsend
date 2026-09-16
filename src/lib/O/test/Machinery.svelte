@@ -1,6 +1,6 @@
 <script lang="ts">
     import { _C, keyser, objectify, TheC, TheX } from "$lib/data/Stuff.svelte";
-    import { Selection } from "$lib/mostly/Selection.svelte";
+    import { Selection } from "$lib/data/Selection.svelte";
     import { WormholeNav, type House } from "$lib/O/Housing.svelte";
     import { Peerily, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts";
     import { armap, depeel, Idento, nex, peel, sex } from "$lib/Y.svelte";

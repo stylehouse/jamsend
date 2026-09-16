@@ -57,7 +57,6 @@
         'Ghost/N/Peeroleum.g',          // transport spine — envelope, inbox/outbox, handshake
         'Ghost/N/Reliable.g',           // network-healing floor — inbound seq + retransmit + the lossy-carrier adversary
         'Ghost/N/Tribunal.g',           // carriers — mock / webrtc / websocket relay
-        'Ghost/N/Tyrant.g',             // cabinetry — trust + policy-gated admission (rides the floor)
         'Ghost/N/Presence.g',           // WHO IS ONLINE — the relay's `who` batch probe, asked once instead of a pulse per friend (Presence_todo.md)
         'Ghost/N/Repli.g',              // paginated streaming C** replication — offer/pull/pages, above the transport spine (ex-Musuation reality)
         'Ghost/Story/PeerTesting.g',    // the p2p tests (né Peregrination.g) — first of a new kind; more pile on here

@@ -23,11 +23,11 @@
 //                            (may grow into Cred*_result|verdict|instruct, §Editron)
 
 import { _C, REACTAP, type TheC } from "$lib/data/Stuff.svelte"
-import { Selection, Travel } from "$lib/mostly/Selection.svelte"
+import { Selection, Travel } from "$lib/data/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { FUNK_KINDS } from "$lib/O/Funk/kinds"
 import { storying_run } from "$lib/O/Funk/Storying.svelte"
-import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte"
+import { SoundSystem } from "$lib/O/Audio.svelte"
 import { mint_grant, verify_grant, type GrantAtom } from "$lib/O/Funk/Grant"
 import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
 import { RemoteWormholeNav } from "$lib/O/RemoteWormholeNav.svelte"

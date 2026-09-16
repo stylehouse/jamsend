@@ -10,7 +10,7 @@
     //   OWN FSA — see Cluster_spec §2.8a for why that is self-certifying and what bounds it.
     //  (Legacy .stashed.cluster_idento is no longer written; Lies_cluster_idento still reads it as a
     //   fallback, and Auto's boot adopts it into a first-class %Identity once.)
-    import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
+    import FaceSucker from "$lib/O/ui/FaceSucker.svelte"
     import { onMount } from "svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { socklog_armed, socklog_arm } from "$lib/O/sockcap"

@@ -115,14 +115,14 @@
     `
 
     import { objectify, TheC }             from "$lib/data/Stuff.svelte"
-    import type { TheD }                  from "$lib/mostly/Selection.svelte"
-    import { Selection, Travel }          from "$lib/mostly/Selection.svelte"
+    import type { TheD }                  from "$lib/data/Selection.svelte"
+    import { Selection, Travel }          from "$lib/data/Selection.svelte"
     import { depeel, peel, dig, exactly, ex }               from "$lib/Y.svelte"
     import { onMount, tick }                    from "svelte"
-    import { now_in_seconds, now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
+    import { now_in_seconds, now_in_seconds_with_ms }     from "$lib/Y.svelte"
     import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
     import Storui                       from "$lib/O/Storui.svelte"
-    import { SoundSystem }              from "$lib/p2p/ftp/Audio.svelte"
+    import { SoundSystem }              from "$lib/O/Audio.svelte"
 
     let { M } = $props()
     let V = { Story: 1 }   // set Story: 1 here to enable drive/analysis debug logs

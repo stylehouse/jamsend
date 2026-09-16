@@ -3,14 +3,14 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
-import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
+import { SoundSystem } from "$lib/O/Audio.svelte.ts"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_MusuTesting(): string { return 'fea225346dcb19a0~g1' },
+    Ghostmeta_Ghost_Story_MusuTesting(): string { return '5cdbfdb1d86b2f1a~g1' },
 
 // MusuTesting.g — né Musuation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09: test code
 //  should be pattern-matchable rather than recognised from a list; `src/lib/L/testing.ts` is the one

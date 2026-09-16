@@ -149,6 +149,20 @@ export class Idento extends IdentoCrypto {
 
 
 
+// the clock — seconds since the epoch, whole or with ms.  Lived in the Peerily prototype for a year;
+//  every layer from Stuff up reads it, so it belongs at the bottom (Y, not Housing: Stuff imports the
+//   clock and Housing imports Stuff — Y↔Stuff is already the one accepted cycle).
+export function now_in_seconds_with_ms() {
+    return Math.floor(Date.now()) / 1000
+}
+export function now_in_seconds() {
+    return Math.floor(Date.now() / 1000)
+}
+export function bunch_of_nowish() {
+    let t = Math.floor(now_in_seconds() / 5) * 5
+    return [t,t-5,t+5,t-10,t+10]
+}
+
 export const CHUNK_SIZE = 16 * 1024;          // 16KB chunks for file transfer etc
 
 

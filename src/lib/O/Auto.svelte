@@ -52,13 +52,13 @@
     import type { House }   from "$lib/O/Housing.svelte"
     import { onMount }      from "svelte"
     import LibraryRun       from "$lib/O/ui/LibraryRun.svelte"
-    import { now_in_seconds, now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
+    import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Y.svelte";
     import { boot_param }   from "$lib/boot"
     import { Idento }       from "$lib/Y.svelte"
     import { prepubOf }     from "$lib/p2p/cluster_trust"
     import { crew_keys, crew_keys_home } from "$lib/O/Funk/Crewkeys"
     import { cluster_name } from "$lib/cluster_name"
-    import { SoundSystem }  from "$lib/p2p/ftp/Audio.svelte"
+    import { SoundSystem }  from "$lib/O/Audio.svelte"
 
     const DEFAULT_BOOKS = ['LeafJuggle', 'LeafFarm', 'StuffFlipping', 'LakeSurfer']
     const HEAD = 'Present'

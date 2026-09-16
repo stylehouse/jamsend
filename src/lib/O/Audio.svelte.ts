@@ -1,12 +1,10 @@
 import { isar } from "$lib/Y.svelte";
-import {Modus} from "$lib/mostly/Modus.svelte.ts"
 
 // see also RadioModus
 //  which could potentially go here except it creates circular dependencies
 
 type LUFS = number
 export class SoundSystem {
-    M: Modus
 
     AC: AudioContext | null = $state(null)
     // audio keep-awake — a silent, always-running source that flags this tab as "playing media" so the

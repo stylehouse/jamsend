@@ -6,7 +6,7 @@
 
     import { exactly, grop, hakd, sex } from "$lib/Y.svelte";
     import { keyser, objectify } from "./Stuff.svelte";
-    import { now_in_seconds, now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
+    import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Y.svelte";
 
     let { M } = $props()
 

@@ -14,7 +14,7 @@
 //  fresh graph.  Its gainNode->gainNode2->destination chain gives mute for free (gainNode2=0), and the
 //   tap()/pcm_buffer()/schedule() added beside it let synth PCM ride the real clock + a real analyser.
 IMPORT()
-    import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
+    import { SoundSystem } from "$lib/O/Audio.svelte.ts"
 
 //#region sound
 

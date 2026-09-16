@@ -1,6 +1,7 @@
-import { now_in_seconds, PeeringFeature } from "$lib/p2p/Peerily.svelte";
+import { PeeringFeature } from "$lib/p2p/Peerily.svelte";
+import { now_in_seconds } from "$lib/Y.svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
-import type { Travel } from "$lib/mostly/Selection.svelte";
+import type { Travel } from "$lib/data/Selection.svelte";
 import { armap, ex, exactly, hakd, isar, map, tex, throttle } from "$lib/Y.svelte";
 import type { Matchy } from "$lib/mostly/Structure.svelte";
 

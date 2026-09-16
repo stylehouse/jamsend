@@ -3,7 +3,7 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
-import { Selection } from "$lib/mostly/Selection.svelte.ts"
+import { Selection } from "$lib/data/Selection.svelte.ts"
 import { sha256_hex } from "$lib/O/Hashly.ts"
 
     let { H } = $props()
@@ -11,7 +11,7 @@ import { sha256_hex } from "$lib/O/Hashly.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Repli(): string { return '539db7b119306061~g1' },
+    Ghostmeta_Ghost_N_Repli(): string { return '35e3cfde0f466c2b~g1' },
 
 // Repli.g — the PAGINATED STREAMING C** REPLICATION protocol.  Extracted from Ghost/Story/MusuTesting.g's
 //  //#region repli (the Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md): shared,

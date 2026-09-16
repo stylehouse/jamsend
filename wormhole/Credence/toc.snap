@@ -4,7 +4,6 @@ Waft:Credence
   What:Pere,desc:the Peeroleum peer-to-peer transport floor — liveness reliability and trust admission
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:PereStaple,wire:canonical Peeroleum spine over loopback mock carriers — the real socket is un-Booked
-    Funkcion:Storying,of_Book:PereTyrant
     Funkcion:Storying,of_Book:PereProof
     Funkcion:Storying,of_Book:Peregrination
     Funkcion:Storying,of_Book:PereReborn,wire:reconnect-epoch fix over one loopback link — boot-detection stubbed
@@ -194,8 +193,6 @@ Waft:Credence
       Funkcion:Storying,of_Book:Interesting
       Funkcion:Storying,of_Book:MundaneStation
       Funkcion:Storying,of_Book:MundaneStaying
-      Funkcion:Storying,of_Book:PeeringLive
-      Funkcion:Storying,of_Book:Peeringinst
       Funkcion:Storying,of_Book:ReactiveWaft
       Funkcion:Storying,of_Book:Snapmigrating,unusual:data-migration
       Funkcion:Storying,of_Book:Snaptesting

@@ -1,10 +1,12 @@
 
 import { KVStore } from '$lib/data/IDB.svelte';
 import { objectify } from '$lib/data/Stuff.svelte';
-import type { ThingAction } from '$lib/data/Things.svelte';
-import type Modus from '$lib/mostly/Modus.svelte';
-import type { OurPeering, OurPier } from '$lib/Trust.svelte';
-import type { Trusting } from '$lib/Trust.svelte.ts';
+import type { ThingAction } from '$lib/data/Things.svelte.ts';
+import type { Modus } from '$lib/mostly/Modus.svelte.ts';
+// the prototype Trust UI is gone (2026-09-16); Peerily itself goes in the next pass
+type Trusting = any
+type OurPeering = any
+type OurPier = any
 import {
     erring,
     enhex, dehex,
@@ -215,16 +217,9 @@ type TheStash = {
 }
 
 // the global internet time, UTC in whole seconds
-export function now_in_seconds_with_ms() {
-    return Math.floor(Date.now()) / 1000
-}
-export function now_in_seconds() {
-    return Math.floor(Date.now() / 1000)
-}
-export function bunch_of_nowish() {
-    let t = Math.floor(now_in_seconds() / 5) * 5
-    return [t,t-5,t+5,t-10,t+10]
-
+import { now_in_seconds, now_in_seconds_with_ms, bunch_of_nowish } from "$lib/Y.svelte"
+export { now_in_seconds, now_in_seconds_with_ms, bunch_of_nowish }
+{
 }
 //#endregion
 

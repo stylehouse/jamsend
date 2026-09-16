@@ -11,7 +11,7 @@
     //     per track a keep/skip tick, with a collision badge when your crate already holds it.  Commit writes
     //      %Pick children + flips the keep to committing; the beat driver (Heist_keep_pull) pulls the chosen
     //       tracks and lands them under music/<genre>/<file> — straight into the collection the radio digs.
-    import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
+    import FaceSucker from "$lib/O/ui/FaceSucker.svelte"
     import { onMount } from "svelte"
     import type { House } from "$lib/O/Housing.svelte"
 

@@ -26,7 +26,7 @@
 //  fresh graph.  Its gainNode->gainNode2->destination chain gives mute for free (gainNode2=0), and the
 //   tap()/pcm_buffer()/schedule() added beside it let synth PCM ride the real clock + a real analyser.
 IMPORT()
-    import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
+    import { SoundSystem } from "$lib/O/Audio.svelte.ts"
 
 // ── the AUDIO ENGINE moved out to Ghost/M/Sound.g (Radiobuddies regroup — spec/Radiobuddies_handover.md
 //  §5): the Musu_* "reality" verbs are now Sound_*, called cross-ghost — this.Sound_synth / _silence /

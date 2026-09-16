@@ -32,7 +32,7 @@
 //   resumed independently of the Understanding).
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
-import { Selection } from "$lib/mostly/Selection.svelte"
+import { Selection } from "$lib/data/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { onMount } from "svelte"
 

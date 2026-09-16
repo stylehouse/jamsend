@@ -1,159 +1,19 @@
+// Filesystem — the File System Access API, wrapped: a directory handle (FileSystemHandler), the
+//  listing under it (DirectoryListing), a file in it (FileListing).  The one seam between Housing's
+//   Wormhole and the browser's disk; node gets its own in scripts/NodeWormholeNav.ts.
+//  A .svelte.ts because DirectoryListing's files|directories|expanded are $state runes (the tree UI watches
+//   them) — as a plain .ts, $state is an undefined name and the first picker click threw (2026-09-16).
+//  Lifted from p2p/ftp/Directory.svelte.ts (the prototype's share machinery) 2026-09-16 — only these
+//   three classes were live; the shares around them went with the prototype.
+import { CHUNK_SIZE, erring } from '$lib/Y.svelte'
 
-import { KVStore } from '$lib/data/IDB.svelte'
-import { Modus } from "$lib/mostly/Modus.svelte.ts";
-import { _C, keyser, TheC, type TheN } from '$lib/data/Stuff.svelte';
-import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
-import { Selection, Tdebug, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
-import { Strata, Structure } from '$lib/mostly/Structure.svelte';
-import { CHUNK_SIZE, erring, grap, grop, sha256 } from '$lib/Y.svelte'
-import { now_in_seconds, PeeringFeature } from '../Peerily.svelte';
-import { DirectoryModus, type PeeringSharing, type PierSharing } from './Sharing.svelte';
-
-
-//#region DirectoryShare
-// Individual share - like a PierFeature but for directories
-export class DirectoryShare extends ThingIsms {
-    // < GOING for %handle,A
-    fsHandler: FileSystemHandler
-    
-    started = $state(false)
-
-    modus_init() {
-        return new DirectoryModus({S:this})
-    }
-
-    get list():DirectoryListing {
-        return this.started && this.fsHandler.list
-    }
-    
-    // was localList
-    
-    persisted_handle:KVStore
-    constructor(opt) {
-        super(opt)
-        let {name,F}:{name:string,F:PeeringFeature} = opt
-
-        this.persisted_handle = F.spawn_KVStore(`share handle`,name)
-        
-        this.fsHandler = new FileSystemHandler({
-            share: this,
-            storeDirectoryHandle: async (handle) => {
-                await this.persisted_handle.put(handle)
-            },
-            restoreDirectoryHandle: async () => {
-                const handle = await this.persisted_handle.get()
-                if (!handle) return null
-
-                try {
-                    // Verify the handle is still valid
-                    const permission = await handle.queryPermission({ mode: 'readwrite' })
-                    
-                    if (permission === 'granted') {
-                        return handle
-                    } else if (permission === 'prompt') {
-                        // Try to request permission again
-                        const newPermission = await handle.requestPermission({ mode: 'readwrite' })
-                        if (newPermission === 'granted') {
-                            return handle
-                        }
-                    }
-                    
-                } catch (err) {
-                    console.warn('Directory handle validation failed:', err)
-                    // < huh?
-                }
-                // maybe drop this stored object?
-                await this.persisted_handle.delete()
-                return null
-            },
-        })
-    }
-    async start() {
-        try {
-            await this.fsHandler.start()
-            this.start_post(true)
-        } catch (err) {
-            throw erring(`Failed to start share "${this.name}"`, err)
-        }
-    }
-    // user interaction required
-    async click_start() {
-        await this.fsHandler.requestDirectoryAccess()
-        this.start_post()
-
-    }
-    async start_post(retriable=false) {
-        if (this.fsHandler.started) {
-            this.started = true
-            // dismiss UI wanting this
-            this.F.P.needs_share_open_action = null
-            console.log(`DirectoryShare "${this.name}" started`)
-        }
-        else {
-            if (retriable) {
-                // the handle failed to resume, perhaps it is new
-                this.i_action({label:'open share', class:'big', handler: async () => {
-                        await this.click_start()
-                        this.i_action({label:'open share'},true)
-                    }})
-            }
-            else {
-                throw erring(`Share not starting! "${this.name}"`)
-            }
-        }
-
-
-    }
-    async stop() {
-        try {
-            await this.fsHandler.stop()
-            this.started = false
-            console.log(`DirectoryShare "${this.name}" stopped`)
-        } catch (err) {
-            throw erring(`Failed to stop share "${this.name}"`, err)
-        }
-    }
-
-    // < used by FileList, which is perhaps not the future...
-    async refresh() {
-        if (!this.started) return
-        // only does the top level
-        await this.fsHandler.list.expand()
-    }
-
-}
-
-//#endregion
-//#region DirectoryShares
-// Collection of DirectoryShares with persistence
-export class DirectoryShares extends ThingsIsms {
-    started = $state(false)
-    constructor(opt) {
-        super(opt)
-        this.set_table(`shares`)
-    }
-
-
-    async thingsify(opt) {
-        return new DirectoryShare(opt)
-    }
-    async autovivify(opt) {
-        opt.name = 'music'
-    }
-}
-
-//#endregion
-
-
-//#endregion
-//#region *Listing
-// one file
-// < GOING, AI produced and ancient
+// what a listing knows about its share: a name for messages.  (Was the prototype's share object.)
+type ShareName = { name: string }
 
 export class FileListing {
     up: DirectoryListing
     name: string;
-    share:DirectoryShare
+    share: ShareName
 
     size: number;
     modified: Date;
@@ -401,40 +261,6 @@ export class DirectoryListing {
     }
 }
 // see unemit:file_list_response
-export class RemoteListing extends DirectoryListing {
-    PF:PierSharing
-    name: string
-    up?: RemoteListing
-    files: FileListing[] = $state([])
-    directories: RemoteListing[] = $state([])
-    expanded = $state(false);
-    
-    constructor(init: Partial<RemoteListing> = {}) {
-        Object.assign(this,init)
-    }
-    async expand() {
-        // < ask PF.send
-    }
-}
-
-// < RemoteShare as a directory revealing process isn't invented yet
-export type AnyShare = RemoteShare | DirectoryShare
-export class RemoteShare extends ThingIsms {
-    async start() {}
-}
-
-//#endregion
-
-
-//#region fs
-
-// < GOING eventually, move open handles to D**
-interface FileReader {
-    size: number;
-    iterate: (startFrom?: number) => AsyncGenerator<ArrayBuffer>;
-}
-
-// type FileSystemDirectoryHandle = any
 export class FileSystemHandler {
     // handle for the root directory of the share
     handle:FileSystemDirectoryHandle|null
@@ -443,7 +269,7 @@ export class FileSystemHandler {
     // < io limits per share? so leech swarms share what is going around
     file_handles = new Map()
     // up to share owning this
-    share: DirectoryShare
+    share: ShareName
     // the owner can store this
     restoreDirectoryHandle:Function
     storeDirectoryHandle:Function
@@ -494,13 +320,6 @@ export class FileSystemHandler {
         this.started = false
     }
 
-
-
-
-
-
-
-
-
 }
+
 

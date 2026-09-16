@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
     import Stuffing from "$lib/data/Stuffing.svelte";
-    import type { NamedT, Selection, TheD, Travel } from "$lib/mostly/Selection.svelte";
+    import type { NamedT, Selection, TheD, Travel } from "$lib/data/Selection.svelte";
     import type { Strata } from "$lib/mostly/Structure.svelte";
 
     let {M, strata, mem, namedT}: {

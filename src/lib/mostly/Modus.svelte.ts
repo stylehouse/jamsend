@@ -6,7 +6,7 @@ import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { erring, exactly, grep, hak, iske, map, tex, throttle } from "$lib/Y.svelte";
 import type { Component } from "svelte";
-import { Selection, Tdebug, Travel } from "./Selection.svelte";
+import { Selection, Tdebug, Travel } from "$lib/data/Selection.svelte";
 
 //#endregion
 //#region Modus

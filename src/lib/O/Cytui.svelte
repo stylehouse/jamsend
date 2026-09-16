@@ -27,7 +27,7 @@
 
     import type { House } from '$lib/O/Housing.svelte'
     import { _C, objectify, type TheC }  from '$lib/data/Stuff.svelte'
-    import { now_in_seconds_with_ms } from '$lib/p2p/Peerily.svelte';
+    import { now_in_seconds_with_ms } from '$lib/Y.svelte';
     import MatstyleEditor from './ui/MatstyleEditor.svelte'
     import Stuffing from '$lib/data/Stuffing.svelte'
     import Vexpandy from '$lib/O/ui/Vexpandy.svelte'

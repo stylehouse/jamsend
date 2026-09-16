@@ -1,6 +1,6 @@
 // Another Things/Thing thing!
 
-import { keyser, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte"
+import { keyser, TheC, type TheEmpirical, type TheN, type TheUniversal } from "./Stuff.svelte"
 import { isar, isC, reverse, sex } from "$lib/Y.svelte"
 
 const AI = `

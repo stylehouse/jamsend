@@ -56,7 +56,7 @@
     //    something to wait out: they are the thing blocking everything, and lifting off them would
     //     just hand the screen back to BootGate (two gates in a row, in the other order) or hide the
     //      join door behind a boot log.
-    import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
+    import FaceSucker from "$lib/O/ui/FaceSucker.svelte"
     import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
     import LinkDevice from "$lib/O/ui/LinkDevice.svelte"
     import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"

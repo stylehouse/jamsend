@@ -3,14 +3,14 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
-import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
+import { SoundSystem } from "$lib/O/Audio.svelte.ts"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Sound(): string { return '8261f31fc4c18e13~g1' },
+    Ghostmeta_Ghost_M_Sound(): string { return 'e91d2b1e4cab4e48~g1' },
 
 // Sound.g — the AUDIO ENGINE.  Extracted from Ghost/Story/MusuTesting.g's //#region reality (the
 //  Radiobuddies regroup — spec: src/lib/O/spec/Radiobuddies_handover.md §5): shared, real software,

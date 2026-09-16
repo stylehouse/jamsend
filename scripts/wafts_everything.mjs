@@ -12,7 +12,7 @@ const W = []
 const P = (m, d) => `Point:${m}|${d}`
 
 W.push(['Ghost/Net/Easy', 'the wire — one spine and its carriers — the relay in the middle — the cluster channel the editor and its runners ride',
- ['PereStaple','PereProof','PereTyrant','PereReborn','PereComplain','Peregrination','RepliUpsert','RepliSplit','RepliShadow','ParkCull','RaBreach','PeeringLive','Sounditron'], [
+ ['PereStaple','PereProof','PereReborn','PereComplain','Peregrination','RepliUpsert','RepliSplit','RepliShadow','ParkCull','RaBreach','Sounditron'], [
  ['What:the spine', 'Peeroleum — an envelope with a seq and an ack — a Pier per peer with an outbox and an inbox — every frame books an unemit served under the beliefs mutex',
   'Doc:Ghost/N/Peeroleum.g',
   P('Peeroleum_send', 'outbound — allocate seq — book the emit — hand to the carrier'),
@@ -47,8 +47,6 @@ W.push(['Ghost/Net/Easy', 'the wire — one spine and its carriers — the relay
   P('inseq_admit', 'in-order admission — buffer the gap — release what is ready'), P('retx_due', 'which emits to resend and which are dead'),
   P('retx_delay', 'backoff per attempt'), P('make_lossy_partner', 'a carrier that drops and reorders on purpose'),
   'Doc:Ghost/N/Peeroleum.g', P('Peeroleum_retx_sweep', 'the resend clock over every outbox'), P('Peeroleum_liveness_sweep', 'no inbound for dead ms → mark the Pier silent')],
- ['What:admission', 'Tyrant — trust and policy-gated admission on the floor',
-  'Doc:Ghost/N/Tyrant.g', P('req_admit', 'is this Pier admitted under policy'), P('req_policy', 'the standing policy req'), P('say_vouch', 'vouch for a peer'), P('hear_vouch', 'take a vouch'), P('Tyrant_grant', 'mint the grant admission rides on')],
  ['What:presence', 'who is online — one batch who probe per round instead of a pulse per friend',
   'Doc:Ghost/N/Presence.g', P('Presence_arm', 'install the who_ok hook before the socket can answer'), P('Presence_ask', 'send the who batch'), P('Presence_take', 'land the answer — online offline'), P('Presence_online', 'is this addr live right now'), P('Presence_ask_roster', 'ask about everyone we know')],
  ['What:replication', 'Repli — a C** subtree becomes wire lines and back — offer a Record then deal its Stream page by page — the want and the park',
@@ -102,7 +100,7 @@ W.push(['Ghost/Music/Ality', 'the music pipeline — rastock racast raterm — s
  ['What:the homes', 'Mine Theirs the shop the bay and the pool — records live once per shelf and a Card refers',
   'Doc:Ghost/M/Ra.g', P('Ra_home_self', 'my shelf'), P('Ra_home_them', 'a friend shelf'), P('Ra_home_pool', 'the pool shelf'), P('Ra_home_shelf', 'any shelf by name'), P('Ra_library', 'the Library under a home'), P('Ra_rec_find', 'a Record by id'), P('Ra_recs', 'every Record on a shelf'), P('Ra_mag_page', 'a page of a Mag')],
  ['What:the pool', 'SoundPooling — the dial already chooses so the pool keeps what played — consent budget caps and the quarter goal',
-  'Doc:Ghost/M/Ra.g', P('Ra_pool_define', 'a pool — who owns it'), P('Ra_pool_stock', 'what the pool holds'), P('Ra_pool_consent', 'who consented to pool'), P('Ra_pool_budget', 'bytes allowed'), P('Ra_pool_census', 'count the pool'), P('Ra_quarter_goal', 'the quarter — how much each source should give'), P('Ra_pool_fill_book', 'book a fill'), P('Ra_pool_fill_homes', 'where a fill comes from and lands'), P('Ra_pool_fill_verdict', 'did the fill land'),
+  'Doc:Ghost/M/Ra.g', P('Ra_pool_define', 'a pool — who owns it'), P('Ra_pool_stock', 'what the pool holds'), P('Ra_pool_consent', 'who consented to pool'), P('Ra_pool_budget', 'bytes allowed'), P('Ra_pool_census', 'count the pool'), P('Ra_quarter_goal_pools', 'the quarter — how much each source should give — per compartment off one tally'), P('Ra_pool_fill_book', 'book a fill'), P('Ra_pool_fill_homes', 'where a fill comes from and lands'), P('Ra_pool_fill_verdict', 'did the fill land'),
   'Doc:src/lib/O/ui/PoolFace.svelte'],
  ['What:the terminal', 'the listener end — pcm admission and the fly — the spool and the stream open — the dial picks the next',
   'Doc:Ghost/M/Ra.g', P('Ra_pcm_admit', 'may this chunk decode now'), P('Ra_pcm_sweep', 'drop pcm we are past'), P('Ra_term_spool', 'the playback spool'), P('Ra_term_stream_open', 'open a stream at the terminal'), P('Ra_dial_next', 'pick the next track'), P('Ra_page_hole', 'a missing chunk in a page — re-ask page-wide'), P('Ra_clock_arm', 'the pull clock')],

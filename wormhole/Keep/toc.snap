@@ -1,16 +1,15 @@
 Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1789512041695,enthusiasm=0
-    Cursor,what:What:the spine,at=1789512076762
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1789512041576,enthusiasm
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1789538527414,enthusiasm=0
+    Cursor,what:What:the spine,at=1789538531946
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1789538527262,enthusiasm
     Cursor,what:What:the stock pass,at=1789335307862
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1789512041582
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1789538527268
     Cursor,what:What:cursor models,at=1783177002906
-  Cursor,waft:Ghost/Net/Easy,at=1789512041695
-  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1789512041584
+  Cursor,waft:Ghost/Net/Easy,at=1789538527414
+  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1789538527274
   WaftTimes,of_Waft:Keep,minimised
-  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1789512041629,minimised
-  DocScroll,of_Doc:Ghost/N/Peeroleum.g,scroll_line=48
-  DocScroll,of_Doc:Ghost/N/Tyrant.g
+  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1789538527285,minimised
+  DocScroll,of_Doc:Ghost/N/Peeroleum.g
   DocScroll,of_Doc:Ghost/M/Radiola.g,scroll_line=16
   DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2608
   DocScroll,of_Doc:Ghost/Story/Peregrination.g,scroll_line=43
@@ -22,14 +21,14 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   DocScroll,of_Doc:Ghost/M/Crate.g,scroll_line=10
   DocScroll,of_Doc:src/lib/p2p/ftp/Audio.svelte.ts,scroll_line=19
   DocScroll,of_Doc:Ghost/N/Tribunal.g,scroll_line=3
-  WaftTimes,of_Waft:Aside/2026-07-03,discovered_at=1783055842350,accessed_at=1789512041634,minimised
+  WaftTimes,of_Waft:Aside/2026-07-03,discovered_at=1783055842350,accessed_at=1789538527301,minimised
     Cursor,what:What:1,at=1784032199665
   DocScroll,of_Doc:src/lib/O/Lies.svelte
-  WaftTimes,of_Waft:Aside/2026-07-04,discovered_at=1783080228115,accessed_at=1789512041639,minimised
+  WaftTimes,of_Waft:Aside/2026-07-04,discovered_at=1783080228115,accessed_at=1789538527307,minimised
     Cursor,what:What:1,at=1783776941376
   DocScroll,of_Doc:Ghost/M/Ra.g
   DocScroll,of_Doc:Ghost/Story/Radiation.g,scroll_line=519
-  WaftTimes,of_Waft:Ghost/Vis/Visua,discovered_at=1783421538699,accessed_at=1789512041642
+  WaftTimes,of_Waft:Ghost/Vis/Visua,discovered_at=1783421538699,accessed_at=1789538527311
     Cursor,what:What:the home,at=1784029329879
   DocScroll,of_Doc:Ghost/V/Voro.g,scroll_line=389
   DocScroll,of_Doc:Ghost/N/Repli.g,scroll_line=468
@@ -39,23 +38,23 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   DocScroll,of_Doc:src/lib/O/Cytui.svelte,scroll_line=172
   DocScroll,of_Doc:src/lib/O/spec/Radio_todo.md
   DocScroll,of_Doc:Ghost/N/Reliable.g
-  WaftTimes,of_Waft:Aside/2026-07-15,discovered_at=1784031306180,accessed_at=1789512041648
+  WaftTimes,of_Waft:Aside/2026-07-15,discovered_at=1784031306180,accessed_at=1789538527331
     Cursor,what:What:1,at=1787553840929
   DocScroll,of_Doc:Ghost/Story/Swarmation.g,scroll_line=7
-  WaftTimes,of_Waft:Aside/2026-09-08,discovered_at=1788842244590,accessed_at=1789512041651
+  WaftTimes,of_Waft:Aside/2026-09-08,discovered_at=1788842244590,accessed_at=1789538527353
     Cursor,what:What:3,at=1788856011093
   DocScroll,of_Doc:Ghost/M/Heist.g
   DocScroll,of_Doc:Ghost/L/Atlantation.g
-  WaftTimes,of_Waft:Aside/2026-09-09,discovered_at=1788870164841,accessed_at=1789512041670
+  WaftTimes,of_Waft:Aside/2026-09-09,discovered_at=1788870164841,accessed_at=1789538527364
     Cursor,what:What:6,at=1788942499342
   DocScroll,of_Doc:src/lib/O/spec/Daemon_todo.md,scroll_line=2164
   DocScroll,of_Doc:src/lib/O/spec/Backpressure_todo.md,scroll_line=157
   DocScroll,of_Doc:Ghost/Story/Sounditron.g,scroll_line=3128
   DocScroll,of_Doc:Ghost/L/Atlas.g,scroll_line=184
-  WaftTimes,of_Waft:Aside/2026-09-10,discovered_at=1789036161177,accessed_at=1789512041674
+  WaftTimes,of_Waft:Aside/2026-09-10,discovered_at=1789036161177,accessed_at=1789538527369
     Cursor,what:What:1,at=1789036161178
   DocScroll,of_Doc:Ghost/V/Vyto.g,scroll_line=616
-  WaftTimes,of_Waft:Aside/2026-09-11,discovered_at=1789084836877,accessed_at=1789512041679
+  WaftTimes,of_Waft:Aside/2026-09-11,discovered_at=1789084836877,accessed_at=1789538527371
     Cursor,what:What:7,at=1789121204967
   DocScroll,of_Doc:Ghost/L/AtlasTesting.g,scroll_line=172
   DocScroll,of_Doc:src/lib/mostly/Structure.svelte.ts,scroll_line=137
@@ -66,12 +65,12 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   DocScroll,of_Doc:src/lib/p2p/ftp/Sharing.svelte.ts,scroll_line=296
   DocScroll,of_Doc:src/lib/O/Census.svelte,scroll_line=264
   DocScroll,of_Doc:Ghost/M/Booth.g,scroll_line=12
-  WaftTimes,of_Waft:Aside/2026-09-12,discovered_at=1789172018848,accessed_at=1789512041682
+  WaftTimes,of_Waft:Aside/2026-09-12,discovered_at=1789172018848,accessed_at=1789538527376
     Cursor,what:What:4,at=1789172042602
   DocScroll,of_Doc:src/lib/mostly/Selection.svelte.ts,scroll_line=374
   DocScroll,of_Doc:src/lib/O/MachPeerily.svelte,scroll_line=387
   DocScroll,of_Doc:Ghost/L/Electrode.g,scroll_line=26
-  WaftTimes,of_Waft:Aside/2026-09-13,discovered_at=1789293813489,accessed_at=1789512041686
+  WaftTimes,of_Waft:Aside/2026-09-13,discovered_at=1789293813489,accessed_at=1789538527381
     Cursor,what:What:1,at=1789293813491
-  WaftTimes,of_Waft:Aside/2026-09-14,discovered_at=1789335333050,accessed_at=1789512041693
+  WaftTimes,of_Waft:Aside/2026-09-14,discovered_at=1789335333050,accessed_at=1789538527403
     Cursor,what:What:1,at=1789335333050

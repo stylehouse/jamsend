@@ -6,9 +6,9 @@
 //   it back into the source, resuming any nested /%What/%What/%Point we never owned.
 
 import { _C, keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte"
-import { Selection, type TheD } from "$lib/mostly/Selection.svelte"
+import { Selection, type TheD } from "$lib/data/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
-import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte"
+import { now_in_seconds_with_ms } from "$lib/Y.svelte"
 import { onMount } from "svelte"
 
 let { M } = $props()

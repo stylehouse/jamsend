@@ -33,7 +33,6 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:Ghost/N/Reliable.g,name:Reliable,noticed_at=1789430287582
     Doc:Ghost/N/Repli.g,name:Repli,noticed_at=1789430287582
     Doc:Ghost/N/Tribunal.g,name:Tribunal,noticed_at=1789430287582
-    Doc:Ghost/N/Tyrant.g,name:Tyrant,noticed_at=1789430287582
   open_dir:Ghost/Story
   group:Ghost/Story,dir:Ghost/Story
     Doc:Ghost/Story/BerthTesting.g,name:BerthTesting,noticed_at=1789430287582

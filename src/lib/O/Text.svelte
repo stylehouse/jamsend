@@ -1,6 +1,6 @@
 <script lang="ts">
     import { _C, objectify, type TheC } from "$lib/data/Stuff.svelte";
-    import { Travel } from "$lib/mostly/Selection.svelte"
+    import { Travel } from "$lib/data/Selection.svelte"
     // Text.svelte — ghost depositing snap-line and diff functions onto H.* via eatfunc.
     //
     // Mounted in Ghost.svelte alongside Agency, Machinery, Story, Cyto.

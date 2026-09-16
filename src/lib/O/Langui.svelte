@@ -107,7 +107,7 @@
     import DocCompost from "./ui/DocCompost.svelte"  // frozen-frame overlay; arms dock.c.compost for fly-in gotos
     import DocPoint   from "./ui/DocPoint.svelte"
     import DocStorying from "./ui/DocStorying.svelte"   // inline Credence light at a Run_A_<Book> def
-    import { now_in_seconds_with_ms } from "./Peerily.svelte";
+    import { now_in_seconds_with_ms } from "$lib/Y.svelte";
 
     let { H }: { H: House } = $props()
 

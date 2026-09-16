@@ -65,8 +65,8 @@
     //   system (positioned <pre> elements over the cytoscape canvas).
 
     import { TheC, _C, objectify }  from "$lib/data/Stuff.svelte"
-    import { Selection } from "$lib/mostly/Selection.svelte"
-    import type { TheD, Travel } from "$lib/mostly/Selection.svelte"
+    import { Selection } from "$lib/data/Selection.svelte"
+    import type { TheD, Travel } from "$lib/data/Selection.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount }   from "svelte"
     import Cytui         from "./Cytui.svelte"

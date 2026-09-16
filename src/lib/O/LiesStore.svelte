@@ -149,7 +149,7 @@
     //   back-linked.  Lies.svelte orchestrates when they run; LiesStore owns how.
     //
     import { _C, type TheC } from "$lib/data/Stuff.svelte"
-    import { Travel }         from "$lib/mostly/Selection.svelte"
+    import { Travel }         from "$lib/data/Selection.svelte"
     import type { House }     from "$lib/O/Housing.svelte"
     import { dig, throttle }  from "$lib/Y.svelte"
     import { onMount }        from "svelte"

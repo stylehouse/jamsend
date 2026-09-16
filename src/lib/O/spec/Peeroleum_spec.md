@@ -182,9 +182,12 @@ editor browser ─ws→ editor /relay ←relay↔relay (plain ws)→ staging /re
 - **The four consumer asks (in code):** `Peeroleum_on(w,type,fn)` (per-`w` `w.c.on` dispatch inside the
    inbox/ack/faulty lifecycle), `Peeroleum_send` (books outbox emit + seq), `Peeroleum_peer_ready(pier)`
     (reads both Piers' handshake/`%Ud`), and the real WS server above.
-- **Security v1 = trust-everything** — the seam **Tyrant.g** attaches to. The runner HAS an Id (Peering/
-   Pier are keyed by it); trust *enforcement* is deferred. Accept the one runner that connects, hardcoded
-    editor+runner Ids. `%Ud` verification / per-runner authz / Thangs persistence are future.
+- **Security v1 = trust-everything** — *(2026-09-16: the "Tyrant.g seam" this once named is gone. Transport
+   admission is the `Cluster_trust*` posture — trust the relay, verify every peer's key yourself
+    (`p2p/cluster_trust.ts`: signHeader/verifyHeader/prepubOf). Friendship admission is Swarm.g. The mock
+     society file `Ghost/N/Tyrant.g` was retired with its Book PereTyrant — see §11.)* The runner HAS an Id
+      (Peering/Pier are keyed by it); accept the one runner that connects. `%Ud` verification / per-runner
+       authz / Thangs persistence are future.
 - **Why ship `.go` bytes to the runner** (editor `write_finished`+`w%editor` → runner
    `LiesStore_good→land_good→drain_good`): same-machine the win is negligible; the real payoff is **remote
     running**, where the runner's disk is away on a server with no shared disk to the editor.
@@ -287,6 +290,21 @@ Two Dexie-backed tables under `w:Thangs`:
 ---
 
 ## 11. The manager: p2pman / p2paddy / per-Pier desires  (UNBUILT — forward design)
+
+> **2026-09-16 — read this first.** Two reads of the code below this heading, a day apart, reached the same
+>  verdict: `req_p2pman` and `req_p2paddy` are *hollow foremen* — `await req&do; req.sc.ok = 1` with no
+>   reason ever to withhold `ok`, no motivation flowing down (`A:Peerologist` never reaches
+>    `A:<id>/w:Peeroleum`), and the structural work they were to own (mint Peerings, own
+>     `transport_select`/`dial`) done instead by the mains and the wranglers. `Squelchbury` (`oai
+>      seemingly:…` in `Peeroleum(A,w)`) is a placeholder particle riding every snap. **Ruling: "not yet"** —
+>       delete the two reqs + eternal seeds + Squelchbury when next in the file, keep `Peeroleum(A,w)` doing
+>        what it demonstrably does, and leave this section as the destination. (A hollow foreman is worse than
+>         none: it reads as a gate to every next reader.)  Retired the same day: `Ghost/N/Tyrant.g` + Book
+>          PereTyrant (superseded by Swarm.g, greenlit 07-26), the Peerily-era `MachPeerily` + PeeringLive
+>           (phoned `0.peerjs.com`; real WebRTC never had a port here — see §4 / Tribunal's `PeerJS()`
+>            black-hole mock), Peeringinst (driver gone since `e59479ef` 2026-05-23), `src/lib/ghost/`,
+>             most of `mostly/` and `p2p/`. WebRTC's parking note is in `Netsitu_todo.md`.
+
 
 > **Forward design, largely unbuilt** — current spine bodies are `// <` seams that `req.do(); req.sc.ok=1`.
 >  Two standing caveats on the diagrams below: a leaf that must wait carries **no `%req:waiting`** (never
