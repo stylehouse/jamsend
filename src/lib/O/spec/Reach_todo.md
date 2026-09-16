@@ -30,6 +30,51 @@ This doc is the answer to that, and to Homethink §5's load-bearing question —
 
 ## 0. What to get on with next
 
+### ▶ W2 BRIEF — the ferry ask becomes a Reach (written 2026-09-17 00:40 for the morning; nothing built)
+
+**Roles, not devices (owner 2026-09-17):** the **Captain** holds the account and MINTS the invite (a QR on its
+ screen, a link pasted into a messaging app) — it exists first, and in the usual game it is the PHONE; the
+  **Cave** is whichever device OPENS the invite (usually the laptop). Everything below is written in roles;
+   the Cave asks, the Captain answers. And "phone" itself only ever means **a body with NO folder** (no FSA
+    share — its durable home is the House stash, `no-fsa-persistence-model`); "laptop" means one with a
+     share. Roles say who asks; folder-or-not says what a body can hold and hand over — keep the two apart.
+
+**What W2 is now.** Not "port `ferry_want`" in the abstract: the adopt road is gone (`4f3ce9cb`), the ferry
+ (the account into a new Cave) is what remains, and its ask is still the five-pump shape §1 diagnosed —
+  `Swarm_ferry_ask` (Swarm.g ~8371) broadcasts `ferry_want` to EVERY pier off a 3s LinkDevice tick + the 5s
+   pulse fallback, behind an `ask_at` throttle (1100ms floor, 2800ms cadence, `force` bypass), and the hear
+    side (~1609) answers with a 4-gate verdict (sealed-live pier · my secret · serial bound · not already
+     ferrying) whose failure is a console line. "Nobody answered the door" has no exit at all: the Cave sits
+      at `phase:'awaiting'` forever.
+
+**The port, in one sentence:** the Cave BOOKS ONE REACH `{to:<soul>, of:<serial>, for:'ferry'}` with a 45s
+ deadline (Swarm_reach_book, ~6316; ceremony arms `w.c.reach_cadence = 3000`); the soul side's DOER for
+  `for:'ferry'` IS the 4-gate verdict, tri-state: truthy → `arrived` (and `Swarm_ferry_on_seal` runs as
+   today) · `{refuse:'no_offer'|'wrong_serial'|'ferrying'}` → `refused,<why>` on the wire · deadline →
+    `dead,nobody-answered`. The Link cell reads the reach's `state` instead of a spinner; retry is a button
+     that re-books (idempotent). Then DELETE: `Swarm_ferry_ask`, the LinkDevice tick's call, the pulse
+      fallback's call, `ask_at`, the `ferry_want`/`ferry_cancel` ephemeral-lane cases at ~1576/1609 —
+       W4's five pumps, three of them fall here.
+
+**Bombs (each already bitten once — §6 rules):**
+- settle kinds MUST ride the pier-EXISTS ephemeral branch (Peeroleum.g ~740-751) or they die `pre-Ud`.
+- the `to:` is the SOUL until W3 stamps the minting body's prepub into the ?Iz (owner ruling: no soul-door
+   coin-flip) — with two Captain bodies live, the road picks; note it, don't fix it in W2.
+- the doer runs SYNC inside `Swarm_hear` (SwarmBody beats call handlers directly) — `Swarm_ferry_on_seal`
+   is async: fire it, don't await it, return truthy.
+- `Swarm_reach_serve` with NO doer refuses `'no_handler'` — register the doer before the first live Cave
+   knocks or every ask lands as an honest refusal.
+
+**Gate.** InvFerry (keeps `the-account-ferries-over`) + a SwarmBody beat 24: book on pure matter, serve with
+ each of the four verdicts, assert the four states + the why on the wire; 2 consecutive greens on a live
+  runner. The two-device live walk (Cave knocks, Captain answers; Captain's tab closed → `dead` on the Cave's screen
+   at 45s) is the owner's.
+
+**Not in W2:** W3 (knock→minting body — needs the receiver-obligation two-word mainkey coinage, owner ruling
+ owed), the remaining two pumps (reheal/throttle in `Swarm_ferry_poke`), SwarmSpread's five stale
+  `Assertion:` lines (Crew_todo §0 — the owner's toc surgery, unrelated to W2 but red in the same family).
+
+
 **LANDED 2026-09-01 (the same day, on the owner's "fuck that hand-rolled pattern is exactly right — we
  need C** to join simplicity to complexity"):** the WHOLE PRIMITIVE + its wire lane, Book-gated
   (SwarmBody beats 10–12, 12/12 green + the full seven-Book gate):

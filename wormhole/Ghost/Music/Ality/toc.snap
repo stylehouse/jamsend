@@ -59,7 +59,10 @@ Waft:Ghost/Music/Ality,desc:the music pipeline — rastock racast raterm — sto
     Point,method:Ra_recs,desc:every Record on a shelf
     Point,method:Ra_mag_page,desc:a page of a Mag
   What:the pool,desc:SoundPooling — the dial already chooses so the pool keeps what played — consent budget caps and the quarter goal
-    Doc:Ghost/M/Ra.g
+    Doc:Ghost/M/Pool.g
+    Point,method:Pool_facts,desc:everything the policy decides on — gathered once a pass
+    Point,method:Pool_policy,desc:the pure goal→diff→roll — decides nothing yet
+    Point,method:Pool_policy_compare,desc:the live diff vs the pure one — said once per shape
     Point,method:Ra_pool_define,desc:a pool — who owns it
     Point,method:Ra_pool_stock,desc:what the pool holds
     Point,method:Ra_pool_consent,desc:who consented to pool

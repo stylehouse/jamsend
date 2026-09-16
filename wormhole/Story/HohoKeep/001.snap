@@ -36,6 +36,7 @@ Snap:H
         req:wants
         o_elvis:dock_askies
         req:Langoer,eternal,ok	{"ref":{"w":"%w:Lies"}}
+        see:lies,docs:0,wafts:2
         see:🗂 0 docs · 2 Wafts
     A:Lang
       self,round=2	{"mung":["age"]}

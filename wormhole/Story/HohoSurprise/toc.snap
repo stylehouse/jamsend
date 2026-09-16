@@ -52,37 +52,37 @@ story:HohoSurprise
         nogen
         nopush
   TimeSpool
-    TimeTotal:beliefs,avg=0.493
-      sample=1.105,at=1784436553
-      sample=0.404,at=1785995780
-      sample=0.309,at=1785998344
-      sample=0.309,at=1785998355
-      sample=0.309,at=1785998359
+    TimeTotal:beliefs,avg=1.117
       sample=0.309,at=1785998359
       sample=0.309,at=1785998360
       sample=0.432,at=1785998505
       sample=1.149,at=1789108829
       sample=0.3,at=1789110700
-    TimeTotal:step,avg=0.045
-      sample=0.1,at=1784436553
-      sample=0.037,at=1785995780
-      sample=0.028,at=1785998344
-      sample=0.028,at=1785998355
-      sample=0.028,at=1785998359
+      sample=0.566,at=1789563626
+      sample=1.541,at=1789565376
+      sample=3.12,at=1789565423
+      sample=1.719,at=1789565458
+      sample=1.727,at=1789565481
+    TimeTotal:step,avg=0.101
       sample=0.028,at=1785998359
       sample=0.028,at=1785998360
       sample=0.039,at=1785998505
       sample=0.104,at=1789108829
       sample=0.027,at=1789110700
+      sample=0.051,at=1789563626
+      sample=0.14,at=1789565376
+      sample=0.284,at=1789565423
+      sample=0.156,at=1789565458
+      sample=0.157,at=1789565481
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
-  step,dige:29e72edb01a217c6
-  step=2,dige:3c9f422b5aeb28b9
-  step=3,dige:3b197c9bfa0332af
-  step=4,dige:28237e59ac0b0562
-  step=5,dige:6641747772618862
-  step=6,dige:45f2b3317831f8a2
-  step=7,dige:c2c86d22ded1f952
-  step=8,dige:726e65b3a1cce4fd
-  step=9,dige:e2c31db79a6a239f
-  step=10,dige:f31f948739d5f128
-  step=11,dige:3a0f675d25ed3a0c
+  step,dige:7066c374b539140e
+  step=2,dige:dce92c759ae6e8f5
+  step=3,dige:0d7af8767310882a
+  step=4,dige:c6d67d3c3005e70f
+  step=5,dige:5b96a8f8f16cc309
+  step=6,dige:dd50406a00822eb6
+  step=7,dige:a69bc52650dd7b32
+  step=8,dige:3acbe89f19a6d6fd
+  step=9,dige:698f4da9251de4d1
+  step=10,dige:a4825097e12bb54c
+  step=11,dige:ab9354a5a9a12666

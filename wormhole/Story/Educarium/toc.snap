@@ -5,26 +5,26 @@ story:Educarium
     For
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=2.549
-      sample=1.053,at=1786067787
-      sample=2.011,at=1786069717
-      sample=4.057,at=1786069788
-      sample=1.996,at=1786070432
+    TimeTotal:beliefs,avg=4.025
       sample=0.83,at=1788842201
       sample=3.571,at=1788846244
       sample=1.052,at=1788851193
       sample=2.016,at=1788853494
       sample=8.797,at=1789108181
       sample=0.108,at=1789109294
-    TimeTotal:step,avg=2.549
-      sample=1.053,at=1786067787
-      sample=2.011,at=1786069717
-      sample=4.057,at=1786069788
-      sample=1.996,at=1786070432
+      sample=3.452,at=1789563941
+      sample=1.651,at=1789563996
+      sample=13.352,at=1789564889
+      sample=5.417,at=1789564976
+    TimeTotal:step,avg=4.025
       sample=0.83,at=1788842201
       sample=3.571,at=1788846244
       sample=1.052,at=1788851193
       sample=2.016,at=1788853494
       sample=8.797,at=1789108181
       sample=0.108,at=1789109294
+      sample=3.452,at=1789563941
+      sample=1.651,at=1789563996
+      sample=13.352,at=1789564889
+      sample=5.417,at=1789564976
   step,dige:0000000000000000,desc:the wire — one spine and its carriers — the relay in the middle — the cluster channel the editor and its runners ride

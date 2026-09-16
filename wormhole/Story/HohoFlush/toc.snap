@@ -42,33 +42,33 @@ story:HohoFlush
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.873
-      sample=0.306,at=1785998371
-      sample=1.876,at=1789108540
-      sample=0.755,at=1789110194
-      sample=2.197,at=1789551264
+    TimeTotal:beliefs,avg=0.687
       sample=0.534,at=1789551363
       sample=0.597,at=1789552099
       sample=1.297,at=1789554574
       sample=0.12,at=1789556233
       sample=0.301,at=1789557054
       sample=0.75,at=1789557911
-    TimeTotal:step,avg=0.125
-      sample=0.044,at=1785998371
-      sample=0.268,at=1789108540
-      sample=0.108,at=1789110194
-      sample=0.314,at=1789551264
+      sample=1.467,at=1789564602
+      sample=0.734,at=1789564653
+      sample=0.615,at=1789564676
+      sample=0.457,at=1789564694
+    TimeTotal:step,avg=0.098
       sample=0.076,at=1789551363
       sample=0.085,at=1789552099
       sample=0.185,at=1789554574
       sample=0.017,at=1789556233
       sample=0.043,at=1789557054
       sample=0.107,at=1789557911
+      sample=0.21,at=1789564602
+      sample=0.105,at=1789564653
+      sample=0.088,at=1789564676
+      sample=0.065,at=1789564694
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
-  step,dige:b357b36e132af360
-  step=2,dige:3207b2ae7c6cb434
-  step=3,dige:6835602f95c53935
-  step=4,dige:8a95e76d19e3e9ae
-  step=5,dige:2358f5101ffbb160
-  step=6,dige:519f61f6802f544d
-  step=7,dige:1d76806cadd78f79
+  step,dige:ebd9f8213d247c3a
+  step=2,dige:a95ab3f54ad9e5f7
+  step=3,dige:c562450e55d4176f
+  step=4,dige:4b74a78d3706f63d
+  step=5,dige:20d546b74e48d8d0
+  step=6,dige:65af534447426c17
+  step=7,dige:a11787032b106327

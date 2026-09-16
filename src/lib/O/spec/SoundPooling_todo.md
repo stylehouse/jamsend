@@ -240,6 +240,24 @@ The owner: *"SP being a crux of operations the user kinda configures and informs
   changing… all edges (calls in or out) nice and clear."* Answer: yes — the policy is ALREADY two regions of Ra.g
    plus five satellites; what is missing is one home, one facts table, and edges written down. 44 sites below.
 
+### THE HOME EXISTS — `Ghost/M/Pool.g` (2026-09-17, "yes to Pool.g, definitely looks big enough")
+
+A file move, no behaviour change, `MusuPoolPolicy` 5/5 after: the pure island (`Pool_*`, 195 lines)
+ first, then the two Ra.g regions verbatim — **the Quartermaster** (`Ra_quarter_*` / `Ra_pool_*` define ·
+  home · consent · excuse · budget · caps · compartments · goal→diff→roll · serve, + `Ra_upgrade_scan`)
+   and **the pool-fill reach** (`Ra_pool_fill_*` / heals / cull / pump). Ra.g 5845→4240 lines and carries
+    ZERO `Ra_pool_`/`Ra_quarter_` defs now; Pool.g is 1799. Registered in `LiesLies.svelte`
+     `CREDULER_GHOSTS` (the runner's hand-kept include manifest — the ONE spine-manifest step; the
+      `pinned_stable/` bootstrap is Peeroleum+Tribunal only and untouched); `wafts_everything.mjs`'s
+       `What:the pool` now points its Doc at Pool.g with the island's three Points added.
+  **The `Ra_` prefix on regions 2–3 is history, not a home.** Renaming to `Pool_` is one sweep with
+   fixtures re-sworn — do it when the island TAKES OVER (step 3), not before; ~60 verbs, every caller
+    is a `this.` call so the sweep is grep-mechanical. Step 3's job is now legible in one file: the
+     Quartermaster's goal_pools+diff+roll become `Pool_policy(Pool_facts(...))` and the compare goes.
+  Still outside, on purpose (they belong to their ghosts' policies): Radio.g's `Radio_pool_steward` +
+   `Radio_meh_ms` + `top.c.pool_steward_cap`, Heard.g's `Heard_landed_cap`/reactions, Swarm's `reach_cap`,
+    Heist.g's keep lane, Cellui's `into:'pool'` seat rule.
+
 ### FOUND (2026-09-17) — a never-asked identity gets auto-enrolled by serving
 
 `Ra_pool_fill_serve` only checks `Ra_pool_excused_of` before pressing a friend's requested track

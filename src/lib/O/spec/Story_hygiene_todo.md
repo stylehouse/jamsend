@@ -9,6 +9,48 @@ A NEW Story primitive: a declared, per-run **reset** of the disk working-area a 
 
 ## 0. What to get on with next
 
+### ☀ MORNING NOTE 2026-09-17 — the Hoho family re-sworn; what is left, and why
+
+**Re-sworn overnight on live e747 (sonnet subagent, `story_accept.mjs` by filtered residual, never `--force`
+ except where said):** HohoFlush · HohoFunk · HohoKeep · HohoLango · HohoLocate · HohoNets · HohoSearch ·
+  HohoSurprise · HohoTtlilt · Engage — residuals were only the three known kinds (the `see:lies` row; the moved
+   imports `data/Stuff.svelte`→`Stuff.svelte`, `p2p/cluster_trust`→`cluster_trust`; the renamed test ghosts'
+    digests). Verified afterwards: no `loading Waft` / `Err,` line in any accepted step 1 — the step-1 Waft
+     loads inside step 1 again (it had drifted to step 3 while socklog + a redundant toc write held the FSA
+      lane; see Docindex_todo's last section). **HohoSurfer** was `--force`d ON PURPOSE: its fixture Waft
+       surfed three files the cull deleted (Idzeuzia.g, ghost/Radios.svelte, p2p/Peerily.svelte.ts); it now
+        surfs `Ghost/L/test_corpus/Sample.g` (alpha/beta/gamma) + the three Hoho test docs. Side effect to
+         rule on: opening Sample.g in a Waft compiles it, so `src/lib/gen/L/test_corpus/Sample.go` now exists
+          (untracked) — either track it, or point the Waft at an already-gen'd doc.
+
+**Left, each for a reason:**
+- **HohoTiles** — real drift, not digests: a new `call,method:laterally,line=258` in the map, a
+   `Waft:Ting/2026-09-17/013146,takes` (a Ting minted BY the run, dated today — if it snaps, it is a
+    wall-clock in the fixture; check before accepting), `Point:theCompiledStuff,…,heat,warm=0,bright`, and
+     Sample text `i thung`→`i UltraThung` (someone's edit). Read `dry2_HohoTiles.txt`, then accept.
+- **Diffmatication** — diffs HohoTiles' snaps (7 vs 9 steps now), so it follows HohoTiles.
+- **HohoWaftMap** — the Atlas map of the repo; genuinely changed by the cull. Accept after a look.
+- **Interesting** — the fixture carries a Cyto node/style block the live run lacks. Unknown cause.
+- **Educarium** — runs 1 step red with NO residual and NO .snap fixtures on disk at all (only toc +
+   Credulate); `steps` answers `book:null`. It has never had a fixture — it is a startup-watcher (owner:
+    Hackarium/Educarium watch an app start up, like Sounditron watches the radio). Not a gate.
+- **Hackarium** — same class; its one residual was `⏳ loading Waft:Cluster` (disk). Not a gate.
+
+**Naming (owner 2026-09-17: "Interesting seems a daft name — they should be in a family if not a one-off
+ app-toplevel doing a startup").** The five one-word Books: Interesting (a w:Lies + Cyto smoke), Engage
+  (`Lies_engage_selftest`), Diffmatication (the snap-diff machine over HohoTiles' snaps), Educarium and
+   Hackarium (room start-ups in `Ghost/Land/Wordland`'s roster). A family proposal for the owner to rule on —
+    NO rename without it: the two start-up watchers keep their room names (they ARE the rooms);
+     Interesting/Engage/Diffmatication are Lies-machine tests and would sit in a **Lies\*** or **Hoho\***
+      family (HohoEngage, HohoDiff…). Other one-word Books in the roster worth the same look: Editron, LeafFarm,
+       LeafJuggle, StuffFlipping/StuffResolving (already a pair), PortPlan/Planet/Plant/Pain (a family).
+
+**Tooling that changed:** `story_accept.mjs` now takes `STORY_RUNNER=<id>` (pins every runner_ask call),
+ `--full` (whole residual), masks `want=NUM` the way NormalEntropy's spayer does, and treats an ok+caveat
+  step as the runner's own forgiveness (counted, printed, never a failure). It is a shell around the runner,
+   not a second judge.
+
+
 ### ⚑ TODO (2026-09-07, the owner) — Story's machinery made generally available to the protocol it examines
 
 The owner, reading the "explaining overlay" finds (`Fallen_out_of_mind_todo §5`): *"making Story's

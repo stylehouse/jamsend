@@ -8,8 +8,10 @@ story:MusuSmuggle
       sample=0.001,at=1788079251
       sample=0.001,at=1788079254
       sample=0.005,at=1789114487
+      sample=0.001,at=1789563982
     TimeTotal:step,avg=0.002
       sample=0.001,at=1788079251
       sample=0.001,at=1788079254
       sample=0.005,at=1789114487
+      sample=0.001,at=1789563982
   step,dige:5309b0cd164d06a4

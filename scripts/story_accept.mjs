@@ -6,7 +6,8 @@
 //    (Crew / Key / mate / self,round — the lines a model change is allowed to move) minus any --allow
 //     regex, compared as SORTED line multisets (a moved block is not a change).  Empty residual (or --force)
 //      ⇒ copy the live snaps over the fixtures, re-run, patch the toc diges LAST (the runner rewrites
-//       toc.snap, so patching earlier is lost), re-run once more and demand ok + caveat 0.  A non-empty
+//       toc.snap, so patching earlier is lost), re-run once more and demand ok (a caveat is the runner's own
+//        forgiveness under EntropyArrest — counted and printed, never a failure here).  A non-empty
 //        residual is PRINTED and the Book left alone — that is the review.  Hollow runs retry once.
 //  Prints one verdict line per Book.  Churn (Credulate/Credulation/TimeTotal) is NOT swept here — git
 //   checkout those after.  Run from the repo root.
@@ -58,7 +59,15 @@ const run = (book) => {
     }
     return null
 }
-const filt = (txt) => txt.split('\n').filter(l => !FILTER.test(l) && !allow.some(re => re.test(l))).sort()
+// NORMALISE what the runner's own EntropyArrest forgives (2026-09-17).  wormhole/Trope/Lies/NormalEntropy
+//  spays `want={NUM}` (tol band ×1.5) — an epoch-ms that IS the particle's mainkey value, so it can neither
+//   be dropped nor ever match across runs.  The runner reads such a step ok+caveat; this text diff saw two
+//    different numbers and called it OTHER (HohoNets/Search/Surprise, 2026-09-16).  Same mask here, so the
+//     residual shows only what the runner would not itself forgive.  Extend NORMALISE as NormalEntropy grows;
+//      it is a mirror, not a second judge — the runner's verdict stays the gate.
+const NORMALISE = [[/\bwant=\d+/g, 'want=NUM']]
+const norm = (l) => NORMALISE.reduce((x, [re, to]) => x.replace(re, to), l)
+const filt = (txt) => txt.split('\n').filter(l => !FILTER.test(l) && !allow.some(re => re.test(l))).map(norm).sort()
 const residual = (fix, live) => {
     const a = filt(fix), b = filt(live)
     const A = new Map(), B = new Map()
@@ -83,8 +92,11 @@ const patchToc = (book, steps) => {
 for (const book of books) {
     const got = run(book)
     if (!got) { console.log(`✗ ${book}: could not run`); continue }
-    const red = got.steps.filter(s => !s.ok || s.caveat)
-    if (!red.length) { console.log(`✓ ${book}: GREEN (${got.steps.length} steps, caveat 0)`); sh(`node scripts/runner_ask.mjs release${PIN}`); continue }
+    // ok+caveat = the runner FORGAVE value-noise under its EntropyArrest (a spay creates the caveat; only
+    //  `means,drop` mutes it).  That is the runner's verdict, not a red: count it and say so, don't fail on it.
+    const cav = got.steps.filter(s => s.ok && s.caveat).length
+    const red = got.steps.filter(s => !s.ok)
+    if (!red.length) { console.log(`✓ ${book}: GREEN (${got.steps.length} steps, caveat ${cav})`); sh(`node scripts/runner_ask.mjs release${PIN}`); continue }
     // diff each fixture step
     let allClean = true
     let bookConfused = false
@@ -92,7 +104,7 @@ for (const book of books) {
     for (const f of got.fixtures) {
         const n = +f.replace('.snap', '')
         const stepj = got.steps.find(s => s.n === n)
-        if (stepj && stepj.ok && !stepj.caveat) continue   // green step: fixture stands
+        if (stepj && stepj.ok) continue   // green step (a caveat is the runner's forgiveness): fixture stands
         const live = sh(`node scripts/runner_ask.mjs snap ${n}${PIN}`).stdout
         if (/^snap: \{/.test(live.trim())) { console.log(`  ${book} step ${n}: no live snap (${live.trim().slice(0, 80)})`); allClean = false; continue }
         // ⚠ THE SNAP MUST BE THIS BOOK'S (2026-09-03: a degraded runner served SwarmBody's snap for a
@@ -126,8 +138,9 @@ for (const book of books) {
     patchToc(book, again.steps)
     sh(`node scripts/runner_ask.mjs release${PIN}`)
     const fin = run(book)
-    const bad = fin ? fin.steps.filter(s => !s.ok || s.caveat) : null
-    if (fin && !bad.length) console.log(`✓ ${book}: ACCEPTED → GREEN (${fin.steps.length} steps, caveat 0)${force ? ' [forced]' : ''}`)
+    const bad = fin ? fin.steps.filter(s => !s.ok) : null
+    const fcav = fin ? fin.steps.filter(s => s.ok && s.caveat).length : 0
+    if (fin && !bad.length) console.log(`✓ ${book}: ACCEPTED → GREEN (${fin.steps.length} steps, caveat ${fcav})${force ? ' [forced]' : ''}`)
     else console.log(`✗ ${book}: accepted but still red: ${bad ? bad.map(s => s.n + (s.caveat ? 'c' : '') + (s.error ? '!' : '')).join(',') : '?'}`)
     sh(`node scripts/runner_ask.mjs release${PIN}`)
 }

@@ -88,8 +88,6 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuVend,born:2026-07-13,wire:two-Pier magazine replication over loopback — grant-gated — no relay
         Funkcion:Storying,of_Book:MusuDoor,born:2026-07-13,wire:the anti-klepto door over loopback — no real socket
         Funkcion:Storying,of_Book:MusuReco,needMusic:1,wire:recommend and stream over one loopback link
-        Funkcion:Storying,of_Book:MusuSoft,needsFSA:1,needMusic:1,born:2026-07-17,wire:soft-heist search hardens into a pull over loopback
-        Funkcion:Storying,of_Book:MusuBay,needsFSA:1,needMusic:1,born:2026-07-17,wire:two loopback origins into one seeker — no socket
         Funkcion:Storying,of_Book:MusuLossy,needsFSA:1,born:2026-07-26,desc:the %Original vs %Lossy grade split at census — a compressed opus or mp3 source lands %Lossy with its title read from the codec headers while a lossless wav lands %Original — and the graded chunks reassemble byte-faithfully into a file left on disk
         What:the cursor,desc:a Dogear names a spot in a magazine — resolve then heal across a rename then resume across a reload
           Funkcion:Storying,of_Book:MusuCursor,born:2026-07-13

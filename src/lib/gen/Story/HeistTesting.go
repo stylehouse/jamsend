@@ -11,7 +11,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_HeistTesting(): string { return 'd75390c2236db976~g1' },
+    Ghostmeta_Ghost_Story_HeistTesting(): string { return 'b8c849e010a74a78~g1' },
 
 // HeistTesting.g — né Heistation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file — `MusuHeist`,
@@ -3766,7 +3766,7 @@ async MusuLossy_materialize(w, nav) {
     if (faithful) m.sc.faithful = 1
     // END SWEEP (2026-08-05) — MusuLossy was the ONE heist Book that swept only at START: a green run left
     //  its three planted sources and the reassembled file sitting on disk until the next run's sweep.  Every
-    //   sibling (MusuHeist, MusuBreach-run|wire, MusuReap, MusuSoft, MusuBay, MusuBerth, MusuOgg) sweeps both
+    //   sibling (MusuHeist, MusuBreach-run|wire, MusuReap, MusuBerth, MusuOgg) sweeps both
     //    ends, so this now does too.  Beat 3 is the last beat and nothing reads the files after this point —
     //     the old `w.c.left_on_disk` marker this replaces was written and never read anywhere (verified), a
     //      note-to-self that the mess was known.  Files only: the dir skeleton is kept ON PURPOSE (see

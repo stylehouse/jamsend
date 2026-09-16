@@ -40,6 +40,7 @@ Snap:H
         req:git
         req:wants
         o_elvis:dock_askies
+        see:lies,docs:0,wafts:3
         see:🗂 0 docs · 3 Wafts
     A:Lang
       self,round=2	{"mung":["age"]}

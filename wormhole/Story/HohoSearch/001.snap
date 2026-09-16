@@ -1,11 +1,11 @@
 Snap:H
   H:HohoSearch,Run
     A:Lies
-      self,round=8	{"mung":["age"]}
+      self,round=9	{"mung":["age"]}
       w:Lies
         Opt
           dontSnapGhostList
-        self,round=8	{"mung":["age"]}
+        self,round=9	{"mung":["age"]}
         SearchGate
           index_converged
           method_search_finds_def
@@ -28,9 +28,10 @@ Snap:H
         req:Cortex,eternal,maz=5,ok
         req:git
         req:wants
-          want=1788602000693,kind:cold,resolved
+          want=1789565191702,kind:cold,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,ok	{"ref":{"w":"%w:Lies"}}
+        see:lies,docs:3,wafts:0
         see:🗂 3 docs
     A:Lang
       self,round=8	{"mung":["age"]}
@@ -47,7 +48,7 @@ Snap:H
             Compile
               Map
                 region,label:Zorblender overview,depth,from=0,to=21,line
-              time,compile=0.004,all=0.004
+              time,compile=0.002,all=0.002
             Pmirrors
             Navicade
               Mapule,kind:region,key:Zorblender overview,depth,line,from=0,to=21,end_line=8

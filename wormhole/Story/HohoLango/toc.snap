@@ -9,26 +9,26 @@ story:HohoLango
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.065
-      sample=0.056,at=1782899672
-      sample=0.035,at=1782899679
-      sample=0.045,at=1782899953
-      sample=0.044,at=1782907392
+    TimeTotal:beliefs,avg=0.061
       sample=0.105,at=1782958502
       sample=0.131,at=1783252453
       sample=0.021,at=1783416317
       sample=0.067,at=1785995487
       sample=0.094,at=1789108589
       sample=0.054,at=1789110363
-    TimeTotal:step,avg=0.065
-      sample=0.056,at=1782899672
-      sample=0.035,at=1782899679
-      sample=0.045,at=1782899953
-      sample=0.044,at=1782907392
+      sample=0.034,at=1789564803
+      sample=0.031,at=1789564816
+      sample=0.042,at=1789564825
+      sample=0.032,at=1789564833
+    TimeTotal:step,avg=0.061
       sample=0.105,at=1782958502
       sample=0.131,at=1783252453
       sample=0.021,at=1783416317
       sample=0.067,at=1785995487
       sample=0.094,at=1789108589
       sample=0.054,at=1789110363
-  step,dige:096b9204dab51624
+      sample=0.034,at=1789564803
+      sample=0.031,at=1789564816
+      sample=0.042,at=1789564825
+      sample=0.032,at=1789564833
+  step,dige:71690587bbe7aad3

@@ -9,26 +9,26 @@ story:Engage
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.059
-      sample=0.03,at=1782806171
-      sample=0.152,at=1782806208
-      sample=0.096,at=1782915591
-      sample=0.029,at=1783255453
+    TimeTotal:beliefs,avg=0.036
       sample=0.029,at=1783255886
       sample=0.029,at=1783255899
       sample=0.032,at=1783255904
       sample=0.027,at=1783255910
       sample=0.078,at=1789108258
       sample=0.086,at=1789109468
-    TimeTotal:step,avg=0.059
-      sample=0.03,at=1782806171
-      sample=0.152,at=1782806208
-      sample=0.096,at=1782915591
-      sample=0.029,at=1783255453
+      sample=0.033,at=1789563828
+      sample=0.015,at=1789563841
+      sample=0.017,at=1789563851
+      sample=0.018,at=1789563860
+    TimeTotal:step,avg=0.036
       sample=0.029,at=1783255886
       sample=0.029,at=1783255899
       sample=0.032,at=1783255904
       sample=0.027,at=1783255910
       sample=0.078,at=1789108258
       sample=0.086,at=1789109468
-  step,dige:422ab042005a5c78
+      sample=0.033,at=1789563828
+      sample=0.015,at=1789563841
+      sample=0.017,at=1789563851
+      sample=0.018,at=1789563860
+  step,dige:6c07662bb311c750

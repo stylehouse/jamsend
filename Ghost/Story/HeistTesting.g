@@ -3565,7 +3565,7 @@ async MusuLossy_materialize(w, nav):
     if (faithful) m.sc.faithful = 1
     // END SWEEP (2026-08-05) — MusuLossy was the ONE heist Book that swept only at START: a green run left
     //  its three planted sources and the reassembled file sitting on disk until the next run's sweep.  Every
-    //   sibling (MusuHeist, MusuBreach-run|wire, MusuReap, MusuSoft, MusuBay, MusuBerth, MusuOgg) sweeps both
+    //   sibling (MusuHeist, MusuBreach-run|wire, MusuReap, MusuBerth, MusuOgg) sweeps both
     //    ends, so this now does too.  Beat 3 is the last beat and nothing reads the files after this point —
     //     the old `w.c.left_on_disk` marker this replaces was written and never read anywhere (verified), a
     //      note-to-self that the mess was known.  Files only: the dir skeleton is kept ON PURPOSE (see
