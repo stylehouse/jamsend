@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuPoolPolicy,Run
+    A:MusuPoolPolicy
+      self,round	{"mung":["age"]}
+      w:MusuPoolPolicy
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

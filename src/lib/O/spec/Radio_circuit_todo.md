@@ -12,9 +12,12 @@ The owner, 2026-09-04: *"think long and hard about the datasplatter behind Radio
 > ⚑ **2026-09-10/11 — READ §9 FIRST if you are here about the ♥.** The owner made the heart
 >  the control surface for SoundPooling and for what the Cave heists, and §9 cooks that into a shape
 >   (what is already built, seven facets with the thing that bites in each, six rulings owed, and a
->    build order). ⚠ Two rulings on THIS section are superseded by it: **"no phone→laptop frame"** (the
->     hand road was built afterwards and is live) and the heart being a one-way press outside a 10s undo
->      (it is a **toggle** now — the latest press stands, and retry is loving it back).
+>    build order). ⚠ Three rulings on THIS section are superseded: **"no phone→laptop frame"** (the
+>     hand road was built afterwards and is live), the heart being a one-way press outside a 10s undo
+>      (it became a **toggle** — 2026-09-10), and **the toggle itself** (2026-09-15, `Love_todo.md §0`:
+>       *"they're all reactions|moods"* — there is no unlove anywhere; a later press RE-AFFIRMS, and a
+>        separate Nay reaction is what removes a track from SoundPool. §9.8 below describes the toggle
+>         it replaced; read it as history, not current law).
 
 **BUILT AND GATED.** The circuit below is in the working tree, uncommitted, gated on the live runner by
  **`MusuHeard`** — 9 beats, 15 sworn, caveat 0. The rulings §7 owed were taken as this doc's own
@@ -376,7 +379,10 @@ So the phone's row can sit reading `Track One` with no artist while the laptop k
    `unseen` for: the row you loved just became a real thing with a name.
 ⚠ Keep it to the LISTING. `keep` is a local handle to a local download and means nothing on the phone.
 
-### 9.8 UNLOVE AND THE LISTING — settled 2026-09-10
+### 9.8 UNLOVE AND THE LISTING — settled 2026-09-10 (⚠ SUPERSEDED 2026-09-15, see `Love_todo.md §0`:
+there is no unlove anywhere any more — `Heard_untake`/`Radio_unlike`/the toggle described below are
+ deleted; a later ♥ re-affirms, and Nay is the separate reaction that empties SoundPool of a track.
+  Read this section as the history that led there.)
 
 `Heard_untake` strips three sets: `take`/`at`, the verdict keys, **and the listing keys**. Under a toggle
  that made unlove→love lossy, and worse, it orphaned a running keep (the card forgets the `keep` handle

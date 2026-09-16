@@ -8,7 +8,7 @@ The one living doc for the Sounditron thread: /BigSoundland's resident Book that
 
 ## 0. What to get on with next
 
-### ⇢ 2026-09-13: the seat/pose policy is surveyed in `Cello_todo.md` §0.1 (the roster island) — the cut below is gate 13-17 of that map
+### ⇢ 2026-09-13: the seat/pose policy is surveyed in `Cello_todo.md` §0.1 (the VisualCrux) — the cut below is gate 13-17 of that map
 
 ### ⇢ THE COMMISSION NOW CUTS TO ONE THING (2026-08-10) — read `Vyto_todo.md` §0 THE FOCUS first
 

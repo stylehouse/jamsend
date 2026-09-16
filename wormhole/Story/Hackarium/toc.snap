@@ -4,10 +4,7 @@ story:Hackarium
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.308
-      sample=1.199,at=1789115501
-      sample=0.163,at=1789116183
-      sample=0.114,at=1789163562
+    TimeTotal:beliefs,avg=0.269
       sample=0.177,at=1789169066
       sample=0.09,at=1789170695
       sample=0.902,at=1789203053
@@ -15,10 +12,10 @@ story:Hackarium
       sample=0.107,at=1789287123
       sample=0.129,at=1789295592
       sample=0.073,at=1789335288
-    TimeTotal:step,avg=0.308
-      sample=1.199,at=1789115501
-      sample=0.163,at=1789116183
-      sample=0.114,at=1789163562
+      sample=0.273,at=1789430249
+      sample=0.749,at=1789455242
+      sample=0.069,at=1789512040
+    TimeTotal:step,avg=0.269
       sample=0.177,at=1789169066
       sample=0.09,at=1789170695
       sample=0.902,at=1789203053
@@ -26,4 +23,7 @@ story:Hackarium
       sample=0.107,at=1789287123
       sample=0.129,at=1789295592
       sample=0.073,at=1789335288
-  step,dige:29c7975b74f8b5f9,desc:the wire — one spine and its carriers — the relay in the middle — the cluster channel the editor and its runners ride
+      sample=0.273,at=1789430249
+      sample=0.749,at=1789455242
+      sample=0.069,at=1789512040
+  step,dige:29c7975b74f8b5f9,desc:the music pipeline — rastock racast raterm — stock a track then cast it then play it at the terminal — the radio dials and the pool keeps what played

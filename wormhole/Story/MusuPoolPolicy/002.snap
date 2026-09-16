@@ -1,0 +1,9 @@
+Snap:H
+  H:MusuPoolPolicy,Run
+    A:MusuPoolPolicy
+      self,round=2	{"mung":["age"]}
+      w:MusuPoolPolicy
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2,goal:a zzz,diffn,sediment_quiet

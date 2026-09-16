@@ -1,0 +1,25 @@
+story:MusuPoolPolicy
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.032
+      sample=0.04,at=1789452220
+      sample=0.008,at=1789452251
+      sample=0.058,at=1789454977
+      sample=0.022,at=1789464036
+    TimeTotal:step,avg=0.007
+      sample=0.008,at=1789452220
+      sample=0.002,at=1789452251
+      sample=0.012,at=1789454977
+      sample=0.004,at=1789464036
+  step,dige:0fffa93fa4ef15e8
+  step=2,dige:dd6e5bb75b69490c
+  step=3,dige:e2b947024b6aa249
+  step=4,dige:ec3a62f57bb4401c
+  step=5,dige:7b4e8211e54d76d7
+    Assertion:a-pooled-track-survives,sentence:a pooled track survives a thin session as sediment in the very same draw — wanted and already pooled together mean silence not an evict
+    Assertion:a-barred-track-never,sentence:a barred track never enters the draw at all — not chosen not diffed not evicted
+    {"Assertion":"the-recent-compartment-presses","sentence":"the recent compartment presses what the shelf already holds and pulls what it does not, the same track never both"}
+    Assertion:an-eviction-the-roll,sentence:an eviction the roll owns waits inside its own window and lands once the window has passed — never both at once

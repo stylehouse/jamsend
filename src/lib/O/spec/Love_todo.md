@@ -9,7 +9,40 @@ The front door for the road a person meets most: press ♥ on a track, and the m
 
 ## 0. What to get on with next
 
-- **♥ on a SoundPool track heists nothing** (found 2026-09-13). A pool card is `%Record,id:<lofi>,of:<original>`
+**Rulings 2026-09-15 (the owner):** ♥ is a REACTION a person indicates toward material — one of a vocabulary:
+ **Yay** (♥ today; Love→Yay migrates later), **Nay** (evicts from SP and bars future draws; never deletes a
+  heisted file), **Meh** (an early skip, written by the radio; the pool never draws it). **There is no unlove,
+   anywhere** — a second press re-affirms; ✕ on a Haul row retires a KEEP, it is not un-loving. No ⇊ next to
+    ♥ and no long-press sheet: **minicell:Pooling appears after the first ♥** and explains the rest there.
+     Records should carry `siblings` + `album_bytes` so a setup form builds from the card in hand —
+      **ALREADY BUILT (verified 2026-09-15) as the UNITY**: `%Record,un_n,un_size,un_d` stamped by the
+       SOURCE in `Ra_unity_stamp` (Ra.g ~2741, off `Ra_unity_census` of the folder listing; `un_d:1` =
+        "I counted my disk", positive on purpose — see its header for the old-build law), riding the Repli
+         lines (the daemon's Mine: 160/160 carry them; eed's mirror of it: 92/92), copied onto the keep
+          every `Heist_keep_step` via `Heist_unity_of(srcmir, seed)` (Heist.g ~2050/2704), rendered by
+           HeistFace as "N tracks · M MB" (`unN/unSize`, l.283–372) with the husk census as the fallback.
+            Not renamed: `un_*` rides across builds and fixtures. A pooled ♥ heists the ORIGINAL under the
+             resolved holder, so its keep finds the unity on that holder's mirror card.
+      (`MusuHeard` swears the old toggle law — its step and Assertion move with the cut; the owner re-swears.)
+
+- **DONE 2026-09-15 (afternoon):** the reactions — `Heard_nay` / `Heard_meh` / `Heard_barred_ids` (Heard.g REACTIONS
+   region); `Radio_nay` + a 👎 beside ♥ in RadioFace (shown for pooled tracks too — the ♥ used to hide behind
+    `{#if face.by}`); the long-press sheet and road chip are GONE; an early skip (<20s, `Radio_meh_ms`) writes
+     `meh`; the steward's draw skips barred ids (`Ra_quarter_goal_pools` 6th arg). **No unlove anywhere:**
+      `Heard_take` re-affirms on a re-press (strips nay/meh + verdicts), `Heard_unwant`/`Heard_thumb` deleted,
+       `Radio_like` always takes. MusuHeard's toggle step now swears "there is no unlove — … reactions not
+        toggles"; its row flags changed, so the fixture diffs on dige until the owner re-swears it.
+       Pool: the roll is budgeted (`Ra_quarter_roll`, one displacement per `Ra_pool_roll_ms`=10 min, live only;
+        Nay/Meh evicts always go); the cap is WEIGHED (`Ra_pool_track_mb` off the pooled cards' `bytes`, live
+         only, re-applied each pass); PoolFace clamps the budget to 80% of free space, asks
+          `navigator.storage.persist()` at the first yes and shows persistent/evictable; `Ra_pool_resurrect`
+           drops a card whose file is gone (the twin-card husk).
+- **DONE 2026-09-15:** ♥ (and ⇊) on a pooled track name the ORIGINAL with no holder — `Heard_take_id/_pub`
+   is the one seam (write in Radio_like, read in RadioFace, keep in Radio_keep); `Heard_holder_of` resolves
+    a holder-less card off the `%Theirs` mirrors at haul time, crew first; `Heard_landed_ids` counts it.
+     MusuHeard 9/9 · MusuPoolRadio 6/6. Pool hearts pressed before this read hollow once (they were written
+      under me + the lofi id).
+- ~~♥ on a SoundPool track heists nothing~~ (found 2026-09-13, fixed 09-15 — above). A pool card is `%Record,id:<lofi>,of:<original>`
    with NO holder (the pool does not track where its try-outs came from — on purpose), and `Radio_open`'s
     source walk (`rec.c.play_by || rec.sc.from || Ra_pub_of(rec)`) climbs to the pool shelf and lands on
      ME, so `Radio_like` writes `Card,id:<lofi>,pub:me,take` — which `Heard_takes` and `Heard_landed_ids`

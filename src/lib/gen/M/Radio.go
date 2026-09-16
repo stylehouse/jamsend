@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'ac90b99c041300c8~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'f3c46213bc1f34ee~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -238,6 +238,11 @@ Radio_skip(radio) {
     if (!radio.c.gat) {
         this.Radio_go(radio, null)
         return
+    }
+    // AN EARLY SKIP IS A MEH (the owner 2026-09-15: "avoid SPing anything the user skipped early on") — a
+    //  reaction on the Card the pool's draw reads; humdinger-only inside Heard_meh, so no fixture moves.
+    if (radio.c.rec && radio.c.open_at && (Date.now() - radio.c.open_at) < this.Radio_meh_ms() && this.Heard_meh) {
+        try { this.Heard_meh(radio.c.w, this.Radio_pub(radio.c.w) || '', radio.c.rec, radio.sc.by || '') } catch (er) {}
     }
     let era = (radio.c.era || 0) + 1
     radio.c.era = era
@@ -1026,6 +1031,7 @@ Radio_open(radio, rec) {
     let w = radio.c.w
     this.Ra_term_stream_open(w, rec, {})
     radio.c.rec = rec
+    radio.c.open_at = Date.now()
     // THE TRACK STARTED — one oblique Card per (id, pub) on the durable heard Mag (Heard.g).  This is
     //  the one place every route into the playhead passes through, which is why the mark lives here.
     this.Heard_mark(w, this.Radio_pub(w) || '', rec)
@@ -1197,7 +1203,7 @@ Radio_pool_catch(w, radio, rec) {
     //   counting only the pool shelf would let a cap of 12 grow a hundred outstanding %Heists behind
     //    it, each one a standing claim on someone's wire.  Count both, and the cap means what it says.
     let held = pshelf ? this.Ra_recs(pshelf).length : 0
-    for (const k of shop.o({ Heist: 1 })) { if (String(k.sc.into || '') === 'pool' && String(k.sc.state || '') !== 'done') { held = held + 1 } }
+    for (const k of shop.o({ Heist: 1 })) { if (this.Pool_is_machinery(k) && String(k.sc.state || '') !== 'done') { held = held + 1 } }
     if (held >= cap) { return 0 }
     let keep = shop.i({ Heist: this.Radio_clean(rec.sc.title || 'this'), seed: seed, pub: by, state: 'primed', into: 'pool', why: 'radio' })
     keep.c.up = shop
@@ -4224,16 +4230,15 @@ Radio_like(n) {
     //  ⚠ `by` must be the pub the take was WRITTEN under — `n.sc.by || me` — because a pool item, or
     //   anything of one's own, has no `by` and lives on the ledger under ME.  Reading it under a
     //    different pub than the write is the bug that made pool hearts go hollow on reload.
-    let got = 0
-    if (this.Heard_taken(w, me, by, String(rec.sc.id))) {
-        got = this.Heard_unwant(w, me, by, String(rec.sc.id)) ? -1 : 0
-    } else {
-        got = this.Heard_take(w, me, rec, by)
-    }
+    //  2026-09-15: a POOL COPY now takes its ORIGINAL with NO holder (Heard_take_id/_pub, Love_todo §0) —
+    //   the one seam both the write here and the read in RadioFace go through, so they cannot disagree.
+    let tid = this.Heard_take_id ? this.Heard_take_id(rec) : String(rec.sc.id)
+    if (this.Heard_take_pub) { by = this.Heard_take_pub(rec, by) }
+    let got = this.Heard_take(w, me, rec, by)   // always loves — there is no unlove (Love_todo §0)
     if (!got) return false
     n.c.liked = n.c.liked || {}
     if (got > 0) { n.c.liked[String(rec.sc.id)] = 1 } else { delete n.c.liked[String(rec.sc.id)] }
-    let mine = !n.sc.by
+    let mine = !n.sc.by && !rec.sc.of
     if (!mine && got > 0) { this.feebly_ponder() }
     n.bump()
     if (got < 0) {
@@ -4244,14 +4249,36 @@ Radio_like(n) {
     return true
 
 },
+Radio_meh_ms() {
+    return 20000
+
+},
+// Radio_nay — the other reaction (Love_todo §0 rulings): bars the track from the pool and evicts its copy
+//  on the next steward pass; a heisted file is never touched. Same seam as the heart.
+Radio_nay(n) {
+    let w = n.c.w
+    let rec = n.c.rec
+    if (!w || !rec || !rec.sc.id || !this.Heard_nay) return false
+    let me = this.Radio_pub(w) || 'me'
+    let got = this.Heard_nay(w, me, rec, n.sc.by || me)
+    if (!got) return false
+    n.c.liked = n.c.liked || {}
+    delete n.c.liked[String(rec.sc.id)]
+    n.bump()
+    console.log('👎 nay — ' + String(rec.sc.title || rec.sc.id).slice(0, 32))
+    return true
+
+},
 async Radio_keep(n) {
     let w = n.c.w
     let rec = n.c.rec
     if (!w || !rec) return false
-    let friend = n.sc.by
-    if (!friend) return false            // your own record — nothing to heist, you already hold it
     let me = this.Radio_pub(w) || 'me'
+    let friend = n.sc.by
     let seed = String(rec.sc.id)
+    // a POOL COPY names its original and whoever holds it now (Love_todo §0) — the same seam as the heart
+    if (!friend && rec.sc.of && this.Heard_holder_of) { seed = String(rec.sc.of); friend = this.Heard_holder_of(w, me, seed) }
+    if (!friend) return false            // your own record — nothing to heist, you already hold it
     let shop = this.Ra_home_shop(w, me)
     n.c.kept = n.c.kept || {}
     n.c.kept[seed] = 1

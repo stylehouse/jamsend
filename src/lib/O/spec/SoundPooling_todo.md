@@ -47,6 +47,7 @@
     gesture ⇒ no realtime audio; the runner's friendship re-courts). Not attributed to today's edits (same
      red with the dog disabled); needs a human-tapped runner tab and a baseline run before believing either way.
 - **25 is the budget**: 100 MB / ~4 MB per lofi copy. `evicted 1 · deferred 1` per pass = at cap, rolling.
+- **ANSWERED 2026-09-15 → `Daemon_todo.md §0.0`** (the rolling shelf being followed: head-run restock per newcomer, invisible to `live`; the pool's minute-by-minute eviction is the same roll; HEISTRANT proposed there).
 - **OPEN — S streams ~24 KB/s to eed with no live serve** (`/status` serve: `live:[]`, `tx_kbps:24`;
    eed's Repli meter: 177 MB in 80 min, nothing landing, pool at cap; not over the relay ws — WebRTC).
     Suspect a `repli_lines`/page re-cast on the share beat with no change gate — the `(re×157)` waste from
@@ -56,8 +57,10 @@
 - **Loose:** a twin card for "Went to Hermes" (evicted card whose file is gone, beside its fresh re-pull) —
    the evict sweep dropped the file and not the card; one of anything. Last night's ~60KB/s Repli rx
     into eed with nothing landing came from the crew mirror, not S (S was idle) — unexplained.
-- **Diagnostic logs still in the tree** from 09-12 (`🏊? stuck-check`, `◈✗ ragged-page mirror`): remove
-   once the pool has filled for a day without a stuck keep.
+- **Diagnostic cleanup 2026-09-15:** the `🏊? stuck-check` spam (fired every 15s whenever any keep was
+   in flight — nearly always) is removed; its root causes were fixed and gated weeks ago and `Pool_facts`
+    logging is the structured successor. `🏊 pool card:` was already superseded. `◈✗ ragged-page mirror`
+     KEPT — it only fires on a genuine unrecoverable page, not on normal traffic.
 
 **Destination.** The dial already chooses, so the pool KEEPS what played; **love** is the one control —
  press to love (into the pool, and heisted to the Cave), press again to unlove — and every pooled
@@ -65,13 +68,14 @@
    what is new; it all works ambiently in the background and across a LinkDevice.
 
 **Where it stands:**
-- ♥ is a toggle (`Radio_like`); the latest press is the state; retry = unlove then love. Book-green
-   (`MusuHeard` 9/9), fixtures accepted 2026-09-11 with the owner's say-so.
+- ~~♥ is a toggle~~ — SUPERSEDED 2026-09-15 (`Love_todo.md §0`): no unlove anywhere; a later press
+   RE-AFFIRMS the same reaction, and Nay is the separate reaction that empties SoundPool of a track.
 - The pool card had no preview (`Ra_dial_next` skipped every pooled track) — carry + heal + skip fixed;
    `Ra_rec_heads_carry` / `Ra_pool_heads_heal` bring the **head run** (`%Prehead`) so a pooled track can
     start at 0:00. **Book-green, never walked live** — the one listen the owner still owes (the account: §0.8 → "THE OFFER IS THE TAIL OF THE SONG").
-- The offer is the TAIL of the song (30–70% in, median 47%); the head is a separate run; adding it is
-   1.95× pool bytes — measured over 54 records, not one.
+- ~~The offer is the TAIL of the song~~ — SUPERSEDED 2026-09-12 ("THE ACTUAL '0 playable' CAUSE" below):
+   a pool card gets its OWN fresh preview encoded from its own full file with `pv_off` forced 0, never
+    the radio's 30–70% tune-in cut. SoundPool tracks start at 0:00 from a whole file, always, now.
 - Arrival attention: `Heard_notice`/`Heard_seen`/`Heard_unseen` — the Haul cell's `N new`.
 
 **What detonates if the next person doesn't know it:**
@@ -228,6 +232,196 @@ Three pool keeps sat 'primed' forever, cycling: mint → 5min give-up (broken �
     laptop; a remote running keep; listing sync-back) — the owner's, nothing moves without them.
 3. Then the LinkDevice ambient path: a love on the phone reaching the laptop's Haul without a ceremony.
 
+## 0.2a THE SP ISLAND — survey (2026-09-15)
+
+*(§0.2 below is the older RADIO CRUX; this is the POLICY-side twin of the VisualCrux in `Cello_todo.md §0.1`.)*
+The owner: *"SP being a crux of operations the user kinda configures and informs various ways … for the humans to
+ have what they want to see in one place. can it be so? so if we want to change that policy it's only that area
+  changing… all edges (calls in or out) nice and clear."* Answer: yes — the policy is ALREADY two regions of Ra.g
+   plus five satellites; what is missing is one home, one facts table, and edges written down. 44 sites below.
+
+### STEP 2 — BUGFIX (2026-09-16 morning)
+
+The differs log was firing every ~10min on eed, growing each time (`old=[1 item]` vs `new=[10+ items]`,
+ climbing) — looked like real disagreement, was actually `Pool_policy`'s own roll-mirror bug: it only
+  handled the "not due" branch (drop all evicts) and fell through UNTHROTTLED when the roll was due,
+   while the real pipeline (`Ra_quarter_roll`) always lets exactly ONE eviction through, due or not.
+    Fixed: `dropE = evicts.slice(rollDue ? 1 : 0)`, an exact mirror. Compiled + esbuild-parsed clean;
+     NOT YET Book-gated or reloaded on eed — the owner was actively in the editor when this was found,
+      so gating waits for the runner to be free. **The day-long "quiet agreement" clock effectively
+       restarts here** — everything logged before this fix was noise from the bug, not evidence either
+        way about whether `Pool_policy` actually agrees with the real pipeline.
+
+### STEP 2 — LANDED (2026-09-15)
+
+`Ghost/M/Ra.g` §`THE SP ISLAND` region grows two verbs. `Pool_policy(f)` — PURE, fed only by `Pool_facts`'s
+ output — reproduces `Ra_quarter_goal_pools` + `_diff` + `_roll` for **all six** declared takes (`random`
+  with the 2026-09-06 sediment rule, `radio`, `recent`, `latest`, `liked`, `kept`, plus the taste-fallback)
+   — the gap noted below at first landing is now closed. `Pool_policy_compare(w, f, liveDiff)` mirrors
+    VisualCrux's `Sounditron_crux_compare` throttle exactly (a `w.c.pool_policy_said` map, one log line per
+     distinct disagreement shape) and is wired into `Ra_quarter` right after the real diff/roll — comparing,
+      never deciding.
+ `Pool_facts` grew the RAW arrays the policy needs (`sources_raw`, `pooled_raw`, `recent_raw`, `barred_raw`,
+  `held_raw`, `pool_roll_at`, and `salt` on each compartment — missing before, and load-bearing for the
+   hash-ranked draw) — excluded from the logged/fingerprinted copy (`JSON.stringify` drops `undefined`
+    keys) so `🏊 facts:` stays the summary it was and zero fixture moves.
+- **CLOSED — the six-take modeling gap (2026-09-15, same day):** `Pool_facts` gained `latest_raw`
+   (`Heard_latest` off the same `mine`/`lib` shelf `Ra_quarter`'s real `shelf` arg always resolves to —
+    `Radio_pool_steward`'s `lib = lib || Ra_home_self(w, pub)`) and `tally_raw` (`Ra_quarter_tally` off the
+     same shelf), both excluded from the fingerprint like the other raw arrays. `Pool_policy` grew the four
+      missing branches (`radio` trims `pooled_raw` from the front, sediment-style; `latest` reads page
+       order; `liked`/`kept` sort the tally like the real pipeline) plus the taste-fallback, and now stamps
+        `score` on every goal row (previously only present in spirit). `MusuPoolPolicy` grew a 6th scene,
+         `MusuPoolPolicy_more_takes`, exercising all four in one combined `Pool_policy` call (distinct id
+          namespaces so the compartments' own dedup can't mask a wrong branch) — asserts `radio` evicts the
+           one id its cap trims, `latest` press/pulls by page order, `liked` picks by most-recent-`at`, and
+            `kept` picks by score — one sworn assertion covering all four. Gate: MusuPoolPolicy 5/5 (was
+             4 scenes, now 5, still caveat 0) · MusuPoolRadio 6/6 · MusuPoolFill 6/6 · MusuPoolRandom 5/5 ·
+              MusuPoolBytes 5/5 (one hollow-start retry) · MusuQuarter 1/1 · MusuSteward 1/1, all green,
+               caveat 0. `wafts_everything.mjs`'s `Heard_unwant` reference (flagged below) was ALREADY FIXED
+                by a concurrent edit before this pass started — verified clean, `Ghost/Music/Cave` writes.
+                 Live check on eed: still inconclusive, busy the whole window — unchanged from below.
+- **`MusuPoolPolicy`** (new Book, `Ghost/Story/HeistTesting.g`, beside `MusuFloor`) drives `Pool_policy`
+   directly against hand-built facts — no world, no library, no Mag — four scenes: sediment survives (a
+    pooled id no longer a live source still competes, and wanted-and-pooled draws no want at all), a
+     barred id never enters the draw, `recent` splits press-vs-pull on what is already held, and the roll
+      budget holds an eviction back inside its window then lets it through once past it. **Hit the
+       documented CLI-authoring trap** ([[hollow-book-1step-green]]): a brand-new multi-beat Book's first
+        `runner_ask run` fires ONE step and calls it green (`total` defaults to 1, only a human clicking
+         Resume in the editor grows it) — fixed with the Book's own `if (run.sc.mode === 'new') { run.sc.total
+          = 5 }` guard, `rm -rf wormhole/Story/MusuPoolPolicy` to clear the hollow fixture, and a full
+           `runner_ask reload` (a bare `release` left the run wedged at `phase:'begun'` forever — not yet
+            understood why, only that a full reload cleared it). Declared all 4 sworn assertions
+             (`runner_ask declare '<sentence>'`) so an absence reds by name.
+- **Book gate, all green, caveat 0** (two Books needed one retry each for the documented `done:0` hollow
+   flake, never red): MusuPoolPolicy 5/5 · MusuPoolRadio 6/6 · MusuPoolFill 6/6 · MusuPoolRandom 5/5 ·
+    MusuPoolBytes 5/5 · MusuQuarter 1/1 · MusuSteward 1/1. **MusuHeist 22/22 but now 4 caveats** (steps
+     3/5/9/13, was 1 caveat at step 3 per step 1's note) — not attributed; Heist.g was untouched by this
+      step, so either pre-existing flakiness widened or a concurrent edit elsewhere shook it; needs a look
+       before trusting either way. `scripts/wafts_everything.mjs` gained `'MusuPoolPolicy'` in the Ality
+        Book list and now finds it (the "no Book" gate reads the fixture folder, not the ghost's defs) —
+         **still fails to write**, unrelated: `Ghost/Music/Cave: Ghost/M/Heard.g has no def Heard_unwant` —
+          a manifest reference to a verb another concurrent edit deleted today (the no-unlove cut);
+           out of my scope (I own Ra.g/Radio.g), needs that manifest line updated or the verb restored.
+- **Live check on eed still inconclusive** — refused every console pull as "busy" for the whole window,
+   same as step 1's note. The Book gate is step 2's proof; a live `🏊 policy differs` (or its absence) is
+    still owed whenever eed is free.
+- **Next — step 3, THE FLIP**, per §0.2a(c)'s migration: only once a live differs-log has run clean for a
+   day (or the owner accepts the two-take modeling gap as acceptable scope for now) — `Ra_quarter`/
+    `fill_wants`/`fill_land` read `Pool_policy`, the two regions move into a real `Pool.g`, the five
+     `into:'pool'` ifs collapse to `Pool_is_machinery` everywhere (Cellui included), one consent resolver.
+
+### STEP 1 — LANDED (2026-09-15)
+
+`Ghost/M/Ra.g` §`THE SP ISLAND` region (after `Ra_quarter_serve`, ~l.1936): `Pool_knobs()` (8 knobs, one
+ table, each noting where it used to live), `Pool_is_machinery(keep)` (the "pool keep is machinery" fact,
+  redirected into Heard.g's clone/haul-beat skip, Heist.g's five `into:'pool'` ifs, Sounditron.g's `anyKeep`
+   filter — Cellui's own copy is untouched, for step 4), and `Pool_facts(w, ident)` (the whole §0.2a(a) facts
+    table, gathered once per steward pass, logged `🏊 facts:` once per fingerprint change, humdinger-only).
+     `Ra_quarter` grew a 7th `facts` parameter it receives and discards (`void facts`) — every Book caller
+      omits it and is unaffected. Zero behaviour change: `Ra_quarter_serve` builds the facts and hands them
+       in, nothing reads them yet.
+- **Book gate, all green, caveat 0**: MusuPoolRadio 6/6 · MusuPoolFill 6/6 · MusuPoolRandom 5/5 ·
+   MusuPoolBytes 5/5 · MusuQuarter 1/1 · MusuSteward 1/1 · MusuHeist 22/22 (1 pre-existing caveat at step 3,
+    unrelated — see §0's MusuHeist note). **MusuHeard red from step 4** — expected and unrelated to step 1:
+     the no-unlove cut from earlier today changed the toggle step's row flags; the fixture is owed a re-swear.
+- **Live check on eed inconclusive**: the player refused every console/ping pull as "busy" for the whole
+   window (unrelated to this edit — nothing here touches eed, and it was never reloaded). Could not confirm
+    the live `🏊 facts:` line or whether `consent_disagree` fires on eed's actual state; the Book gate is the
+     proof for step 1, a live read is still owed.
+- **Next — step 2**: a pure `Pool_policy(facts) → {wants, evicts}` beside `Ra_quarter_diff`/`_roll`, logging
+   disagreements the way VisualCrux's `Sounditron_crux_compare` does, before any flip.
+
+### (a) Every policy site — what decides what the pool keeps, from whom, how much, when, and what the person sees
+
+`hd` = humdinger-only · `B` = Books too · IN = who calls it · OUT = what it reaches
+
+| # | where | decides | on what facts | IN | OUT | scope |
+|---|---|---|---|---|---|---|
+| 1 | Ra.g:1597 `Ra_pool_start` | consent + budget + the one `rolling` random compartment (share 100), who | budget_mb, who | PoolFace, Heist_start_over, Books | consent_give, budget_set, define, share_set | B |
+| 2 | Ra.g:1644 `Ra_pool_off` | 0 MB = off: drop compartments, unfile every copy | — | PoolFace | Ra_pool_unfile, drop | B |
+| 3 | Ra.g:1156/1486 `Ra_pool_consent` / `_consent_of` | the yes — TWO resolvers (world→owner vs identity) | `%Consent` under `%SoundPooling` | steward, reach pump, Sounditron facts, PoolFace, report | Ra_pool_owner | B |
+| 4 | Ra.g:1172–1186 `Ra_pool_excuse*` | a body that holds no pool (a daemon) | `SoundPooling%excused` | poke, report, start (refuses) | — | B |
+| 5 | Ra.g:1511 `Ra_pool_budget_set` | the size (MB) | typed number | PoolFace | caps_apply | B |
+| 6 | Ra.g:1518 `Ra_pool_cap_of` | MB → count at 4 MB/track (legacy) | mb | callers of the old cap | — | B |
+| 7 | Ra.g:1527 `Ra_pool_track_mb` | the per-track weight off pooled `bytes` (fallback 4) | pool cards' bytes | caps_apply | Ra_pool_stock | hd |
+| 8 | Ra.g:1537 `Ra_pool_caps_apply` | cap = MB × share% ÷ weight, per compartment | budget, share, weight | budget_set, share_set, **Ra_quarter every pass** | — | B |
+| 9 | Ra.g:1549 `Ra_pool_share_set` | shares sum to 100; others rescale | pct | gang, start, recent_set | caps_apply | B |
+| 10 | Ra.g:1075/1587/1665/1675 `define`/`gang`/`drop`/`defs` | the compartment ledger `%Pool,name,take,cap,salt,who,share` | — | start, recent_set, Books | — | B |
+| 11 | Ra.g:1619 `Ra_pool_who` | crew / friends / all / none | the random compartment's `who` | PoolFace | — | B |
+| 12 | Ra.g:1572 `Ra_pool_recent_on/_set` | the loved-and-landed compartment (share 50, cap 50) | `%Pool,name:recent` | PoolFace (default at FIRST yes) | gang, drop | B |
+| 13 | Ra.g:1692 `Ra_pool_sources` | who a random pool may draw from + crew/friend tag | every `%Theirs` mirror, /Crew mates | steward | Ra_pool_owner | B |
+| 14 | Ra.g:1684 `Ra_pool_hash` | the clockless shuffle order (name:salt:id) | salt | goal | — | B |
+| 15 | Ra.g:1730 `Ra_quarter_goal_pools` | THE DRAW: per compartment ids by take (random/radio/recent/latest/liked/kept/taste), sediment survives, `barred` skipped | sources, pooled, recent, tally, barred | Ra_quarter, Ra_quarter_lone (l.1798) | tally | B |
+| 16 | Ra.g:1825 `Ra_quarter_diff` | goal vs pooled(id∪of) vs held → pull / press / evict | goal, pool, lib | Ra_quarter | — | B |
+| 17 | Ra.g:1873 `Ra_quarter_roll` + `Ra_pool_roll_ms` (600 s) | the ROLL RATE: one non-barred displacement per window; barred evicts always | wall clock, barred | Ra_quarter | — | hd |
+| 18 | Ra.g:1888 `Ra_quarter` | one steward pass → `%Provisions > %Want,of,do` | recent (Heard_landed_ids), barred (Heard_barred_ids), defs, sources | Radio_pool_steward via Ra_quarter_serve:1935 | Heard (read), caps_apply, Ra_pool_home_mint | B |
+| 19 | Ra.g:1935 `Ra_quarter_serve` | act on the wants: press (Siphon), evict (unfile + drop card, `pool_evicted`), defer | nav, lib, pool | steward | Ra_pool_unfile, Ra_rec_drop, Siphon | B |
+| 20 | Ra.g:1064 `Ra_quarter_tally` | taste score per id (took/kept/why) | Heard-derived | goal | — | B |
+| 21 | Ra.g:5236 `Ra_pool_fill_wants` | book a standing `%Reach,for:serve` per `do:pull`, **budget 3 fresh/pass** (`w.c.pool_fill_budget`) | wants, holder | steward | Swarm_reach_book | B |
+| 22 | Ra.g:5379 `Ra_pool_fill_serve` | the CAVE presses the asked track into its pool (every `serving` reach — no queue, no budget) | serving reaches | fill_pump | Siphon_pull, Ra_stock_one | B |
+| 23 | Ra.g:5419 `Ra_pool_fill_land` | the CAPTAIN: walk `arrived`, mint `%Heist,into:pool`, **K=3 parallel** (`pool_fill_parallel`), stuck give-up after `pool_press_patience_ms` 300 s or fast on `no_route_ts` → cancel keep + refuse reach | arrived reaches, keeps' .c clocks | fill_pump | Heist_keep_pool_go, Heist_keep_cancel, Swarm_reach_refuse | B |
+| 24 | Ra.g:5810 `Ra_pool_fill_pump` | the tick: serve → land → resurrect → heal; steward once/60 s; 120 s expiring latch | `pool_fill_busy`, `pool_steward_at` | Swarm_reach_pump:6553 (gate: reach_on ∨ consent_of ∨ serving) | all of 19–27 | B |
+| 25 | Ra.g:5654 `Ra_pool_previews_heal` | a pooled copy gets its own Opus preview (carry for hifi; ENCODE always, pv_off 0) | card.grade/lofi | fill_pump | Ra_stock_one, Ra_rec_previews_carry | B |
+| 26 | Ra.g:5786/5802 `Ra_pool_cull_headless` / `_nohead` | drop a copy whose head run never came after N real asks (session `.c` tombstone) | asks to a live holder | dial (empty road) | Ra_rec_drop | B |
+| 27 | Ra.g:1231 `Ra_pool_resurrect` | files on disk with no card → cards (4/pass); **card with no file → dropped** (09-15) | nav listing, `pool_evicted` | fill_pump, boot | Ra_rec_pool, Crate_meta_from_tags | B |
+| 28 | Ra.g:1406 `Ra_pool_report` | THE legible dump (+ `quiet`) | everything above | poke, PoolFace (8 s), dial's dry-pool excuse | — | B |
+| 29 | Ra.g:1101–1146 `Ra_pool_owner/_home*/_stock/_pub` | WHERE the pool lives: identity when `w === top.c.radio_w`, else w | `top.c.radio_w` beacon | everything | — | B |
+| 30 | Heist.g:1034 `Heist_catalog_land` (pool branch, ~1075) | a landed pool press becomes `%Record,id:<lofi>,of:<orig>,lofi` on the POOL shelf, no holder | job.seed, grade | keep lane | Ra_rec_pool, Ra_home_pool | B |
+| 31 | Heist.g:3388 `Heist_keep_pool_go` | a pool keep may pull only once its own `%Pick` stands; 45 s solo-wait → `no_route_ts` | rummage census | fill_land | Heist byte lane | B |
+| 32 | Heist.g:109 `Heist_is_pool` + `into:'pool'` skips (Heard.g:~660 clone beat, Heard_haul_beat, Sounditron.g:342, Cellui:235) | "a pool keep is machinery, not a haul" — FIVE copies | keep.sc.into | — | — | B/hd |
+| 33 | Heist.g:328 `Heist_xfer_breach` | 3rd body-digest breach: refuse the reach, cancel the pool keep | breaches | keep lane | Swarm_reach_refuse, Heist_keep_cancel | B |
+| 34 | Swarm.g:6316 `Swarm_reach_book` | the transport cap **32 standing** (`w.c.reach_cap`) — refuses the pool's booking | standing reaches | fill_wants | — | B |
+| 35 | Swarm.g:6535 `Swarm_reach_pump` | the pool tick rides the reach pump (5 s cadence) behind reach_on ∨ consent ∨ serving | knobs | Swarm_pulse_all ← Sounditron_trickle_look | Ra_pool_fill_pump | B |
+| 36 | Radio.g:1546 `Radio_pool_steward` | consent gate; `top.c.pool_steward_cap` **24**; 120 s busy latch; books fills | consent, declared compartments | Radio_pump_tick (!rec), fill_pump (60 s) | Ra_quarter_serve, Ra_pool_fill_wants, cull_headless | B |
+| 37 | Radio.g:1528 `Radio_dial_pool_local` → `Ra_dial_next` | what the pool source plays: dialable (preview + chunks), not heard, retry drops the skip set | pool shelf, Radio_heard | Radio_dial pool rung (l.2548 `Radio_dial_pool`), Radio_peek_next:749 | Ra_dial_next | B |
+| 38 | Radio.g:4360 `Radio_rec_pooled` / `Radio_hbase` | a pooled track opens at 0:00 | card.lofi/of | Radio_open | — | B |
+| 39 | Radio.g:217 `Radio_skip` + `Radio_meh_ms` (20 s) | an early skip writes `meh` | `radio.c.open_at` | the ⏭ | Heard_meh | hd |
+| 40 | Radio.g:4149 `Radio_nay` / 4107 `Radio_like` | the reactions the pool reads; pooled ♥ names `of`, no holder | Heard_take_id/_pub | RadioFace | Heard_nay / Heard_take | B |
+| 41 | Heard.g:565 `Heard_landed_ids` (+`Heard_landed_cap`) | the `recent` feed: loved AND landed, newest first | Mag take cards, Mine | Ra_quarter | Heard_landed | B |
+| 42 | Heard.g:220 `Heard_barred_ids` (+ `Heard_nay`:200, `Heard_meh`:209) | what the pool never draws | Card nay/meh | Ra_quarter | — | B (meh: hd) |
+| 43 | PoolFace.svelte | what the person SETS (MB, who, recent) and SEES (pooled, fill line, GB free, persistent/evictable); clamps to disk; asks `persist()` at first yes | Ra_pool_* reads | the glass | 1, 2, 5, 11, 12, 28 | hd |
+| 44 | Sounditron.g:639/902/1479–1505 + Cellui:235/714 | WHEN the person sees it: Pooling organ (humdinger ∧ ≥1 pier), budded; `pool_consent`/`pool_seen` facts; pool keeps earn no cell; a Pooling cell keeps its seat | consent, any take, piers | commission / VisualCrux | Ra_pool_consent_of, Heard_cards | hd |
+
+### (b) The five worst scatterings
+
+1. **One yes, two resolvers, five askers.** `Ra_pool_consent(w)` finds the home only through `top.c.radio_w`; `Ra_pool_consent_of(ident)` asks the identity. Swarm_reach_pump, Radio_pool_steward, Sounditron facts, PoolFace and the report each pick one — the 09-05 "confident false NO" class is one wrong pick away.
+2. **Three numbers for one budget.** `Ra_pool_cap_of` (MB÷4), `Ra_pool_caps_apply` (weighed), and `top.c.pool_steward_cap` (a bare 24 the steward hands `Ra_quarter_serve`) — plus each compartment's own `cap`. Which one bounds a pass is a reading exercise.
+3. **Eviction is decided in five places.** goal-diff (16), roll rate (17), nohead cull (26), orphan drop in resurrect (27), breach cancel (33) — and `pool_evicted` (a runtime map) is the only memory any of them share.
+4. **"A pool keep is machinery" is copied five times** (32) — Cellui, Sounditron, Heard's clone beat, the haul beat, catalog_land — one fact, five ifs, and the Pooling cell was hidden by one of them for a week.
+5. **The knobs have four homes.** `w.c` (pool_fill_budget, pool_fill_parallel, pool_press_patience_ms, reach_cap, reach_on), `top.c` (pool_steward_cap, pool_steward_busy), `rw.c` (pool_steward_at, pool_evicted, pool_nohead, pool_roll_at), and verbs returning constants (Ra_pool_roll_ms, Radio_meh_ms, Heard_landed_cap). No page and no Book can list them.
+
+Dead or odd on the way: `Ra_pool_cap_of` is the pre-weighed cap and should go with the flip; the steward's 24 vs the compartment's 25; ~~`Ra_quarter_lone`~~ — checked 2026-09-15, zero callers anywhere in the repo (it was `Ra_quarter_goal`, the survey's informal name), deleted.
+
+### (c) The island — `Ghost/M/Pool.g`, one ghost, two edges
+
+**Home: a new ghost, `Ghost/M/Pool.g`** — not a marked region of Ra.g. Ra.g is 5,841 lines and the pool is already two disjoint regions of it (the Quartermaster 1045–2003, the POOL-FILL REACH 5196–5841) plus satellites in Radio, Heard, Heist, Swarm, Sounditron, Cellui and PoolFace. A ghost file IS this repo's unit of "only that area changes": its own Ghostmeta dige, its own compile, its own Book roster in Credence, cross-ghost calls stay `this.` within the House. `Pool.g` holds the policy; the byte lanes stay where they are.
+
+**The facts, gathered once per pass (`Pool_facts(w) → f`):**
+
+| fact | from |
+|---|---|
+| `owner`, `consent`, `excused` | Ra_pool_owner → the ONE resolver (kill the world/identity split: resolve the identity once, hand it down) |
+| `budget_mb`, `weight_mb`, `compartments[]` (name, take, who, share, cap) | the `%SoundPooling` home |
+| `sources[]` (id, from, crew) | the `%Theirs` mirrors + /Crew |
+| `pooled[]` (id, of, bytes, playable, on_disk), `held{}` | pool shelf + Mine |
+| `recent[]`, `barred{}` | the Heard Mag, READ-ONLY |
+| `standing` (reaches by state), `inflight` (pool keeps by state/clock) | the peering + the shop |
+| `humdinger`, `now` | the top House |
+
+**The policy, one readable table (`Pool_policy(f) → { wants[], evicts[], book[], caps }`, PURE):** rows = draw per take · sediment survives · barred never · roll ≤ 1 per 600 s (hd) · K=3 in flight · 3 fresh bookings per pass · give-up 300 s / fast on no-route · nohead after N asks · a Nay evicts now · recent = loved∧landed · a pool keep is machinery. Every row is an owner ruling with its date; every knob is a named field of `Pool_knobs()` with its default — the four `.c` homes collapse into one.
+
+**Edges IN (may call the island):** the tick (Swarm_reach_pump → `Pool_tick`), the dial (`Pool_dial_next` for the pool rung; `Pool_dry_why` for the excuse), PoolFace (`Pool_set_budget/_who/_recent/_off`, `Pool_report`), the reactions (Radio_like/nay/skip write the Mag; the island only READS it), the report/poke, Sounditron's facts (`Pool_seen`, `Pool_consent`), Cellui (`Pool_is_machinery(keep)` — the one copy of ruling 32).
+**Edges OUT (the island may reach):** transport `Swarm_reach_book/refuse` (the cap stays Swarm's); the Heist byte lane (`shop.i %Heist,into:pool`, `Heist_keep_pool_go/_cancel`); the press `Siphon_pull` + encode `Ra_stock_one`; the nav (`Ra_pool_files/unfile/bin_read`); the Heard Mag as ledger, never written.
+**Stays outside:** chunk lanes (Repli), the head run, previews' encode, faces, the reach primitive, Heist's census/materialise.
+**Has to move in:** Radio_pool_steward + Radio_dial_pool_local (Radio keeps only the rung that calls them), the five `into:'pool'` ifs (→ `Pool_is_machinery`), Heard_landed_ids/Heard_barred_ids stay in Heard (they are Mag reads) but are called only from `Pool_facts`.
+
+**Migration, Book-gated (MusuPoolRadio, MusuPoolFill, MusuQuarter, MusuSteward, MusuPoolRandom, MusuPoolBytes; fixtures unmoved until step 3):**
+1. `Pool_facts(w)` + `Pool_knobs()` in a new Pool.g; Ra_quarter and the steward LOG the facts (throttled) but decide as today. Zero fixture change.
+2. `Pool_policy(f)` pure, run BESIDE Ra_quarter_goal_pools/diff/roll and fill_wants/land's gates; log where it differs on eed for a day; a `MusuPoolPolicy` Book drives the table with hand-made facts.
+3. THE FLIP: Ra_quarter/fill_wants/fill_land read `Pool_policy`; move regions 1045–2003 and 5196–5841 into Pool.g verbatim (names unchanged — verb names are not snap matter; the poke allowlist and docs are); delete the five `into:'pool'` ifs for `Pool_is_machinery`; one consent resolver. Re-run the six Books; anything red is a fixture the owner re-swears with the diff in hand.
+4. Rename `Ra_pool_*` → `Pool_*`, delete `Ra_pool_cap_of`, fold the four knob homes; update `wafts_everything.mjs` so `Ghost/Music/Pool` is a What of Everything.
+
 ## 0.8 PUT THE FEATURE IN ONE PLACE (2026-09-04, the owner's — was §0)
 
 ### ⚑⚑ 2026-09-10 — THE HEART IS NOW A TOGGLE, AND IT BREAKS ONE SWORN ASSERTION. OWNER'S CALL PENDING.
@@ -320,6 +514,9 @@ Owner, alongside the start-position ask: *"and they should be lovable"*.
  code-traced end to end (`Radio_like` → `Heard_take` → `Heard_taken`), but no live walk has been done.
 
 ### ⚑ 2026-09-10 — POOL ITEMS START 1–2 THIRDS IN BECAUSE **THE OFFER IS THE TAIL OF THE SONG**
+⚠ SUPERSEDED 2026-09-12 — see "THE ACTUAL '0 playable' CAUSE" above this section. SP no longer keeps
+ the radio's truncated offer at all; it heists a whole file and encodes its own preview from byte 0.
+  Read this section as the diagnosis that led there, not as current behavior.
 
 Owner: *"I need soundpool items to be full tracks… they seem to start at 1-2 thirds of the way… they
  should start from the beginning in the same conditions a remote radio track does."*

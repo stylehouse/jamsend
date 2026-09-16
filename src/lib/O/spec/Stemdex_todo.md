@@ -1,5 +1,36 @@
 # Stemdex_todo — the owed LakeSearch Book
 
+## 0.0 TODO (parked 2026-09-15) — wafts_everything.mjs's check belongs on Atlas's `%Map`, and should live-edit
+
+**The situation, as I know it (for whoever builds the editor side of this):**
+`scripts/wafts_everything.mjs` hand-authors `Waft:Everything`'s area Wafts from a JS array of
+ `Doc:`/`Point,method:` lines, and before writing anything it walks the real `Ghost/*.g` files to
+  confirm each referenced method still exists — that's the ONE automated part; the descriptions and
+   the choice of which methods are worth mentioning stay hand-written (nobody wants every method of
+    every ghost listed, just the ones worth a reader's attention). It caught a real stale reference
+     today: I deleted `Heard_unwant` this afternoon (the no-unlove ruling) and the manifest still
+      named it — 3 failures, fixed by hand, re-run clean.
+
+**The owner's question:** why is this a separate script-and-regenerate step instead of the editor
+ catching it live, the moment a bad `Doc:`/`Point:` line is typed into `Waft:Everything` itself?
+  `Lies_waft_save` (Lies.svelte:352/908/927) already fires on every real save of a Waft — less often
+   than a keystroke, the owner expects — so it's a plausible hook.
+
+**The piece that makes this cheap, not a re-derive:** `Ghost/L/Atlas.g` already builds a `%Map` per
+ doc, corpus-wide, with a `def,method:…,line` row for every method in every ghost (see this file's
+  own §"LANDED 2026-09-05… Atlas.g — every doc's %Map, kept"). A live validator should NOT re-walk
+   `Ghost/*.g` itself (that's what the script does today, and what Atlas already does once for
+    everyone) — it should read the existing `%Map` and ask "does this `Doc:X` carry a `def,method:Y`
+     row", which is a lookup, not a scan. That's the whole idea: fold the existence-check into
+      `Lies_waft_save`, backed by Atlas's `%Map` instead of a fresh file walk, so a bad reference is
+       flagged at the point of typing and the script-regenerate-reload cycle for THIS validation
+        (not for authoring the descriptions, which stays hand-written) becomes unnecessary.
+
+**Not built. Parked here** because it touches the editor's save path and Atlas's read surface, which
+ is `src/lib/L`/Wordland territory more than Stemdex's — read `Wordland_todo.md` and this file's
+  Atlas section before starting, and check whether `%Map` is cheap enough to query on every save
+   before promising it.
+
 ## 0. What to get on with next
 
 **LakeSearch is GREEN — sworn 2026-09-05, ×2 on the live runner** (`ok_pct:1, caveat:1`).  The §0

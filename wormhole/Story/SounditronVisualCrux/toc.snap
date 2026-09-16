@@ -1,0 +1,26 @@
+story:SounditronVisualCrux
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.032
+      sample=0.044,at=1789434937
+      sample=0.044,at=1789434971
+      sample=0.009,at=1789435075
+    TimeTotal:step,avg=0.005
+      sample=0.007,at=1789434937
+      sample=0.007,at=1789434971
+      sample=0.001,at=1789435075
+  step,dige:e99d0b28929bcba0
+  step=2,desc:at rest — Radio main and the Door the one bud,dige:643101041edaeaf3
+    Assertion:at-rest-the-glass,sentence:at rest the glass is the Radio with the Door beside it — always Door or Player and nothing more — and with no Radio the Door is the belly alone
+  step=3,desc:a link ceremony — Link is the belly stretched with Door and Radio the way back,dige:4d0d1ddaac2e8151
+    Assertion:a-ceremony-has-the,sentence:a ceremony has the floor — Link is the belly stretched and Door and Radio are the way back — whether live or surfaced
+  step=4,desc:a keep — a setup form is the belly stretched and the Haul cell buds beside Door and Radio,dige:0a9c5a25d8ea1e4b
+    Assertion:a-setup-form-takes,sentence:a setup form takes the room stretched and an insistent keep takes it big — the Haul cell buds beside Door and Radio and no keep is ever a bud while a bag stands
+    Assertion:with-no-haul-bag,sentence:with no Haul bag the keep itself buds so a running heist always has a way in — and a fresh haul buds the bag on its own
+  step=5,desc:the pool — after the first heart the Pooling cell buds and named it is the belly,dige:08827973505c40b0
+    Assertion:the-pooling-cell-buds,sentence:the Pooling cell buds after the first heart and not before — named it is the belly with Door and Radio beside — and naming an absent organ falls back to the Radio
+  step=6,desc:a Book reads the same rows — and the Supervisor buds only when amiss or asked for,dige:16fef4bfa398896e
+    Assertion:a-book-reads-the,sentence:a Book reads the same rows as a live page — and the Supervisor buds only when amiss or asked for — quiet when healthy

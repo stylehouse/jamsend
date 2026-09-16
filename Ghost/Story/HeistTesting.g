@@ -5137,6 +5137,119 @@ MusuQuarter_witness(w):
     // #4 THE SHIFT: fresh taste displaces the weakest want and the stale row DROPS — never mere accretion.
     if (h && +h.sc.press_o3 === 1 && +h.sc.o2_gone === 1 && +h.sc.pull_stands === 1 && +h.sc.evict_stands === 1) this.story_swear(w, 'a shifted taste shifts the stash — the newcomer takes the press and the displaced want drops while the standing wants stand')
 
+// ══ MusuPoolPolicy — the SP island's step 2, driven directly: Pool_policy(facts) is PURE, so this Book ═══════
+//  builds no world at all — no library, no pool shelf, no Heard Mag — only the plain JS `facts` objects
+//   Pool_facts would have handed it, and reads the returned {goal, diff} straight back (SoundPooling_todo
+//    §0.2a: "a MusuPoolPolicy Book exercising Pool_policy directly against hand-built facts").
+//  Four scenes, each a distinct rule from the table: sediment survives (a pooled id competes even when no
+//   longer a live source, and a wanted-and-pooled id stays QUIET — no evict, no re-pull); a Nay/Meh bars a
+//    candidate from ever being drawn; the `recent` take presses what is held and pulls what is not, cap
+//     trimming the tail; the roll budget holds an eviction back until its window elapses, then lets it through.
+//  CONVENTION (Musu*): the world MUST be named MusuPoolPolicy.
+
+MusuPoolPolicy(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuPoolPolicy_drive,w,req
+        req%ok = 1
+
+MusuPoolPolicy_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuPoolPolicy_note(w, sc):
+    let t = this.MusuPoolPolicy_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async MusuPoolPolicy_drive(w, req):
+    // A FRESH RUN'S total IS 1 AND GROWS ONLY WHEN A HUMAN PRESSES RESUME IN THE EDITOR (memory:
+    //  hollow-book-1step-green, the 2026-09-03 fix) — the Vytonation idiom: the Book declares its own
+    //   beat count once, in 'new' mode only, or a CLI-driven first run fires ONE step and calls it green.
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 5 }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuPoolPolicy_sediment(w)
+        if (n === 3) this.MusuPoolPolicy_barred(w)
+        if (n === 4) this.MusuPoolPolicy_recent(w)
+        if (n === 5) this.MusuPoolPolicy_roll(w)
+    }
+    this.MusuPoolPolicy_witness(w)
+    await this.Musu_float(w)
+
+// MusuPoolPolicy_sediment — 'random', cap 2, one live source ('a') and one pooled id no longer a source
+//  ('zzz', the 2026-09-06 sediment rule: it still competes, off `pooled_raw`). Both fit under cap, so the
+//   goal holds both; the diff must show 'a' PULLED (not held) and say NOTHING about 'zzz' — pooled AND
+//    wanted is the quiet case, never an evict and never a re-pull.
+MusuPoolPolicy_sediment(w):
+    let f = { compartments: [{ name: 'rolling', take: 'random', who: 'all', cap: 2, salt: 'x' }],
+              sources_raw: [{ id: 'a', from: 'H', crew: 1 }], pooled_raw: [{ id: 'zzz', of: '', bytes: 100 }],
+              held_raw: [], recent_raw: [], barred_raw: {}, now: 1000, pool_roll_at: 0 }
+    let r = this.Pool_policy(f)
+    let row = { reached: 'step_2', goal: r.goal.map((g) => g.id).sort().join(' '), diffn: r.diff.length }
+    if (r.diff.length === 1 && r.diff[0].of === 'a' && r.diff[0].do === 'pull') row.sediment_quiet = 1
+    this.MusuPoolPolicy_note(w, row)
+
+// MusuPoolPolicy_barred — two live sources, one Nay'd. The barred id must never enter the goal at all —
+//  not drawn, not diffed, not evicted (it was never pooled, so there is nothing to evict either).
+MusuPoolPolicy_barred(w):
+    let f = { compartments: [{ name: 'rolling', take: 'random', who: 'all', cap: 5, salt: 'x' }],
+              sources_raw: [{ id: 'a', from: 'H' }, { id: 'b', from: 'H' }], pooled_raw: [],
+              held_raw: [], recent_raw: [], barred_raw: { b: 1 }, now: 1000, pool_roll_at: 0 }
+    let r = this.Pool_policy(f)
+    let row = { reached: 'step_3', goal: r.goal.map((g) => g.id).sort().join(' ') }
+    if (r.diff.length === 1 && r.diff[0].of === 'a' && r.diff[0].do === 'pull') row.barred_excluded = 1
+    this.MusuPoolPolicy_note(w, row)
+
+// MusuPoolPolicy_recent — three landed-and-loved ids, cap 2 trims the oldest ('z'); of the two kept,
+//  one is already held (PRESS, the local byte-copy road) and one is not (PULL, the Cave/friend road).
+MusuPoolPolicy_recent(w):
+    let f = { compartments: [{ name: 'recent', take: 'recent', cap: 2 }],
+              sources_raw: [], pooled_raw: [], held_raw: ['y'], recent_raw: ['x', 'y', 'z'], barred_raw: {},
+              now: 1000, pool_roll_at: 0 }
+    let r = this.Pool_policy(f)
+    let row = { reached: 'step_4' }
+    let pull_x = r.diff.some((d) => d.of === 'x' && d.do === 'pull')
+    let press_y = r.diff.some((d) => d.of === 'y' && d.do === 'press')
+    if (r.diff.length === 2 && pull_x && press_y) row.recent_split = 1
+    this.MusuPoolPolicy_note(w, row)
+
+// MusuPoolPolicy_roll — the goal keeps 'keepme' (a 'recent' take — deterministic, no hash needed); 'stale'
+//  is pooled but wanted by nobody, so it is the one evict candidate. Inside the roll window (`pool_roll_at`
+//    1 ms ago) the evict is HELD BACK — the diff is empty. Past the window it goes through.
+MusuPoolPolicy_roll(w):
+    let f0 = { compartments: [{ name: 'keep', take: 'recent', cap: 1 }], sources_raw: [],
+               pooled_raw: [{ id: 'keepme', of: '', bytes: 0 }, { id: 'stale', of: '', bytes: 0 }],
+               held_raw: [], recent_raw: ['keepme'], barred_raw: {}, now: 1000000 }
+    let held = this.Pool_policy(Object.assign({}, f0, { pool_roll_at: 999999 }))
+    let due = this.Pool_policy(Object.assign({}, f0, { pool_roll_at: 0 }))
+    let row = { reached: 'step_5' }
+    if (held.diff.length === 0) row.held_back = 1
+    if (due.diff.length === 1 && due.diff[0].of === 'stale' && due.diff[0].do === 'evict') row.rolled_through = 1
+    this.MusuPoolPolicy_note(w, row)
+
+// ── the witness — %see gated on TRUTH not beat number, once-noticed (no commas; em-dashes). ──
+MusuPoolPolicy_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 5)) return
+    let T = this.MusuPoolPolicy_T(w)
+    let sed = T.o({ reached: 'step_2' })[0]
+    // #1 SEDIMENT: a pooled id no longer among the live sources still competes for its cap seat, and once
+    //  wanted-and-pooled it draws no want at all — never a stray evict, never a stray re-pull.
+    if (sed && +sed.sc.sediment_quiet === 1) this.story_swear(w, 'a pooled track survives a thin session as sediment in the very same draw — wanted and already pooled together mean silence not an evict')
+    let bar = T.o({ reached: 'step_3' })[0]
+    // #2 BARRED: a Nay or Meh on the Mag keeps a candidate out of the draw entirely.
+    if (bar && +bar.sc.barred_excluded === 1) this.story_swear(w, 'a barred track never enters the draw at all — not chosen not diffed not evicted')
+    let rec = T.o({ reached: 'step_4' })[0]
+    // #3 THE RECENT SPLIT: what is already held presses its local copy and what is not held is pulled.
+    if (rec && +rec.sc.recent_split === 1) this.story_swear(w, 'the recent compartment presses what the shelf already holds and pulls what it does not, the same track never both')
+    let rol = T.o({ reached: 'step_5' })[0]
+    // #4 THE ROLL BUDGET: an eviction nobody asked for by name waits for its window and then lands.
+    if (rol && +rol.sc.held_back === 1 && +rol.sc.rolled_through === 1) this.story_swear(w, 'an eviction the roll owns waits inside its own window and lands once the window has passed — never both at once')
+
 // ══ MusuFloor — the trust floor's two unbooked planks: the pinned holdings vocabulary + fails-closed ══════
 //  Portability_doc §12 names the one invariant owed a Book: %Theirs never promotes off-vouch.  The DOOR
 //   half is already gated — MusuBreach drives the swapped-manifest refusal end to end.  What no Book pins:
@@ -6571,30 +6684,18 @@ async MusuHeard_take(w):
     if (!this.MusuHeard_keeps(w).length) { row.the_press_mints_no_heist = 1 }
     // the fat thumb: a second press inside the window takes it back, and the Card SURVIVES as a hearing
     this.MusuHeard_press(w, r1, 'friendo')
-    if (c1 && !c1.sc.take && !c1.sc.at && String(c1.sc.mire) === '2') { row.pressing_again_takes_it_back = 1 }
-    // …AND LATER THAN THAT IT UNLOVES TOO — the heart is a TOGGLE at any distance in time (owner's
-    //  ruling 2026-09-10: *"basically we love or unlove things, which includes or dis-includes them in
-    //   SP and Heisting to our Cave"*).  TWO presses, a minute apart: the first re-takes it, the second
-    //    lands far outside the fat-thumb window and STILL takes it back.
-    //  ⚠ THIS OATH REPLACES `later_it_re_affirms`, which swore the opposite (the second press re-armed
-    //   the gave-up clock and cleared a failure verdict instead of undoing).  Owner's ruling that
-    //    settled it: **"we have to keep a latest love|unlove to make matter"** — the most recent press
-    //     IS the state, at any distance in time, so nothing may quietly override it.
-    //  ⓘ THE RETRY ROAD SURVIVES, it just costs two presses now: `Heard_take` strips the verdict keys
-    //   on every fresh take, so unlove-then-love clears a failure exactly as the old single re-press
-    //    did.  Retry is no longer a hidden second meaning of one press — it is the ordinary act of
-    //     loving something again, which is also what the latest-press rule wants it to be.
-    w.sc.now = 1788400100
-    this.MusuHeard_press(w, r1, 'friendo')
+    if (c1 && String(c1.sc.take) === '1' && String(c1.sc.at) === '1788400000' && String(c1.sc.mire) === '2') { row.pressing_again_keeps_it = 1 }
+    // NO UNLOVE (the owner 2026-09-15: "it shouldn't exist anywhere … they're all reactions|moods the user
+    //  indicates towards some material"): a later press RE-AFFIRMS (re-stamps at), a Nay is its own reaction
+    //   that ends the yay, and a Yay ends the nay. This replaces the 09-10 toggle oath.
     w.sc.now = 1788400150
     this.MusuHeard_press(w, r1, 'friendo')
-    if (c1 && !c1.sc.take && !c1.sc.at) { row.later_it_unloves_too = 1 }
-    // …and love it back, so this beat leaves the world the way the later beats expect to find it.
-    //  The unlove above is the ASSERTION; leaving r1 unloved would silently rewrite every downstream
-    //   beat's ground (measured: no Heist minted, the whole `landeded` row gone from step 9).
+    if (c1 && String(c1.sc.take) === '1' && String(c1.sc.at) === '1788400150') { row.a_later_press_reaffirms = 1 }
+    this.Heard_nay(w, 'me', r1, 'friendo')
+    if (c1 && !c1.sc.take && String(c1.sc.nay) === '1') { row.a_nay_ends_the_yay = 1 }
     w.sc.now = 1788400200
     this.MusuHeard_press(w, r1, 'friendo')
-    if (c1 && String(c1.sc.take) === '1') { row.loving_it_back_restores_the_ask = 1 }
+    if (c1 && String(c1.sc.take) === '1' && !c1.sc.nay) { row.a_yay_ends_the_nay = 1 }
     // a track of my OWN is a taste fact nobody is owed — it names no holder to ask
     let mine = this.Ra_home_self(w, 'me')
     let own = this.Ra_rec_home(mine, 'own1')
@@ -6840,8 +6941,8 @@ MusuHeard_witness(w):
         this.story_swear(w, 'a track played to an empty room earns nothing and a skip earns nothing — only sitting through it with someone there counts — and counting it never bumps the account because a track finishing is not worth a disk write')
     if (tk && +tk.sc.the_press_is_the_ask === 1 && +tk.sc.the_listing_starts_at_the_act === 1 && +tk.sc.the_press_mints_no_heist === 1 && +tk.sc.my_own_track_is_a_taste_fact === 1)
         this.story_swear(w, 'the heart is the whole ask and it mints no heist — the listing arrives with the act and not before — and a heart on a track of my own is a taste fact nobody is owed')
-    if (tk && +tk.sc.pressing_again_takes_it_back === 1 && +tk.sc.later_it_unloves_too === 1 && +tk.sc.loving_it_back_restores_the_ask === 1)
-        this.story_swear(w, 'the heart is a toggle and the latest press is what stands — a second press takes the ask back whether it comes a moment later or a minute later — loving it back restores the ask — and the hearing survives all of it because you did hear the track')
+    if (tk && +tk.sc.pressing_again_keeps_it === 1 && +tk.sc.a_later_press_reaffirms === 1 && +tk.sc.a_nay_ends_the_yay === 1 && +tk.sc.a_yay_ends_the_nay === 1)
+        this.story_swear(w, 'there is no unlove — a second press keeps the heart and a later press re-affirms it — a nay ends the yay and a yay ends the nay — reactions not toggles')
     if (q && +q.sc.grouped_by_holder === 1 && +q.sc.oldest_first === 1 && +q.sc.nobody_is_owed_my_own === 1 && +q.sc.a_row_per_holder === 1)
         this.story_swear(w, 'what I am owed is a query and not a store — take cards not yet on my shelf — oldest first — grouped by who could bring them — and nobody is ever owed a track of my own')
     if (f && +f.sc.a_hearing_nobody_wanted_is_forgotten === 1 && +f.sc.a_heart_is_never_dropped_by_a_clock === 1 && +f.sc.this_sitting_is_untouched === 1 && +f.sc.an_emptied_sitting_goes === 1)

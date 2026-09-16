@@ -514,7 +514,10 @@ album widen §C, MusuOgg/MusuReap encoder drift, stale toc diges). Ranked by use
 
 ## Promises verified as DELIVERED (coverage of this audit)
 
-- **♥ is the heist button, un-pressable within a moment, durable at once**: `RadioFace.svelte:160` → `Radio_like` (`Ghost/M/Radio.g:3792`) → `Heard_take` with the `Heard_thumb()` window (`Heard.g:222-226`, returns −1 = un-press); stashed by `Swarm_restash_heard` (takes only, `Swarm.g` ~3590) and rehydrated at `Swarm.g:2151`.
+- **♥ is the heist button, durable at once**: `RadioFace.svelte:160` → `Radio_like` → `Heard_take`. ⚠ STALE
+   2026-09-15: `Heard_thumb()`'s un-press window is DELETED (`Love_todo.md §0`) — there is no un-press any
+    more, a later ♥ re-affirms, and Nay is the separate reaction that empties SoundPool. The take itself is
+     stashed by `Swarm_restash_heard` (takes only, `Swarm.g` ~3590) and rehydrated at `Swarm.g:2151`.
 - **The share beat turns takes into keeps, and re-arms after a reload from the durable takes**: `Heard_haul_beat` (`Heard.g:543-567`) walks `Heard_takes` and mints one live keep per holder; `Heard_clone_beat` copies verdicts (held/unvouched/landfail) so a wedged holder slot frees.
 - **The Haul groups by who is bringing it, with waiting/gave-up/failed words and row verbs**: `Heard_haul_piers` (`Heard.g:571+`), `Heard_word` (`Heard.g:384-390`); ⏸ `Heist_keep_pause` (`Heist.g:2047`), ↑ `Heist_keep_first` (`:2070`), ✕ `Heist_keep_cancel` (`:4078`, arm-twice), "let this one go" → `Heard_untake` (`Heard.g:249`); "you can't lose a heart — only you retire one" holds (no auto-retire).
 - **SoundPool = one sentence**: `Ra_pool_start/_off/_budget_set/_who/_recent_on/_recent_set` all exist (`Ra.g:1178-1282`) and are wired from `PoolFace.svelte:57-73`; 0 MB cleans out files via `Ra_pool_unfile` (`Ra.g:1273`); the steward runs live (`Radio.g:1433` `Ra_quarter_serve` + `Ra_pool_fill_wants`, consent = the fills switch); the Radio chip shows SOUNDPOOL / `setup` / `empty` and `setup` opens the cell (`RadioFace.svelte:171-187` → `Sounditron_focus('Pooling')`, `Sounditron.g:1411`). Declarations survive a phone reload (pillar 7, `Swarm_pools_rehydrate` `Swarm.g:3812`).

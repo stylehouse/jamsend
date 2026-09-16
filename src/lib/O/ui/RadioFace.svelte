@@ -16,19 +16,9 @@
     //    It opens itself ONCE, after the first ♥ ever (Heard_tipped on the heard Mag — durable, stashed, never
     //     re-asked), and long-press is the way back forever.  The road switch (Heard_hand_set) and the tip are
     //      scalars on the Mag; the sheet holds no state of its own beyond open/closed.
-    let sheet = $state(false)
-    let holdT: any = null
-    let held = false
-    const HOLD_MS = 450
-    const hold_start = () => { held = false; clearTimeout(holdT); holdT = setTimeout(() => { held = true; sheet = true }, HOLD_MS) }
-    const hold_end = () => { clearTimeout(holdT); holdT = null }
-    const like = () => {
-        if (held) { held = false; return }              // the long-press already opened the sheet; not a like
-        const ok = (H as any)?.Radio_like?.(n)
-        try { const w = n?.c?.w; const me = (H as any)?.Radio_pub?.(w); if (ok && w && me && !(H as any)?.Heard_tipped?.(w, me)) { (H as any)?.Heard_tip?.(w, me); sheet = true } } catch {}
-    }
+    const like = () => { (H as any)?.Radio_like?.(n) }
     let roads = $derived.by(() => {
-        void H?.version; void sheet
+        void H?.version
         try {
             const w = n?.c?.w; const me = (H as any)?.Radio_pub?.(w) || 'me'
             const ident = (H as any)?.Swarm_live_self?.()
@@ -45,14 +35,6 @@
             }
         } catch { return { copy: false, folder: false, hand: true, to: '', taken: false } }
     })
-    const hand_toggle = () => { try { const w = n?.c?.w; const me = (H as any)?.Radio_pub?.(w) || 'me'; (H as any)?.Heard_hand_set?.(w, me, roads.hand ? 0 : 1); H?.bump_version?.() } catch {} }
-    const hand_line = () => roads.hand ? (roads.to ? ' — ' + roads.to : ' — no linked device with a folder yet') : ' (off)'
-    // ── WHERE A ♥ LANDS, IN ONE GLYPH AND ONE SENTENCE.
-    //  The roads are not exclusive — a body with a share AND a pool takes both — so the glyph names the
-    //   STRONGEST one that is on: the real file beats a playable copy beats someone else fetching it.
-    //    `·` is an honest "nowhere yet", which is a real state (no share, no pool, no linked device) and
-    //     the one most worth seeing, because a ♥ pressed there keeps the heart and moves no bytes at all.
-    const road_glyph = () => roads.folder ? '⇊' : roads.copy ? '≋' : roads.hand ? '⇢' : '·'
     const road_title = () => {
         const where = roads.folder ? 'the real file lands in your music folder'
             : roads.copy ? 'a copy this phone can play lands in your pool'
@@ -163,8 +145,8 @@
                 (n?.c?.rec?.sc?.id && (H as any)?.Heard_taken?.(
                     n?.c?.w,
                     (H as any)?.Radio_pub?.(n?.c?.w),
-                    n?.sc?.by || (H as any)?.Radio_pub?.(n?.c?.w),
-                    n.c.rec.sc.id))
+                    (H as any)?.Heard_take_pub ? (H as any).Heard_take_pub(n.c.rec, n?.sc?.by || (H as any)?.Radio_pub?.(n?.c?.w)) : (n?.sc?.by || (H as any)?.Radio_pub?.(n?.c?.w)),
+                    (H as any)?.Heard_take_id ? (H as any).Heard_take_id(n.c.rec) : n.c.rec.sc.id))
             ),
         }
     })
@@ -250,55 +232,16 @@
             {/if}
             <button class="rf-btn rf-heart" onclick={() => (H as any)?.Radio_skip?.(n)} title="next">⏭</button>
         </div>
-        {#if face.by}
+        {#if face.by || n?.c?.rec?.sc?.of}
+            <!-- REACTIONS (owner 2026-09-15): ♥ always loves (no unlove, no long-press, no sheet — the Pooling
+                 cell appears after the first ♥ and explains the roads there); 👎 is Nay — out of the pool and
+                 never drawn again, a heisted file untouched. A pooled track (sc.of) gets both. -->
             <button class="rf-btn rf-like" class:liked={face.likedThis} onclick={like}
-                onpointerdown={hold_start} onpointerup={hold_end} onpointerleave={hold_end} onpointercancel={hold_end}
-                oncontextmenu={(e) => { e.preventDefault(); sheet = true }}
                 title={road_title()}>{face.likedThis ? '♥' : '♡'}</button>
-<!-- (the ⇊ keep button folded into ♥ — owner 2026-09-03: "turn the heist button into the like button") -->
-            <!-- THE ROAD, SHOWN (owner 2026-09-09: *"I can't figure out how to Heist anymore, I hate the
-                 `hold ♥ to see this again` popup"*).  Both complaints are one fact: ♥ IS the heist now, but
-                 WHERE its bytes go depends on three roads the face never drew, and the only explanation sat
-                 behind a 450ms hold — so the app had to ask you to memorise a gesture in order to find out
-                 what its main button does.  A hint that teaches a hidden control is the tell that the
-                 control should not have been hidden.
-                 So the road is a CHIP that is always visible and is itself the way in: it says where the
-                 next ♥ lands, and one ordinary tap opens the roads to change it.  The long-press still
-                 works for anyone who learned it; it is no longer the only door, so nothing has to nag. -->
-            <button class="rf-road-chip" class:rf-road-none={!roads.copy && !roads.folder && !roads.hand}
-                    onclick={(e) => { e.stopPropagation(); sheet = true }}
-                    title={road_title()}>{road_glyph()}</button>
+            <button class="rf-btn rf-nay" onclick={() => (H as any)?.Radio_nay?.(n)} title="nay — not in my pool, never drawn again">👎</button>
+
         {/if}
     </div>
-    {#if sheet}
-        <!-- HEART-SETTINGS — the one sentence, then the roads.  Tap anywhere on it to close. -->
-        <div class="rf-sheet" role="dialog" aria-label="what the heart does" onclick={() => { sheet = false }}>
-            <div class="rf-sheet-law">♥ keeps it.</div>
-            <div class="rf-road" class:on={roads.copy}>
-                <span class="rf-road-tick">{roads.copy ? '✓' : '·'}</span>
-                <span>a copy this phone can play{roads.copy ? '' : ' — set up in SoundPool'}</span>
-            </div>
-            {#if roads.folder}
-                <div class="rf-road on"><span class="rf-road-tick">✓</span><span>the real file, into your music folder here</span></div>
-            {:else}
-                <button class="rf-road rf-road-btn" class:on={roads.hand} onclick={(e) => { e.stopPropagation(); hand_toggle() }}>
-                    <span class="rf-road-tick">{roads.hand ? '✓' : '·'}</span>
-                    <span>the real file, fetched by your linked device when it's around{hand_line()}</span>
-                </button>
-            {/if}
-            <div class="rf-road rf-road-dim"><span class="rf-road-tick">·</span><span>the whole album it came from — not yet</span></div>
-            <!-- ONE DOOR, NOT TWO (2026-09-10).  A "retire this heart" line stood here for about an hour,
-                 back when the ♥ was not a toggle and the only way to unlove was the ✕ on a Haul row.
-                 The owner then ruled the heart a TOGGLE — "we love or unlove things, which includes or
-                 dis-includes them in SP and Heisting to our Cave" — so pressing ♥ again IS the unlove,
-                 and a second control saying the same thing in a hidden sheet is worse than none.
-                 The Haul row's ✕ stays: it can call off a keep that is already RUNNING, which the heart
-                 deliberately does not. -->
-            {#if roads.taken}
-                <div class="rf-road rf-road-dim"><span class="rf-road-tick">♥</span><span>loved — press the heart again to unlove</span></div>
-            {/if}
-        </div>
-    {/if}
     <!-- provenance badge, unmistakably (the human 2026-08-07: "the UI in the player should be clear its
          remote, or local") — its own object like everything else here. -->
     <!-- THE SOURCE CHIP (Siphon_todo P2): the provenance badge is also the source selector —
@@ -408,28 +351,6 @@
 {/if}
 
 <style>
-    /* HEART-SETTINGS: a small card over the face, pointer-events re-armed (the overlay is none). */
-    .rf-sheet { position: absolute; left: 8px; right: 8px; bottom: 56px; z-index: 5; pointer-events: auto; background: rgba(18, 16, 24, 0.96); color: #eee; border: 1px solid rgba(255, 210, 120, 0.35); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.35; box-shadow: 0 6px 24px rgba(0,0,0,0.45); }
-    .rf-sheet-law { font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #ffd27a; }
-    .rf-road { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; opacity: 0.55; text-align: left; }
-    .rf-road.on { opacity: 1; }
-    .rf-road-dim { opacity: 0.35; font-style: italic; }
-    .rf-road-btn { background: none; border: 0; color: inherit; font: inherit; width: 100%; cursor: pointer; padding: 3px 0; }
-    /* the retire line sits apart from the roads: the roads say where a ♥ GOES, this one takes it back. */
-    .rf-road-retire { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255, 210, 120, 0.18); opacity: 0.75; }
-    .rf-road-retire:hover { opacity: 1; }
-    .rf-road-tick { width: 1em; flex: 0 0 1em; color: #ffd27a; }
-    /* THE ROAD CHIP — it rides beside ♥ as a label, not as a second verb, so the eye reads "♥ ⇊" as one
-       statement about where a like goes rather than as two buttons competing for the press.  Quiet by
-       default, legible on hover; `·` (no road at all) is the one state drawn in warning colour, because a
-       heart pressed there moves no bytes and that is exactly what a listener would never guess. */
-    .rf-road-chip {
-        background: none; border: 0; padding: 0 2px; cursor: pointer;
-        font-size: 11px; line-height: 1; color: rgba(150, 170, 200, 0.55);
-        transition: color 120ms;
-    }
-    .rf-road-chip:hover, .rf-road-chip:focus-visible { color: #d7e6f7; }
-    .rf-road-chip.rf-road-none { color: #c78a57; }
     /* SMALL — THE PLAY BUTTON, and nothing else.  Intrinsic box on BOTH axes (no height:100%, which
        would measure the mold this face is sitting in and hand the layout an aspect that is not a fact
        about anything — see DoorFace's note, where that was a bug you could see). */
@@ -483,6 +404,8 @@
     .rf-src-sub { display: block; margin-top: -2px; font-size: .78em; opacity: .75; letter-spacing: .3px; }
     .rf-keep { width: 30px; height: 30px; font-size: 12px; }
     .rf-like { width: 30px; height: 30px; font-size: 14px; }
+    .rf-nay { opacity: .55; font-size: .9em; }
+    .rf-nay:hover { opacity: 1; }
     .rf-like.liked { background: #6b2e3a; border-color: #c75777; color: #ffeaf0; }
     .rf-keep.kept { background: #2e6b3a; border-color: #57c777; color: #eafff0; }
     .rf-keep.kept:hover { background: #57c777; color: #04202a; }

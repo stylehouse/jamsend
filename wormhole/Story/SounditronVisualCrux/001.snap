@@ -1,0 +1,7 @@
+Snap:H
+  H:SounditronVisualCrux,Run
+    A:SounditronVisualCrux
+      self,round	{"mung":["age"]}
+      w:SounditronVisualCrux
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

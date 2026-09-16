@@ -1,0 +1,10 @@
+Snap:H
+  H:SounditronVisualCrux,Run
+    A:SounditronVisualCrux
+      self,round=2	{"mung":["age"]}
+      w:SounditronVisualCrux
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          roster:rest,main:Radio,buds:Door,pose:big
+          roster:rest_no_radio,main:Door,buds:-,pose:big

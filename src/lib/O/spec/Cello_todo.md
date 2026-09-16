@@ -45,12 +45,40 @@ Next moves (ripe first):
    belly intent from `stage_want` only — deliberately diverging from Vytui's pose-first ladder
     (Vytui:791-812) because reading pose back would be reading our own writes.
 
-## 0.1 THE ROSTER ISLAND — survey (2026-09-13)
+## 0.1 THE VISUALCRUX — survey (2026-09-13; was "the roster island", renamed by the owner 2026-09-15)
 
 The owner, on learning the Pooling cell was pushed by one gate and dropped by another: *"sounds like some weird
  design has crept in. wanna do a big survey of straightening this out... I want a nice island of SP policy in the
   middle."* SP = the SEAT/POSE policy: which organ becomes a cell, in which pose, when. Today it is smeared over
    FOUR files and two authorities. This section is the map, the contradictions, and the island.
+
+### Progress 2026-09-15 — steps 1 and 2 LANDED (beside the cut; nothing flipped)
+
+- **Step 1** `Sounditron_facts(w, ctx)` (Sounditron.g, region THE VISUALCRUX): one plain object per commission —
+   humdinger · narrow · piers · keeps/setups/pin (non-pool) · hauls_fresh · pool_consent · **pool_seen**
+    (consent ∨ any `take` on the Heard Mag — the owner's "after the first ♥" rule) · focus/focused_keep · amiss ·
+     show_diag · link none|surfaced|live · stage_want (+ stage_refused, always 0 here: the refusal is Cellui view
+      state and never reaches the commission — step 4 moves it) · pose_want · `present` (the organs the top half
+       pushed). Logged `🎴 facts: {…}` once per fingerprint change, humdinger only. Every old gate untouched.
+- **Step 2** `Sounditron_visualcrux(f) → {main, buds[], pose}` — pure, names only, the (c) table as its body;
+   `Sounditron_crux_compare` runs it beside the old ladder and says `🎴 visualcrux differs: old=[…] new=[…]`
+    once per distinct disagreement. **Book `SounditronVisualCrux`** (6 steps, 16 hand-made facts rows, 6 sworn +
+     declared assertions, fixtures recorded from the live runner): 6/6 green.
+- **Live (eed, 15 piers, pool consented, no keeps):** facts `present=[Radio,Door,Riffle,Pooling]`, roster
+   `Radio | Door,Pooling | big` — **old and new agree; no differs line yet.** Watch for a day with keeps in flight.
+- **Where the table KNOWINGLY differs from the old cut** (expected differs lines when the facts arise):
+   · a pulling keep with `stage_want` (no form, no pin) → table seats it as the belly big (Cellui's TIER-1
+      `insistent` already renders that); the old commission gives Radio — contradiction 4 resolved the Cellui way;
+   · Supervisor buds on `amiss` as well as `show_diag` (old: show_diag only) — Cellui's keep_cell rule adopted;
+   · Pooling on `pool_seen` with no piers gate (old: piers≥1) — the cell is the person's config surface.
+- **Still dead, needs a ruling before step 3:** Riffle (pushed when piers>1, seated by neither); Shuffle,
+   Caper, Tree, Transfer likewise. The table has no row for them — add rows or delete the pushes.
+- **Step 3 needs:** the flip in the hd block (`fmain`/`buds` read off `Sounditron_visualcrux(crux_facts)`,
+   resolving names back to organs via `present`), the bud-press wiring kept as is, and the Sounditron Book
+    re-run on a runner that has a sealed peer (today it reads the SAME environment red as the HEAD baseline —
+     `granted`/`a friend counted their shelf`/`music from a friend` absent — unrelated to the crux, which the
+      runner never enters). VytoOrchestra is red at HEAD too (`Stray:moth,loose` vs fixture `Stray:moth` —
+       the Vyto seed's `loose:1`, VytoTesting.g), also unrelated.
 
 ### (a) Every gate on the road organ → cell (read in order; `hd` = humdinger-only, `B` = Books too)
 
@@ -96,7 +124,7 @@ The owner, on learning the Pooling cell was pushed by one gate and dropped by an
 8. **The re-commission triggers are scattered**: pose_fp change, focus verbs, link phase, `focus_commissioned`, and (09-13) a change in friend COUNT — nothing re-commissions on pier arrival, pool consent, or a haul landing except by side effect.
 9. **Books vs live**: rows 7, 11, 12, 13-17 are humdinger-gated so fixtures stand — which means the live roster is exactly the part NO Book sees. VytoOrchestra/Sounditron fixtures prove the top half of the list and nothing about the cut.
 
-### (c) The island — `Sounditron_roster(facts) → { main, buds[], pose }`
+### (c) The island — `Sounditron_visualcrux(facts) → { main, buds[], pose }`
 
 ONE pure function, no world reads inside it, fed by DECLARED FACTS gathered once by the commission:
 
@@ -130,7 +158,7 @@ What each Book needs to keep meaning what it meant: **Sounditron** — the top-h
 
 Migration, in order:
 1. Extract the FACTS (one `Sounditron_facts(w)`), leave every gate as is; commission logs the facts. Fixtures unmoved.
-2. Write `Sounditron_roster(facts)` + the SounditronRoster Book; run it BESIDE the old cut and log where they differ on a live tab for a day.
+2. Write `Sounditron_visualcrux(facts)` + the SounditronVisualCrux Book; run it BESIDE the old cut and log where they differ on a live tab for a day.
 3. Flip the commission to the roster (hd only); delete the bud list, the Shuffle/Riffle/Caper gates, `Sounditron_plain`; keep the mints.
 4. Cellui reads the roster; delete PERMANENT_CAST, keep_cell, extras cap, resting_main, both ladders' storm arrests. Then the 08-31 popping class is gone by construction.
 

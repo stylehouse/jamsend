@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.t
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return 'bc87d417e6d5198f~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '0efa48992fecba14~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -112,7 +112,7 @@ Heist_mardir(w) {
 //         hauls a friend's album hauls a pooled track, and the only difference is one scalar.
 //  Absent `into`, the world's answer stands, so every existing keep is byte-identical.
 Heist_keep_mardir(w, keep) {
-    if (keep && String(keep.sc.into || '') === 'pool') { return 'pool' }
+    if (this.Pool_is_machinery(keep)) { return 'pool' }
     return this.Heist_mardir(w)
 
 },
@@ -388,7 +388,7 @@ Heist_xfer_breach(rec, reason, job) {
             // …AND THE KEEP GOES WITH IT.  The re-rummage road below re-mints the mirror and lands again off the
             //  SAME keep (a landing every five seconds, refused reach or not); a pool keep whose holder cannot
             //   serve a matching body is abandoned the proper way (Heist_keep_cancel drops its %Caper too).
-            if (keep && String(keep.sc.into || '') === 'pool') {
+            if (this.Pool_is_machinery(keep)) {
                 let rw = (MH && MH.c && MH.c.radio_w) || null
                 if (rw) { this.Heist_keep_cancel(rw, keep).catch((er) => 0) }
             }
@@ -2826,7 +2826,7 @@ async Heist_keep_step(w, rw, ident, me, nav, keep, shop) {
         //      the playhead → the seed is no longer "playing" → the keep auto-flipped into the downloading view
         //       (and a natural track-end skipped the form the same way).  Independent of track-skip by design.
         //  …EXCEPT a pool keep, which nobody pressed and which has no form to skip (Heist_keep_pool_go).
-        if (String(keep.sc.into || '') === 'pool') { this.Heist_keep_pool_go(keep, srcmir, seed) } else if (keep.sc.take) { this.Heist_keep_take_go(keep, srcmir, seed) }
+        if (this.Pool_is_machinery(keep)) { this.Heist_keep_pool_go(keep, srcmir, seed) } else if (keep.sc.take) { this.Heist_keep_take_go(keep, srcmir, seed) }
         return
     }
     if (state === 'pulling') {
@@ -3479,7 +3479,7 @@ Heist_keep_solo(keep, seed) {
 
 },
 Heist_keep_pool_go(keep, srcmir, seed) {
-    if (String(keep.sc.into || '') !== 'pool') { return 0 }
+    if (!this.Pool_is_machinery(keep)) { return 0 }
     if (!keep.sc.lofi) { keep.sc.lofi = 1; keep.bump() }
     // THE SEED'S PICK WEARS THE FOLDER'S ID, NOT THE SEED'S (2026-09-06, eed measured live through the
     //  console ring: a pool keep with EIGHTEEN picks -- the whole Owen Pallett session folder -- sitting
@@ -3534,7 +3534,7 @@ Heist_keep_pool_go(keep, srcmir, seed) {
 //   keep wears the same word the Card does, so a snap reads one vocabulary end to end.
 Heist_keep_take_go(keep, srcmir, seed) {
     if (!keep.sc.take) { return 0 }
-    if (String(keep.sc.into || '') === 'pool') { return 0 }
+    if (this.Pool_is_machinery(keep)) { return 0 }
     let cut = this.Heist_keep_solo(keep, seed)
     if (cut < 0) { return 0 }
     keep.sc.state = 'pulling'

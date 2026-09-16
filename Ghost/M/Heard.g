@@ -30,22 +30,6 @@
 
 //#region the mag — where it hangs, and the page per sitting
 
-// Heard_thumb — the un-press window in seconds.  A second ♥ inside it means UNDO (a fat thumb, not a
-//  second vote); outside it the press re-affirms the ask and re-arms the gave-up clock.  Retiring a
-//   heart later is a deliberate act with its own control (the ✕ on the Haul row → Heard_untake), which
-//    is why this window is short: "you can't lose a heart" is only true if a stray tap cannot spend one.
-Heard_thumb():
-    return 10
-// Heard_keeps_cap — how many keeps the ♥ may have standing at once, across every holder.  Not a
-//  transfer bound (that is `heist_inflight`, enforced in the beat): a bound on CELLS, so a take spree
-//   does not open twelve of them.  Three is "a couple going, one queued".
-Heard_keeps_cap():
-    return 3
-// Heard_landed_cap — how many landed takes the pool's `recent` compartment may see.  A compartment
-//  that could name three hundred tracks would only ever draw the same handful anyway.
-Heard_landed_cap():
-    return 60
-
 // Heard_now — the swarm clock, so a Book pinning `w.sc.now` gets a byte-identical snap.
 Heard_now(w):
     return this.Swarm_now ? this.Swarm_now(w) : Math.floor(Date.now() / 1000)
@@ -191,6 +175,43 @@ Heard_mark(w, me, rec):
 //  NO BUMP, deliberately (§5): `%Identity` bumps rewrite the whole account file inside the beliefs mutex,
 //   and a play-through must never cost a disk write.  The value is snapped the next time anything else
 //    on the Mag bumps — a take, an un-take, a page roll — which is soon enough for a score nobody reads.
+//#region REACTIONS — Yay (♥, `take`), Nay, Meh: what a person indicates toward material (the owner 2026-09-15:
+//  "they're all reactions|moods the user indicates towards some material"; there is NO unlove, anywhere).
+//   Every reaction is a scalar on the Card, like every road (THE HANDOFF header) — no state elsewhere.
+//   · Nay: bars the track from every future pool draw and evicts a pooled copy; NEVER deletes a heisted file.
+//   · Meh: written by the radio on an EARLY skip (humdinger only — a Book's skips are fixtures, not moods);
+//      the pool never draws it. A later ♥ outranks a meh; a nay ends a yay.
+Heard_nay(w, me, rec, by):
+    if (!w || !me || !rec || !rec.sc.id) { return 0 }
+    let card = this.Heard_card(w, me, this.Heard_take_id(rec), this.Heard_take_pub(rec, by))
+    if (!card) { return 0 }
+    card.sc.nay = '1'
+    card.sc.at = '' + this.Heard_now(w)
+    this.Heard_strip(card, ['take', 'meh', 'unseen'])
+    card.bump()
+    return 1
+Heard_meh(w, me, rec, by):
+    let M = this.top_House ? this.top_House() : null
+    if (!M || !M.c.humdinger) { return 0 }
+    if (!w || !me || !rec || !rec.sc.id) { return 0 }
+    let card = this.Heard_card(w, me, this.Heard_take_id(rec), this.Heard_take_pub(rec, by))
+    if (!card || card.sc.take || card.sc.nay) { return 0 }
+    card.sc.meh = '1'
+    card.bump()
+    return 1
+// Heard_barred_ids — {id:1} for every track the person said Nay or Meh to: the pool's exclusion set,
+//  read once per steward pass (Ra_quarter). Ids are ORIGINALS, the Mag's own id-space.
+Heard_barred_ids(w, me):
+    let out = {}
+    let mag = this.Heard_mag_find(w, me)
+    if (!mag) { return out }
+    for (const c of this.Heard_cards(mag)) {
+        if (!c.sc.id) { continue }
+        if (c.sc.nay || (c.sc.meh && !c.sc.take)) { out[String(c.sc.id)] = 1 }
+    }
+    return out
+//#endregion
+
 Heard_through(w, me, rec):
     let M = this.top_House ? this.top_House() : null
     if (!M || !M.c.humdinger) { return 0 }
@@ -214,26 +235,34 @@ Heard_verdict(card):
     return ''
 
 // Heard_take — THE HEART.  Not a score that "reaches" a threshold: the heart is a decision, and a
-//  threshold nobody can see is magic (§2, the human lens).  A second press inside Heard_thumb() seconds
+//  threshold nobody can see is magic (§2, the human lens).  (The fat-thumb un-press that once lived here is
 //   UN-presses it — every phone there is means undo by that gesture, and an accidental press had no exit
 //    but a ✕ on a keep that might not have been minted yet.  A press outside the window re-affirms: it
 //     re-stamps `at` (re-arming the gave-up clock) and clears any failure verdict, so pressing again is
 //      how a human retries a track the wire could not bring.
 //  Returns 1 for taken, -1 for un-taken, 0 for nothing.
+//  A POOL COPY NAMES ITS ORIGINAL, WITH NO HOLDER (2026-09-15, Love_todo §0): a pooled %Record is
+//   `id:<lofi>,of:<original>` and carries no holder on purpose (the pool does not track where its try-outs
+//    came from), and its shelf's pub is ME — so a heart on it used to write a take on my own music, which
+//     is a taste fact nobody hauls. The take names `of` and leaves `pub` off; Heard_takes resolves a
+//      holder-less card against the mirrors when it is time to haul. Heard_take_id/_pub are the one seam.
+Heard_take_id(rec):
+    return String((rec && rec.sc && (rec.sc.of || rec.sc.id)) || '')
+Heard_take_pub(rec, by):
+    if (rec && rec.sc && rec.sc.of) { return '' }
+    return String(by || (this.Ra_pub_of ? this.Ra_pub_of(rec) : '') || '')
 Heard_take(w, me, rec, by):
     if (!w || !me || !rec || !rec.sc.id) { return 0 }
-    let pub = String(by || (this.Ra_pub_of ? this.Ra_pub_of(rec) : '') || '')
-    let card = this.Heard_card(w, me, rec.sc.id, pub)
+    let pub = this.Heard_take_pub(rec, by)
+    let card = this.Heard_card(w, me, this.Heard_take_id(rec), pub)
     if (!card) { return 0 }
     let now = this.Heard_now(w)
-    if (card.sc.take && (now - (+(card.sc.at || 0))) < this.Heard_thumb()) {
-        this.Heard_strip(card, ['take', 'at', 'unseen'])   // stop wanting it ⇒ stop nagging about it
-        card.bump()
-        return -1
-    }
+    // NO UNLOVE, ANYWHERE (the owner 2026-09-15): a heart is a reaction, and a second press re-affirms —
+    //  re-stamps `at` (re-arming the gave-up clock), clears a verdict, clears a nay. Taking it back is not a
+    //   thing a heart does; a keep is called off on the Haul row, and a Nay is its own reaction.
     card.sc.take = '1'
     card.sc.at = '' + now
-    this.Heard_strip(card, this.Heard_verdict_keys())
+    this.Heard_strip(card, this.Heard_verdict_keys().concat(['nay', 'meh']))
     // the listing STARTS here (§1: acting is when it becomes yours to hold) with whatever the mirror card
     //  in hand already knows; the rest is cloned off the describe answer when it lands (Heard_clone_beat).
     //   Guarded stamps — an absent value would brand the snap {"undef":[…]}, the mint-bug law.
@@ -260,30 +289,6 @@ Heard_untake(w, me, pub, id):
     this.Heard_strip(card, ['take', 'at', 'unseen'])   // stop wanting it ⇒ stop nagging about it
     this.Heard_strip(card, this.Heard_verdict_keys())
     this.Heard_strip(card, this.Heard_listing_keys())
-    card.bump()
-    return 1
-
-// Heard_unwant — DROP THE WANTING, KEEP THE KNOWLEDGE.  The HEART's unlove (Radio_like), as against
-//  Heard_untake's full retirement above.  The owner made the heart a TOGGLE 2026-09-10 — *"we love or
-//   unlove things, which includes or dis-includes them in SP and Heisting to our Cave"* — and a toggle
-//    presses far more often than a ✕ ever did, so what it destroys matters much more.
-//  WHAT GOES: the ask (`take`/`at`) and its verdict.  A verdict is a word about an ask that no longer
-//   stands, so keeping it would leave a failure hanging off a track nobody is asking for.
-//  WHAT STAYS: the LISTING (`title` `artist` `dir` `path` `bytes` `body_hash` `keep`).  Those are facts
-//   about the TRACK, learned off a friend's describe answer; desire is the only thing a heart states.
-//  THREE REASONS, and the third is a bug rather than a preference:
-//   1. unlove→love IS the retry road now, and it must not re-ask a friend for what we already know;
-//   2. a Haul row that forgets its own title goes bare while you are looking at it;
-//   3. ⚠ `keep` is the card's handle on a RUNNING download, and the heart deliberately does NOT stop one
-//      (Radio_like: that is the ✕'s job).  Stripping it ORPHANS the keep — the download runs on with
-//       nothing pointing at it and no ✕ able to reach it.
-//  The ✕ keeps its full-clear meaning: a deliberate act on one visible row, free to forget everything.
-Heard_unwant(w, me, pub, id):
-    let mag = this.Heard_mag_find(w, me)
-    let card = this.Heard_find(mag, id, pub)
-    if (!card || !card.sc.take) { return 0 }
-    this.Heard_strip(card, ['take', 'at', 'unseen'])   // stop wanting it ⇒ stop nagging about it
-    this.Heard_strip(card, this.Heard_verdict_keys())
     card.bump()
     return 1
 
@@ -418,23 +423,48 @@ Heard_landed(shelf, card):
 //  A Card wearing a verdict is ANSWERED (the wire replied and the reply was not the track), so it waits
 //   for a human — a re-press or a ✕ — rather than re-asking forever behind the holder's one live keep.
 //  Pure: `o` throughout, so a face may call it every poll.
+Heard_holder_of(w, me, id):
+    if (!w || !w.o || !id) { return '' }
+    let crew = null
+    try { crew = this.Ra_pool_owner ? this.Ra_pool_owner(w).o({ Crew: 1 })[0] : null } catch (er) { crew = null }
+    let mates = crew ? crew.o({ mate: 1 }).map((m) => String(m.sc.mate || '')) : []
+    let hits = []
+    for (const t of w.o({ Theirs: 1 })) {
+        let pub = String(t.sc.pub || '')
+        if (!pub || pub === String(me)) { continue }
+        let stock = t.o({ stock: 1 })[0]
+        if (!stock || !this.Ra_rec_find(stock, { Record: 1, id: String(id) })) { continue }
+        hits.push(pub)
+    }
+    hits.sort((a, b) => {
+        let ac = mates.some((m) => m && (a.startsWith(m) || m.startsWith(a))) ? 0 : 1
+        let bc = mates.some((m) => m && (b.startsWith(m) || m.startsWith(b))) ? 0 : 1
+        return ac - bc || (a < b ? -1 : 1)
+    })
+    return hits[0] || ''
 Heard_takes(w, me, shelf):
     let out = []
     let mag = this.Heard_mag_find(w, me)
     if (!mag) { return out }
     let cards = []
+    let holder = {}
     for (const c of this.Heard_cards(mag)) {
         if (!c.sc.take || !c.sc.id) { continue }
         let pub = String(c.sc.pub || '')
-        if (!pub || pub === String(me)) { continue }
+        if (pub === String(me)) { continue }
         if (this.Heard_landed(shelf, c)) { continue }
+        // no holder on the card ⇒ whoever has it now (a pooled take): the %Theirs mirrors are local
+        //  catalogs of every shelf shared with me, so this is a local lookup, crew first. Nobody has it
+        //   ⇒ the card stands, exactly like a take whose holder is away.
+        if (!pub) { pub = this.Heard_holder_of(w, me, String(c.sc.id)); if (!pub) { continue } }
+        holder[String(c.sc.id)] = pub
         cards.push(c)
     }
     cards.sort((a, b) => (+(a.sc.at || 0)) - (+(b.sc.at || 0)))
     let rows = {}
     let order = []
     for (const c of cards) {
-        let pub = String(c.sc.pub || '')
+        let pub = String(c.sc.pub || holder[String(c.sc.id)] || '')
         if (!rows[pub]) { rows[pub] = { pub: pub, cards: [] }; order.push(pub) }
         rows[pub].cards.push(c)
     }
@@ -501,7 +531,7 @@ Heard_landed_ids(w, me, shelf):
         //  is not "what came in lately" and the pool's recent compartment must not draw it (the same
         //   exclusion Heard_takes makes for the same reason: nobody was ever owed it).
         let pub = String(c.sc.pub || '')
-        if (!pub || pub === String(me)) { continue }
+        if (pub === String(me)) { continue }
         let got = this.Heard_landed(shelf, c)
         if (!got) { continue }
         cards.push({ card: c, id: String(got.sc.id || c.sc.id) })
@@ -657,7 +687,7 @@ Heard_haul_piers(rw, me):
     for (const keep of this.Heist_live_rows(rw)) {
         // a POOL keep is the circulation fill's machinery, not something this person is bringing me (the owner
         //  2026-09-06: "a Venus trying to download I never clicked on") — the Pocket cell owns its legibility.
-        if (String(keep.sc.into || '') === 'pool') { continue }
+        if (this.Pool_is_machinery(keep)) { continue }
         if (String(keep.sc.state || 'primed') === 'done') { continue }
         // a keep with no `pub` has no holder to be a row of — it would open a nameless pier headed by the
         //  first 8 characters of nothing.  Every minted keep carries one; this is the guard, not a case.

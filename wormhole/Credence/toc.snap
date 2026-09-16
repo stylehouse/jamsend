@@ -155,6 +155,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:MusuLikeHaul
     Funkcion:Storying,of_Book:MusuHeard
     Funkcion:Storying,of_Book:MusuHandoff
+    Funkcion:Storying,of_Book:MusuPoolPolicy
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus
@@ -228,3 +229,4 @@ Waft:Credence
     Funkcion:Storying,of_Book:ElectrodeStaple
     Funkcion:Storying,of_Book:LagoonStaple
     Funkcion:Storying,of_Book:Hackarium
+    Funkcion:Storying,of_Book:SounditronVisualCrux

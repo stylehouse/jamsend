@@ -73,8 +73,9 @@ Waft:Ghost/Music/Cave,desc:the collection — heist original bytes into the Cave
     Doc:Ghost/M/Heard.g
     Point,method:Heard_mag,desc:the Mag per pub
     Point,method:Heard_card,desc:the Card per track
-    Point,method:Heard_take,desc:love — take it
-    Point,method:Heard_unwant,desc:unlove — drop the ask keep the listing
+    Point,method:Heard_take,desc:a reaction — yay — re-affirms on a later press never unloves
+    Point,method:Heard_nay,desc:a reaction — not in my pool never drawn again
+    Point,method:Heard_meh,desc:a reaction — an early skip radio-written
     Point,method:Heard_taken,desc:is it loved
     Point,method:Heard_verdict,desc:what happened to the take
     Point,method:Heard_notice,desc:mark unseen on arrival

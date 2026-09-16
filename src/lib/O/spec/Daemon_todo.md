@@ -9,6 +9,68 @@ A node daemon that boots the whole jamsend machine headless and stays up: a stab
 
 ## 0. What to get on with next
 
+### 0.0 2026-09-15 — the "24 KB/s for nothing" stream, what the box hands out on whose leeway, and HEISTRANT
+
+**The stream is the ROLLING SHELF being followed, not a bug in one verb.** `/status` said `serve:{live:[],
+ tx_kbps:14–24}` while eed's meter read `◈ Repli rx 3p/57KB` every ~3s (177 MB in 80 min, pool at cap,
+  nothing landing). Evidence, in order:
+- `live` only counts serves that stamp `top.c.xfer.serves` — `Repli_serve_chunks` (Repli.g:1155/1178). The
+   HEAD-RUN serve `Repli_serve_head` (Repli.g:234, `h.stream === 'opus_head'`, :1058) sends 1 lines + PAGE=2
+    page frames through `Repli_send_lines` (the ONE tx meter site, :488) and never stamps a cursor — so
+     "3p/57KB" = one head ask answered, invisible to `live`.
+- Who asks: `Ra_restock_beat` (Ra.g:4869) walks the friend's mirror K records per beat, golden-ratio spread,
+   and for every record with `pv_off > 0` that is not `Ra_head_whole` asks `opus_head` — per-key 4s throttle,
+    `HEAD_ASK_CAP` 4 per beat (Ra.g ~4998). Previews likewise via `Repli_want_next`.
+- Why it never ends: the daemon's shelf ROLLS. `Stoker_cull` (Radio.g:3049) wears heard records out past 44,
+   the digger tours every ~90s and lands ~1.2 new records (run.log: 756 tours, got=938; `shelf=40↔42`), so
+    every pier mirrors the churn (`Musica_stand` recasts on census change, Heist.g:5396) and restocks each
+     newcomer's preview + head run (~1–2 MB) — ≈20 KB/s, forever, for a listener whose pool is already full.
+- The same roll is the pool's `evicted 1 · deferred 1` every minute: `Ra_pool_sources` is every `%Theirs`
+   mirror, so when a record leaves the daemon's shelf it leaves the pool's goal and `Ra_quarter_diff` evicts
+    the lofi copy — the client's cache follows the server's random walk instead of holding what it has.
+- `(re×157)` on `Erge Chokka` = 157 retransmits of pages the sink already held (`x.serves[].re`, main.ts:700):
+   the client re-asks what it has; nothing on the serve side says no.
+
+**What the box hands out today, and who decides:**
+
+| rendition | encoded by | chosen by | caps today (default) | disk/CPU per track |
+|---|---|---|---|---|
+| `%Preview`/`%Stream` Opus 2s chunks (Ra_chunk_*) | holder, once: browser `Orig_ogg_encode` (WebCodecs) / daemon `encode_opus_window` (ffmpeg.ts); cached in radiostock (`Ra_stock_gc_cap` 100 files) | CLIENT — `Ra_restock_beat` over the whole mirror; `Repli_want_next` per page | `repli_page`=2 pages/ask · per-key 4s · `HEAD_ASK_CAP` 4/beat · `Repli_missed_hot` · serve: `repli_serve_parked_budget` (OFF) · `heist_selfclock`/`heist_window` (OFF) | one ffmpeg encode, then reads |
+| head run `%Prehead,hseq` (0:00 → pv_off) | same | CLIENT — same beat | same; NOT in `live` | reads |
+| pool lofi file (Vorbis ~4 MB, `Orig_ogg_from_source` → `nat.ogg`, ra_native.ts) | holder, PER ASK: `Ra_pool_fill_serve` → `Siphon_pull` transcodes into its own pool then serves via the `%Heist,into:pool` chunk lane | CLIENT — `Ra_quarter_goal_pools` random draw over `Ra_pool_sources` (every mirror); booked `Swarm_reach_book` | booker: 3 fills/pass, `reach_cap` 32 total, K=3 pulls; serve: NONE (every `serving` reach is pressed) | a full ffmpeg transcode + write per pull |
+| the catalog (`%Mag:Musica` recast) | — | SERVER — `Musica_stand` on census change | change-gated on the id set | lines only |
+
+**The three leeway holes:** (1) the client picks freely over the whole mirror and re-asks what it holds — the
+ server has no say and no memory of what it served; (2) a pool pull costs the server a transcode per ask with
+  no queue, budget or refusal; (3) the server's own shelf roll drives every pier's traffic and evictions,
+   on the server's clock, regardless of who is listening.
+
+**HEISTRANT — the hydrant for heists (proposal, not built).** The box decides what it hands out; piers draw
+ from THAT. One Mag law kept: Radio and SP share the Mag; SP is the slower/offline Radio.
+
+| particle | where | meaning |
+|---|---|---|
+| `%Hydrant,pub,at,ttl` | on the holder's identity, replicated by the ordinary Repli mirror like the Mag | the standing offer: what this box will serve this hour |
+| `%Hydrant > %Spout,id,lofi,bytes,until` | one per offered track | "this track, lofi, until `until`"; lofi encoded ONCE when the spout opens, not per ask |
+| `%Hydrant > %Tap,pub,bytes,asks,re,since` | one per engaged pier | the meter: what this pier drew, how many re-asks — the refusal ledger |
+| `%Hydrant%io,enc_per_min,kb_per_min,per_tap_kb` | scalars on the hydrant | the budgets; a spout opens only inside them |
+| `%Meh,id` / `%Nay,id` on `Mag:heard` (client) | the listener's ledger | early skip / no — never offered to that pool; sent as the ask's exclude list |
+
+Edges: the pool's `Ra_quarter_goal_pools` 'random' draw reads `%Spout` rows instead of the whole mirror
+ (`Ra_pool_sources` becomes "who has an open hydrant"); `Swarm_reach_book` is gated by the holder's
+  `%Tap` (a booking storm or a re-ask of a landed id gets `refused,why:tap` instead of a slot — the 09-12
+   `reach cap reached (32)` wall becomes a per-pier answer); `Ra_pool_fill_serve` presses only open spouts,
+    inside `%io`; the Stoker's roll and `Ra_restock_beat` are untouched for Radio but a listener whose pool
+     is at cap stops following the roll (hold what you have; `Ra_quarter_diff` evicts by love/meh/age, not by
+      "left the mirror"). Stays client-side: consent, budget, share, the draw ORDER (hash), the Nay/Meh ledger.
+ Rota ≠ tracking: a spout names a track and an hour, never who drew it; the `%Tap` meter is the holder's
+  private ledger and is not replicated.
+
+Next: (a) stamp `x.serves` from `Repli_serve_head` too so `live` tells the truth; (b) "at cap, hold" in
+ `Ra_quarter_diff` (one line, the biggest saving); (c) the `%Tap` refusal on re-asks of landed ids; then the
+  hydrant proper. Owner 2026-09-15: *"conserve disk IO … a bit of DDoS protection"*, *"avoid SPing anything
+   the user skipped early on … a %Meh signal"*.
+
 ✅ **BOOT FIXED 2026-09-05 — the daemon had been dead since 2026-08-30, and both faults were "near-copy drift".**
  `scripts/daemon/daemon.vite.config.mjs` calls itself *"a near-copy of scripts/Story_cli.vitest.config.mjs"*, and
   the daemon is a plain node process that does NOT run `Story_cli.setup.ts` — so anything that file stubs, the

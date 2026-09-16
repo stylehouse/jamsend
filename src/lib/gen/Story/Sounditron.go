@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '43f79b882de5ac4f~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '7ebbb8cf15ab2f4a~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -360,7 +360,7 @@ Sounditron_commission(w) { const H = this;
     //  Pooling cell: with the pool filling there are always ~3 into:'pool' keeps in the shop, so the pool's
     //   own fill kept `anyKeep` true and the pool's own cell off the glass (the owner 2026-09-13: "how do I
     //    get to Cell:Pooling?").  Nobody pressed those; they earn no focus and hide nothing.
-    let keeps = kshop ? kshop.o({ Heist: 1 }).filter((k) => String(k.sc.into || '') !== 'pool') : []
+    let keeps = kshop ? kshop.o({ Heist: 1 }).filter((k) => !this.Pool_is_machinery(k)) : []
     let anyKeep = keeps.length > 0
     // SETTING ONE UP vs LEAVING ONE RUNNING (the owner 2026-08-13: *"we also need to make multiple
     //  Heists doable, I can't be hanging around waiting for each one in fullscreen"*).  The ENGINE was
@@ -852,6 +852,10 @@ Sounditron_commission(w) { const H = this;
         //   The stale pin is dropped here (the keep finished and left the shop) as well as guarded there,
         //    because this is the only place that can actually forget it.
         if (w.c.focused_keep && keeps.indexOf(w.c.focused_keep) < 0) delete w.c.focused_keep
+        // THE VISUALCRUX, BESIDE THE CUT (Cello_todo §0.1, steps 1-2, 2026-09-15): the facts the whole roster
+        //  hangs on are gathered ONCE here, and the pure table (Sounditron_visualcrux) is run next to the old
+        //   ladder below; where they disagree a line says so. Nothing below reads the crux yet (step 3 flips).
+        let crux_facts = this.Sounditron_facts(w, { keeps: keeps, setups: setups, pin: pin, hbag_fresh: hbag_fresh, suprow: suprow, live: live, organs: organs, stager: this.Sounditron_belly_keep(setups, pin) || (keeps.length ? keeps[0] : null) })
         let fmain = this.Sounditron_belly_keep(setups, pin)
         // `org`, NOT `o` — `o` is the find VERB in this dialect, so `for (const o of organs)` compiles
         //  to `for (const w.oa({of: 1}) organs)` and the generated module does not parse.  It was the
@@ -1004,6 +1008,7 @@ Sounditron_commission(w) { const H = this;
         //    fills it) instead of rendering its measured box top-left in a big belly.
         let bellyLink = (fmain && Object.keys(fmain.sc)[0] === 'Link') ? 1 : 0
         if (fmain) fmain.c.pose = fmain.c.pose_want || ((bellyForm || bellyLink) ? 'stretched' : 'big')
+        this.Sounditron_crux_compare(w, crux_facts, fmain, buds)
         // ── onunmain — the leaving verb (the owner: *"that Door cell has an onunmain handler that
         //  shuts the Invite panel"*).  A cell that stops being the subject should be able to put
         //   itself away; without this the Door would come back as a bud with its QR still unfolded,
@@ -1502,6 +1507,199 @@ Sounditron_recommission() {
 //        pin.  No "clear the pin on mint" line anywhere, and nothing to keep in sync.
 //  `>=` gives the tie to the pin: an explicit press must beat an untouched form (last_touch absent, 0).
 //  Pure — no world, no writes, no clock — so it is testable without a browser, which the ladder is not.
+//#region THE VISUALCRUX — one island of seat|pose policy (Cello_todo §0.1; the owner 2026-09-15: "a nice island
+//  of SP policy in the middle … all edges (calls in or out) nice and clear"). Facts in, a roster out.
+// Sounditron_facts — EVERY fact the roster hangs on, gathered once per commission from the live world. Plain
+//  scalars only (the roster is pure and a Book hands it hand-made facts). `present` is the organ list the
+//   top half of the commission pushed — the names the table may seat.
+Sounditron_facts(w, ctx) {
+    let MH = this.top_House ? this.top_House() : null
+    let hd = (MH && MH.c && MH.c.humdinger) ? 1 : 0
+    let f = { humdinger: hd, narrow: 0, piers: 0, keeps: 0, setups: 0, pin: 0, hauls_fresh: 0, pool_consent: 0, pool_seen: 0,
+              focus: '', focused_keep: 0, amiss: 0, show_diag: w.c.show_diag ? 1 : 0, link: 'none', stage_want: 0, stage_refused: 0,
+              pose_want: '', present: [] }
+    try { if (hd && typeof window !== 'undefined' && window.innerWidth < 640) { f.narrow = 1 } } catch (er) {}
+    let keeps = (ctx && ctx.keeps) || []
+    f.keeps = keeps.length
+    f.setups = ((ctx && ctx.setups) || []).length
+    f.pin = (ctx && ctx.pin) ? 1 : 0
+    f.hauls_fresh = +((ctx && ctx.hbag_fresh) || 0)
+    f.focus = String(this.Sounditron_focus_get(w) || '')
+    f.focused_keep = w.c.focused_keep ? 1 : 0
+    let sup = ctx && ctx.suprow
+    if (sup) { f.amiss = Number(sup.sc.amiss || 0) > 0 ? 1 : 0 }
+    let surfaced = this.Sounditron_surfaced_get ? (this.Sounditron_surfaced_get(w) ? 1 : 0) : 0
+    f.link = (ctx && ctx.live) ? 'live' : (surfaced ? 'surfaced' : 'none')
+    if (ctx && ctx.stager) { f.stage_want = 1; f.pose_want = String(ctx.stager.c.pose_want || '') }
+    try {
+        let sident = MH && MH.Swarm_live_self ? MH.Swarm_live_self() : null
+        if (sident && MH.Swarm_peering) { f.piers = (MH.Swarm_peering(sident)?.o({ Pier: 1 }) ?? []).length }
+        if (sident && this.Ra_pool_consent_of) { f.pool_consent = this.Ra_pool_consent_of(sident) ? 1 : 0 }
+        // pool_seen — the owner 2026-09-15: "the minicell:Pooling appears after the first Love": consent OR any take
+        f.pool_seen = f.pool_consent
+        if (hd && !f.pool_seen && this.Heard_mag_find && this.Heard_cards) {
+            let krw = MH.c.radio_w || w
+            let kme = this.Radio_pub ? this.Radio_pub(krw) : null
+            let mag = kme ? this.Heard_mag_find(krw, kme) : null
+            if (mag) { for (const c of this.Heard_cards(mag)) { if (c.sc.take) { f.pool_seen = 1; break } } }
+        }
+    } catch (er) {}
+    for (const org of ((ctx && ctx.organs) || [])) { let mk = Object.keys(org.sc)[0]; if (f.present.indexOf(mk) < 0) { f.present.push(mk) } }
+    let fp = JSON.stringify(f)
+    if (hd && w.c.crux_facts_fp !== fp) { w.c.crux_facts_fp = fp; console.log('🎴 facts: ' + fp) }
+    return f
+
+},
+// Sounditron_visualcrux — THE TABLE. Pure: facts in, { main, buds, pose } out, names only. Every row is an
+//  owner ruling (Cello_todo §0.1(c)); the bud list is short BY CONSTRUCTION, so no cap is needed anywhere.
+//   Not humdinger-gated inside: a Book hands it humdinger:0 facts and reads the same rows.
+Sounditron_visualcrux(f) {
+    let present = (f && f.present) || []
+    let has = (mk) => present.indexOf(mk) >= 0
+    let main = ''
+    let pose = 'big'
+    // ── main: the first row that applies ──
+    if (f.link === 'live' || f.link === 'surfaced') { main = 'Link'; pose = 'stretched' }                 // the ceremony has the floor (08-29/31)
+    else if (f.stage_want && !f.stage_refused && f.keeps) { main = 'Heist'; pose = f.setups ? 'stretched' : 'big' }   // an insistent keep owns the belly (Cellui TIER 1)
+    else if (f.setups) { main = 'Heist'; pose = 'stretched' }                                              // a setup form takes the room (08-10)
+    else if (f.focus && f.focus !== 'Link' && f.focus !== 'Heist' && has(f.focus)) { main = f.focus }       // the person named it
+    else if (has('Radio')) { main = 'Radio' }
+    else if (has('Door')) { main = 'Door' }
+    if (f.pose_want && main === 'Heist') { pose = f.pose_want }
+    // ── buds: the standing set, minus the main, in the one order ──
+    let standing = []
+    if (f.hauls_fresh || f.keeps) { if (has('Hauls')) { standing.push('Hauls') } else if (f.keeps) { standing.push('Heist') } }   // "we only avail them through Haul"; no bag ⇒ the keep itself buds (the invariant)
+    if (f.amiss || f.show_diag) { standing.push('Supervisor') }                                            // quiet-when-healthy
+    standing.push('Door')                                                                                  // "Always Door|Player"
+    standing.push('Radio')
+    if (f.pool_seen) { standing.push('Pooling') }                                                          // after the first ♥ (09-15)
+    let buds = []
+    for (const mk of standing) { if (mk !== main && (has(mk) || mk === 'Heist') && buds.indexOf(mk) < 0) { buds.push(mk) } }
+    if (main === 'Link' || main === 'Heist') { buds = buds.filter((mk) => mk === 'Door' || mk === 'Radio' || mk === 'Hauls' || mk === 'Heist') }   // a belly ceremony|keep keeps only the way back + the Haul
+    return { main: main, buds: buds, pose: pose }
+
+},
+// Sounditron_crux_compare — step 2's instrument: the old cut's answer vs the table's, said once per distinct
+//  disagreement. Reads nothing back into the roster.
+Sounditron_crux_compare(w, f, fmain, buds) {
+    if (!f || !f.humdinger) { return 0 }
+    let mk = (n) => n ? String(Object.keys(n.sc)[0]) : ''
+    let oldr = { main: mk(fmain), buds: (buds || []).map(mk), pose: fmain ? String(fmain.c.pose || '') : '' }
+    let newr = this.Sounditron_visualcrux(f)
+    let a = oldr.main + '|' + oldr.buds.join(',') + '|' + oldr.pose
+    let b = newr.main + '|' + newr.buds.join(',') + '|' + newr.pose
+    if (a === b) { return 0 }
+    w.c.crux_said = w.c.crux_said || {}
+    if (w.c.crux_said[a + '→' + b]) { return 1 }
+    w.c.crux_said[a + '→' + b] = 1
+    console.log('🎴 visualcrux differs: old=[' + a + '] new=[' + b + '] facts=' + JSON.stringify(f))
+    return 1
+
+},
+// ══ SounditronVisualCrux — the island's own gate: hand-made facts through the table's rows, no world ═══════
+//  Pure and deterministic (Cello_todo §0.1(c) "the table above as sworn rows, driven by facts, no world").
+//   One note row per beat carries the roster the table answered, so the snap IS the table's output.
+//    CONVENTION: the world is named SounditronVisualCrux.
+SounditronVisualCrux(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SounditronVisualCrux_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async SounditronVisualCrux_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.SounditronVisualCrux_rest(w)
+        if (n === 3) this.SounditronVisualCrux_link(w)
+        if (n === 4) this.SounditronVisualCrux_keep(w)
+        if (n === 5) this.SounditronVisualCrux_pool(w)
+        if (n === 6) this.SounditronVisualCrux_book(w)
+    }
+    this.SounditronVisualCrux_witness(w)
+
+},
+SounditronVisualCrux_facts(over) {
+    let f = { humdinger: 1, narrow: 0, piers: 3, keeps: 0, setups: 0, pin: 0, hauls_fresh: 0, pool_consent: 0, pool_seen: 0,
+              focus: '', focused_keep: 0, amiss: 0, show_diag: 0, link: 'none', stage_want: 0, stage_refused: 0, pose_want: '',
+              present: ['Radio', 'Door'] }
+    for (const k of Object.keys(over || {})) { f[k] = over[k] }
+    return f
+
+},
+SounditronVisualCrux_note(w, name, f) {
+    let r = this.Sounditron_visualcrux(f)
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    let row = t.i({ roster: name, main: r.main, buds: r.buds.join(' ') || '-', pose: r.pose })
+    row.c.up = t
+    return r
+
+},
+// beat 2 — at rest: the Radio is the belly, the Door beside it, nothing more
+SounditronVisualCrux_rest(w) {
+    w.i({desc: 'at rest — Radio main and the Door the one bud'})
+    let r = this.SounditronVisualCrux_note(w, 'rest', this.SounditronVisualCrux_facts({}))
+    if (r.main === 'Radio' && r.buds.join(',') === 'Door' && r.pose === 'big') w.c.saw_rest = 1
+    let r2 = this.SounditronVisualCrux_note(w, 'rest_no_radio', this.SounditronVisualCrux_facts({ present: ['Door'] }))
+    if (r2.main === 'Door' && r2.buds.length === 0) w.c.saw_door_last = 1
+
+},
+// beat 3 — a ceremony: Link is the belly, stretched; Door and Radio are the way back
+SounditronVisualCrux_link(w) {
+    w.i({desc: 'a link ceremony — Link is the belly stretched with Door and Radio the way back'})
+    let r = this.SounditronVisualCrux_note(w, 'link_live', this.SounditronVisualCrux_facts({ link: 'live', present: ['Radio', 'Door', 'Link'] }))
+    let r2 = this.SounditronVisualCrux_note(w, 'link_surfaced', this.SounditronVisualCrux_facts({ link: 'surfaced', pool_seen: 1, present: ['Radio', 'Door', 'Link', 'Pooling'] }))
+    if (r.main === 'Link' && r.pose === 'stretched' && r.buds.join(',') === 'Door,Radio' && r2.main === 'Link' && r2.buds.join(',') === 'Door,Radio') w.c.saw_link = 1
+
+},
+// beat 4 — a keep: a setup form takes the room; the Haul cell buds; no keep is ever a bud when a bag stands
+SounditronVisualCrux_keep(w) {
+    w.i({desc: 'a keep — a setup form is the belly stretched and the Haul cell buds beside Door and Radio'})
+    let r = this.SounditronVisualCrux_note(w, 'setup_form', this.SounditronVisualCrux_facts({ keeps: 1, setups: 1, stage_want: 1, present: ['Radio', 'Door', 'Hauls', 'Heist'] }))
+    let r2 = this.SounditronVisualCrux_note(w, 'pulling_keep', this.SounditronVisualCrux_facts({ keeps: 1, setups: 0, stage_want: 1, present: ['Radio', 'Door', 'Hauls', 'Heist'] }))
+    let r3 = this.SounditronVisualCrux_note(w, 'keep_no_bag', this.SounditronVisualCrux_facts({ keeps: 1, setups: 0, stage_want: 0, present: ['Radio', 'Door', 'Heist'] }))
+    let r4 = this.SounditronVisualCrux_note(w, 'fresh_hauls', this.SounditronVisualCrux_facts({ hauls_fresh: 2, present: ['Radio', 'Door', 'Hauls'] }))
+    if (r.main === 'Heist' && r.pose === 'stretched' && r.buds.join(',') === 'Hauls,Door,Radio') w.c.saw_form = 1
+    if (r2.main === 'Heist' && r2.pose === 'big' && r2.buds.join(',') === 'Hauls,Door,Radio') w.c.saw_insistent = 1
+    if (r3.main === 'Radio' && r3.buds.join(',') === 'Heist,Door') w.c.saw_no_bag = 1
+    if (r4.main === 'Radio' && r4.buds.join(',') === 'Hauls,Door') w.c.saw_fresh = 1
+
+},
+// beat 5 — the pool: after the first ♥ the Pooling cell buds; named, it is the belly
+SounditronVisualCrux_pool(w) {
+    w.i({desc: 'the pool — after the first heart the Pooling cell buds and named it is the belly'})
+    let r0 = this.SounditronVisualCrux_note(w, 'pool_unseen', this.SounditronVisualCrux_facts({ present: ['Radio', 'Door', 'Pooling'] }))
+    let r = this.SounditronVisualCrux_note(w, 'pool_seen', this.SounditronVisualCrux_facts({ pool_seen: 1, present: ['Radio', 'Door', 'Pooling'] }))
+    let r2 = this.SounditronVisualCrux_note(w, 'pool_focus', this.SounditronVisualCrux_facts({ pool_seen: 1, focus: 'Pooling', present: ['Radio', 'Door', 'Pooling'] }))
+    let r3 = this.SounditronVisualCrux_note(w, 'pool_focus_absent', this.SounditronVisualCrux_facts({ pool_seen: 1, focus: 'Pooling', present: ['Radio', 'Door'] }))
+    if (r0.buds.join(',') === 'Door' && r.buds.join(',') === 'Door,Pooling' && r2.main === 'Pooling' && r2.buds.join(',') === 'Door,Radio' && r3.main === 'Radio') w.c.saw_pool = 1
+
+},
+// beat 6 — a Book's facts and the sanity cell: humdinger 0 reads the same rows; Supervisor buds only when amiss or asked
+SounditronVisualCrux_book(w) {
+    w.i({desc: 'a Book reads the same rows — and the Supervisor buds only when amiss or asked for'})
+    let r = this.SounditronVisualCrux_note(w, 'book_facts', this.SounditronVisualCrux_facts({ humdinger: 0 }))
+    let r2 = this.SounditronVisualCrux_note(w, 'amiss', this.SounditronVisualCrux_facts({ amiss: 1, present: ['Radio', 'Door', 'Supervisor'] }))
+    let r3 = this.SounditronVisualCrux_note(w, 'diag', this.SounditronVisualCrux_facts({ show_diag: 1, present: ['Radio', 'Door', 'Supervisor'] }))
+    let r4 = this.SounditronVisualCrux_note(w, 'healthy', this.SounditronVisualCrux_facts({ present: ['Radio', 'Door', 'Supervisor'] }))
+    if (r.main === 'Radio' && r.buds.join(',') === 'Door') w.c.saw_book = 1
+    if (r2.buds.join(',') === 'Supervisor,Door' && r3.buds.join(',') === 'Supervisor,Door' && r4.buds.join(',') === 'Door') w.c.saw_sup = 1
+
+},
+SounditronVisualCrux_witness(w) {
+    if (w.c.saw_rest && w.c.saw_door_last) this.story_swear(w, 'at rest the glass is the Radio with the Door beside it — always Door or Player and nothing more — and with no Radio the Door is the belly alone')
+    if (w.c.saw_link) this.story_swear(w, 'a ceremony has the floor — Link is the belly stretched and Door and Radio are the way back — whether live or surfaced')
+    if (w.c.saw_form && w.c.saw_insistent) this.story_swear(w, 'a setup form takes the room stretched and an insistent keep takes it big — the Haul cell buds beside Door and Radio and no keep is ever a bud while a bag stands')
+    if (w.c.saw_no_bag && w.c.saw_fresh) this.story_swear(w, 'with no Haul bag the keep itself buds so a running heist always has a way in — and a fresh haul buds the bag on its own')
+    if (w.c.saw_pool) this.story_swear(w, 'the Pooling cell buds after the first heart and not before — named it is the belly with Door and Radio beside — and naming an absent organ falls back to the Radio')
+    if (w.c.saw_book && w.c.saw_sup) this.story_swear(w, 'a Book reads the same rows as a live page — and the Supervisor buds only when amiss or asked for — quiet when healthy')
+},
+//#endregion
+
 Sounditron_belly_keep(setups, pin) {
     let pick = null
     for (const k of (setups || [])) if (!pick || +(k.c.last_touch || 0) > +(pick.c.last_touch || 0)) pick = k

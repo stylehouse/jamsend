@@ -33,6 +33,7 @@ Waft:Ghost/Music/Ality,desc:the music pipeline — rastock racast raterm — sto
     Funkcion:Storying,of_Book:MusuPoolRadio
     Funkcion:Storying,of_Book:MusuPoolRandom
     Funkcion:Storying,of_Book:MusuPoolBytes
+    Funkcion:Storying,of_Book:MusuPoolPolicy
     Funkcion:Storying,of_Book:MusuGenerateTestsMusic
   What:the stock pass,desc:Ra — needles LUFS then a baked gain then Opus segments cut into chunk particles — the preview is the tail of the song and the head run is separate
     Doc:Ghost/M/Ra.g

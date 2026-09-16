@@ -24,6 +24,14 @@
     let recent = $state(true)
     let pooled = $state(0)
     let free_gb = $state<number | null>(null)
+    let persisted = $state<boolean | null>(null)
+    // the origin's storage is evicted ALL AT ONCE under pressure (IndexedDB, OPFS, the identity stash together)
+    //  unless it is persistent — so the first yes to keeping music is the moment to ask for durability.
+    function ask_persist() {
+        try { navigator.storage?.persist?.().then((p: boolean) => { persisted = !!p }).catch(() => {}) } catch {}
+    }
+    // never type past the disk: leave a fifth of what is free
+    const clamp_mb = (v: number) => free_gb == null ? v : Math.min(v, Math.max(0, Math.floor(free_gb * 1024 * 0.8)))
     $effect(() => {
         void H?.version
         const w = world()
@@ -43,6 +51,7 @@
     $effect(() => {
         let gone = false
         try { navigator.storage?.estimate?.().then((e: any) => { if (gone || !e) return; const q = +(e.quota || 0), u = +(e.usage || 0); if (q > 0) free_gb = Math.max(0, Math.round((q - u) / 1e8) / 10) }).catch(() => {}) } catch {}
+        try { navigator.storage?.persisted?.().then((p: boolean) => { if (!gone) persisted = !!p }).catch(() => {}) } catch {}
         return () => { gone = true }
     })
     let draft = $state(300)
@@ -72,12 +81,13 @@
     const crew = $derived(who === 'all' || who === 'crew')
     function set_mb(v: number) {
         const w = world(); if (!w) return
-        draft = Math.max(0, Math.floor(v || 0))
+        draft = clamp_mb(Math.max(0, Math.floor(v || 0)))
         try {
             if (draft === 0) { if (consent) { const p = H.Ra_pool_off?.(w); if (p && p.then) p.then(bump, bump); else bump() } }
             else if (consent) { H.Ra_pool_budget_set?.(w, draft); bump() }
             else {
                 H.Ra_pool_start?.(w, draft, Math.floor(Date.now() / 1000), who)
+                ask_persist()
                 // the FIRST yes is where the default is applied — one act, so a person who unticked it
                 //  before typing a number gets what they asked for and not what we assumed.
                 if (recent) { H.Ra_pool_recent_set?.(w, 1) }
@@ -106,7 +116,7 @@
         <p class="pf-sentence">
             <b>SoundPool</b> keeps rolling
             <input class="pf-mb" type="number" min="0" step="100" value={draft} onchange={(e) => set_mb(num(e))} title="megabytes of music to keep — 0 switches it off and clears it out" />
-            <span class="pf-nb">MB of music</span> in browser storage{#if free_gb != null} <span class="pf-dim pf-nb">({free_gb} GB free)</span>{/if}, sourced from
+            <span class="pf-nb">MB of music</span> in browser storage{#if free_gb != null} <span class="pf-dim pf-nb">({free_gb} GB free{#if persisted === true} · persistent{:else if persisted === false} · <span title="the browser may clear this site's storage under pressure — everything at once, the pool and your identity with it">evictable</span>{/if})</span>{/if}, sourced from
             <label class="pf-ck"><input type="checkbox" checked={friends} onchange={(e) => set_who((e.currentTarget as HTMLInputElement).checked, crew)} /> friends <span class="pf-dim">(less predictable)</span></label>
             <label class="pf-ck"><input type="checkbox" checked={crew} onchange={(e) => set_who(friends, (e.currentTarget as HTMLInputElement).checked)} /> crew <span class="pf-dim">(your devices, see <button class="pf-link" onclick={() => (H as any)?.Sounditron_focus?.('Door')} title="opens the Door — your crew and friends">Door</button>)</span></label>
             and
