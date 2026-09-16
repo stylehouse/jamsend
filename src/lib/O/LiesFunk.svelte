@@ -22,8 +22,8 @@
 //     editor↔runner       — run intent (Esc / Book cell) + the verdict wire back
 //                            (may grow into Cred*_result|verdict|instruct, §Editron)
 
-import { _C, REACTAP, type TheC } from "$lib/data/Stuff.svelte"
-import { Selection, Travel } from "$lib/data/Selection.svelte"
+import { _C, REACTAP, type TheC } from "$lib/Stuff.svelte"
+import { Selection, Travel } from "$lib/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { FUNK_KINDS } from "$lib/O/Funk/kinds"
 import { storying_run } from "$lib/O/Funk/Storying.svelte"

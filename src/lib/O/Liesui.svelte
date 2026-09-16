@@ -17,7 +17,7 @@
     //   directly — so loaded/pending state stays live without Liesui re-rendering.
 
     import type { House }   from "$lib/O/Housing.svelte"
-    import type { TheC }    from "$lib/data/Stuff.svelte"
+    import type { TheC }    from "$lib/Stuff.svelte"
     import WaftComp         from "$lib/O/ui/Waft.svelte"
     import DocRow           from "$lib/O/ui/DocRow.svelte"
     import PeelInput        from "$lib/O/ui/PeelInput.svelte"

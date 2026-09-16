@@ -23,7 +23,7 @@
     // Props:
     //   waft — the Waft TheC particle (holds mung_error and encode_error children)
 
-    import type { TheC } from '$lib/data/Stuff.svelte'
+    import type { TheC } from '$lib/Stuff.svelte'
 
     let { waft }: { waft: TheC } = $props()
 

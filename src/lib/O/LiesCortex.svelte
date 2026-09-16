@@ -93,8 +93,8 @@
     // e.g. Housing.svelte.ts → codetype 'svelte.ts'
     const SECOND_LEVEL_FILETYPES = ['svelte']
 
-    import { _C, type TheC } from "$lib/data/Stuff.svelte"
-    import { dig }           from "$lib/Y.svelte"
+    import { _C, type TheC } from "$lib/Stuff.svelte"
+    import { dig }           from "$lib/Common"
     import type { House }    from "$lib/O/Housing.svelte"
     import { onMount }       from "svelte"
 

@@ -22,7 +22,7 @@
     //   is a future operation; left as a stub comment here.
 
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
 
     let { H, bm, dock_path, lang_model }: {
         H:          House

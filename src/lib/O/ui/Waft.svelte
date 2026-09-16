@@ -23,9 +23,9 @@
     // all personality from ITEM_TYPES (the header row is itself waftitem(waft, waft), no
     // separate header block).
 
-    import type { TheC }    from "$lib/data/Stuff.svelte"
+    import type { TheC }    from "$lib/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
-    import { peel, depeel } from "$lib/Y.svelte"
+    import { peel, depeel } from "$lib/Common"
     import { SvelteSet }    from "svelte/reactivity"
     import { tick }         from "svelte"
     import EncodingSplatter from "$lib/O/ui/EncodingSplatter.svelte"

@@ -7,7 +7,7 @@
     //      local `now` so the fade stays live without a House pump (the Runner/Relay bomb-1 fix).
     import { onDestroy } from 'svelte'
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
 
     let { H, mini = false }: { H: House, lens?: TheC, funk?: TheC, w?: TheC, mini?: boolean } = $props()
 

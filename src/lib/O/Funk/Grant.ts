@@ -23,8 +23,8 @@
 //   the signed domain is sorted-key JSON, mirroring cluster_trust.ts's canonicalHeader so a claim
 //    rebuilt from a particle (whose sc key order may differ) serialises identically to the mint.
 
-import { Idento, type Pubkey, type Sighex } from '$lib/Y.svelte'
-import type { TheC } from '$lib/data/Stuff.svelte'
+import { Idento, type Pubkey, type Sighex } from '$lib/Common'
+import type { TheC } from '$lib/Stuff.svelte'
 
 export type TrustName = string            // the ability, e.g. 'remoteWormhole'
 

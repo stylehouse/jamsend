@@ -1,7 +1,7 @@
 <script lang="ts">
     // LangWhatwhere.svelte — ghost for Language / CodeMirror / Lezer integration.
 
-    import { _C, TheC } from "$lib/data/Stuff.svelte"
+    import { _C, TheC } from "$lib/Stuff.svelte"
     import { syntaxTree } from "@codemirror/language"
     import type { EditorState } from "@codemirror/state"
     import { onMount, tick } from "svelte"

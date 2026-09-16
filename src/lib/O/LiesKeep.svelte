@@ -13,7 +13,7 @@
 //   and holds the loose-locator resolver; LiesKeep holds the attention ledger over it.
 
 import { type House } from "$lib/O/Housing.svelte"
-import { TheC } from "$lib/data/Stuff.svelte"
+import { TheC } from "$lib/Stuff.svelte"
 import { boot_param } from "$lib/boot"
 import { onMount } from "svelte"
 

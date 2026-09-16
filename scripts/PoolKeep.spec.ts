@@ -22,7 +22,7 @@
 //   node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/PoolKeep.spec.ts
 import { test, expect } from 'vitest'
 import { mount } from 'svelte'
-import { TheC } from '../src/lib/data/Stuff.svelte'
+import { TheC } from '../src/lib/Stuff.svelte'
 import Ra from '../src/lib/gen/M/Ra.go'
 import Heist from '../src/lib/gen/M/Heist.go'
 import Repli from '../src/lib/gen/N/Repli.go'

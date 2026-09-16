@@ -1,5 +1,5 @@
 <script module lang="ts">
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
 
     // storytimes_run — the StoryTimes station's BEHAVIOUR.  StoryTimes is a *station*, not a
     //  test-light: one button that runs ALL the %of_Book cells in its scope, in sequence,

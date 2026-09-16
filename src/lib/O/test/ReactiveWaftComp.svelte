@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import { onMount }    from "svelte"
 
     // `tag` names which twin this instance belongs to, so one log tells the GATED list

@@ -18,7 +18,7 @@
     //    chrome).  editor:1 / runner:1 are the symmetric flags; today the code branches on !w%runner.
     import { type House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import { boot_param } from "$lib/boot"
 
     let { M } = $props()

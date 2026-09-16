@@ -14,7 +14,7 @@
 //   node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/HaulFace.spec.ts
 import { test, expect } from 'vitest'
 import { mount, flushSync } from 'svelte'
-import { TheC } from '../src/lib/data/Stuff.svelte'
+import { TheC } from '../src/lib/Stuff.svelte'
 import Heist from '../src/lib/gen/M/Heist.go'
 // THE FACE GROUPS BY WHO IS BRINGING IT (2026-09-04: "they have to be per Pier"), so the live half now
 //  reaches `Heard_haul_piers` rather than `Heist_live_rows` directly. Mounting Heist alone left that verb

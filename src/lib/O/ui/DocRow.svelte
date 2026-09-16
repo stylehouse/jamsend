@@ -29,7 +29,7 @@
     //   on_focus  — called when the user opens the doc row; Waft supplies this
     //               to fire Lies_set_cursor and advance the graft cursor.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import DocDiff from "$lib/O/ui/DocDiff.svelte"
 

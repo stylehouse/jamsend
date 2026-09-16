@@ -26,9 +26,9 @@
     //   step_n   — the currently open step (offered as the cap's scope), or null
     //   on_done  — clear the parent's seed once a draft is committed or cancelled
 
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { peel, depeel } from "$lib/Y.svelte"
+    import { peel, depeel } from "$lib/Common"
     import Vexpandy from "$lib/O/ui/Vexpandy.svelte"
     import DeleteX from "$lib/O/ui/micro/DeleteX.svelte"
 

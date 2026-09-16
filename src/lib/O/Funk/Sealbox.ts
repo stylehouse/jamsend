@@ -28,7 +28,7 @@
 //   is the brick, and Phase 3 (the beacon + issue) decides the actual shared secret — a code, or
 //    an ephemeral-pub agreement.  The brick's contract holds whatever those turn out to be.
 
-import { enhex, dehex } from '$lib/Y.svelte'
+import { enhex, dehex } from '$lib/Common'
 
 // domain separation: this info string binds a derived key to THIS use (the LinkDevice account
 //  transfer, v1), so the same (ikm, salt) can never yield a colliding key for some later use.

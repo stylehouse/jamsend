@@ -10,7 +10,7 @@
     //      every frame from the sprung seeds; text rides the seed; the model is the UI.
     //  Mounts off the UIs registry (Vyto_plan registers it; Otro mounts every UI with
     //   H={house}), so a House with no w:Vyto renders nothing at all.
-    import { TheC }   from "$lib/data/Stuff.svelte"
+    import { TheC }   from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { power_cells, foam_cells, slab_seat, poly_area, poly_centroid, membrane_carve, type Pt } from "$lib/O/vyto_geometry"
     import { deal_rows, seat_on_deal, deal_fits, deal_badness, box_poly,

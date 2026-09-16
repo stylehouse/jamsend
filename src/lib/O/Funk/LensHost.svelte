@@ -6,7 +6,7 @@
     //     funk cell (if any) so it reads the same C its inline face does.  A Funkcion with no
     //      face for this Lens-kind falls back to a bare line so a typo'd suggest stays visible.
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import { FUNK_KINDS } from "$lib/O/Funk/kinds"
 
     let { H, lens, face, mini = false }: { H: House, lens: TheC, face?: string, mini?: boolean } = $props()

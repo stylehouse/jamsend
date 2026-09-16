@@ -133,9 +133,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     
     `
 
-    import { _C, TheC }     from "$lib/data/Stuff.svelte"
+    import { _C, TheC }     from "$lib/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
-    import { throttle, dig } from "$lib/Y.svelte"
+    import { throttle, dig } from "$lib/Common"
     import { boot_param }   from "$lib/boot"
     import { onMount }      from "svelte"
     import Liesui           from "$lib/O/Liesui.svelte"

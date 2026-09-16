@@ -12,8 +12,8 @@
 //     Ghost/Story/MusuTesting.g), which compose this protocol from the outside via this.Repli_*.
 
 IMPORT()
-    import { Selection } from "$lib/data/Selection.svelte.ts"
-    import { sha256_hex } from "$lib/O/Hashly.ts"
+    import { Selection } from "$lib/Selection.svelte"
+    import { sha256_hex } from "$lib/Common"
 
 //#region repli — the PAGINATED STREAMING C** REPLICATION protocol (shared real software; users: the demo Books in Ghost/Story/MusuTesting.g)
 // ══ A general system for replicating a C** of scalars + buffers from one Pier to another, paginatedly.  You

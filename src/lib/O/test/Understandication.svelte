@@ -25,7 +25,7 @@
 //    14  unshowing survives wander (no sphere-resume bleed)    (meaning hygiene)
 //    15  verdict
 
-import { _C, type TheC } from "$lib/data/Stuff.svelte"
+import { _C, type TheC } from "$lib/Stuff.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { onMount } from "svelte"
 

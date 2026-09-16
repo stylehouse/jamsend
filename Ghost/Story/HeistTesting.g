@@ -49,7 +49,7 @@
 //    catches the forger.  ed25519 signatures are deterministic (key + message → one sig) and the Book seeds
 //     its keys — so the vouch repeats run to run, a pinnable fixture.
 IMPORT()
-    import { Idento } from "$lib/Y.svelte.ts"
+    import { Idento } from "$lib/Common"
     import { mint_grant } from "$lib/O/Funk/Grant.ts"
 
 MusuHeist(A,w):

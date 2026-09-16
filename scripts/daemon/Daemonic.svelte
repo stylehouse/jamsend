@@ -37,7 +37,7 @@
     //  FACELESS=<csv> overrides; FACELESS= (empty) mounts everything again, for comparing.
     import Ghost from '$lib/O/Ghost.svelte'
     import { House } from '$lib/O/Housing.svelte'
-    import { keyser } from '$lib/data/Stuff.svelte'
+    import { keyser } from '$lib/Stuff.svelte'
 
     let { onhouse, boot } = $props<{ onhouse?: (h: any) => void, boot?: Record<string, any> }>()
     let H = $state<any>(null)

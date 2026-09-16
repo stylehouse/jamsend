@@ -5,7 +5,7 @@
     // children rendered below. Pass-through of t lets callers reach
     // t.sc.stashed / t.sc.* however they like.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { Snippet } from "svelte"
 
     let { t, on_remove, children }: {

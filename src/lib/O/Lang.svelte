@@ -127,8 +127,8 @@
     //
 
 
-    import { _C, TheC } from "$lib/data/Stuff.svelte"
-    import { dig }       from "$lib/Y.svelte"
+    import { _C, TheC } from "$lib/Stuff.svelte"
+    import { dig }       from "$lib/Common"
     import { syntaxTree } from "@codemirror/language"
     import type { EditorState } from "@codemirror/state"
     import { onMount, tick } from "svelte"

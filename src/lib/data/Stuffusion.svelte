@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { Stuffusion } from './Stuff.svelte';
-    import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
+    import { Stuffusion } from '$lib/Stuff.svelte';
+    import type { House, Housemem } from '$lib/O/Housing.svelte.ts';
     import Stuffziad from './Stuffziad.svelte'
     import Stuffzipper from './Stuffzipper.svelte';
     
-    let { mem,stuffusion }:{ mem:Modusmem,stuffusion: Stuffusion } = $props()
+    let { mem,stuffusion }:{ mem:Housemem,stuffusion: Stuffusion } = $props()
     mem = mem.further("Stuffusion:"+stuffusion.name)
 
     // < GOING nothing toggles here?

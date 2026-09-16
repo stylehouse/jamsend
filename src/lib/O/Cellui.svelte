@@ -11,7 +11,7 @@
     //     inset, not an organic outline), so the wobble is visible ink, not a faint frame.
     //  Mounts off house.UIs (Otro renders every UI; music-page switch is a later step).
     //  See spec/Cello_todo.md for full design.
-    import { TheC } from '$lib/data/Stuff.svelte'
+    import { TheC } from '$lib/Stuff.svelte'
     import type { House } from '$lib/O/Housing.svelte'
     import { GLASS_KINDS } from '$lib/O/glass_kinds'
     import { FACE_MAINKEYS } from '$lib/O/glass_faces'

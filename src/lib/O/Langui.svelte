@@ -100,14 +100,14 @@
     import { diff_match_patch } from "diff-match-patch"
 
     import { lang, simpleLezerLinter, lang_for_path } from "$lib/O/lang/lang"
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"   // doc-picker dropdown + any other Lang actions
     import DocMinimap from "./ui/DocMinimap.svelte"
     import DocCompost from "./ui/DocCompost.svelte"  // frozen-frame overlay; arms dock.c.compost for fly-in gotos
     import DocPoint   from "./ui/DocPoint.svelte"
     import DocStorying from "./ui/DocStorying.svelte"   // inline Credence light at a Run_A_<Book> def
-    import { now_in_seconds_with_ms } from "$lib/Y.svelte";
+    import { now_in_seconds_with_ms } from "$lib/Common";
 
     let { H }: { H: House } = $props()
 

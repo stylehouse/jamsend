@@ -5,7 +5,7 @@
 // Pure + deterministic: sha256 of the transcript, folded to a fixed alphabet.
 // No key material leaves — the emojis are a fingerprint, not a secret.
 
-import { sha256, dehex } from '$lib/Y.svelte'
+import { sha256, dehex } from '$lib/Common'
 
 // 64 wide, visually distinct glyphs — one clean draw per 6 bits, no near-twins.
 const SAS_ALPHABET = [

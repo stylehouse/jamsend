@@ -32,9 +32,9 @@
     //   depth-first walks every .snap under wormhole/ and re-encodes via
     //   decode_wh_lines → encode_wh_lines so the codec makes the decision.
     //
-    import { _C, type TheC } from "$lib/data/Stuff.svelte"
+    import { _C, type TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { depeel } from "$lib/Y.svelte";
+    import { depeel } from "$lib/Common";
     import { onMount }   from "svelte"
 
     let { M } = $props()

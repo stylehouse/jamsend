@@ -19,7 +19,7 @@
     //   soft      — the last two %Waftlet receipts, mute: label · age · ↩ ⋈.
     //               Just enough to realise the real memory moved and intervene.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
     let { H }: { H: House } = $props()

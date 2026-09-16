@@ -53,8 +53,8 @@
 
 <script lang="ts">
     import { onMount } from 'svelte'
-    import { TheC } from "$lib/data/Stuff.svelte"
-    import { throttle } from "$lib/Y.svelte"
+    import { TheC } from "$lib/Stuff.svelte"
+    import { throttle } from "$lib/Common"
 
     let { M } = $props()
 

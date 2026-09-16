@@ -23,7 +23,7 @@
     //    tween needs a transitional fold decoration animating max-height before the real
     //    foldEffect lands.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { EditorState } from "@codemirror/state"
     import { EditorView } from "@codemirror/view"
     import { foldEffect, unfoldEffect } from "@codemirror/language"

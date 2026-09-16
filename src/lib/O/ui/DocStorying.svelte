@@ -9,7 +9,7 @@
     //           to the dock's LIVE ghost_dige (Lies_ghost_get).  Both are the full source⊗compiler
     //            identity minted in compile.ts:ghost_dige_of.  Mismatch → ⧗ stale (re-run to trust).
     import type { House } from "$lib/O/Housing.svelte"
-    import { _C, type TheC } from "$lib/data/Stuff.svelte"
+    import { _C, type TheC } from "$lib/Stuff.svelte"
     import Storying, { storying_run } from "$lib/O/Funk/Storying.svelte"
 
     let { H, of_Book, dock_path }: { H: House, of_Book: string, dock_path: string } = $props()

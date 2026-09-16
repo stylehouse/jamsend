@@ -18,10 +18,10 @@
     //     Pantheate    — compiled-code receiver + executor (w:Pantheate side)
     //     req_Rundown  — the runner driver + BlatDo moments (w:Lies side)
 
-    import { type TheC } from "$lib/data/Stuff.svelte"
+    import { type TheC } from "$lib/Stuff.svelte"
     import { type House } from "$lib/O/Housing.svelte"
     import { onMount }    from "svelte"
-    import { now_in_seconds_with_ms } from "$lib/Y.svelte"
+    import { now_in_seconds_with_ms } from "$lib/Common"
 
     let { M } = $props()
 

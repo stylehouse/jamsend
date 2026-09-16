@@ -64,8 +64,8 @@
     //   cyto_w is now explicit — caller decides which graph instance to
     //   restyle (could be H:Story's Cyto, or H:Lang's Cyto).
 
-    import { _C, objectify, type TheC } from "$lib/data/Stuff.svelte"
-    import { throttle } from "$lib/Y.svelte"
+    import { _C, objectify, type TheC } from "$lib/Stuff.svelte"
+    import { throttle } from "$lib/Common"
     import { onMount } from "svelte"
 
     let { M } = $props()

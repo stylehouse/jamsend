@@ -21,7 +21,7 @@
     //   belongs to whatever class concretes a thang (eg DirectoryShare),
     //   not to the storage ghost. Add it in the snippet when needed.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import type { Snippet } from "svelte"
     import Thang from "./Thang.svelte"

@@ -1,4 +1,4 @@
-import { isar } from "$lib/Y.svelte";
+import { isar } from "$lib/Common";
 
 // see also RadioModus
 //  which could potentially go here except it creates circular dependencies

@@ -16,7 +16,7 @@
 //  Shared by Swarm.g (IMPORT) and Auto.svelte's Clustation_concrete, so the boot-time mint and the
 //   swarm agree byte for byte.  The Story snap MUNGS `secret` ({"mung":["secret"]}); the `page` export
 //    protocol skips %Key and %Crew outright; Cyto skips %Key.
-import type { TheC } from '$lib/data/Stuff.svelte'
+import type { TheC } from '$lib/Stuff.svelte'
 
 export type Keypair = { pub: string; key: string }
 export type Keyed = Keypair & { prepub: string }

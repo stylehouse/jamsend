@@ -12,7 +12,7 @@
     //   Trail); light kinds (GhostList) are a pure face swap.  %ActiveInterest drives
     //   the highlight; with several givers it carries the foreground giver's waft too.
 
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import SurprisePopover from "$lib/O/ui/SurprisePopover.svelte"
 

@@ -1,19 +1,13 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1789430289259
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1789540418985
   group:src/lib,dir:src/lib
     sub:src/lib/L,name:L
     sub:src/lib/O,name:O
     sub:src/lib/V,name:V
     sub:src/lib/data,name:data
     sub:src/lib/gen,name:gen
-    sub:src/lib/ghost,name:ghost
-    sub:src/lib/mostly,name:mostly
     sub:src/lib/p2p,name:p2p
     sub:src/lib/server,name:server
-    Doc:src/lib/FTrusting.svelte,name:FTrusting,noticed_at=1789430288273
-    Doc:src/lib/MTrusting.svelte,name:MTrusting,noticed_at=1789430288273
-    Doc:src/lib/Screenshot From 2026-08-09 06-58-31.png,name:Screenshot From 2026-08-09 06-58-31.png,noticed_at=1789430288273
-    Doc:src/lib/Trust.svelte.ts,name:Trust,noticed_at=1789430288273
     Doc:src/lib/Y.svelte.ts,name:Y,noticed_at=1789430288273
     Doc:src/lib/boot.ts,name:boot,noticed_at=1789430288273
     Doc:src/lib/cluster_name.ts,name:cluster_name,noticed_at=1789430288273
@@ -190,6 +184,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Wordland_todo.md,name:Wordland_todo.md,noticed_at=1789430289259
     Doc:src/lib/O/spec/reactivity_docs.md,name:reactivity_docs.md,noticed_at=1789430289259
     Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md,noticed_at=1789430289259
+    Doc:src/lib/O/spec/Netsitu_todo.md,name:Netsitu_todo.md,noticed_at=1789540418985
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D
@@ -231,7 +226,6 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/LiesRun.svelte,name:LiesRun,noticed_at=1789430289012
     Doc:src/lib/O/LiesStore.svelte,name:LiesStore,noticed_at=1789430289012
     Doc:src/lib/O/Liesui.svelte,name:Liesui,noticed_at=1789430289012
-    Doc:src/lib/O/MachPeerily.svelte,name:MachPeerily,noticed_at=1789430289012
     Doc:src/lib/O/Matstyle.svelte,name:Matstyle,noticed_at=1789430289012
     Doc:src/lib/O/MountNav.svelte.ts,name:MountNav,noticed_at=1789430289012
     Doc:src/lib/O/Otro.svelte,name:Otro,noticed_at=1789430289012
@@ -260,6 +254,8 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/vyto_geometry.ts,name:vyto_geometry,noticed_at=1789430289012
     Doc:src/lib/O/vyto_pane.ts,name:vyto_pane,noticed_at=1789430289012
     Doc:src/lib/O/vyto_seat.ts,name:vyto_seat,noticed_at=1789430289012
+    Doc:src/lib/O/Audio.svelte.ts,name:Audio,noticed_at=1789540418985
+    Doc:src/lib/O/Filesystem.svelte.ts,name:Filesystem,noticed_at=1789540418985
   open_dir:Ghost/M
   group:Ghost/M,dir:Ghost/M
     Doc:Ghost/M/Booth.g,name:Booth,noticed_at=1789430287582

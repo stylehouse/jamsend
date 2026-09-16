@@ -1,5 +1,5 @@
 <script module lang="ts">
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
 
     // storying_run — the Storying kind's verdict computer.  NOT pumped: Lies calls it on an EVENT
     //  (Lies_reflect_storying — when a run_result lands) and once on Waft load, never every tick.

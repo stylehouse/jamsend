@@ -20,7 +20,7 @@
     //   < the fuller metromap: a real time-axis with gap spacing + a route line through
     //     the stations, both axes at once — still custom, no graph lib.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
     let { H }: { H: House } = $props()

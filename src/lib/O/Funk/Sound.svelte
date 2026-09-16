@@ -11,7 +11,7 @@
     //   that never plays audio (most editors) even though it's always suggested.
     import { onMount } from 'svelte'
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
 
     let { H, lens, funk, w, mini = false }: { H: House, lens?: TheC, funk?: TheC, w?: TheC, mini?: boolean } = $props()
 

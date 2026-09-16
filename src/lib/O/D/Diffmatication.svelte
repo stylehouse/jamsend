@@ -46,7 +46,7 @@
 //     %req:demand,step_n:N+1         pre-warm next.
 //     %req:showing                   builds diffs once the centre demand is done.
 
-import type { TheC }  from "$lib/data/Stuff.svelte"
+import type { TheC }  from "$lib/Stuff.svelte"
 import type { House } from "$lib/O/Housing.svelte"
 import { onMount }    from "svelte"
 import Diffmaticui    from "./Diffmaticui.svelte"

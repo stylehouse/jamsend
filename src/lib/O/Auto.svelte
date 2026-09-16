@@ -48,13 +48,13 @@
     //   This makes per-book timing history persist across sessions via toc.snap,
     //   which LibraryRun uses to size bubbles by relative rank.
 
-    import { _C, type TheC }    from "$lib/data/Stuff.svelte"
+    import { _C, type TheC }    from "$lib/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
     import { onMount }      from "svelte"
     import LibraryRun       from "$lib/O/ui/LibraryRun.svelte"
-    import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Y.svelte";
+    import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Common";
     import { boot_param }   from "$lib/boot"
-    import { Idento }       from "$lib/Y.svelte"
+    import { Idento }       from "$lib/Common"
     import { prepubOf }     from "$lib/p2p/cluster_trust"
     import { crew_keys, crew_keys_home } from "$lib/O/Funk/Crewkeys"
     import { cluster_name } from "$lib/cluster_name"

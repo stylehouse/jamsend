@@ -18,7 +18,7 @@
 //    12  encode-compare dirty         (clone sc edit makes snap_working diverge)
 //    13  encode-compare after push    (push lands; compare clean; enc_src/LE3 dropped)
 
-import { _C, type TheC } from "$lib/data/Stuff.svelte"
+import { _C, type TheC } from "$lib/Stuff.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { onMount } from "svelte"
 

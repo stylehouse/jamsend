@@ -1,9 +1,9 @@
 // Housing.svelte.ts
-import { keyser, objectify, REACTAP, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
-import { Selection, type TheD, type Travel } from "$lib/data/Selection.svelte.ts";
+import { keyser, objectify, REACTAP, TheC, type TheUniversal } from "$lib/Stuff.svelte";
+import { Selection, type TheD, type Travel } from "$lib/Selection.svelte";
 import { DirectoryListing, FileSystemHandler } from "$lib/O/Filesystem.svelte";
-import { now_in_seconds_with_ms } from "$lib/Y.svelte";
-import { grap, grep, tex, throttle } from "$lib/Y.svelte"
+import { now_in_seconds_with_ms } from "$lib/Common";
+import { grap, grep, tex, throttle } from "$lib/Common"
 import { mount_opfs_github_nav, mount_lazy_github_nav, mount_opfs_pool_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
 import { MountNav, app_tree_decision } from "./MountNav.svelte.ts";
 import { Dexie, liveQuery, type EntityTable } from 'dexie';

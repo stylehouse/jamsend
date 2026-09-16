@@ -6,7 +6,7 @@
     //   hosted by FunkHost like any kind — Waft knows nothing about the limbs.
     //   the limb kind rides as kind: on the Funkcion:Ballistics embed.
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
 
     let { H, funk, raw = false, examining }: {
         H: House, funk: TheC, raw?: boolean, examining?: TheC

@@ -32,7 +32,7 @@
     //     and by edits (heaviest, batched into one pleasing sweep).  Reversible
     //     navigation rides the same log, longer than the minimap's nav_hist.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { EditorView } from "@codemirror/view"
 

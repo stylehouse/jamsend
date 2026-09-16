@@ -4,7 +4,7 @@
     //  Otro.svelte mounts it automatically for every House that has one.
     //  See spec/Cello_todo.md for design intent and build recipe.
     import { onMount }  from 'svelte'
-    import type { TheC } from '$lib/data/Stuff.svelte'
+    import type { TheC } from '$lib/Stuff.svelte'
     import type { House } from '$lib/O/Housing.svelte'
     import Cellui from './Cellui.svelte'
 

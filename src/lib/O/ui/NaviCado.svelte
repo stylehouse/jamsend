@@ -44,7 +44,7 @@
     //   ↺ = appears when unaccepted; fires mark('undrop') → clears unaccepted.
     //   Capsule label click → Dock_open → Lang_point_navigate.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import type { Snippet } from "svelte"
 

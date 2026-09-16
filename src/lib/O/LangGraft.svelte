@@ -83,9 +83,9 @@
     //   red, strikethrough) so the user has a UI handle to fix a rename.
 
     import { onMount } from "svelte"
-    import { dig }     from "$lib/Y.svelte"
-    import { _C }      from "$lib/data/Stuff.svelte"   // runtime factory for the off-snap Seem home
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import { dig }     from "$lib/Common"
+    import { _C }      from "$lib/Stuff.svelte"   // runtime factory for the off-snap Seem home
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
     let { M } = $props()

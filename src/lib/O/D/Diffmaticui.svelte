@@ -17,7 +17,7 @@
 //   Step particle sc: { Step: N, got_snap: string, exp_snap: string }
 //   Steps not yet loaded are absent from dm_This — UI shows them as hollow.
 
-import type { TheC } from "$lib/data/Stuff.svelte"
+import type { TheC } from "$lib/Stuff.svelte"
 import type { House } from "$lib/O/Housing.svelte"
 import { onMount }    from "svelte"
 

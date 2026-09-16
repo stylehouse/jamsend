@@ -58,8 +58,8 @@
     //   up the deposited methods via ghostsHaunt — method names are the user's, comma-separated
     //    in the eatfunc object literal.
 
-    import { TheC } from "$lib/data/Stuff.svelte"
-    import { dig } from "$lib/Y.svelte";
+    import { TheC } from "$lib/Stuff.svelte"
+    import { dig } from "$lib/Common";
     import { syntaxTree, language } from "@codemirror/language"
     import { EditorState } from "@codemirror/state"
     import type { SyntaxNode } from "@lezer/common"

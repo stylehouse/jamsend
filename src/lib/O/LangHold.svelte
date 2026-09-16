@@ -31,8 +31,8 @@
 //   owned by the push cluster, not %LE (so a push can be inspected and
 //   resumed independently of the Understanding).
 
-import { _C, type TheC } from "$lib/data/Stuff.svelte"
-import { Selection } from "$lib/data/Selection.svelte"
+import { _C, type TheC } from "$lib/Stuff.svelte"
+import { Selection } from "$lib/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { onMount } from "svelte"
 

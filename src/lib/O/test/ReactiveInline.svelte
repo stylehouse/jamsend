@@ -24,7 +24,7 @@
     //   shut" mid-type and a confirm prompt vanished under the pointer.  The bug read as a focus
     //    or an editing bug for weeks; it was this.
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import WaftComp       from "./ReactiveWaftComp.svelte"
 
     let { H }: { H: House } = $props()

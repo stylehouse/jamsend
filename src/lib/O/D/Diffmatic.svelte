@@ -41,7 +41,7 @@
 //     - sudden large additions after a run of small steps → breakthroughs
 //     - lines that appear then disappear within a short window → volatility
 
-import { _C, type TheC } from "$lib/data/Stuff.svelte"
+import { _C, type TheC } from "$lib/Stuff.svelte"
 import type { House }    from "$lib/O/Housing.svelte"
 import { onMount }       from "svelte"
 

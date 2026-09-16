@@ -16,7 +16,7 @@
     //   Re-suggesting the same (kind, of_Funkcion) is the change-notice (oai merge + bump re-renders
     //   a face without tearing it down); altitude orders the stack.
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import LensHost from "$lib/O/Funk/LensHost.svelte"
     import Vexpandy from "$lib/O/ui/Vexpandy.svelte"
 

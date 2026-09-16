@@ -26,7 +26,7 @@
     //   e_Lang_set_lang(A, w, e)      — dropdown on_pick handler
     //   e_Lang_generate_parser(...)   — gen button handler
 
-    import { _C, TheC } from "$lib/data/Stuff.svelte"
+    import { _C, TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"
     import { buildParserFile } from "@lezer/generator"

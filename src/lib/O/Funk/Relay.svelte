@@ -1,5 +1,5 @@
 <script module lang="ts">
-    import type { TheC as TheCm } from "$lib/data/Stuff.svelte"
+    import type { TheC as TheCm } from "$lib/Stuff.svelte"
     // relay_run — the Relay Funkcion's pumped watcher, the second ping (the relay/socket carrier,
     //  distinct from the peer).  Pure C-tree, no H: it inlines Lies_channel_live (channel_up + a
     //   live active_transport connection) off w:Lies and stamps funk.c.latest on a TRANSITION
@@ -24,7 +24,7 @@
     //      `now` so the "last changed Ns ago" stays live without a w bump (the Runner-bomb fix).
     import { onDestroy } from 'svelte'
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
 
     let { H, lens, funk, mini = false }: { H: House, lens?: TheC, funk?: TheC, w?: TheC, mini?: boolean } = $props()
 

@@ -1,12 +1,12 @@
 <script lang="ts">
     // Hovercraft.svelte — C activities
 
-    import { _C, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte"
+    import { _C, TheC, type TheN, type TheUniversal } from "$lib/Stuff.svelte"
     import { onMount, tick } from "svelte"
 
-    import { exactly, grop, hakd, sex } from "$lib/Y.svelte";
-    import { keyser, objectify } from "./Stuff.svelte";
-    import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Y.svelte";
+    import { exactly, grop, hakd, sex } from "$lib/Common";
+    import { keyser, objectify } from "$lib/Stuff.svelte";
+    import { now_in_seconds, now_in_seconds_with_ms } from "$lib/Common";
 
     let { M } = $props()
 

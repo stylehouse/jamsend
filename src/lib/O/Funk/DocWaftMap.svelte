@@ -22,7 +22,7 @@
     //   into the Waft under work.  NaviCado moves feed straight back in — every land
     //    re-lights the shaft.
 
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
     // search — the universal searchbar's live result set ({q, defs, props, texts}), threaded

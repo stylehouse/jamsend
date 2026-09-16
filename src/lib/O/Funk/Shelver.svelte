@@ -1,5 +1,5 @@
 <script module lang="ts">
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
 
     const STORY_DIR = "wormhole/Story"   // every subdir here is a Book (a Story toc lives inside)
     const MISC      = "Misc"             // the catch-all shelf for a Book that prefixes no existing What

@@ -5,10 +5,10 @@
 //   Se_i (pull) clones the immediate child layer into the U sphere; push replaces
 //   it back into the source, resuming any nested /%What/%What/%Point we never owned.
 
-import { _C, keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte"
-import { Selection, type TheD } from "$lib/data/Selection.svelte"
+import { _C, keyser, objectify, TheC, type TheUniversal } from "$lib/Stuff.svelte"
+import { Selection, type TheD } from "$lib/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
-import { now_in_seconds_with_ms } from "$lib/Y.svelte"
+import { now_in_seconds_with_ms } from "$lib/Common"
 import { onMount } from "svelte"
 
 let { M } = $props()

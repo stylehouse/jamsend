@@ -50,7 +50,7 @@
 // Crypto for the RaBreach adversarial beat: sha256_hex content-addresses a chunk's bytes — the same
 //  hash Repli's rung-0 arrival gate (and Heist's landing gate) checks. REAL dep (the .g→.ts idiom).
 IMPORT()
-    import { sha256_hex } from "$lib/O/Hashly.ts"
+    import { sha256_hex } from "$lib/Common"
 
 // CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named MusuRaStream (do_fn_for dispatches by
 //  w.sc.w) or the wrangle silently never fires.

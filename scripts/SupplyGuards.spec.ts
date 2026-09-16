@@ -20,7 +20,7 @@
 import { test, expect } from 'vitest'
 import { mount } from 'svelte'
 import { readFileSync } from 'node:fs'
-import { TheC } from '../src/lib/data/Stuff.svelte'
+import { TheC } from '../src/lib/Stuff.svelte'
 import Ra from '../src/lib/gen/M/Ra.go'
 import Swarm from '../src/lib/gen/S/Swarm.go'
 import Repli from '../src/lib/gen/N/Repli.go'

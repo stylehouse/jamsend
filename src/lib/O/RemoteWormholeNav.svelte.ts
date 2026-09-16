@@ -20,7 +20,7 @@
 //  Bytes: bin/read_range replies are binary frames ([header JSON]\n[raw buffer]) — no base64 tax.
 //   read_range keeps the transfer to the requested WINDOW regardless, so a 1.4GB asset never crosses whole.
 
-import type { TheC } from '$lib/data/Stuff.svelte'
+import type { TheC } from '$lib/Stuff.svelte'
 import type { GrantAtom } from '$lib/O/Funk/Grant'
 
 const REQ_TIMEOUT_MS = 20_000

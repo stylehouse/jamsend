@@ -1,9 +1,7 @@
-import { PeeringFeature } from "$lib/p2p/Peerily.svelte";
-import { now_in_seconds } from "$lib/Y.svelte";
+import { now_in_seconds } from "$lib/Common";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
-import type { Travel } from "$lib/data/Selection.svelte";
-import { armap, ex, exactly, hakd, isar, map, tex, throttle } from "$lib/Y.svelte";
-import type { Matchy } from "$lib/mostly/Structure.svelte";
+import type { Travel } from "$lib/Selection.svelte";
+import { armap, ex, exactly, hakd, isar, map, tex, throttle } from "$lib/Common";
 
 const OPTIMISE_FOR_DX = true
 // DROP_COMPACT_AT — after this many un-reindexed drop()s on one C, its index auto-compacts (rebuilds
@@ -1303,37 +1301,24 @@ export class Stuffing {
     // the one and only reactive surface. one write per commit, never mutated piecemeal.
     groups: Map<string, Stuffusion> = $state(new Map())
     started = $state(false)
-    matchy?: Matchy
     // self_row: the single row is the %Stuff particle ITSELF (its own k:v), not its children —
     //  how a leaf or structural particle renders as a stuffing (Cyto chunk self-mode)
     self_row?: boolean
 
-    constructor(Stuff: Stuff, matchy?: Matchy) {
+    constructor(Stuff: Stuff) {
         this.Stuff = Stuff
-        this.matchy = matchy
         // < no $effect, no internal subscription. H is the only driver.
     }
 
-    // matchy-aware row selection from %Stuff
+    // the rows: every child of %Stuff (or the particle itself in self_row mode).  A see|hide
+    //  filter (the old Matchy) lived here and nothing ever passed one — owner 2026-09-16: "easy to
+    //   reinvent, and for what it does it seems way too inelegant."
     get_matching_rows(): TheN {
         if (this.self_row) return [this.Stuff as unknown as TheC]
-        let matches = this.matchy?.see || []
-        if (!matches.length) matches = [{}]
-        let N: TheN = []
-        for (let sc of matches) {
-            for (let n of this.Stuff.o(sc)) {
-                if (N.includes(n)) continue
-                N.push(n)
-            }
-        }
-        let unmatches = this.matchy?.hide || []
-        for (let sc of unmatches) {
-            N = N.filter((n: TheC) => !n.matches(sc))
-        }
-        return N
+        return this.Stuff.o() as TheN
     }
 
-    // pure: reads %Stuff and %matchy, builds a complete tree of Stuffusion/Stuffziad/Stuffziado,
+    // pure: reads %Stuff, builds a complete tree of Stuffusion/Stuffziad/Stuffziado,
     //  returns the new groups Map. Writes nothing reactive.
     //  Safe to call from anywhere; the caller commits when sibling Stuffings have also computed.
     compute_groups(): Map<string, Stuffusion> {

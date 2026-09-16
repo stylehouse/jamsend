@@ -148,10 +148,10 @@
     //   storage-layer concerns: loading, saving, and keeping the Waft tree
     //   back-linked.  Lies.svelte orchestrates when they run; LiesStore owns how.
     //
-    import { _C, type TheC } from "$lib/data/Stuff.svelte"
-    import { Travel }         from "$lib/data/Selection.svelte"
+    import { _C, type TheC } from "$lib/Stuff.svelte"
+    import { Travel }         from "$lib/Selection.svelte"
     import type { House }     from "$lib/O/Housing.svelte"
-    import { dig, throttle }  from "$lib/Y.svelte"
+    import { dig, throttle }  from "$lib/Common"
     import { onMount }        from "svelte"
 
     let { M } = $props()

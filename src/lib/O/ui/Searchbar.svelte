@@ -20,7 +20,7 @@
     //  onresults hands the live result set up to Liesui, which threads it down the Plank so
     //   DocWaftMap can hang the hits off its Doc chips.
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import { is_testing } from "$lib/L/testing"
 
     //  onpin (optional) — a host with loose space (BigWordland's pin rail) can offer 📌 per

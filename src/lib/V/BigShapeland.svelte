@@ -24,7 +24,7 @@
     //        instrument.  See spec/Glassbeast_todo.md §0 — "THE PIXEL WITNESS DISAGREES WITH THE
     //         MODEL".  The roster below marks which Books are known to DRAW.
     import Ghost      from "$lib/O/Ghost.svelte"
-    import { keyser } from "$lib/data/Stuff.svelte"
+    import { keyser } from "$lib/Stuff.svelte"
     import BootGate   from "$lib/O/ui/BootGate.svelte"
     import { boot_param } from "$lib/boot"
     import { boot_qualand } from "$lib/O/BigQualand.svelte"

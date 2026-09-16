@@ -5,7 +5,7 @@
     // ONLY the style/meta entries currently engaged on this matstyle, plus
     // a row of "+ X" buttons to engage more.  Defaults are not displayed.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
 
     let {
         matstyles = [] as TheC[],

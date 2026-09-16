@@ -8,7 +8,7 @@
 //   node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/TwoFounder.spec.ts
 import { test, expect } from 'vitest'
 import { mount } from 'svelte'
-import { TheC } from '../src/lib/data/Stuff.svelte'
+import { TheC } from '../src/lib/Stuff.svelte'
 import Swarm from '../src/lib/gen/S/Swarm.go'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))

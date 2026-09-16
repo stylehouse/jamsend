@@ -8,7 +8,7 @@
     //    recipe, and L/ is its home: a big empty space, yet Lies+Lang in disguise.
     import { type House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import { boot_param } from "$lib/boot"
 
     let { M } = $props()

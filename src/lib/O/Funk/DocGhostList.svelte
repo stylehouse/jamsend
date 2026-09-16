@@ -9,7 +9,7 @@
     //   Trail and surviving reload.  An index, not an editable surface, so no cursoring
     //   of the list itself.
 
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import StemHive       from "$lib/O/ui/StemHive.svelte"
 

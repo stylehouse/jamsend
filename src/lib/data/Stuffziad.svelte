@@ -1,9 +1,9 @@
 <script lang="ts">
-    import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
-    import { Stuffziado } from "./Stuff.svelte";
+    import type { House, Housemem } from '$lib/O/Housing.svelte.ts';
+    import { Stuffziado } from "$lib/Stuff.svelte";
     import Stuffziad from './Stuffziad.svelte'
     import Stuffzipper from './Stuffzipper.svelte';
-    let { mem,stuffziad }: { mem:Modusmem, stuffziad: Stuffziad } = $props()
+    let { mem,stuffziad }: { mem:Housemem, stuffziad: Stuffziad } = $props()
     mem = mem.further("Stuffziad:"+stuffziad.name)
 
     let t = stuffziad.name

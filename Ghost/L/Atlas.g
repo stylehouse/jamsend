@@ -49,7 +49,7 @@
 IMPORT()
     import { EditorState } from "@codemirror/state"
     import { lang, lang_for_path } from "$lib/O/lang/lang"
-    import { dig } from "$lib/Y.svelte"
+    import { dig } from "$lib/Common"
     import { is_testing } from "$lib/L/testing"
     import { Dexie } from "dexie"
 

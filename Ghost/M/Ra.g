@@ -45,8 +45,8 @@
 //   Heist_census) and Heist_land verifies against.  Same noble hasher Heist.g uses (byte-identical to the
 //    SubtleCrypto path Ra_enid still walks), so a chunk cid and a body_hash slice agree bit-for-bit.
 IMPORT()
-    import { sha256_hex } from "$lib/O/Hashly.ts"
-    import { Idento } from "$lib/Y.svelte.ts"
+    import { sha256_hex } from "$lib/Common"
+    import { Idento } from "$lib/Common"
 
 //#region knobs
 // Ra_target_lufs — the ONE loudness constant (Radio_todo §3.2, decided 2026-07-07): -14 LUFS, the

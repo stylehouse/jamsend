@@ -114,12 +114,12 @@
     
     `
 
-    import { objectify, TheC }             from "$lib/data/Stuff.svelte"
-    import type { TheD }                  from "$lib/data/Selection.svelte"
-    import { Selection, Travel }          from "$lib/data/Selection.svelte"
-    import { depeel, peel, dig, exactly, ex }               from "$lib/Y.svelte"
+    import { objectify, TheC }             from "$lib/Stuff.svelte"
+    import type { TheD }                  from "$lib/Selection.svelte"
+    import { Selection, Travel }          from "$lib/Selection.svelte"
+    import { depeel, peel, dig, exactly, ex }               from "$lib/Common"
     import { onMount, tick }                    from "svelte"
-    import { now_in_seconds, now_in_seconds_with_ms }     from "$lib/Y.svelte"
+    import { now_in_seconds, now_in_seconds_with_ms }     from "$lib/Common"
     import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
     import Storui                       from "$lib/O/Storui.svelte"
     import { SoundSystem }              from "$lib/O/Audio.svelte"

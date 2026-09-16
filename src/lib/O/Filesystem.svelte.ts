@@ -5,7 +5,7 @@
 //   them) — as a plain .ts, $state is an undefined name and the first picker click threw (2026-09-16).
 //  Lifted from p2p/ftp/Directory.svelte.ts (the prototype's share machinery) 2026-09-16 — only these
 //   three classes were live; the shares around them went with the prototype.
-import { CHUNK_SIZE, erring } from '$lib/Y.svelte'
+import { CHUNK_SIZE, erring } from '$lib/Common'
 
 // what a listing knows about its share: a name for messages.  (Was the prototype's share object.)
 type ShareName = { name: string }

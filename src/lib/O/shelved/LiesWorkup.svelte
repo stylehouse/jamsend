@@ -29,7 +29,7 @@
 //   handlers (e_workup) and the w:Lies-side handlers (e_workup_filed,
 //   e_waftlet) live together here because they are two ends of one protocol.
 
-import { _C, type TheC } from "$lib/data/Stuff.svelte"
+import { _C, type TheC } from "$lib/Stuff.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { onMount } from "svelte"
 

@@ -30,7 +30,7 @@
     //     the single truth for accepted/showing and NaviCado pushes via
     //     e_Lang_LE_push.
 
-    import { type TheC } from "$lib/data/Stuff.svelte"
+    import { type TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"
 

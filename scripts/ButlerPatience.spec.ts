@@ -28,7 +28,7 @@
 //   node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/ButlerPatience.spec.ts
 import { test, expect } from 'vitest'
 import { mount } from 'svelte'
-import { TheC } from '../src/lib/data/Stuff.svelte'
+import { TheC } from '../src/lib/Stuff.svelte'
 import Radio from '../src/lib/gen/M/Radio.go'
 import Ra from '../src/lib/gen/M/Ra.go'
 import Swarm from '../src/lib/gen/S/Swarm.go'

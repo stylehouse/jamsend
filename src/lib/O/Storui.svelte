@@ -100,9 +100,9 @@
     //   ensure_swatch() in Story.svelte must be called before any note type reaches
     //   story_analysis() — it is a fatal design error to render an unswatched type.
 
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import type { House, TraceEvent } from "$lib/O/Housing.svelte"
-    import { peel }       from "$lib/Y.svelte"
+    import { peel }       from "$lib/Common"
     import { fly, fade } from "svelte/transition"
     import Vexpandy       from "$lib/O/ui/Vexpandy.svelte"
     import EntropyArrest  from "$lib/O/ui/EntropyArrest.svelte"

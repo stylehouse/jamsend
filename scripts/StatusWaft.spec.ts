@@ -59,7 +59,7 @@ test('the dige agrees with the tab’s own hash function', async () => {
     const doc = C.o({ Doc: 'Ghost/L/Atlas.g' })[0]
     const { readFileSync } = await import('node:fs')
     const text = readFileSync(`${ROOT}/Ghost/L/Atlas.g`, 'utf8')
-    const { dig } = await import('../src/lib/Y.svelte')
+    const { dig } = await import('../src/lib/Common')
     // the whole road depends on ONE hash meaning the same thing on both sides of it: the server
     //  computes it in node, the tab compares it against what `dig` gives.  A drift here would make
     //   every doc look changed forever and the index would be worse than useless.

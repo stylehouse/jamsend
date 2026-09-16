@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { type TheN,Stuffusion,Stuffziado } from "./Stuff.svelte";
-    import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
+    import { type TheN,Stuffusion,Stuffziado } from "$lib/Stuff.svelte";
+    import type { House, Housemem } from '$lib/O/Housing.svelte.ts';
     import Stuffing from "./Stuffing.svelte";
 
     // < ts fail
@@ -11,7 +11,7 @@
         // our client is either:
         stuffusion,
         stuffziado,
-    }: { mem:Modusmem,
+    }: { mem:Housemem,
         innered: TheN,
         opener:object|null }
         & eitherzipperuzia

@@ -8,7 +8,7 @@
     //   and deposits.  Same M-shape + bare-Mundo construction as Story_cli.svelte otherwise.
     import Ghost from '$lib/O/Ghost.svelte'
     import { House } from '$lib/O/Housing.svelte'
-    import { keyser } from '$lib/data/Stuff.svelte'
+    import { keyser } from '$lib/Stuff.svelte'
 
     let { onhouse } = $props<{ onhouse?: (h: any) => void }>()
     let H = $state<any>(null)

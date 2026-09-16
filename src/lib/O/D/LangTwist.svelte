@@ -46,7 +46,7 @@
     //   · the data graph: the same machine pointed at runtime C particles instead of Doc
     //     source — the structure we actually push around all day.  Same Waft, `kind:data`.
 
-    import { TheC } from "$lib/data/Stuff.svelte"
+    import { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"
     import LangTwistui from "./LangTwistui.svelte"

@@ -25,8 +25,8 @@
     // < a now_s tick (1s) re-derives the glow so it fades live between Auto bumps.
 
     import type { House }   from "$lib/O/Housing.svelte"
-    import type { TheC }    from "$lib/data/Stuff.svelte"
-    import { depeel, peel } from "$lib/Y.svelte"
+    import type { TheC }    from "$lib/Stuff.svelte"
+    import { depeel, peel } from "$lib/Common"
     import StemHive         from "./StemHive.svelte"
     import { onDestroy }    from "svelte"
 

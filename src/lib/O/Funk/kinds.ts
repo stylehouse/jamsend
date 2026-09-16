@@ -25,7 +25,7 @@
 // Add a kind: write O/Funk/<Kind>.svelte (a default component, + a `<kind>_run` export if
 //  it is pumped), then add one line here.
 
-import type { TheC } from "$lib/data/Stuff.svelte"
+import type { TheC } from "$lib/Stuff.svelte"
 import Storying from "$lib/O/Funk/Storying.svelte"
 import Ballistics from "$lib/O/Funk/Ballistics.svelte"
 import StoryTimes, { storytimes_run } from "$lib/O/Funk/StoryTimes.svelte"

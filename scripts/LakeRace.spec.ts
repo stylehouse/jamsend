@@ -25,7 +25,7 @@ import path from 'node:path'
 import { EditorState } from '@codemirror/state'
 import Story_cli from './Story_cli.svelte'
 import { lang, lang_for_path } from '$lib/O/lang/lang'
-import { dig } from '$lib/Y.svelte'
+import { dig } from '$lib/Common'
 
 const ROOT  = process.cwd()
 const PEER   = 'Ghost/N/Peeroleum.g'

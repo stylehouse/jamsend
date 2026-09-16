@@ -32,7 +32,7 @@ Books proving it: PereStaple steps 4–6 (trial), PereProof (heal / stall / redi
 
 ## 2. The heap — what the Peerily era had working (deleted 2026-09-16, recover from git)
 
-`git show HEAD:src/lib/p2p/Peerily.svelte.ts` as of 2026-09-16 (last touched in `9c83d1dc`; the file lingers one more pass for four `data/*` type imports, then goes). The parts a real
+`git show c04544d5:src/lib/p2p/Peerily.svelte.ts` (the last commit that still has it — deleted from the tree 2026-09-16). The parts a real
  webrtc port needs, by line in that revision:
 
 - **`Peer_OPTIONS()`** (:23–71) — `{ host, port, path: "peerjs-server", config: { iceServers, iceTransportPolicy:

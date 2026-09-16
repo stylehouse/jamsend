@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
 
     let { N }: { N: TheC[] } = $props()
 

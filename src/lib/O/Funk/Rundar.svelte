@@ -1,5 +1,5 @@
 <script module lang="ts">
-    import type { TheC as TheCm } from "$lib/data/Stuff.svelte"
+    import type { TheC as TheCm } from "$lib/Stuff.svelte"
     // liveness thresholds from the ONE shared home (also read by the reaper + the runner_ask CLI) —
     //  so the rack's "live" window and its cull age can't drift from what the roster actually enforces.
     import { LIVE_MS, PIER_CULL_MS } from "$lib/O/runner_liveness.mjs"
@@ -39,7 +39,7 @@
     //  Suggested by Lies_aim whenever this instance holds an editor|runner role.
     import { onDestroy }   from 'svelte'
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
 
     let { H, lens, funk, mini = false }: { H: House, lens?: TheC, funk?: TheC, w?: TheC, mini?: boolean } = $props()
 

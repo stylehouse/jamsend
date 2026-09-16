@@ -11,8 +11,8 @@
     //   Orbs: the synthetic TOP node carries the only orb at first.  Clicking it pings orbs
     //    onto every node; from then on every orb does the same thing — make that node
     //     editable (inline depeel↔peel of its sc).
-    import type { TheC } from "$lib/data/Stuff.svelte"
-    import { peel, depeel } from "$lib/Y.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
+    import { peel, depeel } from "$lib/Common"
     import { SvelteSet } from "svelte/reactivity"
     import Orb from "$lib/O/ui/micro/Orb.svelte"
 

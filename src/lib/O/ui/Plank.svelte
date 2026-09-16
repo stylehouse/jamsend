@@ -6,7 +6,7 @@
     //     chrome.  DocWaftMap's own content and layout are the map's concern, separate from
     //      where the Plank sits.
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import DocWaftMap from "$lib/O/Funk/DocWaftMap.svelte"
 
     // search — the universal searchbar's live result set (Liesui threads it through), so the

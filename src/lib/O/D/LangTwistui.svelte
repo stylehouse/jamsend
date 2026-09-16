@@ -10,7 +10,7 @@
     //   future Cyto hand-off (commission w.c.twist as a Scannable); here we just surface a
     //   per-node `hits` heat so you can see which names keep mattering across rescans.
 
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
     let { H }: { H: House } = $props()

@@ -13,7 +13,7 @@
 //  stays here in .g): Idento is the ed25519 pair, Grant.ts the signed-capability atom the Idzeug
 //   is COMPOSED from (an Idzeug is an UNBOUND grant — for:'*' — plus a nonce and the inviter's page).
 IMPORT()
-    import { Idento, peel } from "$lib/Y.svelte.ts"
+    import { Idento, peel } from "$lib/Common"
     import { mint_grant, verify_grant, grant_to_C, grant_of_C, mint_revoke, verify_revoke } from "$lib/O/Funk/Grant.ts"
     import { signHeader, verifyHeader, prepubOf } from "$lib/p2p/cluster_trust"
     import { vessel_register, vessel_subnet, vessel_drop, vessel_sweep } from "$lib/O/vessel_store"

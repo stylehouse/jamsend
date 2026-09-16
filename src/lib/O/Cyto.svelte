@@ -64,13 +64,13 @@
     //   Text nodes carry overlay_str in wave data for Cytui's HTML overlay
     //   system (positioned <pre> elements over the cytoscape canvas).
 
-    import { TheC, _C, objectify }  from "$lib/data/Stuff.svelte"
-    import { Selection } from "$lib/data/Selection.svelte"
-    import type { TheD, Travel } from "$lib/data/Selection.svelte"
+    import { TheC, _C, objectify }  from "$lib/Stuff.svelte"
+    import { Selection } from "$lib/Selection.svelte"
+    import type { TheD, Travel } from "$lib/Selection.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount }   from "svelte"
     import Cytui         from "./Cytui.svelte"
-    import { ex, indent, sex } from "$lib/Y.svelte";
+    import { ex, indent, sex } from "$lib/Common";
     import { FACE_MAINKEYS, CREW_MAINKEYS } from "$lib/O/glass_faces"
 
     let { M } = $props()

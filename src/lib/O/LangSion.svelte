@@ -15,7 +15,7 @@
     //     which they ultimately call; the leading underscore marks them
     //      generated-code-only, off the hand-written surface.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import { onMount } from "svelte"
 
     type Cap = { as: string, key: string, val: boolean }

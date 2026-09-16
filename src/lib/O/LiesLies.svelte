@@ -34,7 +34,7 @@
     //               (bare keeps it).  Collapsing bare into either end regresses the
     //                other behaviour.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount, mount } from "svelte"
     import { signHeader, verifyHeader, prepubOf, sha256hex, loadRoleKey, browserTrustedPubs, browserRole, mintClusterKey } from "$lib/p2p/cluster_trust"

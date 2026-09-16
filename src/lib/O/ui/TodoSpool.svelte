@@ -14,7 +14,7 @@
     //  Everything diagnostic in here deliberately does NOT ride the House's version or H.clear() —
     //   both stop under the very wedge this exists to show; own intervals only.
     import { untrack } from "svelte"
-    import { keyser } from "$lib/data/Stuff.svelte"
+    import { keyser } from "$lib/Stuff.svelte"
 
     let { house, H }: { house: any, H: any } = $props()
 

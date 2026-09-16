@@ -16,28 +16,33 @@
 SECS=5; WATCH=""
 for a in "$@"; do case "$a" in --watch) WATCH=1;; [0-9]*) SECS=$a;; esac; done
 
-# pw-top -b: fields 1-9 are fixed single tokens, so $3=QUANT $4=RATE $9=ERR, safe
-sample() { pw-top -b -n 1 2>/dev/null | awk 'NR>1 && $2 ~ /^[0-9]+$/ {print $2, $3, $4, $9, $NF}'; }
+# pw-top -b: fields 1-9 are fixed single tokens, so $1=state $3=QUANT $4=RATE $9=ERR, safe.
+#  ⚠ only a RUNNING (state R) row's QUANT/RATE mean anything — an idle (I) node
+#   genuinely reports 0/0, which is not a broken buffer, just nothing playing right now.
+sample() { pw-top -b -n 1 2>/dev/null | awk 'NR>1 && $2 ~ /^[0-9]+$/ {print $1, $2, $3, $4, $9, $NF}'; }
 
 once() {
   MINQ=$(pw-metadata -n settings 2>/dev/null | awk -F"'" '/clock.min-quantum/{print $4}')
   S1=$(sample); sleep "$SECS"; S2=$(sample)
   bad=0
 
-  # driver quantum vs floor
-  echo "$S2" | grep alsa_output | while read -r id q r err name; do
-    printf 'card     QUANT=%s RATE=%s  (%.1f ms)\n' "$q" "$r" "$(echo "$q $r" | awk '{print $1/$2*1000}')"
-  done
-  Q=$(echo "$S2" | awk '/alsa_output/{print $2; exit}')
-  if [ -n "$Q" ] && [ -n "$MINQ" ] && [ "$Q" -lt "$MINQ" ]; then
-    echo "!! quantum $Q is BELOW the floor $MINQ — floor conf not loaded. run setup.sh"; bad=1
-  elif [ -n "$Q" ] && [ "$Q" -lt 1024 ]; then
-    echo "!! quantum $Q — something pulled it down (pavucontrol meters? low-latency app?)"; bad=1
+  # driver quantum vs floor — only meaningful while the node is actually RUNNING
+  ROW=$(echo "$S2" | awk '/alsa_output/ && $1=="R" {print; exit}')
+  if [ -z "$ROW" ]; then
+    echo "card     idle right now (nothing playing) — quantum/xrun readings below are meaningless; play something and re-run"
+  else
+    Q=$(echo "$ROW" | awk '{print $3}'); R=$(echo "$ROW" | awk '{print $4}')
+    printf 'card     QUANT=%s RATE=%s  (%.1f ms)\n' "$Q" "$R" "$(echo "$Q $R" | awk '{print $1/$2*1000}')"
+    if [ -n "$MINQ" ] && [ "$Q" -lt "$MINQ" ]; then
+      echo "!! quantum $Q is BELOW the floor $MINQ — floor conf not loaded. run setup.sh"; bad=1
+    elif [ "$Q" -lt 1024 ]; then
+      echo "!! quantum $Q — something pulled it down (pavucontrol meters? low-latency app?)"; bad=1
+    fi
   fi
 
-  # xrun delta per node over the sample
+  # xrun delta per node over the sample ($2=id $5=err $6=name — see sample() above)
   grew=$(printf '%s\n%s\n' "$S1" "$S2" | awk '
-    { if ($1 in e1) { d=$4-e1[$1]; if (d>0) printf "  %-40s +%d\n", $5, d } else e1[$1]=$4 }')
+    { if ($2 in e1) { d=$5-e1[$2]; if (d>0) printf "  %-40s +%d\n", $6, d } else e1[$2]=$5 }')
   if [ -n "$grew" ]; then
     echo "!! xruns in the last ${SECS}s (these ARE the stutters):"; echo "$grew"; bad=1
   else

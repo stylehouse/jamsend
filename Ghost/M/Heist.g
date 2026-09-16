@@ -23,7 +23,7 @@
 //   re-materialize), sha256_incremental streams a running digest per chunk so the landing has a wire-side
 //    hash the instant the last byte writes — an early breach tripwire ahead of the read-back gate.
 IMPORT()
-    import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/O/Hashly.ts"
+    import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/Common"
 
 //#region knobs
 // Heist_chunk_bytes — the %Body transport slice.  Big enough that an 8-minute WAV stays ~30 particles

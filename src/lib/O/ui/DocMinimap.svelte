@@ -29,9 +29,9 @@
     //   _navigating: true for 200ms after a nav move (begin_nav) — suppresses the
     //     scroll event our own CM dispatch fires before it can fight the new position.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { throttle } from "$lib/Y.svelte"
+    import { throttle } from "$lib/Common"
     import { EditorView } from "@codemirror/view"
     import { unfoldEffect, foldedRanges } from "@codemirror/language"
     import NaviCado from "$lib/O/ui/NaviCado.svelte"

@@ -25,7 +25,7 @@
 //   node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/MultiHeist.spec.ts
 import { test, expect } from 'vitest'
 import { mount } from 'svelte'
-import { TheC } from '../src/lib/data/Stuff.svelte'
+import { TheC } from '../src/lib/Stuff.svelte'
 import Heist from '../src/lib/gen/M/Heist.go'
 import Sounditron from '../src/lib/gen/Story/Sounditron.go'
 

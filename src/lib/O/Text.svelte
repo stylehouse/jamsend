@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { _C, objectify, type TheC } from "$lib/data/Stuff.svelte";
-    import { Travel } from "$lib/data/Selection.svelte"
+    import { _C, objectify, type TheC } from "$lib/Stuff.svelte";
+    import { Travel } from "$lib/Selection.svelte"
     // Text.svelte — ghost depositing snap-line and diff functions onto H.* via eatfunc.
     //
     // Mounted in Ghost.svelte alongside Agency, Machinery, Story, Cyto.
@@ -103,7 +103,7 @@
     //
     //   StoryRun redeclares this locally for TypeScript narrowing.
 
-    import { depeel, peel }     from "$lib/Y.svelte"
+    import { depeel, peel }     from "$lib/Common"
     import { diff_match_patch } from 'diff-match-patch'
     import { onMount }          from 'svelte'
 

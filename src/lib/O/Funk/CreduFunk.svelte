@@ -1,5 +1,5 @@
 <script module lang="ts">
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import { ghost_ledger_of } from "$lib/O/lang/compile"
 
     // credufunk_run — a Funkcion kind's run; Lies pumps it centrally each tick.

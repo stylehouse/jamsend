@@ -29,7 +29,7 @@
     //       not by ▦; if it's covering the screen, open the folder / tap for sound to get past it.
     import Ghost      from "$lib/O/Ghost.svelte"
     import { hold_list } from "$lib/O/ui/micro/hold"
-    import { keyser } from "$lib/data/Stuff.svelte"
+    import { keyser } from "$lib/Stuff.svelte"
     import BootGate   from "$lib/O/ui/BootGate.svelte"
     import Butler     from "$lib/O/ui/Butler.svelte"
     import Splash     from "$lib/O/ui/Splash.svelte"

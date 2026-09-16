@@ -7,7 +7,7 @@
     //       as a plain-C row via funk_live; this {#if} is the defensive fallback if mounted directly.)
     //   the seam keeping Waft — which mounts the whole editable web — ignorant of any applet's specifics.
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import { FUNK_KINDS } from "$lib/O/Funk/kinds"
 
     let { H, w, funk, raw = false, examining }: {

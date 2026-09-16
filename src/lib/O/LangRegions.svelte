@@ -13,7 +13,7 @@
     //    bare text      fuzzy: defs, calls, regions, comments
     //   issues[] is non-empty for any imperfection (ambiguity, no def, comment-only, broken path).
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { TheC } from "$lib/Stuff.svelte"
     import type { EditorState } from "@codemirror/state"
     import { EditorView } from "@codemirror/view"
     import { foldEffect, unfoldEffect } from "@codemirror/language"

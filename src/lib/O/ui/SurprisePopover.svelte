@@ -19,7 +19,7 @@
     //   We reach w:Lies the same way Liesui does: H.ave's %examining particle carries
     //   c.w and bumps its version each w:Lies tick (watch_c), so this stays live.
 
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { TheC }  from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import Vexpandy from "$lib/O/ui/Vexpandy.svelte"
     import DocDiff  from "$lib/O/ui/DocDiff.svelte"
