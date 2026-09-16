@@ -1150,7 +1150,7 @@ await M.eatfunc({
     },
 
 //#endregion
-//#region WaftMap — the Plank grouping model (pure read; DocWaftMap + Book:LakeWaftMap share it)
+//#region WaftMap — the Plank grouping model (pure read; DocWaftMap + Book:HohoWaftMap share it)
 //
 //  The corpus grouped by ATTENTION.  Every Known|Loaded Waft becomes either a BURST row — the
 //   interesting ones: the foreground, any cursor-TOUCHED Waft (its carrier holds a %Lango,Cursor,
@@ -3099,7 +3099,7 @@ await M.eatfunc({
                     //  (Storui's i_elvisto 'story_accept_all') — every !ok step's live got_snap is promoted
                     //   to the canonical NNN.snap and story_save writes it into the Book's wormhole dir.
                     //    Closes the headless-only re-record gap (CLAUDE.md bans the Story_cli bubble): a
-                    //     Lake* gate now records against the real runner it must match.  Deferred (elvis),
+                    //     Hoho* gate now records against the real runner it must match.  Deferred (elvis),
                     //      so the accept lands a tick later — re-run the Book to verify green.  Run one first.
                     const stW = H.Lies_runner_story_w()
                     if (!stW) { ok = false; result = { error: 'no Story world yet — run a Book first' } }

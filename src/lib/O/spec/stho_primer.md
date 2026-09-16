@@ -4,7 +4,7 @@ The tile language the machine is increasingly written in. A `.g` ghost file comp
 to a `gen/**.go` (a Svelte component whose `eatfunc` deposits the ghost's methods +
 `Ghostmeta_<name>()` onto `H`); the methods then exist on the House. **stho** is the
 language; **LangTiles** is its tile set. This is the orientation; the worked canon is
-`Ghost/test/Story/Lake/LakeTiles.g` (read it — every form below is exercised there).
+`Ghost/test/Story/Hoho/HohoTiles.g` (read it — every form below is exercised there).
 
 - **Compiler:** `src/lib/O/lang/compile.ts` (`LANG_COMPILE`, the pure translator) +
    `src/lib/O/LangCompiling.svelte` (orchestration). Grammar: `stho.grammar` (→ the
@@ -79,7 +79,7 @@ oai %req:desire                   // nesting: a child req inside the parent's do
     req oai %req:acquire,maz:9     //  maz orders leaves (highest runs first); `req` re-binds
         req i %got
 ```
-(See `LakeTiles.g` `reqTiles`/`looseScTiles`/`ampTiles`/`captureOutTiles` for the full set.)
+(See `HohoTiles.g` `reqTiles`/`looseScTiles`/`ampTiles`/`captureOutTiles` for the full set.)
 
 A leaf that must wait for wall-clock time arms a one-shot `%ttlilt`
 (`H.i_req_ttlilt(req, secs)`) — but **only a req that finishes** can carry one: the ttlilt
@@ -108,7 +108,7 @@ values that are objects-off-the-wire — `.sc` is scalars only.
 (then regen the `stho.grammar.ts` artifact via the in-app gen action — the registry falls
 back to a live `buildParser` until you do, so it works but is flagged stale) and/or
 `lang/compile.ts` (the translator). Verify with `npm run ghost-compile -- <file>` against
-the corpus (`LakeTiles.g`) — its output should be unchanged for everything but the new form.
+the corpus (`HohoTiles.g`) — its output should be unchanged for everything but the new form.
 
 ## Gotchas (durable)
 
@@ -120,6 +120,6 @@ the corpus (`LakeTiles.g`) — its output should be unchanged for everything but
 - **Grammar artifact staleness:** editing `stho.grammar` makes `stho.grammar.ts` stale (live
    `buildParser` fallback is correct, just flagged); editing `io_tokens.ts` needs no regen.
 
-Canon: `Ghost/test/Story/Lake/LakeTiles.g`. Compiler: `src/lib/O/lang/compile.ts`,
+Canon: `Ghost/test/Story/Hoho/HohoTiles.g`. Compiler: `src/lib/O/lang/compile.ts`,
 `LangCompiling.svelte`. Compile a `.g`: [[ghost-compile]] (`npm run ghost-compile`). Open language work: handover heading L,
 `LangCompiler_TODO.md`. Peel/capture details: [[langtiles-peel-syntax]].

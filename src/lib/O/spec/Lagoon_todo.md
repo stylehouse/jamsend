@@ -114,7 +114,7 @@ The owner, tired, end of day: *"can we line up the rest of the day's work, and w
      human who remembers what happened to that doc.
 4. **The Waft flattening** is a real candidate for an attended session and you lean yes — contained, not
     corpus-wide (one seam, `LiesCurse`, six Lake\* Books, Funk untouched).  Its gate is re-recording
-     `LakeSurprise`, `Interest.md`'s sole regression gate, and that wants reading rather than accepting.
+     `HohoSurprise`, `Interest.md`'s sole regression gate, and that wants reading rather than accepting.
 
 #### → THE NEXT MOVE, if you are a fresh session working alone
 
@@ -262,7 +262,7 @@ The owner, tired, end of day: *"can we line up the rest of the day's work, and w
 **DO NOT, and why:**
 - **The Waft flattening** — RE-SCOPED after the owner pushed back, and it is CONTAINED, not corpus-wide
    (one seam, `LiesCurse`, six Lake\* Books, Funk untouched — see leg 3's note).  Still not an overnight
-    job, but for a different and better reason: its gate is re-recording `LakeSurprise`, which is
+    job, but for a different and better reason: its gate is re-recording `HohoSurprise`, which is
      `Interest.md`'s sole regression gate for the Interest cluster, and that wants reading rather than
       accepting.  **It is now a real candidate for the next attended session, and the owner leans yes.**
 - **Leg 9, the portal** — needs a ruling on where asks live.
@@ -412,11 +412,11 @@ The owner opened `/Otro?H=Hackarium`, clicked a stem, and it landed: *"lovely"*.
 >      itself.  That is the CURSORING the owner named: *"it's got a cursoring looking it up… it wasn't
 >       working that fantastically!… I simply don't use this."*  So the file carrying most of the cost is
 >        the file whose behaviour is least loved.
->  3. **The fixtures are not 53 things, they are SIX BOOKS in one family** — LakeNets 14, LakeSurprise 13,
->      LakeTiles 10, LakeFlush 8, LakeWaftMap 3, LakeSurfer 3 (51 of the 53 files), plus one each from
+>  3. **The fixtures are not 53 things, they are SIX BOOKS in one family** — HohoNets 14, HohoSurprise 13,
+>      HohoTiles 10, HohoFlush 8, HohoWaftMap 3, HohoSurfer 3 (51 of the 53 files), plus one each from
 >       Hackarium and Editron.  All Lake\*: the editor/Waft machinery itself.  They would need re-recording
 >        because the thing they test changed, which is correct rather than collateral damage.  ⚠ Note
->         `LakeSurprise` is `Interest.md`'s **sole regression gate** for the Interest cluster — it is the
+>         `HohoSurprise` is `Interest.md`'s **sole regression gate** for the Interest cluster — it is the
 >          one to re-record carefully and read, not accept.
 >  4. **Funk is SAFE, which was the owner's stated worry** (*"Waft carries Funk though, which is
 >      important"*).  `Lies_instantiate_funkcions` walks with a generic `for (const k of c.o())` recursion
@@ -807,7 +807,7 @@ The leg as written listed `a region (Atlas.g#the cache)` among the kinds to add.
 ### The three kinds, and what each refuses
 
 - **`sect`** — `<Doc> §N.N`, or a bare `§N.N`.  **470 doc-qualified across 113 target docs; 2,800 bare.**
-- **`book`** — `Book:<Name>` / `Book=<Name>` only.  18 live.  The bare prose form (`Book LakeSurprise`,
+- **`book`** — `Book:<Name>` / `Book=<Name>` only.  18 live.  The bare prose form (`Book HohoSurprise`,
    71 live) is **deliberately not collected**: it cannot be told from a sentence that happens to name
     something after the word "Book".
 - **`sworn`** — `«assertion-slug»`, the spec→test-assertion pointer the owner kept from story 4.  4 live.

@@ -10,7 +10,6 @@
 import RadioFace from './ui/RadioFace.svelte'
 import StokerFace from './ui/StokerFace.svelte'
 import TunerFace from './ui/TunerFace.svelte'
-import CaperFace from './ui/CaperFace.svelte'
 import HeistFace from './ui/HeistFace.svelte'
 import HeistBarFace from './ui/HeistBarFace.svelte'
 import HaulFace from './ui/HaulFace.svelte'
@@ -38,7 +37,6 @@ export const GLASS_KINDS: Record<string, any> = {
     Radio: RadioFace,     // the continuous listen — play/pause/skip, now-playing
     Stoker: StokerFace,   // the provisioning organ — watch the digs crank, poke a churn
     Tuner: TunerFace,     // the glass's dial — which crews of cells are shown
-    Caper: CaperFace,     // the OPERATION — posed needs | soft wish → leads → take → the built pull
     Heist: HeistFace,     // ONE NAB OF AN ALBUM — the ⇊ keep cell: folder nodes, tweak genre, folds down on start
     HeistBar: HeistBarFace, // a NESTED heist's controls cell — genre · dest · all|none · ▶ start · ✕ · progress
     Pick: PickFace,       // one kept track chip in a nested keep — ✓/♪/⇊, click un-keeps

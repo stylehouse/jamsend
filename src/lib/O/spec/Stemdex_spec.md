@@ -99,7 +99,7 @@ The searchbar currently nudges scan passes on an interval.  The scan is backgrou
 
 - Plank: hang hit-counts on calm rows too (v1 hangs only under listed Doc chips), so a search
    lights the whole map spatially.
-- A **LakeSearch Story Book** — fixture corpus, `%see` assertions over stems/defs/props/
+- A **HohoSearch Story Book** — fixture corpus, `%see` assertions over stems/defs/props/
    AND-ranking/convergence, run on the live runner.  The feature has NO fixture gate yet;
     this is the owed piece before the index grows cleverer.
 

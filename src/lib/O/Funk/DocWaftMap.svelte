@@ -1,7 +1,7 @@
 <script lang="ts">
     // DocWaftMap — the corpus navigator as the PLANK MAP, kept simple: a BIG Waft name and
     //  COLUMNS of its Docs (3-ish per column, 4 when it packs better — the model's colh).
-    //   Rendering is all Lies_waftmap_model (LiesFunk — Book:LakeWaftMap watches the same
+    //   Rendering is all Lies_waftmap_model (LiesFunk — Book:HohoWaftMap watches the same
     //    model group things in its snaps).  How many Docs list from where you are is the
     //     Waft's OPENINGNESS (enth 0..3): 0 stacked · 1 title+count · 2 the 3-window from
     //      the cursor · 3 all of them (up to ~30; past that the window + grow-by-3 edges).

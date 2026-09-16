@@ -125,7 +125,7 @@ W.push(['Ghost/Music/Ality', 'the music pipeline — rastock racast raterm — s
 ]])
 
 W.push(['Ghost/Music/Cave', 'the collection — heist original bytes into the Cave — the keep chooses — the Heard Mag is the ledger of love — a phone hands its loves to the laptop',
- ['MusuHeist','MusuHeard','MusuHandoff','MusuBerth','MusuVend','MusuDoor','MusuCursor','MusuHeal','MusuResume','MusuRename','MusuRecast','MusuStanding','MusuFreeze','MusuReap','MusuSoft','MusuBay','MusuBreach','MusuMag','MusuBuddy','MusuSteward','MusuSmuggle','Heistation','Siphonation'], [
+ ['MusuHeist','MusuHeard','MusuHandoff','MusuBerth','MusuVend','MusuDoor','MusuCursor','MusuHeal','MusuResume','MusuRename','MusuRecast','MusuStanding','MusuFreeze','MusuReap','MusuBreach','MusuMag','MusuBuddy','MusuSteward','MusuSmuggle','Heistation','Siphonation'], [
  ['What:the heist', 'Heist — ORIGINAL file bytes move straight into the collection — a job a filing a body',
   'Doc:Ghost/M/Heist.g', P('Heist_job', 'one heist — what to pull and where'), P('Heist_body_new', 'a body to receive bytes'), P('Heist_has_body', 'is the whole body here'), P('Heist_filing_for', 'where a track files'), P('Heist_manifest', 'what a heist will take'), P('Heist_release_rec', 'let a record go'), P('Heist_xfer_breach', 'bytes that do not hash — refused'),
   'Doc:src/lib/O/ui/HeistFace.svelte', 'Doc:src/lib/O/ui/HeistBarFace.svelte', 'Doc:src/lib/O/Funk/HeistSetup.svelte'],
@@ -182,10 +182,10 @@ W.push(['Ghost/Land/Wordland', 'the land — the bet turned on the code itself �
  ['What:the spec', 'Doc:src/lib/O/spec/Wordland_todo.md', 'Doc:src/lib/O/spec/Lagoon_todo.md', 'Doc:src/lib/O/spec/Electrode_todo.md', 'Doc:src/lib/O/spec/Stemdex_todo.md', 'Doc:src/lib/O/spec/Stemdex_spec.md', 'Doc:src/lib/O/spec/Clerkdesk_todo.md', 'Doc:src/lib/O/spec/Docindex_todo.md', 'Doc:src/lib/O/spec/Meaningfold_todo.md'],
 ]])
 
-W.push(['Ghost/Lake/Easy', 'the foundation — particles in a House — the req machine — the Story that proves — the Lies pipeline that compiles and runs — the language of Wafts',
- ['LakeSurfer','LakeNets','LakeFlush','LakeTiles','LakeSurprise','LakeLocate','LakeFunk','LakeKeep','LakeLango','LakeWaftMap','LakeSearch','LakeTtlilt','PortPlan','PortPlanet','PortPlant','PortPain','StuffFlipping','StuffResolving','LeafFarm','LeafJuggle','Diffmatication','Editron','Interesting','MundaneStation','MundaneStaying','ReactiveWaft','Snapmigrating','Snaptesting','TextInca','Understandication','Understandity','Understandium','Engage','WaftMapPacked','ErrChannel','RehealSmoke','Nestcut','GhoghoDrone','BootGateNoFSA'], [
+W.push(['Ghost/Hoho/Easy', 'the foundation — particles in a House — the req machine — the Story that proves — the Lies pipeline that compiles and runs — the language of Wafts',
+ ['HohoSurfer','HohoNets','HohoFlush','HohoTiles','HohoSurprise','HohoLocate','HohoFunk','HohoKeep','HohoLango','HohoWaftMap','HohoSearch','HohoTtlilt','PortPlan','PortPlanet','PortPlant','PortPain','StuffFlipping','StuffResolving','LeafFarm','LeafJuggle','Diffmatication','Editron','Interesting','MundaneStation','MundaneStaying','ReactiveWaft','Snapmigrating','Snaptesting','TextInca','Understandication','Understandity','Understandium','Engage','WaftMapPacked','ErrChannel','RehealSmoke','Nestcut','GhoghoDrone','BootGateNoFSA'], [
  ['What:the particle', 'everything is a C — the mainkey is what a thing IS — sc snaps and c is runtime only — o finds i creates oai finds-or-creates',
-  'Doc:src/lib/data/Stuff.svelte.ts', P('o', 'find children matching sc'), P('i', 'create a child'), P('oai', 'find or create'), P('oa', 'boolean probe'), P('r', 'async replace — never read after a bare r'), P('drop', 'detach a child'), P('bump', 'version up — watchers react'), P('resolve', 'pair a particle across past and future'),
+  'Doc:src/lib/Stuff.svelte.ts', P('o', 'find children matching sc'), P('i', 'create a child'), P('oai', 'find or create'), P('oa', 'boolean probe'), P('r', 'async replace — never read after a bare r'), P('drop', 'detach a child'), P('bump', 'version up — watchers react'), P('resolve', 'pair a particle across past and future'),
   'Doc:src/lib/O/Text.svelte', P('enWaft', 'encode a Waft tree'), P('deWaft', 'decode one'), P('enLine', 'one line'), P('deL', 'one line back'), P('make_diff', 'the snap diff'), P('spay_classify_line', 'what a diff line means — graft blown mung'),
   'Doc:src/lib/O/spec/NOTATION.md', 'Doc:src/lib/O/spec/Cstructures_todo.md'],
  ['What:the House', 'the container hierarchy — Mundo actors and worlds — the beliefs mutex — the Wormhole park',
@@ -230,8 +230,8 @@ W.push(['Everything', 'READ THIS FIRST — one Waft per area of the program list
   'Doc:Ghost/V/Vyto.g', 'Doc:src/lib/O/Vytui.svelte', 'Doc:src/lib/O/spec/Glassbeast_todo.md'],
  ['What:the land', 'Ghost/Land/Wordland — Atlas Electrode Lagoon — BigWordland Hackarium Clerkdesk', 'FromWhat:Waft:Ghost/Land/Wordland',
   'Doc:Ghost/L/Lagoon.g', 'Doc:src/lib/L/BigWordland.svelte', 'Doc:src/lib/O/spec/Wordland_todo.md'],
- ['What:the foundation', 'Ghost/Lake/Easy — the particle the House the req machine the Story Lies Lang the faces', 'FromWhat:Waft:Ghost/Lake/Easy',
-  'Doc:src/lib/data/Stuff.svelte.ts', 'Doc:src/lib/O/Housing.svelte.ts', 'Doc:src/lib/O/Hovercraft.svelte', 'Doc:src/lib/O/spec/Coding_guide.md'],
+ ['What:the foundation', 'Ghost/Hoho/Easy — the particle the House the req machine the Story Lies Lang the faces', 'FromWhat:Waft:Ghost/Hoho/Easy',
+  'Doc:src/lib/Stuff.svelte.ts', 'Doc:src/lib/O/Housing.svelte.ts', 'Doc:src/lib/O/Hovercraft.svelte', 'Doc:src/lib/O/spec/Coding_guide.md'],
  ['What:the Books', 'Credence — every Book grouped by What with a desc naming what the group tests — run one from its Storying', 'FromWhat:Waft:Credence',
   'Doc:src/lib/O/Funk/CreduFunk.svelte', 'Doc:scripts/runner_ask.mjs', 'Doc:scripts/story_accept.mjs'],
  ['What:the shelves', 'GhostList lists the repo — Keep remembers what you had open — Aside/YMD is where errands land — Look and Ting are session-only',

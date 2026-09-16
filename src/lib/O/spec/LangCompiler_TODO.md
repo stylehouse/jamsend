@@ -13,7 +13,7 @@ Reach a TS module via the `IMPORT()` header pseudo-method, always with the absol
    shared primitives that a node side also needs (e.g. `cluster_trust.ts`, so `relay.ts` can
     import it) in their own TS module and `IMPORT` them — a `.go` is a browser Svelte component,
      not a home for node-side or duplicated code. `RENDER()` is the tail twin (`<Child {H} />`).
-  See `Ghost/test/Story/Lake/LakeTiles.g` for both shapes.
+  See `Ghost/test/Story/Hoho/HohoTiles.g` for both shapes.
 
 ### What's imported by default
 The gen template auto-injects only **`TheC`** (plus `onMount`, eatfunc plumbing, not yours to

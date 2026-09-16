@@ -204,7 +204,7 @@ Field observation: during a settle the todo doesn't hold a tidy causal chain one
 *(BUILT 2026-07-07, branch `perf/gallop-tighten` — but the trigger below proved wrong on the first
  trace: the settle queue is a serial drip (depth 1-3), never "20-40 deep"; the shipped trigger is
   sustained OCCUPANCY over consecutive drain gates.  See `Perf_todo.md`'s status log, incl. the
-   LakeTiles finding that "earlier, not different" fails for snaps that observe mid-settle warming.)*
+   HohoTiles finding that "earlier, not different" fails for snaps that observe mid-settle warming.)*
 
 The blunt, general lever: watch todo depth over a window (a `reactap` sibling — `reactap` already measures the
  bump churn, the sister signal). When it's **deep + sustained** (clearly settling) switch the drain from
@@ -302,7 +302,7 @@ The unit of optimisation is an **intervention**: "at the moment req X `finish()`
     quiescence); §2's dense track finds that path and prunes the space to a handful of candidates.
 - **Test oracle (make-or-break):** an edge is a keeper only if it collapses the wait **AND leaves every
    downstream snap byte-identical**.  A `think()`/`do()` fired earlier is a *wake*, and a wake that changes
-    *when* something lands can change an *observable* if that observable was cadence-coupled (the LakeTiles
+    *when* something lands can change an *observable* if that observable was cadence-coupled (the HohoTiles
      warming-point lesson).  Faster-with-a-changed-snap is a *rejected* candidate, not a win.
 - **Determinism filter:** "deterministic moments" is testable — snap the same settle N times densely; the
    finish→idle-gap patterns that recur *every* run are safe to hard-wire, the jittery ones are races

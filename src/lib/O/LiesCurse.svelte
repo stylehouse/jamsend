@@ -61,7 +61,7 @@
             //  Waft_cursor_first re-asserted every timemachine tick (Waft_cursor_candidates is
             //   its shared collector).  A Waft whose Points hang off the %What (siblings of its
             //    Doc, not under it) otherwise lands on a later loose point-%Doc — Lies_first_point_doc
-            //     needs the Point *under* the Doc — the LakeSurfer/LakeFunk regression once P4 dropped
+            //     needs the Point *under* the Doc — the HohoSurfer/HohoFunk regression once P4 dropped
             //      the per-tick land.  Normal %What→%Doc→%Point resolves to the same %What the Doc's
             //       `up` gave, so already-landed Books don't shift.  (Backbone_plan P4)
             const leaf = H.Waft_cursor_candidates(w)[0]?.what as TheC | undefined
@@ -492,7 +492,7 @@
         //      snap never depends on a Keep); undefined ⇒ fresh Waft | unresolvable locator ⇒ first.
         //   (NOTE 2026-07-01: a cleaner Story-safer variant — skip this seam entirely while a want is
         //    pending for this Waft, no Keep read — was proposed in the (retired) Cluster_runner_handover; not shipped
-        //     overnight because it'd swap a user-VERIFIED fix for an unverified one.  See the LakeSurfer note.)
+        //     overnight because it'd swap a user-VERIFIED fix for an unverified one.  See the HohoSurfer note.)
         const target = (H.Lies_role(w) === 'editor' ? H.Lies_keep_resume_what(w, waft, waft_key) : undefined) ?? first
         if (!target) return
         H.i_elvisto(w, 'Lies_want', { src: target, kind: deliberate ? 'click' : 'cold' })

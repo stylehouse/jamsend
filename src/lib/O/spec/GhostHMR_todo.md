@@ -3,7 +3,7 @@
 ## 0. Next
 
 **OPEN 2026-08-22 — the compile ack lies, and this round the write never landed at all.**
- `ghost_compile.ts` tickets for `Radio.g` / `Mesh.g` / `LakeTiles.g`: the editor acked
+ `ghost_compile.ts` tickets for `Radio.g` / `Mesh.g` / `HohoTiles.g`: the editor acked
   `✓ compiled @ <the correct NEW dige>` on TWO separate rounds, and the `.go` on disk (and as
    served by :9091 vite) kept the OLD Ghostmeta — mtimes untouched 10+ minutes later. So the
     editor ran the compile (it knows the new dige) and the WRITE was silently lost: parked in a

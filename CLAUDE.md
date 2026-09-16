@@ -194,7 +194,7 @@ Show the arc, not just the diff.
 
 `wormhole/Everything/toc.snap` is the front door: one `What` per area of the program, each pointing
  (`FromWhat:Waft:…`) at that area's Waft — `Ghost/Net/Easy`, `Ghost/Swarm/Easy`, `Ghost/Music/Ality`,
-  `Ghost/Music/Cave`, `Ghost/Vis/Visua`, `Ghost/Land/Wordland`, `Ghost/Lake/Easy` — plus `Credence` (every
+  `Ghost/Music/Cave`, `Ghost/Vis/Visua`, `Ghost/Land/Wordland`, `Ghost/Hoho/Easy` — plus `Credence` (every
    Book). An area Waft lists its ghosts' MAIN functions as `Point,method:X,desc:<keywords>`. The keeping
     policy is the last `What` of Everything. All of it is generated + validated by
      `scripts/wafts_everything.mjs` — edit THAT, re-run it, reload the editor; never hand-edit the tocs.

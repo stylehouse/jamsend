@@ -71,14 +71,14 @@
     },
 
 //#endregion
-//#region LakeTiles
+//#region HohoTiles
 
-    // LakeTiles ghost — a second test-case game with its own Cyto instance.
+    // HohoTiles ghost — a second test-case game with its own Cyto instance.
     //
     // ── eithery commissioning ───────────────────────────────────────────────
     //
     //   H:Story commissions its Cyto with Scannable=H (everything), giving the
-    //   low-frequency overview wave.  H:LakeTiles commissions its own Cyto
+    //   low-frequency overview wave.  H:HohoTiles commissions its own Cyto
     //   with Scannable=w.c.model — a permanent TheC it owns — for a tighter,
     //   higher-detail wave of just the Lang viewable model.
     //
@@ -87,33 +87,33 @@
     //   Any matstyle edit from either Cytui writes to the same place and both
     //   graphs restyle.  Story's watch_c on stylesC handles save-on-change.
     //
-    //   Client for LakeTiles's Cyto is w:Lang itself, so Cyto_animation_done
+    //   Client for HohoTiles's Cyto is w:Lang itself, so Cyto_animation_done
     //   etc. route back here.  Story's Cyto still talks to w:Story.
     //
 
 
-    // Called from Auto (same path Story uses) with Book=name of a LakeTiles book.
-    // Auto spawns H:LakeTiles as a subHouse and calls Run_A_LakeTiles on it.
-    Run_A_LakeTiles(this: House) {
+    // Called from Auto (same path Story uses) with Book=name of a HohoTiles book.
+    // Auto spawns H:HohoTiles as a subHouse and calls Run_A_HohoTiles on it.
+    Run_A_HohoTiles(this: House) {
         const H = this
         H.i({ A: 'Lies' }).i({ w: 'Lies' })
         H.i({ A: 'Lang' }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate' }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LakeTiles wired`)
+        console.log(`🟦 ${H.name} HohoTiles wired`)
     },
 
 
 //#endregion
-//#region LakeSurfer
+//#region HohoSurfer
     // growing the Lies-Lang system
 
 
-    Run_A_LakeSurfer(this: House) {
+    Run_A_HohoSurfer(this: House) {
         const H = this
         H.i({ A: 'Lies' }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LakeSurfer wired`)
+        console.log(`🟦 ${H.name} HohoSurfer wired`)
     },
 
 
@@ -122,16 +122,16 @@
 
 
 //#endregion
-//#region LakeNets
+//#region HohoNets
     // growing Peeroleum, the Peerily reboot
 
 
-    Run_A_LakeNets(this: House) {
+    Run_A_HohoNets(this: House) {
         const H = this
         H.i({ A: 'Lies' }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LakeNets wired`)
+        console.log(`🟦 ${H.name} HohoNets wired`)
     },
 
 
@@ -141,12 +141,12 @@
     //  No worker body: the real Lies/Lang/Pantheate ghosts run; the scenario is
     //   driven from the Story Plan's Preps (Lies_open_Waft, now_Ting, Lang mark)
     //    and recorded as the regression gate.
-    Run_A_LakeSurprise(this: House) {
+    Run_A_HohoSurprise(this: House) {
         const H = this
         H.i({ A: 'Lies' }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟪 ${H.name} LakeSurprise wired`)
+        console.log(`🟪 ${H.name} HohoSurprise wired`)
     },
 
 
@@ -157,33 +157,33 @@
 //#endregion
 
 
-//#region LakeFlush
+//#region HohoFlush
     // altering Waft, push|pull through LE
 
 
-    Run_A_LakeFlush(this: House) {
+    Run_A_HohoFlush(this: House) {
         const H = this
         H.i({ A: 'Lies' }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LakeFlush wired`)
+        console.log(`🟦 ${H.name} HohoFlush wired`)
     },
 
 
 //#endregion
-//#region LakeLocate
+//#region HohoLocate
     // P2 keystone gate — the one loose locator resolver (Lies_resolve_locator, Keeping_spec #7).
     //  In-system Story, NOT a scratch spec: a Prep fires e_Lies_locate_selftest, which builds a tiny
     //   Waft tree on w:Lies, resolves each of the three locator forms + a rename, and emits a %see
     //    self-describing claim per truth that holds.  The snap-fixture diff is the gate — a resolver
     //     regression drops a %see line.
 
-    Run_A_LakeLocate(this: House) {
+    Run_A_HohoLocate(this: House) {
         const H = this
         H.i({ A: 'Lies'       }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LakeLocate wired`)
+        console.log(`🟦 ${H.name} HohoLocate wired`)
     },
 
     // the Prep handler — drive Lies_resolve_locator through its three forms + a rename, witnessing
@@ -215,19 +215,19 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
-//#region LakeKeep
+//#region HohoKeep
     // P1 verify gate — the kind foundation, reconciled to the %equip collapse + Chunk 1.  P1's goal
     //  ("background kinds get a carrier they'd otherwise never get, before any focus") is met by the
     //   per-Waft req:Waftica carrier: this drives the REAL instantiate→ensure_waftica path on a fresh
     //    background (equip) Waft and witnesses the carrier, plus the equip focus-classification.  Same
-    //     in-system Story shape as LakeLocate; markers under KeepGate, snap-fixture diff is the gate.
+    //     in-system Story shape as HohoLocate; markers under KeepGate, snap-fixture diff is the gate.
 
-    Run_A_LakeKeep(this: House) {
+    Run_A_HohoKeep(this: House) {
         const H = this
         H.i({ A: 'Lies'       }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LakeKeep wired`)
+        console.log(`🟦 ${H.name} HohoKeep wired`)
     },
 
     async e_Lies_keep_selftest(this: House, _A: TheC, w: TheC, _e: TheC) {
@@ -284,7 +284,7 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
-//#region LakeSearch
+//#region HohoSearch
     // Universal-search gate — the Stemdex index + Lies_search driven end to end on a coined,
     //  collision-proof corpus seeded straight into the store: NO disk read fires (content rides
     //   good.c.content so the scan takes the already-loaded branch; a fixed known.sc.dige takes
@@ -294,12 +294,12 @@
     //       recorded|recording|records → record, frobnitz unchanged.  brand_new — needs a first
     //        --accept to mint 001.snap + the real step dige; some beats may want live tuning.
 
-    Run_A_LakeSearch(this: House) {
+    Run_A_HohoSearch(this: House) {
         const H = this
         H.i({ A: 'Lies'       }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LakeSearch wired`)
+        console.log(`🟦 ${H.name} HohoSearch wired`)
     },
 
     async e_Lies_search_selftest(this: House, A: TheC, w: TheC, e: TheC) {
@@ -371,19 +371,19 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
-//#region LakeTtlilt
+//#region HohoTtlilt
     // ttlilt retract-on-drop gate — proves the belief-loop fix (Hovercraft.svelte:548): a req dropped
     //  WITHOUT finishing (host.drop → c.drop=1, no %finished) must have its published Run-root ttlilt
     //   copy RETRACTED by the Story poll, not held to wall-clock timeout.  This is the Sounditron 4→5
     //    stall in isolation (expecting() hangs its req directly on w).  Claims under TtliltGate; the
     //     dropped_req_ttlilt_retracts claim is the one that FAILED before the fix.
 
-    Run_A_LakeTtlilt(this: House) {
+    Run_A_HohoTtlilt(this: House) {
         const H = this
         H.i({ A: 'Lies'       }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LakeTtlilt wired`)
+        console.log(`🟦 ${H.name} HohoTtlilt wired`)
     },
 
     async e_Lies_ttlilt_selftest(this: House, A: TheC, w: TheC, e: TheC) {
@@ -406,19 +406,19 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
-//#region LakeFunk
+//#region HohoFunk
     // Chunk-2 gate — Storying is EVENT-DRIVEN, not pumped.  Drops `run` from FUNK_KINDS.Storying so
     //  instantiate binds no per-tick poll; instead Lies_reflect_storying restamps a cell's verdict
     //   when a run_result lands (Lies_run_result_recv's push).  This builds a Storying cell, confirms
     //    it is unpumped, lands a green then a red run_result through reflect, and witnesses the verdict
     //     flips — markers under FunkGate, snap-fixture diff is the gate.
 
-    Run_A_LakeFunk(this: House) {
+    Run_A_HohoFunk(this: House) {
         const H = this
         H.i({ A: 'Lies'       }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LakeFunk wired`)
+        console.log(`🟦 ${H.name} HohoFunk wired`)
     },
 
     async e_Lies_funk_selftest(this: House, _A: TheC, w: TheC, _e: TheC) {
@@ -444,7 +444,7 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
-//#region LakeLango
+//#region HohoLango
     // P3 gate — the %Lango channel AND its receiver (Backbone_plan P3 "The Lango channel" +
     //  "req:Langoer").  In-system Story, NOT a scratch spec: a Prep fires e_Lies_lango_selftest,
     //   which mints %Langos via H.lango onto each source Waft's req:Waftica carrier, then drives
@@ -457,12 +457,12 @@
     //    (that cut is owner-supervised, :9091).  Markers under LangoGate; the snap-fixture diff —
     //     with the per-Lango `seq` munged (its base churns) and equip Wafts folded — is the gate.
 
-    Run_A_LakeLango(this: House) {
+    Run_A_HohoLango(this: House) {
         const H = this
         H.i({ A: 'Lies'       }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LakeLango wired`)
+        console.log(`🟦 ${H.name} HohoLango wired`)
     },
 
     async e_Lies_lango_selftest(this: House, _A: TheC, w: TheC, _e: TheC) {
@@ -534,28 +534,28 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
-//#region LakeWaftMap
+//#region HohoWaftMap
     // The Plank gate — WATCH Lies_waftmap_model group things (burst rows / shafts of light /
     //  stacks of two / crumbs / seams), snap by snap, while Preps play the cursor and the
-    //   foreground around two fixture Wafts (TestEasy, TestDeep — they share LakeAntecedents.g,
+    //   foreground around two fixture Wafts (TestEasy, TestDeep — they share HohoAntecedents.g,
     //    the ×2 Doc) plus seeded calm ones.  The dump is a per-beat WORKER on its own
-    //     w:LakeWaftMap (a snap boundary): each beat it recomputes the model off the sibling
+    //     w:HohoWaftMap (a snap boundary): each beat it recomputes the model off the sibling
     //      w:Lies and rebuilds the dump ONLY when the fingerprint changed, so the world
     //       quiesces and the step snap always holds the grouping as-at quiesce — no Prep-order
     //        race against want resolution.  The snap-fixture diff is the gate AND the design
     //         surface: iterate the grouping algorithm by reading these snaps.
 
-    Run_A_LakeWaftMap(this: House) {
+    Run_A_HohoWaftMap(this: House) {
         const H = this
         H.i({ A: 'Lies'        }).i({ w: 'Lies' })
         H.i({ A: 'Lang'        }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'   }).i({ w: 'Pantheate' })
-        H.i({ A: 'LakeWaftMap' }).i({ w: 'LakeWaftMap' })   // the dump worker's world (w-name dispatch)
-        console.log(`🟦 ${H.name} LakeWaftMap wired`)
+        H.i({ A: 'HohoWaftMap' }).i({ w: 'HohoWaftMap' })   // the dump worker's world (w-name dispatch)
+        console.log(`🟦 ${H.name} HohoWaftMap wired`)
     },
 
     // the per-beat dump worker — dispatched by the w-name.  Reads the sibling w:Lies.
-    async LakeWaftMap(A: TheC, w: TheC) {
+    async HohoWaftMap(A: TheC, w: TheC) {
         const H  = this as House
         const wl = H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
         if (!wl) return
@@ -624,8 +624,8 @@
         const H = this
         for (const name of ['CalmA', 'CalmB']) w.oai({ Waft: `Calm/${name}` })
         for (const name of ['CalmC', 'CalmD']) w.oai({ Waft: `Calm/${name}` }, { boring: 1 })
-        const deep = w.o({ Waft: 'Story/LakeWaftMap/TestDeep' })[0] as TheC | undefined
-        if (deep) await H.lango(w, deep, { kind: 'Cursor', to: 'Ghost/test/Story/Lake/WaftMapPacked.g' })
+        const deep = w.o({ Waft: 'Story/HohoWaftMap/TestDeep' })[0] as TheC | undefined
+        if (deep) await H.lango(w, deep, { kind: 'Cursor', to: 'Ghost/test/Story/Hoho/WaftMapPacked.g' })
         w.bump_version()
         H.i_elvisto(w, 'think')
     },
@@ -633,7 +633,7 @@
 //#endregion
 //#region Engage
     // Engage gate — the runner-engagement layer (Engage_integration C2 + C1).  Same in-system Story
-    //  shape as LakeKeep: a Prep fires e_Lies_engage_selftest, which stands up the PRODUCTION dispatch
+    //  shape as HohoKeep: a Prep fires e_Lies_engage_selftest, which stands up the PRODUCTION dispatch
     //   topology (one Peering, two Piers — the shape no swarm Book exercises, since the co-resident
     //    swarm runs one Pier per Peering) plus a Waft:Cluster/%HostedIdentity registry, drives the
     //     addressed-dispatch primitive + the favoured-runner lookup, and emits a marker per truth that
@@ -1484,7 +1484,7 @@ The double-envelopment became the template for every subsequent battle of annihi
 
         // < GONER? it doesn't reproduce the problem.
         // ── resolve() Leg-split: the_from vs the_to tie ──────────────────────
-        // Regression for the scan_id mismatch seen in LakeTiles step 3→4.
+        // Regression for the scan_id mismatch seen in HohoTiles step 3→4.
         //
         // When one Leg(from:6, to:10) splits into Leg(6–8) + Leg(9–10),
         // both halves score unambiguity 1.0 against the old node:

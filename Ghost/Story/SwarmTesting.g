@@ -5,7 +5,7 @@
 //   BEFORE the Story begins (once it is in CREDULER_GHOSTS), so Ghost/S/Swarm.g's spine is on H.
 //  DETERMINISM is total: fixed selves (keys seeded off the person's name), a pinned clock
 //   (w.sc.now stepped per beat), a fixed nonce — ed25519 signs deterministically, so every
-//    signature, every grant, every snap byte repeats run to run (the LakeSurprise ideal).
+//    signature, every grant, every snap byte repeats run to run (the HohoSurprise ideal).
 //
 //  SwarmStaple — two strangers become peers, end to end:
 //   beat 2  Alice + Bob stand up — %Identity owning %Peering each, fixed keys, both OFFLINE

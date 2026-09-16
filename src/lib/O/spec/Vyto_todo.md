@@ -2638,7 +2638,7 @@ The occasion: the human found the live glass an "unstructured flap-puddle — no
             grapple `owner = w`; `Vyto_decommission(w)` → `unwatch_owner(w)`.  Gate:
              **VytoTandem** GREEN ×2 (two watchers on one C — old dedup dropped the second;
               decommission leaves only the survivor).  Regression: VytoStaple/Cell/Mitosis/
-               Radio + **LakeTiles** (the Lies `watch_c(waft)` Book) all green — ownerless
+               Radio + **HohoTiles** (the Lies `watch_c(waft)` Book) all green — ownerless
                 callers unperturbed.  **Retires the top hazard below.**
   - **Unit 2 — spool freeze-on-run-fail** (`Vyto.g`): `Vyto_spool_frozen(w)` reads the Run
      ref's `Run.c.run.sc.failed_at` (the step Story stamps when a run PAUSES at a failing

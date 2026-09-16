@@ -14,7 +14,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_SwarmTesting(): string { return '3810aaab985d5524~g1' },
+    Ghostmeta_Ghost_Story_SwarmTesting(): string { return 'e465a4171d399c6b~g1' },
 
 // SwarmTesting.g — né Swarmation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file.
@@ -23,7 +23,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
 //   BEFORE the Story begins (once it is in CREDULER_GHOSTS), so Ghost/S/Swarm.g's spine is on H.
 //  DETERMINISM is total: fixed selves (keys seeded off the person's name), a pinned clock
 //   (w.sc.now stepped per beat), a fixed nonce — ed25519 signs deterministically, so every
-//    signature, every grant, every snap byte repeats run to run (the LakeSurprise ideal).
+//    signature, every grant, every snap byte repeats run to run (the HohoSurprise ideal).
 //
 //  SwarmStaple — two strangers become peers, end to end:
 //   beat 2  Alice + Bob stand up — %Identity owning %Peering each, fixed keys, both OFFLINE

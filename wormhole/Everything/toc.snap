@@ -23,8 +23,8 @@ Waft:Everything,desc:READ THIS FIRST — one Waft per area of the program lists 
     Doc:Ghost/L/Lagoon.g
     Doc:src/lib/L/BigWordland.svelte
     Doc:src/lib/O/spec/Wordland_todo.md
-  What:the foundation,desc:Ghost/Lake/Easy — the particle the House the req machine the Story Lies Lang the faces,FromWhat:Waft:Ghost/Lake/Easy
-    Doc:src/lib/data/Stuff.svelte.ts
+  What:the foundation,desc:Ghost/Hoho/Easy — the particle the House the req machine the Story Lies Lang the faces,FromWhat:Waft:Ghost/Hoho/Easy
+    Doc:src/lib/Stuff.svelte.ts
     Doc:src/lib/O/Housing.svelte.ts
     Doc:src/lib/O/Hovercraft.svelte
     Doc:src/lib/O/spec/Coding_guide.md

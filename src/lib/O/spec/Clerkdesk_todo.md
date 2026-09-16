@@ -213,7 +213,7 @@ The owner: *"if I wait these 30s for a ridiculous amount of reads of 700 docs…
 4. **Hold intent across the wait** — the desk visible WHILE a Doc loads, which is the exact window
     where the errand is currently lost.
 
-**DO NOT, overnight:** the Waft flattening (attended, gate is re-recording `LakeSurprise`) · bulk edits
+**DO NOT, overnight:** the Waft flattening (attended, gate is re-recording `HohoSurprise`) · bulk edits
  from the rot queue (per-item human judgment; `§3.7 → §3` resolves but aims vaguer than the author
   meant) · any further `Testing.g` renaming · anything under the visual branch's Vyto/Glassbeast files
    · the `What / Point,doc:,at:` corpus migration (53 Story fixtures — `Lagoon_todo §leg-3` has the

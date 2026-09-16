@@ -38,7 +38,7 @@
     //   .$ tight value-capture (key.$ , key.$:var , key:val.$)  — "." binds to its key and
     //     grabs that key's VALUE (not the row), assigned inline among peel items:
     //       o prefixy,wither.$:ang   →  let ang = w.o({prefixy:1,wither:1})[0]?.sc.wither
-    //     Built (CaptureDot); LakeTiles.g l.281 is the live example.
+    //     Built (CaptureDot); HohoTiles.g l.281 is the live example.
     //
     // ── Deferred / infirm syntax (parses, not yet compiled) ───────────────────
     //   Inline {}-block verbs (r/roai/oai/replace + trailing {}).  The pythonic indented-

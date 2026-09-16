@@ -159,16 +159,16 @@ Waft:Credence
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus
       Funkcion:StoryTimes
-      Funkcion:Storying,of_Book:LakeSurfer
-      Funkcion:Storying,of_Book:LakeNets
-      Funkcion:Storying,of_Book:LakeFlush
-      Funkcion:Storying,of_Book:LakeTiles
-      Funkcion:Storying,of_Book:LakeSurprise
-      Funkcion:Storying,of_Book:LakeLocate
-      Funkcion:Storying,of_Book:LakeFunk
-      Funkcion:Storying,of_Book:LakeKeep
-      Funkcion:Storying,of_Book:LakeLango
-      Funkcion:Storying,of_Book:LakeWaftMap
+      Funkcion:Storying,of_Book:HohoSurfer
+      Funkcion:Storying,of_Book:HohoNets
+      Funkcion:Storying,of_Book:HohoFlush
+      Funkcion:Storying,of_Book:HohoTiles
+      Funkcion:Storying,of_Book:HohoSurprise
+      Funkcion:Storying,of_Book:HohoLocate
+      Funkcion:Storying,of_Book:HohoFunk
+      Funkcion:Storying,of_Book:HohoKeep
+      Funkcion:Storying,of_Book:HohoLango
+      Funkcion:Storying,of_Book:HohoWaftMap
     What:Leaf,desc:multi-worker particle worlds — cross-worker transfers and juggling rendered in Cyto
       Funkcion:StoryTimes
       Funkcion:Storying,of_Book:LeafFarm
@@ -210,8 +210,8 @@ Waft:Credence
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:GhoghoDrone
     Funkcion:Storying,of_Book:Sounditron,unusual:real-environment,wire:probes the REAL relay and live peers — the only real-channel Book — channel liveness not a proven round-trip
-    Funkcion:Storying,of_Book:LakeSearch
-    Funkcion:Storying,of_Book:LakeTtlilt
+    Funkcion:Storying,of_Book:HohoSearch
+    Funkcion:Storying,of_Book:HohoTtlilt
     Funkcion:Storying,of_Book:Nestcut
     Funkcion:Storying,of_Book:Heistation
     Funkcion:Storying,of_Book:Radiation

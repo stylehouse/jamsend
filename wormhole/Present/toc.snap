@@ -16,7 +16,7 @@ Library
       TimeTotal:beliefs,avg=0.081
         sample=0.077,at=1781080326
         sample=0.085,at=1781607913
-  Book:LakeTiles,ok_pct=0.22,last_pct_change=1780029934.789,done=9,last_run_ms=1782357972.679
+  Book:HohoTiles,ok_pct=0.22,last_pct_change=1780029934.789,done=9,last_run_ms=1782357972.679
     TimeSpool
       TimeTotal:beliefs,avg=1.399
         sample=1.264,at=1781888237
@@ -29,7 +29,7 @@ Library
         sample=1.037,at=1781972804
         sample=1.908,at=1781976378
         sample=1.759,at=1782357974
-  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781888821.61
+  Book:HohoSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781888821.61
     TimeSpool
       TimeTotal:beliefs,avg=0.8
         sample=0.531,at=1781621334
@@ -129,7 +129,7 @@ Library
         sample=0.047,at=1781596162
         sample=0.018,at=1781608069
         sample=0.024,at=1781897138
-  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1781980339.173,time_avg=0.173
+  Book:HohoNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1781980339.173,time_avg=0.173
     TimeSpool
       TimeTotal:beliefs,avg=1.414
         sample=1.633,at=1781656526
@@ -220,7 +220,7 @@ Library
         sample=0.093,at=1781594131
         sample=0.108,at=1781594165
         sample=0.123,at=1781594526
-  Book:LakeFlush,ok_pct=0,done,last_run_ms=1781897094.038
+  Book:HohoFlush,ok_pct=0,done,last_run_ms=1781897094.038
     TimeSpool
       TimeTotal:beliefs,avg=0.963
         sample=1.028,at=1781617793
@@ -246,7 +246,7 @@ Library
         sample=0.163,at=1781656675
         sample=0.171,at=1781660709
         sample=0.002,at=1781750531
-  Book:LakeSurprise,ok_pct=0,done=4,last_run_ms=1781997736.811
+  Book:HohoSurprise,ok_pct=0,done=4,last_run_ms=1781997736.811
     TimeSpool
       TimeTotal:beliefs,avg=1.285
         sample=1.272,at=1781714096

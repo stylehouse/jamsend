@@ -140,7 +140,7 @@ Owed work the sweep found outside the music clusters — real, but **not on the 
 
 Credit where the todos under-count: the Mag §4 recurse ruling (built); heist-landing mints now
  page, not flat; the Keeping **D7 renames** + `req:Langoer` (`LiesKeep`/`LangHold`/`LangCurse`
-  live; `LiesHold`/`Interest.svelte`/`LiesEnd` gone); the **LakeSearch** Book (recorded);
+  live; `LiesHold`/`Interest.svelte`/`LiesEnd` gone); the **HohoSearch** Book (recorded);
    the **Stuff** regrouping algebra (green×2); the **LangSion** IOing oracle (built, not yet
     wired into `LangCompiling`); **spay/EntropyArrest** (live); Interest's prod graduation.
 
@@ -168,7 +168,7 @@ Design docs written alongside this map:
 **Human rulings 2026-07-27 — mostly KEEP (concept compost):** `Seemables_todo.md` and
  `Wire_spec.md` are kept as important concept compost, NOT retired (`Wire_spec` is a
   render/reactivity doc, not transport — valued as-is; any rename is optional). `Radio_lowlevel.md`
-   and `Radiobuddies_handover.md` stay (above). **`LakeSearch`** (recorded but unseen by the human)
+   and `Radiobuddies_handover.md` stay (above). **`HohoSearch`** (recorded but unseen by the human)
     → a review note lives in `Everything_todo.md`, not a retirement. Only genuine cleanup left: the
      drift-fix — `Keeping_spec.md` + `Interest.md` still name renamed files
       (`LiesHold`/`LiesEnd`/`Interest.svelte`).

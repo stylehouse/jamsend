@@ -169,7 +169,7 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
       step badge (`Liesui.svelte`) and the Storying lights read it.
 
 **The board.** `wormhole/Credence/toc.snap` = `Waft:Credence`, Book-bound + What-grouped to mirror the Library
- (`PereStaple | Lake* | Leaf* | Port* | Stuff* | LangTiles` — the substantive Books; the rest are R&D husks,
+ (`PereStaple | Hoho* | Leaf* | Port* | Stuff* | LangTiles` — the substantive Books; the rest are R&D husks,
   [[story-books-catalog]]). Each `What:*` holds its Storying cells + a `Funkcion:StoryTimes` station; a board-wide
    `Funkcion:StoryTimes,all:1` sits at the root. Open via Liesui `+Waft → Credence`.
 

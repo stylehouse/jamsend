@@ -7,6 +7,28 @@ The front door for the road a person meets most: press ♥ on a track, and the m
     (Owner 2026-09-14: *"it's very central to it all, and likely what will be reconfigured or rebuilt a
      lot when this takes on a crowd of student programmers."*)
 
+## 0.0 TODO (parked 2026-09-17) — `ProtoFsaNav`: local music without FSA
+
+**The idea, from the local-music design conversation:** offer local playback on browsers that never got
+ the File System Access API (iOS Safari, Android Chrome — and note: read-only `showDirectoryPicker` is
+  the SAME API, just a mode flag; it is NOT more widely available than read-write) via the one thing that
+   genuinely works everywhere — `<input type="file" webkitdirectory>` — a one-shot `FileList` snapshot, no
+    persistent handle, no re-verification dance. Copy the picked files into OPFS once (same road a pooled
+     lofi copy already lands by), then play from OPFS forever after; no FSA involved again.
+
+**Naming:** `ProtoFsaNav`, to sit beside `WormholeNav`/`OpfsOverlayNav` under `MountNav` (Nav verbs land in
+ three layers — see the nav memory note) as a fourth Nav implementation, not a bolted-on special case.
+  "Proto" because it's scaffolding for a world where real FSA is universal, not a permanent fork.
+
+**The political note the owner asked to be kept alongside it:** FSA is Chromium-only because Apple and
+ Mozilla have each *explicitly declined* to implement it (stated concerns: fingerprinting surface,
+  persistent-access UX risk) — not a technical impossibility. Nobody can force Google here; it already
+   ships it. The real lever pointed at Apple is regulatory, not public pressure — the EU's DMA already
+    forced iOS to allow alternative browser engines, and is the plausible (not yet actual) path to WebKit
+     feature parity someday. `ProtoFsaNav` should work well regardless of whether that ever happens.
+
+**Not built.** No code exists yet; this is the plan to build from when local music is picked up.
+
 ## 0. What to get on with next
 
 **Rulings 2026-09-15 (the owner):** ♥ is a REACTION a person indicates toward material — one of a vocabulary:

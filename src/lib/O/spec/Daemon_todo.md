@@ -1023,7 +1023,7 @@ This promotes the ffmpeg shim (§2.1) from "needed to stock a collection" to "ne
  when `E=`, `B=` or `I=` is given — so a bare `node scripts/daemon/run.mjs` (this file's own §1
   first example) takes the **library** branch: the disk-backed book browser, which reads
    `wormhole/Present/toc.snap` and activates whatever Book a human last left `active` there, falling
-    back to `DEFAULT_BOOKS = ['LeafJuggle','LeafFarm','StuffFlipping','LakeSurfer']` — UI/editor test
+    back to `DEFAULT_BOOKS = ['LeafJuggle','LeafFarm','StuffFlipping','HohoSurfer']` — UI/editor test
      fixtures, not music.
 
 **So §1's "H:Story and H:MusuStaple appear on their own" is not a daemon default — it is the

@@ -51,15 +51,15 @@ Snap:H
             Funkcion:Storying,of_Book:MusuTune
           What:Lake
             Funkcion:StoryTimes
-            Funkcion:Storying,of_Book:LakeSurfer
-            Funkcion:Storying,of_Book:LakeNets
-            Funkcion:Storying,of_Book:LakeFlush
-            Funkcion:Storying,of_Book:LakeTiles
-            Funkcion:Storying,of_Book:LakeSurprise
-            Funkcion:Storying,of_Book:LakeLocate
-            Funkcion:Storying,of_Book:LakeFunk
-            Funkcion:Storying,of_Book:LakeKeep
-            Funkcion:Storying,of_Book:LakeLango
+            Funkcion:Storying,of_Book:HohoSurfer
+            Funkcion:Storying,of_Book:HohoNets
+            Funkcion:Storying,of_Book:HohoFlush
+            Funkcion:Storying,of_Book:HohoTiles
+            Funkcion:Storying,of_Book:HohoSurprise
+            Funkcion:Storying,of_Book:HohoLocate
+            Funkcion:Storying,of_Book:HohoFunk
+            Funkcion:Storying,of_Book:HohoKeep
+            Funkcion:Storying,of_Book:HohoLango
           What:Leaf
             Funkcion:StoryTimes
             Funkcion:Storying,of_Book:LeafFarm

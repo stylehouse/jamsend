@@ -704,7 +704,7 @@ Method that made this safe: an automated gate that, for each Book, diffs its **c
 
 **Accepted, green on two consecutive verifications (21):** MusuReco, MusuDoor, MusuVend, MusuPier,
  MusuBay, MusuBuddy, MusuBounce, MusuSoft, MusuFreeze, MusuHeist, MusuRecast, MusuRename, MusuStanding,
-  SwarmDoor, SwarmGot, SwarmWire, PereProof, PereStaple, MusuMag, LakeSurfer, PereComplain.
+  SwarmDoor, SwarmGot, SwarmWire, PereProof, PereStaple, MusuMag, HohoSurfer, PereComplain.
 
 **Zero fixture movement (proof the protocol changes were contained):** RepliUpsert, RepliSplit,
  RepliShadow — the three Repli Books have no numbered-snap changes at all, and stayed green throughout.

@@ -202,7 +202,7 @@ Most of these die from the one move: **one Interest per Waft ⇒ one LE scheme.*
    snap-visible (fleet re-record) and touches live focus (owner-supervised on :9091).
 4. **Give the Ting its `Interest:Ting`.** The trail-LE becomes `{LE:Ting/<date>}`; the `{LE:1}` and
    `{LE:name}` branches and the `'checkout'` fallback all go — one LE scheme at last. Costs a
-   LakeTiles re-record (seven snaps carry `LE:Undertaking`) and evicts the word *Undertaking*.
+   HohoTiles re-record (seven snaps carry `LE:Undertaking`) and evicts the word *Undertaking*.
 
 ---
 

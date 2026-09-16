@@ -103,7 +103,7 @@ The biggest wall-clock number in interactive use is the deliberate **6 s
 ## RE-RANKED 2026-07-07 by the trace gap-analysis (measure, don't guess)
 
 The old ranking below was written from the causal map (structure), not from measured wall-clock.
- The `runner_ask trace <n>` + `scripts/trace_gaps.mjs` breakdown of a real Lies+Lang settle (LakeFlush)
+ The `runner_ask trace <n>` + `scripts/trace_gaps.mjs` breakdown of a real Lies+Lang settle (HohoFlush)
   moves the priorities — see the Status log for numbers.  **Per step, the wall-clock splits ≈: the 50 ms
    answer_calls DRAIN GATE ~49% · a fixed ~428 ms trailing QUIESCENCE guard ~22% · tight belief work
     ~18% · the 150 ms TRICKLE ~11%.**  So:
@@ -202,7 +202,7 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
   - **FIXED to the one-axis end-state this doc already named** ("under the intended universal-on end-state,
      `no_gallop` is the permanent opt-out for warming-observer Books").  `V.gallop` is **gone**.  The gate is
       now a single presence-keyed **opt-OUT**, `c.no_gallop`, universal-on: `Story` sets it on a Run only
-       when the Book carries `The/Opt/{no_gallop:1}` (LakeTiles + LakeWaftMap), everything else gallops.
+       when the Book carries `The/Opt/{no_gallop:1}` (HohoTiles + HohoWaftMap), everything else gallops.
         `GALLOP_DISARM` (exported, **defaults `false`**) survives as an explicit **escape hatch** for a
          `perf_ab` arm or a bisect — never as configuration.
   - **Two rules earned, worth keeping:** an enable-gate that defaults OFF makes "shipped" and "doing
@@ -232,20 +232,20 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
          between hop N and hop N+1's targeting, or a chain flaps the gallop off every item).  The
           mutex-yield retry tightens too — mid-gallop an item's work outlasts the 4 ms gate, so that
            retry is the common re-drive.
-  - **A/B (perf_ab warm medians, n=5/arm, all runs green):** LakeFlush 11.85 s → 10.31 s (**−13%**),
+  - **A/B (perf_ab warm medians, n=5/arm, all runs green):** HohoFlush 11.85 s → 10.31 s (**−13%**),
      MusuGlide 3.67 s → 3.15 s (**−14%**).  Step-1 trace: the mid-gap (drain-gate) bucket collapsed
       1026 ms → 429 ms; the residual is engage lag + trickle dry-outs.  `GALLOP_SUSTAIN=2` was tried
-       and REJECTED — LakeFlush noise-identical, MusuGlide worse/bimodal; 4 is measured-best AND more
+       and REJECTED — HohoFlush noise-identical, MusuGlide worse/bimodal; 4 is measured-best AND more
         cautious.  The ~430 ms/step trailing quiescence guard is untouched by the gallop and is now
          the largest single slice — next lever.
   - **FLEET: 46/65 green armed.**  17 reds reproduce DISARMED too (reds-only control sweep) → NOT this
      lever: 2 unauthored stubs, 2 runner-killers (peering standup wedges the tab — MusuBounce/Editron),
       2 audio-timeouts (empty /music), a stale-fixture wave from the Voro-guts Cytui rewrite (not
        re-recorded), + wrong/ordering fixtures.  Full triage in `spec/Fleet_reds_report.md`.
-  - **TWO were gallop-CAUSED and robustly so (0/6 armed, 6/6 disarmed): LakeTiles (steps 4-5) +
-     LakeWaftMap** — now **RESOLVED** via `The/Opt/{no_gallop:1}`.  The step-4 diff named the mechanism:
+  - **TWO were gallop-CAUSED and robustly so (0/6 armed, 6/6 disarmed): HohoTiles (steps 4-5) +
+     HohoWaftMap** — now **RESOLVED** via `The/Opt/{no_gallop:1}`.  The step-4 diff named the mechanism:
       the fixture asserts a WARMED point (`heat=4.478,held,long` + its `{"say":…}` child, first→last
-       spanning ~3.2 s; LakeTiles even carries an `EntropyArrest` tol:any matcher for the heat/first/last
+       spanning ~3.2 s; HohoTiles even carries an `EntropyArrest` tol:any matcher for the heat/first/last
         numbers) and the galloped settle quiesces at ~1.7 s, snapping the point just-born (`heat=0.98`,
          no say/held/long).  Genuinely **earlier AND different** — these Books observe mid-settle warming,
           the cadence-sensitive class §3's opt-out is for.  NOT re-recordable (the warmed state is a
@@ -257,7 +257,7 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
 - **2026-07-07 (pm)** — TRACE GAP-ANALYSIS reprioritised the levers.  Exposed the existing per-step
    beliefs-cycle trace over the CLI (`runner_ask trace <n>` — the runner-side `trace` op already served
     it; only the CLI OPS list lacked it) and wrote `scripts/trace_gaps.mjs` to bucket the inter-event
-     gaps.  On LakeFlush (first Lies+Lang settle measured this way), **step 1 = 1984 ms across 103 events**:
+     gaps.  On HohoFlush (first Lies+Lang settle measured this way), **step 1 = 1984 ms across 103 events**:
        - **~982 ms (49%) in ~43 ms "mid" gaps** = the `ANSWER_CALLS_TICK_MS=50` drain gate draining ~28
           todo items one-per-50 ms.  → **Technique A (greedy-to-budget drain) is the biggest lever.**
        - **~428 ms (22%) in ONE contiguous `beliefs/done → quiescent/0.428` gap** — a fixed trailing
@@ -272,10 +272,10 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
    warm the runner (discard cold run), then time N settles back-to-back on the SAME warm runner and
     report the **median** (robust to stalls) + spread + green-count.  A/B a lever by running one arm per
      flag state (HMR between), comparing medians — never single runs, never fresh-vs-degraded sweeps.
-      Proven working; median is stable (LakeTiles ~14.2s, MusuGlide ~3.24s across batches).  It also
+      Proven working; median is stable (HohoTiles ~14.2s, MusuGlide ~3.24s across batches).  It also
        surfaced the escalation of the drift finding: **after heavy session use the runner develops
         intermittent multi-second stalls (~1/5 runs)** — short Books stay green-but-slow, long Books
-         (LakeTiles) sometimes trip a stall into a step-timeout RED (4/6 green).  Median survives this;
+         (HohoTiles) sometimes trip a stall into a step-timeout RED (4/6 green).  Median survives this;
           CORRECTNESS signal does not.  A fresh :9091 tab reload clears it (human-only).  Lesson for the
            high-risk levers (Technique A/B): get clean correctness signal on a FRESH runner — a stall-red
             is indistinguishable from a real wake≠hold race, which is exactly what those levers risk.
@@ -283,7 +283,7 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
    `perf/organise-gate`, discarded — never merged).  The gate: watermark = positional serial of every
     walked node's `version` (read off the standing `Se.c.T.sc.N`, House's own version excluded because
      `reset_interval`'s `{mo:'main'}` replace churns it every tick; `n.c.walk_id` tags so a reminted ref
-      can't alias a stale mark); skip `Se.process` when the mark is unchanged.  Type-clean, LakeTiles
+      can't alias a stale mark); skip `Se.process` when the mark is unchanged.  Type-clean, HohoTiles
        9/9 on the gated code.  **Why abandoned — the upside ceiling is zero by construction:** the idle
         reactap census shows **0 think beats / 5 s** (organise() barely runs at rest — the idle bumps are
          peer-channel `Lies_heard` + `reset_interval`, not think→beliefs→organise), so there is no idle
@@ -309,16 +309,16 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
          one.  A full 65-Book fresh-vs-branch diff is a coarse *correctness* net (verdict flips), NOT a
           perf instrument.
   - Corollary: lever #6's committed perf number ("census ~3.3k→~2.5k bumps") is **correctness-solid but
-     perf-soft** under these same confounds; its LakeFlush content-gated greens are the real gate.
+     perf-soft** under these same confounds; its HohoFlush content-gated greens are the real gate.
 - **2026-07-06** — §6 `Lang_build_mapules` content gate (lever #6, branch
    `perf/mapules-digest-gate`): two-tier like LangGraft's — digest of every Map entry
     (kind|key|depth|line|class|span|region_path) PLUS the dock text (body spans/line
      geometry consume it — Map_dige alone is too weak here, Mapulen carry absolute
       offsets), hashed once per recompile (cached on dock.c against job.version), O(1)
        every other wake; same digest → the standing Mapulen survive, no empty+rebuild+
-        dock-bump.  Verified LIVE on the :9091 runner: LakeTiles 6/6 green, LakeLango
+        dock-bump.  Verified LIVE on the :9091 runner: HohoTiles 6/6 green, HohoLango
          green; census mid-run dropped ~3.3k→~2.5k bumps/think (coarse — window-phase
-          sensitive).  NOTE: LakeWaftMap is RED at step 1 (error:null, fixture shape)
+          sensitive).  NOTE: HohoWaftMap is RED at step 1 (error:null, fixture shape)
            on THIS BRANCH **AND on unmodified main** — pre-existing, not this lever;
             needs its own chase.
 - **2026-07-05** — reactap: the reactivity CENSUS landed (the observation track's first piece —

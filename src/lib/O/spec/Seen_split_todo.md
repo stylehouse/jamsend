@@ -419,13 +419,13 @@ Inventory (live, 2026-07-12 — the assertion emitters, distinct from the runner
 | `Ghost/N/Tyrant.g` | 1 | the `yyyyar!` idiom |
 
 Fixtures carrying prose `see:` lines (the recorded evidence, by Book, top of the list):
- MusuRaChase 55, MusuRaStream 39, MusuHeist 29, Understandication 14, Understandium 13, LakeNets 12,
-  LakeSurprise 10, MusuRaCast 9, LakeTiles 9, SwarmStaple 7, LakeFlush 7, PeeringLive 6, SwarmSteal 5,
+ MusuRaChase 55, MusuRaStream 39, MusuHeist 29, Understandication 14, Understandium 13, HohoNets 12,
+  HohoSurprise 10, MusuRaCast 9, HohoTiles 9, SwarmStaple 7, HohoFlush 7, PeeringLive 6, SwarmSteal 5,
    SwarmGot 5, MusuRaTerm 5, plus one-line tails on ~25 more Books (VoroScape, SwarmWire/Policy/Invite/Door,
-    MusuRaStock, PereTyrant, PereProof, LakeSurfer, Snaptesting, PortPlanet, MusuReplica, MusuReco, etc.).
+    MusuRaStock, PereTyrant, PereProof, HohoSurfer, Snaptesting, PortPlanet, MusuReplica, MusuReco, etc.).
 
 **Not every authored `%see` becomes a `%seen`.** Some are genuinely per-beat observations that SHOULD
- drop (e.g. LakeTiles `see:🗂 1 doc · 2 Wafts` is a live census readout, not a happened-fact) — those
+ drop (e.g. HohoTiles `see:🗂 1 doc · 2 Wafts` is a live census readout, not a happened-fact) — those
   stay `%see` or become `%log`. Only the ones asserting "X happened / holds by beat K" migrate to
    `%seen` + a roster line. Judge per sentence; the tense is the tell ("the pair sealed", "identity is
     not address", "the Idzeug is single-use" = facts → `%seen`; "1 doc · 2 Wafts" = a value → `%log`).

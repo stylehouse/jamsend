@@ -104,19 +104,30 @@ The heavier engine already green in `Heistation`. Kept here as the map for later
       → probation (`newlyadded` log; `Heist_feel` love/drop) → `Heist_flatten` (job + mirror delete,
        collection stays). All `[BOOK]`.
 
-**Soft arc** (`Heist.g //#region soft`): `Heist_wish(sentence, no at)` → `Heist_ask` (wish crosses a
+**Soft arc / HeistFace (renamed CaperFace) — SUPERSEDED 2026-09-17, DELETED.** (The two paragraphs below
+ are history now — kept so a reader understands what was tried and why it's gone; the code no longer
+  exists.) `Heist_wish`/`Heist_ask`/`Heist_match`/`Heist_leads`/`Heist_condense`, the `%Caperlet`
+   travelling-ask machinery, `CaperFace.svelte`, and the `MusuSoft`/`MusuBay` Books were removed whole —
+    the "only live caller" this doc names below (`HeistFace.svelte:43`, `Pirating.svelte`) had already
+     gone dead: `Pirating.svelte` was deleted in the 2026-09-16 old-p2p-stack cull, and by the time this
+      was checked the *only* real caller left was `CaperFace.svelte`'s `take()` button — which itself
+       admits, in the paragraph below, that it never actually kicked a pull. The dead-end was structural,
+        not incidental: the wish-arc needs an artist+title index to match against, and the collection has
+         never had one. `Heist_job`/`%Caper,at,seed` (the real per-pier job data) is untouched.
+
+~~**Soft arc** (`Heist.g //#region soft`): `Heist_wish(sentence, no at)` → `Heist_ask` (wish crosses a
  granted wire as a husk) → `Heist_match` (far side contains-matches title|artist|genre|album, stamps a
   `%Lead` per hit) → `Heist_leads` → **`Heist_condense`** `[LIVE]` (choosing a Lead hardens the wish:
    stamps `at`+`chose`, mints the `%filing`). This is the **only live klepto caller**
-    (`HeistFace.svelte:43`, and `Pirating.svelte`).
+    (`HeistFace.svelte:43`, and `Pirating.svelte`).~~
 
-**HeistFace** (`src/lib/O/ui/HeistFace.svelte`, since you don't remember it): the glass face for a
+~~**HeistFace** (`src/lib/O/ui/HeistFace.svelte`, since you don't remember it): the glass face for a
  `%Heist` node, imposed by mainkey (never wears `sc.face`, so sealed Books stay Voro-blind). It renders
   one of two shapes — **POSED** (a needs-nugget, `%Need` children ticking `met` as the world provides)
    or **SOFT** (the wish sentence + accumulating `%Lead` rows, each with a **take** button gated
     `soft = sc.wish && !sc.at`). `take()` calls only `Heist_condense` today — it stamps the choice and
      stops; **no pull is kicked** (the "pull machinery takes over" comment is aspirational). This is the
-      **klepto** UI — it is *not* the scope-A directory chooser, which is still owed.
+      **klepto** UI — it is *not* the scope-A directory chooser, which is still owed.~~
 
 ---
 

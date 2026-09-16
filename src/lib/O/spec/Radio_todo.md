@@ -1148,7 +1148,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
         round-trips a fixture; `runner_shot` cannot hear. Wants the owner's ear on a fast run of skips.
 - **GROUND TRUTH OF THE SHARE, finally measured — the share is /app ITSELF.** The `died=` electrode (a
    `.c` string naming where a give-up walk ended) came back `died=src/routes h24`,
-    `died=Ghost/test/Story/Lake h24`, `died=wormhole/Ting/2026-07-02/160434 h24` — the wander was
+    `died=Ghost/test/Story/Hoho h24`, `died=wormhole/Ting/2026-07-02/160434 h24` — the wander was
      spending its whole 24-hop budget inside the source tree. So the crate is the repo working tree,
       with the owner's music in `0 spawn/` inside it. Counted from the container:
    | directories | 528 (435 of them under `wormhole/`) |
@@ -1371,7 +1371,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
     asked for, and then SPENT at open. Both marks on both players is the lag actually being gone.
  · Lefto grew 17 → 24 and stopped at the window; Righto sits at 23–24 whittling. Flat `records=N` in
     `advertise` for minutes on end is the tell that the stoker has gone back to sleep.
- **Books at close:** LakeTiles 9/9, MusuRadio 9/9 c0, MusuStock 5/5, SwarmShare 9/9, RepliUpsert 7/7 —
+ **Books at close:** HohoTiles 9/9, MusuRadio 9/9 c0, MusuStock 5/5, SwarmShare 9/9, RepliUpsert 7/7 —
   all `ok_pct=1`. MusuHeist reads `ok_pct=0.95` while every one of its 22 steps reports `ok=1` and **not
    one of its 001–022 fixtures moved** — an aggregate disagreeing with its own per-step reading, worth
     chasing someday as a REPORTING bug, not a regression. Attribute by fixtures, never by ok_pct alone.
@@ -1500,8 +1500,8 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
 
 **THE BOOK GATE IS PARTLY BLIND — know this before trusting a green (2026-08-06).**
  · **Green and trustworthy** on runner `58517b484a8e896d`: MusuHeist 22/22, RepliUpsert, RepliSplit,
-    RepliShadow, MusuStream, MusuResume, MusuRadio, SwarmShare, MusuStock, LakeTiles.
- · **A runner can lie.** `a67a5d04a04fd334` settled EVERY Book all-red including `LakeTiles`, which
+    RepliShadow, MusuStream, MusuResume, MusuRadio, SwarmShare, MusuStock, HohoTiles.
+ · **A runner can lie.** `a67a5d04a04fd334` settled EVERY Book all-red including `HohoTiles`, which
     touches nothing under test, while `58517b` gave the same Book green in the same minute. Both answer
      `ping` identically. **Run one control Book your change cannot affect before believing a red sweep.**
  · **A Book with no recorded fixture mints one on the spot and reports green.** `Radiation` and a
@@ -1662,7 +1662,7 @@ Simulated the algorithm rather than guessing at it (scratchpad `meander_sim.mjs`
       already seal live tab-to-tab over it (2026-07-07, SwarmDoor manual). The gap is narrow: **the
        music-repli flow has only EVER run over `Lake_link`**, an in-process by-reference loopback that is a
         Story-test mock (`Peregrination.g:202` — its "Lake" name a Peregrination theme, UNRELATED to the
-         LakeTiles Lies/Lang family; genuinely rename-worthy). No Book installs `Socket_real`; Sounditron
+         HohoTiles Lies/Lang family; genuinely rename-worthy). No Book installs `Socket_real`; Sounditron
           alone touches the real relay and only proves channel *capability* ("frames CAN cross"), not a
            round-trip. **THE NON-OBVIOUS RISK:** every music Book settles frames "over post_do between beats"
             (the reliable mock) — the repli/want machinery has NEVER faced a mid-beat round-trip, while the

@@ -318,7 +318,7 @@ export const LANG_COMPILE = {
         //     measured, not guessed, and the single largest correctness win in this pass.
         const SECT_RE = /(?:\b((?:[A-Za-z0-9_.-]+\/)*[A-Z][A-Za-z0-9]*(?:(?:_[A-Za-z0-9]+)+(?:\.md)?|\.md))`?[ \t]+`?)?§(\d+(?:\.\d+)*[a-z]?)/g
         // BOOK — `Book:<Name>` / `Book=<Name>`, the pointer from prose to a Story Book.  Only the explicit
-        //  colon|equals form: the bare prose `Book LakeSurprise` (71 in spec/) cannot be told from a
+        //  colon|equals form: the bare prose `Book HohoSurprise` (71 in spec/) cannot be told from a
         //   sentence that happens to start a name after the word "Book", and the `the §3` lesson above is
         //    one page old.  18 live, which is small and honest — the value is that a Book link can ROT
         //     (a Book gets renamed or retired) and until now nothing could see that.

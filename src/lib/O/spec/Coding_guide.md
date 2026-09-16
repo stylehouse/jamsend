@@ -23,7 +23,7 @@ widens the window and tips a ~50/50 race to mostly-fail.
 
 **The fix shape:** arm the hold **synchronously, at the cause** — never in a later gate you reach via
 a wake.
-> 2026-07-01 (LakeTiles "didn't take the text manipulation"): `req_text_mutated`'s machine/test path
+> 2026-07-01 (HohoTiles "didn't take the text manipulation"): `req_text_mutated`'s machine/test path
 > set `dock.c.compile_ready = true` (a plain `.c` flag) + `feebly_ponder()`, and left the real re-arm
 > of `req:compile` to a next-tick gate. Both are wakes — so Story could quiesce and snap in the gap,
 > capturing the *stale* compile output (and its stale downstream Rundown rerun). The edit itself had

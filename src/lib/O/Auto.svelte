@@ -60,7 +60,7 @@
     import { cluster_name } from "$lib/cluster_name"
     import { SoundSystem }  from "$lib/O/Audio.svelte"
 
-    const DEFAULT_BOOKS = ['LeafJuggle', 'LeafFarm', 'StuffFlipping', 'LakeSurfer']
+    const DEFAULT_BOOKS = ['LeafJuggle', 'LeafFarm', 'StuffFlipping', 'HohoSurfer']
     const HEAD = 'Present'
 
     let { M } = $props()

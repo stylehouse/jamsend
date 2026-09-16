@@ -4,26 +4,26 @@ story:Hackarium
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.367
-      sample=0.902,at=1789203053
-      sample=0.124,at=1789249225
-      sample=0.107,at=1789287123
-      sample=0.129,at=1789295592
-      sample=0.073,at=1789335288
-      sample=0.273,at=1789430249
-      sample=0.749,at=1789455242
+    TimeTotal:beliefs,avg=0.803
       sample=0.069,at=1789512040
       sample=0.188,at=1789540764
       sample=1.057,at=1789542331
-    TimeTotal:step,avg=0.367
-      sample=0.902,at=1789203053
-      sample=0.124,at=1789249225
-      sample=0.107,at=1789287123
-      sample=0.129,at=1789295592
-      sample=0.073,at=1789335288
-      sample=0.273,at=1789430249
-      sample=0.749,at=1789455242
+      sample=0.719,at=1789545110
+      sample=1.581,at=1789545279
+      sample=0.188,at=1789545306
+      sample=1.831,at=1789546357
+      sample=1.516,at=1789546854
+      sample=0.722,at=1789547351
+      sample=0.155,at=1789548496
+    TimeTotal:step,avg=0.803
       sample=0.069,at=1789512040
       sample=0.188,at=1789540764
       sample=1.057,at=1789542331
-  step,dige:29c7975b74f8b5f9,desc:the visual — the crush that gangs leaves — the glass that cuts cells from the model — what a Book looks like while it runs
+      sample=0.719,at=1789545110
+      sample=1.581,at=1789545279
+      sample=0.188,at=1789545306
+      sample=1.831,at=1789546357
+      sample=1.516,at=1789546854
+      sample=0.722,at=1789547351
+      sample=0.155,at=1789548496
+  step,dige:29c7975b74f8b5f9,desc:the wire — one spine and its carriers — the relay in the middle — the cluster channel the editor and its runners ride

@@ -87,14 +87,13 @@ Frames are already strings/bytes off `Peeroleum_send` (the envelope is carrier-a
    MTU, store-and-forward yes|no. Nothing reads such a thing yet; when a second live carrier exists,
     `Tribunal_redial` is where it would.
 
-## 5. Naming (owner, 2026-09-16, undecided)
+## 5. Naming (ruled 2026-09-16)
 
-The mock wire in `Ghost/Story/PeerTesting.g` is `Lake_link / Lake_peer / Lake_port / Lake_peering /
- Lake_pier` (the carrier) plus `Lake_trial_* / Lake_storm_* / Lake_silence_* / Lake_stall_* /
-  Lake_reorder_*` (the wranglers). The carrier half is a third `%transport,type:mock` in the terms above
-   and could take the abstraction's name; the wranglers are test code and can stay. The `Lake*` BOOKS
-    (`Ghost/test/Story/Lake/`) are Housing + compiler tests and are becoming **Hoho\*** — a different
-     rename, same day, not to be confused.
+**`Lake_*` stays the mock wire's name** (`Lake_link / Lake_peer / Lake_port / Lake_peering / Lake_pier` — the
+ carrier; `Lake_trial_* / Lake_storm_* / Lake_silence_* / Lake_stall_* / Lake_reorder_*` — the wranglers), all in
+  `Ghost/Story/PeerTesting.g`. The FOUNDATION took a new name instead: the area Waft is now `Ghost/Hoho/Easy`
+   and its Books are the **Hoho\*** series (HohoFlush/Funk/Keep/Lango/Locate/Nets/Search/Surfer/Surprise/Tiles/
+    Ttlilt/WaftMap; test ghosts in `Ghost/test/Story/Hoho/`). So "Lake" now means exactly one thing: this wire.
 
 ## 6. Where the networking docs are (and what each owns)
 

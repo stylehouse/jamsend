@@ -1,0 +1,22 @@
+Waft:Story/HohoWaftMap/TestEasy
+  What:openness
+    What:shaft
+      Doc:Ghost/test/Story/Hoho/WaftMapShaft.g
+      Point,method:Shaft
+    What:bounce
+      Doc:Ghost/test/Story/Hoho/WaftMapBounce.g
+      Point,method:Bounce
+  What:spilling
+    What:spill
+      Doc:Ghost/test/Story/Hoho/WaftMapSpill.g
+      Point,method:Spill
+    What:crumb
+      Doc:Ghost/test/Story/Hoho/WaftMapCrumb.g
+      Point,method:Crumb
+  What:packing
+    What:seams
+      Doc:Ghost/test/Story/Hoho/WaftMapSeam.g
+      Point,method:Seam
+    What:shared
+      Doc:Ghost/test/Story/Hoho/HohoAntecedents.g
+      Point,method:Peeroleum

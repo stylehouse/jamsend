@@ -369,8 +369,8 @@ Mechanism, reusing what exists:
       everywhere from one rule*, not a literal string per Book.
 - **Render the residual.** With the shared delta conserved, a Book's diff shows
    only what is *not* shared — the real signal. In the P4 run that is exactly the
-    split seen by hand: LakeNets/LakeLocate carry *only* the shared delta (accept
-     blind), while LakeSurfer/LakeFunk carry it **plus** an un-shared re-anchor
+    split seen by hand: HohoNets/HohoLocate carry *only* the shared delta (accept
+     blind), while HohoSurfer/HohoFunk carry it **plus** an un-shared re-anchor
       (`Spotlight %What:itis → %Doc:…`, the Pmirror collapse, `what:?`) — which is
        then the one thing a human should actually look at.
 
@@ -455,7 +455,7 @@ A req arms `req/%ttlilt,until_ts` to ask for time before Story snaps;
     already know *exactly* which ttlilts gated it, whose req, which world, how long.
      Surface it:
 
-- a step's panel lists the ttlilts that held it — `w:LakeFlush req:Store +203ms` —
+- a step's panel lists the ttlilts that held it — `w:HohoFlush req:Store +203ms` —
    read straight from the captured `Run_trace`.
 - each ttlilt **links to its req's row in the diff** — the req particle is right
    there in the snap (`req:Store,eternal,maz=7` in the example). The link is the
@@ -632,7 +632,7 @@ This is the "somewhat explore" part: the spool + the channels are the substrate;
 Everything above is parts. Here is the whole they assemble into, and it is not new
  machinery — it is the Waft machine (`Waft_spec.md`) pointed at time instead of at a
   source doc. The Story run already half-admits this: its snap rides at a
-   `waft_path` (`Story/LakeFlush/Waftily` in the example). Make it true.
+   `waft_path` (`Story/HohoFlush/Waftily` in the example). Make it true.
 
 ### 13.1 The mapping
 

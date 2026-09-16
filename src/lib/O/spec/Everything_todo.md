@@ -16,8 +16,8 @@ A cross-spec sweep of what is in motion and what is deferred-but-load-bearing,
         flagged for the human. Full blast radius in `spec/Snap_depth_todo.md`.
 
 **2026-07-27 additions (doc-sweep + human triage):**
-- **LakeSearch — review it.** The universal-search Story Book is *recorded*
-   (`wormhole/Story/LakeSearch/001.snap`) but the human has **not seen it run** — verify it on a
+- **HohoSearch — review it.** The universal-search Story Book is *recorded*
+   (`wormhole/Story/HohoSearch/001.snap`) but the human has **not seen it run** — verify it on a
     live runner. Search v1 is LIVE (`Lies_search` in `LiesFunk.svelte` + `Searchbar.svelte`); the
      owed follow-on is Stemdex v2 (region-partitioned scan + `%Errand` reindex, `Stemdex_spec §3-4`).
 - **The Lies+Lang frontier is real but PARKED ("not the day for it" — human):** P7
@@ -247,7 +247,7 @@ Records-as-files for Identities ("switch who you are" = read a different record)
 
 **The `O`/`I` layout — the filesystem mirroring the particle split (deferred).**
  A standardisation of the whole `wormhole/` tree on directories that hold *only
-  names*. A Story's step 001 becomes `wormhole/Story/O/LakeTiles/O/Step=001/I`,
+  names*. A Story's step 001 becomes `wormhole/Story/O/HohoTiles/O/Step=001/I`,
    where **`I` is today's `toc.snap`** (the node's own content) and **`O/*` are
     pure name-containers** — the filesystem laid out as the C split itself:
      `o()` = children (the `O/` dirs), `i()` = the node (its `I`). The bytes
@@ -271,7 +271,7 @@ Fold work uncommitted (human commits on host). Open:
 - Layout knobs to tune by eye (stem position, cell widths, `FOLD_UP_UNDER`).
 
 ### Interest
-Graduated to prod (gate LakeSurprise); the real Lang↔Lies channel is live.  The detailed status —
+Graduated to prod (gate HohoSurprise); the real Lang↔Lies channel is live.  The detailed status —
  implemented log, the surprise_read popover, the inspector, the Aside kind, gotchas, FUTURE, TODO —
   lives in its own doc; this is just the cross-subsystem pointer.
 - **Canonical doc: `Interest.md`.**

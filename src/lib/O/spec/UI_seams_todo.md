@@ -244,6 +244,13 @@ The engines below are all proven by recorded golden fixtures. But the human's co
 ### S3 — Heist has no live trigger (the engine is built and idle)
 *The human: "I don't see how to heist."*
 
+**RESOLVED 2026-09-17 — this section's own "whether to retire it… is the owner's ruling" is answered:
+ retired.** The soft wish arc (`Heist_wish`/`Heist_ask`/`Heist_match`/`Heist_leads`/`Heist_condense`,
+  `%Caperlet`, `CaperFace.svelte` (renamed from `HeistFace.svelte` since this was written), Books
+   `MusuSoft`+`MusuBay`) is deleted outright — the 2026-08-05 read below ("wish is dead") stood for six
+    weeks as an open ruling before being acted on. `Heist_job`/hard-path `%Caper` is untouched. Read on
+     as the historical case that led here.
+
 - **Built (and green):** the whole engine in `Ghost/M/Heist.g` — hard job
    (`Heist_job:229` → `Heist_offer_all:257` → `Heist_beat:305` → **`Heist_land:384`**,
     which verifies bytes and **catalogues the landed track into your own Crate via

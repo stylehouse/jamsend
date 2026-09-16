@@ -653,8 +653,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //    number and the one to quote: wall clocks vary 3x run to run on identical code, tick COUNTS
     //     do not.
     //  ⚠ THE MARKS LIVE ON .c, NOT .sc (2026-09-11 night sweep).  As `sc` keys they were SNAPPED — a
-    //   wall clock inside every Lake Book's fixture — and the whole family (LakeKeep LakeLocate LakeFunk
-    //    LakeLango Interesting Engage Diffmatication Educarium Hackarium …) went red with a dige that
+    //   wall clock inside every Hoho Book's fixture — and the whole family (HohoKeep HohoLocate HohoFunk
+    //    HohoLango Interesting Engage Diffmatication Educarium Hackarium …) went red with a dige that
     //     differed every run and one diff line: `see:lies,boot:63467,…`.  The row stays (docs · wafts ·
     //      ticks are structural and worth seeing); the milliseconds ride beside it off-snap, where the
     //       console line below still reads them.

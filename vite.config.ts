@@ -15,11 +15,23 @@ const env = (k: string) => process.env[k] ?? dotenv[k] ?? '';
 // Peeroleum's real websocket transport (heading 10): attach the /relay endpoint to the dev
 //  server's http server.  configureServer runs only under `vite dev` (not build), so this is
 //   dev-only; production would call attachRelay() on its own http server.  See src/lib/server/relay.ts.
+// ONE relay per process.  Vite restarts in-process whenever this config (or anything it imports —
+//  relay.ts, cluster_trust.ts) changes, and re-runs configureServer on a NEW httpServer.  The previous
+//   attach was never closed: its r2r redial loop lived on as a zombie, re-dialed the editor relay, and
+//    — "last dialer wins" — took the bridge, so frames the editor sent to a runner arrived at a closure
+//     whose `locals` was empty and were DROPPED ("no local socket is bound"; runners stopped getting
+//      become_book, 2026-09-16, after a relay.ts edit + a staging restart).  This config module is
+//       re-imported fresh on every restart (a .vite-temp bundle), so a module-level variable would be
+//        lost too — the handle rides globalThis, the one scope that survives the reload.
 function relayPlugin(): PluginOption {
 	return {
 		name: 'peeroleum-relay',
 		configureServer(server) {
-			if (server.httpServer) attachRelay(server.httpServer);
+			if (!server.httpServer) return;
+			const g = globalThis as any;
+			if (g.__peeroleum_relay) { try { g.__peeroleum_relay.close() } catch {} ; g.__peeroleum_relay = null }
+			g.__peeroleum_relay = attachRelay(server.httpServer);
+			server.httpServer.once('close', () => { if (g.__peeroleum_relay) { try { g.__peeroleum_relay.close() } catch {} ; g.__peeroleum_relay = null } });
 		},
 	};
 }

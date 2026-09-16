@@ -291,8 +291,8 @@
         //      (a runner's re-compile, a remote gen_write) dynamic-imported the fresh
         //       .go into the compiling tab — module memory churn for a mount nobody
         //        reads.  A Book that RUNS its compile must opt in: req:run_method
-        //         blocks on req:include, which only this notify mints (LakeTiles);
-        //          so must one testing the include-confirm mechanics (LakeSurfer).
+        //         blocks on req:include, which only this notify mints (HohoTiles);
+        //          so must one testing the include-confirm mechanics (HohoSurfer).
         //           The .go is on disk either way; the settle below still fires so the
         //            compile job closes and lint/translation views update.
         if (req.sc.ghost_dige && !H.Lies_is_editor()

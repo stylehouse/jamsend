@@ -1,0 +1,11 @@
+Waft:Story/HohoWaftMap/TestDeep
+  What:hoard
+    What:packed
+      Doc:Ghost/test/Story/Hoho/WaftMapPacked.g
+      Point,method:Packed
+    What:antecedents
+      Doc:Ghost/test/Story/Hoho/HohoAntecedents.g
+      Point,method:transport
+    What:ameliorations
+      Doc:Ghost/test/Story/Hoho/HohoAmeliorations.g
+      Point,method:HohoNetherland

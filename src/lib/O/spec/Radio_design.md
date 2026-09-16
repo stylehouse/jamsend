@@ -183,7 +183,7 @@ The single axis: **loopback → a real carrier between two machines.** Almost ev
    the old `Radiola`/`Musu_*`/`Sound_synth` names; the shipped code consolidated to `Ra.g`/`Ra_*`
     — the `Ra_*` names are canonical. (c) The `racast_rate` knob is dead (the encoder paces the
      transcode), superseding the old rate-driven pump. (d) `Lake_link` is confusable with the
-      LakeTiles Lies/Lang family — an acknowledged, rename-worthy wart, unrelated to it.
+      HohoTiles Lies/Lang family — an acknowledged, rename-worthy wart, unrelated to it.
 
 **Retirement recommendation — OVERRIDDEN by the human (2026-07-27): keep both.**
 - `Radio_lowlevel.md` — stays where it is (describes the old Radiola `req_cast` / Musuation `Musu_*`

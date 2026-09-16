@@ -18,7 +18,7 @@ A clean-room rebirth of **Tyranny** (identity & trust → Tyrant.g) + **Gardenin
    top of the Peeroleum transport** (the floor), not beside it: we do not re-prove M0 (the emit/ack
     core), we *call* it.
 
-Canon followed: `LakeTiles.g` (syntax), `LiesStore.svelte` (the fullest phased-`%req` architecture —
+Canon followed: `HohoTiles.g` (syntax), `LiesStore.svelte` (the fullest phased-`%req` architecture —
  the admission req is modelled on it), `Peeroleum_spec.md` (the transport we reuse — §4/§5/§7).
   Conceptual ancestors: `ghost/Gardening.svelte`, `ghost/Tyranny.svelte`. The Peeroleum handover's
    "Forward look" heading points here.
@@ -81,7 +81,7 @@ Pier oai %req:trust,eternal
     req oai %req:grant,maz:7            // both vouched ⇒ stamp %trust,grants on the Pier
 ```
 
-stho for the say/hear pair (reusing the Peeroleum send seam, LakeTiles `&` + `n%such`):
+stho for the say/hear pair (reusing the Peeroleum send seam, HohoTiles `&` + `n%such`):
 
 ```
 say_vouch(w, pier):

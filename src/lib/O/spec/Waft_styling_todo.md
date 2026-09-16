@@ -14,14 +14,14 @@ The Waft\*\* tree (a `Waft → What* → (Doc, Point*)` forest) renders today as
 
 1. **Continuous runs of Whats cohere.** Adjacent sibling Whats that channel the
     **same Doc** currently each repeat their `Doc:path` label. See a real snap,
-     `wormhole/Story/LakeNets/013.snap` lines 21-47:
-       Waft:Story/LakeNets/Waftily
+     `wormhole/Story/HohoNets/013.snap` lines 21-47:
+       Waft:Story/HohoNets/Waftily
          What:foundations
            What:story
-             Doc:Ghost/test/Story/Lake/LakeAmeliorations.g
-             Point,method:LakeNetherland,class:caution
+             Doc:Ghost/test/Story/Hoho/HohoAmeliorations.g
+             Point,method:HohoNetherland,class:caution
            What:peer
-             Doc:Ghost/test/Story/Lake/LakeAntecedents.g
+             Doc:Ghost/test/Story/Hoho/HohoAntecedents.g
              Point,method:Peeroleum
     The Doc is restated under every What. Cohere a *run* (maximal stretch of
      sibling Whats pointing at one Doc) by drawing the Doc **once** as a shared

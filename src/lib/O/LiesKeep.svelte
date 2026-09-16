@@ -8,7 +8,7 @@
 //   Owns the (scope,id,key)→value LAYOUT service (P5) plus the cfg|pref typed stores, the ledger
 //   accumulators (note / mark_focus / push_cursor), the cursor-resume readers (resume_waft |
 //   resume_what — the latter delegates to Lies' general Lies_resolve_locator, which STAYS in Lies
-//   as the document-machine primitive gated by LakeLocate), and the editor boot driver
+//   as the document-machine primitive gated by HohoLocate), and the editor boot driver
 //   (Lies_keep_boot / _reopen).  Dual concern with Lies: Lies creates the Keep particle (Persist)
 //   and holds the loose-locator resolver; LiesKeep holds the attention ledger over it.
 

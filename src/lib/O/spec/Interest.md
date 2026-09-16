@@ -37,7 +37,7 @@ Interest is the **UItime expression** of the `%subscribe` wire (`Wire_spec.md`);
     `interest_roster_sig` moves.
 - The editing checkout is **unified onto the foreground Trail** in `Lang_set_interest` (non-destructive;
    found by `c.LE`). Editing works through it.
-- **`LakeSurprise` Book** (`wormhole/Story/LakeSurprise/`, 11 Preps) is the sole regression gate; the
+- **`HohoSurprise` Book** (`wormhole/Story/HohoSurprise/`, 11 Preps) is the sole regression gate; the
    `Interesting`/`InterLies`/`InterLang` stand-ins were retired 2026-06-17.
 
 ## 2. The real channel, end to end
@@ -60,8 +60,8 @@ Real Waft **stances** (input to `interest_stance_of`):
 - ~~tentative (→ Sidetrack)~~: **dormant** — a Waft opened by a sidetrack request; no UI stamps it now (the `↳` is gone).
 
 **The Crux — resolved.** The real wire emits the full Interest family (Ting/Trail/GhostList +
- `ActiveInterest`) and `interest_reconcile` mints it correctly. An old `LakeNets/001.snap` carrying a
-  single `{Interest:in_Doc}` was just stale (pre-Trail-unification); LakeNets/LakeFlush expected snaps
+ `ActiveInterest`) and `interest_reconcile` mints it correctly. An old `HohoNets/001.snap` carrying a
+  single `{Interest:in_Doc}` was just stale (pre-Trail-unification); HohoNets/HohoFlush expected snaps
    want re-recording (the improvement, not a regression).
 
 ## 3. Implemented items & phases (all 2026-06-17, verified live; human re-records snaps)
@@ -219,7 +219,7 @@ The through-line: a surprise_read (external edit conflict on an open Doc) **pops
   reducers (Interest.svelte); switcher `ui/InterestStrip.svelte` (mounted in `ui/DocMinimap.svelte`).
    Per-Interest LE: `Lang_active_interest` / `Lang_active_LE` (Lang.svelte) are the foreground resolvers
     everything reads through; `Lang_set_interest` owns each giver's `c.LE`; `LE_for()` (LiesHold, was LiesEnd) returns
-     the active LE for the bare reason. Gate Book: `wormhole/Story/LakeSurprise/` (11 Preps + `step=`
+     the active LE for the bare reason. Gate Book: `wormhole/Story/HohoSurprise/` (11 Preps + `step=`
       lines; fixtures Interestily→Peeroleum.g, Interestily2→Peregrination.g). Elvis names must match
        handlers verbatim ([[elvis-handler-name-verbatim]]).
 
@@ -329,4 +329,4 @@ The beyond-reasonable picture — held in view, not scheduled.
    open, so `surprise_read` no-ops on an empty `%Good`). Fix: host the armed limb in the **Funkcion pump**
     (`req:Store` Phase 2b, after dock reads land) so it self-gates on readiness and retries.
      [[ballistics-drum-pad]], [[nested-req-needs-cup-stamped]].
-- **Snap re-records pending** — LakeNets/LakeFlush expected snaps (the post-unification improvement).
+- **Snap re-records pending** — HohoNets/HohoFlush expected snaps (the post-unification improvement).

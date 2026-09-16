@@ -183,6 +183,12 @@ pull|land    the hardened Heist as already built — wet quarantine · graduatio
 A Heist is a desire hardening into bytes; every phase is the SAME particle wearing more definition.
  *(Phase names imagined on license — cheap to change.)*
 
+**SUPERSEDED 2026-09-17, DELETED** — the whole soft arc (`Heist_wish`/`Heist_ask`/`Heist_match`/
+ `Heist_leads`/`Heist_condense`, `%Caperlet`, `CaperFace.svelte`, Books `MusuSoft`/`MusuBay`) was removed:
+  dead-ended structurally, no artist+title index ever existed to match a wish against, and the only real
+   caller left (`CaperFace.svelte`'s take button) already admitted below that it never actually kicked a
+    pull. `Heist_job`/`%Caper,at,seed` (the hard/real per-pier job data) is untouched. Read on as history.
+
 **[built · green ×2, 2026-07-17 · Book MusuSoft — the LITERAL-match rung]** the soft front is wired in
  `Ghost/M/Heist.g //#region soft`: `Heist_wish(w, home, sentence, constraints)` mints `%Heist,wish:<sentence>`
   (soft = a `wish` and NO `at` — `Heist_soft` reads that tell); `Heist_ask(w, tx, from, to, heist)` crosses the

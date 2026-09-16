@@ -64,7 +64,7 @@ export const WH_OP_PARALLEL   = 8      // concurrent READS per queue; writes alw
 // ── Technique A — the gallop: ONE axis, default ON ───────────────────────────────────────────
 //  WHICH Houses gallop is the only real question, and it is answered by ONE presence-keyed opt-OUT
 //   mark, c.no_gallop — Story sets it on a Run whose Book carries The/Opt/{no_gallop:1} (the
-//    cadence-sensitive warming-observers, LakeTiles + LakeWaftMap).  Everything else gallops.
+//    cadence-sensitive warming-observers, HohoTiles + HohoWaftMap).  Everything else gallops.
 //     That is the end-state Perf_todo names: "under the intended universal-on end-state, no_gallop
 //      is the permanent opt-out for warming-observer Books."
 //  GALLOP_DISARM below is an ESCAPE HATCH, not a second axis: it kills the technique dead for a
@@ -88,8 +88,8 @@ export const GALLOP_DISARM = false
 
 // Technique A — gallop-tighten (Story_future_directions.md §3; Perf_todo.md re-rank #A).
 //  When H.todo is OCCUPIED at gate after gate the machine is visibly mid-settle, and the
-//   50 ms drain gate between items is pure imposed latency (~49% of a measured LakeFlush
-//    step — Perf_todo status 2026-07-07pm).  MEASURED queue shape (LakeFlush step 1): a
+//   50 ms drain gate between items is pure imposed latency (~49% of a measured HohoFlush
+//    step — Perf_todo status 2026-07-07pm).  MEASURED queue shape (HohoFlush step 1): a
 //     settle is a serial DRIP — each hop posts the next at UItime, so depth stays ~1 and
 //      a standing-depth trigger never fires; the §3 "20-40 deep" sketch is the occupancy
 //       integrated over time, not a standing pile.  So the trigger is sustained OCCUPANCY
@@ -107,7 +107,7 @@ export const GALLOP_DISARM = false
 export const GALLOP_TICK_MS = 4        // near-greedy; ≈ the browser's nested-timer clamp floor
 export const GALLOP_DEPTH = 6          // standing depth at/above here = engage NOW (fast path)
 export const GALLOP_SUSTAIN = 4        // consecutive occupied gates (~200 ms at the 50 ms gate) to engage
-                                       //  (2 was A/B'd 2026-07-07: no win — LakeFlush noise-identical,
+                                       //  (2 was A/B'd 2026-07-07: no win — HohoFlush noise-identical,
                                        //   MusuGlide worse/bimodal.  4 is measured-best AND more cautious.)
 export const GALLOP_BUDGET_MS = 400    // max tightened burst; then one full-gate breather (clip)
 

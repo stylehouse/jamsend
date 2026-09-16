@@ -313,7 +313,7 @@ Each phase is independently verifiable; a regression bisects to one phase.
 
 **Each phase ships an integration Book** that drives it headless (the `Story_cli` /
 CredRunner family) — focus-switch, cursor-resume, kind-classification as steps — so the
-spine is *shown off*, not eyeballed. A `LakeKeep`-style Book is the gate, authored
+spine is *shown off*, not eyeballed. A `HohoKeep`-style Book is the gate, authored
 alongside, not after. (timemachine's hidden complexity is the argument *for* this.)
 
 ---

@@ -1114,7 +1114,7 @@
             //  on otherwise stable particles.  Mung them so a real w:Lies snap diffs on
             //   structure, not on WHEN a read/walk/seed/notice happened.  The content
             //    dige beside each stays, so a real change still shows.  Needed for the
-            //     real Lang↔Lies channel (Book:LakeSurprise et al.) to settle as a gate.
+            //     real Lang↔Lies channel (Book:HohoSurprise et al.) to settle as a gate.
             matching_any: [
                 { sc_has: { known: 1, at: 1 } },          // Good/known,dige,kind:read,at
                 { sc_has: { Waft: 1, seeded: 1 } },       // Waft:GhostList,lists,seeded
@@ -1137,7 +1137,7 @@
             //      test-irrelevant churn those Books already fold at the Waft.  Spay tol:any
             //       forgives the VALUE (grafts got→exp) while keeping the line, so no fixture
             //        re-records and the read stays observable.  SCOPED by the parent Good's
-            //         waft_path, so LakeSurprise's REAL content reads still gate on their dige
+            //         waft_path, so HohoSurprise's REAL content reads still gate on their dige
             //          (the rule above deliberately keeps every other read's dige).
             matching_any: [{ sc_has: { Good: 1, waft_path: 'GhostList' } }],
             means: { thence_matching: [

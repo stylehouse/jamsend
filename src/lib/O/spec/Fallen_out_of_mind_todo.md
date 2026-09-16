@@ -339,7 +339,7 @@ What keeps a pile legible is `history/Reqdrop §0` (your 07-14 bet): "leave in t
 `Social_demarcation §7`: every Book stands on one army. The repro Book (in flight) moves one line down.
  Bounding rules already stated: `Story_hygiene §0` — "a verification sweep cannot currently be trusted, and
   it fails SILENTLY GREEN" (you: "please push a TODO for that nondeterministic runner problem"); `history/
-   Backbone_plan` — every Lake* green was a headless bubble, "no Lake* gate is trustworthy" until re-run
+   Backbone_plan` — every Hoho* green was a headless bubble, "no Hoho* gate is trustworthy" until re-run
     live; `Heistation.g:4309` — "all these Musu* tests really didn't prepare us too well for the clusterfuck
      of them all together" → **MusuNeGrind is a missing test LEVEL asserting invariants, not another
       scenario**; `Sounditron.g:2966` — a gate that latches on a row EXISTING swears nothing; `Ra.g:1326` —
@@ -595,7 +595,7 @@ Lift these and the ledger below can mostly be struck.
 Every Book fixture was read for its `see:` sentences (`ulative/…/finds_12_see_map.md` has the whole map).
  163 Books · 1532 steps. **57 speak prose — 341 distinct sentences.** The Vyto/Voro family is 25/25
   sentenced; Musu is 21 of 29. **21 speak tokens only** (all of Inv*, half of Swarm*, the pool/berth
-   cluster). **18 overload `see:` with render strings** (every Lake*, Snaptesting, Engage…) — decide
+   cluster). **18 overload `see:` with render strings** (every Hoho*, Snaptesting, Engage…) — decide
     whether that stays; it poisons the census. **67 prove nothing in words** — LeafFarm (30 steps),
      PereStaple (22), LeafJuggle (19), and the entire Repli* family are wordless.
 

@@ -451,8 +451,8 @@ is **GONE** — the runner now **ACQUIRES the live spine via the Creduler**: `Cr
 Driven by the **PereStaple Story** (`wormhole/Story/PereStaple/toc.snap`), whose Prep opens the
 **Ghost/Net/Easy** Waft overlay (`wormhole/Ghost/Net/Easy/toc.snap`) — its `.g` Docs are the manifest.
 
-> (`LakeNetherland` is NOT this wrangler — it is an unrelated 3-line fixture in
->  `Ghost/test/Story/Lake/LakeAmeliorations.g`, surfaced in the LakeNets editor-machine Book. The
+> (`HohoNetherland` is NOT this wrangler — it is an unrelated 3-line fixture in
+>  `Ghost/test/Story/Hoho/HohoAmeliorations.g`, surfaced in the HohoNets editor-machine Book. The
 >   PereStaple wrangler is `PereStaple(A,w)`/`Lake_drive`. Earlier notes confusing the two were wrong.)
 
 ---
@@ -710,7 +710,7 @@ flagged); regen via the in-app gen action. Still open — each a place the spine
 - auto-`async` on a method with a bare `await`-verb; `drop`/`empty`/`oa` verbs + deep/wildcard `drop
   Pier/protocol/**`; drilled paths on `oai/r/rm`; object/`.c` payloads (`c.connection`, `stashed:{…}`); list
   fan-out (one `%req:dial` per peer over a thang list).
-Corpus + compiler: `Ghost/test/Story/Lake/LakeTiles.g`, `src/lib/O/LangCompiling.svelte`, `LangCompiler_TODO.md`.
+Corpus + compiler: `Ghost/test/Story/Hoho/HohoTiles.g`, `src/lib/O/LangCompiling.svelte`, `LangCompiler_TODO.md`.
 Prose orientation (verbs/peels/captures/`%req`+`doai`, how a `.g` goes live, how to change the language):
 `src/lib/O/spec/stho_primer.md`. (PathVal value-token mechanics live in `io_tokens.ts`, covered there.)
 

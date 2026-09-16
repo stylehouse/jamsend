@@ -35,7 +35,7 @@ See Lagoon_todo §2.7 and Stemdex_todo.md §0 for the census, and spec/Radio_cir
 An older single-word doc still qualifies when it wears its extension: Frontier.md §1.
 The corpus usually code-spans the name, so \`Voro_render_todo.md\` §0 must qualify too.
 Elsewhere in this doc, see §9 and the §3 above; in §5 it is spelled out.
-The gate is Book:LagoonStaple and the older Book=LakeSurprise.
+The gate is Book:LagoonStaple and the older Book=HohoSurprise.
 It swears «the-reader-kept-nothing», which is printed as «slug» in the docs.
 An ordinary [[wiki-slug]] and a pointer at compile.ts:250, plus a \`Lagoon_callers\` mention.
 
@@ -92,7 +92,7 @@ test('sect — a doc-qualified § carries its doc, a bare § carries none', asyn
 
 test('book — the explicit form only, colon or equals', async () => {
     const books = (await collect(DOC)).filter(l => l.kind === 'book').map(l => l.target)
-    expect(books).toEqual(['LagoonStaple', 'LakeSurprise'])
+    expect(books).toEqual(['LagoonStaple', 'HohoSurprise'])
     // the bare prose form is deliberately NOT collected — it cannot be told from a sentence
     const prose = await collect('The Book Educarium boots the room.\n')
     expect(prose.filter(l => l.kind === 'book')).toEqual([])

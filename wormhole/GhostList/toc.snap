@@ -1,16 +1,19 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1789540418985
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1789546440241
   group:src/lib,dir:src/lib
     sub:src/lib/L,name:L
     sub:src/lib/O,name:O
     sub:src/lib/V,name:V
     sub:src/lib/data,name:data
     sub:src/lib/gen,name:gen
-    sub:src/lib/p2p,name:p2p
     sub:src/lib/server,name:server
-    Doc:src/lib/Y.svelte.ts,name:Y,noticed_at=1789430288273
     Doc:src/lib/boot.ts,name:boot,noticed_at=1789430288273
     Doc:src/lib/cluster_name.ts,name:cluster_name,noticed_at=1789430288273
+    sub:src/lib/pinned_stable,name:pinned_stable
+    Doc:src/lib/Common.ts,name:Common,noticed_at=1789546440241
+    Doc:src/lib/Selection.svelte.ts,name:Selection,noticed_at=1789546440241
+    Doc:src/lib/Stuff.svelte.ts,name:Stuff,noticed_at=1789546440241
+    Doc:src/lib/cluster_trust.ts,name:cluster_trust,noticed_at=1789546440241
   group:Ghost,dir:Ghost
     sub:Ghost/L,name:L
     sub:Ghost/M,name:M
@@ -203,7 +206,6 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/Cytui.svelte,name:Cytui,noticed_at=1789430289012
     Doc:src/lib/O/Editron.svelte,name:Editron,noticed_at=1789430289012
     Doc:src/lib/O/Ghost.svelte,name:Ghost,noticed_at=1789430289012
-    Doc:src/lib/O/Hashly.ts,name:Hashly,noticed_at=1789430289012
     Doc:src/lib/O/Housing.svelte.ts,name:Housing,noticed_at=1789430289012
     Doc:src/lib/O/Hovercraft.svelte,name:Hovercraft,noticed_at=1789430289012
     Doc:src/lib/O/Lang.svelte,name:Lang,noticed_at=1789430289012

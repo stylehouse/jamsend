@@ -42,8 +42,8 @@ Waft:Ghost/Net/Easy,desc:the wire — one spine and its carriers — the relay i
     Point,method:handleHello,desc:signed identity bind — the seat arbiter — want and grant
     Point,method:routeFromBrowser,desc:deliver local else forward once over the bridge
     Point,method:dialEditor,desc:the runner relay dials the editor relay — one peerLink — last dialer wins
-    Doc:src/lib/p2p/pinned_stable/Tribunal.go
-    Doc:src/lib/p2p/pinned_stable/Peeroleum.go
+    Doc:src/lib/pinned_stable/Tribunal.go
+    Doc:src/lib/pinned_stable/Peeroleum.go
   What:the healing floor,desc:Reliable — inbound sequencing and retransmit — the lossy partner is the adversary the floor is proven against
     Doc:Ghost/N/Reliable.g
     Point,method:inseq_admit,desc:in-order admission — buffer the gap — release what is ready
@@ -80,7 +80,7 @@ Waft:Ghost/Net/Easy,desc:the wire — one spine and its carriers — the relay i
     Doc:src/lib/O/LiesRun.svelte
     Point,method:req_Rundown,desc:the runner — a rungo lands and the Book runs
     Point,method:Pantheate,desc:where a run lands — the include is mounted
-    Doc:src/lib/p2p/cluster_trust.ts
+    Doc:src/lib/cluster_trust.ts
     Doc:scripts/runner_ask.mjs
     Doc:scripts/relay-test.ts
   What:the tests

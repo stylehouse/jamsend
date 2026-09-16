@@ -1,4 +1,4 @@
-# Stemdex_todo — the owed LakeSearch Book
+# Stemdex_todo — the owed HohoSearch Book
 
 ## 0.0 TODO (parked 2026-09-15) — wafts_everything.mjs's check belongs on Atlas's `%Map`, and should live-edit
 
@@ -33,7 +33,7 @@
 
 ## 0. What to get on with next
 
-**LakeSearch is GREEN — sworn 2026-09-05, ×2 on the live runner** (`ok_pct:1, caveat:1`).  The §0
+**HohoSearch is GREEN — sworn 2026-09-05, ×2 on the live runner** (`ok_pct:1, caveat:1`).  The §0
  below is now historical: the Book was not unverified-and-haunted, it was red on *furniture*.  All
   seven `SearchGate` assertions (`index_converged`, `method_search_finds_def`,
    `prop_search_covers_sc_and_notation`, `freetext_matches_on_shared_stem`,
@@ -465,8 +465,8 @@ Roots are `Ghost`, `src`, `scripts` (687 docs; `gen/`, `history/`, `shelved/`, `
 
 *Historical §0 below (the scaffold note, superseded by the green above):*
 
-**BUILT 2026-07-21 (scaffold, UNVERIFIED — commit f96d71eb).** Authored and compiles: `Run_A_LakeSearch`
- + `e_Lies_search_selftest` in Machinery.svelte, `wormhole/Story/LakeSearch/toc.snap` (placeholder dige
+**BUILT 2026-07-21 (scaffold, UNVERIFIED — commit f96d71eb).** Authored and compiles: `Run_A_HohoSearch`
+ + `e_Lies_search_selftest` in Machinery.svelte, `wormhole/Story/HohoSearch/toc.snap` (placeholder dige
   a0a0…), Credence line (the linter placed it under What:Misc, not What:Lake — cosmetic; the Book still
    runs via Run_A_ + toc). Needs a first live `--accept` to mint 001.snap + the real step dige; some beats
     may want corpus tuning. Corrections the build found vs the brief below: (a) `Lies_search` returns
@@ -475,27 +475,27 @@ Roots are `Ghost`, `src`, `scripts` (687 docs; `gen/`, `history/`, `shelved/`, `
        `%Doc` node (`Waft>What>Doc:path`) — the Good alone isn't indexed; store = `await H.LiesStore_req(w)`
         (= `w/req:Store`); (c) quux.ts holds BOTH stems (records→record + frobnitz), so beat 4 KEEPS it and
          just ranks zorble denser-first — not excluded; (d) Present/toc.snap needs no entry, Credence line
-          is bare. Verify: `runner_ask run LakeSearch --watch`, then `--accept` and green ×2 on the live runner.
+          is bare. Verify: `runner_ask run HohoSearch --watch`, then `--accept` and green ×2 on the live runner.
 
 Original brief below (kept for the corpus + beat design):
 
-Next move: build **LakeSearch** — the Story Book gate for universal search (Stemdex + Searchbar),
+Next move: build **HohoSearch** — the Story Book gate for universal search (Stemdex + Searchbar),
  owed since the feature landed (spec §7 names it). The full plan is below, drafted 2026-07-20 from
   a source-verified research pass (LiesFunk "Stemdex" region 1262–1615, ui/Searchbar.svelte, the
-   Lake* mould in test/Machinery.svelte). Execute after the pending commit lands. Arc: the feature
+   Hoho* mould in test/Machinery.svelte). Execute after the pending commit lands. Arc: the feature
     has NO fixture gate today; this Book closes that, then the `%Map` live-defs layer (unsaved
      buffers) remains the next feature step per Stemdex_spec.
 
-## Naming verdict: LakeSearch, not MusuSearch
+## Naming verdict: HohoSearch, not MusuSearch
 
-Universal search is Lies/editor machinery — its siblings (LakeLocate, LakeFunk, LakeWaftMap,
- LakeLango, LakeKeep) are Lies self-test Books in `src/lib/O/test/Machinery.svelte`, dispatched
-  `Run_A_<Book>`. Stemdex_spec §7 literally names "A LakeSearch Story Book". Credence home =
+Universal search is Lies/editor machinery — its siblings (HohoLocate, HohoFunk, HohoWaftMap,
+ HohoLango, HohoKeep) are Lies self-test Books in `src/lib/O/test/Machinery.svelte`, dispatched
+  `Run_A_<Book>`. Stemdex_spec §7 literally names "A HohoSearch Story Book". Credence home =
    the `What:Lake` cluster.
 
-## Shape: the LakeLocate mould
+## Shape: the HohoLocate mould
 
-One-Prep self-test: `Run_A_LakeSearch` wires the standard trio (A:Lies/w:Lies, A:Lang/w:Lang,
+One-Prep self-test: `Run_A_HohoSearch` wires the standard trio (A:Lies/w:Lies, A:Lang/w:Lang,
  A:Pantheate/w:Pantheate); toc `Plan > Prep > i_elvisto:Lies,e:Lies_search_selftest`; one
   `step,dige:` line. The async handler builds a synthetic corpus, drives the REAL index, fires
    every query, records durable claim markers `gate.i({<claim>:1})` under a gate particle —
@@ -505,7 +505,7 @@ One-Prep self-test: `Run_A_LakeSearch` wires the standard trio (A:Lies/w:Lies, A
 
 ## Corpus: coined, collision-proof, seeded — never disk
 
-One backstage `Waft:SearchW` built `{equip:'Search'}` (folds from the snap, LakeLocate style).
+One backstage `Waft:SearchW` built `{equip:'Search'}` (folds from the snap, HohoLocate style).
  Per doc: `What > Doc:<path>` so Lies_walk_docs collects it, text seeded via the store —
   `store.oai({Good:1,type:'text/Doc',path})`, `g.c.content = text`, `known.sc.dige = fixed` —
    so NO store read ever fires (an unseeded doc = ttlilt + real disk = nondeterminism). Coined
@@ -555,7 +555,7 @@ One backstage `Waft:SearchW` built `{equip:'Search'}` (folds from the snap, Lake
 
 1. **GhostList roster = THE hazard.** toc `Opt > For > w:Lies > dontSnapGhostList` (opts out
     of the WORK, not just the snap) + defensive `gl.sc.dontSnap = 1` in the handler, exactly
-     as every Lake* sibling. Verify live that `total` sits at 3 (no stray roster docs).
+     as every Hoho* sibling. Verify live that `total` sits at 3 (no stray roster docs).
 2. **Dexie `stemdex` warm** loads real-repo rows on a live runner — neutralized for results
     by the coined vocabulary; `total/done` count only the roster. Side effect: our synthetic
      rows bulkPut into the dev IDB cache; pruned on the next real >50-roster search. Fine.
@@ -572,9 +572,9 @@ Pure isolation: skip `e_Lies_stemdex_scan`; `Lies_stemdex(w)` fresh dex +
 
 ## Registration checklist
 
-- `Run_A_LakeSearch` + `e_Lies_search_selftest` in `src/lib/O/test/Machinery.svelte`.
-- `wormhole/Story/LakeSearch/toc.snap` (story, Styles, Plan/Prep, the Opt, one step line).
+- `Run_A_HohoSearch` + `e_Lies_search_selftest` in `src/lib/O/test/Machinery.svelte`.
+- `wormhole/Story/HohoSearch/toc.snap` (story, Styles, Plan/Prep, the Opt, one step line).
 - Add to the Library `wormhole/Present/toc.snap`.
-- Credence board: `Funkcion:Storying,of_Book:LakeSearch` under `What:Lake`, comma-free
+- Credence board: `Funkcion:Storying,of_Book:HohoSearch` under `What:Lake`, comma-free
    `desc:`, `brand_new:1`; NOT `%unusual` (must run in the sweep).
-- Verify on the live runner only (`runner_ask.mjs run LakeSearch --watch`); record green ×2.
+- Verify on the live runner only (`runner_ask.mjs run HohoSearch --watch`); record green ×2.

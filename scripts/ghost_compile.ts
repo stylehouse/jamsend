@@ -122,7 +122,7 @@ async function pollServed(base: string, gen_path: string, dige: string, deadline
 
 // `acked-no-write` — THE EDITOR SAID DONE AND THE FILE NEVER CHANGED (2026-09-10, GhostHMR §0 fix B).
 //  Measured 2026-08-22: the editor acked `✓ compiled @ <the correct NEW dige>` on two separate rounds
-//   for Radio.g / Mesh.g / LakeTiles.g, and the `.go` on disk — and as served by vite — kept the OLD
+//   for Radio.g / Mesh.g / HohoTiles.g, and the `.go` on disk — and as served by vite — kept the OLD
 //    Ghostmeta, mtimes untouched ten minutes later.  So the compile RAN (it knew the new dige) and the
 //     WRITE was silently lost.  Because the ack settled the ticket, this CLI reported success, and every
 //      later step trusted a `.go` that had never moved.

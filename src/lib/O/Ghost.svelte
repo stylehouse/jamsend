@@ -14,8 +14,8 @@
     //               the %aim/%satisfied relics, copied off the now-de-included Agency
     //               ghost.  (prandle moved to the House class in Housing.)
     //   Machinery — the test-suite aggregator (all AI): mounts the test-case games
-    //               (MachReqy, Mundane, LakeSurprise, Diffmatication, the Understand*
-    //               suite, MachPeerily…) and hosts its own (LangTiles, Lake*, Leaf*,
+    //               (MachReqy, Mundane, HohoSurprise, Diffmatication, the Understand*
+    //               suite, MachPeerily…) and hosts its own (LangTiles, Hoho*, Leaf*,
     //               Stuff*)
     //   Story     — w:Story, snap/toc codec, story_drive, story_save, Run wiring
     //   Cyto      — w:Cyto, cyto_scan, grawave, e_story_cyto_step handshake

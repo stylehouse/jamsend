@@ -624,7 +624,7 @@ Two consequences, both worse than the inconvenience:
  a frozen boot depth, which is wrong): it is the **cumulative belief-round counter** (`Hovercraft.svelte:39`),
   stamped into every snap, climbing all through a run — `MusuHeist` records `6,8,9,12,…,38`. It appears
    in the fixtures of **~120 Books**, and *changes within the run* in at least 30. Most exposed by count
-    of distinct values: `MusuRaChase` 55, `MusuRaStream` 39, `PereProof` 32, `LeafFarm`/`LakeNets` 29,
+    of distinct values: `MusuRaChase` 55, `MusuRaStream` 39, `PereProof` 32, `LeafFarm`/`HohoNets` 29,
      `MusuHeist` 21.
 
 It is **not** entropy-arrested anywhere (no `Entcase` names it). That is why Books are normally green:

@@ -1181,7 +1181,7 @@ async Ra_pool_excuse(w):
     await this.Ra_pool_off(w)
     home.sc.excused = 1
     home.bump()
-    console.log('🏊 SoundPooling excused -- this body will not hold or serve a circulation pool')
+    console.log('🏊 SoundPooling excused -- this body will not hold or serve any SoundPooling')
     return 1
 Ra_pool_unexcuse(w):
     let home = this.Ra_pool_home(w)

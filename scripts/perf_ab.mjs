@@ -10,11 +10,11 @@
 //  A full 65-Book sweep is a CORRECTNESS net (verdict flips).  THIS is the PERF instrument.
 //
 //  Usage:
-//    node scripts/perf_ab.mjs LakeTiles                       # warm 1, time 5, report median/spread
-//    node scripts/perf_ab.mjs LakeTiles MusuGlide --n=7       # several Books, 7 timed runs each
-//    node scripts/perf_ab.mjs LakeTiles --warm=2 --n=6        # 2 warmups discarded, 6 measured
-//    node scripts/perf_ab.mjs LakeTiles --label=gate-on       # tag the run (for A/B notes)
-//    node scripts/perf_ab.mjs LakeTiles --json                # machine-readable summary to stdout
+//    node scripts/perf_ab.mjs HohoTiles                       # warm 1, time 5, report median/spread
+//    node scripts/perf_ab.mjs HohoTiles MusuGlide --n=7       # several Books, 7 timed runs each
+//    node scripts/perf_ab.mjs HohoTiles --warm=2 --n=6        # 2 warmups discarded, 6 measured
+//    node scripts/perf_ab.mjs HohoTiles --label=gate-on       # tag the run (for A/B notes)
+//    node scripts/perf_ab.mjs HohoTiles --json                # machine-readable summary to stdout
 //
 //  A/B PROTOCOL (the whole point): run once per arm on the SAME warm runner, flipping only the lever's
 //   flag (HMR) between arms.  Compare MEDIANS, not means, not single runs.  If the medians overlap within

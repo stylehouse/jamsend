@@ -9,7 +9,7 @@
 //   plus the biggest gaps with the event kinds that bracket them (names the cost).
 //
 //  Usage:  node scripts/runner_ask.mjs trace 1 | node scripts/trace_gaps.mjs
-//   First measured on LakeFlush 2026-07-07 — see Perf_todo.md status log for the finding that
+//   First measured on HohoFlush 2026-07-07 — see Perf_todo.md status log for the finding that
 //    reprioritised the levers (the 50ms drain gate dominates; trickle is minor; a ~428ms/step
 //     quiescence guard was a surprise).  A step-1 result: 49% drain-gate, 22% quiescence, 11% trickle.
 // analyse a runner_ask trace dump on stdin: where does a step's wall-clock go?
