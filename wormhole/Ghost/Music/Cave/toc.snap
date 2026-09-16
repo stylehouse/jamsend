@@ -14,8 +14,6 @@ Waft:Ghost/Music/Cave,desc:the collection — heist original bytes into the Cave
     Funkcion:Storying,of_Book:MusuStanding
     Funkcion:Storying,of_Book:MusuFreeze
     Funkcion:Storying,of_Book:MusuReap
-    Funkcion:Storying,of_Book:MusuSoft
-    Funkcion:Storying,of_Book:MusuBay
     Funkcion:Storying,of_Book:MusuBreach
     Funkcion:Storying,of_Book:MusuMag
     Funkcion:Storying,of_Book:MusuBuddy
@@ -50,11 +48,6 @@ Waft:Ghost/Music/Cave,desc:the collection — heist original bytes into the Cave
     Doc:src/lib/O/ui/PickFace.svelte
   What:the rummage,desc:soft heist — words and leads — a wish hardens into a pull
     Doc:Ghost/M/Heist.g
-    Point,method:Heist_wish,desc:a wish for music
-    Point,method:Heist_soft,desc:soft search
-    Point,method:Heist_words,desc:the words of a wish
-    Point,method:Heist_match,desc:does a record match
-    Point,method:Heist_leads,desc:where to look
     Point,method:Heist_rummage_recs,desc:rummage a shelf
     Point,method:Heist_rummage_wire,desc:rummage over the wire
     Point,method:Heist_blag_folder,desc:take a whole folder

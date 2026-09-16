@@ -372,6 +372,15 @@
 
         const throttle_key = `waft_save_throttle_${path}`
         if (!w.c[throttle_key]) {
+            // EDITOR: TRAILING, 3s.  A click on a doc bumps today's Aside (the moment) and the Keep (the
+            //  cursor) — with a LEADING 800ms throttle both saves launched in the same pass as the click's
+            //   own read, and on the owner's box an FSA write costs seconds (host fsync 0.35–1.3s × the
+            //    crswap dance; measured 2026-09-16, Docindex_todo last section), during which Chrome's FSA
+            //     lane holds every read too.  Nobody waits on a save; someone waits on that read.  So the
+            //      editor writes after the burst, not at its head.  Runners (and any nowriting path) keep
+            //       the leading edge: under a Book the save becomes a snapped %log:waft_save want, and moving
+            //        it 3s later would move it into another step and red every fixture that sees it.
+            const trailing = H.Lies_role(w) === 'editor' && !H.Lies_nowriting(w, path)
             w.c[throttle_key] = throttle(() => {
                 H.post_do(async () => {
                     const { snap, errors, muted_log } = await H.enWaft(waft)
@@ -387,10 +396,18 @@
                         await H.Lies_log_want(w, 'waft_save', path, snap)
                         return
                     }
+                    // A RUNNER NEVER WRITES AN ASIDE (2026-09-16).  An idle runner with an FSA share
+                    //  (no Book → no nowriting Opt) is a full writer, and `runner_ask pick` / a Lagoon
+                    //   click on it throws a moment into today's Aside — the SAME wormhole/Aside/<day>/
+                    //    toc.snap the editor keeps — so the runner's four test picks overwrote the owner's
+                    //     day (git showed it).  The runner keeps its Aside in memory; only the editor's
+                    //      is the trail.  After the nowriting branch on purpose: under a Book the snapped
+                    //       %log:waft_save want is unchanged, so no fixture moves.
+                    if (waft.sc.aside && H.Lies_role(w) !== 'editor') return
                     const snap_path = H.Lies_waft_snap_path(path)
                     await H.LiesStore_write(w, snap_path, snap)
                 }, { see: `waft_save_${path}` })
-            }, 800)
+            }, trailing ? 3000 : 800, { notnow: trailing })
         }
         w.c[throttle_key]()
     },

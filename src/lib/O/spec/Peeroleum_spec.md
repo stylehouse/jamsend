@@ -291,7 +291,10 @@ Two Dexie-backed tables under `w:Thangs`:
 
 ## 11. The manager: p2pman / p2paddy / per-Pier desires  (UNBUILT — forward design)
 
-> **2026-09-16 — read this first.** Two reads of the code below this heading, a day apart, reached the same
+> **2026-09-16 — read this first.** ✓ **DONE the same evening**: `req_p2pman` / `req_p2paddy` / `A:Peerologist` /
+>  `Squelchbury` are out of `Ghost/N/Peeroleum.g`; `Peeroleum(A,w)` is now `await w&do` (nothing stood Peerologist;
+>   no fixture carried any of the four; PereStaple + PereProof green on a live runner after). The ruling that led there —
+>    Two reads of the code below this heading, a day apart, reached the same
 >  verdict: `req_p2pman` and `req_p2paddy` are *hollow foremen* — `await req&do; req.sc.ok = 1` with no
 >   reason ever to withhold `ok`, no motivation flowing down (`A:Peerologist` never reaches
 >    `A:<id>/w:Peeroleum`), and the structural work they were to own (mint Peerings, own

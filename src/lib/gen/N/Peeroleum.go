@@ -8,53 +8,24 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '176d03c1fb562ff9~g1' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return 'ee39d52bb1441684~g1' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
-//  Getting-started scaffold: the req tree (p2pman → p2paddy → handshake) and the
-//  three transports, compile-clean. Bodies range from real LangTiles req-seeds to
-//  `// <` seams where the spec needs forms LangTiles can't yet say (deep/wildcard
-//  drop, drilled req paths, object/.c payloads) — each a tracked language seam.
-//  Progress lives in Peeroleum_handover.md.
+//  The flock is req-shaped all the way down: w.do() pumps each %Peering (req_Peering),
+//   which pumps each %Pier (req_Pier), which pumps its handshake / send leaves. Bodies the
+//    spec still owes are `// <` seams. Progress lives in Peeroleum_handover.md.
+//  2026-09-16: the p2pman → p2paddy foremen (and A:Peerologist, and the Squelchbury
+//   placeholder) were deleted under spec §11's "not yet" — hollow `await req&do; ok=1`
+//    shells that read as gates. The per-identity main below is what they demonstrably left.
 
-// ── manager: appear online ────────────────────────────────────────────────────
-// A:Peerologist/w:Peerologist — no identity, no transport; it only wants Peerings.
-async Peerologist(A,w) {
-    w.oai({req: "p2pman", eternal: 1})
-    await w.do()
-
-},
-// %req:p2pman — top desire: a %Peering per online identity. Eternal foreman:
-//  pump children, then settle the gate for this tick with %ok (re-armed next tick).
-async req_p2pman(req) {
-    // < ensure a %Peering per identity-thang with online_want (spec §11.1);
-    //    for the spine the wrangler lays the sides directly.
-    await req.do()
-    req.sc.ok = 1
-
-},
 //#region oleum
 // ── per-identity worker ───────────────────────────────────────────────────────
-// A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
+// A:<id>/w:Peeroleum — one per identity-presence; owns this address's Peerings and their Piers.
+//  Peerings are minted by the mains + wranglers (PeerTesting Lake_peering, the relay standup);
+//   the ambient sweep cascades from here (§11: the manager tier that would mint them is unbuilt).
 async Peeroleum(A,w) {
-    w.oai({seemingly: `ya aooooolly`}, {figaro: "Squelchbury"})
-    // each installed %Peering manages its own Piers via %req:p2paddy
-    for (const Peering of this._o_iter(w, [{sc: {Peering: 1}}])) {
-        Peering.oai({req: "p2paddy"})
-    }
     await w.do()
-
-},
-// %req:p2paddy — maintain this Peering's Piers + pick a transport.
-async req_p2paddy(req) {
-    // < transport_select is seeded + driven by the wrangler (Lake_trial) directly on
-    //    the Peering in this test, so req.c.up IS the Peering. Auto-seeding it here
-    //     nests it under p2paddy (req.c.up = p2paddy), which breaks that navigation —
-    //      restore (and walk up to the Peering) when p2paddy drives real peers (§11.2).
-    // < per known peer: seed %req:dial → ensure a %Pier → seed its %req:handshake.
-    await req.do()
-    req.sc.ok = 1
 
 },
 // req_Peering — the per-Peering worker, the node-level flock do_fn (the twin of req_Pier one
@@ -75,7 +46,7 @@ async req_Peering(peering) {
 //     the Pier, its identity is ours: a peer can land frames in an existing Pier's inbox but
 //      can never mint or re-key one (no gut-swap).  The job: pump whatever sub-reqs this Pier
 //       hosts (handshake / trust / send, seeded by the caller), then stay a live flock member
-//        — ok re-armed each pass, mirroring req_p2paddy.
+//        — ok re-armed each pass, mirroring req_Peering.
 async req_Pier(pier) {
     await pier.do()
     pier.sc.ok = 1

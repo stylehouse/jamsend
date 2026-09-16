@@ -16,6 +16,9 @@ import { type House } from "$lib/O/Housing.svelte"
 import { TheC } from "$lib/Stuff.svelte"
 import { boot_param } from "$lib/boot"
 import { onMount } from "svelte"
+// Aside reopen|sweep thresholds (days) — GUESSES, see Lies_keep_reopen.
+const ASIDE_REOPEN_DAYS = 3
+const ASIDE_SWEEP_DAYS  = 30
 
 let { M } = $props()
 
@@ -137,15 +140,21 @@ await M.eatfunc({
         keep.bump_version()
     },
 
-    //   Lies_keep_note — accumulate a Waft into the ledger: discovered_at once, accessed_at
-    //    now.  No-op until the Keep has loaded (early boot opens catch up on next focus).
-    Lies_keep_note(w: TheC, path: string): TheC | undefined {
+    //   Lies_keep_note — accumulate a Waft into the ledger: discovered_at once; accessed_at only
+    //    when `touch` (a FOCUS — Lies_keep_mark_focus).  No-op until the Keep has loaded (early
+    //     boot opens catch up on next focus).
+    //   2026-09-16: an OPEN no longer bumps accessed_at.  Lies_keep_reopen opens every ledger row
+    //    at boot, so every row read "accessed = last boot" and the ledger could not tell a live
+    //     Aside from a dead one (18 rows, all stamped 08:48 this morning).  accessed_at now means
+    //      what it says — the last time a human focused it — which is what makes the Aside
+    //       reopen gate + sweep below safe to read it.
+    Lies_keep_note(w: TheC, path: string, touch = false): TheC | undefined {
         const keep = (this as House).Lies_keep(w)
         if (!keep) return undefined
         const wt  = keep.oai({ WaftTimes: 1, of_Waft: path })
         const now = Date.now()
         wt.sc.discovered_at ??= now
-        wt.sc.accessed_at    = now
+        if (touch) wt.sc.accessed_at = now
         keep.bump_version()   // watch_c watches the ROOT version only (Housing watch_c) — a
         return wt             //  descendant (WaftTimes) mutation won't trigger the save without this
     },
@@ -156,7 +165,7 @@ await M.eatfunc({
         const H    = this as House
         const keep = H.Lies_keep(w)
         if (!keep) return
-        H.Lies_keep_note(w, path)
+        H.Lies_keep_note(w, path, true)
         H.Lies_keep_push_cursor(keep, 'waft', path)
     },
 
@@ -215,6 +224,16 @@ await M.eatfunc({
     //   Lies_keep_reopen — reopen every Waft in the ledger (idempotent via Lies_open_Waft's
     //    Good dedup).  Seeds the first overlays on a fresh Keep so a brand-new editor still
     //     co-loads Easy + Music/Ality.
+    //   ASIDES ARE THE EXCEPTION (2026-09-16).  A day's Aside (Waft:Aside/YMD, Lies_ghost_pick's
+    //    scratch) is minted by construction — one per working day, forever — so reopening every
+    //     one at boot grew without bound (10 open at once, each "(0 docs)", each a Waft load +
+    //      roster push).  The rule, scoped to `Aside/` rows ONLY — the working Wafts
+    //       (Ghost/Net/Easy…) are a different contract, the human expects them back:
+    //        · reopen an Aside if its DAY or its last FOCUS is within ASIDE_REOPEN_DAYS (today's
+    //          is always inside — the Clerkdesk writes to it);
+    //        · DROP the ledger row once both are older than ASIDE_SWEEP_DAYS — the toc on disk is
+    //          untouched, the history is read off disk (`lagoon errands`), not off open Wafts.
+    //       The two numbers are GUESSES (3 / 30) — defaults to be corrected by use, not measured.
     Lies_keep_reopen(w: TheC): void {
         const H    = this as House
         const keep = H.Lies_keep(w)
@@ -224,8 +243,31 @@ await M.eatfunc({
             for (const path of ['Ghost/Net/Easy', 'Ghost/Music/Ality', 'Ghost/Swarm/Easy', 'Ghost/Vis/Visua']) H.Lies_keep_note(w, path)
             times = keep.o({ WaftTimes: 1 }) as TheC[]
         }
-        for (const wt of times)
-            H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: wt.sc.of_Waft as string })
+        const now = Date.now()
+        let swept = 0, parked = 0
+        for (const wt of times) {
+            const path = wt.sc.of_Waft as string
+            const age  = H.Lies_keep_aside_age_days(wt, now)
+            if (age != null) {
+                if (age > ASIDE_SWEEP_DAYS)  { keep.drop(wt); swept++;  continue }
+                if (age > ASIDE_REOPEN_DAYS) { parked++;                continue }
+            }
+            H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path })
+        }
+        if (swept) keep.bump_version()
+        if (swept || parked) console.log(`Keep: Asides — ${parked} left closed (> ${ASIDE_REOPEN_DAYS}d), ${swept} ledger rows swept (> ${ASIDE_SWEEP_DAYS}d; tocs on disk untouched)`)
+    },
+
+    //   Lies_keep_aside_age_days — for an `Aside/YYYY-MM-DD` ledger row: days since the LATER of
+    //    its day and its last focus (accessed_at); undefined for any other Waft (never gated).
+    Lies_keep_aside_age_days(wt: TheC, now = Date.now()): number | undefined {
+        const path = wt.sc.of_Waft as string | undefined
+        const m = path && /^Aside\/(\d{4}-\d{2}-\d{2})$/.exec(path)
+        if (!m) return undefined
+        const day = Date.parse(m[1] + 'T00:00:00Z')
+        if (Number.isNaN(day)) return undefined
+        const last = Math.max(day, Number(wt.sc.accessed_at) || 0)
+        return (now - last) / 86400000
     },
 
     //   Lies_keep_boot — the editor boot driver (heartbeat, staged & gated by w.c flags):

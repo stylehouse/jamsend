@@ -59,7 +59,13 @@ export const MUTEX_WEDGE_MS = 30000
 export const WH_OP_TIMEOUT_MS = 5000
 export const WH_OP_TRIES      = 4      // attempts before the caller is told it failed
 export const WH_OP_RETRY_MS   = 250    // linear backoff: attempt N waits N×this
-export const WH_OP_PARALLEL   = 8      // concurrent READS per queue; writes always run alone
+export const WH_OP_PARALLEL   = 8      // concurrent ops per queue (reads fan out; a write excludes only ITS OWN path)
+export const WH_WRITE_YIELD_MS = 4000       // a write yields to waiting|running reads for up to this long, then goes anyway
+export const WH_OP_WRITE_TIMEOUT_MS = 30000   // a write's overrun window.  MEASURED 2026-09-16 on the owner's box: FSA
+                                              //  writes take 3–11s each (a 524KB socklog rewrite 10.8s; a 700B Aside toc
+                                              //   3–5s).  Under the 5s read window a slow-but-live write was abandoned
+                                              //    and RE-LAUNCHED on top of itself — two writables on one file — which
+                                              //     made the next one slower still.  A write is abandoned only when hung.
 
 // ── Technique A — the gallop: ONE axis, default ON ───────────────────────────────────────────
 //  WHICH Houses gallop is the only real question, and it is answered by ONE presence-keyed opt-OUT
@@ -2444,10 +2450,26 @@ export class House extends StorableHousing {
     //         carries a generation, and a settle from a superseded generation is dropped.
     //   Retry is for TRANSIENT failure only.  `not_found` is a valid answer, not an error, and a
     //    reply marked `fatal` (a .jamsend refusal, an unknown op) is a decision — neither is retried.
-    Wormhole_park(queue: TheC, wrap: TheC, run_op: () => Promise<any>, done: (reply: any) => void, label = '', exclusive = false) {
-        if (wrap.c.reply) { done(wrap.c.reply); return }
+    Wormhole_park(queue: TheC, wrap: TheC, run_op: () => Promise<any>, done: (reply: any) => void, label = '', exclusive = false, key = label, local = false) {
+        if (wrap.c.reply) {
+            // ⏱ one line per op, three spans (2026-09-16, the "code-opening production line" hunt):
+            //  queue→launch = pump latency (how long the req sat before a drain launched it),
+            //  launch→settle = the backend's own time (FSA / remote round-trip),
+            //  settle→done = the WAKE gap (the promise settled, ponder_now fired — how long until a
+            //   pass actually handed the reply on).  All on .c + console; nothing snaps.  A span that
+            //    is ≫ the others names the hop; do not tune anything until it has.
+            const t_done = Date.now()
+            const enq = Number(wrap.c.enq_at ?? 0), lau = Number(wrap.c.started_at ?? 0), set = Number(wrap.c.settled_at ?? 0)
+            if (enq && lau && set && t_done - enq > 300)
+                console.log(`⏱ wormhole ${(wrap.c.label as string) || '?'} total ${t_done - enq}ms — queue→launch ${lau - enq} · launch→settle ${set - lau} · settle→done ${t_done - set}${Number(wrap.c.tries ?? 1) > 1 ? ` · tries ${wrap.c.tries}` : ''}`)
+            done(wrap.c.reply); return
+        }
         const H = this as House
         const now = Date.now()
+        wrap.c.enq_at ??= now
+        wrap.c.exclusive = exclusive ? 1 : undefined   // stamped at ENQUEUE (not launch) so a waiting write is visible to the yield rule below
+        wrap.c.key = key
+        wrap.c.local = local ? 1 : undefined
         // WHICH op — a retry line that doesn't name its subject is no better than silence (the first
         //  cut of this printed a bare "wormhole op overran 5000ms" and left you guessing).  Stamped on
         //   the wrap too, so it reads off the queue in a snap as well as in the console.
@@ -2461,21 +2483,28 @@ export class House extends StorableHousing {
         //     rather than only by itself.
         const peers = (queue.o({ req: 1 }) as TheC[]).filter(r => r !== wrap && r.c.inflight)
         for (const p of peers) {
-            if (now - Number(p.c.started_at ?? now) > WH_OP_TIMEOUT_MS) {
+            if (now - Number(p.c.started_at ?? now) > ((p.c.exclusive || p.c.local) ? WH_OP_WRITE_TIMEOUT_MS : WH_OP_TIMEOUT_MS)) {
                 p.c.gen = Number(p.c.gen ?? 0) + 1
                 p.c.inflight = undefined
             }
         }
         const live = peers.filter(p => p.c.inflight)
 
+        // LOCAL disk never loses a promise — it only takes long (host fsync under load: a 700B write+fsync
+        //  measured 0.35–1.3s from the container, 2026-09-16, loadavg 12).  Abandoning a slow local READ
+        //   at 5s and re-launching it just ADDED an FSA op on top of the one still running — measured
+        //    `read Ghost/N/Tribunal.g total 24830ms · tries 3` beside a 33s toc write.  So a local op,
+        //     read or write, gets the long window; only a REMOTE read (a reply can genuinely be lost —
+        //      RemoteWormholeNav's reused-seq drop) keeps the short one and its re-emit.
+        const window_ms = (exclusive || local) ? WH_OP_WRITE_TIMEOUT_MS : WH_OP_TIMEOUT_MS
         if (wrap.c.inflight) {
-            if (now - Number(wrap.c.started_at ?? now) < WH_OP_TIMEOUT_MS) return   // still within its window
+            if (now - Number(wrap.c.started_at ?? now) < window_ms) return   // still within its window
             // OVERRUN — abandon this attempt.  The underlying promise may still settle much later;
             //  the generation bump is what makes that harmless.
             wrap.c.gen = Number(wrap.c.gen ?? 0) + 1
             wrap.c.inflight = undefined
             wrap.c.timed_out = Number(wrap.c.timed_out ?? 0) + 1
-            console.log(`🗂⚠ wormhole ${what} overran ${WH_OP_TIMEOUT_MS}ms — retrying (attempt ${Number(wrap.c.tries ?? 0) + 1}/${WH_OP_TRIES})`)
+            console.log(`🗂⚠ wormhole ${what} overran ${window_ms}ms — retrying (attempt ${Number(wrap.c.tries ?? 0) + 1}/${WH_OP_TRIES})`)
         }
 
         // CONCURRENCY — reads fan out, writes run alone.
@@ -2488,9 +2517,29 @@ export class House extends StorableHousing {
         //  Ordering is kept where it actually matters: an exclusive op (any write) waits for reads to
         //   drain and blocks everything while it runs, so a read can never overtake a write to the
         //    same path.  Independent reads have no such hazard and shouldn't queue behind each other.
-        if (live.some(p => p.c.exclusive)) return                      // a write holds the queue
-        if (exclusive && live.length) return                           // drain reads before writing
-        if (!exclusive && live.length >= WH_OP_PARALLEL) return        // fan-out ceiling
+        //  PER-PATH, not per-queue (2026-09-16).  "Writes run alone" was queue-wide, so a click that
+        //   writes today's Aside toc (3–5s of FSA on the owner's box) made the doc READ the same click
+        //    asked for wait behind it — measured `read Ghost/N/Tribunal.g queue→launch 5272ms ·
+        //     launch→settle 62ms`: the read itself was 62ms; it sat 5.2s behind an unrelated write.
+        //      That was the whole click→dock gap.  The ordering hazard a write guards against is real
+        //       only for ITS path — a read must not overtake a write of the SAME file, and two writes
+        //        of one file must not interleave — so the exclusion is keyed by path (`key`, the
+        //         label's path by default: `<op> <path>`), and unrelated ops pass each other.
+        const same = (p: TheC) => p.c.key === key
+        if (live.some(p => p.c.exclusive && same(p))) return           // a write of MY path holds me
+        if (exclusive && live.some(same)) return                       // my write waits for ops on my path
+        if (live.length >= WH_OP_PARALLEL) return                      // fan-out ceiling (reads and writes alike)
+        //  READS FIRST, WRITES WHEN QUIET (2026-09-16).  Even with per-path exclusion the browser's own
+        //   FSA backend contends: a read that launched WHILE a write was in flight measured 3.3–5.9s
+        //    (`read Ghost/S/Swarm.g launch→settle 5908` beside two 8.9s writes) against 62ms alone.
+        //     Nobody is waiting on a save — the Aside toc, the Keep, a socklog dump — while someone IS
+        //      waiting on every read (a click, a Waft load, a Book step).  So a write launches only
+        //       when no read is waiting or running, bounded by WH_WRITE_YIELD_MS so a read storm can't
+        //        starve it.  Reads never yield to anything.
+        if (exclusive && now - Number(wrap.c.enq_at ?? now) < WH_WRITE_YIELD_MS) {
+            const reads_about = (queue.o({ req: 1 }) as TheC[]).some(r => r !== wrap && !r.c.exclusive && !r.sc.finished && !r.c.reply)
+            if (reads_about) return
+        }
         if (wrap.c.retry_at && now < Number(wrap.c.retry_at)) return   // backing off between attempts
 
         const tries = Number(wrap.c.tries ?? 0)
@@ -2502,7 +2551,6 @@ export class House extends StorableHousing {
         const gen = Number(wrap.c.gen ?? 0)
         wrap.c.tries = tries + 1
         wrap.c.started_at = now
-        wrap.c.exclusive = exclusive ? 1 : undefined   // read by the peers scan above, not by a queue-level slot
         wrap.c.inflight = run_op().then(r => r ?? {}, e => ({ error: String(e) })).then(reply => {
             if (Number(wrap.c.gen ?? 0) !== gen) return           // superseded — we already gave up on this attempt
             wrap.c.inflight = undefined
@@ -2513,6 +2561,7 @@ export class House extends StorableHousing {
                 return
             }
             wrap.c.reply = reply
+            wrap.c.settled_at = Date.now()
             H.ponder_now()
         })
     }
@@ -2696,7 +2745,7 @@ export class House extends StorableHousing {
             }
 
             // ALWAYS park — same law as the rw_op actor below.  Never await disk under Atime.
-            this.Wormhole_park(fs, fs_req, run_op, done, `${op} ${path}`, /write|mkdir|delete/i.test(op))
+            this.Wormhole_park(fs, fs_req, run_op, done, `${op} ${path}`, /write|mkdir|delete/i.test(op), `${path}/${op.endsWith('_toc') ? 'toc.snap' : op.endsWith('_snap') ? pad(req.sc.wh_step as number) + '.snap' : ''}`, !(nav as any).is_remote)
         })
         // drop settled wrappers so the queue doesn't accrete (do() never drops)
         ;(fs.o({ req: 1, finished: 1 }) as TheC[]).forEach(fr => fs.drop(fr))
@@ -2801,7 +2850,7 @@ export class House extends StorableHousing {
             //    read as "remote is the dangerous one".  It isn't the dangerous one, it's the OBVIOUS
             //     one: remote self-deadlocks deterministically, local FSA merely usually returns fast
             //      — and "usually" held the whole machine on 2026-08-04.)
-            this.Wormhole_park(rw, rw_req, run_op, done, `${op} ${name}`, /write|mkdir|delete/i.test(op))
+            this.Wormhole_park(rw, rw_req, run_op, done, `${op} ${name}`, /write|mkdir|delete/i.test(op), name, !(nav as any).is_remote)
         })
         ;(rw.o({ req: 1, finished: 1 }) as TheC[]).forEach(rr => rw.drop(rr))
 

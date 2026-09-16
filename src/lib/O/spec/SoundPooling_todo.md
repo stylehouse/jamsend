@@ -240,6 +240,28 @@ The owner: *"SP being a crux of operations the user kinda configures and informs
   changing… all edges (calls in or out) nice and clear."* Answer: yes — the policy is ALREADY two regions of Ra.g
    plus five satellites; what is missing is one home, one facts table, and edges written down. 44 sites below.
 
+### FOUND (2026-09-17) — a never-asked identity gets auto-enrolled by serving
+
+`Ra_pool_fill_serve` only checks `Ra_pool_excused_of` before pressing a friend's requested track
+ into the HOLDER'S OWN pool (`Siphon_pull(…, homes.pool, homes.lib, …)`) — it never checks
+  `Ra_pool_consent`. And `Ra_home_pool` (which resolves `homes.pool`) unconditionally MINTS a
+   `%SoundPooling`/`%Pool` shelf via `Ra_pool_home_mint`. So a body that has NEVER opened the
+    SoundPool sentence — no yes, no explicit excuse, just never touched it — still gets a Pool
+     shelf silently created and filled the moment a friend's standing reach asks to be served,
+      spending that body's own disk and (once caps apply) budget with no consent ever given.
+       `excused` (explicit opt-out of both holding and serving) works exactly as intended and is
+        NOT the bug; the bug is the ABSENCE of a choice defaulting to enrolled rather than to off.
+
+**Owner's ruling (2026-09-17): this is fine, not a bug to gate shut.** *"surely people can serve
+ SoundPooling to others if not consented — so I guess they just roll a very small OPFS pool and we
+  try to delete it every time?"* — i.e. an un-asked body may still legitimately hold a TINY,
+   aggressively-evicted serving cache rather than being blocked outright; consent gates the real,
+    budgeted Pool a person KEEPS, not this reflexive small stash. Not built; owner wants to
+     re-think the exact shape (size cap, eviction eagerness, whether it's a distinct compartment
+      from the consented Pool) **after the `Pool.g` split**, once the SP island has its own file to
+       carry the design in cleanly. Do not build the harder gate (`Ra_pool_consent_of`) — that
+        reading is now superseded by this ruling.
+
 ### STEP 2 — BUGFIX (2026-09-16 morning)
 
 The differs log was firing every ~10min on eed, growing each time (`old=[1 item]` vs `new=[10+ items]`,

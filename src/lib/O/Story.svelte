@@ -3057,8 +3057,20 @@
         // go async to let story drive forward first
         setTimeout(() => {
         storyH.post_do(async () => {
-            const toc_req = await wh.oai({ req: 1, wh_path: run_path, wh_op: 'write_toc', wh_data: snap })
-            storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
+            // WRITE THE TOC ONLY IF IT CHANGED (2026-09-16).  story_save fires from a dozen seams
+            //  (reset, styles/Opt watch_c, completion…) and used to rewrite toc.snap every time,
+            //   unchanged or not — at run START too, right before step 1.  On the owner's box an FSA
+            //    write costs 3–30s and holds Chrome's FSA lane, so step 1's own Waft read (HohoFlush's
+            //     Waftily) landed in step 3 behind a toc write that changed nothing.  Compare against the
+            //      last text this session wrote for this run_path (w.c — runtime, never snapped); the
+            //       first save of a session still writes.  A Book's step diges change → it writes as before.
+            const toc_key = `last_toc:${run_path}`
+            const toc_same = w.c[toc_key] === snap
+            if (!toc_same) {
+                w.c[toc_key] = snap
+                const toc_req = await wh.oai({ req: 1, wh_path: run_path, wh_op: 'write_toc', wh_data: snap })
+                storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
+            }
 
             for (const step of all_steps) {
                 if (step.sc.saved) continue
@@ -3074,7 +3086,7 @@
             }
 
             const tag = frontier > 0 ? ` frontier:${frontier}` : ' clean'
-            console.log(`💾 wormhole: ${run_path} (${step_count} steps${tag})`)
+            console.log(`💾 wormhole: ${run_path} (${step_count} steps${tag})${toc_same ? ' — toc unchanged, not rewritten' : ''}`)
         }, { see: 'story_save' })
         },0)
     },

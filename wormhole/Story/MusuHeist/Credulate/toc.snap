@@ -1,5 +1,5 @@
 Credulate,of_Book:MusuHeist
-  GhostInclude:Ghost_N_Peeroleum,dige:176d03c1fb562ff9~g1
+  GhostInclude:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
   GhostInclude:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
   GhostInclude:Ghost_N_Tribunal,dige:5b157436e5e8bf4a~g1
   GhostInclude:Ghost_N_Presence,dige:14efd88c08b5219c~g1
@@ -10,7 +10,8 @@ Credulate,of_Book:MusuHeist
   GhostInclude:Ghost_M_Crate,dige:23184bd7b97119a6~g1
   GhostInclude:Ghost_M_Mixer,dige:d5597b5a4132d7f3~g1
   GhostInclude:Ghost_M_Mesh,dige:2c1e6afdb90d9379~g1
-  GhostInclude:Ghost_M_Ra,dige:39f169355835f4b8~g1
+  GhostInclude:Ghost_M_Ra,dige:9173463bd7bb59ae~g1
+  GhostInclude:Ghost_M_Pool,dige:a69150ba06fad558~g1
   GhostInclude:Ghost_M_Booth,dige:29a57d8fed02b58e~g1
   GhostInclude:Ghost_M_Heist,dige:3d53b758563a084b~g1
   GhostInclude:Ghost_M_Heard,dige:b9873c8d5c70fc24~g1

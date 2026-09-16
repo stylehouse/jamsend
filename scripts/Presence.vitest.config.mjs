@@ -22,6 +22,7 @@ export default defineConfig({
     resolve: {
         alias: {
             $lib: path.join(APP, 'src/lib'),
+            '$app/navigation': path.join(APP, 'scripts/app_navigation_stub.mjs'),   // same stub as Story_cli's config (InvitePanel imports it since 2026-08-30)
             ws: path.join(APP, 'node_modules/ws/index.js'),   // ← the whole reason this config exists
         },
         conditions: ['browser'],

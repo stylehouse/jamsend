@@ -939,3 +939,44 @@ Every stage of a doc open measures fast (the table above). The 8–33s the owner
      scrollTop write from elsewhere. A `display:none` flip would ALSO zero scrollTop and fire NO scroll
       event — if the probe prints nothing while the list visibly jumps, that is the tell, and the
        place to look is whatever hides the piece during a click.
+
+## ☀ THE CLICK→DOCK GAP, FOUND — 2026-09-16 night. It was the DISK QUEUE, then the DISK.
+
+**One instrument settled it.** `Wormhole_park` now prints one line per op with three spans:
+ `queue→launch` (pump latency) · `launch→settle` (the backend's own time) · `settle→done` (the wake gap).
+  On a runner with a real FSA share, the first pull:
+
+    read  Ghost/N/Tribunal.g               total 5378ms — queue→launch 5272 · launch→settle 62 · settle→done 44
+    write wormhole/Aside/2026-09-16/toc.snap total 5429ms — queue→launch 0    · launch→settle 5420
+    write wormhole/_socklog/…jsonl (524KB)  total 11502ms — launch→settle 10864
+
+ The read is **62ms**. It sat **5.2s** behind the Aside toc write the same click had just caused, because
+  "writes run alone" was queue-WIDE. The wake gap (`settle→done`) is ≤44ms everywhere — the hypothesis
+   in the section above ("a lost wake on one hop") is **dead**; every hop wakes itself. The five `⏱`
+    hop stamps can come out whenever.
+
+**Three fixes in `Housing.svelte.ts Wormhole_park` (all landed, type-clean):**
+1. **Exclusion is per-path** (`key`): a read never waits behind a write of a different file; two ops on
+    one path still serialise.
+2. **Reads first, writes when quiet**: a write launches only when no read is waiting or in flight, for
+    up to `WH_WRITE_YIELD_MS` (4s) — nobody waits on a save, someone waits on every read.
+3. **A local op is never abandoned at 5s** (`WH_OP_WRITE_TIMEOUT_MS` 30s for writes and for LOCAL
+    reads): abandoning a slow FSA read and relaunching it just stacked another FSA op on the running
+     one (`read … total 24830ms · tries 3` beside a 33s write). Only a REMOTE read keeps the 5s window —
+      its reply can genuinely be lost.
+ Plus: `Lies_dump_socklog` / `Lies_dump_supply` write only when the ring MOVED, 30s throttle (was a full
+  524KB rewrite every 10s, moved or not).
+
+**What is left is the disk, and it is not ours.** After the fixes every read shows `queue→launch 0` —
+ and `launch→settle` is 7–13s for a READ, 27–92s for a write, getting worse through the hour. From THIS
+  container a 700-byte write+fsync to /app took **0.35–1.3s**; host loadavg was **10–12**. Chrome's FSA
+   does several fsyncs per write (crswap create, write, close/rename), so ~4× the fsync latency is
+    exactly the 3–5s toc write, and under contention it climbs. The same reads were 62ms when the disk
+     was quiet at 22:35. **Re-measure on a quiet box before tuning anything else**: the number to watch is
+      `launch→settle` on a read with nothing else in flight; if that is <100ms the production line is
+       fixed and the rest is load.
+
+**Ask of the owner:** what has the box at load 10–12 (Atlas? seven Chrome tabs each with an FSA share
+ and socklog armed? the dev container's watcher?) — and turn socklog OFF on the runners now that the
+  become_book hunt is over (`runner_ask socklog off --reload`): armed, each runner rewrites its whole
+   socket ring to disk every 30s.

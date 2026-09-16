@@ -1,5 +1,6 @@
 // story_accept.mjs — RE-SWEAR FIXTURES BY FILTERED DIFF (2026-09-03, the keys-as-particles migration).
-//   node scripts/story_accept.mjs <Book>... [--allow=<regex>] [--force] [--dry]
+//   node scripts/story_accept.mjs <Book>... [--allow=<regex>] [--force] [--dry] [--full]
+//   STORY_RUNNER=<id> pins every runner_ask call to one tab; --full prints the whole residual.
 //  For each Book: run it on the LIVE runner (runner_ask); green ⇒ say so.  Red ⇒ for every RED step with a
 //   fixture, fetch the live snap and compute the RESIDUAL: both sides minus the crew-particle lines
 //    (Crew / Key / mate / self,round — the lines a model change is allowed to move) minus any --allow
@@ -17,6 +18,7 @@ const books = args.filter(a => !a.startsWith('--'))
 const allow = args.filter(a => a.startsWith('--allow=')).map(a => new RegExp(a.slice(8)))
 const force = args.includes('--force')
 const dry = args.includes('--dry')
+const full = args.includes('--full')   // print EVERY residual line, untruncated (default: 12 per step, 200 chars)
 const FILTER = /^\s*(Crew\b|Crew,|Key,pub:|mate:|self,round)/
 
 const sh = (cmd, ms = 400000) => {
@@ -36,20 +38,22 @@ const lastJson = (txt) => {
 //      loses that posted think.  Story_hygiene_todo.md §0a.2; the real cure is a req-owned teardown
 //       (Story_future.md §8.3), and this is the workaround until then.  A dropped Book here costs a whole
 //        re-record, so the seconds are cheap.
+// STORY_RUNNER=<id> pins every runner_ask to one tab (two live runners split ops per-op otherwise).
+const PIN = process.env.STORY_RUNNER ? ` --runner=${process.env.STORY_RUNNER}` : ''
 const SETTLE_MS = Number(process.env.STORY_SETTLE_MS ?? 6000)
 const settle = () => { try { execSync(`sleep ${SETTLE_MS / 1000}`) } catch (e) {} }
 const run = (book) => {
     for (let attempt = 0; attempt < 2; attempt++) {
         settle()
-        const r = sh(`node scripts/runner_ask.mjs run ${book} --watch`)
+        const r = sh(`node scripts/runner_ask.mjs run ${book} --watch${PIN}`)
         const j = lastJson(r.out)
-        const st = sh(`node scripts/runner_ask.mjs steps`)
+        const st = sh(`node scripts/runner_ask.mjs steps${PIN}`)
         const sj = lastJson(st.out)
-        if (!sj || !sj.steps) { console.log(`  ${book}: no steps (${(r.out || '').slice(-200).replace(/\n/g, ' ')})`); sh('node scripts/runner_ask.mjs release'); continue }
+        if (!sj || !sj.steps) { console.log(`  ${book}: no steps (${(r.out || '').slice(-200).replace(/\n/g, ' ')})`); sh(`node scripts/runner_ask.mjs release${PIN}`); continue }
         const fixtures = fs.existsSync(`wormhole/Story/${book}`) ? fs.readdirSync(`wormhole/Story/${book}`).filter(f => /^\d+\.snap$/.test(f)) : []
         const maxfix = fixtures.length ? Math.max(...fixtures.map(f => +f.replace('.snap', ''))) : 0
         // hollow run (fewer steps than the fixtures know) → retry once
-        if (sj.steps.length < maxfix && attempt === 0) { console.log(`  ${book}: hollow (n=${sj.steps.length} < ${maxfix}) — retry`); sh('node scripts/runner_ask.mjs release'); continue }
+        if (sj.steps.length < maxfix && attempt === 0) { console.log(`  ${book}: hollow (n=${sj.steps.length} < ${maxfix}) — retry`); sh(`node scripts/runner_ask.mjs release${PIN}`); continue }
         return { run: j, steps: sj.steps, fixtures }
     }
     return null
@@ -80,7 +84,7 @@ for (const book of books) {
     const got = run(book)
     if (!got) { console.log(`✗ ${book}: could not run`); continue }
     const red = got.steps.filter(s => !s.ok || s.caveat)
-    if (!red.length) { console.log(`✓ ${book}: GREEN (${got.steps.length} steps, caveat 0)`); sh('node scripts/runner_ask.mjs release'); continue }
+    if (!red.length) { console.log(`✓ ${book}: GREEN (${got.steps.length} steps, caveat 0)`); sh(`node scripts/runner_ask.mjs release${PIN}`); continue }
     // diff each fixture step
     let allClean = true
     let bookConfused = false
@@ -89,7 +93,7 @@ for (const book of books) {
         const n = +f.replace('.snap', '')
         const stepj = got.steps.find(s => s.n === n)
         if (stepj && stepj.ok && !stepj.caveat) continue   // green step: fixture stands
-        const live = sh(`node scripts/runner_ask.mjs snap ${n}`).stdout
+        const live = sh(`node scripts/runner_ask.mjs snap ${n}${PIN}`).stdout
         if (/^snap: \{/.test(live.trim())) { console.log(`  ${book} step ${n}: no live snap (${live.trim().slice(0, 80)})`); allClean = false; continue }
         // ⚠ THE SNAP MUST BE THIS BOOK'S (2026-09-03: a degraded runner served SwarmBody's snap for a
         //  SwarmPost step, and this script wrote it into SwarmPost's fixture — cross-Book corruption that
@@ -103,27 +107,27 @@ for (const book of books) {
         if (res.length) {
             allClean = false
             console.log(`  ${book} step ${n}: residual ${res.length} line(s)`)
-            for (const l of res.slice(0, 12)) console.log('     ' + l.slice(0, 200))
+            for (const l of (full ? res : res.slice(0, 12))) console.log('     ' + (full ? l : l.slice(0, 200)))
         }
     }
     const errs = got.steps.filter(s => s.error).map(s => `${s.n}:${String(s.error).slice(0, 120)}`)
     if (errs.length) { allClean = false; console.log(`  ${book} errors: ${errs.join(' | ')}`) }
-    if (bookConfused) { console.log(`✗ ${book}: RUNNER SERVED ANOTHER BOOK — reload the runner and retry; nothing written`); sh('node scripts/runner_ask.mjs release'); continue }
+    if (bookConfused) { console.log(`✗ ${book}: RUNNER SERVED ANOTHER BOOK — reload the runner and retry; nothing written`); sh(`node scripts/runner_ask.mjs release${PIN}`); continue }
     if (!(allClean || force) || dry) {
         console.log(`✗ ${book}: RED — red steps ${red.map(s => s.n + (s.caveat ? 'c' : '')).join(',')}${dry ? ' (dry)' : ' — NOT accepted'}`)
-        sh('node scripts/runner_ask.mjs release')
+        sh(`node scripts/runner_ask.mjs release${PIN}`)
         continue
     }
     for (const f of got.fixtures) { const n = +f.replace('.snap', ''); if (lives[n]) fs.writeFileSync(`wormhole/Story/${book}/${f}`, lives[n]) }
-    sh('node scripts/runner_ask.mjs release')
+    sh(`node scripts/runner_ask.mjs release${PIN}`)
     // re-run on the accepted fixtures, THEN patch the toc diges last and verify once more
     const again = run(book)
     if (!again) { console.log(`✗ ${book}: re-run failed`); continue }
     patchToc(book, again.steps)
-    sh('node scripts/runner_ask.mjs release')
+    sh(`node scripts/runner_ask.mjs release${PIN}`)
     const fin = run(book)
     const bad = fin ? fin.steps.filter(s => !s.ok || s.caveat) : null
     if (fin && !bad.length) console.log(`✓ ${book}: ACCEPTED → GREEN (${fin.steps.length} steps, caveat 0)${force ? ' [forced]' : ''}`)
     else console.log(`✗ ${book}: accepted but still red: ${bad ? bad.map(s => s.n + (s.caveat ? 'c' : '') + (s.error ? '!' : '')).join(',') : '?'}`)
-    sh('node scripts/runner_ask.mjs release')
+    sh(`node scripts/runner_ask.mjs release${PIN}`)
 }

@@ -67,6 +67,7 @@
         'Ghost/M/Mixer.g',              // cellular mixer — beat detection, beatmatch, multi-cell sum, crossfade (stage 6)
         'Ghost/M/Mesh.g',               // the sync that sees itself — replicas/edges, cheapest-route, multicast stretch (8+9)
         'Ghost/M/Ra.g',                 // the PIPELINE spine — rastock: needles LUFS → baked gain → ONE opus encode cut into %Preview,seq chunk particles + demand-driven stream transcode
+        'Ghost/M/Pool.g',               // the SP ISLAND — SoundPooling policy, pure: knobs/facts/policy/compare, split out of Ra.g 2026-09-17
         'Ghost/M/Booth.g',              // the Booth — taste as standing facts: the tune: handle + the %Ban do-not-play list the heist door consults (Radio_todo §11)
         'Ghost/M/Heist.g',              // the heist engine — %Caper,at:<pier> moves ORIGINAL file bytes over Repli straight into the collection (newlyadded probation, catalog-identity dedup)
         'Ghost/M/Heard.g',              // the HEARD MAG — %Mag:heard,pub:<me> > %Cloud,page > %Card,id,pub: what I heard of whom (oblique) and what I took (♥); the heist is a query over it (replaced Jam.g, 2026-09-04)
@@ -1608,7 +1609,7 @@
         // Lies_dump_socklog — write the browser's relay-socket ring (sockcap) to wormhole/_socklog/<role>-
         //  <bootid>.jsonl.  One file per page life (SOCKCAP_BOOT), overwritten each beat, so a reload's
         //   fresh life writes a NEW file and the pre-reload log is preserved.  Editor|runner browser tabs
-        //    only; ~10s throttle; reuses the rw_queue → Wormhole rw_op write (Auto.save_library pattern).
+        //    only; ~30s throttle, and only when the ring moved; reuses the rw_queue → Wormhole rw_op write (Auto.save_library pattern).
         //  ALMOST-GONER: the sockcap diagnostic scaffold — kept on purpose (see sockcap.ts header).
         async Lies_dump_socklog(w: TheC) {
             const H = this as House
@@ -1622,8 +1623,18 @@
             //     dumped.  Now consistent with the capture arm.)
             if (!sockcap_count()) return
             const now = Date.now()
-            if (w.c.last_socklog && now - (w.c.last_socklog as number) < 10000) return
+            if (w.c.last_socklog && now - (w.c.last_socklog as number) < 30000) return
             w.c.last_socklog = now
+            // ONLY WHEN THE RING MOVED (2026-09-16).  This beat used to rewrite the WHOLE ring every 10s
+            //  whether or not a frame had arrived — on the owner's box an FSA write of the 524KB file took
+            //   10.8s, and while it ran every Wormhole read on the tab queued behind it (the per-queue
+            //    "writes run alone" rule, since made per-path).  A quiet tab now writes nothing; a busy one
+            //     writes at most every 30s.  Signature = byte length + tail, so a rolled-but-same-size ring
+            //      still counts as moved.
+            const lines = sockcap_lines()
+            const sig   = `${lines.length}:${lines.slice(-160)}`
+            if (w.c.socklog_sig === sig) return
+            w.c.socklog_sig = sig
             // name carries role + our prepub (the pub) so a fleet of runners writes distinguishable
             //  files (was role+bootid only — three flock runners were indistinguishable). 'anon' until
             //   the identity stands up.
@@ -1644,7 +1655,7 @@
             //   • Safe to replace this %req's ref — it carries no do_fn/child-reqs/oncelers (roai's
             //      warning), just rw_* data an elvis hands to Wormhole; the fresh ref re-fires the write.
             const rw   = w.oai({ rw_queue: 'socklog' })
-            const req  = await rw.r({ req: 1 }, { rw_name: path, rw_op: 'write', rw_data: sockcap_lines() })
+            const req  = await rw.r({ req: 1 }, { rw_name: path, rw_op: 'write', rw_data: lines })
             H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         },
         // Lies_dump_supply — persist the SUPPLY|HEIST pipeline trace (top_House().c.supply_trace, the
@@ -1682,6 +1693,8 @@
             const role = H.Lies_role(w) ?? 'app'
             const path = `wormhole/_trace/${role}-${pub}-${SOCKCAP_BOOT}.jsonl`
             const data = trace.map((c) => JSON.stringify(c)).join('\n')
+            if (w.c.supplylog_sig === data.length + ':' + data.slice(-160)) return   // ring unmoved — no rewrite (see Lies_dump_socklog)
+            w.c.supplylog_sig = data.length + ':' + data.slice(-160)
             // Own single-slot holder, r()-replaced each beat — same shape + rationale as
             //  Lies_dump_socklog (see its note): keeps this caller-side collection at size 1 instead of
             //   i()-ing a fresh row per beat into the "giant stuff" overflow.  DISTINCT holder from

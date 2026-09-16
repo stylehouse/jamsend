@@ -1,0 +1,195 @@
+// Pool.g — the SP ISLAND: SoundPooling policy, pure and standalone (split out of Ra.g 2026-09-17,
+//  SoundPooling_todo.md §0.2a/STEP 2 — the owner: "yes to Pool.g, definitely looks big enough").
+//  Every verb here reads FACTS (Pool_facts, gathered once per steward pass off the live world) and
+//   returns a DECISION (Pool_policy) with no side effect and no world read of its own — a pure twin
+//    of Ra_quarter_goal_pools + _diff + _roll for all six declared takes, run BESIDE the real
+//     pipeline inside Ra_quarter and compared (Pool_policy_compare) — logs once per distinct
+//      disagreement shape, decides nothing (the real pipeline still rules). `MusuPoolPolicy` drives
+//       the table directly with hand-built facts.
+//  STILL OUTSIDE (reads not redirected — they are not pure renames, or live in another ghost's policy):
+//   · Swarm.g `w.c.reach_cap` 32 (the transport's cap, stays Swarm's)  · Heard.g `Heard_landed_cap`
+//   · Radio.g `Radio_meh_ms` 20 s (the radio's reaction) and `top.c.pool_steward_cap` 24 + the steward's 120 s
+//      busy latch (Radio_pool_steward)  · Heist.g's 45 s solo-wait → no_route and the
+//       PRESS/no-route give-up classes (Heist_keep_pool_go / the keep lane)  · Cellui's `into:'pool'`.
+Pool_knobs():
+    return {
+        fill_budget: 3,           // fresh %Reach bookings per steward pass            (was w.c.pool_fill_budget ?? 3)
+        fill_parallel: 3,         // pool keeps pulling at once                         (was w.c.pool_fill_parallel ?? 3)
+        press_patience_ms: 300000, // a mid-pull stall is abandoned after this          (was w.c.pool_press_patience_ms ?? 300000)
+        pump_latch_ms: 120000,    // a fill tick that never finished is taken back after (was a bare 120000 in Ra_pool_fill_pump)
+        roll_ms: 600000,          // one non-barred displacement per window, live only   (was Ra_pool_roll_ms)
+        track_mb_guess: 4,        // per-track weight before the pool can be weighed     (was the 4 in Ra_pool_cap_of / Ra_pool_track_mb)
+        weigh_after: 3,           // pooled cards with bytes before weighing beats the guess
+        resurrect_per_pass: 4,    // files re-catalogued per pass                        (was the 4 in Ra_pool_resurrect)
+    }
+// Pool_is_machinery — "a pool keep is machinery, not a haul" (Cellui, 2026-09-06), as ONE fact instead of five ifs.
+Pool_is_machinery(keep):
+    return !!(keep && keep.sc && String(keep.sc.into || '') === 'pool')
+// Pool_facts — everything the policy will decide on, gathered once per steward pass; logged once per change.
+//  `consent_disagree` measures the two-resolver scattering (§0.2a b1) — it is a fact here, not yet a fix.
+Pool_facts(w, ident):
+    let M = this.top_House ? this.top_House() : null
+    let f = { humdinger: !!(M && M.c && M.c.humdinger), now: Date.now() }
+    let owner = ident || (this.Ra_pool_owner ? this.Ra_pool_owner(w) : null)
+    f.owner = owner && owner.sc ? String(owner.sc.prepub || owner.sc.name || '').slice(0, 8) : ''
+    f.consent = this.Ra_pool_consent ? (this.Ra_pool_consent(w) ? 1 : 0) : 0
+    f.consent_of = (owner && this.Ra_pool_consent_of) ? (this.Ra_pool_consent_of(owner) ? 1 : 0) : 0
+    f.consent_disagree = f.consent !== f.consent_of ? 1 : 0
+    f.excused = (owner && this.Ra_pool_excused_of) ? (this.Ra_pool_excused_of(owner) ? 1 : 0) : 0
+    let home = this.Ra_pool_home ? this.Ra_pool_home(w) : null
+    f.budget_mb = home && home.sc.budget_mb ? +home.sc.budget_mb : 0
+    f.weight_mb = this.Ra_pool_track_mb ? Math.round(this.Ra_pool_track_mb(w) * 10) / 10 : 0
+    f.compartments = this.Ra_pool_defs(w, 0).filter((d) => d.name).map((d) => ({ name: d.name, take: d.take, who: d.who || '', share: d.share, cap: d.cap, salt: d.salt || '' }))
+    let src = this.Ra_pool_sources ? this.Ra_pool_sources(w) : []
+    f.sources = { crew: src.filter((x) => x.crew).length, friend: src.filter((x) => !x.crew).length }
+    f.sources_raw = src   // feeds Pool_policy — excluded from the log/fingerprint below
+    let pub = this.Radio_pub ? (this.Radio_pub(w) || 'me') : 'me'
+    let pool = this.Ra_pool_stock ? this.Ra_pool_stock(w, pub) : null
+    let cards = pool ? this.Ra_recs(pool) : []
+    f.pooled = { cards: cards.length, playable: cards.filter((r) => +(r.sc.preview || 0) > 0 && r.o({ Preview: 1 }).length).length }
+    f.pooled_raw = cards.map((r) => ({ id: String(r.sc.id || ''), of: String(r.sc.of || ''), bytes: +(r.sc.bytes || 0) }))
+    let mine = this.Ra_home_self ? this.Ra_home_self(w, pub) : null
+    f.held = mine ? this.Ra_recs(mine).length : 0
+    f.held_raw = mine ? this.Ra_recs(mine).map((r) => String(r.sc.id || '')) : []
+    let recentIds = this.Heard_landed_ids ? this.Heard_landed_ids(w, pub, mine) : []
+    f.recent = recentIds.length
+    f.recent_raw = recentIds
+    let barredMap = this.Heard_barred_ids ? this.Heard_barred_ids(w, pub) : {}
+    f.barred = Object.keys(barredMap).length
+    f.barred_raw = barredMap
+    // the four remaining take kinds: 'latest' needs the last sitting's own order (Heard_latest),
+    //  'liked'/'kept'/the taste fallback need the tally Ra_quarter_goal_pools reads too — both off the
+    //  SAME shelf the real pipeline passes as Ra_quarter's `shelf` arg, which is always `lib` there
+    //  (Radio_pool_steward's `lib = lib || Ra_home_self(w, pub)`) — i.e. `mine`, already in hand.
+    let latestIds = this.Heard_latest ? this.Heard_latest(mine) : []
+    f.latest = latestIds.length
+    f.latest_raw = latestIds
+    let tallyObj = this.Ra_quarter_tally ? this.Ra_quarter_tally(mine) : {}
+    f.tally = Object.keys(tallyObj).length
+    f.tally_raw = tallyObj
+    f.pool_roll_at = +(w.c.pool_roll_at || 0)
+    f.standing = {}
+    let peering = (owner && this.Swarm_peering) ? this.Swarm_peering(owner) : null
+    if (peering) { for (const r of peering.o({ Reach: 1 })) { let st = String(r.sc.state || ''); f.standing[st] = (f.standing[st] || 0) + 1 } }
+    f.inflight = {}
+    let shop = this.Ra_home_shop ? this.Ra_home_shop(w, pub) : null
+    if (shop) { for (const k of shop.o({ Heist: 1 })) { if (!this.Pool_is_machinery(k)) { continue }; let st = String(k.sc.state || 'primed'); f.inflight[st] = (f.inflight[st] || 0) + 1 } }
+    if (f.humdinger) {
+        // the *_raw arrays feed Pool_policy and can run to hundreds of entries — excluded from the
+        //  logged/fingerprinted copy (JSON.stringify drops an `undefined` key) so the log stays the summary it was.
+        let fp = JSON.stringify(Object.assign({}, f, { now: 0, sources_raw: undefined, pooled_raw: undefined, recent_raw: undefined, barred_raw: undefined, held_raw: undefined, latest_raw: undefined, tally_raw: undefined }))
+        if (w.c.pool_facts_fp !== fp) { w.c.pool_facts_fp = fp; console.log('🏊 facts: ' + fp) }
+    }
+    return f
+// Pool_policy — the pure twin of Ra_quarter_goal_pools + _diff + _roll, fed ONLY by Pool_facts's output
+//  (no world reads). Models all SIX declared takes exactly, including the 2026-09-06 sediment rule on
+//   'random' and the hash order (so a compare by id, not just count, is meaningful): 'random' (circulation),
+//    'radio' (what the dial already caught, trimmed from the front), 'recent' (loved-and-landed), 'latest'
+//     (the last sitting, page order), 'liked'/'kept' (the tally, by score) — plus the taste-fallback for any
+//      other/blank take.  Compared by (of, do) pairs only — `why`/`score`/`from` never matter to the compare.
+Pool_policy(f):
+    let pooledById = {}
+    let pooledByOf = {}
+    for (const c of (f.pooled_raw || [])) { pooledById[c.id] = 1; if (c.of) { pooledByOf[c.of] = 1 } }
+    let heldSet = {}
+    for (const id of (f.held_raw || [])) { heldSet[id] = 1 }
+    let barred = f.barred_raw || {}
+    let taken = {}
+    let goal = []
+    let holder = {}
+    for (const pd of (f.compartments || [])) {
+        let ids = []
+        if (pd.take === 'random') {
+            for (const s of (f.sources_raw || [])) {
+                if (!s || !s.id) { continue }
+                if (pd.who === 'none') { continue }
+                if (pd.who === 'friends' && s.crew) { continue }
+                if (pd.who === 'crew' && !s.crew) { continue }
+                if (!holder[s.id]) { holder[s.id] = String(s.from || '') }
+                if (!ids.includes(s.id)) { ids.push(s.id) }
+            }
+            for (const c of (f.pooled_raw || [])) {
+                let pid = String(c.of || c.id || '')
+                if (pid && !ids.includes(pid)) { ids.push(pid) }
+            }
+            let key = {}
+            for (const id of ids) { key[id] = this.Ra_pool_hash(String(pd.name) + ':' + String(pd.salt || '') + ':' + id) }
+            ids.sort((a, b) => (key[a] < key[b] ? -1 : (key[a] > key[b] ? 1 : (a < b ? -1 : 1))))
+        } else if (pd.take === 'radio') {
+            // the shelf's own row order (Pool_facts builds pooled_raw off Ra_recs, the same call the real
+            //  'radio' branch reads) stands in for recency, trimmed to cap from the FRONT — the oldest catches
+            //  fall out. Nothing here presses or pulls; it only states which ids stay wanted (sediment).
+            let hold = (f.pooled_raw || []).map((c) => c.id).filter(Boolean)
+            ids = hold.slice(Math.max(0, hold.length - pd.cap))
+        } else if (pd.take === 'recent') {
+            ids = (f.recent_raw || []).slice()
+        } else if (pd.take === 'latest') {
+            ids = (f.latest_raw || []).slice()
+        } else if (pd.take === 'liked') {
+            let tally = f.tally_raw || {}
+            ids = Object.keys(tally).filter((id) => tally[id].took > 0)
+            ids.sort((a, b) => (tally[b].at - tally[a].at) || (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
+        } else if (pd.take === 'kept') {
+            let tally = f.tally_raw || {}
+            ids = Object.keys(tally).filter((id) => tally[id].kept > 0)
+            ids.sort((a, b) => (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
+        } else {
+            let tally = f.tally_raw || {}
+            ids = Object.keys(tally).filter((id) => tally[id].score > 0)
+            ids.sort((a, b) => (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
+        }
+        let picked = 0
+        for (const id of ids) {
+            if (picked >= pd.cap) { break }
+            if (taken[id]) { continue }
+            if (barred[id]) { continue }
+            taken[id] = 1
+            let t = (f.tally_raw || {})[id]
+            let why0 = pd.take === 'random' ? 'circulating from ' + String(holder[id] || '').slice(0, 8) : (pd.take === 'radio' ? 'caught off the radio' : 'in the latest jam')
+            let g = { id: id, score: t ? t.score : 0, why: t ? t.why : why0, pool: pd.name }
+            if (pd.take === 'random' && holder[id]) { g.from = holder[id] }
+            goal.push(g)
+            picked = picked + 1
+        }
+    }
+    let wanted = {}
+    let diff = []
+    for (const g of goal) {
+        wanted[g.id] = 1
+        if (pooledById[g.id] || pooledByOf[g.id]) { continue }
+        diff.push({ of: g.id, do: heldSet[g.id] ? 'press' : 'pull', why: g.why, pool: g.pool || '', from: g.from || '' })
+    }
+    if (goal.length) {
+        for (const c of (f.pooled_raw || [])) {
+            if (!wanted[c.id] && !(c.of && wanted[c.of])) { diff.push({ of: c.id, do: 'evict', why: 'not in the goal stash' }) }
+        }
+    }
+    // the roll budget is a FACT (f.pool_roll_at), never a write — this function proposes, Ra_quarter_roll disposes
+    let evicts = diff.filter((d) => d.do === 'evict' && !barred[d.of])
+    let rollDue = !f.pool_roll_at || (f.now - f.pool_roll_at) >= this.Pool_knobs().roll_ms
+    if (evicts.length) {
+        // MIRROR Ra_quarter_roll EXACTLY (2026-09-16, found live: the differs log grew every pass because
+        //  this only handled "not due" — dropping everything — and fell through unthrottled when due,
+        //   while the real pipeline always allows exactly ONE eviction through, due or not).
+        let dropE = evicts.slice(rollDue ? 1 : 0)
+        let pulls = diff.filter((d) => d.do === 'pull' || d.do === 'press')
+        let dropP = pulls.slice(Math.max(0, pulls.length - dropE.length))
+        diff = diff.filter((d) => dropE.indexOf(d) < 0 && dropP.indexOf(d) < 0)
+    }
+    return { goal: goal, diff: diff }
+// Pool_policy_compare — the instrument (Cello_todo's Sounditron_crux_compare pattern): the live
+//  pipeline's diff vs the pure table's, said once per distinct disagreement shape. Reads nothing back.
+Pool_policy_compare(w, f, liveDiff):
+    if (!f || !f.humdinger) { return 0 }
+    let key = (d) => d.of + '|' + d.do
+    let a = liveDiff.map(key).sort().join(',')
+    let policy = this.Pool_policy(f)
+    let b = policy.diff.map(key).sort().join(',')
+    if (a === b) { return 0 }
+    w.c.pool_policy_said = w.c.pool_policy_said || {}
+    let shape = a + '→' + b
+    if (w.c.pool_policy_said[shape]) { return 1 }
+    w.c.pool_policy_said[shape] = 1
+    let fj = JSON.stringify(Object.assign({}, f, { now: 0, sources_raw: undefined, pooled_raw: undefined, recent_raw: undefined, barred_raw: undefined, held_raw: undefined, latest_raw: undefined, tally_raw: undefined }))
+    console.log('🏊 policy differs: old=[' + a + '] new=[' + b + '] facts=' + fj)
+    return 1
