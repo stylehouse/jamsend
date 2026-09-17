@@ -4,14 +4,18 @@ story:MusuSmuggle
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.002
+    TimeTotal:beliefs,avg=0.003
       sample=0.001,at=1788079251
       sample=0.001,at=1788079254
       sample=0.005,at=1789114487
       sample=0.001,at=1789563982
-    TimeTotal:step,avg=0.002
+      sample=0.002,at=1789612164
+      sample=0.007,at=1789615287
+    TimeTotal:step,avg=0.003
       sample=0.001,at=1788079251
       sample=0.001,at=1788079254
       sample=0.005,at=1789114487
       sample=0.001,at=1789563982
+      sample=0.002,at=1789612164
+      sample=0.007,at=1789615287
   step,dige:5309b0cd164d06a4

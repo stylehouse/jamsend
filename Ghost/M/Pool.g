@@ -692,6 +692,17 @@ Ra_pool_consent_take(w):
 // ── THE BUDGET IS THE UNIT OF CONSENT (owner 2026-09-03: "aim for 3GB… or less than 1/3rd of what chrome
 //  thinks it can use… that amount adjustment thing should be able to go back to 0 and turn off and clean
 //   out it all").  `budget_mb` rides the %Pools shelf; 0/absent with no consent = off.  v1 turns megabytes
+//    into a track cap at ~4 MB a lofi track (the byte-budget steward is v2 — Ra.g's own note above).
+Ra_pool_budget(w):
+    let shelf = this.Ra_pool_home(w)
+    return shelf ? Number(shelf.sc.budget_mb || 0) : 0
+Ra_pool_budget_set(w, mb):
+    let shelf = this.Ra_pool_home_mint(w)
+    let v = Math.max(0, Math.floor(Number(mb) || 0))
+    if (v) { shelf.sc.budget_mb = String(v) } else if (shelf.sc.budget_mb) { delete shelf.sc.budget_mb }
+    shelf.bump()
+    this.Ra_pool_caps_apply(w)
+    return v
 // ── FRACTIONS, NOT CAPS (owner 2026-09-03: "why limit anything? they each should have a fraction, use sliders
 //  that redistribute in a gang").  Every %Pool wears `share` (percent of the budget); its `cap` is DERIVED —
 //   budget × share ÷ ~4 MB — never set by hand any more.  Moving one share rescales the others so the gang

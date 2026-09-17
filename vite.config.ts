@@ -30,8 +30,16 @@ function relayPlugin(): PluginOption {
 			if (!server.httpServer) return;
 			const g = globalThis as any;
 			if (g.__peeroleum_relay) { try { g.__peeroleum_relay.close() } catch {} ; g.__peeroleum_relay = null }
-			g.__peeroleum_relay = attachRelay(server.httpServer);
-			server.httpServer.once('close', () => { if (g.__peeroleum_relay) { try { g.__peeroleum_relay.close() } catch {} ; g.__peeroleum_relay = null } });
+			const mine = attachRelay(server.httpServer);
+			g.__peeroleum_relay = mine;
+			// ⚠ CLOSE ONLY OUR OWN HANDLE (2026-09-17).  On an in-process restart vite creates the NEW server
+			//  (this configureServer runs, attaches `mine`) BEFORE the OLD httpServer has finished draining —
+			//   so the old server's 'close' fires AFTER, and a handler that closed "whatever the global holds"
+			//    closed the NEW relay: every ws upgrade then hung, on dev AND staging, until a real restart
+			//     (reproduced on a spare vite: /relay opens, touch relay.ts, /relay hangs).  Each server's
+			//      close handler now closes exactly the handle attached to that server, and clears the global
+			//       only if it still points at it.
+			server.httpServer.once('close', () => { try { mine.close() } catch {} ; if (g.__peeroleum_relay === mine) g.__peeroleum_relay = null });
 		},
 	};
 }
@@ -76,15 +84,35 @@ function digePlugin(): PluginOption {
 			//   would otherwise rewrite the file a dozen times; `write_status_waft` also no-ops when the
 			//    text is unchanged, so a touched-but-identical file costs a stat sweep and no disk write.
 			let pending: NodeJS.Timeout | null = null;
+			let noticed_at = 0;        // the FIRST watcher event of this debounce window — the push carries it
+			let eacces_said = false;   // a root-owned wormhole/Docindex says so once, not every 400ms
 			const refresh = (why: string) => {
+				if (!noticed_at) noticed_at = Date.now();
 				if (pending) clearTimeout(pending);
 				pending = setTimeout(() => {
 					pending = null;
+					const event_at = noticed_at; noticed_at = 0;
 					try {
 						const t0 = Date.now();
 						const r = write_status_waft(process.cwd());
-						if (r.changed) console.log(`🗂 status waft: ${r.docs} docs (${why}, ${Date.now() - t0}ms)`);
-					} catch (e) { console.warn('🗂 status waft failed', e); }
+						const written_at = Date.now();
+						if (r.changed) console.log(`🗂 status waft: ${r.docs} docs (${why}, ${written_at - t0}ms, ${r.moved.length} moved)`);
+						// PUSH (2026-09-17, the owner: "do Hackarium clients get notified when the plugin notices?
+						//  … it should sync up with at least every write we make, revealing how slow writes+inotify+
+						//   the rest are").  A server-originated relay control frame to the code-room sockets
+						//    (editor|hacker) naming the moved rows + the three server-side stamps, so the tab can
+						//     re-read exactly the docs it has open and print the whole write→inotify→index→push→
+						//      heard ladder in ms.  Nothing is pushed when nothing moved.
+						const relay = (globalThis as any).__peeroleum_relay;
+						if (r.changed && relay?.broadcast) {
+							const n = relay.broadcast({ control: 'docindex', why, docs: r.docs, event_at, written_at,
+								index_ms: written_at - t0, moved: r.moved.slice(0, 64), moved_n: r.moved.length });
+							if (n) console.log(`🗂 docindex pushed → ${n} socket(s): ${r.moved.slice(0, 3).map(m => m.path).join(' ')}${r.moved.length > 3 ? ' …' : ''}`);
+						}
+					} catch (e: any) {
+						if (e?.code === 'EACCES') { if (!eacces_said) { eacces_said = true; console.warn(`🗂 status waft: ${e.path} is not writable by uid ${process.getuid?.()} — another server's file; not retrying`); } }
+						else console.warn('🗂 status waft failed', e);
+					}
 				}, 400);
 			};
 			refresh('boot');
@@ -136,7 +164,12 @@ export default defineConfig({
 	
 
 	server: {
-		allowedHosts
+		allowedHosts,
+		// wormhole/ is DATA (5k+ fixture .snaps read through the nav, never imported), so an inotify watch on
+		//  each buys no HMR — and the docindex plugin above already filters wormhole paths out of its own
+		//   interest.  Watches are budgeted per UID on the host, and the dev server runs as uid 1000 (yours)
+		//    since 2026-09-17: the first boot as 1000 died ENOSPC on '/app/wormhole/Story/VytoNeed/003.snap'.
+		watch: { ignored: ['**/wormhole/**'] }
 	}
 	// test: {
 	// 	workspace: [

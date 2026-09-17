@@ -91,6 +91,14 @@ export interface RelayHandle {
 	readonly localCount: number
 	readonly peerReady: boolean
 	close(): void
+	// broadcast — a SERVER-ORIGINATED control frame to every local socket bound under one of `addrs`
+	//  (default: `editor` + `hacker` + `player` — a hacker room binds the read-only player door, so
+	//   `player` is where a code room actually listens; music pages ignore an unknown control).  The relay is the one party a tab has
+	//   already trusted by dialling it (hello_ok/who_ok/census all ride this same lane), so a control
+	//    frame from it needs no cluster signature — it is not a peer speaking, it is the wire.  Never an
+	//     envelope (no header/seq/ack), never to a bridge or an identity addr.  Returns sockets reached.
+	//      First use: the dev server's `digePlugin` announcing `control:'docindex'` on a source change.
+	broadcast(frame: Record<string, unknown>, addrs?: string[]): number
 }
 
 export function attachRelay(
@@ -1079,6 +1087,18 @@ export function attachRelay(
 		},
 		get peerReady() {
 			return !!peerLink && peerLink.readyState === WebSocket.OPEN
+		},
+		broadcast(frame, addrs = ['editor', 'hacker', 'player']) {
+			if (closed) return 0
+			const text = JSON.stringify(frame)
+			let n = 0
+			for (const a of addrs) {
+				for (const ws of locals.get(a) ?? []) {
+					if (ws.readyState !== WebSocket.OPEN) continue
+					try { ws.send(text); n++ } catch { /* a closing socket — the heartbeat reaps it */ }
+				}
+			}
+			return n
 		},
 		close() {
 			closed = true

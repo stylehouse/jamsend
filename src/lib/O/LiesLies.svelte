@@ -168,6 +168,13 @@
             //     the ONLY Lies it keeps its role (nothing else to defer to) — which is why this is
             //      non-breaking until a top-level Creduler Lies is added alongside.
             if ((H as any).Lies_inside_story() && (H as any).Lies_count_in_top() > 1) return undefined
+            // THE WORLD'S OWN hacker STAMP OUTRANKS THE HOUSE ROLE (2026-09-17).  Story hands a Run House
+            //  the machine boot_role ('editor' for any word room), and Run_A_Hackarium's `H.c.role ??=
+            //   'hacker'` then did nothing — so the hacker room's Lies read as EDITOR.  Latent while the
+            //    room mounted no spine (no channel could stand); the moment it did, the code room bound
+            //     `?addr=editor` and would have EVICTED the human's editor — the one thing the hacker
+            //      role exists to make impossible.  `hacker:1` is minted only by Run_A_Hackarium.
+            if (w?.sc?.hacker) return 'hacker'
             const role = H.c.role
             if (role === 'editor' || role === 'runner' || role === 'hacker') return role
             if (w?.sc?.editor) return 'editor'
@@ -261,9 +268,15 @@
         //     fail-closed above it, so this widens the diagnostic population inside a dev build only.
         Lies_player_seen(w?: TheC): boolean {
             const H = this as House
-            if (!H.Lies_humdinger(w)) return false
             if (H.top_House().c.production) return false
+            // A HACKER ROOM IS ADMITTED WHETHER OR NOT IT IS A HUMDINGER (2026-09-17).  BigWordland's
+            //  hacker boot is not a humdinger (boot_qualand stamps that for the sound room), so this
+            //   returned false there and the code room stood no socket at all — "no channel, no editor
+            //    claim" — and could not hear the dev server's docindex push.  A code room is dev-only
+            //     and has no end-user to protect; the player door stays READ-ONLY (runner_ask console|
+            //      minisnap, control frames in), never a dispatch seat.
             if (H.Lies_role(w) === 'hacker') return true
+            if (!H.Lies_humdinger(w)) return false
             try { return socklog_armed() || sockcap_count() > 0 } catch { return false }
         },
 
@@ -474,6 +487,18 @@
                 //  adopts the relay's granted addr) and installs its own only `if (!on_hello)`, so an
                 //   assignment here would silently disable it the day these worlds merge. Own flag keeps
                 //    it idempotent across a channel re-standup.
+                // THE DOCINDEX PUSH (2026-09-17).  The dev server's digePlugin broadcasts control:'docindex'
+                //  to editor|hacker sockets when a source file moved on disk (moved rows + server stamps).
+                //   Registered on Tribunal's on_control_list (same fan-out shape as on_hello_list).  Handled
+                //    OFF Atime here — the work is posted into the tick by Lies_docindex_heard.
+                //     ⚠ Reaches only tabs riding the LIVE spine (gen/N/Tribunal.go): a hacker room today; the
+                //      editor proper rides pinned_stable/ and hears it when that copy is next refreshed.
+                if (!w.c.lies_control_hooked) {
+                    w.c.lies_control_hooked = 1
+                    ;((w.c as any).on_control_list ??= []).push((frame: any) => {
+                        if (frame?.control === 'docindex') H.Lies_docindex_heard(w, frame)
+                    })
+                }
                 if (!w.c.lies_hello_hooked) {
                     w.c.lies_hello_hooked = 1
                     ;((w.c as any).on_hello_list ??= []).push(() => {
@@ -666,7 +691,7 @@
         async Lies_transport_up(w: TheC) {
             const H = this as House
             const role = H.Lies_role(w)
-            if (role !== 'editor') return   // EDITOR-only: the runner gets the live spine via CREDULER_GHOSTS
+            if (role !== 'editor' && role !== 'hacker') return   // the runner gets the live spine via CREDULER_GHOSTS
             // Reconcile the latch (mirrors Lies_channel_up, Robustness_plan Organ 1): transport_up gates
             //  the one-time enroll of the FROZEN spine that PROVIDES Socket_real.  If a remix strips that
             //   ghost, a stale transport_up would block the re-enroll that would bring it back — so clear
@@ -686,13 +711,61 @@
             //      editor stays frozen, because it can't ride the spine it's actively editing.  To
             //       promote a new spine into the EDITOR's channel, re-copy gen/N/ → pinned_stable/ by
             //        hand (now: ghost-compile the spine .g so the editor writes gen/N/*.go, then cp).
+            // A HACKER ROOM RIDES THE LIVE SPINE (2026-09-17).  The freeze exists because the EDITOR edits
+            //  the spine and HMR would reload its own channel; a hacker room compiles nothing, so it can
+            //   ride gen/N like a runner does — and it must, to hear what the frozen copy cannot yet (the
+            //    on_control_list fan-out the docindex push rides).  The editor stays frozen as before.
+            const spine = role === 'hacker' ? ['gen/N/Peeroleum.go', 'gen/N/Tribunal.go'] : ['pinned_stable/Peeroleum.go', 'pinned_stable/Tribunal.go']
             const uis = H.oai_enroll(H, { watched: 'UIs' })
-            for (const gen of ['pinned_stable/Peeroleum.go', 'pinned_stable/Tribunal.go']) {
+            for (const gen of spine) {
                 if (uis.oa({ UI: 'Pantheate-include', gen_path: gen })) continue   // already mounted
                 const module = await import(/* @vite-ignore */ `../../lib/${gen}`)
                 uis.oai({ UI: 'Pantheate-include', gen_path: gen }, { component: module.default })
             }
             H.main()   // wake a tick: channel_up re-runs once eatfunc has deposited Socket_real
+        },
+
+        // Lies_docindex_heard — the dev server says these docs moved on disk.  Two jobs:
+        //  1. PRINT THE LADDER in ms, which is what the owner asked to see: our own write (known.at, when
+        //     the row is ours) → the watcher's first event (event_at) → the index written (written_at) →
+        //      heard here.  Each hop is a different subsystem (Chrome FSA · inotify/chokidar · the plugin ·
+        //       the relay), so one line names the slow one.
+        //  2. SYNC every OPEN doc that moved and is not our own write: defeat writeCarefully's luxury skip
+        //     (known.at → 0) and ask Lang to re-issue its buffer through Lies_source_write, whose pull-
+        //      before-push does the right thing with no new logic — pulls disk silently when the buffer is
+        //       unedited, raises the surprise_read popover when it is, writes nothing otherwise.
+        //  Nothing here touches a doc the tab has not opened: the roster (Atlas/Stemdex) reads the index
+        //   Waft itself on its next refresh, and a push about a closed doc is not news.
+        Lies_docindex_heard(w: TheC, frame: any) {
+            const H = this as House
+            const heard_at = Date.now()
+            const moved: { path: string, dige: string }[] = Array.isArray(frame?.moved) ? frame.moved : []
+            const event_at = Number(frame?.event_at) || 0, written_at = Number(frame?.written_at) || 0
+            // the receipt itself, synchronously — the ladder's wire hops need no tick to be read
+            console.log(`⏱ docindex heard: ${frame.moved_n ?? moved.length} moved (${frame.why}) — inotify→index ${written_at - event_at}ms · index→heard ${heard_at - written_at}ms${moved.length ? ' · ' + moved.slice(0, 3).map((m) => m.path.split('/').pop()).join(' ') : ''}`)
+            // URGENT: a push is an event, not ambient work — an idle room (a finished Book releases the
+            //  clock) would otherwise sit on this until the next unrelated wake.
+            H.post_do(async () => {
+                const host = await H.LiesStore_req(w)
+                let ours = 0, synced = 0, closed = 0
+                const parts: string[] = []
+                for (const m of moved) {
+                    const good = host.o({ Good: 1, type: 'text/Doc', path: m.path })[0] as TheC | undefined
+                    if (!good) { closed++; continue }
+                    const known = good.o({ known: 1 })[0] as TheC | undefined
+                    if (known && known.sc.dige === m.dige) {
+                        // our own write coming back round — the one place write→inotify is measurable
+                        ours++
+                        const wrote_at = Number(known.sc.at) * 1000
+                        if (wrote_at && event_at) parts.push(`${m.path.split('/').pop()} write→inotify ${event_at - wrote_at}ms`)
+                        continue
+                    }
+                    if (known) known.sc.at = 0                         // no luxury skip: the next check reads disk
+                    H.vaguely_ponder('Lang/Lang', 'Lang_disk_moved', { path: m.path })
+                    synced++
+                }
+                console.log(`⏱ docindex synced — docs ${frame.docs}${ours ? ` · ours ${ours}` : ''}${synced ? ` · syncing ${synced}` : ''}${closed ? ` · closed ${closed}` : ''}${parts.length ? ' · ' + parts.join(' · ') : ''}`)
+            }, { see: 'docindex_heard' }, true)
         },
 
         // Lies_send_rungo — editor emit (from the compile-write path).  A **Rungo** is the

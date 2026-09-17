@@ -200,16 +200,34 @@ export function status_waft(repo_root: string, roots: string[]): { snap: string,
 
 // write_status_waft — emit it where a Waft lives, so the tab opens it with no new code at all.
 //  Returns null when nothing changed, so a watcher can call this on every event without churning disk.
-export function write_status_waft(repo_root: string, roots: string[] = DEFAULT_ROOTS): { path: string, docs: number, changed: boolean } {
+//  `moved` names the Doc rows that differ from the previous file (path + new dige, or dige '' for a
+//   doc that vanished) — the material a push to the open tabs needs (relay control:'docindex'), and
+//    nothing a tab could not recompute from two reads of the file; it is here so it need not.
+export function write_status_waft(repo_root: string, roots: string[] = DEFAULT_ROOTS): { path: string, docs: number, changed: boolean, moved: { path: string, dige: string }[] } {
     const { snap, docs } = status_waft(repo_root, roots)
     const dir = join(resolve(repo_root), 'wormhole', WAFT_KEY)
     const file = join(dir, 'toc.snap')
     let had: string | null = null
     try { had = readFileSync(file, 'utf8') } catch { had = null }
-    if (had === snap) return { path: file, docs, changed: false }
+    if (had === snap) return { path: file, docs, changed: false, moved: [] }
     mkdirSync(dir, { recursive: true })
     writeFileSync(file, snap, 'utf8')
-    return { path: file, docs, changed: true }
+    return { path: file, docs, changed: true, moved: moved_rows(had ?? '', snap) }
+}
+
+const ROW = /^  Doc:([^,]+),dige:([0-9a-f]+),/
+function moved_rows(before: string, after: string): { path: string, dige: string }[] {
+    const was = new Map<string, string>()
+    for (const l of before.split('\n')) { const m = ROW.exec(l); if (m) was.set(m[1], m[2]) }
+    const out: { path: string, dige: string }[] = []
+    const seen = new Set<string>()
+    for (const l of after.split('\n')) {
+        const m = ROW.exec(l); if (!m) continue
+        seen.add(m[1])
+        if (was.get(m[1]) !== m[2]) out.push({ path: m[1], dige: m[2] })
+    }
+    for (const [p] of was) if (!seen.has(p)) out.push({ path: p, dige: '' })
+    return out
 }
 
 // serve_diges — the http half.  Returns true when it handled the request.

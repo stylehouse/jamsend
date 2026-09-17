@@ -50,7 +50,7 @@
         //   · NO Pantheate: it mounts compile-run artifacts, and a hacker does not compile or run.
         Run_A_Hackarium(this: House) {
             const H = this
-            H.c.role ??= 'hacker'   // boot param (?H=) wins; this is the Library-boot fallback
+            H.c.role = 'hacker'     // ASSIGN, not ??=: Story stamps the Run House with the machine boot_role ('editor') first, so the fallback never fired (Lies_role now also reads w%hacker first)
             // not a compiler test — munge the SNAPPED generated source (see Run_A_Editron)
             H.c.mungOutputstring = 1
             H.i({ A: 'Hackarium' }).i({ w: 'Hackarium' })

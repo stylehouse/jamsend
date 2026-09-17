@@ -8,6 +8,81 @@ Written 2026-08-21 out of the eed831f1 debug (a daemon that served music but cou
 
 ## 0. Get on with next
 
+### PHASE 5 — PROPOSED 2026-09-17: one serializer, declared once; the write follows the change
+
+**What went wrong today (the case):** two 👎 presses vanished on a reload. Two causes, both structural:
+ (1) `Swarm_restash_heard` kept only cards with `take` — a Nay strips `take`; (2) no reaction ever called
+  `Swarm_account_settle`, so the Heard mag reached the stash only when an unrelated pier frame happened
+   to settle later. Both are now patched (filter widened; `Heard_settle` at the end of take/nay/meh). But
+    the owner's read is the right one: *"surely we just journal the difference of anything that we should
+     definitely store on disk … this seems like a shitty hack."* The pillars are **nine hand-rolled
+      serializers** (`Swarm_restash_piers/izzes/chainroots/roster/crew/reaches/pools/radio/heard` + nine
+       `_rehydrate` twins), each copying the fields its author knew about the day it was written. Every
+        new field or row kind under the identity is a silent reload-loss until someone notices. The
+         reviewer names the next two: a `%Body` field the roster pillar doesn't list, and the pool's
+          record catalogue (declarations survive, the catalogue doesn't — `Everything_todo.md:502`).
+
+**The finding that makes this cheap: the general serializer already exists and is already trusted.**
+ `Swarm_export(ident)` = `enWaft(ident, Swarm_protocol('account'))` — the C-tree encoder over the WHOLE
+  identity subtree, with the durability policy written as protocol RULES in one place (`Swarm_protocol`,
+   Swarm.g ~5757): `skip` for chunk-buf kinds (%Preview/%Stream/%Prehead — "a Uint8Array in .sc is fatal
+    at the storage encoder"), `skip` for session kinds (mail/rebuff/Sibling/Stolen), `omit_sc` for
+     session keys (online/active/address/duty…). And `Swarm_graft(parent, node)` (~5849) is the
+      identity-keyed UPSERT merge (`Card: ['id','pub']`, `Mag: ['pub']`, `Pier: ['pub']`…) that a
+       re-import already uses so nothing twins. That pair IS the account snap
+        (`.jamsend/account/<prepub>/toc.snap`) and the disk-seed road (`Swarm_boot_seed`). The Dexie
+         stash predates it and never adopted it — it is the legacy twin, hand-rolled.
+
+**The shape (three answers, WHAT / WHEN / WHERE):**
+1. **WHAT is durable is declared ONCE, as protocol rules — never as a copy loop.** `Swarm_protocol
+    ('account')` is that declaration. A new durable kind = one rule line (or nothing, if it's under an
+     already-durable parent). A kind that must NOT persist = a `skip` rule, visibly. The Nay could not
+      have been lost under this: a `%Card` is a `%Card`, whatever scalars it wears.
+2. **WHEN: the write FOLLOWS THE CHANGE; nobody has to remember to call anything.** Today the stash
+    `$effect` already re-stringifies the whole `stashed` object within 200 ms of any deep mutation
+     (Housing.svelte.ts:457) — the trigger discipline exists, it just watches a hand-built object
+      instead of the tree. Replace the mark with: on the ambient tick, `enWaft` the identity subtree
+       → `dige` (sha of the text) → if it moved, write. That is Phase 2's content-print, generalised
+        from three ledgers to the whole declared subtree, and it closes the class "someone mutated .sc
+         and forgot settle" for good. `Swarm_account_settle` STAYS as the seam whose promise is the ACK
+          ("settled ⇒ on disk, observably", §3.1) — it forces the tick now and awaits the landed put;
+           callers that need the ack call it, callers that don't can't lose anything by not calling it.
+           ⚠ Cost to measure before believing: encoding a big Heard mag (thousands of %Card) every tick.
+            Story snaps whole worlds between steps, so the encoder is fast — but measure it on eed's
+             mag, and if it bites, the per-particle `dige` (the change-sensitivity digest Story already
+              keeps) lets a subtree short-circuit. The mire-tick rule ("a play-through never bumps —
+               a bump on %Identity rewrites the whole account file inside the beliefs mutex", Heard.g
+                header) is about a SYNC write inside the mutex; this write is the throttled, off-mutex
+                 one the stash effect already does. Keep it that way.
+3. **WHERE: one text, two stores.** The stash entry for an identity becomes the export TEXT (keyed by
+    prepub) in Dexie — the only home a phone has — and the folder snap is the SAME bytes when a folder
+     exists. One serializer, one merge on boot (`Swarm_graft`), no twin. The daemon runs the same
+      encoder under node (it already mirrors the account snap).
+
+**Why not a journal (the owner's word):** an append-only fact log (event sourcing) is the textbook
+ answer and it is the wrong shape for this codebase: it adds replay, compaction and a second notion
+  of truth beside the tree, and the tree's whole-subtree encode is cheap, idempotent, and graft-
+   mergeable — a snap IS a complete journal entry. "Journal the difference" is answered by
+    content-addressing the snap (write only when the dige moves). Revisit only if the encode cost
+     measured in (2) is real.
+
+**Rungs (each lands alone, each Book-gated):**
+ 1. `SwarmReboot` grows a step that ROUND-TRIPS an identity: `enWaft` → decode → `Swarm_graft` onto a
+     fresh identity → `enWaft` again, byte-identical; then swears the Nay case (a `%Card,nay` survives).
+      This is the gate for every rung after.
+ 2. The heard pillar goes first, as the pattern: `Swarm_restash_heard` → `st.Swarm_heards[prepub] =
+     Swarm_export(mag)` text; `Swarm_heard_rehydrate` → decode + `Swarm_graft`. Delete the copy loop
+      and the merge-law special case (`mire takes the larger` — check whether graft's "stashed wins"
+       is acceptable there, or add a per-key max rule).
+ 3. The other eight pillars, one by one, on the same road. `Swarm_restash_all` becomes one call.
+ 4. The trigger: the stash effect watches the identity subtree's dige instead of the hand-built
+     object; `Heard_settle` and the like keep working but stop being load-bearing.
+ 5. The account snap is written from the same text (it nearly is already).
+
+**Stays open, on purpose:** two-writer / write-lease (§2.C, Phase 4) — a body that isn't the writer
+ must not persist; unchanged by this. And the `%Reach` rows: today the reaches pillar drops
+  arrived/refused/dead deliberately — that becomes a rule (`omit` those states), visibly.
+
 **Phase 1 LANDED 2026-08-21 (working tree; the human commits).** And it landed SIMPLER than first
  designed here — the double-check found the codebase already held the right primitive:
   `Swarm_restash_all`, an idempotent, additive, live-self-guarded whole-ledger converge. So

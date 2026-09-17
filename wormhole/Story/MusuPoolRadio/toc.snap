@@ -5,9 +5,6 @@ story:MusuPoolRadio
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.107
-      sample=0.056,at=1789452802
-      sample=0.072,at=1789454989
-      sample=0.026,at=1789455033
       sample=0.129,at=1789463951
       sample=0.067,at=1789548842
       sample=0.028,at=1789549110
@@ -15,10 +12,10 @@ story:MusuPoolRadio
       sample=0.268,at=1789567093
       sample=0.141,at=1789603613
       sample=0.108,at=1789606445
+      sample=0.054,at=1789612168
+      sample=0.055,at=1789612501
+      sample=0.043,at=1789615275
     TimeTotal:step,avg=0.018
-      sample=0.009,at=1789452802
-      sample=0.012,at=1789454989
-      sample=0.004,at=1789455033
       sample=0.021,at=1789463951
       sample=0.011,at=1789548842
       sample=0.005,at=1789549110
@@ -26,6 +23,9 @@ story:MusuPoolRadio
       sample=0.045,at=1789567093
       sample=0.023,at=1789603613
       sample=0.018,at=1789606445
+      sample=0.009,at=1789612168
+      sample=0.009,at=1789612501
+      sample=0.007,at=1789615275
   step,dige:a9ab66df494fe28f
   step=2,dige:f3f4aebbfad49e8b
   step=3,dige:5c858f89823454c8

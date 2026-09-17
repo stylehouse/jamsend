@@ -60,6 +60,8 @@
     // the Book actually booted, whichever road got us here — the switcher opens on its Run House
     const the_book = editor_book || hacker_book
     let H      = $derived(q.H)
+    // window.__H — the live-state probe runner_eye --eval reads (same as BigShapeland:77)
+    $effect(() => { if (H && typeof window !== 'undefined') (window as any).__H = H })
     let houses = $derived(q.houses)
     //#endregion
 
@@ -105,6 +107,13 @@
     //   %rungo run.  Lies is handled separately (show_lies).  Nothing else is hidden — Story/Cyto
     //    are simply on other Houses, so the show-one-thing view already leaves them off unless you
     //     switch to the House that owns them.
+    // THE SPINE MUST MOUNT EVEN THOUGH IT IS HIDDEN (2026-09-17).  Peeroleum/Tribunal .go are Pantheate
+    //  includes whose onMount eatfunc deposits Socket_real on the House — the channel's carrier.  This
+    //   room hid every include, so a hacker room could never stand a socket ("no channel") and could not
+    //    hear the dev server's docindex push.  They render nothing visible; mount them in a hidden block
+    //     OUTSIDE the show-one-House view (below), for every House, whichever is fullscreen.
+    const SPINE = /(^|\/)(pinned_stable|gen\/N)\/(Peeroleum|Tribunal)\.go$/
+    function spine_ui(uiC: any): boolean { return uiC.sc.UI === 'Pantheate-include' && SPINE.test(String(uiC.sc.gen_path ?? '')) }
     function ui_hidden(kind: string): boolean {
         if (kind === 'Pantheate-include') return true
         // Lies stays folded unless summoned — but the sprawl dumps everything, so it rides too
@@ -192,6 +201,14 @@
 
     <!-- the room — ONE House fullscreen (the show-one-thing view), OR the sprawl: every
          House's UIs dumped in order down the page.  Lies only when called up (or in sprawl). -->
+    <!-- the spine — mounted hidden for EVERY House so the channel's carrier lands (see spine_ui) -->
+    <div hidden>
+        {#each houses as house (house.c.ip)}
+            {#each house.UIs.ob({ UI: 1 }).filter(spine_ui) as uiC (keyser(uiC.sc))}
+                <svelte:component this={uiC.sc.component} H={house} />
+            {/each}
+        {/each}
+    </div>
     <div class="bw-room" class:bw-railed={pins.length > 0} class:bw-sprawl={sprawl}>
         {#each (sprawl ? houses : houses.filter(h => h.c.ip === active_ip)) as house (house.c.ip)}
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}

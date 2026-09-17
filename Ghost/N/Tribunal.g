@@ -361,7 +361,14 @@ Socket_real(w):
                 if (w.c && w.c.on_who) { try { w.c.on_who(frame) } catch (e) { console.log('👥☠ on_who threw', e) } }
                 return
             }
-            note(`🛰 ws RECV control:${frame.control}${frame.role ? ' role=' + frame.role : ''}`)
+            // ANY OTHER CONTROL → the registry (2026-09-17), the same fan-out shape as on_hello_list: a
+            //  ghost that wants a server-originated control (the dev server's `docindex` push is the first)
+            //   pushes a fn onto w.c.on_control_list and reads frame.control itself.  One throwing does not
+            //    rob the others; a frame nobody wants still gets its note below and nothing else.
+            if (w.c && Array.isArray(w.c.on_control_list)) {
+                for (const fn of w.c.on_control_list) { try { fn(frame) } catch (e) { console.log('🛰☠ on_control hook threw', e) } }
+            }
+            if (frame.control !== 'docindex') note(`🛰 ws RECV control:${frame.control}${frame.role ? ' role=' + frame.role : ''}`)
             if (frame.control === 'error') console.log('🛰☠ relay refused:', frame.error)
             return
         }

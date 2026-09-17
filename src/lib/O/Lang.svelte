@@ -657,6 +657,20 @@
     //   place a dock is minted|refreshed from content, so one writer, no multipath.  After
     //   installing the text, finish the matching req:furnishing and poke think → the driver
     //   re-keys instrumentation on the new active dock+dige.
+    // ── e_Lang_disk_moved — Lies heard (docindex push) that this doc moved on disk under us.
+    //   Re-issue the dock's current buffer through Lies_source_write: writeCarefully's pull-before-push
+    //    then pulls disk silently if the buffer is unedited, or parks a surprise_read if it is.  A dock
+    //     without a buffer yet (still loading) has nothing to reconcile — the load lands the fresh disk.
+    //   e.sc: { path }
+    async e_Lang_disk_moved(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
+        const path = e.sc.path as string
+        const docks = w.o({ docks: 1 })[0] as TheC | undefined
+        const dock  = docks?.o({ dock: path })[0] as TheC | undefined
+        if (!dock || typeof dock.c.text !== 'string') return
+        H.i_elvisto('Lies/Lies', 'Lies_source_write', { path, text: dock.c.text })
+    },
+
     async e_Lang_dock_content(A: TheC, w: TheC, e?: TheC) {
         const H = this as House
         for (const ev of H.o_elvis(w, 'dock_content')) {

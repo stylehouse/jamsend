@@ -224,50 +224,31 @@ svelte-check reports ~3000 pre-existing errors|warnings — mostly implicit-`any
    even drifts run-to-run from the incremental cache. To judge whether an edit
     regressed, grep the check output for the *edited file's* line range, not the sum.
 
-## ⚠ node_modules is SHARED by two different libc platforms — never `npm install` casually
+## node_modules is one tree on one libc — keep it that way; never `npm install` casually
 
-**The `jamsend-dev` container is Alpine/musl; the claude container is Debian/glibc; they mount
- the SAME `/app/node_modules`.** Native binaries are per-platform optional deps, and npm only
-  installs the one matching the platform it runs on — so an `npm install` from either side can
-   leave the other with no native binary at all.
+**Every container is `node:22-bookworm-slim` (glibc) and runs as uid 1000** — `app` (the dev server),
+ `claude`, `jamserve` — and they all bind-mount the SAME `/app/node_modules`. Until 2026-09-17 the dev
+  server was `alpine` (musl), so a native binary installed from one side was missing on the other:
+   `Cannot find module @rollup/rollup-linux-x64-musl` took the app down for hours on 2026-08-07, with a
+    rollup version drift (4.62.4 vs the lockfile's 4.40.2) riding along that made every SSR request 500
+     with `__SVELTEKIT_PATHS_BASE__ is not defined`. One base ended that class; the leftover
+      `rollup-linux-x64-musl` in node_modules is unused and harmless.
 
-That happened 2026-08-07 and took the app down for hours. The tell in the dev container's log:
+What still holds: **don't `npm install` on a whim** — the lockfile pins the tree, and `"prepare":
+ "svelte-kit sync"` fires on EVERY install (even `--no-save`), regenerating `.svelte-kit/` under a
+  running server. Run `npx svelte-check --tsconfig ./tsconfig.json` directly rather than `npm run check`
+   while a tab is live. If the tree ever drifts from the lockfile, a bare `npm i <pkg>` reconciles it —
+    do NOT delete `package-lock.json` + `node_modules` and `npm i` (that throws away the pins).
 
-    Error: Cannot find module @rollup/rollup-linux-x64-musl
-
-with `node_modules/@rollup/` holding only `rollup-linux-x64-gnu`. The same install had also
- drifted rollup to **4.62.4** while `package-lock.json` pins **4.40.2**, and that mismatch is
-  what made the running server 500 every SSR request with `__SVELTEKIT_PATHS_BASE__ is not
-   defined` — the vite plugin pipeline mis-firing, so kit's `define` replacements never got
-    applied. Two symptoms, one cause.
-
-**DO NOT follow the error's own advice to delete `package-lock.json` + `node_modules` and
- `npm i`.** That throws away the pinned tree and re-breaks whichever container you did not run
-  it in. The fix is to have BOTH binaries present at the rollup version the lockfile pins:
-
-    npm i @rollup/rollup-linux-x64-musl@<rollup version> --no-save --force --os=linux --libc=musl
-
-`--no-save` keeps `package.json`/`package-lock.json` untouched (verify with `git status`), and
- a bare `npm i <pkg>` also reconciles the drifted tree back to the lockfile, which is what you
-  want. Afterwards check all three agree:
-   `@rollup/rollup-linux-x64-gnu`, `@rollup/rollup-linux-x64-musl`, `rollup`.
-Also move any stale `node_modules/.vite/deps` aside (it may be root-owned, so `mv` the directory
- rather than deleting inside it) — it is pre-bundled against the old tree.
-
-**Diagnosing without guessing.** The dev server lives OUTSIDE the claude container (no docker
- socket, not in `/proc`), so you cannot restart it — but you CAN stand up your own on a spare
-  port to decide whether the fault is the repo or their process:
-   `npx vite dev --port 9099 --host 127.0.0.1`, then fetch `/BigSoundland` (a 200 with ~280KB of
-    SSR'd HTML means the repo is healthy; `/` legitimately 404s, the app has no root route).
-Related tell: `fetch('…:9091/src/lib/O/X.svelte')` returning 200 while `/` returns 500 means
- your SOURCE is fine and the fault is server/tree state, not the edit you just made.
-
-**`svelte-kit sync` runs more often than you think** — `npm run check` is
- `svelte-kit sync && svelte-check`, and `package.json`'s `"prepare": "svelte-kit sync"` fires on
-  EVERY npm install, including `--no-save`. It regenerates `.svelte-kit/` under a running server.
-   This is worth avoiding while a tab is live (use `npx svelte-check --tsconfig ./tsconfig.json`
-    directly), but note it was NOT the cause of the 2026-08-07 outage — the platform-binary drift
-     above was. Don't let the cheap explanation crowd out the real one.
+**Diagnosing without guessing.** The dev server lives OUTSIDE the claude container (no docker socket,
+ not in `/proc`), so you cannot restart it — but you CAN stand up your own on a spare port to decide
+  whether the fault is the repo or their process: `npx vite dev --port 9099 --host 127.0.0.1`, then
+   fetch `/BigSoundland` (a 200 with ~280KB of SSR'd HTML means the repo is healthy; `/` legitimately
+    404s, the app has no root route). Related tell: `fetch('…:9091/src/lib/O/X.svelte')` returning 200
+     while `/` returns 500 means your SOURCE is fine and the fault is server/tree state.
+**Ownership.** Everything the dev server writes into the mount (`.svelte-kit`, `node_modules/.vite/deps`,
+ `wormhole/Docindex`) is uid 1000's now. A `root:root 755` dir there is a leftover from before the
+  switch — `sudo chown -R 1000:1000 <dir>` on the host, once.
 
 ## Running a Story Book: a real Lies%runner request, never headless
 
