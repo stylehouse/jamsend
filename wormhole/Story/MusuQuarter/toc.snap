@@ -5,7 +5,6 @@ story:MusuQuarter
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.005
-      sample=0.002,at=1789450297
       sample=0.007,at=1789452623
       sample=0.002,at=1789455016
       sample=0.004,at=1789455169
@@ -15,8 +14,8 @@ story:MusuQuarter
       sample=0.002,at=1789612162
       sample=0.003,at=1789615286
       sample=0.007,at=1789616454
+      sample=0.002,at=1789622229
     TimeTotal:step,avg=0.005
-      sample=0.002,at=1789450297
       sample=0.007,at=1789452623
       sample=0.002,at=1789455016
       sample=0.004,at=1789455169
@@ -26,4 +25,5 @@ story:MusuQuarter
       sample=0.002,at=1789612162
       sample=0.003,at=1789615286
       sample=0.007,at=1789616454
+      sample=0.002,at=1789622229
   step,dige:6982c323e929bc0c

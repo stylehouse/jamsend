@@ -11,7 +11,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_HeistTesting(): string { return 'bd1b4d53e156780c~g1' },
+    Ghostmeta_Ghost_Story_HeistTesting(): string { return '73c90aabdfd58e76~g1' },
 
 // HeistTesting.g — né Heistation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file — `MusuHeist`,
@@ -4877,26 +4877,30 @@ MusuPoolPolicy_recent(w) {
     this.MusuPoolPolicy_note(w, row)
 
 },
-// MusuPoolPolicy_roll — two things hide under 'evict' and the roll treats them differently (Pool_roll, 2026-09-17):
+// MusuPoolPolicy_roll — the one law of the roll (Pool_roll, 2026-09-17 evening): NOTHING IS EVICTED UNLESS THE
+//  POOL HOLDS MORE THAN ITS CAP.  Two things hide under 'evict':
 //  DISPLACEMENT: the goal wants 'fresh' (a 'recent' take — deterministic, no hash) which is NOT pooled, and
-//   'stale' is pooled but wanted by nobody — one out to let one in.  Inside the window (`pool_roll_at` 1 ms
-//    ago) the pair is HELD BACK — the diff is empty, the pull waits with its evict.  Past the window both go.
-//  TRIM: the same 'stale' with NOTHING to pull in (the pool simply holds more than the goal) goes at once,
-//   inside the window — a cache over its cap is nothing to protect (69 against a cap of 26 used to take 7 h).
+//   'stale' is pooled but wanted by nobody, cap 1.  Inside the window (`pool_roll_at` 1 ms ago) everything is
+//    HELD BACK — the diff is empty.  Past the window the PULL goes ALONE: 'stale' stays until 'fresh' has
+//     landed.  Then, with both pooled (cap 1, over by one), 'stale' trims at once — inside the window.
+//      (The old roll paired the evict with the pull; every pull that never came drained the pool by one.)
+//  TRIM: 'keepme'+'stale' pooled against a cap of 1, nothing to pull — 'stale' goes at once, inside the window.
 MusuPoolPolicy_roll(w) {
     let disp = { compartments: [{ name: 'keep', take: 'recent', cap: 1 }], sources_raw: [],
                  pooled_raw: [{ id: 'stale', of: '', bytes: 0 }],
                  held_raw: [], recent_raw: ['fresh'], barred_raw: {}, now: 1000000 }
     let held = this.Pool_policy(Object.assign({}, disp, { pool_roll_at: 999999 }))
     let due = this.Pool_policy(Object.assign({}, disp, { pool_roll_at: 0 }))
+    let landed = this.Pool_policy(Object.assign({}, disp, { pool_roll_at: 999999, pooled_raw: [{ id: 'stale', of: '', bytes: 0 }, { id: 'fresh', of: '', bytes: 0 }] }))
     let trim = { compartments: [{ name: 'keep', take: 'recent', cap: 1 }], sources_raw: [],
                  pooled_raw: [{ id: 'keepme', of: '', bytes: 0 }, { id: 'stale', of: '', bytes: 0 }],
                  held_raw: [], recent_raw: ['keepme'], barred_raw: {}, now: 1000000 }
     let trimmed = this.Pool_policy(Object.assign({}, trim, { pool_roll_at: 999999 }))
     let row = { reached: 'step_5' }
     if (held.diff.length === 0) row.held_back = 1
-    let kinds = due.diff.map((d) => d.of + ':' + d.do).sort().join(',')
-    if (kinds === 'fresh:pull,stale:evict') row.rolled_through = 1
+    let kinds = (r) => r.diff.map((d) => d.of + ':' + d.do).sort().join(',')
+    if (kinds(due) === 'fresh:pull') row.pull_goes_alone = 1
+    if (kinds(landed) === 'stale:evict') row.evict_after_it_landed = 1
     if (trimmed.diff.length === 1 && trimmed.diff[0].of === 'stale' && trimmed.diff[0].do === 'evict') row.trim_now = 1
     this.MusuPoolPolicy_note(w, row)
 
@@ -4918,7 +4922,7 @@ MusuPoolPolicy_witness(w) {
     if (rec && +rec.sc.recent_split === 1) this.story_swear(w, 'the recent compartment presses what the shelf already holds and pulls what it does not, the same track never both')
     let rol = T.o({ reached: 'step_5' })[0]
     // #4 THE ROLL BUDGET: an eviction nobody asked for by name waits for its window and then lands.
-    if (rol && +rol.sc.held_back === 1 && +rol.sc.rolled_through === 1) this.story_swear(w, 'an eviction the roll owns waits inside its own window and lands once the window has passed — never both at once')
+    if (rol && +rol.sc.held_back === 1 && +rol.sc.pull_goes_alone === 1 && +rol.sc.evict_after_it_landed === 1) this.story_swear(w, 'a displacement pulls first and evicts only once the replacement has landed — the pool never drops below its cap for a wish')
     if (rol && +rol.sc.trim_now === 1) this.story_swear(w, 'a pool holding more than its goal trims at once — the window rations displacement not trimming')
 
 },

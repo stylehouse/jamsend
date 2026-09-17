@@ -1,5 +1,5 @@
 Credulation,of_Book:MusuPoolRandom
-  run=0,at=1789615284.397,ok,ok_pct,mode:check
+  run=0,at=1789622227.903,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:8f51a3d0dfa19017~g1
@@ -12,7 +12,7 @@ Credulation,of_Book:MusuPoolRandom
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3~g1
     uses:Ghost_M_Mesh,dige:2c1e6afdb90d9379~g1
     uses:Ghost_M_Ra,dige:1cee21a1d8a56976~g1
-    uses:Ghost_M_Pool,dige:b1b6c049197799d4~g1
+    uses:Ghost_M_Pool,dige:8c70da0ec6342764~g1
     uses:Ghost_M_Booth,dige:29a57d8fed02b58e~g1
     uses:Ghost_M_Heist,dige:3d53b758563a084b~g1
     uses:Ghost_M_Heard,dige:160784e6bcf19855~g1
@@ -21,12 +21,12 @@ Credulation,of_Book:MusuPoolRandom
     uses:Ghost_M_Siphon,dige:222c9a4992b2bc7d~g1
     uses:Ghost_Story_MusuTesting,dige:5cdbfdb1d86b2f1a~g1
     uses:Ghost_Story_RaTesting,dige:03460e5ee73c11d8~g1
-    uses:Ghost_Story_HeistTesting,dige:bd1b4d53e156780c~g1
+    uses:Ghost_Story_HeistTesting,dige:73c90aabdfd58e76~g1
     uses:Ghost_Story_SiphonTesting,dige:e06a0d896fbe5b3e~g1
     uses:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
     uses:Ghost_Story_ErrchannelTesting,dige:55f4a7dd9c9193f1~g1
-    uses:Ghost_S_Swarm,dige:53e61d835aa23b9e~g1
-    uses:Ghost_Story_SwarmTesting,dige:e465a4171d399c6b~g1
+    uses:Ghost_S_Swarm,dige:ae60680d84bb30c8~g1
+    uses:Ghost_Story_SwarmTesting,dige:dcfe89597f46ed41~g1
     uses:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
     uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
     uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1

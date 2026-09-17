@@ -2,6 +2,24 @@
 
 ## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night; the older §0s are §0.6–§0.8 below, intact)
 
+### 0.0 2026-09-17 evening — THE ROLL'S ONE LAW: nothing is evicted unless the pool holds more than its cap
+
+The owner found SP at **0 again** and named it: *"`roll` shouldn't delete if nothing can replace."* The morning's
+ `Pool_roll` paired a displacement's EVICT with its PULL and let both go when the window was due — so every
+  pull that never came (a friend gone offline, a want that never landed; `sources: crew 0 friend 0` on eed all
+   evening) had already cost a card. One per ten minutes, all evening, to zero.
+
+**Now (`Pool_roll(diff, barred, due, pooled_n, cap_n)`):** `over = pooled − Σcap` is the ONLY thing that
+ evicts, at once (trim); a pull that fits under the cap goes at once; a pull past the cap goes ONE per window
+  and its evict waits until it has landed — the next pass sees `over = 1` and trims. A Nay/Meh evict is a
+   reaction, not the roll, and still always goes. The pool can never drop below its cap for a wish.
+ `MusuPoolPolicy` step 5 now models the three beats (`held_back` → `pull_goes_alone` → `evict_after_it_landed`,
+  plus `trim_now`); the sworn sentence changed with the law (`a displacement pulls first and evicts only once
+   the replacement has landed — the pool never drops below its cap for a wish`), toc declaration updated —
+    **still yours to re-swear** (4/5, the same step as before). Radio 6/6 · Fill 6/6 · Random 5/5 · Quarter 1/1.
+ eed picks it up on its next reload; the disk still has the files (`recovered N pooled track(s) from disk`),
+  so the pool refills from OPFS without a single pull.
+
 ### 0.0 2026-09-17 — HOW THE NIGHT WENT (the one to read with coffee)
 
 **Short version: the split landed clean, three things were broken and are now fixed, and the one

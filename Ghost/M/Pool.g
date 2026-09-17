@@ -195,7 +195,12 @@ Pool_policy(f):
     let goal = this.Pool_goal(f)
     let diff = this.Pool_diff(goal, f)
     let rollDue = !f.pool_roll_at || (f.now - f.pool_roll_at) >= this.Pool_knobs().roll_ms
-    return { goal: goal, diff: this.Pool_roll(diff, f.barred_raw || {}, rollDue).diff }
+    return { goal: goal, diff: this.Pool_roll(diff, f.barred_raw || {}, rollDue, (f.pooled_raw || []).length, this.Pool_cap_sum(f.compartments)).diff }
+// Pool_cap_sum — the pool's cap is its compartments' caps summed: the number the roll measures 'over' against.
+Pool_cap_sum(compartments):
+    let n = 0
+    for (const pd of (compartments || [])) { n = n + (+pd.cap || 0) }
+    return n
 // Pool_policy_compare — the instrument (Cello_todo's Sounditron_crux_compare pattern): the live
 //  pipeline's diff vs the pure table's, said once per distinct disagreement shape. Reads nothing back.
 Pool_policy_compare(w, f, liveDiff):
@@ -211,23 +216,28 @@ Pool_policy_compare(w, f, liveDiff):
     w.c.pool_policy_said[shape] = 1
     console.log('🏊 policy differs: old=[' + a + '] new=[' + b + '] facts=' + JSON.stringify(this.Pool_facts_summary(f)))
     return 1
-// Pool_roll — PURE: which of a diff's evictions go NOW.  Two different things hide under 'evict':
-//  TRIM — the pool holds more than its goal (files recovered from disk, a budget turned down, a compartment
-//   dropped).  A cache over its cap is nothing to protect: every trim goes at once.
-//  DISPLACEMENT — an evict that makes room for a pull.  ONE per window (Pool_knobs().roll_ms, live only), so a
-//   good stash stays stable instead of churning a track every pass.  A displacement held back holds its pull
-//    back with it, so the pool never grows past the goal while waiting.
-//  (2026-09-17: the roll used to throttle both — 69 pooled against a cap of 26 would have taken seven hours to
-//   trim, one per ten minutes.  The owner: "that's shit software".)
-Pool_roll(diff, barred, due):
+// Pool_roll — PURE: which of a diff's moves go NOW.  THE ONE LAW (the owner, 2026-09-17 evening, finding the
+//  pool at 0 again): **nothing is evicted unless the pool holds more than its cap** — a card is never let go
+//   for a replacement that has not landed.  Two things hide under 'evict', and only one of them is real:
+//  TRIM — the pool holds MORE than its cap (files recovered from disk, a budget turned down, a compartment
+//   dropped, a displacement that has just landed).  Exactly the overflow goes, at once — a cache over its cap
+//    is nothing to protect (69 against a cap of 26 used to take seven hours at one per ten minutes).
+//  DISPLACEMENT — the goal wants a card the pool has no room for.  The PULL goes (one per window,
+//   Pool_knobs().roll_ms, live only), the pool stands at cap+1 when it lands, and THEN the next pass trims one —
+//    so the evict waits on the arrival instead of being paired with a wish.  The old pairing (evict now, pull
+//     hoped for) drained eed's pool by one card per window every time the pull never came: a friend gone
+//      offline, a want that never landed, and the eviction had already happened.
+//  Pulls that fit under the cap go at once (the pool just fills); pulls past it wait for their window.
+//  `pooled_n` is what the pool HOLDS and `cap_n` the compartments' caps summed — the facts, not the diff.
+Pool_roll(diff, barred, due, pooled_n, cap_n):
     let evicts = diff.filter((d) => d.do === 'evict' && !(barred && barred[d.of]))
-    if (!evicts.length) { return { diff: diff, rolled: 0 } }
     let pulls = diff.filter((d) => d.do === 'pull' || d.do === 'press')
-    let trim = Math.max(0, evicts.length - pulls.length)
-    let rolled = due && evicts.length > trim ? 1 : 0
-    let dropE = evicts.slice(trim + rolled)
-    let dropP = pulls.slice(Math.max(0, pulls.length - dropE.length))
-    if (!dropE.length) { return { diff: diff, rolled: rolled } }
+    let over = Math.max(0, (+pooled_n || 0) - (+cap_n || 0))
+    let room = Math.max(0, (+cap_n || 0) - (+pooled_n || 0))
+    let rolled = due && pulls.length > room ? 1 : 0
+    let dropE = evicts.slice(over)
+    let dropP = pulls.slice(room + rolled)
+    if (!dropE.length && !dropP.length) { return { diff: diff, rolled: rolled } }
     return { diff: diff.filter((d) => !dropE.includes(d) && !dropP.includes(d)), rolled: rolled }
 
 //#region the Quartermaster — who THINKS about the pool (Portability_doc §6; name to preen)
@@ -932,12 +942,12 @@ Ra_quarter_diff(goal, pool, lib):
 //       Live pages only: a Book's passes are its fixtures' clock, not the wall's.
 Ra_pool_roll_ms():
     return this.Pool_knobs().roll_ms
-Ra_quarter_roll(w, diff, barred):
+Ra_quarter_roll(w, diff, barred, pooled_n, cap_n):
     let M = this.top_House ? this.top_House() : null
     if (!M || !M.c.humdinger || !w) { return diff }
     let now = Date.now()
     let due = !w.c.pool_roll_at || (now - w.c.pool_roll_at) >= this.Ra_pool_roll_ms()
-    let r = this.Pool_roll(diff, barred, due)
+    let r = this.Pool_roll(diff, barred, due, pooled_n, cap_n)
     if (r.rolled) { w.c.pool_roll_at = now }
     return r.diff
 
@@ -951,8 +961,9 @@ Ra_quarter(w, shelf, pool, lib, cap, sources, facts):
     try { this.Ra_pool_caps_apply(w) } catch (er) {}   // re-weigh: the per-track MB moves as the pool fills
     let recent = this.Heard_landed_ids ? this.Heard_landed_ids(w, this.Radio_pub(w) || '', lib) : []
     let barred = this.Heard_barred_ids ? this.Heard_barred_ids(w, this.Radio_pub(w) || '') : {}
-    let goal = this.Ra_quarter_goal_pools(shelf, this.Ra_pool_defs(w, cap), sources, pool, recent, barred)
-    let diff = this.Ra_quarter_roll(w, this.Ra_quarter_diff(goal, pool, lib), barred)
+    let pdefs = this.Ra_pool_defs(w, cap)
+    let goal = this.Ra_quarter_goal_pools(shelf, pdefs, sources, pool, recent, barred)
+    let diff = this.Ra_quarter_roll(w, this.Ra_quarter_diff(goal, pool, lib), barred, (pool ? this.Ra_recs(pool) : []).length, this.Pool_cap_sum(pdefs))
     // step 2 (§0.2a): a pure comparison, never a decision — Pool_policy_compare only logs
     if (facts) { try { this.Pool_policy_compare(w, facts, diff) } catch (er) {} }
     let phome = this.Ra_pool_home_mint(w)
