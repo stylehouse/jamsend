@@ -484,7 +484,10 @@ async function main() {
 	//       needed for this check to pass.
 	log('\n— the lost identity bind: role re-binds on reconnect, identity does not —')
 	{
-		const { attachRelay: attach2 } = await import(process.env.RELAY_MOD ?? '../src/lib/server/relay')
+		// The static import unless RELAY_MOD overrides it: a bare dynamic import of the same module here
+		//  throws `ERR_CLOSED_SERVER` under vite-node (2026-09-17 — the run ended red on this line at
+		//   baseline, every check above it green), so the override is the only reason to import late.
+		const attach2 = process.env.RELAY_MOD ? (await import(process.env.RELAY_MOD)).attachRelay : attachRelay
 		const eSrv = createServer(), rSrv = createServer()
 		const ePort = await listen(eSrv), rPort = await listen(rSrv)
 		const eRelay = attach2(eSrv)
@@ -550,6 +553,59 @@ async function main() {
 		stopRetry()
 		eRelay.close(); rRelay.close(); await wait(50)
 		eSrv.close(); rSrv.close()
+	}
+
+	// ⓘ THE WATCH DESK (2026-09-17, src/lib/server/watch.ts).  A tab asks for the files it holds open;
+	//  the relay keeps ONE inotify watch per directory and pushes `changed` (with the docindex-shaped
+	//   dige) to exactly the sockets that asked.  Pinned here: the fence (no traversal, no absolute,
+	//    fenced roots only), delivery to every asker and to nobody else after unwatch, the dige being
+	//     the tab's own `dig` of the bytes, a vanished file saying `gone`, and a closed socket releasing
+	//      its interest.  Uses a scratch dir under wormhole/ (a fenced root) and removes it after.
+	log('\n— the watch desk: per-socket fixation, per-directory inotify —')
+	{
+		const { mkdirSync, writeFileSync, rmSync, unlinkSync } = await import('node:fs')
+		const { createHash } = await import('node:crypto')
+		const dir = 'wormhole/_watchtest', file = `${dir}/toc.snap`
+		mkdirSync(dir, { recursive: true }); writeFileSync(file, 'v0\n')
+		const srv = createServer(); const port = await listen(srv)
+		const relay = attachRelay(srv, { editorRelayUrl: 'off' })
+		try {
+			const a = browser(port, 'WA', { addrless: true }), b = browser(port, 'WB', { addrless: true })
+			await Promise.all([a.open, b.open])
+			a.send({ control: 'watch', paths: [file, '../etc/passwd', '/etc/passwd', 'wormhole/.git/config', 'nowhere/x.snap'], corr: 'w1' })
+			b.send({ control: 'watch', paths: [file] })
+			const ackA = await until(() => a.ctrl.some((m: any) => m.control === 'watch_ok' && m.corr === 'w1'))
+			const ack = a.ctrl.find((m: any) => m.control === 'watch_ok')
+			check('watch acks with the accepted count', ackA && ack.ok === 1)
+			check('…and refuses traversal, absolute, dotfile and unfenced paths by name', ack?.refused?.length === 4)
+			await until(() => b.ctrl.some((m: any) => m.control === 'watch_ok'))
+			const body = 'v1 — moved on disk\n'
+			writeFileSync(file, body)
+			const dige = createHash('sha256').update(Buffer.from(body, 'utf8')).digest('hex').slice(0, 16)
+			const heardA = await until(() => a.ctrl.some((m: any) => m.control === 'changed' && m.path === file), 3000)
+			const heardB = await until(() => b.ctrl.some((m: any) => m.control === 'changed' && m.path === file), 3000)
+			check('a write pushes `changed` to BOTH askers', heardA && heardB)
+			const ch = a.ctrl.find((m: any) => m.control === 'changed')
+			check("…carrying the tab's own dige of the bytes (sha256[:16]) + size", ch?.dige === dige && ch?.size === Buffer.byteLength(body))
+			// unwatch b, write again: only a hears
+			b.send({ control: 'unwatch', paths: [file] }); await wait(100)
+			const nA = a.ctrl.filter((m: any) => m.control === 'changed').length, nB = b.ctrl.filter((m: any) => m.control === 'changed').length
+			writeFileSync(file, 'v2\n')
+			await until(() => a.ctrl.filter((m: any) => m.control === 'changed').length > nA, 3000)
+			await wait(300)
+			check('after unwatch only the remaining asker hears', a.ctrl.filter((m: any) => m.control === 'changed').length === nA + 1 && b.ctrl.filter((m: any) => m.control === 'changed').length === nB)
+			// the file vanishes: gone
+			unlinkSync(file)
+			check('a vanished file says gone:1', await until(() => a.ctrl.some((m: any) => m.control === 'changed' && m.gone === 1), 3000))
+			// closing the socket releases its interest: a rewrite pushes to nobody (no throw, no leak)
+			a.ws.close(); await wait(150)
+			writeFileSync(file, 'v3\n'); await wait(400)
+			check('a closed socket releases its interest (write after close pushes to no one)', b.ctrl.filter((m: any) => m.control === 'changed').length === nB)
+			b.ws.close()
+		} finally {
+			relay.close(); await wait(50); srv.close()
+			rmSync(dir, { recursive: true, force: true })
+		}
 	}
 
 	editor2.close()

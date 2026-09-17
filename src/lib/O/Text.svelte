@@ -729,7 +729,7 @@
         //         here.  See spay_normalize / collect_spayers below.
         const spay_drop_keys: Record<string, 1> = {}
         for (const rule of q.rules ?? []) {
-            const matched = (rule.matching_any as any[] ?? []).some((entry: any) => {
+            const entry_matches = (entry: any) => {
                 if (entry.mk)      return Object.keys(n.sc ?? {})[0] === entry.mk
                 if (entry.sc_only) {
                     const want = Object.keys(entry.sc_only)
@@ -738,8 +738,10 @@
                 }
                 if (!entry.sc_has) throw `enLine rule uses neither mk, sc_only, nor sc_has`
                 return n.matches(entry.sc_has)
-            })
+            }
+            const matched = (rule.matching_any as any[] ?? []).some(entry_matches)
             if (!matched) continue
+            if (rule.unless_any && (rule.unless_any as any[]).some(entry_matches)) continue   // the exception clause (lematch)
             if (rule.means?.blockquote_these_sc) Object.assign(bq_keys,   rule.means.blockquote_these_sc)
             if (rule.means?.omit_sc)             Object.assign(omit_keys, rule.means.omit_sc)
             // dontSnap: a structural means (EntropyArrest.md §5/§9 drop-kind) that keeps the

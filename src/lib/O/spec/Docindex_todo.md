@@ -11,6 +11,54 @@
 
 ## 0. What to get on with next
 
+### ✅ BUILT 2026-09-17 — THE WATCH DESK: a tab's fixation on the files it holds, pushed by the process that has inotify
+
+**Why now.** The dev server runs as uid 1000 since 2026-09-17 and its first boot died `ENOSPC` on a Story
+ fixture — inotify watches are budgeted per UID on the host, and `wormhole/` is 5,243 data files vite never
+  imports. So `vite.config.ts` now ignores `**/wormhole/**` for HMR. That was fine for HMR and for the
+   docindex push (it filtered wormhole out anyway) — but it meant NOTHING on the box could tell a tab that
+    a Waft (`wormhole/<Area>/toc.snap`) had moved under it. The owner's shape: *"some client has to keep
+     fixated on Docs and Wafts, so requests watches for a big list of paths, to get them listened to — and
+      they GC gently over time, if all sockets are gone."*
+
+**What is built** (harness: `scripts/relay-test.ts`, the last block — 7 checks; live-checked on a headless
+ BigWordland: `👁 watch reset +1 → 1 path(s) held` / `watch_ok`):
+- `src/lib/server/watch.ts` — `makeWatchDesk(root, push)`. Interest is **per socket, per path**; the kernel
+   watch is **per directory** (one `fs.watch(dir)` serves every file in it, and atomic writes — tmp+rename,
+    which is how both Chrome's FSA and the Node nav land a file — show on the directory, not the inode).
+     A burst settles 120ms, then ONE stat+read+dige and a push to every asker still open. A directory whose
+      last asker left lingers 5 min before GC releases it (a reload does not churn the kernel). Fence: repo-
+       relative, no `..`/absolute/dotfile, roots `Ghost|src|scripts|wormhole`; 4,096 paths per socket,
+        2,048 dirs total.
+- `relay.ts` — `{control:'watch', paths}` → `{control:'watch_ok', ok, refused:[{path,why}]}`;
+   `{control:'unwatch', paths}`; socket close drops its interest. Pushes `{control:'changed', path, dige,
+    mtime, size, event_at}` (or `gone:1`). `dige` is the SAME sha256[:16] the docindex rows carry, so the
+     tab's `known.dige` comparison tells its own write from a foreign one with no new logic.
+- `LiesLies.svelte` — `Lies_watch_sync(w)` rides `Lies_heartbeat`: every `%Good` under `req:Store` of type
+   `text/Doc|text/Waft` is the list; delta only, the whole list again on a new socket. `Lies_changed_heard`:
+    a **Doc** rides the docindex road exactly (`Lies_docindex_heard` with a one-row `moved`) — own write =
+     `ours`, foreign edit → `Lang_disk_moved` (pull disk / surprise_read). A **Waft** is NOTED only (see
+      the owed rung). `req_Store`'s write phase now stamps `/known` on ANY Good at the path (was Doc-only),
+       so a Waft's own save is recognisable.
+
+**Reach.** Only tabs on the LIVE spine hear pushes (gen/N/Tribunal.go carries `on_control_list`): a hacker
+ room and runners. The editor proper rides `pinned_stable/` and SENDS its watch list but cannot hear
+  `changed` until that copy is next refreshed (same caveat as the docindex push). **A customer for that
+   refresh, seen the same afternoon:** `ghost-compile Ghost/Story/SwarmTesting.g` twice returned
+    `generated JS does not parse @ 5004:4` — the line of a version I had ALREADY replaced on disk. The
+     editor's `%Good/known.at` was fresh (my first ticket's read), so writeCarefully's luxury skip trusted
+      the buffer and compiled stale text; a minute later the same ticket compiled clean. With the editor
+       hearing `changed`, `known.at → 0` would have forced the disk read on the second ticket. A Book's own inner Lies
+   world has no transport, so a running Book's Wafts are not watched — by design; the runner's outer world is.
+
+**THE OWED RUNG — what a Waft does when disk moves.** Today: `good.c.disk_moved = {dige, at}` + a console
+ line (`👁 Waft X moved on disk under us … — live tree kept`). The live Waft tree is what Lang `%Interest`,
+  docks and an armed LE point into, so "take disk" means re-placing it — `delete good.c.content`, drop
+   `w/{Waft:path}`, let the persist pass re-read and re-place, then let `Lies_waft_mutated` re-pull origins.
+    Not done blind: it needs a Book (open a Waft on the runner's OUTER Lies world, rewrite the snap on disk,
+     assert the tree took it and the Interest survived). The obvious first customer is the Story view when a
+      RUNNER rewrites a Book's `toc.snap` under the editor.
+
 ### ☀ WHERE IT STANDS — 2026-09-10 evening, handover. READ THIS FIRST.
 
 **The road is built and measured end to end.** The tab no longer walks the tree, no longer reads 728

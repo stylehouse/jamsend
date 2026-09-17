@@ -4,33 +4,33 @@ story:SwarmReboot
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.084
-      sample=0.071,at=1788593224
-      sample=0.107,at=1788593711
-      sample=0.256,at=1788603358
-      sample=0.125,at=1788780049
-      sample=0.039,at=1788870717
-      sample=0.029,at=1789116425
-      sample=0.057,at=1789123426
-      sample=0.086,at=1789606429
+    TimeTotal:beliefs,avg=0.059
       sample=0.03,at=1789612281
       sample=0.043,at=1789615424
-    TimeTotal:step,avg=0.017
-      sample=0.014,at=1788593224
-      sample=0.021,at=1788593711
-      sample=0.051,at=1788603358
-      sample=0.025,at=1788780049
-      sample=0.008,at=1788870717
-      sample=0.006,at=1789116425
-      sample=0.011,at=1789123426
-      sample=0.017,at=1789606429
+      sample=0.046,at=1789617128
+      sample=0.048,at=1789617280
+      sample=0.105,at=1789619294
+      sample=0.091,at=1789619323
+      sample=0.048,at=1789619340
+      sample=0.062,at=1789619355
+      sample=0.049,at=1789619366
+      sample=0.068,at=1789619380
+    TimeTotal:step,avg=0.012
       sample=0.006,at=1789612281
       sample=0.009,at=1789615424
+      sample=0.009,at=1789617128
+      sample=0.01,at=1789617280
+      sample=0.021,at=1789619294
+      sample=0.018,at=1789619323
+      sample=0.01,at=1789619340
+      sample=0.012,at=1789619355
+      sample=0.01,at=1789619366
+      sample=0.014,at=1789619380
   step,dige:f508e4cd43e96afe
-  step=2,dige:d10421cbdc176b08
-  step=3,dige:a091bfc04dd10ac3
-  step=4,dige:024c5ed9afdf3648
-  step=5,dige:ede46a78d06eb629
+  step=2,dige:5048fc900ef93833
+  step=3,dige:c8b522d201f204bd
+  step=4,dige:d21bab0f2c0f1e52
+  step=5,dige:8c870c235f77c21d
     Assertion:the-crew-ledger-and,sentence:the crew ledger and its cert survive a reload through the stash alone — the home a device with no folder actually has
     Assertion:the-reload-is-real,sentence:the reload is real — the peering stands bare and the crew grant answers nothing until the rehydrate runs
     Assertion:a-standing-booking-outlives,sentence:a standing booking outlives the boot that made it — reach comes back booked so book-it-and-walk-away is true on a phone
@@ -38,3 +38,5 @@ story:SwarmReboot
     Assertion:the-roster-and-my,sentence:the roster and my own post return with the crew — a rebooted body knows what it is and which key each mate answers at
     Assertion:a-friend-pier-with,sentence:a friend pier with its page an issued invite serial and a chain root all come back from the stash — the three oldest pillars finally stand under a fixture
     Assertion:running-the-rehydrate-ladder,sentence:running the rehydrate ladder twice changes nothing — every pillar finds-or-creates so a re-entered boot cannot double a mate or a booking
+    Assertion:a-nay-survives-the,sentence:a nay survives the reboot beside the heart — the stash carries every reaction as one snap under one rule so no reaction kind can be forgotten by a copy loop
+    Assertion:an-identity-encoded-under,sentence:an identity encoded under the account protocol then decoded and grafted onto a bare container encodes again to the same bytes — one serializer can be the stash and the folder snap at once

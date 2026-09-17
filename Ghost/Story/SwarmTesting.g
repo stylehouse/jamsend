@@ -29,6 +29,7 @@
 //   Idzeug from. REAL dep (the .g→.ts import idiom), used only to STAGE the attack, never the spine.
 IMPORT()
     import { mint_grant, verify_grant, grant_to_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
+    import { _C } from "$lib/Stuff.svelte"
     import { signHeader } from "$lib/cluster_trust"
     import { crew_key_hold } from "$lib/O/Funk/Crewkeys"
     import { seal, unseal } from "$lib/O/Funk/Sealbox.ts"
@@ -4564,6 +4565,9 @@ async SwarmReboot_stand(w):
     //    liability §6b's OBLIQUE ruling exists to prevent.  A HEART is a decision and must outlive the boot.
     this.Heard_seed(reba, { id: 'trk-take', pub: 'Cave', title: 'Kept Wanting', take: 1, at: 1751699000, mire: 2 })
     this.Heard_seed(reba, { id: 'trk-heard', pub: 'Cave', mire: 1 })
+    // …and a NAY (2026-09-17): the reaction that was lost on reload that morning — Heard_nay strips `take`,
+    //  and the pillar's copy loop kept only `take`.  Under the protocol a %Card wearing ANY reaction rides.
+    this.Heard_seed(reba, { id: 'trk-nay', pub: 'Cave', title: 'Never Again', nay: 1, at: 1751699500, mire: 1 })
     // two bookings: one standing (survives), one terminal (history — must NOT come back)
     this.Swarm_reach_book(w, reba, { to: 'Cave', of: 'tune-alpha', for: 'serve' })
     let done = this.Swarm_reach_book(w, reba, { to: 'Cave', of: 'tune-omega', for: 'serve' })
@@ -4585,9 +4589,9 @@ async SwarmReboot_stash(w):
     if (r && +r.crew === 2) { row.crew_stashed = 1 }
     if (r && +r.reaches === 1) { row.one_reach_stashed = 1 }
     if (r && +r.pools === 2) { row.pools_stashed = 1 }
-    if (r && +r.heard === 1) { row.one_wish_stashed = 1 }
-    let hs = w.c.st.Swarm_heards?.[w.c.reba.sc.prepub]?.rows || []
-    if (hs.length === 1 && String(hs[0].id) === 'trk-take' && String(hs[0].mire) === '2') { row.the_bare_hearing_stayed_behind = 1 }
+    // the heard pillar counts what its protocol KEEPS: the heart and the nay, never the bare hearing.  The
+    //  text itself lands a few microtasks after the call (enWaft rides Travel) — the wipe beat reads it.
+    if (r && +r.heard === 2) { row.two_reactions_stashed = 1 }
     let mates = w.c.st.Swarm_crews?.[w.c.reba.sc.prepub]?.mates || []
     if (mates.some((m) => m.grant && String(m.grant.to) === 'Crew')) { row.cert_stashed = 1 }
     this.SwarmReboot_note(w, row)
@@ -4612,6 +4616,12 @@ async SwarmReboot_wipe(w):
     if (!this.Ra_pool_defs(reba, 0).some((d) => d.name)) { row.pools_gone = 1 }
     if (!reba.o({ Mag: 'heard' }).length) { row.heard_gone = 1 }
     if (!this.Swarm_crew_grant(reba)) { row.cert_gone = 1 }
+    // what the stash HOLDS for the heard Mag, now that its text has landed: one snap under the 'heard'
+    //  protocol — the heart and the nay by name, the bare hearing nowhere in it.  Read as text on purpose:
+    //   the pillar is one serializer now, and the fixture should show the law biting at encode time.
+    let hsnap = String(w.c.st?.Swarm_heards?.[reba.sc.prepub]?.snap || '')
+    if (hsnap && /Card,id:trk-take,/.test(hsnap) && /Card,id:trk-nay,/.test(hsnap)) { row.reactions_in_the_stash_text = 1 }
+    if (hsnap && !/trk-heard/.test(hsnap)) { row.the_bare_hearing_stayed_behind = 1 }
     this.SwarmReboot_note(w, row)
 
 // beat 5 — THE REHYDRATE LADDER, the same three calls Swarm_station_up makes at boot, against the scratch
@@ -4661,9 +4671,28 @@ async SwarmReboot_back(w):
     //   not when the track was pressed: a page is a sitting, and this sitting is the one that recovered it.
     let hmag = reba.o({ Mag: 'heard', pub: String(reba.sc.prepub) })[0]
     let hcards = hmag ? this.Heard_cards(hmag) : []
-    if (hcards.length === 1 && String(hcards[0].sc.id) === 'trk-take' && hcards[0].sc.take) { row.wish_back = 1 }
-    if (hcards[0] && String(hcards[0].sc.pub) === 'Cave' && String(hcards[0].sc.title) === 'Kept Wanting' && String(hcards[0].sc.mire) === '2') { row.wish_knows_what_it_knew = 1 }
+    let wish = hcards.find((c) => String(c.sc.id) === 'trk-take')
+    let nay = hcards.find((c) => String(c.sc.id) === 'trk-nay')
+    if (hcards.length === 2 && wish && wish.sc.take) { row.wish_back = 1 }
+    if (wish && String(wish.sc.pub) === 'Cave' && String(wish.sc.title) === 'Kept Wanting' && String(wish.sc.mire) === '2') { row.wish_knows_what_it_knew = 1 }
+    if (nay && nay.sc.nay && !nay.sc.take && String(nay.sc.title) === 'Never Again') { row.nay_back = 1 }
     if (!hcards.some((c) => String(c.sc.id) === 'trk-heard')) { row.the_bare_hearing_stayed_dead = 1 }
+    // THE ROUND TRIP (Persistence_todo Phase 5, rung 1 — the gate for every rung after): the whole
+    //  identity under the account protocol → decode → graft onto a bare container → encode again, and the
+    //   two texts are the SAME BYTES.  This is what lets the stash and the folder snap be one text.
+    let once = await this.enWaft(reba, { matching: this.Swarm_protocol('account') })
+    let dec = once.errors.length ? null : this.decode_wh_lines(once.snap)
+    if (dec && dec.C) {
+        let bare = _C({ scratch: 1 })
+        let again = await this.enWaft(this.Swarm_graft(bare, dec.C), { matching: this.Swarm_protocol('account') })
+        let same = !again.errors.length && again.snap === once.snap
+        if (same) { row.round_trip_byte_identical = 1 }
+        // the first line that differs, so a red names the drifting particle rather than just "not equal"
+        let a1 = once.snap.split('\n')
+        let b1 = String(again.snap || '').split('\n')
+        let at = a1.findIndex((l, i) => l !== b1[i])
+        if (!same) { row.round_trip_drift_line = String(at) + ': ' + String(a1[at] || '').trim().slice(0, 60) + ' ≠ ' + String(b1[at] || '').trim().slice(0, 60) }
+    }
     // the round trip is idempotent: a second ladder pass must not double a single row.
     this.Swarm_iz_rehydrate(w, reba, w.c.st)
     this.Swarm_piers_rehydrate(w, reba, w.c.st)
@@ -4672,7 +4701,7 @@ async SwarmReboot_back(w):
     this.Swarm_reaches_rehydrate(w, reba, w.c.st)
     this.Swarm_pools_rehydrate(w, reba, w.c.st)
     this.Swarm_heard_rehydrate(w, reba, w.c.st)
-    if (this.Heard_cards(reba.o({ Mag: 'heard', pub: String(reba.sc.prepub) })[0]).length !== 1) { row.idem_heard_doubled = 1 }
+    if (this.Heard_cards(reba.o({ Mag: 'heard', pub: String(reba.sc.prepub) })[0]).length !== 2) { row.idem_heard_doubled = 1 }
     if (crew && crew.o({ mate: 1 }).length === 2 && this.Ra_pool_defs(reba, 0).filter((d) => d.name).length === 2 && peering.o({ Reach: 1 }).length === 1
         && peering.o({ Pier: 1 }).length === 1 && peering.o({ Idzeug: 1 }).length === 1 && reba.o({ ChainRoot: 1 }).length === 1) { row.idempotent = 1 }
     this.SwarmReboot_note(w, row)
@@ -4703,8 +4732,12 @@ SwarmReboot_witness(w):
     if (+s.sc.pools_stashed === 1 && +d.sc.pools_gone === 1 && +b.sc.pools_back_in_order === 1 && +b.sc.pool_policy_back === 1) this.story_swear(w, 'the pool compartments a device declares survive its reload through the stash alone — names and policies and caps and the shuffle salt — and in declaration order so the priority they were given is the priority they come back with')
     // #9 THE PHONE KEEPS ITS WISHES, AND ONLY ITS WISHES: a heart is a decision and outlives the boot; a
     //  bare hearing is a thirty-day dedup mark and is deliberately left behind.
-    if (+s.sc.one_wish_stashed === 1 && +s.sc.the_bare_hearing_stayed_behind === 1 && +d.sc.heard_gone === 1 && +b.sc.wish_back === 1 && +b.sc.wish_knows_what_it_knew === 1 && +b.sc.the_bare_hearing_stayed_dead === 1)
+    if (+s.sc.two_reactions_stashed === 1 && +d.sc.the_bare_hearing_stayed_behind === 1 && +d.sc.heard_gone === 1 && +b.sc.wish_back === 1 && +b.sc.wish_knows_what_it_knew === 1 && +b.sc.the_bare_hearing_stayed_dead === 1)
         this.story_swear(w, 'a heart pressed on a device with no folder survives that device rebooting — with the holder and the listing it had learned — while the bare hearings it sat among are left behind rather than hoarded')
+    // #10 A NAY IS A DECISION TOO (2026-09-17): the reaction the copy loop lost is what the protocol keeps.
+    if (+d.sc.reactions_in_the_stash_text === 1 && +b.sc.nay_back === 1) this.story_swear(w, 'a nay survives the reboot beside the heart — the stash carries every reaction as one snap under one rule so no reaction kind can be forgotten by a copy loop')
+    // #11 THE ROUND TRIP IS THE GATE (Persistence_todo Phase 5 rung 1): encode → decode → graft → encode, same bytes.
+    if (+b.sc.round_trip_byte_identical === 1) this.story_swear(w, 'an identity encoded under the account protocol then decoded and grafted onto a bare container encodes again to the same bytes — one serializer can be the stash and the folder snap at once')
     // #6 THE LADDER IS IDEMPOTENT: boot runs it once but a re-entry must not double a row.
     //  ⚠ THE SENTENCE IS THE CONTRACT — do not reword it.  A declared %Assertion in this Book's toc
     //   carries it verbatim, so appending "or a wish" (tried 2026-09-04) turns the run red with a

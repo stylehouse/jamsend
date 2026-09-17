@@ -497,6 +497,8 @@
                     w.c.lies_control_hooked = 1
                     ;((w.c as any).on_control_list ??= []).push((frame: any) => {
                         if (frame?.control === 'docindex') H.Lies_docindex_heard(w, frame)
+                        else if (frame?.control === 'changed') H.Lies_changed_heard(w, frame)
+                        else if (frame?.control === 'watch_ok' && frame.refused?.length) console.warn(`👁 relay refused ${frame.refused.length} watch path(s):`, frame.refused.slice(0, 5).map((r: any) => `${r.path} (${r.why})`).join(', '))
                     })
                 }
                 if (!w.c.lies_hello_hooked) {
@@ -764,8 +766,70 @@
                     H.vaguely_ponder('Lang/Lang', 'Lang_disk_moved', { path: m.path })
                     synced++
                 }
-                console.log(`⏱ docindex synced — docs ${frame.docs}${ours ? ` · ours ${ours}` : ''}${synced ? ` · syncing ${synced}` : ''}${closed ? ` · closed ${closed}` : ''}${parts.length ? ' · ' + parts.join(' · ') : ''}`)
+                console.log(`⏱ docindex synced — ${frame.docs != null ? `docs ${frame.docs}` : frame.why}${ours ? ` · ours ${ours}` : ''}${synced ? ` · syncing ${synced}` : ''}${closed ? ` · closed ${closed}` : ''}${parts.length ? ' · ' + parts.join(' · ') : ''}`)
             }, { see: 'docindex_heard' }, true)
+        },
+
+        // ── THE WATCH DESK, tab side (2026-09-17; server half in src/lib/server/watch.ts) ──
+        //  Vite no longer watches wormhole/ (5k data files; inotify is budgeted per UID), and the docindex
+        //   push only ever covered source docs.  So the tab says what it is fixated on: every %Good it holds
+        //    under req:Store — Docs AND Wafts — goes to the relay as `{control:'watch', paths}` and the relay
+        //     keeps one inotify watch per directory, pushing `{control:'changed', path, dige}` when one moves.
+        //  Lies_watch_sync — the standing order.  Rides Lies_heartbeat (in-think, every beat): diff the
+        //   current Good roster against what this SOCKET was last told, send only the delta, and start over
+        //    on a new socket (interest dies with the socket at the relay, so a reconnect re-sends the lot).
+        //     Cheap when nothing moved: one o() over the Goods and a string compare.
+        Lies_watch_sync(w: TheC) {
+            const H = this as House
+            if (!H.Lies_channel_live(w)) return
+            const ws = ((w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any)?.ws
+            if (!ws || ws.readyState !== 1) return
+            const store = w.o({ req: 'Store' })[0] as TheC | undefined
+            if (!store) return
+            const want = new Set<string>()
+            for (const g of store.o({ Good: 1 }) as TheC[]) {
+                const t = g.sc.type, p = g.sc.path as string | undefined
+                if (p && (t === 'text/Doc' || t === 'text/Waft')) want.add(p)
+            }
+            const fresh = w.c.watch_ws !== ws                     // a new socket knows nothing of us
+            const had: Set<string> = fresh ? new Set() : (w.c.watched as Set<string> | undefined) ?? new Set()
+            const add: string[] = [], gone: string[] = []
+            for (const p of want) if (!had.has(p)) add.push(p)
+            for (const p of had) if (!want.has(p)) gone.push(p)
+            if (!add.length && !gone.length) return
+            try {
+                if (add.length)  ws.send(JSON.stringify({ control: 'watch',   paths: add }))
+                if (gone.length) ws.send(JSON.stringify({ control: 'unwatch', paths: gone }))
+            } catch { return }                                    // relay down — the next beat re-tries on the next socket
+            w.c.watch_ws = ws
+            w.c.watched  = want
+            console.log(`👁 watch ${fresh ? 'reset ' : ''}+${add.length}${gone.length ? ` -${gone.length}` : ''} → ${want.size} path(s) held`)
+        },
+        // Lies_changed_heard — the relay says one file we hold open moved on disk.  A DOC rides the
+        //  docindex road exactly (same {path, dige} row: our own write comes back round as `ours`, a foreign
+        //   edit pulls disk or parks a surprise_read through Lang_disk_moved).  A WAFT is only NOTED for now:
+        //    the live Waft tree is what Lang/Story hold references into, and taking disk means re-placing it —
+        //     a reaction to design on its own (Docindex_todo).  `known` on the Waft's Good (stamped by
+        //      req_Store's write phase, widened 2026-09-17) tells our own save from someone else's.
+        Lies_changed_heard(w: TheC, frame: any) {
+            const H = this as House
+            const path = String(frame?.path ?? '')
+            if (!path) return
+            const store = w.o({ req: 'Store' })[0] as TheC | undefined
+            const good = store?.o({ Good: 1, path })[0] as TheC | undefined
+            if (!good) return                                      // closed since we asked; the unwatch is on its way
+            if (good.sc.type === 'text/Doc') {
+                H.Lies_docindex_heard(w, { why: 'watch', moved: frame.gone ? [] : [{ path, dige: frame.dige }], moved_n: 1, event_at: frame.event_at, written_at: frame.event_at })
+                return
+            }
+            const known = good.o({ known: 1 })[0] as TheC | undefined
+            if (!frame.gone && known && known.sc.dige === frame.dige) {
+                const wrote_at = Number(known.sc.at) * 1000
+                console.log(`⏱ ${path.split('/').slice(-2).join('/')} — our own save back round${wrote_at && frame.event_at ? ` · write→inotify ${frame.event_at - wrote_at}ms` : ''}`)
+                return
+            }
+            good.c.disk_moved = { dige: frame.gone ? null : frame.dige, at: Date.now() }   // runtime marker; a reader may act on it
+            console.log(`👁 Waft ${good.sc.waft_path ?? path} ${frame.gone ? 'VANISHED' : 'moved'} on disk under us${frame.gone ? '' : ` (dige ${frame.dige}${known ? ` ≠ ours ${known.sc.dige}` : ', no save of ours yet'})`} — live tree kept`)
         },
 
         // Lies_send_rungo — editor emit (from the compile-write path).  A **Rungo** is the
@@ -1669,6 +1733,7 @@
             //   _resolve_runstepped on it), so nothing else fires it and every app frame's acked emit would
             //    pile up.  Peeroleum_runstepped has no Story dependency — drive it here when the backlog grows.
             ;(H as any).Lies_channel_cull(w)
+            ;(H as any).Lies_watch_sync(w)    // tell the relay which files we hold open (the watch desk) — delta only, all on a new socket
             ;(H as any).Lies_drain_rungo(w)   // editor-gated inside: drop a 60s-stale held rungo even with no Cluster Waft (where runner_roster doesn't run)
             // TEMP investigation: persist the relay-socket capture to disk via the Wormhole, so the
             //  traffic a human reads in DevTools is readable off /app too (and survives the &watch reload).

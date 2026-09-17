@@ -28,6 +28,7 @@ import { writeFile, mkdir } from 'node:fs/promises'
 import { resolve, dirname, sep } from 'node:path'
 import { createHash } from 'node:crypto'
 import { loadTrustedPubs, verifyHeader, prepubOf } from '../cluster_trust'
+import { makeWatchDesk } from './watch'
 
 // gen_write lands here: the editor compiles a ghost and, rather than pay the browser's
 //  ~0.5s File-System-Access write, ships the .go down its relay socket for Node to write
@@ -172,6 +173,15 @@ export function attachRelay(
 		//    the editor-bound socket(s) alone; on a runner relay that set is empty, so runners stop drowning.
 		sendControlTo('editor', { control: 'log', line: `${tag} ${line}` })
 	}
+	// THE WATCH DESK (2026-09-17, src/lib/server/watch.ts): a socket asks `{control:'watch', paths:[…]}`
+	//  for the files it holds open and hears `{control:'changed', path, dige, …}` when one moves on
+	//   disk.  Per-socket interest, per-directory inotify, gentle GC — the shape the owner asked for
+	//    once vite stopped watching wormhole/.  Its pushes go straight down the asking socket (never
+	//     routed, never bridged), so the peer link is never involved.
+	const watchDesk = makeWatchDesk(process.cwd(), (ws, frame) => {
+		const s = ws as WebSocket
+		if (s.readyState === WebSocket.OPEN) s.send(JSON.stringify(frame))
+	}, (line) => relayLog(line))
 	// Send a control frame to the live local browser socket(s) bound under one addr (e.g. 'editor').
 	function sendControlTo(addr: string, obj: any) {
 		const set = locals.get(addr)
@@ -661,6 +671,23 @@ export function attachRelay(
 			relayLog(`📻 unsubscribe ${ch} (subs: ${locals.get(ch)?.size ?? 0})`)
 			return
 		}
+		// watch / unwatch (tab → relay): fixation on files (watch.ts).  Idempotent — a tab re-sends its
+		//  whole list on every reconnect, since interest dies with the socket.  The ack names what was
+		//   refused and why (outside the fence, no such directory, over budget) so a bad path is visible
+		//    in the tab rather than silently unwatched; the count line here is the terminal's view.
+		if (msg.control === 'watch' && Array.isArray(msg.paths)) {
+			const r = watchDesk.watch(ws, msg.paths)
+			try { ws.send(JSON.stringify({ control: 'watch_ok', ok: r.ok.length, refused: r.refused.slice(0, 32), corr: msg.corr ?? null })) } catch {}
+			const st = watchDesk.stats
+			relayLog(`👁 watch +${r.ok.length}${r.refused.length ? ` ✗${r.refused.length} (${r.refused[0].why})` : ''} — ${st.paths} paths in ${st.dirs} dirs for ${st.sockets} socket(s)`)
+			return
+		}
+		if (msg.control === 'unwatch' && Array.isArray(msg.paths)) {
+			const n = watchDesk.unwatch(ws, msg.paths)
+			const st = watchDesk.stats
+			if (n) relayLog(`👁 unwatch -${n} — ${st.paths} paths in ${st.dirs} dirs`)
+			return
+		}
 		// who (peer → relay): BATCH presence probe — which of these addrs are online right now?
 		//  Replaces the speculative fan-out (one pulse/swarm_hi per friend, most of them offline,
 		//   with every miss dying silently in warnDrop — the sender can never learn).  One frame up,
@@ -1006,6 +1033,7 @@ export function attachRelay(
 			if (bound) for (const a of bound) unbind(a, ws)
 			const roleBound = (ws as any).roleBound as Set<string> | undefined  // release the role addr(s) bound via `become`
 			if (roleBound) for (const a of roleBound) unbind(a, ws)
+			watchDesk.drop(ws)                                                 // its file fixations; the dir watches linger for GC
 		}
 		ws.on('close', (code: number) => {
 			drop()
@@ -1106,6 +1134,7 @@ export function attachRelay(
 			httpServer.off('upgrade', onUpgrade)
 			clearInterval(heartbeat)
 			clearInterval(tallyTimer)
+			watchDesk.close()
 			peerLink?.close()
 			wss.close()
 			delete (httpServer as any)[ATTACHED]

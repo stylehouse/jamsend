@@ -26,12 +26,13 @@ Snap:H
               Pool,name:circulation,take:random,cap:12,salt:3
               Pool,name:liked,take:liked,cap:6
             Mag:heard,pub:08c3e3304c792752,heard_ttl:30,take_ttl:90
-              Cloud,page:1,created_at:1751700030
+              Cloud,page:1,created_at:1751699000
                 Card,id:trk-take,pub:Cave,title:Kept Wanting,take:1,at:1751699000,mire:2
+                Card,id:trk-nay,pub:Cave,title:Never Again,nay:1,at:1751699500,mire:1
         reached:step_3
         testing
-          stashed,roster_stashed,pier_stashed,izz_stashed,root_stashed,crew_stashed,one_reach_stashed,pools_stashed,one_wish_stashed,the_bare_hearing_stayed_behind,cert_stashed
-          wiped,roots_gone,peering_bare,crew_gone,pools_gone,heard_gone,cert_gone
-          back,pier_back,izz_back,root_back,crew_back,my_role_back,cert_back,body_back,roster_back,pools_back_in_order,pool_policy_back,standing_reach_back,terminal_reach_stayed_dead,reach_state_back,wish_back,wish_knows_what_it_knew,the_bare_hearing_stayed_dead,idempotent
+          stashed,roster_stashed,pier_stashed,izz_stashed,root_stashed,crew_stashed,one_reach_stashed,pools_stashed,two_reactions_stashed,cert_stashed
+          wiped,roots_gone,peering_bare,crew_gone,pools_gone,heard_gone,cert_gone,reactions_in_the_stash_text,the_bare_hearing_stayed_behind
+          back,pier_back,izz_back,root_back,crew_back,my_role_back,cert_back,body_back,roster_back,pools_back_in_order,pool_policy_back,standing_reach_back,terminal_reach_stayed_dead,reach_state_back,wish_back,wish_knows_what_it_knew,nay_back,the_bare_hearing_stayed_dead,round_trip_byte_identical,idempotent
         reached:step_4
         reached:step_5

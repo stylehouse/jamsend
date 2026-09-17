@@ -67,14 +67,45 @@ Written 2026-08-21 out of the eed831f1 debug (a daemon that served music but cou
      measured in (2) is real.
 
 **Rungs (each lands alone, each Book-gated):**
- 1. `SwarmReboot` grows a step that ROUND-TRIPS an identity: `enWaft` → decode → `Swarm_graft` onto a
-     fresh identity → `enWaft` again, byte-identical; then swears the Nay case (a `%Card,nay` survives).
-      This is the gate for every rung after.
- 2. The heard pillar goes first, as the pattern: `Swarm_restash_heard` → `st.Swarm_heards[prepub] =
-     Swarm_export(mag)` text; `Swarm_heard_rehydrate` → decode + `Swarm_graft`. Delete the copy loop
-      and the merge-law special case (`mire takes the larger` — check whether graft's "stashed wins"
-       is acceptable there, or add a per-key max rule).
+ 1. ✅ **LANDED 2026-09-17 (working tree)** — `SwarmReboot` beat 5 now round-trips Reba whole:
+     `enWaft(account)` → `decode_wh_lines` → `Swarm_graft` onto a bare `_C({scratch})` → `enWaft` again,
+      and swears `round_trip_byte_identical` (a red carries `round_trip_drift_line` naming the first
+       differing line). It IS byte-identical today, first try. Beat 2 seeds a `%Card,nay` (`trk-nay`)
+        beside the heart and the bare hearing; beat 4 reads the stash TEXT (`reactions_in_the_stash_text`,
+         `the_bare_hearing_stayed_behind`); beat 5 swears `nay_back`. Two new sworn sentences (#10 the nay,
+          #11 the round trip). ⚠ **Owed to the owner: re-swear steps 2–5** (diges stable across two runs:
+           `5048fc90 / c8b522d2 / d21bab0f / 8c870c23`) **and declare the two new `Assertion:` lines
+            under step 5 in the toc.** Every row lands green; the red is fixture drift only (`ok_pct:0.2,
+             caveat:0`, no gaps on the second run — the first run listed all seven declared assertions as
+              gaps once, not reproduced; watch for it).
+ 2. ✅ **LANDED 2026-09-17 (working tree)** — the heard pillar is the pattern:
+     - `Swarm_protocol('heard')` = the account rules + ONE skip rule: every `%Card` **unless** it wears
+        `take|nay|meh`. That needed an exception clause the rule vocabulary lacked — `unless_any` (same
+         entry shapes as `matching_any`) added to `lematch` (Stuff.svelte.ts) and enLine's own re-check
+          (Text.svelte). A new reaction kind is one word; a new Card scalar needs nothing.
+     - `Swarm_restash_heard` → `st.Swarm_heards[prepub] = { snap }` via `enWaft(mag, heard rules)`. The
+        count returns synchronously (the rule's own `lematch(...).skip` per Card, so log and text agree);
+         the text lands a few microtasks later (enWaft is async only because Travel is) — the stash effect
+          writes 200 ms after any mutation, so the Dexie put always carries it. Kept `Swarm_restash_all`
+           sync for its four sync callers.
+     - `Swarm_heard_rehydrate` → decode + `Swarm_graft(ident, C)`; the `mire = max` law is applied to
+        the DECODED tree before the graft (graft is "the snap wins"), so no graft special case. Pages
+         come back as the sittings they were (Cloud keyed by page) rather than folded into one dated page.
+     - LEGACY: an entry with `rows` (every Dexie stash written before today — eed's included) still
+        rehydrates through `Swarm_heard_rehydrate_rows`, one boot's worth; the next settle re-stashes as
+         `{snap}`. Delete the rows road once every live phone has booted once on this build.
+     - `Swarm_graft` fix on the way: an identity key the node does not wear (`{pub: undefined}`) is
+        left OUT of the probe — `o()` requires the key present, so a pub-less Card twinned on every
+         re-graft.
+     - **Open, the owner's:** the folder's account snap still carries the WHOLE Mag (bare hearings
+        included — "rides the account snap for free"). Rung 5 wants one text for both stores; that means
+         either the account snap also forgets bare hearings (privacy-consistent, but a folder device then
+          re-offers a track heard yesterday after a reload, as a phone does today) or the stash keeps its
+           own kind. Not decided here.
  3. The other eight pillars, one by one, on the same road. `Swarm_restash_all` becomes one call.
+     The heard pillar shows the shape: a `Swarm_protocol('<pillar>')` kind (usually just the account
+      rules — most pillars need no extra law), `enWaft` → `{snap}`, decode + graft back, a legacy branch
+       for the old entry shape. Reaches carries the one other law (`omit` arrived/refused/dead states).
  4. The trigger: the stash effect watches the identity subtree's dige instead of the hand-built
      object; `Heard_settle` and the like keep working but stop being load-bearing.
  5. The account snap is written from the same text (it nearly is already).

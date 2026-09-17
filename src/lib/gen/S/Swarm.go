@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '53e61d835aa23b9e~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'd897ca9eb833093b~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -4020,48 +4020,72 @@ Swarm_restash_pools(ident, from, st0) {
 //    privacy liability §6b's OBLIQUE ruling exists to prevent.  A HEART is a decision, and a decision
 //     must outlive the boot that made it.  So the stash carries `take` Cards whole (the listing rides
 //      along — it is what makes the ask legible before anything lands) and forgets the rest.
-//  Rehydrated into ONE page of its own, dated when the stash was written: the pages are sittings, and
-//   the sitting that recovered them is this boot, not whichever evening they were pressed in.
 //  MERGE LAW, stated here because two bodies WILL write (§5): `mire = max`, `take = OR`, keyed
-//   (id, pub), no device key.  Where it lands first is this pillar's own `oai`.
+//   (id, pub), no device key.
+// ── ONE SERIALIZER (2026-09-17, Persistence_todo Phase 5 rung 2 — this pillar is the pattern) ──
+//  The stash entry is the Mag's SNAP TEXT under `Swarm_protocol('heard')` — the same enWaft that writes
+//   the account snap, with the reaction-only law as one skip rule — and the rehydrate is decode +
+//    Swarm_graft, the identity-keyed merge a re-import already uses.  What used to be here was a copy
+//     loop that knew the fields its author knew: a Nay carries no `take`, so the take-only filter
+//      dropped every 👎 on reload (the 2026-09-17 morning), and a new Card scalar was a silent loss
+//       until someone noticed.  Under the protocol a %Card is a %Card whatever it wears; the pages
+//        come back as the sittings they were (Cloud keyed by page), not folded into one dated page.
+//  The count returns synchronously (the rule's own answer per Card, so the log and the text agree);
+//   the text lands a few microtasks later — enWaft is async only because Travel is, no IO inside —
+//    and the stash effect writes 200ms after any mutation, so the Dexie put always carries it.
 Swarm_restash_heard(ident, from, st0) {
     let st = this.Swarm_stash_of(ident, st0)
     if (!st || !ident) { return 0 }
     let src = from || ident
+    let me = String(ident.sc.prepub || '')
     let mag = src.o({ Mag: 'heard', pub: String(src.sc.prepub || '') })[0]
-    let rows = []
+    let rules = this.Swarm_protocol('heard')
+    let n = 0
     for (const pg of (mag ? mag.o({ Cloud: 1 }) : [])) {
-        for (const card of pg.o({ Card: 1 })) {
-            // every REACTION rides (2026-09-17): a Nay/Meh carries no `take` (Heard_nay strips it), so the
-            //  take-only filter dropped them on reload and the pool drew a Nay'd track again the next morning.
-            if (!card.sc.id || !(card.sc.take || card.sc.nay || card.sc.meh)) { continue }
-            let e = {}
-            for (const k of Object.keys(card.sc)) { if (k !== 'Card') { e[k] = String(card.sc[k]) } }
-            rows.push(e)
-        }
+        for (const card of pg.o({ Card: 1 })) { if (card.sc.id && !card.lematch(rules).skip) { n = n + 1 } }
     }
     let settings = mag && (mag.sc.tipped || mag.sc.no_handoff) ? 1 : 0
-    if (!rows.length && !settings) {
-        if (st.Swarm_heards) { delete st.Swarm_heards[ident.sc.prepub] }
+    if (!mag || (!n && !settings)) {
+        if (st.Swarm_heards) { delete st.Swarm_heards[me] }
         return 0
     }
-    if (!st.Swarm_heards) { st.Swarm_heards = {} }
-    let entry = { rows: rows }
-    if (mag && mag.sc.heard_ttl) { entry.heard_ttl = String(mag.sc.heard_ttl) }
-    if (mag && mag.sc.take_ttl) { entry.take_ttl = String(mag.sc.take_ttl) }
-    // heart-settings ride the same pillar (Heard.g): the one-time tip and the linked-device road switch
-    if (mag && mag.sc.tipped) { entry.tipped = '1' }
-    if (mag && mag.sc.no_handoff) { entry.no_handoff = '1' }
-    st.Swarm_heards[ident.sc.prepub] = entry
-    return rows.length
+    this.enWaft(mag, { matching: rules }).then((out) => {
+        if (out.errors && out.errors.length) { console.log('♥⚠ heard restash refused — ' + out.errors.join('; ')); return }
+        if (!st.Swarm_heards) { st.Swarm_heards = {} }
+        st.Swarm_heards[me] = { snap: out.snap }
+    })
+    return n
 },
-// Swarm_heard_rehydrate — re-stand the takes on the identity's own heard Mag.  Idempotent by (id, pub),
-//  the same key Heard_card finds-or-creates on, so a re-entered boot cannot double a wish.  SYNC and
-//   stashed-gated like every sibling, so no Book world moves unless it hands its own stash in.
+// Swarm_heard_rehydrate — decode the stashed snap and GRAFT it onto the identity's own heard Mag.
+//  Idempotent by construction (Swarm_graft finds Mag by pub, Cloud by page, Card by (id, pub)), so a
+//   re-entered boot cannot double a wish.  The merge law's `mire = max` is applied to the decoded tree
+//    BEFORE the graft (graft itself is "the snap wins"), so a live card that has been played more since
+//     the stash keeps its count.  SYNC and stashed-gated like every sibling.
+//  LEGACY (entries written before 2026-09-17 carry `rows`, not `snap`): a Dexie stash on a real phone
+//   predates this and must still come back — the old row loop stays, one boot's worth, then re-stashes
+//    in the new shape at the next settle.
 Swarm_heard_rehydrate(w, ident, st0) {
     let st = st0 || this.top_House().stashed
     let mine = st?.Swarm_heards?.[ident?.sc?.prepub]
     if (!mine || !ident) { return 0 }
+    let me = String(ident.sc.prepub || '')
+    if (!mine.snap) { return this.Swarm_heard_rehydrate_rows(w, ident, mine) }
+    let got = this.decode_wh_lines(String(mine.snap))
+    if (!got.C) { console.log('♥⚠ heard rehydrate refused — ' + (got.errors ? got.errors.join('; ') : 'bad snap')); return 0 }
+    let live = ident.o({ Mag: 'heard', pub: me })[0]
+    let n = 0
+    for (const pg of got.C.o({ Cloud: 1 })) {
+        for (const card of pg.o({ Card: 1 })) {
+            let twin = live ? this.Heard_find(live, card.sc.id, card.sc.pub) : null
+            if (twin && +(twin.sc.mire || 0) > +(card.sc.mire || 0)) { card.sc.mire = String(twin.sc.mire) }
+            n = n + 1
+        }
+    }
+    this.Swarm_graft(ident, got.C)   // wires .c.up at every level
+    if (n) { console.log('♥ heard rehydrated — ' + n + ' reaction(s) survive the reload') }
+    return n
+},
+Swarm_heard_rehydrate_rows(w, ident, mine) {
     let me = String(ident.sc.prepub || '')
     let mag = ident.oai({ Mag: 'heard', pub: me })
     mag.c.up = ident
@@ -4078,14 +4102,13 @@ Swarm_heard_rehydrate(w, ident, st0) {
         card.c.up = card.c.up || page
         for (const k of Object.keys(e)) {
             if (k === 'id' || k === 'pub') { continue }
-            // the merge law: mire takes the LARGER, everything else the stashed value.
             if (k === 'mire' && +(card.sc.mire || 0) >= +(e.mire || 0)) { continue }
             card.sc[k] = String(e[k])
         }
         card.bump()
         n = n + 1
     }
-    if (n) { console.log('♥ heard rehydrated — ' + n + ' wish(es) survive the reload') }
+    if (n) { console.log('♥ heard rehydrated (legacy rows) — ' + n + ' wish(es) survive the reload') }
     return n
 
 },
@@ -5980,6 +6003,17 @@ Swarm_protocol(kind) {
         probe[mk] = 1
         rules.push({ matching_any: [{ sc_has: probe }], means: { skip: 1 } })
     }
+    // kind 'heard' — the heard Mag as the STASH carries it (Persistence_todo Phase 5, rung 2): every
+    //  %Card is skipped UNLESS it wears a reaction.  A bare hearing is a dedup mark with a thirty-day
+    //   clock, worth nothing after a reload and — multiplied by every track ever played — the privacy
+    //    liability §6b's OBLIQUE ruling exists to prevent; a heart, a nay or a meh is a DECISION and must
+    //     outlive the boot that made it.  Said here as one rule instead of a copy loop, so a new
+    //      reaction kind is one word added to `unless_any` and a new Card scalar needs nothing at all.
+    //       (The folder's account snap still carries the whole Mag — whether it should also forget bare
+    //        hearings is the owner's call, noted in Persistence_todo.)
+    if (kind === 'heard') {
+        rules.push({ matching_any: [{ sc_has: { Card: 1 } }], unless_any: [{ sc_has: { take: 1 } }, { sc_has: { nay: 1 } }, { sc_has: { meh: 1 } }], means: { skip: 1 } })
+    }
     return rules
 
 },
@@ -6055,7 +6089,9 @@ Swarm_graft(parent, node) {
     let mk = Object.keys(node.sc)[0]
     let find = {}
     find[mk] = node.sc[mk]
-    for (const k of (ID[mk] ?? Object.keys(node.sc).slice(1))) find[k] = node.sc[k]
+    // an identity key the node does NOT wear is left out of the probe (2026-09-17): `{pub: undefined}`
+    //  matches nothing (o() requires the key be present), so a pub-less %Card twinned on every re-graft
+    for (const k of (ID[mk] ?? Object.keys(node.sc).slice(1))) { if (node.sc[k] !== undefined) { find[k] = node.sc[k] } }
     let twin = parent.o(find)[0]
     if (twin) {
         for (const k of Object.keys(node.sc)) twin.sc[k] = node.sc[k]

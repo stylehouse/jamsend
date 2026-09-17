@@ -564,9 +564,14 @@ class StuffIO {
 //#region Stuff util
     // lematch — generalised rule matcher
     //   { matching_any: [{sc_has:{...}} | {sc_only:{...}}],
+    //     unless_any?: [{sc_has:{...}} | {sc_only:{...}}],
     //     means: { skip?, munging?, thence_matching? } }
     //  sc_has: like .o(), C contains (at least) these keys/values.
     //  sc_only: C contains exactly these keys/values and no more.
+    //  unless_any (2026-09-17): the rule stands DOWN when any of these match — the exception clause a
+    //   skip needs to say "every %Card, except one wearing take|nay|meh" (Swarm_protocol 'heard'), which
+    //    a positive match alone cannot express.  Same entry shapes as matching_any; enLine's own
+    //     re-check (Text.svelte) honours it too, so a rule's means never fire where its match stood down.
     lematch(rules: any[] = []): {
         skip: boolean
         munging: any[]
@@ -578,7 +583,7 @@ class StuffIO {
         const seen = new Set<string>()
 
         for (const rule of rules) {
-            const matched = (rule.matching_any as any[]).some((entry: any) => {
+            const entry_matches = (entry: any) => {
                 if ('sc' in entry) throw `lematch rule uses deprecated key 'sc' — rename to 'sc_has'`
                 if (entry.sc_only) {
                     const want = Object.keys(entry.sc_only)
@@ -586,8 +591,10 @@ class StuffIO {
                     return this.matches(entry.sc_only)
                 }
                 return this.matches(entry.sc_has)
-            })
+            }
+            const matched = (rule.matching_any as any[]).some(entry_matches)
             if (!matched) continue
+            if (rule.unless_any && (rule.unless_any as any[]).some(entry_matches)) continue
             for (const m of rule.means?.munging ?? []) munging.push(m)
             if (rule.means?.skip) skip = true
             for (const tw of rule.means?.thence_matching ?? []) {

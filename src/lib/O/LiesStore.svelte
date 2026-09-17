@@ -473,11 +473,12 @@
                     H.i_elvisto(w, 'think')
                 }
             } else {
-                // Stamp the write dige onto Good,type:'text/Doc'/known so
-                //  writeCarefully's base_dige gate and DocRow see it.
-                // Only source files have a Good provisioned; gen/ writes skip this.
+                // Stamp the write dige onto the path's Good/known so writeCarefully's
+                //  base_dige gate and DocRow see it — ANY Good at that path (2026-09-17: a
+                //   Waft's too, so the watch desk's `changed` can tell our own save from a
+                //    foreign write; Lies_changed_heard).  gen/ writes have no Good and skip this.
                 // Goods live under req:Store, which is `req` here.
-                const good = req.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
+                const good = req.o({ Good: 1, path })[0] as TheC | undefined
                 if (good) {
                     const known = good.oai({ known: 1 })
                     known.sc.dige = wr.sc.dige as string
