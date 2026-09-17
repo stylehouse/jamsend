@@ -807,10 +807,12 @@
         },
         // Lies_changed_heard — the relay says one file we hold open moved on disk.  A DOC rides the
         //  docindex road exactly (same {path, dige} row: our own write comes back round as `ours`, a foreign
-        //   edit pulls disk or parks a surprise_read through Lang_disk_moved).  A WAFT is only NOTED for now:
-        //    the live Waft tree is what Lang/Story hold references into, and taking disk means re-placing it —
-        //     a reaction to design on its own (Docindex_todo).  `known` on the Waft's Good (stamped by
-        //      req_Store's write phase, widened 2026-09-17) tells our own save from someone else's.
+        //   edit pulls disk or parks a surprise_read through Lang_disk_moved).  A WAFT TAKES DISK
+        //    (Lies_waft_retake, 2026-09-17 evening — Book:HohoRetake is the gate) unless a save of ours is
+        //     pending (then the live tree is about to win the file anyway: kept, and the collision logged
+        //      — `good.c.disk_moved` marks it) or the file VANISHED (noted only; not ours to re-create or to
+        //       empty).  `known` on the Waft's Good (stamped by req_Store's write phase, widened 2026-09-17)
+        //        tells our own save from someone else's.
         Lies_changed_heard(w: TheC, frame: any) {
             const H = this as House
             const path = String(frame?.path ?? '')
@@ -828,8 +830,17 @@
                 console.log(`⏱ ${path.split('/').slice(-2).join('/')} — our own save back round${wrote_at && frame.event_at ? ` · write→inotify ${frame.event_at - wrote_at}ms` : ''}`)
                 return
             }
-            good.c.disk_moved = { dige: frame.gone ? null : frame.dige, at: Date.now() }   // runtime marker; a reader may act on it
-            console.log(`👁 Waft ${good.sc.waft_path ?? path} ${frame.gone ? 'VANISHED' : 'moved'} on disk under us${frame.gone ? '' : ` (dige ${frame.dige}${known ? ` ≠ ours ${known.sc.dige}` : ', no save of ours yet'})`} — live tree kept`)
+            // URGENT post_do, as the docindex road: an event, not ambient work — and the retake mutates w
+            H.post_do(async () => {
+                const wpath = (good.sc.waft_path ?? path) as string
+                const pending = !frame.gone && good.sc.waft_path && H.Lies_waft_save_pending(w, good.sc.waft_path as string)
+                if (frame.gone || pending || !good.sc.waft_path) {
+                    good.c.disk_moved = { dige: frame.gone ? null : frame.dige, at: Date.now(), pending: !!pending }   // runtime marker; a reader may act on it
+                    console.log(`👁 Waft ${wpath} ${frame.gone ? 'VANISHED' : 'moved'} on disk under us${frame.gone ? '' : ` (dige ${frame.dige}${known ? ` ≠ ours ${known.sc.dige}` : ', no save of ours yet'})`} — live tree kept${pending ? ' (a save of ours is pending — it wins the file)' : ''}`)
+                    return
+                }
+                H.Lies_waft_retake(w, good, frame.dige, `moved on disk (${frame.dige}${known ? ` ≠ ours ${known.sc.dige}` : ', no save of ours yet'})`)
+            }, { see: 'waft_changed_heard' }, true)
         },
 
         // Lies_send_rungo — editor emit (from the compile-write path).  A **Rungo** is the

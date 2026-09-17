@@ -202,6 +202,34 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         this.i_elvisto(w, 'think')
     },
 
+    // ── Lies_waft_retake — disk moved under a loaded Waft: take disk ───────────
+    //
+    //   The watch desk (LiesLies Lies_changed_heard) says the snap file behind a %Good,type:text/Waft
+    //    has a dige that is not our last save.  "Take disk" = forget the buffer and let the persist
+    //     pass above re-read + re-place: `delete good.c.content` is the documented re-read trigger
+    //      (LiesStore_read_good), and `good.c.retake` tells the placement to SWAP the standing tree
+    //       inside one replace() (no roster gap → Lang's Interest and its LE survive), carry the
+    //        session-only sc.active across, tear down the old tree's watcher, skip the from-nothing
+    //         save, and fire Lies_waft_mutated so an armed LE re-pulls its origin.
+    //   NOT called blind: the heard side refuses while a save of ours is pending (the live tree would
+    //    overwrite theirs anyway — last writer wins — so it stays and the collision is logged), and a
+    //     VANISHED file is only noted.  Book:HohoRetake is the gate.
+    Lies_waft_retake(w: TheC, good: TheC, dige: string | null, why = 'disk moved') {
+        const H    = this as House
+        const path = good.sc.waft_path as string
+        const was  = w.o({ Waft: path })[0] as TheC | undefined
+        if (good.c.retake) return                                  // one in flight already
+        good.c.retake = { was, dige, at: Date.now(), active: !!was?.sc.active }
+        delete good.c.content
+        delete good.c.disk_moved
+        // a lingering finished read at this path (seen, awaiting its Phase-2 drop) must not land again
+        const store = w.o({ req: 'Store' })[0] as TheC | undefined
+        for (const rd of (store?.o({ req: 'LiesStore_read', rw_name: good.sc.path }) ?? []) as TheC[]) if (rd.sc.finished) store!.drop(rd)
+        console.log(`👁 Waft:${path} — ${why}; taking disk${dige ? ` (${dige})` : ''}`)
+        w.bump_version()
+        H.i_elvisto(w, 'think')
+    },
+
     // ── e_Lies_foreground_waft ─────────────────────────────────────────────
     //
     //   The Interest-switcher foregrounding a giver/Sidetrack from Lang.  Land the
@@ -892,6 +920,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 return Waft
             })()
 
+            // A RETAKE (Lies_waft_retake — disk moved under us): the old tree is still standing at
+            //  {Waft:path}.  place() swaps it for the fresh one INSIDE one replace() — the roster never
+            //   sees a gap, so Lang's %Interest and its armed LE stay (a drop-then-re-place across ticks
+            //    would have retired the LE in the waft_roster do_fn).  Session-only state that lives on
+            //     the Waft particle and not in the snap (sc.active) is carried across by hand.
+            const retake = good.c.retake as { was?: TheC, dige?: string | null, active?: boolean } | undefined
+            if (retake?.was) {
+                if (retake.active) waft.sc.active = 1
+                H.unwatch_owner(retake.was)                 // the old tree's save|notify watcher, torn down
+            }
             await w.place({ Waft: path }, waft)
             // a backstage kind (Cluster — a borrowed EntropyProfile — or the Keep) carries
             //  the hide to its load Good too, so the Good vanishes from the parent Store snap
@@ -903,6 +941,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             await H.Waft_dip(waft)
             await H.Lies_instantiate_funkcions(w, waft)   // bind embedded %Funkcion cells
 
+            // owner = the Waft C itself, so a retake can tear this one down (unwatch_owner above)
             H.watch_c(waft, async () => {
                 H.Lies_sync_waft_docs(w, waft)
                 H.Lies_waft_save(w, waft)
@@ -915,7 +954,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 // Cross-ghost, so it goes by elvis; Lang gates on whether its
                 // armed target lives in this Waft.
                 H.vaguely_ponder('Lang/Lang', 'Lies_waft_mutated', { waft_key: waft.sc.Waft })
-            })
+            }, waft)
 
             // From nothing: a not_found Waft starts empty in memory (content === null) — in the
             //  editor, write its initial snap NOW so its wormhole home comes into being on disk
@@ -924,10 +963,17 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             //     where a save becomes a snapped %log:waft_save want — gating both ways keeps this
             //      out of every recorded fixture.  (Decorated registries like Cluster mutate on
             //       decorate anyway, so this only matters for an opened-but-untouched Waft.)
-            if (content === null && H.Lies_role(w) === 'editor' && !H.Lies_nowriting(w, path)) H.Lies_waft_save(w, waft)
+            //  Never on a retake: a file that VANISHED under us is not ours to re-create.
+            if (content === null && !retake && H.Lies_role(w) === 'editor' && !H.Lies_nowriting(w, path)) H.Lies_waft_save(w, waft)
 
             w.bump_version()
-            console.log(`🗂 Waft:${path} opened (${waft.o({ Doc: 1 }).length} docs)`)
+            if (retake) {
+                delete good.c.retake
+                // the armed LE's Seem:origin points into the OLD tree — same road as any Waft mutation
+                H.vaguely_ponder('Lang/Lang', 'Lies_waft_mutated', { waft_key: path })
+                console.log(`👁 Waft:${path} retaken from disk (${waft.o({ Doc: 1 }).length} docs${content === null ? ', file gone → empty' : ''}${retake.active ? ', still active' : ''})`)
+            }
+            else console.log(`🗂 Waft:${path} opened (${waft.o({ Doc: 1 }).length} docs)`)
         }
 
         // ── GhostList — w:Lies's self-listing ghost index ─────────────────────

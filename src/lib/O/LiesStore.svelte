@@ -383,6 +383,7 @@
             const trailing = H.Lies_role(w) === 'editor' && !H.Lies_nowriting(w, path)
             w.c[throttle_key] = throttle(() => {
                 H.post_do(async () => {
+                    delete w.c[`waft_save_pending_${path}`]   // the burst is being written now (see below)
                     const { snap, errors, muted_log } = await H.enWaft(waft)
                     if (muted_log.length) {
                         // < surface muted_log in the UI once a per-mainkey review panel exists
@@ -409,7 +410,18 @@
                 }, { see: `waft_save_${path}` })
             }, trailing ? 3000 : 800, { notnow: trailing })
         }
+        // "a save of ours is on its way" — set here, cleared when the throttle fires its post_do.  The
+        //  watch desk's retake (Lies_changed_heard) reads it: a foreign write landing inside this window
+        //   is a collision the live tree is about to win anyway, so it keeps the tree and says so.
+        w.c[`waft_save_pending_${path}`] = Date.now()
         w.c[throttle_key]()
+    },
+    // Lies_waft_save_pending — is a save of this Waft throttled-but-unwritten, or written-but-unlanded?
+    Lies_waft_save_pending(w: TheC, path: string): boolean {
+        if (w.c[`waft_save_pending_${path}`]) return true
+        const store = w.o({ req: 'Store' })[0] as TheC | undefined
+        const snap_path = (this as House).Lies_waft_snap_path(path)
+        return !!store && (store.o({ req: 'LiesStore_write', path: snap_path }) as TheC[]).some(wr => !wr.sc.finished)
     },
 
 //#endregion
@@ -608,9 +620,11 @@
         const new_dige = await dig(text)
         const host    = await H.LiesStore_req(w)
 
-        // Content-equality gate — Good not yet provisioned means no gate
-        //  (Waft snaps and gen/ writes have no Good under req:Store).
-        const good      = host.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
+        // Content-equality gate — Good not yet provisioned means no gate (gen/ writes have no Good
+        //  under req:Store).  ANY Good type (2026-09-17, was Doc-only): a Waft's load-Good carries
+        //   /known too — stamped by a read (land_good) or by our own write coming round — so a save
+        //    that re-encodes exactly what is on disk (a retake, a no-op mutation) is not a write.
+        const good      = host.o({ Good: 1, path })[0] as TheC | undefined
         const base_dige = good?.o({ known: 1 })[0]?.sc.dige as string | undefined
         if (base_dige && base_dige === new_dige) return null
 

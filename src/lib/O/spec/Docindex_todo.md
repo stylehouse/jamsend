@@ -11,6 +11,64 @@
 
 ## 0. What to get on with next
 
+### ✅ 2026-09-17 night — THE OWED RUNG LANDED: a Waft TAKES DISK when it moves under a live tab
+
+The watch desk (below) already told a tab a Waft's file moved; until now the reaction was a note
+ (`good.c.disk_moved`) — the live tree was kept, never refreshed.  Built tonight:
+
+- `Lies_waft_retake(w, good, dige, why)` (Lies.svelte) — marks `good.c.retake`, drops `content` (the
+   documented re-read trigger), drops any stale finished read req at that path, wakes the tick.  The
+    persist loop's Waft-provisioning pass, on seeing `good.c.retake`, swaps the OLD tree for the freshly
+     re-read one **inside one `place()` call** — no roster gap, so Lang's `%Interest`/its armed `%LE`
+      SURVIVE the swap (`w.watch_c(waft, …, waft)` now owner-tags the watcher so `unwatch_owner` can tear
+       down the OLD tree's watcher specifically) — carries `sc.active` across, skips the from-nothing
+        initial save (a vanished file is not ours to re-create), and fires `Lies_waft_mutated` so an armed
+         LE re-pulls origin.
+- `Lies_changed_heard` (LiesLies.svelte) now calls the retake for a Waft, UNLESS a save of ours is
+   pending (`Lies_waft_save_pending`, new — checks the throttle-window flag `Lies_waft_save` now stamps,
+    plus any unfinished `LiesStore_write` at the snap path) — then the live tree is about to win the file
+     anyway, so it's kept and the collision logged — or the file vanished (noted only).
+- `LiesStore_write`'s content-equality gate widened from Doc-only to ANY `%Good` at the path (a Waft's
+   own no-op write is now recognised too — was silently treated as a real write before).
+
+**Gate: `Book:HohoRetake`** (`src/lib/O/test/Machinery.svelte`, `wormhole/Story/HohoRetake/`) — real disk
+ IO, no mocking.  One Prep (Story's Plan/Prep + `run.sc.total` is an INTERACTIVE authoring mechanism —
+  `total` mints at 1 and only a human's Resume-click in the editor extends it, so a multi-Prep multi-step
+   plan authored cold, as I first tried, silently only ever runs Prep 1; collapse a whole scenario into
+    one Prep, one step, same shape as `HohoLocate`'s single-Prep gate) does: open the fixture Waft, arm an
+     LE on it (`Lang_foreground kind:Trail`), then `e_Lies_retake_selftest` — wrapped in `expecting()` (off
+      the Atime mutex, so real `await`s are safe) — writes a REAL clean baseline through the tracked
+       `LiesStore_write` road (so `known` is a deterministic starting point regardless of what a previous
+        run's own foreign write left on disk — re-run safety was the second-hardest part of this gate),
+         then a REAL "foreign" write **raw, outside `req:Store`** (an ad-hoc req with `rw_op:'write'`
+          dispatched directly via `i_elvis_req(w,'Wormhole','rw_op',…)`, bypassing `Lies_waft_save`
+           entirely — the one way to make a real second-writer look real from inside a single tab), then
+            hands `Lies_changed_heard` the exact `{path,dige}` frame the watch desk would have pushed.
+             Swears two Assertions (`a-waft-that-moves`, `a-retake-never-disturbs`), declared, gaps 0.
+- **A real flake found and fixed, not papered over**: the retake's own read sometimes hung
+   INDEFINITELY (measured: instant to ~15s, once >79s with zero other activity logged — not a retry
+    storm, a genuinely dropped reply) because `Lies_waft_retake`'s `i_elvisto(w,'think')` is a WAKE
+     (Coding_guide.md's "wake ≠ hold" — good for one tick, not a keep-alive) and nothing else was left to
+      notice the read's own ttlilt go overdue and re-dispatch.  Fixed IN THE TEST (re-wake every 400ms
+       while polling for the land) — **this is a latent gap in the core retake path itself** worth a
+        proper look (the ttlilt-overdue self-heal inside `LiesStore_read` only runs when something calls
+         it again; nothing does, once the ambient heartbeat is off during an active Story run).
+- **Also found, then properly fixed**: EVERY Hoho Book that opens a real Doc embeds a raw wall-clock
+   `time,compile=…,all=…` line (`LangCompiling.svelte`) and a second one, `Change/compile,secs=…`
+    (Lang.svelte's strip display) — both real durations landing in `.sc`.  First instinct was a global
+     `story_matching` munging rule in code; wrong layer — the SHARED `Trope/Lies/NormalEntropy` profile
+      Waft (`EntropyProfile,Wref:…`, unioned into any Book that references it — Hovercraft.svelte
+       `entropy_rules`) already carries well-tuned `Entcase:Compile_time-compile` (`tol:band,factor:2.53,
+        slack:0.5`) and `Entcase:Change_compile-secs` (`tol:band,factor:0.52,slack:0.2`) for exactly these
+         two lines.  `HohoRetake` just hadn't referenced the profile.  Fix was one line:
+          `EntropyProfile,Wref:Trope/Lies/NormalEntropy` in the toc — green with `caveat:1` (a real
+           `tol:band` forgiveness, not a hidden munge — a genuine regression to multi-second compile
+            times would still redden).  `HohoSurprise` already references it; any new hand-authored
+             Hoho toc should too, from the start.
+
+**Left, small:** the `Coding_guide.md` wake-vs-hold gap above, if the owner wants it chased into
+ `LiesStore_read`/Story's own poll loop rather than papered over per-caller.
+
 ### ✅ 2026-09-17 — THE PUSH IS LIVE. The index Waft now announces itself.
 
 `digePlugin` broadcasts a relay control frame `docindex` (the moved Doc rows + `event_at`/`written_at`)

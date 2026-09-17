@@ -1,0 +1,5 @@
+Waft:Story/HohoRetake/Interestily
+  What:landing
+    Doc:Ghost/test/Story/Hoho/HohoAntecedents.g
+    Point,method:InterestLanding
+  What:foreign_marker

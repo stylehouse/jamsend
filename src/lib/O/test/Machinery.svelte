@@ -2,7 +2,7 @@
     import { _C, keyser, objectify, TheC, TheX } from "$lib/Stuff.svelte";
     import { Selection } from "$lib/Selection.svelte";
     import { WormholeNav, type House } from "$lib/O/Housing.svelte";
-    import { armap, depeel, Idento, nex, peel, sex } from "$lib/Common";
+    import { armap, depeel, dig, Idento, nex, peel, sex } from "$lib/Common";
     import { onMount } from "svelte";
     import MachReactivity from "./MachReactivity.svelte";
     import MachReqy from "./MachReqy.svelte";
@@ -2009,6 +2009,179 @@ The double-envelopment became the template for every subsequent battle of annihi
         }
     },
 
+//#endregion
+//#region HohoRetake
+    // the watch-desk's "take disk" rung (Docindex_todo §0, 2026-09-17 evening) — the gate for
+    //  Lies_waft_retake.  Fixture: Story/HohoRetake/Interestily is a real Waft on disk (a copy of
+    //   HohoSurprise's own fixture shape).  Prep 1 opens it, Prep 2 foregrounds it as a Trail (arms an
+    //    Interest + LE — the thing a retake must NOT disturb), Prep 3 fires the selftest.
+    //  THE FOREIGN WRITE, done for real: the selftest mints a raw Wormhole write OUTSIDE req:Store's own
+    //   bookkeeping (bypassing Lies_waft_save entirely, so this tab's own Good/known never learns of it —
+    //    exactly what a second process, a runner or the relay's own write, would look like) carrying a
+    //     snap this tab has never produced (an extra %What only the "foreign" writer put there), then
+    //      hands Lies_changed_heard the same {path,dige} frame the watch desk would have pushed.  All of
+    //       that real IO runs inside expecting() — OFF the Atime mutex, so a real multi-tick wait (the
+    //        write round-trip, then the persist loop's own re-read + place()) is a plain await, same as
+    //         HeistTesting's census.  It only STAMPS facts on RetakeGate; HohoRetake_witness (a plain
+    //          eternal do_fn, so it runs IN Atime) reads those facts and swears — expecting()'s own
+    //           comment is explicit that a detached leg must never swear directly.
+    Run_A_HohoRetake(this: House) {
+        const H = this
+        const lies_w = H.i({ A: 'Lies' }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'      }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate' }).i({ w: 'Pantheate' })
+        lies_w.doai({ req: 'witness', eternal: 1 })?.((req: TheC) => { H.HohoRetake_witness(lies_w); req.sc.ok = 1 })
+        console.log(`🟪 ${H.name} HohoRetake wired`)
+    },
+
+    async e_Lies_retake_selftest(this: House, _A: TheC, w: TheC, _e: TheC) {
+        const H         = this
+        const path      = 'Story/HohoRetake/Interestily'
+        const snap_path = H.Lies_waft_snap_path(path)
+        const gate      = w.oai({ RetakeGate: 1 })
+
+        // 60s ceiling: a Wormhole read round-trip measured as low as ~0.2s and, under repeated
+        //  back-to-back Book runs stressing the same relay, as high as ~15s with NO intervening
+        //   activity at all (a plain queueing wait, not a retry storm — nothing logs mid-wait) — real
+        //    disk/relay latency variance, not a logic fault.  Give it real headroom.
+        H.expecting(w, 'retake_selftest', 120, async () => {
+            // Prep 1's three i_elvisto lines fire back-to-back in the SAME dispatch loop — the Waft's
+            //  actual placement (a persist-loop tick) and Lang_foreground's LE-arm both land a beat or
+            //   two LATER.  Poll for the whole setup rather than judging it in this instant.
+            // Languinio lives under the SIBLING w:Lang, not w:Lies — reach across the same way
+            //  HohoWaftMap's dump worker reaches w:Lies from its own w.
+            const lang_w = H.o({ A: 'Lang' })[0]?.o({ w: 'Lang' })[0] as TheC | undefined
+            let good: TheC | undefined, was: TheC | undefined, languinio: TheC | undefined
+            let it_before: TheC | undefined, le_before: TheC | undefined
+            for (let t0 = Date.now(); Date.now() - t0 < 10_000;) {
+                good      = H.LiesStore_good_of(w, 'text/Waft', snap_path)
+                was       = w.o({ Waft: path })[0] as TheC | undefined
+                languinio = lang_w?.o({ Languinio: 1 })[0] as TheC | undefined
+                it_before = (languinio?.o({ Interest: 1 }) as TheC[] | undefined)?.find(i => i.sc.waft === path)
+                le_before = it_before?.c.LE as TheC | undefined
+                if (good && was && le_before) break
+                await new Promise(r => setTimeout(r, 100))
+            }
+            if (!good || !was) { gate.i({ setup_missing: 1 }); return }
+            if (it_before) gate.i({ interest_armed_before: 1 })
+            if (le_before) gate.i({ le_armed_before: 1 })
+
+            // STEP A — a REAL tracked write of the clean baseline (no marker), through the normal
+            //  LiesStore_write road.  This is what makes the whole selftest re-run-safe: req_Store's
+            //   Phase 1 stamps /known off ANY write, so after this `known` is GUARANTEED to reflect
+            //    "clean, no marker" — regardless of whatever a PREVIOUS run of this same Book left on
+            //     disk (its own foreign write, never cleaned up, would otherwise still be sitting there
+            //      as `known`'s only impression, and a naive "always add the marker" write could then
+            //       land byte-identical to a stale `known` and read as "our own save coming round").
+            const clean  = _C({ Waft: path })
+            const l0     = clean.i({ What: 'landing' })
+            l0.i({ Doc: 'Ghost/test/Story/Hoho/HohoAntecedents.g' })
+            l0.i({ Point: 1, method: 'InterestLanding' })
+            const { snap: clean_snap, errors: clean_errors } = await H.enWaft(clean)
+            if (clean_errors.length) { gate.i({ encode_errors: 1 }); return }
+            const creq = await H.LiesStore_write(w, snap_path, clean_snap)
+            for (let t0 = Date.now(); creq && !creq.sc.finished && Date.now() - t0 < 15_000;) await new Promise(r => setTimeout(r, 50))
+            if (creq && !creq.sc.finished) { gate.i({ baseline_reset_timed_out: 1 }); return }
+
+            // STEP B — the FOREIGN write: same shape plus one marker What, done RAW — outside
+            //  req:Store, so Lies_waft_save/LiesStore_write never touch this path and our own Good/known
+            //   stays exactly at the clean baseline Step A just stamped.  Guaranteed to differ from
+            //    `known` now, every run, regardless of history.
+            const foreign = _C({ Waft: path })
+            const l1      = foreign.i({ What: 'landing' })
+            l1.i({ Doc: 'Ghost/test/Story/Hoho/HohoAntecedents.g' })
+            l1.i({ Point: 1, method: 'InterestLanding' })
+            foreign.i({ What: 'foreign_marker' })
+            const { snap: foreign_snap, errors } = await H.enWaft(foreign)
+            if (errors.length) { gate.i({ encode_errors: 1 }); return }
+            const foreign_dige = await dig(foreign_snap)
+            const wreq = w.oai({ req: 'HohoRetakeForeignWrite' }, { rw_data: foreign_snap, rw_name: snap_path, rw_op: 'write' })
+            H.i_elvis_req(w, 'Wormhole', 'rw_op', { req: wreq })
+            for (let t0 = Date.now(); !wreq.sc.finished && Date.now() - t0 < 15_000;) await new Promise(r => setTimeout(r, 50))
+            if (!wreq.sc.finished) { gate.i({ foreign_write_timed_out: 1 }); return }
+            if ((wreq.sc as any).reply?.error) { gate.i({ foreign_write_error: 1 }); return }
+            gate.i({ foreign_write_landed: 1 })
+
+            // hand Lies exactly the {path,dige} control frame the watch desk would have pushed —
+            //  drives the real Lies_changed_heard → Lies_waft_retake road, not just the tail of it.
+            //  Lies_changed_heard's own post_do needs a beat to even arm good.c.retake, so wait for
+            //  ARM first, then for LAND (retake cleared again).
+            H.Lies_changed_heard(w, { path: snap_path, dige: foreign_dige })
+            for (let t0 = Date.now(); !good.c.retake && Date.now() - t0 < 5_000;) await new Promise(r => setTimeout(r, 50))
+            if (!good.c.retake) { gate.i({ retake_never_armed: 1 }); return }
+            // Coding_guide.md's "wake ≠ hold": Lies_waft_retake's own `i_elvisto(w,'think')` is a WAKE,
+            //  good for exactly one tick — it does not keep the belief loop coming back to notice the
+            //   read's ttlilt go overdue and re-dispatch a lost reply (measured: usually lands in
+            //    <1s, occasionally hangs indefinitely with zero other activity logged — a genuinely
+            //     dropped reply that nothing was left to re-poke).  Re-wake ourselves every 400ms while
+            //      waiting so a stuck read always gets another look, rather than hoping one wake was enough.
+            // PROBE (temporary, 2026-09-18 — the stall hunt): every 500ms, WHERE is it stuck?  Run's
+            //  cycle state, Run.todo, the LiesStore_read req, and Mundo's rw_queue wrap for this path.
+            //   No re-wake for the first 6s so a stall shows its shape; then re-wake.  Console only.
+            const Mundo = H.top_House() as any
+            const probe = (): string => {
+                const store = w.o({ req: 'Store' })[0] as TheC | undefined
+                const rd = store?.o({ req: 'LiesStore_read', rw_name: snap_path })[0] as TheC | undefined
+                const tt = rd?.o({ ttlilt: 1 })[0] as TheC | undefined
+                let wrap: TheC | undefined
+                for (const A of Mundo.o({ A: 1 }) as TheC[]) for (const mw of A.o({ w: 1 }) as TheC[]) {
+                    const rq = mw.o({ rw_queue: 1 })[0] as TheC | undefined
+                    const f = (rq?.o({ req: 1 }) as TheC[] | undefined)?.find(r => (r.c.for as TheC | undefined)?.sc.rw_name === snap_path && (r.c.for as TheC).sc.rw_op === 'read')
+                    if (f) wrap = f
+                }
+                const H2 = H as any
+                return `run:{todo:${H2.todo?.length} began:${H2.c.began_run ?? '-'} fin:${H2.c.finished_run ?? '-'} runtime:${H2.c.runtime ? 1 : 0}} `
+                    + `mundo:{todo:${Mundo.todo?.length} began:${Mundo.c.began_run ?? '-'} fin:${Mundo.c.finished_run ?? '-'}} `
+                    + `content:${good.c.content === undefined ? 'undef' : 'set'} `
+                    + `read:${rd ? `{sent:${rd.sc.req_sent ? 1 : 0} fin:${rd.sc.finished ? 1 : 0} seen:${rd.sc.seen ? 1 : 0} ttlilt:${tt ? (tt.sc.timed_out ? 'expired' : `until ${tt.sc.until_ts}`) : 'none'}}` : 'none'} `
+                    + `wrap:${wrap ? `{inflight:${wrap.c.inflight ? 1 : 0} reply:${wrap.c.reply ? 1 : 0} fin:${wrap.sc.finished ? 1 : 0} tries:${wrap.c.tries ?? 0}}` : 'none'}`
+            }
+            const probes: string[] = []
+            for (let t1 = Date.now(); good.c.retake && Date.now() - t1 < 60_000;) {
+                await new Promise(r => setTimeout(r, 500))
+                if (!good.c.retake) break
+                const el = Date.now() - t1
+                probes.push(`+${el}ms ${probe()}`)
+                if (el > 6_000) H.i_elvisto(w, 'think')
+            }
+            if (probes.length > 3) console.warn(`🔬 retake stall probe (${probes.length} samples):\n  ` + probes.join('\n  '))
+            if (good.c.retake) { gate.i({ retake_never_landed: 1 }); return }
+
+            // the final state converges to the SAME shape every run (clean-then-marker-added) —
+            //  reproducible for the fixture regardless of what a previous run's leftover looked like.
+            const now_waft = w.o({ Waft: path })[0] as TheC | undefined
+            if (now_waft?.o({ What: 'foreign_marker' })[0]) gate.i({ foreign_content_present: 1 })
+            else gate.i({ foreign_content_MISSING: 1 })
+            if (now_waft === was) gate.i({ tree_identity_unchanged: 1 })   // place() swapped IN PLACE — expected
+
+            const it_after = (lang_w?.o({ Languinio: 1 })[0]?.o({ Interest: 1 }) as TheC[] | undefined)?.find(i => i.sc.waft === path)
+            const le_after = it_after?.c.LE as TheC | undefined
+            if (it_before && it_after === it_before) gate.i({ interest_identity_preserved: 1 })
+            if (le_before && le_after === le_before) gate.i({ le_identity_preserved: 1 })
+
+            gate.bump_version(); w.bump_version()
+        })
+    },
+
+    // HohoRetake_witness — an ordinary eternal do_fn (IN Atime, unlike the selftest's expecting() leg
+    //  above) that reads RetakeGate once its facts are in and swears.  Idempotent: story_swear itself
+    //  dedups per run, and c.witnessed stops this from re-scanning every tick after.
+    HohoRetake_witness(this: House, w: TheC) {
+        const H    = this
+        const gate = w.o({ RetakeGate: 1 })[0] as TheC | undefined
+        if (!gate || gate.c.witnessed) return
+        // wait for the WHOLE selftest to finish (the expecting() req it rides), not merely for
+        //  `foreign_write_landed` to appear — that stamps early, well before the retake settles, and
+        //   witnessing off it alone would judge an incomplete picture and never look again.
+        const selftest = w.o({ req: 'retake_selftest' })[0] as TheC | undefined
+        if (!selftest?.sc.finished) return
+        gate.c.witnessed = 1
+        const waft = w.o({ Waft: 'Story/HohoRetake/Interestily' })[0] as TheC | undefined
+        if (gate.oa({ foreign_content_present: 1 }))
+            H.story_swear(w, 'a Waft that moves on disk under a live tab takes disk — the fresh tree swaps in through one place so the roster never gaps', waft)
+        if (gate.oa({ interest_identity_preserved: 1 }) && gate.oa({ le_identity_preserved: 1 }))
+            H.story_swear(w, 'a retake never disturbs the Interest or the armed LE watching the Waft it just replaced')
+    },
 //#endregion
 //#region do_A
 
