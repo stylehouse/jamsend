@@ -102,10 +102,33 @@ Written 2026-08-21 out of the eed831f1 debug (a daemon that served music but cou
          either the account snap also forgets bare hearings (privacy-consistent, but a folder device then
           re-offers a track heard yesterday after a reload, as a phone does today) or the stash keeps its
            own kind. Not decided here.
- 3. The other eight pillars, one by one, on the same road. `Swarm_restash_all` becomes one call.
-     The heard pillar shows the shape: a `Swarm_protocol('<pillar>')` kind (usually just the account
-      rules — most pillars need no extra law), `enWaft` → `{snap}`, decode + graft back, a legacy branch
-       for the old entry shape. Reaches carries the one other law (`omit` arrived/refused/dead states).
+ 3. ✅ **LANDED 2026-09-17 (working tree) — not eight pillars, ONE.** Seven of them (piers, izzes,
+     chainroots, roster, crew, reaches, pools) are copy loops over the identity subtree, so the road is
+      the subtree itself: **`Swarm_restash_account`** → `st.Swarm_account[prepub] = {snap, at}` via
+       `enWaft(ident, Swarm_protocol('stash'))`, content-addressed (same bytes ⇒ no write);
+        **`Swarm_account_rehydrate`** → decode + refuse a foreign prepub + root scalars onto `ident` +
+         `Swarm_graft` per child. The `'stash'` kind = the account rules + the two laws the loops kept in
+          code: skip a settled `%Reach` (arrived|refused|dead), skip `Mag:heard` (it rides its own pillar
+           under the reaction-only law). `Swarm_graft`'s ID table grew the rows the loops keyed by hand
+            (`ChainRoot:[pub] Reach:[to,of,for] Suggest:[id,by] SoundPooling:[pub] Pool:[name] Consent
+             Record:[id] Blotter stock:[pub] Owed owe Organ:[kind] Provisions`) — **a new durable kind under
+              the identity = one ID row; a new scalar = nothing.** Radio stays its own pillar (it lives on the
+               Radio world with the "unless a new friend was minted" exception — a decision record, not a
+                subtree copy).
+     **ADDITIVE this commit:** the seven still write and still rehydrate first; the account graft runs LAST
+      in the station ladder (`Swarm_station_up`) and in `SwarmReboot` beat 5. The Book proves both: grafted
+       on top of the seven it doubles nothing (#6 `idempotent` + `idem_heard_doubled` unchanged, tree
+        byte-identical to the fixture), and after a **second wipe the account text ALONE re-stands 8/8
+         facts** (crew+cert, pier+page, invite, root, pools in order, the standing reach only, the roster
+          body, both reactions) — sworn as #12 `the whole identity comes back from one text alone…`. Green
+           5/5, 10 declared assertions; SwarmDisk 7/7, SwarmChain 5/5, SwarmBody 23/23 after.
+     **NEXT (rung 3″, the owner's call after a few real boots):** delete the seven `Swarm_restash_*` /
+      `*_rehydrate` twins and their incremental writers (`Swarm_iz_stash`, `Swarm_pier_stash/unstash`,
+       `Swarm_chainroot_stash`, `Swarm_suggest_stash`, `Swarm_cave_unbond`'s direct `st.Swarm_piers` edit)
+        — each becomes a `Swarm_account_settle(ident, why)`; Phase 2's ledger print (Auto.svelte:533,
+         djb2 over `Swarm_izzes/piers/roots`) moves to the account text's dige. Watch first: does a stale
+          `%Owed/owe` or `%Organ` grafted back at boot misbehave? They ride the folder snap already, so the
+           folder road has been doing this — but rarely (§6.0: no disk read on a healthy boot).
  4. The trigger: the stash effect watches the identity subtree's dige instead of the hand-built
      object; `Heard_settle` and the like keep working but stop being load-bearing.
  5. The account snap is written from the same text (it nearly is already).

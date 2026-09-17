@@ -11,6 +11,22 @@
 
 ## 0. What to get on with next
 
+### ✅ 2026-09-17 — THE PUSH IS LIVE. The index Waft now announces itself.
+
+`digePlugin` broadcasts a relay control frame `docindex` (the moved Doc rows + `event_at`/`written_at`)
+ to every editor|hacker|player socket the moment it rewrites `wormhole/Docindex/toc.snap`; a code room
+  hears it via `Tribunal.g`'s `on_control_list` and `Lies_docindex_heard` re-issues any OPEN moved doc
+   through `Lies_source_write` (pull silently / surprise popover). Measured on the owner's box: touch →
+    inotify 6ms → index +433ms (400 of it the debounce) → heard +3ms; the owner live: *"responds in slightly
+     less than a second"*. Design + the three latent bugs it flushed (no spine mounted in BigWordland, the
+      hacker Run House reading as editor, the vite restart race that killed both relays) are in memory
+       `docindex-push-and-hacker-room-channel` + `vite-restart-race-closes-new-relay`.
+
+**Left, small:** the EDITOR proper still rides `pinned_stable/` and so does not hear the push until that
+ copy is re-taken from gen/N (the owner's re-pin). The 400ms debounce is the only tunable and is fine.
+  Whether the Docindex deserves a `What` in Waft:Everything, or a better name, is the owner's call.
+
+
 ### ✅ BUILT 2026-09-17 — THE WATCH DESK: a tab's fixation on the files it holds, pushed by the process that has inotify
 
 **Why now.** The dev server runs as uid 1000 since 2026-09-17 and its first boot died `ENOSPC` on a Story

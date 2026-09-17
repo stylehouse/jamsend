@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'd897ca9eb833093b~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'ae60680d84bb30c8~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -2276,6 +2276,9 @@ async Swarm_station_up(w, ident) {
     if (!w.c.pools_rehydrated && this.top_House().stashed) { w.c.pools_rehydrated = 1; this.Swarm_pools_rehydrate(w, ident) }
     // the hearts (eighth pillar): a wish pressed on a phone still stands after that phone reloads.
     if (!w.c.heard_rehydrated && this.top_House().stashed) { w.c.heard_rehydrated = 1; this.Swarm_heard_rehydrate(w, ident) }
+    // the whole identity as one text (the account pillar, Phase 5 rung 3): grafted LAST, on top of the seven,
+    //  so a shelf the loops above never knew comes back too — and nothing they stood is doubled.
+    if (!w.c.account_rehydrated && this.top_House().stashed) { w.c.account_rehydrated = 1; this.Swarm_account_rehydrate(w, ident) }
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     if (station && w.c.station_up) return station
     if (typeof this.Socket_real !== 'function') return null
@@ -3840,7 +3843,8 @@ Swarm_restash_all(ident, from, st) {
              reaches: this.Swarm_restash_reaches(ident, src, st),
              pools: this.Swarm_restash_pools(ident, src, st),
              radio: this.Swarm_restash_radio(ident, src, st),
-             heard: this.Swarm_restash_heard(ident, src, st) }
+             heard: this.Swarm_restash_heard(ident, src, st),
+             account: this.Swarm_restash_account(ident, src, st) }
 
 },
 // ── the roster is the FOURTH stash pillar (2026-08-31, the owner: "if I do a Link ceremony again,
@@ -4302,6 +4306,58 @@ Swarm_reaches_rehydrate(w, ident, st0) {
         n = n + 1
     }
     if (n) { console.log('🎣 reaches rehydrated — ' + n + ' standing booking(s) survive the reload') }
+    return n
+
+},
+// ── THE ACCOUNT PILLAR (2026-09-17, Persistence_todo Phase 5 rung 3) — the whole identity as ONE TEXT ──
+//  Seven of the pillars above (piers, izzes, chainroots, roster, crew, reaches, pools) are copy loops over
+//   the identity subtree, each knowing the fields its author knew.  This one is the subtree ITSELF:
+//    `enWaft(ident, Swarm_protocol('stash'))` — the same encoder and the same rules the folder's account
+//     snap rides, plus the two laws the loops kept in code (see the 'stash' kind) — and the rehydrate is
+//      decode + Swarm_graft, keyed by the identity table there.  A new durable kind under the identity
+//       needs one ID row and nothing else; a new scalar needs nothing.
+//  ADDITIVE for now: the seven still write and still rehydrate FIRST; this grafts on top, idempotently
+//   (SwarmReboot proves the ladder + this changes nothing, and that this ALONE rebuilds the identity
+//    after a wipe).  Once a few real boots have ridden it, the seven are deletable — that is the commit
+//     after this one, the owner's call.  Heard (its own law) and radio (not under the identity) stay.
+//  The text lands a few microtasks after the call (enWaft rides Travel, no IO); the count returns now.
+Swarm_restash_account(ident, from, st0) {
+    let st = this.Swarm_stash_of(ident, st0)
+    if (!st || !ident) { return 0 }
+    let src = from || ident
+    let me = String(ident.sc.prepub || '')
+    this.enWaft(src, { matching: this.Swarm_protocol('stash') }).then((out) => {
+        if (out.errors && out.errors.length) { console.log('🪪⚠ account restash refused — ' + out.errors.join('; ')); return }
+        if (!st.Swarm_account) { st.Swarm_account = {} }
+        let had = st.Swarm_account[me]
+        if (had && had.snap === out.snap) { return }            // content-addressed: same bytes, no write
+        st.Swarm_account[me] = { snap: out.snap, at: String(Date.now()) }
+    })
+    return 1
+},
+// Swarm_account_rehydrate — graft the stashed identity text onto the live identity.  The decoded root
+//  is the %Identity itself: its scalars land on `ident` (never the mainkey or prepub — the live one is
+//   the key-holder), its children graft by the identity table.  SYNC, stashed-gated like every sibling.
+Swarm_account_rehydrate(w, ident, st0) {
+    let st = st0 || this.top_House().stashed
+    let mine = st?.Swarm_account?.[ident?.sc?.prepub]
+    if (!mine || !mine.snap || !ident) { return 0 }
+    let got = this.decode_wh_lines(String(mine.snap))
+    if (!got.C) { console.log('🪪⚠ account rehydrate refused — ' + (got.errors ? got.errors.join('; ') : 'bad snap')); return 0 }
+    let root = got.C
+    if (Object.keys(root.sc)[0] !== 'Identity' || String(root.sc.prepub || '') !== String(ident.sc.prepub || '')) {
+        console.log('🪪⚠ account rehydrate REFUSED — the stashed text is not this identity (' + String(root.sc.prepub || Object.keys(root.sc)[0]) + ')')
+        return 0
+    }
+    let moved = 0
+    for (const k of Object.keys(root.sc)) {
+        if (k === 'Identity' || k === 'prepub') { continue }
+        if (String(ident.sc[k] ?? '') !== String(root.sc[k])) { ident.sc[k] = root.sc[k]; moved = moved + 1 }
+    }
+    let n = 0
+    for (const child of root.o()) { this.Swarm_graft(ident, child); n = n + 1 }
+    if (moved) { ident.bump() }
+    if (n) { console.log('🪪 account rehydrated — ' + n + ' shelf/shelves grafted from one text') }
     return n
 
 },
@@ -6014,6 +6070,16 @@ Swarm_protocol(kind) {
     if (kind === 'heard') {
         rules.push({ matching_any: [{ sc_has: { Card: 1 } }], unless_any: [{ sc_has: { take: 1 } }, { sc_has: { nay: 1 } }, { sc_has: { meh: 1 } }], means: { skip: 1 } })
     }
+    // kind 'stash' — the identity as the DEXIE STASH carries it (Phase 5 rung 3, Swarm_restash_account):
+    //  the account rules plus the two laws the hand-rolled pillars had kept in code.  A settled %Reach
+    //   (arrived|refused|dead) is history and must not be resurrected by its own stash (the reaches
+    //    pillar's rule, SwarmReboot #4); the heard Mag rides its OWN pillar under the 'heard' law above
+    //     (reaction-only), so it is skipped whole here rather than carried twice.  The %Radio choice is
+    //      not under the identity at all (Swarm_radio_stash) and stays its own pillar.
+    if (kind === 'stash') {
+        for (const stt of ['arrived', 'refused', 'dead']) { rules.push({ matching_any: [{ sc_has: { Reach: 1, state: stt } }], means: { skip: 1 } }) }
+        rules.push({ matching_any: [{ sc_has: { Mag: 'heard' } }], means: { skip: 1 } })
+    }
     return rules
 
 },
@@ -6085,7 +6151,13 @@ Swarm_graft(parent, node) {
                //  identity rows or every re-import TWINS every Card whose `mire` moved (Radio_circuit_todo
                //   §5, the persistence lens).  A Mag is keyed (name, pub) — the 2026-08-05 ruling; a page by
                //    its number; a Card by the pair that IS its identity.
-               Mag: ['pub'], Cloud: ['page'], Card: ['id', 'pub'] }
+               Mag: ['pub'], Cloud: ['page'], Card: ['id', 'pub'],
+               // the rest of the identity subtree (2026-09-17, the account pillar — Swarm_restash_account):
+               //  every row the seven hand-rolled pillars used to key by hand, keyed here once.  A kind
+               //   missing from this table falls back to whole-sc match, which twins the row the moment
+               //    one scalar moves — so a new durable kind under the identity belongs here.
+               ChainRoot: ['pub'], Reach: ['to', 'of', 'for'], Suggest: ['id', 'by'], SoundPooling: ['pub'], Pool: ['name'],
+               Consent: [], Record: ['id'], Blotter: [], stock: ['pub'], Owed: [], owe: [], Organ: ['kind'], Provisions: [] }
     let mk = Object.keys(node.sc)[0]
     let find = {}
     find[mk] = node.sc[mk]

@@ -4592,23 +4592,30 @@ async SwarmReboot_stash(w):
     // the heard pillar counts what its protocol KEEPS: the heart and the nay, never the bare hearing.  The
     //  text itself lands a few microtasks after the call (enWaft rides Travel) — the wipe beat reads it.
     if (r && +r.heard === 2) { row.two_reactions_stashed = 1 }
+    if (r && +r.account === 1) { row.account_stashed = 1 }
     let mates = w.c.st.Swarm_crews?.[w.c.reba.sc.prepub]?.mates || []
     if (mates.some((m) => m.grant && String(m.grant.to) === 'Crew')) { row.cert_stashed = 1 }
     this.SwarmReboot_note(w, row)
 
 // beat 4 — THE RELOAD: everything the C tree held is gone.  A real boot keeps only what Dexie carried —
 //  the keypair (thang_put) — and re-stands an EMPTY %Peering, which is exactly what a phone wakes to.
-async SwarmReboot_wipe(w):
-    w i reached:step_4
-    w.sc.now = 1751700020
-    let reba = w.c.reba
-    if (!reba) { return }
+// the wipe itself, shared by beat 4 and beat 5's second reboot: everything the C tree held under Reba
+//  that any pillar carries — the Peering's children, the crew, the roots, the pools, the heard Mag.
+SwarmReboot_clear(reba):
     let peering = this.Swarm_peering(reba)
     for (const child of peering.o()) { peering.drop(child) }
     for (const crew of reba.o({ Crew: 1 })) { reba.drop(crew) }
     for (const cr2 of reba.o({ ChainRoot: 1 })) { reba.drop(cr2) }
     for (const ps of reba.o({ SoundPooling: 1 })) { reba.drop(ps) }
     for (const hm of reba.o({ Mag: 'heard' })) { reba.drop(hm) }
+    return peering
+
+async SwarmReboot_wipe(w):
+    w i reached:step_4
+    w.sc.now = 1751700020
+    let reba = w.c.reba
+    if (!reba) { return }
+    let peering = this.SwarmReboot_clear(reba)
     let row = { wiped: 1 }
     if (!reba.o({ ChainRoot: 1 }).length) { row.roots_gone = 1 }
     if (!peering.o().length) { row.peering_bare = 1 }
@@ -4622,6 +4629,11 @@ async SwarmReboot_wipe(w):
     let hsnap = String(w.c.st?.Swarm_heards?.[reba.sc.prepub]?.snap || '')
     if (hsnap && /Card,id:trk-take,/.test(hsnap) && /Card,id:trk-nay,/.test(hsnap)) { row.reactions_in_the_stash_text = 1 }
     if (hsnap && !/trk-heard/.test(hsnap)) { row.the_bare_hearing_stayed_behind = 1 }
+    // …and the ACCOUNT text (rung 3): one snap of the whole identity under the stash law — the pier and the
+    //  crew by name, the settled reach (tune-omega) and the heard Mag (its own pillar) nowhere in it.
+    let asnap = String(w.c.st?.Swarm_account?.[reba.sc.prepub]?.snap || '')
+    if (asnap && /^\s*Identity:/.test(asnap) && /Pier,/.test(asnap) && /Crew\b/.test(asnap) && /ChainRoot,/.test(asnap) && /Pool,name:circulation/.test(asnap)) { row.account_text_carries_the_shelves = 1 }
+    if (asnap && !/tune-omega/.test(asnap) && !/Mag:heard/.test(asnap)) { row.account_text_obeys_the_laws = 1 }
     this.SwarmReboot_note(w, row)
 
 // beat 5 — THE REHYDRATE LADDER, the same three calls Swarm_station_up makes at boot, against the scratch
@@ -4641,6 +4653,7 @@ async SwarmReboot_back(w):
     this.Swarm_reaches_rehydrate(w, reba, w.c.st)
     this.Swarm_pools_rehydrate(w, reba, w.c.st)
     this.Swarm_heard_rehydrate(w, reba, w.c.st)
+    this.Swarm_account_rehydrate(w, reba, w.c.st)   // the account pillar, LAST — on top of the seven, as the station ladder runs it
     let peering = this.Swarm_peering(reba)
     let row = { back: 1 }
     let pier = peering.o({ Pier: 1, pub: String(w.c.matekeys.prepub) })[0]
@@ -4701,9 +4714,36 @@ async SwarmReboot_back(w):
     this.Swarm_reaches_rehydrate(w, reba, w.c.st)
     this.Swarm_pools_rehydrate(w, reba, w.c.st)
     this.Swarm_heard_rehydrate(w, reba, w.c.st)
+    this.Swarm_account_rehydrate(w, reba, w.c.st)
     if (this.Heard_cards(reba.o({ Mag: 'heard', pub: String(reba.sc.prepub) })[0]).length !== 2) { row.idem_heard_doubled = 1 }
     if (crew && crew.o({ mate: 1 }).length === 2 && this.Ra_pool_defs(reba, 0).filter((d) => d.name).length === 2 && peering.o({ Reach: 1 }).length === 1
         && peering.o({ Pier: 1 }).length === 1 && peering.o({ Idzeug: 1 }).length === 1 && reba.o({ ChainRoot: 1 }).length === 1) { row.idempotent = 1 }
+    // THE SECOND REBOOT — the account pillar ALONE (Phase 5 rung 3): wipe again, graft only the one text
+    //  (plus heard, its own pillar), and every fact the seven copy loops used to carry must be standing.
+    //   Bodies too: the roster pillar has an ASYNC leg (the Charter), and this needs none.
+    this.SwarmReboot_clear(reba)
+    let alone = { alone_ok: 0 }
+    if (!peering.o().length && !reba.o({ Crew: 1 }).length) { alone.cleared = 1 }
+    this.Swarm_account_rehydrate(w, reba, w.c.st)
+    this.Swarm_heard_rehydrate(w, reba, w.c.st)
+    let acrew = reba.o({ Crew: 1 })[0]
+    let amrow = acrew ? acrew.o({ mate: String(w.c.matekeys.prepub) })[0] : null
+    let apier = peering.o({ Pier: 1, pub: String(w.c.matekeys.prepub) })[0]
+    let apdefs = this.Ra_pool_defs(reba, 0).filter((d) => d.name)
+    let areach = peering.o({ Reach: 1 })
+    let facts = []
+    facts.push(acrew && acrew.o({ mate: 1 }).length === 2 && amrow && amrow.o({ Grant: 'Crew' })[0])
+    facts.push(apier && String(apier.sc.friendly) === 'Mate' && String(apier.o({ Peering: 1 })[0]?.sc?.pub || '') === String(w.c.matekeys.pub))
+    facts.push(peering.o({ Idzeug: 'reboot_1' })[0] && String(peering.o({ Idzeug: 'reboot_1' })[0].sc.to) === 'Music')
+    facts.push(reba.o({ ChainRoot: 1, pub: String(w.c.matekeys.pub) })[0])
+    facts.push(apdefs.length === 2 && apdefs[0].name === 'circulation' && apdefs[0].cap === 12 && apdefs[1].name === 'liked')
+    facts.push(areach.length === 1 && String(areach[0].sc.of) === 'tune-alpha' && String(areach[0].sc.state) === 'booked')
+    facts.push(peering.o({ Body: 1 }).length === 1 && String(peering.o({ Body: 1 })[0].sc.name || '') === 'Reba')
+    facts.push(this.Heard_cards(reba.o({ Mag: 'heard', pub: String(reba.sc.prepub) })[0]).length === 2)
+    let held = facts.filter((f) => !!f).length
+    alone.alone_facts = String(held) + '/' + String(facts.length)
+    if (held === facts.length) { alone.alone_ok = 1 } else { delete alone.alone_ok }
+    this.SwarmReboot_note(w, alone)
     this.SwarmReboot_note(w, row)
 
 // ── the witness ───────────────────────────────────────────────────────────────────────────────────
@@ -4738,6 +4778,11 @@ SwarmReboot_witness(w):
     if (+d.sc.reactions_in_the_stash_text === 1 && +b.sc.nay_back === 1) this.story_swear(w, 'a nay survives the reboot beside the heart — the stash carries every reaction as one snap under one rule so no reaction kind can be forgotten by a copy loop')
     // #11 THE ROUND TRIP IS THE GATE (Persistence_todo Phase 5 rung 1): encode → decode → graft → encode, same bytes.
     if (+b.sc.round_trip_byte_identical === 1) this.story_swear(w, 'an identity encoded under the account protocol then decoded and grafted onto a bare container encodes again to the same bytes — one serializer can be the stash and the folder snap at once')
+    // #12 ONE TEXT REBUILDS THE IDENTITY (Phase 5 rung 3): after a second wipe the account pillar alone re-stands
+    //  every fact the seven copy loops carried — and grafted on top of them it doubled nothing (#6 still holds).
+    let al = T.o({ alone_facts: 1 })[0]
+    if (al && +al.sc.alone_ok === 1 && +al.sc.cleared === 1 && +s.sc.account_stashed === 1 && +d.sc.account_text_carries_the_shelves === 1 && +d.sc.account_text_obeys_the_laws === 1)
+        this.story_swear(w, 'the whole identity comes back from one text alone — piers crew roots pools bookings and roster re-stand from the account snap under the stash law with no copy loop between the tree and the disk')
     // #6 THE LADDER IS IDEMPOTENT: boot runs it once but a re-entry must not double a row.
     //  ⚠ THE SENTENCE IS THE CONTRACT — do not reword it.  A declared %Assertion in this Book's toc
     //   carries it verbatim, so appending "or a wish" (tried 2026-09-04) turns the run red with a
