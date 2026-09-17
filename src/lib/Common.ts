@@ -95,8 +95,10 @@ function enu8(message) {
 
 // the crypto features of Idento
 export class IdentoCrypto {
-    public publicKey:ed.Bytes = $state()
-    public privateKey:ed.Bytes = $state()
+    // plain fields: this file is a .ts, so a rune here throws rune_outside_svelte at runtime (it was
+    //  legal when this class lived in Y.svelte.ts — the 2026-09-16 cull moved it); nothing reads them reactively
+    public publicKey:ed.Bytes
+    public privateKey:ed.Bytes
 
     async generateKeys(seed?: string | Uint8Array) {
         let privateKey: Uint8Array;

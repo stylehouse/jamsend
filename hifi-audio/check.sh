@@ -5,60 +5,70 @@
 #   sh check.sh --watch    # keep sampling
 #   sh check.sh 10         # 10s sample
 #
-# Reads three truths, no guessing:
-#   QUANT   — the driver's live buffer. Must be >= min-quantum. If a client has
-#             pulled it below, the floor conf isn't loaded → run setup.sh.
-#   ERR Δ   — xruns that happened DURING this sample (pw-top's ERR is cumulative,
-#             so a big static number is history; only a GROWING one is a stutter).
-#   hw      — what the soundcard is actually clocking (/proc/asound), not what
-#             PipeWire claims. Only readable while audio plays.
-# Exit 0 = healthy, 1 = something to look at. Scriptable.
+# 2026-09-17: the FIRST version of this gated "is it playing" on pw-top's batch
+#  table (state letter + column position). That table lied twice — showing
+#  QUANT=0/state idle while /proc/asound simultaneously showed a real, open,
+#  non-closed hw_params. So the primary truth now comes straight from the
+#  kernel (/proc/asound), which has been correct every single time:
+#   period_size — the ALSA driver's actual negotiated buffer, in frames. This IS
+#                 pipewire's "quantum" as seen by the hardware — no table to parse.
+#   status:RUNNING — the kernel's own word that samples are actively clocking out
+#                 right now (vs. open-but-paused).
+# pw-top's ERR is kept as a SECOND, best-effort opinion (still useful when it
+#  works), never the gate.
 SECS=5; WATCH=""
 for a in "$@"; do case "$a" in --watch) WATCH=1;; [0-9]*) SECS=$a;; esac; done
 
-# pw-top -b: fields 1-9 are fixed single tokens, so $1=state $3=QUANT $4=RATE $9=ERR, safe.
-#  ⚠ only a RUNNING (state R) row's QUANT/RATE mean anything — an idle (I) node
-#   genuinely reports 0/0, which is not a broken buffer, just nothing playing right now.
-sample() { pw-top -b -n 1 2>/dev/null | awk 'NR>1 && $2 ~ /^[0-9]+$/ {print $1, $2, $3, $4, $9, $NF}'; }
-
 once() {
   MINQ=$(pw-metadata -n settings 2>/dev/null | awk -F"'" '/clock.min-quantum/{print $4}')
-  S1=$(sample); sleep "$SECS"; S2=$(sample)
+  FORCEQ=$(pw-metadata -n settings 2>/dev/null | awk -F"'" '/clock.force-quantum/{print $4}')
   bad=0
+  found=""
 
-  # driver quantum vs floor — only meaningful while the node is actually RUNNING
-  ROW=$(echo "$S2" | awk '/alsa_output/ && $1=="R" {print; exit}')
-  if [ -z "$ROW" ]; then
-    echo "card     idle right now (nothing playing) — quantum/xrun readings below are meaningless; play something and re-run"
-  else
-    Q=$(echo "$ROW" | awk '{print $3}'); R=$(echo "$ROW" | awk '{print $4}')
-    printf 'card     QUANT=%s RATE=%s  (%.1f ms)\n' "$Q" "$R" "$(echo "$Q $R" | awk '{print $1/$2*1000}')"
-    if [ -n "$MINQ" ] && [ "$Q" -lt "$MINQ" ]; then
-      echo "!! quantum $Q is BELOW the floor $MINQ — floor conf not loaded. run setup.sh"; bad=1
-    elif [ "$Q" -lt 1024 ]; then
-      echo "!! quantum $Q — something pulled it down (pavucontrol meters? low-latency app?)"; bad=1
-    fi
-  fi
-
-  # xrun delta per node over the sample ($2=id $5=err $6=name — see sample() above)
-  grew=$(printf '%s\n%s\n' "$S1" "$S2" | awk '
-    { if ($2 in e1) { d=$5-e1[$2]; if (d>0) printf "  %-40s +%d\n", $6, d } else e1[$2]=$5 }')
-  if [ -n "$grew" ]; then
-    echo "!! xruns in the last ${SECS}s (these ARE the stutters):"; echo "$grew"; bad=1
-  else
-    echo "xruns    none in ${SECS}s"
-  fi
-
-  # hardware truth
   for hp in /proc/asound/card*/pcm*p/sub*/hw_params; do
-    [ -f "$hp" ] && ! grep -q closed "$hp" 2>/dev/null || continue
-    awk -F': ' '/^format|^rate/{printf "%s=%s ", $1, $2} END{print ""}' "$hp" | sed 's/^/hw       /'
+    [ -f "$hp" ] || continue
+    grep -q closed "$hp" 2>/dev/null && continue
+    found=1
+    dir=$(dirname "$hp")
+    fmt=$(awk -F': ' '/^format/{print $2}' "$hp")
+    rate=$(awk -F': ' '/^rate/{print $2; exit}' "$hp" | awk '{print $1}')
+    period=$(awk -F': ' '/^period_size/{print $2}' "$hp" | awk '{print $1}')
+    state=$(awk -F': ' '/^state/{print $2}' "$dir/status" 2>/dev/null)
+
+    ms=$(awk -v p="$period" -v r="$rate" 'BEGIN{ if (r>0) printf "%.1f", p/r*1000; else print "?" }')
+    printf 'hw       %s  state=%s  period=%s frames (%sms)\n' "$fmt @ ${rate}Hz" "${state:-?}" "$period" "$ms"
+
+    if [ "$state" != "RUNNING" ]; then
+      echo "!! PCM is open but not RUNNING ($state) — is it actually playing, or just paused?"; bad=1
+    elif [ -n "$period" ]; then
+      if [ -n "$FORCEQ" ] && [ "$FORCEQ" != "0" ] && [ "$period" -lt "$FORCEQ" ]; then
+        echo "!! period $period is BELOW the forced quantum $FORCEQ — force-quantum conf not loaded. run setup.sh"; bad=1
+      elif [ -n "$MINQ" ] && [ "$period" -lt "$MINQ" ]; then
+        echo "!! period $period is BELOW the floor $MINQ — quantum conf not loaded, or something is overriding it. run setup.sh"; bad=1
+      fi
+    fi
   done
+  [ -n "$found" ] || echo "card     idle right now (no open PCM) — play something and re-run"
+
+  # pw-top ERR — best-effort second opinion; label it as such since its own
+  #  table has been unreliable before. A real ERR climb here IS worth trusting;
+  #  a flat/blank read here is NOT proof of health on its own.
+  S1=$(pw-top -b -n 1 2>/dev/null | awk 'NR>1 && $2 ~ /^[0-9]+$/ {print $2, $9, $NF}')
+  sleep "$SECS"
+  S2=$(pw-top -b -n 1 2>/dev/null | awk 'NR>1 && $2 ~ /^[0-9]+$/ {print $2, $9, $NF}')
+  grew=$(printf '%s\n%s\n' "$S1" "$S2" | awk '
+    { if ($1 in e1) { d=$2-e1[$1]; if (d>0) printf "  %-40s +%d\n", $3, d } else e1[$1]=$2 }')
+  if [ -n "$grew" ]; then
+    echo "!! pw-top ERR climbed in the last ${SECS}s (best-effort — real if it says so):"; echo "$grew"; bad=1
+  else
+    echo "xruns    pw-top ERR did not climb in ${SECS}s (best-effort reading)"
+  fi
+
   return $bad
 }
 
 if [ -n "$WATCH" ]; then
-  while :; do echo "── $(date +%T)"; once; done
+  while :; do echo "── $(date +%T)"; once; sleep 1; done
 else
   once
 fi

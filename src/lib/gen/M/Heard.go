@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return 'b9873c8d5c70fc24~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return '160784e6bcf19855~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -206,6 +206,17 @@ Heard_mark(w, me, rec) {
 //   · Nay: bars the track from every future pool draw and evicts a pooled copy; NEVER deletes a heisted file.
 //   · Meh: written by the radio on an EARLY skip (humdinger only — a Book's skips are fixtures, not moods);
 //      the pool never draws it. A later ♥ outranks a meh; a nay ends a yay.
+// Heard_settle — a reaction is a change to the durable ledger, so it goes durable NOW through the ONE outcome
+//  seam (Swarm_account_settle: whole-ledger restash + the disk-mirror nudge).  Until 2026-09-17 no reaction called
+//   it: a ♥ or a 👎 reached the stash only when some pier/crew frame happened to settle later, and a Nay pressed
+//    before a reload was simply gone the next morning.  Live-self-guarded inside, so a Book's shelf no-ops.
+Heard_settle(w, me, why) {
+    let M = this.top_House ? this.top_House() : null
+    let live = (M && M.Swarm_live_self) ? M.Swarm_live_self() : null
+    if (!live || String(live.sc.prepub || '') !== String(me) || !M.Swarm_account_settle) { return 0 }
+    try { M.Swarm_account_settle(live, why) } catch (e) {}
+    return 1
+},
 Heard_nay(w, me, rec, by) {
     if (!w || !me || !rec || !rec.sc.id) { return 0 }
     let card = this.Heard_card(w, me, this.Heard_take_id(rec), this.Heard_take_pub(rec, by))
@@ -214,6 +225,7 @@ Heard_nay(w, me, rec, by) {
     card.sc.at = '' + this.Heard_now(w)
     this.Heard_strip(card, ['take', 'meh', 'unseen'])
     card.bump()
+    this.Heard_settle(w, me, 'heard_nay')
     return 1
 },
 Heard_meh(w, me, rec, by) {
@@ -224,6 +236,7 @@ Heard_meh(w, me, rec, by) {
     if (!card || card.sc.take || card.sc.nay) { return 0 }
     card.sc.meh = '1'
     card.bump()
+    this.Heard_settle(w, me, 'heard_meh')
     return 1
 },
 // Heard_barred_ids — {id:1} for every track the person said Nay or Meh to: the pool's exclusion set,
@@ -303,6 +316,7 @@ Heard_take(w, me, rec, by) {
     if (rec.sc.title && !card.sc.title) { card.sc.title = this.Radio_clean(rec.sc.title) }
     if (rec.sc.artist && !card.sc.artist) { card.sc.artist = this.Radio_clean(rec.sc.artist) }
     card.bump()
+    this.Heard_settle(w, me, 'heard_take')
     return 1
 
 },
@@ -566,6 +580,13 @@ Heard_gc(w, me, now) {
     if (n) { mag.bump() }
     return n
 
+},
+// Heard_landed_cap — how many landed takes the pool's `recent` compartment may see.  A compartment
+//  that could name three hundred tracks would only ever draw the same handful anyway.
+//  (Restored 2026-09-17: e42be0a0 dropped the def and kept the caller below — every steward press
+//   round on eed threw `Heard_landed_cap is not a function` for a night.)
+Heard_landed_cap() {
+    return 60
 },
 // Heard_landed_ids — MY LANDED TAKES, newest first: the pool's `recent` compartment input (the one pool
 //  source that CHOOSES nothing, because the choosing happened when you took the track).  This replaces

@@ -68,6 +68,15 @@ Next moves, in order:
 1. ~~**Step 0 experiment**~~ — DONE, positive (above).
 2. **One-ghost proof** — effectively DONE for the Story path via GhoghoDrone; still worth repeating on
     a `{N,M,S,V}` business-spine ghost (different load path — `Lies_ghost_set` early-return) to confirm.
+    ~~ANSWERED (2026-09-17):~~ NO — a live music page (eed, tab `eed831f1977c4e81`, on the :9091 dev
+     server) was running `Ghost/M/Pool.g`'s compiled `.go`. We recompiled `Pool.g` with one extra
+      comment line at the top (shifting every line number in `Pool.go` by one) at 12:47:02 and watched
+       the page's console for over 2 minutes: it kept logging the OLD line numbers (`Pool.go:162` /
+        `:2688`) and never took the new module. So the July GhoghoDrone proof holds for Story ghosts
+         only — a recompiled `Ghost/M` (and presumably `N`/`S`/`V`) `.go` does NOT hot-swap into a live
+          page; a tab reload is the only delivery for the business spine. Consequence: a broken
+           `Ghost/M` ghost on a live page stays broken until the human reloads it — this is what
+            happened overnight 2026-09-16→17 with a deleted `Heard_landed_cap`.
 3. Convert the spine to `Ghosts.svelte` + `ghost_manifest.ts` (design below) — now for editor-graph
     isolation + retiring the hand-kept list, NOT to make HMR work.
 4. Per-Book Story-ghost selection.

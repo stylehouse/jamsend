@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'c368062068753aad~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '53e61d835aa23b9e~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -4032,7 +4032,9 @@ Swarm_restash_heard(ident, from, st0) {
     let rows = []
     for (const pg of (mag ? mag.o({ Cloud: 1 }) : [])) {
         for (const card of pg.o({ Card: 1 })) {
-            if (!card.sc.take || !card.sc.id) { continue }
+            // every REACTION rides (2026-09-17): a Nay/Meh carries no `take` (Heard_nay strips it), so the
+            //  take-only filter dropped them on reload and the pool drew a Nay'd track again the next morning.
+            if (!card.sc.id || !(card.sc.take || card.sc.nay || card.sc.meh)) { continue }
             let e = {}
             for (const k of Object.keys(card.sc)) { if (k !== 'Card') { e[k] = String(card.sc[k]) } }
             rows.push(e)

@@ -2,6 +2,91 @@
 
 ## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night; the older §0s are §0.6–§0.8 below, intact)
 
+### 0.0 2026-09-17 — HOW THE NIGHT WENT (the one to read with coffee)
+
+**Short version: the split landed clean, three things were broken and are now fixed, and the one
+ measurement I promised you turned out to be a crash wearing silence — so step 3 still has no evidence.**
+
+1. **`Pool.g` exists and is real.** SoundPooling's policy, steward and fill machinery all live in one
+    file now, moved verbatim. Every SP Book is green: `MusuPoolPolicy` 5/5 · `MusuQuarter` · `MusuSmuggle`
+     · `MusuPoolRadio` 6/6 · `MusuPoolFill` 6/6 · `MusuPoolRandom` 5/5 · `MusuHeist` 22/22 caveat 0.
+      eed booted through it at 01:53 (`🏊 pools rehydrated` came from `Pool.go`).
+2. **Three casualties of the last two days' commits, found and fixed** (none were the split's):
+    - `Common.ts` carried two `$state()` fields out of `Y.svelte.ts` in the cull → `rune_outside_svelte`
+       on every `new Idento()` → every Book's identity mint red. Plain fields now. This was the whole
+        `MusuHeist`/`MusuPool*` red family.
+    - `e42be0a0` ("stuttering soundcard") deleted `Heard_landed_cap()` and kept its caller → **every
+       steward press round on eed threw, all night, from 01:56**. Restored (returns 60). ⚠ **eed is still
+        running the broken build — it needs a reload from you** to get the steward back.
+    - `wafts_everything.mjs` had 5 Points naming the deleted `Heist_wish` family → validator red. Swept.
+3. **The overnight "quiet agreement" read is void.** My collector only grepped for `policy differs`,
+    so 2,400 `press round failed` lines went past it unseen and I reported "quiet" for nine hours.
+     The lesson is already in memory (silence ≠ success; match the failure signatures too). Once eed
+      is reloaded the clock starts for real — and it only runs while someone listens.
+3b. **Midday: a Nay did not survive a reload.** `Swarm_restash_heard` stashed only cards with `take`
+    (it predates the 09-15 reactions); a Nay strips `take`, so both of your morning Nays evaporated
+     at the 12:43 reload and the pool could draw them again. Now any card carrying take|nay|meh rides
+      the stash. `SwarmReboot` 5/5 · `MusuPoolRadio` 6/6. The two you pressed are gone — press again.
+     Also midday: `Pool.g` was missing Ra.g's `sha256_hex` import (mine, from the split) so
+      `Ra_pool_resurrect` threw every pass and eed showed 3 records for 37 files; fixed, and after your
+       reload the pool recovered to 69 cards / 41 playable against a cap of 26 — the roll will trim
+        it one displacement per 10 min, by design.
+4. **`MusuHeard` 3/9 is the known one** — the fixture swears the old toggle law, the live run swears
+    your no-unlove ruling. Yours to re-swear; nothing broken.
+5. **Also gone:** the soft-Caper arc (`Heist_wish`…, %Lead, %Need, %Caperlet, CaperFace, MusuSoft/MusuBay).
+    Shuffle and Tree turned out to be deliberately gated, not dead — left alone.
+
+**Your call this morning:** (a) reload eed; (b) commit point — this is a big coherent diff;
+ (c) whether the tiny-serving-stash shape is ready to rule. Step 3 waits on (a) + listening hours.
+
+### 0.0 2026-09-17 night — MORNING BRIEF (read this one; the dated sections below it are the trail)
+
+**Destination, unchanged:** the dial chooses, the pool KEEPS what played, ♥ is the one control, and the
+ policy that decides the stash lives in ONE legible place a person can read and a Book can drive.
+
+**Where it stands tonight:**
+- **`Ghost/M/Pool.g` is that place now** (§0.2a "THE HOME EXISTS"): the pure island + the Quartermaster +
+   the pool-fill reach, moved verbatim out of Ra.g (5845→4240). Gated `MusuPoolPolicy` 5/5, `MusuQuarter`,
+    `MusuSmuggle`; **live-proven on eed's 01:53 reboot** (`🏊 pools rehydrated — 1 compartment survives`
+     came through Pool.go). You committed the first pass mid-stream ("slowas"); the machinery move is
+      in the working tree. The `Ra_` prefix on the moved verbs is history, renamed in one sweep at step 3.
+- **Step 2's "quiet agreement" clock restarted at 01:53** when eed reloaded (the console ring is 41
+   lines and resets on boot — every earlier differs record is gone). An overnight collector is keeping
+    `🏊` lines from eed to `scratchpad/eed_pool_overnight.log` (read-only console pulls, 10-min cadence,
+     hourly heartbeat). **Morning read: `grep -c 'policy differs' <that log>`** — 0 across a night of
+      real listening is the evidence step 3 wants; any hit is a shape to read before flipping anything.
+       ⚠ Overnight it sat at 2 facts / 0 differs from 02:00 on — `🏊 facts` only logs on a fingerprint
+        change, so with nobody listening the pool never moved: that is IDLE-quiet, not evidence. The
+         clock only runs while eed plays; count listening hours, not wall hours.
+- **The serving-without-consent finding is RULED, not a bug** (§0.2a FOUND): an un-asked body may hold
+   a tiny, eagerly-evicted serving stash; the shape (own compartment? size? eviction) is yours to
+    re-think now that Pool.g exists. Nothing built.
+- **The SP live Books are GREEN again** — `MusuPoolRadio` 6/6 · `MusuPoolFill` 6/6 · `MusuPoolRandom` 5/5
+   (were red at the crew/identity step for a day). One line: the cull moved `IdentoCrypto` from
+    `Y.svelte.ts` into `Common.ts` carrying two `$state()` class fields — legal there, a runtime
+     `rune_outside_svelte` throw in a plain `.ts`, so every `new Idento()` (`Clustation_mint`) died.
+      Plain fields now; nothing read them reactively. Same throw was `MusuHeist`'s red.
+- **%Caper's soft arc is GONE** (Heist_wish/ask/match/leads/condense, %Lead, %Need, %Caperlet, CaperFace,
+   MusuSoft+MusuBay Books + fixtures + Credence rows). `Heist_job` (the real per-pier %Caper) stands.
+    Shuffle and Tree were NOT dead — deliberately gated (humdinger-cut / show_diag); left alone.
+
+**What detonates if the next person doesn't know it:**
+1. A new `.g` is registered in ONE place: `src/lib/O/LiesLies.svelte` `CREDULER_GHOSTS` (the runner's
+    hand-kept include list). `wormhole/GhostList` is auto-noticed; `pinned_stable/` is editor bootstrap only.
+2. `scripts/wafts_everything.mjs` VALIDATES every `Point` against the ghost's defs — a delete or move
+    that skips it leaves the front door lying (the Caper rip-out did, for a day). Re-run after any of either.
+3. A stale `Credence` row for a Book whose fixtures are gone 404s the runner into a reload. Sweep it.
+4. Compiling an M-spine `.go` HMR-touches EVERY tab on :9091 — check `runners --live` for someone
+    else's active engagement before `ghost-compile`, and never reload eed.
+
+**Next moves, in order:**
+1. Read the overnight log (above). If quiet: **step 3** — `Ra_quarter` calls `Pool_policy(Pool_facts())`
+    for real, the compare goes, then the `Ra_`→`Pool_` rename sweep + fixtures re-sworn. Behaviour change:
+     wants your testing time, same as the VisualCrux flip.
+2. The tiny-serving-stash ruling (shape only; then it's a small build).
+3. `ProtoFsaNav` — a separate fork is designing it (Love_todo §0.0); its brief lands in its own session.
+4. Unchanged from 09-13: the crew (Cave) road walked live; the §9.9 rulings; the LinkDevice ambient path.
+
 ### 0.0 2026-09-13 morning — the pulse has a dog now; the glass shows the fill
 
 - **"I reloaded and the tally went to 0" was not loss.** `Ra_pool_resurrect` re-catalogues from disk in

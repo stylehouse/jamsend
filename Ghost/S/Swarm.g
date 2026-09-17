@@ -3899,7 +3899,9 @@ Swarm_restash_heard(ident, from, st0):
     let rows = []
     for (const pg of (mag ? mag.o({ Cloud: 1 }) : [])) {
         for (const card of pg.o({ Card: 1 })) {
-            if (!card.sc.take || !card.sc.id) { continue }
+            // every REACTION rides (2026-09-17): a Nay/Meh carries no `take` (Heard_nay strips it), so the
+            //  take-only filter dropped them on reload and the pool drew a Nay'd track again the next morning.
+            if (!card.sc.id || !(card.sc.take || card.sc.nay || card.sc.meh)) { continue }
             let e = {}
             for (const k of Object.keys(card.sc)) { if (k !== 'Card') { e[k] = String(card.sc[k]) } }
             rows.push(e)
