@@ -15,7 +15,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_SwarmTesting(): string { return 'dcfe89597f46ed41~g1' },
+    Ghostmeta_Ghost_Story_SwarmTesting(): string { return '7cdeff39df6b42a2~g1' },
 
 // SwarmTesting.g — né Swarmation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file.
@@ -2987,6 +2987,7 @@ async SwarmBody_drive(w, req) {
         if (n === 21) { await this.SwarmBody_reach_auth(w) }
         if (n === 22) { await this.SwarmBody_reach_doer(w) }
         if (n === 23) { await this.SwarmBody_reach_pump(w) }
+        if (n === 24) { await this.SwarmBody_reach_ferry(w) }
     }
     this.SwarmBody_witness(w)
     await this.SwarmBody_order(w)
@@ -3154,6 +3155,11 @@ SwarmBody_witness(w) {
     let pm = T.o({ pumped: 1 })[0]
     // #25 THE ONE PUMP (proving beat): self-throttling single entry — hygiene runs knob-off, the knob gates action only.
     if (pm && +pm.sc.sweeps_while_observing === 1 && +pm.sc.self_throttles === 1 && +pm.sc.knob_on_dispatches === 1) { this.story_swear(w, 'the reach pump is one self-throttling entry any driver may call — a second call inside its cadence no-ops — it sweeps stale receipts even while the settle knob leaves the ledger observing because the knob gates action never hygiene — and with the knob on the same entry dispatches the standing wants') }
+    let fy = T.o({ ferried: 1 })[0]
+    // #26 THE FERRY ASK IS A REACH (W2 proving beat): the Captain's four gates are the for:ferry doer — wrong serial no offer and
+    //  revoked refuse by name — a pier not yet live STAYS serving — a live bound ask arrives and seals once — the Cave books ONE
+    //   reach with a 45s deadline and a dead receipt re-books only by hand.
+    if (fy && +fy.sc.wrong_serial_refused === 1 && +fy.sc.revoked_refused === 1 && +fy.sc.late_seal_stays_serving === 1 && +fy.sc.live_arrives_and_seals === 1 && +fy.sc.no_secret_refuses_no_offer === 1 && +fy.sc.one_reach_with_deadline === 1 && +fy.sc.reask_books_afresh === 1) { this.story_swear(w, 'the ferry ask is one booked reach not a beacon — the Captain answers it with the four gates as its doer so a wrong serial a closed offer and a revoked device refuse by name — a pier not yet live stays serving — a live bound ask arrives and seals once — and a dead ask re-books only when a hand asks again') }
 
 },
 // beat 5 — REMINT-NOT-READ is SEEN (Statehome_todo debts: "a fork must be seen").  The sanctioned join
@@ -3869,6 +3875,82 @@ async SwarmBody_reach_pump(w) {
     if (p1 === 0 && swept_off === 1) { row.sweeps_while_observing = 1 }
     if (p2 === null) { row.self_throttles = 1 }
     if (p3 === 1) { row.knob_on_dispatches = 1 }
+    this.SwarmBody_note(w, row)
+
+},
+// beat 24 — W2: THE FERRY ASK IS A REACH, AND THE CAPTAIN'S VERDICT IS ITS DOER (Reach_todo §0 brief).
+//  Pure matter, no wire: a soul ceremony req with a serial + secret stood by hand, four Cave piers in four
+//   states, five for:ferry reaches served through Swarm_ferry_verdict via the real Swarm_reach_serve — so
+//    the tri-state lands as the three honest endings: wrong serial → refused,wrong_serial · no secret →
+//     refused,no_offer · revoked → refused,revoked · a pier not yet link-live → STAYS serving (not sealed
+//      yet is not no ceremony) · live+bound+secret → arrived, the pier stamped, on_seal fired once.
+//       And the Cave's side: Swarm_ferry_ask books exactly ONE reach with a 45s deadline, twice asked is
+//        still one; Swarm_ferry_reask drops a dead receipt and books afresh.
+async SwarmBody_reach_ferry(w) {
+    w.i({reached: "step_24"})
+    let top = this.top_House()
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    let ckeys = await this.Swarm_mint_keys('SwarmBody-Cap')
+    let cap = this.Swarm_identity(acct, ckeys, 'Cap')
+    // the Captain holds ONE ceremony: serial ser_24, a secret
+    let had_world = top.c.ferry_world
+    top.c.ferry_world = w
+    let soul = this.Swarm_ferry_role('soul', 1)
+    soul.sc.serial = 'ser_24'
+    soul.c.secret = 'sec_24'
+    let peering = this.Swarm_peering(cap)
+    let pier_of = (pub, live) => { let p = peering.oai({ Pier: 1, pub: pub }); p.c.up = peering; if (live) { p.sc.link = 1 } return p }
+    let live_p = pier_of('aaaa000000000001', 1)
+    let cold_p = pier_of('aaaa000000000002', 0)
+    let revk_p = pier_of('aaaa000000000003', 1)
+    revk_p.oai({ NotGrant: 'MyCave' })
+    let wrong_p = pier_of('aaaa000000000004', 1)
+    // five inbound asks, as Swarm_reach_heard would mint them: serving, by = the asking Cave
+    let ask = (to, of, by) => { let r = this.Swarm_reach_book(w, cap, { to: to, of: of, for: 'ferry' }); r.sc.by = by; r.sc.state = 'serving'; r.bump(); return r }
+    let r_live = ask('cap1', 'ser_24', 'aaaa000000000001')
+    let r_cold = ask('cap2', 'ser_24', 'aaaa000000000002')
+    let r_revk = ask('cap3', 'ser_24', 'aaaa000000000003')
+    let r_wrong = ask('cap4', 'ser_old', 'aaaa000000000004')
+    // on_seal is the live ceremony's async road (frames, phases) — count it, don't run it
+    let fired = 0
+    let on_seal = this.Swarm_ferry_on_seal
+    this.Swarm_ferry_on_seal = async (w2, id2, p2) => { fired = fired + 1 }
+    let served = this.Swarm_reach_serve(w, cap, (r) => this.Swarm_ferry_verdict(w, cap, r))
+    this.Swarm_ferry_on_seal = on_seal
+    let row = { ferried: 1 }
+    if (String(r_wrong.sc.state) === 'refused' && String(r_wrong.sc.why) === 'wrong_serial') { row.wrong_serial_refused = 1 }
+    if (String(r_revk.sc.state) === 'refused' && String(r_revk.sc.why) === 'revoked') { row.revoked_refused = 1 }
+    if (String(r_cold.sc.state) === 'serving') { row.late_seal_stays_serving = 1 }
+    if (String(r_live.sc.state) === 'arrived' && served === 1 && fired === 1 && String(live_p.c.ferry_want_serial) === 'ser_24') { row.live_arrives_and_seals = 1 }
+    // no secret at all → no_offer (the ceremony ended my side)
+    delete soul.c.secret
+    let r_none = ask('cap5', 'ser_24', 'aaaa000000000001')
+    let v = this.Swarm_ferry_verdict(w, cap, r_none)
+    if (v && v.refuse === 'no_offer') { row.no_secret_refuses_no_offer = 1 }
+    // THE CAVE'S SIDE — the ask is one booked reach with a deadline; asked twice is still one
+    let cave = this.Swarm_ferry_role('cave', 1)
+    cave.sc.phase = 'awaiting'
+    cave.sc.pub = String(cap.sc.prepub)
+    cave.sc.serial = 'ser_24'
+    let ekeys = await this.Swarm_mint_keys('SwarmBody-Eve')
+    let eve = this.Swarm_identity(acct, ekeys, 'Eve')
+    let a1 = this.Swarm_ferry_ask(w, eve, false)
+    let a2 = this.Swarm_ferry_ask(w, eve, false)
+    let asks = this.Swarm_peering(eve).o({ Reach: 1, for: 'ferry' })
+    if (a1 === 1 && a2 === 0 && asks.length === 1 && asks[0].c.deadline > Date.now() && String(asks[0].sc.to) === String(cap.sc.prepub)) { row.one_reach_with_deadline = 1 }
+    // a dead receipt + [try again] → dropped and booked afresh
+    asks[0].sc.state = 'dead'
+    asks[0].sc.why = 'nobody-answered'
+    asks[0].bump()
+    let a3 = this.Swarm_ferry_reask(w, eve)
+    let again = this.Swarm_peering(eve).o({ Reach: 1, for: 'ferry' })
+    if (a3 === 1 && again.length === 1 && String(again[0].sc.state) !== 'dead') { row.reask_books_afresh = 1 }
+    // leave the world as the earlier beats left it
+    delete w.c.reach_cadence
+    delete w.c.reach_pump_at
+    for (const r of this.Swarm_peering(eve).o({ Reach: 1 })) { this.Swarm_peering(eve).drop(r) }
+    w.drop(this.Swarm_ferry_host())
+    if (had_world) { top.c.ferry_world = had_world } else { delete top.c.ferry_world }
     this.SwarmBody_note(w, row)
 
 },

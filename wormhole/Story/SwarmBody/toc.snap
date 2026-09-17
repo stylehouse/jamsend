@@ -4,28 +4,28 @@ story:SwarmBody
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.186
-      sample=0.474,at=1788780023
-      sample=0.132,at=1788870905
-      sample=0.122,at=1788872823
-      sample=0.106,at=1788874584
-      sample=0.243,at=1788937448
-      sample=0.19,at=1788949445
+    TimeTotal:beliefs,avg=0.11
       sample=0.157,at=1789116232
       sample=0.134,at=1789119549
       sample=0.123,at=1789123283
       sample=0.175,at=1789620761
-    TimeTotal:step,avg=0.008
-      sample=0.021,at=1788780023
-      sample=0.006,at=1788870905
-      sample=0.005,at=1788872823
-      sample=0.005,at=1788874584
-      sample=0.011,at=1788937448
-      sample=0.008,at=1788949445
+      sample=0.123,at=1789625268
+      sample=0.077,at=1789625292
+      sample=0.064,at=1789625316
+      sample=0.071,at=1789625362
+      sample=0.103,at=1789625408
+      sample=0.074,at=1789625435
+    TimeTotal:step,avg=0.005
       sample=0.007,at=1789116232
       sample=0.006,at=1789119549
       sample=0.005,at=1789123283
       sample=0.008,at=1789620761
+      sample=0.005,at=1789625268
+      sample=0.003,at=1789625292
+      sample=0.003,at=1789625316
+      sample=0.003,at=1789625362
+      sample=0.004,at=1789625408
+      sample=0.003,at=1789625435
   step,dige:2b840e0ba238da72
   step=2,dige:40b3026ce7a2c652
     Assertion:a-body-row-is,sentence:a body row is keyed by its own body key not the soul — one soul wears many bodies so the durable per-body key is what a roster row IS
@@ -74,3 +74,5 @@ story:SwarmBody
     Assertion:the-doer-answers-in,sentence:the doer answers in the req machine's three postures — placed lands it and not-yet leaves it serving while provably-cannot refuses with a named why — a missing handler refuses no handler instead of auto-landing the lie — a throw is never terminal but leaves a loud rebuff — and the why crosses the wire to the booker while an ack without one stamps nothing
   step=23,dige:984912c364115f34
     Assertion:the-reach-pump-is,sentence:the reach pump is one self-throttling entry any driver may call — a second call inside its cadence no-ops — it sweeps stale receipts even while the settle knob leaves the ledger observing because the knob gates action never hygiene — and with the knob on the same entry dispatches the standing wants
+  step=24,dige:263aac120a8076f2
+    Assertion:the-ferry-ask-is,sentence:the ferry ask is one booked reach not a beacon — the Captain answers it with the four gates as its doer so a wrong serial a closed offer and a revoked device refuse by name — a pier not yet live stays serving — a live bound ask arrives and seals once — and a dead ask re-books only when a hand asks again

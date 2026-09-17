@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'ae60680d84bb30c8~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'd765ff61eaae2fa2~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -6885,6 +6885,14 @@ Swarm_reach_pump(w, ident) {
     if (w.c.reach_pump_at && (now - w.c.reach_pump_at) < cadence) { return null }
     w.c.reach_pump_at = now
     this.Swarm_reach_sweep_receipts(w, ident)
+    // THE for:ferry DOER rides the one pump (W2).  Station-gated so a driven world's serving rows stand as
+    //  intent, as every fixture expects; the verdict itself is Book-proven on pure matter (SwarmBody beat 24).
+    //   Other kinds pass through untouched (the doer answers 0 for anything not for:ferry — the pool's doer
+    //    does the same for anything not for:serve), then every terminal is reported to its booker once.
+    if (w.c.station_up) {
+        this.Swarm_reach_serve(w, ident, (r) => this.Swarm_ferry_verdict(w, ident, r))
+        this.Swarm_reach_report_terminals(w, ident)
+    }
     // THE LIVE DOER BINDING (SoundPooling_todo §0.5 / Reach_todo §0 "still owed"): the pool-fill
     //  serve+land tick rides the ONE pump — knob-gated with the settle (w.c.reach_on, default-off,
     //   the backpressure discipline) and M-SIDE (Ra_pool_fill_pump, Ghost/M/Ra.g), so the primitive
@@ -7037,6 +7045,12 @@ Swarm_reach_road(w, ident, frame, from) {
     if (!kin && /^[0-9a-f]{16}/.test(by)) {
         let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => same(String(p.o({ Peering: 1 })[0]?.sc?.pub || ''), by))
         if (pier && this.Swarm_pier_live(pier, 'Music')) { kin = true }
+        // a for:ferry ask rides the pier the link ceremony itself sealed (MyCave|MyCaptain) — the Cave is not
+        //  yet a rostered body of mine (that is what the ferry MAKES it), and it holds no Music grant (W2)
+        if (!kin && r.for === 'ferry') {
+            let lp = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => same(String(p.sc.pub || ''), by))
+            if (lp && this.Swarm_pier_linklive(lp)) { kin = true }
+        }
     }
     if (!kin) { console.log('⨳🫱⚠ a reach from an unrostered body was ignored (' + by.slice(0, 8) + ')'); return null }
     return this.Swarm_reach_heard(w, ident, frame)
@@ -8491,7 +8505,14 @@ Swarm_ferry_facts(w) {
     if (c && !c.sc.finished) {
         let ph = String(c.sc.phase || '')
         if (ph === 'offered') { f.offer = { from: String(c.sc.pub || ''), friendly: String(c.sc.name || ''), post: String(c.sc.post || ''), at: c.c.offer_at || 0 } }
-        if (ph === 'awaiting') { f.awaiting = { soul: String(c.sc.pub || ''), serial: String(c.sc.serial || ''), at: c.sc.at } }
+        if (ph === 'awaiting') {
+            f.awaiting = { soul: String(c.sc.pub || ''), serial: String(c.sc.serial || ''), at: c.sc.at }
+            // W2: the ask's own state rides along — the Cave's outbound for:ferry reach (booked|dispatched|
+            //  serving|arrived|refused,<why>|dead,nobody-answered), so the cell can say what is actually so
+            let me = this.Swarm_live_self ? this.Swarm_live_self() : null
+            let ar = me ? this.Swarm_peering(me)?.o({ Reach: 1, for: 'ferry', of: String(c.sc.serial || '') })[0] : null
+            if (ar) { f.awaiting.ask = { state: String(ar.sc.state || ''), why: String(ar.sc.why || '') } }
+        }
         if (ph === 'pending' && c.c.pending) { f.pending = c.c.pending }
         if (ph === 'ended') { f.ended = { by: String(c.sc.pub || ''), at: c.sc.at, why: String(c.sc.why || ''), role: 'cave' } }
     }
@@ -8805,23 +8826,96 @@ Swarm_ferry_ask(w, ident, force) {
     //    makes the 3s tick + 5s pulse fallback dedupe cleanly.  A `force` ask (first contact, or the instant the
     //     peer comes online) BYPASSES the throttle so the link LEAPS the moment both ends are present — the eager,
     //      "wants-to-happen" feel — instead of waiting out the idle cadence.
-    let nowt = Date.now()
-    // ABSOLUTE FLOOR that even `force` cannot cross (owner 2026-08-29: "it sends like 1000 of these on startup").
-    //  The Link cell re-grapples on every version bump, so a mounted LinkDevice's fire_ask(true) mount-pounce
-    //   re-fires in a tight remount loop; a forced ask that bypassed the throttle turned that into ~1000
-    //    ferry_want/second (each Swarm_deliver bumps → re-commission → remount → pounce again).  An 1100ms floor
-    //     BEFORE the force check caps the storm to <1/sec while still letting a genuine pounce jump the longer
-    //      idle cadence.  force buys eagerness, never a machine-gun.
-    let gap = acave.c.ask_at ? (nowt - acave.c.ask_at) : 1000000000
-    if (gap < 1100) { return 0 }
-    if (!force && gap < 2800) { return 0 }
-    acave.c.ask_at = nowt
-    let sent = 0
-    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
-        if (this.Swarm_deliver(w, ident, pier.sc.pub, { kind: 'ferry_want', serial: String(acave.sc.serial || ''), page: this.Swarm_page(ident) })) { sent = sent + 1 }
+    // W2 (2026-09-17, Reach_todo §0): THE ASK IS ONE BOOKED REACH, NOT A BEACON.  This used to broadcast a
+    //  `ferry_want` to every pier off a 3s tick + the 5s pulse behind an ask_at throttle (1100ms floor, 2800ms
+    //   cadence, `force` bypass) — the five-pump shape Reach_todo §1 diagnosed — and "nobody answered the
+    //    door" had no exit at all: the Cave sat at 'awaiting' for good.  Now: book `%Reach,to:<Captain>,
+    //     of:<serial>,for:ferry` ONCE (re-book is idempotent — the cell may keep calling this every 3s, it
+    //      costs an o()), arm a 45s deadline on `.c` (volatile — a reload re-books its own), set the pump's
+    //       cadence to the ceremony's 3s, and let the ONE pump dispatch/back off/settle.  The Captain's four-
+    //        gate verdict is the `for:ferry` doer (Swarm_ferry_verdict); the three honest endings land on the
+    //         Cave's own row: arrived · refused,<why> · dead,nobody-answered.  `force` now only means "pump now".
+    let soul = String(acave.sc.pub || '')
+    if (!soul) { return 0 }
+    let peering = this.Swarm_peering(ident)
+    if (!peering) { return 0 }
+    let serial = String(acave.sc.serial || '')
+    let had = peering.o({ Reach: 1, to: soul, of: serial, for: 'ferry' })[0]
+    let reach = this.Swarm_reach_book(w, ident, { to: soul, of: serial, for: 'ferry' })
+    if (!reach) { return 0 }
+    if (!reach.c.deadline && String(reach.sc.state || '') !== 'dead' && String(reach.sc.state || '') !== 'refused') { reach.c.deadline = Date.now() + 45000 }
+    if (w.c.reach_cadence == null) { w.c.reach_cadence = 3000 }
+    if (!had) { console.log('🦑 ferry: "I want linkage" booked as a Reach → ' + soul.slice(0, 8) + ' (serial ' + serial.slice(0, 8) + ', 45s)') }
+    if (force) { w.c.reach_pump_at = 0 }
+    this.Swarm_reach_pump(w, ident)
+    return had ? 0 : 1
+},
+// Swarm_ferry_reask — the Cave's [try again]: a refused|dead ferry reach is a receipt, not a claim; drop it
+//  and book afresh (a fresh 45s).  Nothing else re-books a settled reach — retry is a button (owner ruling).
+Swarm_ferry_reask(w, ident) {
+    let acave = this.Swarm_ferry_role('cave')
+    if (!acave || acave.sc.finished || acave.sc.phase !== 'awaiting') { return 0 }
+    if (!ident) { ident = this.Swarm_live_self ? this.Swarm_live_self() : null }
+    let peering = ident ? this.Swarm_peering(ident) : null
+    if (!peering) { return 0 }
+    for (const r of peering.o({ Reach: 1, for: 'ferry', of: String(acave.sc.serial || '') })) {
+        let st = String(r.sc.state || '')
+        if (st === 'refused' || st === 'dead') { peering.drop(r) }
     }
-    if (sent) { console.log('🦑 ferry: "I want linkage" → ' + sent + ' pier(s) — awaiting my soul') }
-    return sent
+    return this.Swarm_ferry_ask(w, ident, true)
+},
+// Swarm_ferry_verdict — THE for:ferry DOER (the Captain's side), tri-state per the doer contract.  The four
+//  gates that used to be a console line in the ferry_want handler, now the Reach's answer:
+//    · the serial isn't the ceremony I hold      → { refuse: 'wrong_serial' }   (I re-minted; ask is dead)
+//    · I hold no secret at all                   → { refuse: 'no_offer' }       (ended|cancelled my side)
+//    · the human REVOKED this Cave               → { refuse: 'revoked' }        (a %NotGrant tombstone)
+//    · the Cave's pier is not link-live YET      → 0                            (STAY serving — "not sealed yet
+//                                                                                is not no ceremony": the seal
+//                                                                                lands a beat after the first
+//                                                                                ask; the doer re-runs each pump)
+//    · live + bound + secret                     → stamp the pier, fire on_seal  → 1 (arrived: linkage is under way)
+//  PURE MATTER, no wire: a Book calls it on a hand-built reach + pier (SwarmBody beat 24); the pump calls it
+//   live.  Fire-and-forget on_seal — the doer runs SYNC under the hear funnel, never awaits.
+Swarm_ferry_verdict(w, ident, reach) {
+    if (!reach || String(reach.sc.for || '') !== 'ferry') { return 0 }
+    let by = String(reach.sc.by || '')
+    let same = (a, b) => a && b ? (a.startsWith(b) || b.startsWith(a) ? 1 : 0) : 0
+    let pier = by ? (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => same(String(p.sc.pub || ''), by)) : null
+    let wser = this.Swarm_ferry_serial()
+    let wask = String(reach.sc.of || '')
+    if (wser && wask && wser !== wask) { return { refuse: 'wrong_serial' } }
+    if (!this.Swarm_ferry_secret()) { return { refuse: 'no_offer' } }
+    if (pier && (pier.o({ NotGrant: 'MyCave' })[0] || pier.o({ NotGrant: 'MyCaptain' })[0])) { return { refuse: 'revoked' } }
+    if (!pier || !this.Swarm_pier_linklive(pier)) { return 0 }
+    let soul = this.Swarm_ferry_role('soul')
+    if (!(soul && soul.c.ferrying)) {
+        pier.c.ferry_want_at = Date.now()
+        pier.c.ferry_want_serial = wask
+        let p = this.Swarm_ferry_on_seal(w, ident, pier)
+        if (p && p.catch) { p.catch((er) => console.log('🦑⚠ ferry on_seal (reach) threw: ' + er)) }
+    }
+    return 1
+},
+// Swarm_reach_report_terminals — tell each booker its outcome, once per row (`.c.reported`), for every
+//  arrived|refused reach that is NOT my own booking.  Lifted out of Ra_pool_fill_pump (which still runs its
+//   own copy — idempotent by the same mark) so a for:ferry answer does not depend on the pool knob.
+Swarm_reach_report_terminals(w, ident) {
+    let peering = this.Swarm_peering(ident)
+    if (!peering) { return 0 }
+    let mypub = String((this.Swarm_body_key ? this.Swarm_body_key(ident) : null)?.pub || '')
+    let n = 0
+    for (const st of ['arrived', 'refused']) {
+        for (const reach of peering.o({ Reach: 1, state: st })) {
+            let by = String(reach.sc.by || '')
+            if (!by) { continue }
+            if (mypub && (mypub.startsWith(by) || by.startsWith(mypub))) { continue }
+            if (reach.c.reported) { continue }
+            reach.c.reported = 1
+            this.Swarm_reach_report(w, ident, reach)
+            n = n + 1
+        }
+    }
+    return n
 },
 // Swarm_ferry_cancelled — the Linkee's side of the teardown: the soul we were awaiting called the link off, so
 //  give up the "connecting…" wait and drop its durable twin (a reload must not rehydrate a dead ceremony).  Only

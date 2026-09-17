@@ -4,9 +4,7 @@ story:SwarmSpread
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.103
-      sample=0.056,at=1788603441
-      sample=0.063,at=1788603488
+    TimeTotal:beliefs,avg=0.107
       sample=0.107,at=1788870939
       sample=0.031,at=1788870979
       sample=0.059,at=1788871155
@@ -15,9 +13,9 @@ story:SwarmSpread
       sample=0.369,at=1789116479
       sample=0.091,at=1789118201
       sample=0.08,at=1789118804
-    TimeTotal:step,avg=0.02
-      sample=0.011,at=1788603441
-      sample=0.013,at=1788603488
+      sample=0.092,at=1789624622
+      sample=0.071,at=1789625491
+    TimeTotal:step,avg=0.021
       sample=0.021,at=1788870939
       sample=0.006,at=1788870979
       sample=0.012,at=1788871155
@@ -26,13 +24,15 @@ story:SwarmSpread
       sample=0.074,at=1789116479
       sample=0.018,at=1789118201
       sample=0.016,at=1789118804
+      sample=0.018,at=1789624622
+      sample=0.014,at=1789625491
   step,dige:04719603a51e3f2a
   step=2,dige:020dc4c31cfd085d
-    Assertion:a-blank-device-offers,sentence:a blank device offers itself as a body not a role — the adoption offer proves the device holds its own key and carries no Post so the device does not yet know it will be a Cave
+    Assertion:every-identity-is-born,sentence:every identity is born a crew of one — its key is a particle on /Crew not a runtime field — it wields its own key until a ledger says otherwise
   step=3,dige:b1fdb8c5aaed275a
-    Assertion:the-soul-seals-across,sentence:the soul seals across on a scan — the soul-holder seals its whole account to the blank device and the device unseals it and now holds the very same soul key so it is no longer blank but a body of that soul
-    Assertion:the-device-consents-to,sentence:the device consents to the role and the roster routes both — the box derives Cave from the proposed grant the phone takes Captain and each body answers at its own key-derived name — the first charter still verifies while carrying no seat column at all
+    Assertion:the-division-is-a,sentence:the division is a ledger — the Captain writes a row and a cert and the device takes the whole ledger — it is a Cave by its row — it holds the soul secret and still signs as itself
+    Assertion:the-roster-routes-both,sentence:the roster routes both bodies at their own names — the Charter verifies against the soul — and the two ledgers read byte for byte the same
   step=4,dige:34756ed9a836b4a6
-    Assertion:the-ceremony-fails-closed,sentence:the ceremony fails closed — a tampered seal a wrong nonce and a withheld consent each produce no body and the soul never lands on a device that flubbed the seal or that the human did not confirm
+    Assertion:the-ledger-fails-closed,sentence:the ledger fails closed — a stranger-signed ledger and a tampered one change nothing — a forged ejection riding a real ledger is dropped and the Cave stays crew
   step=5,dige:cca7c2d23e3a680d
-    Assertion:the-account-ferries-over,sentence:the account ferries over the sealed pier — once a MyCave pier stands the soul exports and seals its account data across to the device which unseals it with the fragment code and folds it into its own identity as a Cave keeping its own key while the soul key never crosses and a wrong code lands no account at all
+    Assertion:the-account-ferries-over,sentence:the account ferries over the sealed pier — once a MyCave pier stands the soul exports and seals its whole account with the fragment code — the device folds it into its own identity with the soul secret HELD not wielded — a wrong code lands nothing

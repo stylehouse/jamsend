@@ -30,6 +30,35 @@ This doc is the answer to that, and to Homethink §5's load-bearing question —
 
 ## 0. What to get on with next
 
+### ✅ W2 LANDED 2026-09-17 evening — the ferry ask is a Reach; Book-gated; live walk is the owner's
+
+Built exactly as the brief below says, in `Ghost/S/Swarm.g`:
+- **Cave:** `Swarm_ferry_ask` books ONE `%Reach,to:<Captain prepub>,of:<serial>,for:ferry` (idempotent — the
+   cell's 3s tick is now a cheap re-assert + pump nudge, not a wire beacon), 45s deadline on `.c`, pump cadence
+    3000. `Swarm_ferry_reask` = the [try again]: drops a refused|dead receipt, books afresh. `Swarm_ferry_facts`
+     carries `awaiting.ask {state, why}` and `LinkDevice.svelte`'s awaiting screen shows the three endings.
+- **Captain:** `Swarm_ferry_verdict` is the `for:ferry` doer — wrong_serial · no_offer · revoked refuse by
+   name; a not-yet-live pier STAYS serving ("not sealed yet is not no ceremony"); live+bound+secret stamps the
+    pier, fires `Swarm_ferry_on_seal` once, arrives. Served by the ONE pump (`Swarm_reach_pump`, station-gated)
+     with `Swarm_reach_report_terminals` (lifted from Pool's loop, idempotent by `.c.reported`).
+- **Road:** a `for:ferry` reach is admitted over the link-live (MyCave|MyCaptain) pier the ceremony sealed.
+- **Gate:** SwarmBody beat 24 (pure matter, on_seal counted not run), oath #26 declared+sworn; **24/24 green
+   ×2, 26/26 sworn, zero drift** on live da060. Regression series (InvFerry SwarmSpread SwarmStaple MusuPoolFill
+    SwarmReboot SwarmHelm SwarmPost) run on e747 — see the session's report.
+
+**Not deleted yet (W4, on purpose):** the `ferry_want` HEAR handler + `ferry_cancel` courtesy stay so an old
+ Cave on the wire (mixed fleet is the only rollout state) is still answered; the Cave's SEND side is the
+  Reach. Delete the handler, the ephemeral-lane cases (~1576/1609) and `Swarm_ferry_cancelled` once every
+   device is on this build. `LinkDevice`'s 3s tick can go the same day (the pump's own cadence covers it).
+
+**The owner's walk:** Captain (phone) mints; Cave (laptop) opens → "signing on … waiting" → the Captain
+ confirms → arrived. Then: Captain's tab CLOSED before confirming → the Cave's screen reads "nobody answered
+  in 45 seconds — is jamsend open on the Captain's device? [try again]". Then: Captain re-mints a NEW link while
+   the old Cave still asks → the old Cave reads "the Captain's device said no — this link is not the one it
+    holds now — reopen the newest QR".
+
+---
+
 ### ▶ W2 BRIEF — the ferry ask becomes a Reach (written 2026-09-17 00:40 for the morning; nothing built)
 
 **Roles, not devices (owner 2026-09-17):** the **Captain** holds the account and MINTS the invite (a QR on its

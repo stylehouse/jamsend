@@ -1,0 +1,292 @@
+Snap:H
+  H:SwarmBody,Run
+    A:SwarmBody
+      self,round=24	{"mung":["age"]}
+      w:SwarmBody,now=1751700000
+        self,round=24	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:4b6a63a01204bf0e,prepub:4b6a63a01204bf0e,friendly:Alice
+            Peering,name:4b6a63a01204bf0e,friendly:Alice
+              Body,pub:4b6a63a01204bf0efe6be0d9271c83542fa6776000e6664d99e3a7db574c2892,post:Captain,address:4b6a63a01204bf0e
+            Crew,soul:4b6a63a01204bf0efe6be0d9271c83542fa6776000e6664d99e3a7db574c2892
+              mate:4b6a63a01204bf0e,role:Captain,pub:4b6a63a01204bf0efe6be0d9271c83542fa6776000e6664d99e3a7db574c2892
+              Key,pub:4b6a63a01204bf0efe6be0d9271c83542fa6776000e6664d99e3a7db574c2892	{"mung":["secret"]}
+          Identity:a336c7172442dcab,prepub:a336c7172442dcab,friendly:Zoe
+            Peering,name:a336c7172442dcab,friendly:Zoe
+            Crew,soul:a336c7172442dcab6cf29f401ecb613e29066fa5c8334cacb7da72300089a8e5
+              mate:a336c7172442dcab,role:Captain,pub:a336c7172442dcab6cf29f401ecb613e29066fa5c8334cacb7da72300089a8e5
+              Key,pub:a336c7172442dcab6cf29f401ecb613e29066fa5c8334cacb7da72300089a8e5	{"mung":["secret"]}
+          Identity:rema_prepub_000,prepub:rema_prepub_000,friendly:Rema
+            Peering,name:rema_prepub_000,friendly:Rema
+              Body,pub:rema_old_body_pub,post:Captain,address:rema_prepub_000,name:OldSeat
+              Body,pub:rema_new_body_pub,caveat:remint
+            Crew,soul:rema_pub_00000000
+              mate:rema_prepub_000,role:Captain,pub:rema_pub_00000000
+              Key,pub:rema_pub_00000000	{"mung":["secret"]}
+          Identity:vera_prepub_000,prepub:vera_prepub_000,friendly:Vera
+            Peering,name:vera_prepub_000,friendly:Vera
+            Crew,soul:vera_pub_00000000
+              mate:vera_prepub_000,role:Captain,pub:vera_pub_00000000
+              Key,pub:vera_pub_00000000	{"mung":["secret"]}
+          Identity:hera_prepub_0000,prepub:hera_prepub_0000,friendly:Hera
+            Peering,name:hera_prepub_0000,friendly:Hera
+              Pier,pub:gwen_prepub_0000,friendly:Gwen
+                Peering,pub:gwen_prepub_0000_full_pub_00000
+                Grant:MyCave,by:hera_prepub_0000,for:gwen_prepub_0000
+              Pier,pub:xena_prepub_0000,friendly:Xena
+                Grant:MyCave,by:stranger_pub_000,for:xena_prepub_0000
+            Crew,soul:hera_prepub_0000_full_pub_00000
+              mate:hera_prepub_0000,role:Captain,pub:hera_prepub_0000_full_pub_00000
+              Key,pub:hera_prepub_0000_full_pub_00000	{"mung":["secret"]}
+          Identity:wsoul_prepub_000,prepub:wsoul_prepub_000,friendly:Wanda
+            Peering,name:wsoul_prepub_000,friendly:Wanda
+              Pier,pub:gril_prepub_0000,friendly:Gril
+                Peering,pub:gril_prepub_0000_full_pub_00000
+                Grant:MyCave,by:wsoul_prepub_000,for:wsoul_prepub_000_full_pub_00000
+              Pier,pub:wsoul_prepub_000,friendly:Wanda
+                Peering,pub:wsoul_prepub_000_full_pub_00000
+                Grant:MyCave,by:wsoul_prepub_000,for:wsoul_prepub_000_full_pub_00000
+            Crew,soul:wsoul_prepub_000_full_pub_00000
+              mate:wsoul_prepub_000,role:Captain,pub:wsoul_prepub_000_full_pub_00000
+              Key,pub:wsoul_prepub_000_full_pub_00000	{"mung":["secret"]}
+          Identity:cbec4cf20c6aaab3,prepub:cbec4cf20c6aaab3,friendly:Hana
+            Peering,name:cbec4cf20c6aaab3,friendly:Hana
+              Pier,pub:kavi_prepub_0000,friendly:Kavi
+                Peering,pub:kavi_prepub_0000_full_pub_00000
+                Grant:MyCave,by:cbec4cf20c6aaab3,for:kavi_prepub_0000
+              Body,pub:kavi_prepub_0000_full_pub_00000,post:Cave,name:Kavi
+              Body,pub:gapcap_body_pub_00,post:Captain,name:GapCap
+              Pier,pub:cbec4cf20c6aaab3,friendly:Hana,since:1751700000,link,post:Captain
+                Peering,name:cbec4cf20c6aaab3,friendly:Hana,pub:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72
+              Body,pub:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72,post:Captain,name:Hana
+            Crew,soul:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72
+              mate:cbec4cf20c6aaab3,role:Captain,pub:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72
+              Key,pub:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72	{"mung":["secret"]}
+            SocialGraph
+              Edge,a:cbec4cf20c6aaab3,b:cbec4cf20c6aaab3,at:1751700000
+          Identity:abbea59ac778557d,prepub:abbea59ac778557d,friendly:Rex
+            Peering,name:abbea59ac778557d,friendly:Rex
+              Body,pub:abbea59ac778557dd62cb4da7ad405cdaf33a49746d499510d5f08f13a0c4a41,post:Captain,address:abbea59ac778557d
+              Body,pub:cove_body_pub_00,post:Cave,address:abbea59ac778557d_1,name:Cove
+              Reach,to:Cave,of:track_xyz,for:serve,by:abbea59ac778557dd62cb4da7ad405cdaf33a49746d499510d5f08f13a0c4a41,state:booked,at:1751700000
+            Crew,soul:abbea59ac778557dd62cb4da7ad405cdaf33a49746d499510d5f08f13a0c4a41
+              mate:abbea59ac778557d,role:Captain,pub:abbea59ac778557dd62cb4da7ad405cdaf33a49746d499510d5f08f13a0c4a41
+              Key,pub:abbea59ac778557dd62cb4da7ad405cdaf33a49746d499510d5f08f13a0c4a41	{"mung":["secret"]}
+          Identity:322edbc2ef8a82f4,prepub:322edbc2ef8a82f4,friendly:Cove
+            Peering,name:322edbc2ef8a82f4,friendly:Cove
+            Crew,soul:322edbc2ef8a82f4e59b53155e03380db4d613dbc8b9f2be5d002c5d7f6911d9
+              mate:322edbc2ef8a82f4,role:Captain,pub:322edbc2ef8a82f4e59b53155e03380db4d613dbc8b9f2be5d002c5d7f6911d9
+              Key,pub:322edbc2ef8a82f4e59b53155e03380db4d613dbc8b9f2be5d002c5d7f6911d9	{"mung":["secret"]}
+          Identity:0eb2ad75b7c8de6e,prepub:0eb2ad75b7c8de6e,friendly:Rax
+            Peering,name:0eb2ad75b7c8de6e,friendly:Rax
+              Body,pub:cave_body_pub_11,post:Cave,address:0eb2ad75b7c8de6e_1,name:Caz
+              Reach,to:Cave,of:track_B,for:serve,by:0eb2ad75b7c8de6e176707e96a76c00cec9d630dad6a4918cee7098a0203755c,state:refused,at:1751700000
+            Crew,soul:0eb2ad75b7c8de6e176707e96a76c00cec9d630dad6a4918cee7098a0203755c
+              mate:0eb2ad75b7c8de6e,role:Captain,pub:0eb2ad75b7c8de6e176707e96a76c00cec9d630dad6a4918cee7098a0203755c
+              Key,pub:0eb2ad75b7c8de6e176707e96a76c00cec9d630dad6a4918cee7098a0203755c	{"mung":["secret"]}
+          Identity:127297b388063ae7,prepub:127297b388063ae7,friendly:Caz
+            Peering,name:127297b388063ae7,friendly:Caz
+              Reach,to:Cave,of:track_A,for:serve,by:0eb2ad75b7c8de6e176707e96a76c00cec9d630dad6a4918cee7098a0203755c,state:arrived,at:1751700000
+              Reach,to:Cave,of:track_B,for:serve,by:0eb2ad75b7c8de6e176707e96a76c00cec9d630dad6a4918cee7098a0203755c,state:refused,at:1751700000
+            Crew,soul:127297b388063ae7bcf9fdd092fc05a71f30966c31bf97b4d04864ba014d718e
+              mate:127297b388063ae7,role:Captain,pub:127297b388063ae7bcf9fdd092fc05a71f30966c31bf97b4d04864ba014d718e
+              Key,pub:127297b388063ae7bcf9fdd092fc05a71f30966c31bf97b4d04864ba014d718e	{"mung":["secret"]}
+          Identity:c183606e2694c76d,prepub:c183606e2694c76d,friendly:Tove
+            Peering,name:c183606e2694c76d,friendly:Tove
+              Body,pub:rex_body_pub_1200,post:Captain,address:c183606e2694c76d,name:Rexa
+              Reach,to:Cave,of:track_R,for:serve,by:rex_body_pub_1200,state:arrived,at:1751700000
+            Crew,soul:c183606e2694c76d27242f3f55bbefebe7e6a9e99fc52ce3b29a2b5e4de9635e
+              mate:c183606e2694c76d,role:Captain,pub:c183606e2694c76d27242f3f55bbefebe7e6a9e99fc52ce3b29a2b5e4de9635e
+              Key,pub:c183606e2694c76d27242f3f55bbefebe7e6a9e99fc52ce3b29a2b5e4de9635e	{"mung":["secret"]}
+          Identity:67cc6b436e35b282,prepub:67cc6b436e35b282,friendly:Krew
+            Peering,name:67cc6b436e35b282,friendly:Krew
+              Body,pub:kcave_body_pub_13,post:Cave,address:67cc6b436e35b282_1,name:Kave
+              Reach,to:Cave,of:t1,for:serve,by:67cc6b436e35b2823c9b47cd5bef506546d06760d107e8d8a40ec940d96c1c63,state:booked,at:1751700000
+              Reach,to:Cave,of:t2,for:serve,by:x,state:serving,at:1751700000
+              Reach,to:Cave,of:t3,for:serve,by:67cc6b436e35b2823c9b47cd5bef506546d06760d107e8d8a40ec940d96c1c63,state:refused,at:1751700000
+              Reach,to:Cave,of:t4,for:serve,by:67cc6b436e35b2823c9b47cd5bef506546d06760d107e8d8a40ec940d96c1c63,state:dead,at:1751700000
+            Crew,soul:67cc6b436e35b2823c9b47cd5bef506546d06760d107e8d8a40ec940d96c1c63
+              mate:67cc6b436e35b282,role:Captain,pub:67cc6b436e35b2823c9b47cd5bef506546d06760d107e8d8a40ec940d96c1c63
+              Key,pub:67cc6b436e35b2823c9b47cd5bef506546d06760d107e8d8a40ec940d96c1c63	{"mung":["secret"]}
+          Identity:27aca4b5a937f6be,prepub:27aca4b5a937f6be,friendly:Orin
+            Peering,name:27aca4b5a937f6be,friendly:Orin
+              Body,pub:27aca4b5a937f6be1ee6bf08cf6a8b246258922a9353ae11a0b4b56f9bd4f646,post:Captain,address:27aca4b5a937f6be
+                Organ,kind:pocket,tracks:220,tags:vio+train
+                Organ,kind:trove,tracks:38000,tags:all
+            Crew,soul:27aca4b5a937f6be1ee6bf08cf6a8b246258922a9353ae11a0b4b56f9bd4f646
+              mate:27aca4b5a937f6be,role:Captain,pub:27aca4b5a937f6be1ee6bf08cf6a8b246258922a9353ae11a0b4b56f9bd4f646
+              Key,pub:27aca4b5a937f6be1ee6bf08cf6a8b246258922a9353ae11a0b4b56f9bd4f646	{"mung":["secret"]}
+          Identity:45239b2d71128048,prepub:45239b2d71128048,friendly:Sage
+            Peering,name:45239b2d71128048,friendly:Sage
+              Body,pub:45239b2d7112804826bd27113f8aceb62c8c69332205370ce75668fc76d29f3f,post:Cave,address:45239b2d71128048
+                Organ,kind:trove,tracks:38000,tags:all
+            Crew,soul:45239b2d7112804826bd27113f8aceb62c8c69332205370ce75668fc76d29f3f
+              mate:45239b2d71128048,role:Captain,pub:45239b2d7112804826bd27113f8aceb62c8c69332205370ce75668fc76d29f3f
+              Key,pub:45239b2d7112804826bd27113f8aceb62c8c69332205370ce75668fc76d29f3f	{"mung":["secret"]}
+          Identity:0ea7c4d7ada3675b,prepub:0ea7c4d7ada3675b,friendly:Rue
+            Peering,name:0ea7c4d7ada3675b,friendly:Rue
+              Body,pub:45239b2d7112804826bd27113f8aceb62c8c69332205370ce75668fc76d29f3f,post:Cave,address:45239b2d71128048,name:Sage
+                Organ,kind:trove,tracks:38000,tags:all
+            Crew,soul:0ea7c4d7ada3675bf562d6e6c4259f84bc667a15418d536fb13cb0e71de2cc68
+              mate:0ea7c4d7ada3675b,role:Captain,pub:0ea7c4d7ada3675bf562d6e6c4259f84bc667a15418d536fb13cb0e71de2cc68
+              Key,pub:0ea7c4d7ada3675bf562d6e6c4259f84bc667a15418d536fb13cb0e71de2cc68	{"mung":["secret"]}
+          Identity:5c719773eb7eff19,prepub:5c719773eb7eff19,friendly:Cap
+            Peering,name:5c719773eb7eff19,friendly:Cap
+              Body,pub:capcave_pub_16,post:Cave,address:5c719773eb7eff19_1,name:Capa
+              Reach,to:Cave,of:c1,for:serve,by:5c719773eb7eff19c733c0ad0f13a02ac957f5b983853d68aa9f2bc2bfcc3181,state:booked,at:1751700000
+              Reach,to:Cave,of:c2,for:serve,by:5c719773eb7eff19c733c0ad0f13a02ac957f5b983853d68aa9f2bc2bfcc3181,state:booked,at:1751700000
+              Reach,to:Cave,of:c3,for:serve,by:5c719773eb7eff19c733c0ad0f13a02ac957f5b983853d68aa9f2bc2bfcc3181,state:booked,at:1751700000
+              Pier,pub:aaaa000000000001,link
+              Pier,pub:aaaa000000000002
+              Pier,pub:aaaa000000000003,link
+                NotGrant:MyCave
+              Pier,pub:aaaa000000000004,link
+              Reach,to:cap1,of:ser_24,for:ferry,by:aaaa000000000001,state:arrived,at:1751700000
+              Reach,to:cap2,of:ser_24,for:ferry,by:aaaa000000000002,state:serving,at:1751700000
+              Reach,to:cap3,of:ser_24,for:ferry,by:aaaa000000000003,state:refused,at:1751700000,why:revoked
+              Reach,to:cap4,of:ser_old,for:ferry,by:aaaa000000000004,state:refused,at:1751700000,why:wrong_serial
+              Reach,to:cap5,of:ser_24,for:ferry,by:aaaa000000000001,state:serving,at:1751700000
+            Crew,soul:5c719773eb7eff19c733c0ad0f13a02ac957f5b983853d68aa9f2bc2bfcc3181
+              mate:5c719773eb7eff19,role:Captain,pub:5c719773eb7eff19c733c0ad0f13a02ac957f5b983853d68aa9f2bc2bfcc3181
+              Key,pub:5c719773eb7eff19c733c0ad0f13a02ac957f5b983853d68aa9f2bc2bfcc3181	{"mung":["secret"]}
+          Identity:1b5b87bc7c9238d9,prepub:1b5b87bc7c9238d9,friendly:Swp
+            Peering,name:1b5b87bc7c9238d9,friendly:Swp
+              Body,pub:swpcave_pub_17,post:Cave,address:1b5b87bc7c9238d9_1,name:Swpa
+              Reach,to:Cave,of:fresh_r,for:serve,by:1b5b87bc7c9238d988eafcc6a865cdf84417d14afbba812697e4e80de57f259a,state:refused,at:1751700000
+            Crew,soul:1b5b87bc7c9238d988eafcc6a865cdf84417d14afbba812697e4e80de57f259a
+              mate:1b5b87bc7c9238d9,role:Captain,pub:1b5b87bc7c9238d988eafcc6a865cdf84417d14afbba812697e4e80de57f259a
+              Key,pub:1b5b87bc7c9238d988eafcc6a865cdf84417d14afbba812697e4e80de57f259a	{"mung":["secret"]}
+          Identity:5f84f04638a55413,prepub:5f84f04638a55413,friendly:Dex
+            Peering,name:5f84f04638a55413,friendly:Dex
+              Body,pub:dcave_pub_18,post:Cave,address:5f84f04638a55413_1,name:Dave
+              Reach,to:Cave,of:gone_track,for:serve,by:5f84f04638a554130704f651be37712b17eaae35848e5a1636d6c0c75062662e,state:dead,at:1751700000,why:nobody-answered
+              Reach,to:Cave,of:standing_track,for:serve,by:5f84f04638a554130704f651be37712b17eaae35848e5a1636d6c0c75062662e,state:booked,at:1751700000
+            Crew,soul:5f84f04638a554130704f651be37712b17eaae35848e5a1636d6c0c75062662e
+              mate:5f84f04638a55413,role:Captain,pub:5f84f04638a554130704f651be37712b17eaae35848e5a1636d6c0c75062662e
+              Key,pub:5f84f04638a554130704f651be37712b17eaae35848e5a1636d6c0c75062662e	{"mung":["secret"]}
+          Identity:b8b30f9b54f8ffe7,prepub:b8b30f9b54f8ffe7,friendly:Lex
+            Peering,name:b8b30f9b54f8ffe7,friendly:Lex
+              Body,pub:lcave_pub_19,post:Cave,address:b8b30f9b54f8ffe7_1,name:Lave
+              Reach,to:Cave,of:landed_x,for:serve,by:b8b30f9b54f8ffe7636c1c649c713feead99da623a64a1c1627ff3fa6c3cf13e,state:arrived,at:1751700000
+              Reach,to:Cave,of:upgrade_y,for:serve,by:b8b30f9b54f8ffe7636c1c649c713feead99da623a64a1c1627ff3fa6c3cf13e,state:arrived,at:1751700000
+              Reach,to:Cave,of:first_z,for:serve,by:b8b30f9b54f8ffe7636c1c649c713feead99da623a64a1c1627ff3fa6c3cf13e,state:refused,at:1751700000
+            Crew,soul:b8b30f9b54f8ffe7636c1c649c713feead99da623a64a1c1627ff3fa6c3cf13e
+              mate:b8b30f9b54f8ffe7,role:Captain,pub:b8b30f9b54f8ffe7636c1c649c713feead99da623a64a1c1627ff3fa6c3cf13e
+              Key,pub:b8b30f9b54f8ffe7636c1c649c713feead99da623a64a1c1627ff3fa6c3cf13e	{"mung":["secret"]}
+          Identity:6f378697693e8d39,prepub:6f378697693e8d39,friendly:Zed
+            Peering,name:6f378697693e8d39,friendly:Zed
+              Body,pub:zcave_pub_20,post:Cave,address:6f378697693e8d39_1,name:Zave
+              Reach,to:Cave,of:refused_z,for:serve,by:6f378697693e8d396c1f46c755bfbc4754a36a138cbc48fb465b3d526b416d20,state:refused,at:1751700000
+              Reach,to:Cave,of:dead_z,for:serve,by:6f378697693e8d396c1f46c755bfbc4754a36a138cbc48fb465b3d526b416d20,state:dead,at:1751700000
+              Reach,to:Cave,of:live_z,for:serve,by:6f378697693e8d396c1f46c755bfbc4754a36a138cbc48fb465b3d526b416d20,state:booked,at:1751700000
+            Crew,soul:6f378697693e8d396c1f46c755bfbc4754a36a138cbc48fb465b3d526b416d20
+              mate:6f378697693e8d39,role:Captain,pub:6f378697693e8d396c1f46c755bfbc4754a36a138cbc48fb465b3d526b416d20
+              Key,pub:6f378697693e8d396c1f46c755bfbc4754a36a138cbc48fb465b3d526b416d20	{"mung":["secret"]}
+          Identity:813b13953fcbb242,prepub:813b13953fcbb242,friendly:AuthAlice
+            Peering,name:813b13953fcbb242,friendly:AuthAlice
+              Pier,pub:590e5760c3991d0d
+                Peering,pub:590e5760c3991d0d8d91f9efd378248dca3aaa8a6253bd5cee9c8de38824ee69
+            Crew,soul:813b13953fcbb242528be432fa4d8f00bed5fa302b0df3974d4f879bd24e6b3c
+              mate:813b13953fcbb242,role:Captain,pub:813b13953fcbb242528be432fa4d8f00bed5fa302b0df3974d4f879bd24e6b3c
+              Key,pub:813b13953fcbb242528be432fa4d8f00bed5fa302b0df3974d4f879bd24e6b3c	{"mung":["secret"]}
+          Identity:426ba307bfc36df7,prepub:426ba307bfc36df7,friendly:AuthEve
+            Peering,name:426ba307bfc36df7,friendly:AuthEve
+            Crew,soul:426ba307bfc36df74c21d6a351a2676c5479eba0e7e93fea78edbff2d0d634ab
+              mate:426ba307bfc36df7,role:Captain,pub:426ba307bfc36df74c21d6a351a2676c5479eba0e7e93fea78edbff2d0d634ab
+              Key,pub:426ba307bfc36df74c21d6a351a2676c5479eba0e7e93fea78edbff2d0d634ab	{"mung":["secret"]}
+          Identity:590e5760c3991d0d,prepub:590e5760c3991d0d,friendly:AuthBob
+            Peering,name:590e5760c3991d0d,friendly:AuthBob
+            Crew,soul:590e5760c3991d0d8d91f9efd378248dca3aaa8a6253bd5cee9c8de38824ee69
+              mate:590e5760c3991d0d,role:Captain,pub:590e5760c3991d0d8d91f9efd378248dca3aaa8a6253bd5cee9c8de38824ee69
+              Key,pub:590e5760c3991d0d8d91f9efd378248dca3aaa8a6253bd5cee9c8de38824ee69	{"mung":["secret"]}
+          Identity:8da5fc731cf8c3db,prepub:8da5fc731cf8c3db,friendly:Serl
+            Peering,name:8da5fc731cf8c3db,friendly:Serl
+              Reach,to:Cave,of:s1,for:serve,by:x,state:refused,at:1751700000,why:no_handler
+              Reach,to:Cave,of:s4,for:serve,by:x,state:arrived,at:1751700000
+              Reach,to:Cave,of:s2,for:serve,by:x,state:refused,at:1751700000,why:shelf_full
+              Reach,to:Cave,of:s3,for:serve,by:x,state:serving,at:1751700000
+              Reach,to:Cave,of:w1,for:serve,by:8da5fc731cf8c3dbca13cea9f16fd414897ae9256bbc7d90d515c78a58116eff,state:refused,at:1751700000,why:no_handler
+              Reach,to:Cave,of:w2,for:serve,by:8da5fc731cf8c3dbca13cea9f16fd414897ae9256bbc7d90d515c78a58116eff,state:refused,at:1751700000
+            Crew,soul:8da5fc731cf8c3dbca13cea9f16fd414897ae9256bbc7d90d515c78a58116eff
+              mate:8da5fc731cf8c3db,role:Captain,pub:8da5fc731cf8c3dbca13cea9f16fd414897ae9256bbc7d90d515c78a58116eff
+              Key,pub:8da5fc731cf8c3dbca13cea9f16fd414897ae9256bbc7d90d515c78a58116eff	{"mung":["secret"]}
+            rebuff:reach_doer_threw,say:serve:s3 boom
+          Identity:76e99794349b7b59,prepub:76e99794349b7b59,friendly:Pum
+            Peering,name:76e99794349b7b59,friendly:Pum
+              Body,pub:pumcave_pub_23,post:Cave,address:76e99794349b7b59_1,name:Puma
+              Reach,to:Cave,of:live_p,for:serve,by:76e99794349b7b595b2edee97186414d56acbf8ce63ce1a5ce953df0f0b32179,state:booked,at:1751700000
+            Crew,soul:76e99794349b7b595b2edee97186414d56acbf8ce63ce1a5ce953df0f0b32179
+              mate:76e99794349b7b59,role:Captain,pub:76e99794349b7b595b2edee97186414d56acbf8ce63ce1a5ce953df0f0b32179
+              Key,pub:76e99794349b7b595b2edee97186414d56acbf8ce63ce1a5ce953df0f0b32179	{"mung":["secret"]}
+          Identity:4ab1d0d36bc1f801,prepub:4ab1d0d36bc1f801,friendly:Eve
+            Peering,name:4ab1d0d36bc1f801,friendly:Eve
+            Crew,soul:4ab1d0d36bc1f801ad706cfb44bf93380de4b08e3f995503a38feae11be9c781
+              mate:4ab1d0d36bc1f801,role:Captain,pub:4ab1d0d36bc1f801ad706cfb44bf93380de4b08e3f995503a38feae11be9c781
+              Key,pub:4ab1d0d36bc1f801ad706cfb44bf93380de4b08e3f995503a38feae11be9c781	{"mung":["secret"]}
+        testing
+          stood,keyed_by_bodykey,not_soul_keyed,bodykey_durable,per_soul_bodykey,mine_is_computed,no_self_flag
+          friended,absorbed:1,bob_mine_is_bob,bob_mine_ownkey,no_self_on_pier,no_self_at_source
+          subnetted,primary_is_bare,suffix_ascends,empty_null
+          reminted,caveat_stands,old_seat_kept,virgin_clean,no_caveat_on_virgin
+          owed,deduped,at_pinned,paid_gone,capped_loud,overflow_survives
+          familied,captain_sees_cave,cave_page_named,husk_is_me,husk_keeps_my_name,no_second_member,foreign_sign_ignored
+          healed,founding_stamp_stands,self_husk_pier,heal_ran,own_row_seated,member_from_grant,caveat_retired,junk_retired,gap_captain_survives,ghost_dropped,no_charter_minted,settled_idempotent
+          replicated,roster_rode,sibling_sees_captain,union_grows_only,relic_stayed_home,stamp_stayed_home
+          reached,booked_stands,addr_resolves,offline_stands,idempotent,heard_serving,doer_gates,served_arrived,graduated
+          acked,knob_off_observes,knob_on_settles,round_trip,refused_stands
+          roaded,kin_admitted,stranger_refused,report_resolves
+          crewed,tallies_total,tallies_states,entry_shape
+          organed,pocket_stood,trove_stood,idempotent_updated,read_by_kind
+          organ_wired,wire_shape,sibling_organ_seen,stray_skipped
+          capped,under_cap_booked,over_cap_refused,rebook_honoured
+          swept,stale_swept,fresh_survives
+          deaded,deadline_dies,dead_at_pinned,no_deadline_stands
+          latched,landed_survives_refusal,refusal_upgrades_to_landed,first_terminal_wins
+          zombied,refused_guarded,dead_guarded,booked_dispatches,settle_skips_terminals
+          authed,own_soul_admitted,no_voucher_rejected,tampered_rejected,stranger_rejected,sealed_friend_admitted
+          doered,no_handler_refuses,refusal_named,throw_not_terminal_but_loud,controls_hold,why_crosses_guarded
+          pumped,sweeps_while_observing,self_throttles,knob_on_dispatches
+          ferried,wrong_serial_refused,revoked_refused,late_seal_stays_serving,live_arrives_and_seals,no_secret_refuses_no_offer,one_reach_with_deadline,reask_books_afresh
+        reached:step_3
+        Account,of:Bob
+          Identity:bob_prepub_000,prepub:bob_prepub_000,friendly:Bob
+            Peering,name:bob_prepub_000,friendly:Bob
+              Body,pub:bob_pub_00000000,post:Captain,address:bob_prepub_000
+              Pier,prepub:4b6a63a01204bf0e,pub:4b6a63a01204bf0efe6be0d9271c83542fa6776000e6664d99e3a7db574c2892
+                Body,pub:4b6a63a01204bf0efe6be0d9271c83542fa6776000e6664d99e3a7db574c2892,post:Captain,address:4b6a63a01204bf0e
+                Owed,dropped
+            Crew,soul:bob_pub_00000000
+              mate:bob_prepub_000,role:Captain,pub:bob_pub_00000000
+              Key,pub:bob_pub_00000000	{"mung":["secret"]}
+        reached:step_4
+        reached:step_5
+        reached:step_6
+        reached:step_7
+        reached:step_8
+        reached:step_9
+        Account,of:HanaTwin
+          Identity:cbec4cf20c6aaab3,prepub:cbec4cf20c6aaab3,friendly:Hana
+            Peering,name:cbec4cf20c6aaab3,friendly:Hana
+              Body,pub:kavi_prepub_0000_full_pub_00000,post:Cave,name:Kavi
+              Body,pub:gapcap_body_pub_00,post:Captain,name:GapCap
+              Body,pub:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72,post:Captain,name:Hana
+            Crew,soul:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72
+              mate:cbec4cf20c6aaab3,role:Captain,pub:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72
+              Key,pub:cbec4cf20c6aaab3c9cb46f09f5a0f6730cddd96bd95b3b20c9d53bda6132b72	{"mung":["secret"]}
+        reached:step_10
+        reached:step_11
+        reached:step_12
+        reached:step_13
+        reached:step_14
+        reached:step_15
+        reached:step_16
+        reached:step_17
+        reached:step_18
+        reached:step_19
+        reached:step_20
+        reached:step_21
+        reached:step_22
+        reached:step_23
+        reached:step_24

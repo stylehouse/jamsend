@@ -445,7 +445,8 @@
     //    only mounted while Swarm_link_active — and the ghost throttles to ~3s so the ~5s pulse fallback can't double
     //     it up.  Fires once immediately on mount so the first ask is snappy, then every 3s.  If we lose the other
     //      end we just keep asking (no giveup); the presence dot shows them offline and it re-lands when they return.
-    // fire one "I want linkage" ask; force=true bypasses the ghost's ~3s throttle for eager first-contact / re-lock.
+    // W2 (2026-09-17): Swarm_ferry_ask now BOOKS ONE %Reach (idempotent) and pumps it; this 3s tick is just a
+    //  cheap re-assert + pump nudge, no longer a wire beacon.  force=true only means "pump now".
     function fire_ask(force: boolean) {
         // the ghost self-guards on the cave req's 'awaiting' phase — no pre-check needed here.
         try { H?.Swarm_ferry_ask?.(world(), self, force) } catch {}
@@ -667,7 +668,18 @@
              "✉ MyCave redeeming" row in the Door with an honest, reassuring wait. -->
         <div class="ld-face">
             <div class="ld-cap-big">🏴 signing on with <b>{short(awaiting.soul) || 'your other device'}</b> {@render live_dot(presence)}</div>
-            <p class="ld-deal">waiting for the Captain to <b>confirm</b> — the other device decides whether to add this one to the crew.</p>
+            <!-- W2 (2026-09-17): the ask is a Reach now, so this screen can tell the truth it used to hide.
+                 awaiting.ask.state: booked|dispatched|serving → waiting · refused,<why> → the Captain said no
+                 · dead → nobody answered in 45s.  Retry is a button (owner ruling), never a timer. -->
+            {#if awaiting.ask?.state === 'dead'}
+                <p class="ld-deal">⏳ <b>nobody answered</b> in 45 seconds — is jamsend open on the Captain's device?</p>
+                <button class="ld-go" onclick={() => { try { H?.Swarm_ferry_reask?.(world(), self) } catch {} }}>try again</button>
+            {:else if awaiting.ask?.state === 'refused'}
+                <p class="ld-deal">✋ the Captain's device said <b>no</b>{#if awaiting.ask.why} — <i>{awaiting.ask.why === 'wrong_serial' ? 'this link is not the one it holds now — reopen the newest QR' : awaiting.ask.why === 'no_offer' ? 'it has no link open any more' : awaiting.ask.why === 'revoked' ? 'this device was refused there' : awaiting.ask.why}</i>{/if}</p>
+                <button class="ld-go" onclick={() => { try { H?.Swarm_ferry_reask?.(world(), self) } catch {} }}>ask again</button>
+            {:else}
+                <p class="ld-deal">waiting for the Captain to <b>confirm</b> — the other device decides whether to add this one to the crew.{#if awaiting.ask?.state === 'serving'} <span title="the Captain's device has the ask and is on it">(it has heard you)</span>{/if}</p>
+            {/if}
             <!-- SAS ALWAYS SHOWS, symmetric with the soul side (owner 2026-08-31: "icons show there but not on
                  incognito, who is listening for the soul").  The 3-glyph match row is the ceremony's face; a
                  `···` placeholder holds its place until the pubs resolve, so the listening screen is never iconless. -->
