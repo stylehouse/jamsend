@@ -2,6 +2,70 @@
 
 ## 0. Next
 
+### ✅ ANSWERED 2026-09-17 evening — "why won't `.go` HMR?" — IT DOES. Both halves, measured, on a runner AND on eed.
+
+**Vite delivers a recompiled `gen/**.go`, Svelte re-instantiates the hidden shim, its `onMount → eatfunc` fires
+ again, and the methods land on every House — with no reswap, no tick, no reload.** Proven with two probe
+  lines put straight into `Pool.go` (reverted): on a FRESHLY RELOADED `da06` (plain module mounted, nothing
+   swapped yet), one content change gave
+  `18:36:29.332 [vite] hot updated: /src/lib/gen/M/Pool.go` → `.342 ⚡ Pool.go instance script ran` →
+   `.351 ⚡ Pool.go onMount fired H=Mundo` → (then, 700 ms later, `👻 reswap` re-mounted it a SECOND time).
+    eed printed the same three lines in the same order. So the doc's old reason ("`@vite-ignore` ⇒ untracked ⇒
+     no HMR") was wrong, and so was my first reading this evening ("the swap doesn't re-run eatfunc") — that
+      came from watching `GhostInclude:gen/M/Pool.go`, which is refreshed only on a `w:Lies` TICK; the methods
+       had moved at .35, the ledger said so nine seconds later when something ticked. **Readout lag, not
+        delivery lag.** `Creduler_reswap` is therefore a REDUNDANT second deposit on any tab whose HMR socket
+         is alive — its remaining job is a tab whose socket is dead (and a LocalGen write still goes through
+          vite's watcher, so that is not a case either).
+
+**Then what were the overnight `Heard_landed_cap` and the 12:47 "old line numbers for 2 minutes"?** Not this
+ mechanism. The candidates, now checkable: (a) eed's HMR socket was down at the time — Vite's client then
+  logs `[vite] server connection lost. Polling for restart...` and RELOADS the page when the server answers
+   (that reload is also what every `relay.ts`/`vite.config.ts` save does to every tab: the "tabs lost on
+    restart" symptom is a reload, not just a dropped websocket); (b) the compile's write never landed (the
+     `acked-no-write` class below). Both leave lines that `⏮ last life` (sockcap.ts, same evening) now keeps
+      across a reload: `runner_ask console --player=eed831f1977c4e81 --grep '⏮'`. First use: eed's 18:22
+       reload tail carried no `[vite]` line — a hand reload; the 18:03 one predates the instrument.
+
+### ✅ AND THE BIG ONE, same night — WHY EVERY `src/**` SAVE RELOADED EVERY TAB (and now doesn't)
+
+`⏮` caught it within the hour: eed's tail before a reload ended in `[vite] FULL RELOAD — (no path)` (a line
+ sockcap now prints from `vite:beforeFullReload`, because Vite 6's client says nothing itself). Reproduced on a
+  spare vite (`npx vite dev --port 9099`) with a headless page, one edit to `sockcap.ts`:
+  `(client) hmr update /src/routes/+layout.svelte, LiesLies.svelte, LiesFunk.svelte, IdHatch.svelte` — the tab
+   hot-applied it — and then `(ssr) page reload src/lib/O/sockcap.ts`. **Vite 6 runs HMR in two environments;
+    the SSR one has no accepting module, decides "page reload", and sends `full-reload` down the same
+     websocket.** So anything in the server-rendered graph — LiesLies, sockcap, BigQualand, the rooms, i.e. the
+      whole app — reloaded every open tab on save; only `gen/*.go` (never SSR'd) hot-swapped. Every "eed
+       reloaded itself / haven't seen it run stably" today was a save of mine.
+- **Fix, `vite.config.ts`:** `environments: { ssr: { dev: { hot: false } } }`. Verified on the spare with the
+   same edit: client hot updates, `🏠 boot_qualand … rides it`, no reload. The SSR graph still invalidates.
+- **Second half, `BigQualand.svelte.ts`:** a room component is itself a Svelte HMR boundary, and its
+   re-instantiation re-ran `boot_qualand` → a SECOND H:Mundo booted in the same page while `onDestroy`
+    stopped the first (`Liesui ready in 460.9s`, `Creduler up` again, `👥⚠ another live body … name
+     contested` — the old House's socket still on the wire). Now the House is a page-level fact
+      (`window['peeroleum.qualand']`): a re-mount under HMR (`vite:beforeUpdate` sets a flag) hands back
+       the same House and re-stands only the tree tracker; a real unmount still stops it. Measured on a
+        headless /BigShapeland: `__H` identity unchanged, no second boot, UI re-mounted.
+- Still true and unchanged: a `relay.ts` or `vite.config.ts` save restarts the dev server and every tab
+   reloads via `[vite] server connection lost` — batch those, and say so first. (One caveat seen on eed
+    through Caddy: after that loss it polled for minutes without reconnecting; its HMR is dead until a reload.)
+
+**Also landed (`LiesLies.svelte` `Creduler_ensure`):** `import.meta.hot.on('vite:afterUpdate')` filtered to
+ `gen/**.go` clears the reswap throttle and `H.main()`s a tick. With delivery already done by Vite this is a
+  READOUT wake — the GhostInclude ledger and `Ghost_version_checkin` see the new dige 100 ms after the
+   update instead of at the next tick a quiet music page never takes. Cheap, event-driven, keep.
+
+**What this retires from the plan below:** item 3 (the glob manifest) never had anything to do with HMR
+ working; its only value is editor-graph isolation. Item 5 (`%ghost_swapped` visibility) is the one worth
+  doing next, and `Creduler_reswap`'s re-mount can be skipped when the live Ghostmeta already equals the
+   served source dige (today it compares the served FILE hash to its own baseline, so it cannot tell).
+
+**Also landed the same evening:** `⏮ last life` in `sockcap.ts` — the console ring's last 60 lines survive a
+ reload in `sessionStorage` and replay at boot, so `runner_ask console --grep ⏮` shows why any tab reloaded.
+  First use: eed's 18:22 reload tail carried no `[vite]` line at all (not Vite's fallback, not the
+   connection-lost reload) — it was a hand reload; the 18:03 one is lost, the next one will not be.
+
 **OPEN 2026-08-22 — the compile ack lies, and this round the write never landed at all.**
  `ghost_compile.ts` tickets for `Radio.g` / `Mesh.g` / `HohoTiles.g`: the editor acked
   `✓ compiled @ <the correct NEW dige>` on TWO separate rounds, and the `.go` on disk (and as

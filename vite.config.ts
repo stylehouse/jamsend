@@ -128,6 +128,18 @@ function digePlugin(): PluginOption {
 export default defineConfig({
 	plugins: [sveltekit(), relayPlugin(), digePlugin()],
 
+	// THE SSR ENVIRONMENT MUST NOT RELOAD THE BROWSER (2026-09-17, measured on a spare vite + a headless page).
+	//  Vite 6 runs HMR in TWO environments.  For a module the CLIENT can hot-apply (every .svelte is a Svelte HMR
+	//   boundary) the client log said `hmr update …` and the tab swapped it in place — and then the SSR
+	//    environment, whose graph has no accepting module, said `page reload src/lib/O/sockcap.ts` and sent
+	//     `full-reload` down the SAME websocket, so the browser reloaded anyway.  Every save of anything in
+	//      the server-rendered graph (LiesLies, sockcap, BigQualand — the whole app) was reloading every open
+	//       tab, the owner's music page included; only `gen/*.go` (never SSR'd) hot-swapped.  The SSR graph
+	//        still invalidates on change (the next page load re-transforms); it just stops talking to tabs.
+	//         With this off, that same sockcap.ts edit hot-updated +layout/LiesLies/LiesFunk/IdHatch in place,
+	//          `boot_qualand` kept the page's House, and nothing reloaded.
+	environments: { ssr: { dev: { hot: false } } },
+
 	// Bake the cluster's PUBLIC trust anchors into the client so the browser can VERIFY inbound
 	//  signed frames (this-dock-updated, etc.). Sourced from process.env (compose env_file
 	//   .env.cluster-identos) — same pattern as ALLOWED_HOSTS above. Only the PUBLIC pubs + the role

@@ -150,6 +150,39 @@ export function concap_install() {
         if (typeof orig !== 'function') continue
         ;(console as any)[lv] = (...args: any[]) => { try { conPush(lv, args) } catch {} ; orig(...args) }
     }
+    concap_last_life()
+}
+// THE LAST LIFE'S TAIL (2026-09-17 — eed reloaded itself and nobody could say why: the ring dies with the
+//  page, so the one stretch of console that explains a reload is the one stretch no one ever reads).
+//   On `pagehide` the last LAST_N lines go to sessionStorage (per-tab, survives a reload, never crosses
+//    tabs); the next boot replays them into the new ring as `⏮ last life …` lines and clears the store —
+//     so `runner_ask console --grep ⏮` on a freshly-reloaded tab shows what it was doing when it died.
+//      Vite's own client lines land here too (`[vite] server connection lost`, `[vite] page reload …`),
+//       which is the whole point.  Every step is try/caught: a storage that throws costs nothing.
+const LAST_KEY = 'concap_last_life'
+const LAST_N = 60
+function concap_last_life() {
+    try {
+        const prev = window.sessionStorage?.getItem(LAST_KEY)
+        if (prev) {
+            window.sessionStorage.removeItem(LAST_KEY)
+            const rows = JSON.parse(prev) as Con[]
+            console.log(`⏮ last life — the ${rows.length} console lines before this tab reloaded (ended ${new Date(rows[rows.length - 1]?.t ?? 0).toISOString()}):`)
+            for (const r of rows) console.log(`⏮ ${new Date(r.t).toISOString().slice(11, 23)} ${r.lv === 'log' ? '' : r.lv.toUpperCase() + ' '}${r.line.slice(0, 300)}`)
+        }
+    } catch {}
+    // Vite 6's client says NOTHING before a server-decided full reload (client.mjs `case "full-reload"` →
+    //  pageReload(), no log) — so a tail that simply ends is that.  Name it: the payload's path is the
+    //   file whose update could not be hot-applied (a circular import chain, or a non-accepting root).
+    try {
+        const hot = (import.meta as any).hot
+        hot?.on?.('vite:beforeFullReload', (p: any) => { try { console.log(`[vite] FULL RELOAD — ${p?.path ?? '(no path)'} could not be hot-applied (circular imports / no accepting boundary); this tab reloads now`) } catch {} })
+    } catch {}
+    try {
+        window.addEventListener('pagehide', () => {
+            try { window.sessionStorage?.setItem(LAST_KEY, JSON.stringify(conRing.slice(-LAST_N).filter(r => !r.line.includes('⏮ ')))) } catch {}
+        })
+    } catch {}
 }
 // The ring as an array of {t,lv,line}, oldest→newest, AFTER optional grep + tail.  Applied ring-side so
 //  the relay reply carries only the N lines the caller wants, not the whole 2000-entry ring every read.
@@ -179,3 +212,4 @@ export function socklog_armed(): boolean {
 export function socklog_arm(on: boolean): void {
     try { if (on) localStorage.setItem(ARM_KEY, '1'); else localStorage.removeItem(ARM_KEY) } catch {}
 }
+

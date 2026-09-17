@@ -47,7 +47,15 @@ const b = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-requ
 const ctx = await b.newContext({ viewport: { width: +W, height: +H }, deviceScaleFactor: 1 })
 const p = await ctx.newPage()
 const logs = []
-p.on('console', m => { const t = m.text(); if (process.env.EYE_LOG === 'all' || /error|warn|▣|Vyto|Voro|Story/i.test(t)) logs.push(t.slice(0, 220)) })
+// EYE_LOG=all keeps every line; EYE_SITE=1 prefixes each with its callsite (`Pool.go:134`) — the same
+//  attribution DevTools shows, which is how a hot-swapped module is told from the boot one (2026-09-17).
+p.on('console', m => {
+    const t = m.text()
+    if (!(process.env.EYE_LOG === 'all' || /error|warn|▣|Vyto|Voro|Story/i.test(t))) return
+    let site = ''
+    if (process.env.EYE_SITE) { try { const l = m.location(); const f = String(l.url || '').split('/').pop().split('?')[0]; if (f) site = f + ':' + (l.lineNumber + 1) + ' ' } catch {} }
+    logs.push((site + t).slice(0, 220))
+})
 p.on('pageerror', e => logs.push('PAGEERROR ' + e.message.slice(0, 200)))
 p.on('requestfailed', r => logs.push('REQFAIL ' + r.url().slice(0, 160) + ' ' + (r.failure()?.errorText ?? '')))
 p.on('response', r => { const ct = r.headers()['content-type'] ?? ''; const u = r.url(); if ((r.status() >= 400 || !ct) && !/\.(png|ico|woff2?)$/.test(u)) logs.push('RESP ' + r.status() + ' ct=' + JSON.stringify(ct) + ' ' + u.slice(0, 160)) })

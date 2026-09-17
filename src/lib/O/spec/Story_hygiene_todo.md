@@ -51,6 +51,28 @@ A NEW Story primitive: a declared, per-run **reset** of the disk working-area a 
    not a second judge.
 
 
+### ⚑ TODO (2026-09-17 night, the owner) — park OTHER versions of each step: pictures of it being broken
+
+> *"maybe Story could park various other versions of each step… so we can take pictures of it being broken,
+>  so we know if it's changing while working on it?"*
+
+Today a red step has ONE fixture (`NNN.snap`) and one live `got_snap`; the only question the gate answers is
+ "same as sworn?".  While working on a red, the question is different: **is the broken picture STABLE, or is
+  it still moving under me** — a red that reproduces byte-identically is a bug you can work on; one whose
+   got_snap drifts run to run is the determinism problem (§0a) wearing a bug's clothes.  Tonight's case:
+    SwarmReboot's new steps were RED four times and the diges were identical each run (`5048fc90 / c8b522d2 /
+     d21bab0f / 8c870c23`), which is what made the re-swear safe — but that was checked by hand with
+      `runner_ask steps` and memory.
+- **The shape:** beside `NNN.snap` (the sworn picture) Story keeps `NNN.<dige>.snap` — every DISTINCT
+   got_snap a red step has produced, capped (say 5, oldest out), written by the same `💾 wormhole` save that
+    already rewrites the toc.  The toc row grows `step=N,dige:<sworn>,seen:<dige1>,<dige2>…` so
+     `runner_ask steps` can say "red, and the same red as the last 3 runs" vs "red, third different picture".
+- **Then `story_accept` reads it:** a step whose seen-set has ONE member across ≥2 runs is a candidate to
+   re-swear; one with several is refused with the diff BETWEEN the seen pictures printed — that diff IS the
+    nondeterminism, isolated for free.
+- Not a fixture change, not a gate change: the sworn snap and `ok` stay exactly what they are.  Pure
+   bookkeeping beside them, and the snaps are already computed — only the write is new.
+
 ### ⚑ TODO (2026-09-07, the owner) — Story's machinery made generally available to the protocol it examines
 
 The owner, reading the "explaining overlay" finds (`Fallen_out_of_mind_todo §5`): *"making Story's

@@ -1362,6 +1362,28 @@
                 //  page reload.  Creduler_reswap self-gates on a run being in flight (it queues to
                 //   the next boundary), so calling it every ready tick is correct + cheap (a HEAD
                 //    ETag pre-filter; a real fetch+re-mount only on a changed .go).
+                // ⚡ WAKE ON VITE'S OWN WORD (2026-09-17 — "why won't .go HMR?").  Measured on a runner and
+                //  on eed alike: a recompiled gen/*.go DOES arrive over Vite's HMR socket (`[vite] hot updated:
+                //   /src/lib/gen/M/Pool.go` on both), and Svelte swaps the hidden shim — but the swap never
+                //    re-runs its onMount → eatfunc, so the Houses keep the boot-time methods.  What delivers is
+                //     THIS reswap, and it only runs on a w:Lies TICK: a runner ticks all day, a music page's
+                //      w:Lies quiesces once its boot Book is done (eed: `round=26` an hour apart), so eed never
+                //       swept and every Ghost/M fix waited on a human reload.  So let Vite's afterUpdate be the
+                //        wake: a gen/*.go in the payload clears the poll throttle and ticks the world, and the
+                //         sweep below does what it always did.  No polling on a quiet page, no new road.
+                if (!w.c.hmr_hooked) {
+                    w.c.hmr_hooked = 1
+                    try {
+                        const hot = (import.meta as any).hot
+                        hot?.on?.('vite:afterUpdate', (payload: any) => {
+                            const gens = ((payload?.updates ?? []) as any[]).filter(u => /\/gen\/.+\.go(\?|$)/.test(String(u?.path ?? u?.acceptedPath ?? '')))
+                            if (!gens.length) return
+                            H.tlog(`👻 vite hot-updated ${gens.length} gen .go — waking the reswap sweep`)
+                            w.c.reswap_last = 0
+                            H.main()
+                        })
+                    } catch { /* not under vite dev — no HMR, no hook */ }
+                }
                 void H.Creduler_reswap(w)
                 return
             }
@@ -2509,3 +2531,4 @@
     })
     })
 </script>
+

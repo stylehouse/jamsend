@@ -20,6 +20,11 @@ The owner found SP at **0 again** and named it: *"`roll` shouldn't delete if not
  eed picks it up on its next reload; the disk still has the files (`recovered N pooled track(s) from disk`),
   so the pool refills from OPFS without a single pull.
 
+**Second casualty of e42be0a0, found the same evening via MusuHeard's residual:** `Heard_keeps_cap` was
+ deleted with `Heard_landed_cap` (and `Heard_thumb`, which was deliberate). Its caller in `Heard_haul_beat`
+  stayed, so **every haul beat threw and no heart hauled** — MusuHeard step 7 carried
+   `Err … this.Heard_keeps_cap is not a function`. Restored (3). eed's hearts haul again on its next reload.
+
 ### 0.0 2026-09-17 — HOW THE NIGHT WENT (the one to read with coffee)
 
 **Short version: the split landed clean, three things were broken and are now fixed, and the one

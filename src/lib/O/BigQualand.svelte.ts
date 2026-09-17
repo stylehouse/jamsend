@@ -49,7 +49,42 @@ export type Qualand = {
 //  onDestroy on the calling component's lifecycle).  Returns getters, not plain values: alias them
 //   with `let H = $derived(q.H)` / `let houses = $derived(q.houses)` to keep reactivity across the
 //    module boundary — do NOT destructure (that snapshots and goes dead).
+// ── ONE BOOT PER PAGE, ACROSS HMR (2026-09-17, measured with the eye on /BigShapeland) ──────────────
+//  A room component (BigSoundland/BigShapeland/BigWordland) is a Svelte HMR boundary: save it and Vite
+//   re-instantiates it in place — which re-runs this function.  Before this guard that meant a SECOND
+//    H:Mundo booted inside the same page while the first was `stop()`ped by onDestroy: the eye saw
+//     `__H` change identity, `Creduler up` again, `Liesui ready in 460.9s` (the marks span the page), a
+//      Sounditron re-run, and on eed `👥⚠ another live body … name contested` — the old House's socket
+//       still on the wire.  Every src/V or src/O save was rebooting the owner's music page in place.
+//  So the House is a PAGE-level fact, not a component-level one: the first boot for a (role, book) is
+//   kept on `window`, a later call with the same key hands it back untouched, and the unmount that an
+//    HMR swap performs (Vite says `vite:beforeUpdate` first) does NOT stop it.  A real unmount — the
+//     page navigating away — still stops it as before.  Nothing else changes: same getters, same
+//      reactivity, one House.
+type Kept = { key: string; q: Qualand; H: House | null; refresh: () => void }
+const KEPT = 'peeroleum.qualand'
+let hmr_swapping = false
+try {
+    const hot = (import.meta as any).hot
+    hot?.on?.('vite:beforeUpdate', () => { hmr_swapping = true })
+    hot?.on?.('vite:afterUpdate',  () => { setTimeout(() => { hmr_swapping = false }, 0) })
+    hot?.on?.('vite:error',        () => { hmr_swapping = false })
+} catch {}
+function kept_of(key: string): Kept | null {
+    try { const k = (window as any)[KEPT] as Kept | undefined; return k && k.key === key && k.H && !k.H.stopped ? k : null } catch { return null }
+}
+
 export function boot_qualand(opts: QualandOpts): Qualand {
+    const key = `${opts.role}:${opts.book}`
+    const kept = typeof window !== 'undefined' ? kept_of(key) : null
+    if (kept) {
+        console.log(`🏠 boot_qualand: the page already has its House (${key}) — a room re-mounted under HMR rides it, no second boot`)
+        // the tree tracker lived in the unmounted instance's effect root; stand it again on this one so
+        //  `houses` keeps following H** (a Story run's subHouse, a late shim) after the swap
+        $effect(() => { kept.refresh() })
+        onDestroy(() => { if (!hmr_swapping) kept.H?.stop() })
+        return kept.q
+    }
     let H = $state<House>(null!)
     let houses = $state<House[]>([])
     let setup_done = $state(false)
@@ -119,10 +154,18 @@ export function boot_qualand(opts: QualandOpts): Qualand {
         houses = H.all_House
     })
 
-    onDestroy(() => { H?.stop() })
+    // an HMR swap unmounts this instance and mounts the next one, which finds the House above; only a
+    //  real unmount stops it
+    onDestroy(() => { if (!hmr_swapping) H?.stop() })
 
-    return {
+    const q: Qualand = {
         get H()      { return H },
         get houses() { return houses },
     }
+    if (typeof window !== 'undefined') {
+        const rec: Kept = { key, q, H: null, refresh: () => { if (setup_done && H) houses = H.all_House } }
+        $effect(() => { if (H) rec.H = H })
+        try { (window as any)[KEPT] = rec } catch {}
+    }
+    return q
 }

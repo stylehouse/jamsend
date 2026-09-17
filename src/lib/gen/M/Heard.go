@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return '160784e6bcf19855~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return '6edabd460cf94c17~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -587,6 +587,16 @@ Heard_gc(w, me, now) {
 //   round on eed threw `Heard_landed_cap is not a function` for a night.)
 Heard_landed_cap() {
     return 60
+},
+// Heard_keeps_cap — how many keeps the ♥ may have standing at once, across every holder.  Not a
+//  transfer bound (that is `heist_inflight`, enforced in the beat): a bound on CELLS, so a take spree
+//   does not open twelve of them.  Three is "a couple going, one queued".
+//  (Restored 2026-09-17 evening — the SAME commit, e42be0a0, dropped this def too; its caller in
+//   Heard_haul_beat stayed, so every haul beat threw `Heard_keeps_cap is not a function` and no heart
+//    hauled at all — MusuHeard's step 7 carried the Err row.  `Heard_thumb` went in that commit as well,
+//     and that one was deliberate: a later press re-affirms, there is no un-press window any more.)
+Heard_keeps_cap() {
+    return 3
 },
 // Heard_landed_ids — MY LANDED TAKES, newest first: the pool's `recent` compartment input (the one pool
 //  source that CHOOSES nothing, because the choosing happened when you took the track).  This replaces

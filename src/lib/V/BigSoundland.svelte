@@ -67,6 +67,11 @@
     const q = boot_qualand({ book, role: 'sound' })   // role 'sound' ⇒ Lies%humdinger: an end-user page, never a dispatch target
     let H      = $derived(q.H)
     let houses = $derived(q.houses)
+    // THE EYE'S HANDLE (2026-09-17, mirrors BigShapeland): `runner_eye.mjs --eval=` reads `window.__H` to
+    //  answer a live-state question on a headless music page — e.g. `H.Ghostmeta_Ghost_M_Pool()` to see
+    //   whether a recompile landed — without a console.log + compile + reload round.  Dev-only by nature
+    //    (the production build has no eye); a read-only pointer, never a door: nothing dispatches through it.
+    $effect(() => { if (H && typeof window !== 'undefined' && !(H as any).top_House?.()?.c?.production) (window as any).__H = H })
     //#endregion
 
     // the Cyto UI (Cytui) is registered by the Cyto ghost on whichever House carries the live graph;
@@ -867,3 +872,4 @@
         user-select: none; pointer-events: none;
     }
 </style>
+
