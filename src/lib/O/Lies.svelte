@@ -888,17 +888,28 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const path      = good.sc.waft_path as string
             const snap_path = good.sc.path      as string
 
-            if (good.c.content !== undefined) {
-                // already loaded — Lies_sync_waft_docs is the %Good GC hook
+            // THE RACE (found 2026-09-18, HohoRetake's stall hunt): req_Store's own Phase 2 lands
+            //  ANY finished LiesStore_read onto ANY Good at that path, generically — it doesn't know
+            //   about retake.  If Phase 2 wins that race against this loop's OWN LiesStore_read_good
+            //    call below, content lands here with `good.c.retake` still armed, and the fast path
+            //     must NOT take its usual continue — that would skip the swap below forever (nothing
+            //      else ever clears .c.retake), a PERMANENT wedge, not a slow one.  So the fast path
+            //       requires content AND no pending retake; a retake always falls through to the
+            //        decode+place block below, using whichever landing (this loop's own read, or
+            //         Phase 2's) got there first.
+            if (good.c.content !== undefined && !good.c.retake) {
+                // already loaded, nothing pending — Lies_sync_waft_docs is the %Good GC hook
                 const waft = w.o({ Waft: path })[0] as TheC | undefined
                 if (waft) H.Lies_sync_waft_docs(w, waft)
                 continue
             }
 
-            await H.LiesStore_read_good(w, 'text/Waft', snap_path)
             if (good.c.content === undefined) {
-                w.i({ see: `⏳ loading Waft:${path}…` })
-                return false
+                await H.LiesStore_read_good(w, 'text/Waft', snap_path)
+                if (good.c.content === undefined) {
+                    w.i({ see: `⏳ loading Waft:${path}…` })
+                    return false
+                }
             }
 
             const content = good.c.content as string | null

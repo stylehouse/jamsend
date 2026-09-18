@@ -2109,42 +2109,11 @@ The double-envelopment became the template for every subsequent battle of annihi
             H.Lies_changed_heard(w, { path: snap_path, dige: foreign_dige })
             for (let t0 = Date.now(); !good.c.retake && Date.now() - t0 < 5_000;) await new Promise(r => setTimeout(r, 50))
             if (!good.c.retake) { gate.i({ retake_never_armed: 1 }); return }
-            // Coding_guide.md's "wake ≠ hold": Lies_waft_retake's own `i_elvisto(w,'think')` is a WAKE,
-            //  good for exactly one tick — it does not keep the belief loop coming back to notice the
-            //   read's ttlilt go overdue and re-dispatch a lost reply (measured: usually lands in
-            //    <1s, occasionally hangs indefinitely with zero other activity logged — a genuinely
-            //     dropped reply that nothing was left to re-poke).  Re-wake ourselves every 400ms while
-            //      waiting so a stuck read always gets another look, rather than hoping one wake was enough.
-            // PROBE (temporary, 2026-09-18 — the stall hunt): every 500ms, WHERE is it stuck?  Run's
-            //  cycle state, Run.todo, the LiesStore_read req, and Mundo's rw_queue wrap for this path.
-            //   No re-wake for the first 6s so a stall shows its shape; then re-wake.  Console only.
-            const Mundo = H.top_House() as any
-            const probe = (): string => {
-                const store = w.o({ req: 'Store' })[0] as TheC | undefined
-                const rd = store?.o({ req: 'LiesStore_read', rw_name: snap_path })[0] as TheC | undefined
-                const tt = rd?.o({ ttlilt: 1 })[0] as TheC | undefined
-                let wrap: TheC | undefined
-                for (const A of Mundo.o({ A: 1 }) as TheC[]) for (const mw of A.o({ w: 1 }) as TheC[]) {
-                    const rq = mw.o({ rw_queue: 1 })[0] as TheC | undefined
-                    const f = (rq?.o({ req: 1 }) as TheC[] | undefined)?.find(r => (r.c.for as TheC | undefined)?.sc.rw_name === snap_path && (r.c.for as TheC).sc.rw_op === 'read')
-                    if (f) wrap = f
-                }
-                const H2 = H as any
-                return `run:{todo:${H2.todo?.length} began:${H2.c.began_run ?? '-'} fin:${H2.c.finished_run ?? '-'} runtime:${H2.c.runtime ? 1 : 0}} `
-                    + `mundo:{todo:${Mundo.todo?.length} began:${Mundo.c.began_run ?? '-'} fin:${Mundo.c.finished_run ?? '-'}} `
-                    + `content:${good.c.content === undefined ? 'undef' : 'set'} `
-                    + `read:${rd ? `{sent:${rd.sc.req_sent ? 1 : 0} fin:${rd.sc.finished ? 1 : 0} seen:${rd.sc.seen ? 1 : 0} ttlilt:${tt ? (tt.sc.timed_out ? 'expired' : `until ${tt.sc.until_ts}`) : 'none'}}` : 'none'} `
-                    + `wrap:${wrap ? `{inflight:${wrap.c.inflight ? 1 : 0} reply:${wrap.c.reply ? 1 : 0} fin:${wrap.sc.finished ? 1 : 0} tries:${wrap.c.tries ?? 0}}` : 'none'}`
-            }
-            const probes: string[] = []
-            for (let t1 = Date.now(); good.c.retake && Date.now() - t1 < 60_000;) {
-                await new Promise(r => setTimeout(r, 500))
-                if (!good.c.retake) break
-                const el = Date.now() - t1
-                probes.push(`+${el}ms ${probe()}`)
-                if (el > 6_000) H.i_elvisto(w, 'think')
-            }
-            if (probes.length > 3) console.warn(`🔬 retake stall probe (${probes.length} samples):\n  ` + probes.join('\n  '))
+            // 2026-09-18: the real bug was a Lies.svelte race (req_Store's own Phase 2 could land the
+            //  read before this loop's provisioning pass, and the fast path skipped the swap that
+            //   clears .c.retake — a PERMANENT wedge, not a slow one — see Lies.svelte for the fix).
+            //    Fixed at the source; this wait is now the ordinary "give the tick a moment" kind.
+            for (let t1 = Date.now(); good.c.retake && Date.now() - t1 < 15_000;) await new Promise(r => setTimeout(r, 50))
             if (good.c.retake) { gate.i({ retake_never_landed: 1 }); return }
 
             // the final state converges to the SAME shape every run (clean-then-marker-added) —

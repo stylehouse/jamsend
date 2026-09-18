@@ -16,58 +16,53 @@ An invite gets you the ability to invite other peers. Ideally you and your peer 
 
 **🚛downloads📦** Preserve directory structure, tend to move whole albums, and restart if interrupted.
 
-**🛰️jamserve🎛️** Your own always-on peer. The same app, headless in a container, holding your collection and answering heists and invites when your browser is closed. See *jamserve* under [setup](#jamserve--your-own-always-on-peer).
-
 # development
 
-Get this to your programmers! Make noise as Issues on github, especially grandiose new feature requests that introduce your creative mind.
+Get this to your programmers! I'm wanting to promote myself to management. Do you have 10hr/week? If you aren't allowed to make $3/hr you'll have to volunteer. Make noise as Issues on github, especially grandiose new feature requests that introduce your creative mind.
 
 We are an ongoing project to capture the core of the universe with language, and fix the computer once and for all!
 
-Currently appearing in the guise of modern music piracy, built on a secure and open social medium, soon becoming a hive of diverse developments, attracting low-stakes creativity to the digital frontier.
+Currently appearing in the guise of modern music piracy, built on a secure and open social medium, soon becoming a hive of diverse developments, attracting low-stakes creativity to the digital frontier. Oh, and all this .g code is quite ugly and I tend not to read it, we're going to fix that at some point.
 
-## news 
+Interesting areas of development besides the does-a-two-word-thing (music piracy) imperative:
 
-A new top-level at lib/O/Otro.svelte is in development, with a bunch of fancy simplicities... It's a much more elegant integration with svelte, etc.
+## stho - new programming language
 
-Work is currently progressing towards using it to make a presentation of this project in the next week or two. We're also trying to establish the nice new architecture that I want developers to look at.
+Lies+Lang are compiler|infra and code editor for a new language with more path expressions etc. Promises nice database abstraction. Compiles to javascript. I've neglected it while getting this MVP done, seeking safety. Next steps: meta-programming of having all the IOexpr and Seem known at compile time... It's very creative and unblocked, a brain-teaser.
 
-Involving a compiler of a nice new language and CodeMirror integration, figuring out how to start using Selection and io expressions together, then we can much more recreationally build testable app code, particularly Radios and Pirating. Architectural problems (causing ugly code) should be fixed. It should all look good in Cyto.
+## Atheory - metaphysics and H|A|w|req
+
+What are these types, really... Probably merge into A, but keep w, and r, which is distinct from n, e... the %Aw pointer somewhere in, and indeed method resolution and precise imports...
 
 It has a nice style+house pattern emerging: Stuff and Housing are very central to everything yet opposite in nature... universal and empirical. the players and the canopy lighting timeclock.
 
+## Vyto - the attractor
 
-# hiring
+An attractor is a mathematical object for engulfing space with stuff, gently... The computer searches for its new visual capacity, and how to keep it connected to ongoing reality, perhaps needing to pin this down as an important common artifact we need to impress people with civilisation and its glorious information: to create a convincing expression of information to look at... See */BigShapeland?B=VytoOrchestra*
 
-Proudly supporting the $3/hr programmer, which means under 16 in NZ. You may volunteer! Go for it. All development, commissioning and correspondence is on github under the eyes of the law.
+Using it to make a presentation of this project... To establish the nice new architecture that I want developers to look at.
 
-Open an issue if anything isn't easy.
+## Story - testing
 
-There are many non-frontend things to do. See Issues on github, or comments starting with < in the code, which means less-than-existing, ie TODO.
+It's quite a futuristic testing system. It captures big deterministic pictures, occasionally leaning on EntropyArrest. It has a huge next-generation wishlist to build, but wants it on top of Atheory.
+
+## Music
+
+What we're doing here... Nice and simple. The system has active (Heist) and passive (SoundPooling) transport whims.
+
+Downloads are weird because you can't get enough filesystem access (FSA) on a mobile device, so Link Device to your computer running Chrome is necessary in that case, Heists land there... So they become a team for music distribution, and SoundPooling (tracks stored in OPFS, in the browser) will keep freshly shuffled music on your phone, as long as both devices are on at the same time...
+
+So there's a "your personal infra" to work out how to stretch music availability across. Lots of this could be slightly different or better! It's the central metaphysical drama that should keep giving to the above four arms of academic development until they're rounded out.
 
 # funding
 
-[Send tips!](https://ko-fi.com/ostylehouse) Ready to technically manage lots of quality work on a new computer culture and direction for the humans, which is somewhat here in this project.
+[You may send tips here!](https://ko-fi.com/ostylehouse) Funds may be for specifics soon, probably starting with educational videos...
 
 # notes
 
 DevTools with 'pause on exception' will need to ignore the line in Decoder.ts with a meaningless RangeError, etc, it sometimes adds random breakpoints, which can be ignored or switched off in the expandy-rack to the right, between Watch and Scope.
 
 Identities (an OurPeering) can be copied out of and into the UI somewhere, if you defeat the FaceSucker
-
-## prod
-
-To use *prod.sh*, see *Peer_OPTIONS*. I would ./install.sh then scp (clone) the entire leproxy repo to the server at ~/src/leproxy, then run ~/src/prod-jamsend/prod.sh (that repo is git cloned from my machine, this pulls), then that produces a there/ to scp to your proxy host. See also *ty/* to run a flock of chrome instances with your identities.
-
-### ⚠ hosting on your own router
-
-Behind a port-forward + dynamic-DNS name, your own LAN usually can't reach your own public name —
- most routers won't hairpin a packet back to their own outside address (search **NAT hairpin/loopback**
-  if it's news). The fix is to point the name at your LAN IP wherever it's being resolved: a line in
-   `/etc/hosts` for a desktop browser, or `extra_hosts:` on the container's compose service (see
-    `jamserve` in *docker-compose.yml*, fed from gitignored `.env` vars) for anything running in Docker.
-     Don't swap in the LAN IP itself instead — it fails TLS and vite's `ALLOWED_HOSTS` check; keep the
-      name, only change where it resolves.
 
 ## objects, data layer
 
@@ -111,7 +106,7 @@ Then many further *Objects* are not javascript classes of their own, but are *Th
 - shared structures
 - guess the `Artist/1979 Album/01 Track.etc` hierarchy, general noise sorter and goo tuner
 - read a big music library via some API, eg readonly open your Strawberry music player's sqlite database, to be able to search up tracks
-- streaming, show gear. voice calls?
+- streaming, show gear. voice calls? moderation?
 - safer content filter. check media-contained album art is legit.
 - collectivise music collection connections, ie multi-hop
 - build a trust network, advanced social network features aka SafetyNet
@@ -134,7 +129,19 @@ cd ..; git clone jamsend prod-jamsend; cd prod-jamsend; ./prod.sh
 # having already configured leproxy to tunnel or not, etc.
 ```
 
-If your docker0 interface isnt 172.17.0.1 (so eg _leproxy_ can reverse to it), edit *docker-compose.yml* and related things until it works. You should then look at `docker compose ps` to see where it's listening, it may need to be on localhost. Getting it on the interweb is left a bit hard, just help this project until we make an app scripting language and the community can develop what you need.
+If your docker0 interface isn't 172.17.0.1 (so eg _leproxy_ can reverse to it), edit *docker-compose.yml* and related things until it works. You should then look at `docker compose ps` to see where it's listening, it may need to be on localhost. Getting it on the interweb is left a bit hard, just help this project until we make an app scripting language and the community can develop what you need.
+
+### ⚠ hosting at home
+
+**leproxy** also supports tunneling to a public proxy host to reverse a port from, which avoids this flaw.
+
+Behind a port-forward + dynamic-DNS name, your own LAN usually can't reach your own public name —
+ most routers won't hairpin a packet back to their own outside address (search **NAT hairpin/loopback**
+  if it's news). The fix is to point the name at your LAN IP wherever it's being resolved: a line in
+   `/etc/hosts` for a desktop browser, or `extra_hosts:` on the container's compose service (see
+    `jamserve` in *docker-compose.yml*, fed from gitignored `.env` vars) for anything running in Docker.
+     Don't swap in the LAN IP itself instead — it fails TLS and vite's `ALLOWED_HOSTS` check; keep the
+      name, only change where it resolves.
 
 ## jamserve — your own always-on peer
 
@@ -146,8 +153,8 @@ A browser tab is a bad place to keep a server: it closes, it sleeps, it forgets.
    alongside dev (`docker compose up`) and prod (*prod.sh*) — it shares their compose file but sits
     behind a profile, so it only ever starts when you name it.
 
-see [jamserve.md]
+see [jamserve/README.md](jamserve/README.md)
 
-## Licensing
+# Licensing
 
 Is AGPL 3.0 or later, no holding back releasing your derived work and notes and all. We want working systems here on Earth, remain open. Copyright (c) 2025 github.com/stylehouse
