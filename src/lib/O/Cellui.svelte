@@ -186,6 +186,7 @@
         Transfer:   { bg: '#1a0e0e', color: '#e88888', border: '#c94c4c' },
         Heist:      { bg: '#0e0e1a', color: '#8888e8', border: '#4c4cc9' },
         Caper:      { bg: '#1a120e', color: '#e8b088', border: '#c9784c' },
+        Wikipedia:  { bg: '#0e1420', color: '#b8c8e8', border: '#6c8fd0' },
     }
     const NEUTRAL = { bg: '#141420', color: '#a8a8cc', border: '#6a6ad0' }
 
@@ -487,7 +488,10 @@
     //   Device is likely okay as the regular large cell" — so ONLY the Heist ceremony earns the giant
     //    spill-off-screen geometry.  Link/Transfer/Caper still CLAIM the main (commissioner focus +
     //     the main-or-gone satellites filter for Link), but render as a normal large main cell.
-    const TAKEOVER = new Set(['Heist', 'HeistBar'])
+    //  Wikipedia joins (owner 2026-09-20: "like the Heist setup cell, which goes all the way off the
+    //   screen") — an article is a thing to READ, and the off-edge belly is the reading room; it scrolls
+    //    rather than scale-to-fit, which is what a long extract wants.
+    const TAKEOVER = new Set(['Heist', 'HeistBar', 'Wikipedia'])
     // THE COMMISSIONER'S FOCUS is the shared belly signal (task #45 "defer to commissioner belly").
     //  Sounditron stores the focused cell's MAINKEY on the commissioned world as `w.c.focused`
     //   (Sounditron.g: the Door's "Link Device" button → 'Link', a Vyto cell-switch → that cell, else
@@ -1076,6 +1080,7 @@
         <div
             class="cello-main"
             class:offedge={main_offedge}
+            class:reading={main_cell.mk === 'Wikipedia'}
             in:receive={{ key: main_cell?.key ?? last_main_key }}
             out:send={{ key: main_cell?.key ?? last_main_key }}
             style="
@@ -1384,6 +1389,62 @@
 }
 .cello-stage.narrow .cello-sat {
     width: clamp(96px, 26vw, 150px);
+}
+/* ── NARROW + OFF-EDGE (owner 2026-09-20, the Wikipedia takeover on a phone: "makes the big wiki cell
+   only 1/3rd of screen real estate … they should be in a row at the bottom").  The two layouts above
+    were never written to coexist: narrow shrank the main to 78vw while offedge still shifted it -42vw
+     (a third of it on screen, the mold's margin measured from an off-screen box edge), and the
+      satellites kept offedge's absolute mid-right pin while narrow flipped them to a row.  Here the
+       spill is modest (the wall still arcs off all four edges), the mold spans the viewport, and the
+        minicells sit in a row along the bottom.  Specificity (0,3,0) beats both parents. */
+.cello-stage.narrow .cello-main.offedge {
+    left: -10vw;
+    width: 120vw;
+    top: -8vh;
+    height: 116vh;
+    aspect-ratio: auto;
+}
+.cello-stage.narrow .cello-main.offedge .cello-face-mold {
+    /* box spans -10vw..110vw; 12% of 120vw = 14.4vw ⇒ the mold runs ~4vw..96vw of the viewport */
+    left: 12%;
+    right: 12%;
+    top: 4vh;
+    bottom: 18vh;        /* the minicell row lives in the bottom band */
+    padding: 1% 2%;
+}
+/* ── THE READING ROOM (Wikipedia's takeover; `reading` is class-bound on the main by mainkey).
+   The generic offedge mold is box-relative (top:7vh of a box that starts at -15vh ⇒ the face began
+    ~6vh ABOVE the screen — "occludes above … the bottom half contains nothing").  The box overhangs
+     the viewport by 15vh top and bottom, so the VISIBLE band is box-relative 15vh..115vh; the mold
+      sits inside that with a 3vh breath.  Left pulled to 34% (≈5vw of viewport) for a wider column.
+       Scoped so the Heist's tuned geometry is untouched. */
+.cello-main.offedge.reading .cello-face-mold {
+    left: 34%;
+    right: 13%;
+    top: 18vh;
+    bottom: 18vh;
+}
+/* narrow: box -8vh..108vh, visible band box-relative 8vh..108vh; the minicell row wants the bottom ~16vh */
+.cello-stage.narrow .cello-main.offedge.reading .cello-face-mold {
+    top: 11vh;
+    bottom: 26vh;
+}
+.cello-stage.narrow.offedge .cello-satellites {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 1.5vh;
+    transform: none;
+    margin: 0;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 2vw;
+    flex-wrap: nowrap;
+}
+.cello-stage.narrow.offedge .cello-sat {
+    width: clamp(64px, 18vw, 110px);
 }
 
 /* ── SATELLITE BLOB ─────────────────────────────────────────────────────────── */

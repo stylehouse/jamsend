@@ -13,28 +13,28 @@ story:HohoRetake
       w:Lies
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=0.309
-      sample=0.183,at=1789644430
-      sample=0.162,at=1789644439
-      sample=0.176,at=1789644457
-      sample=0.165,at=1789644463
-      sample=0.166,at=1789644470
-      sample=1.418,at=1789644535
-      sample=0.29,at=1789644541
-      sample=0.207,at=1789644548
-      sample=0.15,at=1789644554
-      sample=0.174,at=1789644559
-    TimeTotal:step,avg=0.309
-      sample=0.183,at=1789644430
-      sample=0.162,at=1789644439
-      sample=0.176,at=1789644457
-      sample=0.165,at=1789644463
-      sample=0.166,at=1789644470
-      sample=1.418,at=1789644535
-      sample=0.29,at=1789644541
-      sample=0.207,at=1789644548
-      sample=0.15,at=1789644554
-      sample=0.174,at=1789644559
+    TimeTotal:beliefs,avg=0.181
+      sample=0.212,at=1789861405
+      sample=0.164,at=1789861414
+      sample=0.136,at=1789861431
+      sample=0.153,at=1789861440
+      sample=0.146,at=1789861450
+      sample=0.235,at=1789861460
+      sample=0.22,at=1789861470
+      sample=0.145,at=1789861480
+      sample=0.224,at=1789861489
+      sample=0.17,at=1789861499
+    TimeTotal:step,avg=0.181
+      sample=0.212,at=1789861405
+      sample=0.164,at=1789861414
+      sample=0.136,at=1789861431
+      sample=0.153,at=1789861440
+      sample=0.146,at=1789861450
+      sample=0.235,at=1789861460
+      sample=0.22,at=1789861470
+      sample=0.145,at=1789861480
+      sample=0.224,at=1789861489
+      sample=0.17,at=1789861499
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   step,dige:4564fe1cc90a15ed
     Assertion:a-waft-that-moves,sentence:a Waft that moves on disk under a live tab takes disk — the fresh tree swaps in through one place so the roster never gaps

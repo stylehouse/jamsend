@@ -3516,6 +3516,9 @@ await M.eatfunc({
                         // FORGET EVERYTHING THE HEIST MACHINE THINKS IT HAS DONE (2026-09-12): ledgers, keeps, pool
                         //  copies — never the music.  A human-pressable reset for a polluted Haul.
                         Heist_start_over: 'w',
+                        // Cell:Wikipedia's one press (2026-09-20): roll the next random page.  A paced public
+                        //  GET to Wikipedia and a queue move — no seal, no grant, no fixture, none of our bytes.
+                        Sounditron_wiki_roll: 'w',
                     }
                     const verb = String((ask as any).verb ?? '')
                     const kind = POKES[verb]

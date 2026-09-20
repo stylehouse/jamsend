@@ -294,10 +294,16 @@
         try {
             const d = (H as any)?.Swarm_persist_diag?.()
             if (!d) return null
-            // the contested name outranks everything — it is the one state where "settled ✓" would
-            //  be a lie twice over (two writers, either one clobbering the other).  §7.4h: DoorFace
-            //   is the ruled surface for this warning, and resolution stays the human's.
-            if (d.stolen) return { state: 'stolen' as const, why: d.settle_why }
+            // THE "two of you" BADGE IS GONE (owner 2026-09-20: "pure noise all the time").  `d.stolen`
+            //  fires off a REAL received frame (Swarm_note_theft, gated on pier_hello|swarm_hi|pulse) so
+            //   it's never literally stale by the time it fires — but it can be minutes old by the time a
+            //    human reads the badge, and Swarm_note_theft is separately known structurally blind to a
+            //     genuine theft (Crew_todo §7.4h — any rostered sibling is trusted, full stop), so what's
+            //      left is a banner that fires on ordinary multi-device presence and rarely means what it
+            //       says. Swarm_stolen/Swarm_note_theft + the console line stay (real diagnostic signal,
+            //        read via `runner_ask console`) — only the Door's own UI surface for it is removed.
+            //  d.stolen is intentionally unread here now, so a stolen tick falls through to whatever the
+            //   real settle state underneath actually is (settling/owed/settled), never masking it.
             if (d.mirror_muted) return null
             if (d.mirror_owed) return { state: 'owed' as const, why: d.settle_why }
             if (d.settle_owed || d.stash_saving) return { state: 'settling' as const, why: d.settle_why }
@@ -523,9 +529,7 @@
         {#if face.newborn}<span class="df-born">✨ born today</span>{/if}
         {#if face.listen_only}<span class="df-listen"
             title="listening only — this browser can't open a music folder, so you're a radio terminal. Your identity lives only in this browser: clearing site data forgets you (linked devices will fix that).">🎧 listening only</span>{/if}
-        {#if settle?.state === 'stolen'}<span class="df-settle stolen"
-            title="another live body of your identity is on the wire — two writers means either can clobber the other's ledger. This body keeps writing; close the other one (or Steal Back to a new address here).">👥 two of you</span>
-        {:else if settle?.state === 'settling'}<span class="df-settle busy"
+        {#if settle?.state === 'settling'}<span class="df-settle busy"
             title={`writing your ledger to disk now${settle.why ? ` (${settle.why})` : ''}…`}>⛁ settling…</span>
         {:else if settle?.state === 'owed'}<span class="df-settle owed"
             title="your ledger changed but no share folder is open to write it to — it lives only in this tab until you open one.">⛁ write owed</span>{/if}
@@ -862,7 +866,6 @@
     .df-settle.ok { color: #7fc98a; }
     .df-settle.busy { color: #d8c56b; }
     .df-settle.owed { color: #e0965e; }
-    .df-settle.stolen { color: #e06a6a; font-weight: 600; }
     .df-invite { font-size: 10px; margin-top: 3px; }
     .df-note { font-size: 9px; opacity: 0.7; font-style: italic; margin-top: 2px; }
     /* the friends ARE the app — they read at full size, not as a footnote ("friends list is

@@ -393,6 +393,13 @@ Sounditron_commission(w):
         let row = w.o(q)[0]
         if (row) organs.push(row)
     }
+    // the WIKIPEDIA cell (spec/WikipediaCell_todo.md, owner 2026-09-18/20: "a top-level app
+    //  personality quirk... an important 'thing on the internet'") — click for a random page, always
+    //   on like Door|Radio, not folded away by a keep (a heist has the room, this stays a minicell).
+    //    The anchor is dontSnap (the Pooling precedent): the pages under it are fetched third-party
+    //     content, legible in the glass and to minisnap, but never in a Story snap.  Verbs below.
+    let wiki = this.Sounditron_wiki_ensure(w)
+    organs.push(wiki)
     // an ARRIVING account must surface itself — on the receiving device the ferry lands with no press, so a
     //  link that goes active auto-focuses the Link cell ONCE (the w.c.link_surfaced latch) and then yields to
     //   any deliberate press away; when the ceremony ends (active goes false) the latch clears and a focus
@@ -900,6 +907,9 @@ Sounditron_commission(w):
         // the SoundPool buds too (2026-09-13, "where's the 🏊 bud?") — it is pushed pier-gated above, and it was
         //  the one organ this cut never carried, so a live page could never reach Cell:Pooling at all.
         for (const org of organs) if (Object.keys(org.sc)[0] === 'Pooling' && org !== fmain) buds.push(org)
+        // Wikipedia buds too — same trap as Pooling: minted + in `organs`, but this cut is an allowlist,
+        //  and a live page only ever shows what it carries.  Press ⇒ it takes the belly like any bud.
+        for (const org of organs) if (Object.keys(org.sc)[0] === 'Wikipedia' && org !== fmain) buds.push(org)
         if (fmain && fmain.c.press) delete fmain.c.press
         for (const bud of buds) {
             // handed the SOURCE particle, so the handler reads its own identity — no closure over
@@ -1533,6 +1543,7 @@ Sounditron_visualcrux(f):
     standing.push('Door')                                                                                  // "Always Door|Player"
     standing.push('Radio')
     if (f.pool_seen) { standing.push('Pooling') }                                                          // after the first ♥ (09-15)
+    standing.push('Wikipedia')                                                                             // always on (WikipediaCell_todo)
     let buds = []
     for (const mk of standing) { if (mk !== main && (has(mk) || mk === 'Heist') && buds.indexOf(mk) < 0) { buds.push(mk) } }
     if (main === 'Link' || main === 'Heist') { buds = buds.filter((mk) => mk === 'Door' || mk === 'Radio' || mk === 'Hauls' || mk === 'Heist') }   // a belly ceremony|keep keeps only the way back + the Haul
@@ -1800,6 +1811,121 @@ Sounditron_pose(w):
     }
     if (fl) pose.drop(fl)
     return []
+
+// ── CELL:WIKIPEDIA — click for a random page (spec/WikipediaCell_todo.md) ───────────────────────
+//  The owner, 2026-09-18/20: a "top-level app personality quirk … an important 'thing on the internet'";
+//   then, on where the fetch lives (09-20): the client talks to Wikipedia directly — a public JSON GET
+//    needs nothing a tab doesn't have, and the API is CORS-open for exactly this.  No daemon, no route.
+//  THE SHAPE.  `%Wikipedia,face:Wikipedia,dontSnap` is the anchor (one per glass, minted at commission).
+//   Under it, `%Page,title,url[,extract,thumb]` rows — the QUEUE.  The one wearing `shown` is on the
+//    card; the rest are fetched AHEAD so a press is a swap, not a wait ("a queue of these … run users
+//     through them").  `Sounditron_wiki_roll` is the only press: it retires the shown page, promotes the
+//      next, and tops the queue back up.  Everything is a particle, so minisnap 'mundo>…>Wikipedia'
+//       reads the queue and the face reads it off H.version like every other organ.
+//  WHY dontSnap.  The rows are third-party content that changes every press; without the fold every
+//   Sounditron fixture would churn on the wire's mood.  The anchor line still snaps (the cell exists).
+Sounditron_wiki_ensure(w):
+    let wiki = w.o({ Wikipedia: 1 })[0]
+    if (!wiki) {
+        wiki = w.i({ Wikipedia: 1, face: 'Wikipedia', dontSnap: 1 })
+        console.log('📖 wiki: cell minted')
+    }
+    if (!wiki.sc.dontSnap) { wiki.sc.dontSnap = 1 }   // an anchor from before the fold wears it now
+    wiki.c.up = w
+    return wiki
+// the page on the card, or null
+Sounditron_wiki_shown(w):
+    let wiki = w.o({ Wikipedia: 1 })[0]
+    return wiki ? (wiki.o({ Page: 1, shown: 1 })[0] || null) : null
+// the queue ahead of the card
+Sounditron_wiki_ahead(w):
+    let wiki = w.o({ Wikipedia: 1 })[0]
+    return wiki ? wiki.o({ Page: 1 }).filter((p) => !p.sc.shown) : []
+// Sounditron_wiki_roll — THE PRESS.  `why` is only for the log (belly | press | face).  Retires the shown
+//  page (dropped, not kept — a history shelf is a later ask), promotes the next fetched row, and refills.
+//   With nothing ahead (first press, or the wire was slow) it fills INLINE and then promotes, so the first
+//    press waits once and every later one is instant.  Returns the page now shown, or null.
+async Sounditron_wiki_roll(w, why):
+    let wiki = this.Sounditron_wiki_ensure(w)
+    if (wiki.c.rolling) { return this.Sounditron_wiki_shown(w) }
+    wiki.c.rolling = 1
+    wiki.bump()   // the face shows "fetching…" off this
+    try {
+        if (!this.Sounditron_wiki_ahead(w).length) { await this.Sounditron_wiki_fill(w, 1) }
+        let next = this.Sounditron_wiki_ahead(w)[0]
+        if (!next) {
+            console.log('📖⚠ wiki roll (' + (why || '') + ') — nothing fetched; Wikipedia unreachable?')
+            return this.Sounditron_wiki_shown(w)
+        }
+        let old = this.Sounditron_wiki_shown(w)
+        if (old) { wiki.drop(old) }
+        next.sc.shown = 1
+        next.bump()
+        console.log('📖 wiki roll (' + (why || '') + ') → ' + next.sc.title + ' · ' + this.Sounditron_wiki_ahead(w).length + ' ahead')
+        return next
+    } finally {
+        delete wiki.c.rolling
+        wiki.bump()
+        this.Sounditron_wiki_fill(w, 2)   // top back up in the background; not awaited
+    }
+// Sounditron_wiki_pace — DON'T DDOS WIKIPEDIA (the owner 2026-09-20: "not 5 requests per second, and
+//  dwindle that to 2ps").  A per-TAB ledger of request times on the top House (every glass shares it):
+//   at most 5 in any 1s window (the burst), at most 10 in any 5s window (2/s sustained).  Resolves when
+//    a request may go, having slept if it must; the caller records the send by pushing now().
+async Sounditron_wiki_pace():
+    let M = this.top_House()
+    let ts = M.c.wiki_ts || (M.c.wiki_ts = [])
+    while (true) {
+        let now = Date.now()
+        while (ts.length && now - ts[0] > 5000) { ts.shift() }
+        let burst = ts.filter((t) => now - t < 1000).length
+        let wait = 0
+        if (burst >= 5) { wait = 1000 - (now - ts[ts.length - 5]) }
+        if (ts.length >= 10) { wait = Math.max(wait, 5000 - (now - ts[0])) }
+        if (wait <= 0) { ts.push(now); return }
+        console.log('📖 wiki pace — holding ' + wait + 'ms (' + burst + ' in 1s, ' + ts.length + ' in 5s)')
+        await new Promise((res) => setTimeout(res, wait + 5))
+    }
+// Sounditron_wiki_fill — fetch until `want` pages stand ahead.  ONE in flight per glass (a shared promise
+//  on .c, so a concurrent caller awaits the same work instead of racing past it).  A disambiguation page
+//   or a miss just rerolls, up to 3 misses.  Never stamps a maybe-undefined sc value (extract/thumb are
+//    set only when present — the album/body_hash idiom).
+Sounditron_wiki_fill(w, want):
+    let wiki = this.Sounditron_wiki_ensure(w)
+    if (wiki.c.filling) { return wiki.c.filling }
+    let need = () => this.Sounditron_wiki_ahead(w).length < (want || 2)
+    if (!need()) { return Promise.resolve(0) }
+    wiki.c.filling = (async () => {
+        let got = 0
+        let misses = 0     // the wire failing us — HTTP error, timeout, bad JSON
+        let rerolls = 0    // Wikipedia handing us the wrong KIND of page — not a failure, just go again
+        try {
+            while (need() && misses < 3 && rerolls < 8) {
+                try {
+                    await this.Sounditron_wiki_pace()
+                    let r = await fetch('https://en.wikipedia.org/api/rest_v1/page/random/summary', { signal: AbortSignal.timeout(8000) })
+                    if (!r.ok) { misses = misses + 1; console.log('📖⚠ wiki fetch: HTTP ' + r.status); continue }
+                    let j = await r.json()
+                    if (!j || !j.title || j.type !== 'standard') { rerolls = rerolls + 1; console.log('📖 wiki reroll — ' + (j && j.type || 'no title')); continue }
+                    let sc = { Page: 1, title: String(j.title), url: String((j.content_urls && j.content_urls.desktop && j.content_urls.desktop.page) || ('https://en.wikipedia.org/wiki/' + encodeURIComponent(j.title))) }
+                    if (j.extract) { sc.extract = String(j.extract) }
+                    if (j.thumbnail && j.thumbnail.source) { sc.thumb = String(j.thumbnail.source) }
+                    let page = wiki.i(sc)
+                    page.c.up = wiki
+                    got = got + 1
+                    console.log('📖 wiki fetched "' + sc.title + '" · ' + this.Sounditron_wiki_ahead(w).length + ' ahead')
+                } catch (e) {
+                    misses = misses + 1
+                    console.log('📖⚠ wiki fetch failed: ' + String(e && e.message || e).slice(0, 100))
+                }
+            }
+        } finally {
+            delete wiki.c.filling
+            if (got) { wiki.bump() }
+        }
+        return got
+    })()
+    return wiki.c.filling
 
 // ── THE PLAIN GLASS ──────────────────────────────────────────────────────────────────────────
 //  The owner, 2026-08-09, after looking at the live page: *"this is kind of nice how it is, but it

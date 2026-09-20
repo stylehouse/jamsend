@@ -68,17 +68,20 @@ Identities (an OurPeering) can be copied out of and into the UI somewhere, if yo
 
 ### Stuff
 
-*TheC* is the convoluted name for the type C, the main type, the piece of the computer's mind, the standard item you should believe in. It is a set of properties on a thing, so a bunch of pieces of text -> other pieces of text. There's an upper (C.sc) and lower (C.c) hemisphere, supposing the user is up and the machine is down. C.c is for esoteric hacks for very nearby machinery, C.sc is for everything you'd ever want to see, one way or another.
+Everything, the data model, is C (*TheC*), a homoiconic particle, where properties are bunched together, which might give it meaning in multiple systems.
 
-*TheC* extends *Stuff*, which allows them to contain each other (eg C/C, C/C/C, etc), and thus insert (C.i({props:1})) and select (C.o({props:1})) them. There's a way replace subsets of them ongoingly, which usually resolves which is which so they can know their history by simply containing what they did before, so they magically aren't re-inserted empty though it looks like it until the replace finishes. This is an important trick to making code easy.
+C makes pieces of the computer's mind, the standard item you should believe in. They have properties and can contain each other (eg C/C, C/C/C, etc), and thus insert (C.i({props:1})) and select (C.o({props:1})) them. There's a way `replace` subsets of them ongoingly, which then will `resolve` which was which so they can know their history by simply containing what they did before, so they magically aren't re-inserted empty though it looks like it until the replace finishes. This is an important design, leads to a more reductive system.
 
+The first property (aka mainkey) tends to be its class or object type, each property adds a bit more type. Also reductive, not fully invented as an object model.
 We can note the name of a C variable, and some relevant structure and properties like so:
 
-``%Waft/*%Doc`` is the many %Doc inside a %Waft
-
-``Doc/Point,method`` is about the same, less plurality implied, and refers to the method property, as well as the mainkey ``Point``, which most of a Doc's data falls under, like an object type.
+``Waft`` is well known, but ``%somethingelse`` (with a % sigil) may be clearer on its own...
 
 ``Text%dige`` is a property of a thing: a Text's dige.
+
+``Waft/What**/Doc`` is about a %Doc inside perhaps many layers of %What, in a %Waft - `**` meaning recursing.
+
+``What/Point,method`` is about the same, less plurality implied, and refers to the method property, as well as the mainkey ``Point``, which most of a Doc's data falls under, like an object type.
 
 *Stuffing* puts them on the screen efficiently, grouping like stuff, compressing communication.
 
@@ -90,7 +93,7 @@ We can note the name of a C variable, and some relevant structure and properties
 
 *House* (aka *H*), or some subclass of it, contains many *A*/*w* that organise to do the work. They can handle events via %elvis=sometype,Aw=suchAplace/workertype .
 
-Then many further *Objects* are not javascript classes of their own, but are *TheC* that define themselves with their C.sc.*, eg A:such is C%A=such, and somehow those properties are meaningful.
+Then many further *Objects* are not javascript classes of their own, but are *TheC* that define themselves with their C.sc.*, eg A:such is C%A:such, and somehow those properties are meaningful.
 
 ### Ultimately
 

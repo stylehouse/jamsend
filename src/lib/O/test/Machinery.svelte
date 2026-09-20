@@ -2129,6 +2129,22 @@ The double-envelopment became the template for every subsequent battle of annihi
             if (le_before && le_after === le_before) gate.i({ le_identity_preserved: 1 })
 
             gate.bump_version(); w.bump_version()
+            // HOLD FOR A PASS (Coding_guide's wake≠hold, second sighting — HeistTesting's own
+            //  MusuHeist_hold_for_a_pass names this exact shape): the facts above land off the Atime
+            //   mutex, inside expecting().  req:witness is an ordinary eternal do_fn — it WILL see them
+            //    on its next real pass, but nothing forces that pass to happen before Story calls this
+            //     step quiescent (Run.todo empty + no ttlilt held is enough on its own).  Measured: 2 of
+            //      5 runs snapped with ok_pct:1 (content byte-identical) yet a declared Assertion
+            //       reported as a gap — the swear simply hadn't run yet.  This one-shot finishing req +
+            //        ttlilt forces at least one more genuine pass: its own do_fn only fires inside a real
+            //         pass, and do() pumps every req at a level together, so req:witness (same default
+            //          maz, same level) gets pumped in that SAME pass — by the time this gate finishes,
+            //           the swear has already happened.
+            const already = w.o({ req: 'retake_witnessed' })[0] as TheC | undefined
+            if (!already?.sc.finished) {
+                w.doai({ req: 'retake_witnessed' })?.((req: TheC) => { w.finish(req); w.drop(req) })
+                H.i_req_ttlilt(w.o({ req: 'retake_witnessed' })[0] as TheC, 20)
+            }
         })
     },
 

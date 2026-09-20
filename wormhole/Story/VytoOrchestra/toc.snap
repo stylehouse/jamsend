@@ -4,10 +4,7 @@ story:VytoOrchestra
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.098
-      sample=0.142,at=1789626113
-      sample=0.127,at=1789626198
-      sample=0.093,at=1789626678
+    TimeTotal:beliefs,avg=0.189
       sample=0.077,at=1789634830
       sample=0.068,at=1789634930
       sample=0.104,at=1789634989
@@ -15,10 +12,10 @@ story:VytoOrchestra
       sample=0.063,at=1789635380
       sample=0.047,at=1789635586
       sample=0.092,at=1789685226
-    TimeTotal:step,avg=0.012
-      sample=0.018,at=1789626113
-      sample=0.016,at=1789626198
-      sample=0.012,at=1789626678
+      sample=0.088,at=1789727061
+      sample=0.12,at=1789789749
+      sample=1.07,at=1789861813
+    TimeTotal:step,avg=0.024
       sample=0.01,at=1789634830
       sample=0.008,at=1789634930
       sample=0.013,at=1789634989
@@ -26,6 +23,9 @@ story:VytoOrchestra
       sample=0.008,at=1789635380
       sample=0.006,at=1789635586
       sample=0.011,at=1789685226
+      sample=0.011,at=1789727061
+      sample=0.015,at=1789789749
+      sample=0.134,at=1789861813
   step,dige:4d8d5b4a1abafbd1
   step=2,desc:seed the orchestra — a stuffed band beside three kin songs and two loose strays,dige:d516aa5f8f793f5e
   step=3,desc:commission the glass foam-cut and nested — six top cells with the band carrying three,dige:9d653dccb345c38e
