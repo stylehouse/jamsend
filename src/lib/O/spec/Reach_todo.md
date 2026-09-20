@@ -99,9 +99,34 @@ Built exactly as the brief below says, in `Ghost/S/Swarm.g`:
   runner. The two-device live walk (Cave knocks, Captain answers; Captain's tab closed → `dead` on the Cave's screen
    at 45s) is the owner's.
 
-**Not in W2:** W3 (knock→minting body — needs the receiver-obligation two-word mainkey coinage, owner ruling
- owed), the remaining two pumps (reheal/throttle in `Swarm_ferry_poke`), SwarmSpread's five stale
-  `Assertion:` lines (Crew_todo §0 — the owner's toc surgery, unrelated to W2 but red in the same family).
+**Not in W2:** W3 (knock→minting body), the remaining two pumps (reheal/throttle in `Swarm_ferry_poke`),
+ SwarmSpread's five stale `Assertion:` lines (Crew_todo §0 — the owner's toc surgery, unrelated to W2 but
+  red in the same family).
+
+**W3 naming — RULED 2026-09-20: `DoorKeeper`.** The particle marking "this specific device owes the
+ answer to this knock" — ties to the Door UI already in the codebase (DoorFace.svelte) rather than
+  inventing a new metaphor. `%DoorKeeper,of:<invite serial>` lives on the invite/token, stamped with the
+   MINTING device's own prepub at mint time (the existing ruling this doc already carried above: "no
+    soul-door coin-flip"). A redeemer's booked Reach then addresses `to:` that literal prepub — `Swarm_
+     reach_addr` already falls through to a literal `to` when `Swarm_body_for`'s role-resolve misses, so
+      this needs NO new routing code, only the stamp at mint time and the DoorKeeper particle to hold it.
+
+**W3's "run into yourself" — PARKED AS A NIB, owner 2026-09-20: expand later, with active pinging.**
+ The case: a device discovers a knock resolves back to ITS OWN crew — i.e., you're knocking on an account
+  you're already a body of. Undesigned. The owner's own words: *"the run-into-yourself wants to be a nib
+   we expand on later, with pinging."* Tie this to the Door theft-alarm work the same evening: the "two of
+    you" banner (`Swarm_note_theft`/`Swarm_stolen`) was pulled from DoorFace for being noisy on the
+     ORDINARY case (your own two devices, harmless) — but the owner flagged explicitly: *"there's a real
+      problem if there's two of you"* — meaning the underlying hazard (two live writers genuinely
+       clobbering one ledger) is NOT dismissed, only the false-positive UI is. `Swarm_note_theft` fires off
+        a real just-received frame, never a stale cache — the honest gap is that it can't tell "briefly
+         quiet" from "genuinely gone" (no active liveness probe, just presence-by-frame). Whatever the
+          run-into-yourself design becomes, it should resolve BOTH: a device recognising its own crew
+           should never alarm (today's fix), and a device that's ACTUALLY still live and being clobbered
+            by a genuine second writer should still find out — which wants a real ping, not a wait-and-see
+             on the next incidental frame. Nothing built; this paragraph is the seed for whoever picks it
+              up. See [[old-p2p-stack-cull]]'s sibling note and Crew_todo §7.4h (the tripwire's structural
+               blindness to an actual stolen device — the same family of gap, opposite failure direction).
 
 
 **LANDED 2026-09-01 (the same day, on the owner's "fuck that hand-rolled pattern is exactly right — we

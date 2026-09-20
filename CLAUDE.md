@@ -80,6 +80,11 @@ Notation we use when talking about particles:
   alone: `%like,this`; in a structure: `/like,this/written:is`.
   a property of a thing: `Text%dige`.
 
+**Mainkeys can be multi-word — ruled 2026-09-20, correcting an over-tight reading a session gave itself.**
+ One word is the ideal, not a rule: the codebase already carries `NotGrant`, `TimeTotal`, `EntropyProfile`,
+  `ActiveInterest`, `MyCave` as live mainkeys. A weird/compound particle can wear a weird/compound name —
+   pick what a reader would recognise, not what fits a syllable budget.
+
 Find-or-create on a container:
   `C.o(sc)` returns matching children; `C.o(sc)[0]` is the existing one.
   `C.i(sc)` creates.

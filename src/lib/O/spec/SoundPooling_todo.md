@@ -2,6 +2,59 @@
 
 ## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night; the older §0s are §0.6–§0.8 below, intact)
 
+### 0.0 2026-09-20 — NEXT RUNG: a Captain's ♥ reaches the Cave — `take:'crew'`, drawn off a MIRRORED Mag
+
+**The owner:** *"I DO of course want Captain Yays → Repli or something keeps that exact data on the Cave,
+ which there will react into doing the heist the Yay implies."* Today nothing carries a ♥ across bodies: a ♥
+  is `Heard_take` → `Heard_keep` → a `%Heist` FOR WHOEVER PRESSED IT (immediate, unconditional, not gated by
+   `budget_mb` — that knob governs only the ambient sweep). The only cross-body movement is this pool's sweep,
+    and its taste compartments read MY OWN Mag (`Heard_tally`/`Heard_landed_ids` off `Heard_mag_find(w, me)`).
+     So a Cave pooling from its Captain prioritises what the CAVE liked, never what the Captain liked.
+
+**The shape — route through what stands, no new event pipeline (app|infra):**
+1. **Mirror the Mag.** A ♥ is already durable data in the right form: `%Card,id,pub,take,at` under
+    `%Mag:heard,pub:<Captain>`, rehydrated through the account stash (eed: `♥ heard rehydrated — 6
+     reaction(s)`). Repli already ships a body's catalog to crew as a `%Theirs` crate; ship the Mag beside it —
+      **crew-only** (it is taste, not a listing; a Music friend gets the crate, never the Mag). This is the one
+       genuinely new wire, and it is a Repli protocol row, not a mechanism.
+2. **A 7th take kind, `'crew'`.** `Pool_draw` gets a branch: the mirrored Mag's `take` cards, newest first —
+    the exact shape of `'recent'` (`Heard_landed_ids`) read off the CAPTAIN's Mag instead of mine, and
+     `pub === me` exclusion inverted (only the Captain's own ♥s, not re-broadcast hearsay). Then everything
+      downstream is free: `Pool_goal`'s cap bounds it, `barred` keeps the Cave's own Nay out, `Heard_landed`
+       dedups against anything the Cave already holds however it arrived, `Ra_pool_fill` does the heist. The
+        mirror ARRIVING is what wakes the sweep — that is the "immediate".
+3. **Default it on for a Cave.** `Ra_pool_defs`' fallback is `take:'taste'`; a body that IS crew (my row a
+    Cave, `Swarm_is_cave`'s successor) should carry `{name:'crew', take:'crew', who:'crew'}` ahead of `random`
+     by default, so the owner's LinkDevice test needs no Pooling-cell surgery to show it. `budget_mb` still
+      gates the sweep as a whole — 0 is off, by consent; that stays.
+
+**The one ruling that is not free — HOW FAR BACK.** The cap bounds how MANY; nothing bounds SINCE WHEN. A
+ Captain with a year of ♥s would flood a phone on the first mirror. Candidates: since the crew link's `at`;
+  the last N by `at` (the compartment's cap IS that N, if the draw is newest-first — the simplest); everything
+   that fits `budget_mb`. Newest-first + cap is my pick; the owner rules.
+
+**Not a redesign** (the owner asked): three seams touched — a Repli row (the Mag, crew-gated), one `Pool_draw`
+ branch + `Ra_pool_defs` default, and the existing `MusuPool*`/`MusuHeard` Books grow one beat each. Gate:
+  a `MusuPoolCrew` Book beside `MusuPoolRadio` — two bodies in one Run, Captain ♥s a track the Cave doesn't
+   hold, the Cave's next sweep lands it; and a Nay on the Cave keeps it out.
+
+**WHERE THE ♥ LANDS ON THE CAVE — forks on FSA, and no new popup** (owner 2026-09-20: *"the first Yay should
+ come with some popup that takes their LOFI or not preference... only if noFSA... or when they LinkDevice?
+  ...maybe it's a single track or the album with directory hierarchy chooser as well"*):
+- **noFSA Cave (phone-shaped, no folder):** the pool IS lofi by construction (`Heist_catalog_land`'s pool branch
+   mints `%Record,id:<lofi>,of:<orig>,lofi`; the holder transcodes, never an original) — so `take:'crew'` needs
+    no lofi question. Its only consent is `budget_mb`, and that is asked at **LinkDevice**: the ceremony already
+     knows the body has no folder, it is already UI, and a durable body-level answer wants a body-level moment —
+      not an interrupt at whatever hour the first mirrored ♥ lands on a backgrounded phone. The one LinkDevice
+       addition.
+- **FSA Cave (has a folder):** a Captain's ♥ does NOT go to the pool — it mints the same `%Keep` a live listen
+   does and surfaces in **HeistSetup**, which already IS the chooser the owner described: per-artist genre
+    folder, per-track keep/skip ticks (so "single track or the album" is "tick one row or all of them"), `lofi`
+     off by default for a desktop, commit lands under `music/<genre>/<file>`. Seed it pre-ticked on the ♥'d track
+      with its album siblings in view. Zero new UI; the ♥ is just one more way a %Keep is born.
+- So the fork is decided by `Swarm_share_granted`'s folder fact on the Cave (the same fact that makes it
+   phone-shaped), never by asking. Nothing pops on the first ♥.
+
 ### 0.0 2026-09-17 evening — THE ROLL'S ONE LAW: nothing is evicted unless the pool holds more than its cap
 
 The owner found SP at **0 again** and named it: *"`roll` shouldn't delete if nothing can replace."* The morning's
