@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'd7e61e24d7957ec0~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return '1eaa36b3f8d6469a~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -1551,7 +1551,7 @@ Sounditron_facts(w, ctx) {
             let krw = MH.c.radio_w || w
             let kme = this.Radio_pub ? this.Radio_pub(krw) : null
             let mag = kme ? this.Heard_mag_find(krw, kme) : null
-            if (mag) { for (const c of this.Heard_cards(mag)) { if (c.sc.take) { f.pool_seen = 1; break } } }
+            if (mag) { for (const c of this.Heard_cards(mag)) { if (c.sc.hearted_at) { f.pool_seen = 1; break } } }
         }
     } catch (er) {}
     for (const org of ((ctx && ctx.organs) || [])) { let mk = Object.keys(org.sc)[0]; if (f.present.indexOf(mk) < 0) { f.present.push(mk) } }

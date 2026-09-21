@@ -15,7 +15,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_SwarmTesting(): string { return '7cdeff39df6b42a2~g1' },
+    Ghostmeta_Ghost_Story_SwarmTesting(): string { return 'f2c92dee44a4cb94~g1' },
 
 // SwarmTesting.g — né Swarmation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file.
@@ -4953,11 +4953,12 @@ async SwarmReboot_stand(w) {
     //  and only one of them is durable matter: a bare hearing is a dedup mark with a thirty-day clock on
     //   it, worth nothing after a reload and (multiplied by every track ever played) the fat privacy
     //    liability §6b's OBLIQUE ruling exists to prevent.  A HEART is a decision and must outlive the boot.
-    this.Heard_seed(reba, { id: 'trk-take', pub: 'Cave', title: 'Kept Wanting', take: 1, at: 1751699000, mire: 2 })
-    this.Heard_seed(reba, { id: 'trk-heard', pub: 'Cave', mire: 1 })
-    // …and a NAY (2026-09-17): the reaction that was lost on reload that morning — Heard_nay strips `take`,
-    //  and the pillar's copy loop kept only `take`.  Under the protocol a %Card wearing ANY reaction rides.
-    this.Heard_seed(reba, { id: 'trk-nay', pub: 'Cave', title: 'Never Again', nay: 1, at: 1751699500, mire: 1 })
+    this.Heard_seed(reba, { id: 'trk-take', pub: 'Cave', title: 'Kept Wanting', hearted_at: 1751699000, played_through: 2 })
+    this.Heard_seed(reba, { id: 'trk-heard', pub: 'Cave', played_through: 1 })
+    // …and a NAY (2026-09-17): the reaction that was lost on reload that morning — the old Heard_nay
+    //  stripped `take`, and the pillar's copy loop kept only `take`.  Under the protocol a %Card wearing
+    //   ANY reaction rides (2026-09-21: the reaction is a timestamp now, never stripped at all).
+    this.Heard_seed(reba, { id: 'trk-nay', pub: 'Cave', title: 'Never Again', nayed_at: 1751699500, played_through: 1 })
     // two bookings: one standing (survives), one terminal (history — must NOT come back)
     this.Swarm_reach_book(w, reba, { to: 'Cave', of: 'tune-alpha', for: 'serve' })
     let done = this.Swarm_reach_book(w, reba, { to: 'Cave', of: 'tune-omega', for: 'serve' })
@@ -5080,9 +5081,9 @@ async SwarmReboot_back(w) {
     let hcards = hmag ? this.Heard_cards(hmag) : []
     let wish = hcards.find((c) => String(c.sc.id) === 'trk-take')
     let nay = hcards.find((c) => String(c.sc.id) === 'trk-nay')
-    if (hcards.length === 2 && wish && wish.sc.take) { row.wish_back = 1 }
-    if (wish && String(wish.sc.pub) === 'Cave' && String(wish.sc.title) === 'Kept Wanting' && String(wish.sc.mire) === '2') { row.wish_knows_what_it_knew = 1 }
-    if (nay && nay.sc.nay && !nay.sc.take && String(nay.sc.title) === 'Never Again') { row.nay_back = 1 }
+    if (hcards.length === 2 && wish && wish.sc.hearted_at) { row.wish_back = 1 }
+    if (wish && String(wish.sc.pub) === 'Cave' && String(wish.sc.title) === 'Kept Wanting' && String(wish.sc.played_through) === '2') { row.wish_knows_what_it_knew = 1 }
+    if (nay && nay.sc.nayed_at && !nay.sc.hearted_at && String(nay.sc.title) === 'Never Again') { row.nay_back = 1 }
     if (!hcards.some((c) => String(c.sc.id) === 'trk-heard')) { row.the_bare_hearing_stayed_dead = 1 }
     // THE ROUND TRIP (Persistence_todo Phase 5, rung 1 — the gate for every rung after): the whole
     //  identity under the account protocol → decode → graft onto a bare container → encode again, and the

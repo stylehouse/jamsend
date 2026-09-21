@@ -60,6 +60,45 @@
    - Readers: `Heard_tally` (hearted 3 · kept 2 · played_through), `Heard_takes` (hearted_at newer than any
      nayed_at/verdict), `Heard_barred_ids` (nayed_at newest), `Heard_word` (the §C words off the stamps),
       RadioFace/HaulFace/PoolFace read through the two derivers, never the keys.
+
+   **RUNG 2 — LANDED 2026-09-21.** Every rename above shipped exactly as planned, plus two new derivers
+    the plan implied but didn't name: `Heard_reaction(card)` (which of hearted_at/nayed_at/mehed_at is
+     NEWEST — "a nay ends a yay" is a comparison now, never a delete) and `Heard_news(card)`/`Heard_news_at`
+      (the `unseen` replacement — newest of carried_at/landed_at/the-three-verdicts, EXCLUDING the verdicts
+       on a `pressed_on` card, since that body did the work and isn't the one waiting; `Heard_notice` the
+        WRITER is gone entirely — every event already stamps its own `_at`, so news needs no separate mark).
+    `Heard_verdict(card)` now returns a verdict only if its stamp is `>= hearted_at` (a fresh press outdates
+     a stale verdict by comparison, per the plan). `Heard_strip` survives as `Heard_forget`, called ONLY by
+      `Heard_untake` (the human's explicit ✕) — every auto writer (take/nay/meh/hand_land) stopped stripping.
+    **A bug the plan didn't anticipate, found by live-running MusuHeard, not by the OK/fail status (which
+     never checked the row flags — see the memory pointer):** two DIFFERENT reactions landing in the SAME
+      pinned second (a Book fixture doing press→nay→press across one `w.sc.now`) tied on `Heard_reaction`'s
+       comparison, and a verdict landing the same second as the press that answers it tied on `Heard_verdict`
+        too — both silently kept the WRONG/stale one.  Fixed with `Heard_react_at(w, card, others)`: every
+         writer floors its new stamp past every OTHER stamp already on the card (nay/meh/the-three-verdicts),
+          so a genuinely later call always reads later regardless of clock resolution — "asking again" always
+           wins now, exactly as intended, instead of winning only when the clock happened to tick.
+    Also fixed the ACTUAL forcing mechanism the plan's opening paragraph promised but didn't name a line
+     for: `Swarm_protocol('heard')`'s hardcoded `sc_has:{take:1}/{nay:1}/{meh:1}` skip-rule (Swarm.g ~5874)
+      — the ONE place that decides which Cards survive the stash — renamed to the new fields.  Missing this
+       would have been the worst possible silent regression (every reaction vanishing on reload) and it is
+        NOT obviously reachable from Heard.g itself, so it's flagged here for whoever reads this rung later.
+    `Swarm_heard_rehydrate`'s `mire = max` merge renamed too; the LEGACY row-format rehydrate (pre-dates the
+     protocol-snap pillar, 2026-09-17) gets a best-effort translation — `mire`/`take`+`at`/`nay`+`at`/`handed`
+      carry over, `meh`/`via`/the verdicts/`unseen` do not (no timestamp to recover in that shape; safe —
+       a stale verdict just re-asks once).  External callers (HaulFace/RadioFace/Pool.g/Radio.g) all go
+        through function calls, not raw fields, so NONE needed touching — confirmed by a full-codebase grep
+         before editing, which is also what caught the Swarm.g protocol rule and two genuine (non-Heard.g)
+          Card pokes in Sounditron.g/RaTesting.g's MusuBuddy.
+    Verified LIVE the same way as rung 1 (headless-chromium runner over the real `/relay`), but this time
+     with a temporary `console.log` in each Book's `_note` helper (since these Books use `story_swear`,
+      not sworn+declared `Assertion:` lines, so `Cred spool: OK` alone proves nothing about the row flags —
+       `req.sc.ok = 1` is unconditional).  Every row of MusuHeard (9 steps), MusuHandoff (8, rung 1's new
+        beats included), and SwarmReboot (5, including the encode→decode→graft→encode byte-identical gate
+         AND the full stash→wipe→rehydrate round trip of both a heart and a nay) showed every expected flag
+          true — the debug lines were removed before the final compile.  Regression swept across
+           Sounditron/MusuBuddy/MusuHeist/SwarmHelm/MusuPoolPolicy/Fill/Random/Bytes: all green.
+    See [[heard-mag-stamps-and-crew-mirror]] for the pointer memory.
 3. **The Mag mirrors over the crew — via the pillar-8 text, NOT the Repli identity table** (Swarm.g + Heard.g;
    gate: MusuHandoff loses its `take`/`take_got` frames and keeps its beats; SwarmReboot untouched).
    - On `Heard_settle` (every reaction, every landing) the body sends `kind:'heard'` with the

@@ -11,7 +11,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_HeistTesting(): string { return '98c6b6de6a8e41f7~g1' },
+    Ghostmeta_Ghost_Story_HeistTesting(): string { return 'c43f2cc43e685c00~g1' },
 
 // HeistTesting.g — né Heistation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file — `MusuHeist`,
@@ -6415,13 +6415,13 @@ async MusuHeard_through(w) {
     let mag = this.MusuHeard_mag(w)
     let card = this.Heard_find(mag, 'r1', 'friendo')
     let v0 = card.version
-    if (this.MusuHeard_present(w, r1, 0) === 0 && !card.sc.mire) { row.an_empty_room_earns_nothing = 1 }
-    if (this.MusuHeard_present(w, r1, 1) === 1 && String(card.sc.mire) === '1') { row.present_is_a_play_through = 1 }
+    if (this.MusuHeard_present(w, r1, 0) === 0 && !card.sc.played_through) { row.an_empty_room_earns_nothing = 1 }
+    if (this.MusuHeard_present(w, r1, 1) === 1 && String(card.sc.played_through) === '1') { row.present_is_a_play_through = 1 }
     this.MusuHeard_present(w, r1, 1)
-    if (String(card.sc.mire) === '2') { row.it_accrues = 1 }
+    if (String(card.sc.played_through) === '2') { row.it_accrues = 1 }
     if (card.version === v0) { row.never_bumps_the_account = 1 }
     // a skip is worth exactly nothing — people skip songs they love, so there is no verb for it at all
-    if (!this.Heard_find(mag, 'r2', 'friendo').sc.mire) { row.a_skip_is_nothing = 1 }
+    if (!this.Heard_find(mag, 'r2', 'friendo').sc.played_through) { row.a_skip_is_nothing = 1 }
     this.MusuHeard_note(w, row)
 
 },
@@ -6439,23 +6439,25 @@ async MusuHeard_take(w) {
     this.MusuHeard_press(w, r1, 'friendo')
     this.MusuHeard_press(w, r2, 'friendo')
     let c1 = this.Heard_find(mag, 'r1', 'friendo')
-    if (c1 && String(c1.sc.take) === '1' && String(c1.sc.at) === '1788400000') { row.the_press_is_the_ask = 1 }
+    if (c1 && String(c1.sc.hearted_at) === '1788400000') { row.the_press_is_the_ask = 1 }
     if (c1 && String(c1.sc.title) === 'Track One' && !c1.sc.path) { row.the_listing_starts_at_the_act = 1 }
     if (!this.MusuHeard_keeps(w).length) { row.the_press_mints_no_heist = 1 }
     // the fat thumb: a second press inside the window takes it back, and the Card SURVIVES as a hearing
     this.MusuHeard_press(w, r1, 'friendo')
-    if (c1 && String(c1.sc.take) === '1' && String(c1.sc.at) === '1788400000' && String(c1.sc.mire) === '2') { row.pressing_again_keeps_it = 1 }
+    if (c1 && String(c1.sc.hearted_at) === '1788400000' && String(c1.sc.played_through) === '2') { row.pressing_again_keeps_it = 1 }
     // NO UNLOVE (the owner 2026-09-15: "it shouldn't exist anywhere … they're all reactions|moods the user
-    //  indicates towards some material"): a later press RE-AFFIRMS (re-stamps at), a Nay is its own reaction
-    //   that ends the yay, and a Yay ends the nay. This replaces the 09-10 toggle oath.
+    //  indicates towards some material"): a later press RE-AFFIRMS (re-stamps hearted_at), a Nay is its own
+    //   reaction that ends the yay, and a Yay ends the nay. This replaces the 09-10 toggle oath.  Under
+    //    stamps-not-flags (2026-09-21) nothing is CLEARED any more — `Heard_reaction` picks whichever of
+    //     hearted_at/nayed_at is NEWEST, so "ends" is a comparison, not a deletion.
     w.sc.now = 1788400150
     this.MusuHeard_press(w, r1, 'friendo')
-    if (c1 && String(c1.sc.take) === '1' && String(c1.sc.at) === '1788400150') { row.a_later_press_reaffirms = 1 }
+    if (c1 && String(c1.sc.hearted_at) === '1788400150') { row.a_later_press_reaffirms = 1 }
     this.Heard_nay(w, 'me', r1, 'friendo')
-    if (c1 && !c1.sc.take && String(c1.sc.nay) === '1') { row.a_nay_ends_the_yay = 1 }
+    if (c1 && this.Heard_reaction(c1) === 'nay' && c1.sc.hearted_at) { row.a_nay_ends_the_yay = 1 }
     w.sc.now = 1788400200
     this.MusuHeard_press(w, r1, 'friendo')
-    if (c1 && String(c1.sc.take) === '1' && !c1.sc.nay) { row.a_yay_ends_the_nay = 1 }
+    if (c1 && this.Heard_reaction(c1) === 'take' && c1.sc.nayed_at) { row.a_yay_ends_the_nay = 1 }
     // a track of my OWN is a taste fact nobody is owed — it names no holder to ask
     let mine = this.Ra_home_self(w, 'me')
     let own = this.Ra_rec_home(mine, 'own1')
@@ -6500,7 +6502,7 @@ async MusuHeard_forget(w) {
     let old = mag.i({ Cloud: 1, page: '99', created_at: '1780000000' })
     old.c.up = mag
     for (const e of [['x1', ''], ['x2', '1']]) {
-        let c = old.i(e[1] ? { Card: 1, id: e[0], pub: 'friendo', take: 1, at: '1780000000' } : { Card: 1, id: e[0], pub: 'friendo' })
+        let c = old.i(e[1] ? { Card: 1, id: e[0], pub: 'friendo', hearted_at: '1780000000' } : { Card: 1, id: e[0], pub: 'friendo' })
         c.c.up = old
     }
     let now = 1788400300
@@ -6512,7 +6514,7 @@ async MusuHeard_forget(w) {
     let x2 = this.Heard_find(mag, 'x2', 'friendo')
     if (this.Heard_gave_up(mag, x2, now) === 1 && this.Heard_word(mag, x2, now) === 'gave up') { row.gave_up_is_a_word = 1 }
     // …and the only exit is a person's ✕
-    if (this.Heard_untake(w, 'me', 'friendo', 'x2') === 1 && !x2.sc.take && this.Heard_find(mag, 'x2', 'friendo')) { row.only_a_person_retires_a_heart = 1 }
+    if (this.Heard_untake(w, 'me', 'friendo', 'x2') === 1 && this.Heard_reaction(x2) !== 'take' && this.Heard_find(mag, 'x2', 'friendo')) { row.only_a_person_retires_a_heart = 1 }
     // an emptied page goes with its last Card; the OPEN page never goes
     this.Heard_gc(w, 'me', now)
     if (!mag.o({ Cloud: 1, page: '99' })[0] && mag.o({ Cloud: 1 }).length === 1) { row.an_emptied_sitting_goes = 1 }
@@ -6586,20 +6588,22 @@ async MusuHeard_clone(w) {
     let bad = job.i({ unvouched: 1, tune: 'Friendo — Track Two' })
     bad.c.up = job
     this.Heard_clone_beat(w, w, 'me', shop)
-    if (String(card.sc.unvouched) === '1' && this.Heard_word(mag, card, 1788400300) === 'could not be verified') { row.the_verdict_lands_on_the_card = 1 }
+    if (this.Heard_verdict(card) === 'unvouched' && this.Heard_word(mag, card, 1788400300) === 'could not be verified') { row.the_verdict_lands_on_the_card = 1 }
     if (String(keep.sc.state) === 'done' && !this.Heist_job_of(shop, keep)) { row.the_wedged_keep_is_ended = 1 }
     // ── ATTENTION: the arrival asked to be looked at, and reading it spends the mark (Radio_circuit
     //  _todo §9.6).  The verdict that just landed IS the "look at this" case, so the mark is checked
-    //   right here rather than in a beat of its own.
-    if (String(card.sc.unseen) === '1') { row.an_arrival_asks_to_be_looked_at = 1 }
-    if (this.Heard_seen(w, 'me', 'friendo', 'r2') === 1 && !card.sc.unseen) { row.reading_a_row_spends_its_mark = 1 }
+    //   right here rather than in a beat of its own.  2026-09-21: news is DERIVED off the very stamp
+    //    Heard_clone_beat just wrote (offer_unsigned_at), not a separate `unseen` mark a writer sets.
+    if (this.Heard_news(card) === 1) { row.an_arrival_asks_to_be_looked_at = 1 }
+    if (this.Heard_seen(w, 'me', 'friendo', 'r2') === 1 && !this.Heard_news(card)) { row.reading_a_row_spends_its_mark = 1 }
     // …and a take CARRIED here from a sibling never nags: that body pressed the heart and is the one
-    //  waiting to hear.  `via` is the stamp Heard_hand_land leaves; without this guard the device doing
-    //   the work is the one that interrupts, which is exactly backwards.
+    //  waiting to hear.  `pressed_on` is the stamp Heard_hand_land leaves; without this guard the device
+    //   doing the work is the one that interrupts, which is exactly backwards.
     let carried = this.Heard_card(w, 'me', 'r1', 'friendo')
-    if (carried) { carried.sc.via = 'a linked device'; carried.bump() }
-    if (this.Heard_notice(carried) === 0 && !carried.sc.unseen) { row.a_carried_take_does_not_nag = 1 }
-    if (carried && carried.sc.via) { this.Heard_strip(carried, ['via']); carried.bump() }
+    let cnow = this.Heard_now(w)
+    if (carried) { carried.sc.pressed_on = '' + cnow; carried.sc.already_had_at = '' + (cnow + 1); carried.bump() }
+    if (this.Heard_news(carried) === 0) { row.a_carried_take_does_not_nag = 1 }
+    if (carried) { this.Heard_forget(carried, ['pressed_on', 'already_had_at']); carried.bump() }
     // …and the holder's queue moves on to the next wish rather than sitting behind a dead one
     let rows = this.Heard_takes(w, 'me', this.Heard_shelf(w, 'me'))
     let fr = rows.find((r) => r.pub === 'friendo')
@@ -6617,7 +6621,7 @@ async MusuHeard_clone(w) {
     let r2rec = this.Ra_rec_find(them, { Record: 1, id: 'r2' })
     this.MusuHeard_press(w, r2rec, 'friendo')   // unlove — the latest press is the state
     this.MusuHeard_press(w, r2rec, 'friendo')   // love it back — and the take clears the verdict
-    if (!card.sc.unvouched && card.sc.take) { row.loving_it_back_clears_the_verdict = 1 }
+    if (!this.Heard_verdict(card) && this.Heard_reaction(card) === 'take') { row.loving_it_back_clears_the_verdict = 1 }
     this.MusuHeard_note(w, row)
 
 },
@@ -6843,7 +6847,7 @@ async MusuHandoff_heart(w) {
     if (took === 1) { row.took = 1 }
     if (sent === 1 && again === 0) { row.one_frame_once = 1 }
     let card = this.MusuHandoff_card(w, phone, 't1')
-    if (card && !card.sc.handed && this.Heard_word(this.Heard_mag_find(w, me), card, this.Heard_now(w)) === 'waiting') { row.word_is_waiting = 1 }
+    if (card && !card.sc.carried_by && this.Heard_word(this.Heard_mag_find(w, me), card, this.Heard_now(w)) === 'waiting') { row.word_is_waiting = 1 }
     // a body WITH a folder hands nothing (it carries its own)
     if (await this.Heard_hand_beat(w, w, me, phone, {}) === 0) { row.a_folder_hands_nothing = 1 }
     this.MusuHandoff_note(w, row)
@@ -6856,11 +6860,11 @@ async MusuHandoff_land(w) {
     await this.SwarmStaple_pump(w)
     let row = { landed: 1 }
     let lc = this.MusuHandoff_card(w, laptop, 't1')
-    if (lc && +lc.sc.take === 1 && String(lc.sc.via) === 'Phone' && String(lc.sc.title) === 'Cosmic C') { row.laptop_wears_the_card = 1 }
+    if (lc && this.Heard_reaction(lc) === 'take' && lc.sc.pressed_on && this.Heard_hand_name(laptop, lc.sc.via_addr) === 'Phone' && String(lc.sc.title) === 'Cosmic C') { row.laptop_wears_the_card = 1 }
     let pc = this.MusuHandoff_card(w, phone, 't1')
-    if (pc && String(pc.sc.handed) === 'Laptop') { row.phone_reads_handed = 1 }
+    if (pc && String(pc.sc.carried_by) === 'Laptop') { row.phone_reads_handed = 1 }
     if (pc && this.Heard_word(this.Heard_mag_find(w, String(phone.sc.prepub)), pc, this.Heard_now(w)) === 'handed to Laptop') { row.word_changed = 1 }
-    if (lc && !lc.sc.handed && !lc.c.hand_sent) { row.laptop_hands_nothing_back = 1 }
+    if (lc && !lc.sc.carried_by && !lc.c.hand_sent) { row.laptop_hands_nothing_back = 1 }
     this.MusuHandoff_note(w, row)
 },
 // beat 5 — the ordinary haul on the laptop carries the handed heart (MusuHeard beat 7's road, unchanged).
@@ -6886,13 +6890,13 @@ async MusuHandoff_once(w) {
     let re = this.Heard_take(w, lme, w.c.rec_t1, 'dj')
     let lmag = this.Heard_mag_find(w, lme)
     let lcards = lmag ? this.Heard_cards(lmag).filter((c) => String(c.sc.id) === 't1') : []
-    if (re === 1 && lcards.length === 1 && +lcards[0].sc.take === 1) { row.own_heart_finds_the_one_card = 1 }
+    if (re === 1 && lcards.length === 1 && this.Heard_reaction(lcards[0]) === 'take') { row.own_heart_finds_the_one_card = 1 }
     // the laptop is AWAY: a new heart on the phone waits (nothing sent; the word stays waiting)
     this.Swarm_online(laptop, false)
     this.Heard_take(w, me, w.c.rec_t2, 'dj')
     let away = await this.Heard_hand_beat(w, w, me, phone, null)
     let pc2 = this.MusuHandoff_card(w, phone, 't2')
-    if (away === 0 && pc2 && !pc2.sc.handed && !pc2.c.hand_sent) { row.away_waits = 1 }
+    if (away === 0 && pc2 && !pc2.sc.carried_by && !pc2.c.hand_sent) { row.away_waits = 1 }
     // …and hands the moment the laptop is back — the roster mile's wake plus the next beat
     this.Swarm_online(laptop, true)
     this.Heard_hand_wake(w, phone)
@@ -6901,7 +6905,7 @@ async MusuHandoff_once(w) {
     await this.SwarmStaple_pump(w)
     let lc2 = this.MusuHandoff_card(w, laptop, 't2')
     pc2 = this.MusuHandoff_card(w, phone, 't2')
-    if (back === 1 && lc2 && +lc2.sc.take === 1 && pc2 && String(pc2.sc.handed) === 'Laptop') { row.back_hands = 1 }
+    if (back === 1 && lc2 && this.Heard_reaction(lc2) === 'take' && pc2 && String(pc2.sc.carried_by) === 'Laptop') { row.back_hands = 1 }
     this.MusuHandoff_note(w, row)
 },
 // beat 7 — THE LANE'S TWO SILENT HOLES (§9.7): a wish with nowhere to go, and a wish whose holder's
@@ -6961,13 +6965,13 @@ async MusuHandoff_echo(w) {
     if (pc1 && pc1.sc.landed_at && this.Heard_word(pmag, pc1, this.Heard_now(w)) === 'landed') { row.landing_echoes_back = 1 }
     // t2 comes back with a verdict instead of bytes
     let lc2 = this.MusuHandoff_card(w, laptop, 't2')
-    lc2.sc.unvouched = '1'
+    lc2.sc.offer_unsigned_at = '' + this.Heard_now(w)
     lc2.bump()
     await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
     await this.SwarmStaple_pump(w)
     await this.SwarmStaple_pump(w)
     let pc2 = this.MusuHandoff_card(w, phone, 't2')
-    if (pc2 && String(pc2.sc.unvouched) === '1' && this.Heard_word(pmag, pc2, this.Heard_now(w)) === 'could not be verified') { row.a_verdict_echoes_back_too = 1 }
+    if (pc2 && this.Heard_verdict(pc2) === 'unvouched' && this.Heard_word(pmag, pc2, this.Heard_now(w)) === 'could not be verified') { row.a_verdict_echoes_back_too = 1 }
     // sent once per outcome — a re-beat writes nothing new
     let v1 = pc1.version
     await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)

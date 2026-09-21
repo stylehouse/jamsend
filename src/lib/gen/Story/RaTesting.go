@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_RaTesting(): string { return '03460e5ee73c11d8~g1' },
+    Ghostmeta_Ghost_Story_RaTesting(): string { return 'a1659c401247b460~g1' },
 
 // RaTesting.g — né Radiation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  ⚠ `Ra` was a JUDGMENT CALL, not a derivation — say
@@ -1237,7 +1237,7 @@ MusuBuddy_witness(w) {
     //   §0.5 rule under a fixture: a durable structure REFERS into the edge and holds nothing of it.
     let hmag = this.Heard_mag_find(w, w.c.lis_pre)
     let hcard = hmag ? this.Heard_find(hmag, w.c.pick_id, w.c.dj_pre) : null
-    let heard_ok = !!(hcard && hcard.sc.take && String(hcard.sc.pub || '') === String(w.c.dj_pre) && !hmag.o({ Record: 1 }).length)
+    let heard_ok = !!(hcard && hcard.sc.hearted_at && String(hcard.sc.pub || '') === String(w.c.dj_pre) && !hmag.o({ Record: 1 }).length)
     if (n === 11 && heard_ok && !(w.oa({see: 'the listener remembers the session on their own heard Mag — a card naming the DJ and wearing the heart — while the mirror it refers to stays disposable'}))) w.i({see: 'the listener remembers the session on their own heard Mag — a card naming the DJ and wearing the heart — while the mirror it refers to stays disposable'})
     // beat 11: the grabbed keeper STANDS whole in the listeners own %Kept shelf (every chunk copied off the
     //  pulled husk) beside the buddys magazine still in the mirror — a KEEP the listener owns, not a stream.

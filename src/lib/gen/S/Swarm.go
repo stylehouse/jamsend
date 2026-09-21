@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'd765ff61eaae2fa2~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '53f664149b5a1f20~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -4062,9 +4062,12 @@ Swarm_restash_heard(ident, from, st0) {
 },
 // Swarm_heard_rehydrate — decode the stashed snap and GRAFT it onto the identity's own heard Mag.
 //  Idempotent by construction (Swarm_graft finds Mag by pub, Cloud by page, Card by (id, pub)), so a
-//   re-entered boot cannot double a wish.  The merge law's `mire = max` is applied to the decoded tree
-//    BEFORE the graft (graft itself is "the snap wins"), so a live card that has been played more since
-//     the stash keeps its count.  SYNC and stashed-gated like every sibling.
+//   re-entered boot cannot double a wish.  The merge law's `played_through = max` (2026-09-21, renamed
+//    from `mire`) is applied to the decoded tree BEFORE the graft (graft itself is "the snap wins"), so a
+//     live card that has been played more since the stash keeps its count.  SYNC and stashed-gated like
+//      every sibling.  The reaction/verdict `_at` stamps need no such merge here — this is the SAME-SOUL
+//       stash↔identity round trip (one writer, one reader), not the cross-device merge (rung 3, "every
+//        `_at` = max") the crew mirror will need.
 //  LEGACY (entries written before 2026-09-17 carry `rows`, not `snap`): a Dexie stash on a real phone
 //   predates this and must still come back — the old row loop stays, one boot's worth, then re-stashes
 //    in the new shape at the next settle.
@@ -4081,7 +4084,7 @@ Swarm_heard_rehydrate(w, ident, st0) {
     for (const pg of got.C.o({ Cloud: 1 })) {
         for (const card of pg.o({ Card: 1 })) {
             let twin = live ? this.Heard_find(live, card.sc.id, card.sc.pub) : null
-            if (twin && +(twin.sc.mire || 0) > +(card.sc.mire || 0)) { card.sc.mire = String(twin.sc.mire) }
+            if (twin && +(twin.sc.played_through || 0) > +(card.sc.played_through || 0)) { card.sc.played_through = String(twin.sc.played_through) }
             n = n + 1
         }
     }
@@ -4089,6 +4092,12 @@ Swarm_heard_rehydrate(w, ident, st0) {
     if (n) { console.log('♥ heard rehydrated — ' + n + ' reaction(s) survive the reload') }
     return n
 },
+// LEGACY KEY TRANSLATION (2026-09-21): a Dexie stash from before the stamps-not-flags rename carries the
+//  old flag names — `mire`→`played_through` translates directly; `take`/`nay` shared ONE `at` between them
+//   (the old flag model's own ambiguity), so it is routed by whichever reaction rode with it; `handed`
+//    carries over as a NAME with no `carried_at` (the legacy shape never had one).  `meh`, `via`, the three
+//     verdicts and `unseen` have no timestamp to recover in this shape and are left unset — safe: a stale
+//      verdict just re-asks once (Heard_takes), and a lost meh/via is low-stakes ambient metadata.
 Swarm_heard_rehydrate_rows(w, ident, mine) {
     let me = String(ident.sc.prepub || '')
     let mag = ident.oai({ Mag: 'heard', pub: me })
@@ -4104,11 +4113,11 @@ Swarm_heard_rehydrate_rows(w, ident, mine) {
         if (!e || !e.id) { continue }
         let card = this.Heard_find(mag, e.id, e.pub) || page.i(e.pub ? { Card: 1, id: String(e.id), pub: String(e.pub) } : { Card: 1, id: String(e.id) })
         card.c.up = card.c.up || page
-        for (const k of Object.keys(e)) {
-            if (k === 'id' || k === 'pub') { continue }
-            if (k === 'mire' && +(card.sc.mire || 0) >= +(e.mire || 0)) { continue }
-            card.sc[k] = String(e[k])
-        }
+        if (e.mire && +(card.sc.played_through || 0) < +(e.mire || 0)) { card.sc.played_through = String(e.mire) }
+        if (e.at && e.take) { card.sc.hearted_at = String(e.at) }
+        else if (e.at && e.nay) { card.sc.nayed_at = String(e.at) }
+        if (e.handed) { card.sc.carried_by = String(e.handed) }
+        for (const k of this.Heard_listing_keys()) { if (e[k] != null && e[k] !== '') { card.sc[k] = String(e[k]) } }
         card.bump()
         n = n + 1
     }
@@ -6068,7 +6077,12 @@ Swarm_protocol(kind) {
     //       (The folder's account snap still carries the whole Mag — whether it should also forget bare
     //        hearings is the owner's call, noted in Persistence_todo.)
     if (kind === 'heard') {
-        rules.push({ matching_any: [{ sc_has: { Card: 1 } }], unless_any: [{ sc_has: { take: 1 } }, { sc_has: { nay: 1 } }, { sc_has: { meh: 1 } }], means: { skip: 1 } })
+        // 2026-09-21: the Card wears TIMESTAMPS now (stamps not flags — Heard.g), not the flags `take`/
+        //  `nay`/`meh` this rule used to test — but the "keep it" law is unchanged: any of the three
+        //   reactions having EVER fired is what earns a Card a spot in the stash (a stamp is never
+        //    cleared, only outdated by a newer one, so this presence test is exactly as durable as the
+        //     old flag test was).
+        rules.push({ matching_any: [{ sc_has: { Card: 1 } }], unless_any: [{ sc_has: { hearted_at: 1 } }, { sc_has: { nayed_at: 1 } }, { sc_has: { mehed_at: 1 } }], means: { skip: 1 } })
     }
     // kind 'stash' — the identity as the DEXIE STASH carries it (Phase 5 rung 3, Swarm_restash_account):
     //  the account rules plus the two laws the hand-rolled pillars had kept in code.  A settled %Reach

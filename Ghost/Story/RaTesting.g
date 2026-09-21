@@ -1197,7 +1197,7 @@ MusuBuddy_witness(w):
     //   §0.5 rule under a fixture: a durable structure REFERS into the edge and holds nothing of it.
     let hmag = this.Heard_mag_find(w, w.c.lis_pre)
     let hcard = hmag ? this.Heard_find(hmag, w.c.pick_id, w.c.dj_pre) : null
-    let heard_ok = !!(hcard && hcard.sc.take && String(hcard.sc.pub || '') === String(w.c.dj_pre) && !hmag.o({ Record: 1 }).length)
+    let heard_ok = !!(hcard && hcard.sc.hearted_at && String(hcard.sc.pub || '') === String(w.c.dj_pre) && !hmag.o({ Record: 1 }).length)
     if (n === 11 && heard_ok && !(oa %see:'the listener remembers the session on their own heard Mag — a card naming the DJ and wearing the heart — while the mirror it refers to stays disposable')) i %see:'the listener remembers the session on their own heard Mag — a card naming the DJ and wearing the heart — while the mirror it refers to stays disposable'
     // beat 11: the grabbed keeper STANDS whole in the listeners own %Kept shelf (every chunk copied off the
     //  pulled husk) beside the buddys magazine still in the mirror — a KEEP the listener owns, not a stream.

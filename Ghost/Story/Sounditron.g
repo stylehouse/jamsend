@@ -1512,7 +1512,7 @@ Sounditron_facts(w, ctx):
             let krw = MH.c.radio_w || w
             let kme = this.Radio_pub ? this.Radio_pub(krw) : null
             let mag = kme ? this.Heard_mag_find(krw, kme) : null
-            if (mag) { for (const c of this.Heard_cards(mag)) { if (c.sc.take) { f.pool_seen = 1; break } } }
+            if (mag) { for (const c of this.Heard_cards(mag)) { if (c.sc.hearted_at) { f.pool_seen = 1; break } } }
         }
     } catch (er) {}
     for (const org of ((ctx && ctx.organs) || [])) { let mk = Object.keys(org.sc)[0]; if (f.present.indexOf(mk) < 0) { f.present.push(mk) } }

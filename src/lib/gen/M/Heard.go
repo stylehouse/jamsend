@@ -8,17 +8,34 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return '26913e29183cb0b8~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return '6c4b1f9f02ed1222~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
 //   radio ever played me, in `%Cloud,page:N` pages, one page per sitting.  A Card has TWO STAGES and
 //    nothing else:
-//      heard — `id, pub, mire`.  BARE IDS (Mag_todo §6b, ruled 2026-07-19: "listening history … keep it
-//       OBLIQUE — bare ids, no titles|paths").  `mire` counts play-throughs with a person in the room.
-//      taken — `take, at` plus the listing, cloned from the friend's answer to a describe once it lands
+//      heard — `id, pub, played_through`.  BARE IDS (Mag_todo §6b, ruled 2026-07-19: "listening history …
+//       keep it OBLIQUE — bare ids, no titles|paths").  `played_through` counts play-throughs with a
+//        person in the room.
+//      taken — `hearted_at` plus the listing, cloned from the friend's answer to a describe once it lands
 //       (`title, artist, dir, path, bytes, body_hash`) and `keep:<their keep-id>` naming the ORIGINAL.
 //  Acting is the moment a track becomes yours to hold, so the listing arrives with the act, never before.
+//
+//  STAMPS, NOT FLAGS (2026-09-21, Repli's law: a key cannot be UN-set over the wire — `op:delete` is
+//   whole-particle — so a flag that gets STRIPPED on every re-press or every retry is a delete pretending
+//    to be a change, and the crew mirror (SoundPooling_todo §0.0 rung 3) would lose it on the first sync).
+//   Every reaction and every outcome is now a TIMESTAMP that only ever gets written forward, never
+//    cleared: `hearted_at` / `nayed_at` / `mehed_at` (the three reactions — `Heard_reaction` picks whichever
+//     is NEWEST as the card's current word, so a later press outdating an older nay is a COMPARISON, not a
+//      deletion — "a nay ends a yay" is now just "nayed_at > hearted_at"), `already_had_at` /
+//       `landing_failed_at` / `offer_unsigned_at` (the three verdicts — `Heard_verdict` only counts one that
+//        is NEWER than `hearted_at`, so "a later hearted_at outdates a verdict" is the same comparison),
+//         `landed_at` / `carried_by`+`carried_at` (the handoff echo, §9.7), `pressed_on` (this card arrived
+//          via a sibling — replaces the old `via` NAME field; the display name derives from `via_addr`,
+//           already durable since rung 1), `looked_at` (replaces `unseen`'s delete-to-clear — `Heard_news`
+//            derives "is there anything new" by comparing the newest event stamp against it).  The only
+//             function that still DELETES anything is `Heard_untake` — the human's explicit ✕, a local
+//              act with no wire-replication claim on it, unlike every writer above.
 //
 //  THIS MAG IS FOUR READERS AT ONCE, which is the whole reason it exists (Radio_circuit_todo §1b):
 //   the DEDUP set the dial skips by (it replaces `radio.c.heard`, a 100-cap runtime bag that died on
@@ -33,12 +50,12 @@
 //  NOTHING HERE EVER CROSSES.  The Mag hangs under `%Identity` (or, in a Book, under the `Mine,pub`
 //   HOME — never its `stock` shelf, which is the Repli unit).  A Card is not a holding and must never
 //    read as one: `Repli_identity_keys` and `Swarm_graft` carry `Card: ['id','pub']` so a re-import
-//     upserts rather than twinning every Card whose `mire` moved.
+//     upserts rather than twinning every Card whose `played_through` moved.
 //
-//  THE CLOCK IS `Swarm_now` (a Book pins `w.sc.now`), never a bare Date.now — `at` and `created_at` are
-//   snapped scalars and a wall clock in a fixture is churn.  And a `mire` tick NEVER bumps: a bump on
-//    `%Identity` rewrites the whole account file inside the beliefs mutex, and a play-through is not
-//     worth a disk write (Radio_circuit_todo §5).
+//  THE CLOCK IS `Swarm_now` (a Book pins `w.sc.now`), never a bare Date.now — every `_at` stamp and
+//   `created_at` are snapped scalars and a wall clock in a fixture is churn.  And a `played_through` tick
+//    NEVER bumps: a bump on `%Identity` rewrites the whole account file inside the beliefs mutex, and a
+//     play-through is not worth a disk write (Radio_circuit_todo §5).
 
 //#region the mag — where it hangs, and the page per sitting
 
@@ -88,7 +105,7 @@ Heard_mag_at(container, pub) {
     let mag = pub ? container.oai({ Mag: 'heard', pub: String(pub) }) : container.oai({ Mag: 'heard' })
     mag.c.up = container
     // the rules ride the Mag line — visible, snapped, Book-gated, no %Rules particle (§2).  Only the
-    //  two TTLs in v1.0: the ambient road (mire ⇒ take with no heart pressed) wants a screen first.
+    //  two TTLs in v1.0: the ambient road (played_through ⇒ take with no heart pressed) wants a screen first.
     if (!mag.sc.heard_ttl) { mag.sc.heard_ttl = '30'; mag.sc.take_ttl = '90'; mag.bump() }
     return mag
 },
@@ -104,8 +121,9 @@ Heard_mag_near(shelf) {
     return up ? (up.o({ Mag: 'heard' })[0] || null) : null
 },
 // Heard_seed — mint or refresh one Card directly under a container's heard Mag, from a plain sc bag
-//  ({id, pub?, mire?, take?, at?, keep?, title?}).  The door for a Book and for the stash rehydrate: both
-//   have the facts in hand and no identity to resolve them through.  Idempotent by (id, pub).
+//  ({id, pub?, played_through?, hearted_at?, keep?, title?, …any stamp}).  The door for a Book and for the
+//   stash rehydrate: both have the facts in hand and no identity to resolve them through.  Idempotent by
+//    (id, pub).  Generic — every key in the bag lands verbatim, so a renamed stamp needs nothing here.
 Heard_seed(container, e) {
     if (!container || !e || !e.id) { return null }
     // THE MAG WEARS ITS OWNER'S PUB, THE CARD WEARS THE HOLDER'S (fixed 2026-09-05).  This keyed the Mag by
@@ -217,13 +235,22 @@ Heard_settle(w, me, why) {
     try { M.Swarm_account_settle(live, why) } catch (e) {}
     return 1
 },
+// Heard_react_at — the timestamp a reaction writer stamps: `Heard_now`, floored past whatever the OTHER
+//  two reactions already wear (2026-09-21).  Real seconds-resolution clocks (and a Book's PINNED one) can
+//   land two different reactions in the exact same second — press, nay, in one beat — and since nothing
+//    strips any more, Heard_reaction's "newest wins" needs a genuine ordering to compare, not a tie.  This
+//     guarantees the CALL that happens later always reads later, one second past the highest it beat.
+Heard_react_at(w, card, others) {
+    let now = this.Heard_now(w)
+    let floor = 0
+    for (const k of others) { let v = +(card.sc[k] || 0); if (v > floor) { floor = v } }
+    return '' + Math.max(now, floor + 1)
+},
 Heard_nay(w, me, rec, by) {
     if (!w || !me || !rec || !rec.sc.id) { return 0 }
     let card = this.Heard_card(w, me, this.Heard_take_id(rec), this.Heard_take_pub(rec, by))
     if (!card) { return 0 }
-    card.sc.nay = '1'
-    card.sc.at = '' + this.Heard_now(w)
-    this.Heard_strip(card, ['take', 'meh', 'unseen'])
+    card.sc.nayed_at = this.Heard_react_at(w, card, ['hearted_at', 'mehed_at'])
     card.bump()
     this.Heard_settle(w, me, 'heard_nay')
     return 1
@@ -233,21 +260,38 @@ Heard_meh(w, me, rec, by) {
     if (!M || !M.c.humdinger) { return 0 }
     if (!w || !me || !rec || !rec.sc.id) { return 0 }
     let card = this.Heard_card(w, me, this.Heard_take_id(rec), this.Heard_take_pub(rec, by))
-    if (!card || card.sc.take || card.sc.nay) { return 0 }
-    card.sc.meh = '1'
+    // ever hearted or nayed ⇒ a background skip is refused forever, exactly as before (the OLD guard
+    //  read the same two flags — under stamps-not-flags they just never go away either, so the check is
+    //   the same presence test it always was).
+    if (!card || card.sc.hearted_at || card.sc.nayed_at) { return 0 }
+    card.sc.mehed_at = this.Heard_react_at(w, card, ['hearted_at', 'nayed_at'])
     card.bump()
     this.Heard_settle(w, me, 'heard_meh')
     return 1
 },
-// Heard_barred_ids — {id:1} for every track the person said Nay or Meh to: the pool's exclusion set,
-//  read once per steward pass (Ra_quarter). Ids are ORIGINALS, the Mag's own id-space.
+// Heard_reaction — WHICH OF THE THREE IS CURRENT, decided by comparing timestamps rather than by which
+//  key survived a strip (2026-09-21): "a nay ends a yay" is now `nayed_at > hearted_at`, not a delete.
+//   Every reader that used to test `card.sc.take`/`nay`/`meh` directly goes through this now.
+Heard_reaction(card) {
+    if (!card) { return '' }
+    let best = ''
+    let bestAt = 0
+    for (const r of [['take', 'hearted_at'], ['nay', 'nayed_at'], ['meh', 'mehed_at']]) {
+        let at = +(card.sc[r[1]] || 0)
+        if (at > bestAt) { best = r[0]; bestAt = at }
+    }
+    return best
+},
+// Heard_barred_ids — {id:1} for every track whose CURRENT reaction is Nay or Meh: the pool's exclusion
+//  set, read once per steward pass (Ra_quarter).  Ids are ORIGINALS, the Mag's own id-space.
 Heard_barred_ids(w, me) {
     let out = {}
     let mag = this.Heard_mag_find(w, me)
     if (!mag) { return out }
     for (const c of this.Heard_cards(mag)) {
         if (!c.sc.id) { continue }
-        if (c.sc.nay || (c.sc.meh && !c.sc.take)) { out[String(c.sc.id)] = 1 }
+        let r = this.Heard_reaction(c)
+        if (r === 'nay' || r === 'meh') { out[String(c.sc.id)] = 1 }
     }
     return out
 },
@@ -258,13 +302,20 @@ Heard_through(w, me, rec) {
     if (!M || !M.c.humdinger) { return 0 }
     let card = this.Heard_mark(w, me, rec)
     if (!card) { return 0 }
-    card.sc.mire = '' + ((+(card.sc.mire || 0)) + 1)
+    card.sc.played_through = '' + ((+(card.sc.played_through || 0)) + 1)
     return 1
 
 },
-// Heard_verdict_keys — what a Card wears when the wire ANSWERED and the answer was not the track: the
-//  three failures no shelf can derive.  They are stripped on a fresh take, which is what makes a
-//   re-press a real retry rather than a heart that silently never asks again.
+// Heard_verdict_field — the STAMP a wire verdict key lands on (2026-09-21): the wire vocabulary
+//  (held/unvouched/landfail, also what a job's own markers wear — Heard_verdict_of reads those, a
+//   DIFFERENT particle, untouched by this rename) stays the short name; the Card wears the timestamp.
+Heard_verdict_field(key) {
+    if (key === 'held') { return 'already_had_at' }
+    if (key === 'unvouched') { return 'offer_unsigned_at' }
+    if (key === 'landfail') { return 'landing_failed_at' }
+    return ''
+},
+// Heard_verdict_keys — the wire vocabulary (unchanged) plus `why`, still what Heard_untake forgets.
 Heard_verdict_keys() {
     return ['held', 'unvouched', 'landfail', 'why']
 },
@@ -272,19 +323,28 @@ Heard_verdict_keys() {
 Heard_listing_keys() {
     return ['title', 'artist', 'dir', 'path', 'bytes', 'body_hash', 'keep']
 },
-// Heard_verdict — the answered-but-not-landed word on a Card, or ''.
+// Heard_verdict — the answered-but-not-landed word on a Card, or ''.  A verdict only counts if it is NEWER
+//  than `hearted_at` (2026-09-21): a re-press no longer STRIPS the old verdict, it OUTDATES it by
+//   comparison — "asking again" is a later hearted_at, not a deletion.
 Heard_verdict(card) {
     if (!card) { return '' }
-    for (const k of ['held', 'unvouched', 'landfail']) { if (card.sc[k]) { return k } }
-    return ''
+    let hearted = +(card.sc.hearted_at || 0)
+    let best = ''
+    let bestAt = 0
+    for (const key of ['held', 'unvouched', 'landfail']) {
+        let at = +(card.sc[this.Heard_verdict_field(key)] || 0)
+        if (at && at >= hearted && at > bestAt) { best = key; bestAt = at }
+    }
+    return best
 
 },
 // Heard_take — THE HEART.  Not a score that "reaches" a threshold: the heart is a decision, and a
 //  threshold nobody can see is magic (§2, the human lens).  (The fat-thumb un-press that once lived here is
 //   UN-presses it — every phone there is means undo by that gesture, and an accidental press had no exit
 //    but a ✕ on a keep that might not have been minted yet.  A press outside the window re-affirms: it
-//     re-stamps `at` (re-arming the gave-up clock) and clears any failure verdict, so pressing again is
-//      how a human retries a track the wire could not bring.
+//     re-stamps `hearted_at` (re-arming the gave-up clock and OUTDATING any failure verdict by comparison
+//      — Heard_verdict — rather than clearing it), so pressing again is how a human retries a track the
+//       wire could not bring.
 //  Returns 1 for taken, -1 for un-taken, 0 for nothing.
 //  A POOL COPY NAMES ITS ORIGINAL, WITH NO HOLDER (2026-09-15, Love_todo §0): a pooled %Record is
 //   `id:<lofi>,of:<original>` and carries no holder on purpose (the pool does not track where its try-outs
@@ -303,13 +363,14 @@ Heard_take(w, me, rec, by) {
     let pub = this.Heard_take_pub(rec, by)
     let card = this.Heard_card(w, me, this.Heard_take_id(rec), pub)
     if (!card) { return 0 }
-    let now = this.Heard_now(w)
     // NO UNLOVE, ANYWHERE (the owner 2026-09-15): a heart is a reaction, and a second press re-affirms —
-    //  re-stamps `at` (re-arming the gave-up clock), clears a verdict, clears a nay. Taking it back is not a
-    //   thing a heart does; a keep is called off on the Haul row, and a Nay is its own reaction.
-    card.sc.take = '1'
-    card.sc.at = '' + now
-    this.Heard_strip(card, this.Heard_verdict_keys().concat(['nay', 'meh']))
+    //  re-stamps `hearted_at` (re-arming the gave-up clock).  Nothing is CLEARED any more (2026-09-21,
+    //   stamps not flags): a fresh hearted_at simply OUTDATES a stale verdict or a stale nay by comparison
+    //    (Heard_verdict, Heard_reaction) — the wire never needed to un-set anything for a re-press to work.
+    //     Taking it back is not a thing a heart does; a keep is called off on the Haul row, and a Nay is
+    //      its own reaction.  Floored past every OTHER stamp on the card (not just nay/meh — the three
+    //       verdicts too), so "asking again" always outdates a same-tick verdict rather than tying it.
+    card.sc.hearted_at = this.Heard_react_at(w, card, ['nayed_at', 'mehed_at', 'already_had_at', 'offer_unsigned_at', 'landing_failed_at'])
     // the listing STARTS here (§1: acting is when it becomes yours to hold) with whatever the mirror card
     //  in hand already knows; the rest is cloned off the describe answer when it lands (Heard_clone_beat).
     //   Guarded stamps — an absent value would brand the snap {"undef":[…]}, the mint-bug law.
@@ -320,9 +381,11 @@ Heard_take(w, me, rec, by) {
     return 1
 
 },
-// Heard_strip — drop a set of keys off a Card without bumping (the caller bumps once).  Prefer deleting
-//  a key to setting it 0: a snapped boolean rides as `1` or ABSENT (CLAUDE.md).
-Heard_strip(card, keys) {
+// Heard_forget — drop a set of keys off a Card without bumping (the caller bumps once).  ONLY Heard_untake
+//  calls this now (2026-09-21): every AUTO writer above stopped stripping (Repli's law — a key cannot be
+//   UN-set over the wire), so the one surviving deleter is the human's own explicit ✕, a local act with no
+//    wire-replication claim on it.  Prefer deleting a key to setting it 0 (CLAUDE.md).
+Heard_forget(card, keys) {
     let n = 0
     for (const k of keys) { if (card.sc[k] != null) { delete card.sc[k]; n = n + 1 } }
     return n
@@ -335,10 +398,10 @@ Heard_strip(card, keys) {
 Heard_untake(w, me, pub, id) {
     let mag = this.Heard_mag_find(w, me)
     let card = this.Heard_find(mag, id, pub)
-    if (!card || !card.sc.take) { return 0 }
-    this.Heard_strip(card, ['take', 'at', 'unseen'])   // stop wanting it ⇒ stop nagging about it
-    this.Heard_strip(card, this.Heard_verdict_keys())
-    this.Heard_strip(card, this.Heard_listing_keys())
+    if (!card || this.Heard_reaction(card) !== 'take') { return 0 }
+    this.Heard_forget(card, ['hearted_at', 'looked_at'])   // stop wanting it ⇒ stop nagging about it
+    this.Heard_forget(card, ['already_had_at', 'offer_unsigned_at', 'landing_failed_at', 'why'])
+    this.Heard_forget(card, this.Heard_listing_keys())
     card.bump()
     return 1
 
@@ -346,22 +409,30 @@ Heard_untake(w, me, pub, id) {
 // ── ATTENTION (the owner 2026-09-10: *"we might like to get attention on the Haul cell when that
 //  happens, or some new loved track info is synced over, but it should also ambiently work in the
 //   background"*).  Design: Radio_circuit_todo §9.6.
-//  AMBIENT MEANS THE CELL SIMPLY KNOWS.  No notification, no sound, no interruption — one `unseen`
-//   mark on the Card, a count on the cell, and you find out when you look.  It is a scalar on the
-//    Card exactly like the ask, so it stashes, snaps and GCs with everything else and needs no new
-//     home (a mark that outlived its Card would be a row pointing at nothing).
+//  AMBIENT MEANS THE CELL SIMPLY KNOWS.  No notification, no sound, no interruption.  Rebuilt 2026-09-21
+//   (stamps not flags) as a PURE DERIVATION instead of an explicit `unseen` mark a writer had to remember
+//    to set: `Heard_news_at` is the newest of the "look at this" event stamps, and news is simply that
+//     stamp being newer than `looked_at` — so every writer above that already stamps its own event
+//      (carried_at, landed_at, the three verdict `_at`s) needs no separate notice call any more.
 //  ⚠ MARK IT WHERE THE TAKE WAS MADE, NOT WHERE THE WORK HAPPENED.  A landing on the laptop you are
-//   sitting at is not news; the same landing seen from the phone is.  `via` is already stamped by
-//    Heard_hand_land on a take that was CARRIED here from a sibling — so no `via` means this body
-//     pressed the heart itself, and only that body is told.  Without this the device doing the work
-//      is the one that nags, which is exactly backwards.
-Heard_notice(card) {
-    if (!card || !card.sc.take) { return 0 }
-    if (card.sc.via) { return 0 }        // carried here from a sibling — that body is the one waiting
-    if (card.sc.unseen) { return 0 }
-    card.sc.unseen = '1'
-    card.bump()
-    return 1
+//   sitting at is not news; the same landing seen from the phone is.  `pressed_on` is stamped by
+//    Heard_hand_land on a take that was CARRIED here from a sibling — so a pressed_on card excludes its
+//     OWN verdict stamps from counting as news (only that OTHER body, whose card has no pressed_on, is
+//      told) — without this the device doing the work is the one that nags, which is exactly backwards.
+//       `carried_at`/`landed_at` never appear on a pressed_on card at all (they are the presser's own
+//        ack fields), so only the verdict trio needs the guard.
+Heard_news_at(card) {
+    if (!card) { return 0 }
+    let best = 0
+    let consider = (k) => { let at = +(card.sc[k] || 0); if (at > best) { best = at } }
+    consider('carried_at')
+    consider('landed_at')
+    if (!card.sc.pressed_on) { consider('already_had_at'); consider('landing_failed_at'); consider('offer_unsigned_at') }
+    return best
+},
+Heard_news(card) {
+    let at = this.Heard_news_at(card)
+    return (at && at > +(card.sc.looked_at || 0)) ? 1 : 0
 
 },
 // Heard_seen — one row was actually LOOKED AT.  ⚠ Per ROW, never per cell: clearing on the cell merely
@@ -370,8 +441,8 @@ Heard_notice(card) {
 Heard_seen(w, me, pub, id) {
     let mag = this.Heard_mag_find(w, me)
     let card = mag ? this.Heard_find(mag, id, pub) : null
-    if (!card || !card.sc.unseen) { return 0 }
-    delete card.sc.unseen
+    if (!card || !this.Heard_news(card)) { return 0 }
+    card.sc.looked_at = '' + this.Heard_now(w)
     card.bump()
     return 1
 
@@ -382,7 +453,7 @@ Heard_unseen(w, me) {
     let mag = this.Heard_mag_find(w, me)
     if (!mag) { return 0 }
     let n = 0
-    for (const card of this.Heard_cards(mag)) { if (card.sc.unseen) { n = n + 1 } }
+    for (const card of this.Heard_cards(mag)) { if (this.Heard_news(card)) { n = n + 1 } }
     return n
 
 },
@@ -391,7 +462,7 @@ Heard_unseen(w, me) {
 //   it stood for was still standing — the button saying the opposite of the truth.  Pure probe.
 Heard_taken(w, me, pub, id) {
     let card = this.Heard_find(this.Heard_mag_find(w, me), id, pub)
-    return (card && card.sc.take) ? 1 : 0
+    return (card && this.Heard_reaction(card) === 'take') ? 1 : 0
 
 },
 // Heard_set — THE DEDUP SET the dial skips by: `{id:1}` over every Card, heard or taken.  This is the
@@ -412,25 +483,25 @@ Heard_set(w, me) {
 //  steward's taste input (Ra_quarter_tally delegates here).  It read a %Jam ledger of %Spin/%Like/%Grab
 //   rows until 2026-09-04 and scored Like 3 · Grab 2 · Spin 1; the same three signals live on the Card now
 //    and keep the same weights, with one deliberate change:
-//      `take` (the heart)                       → 3   — a decision outranks exposure, as before
+//      the heart, CURRENTLY the reaction (Heard_reaction) → 3   — a decision outranks exposure, as before
 //      `keep` (the original was materialised)   → 2   — they carried it: the old %Grab, by evidence
-//      `mire` (played through, someone present) → 1 each — the old %Spin, but ATTENTION rather than mere
+//      `played_through` (someone present)       → 1 each — the old %Spin, but ATTENTION rather than mere
 //                                                    exposure: a bare hearing now scores ZERO.
 //  That last is the point. A %Spin was "it streamed at you", which a radio does all day whether anyone is
-//   in the room; `mire` only moves when a person was there and let the track finish. Taste built out of
-//    what a machine played to an empty kitchen was never taste.
+//   in the room; `played_through` only moves when a person was there and let the track finish. Taste built
+//    out of what a machine played to an empty kitchen was never taste.
 Heard_tally(shelf) {
     let out = {}
     for (const c of this.Heard_cards(this.Heard_mag_near(shelf))) {
         let id = String(c.sc.id || '')
         if (!id) { continue }
-        let mire = +(c.sc.mire || 0)
-        let took = c.sc.take ? 1 : 0
+        let mire = +(c.sc.played_through || 0)
+        let took = this.Heard_reaction(c) === 'take' ? 1 : 0
         let kept = c.sc.keep ? 1 : 0
         let why = took ? 'took it' : 'heard it'
         if (kept) { why = why + ' — carried' }
         if (mire) { why = why + ' — played through ' + mire }
-        out[id] = { score: took * 3 + kept * 2 + mire, why: why, mire: mire, took: took, kept: kept, at: +(c.sc.at || 0) }
+        out[id] = { score: took * 3 + kept * 2 + mire, why: why, mire: mire, took: took, kept: kept, at: +(c.sc.hearted_at || 0) }
     }
     return out
 },
@@ -510,7 +581,7 @@ Heard_takes(w, me, shelf) {
     let cards = []
     let holder = {}
     for (const c of this.Heard_cards(mag)) {
-        if (!c.sc.take || !c.sc.id) { continue }
+        if (this.Heard_reaction(c) !== 'take' || !c.sc.id) { continue }
         let pub = String(c.sc.pub || '')
         if (pub === String(me)) { continue }
         if (this.Heard_landed(shelf, c)) { continue }
@@ -521,7 +592,7 @@ Heard_takes(w, me, shelf) {
         holder[String(c.sc.id)] = pub
         cards.push(c)
     }
-    cards.sort((a, b) => (+(a.sc.at || 0)) - (+(b.sc.at || 0)))
+    cards.sort((a, b) => (+(a.sc.hearted_at || 0)) - (+(b.sc.hearted_at || 0)))
     let rows = {}
     let order = []
     for (const c of cards) {
@@ -537,22 +608,23 @@ Heard_takes(w, me, shelf) {
 //  offers a ✕, and is never deleted by the machine.  "A take with no exit is immortality" and "you can't
 //   lose a heart" reconciled — the clock can change what a heart SAYS, never whether it exists (§3).
 Heard_gave_up(mag, card, now) {
-    if (!card || !card.sc.take || card.sc.keep) { return 0 }
+    if (!card || this.Heard_reaction(card) !== 'take' || card.sc.keep) { return 0 }
     let ttl = (+((mag && mag.sc.take_ttl) || 90)) * 86400
-    let at = +(card.sc.at || 0)
+    let at = +(card.sc.hearted_at || 0)
     return (at && (now - at) >= ttl) ? 1 : 0
 
 },
 // Heard_word — the ONE SHORT PHRASE a Haul row carries for a wish, decided here rather than in the face
-//  (the Heist_keep_gist doctrine).  These are §C's words verbatim: a person meets these, never `mire`.
+//  (the Heist_keep_gist doctrine).  These are §C's words verbatim: a person meets these, never `played_through`.
 Heard_word(mag, card, now) {
     if (!card) { return '' }
-    if (card.sc.held) { return 'already had it' }
-    if (card.sc.unvouched) { return 'could not be verified' }
-    if (card.sc.landfail) { return 'failed' }
+    let v = this.Heard_verdict(card)
+    if (v === 'held') { return 'already had it' }
+    if (v === 'unvouched') { return 'could not be verified' }
+    if (v === 'landfail') { return 'failed' }
     if (this.Heard_gave_up(mag, card, now)) { return 'gave up' }
     if (card.sc.landed_at) { return 'landed' }
-    if (card.sc.handed) { return 'handed to ' + String(card.sc.handed) }
+    if (card.sc.carried_by) { return 'handed to ' + String(card.sc.carried_by) }
     if (card.sc.waiting_for) { return 'waiting for ' + String(card.sc.waiting_for) }
     return 'waiting'
 
@@ -575,7 +647,7 @@ Heard_gc(w, me, now) {
         let born = +(pg.sc.created_at || 0)
         if (!born || (now - born) < ttl) { continue }
         let goners = []
-        for (const c of pg.o({ Card: 1 })) { if (!c.sc.take) { goners.push(c) } }
+        for (const c of pg.o({ Card: 1 })) { if (this.Heard_reaction(c) !== 'take') { goners.push(c) } }
         for (const c of goners) { pg.drop(c); n = n + 1 }
         if (!pg.o({ Card: 1 }).length && pg !== mag.c.sitting) { mag.drop(pg) }
     }
@@ -610,7 +682,7 @@ Heard_landed_ids(w, me, shelf) {
     if (!mag || !shelf) { return out }
     let cards = []
     for (const c of this.Heard_cards(mag)) {
-        if (!c.sc.take || !c.sc.id) { continue }
+        if (this.Heard_reaction(c) !== 'take' || !c.sc.id) { continue }
         // a heart on a track of MY OWN is a taste fact, not an acquisition — nothing was acquired, so it
         //  is not "what came in lately" and the pool's recent compartment must not draw it (the same
         //   exclusion Heard_takes makes for the same reason: nobody was ever owed it).
@@ -620,7 +692,7 @@ Heard_landed_ids(w, me, shelf) {
         if (!got) { continue }
         cards.push({ card: c, id: String(got.sc.id || c.sc.id) })
     }
-    cards.sort((a, b) => (+(b.card.sc.at || 0)) - (+(a.card.sc.at || 0)))
+    cards.sort((a, b) => (+(b.card.sc.hearted_at || 0)) - (+(a.card.sc.hearted_at || 0)))
     for (const e of cards.slice(0, this.Heard_landed_cap())) { out.push(e.id) }
     return out
 },
@@ -660,9 +732,11 @@ Heard_keep(w, rw, shop, dj, rec) {
 //    verify), `landfail,why` (three throws on the landing).  The engine stamps these on the JOB, which
 //     FLATTENS when the keep finishes, so nothing durable would remember them; and each of them removes
 //      the husk from the mirror, which leaves the keep pulling something that is no longer there — the
-//       holder's one live slot wedged forever.  So: copy the verdict onto the Card and END the keep, and
-//        the queue moves on.  A re-press of ♥ clears the verdict and asks again (Heard_take).
-//  Runs at the top of every haul beat.  Pure `o` until something has actually landed.
+//       holder's one live slot wedged forever.  So: copy the verdict onto the Card (as a TIMESTAMP,
+//        Heard_verdict_field) and END the keep, and the queue moves on.  A re-press of ♥ OUTDATES the
+//         verdict by comparison and asks again (Heard_take, Heard_verdict) — nothing is cleared here.
+//  Runs at the top of every haul beat.  Pure `o` until something has actually landed.  Neither branch below
+//   calls a separate "mark it unseen" any more — Heard_news derives that off the very stamps written here.
 Heard_clone_beat(w, rw, me, shop) {
     if (!shop || !rw || !me) { return 0 }
     let mag = this.Heard_mag_find(rw, me)
@@ -678,16 +752,15 @@ Heard_clone_beat(w, rw, me, shop) {
         let mir = rw.o({ Theirs: 1, pub: dj })[0]
         let mirstock = mir ? mir.o({ stock: 1, pub: dj })[0] : null
         let head = mirstock ? this.Ra_rec_find(mirstock, { Record: 1, re: seed }) : null
-        if (head) { let learned = this.Heard_clone_head(card, head); if (learned) { this.Heard_notice(card) }; n = n + learned }
+        if (head) { n = n + this.Heard_clone_head(card, head) }
         let v = this.Heard_verdict_of(this.Heist_job_of ? this.Heist_job_of(shop, keep) : null)
         if (v && String(keep.sc.state || 'primed') !== 'done') {
-            card.sc[v.key] = '1'
+            card.sc[this.Heard_verdict_field(v.key)] = '' + this.Heard_now(w)
             if (v.why) { card.sc.why = String(v.why).slice(0, 120) }
             card.bump()
             keep.sc.state = 'done'
             keep.bump()
             try { this.Heist_job_drop(shop, keep) } catch (er) {}
-            this.Heard_notice(card)   // a verdict is exactly the 'look at this' case
             console.log('♥⚠ ' + String(card.sc.title || seed).slice(0, 32) + ' — ' + this.Heard_word(mag, card, this.Heard_now(w)))
             n = n + 1
         }
@@ -827,11 +900,12 @@ Heard_carrying(row, of) {
 //  folder cannot be carried where it was pressed — the phone holds the wish — and a crew body that HAS a
 //   folder (a roster %Body wearing %Organ,kind:trove, which the roster mile already replicates) does the
 //    carrying.  So the WISH travels, not the bytes: one `take` frame over the crew mile lands as the SAME
-//     Card on that body's own heard Mag (taken, `via` the body that pressed it), and its ordinary
-//      Heard_haul_beat keeps it like any heart pressed there.  A `take_got` comes back and the phone's Card
-//       wears `handed:<name>` — the Haul row's word turns from `waiting` to `handed to Laptop`.
-//  EVERY ROAD IS A SCALAR ON THE CARD (into:pool · handed · via · held · landfail): a face can draw the
-//   wires of love-heist-opfs-fsa-now-later straight off the Mag, with no state of its own.
+//     Card on that body's own heard Mag (taken, `pressed_on` timestamped — the body that pressed it is
+//      derivable from `via_addr`), and its ordinary Heard_haul_beat keeps it like any heart pressed there.
+//       A `take_got` comes back and the phone's Card wears `carried_by:<name>` — the Haul row's word turns
+//        from `waiting` to `handed to Laptop`.
+//  EVERY ROAD IS A SCALAR ON THE CARD (into:pool · carried_by · pressed_on · the verdict `_at`s): a face
+//   can draw the wires of love-heist-opfs-fsa-now-later straight off the Mag, with no state of its own.
 //  Store-and-forward like %Suggest: the Card IS the queue (durable — pillar 8 stashes takes), sent once
 //   per session (`card.c.hand_sent`), re-offered when a sibling announces itself on the roster mile
 //    (Heard_hand_wake), retired by the ack.  Live frames ride Swarm_sibling_send (body page + soul
@@ -851,7 +925,7 @@ Heard_hand_targets(ident, mineaddr) {
     }
     return out
 },
-// Heard_hand_body — the roster row at an address (the ack's return address; the `via`/`handed` name).
+// Heard_hand_body — the roster row at an address (the ack's return address; the `carried_by` name).
 Heard_hand_body(ident, addr) {
     if (!ident || !addr || !this.Swarm_body_roster) { return null }
     for (const b of this.Swarm_body_roster(ident)) { if (this.Swarm_body_addr(b) === String(addr)) { return b } }
@@ -883,7 +957,7 @@ async Heard_hand_beat(w, rw, me, ident, nav) {
         if (!rw.c.hand_no_target_told) { console.log('⏳ heard: no linked device with a folder yet — hearts wait'); rw.c.hand_no_target_told = 1 }
         for (const row of this.Heard_takes(rw, me, this.Heard_shelf(rw, me))) {
             for (const card of row.cards) {
-                if (card.sc.handed || this.Heard_verdict(card)) { continue }
+                if (card.sc.carried_by || this.Heard_verdict(card)) { continue }
                 if (card.sc.waiting_for !== 'a device with a folder') { card.sc.waiting_for = 'a device with a folder'; card.bump() }
             }
         }
@@ -893,7 +967,7 @@ async Heard_hand_beat(w, rw, me, ident, nav) {
     let sent = 0
     for (const row of this.Heard_takes(rw, me, this.Heard_shelf(rw, me))) {
         for (const card of row.cards) {
-            if (card.sc.handed || card.c.hand_sent || this.Heard_verdict(card)) { continue }
+            if (card.sc.carried_by || card.c.hand_sent || this.Heard_verdict(card)) { continue }
             if (card.sc.waiting_for) { delete card.sc.waiting_for; card.bump() }
             let frame = { kind: 'take', page: this.Swarm_page(ident), from: mineaddr, id: String(card.sc.id), pub: String(row.pub) }
             if (card.sc.title) { frame.title = String(card.sc.title) }
@@ -912,13 +986,15 @@ Heard_hand_land(w, ident, frame) {
     if (!pub || pub === me) { return 0 }
     let card = this.Heard_card(w, me, String(frame.id), pub)
     if (!card) { return 0 }
-    let fresh = card.sc.take ? 0 : 1
-    if (fresh) { card.sc.take = '1'; card.sc.at = '' + this.Heard_now(w); this.Heard_strip(card, this.Heard_verdict_keys()) }
+    let fresh = this.Heard_reaction(card) !== 'take' ? 1 : 0
+    if (fresh) {
+        let at = this.Heard_react_at(w, card, ['nayed_at', 'mehed_at', 'already_had_at', 'offer_unsigned_at', 'landing_failed_at'])
+        card.sc.hearted_at = at
+        card.sc.pressed_on = at
+    }
     if (frame.title && !card.sc.title) { card.sc.title = this.Radio_clean(String(frame.title)) }
     if (frame.artist && !card.sc.artist) { card.sc.artist = this.Radio_clean(String(frame.artist)) }
     let from = String(frame.from || (frame.page ? frame.page.prepub : '') || '')
-    let who = this.Heard_hand_name(ident, from)
-    if (who && !card.sc.via) { card.sc.via = who }
     if (from && !card.sc.via_addr) { card.sc.via_addr = from }   // the way back, for Heard_hand_ack_beat
     card.bump()
     let back = this.Heard_hand_body(ident, from)
@@ -930,28 +1006,33 @@ Heard_hand_land(w, ident, frame) {
     return fresh ? 1 : 2
 },
 // Heard_hand_got — THE PHONE HEARS BACK.  Two different acks share this frame now (§9.7): the FIRST is
-//  the handoff itself ("it's in hands that can carry it" — `handed`, unchanged); the SECOND, later, is
-//  the OUTCOME of that carrying (`frame.state`) — `landed` (Heard_hand_ack_beat found it on the trove
+//  the handoff itself ("it's in hands that can carry it" — `carried_by`+`carried_at`); the SECOND, later,
+//  is the OUTCOME of that carrying (`frame.state`) — `landed` (Heard_hand_ack_beat found it on the trove
 //   body's own shelf) or `gave_up` (the wire answered and the answer was not the track, `frame.verdict`
-//    one of Heard_verdict_keys()).  A gave_up ack copies the SAME verdict key a direct ask would have
-//     written, so Heard_word renders it identically whether this body asked itself or was told.
+//    one of Heard_verdict_keys()).  A gave_up ack copies the SAME verdict stamp a direct ask would have
+//     written (Heard_verdict_field), so Heard_word renders it identically whether this body asked itself
+//      or was told.
 Heard_hand_got(w, ident, frame) {
     if (!w || !ident || !frame || !frame.id) { return 0 }
     let me = String(ident.sc.prepub || '')
     let mag = this.Heard_mag_find(w, me)
     let card = mag ? this.Heard_find(mag, String(frame.id), String(frame.pub || '')) : null
     if (!card) { return 0 }
+    let now = this.Heard_now(w)
     let from = String(frame.from || (frame.page ? frame.page.prepub : '') || '')
     let who = this.Heard_hand_name(ident, from) || 'a linked device'
     let changed = 0
-    if (String(card.sc.handed || '') !== who) { card.sc.handed = who; changed = 1 }   // durable — same seam as the landing
-    if (frame.state === 'landed' && !card.sc.landed_at) { card.sc.landed_at = '' + this.Heard_now(w); changed = 1 }
-    if (frame.state === 'gave_up' && this.Heard_verdict_keys().slice(0, 3).includes(String(frame.verdict)) && !card.sc[frame.verdict]) {
-        card.sc[frame.verdict] = '1'
-        if (frame.why) { card.sc.why = String(frame.why).slice(0, 120) }
-        changed = 1
+    if (String(card.sc.carried_by || '') !== who) { card.sc.carried_by = who; card.sc.carried_at = '' + now; changed = 1 }
+    if (frame.state === 'landed' && !card.sc.landed_at) { card.sc.landed_at = '' + now; changed = 1 }
+    if (frame.state === 'gave_up') {
+        let field = this.Heard_verdict_field(String(frame.verdict))
+        if (field && !card.sc[field]) {
+            card.sc[field] = '' + now
+            if (frame.why) { card.sc.why = String(frame.why).slice(0, 120) }
+            changed = 1
+        }
     }
-    if (changed) { this.Heard_notice(card); card.bump(); this.Heard_settle(w, me, 'heard_hand_got') }
+    if (changed) { card.bump(); this.Heard_settle(w, me, 'heard_hand_got') }
     return 1
 },
 // Heard_hand_wake — a sibling just announced itself (the roster mile): re-offer what was never acked.
@@ -960,12 +1041,12 @@ Heard_hand_wake(w, ident) {
     let mag = this.Heard_mag_find(w, String(ident.sc.prepub || ''))
     if (!mag) { return 0 }
     let n = 0
-    for (const card of this.Heard_cards(mag)) { if (card.c.hand_sent && !card.sc.handed) { delete card.c.hand_sent; n = n + 1 } }
+    for (const card of this.Heard_cards(mag)) { if (card.c.hand_sent && !card.sc.carried_by) { delete card.c.hand_sent; n = n + 1 } }
     return n
 },
-// Heard_hand_ack_beat — THE TROVE BODY'S ECHO (§9.7): a take carried here (`via`/`via_addr`) that has
-//  since either landed on THIS shelf or come back with a verdict tells the presser so.  Without this the
-//   presser's Card read "handed to Laptop" forever, even long after the wire already knew more.  Sent
+// Heard_hand_ack_beat — THE TROVE BODY'S ECHO (§9.7): a take carried here (`pressed_on`/`via_addr`) that
+//  has since either landed on THIS shelf or come back with a verdict tells the presser so.  Without this
+//   the presser's Card read "handed to Laptop" forever, even long after the wire already knew more.  Sent
 //    once per outcome (`card.c.hand_acked`) — the outcome does not un-happen while the presser is away,
 //     so no store-and-forward re-offer is needed the way the initial `take` frame needs one.
 Heard_hand_ack_beat(w, rw, me, ident, shop) {
@@ -975,7 +1056,7 @@ Heard_hand_ack_beat(w, rw, me, ident, shop) {
     let shelf = this.Heard_shelf(rw, me)
     let n = 0
     for (const card of this.Heard_cards(mag)) {
-        if (!card.sc.via || !card.sc.via_addr || card.c.hand_acked) { continue }
+        if (!card.sc.pressed_on || !card.sc.via_addr || card.c.hand_acked) { continue }
         let frame = { kind: 'take_got', page: this.Swarm_page(ident), from: this.Heard_hand_myaddr(ident), id: String(card.sc.id), pub: String(card.sc.pub || '') }
         let outcome = ''
         if (this.Heard_landed(shelf, card)) { outcome = 'landed'; frame.state = 'landed' }
