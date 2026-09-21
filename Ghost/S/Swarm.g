@@ -1597,9 +1597,8 @@ Swarm_arm(w):
         //  claimed `by` inside the road (SoundPooling_todo:640).  The mail lane below passes none.
         if (frame.header.type === 'reach') this.Swarm_reach_road(w2, ident, frame.swarm, frame.header.from)
         if (frame.header.type === 'reach_done') this.Swarm_reach_ack(w2, ident, frame.swarm)
-        // the handoff lane (Heard.g, Radio_circuit_todo §7.5): a sibling hands me a heart to carry / confirms mine landed.
-        if (frame.header.type === 'take' && this.Heard_hand_land) this.Heard_hand_land(w2, ident, frame.swarm)
-        if (frame.header.type === 'take_got' && this.Heard_hand_got) this.Heard_hand_got(w2, ident, frame.swarm)
+        // the mirror mile (Heard.g rung 3, retiring the old handoff lane): a sibling's whole heard Mag.
+        if (frame.header.type === 'heard') await this.Swarm_heard_mirror(w2, ident, frame.swarm)
         if (frame.header.type === 'ferry') this.Swarm_ferry_park(w2, ident, frame.swarm)
         // FERRY WANT — a Linkee's steady "I want linkage" ask (Swarm_ferry_ask): the far mirror of the seal-seam.
         //  It keeps the Linkor (me) focused on the confirm no matter how MY `.c` was reset — my focus is driven by
@@ -1943,8 +1942,7 @@ async Swarm_pump(w, ident):
         if (frame.kind === 'crew') await this.Swarm_crew_heard(w, ident, frame)
         if (frame.kind === 'reach') this.Swarm_reach_road(w, ident, frame)
         if (frame.kind === 'reach_done') this.Swarm_reach_ack(w, ident, frame)
-        if (frame.kind === 'take' && this.Heard_hand_land) this.Heard_hand_land(w, ident, frame)
-        if (frame.kind === 'take_got' && this.Heard_hand_got) this.Heard_hand_got(w, ident, frame)
+        if (frame.kind === 'heard') await this.Swarm_heard_mirror(w, ident, frame)
         if (frame.kind === 'ferry') this.Swarm_ferry_park(w, ident, frame)
         // SEED THE CHARTER AT SEAL (Division_todo step 4): a freshly sealed friend learns my division
         //  now, not at the next change.  No-op for an undivided soul (no Charter to gossip).
@@ -5859,7 +5857,11 @@ Swarm_protocol(kind):
     //      mint head bufs onto the pool card without adding the skip here and the next account snap walks
     //       into a Uint8Array.  If a FOURTH buf-bearing kind is ever carried onto a card, it belongs here
     //        in the same commit as the carry that mints it.
-    let skips = ['mail', 'rebuff', 'Sibling', 'Stolen', 'Preview', 'Stream', 'Prehead']
+    // `TheirHeard` (rung 3, 2026-09-21) is a sibling's MIRRORED heard Mag, a pure runtime cache the
+    //  gossip mile rebuilds every session — never carried by the account snap, a page export, or even
+    //   the heard pillar's own stash (which is scoped to MY OWN Mag only, never a broad walk, but the
+    //    blanket skip costs nothing and rules the case out everywhere on principle).
+    let skips = ['mail', 'rebuff', 'Sibling', 'Stolen', 'Preview', 'Stream', 'Prehead', 'TheirHeard']
     if (kind === 'page') skips = [...skips, 'Pier', 'Idzeug', 'SocialGraph', 'Key', 'Crew']
     if (kind === 'crew') skips = [...skips, 'Key']
     let rules = []
@@ -7303,9 +7305,26 @@ async Swarm_roster_heard(w, ident, frame):
     try { landed = await this.Swarm_family_grants_absorb(w, ident, frame.grants || []) } catch (e) {}
     let orgs = 0
     try { orgs = this.Swarm_organ_absorb(ident, frame.organs || []) } catch (e) {}
-    // a sibling is here — the hearts I could not carry get re-offered (Heard_hand_wake; the ack retires them)
-    if (this.Heard_hand_wake) { try { this.Heard_hand_wake(w, ident) } catch (e) {} }
+    // a sibling is here — my heard Mag gets re-sent (rung 3's mirror mile; store-and-forward, a miss
+    //  just waits for the next reaction or the next sibling roster frame)
+    if (this.Heard_gossip_beat) { try { await this.Heard_gossip_beat(w, ident) } catch (e) {} }
     if (n || landed || orgs) { try { this.Swarm_account_settle(ident, 'sibling_roster') } catch (e) {} }
+    return n
+// Swarm_heard_mirror — RECEIVE (rung 3, SoundPooling_todo §0.0): a sibling's heard Mag snap lands
+//  beside mine, in a `%TheirHeard,pub:<sibling>` home (Heard_mirror_mag) — NEVER grafted into MY OWN
+//   Mag, whose pages are MY sittings and do not line up with theirs.  `Heard_mirror_merge` (Heard.g)
+//    does the actual per-field max-merge; this is the wire door — decode, resolve the home, settle if
+//     anything actually moved.
+async Swarm_heard_mirror(w, ident, frame):
+    if (!w || !ident || !frame || !frame.snap) { return 0 }
+    let from = String(frame.from || (frame.page ? frame.page.prepub : '') || '')
+    if (!from || !this.Heard_mirror_mag || !this.Heard_mirror_merge) { return 0 }
+    let got = this.decode_wh_lines(String(frame.snap))
+    if (!got.C) { console.log('♥⚠ heard mirror refused — ' + (got.errors ? got.errors.join('; ') : 'bad snap')); return 0 }
+    let mag = this.Heard_mirror_mag(w, String(ident.sc.prepub || ''), from)
+    if (!mag) { return 0 }
+    let n = this.Heard_mirror_merge(mag, got.C, this.Swarm_now(w))
+    if (n) { try { this.Swarm_account_settle(ident, 'sibling_heard') } catch (e) {} }
     return n
 // Swarm_roster_onto — ABSORB: land a published roster (from Swarm_roster_of, across the wire) as %Body
 //  rows under a FRIEND's %Pier, so Swarm_pier_body can route to the counterparty's departments. oai per

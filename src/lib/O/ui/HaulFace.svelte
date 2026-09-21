@@ -87,9 +87,9 @@
         // ATTENTION, AMBIENTLY (owner 2026-09-10: attention on this cell when a hand lands or new loved
         //  track info syncs over — *"but it should also ambiently work in the background"*).  A COUNT and
         //   nothing else: no notification, no sound, nothing that pulls you mid-track.  The cell simply
-        //    knows, and you find out when you look.  Marked in the ghost at the three ARRIVAL seams
-        //     (a verdict, a listing learned, a hand coming back) and only on the body that pressed the
-        //      heart — see Heard_notice.  Design: Radio_circuit_todo §9.6.
+        //    knows, and you find out when you look.  DERIVED off the event stamps themselves (Heard_news),
+        //     never a separate mark a writer has to remember to set, and only on the body that pressed the
+        //      heart — a `pressed_on` card (rung 3: adopted from a sibling's mirror) excludes itself.
         const unseen = Number(A?.Heard_unseen?.(W, A?.Radio_pub?.(W)) ?? 0)
         // TODAY is the number worth leading with: a list that only ever grows stops being news, and the
         //  one question you come back to this cell with is "did the ones I left running land?".

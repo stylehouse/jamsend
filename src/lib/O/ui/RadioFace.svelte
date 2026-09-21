@@ -22,7 +22,7 @@
         try {
             const w = n?.c?.w; const me = (H as any)?.Radio_pub?.(w) || 'me'
             const ident = (H as any)?.Swarm_live_self?.()
-            const targets = ident ? ((H as any)?.Heard_hand_targets?.(ident, (H as any)?.Heard_hand_myaddr?.(ident)) ?? []) : []
+            const targets = ident ? ((H as any)?.Heard_trove_siblings?.(ident) ?? []) : []
             return {
                 copy: !!(w && (H as any)?.Ra_pool_consent?.(w)),
                 folder: !!((H as any)?.Crate_nav?.()),

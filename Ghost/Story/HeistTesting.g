@@ -6242,7 +6242,7 @@ async MusuHeard_clone(w):
     if (this.Heard_news(card) === 1) { row.an_arrival_asks_to_be_looked_at = 1 }
     if (this.Heard_seen(w, 'me', 'friendo', 'r2') === 1 && !this.Heard_news(card)) { row.reading_a_row_spends_its_mark = 1 }
     // …and a take CARRIED here from a sibling never nags: that body pressed the heart and is the one
-    //  waiting to hear.  `pressed_on` is the stamp Heard_hand_land leaves; without this guard the device
+    //  waiting to hear.  `pressed_on` is the stamp Heard_adopt leaves; without this guard the device
     //   doing the work is the one that interrupts, which is exactly backwards.
     let carried = this.Heard_card(w, 'me', 'r1', 'friendo')
     let cnow = this.Heard_now(w)
@@ -6384,25 +6384,32 @@ MusuHeard_witness(w):
         this.story_swear(w, 'the yes still declares exactly one compartment — the third checkbox is what splits the budget in two — and unticking it gives the room back whole so the number a person typed always means the same thing')
 
 
-// ══ MusuHandoff — THURSDAY (Radio_circuit_todo §7.5, ruled 2026-09-05): a ♥ pressed where it cannot be
-//  carried is HANDED to the crew body that can ══════════════════════════════════════════════════════════
+// ══ MusuHandoff — THURSDAY, REWRITTEN 2026-09-21 (rung 3, SoundPooling_todo §0.0): a ♥ pressed where it
+//  cannot be carried is SEEN by every sibling, not HANDED to one ═══════════════════════════════════════
 //  Tuesday exists (a phone holds the wish) and Friday exists (a body with a folder hauls a heart — MusuHeard
 //   beat 7); this Book is the day between.  Alice's soul has two bodies in ONE world: `phone` (Captain, no
 //    nav — it can keep nothing) and `laptop` (Cave, a nav + a %Organ,kind:trove that the roster mile has
 //     already replicated onto the phone's view of it).  A DJ's mirror stands with two tracks.  Seeded keys,
 //      pinned clock, no station: the crew frames ride Swarm_deliver's in-process mail and SwarmStaple_pump
 //       drains it each pass.  Everything the test observes hangs under ONE w/%testing subtree.
-//   beat 2  STAND   — the two bodies, the trove organ, the DJ mirror, the laptop's shop
-//   beat 3  HEART   — ♥ on the phone; the hand beat sends ONE `take` frame to the trove body
-//   beat 4  LAND    — the mail drains: the laptop's own heard Mag wears the same Card, taken, `via` Phone;
-//                     the `take_got` comes back and the phone's Card wears `handed` — its WORD changes
-//   beat 5  CARRY   — the laptop's ordinary Heard_haul_beat keeps it from the DJ mirror: one %Heist, take:1
-//   beat 6  ONCE    — a handed heart is never re-sent; the laptop's own ♥ finds the one Card; a heart
-//                     pressed while the laptop is AWAY waits — and hands the moment the laptop is back
-//   beat 7  WAITING — the lane's two silent holes (§9.7): no trove sibling at all, and a sibling whose
-//                     mirror of the holder has not stood, both say WHY on the Card instead of nothing
-//   beat 8  ECHO    — the trove body's own landing, or its verdict, echoes back to the presser — the
-//                     Card stops reading "handed to Laptop" forever once the wire actually knows more
+//  THE OLD LANE (retired, Heard.g "THE HANDOFF" region): one `take` frame to the FIRST trove sibling, a
+//   `take_got` ack back.  THE NEW MILE (Heard_gossip_beat / Swarm_heard_mirror): every reaction re-sends
+//    my WHOLE heard Mag to EVERY sibling; a trove body that sees a wish it does not itself carry ADOPTS it
+//     (Heard_adopt) onto its own Mag and hauls — the ordinary gossip mile carries the outcome back with no
+//      separate ack at all.  Nobody is ever "handed" anything; there is nothing left TO hand.
+//   beat 2  STAND        — the two bodies, the trove organ, the DJ mirror, the laptop's shop
+//   beat 3  HEART        — ♥ on the phone; the gossip beat sends my whole Mag to the one sibling
+//   beat 4  MIRROR       — the mail drains: the wish lands in the LAPTOP's MIRROR of the phone (not its
+//                          own Mag — mirroring is not adopting) — but the laptop's UNION already owes it
+//   beat 5  CARRY        — the ordinary haul ADOPTS the union wish onto the laptop's own Mag, then keeps it
+//   beat 6  EFFECT       — the laptop's own card lands; gossiping it back makes the PHONE's UNION read
+//                          "landed" off the laptop's mirrored copy — no ack frame anywhere
+//   beat 7  VERDICT      — the wire answers with a refusal instead; the SAME mirror mile carries THAT back
+//                          too, and re-gossiping writes nothing new once it has
+//   beat 8  WAITING      — a lone soul's wish just waits, forever (nobody left to hand it to); a trove
+//                          sibling whose mirror of the HOLDER has not stood says why, cleared once it does
+//   beat 9  RESILIENCE   — a wish pressed while the only sibling is AWAY reaches nobody; the roster mile's
+//                          wake re-sends the whole Mag the moment it is back
 MusuHandoff(A,w):
     w oai %req:wrangle,eternal
         await &MusuHandoff_drive,w,req
@@ -6419,20 +6426,27 @@ MusuHandoff_note(w, sc):
 MusuHandoff_card(w, ident, id):
     let mag = this.Heard_mag_find(w, String(ident.sc.prepub))
     return mag ? this.Heard_find(mag, id, 'dj') : null
+// MusuHandoff_mirror_card — the SAME (id, pub) as seen through `me`'s mirror OF `from` — never `me`'s
+//  own Mag.  What Swarm_heard_mirror actually populates.
+MusuHandoff_mirror_card(w, me, from, id, pub):
+    let t = this.Heard_mirror_home_find(w, String(me.sc.prepub), String(from.sc.prepub))
+    let mag = t ? t.o({ Mag: 'heard' })[0] : null
+    return mag ? this.Heard_find(mag, id, pub) : null
 async MusuHandoff_drive(w, req):
     let run = (this.c.run)
-    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 8 }
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 9 }
     let n = run?.c.step_n
     w.sc.now = 1788500000 + 10 * (+n || 0)
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) { await this.MusuHandoff_stand(w) }
         if (n === 3) { await this.MusuHandoff_heart(w) }
-        if (n === 4) { await this.MusuHandoff_land(w) }
+        if (n === 4) { await this.MusuHandoff_mirror(w) }
         if (n === 5) { await this.MusuHandoff_carry(w) }
-        if (n === 6) { await this.MusuHandoff_once(w) }
-        if (n === 7) { await this.MusuHandoff_waiting(w) }
-        if (n === 8) { await this.MusuHandoff_echo(w) }
+        if (n === 6) { await this.MusuHandoff_effect(w) }
+        if (n === 7) { await this.MusuHandoff_verdict(w) }
+        if (n === 8) { await this.MusuHandoff_waiting(w) }
+        if (n === 9) { await this.MusuHandoff_resilience(w) }
     }
     await this.SwarmStaple_pump(w)
     this.MusuHandoff_witness(w)
@@ -6467,40 +6481,41 @@ async MusuHandoff_stand(w):
     }
     w.c.shop = this.Ra_home_shop(w, String(laptop.sc.prepub))
     let row = { stood: 1 }
-    let seen = this.Heard_hand_targets(phone, this.Heard_hand_myaddr(phone))
-    if (seen.length === 1 && seen[0].name === 'Laptop') { row.phone_sees_one_trove = 1 }
-    if (!this.Heard_hand_targets(laptop, this.Heard_hand_myaddr(laptop)).length) { row.laptop_sees_none = 1 }
+    let troves = this.Heard_trove_siblings(phone)
+    if (troves.length === 1 && troves[0].name === 'Laptop') { row.phone_sees_one_trove = 1 }
+    if (!this.Heard_trove_siblings(laptop).length) { row.laptop_sees_none = 1 }
     this.MusuHandoff_note(w, row)
-// beat 3 — ♥ on the phone.  It has no folder (nav null on purpose): the wish is taken and HANDED, once.
+// beat 3 — ♥ on the phone.  It has no folder (nav null on purpose): the wish is taken, and the WHOLE Mag
+//  is gossiped to every sibling — one frame, no per-track routing, no "first trove body" to find.
 async MusuHandoff_heart(w):
     let phone = w.c.phone
     let me = String(phone.sc.prepub)
     let took = this.Heard_take(w, me, w.c.rec_t1, 'dj')
-    let sent = await this.Heard_hand_beat(w, w, me, phone, null)
-    let again = await this.Heard_hand_beat(w, w, me, phone, null)
+    let sent = await this.Heard_gossip_beat(w, phone)
     let row = { hearted: 1 }
     if (took === 1) { row.took = 1 }
-    if (sent === 1 && again === 0) { row.one_frame_once = 1 }
+    if (sent === 1) { row.gossip_reaches_the_one_sibling = 1 }
     let card = this.MusuHandoff_card(w, phone, 't1')
     if (card && !card.sc.carried_by && this.Heard_word(this.Heard_mag_find(w, me), card, this.Heard_now(w)) === 'waiting') { row.word_is_waiting = 1 }
-    // a body WITH a folder hands nothing (it carries its own)
-    if (await this.Heard_hand_beat(w, w, me, phone, {}) === 0) { row.a_folder_hands_nothing = 1 }
     this.MusuHandoff_note(w, row)
-// beat 4 — the mail drains both ways.  The laptop wears the same Card; the phone's word changes.
-async MusuHandoff_land(w):
+// beat 4 — the mail drains.  The wish lands in the LAPTOP's MIRROR of the phone — a %TheirHeard home
+//  beside its own Mag, never inside it (their pages are their sittings).  The laptop's OWN Mag stays
+//  bare; mirroring is not adopting.  But the union — what Heard_takes actually reads — already owes it.
+async MusuHandoff_mirror(w):
     let phone = w.c.phone
     let laptop = w.c.laptop
-    await this.SwarmStaple_pump(w)
+    let lme = String(laptop.sc.prepub)
     await this.SwarmStaple_pump(w)
     let row = { landed: 1 }
+    let mc = this.MusuHandoff_mirror_card(w, laptop, phone, 't1', 'dj')
+    if (mc && this.Heard_reaction(mc) === 'take' && String(mc.sc.title) === 'Cosmic C') { row.mirror_wears_the_same_card = 1 }
     let lc = this.MusuHandoff_card(w, laptop, 't1')
-    if (lc && this.Heard_reaction(lc) === 'take' && lc.sc.pressed_on && this.Heard_hand_name(laptop, lc.sc.via_addr) === 'Phone' && String(lc.sc.title) === 'Cosmic C') { row.laptop_wears_the_card = 1 }
-    let pc = this.MusuHandoff_card(w, phone, 't1')
-    if (pc && String(pc.sc.carried_by) === 'Laptop') { row.phone_reads_handed = 1 }
-    if (pc && this.Heard_word(this.Heard_mag_find(w, String(phone.sc.prepub)), pc, this.Heard_now(w)) === 'handed to Laptop') { row.word_changed = 1 }
-    if (lc && !lc.sc.carried_by && !lc.c.hand_sent) { row.laptop_hands_nothing_back = 1 }
+    if (!lc || this.Heard_reaction(lc) !== 'take') { row.mirroring_does_not_adopt = 1 }
+    let rows = this.Heard_takes(w, lme, this.Heard_shelf(w, lme))
+    if (rows[0] && rows[0].pub === 'dj' && rows[0].cards.some((c) => String(c.sc.id) === 't1')) { row.the_union_already_owes_it = 1 }
     this.MusuHandoff_note(w, row)
-// beat 5 — the ordinary haul on the laptop carries the handed heart (MusuHeard beat 7's road, unchanged).
+// beat 5 — the ordinary haul (MusuHeard beat 7's road, unchanged) finds the union wish, ADOPTS it onto
+//  the laptop's OWN Mag (Heard_adopt — `pressed_on`, not my own press), and keeps it from the DJ mirror.
 async MusuHandoff_carry(w):
     let laptop = w.c.laptop
     let me = String(laptop.sc.prepub)
@@ -6508,40 +6523,62 @@ async MusuHandoff_carry(w):
     let keeps = w.c.shop.o({ Heist: 1 })
     let row = { carried: 1 }
     let k = keeps[0]
-    if (got === 1 && keeps.length === 1 && k && String(k.sc.seed) === 't1' && String(k.sc.pub) === 'dj' && +k.sc.take === 1 && String(k.sc.state) === 'primed') { row.one_keep_primed = 1 }
+    if (got === 1 && keeps.length === 1 && k && String(k.sc.seed) === 't1' && String(k.sc.pub) === 'dj' && String(k.sc.state) === 'primed') { row.one_keep_primed = 1 }
+    let lc = this.MusuHandoff_card(w, laptop, 't1')
+    if (lc && this.Heard_reaction(lc) === 'take' && lc.sc.pressed_on) { row.carrying_adopts_the_wish = 1 }
+    if (lc && String(lc.sc.carried_by) === 'Laptop') { row.the_keep_stamps_who_has_it = 1 }
     this.MusuHandoff_note(w, row)
-// beat 6 — once, dedup, and store-and-forward: away waits; back hands.
-async MusuHandoff_once(w):
+// beat 6 — the laptop's OWN card lands (the same query Heard_landed always asks); gossiping it back is
+//  the SAME mile that carried the wish — no take_got, no ack frame.  The phone never adopted t1 itself,
+//  but its union now includes the laptop's richer mirror, and Heard_word reads THAT one.
+async MusuHandoff_effect(w):
     let phone = w.c.phone
     let laptop = w.c.laptop
     let me = String(phone.sc.prepub)
-    let row = { once: 1 }
-    if (await this.Heard_hand_beat(w, w, me, phone, null) === 0) { row.handed_is_never_resent = 1 }
-    // the laptop ♥s the same track itself, 20s after the landing: a re-affirm on the ONE card, no second card
     let lme = String(laptop.sc.prepub)
-    let re = this.Heard_take(w, lme, w.c.rec_t1, 'dj')
-    let lmag = this.Heard_mag_find(w, lme)
-    let lcards = lmag ? this.Heard_cards(lmag).filter((c) => String(c.sc.id) === 't1') : []
-    if (re === 1 && lcards.length === 1 && this.Heard_reaction(lcards[0]) === 'take') { row.own_heart_finds_the_one_card = 1 }
-    // the laptop is AWAY: a new heart on the phone waits (nothing sent; the word stays waiting)
-    this.Swarm_online(laptop, false)
-    this.Heard_take(w, me, w.c.rec_t2, 'dj')
-    let away = await this.Heard_hand_beat(w, w, me, phone, null)
-    let pc2 = this.MusuHandoff_card(w, phone, 't2')
-    if (away === 0 && pc2 && !pc2.sc.carried_by && !pc2.c.hand_sent) { row.away_waits = 1 }
-    // …and hands the moment the laptop is back — the roster mile's wake plus the next beat
-    this.Swarm_online(laptop, true)
-    this.Heard_hand_wake(w, phone)
-    let back = await this.Heard_hand_beat(w, w, me, phone, null)
+    let row = { effect: 1 }
+    let landed = this.Ra_rec_home(this.Ra_home_self(w, lme), 't1')
+    landed.sc.title = 'Cosmic C'
+    landed.bump()
+    await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
+    let lc = this.MusuHandoff_card(w, laptop, 't1')
+    if (lc && lc.sc.landed_at) { row.the_laptops_own_card_lands = 1 }
+    await this.Heard_gossip_beat(w, laptop)
     await this.SwarmStaple_pump(w)
-    await this.SwarmStaple_pump(w)
-    let lc2 = this.MusuHandoff_card(w, laptop, 't2')
-    pc2 = this.MusuHandoff_card(w, phone, 't2')
-    if (back === 1 && lc2 && this.Heard_reaction(lc2) === 'take' && pc2 && String(pc2.sc.carried_by) === 'Laptop') { row.back_hands = 1 }
+    let punion = this.Heard_cards_union(w, me).find((c) => String(c.sc.id) === 't1')
+    let pmag = this.Heard_mag_find(w, me)
+    if (punion && this.Heard_word(pmag, punion, this.Heard_now(w)) === 'landed') { row.the_phones_word_derives_from_the_mirror = 1 }
     this.MusuHandoff_note(w, row)
-// beat 7 — THE LANE'S TWO SILENT HOLES (§9.7): a wish with nowhere to go, and a wish whose holder's
-//  mirror has not stood yet, used to sit as plain "waiting" — indistinguishable from a send in flight.
-//  Both now say why, on the Card, cleared the instant the wait ends.
+// beat 7 — the wire answers t2 with a refusal instead of bytes.  The SAME mirror mile carries the
+//  verdict back — the presser's own Heard_word renders it exactly as if it had asked the wire itself.
+//  Re-gossiping and re-reading writes nothing new once the outcome has already crossed.
+async MusuHandoff_verdict(w):
+    let phone = w.c.phone
+    let laptop = w.c.laptop
+    let me = String(phone.sc.prepub)
+    let lme = String(laptop.sc.prepub)
+    let row = { verdict: 1 }
+    this.Heard_take(w, me, w.c.rec_t2, 'dj')
+    await this.Heard_gossip_beat(w, phone)
+    await this.SwarmStaple_pump(w)
+    await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
+    let lc2 = this.MusuHandoff_card(w, laptop, 't2')
+    lc2.sc.offer_unsigned_at = '' + this.Heard_now(w)
+    lc2.bump()
+    await this.Heard_gossip_beat(w, laptop)
+    await this.SwarmStaple_pump(w)
+    let pmag = this.Heard_mag_find(w, me)
+    let punion2 = this.Heard_cards_union(w, me).find((c) => String(c.sc.id) === 't2')
+    if (punion2 && this.Heard_verdict(punion2) === 'unvouched' && this.Heard_word(pmag, punion2, this.Heard_now(w)) === 'could not be verified') { row.a_verdict_reaches_the_presser_too = 1 }
+    let before = punion2 ? punion2.version : -1
+    await this.Heard_gossip_beat(w, laptop)
+    await this.SwarmStaple_pump(w)
+    let punion2b = this.Heard_cards_union(w, me).find((c) => String(c.sc.id) === 't2')
+    if (punion2b && punion2b.version === before) { row.regossip_writes_nothing_new = 1 }
+    this.MusuHandoff_note(w, row)
+// beat 8 — THE LANE'S OLD SILENT HOLE, RESHAPED (§9.7): a lone soul's wish has nobody to be adopted by
+//  at all — it just waits, forever (there is no send left to fail at); a trove sibling whose mirror of
+//  the HOLDER has not stood still says why, cleared the instant the wait ends — unchanged from rung 1.
 async MusuHandoff_waiting(w):
     let row = { waiting: 1 }
     let laptop = w.c.laptop
@@ -6555,9 +6592,9 @@ async MusuHandoff_waiting(w):
     let rec3 = w.i({ Record: 1, id: 't3', title: 'Solo S', artist: 'DJ Oscillo' })
     rec3.c.up = w
     this.Heard_take(w, lonelyme, rec3, 'dj')
-    await this.Heard_hand_beat(w, w, lonelyme, lonely, null)
-    let c3 = this.Heard_find(this.Heard_mag_find(w, lonelyme), 't3', 'dj')
-    if (c3 && c3.sc.waiting_for === 'a device with a folder') { row.no_target_waits_with_a_word = 1 }
+    let c3mag = this.Heard_mag_find(w, lonelyme)
+    let c3 = this.Heard_find(c3mag, 't3', 'dj')
+    if (c3 && this.Heard_word(c3mag, c3, this.Heard_now(w)) === 'waiting') { row.a_lone_soul_just_waits = 1 }
     // case B — a trove sibling exists, but nobody has mirrored ITS holder yet: the laptop hears a track
     //  from a second DJ no %Theirs mirror has ever stood for.
     let rec4 = w.i({ Record: 1, id: 't4', title: 'Solo Q', artist: 'DJ Quiet' })
@@ -6573,40 +6610,29 @@ async MusuHandoff_waiting(w):
     let got4b = await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
     if (got4b === 1 && card4 && !card4.sc.waiting_for) { row.mirror_arriving_clears_the_word = 1 }
     this.MusuHandoff_note(w, row)
-// beat 8 — THE ECHO (§9.7): a landing, or a verdict, on the trove body's side is told back to the
-//  presser — without this the presser's Card read "handed to Laptop" forever, long after the wire knew
-//   more.  A gave-up ack copies the SAME verdict key a direct ask would have written, so the presser's own
-//    Heard_word renders it exactly as if it had asked the wire itself.
-async MusuHandoff_echo(w):
+// beat 9 — a wish pressed while the only sibling is AWAY reaches nobody (Swarm_sibling_reach's own
+//  offline gate); the roster mile's wake — a sibling announcing itself is proof it is back — re-sends
+//  the whole Mag, same as any other reaction would.
+async MusuHandoff_resilience(w):
     let phone = w.c.phone
     let laptop = w.c.laptop
     let me = String(phone.sc.prepub)
     let lme = String(laptop.sc.prepub)
-    let row = { echo: 1 }
-    // t1 lands on the laptop's OWN shelf — the same query Heard_landed always asks
-    let landed = this.Ra_rec_home(this.Ra_home_self(w, lme), 't1')
-    landed.sc.title = 'Cosmic C'
-    landed.bump()
-    await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
+    let row = { resilience: 1 }
+    this.Swarm_online(laptop, false)
+    let rec5 = w.i({ Record: 1, id: 't5', title: 'Solo Z', artist: 'DJ Oscillo' })
+    rec5.c.up = w
+    this.Heard_take(w, me, rec5, 'dj')
+    await this.Heard_gossip_beat(w, phone)
     await this.SwarmStaple_pump(w)
+    if (!this.MusuHandoff_mirror_card(w, laptop, phone, 't5', 'dj')) { row.away_never_lands = 1 }
+    // …and lands the moment the laptop is back — a sibling's roster announcement is what proves it, and
+    //  that wake is what re-fires the gossip beat (Swarm_roster_heard, Swarm.g)
+    this.Swarm_online(laptop, true)
+    await this.Swarm_roster_heard(w, phone, { roster: this.Swarm_roster_of(laptop) })
     await this.SwarmStaple_pump(w)
-    let pc1 = this.MusuHandoff_card(w, phone, 't1')
-    let pmag = this.Heard_mag_find(w, me)
-    if (pc1 && pc1.sc.landed_at && this.Heard_word(pmag, pc1, this.Heard_now(w)) === 'landed') { row.landing_echoes_back = 1 }
-    // t2 comes back with a verdict instead of bytes
-    let lc2 = this.MusuHandoff_card(w, laptop, 't2')
-    lc2.sc.offer_unsigned_at = '' + this.Heard_now(w)
-    lc2.bump()
-    await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
-    await this.SwarmStaple_pump(w)
-    await this.SwarmStaple_pump(w)
-    let pc2 = this.MusuHandoff_card(w, phone, 't2')
-    if (pc2 && this.Heard_verdict(pc2) === 'unvouched' && this.Heard_word(pmag, pc2, this.Heard_now(w)) === 'could not be verified') { row.a_verdict_echoes_back_too = 1 }
-    // sent once per outcome — a re-beat writes nothing new
-    let v1 = pc1.version
-    await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
-    await this.SwarmStaple_pump(w)
-    if (pc1.version === v1) { row.echoed_once = 1 }
+    let mc5 = this.MusuHandoff_mirror_card(w, laptop, phone, 't5', 'dj')
+    if (mc5 && this.Heard_reaction(mc5) === 'take') { row.back_wakes_the_gossip = 1 }
     this.MusuHandoff_note(w, row)
 // the witness — every pass; each %see fires the first pass its truth holds.
 MusuHandoff_witness(w):
@@ -6614,9 +6640,10 @@ MusuHandoff_witness(w):
     let n = (this.c.run)?.c.step_n
     let has = (k) => t.o(k).length > 0
     let say = (s) => { if (!t.oa({ see: s })) { this.MusuHandoff_note(w, { see: s }) } }
-    if (n >= 3 && has({ hearted: 1, took: 1, one_frame_once: 1, word_is_waiting: 1, a_folder_hands_nothing: 1 })) { say('a heart pressed where there is no folder is taken and handed once — one frame to the one body wearing a trove while a body with a folder hands nothing') }
-    if (n >= 4 && has({ landed: 1, laptop_wears_the_card: 1, phone_reads_handed: 1, word_changed: 1, laptop_hands_nothing_back: 1 })) { say('the wish travels not the bytes — the laptop wears the same card taken via the phone and the phone reads handed to Laptop') }
-    if (n >= 5 && has({ carried: 1, one_keep_primed: 1 })) { say('a handed heart is carried by the ordinary haul — one keep primed on the laptop from the DJ mirror wearing take') }
-    if (n >= 6 && has({ once: 1, handed_is_never_resent: 1, own_heart_finds_the_one_card: 1, away_waits: 1, back_hands: 1 })) { say('a handed heart is never re-sent and the laptops own heart finds the one card — a wish pressed while the laptop is away waits and hands the moment it is back') }
-    if (n >= 7 && has({ waiting: 1, no_target_waits_with_a_word: 1, no_mirror_waits_with_a_word: 1, mirror_arriving_clears_the_word: 1 })) { say('a heart with nowhere to go, or nobody yet mirroring its holder, says so on the card instead of nothing at all — and the word clears the moment the wait ends') }
-    if (n >= 8 && has({ echo: 1, landing_echoes_back: 1, a_verdict_echoes_back_too: 1, echoed_once: 1 })) { say('the trove bodys landing or verdict echoes back to the presser — the card stops reading handed to laptop forever, sent once per outcome') }
+    if (n >= 3 && has({ hearted: 1, took: 1, gossip_reaches_the_one_sibling: 1, word_is_waiting: 1 })) { say('a heart pressed where there is no folder is taken and the whole heard mag is gossiped to every sibling in one frame — no per-track routing, no first trove body to find') }
+    if (n >= 4 && has({ landed: 1, mirror_wears_the_same_card: 1, mirroring_does_not_adopt: 1, the_union_already_owes_it: 1 })) { say('the wish travels not the bytes — the laptop mirrors the same card taken via the phone beside its own mag, not inside it, and the union already owes it before anything is adopted') }
+    if (n >= 5 && has({ carried: 1, one_keep_primed: 1, carrying_adopts_the_wish: 1, the_keep_stamps_who_has_it: 1 })) { say('the ordinary haul finds the union wish, adopts it onto the laptops own mag, and carries it from the dj mirror — one keep primed, stamped with who is carrying it') }
+    if (n >= 6 && has({ effect: 1, the_laptops_own_card_lands: 1, the_phones_word_derives_from_the_mirror: 1 })) { say('the laptops own card lands and gossiping it back is the same mile that carried the wish — no ack frame anywhere — so the phones word reads landed straight off the mirrored stamps') }
+    if (n >= 7 && has({ verdict: 1, a_verdict_reaches_the_presser_too: 1, regossip_writes_nothing_new: 1 })) { say('a refusal reaches the presser through the same mirror mile a landing would — the presser reads the identical word it would have asked the wire itself for — and re-gossiping an unchanged outcome writes nothing new') }
+    if (n >= 8 && has({ waiting: 1, a_lone_soul_just_waits: 1, no_mirror_waits_with_a_word: 1, mirror_arriving_clears_the_word: 1 })) { say('a lone souls wish just waits forever with nobody left to adopt it, while a trove sibling not yet mirroring the holder says so on the card instead of nothing at all — and the word clears the moment the wait ends') }
+    if (n >= 9 && has({ resilience: 1, away_never_lands: 1, back_wakes_the_gossip: 1 })) { say('a wish pressed while the only sibling is away reaches nobody — and a sibling announcing itself back is what wakes the whole mag to gossip again, landing it the same as any other reaction would') }

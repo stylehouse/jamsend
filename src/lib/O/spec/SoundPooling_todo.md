@@ -114,6 +114,53 @@
      = "on THIS shelf", `Heard_landed`); the phone's word derives from the laptop's mirrored stamps
       (`carried_by` = which body's Card has a keep; `landed_at` mirrors back; the listing rides the Card).
        `a_folder_hands_nothing` stays true — nobody hands. MusuHandoff re-sworn to the new sentences.
+
+   **RUNG 3 — LANDED 2026-09-21.** Shipped closer to the plan's own words than either prior rung — but the
+    "own-track rule = Heard_landed" line hid a real design gap the plan didn't name: writing a verdict/keep
+     onto a MIRROR home (a sibling's cached copy of someone ELSE's Mag) would never re-gossip, since only
+      `Heard_mag_find(w,me)` — MY OWN Mag — ever gets sent.  So hauling a union wish now ADOPTS it first
+       (`Heard_adopt`) — re-stamps the SAME (id,pub) onto my own Mag, `pressed_on` (I didn't press it,
+        `Heard_news` excludes it from MY OWN nag) — and only THEN keeps it; the ordinary gossip mile,
+         already firing off every `Heard_settle`, carries the outcome back with no separate ack frame at
+          all.  `Heard_cards_union(w,me)` is the shared core the ~8 readers all switched to: one entry per
+           (id,pub) across `Heard_mags` (mine ∪ every `%TheirHeard,pub:<sibling>` mirror), picking whichever
+            copy carries the MOST outcome (landed > verdict > carried_by > bare take) — THIS is what makes
+             "the phone's word derives from the laptop's mirrored stamps" literally true: the phone's own
+              bare copy loses the rank contest to the laptop's richer one.
+   A NEW mainkey, `TheirHeard` — NOT `Theirs` as first drafted.  `o({Theirs:1})` is a presence WILDCARD
+    (matches ANY stored value), and six other ghosts (Ra/Radio/Pool/Heist/Swarm/Repli) walk it broadly for
+     the MUSIC mirror; reusing it for the heard-mag mirror would have swept every one of those walks into a
+      bogus shelf with no `stock` — CLAUDE.md's own "two different shapes under one mainkey" tell, caught
+       by inventory before writing the mint, not by a crash after.  `TheirHeard` also joined the account/
+        stash/page/crew protocols' blanket skip list — a mirror is a pure runtime cache the gossip mile
+         rebuilds every session, never durable matter of its own (an owed gap: a STALE mirror entry a
+          sibling has since GC'd on its own side is never purged from mine — additive-only merge has no
+           delete; low-stakes, thirty-day-bounded, not solved here).
+   TWO REAL BUGS the plan's prose did not anticipate, both found live (not by design review):
+    (1) `landed_at`/`carried_by` had NOTHING left writing them — both were rung-1 fields fed exclusively by
+     the ack frames rung 3 just retired.  Fixed with `Heard_land_beat` (stamps `landed_at` the instant
+      `Heard_landed(shelf,card)` turns true — this body's own live check, for every OTHER body's benefit)
+       and a `carried_by`/`carried_at` stamp at the exact `Heard_keep` mint site, using `ident.sc.friendly`
+        (§9.7's "which body's Card has a keep", literally).  (2) Adoption lived AFTER the per-holder `busy`
+         gate in `Heard_haul_beat`, so a SECOND wish from a holder already busy with one download (the
+          Book's own t2-while-t1-still-primed) never got claimed at all — `MusuHandoff_verdict` threw
+           reading `.sc` off null.  Moved the adopt line before the gate: the CLAIM is unconditional, only
+            the keep-mint waits its turn.  `Heard_news_at` also needed the SAME pressed_on guard extended
+             to `carried_at`/`landed_at` (they used to be presser-only fields, incapable of ever appearing
+              on a `pressed_on` card at all — now they can, so the exclusion must say so or the adopting
+               body nags itself about its own work).
+   MusuHandoff REWRITTEN top to bottom — 9 beats now (STAND/HEART/MIRROR/CARRY/EFFECT/VERDICT/WAITING/
+    RESILIENCE), the `take`/`take_got` frame assertions replaced by mirror-home reads
+     (`MusuHandoff_mirror_card`) and union reads; `Heard_hand_targets` retired from the ENGINE but kept
+      alive as `Heard_trove_siblings` for RadioFace's heart-settings sheet (still names who might carry a
+       wish — purely informational now, nothing routes off it).  A THIRD production call site turned up
+        only by grepping for the retired functions post-hoc: `Heist_keep_beat`'s per-tick pump (`!nav &&
+         Heard_hand_beat`) — deliberately left UNREPLACED rather than wired to gossip every tick (the old
+          per-card dedup made a retry-every-beat cheap; a whole-Mag re-encode is not) — `Heard_settle` +
+           the roster-wake re-send cover the case a per-tick poll existed for.
+   Verified LIVE the same way — temporary `console.log` in each Book's `_note`, every row of MusuHandoff
+    (9 beats), MusuHeard (9), SwarmReboot (5) true, debug lines removed before the final compile.  Full
+     regression: Sounditron/MusuBuddy/MusuHeist/SwarmHelm/MusuPoolPolicy/Fill/Random/Bytes green.
 4. **The machine's acts are Cards** (Heard.g + Pool.g/Heist.g; gate MusuPoolFill + a MusuPoolPolicy scene).
    A pool press lands `Card,id:X,pub:H,for:pool` on a MACHINE page (`Cloud,page:machine` — never a sitting),
     and `Heard_clone_beat` copies a pool keep's verdict up as a stamp exactly as for a human keep (`Heist_is_pool`

@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '518ff167b47dfb16~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '4e0475895a4f13a3~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2201,8 +2201,13 @@ async Heist_keep_beat(w, ident) {
     let me = String(ident.sc.prepub)
     let rw = this.top_House().c.radio_w || w
     let nav = this.Crate_nav ? this.Crate_nav() : null
-    // NO FOLDER HERE — the hearts I cannot carry go to a crew body that can (Heard_hand_beat, Thursday).
-    if (!nav && this.Heard_hand_beat) { try { await this.Heard_hand_beat(w, rw, me, ident, nav) } catch (er) {} }
+    // THE OLD FOLDER-GATED HAND BEAT RETIRED HERE, deliberately UNREPLACED (rung 3): a per-tick call
+    //  (this pump runs many times a second) would re-encode and re-send the WHOLE heard Mag on that same
+    //   cadence, which the old per-card `hand_sent` dedup made cheap but a whole-Mag gossip is not.  The
+    //    mirror mile is triggered by REACTIONS instead (Heard_settle, below every take/nay/meh/landing)
+    //     and by a sibling's own roster announcement proving it just came back (Swarm_roster_heard's
+    //      wake, Swarm.g) — between the two, a card that predates this boot (rehydrated, never gossiped
+    //       last session) still gets sent the moment either side reconnects, with no unthrottled spam.
     // TRANSFER HUD (the human 2026-07-30 "I keep wanting more transfer visual feedback but I don't see any"):
     //  a persistent dontSnap %Transfer cell in the radio world — the glass imposes TransferFace on it by mainkey
     //   (no snap byte).  It reads the live top_House().c.xfer (rates/pulls/serves/freed) on its own poll.  Here
