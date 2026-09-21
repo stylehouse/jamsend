@@ -2291,7 +2291,7 @@ async Heist_keep_beat(w, ident):
     //  It also CLONES BACK: a describe answer writes the original's listing onto the Card, and a verdict
     //   (held · unvouched · landfail) is copied off the job before the job flattens — see Heard_clone_beat.
     w.c.keep_beat_at = 'heard'
-    try { await this.Heard_haul_beat(w, rw, me, nav, shop) } catch (er) {}
+    try { await this.Heard_haul_beat(w, rw, me, nav, shop, ident) } catch (er) {}
     // the SOURCE side's own reload recovery: read the durable keep-memo back once, and mirror out whatever
     //  this beat's materialises learned.  Its own gate (humdinger, nav, strikes) is inside; it is put here,
     //   beside the two rehydrates, because this is the one place per beat that already holds nav + me.

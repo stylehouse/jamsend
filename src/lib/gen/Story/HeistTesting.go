@@ -11,7 +11,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_HeistTesting(): string { return '73c90aabdfd58e76~g1' },
+    Ghostmeta_Ghost_Story_HeistTesting(): string { return '98c6b6de6a8e41f7~g1' },
 
 // HeistTesting.g — né Heistation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file — `MusuHeist`,
@@ -6753,6 +6753,10 @@ MusuHeard_witness(w) {
 //   beat 5  CARRY   — the laptop's ordinary Heard_haul_beat keeps it from the DJ mirror: one %Heist, take:1
 //   beat 6  ONCE    — a handed heart is never re-sent; the laptop's own ♥ finds the one Card; a heart
 //                     pressed while the laptop is AWAY waits — and hands the moment the laptop is back
+//   beat 7  WAITING — the lane's two silent holes (§9.7): no trove sibling at all, and a sibling whose
+//                     mirror of the holder has not stood, both say WHY on the Card instead of nothing
+//   beat 8  ECHO    — the trove body's own landing, or its verdict, echoes back to the presser — the
+//                     Card stops reading "handed to Laptop" forever once the wire actually knows more
 MusuHandoff(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.MusuHandoff_drive(w,req)
@@ -6776,7 +6780,7 @@ MusuHandoff_card(w, ident, id) {
 },
 async MusuHandoff_drive(w, req) {
     let run = (this.c.run)
-    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 6 }
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 8 }
     let n = run?.c.step_n
     w.sc.now = 1788500000 + 10 * (+n || 0)
     if (n != null && n !== req.c.did_step) {
@@ -6786,6 +6790,8 @@ async MusuHandoff_drive(w, req) {
         if (n === 4) { await this.MusuHandoff_land(w) }
         if (n === 5) { await this.MusuHandoff_carry(w) }
         if (n === 6) { await this.MusuHandoff_once(w) }
+        if (n === 7) { await this.MusuHandoff_waiting(w) }
+        if (n === 8) { await this.MusuHandoff_echo(w) }
     }
     await this.SwarmStaple_pump(w)
     this.MusuHandoff_witness(w)
@@ -6861,7 +6867,7 @@ async MusuHandoff_land(w) {
 async MusuHandoff_carry(w) {
     let laptop = w.c.laptop
     let me = String(laptop.sc.prepub)
-    let got = await this.Heard_haul_beat(w, w, me, {}, w.c.shop)
+    let got = await this.Heard_haul_beat(w, w, me, {}, w.c.shop, laptop)
     let keeps = w.c.shop.o({ Heist: 1 })
     let row = { carried: 1 }
     let k = keeps[0]
@@ -6898,6 +6904,77 @@ async MusuHandoff_once(w) {
     if (back === 1 && lc2 && +lc2.sc.take === 1 && pc2 && String(pc2.sc.handed) === 'Laptop') { row.back_hands = 1 }
     this.MusuHandoff_note(w, row)
 },
+// beat 7 — THE LANE'S TWO SILENT HOLES (§9.7): a wish with nowhere to go, and a wish whose holder's
+//  mirror has not stood yet, used to sit as plain "waiting" — indistinguishable from a send in flight.
+//  Both now say why, on the Card, cleared the instant the wait ends.
+async MusuHandoff_waiting(w) {
+    let row = { waiting: 1 }
+    let laptop = w.c.laptop
+    let lme = String(laptop.sc.prepub)
+    // case A — nobody wearing a trove at all: a solo soul, no linked device.
+    let bkeys = await this.Swarm_mint_keys('MusuHandoff-Lonely')
+    let lonely = this.Swarm_identity(w.oai({ Account: 1, of: 'Bob' }), bkeys, 'Lonely')
+    lonely.c.up = w
+    this.Swarm_body_take(lonely, null, 'Captain', String(lonely.sc.prepub))
+    let lonelyme = String(lonely.sc.prepub)
+    let rec3 = w.i({ Record: 1, id: 't3', title: 'Solo S', artist: 'DJ Oscillo' })
+    rec3.c.up = w
+    this.Heard_take(w, lonelyme, rec3, 'dj')
+    await this.Heard_hand_beat(w, w, lonelyme, lonely, null)
+    let c3 = this.Heard_find(this.Heard_mag_find(w, lonelyme), 't3', 'dj')
+    if (c3 && c3.sc.waiting_for === 'a device with a folder') { row.no_target_waits_with_a_word = 1 }
+    // case B — a trove sibling exists, but nobody has mirrored ITS holder yet: the laptop hears a track
+    //  from a second DJ no %Theirs mirror has ever stood for.
+    let rec4 = w.i({ Record: 1, id: 't4', title: 'Solo Q', artist: 'DJ Quiet' })
+    rec4.c.up = w
+    this.Heard_take(w, lme, rec4, 'dj2')
+    let card4 = this.Heard_find(this.Heard_mag_find(w, lme), 't4', 'dj2')
+    let got4 = await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
+    if (got4 === 0 && card4 && card4.sc.waiting_for === 'dj2 to come online') { row.no_mirror_waits_with_a_word = 1 }
+    // the mirror stands — the wait clears and the ordinary haul proceeds, same as it always would have
+    let mir2 = this.Ra_home_them(w, 'dj2')
+    let rec4b = mir2.i({ Record: 1, id: 't4', title: 'Solo Q', artist: 'DJ Quiet' })
+    rec4b.c.up = mir2
+    let got4b = await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
+    if (got4b === 1 && card4 && !card4.sc.waiting_for) { row.mirror_arriving_clears_the_word = 1 }
+    this.MusuHandoff_note(w, row)
+},
+// beat 8 — THE ECHO (§9.7): a landing, or a verdict, on the trove body's side is told back to the
+//  presser — without this the presser's Card read "handed to Laptop" forever, long after the wire knew
+//   more.  A gave-up ack copies the SAME verdict key a direct ask would have written, so the presser's own
+//    Heard_word renders it exactly as if it had asked the wire itself.
+async MusuHandoff_echo(w) {
+    let phone = w.c.phone
+    let laptop = w.c.laptop
+    let me = String(phone.sc.prepub)
+    let lme = String(laptop.sc.prepub)
+    let row = { echo: 1 }
+    // t1 lands on the laptop's OWN shelf — the same query Heard_landed always asks
+    let landed = this.Ra_rec_home(this.Ra_home_self(w, lme), 't1')
+    landed.sc.title = 'Cosmic C'
+    landed.bump()
+    await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
+    await this.SwarmStaple_pump(w)
+    await this.SwarmStaple_pump(w)
+    let pc1 = this.MusuHandoff_card(w, phone, 't1')
+    let pmag = this.Heard_mag_find(w, me)
+    if (pc1 && pc1.sc.landed_at && this.Heard_word(pmag, pc1, this.Heard_now(w)) === 'landed') { row.landing_echoes_back = 1 }
+    // t2 comes back with a verdict instead of bytes
+    let lc2 = this.MusuHandoff_card(w, laptop, 't2')
+    lc2.sc.unvouched = '1'
+    lc2.bump()
+    await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
+    await this.SwarmStaple_pump(w)
+    await this.SwarmStaple_pump(w)
+    let pc2 = this.MusuHandoff_card(w, phone, 't2')
+    if (pc2 && String(pc2.sc.unvouched) === '1' && this.Heard_word(pmag, pc2, this.Heard_now(w)) === 'could not be verified') { row.a_verdict_echoes_back_too = 1 }
+    // sent once per outcome — a re-beat writes nothing new
+    let v1 = pc1.version
+    await this.Heard_haul_beat(w, w, lme, {}, w.c.shop, laptop)
+    await this.SwarmStaple_pump(w)
+    if (pc1.version === v1) { row.echoed_once = 1 }
+    this.MusuHandoff_note(w, row)
+},
 // the witness — every pass; each %see fires the first pass its truth holds.
 MusuHandoff_witness(w) {
     let t = this.MusuHandoff_T(w)
@@ -6908,6 +6985,8 @@ MusuHandoff_witness(w) {
     if (n >= 4 && has({ landed: 1, laptop_wears_the_card: 1, phone_reads_handed: 1, word_changed: 1, laptop_hands_nothing_back: 1 })) { say('the wish travels not the bytes — the laptop wears the same card taken via the phone and the phone reads handed to Laptop') }
     if (n >= 5 && has({ carried: 1, one_keep_primed: 1 })) { say('a handed heart is carried by the ordinary haul — one keep primed on the laptop from the DJ mirror wearing take') }
     if (n >= 6 && has({ once: 1, handed_is_never_resent: 1, own_heart_finds_the_one_card: 1, away_waits: 1, back_hands: 1 })) { say('a handed heart is never re-sent and the laptops own heart finds the one card — a wish pressed while the laptop is away waits and hands the moment it is back') }
+    if (n >= 7 && has({ waiting: 1, no_target_waits_with_a_word: 1, no_mirror_waits_with_a_word: 1, mirror_arriving_clears_the_word: 1 })) { say('a heart with nowhere to go, or nobody yet mirroring its holder, says so on the card instead of nothing at all — and the word clears the moment the wait ends') }
+    if (n >= 8 && has({ echo: 1, landing_echoes_back: 1, a_verdict_echoes_back_too: 1, echoed_once: 1 })) { say('the trove bodys landing or verdict echoes back to the presser — the card stops reading handed to laptop forever, sent once per outcome') }
 
 },
 

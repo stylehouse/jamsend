@@ -2,58 +2,152 @@
 
 ## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night; the older §0s are §0.6–§0.8 below, intact)
 
-### 0.0 2026-09-20 — NEXT RUNG: a Captain's ♥ reaches the Cave — `take:'crew'`, drawn off a MIRRORED Mag
+### 0.0 2026-09-21 — THE PLAN (ruled with the owner 09-20/21; the slog starts here)
 
-**The owner:** *"I DO of course want Captain Yays → Repli or something keeps that exact data on the Cave,
- which there will react into doing the heist the Yay implies."* Today nothing carries a ♥ across bodies: a ♥
-  is `Heard_take` → `Heard_keep` → a `%Heist` FOR WHOEVER PRESSED IT (immediate, unconditional, not gated by
-   `budget_mb` — that knob governs only the ambient sweep). The only cross-body movement is this pool's sweep,
-    and its taste compartments read MY OWN Mag (`Heard_tally`/`Heard_landed_ids` off `Heard_mag_find(w, me)`).
-     So a Cave pooling from its Captain prioritises what the CAVE liked, never what the Captain liked.
+**Rulings taken:** the heard Mag MAY cross the relay, crew-only (*"that I say is okay"*). A Nay removes the
+ track from "whimsical locations" (the pool) but NEVER a file already heisted — already the law; artist-level
+  Nay is new and later. "You liked this but hated that" is a tender case for a later listening-consciousness UX,
+   a query over the stamps, not a mechanism now. We are after general patterns: (1) **stamps that only go
+    forward, state derived** — a ledger that replicates with no delete; (2) **one serializer, three homes** —
+     `Swarm_protocol('heard')` text is the stash, the folder mirror, and now the crew wire; (3) **the machine's
+      acts are Cards too**.
 
-**The shape — route through what stands, no new event pipeline (app|infra):**
-1. **Mirror the Mag.** A ♥ is already durable data in the right form: `%Card,id,pub,take,at` under
-    `%Mag:heard,pub:<Captain>`, rehydrated through the account stash (eed: `♥ heard rehydrated — 6
-     reaction(s)`). Repli already ships a body's catalog to crew as a `%Theirs` crate; ship the Mag beside it —
-      **crew-only** (it is taste, not a listing; a Music friend gets the crate, never the Mag). This is the one
-       genuinely new wire, and it is a Repli protocol row, not a mechanism.
-2. **A 7th take kind, `'crew'`.** `Pool_draw` gets a branch: the mirrored Mag's `take` cards, newest first —
-    the exact shape of `'recent'` (`Heard_landed_ids`) read off the CAPTAIN's Mag instead of mine, and
-     `pub === me` exclusion inverted (only the Captain's own ♥s, not re-broadcast hearsay). Then everything
-      downstream is free: `Pool_goal`'s cap bounds it, `barred` keeps the Cave's own Nay out, `Heard_landed`
-       dedups against anything the Cave already holds however it arrived, `Ra_pool_fill` does the heist. The
-        mirror ARRIVING is what wakes the sweep — that is the "immediate".
-3. **Default it on for a Cave.** `Ra_pool_defs`' fallback is `take:'taste'`; a body that IS crew (my row a
-    Cave, `Swarm_is_cave`'s successor) should carry `{name:'crew', take:'crew', who:'crew'}` ahead of `random`
-     by default, so the owner's LinkDevice test needs no Pooling-cell surgery to show it. `budget_mb` still
-      gates the sweep as a whole — 0 is off, by consent; that stays.
+**RUNGS, in order (each compiles + gates before the next; LocalGen ladder if the editor is down):**
 
-**The one ruling that is not free — HOW FAR BACK.** The cap bounds how MANY; nothing bounds SINCE WHEN. A
- Captain with a year of ♥s would flood a phone on the first mirror. Candidates: since the crew link's `at`;
-  the last N by `at` (the compartment's cap IS that N, if the draw is newest-first — the simplest); everything
-   that fits `budget_mb`. Newest-first + cap is my pick; the owner rules.
+1. **Close the lane's two silent holes** (Heard.g; gate MusuHandoff, add beats; owed re-swear 4–6 anyway).
+   - `Heard_hand_beat`: `if (!targets.length) return 0` says nothing. Stamp a word on each un-handed take
+     (`waiting_for:a device with a folder`) so the Haul row can say it; log once per session.
+   - `Heard_haul_beat` on the trove body: a take whose holder has no `%Theirs` mirror standing is LEFT STANDING
+     silently — stamp `waiting_for:<holder> to come online` on that Card; it mirrors back (rung 3) and the phone
+      finally has a word between *handed* and *landed*.
+   - `take_got` again on land and on gave-up (§9.7): until rung 3 makes the mirror the ack, send the frame twice
+     more with `state:landed|gave_up`; `Heard_hand_got` writes `landed_at` / the verdict stamp.
 
-**Not a redesign** (the owner asked): three seams touched — a Repli row (the Mag, crew-gated), one `Pool_draw`
- branch + `Ra_pool_defs` default, and the existing `MusuPool*`/`MusuHeard` Books grow one beat each. Gate:
-  a `MusuPoolCrew` Book beside `MusuPoolRadio` — two bodies in one Run, Captain ♥s a track the Cave doesn't
-   hold, the Cave's next sweep lands it; and a Nay on the Cave keeps it out.
+   **RUNG 1 — LANDED 2026-09-21.** All three holes closed in Heard.g: `Heard_hand_beat`'s no-target branch
+    now stamps `card.sc.waiting_for = 'a device with a folder'` (cleared the moment a target exists), logging
+     once per session (`rw.c.hand_no_target_told`); `Heard_haul_beat`'s no-mirror branch stamps
+      `waiting_for:'<name> to come online'` (cleared once the mirror stands); `Heard_word` composes
+       `'waiting for ' + waiting_for` when set. The echo is a new function, `Heard_hand_ack_beat(w, rw, me,
+        ident, shop)`, called from the top of `Heard_haul_beat` (now takes an optional trailing `ident` —
+         every existing 5-arg Book caller is unaffected): it watches the trove body's OWN `via`/`via_addr`
+          Cards for a landing (`Heard_landed`) or a verdict (`Heard_verdict`) and sends ONE more `take_got`
+           frame back (`state:'landed'` or `state:'gave_up'` + the verdict key), `card.c.hand_acked` guarding
+            against a resend. `Heard_hand_land` now also stashes `card.sc.via_addr` (the return address —
+             it only ever had the display name before, so there was no way back). `Heard_hand_got` copies a
+              `gave_up` verdict straight onto the presser's OWN card under the SAME key
+               (`held`/`unvouched`/`landfail`), so `Heard_word` renders it identically to a direct ask.
+    MusuHandoff grew two beats (7 WAITING, 8 ECHO; `run.sc.total` 6→8) exercising all of this, including a
+     brand-new solo identity (no sibling at all) and a second DJ nobody has mirrored — both witnessed. Heist.g's
+      one production call site now threads `ident` through. Verified LIVE (LocalGen ladder, editor was down;
+       esbuild-ts-parse-gated; then a real headless-chromium runner tab over the actual `/relay`, since no tab
+        was already up) — MusuHandoff all 8 rows green including both new ones, MusuHeard/MusuHeist/MusuPool-
+         Policy/Fill/Random/Bytes unaffected. **Owed:** the MusuHandoff fixture (steps 7–8, and the toc's
+          `step,dige` index) was never re-recorded — `runner_ask`/`story_accept.mjs` could not address my
+           headless tab (census classified it `role UNKNOWN`; the page itself confirmed `control:role
+            role=runner` in its own console, so this looks like the `supervisor`/humdinger probe getting no
+             answer from a Book-only boot, not a real role problem — a plumbing question for whoever next
+              needs headless-chromium Books addressable, not a rung-1 blocker). Run
+               `node scripts/story_accept.mjs MusuHandoff` from a real runner tab (chrome.sh) to record it.
+2. **Stamps, not flags** (Heard.g, every writer + reader; one fixture re-record across the Musu*/Swarm* Books
+   that snap a Card — do the RENAMES in the same pass, one re-record). Forced by Repli's law: a key cannot be
+    UN-set over the wire, and every `Heard_strip`/`Heard_seen` is a delete pretending to be a change.
+   - `take:1,at` → `hearted_at` · `nay` → `nayed_at` · `meh` → `mehed_at` (newest of the three wins, derived
+     `Heard_reaction(card)`) · `mire` → `played_through` (max-merges) · `via` → `pressed_on` · `handed` →
+      `carried_by` + `carried_at` · NEW `landed_at` · `held`/`landfail`/`unvouched` → `already_had_at` /
+       `landing_failed_at` / `offer_unsigned_at` (a later `hearted_at` outdates a verdict = "asking again") ·
+        `unseen` → gone; `looked_at` stamp; news = newest event stamp > `looked_at` (`Heard_news(card)`).
+   - `Heard_strip` and `Heard_seen` are deleted; `Heard_gc` unchanged (drops UNREACTED hearings by heard_ttl).
+   - Readers: `Heard_tally` (hearted 3 · kept 2 · played_through), `Heard_takes` (hearted_at newer than any
+     nayed_at/verdict), `Heard_barred_ids` (nayed_at newest), `Heard_word` (the §C words off the stamps),
+      RadioFace/HaulFace/PoolFace read through the two derivers, never the keys.
+3. **The Mag mirrors over the crew — via the pillar-8 text, NOT the Repli identity table** (Swarm.g + Heard.g;
+   gate: MusuHandoff loses its `take`/`take_got` frames and keeps its beats; SwarmReboot untouched).
+   - On `Heard_settle` (every reaction, every landing) the body sends `kind:'heard'` with the
+     `Swarm_protocol('heard')` snap of ITS OWN Mag to every crew sibling (`Swarm_sibling_reach`, store-and-
+      forward like the roster: re-sent on `Swarm_roster_heard` wake). The protocol already skips every Card
+       unless reacted, so bare hearings and GC'd rows never cross.
+   - Receive: `Swarm_heard_mirror(w, ident, frame)` = decode + graft into `%Theirs`-shaped home
+     `Mag:heard,pub:<sibling>` beside my own (NOT into my Mag — pages are sittings and don't line up),
+      with `played_through = max`, every `_at` = max. `Heard_mags(w, me)` returns [mine, ...siblings'] and the
+       ~8 `Heard_mag_find(w, me)` readers iterate it (Heard_takes, Heard_tally, Heard_landed_ids, Heard_latest,
+        Heard_barred_ids, Heard_haul_piers, Heard_set, Radio's skip-heard).
+   - The handoff lane RETIRES: a trove body hauls any hearted Card in the union it doesn't hold (own-track rule
+     = "on THIS shelf", `Heard_landed`); the phone's word derives from the laptop's mirrored stamps
+      (`carried_by` = which body's Card has a keep; `landed_at` mirrors back; the listing rides the Card).
+       `a_folder_hands_nothing` stays true — nobody hands. MusuHandoff re-sworn to the new sentences.
+4. **The machine's acts are Cards** (Heard.g + Pool.g/Heist.g; gate MusuPoolFill + a MusuPoolPolicy scene).
+   A pool press lands `Card,id:X,pub:H,for:pool` on a MACHINE page (`Cloud,page:machine` — never a sitting),
+    and `Heard_clone_beat` copies a pool keep's verdict up as a stamp exactly as for a human keep (`Heist_is_pool`
+     no longer skips the clone). ⚠ AUDIT FIRST: `Heard_set` (the radio's "already heard" skip) and `Heard_latest`
+      must exclude `for:pool` / the machine page, or a fetch-failure becomes "you heard this". `Ra_pool_fill_wants`
+       reads `landing_failed_at` newer than heard_ttl as "don't re-want" — the failure memory with its horizon.
+5. **One resolver for "who has it now"** (Pool.g): `Pool_goal` sets `from` for every draw off `f.sources_raw`
+   (crew first, as `Heard_holder_of` does) — the latent gap where non-random pulls were never booked. Existing
+    MusuPoolPolicy scenes give non-random draws no sources (no fixture moves); add a scene that gates it.
+    Then the phone's own ♥ can be `for:pool` now + the original later: one Card, two roads (budget ruling
+     still owed for a body that said no — the tiny-serving-stash shape).
 
-**WHERE THE ♥ LANDS ON THE CAVE — forks on FSA, and no new popup** (owner 2026-09-20: *"the first Yay should
- come with some popup that takes their LOFI or not preference... only if noFSA... or when they LinkDevice?
-  ...maybe it's a single track or the album with directory hierarchy chooser as well"*):
-- **noFSA Cave (phone-shaped, no folder):** the pool IS lofi by construction (`Heist_catalog_land`'s pool branch
-   mints `%Record,id:<lofi>,of:<orig>,lofi`; the holder transcodes, never an original) — so `take:'crew'` needs
-    no lofi question. Its only consent is `budget_mb`, and that is asked at **LinkDevice**: the ceremony already
-     knows the body has no folder, it is already UI, and a durable body-level answer wants a body-level moment —
-      not an interrupt at whatever hour the first mirrored ♥ lands on a backgrounded phone. The one LinkDevice
-       addition.
-- **FSA Cave (has a folder):** a Captain's ♥ does NOT go to the pool — it mints the same `%Keep` a live listen
-   does and surfaces in **HeistSetup**, which already IS the chooser the owner described: per-artist genre
-    folder, per-track keep/skip ticks (so "single track or the album" is "tick one row or all of them"), `lofi`
-     off by default for a desktop, commit lands under `music/<genre>/<file>`. Seed it pre-ticked on the ♥'d track
-      with its album siblings in view. Zero new UI; the ♥ is just one more way a %Keep is born.
-- So the fork is decided by `Swarm_share_granted`'s folder fact on the Cave (the same fact that makes it
-   phone-shaped), never by asking. Nothing pops on the first ♥.
+**Not in this plan (owed rulings, later):** artist-level Nay; the liked-vs-hated query; the album/hierarchy
+ chooser in HeistSetup; the `Ra_`→`Pool_` flip.
+
+### 0.0 2026-09-20 — ♥ ACROSS BODIES: what stands, what the LinkDevice walk tests, what needs a ruling
+
+**The owner:** *"a LinkDevice test to check the Cave gets Heisting things based on the Captain Yaying tracks"*;
+ *"I DO of course want Captain Yays → Repli or something keeps that exact data on the Cave, which there will
+  react into doing the heist the Yay implies"*; on a first-♥ popup: *"only if noFSA... or when they LinkDevice?
+   ... maybe it's a single track or the album with directory hierarchy chooser as well"*.
+
+**VOCABULARY FIRST — a slip this section made twice before a doc-research pass caught it.** Captain/Cave are
+ /Crew ROLES (the wielder vs a holder of the soul key — Crew_todo.md), NOT folder-vs-no-folder. *"A phone
+  with no folder is the usual Captain"* (Love_todo.md). MusuHandoff's phone IS the Captain. Say "trove body" /
+   "folderless body" for the folder fact (`Swarm_organ_of(b,'trove')` on a roster row, `Crate_nav()` for self).
+
+**WHAT STANDS (verified 2026-09-20 against the code AND the rulings):**
+- A ♥ is `Heard_take` → `%Card,id,pub,take,at` on MY heard Mag (durable, pillar 8; `Heard_settle` at the press).
+   Taste is `Heard_tally`: take 3 · keep 2 · mire 1 · bare hearing 0. No unlove (09-15). Un-taking never travels (§C).
+- **THE HANDOFF LANE IS THE OWNER'S CASE, AND IT EXISTS** (Heard.g `//#region THE HANDOFF`, ruled 2026-09-05,
+   Book `MusuHandoff` HeistTesting.g:6383): a body with NO folder cannot haul, so `Heard_hand_beat` sends each take
+    as `kind:'take'` over `Swarm_sibling_reach` to the first trove sibling; `Heard_hand_land` puts THE SAME CARD, taken,
+     `via:<sender>`, on that body's Mag; its ordinary `Heard_haul_beat` keeps it (`Heard_keep` — the heart road,
+      pulled straight, lofi if the heist defaults say so); `take_got` comes back and the presser's Card wears
+       `handed:<name>`. Store-and-forward (the Card is the queue), re-offered on the sibling's roster wake.
+        Phone-Captain presses ♥ → laptop-Cave heists it: **the LinkDevice walk exercises THIS. Nothing to build.**
+         Never yet walked live on a real crew pair (the 09-06 measurement was eed→daemon).
+- **Durability gap, FIXED 2026-09-20:** `Heard_hand_land`/`Heard_hand_got` bumped the Card but never `Heard_settle`d —
+   `via`/`handed` reached the stash only when some unrelated frame settled later; a reload in that window forgot
+    the handoff. Both now settle through the one seam, exactly as ♥/👎 do since 09-17. Compiled (LocalGen ladder,
+     editor was down), parse-gated, MusuHandoff re-run: same 3/6 as HEAD's own .go (baseline taken by restoring
+      HEAD's Heard.go and re-running) — the residual is a pre-existing `unseen:1` on the handed Card (the 09-10
+       ambient-attention mark, recorded after the fixture was cut) → **owed re-swear, steps 4–6**, not this change.
+- **The first-♥ sheet the owner asked about was RULED OUT by the owner on 09-15** (RadioFace: *"no unlove, no
+   long-press, no sheet — the Pooling cell appears after the first ♥"*). `Heard_tip`/`Heard_hand_set` have no UI
+    caller; only `Heard_hand_on` is read. And Onboarding_todo §6 rules setup questions OUT of the Link cell (the
+     Door owns account setup) — a budget ask in the ceremony is the shape that ruling removed.
+
+**WHAT IS NOT BUILT — the OTHER direction, and it needs rulings before code:** a trove body's ♥ reaching a
+ folderless sibling so the PHONE ends up with a lofi copy (the pool road). Four sworn things stand in the way:
+ (1) `a_folder_hands_nothing` / `laptop_hands_nothing_back` are sworn sentences in MusuHandoff — a trove body handing
+  is a rule change, not a gate widening; (2) `Heard_takes` (what the hand beat iterates) drops `pub === me` (own-track
+   ♥ is a taste fact — sworn in MusuHeard) and anything already on my shelf — a trove body's ♥ on ITS OWN track,
+    the main case, is excluded twice, so the informational direction needs its own walk over `Heard_cards`;
+     (3) the pool's `taste` draw would carry the handed take (took×3), BUT *"the yes declares exactly one
+      compartment"* is sworn (MusuHeard, MusuPoolRandom: `falls_back_to_anonymous`) and PoolFace owns the default
+       (*"THE DEFAULT LIVES HERE… only defaulted at a FIRST yes"*) — a folder-conditional default in `Ra_pool_defs`
+        moves both; `who:` is ignored on non-random draws; (4) a non-random pull has no `from` today — only `random`
+         sets `g.from`, and `Ra_pool_fill_wants` skips a pull without a holder — so `taste` pulls have never been booked
+          (a latent gap regardless of this wave; `Heard_holder_of` is the existing crew-first resolver to reuse, and
+           the existing MusuPoolPolicy scenarios give non-random draws no sources, so adding `from` there moves no
+            fixture — a new scenario would gate it).
+ Love_todo §3 already claims the answer for this direction — *"the crew's libraries merge into one Mine, so the
+  phone's Heard_landed sees the Cave's holding… the fill pulls a lofi copy FROM THE CREW MIRROR"* — but no code
+   merges crew Mines (`Heard_landed` reads my own `Mine,pub:me`). That claim vs the four rulings above is the
+    ruling to make. Also owed here: "love is per Pier" vs the two-axis ledger (a reaction attributed to the
+     track's HOST vs MY portable taste — `Heard_tally` keys by id only); the per-(track, holder) failure memory.
+
+**WHAT COULD BE, positioned as the owner said:** *"if there's a Cave… a much more serious user… we can throw up
+ more forms then."* HeistSetup today is per-track ticks off ONE rummaged folder — not yet the single-track-vs-album
+  + directory-hierarchy chooser; that chooser is where a trove Cave's handed hearts could stop being auto-pulled
+   singles and become a choosing moment. A later wave, UI-shaped.
 
 ### 0.0 2026-09-17 evening — THE ROLL'S ONE LAW: nothing is evicted unless the pool holds more than its cap
 

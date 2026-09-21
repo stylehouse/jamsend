@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '3d53b758563a084b~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '518ff167b47dfb16~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -2366,7 +2366,7 @@ async Heist_keep_beat(w, ident) {
     //  It also CLONES BACK: a describe answer writes the original's listing onto the Card, and a verdict
     //   (held · unvouched · landfail) is copied off the job before the job flattens — see Heard_clone_beat.
     w.c.keep_beat_at = 'heard'
-    try { await this.Heard_haul_beat(w, rw, me, nav, shop) } catch (er) {}
+    try { await this.Heard_haul_beat(w, rw, me, nav, shop, ident) } catch (er) {}
     // the SOURCE side's own reload recovery: read the durable keep-memo back once, and mirror out whatever
     //  this beat's materialises learned.  Its own gate (humdinger, nav, strikes) is inside; it is put here,
     //   beside the two rehydrates, because this is the one place per beat that already holds nav + me.

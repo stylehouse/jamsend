@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return '6edabd460cf94c17~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return '26913e29183cb0b8~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -551,7 +551,9 @@ Heard_word(mag, card, now) {
     if (card.sc.unvouched) { return 'could not be verified' }
     if (card.sc.landfail) { return 'failed' }
     if (this.Heard_gave_up(mag, card, now)) { return 'gave up' }
+    if (card.sc.landed_at) { return 'landed' }
     if (card.sc.handed) { return 'handed to ' + String(card.sc.handed) }
+    if (card.sc.waiting_for) { return 'waiting for ' + String(card.sc.waiting_for) }
     return 'waiting'
 
 },
@@ -730,9 +732,12 @@ Heard_verdict_of(job) {
 //    serialisation the whole shape exists for.
 //  A take whose record is not in the friend's mirror is LEFT STANDING rather than dropped: they are away,
 //   or the mirror was swept between sessions.  The ask outliving the session is the point of a ledger.
-async Heard_haul_beat(w, rw, me, nav, shop) {
+//   `ident` is OPTIONAL and only feeds Heard_hand_ack_beat (§9.7) — a Book that never mints one keeps the
+//    exact behaviour it always had.
+async Heard_haul_beat(w, rw, me, nav, shop, ident) {
     if (!nav || !rw || !me || !shop) { return 0 }
     this.Heard_clone_beat(w, rw, me, shop)
+    this.Heard_hand_ack_beat(w, rw, me, ident, shop)
     let live = 0
     for (const k of shop.o({ Heist: 1 })) { if (String(k.sc.state || 'primed') !== 'done') { live = live + 1 } }
     if (live >= this.Heard_keeps_cap()) { return 0 }
@@ -743,7 +748,19 @@ async Heard_haul_beat(w, rw, me, nav, shop) {
         if (busy) { continue }
         let mir = rw.o({ Theirs: 1, pub: row.pub })[0]
         let mirstock = mir ? mir.o({ stock: 1, pub: row.pub })[0] : null
-        if (!mirstock) { continue }
+        if (!mirstock) {
+            // THE HOLDER'S MIRROR HAS NOT STOOD YET — away, or swept between sessions.  Used to leave the
+            //  take standing with no word at all; now it says WHY it is standing, cleared the moment the
+            //   mirror shows up (below).
+            let name = this.Radio_friendly ? this.Radio_friendly(rw, row.pub) : String(row.pub).slice(0, 8)
+            let word = name + ' to come online'
+            for (const card of row.cards) {
+                if (this.Heard_verdict(card)) { continue }
+                if (card.sc.waiting_for !== word) { card.sc.waiting_for = word; card.bump() }
+            }
+            continue
+        }
+        for (const card of row.cards) { if (card.sc.waiting_for) { delete card.sc.waiting_for; card.bump() } }
         for (const card of row.cards) {
             let id = String(card.sc.id || '')
             if (!id || this.Heard_verdict(card)) { continue }
@@ -859,12 +876,25 @@ async Heard_hand_beat(w, rw, me, ident, nav) {
     if (!this.Heard_hand_on(rw, me)) { return 0 }   // the person switched the linked-device road off
     let mineaddr = this.Heard_hand_myaddr(ident)
     let targets = this.Heard_hand_targets(ident, mineaddr)
-    if (!targets.length) { return 0 }
+    if (!targets.length) {
+        // NOBODY TO CARRY IT: this used to say nothing at all — a wish sat as plain "waiting" exactly
+        //  like one with a live target still mid-send, which reads as the machine doing something when
+        //   it cannot even try.  A word on the Card, cleared the moment a target exists (below).
+        if (!rw.c.hand_no_target_told) { console.log('⏳ heard: no linked device with a folder yet — hearts wait'); rw.c.hand_no_target_told = 1 }
+        for (const row of this.Heard_takes(rw, me, this.Heard_shelf(rw, me))) {
+            for (const card of row.cards) {
+                if (card.sc.handed || this.Heard_verdict(card)) { continue }
+                if (card.sc.waiting_for !== 'a device with a folder') { card.sc.waiting_for = 'a device with a folder'; card.bump() }
+            }
+        }
+        return 0
+    }
     let t = targets[0]
     let sent = 0
     for (const row of this.Heard_takes(rw, me, this.Heard_shelf(rw, me))) {
         for (const card of row.cards) {
             if (card.sc.handed || card.c.hand_sent || this.Heard_verdict(card)) { continue }
+            if (card.sc.waiting_for) { delete card.sc.waiting_for; card.bump() }
             let frame = { kind: 'take', page: this.Swarm_page(ident), from: mineaddr, id: String(card.sc.id), pub: String(row.pub) }
             if (card.sc.title) { frame.title = String(card.sc.title) }
             if (card.sc.artist) { frame.artist = String(card.sc.artist) }
@@ -889,12 +919,22 @@ Heard_hand_land(w, ident, frame) {
     let from = String(frame.from || (frame.page ? frame.page.prepub : '') || '')
     let who = this.Heard_hand_name(ident, from)
     if (who && !card.sc.via) { card.sc.via = who }
+    if (from && !card.sc.via_addr) { card.sc.via_addr = from }   // the way back, for Heard_hand_ack_beat
     card.bump()
     let back = this.Heard_hand_body(ident, from)
     if (back) { this.Swarm_sibling_reach(w, ident, back, { kind: 'take_got', page: this.Swarm_page(ident), from: this.Heard_hand_myaddr(ident), id: String(frame.id), pub: pub }) }
+    // a handed take is a change to MY durable ledger exactly as a ♥ pressed here is (Heard_take settles) —
+    //  without this the Card reached the stash only when some later frame happened to settle, and a reload
+    //   between the landing and that moment forgot the wish (the 2026-09-17 class, found by review 2026-09-20)
+    if (fresh) { this.Heard_settle(w, me, 'heard_hand_land') }
     return fresh ? 1 : 2
 },
-// Heard_hand_got — THE PHONE HEARS BACK: the wish is in hands that can carry it.  The row's word changes.
+// Heard_hand_got — THE PHONE HEARS BACK.  Two different acks share this frame now (§9.7): the FIRST is
+//  the handoff itself ("it's in hands that can carry it" — `handed`, unchanged); the SECOND, later, is
+//  the OUTCOME of that carrying (`frame.state`) — `landed` (Heard_hand_ack_beat found it on the trove
+//   body's own shelf) or `gave_up` (the wire answered and the answer was not the track, `frame.verdict`
+//    one of Heard_verdict_keys()).  A gave_up ack copies the SAME verdict key a direct ask would have
+//     written, so Heard_word renders it identically whether this body asked itself or was told.
 Heard_hand_got(w, ident, frame) {
     if (!w || !ident || !frame || !frame.id) { return 0 }
     let me = String(ident.sc.prepub || '')
@@ -903,7 +943,15 @@ Heard_hand_got(w, ident, frame) {
     if (!card) { return 0 }
     let from = String(frame.from || (frame.page ? frame.page.prepub : '') || '')
     let who = this.Heard_hand_name(ident, from) || 'a linked device'
-    if (String(card.sc.handed || '') !== who) { card.sc.handed = who; this.Heard_notice(card); card.bump() }
+    let changed = 0
+    if (String(card.sc.handed || '') !== who) { card.sc.handed = who; changed = 1 }   // durable — same seam as the landing
+    if (frame.state === 'landed' && !card.sc.landed_at) { card.sc.landed_at = '' + this.Heard_now(w); changed = 1 }
+    if (frame.state === 'gave_up' && this.Heard_verdict_keys().slice(0, 3).includes(String(frame.verdict)) && !card.sc[frame.verdict]) {
+        card.sc[frame.verdict] = '1'
+        if (frame.why) { card.sc.why = String(frame.why).slice(0, 120) }
+        changed = 1
+    }
+    if (changed) { this.Heard_notice(card); card.bump(); this.Heard_settle(w, me, 'heard_hand_got') }
     return 1
 },
 // Heard_hand_wake — a sibling just announced itself (the roster mile): re-offer what was never acked.
@@ -913,6 +961,33 @@ Heard_hand_wake(w, ident) {
     if (!mag) { return 0 }
     let n = 0
     for (const card of this.Heard_cards(mag)) { if (card.c.hand_sent && !card.sc.handed) { delete card.c.hand_sent; n = n + 1 } }
+    return n
+},
+// Heard_hand_ack_beat — THE TROVE BODY'S ECHO (§9.7): a take carried here (`via`/`via_addr`) that has
+//  since either landed on THIS shelf or come back with a verdict tells the presser so.  Without this the
+//   presser's Card read "handed to Laptop" forever, even long after the wire already knew more.  Sent
+//    once per outcome (`card.c.hand_acked`) — the outcome does not un-happen while the presser is away,
+//     so no store-and-forward re-offer is needed the way the initial `take` frame needs one.
+Heard_hand_ack_beat(w, rw, me, ident, shop) {
+    if (!ident || !shop) { return 0 }
+    let mag = this.Heard_mag_find(rw, me)
+    if (!mag) { return 0 }
+    let shelf = this.Heard_shelf(rw, me)
+    let n = 0
+    for (const card of this.Heard_cards(mag)) {
+        if (!card.sc.via || !card.sc.via_addr || card.c.hand_acked) { continue }
+        let frame = { kind: 'take_got', page: this.Swarm_page(ident), from: this.Heard_hand_myaddr(ident), id: String(card.sc.id), pub: String(card.sc.pub || '') }
+        let outcome = ''
+        if (this.Heard_landed(shelf, card)) { outcome = 'landed'; frame.state = 'landed' }
+        else {
+            let v = this.Heard_verdict(card)
+            if (v) { outcome = 'gave_up'; frame.state = 'gave_up'; frame.verdict = v; if (card.sc.why) { frame.why = String(card.sc.why) } }
+        }
+        if (!outcome) { continue }
+        let body = this.Heard_hand_body(ident, String(card.sc.via_addr))
+        if (!body) { continue }
+        if (this.Swarm_sibling_reach(w, ident, body, frame)) { card.c.hand_acked = outcome; n = n + 1 }
+    }
     return n
 },
 // ── HEART-SETTINGS (the owner 2026-09-05: *"long-press the heart to open heart-settings"*) — the roads a ♥
