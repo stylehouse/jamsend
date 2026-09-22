@@ -227,7 +227,7 @@ and after the `'Ghost/Story/Errchannelation.g',` line:
     {:else if face.solo && face.title && face.state !== 'off' && face.state !== 'digging'}
         <div class="rf-src rf-src-local">♪ LOCAL · {soloWhy(face)}</div>
     {:else if face.title && face.state !== 'off' && face.state !== 'digging'}
-        <div class="rf-src rf-src-local">♪ LOCAL — your own record</div>
+        <div class="rf-src rf-src-local">♪ LOCAL — your music</div>
     {/if}
 ```
 

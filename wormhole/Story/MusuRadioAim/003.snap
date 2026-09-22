@@ -1,0 +1,17 @@
+Snap:H
+  H:MusuRadioAim,Run
+    A:MusuRadioAim
+      self,round=3	{"mung":["age"]}
+      w:MusuRadioAim
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          switched,own_took,aim_left_own_behind
+          reached:step_3
+          joined,own_took_again,wish_left_own_behind
+        Radio,name:on-air,aim:friendpub2,aim_by:friendpu,note:nobody online yet — connect a friend to hear their music
+        Mine,pub:e747cbed6a9ca919
+          stock,pub:e747cbed6a9ca919
+        Stoker:idle,face:Stoker,crew:Radio
+        Mag:Lineup,face:Lineup,crew:Radio

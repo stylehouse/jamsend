@@ -197,6 +197,73 @@ Two more of the owner's own asks, landed and verified live (not screenshotted-an
           folio starts from its membrane inward and yields to the bump. Model-side. STOP tweaking pixels
            here — the next commit of effort goes to Vyto.g, not Vytui.
 
+### THE SEEM — LANDED (2026-09-23): a plain tree lays out, so a non-particle can use the glass
+The owner: *"C** can be fed into something that kinda scans|inflates them into a more general notation so
+ we can lay out more types of stuff with the shape primitives... I'd like to use this to output clustered
+  search results, without exposing the bare C**-ness whole."*  `wormhole/shots/seq_0051_seemsearch`.
+
+**THE FINDING THIS RESTS ON — the glass's input contract is already tiny.** `Vyto_scan_walk` reads exactly
+ five things off a source: its mainkey, that key's VALUE, its flat `sc` scalars, its children, and two `.c`
+  overrides. Nothing downstream touches the source again — dose, loose, the joins, the fold ladder, the
+   membrane and the folio all read the MIRROR ROW. So **anything that can present those five things can be
+    laid out**; it never has to be a particle of the program. That is the whole opening.
+
+**`Vyto_seem(spec)`** inflates a plain JS object into a DETACHED C ready to grapple, so the notation is
+ authored in ONE place and every station downstream is untouched:
+ `{ is, name, facts, dose, loose, kids, says, tok, flat }`
+- `is`+`name` → the mainkey line. `facts` → the folio's k:v pairs, **an allowlist, and that is the point**:
+   grapple a real particle and the scan copies every scalar it finds (the program's own guts); sow a Seem
+    and a producer shows exactly what it chose to. Join keys (`id of pub page seq`) are ordinary facts here
+     and pick up identity / kin weave / fold ladder merely by being named.
+- `kids` → nesting, which is how a CLUSTER is said: a Seem with kids is a scope its members tile, and
+   sibling kids of one mainkey become a family under `membrane` for free.
+- `says` → the crest's OWN saying vocabulary (dip · vein · fact · spread) for a LEAF that stands for many:
+   a collapsed cluster says `×214 · artist Yara×31 · year 2019×12 +5` with no fold behind it.
+- `tok` → identity override; re-sowing the same tok MORPHS instead of blinking (see the two-seam note).
+
+**NON-SCALARS INFLATE, they are not dropped** (the owner's catch: *"the scanner might dump data eventually,
+ by inflating a bunch of tree around it"*). An object becomes a child cell (`Vyto_seem_sub` — the KEY is the
+  mainkey, first of name|title|label|id is the value, the rest recurse); a list of scalars becomes a spread
+   of chips capped at `SEEM_CHIPS` with an honest `+N` (`Vyto_seem_spread`). **Why here and not in the
+    scan:** `scan_walk` dropping an object-valued sc key is CORRECT where it stands — an object in `.sc` is
+     fatal at encode, so in a real particle it is a mint bug, not data. In a Seem it is legitimate producer
+      data. That asymmetry is deliberate; do not "fix" the scan.
+
+**THE TWO-SEAM READING of `vyto_tok` / `flat`** (worth keeping — they ARE the producer interface, and both
+ already ride real persisted particles in Sounditron):
+- `vyto_tok` = **identity**. The default tok is `mainkey:value|id:…`, which breaks when the mainkey's value
+   is a STATE — `Radio:playing` re-toks on every track change and the cell blinks. Sounditron pins
+    `org.c.vyto_tok = 'Radio'`. It answers one question: *is this the same thing I drew last time?*
+- `flat` = **depth**. "Mirror me, don't descend" — Heist's constraint/Lead/supervision rows are WORKINGS,
+   not contents. And it has a DOOR: `flat_n` stamps the true child count, so the cell says "7 more inside"
+    rather than lying about being a leaf.
+- Identity and depth: the two things a producer knows that the tree cannot say about itself.
+
+**Book `VytoSeem`** (5 sworn, all seen green via the eye; the runner was busy with Ra work so it has NOT yet
+ had a runner run — do that): sow → stand → re-sow the same ids with new scores. Swears the set stands, the
+  tail speaks, a non-scalar inflates, **the producer's `internal` field never reaches a cell**, and a re-sown
+   hit MORPHS (same particle, changed score) rather than blinking.
+
+**Two bugs found and fixed on the way, both worth knowing:**
+- **A voice row was swept.** `Vyto_scan_sweep` drops any row without `seen_at === gen`; the voice is minted
+   from the scan and guarded by a sig so a quiet glass mints nothing — so it was marked departing on the
+    very scan that made it, dropped on the next, and the guard refused to rebuild. Now `.c.voice` takes the
+     same sweep exemption a membrane does. **Any mirror-side furniture needs this.**
+- `dose`/`loose` were printing as k:v facts. They are display CHANNELS — the cut says them by being the
+   shape it is — so they joined `GUT_SKIP`. `same_n`/`flat_n` deliberately stay: doors carrying a count.
+
+**Owed / next:**
+- A runner run of `VytoSeem` + declare its 5 assertions.
+- `wafts_everything.mjs` has VytoSeem in the Visua list but **refuses to write while `Ghost/M/Heard.g` is
+   mid-edit** (5 missing Points — the owner's in-flight work, nothing to do with this). The Visua toc picks
+    it up the moment Heard.g is whole; the Credence line is already in.
+- **Pricing:** a leaf with `dose:1` took ~60% of the frame while two 3-child clusters were crushed. That is
+   the standing scope-claim taste call (`Vyto_express_rows`, +0.15/extra kid) seen from a new angle — a
+    cluster of N should out-claim a doseless leaf and does not.
+- A cluster that TILES its members has nowhere to say `×214` (a scope's folio is one running-head line). The
+   membrane's bump solved this for families; a plain cluster scope wants the same. Probably: let any scope
+    with a voice take a bump.
+
 ### THE MEMBRANE — LANDED (2026-09-12): the family is a scope, the bump is its self seat, Book green 6/6
 Start here next session. The plan below is superseded by what actually worked; the owner has the this-or-that
  (`wormhole/shots/seq_0049_membrane`, `seq_0050_membranepinch`) and has NOT yet ruled.

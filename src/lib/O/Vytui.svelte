@@ -1847,7 +1847,10 @@
     //   furniture is dropped — `dontSnap` and friends describe the PLUMBING, not the thing (the live
     //    capture was showing `dontSnap:1` under three separate organs, which is noise wearing the costume
     //     of information).
-    const GUT_SKIP = new Set(['face', 'departing', 'active', 'created_at', 'new', 'not_found', 'dontSnap'])
+    // 'dose'/'loose' are display CHANNELS (how big; on the pile or off it) — the cut already says them by
+    //  being the shape it is, so printing them as k:v facts says the same thing twice in the wrong
+    //   language.  same_n/flat_n deliberately stay: those are DOORS carrying a count, which must be said.
+    const GUT_SKIP = new Set(['face', 'departing', 'active', 'created_at', 'new', 'not_found', 'dontSnap', 'dose', 'loose'])
     function under_guts(row: TheC, max: number): string[] {
         const sc: any = row?.sc; if (!sc || max <= 0) return []
         const keys = Object.keys(sc)
@@ -2084,7 +2087,13 @@
         // a SCOPE (its children tile it) wears a RUNNING HEAD: its name alone along its top wall, small and
         //  un-inflated, the way a magazine section carries its title above the pieces inside it
         const head = cell.hasKids
-        const vrows = crest && !head ? crest_vrows(cell.row) : null
+        // A VOICE IS NOT ONLY A CREST'S (2026-09-23).  `crest_vrows` reads the %Vrow/%Vbit saying rows off
+        //  a row; only a folded crest used to have any.  A SOWN leaf can carry one too (Vyto_seem `says` →
+        //   Vyto_seem_voice), which is how a collapsed cluster says `×214 · mood brine×31` without being a
+        //    fold of real members.  So ask the ROW whether it has a voice rather than asking what kind it is;
+        //     a row with none returns [] and falls through to its facts exactly as before.
+        const voice = head ? null : crest_vrows(cell.row)
+        const vrows = voice && voice.length ? voice : null
         const jn = crest || head || fam || mem ? null : junction_of(w, cell)
         const said = fam ? new Set(Object.keys(fam.sc as any).filter(k => k !== 'Membrane' && k !== 'n')) : null
         const guts = crest || head ? []

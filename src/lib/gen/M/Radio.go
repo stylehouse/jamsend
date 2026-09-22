@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '6b09c44322397388~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '6affb08ffee85690~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1537,6 +1537,14 @@ Radio_choice_keep(radio) {
 //  also leaves SoundPool mode (the chip is one control: you cannot be aimed at a friend AND on the pool),
 //   and clears the note the empty-pool rung may have left.  Deletes rather than blanks — a snapped scalar
 //    rides as a value or is ABSENT.  Returns the name now aimed at, or '' when roaming.
+//  ⚠ MUST ALSO LEAVE `own` (found live, 2026-09-22): Radio_own_set's own comment states the three-way
+//   law — "you cannot be on your own records AND aimed at a friend AND on the pool at once, so the other
+//    two clear" — and enforces it when TURNING own ON (clears source+aim+aim_by there). This direction
+//     never enforced the same law: aiming at a friend while `own` was still set left both flags standing
+//      together, and the dial's own fallback ladder checks `radio.sc.own` FIRST, unconditionally, before
+//       ever reaching the friend/pool path — so the aim silently never took effect. A live tab was found
+//        wearing exactly this: `aim:940f93acb9267404,aim_by:Lump,own` all at once, the face reporting
+//         "listening with Lump" while the dial kept serving the listener's own shelf forever.
 Radio_aim_set(n, pub) {
     let w = n ? n.c.w : null
     let radio = n
@@ -1549,6 +1557,10 @@ Radio_aim_set(n, pub) {
         this.Radio_choice_keep(radio)
         return ''
     }
+    // LEAVE `own` THE SAME WAY Radio_own_set DOES (Radio_source_toggle) — not a bare delete: it also
+    //  wipes the now-stale Lineup/Streams cards (drawn from the OTHER side of the exclusivity rule)
+    //   and clears solo/solo_by/ready, exactly the cleanup own→friends has always needed and never got.
+    if (radio.sc.own) { this.Radio_source_toggle(radio) }
     radio.sc.aim = want
     let nice = this.Radio_friendly ? this.Radio_friendly(w, want) : ''
     if (nice) { radio.sc.aim_by = nice } else if (radio.sc.aim_by) { delete radio.sc.aim_by }
@@ -1665,9 +1677,15 @@ async Radio_dial(radio) {
     //  radio may not even have been standing at seal-time).  Consumed into the ordinary aim lock,
     //   which the dial's aimed pool prefers as soon as any of their records land; until then every
     //    pick falls through exactly as before (an aim over an empty crate narrows nothing).
+    //  ⚠ SAME LAW Radio_aim_set keeps (found live, 2026-09-22, same day as that fix): a listener who
+    //   was on their own shelf before scanning the invite still wears `own`, and the dial's own
+    //    fallback runs FIRST, unconditionally, below — so a fresh join's aim would be silently
+    //     preempted forever, the exact symptom just fixed for the manual switch, hitting every
+    //      newcomer who happened to be playing their own music before joining.
     let wish = this.top_House().c.aim_wish
     if (wish) {
         delete this.top_House().c.aim_wish
+        if (radio.sc.own) { this.Radio_source_toggle(radio) }
         radio.sc.aim = String(wish)
         let wname = this.Radio_friendly ? this.Radio_friendly(w, String(wish)) : ''
         if (wname) radio.sc.aim_by = wname

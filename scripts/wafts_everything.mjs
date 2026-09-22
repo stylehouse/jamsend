@@ -147,7 +147,7 @@ W.push(['Ghost/Music/Cave', 'the collection — heist original bytes into the Ca
 ]])
 
 W.push(['Ghost/Vis/Visua', 'the visual — the crush that gangs leaves — the glass that cuts cells from the model — what a Book looks like while it runs',
- ['VoroMitosis','VoroScape','VoroRadio','VoroClinic','VoroTest','VytoStaple','VytoCell','VytoMitosis','VytoTandem','VytoFreeze','VytoSeek','VytoCrest','VytoFold','VytoBunch','VytoFoam','VytoBreathe','VytoNest','VytoMemo','VytoNeed','VytoDepth','VytoOrchestra','VytoMembrane'], [
+ ['VoroMitosis','VoroScape','VoroRadio','VoroClinic','VoroTest','VytoStaple','VytoCell','VytoMitosis','VytoTandem','VytoFreeze','VytoSeek','VytoCrest','VytoFold','VytoBunch','VytoFoam','VytoBreathe','VytoNest','VytoMemo','VytoNeed','VytoDepth','VytoOrchestra','VytoMembrane','VytoSeem'], [
  ['What:the crush', 'Voro — the census that gangs loose leaves behind a representative — the model and its facts',
   'Doc:Ghost/V/Voro.g', P('Voro_crush_scan', 'scan the worlds'), P('Voro_crush_pass', 'one pass — escalate a level'), P('Voro_crushable', 'may this gang'), P('Voro_crush_clear', 'undo'), P('Voro_model', 'the model of a family'), P('Voro_model_family', 'one family'), P('Voro_gang_fold', 'fold a gang behind a representative')],
  ['What:the stuffing', 'Vtuff — what a cell says about itself — title rows member rows and the bamboo',

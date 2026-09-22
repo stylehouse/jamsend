@@ -731,7 +731,7 @@
         </div>
     {:else}
         <p class="ld-blurb">
-            🏴 muster a Crew across your devices — a fleet sailing under your colours in
+            🏴 your personal devices — are added to the Crew (starting with this one), giving them
             <button class="ld-trust" onclick={() => trust = !trust}>TOTAL TRUST</button>.
         </p>
         {#if trust}

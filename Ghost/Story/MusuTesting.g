@@ -3475,3 +3475,91 @@ async ParkCull_zeroleash(w):
         this.story_swear(w, 'a leash configured to zero culled what the ninety second default would have kept')
     }
 // (end of the repli protocol Books — RepliUpsert / RepliSplit / RepliShadow / ParkCull)
+
+// ══ MusuRadioAim — THE "WHO AM I LISTENING WITH" EXCLUSIVITY LAW, PURE (2026-09-22) ═══════════════
+//  radio.sc.own / radio.sc.aim / radio.sc.source('pool') are meant to be mutually exclusive —
+//   Radio_own_set's own comment states the law: "you cannot be on your own records AND aimed at a
+//    friend AND on the pool at once, so the other two clear."  Two setters were found live NOT
+//     honouring the reverse direction: Radio_aim_set (the manual switch) and the aim_wish consumer
+//      inside Radio_dial (a fresh join's "who to listen with") both left a pre-existing `own` standing
+//       — so the dial's own-first fallback (which runs BEFORE the aim/pool path is ever reached)
+//        silently kept serving the listener's own shelf forever while the face reported the switch
+//         had happened.  Found live on a real tab (eed, aimed at a Pier named Lump:
+//          `aim:…,aim_by:Lump,own` all present together, the playing track never once carrying `by:`
+//           — the tell that nothing was actually drawn from the aim).  Both fixed in Radio.g; this
+//            Book pins the law so neither regresses.
+//  PURE STATE MACHINE, no audio/network — every function under test only touches radio.sc and
+//   top_House().c, so this needs no OfflineAudioContext gate, unlike its MusuRadio/MusuTune neighbours.
+//  BEAT 3 CALLS Radio_dial WITHOUT AWAITING IT, DELIBERATELY: the fix under test (the aim_wish
+//   consumption) is the FIRST mutation in the function and runs with no `await` ahead of it, so it
+//    completes synchronously before control ever yields — the state is already correct on the very
+//     next line.  Past that point Radio_dial goes on to draw a track (pool/lineup/friend ladder),
+//      which needs real nav/stoker infrastructure this Book does not build (deliberately — the law
+//       under test lives entirely before that point).  Awaiting the call would risk hanging the Book
+//        on machinery it was never meant to exercise; the dangling promise is caught and dropped.
+MusuRadioAim(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuRadioAim_drive,w,req
+        req%ok = 1
+
+MusuRadioAim_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+MusuRadioAim_note(w, sc):
+    let t = this.MusuRadioAim_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async MusuRadioAim_drive(w, req):
+    let run = (this.c.run)
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 3 }
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuRadioAim_switch(w)
+        if (n === 3) this.MusuRadioAim_join(w)
+    }
+    this.MusuRadioAim_witness(w)
+    await this.Musu_float(w)
+
+// beat 2 — THE MANUAL SWITCH (Radio_aim_set): own on, then aim at a friend. own must clear.
+MusuRadioAim_switch(w):
+    this.MusuRadioAim_note(w, { reached: 'step_2' })
+    let radio = w.oai({ Radio: 1, name: 'on-air' })
+    radio.c.up = w
+    radio.c.w = w
+    this.Radio_own_set(radio, 1)
+    let row = { switched: 1 }
+    if (radio.sc.own) row.own_took = 1
+    this.Radio_aim_set(radio, 'friendpub1')
+    if (!radio.sc.own && radio.sc.aim === 'friendpub1') row.aim_left_own_behind = 1
+    this.MusuRadioAim_note(w, row)
+
+// beat 3 — THE FRESH JOIN (the aim_wish consumer inside Radio_dial): own on, then a join seals and
+//  wishes a friend. own must clear the same way — see the Book header for why this deliberately
+//   does not await Radio_dial's own promise.
+MusuRadioAim_join(w):
+    this.MusuRadioAim_note(w, { reached: 'step_3' })
+    let radio = w.oai({ Radio: 1, name: 'on-air' })
+    radio.c.up = w
+    radio.c.w = w
+    this.Radio_own_set(radio, 1)
+    let row = { joined: 1 }
+    if (radio.sc.own) row.own_took_again = 1
+    this.top_House().c.aim_wish = 'friendpub2'
+    let p = this.Radio_dial(radio)
+    if (typeof p?.catch === 'function') p.catch(() => {})
+    if (!radio.sc.own && radio.sc.aim === 'friendpub2') row.wish_left_own_behind = 1
+    this.MusuRadioAim_note(w, row)
+
+MusuRadioAim_witness(w):
+    let T = this.MusuRadioAim_T(w)
+    let s = T.o({ switched: 1 })[0]
+    if (s && +s.sc.own_took === 1 && +s.sc.aim_left_own_behind === 1)
+        this.story_swear(w, 'switching the aim to a friend leaves your own shelf behind — the two can never stand together or the dial would keep serving your own records while the face says you switched')
+    let j = T.o({ joined: 1 })[0]
+    if (j && +j.sc.own_took_again === 1 && +j.sc.wish_left_own_behind === 1)
+        this.story_swear(w, 'a fresh joins own wish leaves your own shelf behind the exact same way a manual switch does — a newcomer who was playing their own music before joining hears their new friend and not themselves')

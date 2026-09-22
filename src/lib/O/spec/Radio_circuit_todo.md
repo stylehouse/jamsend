@@ -542,6 +542,24 @@ The owner, 2026-09-04, arriving at it from the other side: *"we need to mirror m
 
 ---
 
+> ⚑ **2026-09-22 — OWNER DECISION OWED: the Door's "suggest the playing track" buttons (♪→ / ▶).**
+>  The owner doesn't recall asking for these and is considering removing them. Checked: the system
+>   behind them is fully built and live, not orphaned. `DoorFace.svelte`'s `suggest()` (:420) calls
+>    `Swarm_suggest(w, self, pub, rec, note)` (Swarm.g:4282) — mints a `%Suggest` referring particle
+>     under the friendship `%Pier`, stashes it durably (capped 24/friend), and sends it now. Delivery
+>      is RELIABLE store-and-forward, not ephemeral gossip (Swarm.g's own comment, just above
+>       `Swarm_suggest_send`): a friend who's away gets it re-offered the moment their rebirth greeting
+>        arrives (`Swarm_suggest_resend` off `Swarm_heard_hi`), until their `suggest_got` retires it —
+>         so "lands even if they're away" in the tooltip is literally true, not aspirational copy. The
+>          receiving side (`Swarm_suggested`) mints the mirrored particle on THEIR pier and confirms;
+>           DoorFace renders an arrived one with a ▶ (`tune_sug`, :428) that plays it straight through
+>            `Radio_tune`. The send button (♪→) only shows while `playing && Grant:'Music'` exists for
+>             that pier (:110) — so it can't fire at a stranger or with nothing playing.
+>  Nothing here is stubbed or dead. If it goes, it's a real feature going, not cleanup — worth a
+>   moment's thought about who's used it, not just a "looks unused, cut it" pass.
+
+---
+
 ## 1. THE SHAPE — one Mag, two stages, no operation particle
 
 ```

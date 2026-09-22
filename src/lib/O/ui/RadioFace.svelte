@@ -66,14 +66,49 @@
     let sources = $derived.by(() => { void H?.version; try { return (H as any)?.Radio_sources?.(n?.c?.w, n) ?? [] } catch { return [] } })
     let aimed_by = $derived.by(() => { void H?.version; return (n?.sc?.aim ? String(n?.sc?.aim_by || '') : '') })
     let menu = $state(false)
-    // picking a holder PINS the dial (`sc.aim`) and leaves pool mode in the same act — Radio_aim_set owns
-    //  both halves so the chip can never show "aimed at Grink" and "on the pool" at once.  '' = roam again.
-    const aim_to = (pub: string) => { try { (H as any)?.Radio_aim_set?.(n, pub); H?.bump_version?.() } catch {} ; menu = false }
+    let srcwrap: HTMLDivElement | undefined = $state()
+    // A CHOSEN SOURCE SHOULD BE HEARD (owner 2026-09-22: "when I change the source it should hit the
+    //  next track button for me, so the sounds transition") — picking a row is a real request to hear
+    //   the new source NOW, not merely a label change for whenever the current track happens to end.
+    //    `changed` is captured as the FIRST thing each handler does, before any ghost-function call —
+    //     Radio_own_set mutates `own` and aim_to('') is often composed right after it (the "any friend"
+    //      row), so checking post-mutation state would read the ALREADY-CLEARED flag and miss the skip.
+    //  Radio_skip is the exact ⏭ button's own verb — its "blend, don't cut" crossfade is what makes the
+    //   switch a transition rather than a hard cut, and it also carries the ⏭ button's early-skip-is-a-
+    //    Meh side effect (Radio_meh_ms, 20s) on whatever was playing.  Deliberately not suppressed here:
+    //     a source-driven skip is the same act a manual ⏭ would be, and diverging would be a second,
+    //      inconsistent skip behaviour rather than one.
+    const aim_to = (pub: string) => {
+        const changed = !!face.own || face.source === 'pool' || String(n?.sc?.aim || '') !== pub
+        try { (H as any)?.Radio_aim_set?.(n, pub); if (changed) (H as any)?.Radio_skip?.(n); H?.bump_version?.() } catch {}
+        menu = false
+    }
     // the pool is the one row that is not a holder, so it goes through the old flip rather than the aim —
     //  and only when we are not already there (Radio_source_next is a toggle, not a setter).
-    const aim_pool = () => { try { if (face.source !== 'pool') (H as any)?.Radio_source_next?.(n); H?.bump_version?.() } catch {} ; menu = false }
+    const aim_pool = () => {
+        const changed = face.source !== 'pool'
+        try { if (changed) { (H as any)?.Radio_source_next?.(n); (H as any)?.Radio_skip?.(n) } ; H?.bump_version?.() } catch {}
+        menu = false
+    }
     // your own shelf, as a row (owner 2026-09-06: "LOCAL isn't in the source list") — a setter, not the flip.
-    const aim_own = () => { try { (H as any)?.Radio_own_set?.(n, 1); H?.bump_version?.() } catch {} ; menu = false }
+    const aim_own = () => {
+        const changed = !face.own
+        try { (H as any)?.Radio_own_set?.(n, 1); if (changed) (H as any)?.Radio_skip?.(n); H?.bump_version?.() } catch {}
+        menu = false
+    }
+    // ROAMING IS A CHOICE TOO (see the menu row below) — a dedicated handler, not Radio_own_set(n,0)
+    //  composed inline with aim_to(''), so `changed` can be captured before EITHER mutation runs.
+    const aim_any = () => {
+        const changed = !!face.own || face.source === 'pool' || !!n?.sc?.aim
+        try { (H as any)?.Radio_own_set?.(n, 0) } catch {}
+        try { (H as any)?.Radio_aim_set?.(n, ''); if (changed) (H as any)?.Radio_skip?.(n); H?.bump_version?.() } catch {}
+        menu = false
+    }
+    // CLICK ANYWHERE ELSE CLOSES THE MENU (owner 2026-09-22).  window-level so it also catches a click
+    //  on another chip, the graph behind the glass, or anywhere outside this face — `srcwrap.contains`
+    //   is the one check that keeps a click ON the chooser (a row, the chip itself) from closing it out
+    //    from under the press that just opened or is using it.
+    const outside_close = (e: MouseEvent) => { if (menu && srcwrap && !srcwrap.contains(e.target as Node)) menu = false }
     // more than one place to listen from ⇒ the press is a chooser; else it stays the old flip.
     let chooser = $derived(sources.length + (pool_ok ? 1 : 0) > 1)
     const chip_press = () => { if (chooser) { menu = !menu } else { try { (H as any)?.Radio_source_next?.(n) } catch {} } }
@@ -186,6 +221,8 @@
     let peerless = $derived.by(() => { void H?.version; void tick; return (H?.c as any)?.door_friends === 0 })
 </script>
 
+<svelte:window onclick={outside_close} />
+
 <!-- SMALL IS THE WHOLE FACE, not a folded player (DoorFace's discipline, same reason): one early
      return, so a bud does not mount the transport, the ring, the friend-pool census or the 1s clock —
      and a single branch is the only way to be sure of that by reading it.  The glyph reports STATE:
@@ -253,7 +290,7 @@
          a press opens the chooser whenever there is more than one place to listen from (friends + the pool),
          and only a one-source tab keeps the flip.  UPWARDS because the chip sits at the foot of the face. -->
     {#if face.source === 'pool' || face.by || (face.title && face.state !== 'off' && face.state !== 'digging')}
-        <div class="rf-srcwrap">
+        <div class="rf-srcwrap" bind:this={srcwrap}>
             {#if menu}
                 <div class="rf-menu">
                     {#each sources.filter((x: any) => !x.own) as s}
@@ -264,7 +301,7 @@
                     {/each}
                     <!-- ROAMING IS A CHOICE TOO, and it is the default the pin overrides — so it is a row,
                          not the absence of one.  Without it a listener who pinned Grink has no way back. -->
-                    <button class="rf-menu-row rf-menu-any" class:rf-menu-on={!aimed_by && face.source !== 'pool' && !face.own} onclick={() => { try { (H as any)?.Radio_own_set?.(n, 0) } catch {} ; aim_to('') }}>any friend</button>
+                    <button class="rf-menu-row rf-menu-any" class:rf-menu-on={!aimed_by && face.source !== 'pool' && !face.own} onclick={aim_any}>any friend</button>
                     <!-- YOUR OWN RECORDS, as a row (owner 2026-09-06: "LOCAL isn't in the source list — only friends and
                          any friend and soundpool").  Radio_sources adds it last with own:1 when the shelf has something
                          playable; it wires to Radio_own_set (a setter) rather than an aim. -->
@@ -292,7 +329,7 @@
             {:else if face.solo}
                 <button class="rf-src rf-src-local" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'the source — press to flip friends | SoundPool'}>♪ LOCAL · {soloWhy(face)}{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
             {:else}
-                <button class="rf-src rf-src-local" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'the source — press to flip friends | SoundPool'}>♪ LOCAL — your own record{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
+                <button class="rf-src rf-src-local" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'the source — press to flip friends | SoundPool'}>♪ LOCAL — your music{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
             {/if}
         </div>
     {/if}

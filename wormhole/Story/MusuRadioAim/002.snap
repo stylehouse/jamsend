@@ -1,0 +1,11 @@
+Snap:H
+  H:MusuRadioAim,Run
+    A:MusuRadioAim
+      self,round=2	{"mung":["age"]}
+      w:MusuRadioAim
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          switched,own_took,aim_left_own_behind
+        Radio,name:on-air,aim:friendpub1,aim_by:friendpu

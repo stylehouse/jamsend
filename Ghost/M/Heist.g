@@ -2371,7 +2371,16 @@ async Heist_keep_beat(w, ident):
     //  …AND IT IS `Heist_queue_order` NOW, not a sort written here: the same order is needed by
     //   Heist_keep_first (which renumbers it) and by the Haul list (which shows it), and a surface that
     //    disagreed with THIS loop about what runs next would be worse than no surface — it would be believed.
-    let GLOBAL = +(w.c.heist_inflight_total || w.c.heist_inflight || 1)
+    // `??`, NOT `||` (found live, 2026-09-22 — same footgun Repli.g:763 already names for its own knob):
+    //  `heist_inflight`/`heist_inflight_total` are hand-flipped console knobs (no UI setter anywhere in
+    //   the codebase — matching every other backpressure knob's documented operating pattern, "flip live
+    //    on the daemon shelf"), and PAUSING ALL CONCURRENT PULLS BY SETTING ONE TO 0 IS EXACTLY THE ASK
+    //     the 2026-08-06 comment above quotes ("switch off while sorting this out?"). `||` silently
+    //      turned a deliberate 0 back into 1, so that pause could never actually take effect through this
+    //       knob — even though the DOWNSTREAM consumer (`rw.c.heist_budget`, two lines below this
+    //        function's own `INFLIGHT` read) already gets this right (`!= null` + `Math.max(0, …)`). The
+    //         bug was upstream, at the mint, not at the read.
+    let GLOBAL = +(w.c.heist_inflight_total ?? w.c.heist_inflight ?? 1)
     rw.c.heist_budget = GLOBAL
     let queue = this.Heist_queue_order(shop)
     for (const keep of queue) {

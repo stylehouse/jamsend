@@ -1,0 +1,17 @@
+story:MusuRadioAim
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.022
+      sample=0.028,at=1790063148
+      sample=0.016,at=1790063167
+    TimeTotal:step,avg=0.007
+      sample=0.009,at=1790063148
+      sample=0.005,at=1790063167
+  step,dige:2cc08a97b918eb47
+  step=2,dige:291ad36e4dad16cd
+    Assertion:switching-the-aim-to,sentence:switching the aim to a friend leaves your own shelf behind — the two can never stand together or the dial would keep serving your own records while the face says you switched
+  step=3,dige:e0dab5d43969b30a
+    Assertion:a-fresh-joins-own,sentence:a fresh joins own wish leaves your own shelf behind the exact same way a manual switch does — a newcomer who was playing their own music before joining hears their new friend and not themselves

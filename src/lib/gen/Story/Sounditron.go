@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return '1eaa36b3f8d6469a~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'c113f372ff580584~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -3052,15 +3052,27 @@ Sounditron_supervise(w) {
         //        advice is now true; a fixed string cannot keep that promise across four different
         //         failures (§2), and `Sounditron_music_why` exists precisely to tell them apart.
         //  COST-BOUNDED ON PURPOSE: `music_why` calls `Radio_dial_pool`, which walks every crate, and
-        //   this function re-runs EVERY BEAT — so the walk is spent only inside the last 5s before the
+        //   this function re-runs EVERY BEAT — so the walk is spent only inside the last 20s before the
         //    deadline, which is the only window where the answer is about to be shown to anybody.
         //     `Supervisor_patient` refreshes `advice` on every call (:481), so the late re-arm lands
         //      without restarting the clock.
         //  `remedy` rides beside it as a one-word REMEDY KIND, not a sentence: the arrival screen must
         //   choose a control, and parsing English to pick a button is the second opinion this file
         //    keeps refusing to grow.  'gesture' means a tap — any tap — is the whole cure.
+        //  ⚠ WIDENED FROM 5s TO 20s (found live, 2026-09-22 — the SAME failure the 2026-08-11 note two
+        //   paragraphs up already fixed once, one layer down).  The give-up TRANSITION is a pure wall-
+        //    clock read (`Supervisor_watch_waiting`: `Date.now() < watch.c.deadline`) that Butler polls
+        //     reactively, on its own cadence — completely decoupled from THIS function's own beat.  A 5s
+        //      window means exactly one, maybe two, beats ever get a chance to land the refined advice
+        //       before the deadline fires; a tab whose beat is running slow right when it matters most
+        //        (a cold boot still settling, a burst of Repli traffic blocking the main thread — both
+        //         measured on the live incident this was found from: 43.5s to `Liesui ready`, multiple
+        //          `[Violation] setTimeout/setInterval` warnings in the seconds before give-up) can miss
+        //           its one or two chances entirely and give up on the same hardcoded-reading sentence
+        //            the 2026-08-11 fix exists to prevent.  20s gives roughly four times the beats to
+        //             land it, for four times the (still small, still late-only) walk cost.
         let pw = this.Supervisor_patient(sup, 'arrive.playing', 90, 'nothing has started playing...')
-        if (pw && pw.c.deadline && Date.now() > pw.c.deadline - 5000) {
+        if (pw && pw.c.deadline && Date.now() > pw.c.deadline - 20000) {
             // ONE READING, AND ITS EXACT COMPLEMENT (2026-09-05).  These two branches used to test
             //  `probe` twice, by hand, in mirrored form — so the pair was only as good as the staleness
             //   of the single fact they shared.  `Sounditron_ac_parked` re-checks that boot fact against
