@@ -1,9 +1,9 @@
 Snap:H
   H:MusuBuddy,Run
     A:MusuBuddy
-      self,round=28	{"mung":["age"]}
+      self,round=29	{"mung":["age"]}
       w:MusuBuddy,now=1751960120
-        self,round=28	{"mung":["age"]}
+        self,round=29	{"mung":["age"]}
         req:wrangle,eternal,ok
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
@@ -334,7 +334,7 @@ Snap:H
         Mine,pub:b317b9a776e39d30
           Mag:heard,pub:b317b9a776e39d30,heard_ttl:30,take_ttl:90
             Cloud,page:1,created_at:1751960110
-              Card,id:02cfcb9c15affeaf,pub:c012850d69de1318,take:1,at:1751960110,title:Dorian D,artist:DJ Oscillo
+              Card,id:02cfcb9c15affeaf,pub:c012850d69de1318,hearted_at:1751960110,title:Dorian D,artist:DJ Oscillo
         jammed,took,card_names_the_dj,kept_id:02cfcb9c15affeaf
         revoked_stand,changed,quiet_wire
         see:the stream chunks did not exist until asked — boundary wants parked at the frontier and released as the transcode advanced

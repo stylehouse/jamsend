@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return 'ac0c56af5e989abc~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return 'b30c711bd8edfee8~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -164,6 +164,113 @@ Heard_page(mag, now) {
     if (now) { pg.sc.created_at = '' + now }
     mag.c.sitting = pg
     return pg
+},
+// Heard_machine_page — THE MACHINE'S OWN PAGE (rung 4, SoundPooling_todo §0.0): find-or-create, NEVER a
+//  sitting.  `Heard_page` mints the next NUMBERED page per boot ("Tuesday's page"); a pool press is not
+//   something a person sat through, so it gets the SAME stable `page:'machine'` every time — a non-
+//    numeric id `Heard_page`'s own `+(p.sc.page||0)` max-scan silently skips, so it never perturbs
+//     sitting numbering, and `Heard_gc`'s age-by-`created_at` never touches it (it has none, by design —
+//      a machine page is not a boot's worth of listening to forget after thirty days; see Heard_is_machine).
+Heard_machine_page(mag) {
+    if (!mag) { return null }
+    let pg = mag.oai({ Cloud: 1, page: 'machine' })
+    pg.c.up = mag
+    return pg
+},
+// Heard_is_machine — IS THIS THE MACHINE'S OWN ACT, NOT A PERSON'S?  A pool press (circulation fill or
+//  radio-catch) wears `for:'pool'` on its Card, and every taste/attention/dedup reader below excludes it:
+//   a machine deciding to try a track is not a person hearing it, and letting it count would be a
+//    feedback loop (the pool "liking" its own presses) or a lie (the dial thinking a fetch-only attempt
+//     was a hearing, or the heart glyph lighting up for nobody's press).
+Heard_is_machine(card) {
+    return !!(card && card.sc && String(card.sc.for || '') === 'pool')
+},
+// ONE CARD, TWO ROADS (rung 5, SoundPooling_todo §0.0).  A track a person ♥'d can travel two roads at
+//  once: the ORIGINAL into their library (the heist, the Card's own stamps) and a lofi copy into the POOL
+//   (the fill).  Each road has its own press, its own verdict, its own landing — a pool fetch that fails
+//    must not read as the ♥ failing (Heard_takes would park the take "answered", waiting for a human),
+//     and a ♥ that landed must not read as the pool copy landing.  So the stamps of a road live on a
+//      ROAD-BEARER, and Heard_road names it: a machine press (rung 4's own Card, `for:'pool'`) IS its pool
+//       road — its Card carries the stamps, exactly as before; a human Card the pool also fetches grows a
+//        `%Road,via:'pool'` CHILD, stamp-shaped like a Card (hearted_at, landing_failed_at, … — so
+//         Heard_reaction / Heard_verdict / Heard_react_at read a road as they read a Card).  A Road is
+//          this body's own bookkeeping (each body has its own pool): the heard protocol skips it, like the
+//           machine page, so it neither stashes nor gossips — a session memory, re-derived by the fill.
+Heard_road(card, via) {
+    if (!card) { return null }
+    if (String(via || 'pool') === 'pool' && this.Heard_is_machine(card)) { return card }
+    return card.o({ Road: 1, via: String(via || 'pool') })[0] || null
+},
+Heard_road_mint(card, via) {
+    if (!card) { return null }
+    let road = this.Heard_road(card, via)
+    if (road) { return road }
+    road = card.i({ Road: 1, via: String(via || 'pool') })
+    road.c.up = card
+    return road
+},
+// Heard_road_promote — THE REVERSE HAZARD (rung 5 follow-up, 2026-09-22).  Heard_road_mint protects a
+//  human-first Card from a LATER pool press; this protects the opposite order, which is at least as
+//   common — the 'random' compartment's whole point is circulating tracks nobody has heard yet, so the
+//    machine routinely mints a Card (`for:'pool'`) BEFORE any human touches that (id, pub).  Every human
+//     path reaches the ledger through Heard_card (Heard_mark/_through, Heard_take, Heard_nay, Heard_meh),
+//      so that is the one gate this promotion needs.  Left unpromoted, nothing ever clears `for` (stamps
+//       are never cleared) — Heard_is_machine would call it a machine act forever, and the person's own
+//        reaction would vanish from Heard_set/tally/taken/unseen/takes/landed_ids: the glyph dark for a
+//         track they actually loved.
+//  PROMOTE, symmetric to the human-first case: migrate every stamp the machine already wrote onto a fresh
+//   pool Road (so a real fetch failure or already-had verdict is relocated, not lost), then relocate the
+//    CARD ITSELF off the machine page onto TODAY'S open sitting — the exact page a fresh human take would
+//     have landed on to begin with — so Heard_latest (which reads one numbered page's own children, never
+//      the machine page) sees it too.  A mint-and-drop, not a `.c.up` repoint: `i()`/`drop()` are the only
+//       way to move a child between containers, and this runs once (Heard_is_machine is false forever
+//        after, by construction), so the fresh `i()` can never collide with a second promotion.
+Heard_road_promote(w, mag, card) {
+    if (!mag || !card || !this.Heard_is_machine(card)) { return card }
+    let dest = this.Heard_page(mag, this.Heard_now(w))
+    let old_page = card.c.up
+    let sc = { Card: 1, id: String(card.sc.id) }
+    if (card.sc.pub) { sc.pub = String(card.sc.pub) }
+    let fresh = dest.i(sc)
+    fresh.c.up = dest
+    for (const k of Object.keys(card.sc)) { if (k !== 'Card' && k !== 'id' && k !== 'pub' && k !== 'for') { fresh.sc[k] = card.sc[k] } }
+    let road = fresh.oai({ Road: 1, via: 'pool' })
+    road.c.up = fresh
+    for (const k of this.Heard_mirror_stamp_keys().concat(['why', 'carried_by'])) {
+        if (fresh.sc[k] != null) { road.sc[k] = fresh.sc[k]; delete fresh.sc[k] }
+    }
+    road.bump()
+    if (old_page) { old_page.drop(card) }
+    fresh.bump()
+    return fresh
+},
+// Heard_pool_take — THE MACHINE'S OWN PRESS (rung 4): a pool fetch is a decision too, just not a human
+//  one — it deserves the SAME Card the heist reads from (Heard_clone_beat copies its listing + verdict
+//   up exactly as for a ♥, so a fetch failure becomes a real, re-askable memory — Ra_pool_fill_wants'
+//    `landing_failed_at` check), on the MACHINE's page so nothing mistakes it for a sitting.  Idempotent
+//     by (id, pub), like Heard_take; a re-press (the SAME track pooled again after a prior verdict)
+//      re-arms exactly like a human re-press does (Heard_react_at floors past whatever's already there).
+//  Rung 5: when the (id, pub) is ALREADY a person's Card (the liked/recent compartments draw exactly the
+//   tracks a person ♥'d), the Card is never relabelled — the press goes on its pool road (Heard_road_mint).
+Heard_pool_take(w, me, seed, dj, title, artist) {
+    if (!w || !me || !seed || !dj) { return null }
+    let mag = this.Heard_mag(w, me)
+    if (!mag) { return null }
+    let card = this.Heard_find(mag, seed, dj)
+    if (!card) {
+        let pg = this.Heard_machine_page(mag)
+        card = pg.i({ Card: 1, id: String(seed), pub: String(dj), for: 'pool' })
+        card.c.up = pg
+    }
+    let road = this.Heard_road_mint(card, 'pool')
+    if (this.Heard_reaction(road) !== 'take') {
+        road.sc.hearted_at = this.Heard_react_at(w, road, ['nayed_at', 'mehed_at', 'already_had_at', 'offer_unsigned_at', 'landing_failed_at'])
+    }
+    if (title && !card.sc.title) { card.sc.title = this.Radio_clean ? this.Radio_clean(title) : String(title) }
+    if (artist && !card.sc.artist) { card.sc.artist = this.Radio_clean ? this.Radio_clean(artist) : String(artist) }
+    road.bump()
+    card.bump()
+    return card
 
 },
 // Heard_cards — every Card, across every page, in page order.  The one walk; nothing else iterates the
@@ -357,12 +464,16 @@ Heard_mag_card(mag, id, pub, now) {
     card.c.up = pg
     return card
 },
-// Heard_card — find-or-create, landing a fresh Card in the open page.
+// Heard_card — find-or-create, landing a fresh Card in the open page.  THE ONE GATE every human path
+//  reaches a Card through (Heard_mark/_through, Heard_take, Heard_nay, Heard_meh) — so it is also the one
+//   place a machine-pressed Card gets promoted the instant a human touches it (Heard_road_promote).
 Heard_card(w, me, id, pub) {
     if (!id) { return null }
     let mag = this.Heard_mag(w, me)
     if (!mag) { return null }
-    return this.Heard_mag_card(mag, id, pub, this.Heard_now(w))
+    let card = this.Heard_mag_card(mag, id, pub, this.Heard_now(w))
+    if (card && this.Heard_is_machine(card)) { card = this.Heard_road_promote(w, mag, card) }
+    return card
 },
 //#endregion
 
@@ -641,12 +752,13 @@ Heard_seen(w, me, pub, id) {
 
 },
 // Heard_unseen — what the Haul cell shows.  A COUNT, nothing more; the rows themselves say what changed
-//  (Heard_word already turns a verdict into a sentence a person reads).
+//  (Heard_word already turns a verdict into a sentence a person reads).  A machine press (rung 4) never
+//   nags — nobody wants "your pool auto-fetch failed" as an attention ping.
 Heard_unseen(w, me) {
     let mag = this.Heard_mag_find(w, me)
     if (!mag) { return 0 }
     let n = 0
-    for (const card of this.Heard_cards(mag)) { if (this.Heard_news(card)) { n = n + 1 } }
+    for (const card of this.Heard_cards(mag)) { if (!this.Heard_is_machine(card) && this.Heard_news(card)) { n = n + 1 } }
     return n
 
 },
@@ -654,10 +766,11 @@ Heard_unseen(w, me) {
 //  runtime mirror: a mirror dies with the process, so after a reload the heart went hollow while the ask
 //   it stood for was still standing — the button saying the opposite of the truth.  Pure probe.
 //    Rung 3: checks every sibling's mirror too — a heart pressed on the OTHER device still fills the glyph.
+//     Rung 4: never lights up for a machine's OWN press — nobody pressed anything.
 Heard_taken(w, me, pub, id) {
     for (const mag of this.Heard_mags(w, me)) {
         let card = this.Heard_find(mag, id, pub)
-        if (card && this.Heard_reaction(card) === 'take') { return 1 }
+        if (card && !this.Heard_is_machine(card) && this.Heard_reaction(card) === 'take') { return 1 }
     }
     return 0
 
@@ -670,9 +783,11 @@ Heard_taken(w, me, pub, id) {
 //  Rebuilt per call rather than cached: the set only changes when a Card mints or the GC drops one, and a
 //   cache would need invalidating from three places to save a walk over a few hundred bare ids.  Callers
 //    hoist it out of their own loops, exactly as they hoisted `radio.c.heard` before.
+//  ⚠ EXCLUDES A MACHINE PRESS (rung 4): a pool fetch — successful OR failed — is not a person hearing a
+//   track, and letting it dedupe the dial would mean the radio silently skips something nobody ever heard.
 Heard_set(w, me) {
     let set = {}
-    for (const c of this.Heard_cards_union(w, me)) { if (c.sc.id) { set[String(c.sc.id)] = 1 } }
+    for (const c of this.Heard_cards_union(w, me)) { if (c.sc.id && !this.Heard_is_machine(c)) { set[String(c.sc.id)] = 1 } }
     return set
 },
 //#endregion
@@ -691,6 +806,7 @@ Heard_set(w, me) {
 Heard_tally(shelf) {
     let out = {}
     for (const c of this.Heard_cards_union_near(shelf)) {
+        if (this.Heard_is_machine(c)) { continue }   // a pool press is not taste — rung 4, no feedback loop
         let id = String(c.sc.id || '')
         if (!id) { continue }
         let mire = +(c.sc.played_through || 0)
@@ -708,12 +824,16 @@ Heard_tally(shelf) {
 //   union of "the last page", not one shared page).  The old 'latest' pool policy read the last %Jam
 //    session; a Cloud page IS a sitting, which is the same idea with a coordinate the model already
 //     keeps, and it is clockless (page order, not a timestamp) so no fixture moves on it.
+//  ⚠ THE MACHINE PAGE IS NOT A SITTING (rung 4): `page:'machine'` is a non-numeric id, so it never wins
+//   `Heard_page`'s own next-number scan — but a naive "last CHILD" read here would still pick it up the
+//    instant it exists, since it mints AFTER whatever sitting is currently open, making a pool press look
+//     like "the last thing this body heard".  Filter to numeric pages before taking the last one.
 Heard_latest(shelf) {
     let out = []
     for (const mag of this.Heard_mags_near(shelf)) {
-        let pages = mag.o({ Cloud: 1 })
+        let pages = mag.o({ Cloud: 1 }).filter((p) => /^\d+$/.test(String(p.sc.page || '')))
         let last = pages[pages.length - 1]
-        for (const c of (last ? last.o({ Card: 1 }) : [])) { if (c.sc.id && !out.includes(String(c.sc.id))) { out.push(String(c.sc.id)) } }
+        for (const c of (last ? last.o({ Card: 1 }) : [])) { if (c.sc.id && !this.Heard_is_machine(c) && !out.includes(String(c.sc.id))) { out.push(String(c.sc.id)) } }
     }
     return out
 
@@ -754,41 +874,42 @@ Heard_landed(shelf, card) {
 //  A Card wearing a verdict is ANSWERED (the wire replied and the reply was not the track), so it waits
 //   for a human — a re-press or a ✕ — rather than re-asking forever behind the holder's one live keep.
 //  Pure: `o` throughout, so a face may call it every poll.
+// Heard_holders — WHO HAS IT NOW, over the live mirrors: the census (Pool_shared_rows — every stocked,
+//  real record on every %Theirs, minus my own) folded crew-first by the ONE resolver (Pool_holders,
+//   rung 5).  {id → pub}, built once per query; Heard_holder_of is the single-id read of it.
+Heard_holders(w, me) {
+    if (!w || !w.o || !this.Pool_shared_rows) { return {} }
+    let rows = []
+    try { rows = this.Pool_shared_rows(w) } catch (er) { rows = [] }
+    return this.Pool_holders(rows.filter((s) => s && String(s.from || '') !== String(me)))
+},
 Heard_holder_of(w, me, id) {
-    if (!w || !w.o || !id) { return '' }
-    let crew = null
-    try { crew = this.Ra_pool_owner ? this.Ra_pool_owner(w).o({ Crew: 1 })[0] : null } catch (er) { crew = null }
-    let mates = crew ? crew.o({ mate: 1 }).map((m) => String(m.sc.mate || '')) : []
-    let hits = []
-    for (const t of w.o({ Theirs: 1 })) {
-        let pub = String(t.sc.pub || '')
-        if (!pub || pub === String(me)) { continue }
-        let stock = t.o({ stock: 1 })[0]
-        if (!stock || !this.Ra_rec_find(stock, { Record: 1, id: String(id) })) { continue }
-        hits.push(pub)
-    }
-    hits.sort((a, b) => {
-        let ac = mates.some((m) => m && (a.startsWith(m) || m.startsWith(a))) ? 0 : 1
-        let bc = mates.some((m) => m && (b.startsWith(m) || m.startsWith(b))) ? 0 : 1
-        return ac - bc || (a < b ? -1 : 1)
-    })
-    return hits[0] || ''
+    if (!id) { return '' }
+    return this.Heard_holders(w, me)[String(id)] || ''
 },
 // Heard_takes — WHAT I AM OWED, AND BY WHOM (rung 3: mine or any sibling's — a body with an empty own
-//  Mag but a mirrored sibling still has wishes to carry).
+//  Mag but a mirrored sibling still has wishes to carry).  A machine press (rung 4) is not a human ask —
+//   its OWN `%Heist,into:'pool'` keep already exists, minted straight from the press site; this query
+//    must never mint a SECOND one from the Card.
 Heard_takes(w, me, shelf) {
     let out = []
     let cards = []
     let holder = {}
+    let holders = null
     for (const c of this.Heard_cards_union(w, me)) {
+        if (this.Heard_is_machine(c)) { continue }
         if (this.Heard_reaction(c) !== 'take' || !c.sc.id) { continue }
         let pub = String(c.sc.pub || '')
         if (pub === String(me)) { continue }
         if (this.Heard_landed(shelf, c)) { continue }
         // no holder on the card ⇒ whoever has it now (a pooled take): the %Theirs mirrors are local
-        //  catalogs of every shelf shared with me, so this is a local lookup, crew first. Nobody has it
-        //   ⇒ the card stands, exactly like a take whose holder is away.
-        if (!pub) { pub = this.Heard_holder_of(w, me, String(c.sc.id)); if (!pub) { continue } }
+        //  catalogs of every shelf shared with me, so this is a local lookup, crew first (Heard_holders,
+        //   built once per query). Nobody has it ⇒ the card stands, exactly like a take whose holder is away.
+        if (!pub) {
+            if (!holders) { holders = this.Heard_holders(w, me) }
+            pub = holders[String(c.sc.id)] || ''
+            if (!pub) { continue }
+        }
         holder[String(c.sc.id)] = pub
         cards.push(c)
     }
@@ -881,6 +1002,9 @@ Heard_landed_ids(w, me, shelf) {
     if (!shelf) { return out }
     let cards = []
     for (const c of this.Heard_cards_union(w, me)) {
+        // a machine's OWN press must never feed the pool's own 'recent' compartment (rung 4) — the pool
+        //  choosing what it just chose is a feedback loop, not a fact about an evening of listening.
+        if (this.Heard_is_machine(c)) { continue }
         if (this.Heard_reaction(c) !== 'take' || !c.sc.id) { continue }
         // a heart on a track of MY OWN is a taste fact, not an acquisition — nothing was acquired, so it
         //  is not "what came in lately" and the pool's recent compartment must not draw it (the same
@@ -936,13 +1060,21 @@ Heard_keep(w, rw, shop, dj, rec) {
 //         verdict by comparison and asks again (Heard_take, Heard_verdict) — nothing is cleared here.
 //  Runs at the top of every haul beat.  Pure `o` until something has actually landed.  Neither branch below
 //   calls a separate "mark it unseen" any more — Heard_news derives that off the very stamps written here.
+//  RUNG 4: a POOL keep (`Pool_is_machinery`) rides the SAME clone now (`Heist_is_pool` used to skip it
+//   entirely, via the plain `!keep.sc.take` guard below — a pool keep never wears `take`) — its Card is
+//    Heard_pool_take's, on the machine page, so a fetch failure becomes a real, re-askable memory instead
+//     of vanishing the moment the wedged keep flattens.
+//  RUNG 5: the verdict lands on the KEEP'S ROAD — a pool keep's on the Card's pool road (Heard_road: the
+//   Card itself for a machine press, the %Road child under a human ♥ the pool is also fetching), a ♥ keep's
+//    on the Card.  The LISTING is road-less (it describes the track, not the trip) and stays on the Card.
 Heard_clone_beat(w, rw, me, shop) {
     if (!shop || !rw || !me) { return 0 }
     let mag = this.Heard_mag_find(rw, me)
     if (!mag) { return 0 }
     let n = 0
     for (const keep of shop.o({ Heist: 1 })) {
-        if (!keep.sc.take) { continue }
+        let pool = this.Pool_is_machinery(keep)
+        if (!keep.sc.take && !pool) { continue }
         let seed = String(keep.sc.seed || '')
         let dj = String(keep.sc.pub || '')
         if (!seed || !dj) { continue }
@@ -954,13 +1086,14 @@ Heard_clone_beat(w, rw, me, shop) {
         if (head) { n = n + this.Heard_clone_head(card, head) }
         let v = this.Heard_verdict_of(this.Heist_job_of ? this.Heist_job_of(shop, keep) : null)
         if (v && String(keep.sc.state || 'primed') !== 'done') {
-            card.sc[this.Heard_verdict_field(v.key)] = '' + this.Heard_now(w)
-            if (v.why) { card.sc.why = String(v.why).slice(0, 120) }
-            card.bump()
+            let road = pool ? this.Heard_road_mint(card, 'pool') : card
+            road.sc[this.Heard_verdict_field(v.key)] = '' + this.Heard_now(w)
+            if (v.why) { road.sc.why = String(v.why).slice(0, 120) }
+            road.bump()
             keep.sc.state = 'done'
             keep.bump()
             try { this.Heist_job_drop(shop, keep) } catch (er) {}
-            console.log('♥⚠ ' + String(card.sc.title || seed).slice(0, 32) + ' — ' + this.Heard_word(mag, card, this.Heard_now(w)))
+            console.log((pool ? '🏊⚠ ' : '♥⚠ ') + String(card.sc.title || seed).slice(0, 32) + ' — ' + this.Heard_word(mag, road, this.Heard_now(w)))
             n = n + 1
         }
     }

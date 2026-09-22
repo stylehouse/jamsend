@@ -4563,7 +4563,7 @@ async MusuPoolPolicy_drive(w, req):
     //  hollow-book-1step-green, the 2026-09-03 fix) — the Vytonation idiom: the Book declares its own
     //   beat count once, in 'new' mode only, or a CLI-driven first run fires ONE step and calls it green.
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 5 }
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 6 }
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
@@ -4571,6 +4571,7 @@ async MusuPoolPolicy_drive(w, req):
         if (n === 3) this.MusuPoolPolicy_barred(w)
         if (n === 4) this.MusuPoolPolicy_recent(w)
         if (n === 5) this.MusuPoolPolicy_roll(w)
+        if (n === 6) this.MusuPoolPolicy_holders(w)
     }
     this.MusuPoolPolicy_witness(w)
     await this.Musu_float(w)
@@ -4639,6 +4640,27 @@ MusuPoolPolicy_roll(w):
     if (trimmed.diff.length === 1 && trimmed.diff[0].of === 'stale' && trimmed.diff[0].do === 'evict') row.trim_now = 1
     this.MusuPoolPolicy_note(w, row)
 
+// MusuPoolPolicy_holders — ONE RESOLVER FOR "WHO HAS IT NOW" (rung 5, SoundPooling_todo §0.0).  A 'liked'
+//  draw ('L', loved, not held) whose track two mirrors hold — a friend 'F' and a crew body 'C' — must PULL
+//   from the crew body; a 'random' draw ('R') held by two friends resolves by name ('F1' before 'F2'), the
+//    same on every sit-down; a loved track nobody holds ('N') keeps its pull with NO road — a standing wish,
+//     not a vanished one.  Before this, only the random draw ever learned a holder (first mirror seen), and
+//      every liked/recent pull was a want with an empty `from` that Ra_pool_fill_wants could never book.
+MusuPoolPolicy_holders(w):
+    let tally = { L: { took: 1, at: 50, score: 2, kept: 0, why: 'loved' }, N: { took: 1, at: 40, score: 2, kept: 0, why: 'loved' } }
+    let f = { compartments: [{ name: 'liked', take: 'liked', cap: 2 }, { name: 'rolling', take: 'random', who: 'all', cap: 1, salt: 'x' }],
+              sources_raw: [{ id: 'L', from: 'F' }, { id: 'L', from: 'C', crew: 1 }, { id: 'R', from: 'F2' }, { id: 'R', from: 'F1' }],
+              pooled_raw: [], held_raw: [], recent_raw: [], tally_raw: tally, barred_raw: {}, now: 1000, pool_roll_at: 0 }
+    let r = this.Pool_policy(f)
+    let row = { reached: 'step_6', goal: r.goal.map((g) => g.id + '<' + (g.from || '')).sort().join(' ') }
+    let pull = (id) => r.diff.filter((d) => d.of === id && d.do === 'pull')[0]
+    if (pull('L') && pull('L').from === 'C') row.liked_pulls_from_crew_first = 1
+    if (pull('R') && pull('R').from === 'F1') row.random_holder_by_name = 1
+    if (pull('N') && pull('N').from === '') row.wish_without_a_road_stands = 1
+    let h = this.Pool_holders(f.sources_raw)
+    if (h.L === 'C' && h.R === 'F1' && !('N' in h)) row.one_fold_answers = 1
+    this.MusuPoolPolicy_note(w, row)
+
 // ── the witness — %see gated on TRUTH not beat number, once-noticed (no commas; em-dashes). ──
 MusuPoolPolicy_witness(w):
     let n = (this.c.run)?.c.step_n
@@ -4658,6 +4680,10 @@ MusuPoolPolicy_witness(w):
     // #4 THE ROLL BUDGET: an eviction nobody asked for by name waits for its window and then lands.
     if (rol && +rol.sc.held_back === 1 && +rol.sc.pull_goes_alone === 1 && +rol.sc.evict_after_it_landed === 1) this.story_swear(w, 'a displacement pulls first and evicts only once the replacement has landed — the pool never drops below its cap for a wish')
     if (rol && +rol.sc.trim_now === 1) this.story_swear(w, 'a pool holding more than its goal trims at once — the window rations displacement not trimming')
+    let hol = T.o({ reached: 'step_6' })[0]
+    // #6 ONE RESOLVER: every pull names who has it now — crew first then by name — and a wish nobody holds stands.
+    if (hol && +hol.sc.liked_pulls_from_crew_first === 1 && +hol.sc.random_holder_by_name === 1 && +hol.sc.one_fold_answers === 1) this.story_swear(w, 'every pull in the goal names who has it now — crew first then by name — one fold over the mirrors that the heist and the pool both read')
+    if (hol && +hol.sc.wish_without_a_road_stands === 1) this.story_swear(w, 'a loved track nobody holds keeps its pull with no road — a standing wish the fill leaves alone until a mirror turns up')
 
 // ══ MusuFloor — the trust floor's two unbooked planks: the pinned holdings vocabulary + fails-closed ══════
 //  Portability_doc §12 names the one invariant owed a Book: %Theirs never promotes off-vouch.  The DOOR
@@ -5522,7 +5548,7 @@ MusuPoolRadio_keeps(w):
 
 async MusuPoolRadio_drive(w, req):
     let run = (this.c.run)
-    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 6 }
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 9 }
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
@@ -5531,6 +5557,9 @@ async MusuPoolRadio_drive(w, req):
         if (n === 4) { await this.MusuPoolRadio_goal(w) }
         if (n === 5) { await this.MusuPoolRadio_cave(w) }
         if (n === 6) { await this.MusuPoolRadio_go(w) }
+        if (n === 7) { await this.MusuPoolRadio_card(w) }
+        if (n === 8) { await this.MusuPoolRadio_roads(w) }
+        if (n === 9) { await this.MusuPoolRadio_reverse(w) }
     }
     this.MusuPoolRadio_witness(w)
     await this.Musu_float(w)
@@ -5704,12 +5733,129 @@ async MusuPoolRadio_go(w):
     shop.drop(plain)
     this.MusuPoolRadio_note(w, row)
 
+// beat 7 — THE MACHINE'S OWN CARD (rung 4, SoundPooling_todo §0.0): the r1 press beat 2 made lands the
+//  SAME Card a human ♥ would, on the machine page — never a sitting — so Heard_clone_beat's verdict/
+//  listing machinery works identically for it.  But it must never LOOK like taste: the dial's dedup, the
+//  tally, "last sitting" and the heart glyph all exclude a machine press, everywhere that reads it.
+async MusuPoolRadio_card(w):
+    this.MusuPoolRadio_note(w, { reached: 'step_7' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788400050
+    let me = this.MusuPoolRadio_me(w)
+    let mag = this.Heard_mag_find(w, me)
+    let card = mag ? this.Heard_find(mag, 'r1', 'friendo') : null
+    let row = { carded: 1 }
+    if (card && String(card.sc.for || '') === 'pool' && this.Heard_reaction(card) === 'take') { row.the_press_is_a_card = 1 }
+    if (card && card.c.up && String(card.c.up.sc.page || '') === 'machine') { row.lives_on_the_machine_page = 1 }
+    let set = this.Heard_set(w, me)
+    if (!set.r1) { row.the_dial_never_thinks_it_heard_this = 1 }
+    let shelf = this.Heard_shelf(w, me)
+    let tally = this.Heard_tally(shelf)
+    if (!tally.r1 || tally.r1.score === 0) { row.no_taste_credit = 1 }
+    let latest = this.Heard_latest(shelf)
+    if (!latest.includes('r1')) { row.not_the_last_sitting = 1 }
+    if (!this.Heard_taken(w, me, 'friendo', 'r1')) { row.the_heart_glyph_stays_dark = 1 }
+    // the SAME clone_beat a human keep rides — a refusal becomes a real, re-askable memory
+    let shop = this.Ra_home_shop(w, me)
+    let k = shop.o({ Heist: 1, seed: 'r1' })[0]
+    if (k) {
+        let job = this.Heist_job(w, 'friendo', [], { home: shop, seed: 'r1' })
+        let bad = job.i({ unvouched: 1, tune: 'Radio One' })
+        bad.c.up = job
+        this.Heard_clone_beat(w, w, me, shop)
+        if (this.Heard_verdict(card) === 'unvouched') { row.the_failure_becomes_a_real_memory = 1 }
+        if (String(k.sc.state) === 'done') { row.the_wedged_keep_still_ends = 1 }
+    }
+    this.MusuPoolRadio_note(w, row)
+
+// beat 8 — ONE CARD, TWO ROADS (rung 5).  A person ♥s r4 from friendo (the heist road: the original into
+//  their library); then the pool presses the SAME (id, pub) — the liked compartment draws exactly what a
+//   person loved.  The ♥ Card must stay a person's Card (its sitting, its reaction, the glyph lit) and grow a
+//    %Road,via:pool child carrying the press; when the POOL's keep is answered unvouched the verdict lands on
+//     the road and NOT on the Card — the heist still owes the original (Heard_takes lists it) and the pool
+//      keep still ends.
+async MusuPoolRadio_roads(w):
+    this.MusuPoolRadio_note(w, { reached: 'step_8' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788400060
+    let me = this.MusuPoolRadio_me(w)
+    let them = w.c.them
+    let r4 = them.i({ Record: 1, id: 'r4', title: 'Radio Four' })
+    r4.c.up = them
+    this.Heard_take(w, me, r4, 'friendo')
+    let mag = this.Heard_mag_find(w, me)
+    let card = mag ? this.Heard_find(mag, 'r4', 'friendo') : null
+    let row = { roaded: 1 }
+    if (card && !this.Heard_is_machine(card) && this.Heard_reaction(card) === 'take' && !this.Heard_road(card, 'pool')) { row.the_heart_is_a_card_with_no_pool_road = 1 }
+    this.Heard_pool_take(w, me, 'r4', 'friendo', 'Radio Four', null)
+    let road = card ? this.Heard_road(card, 'pool') : null
+    if (card && !this.Heard_is_machine(card) && card.c.up && /^\d+$/.test(String(card.c.up.sc.page || ''))) { row.the_heart_is_still_a_heart = 1 }
+    if (road && road !== card && this.mainkey(road) === 'Road' && this.Heard_reaction(road) === 'take') { row.the_press_is_a_road_on_it = 1 }
+    if (this.Heard_taken(w, me, 'friendo', 'r4')) { row.the_glyph_stays_lit = 1 }
+    let shop = this.Ra_home_shop(w, me)
+    let k = shop.i({ Heist: 'Radio Four', seed: 'r4', pub: 'friendo', state: 'primed', into: 'pool', why: 'fill' })
+    k.c.up = shop
+    let job = this.Heist_job(w, 'friendo', [], { home: shop, seed: 'r4' })
+    let bad = job.i({ unvouched: 1, tune: 'Radio Four' })
+    bad.c.up = job
+    this.Heard_clone_beat(w, w, me, shop)
+    if (road && this.Heard_verdict(road) === 'unvouched' && !this.Heard_verdict(card)) { row.the_verdict_stays_on_its_road = 1 }
+    let owed = this.Heard_takes(w, me, this.Heard_shelf(w, me))
+    if (owed.some((r) => r.cards.some((c) => String(c.sc.id) === 'r4'))) { row.the_heist_still_owes_the_original = 1 }
+    if (String(k.sc.state) === 'done') { row.the_pool_keep_still_ends = 1 }
+    this.MusuPoolRadio_note(w, row)
+
+// beat 9 — THE REVERSE ROAD (rung 5 follow-up).  Beat 8 proved a human-first Card survives a later pool
+//  press.  This is the opposite order — the one 'random' circulation actually produces, since it presses
+//   whole tracks NOBODY has heard yet: the pool mints r5/friendo FIRST (a bare machine Card, `for:'pool'`,
+//    on the machine page), and only THEN does a person independently play the same track straight off
+//     friendo (not the pool copy) and press ♥.  Heard_take must promote the machine Card into a person's
+//      Card — migrating the machine's own hearted_at onto a fresh pool Road and relocating the Card off
+//       the machine page onto today's open sitting — so nothing about the person's own heart reads as a
+//        machine act, and a THIRD pool press on the same id afterward lands on the SAME road, never
+//         re-touching `for`.
+async MusuPoolRadio_reverse(w):
+    this.MusuPoolRadio_note(w, { reached: 'step_9' })
+    if (!w.c.set_up) { return }
+    w.sc.now = 1788400070
+    let me = this.MusuPoolRadio_me(w)
+    let them = w.c.them
+    let r5 = them.i({ Record: 1, id: 'r5', title: 'Radio Five' })
+    r5.c.up = them
+    let mag = this.Heard_mag_find(w, me)
+    let row = { reversed: 1 }
+    this.Heard_pool_take(w, me, 'r5', 'friendo', 'Radio Five', null)
+    let pressed = mag ? this.Heard_find(mag, 'r5', 'friendo') : null
+    if (pressed && this.Heard_is_machine(pressed) && pressed.c.up && String(pressed.c.up.sc.page) === 'machine') { row.the_press_lands_first_as_the_machines_own = 1 }
+    this.Heard_take(w, me, r5, 'friendo')
+    let card = mag ? this.Heard_find(mag, 'r5', 'friendo') : null
+    if (card && !this.Heard_is_machine(card)) { row.the_touch_promotes_it = 1 }
+    if (card && card.c.up && /^\d+$/.test(String(card.c.up.sc.page || ''))) { row.it_moves_off_the_machine_page = 1 }
+    let road = card ? this.Heard_road(card, 'pool') : null
+    if (road && road !== card && this.mainkey(road) === 'Road' && road.sc.hearted_at) { row.the_machines_own_press_rides_the_road = 1 }
+    if (card && this.Heard_reaction(card) === 'take' && card.sc.hearted_at) { row.the_persons_heart_is_the_cards_own = 1 }
+    if (this.Heard_taken(w, me, 'friendo', 'r5')) { row.the_glyph_lights_up = 1 }
+    // Heard_shelf is find-ONLY (Ra_home_self is the mint door) — this fixture never presses anything
+    //  through the library, so nothing else in this Book ever mints the stock shelf Heard_latest needs
+    //   to climb to the Mag from.  Mint it here, once: it links to the SAME Mine,pub:me home Heard_mag
+    //    already stood, so this only makes Heard_shelf answer truthfully — it changes nothing recorded
+    //     by an earlier step (Ra_home_self is idempotent, and no earlier step reads this shelf at all).
+    this.Ra_home_self(w, me)
+    let latest = this.Heard_latest(this.Heard_shelf(w, me))
+    if (latest.includes('r5')) { row.it_counts_as_the_latest_sitting_too = 1 }
+    this.Heard_pool_take(w, me, 'r5', 'friendo', 'Radio Five', null)
+    let after = mag ? this.Heard_find(mag, 'r5', 'friendo') : null
+    let roadAfter = after ? this.Heard_road(after, 'pool') : null
+    if (after && !this.Heard_is_machine(after) && after === card && roadAfter === road) { row.a_later_press_never_re_corrupts_it = 1 }
+    this.MusuPoolRadio_note(w, row)
+
 MusuPoolRadio_witness(w):
     let T = this.MusuPoolRadio_T(w)
     let s = T.o({ stood: 1 })[0]
     let g = T.o({ guarded: 1 })[0]
     let o = T.o({ goaled: 1 })[0]
     let c = T.o({ caved: 1 })[0]
+    let cd = T.o({ carded: 1 })[0]
     if (s && +s.sc.one_keep === 1 && +s.sc.keep_says_pool === 1 && +s.sc.own_track_never_caught === 1 && +s.sc.catching_twice_is_once === 1)
         this.story_swear(w, 'a radio pool does not choose — it keeps what the dial already chose and I already heard — as the same Heist intent the keep button mints, wearing into:pool')
     if (s && +s.sc.refused_without_consent === 1 && +s.sc.one_keep === 1)
@@ -5735,6 +5881,22 @@ MusuPoolRadio_witness(w):
         this.story_swear(w, 'a pool takes the track and not the album — the describe may land a whole folder but the compartment keeps the one that played — and the narrowing holds against every later answer')
     if (gg && +gg.sc.starts_itself_lofi === 1 && +gg.sc.human_keep_untouched === 1)
         this.story_swear(w, 'nobody pressed anything so there is no form to skip — a pool keep starts itself and takes the lofi grade — while a keep a human minted still waits for that human’s start')
+    if (cd && +cd.sc.the_press_is_a_card === 1 && +cd.sc.lives_on_the_machine_page === 1 && +cd.sc.the_failure_becomes_a_real_memory === 1 && +cd.sc.the_wedged_keep_still_ends === 1)
+        this.story_swear(w, 'a pool press is a card too — on the machines own page, never a sitting — so a refusal becomes a real memory exactly as it would for a human keep and the wedged keep still ends')
+    if (cd && +cd.sc.the_dial_never_thinks_it_heard_this === 1 && +cd.sc.no_taste_credit === 1 && +cd.sc.not_the_last_sitting === 1 && +cd.sc.the_heart_glyph_stays_dark === 1)
+        this.story_swear(w, 'a machine press never looks like taste — the dial does not skip it as heard, the tally gives it no credit, it is never the last sitting, and the heart glyph stays dark for nobody having pressed it')
+    let rd = T.o({ roaded: 1 })[0]
+    if (rd && +rd.sc.the_heart_is_a_card_with_no_pool_road === 1 && +rd.sc.the_heart_is_still_a_heart === 1 && +rd.sc.the_press_is_a_road_on_it === 1 && +rd.sc.the_glyph_stays_lit === 1)
+        this.story_swear(w, 'one card two roads — when the pool presses a track a person already loved the heart stays a heart on its sitting with the glyph lit and the press becomes a pool road under it')
+    if (rd && +rd.sc.the_verdict_stays_on_its_road === 1 && +rd.sc.the_heist_still_owes_the_original === 1 && +rd.sc.the_pool_keep_still_ends === 1)
+        this.story_swear(w, 'a road fails alone — the pool copy refused lands its verdict on the pool road and the heist still owes the original while the pool keep still ends')
+    let rv = T.o({ reversed: 1 })[0]
+    if (rv && +rv.sc.the_press_lands_first_as_the_machines_own === 1 && +rv.sc.the_touch_promotes_it === 1 && +rv.sc.it_moves_off_the_machine_page === 1)
+        this.story_swear(w, 'the machine can get there first — a track nobody has heard yet presses onto its own page as the machines own act — and the first human touch promotes it off that page into a card of its own')
+    if (rv && +rv.sc.the_machines_own_press_rides_the_road === 1 && +rv.sc.the_persons_heart_is_the_cards_own === 1 && +rv.sc.the_glyph_lights_up === 1 && +rv.sc.it_counts_as_the_latest_sitting_too === 1)
+        this.story_swear(w, 'promotion keeps both histories — the machines own press rides the road it is moved onto while the persons heart becomes the cards own — the glyph lights and the sitting counts it as the latest heard')
+    if (rv && +rv.sc.a_later_press_never_re_corrupts_it === 1)
+        this.story_swear(w, 'a promoted card never reverts — a later pool press on the same track lands on the same road it already grew and never relabels the card again')
 
 // ══ MusuPoolBytes — THE LAST MILE: a pool keep's bytes LAND, and "off" gives the space back ═══════════════
 //  Every other pool Book proves intent particles and catalog rows.  This one drives the ONE landing tail the
@@ -6639,11 +6801,11 @@ MusuHandoff_witness(w):
     let t = this.MusuHandoff_T(w)
     let n = (this.c.run)?.c.step_n
     let has = (k) => t.o(k).length > 0
-    let say = (s) => { if (!t.oa({ see: s })) { this.MusuHandoff_note(w, { see: s }) } }
-    if (n >= 3 && has({ hearted: 1, took: 1, gossip_reaches_the_one_sibling: 1, word_is_waiting: 1 })) { say('a heart pressed where there is no folder is taken and the whole heard mag is gossiped to every sibling in one frame — no per-track routing, no first trove body to find') }
-    if (n >= 4 && has({ landed: 1, mirror_wears_the_same_card: 1, mirroring_does_not_adopt: 1, the_union_already_owes_it: 1 })) { say('the wish travels not the bytes — the laptop mirrors the same card taken via the phone beside its own mag, not inside it, and the union already owes it before anything is adopted') }
-    if (n >= 5 && has({ carried: 1, one_keep_primed: 1, carrying_adopts_the_wish: 1, the_keep_stamps_who_has_it: 1 })) { say('the ordinary haul finds the union wish, adopts it onto the laptops own mag, and carries it from the dj mirror — one keep primed, stamped with who is carrying it') }
+    let say = (s) => { this.story_swear(w, s) }
+    if (n >= 3 && has({ hearted: 1, took: 1, gossip_reaches_the_one_sibling: 1, word_is_waiting: 1 })) { say('a heart pressed where there is no folder is taken and the whole heard mag is gossiped to every sibling in one frame — no per-track routing — no first trove body to find') }
+    if (n >= 4 && has({ landed: 1, mirror_wears_the_same_card: 1, mirroring_does_not_adopt: 1, the_union_already_owes_it: 1 })) { say('the wish travels not the bytes — the laptop mirrors the same card taken via the phone beside its own mag — not inside it — and the union already owes it before anything is adopted') }
+    if (n >= 5 && has({ carried: 1, one_keep_primed: 1, carrying_adopts_the_wish: 1, the_keep_stamps_who_has_it: 1 })) { say('the ordinary haul finds the union wish — adopts it onto the laptops own mag — and carries it from the dj mirror — one keep primed — stamped with who is carrying it') }
     if (n >= 6 && has({ effect: 1, the_laptops_own_card_lands: 1, the_phones_word_derives_from_the_mirror: 1 })) { say('the laptops own card lands and gossiping it back is the same mile that carried the wish — no ack frame anywhere — so the phones word reads landed straight off the mirrored stamps') }
     if (n >= 7 && has({ verdict: 1, a_verdict_reaches_the_presser_too: 1, regossip_writes_nothing_new: 1 })) { say('a refusal reaches the presser through the same mirror mile a landing would — the presser reads the identical word it would have asked the wire itself for — and re-gossiping an unchanged outcome writes nothing new') }
-    if (n >= 8 && has({ waiting: 1, a_lone_soul_just_waits: 1, no_mirror_waits_with_a_word: 1, mirror_arriving_clears_the_word: 1 })) { say('a lone souls wish just waits forever with nobody left to adopt it, while a trove sibling not yet mirroring the holder says so on the card instead of nothing at all — and the word clears the moment the wait ends') }
-    if (n >= 9 && has({ resilience: 1, away_never_lands: 1, back_wakes_the_gossip: 1 })) { say('a wish pressed while the only sibling is away reaches nobody — and a sibling announcing itself back is what wakes the whole mag to gossip again, landing it the same as any other reaction would') }
+    if (n >= 8 && has({ waiting: 1, a_lone_soul_just_waits: 1, no_mirror_waits_with_a_word: 1, mirror_arriving_clears_the_word: 1 })) { say('a lone souls wish just waits forever with nobody left to adopt it — while a trove sibling not yet mirroring the holder says so on the card instead of nothing at all — and the word clears the moment the wait ends') }
+    if (n >= 9 && has({ resilience: 1, away_never_lands: 1, back_wakes_the_gossip: 1 })) { say('a wish pressed while the only sibling is away reaches nobody — and a sibling announcing itself back is what wakes the whole mag to gossip again — landing it the same as any other reaction would') }

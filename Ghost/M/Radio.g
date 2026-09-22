@@ -1176,6 +1176,8 @@ Radio_pool_catch(w, radio, rec):
     if (this.Heist_keep_born) { this.Heist_keep_born(keep, this.Swarm_now ? this.Swarm_now(w) : 0) }
     keep.sc.from_name = this.Radio_friendly(w, by)
     if (rec.sc.artist) { keep.sc.artist = this.Radio_clean(rec.sc.artist) }
+    // THE MACHINE'S OWN PRESS (rung 4, SoundPooling_todo §0.0) — see Ra_pool_fill_land's twin call.
+    if (this.Heard_pool_take) { try { this.Heard_pool_take(w, me, seed, by, rec.sc.title, rec.sc.artist) } catch (er) {} }
     console.log('🏊⇊ pooling what is playing — ' + String(rec.sc.title || seed).slice(0, 32) + ' from ' + String(keep.sc.from_name || by).slice(0, 12) + ' (' + (held + 1) + '/' + cap + ')')
     return 1
 

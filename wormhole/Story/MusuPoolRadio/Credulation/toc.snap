@@ -1,5 +1,5 @@
 Credulation,of_Book:MusuPoolRadio
-  run=0,at=1789622026.47,ok,ok_pct,mode:check
+  {"run":0,"at":1790043549.366,"ok":1,"ok_pct":null,"mode":"new"}
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:8f51a3d0dfa19017~g1
@@ -12,21 +12,21 @@ Credulation,of_Book:MusuPoolRadio
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3~g1
     uses:Ghost_M_Mesh,dige:2c1e6afdb90d9379~g1
     uses:Ghost_M_Ra,dige:1cee21a1d8a56976~g1
-    uses:Ghost_M_Pool,dige:8c70da0ec6342764~g1
+    uses:Ghost_M_Pool,dige:ad9ef6698fc2b9c3~g1
     uses:Ghost_M_Booth,dige:29a57d8fed02b58e~g1
-    uses:Ghost_M_Heist,dige:3d53b758563a084b~g1
-    uses:Ghost_M_Heard,dige:160784e6bcf19855~g1
+    uses:Ghost_M_Heist,dige:4e0475895a4f13a3~g1
+    uses:Ghost_M_Heard,dige:b30c711bd8edfee8~g1
     uses:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
-    uses:Ghost_M_Radio,dige:29a73704a64c5b30~g1
+    uses:Ghost_M_Radio,dige:6b09c44322397388~g1
     uses:Ghost_M_Siphon,dige:222c9a4992b2bc7d~g1
     uses:Ghost_Story_MusuTesting,dige:5cdbfdb1d86b2f1a~g1
-    uses:Ghost_Story_RaTesting,dige:03460e5ee73c11d8~g1
-    uses:Ghost_Story_HeistTesting,dige:73c90aabdfd58e76~g1
+    uses:Ghost_Story_RaTesting,dige:a1659c401247b460~g1
+    uses:Ghost_Story_HeistTesting,dige:135c650f5dc91ccc~g1
     uses:Ghost_Story_SiphonTesting,dige:e06a0d896fbe5b3e~g1
     uses:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
     uses:Ghost_Story_ErrchannelTesting,dige:55f4a7dd9c9193f1~g1
-    uses:Ghost_S_Swarm,dige:ae60680d84bb30c8~g1
-    uses:Ghost_Story_SwarmTesting,dige:dcfe89597f46ed41~g1
+    uses:Ghost_S_Swarm,dige:59b8c21f4b4513b5~g1
+    uses:Ghost_Story_SwarmTesting,dige:f2c92dee44a4cb94~g1
     uses:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
     uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
     uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
@@ -34,5 +34,79 @@ Credulation,of_Book:MusuPoolRadio
     uses:Ghost_V_Vyto,dige:2066029ff9ddff02~g1
     uses:Ghost_V_VytoTesting,dige:c3522b53e1dbe88e~g1
     uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
-    uses:Ghost_Story_Sounditron,dige:7ebbb8cf15ab2f4a~g1
+    uses:Ghost_Story_Sounditron,dige:1eaa36b3f8d6469a~g1
+    uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
+  run,at=1790043589.067,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
+    uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
+    uses:Ghost_N_Tribunal,dige:8f51a3d0dfa19017~g1
+    uses:Ghost_N_Presence,dige:14efd88c08b5219c~g1
+    uses:Ghost_N_Repli,dige:e16a0ac2266ae4f8~g1
+    uses:Ghost_Story_PeerTesting,dige:0f932bb96f66ab47~g1
+    uses:Ghost_M_Radiola,dige:b097a7b4435b144e~g1
+    uses:Ghost_M_Sound,dige:e91d2b1e4cab4e48~g1
+    uses:Ghost_M_Crate,dige:23184bd7b97119a6~g1
+    uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3~g1
+    uses:Ghost_M_Mesh,dige:2c1e6afdb90d9379~g1
+    uses:Ghost_M_Ra,dige:1cee21a1d8a56976~g1
+    uses:Ghost_M_Pool,dige:ad9ef6698fc2b9c3~g1
+    uses:Ghost_M_Booth,dige:29a57d8fed02b58e~g1
+    uses:Ghost_M_Heist,dige:4e0475895a4f13a3~g1
+    uses:Ghost_M_Heard,dige:b30c711bd8edfee8~g1
+    uses:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
+    uses:Ghost_M_Radio,dige:6b09c44322397388~g1
+    uses:Ghost_M_Siphon,dige:222c9a4992b2bc7d~g1
+    uses:Ghost_Story_MusuTesting,dige:5cdbfdb1d86b2f1a~g1
+    uses:Ghost_Story_RaTesting,dige:a1659c401247b460~g1
+    uses:Ghost_Story_HeistTesting,dige:135c650f5dc91ccc~g1
+    uses:Ghost_Story_SiphonTesting,dige:e06a0d896fbe5b3e~g1
+    uses:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
+    uses:Ghost_Story_ErrchannelTesting,dige:55f4a7dd9c9193f1~g1
+    uses:Ghost_S_Swarm,dige:59b8c21f4b4513b5~g1
+    uses:Ghost_Story_SwarmTesting,dige:f2c92dee44a4cb94~g1
+    uses:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
+    uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
+    uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
+    uses:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
+    uses:Ghost_V_Vyto,dige:2066029ff9ddff02~g1
+    uses:Ghost_V_VytoTesting,dige:c3522b53e1dbe88e~g1
+    uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
+    uses:Ghost_Story_Sounditron,dige:1eaa36b3f8d6469a~g1
+    uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1
+  run=2,at=1790047128.184,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
+    uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
+    uses:Ghost_N_Tribunal,dige:8f51a3d0dfa19017~g1
+    uses:Ghost_N_Presence,dige:14efd88c08b5219c~g1
+    uses:Ghost_N_Repli,dige:e16a0ac2266ae4f8~g1
+    uses:Ghost_Story_PeerTesting,dige:0f932bb96f66ab47~g1
+    uses:Ghost_M_Radiola,dige:b097a7b4435b144e~g1
+    uses:Ghost_M_Sound,dige:e91d2b1e4cab4e48~g1
+    uses:Ghost_M_Crate,dige:23184bd7b97119a6~g1
+    uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3~g1
+    uses:Ghost_M_Mesh,dige:2c1e6afdb90d9379~g1
+    uses:Ghost_M_Ra,dige:1cee21a1d8a56976~g1
+    uses:Ghost_M_Pool,dige:ad9ef6698fc2b9c3~g1
+    uses:Ghost_M_Booth,dige:29a57d8fed02b58e~g1
+    uses:Ghost_M_Heist,dige:4e0475895a4f13a3~g1
+    uses:Ghost_M_Heard,dige:b30c711bd8edfee8~g1
+    uses:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
+    uses:Ghost_M_Radio,dige:6b09c44322397388~g1
+    uses:Ghost_M_Siphon,dige:222c9a4992b2bc7d~g1
+    uses:Ghost_Story_MusuTesting,dige:5cdbfdb1d86b2f1a~g1
+    uses:Ghost_Story_RaTesting,dige:a1659c401247b460~g1
+    uses:Ghost_Story_HeistTesting,dige:135c650f5dc91ccc~g1
+    uses:Ghost_Story_SiphonTesting,dige:e06a0d896fbe5b3e~g1
+    uses:Ghost_Story_BerthTesting,dige:25d25e655deaa666~g1
+    uses:Ghost_Story_ErrchannelTesting,dige:55f4a7dd9c9193f1~g1
+    uses:Ghost_S_Swarm,dige:59b8c21f4b4513b5~g1
+    uses:Ghost_Story_SwarmTesting,dige:f2c92dee44a4cb94~g1
+    uses:Ghost_Story_InvSeal,dige:3be936ab81f63e26~g1
+    uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
+    uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
+    uses:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
+    uses:Ghost_V_Vyto,dige:2066029ff9ddff02~g1
+    uses:Ghost_V_VytoTesting,dige:c3522b53e1dbe88e~g1
+    uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
+    uses:Ghost_Story_Sounditron,dige:1eaa36b3f8d6469a~g1
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1

@@ -4,34 +4,50 @@ story:MusuHeard
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.073
-      sample=0.103,at=1789437285
-      sample=0.052,at=1789450172
-      sample=0.025,at=1789450309
-      sample=0.085,at=1789451690
-      sample=0.145,at=1789603606
-      sample=0.046,at=1789603648
-      sample=0.092,at=1789606438
-      sample=0.035,at=1789612287
-      sample=0.065,at=1789627297
-      sample=0.079,at=1789627624
-    TimeTotal:step,avg=0.008
-      sample=0.011,at=1789437285
-      sample=0.006,at=1789450172
-      sample=0.003,at=1789450309
-      sample=0.009,at=1789451690
-      sample=0.016,at=1789603606
-      sample=0.005,at=1789603648
-      sample=0.01,at=1789606438
-      sample=0.004,at=1789612287
-      sample=0.007,at=1789627297
-      sample=0.009,at=1789627624
+    TimeTotal:beliefs,avg=0.058
+      sample=0.038,at=1790040014
+      sample=0.078,at=1790040027
+      sample=0.035,at=1790040034
+      sample=0.031,at=1790040056
+      sample=0.038,at=1790040318
+      sample=0.119,at=1790043604
+      sample=0.078,at=1790043699
+      sample=0.044,at=1790044059
+      sample=0.047,at=1790047146
+      sample=0.068,at=1790047229
+    TimeTotal:step,avg=0.006
+      sample=0.004,at=1790040014
+      sample=0.009,at=1790040027
+      sample=0.004,at=1790040034
+      sample=0.003,at=1790040056
+      sample=0.004,at=1790040318
+      sample=0.013,at=1790043604
+      sample=0.009,at=1790043699
+      sample=0.005,at=1790044059
+      sample=0.005,at=1790047146
+      sample=0.008,at=1790047229
   step,dige:9fad2f0a72efe108
   step=2,dige:d915f20899e00145
-  step=3,dige:7c5c6f625c84e941
-  step=4,dige:d2cc522da6f1d2ef
-  step=5,dige:85aa93b505cb7d49
-  step=6,dige:fa3aa91a68893718
-  step=7,dige:9cd41fd64a05e1b9
-  step=8,dige:bd33e19a4ecd9b02
-  step=9,dige:ebc4979b87bcdca1
+    Assertion:a-track-the-radio,sentence:a track the radio played leaves one card wearing nothing but its id and whose it was — hearing it again is that same card — and the whole sitting shares one page under a Mag that never crosses to anyone
+    Assertion:the-set-the-dial,sentence:the set the dial skips by IS the heard Mag — so never-repeat-a-track survives a reload instead of dying with the process and being capped at a hundred ids nobody could see
+  step=3,dige:56244889bb6f8055
+    Assertion:a-track-played-to,sentence:a track played to an empty room earns nothing and a skip earns nothing — only sitting through it with someone there counts — and counting it never bumps the account because a track finishing is not worth a disk write
+  step=4,dige:fefe4b9c12844ecd
+    Assertion:the-heart-is-the,sentence:the heart is the whole ask and it mints no heist — the listing arrives with the act and not before — and a heart on a track of my own is a taste fact nobody is owed
+    Assertion:there-is-no-unlove,sentence:there is no unlove — a second press keeps the heart and a later press re-affirms it — a nay ends the yay and a yay ends the nay — reactions not toggles
+  step=5,dige:ee1216c62c8eaf64
+    Assertion:what-i-am-owed,sentence:what I am owed is a query and not a store — take cards not yet on my shelf — oldest first — grouped by who could bring them — and nobody is ever owed a track of my own
+  step=6,dige:69426c25690d35f0
+    Assertion:a-hearing-nobody-wanted,sentence:a hearing nobody wanted is forgotten thirty days after the sitting it happened in and the emptied sitting goes with it — while a heart in that same sitting pins it and is never dropped by a clock
+    Assertion:ninety-days-with-nobody,sentence:ninety days with nobody answering changes what a heart SAYS and not whether it exists — the clock can word it gave up but only a person pressing the cross ever ends one
+  step=7,dige:98cf53adaf82863c
+    Assertion:the-beat-carries-the,sentence:the beat carries the oldest wish per holder into the very heist the button used to mint — one at a time — the rest waiting legibly as wishes — and with no share it carries none
+    Assertion:a-wish-is-a,sentence:a wish is a track so the described folder is pruned to the one that was asked for and started with no form at all — and three standing keeps is as many as the heart may ever open
+  step=8,dige:6eda96f930032dc1
+    Assertion:the-original-the-describe,sentence:the original the describe answers with teaches the card its own keep id and its real size and hash — so everything a later reader needs for the way back rides the line — and re-reading it writes nothing
+    Assertion:a-refusal-takes-the,sentence:a refusal takes the husk out of the mirror and would leave the keep pulling something that no longer exists — so the verdict is copied onto the card and the keep ended — the holder queue moves on and loving it back is the retry
+    Assertion:an-arrival-marks-its,sentence:an arrival marks its row as unseen and reading that row spends the mark — and a take carried here from a linked device never nags because the body that pressed the heart is the one waiting to hear
+  step=9,dige:9de5fd6199a47742
+    Assertion:done-ness-is-the,sentence:done-ness is the collection answering by whatever road the track arrived — the original under its own keep id or the streamed bytes under theirs — one derived question and no landed flag anywhere
+    Assertion:a-recent-compartment-chooses,sentence:a recent compartment chooses nothing because the choosing happened when you took the track — so its goal is simply the wishes that landed newest first and an empty ledger pools nothing rather than falling back to taste
+    Assertion:the-yes-still-declares,sentence:the yes still declares exactly one compartment — the third checkbox is what splits the budget in two — and unticking it gives the room back whole so the number a person typed always means the same thing

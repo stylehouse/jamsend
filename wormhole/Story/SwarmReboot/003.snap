@@ -27,10 +27,10 @@ Snap:H
               Pool,name:circulation,take:random,cap:12,salt:3
               Pool,name:liked,take:liked,cap:6
             Mag:heard,pub:08c3e3304c792752,heard_ttl:30,take_ttl:90
-              Cloud,page:1,created_at:1751699000
-                Card,id:trk-take,pub:Cave,title:Kept Wanting,take:1,at:1751699000,mire:2
-                Card,id:trk-heard,pub:Cave,mire:1
-                Card,id:trk-nay,pub:Cave,title:Never Again,nay:1,at:1751699500,mire:1
+              Cloud,page:1
+                Card,id:trk-take,pub:Cave,title:Kept Wanting,hearted_at:1751699000,played_through:2
+                Card,id:trk-heard,pub:Cave,played_through:1
+                Card,id:trk-nay,pub:Cave,title:Never Again,nayed_at:1751699500,played_through:1
         reached:step_3
         testing
           stashed,roster_stashed,pier_stashed,izz_stashed,root_stashed,crew_stashed,one_reach_stashed,pools_stashed,two_reactions_stashed,account_stashed,cert_stashed

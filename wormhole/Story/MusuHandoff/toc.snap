@@ -4,31 +4,41 @@ story:MusuHandoff
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.048
-      sample=0.034,at=1788574515
-      sample=0.043,at=1788585640
-      sample=0.024,at=1788586175
-      sample=0.03,at=1788586404
-      sample=0.07,at=1788593907
-      sample=0.082,at=1789112234
-      sample=0.078,at=1789117941
-      sample=0.038,at=1789118756
+    TimeTotal:beliefs,avg=0.061
       sample=0.062,at=1789434036
       sample=0.014,at=1789434055
-    TimeTotal:step,avg=0.008
-      sample=0.006,at=1788574515
-      sample=0.007,at=1788585640
-      sample=0.004,at=1788586175
-      sample=0.005,at=1788586404
-      sample=0.012,at=1788593907
-      sample=0.014,at=1789112234
-      sample=0.013,at=1789117941
-      sample=0.006,at=1789118756
+      sample=0.049,at=1790039716
+      sample=0.078,at=1790039807
+      sample=0.038,at=1790039838
+      sample=0.042,at=1790040372
+      sample=0.118,at=1790040956
+      sample=0.06,at=1790043613
+      sample=0.098,at=1790043837
+      sample=0.054,at=1790044193
+    TimeTotal:step,avg=0.007
       sample=0.01,at=1789434036
       sample=0.002,at=1789434055
+      sample=0.005,at=1790039716
+      sample=0.009,at=1790039807
+      sample=0.004,at=1790039838
+      sample=0.005,at=1790040372
+      sample=0.013,at=1790040956
+      sample=0.007,at=1790043613
+      sample=0.011,at=1790043837
+      sample=0.006,at=1790044193
   step,dige:f5d953e52433c61c
   step=2,dige:06e020df8c5094ad
-  step=3,dige:22ba88dd70c41de4
-  step=4,dige:f40e41aeec81007d
-  step=5,dige:af7419d013171936
-  step=6,dige:ef1ec0f950413c63
+  step=3,dige:60a399619a73c203
+    Assertion:a-heart-pressed-where,sentence:a heart pressed where there is no folder is taken and the whole heard mag is gossiped to every sibling in one frame — no per-track routing — no first trove body to find
+  step=4,dige:f118df2ab34e0a26
+    Assertion:the-wish-travels-not,sentence:the wish travels not the bytes — the laptop mirrors the same card taken via the phone beside its own mag — not inside it — and the union already owes it before anything is adopted
+  step=5,dige:a0ab1c0d8e83da52
+    Assertion:the-ordinary-haul-finds,sentence:the ordinary haul finds the union wish — adopts it onto the laptops own mag — and carries it from the dj mirror — one keep primed — stamped with who is carrying it
+  step=6,dige:2d58e87e1d95bdee
+    Assertion:the-laptops-own-card,sentence:the laptops own card lands and gossiping it back is the same mile that carried the wish — no ack frame anywhere — so the phones word reads landed straight off the mirrored stamps
+  step=7,dige:681f5993524453b7
+    Assertion:a-refusal-reaches-the,sentence:a refusal reaches the presser through the same mirror mile a landing would — the presser reads the identical word it would have asked the wire itself for — and re-gossiping an unchanged outcome writes nothing new
+  step=8,dige:cb72d8f5dca7b985
+    Assertion:a-lone-souls-wish,sentence:a lone souls wish just waits forever with nobody left to adopt it — while a trove sibling not yet mirroring the holder says so on the card instead of nothing at all — and the word clears the moment the wait ends
+  step=9,dige:1945d6edd35205b5
+    Assertion:a-wish-pressed-while,sentence:a wish pressed while the only sibling is away reaches nobody — and a sibling announcing itself back is what wakes the whole mag to gossip again — landing it the same as any other reaction would

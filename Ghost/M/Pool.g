@@ -109,14 +109,13 @@ Pool_cards_raw(recs):
 //   'recent'  my loved-and-landed takes, newest first (Heard_landed_ids)
 //   'latest'  the last sitting, in the order it was heard (Heard_latest)
 //   'liked'   taken tracks, most recently taken first    'kept' carried tracks by score    else: taste by score
-Pool_draw_random(pd, f, holder):
+Pool_draw_random(pd, f):
     let ids = []
     for (const s of (f.sources_raw || [])) {
         if (!s || !s.id) { continue }
         if (pd.who === 'none') { continue }
         if (pd.who === 'friends' && s.crew) { continue }
         if (pd.who === 'crew' && !s.crew) { continue }
-        if (!holder[s.id]) { holder[s.id] = String(s.from || '') }
         if (!ids.includes(s.id)) { ids.push(s.id) }
     }
     for (const c of (f.pooled_raw || [])) {
@@ -138,30 +137,51 @@ Pool_draw_tally(kind, f):
     }
     ids = ids.filter((id) => (kind === 'kept' ? tally[id].kept > 0 : tally[id].score > 0))
     return ids.sort((a, b) => (tally[b].score - tally[a].score) || (a < b ? -1 : 1))
-Pool_draw(pd, f, holder):
-    if (pd.take === 'random') { return this.Pool_draw_random(pd, f, holder) }
+Pool_draw(pd, f):
+    if (pd.take === 'random') { return this.Pool_draw_random(pd, f) }
     if (pd.take === 'radio') { return this.Pool_draw_radio(pd, f) }
     if (pd.take === 'recent') { return (f.recent_raw || []).slice() }
     if (pd.take === 'latest') { return (f.latest_raw || []).slice() }
     return this.Pool_draw_tally(pd.take, f)
+// Pool_holders — WHO HAS IT NOW, the one resolver (rung 5, SoundPooling_todo §0.0): every source row folded
+//  to {id → from}, CREW FIRST (a sibling body's mirror is the cheap, consenting road), then by name so the
+//   answer is the same on every sit-down.  Pure over the rows Ra_pool_sources / Pool_shared_rows shape;
+//    Heard_holders is the same fold over the live mirrors, so a human take and a pool pull agree on the holder.
+//     Until this, only a 'random' draw learned its holder (first mirror seen, not crew first) and every
+//      recent/latest/liked/kept pull left `from` empty — a want no fill could ever book.
+Pool_holders(sources):
+    let best = {}
+    for (const s of (sources || [])) {
+        if (!s || !s.id || !s.from) { continue }
+        let id = String(s.id)
+        let from = String(s.from)
+        let crew = s.crew ? 1 : 0
+        let cur = best[id]
+        if (!cur || crew > cur.crew || (crew === cur.crew && from < cur.from)) { best[id] = { from: from, crew: crew } }
+    }
+    let out = {}
+    for (const id of Object.keys(best)) { out[id] = best[id].from }
+    return out
 // Pool_goal — fill each compartment to its cap, in declared order, from its draw; an id lands in ONE compartment
-//  (the first that draws it); a Nay/Meh id lands in none.  A goal row: {id, score, why, pool, from?}.
+//  (the first that draws it); a Nay/Meh id lands in none.  A goal row: {id, score, why, pool, from?} — `from`
+//   is the holder Pool_holders names, on EVERY row that has one (a draw with no holder is a wish with no road
+//    yet; Pool_diff still carries it, and the fill leaves it standing until a mirror turns up).
 Pool_goal(f):
     let barred = f.barred_raw || {}
     let tally = f.tally_raw || {}
+    let holders = this.Pool_holders(f.sources_raw)
     let taken = {}
-    let holder = {}
     let goal = []
     for (const pd of (f.compartments || [])) {
         let picked = 0
-        for (const id of this.Pool_draw(pd, f, holder)) {
+        for (const id of this.Pool_draw(pd, f)) {
             if (picked >= pd.cap) { break }
             if (taken[id] || barred[id]) { continue }
             taken[id] = 1
             let t = tally[id]
-            let why = t ? t.why : (pd.take === 'random' ? 'circulating from ' + String(holder[id] || '').slice(0, 8) : (pd.take === 'radio' ? 'caught off the radio' : 'in the latest jam'))
+            let why = t ? t.why : (pd.take === 'random' ? 'circulating from ' + String(holders[id] || '').slice(0, 8) : (pd.take === 'radio' ? 'caught off the radio' : 'in the latest jam'))
             let g = { id: id, score: t ? t.score : 0, why: why, pool: pd.name }
-            if (pd.take === 'random' && holder[id]) { g.from = holder[id] }
+            if (holders[id]) { g.from = holders[id] }
             goal.push(g)
             picked = picked + 1
         }
@@ -885,7 +905,13 @@ Ra_pool_hash(s):
 //  LOFI tracks from all Piers|Crewmates"): every mirrored catalog in the radio world — a %Theirs crate
 //   stands only for a body that shared with me (Repli mirrors the granted), so crew and friends alike are
 //    sources.  Plain rows {id, from, title}; `from` is the holder's routing name the fill will book toward.
+//  Two layers since rung 5 (SoundPooling_todo §0.0): Pool_shared_rows is the CENSUS — every stocked, real
+//   (non-husk) record on every mirror, who holds it, crew or not — and Ra_pool_sources is that census minus
+//    what the POOL specifically gave up on (Ra_pool_nohead).  Heard_holders reads the census, so "who has it
+//     now" for a human take and for a pool pull is one walk and one fold (Pool_holders), not two.
 Ra_pool_sources(w):
+    return this.Pool_shared_rows(w).filter((row) => !this.Ra_pool_nohead(w, row.id))
+Pool_shared_rows(w):
     let out = []
     if (!w || !w.o) { return out }
     // crew or friend?  /Crew lives on the identity the pooling lives on (Ra_pool_owner) — a holder whose
@@ -910,7 +936,6 @@ Ra_pool_sources(w):
             //      a candidate must be something the holder has actually stocked.  (Owed on the holder's side:
             //       press from the RummageLib husk -- it has a path -- so a browsed folder becomes servable.)
             if (r.sc.husk || r.sc.rummage) { continue }
-            if (this.Ra_pool_nohead(w, id)) { continue }     // culled once for a head its holder never served
             let row = { id: id, from: from, title: String(r.sc.title || '') }
             if (crewish(from)) { row.crew = 1 }
             out.push(row)
@@ -1133,11 +1158,24 @@ Ra_pool_fill_wants(w, ident):
     //  slosh in. we have consented to 3gb").  Supersedes the 2026-09-05 "do them serially": three in flight, and
     //   the landing's in-flight gate below matches (POOL_PARALLEL).  `w.c.pool_fill_budget` still pins a Book.
     let budget = (w && w.c && w.c.pool_fill_budget != null) ? +w.c.pool_fill_budget : this.Pool_knobs().fill_budget
+    // A RECENT FETCH FAILURE IS A MEMORY, NOT A RETRY-FOREVER INVITE (rung 4, SoundPooling_todo §0.0):
+    //  Heard_pool_take/Heard_clone_beat now stamp a pool keep's verdict onto its OWN Card exactly as for
+    //   a human keep, so `landing_failed_at` newer than the Mag's own heard_ttl means "already tried this
+    //    recently, it didn't work" — skip re-booking until the memory ages out, the same clock a bare
+    //     hearing forgets by.  Resolved once, outside the loop.  The stamp lives on the Card's POOL ROAD
+    //      (Heard_road — the Card itself for a machine press, a %Road child under a human ♥ the pool is
+    //       also fetching; rung 5), so a human take's own verdicts never gate the pool and vice versa.
+    let hmag = this.Heard_mag_find ? this.Heard_mag_find(w, String(ident.sc.prepub || '')) : null
+    let hnow = this.Heard_now ? this.Heard_now(w) : 0
+    let hbadTtl = (+((hmag && hmag.sc.heard_ttl) || 30)) * 86400
     for (const want of out.o({ Want: 1, do: 'pull' })) {
         if (fresh >= budget) { break }
         let from = String(want.sc.from || '')
         let of = String(want.sc.of || '')
         if (!from || !of) { continue }
+        let hcard = hmag ? this.Heard_find(hmag, of, from) : null
+        let hroad = (hcard && this.Heard_road) ? this.Heard_road(hcard, 'pool') : null
+        if (hroad && hroad.sc.landing_failed_at && (hnow - +hroad.sc.landing_failed_at) < hbadTtl) { continue }
         // ONLY WHAT IS NOT ALREADY IN FLIGHT (2026-09-05: *"steward: booked 4 circulation fill(s)"* hundreds of
         //  times in a row).  This pass runs from the pump's null-dial retry — every 800ms on an empty pool — and
         //   Ra_pool_fill_book is find-or-create + dispatch, so the same four wants were re-booked, re-stamped and
@@ -1456,6 +1494,11 @@ async Ra_pool_fill_land(w, ident):
             let k = shop.i({ Heist: this.Radio_clean ? this.Radio_clean(title) : title, seed: of, pub: to, state: 'primed', into: 'pool', why: 'fill' })
             k.c.up = shop
             k.c.last_touch = Date.now()
+            // THE MACHINE'S OWN PRESS (rung 4, SoundPooling_todo §0.0): the SAME Card a human ♥ mints,
+            //  on the machine page (Heard_is_machine) — so Heard_clone_beat's verdict/listing machinery
+            //   works identically, and a fetch failure becomes a real memory (Ra_pool_fill_wants' re-want
+            //    guard below) instead of vanishing the moment the wedged keep flattens.
+            if (this.Heard_pool_take) { try { this.Heard_pool_take(homes.mw, String(ident.sc.prepub || ''), of, to, title, srec ? srec.sc.artist : null) } catch (er) {} }
             // A BIRTH CLOCK NOBODY ELSE WINDS (2026-09-06).  The give-up below timed a never-started keep from
             //  last_touch -- which Heist.g rewrites in ten places as its "recently touched" focus marker, so the
             //   timer reset on every pass and a keep stuck at 'primed' was immortal.  eed measured it: ONE keep

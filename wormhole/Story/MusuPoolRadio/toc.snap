@@ -4,10 +4,7 @@ story:MusuPoolRadio
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.099
-      sample=0.067,at=1789548842
-      sample=0.028,at=1789549110
-      sample=0.173,at=1789566916
+    TimeTotal:beliefs,avg=0.106
       sample=0.268,at=1789567093
       sample=0.141,at=1789603613
       sample=0.108,at=1789606445
@@ -15,10 +12,10 @@ story:MusuPoolRadio
       sample=0.055,at=1789612501
       sample=0.043,at=1789615275
       sample=0.05,at=1789622026
+      sample=0.129,at=1790043549
+      sample=0.1,at=1790043589
+      sample=0.115,at=1790047128
     TimeTotal:step,avg=0.016
-      sample=0.011,at=1789548842
-      sample=0.005,at=1789549110
-      sample=0.029,at=1789566916
       sample=0.045,at=1789567093
       sample=0.023,at=1789603613
       sample=0.018,at=1789606445
@@ -26,9 +23,33 @@ story:MusuPoolRadio
       sample=0.009,at=1789612501
       sample=0.007,at=1789615275
       sample=0.008,at=1789622026
+      sample=0.014,at=1790043549
+      sample=0.011,at=1790043589
+      sample=0.013,at=1790047128
   step,dige:a9ab66df494fe28f
-  step=2,dige:f3f4aebbfad49e8b
-  step=3,dige:5c858f89823454c8
-  step=4,dige:170400832be735d5
-  step=5,dige:d650ace557ee5066
-  step=6,dige:e6bf3ee1c1d1c7b6
+  step=2,dige:48264edc8859c454
+    {"Assertion":"a-radio-pool-does","sentence":"a radio pool does not choose — it keeps what the dial already chose and I already heard — as the same Heist intent the keep button mints, wearing into:pool"}
+    Assertion:nothing-touches-bytes-before,sentence:nothing touches bytes before the device has said yes — a declared pool catches nothing until the consent stands — and catches the very next track once it does
+  step=3,dige:50c99a81a94a4519
+    Assertion:one-scalar-is-the,sentence:one scalar is the whole seam — a keep that says into:pool lands on the pool shelf and every keep that does not still takes the world’s own answer — so no existing heist moves an inch
+    Assertion:the-aim-is-the,sentence:the aim is the area — tune the radio at one body and the pool fills from that body alone — lift it and the catch opens again
+    Assertion:the-cap-counts-keeps,sentence:the cap counts keeps in flight as well as tracks landed — so an evening of radio can never mint a hundred standing claims on somebody else’s wire
+  step=4,dige:fecce7522f194bac
+    Assertion:the-sediment-is-safe,sentence:the sediment is safe — a radio compartment’s goal is what it already holds — so the steward trims the oldest catch and never evicts the evening
+  step=5,dige:34fa9780d0aaf4a6
+    Assertion:a-captain-chooses-its,sentence:a Captain chooses its own composition — a Cave with no library wants pooling — and wanting declares nothing on its own
+    Assertion:the-unit-of-consent,sentence:the unit of consent is space — the yes sets how many megabytes keep rolling and where from — and a second yes only moves the number and the where
+    Assertion:the-budget-goes-back,sentence:the budget goes back to zero — the yes is taken back — every compartment and every pooled card goes with it
+  step=6,dige:f3302e8018e5cac4
+    Assertion:a-pool-takes-the,sentence:a pool takes the track and not the album — the describe may land a whole folder but the compartment keeps the one that played — and the narrowing holds against every later answer
+    Assertion:nobody-pressed-anything-so,sentence:nobody pressed anything so there is no form to skip — a pool keep starts itself and takes the lofi grade — while a keep a human minted still waits for that human’s start
+  step=7,dige:130e8d4d26104dd7
+    {"Assertion":"a-pool-press-is","sentence":"a pool press is a card too — on the machines own page, never a sitting — so a refusal becomes a real memory exactly as it would for a human keep and the wedged keep still ends"}
+    {"Assertion":"a-machine-press-never","sentence":"a machine press never looks like taste — the dial does not skip it as heard, the tally gives it no credit, it is never the last sitting, and the heart glyph stays dark for nobody having pressed it"}
+  step=8,dige:94e6ae6accd7a58d
+    Assertion:one-card-two-roads,sentence:one card two roads — when the pool presses a track a person already loved the heart stays a heart on its sitting with the glyph lit and the press becomes a pool road under it
+    Assertion:a-road-fails-alone,sentence:a road fails alone — the pool copy refused lands its verdict on the pool road and the heist still owes the original while the pool keep still ends
+  step=9,dige:e22d5dccb819d2db
+    Assertion:the-machine-can-get,sentence:the machine can get there first — a track nobody has heard yet presses onto its own page as the machines own act — and the first human touch promotes it off that page into a card of its own
+    Assertion:promotion-keeps-both-histories,sentence:promotion keeps both histories — the machines own press rides the road it is moved onto while the persons heart becomes the cards own — the glyph lights and the sitting counts it as the latest heard
+    Assertion:a-promoted-card-never,sentence:a promoted card never reverts — a later pool press on the same track lands on the same road it already grew and never relabels the card again

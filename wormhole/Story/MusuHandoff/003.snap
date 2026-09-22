@@ -8,8 +8,7 @@ Snap:H
         testing
           reached:step_2
           stood,phone_sees_one_trove,laptop_sees_none
-          hearted,took,one_frame_once,word_is_waiting,a_folder_hands_nothing
-          see:a heart pressed where there is no folder is taken and handed once — one frame to the one body wearing a trove while a body with a folder hands nothing
+          hearted,took,gossip_reaches_the_one_sibling,word_is_waiting
         Account,of:Alice
           Identity:f14417f95661701f,prepub:f14417f95661701f,friendly:Phone
             Peering,name:f14417f95661701f,friendly:Phone,online
@@ -19,8 +18,6 @@ Snap:H
             Crew,soul:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076
               mate:f14417f95661701f,role:Captain,pub:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076
               Key,pub:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076	{"mung":["secret"]}
-            mail
-              frame:take_got
           Identity:68983ffd155abb42,prepub:68983ffd155abb42,friendly:Laptop
             Peering,name:68983ffd155abb42,friendly:Laptop,online
               Body,pub:68983ffd155abb421a29653e2174d0380aa2e7dd8d2e84c32f7bc72bfc929519,post:Cave,address:f14417f95661701f_1
@@ -30,17 +27,18 @@ Snap:H
               mate:68983ffd155abb42,role:Captain,pub:68983ffd155abb421a29653e2174d0380aa2e7dd8d2e84c32f7bc72bfc929519
               Key,pub:68983ffd155abb421a29653e2174d0380aa2e7dd8d2e84c32f7bc72bfc929519	{"mung":["secret"]}
             mail
-              frame:take,did
+              frame:heard,did
         Theirs,pub:dj
           stock,pub:dj
             Record,id:t1,title:Cosmic C,artist:DJ Oscillo
             Record,id:t2,title:Dorian D,artist:DJ Oscillo
         Mine,pub:68983ffd155abb42
           shop,pub:68983ffd155abb42
-          Mag:heard,pub:68983ffd155abb42,heard_ttl:30,take_ttl:90
-            Cloud,page:1,created_at:1788500030
-              Card,id:t1,pub:dj,take:1,at:1788500030,title:Cosmic C,artist:DJ Oscillo,via:Phone
+          TheirHeard,pub:f14417f95661701f
+            Mag:heard,pub:f14417f95661701f
+              Cloud,page:1,created_at:1788500030
+                Card,id:t1,pub:dj,hearted_at:1788500030,title:Cosmic C,artist:DJ Oscillo
         Mine,pub:f14417f95661701f
           Mag:heard,pub:f14417f95661701f,heard_ttl:30,take_ttl:90
             Cloud,page:1,created_at:1788500030
-              Card,id:t1,pub:dj,take:1,at:1788500030,title:Cosmic C,artist:DJ Oscillo
+              Card,id:t1,pub:dj,hearted_at:1788500030,title:Cosmic C,artist:DJ Oscillo

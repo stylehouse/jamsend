@@ -167,11 +167,156 @@
      no longer skips the clone). ⚠ AUDIT FIRST: `Heard_set` (the radio's "already heard" skip) and `Heard_latest`
       must exclude `for:pool` / the machine page, or a fetch-failure becomes "you heard this". `Ra_pool_fill_wants`
        reads `landing_failed_at` newer than heard_ttl as "don't re-want" — the failure memory with its horizon.
+
+   **RUNG 4 — LANDED 2026-09-22.** `Heard_pool_take(w, me, seed, dj, title, artist)` is the mint (Heard.g):
+    find-or-create on `Heard_machine_page` (`Cloud,page:'machine'` — a non-numeric id, so `Heard_page`'s own
+     next-sitting scan silently skips it and `Heard_gc`'s age-by-`created_at` never touches it, having none
+      by design), stamped `for:'pool'`, `hearted_at` via `Heard_react_at` exactly like a human press.  Wired
+       at BOTH mint sites — `Ra_pool_fill_land`'s live keep-mint loop (Pool.g) and `Radio_pool_catch`
+        (Radio.g) — alongside their `%Heist,into:'pool'` keep, same seed/pub.  `Heard_clone_beat`'s old
+         `if (!keep.sc.take) continue` widened to `if (!keep.sc.take && !this.Pool_is_machinery(keep))`, so
+          a pool keep's verdict/listing rides the exact same clone a human keep does.
+   The audit turned into SEVEN exclusion points, not two — `Heard_is_machine(card)` (`for:'pool'`) is the
+    one predicate every one of them shares: `Heard_set` (dial dedup), `Heard_tally`/`Heard_landed_ids`
+     (taste/the pool's OWN 'recent' compartment — without this a pool feeds its own sediment back into
+      itself), `Heard_taken` (the ♥ glyph — nobody pressed it), `Heard_unseen` (no attention ping for a
+       machine's own failed fetch), and `Heard_takes` (a machine wish must never re-mint a SECOND keep from
+        the Card — its real one already exists, minted straight from the press site).  `Heard_latest`
+         needed a DIFFERENT fix — not exclusion but page SELECTION: `page:'machine'` is a later CHILD than
+          the currently-open sitting the instant it mints, so a naive "last page" read would show a pool
+           press as "the last thing this body heard"; filtered to numeric pages before taking the last one.
+   `Swarm_protocol('heard')` gained an unconditional `for:'pool'` skip — machine bookkeeping is local only,
+    never gossiped (the SAME reasoning as rung 3's own `TheirHeard` skip).  `Ra_pool_fill_wants` gained the
+     planned `landing_failed_at`-newer-than-`heard_ttl` throttle, resolving the Mag once outside its loop.
+   Gated with a NEW beat 7 on `MusuPoolRadio`, not `MusuPoolFill` — `Ra_pool_fill_land`'s keep-mint loop
+    (where `Heard_pool_take` actually lives) is gated behind `!(ident.c.fill_mw)`, and MusuPoolFill's WHOLE
+     premise is standing that override (its own comment: "Siphon_pull stays as the BOOK's stand-in only …
+      a live tab never takes that road again") — the Book PROVABLY never reaches the code this rung touched.
+       `Radio_pool_catch` has no such branch and MusuPoolRadio already exercises it in beat 2, so the new
+        beat asserts directly off that: the Card exists on the machine page, all seven readers correctly
+         exclude it, and a simulated wire refusal still rides `Heard_clone_beat` to a real verdict stamp.
+   **A pre-existing gap found while attributing, not introduced by this rung:** `MusuPoolRadio`'s
+    `friends_crew_or_both` assertion (beat 5, `Ra_pool_sources`/`Ra_quarter_goal_pools` — code this rung
+     never touches) already fails on the committed HEAD baseline, confirmed by swapping HEAD's `.go` files
+      in and re-running before touching anything else — not a regression, just never noticed before because
+       this Book had never been run in THIS session's regression sweeps until now.  Left alone; flagged here.
+   Verified LIVE the same way (temporary `console.log`, removed before final compile): all 8 new beat-7
+    flags true, all of MusuPoolRadio's 7 beats green.  Regression: MusuPoolFill/Policy/Random/Bytes,
+     MusuHeard, MusuHandoff, SwarmReboot, Sounditron, MusuBuddy, MusuHeist, SwarmHelm — all green.
 5. **One resolver for "who has it now"** (Pool.g): `Pool_goal` sets `from` for every draw off `f.sources_raw`
    (crew first, as `Heard_holder_of` does) — the latent gap where non-random pulls were never booked. Existing
     MusuPoolPolicy scenes give non-random draws no sources (no fixture moves); add a scene that gates it.
     Then the phone's own ♥ can be `for:pool` now + the original later: one Card, two roads (budget ruling
      still owed for a body that said no — the tiny-serving-stash shape).
+
+   **RUNG 5 — LANDED 2026-09-22.** Shipped the resolver as planned, plus a hazard the plan's last line
+    ("one Card, two roads") named but didn't yet mean literally — it turned out to be load-bearing the
+     moment the resolver actually worked.
+   - **`Pool_holders(sources)`** (Pool.g) is the one fold: every `{id, from, crew}` row reduced to
+     `{id → holder}`, crew beating friend, then lowest name winning ties — deterministic on every sit-down.
+      `Pool_goal` calls it once per pass and stamps `g.from` on ANY draw kind that resolves, not only
+       `random`; `Ra_pool_sources` split into a census (`Pool_shared_rows` — every stocked, non-husk
+        record on every mirror) and the pool-specific filter (`Ra_pool_nohead`) over it, so the fold has
+         one walk to read, not two divergent ones.
+   - **`Heard_holders(w, me)`** (Heard.g) is the SAME fold read the other way: `Heard_takes`'s no-holder
+     branch and the heist's `Heard_holder_of` both call it now, replacing the old first-mirror-seen,
+      non-crew-preferring walk `Heard_holder_of` used to do alone. One fold, two doors — the resolver a
+       pool pull books toward and the resolver a heist reads a held take's holder from finally agree.
+   - **THE HAZARD: a resolved holder let the liked/recent compartments draw a track someone had already
+     ♥'d — and `Heard_pool_take` had no way to know that.** It found the (id, pub) Card by identity, saw
+      an existing human Card, and would have stamped `for:'pool'` onto — and re-purposed the reaction
+       clock of — somebody's own heart.  A person's ♥ would have silently become "the machine tried this",
+        the glyph would go dark, and Heard_takes would stop treating it as owed.  Caught by design review,
+         before any Book exercised it (rung 4's own liked/recent draws never resolved a `from` — this
+          rung's resolver is what first makes a pool pull actually reach a ♥'d id).
+   - **THE FIX — one Card, two roads, literally.** `Heard_road(card, via)` names where a road's stamps
+     live: for a MACHINE Card (`for:'pool'`) the Card IS its own pool road, unchanged from rung 4; for a
+      HUMAN Card the pool press grows a `%Road,via:'pool'` CHILD (`Heard_road_mint`) that is stamp-shaped
+       exactly like a Card (`hearted_at`, `nayed_at`, `landing_failed_at`, …), so every existing reader
+        (`Heard_reaction`, `Heard_verdict`, `Heard_react_at`, `Heard_word`) reads a road exactly as it
+         reads a Card, no new branches. `Heard_pool_take` now mints/finds the Card by identity as before,
+          then presses onto `Heard_road_mint(card, 'pool')` — the Card's OWN sitting, reaction and page
+           never move. `Heard_clone_beat` mints the road for a `Pool_is_machinery` keep and writes the
+            listing onto the Card (it describes the track) but the VERDICT onto the road (it describes the
+             trip) — so a pool-copy refusal never overwrites, outdates, or even touches a person's own
+              verdict, and `Ra_pool_fill_wants`' failure-memory throttle now reads `Heard_road(hcard,
+               'pool').sc.landing_failed_at`, never the Card's.
+   - **Swarm_protocol('heard')** got one more skip rule alongside rung 4's `for:'pool'` one: `sc_has:
+     {Road:1}` — a Road is this body's own pool bookkeeping under someone's heart, never a taste fact a
+      sibling has a use for, exactly the same reasoning as the machine page.
+   - Two new fixture-recorded beats: **MusuPoolPolicy beat 6** (pure over hand-built facts — a `liked`
+     draw held by both a friend and a crew body resolves crew; a `random` draw held by two friends
+      resolves by name; a loved id nobody holds keeps its pull with `from` absent, a standing wish, not a
+       dropped one) and **MusuPoolRadio beat 8** (live, through `Heard_take` + `Heard_pool_take` +
+        `Heard_clone_beat` in sequence — ♥ r4 from friendo, pool-press the same id, refuse the pool's own
+         keep: the Card stays a take on its sitting with the glyph lit, the verdict lands on the road, and
+          `Heard_takes` still lists r4 as owed while the pool keep still reaches `done`).
+   - **Recording note, worth keeping:** the temporary headless-chromium harness used for rungs 3–4's live
+     verification takes the FSA-less "listen without a folder" boot door, which has no repo wormhole — its
+      runs land in the browser's own ephemeral OPFS and never touch disk. Every "live-verified" claim in
+       rungs 3 and 4 was real (the Books' own `story_swear` rows were read straight off that boot), but
+        **none of it was ever diffed against the recorded fixtures or declared into the tocs** — by rung 5,
+         MusuHandoff had 9 beats coded against 6 recorded, MusuPoolRadio 8 against 6, MusuPoolPolicy 6
+          against 5, and every sworn sentence across all three sat undeclared. Fixed this rung by recording
+           all three fresh against the owner's own runner tab (`node scripts/runner_ask.mjs run <Book>
+            --watch --runner=<id>`, then `declare` each undeclared sentence) — they now gate for real, not
+             just narrate true. Along the way, `MusuHandoff_witness` was still using the retired `%see`
+              idiom (see-to-sworn migration, `spec/history` note) rather than `story_swear` — converted (7
+               sentences, commas swapped for em-dashes per the parser's rule) so its assertions actually
+                declare instead of silently asserting `gaps 0` on a Book with 0 sworn.
+   - Regression, on the owner's live runner, full fixture diff (not narration): MusuPoolFill, MusuPoolRandom,
+     MusuPoolBytes, MusuHeard, MusuHeist, SwarmReboot, SwarmHelm — all green, `caveat:0`, zero assertion
+      gaps. Two residuals found and accepted as pre-existing (both predate this rung, confirmed by reading
+       the diff content, not assumed): MusuHeard's and SwarmReboot's fixtures still carried rung-2's
+        pre-rename stamps (`mire`/`take:1,at:` → `played_through`/`hearted_at`, and old row-flag names) —
+         `story_accept.mjs --force`'d both onto the current shape. MusuBuddy (RaTesting.g, a streaming/
+          backpressure Book that touches none of Heard/Pool/Swarm's heard machinery) sits at `ok_pct:0.86`
+           with a `self,round` counter and in-flight `parked_want` indices that differ run to run — its own
+            code comment says to read `ok`/`ok_pct`, never the caveat count, because it is timing-shaped by
+             design; left alone, unrelated to this rung. Sounditron's tab wedged mid-sweep (role stopped
+              answering after an unrelated timeout) — re-run on a second live tab, not chased further; no
+               ghost this rung touched is in its path.
+
+   **RUNG 5 FOLLOW-UP — LANDED 2026-09-22, same day.** A design review after the rung closed asked "what
+    could still be wrong with this" and found the MIRROR IMAGE of the hazard rung 5 already fixed. The
+     fix protected a human-first Card from a LATER pool press (one Card, two roads). It did nothing for
+      the opposite order — and the `random` compartment's entire purpose is circulating tracks NOBODY has
+       heard yet, so the pool routinely gets to an (id, pub) FIRST. A person later playing that exact
+        track straight off the same holder (not the pool copy) and pressing ♥ would land their own
+         `hearted_at` directly onto the still-`for:'pool'` Card via the ordinary `Heard_take` path — and
+          since no stamp is ever cleared, `Heard_is_machine` would call it a machine act forever, silently
+           hiding the person's own heart from every taste/attention reader (`Heard_set`/`tally`/`taken`/
+            `unseen`/`takes`/`landed_ids`).
+   - **`Heard_road_promote(w, mag, card)`** (Heard.g) closes it: the instant a human path reaches a
+     machine-tagged Card, it migrates every stamp the machine already wrote onto a fresh
+      `%Road,via:'pool'` (so a real fetch failure or already-had verdict is relocated, never lost), then
+       RELOCATES the Card itself off the machine page onto today's open numbered sitting — a mint-and-drop
+        (`dest.i(sc)` + `old_page.drop(card)`), not a `.c.up` repoint, since that is the only way this
+         C-tree actually moves a child between containers — so `Heard_latest` (which reads one numbered
+          page's own children, never the machine page) sees it too.
+   - **Wired at the one gate every human path already shares**: `Heard_card` (`Heard_mark`/`_through`,
+     `Heard_take`, `Heard_nay`, `Heard_meh` all reach a Card through it) now calls the promoter whenever
+      the found Card is `Heard_is_machine`. One insertion point, no new branches at any call site.
+   - **New Book coverage**: MusuPoolRadio grew a beat 9 (`MusuPoolRadio_reverse`, `run.sc.total` 8→9) —
+     presses r5/friendo as a bare machine act first, confirms it sits on the machine page, then a genuine
+      `Heard_take` on the identical (id, pub); asserts the promotion (off the machine page, the machine's
+       own `hearted_at` riding the new road, the person's own `hearted_at` the Card's own, the heart glyph
+        lit, `Heard_latest` now including it), then presses the pool a THIRD time and asserts it lands on
+         the SAME road and never re-corrupts the Card. Two new `story_swear` sentences.
+   - **One real iteration, not in `Heard_road_promote` itself**: the first recording came back with
+     `it_counts_as_the_latest_sitting_too` false. Traced (not assumed) to the TEST: this fixture's library
+      setup never mints a `stock,pub:'me'` shelf (its `_stand` beat plants a bare `%Record` straight on
+       `w`), so `Heard_shelf(w, me)` — a find-ONLY door — always returned null, and `Heard_latest(null)`
+        always returns `[]` regardless of where the promoted Card actually landed. Confirmed the promotion
+         logic was already correct (`it_moves_off_the_machine_page` fired on the first attempt) before
+          touching anything; fixed the TEST by minting the real shelf (`this.Ra_home_self(w, me)`, one
+           line, additive — it links to the exact `Mine,pub:'me'` home the Heard Mag already stands on, so
+            it changes nothing any earlier step reads or recorded). Second recording: all 8 flags true.
+   - **Regression widened accordingly** (`Heard_card` now gates five call sites, not one): re-ran
+     MusuHeard, MusuHandoff, MusuPoolPolicy, MusuPoolFill, MusuPoolRandom, MusuPoolBytes, MusuHeist,
+      SwarmReboot, SwarmHelm plus MusuPoolRadio itself — all green, `ok_pct:1`, zero assertion gaps
+       (MusuHeist carries its usual small caveat count, `ok_pct` still 1 — pre-existing timing noise, not
+        this fix).
 
 **Not in this plan (owed rulings, later):** artist-level Nay; the liked-vs-hated query; the album/hierarchy
  chooser in HeistSetup; the `Ra_`→`Pool_` flip.

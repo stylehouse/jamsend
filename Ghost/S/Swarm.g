@@ -5888,6 +5888,14 @@ Swarm_protocol(kind):
         //    cleared, only outdated by a newer one, so this presence test is exactly as durable as the
         //     old flag test was).
         rules.push({ matching_any: [{ sc_has: { Card: 1 } }], unless_any: [{ sc_has: { hearted_at: 1 } }, { sc_has: { nayed_at: 1 } }, { sc_has: { mehed_at: 1 } }], means: { skip: 1 } })
+        // rung 4 (2026-09-21): a MACHINE press (`for:'pool'`) never crosses at all — it is local bookkeeping
+        //  for Ra_pool_fill_wants' own failure memory, not a taste fact a sibling has any use for, and
+        //   letting it gossip would be the same feedback risk Heard_tally/Heard_landed_ids guard against
+        //    locally, just carried to every other body instead of staying on this one.
+        rules.push({ matching_any: [{ sc_has: { for: 'pool' } }], means: { skip: 1 } })
+        // rung 5: a human Card's POOL ROAD (`%Road,via:'pool'`, Heard_road) is the same bookkeeping under
+        //  a person's ♥ — this body's pool fetching what the person asked for — and stays home likewise.
+        rules.push({ matching_any: [{ sc_has: { Road: 1 } }], means: { skip: 1 } })
     }
     // kind 'stash' — the identity as the DEXIE STASH carries it (Phase 5 rung 3, Swarm_restash_account):
     //  the account rules plus the two laws the hand-rolled pillars had kept in code.  A settled %Reach

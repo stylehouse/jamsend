@@ -1,9 +1,9 @@
 Snap:H
   H:MusuPoolRadio,Run
     A:MusuPoolRadio
-      self,round=5	{"mung":["age"]}
-      w:MusuPoolRadio,now=1788400030
-        self,round=5	{"mung":["age"]}
+      self,round=9	{"mung":["age"]}
+      w:MusuPoolRadio,now=1788400070
+        self,round=9	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -14,12 +14,22 @@ Snap:H
           goaled,own_contents_are_the_goal,honest_why,trims_the_oldest_only
           reached:step_5
           caved,captain_not_wanting,bare_cave_wants,wanting_declares_nothing,the_yes_declares_one_rolling_pool,a_second_yes_only_moves_the_budget,back_to_zero_cleans_out
+          reached:step_6
+          went,folder_described,takes_the_track_not_the_album,starts_itself_lofi,narrowing_holds,human_keep_untouched
+          reached:step_7
+          carded,the_press_is_a_card,lives_on_the_machine_page,the_dial_never_thinks_it_heard_this,no_taste_credit,not_the_last_sitting,the_heart_glyph_stays_dark,the_failure_becomes_a_real_memory,the_wedged_keep_still_ends
+          reached:step_8
+          roaded,the_heart_is_a_card_with_no_pool_road,the_heart_is_still_a_heart,the_press_is_a_road_on_it,the_glyph_stays_lit,the_verdict_stays_on_its_road,the_heist_still_owes_the_original,the_pool_keep_still_ends
+          reached:step_9
+          reversed,the_press_lands_first_as_the_machines_own,the_touch_promotes_it,it_moves_off_the_machine_page,the_machines_own_press_rides_the_road,the_persons_heart_is_the_cards_own,the_glyph_lights_up,it_counts_as_the_latest_sitting_too,a_later_press_never_re_corrupts_it
         Radio:playing,by:friendo
         Theirs,pub:friendo
           stock,pub:friendo
             Record,id:r1,title:Radio One
             Record,id:r2,title:Radio Two
             Record,id:r3,title:Radio Three
+            Record,id:r4,title:Radio Four
+            Record,id:r5,title:Radio Five
         SoundPooling,pub:me
           Pool,name:heard,take:radio,cap:2
           Consent,at:1788400000
@@ -30,12 +40,20 @@ Snap:H
         Record,id:own1,title:Mine
         Mine,pub:me
           shop,pub:me
-            Heist:Radio One,seed:r1,pub:friendo,state:primed,into:pool,why:radio,at:1788400000,from_name:friendo
+            Heist:Radio One,seed:r1,pub:friendo,state:done,into:pool,why:radio,at:1788400000,from_name:friendo,lofi,pick_edited
+              Pick,ref:r1
             Heist:Radio Two,seed:r2,pub:friendo,state:primed,into:pool,why:radio,at:1788400010,from_name:friendo
+            Heist:Radio Four,seed:r4,pub:friendo,state:done,into:pool,why:fill
           Mag:heard,pub:me,heard_ttl:30,take_ttl:90
             Cloud,page:machine
-              Card,id:r1,pub:friendo,for:pool,hearted_at:1788400000,title:Radio One
+              Card,id:r1,pub:friendo,for:pool,hearted_at:1788400000,title:Radio One,offer_unsigned_at:1788400050
               Card,id:r2,pub:friendo,for:pool,hearted_at:1788400010,title:Radio Two
+            Cloud,page:1,created_at:1788400060
+              Card,id:r4,pub:friendo,hearted_at:1788400060,title:Radio Four
+                Road,via:pool,hearted_at:1788400060,offer_unsigned_at:1788400060
+              Card,id:r5,pub:friendo,title:Radio Five,hearted_at:1788400070
+                Road,via:pool,hearted_at:1788400070
+          stock,pub:me
         Library,name:radiolib
         w:MusuPoolRadioCave
           Account,of:Cavey

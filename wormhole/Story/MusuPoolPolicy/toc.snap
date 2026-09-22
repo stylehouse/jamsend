@@ -4,35 +4,38 @@ story:MusuPoolPolicy
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.03
-      sample=0.04,at=1789548762
-      sample=0.012,at=1789560131
-      sample=0.132,at=1789563972
-      sample=0.025,at=1789612161
-      sample=0.008,at=1789612304
-      sample=0.013,at=1789612410
-      sample=0.012,at=1789612480
-      sample=0.02,at=1789615293
-      sample=0.018,at=1789622021
+    TimeTotal:beliefs,avg=0.027
       sample=0.018,at=1789622350
-    TimeTotal:step,avg=0.006
-      sample=0.008,at=1789548762
-      sample=0.002,at=1789560131
-      sample=0.026,at=1789563972
-      sample=0.005,at=1789612161
-      sample=0.002,at=1789612304
-      sample=0.003,at=1789612410
-      sample=0.002,at=1789612480
-      sample=0.004,at=1789615293
-      sample=0.004,at=1789622021
+      sample=0.029,at=1790039554
+      sample=0.035,at=1790039612
+      sample=0.017,at=1790039642
+      sample=0.032,at=1790039664
+      sample=0.024,at=1790040357
+      sample=0.031,at=1790040939
+      sample=0.035,at=1790043618
+      sample=0.022,at=1790043850
+      sample=0.027,at=1790047152
+    TimeTotal:step,avg=0.005
       sample=0.004,at=1789622350
+      sample=0.006,at=1790039554
+      sample=0.006,at=1790039612
+      sample=0.003,at=1790039642
+      sample=0.005,at=1790039664
+      sample=0.004,at=1790040357
+      sample=0.005,at=1790040939
+      sample=0.006,at=1790043618
+      sample=0.004,at=1790043850
+      sample=0.004,at=1790047152
   step,dige:0fffa93fa4ef15e8
   step=2,dige:dd6e5bb75b69490c
   step=3,dige:e2b947024b6aa249
   step=4,dige:ec3a62f57bb4401c
-  step=5,dige:7b4e8211e54d76d7
+  step=5,dige:456cb95793aa3775
     Assertion:a-pooled-track-survives,sentence:a pooled track survives a thin session as sediment in the very same draw — wanted and already pooled together mean silence not an evict
     Assertion:a-barred-track-never,sentence:a barred track never enters the draw at all — not chosen not diffed not evicted
     {"Assertion":"the-recent-compartment-presses","sentence":"the recent compartment presses what the shelf already holds and pulls what it does not, the same track never both"}
     Assertion:a-displacement-pulls-first,sentence:a displacement pulls first and evicts only once the replacement has landed — the pool never drops below its cap for a wish
     Assertion:a-pool-holding-more,sentence:a pool holding more than its goal trims at once — the window rations displacement not trimming
+  step=6,dige:0e067e7d9b570efb
+    Assertion:every-pull-in-the,sentence:every pull in the goal names who has it now — crew first then by name — one fold over the mirrors that the heist and the pool both read
+    Assertion:a-loved-track-nobody,sentence:a loved track nobody holds keeps its pull with no road — a standing wish the fill leaves alone until a mirror turns up

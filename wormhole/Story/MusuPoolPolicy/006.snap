@@ -1,12 +1,13 @@
 Snap:H
   H:MusuPoolPolicy,Run
     A:MusuPoolPolicy
-      self,round=5	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:MusuPoolPolicy
-        self,round=5	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2,goal:a zzz,diffn,sediment_quiet
           reached:step_3,goal:a,barred_excluded
           reached:step_4,recent_split
           reached:step_5,held_back,pull_goes_alone,evict_after_it_landed,trim_now
+          reached:step_6,goal:L<C N< R<F1,liked_pulls_from_crew_first,random_holder_by_name,wish_without_a_road_stands,one_fold_answers

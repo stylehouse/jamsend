@@ -30,4 +30,8 @@ Snap:H
           shop,pub:me
             Heist:Radio One,seed:r1,pub:friendo,state:primed,into:pool,why:radio,at:1788400000,from_name:friendo
             Heist:Radio Two,seed:r2,pub:friendo,state:primed,into:pool,why:radio,at:1788400010,from_name:friendo
+          Mag:heard,pub:me,heard_ttl:30,take_ttl:90
+            Cloud,page:machine
+              Card,id:r1,pub:friendo,for:pool,hearted_at:1788400000,title:Radio One
+              Card,id:r2,pub:friendo,for:pool,hearted_at:1788400010,title:Radio Two
         Library,name:radiolib

@@ -1,9 +1,9 @@
 Snap:H
   H:MusuHandoff,Run
     A:MusuHandoff
-      self,round=5	{"mung":["age"]}
-      w:MusuHandoff,now=1788500050
-        self,round=5	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
+      w:MusuHandoff,now=1788500080
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         testing
           reached:step_2
@@ -11,6 +11,9 @@ Snap:H
           hearted,took,gossip_reaches_the_one_sibling,word_is_waiting
           landed,mirror_wears_the_same_card,mirroring_does_not_adopt,the_union_already_owes_it
           carried,one_keep_primed,carrying_adopts_the_wish,the_keep_stamps_who_has_it
+          effect,the_laptops_own_card_lands,the_phones_word_derives_from_the_mirror
+          verdict,a_verdict_reaches_the_presser_too,regossip_writes_nothing_new
+          waiting,a_lone_soul_just_waits,no_mirror_waits_with_a_word,mirror_arriving_clears_the_word
         Account,of:Alice
           Identity:f14417f95661701f,prepub:f14417f95661701f,friendly:Phone
             Peering,name:f14417f95661701f,friendly:Phone,online
@@ -20,6 +23,10 @@ Snap:H
             Crew,soul:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076
               mate:f14417f95661701f,role:Captain,pub:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076
               Key,pub:f14417f95661701fa9fcb6a9748892b3fa1520bb569608728ac40617029b0076	{"mung":["secret"]}
+            mail
+              frame:heard,did
+              frame:heard,did
+              frame:heard,did
           Identity:68983ffd155abb42,prepub:68983ffd155abb42,friendly:Laptop
             Peering,name:68983ffd155abb42,friendly:Laptop,online
               Body,pub:68983ffd155abb421a29653e2174d0380aa2e7dd8d2e84c32f7bc72bfc929519,post:Cave,address:f14417f95661701f_1
@@ -30,6 +37,7 @@ Snap:H
               Key,pub:68983ffd155abb421a29653e2174d0380aa2e7dd8d2e84c32f7bc72bfc929519	{"mung":["secret"]}
             mail
               frame:heard,did
+              frame:heard,did
         Theirs,pub:dj
           stock,pub:dj
             Record,id:t1,title:Cosmic C,artist:DJ Oscillo
@@ -37,14 +45,44 @@ Snap:H
         Mine,pub:68983ffd155abb42
           shop,pub:68983ffd155abb42
             Heist:Cosmic C,seed:t1,pub:dj,state:primed,take,at:1788500050,from_name:dj,artist:DJ Oscillo
+            Heist:Solo Q,seed:t4,pub:dj2,state:primed,take,at:1788500080,from_name:dj2,artist:DJ Quiet
           TheirHeard,pub:f14417f95661701f
             Mag:heard,pub:f14417f95661701f
               Cloud,page:1,created_at:1788500030
                 Card,id:t1,pub:dj,hearted_at:1788500030,title:Cosmic C,artist:DJ Oscillo
+                Card,id:t2,pub:dj,hearted_at:1788500070,title:Dorian D,artist:DJ Oscillo
           Mag:heard,pub:68983ffd155abb42,heard_ttl:30,take_ttl:90
             Cloud,page:1,created_at:1788500050
-              Card,id:t1,pub:dj,hearted_at:1788500050,pressed_on:1788500050,title:Cosmic C,artist:DJ Oscillo,carried_by:Laptop,carried_at:1788500050
+              Card,id:t1,pub:dj,hearted_at:1788500050,pressed_on:1788500050,title:Cosmic C,artist:DJ Oscillo,carried_by:Laptop,carried_at:1788500050,landed_at:1788500060
+              Card,id:t2,pub:dj,hearted_at:1788500070,pressed_on:1788500070,title:Dorian D,artist:DJ Oscillo,offer_unsigned_at:1788500070
+              Card,id:t4,pub:dj2,hearted_at:1788500080,title:Solo Q,artist:DJ Quiet,carried_by:Laptop,carried_at:1788500080
+          stock,pub:68983ffd155abb42
+            Mag:shuffle
+              Cloud,page:1
+                Record,id:t1,title:Cosmic C
         Mine,pub:f14417f95661701f
           Mag:heard,pub:f14417f95661701f,heard_ttl:30,take_ttl:90
             Cloud,page:1,created_at:1788500030
               Card,id:t1,pub:dj,hearted_at:1788500030,title:Cosmic C,artist:DJ Oscillo
+              Card,id:t2,pub:dj,hearted_at:1788500070,title:Dorian D,artist:DJ Oscillo
+          TheirHeard,pub:68983ffd155abb42
+            Mag:heard,pub:68983ffd155abb42
+              Cloud,page:1,created_at:1788500060
+                Card,id:t1,pub:dj,hearted_at:1788500050,pressed_on:1788500050,carried_at:1788500050,landed_at:1788500060,title:Cosmic C,artist:DJ Oscillo,carried_by:Laptop
+                Card,id:t2,pub:dj,hearted_at:1788500070,pressed_on:1788500070,offer_unsigned_at:1788500070,title:Dorian D,artist:DJ Oscillo
+        Account,of:Bob
+          Identity:cdb80cb78cbe02f0,prepub:cdb80cb78cbe02f0,friendly:Lonely
+            Peering,name:cdb80cb78cbe02f0,friendly:Lonely
+              Body,pub:cdb80cb78cbe02f0b6e24779fa6d48236cbde6b5b46fc84ab6d857472b9f5ac3,post:Captain,address:cdb80cb78cbe02f0
+            Crew,soul:cdb80cb78cbe02f0b6e24779fa6d48236cbde6b5b46fc84ab6d857472b9f5ac3
+              mate:cdb80cb78cbe02f0,role:Captain,pub:cdb80cb78cbe02f0b6e24779fa6d48236cbde6b5b46fc84ab6d857472b9f5ac3
+              Key,pub:cdb80cb78cbe02f0b6e24779fa6d48236cbde6b5b46fc84ab6d857472b9f5ac3	{"mung":["secret"]}
+        Record,id:t3,title:Solo S,artist:DJ Oscillo
+        Mine,pub:cdb80cb78cbe02f0
+          Mag:heard,pub:cdb80cb78cbe02f0,heard_ttl:30,take_ttl:90
+            Cloud,page:1,created_at:1788500080
+              Card,id:t3,pub:dj,hearted_at:1788500080,title:Solo S,artist:DJ Oscillo
+        Record,id:t4,title:Solo Q,artist:DJ Quiet
+        Theirs,pub:dj2
+          stock,pub:dj2
+            Record,id:t4,title:Solo Q,artist:DJ Quiet

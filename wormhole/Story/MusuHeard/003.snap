@@ -17,6 +17,6 @@ Snap:H
         Mine,pub:me
           Mag:heard,pub:me,heard_ttl:30,take_ttl:90
             Cloud,page:1,created_at:1788400000
-              Card,id:r1,pub:friendo,mire:2
+              Card,id:r1,pub:friendo,played_through:2
               Card,id:r2,pub:friendo
               Card,id:r3,pub:friendo
