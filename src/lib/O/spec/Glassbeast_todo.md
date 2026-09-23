@@ -197,6 +197,30 @@ Two more of the owner's own asks, landed and verified live (not screenshotted-an
           folio starts from its membrane inward and yields to the bump. Model-side. STOP tweaking pixels
            here — the next commit of effort goes to Vyto.g, not Vytui.
 
+### THE GRID REGIME — LANDED (2026-09-24): alignment instead of noodles
+The owner on the crosslink shot: *"I wish they were more containey alignments of things informing the
+ layout rather than a bunch of noodles dropped onto the cells."* Third outright-assigned regime beside
+  seat/focus (stop `grid`, root scope only): `grid_cells` (vyto_geometry.ts) row-bands members by
+   `bucket_key_of` — the SAME heuristic the fold ladder already elects a partition key with — laid out
+    HTML block-flow, grown-or-shrunk to fill the frame (never past the ask, matching seat_polys' floor-not-
+     ceiling law). `crosslink` now skips any tie the row alignment already says (same key), so what's left
+      is only the ties alignment CANNOT show — on the Guise data, mood bands the rows and artist crosses
+       them, 11 lines down to 3. Band label per row via `grid_bands_of` (same recompute-from-painted-cells
+        idiom as `junctions_of`). `wormhole/shots/seq_0057`. Root-scope-only like focus; a nested scope
+         still tiles with the standing foam machinery.
+
+### ⚠ VytoGuise's FIXTURE IS CORRUPT — NOT a regression from the grid/crosslink render work
+`wormhole/Story/VytoGuise/toc.snap`'s step 3 line is malformed — raw JSON (`{"step":3,"desc":...,
+ "dige":...}`) instead of every other step's `step=N,desc:...,dige:...` form. Debris from the earlier
+  mid-session incident (see [[live-editor-can-revert-a-source-file]]), isolated to this ONE file —
+   VytoOrchestra and VytoMembrane's fixtures are clean. Confirmed via a live `runner_ask run VytoGuise
+    --watch` + `snap 3`: the Book's own logic is CORRECT — all four step-3 oaths (saw_stand/saw_voice/
+     saw_sealed/saw_drawn) fire exactly as designed — the run reds ONLY because Story can't match the
+      malformed recorded line. Render-only changes (Vytui.svelte, vyto_geometry.ts) cannot touch a
+       model-side assertion; ruled out on architecture, then confirmed by reading the live snap.
+        **Not mine to fix** — declaring/accepting a fixture is the owner's call (`node
+         scripts/story_accept.mjs`, or a fresh recorded run, once satisfied).
+
 ### THE CROSSLINK — LANDED (2026-09-23): the grouping is drawn, on top, landing on the word
 The owner, on seeing `Facet` boxing hits: *"what is Facet? that's a grouping projected onto our data
  right?"* — right, and fixed: `VytoGuise`'s records are now FLAT (no container mainkey anywhere), and

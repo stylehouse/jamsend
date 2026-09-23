@@ -103,6 +103,7 @@
         { stop: 'wallcarve',  what: 'OPT OUT of the folio — back to the old wall-carve masonry / centred ident (folio is now the default)' },
         { stop: 'wave',       what: 'with wallcarve on: the label rides a scalloped wave band instead of the wall carve' },
         { stop: 'junction',   what: 'sibling cells of one mainkey say it ONCE where they meet — each keeps only its value (the owner\'s idea)' },
+        { stop: 'grid',       what: 'a THIRD outright-assigned regime beside seat/focus, root scope only -- rows lay out HTML-block-flow, banded into ROWS by the strongest shared scalar (bucket_key_of), no cell drawn to hold the group; try alongside crosslink -- a tie the row alignment already says is not also drawn as a line' },
         { stop: 'crosslink', what: 'the grouping-as-vines pass paints ON TOP of the cells instead of underneath — for a dense pile with no gaps to show a substrate through (the owner: "a layer on top of them with lines connecting")' },
         { stop: 'pinch',      what: 'with membrane on: each petal is carved to a NECK onto its family\'s bump — the disc shows through the pinches between necks' },
         { stop: 'seal',       what: 'the seat regime — cells seal to their molds' },

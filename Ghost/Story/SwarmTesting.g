@@ -28,7 +28,7 @@
 //  grant a malicious pier_hello would carry — the same signed-capability atom Swarm.g composes an
 //   Idzeug from. REAL dep (the .g→.ts import idiom), used only to STAGE the attack, never the spine.
 IMPORT()
-    import { mint_grant, verify_grant, grant_to_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
+    import { mint_grant, verify_grant, grant_to_C, grant_of_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
     import { _C } from "$lib/Stuff.svelte"
     import { signHeader } from "$lib/cluster_trust"
     import { crew_key_hold } from "$lib/O/Funk/Crewkeys"
@@ -5124,6 +5124,136 @@ async SwarmHelm_order(w):
     let As = H.o({A: 1})
     if (!As.length) { return }
     let first = (a) => (a.sc.A === 'SwarmHelm') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+// ══ SwarmBorrow — GrantBorrowing (LinkDevice_leak_todo §5, owner 2026-09-23: "the Captain lets Caves ═══
+//  in, but remains the Grant-winner"). Division/Ferry (SwarmFerry above) clones a KEY — every clone
+//   becomes cryptographically indistinguishable as "the same pub", the leak §2 of that doc names.
+//    GrantBorrowing clones NOTHING: `Swarm_mint_borrow`/`Swarm_verify_borrow` (Swarm.g, the GrantBorrowing
+//     region right after ReInvite) wrap an ALREADY-SIGNED Grant one more time, and the wrap can only ever
+//      be signed by that grant's own bearer — so no matter how many loans a Captain mints, to however many
+//       Caves, `winner` on every one of them stays the SAME pub. A Cave borrowing it never becomes a second
+//        claimant the way a Division clone does.
+//   beat 2  Friend mints a real Grant:Music FOR Captain (mint_grant) — landed as an ordinary %Grant
+//            particle (grant_to_C), exactly how any pier carries one; Cave and Mallory stand as bystanders
+//   beat 3  THE LOAN and its four proofs, each pinned as a boolean a sync witness reads:
+//            #1 the winner never moves — a verified loan names Captain, not the Cave presenting it
+//            #2 off-pub mint refused — Cave (who does not hold the grant) cannot lend it onward
+//            #3 off-pub sign refused — Mallory forges a wrap around the SAME real embedded atom, signed
+//                with her own key; the structural check (signer must equal the grant's own bearer) catches it
+//            #4 expiry — the same real loan, verified well past its own TTL, is refused with no revocation
+//  THE DISCRIMINATION ([[adversarial-test-agent]]): #2/#3/#4 are the adversarial half — a borrow that let
+//   any of the three through would be the exact leak LinkDevice_leak_todo §2 describes, just one layer
+//    re-hidden behind a nicer name.
+//  CONVENTION (Musu*/Swarm*): the world MUST be named SwarmBorrow (do_fn_for dispatches by w.sc.w).
+
+SwarmBorrow(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmBorrow_drive,w,req
+        req%ok = 1
+
+SwarmBorrow_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+SwarmBorrow_note(w, sc):
+    let t = this.SwarmBorrow_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async SwarmBorrow_drive(w, req):
+    let run = (this.c.run)
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 3 }
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmBorrow_stand(w)
+        if (n === 3) await this.SwarmBorrow_loan(w)
+    }
+    this.SwarmBorrow_witness(w)
+    await this.SwarmBorrow_order(w)
+
+// beat 2 — four fixed selves (fixed keys, seeded off each name — deterministic signatures, deterministic
+//  snap bytes) and the one real grant under test: Friend → Captain, Grant:Music, landed as an ordinary
+//   %Grant particle exactly the way SwarmStaple's own pier grants land (grant_to_C).
+async SwarmBorrow_stand(w):
+    w i reached:step_2
+    w.sc.now = 1751700000
+    let mk = async (name) => {
+        let acct = w.oai({ Account: 1, of: name })
+        acct.c.up = w
+        let keys = await this.Swarm_mint_keys('SwarmBorrow-' + name)
+        return { keys: keys, ident: this.Swarm_identity(acct, keys, name) }
+    }
+    w.c.friend = await mk('Friend')
+    w.c.captain = await mk('Captain')
+    w.c.cave = await mk('Cave')
+    w.c.mallory = await mk('Mallory')
+    let atom = await mint_grant(this.Swarm_keys(w.c.friend.ident), String(w.c.captain.keys.pub), 'Music', { genre: 'Jazz' }, this.Swarm_now(w))
+    // grant_to_C(container, atom) MINTS THE CHILD AND RETURNS IT (Grant.ts) — it does not mutate
+    //  `container` in place, so the row to keep is its RETURN VALUE, not a pre-made stub.
+    let row = grant_to_C(w, atom)
+    row.c.up = w
+    w.c.grant = row
+
+// beat 3 — the loan and its four proofs. All async (signing/verifying is async throughout Swarm.g), all
+//  pinned as booleans a sync witness reads — nothing here that varies run to run reaches sc except through
+//   those fixed booleans, per the file's own determinism law.
+async SwarmBorrow_loan(w):
+    w i reached:step_3
+    w.sc.now = 1751700010
+    if (!w.c.grant) return
+    let row = { loaned: 1 }
+    // #1 — the real loan: Captain lends Cave the grant it holds, a 900s TTL.
+    let rib = await this.Swarm_mint_borrow(w, w.c.captain.ident, w.c.grant, String(w.c.cave.keys.pub), 900)
+    let seen = await this.Swarm_verify_borrow(rib, this.Swarm_now(w) + 10)
+    if (seen.winner === w.c.captain.keys.pub && seen.grantor === w.c.friend.keys.pub && seen.borrower === w.c.cave.keys.pub && seen.feature === 'Music')
+        row.winner_fixed = 1
+    // #2 — off-pub mint: Cave does NOT hold the grant (its `for` names Captain) — lending it onward must throw.
+    let denied_mint = 0
+    try { await this.Swarm_mint_borrow(w, w.c.cave.ident, w.c.grant, String(w.c.mallory.keys.pub), 900) }
+    catch (e) { denied_mint = 1 }
+    if (denied_mint) row.mint_gated = 1
+    // #3 — off-pub sign: Mallory forges an outer wrap around the SAME real embedded atom (grant_of_C),
+    //  signing with her OWN key instead of Captain's — the structural bearer check must catch it.
+    let forged = { tip: String(w.c.captain.keys.pub), borrower: String(w.c.mallory.keys.pub), atom: grant_of_C(w.c.grant), at: this.Swarm_now(w), exp: this.Swarm_now(w) + 900 }
+    forged.sign = await signHeader(forged, this.Swarm_keys(w.c.mallory.ident).key)
+    let denied_sign = 0
+    try { await this.Swarm_verify_borrow(this.Swarm_b64(JSON.stringify(forged)), this.Swarm_now(w) + 10) }
+    catch (e) { denied_sign = 1 }
+    if (denied_sign) row.sign_gated = 1
+    // #4 — expiry: the same real loan (#1's `rib`), checked WELL PAST its own exp.
+    let denied_exp = 0
+    try { await this.Swarm_verify_borrow(rib, this.Swarm_now(w) + 901) }
+    catch (e) { denied_exp = 1 }
+    if (denied_exp) row.exp_gated = 1
+    this.SwarmBorrow_note(w, row)
+
+// ── the witness — %sworn gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmBorrow_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    let T = this.SwarmBorrow_T(w)
+    let f = T.o({ loaned: 1 })[0]
+    if (!f) return
+    if (+f.sc.winner_fixed === 1)
+        this.story_swear(w, 'a borrowed grant never changes who won it — the loan always names the original bearer as winner, never the Cave presenting it')
+    if (+f.sc.mint_gated === 1)
+        this.story_swear(w, "only the grant's own bearer may lend it — a body that does not hold the grant cannot mint a loan off it")
+    if (+f.sc.sign_gated === 1)
+        this.story_swear(w, "a forged loan around a real grant is refused — the outer signature must be the grant's own bearer, never a borrower or a stranger")
+    if (+f.sc.exp_gated === 1)
+        this.story_swear(w, 'a borrowed grant expires on its own — checked past its TTL the loan is refused with no revocation needed')
+
+// SwarmBorrow_order — float A:SwarmBorrow to the front of H/* so the Run snap stays readable.
+async SwarmBorrow_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) { return }
+    let first = (a) => (a.sc.A === 'SwarmBorrow') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

@@ -6,20 +6,34 @@ Triggered by the owner, live, 2026-09-23: *"think up some way we can stop LinkDe
    nothing here is ruled. It exists so the next session (or the owner) has the threat model written down
     instead of re-deriving it.
 
-## 0. WHAT TO GET ON WITH NEXT
+## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-24 — §1.6 changed the priority order)
 
-Nothing is built. The owner asked for thinking, not code. The order to bring these to a ruling, cheapest
- first:
-1. **Surface `Swarm_body_roster` growth to the grant-holder** (§3.1) — pure UI, no protocol change, no risk
-    of breaking legitimate multi-device users. Ships fastest, and is a prerequisite for any of the harder
-     options anyway (you can't gradually evict what you never show anyone).
-2. **Decide whether a concurrent-stream cap is wanted at all** (§3.2) — this is a real product-policy call
-    (does jamsend want to BE a "N simultaneous streams" service, Netflix-style?) and needs the owner's answer
-     before anything gets coded, because it changes normal multi-device behaviour, not just abuse.
-3. **Only if (2) is yes**, design the eviction rule itself (LRU vs random vs "ask the human") — §3.2 sketches
-    three, none chosen.
-4. §3.3 (linear-only re-share for LinkDevice specifically) is the deepest cut and should wait until the
-    owner has seen §3.1 in practice — it may turn out the visibility alone is enough of a deterrent.
+**Read §1.6 first, if this is a fresh session.** It traces, live in the code, the mechanism that actually
+ answers the owner's original question — NOT key-cloning (§1/§2, the Division/Ferry ceremony), but
+  cert-crew's voucher road: a certified Cave gets full, permanent, blanket access to every grant the soul
+   has EVER been handed by anyone, the instant `to:MyCave` device-link completes, via an ordinary
+    single-use Idzeug redeem that never needs a cloned key. GrantBorrowing (§5, landed as code 2026-09-23)
+     does NOT touch this — it answers a different question (lending to a non-crew party). Order:
+1. **CHECKED 2026-09-24 — the Captain-side consent copy is already good, no gap here.** Read the actual
+    `LinkDevice.svelte` UI (not guessed): before minting a Cave link, the Captain sees a "TOTAL TRUST"
+     toggle whose warning reads verbatim *"the crew shares this account, its **friends** and its library,
+      and any member can serve it in the crew's name"* — that IS §1.6's finding, already said plainly, in
+       the UI, today. The receiving Cave's own offer screen says the mirror: *"serves the Captain's shared
+        account, friends, and music as part of the crew."* Nothing to fix here — this was the one item on
+         this list most likely to be a real, cheap gap, and it turned out not to be.
+2. **The real remaining gap is the OTHER side: the FRIEND has no visibility at all.** The Captain is warned
+    (item 1); the Cave is warned (item 1); the friend whose grant is being transitively shared with every
+     one of the Captain's crew bodies is never told anything, ever, and has no way to check. §3.1 (surface
+      `Swarm_body_roster` growth to the grant-HOLDER's counterparty) is exactly this fix, pure UI, no
+       protocol change, no risk to legitimate multi-device users. Now the clear next thing to build.
+3. **Decide whether a concurrent-stream cap is wanted at all** (§3.2) — a real product-policy call, needs
+    the owner's answer before anything gets coded, because it changes normal multi-device behaviour too.
+4. **Only if (3) is yes**, design the eviction rule itself (LRU vs random vs "ask the human") — §3.2
+    sketches three, none chosen.
+5. §3.3 (linear-only re-share for LinkDevice specifically) and any narrower, feature-scoped variant of
+    cert-crew itself (a bigger, more architectural question §1.6 raises but does not answer — would mean
+     teaching `Swarm_pier_live`/the voucher road to care WHICH body is asking, a real design project, not a
+      patch) are both the deepest cuts here — wait for the owner's read of §1.6 before scoping either.
 
 ## 1. What the code actually does today (read, not guessed — Swarm.g, SwarmTesting.g)
 
@@ -77,20 +91,83 @@ This is a DIFFERENT mechanism from the key-cloning ferry above, and worth keepin
      Cave over the same Repli lane a friendship would use. It is the Captain sharing itself with its own
       body — not a friend's grant being redistributed to anyone.
 
-**The specific worry — a Cave that independently holds some OUTSIDE friend's Grant automatically leaking
- that access to the rest of the crew — is not what's built.** Peering is per-body; nothing here walks "does
-  any of my crewmates hold a grant I don't have yet" and copies it over. If a Cave were to redeem some
-   outside friend's invite on its own (nothing stops a Cave from doing that — it is a first-class signing
-    identity, addressable on the relay exactly like the Captain), that grant would sit ONLY on that Cave's
-     own Peering shelf. It doesn't reach the Captain or any sibling automatically.
+**CORRECTION 2026-09-24 — the paragraph above was wrong about the thing that actually matters.** It's
+ correct that no grant *particle* gets copied onto a Cave's own Peering shelf. But the owner asked the
+  right follow-up ("before it would've done so fine because there was a Crew member with the Grant it
+   could impersonate... I dunno if we actually had that built") and the honest answer, traced below, is:
+    **the DATA never copies, but the ACCESS already does, completely, automatically, for every feature —
+     not just Music, not just the self-catalog mint this section describes.** §1.6 is that finding; it
+      supersedes "today's actual shape is narrower and safer than the worry" above. Read §1.6 before
+       trusting anything else in this section about what a Cave can or can't reach.
 
-**So today's actual shape is narrower and safer than the worry — but the worry is still the right one to
- have**, because the ONLY existing precedent for "share a grant across bodies" (§ above) is a blanket,
-  permanent, install-time copy with no per-use gate and no expiry (the Pier convention elsewhere is
-   "infinite — never an expiry", retiring only at explicit revoke). If anyone ever extends that same
-    copy-once-forever pattern to an EXTERNALLY-held grant — "convenient, just mirror whatever Grant:Music
-     the Captain gets onto every Cave too" — that is the exact moment the leak the owner described would
-      start actually existing in code. §5 below is what to reach for instead, if that need ever comes up.
+### 1.6 THE MECHANISM THAT ACTUALLY MATTERS: cert-crew's voucher road already gives a Cave full, permanent,
+##  blanket access to every grant the soul has ever held — no copy, no separate mint, no GrantBorrowing needed
+
+Traced live in `Swarm_voucher_ok` (`Ghost/S/Swarm.g` ~1870) and its caller (~1538-1554), prompted by the
+ owner asking directly whether this was ever actually built and tested that far. It was built (2026-09-02,
+  "the owner's model", with its own adversarial test file `crew-cert-test.ts`) — just never traced end to
+   end against the SPECIFIC question this doc is about.
+
+**How a Cave's frame gets trusted on a Pier it never personally sealed.** A Cave holds no soul key, so its
+ outgoing frames route under its OWN distinct key (`Swarm_signas`, ~1461: "the BODY prepub for a keyless
+  Cave"), not the Captain's. When that frame reaches Friend's tab, the ordinary lookup (`from` → an
+   existing sealed Pier) misses — Friend never sealed anything with THIS key. The fallback (~1543-1548,
+    "THE CREW ROAD, land-of-prepub") resolves the SOUL's pier instead — via a body Friend has already
+     noted, or via the SOUL pub named inside the frame's own attached voucher — landing on the exact SAME
+      shared `%Pier` particle Friend has always used for "the Captain". `Swarm_voucher_ok`'s cert-crew arm
+       (~1905-1926) then accepts the frame as genuinely vouched for that Pier once it checks four things:
+        the claimed body's key really produced the signature, the embedded `Grant:Crew` really names
+         `by:<the Pier's own held soul>`, it really names `for:<this presenting body>`, and no
+          `NotGrant:Crew` has ejected it since. **Nothing in this whole chain ever asks which FEATURE the
+           Cave is trying to use.** It proves "this body genuinely belongs to the soul Friend already
+            trusts" — full stop.
+
+**Why that's enough, on its own, for Music (or anything else).** `Swarm_pier_live(pier, feature)`
+ (~5719) — the function every content/Grant-gated door actually calls — takes the shared PIER, not a
+  presenting identity: "does THIS Pier carry a live `Grant:<feature>` with no matching `NotGrant`." It has
+   no idea, and no way to ask, which crew body's voucher authenticated the frame it's currently serving.
+    Once `Swarm_voucher_ok` stamps `sealed.c.voucher_ok`, every subsequent feature check downstream on
+     that same Pier — Music included — runs exactly as if the Captain itself were asking. A Cave never
+      needed the "CREW SHARES MUSIC" self-catalog mint (§ above) to reach a FRIEND's music at all; that
+       mint only ever mattered for the Captain's OWN library. Reaching a THIRD PARTY's grant needed
+        nothing but the `Grant:Crew` cert every Cave already gets the moment device-link completes.
+
+**This is, concretely, the exact shape of leak the owner's original question described** — "LinkDevice
+ being used to leak access in for lots of other users to the same Invite|Grant by supposing they are all
+  the same person" — except it needs no key-cloning at all (§1's Division/Ferry ceremony is a SEPARATE,
+   heavier flow: same key everywhere). An ordinary `to:MyCave` Idzeug redeem — a normal-looking, single-use,
+    one-body-at-a-time "add a device" invite, exactly the shape `SwarmRole`'s own adversarial Book proves is
+     correctly ISOLATED at the grant-minting layer — is *also*, transitively, a grant of full, permanent,
+      blanket standing on every relationship the soul has ever sealed with anyone, the instant the voucher
+       road is reached. `SwarmRole`'s own sworn isolation ("a Cave is not thereby a music friend") is true
+        and still holds — it tests whether Cara's OWN Pier carries a Music grant it was never minted (it
+         doesn't) — but it never drives a live frame through the wire/voucher path this section traces, so
+          it proves a real, narrower property and was never positioned to catch this one.
+
+**Is this a bug?** No — it reads as the deliberate, adversarially-tested DEFINITION of what "crew" means in
+ this codebase (Crew_todo's own title: "one soul, many bodies"). A crew member IS meant to be able to act
+  as the soul, everywhere, for as long as it's certified. The tension worth naming plainly: Crew_todo's
+   title also says "granted not copied" — true of the DATA (one Grant particle, one Pier, never duplicated)
+    but not of the ACCESS (every certified body exercises the full power of that one grant, indistinguishably
+     from the Captain). "Not copied" describes the model; it does not describe a narrower blast radius.
+
+**What this means for the rest of this doc.** GrantBorrowing (§5) is NOT made irrelevant by this — it
+ answers a genuinely different question (lending scoped, temporary, revocable access to a party that should
+  NOT become a full, permanently-trusted crew member) that cert-crew was never built to answer at all
+   (cert-crew has exactly one trust tier: full member or nothing). But GrantBorrowing does nothing to narrow
+    cert-crew's existing blanket model, and nobody should read its landing as having "fixed" this.
+
+**Checked, not just asked: the Captain-side consent copy already says this plainly.** `LinkDevice.svelte`'s
+ pre-mint "TOTAL TRUST" warning (the Captain's own screen, before an invite is even minted) reads *"the
+  crew shares this account, its **friends** and its library, and any member can serve it in the crew's
+   name"* — that is §1.6's finding, stated in the UI, already, today. The receiving Cave's offer screen
+    mirrors it ("serves the Captain's shared account, friends, and music as part of the crew"). So the
+     lever this doc first reached for here — better consent wording — turns out to already exist and
+      already be honest. **The actual gap is the OTHER side of the relationship**: the FRIEND whose grant
+       is being transitively shared is never told anything and has no way to check. §3.1's body-roster
+        visibility (already proposed) is exactly that fix, and is now the clearest next thing to build —
+         today a FRIEND has no way to see that "the Captain" they trust is, in practice, N different bodies with
+            equal standing on the friendship — the roster idea would make that visible for the first time.
 
 ## 2. The actual threat, stated precisely
 
@@ -180,14 +257,26 @@ A speculative direction (not designed, not scoped): wrap the ferry itself in a c
       into an auditable trail. This is the biggest lift of the three options and should only be scoped once
        §3.1 has actually shipped and the owner has seen whether visibility alone changes anything.
 
-## 5. THE OWNER'S PROPOSAL (2026-09-23, live) — GrantDeputisation: a live, single-target, Captain-attested loan
+## 5. THE OWNER'S PROPOSAL (2026-09-23, live, named 2026-09-23) — GrantBorrowing: a live, single-target,
+##  Captain-attested loan that never changes WHO holds the Grant
 
 The owner's sketch, restated precisely: address-bind grants (already true, see below); by default only the
  Captain (or whichever Crew member actually redeemed it) holds an outside friend's Grant; when a DIFFERENT
   Crew member's Cave needs to reach that same friend Pier, the Captain — briefly online — signs a scoped
-   delegation naming that ONE Cave, for that ONE Pier; and since the two devices "want to regularly open the
+   loan naming that ONE Cave, for that ONE Pier; and since the two devices "want to regularly open the
     two of them anyway," the Captain's own client can do this the instant it comes online and sees the need,
      so it never feels like a manual step.
+
+**The name (owner, 2026-09-23): "GrantBorrowing — the Captain lets Caves in, but remains the Grant-winner."**
+ Worth stating why the name is load-bearing, not decoration: "Deputisation" reads as the Captain handing
+  some of its own standing to another body — a small transfer of authority. "Borrowing" says the opposite,
+   and says it correctly: the Captain is, and stays, the ONE who actually earned this — redeemed the friend's
+    invite, built the relationship the Grant rests on. A Cave using a loan is a GUEST on the Captain's own
+     standing, temporarily and revocably, never a co-holder. This matters for the friend on the other end
+      too, not just internally: from A's point of view (§2), the answer to "who is B" never gets muddier —
+       there is still exactly one grant-winner, the Captain, and every borrowed use traces back to a loan
+        THAT SAME KEY signed. Nothing about this proposal creates a second, independent claimant the way
+         LinkDevice's key-cloning does.
 
 **"Require the pubkey as address" is already true, not a gap.** `Swarm_body_addr` derives a body's relay
  address FROM its own key (`prepubOf(pub)`) — "never assigned, never fought over" — and every grant check
@@ -210,37 +299,69 @@ The owner's sketch, restated precisely: address-bind grants (already true, see b
 **Build it on the primitive that already exists — don't invent a new signature shape.** `Swarm_mint_reinvite`/
  `Swarm_verify_reinvite` (§1, §6.3a) is already exactly this data shape: a signed capability that EMBEDS a
   held grant/invite, names a specific next holder, and lets a stranger verify the whole chain against the
-   ORIGINAL signer's pub without the two ends having met. A "GrantDeputisation" is a ReInvite over a held
-    GRANT instead of over an Idzeug: `{ tip: <the friend Pier's pub>, deputy: <the Cave's pub>, iz: <the
-     held Grant:Music, embedded>, at, sign }`, signed by the Captain. The deputy Cave presents this (instead
+   ORIGINAL signer's pub without the two ends having met. A **GrantBorrowing** loan is a ReInvite over a held
+    GRANT instead of over an Idzeug: `{ tip: <the friend Pier's pub>, borrower: <the Cave's pub>, iz: <the
+     held Grant:Music, embedded>, at, sign }`, signed by the Captain. The borrower Cave presents this (instead
       of a bare Grant) when it dials the friend Pier; the friend's door verifies the embedded grant is real
-       AND the deputisation's signature traces to the SAME signer — one verify call, the exact shape
-        `Swarm_verify_reinvite` already performs.
+       AND the loan's own signature traces to the SAME signer — one verify call, the exact shape
+        `Swarm_verify_reinvite` already performs. Naming `tip`/`iz`/`sign` kept verbatim from the existing
+         ReInvite shape on purpose (§1, §6.3a) — this is that primitive, not a lookalike.
 
 **For the "automatic and smooth" half — reuse the existing WISH pattern, don't build a new request channel.**
  `top_House().c.aim_wish` (Radio_dial) is already "I want X, resolve when whoever's driving next gets a
   chance" — a Cave that wants to reach a friend Pier it only knows about through the Captain can leave the
-   identical shape of wish (`c.deputise_wish = { for: <friend pier pub> }`), and the Captain's own driving
-    beat, the moment it's next live, checks for outstanding wishes across its Crew and mints the deputisation
+   identical shape of wish (`c.borrow_wish = { for: <friend pier pub> }`), and the Captain's own driving
+    beat, the moment it's next live, checks for outstanding wishes across its Crew and mints the loan
      unprompted. No new plumbing class, no new UI moment on the happy path — only a fresh wish-consumer,
       mirroring one the codebase already trusts.
 
 **Two things to build IN from the start, not bolt on later, given the whole point was to be MORE secure:**
 - **Expire it.** Every existing Pier grant in this codebase is documented as infinite-until-revoked
-   ("retires at use, never deleted"). A GrantDeputisation should be the first exception — a short TTL
+   ("retires at use, never deleted"). A GrantBorrowing loan should be the first exception — a short TTL
     (minutes-to-hours, not the friendship's whole lifetime), re-minted on the next Captain-online tick rather
-     than renewed indefinitely. This is what actually delivers "more secure": a stale, unrevoked delegation
-      simply stops working on its own.
+     than renewed indefinitely. This is what actually delivers "more secure": a stale, unrevoked loan simply
+      stops working on its own, and the Captain — as the one grant-winner of record — never has to chase
+       down who still holds a copy of something, because nobody holds a permanent copy of anything.
 - **Log it where §3.1 already put a light.** "Automatic the moment the Captain comes online" is exactly the
    kind of silent, no-human-looks-at-it moment §2 warned distinguishes a victim from a willing sharer. Route
     every mint through the same visible trail §3.1 proposed for the body roster — a Captain shouldn't need to
-     go looking to notice it's been auto-deputising the same Cave every six minutes for a friend it never
+     go looking to notice it's been auto-lending to the same Cave every six minutes for a friend it never
       manually approved reaching.
 
 Net assessment: yes — this is a materially better shape than a blanket copy-forever grant, and it costs
  almost nothing extra to build because the two primitives it needs (ReInvite-shaped signing, wish-shaped
-  async request) already exist and are already trusted elsewhere in this codebase. Not yet scoped into
-   beats/a Book — this is still the "how's that" answer, not a build ticket.
+  async request) already exist and are already trusted elsewhere in this codebase.
+
+**LANDED 2026-09-23 — the loan primitives + their security proofs, not yet the auto-online wiring.**
+ `Swarm_mint_borrow`/`Swarm_verify_borrow` (`Ghost/S/Swarm.g`, a new `//#region GrantBorrowing` right after
+  ReInvite) are real: `grant_of_C` embeds the Captain's already-held, already-signed Grant verbatim (the
+   friend's door verifies a signature it already trusts, nothing new to trust); the outer loan wrap is
+    structurally required to be signed by that SAME embedded grant's own bearer (`claim.for`) — not the
+     original external grantor, not the borrower — so "winner" can never drift no matter who mints how many
+      loans to however many Caves. TTL'd (`exp`, seconds, Book-pinnable), checked at verify.
+- New Book `SwarmBorrow` (`Ghost/Story/SwarmTesting.g`, appended after `SwarmHelm`): Friend mints a real
+   Grant:Music for Captain (landed via `grant_to_C`, exactly how any pier carries one); beat 3 proves all
+    four security properties as pinned booleans — the winner never moves, a non-bearer's mint is refused, a
+     forged outer signature is refused, an expired loan is refused. **3/3 steps green, 4/4 assertions
+      declared+sworn, 0 gaps** — verified live via `runner_ask` (`node scripts/runner_ask.mjs run
+       SwarmBorrow`, then `declare` for each sentence since a brand-new Book's first swear needs an explicit
+        declare pass before a rerun stops flagging its own assertions as gaps).
+- **Two real bugs found and fixed during this build, both worth remembering**: (1) `grant_to_C(container,
+   atom)` MINTS AND RETURNS THE CHILD — it does not mutate `container` in place (Grant.ts's own contract,
+    easy to misread from usage sites that discard the return value because they only cared about the
+     side effect). Keep the return value; a `w.i({Grant:1})` stub-then-pass-in pattern silently keeps the
+      wrong, signature-less object. (2) A brand-new Book with no prior fixture needs `run.sc.total` set
+       explicitly on `mode:'new'` (`if (run.sc.mode === 'new') { run.sc.total = 3 }`, mirroring
+        `MusuRadioAim`'s own pattern) — without it the drive never advances past its first tick, a HOLLOW
+         hang (not a crash, not an error — just `phase:'begun'` forever) distinct from, and easy to
+          confuse with, the ordinary "reload after recompile" staleness this repo already knows about.
+- **NOT built**: the wish-shaped auto-request (`c.borrow_wish`) and the Captain-side driving-beat consumer
+   that would mint a loan unprompted the moment the Captain comes online — that's real application wiring
+    into wherever a Cave's dial-attempt toward an unrecognized Pier currently lives, which hasn't been
+     traced yet (unlike the crypto primitives, there's no existing call site to hang it off today). The
+      §3.1 visibility trail (log every mint somewhere a Captain would actually see it) is equally unbuilt —
+       it depends on UI surface work this doc's §3.1 only ever proposed, never shipped. Both are real next
+        steps, not done here.
 
 ## 4. What this doc deliberately does NOT claim
 

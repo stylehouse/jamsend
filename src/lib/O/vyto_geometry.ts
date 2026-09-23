@@ -10,6 +10,7 @@
 //     moments for area and the true area centroid — primitives moved, not reinvented.
 
 export type Pt = { x: number, y: number }
+type Rect = { x: number, y: number, w: number, h: number }
 
 // Sutherland–Hodgman against one wall: keep the side the seed is on — every vertex p
 //  with dot(p − m, dir) ≤ 0, splicing the crossing point on each edge that straddles
@@ -298,4 +299,74 @@ export function membrane_carve(polys: (Pt[] | null)[], mi: number, petals: numbe
     for (let s = 0; s < 24; s++) disc.push({ x: c.x + rb * Math.cos(s * Math.PI / 12), y: c.y + rb * Math.sin(s * Math.PI / 12) })
     polys[mi] = disc
     return carved > 0
+}
+
+// grid_cells -- A GRID REGIME, ROW-BANDED BY THE SHARED SCALAR (2026-09-24, the owner on the crosslink
+//  vines: *"I wish they were more containey alignments of things informing the layout rather than a
+//   bunch of noodles dropped onto the cells"*).  Assigned OUTRIGHT -- same contract as `seat_polys` /
+//    `focus_cells`: a pure function of (rows, radii, frame), no relax, no memo needed.
+//  THE GROUPING BECOMES ALIGNMENT, not a line: `bucket_key_of` (vyto_foam -- the same heuristic the fold
+//   ladder elects a partition key with: excludes a key everyone shares one value of, excludes a key
+//    where every row differs, prefers fewer distinct values over more) picks the strongest shared
+//     scalar across the rows handed in, and every row carrying the same value of it lands in the SAME
+//      ROW of the grid -- reading left to right like the ROWS an HTML table would put them in, no cell
+//       drawn to hold the group, the position itself says it.  A row with no shared-enough scalar
+//        (an ungrouped or entirely-unique set) falls back to one flowing grid, still no cut, still no
+//         crowding -- HTML block flow either way, laid out once, not negotiated.
+//  Sizing: each cell keeps the AREA its radius asked for (area = pi*r^2) as a square (side = r * 1.77,
+//   i.e. r*sqrt(pi)), so a bigger ask still reads bigger inside the grid -- the one thing power_cells
+//    and this regime agree on.  Rows and the grid overall shrink to fit the frame only if they would
+//     overflow it (never grow past what was asked, matching seat_polys' floor-not-ceiling discipline).
+//  Returns polygons in the SAME ORDER as `radii`, aligned with the caller's `keys` -- a null is never
+//   produced (an assigned regime, like focus_cells, promises every row a cell).
+export function grid_cells(scs: Record<string, any>[], radii: number[], frame: Rect, gap: number,
+                            bandKeyFn: (rows: Record<string, any>[]) => string | null): (Pt[] | null)[] {
+    const n = scs.length
+    if (!n) return []
+    const sides = radii.map(r => Math.max(6, r * 1.772))
+    const bandKey = bandKeyFn(scs)
+    // group indices by the band key's value, first-seen order -- a row with no value for it (or no
+    //  band key found at all) rides alone in its own singleton row, never dropped
+    const bands: number[][] = []
+    const at = new Map<string, number>()
+    for (let i = 0; i < n; i++) {
+        const v = bandKey != null ? ('' + (scs[i][bandKey] ?? (' ' + i))) : (' ' + i)
+        let bi = at.get(v)
+        if (bi == null) { bi = bands.length; bands.push([]); at.set(v, bi) }
+        bands[bi].push(i)
+    }
+    const pad = Math.max(4, gap)
+    const innerW = Math.max(1, frame.w - 2 * pad)
+    let y = frame.y + pad
+    let usedW = 0
+    const rects: (Rect | null)[] = new Array(n).fill(null)
+    for (const band of bands) {
+        // WRAP a band that would overrun the frame's width -- an HTML row that has run out of room
+        //  starts a new line, same law, never a squeeze that shrinks a cell below its own ask
+        let x = frame.x + pad, rowH = 0
+        for (const i of band) {
+            const s = sides[i]
+            if (x > frame.x + pad && x + s > frame.x + pad + innerW) { x = frame.x + pad; y += rowH + pad; rowH = 0 }
+            rects[i] = { x, y, w: s, h: s }
+            x += s + pad
+            if (s > rowH) rowH = s
+            if (x - pad > usedW) usedW = x - pad
+        }
+        y += rowH + pad
+    }
+    const usedH = Math.max(1, y - frame.y)
+    usedW = Math.max(1, usedW - frame.x)
+    // FIT TO THE FRAME BOTH WAYS (2026-09-24, the owner: watching a raw block-flow hug the top-left
+    //  corner of an 800x450 frame at its natural size -- *"we're not using the entire space very
+    //   efficiently"*, the SAME complaint that started this whole regime, now showing up a second time
+    //    in a new shape).  A shrink-only floor stops overflow but never fills a sparse pile; grow the
+    //     WHOLE GRID -- one uniform scale about the frame's own top-left, so every row keeps its
+    //      relative size and alignment -- to the tighter of the two axes, capped so a lone tiny result
+    //       set never balloons into a single monstrous cell (the same cap 'room' and 'plump' already use).
+    const k = Math.max(0.35, Math.min(2.4, Math.min(frame.w / usedW, frame.h / usedH)))
+    return rects.map(r => {
+        if (!r) return null
+        const rx = frame.x + (r.x - frame.x) * k, ry = frame.y + (r.y - frame.y) * k, rw = r.w * k, rh = r.h * k
+        return [{ x: rx, y: ry }, { x: rx + rw, y: ry }, { x: rx + rw, y: ry + rh }, { x: rx, y: ry + rh }]
+    })
 }

@@ -1,0 +1,36 @@
+Snap:H
+  H:SwarmBorrow,Run
+    A:SwarmBorrow
+      self,round=3	{"mung":["age"]}
+      w:SwarmBorrow,now=1751700010
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Friend
+          Identity:8af86bcb122bdcd1,prepub:8af86bcb122bdcd1,friendly:Friend
+            Peering,name:8af86bcb122bdcd1,friendly:Friend
+            Crew,soul:8af86bcb122bdcd1eea4b3ca141f94e55337edba1320e2f83b09891e5d313ea8
+              mate:8af86bcb122bdcd1,role:Captain,pub:8af86bcb122bdcd1eea4b3ca141f94e55337edba1320e2f83b09891e5d313ea8
+              Key,pub:8af86bcb122bdcd1eea4b3ca141f94e55337edba1320e2f83b09891e5d313ea8	{"mung":["secret"]}
+        Account,of:Captain
+          Identity:bcdc46c43b34e4d7,prepub:bcdc46c43b34e4d7,friendly:Captain
+            Peering,name:bcdc46c43b34e4d7,friendly:Captain
+            Crew,soul:bcdc46c43b34e4d73f18b55b3f17451a77c2c1249c1859b4323022edaf616a64
+              mate:bcdc46c43b34e4d7,role:Captain,pub:bcdc46c43b34e4d73f18b55b3f17451a77c2c1249c1859b4323022edaf616a64
+              Key,pub:bcdc46c43b34e4d73f18b55b3f17451a77c2c1249c1859b4323022edaf616a64	{"mung":["secret"]}
+        Account,of:Cave
+          Identity:99a818f9ecd5bc1f,prepub:99a818f9ecd5bc1f,friendly:Cave
+            Peering,name:99a818f9ecd5bc1f,friendly:Cave
+            Crew,soul:99a818f9ecd5bc1f09d79ed596fc972a0d51434140b55cebbf7e9191fe580fca
+              mate:99a818f9ecd5bc1f,role:Captain,pub:99a818f9ecd5bc1f09d79ed596fc972a0d51434140b55cebbf7e9191fe580fca
+              Key,pub:99a818f9ecd5bc1f09d79ed596fc972a0d51434140b55cebbf7e9191fe580fca	{"mung":["secret"]}
+        Account,of:Mallory
+          Identity:60272043020b1715,prepub:60272043020b1715,friendly:Mallory
+            Peering,name:60272043020b1715,friendly:Mallory
+            Crew,soul:60272043020b1715957b66e4ccac571bdf5be3ea216c79f49d521985066cbeb0
+              mate:60272043020b1715,role:Captain,pub:60272043020b1715957b66e4ccac571bdf5be3ea216c79f49d521985066cbeb0
+              Key,pub:60272043020b1715957b66e4ccac571bdf5be3ea216c79f49d521985066cbeb0	{"mung":["secret"]}
+        Grant:Music,by:8af86bcb122bdcd1eea4b3ca141f94e55337edba1320e2f83b09891e5d313ea8,for:bcdc46c43b34e4d73f18b55b3f17451a77c2c1249c1859b4323022edaf616a64,time:1751700000,sign:66682077154e8b9be79b0d1e6d0970f839ee7e96ac5e307fb5548c5a3c2634027676518855d049800c0607c76b2001b12867af044d645a3290f58e7005798208,genre:Jazz
+        reached:step_3
+        testing
+          loaned,winner_fixed,mint_gated,sign_gated,exp_gated

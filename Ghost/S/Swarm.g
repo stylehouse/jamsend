@@ -909,6 +909,52 @@ async Swarm_verify_reinvite(rib):
     return { tip: c.tip, newcomer: c.newcomer, nonce: c.nonce, rnonce: c.rnonce, at: c.at, by: inner.by, feature: inner.to, params: this.Swarm_iz_params(inner) }
 //#endregion
 
+//#region GrantBorrowing — a live, single-target, TTL'd loan of an ALREADY-HELD grant (LinkDevice_leak_todo
+//  §5, owner 2026-09-23: "the Captain lets Caves in, but remains the Grant-winner").  A different shape
+//   from ReInvite above, on purpose: ReInvite extends a CHAIN INVITE forward (a fresh claimant, unbounded
+//    reach). A borrow loans a grant the caller ALREADY HOLDS — no new claimant is ever minted, the embedded
+//     atom (`grant_of_C`) is bit-for-bit the SAME signed Grant the friend originally issued, so the friend's
+//      door verifies a signature it already trusts. The loan is a SECOND, OUTER signature over that: who is
+//       allowed to sign a loan is fixed structurally, not by policy — `Swarm_verify_borrow` requires the
+//        outer signer to equal the embedded grant's OWN bearer (`claim.for`), so only whoever the friend
+//         actually granted to can ever lend it onward. That is the whole mechanism behind "remains the
+//          Grant-winner": every verified loan carries `winner: claim.for`, copied verbatim from a grant
+//           this borrow can only wrap, never rewrite — a Cave borrowing it is never that pub, and can never
+//            become it. No blanket copy (§1.5's existing self-catalog pattern), no fan-out (one `borrower`
+//             pub per loan), and it EXPIRES (`exp`, seconds — Grant.ts's own atoms never do, by design; a
+//              loan is the deliberate exception, because letting it lapse unrenewed IS the revocation path).
+
+// Swarm_mint_borrow — `grant` is a landed %Grant C-particle the caller (`ident`) already holds (its `for`
+//  must be ident's own pub — checked, not assumed: a borrow of a grant you don't actually hold would let
+//   anyone forge standing they never earned). `borrower` is the ONE Cave's pub this loan names; `ttl_s`
+//    defaults to 900 (15 minutes) — short enough that an un-renewed loan goes quiet on its own.
+async Swarm_mint_borrow(w, ident, grant, borrower, ttl_s):
+    if (!grant || !grant.sc || !grant.sc.sign) throw 'borrow: not a real grant'
+    let mine = String(this.Swarm_keys(ident)?.pub || '')
+    if (!mine || String(grant.sc.for || '') !== mine) throw 'borrow: not my grant to lend'
+    if (!borrower) throw 'borrow: no borrower named'
+    let atom = grant_of_C(grant)
+    let now = this.Swarm_now(w)
+    let c = { tip: String(grant.sc.for || ''), borrower: String(borrower), atom: atom, at: now, exp: now + (+ttl_s > 0 ? +ttl_s : 900) }
+    c.sign = await signHeader(c, this.Swarm_keys(ident).key)
+    return this.Swarm_b64(JSON.stringify(c))
+
+// Swarm_verify_borrow — decode + verify the embedded grant (real, signed by the ORIGINAL grantor) AND the
+//  loan's own signature (must be the embedded grant's OWN bearer — `claim.for`, never the original grantor
+//   `claim.by`: a friend never signs loans, only the one they granted to does) AND that it has not expired.
+//    THROWS on forgery|garbage|expiry; returns { tip, borrower, at, exp, winner, grantor, feature, params }
+//     — `winner` is ALWAYS the embedded grant's own bearer, the one fact this whole mechanism exists to
+//      keep fixed no matter who is presenting the loan.
+async Swarm_verify_borrow(rib, now_s):
+    let c = JSON.parse(this.Swarm_unb64(rib))
+    let claim = await verify_grant(c.atom)
+    let who = await verifyHeader(c, [claim.for])
+    if (who !== claim.for) throw 'borrow: bad signature — only the grant\'s own bearer may lend it'
+    let now = (now_s != null) ? +now_s : Math.floor(Date.now() / 1000)
+    if (now > +c.exp) throw 'borrow: expired'
+    return { tip: c.tip, borrower: c.borrower, at: c.at, exp: c.exp, winner: claim.for, grantor: claim.by, feature: claim.to, params: this.Swarm_iz_params(claim) }
+//#endregion
+
 //#region front door — the live self, the invite URL (Swarm_spec §10.1: the QR face of the Idzeug)
 //  USER-FACING this is an Invite; the signed mechanics stay the Idzeug verbs above (renaming a green
 //   handshake is a deliberate later pass, not a drive-by). The front door adds NO crypto: it resolves

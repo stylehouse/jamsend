@@ -1,0 +1,27 @@
+story:SwarmBorrow
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.027
+      sample=0.026,at=1790163479
+      sample=0.026,at=1790163492
+      sample=0.031,at=1790163497
+      sample=0.031,at=1790163521
+      sample=0.03,at=1790163528
+      sample=0.02,at=1790163541
+    TimeTotal:step,avg=0.009
+      sample=0.009,at=1790163479
+      sample=0.009,at=1790163492
+      sample=0.01,at=1790163497
+      sample=0.01,at=1790163521
+      sample=0.01,at=1790163528
+      sample=0.007,at=1790163541
+  step,dige:83d178fe182f5ae4
+  step=2,dige:dec91a81098c575d
+  step=3,dige:e7a8d1a20a9fb2fc
+    {"Assertion":"a-borrowed-grant-never","sentence":"a borrowed grant never changes who won it — the loan always names the original bearer as winner, never the Cave presenting it"}
+    Assertion:only-the-grant-s,sentence:only the grant's own bearer may lend it — a body that does not hold the grant cannot mint a loan off it
+    {"Assertion":"a-forged-loan-around","sentence":"a forged loan around a real grant is refused — the outer signature must be the grant's own bearer, never a borrower or a stranger"}
+    Assertion:a-borrowed-grant-expires,sentence:a borrowed grant expires on its own — checked past its TTL the loan is refused with no revocation needed

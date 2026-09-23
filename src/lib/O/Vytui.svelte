@@ -12,7 +12,8 @@
     //   H={house}), so a House with no w:Vyto renders nothing at all.
     import { TheC }   from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { power_cells, foam_cells, slab_seat, poly_area, poly_centroid, membrane_carve, type Pt } from "$lib/O/vyto_geometry"
+    import { power_cells, foam_cells, slab_seat, poly_area, poly_centroid, membrane_carve, grid_cells, type Pt } from "$lib/O/vyto_geometry"
+    import { bucket_key_of } from "$lib/O/vyto_foam"
     import { deal_rows, seat_on_deal, deal_fits, deal_badness, box_poly,
              type Deal, type SeatRow } from "$lib/O/vyto_seat"
     import { focus_polys, fill_body, BELLY_SWELL, type FocusRole } from "$lib/O/vyto_focus"
@@ -2279,7 +2280,14 @@
             //   INSIDE the belly tiles with the standing machinery) — and it outranks the seat.
             const focusR = scopeKey === '' && focus_on(w)
             const seatR = !focusR && seat_on(w)
-            const foam = !!(w.c as any).foam && !seatR && !focusR
+            // THE GRID REGIME (stop `grid`, 2026-09-24) -- a THIRD outright-assigned regime beside
+            //  seat/focus, for a glass whose content is a LIST, not a pile: the owner, watching foam pack
+            //   a result set into a round rosette with dead margin all round, then watching a fix-up
+            //    ('room' -- spread-only, cell shape untouched) just grow the same circle bigger and clip
+            //     the frame: *"something straighter, more like a grid (or like what html does)"*.  Root
+            //      scope only, like focus -- a scope INSIDE a grid tiles with the standing machinery.
+            const gridR = !focusR && !seatR && scopeKey === '' && !!fo(w, 'grid')
+            const foam = !!(w.c as any).foam && !seatR && !focusR && !gridR
             const live: Node[] = []
             const seeds: Pt[] = []
             const radii: number[] = []
@@ -2457,6 +2465,13 @@
                 // no wall memo here: the deal IS the memo, and it is keyed on membership rather than
                 //  on a signature of every coordinate, so ordinary dose work never re-cuts it.
                 polys = seat_polys(w, scopeKey, keys, radii, framePoly, gap)
+            } else if (gridR) {
+                // assigned outright, like focus -- a pure function of (frame, rows, radii); no memo,
+                //  cheaper than the sig it would be keyed under.  bucket_key_of picks the band from the
+                //   rows' OWN scalars -- the SAME heuristic the fold ladder already trusts to elect a
+                //    partition key, so the grouping the grid aligns on is never a second guess.
+                const fb = bbox_of(framePoly)
+                polys = grid_cells(live.map(n => n.row.sc as any), radii, { x: fb.bx, y: fb.by, w: fb.bw, h: fb.bh }, gap, bucket_key_of)
             } else if (had && had.sig === sig) {
                 polys = had.polys
             } else {
@@ -4154,7 +4169,7 @@
     //  HONEST STATE: whether the LIVE Sounditron world declares any relations is exactly the open
     //   question of the gap list (§0.1 item 3) — Relate's teeth were proven in Books, not on the live
     //    page.  So this renders whatever is true and nothing when nothing is: no relations, no vines.
-    function vines_of(w: TheC, cells: PaintCell[]): { d: string, sw: number }[] {
+    function vines_of(w: TheC, cells: PaintCell[], excludeKey?: string | null): { d: string, sw: number }[] {
         const rel: any = (w.c as any).relations
         if (!rel) return []
         const at = new Map<string, PaintCell>()
@@ -4170,6 +4185,8 @@
             //    `<text>` per atom, and a fact's VALUE atom carries its key just as the label does.  So
             //     the crosslink is a lookup, not new machinery.  No `via` (a kin edge) ⇒ the old anchor.
             const via = (e.sc as any).via ? String((e.sc as any).via) : ''
+            // an alignment already SAYS a tie on the band key -- do not also draw it as a line
+            if (excludeKey && via && via.slice(0, via.indexOf('=')) === excludeKey) continue
             const pa = vine_anchor(w, a, via) ?? a, pb = vine_anchor(w, b, via) ?? b
             out.push({ d: vine_curve(pa, pb), sw: +(1 + Math.log2(1 + (Number((e.sc as any).n) || 1))).toFixed(2) })
         }
@@ -4191,6 +4208,44 @@
         for (const s of pane.seats) if (s.k === k && s.text === val) return { x: s.x, y: s.y }
         for (const s of pane.seats) if (s.k === k) return { x: s.x, y: s.y }
         return null
+    }
+    // grid_bands_of -- THE ALIGNMENT ITSELF, LABELLED (2026-09-24, the grid regime's own label pass,
+    //  the same "recompute from the painted cells" idiom junctions_of uses).  A grid row that shares a
+    //   value already SAYS the grouping by where it sits; one small label per row confirms it in words,
+    //    so the alignment reads intentionally rather than being left for the eye to infer alone.
+    type GridBand = { key: string, value: string, y: number, x0: number, x1: number }
+    function grid_bands_of(w: TheC): GridBand[] {
+        void paint_tick
+        if (!fo(w, 'grid')) return []
+        const cells = viewport_cells(w).filter(c => c.kind === 'poly' && !c.hasKids && !c.departing && !c.loose && c.depth === 0)
+        if (cells.length < 2) return []
+        const key = bucket_key_of(cells.map(c => (c.row.sc as any)))
+        if (!key) return []
+        // a row carrying NO value for the band key rode its own singleton row in the real layout
+        //  (grid_cells' own fallback) -- it is not banded with anything, so it earns no label here
+        const groups = new Map<string, PaintCell[]>()
+        for (const c of cells) {
+            const raw = (c.row.sc as any)[key]
+            if (raw == null) continue
+            const val = String(raw)
+            const g = groups.get(val); if (g) g.push(c); else groups.set(val, [c])
+        }
+        const out: GridBand[] = []
+        for (const [val, gs] of groups) {
+            if (gs.length < 2) continue
+            let y = Infinity, x0 = Infinity, x1 = -Infinity
+            for (const c of gs) { y = Math.min(y, c.by); x0 = Math.min(x0, c.bx); x1 = Math.max(x1, c.bx + c.bw) }
+            out.push({ key, value: val, y, x0, x1 })
+        }
+        return out
+    }
+    // grid_band_key_of -- the same election, exposed alone, so the crosslink pass can skip a tie the
+    //  ROWS already say by sitting together (a redundant noodle drawn over an alignment says nothing new).
+    function grid_band_key_of(w: TheC): string | null {
+        if (!fo(w, 'grid')) return null
+        const cells = viewport_cells(w).filter(c => c.kind === 'poly' && !c.hasKids && !c.departing && !c.loose && c.depth === 0)
+        if (cells.length < 2) return null
+        return bucket_key_of(cells.map(c => (c.row.sc as any)))
     }
     function vine_curve(a: { x: number, y: number }, b: { x: number, y: number }): string {
         const dx = b.x - a.x, dy = b.y - a.y
@@ -4751,10 +4806,15 @@
                          the same "warm cable over cold glass" instinct the PLUG already uses, for the same
                          reason.  Gated so the sparse-graph substrate everywhere else stands byte-identical. -->
                     {#if fo(w, 'crosslink')}
-                        {#each vines_of(w, viewport_cells(w)) as v (v.d)}
+                        {@const bandKey = grid_band_key_of(w)}
+                        {#each vines_of(w, viewport_cells(w), bandKey) as v (v.d)}
                             <path class="crosslink" d={v.d} style="stroke-width:{v.sw + 0.6};"></path>
                         {/each}
                     {/if}
+                    {#each grid_bands_of(w) as b (b.key + ':' + b.value)}
+                        <text class="grid-band" x={(b.x0).toFixed(1)} y={(b.y - 6).toFixed(1)}
+                              text-anchor="start" dominant-baseline="alphabetic">{b.key} {b.value}</text>
+                    {/each}
                     <!-- THE LATE FURNITURE PASS — carved names + A gates paint AFTER every cell
                          ("on top of the A labels"), so a big neighbour drawn later in the occlusion
                          order can never bury another cell's name or its handle.  Gates last of all:
@@ -5296,6 +5356,9 @@
         fill: none; stroke: #ffb86b; stroke-linecap: round; opacity: 0.75; pointer-events: none;
         filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
     }
+    /* THE GRID BAND LABEL (stop `grid`) -- the alignment named in words above the row it groups; small
+       and out of the way, the same register a scope's own running head reads at (.fo-head territory). */
+    .grid-band { font: 600 11px monospace; fill: #9d9dc0; letter-spacing: 0.02em; pointer-events: none; }
     /* THE PLUG — the radio↔Record relation, drawn (Vyto_todo §0.0).  Warm against the glass's cold
        violets on purpose: this is the one live, human thing on a plate of machinery, and it should
        read as a cable someone ran, not as another wall.  Unfilled, round-capped, and deliberately
