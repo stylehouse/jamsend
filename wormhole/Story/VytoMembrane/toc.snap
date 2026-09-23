@@ -4,10 +4,12 @@ story:VytoMembrane
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.04
+    TimeTotal:beliefs,avg=0.06
       sample=0.04,at=1789131851
-    TimeTotal:step,avg=0.007
+      sample=0.08,at=1790121947
+    TimeTotal:step,avg=0.01
       sample=0.007,at=1789131851
+      sample=0.013,at=1790121947
   step,dige:6bdaa5b9553a2ab9
   step=2,desc:seed the orchestra world — a band of three players beside three songs of one artist and two strays,dige:02c5aac1a6756880
   step=3,desc:commission foam-cut and nested with membrane on the deck — the songs and the players each become one family scope,dige:dc17a739b4f9e82f

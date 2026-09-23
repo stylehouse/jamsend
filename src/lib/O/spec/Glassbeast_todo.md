@@ -197,7 +197,57 @@ Two more of the owner's own asks, landed and verified live (not screenshotted-an
           folio starts from its membrane inward and yields to the bump. Model-side. STOP tweaking pixels
            here — the next commit of effort goes to Vyto.g, not Vytui.
 
-### THE SEEM — LANDED (2026-09-23): a plain tree lays out, so a non-particle can use the glass
+### THE CROSSLINK — LANDED (2026-09-23): the grouping is drawn, on top, landing on the word
+The owner, on seeing `Facet` boxing hits: *"what is Facet? that's a grouping projected onto our data
+ right?"* — right, and fixed: `VytoGuise`'s records are now FLAT (no container mainkey anywhere), and
+  `Vyto_relate` stamps WHICH scalar an edge is about (`Flow,via:'mood=brine'`) so `vine_anchor` (Vytui) can
+   land the line on the actual seated word inside each cell's folio, not the cell's centre. Then the real
+    surprise: the existing `.vine` layer paints UNDER every cell (a deliberate choice for its real job — a
+     sparse kinship substrate meant to peek through gaps) and a packed datadump pile has NO gaps, so 11
+      correctly-anchored vines were verified live and every one was fully occluded. Fixed with a second,
+       opt-in `crosslink` stop — same `vines_of` data, painted LAST so it reads over the cells, styled like
+        the PLUG (warm amber, a drop-shadow so it survives crossing any cell colour).
+         `wormhole/shots/seq_0055/0056`. Byte-invisible off; the sparse-graph `.vine` substrate untouched.
+
+### ⚠ A LIVE FILE GOT REVERTED MID-SESSION — see [[live-editor-can-revert-a-source-file]]
+A clean rewrite of `VytoTesting.g` reverted itself with no edit of mine in between, coinciding with a
+ wedged runner (`ping` showed `running:{book:'Ghost/V/VytoTesting.g',phase:'begun'}`, same uid, not
+  advancing). `runner_ask reload` cleared the wedge; a second write+compile then held and was verified by
+   a live `runner_ask run` of all three Books (VytoOrchestra its known 0.13 drift, VytoMembrane 6/6,
+    VytoGuise 5/5). If a Book's content ever looks stale after a compile that claimed success, suspect this
+     before suspecting your own edit — and don't blind-retry; that produced 5 duplicate copies of a whole
+      Book in one file earlier this same session, only caught by counting header occurrences.
+
+### OPEN, RULED BY THE OWNER 2026-09-23 — READ BEFORE TOUCHING THE GLASS AGAIN
+- **"perhaps I am after something straighter... can we add some constraint to make everything come out
+   straighter, more like a grid (or like what html does)"** — the biggest open ask. The foam cut is organic
+    by construction; a result set is a LIST. Wanted: a layout regime whose cells are rectangles in rows,
+     the way HTML flows. Probably a sibling of the existing `seat`/`focus` regimes in Vytui.layout (both
+      already bypass the foam economy and assign cells outright — `seat_polys`/`focus_cells` are the
+       precedent to copy), NOT a change to the cut. This is the next real piece of work.
+- **The notation shape was criticised and fixed**: the first cut had `is`/`name`/`facts` plus promoted
+   `dose`/`loose` — all of which become sc, written in three different places (*"badly thought out as
+    fuck, unhygienic"*). Now: a Guise READS AS A SNAP LINE (first key is the mainkey, every other plain key
+     is a fact) and everything else lives in one `guise:` bag. Keep that rule.
+- **A cell that overruns drops atoms silently** — the owner met it (*"the artist is not fit in there on
+   Hit:Kelpwalk"*). `Pane.hid` already counts them honestly and NOTHING renders it. This is the same
+    silent omission `flat_n` was added for, and it is glass-wide, not Guise-specific. Owed.
+- **A scope running-head paints UNDER its children** (*"the Facet label, which is along the cell wall? is
+   underneath the %Hit cells... obscured"*). Children are emitted inside the parent push, so they paint
+    over it. Needs the heads emitted last, or a reserved band.
+- **A cell with no folio room falls back to the plain centred ident, which prints the mainkey**
+   (`Hit:Rimlight`) — so the C-ness leaks back in exactly where there is least room to explain it.
+- **`VytoTandem` / `VytoFreeze` / `VytoSeek` "do not seem to do anything"** — correct: they are model
+   benches whose world is one `Cog:seek,dose:1` plus finished reqs. The roster column `draws` exists for
+    precisely this and is `null` (unmeasured) for all three; measure and set it honestly rather than
+     leaving the owner to discover it by clicking.
+- ⚠ **A STALE GHOST SURVIVED A FRESH PAGE.** `.g`, `.go` and the module the dev server SERVES were all
+   verified to be the new code, and the running House still executed the previous `VytoGuise_spec`
+    (proven: the sown source particle carried a field the new code never writes). A fresh headless
+     chromium did not clear it. If a change seems not to land, verify by reading a SOWN SOURCE, not by
+      trusting the compile — and suspect the ghost registry, not your edit.
+
+### THE GUISE — LANDED (2026-09-23): a plain object lays out, so a non-particle can use the glass
 The owner: *"C** can be fed into something that kinda scans|inflates them into a more general notation so
  we can lay out more types of stuff with the shape primitives... I'd like to use this to output clustered
   search results, without exposing the bare C**-ness whole."*  `wormhole/shots/seq_0051_seemsearch`.
@@ -208,7 +258,7 @@ The owner: *"C** can be fed into something that kinda scans|inflates them into a
    membrane and the folio all read the MIRROR ROW. So **anything that can present those five things can be
     laid out**; it never has to be a particle of the program. That is the whole opening.
 
-**`Vyto_seem(spec)`** inflates a plain JS object into a DETACHED C ready to grapple, so the notation is
+**`Vyto_guise(spec)`** inflates a plain JS object into a DETACHED C ready to grapple, so the notation is
  authored in ONE place and every station downstream is untouched:
  `{ is, name, facts, dose, loose, kids, says, tok, flat }`
 - `is`+`name` → the mainkey line. `facts` → the folio's k:v pairs, **an allowlist, and that is the point**:
@@ -222,9 +272,9 @@ The owner: *"C** can be fed into something that kinda scans|inflates them into a
 - `tok` → identity override; re-sowing the same tok MORPHS instead of blinking (see the two-seam note).
 
 **NON-SCALARS INFLATE, they are not dropped** (the owner's catch: *"the scanner might dump data eventually,
- by inflating a bunch of tree around it"*). An object becomes a child cell (`Vyto_seem_sub` — the KEY is the
+ by inflating a bunch of tree around it"*). An object becomes a child cell (`Vyto_guise_sub` — the KEY is the
   mainkey, first of name|title|label|id is the value, the rest recurse); a list of scalars becomes a spread
-   of chips capped at `SEEM_CHIPS` with an honest `+N` (`Vyto_seem_spread`). **Why here and not in the
+   of chips capped at `SEEM_CHIPS` with an honest `+N` (`Vyto_guise_spread`). **Why here and not in the
     scan:** `scan_walk` dropping an object-valued sc key is CORRECT where it stands — an object in `.sc` is
      fatal at encode, so in a real particle it is a mint bug, not data. In a Seem it is legitimate producer
       data. That asymmetry is deliberate; do not "fix" the scan.
@@ -239,7 +289,7 @@ The owner: *"C** can be fed into something that kinda scans|inflates them into a
     rather than lying about being a leaf.
 - Identity and depth: the two things a producer knows that the tree cannot say about itself.
 
-**Book `VytoSeem`** (5 sworn, all seen green via the eye; the runner was busy with Ra work so it has NOT yet
+**Book `VytoGuise`** (5 sworn, all seen green via the eye; the runner was busy with Ra work so it has NOT yet
  had a runner run — do that): sow → stand → re-sow the same ids with new scores. Swears the set stands, the
   tail speaks, a non-scalar inflates, **the producer's `internal` field never reaches a cell**, and a re-sown
    hit MORPHS (same particle, changed score) rather than blinking.
@@ -253,7 +303,7 @@ The owner: *"C** can be fed into something that kinda scans|inflates them into a
    shape it is — so they joined `GUT_SKIP`. `same_n`/`flat_n` deliberately stay: doors carrying a count.
 
 **Owed / next:**
-- A runner run of `VytoSeem` + declare its 5 assertions.
+- A runner run of `VytoGuise` + declare its 5 assertions.
 - `wafts_everything.mjs` has VytoSeem in the Visua list but **refuses to write while `Ghost/M/Heard.g` is
    mid-edit** (5 missing Points — the owner's in-flight work, nothing to do with this). The Visua toc picks
     it up the moment Heard.g is whole; the Credence line is already in.
@@ -1606,7 +1656,7 @@ So the `comms:1` finding of the previous tick was right about *what* and this is
   persist across beats the way I assumed). **`grapples` is the trustworthy witness**; treat `comms` as
    indicative only. I would rather say that than leave a number in the doc that looks load-bearing.
 
-**② A SEEM IS CONSUMED BY READING IT.** With the commission landing, the diff came back `neu:0
+**② A GUISE IS CONSUMED BY READING IT.** With the commission landing, the diff came back `neu:0
  gone:0` on a mirror that had demonstrably gone from five rows to six. Not a Seem fault — mine.
   `Selection.process` pairs THIS walk against the LAST, so **every call resets the baseline**. My
    reader grasped on every poll: a hundred walks across the wait, and the final one compared two

@@ -110,9 +110,19 @@ Pool_cards_raw(recs):
 //   'latest'  the last sitting, in the order it was heard (Heard_latest)
 //   'liked'   taken tracks, most recently taken first    'kept' carried tracks by score    else: taste by score
 Pool_draw_random(pd, f):
+    // SELF-HELD IS NOT CIRCULATION (2026-09-23, owner: "this one mechanism works... for Radio as well
+    //  as SP right?") — the same `held_raw` Pool_diff already reads to choose press-vs-pull (line ~198)
+    //   says the same thing here: a source row whose id you already hold natively isn't NEW music
+    //    arriving, it's your own library bouncing back off a friend's mirror (Grav re-serving Lump's
+    //     own uploads, the live case that started this). Random circulation is for what a friend has
+    //      that you DON'T — scoped to `sources_raw` only, never `pooled_raw`: an existing pool card
+    //       keeps competing on its hash as before, this only stops NEW self-content from entering.
+    let held = {}
+    for (const id of (f.held_raw || [])) { held[id] = 1 }
     let ids = []
     for (const s of (f.sources_raw || [])) {
         if (!s || !s.id) { continue }
+        if (held[s.id]) { continue }
         if (pd.who === 'none') { continue }
         if (pd.who === 'friends' && s.crew) { continue }
         if (pd.who === 'crew' && !s.crew) { continue }

@@ -2419,13 +2419,36 @@ Radio_lineup_fill(w, radio):
         }
         if (mine.length) pools.push({ key: 'mine', recs: mine })
     } else {
+        // SELF-HELD IS NEVER A FRIEND CANDIDATE (2026-09-23, owner: "this one mechanism works... for
+        //  Radio as well as SP right?") — the exclusivity law two lines up already says own vs friend
+        //   never mix; a friend's mirror handing back content you already hold natively (Grav re-
+        //    serving Lump's own uploads, the live case that started this) violates that law's SPIRIT
+        //     even though it passed the `heard` gate (content you own but never explicitly played
+        //      would sail through `heard` and get treated as "new").  `mineIds` is the SAME `held_raw`
+        //       idea `Pool_facts` already computes (`Ghost/M/Pool.g:66`) — one shared notion of "do I
+        //        already have these exact bytes", read here on the RADIO side and, via `f.held_raw`
+        //         feeding `Pool_goal`'s skip below, on the SP side too: one mechanism, both doors.
+        let mineIds = {}
+        for (const rec of this.Ra_recs(this.Ra_home_self(w, pub))) { mineIds[rec.sc.id] = 1 }
+        // STATS PER HOLDER (2026-09-23, owner: "a coherent C** somewhere about such situations, so
+        //  you can diagnose it via runner_ask") — Radio_lineup_errors used to see only the WINNERS
+        //   (pools), so every starve reason collapsed into one alarming "no music coming across",
+        //    whether the wire was truly silent, still landing chunks, or — the live case that started
+        //     this — every candidate was already durably heard or, more precisely, self-held (a
+        //      content-exhaustion VALVE, not a fault). Counting where each candidate actually fell
+        //       out turns that guess into a fact, stamped on the error row itself (Radio_lineup_errors
+        //        below), legible in a snap.
+        let stats = {}
         for (const home of w.o({ Theirs: 1 })) {
             let hp = String(home.sc.pub || '')
             if (!hp) continue
             let frecs = []
+            let st = { total: 0, lined: 0, mine: 0, heard: 0, notplay: 0 }
             for (const rec of this.Ra_recs(this.Ra_home_them(w, hp))) {
-                if (lined[rec.sc.id]) continue
-                if (heard[rec.sc.id]) continue
+                st.total = st.total + 1
+                if (lined[rec.sc.id]) { st.lined = st.lined + 1; continue }
+                if (mineIds[rec.sc.id]) { st.mine = st.mine + 1; continue }
+                if (heard[rec.sc.id]) { st.heard = st.heard + 1; continue }
                 // husk gate by PRESENCE, not by materialising the record (the Radio_deal idiom, below).
                 // WHY (2026-08-06, the human "downloader is still CPU burning ... goes away when Heist
                 //  finishes"): this ran Ra_chunk_map — which COPIES every held chunk into a fresh
@@ -2434,12 +2457,42 @@ Radio_lineup_fill(w, radio):
                 //     Radio_pump_tick → Radio_dial while the radio is 'digging', which is exactly the
                 //      state a listener sits in during a heist.  Tens of MB memcpy'd per chunk × ~250
                 //       chunks: the burn that starts with the heist and ends with it.
-                if (!this.Radio_playable(rec)) continue
+                if (!this.Radio_playable(rec)) { st.notplay = st.notplay + 1; continue }
                 frecs.push(rec)
             }
+            stats[hp] = st
             if (frecs.length) pools.push({ key: hp, recs: frecs })
         }
-        this.Radio_lineup_errors(w, lu, pools)
+        this.Radio_lineup_errors(w, lu, pools, stats)
+        // FALL BACK TO SP WHEN NO FRIEND YIELDS ANYTHING (2026-09-23, owner ruling on Option 2:
+        //  "yeah fall back to SP I guess"). Every friend still gets their own precise %error row
+        //   above (why they're dry) — this is the SEPARATE, Lineup-wide fact that the QUEUE ITSELF
+        //    is about to run dry and the pool shelf (SoundPooling's own sediment of past listening,
+        //     Ra_pool_stock — PROBE only, never vivifies a home mid-poll) is standing in so the radio
+        //      doesn't just stop. `exhausted` rides the Lineup particle itself — a snap-legible fact,
+        //       and the UI's cue for its "puff" (LineupFace) — cleared the moment real friend content
+        //        is flowing again.
+        if (pools.length) {
+            delete lu.sc.exhausted
+        } else {
+            let pshelf = this.Ra_pool_stock ? this.Ra_pool_stock(w, pub) : null
+            let precs = []
+            if (pshelf) {
+                for (const rec of this.Ra_recs(pshelf)) {
+                    if (lined[rec.sc.id]) continue
+                    if (mineIds[rec.sc.id]) continue
+                    if (heard[rec.sc.id]) continue
+                    if (!this.Radio_playable(rec)) continue
+                    precs.push(rec)
+                }
+            }
+            if (precs.length) {
+                pools.push({ key: 'pool', recs: precs })
+                if (!lu.sc.exhausted) { lu.sc.exhausted = 1; lu.bump() }
+            } else {
+                delete lu.sc.exhausted
+            }
+        }
     }
     if (!pools.length) return lu
     let pi = lu.c.fill_i || 0
@@ -2472,9 +2525,20 @@ Radio_lineup_fill(w, radio):
     return lu
 
 // the starve watch: a granted friend who has PULSED lately but contributed NO playable
-//  record — the wire owes us their music and none is coming across.  A real %error row,
-//   one per friend, dropped the moment their pool stands.
-Radio_lineup_errors(w, lu, pools):
+//  record.  A real %error row, one per friend, dropped the moment their pool stands — but
+//   NOT every starve is the same fact.  Four real causes, and they call for different words:
+//    'no_records' — nothing has mirrored at all (the wire really does owe us their catalog);
+//    'downloading' — records exist but none has its first chunks in yet (a transient state,
+//     resolves on its own as Heist lands bytes); 'own_content' — every candidate traces back to
+//      content the LISTENER already holds natively (mineIds, above) — the live case that started
+//       this: a friend circulating your own library back at you; 'all_heard' — the rest, already
+//        durably heard (Radio_heard, 30-day).  The last two are a CONTENT-EXHAUSTION VALVE, not a
+//         fault: this friend genuinely has nothing NEW right now.  `why` rides the row itself
+//          (a snap-legible fact for runner_ask/minisnap to read directly, never re-derived by
+//           diffing pools against the heard Mag by hand) and `say` stays the human sentence,
+//            worded so the valve cases read as a calm limit, not an alarm (owner, 2026-09-23:
+//             "if nothing is available it gives up as a limiting valve, but the UI says so").
+Radio_lineup_errors(w, lu, pools, stats):
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null
     if (!ident || !M.Swarm_peering) return
@@ -2495,9 +2559,25 @@ Radio_lineup_errors(w, lu, pools):
         let here = p.c.heard_at && (Date.now() - p.c.heard_at) < 30000
         let err = lu.o({ error: 1, of: hp })[0]
         if (!has && here) {
-            if (!err) {
-                let name = p.sc.friendly ? String(p.sc.friendly) : hp.slice(0, 8)
-                lu.i({ error: 1, of: hp, say: this.Radio_clean('no music coming across from ' + name) })
+            let name = p.sc.friendly ? String(p.sc.friendly) : hp.slice(0, 8)
+            let st = (stats && stats[hp]) || { total: 0, lined: 0, mine: 0, heard: 0, notplay: 0 }
+            let why = 'no_records'
+            let say = 'no music coming across from ' + name
+            if (st.total > 0) {
+                if (st.notplay > 0) {
+                    why = 'downloading'
+                    say = name + "'s music is still arriving"
+                } else if (st.mine > 0) {
+                    why = 'own_content'
+                    say = "everything " + name + " has right now is already yours"
+                } else if (st.heard > 0) {
+                    why = 'all_heard'
+                    say = "you've already heard everything " + name + ' has right now'
+                }
+            }
+            if (!err || String(err.sc.why || '') !== why) {
+                if (err) { lu.drop(err) }
+                lu.i({ error: 1, of: hp, why: why, say: this.Radio_clean(say) })
                 lu.bump()
             }
             continue

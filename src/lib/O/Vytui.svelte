@@ -4164,7 +4164,14 @@
         for (const e of rel.o() as TheC[]) {
             const a = at.get(String((e.sc as any).a)), b = at.get(String((e.sc as any).b))
             if (!a || !b || a === b) continue
-            out.push({ d: vine_curve(a, b), sw: +(1 + Math.log2(1 + (Number((e.sc as any).n) || 1))).toFixed(2) })
+            // THE LINE LANDS ON THE WORD, not on the middle of the cell (2026-09-23).  A vine between two
+            //  cell centres says THAT they are related; a vine between the two `Yara`s says WHAT relates
+            //   them, and the glass already knows where every word sits — `pane_rows` seats one keyed
+            //    `<text>` per atom, and a fact's VALUE atom carries its key just as the label does.  So
+            //     the crosslink is a lookup, not new machinery.  No `via` (a kin edge) ⇒ the old anchor.
+            const via = (e.sc as any).via ? String((e.sc as any).via) : ''
+            const pa = vine_anchor(w, a, via) ?? a, pb = vine_anchor(w, b, via) ?? b
+            out.push({ d: vine_curve(pa, pb), sw: +(1 + Math.log2(1 + (Number((e.sc as any).n) || 1))).toFixed(2) })
         }
         return out
     }
@@ -4172,6 +4179,19 @@
     //  the line leaves one cell and arrives at the other along a shallow S — the way a runner grows
     //   between two plants rather than the way a graph library connects two nodes.  2dp, so a settled
     //    glass re-emits a byte-identical `d` and Svelte never touches the attribute.
+    // where a `k=v` atom actually sits inside a cell's folio — the seat carrying that key whose text IS
+    //  the value (the label seat is the fallback, then the cell itself).  Memoised upstream: `folio_of`
+    //   is keyed by a signature, so asking here costs a map lookup on a settled glass.
+    function vine_anchor(w: TheC, cell: PaintCell, via: string): { x: number, y: number } | null {
+        if (!via) return null
+        const eq = via.indexOf('='); if (eq < 0) return null
+        const k = via.slice(0, eq), val = via.slice(eq + 1)
+        if (!folio_on(w)) return null
+        const pane = folio_of(w, cell); if (!pane) return null
+        for (const s of pane.seats) if (s.k === k && s.text === val) return { x: s.x, y: s.y }
+        for (const s of pane.seats) if (s.k === k) return { x: s.x, y: s.y }
+        return null
+    }
     function vine_curve(a: { x: number, y: number }, b: { x: number, y: number }): string {
         const dx = b.x - a.x, dy = b.y - a.y
         const len = Math.hypot(dx, dy) || 1
@@ -4718,6 +4738,23 @@
                             </g>
                         {/if}
                     {/each}
+                    <!-- THE CROSSLINK PASS (stop `crosslink`, 2026-09-23) — the owner: *"a layer on top
+                         of them with lines connecting... layout text then crosslinks stretches of it."*
+                         `.vine` (above, painted BEFORE every cell on purpose — see its own comment) is a
+                         SUBSTRATE: subtle, meant to peek through the gaps of a sparse kinship graph, never
+                         to compete with the cells.  A dense datadump pile has no gaps — 11 real vines with
+                         correct `d` paths were verified live and NONE were visible, fully occluded by the
+                         packed cells they run under.  Same data (`vines_of` unchanged, same `via`-anchored
+                         endpoints landing on the actual word — Vyto_relate's edge, folio_of's seat lookup),
+                         a second, opt-in, ON-TOP treatment: painted LAST so it reads over the cells, bolder
+                         and warmer so it announces itself as drawn annotation rather than organic tissue —
+                         the same "warm cable over cold glass" instinct the PLUG already uses, for the same
+                         reason.  Gated so the sparse-graph substrate everywhere else stands byte-identical. -->
+                    {#if fo(w, 'crosslink')}
+                        {#each vines_of(w, viewport_cells(w)) as v (v.d)}
+                            <path class="crosslink" d={v.d} style="stroke-width:{v.sw + 0.6};"></path>
+                        {/each}
+                    {/if}
                     <!-- THE LATE FURNITURE PASS — carved names + A gates paint AFTER every cell
                          ("on top of the A labels"), so a big neighbour drawn later in the occlusion
                          order can never bury another cell's name or its handle.  Gates last of all:
@@ -5251,6 +5288,13 @@
     .vine {
         fill: none; stroke: #6fae8f; stroke-linecap: round;
         opacity: 0.3; pointer-events: none;
+    }
+    /* THE CROSSLINK — `.vine`'s on-top twin (stop `crosslink`).  Same curve, painted last: warm amber
+       against the glass's cold violets (the PLUG's own contrast trick), a soft glow so it survives
+       crossing a cell of any colour, and real enough opacity to read as a drawn line rather than a hint. */
+    .crosslink {
+        fill: none; stroke: #ffb86b; stroke-linecap: round; opacity: 0.75; pointer-events: none;
+        filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
     }
     /* THE PLUG — the radio↔Record relation, drawn (Vyto_todo §0.0).  Warm against the glass's cold
        violets on purpose: this is the one live, human thing on a plate of machinery, and it should

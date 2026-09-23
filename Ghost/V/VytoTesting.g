@@ -2559,181 +2559,196 @@ VytoMembrane_witness(w):
         if (!(oa %see:'one song is no family — the membrane dissolves and the survivor moves back out to the top')) i %see:'one song is no family — the membrane dissolves and the survivor moves back out to the top'
     }
 
-// ══ VytoSeem — CLUSTERED SEARCH RESULTS, SOWN: plain trees laid out by the glass's own primitives ══
-//  (The owner 2026-09-23: *"C** can be fed into something that kinda scans|inflates them into a more
-//   general notation so we can lay out more types of stuff... I'd like to use this to output clustered
-//    search results, without exposing the bare C**-ness whole."*)  `Vyto_seem` is that inflater and
-//     this is its gate.  NOT ONE PARTICLE OF THE PROGRAM IS GRAPPLED here: the world builds plain JS
-//      objects — the shape any search backend already returns — and sows them.  Three things are worth
-//       swearing on, and each is a different half of the owner's sentence:
-//        · the SET STANDS — a facet cluster is a scope its hits tile, laid out by the same cut, folio
-//           and membrane as any glass, with no new layout code anywhere;
-//        · NOTHING LEAKED — the producer's own `internal` field sits right beside the spec and never
-//           reaches a cell, because `facts` is an allowlist.  That is the whole of "without exposing
-//            the bare C**-ness": the notation is narrower than the tree behind it, by construction;
-//        · a RE-SOW MORPHS — the same `tok` (the producer's doc id) finds the same row, so a result set
-//           refreshing its scores animates in place instead of blinking a new pile.  Identity is the
-//            producer's, which is what makes this usable for live results at all.
-//  World VytoSeem.
-VytoSeem(A,w):
+
+// ══ VytoGuise — CLUSTERED SEARCH RESULTS, DRAWN NOT CONTAINED: plain objects lay out ══════════════
+//  (The owner 2026-09-23: *"I'd like to use this to output clustered search results... without exposing
+//   the bare C**-ness whole"* — then, on a first cut that boxed hits inside a synthetic `Facet` cell:
+//    *"what is Facet? that's a grouping projected onto our data right?"* — it was, and a projection has
+//     no business posing as structure.)  `Vyto_guise` is the inflater and this is its gate.  NOT ONE
+//      PARTICLE OF THE PROGRAM IS GRAPPLED: the world builds plain objects — the shape any search
+//       backend already returns — and hands them over FLAT, one per row, no container.
+//  THE GROUPING IS DRAWN, NOT CONTAINED (the owner: *"a layer on top of them with lines connecting...
+//   layout text then crosslinks stretches of it"*).  `Vyto_relate`'s weave already finds which rows
+//    share a scalar; it now also stamps WHICH one (`Flow,via:'mood=brine'`), and the renderer's vine
+//     lands on that exact word inside each cell's folio rather than on the cell's centre.  So two hits
+//      sharing `mood:brine` grow a line between the two words `brine`, and the reader sees what ties
+//       them without a cell ever being minted to hold the tie.
+//  Four things worth swearing on:
+//   · the SET STANDS — every hit is its own top-level cell, foam-cut and folioed, no new layout code;
+//   · NOTHING LEAKED — the producer's own `internal` field is simply never written into the guise,
+//      which is the whole of "without exposing the bare C**-ness": the notation is narrower than the
+//       record behind it, by construction, not by a filter that could be forgotten;
+//   · THE GROUPING IS DRAWN — every tie the weave wove names the scalar it is about, and that scalar
+//      is one both ends actually carry — proof the vine can be anchored to a real word on both sides;
+//   · a RE-SOW MORPHS — the same `tok` (the producer's doc id) finds the same row, so a result set
+//      refreshing its scores animates in place instead of blinking a new pile.
+//  World VytoGuise.
+VytoGuise(A,w):
     w oai %req:wrangle,eternal
-        await &VytoSeem_drive,w,req
+        await &VytoGuise_drive,w,req
         req%ok = 1
 
-async VytoSeem_drive(w, req):
+async VytoGuise_drive(w, req):
     let run = this.c.run
     if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
-        if (n === 2) this.VytoSeem_sow(w)
-        if (n === 3) this.VytoSeem_stand(w)
-        if (n === 4) this.VytoSeem_resow(w)
+        if (n === 2) this.VytoGuise_sow(w)
+        if (n === 3) this.VytoGuise_stand(w)
+        if (n === 4) this.VytoGuise_resow(w)
     }
-    this.VytoSeem_witness(w)
+    this.VytoGuise_witness(w)
 
-// the result set as a producer would hand it over — plain objects, nothing from this program in them.
-//  `internal` is the control: a real field of the producer's own record, deliberately NOT in `facts`.
-VytoSeem_spec(bump):
+// THE PRODUCER'S OWN RECORDS — what a search backend actually holds, shard bookkeeping and all.  The
+//  glass never sees these.  FLAT — no `Facet` container anywhere.  Two moods and three years cross the
+//   six hits on purpose, so the drawn weave has real lines to find on more than one scalar.
+VytoGuise_records():
     return [
-        { is: 'Facet', name: 'mood brine', tok: 'facet:brine', facts: { hits: 3 }, kids: [
-            // a nested record and a list handed over RAW: the object grows a child cell and the list a
-            //  spread of chips — the producer never flattened anything for us
-            { is: 'Hit', name: 'LowTide', tok: 'doc:t12', internal: 'shard-7', facts: { artist: 'Yara', score: 91 + bump,
-                album: { title: 'Tidewash', year: 2019 }, tags: ['brine', 'cold', 'slow'] } },
-            { is: 'Hit', name: 'Undertow', tok: 'doc:t31', internal: 'shard-7', facts: { artist: 'Yara', score: 84 + bump } },
-            { is: 'Hit', name: 'SaltAir', tok: 'doc:t07', internal: 'shard-2', facts: { artist: 'Nell', score: 77 + bump } },
-        ] },
-        { is: 'Facet', name: 'year 2019', tok: 'facet:2019', facts: { hits: 3 }, kids: [
-            { is: 'Hit', name: 'Rimlight', tok: 'doc:t44', internal: 'shard-2', facts: { artist: 'Nell', score: 88 + bump } },
-            { is: 'Hit', name: 'Kelpwalk', tok: 'doc:t58', internal: 'shard-9', facts: { artist: 'Ivo', score: 72 + bump } },
-            { is: 'Hit', name: 'Coldfront', tok: 'doc:t60', internal: 'shard-9', facts: { artist: 'Ivo', score: 69 + bump } },
-        ] },
-        // the collapsed tail — a LEAF that stands for many and says so in the crest's own vocabulary
-        { is: 'More', name: 'tail', tok: 'more:brine', says: [
-            { row: 'dip', n: 214, q: 'mood=brine' },
-            { row: 'vein', v: 'Yara', bits: [{ k: 'artist', n: 31 }] },
-            { row: 'spread', k: 'year', bits: [{ v: '2019', n: 12 }, { v: '2020', n: 9 }, { text: '+5' }] },
-        ] },
+        { id: 'doc:t12', title: 'LowTide',   artist: 'Yara', mood: 'brine', year: 2019, rank: 91, internal: 'shard-7' },
+        { id: 'doc:t31', title: 'Undertow',  artist: 'Yara', mood: 'brine', year: 2020, rank: 84, internal: 'shard-7' },
+        { id: 'doc:t07', title: 'SaltAir',   artist: 'Nell', mood: 'brine', year: 2019, rank: 77, internal: 'shard-2' },
+        { id: 'doc:t44', title: 'Rimlight',  artist: 'Nell', mood: 'dry',   year: 2019, rank: 88, internal: 'shard-2' },
+        { id: 'doc:t58', title: 'Kelpwalk',  artist: 'Ivo',  mood: 'dry',   year: 2020, rank: 72, internal: 'shard-9' },
+        { id: 'doc:t60', title: 'Coldfront', artist: 'Ivo',  mood: 'brine', year: 2021, rank: 69, internal: 'shard-9' },
     ]
 
-// ── beat 2 — sow: the plain trees become detached matter, ready to grapple ────────────────────────
-VytoSeem_sow(w):
-    i %desc:'sow a clustered result set — two facet clusters of three hits and a collapsed tail from plain trees not particles'
-    w.c.seeds = []
-    for (const h of this.VytoSeem_spec(0)) { w.c.seeds.push(this.Vyto_seem(h)) }
+// THE GUISE IS WRITTEN, and that act IS the allowlist (the owner: *"without exposing the bare C**-ness
+//  whole"*).  There is no sub-bag of permitted fields and no filter to forget to apply — a producer
+//   writes the line it wants shown, and `internal` is simply never written.  A guise reads as the snap
+//    line it becomes: the mainkey first, then plain facts, then a `guise:` bag for what only the glass
+//     needs (here, only `tok` — the producer's own id, so a re-sow morphs).
+VytoGuise_spec(bump):
+    let out = []
+    for (const r of this.VytoGuise_records()) {
+        out.push({ Hit: r.title, artist: r.artist, mood: r.mood, year: r.year, score: r.rank + bump,
+                   guise: { tok: r.id } })
+    }
+    // the collapsed tail — a LEAF that stands for many and says so in the crest's own vocabulary
+    out.push({ More: 'tail', guise: { tok: 'more:brine', says: [
+        { row: 'dip', n: 214, q: 'mood=brine' },
+        { row: 'vein', v: 'Yara', bits: [{ k: 'artist', n: 31 }] },
+        { row: 'spread', k: 'year', bits: [{ v: '2019', n: 12 }, { v: '2020', n: 9 }, { text: '+5' }] },
+    ] } })
+    return out
 
-// ── beat 3 — stand it: the set lays out, the tail speaks, and the producer's guts stayed home ─────
-VytoSeem_stand(w):
-    i %desc:'stand the sown set foam-cut and nested — the clusters tile and the tail speaks its count'
+// ── beat 2 — the plain objects become detached matter, ready to grapple ──────────────────────────
+VytoGuise_sow(w):
+    i %desc:'build a result set — six flat hits and a collapsed tail from plain objects not particles'
+    w.c.seeds = []
+    for (const h of this.VytoGuise_spec(0)) { w.c.seeds.push(this.Vyto_guise(h)) }
+
+// ── beat 3 — stand it flat: no container, the grouping is drawn over it by the weave ─────────────
+VytoGuise_stand(w):
+    i %desc:'stand the flat set — every hit is its own cell, and the shared-scalar ties are drawn as vines landing on the word'
     this.Vyto_commission_on(w, w.c.seeds, 1, 0, 1, 0, 0, 1, 1)
     this.Vyto_rest_reset(w)
-    this.expecting(w, 'stand_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoSeem_stand_ready(w)) })
+    this.expecting(w, 'stand_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoGuise_stand_ready(w)) })
 
-VytoSeem_stand_ready(w):
+VytoGuise_stand_ready(w):
     let vw = this.VytoStaple_vw(w)
     if (!vw || !vw.c.foam || !vw.c.nested) return 0
-    if (!this.Vyto_rest_poll(w, 3)) return 0
-    let rows = vw.c.mirror.o().filter(r => !r.sc.departing)
-    // the collapsed tail carries a VOICE — three saying rows and a true count — with no fold behind it
-    let more = rows.find(r => r.sc.More != null)
+    // seven top cells: six flat hits and the tail.  No container anywhere — the grouping is not a cell.
+    if (!this.Vyto_rest_poll(w, 7)) return 0
+    let top = vw.c.mirror.o().filter(r => !r.sc.departing)
+    let more = top.find(r => r.sc.More != null)
     if (!more) return 0
+    // the collapsed tail carries a VOICE — three saying rows and a true count — with no fold behind it
     let vrs = more.o({ Vrow: 1 })
     if (vrs.length !== 3) return 0
     let dip = vrs.find(r => r.sc.row === 'dip')
     if (!dip || dip.sc.n !== '214') return 0
-    let vein = vrs.find(r => r.sc.row === 'vein')
-    if (!vein || vein.o({ Vbit: 1 }).length !== 1) return 0
-    // every hit took a seat inside its cluster — and not one carried the producer's private field
+    // every hit stands as its own cell, and not one carried the producer's private field
     let hits = 0
     let leaked = 0
-    for (const f of rows) {
-        if (f.sc.Facet == null) continue
-        if (f.sc.hits !== '3') return 0
-        for (const h of f.o()) {
-            if (h.sc.Hit == null) continue
-            hits = hits + 1
-            if (h.sc.internal != null) leaked = 1
-            if (h.sc.artist == null || h.sc.score == null) return 0
-            if (!h.c.T) return 0
-        }
+    for (const h of top) {
+        if (h.sc.Hit == null) continue
+        hits = hits + 1
+        if (h.sc.internal != null) leaked = 1
+        if (h.sc.artist == null || h.sc.score == null) return 0
+        if (!h.c.T) return 0
     }
     if (hits !== 6) return 0
     if (leaked) return 0
-    // the non-scalars inflated: the nested record grew its own cell and the list became a chip spread
-    let low = null
-    for (const f of rows) {
-        for (const h of f.o()) { if (h.sc.Hit === 'LowTide') low = h }
-    }
-    if (!low) return 0
-    let album = low.o().find(r => r.sc.album != null)
-    if (!album || album.sc.album !== 'Tidewash' || album.sc.year !== '2019') return 0
-    let tagrow = low.o({ Vrow: 1 }).find(r => r.sc.k === 'tags')
-    if (!tagrow || tagrow.o({ Vbit: 1 }).length !== 3) return 0
-    w.c.saw_inflate = 1
     w.c.saw_stand = 1
     w.c.saw_voice = 1
     w.c.saw_sealed = 1
+    // THE GROUPING IS DRAWN, NOT CONTAINED: the weave found the shared scalars by itself and every edge
+    //  names the one it is about, so a line can land on that very word rather than on a cell's middle.
+    let rel = vw.c.relations
+    if (!rel) return 0
+    let edges = rel.o()
+    if (edges.length < 3) return 0
+    let viad = edges.filter(e => e.sc.via != null)
+    if (viad.length !== edges.length) return 0
+    // and the shared scalar is a real one both ends actually carry
+    for (const e of viad) {
+        let at = String(e.sc.via).indexOf('=')
+        if (at < 0) return 0
+        let k = String(e.sc.via).slice(0, at)
+        let v = String(e.sc.via).slice(at + 1)
+        let ra = top.find(r => r.c.tok === e.sc.a)
+        let rb = top.find(r => r.c.tok === e.sc.b)
+        if (!ra || !rb) return 0
+        if (String(ra.sc[k]) !== v || String(rb.sc[k]) !== v) return 0
+    }
+    w.c.saw_drawn = 1
     return 1
 
-// ── beat 4 — re-sow the same ids with new scores: every cell must MORPH not blink ─────────────────
-VytoSeem_resow(w):
+// ── beat 4 — re-sow the same ids with new scores: every cell must MORPH not blink ────────────────
+VytoGuise_resow(w):
     i %desc:'re-sow the same hits with new scores — the producer id is the identity so each cell morphs in place'
     let vw = this.VytoStaple_vw(w)
     if (!vw) return
     w.c.was_row = {}
     w.c.was_score = {}
-    for (const f of vw.c.mirror.o()) {
-        for (const h of f.o()) {
-            if (h.sc.Hit == null) continue
-            w.c.was_row[h.c.tok] = h
-            w.c.was_score[h.c.tok] = h.sc.score
-        }
+    for (const h of vw.c.mirror.o()) {
+        if (h.sc.Hit == null) continue
+        w.c.was_row[h.c.tok] = h
+        w.c.was_score[h.c.tok] = h.sc.score
     }
     let seeds = []
-    for (const h of this.VytoSeem_spec(3)) { seeds.push(this.Vyto_seem(h)) }
+    for (const h of this.VytoGuise_spec(3)) { seeds.push(this.Vyto_guise(h)) }
     w.c.seeds = seeds
     // fresh:0 — the standing world and its mirror are KEPT, which is the whole point: the new sowing
     //  meets the old rows and the toks decide what is the same thing
     this.Vyto_commission_on(w, seeds, 0, 0, 1, 0, 0, 1, 1)
-    this.expecting(w, 'resow_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoSeem_resow_ready(w)) })
+    this.expecting(w, 'resow_wait', 14, async () => { await this.VytoStaple_await(w, 14, () => this.VytoGuise_resow_ready(w)) })
 
-VytoSeem_resow_ready(w):
+VytoGuise_resow_ready(w):
     let vw = this.VytoStaple_vw(w)
     if (!vw) return 0
     this.Vyto_stir(vw)
     let seen = 0
-    for (const f of vw.c.mirror.o()) {
-        for (const h of f.o()) {
-            if (h.sc.Hit == null || h.sc.departing) continue
-            let was = w.c.was_row[h.c.tok]
-            if (!was) return 0          // a fresh row for a hit we already had is a blink not a morph
-            if (was !== h) return 0     // the SAME particle or it is not the same cell
-            if (h.sc.score === w.c.was_score[h.c.tok]) return 0
-            seen = seen + 1
-        }
+    for (const h of vw.c.mirror.o()) {
+        if (h.sc.Hit == null || h.sc.departing) continue
+        let was = w.c.was_row[h.c.tok]
+        if (!was) return 0          // a fresh row for a hit we already had is a blink not a morph
+        if (was !== h) return 0     // the SAME particle or it is not the same cell
+        if (h.sc.score === w.c.was_score[h.c.tok]) return 0
+        seen = seen + 1
     }
     if (seen !== 6) return 0
     w.c.saw_morph = 1
     return 1
 
-// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ───────────────────
-VytoSeem_witness(w):
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ─────────────────
+VytoGuise_witness(w):
     if (w.c.saw_stand) {
-        this.story_swear(w, 'a sown result set stands as cells — plain trees laid out by the same cut and folio with no particle of the program grappled')
-        if (!(oa %see:'a sown result set stands as cells — plain trees laid out by the same cut and folio with no particle of the program grappled')) i %see:'a sown result set stands as cells — plain trees laid out by the same cut and folio with no particle of the program grappled'
+        this.story_swear(w, 'a flat result set stands as cells — no grouping cell anywhere, only the hits themselves')
+        if (!(oa %see:'a flat result set stands as cells — no grouping cell anywhere, only the hits themselves')) i %see:'a flat result set stands as cells — no grouping cell anywhere, only the hits themselves'
     }
     if (w.c.saw_voice) {
         this.story_swear(w, 'a collapsed cluster speaks its count and its facets — a voice with no fold behind it')
         if (!(oa %see:'a collapsed cluster speaks its count and its facets — a voice with no fold behind it')) i %see:'a collapsed cluster speaks its count and its facets — a voice with no fold behind it'
     }
     if (w.c.saw_sealed) {
-        this.story_swear(w, 'the facts are an allowlist — the producer private field sits beside the spec and never reaches a cell')
-        if (!(oa %see:'the facts are an allowlist — the producer private field sits beside the spec and never reaches a cell')) i %see:'the facts are an allowlist — the producer private field sits beside the spec and never reaches a cell'
+        this.story_swear(w, 'a guise says only what it names — the producer private field sits beside the spec and never reaches a cell')
+        if (!(oa %see:'a guise says only what it names — the producer private field sits beside the spec and never reaches a cell')) i %see:'a guise says only what it names — the producer private field sits beside the spec and never reaches a cell'
     }
-    if (w.c.saw_inflate) {
-        this.story_swear(w, 'a non-scalar fact inflates instead of vanishing — a nested record grows its own cell and a list becomes a spread of chips')
-        if (!(oa %see:'a non-scalar fact inflates instead of vanishing — a nested record grows its own cell and a list becomes a spread of chips')) i %see:'a non-scalar fact inflates instead of vanishing — a nested record grows its own cell and a list becomes a spread of chips'
+    if (w.c.saw_drawn) {
+        this.story_swear(w, 'the grouping is drawn and not contained — no cell holds the hits yet every tie names the shared scalar it is about')
+        if (!(oa %see:'the grouping is drawn and not contained — no cell holds the hits yet every tie names the shared scalar it is about')) i %see:'the grouping is drawn and not contained — no cell holds the hits yet every tie names the shared scalar it is about'
     }
     if (w.c.saw_morph) {
         this.story_swear(w, 'a re-sown hit morphs in place — the producer own id is the identity so a refreshed result set never blinks')

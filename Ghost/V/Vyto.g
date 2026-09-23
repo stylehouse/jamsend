@@ -431,150 +431,158 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen):
     //      rows were never meant to be looked at); it is the SILENCE that is wrong.
     //  So: census before drop.  A flat source with children stamps the true count on its row, and the
     //   cell can say "and 7 more inside" instead of pretending to be a leaf.
-    // a SOWN leaf carries its saying on `.c` (Vyto_seem) — mint it on the row, in the crest vocabulary
-    if (n.c.seem_says) this.Vyto_seem_voice(w, row, n.c.seem_says)
+    // a GUISE carries its saying on `.c` (Vyto_guise) — mint it on the row, in the crest's vocabulary
+    if (n.c.guise_says) this.Vyto_guise_voice(w, row, n.c.guise_says)
     let kids = n.o()
     if (n.c.flat && kids.length && row.sc.flat_n !== ('' + kids.length)) { row.sc.flat_n = '' + kids.length }
     if (depth < 40 && !n.c.flat) {
         for (const c of kids) this.Vyto_scan_walk(w, c, row, depth + 1, gen)
     }
 
-// ══ THE SEEM — a plain tree inflates into grappleable matter (2026-09-23) ════════════════════════
+// ══ THE GUISE — a plain object lays out, without being a particle (2026-09-23) ═══════════════════
 //  The owner: *"C** can be fed into something that kinda scans|inflates them into a more general
-//   notation so we can lay out more types of stuff with the shape primitives... I'd like to use this to
-//    output clustered search results, without exposing the bare C**-ness whole."*
-//  THE GLASS'S INPUT CONTRACT IS ALREADY TINY, and that is the finding this rests on: `Vyto_scan_walk`
-//   reads exactly five things off a source — its mainkey, that key's VALUE (identity + title), its flat
-//    `sc` scalars (the facts), its children (the nesting), and two `.c` overrides (`vyto_tok` identity,
-//     `flat` count-dont-descend).  Nothing downstream ever touches the source again: dose, loose, the
-//      joins, the fold ladder, the membrane and the folio all read the MIRROR ROW.  So anything that can
-//       PRESENT those five things can be laid out.  It does not have to be a particle of the program.
-//  A SEEM is a plain JS object that says them; this inflates one into a DETACHED C, ready to grapple —
-//   so the general notation is authored in ONE place and every station downstream is untouched:
-//    { is:'Result', name:'LowTide', facts:{artist:'Yara'}, dose:2, loose:0, kids:[…], says:[…], tok:'t12' }
-//  · `is` + `name` → the mainkey line `Result:LowTide` — what the cell IS and what it is called.
-//  · `facts`       → the folio's k:v pairs, and THE POINT OF THE WHOLE SEAM: an ALLOWLIST.  Grapple a
-//                     real particle and the scan copies every scalar it finds, so the glass shows the
-//                      program's own guts; sow a Seem and a producer shows exactly what it chose to.
-//                       Join keys (id of pub page seq) are ordinary facts here and pick up their usual
-//                        powers — identity, the kin weave, the fold ladder — merely by being named.
-//                        A NON-SCALAR value is not dropped, it INFLATES: an object becomes a child cell
-//                         (Vyto_seem_sub), a list of scalars becomes a spread of chips with an honest +N
-//                          tail (Vyto_seem_spread), a list of objects becomes several children.  So a
-//                           producer hands over its own nested record and the glass grows tree around it.
-//  · `dose`/`loose`→ the two display channels, named so a producer need not know they ride as scalars.
-//  · `kids`        → nesting, which is how a CLUSTER is said: a Seem with kids is a SCOPE its members
-//                     tile, and sibling kids of one mainkey become a family under `membrane` for free.
-//  · `says`        → the crest's own saying vocabulary (Vyto_distil's %Vrow/%Vbit — dip · vein · fact ·
-//                     spread), for a LEAF that stands for many: a collapsed cluster says `×214` and its
-//                      facets without being a fold of real members.  It rides `.c` and is minted on the
-//                       MIRROR row (Vyto_seem_voice), never on the source — a %Vrow with no `.c.tok` is
-//                        furniture the renderer speaks, not a cell (the same way a crest's voice works).
-//  · `tok`         → an identity override: re-sowing the same tok MORPHS the cell instead of blinking a
-//                     new one, so a producer's own id (a search hit's doc id) can be the truth.
+//   notation so we can lay out more types of stuff... I'd like to use this to output clustered search
+//    results, without exposing the bare C**-ness whole."*  A GUISE is how a thing chooses to APPEAR —
+//     which is the whole point: it is narrower than the record behind it, by construction.
+//  THE FINDING THIS RESTS ON — the glass's input contract is already tiny.  `Vyto_scan_walk` reads
+//   exactly five things off a source: its mainkey, that key's VALUE, its flat `sc` scalars, its
+//    children, and two `.c` overrides (`vyto_tok` identity, `flat` depth).  Nothing downstream ever
+//     touches the source again — dose, loose, the joins, the fold ladder, the membrane and the folio
+//      all read the MIRROR ROW.  So anything that can PRESENT those five things can be laid out.
+//  THE NOTATION IS A SNAP LINE.  One rule, and it exists because the first cut of this had three
+//   different bags for things that all end up in the same place (the owner, correctly: *"the guise has
+//    some properties promoted from the C.sc? and also facts are some more C.sc but also some metrics?
+//     it just looks badly thought out as fuck, unhygienic"*).  So:
+//        { Hit:'SaltAir', artist:'Nell', score:80, guise:{ tok:'doc:t07', kids:[…] } }
+//   · the FIRST key is the mainkey line — `Hit:SaltAir`, exactly the wire format a snap already uses;
+//   · EVERY other plain key is a fact, exactly as a snap line's are;
+//   · anything the glass needs that a snap line cannot say lives in ONE bag, `guise:` — and nothing
+//      else does.  There is no second way to say a fact and no promotion of one scalar over another.
+//  The `guise:` bag, and why each is not a fact:
+//   · `tok`   — IDENTITY.  The default tok is `mainkey:value|id:…`, which breaks when the mainkey's
+//                value is a STATE: re-sowing the same tok MORPHS the cell instead of blinking a new
+//                 one, so a producer's own id (a search hit's doc id) can be the truth.
+//   · `flat`  — DEPTH.  Mirror me but do not walk my children; `flat_n` then stamps the true count so
+//                the cell says how many it holds rather than posing as a leaf.
+//   · `dose`  — how big.  `loose` — off the pile, on the rim.  Display CHANNELS: they land as scalars
+//                like anything else, but the cut says them by being the shape it is, so they are not
+//                 facts to print (they ride GUT_SKIP) and do not belong among the facts to write.
+//   · `kids`  — nesting, which is how a CLUSTER is said: a Guise with kids is a scope its members
+//                tile, and sibling kids of one mainkey become a family under `membrane` for free.
+//   · `says`  — the crest's own saying vocabulary (dip · vein · fact · spread) for a LEAF that stands
+//                for many: a collapsed cluster says `×214 · artist Yara×31` with no fold behind it.
+//  A FACT'S VALUE NEED NOT BE A SCALAR (the owner: *"we want to do something about the non-scalar bits.
+//   the scanner might dump data eventually, by inflating a bunch of tree around it"*).  An object
+//    becomes a CHILD CELL (Vyto_guise_sub); a list of scalars becomes a SPREAD of chips
+//     (Vyto_guise_spread); a list of objects becomes several children.  So a producer hands over its
+//      own nested record and the glass grows tree around it, rather than dropping what it cannot flatten.
 //  Detached (`new TheC`) — reachable from nothing in H**, so no Book snaps it and nothing here can
-//   reach the program's own shelves.  A Seem is display matter, and only display matter.
-Vyto_seem(spec):
+//   reach the program's own shelves.  A Guise is display matter, and only display matter.
+Vyto_guise(spec):
     if (!spec) return null
-    let mk = spec.is ? String(spec.is) : 'Seem'
-    let nm = (spec.name != null && spec.name !== '') ? String(spec.name) : 1
+    let mk = null
+    for (const k of Object.keys(spec)) {
+        if (k === 'guise') continue
+        mk = k
+        break
+    }
+    if (!mk) return null
+    let g = spec.guise || {}
+    let mv = spec[mk]
+    let nm = (mv != null && mv !== '' && typeof mv !== 'object' && typeof mv !== 'function') ? String(mv) : 1
     let seed = {}
     seed[mk] = nm
     let n = new TheC({ c: {}, sc: seed })
     let grown = []      // sub-specs an object-valued fact inflated into
     let spreads = []    // saying rows a list-of-scalars fact became
-    if (spec.facts) {
-        for (const k of Object.keys(spec.facts)) {
-            if (k === mk) continue
-            let v = spec.facts[k]
-            if (v == null) continue
-            let t = typeof v
-            if (t === 'function') continue
-            // the snapped-boolean law, at the door: true rides as 1 and false is simply absent
-            if (t === 'boolean') {
-                if (v) { n.sc[k] = 1 }
-                continue
-            }
-            if (t !== 'object') { n.sc[k] = '' + v; continue }
-            if (Array.isArray(v)) {
-                let bits = []
-                for (const e of v) {
-                    if (e == null) continue
-                    if (typeof e === 'object') { grown.push(this.Vyto_seem_sub(k, e)); continue }
-                    bits.push(e)
-                }
-                if (bits.length) spreads.push(this.Vyto_seem_spread(k, bits))
-                continue
-            }
-            grown.push(this.Vyto_seem_sub(k, v))
+    for (const k of Object.keys(spec)) {
+        if (k === 'guise' || k === mk) continue
+        let v = spec[k]
+        if (v == null) continue
+        let t = typeof v
+        if (t === 'function') continue
+        // the snapped-boolean law, at the door: true rides as 1 and false is simply absent
+        if (t === 'boolean') {
+            if (v) { n.sc[k] = 1 }
+            continue
         }
+        if (t !== 'object') { n.sc[k] = '' + v; continue }
+        if (Array.isArray(v)) {
+            let bits = []
+            for (const e of v) {
+                if (e == null) continue
+                if (typeof e === 'object') { grown.push(this.Vyto_guise_sub(k, e)); continue }
+                bits.push(e)
+            }
+            if (bits.length) spreads.push(this.Vyto_guise_spread(k, bits))
+            continue
+        }
+        grown.push(this.Vyto_guise_sub(k, v))
     }
-    if (spec.dose != null && Number(spec.dose) > 0) n.sc.dose = '' + spec.dose
-    if (spec.loose) n.sc.loose = 1
-    if (spec.tok) n.c.vyto_tok = String(spec.tok)
-    if (spec.flat) n.c.flat = 1
+    if (g.dose != null && Number(g.dose) > 0) n.sc.dose = '' + g.dose
+    if (g.loose) n.sc.loose = 1
+    if (g.tok) n.c.vyto_tok = String(g.tok)
+    if (g.flat) n.c.flat = 1
     let says = []
-    if (spec.says) { for (const d of spec.says) says.push(d) }
+    if (g.says) { for (const d of g.says) says.push(d) }
     for (const d of spreads) says.push(d)
-    if (says.length) n.c.seem_says = says
-    if (spec.kids) {
-        for (const k of spec.kids) {
-            let kid = this.Vyto_seem(k)
+    if (says.length) n.c.guise_says = says
+    if (g.kids) {
+        for (const k of g.kids) {
+            let kid = this.Vyto_guise(k)
             if (kid) n.i(kid)
         }
     }
-    for (const g of grown) {
-        let kid = this.Vyto_seem(g)
+    for (const gr of grown) {
+        let kid = this.Vyto_guise(gr)
         if (kid) n.i(kid)
     }
     return n
 
-// Vyto_seem_sub — AN OBJECT-VALUED FACT BECOMES A CHILD (2026-09-23, the owner: *"we want to do something
-//  about the non-scalar bits. the scanner might dump data eventually, by inflating a bunch of tree around
-//   it"*).  The KEY is what the thing IS (its mainkey) and the first of name|title|label|id is what it is
-//    called; every remaining key is its own facts, inflated by these same rules all the way down.  An
-//     element already carrying `is` is a full Seem and is honoured verbatim, so a producer can hand-shape
-//      one branch and let the rest inflate.
-//  WHY HERE AND NOT IN THE SCAN: `Vyto_scan_walk` drops an object-valued sc key, and that is correct where
-//   it stands — CLAUDE.md makes an object in `.sc` FATAL at encode, so in a real particle it is a mint bug
-//    and not data.  In a SEEM it is legitimate producer data, so this is the one place inflation belongs.
-Vyto_seem_sub(k, v):
-    if (v.is) return v
+// Vyto_guise_sub — AN OBJECT-VALUED FACT BECOMES A CHILD.  The KEY is what the thing IS (its mainkey)
+//  and the first of name|title|label|id is what it is called; every remaining key is its own facts,
+//   inflated by these same rules all the way down.  An element that already reads as a Guise (its first
+//    key carrying its own name, or a `guise:` bag) is honoured verbatim, so a producer can hand-shape
+//     one branch and let the rest inflate.
+//  WHY HERE AND NOT IN THE SCAN: `Vyto_scan_walk` drops an object-valued sc key, and that is correct
+//   where it stands — CLAUDE.md makes an object in `.sc` FATAL at encode, so in a real particle it is a
+//    mint bug and not data.  In a Guise it is legitimate producer data, so this is where it inflates.
+Vyto_guise_sub(k, v):
+    if (v.guise) return v
     let nk = null
     if (v.name != null) { nk = 'name' }
     else if (v.title != null) { nk = 'title' }
     else if (v.label != null) { nk = 'label' }
     else if (v.id != null) { nk = 'id' }
-    let facts = {}
+    let out = {}
+    out[k] = nk ? v[nk] : 1
     for (const kk of Object.keys(v)) {
-        if (kk === nk) continue
-        facts[kk] = v[kk]
+        if (kk === nk || kk === k) continue
+        out[kk] = v[kk]
     }
-    let out = { is: k, facts: facts }
-    if (nk) out.name = v[nk]
     return out
 
-// Vyto_seem_spread — A LIST OF SCALARS BECOMES A SPREAD saying row: the key, then its values as chips.
+// Vyto_guise_spread — A LIST OF SCALARS BECOMES A SPREAD saying row: the key, then its values as chips.
 //  That is the distiller's own vocabulary for exactly this shape (many values under one key) and it
 //   already renders, so a list costs no new layout.
-//  IT DOES NOT TRUNCATE, and that is deliberate (2026-09-23, the owner of an earlier `SEEM_CHIPS = 6`:
-//   *"seems brutal"* — and right twice over).  A constant here is the MODEL guessing at room it cannot
-//    see: a chip cap that is stingy in a big cell is mean and generous in a small one is a lie, and the
-//     glass already has the honest answer — `pane_rows` seats what the wall affords and counts the rest
-//      in `Pane.hid`.  So say everything and let the room decide.
-//  ⚠ THE DOOR IS OWED, and it is OLDER than this: nothing renders `hid` yet, so any cell whose folio
-//   overruns its wall today drops atoms silently — the exact silent omission the flat seam was given
-//    `flat_n` for.  That is a glass-wide gap, not a Seem one; see Glassbeast_todo §0.
-Vyto_seem_spread(k, bits):
+//  IT DOES NOT TRUNCATE, deliberately (2026-09-23, the owner of an earlier six-chip cap: *"seems
+//   brutal"*).  A constant here is the MODEL guessing at room it cannot see — stingy in a big cell,
+//    a lie in a small one — and the glass already holds the honest answer: `pane_rows` seats what the
+//     wall affords and counts the rest in `Pane.hid`.  So say everything and let the room decide.
+//  ⚠ THE DOOR IS OWED, and it is OLDER than this: nothing renders `hid` yet, so ANY cell whose folio
+//   overruns its wall drops atoms silently — the same silent omission the flat seam was given `flat_n`
+//    for.  The owner met it on this very glass (*"the artist isn't fit in there on Hit:Kelpwalk"*).
+//     Glass-wide gap, not a Guise one; see Glassbeast_todo §0.
+Vyto_guise_spread(k, bits):
     let row = { row: 'spread', k: k, bits: [] }
     for (const b of bits) { row.bits.push({ v: '' + b }) }
     return row
 
-// Vyto_seem_voice — mint a sown leaf's SAYING on its mirror row, in the crest's own vocabulary.  Called
-//  from the scan (the one place that holds both the source and its row).  Rebuilt only when the saying
-//   CHANGES (a sig on `.c`), so a quiet glass mints nothing; the rows carry no `.c.tok`, so `tree_nodes`
-//    skips them exactly as it skips a crest's — furniture the renderer speaks, never a cell.
-Vyto_seem_voice(w, row, says):
+// Vyto_guise_voice — mint a leaf's SAYING on its mirror row, in the crest's own vocabulary.  Called
+//  from the scan (the one place holding both the source and its row).  Rebuilt only when the saying
+//   CHANGES (a sig on `.c`), so a quiet glass mints nothing; the rows carry no `.c.tok`, so
+//    `tree_nodes` skips them exactly as it skips a crest's — furniture the renderer speaks, not a cell.
+Vyto_guise_voice(w, row, says):
     let sig = JSON.stringify(says)
     if (row.c.voice_sig === sig) return
     row.c.voice_sig = sig
@@ -612,7 +620,7 @@ Vyto_scan_sweep(w, parentMirror, gen):
         // a %Membrane is minted by the Membrane station, never walked from a source — it keeps its own
         //  house (Vyto_membrane_scope drops a stale one), so the sweep leaves it be
         if (row.c.membrane) continue
-        // VOICE ROWS ARE FURNITURE, NOT SIGHTINGS (2026-09-23).  A sown leaf's saying (Vyto_seem_voice) is
+        // VOICE ROWS ARE FURNITURE, NOT SIGHTINGS (2026-09-23).  A leaf's saying (Vyto_guise_voice) is
         //  minted from the scan and never re-stamped — its sig guard exists precisely so a quiet glass
         //   mints nothing — so without this the sweep marked it departing on the very scan that made it,
         //    dropped it on the next, and the guard then refused to rebuild: a voice that showed for one
@@ -1482,6 +1490,20 @@ Vyto_relate(w):
     for (const e of edges) {
         let flow = { Flow: 1, a: members[e.i].c.tok, b: members[e.j].c.tok, n: '' + e.w }
         if (e.kind === 'kin') { flow.kind = 'kin' }
+        // WHICH SCALAR THE EDGE IS ABOUT (2026-09-23, the owner: *"a layer on top of them with lines
+        //  connecting... layout text then crosslinks stretches of it"*).  The weave has always known that
+        //   two rows share something and thrown away WHAT — `group_edges` counts the shared atoms and
+        //    returns a number.  But the renderer can only land a line on the WORD if it is told the word,
+        //     and `sig_of` already speaks in `k=v` atoms, so the intersection is right here for free.
+        //  The first shared atom, not all of them: a line is one line, and the strongest claim a pair has
+        //   on each other is enough to point at.  Absent on a kin-only edge (kin atoms are not in the
+        //    sigs), and absent leaves the renderer on its old cell-centre anchor — byte-invisible.
+        let via = null
+        for (const sg of sigs[e.i]) {
+            if (via) break
+            if (sigs[e.j].indexOf(sg) >= 0) via = sg
+        }
+        if (via) flow.via = via
         w.c.relations.i(flow)
     }
     if (!edges.length) return

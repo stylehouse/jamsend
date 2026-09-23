@@ -1,0 +1,7 @@
+Snap:H
+  H:VytoGuise,Run
+    A:VytoGuise
+      self,round=2	{"mung":["age"]}
+      w:VytoGuise
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok

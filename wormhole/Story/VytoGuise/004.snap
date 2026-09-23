@@ -1,0 +1,10 @@
+Snap:H
+  H:VytoGuise,Run
+    A:VytoGuise
+      self,round=5	{"mung":["age"]}
+      w:VytoGuise
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        req:resow_wait,finished
+        see:a re-sown hit morphs in place — the producer own id is the identity so a refreshed result set never blinks

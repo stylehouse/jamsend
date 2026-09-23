@@ -2,6 +2,133 @@
 
 ## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night; the older §0s are §0.6–§0.8 below, intact)
 
+### 0.0 2026-09-23 — SELF-CIRCULATION: why a Lineup can say "no music coming across" with real records mirrored
+##  (owner, live: "somehow we should be smarter than that" — ANALYSIS, nothing coded yet, owner's call pending)
+
+**The live symptom** (940f aka "deep-mango"/"Lump", aimed at Grav/`eed831f1977c4e81`): a `minisnap` taken right
+ after give-up showed `Friend:Grav,music,records:26,here` — 26 real, chunked (non-husk) records genuinely
+  mirrored from Grav — yet the Lineup still minted `error,say:'no music coming across from Grav'`. A second,
+   independent live incident (console log, same 940f tab, later reload) shows the SAME shape from the traffic
+    side: `Repli rx` climbs to real sustained transfer (`26p/517KB`, `36p/758KB`, …) — the pool download from
+     Grav is genuinely succeeding — and the radio still never begins.
+
+**Root cause, confirmed via code + the mirror's own `path:pool/...` tag on every one of those 26 records**:
+ Grav's pool is, right now, almost entirely 940f's OWN originally-uploaded library, pooled by Grav from 940f
+  earlier and now circulating back. `Radio_lineup_fill` (`Ghost/M/Radio.g` ~2373) correctly refuses to draw
+   any record whose id is in `Radio_heard(radio)` — the durable, 30-day, content-addressed heard set
+    (`Heard.g`'s `Heard_set`, keyed on `%Card,id,pub` — see [[heard-mag-is-the-ledger]]) — and 940f has, by
+     definition, already "heard" every one of its own originally-uploaded tracks. So the per-record filter is
+      RIGHT, but the aggregate result — a friend whose ENTIRE current offering happens to be self-originated —
+       is a topology/bootstrapping dead end the Lineup has no vocabulary for beyond the generic error.
+
+**Why the obvious "smarter" patch (exclude already-held ids from the draw) does not actually reach this bug**:
+ `Pool_facts` already computes exactly the right signal for this — `f.held_raw` (`Ghost/M/Pool.g:66-68`, the
+  listener's own Mine/library ids) — and it already flows into `Pool_diff` (line ~198) to choose `press` vs
+   `pull`. The instinct is "so just make `Pool_goal` skip held ids too." But that fix runs on the WRONG side:
+    `held_raw` is computed per-identity from `Pool_facts(w, ident)`, i.e. whoever is BUILDING their own pool.
+     On **Grav's** own Pool_facts, none of 940f's ids are in Grav's `held_raw` (Grav doesn't own them, it
+      mirrored them) — so excluding self-held ids from Grav's own goal changes nothing for 940f. The actual
+       decision point is on **940f's LISTEN side** (`Radio_lineup_fill`, reading 940f's `Radio_heard`), a
+        completely different function/identity from where `held_raw` lives. There is no existing "is this id
+         self-originated" signal on the listen side at all — heard-or-not is the only lens `Radio_lineup_fill`
+          has, and heard-or-not is not the same question as self-originated-or-not (a track heard via a THIRD
+           friend, not self-uploaded, is filtered by the exact same line, correctly, and should stay filtered).
+
+**What "smarter" could actually mean here — three real options, a real tradeoff each:**
+
+1. **Diagnose better, fix nothing mechanical.** Give `Radio_lineup_errors` a second message when EVERY
+    candidate it rejected from a holder was rejected specifically via the heard-filter (as opposed to zero
+     candidates existing at all): `'Grav only has your own music right now'` instead of the generic
+      `'no music coming across from Grav'`. Cheap, safe, ships fast — but the radio still doesn't play; it
+       just explains itself better. Good baseline regardless of what else happens.
+2. **Widen the search instead of stopping at one friend.** If the only aimed/granted friend's entire
+    contribution reduces to zero after the heard-filter, fall back to the pool (`radio.sc.aim` present but
+     `radio.sc.own` and pool both eligible) rather than a dead stop — i.e. treat "this specific friend has
+      nothing new" as a reason to widen the draw, not a reason to give up. Changes dial semantics (a listener
+       aimed at ONE friend has, until now, meant ONLY that friend) — needs the owner's ruling, not a unilateral
+        call: does "aimed at Grav" mean *exclusively* Grav, or *Grav preferred, pool as fallback*?
+3. **Teach the POOL not to waste effort re-circulating a track back to its own originator.** Grav's pool
+    doesn't know 940f is the original owner of what it's mirroring — nothing does; content-addressing means
+     the id alone can't say "whose library did this start in" without a provenance stamp nobody currently
+      writes. This is the most correct long-term fix (stop the waste at the source, not just hide it at
+       playback) but needs a new field: an `origin`/`of` stamp at PRESS TIME on `%Record` (Heist_catalog_land,
+        `Ghost/M/Heist.g` ~950 — "the one door") naming the FIRST holder ever seen for an id, carried through
+         every subsequent pool hop. A real schema addition, not a filter — bigger, and worth doing once, not
+          per-symptom.
+
+**Recommendation**: do (1) now (cheap, safe, immediately better for the owner's next live hit of this), and
+ bring (2) to the owner as an explicit ruling next session (it's a dial-semantics decision, not a bug fix).
+  (3) is the "actually smart" fix but is a real feature, not a patch — scope it separately if the owner wants
+   the pool itself to stop wasting bandwidth on this pattern, not just the Lineup to explain it better.
+
+**(1) LANDED 2026-09-23** (same session, after the owner: *"we need to take care to have some coherent C**
+ somewhere about such situations, so you can diagnose it via runner_ask etc"*). `Radio_lineup_fill`
+  (`Ghost/M/Radio.g` ~2421) now counts, per friend, WHY each candidate record fell out of their pool
+   (`lined` already-queued / `heard` already-heard / `notplay` not-yet-downloaded / surviving `total`) and
+    hands that `stats` map to `Radio_lineup_errors` (~2477, now taking a 4th `stats` arg). The minted `%error`
+     row carries a real `why:` field — `'no_records'` (genuine silence — the old, only, behaviour), `'downloading'`
+      (bytes still landing, self-resolving), or `'all_heard'` (every candidate is content already durably
+       heard — a content-exhaustion VALVE, not a fault) — alongside the human `say:` sentence, worded
+        differently per case (`'all_heard'` reads as a calm limit: *"you've already heard everything <name>
+         has right now"*, never the alarming *"no music coming across"*). `LineupFace.svelte` reads `why` too:
+          an `'all_heard'` row renders dim/calm (`.lf-calm`, a `·` marker) instead of the red `⚠` `.lf-err`
+           treatment every other starve reason keeps. **This closes the "coherent C particle" ask directly**:
+            `minisnap`/`runner_ask` now shows `why:` on the Lineup's error row without anyone having to
+             cross-reference the heard Mag against the friend's mirror by hand, the way this session's whole
+              investigation had to. Compiled (LocalGen CHECK, esbuild-parsed, NUL-swept); **not yet live-
+               verified against the specific `all_heard` branch** — every Book in `MusuTesting.g` that
+                exercises `Radio_dial`'s friend/pool ladder either needs a real gesture-granted AudioContext
+                 (blocked in this sandbox, the same class of limit as the original 940f investigation) or
+                  deliberately stubs past the lineup-fill logic (`MusuRadioAim`). `MusuMesh` (no AC gate) was
+                   run as a sanity check that nothing else broke (6/6 green, caveat:0) but does not touch
+                    Radio at all, so it is not evidence for the new branch specifically — next session, verify
+                     directly on a live tab (aim at a friend whose whole current pool traces back to your own
+                      heard content) via `minisnap` for `why:'all_heard'` on the Lineup's error row.
+**(2) RULED AND LANDED 2026-09-23** (owner: *"yeah fall back to SP I guess. maybe a little puff of
+ 'exhaustion' when that happens, nice"*). `Radio_lineup_fill`'s friend branch (`Ghost/M/Radio.g` ~2453): when
+  every granted friend contributes zero playable candidates (`pools.length === 0`, after each friend's own
+   `%error,why` row is still minted per §0.0's rung above), it now draws a fallback pool from `Ra_pool_stock`
+    (SoundPooling's own local shelf, PROBE-only — never vivifies a home mid-poll) using the same
+     lined/held/heard/playable filters as a friend draw. A snap-legible `lu.sc.exhausted` flag marks the
+      moment this happens (cleared the instant real friend content flows again) — `LineupFace.svelte` reads
+       it and shows a one-shot "🫧 dipping into your pool" flourish (CSS keyframe puff-in, then settles calm,
+        never a standing banner). Falling back was already the existing law one layer down in
+         `Radio_dial_pool` (the actual NEXT-TRACK picker, 2026-08-06 "exhaustion pass" — `aimed.length ?
+          aimed : cands`) — this closes the same gap in the LINEUP (the visible up-next QUEUE, a separate
+           function from the dial), which had no such fallback and just gave up with an error instead.
+
+**(3) — refined and PARTIALLY LANDED 2026-09-23** (owner: *"this one mechanism works... for Radio as well
+ as SP right?"*). Rather than a new provenance-stamp schema (the original, bigger scoping), the existing
+  `held_raw`/`Ra_home_self` signal — "do I already hold these exact content-addressed bytes" — turned out to
+   be the right, ALREADY-COMPUTED tool, reused in both doors the owner asked about:
+- **Radio** (`Radio_lineup_fill`'s friend branch): a `mineIds` set (own Mine library ids) now excludes a
+   candidate from a friend's draw BEFORE the heard-check even runs — self-held content is skipped whether or
+    not it's been explicitly "heard" yet (a never-played self-upload bouncing back would have sailed past
+     the old heard-only filter). `Radio_lineup_errors`' `why` ladder grew a fourth, more precise value —
+      `'own_content'` — ahead of `'all_heard'`, so the live case that started this session's whole
+       investigation (Grav re-serving Lump's own uploads) now diagnoses exactly, not just "all heard".
+- **SP** (`Pool_draw_random`, `Ghost/M/Pool.g` ~112): the SAME `held_raw` field `Pool_diff` already reads
+   (line ~198, to choose press-vs-pull) now also excludes an already-held id from ever entering the
+    'random' circulation draw at all — scoped DELIBERATELY to the 'random' take only, never the generic
+     `Pool_goal` or the other take-kinds (`recent`/`latest`/`liked`/`kept` explicitly WANT to press
+      already-held content into the pool cache — that's the feature, not a bug; `MusuPoolPolicy`'s own sworn
+       assertion "the recent compartment presses what the shelf already holds" pinned this distinction live).
+- **Not done**: no provenance stamp exists yet (nothing records WHO originated a given id, only "do I
+   currently hold it") — so a self-originated track you've since REMOVED from your own Mine shelf would no
+    longer be caught by this. That's the real §3 gap left for later if it ever matters in practice; this
+     landing covers every case seen live so far.
+
+Compiled (LocalGen CHECK-equivalent write, esbuild-parsed both `Radio.go`/`Pool.go`, NUL-swept). Live-checked
+ on the Pool side: `MusuPoolRandom` (5/5), `MusuPoolPolicy` (6/6), `MusuPoolFill` (6/6) — all green, caveat:0,
+  no regressions from the `held_raw` exclusion or the press/pull distinction. **Not live-checked on the
+   Radio/Lineup side** (the fallback-to-pool + `mineIds` exclusion + the puff): every Book that drives
+    `Radio_dial`'s friend/lineup ladder either needs a real gesture-granted AudioContext (unavailable in this
+     sandbox) or deliberately stubs past lineup-fill (`MusuRadioAim`) — same limitation flagged for (1)
+      above. Next session: check a live `minisnap` for `lu.sc.exhausted` and a `%error,why:'own_content'`
+       row next time the 940f/Grav scenario (or any single-exhausted-friend case) recurs, and eyeball the
+        puff in the actual glass. [[radio-dial-aim-own-gesture-bugs-2026-09-22]] has the original bug hunt
+         this whole thread grew out of.
+
 ### 0.0 2026-09-21 — THE PLAN (ruled with the owner 09-20/21; the slog starts here)
 
 **Rulings taken:** the heard Mag MAY cross the relay, crew-only (*"that I say is okay"*). A Nay removes the

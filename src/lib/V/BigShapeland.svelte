@@ -41,11 +41,7 @@
         // ── the one you like ──────────────────────────────────────────────────────────────────────
         { book: "VytoOrchestra", draws: true,  what: "THE DEMO — foam cut, a nested bag, kin songs, loose strays, a live re-weave, a focus swell, a pose flip, a departure. Groovy. Has fins. A bare unfurnished apartment." },
         { book: "VytoMembrane",  draws: true,  what: "THE MEMBRANE — siblings of one mainkey become ONE family scope with a bump at its heart saying the mainkey and every fact they share; a diverging fact leaves the bump, a departure shrinks the family, a second dissolves it. Try the membrane + pinch stops." },
-        { book: "VytoSeem",      draws: true,  what: "SOWN MATTER — clustered search results laid out from plain JS trees with not one particle of the program grappled; a nested record grows its own cell, a list becomes chips, a collapsed cluster speaks its count, and the producer private field never reaches a cell." },
-        { book: "VytoMembrane",  draws: true,  what: "THE MEMBRANE — siblings of one mainkey become ONE family scope with a bump at its heart saying the mainkey and every fact they share; a diverging fact leaves the bump, a departure shrinks the family, a second dissolves it. Try the membrane + pinch stops." },
-        { book: "VytoSeem",      draws: true,  what: "SOWN MATTER — clustered search results laid out from plain JS trees with not one particle of the program grappled; a nested record grows its own cell, a list becomes chips, a collapsed cluster speaks its count, and the producer private field never reaches a cell." },
-        { book: "VytoMembrane",  draws: true,  what: "THE MEMBRANE — siblings of one mainkey become ONE family scope with a bump at its heart saying the mainkey and every fact they share; a diverging fact leaves the bump, a departure shrinks the family, a second dissolves it. Try the membrane + pinch stops." },
-        { book: "VytoSeem",      draws: true,  what: "SOWN MATTER — clustered search results laid out from plain JS trees with not one particle of the program grappled; a nested record grows its own cell, a list becomes chips, a collapsed cluster speaks its count, and the producer private field never reaches a cell." },
+        { book: "VytoGuise",     draws: true,  what: "THE GUISE — a flat result set (no grouping cell) laid out from plain objects that are NOT particles; a guise reads as a snap line and says only what it names, so the producer private field never reaches a cell. Try deck=crosslink: the shared-scalar grouping is DRAWN as lines landing on the actual shared word, not boxed as a container." },
         // ── Voro: the OLD renderer (Cytui). It has the crest voice and the words-along-the-wall that did not cross the moult — look here for what got lost ──
         { book: "VoroMitosis",   draws: null,  what: "Voro · a flora of genera — newcomers arrive, the cut re-seats, a genus goes extinct and its cell escorts out" },
         { book: "VoroScape",     draws: null,  what: "Voro · the graph-of-music: %Artist panes of %Track songs, peers sharing tracks as edges, a shared track blazing as a hub" },
@@ -107,6 +103,7 @@
         { stop: 'wallcarve',  what: 'OPT OUT of the folio — back to the old wall-carve masonry / centred ident (folio is now the default)' },
         { stop: 'wave',       what: 'with wallcarve on: the label rides a scalloped wave band instead of the wall carve' },
         { stop: 'junction',   what: 'sibling cells of one mainkey say it ONCE where they meet — each keeps only its value (the owner\'s idea)' },
+        { stop: 'crosslink', what: 'the grouping-as-vines pass paints ON TOP of the cells instead of underneath — for a dense pile with no gaps to show a substrate through (the owner: "a layer on top of them with lines connecting")' },
         { stop: 'pinch',      what: 'with membrane on: each petal is carved to a NECK onto its family\'s bump — the disc shows through the pinches between necks' },
         { stop: 'seal',       what: 'the seat regime — cells seal to their molds' },
         { stop: 'copperless', what: 'no copper ground' },

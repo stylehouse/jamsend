@@ -2,7 +2,16 @@
     // LineupFace — the STANDING PROGRAMME in the glass: mounted by Cytui on %Mag:'Lineup'
     //  (glass_kinds).  Shows what plays next (the rolling ~20-deep queue every crate feeds —
     //   friend tracks marked with who they're from) and any %error rows — a granted friend
-    //    who is here with no music coming across is a RED fact, not furniture.
+    //    who is here with no NEW music coming across is a fact worth a line, not furniture.
+    //     Two tones (2026-09-23, Radio_lineup_errors `why`): a real starve (no records at all,
+    //      or bytes still landing) stays a RED ⚠; a friend whose whole offering is content
+    //       you've already durably heard OR already own (`why:'all_heard'`/`'own_content'`) is a
+    //        calm content-exhaustion VALVE, not a fault, and reads dim — never alarms for a state
+    //         that resolves itself the moment the friend has anything new.
+    //     THE PUFF (owner, 2026-09-23, ruling on Option 2 — "fall back to SP... maybe a little
+    //      puff of exhaustion when that happens, nice"): when every friend runs dry, Radio_lineup_fill
+    //       dips into the SoundPool shelf and stamps `sc.exhausted` on the Lineup itself — a one-shot
+    //        CSS flourish marks the moment it happens, then settles calm (never a standing alarm).
     //     Read-only v1: the radio's ⏭ is the skip; per-card surgery is a later gear.
     let { n, H } = $props()
 
@@ -15,11 +24,15 @@
             artist: c.sc.artist as string | undefined,
             by: c.sc.by as string | undefined,
         }))
-        const errors = (n?.o?.({ error: 1 }) ?? []).map((e: any) => String(e.sc.say ?? 'no music coming across'))
+        const errors = (n?.o?.({ error: 1 }) ?? []).map((e: any) => {
+            const why = String(e.sc.why ?? '')
+            return { say: String(e.sc.say ?? 'no music coming across'), calm: why === 'all_heard' || why === 'own_content' }
+        })
         return {
             up_next: +(sc.up_next ?? 0),
             cards,
             errors,
+            exhausted: !!sc.exhausted,
         }
     })
     // a friend prepub → their chosen name, for the "· from" tag
@@ -42,8 +55,13 @@
         </div>
     {/each}
     {#each face.errors as e}
-        <div class="lf-err">⚠ {e}</div>
+        <div class={e.calm ? 'lf-calm' : 'lf-err'}>{e.calm ? '·' : '⚠'} {e.say}</div>
     {/each}
+    {#if face.exhausted}
+        {#key face.exhausted}
+        <div class="lf-puff">🫧 dipping into your pool</div>
+        {/key}
+    {/if}
 </div>
 {/if}
 
@@ -63,4 +81,11 @@
     .lf-artist { opacity: 0.7; }
     .lf-by { font-size: 8px; color: #b797dd; flex: none; }
     .lf-err { font-size: 10px; color: #e07c85; font-weight: 600; margin-top: 3px; }
+    .lf-calm { font-size: 10px; color: #9fb0a8; font-weight: 400; margin-top: 3px; }
+    .lf-puff { font-size: 10px; color: #9fb0a8; font-weight: 400; margin-top: 3px; animation: lf-puff-in 900ms ease-out; }
+    @keyframes lf-puff-in {
+        0%   { opacity: 0; transform: scale(0.7); }
+        60%  { opacity: 1; transform: scale(1.08); }
+        100% { opacity: 1; transform: scale(1); }
+    }
 </style>

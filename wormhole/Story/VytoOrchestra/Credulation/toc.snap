@@ -1,5 +1,5 @@
 Credulation,of_Book:VytoOrchestra
-  run=0,at=1790113008.535,ok=0,ok_pct=0.13,mode:check
+  run=0,at=1790121940.954,ok=0,ok_pct=0.13,mode:check
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:8f51a3d0dfa19017~g1
@@ -31,8 +31,8 @@ Credulation,of_Book:VytoOrchestra
     uses:Ghost_Story_InvFerry,dige:25d7e048c292e562~g1
     uses:Ghost_Story_InvWalk,dige:e3dd6a1629d67c5c~g1
     uses:Ghost_V_Voro,dige:e0323dccaf9924f8~g1
-    uses:Ghost_V_Vyto,dige:7edafd2658ba9b65~g1
-    uses:Ghost_V_VytoTesting,dige:c3522b53e1dbe88e~g1
+    uses:Ghost_V_Vyto,dige:3a0ad58fe429c68f~g1
+    uses:Ghost_V_VytoTesting,dige:0f52dfbfc9862f86~g1
     uses:Ghost_Story_VoroTesting,dige:ba7f8d826ff81866~g1
     uses:Ghost_Story_Sounditron,dige:c113f372ff580584~g1
     uses:Ghost_O_Supervisor,dige:4efe70cdd7ae19ac~g1

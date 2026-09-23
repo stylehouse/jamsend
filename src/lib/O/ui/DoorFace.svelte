@@ -37,8 +37,6 @@
         let friends: any[] = []
         try {
             if (self && typeof H?.Swarm_peering === 'function') {
-                const rw = (H as any)?.c?.radio_w
-                const playing = !!rw?.o?.({ Radio: 1 })?.[0]?.c?.rec
                 // FAMILY SUPERSEDES FRIENDSHIP (owner 2026-08-31: both tabs listed "you" / "captain
                 //  Grav you" among the piers — each body seeing its own family, husk included, dressed
                 //   as friends).  A pier whose key matches a roster %Body — or my own soul (the redeem
@@ -53,19 +51,6 @@
                     return keys.some(k => fam_pubs.some(fp => fp && (k.startsWith(fp) || fp.startsWith(k))))
                 }
                 friends = ((H.Swarm_peering(self)?.o({ Pier: 1 }) ?? []) as any[]).filter((p: any) => !kin(p)).map((p: any) => {
-                    // the latest suggestion FROM them (by === their pub), with its mirror rec
-                    //  resolved by enid against their crate when the share already carried it —
-                    //   resolvable means ▶ plays it right here.
-                    const sug = (p.o({ Suggest: 1 }) as any[]).filter(s => s.sc.by === String(p.sc.pub)).at(-1)
-                    let sug_rec: any = null
-                    if (sug && rw) {
-                        try {
-                            const shelf = rw.o({ Theirs: 1, pub: String(p.sc.pub) })[0]?.o({ stock: 1 })?.[0]
-                            sug_rec = ((H as any)?.Ra_rec_find
-                                ? (H as any).Ra_rec_find(shelf, { Record: 1, id: String(sug.sc.id) })
-                                : shelf?.o({ Record: 1, id: String(sug.sc.id) })?.[0]) ?? null
-                        } catch { sug_rec = null }
-                    }
                     // presence in three honest rungs off heard_at (their pulse heartbeat, ~5s):
                     //  here (<15s ≈ 2 missed pulses) · fading (<45s) · away.  The old 12s window
                     //   flickered on one dropped pulse — "doesn't seem reliable", the human.
@@ -105,9 +90,6 @@
                         records: p.o({ IveGot: 1, by: 'records' })[0]?.sc?.count,
                         rung,
                         ago,
-                        sug: sug ? { title: sug.sc.title || sug.sc.id, note: sug.sc.note } : null,
-                        sug_rec,
-                        can_suggest: playing && !!p.o({ Grant: 'Music' })[0],
                         // RETIRED = every feature NotGrant-revoked (Swarm_pier_forget).  The Pier row stays in
                         //  the ledger as history, but the Door stops SHOWING it — "we don't need too much in
                         //   there" (owner 2026-08-29, six dead Incognito link-test piers cluttering the list).
@@ -414,25 +396,6 @@
         } catch (e) { name_err = 'not saved — ' + String(e).slice(0, 50) }
     }
 
-    // ── SUGGEST — "you'd love this": send the PLAYING track to a friend, async to their being
-    //  online (Swarm_suggest stashes + re-offers until their suggest_got).  ▶ on an arrived
-    //   suggestion tunes the mirror record the share already carried over.
-    function suggest(pub: string) {
-        try {
-            const w = (H as any)?.Swarm_station_world?.()
-            const self = (H as any)?.Swarm_live_self?.()
-            const rec = (H as any)?.c?.radio_w?.o?.({ Radio: 1 })?.[0]?.c?.rec
-            if (w && self && rec) (H as any)?.Swarm_suggest?.(w, self, pub, rec, null)
-        } catch {}
-    }
-    function tune_sug(rec: any) {
-        try {
-            const rw = (H as any)?.c?.radio_w
-            const radio = rw?.o?.({ Radio: 1 })?.[0]
-            if (radio && rec) (H as any)?.Radio_tune?.(radio, rec)
-        } catch {}
-    }
-
     // (The grantor adopt-confirm + its SAS used to live here — moved to the Link cell 2026-08-28, owner:
     //  "should be on its own in the Link cell. both should be. it's a huge deal copying your account".)
 
@@ -700,10 +663,6 @@
             <!-- "Gwop eed831f1" — friendly prominent, prepub small (owner 2026-08-31: "both name and prepub …
                  make the [name] part bigger, the rest pretty small").  Unnamed pier → just the pub8, once. -->
             <span class="df-name">{f.cave ? '🔗 ' : ''}{#if f.friendly}{f.friendly}<span class="df-fpub">{f.pub8}</span>{:else}<span class="df-fpub df-fpub-solo">{f.pub8}</span>{/if}</span>
-            {#if f.can_suggest}
-                <button class="df-edit" onclick={() => suggest(f.pub)}
-                    title="suggest the playing track to {f.name} — lands even if they're away">♪→</button>
-            {/if}
             <!-- FORGET (away rows only): retire a pier that will never return — a dead Incognito tab, an
                  abandoned link test.  Swarm_pier_forget mints the standard signed %NotGrant per feature
                  (durable; the row stays in the ledger as history) + UnInvites the pub, and the retired
@@ -715,16 +674,6 @@
                     title="forget {f.name} — retires this {f.cave ? 'device link' : 'friend'} (it can be re-invited later)" />
             {/if}
         </div>
-        {#if f.sug}
-            <div class="df-sug">
-                {#if f.sug_rec}
-                    <button class="df-edit" onclick={() => tune_sug(f.sug_rec)} title="play their suggestion">▶</button>
-                {/if}
-                <span class="df-tag">suggests: {f.sug.title}</span>
-                {#if f.sug.note}<span class="df-tag dim">{f.sug.note}</span>{/if}
-                {#if !f.sug_rec}<span class="df-tag dim">arriving with the share…</span>{/if}
-            </div>
-        {/if}
     {/each}
     {#if friend_piers.length > PIERS_SHOWN}
         <button class="df-more" onclick={() => piers_all = !piers_all}
@@ -930,7 +879,6 @@
        Door wraps a flex list into an uneven grid; stack the piers in one clean column instead. */
     .df-others { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: 4px; }
     .df-others .df-friend { margin-top: 0; }
-    .df-others .df-sug { flex-basis: 100%; }
     .df-friend { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 4px; }
     /* the prepub tag beside a friendly name — small, dim, monospace (matches .df-pub on the title line). */
     .df-fpub { font-size: 8px; opacity: 0.5; font-family: monospace; font-weight: 400; margin-left: 5px; letter-spacing: 0; }
@@ -944,7 +892,6 @@
        mate's row is the receipt (owner 2026-09-03: "dump us off in the Door, and have a glow behind the new Crew Pier") */
     .df-body.fresh { box-shadow: 0 0 14px 3px rgba(240, 190, 110, 0.45); border-radius: 0.6rem; background: rgba(240, 190, 110, 0.10); }
     .df-friend .df-name { font-weight: 600; }
-    .df-sug { display: flex; align-items: center; gap: 4px; font-size: 10px; margin-left: 16px; }
     .df-dot { color: #5a4a5f; font-size: 10px; }
     .df-dot.here { color: #7fe8bf; text-shadow: 0 0 4px #7fe8bf; }
     .df-dot.fading { color: #d8b86a; }
