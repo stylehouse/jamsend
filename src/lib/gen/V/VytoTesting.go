@@ -12,7 +12,7 @@ import { poly_area } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_VytoTesting(): string { return '2d7c4b9eaf7e2503~g1' },
+    Ghostmeta_Ghost_V_VytoTesting(): string { return '78f29017ac764951~g1' },
 
 // VytoTesting.g — né Vytonation.g.  Vyto's demo Books (the VoroTesting.g sibling, one directory over
 //  in Ghost/V/), under the `<Name>Testing.g` convention (owner ruling 2026-09-09; the one predicate
@@ -3192,10 +3192,27 @@ VytoSpine_level(w) {
             if (!byPath[h.path]) { byPath[h.path] = []; order.push(h.path) }
             byPath[h.path].push(h)
         }
+        // STEM (2026-09-24, from the coding|meta agent: "stemming doesn't need its own mechanism — it needs
+        //  to become one more fact the election can see"): a file's stem is its name less the `Testing`
+        //   suffix (testing.ts TESTING_RE's own convention), so Swarm.g and SwarmTesting.g share one.  Files
+        //    are ordered by stem first (then the ghost before its Testing, then path) so a family sits
+        //     together down the spine, and the glass FUSES adjacent vertebrae sharing a stem (Vytui).
+        let stemOf = p => this.VytoSpine_base(p).replace(/Testing$/, '')
+        order.sort((a, b) => {
+            let sa = stemOf(a), sb = stemOf(b)
+            if (sa !== sb) return sa < sb ? -1 : 1
+            let ta = /Testing\.g$/.test(a) ? 1 : 0, tb = /Testing\.g$/.test(b) ? 1 : 0
+            if (ta !== tb) return ta - tb
+            return a < b ? -1 : a > b ? 1 : 0
+        })
         for (const p of order) {
             let kids = byPath[p].map(h => this.VytoSpine_hit(w, h))
-            out.push({ Doc: p, guise: { tok: 'doc:' + p, dose: byPath[p].length, kids: kids,
-                press: () => this.VytoSpine_go(w, { lvl: 'file', path: p, kind: null }) } })
+            let doc = { Doc: p, stem: stemOf(p) }
+            // the snapped-boolean law: a true rides as 1 and a false is ABSENT, never 0
+            if (/Testing\.g$/.test(p)) doc.testing = true
+            doc.guise = { tok: 'doc:' + p, dose: byPath[p].length, kids: kids,
+                press: () => this.VytoSpine_go(w, { lvl: 'file', path: p, kind: null }) }
+            out.push(doc)
         }
         return out
     }

@@ -34,6 +34,7 @@ import { RemoteWormholeNav } from "$lib/O/RemoteWormholeNav.svelte"
 import { Dexie } from "dexie"
 import { onMount } from "svelte"
 import { socklog_arm, socklog_armed, concap_read, concap_count } from "$lib/O/sockcap"
+import { TESTING_RE } from "$lib/L/testing"
 
 let { M } = $props()
 
@@ -1093,7 +1094,12 @@ await M.eatfunc({
         //   minus its source suffix, so Lang*|Lies* fold onto shared stems rather than all
         //    sharing `.svelte` (and Peeroleum.g → Peeroleum). A non-source name (Peeroleum_spec.md)
         //     keeps its extension, since stripping nothing is the honest stem.
-        const stem  = (name: string) => name.replace(/\.(svelte\.ts|svelte|ts|g)$/, '')
+        // A <Name>Testing.g also loses its Testing suffix (TESTING_RE, testing.ts's own
+        //  convention), so SwarmTesting folds onto Swarm's stem instead of standing apart.
+        const stem  = (name: string) => {
+            const base = name.replace(/\.(svelte\.ts|svelte|ts|g)$/, '')
+            return TESTING_RE.test(name) ? base.replace(/Testing$/, '') : base
+        }
 
         funk.c.run = async (host: TheC, _fk: TheC, ww: TheC) => {
             const now = Date.now()

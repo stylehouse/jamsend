@@ -1,10 +1,9 @@
 Snap:H
   H:VytoSpine,Run
     A:VytoSpine
-      self,round=3	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:VytoSpine
-        self,round=3	{"mung":["age"]}
+        self,round=4	{"mung":["age"]}
         req:wrangle,eternal,ok
-        req:stand_wait
-          ttlilt	{"mung":["until_ts"]}
-    ttlilt,of_w:VytoSpine	{"ref":{"req":"%req:stand_wait"},"mung":["until_ts"]}
+        req:stand_wait,finished
+        see:a code search stands as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs

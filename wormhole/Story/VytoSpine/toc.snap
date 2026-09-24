@@ -4,10 +4,7 @@ story:VytoSpine
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.167
-      sample=0.056,at=1790209956
-      sample=0.043,at=1790210035
-      sample=0.031,at=1790210112
+    TimeTotal:beliefs,avg=0.239
       sample=0.054,at=1790210232
       sample=0.038,at=1790210346
       sample=0.056,at=1790211025
@@ -15,10 +12,10 @@ story:VytoSpine
       sample=0.785,at=1790224679
       sample=0.242,at=1790226766
       sample=0.282,at=1790228973
-    TimeTotal:step,avg=0.042
-      sample=0.014,at=1790209956
-      sample=0.011,at=1790210035
-      sample=0.008,at=1790210112
+      sample=0.282,at=1790237350
+      sample=0.282,at=1790237352
+      sample=0.282,at=1790237354
+    TimeTotal:step,avg=0.06
       sample=0.014,at=1790210232
       sample=0.01,at=1790210346
       sample=0.014,at=1790211025
@@ -26,7 +23,10 @@ story:VytoSpine
       sample=0.196,at=1790224679
       sample=0.061,at=1790226766
       sample=0.07,at=1790228973
+      sample=0.07,at=1790237350
+      sample=0.07,at=1790237352
+      sample=0.07,at=1790237354
   step,dige:1fcc5bcdd71c806a
   step=2,desc:a code search lands — the Door hits across twelve files fetched from the sample in the Searchbar hit shape,dige:254f9557d6288f57
-  step=3,desc:stand the search as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs by kind,dige:7b8ee0c20a353132
-  step=4,desc:re-search Door to Heist in the same world — the creature re-forms around twenty-one files and the head morphs,dige:d6e4d3e3f42c3c31
+  step=3,desc:stand the search as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs by kind,dige:a870aca422c1b562
+  step=4,desc:re-search Door to Heist in the same world — the creature re-forms around twenty-one files and the head morphs,dige:f8bcc09c4b7d5d6d

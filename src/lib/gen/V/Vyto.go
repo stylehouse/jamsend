@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return 'a797fc0fb4d4485e~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return 'eee2c3da16e6b540~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -453,6 +453,8 @@ Vyto_scan_walk(w, n, parentMirror, depth, gen) {
     //      rows were never meant to be looked at); it is the SILENCE that is wrong.
     //  So: census before drop.  A flat source with children stamps the true count on its row, and the
     //   cell can say "and 7 more inside" instead of pretending to be a leaf.
+    // a producer's fold hint for this row's children rides along (Vyto_guise `foldby`)
+    row.c.fold_by = n.c.fold_by || null
     // a GUISE carries its saying on `.c` (Vyto_guise) — mint it on the row, in the crest's vocabulary
     if (n.c.guise_says) this.Vyto_guise_voice(w, row, n.c.guise_says)
     let kids = n.o()
@@ -549,6 +551,10 @@ Vyto_guise(spec) {
     // `press` — what pressing this cell does (Vytui's cell_click calls source `.c.press`; a crest of these
     //  calls the first member's press with the whole group).  How a producer makes its matter explorable.
     if (typeof g.press === 'function') n.c.press = g.press
+    // `foldby` — a HINT to the fold election for this scope's children: "partition by this fact when it
+    //  partitions at all" (Vyto_fold_scope).  The producer knows its domain — a code search's children carry
+    //   both a kind and a stem, and only it knows which grouping the reader wants.
+    if (g.foldby) n.c.fold_by = String(g.foldby)
     let says = []
     if (g.says) { for (const d of g.says) says.push(d) }
     for (const d of spreads) says.push(d)
@@ -765,7 +771,22 @@ Vyto_fold_scope(w, scope, depth) {
         //   The root keeps its recorded behaviour byte for byte.
         let elsc = members.map(m => m.sc)
         if (depth > 0) elsc = members.map(m => this.Vyto_fold_facts(m.sc))
-        let el = fold_key_compat(elsc, this.Vyto_fo(w, 'kindfold') ? 1 : 0)
+        // THE PRODUCER'S HINT (2026-09-24, asked for by the coding|meta agent: "does the election ever get a
+        //  hint from the producer?" — it did not; the ladder is fixed: mainkey, of, id, then discovered, so a
+        //   scope carrying both a kind and a stem always folds by kind).  A scope row's `c.fold_by` (from a
+        //    guise's `foldby`), or `foldby:<key>` on the deck for the root, NAMES the fact to partition by —
+        //     honoured only when EVERY member carries it and it really partitions (2 to n-1 values, the same
+        //      test every rung passes).  Otherwise the ladder decides exactly as before.  No Book sets a hint.
+        let hint = scope.c.fold_by || (depth === 0 ? this.Vyto_fo(w, 'foldby') : null)
+        let el = null
+        if (hint) {
+            let hv = elsc.map(sc => sc[hint])
+            let hd = {}
+            for (const x of hv) { if (x != null) hd['' + x] = 1 }
+            let dn = Object.keys(hd).length
+            if (hv.every(x => x != null) && dn >= 2 && dn < members.length) el = { rung: 'discovered', key: hint }
+        }
+        if (!el) el = fold_key_compat(elsc, this.Vyto_fo(w, 'kindfold') ? 1 : 0)
         if (el) {
             for (const m of members) {
                 let ofk = fold_group_of(m.sc, el)

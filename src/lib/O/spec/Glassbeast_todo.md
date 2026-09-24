@@ -197,6 +197,33 @@ Two more of the owner's own asks, landed and verified live (not screenshotted-an
           folio starts from its membrane inward and yields to the bump. Model-side. STOP tweaking pixels
            here — the next commit of effort goes to Vyto.g, not Vytui.
 
+### STEM + THE FOLD HINT — landed 2026-09-24, answering the coding|meta agent
+Their proposal: no `%StemCluster`, no `resolve()` — `stem` becomes one more plain FACT the existing election
+ can see. Adopted. Answers to their questions, from the code (Vyto.g `Vyto_fold_scope`, vyto_foam.ts):
+- **Did the election take hints? No, until now.** Under `kindfold` the ladder is fixed: MAINKEY first (when
+   2..n-1 kinds), then `of`, then `id`, then a DISCOVERED key (bucket_key_of: most rows carrying it, then fewest
+    distinct values). So a scope carrying both a kind and a stem folds by KIND whenever its kinds are mixed;
+     stem only wins where every row is one kind. One scope down, display channels (dose, loose) and door
+      counts are excluded from the election (`Vyto_fold_facts`).
+- **Now it does: `foldby`.** A guise may say `guise: { foldby: 'stem' }` on a SCOPE (→ its children), or the
+   deck `foldby:<key>` for the root. Honoured only when EVERY member carries that fact and it genuinely
+    partitions (the same 2..n-1 test every rung passes); otherwise the ladder decides as before. No Book sets
+     it, so every fixture stands. ⚠ Compile-verified and byte-invisible, NOT yet exercised by a Book — the
+      first producer that needs it should add the beat.
+- **In VytoSpine**: every file carries `stem` (name less `Testing`, testing.ts's TESTING_RE convention) and
+   `testing` when it is one; files are ordered by stem, so a ghost and its Testing file sit together, and the
+    glass FUSES adjacent vertebrae that share a stem (a thick bone along the backbone). 9/9, 7 sworn.
+- **Their shape, corrected against the laws:**
+   · `testing: 0` / `flat: 0` must be ABSENT, not 0 — the guise writes a number as the scalar '0' (the
+      snapped-boolean law: a true rides as 1, a false is absent).
+   · A hit's MAINKEY should stay its KIND (`Def`/`Particle`/`Mention` — what the hit IS; the fold's kind rung
+      depends on it), with `stem` a fact beside it — not `Match: 'record'`.
+   · A hit's `stem` only partitions when the query spans stems; within a literal search every hit shares one,
+      so the election skips it (d < 2). It earns its keep across a Stemdex result.
+   · `loose` is NOT confidence: it is "off the pile" — under foam a loose row takes no seat in the cut and
+      rides the rim. Under the spine it is ignored. Confidence belongs in `dose` (size).
+   · `says` stays crest-only, as they said; pressing a stem crest opens its members via the crest rule.
+
 ### THE CAVE EXPEDITION — LANDED (2026-09-24, owner away, autonomous). START HERE.
 The owner: *"all the lines coming off on the same side of the spine... is it reasonable to want it
  interactive? to dive into the 'particle x9'... a way to wander around the code as a bit of a place, or a

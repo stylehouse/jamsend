@@ -4344,6 +4344,28 @@
         return { x: m.x0 + m.dir * 5, y: m.cy + m.droop * 0.12 + fs * 0.35, fs, rot: m.dir > 0 ? ang : -ang,
                  anchor: m.dir > 0 ? 'start' : 'end', text: text.length > max ? text.slice(0, max - 1) + '…' : text }
     }
+    // FUSED VERTEBRAE — adjacent vertebrae whose rows share a `stem` fact (a ghost and its Testing file) are
+    //  joined by a thick bone along the backbone: a family said by ANATOMY, not by a box around it.  The
+    //   producer states the fact and the order; the glass only notices neighbours that agree.
+    function spine_fused(w: TheC): { x1: number, y1: number, x2: number, y2: number, w: number }[] {
+        void paint_tick
+        if (!fo(w, 'spine')) return []
+        const bm = boneOf.get(w); if (!bm) return []
+        const vs: { cy: number, cx: number, rx: number, stem: string }[] = []
+        for (const c of viewport_cells(w)) {
+            if (c.depth !== 0 || c.departing) continue
+            const m = bm.get(c.key); const st = (c.row.sc as any)?.stem
+            if (!m || m.kind !== 'vert' || st == null) continue
+            vs.push({ cy: m.cy, cx: m.cx, rx: m.rx, stem: String(st) })
+        }
+        vs.sort((a, b) => a.cy - b.cy)
+        const out: { x1: number, y1: number, x2: number, y2: number, w: number }[] = []
+        for (let i = 0; i + 1 < vs.length; i++) {
+            if (vs[i].stem !== vs[i + 1].stem) continue
+            out.push({ x1: vs[i].cx, y1: vs[i].cy, x2: vs[i + 1].cx, y2: vs[i + 1].cy, w: Math.max(8, Math.min(vs[i].rx, vs[i + 1].rx) * 1.1) })
+        }
+        return out
+    }
     function spine_d(w: TheC): string {
         void paint_tick
         if (!fo(w, 'spine')) return ''
@@ -4801,6 +4823,9 @@
                     {#if spine_d(w)}
                         <!-- the backbone: under every vertebra and rib, bone on the dark ground -->
                         <path class="spine-bone" d={spine_d(w)}></path>
+                        {#each spine_fused(w) as f (f.y1.toFixed(0) + ':' + f.y2.toFixed(0))}
+                            <line class="fused-bone" x1={f.x1} y1={f.y1} x2={f.x2} y2={f.y2} stroke-width={f.w.toFixed(1)}></line>
+                        {/each}
                     {/if}
                     {#each vines_of(w, viewport_cells(w)) as v (v.d)}
                         <path class="vine" d={v.d} style="stroke-width:{v.sw};"></path>
@@ -5586,6 +5611,7 @@
     .gauge-rail { stroke: rgba(205, 191, 159, 0.18); stroke-width: 3; stroke-linecap: round; pointer-events: none; }
     .gauge-lit { stroke: rgba(205, 191, 159, 0.75); stroke-width: 5; stroke-linecap: round; pointer-events: none; }
     .keep-col { fill: rgba(120, 140, 170, 0.07); stroke: rgba(160, 180, 210, 0.25); stroke-dasharray: 6 5; pointer-events: none; }
+    .fused-bone { stroke: #d9ccae; stroke-linecap: round; opacity: 0.55; pointer-events: none; }
     .spine-bone { fill: none; stroke: #cdbf9f; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; opacity: 0.4; pointer-events: none; }
     /* a bone label rides its bone: small, the cell's own hue, a dark halo so it reads over anything it crosses */
     .bone-label { font-family: ui-monospace, monospace; font-weight: 600; pointer-events: none; paint-order: stroke; stroke: rgba(10, 8, 12, 0.85); stroke-width: 2.5px; }
