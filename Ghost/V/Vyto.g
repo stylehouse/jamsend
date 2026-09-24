@@ -666,7 +666,17 @@ Vyto_scan_sweep(w, parentMirror, gen):
 Vyto_fold(w):
     if (!w.c.mirror) return
     if (!w.c.folded) return
-    this.Vyto_fold_scope(w, w.c.mirror)
+    this.Vyto_fold_scope(w, w.c.mirror, 0)
+    // THE FOLD REACHES ONE SCOPE DOWN (2026-09-24).  It only ever acted on the root, so a NESTED glass
+    //  whose scopes are crowded — a code search: twenty files, one holding three hundred hits — never
+    //   squished at all: three hundred children tiled one file's cell.  Gated on nested AND folded
+    //    together, a pairing no Book commissions, so every fixture stands to the byte.
+    if (w.c.nested) {
+        for (const r of w.c.mirror.o()) {
+            if (r.sc.departing || r.c.folded || r.sc.Vtuffing != null) continue
+            this.Vyto_fold_scope(w, r, 1)
+        }
+    }
     let organ = w.o({ Organ: 'Fold' })[0]
     if (organ && organ.sc.status !== 'live') {
         organ.sc.status = 'live'
@@ -681,7 +691,7 @@ Vyto_fold(w):
 //      changes, and stamped `seen_at = scan_gen` so Scan's sweep keeps it (a group that stops
 //       qualifying has its crest dropped — un-crush).  Members of a crushed group wear `.c.folded`
 //        and lose their `.c.T`, so Solve skips them and the renderer never springs them.
-Vyto_fold_scope(w, scope):
+Vyto_fold_scope(w, scope, depth):
     let all = scope.o()
     let members = all.filter(r => !r.sc.departing && r.sc.Vtuffing == null && !r.c.membrane)
     for (const m of members) { if (m.c.folded) { m.c.folded = 0; m.c.T = null; m.bump_version() } }
@@ -693,10 +703,18 @@ Vyto_fold_scope(w, scope):
     //      cell crossing that threshold CRUSHES or UNCRUSHES a whole group — a far bigger visual event
     //       than the thing it would be tracking.  Not measured; reasoned from the arithmetic above.
     let budget = budget_for(800, 450)
+    // a nested scope is a small room: its legibility budget is its own stop, `ribs:N` (default 7 —
+    //  roughly what one file's band can say before its words turn to hatching)
+    if (depth > 0) {
+        let rb = this.Vyto_fo(w, 'ribs')
+        budget = (rb && Number(rb) > 0) ? Number(rb) : 7
+    }
     // `foamereo:'budget:N'` — a DESK stop (2026-09-10): the legibility budget said outright, so a scope of
     //  six can be made to fold on the canonical demo and the crest can be LOOKED AT, rather than only
     //   reached through a Book that crowds the frame.  Unset ⇒ the arithmetic above, byte-identical.
-    let bo = this.Vyto_fo(w, 'budget')
+    // `budget:N` is the ROOT's word; a nested scope answers to `ribs` (above) — else a root budget
+    //  raised to keep the files open silently disarmed every file's own squish
+    let bo = depth > 0 ? null : this.Vyto_fo(w, 'budget')
     if (bo && Number(bo) > 0) budget = Number(bo)
     let groups = {}
     if (members.length > budget) {
@@ -717,6 +735,31 @@ Vyto_fold_scope(w, scope):
                 if (ofk == null) continue
                 if (!groups[ofk]) groups[ofk] = []
                 groups[ofk].push(m)
+            }
+        }
+        // A NESTED FOLD MUST ACTUALLY SQUISH — nested only.  The election answers "where does the wall
+        //  fall", not "does this get under budget": for a scope that is all one kind it elects nothing (a
+        //   key everyone shares partitions nothing — right at the root), and it can elect a DISCOVERED key
+        //    that barely partitions at all (seen: twelve hits of one file, two of which read identically, so
+        //     the hit text itself was elected and folded one pair, leaving eleven cells over a budget of
+        //      seven).  So one scope down, count what the election would leave standing; if that is still
+        //       over budget, fold BY KIND instead — one crest per mainkey, the count on its door.
+        if (depth > 0) {
+            let inG = new Set()
+            let vis = 0
+            for (const gk of Object.keys(groups)) {
+                if (groups[gk].length < 2) continue
+                vis = vis + 1
+                for (const m of groups[gk]) inG.add(m)
+            }
+            for (const m of members) { if (!inG.has(m)) vis = vis + 1 }
+            if (vis > budget) {
+                groups = {}
+                for (const m of members) {
+                    let gk = '@mainkey=' + this.mainkey(m)
+                    if (!groups[gk]) groups[gk] = []
+                    groups[gk].push(m)
+                }
             }
         }
     }
@@ -786,7 +829,17 @@ Vyto_distil_fill(root, members, skips, coexist, q, saylaw):
     let veined = this.Vyto_veinrows(root, members, skips)
     let hide = coexist ? null : veined
     this.Vyto_keyrows(root, members, skips, hide, saylaw)
+    this.Vyto_voice_mark(root)
     return root
+
+// Vyto_voice_mark — a crest's saying rows are FURNITURE, not sightings: the scan never stamps them
+//  `seen_at`, so without the mark the sweep departs them on the next scan (the same trap the Guise's
+//   voice fell into — see Vyto_scan_sweep's VOICE ROWS note).
+Vyto_voice_mark(n):
+    for (const k of n.o()) {
+        k.c.voice = 1
+        this.Vyto_voice_mark(k)
+    }
 
 // Vyto_dip_assign — the Dip_assign law as a method: the door rides FIRST with the true count and
 //  the members on `.c` (the dip a surf opens; the count present at EVERY register — injectivity).
@@ -1628,7 +1681,8 @@ Vyto_express_rows(w, rows):
         // MEMBERS only — a mirror row wears `.c.tok` (Vyto_scan_walk); a crest's %Vrow/%Vbit children
         //  are its VOICE, not seated members, and must not buy it room (seen live: a folded Song crest
         //   claimed 1.45× for its four Vrows)
-        let live_kids = kids.filter(k => !k.sc.departing && k.c.tok && !k.c.membrane).length
+        // folded members are not SEEN (their crest stands for them and claims its own room), so they buy none
+        let live_kids = kids.filter(k => !k.sc.departing && k.c.tok && !k.c.membrane && !k.c.folded).length
         // a family's membrane (Vyto_membrane) is a scope like any other and claims like one — for its
         //  members, who are its kids; a scope HOLDING a family counts the family's members as its own.
         //   Summing the members' room was tried first and the family swallowed the Band outright: a
@@ -2144,6 +2198,11 @@ Vyto_solve(w):
             let m = members[p]
             m.c.poly = finals[p] ?? null
             if (m.c.poly) this.Vyto_solve_scope(w, m, m.c.poly)
+            // A CROWDED-OUT SCOPE STILL SEATS ITS STUFFING (2026-09-24).  A frame cut of many bodies
+            //  crowds some out (a null polygon), and a scope with no polygon never solved its children —
+            //   so they had no target, and a renderer that seats them its own way (the spine's ribs) had
+            //    nothing to draw.  Its own ball stands in for the wall it did not win.
+            else if (m.o().length) this.Vyto_solve_scope(w, m, this.Vyto_disc(seeds[p], Math.max(8, radii[p])))
             p = p + 1
         }
     }
@@ -2218,6 +2277,17 @@ Vyto_solve_scope(w, parent, poly):
 
 // Vyto_seed_mean — the mean of the seeds placed so far, or the frame centre (400,225) when
 //  none stand yet.  Feeds the newcomer's deterministic boundary entry point.
+// a 16-gon disc — a scope's stand-in wall when the cut gave it none
+Vyto_disc(c, r):
+    let out = []
+    let i = 0
+    while (i < 16) {
+        let a = i / 16 * Math.PI * 2
+        out.push({ x: c.x + r * Math.cos(a), y: c.y + r * Math.sin(a) })
+        i = i + 1
+    }
+    return out
+
 Vyto_seed_mean(seeds):
     if (!seeds.length) return { x: 400, y: 225 }
     let sx = 0

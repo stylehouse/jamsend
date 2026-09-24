@@ -1,0 +1,32 @@
+story:VytoSpine
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.046
+      sample=0.029,at=1790209723
+      sample=0.034,at=1790209814
+      sample=0.034,at=1790209892
+      sample=0.056,at=1790209956
+      sample=0.043,at=1790210035
+      sample=0.031,at=1790210112
+      sample=0.054,at=1790210232
+      sample=0.038,at=1790210346
+      sample=0.056,at=1790211025
+      sample=0.083,at=1790214400
+    TimeTotal:step,avg=0.012
+      sample=0.007,at=1790209723
+      sample=0.008,at=1790209814
+      sample=0.009,at=1790209892
+      sample=0.014,at=1790209956
+      sample=0.011,at=1790210035
+      sample=0.008,at=1790210112
+      sample=0.014,at=1790210232
+      sample=0.01,at=1790210346
+      sample=0.014,at=1790211025
+      sample=0.021,at=1790214400
+  step,dige:1fcc5bcdd71c806a
+  step=2,desc:a code search lands — the Door hits across eleven files as guises one Doc per file,dige:254f9557d6288f57
+  step=3,desc:stand the search as a spine — every file a vertebra and every crowded file folded to crests by kind,dige:7b8ee0c20a353132
+  step=4,desc:re-search Door to Heist in the same world — the creature re-forms around twenty files and the crowded ones squish,dige:d6e4d3e3f42c3c31

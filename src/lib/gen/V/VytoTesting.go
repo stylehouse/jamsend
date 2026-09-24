@@ -6,13 +6,14 @@
 import Vytui from "$lib/O/Vytui.svelte"
 import { budget_for, fold_ladder, bucket_key_of, AREA_BASE } from "$lib/O/vyto_foam"
 import { poly_area } from "$lib/O/vyto_geometry"
+import { SEARCH_SAMPLE } from "$lib/O/vyto_search_sample"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_VytoTesting(): string { return '0f52dfbfc9862f86~g1' },
+    Ghostmeta_Ghost_V_VytoTesting(): string { return '17e5dc67922a9771~g1' },
 
 // VytoTesting.g — né Vytonation.g.  Vyto's demo Books (the VoroTesting.g sibling, one directory over
 //  in Ghost/V/), under the `<Name>Testing.g` convention (owner ruling 2026-09-09; the one predicate
@@ -3003,6 +3004,147 @@ VytoGuise_witness(w) {
     if (w.c.saw_morph) {
         this.story_swear(w, 'a re-sown hit morphs in place — the producer own id is the identity so a refreshed result set never blinks')
         if (!(w.oa({see: 'a re-sown hit morphs in place — the producer own id is the identity so a refreshed result set never blinks'}))) w.i({see: 'a re-sown hit morphs in place — the producer own id is the identity so a refreshed result set never blinks'})
+    }
+
+},
+// ══ VytoSpine — A CODE SEARCH AS A CREATURE: files are vertebrae, their hits are ribs ═════════════
+//  (The owner 2026-09-24, of the grid: *"a goofy office vibe whereas where we're going looks more like
+//   zoology... I'm looking for something we can use as a nice fullscreen graphic while searching for
+//    code in the code editor... might have a ton of matches to squish."*)  REAL result sets: greps of
+//     Ghost/**/*.g in the Searchbar's own hit shape (scripts/vyto_search_sample.mjs →
+//      src/lib/O/vyto_search_sample.ts), handed to the glass as Guises — a `Doc:<path>` per file (in
+//       path order, the order the Searchbar already sorts by) holding one child per hit, its mainkey
+//        the hit's KIND (ƒ Def · % Particle · ¶ Mention) and its value the def name or the line.
+//  Stood `spine` (render: vertebrae down an S-curved backbone, ribs off each side — vyto_geometry
+//   spine_cells / rib_cells), `kindfold` + nested + folded (the fold now reaches one scope down, so a
+//    file with hundreds of hits crushes to a few crests by kind instead of three hundred slivers), and
+//     `budget:40` so the root — the files — never folds: a file is never hidden behind another.
+//  NOT FOAM-CUT, on purpose: the vertebrae are ASSIGNED by the spine, so the model's pile positions are
+//   never drawn — and a dense 20-body foam pile never rests (measured: it jiggles 0.1–0.6px a stir
+//    forever, just over the settle tolerance), which would hold every beat to its timeout.
+//  Then a RE-SEARCH, the thing a searchbar actually does: Door → Heist, same world, fresh:0.  The
+//   creature re-forms around the new set; the crowded Heist files squish.
+//  World VytoSpine.
+VytoSpine(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoSpine_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoSpine_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoSpine_sow(w, 'Door')
+        if (n === 3) this.VytoSpine_stand(w)
+        if (n === 4) this.VytoSpine_research(w)
+    }
+    this.VytoSpine_witness(w)
+
+},
+// a result set → guises: one Doc per file, one child per hit.  The hit KIND is the child's mainkey —
+//  what the hit IS — so the fold's kind ladder groups mentions with mentions and defs with defs.
+VytoSpine_guises(q) {
+    let kinds = { 'ƒ': 'Def', '%': 'Particle', '¶': 'Mention', '≈': 'Text' }
+    let byPath = {}
+    let order = []
+    for (const h of SEARCH_SAMPLE[q] || []) {
+        if (!byPath[h.path]) { byPath[h.path] = []; order.push(h.path) }
+        byPath[h.path].push(h)
+    }
+    let out = []
+    for (const p of order) {
+        let kids = []
+        for (const h of byPath[p]) {
+            let g = {}
+            g[kinds[h.glyph] || 'Mention'] = h.name
+            g.line = h.line
+            g.guise = { tok: p + ':' + h.line }
+            kids.push(g)
+        }
+        out.push({ Doc: p, hits: byPath[p].length, guise: { tok: 'doc:' + p, kids: kids } })
+    }
+    return out
+
+},
+// ── beat 2 — a search lands: the Door result set as guises ─────────────────────────────────────────
+VytoSpine_sow(w, q) {
+    w.i({desc: 'a code search lands — the Door hits across eleven files as guises one Doc per file'})
+    w.c.q = q
+    w.c.seeds = []
+    for (const g of this.VytoSpine_guises(q)) { w.c.seeds.push(this.Vyto_guise(g)) }
+
+},
+// ── beat 3 — stand the creature: every file a vertebra, every crowded file squished ────────────────
+async VytoSpine_stand(w) {
+    w.i({desc: 'stand the search as a spine — every file a vertebra and every crowded file folded to crests by kind'})
+    this.Vyto_commission_on(w, w.c.seeds, 1, 0, 1, 1, 0, 1, 0, 'spine,kindfold,budget:40')
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'stand_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoSpine_ready(w, 'saw_stand')) })
+
+},
+// ready when every file stands as its own vertebra and every file over the rib budget has folded
+VytoSpine_ready(w, flag) {
+    let vw = this.VytoStaple_vw(w)
+    if (vw) this.Vyto_stir(vw)
+    if (this.VytoSpine_why(w)) return 0
+    w.c[flag] = 1
+    return 1
+
+},
+// the reason the creature is not yet what the Book promises — '' when it is.  It waits for STRUCTURE,
+//  not for the model's pile to rest: the spine ASSIGNS every vertebra and rib, so the pile's positions
+//   are never drawn, and a pile of twenty never rests anyway (measured: 0.1–0.6px a stir, forever).
+VytoSpine_why(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.mirror) return 'no vw'
+    if (!vw.c.nested || !vw.c.folded) return 'not nested+folded'
+    let files = 0
+    for (const g of this.VytoSpine_guises(w.c.q)) files = files + 1
+    let top = vw.c.mirror.o().filter(r => !r.sc.departing)
+    if (top.length !== files) return 'top ' + top.length + '/' + files
+    for (const d of top) {
+        if (d.sc.Doc == null) return 'a non-Doc at the root'
+        if (!d.c.T) return 'no T on ' + d.sc.Doc
+        let seen = d.o().filter(k => !k.sc.departing && !k.c.folded && k.c.T)
+        let hits = Number(d.sc.hits) || 0
+        // a crowded file squishes: no more than the rib budget of cells, and at least one crest
+        if (hits > 7) {
+            if (seen.length > 7) return d.sc.Doc + ' hits=' + hits + ' seen=' + seen.length
+            if (!seen.some(k => k.sc.Vtuffing != null)) return d.sc.Doc + ' no crest'
+        }
+        if (hits <= 7 && seen.length !== hits) return d.sc.Doc + ' small ' + seen.length + '/' + hits
+    }
+    return ''
+
+},
+// ── beat 4 — re-search: Door → Heist in the same world, the way a searchbar does it ────────────────
+async VytoSpine_research(w) {
+    w.i({desc: 're-search Door to Heist in the same world — the creature re-forms around twenty files and the crowded ones squish'})
+    this.VytoSpine_sow_quiet(w, 'Heist')
+    this.Vyto_commission_on(w, w.c.seeds, 0, 0, 1, 1, 0, 1, 0, 'spine,kindfold,budget:40')
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'research_wait', 24, async () => { await this.VytoStaple_await(w, 24, () => this.VytoSpine_ready(w, 'saw_research')) })
+
+},
+VytoSpine_sow_quiet(w, q) {
+    w.c.q = q
+    w.c.seeds = []
+    for (const g of this.VytoSpine_guises(q)) { w.c.seeds.push(this.Vyto_guise(g)) }
+
+},
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ───────────────────
+VytoSpine_witness(w) {
+    if (w.c.saw_stand) {
+        this.story_swear(w, 'a code search stands as a spine — every file a vertebra and every crowded file folded to a few ribs by kind')
+        if (!(w.oa({see: 'a code search stands as a spine — every file a vertebra and every crowded file folded to a few ribs by kind'}))) w.i({see: 'a code search stands as a spine — every file a vertebra and every crowded file folded to a few ribs by kind'})
+    }
+    if (w.c.saw_research) {
+        this.story_swear(w, 'a re-search re-forms the creature — twenty files of Heist stand and the crowded ones squish')
+        if (!(w.oa({see: 'a re-search re-forms the creature — twenty files of Heist stand and the crowded ones squish'}))) w.i({see: 'a re-search re-forms the creature — twenty files of Heist stand and the crowded ones squish'})
     }
 
 },

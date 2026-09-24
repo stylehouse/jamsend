@@ -12,7 +12,7 @@
     //   H={house}), so a House with no w:Vyto renders nothing at all.
     import { TheC }   from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { power_cells, foam_cells, slab_seat, poly_area, poly_centroid, membrane_carve, grid_cells, type Pt } from "$lib/O/vyto_geometry"
+    import { power_cells, foam_cells, slab_seat, poly_area, poly_centroid, membrane_carve, grid_cells, spine_cells, rib_cells, type Pt, type SpineBand, type BoneMeta } from "$lib/O/vyto_geometry"
     import { bucket_key_of } from "$lib/O/vyto_foam"
     import { deal_rows, seat_on_deal, deal_fits, deal_badness, box_poly,
              type Deal, type SeatRow } from "$lib/O/vyto_seat"
@@ -2271,6 +2271,9 @@
         //   wears the parent's fill and no wall of its own, so it reads as the parent showing
         //    through its own stuffing rather than as a sibling of its children.
         const SELF_KEY = '»self'
+        // THE SPINE (stop `spine`): the root cut stamps each vertebra's band here so the vertebra's own
+        //  children, laid out one scope down, know where their ribs go; and the backbone for the paint
+        const spineBands = new Map<string, SpineBand>()
     // the bump's radius floor, as a share of its petals' mean cut radius (membrane_carve)
     const MEMBRANE_SHARE = 0.36
         const layout = (nodes: Node[], framePoly: Pt[], gap: number, scopeKey: string, selfOf?: Node): void => {
@@ -2286,8 +2289,14 @@
             //    ('room' -- spread-only, cell shape untouched) just grow the same circle bigger and clip
             //     the frame: *"something straighter, more like a grid (or like what html does)"*.  Root
             //      scope only, like focus -- a scope INSIDE a grid tiles with the standing machinery.
-            const gridR = !focusR && !seatR && scopeKey === '' && !!fo(w, 'grid')
-            const foam = !!(w.c as any).foam && !seatR && !focusR && !gridR
+            // THE SPINE (stop `spine`, 2026-09-24): vertebrae at the root, ribs one scope down — see
+            //  spine_cells / rib_cells in vyto_geometry.  Outranks grid; both are assigned outright.
+            const spineR = !focusR && !seatR && scopeKey === '' && !!fo(w, 'spine')
+            const ribBand = (!focusR && !seatR && selfOf && fo(w, 'spine')) ? spineBands.get(selfOf.key) ?? null : null
+            const ribR = !!ribBand
+            const gridR = !focusR && !seatR && !spineR && scopeKey === '' && !!fo(w, 'grid')
+            const assignedR = focusR || gridR || spineR || ribR
+            const foam = !!(w.c as any).foam && !seatR && !focusR && !gridR && !spineR && !ribR
             const live: Node[] = []
             const seeds: Pt[] = []
             const radii: number[] = []
@@ -2376,7 +2385,7 @@
             //  Counted on `.c` (never encoded) so `--why` can show the glass catching its own rows.
             //  A seated glass has no seed to strand — boxes are constructed inside the frame — so it
             //   skips this too rather than counting phantom rescues.
-            const seated = (seatR || focusR) ? 0 : frame_seat(seeds, framePoly, SEAT_MIN)
+            const seated = (seatR || assignedR) ? 0 : frame_seat(seeds, framePoly, SEAT_MIN)
             if (seated) (w.c as any).frame_seats = (((w.c as any).frame_seats as number) || 0) + seated
             // THE FOAM REGIME (gated on w.c.foam — the ORCHESTRA OF SPHERES law, Vyto_todo):
             //  coverage is earned by pressure.  The solve's radii are RELATIVE weights tuned for
@@ -2465,6 +2474,18 @@
                 // no wall memo here: the deal IS the memo, and it is keyed on membership rather than
                 //  on a signature of every coordinate, so ordinary dose work never re-cuts it.
                 polys = seat_polys(w, scopeKey, keys, radii, framePoly, gap)
+            } else if (spineR) {
+                const fb = bbox_of(framePoly)
+                const sp_ = spine_cells(radii, { x: fb.bx, y: fb.by, w: fb.bw, h: fb.bh }, gap)
+                polys = sp_.polys
+                let bm = boneOf.get(w); if (!bm) { bm = new Map(); boneOf.set(w, bm) }
+                for (let i = 0; i < keys.length; i++) { spineBands.set(keys[i], sp_.bands[i]); bm.set(keys[i], sp_.metas[i]) }
+                spineOf.set(w, sp_.spine)
+            } else if (ribR) {
+                const rb_ = rib_cells(radii, ribBand!, gap)
+                polys = rb_.polys
+                let bm = boneOf.get(w); if (!bm) { bm = new Map(); boneOf.set(w, bm) }
+                for (let i = 0; i < keys.length; i++) { const m = rb_.metas[i]; if (m) bm.set(keys[i], m) }
             } else if (gridR) {
                 // assigned outright, like focus -- a pure function of (frame, rows, radii); no memo,
                 //  cheaper than the sig it would be keyed under.  bucket_key_of picks the band from the
@@ -2600,7 +2621,7 @@
                 // a family's petal sits one deeper than its membrane but IS the thing (Vyto_membrane): it
                 //  reads at the ink its family's scope would
                 const eff_depth = (row.c as any).family ? n.depth - 1 : n.depth
-                const sunk = eff_depth > 0 && !near_key(liftKey, n.key) && !near_key(engKey, n.key)
+                const sunk = !ribR && eff_depth > 0 && !near_key(liftKey, n.key) && !near_key(engKey, n.key)
                           && !(((row.c as any).heat ?? 0) > 0.25)
                 // BARE: the face is dropped at the source, so nothing downstream — mold, measure, seat,
                 //  need floor, icon register — has anything to do.  One gate, not six opt-outs.
@@ -2863,7 +2884,7 @@
                     //  and still; the springs keep relaxing underneath — an anchor read off s.x/s.y
                     //   would slide a label across a cell that is not moving.
                     let ax = s.x, ay = s.y
-                    if (focusR) {
+                    if (assignedR) {
                         ax = 0; ay = 0
                         for (const p of poly) { ax += p.x; ay += p.y }
                         ax /= poly.length; ay /= poly.length
@@ -4169,6 +4190,42 @@
     //  HONEST STATE: whether the LIVE Sounditron world declares any relations is exactly the open
     //   question of the gap list (§0.1 item 3) — Relate's teeth were proven in Books, not on the live
     //    page.  So this renders whatever is true and nothing when nothing is: no relations, no vines.
+    // the backbone the spine regime last laid (layout writes it; the paint reads it)
+    const spineOf = new Map<TheC, Pt[]>()
+    // each bone's own geometry (vertebra centre and radii; rib root, length, droop, thickness), stamped by
+    //  the spine layout so its label can ride the bone instead of falling back to a centred ident
+    const boneOf = new Map<TheC, Map<string, BoneMeta>>()
+    // BONE LABELS (stop `spine`) — plain words, never the C line: a vertebra says its file's name, a rib
+    //  says what it is (a def's name, a mention's text, a crest's kind and count).  Sized by the bone,
+    //   clamped to stay legible, cut to the bone's length, and turned to lie along a drooping rib.
+    function bone_label(w: TheC, cell: PaintCell): { x: number, y: number, fs: number, rot: number, anchor: 'start' | 'middle' | 'end', text: string } | null {
+        const m = boneOf.get(w)?.get(cell.key); if (!m) return null
+        const sc: any = cell.row?.sc ?? {}
+        const mk = Object.keys(sc)[0] ?? ''
+        let text = ''
+        if (mk === 'Doc') text = String(sc.Doc).replace(/^.*\//, '').replace(/\.g$/, '')
+        else if (mk === 'Vtuffing') text = String(sc.of ?? '').replace('@mainkey=', '').replace('@all', '') + ' ×' + (sc.n ?? '?')
+        else text = String(sc[mk] ?? '').replace(/^\/\/+\s*/, '').trim()
+        if (!text) return null
+        if (m.kind === 'vert') {
+            const fs = Math.max(7, Math.min(12, m.ry * 1.1))
+            const max = Math.max(3, Math.floor(m.rx * 2 * 0.9 / (fs * 0.6)))
+            return { x: m.cx, y: m.cy + fs * 0.35, fs, rot: 0, anchor: 'middle', text: text.length > max ? text.slice(0, max - 1) + '…' : text }
+        }
+        const fs = Math.max(7, Math.min(12, m.th * 0.8))
+        const max = Math.max(3, Math.floor(m.len * 0.85 / (fs * 0.6)))
+        const ang = Math.atan2(m.droop * 0.6, m.len) * 180 / Math.PI
+        return { x: m.x0 + m.dir * 5, y: m.cy + m.droop * 0.12 + fs * 0.35, fs, rot: m.dir > 0 ? ang : -ang,
+                 anchor: m.dir > 0 ? 'start' : 'end', text: text.length > max ? text.slice(0, max - 1) + '…' : text }
+    }
+    function spine_d(w: TheC): string {
+        void paint_tick
+        if (!fo(w, 'spine')) return ''
+        const pts = spineOf.get(w); if (!pts || pts.length < 2) return ''
+        let d = 'M ' + pts[0].x.toFixed(1) + ' ' + pts[0].y.toFixed(1)
+        for (let i = 1; i < pts.length; i++) d += ' L ' + pts[i].x.toFixed(1) + ' ' + pts[i].y.toFixed(1)
+        return d
+    }
     function vines_of(w: TheC, cells: PaintCell[], excludeKey?: string | null): { d: string, sw: number }[] {
         const rel: any = (w.c as any).relations
         if (!rel) return []
@@ -4577,6 +4634,16 @@
                     <!-- THE VINES, FIRST: the %Flow relations the solver already bunches by, drawn as
                          roots UNDER the cells they tie together.  Nothing when nothing relates. -->
                     {#snippet folio(w: TheC, cell: PaintCell)}
+                      {#if fo(w, 'spine')}
+                        {@const bl = bone_label(w, cell)}
+                        {#if bl}
+                            {@const g0 = cell_ground(cell)}
+                            <text class="bone-label" class:bone-vert={Object.keys((cell.row.sc as any) ?? {})[0] === 'Doc'}
+                                  x={bl.x.toFixed(1)} y={bl.y.toFixed(1)} font-size={bl.fs.toFixed(1)} text-anchor={bl.anchor}
+                                  transform="rotate({bl.rot.toFixed(1)} {bl.x.toFixed(1)} {bl.y.toFixed(1)})"
+                                  style={g0?.color ? `fill:${g0.color}` : undefined}>{bl.text}</text>
+                        {/if}
+                      {:else}
                         {@const fp = folio_of(w, cell)}
                         {#if fp}
                             <g class="folio" class:sunk={cell.sunk} data-fkey={cell.key}>
@@ -4603,7 +4670,12 @@
                             <text class="ident" class:sunk={cell.sunk} data-key={cell.key} x={cell.x} y={cell.y}
                                   text-anchor="middle" dominant-baseline="middle">{cell.ident}</text>
                         {/if}
+                      {/if}
                     {/snippet}
+                    {#if spine_d(w)}
+                        <!-- the backbone: under every vertebra and rib, bone on the dark ground -->
+                        <path class="spine-bone" d={spine_d(w)}></path>
+                    {/if}
                     {#each vines_of(w, viewport_cells(w)) as v (v.d)}
                         <path class="vine" d={v.d} style="stroke-width:{v.sw};"></path>
                     {/each}
@@ -5358,6 +5430,10 @@
     }
     /* THE GRID BAND LABEL (stop `grid`) -- the alignment named in words above the row it groups; small
        and out of the way, the same register a scope's own running head reads at (.fo-head territory). */
+    .spine-bone { fill: none; stroke: #cdbf9f; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; opacity: 0.4; pointer-events: none; }
+    /* a bone label rides its bone: small, the cell's own hue, a dark halo so it reads over anything it crosses */
+    .bone-label { font-family: ui-monospace, monospace; font-weight: 600; pointer-events: none; paint-order: stroke; stroke: rgba(10, 8, 12, 0.85); stroke-width: 2.5px; }
+    .bone-label.bone-vert { font-weight: 700; letter-spacing: 0.02em; }
     .grid-band { font: 600 11px monospace; fill: #9d9dc0; letter-spacing: 0.02em; pointer-events: none; }
     /* THE PLUG — the radio↔Record relation, drawn (Vyto_todo §0.0).  Warm against the glass's cold
        violets on purpose: this is the one live, human thing on a plate of machinery, and it should

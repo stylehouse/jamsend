@@ -1,0 +1,10 @@
+Snap:H
+  H:VytoSpine,Run
+    A:VytoSpine
+      self,round=3	{"mung":["age"]}
+      w:VytoSpine
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:stand_wait
+          ttlilt	{"mung":["until_ts"]}
+    ttlilt,of_w:VytoSpine	{"ref":{"req":"%req:stand_wait"},"mung":["until_ts"]}

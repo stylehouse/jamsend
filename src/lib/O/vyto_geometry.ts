@@ -370,3 +370,116 @@ export function grid_cells(scs: Record<string, any>[], radii: number[], frame: R
         return [{ x: rx, y: ry }, { x: rx + rw, y: ry }, { x: rx + rw, y: ry + rh }, { x: rx, y: ry + rh }]
     })
 }
+
+// ── THE SPINE — a result set laid out as a creature, not a table (2026-09-24) ──────────────────────
+//  The owner, of the grid regime: *"pretty sucky really. I want more of an actual creature-looking
+//   spine... it's got a goofy office vibe whereas where we're going looks more like zoology."*  And the
+//    use: *"a nice fullscreen graphic while searching for code in the code editor."*
+//  A code search is already a spine: hits come SORTED BY PATH (Searchbar — "the path IS the
+//   structure"), so the files are an ORDERED run, and each file holds its own hits.  So: the files are
+//    VERTEBRAE stacked down a gently S-curving backbone, each sized by what it holds, and each file's
+//     hits are RIBS off its vertebra, alternating left and right, drooping slightly the way ribs do.  A
+//      rib runs roughly horizontally, so its text reads — which is why the spine runs down, not across.
+//  Assigned outright (the seat/focus/grid contract): pure, no relax, every row gets a cell.
+
+export type SpineBand = { y0: number, y1: number, cx: number, hw: number, frame: Rect }
+export type BoneMeta = { kind: 'vert', cx: number, cy: number, rx: number, ry: number }
+                     | { kind: 'rib', x0: number, cy: number, len: number, droop: number, th: number, dir: number }
+
+// the backbone's x at height y — a slow S, amplitude a fraction of the frame's width
+export function spine_x(frame: Rect, y: number): number {
+    const t = (y - frame.y) / Math.max(1, frame.h)
+    return frame.x + frame.w * 0.5 + frame.w * 0.045 * Math.sin(t * Math.PI * 1.6 - 0.4)
+}
+
+// spine_cells — one vertebra per root row, in the order given.  Each takes a vertical share of the
+//  backbone proportional to its radius (radius ~ sqrt of what it holds, so a 300-hit file is a big
+//   vertebra but not a 300x one).  The vertebra is a small flattened disc lying ACROSS the backbone,
+//    sheared to its local slope — a bone, not a box: narrow enough that the ribs carry the width.
+export function spine_cells(radii: number[], frame: Rect, gap: number): { polys: (Pt[] | null)[], bands: SpineBand[], metas: BoneMeta[], spine: Pt[] } {
+    const n = radii.length
+    const pad = Math.max(10, gap * 3)
+    const H = Math.max(1, frame.h - 2 * pad)
+    const wsum = radii.reduce((a, r) => a + Math.max(1, r), 0) || 1
+    const wmax = Math.max(1, ...radii)
+    const polys: (Pt[] | null)[] = []
+    const bands: SpineBand[] = []
+    const metas: BoneMeta[] = []
+    let y = frame.y + pad
+    for (let i = 0; i < n; i++) {
+        const bh = H * Math.max(1, radii[i]) / wsum
+        const cy = y + bh / 2
+        const cx = spine_x(frame, cy)
+        const slope = (spine_x(frame, cy + 1) - spine_x(frame, cy - 1)) / 2
+        const rx = frame.w * (0.022 + 0.026 * Math.sqrt(Math.max(1, radii[i]) / wmax))
+        const ry = Math.max(3, bh * 0.4)
+        const pts: Pt[] = []
+        for (let k = 0; k < 18; k++) {
+            const a = k / 18 * Math.PI * 2
+            const px = rx * Math.cos(a), py = ry * Math.sin(a)
+            pts.push({ x: cx + px + py * slope, y: cy + py })
+        }
+        polys.push(pts)
+        bands.push({ y0: y, y1: y + bh, cx, hw: rx, frame })
+        metas.push({ kind: 'vert', cx, cy, rx, ry })
+        y += bh
+    }
+    const spine: Pt[] = []
+    for (let k = 0; k <= 48; k++) {
+        const yy = frame.y + pad * 0.4 + (frame.h - pad * 0.8) * k / 48
+        spine.push({ x: spine_x(frame, yy), y: yy })
+    }
+    return { polys, bands, metas, spine }
+}
+
+// rib_cells — one vertebra's children as ribs.  Alternate sides (first right, then left, …) so the
+//  creature stays balanced; each side stacks its ribs down the vertebra's band, thickness by radius,
+//   with a GAP between ribs (bone, not masonry).  A rib is a curved tapering bone: it leaves the
+//    vertebra level, droops as it runs out, narrows to a rounded tip.  Its LENGTH makes the silhouette:
+//     a ribcage envelope along the body (longest mid-body, short at the neck and the tail), times the
+//      rib's own weight (a crest standing for many reaches further than a single mention).
+export function rib_cells(radii: number[], band: SpineBand, gap: number): { polys: (Pt[] | null)[], metas: (BoneMeta | null)[] } {
+    const n = radii.length
+    const polys: (Pt[] | null)[] = new Array(n).fill(null)
+    const metas: (BoneMeta | null)[] = new Array(n).fill(null)
+    if (!n) return { polys, metas }
+    const f = band.frame
+    const rmax = Math.max(1, ...radii)
+    const sides: number[][] = [[], []]
+    for (let i = 0; i < n; i++) sides[i % 2].push(i)
+    for (let sd = 0; sd < 2; sd++) {
+        const ids = sides[sd]
+        if (!ids.length) continue
+        const dir = sd === 0 ? 1 : -1
+        const tot = ids.reduce((a, i) => a + Math.max(1, radii[i]), 0)
+        const h = band.y1 - band.y0
+        let y = band.y0
+        for (const i of ids) {
+            const sh = h * Math.max(1, radii[i]) / tot
+            const cy = y + sh / 2
+            const x0 = spine_x(f, cy) + dir * (band.hw * 0.8)
+            const room = dir > 0 ? (f.x + f.w - 10) - x0 : x0 - (f.x + 10)
+            const t = (cy - f.y) / Math.max(1, f.h)
+            const env = 0.35 + 0.65 * Math.sin(Math.PI * Math.min(1, Math.max(0, t)))
+            const len = Math.max(18, room * env * (0.4 + 0.6 * Math.sqrt(Math.max(1, radii[i]) / rmax)))
+            const th = Math.max(2, sh * 0.62 - Math.max(0, gap))
+            const droop = Math.min(len * 0.16, th * 1.4 + 6)
+            // the centre line droops with u^1.6; the half-thickness tapers to 45% at the tip
+            const top: Pt[] = [], bot: Pt[] = []
+            const K = 9
+            for (let k = 0; k <= K; k++) {
+                const u = k / K
+                const x = x0 + dir * len * u
+                const yc = cy + droop * Math.pow(u, 1.6)
+                const ht = (th / 2) * (1 - 0.55 * u)
+                top.push({ x, y: yc - ht }); bot.push({ x, y: yc + ht })
+            }
+            const tipx = x0 + dir * (len + th * 0.3), tipy = cy + droop
+            const ring = top.concat([{ x: tipx, y: tipy }], bot.reverse())
+            polys[i] = dir > 0 ? ring : ring.reverse()
+            metas[i] = { kind: 'rib', x0, cy, len, droop, th, dir }
+            y += sh
+        }
+    }
+    return { polys, metas }
+}

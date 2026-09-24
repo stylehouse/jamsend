@@ -197,6 +197,34 @@ Two more of the owner's own asks, landed and verified live (not screenshotted-an
           folio starts from its membrane inward and yields to the bump. Model-side. STOP tweaking pixels
            here — the next commit of effort goes to Vyto.g, not Vytui.
 
+### THE SPINE — LANDED (2026-09-24): a code search as a creature. START HERE.
+The owner, of the grid: *"a goofy office vibe whereas where we're going looks more like zoology... I'm
+ looking for something we can use as a nice fullscreen graphic while searching for code in the code
+  editor... might have a ton of matches to squish."*  `wormhole/shots/seq_0058`.
+- **Real data**: `scripts/vyto_search_sample.mjs` greps Ghost/**/*.g into the Searchbar's own hit shape
+   (`{path,line,name,glyph}` — Searchbar.svelte:103-110) → `src/lib/O/vyto_search_sample.ts` (Crew 182,
+    Door 256, Heist 1305 hits / 20 files). Re-run to refresh.
+- **Book `VytoSpine`**: a `Doc:<path>` guise per file (path order — the Searchbar's own sort), one child
+   per hit whose MAINKEY IS ITS KIND (ƒ Def · % Particle · ¶ Mention). Stands Door, then RE-SEARCHES to
+    Heist in the same world. Deck `spine,kindfold,budget:40`, nested+folded, **not foam** (the vertebrae
+     are assigned, and a 20-body foam pile never rests — measured 0.1–0.6px/stir forever). 2 oaths sworn
+      on the live runner. Its toc fixture was recorded by earlier hollow runs — Accept is the owner's.
+- **Render** (`spine` stop; `spine_cells`/`rib_cells` in vyto_geometry): vertebrae down an S-curved
+   backbone, sized by sqrt(what they hold); children become RIBS alternating sides — curved, drooping,
+    tapering, gaps between, length from a ribcage envelope (longest mid-body) × weight. Bone labels in
+     plain words (`Heist`, `Mention ×642`, a def's name, a line's text), sized by the bone, in the cell's
+      hue — never the C line. Stamped geometry per bone rides `boneOf`; the backbone `spineOf`.
+- **Model fixes the search needed — each byte-invisible to every existing Book (no Book commissions
+   nested+folded)**: the fold now reaches ONE SCOPE DOWN (`ribs:N`, default 7; the root `budget:N` no
+    longer disarms it); a nested crowd the election can't squish (all one kind, or a "discovered" key that
+     barely partitions — two identical lines!) folds BY KIND; a crowded-out scope (null poly in the root
+      cut) still seats its children in its own ball (`Vyto_disc`); folded children buy no room
+       (`live_kids`); crest voice rows are marked `.c.voice` so the sweep keeps them.
+**Next, in the owner's words:** *"there'll be some stuff already on screen, that this might want to jump
+ in around"* — the spine should dodge a keep-out rect (the editor's own column) rather than own the frame;
+  wire the live Searchbar result set instead of the sample; decide what a def rib vs a mention crest
+   should look like (defs are the valuable names — maybe they should never fold with mentions).
+
 ### THE GRID REGIME — LANDED (2026-09-24): alignment instead of noodles
 The owner on the crosslink shot: *"I wish they were more containey alignments of things informing the
  layout rather than a bunch of noodles dropped onto the cells."* Third outright-assigned regime beside
