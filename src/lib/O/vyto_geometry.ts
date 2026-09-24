@@ -382,21 +382,34 @@ export function grid_cells(scs: Record<string, any>[], radii: number[], frame: R
 //      rib runs roughly horizontally, so its text reads — which is why the spine runs down, not across.
 //  Assigned outright (the seat/focus/grid contract): pure, no relax, every row gets a cell.
 
-export type SpineBand = { y0: number, y1: number, cx: number, hw: number, frame: Rect }
-export type BoneMeta = { kind: 'vert', cx: number, cy: number, rx: number, ry: number }
+export type SpineBand = { y0: number, y1: number, cx: number, hw: number, frame: Rect, side: number, t: number }
+export type BoneMeta = { kind: 'vert', cx: number, cy: number, rx: number, ry: number, side: number, margin: number }
                      | { kind: 'rib', x0: number, cy: number, len: number, droop: number, th: number, dir: number }
 
-// the backbone's x at height y — a slow S, amplitude a fraction of the frame's width
-export function spine_x(frame: Rect, y: number): number {
+// the backbone's x at height y — a slow S near one EDGE of the frame.  `side` +1: the spine hugs the
+//  left and every rib runs right into the open room; -1: the mirror.  One side, on purpose (the owner:
+//   *"I'd like to get all the lines coming off on the same side of the spine"*) — and it is also the first
+//    answer to *"getting the spine to fit in around other things"*: the creature claims an edge and grows
+//     into whatever the frame leaves open, rather than planting itself in the middle.
+export function spine_x(frame: Rect, y: number, side = 1): number {
     const t = (y - frame.y) / Math.max(1, frame.h)
-    return frame.x + frame.w * 0.5 + frame.w * 0.045 * Math.sin(t * Math.PI * 1.6 - 0.4)
+    // not hard against the edge: the margin behind the spine is where each vertebra's NAME hangs
+    // the margin keeps room for a name even in a narrow frame (a kept editor column shrinks the frame)
+    const m = Math.min(frame.w * 0.4, Math.max(frame.w * 0.22, 150))
+    const base = side > 0 ? frame.x + m : frame.x + frame.w - m
+    return base + frame.w * 0.03 * Math.sin(t * Math.PI * 1.6 - 0.4)
 }
 
 // spine_cells — one vertebra per root row, in the order given.  Each takes a vertical share of the
 //  backbone proportional to its radius (radius ~ sqrt of what it holds, so a 300-hit file is a big
 //   vertebra but not a 300x one).  The vertebra is a small flattened disc lying ACROSS the backbone,
 //    sheared to its local slope — a bone, not a box: narrow enough that the ribs carry the width.
-export function spine_cells(radii: number[], frame: Rect, gap: number): { polys: (Pt[] | null)[], bands: SpineBand[], metas: BoneMeta[], spine: Pt[] } {
+// THE PASSAGE (2026-09-24): a level with more vertebrae than a screen can read does not crush them — each
+//  keeps at least `minBand` of body, the creature grows LONGER than the frame, and `scroll` travels along
+//   it (the owner's cave: *"a way to wander around the code as a bit of a place"*).  Measured why: a region
+//    of 42 methods squeezed into one frame stood 14px vertebrae whose ribs fell into each other.
+//     `length` is the whole body, so the caller can bound the scroll.
+export function spine_cells(radii: number[], frame: Rect, gap: number, side = 1, scroll = 0, minBand = 26, mins?: number[]): { polys: (Pt[] | null)[], bands: SpineBand[], metas: BoneMeta[], spine: Pt[], length: number } {
     const n = radii.length
     const pad = Math.max(10, gap * 3)
     const H = Math.max(1, frame.h - 2 * pad)
@@ -405,12 +418,19 @@ export function spine_cells(radii: number[], frame: Rect, gap: number): { polys:
     const polys: (Pt[] | null)[] = []
     const bands: SpineBand[] = []
     const metas: BoneMeta[] = []
-    let y = frame.y + pad
+    // each vertebra's floor is the room ITS OWN ribs need (`mins`, from the caller who knows how many it shows)
+    //  — seen: seven one-line ribs piled into a 26px band, unreadable while a neighbour had room to spare
+    const bhs = radii.map((r, i) => Math.max(minBand, mins?.[i] ?? 0, H * Math.max(1, r) / wsum))
+    const total = bhs.reduce((a, b) => a + b, 0)
+    // a body that fits is spread to the frame as before; a longer one keeps its min bands and scrolls
+    const k = total < H ? H / total : 1
+    const top = frame.y + pad - (total * k > H ? Math.max(0, Math.min(scroll, total * k - H)) : 0)
+    let y = top
     for (let i = 0; i < n; i++) {
-        const bh = H * Math.max(1, radii[i]) / wsum
+        const bh = bhs[i] * k
         const cy = y + bh / 2
-        const cx = spine_x(frame, cy)
-        const slope = (spine_x(frame, cy + 1) - spine_x(frame, cy - 1)) / 2
+        const cx = spine_x(frame, cy, side)
+        const slope = (spine_x(frame, cy + 1, side) - spine_x(frame, cy - 1, side)) / 2
         const rx = frame.w * (0.022 + 0.026 * Math.sqrt(Math.max(1, radii[i]) / wmax))
         const ry = Math.max(3, bh * 0.4)
         const pts: Pt[] = []
@@ -420,16 +440,17 @@ export function spine_cells(radii: number[], frame: Rect, gap: number): { polys:
             pts.push({ x: cx + px + py * slope, y: cy + py })
         }
         polys.push(pts)
-        bands.push({ y0: y, y1: y + bh, cx, hw: rx, frame })
-        metas.push({ kind: 'vert', cx, cy, rx, ry })
+        bands.push({ y0: y, y1: y + bh, cx, hw: rx, frame, side, t: (y + bh / 2 - top) / Math.max(1, total * k) })
+        metas.push({ kind: 'vert', cx, cy, rx, ry, side, margin: side > 0 ? cx - rx - frame.x : frame.x + frame.w - (cx + rx) })
         y += bh
     }
     const spine: Pt[] = []
-    for (let k = 0; k <= 48; k++) {
-        const yy = frame.y + pad * 0.4 + (frame.h - pad * 0.8) * k / 48
-        spine.push({ x: spine_x(frame, yy), y: yy })
+    const y0 = top - pad * 0.6, y1 = top + total * k + pad * 0.6
+    for (let s = 0; s <= 64; s++) {
+        const yy = y0 + (y1 - y0) * s / 64
+        spine.push({ x: spine_x(frame, yy, side), y: yy })
     }
-    return { polys, bands, metas, spine }
+    return { polys, bands, metas, spine, length: total * k + 2 * pad }
 }
 
 // rib_cells — one vertebra's children as ribs.  Alternate sides (first right, then left, …) so the
@@ -445,25 +466,27 @@ export function rib_cells(radii: number[], band: SpineBand, gap: number): { poly
     if (!n) return { polys, metas }
     const f = band.frame
     const rmax = Math.max(1, ...radii)
-    const sides: number[][] = [[], []]
-    for (let i = 0; i < n; i++) sides[i % 2].push(i)
-    for (let sd = 0; sd < 2; sd++) {
+    // every rib on the band's own side — one stack, one direction
+    const sides: number[][] = [[]]
+    for (let i = 0; i < n; i++) sides[0].push(i)
+    for (let sd = 0; sd < 1; sd++) {
         const ids = sides[sd]
         if (!ids.length) continue
-        const dir = sd === 0 ? 1 : -1
+        const dir = band.side > 0 ? 1 : -1
         const tot = ids.reduce((a, i) => a + Math.max(1, radii[i]), 0)
         const h = band.y1 - band.y0
         let y = band.y0
         for (const i of ids) {
             const sh = h * Math.max(1, radii[i]) / tot
             const cy = y + sh / 2
-            const x0 = spine_x(f, cy) + dir * (band.hw * 0.8)
+            const x0 = spine_x(f, cy, band.side) + dir * (band.hw * 0.8)
             const room = dir > 0 ? (f.x + f.w - 10) - x0 : x0 - (f.x + 10)
-            const t = (cy - f.y) / Math.max(1, f.h)
-            const env = 0.35 + 0.65 * Math.sin(Math.PI * Math.min(1, Math.max(0, t)))
+            const t = band.t
+            const env = 0.55 + 0.45 * Math.sin(Math.PI * Math.min(1, Math.max(0, t)))
             const len = Math.max(18, room * env * (0.4 + 0.6 * Math.sqrt(Math.max(1, radii[i]) / rmax)))
             const th = Math.max(2, sh * 0.62 - Math.max(0, gap))
-            const droop = Math.min(len * 0.16, th * 1.4 + 6)
+            // the droop stays inside the rib's own slot — a rib that sags into the next vertebra's band is noise
+            const droop = Math.min(len * 0.08, sh * 0.3)
             // the centre line droops with u^1.6; the half-thickness tapers to 45% at the tip
             const top: Pt[] = [], bot: Pt[] = []
             const K = 9

@@ -6,14 +6,13 @@
 import Vytui from "$lib/O/Vytui.svelte"
 import { budget_for, fold_ladder, bucket_key_of, AREA_BASE } from "$lib/O/vyto_foam"
 import { poly_area } from "$lib/O/vyto_geometry"
-import { SEARCH_SAMPLE } from "$lib/O/vyto_search_sample"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_VytoTesting(): string { return '17e5dc67922a9771~g1' },
+    Ghostmeta_Ghost_V_VytoTesting(): string { return '2d7c4b9eaf7e2503~g1' },
 
 // VytoTesting.g — né Vytonation.g.  Vyto's demo Books (the VoroTesting.g sibling, one directory over
 //  in Ghost/V/), under the `<Name>Testing.g` convention (owner ruling 2026-09-09; the one predicate
@@ -3007,24 +3006,31 @@ VytoGuise_witness(w) {
     }
 
 },
-// ══ VytoSpine — A CODE SEARCH AS A CREATURE: files are vertebrae, their hits are ribs ═════════════
-//  (The owner 2026-09-24, of the grid: *"a goofy office vibe whereas where we're going looks more like
-//   zoology... I'm looking for something we can use as a nice fullscreen graphic while searching for
-//    code in the code editor... might have a ton of matches to squish."*)  REAL result sets: greps of
-//     Ghost/**/*.g in the Searchbar's own hit shape (scripts/vyto_search_sample.mjs →
-//      src/lib/O/vyto_search_sample.ts), handed to the glass as Guises — a `Doc:<path>` per file (in
-//       path order, the order the Searchbar already sorts by) holding one child per hit, its mainkey
-//        the hit's KIND (ƒ Def · % Particle · ¶ Mention) and its value the def name or the line.
-//  Stood `spine` (render: vertebrae down an S-curved backbone, ribs off each side — vyto_geometry
-//   spine_cells / rib_cells), `kindfold` + nested + folded (the fold now reaches one scope down, so a
-//    file with hundreds of hits crushes to a few crests by kind instead of three hundred slivers), and
-//     `budget:40` so the root — the files — never folds: a file is never hidden behind another.
-//  NOT FOAM-CUT, on purpose: the vertebrae are ASSIGNED by the spine, so the model's pile positions are
-//   never drawn — and a dense 20-body foam pile never rests (measured: it jiggles 0.1–0.6px a stir
-//    forever, just over the settle tolerance), which would hold every beat to its timeout.
-//  Then a RE-SEARCH, the thing a searchbar actually does: Door → Heist, same world, fresh:0.  The
-//   creature re-forms around the new set; the crowded Heist files squish.
-//  World VytoSpine.
+// ══ VytoSpine — A CODE SEARCH AS A CREATURE, AND A CAVE YOU CAN GO DOWN INTO ════════════════════════
+//  (The owner 2026-09-24: *"a nice fullscreen graphic while searching for code in the code editor"* — then
+//   *"is it reasonable to want it interactive? to dive into the 'particle x9' etc. because there needs to
+//    be a way to wander around the code as a bit of a place, or a hyper-place... invent a caving expedition
+//     interactivity system or something as well."*)
+//  THE CREATURE: a result set in the Searchbar's own hit shape (real greps of Ghost/**/*.g —
+//   scripts/vyto_search_sample.mjs → static/vyto/*.json, fetched), sown as Guises and drawn by the `spine`
+//    stop: vertebrae down a backbone hugging the left edge, every rib running right into the open room.
+//  THE EXPEDITION — four depths, each the code's OWN anatomy, never a grouping invented for it:
+//   · SEARCH — vertebrae are the FILES holding hits (path order), ribs their hits folded by kind;
+//   · FILE — press a file (or a crest: "Def ×124" presses like its members, Vytui's crest rule, and the
+//      rest of the dive stays narrowed to that kind): vertebrae are the file's REGIONS (its own
+//       `//#region` markers; a file with none groups by method-name prefix, which in a *Testing.g is the
+//        Book), ribs the methods in each.  Measured why: one level less and a Def-narrowed Heist.g stood
+//         124 method vertebrae — a spine of hairs;
+//   · REGION — vertebrae are the region's METHODS holding hits (line order), ribs the hits in each;
+//   · METHOD — the chamber: vertebrae are the method's paragraphs, ribs its actual source lines, the hit
+//      lines wearing their own kind (`Hit`).
+//  THE HEAD IS THE ROPE: the first vertebra is always `Head:<where you are>` (one tok across every depth,
+//   so it MORPHS as you descend rather than blinking), and pressing it climbs one level.  Every press is a
+//    guise `press` — the producer owns what opening a thing means; Vyto only draws what it is handed, and a
+//     descent is just a re-sow into the same world (fresh:0), so what persists morphs and the rest escorts
+//      out.  Not foam-cut: the spine assigns every bone, and a dense foam pile never rests.
+//  The Book walks it the way a hand would — by calling the very presses a click calls: Door, re-search
+//   to Heist, dive a CREST of Heist.g, dive a method, climb the rope.  World VytoSpine.
 VytoSpine(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.VytoSpine_drive(w,req)
@@ -3034,59 +3040,375 @@ VytoSpine(A,w) {
 },
 async VytoSpine_drive(w, req) {
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 4
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 9
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
-        if (n === 2) this.VytoSpine_sow(w, 'Door')
+        if (n === 2) await this.VytoSpine_sow(w)
         if (n === 3) this.VytoSpine_stand(w)
         if (n === 4) this.VytoSpine_research(w)
+        if (n === 5) this.VytoSpine_dive_crest(w)
+        if (n === 6) this.VytoSpine_dive_region(w)
+        if (n === 7) this.VytoSpine_dive_method(w)
+        if (n === 8) this.VytoSpine_climb(w)
+        if (n === 9) this.VytoSpine_tunnel_walk(w)
     }
     this.VytoSpine_witness(w)
 
 },
-// a result set → guises: one Doc per file, one child per hit.  The hit KIND is the child's mainkey —
-//  what the hit IS — so the fold's kind ladder groups mentions with mentions and defs with defs.
-VytoSpine_guises(q) {
-    let kinds = { 'ƒ': 'Def', '%': 'Particle', '¶': 'Mention', '≈': 'Text' }
-    let byPath = {}
-    let order = []
-    for (const h of SEARCH_SAMPLE[q] || []) {
-        if (!byPath[h.path]) { byPath[h.path] = []; order.push(h.path) }
-        byPath[h.path].push(h)
+// ── the producer ────────────────────────────────────────────────────────────────────────────────
+// the data, fetched once per world from static/ (the dev server refuses raw .g reads, so the anatomy a
+//  deep chamber needs is generated beside the sample — scripts/vyto_search_sample.mjs)
+async VytoSpine_load(w) {
+    if (!w.c.sample) {
+        let r = await fetch('/vyto/search_sample.json')
+        w.c.sample = await r.json()
     }
-    let out = []
-    for (const p of order) {
-        let kids = []
-        for (const h of byPath[p]) {
-            let g = {}
-            g[kinds[h.glyph] || 'Mention'] = h.name
-            g.line = h.line
-            g.guise = { tok: p + ':' + h.line }
-            kids.push(g)
+    if (!w.c.anat) {
+        let r = await fetch('/vyto/search_anatomy.json')
+        w.c.anat = await r.json()
+    }
+
+},
+VytoSpine_kind(glyph) {
+    if (glyph === 'ƒ') return 'Def'
+    if (glyph === '%') return 'Particle'
+    if (glyph === '≈') return 'Text'
+    return 'Mention'
+
+},
+// a method as the code writes it — `name()`; the stretch above a file's first method is `(top)`
+VytoSpine_mname(m) {
+    if (!m || m === '(head)' || m === '(top)') return '(top)'
+    return m + '()'
+
+},
+VytoSpine_base(path) {
+    return String(path).replace(/^.*\//, '').replace(/\.g$/, '')
+
+},
+// every method name the anatomy knows → the files defining it; built once per world
+VytoSpine_index(w) {
+    if (w.c.idx) return w.c.idx
+    let idx = {}
+    for (const p of Object.keys(w.c.anat || {})) {
+        for (const mm of w.c.anat[p].methods) {
+            if (!idx[mm[0]]) idx[mm[0]] = []
+            idx[mm[0]].push(p)
         }
-        out.push({ Doc: p, hits: byPath[p].length, guise: { tok: 'doc:' + p, kids: kids } })
+    }
+    w.c.idx = idx
+    return idx
+
+},
+// TUNNELS (2026-09-24, loop tick 3): a line that CALLS another method is a passage to that method's chamber
+//  — the call graph becomes the cave's geography, across files (the owner: "a way to wander around the code
+//   as a bit of a place, or a hyper-place").  The first `this.X(` in the line whose chamber exists (the
+//    anatomy carries source only for methods holding hits — 553 tunnel lines, 208 of them into another file,
+//     in the Heist set); the same file wins a tie.  null when the line leads nowhere.
+VytoSpine_tunnel(w, path, m, text) {
+    let idx = this.VytoSpine_index(w)
+    let re = /this\.([A-Za-z_]\w*)\(/g
+    let hit = null
+    while ((hit = re.exec(text)) !== null) {
+        let n = hit[1]
+        if (n === m) continue
+        let ps = (idx[n] || []).filter(q => w.c.anat[q].lines[n])
+        if (!ps.length) continue
+        return { path: ps.indexOf(path) >= 0 ? path : ps[0], m: n }
+    }
+    return null
+
+},
+// where the expedition stands — the top of the rope
+VytoSpine_here(w) {
+    let st = w.c.cave || []
+    return st[st.length - 1] || null
+
+},
+// the rope, read aloud: search · Heist › Heist.g · Def › Heist_pull()
+VytoSpine_rope_text(w) {
+    let out = []
+    for (const s of w.c.cave || []) {
+        if (s.lvl === 'search') out.push('⌕ ' + s.q)
+        if (s.lvl === 'file') out.push(this.VytoSpine_base(s.path) + (s.kind ? ' · ' + s.kind : ''))
+        if (s.lvl === 'region') out.push(s.r)
+        if (s.lvl === 'method' && s.via) out.push('⇝ ' + (s.path !== s.via ? this.VytoSpine_base(s.path) + '.' : '') + this.VytoSpine_mname(s.m))
+        if (s.lvl === 'method' && !s.via) out.push(this.VytoSpine_mname(s.m))
+    }
+    return out.join(' › ')
+
+},
+// the head: always the first vertebra, one tok at every depth so it morphs, and pressing it climbs
+VytoSpine_head(w) {
+    // `deep` — how far down the rope is; the glass darkens the cave by it and the torch lights the way
+    let head = { Head: this.VytoSpine_rope_text(w), guise: { tok: 'cave:head', dose: 1, press: () => this.VytoSpine_rise(w) } }
+    let deep = (w.c.cave || []).length - 1
+    if (deep > 0) head.deep = deep
+    return head
+
+},
+// one hit as a rib — pressing it (alone) goes straight to its chamber; pressed as a CREST (the members
+//  handed in by Vytui's crest rule) it opens the file narrowed to that kind
+VytoSpine_hit(w, h) {
+    let g = {}
+    g[this.VytoSpine_kind(h.glyph)] = h.name
+    g.line = h.line
+    g.guise = { tok: h.path + ':' + h.line, press: (src, ctx) => {
+        if (ctx && ctx.crest) {
+            let k0 = ctx.members[0] ? Object.keys(ctx.members[0].sc)[0] : null
+            this.VytoSpine_go(w, { lvl: 'file', path: h.path, kind: k0 })
+            return
+        }
+        this.VytoSpine_go(w, { lvl: 'method', path: h.path, m: h.m })
+    } }
+    return g
+
+},
+// the kind a crest narrowed the dive to, if any — set at the file step, honoured all the way down
+VytoSpine_kindof(w) {
+    for (const s of w.c.cave || []) { if (s.lvl === 'file' && s.kind) return s.kind }
+    return null
+
+},
+// the hits under where the expedition stands (file, region, method), narrowed by kind
+VytoSpine_under(w, hits, here) {
+    let k = this.VytoSpine_kindof(w)
+    return hits.filter(h => h.path === here.path && (!k || this.VytoSpine_kind(h.glyph) === k)
+        && (here.lvl !== 'region' || h.r === here.r) && (here.lvl !== 'method' || h.m === here.m))
+
+},
+// the guises for where the expedition stands — head first, then the level's own anatomy
+VytoSpine_level(w) {
+    let here = this.VytoSpine_here(w)
+    let out = [this.VytoSpine_head(w)]
+    if (!here || !w.c.sample) return out
+    let q = (w.c.cave[0] || {}).q
+    let hits = w.c.sample[q] || []
+    if (here.lvl === 'search') {
+        let byPath = {}
+        let order = []
+        for (const h of hits) {
+            if (!byPath[h.path]) { byPath[h.path] = []; order.push(h.path) }
+            byPath[h.path].push(h)
+        }
+        for (const p of order) {
+            let kids = byPath[p].map(h => this.VytoSpine_hit(w, h))
+            out.push({ Doc: p, guise: { tok: 'doc:' + p, dose: byPath[p].length, kids: kids,
+                press: () => this.VytoSpine_go(w, { lvl: 'file', path: p, kind: null }) } })
+        }
+        return out
+    }
+    if (here.lvl === 'file') {
+        // regions, in the order they first hold a hit; each region's ribs are its methods
+        let byR = {}
+        let order = []
+        for (const h of this.VytoSpine_under(w, hits, here)) {
+            if (!byR[h.r]) { byR[h.r] = { ms: [], n: {} }; order.push(h.r) }
+            if (!byR[h.r].n[h.m]) { byR[h.r].n[h.m] = 0; byR[h.r].ms.push(h.m) }
+            byR[h.r].n[h.m] = byR[h.r].n[h.m] + 1
+        }
+        for (const r of order) {
+            let kids = byR[r].ms.map(m => ({ Method: this.VytoSpine_mname(m), guise: { tok: 'm:' + here.path + '#' + m, dose: byR[r].n[m],
+                // a method rib opens its chamber; pressed as a crest ("Method ×18") it opens the region instead
+                press: (src, ctx) => {
+                    if (ctx && ctx.crest) { this.VytoSpine_go(w, { lvl: 'region', path: here.path, r: r }); return }
+                    this.VytoSpine_go(w, { lvl: 'method', path: here.path, m: m })
+                } } }))
+            let total = 0
+            for (const m of byR[r].ms) total = total + byR[r].n[m]
+            out.push({ Region: r, guise: { tok: 'r:' + here.path + '#' + r, dose: total, kids: kids,
+                press: () => this.VytoSpine_go(w, { lvl: 'region', path: here.path, r: r }) } })
+        }
+        return out
+    }
+    if (here.lvl === 'region') {
+        let byM = {}
+        let order = []
+        for (const h of this.VytoSpine_under(w, hits, here)) {
+            if (!byM[h.m]) { byM[h.m] = []; order.push(h.m) }
+            byM[h.m].push(h)
+        }
+        for (const m of order) {
+            let kids = byM[m].map(h => this.VytoSpine_hit(w, h))
+            out.push({ Method: this.VytoSpine_mname(m), guise: { tok: 'mm:' + here.path + '#' + m, dose: byM[m].length, kids: kids,
+                press: () => this.VytoSpine_go(w, { lvl: 'method', path: here.path, m: m }) } })
+        }
+        return out
+    }
+    if (here.lvl === 'method') {
+        let body = ((w.c.anat || {})[here.path] || { lines: {} }).lines[here.m]
+        if (!body) return out
+        // paragraphs: split at blank lines, at most six lines a vertebra
+        let para = []
+        let paras = []
+        let i = 0
+        while (i < body.src.length) {
+            let text = body.src[i]
+            let ln = body.a + i
+            if (!text.trim()) {
+                if (para.length) { paras.push(para); para = [] }
+            } else {
+                para.push({ ln: ln, text: text })
+                if (para.length >= 6) { paras.push(para); para = [] }
+            }
+            i = i + 1
+        }
+        if (para.length) paras.push(para)
+        for (const p of paras) {
+            let kids = []
+            for (const l of p) {
+                let g = {}
+                let tun = this.VytoSpine_tunnel(w, here.path, here.m, l.text)
+                g[tun ? 'Call' : (l.text.indexOf(q) >= 0 ? 'Hit' : 'Line')] = l.text.trim()
+                g.line = l.ln
+                g.guise = { tok: 'l:' + here.path + ':' + l.ln }
+                if (tun) g.guise.press = () => this.VytoSpine_go(w, { lvl: 'method', path: tun.path, m: tun.m, via: here.path })
+                kids.push(g)
+            }
+            out.push({ Lines: 'L' + p[0].ln, guise: { tok: 'p:' + here.path + '#' + here.m + '@' + p[0].ln, kids: kids } })
+        }
+        return out
     }
     return out
 
 },
-// ── beat 2 — a search lands: the Door result set as guises ─────────────────────────────────────────
-VytoSpine_sow(w, q) {
-    w.i({desc: 'a code search lands — the Door hits across eleven files as guises one Doc per file'})
-    w.c.q = q
-    w.c.seeds = []
-    for (const g of this.VytoSpine_guises(q)) { w.c.seeds.push(this.Vyto_guise(g)) }
+// re-sow the glass with where the expedition stands.  fresh only for the very first stand; every later
+//  move re-sows into the SAME world, so the head (and anything else that persists) morphs in place
+VytoSpine_show(w, fresh) {
+    let seeds = []
+    for (const g of this.VytoSpine_level(w)) seeds.push(this.Vyto_guise(g))
+    w.c.seeds = seeds
+    this.Vyto_commission_on(w, seeds, fresh, 0, 1, 1, 0, 1, 0, 'spine,kindfold,budget:400')
+    this.Vyto_rest_reset(w)
 
 },
-// ── beat 3 — stand the creature: every file a vertebra, every crowded file squished ────────────────
+// go down (push) / climb (pop) — the whole interaction surface of the expedition
+VytoSpine_go(w, step) {
+    w.c.cave = (w.c.cave || []).concat([step])
+    this.VytoSpine_show(w, 0)
+
+},
+VytoSpine_rise(w) {
+    if (!w.c.cave || w.c.cave.length < 2) return
+    w.c.cave = w.c.cave.slice(0, w.c.cave.length - 1)
+    this.VytoSpine_show(w, 0)
+
+},
+// ── the beats ───────────────────────────────────────────────────────────────────────────────────
+async VytoSpine_sow(w) {
+    w.i({desc: 'a code search lands — the Door hits across twelve files fetched from the sample in the Searchbar hit shape'})
+    await this.VytoSpine_load(w)
+    w.c.cave = [{ lvl: 'search', q: 'Door' }]
+
+},
 async VytoSpine_stand(w) {
-    w.i({desc: 'stand the search as a spine — every file a vertebra and every crowded file folded to crests by kind'})
-    this.Vyto_commission_on(w, w.c.seeds, 1, 0, 1, 1, 0, 1, 0, 'spine,kindfold,budget:40')
-    this.Vyto_rest_reset(w)
+    w.i({desc: 'stand the search as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs by kind'})
+    this.VytoSpine_show(w, 1)
     this.expecting(w, 'stand_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoSpine_ready(w, 'saw_stand')) })
 
 },
-// ready when every file stands as its own vertebra and every file over the rib budget has folded
+async VytoSpine_research(w) {
+    w.i({desc: 're-search Door to Heist in the same world — the creature re-forms around twenty-one files and the head morphs'})
+    w.c.cave = [{ lvl: 'search', q: 'Heist' }]
+    this.VytoSpine_show(w, 0)
+    this.expecting(w, 'research_wait', 24, async () => { await this.VytoStaple_await(w, 24, () => this.VytoSpine_ready(w, 'saw_research')) })
+
+},
+// press a CREST the way a hand would — Vytui's crest rule, done here by hand: the first member's press
+//  handed the whole group — and land in Heist.g narrowed to that kind
+async VytoSpine_dive_crest(w) {
+    w.i({desc: 'press the Def crest of Heist.g — the crest presses like its members and the expedition goes down into the file'})
+    let vw = this.VytoStaple_vw(w)
+    let doc = vw ? vw.c.mirror.o().find(r => r.sc.Doc === 'Ghost/M/Heist.g' && !r.sc.departing) : null
+    let crest = doc ? doc.o().find(r => r.sc.Vtuffing != null && String(r.sc.of).indexOf('Def') >= 0) : null
+    let dip = crest ? crest.o({ Vrow: 1 }).find(r => r.sc.row === 'dip') : null
+    let srcs = ((dip && dip.c.members) || []).map(m => m.c.source_n).filter(Boolean)
+    if (srcs[0] && srcs[0].c.press) srcs[0].c.press(srcs[0], { crest: crest, members: srcs })
+    w.c.pressed_crest = srcs.length
+    this.expecting(w, 'crest_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoSpine_ready(w, 'saw_crest')) })
+
+},
+// press the region vertebra holding the most hits — the region opens: its methods, each with its hits
+async VytoSpine_dive_region(w) {
+    w.i({desc: 'press the busiest region of the file — its methods become the vertebrae with their hits as ribs'})
+    this.VytoSpine_press_busiest(w, 'Region')
+    this.expecting(w, 'region_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoSpine_ready(w, 'saw_region')) })
+
+},
+// press the vertebra of kind `mk` holding the most hits, exactly as a click would
+VytoSpine_press_busiest(w, mk) {
+    let vw = this.VytoStaple_vw(w)
+    let best = null
+    for (const r of (vw ? vw.c.mirror.o() : [])) {
+        if (r.sc[mk] == null || r.sc.departing) continue
+        if (!best || Number(r.sc.dose) > Number(best.sc.dose)) best = r
+    }
+    if (best && best.c.source_n && best.c.source_n.c.press) best.c.source_n.c.press(best.c.source_n)
+
+},
+// press the method vertebra holding the most hits — its chamber opens: paragraphs and the actual lines
+async VytoSpine_dive_method(w) {
+    w.i({desc: 'press the busiest method — the chamber opens with its paragraphs as vertebrae and its source lines as ribs'})
+    this.VytoSpine_press_busiest(w, 'Method')
+    this.expecting(w, 'method_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoSpine_ready(w, 'saw_chamber')) })
+
+},
+// press the head — the rope climbs one level, back to the file
+async VytoSpine_climb(w) {
+    w.i({desc: 'press the head — the rope climbs back up to the region and its methods return'})
+    let vw = this.VytoStaple_vw(w)
+    let head = vw ? vw.c.mirror.o().find(r => r.sc.Head != null && !r.sc.departing) : null
+    if (head && head.c.source_n && head.c.source_n.c.press) head.c.source_n.c.press(head.c.source_n)
+    this.expecting(w, 'climb_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoSpine_ready(w, 'saw_climb')) })
+
+},
+// go down into a chamber that HAS a tunnel, then press the tunnel — the rope must end in the method it called
+async VytoSpine_tunnel_walk(w) {
+    w.i({desc: 'walk a tunnel — in a chamber a line that calls another method is pressed and the expedition lands in that method'})
+    let here = this.VytoSpine_here(w)
+    let q = (w.c.cave[0] || {}).q
+    // the busiest method under the region that has a tunnel line
+    let best = null
+    for (const h of (w.c.sample[q] || [])) {
+        if (h.path !== here.path || (here.r && h.r !== here.r)) continue
+        let body = ((w.c.anat || {})[h.path] || { lines: {} }).lines[h.m]
+        if (!body || body.src.every(l => !this.VytoSpine_tunnel(w, h.path, h.m, l))) continue
+        best = h
+        break
+    }
+    if (!best) return
+    w.c.cave = w.c.cave.concat([{ lvl: 'method', path: best.path, m: best.m }])
+    this.VytoSpine_show(w, 0)
+    let body = w.c.anat[best.path].lines[best.m]
+    let line = body.src.find(l => this.VytoSpine_tunnel(w, best.path, best.m, l))
+    w.c.tunnel_to = this.VytoSpine_tunnel(w, best.path, best.m, line)
+    w.c.tunnel_ln = body.a + body.src.indexOf(line)
+    this.expecting(w, 'tunnel_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoSpine_tunnel_ready(w)) })
+
+},
+// first the chamber stands, then the Call rib is pressed exactly as a click would, then the far chamber stands
+VytoSpine_tunnel_ready(w) {
+    let vw = this.VytoStaple_vw(w)
+    if (vw) this.Vyto_stir(vw)
+    if (this.VytoSpine_why(w)) return 0
+    let here = this.VytoSpine_here(w)
+    if (!w.c.tunnel_pressed) {
+        let row = null
+        for (const r of vw.c.mirror.o()) {
+            for (const k of r.o()) { if (k.c.tok === 'l:' + here.path + ':' + w.c.tunnel_ln) row = k }
+        }
+        if (!row || row.sc.Call == null || !row.c.source_n || !row.c.source_n.c.press) return 0
+        row.c.source_n.c.press(row.c.source_n)
+        w.c.tunnel_pressed = 1
+        return 0
+    }
+    if (here.m !== w.c.tunnel_to.m || here.path !== w.c.tunnel_to.path) return 0
+    w.c.saw_tunnel = 1
+    return 1
+
+},
+// ── readiness: the glass holds EXACTLY the level the rope says, every bone seated ─────────────────────
 VytoSpine_ready(w, flag) {
     let vw = this.VytoStaple_vw(w)
     if (vw) this.Vyto_stir(vw)
@@ -3095,56 +3417,61 @@ VytoSpine_ready(w, flag) {
     return 1
 
 },
-// the reason the creature is not yet what the Book promises — '' when it is.  It waits for STRUCTURE,
-//  not for the model's pile to rest: the spine ASSIGNS every vertebra and rib, so the pile's positions
-//   are never drawn, and a pile of twenty never rests anyway (measured: 0.1–0.6px a stir, forever).
+// the reason the glass is not yet the level the rope says — '' when it is.  It waits for STRUCTURE, not
+//  for the model's pile to rest: the spine ASSIGNS every bone, so the pile's positions are never drawn.
 VytoSpine_why(w) {
     let vw = this.VytoStaple_vw(w)
     if (!vw || !vw.c.mirror) return 'no vw'
     if (!vw.c.nested || !vw.c.folded) return 'not nested+folded'
-    let files = 0
-    for (const g of this.VytoSpine_guises(w.c.q)) files = files + 1
+    let want = this.VytoSpine_level(w)
     let top = vw.c.mirror.o().filter(r => !r.sc.departing)
-    if (top.length !== files) return 'top ' + top.length + '/' + files
-    for (const d of top) {
-        if (d.sc.Doc == null) return 'a non-Doc at the root'
-        if (!d.c.T) return 'no T on ' + d.sc.Doc
-        let seen = d.o().filter(k => !k.sc.departing && !k.c.folded && k.c.T)
-        let hits = Number(d.sc.hits) || 0
-        // a crowded file squishes: no more than the rib budget of cells, and at least one crest
-        if (hits > 7) {
-            if (seen.length > 7) return d.sc.Doc + ' hits=' + hits + ' seen=' + seen.length
-            if (!seen.some(k => k.sc.Vtuffing != null)) return d.sc.Doc + ' no crest'
+    if (top.length !== want.length) return 'top ' + top.length + '/' + want.length
+    for (const g of want) {
+        let row = top.find(r => r.c.tok === g.guise.tok)
+        if (!row) return 'missing ' + g.guise.tok
+        if (!row.c.T) return 'no T on ' + g.guise.tok
+        let kids = (g.guise.kids || []).length
+        let seen = row.o().filter(k => !k.sc.departing && !k.c.folded && k.c.T)
+        // a crowded bone squishes: no more than the rib budget of cells, and at least one crest
+        if (kids > 7) {
+            if (seen.length > 7) return g.guise.tok + ' seen ' + seen.length
+            if (!seen.some(k => k.sc.Vtuffing != null)) return g.guise.tok + ' no crest'
         }
-        if (hits <= 7 && seen.length !== hits) return d.sc.Doc + ' small ' + seen.length + '/' + hits
+        if (kids <= 7 && seen.length !== kids) return g.guise.tok + ' ribs ' + seen.length + '/' + kids
     }
+    if (top[0] && top[0].sc.Head !== this.VytoSpine_rope_text(w)) return 'head says ' + top[0].sc.Head
     return ''
-
-},
-// ── beat 4 — re-search: Door → Heist in the same world, the way a searchbar does it ────────────────
-async VytoSpine_research(w) {
-    w.i({desc: 're-search Door to Heist in the same world — the creature re-forms around twenty files and the crowded ones squish'})
-    this.VytoSpine_sow_quiet(w, 'Heist')
-    this.Vyto_commission_on(w, w.c.seeds, 0, 0, 1, 1, 0, 1, 0, 'spine,kindfold,budget:40')
-    this.Vyto_rest_reset(w)
-    this.expecting(w, 'research_wait', 24, async () => { await this.VytoStaple_await(w, 24, () => this.VytoSpine_ready(w, 'saw_research')) })
-
-},
-VytoSpine_sow_quiet(w, q) {
-    w.c.q = q
-    w.c.seeds = []
-    for (const g of this.VytoSpine_guises(q)) { w.c.seeds.push(this.Vyto_guise(g)) }
 
 },
 // ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ───────────────────
 VytoSpine_witness(w) {
     if (w.c.saw_stand) {
-        this.story_swear(w, 'a code search stands as a spine — every file a vertebra and every crowded file folded to a few ribs by kind')
-        if (!(w.oa({see: 'a code search stands as a spine — every file a vertebra and every crowded file folded to a few ribs by kind'}))) w.i({see: 'a code search stands as a spine — every file a vertebra and every crowded file folded to a few ribs by kind'})
+        this.story_swear(w, 'a code search stands as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs')
+        if (!(w.oa({see: 'a code search stands as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs'}))) w.i({see: 'a code search stands as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs'})
     }
     if (w.c.saw_research) {
-        this.story_swear(w, 'a re-search re-forms the creature — twenty files of Heist stand and the crowded ones squish')
-        if (!(w.oa({see: 'a re-search re-forms the creature — twenty files of Heist stand and the crowded ones squish'}))) w.i({see: 'a re-search re-forms the creature — twenty files of Heist stand and the crowded ones squish'})
+        this.story_swear(w, 'a re-search re-forms the creature in the same world — the head morphs to the new query')
+        if (!(w.oa({see: 'a re-search re-forms the creature in the same world — the head morphs to the new query'}))) w.i({see: 'a re-search re-forms the creature in the same world — the head morphs to the new query'})
+    }
+    if (w.c.saw_crest) {
+        this.story_swear(w, 'a crest presses like its members — the expedition goes down into the file narrowed to that kind')
+        if (!(w.oa({see: 'a crest presses like its members — the expedition goes down into the file narrowed to that kind'}))) w.i({see: 'a crest presses like its members — the expedition goes down into the file narrowed to that kind'})
+    }
+    if (w.c.saw_region) {
+        this.story_swear(w, 'a region opens from the file — its own methods become the vertebrae with their hits as ribs')
+        if (!(w.oa({see: 'a region opens from the file — its own methods become the vertebrae with their hits as ribs'}))) w.i({see: 'a region opens from the file — its own methods become the vertebrae with their hits as ribs'})
+    }
+    if (w.c.saw_chamber) {
+        this.story_swear(w, 'a method opens as a chamber — its paragraphs are vertebrae and its own source lines are the ribs')
+        if (!(w.oa({see: 'a method opens as a chamber — its paragraphs are vertebrae and its own source lines are the ribs'}))) w.i({see: 'a method opens as a chamber — its paragraphs are vertebrae and its own source lines are the ribs'})
+    }
+    if (w.c.saw_tunnel) {
+        this.story_swear(w, 'a line that calls another method is a tunnel — pressing it lands in that method chamber')
+        if (!(w.oa({see: 'a line that calls another method is a tunnel — pressing it lands in that method chamber'}))) w.i({see: 'a line that calls another method is a tunnel — pressing it lands in that method chamber'})
+    }
+    if (w.c.saw_climb) {
+        this.story_swear(w, 'the head is the rope — pressing it climbs one level and the region returns')
+        if (!(w.oa({see: 'the head is the rope — pressing it climbs one level and the region returns'}))) w.i({see: 'the head is the rope — pressing it climbs one level and the region returns'})
     }
 
 },

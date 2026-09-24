@@ -5,8 +5,6 @@ story:VytoCrest
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.013
-      sample=0.015,at=1786240771
-      sample=0.016,at=1786246107
       sample=0.009,at=1786278574
       sample=0.009,at=1788853987
       sample=0.024,at=1788870484
@@ -15,9 +13,9 @@ story:VytoCrest
       sample=0.01,at=1788905255
       sample=0.01,at=1789116945
       sample=0.011,at=1790211081
+      sample=0.013,at=1790220098
+      sample=0.023,at=1790224447
     TimeTotal:step,avg=0.003
-      sample=0.004,at=1786240771
-      sample=0.004,at=1786246107
       sample=0.002,at=1786278574
       sample=0.002,at=1788853987
       sample=0.006,at=1788870484
@@ -26,6 +24,8 @@ story:VytoCrest
       sample=0.003,at=1788905255
       sample=0.003,at=1789116945
       sample=0.003,at=1790211081
+      sample=0.003,at=1790220098
+      sample=0.006,at=1790224447
   step,dige:3c5d064fc2298650
   step=2,desc:the fold distils a four-member shoal — the re-homed algebra with its door,dige:81f16e8262223a96
   step=3,desc:the detached mint — the same saying off the book,dige:0cfaf34d4375167f

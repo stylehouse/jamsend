@@ -197,7 +197,66 @@ Two more of the owner's own asks, landed and verified live (not screenshotted-an
           folio starts from its membrane inward and yields to the bump. Model-side. STOP tweaking pixels
            here — the next commit of effort goes to Vyto.g, not Vytui.
 
-### THE SPINE — LANDED (2026-09-24): a code search as a creature. START HERE.
+### THE CAVE EXPEDITION — LANDED (2026-09-24, owner away, autonomous). START HERE.
+The owner: *"all the lines coming off on the same side of the spine... is it reasonable to want it
+ interactive? to dive into the 'particle x9'... a way to wander around the code as a bit of a place, or a
+  hyper-place... getting the spine to fit in around other things... invent a caving expedition
+   interactivity system."*  Book `VytoSpine`, 9 beats, 7 oaths, all green on the live runner (new mode).
+- **One side.** Every rib runs the same way; the spine hugs an edge (`spine` = left, `spine:right` mirrors).
+   The margin behind the spine holds each vertebra's NAME as a specimen tag (a bone is too narrow for a
+    method name). The creature claims one edge and grows into the open room — the first answer to "fit in
+     around other things".
+- **Four depths, all the code's own anatomy** (never a grouping invented for it):
+   SEARCH (files, path order) → FILE (its `//#region`s; a file with none groups by method-name prefix,
+    which in a *Testing.g is the Book) → REGION (its methods) → METHOD, the chamber (its paragraphs as
+     vertebrae, its actual source lines as ribs, hit lines their own colour).
+- **Pressing is how you move.** Every cell's press is the producer's (a Guise `press`); Vyto only draws.
+   A CREST presses like its members (Vytui: the dip row's `.c.members` → the first member's press with
+    `{crest, members}`) — so "Def ×124" dives into the file narrowed to defs, "Method ×43" opens its
+     region. The HEAD is the rope: the first vertebra always, reading the whole descent (`⌕ Heist › Heist ›
+      raheist › Heist_keep_step()`), one tok at every depth so it MORPHS; pressing it (or Escape) climbs.
+- **The passage.** A level with more vertebrae than a frame can read keeps a legible minimum band (26px)
+   and grows LONGER than the frame; the wheel travels along the body. A new level starts at the head.
+- **Bodies sized by what they show** (loop tick 1): each vertebra's floor is ~12px per rib it actually shows,
+   so seven one-line ribs no longer pile into a 26px band; and a DEPTH GAUGE rail at the open edge lights the
+    stretch of a long passage you are looking at. The name margin keeps ≥150px even in a narrowed frame.
+- **The dive** (loop tick 2): a press on a live spine glass snaps the camera ONTO the pressed bone and lets the
+   ordinary camera spring (cam_step pulls an un-engaged camera home) carry it back out while the next level
+    assembles — the level opens out of what you pressed. Escape dives from the head. The general
+     click-to-zoom stays retired; Books are parked and never see it. `wormhole/shots/seq_0066..0069`.
+- **Tunnels** (loop tick 3): in a chamber, a line that calls another method (`this.X(`) whose chamber exists is
+   a `Call` rib — press it and you walk through into that method, across files (553 tunnel lines, 208
+    cross-file, in the Heist set). The rope records it (`› ⇝ Heist_keep_forget()`). Beat 9 of VytoSpine walks
+     one on the live runner: 9/9, 7 sworn. The call graph is the cave's geography.
+- **Torchlight.** The head carries `deep:N`; the glass darkens by depth and the pointer carries a pool of
+   light (a radial gradient on one rect). Full light at the search, dim in a file, dark in a chamber.
+- **Data**: `scripts/vyto_search_sample.mjs` → `static/vyto/search_sample.json` (hits + each hit's method
+   `m` and region `r`) + `static/vyto/search_anatomy.json` (~800KB: method lists, and the source of every
+    method holding a hit, capped 40×84). Fetched, never imported (a module import would ride every runner
+     boot). The dev server 403s raw `.g` — a real source route would replace the anatomy file; that edit
+      lives in vite.config and restarts the server, so it was NOT made while the owner was away.
+- **Model fixes the cave needed (all byte-invisible to existing Books — verified, see below)**: the nested
+   election ignores display channels (a COUNT is a size — seen: methods grouped "hits=2 ×3"; counts now
+    ride `dose`, so busier bones are bigger); crowded-out scopes seat their children (earlier today).
+- **Fixture**: the committed VytoSpine fixture is the 4-beat version; in check mode the runner plays only
+   as many beats as the fixture has, so it reds at 0.5. The 8-beat recording is NOT in the tree — accepting
+    it is the owner's (run it in new mode, or `story_accept.mjs`).
+
+**How to think about space — the options, for the owner to rule:**
+ 1. **Claim an edge** (landed): the spine takes a side, grows into what's left. Cheap, already reads well.
+ 2. **Keep-out** (first cut landed — a COLUMN): `keep:right:0.4` (or `keep:left:…`) — the host declares the
+     column it owns (an editor) and the whole creature is cut against the frame less that column, which is
+      drawn faintly dashed. Works from the URL (`?deck=keep:right:0.4` — the desk now carries stop VALUES,
+       it used to drop everything after the name). Arbitrary rects (a toolbar, a popup) are the next rung.
+ 3. **The passage** (landed): the creature is allowed to be longer than the screen; you travel it.
+ 4. **Depth, not breadth** (landed): a crowded level is a door, not a squeeze — dive instead of cram.
+ Recommendation: all four exist now in first form; next is the editor declaring its REAL layout as the
+  keep, once the spine is wired to the live Searchbar.
+**Next:** wire the live Searchbar result set (Searchbar `onresults`) in place of the sample; a source route
+ for the chamber; keep-out rects; the chamber's line press could open the line in the editor
+  (`Lies_ghost_pick{path, point:'text:…'}` — the Searchbar's own delivery).
+
+### THE SPINE — LANDED (2026-09-24): a code search as a creature.
 The owner, of the grid: *"a goofy office vibe whereas where we're going looks more like zoology... I'm
  looking for something we can use as a nice fullscreen graphic while searching for code in the code
   editor... might have a ton of matches to squish."*  `wormhole/shots/seq_0058`.

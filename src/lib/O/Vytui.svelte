@@ -138,7 +138,21 @@
         //   fire because it was spelled the DOM way is a bad half hour for whoever wrote it.  Both work.
         const fn = src?.c?.press ?? src?.c?.onclick
         if (typeof fn === 'function') {
+            spine_dive_cam(w, cell)
             try { fn(src) } catch (e) { console.warn('◈ Vyto press threw', cell.ident, e) }
+            return
+        }
+        // A CREST PRESSES LIKE ITS MEMBERS (2026-09-24).  A crest is minted by the fold, not sown, so it has
+        //  no source of its own to wear a press — and "dive into the Particle ×9" is exactly what a crest is
+        //   FOR (its dip row keeps `.c.members`, "the way back in").  So pressing it hands the members' own
+        //    press the whole group: the producer that sowed them decides what opening them means.
+        const dip: any = (cell.row.o({ Vrow: 1 }) as TheC[]).find(r => (r.sc as any).row === 'dip')
+        const mem: TheC[] = (dip?.c?.members ?? []) as TheC[]
+        const srcs = mem.map(m => (m.c as any)?.source_n).filter(Boolean)
+        const mfn = srcs[0]?.c?.press
+        if (typeof mfn === 'function') {
+            spine_dive_cam(w, cell)
+            try { mfn(srcs[0], { crest: cell.row, members: srcs }) } catch (e) { console.warn('◈ Vyto crest press threw', cell.ident, e) }
         }
     }
 
@@ -1696,6 +1710,18 @@
     //  THE CALM FLOOR SCALES WITH ZOOM: CALM_EPS is a MODEL-unit floor, and at 4× magnification 1.25
     //   model units is 5 screen pixels — landing there would be a visibly sloppy stop.  Judge in screen
     //    terms (floor × the zoom ratio) and then land exactly.
+    // THE DIVE (stop `spine`, 2026-09-24 — the cave expedition): a press on a spine glass puts the view ON the
+    //  pressed bone, then lets the ordinary camera spring (cam_step, which pulls an un-engaged camera home)
+    //   carry it back out while the next level assembles — so the new level seems to open OUT OF the thing
+    //    you pressed, instead of the scene swapping.  The general click-to-zoom stays retired (the owner:
+    //     "all that I want GONE!"); this is the cave's own gesture, only on a spine glass, only on a press.
+    function spine_dive_cam(w: TheC, cell: PaintCell) {
+        if (!fo(w, 'spine') || !live_page() || parked(w)) return
+        const r = aspect_fit(cell.bx, cell.by, Math.max(cell.bw, 60), Math.max(cell.bh, 40))
+        const c = cam_of(w)
+        c.x = r.x; c.y = r.y; c.w = r.w; c.h = r.h; c.vx = 0; c.vy = 0; c.vw = 0; c.vh = 0
+        kick(w); paint_tick++
+    }
     function cam_step(w: TheC, dt: number): boolean {
         const c = cams.get(w); if (!c) return false
         // a DISENGAGED camera tracks the reference pose, so an aspect flip or a window resize glides
@@ -2476,7 +2502,15 @@
                 polys = seat_polys(w, scopeKey, keys, radii, framePoly, gap)
             } else if (spineR) {
                 const fb = bbox_of(framePoly)
-                const sp_ = spine_cells(radii, { x: fb.bx, y: fb.by, w: fb.bw, h: fb.bh }, gap)
+                // a new set of vertebrae (a dive, a climb, a re-search) starts the passage at its head
+                const psig = keys.join('|')
+                if (spineSig.get(w) !== psig) { spineSig.set(w, psig); spineScroll.set(w, 0) }
+                const sf = spine_frame(w, { x: fb.bx, y: fb.by, w: fb.bw, h: fb.bh })
+                // ~12px per rib the vertebra will actually show (its kids that reached the walk), so a file of
+                //  seven one-liners gets a body tall enough to read them
+                const mins = live.map(n => n.kids.length ? n.kids.length * 12 + 6 : 0)
+                const sp_ = spine_cells(radii, sf, gap, fo(w, 'spine') === 'right' ? -1 : 1, spineScroll.get(w) ?? 0, 26, mins)
+                spineLen.set(w, { len: sp_.length, h: fb.bh })
                 polys = sp_.polys
                 let bm = boneOf.get(w); if (!bm) { bm = new Map(); boneOf.set(w, bm) }
                 for (let i = 0; i < keys.length; i++) { spineBands.set(keys[i], sp_.bands[i]); bm.set(keys[i], sp_.metas[i]) }
@@ -3970,6 +4004,19 @@
     $effect(() => {
         if (typeof window === 'undefined' || !live_page()) return
         const onkey = (e: KeyboardEvent) => {
+            // ESCAPE CLIMBS THE ROPE on a spine glass: it presses the head (the first vertebra), whose press is
+            //  the producer's own "up one level" — the keyboard reaches the same door a click does
+            if (e.key === 'Escape' && !engaged.size) {
+                for (const w of vyto_worlds()) {
+                    if (!fo(w, 'spine')) continue
+                    const head: any = ((w.c as any).mirror?.o() ?? []).find((r: any) => !r.sc.departing && Object.keys(r.sc)[0] === 'Head')
+                    const fn = head?.c?.source_n?.c?.press
+                    const hc = (paintMap.get(w) ?? []).find(c => c.row === head)
+                    if (hc && typeof fn === 'function') spine_dive_cam(w, hc)
+                    if (typeof fn === 'function') { try { fn(head.c.source_n) } catch (er) { console.warn('◈ Vyto escape press threw', er) } }
+                }
+                return
+            }
             if (e.key !== 'Escape' || !engaged.size) return
             for (const w of [...engaged.keys()]) cam_out(w)
         }
@@ -4192,6 +4239,78 @@
     //    page.  So this renders whatever is true and nothing when nothing is: no relations, no vines.
     // the backbone the spine regime last laid (layout writes it; the paint reads it)
     const spineOf = new Map<TheC, Pt[]>()
+    // the passage: how far down the body the view has travelled, the body's length, and which set of
+    //  vertebrae that scroll belongs to (a new set starts at the head)
+    // THE TORCH (stop `spine`, 2026-09-24 — the owner's "caving expedition"): the deeper the rope, the darker
+    //  the cave, and the pointer carries a pool of light.  Depth is a plain fact the producer sets on its
+    //   root rows (`deep:N` — the head's); the torch is where the hand is, in the glass's own units.
+    let torch = $state({ x: 0, y: 0, on: false })
+    function spine_deep(w: TheC): number {
+        void paint_tick
+        if (!fo(w, 'spine')) return 0
+        let d = 0
+        for (const r of (((w.c as any).mirror?.o() ?? []) as any[])) if (!r.sc.departing && Number(r.sc.deep) > d) d = Number(r.sc.deep)
+        return d
+    }
+    function torch_move(e: PointerEvent) {
+        const svg = e.currentTarget as SVGSVGElement
+        const m = svg.getScreenCTM(); if (!m) return
+        const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse())
+        torch = { x: p.x, y: p.y, on: true }
+    }
+    // KEEP-OUT (stop `keep:<side>:<fraction>`, 2026-09-24 — the owner: *"getting the spine to fit in around
+    //  other things"*).  The host declares the part of the screen already taken — `keep:right:0.4` is an
+    //   editor column on the right 40% — and the creature lives in the rest: the backbone, every vertebra and
+    //    every rib are cut against the frame LESS the kept column.  A column, not an arbitrary rect, on
+    //     purpose: it is the shape a code editor actually is, and it keeps the geometry a frame.
+    function spine_frame(w: TheC, f: { x: number, y: number, w: number, h: number }): { x: number, y: number, w: number, h: number } {
+        const k = fo(w, 'keep'); if (!k) return f
+        const [side, fr] = String(k).split(':')
+        const frac = Math.min(0.8, Math.max(0, Number(fr) || 0.4))
+        if (side === 'left') return { x: f.x + f.w * frac, y: f.y, w: f.w * (1 - frac), h: f.h }
+        if (side === 'right') return { x: f.x, y: f.y, w: f.w * (1 - frac), h: f.h }
+        return f
+    }
+    function keep_rect(w: TheC): { x: number, y: number, w: number, h: number } | null {
+        void paint_tick
+        const k = fo(w, 'keep'); if (!k || !fo(w, 'spine')) return null
+        const [side, fr] = String(k).split(':')
+        const frac = Math.min(0.8, Math.max(0, Number(fr) || 0.4))
+        const c = cam_view(w); if (!c) return null
+        if (side === 'left') return { x: c.x, y: c.y, w: c.w * frac, h: c.h }
+        if (side === 'right') return { x: c.x + c.w * (1 - frac), y: c.y, w: c.w * frac, h: c.h }
+        return null
+    }
+    // THE DEPTH GAUGE — where the view is along a passage longer than the screen: a slim rail at the open
+    //  edge, the lit stretch is what you are looking at.  Nothing when the whole body fits.
+    function spine_gauge(w: TheC): { x: number, y: number, h: number, ty: number, th: number } | null {
+        void paint_tick
+        if (!fo(w, 'spine')) return null
+        const L = spineLen.get(w); if (!L || L.len <= L.h + 2) return null
+        const c = cam_view(w); if (!c) return null
+        const k = keep_rect(w)
+        const x = (k && k.x > c.x + 1 ? k.x : c.x + c.w) - 10
+        const y = c.y + 18, h = c.h - 36
+        const s = spineScroll.get(w) ?? 0
+        return { x, y, h, ty: y + h * (s / L.len), th: Math.max(14, h * (L.h / L.len)) }
+    }
+    const spineScroll = new Map<TheC, number>()
+    const spineLen = new Map<TheC, { len: number, h: number }>()
+    const spineSig = new Map<TheC, string>()
+    // the wheel walks the passage — a non-passive listener so a spine glass keeps the wheel for itself,
+    //  and ONLY when the body is longer than the frame (a body that fits leaves the page its scroll)
+    function spine_wheel(node: Element, w: TheC) {
+        const on = (e: WheelEvent) => {
+            if (!fo(w, 'spine')) return
+            const L = spineLen.get(w); if (!L || L.len <= L.h + 2) return
+            e.preventDefault()
+            const s = Math.max(0, Math.min(L.len - L.h, (spineScroll.get(w) ?? 0) + e.deltaY * 0.9))
+            spineScroll.set(w, s)
+            paint_world(w); paint_tick++
+        }
+        node.addEventListener('wheel', on as EventListener, { passive: false })
+        return { destroy() { node.removeEventListener('wheel', on as EventListener) } }
+    }
     // each bone's own geometry (vertebra centre and radii; rib root, length, droop, thickness), stamped by
     //  the spine layout so its label can ride the bone instead of falling back to a centred ident
     const boneOf = new Map<TheC, Map<string, BoneMeta>>()
@@ -4207,10 +4326,17 @@
         else if (mk === 'Vtuffing') text = String(sc.of ?? '').replace('@mainkey=', '').replace('@all', '') + ' ×' + (sc.n ?? '?')
         else text = String(sc[mk] ?? '').replace(/^\/\/+\s*/, '').trim()
         if (!text) return null
+        if (m.kind === 'vert' && mk === 'Head') {
+            const fs = Math.max(10, Math.min(15, m.ry * 1.2))
+            return { x: m.cx - m.rx + 8, y: m.cy + fs * 0.35, fs, rot: 0, anchor: 'start', text: text.length > 90 ? text.slice(0, 89) + '…' : text }
+        }
         if (m.kind === 'vert') {
-            const fs = Math.max(7, Math.min(12, m.ry * 1.1))
-            const max = Math.max(3, Math.floor(m.rx * 2 * 0.9 / (fs * 0.6)))
-            return { x: m.cx, y: m.cy + fs * 0.35, fs, rot: 0, anchor: 'middle', text: text.length > max ? text.slice(0, max - 1) + '…' : text }
+            // a SPECIMEN TAG: the name hangs in the margin behind the spine, reading toward its bone —
+            //  a bone is too narrow to hold a method's name, and the margin is otherwise empty
+            const fs = Math.max(8, Math.min(12, m.ry * 1.1))
+            const max = Math.max(4, Math.floor((m.margin - 10) / (fs * 0.6)))
+            const x = m.side > 0 ? m.cx - m.rx - 6 : m.cx + m.rx + 6
+            return { x, y: m.cy + fs * 0.35, fs, rot: 0, anchor: m.side > 0 ? 'end' : 'start', text: text.length > max ? text.slice(0, max - 1) + '…' : text }
         }
         const fs = Math.max(7, Math.min(12, m.th * 0.8))
         const max = Math.max(3, Math.floor(m.len * 0.85 / (fs * 0.6)))
@@ -4584,7 +4710,7 @@
                 <!-- and the seat's own three numbers, for the same reason: whether the regime is on at
                      all, how many rows are on its waiting list, and how sour the standing deal has
                      gone (the re-deal trigger).  A capture that cannot see these cannot judge it. -->
-                <svg class="viewport" data-foamereo={String((w.sc as any)?.foamereo ?? '')} ondblclick={(e) => toggle_land(w, e)}
+                <svg class="viewport" use:spine_wheel={w} onpointermove={(e) => { if (fo(w, 'spine')) torch_move(e) }} data-foamereo={String((w.sc as any)?.foamereo ?? '')} ondblclick={(e) => toggle_land(w, e)}
                      data-noroom={unseated_cells(w).length}
                      data-seat={seat_on(w) ? '1' : '0'}
                      data-seatwait={(w.c as any).seat_wait ?? 0}
@@ -4887,6 +5013,32 @@
                         <text class="grid-band" x={(b.x0).toFixed(1)} y={(b.y - 6).toFixed(1)}
                               text-anchor="start" dominant-baseline="alphabetic">{b.key} {b.value}</text>
                     {/each}
+                    {#if spine_gauge(w)}
+                        {@const gg = spine_gauge(w)!}
+                        <line class="gauge-rail" x1={gg.x} y1={gg.y} x2={gg.x} y2={gg.y + gg.h}></line>
+                        <line class="gauge-lit" x1={gg.x} y1={gg.ty} x2={gg.x} y2={gg.ty + gg.th}></line>
+                    {/if}
+                    {#if keep_rect(w)}
+                        {@const kr = keep_rect(w)!}
+                        <!-- the kept column: someone else's ground (the editor's), tinted so the creature's respect for it shows -->
+                        <rect class="keep-col" x={kr.x} y={kr.y} width={kr.w} height={kr.h}></rect>
+                    {/if}
+                    {#if spine_deep(w) > 0}
+                        <!-- THE CAVE'S DARK: one rect over everything, a radial gradient centred on the torch — clear
+                             around the hand, darkening with distance, deeper levels darker.  No hand yet ⇒ the torch
+                             rests at the head of the body. -->
+                        {@const dk = Math.min(0.72, 0.28 + 0.15 * spine_deep(w))}
+                        {@const tx = torch.on ? torch.x : cam.x + cam.w * 0.3}
+                        {@const ty = torch.on ? torch.y : cam.y + cam.h * 0.2}
+                        <defs>
+                            <radialGradient id="cave-torch" gradientUnits="userSpaceOnUse" cx={tx.toFixed(1)} cy={ty.toFixed(1)} r={(Math.max(cam.w, cam.h) * 0.42).toFixed(1)}>
+                                <stop offset="0" stop-color="#0a0806" stop-opacity="0"></stop>
+                                <stop offset="0.38" stop-color="#0a0806" stop-opacity={(dk * 0.15).toFixed(2)}></stop>
+                                <stop offset="1" stop-color="#0a0806" stop-opacity={dk.toFixed(2)}></stop>
+                            </radialGradient>
+                        </defs>
+                        <rect class="cave-dark" x={cam.x} y={cam.y} width={cam.w} height={cam.h} fill="url(#cave-torch)"></rect>
+                    {/if}
                     <!-- THE LATE FURNITURE PASS — carved names + A gates paint AFTER every cell
                          ("on top of the A labels"), so a big neighbour drawn later in the occlusion
                          order can never bury another cell's name or its handle.  Gates last of all:
@@ -5430,6 +5582,10 @@
     }
     /* THE GRID BAND LABEL (stop `grid`) -- the alignment named in words above the row it groups; small
        and out of the way, the same register a scope's own running head reads at (.fo-head territory). */
+    .cave-dark { pointer-events: none; }
+    .gauge-rail { stroke: rgba(205, 191, 159, 0.18); stroke-width: 3; stroke-linecap: round; pointer-events: none; }
+    .gauge-lit { stroke: rgba(205, 191, 159, 0.75); stroke-width: 5; stroke-linecap: round; pointer-events: none; }
+    .keep-col { fill: rgba(120, 140, 170, 0.07); stroke: rgba(160, 180, 210, 0.25); stroke-dasharray: 6 5; pointer-events: none; }
     .spine-bone { fill: none; stroke: #cdbf9f; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; opacity: 0.4; pointer-events: none; }
     /* a bone label rides its bone: small, the cell's own hue, a dark halo so it reads over anything it crosses */
     .bone-label { font-family: ui-monospace, monospace; font-weight: 600; pointer-events: none; paint-order: stroke; stroke: rgba(10, 8, 12, 0.85); stroke-width: 2.5px; }

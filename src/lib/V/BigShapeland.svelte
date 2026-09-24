@@ -104,6 +104,7 @@
         { stop: 'wallcarve',  what: 'OPT OUT of the folio — back to the old wall-carve masonry / centred ident (folio is now the default)' },
         { stop: 'wave',       what: 'with wallcarve on: the label rides a scalloped wave band instead of the wall carve' },
         { stop: 'junction',   what: 'sibling cells of one mainkey say it ONCE where they meet — each keeps only its value (the owner\'s idea)' },
+        { stop: 'keep',       what: 'with spine: someone else owns a column of the screen — ?deck=keep:right:0.4 keeps the right 40% (an editor) and the creature lives in the rest' },
         { stop: 'spine',      what: 'THE SPINE — root rows become vertebrae down a backbone, their children become ribs (VytoSpine)' },
         { stop: 'grid',       what: 'a THIRD outright-assigned regime beside seat/focus, root scope only -- rows lay out HTML-block-flow, banded into ROWS by the strongest shared scalar (bucket_key_of), no cell drawn to hold the group; try alongside crosslink -- a tie the row alignment already says is not also drawn as a line' },
         { stop: 'crosslink', what: 'the grouping-as-vines pass paints ON TOP of the cells instead of underneath — for a dense pile with no gaps to show a substrate through (the owner: "a layer on top of them with lines connecting")' },
@@ -166,7 +167,14 @@
     //       lesson, Vytui.svelte:70.)
     const deck_want = new Map<string, boolean>()
     const is_model = (stop: string) => MODEL_STOPS.some(m => stop === m.stop)
-    for (const x of (boot_param('deck') ?? '').split(',').map(t => t.trim()).filter(Boolean)) deck_want.set(x.split(':')[0], true)
+    // a URL stop may carry a VALUE — `?deck=keep:right:0.4` → keep = 'right:0.4' (everything after the first
+    //  colon, the same split Vyto_vytocon_seed makes).  A valueless stop stays '1'.
+    const deck_vals = new Map<string, string>()
+    for (const x of (boot_param('deck') ?? '').split(',').map(t => t.trim()).filter(Boolean)) {
+        const at = x.indexOf(':')
+        deck_want.set(at < 0 ? x : x.slice(0, at), true)
+        if (at >= 0) deck_vals.set(x.slice(0, at), x.slice(at + 1))
+    }
     function enforce_deck() {
         for (const { house, w } of glass_worlds()) {
             const vc = w.oai({ Vytocon: 1 })
@@ -196,7 +204,8 @@
             for (const [stop, on] of deck_want) {
                 if (stop === 'fold') continue
                 const has = vc.sc[stop] != null
-                if (on && !has) { vc.sc[stop] = '1'; changed = true; model = model || is_model(stop) }
+                const val = deck_vals.get(stop)
+                if (on && (val != null ? vc.sc[stop] !== val : !has)) { vc.sc[stop] = val ?? '1'; changed = true; model = model || is_model(stop) }
                 if (!on && has) { delete vc.sc[stop]; changed = true; model = model || is_model(stop) }
             }
             if (changed) {

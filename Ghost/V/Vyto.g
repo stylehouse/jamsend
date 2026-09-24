@@ -523,6 +523,9 @@ Vyto_guise(spec):
     if (g.loose) n.sc.loose = 1
     if (g.tok) n.c.vyto_tok = String(g.tok)
     if (g.flat) n.c.flat = 1
+    // `press` — what pressing this cell does (Vytui's cell_click calls source `.c.press`; a crest of these
+    //  calls the first member's press with the whole group).  How a producer makes its matter explorable.
+    if (typeof g.press === 'function') n.c.press = g.press
     let says = []
     if (g.says) { for (const d of g.says) says.push(d) }
     for (const d of spreads) says.push(d)
@@ -728,7 +731,12 @@ Vyto_fold_scope(w, scope, depth):
         //    in all 25 Vyto|Voro Books) the ladder returns bucket_key_of's own answer.  So the fleet
         //     cannot tell the difference — and cannot witness the fix either, which is why a
         //      mixed-kind Book is owed.
-        let el = fold_key_compat(members.map(m => m.sc), this.Vyto_fo(w, 'kindfold') ? 1 : 0)
+        // one scope down the election never partitions by a display CHANNEL (dose, loose) or a door count —
+        //  a count is how big a thing is, not what family it is in (seen: methods grouped "hits=2 ×3").
+        //   The root keeps its recorded behaviour byte for byte.
+        let elsc = members.map(m => m.sc)
+        if (depth > 0) elsc = members.map(m => this.Vyto_fold_facts(m.sc))
+        let el = fold_key_compat(elsc, this.Vyto_fo(w, 'kindfold') ? 1 : 0)
         if (el) {
             for (const m of members) {
                 let ofk = fold_group_of(m.sc, el)
@@ -831,6 +839,15 @@ Vyto_distil_fill(root, members, skips, coexist, q, saylaw):
     this.Vyto_keyrows(root, members, skips, hide, saylaw)
     this.Vyto_voice_mark(root)
     return root
+
+// the facts of a row, less its display channels and door counts — what a nested fold may partition by
+Vyto_fold_facts(sc):
+    let out = {}
+    for (const k of Object.keys(sc)) {
+        if (k === 'dose' || k === 'loose' || k === 'same_n' || k === 'flat_n' || k === 'departing') continue
+        out[k] = sc[k]
+    }
+    return out
 
 // Vyto_voice_mark — a crest's saying rows are FURNITURE, not sightings: the scan never stamps them
 //  `seen_at`, so without the mark the sweep departs them on the next scan (the same trap the Guise's
