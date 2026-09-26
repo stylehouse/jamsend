@@ -25,9 +25,12 @@
 
     //  onpin (optional) — a host with loose space (BigWordland's pin rail) can offer 📌 per
     //   row: pin the hit without navigating.  Liesui passes nothing and sees no pins.
-    let { H, w, onresults, hover, onpin }: {
+    //  dismiss (optional) — a counter a host bumps to close the search from outside (BigWordland's cave
+    //   delivers a line into the editor and wants the search gone so the landed line shows).  Unpassed ⇒
+    //    undefined forever ⇒ the effect below never fires, so Liesui's bar is exactly what it was.
+    let { H, w, onresults, hover, onpin, dismiss }: {
         H: House, w: TheC, onresults?: (r: any) => void, hover?: string,
-        onpin?: (hit: any) => void } = $props()
+        onpin?: (hit: any) => void, dismiss?: number } = $props()
 
     let q       = $state('')
     let open    = $state(false)
@@ -84,6 +87,16 @@
         bounce = setTimeout(ask, 250)
     }
     const clear = () => { q = ''; open = false; results = undefined; onresults?.(undefined) }
+    let dismissed_at: number | undefined = undefined
+    $effect(() => {
+        const d = dismiss
+        if (d === undefined || d === dismissed_at) return
+        const first = dismissed_at === undefined
+        dismissed_at = d
+        if (first && d === 0) return
+        clear()
+        input_el?.blur()
+    })
 
     const pick = (path: string, point?: string) => {
         H.i_elvisto('Lies/Lies', 'Lies_ghost_pick', { path, point })   // point ⇒ Aside-recorded delivery

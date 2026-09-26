@@ -1,0 +1,17 @@
+story:LagoonCave
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.139
+      sample=0.139,at=1790336217
+    TimeTotal:step,avg=0.02
+      sample=0.02,at=1790336217
+  step,dige:65190df1913d6fad
+  step=2,desc:load Atlas and Lagoon on demand — stand Atlas on the frozen corpus and the reader beside it,dige:1512f003aebb5a13
+  step=3,desc:a search stands as a spine — the rope as its head and one vertebra per file,dige:0fdb7fb39d87adce
+  step=4,desc:press the file — its regions are the bead its author drew and the name prefix beyond it,dige:86a8409b4aef2b72
+  step=5,desc:press a method — the chamber is the method itself and read through the census nav,dige:cc94c60b6fa73caa
+  step=6,desc:press the line that calls — the tunnel walks into the chamber of the method it calls,dige:d1023ca25cdb46dd
+  step=7,desc:press the head — the rope climbs back out one step,dige:91cc0d4ec2b50948

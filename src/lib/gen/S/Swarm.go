@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '33ba46f96c7bc1a9~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '9b70fabf361f1038~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -990,7 +990,8 @@ async Swarm_verify_reinvite(rib) {
 // Swarm_mint_borrow — `grant` is a landed %Grant C-particle the caller (`ident`) already holds (its `for`
 //  must be ident's own pub — checked, not assumed: a borrow of a grant you don't actually hold would let
 //   anyone forge standing they never earned). `borrower` is the ONE Cave's pub this loan names; `ttl_s`
-//    defaults to 900 (15 minutes) — short enough that an un-renewed loan goes quiet on its own.
+//    defaults to 3600 (an hour — owner 2026-09-24: "offline for an hour and come back they should have to
+//     log in again... or maybe a day?") — short enough that an un-renewed loan goes quiet on its own.
 async Swarm_mint_borrow(w, ident, grant, borrower, ttl_s) {
     if (!grant || !grant.sc || !grant.sc.sign) throw 'borrow: not a real grant'
     let mine = String(this.Swarm_keys(ident)?.pub || '')
@@ -998,7 +999,7 @@ async Swarm_mint_borrow(w, ident, grant, borrower, ttl_s) {
     if (!borrower) throw 'borrow: no borrower named'
     let atom = grant_of_C(grant)
     let now = this.Swarm_now(w)
-    let c = { tip: String(grant.sc.for || ''), borrower: String(borrower), atom: atom, at: now, exp: now + (+ttl_s > 0 ? +ttl_s : 900) }
+    let c = { tip: String(grant.sc.for || ''), borrower: String(borrower), atom: atom, at: now, exp: now + (+ttl_s > 0 ? +ttl_s : 3600) }
     c.sign = await signHeader(c, this.Swarm_keys(ident).key)
     return this.Swarm_b64(JSON.stringify(c))
 
@@ -1017,6 +1018,74 @@ async Swarm_verify_borrow(rib, now_s) {
     let now = (now_s != null) ? +now_s : Math.floor(Date.now() / 1000)
     if (now > +c.exp) throw 'borrow: expired'
     return { tip: c.tip, borrower: c.borrower, at: c.at, exp: c.exp, winner: claim.for, grantor: claim.by, feature: claim.to, params: this.Swarm_iz_params(claim) }
+
+},
+// ── THE ONE SLOT (owner 2026-09-24/25: "there's one slot, either the Captain with the Grant or whoever they
+//  lend it to"; "if another logs in with it the other should be logged out"; "if the other server is
+//   limiting access to one of that Crew at all times, that's fine").  The FRIEND is the authority — it is
+//    the one serving the music, and the only side a crew can't talk its way around.  Every crewmate holds
+//     the soul secret (SwarmHelm swears it), so a loan is NOT a crew-internal boundary; the slot is.
+//  Traced 2026-09-25: a friend's music doors already key on ONE ADDRESS per friendship — Repli consent
+//   (`Repli.g:994` → Swarm_share_granted) and the cast loop both use the Pier's own address, the soul's,
+//    which only the Captain binds on the relay.  So without a loan the crew already gets exactly one seat.
+//     A standing %Loan just MOVES that one seat to a named borrower's address until it lapses.
+
+// Swarm_pier_slot — the ADDRESS this friendship's music is served to right now: an unexpired %Loan names the
+//  borrower's address; otherwise the friend's own (the soul's).  The only question the serving doors ask.
+Swarm_pier_slot(pier, now_s) {
+    if (!pier) return ''
+    let loan = pier.o({ Loan: 1 })[0]
+    let now = (now_s != null) ? +now_s : Math.floor(Date.now() / 1000)
+    if (loan && loan.sc.to && +loan.sc.exp > now) return String(loan.sc.to)
+    return String(pier.sc.pub || '')
+
+},
+// Swarm_slot_granted — may `peer` (a requester's ADDRESS) draw my music?  Only if it holds the slot on a
+//  Music-live friendship.  While a friendship is lent, its OWN address is refused — one seat, never two.
+//   First pier whose slot matches, exactly as the old `o({Pier, pub:peer})[0]` lookup took the first.
+Swarm_slot_granted(ident, peer, now_s) {
+    if (!ident || !peer) return false
+    let p = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((q) => this.Swarm_pier_slot(q, now_s) === String(peer))
+    return !!(p && this.Swarm_pier_live(p, 'Music'))
+
+},
+// Swarm_borrow_heard — the FRIEND takes a loan (a `borrow` frame, from the lending Captain — or anyone
+//  holding the rib; it authenticates itself).  Refuses unless: it verifies and has not lapsed; the grant it
+//   wraps is MINE (I am its grantor — a loan of someone else's grant means nothing here); I still have a
+//    Music-live friendship with the soul it was issued to.  Then the pier's ONE %Loan is replaced — newest
+//     `at` wins, so a replayed older loan cannot unseat a newer one.  A loan whose borrower is the soul
+//      itself is the Captain TAKING THE SEAT BACK: the %Loan is dropped.  Returns the %Loan (or null).
+async Swarm_borrow_heard(w, ident, frame) {
+    let rib = frame && frame.loan ? String(frame.loan) : ''
+    if (!rib) return null
+    let seen = null
+    try { seen = await this.Swarm_verify_borrow(rib, this.Swarm_now(w)) } catch (er) { this.Swarm_rebuff(ident, 'borrow_bad', String(er).slice(0, 40)); return null }
+    let mine = String(this.Swarm_keys(ident)?.pub || '')
+    if (!mine || String(seen.grantor) !== mine) { this.Swarm_rebuff(ident, 'borrow_not_my_grant', String(seen.grantor).slice(0, 8)); return null }
+    let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => String(p.o({ Peering: 1 })[0]?.sc?.pub || '') === String(seen.winner))
+    if (!pier || !this.Swarm_pier_live(pier, 'Music')) { this.Swarm_rebuff(ident, 'borrow_no_friendship', String(seen.winner).slice(0, 8)); return null }
+    let old = pier.o({ Loan: 1 })[0]
+    if (old && +old.sc.at > +seen.at) return old
+    if (old) pier.drop(old)
+    if (String(seen.borrower) === String(seen.winner)) { pier.bump(); return null }
+    let loan = pier.i({ Loan: 1, to: prepubOf(String(seen.borrower)), at: String(seen.at), exp: String(seen.exp) })
+    loan.c.up = pier
+    pier.bump()
+    return loan
+
+},
+// Swarm_lend — the CAPTAIN's verb: lend my one seat on `pier` (my friendship with them) to `borrower` (a
+//  full pub — a Cave of mine) for `ttl_s`, by sending the friend the loan.  Lending to my OWN pub takes the
+//   seat back.  Uses the Grant:Music they issued me (for my key) — only its bearer can mint, which inside a
+//    crew is everyone holding the soul secret; the friend's one slot is the limit, not this.
+async Swarm_lend(w, ident, pier, borrower, ttl_s) {
+    if (!pier || !borrower) return null
+    let mine = String(this.Swarm_keys(ident)?.pub || '')
+    let grant = pier.o({ Grant: 'Music' }).find((g) => String(g.sc.for) === mine)
+    if (!grant) return null
+    let rib = await this.Swarm_mint_borrow(w, ident, grant, String(borrower), ttl_s)
+    this.Swarm_deliver(w, ident, String(pier.sc.pub), { kind: 'borrow', page: this.Swarm_page(ident), loan: rib })
+    return rib
 },
 //#endregion
 
@@ -1717,6 +1786,7 @@ async Swarm_arm(w) {
         if (frame.header.type === 'ive_got') this.Swarm_ive_got(w2, ident, frame.swarm)
         if (frame.header.type === 'swarm_hi') this.Swarm_heard_hi(w2, ident, frame)
         if (frame.header.type === 'suggest') this.Swarm_suggested(w2, ident, frame.swarm)
+        if (frame.header.type === 'borrow') this.Swarm_borrow_heard(w2, ident, frame.swarm).catch((er) => console.log('⨳ borrow threw —', er))
         if (frame.header.type === 'suggest_got') this.Swarm_suggest_got(w2, ident, frame.swarm)
         if (frame.header.type === 'repli_ready') this.Swarm_repli_ready(w2, ident, frame.swarm)
         if (frame.header.type === 'charter') await this.Swarm_charter_heard(w2, ident, frame.swarm)
@@ -1944,7 +2014,7 @@ async Swarm_arm(w) {
     //    (the station funnel above, header.type === 'reach') was the only one that heard.  So eed re-sent the
     //     same six seqs to the daemon every 5s for an hour and the daemon's 5600s log held ZERO reach
     //      lines — not "ignored, unrostered", simply never dispatched.  reach_done rides back the same road.
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'roster', 'crew', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held', 'reach', 'reach_done']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'roster', 'crew', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held', 'reach', 'reach_done', 'borrow']) w.c.on[kind] = hear
 
 },
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
@@ -2076,6 +2146,7 @@ async Swarm_pump(w, ident) {
         if (frame.kind === 'crew') await this.Swarm_crew_heard(w, ident, frame)
         if (frame.kind === 'reach') this.Swarm_reach_road(w, ident, frame)
         if (frame.kind === 'reach_done') this.Swarm_reach_ack(w, ident, frame)
+        if (frame.kind === 'borrow') await this.Swarm_borrow_heard(w, ident, frame)
         if (frame.kind === 'heard') await this.Swarm_heard_mirror(w, ident, frame)
         if (frame.kind === 'ferry') this.Swarm_ferry_park(w, ident, frame)
         // SEED THE CHARTER AT SEAL (Division_todo step 4): a freshly sealed friend learns my division
@@ -4926,8 +4997,7 @@ Swarm_ive_got_tally(w, ident) {
 //  page (tombstones override — Swarm_pier_live checks at use, never cached).
 Swarm_share_granted(peer) {
     let me = this.Swarm_live_self ? this.Swarm_live_self() : null
-    let p = me ? this.Swarm_peering(me)?.o({ Pier: 1, pub: String(peer) })[0] : null
-    return !!(p && this.Swarm_pier_live(p, 'Music'))
+    return this.Swarm_slot_granted(me, peer)
 
 },
 // Swarm_share_present — the pull's source-liveness hook: only want pages over wires whose
@@ -5642,7 +5712,8 @@ async Swarm_share_beat(w, ident) {
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!p.sc.pub) continue
         if (!this.Swarm_pier_live(p, 'Music')) continue
-        let pub = String(p.sc.pub)
+        // THE ONE SLOT: cast to whoever holds this friendship's seat — the soul, or a lent Cave (Swarm_pier_slot).
+        let pub = this.Swarm_pier_slot(p)
         // never treat my OWN Pier as a friend: a self-offer echoes back and Repli_mirror_lib would mint a
         //  spurious %Theirs,pub:<me> right beside my %Mine — the self-mirror the human saw on Righto.
         if (pub === me) continue

@@ -1,0 +1,38 @@
+Snap:H
+  H:LagoonCave,Run
+    A:LagoonCave
+      self,round=9	{"mung":["age"]}
+      w:LagoonCave
+        self,round=9	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        aimed:fixture
+        req:search_wait,finished
+        saw:cave,lvl:search,rope:⌕ Sample,vertebrae:Doc,ribs:Def+Def+Def
+        req:dive_wait,finished
+        saw:cave,lvl:file,rope:⌕ Sample › Sample,vertebrae:Region Region,ribs:Method+Method Method
+    A:Vyto
+      self,round=5	{"mung":["age"]}
+      w:Vyto,grawave_duration=0.4
+        self,round=5	{"mung":["age"]}
+        Organ:Scan,family:chronicler,reads:the grappled worlds,writes:the mirror,status:stub
+        Organ:Fold,family:solver,reads:the mirror,decides:which subtrees become one cell,status:stub
+        Organ:Gang,family:solver,reads:a crowded sibling row,decides:who represents whom,status:stub
+        Organ:Slope,family:solver,reads:a weight,writes:a position — and back,status:stub
+        Organ:Mesh,family:solver,reads:a family,writes:a dot-body with a spine,status:stub
+        Organ:Calm,family:governor,reads:everything in flight,decides:what may move,status:stub
+        Organ:Focus,family:governor,reads:attention,decides:what matters now,status:stub
+        Organ:Relate,family:scribe,reads:meaning,writes:flow edges,status:stub
+        Organ:Express,family:scribe,reads:quantities,writes:channels,status:stub
+        Organ:Spool,family:chronicler,reads:settles,writes:moments,status:stub
+        Bar:live,doctrine:follow the newest settle — or park,on
+        Bar:depths,doctrine:this scope as notation rows instead of space
+        Bar:flows,doctrine:show or hush the loud edge caste
+        Bar:frames,doctrine:show or hush the quiet one
+        Bar:holds,doctrine:paint every Hold and who placed it
+        Bar:pelt,doctrine:comb the hair-field visible
+        Bar:o,doctrine:we saw it — keep this moment,kind:act
+        Vytocon,spine:1,kindfold:1,budget:400
+        see:🫧 stir:0 yore:0
+    watched:UIs
+      UI:Vyto	{"ref":{"component":"Function()"}}

@@ -5,6 +5,11 @@
 
 import Lagui from "$lib/L/Lagui.svelte"
 import Clerkdesk from "$lib/L/Clerkdesk.svelte"
+import { TESTING_RE } from "$lib/L/testing"
+// THE CAVE's two knobs — a chamber shows at most this many lines of its method (VytoSpine's sample
+//  capped at 40 too), and the deck is VytoSpine's own, so the live cave and the Book's are one creature.
+const LAGOON_CAVE_MAX_LINES = 40
+const LAGOON_CAVE_DECK      = 'spine,kindfold,budget:400'
 // Copies of the constants the moved verbs need.  Module consts do not cross ghosts, and a shared
 //  module for four regexes would be a third thing to keep in step — the duplication is deliberate
 //   and each is annotated with its twin in Atlas.g so a drift is greppable.
@@ -23,7 +28,7 @@ const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return '3a0b8237c4d0fac3~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return '803da437cbef9751~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -1309,6 +1314,537 @@ Lagoon_figurines(w, k) {
     if (rows.length > kk) rows = rows.slice(0, kk)
     return { figurines: rows, ran: seen.size, tops: tops, armed: T.armed ? 1 : 0, since: T.since || 0,
              max_callers: max_pop, unjoined: unjoined, atlas_docs: atlas.o({ Doc: 1 }).length }
+},
+//#endregion
+
+//#region THE CAVE — a seek worn as a creature, over the code (2026-09-25)
+// The owner, 2026-09-24: *"I wanted to start using it as the visual when we search for anything in there…
+//  bring it in over the top of the code in BigWordland."*  VytoSpine (Ghost/V/VytoTesting.g) walked this
+//   expedition over a FROZEN sample — search › file › region › method chamber, with tunnels along the call
+//    graph (Glassbeast_todo §0, THE CAVE EXPEDITION).  This is the same walk over the LIVE censuses, and
+//     what made it small is that the room already holds the whole geography the sample had to fake:
+//      · the search level is `Lagoon_seek`'s own reply — the same four readings the Searchbar lists
+//      · the anatomy is Atlas's %Map — each def's line, its bead (the `//#region` its author drew), and the
+//         compiler's own `call`/`elvisto` rows, which ARE the tunnels (real grammar, not a `this.X(` regex)
+//      · a chamber's walls are the Stemdex's lines — `dex.docs.get(path).lines`, its snippet store
+// THE LINE HOLDS (ATLAS KEEPS, LAGOON ASKS).  No census is written and no index is kept: anatomy and
+//  tunnels are asked afresh at every sowing through a scratch that dies with it.  What IS held is face
+//   state — the rope (`w.c.cave`) and the answer being walked (`w.c.cave_hits`), exactly as the Searchbar
+//    holds its own `q` and `results` — and it is `.c`, so a reload forgets a search, as it should.  The glass
+//     is Vyto's and stands on the ROOM this reader's face belongs to (`w.c.face_on` — Hackarium sets it),
+//      so UI:Vyto enrolls beside Langui and the room can lift it over the code.
+// A press either DIVES (re-sow the same world: every tok that persists morphs in place) or DELIVERS (a
+//  chamber's lines, and anything with no anatomy below it, land in the editor through the Searchbar's own
+//   `Lies_ghost_pick`).  The head is the rope; pressing it climbs.
+
+// e_Lagoon_cave — the door.  `{ q }` stands a search (or re-sows it while the seeker is still at the
+//  surface, so a converging index fills in); `{ clear }` drops the rope.  A seeker who has dived is left
+//   where they are — the index moving underneath must not yank them back up.
+e_Lagoon_cave(A, w, e) {
+    let q = String(e?.sc.q ?? '').trim()
+    if (e?.sc.clear || q.length < 2) {
+        delete w.c.cave
+        delete w.c.cave_hits
+        delete w.c.cave_sig
+        return
+    }
+    let cave = w.c.cave
+    let same = !!(cave && cave[0] && cave[0].q === q)
+    if (same && cave.length > 1) return
+    if (!same) {
+        w.c.cave = [{ lvl: 'search', q: q }]
+        delete w.c.cave_hits
+    }
+    this.Lagoon_cave_show(w)
+
+},
+// the whole interaction surface: push a step, or pop one — both re-sow the SAME world
+Lagoon_cave_go(w, step) {
+    w.c.cave = (w.c.cave || []).concat([step])
+    this.Lagoon_cave_show(w)
+
+},
+Lagoon_cave_rise(w) {
+    if (!w.c.cave || w.c.cave.length < 2) return
+    w.c.cave = w.c.cave.slice(0, w.c.cave.length - 1)
+    this.Lagoon_cave_show(w)
+
+},
+// Lagoon_cave_show — sow where the rope stands.  The commission is the client door Sounditron uses live
+//  (e_Vyto_commission, no Book wrapper); the Vyto world is stood on the room the first time.  REFUSES BY
+//   NAME when it cannot draw — no room, or no glass loaded here — never a silent nothing.
+Lagoon_cave_show(w) {
+    let SH = w.c.face_on
+    let why = !SH ? 'no room — Lagoon has no face_on (Hackarium sets it)'
+        : (typeof this.Vyto_guise !== 'function' ? 'no glass — Ghost/V/Vyto.g is not loaded on this tab' : '')
+    if (why) {
+        if (w.c.cave_refused !== why) console.log('🕳 cave refused: ' + why)
+        w.c.cave_refused = why
+        return
+    }
+    delete w.c.cave_refused
+    let guises = this.Lagoon_cave_level(w)
+    // the same sowing twice is not news: the Searchbar re-asks every 1.5s while its index converges
+    let sig = this.Lagoon_cave_sig(guises)
+    if (sig === w.c.cave_sig) return
+    w.c.cave_sig = sig
+    let seeds = guises.map(g => this.Vyto_guise(g))
+    if (!SH.o({ A: 'Vyto' })[0]) SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
+    let commission = new TheC({ c: {}, sc: { Scannable: seeds[0], client_w: w, grapples: seeds.slice(),
+        nested: 1, folded: 1, depth_scale: 1, foamereo: w.c.cave_deck || LAGOON_CAVE_DECK } })
+    commission.c.Run = this
+    SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
+
+},
+Lagoon_cave_sig(guises) {
+    let bits = []
+    for (const g of guises) {
+        let k = Object.keys(g)[0]
+        let kids = (g.guise && g.guise.kids) || []
+        bits.push(k + '=' + g[k] + '#' + (g.guise ? g.guise.dose : '') + '[' + kids.map(x => x.guise ? x.guise.tok : '').join(',') + ']')
+    }
+    return bits.join('|')
+
+},
+// Lagoon_cave_level — head first, then the anatomy of where the rope stands.  `sx` is the sowing's
+//  scratch: Atlas's anatomy and the tunnel index are asked into it and die with it (the layer rule).
+Lagoon_cave_level(w) {
+    let st = w.c.cave || []
+    let here = st[st.length - 1]
+    let out = [this.Lagoon_cave_head(w)]
+    if (!here) return out
+    let sx = {}
+    if (here.lvl === 'search') return out.concat(this.Lagoon_cave_files(w, sx))
+    if (here.lvl === 'file') return out.concat(this.Lagoon_cave_regions(w, here, sx))
+    if (here.lvl === 'region') return out.concat(this.Lagoon_cave_methods(w, here, sx))
+    if (here.lvl === 'method') return out.concat(this.Lagoon_cave_chamber(w, here, sx))
+    return out
+
+},
+// the head: always the first vertebra, one tok at every depth so it morphs, and pressing it climbs.
+//  `deep` rides as a fact — the glass darkens the cave by it (VytoSpine's torchlight).
+Lagoon_cave_head(w) {
+    let head = { Head: this.Lagoon_cave_rope(w), guise: { tok: 'cave:head', dose: 1, press: () => this.Lagoon_cave_rise(w) } }
+    let deep = (w.c.cave || []).length - 1
+    if (deep > 0) head.deep = deep
+    return head
+
+},
+// the rope, read aloud: ⌕ Heist › Heist · Def › raheist › Heist_keep_step()
+Lagoon_cave_rope(w) {
+    let out = []
+    for (const s of w.c.cave || []) {
+        if (s.lvl === 'search') out.push('⌕ ' + s.q)
+        if (s.lvl === 'file') out.push(this.Lagoon_cave_base(s.path) + (s.kind ? ' · ' + s.kind : ''))
+        if (s.lvl === 'region') out.push(s.r)
+        if (s.lvl === 'method') {
+            let far = s.via && s.path !== s.via ? this.Lagoon_cave_base(s.path) + '.' : ''
+            out.push((s.via ? '⇝ ' + far : '') + this.Lagoon_cave_mname(s.m))
+        }
+    }
+    return out.join(' › ')
+
+},
+Lagoon_cave_base(path) {
+    return String(path).replace(/^.*\//, '').replace(/\.(svelte\.ts|svelte|ts|g|md)$/, '')
+
+},
+Lagoon_cave_mname(m) {
+    if (!m || m === '(top)') return '(top)'
+    return m + '()'
+
+},
+// a file's STEM — its name less the source suffix and the `Testing` suffix (testing.ts's own TESTING_RE,
+//  imported, not copied), so Swarm.g and SwarmTesting.g are one family.  The same rule GhostList's hive
+//   and VytoSpine use; the glass fuses adjacent vertebrae that share it.
+Lagoon_cave_stem(path) {
+    let base = String(path).replace(/^.*\//, '').replace(/\.(svelte\.ts|svelte|ts|g)$/, '')
+    return TESTING_RE.test(path) ? base.replace(/Testing$/, '') : base
+
+},
+// Lagoon_cave_hits — the seek's reply as one row per hit, each wearing its KIND (Def · Mention · Particle
+//  · Text — what the hit IS; the fold's kind rung reads it off the mainkey).  Asked afresh at the surface,
+//   held once the seeker dives so the cave cannot reshuffle under their feet.  A Mention or a Text reads as
+//    its own line where the Stemdex has it — twelve ribs all saying the same def name tell you nothing.
+Lagoon_cave_hits(w) {
+    let st = w.c.cave || []
+    if (st.length > 1 && w.c.cave_hits) return w.c.cave_hits
+    let q = (st[0] || {}).q
+    let r = q ? this.Lagoon_seek(w, q, 200) : null
+    let hits = []
+    if (r && !r.error) {
+        for (const h of r.defs || []) hits.push({ kind: 'Def', name: h.name, path: h.doc, line: h.line, point: h.name })
+        for (const h of r.mentions || []) hits.push({ kind: 'Mention', name: r.mentions_of, path: h.doc, line: h.line, point: 'text:' + r.mentions_of })
+        for (const h of r.props || []) hits.push({ kind: 'Particle', name: h.name, path: h.doc, line: h.line, point: 'text:' + h.name })
+        for (const h of r.texts || []) hits.push({ kind: 'Text', name: h.snippet || h.name, path: h.doc, line: h.line, point: 'text:' + String(q).split(/\s+/)[0] })
+    }
+    hits = hits.filter(h => h.path && h.line)
+    for (const h of hits) {
+        if (h.kind !== 'Mention' && h.kind !== 'Text') continue
+        let src = this.Lagoon_cave_src(w, h.path)
+        let text = src ? String(src[h.line - 1] ?? '').trim() : ''
+        if (text) h.name = text
+    }
+    w.c.cave_hits = hits
+    return hits
+
+},
+// THE SEARCH LEVEL — one vertebra per file.  THE ANSWER DECIDES WHICH FAMILY LEADS, THE STEM KEEPS A
+//  FAMILY TOGETHER: the Searchbar learned that a face re-sorting by path buries the exact hit under thirty
+//   substring ones, and VytoSpine learned that a ghost and its Testing file belong side by side.  So a
+//    family's place is its best-ranked file's place in the seek's own order, and inside a family the ghost
+//     comes before its Testing, then path.
+Lagoon_cave_files(w, sx) {
+    let hits = this.Lagoon_cave_hits(w)
+    let byPath = {}
+    let first = {}
+    let order = []
+    for (let k = 0; k < hits.length; k++) {
+        let h = hits[k]
+        if (!byPath[h.path]) {
+            byPath[h.path] = []
+            first[h.path] = k
+            order.push(h.path)
+        }
+        byPath[h.path].push(h)
+    }
+    let fam = {}
+    for (const p of order) {
+        let s = this.Lagoon_cave_stem(p)
+        if (fam[s] == null || first[p] < fam[s]) fam[s] = first[p]
+    }
+    order.sort((a, b) => {
+        let fa = fam[this.Lagoon_cave_stem(a)]
+        let fb = fam[this.Lagoon_cave_stem(b)]
+        if (fa !== fb) return fa - fb
+        let ta = TESTING_RE.test(a) ? 1 : 0
+        let tb = TESTING_RE.test(b) ? 1 : 0
+        if (ta !== tb) return ta - tb
+        return a < b ? -1 : (a > b ? 1 : 0)
+    })
+    let out = []
+    for (const p of order) {
+        // the snapped-boolean law: a true rides as 1 and a false is ABSENT, never 0
+        let doc = { Doc: p, stem: this.Lagoon_cave_stem(p) }
+        if (TESTING_RE.test(p)) doc.testing = 1
+        doc.guise = { tok: 'doc:' + p, dose: byPath[p].length,
+            kids: byPath[p].map(h => this.Lagoon_cave_hit(w, h)),
+            press: () => this.Lagoon_cave_enter(w, p, null) }
+        out.push(doc)
+    }
+    return out
+
+},
+// one hit as a rib.  Alone, it opens the chamber of the method it sits in; pressed as a CREST (Vytui hands
+//  the first member the whole group) it opens the file narrowed to that kind.  With no anatomy under it,
+//   it delivers — the cave never offers a door that opens onto nothing.
+Lagoon_cave_hit(w, h) {
+    let g = {}
+    g[h.kind] = h.name
+    g.line = h.line
+    g.guise = { tok: h.path + ':' + h.line, press: (src, ctx) => {
+        if (ctx && ctx.crest) {
+            this.Lagoon_cave_enter(w, h.path, h.kind)
+            return
+        }
+        let m = this.Lagoon_cave_method_at(w, h.path, h.line, {})
+        if (m) {
+            this.Lagoon_cave_open(w, h.path, m.name, null)
+            return
+        }
+        this.Lagoon_cave_deliver(w, h.path, h.point)
+    } }
+    return g
+
+},
+// into a file — or, if Atlas has no map of it (a spec, an unmapped module), straight into the editor
+Lagoon_cave_enter(w, path, kind) {
+    if (!this.Lagoon_cave_anat(w, path, {})) {
+        this.Lagoon_cave_deliver(w, path, null)
+        return
+    }
+    this.Lagoon_cave_go(w, { lvl: 'file', path: path, kind: kind })
+
+},
+// into a method's chamber.  Its walls are the Stemdex's lines where it has read the doc — but the Stemdex
+//  only rosters the docs of loaded Wafts (and a runner's has indexed nothing), while Atlas maps the whole
+//   tree, so most doors Atlas offers lead into a doc the Stemdex never read.  Those are read ONCE through
+//    Atlas's own nav, and the lines ride the rope's step — face state, gone when the seeker climbs out.
+//     With no walls to be had at all, the method is delivered by NAME.
+async Lagoon_cave_open(w, path, m, via) {
+    if (m === '(top)') {
+        this.Lagoon_cave_deliver(w, path, null)
+        return
+    }
+    let step = { lvl: 'method', path: path, m: m }
+    if (via) step.via = via
+    if (!this.Lagoon_cave_src(w, path)) {
+        let lines = await this.Lagoon_cave_read(path)
+        if (!lines) {
+            this.Lagoon_cave_deliver(w, path, m)
+            return
+        }
+        step.src = lines
+    }
+    this.Lagoon_cave_go(w, step)
+
+},
+// a doc's lines through Atlas's nav (the granted folder), clipped like the Stemdex's; null if it can't
+async Lagoon_cave_read(path) {
+    let nav = typeof this.Atlas_nav === 'function' ? this.Atlas_nav() : null
+    if (!nav || typeof nav.read_file !== 'function') return null
+    let cut = path.lastIndexOf('/')
+    let text = null
+    try {
+        text = await nav.read_file(path.slice(0, cut), path.slice(cut + 1))
+    } catch (e) {
+        return null
+    }
+    if (text == null) return null
+    return String(text).split('\n').map(l => l.length > 120 ? l.slice(0, 120) : l)
+
+},
+// Lagoon_cave_anat — a file's anatomy off Atlas's %Map: its methods in line order, each with where it ends
+//  (the next one's start) and its bead (the innermost `//#region` its author drew).  null when Atlas has not
+//   mapped the doc.  Asked into the sowing's scratch, never kept.
+Lagoon_cave_anat(w, path, sx) {
+    let memo = sx.anat || (sx.anat = {})
+    if (memo[path] !== undefined) return memo[path]
+    let atlas = this.Lagoon_atlas()
+    let doc = atlas ? atlas.o({ Doc: path })[0] : null
+    let map = doc ? doc.o({ Map: 1 })[0] : null
+    let ms = []
+    if (map) {
+        for (const d of map.o({ def: 1 })) {
+            let name = d.sc.method
+            if (!name || name === 'IMPORT' || d.sc.line == null) continue
+            let rp = d.c.region_path
+            ms.push({ name: name, a: Number(d.sc.line), r: (rp && rp.length) ? rp[rp.length - 1] : null })
+        }
+    }
+    ms.sort((x, y) => x.a - y.a)
+    for (let k = 0; k < ms.length; k++) ms[k].b = k + 1 < ms.length ? ms[k + 1].a - 1 : null
+    let an = ms.length ? { methods: ms } : null
+    memo[path] = an
+    return an
+
+},
+Lagoon_cave_method_at(w, path, line, sx) {
+    let an = this.Lagoon_cave_anat(w, path, sx)
+    if (!an) return null
+    let m = null
+    for (const x of an.methods) {
+        if (x.a > line) break
+        m = x
+    }
+    return m
+
+},
+// a method's region: the bead its author drew, else — a file with no `//#region`s — the name's prefix
+//  before its first underscore (in a *Testing.g that prefix IS the Book), else the file's top
+Lagoon_cave_region(m) {
+    if (!m) return '(top)'
+    if (m.r) return m.r
+    return m.name.indexOf('_') > 0 ? m.name.split('_')[0] : '(top)'
+
+},
+Lagoon_cave_kindof(w) {
+    for (const s of w.c.cave || []) {
+        if (s.lvl === 'file' && s.kind) return s.kind
+    }
+    return null
+
+},
+// the hits under where the rope stands (file, region, method), narrowed by the kind a crest chose
+Lagoon_cave_under(w, here, sx) {
+    let k = this.Lagoon_cave_kindof(w)
+    let out = []
+    for (const h of this.Lagoon_cave_hits(w)) {
+        if (h.path !== here.path) continue
+        if (k && h.kind !== k) continue
+        let m = this.Lagoon_cave_method_at(w, h.path, h.line, sx)
+        let mn = m ? m.name : '(top)'
+        let rn = this.Lagoon_cave_region(m)
+        if (here.lvl === 'region' && rn !== here.r) continue
+        if (here.lvl === 'method' && mn !== here.m) continue
+        out.push({ h: h, m: mn, r: rn })
+    }
+    return out
+
+},
+// THE FILE LEVEL — its regions, in the order they first hold a hit; each region's ribs are its methods.
+//  A method rib opens its chamber; pressed as a crest ("Method ×18") it opens the region instead.
+Lagoon_cave_regions(w, here, sx) {
+    let byR = {}
+    let order = []
+    for (const u of this.Lagoon_cave_under(w, here, sx)) {
+        if (!byR[u.r]) {
+            byR[u.r] = { ms: [], n: {} }
+            order.push(u.r)
+        }
+        if (!byR[u.r].n[u.m]) {
+            byR[u.r].n[u.m] = 0
+            byR[u.r].ms.push(u.m)
+        }
+        byR[u.r].n[u.m] = byR[u.r].n[u.m] + 1
+    }
+    let out = []
+    for (const r of order) {
+        let total = 0
+        let kids = []
+        for (const m of byR[r].ms) {
+            total = total + byR[r].n[m]
+            kids.push({ Method: this.Lagoon_cave_mname(m), guise: { tok: 'm:' + here.path + '#' + m, dose: byR[r].n[m],
+                press: (src, ctx) => {
+                    if (ctx && ctx.crest) {
+                        this.Lagoon_cave_go(w, { lvl: 'region', path: here.path, r: r })
+                        return
+                    }
+                    this.Lagoon_cave_open(w, here.path, m, null)
+                } } })
+        }
+        out.push({ Region: r, guise: { tok: 'r:' + here.path + '#' + r, dose: total, kids: kids,
+            press: () => this.Lagoon_cave_go(w, { lvl: 'region', path: here.path, r: r }) } })
+    }
+    return out
+
+},
+// THE REGION LEVEL — its methods, each with its hits as ribs
+Lagoon_cave_methods(w, here, sx) {
+    let byM = {}
+    let order = []
+    for (const u of this.Lagoon_cave_under(w, here, sx)) {
+        if (!byM[u.m]) {
+            byM[u.m] = []
+            order.push(u.m)
+        }
+        byM[u.m].push(u.h)
+    }
+    let out = []
+    for (const m of order) {
+        out.push({ Method: this.Lagoon_cave_mname(m), guise: { tok: 'mm:' + here.path + '#' + m, dose: byM[m].length,
+            kids: byM[m].map(h => this.Lagoon_cave_hit(w, h)),
+            press: () => this.Lagoon_cave_open(w, here.path, m, null) } })
+    }
+    return out
+
+},
+// THE CHAMBER — the method's own lines as paragraphs (blank-line split, at most six a vertebra), off the
+//  Stemdex's snippet store.  A line that CALLS a method Atlas maps is a Call rib (a tunnel — press it and
+//   walk through, across files); a line holding the query is a Hit; the rest are Line.  Pressing any
+//    non-tunnel line DELIVERS it into the editor: the cave's exits are the code itself.
+Lagoon_cave_chamber(w, here, sx) {
+    let src = here.src || this.Lagoon_cave_src(w, here.path)
+    let an = this.Lagoon_cave_anat(w, here.path, sx)
+    let me = an ? an.methods.find(x => x.name === here.m) : null
+    if (!src || !me) return []
+    let a = me.a
+    let b = Math.min(me.b || src.length, a + LAGOON_CAVE_MAX_LINES - 1)
+    let tun = this.Lagoon_cave_tunnels(w, here.path, here.m, sx)
+    let q = String(((w.c.cave || [])[0] || {}).q || '').toLowerCase()
+    let paras = []
+    let para = []
+    for (let ln = a; ln <= b; ln++) {
+        let text = String(src[ln - 1] ?? '')
+        if (!text.trim()) {
+            if (para.length) {
+                paras.push(para)
+                para = []
+            }
+            continue
+        }
+        para.push({ ln: ln, text: text })
+        if (para.length >= 6) {
+            paras.push(para)
+            para = []
+        }
+    }
+    if (para.length) paras.push(para)
+    let out = []
+    for (const p of paras) {
+        let kids = []
+        for (const l of p) {
+            let to = tun[l.ln]
+            let said = l.text.trim()
+            let g = {}
+            g[to ? 'Call' : (q && said.toLowerCase().indexOf(q) >= 0 ? 'Hit' : 'Line')] = said
+            g.line = l.ln
+            g.guise = { tok: 'l:' + here.path + ':' + l.ln }
+            if (to) {
+                g.guise.press = () => this.Lagoon_cave_open(w, to.path, to.m, here.path)
+            } else {
+                g.guise.press = () => this.Lagoon_cave_deliver(w, here.path, 'text:' + said)
+            }
+            kids.push(g)
+        }
+        out.push({ Lines: 'L' + p[0].ln, guise: { tok: 'p:' + here.path + '#' + here.m + '@' + p[0].ln, kids: kids } })
+    }
+    return out
+
+},
+// Lagoon_cave_tunnels — line → the method it walks into, for one chamber.  Atlas's own `call` AND
+//  `elvisto` rows (the compiler's call graph; `via` is the enclosing method) — a cross-ghost elvisto is a
+//   passage like any other.  A callee leads somewhere only if Atlas maps a def of that name; the same file
+//    wins a tie.  The name index is built into the sowing's scratch and dies with it.
+Lagoon_cave_tunnels(w, path, m, sx) {
+    let out = {}
+    let atlas = this.Lagoon_atlas()
+    let doc = atlas ? atlas.o({ Doc: path })[0] : null
+    let map = doc ? doc.o({ Map: 1 })[0] : null
+    if (!map) return out
+    let idx = this.Lagoon_cave_index(sx)
+    let rows = map.o({ call: 1, via: m }).concat(map.o({ elvisto: 1, via: m }))
+    for (const c of rows) {
+        let n = c.sc.method
+        if (!n || n === m || out[c.sc.line]) continue
+        let ps = idx[n]
+        if (!ps || !ps.length) continue
+        out[c.sc.line] = { path: ps.indexOf(path) >= 0 ? path : ps[0], m: n }
+    }
+    return out
+
+},
+Lagoon_cave_index(sx) {
+    if (sx.idx) return sx.idx
+    let idx = {}
+    let atlas = this.Lagoon_atlas()
+    for (const doc of (atlas ? atlas.o({ Doc: 1 }) : [])) {
+        let map = doc.o({ Map: 1 })[0]
+        if (!map) continue
+        for (const d of map.o({ def: 1 })) {
+            let n = d.sc.method
+            if (!n || n === 'IMPORT') continue
+            if (!idx[n]) idx[n] = []
+            if (idx[n].indexOf(doc.sc.Doc) < 0) idx[n].push(doc.sc.Doc)
+        }
+    }
+    sx.idx = idx
+    return idx
+
+},
+// Lagoon_cave_src — a doc's lines off the Stemdex's snippet store (clipped at 120, which a chamber can live
+//  with).  The Stemdex rides w:Lies — on the top House for an editor, on the ROOM for a hacker — so both are
+//   asked.  Read straight off `.c.stemdex`: `Lies_stemdex()` would mint an empty one where there is none.
+Lagoon_cave_src(w, path) {
+    let SH = w.c.face_on
+    let room = SH ? (SH.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] ?? null) : null
+    for (const lies of [this.Lagoon_lies(), room]) {
+        let dex = lies ? lies.c.stemdex : null
+        let doc = dex && dex.docs ? dex.docs.get(path) : null
+        if (doc && doc.lines && doc.lines.length) return doc.lines
+    }
+    return null
+
+},
+// Lagoon_cave_deliver — out of the cave and into the code: the Searchbar's own delivery (Aside-recorded
+//  `Lies_ghost_pick`) on the room's Lies.  The face is told (`w.c.cave_ondeliver`, set by BigWordland) so it
+//   can drop the glass and let the landed line show — the cave's last act is to get out of the way.
+Lagoon_cave_deliver(w, path, point) {
+    let SH = w.c.face_on
+    let args = { path: path }
+    if (point) args.point = point
+    if (SH) SH.i_elvisto('Lies/Lies', 'Lies_ghost_pick', args)
+    if (typeof w.c.cave_ondeliver === 'function') w.c.cave_ondeliver(args)
 },
 //#endregion
 // (a .g must end on a comment or a statement, never a method-final brace)

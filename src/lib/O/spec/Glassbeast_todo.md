@@ -14,6 +14,83 @@ Read it as a field guide. The animal is real, most of its organs exist, and it i
 
 ## 0. HANDOVER — 2026-09-10, written at 92% context. Read this, then §I.
 
+### THE CAVE GOES LIVE — LANDED 2026-09-25 (owner away, /loop continue): a search worn as a creature, over the code
+The owner: *"I wanted to start using it as the visual when we search for anything in there. bring it in over
+ the top of the code in BigWordland."* Plus a looser second idea: *"perhaps we need a physical nodes-moving-
+  around thing whenever the document changes... so we remain animal aware of what's what."*  Layer 1 is
+   built and proven; Layer 2 is still a sketch (below).
+
+**WHAT IT IS.** Type in BigWordland's search bar and a VytoSpine glass rises over the code: the rope as the
+ head (`⌕ Heist`), one vertebra per file (families by stem, Swarm beside SwarmTesting), each file's hits as
+  ribs wearing their KIND (Def · Mention · Particle · Text).  Press a file → its regions; a method → its
+   CHAMBER (the method's own lines, the query lit, calls marked); a Call line → the tunnel into that method,
+    across files; the head → climb.  A plain line in a chamber, or a file Atlas never mapped, DELIVERS into
+     the editor (the Searchbar's own `Lies_ghost_pick`) and the whole search closes so the landed line shows.
+      The results list keeps its strip on the right; the glass takes the rest, translucent, the code under it.
+
+**THE FINDING THAT MADE IT SMALL — the room already holds the whole geography the sample had to fake.**
+ VytoSpine's `scripts/vyto_search_sample.mjs` computes each hit's method + region by regex and ships method
+  source as JSON, because a page can't read raw `.g`.  But the hacker room stands Atlas + Lagoon, so:
+   · the search level = `Lagoon_seek`'s own reply (the same four readings the list shows, the same ranking)
+   · the anatomy = Atlas's `%Map` (each def's line, its `//#region` bead on `.c.region_path`, and the
+      compiler's `call`/`elvisto` rows — those ARE the tunnels, `via` = the enclosing method)
+   · a chamber's walls = the Stemdex's `dex.docs.get(path).lines`, else read ONCE through `Atlas_nav()`
+      (`nav.read_file`) — the Stemdex only rosters loaded Wafts, so most doors Atlas offers need this.
+
+**WHERE IT LIVES (all uncommitted — the owner's diff):**
+- `Ghost/L/Lagoon.g` — new `//#region THE CAVE`: `e_Lagoon_cave` (the door: `{q}` / `{clear}`), `_level` per
+   depth, `_go/_rise/_open/_enter/_deliver`, `_read` (the nav fallback).  A READER's face: no census written,
+    no index kept (anatomy + tunnel index live in a per-sowing scratch); only the rope + the answer being
+     walked sit on `w.c` (face state, like the Searchbar's own `q`/`results`).  The glass stands on
+      `w.c.face_on` — the room Hackarium already names for Lagoon's face.  Commission = the live client door
+       Sounditron uses (`SH.i_elvisto('Vyto/Vyto','Vyto_commission',{req})`), deck `spine,kindfold,budget:400`.
+- `src/lib/L/Hackarium.svelte` — `Lies_ghost_include('Ghost/V/Vyto.g')`.  **This was the other agent's
+   hazard, confirmed:** a hacker/editor tab never loads CREDULER_GHOSTS, so Vyto was simply absent.  (eatfunc
+    pushes a ghost onto every House, so including from the top reaches the room.)
+- `src/lib/L/BigWordland.svelte` — Searchbar `onresults` → `Lagoon_cave`; UI:Vyto lifted out of the flow into
+   `.bw-glass` (fixed, z 70 — above the top bar's stacking context where the Searchbar's dim + panel live —
+    width measured to end at the search input); a scoped `:global(.vyto)` makes the copper sheet translucent
+     HERE only; ✕ closes.  `src/lib/O/ui/Searchbar.svelte` — optional `dismiss` counter (Liesui passes none).
+- `Ghost/L/LagoonTesting.g` — **Book `LagoonCave`**, 7 steps on the frozen Sample.g corpus, pressing every
+   door the way a hand would (`seed.c.press`) and swearing on the commission's own grapples.
+
+**PROOF.** Live runner e747, `new` mode: 7/7, **7 sworn, 0 gaps** — every level exactly as predicted:
+ `Doc[Def+Def+Def]` → `Region[Method+Method] Region[Method]` (the bead + the `Sample` prefix beyond it) →
+  chamber `Lines[Hit+Call+Line]` read via the nav (the runner's Stemdex holds nothing) → tunnel
+   `⇝ Sample_beta()` → climb.  Regression: **LagoonStaple 8/8 ok_pct 1, 10/10 declared+sworn** (the cave keeps
+    no particle on the reader's world — beat 8 holds).  Headless eye on `/BigWordland`: Hackarium stands the
+     glass, typing reaches the cave, A:Vyto stands on the room, `.bw-glass up`, Vytui mounts, the head draws
+      over a dimmed room — but ZERO hits there, because a headless tab has no granted folder (Atlas 0 docs).
+
+**OWED — the owner's, needs live eyes:**
+1. **Open `/BigWordland` in your real tab (folder granted) and search.** Nothing has been seen with real
+    data in the room itself; the Book proves the producer, the eye proved the overlay, nobody has seen both.
+2. **Accept `LagoonCave`** — `wormhole/Story/LagoonCave/` is an untracked `new` recording with 7 undeclared
+    sworn sentences (`runner_ask assertions` lists them).  Declare + accept, or discard the dir.
+3. Taste: the copper sheet's swirl texture still shows faintly through the translucency; whether Vytui's own
+    chrome belongs in an overlay at all; whether a chamber line should deliver or keep you in the cave.
+**FOR THE VYTO AGENT — `foldby` still unexercised, and here is why the cave could not honour it:** at the
+ root every child must carry the fact, and the HEAD vertebra carries no `stem`, so `deck foldby:stem` can
+  never fire on a spine's root.  Either the Head is exempt from the fold's family (it is furniture, like a
+   crest voice row) or foldby should ignore members that lack the fact.  Your call; nothing in the cave
+    depends on it yet (budget 400 files never crowds).
+**Two claims in the concept draft this replaced were WRONG, noted so nobody re-derives them:** (a) "swap the
+ data source is one adapter function" — no: the deeper levels need method/region/source, which live hits do
+  not carry (Atlas + the nav supply them); (b) "promote VytoSpine out of VytoTesting.g" — not done: the other
+   agent said COPY, and the live producer's search level genuinely differs (a multi-reading seek, not one
+    grep), so it is its own region in Lagoon.g.  VytoSpine is untouched.  The two walk the same levels with
+     the same toks and deck; unify later if they stop diverging.
+
+**LAYER 2 — the ambient jostle, sketched, not scoped.** *"Physical nodes moving around whenever the document
+ changes... so we remain animal aware"* reads as: peripheral motion as a cheaper signal than a diff you'd
+  have to read. The hook already exists — `dock/{Text}.sc.dige` bumps on every edit burst (Stemdex_spec §2,
+   80ms), and Cyto already treats a version bump as an animatable wave (`cyto_update_wave`). The natural
+    Vyto-side echo: a mirrored source's `dige` moving applies a literal foam-physics kick (`pile_step`,
+     vyto_geometry.ts) to that cell — a nudge, not a redraw. Left unscoped on purpose: "how nearby" an edit's
+      kick should spread (file? region? stem-cluster?) and how strong a kick reads as information rather than
+       jitter both want a real glass to feel it against — better decided once Layer 1 is actually up over real
+        code than guessed at now with nothing to test it on.
+
 ### THE DESTINATION (unchanged, restated in one line)
 A glass that folds at the meaning and looks like a made thing — and the look is a **deck of stops**
  you compose, record and hand on, never a fourth engine.

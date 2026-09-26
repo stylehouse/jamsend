@@ -367,4 +367,156 @@ LagoonStaple_witness(w):
     if (w.c.kept_checked && w.c.kept_others === 0 && this.LagoonStaple_at(w, 8)) {
         this.story_swear(w, 'the reader kept nothing — after every answer its world holds only its own report row')
     }
+
+// ═══ Book LagoonCave — THE CAVE (Lagoon.g, 2026-09-25): a seek worn as a creature ═══════════════════════
+// The live cave BigWordland lifts over the code, walked over the same FROZEN corpus LagoonStaple stands
+//  (Ghost/L/test_corpus/Sample.g: three defs, one bead around the first two, one call alpha → beta).  It
+//   swears the PRODUCER — what the reader hands the glass at each depth — by reading the commission's own
+//    grapples (the seeds Vyto was given), never the drawn geometry: the spine assigns every bone, so the
+//     model's pile is not what a seeker sees, and a Book that waited on it would be waiting on the wrong
+//      thing.  Every move is a PRESS, made the way a hand would (the seed's own `.c.press`), so the Book
+//       walks exactly the doors the glass offers.
+//   · beat 2 — the census stands on the corpus (LagoonStaple_stand, reused whole)
+//   · beat 3 — a search stands: the rope as the head, one vertebra per file wearing its stem, Def ribs
+//   · beat 4 — press the file: its regions are the bead its author drew and the name prefix beyond it
+//   · beat 5 — press a method: the chamber is the method itself, read through Atlas's nav because a
+//      runner's Stemdex holds nothing (the fallback the live room needs for most of what Atlas maps)
+//   · beat 6 — press the line that calls: the tunnel walks into Sample_beta's chamber
+//   · beat 7 — press the head: the rope climbs back out
+// The glass stands on THIS Run House (`face_on`) — the room, as far as a Book has one.
+
+LagoonCave(A,w):
+    w oai %req:wrangle,eternal
+        await &LagoonCave_drive,w,req
+        req%ok = 1
+
+async LagoonCave_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 7
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.LagoonStaple_stand(w)
+        if (n === 3) this.LagoonCave_search(w)
+        if (n === 4) this.LagoonCave_dive(w)
+        if (n === 5) this.LagoonCave_chamber(w)
+        if (n === 6) this.LagoonCave_tunnel(w)
+        if (n === 7) this.LagoonCave_climb(w)
+    }
+    this.LagoonCave_witness(w)
+
+LagoonCave_vw(w):
+    return this.o({ A: 'Vyto' })[0]?.o({ w: 'Vyto' })[0] ?? null
+
+// the seeds the reader last handed the glass — null until a commission from THIS reader has landed
+LagoonCave_sown(w):
+    let vw = this.LagoonCave_vw(w)
+    let lw = this.LagoonStaple_lw(w)
+    let req = vw ? vw.c.commission : null
+    if (!req || !lw || req.sc.client_w !== lw) return null
+    return req.sc.grapples || null
+
+// the rope the glass was last handed — its head's own saying, so the claim is about what was SOWN
+LagoonCave_rope(w):
+    let seeds = this.LagoonCave_sown(w)
+    return seeds && seeds[0] ? String(seeds[0].sc.Head ?? '') : ''
+
+// wait until the glass has been handed `rope`, then leave a snapped trace of the level's shape
+async LagoonCave_until(w, rope, lvl):
+    await this.LagoonStaple_await(w, 15, () => this.LagoonCave_rope(w) === rope)
+    let seeds = this.LagoonCave_sown(w) || []
+    let kinds = seeds.slice(1).map(s => Object.keys(s.sc)[0]).join(' ')
+    let kids = seeds.slice(1).map(s => s.o().map(k => Object.keys(k.sc)[0]).join('+')).join(' ')
+    w.i({ saw: 'cave', lvl: lvl, rope: this.LagoonCave_rope(w), vertebrae: kinds, ribs: kids })
+
+// press a seed the way a hand would — Vytui's cell_click calls the source's own `.c.press`
+LagoonCave_press(seed):
+    if (seed && typeof seed.c.press === 'function') seed.c.press(seed, null)
+
+LagoonCave_search(w):
+    i %desc:'a search stands as a spine — the rope as its head and one vertebra per file'
+    this.expecting(w, 'search_wait', 20, async () => {
+        let top = this.top_House()
+        let lw = this.LagoonStaple_lw(w)
+        if (!lw || typeof top.e_Lagoon_cave !== 'function') return
+        lw.c.face_on = this
+        top.e_Lagoon_cave(null, lw, { sc: { q: 'Sample' } })
+        await this.LagoonCave_until(w, '⌕ Sample', 'search')
+        let seeds = this.LagoonCave_sown(w) || []
+        let doc = seeds.find(s => s.sc.Doc === 'Ghost/L/test_corpus/Sample.g')
+        w.c.search_files = seeds.filter(s => s.sc.Doc).length
+        w.c.search_stem = doc ? doc.sc.stem : null
+        w.c.search_defs = doc ? doc.o().filter(k => k.sc.Def).length : 0
+        w.c.search_ribs = doc ? doc.o().length : 0
+    })
+
+LagoonCave_dive(w):
+    i %desc:'press the file — its regions are the bead its author drew and the name prefix beyond it'
+    this.expecting(w, 'dive_wait', 20, async () => {
+        let seeds = this.LagoonCave_sown(w) || []
+        this.LagoonCave_press(seeds.find(s => s.sc.Doc === 'Ghost/L/test_corpus/Sample.g'))
+        await this.LagoonCave_until(w, '⌕ Sample › Sample', 'file')
+        let regions = (this.LagoonCave_sown(w) || []).filter(s => s.sc.Region != null)
+        let gamma = regions.find(r => r.o().some(k => k.sc.Method === 'Sample_gamma()'))
+        let alpha = regions.find(r => r.o().some(k => k.sc.Method === 'Sample_alpha()'))
+        w.c.dive_regions = regions.length
+        w.c.dive_gamma_prefix = gamma && gamma.sc.Region === 'Sample' ? 1 : 0
+        w.c.dive_bead_pair = alpha && alpha !== gamma && alpha.o().some(k => k.sc.Method === 'Sample_beta()') ? 1 : 0
+    })
+
+LagoonCave_chamber(w):
+    i %desc:'press a method — the chamber is the method itself and read through the census nav'
+    this.expecting(w, 'chamber_wait', 20, async () => {
+        let region = (this.LagoonCave_sown(w) || []).find(s => s.sc.Region != null && s.o().some(k => k.sc.Method === 'Sample_alpha()'))
+        let rib = region ? region.o().find(k => k.sc.Method === 'Sample_alpha()') : null
+        this.LagoonCave_press(rib)
+        await this.LagoonCave_until(w, '⌕ Sample › Sample › Sample_alpha()', 'method')
+        let lw = this.LagoonStaple_lw(w)
+        let here = lw && lw.c.cave ? lw.c.cave[lw.c.cave.length - 1] : null
+        let paras = (this.LagoonCave_sown(w) || []).filter(s => s.sc.Lines != null)
+        let kinds = paras.length ? paras[0].o().map(k => Object.keys(k.sc)[0]).join(' ') : ''
+        w.c.chamber_lines = kinds
+        w.c.chamber_via_nav = here && here.src ? 1 : 0
+    })
+
+LagoonCave_tunnel(w):
+    i %desc:'press the line that calls — the tunnel walks into the chamber of the method it calls'
+    this.expecting(w, 'tunnel_wait', 20, async () => {
+        let para = (this.LagoonCave_sown(w) || []).find(s => s.sc.Lines != null)
+        let call = para ? para.o().find(k => k.sc.Call != null) : null
+        this.LagoonCave_press(call)
+        await this.LagoonCave_until(w, '⌕ Sample › Sample › Sample_alpha() › ⇝ Sample_beta()', 'tunnel')
+        w.c.tunnel_walked = this.LagoonCave_rope(w) === '⌕ Sample › Sample › Sample_alpha() › ⇝ Sample_beta()' ? 1 : 0
+    })
+
+LagoonCave_climb(w):
+    i %desc:'press the head — the rope climbs back out one step'
+    this.expecting(w, 'climb_wait', 20, async () => {
+        this.LagoonCave_press((this.LagoonCave_sown(w) || [])[0])
+        await this.LagoonCave_until(w, '⌕ Sample › Sample › Sample_alpha()', 'climb')
+        w.c.climbed = this.LagoonCave_rope(w) === '⌕ Sample › Sample › Sample_alpha()' ? 1 : 0
+    })
+
+LagoonCave_witness(w):
+    if (w.c.search_files === 1 && w.c.search_stem === 'Sample' && this.LagoonStaple_at(w, 3)) {
+        this.story_swear(w, 'a search stands as a spine — the rope as its head and one vertebra per file wearing its stem')
+    }
+    if (w.c.search_defs === 3 && w.c.search_ribs === 3 && this.LagoonStaple_at(w, 3)) {
+        this.story_swear(w, 'every hit wears its kind as its mainkey — the fixture seek is three Def ribs')
+    }
+    if (w.c.dive_regions === 2 && w.c.dive_gamma_prefix && w.c.dive_bead_pair && this.LagoonStaple_at(w, 4)) {
+        this.story_swear(w, 'pressing a file dives into it — the bead its author drew and the name prefix beyond it')
+    }
+    if (w.c.chamber_lines === 'Hit Call Line' && this.LagoonStaple_at(w, 5)) {
+        this.story_swear(w, 'a chamber is the method itself — the line that names the query lit and the line that calls marked')
+    }
+    if (w.c.chamber_via_nav && this.LagoonStaple_at(w, 5)) {
+        this.story_swear(w, 'a chamber the Stemdex never read is read through the census nav — the door still opens')
+    }
+    if (w.c.tunnel_walked && this.LagoonStaple_at(w, 6)) {
+        this.story_swear(w, 'a line that calls a mapped method is a tunnel — pressing it walks into that chamber')
+    }
+    if (w.c.climbed && this.LagoonStaple_at(w, 7)) {
+        this.story_swear(w, 'the head is the rope — pressing it climbs back out')
+    }
 // (ends on a comment — a .g must not end on a method-final brace)

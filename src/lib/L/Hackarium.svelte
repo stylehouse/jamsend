@@ -89,6 +89,14 @@
                     })
                     .catch((e: any) => console.log(`🔎 Hackarium could not stand ${name} — ${String(e?.message ?? e)}`))
             }
+            // THE GLASS (2026-09-25).  The cave (Lagoon.g, THE CAVE) draws a search over the code on a
+            //  Vyto glass, and a hacker never loads the runner's CREDULER_GHOSTS — so Vyto.g is not here
+            //   unless the room includes it.  No world is minted: the cave stands A:Vyto on THIS room at
+            //    its first search, so UI:Vyto enrolls beside Langui and BigWordland lifts it over the code.
+            //     (eatfunc pushes a ghost onto every House, so including it from the top reaches the room.)
+            top.Lies_ghost_include('Ghost/V/Vyto.g')
+                .then((stood: boolean) => console.log(`🔎 ${H.name} Hackarium ${stood ? 'stood' : 'could not stand'} the glass (Vyto)`))
+                .catch((e: any) => console.log(`🔎 Hackarium could not stand the glass — ${String(e?.message ?? e)}`))
             H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: HACKER_WAFT })
             console.log(`🔎 ${H.name} Hackarium — opening Waft:${HACKER_WAFT}`)
         },

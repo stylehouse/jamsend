@@ -6,51 +6,52 @@ Triggered by the owner, live, 2026-09-23: *"think up some way we can stop LinkDe
    nothing here is ruled. It exists so the next session (or the owner) has the threat model written down
     instead of re-deriving it.
 
-## 0. WHERE THIS LANDED (consolidated 2026-09-24 — read this, the rest is the trail)
+## 0. WHERE THIS IS (2026-09-25 — the only section to trust; everything below is the reasoning trail,
+##  including several conclusions later corrected)
 
-**What the owner actually wants, stated once:** Friend's side serves **one body of a given crew at a time**
- on a relationship — the Captain, or whichever Cave/borrower is using it now. A newer body taking the seat
-  evicts the older one. A seat idle for a while (an hour? a day? — a knob, unruled) lapses, so the next
-   body just takes it. The goal is **limiting the casual over-sharer**, not defeating a malicious insider
-    ("that's supposing the app is running on the devil's computer").
+**The concern (owner):** LinkDevice can be used over and over instead of the Invite-Friend button, to put
+ more PEOPLE behind one friendship that was meant to be one person's. Goal: limit the casual over-sharer,
+  not defeat a malicious insider ("that's supposing the app is running on the devil's computer").
 
-**The facts that shape it (all traced in code, §1.6 and below):**
-- Every crewmate holds the soul secret — sworn in `SwarmHelm`: *"every crewmate carries the whole ledger
-   and the soul secret — held not wielded."* So inside the crew, "only the Captain's key can sign" is NOT a
-    boundary: any Cave's device can sign as the soul, take the soul's relay address, mint loans, anything.
-- Every certified Cave already reaches every friend's Pier via cert-crew's voucher road (§1.6), with no
-   limit on how many at once. Friend's door can tell the bodies apart (each Cave vouches with its own
-    `vh.pub`; the Captain vouches as the soul) — it just never uses that.
+**The rule (owner, "fairly airtight"):** a friend serves ONE body of a crew at a time — the Captain, or the
+ one Cave the Captain lends it to. A newer loan logs the previous borrower out. A loan lapses by itself.
 
-**So the coherent build is the SLOT, on Friend's side, per Pier — not the loan.** One small piece of state
- on Friend's `%Pier` (`c.slot = {body, at}`) set in the hear funnel right after `Swarm_voucher_ok` passes
-  (~Swarm.g:1558, where `sealed` + the vouching body are both known): same body ⇒ refresh `at`; different
-   body ⇒ it takes the seat, the old holder is refused (`rebuff 'seat_taken'`) until it's newest again;
-    `at` older than the idle knob ⇒ seat free. Covers Captain, Caves and any borrower through one rule.
-     Caveat to handle: `sealed.c.voucher_ok` caches ONE signature per Pier, so alternating bodies thrash
-      it into full re-verifies — cache per body instead.
+**What the code does now:**
+- **Without a loan it was already one seat.** A friend's music doors key on ONE address per friendship:
+   Repli consent (`Repli.g:994` → `Swarm_share_granted`) and the cast loop both use the soul's address,
+    and only the Captain binds that on the relay. A linked Cave can't pull a friend's music at all
+     (neither Repli nor the Reach friend-arm, `Swarm.g:~6900`, admits its own address). So extra Caves
+      never reached a friend directly — the concern was already blocked for direct access.
+- **LANDED 2026-09-25 — the slot, at the friend** (`Ghost/S/Swarm.g`, GrantBorrowing region):
+   `Swarm_pier_slot(pier)` = the address this friendship serves right now (an unexpired `%Loan` child
+    on the friend's %Pier names the borrower; else the soul). `Swarm_slot_granted` answers consent from it,
+     and `Swarm_share_granted` (Repli's live hook) now delegates there; the live cast loop casts to the
+      slot. `Swarm_borrow_heard` takes a `borrow` frame (dispatched on the live funnel AND the Book mail
+       pump): verifies the loan, refuses unless the wrapped grant is the friend's OWN and the friendship is
+        Music-live, keeps ONE %Loan (newest `at` wins — replays can't unseat), and a loan to the soul itself
+         = the Captain taking the seat back. `Swarm_lend(w, ident, pier, borrowerPub, ttl)` is the Captain's
+          verb (mints + sends). Default loan life: 1 hour (`Swarm_mint_borrow`), a knob.
+- **Proven:** Book `SwarmBorrow` beat 4 — one seat (soul refused while lent), newest wins + replay
+   refused, lapse returns the seat with nothing sent + take-back, friend refuses a loan of a grant it
+    didn't issue. 4/4 steps, 8/8 oaths declared+sworn, 0 gaps; steps 1–3 re-recorded byte-identical to
+     HEAD. SwarmStaple/SwarmHelm/SwarmSpread green; SwarmShare's caveat:8 reproduces on HEAD's Swarm.go.
 
-**GrantBorrow (landed 2026-09-23, `Swarm_mint_borrow`/`Swarm_verify_borrow` + Book `SwarmBorrow`, green)
- is now mostly redundant.** Crew members don't need it (cert-crew already admits them) and can forge it
-  anyway (they hold the soul secret). It only means something for lending to someone OUTSIDE the crew — and
-   Friend's door isn't wired to accept a loan as a credential at all yet. Recommendation: park it (or delete
-    it) rather than wire it; the slot is what does the job. Its Book's "only the bearer may lend" oath is
-     true against outsiders only — do not read it as a crew-internal guarantee.
+**Honest limits (accepted):** every crewmate holds the soul secret (`SwarmHelm` swears it), so any crewmate
+ with a modified client can mint a loan or take the soul's relay address. Either way the friend still
+  serves one seat — worst case is crewmates kicking each other off (availability, internal). Crewmates can
+   also get friend-sourced music second-hand through their own crew (pool/Reach on the Captain) — the owner
+    ruled that "of course not the concern".
 
-**Abuse that remains once the slot exists — the honest list:**
-| who | can do | matters? |
-|---|---|---|
-| casual over-crewing (5 friends added as Caves) | only one streams from a given friend at a time; they keep kicking each other | **this is the goal** — self-limiting, annoying, not a fan-out |
-| any crewmate | kick the Captain (or each other) off the seat | availability only, internal; accepted — crew is high trust |
-| any crewmate with a modified client | sign as the soul, take the soul's relay address, eject others, act as Captain outright | out of scope — "devil's computer"; same as handing over a house key |
-| any crewmate | pool what they pulled (SoundPooling) and circulate it to their own friends | **the real remaining leak**, by design — the slot limits live access, not redistribution of bytes already held |
-| crew taking turns | time-share the one seat | fine — equivalent to one person listening |
-
-**Left to decide / build:** (1) the idle knob value; (2) build the slot (small, one seam + a Book with two
- Caves contesting); (3) park or delete GrantBorrow; (4) whether pooling of a friend's music by a Cave is
-  acceptable — a SoundPooling policy question, not this doc's. Everything below (§1–§5) is the reasoning
-   trail, including two conclusions later corrected (§1.5's "narrower than the worry", and §5's framing of
-    the loan as a crew-internal boundary).
+**NOT built — what's left:**
+1. **The Cave's receiving side.** When lent, the friend casts to the Cave's address — but the Cave has no
+    Pier with that friend, so it doesn't arm a Repli rx route for it, and its pull presence gate
+     (`Swarm_share_present`, keyed on a Pier's `heard_at`) says no. The Cave needs to know it's borrowing
+      (Swarm_lend should also tell the Cave, e.g. a `%Borrowing,of:<friend>,exp` on its own Peering) and
+       those two gates must accept a live Borrowing. Untestable in this sandbox (needs 3 live tabs).
+2. **Who triggers a lend.** No UI and no auto-lend yet. The owner's idea: the Captain lends automatically
+    when it comes online and a Cave is asking — a Cave-side wish the Captain's beat consumes.
+3. The friend's `repli_ready` ask-reply path (`Swarm_repli_ready`/`Swarm_offer_now`) still requires a
+    sealed Pier for the sender, so a borrower gets the catalog on the 60s re-offer floor, not instantly.
 
 ## 1. What the code actually does today (read, not guessed — Swarm.g, SwarmTesting.g)
 
@@ -116,6 +117,9 @@ This is a DIFFERENT mechanism from the key-cloning ferry above, and worth keepin
      not just Music, not just the self-catalog mint this section describes.** §1.6 is that finding; it
       supersedes "today's actual shape is narrower and safer than the worry" above. Read §1.6 before
        trusting anything else in this section about what a Cave can or can't reach.
+
+> ⚠ **Corrected 2026-09-25 (see §0):** true for voucher-gated Swarm frames only — a Cave can NOT pull a
+>  friend's music directly (Repli consent and the Reach friend-arm both key on the requester's own address).
 
 ### 1.6 THE MECHANISM THAT ACTUALLY MATTERS: cert-crew's voucher road already gives a Cave full, permanent,
 ##  blanket access to every grant the soul has ever held — no copy, no separate mint, no GrantBorrowing needed

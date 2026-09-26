@@ -146,6 +146,37 @@
         const segs = (path ?? '').split('/').filter(Boolean)
         return segs[segs.length - 1] ?? path
     }
+
+    // THE CAVE (2026-09-25) — a search, worn as a creature, over the code.  The owner: *"I wanted to start
+    //  using it as the visual when we search for anything in there… bring it in over the top of the code."*
+    //   The producer is Lagoon's (Lagoon.g, THE CAVE): every settled result set goes to it by q; it sows a
+    //    Vyto glass on this room's Run House, and UI:Vyto — an ordinary piece in the loop below — is lifted
+    //     out of the flow into `.bw-glass`, over the code and left of the results list.  Nothing here
+    //      decides what the glass shows; the room only says when it is up.
+    //  A press that DELIVERS (a chamber's line, a file with no map) tells the room through the Lagoon world's
+    //   `cave_ondeliver`, and the room dismisses the whole search — the landed line is what you wanted to see.
+    let cave_q  = $state('')
+    let dismiss = $state(0)
+    let search_el: HTMLDivElement | undefined = $state()
+    let glass_w = $state(0)
+    const lagoon_w = () => (H as any)?.o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
+    function on_results(r: any) {
+        const q = r?.q ? String(r.q) : ''
+        if (!H) return
+        if (!q) {
+            if (cave_q) H.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { clear: 1 })
+            cave_q = ''
+            return
+        }
+        const lw = lagoon_w()
+        if (lw) lw.c.cave_ondeliver = () => { dismiss = dismiss + 1 }
+        // the glass ends where the results list begins — the list hangs from the search input's left edge
+        const box = search_el?.getBoundingClientRect()
+        glass_w = box ? Math.max(0, Math.round(box.left) - 8) : 0
+        cave_q = q
+        H.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { q })
+    }
+    const is_glass = (uiC: any) => uiC.sc.UI === 'Vyto' && !sprawl
     //#endregion
 </script>
 
@@ -182,7 +213,8 @@
                 title="call Lies up — the straight Liesui, hidden by default in the room"
                 onclick={() => show_lies = !show_lies}>⌐ Lies</button>
         {#if lies}
-            <div class="bw-search"><Searchbar H={lies.house} w={lies.w} onpin={pin} /></div>
+            <div class="bw-search" bind:this={search_el}><Searchbar H={lies.house} w={lies.w} onpin={pin}
+                onresults={on_results} {dismiss} /></div>
         {/if}
     </div>
 
@@ -213,8 +245,15 @@
         {#each (sprawl ? houses : houses.filter(h => h.c.ip === active_ip)) as house (house.c.ip)}
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
                 {#if !ui_hidden(uiC.sc.UI)}
-                    <section class="bw-piece" class:bw-piece-lies={uiC.sc.UI === 'Lies'}>
-                        <span class="bw-tag">{house.name} · {uiC.sc.UI}</span>
+                    <section class="bw-piece" class:bw-piece-lies={uiC.sc.UI === 'Lies'}
+                             class:bw-glass={is_glass(uiC)} class:up={is_glass(uiC) && !!cave_q}
+                             style={is_glass(uiC) && glass_w ? `--glass-w: ${glass_w}px` : undefined}>
+                        {#if is_glass(uiC)}
+                            <button class="bw-glass-x" title="close the cave (and the search)"
+                                    onclick={() => dismiss = dismiss + 1}>×</button>
+                        {:else}
+                            <span class="bw-tag">{house.name} · {uiC.sc.UI}</span>
+                        {/if}
                         <svelte:component this={uiC.sc.component} H={house} />
                     </section>
                 {/if}
@@ -365,6 +404,32 @@
         font-size: 0.62rem; letter-spacing: 0.08em; color: rgba(120, 135, 170, 0.55);
         user-select: none; pointer-events: none;
     }
+
+    /* THE CAVE'S GLASS — UI:Vyto lifted out of the flow and laid over the code, left of the results list
+       (which hangs from the search input; --glass-w is measured to end just before it).  Always MOUNTED so
+       the glass keeps its world and its size; merely invisible and click-through until a search is up.
+       z 70 clears the top bar's stacking context (60), where the Searchbar's dim and panel live — the dim
+       still darkens the code underneath, which is the torchlight the cave wants. */
+    .bw-piece.bw-glass {
+        position: fixed; top: 3rem; left: 0; bottom: 0; z-index: 70;
+        width: var(--glass-w, 62vw);
+        display: flex; flex-direction: column;
+        visibility: hidden; pointer-events: none;
+    }
+    .bw-piece.bw-glass.up { visibility: visible; pointer-events: auto; }
+    /* the copper sheet goes translucent HERE only — a scoped :global, so no other page that mounts Vytui
+       changes by a pixel — and the code ghosts through beneath the spine */
+    .bw-glass :global(.vyto) {
+        flex: 1; background-color: rgba(26, 20, 16, 0.62) !important; background-image: none !important;
+        backdrop-filter: blur(1.5px);
+    }
+    .bw-glass-x {
+        position: absolute; top: 0.3rem; right: 0.4rem; z-index: 5;
+        background: rgba(14, 15, 25, 0.8); border: 1px solid rgba(224, 180, 110, 0.35); border-radius: 6px;
+        cursor: pointer; font-family: inherit; font-size: 0.95rem; line-height: 1;
+        color: rgba(255, 224, 168, 0.8); padding: 0.1rem 0.4rem;
+    }
+    .bw-glass-x:hover { color: #ffe0a8; border-color: rgba(224, 180, 110, 0.7); }
 
     /* the pin rail — the loose space at the right of the code */
     .bw-pins {

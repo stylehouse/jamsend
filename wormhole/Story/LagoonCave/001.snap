@@ -1,0 +1,7 @@
+Snap:H
+  H:LagoonCave,Run
+    A:LagoonCave
+      self,round	{"mung":["age"]}
+      w:LagoonCave
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok
