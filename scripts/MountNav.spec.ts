@@ -8,7 +8,7 @@
 //     wrapper is no longer a no-op and the seam install must come back out.
 
 import { describe, it, expect } from 'vitest'
-import { MountNav, app_tree_decision, type NavLike } from '../src/lib/O/MountNav.svelte.ts'
+import { MountNav, AppTreeNav, app_tree_decision, type NavLike } from '../src/lib/O/MountNav.svelte.ts'
 
 // a nav that records what it was asked for, so a test can assert the REBASE rather than the result
 type Call = { m: string, args: any[] }
@@ -196,5 +196,73 @@ describe('app_tree_decision', () => {
 
     it('an editor sitting on the real repo still just reads it', () => {
         expect(D({ names: ['wormhole', 'src'], boot_role: 'editor' })).toBe('share')
+    })
+})
+
+// AppTreeNav — a listener's `wormhole/`: writes to the share's `.jamsend/wormhole/`, reads try that
+//  first and then WAIT for the cloud.  The 940f stall (2026-09-28) was a write landing in the window
+//   before the cloud mounted, creating `<music>/wormhole/` and flipping every later boot to 'share'.
+describe('AppTreeNav', () => {
+    // a tiny in-memory disk: path → content
+    function disk(files: Record<string, string>): NavLike & { files: Record<string, string> } {
+        return {
+            files,
+            async read_file(d: string, f: string) { return files[[d, f].filter(Boolean).join('/')] ?? null },
+            async write_file(d: string, f: string, c: string) { files[[d, f].filter(Boolean).join('/')] = c },
+            async dir(...parts: string[]) {
+                const pre = parts.length ? parts.join('/') + '/' : ''
+                const ds = new Set<string>(), fs = new Set<string>()
+                for (const p of Object.keys(files)) {
+                    if (!p.startsWith(pre)) continue
+                    const rest = p.slice(pre.length).split('/')
+                    if (rest.length === 1) fs.add(rest[0]); else ds.add(rest[0])
+                }
+                if (!ds.size && !fs.size) return null
+                return { directories: [...ds].map(name => ({ name })), files: [...fs].map(name => ({ name })), async expand() {} }
+            },
+        }
+    }
+
+    it('a write before the cloud lands goes to .jamsend/wormhole — never <music>/wormhole', async () => {
+        const music = disk({ 'Album/a.mp3': 'x' })
+        let land!: (n: NavLike) => void
+        const cloud = new Promise<NavLike | null>(r => { land = r })
+        const mn = new MountNav(music)
+        mn.mount('wormhole', new AppTreeNav(mn.base, '.jamsend/wormhole', cloud, 'wormhole'))
+        await mn.write_file('wormhole/_trace', 'app-940f.jsonl', '{}')
+        expect(Object.keys(music.files).sort()).toEqual(['.jamsend/wormhole/_trace/app-940f.jsonl', 'Album/a.mp3'])
+        // and the verdict on the next boot is still 'mount', because the root has no `wormhole`
+        expect(app_tree_decision({ expanded: true, names: ['.jamsend', 'Album'] })).toBe('mount')
+        land(disk({}))
+    })
+
+    it('a read that misses the share waits for the cloud rather than answering "no Book"', async () => {
+        const music = disk({ 'Album/a.mp3': 'x' })
+        let land!: (n: NavLike) => void
+        const cloud = new Promise<NavLike | null>(r => { land = r })
+        const mn = new MountNav(music)
+        mn.mount('wormhole', new AppTreeNav(mn.base, '.jamsend/wormhole', cloud, 'wormhole'))
+        const got = mn.read_file('wormhole/Story/Sounditron', 'toc.snap')
+        land(disk({ 'wormhole/Story/Sounditron/toc.snap': 'the real Book' }))
+        expect(await got).toBe('the real Book')
+    })
+
+    it("what this app wrote shadows the cloud, and listings merge both", async () => {
+        const music = disk({ '.jamsend/wormhole/Story/Mine/toc.snap': 'mine', '.jamsend/wormhole/Story/Sounditron/toc.snap': 'saved' })
+        const cloud = Promise.resolve(disk({ 'wormhole/Story/Sounditron/toc.snap': 'cloud', 'wormhole/Story/Other/toc.snap': 'o' }) as NavLike)
+        const mn = new MountNav(music)
+        mn.mount('wormhole', new AppTreeNav(mn.base, '.jamsend/wormhole', cloud, 'wormhole'))
+        expect(await mn.read_file('wormhole/Story/Sounditron', 'toc.snap')).toBe('saved')
+        const l = await mn.dir('wormhole', 'Story')
+        expect(l.directories.map((d: any) => d.name).sort()).toEqual(['Mine', 'Other', 'Sounditron'])
+    })
+
+    it('a failed cloud still keeps writes on the share and reads answer absent', async () => {
+        const music = disk({})
+        const mn = new MountNav(music)
+        mn.mount('wormhole', new AppTreeNav(mn.base, '.jamsend/wormhole', Promise.reject(new Error('offline')), 'wormhole'))
+        expect(await mn.read_file('wormhole/Story/Sounditron', 'toc.snap')).toBe(null)
+        await mn.write_file('wormhole/x', 'y', 'z')
+        expect(music.files['.jamsend/wormhole/x/y']).toBe('z')
     })
 })

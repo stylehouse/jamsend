@@ -221,3 +221,85 @@ export class MountNav {
         return nav.bin_writer(rest.join('/'), filename)
     }
 }
+
+// ── AppTreeNav — what a LISTENER's `wormhole/` is: their writes on their disk, under `.jamsend/` ──────
+//  The owner, 2026-09-28: *"we should not make wormhole/ in music collections."*  Before this, a music
+//   folder with no `wormhole/` got the github tree mounted there with writes landing in OPFS scratch —
+//    but the mount is async (one git Trees call), and any write in that window (a socklog `_trace`
+//     dump, a Story save) went through to the BASE and created `<music>/wormhole/`.  The next boot then
+//      saw a `wormhole` directory, decided 'share', never mounted github, found no Sounditron and
+//       recorded a 1-step one — the 940f stall, twice.
+//  So the 'mount' verdict now stands THIS synchronously, in the same tick it is reached:
+//   · UPPER — the base share rebased at `.jamsend/wormhole/`: every write lands there, on the person's
+//      own disk (durable, backed up with their music, invisible in a file browser), and reads try it
+//       first so what this app wrote shadows the cloud.
+//   · LOWER — the github tree, arriving later as a promise; reads that miss upper WAIT for it, so a
+//      Story that boots inside the window reads the real Book rather than a miss that means 'new'.
+//  `.jamsend/wormhole` is not `wormhole`, so app_tree_decision never flips to 'share' because of it.
+export class AppTreeNav {
+    upper: NavLike
+    at: string[]
+    lower: NavLike | null = null
+    lower_p: Promise<NavLike | null>
+    lower_at: string[]
+    label: string
+
+    // at: where in UPPER this tree lives; lower_at: where in LOWER (the cloud is a repo checkout,
+    //  so its books are at `wormhole/…` inside it)
+    constructor(upper: NavLike, at: string, lower_p: Promise<NavLike | null>, lower_at = '', label = 'app tree') {
+        this.upper = upper
+        this.at = seg(at)
+        this.lower_at = seg(lower_at)
+        this.label = label
+        // a failed cloud leaves upper alone: no Books, but nothing this app writes goes astray
+        this.lower_p = lower_p.then(n => (this.lower = n), () => null)
+    }
+
+    _up(p: string | string[]): string[] { return [...this.at, ...(typeof p === 'string' ? seg(p) : p)] }
+    _low(p: string | string[]): string[] { return [...this.lower_at, ...(typeof p === 'string' ? seg(p) : p)] }
+
+    // upper first; a miss there waits for the cloud
+    async _read<T>(fn: (n: NavLike, p: string) => Promise<T | null> | undefined, dir_path: string): Promise<T | null> {
+        const got = await (fn(this.upper, this._up(dir_path).join('/')) ?? null)
+        if (got != null) return got
+        const lower = await this.lower_p
+        return lower ? ((await (fn(lower, this._low(dir_path).join('/')) ?? null)) ?? null) : null
+    }
+
+    async read_file(dir_path: string, filename: string) { return this._read<string>((n, p) => n.read_file?.(p, filename), dir_path) }
+    async bin_read(dir_path: string, filename: string) { return this._read<ArrayBuffer>((n, p) => n.bin_read?.(p, filename), dir_path) }
+    async read_range(dir_path: string, filename: string, offset: number, len?: number) {
+        return this._read<{ buffer: ArrayBuffer, size: number }>((n, p) => n.read_range?.(p, filename, offset, len), dir_path)
+    }
+
+    // writes never touch the cloud — they are the person's, and land beside their music
+    async write_file(dir_path: string, filename: string, content: string) { await this.upper.write_file?.(this._up(dir_path).join('/'), filename, content) }
+    async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer) { await this.upper.bin_write?.(this._up(dir_path).join('/'), filename, bytes) }
+    async bin_append(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer) { await this.upper.bin_append?.(this._up(dir_path).join('/'), filename, bytes) }
+    async bin_writer(dir_path: string, filename: string) { return this.upper.bin_writer!(this._up(dir_path).join('/'), filename) }
+    async bin_rm(dir_path: string, filename: string) { return this.upper.bin_rm ? this.upper.bin_rm(this._up(dir_path).join('/'), filename) : false }
+    async mkdirp(...parts: string[]) { return this.upper.mkdirp?.(...this._up(parts)) }
+    async dir_at(path: string) { return this.dir(...seg(path)) }
+
+    // listing merges both layers, the way LazyGithubNav merges its manifest with scratch
+    async dir(...parts: string[]): Promise<any> {
+        const up = this.upper.dir ? await this.upper.dir(...this._up(parts)).catch(() => null) : null
+        if (up?.expand && !up.expanded) await up.expand().catch(() => {})
+        const lower = await this.lower_p
+        const low = lower?.dir ? await lower.dir(...this._low(parts)).catch(() => null) : null
+        if (low?.expand) await low.expand().catch(() => {})
+        if (!low) return up
+        if (!up) return low
+        const dirs = new Set<string>(), files = new Set<string>()
+        for (const l of [up, low]) {
+            for (const d of l.directories ?? []) dirs.add(d.name)
+            for (const f of l.files ?? []) files.add(f.name)
+        }
+        return {
+            name: parts.length ? parts[parts.length - 1] : '/',
+            directories: [...dirs].sort().map(name => ({ name })),
+            files: [...files].sort().map(name => ({ name })),
+            async expand() { /* already whole */ },
+        }
+    }
+}

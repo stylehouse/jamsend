@@ -53,6 +53,29 @@ Triggered by the owner, live, 2026-09-23: *"think up some way we can stop LinkDe
      before that, they're dropped until the next offer; (2) `seat_lost` is on `.c` (a reload forgets it —
       harmless: the next switch re-procures).
 
+### 0.1 Live LinkDevice run, 2026-09-28 evening (940f "Lump" → incognito 975a "Inco") — three faults seen
+
+1. **A crash un-issues a link serial, and the re-mint reuses it.** Chrome crashed (all windows) around the
+    incognito tab's folder grant. 940f came back with `Idzeug:1,to:MyCave,next:2`, i.e. serial 2 never drawn,
+    so the old link knocked `hello_unknown` twice (19:14). The fresh link drew serial 2 AGAIN — same canon
+     `1.2`, same deterministic presig ⇒ the pre-crash link became valid again. Harmless here; wrong in
+      principle. Suspect: the draw's `Swarm_iz_mark` → House stash is debounced (Housing.svelte.ts ~430,
+       AMBIENT_MAIN_TICK_MS) and/or IndexedDB lost the tail in the crash. Want: the draw durable before the link
+        is shown, or serials never reissued (e.g. bump `next` past any serial ever SHOWN).
+2. **The ceremony stalled with the Link cell drawn as a minicell** ("just says Link"). The incognito load at
+    ~19:19–19:25 never sent `pier_hello` (940f heard nothing between minting 19:19:23 and 19:26:12); the
+     "become them?" consent lives inside LinkFace, which rendered in its `small` pose, so there was nothing
+      to press. Every cell navigated to stayed small. A reload drew it big and the knock went through. NOT
+       root-caused: two writers stamp `.c.pose` on the same particle — Sounditron.g ~989/999 (Vyto commission)
+        and Cellui.svelte 646/723 — a race between them fits, unproven.
+3. **Half-linked after reloads.** 940f's /Crew lists 975a as a cert Cave (sealed MyCave link pier, Body
+    post:Cave). 975a is still ITS OWN soul ("Inco", Captain of a crew of one) holding 940f only as a FRIEND
+     pier (Grant:Music both ways) — its "landed my Grant:Crew … I am crew" at 19:26:12 did not survive its
+      reload ("crew rehydrated — 1 mate"). 940f logged "awaiting my confirm on its pier … before I send" —
+       the soul was never ferried (the "give my soul" press on 940f). After both tabs reloaded (~21:17) NEITHER
+        holds a Ferry req, so the ceremony will not resume by itself. Want: one side's durable twin must either
+         resume or fold BOTH sides (940f should not keep calling 975a its Cave).
+
 ## 1. What the code actually does today (read, not guessed — Swarm.g, SwarmTesting.g)
 
 **LinkDevice ("Division", the ferry ceremony) does not create a second, distinguishable identity — it

@@ -529,11 +529,14 @@ const TREE_CACHE = '.tree_index.json'   // the persisted git-tree manifest, besi
 
 // mount_lazy_github_nav — the lazy twin of mount_opfs_github_nav.  Returns immediately after ONE
 //  Trees call; nothing else is fetched until something reads it.
-export async function mount_lazy_github_nav(src: GithubSource): Promise<LazyGithubNav> {
+//  `seed_only`: the caller keeps its writes elsewhere (AppTreeNav → the share's `.jamsend/wormhole/`), so
+//   reads skip OPFS scratch too — an older session's scratch (a 1-step Sounditron, say) must not
+//    silently shadow the real Book from then on.
+export async function mount_lazy_github_nav(src: GithubSource, o: { seed_only?: boolean } = {}): Promise<LazyGithubNav> {
     const bad = opfs_unavailable()
     if (bad) throw new Error(bad)
     const { seed, scratch } = await opfs_roots(src)
-    const nav = new LazyGithubNav(new OpfsOverlayNav(seed, scratch, `${src.owner}/${src.repo}@${src.ref}`), src, seed)
+    const nav = new LazyGithubNav(new OpfsOverlayNav(seed, o.seed_only ? seed : scratch, `${src.owner}/${src.repo}@${src.ref}`), src, seed)
     await nav.manifest()          // fail loudly here if the repo/ref is wrong, not on the first read
     return nav
 }

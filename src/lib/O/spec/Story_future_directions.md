@@ -342,3 +342,48 @@ Today's control flow is hand-authored twice over: the ghost C-like code, and the
 - How to bound the search so the optimiser never itself becomes the tax it removes (a hard candidate-count +
    `log()` when it clips, cf. §3's budget guard).
 - Cross-machine edges never collapse (network RTT, not schedule) — the algebra must mark and skip them.
+
+---
+
+## 5 — A missing Book is a failure; starting a new Book is an explicit act (owner, 2026-09-28)
+
+### The itch
+
+Today a Story run decides "new Book" by **absence**: `read_toc` comes back `not_found` twice
+ (`Story.svelte` ~1904, the re-ask-once guard) → `decode('')` → `run.sc.mode = step_count > 0 ? 'check' : 'new'`.
+  So "I couldn't find the fixture" and "this is a brand-new Book, record it" are the same code path. The
+   re-ask guard was already a patch over one clobber (2026-07-04: a proxy runner's `read_toc` raced the
+    editor's DirectoryListing and wrote a Step-less skeleton over a real fixture). It fixed the race, not
+     the ambiguity.
+
+Found live 2026-09-28 on a listener (940f, `App_todo.md §0.5`): a music page runs Book `Sounditron` at boot
+ from its own folder's `wormhole/`. That folder had lost/never had the real toc → 'new' → the page recorded
+  its own, and **saved only step 1** (`💾 Story/Sounditron (1 steps clean)`) even though the session walked on
+   and played. Next boot: that 1-step copy loads in 'check' mode, which plays only the recorded step count; the
+    radio's auto-press is at step 6 — so the page never starts music and the arrival gives up, with 27 friend
+     tracks sitting ready. A missing Book silently became a broken Book, and then a permanent one.
+
+### The shape
+
+1. **New is an argument, never an inference.** A runner starts a brand-new Book only when told to — e.g.
+    `become_book` / `?B=` carry an explicit `new:1` (and `runner_ask run <Book> --new`); the editor's "record
+     a new Book" button passes it. Without it, `mode` can only be 'check'.
+2. **Not found is a failure, loudly.** Without `new:1`, a toc `not_found` (after the existing confirm re-ask)
+    ends the run `failed` with `why:'book_not_found'` + the path it looked at — a red on a runner, a supervisor
+     line on a music page ("the app's Story copy is missing — <path>"). Never a silent recording.
+3. **An end-user page never records.** A humdinger (music page) runs its boot Book check-only, always: it has
+    no business writing fixtures into a listener's folder. `story_save` on a humdinger is a no-op (or goes to
+     a scratch path that is never read back as a fixture). This alone would have prevented the 940f trap.
+4. **A short copy is a failure too, not a quiet truncation.** If a Book declares its length (`run.sc.total` in
+    the Book, e.g. Sounditron's 8) and the toc found has fewer steps, that's `why:'book_short'` — don't play
+     the prefix and stop.
+
+### What it would touch (sketch)
+
+- `Story.svelte` ~1904–1915: the `not_found` branch → honour `run.c.new` / fail with `book_not_found`.
+- `become_book` / `Lies_runner_ask_recv` `run` op + `scripts/runner_ask.mjs run`: carry `new`.
+- `story_save`: gate on `!humdinger` (or `run.c.new`).
+- Every place that relies on "absence ⇒ new" today — the Books recorded fresh this month (SwarmBorrow,
+   MusuRadioAim) were all first runs by absence; they'd pass `--new` instead.
+- Separately, not Story's job but the same bite: autoplay on a humdinger shouldn't wait on `n >= 6`
+   (`Sounditron.g:3560`) at all — see `App_todo.md §0.5` "Owed".

@@ -280,6 +280,12 @@ Verify a Book by asking a LIVE runner to run it — not a headless boot.
      describes only this box's relay. The census broadcasts pings and sweeps: the relay spends
       an addr-less asker's `corr` on the FIRST ack, so one broadcast finds exactly one tab and
        only repeated rounds enumerate the flock (it can miss a wedged tab; it never invents one).
+ **⚠ djamsend is NOT remote** (owner, 2026-09-28): `https://djamsend.duckdns.org:9999/?I=<pub>` is Caddy in
+  front of THIS box's own `:9091` dev server (container `jamsend-dev`). Its music tabs sit on the local relay —
+   use the DEFAULT `RUNNER_URL` and address one with `--player=<pub>` (`minisnap`, `console`, `crew`, `dump`,
+    `reload`). The djamsend URL is unreachable from this container; don't try it. A music tab only answers once
+     DIAGNOSTIC-ARMED — the owner runs `localStorage.setItem('socklog','1')` in its DevTools and reloads (or
+      opens it once with `&socklog`). `runners` lists only armed players; a missing one isn't armed.
  A tab's ping ack carries a real `role` — `'runner'` or `'player'` (a music page answers `player`;
   `LiesLies` stamps it at the one place a role is ever stamped, and `runner_ask` filters on the ack's own
    value, so a player is never dispatched a Book; the transition is one-way). `supervisor`'s `humdinger`

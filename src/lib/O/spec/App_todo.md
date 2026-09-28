@@ -39,6 +39,75 @@ The open threads seen across the §0s, each with the doc that owns it:
 - **Radio_circuit §9.9 rulings** owed: `unseen`/attention, the listing on `take_got`, `take_off`.
 - **`ProtoFsaNav`** (`Love_todo.md §0.0`): local music without FSA — planned, no code.
 
+## 0.5 Storage basics — where a tab's files actually live (written 2026-09-28, after 940f never auto-started)
+
+Every tab reads and writes "the wormhole" through ONE object: `A:Wormhole`'s `A.c.nav`, a **MountNav**
+ (`src/lib/O/MountNav.svelte.ts`) — a base directory plus mounts, longest-prefix wins. What the base is, and
+  what gets mounted over it, depends on who the tab is:
+
+| tab | base | `wormhole/` (Books, Story fixtures, traces) comes from |
+|---|---|---|
+| developer / editor | the share IS the repo checkout | the repo, on disk — edits land in git's working tree |
+| listener with a music folder (FSA grant, e.g. 940f's `testmusicshare`) | their music folder | **either** the folder's own `wormhole/` if one exists, **or** the app's tree from GitHub (below) |
+| no folder (phone, "listen only") | an empty MountNav | nothing of their own; pool only |
+
+Other mounts on top of any base: `pool/` → browser storage (OPFS, the SoundPool — `Wormhole_mount_pool`);
+ `.jamsend/account` + `.jamsend/identities` → a separately granted credentials folder if there is one
+  (`Wormhole_mount_creds`); `.jamsend/radiostock` and `.jamsend/berth` stay on the base, beside the music.
+
+**How a listener gets the app's own tree** (`Housing.svelte.ts` `Wormhole_compose_app_tree`,
+ `MountNav.svelte.ts` `app_tree_decision`, `WormholeOpfs.svelte.ts` `mount_lazy_github_nav`): once per grant,
+  if the folder's expanded root lists directories and **none is named `wormhole`**, the app mounts
+   `stylehouse/jamsend@main` from GitHub at `wormhole/`. It's lazy — one git-trees call, then a file is fetched
+    only when read, cached in OPFS ("seed"). **Writes go to `<folder>/.jamsend/wormhole/`** on the person's own
+     disk (`AppTreeNav`, since 2026-09-28 — before that they went to an OPFS "scratch" layer, which is now
+      ignored), and reads try that first, so anything the app saves there shadows the GitHub version. The
+       mount stands in the SAME tick as the verdict; reads that miss `.jamsend/wormhole` wait for GitHub
+        rather than answering "no Book". Note it
+      follows GitHub `main`, not this box's working tree: an unpushed fixture change never reaches a listener.
+       If the root DOES list a `wormhole` directory, the verdict is 'share' and nothing is mounted — the folder's
+        own `wormhole/` is used, whatever it holds.
+
+**What a music page does with it at boot:** it runs Book `Sounditron` from `wormhole/Story/Sounditron/toc.snap`.
+ Toc not found (confirmed by a second read) → mode **'new'**: it records, and saves whatever steps it reaches.
+  Toc found → mode **'check'**: it plays **only as many steps as the toc recorded**. The radio's auto-start
+   press lives at step 6 (`Sounditron.g:3560`, `n >= 6`), so **a toc with fewer than 6 steps means the radio
+    never starts on its own** and the arrival screen gives up ("nothing has started playing...") — even with
+     plenty of friend music landed.
+
+**THE TRAP (found live 2026-09-28, 940f; FIXED same day by `AppTreeNav` — the history is kept because it explains
+ any folder still carrying a stray `wormhole/`):** the app itself writes into `wormhole/` on the listener's folder —
+ traces (`wormhole/_trace/…`), Story saves. So a plain music folder *acquires* a `wormhole/` directory, and
+  from the next boot on the verdict is 'share': the GitHub tree is never mounted again, and whatever partial
+   Story the folder once saved is final. 940f's `testmusicshare` held a **1-step** Sounditron (`the_steps=1`;
+    Grav's has 8) — some earlier boot saved only step 1 — so 940f loaded, pulled 27 playable tracks from Grav,
+     and never pressed play. **Remedy for a stuck listener — and why the obvious one only half-works** (tested live on 940f, 2026-09-28):
+ deleting just `wormhole/Story/Sounditron/` DOES get the radio playing — the toc is gone, so the run goes
+  'new', walks its steps and reaches the press — but it does NOT fetch the canonical Book (the folder still
+   has a `wormhole/`, so GitHub is never mounted): it **invents a local recording**, and what it saved was
+    again `Story/Sounditron (1 steps clean)` — nothing past step 1 got written. So the **next reload is stuck
+     again**. This is very likely how 940f got its 1-step copy in the first place. The durable remedy is to
+      delete the **whole** `<folder>/wormhole/`: the next boot then mounts the GitHub tree (canonical 8 steps,
+       check mode), and the app's own writes land in OPFS scratch instead of the folder, so it stays that way.
+        (If the folder had NO `wormhole/` and it's still stuck, the short copy is in OPFS scratch — clear the
+         site's storage, which also empties the SoundPool.) The real fix is in Story, not here:
+          `Story_future_directions.md §5`.
+
+**Why it kept coming back even after deleting `wormhole/`:** the GitHub mount was async (one git-trees
+ call), and a write landing in that window (a socklog `_trace` dump) went through to the base and re-created
+  `<folder>/wormhole/_trace/…`. Owner: *"we should not make wormhole/ in music collections."* Now the mount
+   (`.jamsend/wormhole` for writes + GitHub for reads) stands synchronously with the verdict, so no write can
+    reach `<folder>/wormhole/`. Tests: `scripts/MountNav.spec.ts` `AppTreeNav`.
+
+**Owed (not done):**
+- autoplay on an end-user page (humdinger) must not depend on a fixture's step count — let the press retry at
+   any step there;
+- the 'share' verdict should need the app's own evidence (e.g. a `wormhole/Story/Sounditron/toc.snap`), not
+   merely a directory named `wormhole` — or MountNav should fall through to the GitHub tree for files the
+    share lacks;
+- a short/partial saved fixture on a listener should be detectable (a supervisor line: "your Story copy has
+   N of 8 steps").
+
 ## 1. The person and their bodies
 
 **A person is a soul: one signing key.** `%Identity,prepub:<eed…>` owns its keys as particles —

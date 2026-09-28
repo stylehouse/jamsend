@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'f3039605dab720b1~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '02b20184da27c5f1~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1563,6 +1563,7 @@ Radio_aim_set(n, pub) {
     let radio = n
     if (!w || !radio || !radio.sc) { return '' }
     let want = String(pub || '')
+    if (want !== String(radio.sc.aim || '')) { this.Radio_queue_clear(radio) }
     if (!want) {
         if (radio.sc.aim) { delete radio.sc.aim }
         if (radio.sc.aim_by) { delete radio.sc.aim_by }
@@ -2364,6 +2365,24 @@ Radio_source_toggle(radio) {
     } else {
         radio.sc.own = 1
     }
+    // the standing order and its primes flip with the source: they name a record from the OTHER
+    //  side of the exclusivity rule, so keeping them would spend the next seam on a stale pick.
+    this.Radio_queue_clear(radio)
+    radio.c.ready = null
+    radio.c.ready_fin = null
+    delete radio.sc.note
+    delete radio.sc.solo
+    delete radio.sc.solo_by
+    radio.bump()
+
+},
+// Radio_queue_clear — drop what is QUEUED (Lineup cards + the Streams standing order), not what plays.
+//  Any change of source makes the queue a lie: it was drawn under the old choice.  Found live
+//   2026-09-28 (owner: "eed setting its source to Incog doesn't restrict to that source") — switching
+//    from one friend to another left up to 20 lineup cards from everybody standing, and the dial eats
+//     the lineup head first, so the pick showed for a track or twenty before it did anything.
+Radio_queue_clear(radio) {
+    let w = radio.c.w
     let lu = w ? w.o({ Mag: 'Lineup' })[0] : null
     if (lu) {
         for (const c of lu.o({ Card: 1 })) lu.drop(c)
@@ -2371,19 +2390,11 @@ Radio_source_toggle(radio) {
         lu.sc.up_next = '0'
         lu.bump()
     }
-    // the standing order and its primes flip with the source: they name a record from the OTHER
-    //  side of the exclusivity rule, so keeping them would spend the next seam on a stale pick.
     let stg = w ? w.o({ Mag: 'Streams' })[0] : null
     if (stg) {
         for (const c of stg.o({ Card: 1 })) stg.drop(c)
         stg.bump()
     }
-    radio.c.ready = null
-    radio.c.ready_fin = null
-    delete radio.sc.note
-    delete radio.sc.solo
-    delete radio.sc.solo_by
-    radio.bump()
 
 },
 //#region lineup — the STANDING PROGRAMME: a rolling %Mag the radio plays through
@@ -2556,6 +2567,17 @@ Radio_lineup_fill(w, radio) {
             if (frecs.length) pools.push({ key: hp, recs: frecs })
         }
         this.Radio_lineup_errors(w, lu, pools, stats)
+        // THE AIM NARROWS THE PROGRAMME TOO (2026-09-28).  Radio_dial_pool always honoured the aim, but the
+        //  lineup — which the dial consumes FIRST — round-robined every friend regardless, so a picked
+        //   source barely showed.  Same stance as Radio_dial_pool: the aimed holder alone while it has
+        //    anything to give, everybody (the old draw) once it is dry, so a friend going quiet still hands
+        //     the radio on rather than stranding it.  Errors above are counted before this, so a dry
+        //      non-aimed friend still gets its honest row.
+        let aimk = radio ? String(radio.sc.aim || '') : ''
+        if (aimk) {
+            let only = pools.filter((p) => p.key === aimk)
+            if (only.length) { pools = only }
+        }
         // FALL BACK TO SP WHEN NO FRIEND YIELDS ANYTHING (2026-09-23, owner ruling on Option 2:
         //  "yeah fall back to SP I guess"). Every friend still gets their own precise %error row
         //   above (why they're dry) — this is the SEPARATE, Lineup-wide fact that the QUEUE ITSELF

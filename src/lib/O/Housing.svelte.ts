@@ -5,7 +5,7 @@ import { DirectoryListing, FileSystemHandler } from "$lib/O/Filesystem.svelte";
 import { now_in_seconds_with_ms } from "$lib/Common";
 import { grap, grep, tex, throttle } from "$lib/Common"
 import { mount_opfs_github_nav, mount_lazy_github_nav, mount_opfs_pool_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
-import { MountNav, app_tree_decision } from "./MountNav.svelte.ts";
+import { MountNav, AppTreeNav, app_tree_decision } from "./MountNav.svelte.ts";
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 // concat_chunks — join a file's reader chunks into ONE ArrayBuffer in a single linear pass.
@@ -2598,26 +2598,31 @@ export class House extends StorableHousing {
         A.c.app_tree_checked = true
         if (verdict !== 'mount') return
 
-        A.c.app_tree = 'mounting'
+        // STAND IT NOW, in this tick (AppTreeNav, MountNav.svelte.ts): writes go to the share's own
+        //  `.jamsend/wormhole/` from this instant, and reads that miss there wait for the cloud.  The old
+        //   shape mounted only when github answered, and a write in that window created
+        //    `<music>/wormhole/` — which flipped every later boot to 'share' (the 940f stall).
         // LAZY, not the eager seed (the owner, 2026-08-12): *"just the Sounditron toc.snap needs
         //  downloading initially, each step may only download if it wants diffing."*  One git Trees
         //   call indexes the repo and then listing is free; a blob is fetched only when something
-        //    actually reads it.  So this resolves in one request instead of several hundred, and a
-        //     Story walk that never opens a step never pays for it.
-        mount_lazy_github_nav(JAMSEND_SOURCE)
+        //    actually reads it.
+        //  `seed_only`: OPFS scratch is no longer where this app's writes live, so an older session's
+        //   scratch must not shadow the Book.  The cloud is a checkout of the repo, so its books sit at
+        //    `wormhole/Story/…` inside it — AppTreeNav's `lower_at` puts that prefix back.
+        A.c.app_tree = 'mounting'
+        const cloud = mount_lazy_github_nav(JAMSEND_SOURCE, { seed_only: true })
             .then(nav => {
-                // `inner:'wormhole'` because the seeded tree is a checkout of the repo — its books live
-                //  at `wormhole/Story/…` INSIDE it, so the mount maps the path onto itself, through a
-                //   different disk.  Without it every Book read would ask the cloud for `Story/…`.
-                mn.mount('wormhole', nav, { inner: 'wormhole', label: 'app tree (cloud)' })
                 A.c.app_tree = 'mounted'
                 H.main(true)
+                return nav
             })
             .catch(err => {
-                // a failed seed leaves the share exactly as it was: no Books, but nothing broken, and
-                //  the person still has their music.  Say it out loud rather than retry blindly.
+                // a failed seed leaves writes where they belong and reads with no Books: nothing
+                //  broken, and the person still has their music.  Say it out loud rather than retry.
                 A.c.app_tree = 'failed'; A.c.app_tree_error = String(err); H.main(true)
+                return null
             })
+        mn.mount('wormhole', new AppTreeNav(mn.base, '.jamsend/wormhole', cloud, 'wormhole'), { label: 'app tree (.jamsend/wormhole + cloud)' })
     }
 
     // Wormhole_mount_creds — point the two keyed paths at the credentials folder, if one was granted.
