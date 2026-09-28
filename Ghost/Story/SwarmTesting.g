@@ -5167,13 +5167,14 @@ SwarmBorrow_note(w, sc):
 
 async SwarmBorrow_drive(w, req):
     let run = (this.c.run)
-    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 4 }
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 5 }
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) await this.SwarmBorrow_stand(w)
         if (n === 3) await this.SwarmBorrow_loan(w)
         if (n === 4) await this.SwarmBorrow_slot(w)
+        if (n === 5) await this.SwarmBorrow_lendbeat(w)
     }
     this.SwarmBorrow_witness(w)
     await this.SwarmBorrow_order(w)
@@ -5270,15 +5271,19 @@ async SwarmBorrow_slot(w):
     let caveRib = await lend(cave.pub, 900)
     let lent = ok(CAVE, 1751700100) && !ok(CAP, 1751700100)
     if (before && lent) row.one_seat = 1
-    // #2 newest wins: a later loan to Mallory logs the Cave out; replaying the older Cave loan can't retake it.
+    // #2 newest PRESENTATION wins: Mallory presenting her loan logs the Cave out; Mallory presenting the
+    //  Cave's loan is refused (only the borrower can present it); the Cave re-presenting its own retakes the seat.
     w.sc.now = 1751700200
-    await lend(mal.pub, 900)
+    let malRib = await this.Swarm_mint_borrow(w, w.c.captain.ident, w.c.grant, String(mal.pub), 900)
+    await this.Swarm_borrow_heard(w, F, { kind: 'borrow', loan: malRib }, MAL)
     let moved = ok(MAL, 1751700200) && !ok(CAVE, 1751700200)
-    await this.Swarm_borrow_heard(w, F, { kind: 'borrow', loan: caveRib })
-    let held = ok(MAL, 1751700200) && !ok(CAVE, 1751700200)
-    if (moved && held && pier.o({ Loan: 1 }).length === 1) row.newest_wins = 1
+    await this.Swarm_borrow_heard(w, F, { kind: 'borrow', loan: caveRib }, MAL)
+    let refused = ok(MAL, 1751700200) && !ok(CAVE, 1751700200)
+    await this.Swarm_borrow_heard(w, F, { kind: 'borrow', loan: caveRib }, CAVE)
+    let retook = ok(CAVE, 1751700200) && !ok(MAL, 1751700200)
+    if (moved && refused && retook && pier.o({ Loan: 1 }).length === 1) row.newest_wins = 1
     // #3 lapse + take-back: past exp the soul is served again with nothing sent; lending to itself ends a loan early.
-    let lapsed = ok(CAP, 1751701101) && !ok(MAL, 1751701101)
+    let lapsed = ok(CAP, 1751701101) && !ok(CAVE, 1751701101)
     w.sc.now = 1751700300
     await lend(cave.pub, 900)
     let relent = ok(CAVE, 1751700300)
@@ -5293,6 +5298,75 @@ async SwarmBorrow_slot(w):
     if (!took && w.c.captain.ident.o({ rebuff: 'borrow_not_my_grant' }).length > before_rebuffs) row.own_grant_only = 1
     this.SwarmBorrow_note(w, row)
 
+
+// beat 5 — THE AUTO-LEND and THE SWITCH (owner 2026-09-28).  The Captain holds a sealed-shape friendship
+//  with Friend (Grant:Music by Friend FOR the Captain); the Cave is a body on the Captain's roster heard
+//   just now, and its own ledger names the Captain's soul with itself as a Cave.  Frames cross the in-process
+//    mail wire (Swarm_sibling_reach / Swarm_deliver → Swarm_pump), exactly the Book road the rest of the file uses.
+async SwarmBorrow_lendbeat(w):
+    w i reached:step_5
+    if (!w.c.grant) return
+    let now = 1751702000
+    w.sc.now = now
+    let C = w.c.captain.ident
+    let V = w.c.cave.ident
+    let F = w.c.friend.ident
+    let cap = w.c.captain.keys
+    let cave = w.c.cave.keys
+    let fr = w.c.friend.keys
+    let FR = String(fr.prepub)
+    let cp = this.Swarm_peering(C)
+    let cpier = cp.oai({ Pier: 1, pub: FR })
+    cpier.c.up = cp
+    let cpg = cpier.oai({ Peering: 1, pub: String(fr.pub) })
+    cpg.c.up = cpier
+    if (!cpier.o({ Grant: 'Music' })[0]) { let g = grant_to_C(cpier, grant_of_C(w.c.grant)); g.c.up = cpier }
+    let body = this.Swarm_body_note(C, String(cave.pub), 'Cave', String(V.sc.prepub), 'Cave')
+    body.sc.heard = String(now - 5)
+    let vcrew = V.o({ Crew: 1 })[0]
+    vcrew.sc.soul = String(cap.pub)
+    let vrow = vcrew.o({ mate: String(V.sc.prepub) })[0]
+    if (vrow) { vrow.sc.role = 'Cave' }
+    this.Swarm_peering(V).sc.online = 1
+    this.Swarm_peering(F).sc.online = 1
+    this.Swarm_peering(C).sc.online = 1
+    let row = { lent: 1 }
+    // #1 every online Cave gets a loan per friend; not re-sent while fresh; renewed under 10 minutes left
+    //  (the Cave still being heard — an offline Cave is not renewed, and the loan just lapses).
+    let sent = await this.Swarm_lend_beat(w, C, now)
+    await this.Swarm_pump(w, V)
+    let b = this.Swarm_borrowing(V, FR)
+    let again = await this.Swarm_lend_beat(w, C, now + 60)
+    body.sc.heard = String(now + 3095)
+    let renew = await this.Swarm_lend_beat(w, C, now + 3100)
+    await this.Swarm_pump(w, V)
+    if (sent === 1 && again === 0 && renew === 1 && b && +b.sc.exp > now) row.online_caves_lent = 1
+    // #2 the Cave's menu lists the Captain's friend: live now, needing the Captain once the loan lapses.
+    let live = this.Swarm_borrow_sources(V, now).find((x) => x.of === FR)
+    let old = this.Swarm_borrow_sources(V, now + 7300).find((x) => x.of === FR)
+    if (live && +live.live === 1 && old && +old.live === 0 && !this.Swarm_borrow_sources(C, now).length) row.menu_needs_captain = 1
+    // #3 switching presents the Cave's own loan and the friend seats it; a lapsed loan sends nothing.
+    let got = this.Swarm_borrow_use(w, V, FR)
+    await this.Swarm_pump(w, F)
+    let seated = got === 'seated' && this.Swarm_slot_granted(F, String(V.sc.prepub), now) && !this.Swarm_slot_granted(F, String(cap.prepub), now)
+    w.sc.now = now + 7300
+    let got2 = this.Swarm_borrow_use(w, V, FR)
+    w.sc.now = now
+    if (seated && got2 === 'needs_captain') row.switch_seats = 1
+    // #4 the one it displaced is TOLD: the Captain (the seat before) gets seat_lost, stops pulling from them,
+    //  and switching back clears it and takes the seat home.
+    await this.Swarm_pump(w, C)
+    let told = !!(C.c.seat_lost && C.c.seat_lost[FR]) && !this.Swarm_share_present_of(C, FR)
+    let back = this.Swarm_borrow_use(w, C, FR)
+    let cleared = !(C.c.seat_lost && C.c.seat_lost[FR])
+    if (C.c.borrow_p) { await C.c.borrow_p }
+    await this.Swarm_pump(w, F)
+    let home = this.Swarm_slot_granted(F, String(cap.prepub), now) && !this.Swarm_slot_granted(F, String(V.sc.prepub), now)
+    await this.Swarm_pump(w, V)
+    let caveTold = !!(V.c.seat_lost && V.c.seat_lost[FR])
+    if (told && back === 'own' && cleared && home && caveTold) row.displaced_told = 1
+    this.SwarmBorrow_note(w, row)
+
 // ── the witness — %sworn gated on TRUTH not beat number (no commas; em-dashes) ──
 SwarmBorrow_witness(w):
     let n = (this.c.run)?.c.step_n
@@ -5301,22 +5375,31 @@ SwarmBorrow_witness(w):
     let f = T.o({ loaned: 1 })[0]
     if (!f) return
     if (+f.sc.winner_fixed === 1)
-        this.story_swear(w, 'a borrowed grant never changes who won it — the loan always names the original bearer as winner, never the Cave presenting it')
+        this.story_swear(w, 'a borrowed grant never changes who won it — the loan always names the original bearer as winner and never the Cave presenting it')
     if (+f.sc.mint_gated === 1)
         this.story_swear(w, "only the grant's own bearer may lend it — a body that does not hold the grant cannot mint a loan off it")
     if (+f.sc.sign_gated === 1)
-        this.story_swear(w, "a forged loan around a real grant is refused — the outer signature must be the grant's own bearer, never a borrower or a stranger")
+        this.story_swear(w, "a forged loan around a real grant is refused — the outer signature must be the grant's own bearer and never a borrower or a stranger")
     if (+f.sc.exp_gated === 1)
         this.story_swear(w, 'a borrowed grant expires on its own — checked past its TTL the loan is refused with no revocation needed')
     let sl = T.o({ slotted: 1 })[0]
     if (sl && +sl.sc.one_seat === 1)
         this.story_swear(w, 'one friendship serves one seat — lent to a Cave the soul address is refused until the loan ends')
     if (sl && +sl.sc.newest_wins === 1)
-        this.story_swear(w, 'a newer loan takes the seat — the previous borrower is logged out and a replayed older loan cannot take it back')
+        this.story_swear(w, 'a newer presentation takes the seat — the previous borrower is logged out and only the borrower itself can present its loan')
     if (sl && +sl.sc.lapse_returns === 1)
         this.story_swear(w, 'a lapsed loan hands the seat back to the Captain with nothing sent — and lending to itself ends a loan early')
     if (sl && +sl.sc.own_grant_only === 1)
         this.story_swear(w, 'a friend only honours a loan of a grant it issued itself — a loan of anyone else is refused')
+    let lb = T.o({ lent: 1 })[0]
+    if (lb && +lb.sc.online_caves_lent === 1)
+        this.story_swear(w, 'while the Captain is online every online Cave holds its own loan per friend — renewed before it lapses and not re-sent while fresh')
+    if (lb && +lb.sc.menu_needs_captain === 1)
+        this.story_swear(w, "a Cave lists its Captain's friends — live while its loan stands and needing the Captain once it lapses")
+    if (lb && +lb.sc.displaced_told === 1)
+        this.story_swear(w, 'whoever loses the seat is told it was logged out and stops pulling from that friend — switching back takes the seat home')
+    if (lb && +lb.sc.switch_seats === 1)
+        this.story_swear(w, "switching to a friend presents the Cave's own loan and the friend seats it — a lapsed loan sends nothing and says the Captain must come online")
 
 // SwarmBorrow_order — float A:SwarmBorrow to the front of H/* so the Run snap stays readable.
 async SwarmBorrow_order(w):

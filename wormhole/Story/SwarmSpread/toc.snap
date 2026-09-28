@@ -4,9 +4,7 @@ story:SwarmSpread
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.161
-      sample=0.059,at=1788871155
-      sample=0.042,at=1788871163
+    TimeTotal:beliefs,avg=0.158
       sample=0.129,at=1789081478
       sample=0.369,at=1789116479
       sample=0.091,at=1789118201
@@ -15,9 +13,9 @@ story:SwarmSpread
       sample=0.071,at=1789625491
       sample=0.546,at=1789897693
       sample=0.13,at=1790335706
+      sample=0.037,at=1790546401
+      sample=0.039,at=1790546825
     TimeTotal:step,avg=0.032
-      sample=0.012,at=1788871155
-      sample=0.008,at=1788871163
       sample=0.026,at=1789081478
       sample=0.074,at=1789116479
       sample=0.018,at=1789118201
@@ -26,6 +24,8 @@ story:SwarmSpread
       sample=0.014,at=1789625491
       sample=0.109,at=1789897693
       sample=0.026,at=1790335706
+      sample=0.007,at=1790546401
+      sample=0.008,at=1790546825
   step,dige:04719603a51e3f2a
   step=2,dige:020dc4c31cfd085d
     Assertion:every-identity-is-born,sentence:every identity is born a crew of one — its key is a particle on /Crew not a runtime field — it wields its own key until a ledger says otherwise

@@ -295,7 +295,7 @@
                 <div class="rf-menu">
                     {#each sources.filter((x: any) => !x.own) as s}
                         <button class="rf-menu-row" class:rf-menu-on={s.aimed && face.source !== 'pool' && !face.own} onclick={() => aim_to(s.pub)}
-                            title={s.live ? 'online now' : 'not heard from lately — the dial will pass over them'}>
+                            title={s.needs_captain ? 'borrowed through your Captain — your Captain needs to come online to reach them' : s.borrow ? 'borrowed through your Captain — choosing takes the one seat, logging out anyone else in your crew listening to them' : s.live ? 'online now' : 'not heard from lately — the dial will pass over them'}>
                             <span class="rf-menu-dot" class:rf-menu-live={s.live}>●</span><span class="rf-menu-name">{s.name || s.pub.slice(0, 8)}</span><span class="rf-menu-n">{s.tracks}</span>
                         </button>
                     {/each}

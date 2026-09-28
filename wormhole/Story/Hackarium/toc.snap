@@ -4,9 +4,7 @@ story:Hackarium
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.316
-      sample=1.194,at=1790112647
-      sample=0.202,at=1790119961
+    TimeTotal:beliefs,avg=0.279
       sample=0.132,at=1790194564
       sample=0.4,at=1790195955
       sample=0.379,at=1790220441
@@ -15,9 +13,9 @@ story:Hackarium
       sample=0.15,at=1790237618
       sample=0.175,at=1790373599
       sample=0.266,at=1790407085
-    TimeTotal:step,avg=0.316
-      sample=1.194,at=1790112647
-      sample=0.202,at=1790119961
+      sample=0.301,at=1790458848
+      sample=0.727,at=1790545078
+    TimeTotal:step,avg=0.279
       sample=0.132,at=1790194564
       sample=0.4,at=1790195955
       sample=0.379,at=1790220441
@@ -26,4 +24,6 @@ story:Hackarium
       sample=0.15,at=1790237618
       sample=0.175,at=1790373599
       sample=0.266,at=1790407085
+      sample=0.301,at=1790458848
+      sample=0.727,at=1790545078
   step,dige:29c7975b74f8b5f9,desc:the wire — one spine and its carriers — the relay in the middle — the cluster channel the editor and its runners ride

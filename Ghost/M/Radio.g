@@ -1432,6 +1432,19 @@ Radio_sources(w, radio):
         out.push(row)
     }
     out.sort((a, b) => (b.live - a.live) || (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0)))
+    // BORROWABLE FRIENDS (GrantBorrowing): a Cave lists its Captain's friends too — reachable by presenting a
+    //  loan when chosen.  One with a live loan reads as a normal (empty-until-seated) row; one without says
+    //   the Captain must come online.  A crate row already standing for the same friend just gets the flag.
+    let bself = this.Swarm_live_self ? this.Swarm_live_self() : null
+    let brows = (bself && this.Swarm_borrow_sources) ? this.Swarm_borrow_sources(bself) : []
+    for (const br of brows) {
+        let hit = out.find((r) => r.pub === br.of)
+        if (hit) { if (!br.live) { hit.needs_captain = 1; hit.live = 0 }; continue }
+        let row = { pub: br.of, name: br.name, tracks: 0, live: br.live, borrow: 1 }
+        if (!br.live) { row.needs_captain = 1 }
+        if (aim && (br.of.startsWith(aim) || aim.startsWith(br.of))) { row.aimed = 1 }
+        out.push(row)
+    }
     // YOUR OWN SHELF IS A PLACE TO LISTEN FROM TOO (the owner 2026-09-06: *"LOCAL isn't in the source list —
     //  only friends and any friend and soundpool"*).  The dial has had an own rung behind sc.own all along
     //   (Radio_source_toggle flips it), but the chooser was built from %Theirs crates only, so a listener
@@ -1519,6 +1532,17 @@ Radio_aim_set(n, pub):
     if (nice) { radio.sc.aim_by = nice } else if (radio.sc.aim_by) { delete radio.sc.aim_by }
     if (radio.sc.source) { delete radio.sc.source }
     if (radio.sc.note) { delete radio.sc.note }
+    // SWITCHING TO A FRIEND PROCURES THE SEAT (GrantBorrowing, owner 2026-09-28: "when you switch sources it'll
+    //  procure the Borrow and kick another Cave ... it can also indicate your Captain needs to come online to
+    //   reach such source").  A Cave presents its loan (the friend seats it, logs the last one out, casts it
+    //    the catalog at once); the Captain takes a lent seat back; a Cave with no live loan is told why.
+    //  Live-only: a Book world has no live self, so nothing here moves a fixture.
+    let bself = this.Swarm_live_self ? this.Swarm_live_self() : null
+    let bw = bself && this.Swarm_station_world ? this.Swarm_station_world() : null
+    if (bself && bw && this.Swarm_borrow_use) {
+        let got = this.Swarm_borrow_use(bw, bself, want)
+        if (got === 'needs_captain') radio.sc.note = this.Radio_clean('your Captain needs to come online to reach ' + (nice || want.slice(0, 8)))
+    }
     radio.bump()
     this.Radio_choice_keep(radio)
     console.log('📻 listening with ' + (nice || want.slice(0, 8)))

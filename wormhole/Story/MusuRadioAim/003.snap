@@ -11,7 +11,7 @@ Snap:H
           reached:step_3
           joined,own_took_again,wish_left_own_behind
         Radio,name:on-air,aim:friendpub2,aim_by:friendpu,note:nobody online yet — connect a friend to hear their music
-        Mine,pub:e747cbed6a9ca919
-          stock,pub:e747cbed6a9ca919
+        Mine,pub:radioaim
+          stock,pub:radioaim
         Stoker:idle,face:Stoker,crew:Radio
         Mag:Lineup,face:Lineup,crew:Radio

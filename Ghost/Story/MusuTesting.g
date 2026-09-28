@@ -3514,6 +3514,9 @@ MusuRadioAim_note(w, sc):
     return n
 
 async MusuRadioAim_drive(w, req):
+    // PIN MY OWN PUB (Radio_pub's world pin): beat 3's un-awaited Radio_dial mints my own shelf, which
+    //  otherwise keys by whichever runner tab ran it — the fixture went red on every other tab.
+    w.c.ra_pub = 'radioaim'
     let run = (this.c.run)
     if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 3 }
     let n = run?.c.step_n
