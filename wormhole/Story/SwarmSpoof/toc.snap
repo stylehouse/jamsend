@@ -4,8 +4,7 @@ story:SwarmSpoof
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.028
-      sample=0.023,at=1784714539
+    TimeTotal:beliefs,avg=0.033
       sample=0.018,at=1785075867
       sample=0.018,at=1785075875
       sample=0.011,at=1785075883
@@ -15,8 +14,8 @@ story:SwarmSpoof
       sample=0.082,at=1786519027
       sample=0.035,at=1786521317
       sample=0.021,at=1789116465
-    TimeTotal:step,avg=0.006
-      sample=0.006,at=1784714539
+      sample=0.074,at=1790655528
+    TimeTotal:step,avg=0.007
       sample=0.004,at=1785075867
       sample=0.004,at=1785075875
       sample=0.002,at=1785075883
@@ -26,6 +25,7 @@ story:SwarmSpoof
       sample=0.016,at=1786519027
       sample=0.007,at=1786521317
       sample=0.004,at=1789116465
+      sample=0.015,at=1790655528
   step,dige:e459d5a3175f7c10
   step=2,dige:4430cab54baeac2a
   step=3,dige:f291c16ceba3689c

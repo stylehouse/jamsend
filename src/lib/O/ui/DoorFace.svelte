@@ -418,6 +418,15 @@
     //     already drive this component), defaulting to `big` so any glass that does not pose its
     //      cells gets exactly today's face.
     let pose = $derived.by(() => { void H?.version; void tick; return String(n?.c?.pose ?? 'big') })
+    // A LINK IN FLIGHT — the Door's "🔗 Link Device" becomes the way BACK to it (owner 2026-09-29: "it's hard to get
+    //  back to Link from Door, it should be more like '[Link] in progress'").  Read-only probes, ticked like pose.
+    let link_live = $derived.by(() => {
+        void H?.version; void tick
+        try {
+            const w = H?.Swarm_station_world?.() ?? null
+            return !!(w && (H?.Swarm_link_active?.(w) || H?.Swarm_ferry_pending?.(w)))
+        } catch { return false }
+    })
     let small = $derived(pose === 'small')
     // THE INVITE PANEL'S OPEN STATE IS GONE (2026-08-11) — `c.inviting`, `invite_set()` and the
     //  auto-open latch all went with the fold.  Worth its headstone because the flag was carefully
@@ -569,10 +578,17 @@
                 {#if face.prepub}
                     <!-- LINK A DEVICE — opens the Link ceremony as a BELLY CELL (owner 2026-08-29: "I want a
                          Cell").  Sounditron_link_open focuses %Link directly; you leave it by "no". -->
-                    <button class="df-linkdev" onclick={() => H?.Sounditron_link_open?.()}
-                        title="carry this account to another device — opens the Link Device cell, which you dismiss with “no”">
-                        🔗 Link Device
-                    </button>
+                    {#if link_live}
+                        <button class="df-linkdev live" onclick={() => H?.Sounditron_link_open?.()}
+                            title="a device link is in progress — go back to the Link cell">
+                            <span class="df-linkdev-chip">🔗 Link</span> in progress
+                        </button>
+                    {:else}
+                        <button class="df-linkdev" onclick={() => H?.Sounditron_link_open?.()}
+                            title="carry this account to another device — opens the Link Device cell, which you dismiss with “no”">
+                            🔗 Link Device
+                        </button>
+                    {/if}
                 {/if}
             </div>
             {#if face.family.length}
@@ -764,6 +780,12 @@
         font-size: 10px; color: #9a86b4;
     }
     .df-linkdev:hover { color: #d9a9ef; }
+    .df-linkdev.live { color: #e8d7f5; font-size: 11px; }
+    .df-linkdev-chip {
+        display: inline-block; padding: 1px 7px; border-radius: 999px;
+        border: 1px solid #b48fc9; background: rgba(180, 143, 201, 0.18); font-weight: 600;
+    }
+    .df-linkdev.live:hover .df-linkdev-chip { background: rgba(180, 143, 201, 0.35); }
     .df-edit {
         pointer-events: auto;
         cursor: pointer;

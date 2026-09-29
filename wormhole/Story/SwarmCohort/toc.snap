@@ -4,12 +4,14 @@ story:SwarmCohort
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.033
+    TimeTotal:beliefs,avg=0.026
       sample=0.021,at=1789118374
       sample=0.045,at=1789123241
-    TimeTotal:step,avg=0.005
+      sample=0.012,at=1790679487
+    TimeTotal:step,avg=0.004
       sample=0.003,at=1789118374
       sample=0.007,at=1789123241
+      sample=0.002,at=1790679487
   step,dige:0260ba620e595d67
   step=2,dige:8ac155e18ccea62d
     Assertion:the-roster-knows-vessa,sentence:the roster knows vessA and vessB as our own tabs — a stranger is no sibling

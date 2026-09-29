@@ -27,7 +27,7 @@
     //         stash, say so and offer the disk restore instead of the full soul-copy.
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
     import Bandwidth from "$lib/O/ui/micro/Bandwidth.svelte"
-    import { tick } from "svelte"
+    import { tick, untrack } from "svelte"
     // SvelteKit's shallow-router replaceState — raw history.replaceState warns ("will conflict with SvelteKit's
     //  router", owner 2026-08-31 console).  We only ever REWRITE this page's query/hash (drop ?Iz, pin ?I=), never
     //   navigate, so shallow replaceState is exactly right.  set_bar() is the one seam both the finalize + the
@@ -416,7 +416,9 @@
         //   the twin for its secret and re-parks ferry_confirm from the still-sealed Cave pier, so an eed
         //    refresh snaps straight back to "giving your soul" the instant reactivity ticks — not a blank cell.
         //     (poke self-guards on `ferrying` and needs a secret, so it's a no-op on the Linkee and mid-send.)
-        try { if (url || H?.Swarm_link_active?.(world())) H?.Swarm_ferry_poke?.(world()) } catch {}
+        //  UNTRACKED (2026-09-29): poke WRITES the ceremony phase (a particle bump) — read inside this effect it
+        //   made the effect depend on the version it bumps (see fire_ask).
+        try { if (url || H?.Swarm_link_active?.(world())) untrack(() => H?.Swarm_ferry_poke?.(world())) } catch {}
     })
     let giving = $state(false)
     async function do_confirm() {
@@ -449,7 +451,11 @@
     //  cheap re-assert + pump nudge, no longer a wire beacon.  force=true only means "pump now".
     function fire_ask(force: boolean) {
         // the ghost self-guards on the cave req's 'awaiting' phase — no pre-check needed here.
-        try { H?.Swarm_ferry_ask?.(world(), self, force) } catch {}
+        // UNTRACKED (2026-09-29): since W2 the ask BOOKS a %Reach — a particle mint + bump.  Called from an
+        //  $effect (mount pounce, presence pounce), that bump read+written inside the effect made it re-run
+        //   on its own write: `effect_update_depth_exceeded` the instant "I want linkage" was booked, and
+        //    the Link face fell back to its bare label.  A wire action is never a dependency.
+        try { untrack(() => H?.Swarm_ferry_ask?.(world(), self, force)) } catch {}
     }
     $effect(() => {
         if (typeof window === 'undefined') return

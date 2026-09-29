@@ -774,7 +774,14 @@
                      Link cell's `offer` phase (LinkDevice, driven by top.c.ferry_offer parked in the effect below);
                      the Door just shows a quiet handoff so nothing about becoming-a-body is decided amid the friends. -->
                 <span class="ip-title">🔗 a device link from <b>{invite.friendly || invite.prepub}</b></span>
-                <span class="ip-note">{joined || 'opening in the Link panel — you can become them there'}</span>
+                {#if joined}
+                    <span class="ip-note">{joined}</span>
+                {:else}
+                    <!-- a WAY THERE, not a promise (2026-09-29, owner: "hard to get back to Link from Door") -->
+                    <button class="ip-golink" onclick={() => H?.Sounditron_link_open?.()} title="go to the Link cell — you can become them there">
+                        <span class="ip-golink-chip">🔗 Link</span> in progress
+                    </button>
+                {/if}
             {:else if invite}
                 <span class="ip-title">📨 an invite from <b>{invite.friendly || invite.prepub}</b> — {invite.to}</span>
                 {#if !named}
@@ -1098,6 +1105,15 @@
         .ip-go { animation: none; }
     }
     .ip-note { font-size: 0.72rem; color: #889; max-width: 22rem; }
+    .ip-golink {
+        pointer-events: auto; cursor: pointer; background: none; border: none; padding: 0;
+        font: inherit; font-size: 0.8rem; color: #e8d7f5; text-align: left;
+    }
+    .ip-golink-chip {
+        display: inline-block; padding: 1px 7px; border-radius: 999px;
+        border: 1px solid #b48fc9; background: rgba(180, 143, 201, 0.18); font-weight: 600;
+    }
+    .ip-golink:hover .ip-golink-chip { background: rgba(180, 143, 201, 0.35); }
     /* the capability warning — warm amber, not alarm red.  Nothing has gone WRONG here and the
        person has done nothing incorrect; they are simply in a browser that cannot do one half of
        this.  Red would read as an error to be fixed on the spot and would sour a welcome screen. */

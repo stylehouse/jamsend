@@ -593,6 +593,17 @@
     //       once — so the main and satellite regions each ride a <svelte:boundary>: a fault costs one
     //        ~150ms blink of that region, never the whole glass.
     let bound_warned = false
+    // A FACE THAT THROWS SHOWS ITS LABEL — and used to say so ONLY in a hover tooltip (2026-09-29: the Link
+    //  ceremony's "Link, big, in the middle, then every cell like that" was this fallback, fitted up 5× as a
+    //   42×30 face; the console said nothing).  Log each face kind's fault once per distinct message.
+    const face_errs = new Set<string>()
+    function face_err(mk: string, e: unknown) {
+        const msg = String((e as any)?.message ?? e)
+        const k = mk + '|' + msg
+        if (face_errs.has(k)) return
+        face_errs.add(k)
+        console.warn(`🎴 Cello: ${mk} face THREW — showing its label instead: ${msg}`, e)
+    }
     function bound_err(e: unknown, reset: () => void) {
         if (!bound_warned) { bound_warned = true; console.warn('🎴 Cello: contained a render fault (deferred-transition reset race) — region retries in 150ms', e) }
         setTimeout(() => { try { reset() } catch { /* region gone */ } }, 150)
@@ -897,6 +908,8 @@
     //    real change (a panel unfolding is far past 6%).  The bigger structural fix is below: the
     //     scroll column no longer depends on --fit, so a fit change can't reflow the face and feed back.
     const FIT_DEADBAND = 0.06
+    const TAKEOVER_ZOOM_MAX = 3
+    const TAKEOVER_DESIGN_W = 440
 
     function measure_molds() {
         try {
@@ -907,6 +920,29 @@
                 if (!child || typeof child.offsetWidth !== 'number') continue
                 const mold = scroll.parentElement as HTMLElement | null
                 if (!mold) continue
+                // THE TAKEOVER DICTATES ITS WIDTH (owner 2026-09-29: "a big full-map of a Heist cell … react to viewport
+                //  changes nicely" → "can we know how wide we are to be and force-wrap everything?").  Two box models
+                //   meet here: a RIM cell is content-sized (inside-out: the face's natural box → --fit), but a TAKEOVER
+                //    knows its width exactly — the scroll column — so it is sized OUTSIDE-IN: the face is TOLD its width
+                //     and wraps to it.  The face is scaled up (CSS `zoom`, which takes part in layout, so the column's
+                //      scroll height stays true) by column ÷ TAKEOVER_DESIGN_W (the width the rim faces are authored at,
+                //       HeistFace's 440px card), clamped 1..3, and laid out at column ÷ zoom so it renders exactly the
+                //        column wide.  Nothing is read back off the face, so there is no measure→resize feedback; a
+                //         window change moves the column, the stage/face observers re-run this, and it re-flows.
+                //  HEIST ONLY: Wikipedia's reading room is already a full-width block with its own type, and zooming an
+                //   article ×2-3 would be a billboard, not a page.
+                if (key === main_key && main_offedge && (main_cell?.mk === 'Heist' || main_cell?.mk === 'HeistBar')) {
+                    const colw = scroll.clientWidth
+                    if (colw > 0) {
+                        const z = Math.round(Math.max(1, Math.min(TAKEOVER_ZOOM_MAX, colw / TAKEOVER_DESIGN_W)) * 100) / 100
+                        const wpx = Math.floor(colw / z) + 'px'
+                        if (child.style.zoom !== String(z)) child.style.zoom = String(z)
+                        if (child.style.width !== wpx) child.style.width = wpx
+                        if (child.style.maxWidth !== 'none') child.style.maxWidth = 'none'
+                        if (child.style.boxSizing !== 'border-box') child.style.boxSizing = 'border-box'
+                    }
+                    continue
+                }
                 // the target may exceed the blob (the mold is unclipped now) but never the PAGE: a face wider than
                 //  the viewport is a face with its ends off-screen, which no amount of overflow makes legible.
                 const vw = (typeof window !== 'undefined' ? window.innerWidth : 0) || Infinity
@@ -1131,12 +1167,17 @@
                          blob (lay out at 100%/--fit, scale back by --fit — Vytui:1258). -->
                     <div class="cello-face-scroll" class:scrollbig={main_offedge} use:sizewatch={main_cell.key}
                          style="--fit: {main_offedge ? 1 : (fits.get(main_cell.key) ?? 1)};">
-                        <svelte:boundary>
+                        <!-- KEYED ON THE MAIN (2026-09-29): a boundary that failed stays failed, so ONE face's fault
+                             (the Link ceremony's effect loop) left every LATER main showing only its label — "then all
+                              cells are like that".  A new main is a new face and gets a fresh boundary. -->
+                        {#key main_cell.key}
+                        <svelte:boundary onerror={(e) => face_err(main_cell?.mk ?? '?', e)}>
                             <Face n={main_cell.n} H={H} />
                             {#snippet failed(error)}
                                 <div class="cello-face-err" title={String(error)}>{main_cell.label}</div>
                             {/snippet}
                         </svelte:boundary>
+                        {/key}
                     </div>
                 </div>
             {:else}
@@ -1228,7 +1269,7 @@
                             <!-- same fitting seam as the main: the bud glyph centres in ITS inscribed box -->
                             <div class="cello-face-scroll" use:sizewatch={cell.key}
                                  style="--fit: {fits.get(cell.key) ?? 1};">
-                                <svelte:boundary>
+                                <svelte:boundary onerror={(e) => face_err(cell.mk, e)}>
                                     <Face n={cell.n} H={H} />
                                     {#snippet failed()}
                                         <div class="cello-face-err">{cell.mk}</div>
@@ -1702,12 +1743,17 @@
      scrollbar").  The box right edge is at 100vw; right:16vw of the box ⇒ the face's right edge at
       ~84vw, clear of the minicells at ~97vw. */
 .cello-main.offedge .cello-face-mold {
-    /* box spans viewport ~-32vw..100vw; left 40% / right 16% centres the mold on the viewport (owner:
-       the overlay component should be "in the middle... ish"), clear of the minicells on the far right */
-    left: 40%;
-    right: 16%;
-    top: 7vh;
-    bottom: 7vh;
+    /* A FULL MAP WITH A SHORELINE ON THE RIGHT (owner 2026-09-29: "I just want a big full-map of a Heist cell,
+       with a shoreline on the right" — after a narrow window gave it a 460px column).  The box is -42vw..96vw
+        wide (138vw) and -15vh..115vh tall (130vh), so everything here is box-relative and tracks the window:
+         left 32% ≈ viewport 2vw, right 13% ≈ viewport 78vw (the wall's right arc + the minicells own the rest),
+          top/bottom 18vh ≈ viewport 3vh..97vh.  The old 40%/16% gave the face only the middle ~60% of the
+           width, and top:7vh of a box starting at -15vh put its top 8vh ABOVE the screen (the reading room
+            below had already been corrected for exactly that). */
+    left: 32%;
+    right: 13%;
+    top: 18vh;
+    bottom: 18vh;
     transform: none;
     width: auto;
     height: auto;

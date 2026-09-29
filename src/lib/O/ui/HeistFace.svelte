@@ -992,7 +992,9 @@
         filter: brightness(1.45);
         transition: none;
     }
-    .kf-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+    /* flex-WRAP (2026-09-29): in a takeover the cell TELLS this face its width (Cellui, outside-in) — a footer that
+       cannot wrap pushed "lofi ?" and the exits off the right of the screen.  At the rim's 440px it still fits on one line. */
+    .kf-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
     /* the QUEUE controls (⏸ / ▶ / ↑ first) — plain and unboxed, a step quieter than the exits they sit
        beside, because none of them destroys anything.  The exits stay the loud ones. */
     .kf-q {

@@ -62,12 +62,25 @@ Triggered by the owner, live, 2026-09-23: *"think up some way we can stop LinkDe
       principle. Suspect: the draw's `Swarm_iz_mark` → House stash is debounced (Housing.svelte.ts ~430,
        AMBIENT_MAIN_TICK_MS) and/or IndexedDB lost the tail in the crash. Want: the draw durable before the link
         is shown, or serials never reissued (e.g. bump `next` past any serial ever SHOWN).
+    **ROOT-CAUSED 2026-09-29 — not the crash, every reload.** The boot ladder restores the izzes row (fresh
+     `next`) and THEN `Swarm_account_rehydrate` grafts the whole-identity text over it; that text was refreshed
+      only by `Swarm_account_settle`, never by a mint, so every reload wound `next` back to its value at the last
+       seal. Fixed: `Swarm_iz_mark` restashes the account text; `Swarm_graft` keeps an %Idzeug's larger `next`
+        and the union of `claimed` (`Swarm_claimed_union`). Also found: 940f dropped Inco's re-link knock as
+         crewmate presence (the half-link left Inco on its /Crew) — an `iz`-bearing pier_hello now reaches
+          Swarm_hello. Pending: the live mint→reload→read check on 940f.
 2. **The ceremony stalled with the Link cell drawn as a minicell** ("just says Link"). The incognito load at
     ~19:19–19:25 never sent `pier_hello` (940f heard nothing between minting 19:19:23 and 19:26:12); the
      "become them?" consent lives inside LinkFace, which rendered in its `small` pose, so there was nothing
       to press. Every cell navigated to stayed small. A reload drew it big and the knock went through. NOT
        root-caused: two writers stamp `.c.pose` on the same particle — Sounditron.g ~989/999 (Vyto commission)
         and Cellui.svelte 646/723 — a race between them fits, unproven.
+    **ROOT-CAUSED 2026-09-29 — not the pose.** LinkDevice's `fire_ask` (called from `$effect`s) books a %Reach
+     since W2; the mint's bump inside the effect re-triggered it → `effect_update_depth_exceeded` → the Link
+      face's `<svelte:boundary>` showed its bare label (fitted 5×), and that boundary STAYED failed, so every
+       later main showed only its label. Fixed: `untrack` around Swarm_ferry_ask + Swarm_ferry_poke in
+        LinkDevice.svelte; the Cellui main boundary is `{#key main_cell.key}`ed; face faults now log
+         `🎴 Cello: <mk> face THREW`. Needs a live ceremony to confirm.
 3. **Half-linked after reloads.** 940f's /Crew lists 975a as a cert Cave (sealed MyCave link pier, Body
     post:Cave). 975a is still ITS OWN soul ("Inco", Captain of a crew of one) holding 940f only as a FRIEND
      pier (Grant:Music both ways) — its "landed my Grant:Crew … I am crew" at 19:26:12 did not survive its

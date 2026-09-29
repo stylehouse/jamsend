@@ -792,8 +792,36 @@ Heard_landed(shelf, card):
         let hit = this.Ra_rec_find(shelf, { Record: 1, id: String(card.sc.id) })
         if (hit) { return hit }
     }
-    if (card.sc.keep) { return this.Ra_rec_find(shelf, { Record: 1, id: String(card.sc.keep) }) }
+    if (card.sc.keep) {
+        let khit = this.Ra_rec_find(shelf, { Record: 1, id: String(card.sc.keep) })
+        if (khit) { return khit }
+    }
+    // …OR THE SAME FILE / THE SAME SONG UNDER MY OWN ID (2026-09-30, Inco just after joining Lump's crew: a ♥ of
+    //  Lump's re-opened a take Heist for an album already on disk).  An id is per-holder — a haul re-files the
+    //   bytes under MY id — so a heart carried across (a crew join, a sibling's Mag) misses the id probe above
+    //    for a track I already hold.  Same relative PATH first (a haul lands at the holder's path), then the
+    //     title+artist song key (Radio_song_key — the radio and the pool use the same one).
+    let ix = this.Heard_shelf_index(shelf)
+    if (card.sc.path && ix.path[String(card.sc.path)]) { return ix.path[String(card.sc.path)] }
+    let sk = this.Radio_song_key ? this.Radio_song_key(card) : ''
+    if (sk && ix.song[sk]) { return ix.song[sk] }
     return null
+// Heard_shelf_index — {path → Record, song → Record} over a shelf, cached on its .c until the record count or
+//  the last record moves (Heard_landed runs per card per poll; the shelf walk must not).
+Heard_shelf_index(shelf):
+    let recs = this.Ra_recs(shelf)
+    let last = recs.length ? String(recs[recs.length - 1].sc.id || '') : ''
+    let key = String(recs.length) + ':' + last
+    let ix = shelf.c.heard_ix
+    if (ix && ix.key === key) { return ix }
+    ix = { key: key, path: {}, song: {} }
+    for (const r of recs) {
+        if (r.sc.path) { ix.path[String(r.sc.path)] = r }
+        let sk = this.Radio_song_key ? this.Radio_song_key(r) : ''
+        if (sk && !ix.song[sk]) { ix.song[sk] = r }
+    }
+    shelf.c.heard_ix = ix
+    return ix
 
 // Heard_takes — WHAT I AM OWED, AND BY WHOM.  THE heist, as a query: `take` Cards not yet on my shelf,
 //  oldest first, grouped by holder, one holder pulled at a time.  No operation particle survives this —

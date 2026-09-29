@@ -10,7 +10,7 @@ import { sha256_hex } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Pool(): string { return 'a0e5e16cad81a1b0~g1' },
+    Ghostmeta_Ghost_M_Pool(): string { return 'b2963ef5ae5fe1fb~g1' },
 
 // Pool.g — SOUNDPOOLING's home (split out of Ra.g 2026-09-17, SoundPooling_todo.md §0.2a — the owner:
 //  "yes to Pool.g, definitely looks big enough"). Three regions, in the order a reader should meet them:
@@ -80,6 +80,16 @@ Pool_facts(w, ident) {
     let mine = mineHome ? (mineHome.o({ stock: 1, pub: pub })[0] || null) : null
     f.held_raw = mine ? this.Ra_recs(mine).map((r) => String(r.sc.id || '')) : []
     f.held = f.held_raw.length
+    // the SONGS held, across id-spaces (Radio_song_key) — a haul re-files a friend's track under MY id, so the
+    //  id match above never sees it and random circulation pulled my fresh download straight back into the
+    //   friend's pool and on round (Incog ↔ Grav, 2026-09-28: most of a 1–2 MB/s upload was this loop).
+    f.held_songs_raw = {}
+    if (mine && this.Radio_song_key) {
+        for (const r of this.Ra_recs(mine)) {
+            let sk = this.Radio_song_key(r)
+            if (sk) { if (!f.held_songs_raw[sk]) { f.held_songs_raw[sk] = [] } f.held_songs_raw[sk].push(+(r.sc.seconds || 0)) }
+        }
+    }
     f.recent_raw = this.Heard_landed_ids ? this.Heard_landed_ids(w, pub, mine) : []
     f.recent = f.recent_raw.length
     f.barred_raw = this.Heard_barred_ids ? this.Heard_barred_ids(w, pub) : {}
@@ -139,6 +149,7 @@ Pool_draw_random(pd, f) {
     for (const s of (f.sources_raw || [])) {
         if (!s || !s.id) { continue }
         if (held[s.id]) { continue }
+        if (f.held_songs_raw && this.Radio_song_held && this.Radio_song_held(f.held_songs_raw, { sc: s })) { continue }
         if (pd.who === 'none') { continue }
         if (pd.who === 'friends' && s.crew) { continue }
         if (pd.who === 'crew' && !s.crew) { continue }
@@ -1014,6 +1025,8 @@ Pool_shared_rows(w) {
             //       press from the RummageLib husk -- it has a path -- so a browsed folder becomes servable.)
             if (r.sc.husk || r.sc.rummage) { continue }
             let row = { id: id, from: from, title: String(r.sc.title || '') }
+            if (r.sc.artist) { row.artist = String(r.sc.artist) }
+            if (r.sc.seconds) { row.seconds = +r.sc.seconds }
             if (crewish(from)) { row.crew = 1 }
             out.push(row)
         }

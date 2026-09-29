@@ -4,20 +4,22 @@ story:MusuRadioAim
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.024
+    TimeTotal:beliefs,avg=0.033
       sample=0.046,at=1790546972
       sample=0.015,at=1790546977
       sample=0.01,at=1790546981
       sample=0.036,at=1790546985
       sample=0.007,at=1790546989
       sample=0.03,at=1790583680
-    TimeTotal:step,avg=0.008
+      sample=0.09,at=1790589228
+    TimeTotal:step,avg=0.011
       sample=0.015,at=1790546972
       sample=0.005,at=1790546977
       sample=0.003,at=1790546981
       sample=0.012,at=1790546985
       sample=0.002,at=1790546989
       sample=0.01,at=1790583680
+      sample=0.03,at=1790589228
   step,dige:2cc08a97b918eb47
   step=2,dige:291ad36e4dad16cd
     Assertion:switching-the-aim-to,sentence:switching the aim to a friend leaves your own shelf behind — the two can never stand together or the dial would keep serving your own records while the face says you switched

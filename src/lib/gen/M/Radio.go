@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '02b20184da27c5f1~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '19b60ff251c47e91~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -2376,6 +2376,28 @@ Radio_source_toggle(radio) {
     radio.bump()
 
 },
+// Radio_song_key / Radio_song_held — "do I already hold this SONG", across id-spaces.  An id is per-holder
+//  (a haul re-files the bytes under the listener's own path ⇒ a new id), so the self-held gate needs a
+//   content key too.  title + artist, lowercased with whitespace folded; LENGTH disambiguates when both
+//    sides carry `seconds` (±3s — a live take or a remix under the same name is a different song).  A
+//     record with no title yields no key and is never matched this way (only by id).
+Radio_song_key(rec) {
+    let t = String(rec && rec.sc ? (rec.sc.title || '') : '').toLowerCase().replace(/\s+/g, ' ').trim()
+    if (!t) return ''
+    let a = String(rec.sc.artist || '').toLowerCase().replace(/\s+/g, ' ').trim()
+    return t + '|' + a
+},
+Radio_song_held(songs, rec) {
+    let sk = this.Radio_song_key(rec)
+    if (!sk || !songs[sk]) return 0
+    let secs = +(rec.sc.seconds || 0)
+    for (const m of songs[sk]) {
+        if (!secs || !m) return 1
+        if (Math.abs(m - secs) <= 3) return 1
+    }
+    return 0
+
+},
 // Radio_queue_clear — drop what is QUEUED (Lineup cards + the Streams standing order), not what plays.
 //  Any change of source makes the queue a lie: it was drawn under the old choice.  Found live
 //   2026-09-28 (owner: "eed setting its source to Incog doesn't restrict to that source") — switching
@@ -2532,7 +2554,17 @@ Radio_lineup_fill(w, radio) {
         //        already have these exact bytes", read here on the RADIO side and, via `f.held_raw`
         //         feeding `Pool_goal`'s skip below, on the SP side too: one mechanism, both doors.
         let mineIds = {}
-        for (const rec of this.Ra_recs(this.Ra_home_self(w, pub))) { mineIds[rec.sc.id] = 1 }
+        // …AND BY THE SONG, NOT ONLY THE ID (2026-09-28, owner on Incog: "switching source to Grav, a bunch of
+        //  Incog-only tracks come out still").  They were Grav's copies of the albums Incog had just HAULED from
+        //   Grav: a haul lands as the listener's own Record under a NEW id (its own path), so the id match
+        //    missed every one and the radio played your fresh download back to you from its source.
+        //     Radio_song_key matches title + artist (+ length when both sides know it) — see its header.
+        let mineSongs = {}
+        for (const rec of this.Ra_recs(this.Ra_home_self(w, pub))) {
+            mineIds[rec.sc.id] = 1
+            let sk = this.Radio_song_key(rec)
+            if (sk) { if (!mineSongs[sk]) { mineSongs[sk] = [] } mineSongs[sk].push(+(rec.sc.seconds || 0)) }
+        }
         // STATS PER HOLDER (2026-09-23, owner: "a coherent C** somewhere about such situations, so
         //  you can diagnose it via runner_ask") — Radio_lineup_errors used to see only the WINNERS
         //   (pools), so every starve reason collapsed into one alarming "no music coming across",
@@ -2550,7 +2582,7 @@ Radio_lineup_fill(w, radio) {
             for (const rec of this.Ra_recs(this.Ra_home_them(w, hp))) {
                 st.total = st.total + 1
                 if (lined[rec.sc.id]) { st.lined = st.lined + 1; continue }
-                if (mineIds[rec.sc.id]) { st.mine = st.mine + 1; continue }
+                if (mineIds[rec.sc.id] || this.Radio_song_held(mineSongs, rec)) { st.mine = st.mine + 1; continue }
                 if (heard[rec.sc.id]) { st.heard = st.heard + 1; continue }
                 // husk gate by PRESENCE, not by materialising the record (the Radio_deal idiom, below).
                 // WHY (2026-08-06, the human "downloader is still CPU burning ... goes away when Heist
@@ -2594,7 +2626,7 @@ Radio_lineup_fill(w, radio) {
             if (pshelf) {
                 for (const rec of this.Ra_recs(pshelf)) {
                     if (lined[rec.sc.id]) continue
-                    if (mineIds[rec.sc.id]) continue
+                    if (mineIds[rec.sc.id] || this.Radio_song_held(mineSongs, rec)) continue
                     if (heard[rec.sc.id]) continue
                     if (!this.Radio_playable(rec)) continue
                     precs.push(rec)

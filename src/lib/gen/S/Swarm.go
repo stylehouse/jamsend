@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return 'c47d3e0336f912a7~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '9a62d02d5f9cac6a~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -794,6 +794,20 @@ Swarm_claimed_has(runs, i) {
         if (i >= lo && i <= hi) return 1
     }
     return 0
+
+},
+// Swarm_claimed_union — every serial either run-list claims (Swarm_graft's monotone merge of two ledgers)
+Swarm_claimed_union(a, b) {
+    let out = String(a || '')
+    for (const part of String(b || '').split('~')) {
+        if (!part) continue
+        let dash = part.indexOf('-')
+        let lo = dash < 0 ? +part : +part.slice(0, dash)
+        let hi = dash < 0 ? lo : +part.slice(dash + 1)
+        let k = lo
+        while (k <= hi) { if (!this.Swarm_claimed_has(out, k)) { out = this.Swarm_claimed_add(out, k) } k = k + 1 }
+    }
+    return out
 
 },
 Swarm_claimed_add(runs, i) {
@@ -1818,7 +1832,14 @@ async Swarm_arm(w) {
         //   prefix-matches a ROSTERED %Body pub of mine (my own body never appears — sibling_send
         //    skips self). The branch body already keys off frame.swarm.body (the full pub).
         let crew_claim = from && (from === ident.sc.prepub || (from !== ident.sc.prepub && this.Swarm_body_roster(ident).some((b) => String(b.sc.pub || '').length >= 16 && String(b.sc.pub || '').startsWith(from))))
-        if (crew_claim && ['pier_hello', 'swarm_hi', 'pulse'].includes(frame.header.type)) {
+        // A KNOCK WITH AN INVITE IS A REDEEM, NOT PRESENCE (2026-09-29, 940f ↔ Inco): a half-finished device link
+        //  left Inco on 940f's /Crew + %Body roster, so Inco's FRESH link knock (pier_hello carrying ?Iz) matched
+        //   the crewmate branch below as "my Cave pulsing" and was dropped before Swarm_hello — the Captain
+        //    "never noticed", the unemit logged `not-them`.  A redeem carries its own proof (Swarm_hello verifies
+        //     the token + presig), so let it through.  A pier_hello from my OWN soul prepub still takes the theft
+        //      branch — nobody redeems an invite from themselves.
+        let redeem_knock = frame.header.type === 'pier_hello' && frame.swarm && frame.swarm.iz && from !== ident.sc.prepub
+        if (crew_claim && !redeem_knock && ['pier_hello', 'swarm_hi', 'pulse'].includes(frame.header.type)) {
             // A ROSTERED SIBLING'S PULSE IS PRESENCE, NOT THEFT (owner 2026-08-31: "not clear that
             //  the two of them can see each other").  The sibling pulse carries `body` — the sender's
             //   roster key — so stamp `heard` ON the %Body row (a standing particle the family box
@@ -2465,6 +2486,13 @@ Swarm_iz_mark(ident, record, patch) {
     //   ticks the beliefs drive, so without this the account write waits for the next unrelated tick
     //    (measured 2026-08-13: invites reached disk only at "the next time around to openshare").
     if (this.Clustation_mirror_nudge) this.Clustation_mirror_nudge()
+    // …AND THE ACCOUNT TEXT (2026-09-29, the owner's "off-by-one record error keeps happening").  The boot
+    //  ladder rehydrates the izzes row (fresh) and THEN grafts the whole-identity text (Swarm_account_rehydrate)
+    //   over it — and that text was only refreshed by Swarm_account_settle (seals, crew moves), never by a
+    //    mint.  So every reload put `next` back to its value at the last seal: the serial just handed out
+    //     came back `hello_unknown`, and the NEXT mint re-issued the same serial (same deterministic presig ⇒
+    //      the old link alive again).  Restash the text here too; live-self-guarded like the rest.
+    if (this.Swarm_restash_account) this.Swarm_restash_account(ident)
 
 },
 Swarm_iz_rehydrate(w, ident, st0) {
@@ -6495,7 +6523,18 @@ Swarm_graft(parent, node) {
     for (const k of (ID[mk] ?? Object.keys(node.sc).slice(1))) { if (node.sc[k] !== undefined) { find[k] = node.sc[k] } }
     let twin = parent.o(find)[0]
     if (twin) {
+        // AN ISSUER'S LEDGER ONLY GROWS (2026-09-29).  `next` (serials handed out) and `claimed` (serials spent)
+        //  are monotone facts; a graft from an OLDER text must never wind them back — a lowered `next` forgets a
+        //   link already in someone's hand (hello_unknown) and re-issues its number; a shrunk `claimed` un-spends
+        //    an invite.  So an %Idzeug graft keeps the larger `next` and the UNION of `claimed`.
+        let keep = {}
+        if (mk === 'Idzeug') {
+            if (twin.sc.next && node.sc.next && +twin.sc.next > +node.sc.next) { keep.next = twin.sc.next }
+            if (twin.sc.claimed && node.sc.claimed && twin.sc.claimed !== node.sc.claimed) { keep.claimed = this.Swarm_claimed_union(twin.sc.claimed, node.sc.claimed) }
+            if (twin.sc.claimed && !node.sc.claimed) { keep.claimed = twin.sc.claimed }
+        }
         for (const k of Object.keys(node.sc)) twin.sc[k] = node.sc[k]
+        for (const k of Object.keys(keep)) twin.sc[k] = keep[k]
         twin.bump()
     } else {
         twin = parent.i({ ...node.sc })
@@ -7454,8 +7493,15 @@ Swarm_organ_refresh(w, ident) {
     let top = this.top_House ? this.top_House() : null
     let rw = (top && top.c) ? top.c.radio_w : null
     if (!rw || !ident || !this.Swarm_body_mine || !this.Swarm_body_mine(ident)) { return 0 }
+    // TROVE IS THE COLLECTION, not the Stoker's `stock` (2026-09-30, owner on Inco's Door: "12 trove · 12 ready,
+    //  which is crazy").  `stock` counts the tracks the Stoker has WARMED for play — a small rolling number that
+    //   says nothing about how much music this body holds.  Count the own shelf's records (PROBE: Ra_home_self
+    //    would mint), falling back to the Stoker only while the shelf has not stood yet.
+    let tpub = String(ident.sc.prepub || '')
+    let mineHome = rw.o ? rw.o({ Mine: 1, pub: tpub })[0] : null
+    let shelf = mineHome ? mineHome.o({ stock: 1, pub: tpub })[0] : null
     let stoker = rw.o ? rw.o({ Stoker: 1 })[0] : null
-    let trove = stoker ? (+stoker.sc.stock || 0) : 0
+    let trove = shelf && this.Ra_recs ? this.Ra_recs(shelf).length : (stoker ? (+stoker.sc.stock || 0) : 0)
     let pocket = 0
     try {
         let pool = this.Ra_home_pool ? this.Ra_home_pool(rw, String(ident.sc.prepub)) : null

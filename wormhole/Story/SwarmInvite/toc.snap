@@ -4,12 +4,16 @@ story:SwarmInvite
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.061
+    TimeTotal:beliefs,avg=0.044
       sample=0.04,at=1789116383
       sample=0.081,at=1789122769
-    TimeTotal:step,avg=0.012
+      sample=0.022,at=1790655623
+      sample=0.033,at=1790679575
+    TimeTotal:step,avg=0.009
       sample=0.008,at=1789116383
       sample=0.016,at=1789122769
+      sample=0.004,at=1790655623
+      sample=0.007,at=1790679575
   step,dige:f1ec75beced2fe2a
   step=2,dige:7492917cd62e69fa
     Assertion:the-machine-self-is,sentence:the machine self is made by its real maker — keys and nick and Peering — and only one identity is active
