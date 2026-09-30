@@ -114,7 +114,11 @@ const faces = Object.fromEntries((kv.face ?? 'voronoi:1,subgraph:1').split(',').
     const [k, v] = s.split(':')
     return [k, v === 'tuples' || v === 'star' ? v : Number(v)]
 }))
-const ask = arm ? { op: 'face', faces }
+// --drag-list | --drag=<id|random>,<dx>,<dy>[,<hold ms>] — a remote hand on the Cyto graph (op:'drag')
+const drag = flags.has('--drag-list') ? { op: 'drag', list: 1 }
+           : kv.drag ? (([id, dx, dy, hold]) => ({ op: 'drag', ...(id && id !== 'random' ? { id } : {}), dx: Number(dx) || 0, dy: Number(dy) || 0, ...(hold ? { hold: Number(hold) } : {}) }))(kv.drag.split(','))
+           : null
+const ask = drag ? drag : arm ? { op: 'face', faces }
           : why ? { op: 'why' } : svg ? { op: 'svg' } : { op: 'shot', full: !flags.has('--viewport') }
 if (kv.scale) ask.scale = Number(kv.scale)
 if (kv.w)     ask.maxWidth = Number(kv.w)
@@ -186,6 +190,7 @@ if (reply.control !== 'runner_ack' || reply.ok === false) {
     process.exit(1)
 }
 const r = reply.result || {}
+if (drag) { console.log(JSON.stringify(r)); process.exit(0) }
 if (arm) { console.log(`◈ faces armed: ${JSON.stringify(r)}`); process.exit(0) }
 if (why) { printRender(r); process.exit(0) }   // the whole reply IS the telemetry
 if (svg) {

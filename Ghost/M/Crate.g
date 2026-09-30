@@ -68,6 +68,25 @@ Crate_ext(name):
 Crate_is_audio(ext):
     return ext === 'mp3' || ext === 'm4a' || ext === 'flac' || ext === 'ogg' || ext === 'opus' || ext === 'wav' || ext === 'webm' || ext === 'aac'
 
+// Crate_walkable_dirs — the directory NAMES a music walk may enter from an expanded dl.  The one rule
+//  every walk shares (the census wander, Crate_nav_paths, Radio's subtree pool + folder cards):
+//   never a dot-dir (.jamsend holds the owner-private account snaps; .git) nor node_modules, and — when
+//    dl IS A GIT WORKING TREE (a `.git` dir, or file for a worktree, sits here) — not its code|tooling
+//     dirs either (owner 2026-09-30: "avoid Census going into node_modules or wormhole etc when we know
+//      the FSA is a git repo").  A named list, not .gitignore: this repo's music (testsounds) IS ignored.
+//   Only the repo ROOT's children are judged; everything below a kept dir walks as before.
+Crate_walkable_dirs(dl):
+    let repo = dl.directories.some(d => d.name === '.git') || dl.files.some(f => f.name === '.git')
+    let noise = ['node_modules', 'wormhole', 'src', 'Ghost', 'scripts', 'build', 'dist', 'logs', 'staging', 'dockers', 'jamserve']
+    let out = []
+    for (const d of dl.directories) {
+        let nm = String(d.name || '')
+        if (!nm || nm[0] === '.' || nm === 'node_modules') continue
+        if (repo && noise.includes(nm)) continue
+        out.push(nm)
+    }
+    return out
+
 // Crate_meander — the faithful port of meander(): random-walk the crate until a track turns up.  Each hop
 //  walks the current node (lazily), and if it holds audio blobs returns a RANDOM one; else descends into a
 //   random subdir; a dead end climbs back to the root to try elsewhere.  Random via prandle, so a seeded
@@ -200,16 +219,11 @@ async Crate_nav_ls(nav, base):
         for (const f of dl.files) {
             if (this.Crate_is_audio(this.Crate_ext(f.name))) out.push({ path: rel ? (rel + '/' + f.name) : f.name, bytes: f.size != null ? +f.size : null })
         }
-        for (const d of dl.directories) {
-            // NEVER descend a dot-dir (.jamsend holds owner-private account snaps carrying the identity
-            //  key in the clear — Swarm_account_save) or node_modules: the census is for MUSIC.  This is
-            //   the ENFORCED half of the owner-local .jamsend law (its invariant 2) — a share walk can't
-            //    surface the private corner even if the audio filter is ever relaxed — and matches
-            //     Crate_nav_meander's own dot-dir skip.
-            let nm = String(d.name || '')
-            if (!nm || nm[0] === '.' || nm === 'node_modules') continue
-            queue.push(rel ? (rel + '/' + nm) : nm)
-        }
+        // NEVER descend a dot-dir (.jamsend holds owner-private account snaps carrying the identity
+        //  key in the clear — Swarm_account_save) or node_modules: the census is for MUSIC.  This is
+        //   the ENFORCED half of the owner-local .jamsend law (its invariant 2) — a share walk can't
+        //    surface the private corner even if the audio filter is ever relaxed.  Crate_walkable_dirs.
+        for (const nm of this.Crate_walkable_dirs(dl)) queue.push(rel ? (rel + '/' + nm) : nm)
     }
     out.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
     return out
@@ -481,9 +495,10 @@ async Crate_nav_meander(nav, base, want, skip):
         //    deep albums, unreachable forever).  Now a root of 5 wavs + 1 folder descends half
         //     the time, a folders-only level always descends, and a FLAT share (no subdirs)
         //      still picks locally every hop — the 200k flat crate walks exactly as before.
-        //  Noise dirs (dot-dirs, node_modules) never draw: a repo-root share is a working
-        //   tree, and the wander is for MUSIC.
-        let dirs = dl.directories.filter(d => { let nm = String(d.name || ''); return nm && nm[0] !== '.' && nm !== 'node_modules' })
+        //  Noise dirs (dot-dirs, node_modules, a git root's code dirs) never draw: a repo-root share is a
+        //   working tree, and the wander is for MUSIC (Crate_walkable_dirs).
+        let walk_ok = this.Crate_walkable_dirs(dl)
+        let dirs = dl.directories.filter(d => walk_ok.includes(String(d.name || '')))
         // LEARN BEFORE THE DEAD-END GUARD, NOT AFTER (2026-08-07).  The write used to live below the
         //  `!branches` bail, so the two kinds of directory the map most needs to know about were the
         //   exact two it never recorded: a SPENT LEAF ALBUM (every track skipped, no subdirs) and a

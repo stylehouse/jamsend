@@ -32,31 +32,31 @@ story:VoroScape
     dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.023
-      sample=0.013,at=1788878855
-      sample=0.017,at=1788907175
-      sample=0.032,at=1788942661
-      sample=0.013,at=1789034396
-      sample=0.023,at=1789036026
+    TimeTotal:beliefs,avg=0.029
       sample=0.032,at=1789084534
       sample=0.031,at=1789116751
       sample=0.032,at=1789118290
       sample=0.022,at=1789118637
       sample=0.014,at=1790680395
-    TimeTotal:step,avg=0.004
-      sample=0.002,at=1788878855
-      sample=0.003,at=1788907175
-      sample=0.005,at=1788942661
-      sample=0.002,at=1789034396
-      sample=0.004,at=1789036026
+      sample=0.023,at=1790726611
+      sample=0.023,at=1790727300
+      sample=0.051,at=1790727533
+      sample=0.031,at=1790729125
+      sample=0.026,at=1790729285
+    TimeTotal:step,avg=0.005
       sample=0.005,at=1789084534
       sample=0.005,at=1789116751
       sample=0.005,at=1789118290
       sample=0.004,at=1789118637
       sample=0.002,at=1790680395
+      sample=0.004,at=1790726611
+      sample=0.004,at=1790727300
+      sample=0.008,at=1790727533
+      sample=0.005,at=1790729125
+      sample=0.004,at=1790729285
   step,dige:c61532ec59f1649a
-  step=2,dige:949c6b72319bf5c4
-  step=3,dige:356548407f1a0758
-  step=4,dige:a6e908cf3b6a49a1
-  step=5,dige:4f76285d8f5c18ac
-  step=6,dige:dc34a5a6e081a972
+  step=2,dige:bf392b2ec7d5ec19
+  step=3,dige:d01a0e10e8c46ee1
+  step=4,dige:2e5280e322838ac0
+  step=5,dige:4469915e1d18e68d
+  step=6,dige:eaf5c2e2f4b37820

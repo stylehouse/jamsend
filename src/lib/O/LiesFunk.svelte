@@ -3411,6 +3411,45 @@ await M.eatfunc({
                     const fn = (H.top_House().c as any).cy_face
                     if (typeof fn !== 'function') { ok = false; result = { error: 'no cy_face hook — this tab runs an old Cytui; reload it' } }
                     else result = fn((ask as any).faces ?? { voronoi: 1, regions: 1, subgraph: 1 })
+                } else if (op === 'drag') {
+                    // a remote HAND on the Cyto graph (runner_shot --drag): move one node the way a pointer
+                    //  drag would — grab, position, free — so a headless caller can film the glass
+                    //   re-tessellating around a moved cell (pixels only; nothing snaps).  `list` answers
+                    //    the movable nodes + the extent to aim at.  RUNNER TABS ONLY, like reload.
+                    const cy = (H.top_House().c as any).cy
+                    const a = ask as any
+                    if (!H.Lies_is_runner(w)) { ok = false; result = { error: 'not a runner — refusing to drag an editor tab' } }
+                    else if (!cy) { ok = false; result = { error: 'no Cytoscape canvas — is a useCyto Book mounted?' } }
+                    else {
+                        // a nucleus (`nuc:` — the compound's own seed) and a compound are not hand-movable,
+                        //  the same refusal Cytui's vsub_grab makes; they still LIST, so a caller aiming a
+                        //   move sees the whole layout (every seed the glass cuts around), not just the handles.
+                        const can = (n: any) => !n.isParent() && !n.locked() && !String(n.id()).startsWith('nuc:')
+                        const movable = cy.nodes().filter(can)
+                        if (a.list) {
+                            const e = cy.extent()
+                            result = { extent: { x1: e.x1, y1: e.y1, x2: e.x2, y2: e.y2 },
+                                       nodes: cy.nodes().map((n: any) => ({ id: n.id(), x: Math.round(n.position('x')), y: Math.round(n.position('y')),
+                                           ...(can(n) ? { movable: 1 } : {}), ...(n.isParent() ? { compound: 1 } : {}),
+                                           ...(n.parent().length ? { parent: n.parent().id() } : {}),
+                                           ...(n.data('label') ? { label: String(n.data('label')).slice(0, 40) } : {}) })) }
+                        } else {
+                            const node = a.id ? cy.getElementById(a.id) : movable[Math.floor(Math.random() * movable.length)]
+                            if (!node?.length) { ok = false; result = { error: `no node ${a.id}` } }
+                            else {
+                                const top = H.top_House().c as any
+                                const p = { ...node.position() }
+                                const to = { x: a.x ?? p.x + (a.dx ?? 0), y: a.y ?? p.y + (a.dy ?? 0) }
+                                if (top.cy_drag_node !== node) { top.cy_drag_node?.emit('free'); node.emit('grab'); top.cy_drag_node = node }
+                                node.position(to)
+                                node.emit('drag')
+                                top.cy_paint?.()   // a hidden tab starves the rAF drag loop — repaint the glass now
+                                clearTimeout(top.cy_drag_free)
+                                top.cy_drag_free = setTimeout(() => { node.emit('free'); node.emit('dragfree'); top.cy_drag_node = null }, a.hold ?? 600)
+                                result = { id: node.id(), from: p, to }
+                            }
+                        }
+                    }
                 } else if (op === 'reload') {
                     // the remote TAB RELOAD — the fleet's wedge-healer.  Every "tab broken" class
                     //  (HMR-wedged template flush, dead Vite socket, frozen-boot husk) ends the same

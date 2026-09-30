@@ -366,6 +366,15 @@
             secsAll: edited
                 ? (husks.length ? totSecs * (pickedRefs.size / husks.length) : 0)
                 : ((unTracks > husks.length && husks.length) ? totSecs * (unTracks / husks.length) : totSecs),
+            // ALREADY LOFI (owner 2026-09-30: "we should notice when already LOFI and leave it ghost-ticked, taking
+            //  originals").  7 tracks · ~42:55 · 41.6 MB is ~16 KB/s — the originals ARE ~128k already, so a lofi
+            //   transcode buys nothing and costs the holder a re-encode.  ≤ 17.6 KB/s (~140 kb/s, lofi's 16 KB/s
+            //    plus 10%) reads as already small.  Only on a real weight + length; unknown stays unknown.
+            alreadyLofi: (() => {
+                const sz = edited ? pickBytes : ((unTracks >= husks.length && sc.un_d ? +(sc.un_size || 0) : 0) || ((unTracks > husks.length && husks.length) ? totBytes * (unTracks / husks.length) : totBytes))
+                const ss = edited ? (husks.length ? totSecs * (pickedRefs.size / husks.length) : 0) : ((unTracks > husks.length && husks.length) ? totSecs * (unTracks / husks.length) : totSecs)
+                return sz > 0 && ss > 0 && sz / ss <= 17600
+            })(),
             // is the weight a MEASUREMENT or an extrapolation?  The `~` the line already wears for length
             //  belongs on the size too whenever we scaled it — see the estimate rules in the markup.
             sizeEst: !edited && unTracks > husks.length && !(unTracks >= husks.length && sc.un_d) && !!husks.length,
@@ -546,7 +555,11 @@
         press_probe('scrub', () => { A?.Heist_keep_scrub?.(A?.top_House?.()?.c?.radio_w, n) })
     }
 
-    function start() { press_probe('start', () => { A?.Heist_keep_start?.(n) }) }
+    function start() {
+        // already-lofi takes the ORIGINALS: clear a standing lofi (a remembered default) before the want-ask reads it
+        const drop_lofi = face.alreadyLofi && face.lofi
+        press_probe('start', () => { if (drop_lofi) A?.Heist_keep_set_lofi?.(n, false); A?.Heist_keep_start?.(n) })
+    }
     // lofi — the phone answer.  Framed as what it does to the TRANSFER, not as a codec setting: the friend
     //  transcodes and sends the small thing, which is the only reason to want it.  Settable while primed and
     //   read by the want-ask at ▶ start, so it must sit here beside the other pre-start tweaks.
@@ -786,7 +799,7 @@
             <div class="kf-sum">
                 <!-- ☑ lofi flips the size and that is the whole story (the owner: "change the
                      quantity, don't explain it") — no suffix, no tooltip. -->
-                {face.nAll} track{face.nAll === 1 ? '' : 's'}{#if face.secsAll}&nbsp;· ~{fmtT(face.secsAll)}{/if}{#if face.lofi && face.secsAll}&nbsp;· ~{fmtB(face.secsAll * 16000)}{:else if face.sizeAll}&nbsp;· {face.sizeEst ? '~' : ''}{fmtB(face.sizeAll)}{:else}&nbsp;· <span class="kf-dim">size unknown</span>{/if}{#if face.counting}&nbsp;<span class="kf-spin sm" title="still counting — the folder is arriving"></span>{/if}
+                {face.nAll} track{face.nAll === 1 ? '' : 's'}{#if face.secsAll}&nbsp;· ~{fmtT(face.secsAll)}{/if}{#if face.lofi && !face.alreadyLofi && face.secsAll}&nbsp;· ~{fmtB(face.secsAll * 16000)}{:else if face.sizeAll}&nbsp;· {face.sizeEst ? '~' : ''}{fmtB(face.sizeAll)}{:else}&nbsp;· <span class="kf-dim">size unknown</span>{/if}{#if face.counting}&nbsp;<span class="kf-spin sm" title="still counting — the folder is arriving"></span>{/if}
                 <!-- THE LISTING CATCHING UP is a progress clause, never a question put to the human.  The
                      count and the size above are already the truth about the folder; this only says which
                      of its tracks we can name yet, and it vanishes on its own when the source answers.
@@ -819,11 +832,20 @@
                  LOFI") — the gap that separates groups in this footer must not fall between a control and
                  its own explainer. -->
             <span class="kf-lofi-grp">
-                <button class="kf-lofi" class:on={face.lofi} onclick={toggleLofi}
-                        title="ask your friend to send a small .ogg instead of the original file">
-                    <span class="kf-lofi-box">{face.lofi ? '☑' : '☐'}</span>
-                    <span class="kf-lofi-lbl">lofi</span>
-                </button>
+                {#if face.alreadyLofi}
+                    <!-- GHOST-TICKED: the originals are already ~128k, so they ARE the lofi — taken as they are -->
+                    <span class="kf-lofi ghost" title="these files are already small (~128 kb/s) — taking the originals as they are; a lofi re-encode would save nothing">
+                        <span class="kf-lofi-box">☑</span>
+                        <span class="kf-lofi-lbl">lofi</span>
+                        <span class="kf-dim">already</span>
+                    </span>
+                {:else}
+                    <button class="kf-lofi" class:on={face.lofi} onclick={toggleLofi}
+                            title="ask your friend to send a small .ogg instead of the original file">
+                        <span class="kf-lofi-box">{face.lofi ? '☑' : '☐'}</span>
+                        <span class="kf-lofi-lbl">lofi</span>
+                    </button>
+                {/if}
                 <button class="kf-q" onclick={() => (lofiWhy = !lofiWhy)} title="what does lofi do?">?</button>
             </span>
             <span class="kf-exits">
@@ -923,6 +945,8 @@
         opacity: 0.6;
     }
     .kf-lofi:hover, .kf-lofi.on { opacity: 1; }
+    .kf-lofi.ghost { cursor: default; opacity: 0.45; width: auto; }
+    .kf-lofi.ghost:hover { opacity: 0.45; }
     .kf-lofi-box { font-size: 11px; color: #7fe8bf; flex: none; }
     .kf-lofi-lbl { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; flex: none; }
     .kf-lofi.on .kf-lofi-lbl { color: #7fe8bf; }

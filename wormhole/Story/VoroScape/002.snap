@@ -7,6 +7,8 @@ Snap:H
         req:wrangle,eternal,ok
         Artist,name:Moonlit
           Track,title:Tide,year:1998,remaster
+            What:the-spot,start_at=3,end_at=6
+              What:cymbal,start_at=4,end_at=5
           Track,title:Halo,year:2007
         Artist,name:Fernway
           Track,title:Root,year:2019,live

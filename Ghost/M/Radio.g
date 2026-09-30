@@ -3934,10 +3934,7 @@ async Riffle_paths(nav, rel):
             paths.push(cur ? (cur + '/' + nm) : nm)
         }
         if (paths.length >= 3000) { clipped = 1; break }
-        for (const d of dl.directories) {
-            let dn = String(d.name || '')
-            if (dn && dn[0] !== '.' && dn !== 'node_modules') queue.push(cur ? (cur + '/' + dn) : dn)
-        }
+        for (const dn of this.Crate_walkable_dirs(dl)) queue.push(cur ? (cur + '/' + dn) : dn)
     }
     if (paths.length > 3000) paths = paths.slice(0, 3000)
     return { paths: paths, dirs_seen: seen, clipped: clipped }
@@ -4143,12 +4140,7 @@ async Riffle_deal_dir(ri):
         up.c.path = segs.slice(0, -1).join('/')
         up.sc.title = '..'
     }
-    let dirs = []
-    for (const d of dl.directories) {
-        let nm = String(d.name || '')
-        if (!nm || nm[0] === '.' || nm === 'node_modules') continue
-        dirs.push(nm)
-    }
+    let dirs = this.Crate_walkable_dirs(dl)
     dirs.sort()
     ri.sc.folders = String(dirs.length)
     let di = 0

@@ -6949,14 +6949,23 @@ Swarm_reach_dispatch(w, ident, reach):
 //       later, the daemon holding the bytes serving nobody.  A change that looks landed and gates
 //        nothing is worse than no change — it spends the belief.  `ident` is already in hand here and
 //         the home is minted on the identity, so `Ra_pool_consent_of(ident)` cannot miss it.
+//  ⚠ THE KNOB GATES POOL FILLS ONLY (2026-09-30).  This whole-loop gate outlived its reason: it was written when
+//   `for:serve` (the pool fill) was the only kind, and it silently blocked every kind added since.  Measured
+//    live on Inco (975a): its W2 `Reach,for:ferry` ("I want linkage") sat `state:booked` for a day — never
+//     dispatched, no deadline, no 'dead' — on a Cave without pool consent; the link only worked because the
+//      Captain also reacts to the knock directly.  Every future kind (RemoteHeist's `for:call`) would have died
+//       the same way.  So the knob now gates `for:serve` rows only; the rest settle whenever the pump runs.
+//        SwarmBody's knob_off_observes (a `for:serve` booking, knob off → 0) is unchanged.
 Swarm_reach_settle(w, ident):
-    if (!w || !(w.c.reach_on || (this.Ra_pool_consent_of ? this.Ra_pool_consent_of(ident) : 0))) { return 0 }
+    if (!w) { return 0 }
+    let fills_on = (w.c.reach_on || (this.Ra_pool_consent_of ? this.Ra_pool_consent_of(ident) : 0)) ? 1 : 0
     let peering = this.Swarm_peering(ident)
     if (!peering) { return 0 }
     let n = 0
     for (const reach of peering.o({ Reach: 1 })) {
         let st = String(reach.sc.state || '')
         if (st === 'arrived' || st === 'refused' || st === 'dead') { continue }
+        if (!fills_on && String(reach.sc.for || '') === 'serve') { continue }
         // THE THIRD EXIT — deadline → dead (W1): a standing want past its deadline settles 'dead'
         //  ('nobody-answered'), the only exit besides landed|refused, so a want can NEVER hang silent.
         //   The deadline is ms-epoch on `.c` (volatile — never snapped, Books stay clean; a reloaded

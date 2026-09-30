@@ -5074,6 +5074,9 @@
         //   rendered power-diagram: the one fault class no snap carries (pixels never round-trip a
         //    fixture).  top_House.c.cy is per-tab + never snapped (a live object belongs only in .c).
         try { (H.top_House().c as any).cy = cy } catch { /* no House root yet — a shot just reports none */ }
+        // the remote HAND's repaint (LiesFunk op:'drag'): the live drag loop rides requestAnimationFrame,
+        //  which a background runner tab barely runs, so a remote drag re-tessellates NOW, synchronously.
+        try { (H.top_House().c as any).cy_paint = () => paint_overlays_now() } catch { /* no House root yet */ }
 
         // the remote FACE-ARM (runner_shot --arm → LiesFunk op:'face'): set this tab's ◈/▧/▦
         //  prefs over the ask rails — the stashes are per-tab, so before this a headless caller
