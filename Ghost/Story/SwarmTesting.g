@@ -5409,3 +5409,192 @@ async SwarmBorrow_order(w):
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+
+// ══ SwarmCall — a Cell whose backend is another body of my crew (RemoteHeist_todo §2½, G0+G1) ═══════════
+//  The frontend (Captain) holds a %Remote,counter,of:c1,on:<Cave> — a cache of the backend's answers — and
+//   changes nothing but by asking.  Asking is a Reach `for:call` carrying `args`; the backend (Cave) is the
+//    ONE writer of its %Counter, serves the call on hear, and answers with the kind's view-model, which lands
+//     back on the %Remote.  No station in a Book, so each frame is CARRIED by hand exactly as the wire would
+//      carry it (Swarm_reach_wire out, the backend's `done_frame` back) — the SwarmBody beat 12 idiom.
+//   beat 2  three selves: Captain (frontend), Cave (backend), Mallory (not crew); Captain and Cave roster
+//            each other's body — the kin road
+//   beat 3  the round trip: create → inc 2 → inc 3 → a named refusal → get; both envelopes gone after
+//   beat 4  the gates: a stranger's call lands nothing; an unanswered call expires; the local path runs the
+//            same verb; list names the targets; a throwing doer stays serving and is logged
+//  CONVENTION (Musu*/Swarm*): the world MUST be named SwarmCall (do_fn_for dispatches by w.sc.w).
+
+// Remote_kind_counter — the stub kind (G1's proof).  A %Counter under the backend's %Peering.
+Remote_kind_counter():
+    return {
+        find: (ident, of, make) => {
+            let pe = this.Swarm_peering(ident)
+            if (!pe) { return null }
+            let t = pe.o({ Counter: String(of) })[0]
+            if (!t && make) { t = pe.i({ Counter: String(of), n: '0' }); t.c.up = pe }
+            return t || null
+        },
+        ops: {
+            inc: (t, args) => { t.sc.n = String((+t.sc.n || 0) + (+args.by || 1)); t.bump(); return 1 },
+            boom: (t) => { throw new Error('boom') },
+        },
+        view: (t) => ({ n: String(t.sc.n || '0'), _peek: 'volatile' }),
+        list: (ident) => (this.Swarm_peering(ident)?.o({ Counter: 1 }) ?? []).map((c) => String(c.sc.Counter)),
+        refuse: (ident, op) => op === 'nope' ? 'not_allowed' : null,
+    }
+
+SwarmCall(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmCall_drive,w,req
+        req%ok = 1
+
+SwarmCall_T(w):
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+
+SwarmCall_note(w, sc):
+    let t = this.SwarmCall_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+
+async SwarmCall_drive(w, req):
+    let run = (this.c.run)
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 4 }
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmCall_stand(w)
+        if (n === 3) await this.SwarmCall_trip(w)
+        if (n === 4) await this.SwarmCall_gates(w)
+    }
+    this.SwarmCall_witness(w)
+    await this.SwarmCall_order(w)
+
+// SwarmCall_carry — one call's whole journey with no wire: the frontend's reach as it would cross, the
+//  backend's road (kin gate → heard → served on hear), and the backend's done frame back to the frontend.
+SwarmCall_carry(w, reach):
+    if (!reach) { return null }
+    let heard = this.Swarm_reach_road(w, w.c.cave.ident, { reach: this.Swarm_reach_wire(reach) })
+    let done = heard && heard.c ? heard.c.done_frame : null
+    if (done) { this.Swarm_reach_ack(w, w.c.captain.ident, done) }
+    return { heard: heard, done: done }
+
+// beat 2 — three fixed selves, and the kin road between Captain and Cave.
+async SwarmCall_stand(w):
+    w i reached:step_2
+    w.sc.now = 1751800000
+    let mk = async (name) => {
+        let acct = w.oai({ Account: 1, of: name })
+        acct.c.up = w
+        let keys = await this.Swarm_mint_keys('SwarmCall-' + name)
+        return { keys: keys, ident: this.Swarm_identity(acct, keys, name) }
+    }
+    w.c.captain = await mk('Captain')
+    w.c.cave = await mk('Cave')
+    w.c.mallory = await mk('Mallory')
+    let C = w.c.captain.ident
+    let V = w.c.cave.ident
+    let cbody = String((this.Swarm_body_key(C) || {}).pub || C.sc.prepub)
+    let vbody = String((this.Swarm_body_key(V) || {}).pub || V.sc.prepub)
+    this.Swarm_body_note(V, cbody, 'Captain', String(C.sc.prepub), 'Captain')
+    this.Swarm_body_note(C, vbody, 'Cave', String(V.sc.prepub), 'Cave')
+    w.c.cave_at = String(V.sc.prepub)
+
+// beat 3 — THE ROUND TRIP.
+async SwarmCall_trip(w):
+    w i reached:step_3
+    if (!w.c.captain) return
+    w.sc.now = 1751800010
+    let C = w.c.captain.ident
+    let V = w.c.cave.ident
+    let rem = this.Remote_open(w, C, 'counter', w.c.cave_at, 'c1')
+    w.c.rem = rem
+    let row = { tripped: 1 }
+    this.SwarmCall_carry(w, this.Remote_call(w, C, 'counter', rem, 'create', {}))
+    let made = String(rem.sc.n || '') === '0'
+    this.SwarmCall_carry(w, this.Remote_call(w, C, 'counter', rem, 'inc', { by: 2 }))
+    this.SwarmCall_carry(w, this.Remote_call(w, C, 'counter', rem, 'inc', { by: 3 }))
+    let held = this.Remote_kind_counter().find(V, 'c1', 0)
+    if (made && String(rem.sc.n) === '5' && held && String(held.sc.n) === '5' && rem.c.peek === 'volatile' && !rem.sc.peek) row.round_trip = 1
+    // a named no — the view comes back unchanged, the why lands, the thing is untouched
+    this.SwarmCall_carry(w, this.Remote_call(w, C, 'counter', rem, 'nope', {}))
+    let refused = String(rem.sc.why || '') === 'not_allowed' && String(rem.sc.n) === '5' && String(held.sc.n) === '5'
+    this.SwarmCall_carry(w, this.Remote_call(w, C, 'counter', rem, 'get', {}))
+    if (refused && !rem.sc.why) row.refusal_named = 1
+    // both envelopes are scaffolding — gone once answered; the wish retired with them
+    let back_rows = this.Swarm_peering(V).o({ Reach: 1 }).length
+    let front_rows = this.Swarm_peering(C).o({ Reach: 1, for: 'call' }).length
+    let wishes = rem.c.wish ? Object.keys(rem.c.wish).length : 0
+    if (back_rows === 0 && front_rows === 0 && wishes === 0) row.envelopes_dropped = 1
+    this.SwarmCall_note(w, row)
+
+// beat 4 — THE GATES.
+async SwarmCall_gates(w):
+    w i reached:step_4
+    if (!w.c.rem) return
+    w.sc.now = 1751800100
+    let C = w.c.captain.ident
+    let V = w.c.cave.ident
+    let M = w.c.mallory.ident
+    let rem = w.c.rem
+    let held = this.Remote_kind_counter().find(V, 'c1', 0)
+    let row = { gated: 1 }
+    // #1 a stranger's call lands nothing
+    let mrem = this.Remote_open(w, M, 'counter', w.c.cave_at, 'c1')
+    let mreach = this.Remote_call(w, M, 'counter', mrem, 'inc', { by: 100 })
+    let landed = this.Swarm_reach_road(w, V, { reach: this.Swarm_reach_wire(mreach) })
+    if (landed === null && String(held.sc.n) === '5' && this.Swarm_peering(V).o({ Reach: 1 }).length === 0) row.stranger_ignored = 1
+    // #2 an unanswered call expires — nobody carries it; past its until the settle loop says so
+    let lost = this.Remote_call(w, C, 'counter', rem, 'inc', { by: 7 })
+    w.sc.now = 1751800100 + 61
+    this.Swarm_reach_settle(w, C)
+    let gone = !this.Swarm_peering(C).o({ Reach: 1, for: 'call' }).length
+    if (lost && String(rem.sc.why || '') === 'nobody-answered' && gone && String(held.sc.n) === '5') row.expiry_named = 1
+    // #3 the local path runs the same verb on the real thing and hands back the same view
+    let lv = this.Remote_call(w, V, 'counter', held, 'inc', { by: 1 })
+    this.SwarmCall_carry(w, this.Remote_call(w, C, 'counter', rem, 'get', {}))
+    if (lv && String(lv.n) === '6' && String(rem.sc.n) === '6' && !rem.sc.why) row.local_same = 1
+    // #4 list names the targets
+    let lrem = this.Remote_open(w, C, 'counter', w.c.cave_at, '*')
+    this.SwarmCall_carry(w, this.Remote_call(w, C, 'counter', lrem, 'list', {}))
+    if (String(lrem.sc.items || '') === 'c1' && String(lrem.sc.count || '') === '1') row.list_names = 1
+    // #5 a throwing doer stays serving and is logged — never silently answered
+    let before = V.o({ rebuff: 'reach_doer_threw' }).length
+    let bt = this.SwarmCall_carry(w, this.Remote_call(w, C, 'counter', rem, 'boom', {}))
+    let serving = this.Swarm_peering(V).o({ Reach: 1, for: 'call', state: 'serving' }).length
+    if (bt && bt.heard && !bt.done && serving === 1 && V.o({ rebuff: 'reach_doer_threw' }).length > before) row.throw_stays = 1
+    this.SwarmCall_note(w, row)
+
+// ── the witness — %sworn gated on TRUTH not beat number (no commas; em-dashes) ──
+SwarmCall_witness(w):
+    let n = (this.c.run)?.c.step_n
+    if (!(n >= 3)) return
+    let T = this.SwarmCall_T(w)
+    let tr = T.o({ tripped: 1 })[0]
+    if (tr && +tr.sc.round_trip === 1)
+        this.story_swear(w, 'a call is answered by the body that holds the thing — its view lands on the asking Remote and volatile keys stay off the snap')
+    if (tr && +tr.sc.refusal_named === 1)
+        this.story_swear(w, 'a refused call names its why on the Remote and leaves the thing as it was — the next answer clears it')
+    if (tr && +tr.sc.envelopes_dropped === 1)
+        this.story_swear(w, 'both envelopes of a call are dropped once it is answered — and its optimistic wish retires with them')
+    let g = T.o({ gated: 1 })[0]
+    if (g && +g.sc.stranger_ignored === 1)
+        this.story_swear(w, 'a call from outside my crew lands nothing — the road ignores it and the thing is untouched')
+    if (g && +g.sc.expiry_named === 1)
+        this.story_swear(w, 'a call nobody answers expires on its own — the Remote says nobody answered and the row goes')
+    if (g && +g.sc.local_same === 1)
+        this.story_swear(w, 'the same verb runs locally on the real thing and remotely through a Remote — one kind serves both')
+    if (g && +g.sc.list_names === 1)
+        this.story_swear(w, 'list names every target of a kind on the backend')
+    if (g && +g.sc.throw_stays === 1)
+        this.story_swear(w, 'a call whose doer throws stays serving and is logged — never silently answered')
+
+// SwarmCall_order — float A:SwarmCall to the front of H/* so the Run snap stays readable.
+async SwarmCall_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) { return }
+    let first = (a) => (a.sc.A === 'SwarmCall') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)

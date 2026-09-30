@@ -16,10 +16,29 @@ Read with: `Heist_todo.md` (what a Heist is, the `%Heist` keep, the cost line), 
 
 ## 0. What to get on with next
 
-**Nothing is built.** This is the design, settled in conversation, for the owner to preen. It is TWO layers:
- the general frontend/backend split (§2½ — a Cell whose backend is another crew body; G0–G2) and Heist as its
-  first customer (§3 — R1–R4). Build **G0 → G1 → R1** in that order. Build it Book-first: a two-body Book (Captain + Cave on one runner, the
-  SwarmBody/SwarmBorrow shape) before any live walk.
+### ✅ G0 + G1 LANDED 2026-09-30 — the general layer, Book-gated
+
+Built in `Ghost/S/Swarm.g` (the transport + the `#region Remote`), proven by the new two-body Book
+ **SwarmCall** (`Ghost/Story/SwarmTesting.g`, stub kind `Remote_kind_counter`): 4 steps, **8/8 declared +
+  sworn, green ×2 in check mode, caveat 0**.
+- **G0 (transport):** `Swarm_reach_wire` / `Swarm_reach_done_frame` carry the optional envelope (`args`,
+   `until`, `answer` — URI-encoded JSON, byte-identical for every pre-call reach); `Swarm_reach_heard` copies it;
+    T-1 settle gate (knob gates `for:serve` only); T-3 doer table `Swarm_reach_doer`; T-4 `for:call` kin-only in
+     the road; T-5 `until` expiry in settle; T-6 call rows dropped once reported (backend) / acked (frontend).
+- **G1 (the layer):** `Remote_open` (the `%Remote,<kind>,on,of` handle, on the station world — never the
+   identity), `Remote_call` (local → the kind's op + view; remote → book + dispatch at once + `.c.wish`),
+    `Remote_serve` (the `for:call` doer, quiet ops, free `get`/`list`/`create`), `Swarm_call_serve_now`
+     (served ON HEAR, T-2), `Remote_landed` (view → sc, `_`keys → .c, why, wish retires).
+- **What SwarmCall swears:** round trip lands the view (volatile keys off the snap) · a refusal names its why
+   and changes nothing · both envelopes drop and the wish retires · a stranger's call lands nothing · an
+    unanswered call expires as `nobody-answered` · the same verb runs locally and remotely · `list` names the
+     targets · a throwing doer stays serving and is logged.
+- **Not yet proven on a live wire** — the Book carries frames by hand (no station). The first live proof is R1.
+
+**Next: G2 → R1.** G2 = the view-model seam for a real kind (HeistFace onto `Remote_kind_heist().view`, R-1/R-9);
+ R1 = start + cancel a Cave's Heist from the Captain, live. Owner rulings in §4 apply (1 Captain + 1 Cave seat).
+
+### the design
 
 The destination in one sentence: **the Cave is a Heist SERVER for its own crew — the Captain's Heist cell is a
  remote form whose every edit is a request the Cave answers, and the Cave's own screen never sees it.**

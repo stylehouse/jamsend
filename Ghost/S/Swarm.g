@@ -6875,6 +6875,15 @@ Swarm_reach_backoff(w, reach):
     let wait = base * Math.pow(2, tries)
     return wait > 60000 ? 60000 : wait
 
+// Swarm_reach_wire — the reach as it crosses: its identity (of, to, for, by) plus the CALL envelope when present
+//  (RemoteHeist_todo §2½ G0): `args` (what the booker asks, URI-encoded JSON) and `until` (its expiry in
+//   Swarm_now seconds).  Both optional + guarded, so every pre-call reach is byte-identical on the wire.
+Swarm_reach_wire(reach):
+    let wire = { of: String(reach.sc.of || ''), to: String(reach.sc.to || ''), for: String(reach.sc.for || ''), by: String(reach.sc.by || '') }
+    if (reach.sc.args != null && String(reach.sc.args)) { wire.args = String(reach.sc.args) }
+    if (reach.sc.until != null && String(reach.sc.until)) { wire.until = String(reach.sc.until) }
+    return wire
+
 Swarm_reach_dispatch(w, ident, reach):
     if (!reach) { return null }
     // TERMINAL GUARD (kill the zombie, W1): a SETTLED reach — arrived | refused | dead — never
@@ -6920,7 +6929,7 @@ Swarm_reach_dispatch(w, ident, reach):
     if (reach.c.said_at && (now - reach.c.said_at) < this.Swarm_reach_backoff(w, reach)) { return addr }
     reach.c.said_at = now
     reach.c.tries = (+(reach.c.tries || 0)) + 1
-    let wire = { of: String(reach.sc.of || ''), to: String(reach.sc.to || ''), for: String(reach.sc.for || ''), by: String(reach.sc.by || '') }
+    let wire = this.Swarm_reach_wire(reach)
     // a NAMED holder that is a friend's pier (a circulation fill) rides the pier, not the sibling lane
     let fpier = (this.Swarm_body_for && this.Swarm_body_for(ident, String(reach.sc.to || ''))) ? null : (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => String(p.sc.pub || '') === addr)
     let went = fpier ? this.Swarm_deliver(w, ident, addr, { kind: 'reach', reach: wire }) : this.Swarm_sibling_send(w, ident, addr, { kind: 'reach', reach: wire })
@@ -6966,6 +6975,13 @@ Swarm_reach_settle(w, ident):
         let st = String(reach.sc.state || '')
         if (st === 'arrived' || st === 'refused' || st === 'dead') { continue }
         if (!fills_on && String(reach.sc.for || '') === 'serve') { continue }
+        // A CALL EXPIRES (T-5): its `until` rides sc in Swarm_now seconds — a reload does not lose it, and a Book's
+        //  pinned clock keeps it deterministic.  Past it, the frontend learns "nobody answered" and the row goes.
+        if (String(reach.sc.for || '') === 'call' && reach.sc.until && this.Swarm_now(w) > +reach.sc.until) {
+            this.Remote_landed(w, ident, reach, 'dead', { why: 'nobody-answered' })
+            peering.drop(reach)
+            continue
+        }
         // THE THIRD EXIT — deadline → dead (W1): a standing want past its deadline settles 'dead'
         //  ('nobody-answered'), the only exit besides landed|refused, so a want can NEVER hang silent.
         //   The deadline is ms-epoch on `.c` (volatile — never snapped, Books stay clean; a reloaded
@@ -7013,7 +7029,7 @@ Swarm_reach_pump(w, ident):
     //   Other kinds pass through untouched (the doer answers 0 for anything not for:ferry — the pool's doer
     //    does the same for anything not for:serve), then every terminal is reported to its booker once.
     if (w.c.station_up) {
-        this.Swarm_reach_serve(w, ident, (r) => this.Swarm_ferry_verdict(w, ident, r))
+        this.Swarm_reach_serve(w, ident, (r) => this.Swarm_reach_doer(w, ident, r))
         this.Swarm_reach_report_terminals(w, ident)
     }
     // THE LIVE DOER BINDING (SoundPooling_todo §0.5 / Reach_todo §0 "still owed"): the pool-fill
@@ -7041,6 +7057,9 @@ Swarm_reach_heard(w, ident, frame):
     let reach = this.Swarm_reach_book(w, ident, { to: String(r.to || ''), of: String(r.of || ''), for: String(r.for) })
     if (!reach) { return null }
     if (r.by) { reach.sc.by = String(r.by); reach.bump() }
+    // the CALL envelope rides in (G0) — guarded, never a maybe-undefined stamp
+    if (r.args != null && String(r.args)) { reach.sc.args = String(r.args) }
+    if (r.until != null && String(r.until)) { reach.sc.until = String(r.until) }
     if (String(reach.sc.state || '') === 'booked') { reach.sc.state = 'serving'; reach.bump() }
     return reach
 // Swarm_reach_serve — the TARGET does the work: for each inbound serving reach, DELEGATE to the doer (Reach
@@ -7122,6 +7141,13 @@ Swarm_reach_ack(w, ident, frame):
             reach.bump()
         }
     }
+    // A CALL'S ANSWER LANDS ON ITS %Remote, and the call row goes (G0/G1): the booker's reach was only ever the
+    //  envelope; what the frontend keeps is the view the backend answered with.  A non-terminal ack (a
+    //   `serving` echo) lands nothing.
+    if (String(r.for || '') === 'call' && rank(String(reach.sc.state || '')) > 0) {
+        this.Remote_landed(w, ident, reach, String(reach.sc.state || ''), frame)
+        peering.drop(reach)
+    }
     return reach
 // Swarm_reach_road — the RECEIVER's gate for an inbound `reach` frame: only a body of MY OWN soul may
 //  book work on me (the sibling law — `by` must prefix-match a rostered %Body pub), so a stranger's
@@ -7152,6 +7178,9 @@ Swarm_reach_road(w, ident, frame, from):
         }
     }
     let kin = this.Swarm_body_roster(ident).some((b) => same(String(b.sc.pub || ''), by))
+    // A CALL IS KIN-ONLY (RemoteHeist_todo T-4): a friend's live Music grant may book a pool fill on me, never
+    //  drive my organs.  Only a body of my own soul (the roster) may book `for:call`.
+    if (r.for === 'call' && !kin) { console.log('⨳🫱⚠ a call from a body outside my crew was ignored (' + by.slice(0, 8) + ')'); return null }
     // THE PEOPLE'S MUSIC (SoundPooling_todo, 2026-09-03): a FRIEND I share with may book a pool fill on me
     //  too — the same Music grant that lets it stream from me lets it ask me to press.  Kin by roster, or
     //   a pier whose page is `by` with Music live; a stranger is still ignored, loudly.
@@ -7169,7 +7198,20 @@ Swarm_reach_road(w, ident, frame, from):
         }
     }
     if (!kin) { console.log('⨳🫱⚠ a reach from an unrostered body was ignored (' + by.slice(0, 8) + ')'); return null }
-    return this.Swarm_reach_heard(w, ident, frame)
+    let heard = this.Swarm_reach_heard(w, ident, frame)
+    // SERVED ON HEAR (T-2): a call is answered NOW, in the hear funnel — the pump (every ~10s on a live tab)
+    //  stays the retry path for a call whose doer said "not yet", never the fast path.
+    if (heard && r.for === 'call') { this.Swarm_call_serve_now(w, ident, heard) }
+    return heard
+// Swarm_reach_done_frame — the outcome as it crosses back: state + the reach's identity, the named refusal, and
+//  (G0) the CALL's `answer` (URI-encoded JSON view-model).  Split out so a Book can carry the SAME frame the
+//   wire would, by hand, when there is no station.
+Swarm_reach_done_frame(reach):
+    let wire = { of: String(reach.sc.of || ''), to: String(reach.sc.to || ''), for: String(reach.sc.for || ''), by: String(reach.sc.by || '') }
+    let done = { kind: 'reach_done', state: String(reach.sc.state || 'arrived'), reach: wire }
+    if (reach.sc.why != null && String(reach.sc.why)) { done.why = String(reach.sc.why) }   // the named refusal crosses too (guarded)
+    if (reach.sc.answer != null && String(reach.sc.answer)) { done.answer = String(reach.sc.answer) }
+    return done
 // Swarm_reach_report — the TARGET tells the BOOKER the outcome: resolve the booker's ADDRESS off my
 //  roster (the row whose pub matches the reach's `by`) and send a `reach_done` carrying the terminal
 //   state.  A miss is fine — the settle loop's re-dispatch makes the booker re-learn eventually.
@@ -7185,11 +7227,169 @@ Swarm_reach_report(w, ident, reach):
     if (!addr && fpier) { addr = String(fpier.sc.pub || '') }
     if (!addr) { return null }
     if (!w || !w.c.station_up) { return addr }        // Book / no station: resolution proven, wire inert
-    let wire = { of: String(reach.sc.of || ''), to: String(reach.sc.to || ''), for: String(reach.sc.for || ''), by: by }
-    let done = { kind: 'reach_done', state: String(reach.sc.state || 'arrived'), reach: wire }
-    if (reach.sc.why != null && String(reach.sc.why)) { done.why = String(reach.sc.why) }   // the named refusal crosses too (guarded)
+    let done = this.Swarm_reach_done_frame(reach)
     if (fpier) { return this.Swarm_deliver(w, ident, addr, done) ? addr : null }
     return this.Swarm_sibling_send(w, ident, addr, done) ? addr : null
+//#region Remote — a Cell whose backend is another body of my crew (RemoteHeist_todo §2½, G1)
+//  THE SHAPE: the backend body holds the real particle and is its ONE writer; a frontend body holds a
+//   %Remote,<kind>,of,on — a referring particle carrying the backend's LAST ANSWERED view — and changes
+//    nothing but by asking.  Asking is a Reach `for:call`, `of:<kind>|<target>|<op>|<seq>`, kin-only (the
+//     road), served on hear (Swarm_call_serve_now), answered as a view-model that lands back on the %Remote.
+//  A KIND is registered by the ghost that owns it: a method `Remote_kind_<kind>()` returning
+//   { find(ident, of, make) → target, ops: { <op>(target, args, cx) → truthy | {refuse} }, view(target) →
+//     flat object, list?(ident) → [ids], refuse?(ident, op, args, of) → why | null }.
+//   View keys starting `_` are VOLATILE and land on the %Remote's `.c` (never snapped, R-6); the rest land
+//    on its `sc`.  `get` and `list` are free on every kind; `create` asks find() to make the target.
+//  Swarm stays verb-agnostic — it never learns what a Heist is.
+
+// Remote_enc / Remote_dec — the envelope codec.  URI-encoded JSON, so a snapped `args`/`answer` scalar carries
+//  no comma, colon or quote to trip a line codec.
+Remote_enc(obj):
+    return encodeURIComponent(JSON.stringify(obj == null ? {} : obj))
+Remote_dec(s):
+    if (s == null || !String(s)) { return null }
+    try { return JSON.parse(decodeURIComponent(String(s))) } catch (er) { return null }
+
+// Remote_spec — the registered kind, or null.
+Remote_spec(kind):
+    let fn = this['Remote_kind_' + String(kind || '')]
+    if (typeof fn !== 'function') { return null }
+    try { return fn.call(this) } catch (er) { return null }
+
+// Remote_open — the frontend's handle on one target of one kind on one body.  Find-or-create; the view fills in
+//  on the first answer.  Lives on the station world (NOT the identity — it is a cache, and the account text
+//   must not persist it).
+Remote_open(w, ident, kind, on, of):
+    let n = w.oai({ Remote: String(kind), on: String(on), of: String(of || '') })
+    n.c.up = w
+    return n
+
+// Remote_call — THE one verb a face calls.  On a %Remote it asks the backend (books + dispatches at once, R-3/
+//  T-2) and stamps the optimistic wish on .c; on a real particle it runs the kind's op locally and returns the
+//   fresh view — so a face never branches on where its backend lives.  Returns the booked reach (remote) or the
+//    view (local), or {refuse} (local refusal), or null.
+Remote_call(w, ident, kind, n, op, args):
+    if (!w || !ident || !n) { return null }
+    let a = args || {}
+    if (Object.keys(n.sc)[0] === 'Remote') {
+        let rk = String(n.sc.Remote)
+        w.c.remote_seq = (+(w.c.remote_seq || 0)) + 1
+        let rof = rk + '|' + String(n.sc.of || '') + '|' + String(op) + '|' + String(w.c.remote_seq)
+        let reach = this.Swarm_reach_book(w, ident, { to: String(n.sc.on), of: rof, for: 'call' })
+        if (!reach) { return null }
+        reach.sc.args = this.Remote_enc(a)
+        reach.sc.until = String(this.Swarm_now(w) + 60)
+        reach.bump()
+        if (!n.c.wish) { n.c.wish = {} }
+        n.c.wish[String(op)] = a
+        n.bump()
+        this.Swarm_reach_dispatch(w, ident, reach)
+        return reach
+    }
+    let spec = this.Remote_spec(kind)
+    if (!spec) { return null }
+    if (spec.refuse) { let why = spec.refuse(ident, String(op), a, ''); if (why) { return { refuse: String(why) } } }
+    if (op !== 'get') {
+        let fn = spec.ops ? spec.ops[String(op)] : null
+        if (typeof fn !== 'function') { return { refuse: 'no_op' } }
+        let res = fn(n, a, { w: w, ident: ident, quiet: 1 })
+        if (res && res.refuse) { return res }
+    }
+    return spec.view(n)
+
+// Remote_serve — the BACKEND answers one call (the `for:call` doer, tri-state per the reach doer contract):
+//  truthy → answered (the view is on reach.sc.answer); {refuse: why} → a named no (with the fresh view when
+//   the target exists, R-2); a throw stays serving — loud, retried by the pump.  Ops run QUIET (R-8): a call
+//    never touches the backend's focus.
+Remote_serve(w, ident, reach):
+    let parts = String(reach.sc.of || '').split('|')
+    let kind = parts[0] || ''
+    let target = parts[1] || ''
+    let op = parts[2] || ''
+    let spec = this.Remote_spec(kind)
+    if (!spec) { return { refuse: 'no_kind' } }
+    let a = this.Remote_dec(reach.sc.args) || {}
+    if (spec.refuse) { let why = spec.refuse(ident, op, a, target); if (why) { return { refuse: String(why) } } }
+    if (op === 'list') {
+        let ids = spec.list ? spec.list(ident) : []
+        reach.sc.answer = this.Remote_enc({ items: ids.join(' '), count: ids.length })
+        return 1
+    }
+    let t = spec.find(ident, target, op === 'create' ? 1 : 0)
+    if (!t) { return { refuse: 'no_target' } }
+    if (op !== 'get' && op !== 'create') {
+        let fn = spec.ops ? spec.ops[op] : null
+        if (typeof fn !== 'function') { return { refuse: 'no_op' } }
+        let res = fn(t, a, { w: w, ident: ident, quiet: 1 })
+        if (res && res.refuse) {
+            reach.sc.answer = this.Remote_enc(spec.view(t))
+            return res
+        }
+    }
+    reach.sc.answer = this.Remote_enc(spec.view(t))
+    return 1
+
+// Swarm_reach_doer — the pump's doer TABLE (T-3): each `for` to its own doer; anything else answers 0 (stays
+//  serving — `for:serve` is the pool pump's, served by Ra_pool_fill_pump).
+Swarm_reach_doer(w, ident, reach):
+    let fr = String(reach.sc.for || '')
+    if (fr === 'ferry') { return this.Swarm_ferry_verdict(w, ident, reach) }
+    if (fr === 'call') { return this.Remote_serve(w, ident, reach) }
+    return 0
+
+// Swarm_call_serve_now — serve ONE inbound call in the hear funnel (T-2) and report it at once; the backend's
+//  copy is dropped once reported (T-6).  The done frame is kept on the row's .c (`done_frame`) before the drop
+//   so a Book — no station, no wire — can carry exactly what the wire would have.
+Swarm_call_serve_now(w, ident, reach):
+    let got
+    try { got = this.Remote_serve(w, ident, reach) } catch (e) {
+        this.Swarm_rebuff(ident, 'reach_doer_threw', 'call:' + String(reach.sc.of || '').slice(0, 40) + ' ' + String(e).slice(0, 40))
+        return null
+    }
+    if (!got) { return null }
+    if (got.refuse) {
+        this.Swarm_reach_refuse(w, ident, reach, String(got.refuse))
+    } else {
+        reach.sc.state = 'arrived'
+        reach.sc.at = String(this.Swarm_now(w))
+        reach.bump()
+    }
+    reach.c.done_frame = this.Swarm_reach_done_frame(reach)
+    reach.c.reported = 1
+    this.Swarm_reach_report(w, ident, reach)
+    let peering = this.Swarm_peering(ident)
+    if (peering) { peering.drop(reach) }
+    return reach.c.done_frame
+
+// Remote_landed — the FRONTEND takes an answer: the view lands on the %Remote this call belongs to (sc for the
+//  durable keys, .c for `_`-prefixed volatile ones), a refusal or a death lands its `why`, and the op's
+//   optimistic wish retires.  A call whose %Remote is gone lands nowhere, quietly.
+Remote_landed(w, ident, reach, st, frame):
+    let parts = String(reach.sc.of || '').split('|')
+    let n = w.o({ Remote: parts[0] || '', on: String(reach.sc.to || ''), of: parts[1] || '' })[0]
+    if (!n) { return null }
+    let view = this.Remote_dec(frame && frame.answer)
+    if (view && typeof view === 'object') {
+        for (const k of Object.keys(view)) {
+            let v = view[k]
+            if (v == null || typeof v === 'object' || typeof v === 'function') { continue }
+            if (k === 'Remote' || k === 'on' || k === 'of' || k === 'why') { continue }
+            if (k.charAt(0) === '_') { n.c[k.slice(1)] = v; continue }
+            n.sc[k] = String(v)
+        }
+    }
+    let why = frame && frame.why != null ? String(frame.why) : ''
+    if ((st === 'refused' || st === 'dead') && why) {
+        n.sc.why = why
+    } else if (st === 'arrived' && n.sc.why) {
+        delete n.sc.why
+    }
+    if (n.c.wish) { delete n.c.wish[parts[2] || ''] }
+    n.c.answered_at = Date.now()
+    n.bump()
+    return n
+//#endregion
+
 // Swarm_reach_crew — the CREW ACTIVITY read (Reach_todo §6, the legibility half — the owner: "I don't
 //  bother reading your code anymore").  A pure projection of the standing reaches into ONE legible glance:
 //   what my crew is doing for me and what I'm doing for them, tallied by state, each with its age.  The
@@ -8981,6 +9181,8 @@ Swarm_reach_report_terminals(w, ident):
             if (reach.c.reported) { continue }
             reach.c.reported = 1
             this.Swarm_reach_report(w, ident, reach)
+            // a CALL's backend copy is scaffolding once answered (T-6) — the receipt lives on the frontend
+            if (String(reach.sc.for || '') === 'call') { peering.drop(reach) }
             n = n + 1
         }
     }

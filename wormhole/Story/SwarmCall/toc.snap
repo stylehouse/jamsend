@@ -1,0 +1,28 @@
+story:SwarmCall
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.022
+      sample=0.037,at=1790746775
+      sample=0.022,at=1790746802
+      sample=0.009,at=1790746805
+      sample=0.02,at=1790747007
+    TimeTotal:step,avg=0.006
+      sample=0.009,at=1790746775
+      sample=0.006,at=1790746802
+      sample=0.002,at=1790746805
+      sample=0.005,at=1790747007
+  step,dige:6ff5b022a54efa9f
+  step=2,dige:89c81bf56b6b2b74
+  step=3,dige:60d0d14f119ae61c
+    Assertion:a-call-is-answered,sentence:a call is answered by the body that holds the thing — its view lands on the asking Remote and volatile keys stay off the snap
+    Assertion:a-refused-call-names,sentence:a refused call names its why on the Remote and leaves the thing as it was — the next answer clears it
+    Assertion:both-envelopes-of-a,sentence:both envelopes of a call are dropped once it is answered — and its optimistic wish retires with them
+  step=4,dige:a20a91c482ab2728
+    Assertion:a-call-from-outside,sentence:a call from outside my crew lands nothing — the road ignores it and the thing is untouched
+    Assertion:a-call-nobody-answers,sentence:a call nobody answers expires on its own — the Remote says nobody answered and the row goes
+    Assertion:the-same-verb-runs,sentence:the same verb runs locally on the real thing and remotely through a Remote — one kind serves both
+    Assertion:list-names-every-target,sentence:list names every target of a kind on the backend
+    Assertion:a-call-whose-doer,sentence:a call whose doer throws stays serving and is logged — never silently answered

@@ -1,0 +1,33 @@
+Snap:H
+  H:SwarmCall,Run
+    A:SwarmCall
+      self,round=3	{"mung":["age"]}
+      w:SwarmCall,now=1751800010
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Captain
+          Identity:d2bff7cb7525cea6,prepub:d2bff7cb7525cea6,friendly:Captain
+            Peering,name:d2bff7cb7525cea6,friendly:Captain
+              Body,pub:978633c59eee172b81353fba31041126d6219ac286b07f8d8d3ddb5afff49545,post:Cave,address:978633c59eee172b,name:Cave
+            Crew,soul:d2bff7cb7525cea6c8332e2c22f7e6715c820cfb8cf7e652a1d37358543c8d5f
+              mate:d2bff7cb7525cea6,role:Captain,pub:d2bff7cb7525cea6c8332e2c22f7e6715c820cfb8cf7e652a1d37358543c8d5f
+              Key,pub:d2bff7cb7525cea6c8332e2c22f7e6715c820cfb8cf7e652a1d37358543c8d5f	{"mung":["secret"]}
+        Account,of:Cave
+          Identity:978633c59eee172b,prepub:978633c59eee172b,friendly:Cave
+            Peering,name:978633c59eee172b,friendly:Cave
+              Body,pub:d2bff7cb7525cea6c8332e2c22f7e6715c820cfb8cf7e652a1d37358543c8d5f,post:Captain,address:d2bff7cb7525cea6,name:Captain
+              Counter:c1,n:5
+            Crew,soul:978633c59eee172b81353fba31041126d6219ac286b07f8d8d3ddb5afff49545
+              mate:978633c59eee172b,role:Captain,pub:978633c59eee172b81353fba31041126d6219ac286b07f8d8d3ddb5afff49545
+              Key,pub:978633c59eee172b81353fba31041126d6219ac286b07f8d8d3ddb5afff49545	{"mung":["secret"]}
+        Account,of:Mallory
+          Identity:8ff77a27ee47d407,prepub:8ff77a27ee47d407,friendly:Mallory
+            Peering,name:8ff77a27ee47d407,friendly:Mallory
+            Crew,soul:8ff77a27ee47d40750bea26ee4ec031b65805c6932b5b5a39cc4cccfdc17bb35
+              mate:8ff77a27ee47d407,role:Captain,pub:8ff77a27ee47d40750bea26ee4ec031b65805c6932b5b5a39cc4cccfdc17bb35
+              Key,pub:8ff77a27ee47d40750bea26ee4ec031b65805c6932b5b5a39cc4cccfdc17bb35	{"mung":["secret"]}
+        reached:step_3
+        Remote:counter,on:978633c59eee172b,of:c1,n:5
+        testing
+          tripped,round_trip,refusal_named,envelopes_dropped

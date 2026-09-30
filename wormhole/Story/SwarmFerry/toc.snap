@@ -4,8 +4,7 @@ story:SwarmFerry
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.047
-      sample=0.001,at=1788060322
+    TimeTotal:beliefs,avg=0.048
       sample=0.004,at=1788061927
       sample=0.001,at=1788063993
       sample=0.001,at=1788071929
@@ -15,8 +14,8 @@ story:SwarmFerry
       sample=0.027,at=1790655454
       sample=0.007,at=1790679525
       sample=0.012,at=1790727924
-    TimeTotal:step,avg=0.047
-      sample=0.001,at=1788060322
+      sample=0.004,at=1790746896
+    TimeTotal:step,avg=0.048
       sample=0.004,at=1788061927
       sample=0.001,at=1788063993
       sample=0.001,at=1788071929
@@ -26,4 +25,5 @@ story:SwarmFerry
       sample=0.027,at=1790655454
       sample=0.007,at=1790679525
       sample=0.012,at=1790727924
+      sample=0.004,at=1790746896
   step,dige:2d1121ca35c66bc3

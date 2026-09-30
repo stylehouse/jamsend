@@ -4,7 +4,7 @@ story:SwarmBorrow
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.077
+    TimeTotal:beliefs,avg=0.08
       sample=0.051,at=1790546669
       sample=0.036,at=1790546677
       sample=0.058,at=1790546681
@@ -12,6 +12,7 @@ story:SwarmBorrow
       sample=0.103,at=1790546799
       sample=0.113,at=1790655561
       sample=0.112,at=1790728123
+      sample=0.1,at=1790746877
     TimeTotal:step,avg=0.016
       sample=0.01,at=1790546669
       sample=0.007,at=1790546677
@@ -20,6 +21,7 @@ story:SwarmBorrow
       sample=0.021,at=1790546799
       sample=0.023,at=1790655561
       sample=0.022,at=1790728123
+      sample=0.02,at=1790746877
   step,dige:83d178fe182f5ae4
   step=2,dige:dec91a81098c575d
   step=3,dige:e7a8d1a20a9fb2fc
