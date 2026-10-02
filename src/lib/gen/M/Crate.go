@@ -9,7 +9,7 @@ import { parseBuffer } from "music-metadata"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '09a8e335a4945448~g1' },
+    Ghostmeta_Ghost_M_Crate(): string { return '3fbdac497f82b30d~g1' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -213,6 +213,13 @@ async Crate_radiostock_from(crate) {
 Crate_nav() {
     let A = this.top_House().o({ A: 'Wormhole' })[0]
     return A ? (A.c.nav || null) : null
+
+},
+// Crate_has_folder — does this body hold a REAL music folder (an FSA grant), not the listen-only|cloud nav a
+//  no-folder phone stands?  The 🧲's candidacy test (Heard_magnet): only a folder can take originals.
+Crate_has_folder() {
+    let A = this.top_House().o({ A: 'Wormhole' })[0]
+    return A && A.c.DL ? 1 : 0
 
 },
 // Crate_nav_paths — walk `base` breadth-first, collecting every audio file's path RELATIVE to base

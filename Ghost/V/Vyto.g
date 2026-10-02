@@ -150,6 +150,12 @@ e_Vyto_commission(A, w, e):
     //      of a comma-string re-split on every call — the hacky part is gone, the wire is unchanged.
     //  GUARDED — an unset commission mints nothing.  So every existing world stays byte-identical.
     if (req.sc.foamereo) this.Vyto_vytocon_seed(w, req.sc.foamereo)
+    // THE HAND'S CAUSES ride the commission (Vyto_hand_puts): the PRODUCER owns where things were put —
+    //  the cave's law, a dive is the producer's state and Vyto only draws — and hands the whole set over
+    //   on every commission (`req.c.puts`, plain {Put:tok, x, y, pin?, pull?} objects), so a fresh glass
+    //    is put back exactly as it was.  Given ⇒ the world's Put rows become exactly that set; absent ⇒
+    //     untouched (a commission that says nothing about the hand changes nothing about it).
+    if (req.c?.puts) this.Vyto_hand_seat(w, req.c.puts)
     // PLAIN — the commissioner is handing over particles with no faces behind them, so the glass
     //  should draw the C** itself (bare's typographic set) instead of leaving quiet frames waiting
     //   for components that will never mount.  Same carry as foamereo: a capture can read it.
@@ -636,6 +642,16 @@ Vyto_scan_sweep(w, parentMirror, gen):
         //     stir and never again.  The same exemption a membrane takes, for the same reason — the row
         //      keeps its own house and the scan is not its witness.
         if (row.c.voice) continue
+        // A CREST IS THE FOLD'S, NOT THE SCAN'S (2026-10-03, the owner: *"it doesn't settle on the page, it
+        //  keeps jitterbugging — HeistTesting is usually Particle x17 but sometimes Mention x200 Def x17"*).
+        //   The fold stamps a crest `seen_at = scan_gen` — but the fold runs AFTER the scan, and the next
+        //    scan bumps the gen before it sweeps, so every crest was ALWAYS one gen stale here: marked
+        //     departing on one stir (the fold re-found it but never cleared the mark), dropped on the next,
+        //      re-minted by the fold, departing again — a strict period-2 flicker, every crest, every level,
+        //       forever (measured in the eye: dep=3 / dep=0 alternating on HeistTesting, stir after stir).
+        //   The fold already keeps its own house (it drops a crest whose group stops qualifying), so the
+        //    sweep leaves crests be — the membrane's and the voice's exemption, for the same reason.
+        if (row.sc.Vtuffing != null) continue
         if (row.c.seen_at === gen) continue
         // DIAGNOSTIC twin of the MINT log above — a Keep row missed this scan (its source wasn't
         //  re-walked): first miss marks departing, second miss (still departing) actually drops it.
@@ -1806,6 +1822,76 @@ Vyto_fo(w, key):
     let v = vc.sc[key]
     return v == null ? null : String(v)
 
+// Vyto_hand_puts — THE HAND'S CAUSES (2026-10-03, Glassbeast §0 "THE WALL, AND THE SHAPE OF ITS CRACK").
+//  A `%Put:<tok>,x,y` row under the world says WHERE A HAND PUT a cell: x|y in per-mille of the frame
+//   (so a resize never moves it), integers, no wall clock — a cause, so it snaps and a Book proves it,
+//    and the cut stays a pure function of it.  The owner: *"some of the display should stay stable and
+//     some of it should change"* + *"or be like an attractor"* — so a Put is an ATTRACTOR by default
+//      (`pull`, per relax step, default 0.15: the cell falls toward the place and neighbours can still
+//       press it off), and a `pin` Put is a pin (it sits exactly there).  The rows ARE the gate: none ⇒
+//        null ⇒ the solve is byte-identical, so no Book that never puts can see this.
+//  Returns per-member {x, y, k} | null (aligned with members), or null when nothing here is put.
+//   A pinned put also seats the seed on the spot and marks `pinned`, so every existing pin law holds it.
+Vyto_hand_puts(w, members, seeds, pinned, fw, fh):
+    let rows = w.o({ Put: 1 })
+    if (!rows.length) return null
+    let by = {}
+    for (const p of rows) by[p.sc.Put] = p
+    let out = []
+    let any = 0
+    let i = 0
+    while (i < members.length) {
+        let p = by[members[i].c.tok]
+        if (!p) { out.push(null); i = i + 1; continue }
+        let at = { x: Number(p.sc.x) / 1000 * fw, y: Number(p.sc.y) / 1000 * fh, k: p.sc.pull != null ? Number(p.sc.pull) : 0.15 }
+        if (!isFinite(at.x) || !isFinite(at.y)) { out.push(null); i = i + 1; continue }
+        if (p.sc.pin) { seeds[i] = { x: at.x, y: at.y }; pinned[i] = true }
+        out.push(at)
+        any = 1
+        i = i + 1
+    }
+    return any ? out : null
+
+// Vyto_hand_seat — make the world's %Put rows exactly `puts` (the producer's whole set).  Only
+//  scalar keys, only what is given (never a maybe-undefined stamp); bumps only on a real change.
+Vyto_hand_seat(w, puts):
+    let want = {}
+    for (const p of puts) {
+        if (!p || p.Put == null || p.x == null || p.y == null) continue
+        let sc = { Put: String(p.Put), x: String(Math.round(Number(p.x))), y: String(Math.round(Number(p.y))) }
+        if (p.pin) sc.pin = 1
+        if (p.pull != null) sc.pull = String(p.pull)
+        want[sc.Put] = sc
+    }
+    for (const r of w.o({ Put: 1 })) {
+        let s = want[r.sc.Put]
+        if (!s) { w.drop(r); continue }
+        delete want[r.sc.Put]
+        if (r.sc.x !== s.x || r.sc.y !== s.y || r.sc.pin != s.pin || r.sc.pull != s.pull) { w.drop(r); want[s.Put] = s }
+    }
+    for (const k of Object.keys(want)) w.i(want[k])
+
+// e_Vyto_put — the HAND's door (a pointer on the glass, a runner's remote hand): put ONE cell, or
+//  lift it (`lift:1`).  Writes the world's row directly — the producer-owned road is the commission;
+//   this is the live glass's own, for a hand that has no producer behind it.
+e_Vyto_put(A, w, e):
+    let p = e?.sc
+    if (!p || p.Put == null) return
+    for (const r of w.o({ Put: p.Put })) w.drop(r)
+    if (!p.lift) this.Vyto_hand_seat_one(w, p)
+    this.Vyto_stir_soon(w)
+
+Vyto_hand_seat_one(w, p):
+    if (p.x == null || p.y == null) return
+    let sc = { Put: String(p.Put), x: String(Math.round(Number(p.x))), y: String(Math.round(Number(p.y))) }
+    if (p.pin) sc.pin = 1
+    if (p.pull != null) sc.pull = String(p.pull)
+    w.i(sc)
+
+// Vyto_hand_pull — one attractor step: the seed moves k of the way toward where the hand put it.
+Vyto_hand_pull(s, at):
+    return { x: s.x + at.k * (at.x - s.x), y: s.y + at.k * (at.y - s.y) }
+
 // Vyto_solve — the cut.  For now ONE root scope (the scope milestone comes later): a fixed
 //  frame, the `cell` solver of shapes.md §3 — seed-and-relax over the proven power diagram.
 //   NO board Organ row is struck here: the cut is the root scope's own cell solve, and organ
@@ -1924,6 +2010,9 @@ Vyto_solve(w):
     let stok = this.Vyto_stage_tok(w, members)
     let sidx = -1
     if (stok != null) sidx = this.Vyto_stage_lay(w, members, seeds, radii, pinned, fw, fh, stok)
+    // THE HAND (Glassbeast §0 "THE WALL, AND THE SHAPE OF ITS CRACK") — %Put rows are causes the solve
+    //  honours; null when the world holds none, so every world without one solves byte-identically.
+    let puts = this.Vyto_hand_puts(w, members, seeds, pinned, fw, fh)
     // THE BAG IS FINITE (fit law, 2026-08-09 — the owner: "mostly in a broken layout state").
     //  Bodies keep their intrinsic sizes until the bag cannot hold them; then BAG PRESSURE
     //   squeezes everyone ALIKE (one k on every radius — a similarity, so relative pricing is
@@ -2023,6 +2112,7 @@ Vyto_solve(w):
             let pi = 0
             while (pi < seeds.length) {
                 if (pinned[pi]) next[pi] = seeds[pi]
+                else if (puts && puts[pi]) next[pi] = this.Vyto_hand_pull(next[pi], puts[pi])
                 let dd = Math.abs(next[pi].x - seeds[pi].x) + Math.abs(next[pi].y - seeds[pi].y)
                 if (dd > moved) moved = dd
                 pi = pi + 1
@@ -2040,6 +2130,7 @@ Vyto_solve(w):
         //       moves it is the frame overruling the author.
         let anyPin = false
         for (const p of pinned) { if (p) anyPin = true }
+        if (puts) anyPin = true   // a put is the author's word too — the fit/room rescue must not move it
         if (!anyPin && seeds.length) {
             let minx = 1e9
             let miny = 1e9
@@ -2159,6 +2250,7 @@ Vyto_solve(w):
                 i = i + 1
             }
             if (nbrs) seeds = pull_step(seeds, nbrs, pinned, 0.15)
+            if (puts) seeds = seeds.map((s, si) => (puts[si] && !pinned[si]) ? this.Vyto_hand_pull(s, puts[si]) : s)
             k = k + 1
         }
     }

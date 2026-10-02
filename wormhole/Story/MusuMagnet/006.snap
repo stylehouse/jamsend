@@ -1,0 +1,64 @@
+Snap:H
+  H:MusuMagnet,Run
+    A:MusuMagnet
+      self,round=6	{"mung":["age"]}
+      w:MusuMagnet,now=1788600060
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          stood
+          picked,an_online_cave_by_default,the_pick_holds,a_stale_pick_falls_back,a_cave_keeps_its_own,an_away_cave_yields_to_my_folder,no_folder_still_names_the_cave,no_crew_names_nobody
+          away,the_desk_leaves_it_be,the_laptop_hauls_it,the_adopted_card_keeps_its_to,the_row_names_where
+          home,the_laptop_sees_it_and_leaves_it,the_desk_hauls_it
+          nobody,no_to_is_stamped,anyone_may_haul_it
+        Account,of:Alice
+          Identity:8932a53c4ab9a3e9,prepub:8932a53c4ab9a3e9,friendly:Desk
+            Peering,name:8932a53c4ab9a3e9,friendly:Desk,online
+              Body,pub:8932a53c4ab9a3e995a830a0a6d35ab7ad4ee64b16cf6ea601b7071057b35254,post:Captain,address:8932a53c4ab9a3e9
+              Body,pub:7992f22e1247f43aebe5fd6104681ab599fd21f49bb47e4e7c193b08b8a3aa38,post:Cave,address:8932a53c4ab9a3e9_1,name:Laptop
+            Crew,soul:8932a53c4ab9a3e995a830a0a6d35ab7ad4ee64b16cf6ea601b7071057b35254
+              mate:8932a53c4ab9a3e9,role:Captain,pub:8932a53c4ab9a3e995a830a0a6d35ab7ad4ee64b16cf6ea601b7071057b35254
+              Key,pub:8932a53c4ab9a3e995a830a0a6d35ab7ad4ee64b16cf6ea601b7071057b35254	{"mung":["secret"]}
+          Identity:7992f22e1247f43a,prepub:7992f22e1247f43a,friendly:Laptop
+            Peering,name:7992f22e1247f43a,friendly:Laptop,online
+              Body,pub:7992f22e1247f43aebe5fd6104681ab599fd21f49bb47e4e7c193b08b8a3aa38,post:Cave,address:8932a53c4ab9a3e9_1
+              Body,pub:8932a53c4ab9a3e995a830a0a6d35ab7ad4ee64b16cf6ea601b7071057b35254,post:Captain,address:8932a53c4ab9a3e9,name:Desk
+            Crew,soul:7992f22e1247f43aebe5fd6104681ab599fd21f49bb47e4e7c193b08b8a3aa38
+              mate:7992f22e1247f43a,role:Captain,pub:7992f22e1247f43aebe5fd6104681ab599fd21f49bb47e4e7c193b08b8a3aa38
+              Key,pub:7992f22e1247f43aebe5fd6104681ab599fd21f49bb47e4e7c193b08b8a3aa38	{"mung":["secret"]}
+            mail
+              frame:heard,did
+              frame:heard,did
+              frame:heard,did
+        Theirs,pub:dj
+          stock,pub:dj
+            Record,id:t1,title:Cosmic C,artist:DJ Oscillo
+        Theirs,pub:dj2
+          stock,pub:dj2
+            Record,id:t2,title:Dorian D,artist:DJ Oscillo
+        Theirs,pub:dj3
+          stock,pub:dj3
+            Record,id:t3,title:Lydian L,artist:DJ Oscillo
+        Mine,pub:8932a53c4ab9a3e9
+          shop,pub:8932a53c4ab9a3e9
+            Heist:Dorian D,seed:t2,pub:dj2,state:primed,take,at:1788600050,from_name:dj2,artist:DJ Oscillo
+          Mag:heard,pub:8932a53c4ab9a3e9,heard_ttl:30,take_ttl:90
+            Cloud,page:1,created_at:1788600040
+              Card,id:t1,pub:dj,hearted_at:1788600040,title:Cosmic C,artist:DJ Oscillo,to:7992f22e1247f43a
+              Card,id:t2,pub:dj2,hearted_at:1788600050,title:Dorian D,artist:DJ Oscillo,to:8932a53c4ab9a3e9,carried_by:Desk,carried_at:1788600050
+              Card,id:t3,pub:dj3,hearted_at:1788600060,title:Lydian L,artist:DJ Oscillo
+        Mine,pub:7992f22e1247f43a
+          shop,pub:7992f22e1247f43a
+            Heist:Cosmic C,seed:t1,pub:dj,state:primed,take,at:1788600040,from_name:dj,artist:DJ Oscillo
+            Heist:Lydian L,seed:t3,pub:dj3,state:primed,take,at:1788600060,from_name:dj3,artist:DJ Oscillo
+          TheirHeard,pub:8932a53c4ab9a3e9
+            Mag:heard,pub:8932a53c4ab9a3e9
+              Cloud,page:1,created_at:1788600040
+                Card,id:t1,pub:dj,hearted_at:1788600040,title:Cosmic C,artist:DJ Oscillo,to:7992f22e1247f43a
+                Card,id:t2,pub:dj2,hearted_at:1788600050,title:Dorian D,artist:DJ Oscillo,to:8932a53c4ab9a3e9,carried_at:1788600050,carried_by:Desk
+                Card,id:t3,pub:dj3,hearted_at:1788600060,title:Lydian L,artist:DJ Oscillo
+          Mag:heard,pub:7992f22e1247f43a,heard_ttl:30,take_ttl:90
+            Cloud,page:1,created_at:1788600040
+              Card,id:t1,pub:dj,hearted_at:1788600040,pressed_on:1788600040,title:Cosmic C,artist:DJ Oscillo,to:7992f22e1247f43a,carried_by:Laptop,carried_at:1788600040
+              Card,id:t3,pub:dj3,hearted_at:1788600060,pressed_on:1788600060,title:Lydian L,artist:DJ Oscillo,carried_by:Laptop,carried_at:1788600060

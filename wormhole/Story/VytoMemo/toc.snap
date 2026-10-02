@@ -5,8 +5,6 @@ story:VytoMemo
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.011
-      sample=0.01,at=1788880743
-      sample=0.011,at=1788893208
       sample=0.012,at=1788903142
       sample=0.01,at=1788903199
       sample=0.01,at=1788903337
@@ -15,9 +13,9 @@ story:VytoMemo
       sample=0.01,at=1788903410
       sample=0.014,at=1788907610
       sample=0.011,at=1789117024
+      sample=0.015,at=1790983097
+      sample=0.007,at=1790983115
     TimeTotal:step,avg=0.003
-      sample=0.002,at=1788880743
-      sample=0.003,at=1788893208
       sample=0.003,at=1788903142
       sample=0.003,at=1788903199
       sample=0.002,at=1788903337
@@ -26,7 +24,9 @@ story:VytoMemo
       sample=0.002,at=1788903410
       sample=0.004,at=1788907610
       sample=0.003,at=1789117024
-  step,dige:lie
-  step=2,dige:lie,desc:seed a two-level rig — three cogs under the root and two grandchildren under the first
-  step=3,dige:lie,desc:commission the glass nested on the rig and stir to rest
+      sample=0.004,at=1790983097
+      sample=0.002,at=1790983115
+  step,dige:39674d74cf6b2250
+  step=2,dige:3f49a27a499a3288,desc:seed a two-level rig — three cogs under the root and two grandchildren under the first
+  step=3,dige:d590563d8ed12492,desc:commission the glass nested on the rig and stir to rest
   step=4,dige:df1313444c257136,desc:hold the settled glass under forced repaints — the wall counter must stand still

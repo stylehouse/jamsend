@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '8e42a7cf6e4bfcfd~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return 'ddafb7a32369feb4~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -3275,6 +3275,20 @@ Heist_keep_solo(keep, seed) {
     return cut
 
 },
+// Heist_keep_seed_ref — the PICK ref that IS a keep's seed track.  The seed is the id we heard (the holder's
+//  Mine/opus id); the folder census mints picks under the source's RUMMAGE ids, and the seed shows up only as
+//   the mirror record's `re` (2026-09-06, eed).  A pick under the bare seed wins; else the mirror's alias; else
+//    the bare seed (Heist_keep_solo then answers -1, "not described yet").
+Heist_keep_seed_ref(keep, srcmir, seed) {
+    let sid = String(seed)
+    if (srcmir && !keep.o({ Pick: 1, ref: sid })[0]) {
+        let alias = this.Ra_rec_find(srcmir, { Record: 1, re: sid })
+        let aref = alias ? String(alias.sc.id || '') : ''
+        if (aref && keep.o({ Pick: 1, ref: aref })[0]) { sid = aref }
+    }
+    return sid
+
+},
 Heist_keep_pool_go(keep, srcmir, seed) {
     if (!this.Pool_is_machinery(keep)) { return 0 }
     if (!keep.sc.lofi) { keep.sc.lofi = 1; keep.bump() }
@@ -3288,12 +3302,7 @@ Heist_keep_pool_go(keep, srcmir, seed) {
     //        still attached.  No Book could see it: a hand-minted mirror record's id IS the seed.
     //  Resolve through the mirror: the record wearing re:<seed> names the pick that is the seed.  `srcmir`
     //   was passed here all along and never read -- this is what it was for.
-    let sid = String(seed)
-    if (srcmir && !keep.o({ Pick: 1, ref: sid })[0]) {
-        let alias = this.Ra_rec_find(srcmir, { Record: 1, re: sid })
-        let aref = alias ? String(alias.sc.id || '') : ''
-        if (aref && keep.o({ Pick: 1, ref: aref })[0]) { sid = aref }
-    }
+    let sid = this.Heist_keep_seed_ref(keep, srcmir, seed)
     let cut = this.Heist_keep_solo(keep, sid)
     if (cut < 0) {
         // A WAIT THAT NEVER ENDS IS A WAIT THAT NEVER HAPPENED (2026-09-12, eed: three pool keeps sat 'primed'
@@ -3329,11 +3338,20 @@ Heist_keep_pool_go(keep, srcmir, seed) {
 //    listener's own remembered setting — you asked for the TRACK, not for a smaller version of it.
 //  Keyed on `take` since 2026-09-04 (it was `liked`, from the %Like ledger the heard Mag replaced): the
 //   keep wears the same word the Card does, so a snap reads one vocabulary end to end.
+//  THE SAME ALIAS THE POOL NEEDED (2026-10-03, R4): a ♥ seed is the id we HEARD (the holder's opus/Mine id), the
+//   folder census mints picks under RUMMAGE ids — so solo by the bare seed answered -1 forever and the keep sat
+//    primed holding the whole album, which the glass drew as a setup form nobody had asked for.  Resolve first.
+//     And the same give-up as the pool: unable to find its own track after 45s, it yields its holder's slot.
 Heist_keep_take_go(keep, srcmir, seed) {
     if (!keep.sc.take) { return 0 }
     if (this.Pool_is_machinery(keep)) { return 0 }
-    let cut = this.Heist_keep_solo(keep, seed)
-    if (cut < 0) { return 0 }
+    let cut = this.Heist_keep_solo(keep, this.Heist_keep_seed_ref(keep, srcmir, seed))
+    if (cut < 0) {
+        if (!keep.c.solo_wait_since) { keep.c.solo_wait_since = Date.now() }
+        else if (!keep.c.no_route_ts && Date.now() - keep.c.solo_wait_since > 45000) { keep.c.no_route_ts = Date.now() }
+        return 0
+    }
+    delete keep.c.solo_wait_since
     keep.sc.state = 'pulling'
     if (keep.sc.dose) { delete keep.sc.dose }
     keep.bump()
@@ -3876,12 +3894,13 @@ Heist_sections_strip(rel) {
 //    disk, how you want music to arrive — so it is remembered globally and every later heist opens with it
 //     already set.  A section is a property of the MUSIC, different for every folder, so it is deliberately
 //      NOT remembered (see Heist_keep_set_genre, where that feed was removed).
-Heist_keep_set_lofi(keep, on) {
-    keep.c.last_touch = Date.now()
+// `quiet` (a remote press, R-8): no focus stamp, and the Cave's own remembered default stays the Cave's.
+Heist_keep_set_lofi(keep, on, quiet) {
+    if (!quiet) { keep.c.last_touch = Date.now() }
     if (on) { keep.sc.lofi = 1 } else { delete keep.sc.lofi }
     keep.bump()
     this.Heist_keep_persist_nudge(keep)
-    this.Heist_defaults_set({ lofi: on ? '1' : '' })
+    if (!quiet) { this.Heist_defaults_set({ lofi: on ? '1' : '' }) }
 
 },
 // Heist_keep_set_dirs — the directories breadcrumb's edit (the human 2026-07-30): override the SHARED
@@ -4683,6 +4702,57 @@ Heist_shop_find(w) {
 //  them.  Pure: a face may call this every poll forever.
 Heist_live_rows(w) {
     return this.Heist_queue_order(this.Heist_shop_find(w))
+
+},
+// Remote_kind_heist — THE CAVE AS A HEIST SERVER (RemoteHeist_todo §0 R1).  My shop's keeps, served to my
+//  crew: a Captain's %Remote,heist,of:<seed> asks, this body answers, and only this body ever writes the keep.
+//   find PROBES (Heist_shop_find — a call must never conjure a shop); `create` is R2 and refused until then.
+//  QUIET (R-8): no op here stamps `c.last_touch` or the global defaults, so a remote press never makes a
+//   keep the one this screen focuses — a Cave nobody is sitting at does not grow a form.
+Remote_kind_heist() {
+    let rw = () => { let M = this.top_House ? this.top_House() : null; return (M && M.c.radio_w) || null }
+    let shop = () => this.Heist_shop_find(rw())
+    return {
+        find: (ident, of, make) => {
+            if (make) { return null }
+            let s = shop()
+            return s ? (s.o({ Heist: 1, seed: String(of) })[0] || null) : null
+        },
+        ops: {
+            start: (keep, args) => {
+                let s = String(keep.sc.state || 'primed')
+                if (s !== 'primed' && s !== 'wanted' && s !== 'asking') { return { refuse: 'not_startable' } }
+                if (args.lofi != null) { this.Heist_keep_set_lofi(keep, !!args.lofi, 1) }
+                this.Heist_keep_start(keep).catch((er) => console.log('🛰⚠ remote heist start: ' + String(er).slice(0, 80)))
+                return 1
+            },
+            cancel: (keep) => {
+                // the ✕ keeps what landed (Heist_keep_cancel); a remote DELETE is not offered (owner §4.5: log only)
+                console.log('🛰✕ remote cancel of ' + String(keep.sc.Heist || keep.sc.seed).slice(0, 40))
+                this.Heist_keep_cancel(rw(), keep).catch((er) => console.log('🛰⚠ remote heist cancel: ' + String(er).slice(0, 80)))
+                return 1
+            },
+            lofi: (keep, args) => { this.Heist_keep_set_lofi(keep, !!args.on, 1); return 1 },
+        },
+        view: (keep) => {
+            let g = this.Heist_keep_gist(keep)
+            let v = { title: String(keep.sc.Heist || ''), state: String(keep.sc.state || 'primed'), word: String(g.word || ''),
+                      landed: String(g.landed || 0), total: String(g.total || 0), form: g.form ? '1' : '' }
+            // every key rides every answer — '' clears it on the %Remote (Remote_landed), so a flag that
+            //  went absent here goes absent there
+            v.artist = String(keep.sc.artist || '')
+            v.from_name = String(keep.sc.from_name || '')
+            v.un_n = String(keep.sc.un_n || '')
+            v.un_size = String(keep.sc.un_size || '')
+            v.lofi = keep.sc.lofi ? '1' : ''
+            v.take = keep.sc.take ? '1' : ''
+            v.paused = keep.sc.paused ? '1' : ''
+            let fl = this.Heist_keep_flight ? this.Heist_keep_flight(rw(), keep) : null
+            v._pct = fl && fl.total > 0 ? fl.pct : 0
+            return v
+        },
+        list: (ident) => this.Heist_queue_order(shop()).map((k) => String(k.sc.seed || '')).filter(Boolean),
+    }
 
 },
 // Heist_keep_gist — a keep's state as the ONE SHORT PHRASE a list row can carry, decided here rather than

@@ -11,7 +11,7 @@ import { mint_grant } from "$lib/O/Funk/Grant.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_HeistTesting(): string { return '135c650f5dc91ccc~g1' },
+    Ghostmeta_Ghost_Story_HeistTesting(): string { return '2abc7c12f2c06673~g1' },
 
 // HeistTesting.g — né Heistation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file — `MusuHeist`,
@@ -7186,6 +7186,190 @@ MusuHandoff_witness(w) {
     if (n >= 7 && has({ verdict: 1, a_verdict_reaches_the_presser_too: 1, regossip_writes_nothing_new: 1 })) { say('a refusal reaches the presser through the same mirror mile a landing would — the presser reads the identical word it would have asked the wire itself for — and re-gossiping an unchanged outcome writes nothing new') }
     if (n >= 8 && has({ waiting: 1, a_lone_soul_just_waits: 1, no_mirror_waits_with_a_word: 1, mirror_arriving_clears_the_word: 1 })) { say('a lone souls wish just waits forever with nobody left to adopt it — while a trove sibling not yet mirroring the holder says so on the card instead of nothing at all — and the word clears the moment the wait ends') }
     if (n >= 9 && has({ resilience: 1, away_never_lands: 1, back_wakes_the_gossip: 1 })) { say('a wish pressed while the only sibling is away reaches nobody — and a sibling announcing itself back is what wakes the whole mag to gossip again — landing it the same as any other reaction would') }
+
+
+},
+// ══ MusuMagnet — THE 🧲: WHERE A HEART IS HAULED (RemoteHeist_todo §4.2, ruled 2026-10-03) ═════════════════
+//  Before it, every body with a folder hauled every take in the crew union — a Captain with a folder and its
+//   Cave would BOTH haul one heart.  Now the press stamps `to` (the body holding the 🧲) and only that body
+//    hauls.  One soul, two bodies that can both take originals: `desk` (Captain, folder) and `laptop` (Cave).
+//     Three DJs so no holder's busy-gate can confound a skip.  Seeded keys, pinned clock, in-process mail.
+//   beat 2  STAND   — the two bodies, a shop each, three DJ mirrors
+//   beat 3  PICK    — the decision table, pure (Heard_magnet_pick over crew-view-shaped rows)
+//   beat 4  AWAY    — ♥ on the desk to the laptop: only the laptop hauls; the desk's row names where it went
+//   beat 5  HOME    — the 🧲 moved home: the next ♥ is the desk's; the laptop sees it and leaves it be
+//   beat 6  NOBODY  — a heart naming nobody is anyone's, exactly as before
+//   beat 7  QUIET   — R4: a carried ♥ keep is marked so the glass never hands it the room; a ♥ keep whose folder
+//                     census wears RUMMAGE ids still finds its own track (the alias) and starts with no form
+MusuMagnet(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuMagnet_drive(w,req)
+        req.sc.ok = 1
+    })
+},
+MusuMagnet_T(w) {
+    let t = w.o({ testing: 1 })[0]
+    if (!t) { t = w.i({ testing: 1 }); t.c.up = w }
+    return t
+},
+MusuMagnet_note(w, sc) {
+    let t = this.MusuMagnet_T(w)
+    let n = t.i(sc)
+    n.c.up = t
+    return n
+},
+MusuMagnet_card(w, ident, id, pub) {
+    let mag = this.Heard_mag_find(w, String(ident.sc.prepub))
+    return mag ? this.Heard_find(mag, id, pub) : null
+},
+async MusuMagnet_drive(w, req) {
+    let run = (this.c.run)
+    if (run && run.sc && run.sc.mode === 'new') { run.sc.total = 7 }
+    let n = run?.c.step_n
+    w.sc.now = 1788600000 + 10 * (+n || 0)
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) { await this.MusuMagnet_stand(w) }
+        if (n === 3) { await this.MusuMagnet_pick(w) }
+        if (n === 4) { await this.MusuMagnet_away(w) }
+        if (n === 5) { await this.MusuMagnet_home(w) }
+        if (n === 6) { await this.MusuMagnet_nobody(w) }
+        if (n === 7) { await this.MusuMagnet_quiet(w) }
+    }
+    await this.SwarmStaple_pump(w)
+    this.MusuMagnet_witness(w)
+    await this.Musu_float(w)
+},
+// beat 2 — one soul, two folder-holding bodies, a shop each, three DJs with one track apiece.
+async MusuMagnet_stand(w) {
+    this.MusuMagnet_note(w, { reached: 'step_2' })
+    let acct = w.oai({ Account: 1, of: 'Alice' })
+    acct.c.up = w
+    let desk = this.Swarm_identity(acct, await this.Swarm_mint_keys('MusuMagnet-Desk'), 'Desk')
+    let laptop = this.Swarm_identity(acct, await this.Swarm_mint_keys('MusuMagnet-Laptop'), 'Laptop')
+    w.c.desk = desk
+    w.c.laptop = laptop
+    let bare = String(desk.sc.prepub)
+    this.Swarm_body_take(desk, null, 'Captain', bare)
+    this.Swarm_body_note(desk, String(this.Swarm_body_key(laptop).pub), 'Cave', bare + '_1', 'Laptop')
+    this.Swarm_body_take(laptop, null, 'Cave', bare + '_1')
+    this.Swarm_body_note(laptop, String(this.Swarm_body_key(desk).pub), 'Captain', bare, 'Desk')
+    this.Swarm_online(desk, true)
+    this.Swarm_online(laptop, true)
+    for (const t of [['dj', 't1', 'Cosmic C'], ['dj2', 't2', 'Dorian D'], ['dj3', 't3', 'Lydian L']]) {
+        let mir = this.Ra_home_them(w, t[0])
+        let rec = mir.i({ Record: 1, id: t[1], title: t[2], artist: 'DJ Oscillo' })
+        rec.c.up = mir
+        w.c['rec_' + t[1]] = rec
+    }
+    w.c.dshop = this.Ra_home_shop(w, String(desk.sc.prepub))
+    w.c.lshop = this.Ra_home_shop(w, String(laptop.sc.prepub))
+    this.MusuMagnet_note(w, { stood: 1 })
+},
+// beat 3 — the table.  Rows are crew-view shaped; `mine` is the presser.
+async MusuMagnet_pick(w) {
+    let row = { picked: 1 }
+    let P = this.Heard_magnet_pick.bind(this)
+    let meCap = { prepub: 'me', role: 'Captain', mine: 1, rung: 'here' }
+    let meCave = { prepub: 'me', role: 'Cave', mine: 1, rung: 'here' }
+    let caveHere = { prepub: 'cv', role: 'Cave', mine: 0, rung: 'here' }
+    let caveAway = { prepub: 'cv', role: 'Cave', mine: 0, rung: 'away' }
+    let other = { prepub: 'c2', role: 'Cave', mine: 0, rung: 'here' }
+    if (P([meCap, caveHere], '') === 'cv') { row.an_online_cave_by_default = 1 }
+    if (P([meCap, caveHere], 'me') === 'me') { row.the_pick_holds = 1 }
+    if (P([meCap, caveHere], 'gone') === 'cv') { row.a_stale_pick_falls_back = 1 }
+    if (P([meCave, other], '') === 'me') { row.a_cave_keeps_its_own = 1 }
+    if (P([meCap, caveAway], '') === 'me') { row.an_away_cave_yields_to_my_folder = 1 }
+    if (P([caveAway], '') === 'cv') { row.no_folder_still_names_the_cave = 1 }
+    if (P([], 'me') === '') { row.no_crew_names_nobody = 1 }
+    this.MusuMagnet_note(w, row)
+},
+// beat 4 — ♥ on the desk, 🧲 on the laptop.
+async MusuMagnet_away(w) {
+    let desk = w.c.desk
+    let laptop = w.c.laptop
+    let dme = String(desk.sc.prepub)
+    let lme = String(laptop.sc.prepub)
+    let row = { away: 1 }
+    this.Heard_take(w, dme, w.c.rec_t1, 'dj', lme)
+    await this.Heard_gossip_beat(w, desk)
+    await this.SwarmStaple_pump(w)
+    let dgot = await this.Heard_haul_beat(w, w, dme, {}, w.c.dshop, desk)
+    if (dgot === 0 && !w.c.dshop.o({ Heist: 1, seed: 't1' }).length) { row.the_desk_leaves_it_be = 1 }
+    let lgot = await this.Heard_haul_beat(w, w, lme, {}, w.c.lshop, laptop)
+    let k = w.c.lshop.o({ Heist: 1, seed: 't1' })[0]
+    if (lgot === 1 && k && String(k.sc.state) === 'primed') { row.the_laptop_hauls_it = 1 }
+    let lc = this.MusuMagnet_card(w, laptop, 't1', 'dj')
+    if (lc && String(lc.sc.to) === lme) { row.the_adopted_card_keeps_its_to = 1 }
+    let dc = this.MusuMagnet_card(w, desk, 't1', 'dj')
+    let rows = [{ prepub: lme, role: 'Cave', name: 'Laptop', mine: 0, rung: 'here' }]
+    if (dc && this.Heard_to_name(dc, rows) === 'Laptop') { row.the_row_names_where = 1 }
+    this.MusuMagnet_note(w, row)
+},
+// beat 5 — the 🧲 moved home: the next ♥ names the desk.
+async MusuMagnet_home(w) {
+    let desk = w.c.desk
+    let laptop = w.c.laptop
+    let dme = String(desk.sc.prepub)
+    let lme = String(laptop.sc.prepub)
+    let row = { home: 1 }
+    this.Heard_take(w, dme, w.c.rec_t2, 'dj2', dme)
+    await this.Heard_gossip_beat(w, desk)
+    await this.SwarmStaple_pump(w)
+    let lunion = this.Heard_cards_union(w, lme).find((c) => String(c.sc.id) === 't2')
+    let lgot = await this.Heard_haul_beat(w, w, lme, {}, w.c.lshop, laptop)
+    if (lunion && lgot === 0 && !w.c.lshop.o({ Heist: 1, seed: 't2' }).length) { row.the_laptop_sees_it_and_leaves_it = 1 }
+    let dgot = await this.Heard_haul_beat(w, w, dme, {}, w.c.dshop, desk)
+    let k = w.c.dshop.o({ Heist: 1, seed: 't2' })[0]
+    if (dgot === 1 && k && String(k.sc.state) === 'primed') { row.the_desk_hauls_it = 1 }
+    this.MusuMagnet_note(w, row)
+},
+// beat 6 — a heart naming nobody (no crew, or pressed before the 🧲) is anyone's.
+async MusuMagnet_nobody(w) {
+    let desk = w.c.desk
+    let laptop = w.c.laptop
+    let dme = String(desk.sc.prepub)
+    let lme = String(laptop.sc.prepub)
+    let row = { nobody: 1 }
+    this.Heard_take(w, dme, w.c.rec_t3, 'dj3', '')
+    let dc = this.MusuMagnet_card(w, desk, 't3', 'dj3')
+    if (dc && !dc.sc.to) { row.no_to_is_stamped = 1 }
+    await this.Heard_gossip_beat(w, desk)
+    await this.SwarmStaple_pump(w)
+    let lgot = await this.Heard_haul_beat(w, w, lme, {}, w.c.lshop, laptop)
+    if (lgot === 1 && w.c.lshop.o({ Heist: 1, seed: 't3' }).length) { row.anyone_may_haul_it = 1 }
+    this.MusuMagnet_note(w, row)
+},
+// beat 7 — R4.  The laptop's t1 keep came from a heart pressed on the desk (carried); the desk's own t2 did not.
+//  And a ♥ keep whose picks wear the source's rummage ids: the seed is only the mirror record's `re`.
+async MusuMagnet_quiet(w) {
+    let row = { quiet: 1 }
+    let lk = w.c.lshop.o({ Heist: 1, seed: 't1' })[0]
+    let dk = w.c.dshop.o({ Heist: 1, seed: 't2' })[0]
+    if (lk && lk.c.carried && dk && !dk.c.carried) { row.a_carried_heart_is_marked = 1 }
+    let mir = this.Ra_home_them(w, 'dj')
+    let alias = mir.i({ Record: 1, id: 'r2', re: 's9', title: 'Middle M' })
+    alias.c.up = mir
+    let keep = w.c.lshop.i({ Heist: 'An Album', seed: 's9', pub: 'dj', state: 'primed', take: 1 })
+    keep.c.up = w.c.lshop
+    for (const r of ['r1', 'r2', 'r3']) { let pk = keep.i({ Pick: 1, ref: r }); pk.c.up = keep }
+    let went = this.Heist_keep_take_go(keep, mir, 's9')
+    let left = keep.o({ Pick: 1 }).map((p) => String(p.sc.ref))
+    if (went === 1 && String(keep.sc.state) === 'pulling' && left.length === 1 && left[0] === 'r2') { row.the_alias_finds_its_track = 1 }
+    w.c.lshop.drop(keep)
+    mir.drop(alias)
+    this.MusuMagnet_note(w, row)
+},
+MusuMagnet_witness(w) {
+    let t = this.MusuMagnet_T(w)
+    let n = (this.c.run)?.c.step_n
+    let has = (k) => t.o(k).length > 0
+    let say = (s) => { this.story_swear(w, s) }
+    if (n >= 3 && has({ picked: 1, an_online_cave_by_default: 1, the_pick_holds: 1, a_stale_pick_falls_back: 1, a_cave_keeps_its_own: 1, an_away_cave_yields_to_my_folder: 1, no_folder_still_names_the_cave: 1, no_crew_names_nobody: 1 })) { say('the magnet goes to the pick while it stands — else a Cave keeps its own — else a Cave that is here — else my own folder — else an away Cave — and with no crew to nobody') }
+    if (n >= 4 && has({ away: 1, the_desk_leaves_it_be: 1, the_laptop_hauls_it: 1, the_adopted_card_keeps_its_to: 1, the_row_names_where: 1 })) { say('a heart sent to the Cave is hauled there only — the Captain with a folder of its own leaves it be — and its row names where it went') }
+    if (n >= 5 && has({ home: 1, the_laptop_sees_it_and_leaves_it: 1, the_desk_hauls_it: 1 })) { say('moving the magnet home hauls the next heart here — and the Cave seeing it in the union leaves it be') }
+    if (n >= 6 && has({ nobody: 1, no_to_is_stamped: 1, anyone_may_haul_it: 1 })) { say('a heart that names nobody is anyones to haul — exactly as before the magnet') }
+    if (n >= 7 && has({ quiet: 1, a_carried_heart_is_marked: 1, the_alias_finds_its_track: 1 })) { say('a heart carried from another body never asks this screen for the room — and its keep finds its own track through the folder census alias and starts with no form') }
 
 },
 

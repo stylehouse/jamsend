@@ -1,0 +1,8 @@
+Snap:H
+  H:MusuMagnet,Run
+    A:MusuMagnet
+      self,round	{"mung":["age"]}
+      w:MusuMagnet,now=1788600010
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing

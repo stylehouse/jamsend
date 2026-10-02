@@ -359,6 +359,7 @@ Heard_adopt(w, me, card):
     mine.sc.pressed_on = at
     if (card.sc.title && !mine.sc.title) { mine.sc.title = String(card.sc.title) }
     if (card.sc.artist && !mine.sc.artist) { mine.sc.artist = String(card.sc.artist) }
+    if (card.sc.to) { mine.sc.to = String(card.sc.to) }
     mine.bump()
     this.Heard_settle(w, me, 'heard_adopt')
     return mine
@@ -368,7 +369,7 @@ Heard_adopt(w, me, card):
 Heard_mirror_stamp_keys():
     return ['hearted_at', 'nayed_at', 'mehed_at', 'played_through', 'pressed_on', 'carried_at', 'landed_at', 'already_had_at', 'landing_failed_at', 'offer_unsigned_at', 'looked_at']
 Heard_mirror_listing_keys():
-    return ['title', 'artist', 'dir', 'path', 'bytes', 'body_hash', 'keep', 'why', 'waiting_for', 'carried_by', 'via_addr']
+    return ['title', 'artist', 'dir', 'path', 'bytes', 'body_hash', 'keep', 'why', 'waiting_for', 'carried_by', 'via_addr', 'to']
 // Heard_mirror_merge — land a decoded sibling snap's Cards onto MY mirror of them.  Swarm.g's
 //  `Swarm_heard_mirror` is the wire receiver; this is the pure merge it calls, kept here beside the key
 //   lists it depends on.  Two DIFFERENT bodies' clocks can disagree even though Heard_react_at (rung 2)
@@ -598,7 +599,63 @@ Heard_take_id(rec):
 Heard_take_pub(rec, by):
     if (rec && rec.sc && rec.sc.of) { return '' }
     return String(by || (this.Ra_pub_of ? this.Ra_pub_of(rec) : '') || '')
-Heard_take(w, me, rec, by):
+// Heard_magnet — WHERE MY HEARTS LAND, the 🧲 (RemoteHeist_todo §4.2, ruled 2026-10-03: "it must be the place to
+//  put it if it's on the Crew structure").  Big pile = trove = the body holding the magnet, where originals are
+//   hauled; small pile = pocket = the pool.  Returns the prepub of the crew body a take I press now is hauled
+//    onto, or '' — no crew, or nobody able (a no-folder body with no Cave: the heart waits, §4.3) — and then
+//     the card carries no 'to' and any folder-holding body may haul it, which is how it was before.
+//  The human's pick ('Heist_defaults.to') holds while that body is still a candidate; otherwise me if I am
+//   a Cave with a folder, else a Cave that is here, else me if I have a folder, else a Cave that is away.
+//  Candidates are crew-view rows ({prepub, role, name, mine, rung}); with no ident given, the live page's.
+Heard_magnet_candidates(ident0, folder0):
+    let M = this.top_House ? this.top_House() : null
+    let ident = ident0 || (M && M.Swarm_live_self ? M.Swarm_live_self() : null)
+    if (!ident || !this.Swarm_crew_view) { return [] }
+    let folder = folder0 != null ? folder0 : (this.Crate_has_folder ? this.Crate_has_folder() : 0)
+    let out = []
+    for (const r of this.Swarm_crew_view(ident)) {
+        if (r.mine) { if (folder) { out.push(r) } continue }
+        if (r.role === 'Cave') { out.push(r) }
+    }
+    return out
+// Heard_magnet_pick — THE DECISION, pure: candidate rows + the human's pick → a prepub or ''.
+Heard_magnet_pick(c, pick0):
+    if (!c || !c.length) { return '' }
+    let pick = String(pick0 || '')
+    if (pick && c.find((r) => r.prepub === pick)) { return pick }
+    let me = c.find((r) => r.mine)
+    if (me && me.role === 'Cave') { return me.prepub }
+    let here = c.find((r) => !r.mine && r.rung !== 'away')
+    if (here) { return here.prepub }
+    if (me) { return me.prepub }
+    let away = c.find((r) => !r.mine)
+    return away ? away.prepub : ''
+//  LIVE ONLY: 'w' must be the page's own radio world — a Book's worlds (and a runner tab's identity, which is
+//   not the Book's bodies) never get a 'to', so every fixture means what it meant.
+Heard_magnet(w):
+    let M = this.top_House ? this.top_House() : null
+    if (!w || !M || !M.c.radio_w || w !== M.c.radio_w || (w.c && w.c.Run)) { return '' }
+    return this.Heard_magnet_pick(this.Heard_magnet_candidates(), (this.Heist_defaults_get ? this.Heist_defaults_get() : {}).to)
+// Heard_magnet_set — the 🧲 moved (Door).  '' forgets the pick and the default above takes over again.
+Heard_magnet_set(prepub):
+    if (this.Heist_defaults_set) { this.Heist_defaults_set({ to: String(prepub || '') }) }
+// Heard_to_name — the crew name of the body a take's 'to' names, '' when it names me or nobody I know.
+Heard_to_name(card, cands):
+    let to = String((card && card.sc.to) || '')
+    if (!to) { return '' }
+    let r = (cands || this.Heard_magnet_candidates()).find((c) => c.prepub && (to.startsWith(c.prepub) || c.prepub.startsWith(to)))
+    if (!r || r.mine) { return '' }
+    return String(r.name || r.role || to.slice(0, 8))
+// Heard_for_me — is this take mine to haul?  A card with no 'to' is anyone's (pre-magnet, or no crew); one
+//  with a 'to' is only that body's.  Prefix-compare: prepubs ride short and long.
+Heard_for_me(card, myprepub):
+    let to = String((card && card.sc.to) || '')
+    if (!to || !myprepub) { return 1 }
+    let m = String(myprepub)
+    return (to.startsWith(m) || m.startsWith(to)) ? 1 : 0
+
+// 'to0' (optional) names the hauling body outright — a Book, or a caller that already decided; else the 🧲.
+Heard_take(w, me, rec, by, to0):
     if (!w || !me || !rec || !rec.sc.id) { return 0 }
     let pub = this.Heard_take_pub(rec, by)
     let card = this.Heard_card(w, me, this.Heard_take_id(rec), pub)
@@ -616,6 +673,10 @@ Heard_take(w, me, rec, by):
     //   Guarded stamps — an absent value would brand the snap {"undef":[…]}, the mint-bug law.
     if (rec.sc.title && !card.sc.title) { card.sc.title = this.Radio_clean(rec.sc.title) }
     if (rec.sc.artist && !card.sc.artist) { card.sc.artist = this.Radio_clean(rec.sc.artist) }
+    // the 🧲 decides at the press (the newest press decides): 'to' rides the mirror as listing, so the
+    //  body it names hauls and every other folder-holder leaves it be (Heard_for_me, in the haul beat)
+    let to = to0 != null ? String(to0) : this.Heard_magnet(w)
+    if (to && card.sc.to !== to) { card.sc.to = to }
     card.bump()
     this.Heard_settle(w, me, 'heard_take')
     return 1
@@ -899,6 +960,9 @@ Heard_word(mag, card, now):
     if (card.sc.landed_at) { return 'landed' }
     if (card.sc.carried_by) { return 'handed to ' + String(card.sc.carried_by) }
     if (card.sc.waiting_for) { return 'waiting for ' + String(card.sc.waiting_for) }
+    // the 🧲 sent it elsewhere: say WHERE, until that body's carried_by gossips back
+    let away = this.Heard_to_name(card)
+    if (away) { return 'for ' + away }
     return 'waiting'
 
 // Heard_gc — HOW IT FORGETS (§3).  One rule, run per page rather than per Card because a page IS the
@@ -1116,7 +1180,11 @@ async Heard_haul_beat(w, rw, me, nav, shop, ident):
         //    gossiped back right away — only the KEEP has to wait its turn, not the card write.  Everything
         //     below — the waiting_for word, the verdict check, the keep itself — lands on MY OWN card
         //      (Heard_clone_beat only ever finds a card on `Heard_mag_find(rw,me)`), never the mirror copy.
-        let cards = row.cards.map((c) => this.Heard_adopt(w, me, c)).filter((c) => c)
+        //  THE 🧲 FIRST: a take whose 'to' names another body is that body's to haul — not adopted, not
+        //   minted here (two folder-holders in one crew used to haul the same heart twice).
+        let myprepub = ident ? String(ident.sc.prepub || '') : ''
+        let cards = row.cards.filter((c) => this.Heard_for_me(c, myprepub)).map((c) => this.Heard_adopt(w, me, c)).filter((c) => c)
+        if (!cards.length) { continue }
         let busy = 0
         for (const k of shop.o({ Heist: 1, pub: row.pub })) { if (String(k.sc.state || 'primed') !== 'done') { busy = 1 } }
         if (busy) { continue }
@@ -1141,7 +1209,10 @@ async Heard_haul_beat(w, rw, me, nav, shop, ident):
             if (shop.o({ Heist: 1, seed: id })[0]) { continue }
             let rec = this.Ra_rec_find(mirstock, { Record: 1, id: id })
             if (!rec) { continue }
-            if (this.Heard_keep(w, rw, shop, row.pub, rec)) {
+            let kept = this.Heard_keep(w, rw, shop, row.pub, rec)
+            if (kept) {
+                // a heart pressed on ANOTHER body: nobody here asked, so it never takes this screen (R4, Sounditron)
+                if (card.sc.pressed_on) { kept.c.carried = 1 }
                 // "carried_by = which body's Card has a keep" (SoundPooling_todo §0.0 rung 3): the only
                 //  way anyone ELSE, reading this card through a mirror, learns someone is working on it —
                 //   there is no separate ack any more, the gossip mile carries the stamp itself.

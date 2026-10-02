@@ -11,7 +11,7 @@ import { boot_gate } from "$lib/O/ui/boot_gate.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Sounditron(): string { return 'c113f372ff580584~g1' },
+    Ghostmeta_Ghost_Story_Sounditron(): string { return 'df0cefec57fe806b~g1' },
 
 // Sounditron.g — the sound twin of Editron: the CENTRAL DIAGNOSTIC Book that lurks on
 //  /BigSoundland and probes the REAL environment — no minted people, no synthetic wire.  A user
@@ -377,7 +377,11 @@ Sounditron_commission(w) { const H = this;
     //   the belly, runs ride as buds, and the Radio comes back on its own the moment the last form is
     //    submitted.  Nothing here touches the foam path (or any Book) — the split is only CONSULTED
     //     inside the humdinger gate.
-    let setups = keeps.filter((k) => { let ks = k.sc.state || 'primed'; return ks !== 'pulling' && ks !== 'committing' && ks !== 'done' })
+    //  A CARRIED ♥ NEVER TAKES THE ROOM (RemoteHeist_todo R4, 2026-10-03 — the owner on Inco: "a Heist setup grabbing
+    //   focus, but it's for one we've already got done").  A heart adopted from a sibling (Heard_haul_beat marks the
+    //    keep `.c.carried`) has nobody HERE to ask: it is neither a setup nor the insistent keep — it runs as a row
+    //     of the Haul cell.  A ♥ pressed on this body keeps its old behaviour.
+    let setups = keeps.filter((k) => { let ks = k.sc.state || 'primed'; return !k.c.carried && ks !== 'pulling' && ks !== 'committing' && ks !== 'done' })
     // THE DOOR PUTS ITSELF AWAY WHEN IT STOPS BEING THE SUBJECT (the owner 2026-08-10).  Stamped
     //  here, beside the mint, rather than in the focus cut: it is a property of the Door, not of
     //   one layout regime, and DoorFace reads the same `.c.inviting` it writes when you press
@@ -751,7 +755,7 @@ Sounditron_commission(w) { const H = this;
     //   commissioner must not be able to name one belly and ask the stage for another.  This was two
     //    copies of one decision for about ten minutes, which is exactly long enough to prove the point.
     let pin = (w.c.focused_keep && keeps.indexOf(w.c.focused_keep) >= 0) ? w.c.focused_keep : null
-    let stager = this.Sounditron_belly_keep(setups, pin) || (keeps.length ? keeps[0] : null)
+    let stager = this.Sounditron_belly_keep(setups, pin) || keeps.find((k) => !k.c.carried) || null
     for (const keep of keeps) {
         if (keep === stager) keep.c.stage_want = 1
         if (keep !== stager && keep.c.stage_want) delete keep.c.stage_want
@@ -862,7 +866,7 @@ Sounditron_commission(w) { const H = this;
         // THE VISUALCRUX, BESIDE THE CUT (Cello_todo §0.1, steps 1-2, 2026-09-15): the facts the whole roster
         //  hangs on are gathered ONCE here, and the pure table (Sounditron_visualcrux) is run next to the old
         //   ladder below; where they disagree a line says so. Nothing below reads the crux yet (step 3 flips).
-        let crux_facts = this.Sounditron_facts(w, { keeps: keeps, setups: setups, pin: pin, hbag_fresh: hbag_fresh, suprow: suprow, live: live, organs: organs, stager: this.Sounditron_belly_keep(setups, pin) || (keeps.length ? keeps[0] : null) })
+        let crux_facts = this.Sounditron_facts(w, { keeps: keeps, setups: setups, pin: pin, hbag_fresh: hbag_fresh, suprow: suprow, live: live, organs: organs, stager: this.Sounditron_belly_keep(setups, pin) || keeps.find((k) => !k.c.carried) || null })
         let fmain = this.Sounditron_belly_keep(setups, pin)
         // `org`, NOT `o` — `o` is the find VERB in this dialect, so `for (const o of organs)` compiles
         //  to `for (const w.oa({of: 1}) organs)` and the generated module does not parse.  It was the
@@ -2440,7 +2444,7 @@ Sounditron_keeps_look(w) {
     //   with its state, so adding this there would buy nothing and spend an extra commission — inside a
     //    Book, at a step boundary, which is how a fixture moves for no reason anyone can later explain.
     let MHk = this.top_House ? this.top_House() : null
-    let setupN = (MHk && MHk.c.humdinger) ? kepts.filter((k) => { let ks = k.sc.state || 'primed'; return ks !== 'pulling' && ks !== 'committing' && ks !== 'done' }).length : 0
+    let setupN = (MHk && MHk.c.humdinger) ? kepts.filter((k) => { let ks = k.sc.state || 'primed'; return !k.c.carried && ks !== 'pulling' && ks !== 'committing' && ks !== 'done' }).length : 0
     let kfp = (w.c.show_diag ? 'D' : '') + keptN + '/' + setupN
     if (w.c.keep_fp !== kfp) {
         w.c.keep_fp = kfp

@@ -1,10 +1,14 @@
 Snap:H
   H:VytoGuise,Run
     A:VytoGuise
-      self,round=5	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:VytoGuise
-        self,round=5	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         req:wrangle,eternal,ok
         req:stand_wait,finished
         req:resow_wait,finished
+        see:a flat result set stands as cells — no grouping cell anywhere — only the hits themselves
+        see:a collapsed cluster speaks its count and its facets — a voice with no fold behind it
+        see:a guise says only what it names — the producer private field sits beside the spec and never reaches a cell
+        see:the grouping is drawn and not contained — no cell holds the hits yet every tie names the shared scalar it is about
         see:a re-sown hit morphs in place — the producer own id is the identity so a refreshed result set never blinks

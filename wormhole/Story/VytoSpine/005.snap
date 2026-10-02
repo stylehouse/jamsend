@@ -1,0 +1,13 @@
+Snap:H
+  H:VytoSpine,Run
+    A:VytoSpine
+      self,round=8	{"mung":["age"]}
+      w:VytoSpine
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        req:research_wait,finished
+        req:crest_wait,finished
+        see:a code search stands as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs
+        see:a re-search re-forms the creature in the same world — the head morphs to the new query
+        see:a crest presses like its members — the expedition goes down into the file narrowed to that kind

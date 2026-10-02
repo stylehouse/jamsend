@@ -1,0 +1,21 @@
+Snap:H
+  H:VytoSpine,Run
+    A:VytoSpine
+      self,round=16	{"mung":["age"]}
+      w:VytoSpine
+        self,round=16	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        req:research_wait,finished
+        req:crest_wait,finished
+        req:region_wait,finished
+        req:method_wait,finished
+        req:climb_wait,finished
+        req:tunnel_wait,finished
+        see:a code search stands as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs
+        see:a re-search re-forms the creature in the same world — the head morphs to the new query
+        see:a crest presses like its members — the expedition goes down into the file narrowed to that kind
+        see:a region opens from the file — its own methods become the vertebrae with their hits as ribs
+        see:a method opens as a chamber — its paragraphs are vertebrae and its own source lines are the ribs
+        see:a line that calls another method is a tunnel — pressing it lands in that method chamber
+        see:the head is the rope — pressing it climbs one level and the region returns

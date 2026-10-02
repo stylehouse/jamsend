@@ -1,0 +1,38 @@
+Snap:H
+  H:MusuMagnet,Run
+    A:MusuMagnet
+      self,round=2	{"mung":["age"]}
+      w:MusuMagnet,now=1788600020
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        testing
+          reached:step_2
+          stood
+        Account,of:Alice
+          Identity:8932a53c4ab9a3e9,prepub:8932a53c4ab9a3e9,friendly:Desk
+            Peering,name:8932a53c4ab9a3e9,friendly:Desk,online
+              Body,pub:8932a53c4ab9a3e995a830a0a6d35ab7ad4ee64b16cf6ea601b7071057b35254,post:Captain,address:8932a53c4ab9a3e9
+              Body,pub:7992f22e1247f43aebe5fd6104681ab599fd21f49bb47e4e7c193b08b8a3aa38,post:Cave,address:8932a53c4ab9a3e9_1,name:Laptop
+            Crew,soul:8932a53c4ab9a3e995a830a0a6d35ab7ad4ee64b16cf6ea601b7071057b35254
+              mate:8932a53c4ab9a3e9,role:Captain,pub:8932a53c4ab9a3e995a830a0a6d35ab7ad4ee64b16cf6ea601b7071057b35254
+              Key,pub:8932a53c4ab9a3e995a830a0a6d35ab7ad4ee64b16cf6ea601b7071057b35254	{"mung":["secret"]}
+          Identity:7992f22e1247f43a,prepub:7992f22e1247f43a,friendly:Laptop
+            Peering,name:7992f22e1247f43a,friendly:Laptop,online
+              Body,pub:7992f22e1247f43aebe5fd6104681ab599fd21f49bb47e4e7c193b08b8a3aa38,post:Cave,address:8932a53c4ab9a3e9_1
+              Body,pub:8932a53c4ab9a3e995a830a0a6d35ab7ad4ee64b16cf6ea601b7071057b35254,post:Captain,address:8932a53c4ab9a3e9,name:Desk
+            Crew,soul:7992f22e1247f43aebe5fd6104681ab599fd21f49bb47e4e7c193b08b8a3aa38
+              mate:7992f22e1247f43a,role:Captain,pub:7992f22e1247f43aebe5fd6104681ab599fd21f49bb47e4e7c193b08b8a3aa38
+              Key,pub:7992f22e1247f43aebe5fd6104681ab599fd21f49bb47e4e7c193b08b8a3aa38	{"mung":["secret"]}
+        Theirs,pub:dj
+          stock,pub:dj
+            Record,id:t1,title:Cosmic C,artist:DJ Oscillo
+        Theirs,pub:dj2
+          stock,pub:dj2
+            Record,id:t2,title:Dorian D,artist:DJ Oscillo
+        Theirs,pub:dj3
+          stock,pub:dj3
+            Record,id:t3,title:Lydian L,artist:DJ Oscillo
+        Mine,pub:8932a53c4ab9a3e9
+          shop,pub:8932a53c4ab9a3e9
+        Mine,pub:7992f22e1247f43a
+          shop,pub:7992f22e1247f43a

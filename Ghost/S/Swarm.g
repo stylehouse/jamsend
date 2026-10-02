@@ -4443,6 +4443,8 @@ Swarm_restash_reaches(ident, from, st0):
     for (const r of peering.o({ Reach: 1 })) {
         let stt = String(r.sc.state || 'booked')
         if (stt === 'arrived' || stt === 'refused' || stt === 'dead') { continue }
+        // a call is a question with a 60s life, not a booking — a reload drops it rather than re-asking
+        if (String(r.sc.for || '') === 'call') { continue }
         let e = {}
         for (const k of Object.keys(r.sc)) { e[k] = String(r.sc[k]) }
         rows.push(e)
@@ -7250,6 +7252,10 @@ Remote_dec(s):
     if (s == null || !String(s)) { return null }
     try { return JSON.parse(decodeURIComponent(String(s))) } catch (er) { return null }
 
+// Remote_undo — one `of` segment back to the target id (a bad escape stays as it came).
+Remote_undo(s):
+    try { return decodeURIComponent(String(s || '')) } catch (er) { return String(s || '') }
+
 // Remote_spec — the registered kind, or null.
 Remote_spec(kind):
     let fn = this['Remote_kind_' + String(kind || '')]
@@ -7274,7 +7280,8 @@ Remote_call(w, ident, kind, n, op, args):
     if (Object.keys(n.sc)[0] === 'Remote') {
         let rk = String(n.sc.Remote)
         w.c.remote_seq = (+(w.c.remote_seq || 0)) + 1
-        let rof = rk + '|' + String(n.sc.of || '') + '|' + String(op) + '|' + String(w.c.remote_seq)
+        // the target is URI-encoded: a kind's ids (a heist seed, a path) may carry the `|` this splits on
+        let rof = rk + '|' + encodeURIComponent(String(n.sc.of || '')) + '|' + String(op) + '|' + String(w.c.remote_seq)
         let reach = this.Swarm_reach_book(w, ident, { to: String(n.sc.on), of: rof, for: 'call' })
         if (!reach) { return null }
         reach.sc.args = this.Remote_enc(a)
@@ -7304,7 +7311,7 @@ Remote_call(w, ident, kind, n, op, args):
 Remote_serve(w, ident, reach):
     let parts = String(reach.sc.of || '').split('|')
     let kind = parts[0] || ''
-    let target = parts[1] || ''
+    let target = this.Remote_undo(parts[1])
     let op = parts[2] || ''
     let spec = this.Remote_spec(kind)
     if (!spec) { return { refuse: 'no_kind' } }
@@ -7366,7 +7373,7 @@ Swarm_call_serve_now(w, ident, reach):
 //   optimistic wish retires.  A call whose %Remote is gone lands nowhere, quietly.
 Remote_landed(w, ident, reach, st, frame):
     let parts = String(reach.sc.of || '').split('|')
-    let n = w.o({ Remote: parts[0] || '', on: String(reach.sc.to || ''), of: parts[1] || '' })[0]
+    let n = w.o({ Remote: parts[0] || '', on: String(reach.sc.to || ''), of: this.Remote_undo(parts[1]) })[0]
     if (!n) { return null }
     let view = this.Remote_dec(frame && frame.answer)
     if (view && typeof view === 'object') {
@@ -7375,6 +7382,8 @@ Remote_landed(w, ident, reach, st, frame):
             if (v == null || typeof v === 'object' || typeof v === 'function') { continue }
             if (k === 'Remote' || k === 'on' || k === 'of' || k === 'why') { continue }
             if (k.charAt(0) === '_') { n.c[k.slice(1)] = v; continue }
+            // '' is how a view says a flag went ABSENT (1-or-absent — a kept stale `1` would lie)
+            if (String(v) === '') { if (n.sc[k] != null) { delete n.sc[k] } continue }
             n.sc[k] = String(v)
         }
     }
@@ -7388,6 +7397,39 @@ Remote_landed(w, ident, reach, st, frame):
     n.c.answered_at = Date.now()
     n.bump()
     return n
+// Remote_watch — keep a frontend's view of ONE kind on ONE body fresh: a `*` head asks `list`, one %Remote
+//  per listed id asks `get`, each at most every `every` ms and never while a call on it is still out (a body
+//   that has gone quiet costs one outstanding row per target, not a pile against the reach cap).  Rows whose
+//    id left the list are dropped.  The ASKING half — call it from a timer, never from a render; a face reads
+//     with Remote_rows.
+Remote_watch(w, ident, kind, on, every):
+    if (!w || !ident || !on) { return 0 }
+    let gap = +every || 3000
+    let now = Date.now()
+    let busy = (r) => r.c.wish && Object.keys(r.c.wish).length
+    let due = (r) => !busy(r) && now - (+r.c.asked_at || 0) >= gap
+    let head = this.Remote_open(w, ident, kind, on, '*')
+    if (due(head)) { head.c.asked_at = now; this.Remote_call(w, ident, kind, head, 'list', {}) }
+    let ids = String(head.sc.items || '').split(' ').filter(Boolean)
+    let want = new Set(ids)
+    for (const r of w.o({ Remote: String(kind), on: String(on) })) {
+        let rof = String(r.sc.of || '')
+        if (rof !== '*' && !want.has(rof) && !busy(r)) { w.drop(r) }
+    }
+    for (const id of ids) {
+        let r = this.Remote_open(w, ident, kind, on, id)
+        if (due(r)) { r.c.asked_at = now; this.Remote_call(w, ident, kind, r, 'get', {}) }
+    }
+    return ids.length
+// Remote_rows — the READ half: the `*` head (its `why` says whether the body is answering) and the %Remote
+//  per listed id, in list order.  Pure — a face may call it every paint.
+Remote_rows(w, kind, on):
+    if (!w) { return { head: null, rows: [] } }
+    let head = w.o({ Remote: String(kind), on: String(on), of: '*' })[0] || null
+    let ids = head ? String(head.sc.items || '').split(' ').filter(Boolean) : []
+    let rows = []
+    for (const id of ids) { let r = w.o({ Remote: String(kind), on: String(on), of: id })[0]; if (r) { rows.push(r) } }
+    return { head: head, rows: rows }
 //#endregion
 
 // Swarm_reach_crew — the CREW ACTIVITY read (Reach_todo §6, the legibility half — the owner: "I don't

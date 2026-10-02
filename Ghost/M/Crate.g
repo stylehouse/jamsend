@@ -193,6 +193,12 @@ Crate_nav():
     let A = this.top_House().o({ A: 'Wormhole' })[0]
     return A ? (A.c.nav || null) : null
 
+// Crate_has_folder — does this body hold a REAL music folder (an FSA grant), not the listen-only|cloud nav a
+//  no-folder phone stands?  The 🧲's candidacy test (Heard_magnet): only a folder can take originals.
+Crate_has_folder():
+    let A = this.top_House().o({ A: 'Wormhole' })[0]
+    return A && A.c.DL ? 1 : 0
+
 // Crate_nav_paths — walk `base` breadth-first, collecting every audio file's path RELATIVE to base
 //  (nested "Artist/Album/NN Title.ext" or flat "Artist - Title.ext").  Sorted for a deterministic pool
 //   (the backends don't all order their entries).  This IS the track list, discovered rather than declared.

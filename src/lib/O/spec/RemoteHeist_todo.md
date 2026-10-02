@@ -16,6 +16,26 @@ Read with: `Heist_todo.md` (what a Heist is, the `%Heist` keep, the cost line), 
 
 ## 0. What to get on with next
 
+### ⇄ HAND-BACK 2026-10-03 (the 🧲 sidetrack, forked off the main session — read this first)
+
+**Where it stands:** R1 (Captain ▶/✕ on a Cave's Heists from the Haul cell), the 🧲 (where hearts are hauled) and
+ R4 (a carried ♥ never takes the Cave's screen) are BUILT and Book-gated; **none is walked live yet — the owner is
+  testing.**  Book **MusuMagnet** (HeistTesting.g, 7 steps, 5 oaths) gates the 🧲 + R4; SwarmCall still gates G0/G1.
+**The bombs:**
+- **The 🧲 is live-only by design.** `Heard_magnet(w)` returns '' unless `w === top.c.radio_w && !w.c.Run` — a Book's
+   world CAN be radio_w on a runner, and the runner tab's own identity has a crew: without the guard Book takes got a
+    foreign `to` and MusuHeard/MusuHandoff went red.  Books pass `to` explicitly (`Heard_take(..., to0)`).
+- **The R4 root cause was an id alias, not focus.** `Heist_keep_take_go` soloed a ♥ keep by the HEARD id while the
+   folder census mints picks under RUMMAGE ids → -1 forever → the keep sat primed holding the whole album = the setup
+    form on Inco.  `Heist_keep_seed_ref` (shared with pool_go, which had the same fix inline) resolves it.  Then
+     Sounditron: a keep marked `.c.carried` (Heard_haul_beat, card has `pressed_on`) is neither a setup nor the
+      insistent stager; a pin (clicking its Haul row) still opens it.
+- **A shared runner:** another session uses da06; this work ran on **e747** (`--runner=e747cbed6a9ca919`).
+- **Owner said item 3 (1 Captain + 1 Cave seat at a friend) may already be done** — "I've seen it reject"; verify
+   against §4.1 before building anything.
+**Next:** owner's live walk (R1 + 🧲, steps in the 🧲 entry below) → then G2 → R2 (R2 = ⇊/♥ on the Captain becomes a
+ `create` call to the 🧲 body; the 🧲 already decides WHERE, R2 makes the Captain's ⇊ go there).
+
 ### ✅ G0 + G1 LANDED 2026-09-30 — the general layer, Book-gated
 
 Built in `Ghost/S/Swarm.g` (the transport + the `#region Remote`), proven by the new two-body Book
@@ -35,7 +55,48 @@ Built in `Ghost/S/Swarm.g` (the transport + the `#region Remote`), proven by the
      targets · a throwing doer stays serving and is logged.
 - **Not yet proven on a live wire** — the Book carries frames by hand (no station). The first live proof is R1.
 
-**Next: G2 → R1.** G2 = the view-model seam for a real kind (HeistFace onto `Remote_kind_heist().view`, R-1/R-9);
+**NEXT (owner said go, 2026-09-30): R1 FIRST with a small summary view, G2 (the full HeistFace view-model)
+ after** — prove the live wire before the big face refactor. The R1 build, concretely:
+1. **`Remote_kind_heist()` in `Ghost/M/Heist.g`** — `find(ident, of)`: the keep on the backend's shop
+    (`Ra_home_shop(radio_w, <own body prepub>)` — PROBE, it mints; `top.c.radio_w` is the radio world) by
+     `seed`; `list`: the shop's live keeps' seeds; `ops.start` → `Heist_keep_start(keep)` (async — fire it,
+      return 1), `ops.cancel` → `Heist_keep_cancel(rw, keep)`, `ops.lofi` → `Heist_keep_set_lofi(keep, !!args.on)`;
+       `view` → `Heist_keep_gist(keep)` + title/artist/from_name/un_n/un_size/landed_n/state (flat scalars; the
+        running rate/progress as `_`-keys). `create` is R2 — refuse it for now (`not_yet`).
+2. **R-8 QUIET:** `Heist_keep_start` re-commissions the glass (≈3270, humdinger-gated) and several verbs
+    stamp `c.last_touch` (1969/1977/2009/3617) — which is what steals the belly. Thread `cx.quiet` so a remote
+     start skips both. Check every verb the ops call.
+3. **Frontend in the Haul cell (`HaulFace.svelte`):** when this body has a Cave online (Door's family rows /
+    `Swarm_crew_view`), open `Remote_open(sw, self, 'heist', <cave prepub>, '*')` + `list`, then one `%Remote`
+     per seed with `get`; render a section "on <Cave name>" — title · gist word · landed/total · ▶ start
+      (primed) · ✕ cancel — calling `Remote_call`. Poll `get` only while the cell is mounted (R-3 wish shows
+       at once). Station world = `Swarm_station_world()`.
+4. **Live proof:** 940f (Captain, Lump) + Inco (Cave): a Heist left primed on Inco is started from 940f's Haul
+    cell; Inco's glass does not move; 940f shows it running then landed. Then cancel one. Watch for `⨳🫱⚠`
+     lines (road refusals) on Inco and `🦑`/`⨳` on 940f.
+5. **Book:** extend SwarmCall with a heist beat only if a keep can be stood headless cheaply (MusuHeist has the
+    shapes); otherwise the live walk IS R1's gate, and say so.
+
+**R1 BUILT 2026-09-30 — live walk owed (the gate).**  `Remote_kind_heist` (Heist.g, beside Heist_live_rows): find PROBES
+ via Heist_shop_find, create refused (no make), ops start/cancel/lofi, view = gist + every flag every time (`''` clears — Remote_landed
+  now deletes a key sent as `''`), `_pct` volatile.  Quiet: `Heist_keep_set_lofi(keep, on, quiet)` skips the last_touch stamp and the
+   global default.  Start still calls Sounditron_keeps_look on the Cave — that RELEASES a belly (leaving direction), so it stays.
+    Swarm.g: target URI-encoded in `of` (Remote_undo), call reaches never restashed, and the generic pair `Remote_watch` (asks —
+     timer only, one outstanding call per target, drops rows whose id left the list) / `Remote_rows` (pure read).  HaulFace: an
+      "on <Cave>" section per crew Cave that is here, ▶ on a form keep, two-press ✕, "asking…" while a wish is out.  SwarmCall 4/4
+       green after.  No heist Book (a keep needs a radio world + shop; the live walk is the gate).
+
+**🧲 BUILT 2026-10-03 — live walk owed.**  The magnet had a job the day it landed: every body with a folder hauled
+ every take in the crew union (Heard_takes reads own + sibling mirrors), so a Captain-with-folder and its Cave would BOTH haul
+  one heart.  Now `Heard_take` stamps `to:<prepub>` = `Heard_magnet()` at the press (newest press decides; `to` rides the
+   mirror as a listing key, Heard_adopt copies it), and `Heard_haul_beat` skips a card whose `to` is another body
+    (`Heard_for_me`) — no `to` = anyone's, as before (no crew, Books).  `Heard_magnet`: the pick (`Heist_defaults.to`) while
+     still a candidate, else me-if-Cave-with-folder, else a Cave that's here, else me-with-folder, else an away Cave.  Candidates =
+      my crew's Caves + me iff `Crate_has_folder()` (A:Wormhole `c.DL`).  Door: a 🧲 on each candidate row + the instance badge,
+       only at ≥2 candidates; click = `Heard_magnet_set`.  Haul's wish word says "for Inco" (`Heard_to_name`) until carried_by
+        gossips back.  ⚠ Moving the 🧲 does NOT re-route hearts already pressed — their `to` stands (a re-press re-decides).
+
+**Then G2 → R2 → R3 → R4** (§3). G2 = the view-model seam for a real kind (HeistFace onto `Remote_kind_heist().view`, R-1/R-9);
  R1 = start + cancel a Cave's Heist from the Captain, live. Owner rulings in §4 apply (1 Captain + 1 Cave seat).
 
 ### the design
@@ -293,6 +354,16 @@ What it deliberately does NOT try to be: a general RPC for arbitrary ghost metho
 2. **Which Cave — the online one; a picker only when it matters.** Default to the one online. When there are
     **two or more Caves** and it's the first remote act this session, ask once: a **targeted-Cave control in
      Door** (the family list gains a "heists go here" mark). Fewer than two Caves: never shown.
+   **RULED + BUILT 2026-10-03 ("it must be the place to put it if it's on the Crew structure") — the mark is a 🧲
+    magnet, and "here instead" is just moving it.**  Big pile =
+    trove = the body wearing the 🧲 (where originals land); small pile = pocket = the pool, configured by PoolFace's
+     sentence.  ONE 🧲 per presser, on one row of Door's crew list (rows already show each body's organs); tap another
+      row's slot to move it.  Candidates = my Caves + me if I have a folder; shown only at ≥2 candidates (so §4.2's
+       "fewer than two: never shown" still holds for a no-folder phone with one Cave).  Default: the online Cave, else
+        me-with-folder, else nobody → hearts wait (§4.3).  A per-Heist override rides the R2 form as "to [Inco ▾]" for the
+         laptop-on-the-train case.  Stored as `Heist_defaults.to` (Dexie + Berth mirror, as lofi is).  Rejected: a cog
+          or settings cell — a setting hides where things go; the magnet on the row SHOWS it.  Yay (what ♥ means) is a
+           separate question from where it lands; don't fold them.
 3. **Offline Cave — the Love stays unfulfilled.** No standing command (R-4): the heart on the heard Mag IS the
     durable want; a later "more of what you liked" exploration mode can review the unheisted pile. Rejected:
      LOFI-ing it all into the Captain's SP/OPFS meanwhile — correct but too hard to explain. The owner's hope,

@@ -201,6 +201,66 @@
         arm = ''
         A?.Heard_untake?.(W, A?.Radio_pub?.(W), dj, q.of)
     }
+
+    // ── A CAVE'S HEISTS, OPERATED FROM HERE (RemoteHeist_todo §0 R1).  The keeps live on the Cave and only
+    //  the Cave writes them; this body holds a %Remote per keep carrying the Cave's last answer, and every
+    //   press is a question the Cave answers (Remote_call).  The asking runs on a timer, only while this
+    //    cell is mounted and only for a Cave that is here; the render below only reads (Remote_rows).
+    function caves_here(): any[] {
+        const self = A?.Swarm_live_self?.()
+        if (!self) return []
+        return (A?.Swarm_crew_view?.(self) ?? []).filter((r: any) => !r.mine && r.role === 'Cave' && r.rung !== 'away')
+    }
+    $effect(() => {
+        if (bud) return
+        const iv = setInterval(() => {
+            try {
+                const self = A?.Swarm_live_self?.()
+                const sw = A?.Swarm_station_world?.()
+                if (!self || !sw) return
+                for (const c of caves_here()) A?.Remote_watch?.(sw, self, 'heist', c.prepub, 3000)
+            } catch (er) { console.log('🛰⚠ haul remote watch: ' + String(er).slice(0, 80)) }
+        }, 1000)
+        return () => clearInterval(iv)
+    })
+    let remote = $derived.by(() => {
+        void H?.version
+        void tick
+        if (bud) return []
+        const sw = A?.Swarm_station_world?.()
+        return caves_here().map((c: any) => {
+            const got = A?.Remote_rows?.(sw, 'heist', c.prepub) ?? { head: null, rows: [] }
+            return {
+                cave: c.prepub,
+                name: String(c.name || c.pub8),
+                why: String(got.head?.sc?.why || ''),
+                heard: !!got.head?.c?.answered_at,
+                rows: got.rows.map((r: any) => ({
+                    rem: r,
+                    key: 'r|' + String(r.sc.of),
+                    name: String(r.sc.title || r.sc.of),
+                    word: String(r.sc.word || '…'),
+                    form: !!r.sc.form,
+                    landed: +(r.sc.landed || 0),
+                    total: +(r.sc.total || 0),
+                    unN: +(r.sc.un_n || 0),
+                    pct: +(r.c?.pct || 0),
+                    why: String(r.sc.why || ''),
+                    asking: !!(r.c?.wish && (r.c.wish.start || r.c.wish.cancel)),
+                })),
+            }
+        })
+    })
+    function rstart(row: any) {
+        const self = A?.Swarm_live_self?.()
+        A?.Remote_call?.(A?.Swarm_station_world?.(), self, 'heist', row.rem, 'start', {})
+    }
+    function rcancel(row: any) {
+        if (arm !== row.key) { arm = row.key; return }
+        arm = ''
+        const self = A?.Swarm_live_self?.()
+        A?.Remote_call?.(A?.Swarm_station_world?.(), self, 'heist', row.rem, 'cancel', {})
+    }
     // PLAY — the album goes to the front of the lineup, in its own track order.  `played` is a one-shot
     //  acknowledgement so the row can SAY it took the press ("queued") instead of looking inert: the
     //   lineup is elsewhere on screen and a press with no local answer reads as a dead button.
@@ -262,6 +322,37 @@
             {#if face.live.length}{face.live.length} on the go{#if face.waitingN}, {face.waitingN} waiting{/if}{:else if face.waitingN}{face.waitingN} waiting on a share{:else if face.today}{face.todayTracks} track{face.todayTracks === 1 ? '' : 's'} today{:else if face.tracks}{face.tracks} track{face.tracks === 1 ? '' : 's'} kept{/if}
         </span>
     </div>
+
+    {#each remote as rc (rc.cave)}
+        {#if rc.rows.length || rc.why}
+        <div class="hf-live">
+            <!-- ON <CAVE>: that body's own heists, answered by it.  Nothing here is held on this body. -->
+            <div class="hf-pier">
+                <span class="hf-who" title={rc.cave}>on {rc.name}</span>
+                <span class="hf-owed">{#if rc.why}{rc.why === 'nobody-answered' ? 'not answering' : rc.why}{:else}{rc.rows.length} heist{rc.rows.length === 1 ? '' : 's'}{/if}</span>
+            </div>
+            <div class="hf-list">
+                {#each rc.rows as r (r.key)}
+                <div class="hf-row hf-liverow">
+                    <span class="hf-open">
+                        <span class="hf-name" title={r.name}>{r.name}</span>
+                        <span class="hf-state">{#if r.asking}asking…{:else if r.why}{r.why}{:else}{r.word}{#if !r.form && r.total}&nbsp;{r.landed}/{r.total}{:else if r.form && r.unN}&nbsp;{r.unN} track{r.unN === 1 ? '' : 's'}{/if}{#if r.pct}&nbsp;{Math.round(r.pct)}%{/if}{/if}</span>
+                    </span>
+                    <span class="hf-acts">
+                        {#if r.form}
+                            <button class="hf-b" disabled={r.asking} onclick={() => rstart(r)} title="start this heist on {rc.name}">▶</button>
+                        {/if}
+                        <button class="hf-b hf-x" class:armed={arm === r.key} disabled={r.asking}
+                                onclick={() => rcancel(r)}
+                                title={arm === r.key ? 'press again to call it off on ' + rc.name + ' — anything already landed stays' : 'call this heist off on ' + rc.name}
+                        >{arm === r.key ? 'sure?' : '✕'}</button>
+                    </span>
+                </div>
+                {/each}
+            </div>
+        </div>
+        {/if}
+    {/each}
 
     {#if face.piers.length}
         <div class="hf-live">

@@ -3352,8 +3352,18 @@
         const mf = (motionFrames.get(w) ?? 0) + 1
         if (cnt >= SETTLE_FRAMES || mf >= MAX_MOTION_FRAMES) {
             if (mf >= MAX_MOTION_FRAMES && cnt < SETTLE_FRAMES) {
-                if (typeof console !== 'undefined') console.log('▣⚠ Vyto watchdog: forced settle after', mf,
-                    'frames of unbroken motion — a cell never stopped moving (disp/drift pinned). Landing anyway.', { w })
+                // SAY WHICH CELLS (the owner, 2026-10-03: *"logging %w:Vyto there might be kinda useless"*) —
+                //  the three springs furthest from their targets, by key, so the line names the culprit.
+                //   An empty list means no spring was off target: the WALLS kept moving (drift), not a cell.
+                const movers: string[] = []
+                for (const [key, s] of sp) {
+                    const row = rowByKey.get(key); const T = row ? target_of(row) : null
+                    if (!T) continue
+                    const d = Math.hypot(s.x - T.x, s.y - T.y) + Math.abs(s.r - T.r)
+                    if (d > 0.5) movers.push(d.toFixed(1) + 'px ' + key)
+                }
+                movers.sort((a, b) => parseFloat(b) - parseFloat(a))
+                if (typeof console !== 'undefined') console.log(`▣⚠ Vyto watchdog: ${(w.c as any).client_w?.sc?.w ?? w.sc.w} never settled in ${mf} frames — still moving: ${movers.slice(0, 3).join(' · ') || 'no cell off target, the walls kept drifting'}${movers.length > 3 ? ` (+${movers.length - 3} more)` : ''}. Landing anyway.`)
             }
             // EVERY settle lands (2026-08-08, half of the CALM_EPS decision above): the ordinary strike
             //  used to leave springs wherever the calm streak caught them (≤EPS off), which was fine at
@@ -3835,6 +3845,26 @@
                 const bb = (t as SVGGraphicsElement).getBBox()
                 stamp_need(w, cell.row, bb.width * bb.height)
             } catch { /* an unrendered node has no box — skip */ }
+        }
+        // THE FOLIO IS A LABEL TOO (2026-10-03).  Since the folio became the default (2026-09-11) almost no
+        //  cell draws a `text.ident`, so the loop above found nothing, `need_area` was never stamped, and the
+        //   need floor was silently OFF fleet-wide — VytoNeed's `floor_wait` never finished (red since).
+        //  A folio is FITTED to its cell (its font shrinks or grows with the room), so its raw box would read
+        //   the cell's own size back as its need — a loop.  Measure its NATURAL size instead: every line's box
+        //    rescaled to the ident's 14px, so the need is what the words want, whatever room they were given.
+        for (const g of stage.querySelectorAll('g.folio[data-fkey]')) {
+            const cell = byKey.get((g as Element).getAttribute('data-fkey') ?? '')
+            if (!cell || cell.departing) continue
+            let area = 0
+            for (const t of g.querySelectorAll('text.fo')) {
+                const fs = Number((t as Element).getAttribute('font-size')) || 14
+                try {
+                    const bb = (t as SVGGraphicsElement).getBBox()
+                    const s = 14 / fs
+                    area += bb.width * s * bb.height * s
+                } catch { /* unrendered — skip */ }
+            }
+            stamp_need(w, cell.row, area)
         }
         let seen = 0
         for (const m of stage.querySelectorAll('.face-mold')) {

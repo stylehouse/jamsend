@@ -1,0 +1,15 @@
+Snap:H
+  H:VytoHand,Run
+    A:VytoHand
+      self,round=10	{"mung":["age"]}
+      w:VytoHand
+        self,round=10	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:stand_wait,finished
+        req:put_wait,finished
+        req:rebuild_wait,finished
+        req:lift_wait,finished
+        see:a pinned put sits exactly where the hand put it
+        see:an attracted put falls toward its place — nearer than it rested free — and its neighbours still press
+        see:a glass torn down and stood fresh is put back exactly as the hand left it
+        see:lifting the hand frees the stone and the put rows leave the world

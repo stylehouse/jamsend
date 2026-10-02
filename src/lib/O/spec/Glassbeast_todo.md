@@ -14,6 +14,120 @@ Read it as a field guide. The animal is real, most of its organs exist, and it i
 
 ## 0. HANDOVER — 2026-09-10, written at 92% context. Read this, then §I.
 
+### THE NEED FLOOR WAS SILENTLY OFF — FIXED 2026-10-03 (/loop, VytoNeed red since the folio)
+`measure_world` (Vytui) stamped `need_area` only off `text.ident` — and since the folio became the default
+ (2026-09-11) almost no cell draws an ident, so nothing was measured and the floor never armed: VytoNeed's
+  `floor_wait` never finished (ok_pct 0.5), and the LIVE music glass (Sounditron commissions `need_floor`)
+   has been sizing cells without it for three weeks.  Now a `g.folio[data-fkey]` is measured too, at its
+    NATURAL size (each line's box rescaled to the ident's 14px — a folio is fitted to its cell, so its raw
+     box would read the cell's own size back as need, a loop).  VytoNeed green ×2 on its ORIGINAL fixture,
+      2 sworn.  ⚠ This changes the live music page: need-floored cells grow to hold their words again.
+
+### THE CREST FLICKER — FIXED 2026-10-03 (the owner: *"it doesn't settle on the page, it keeps jitterbugging"*)
+Every crest, at every level, flickered with period 2 forever: the fold stamps `crest.c.seen_at = scan_gen`
+ AFTER the scan, the next scan bumps the gen BEFORE it sweeps, so the sweep always saw it stale → marked
+  `departing` (the fold re-found it but never cleared the mark) → dropped next scan → re-minted → …
+   Measured in the eye at the VytoSpine Heist level: HeistTesting `dep=3`/`dep=0` alternating stir after
+    stir (the owner saw "Particle x17" ⇄ "Mention x200, Def x17"); the live page's rAF never settled (the
+     `▣⚠ watchdog: forced settle` line).  **Fix: `Vyto_scan_sweep` exempts `Vtuffing` rows** — the fold keeps
+      its own house (it already drops a crest whose group stops qualifying), the membrane/voice precedent.
+- **It was also VytoSpine's step-4 red**: `research_wait` waited on a crowded file's crest and landed on the
+   wrong parity.  The HEAD `004.snap` had been RECORDED IN THAT FAILURE (no research `see:`).  Re-recorded all
+    9 beats new-mode (steps 1–3 byte-identical to HEAD, 4 gains the research line, 5–9 new) → check ×2 green
+     9/9, 7 sworn.  The old 9-beat recording in scratch is obsolete.
+- Fleet after the fix: VytoFold/Crest/Nest/Membrane/Hand green; Guise 0.5, Orchestra 0.13, Need 0.5, Memo
+   caveat 3 unchanged (pre-existing).  ⚠ Candidate, unchecked: `Meaningfold §0.2`'s *"VytoCrush fails its
+    sworn crushed/crest-counts sentences INTERMITTENTLY on byte-identical input"* — that is what a period-2
+     crest would do.  VytoCrush no longer exists by that name; the note may now be explained.
+- The watchdog line now names the world's client and the three springs furthest from target (Vytui).
+
+### THE WALL, AND THE SHAPE OF ITS CRACK — 2026-10-03 (the owner: *"squish them through the wall we're bumping up against… figure out the shape of that crack"*)
+**The wall.** Everything the owner has called beautiful is made of HANDS AND TIME: Voro's leading
+ re-forming around a dragged seed (*"it looks great with the cells wobbling around them"*, 2026-09-30),
+  the stained glass, a settle.  Every one of those lives OFF the world, on purpose:
+  the mirror (`w.c.mirror` — *"never snaps and the Books stay Vyto-blind"*), the holds (`w.c.calm`,
+   strengths off `Date.now()`), the positions (Vytui springs, Cytoscape nodes), the cut itself (inside
+    Vytui, in Svelte-side Maps — `spineScroll`, `boneOf`, the wall memo).  And the runner cannot see
+     time at all: a driven Book is PARKED (jumps to target, `Vyto_settle` never fires), and a hidden
+      tab starves `requestAnimationFrame` — met 2026-09-30, when a remote drag moved the seed but the
+       glass stopped repainting until `cy_paint` was exposed.  So the proof machine sees neither hands
+        nor time, and F1 (`Vyto_todo` autopsy, *"the harness selected the organism's shape"*) keeps
+         happening: this very run, guise/fold/spine thrived (snap-provable) and the LOOK was judged by
+          the owner's eye off screenshots — LAW A (*pixels or it didn't land*) broken again, by me.
+
+**Two roads that are the wall, not the crack** (tried in thought, both fail on known laws):
+- **Pixels → model** (absorb the rendered cut / label fits as sc): two clocks (the render frame is
+   async to the stir|step clock — the await-on-hot-path flake class) and the type is DOM-measured
+    (`getBBox`/`offsetWidth` — machine-dependent fonts).  It would make fixtures flake, not see.
+- **`runner_shot --svg` greps** (LAW A as written): the instrument exists since July and is good, but it
+   lives in a terminal, so it is a per-session ritual and never a fleet gate.  It decays.
+
+**The crack: geometry has a CAUSE side and an EFFECT side — absorb the causes, recompute the effects.**
+ Effects (polygons, label fits, wobble) are on the render clock and machine-dependent.  Causes — where a
+  hand PUT a seed, what is held, which regime|deck, the order|stem the producer stated, which level a
+   dive is at — are DECISIONS: discrete, made on the model clock, deterministic.  And the cut is already
+    a PURE function of them (`vyto_geometry.ts` — `power_cells`/`foam_cells`/`spine_cells`/`grid_cells`,
+     node-runnable).  So a cause made matter snaps (Books prove it), and the effect is proven by PURITY
+      (a cut fixture in node: snapped causes → polygons, no browser).  What remains for the eye is
+       typography and the feel of motion — the irreducible remainder, and exactly what the owner's eye is
+        FOR.  Spend the eye on taste, the machine on structure.
+
+**The evidence it works is already in the tree: the cave.**  VytoSpine's dives were proven 9/9 because a
+ dive is a cause the PRODUCER holds (level/path in its own state → the guise → the snap); head-as-rope,
+  tunnels, the crest press — all causes, all provable.  Its one unproven organ is the passage scroll,
+   and that is precisely the one cause left in a Svelte Map (`spineScroll`).
+
+**And it explains the hand's two verdicts.**  2026-08-10 the drag came OFF Vyto (*"far too slow to be
+ visually nice… I want GONE"*, `Vytui.svelte:673`); 2026-09-30 Voro's drag *"looks great"*.  Not a
+  contradiction: in Voro the seed IS the hand's position and the wall is re-cut the same frame (no spring
+   between hand and wall); in Vyto a spring sat between target and pixel, so the hand dragged a lag — and
+    that same spring is what made the drag unprovable (in-flight geometry).  So the hand comes back as a
+     DISCRETE CAUSE with an INSTANT cut — a `%Put` event, walls re-leaded at once — and motion becomes
+      decoration over a truth (`Meaningfold §0.2c` interchange), never the mechanism.  This is
+       `Meaningfold §0.2b`'s absorption, re-aimed: §0.2b wanted resting EFFECTS deposited at the settle,
+        and the settle never fires on a runner; causes need no settle.
+
+**LANDED 2026-10-03 (the owner: *"go on and build it"*, *"or be like an attractor"*, *"hopefully
+ non-invasively?"*).**  ① + ③ built, ② half, ④ re-found as a wall:
+- `Vyto.g`: `Vyto_hand_puts` / `Vyto_hand_pull` / `Vyto_hand_seat` / `e_Vyto_put` — own methods; the solve
+   gained ONE line per seam (seed setup, pile step, fit/room skip, frame relax).  **No deck token: the
+    `%Put` rows ARE the gate** — none ⇒ `puts` null ⇒ byte-identical solve, so only a Book that puts sees it.
+   A Put is an ATTRACTOR by default (`pull`, default 0.15 per relax step — the cell falls toward the place,
+    neighbours still press) and a PIN with `pin`.  x|y per-mille of the frame.
+- **The producer owns its puts** (the cave's law): it HOLDS them as `%Put` rows in its own world — so they
+   SNAP (`VytoHand/004.snap`: `Put:stone:chert,x=150,y=750,pin`) — and hands their sc over on every
+    commission (`req.c.puts` → `Vyto_hand_seat` makes the glass's set exactly that).  A fresh rebuild is put
+     back as left; no carry inside Vyto (a carry would leak one run's hand into the next run of a Book).
+- **Book `VytoHand`** (6 beats, 4 sworn, recorded new-mode on da06, then **check ×5 green ok_pct 1 caveat 0**).
+   **LAW D proven**: sabotaging `Vyto_hand_puts` reds it (ok_pct 0.5, 0 sworn) — after a RELOAD; the first
+    sabotage run was GREEN because the tab still ran the old .go ([[reload-runner-after-recompile]] again).
+- ② half: `e_Vyto_put` exists; NOTHING calls it yet — Vytui's pointer and the runner's `op:'drag'`
+   (Cytoscape-only today) are unwired.  That is the next build, and the one the owner will FEEL.
+- **④ is a wall, and it is the owner's "weird how singular this code is"**: the causes snap and the cut
+   (`foam_cells`) is pure, but the solve BETWEEN them — express sizing, bag pressure, the pile + attractor,
+    fit/room — lives inside `Vyto_solve` in the .g, unreachable from node.  So "pixels by purity" needs the
+     pile extracted to `vyto_geometry.ts` (`solve_pile(seeds, radii, frame, nbrs, pinned, puts)`), fleet
+      byte-identical — which would also be the first real de-singularising of `Vyto_solve`.
+- The eye shows VytoHand only at DONE (the lifted state) — Books run in ms and the glass draws after.
+- **Fleet (19 Vyto Books, da06, 2026-10-03)**: unmoved by the hand.  Reds, all PRE-EXISTING — proven by
+   re-running on HEAD's `Vyto.g` (the hand is its only diff): **VytoNeed ok_pct 0.5** (steps 3–4) and
+    **VytoMemo caveat 3** reproduce byte-for-byte without the hand — NOT investigated, owed a look;
+     **VytoSpine 0.75** = the owed 9-beat Accept (HEAD fixture predates the stem/tunnel beats);
+      VytoOrchestra 0.13 + VytoGuise 0.5 as known.  **VytoPosed has NO fixtures** (runs new-mode).
+- ⚠ `ghost-compile` said "1/1 sent; 0 compiled" once and left HEAD's .go standing — VytoHand went red
+   for it.  Always grep the .go for the new symbol after a compile, then reload the runner.
+
+**The first build as first sketched** (gated as a Vytocon token `hand` per §0.2h④ — every existing fixture
+ byte-identical):  ① `%Put,of:<tok>,x,y` rows under `w:` — sc, integer, frame-relative, no wall clock;
+  `Vyto_solve` honours a Put as the row's seed+target (a pin).  ② one door, `e_Vyto_put`, that the
+   Vytui pointer AND the runner's `op:'drag'` both ride.  ③ Book `VytoHand`: put two cells, swear *"the
+    put cell rests where the hand put it"*, re-commission `fresh=1`, swear it still does (the *flower
+     arranging* pose `Meaningfold §0.2b` table says *"dies on reload"*).  ④ a node test: the Book's
+      snapped Puts → `foam_cells` → polygons, byte-equal to a recorded cut — LAW A without a browser.
+ Then `spineScroll` becomes a cause too (`%Put`'s sibling for the passage), and the cave's last organ is
+  provable.  Voro's lettering (the stained-glass Stuffing Vyto lacks) is a SEPARATE thread — that is
+   effect-side, typography, the eye's.
+
 ### THE CAVE GOES LIVE — LANDED 2026-09-25 (owner away, /loop continue): a search worn as a creature, over the code
 The owner: *"I wanted to start using it as the visual when we search for anything in there. bring it in over
  the top of the code in BigWordland."* Plus a looser second idea: *"perhaps we need a physical nodes-moving-

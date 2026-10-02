@@ -4,29 +4,22 @@ story:VytoSpine
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.364
-      sample=0.32,at=1790237593
-      sample=0.106,at=1790237644
-      sample=0.246,at=1790335800
-      sample=0.893,at=1790373589
-      sample=0.227,at=1790458887
-      sample=1.179,at=1790545121
-      sample=0.198,at=1790568039
-      sample=0.255,at=1790570366
-      sample=0.106,at=1790572415
-      sample=0.11,at=1790572498
-    TimeTotal:step,avg=0.091
-      sample=0.08,at=1790237593
-      sample=0.027,at=1790237644
-      sample=0.062,at=1790335800
-      sample=0.223,at=1790373589
-      sample=0.057,at=1790458887
-      sample=0.295,at=1790545121
-      sample=0.05,at=1790568039
-      sample=0.064,at=1790570366
-      sample=0.027,at=1790572415
-      sample=0.028,at=1790572498
+    TimeTotal:beliefs,avg=0.578
+      sample=0.541,at=1790982635
+      sample=0.481,at=1790982661
+      sample=0.463,at=1790982675
+      sample=0.828,at=1790982966
+    TimeTotal:step,avg=0.064
+      sample=0.06,at=1790982635
+      sample=0.053,at=1790982661
+      sample=0.051,at=1790982675
+      sample=0.092,at=1790982966
   step,dige:1fcc5bcdd71c806a
   step=2,desc:a code search lands — the Door hits across twelve files fetched from the sample in the Searchbar hit shape,dige:254f9557d6288f57
   step=3,desc:stand the search as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs by kind,dige:a870aca422c1b562
-  step=4,desc:re-search Door to Heist in the same world — the creature re-forms around twenty-one files and the head morphs,dige:f8bcc09c4b7d5d6d
+  step=4,desc:re-search Door to Heist in the same world — the creature re-forms around twenty-one files and the head morphs,dige:9811e99f9cbbb24e
+  step=5,desc:press the Def crest of Heist.g — the crest presses like its members and the expedition goes down into the file,dige:a487e6cf07243f0c
+  step=6,desc:press the busiest region of the file — its methods become the vertebrae with their hits as ribs,dige:ce92b1e3858f8b93
+  step=7,desc:press the busiest method — the chamber opens with its paragraphs as vertebrae and its source lines as ribs,dige:250e3da117b68376
+  step=8,desc:press the head — the rope climbs back up to the region and its methods return,dige:08dbbf70f42d7fb9
+  step=9,desc:walk a tunnel — in a chamber a line that calls another method is pressed and the expedition lands in that method,dige:e9cdb03cf74f5492

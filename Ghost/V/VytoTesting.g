@@ -572,7 +572,7 @@ Vyto_plant(w, genus, dose):
 //  A 4th arg `priced` (optional, default plain) commissions the glass on the global type-scale
 //   (Vyto_sizing_todo §9 ④+⑤ — cell area is a share of the frame, not an absolute dose box); every
 //    existing caller passes three args → undefined → the byte-identical plain cut.
-Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale, foamy, deck):
+Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale, foamy, deck, puts):
     let SH = this.VytoStaple_SH(w)
     if (!SH) return
     // stash it while this.up is still trustworthy (see VytoStaple_SH) — the one write, at the one
@@ -595,6 +595,8 @@ Vyto_commission_on(w, cogs, fresh, priced, nested, folded, needful, depthscale, 
     //   configuration the glass was wearing.  Additive: every existing caller passes nothing and the
     //    commission is byte-identical.  This is how a Vytocon becomes Book-testable at all.
     if (deck) commission.sc.foamereo = deck
+    // the hand's causes (Vyto_hand_puts) — a list of {Put:tok,x,y,pin?,pull?}, the producer's own set
+    if (puts) commission.c.puts = puts
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
 
@@ -2735,8 +2737,8 @@ VytoGuise_resow_ready(w):
 // ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ─────────────────
 VytoGuise_witness(w):
     if (w.c.saw_stand) {
-        this.story_swear(w, 'a flat result set stands as cells — no grouping cell anywhere, only the hits themselves')
-        if (!(oa %see:'a flat result set stands as cells — no grouping cell anywhere, only the hits themselves')) i %see:'a flat result set stands as cells — no grouping cell anywhere, only the hits themselves'
+        this.story_swear(w, 'a flat result set stands as cells — no grouping cell anywhere — only the hits themselves')
+        if (!(oa %see:'a flat result set stands as cells — no grouping cell anywhere — only the hits themselves')) i %see:'a flat result set stands as cells — no grouping cell anywhere — only the hits themselves'
     }
     if (w.c.saw_voice) {
         this.story_swear(w, 'a collapsed cluster speaks its count and its facets — a voice with no fold behind it')
@@ -3207,4 +3209,188 @@ VytoSpine_witness(w):
     if (w.c.saw_climb) {
         this.story_swear(w, 'the head is the rope — pressing it climbs one level and the region returns')
         if (!(oa %see:'the head is the rope — pressing it climbs one level and the region returns')) i %see:'the head is the rope — pressing it climbs one level and the region returns'
+    }
+
+// ══ VytoHand — THE HAND'S CAUSES: where a hand put a cell is matter, so it stays put ═══════════════
+//  Glassbeast §0 "THE WALL, AND THE SHAPE OF ITS CRACK" (2026-10-03).  Geometry has a CAUSE side (where a
+//   hand put a seed — a decision, discrete, on the model clock) and an EFFECT side (the walls, on the
+//    render clock).  Absorb the causes and recompute the effects: a `%Put:<tok>,x,y` row (per-mille of
+//     the frame) is a cause the solve honours — an ATTRACTOR by default (the owner: *"or be like an
+//      attractor"*), a PIN when it says `pin`.  The PRODUCER owns its puts (the cave's law) and hands the
+//       set over on every commission, so a fresh glass is put back exactly as the hand left it.
+//  Swears:
+//   · a PIN sits exactly where the hand put it;
+//   · an ATTRACTED cell falls toward its place, nearer than it rested free, and still yields to neighbours;
+//   · a FRESH glass — the whole world torn down and rebuilt — is put back exactly as the hand left it;
+//   · LIFTING the hand frees the cell and the put rows leave the world.
+//  World VytoHand.
+VytoHand(A,w):
+    w oai %req:wrangle,eternal
+        await &VytoHand_drive,w,req
+        req%ok = 1
+
+async VytoHand_drive(w, req):
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 6
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VytoHand_sow(w)
+        if (n === 3) this.VytoHand_stand(w)
+        if (n === 4) this.VytoHand_put(w)
+        if (n === 5) this.VytoHand_rebuild(w)
+        if (n === 6) this.VytoHand_lift(w)
+    }
+    this.VytoHand_witness(w)
+
+// six stones, plain objects, the producer's own ids as toks (so a put can name them)
+VytoHand_specs():
+    let out = []
+    for (const s of [['basalt', 3], ['chert', 1], ['flint', 2], ['jade', 1], ['onyx', 2], ['slate', 1]]) {
+        out.push({ Stone: s[0], guise: { tok: 'stone:' + s[0], dose: s[1] } })
+    }
+    return out
+
+// the producer's puts — chert PINNED low-left, jade ATTRACTED high-right (per-mille of the frame)
+VytoHand_puts():
+    return [
+        { Put: 'stone:chert', x: 150, y: 750, pin: 1 },
+        { Put: 'stone:jade', x: 850, y: 250 },
+    ]
+
+// the producer HOLDS its puts as matter in its own world (so the snap carries the causes) and hands
+//  their scalars over on every commission — the rows here ARE the hand's state; the glass only mirrors.
+VytoHand_held(w):
+    let out = []
+    for (const p of w.o({ Put: 1 })) out.push(Object.assign({}, p.sc))
+    return out
+
+VytoHand_seeds(w):
+    w.c.seeds = []
+    for (const s of this.VytoHand_specs()) { w.c.seeds.push(this.Vyto_guise(s)) }
+    return w.c.seeds
+
+// a cell's target by tok, and the frame the solve used (the same read Vyto_solve makes)
+VytoHand_T(vw, tok):
+    for (const r of this.Vyto_cells(vw)) { if (r.c.tok === tok) return r.c.T }
+    return null
+
+VytoHand_at(vw, p):
+    let vf = vw.c.vw_frame
+    let fw = (vf && Number(vf.w) > 0) ? Number(vf.w) : 800
+    let fh = (vf && Number(vf.h) > 0) ? Number(vf.h) : 450
+    return { x: p.x / 1000 * fw, y: p.y / 1000 * fh }
+
+VytoHand_d(a, b):
+    return Math.hypot(a.x - b.x, a.y - b.y)
+
+// ── beat 2 — the stones, as plain objects ───────────────────────────────────────────────────────
+VytoHand_sow(w):
+    i %desc:'six stones from plain objects — the producer names each one by its own id'
+    this.VytoHand_seeds(w)
+
+// ── beat 3 — stand them free: no hand yet, and where each rests is remembered ───────────────────
+VytoHand_stand(w):
+    i %desc:'stand the stones as foam with no hand on them — each rests where the pile puts it'
+    this.Vyto_commission_on(w, w.c.seeds, 1, 0, 0, 0, 0, 0, 1)
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'stand_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoHand_stand_ready(w)) })
+
+VytoHand_stand_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.foam) return 0
+    if (!this.Vyto_rest_poll(w, 6)) return 0
+    if (vw.o({ Put: 1 }).length) return 0
+    w.c.free_T = {}
+    for (const r of this.Vyto_cells(vw)) w.c.free_T[r.c.tok] = { x: r.c.T.x, y: r.c.T.y }
+    if (!w.c.free_T['stone:chert'] || !w.c.free_T['stone:jade']) return 0
+    w.c.saw_free = 1
+    return 1
+
+// ── beat 4 — the hand puts two stones: one pinned, one attracted ─────────────────────────────────
+VytoHand_put(w):
+    i %desc:'the hand puts two stones — chert pinned low left and jade drawn toward the high right'
+    for (const p of this.VytoHand_puts()) w.oai(p)
+    this.Vyto_commission_on(w, w.c.seeds, 0, 0, 0, 0, 0, 0, 1, null, this.VytoHand_held(w))
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'put_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoHand_put_ready(w)) })
+
+VytoHand_put_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (vw.o({ Put: 1 }).length !== 2) { this.Vyto_stir(vw); return 0 }
+    if (!this.Vyto_rest_poll(w, 6)) return 0
+    let ps = this.VytoHand_puts()
+    let pinT = this.VytoHand_T(vw, 'stone:chert')
+    let pullT = this.VytoHand_T(vw, 'stone:jade')
+    if (!pinT || !pullT) return 0
+    // THE PIN sits exactly on its place
+    if (this.VytoHand_d(pinT, this.VytoHand_at(vw, ps[0])) > 0.5) return 0
+    // THE ATTRACTOR: nearer its place than it rested free, and within its own radius of the place —
+    //  it arrived; but not necessarily ON it, because its neighbours still press (the owner's attractor)
+    let place = this.VytoHand_at(vw, ps[1])
+    let free = w.c.free_T['stone:jade']
+    if (!(this.VytoHand_d(pullT, place) < this.VytoHand_d(free, place))) return 0
+    if (!(this.VytoHand_d(pullT, place) < pullT.r)) return 0
+    w.c.put_T = { pin: { x: pinT.x, y: pinT.y }, pull: { x: pullT.x, y: pullT.y } }
+    w.c.saw_pin = 1
+    w.c.saw_pull = 1
+    return 1
+
+// ── beat 5 — tear the whole glass down and rebuild it: the producer hands the same puts over ─────
+VytoHand_rebuild(w):
+    i %desc:'tear the glass down and stand it fresh — the producer hands over the same puts'
+    this.Vyto_commission_on(w, this.VytoHand_seeds(w), 1, 0, 0, 0, 0, 0, 1, null, this.VytoHand_held(w))
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'rebuild_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoHand_rebuild_ready(w)) })
+
+VytoHand_rebuild_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw || !vw.c.foam) return 0
+    if (vw.o({ Put: 1 }).length !== 2) { this.Vyto_stir(vw); return 0 }
+    if (!this.Vyto_rest_poll(w, 6)) return 0
+    let pinT = this.VytoHand_T(vw, 'stone:chert')
+    let pullT = this.VytoHand_T(vw, 'stone:jade')
+    if (!pinT || !pullT || !w.c.put_T) return 0
+    if (this.VytoHand_d(pinT, w.c.put_T.pin) > 0.5) return 0
+    if (this.VytoHand_d(pullT, w.c.put_T.pull) > 0.5) return 0
+    w.c.saw_rebuilt = 1
+    return 1
+
+// ── beat 6 — the hand lifts: an empty set of puts, and the stones go free ─────────────────────────
+VytoHand_lift(w):
+    i %desc:'the hand lifts — the producer hands over no puts and the stones go free'
+    for (const p of w.o({ Put: 1 })) w.drop(p)
+    this.Vyto_commission_on(w, w.c.seeds, 0, 0, 0, 0, 0, 0, 1, null, this.VytoHand_held(w))
+    this.Vyto_rest_reset(w)
+    this.expecting(w, 'lift_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoHand_lift_ready(w)) })
+
+VytoHand_lift_ready(w):
+    let vw = this.VytoStaple_vw(w)
+    if (!vw) return 0
+    if (vw.o({ Put: 1 }).length) { this.Vyto_stir(vw); return 0 }
+    if (!this.Vyto_rest_poll(w, 6)) return 0
+    let pinT = this.VytoHand_T(vw, 'stone:chert')
+    if (!pinT || !w.c.put_T) return 0
+    if (this.VytoHand_d(pinT, w.c.put_T.pin) < 2) return 0
+    w.c.saw_lift = 1
+    return 1
+
+// ── the witness — story_swear + once-noticed %see · comma-free · apostrophe-free ─────────────────
+VytoHand_witness(w):
+    if (w.c.saw_pin) {
+        this.story_swear(w, 'a pinned put sits exactly where the hand put it')
+        if (!(oa %see:'a pinned put sits exactly where the hand put it')) i %see:'a pinned put sits exactly where the hand put it'
+    }
+    if (w.c.saw_pull) {
+        this.story_swear(w, 'an attracted put falls toward its place — nearer than it rested free — and its neighbours still press')
+        if (!(oa %see:'an attracted put falls toward its place — nearer than it rested free — and its neighbours still press')) i %see:'an attracted put falls toward its place — nearer than it rested free — and its neighbours still press'
+    }
+    if (w.c.saw_rebuilt) {
+        this.story_swear(w, 'a glass torn down and stood fresh is put back exactly as the hand left it')
+        if (!(oa %see:'a glass torn down and stood fresh is put back exactly as the hand left it')) i %see:'a glass torn down and stood fresh is put back exactly as the hand left it'
+    }
+    if (w.c.saw_lift) {
+        this.story_swear(w, 'lifting the hand frees the stone and the put rows leave the world')
+        if (!(oa %see:'lifting the hand frees the stone and the put rows leave the world')) i %see:'lifting the hand frees the stone and the put rows leave the world'
     }

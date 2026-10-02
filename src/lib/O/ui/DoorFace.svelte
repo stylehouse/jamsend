@@ -165,11 +165,11 @@
             const samek = (a: string, b: string) => !!(a && b && (a.startsWith(b) || b.startsWith(a)))
             if (crewv.length) {
                 const meRow = crewv.find((m: any) => m.mine)
-                if (meRow) instance = { role: meRow.role, name: meRow.name }
+                if (meRow) instance = { role: meRow.role, name: meRow.name, prepub: meRow.prepub }
                 family = crewv.filter((m: any) => !m.mine).map((m: any) => {
                     const brow = roster.find((b: any) => samek(String(b?.sc?.pub || ''), m.prepub) || (m.pub && samek(String(b?.sc?.pub || ''), m.pub)))
                     return {
-                        role: m.role, name: m.name, pub: m.pub || m.prepub, pub8: m.pub8, addr: '', mine: false,
+                        role: m.role, name: m.name, pub: m.pub || m.prepub, prepub: m.prepub, pub8: m.pub8, addr: '', mine: false,
                         ago: m.ago, rung: m.rung, cert: !!m.cert, fresh: !!m.fresh,
                         pocket: brow ? organsize(brow, 'pocket') : null,
                         trove: brow ? organsize(brow, 'trove') : null,
@@ -246,7 +246,15 @@
                 }
             })
         } catch { family = []; flows = [] }
+        // THE 🧲 — where my hearts land (RemoteHeist_todo §4.2).  Shown only when there is a CHOICE (two or more
+        //  bodies that can take originals: my Caves, and me if I hold a folder); the row wearing it is the big pile.
+        let magnet = { show: false, at: '', can: [] as string[] }
+        try {
+            const cands = ((H as any)?.Heard_magnet_candidates?.() ?? []) as any[]
+            if (cands.length >= 2) magnet = { show: true, at: String((H as any)?.Heard_magnet?.((H as any)?.top_House?.()?.c?.radio_w) || ''), can: cands.map((r: any) => String(r.prepub)) }
+        } catch {}
         return {
+            magnet,
             name: (self?.sc?.friendly || self?.sc?.nick) as string | undefined,
             named: !!self?.sc?.friendly,
             family,
@@ -374,6 +382,11 @@
         } catch { return [] }
     })
 
+    // the 🧲 moves: it only sets the default for the NEXT heart (a heart already pressed keeps its 'to').
+    function magnet_to(prepub: string) {
+        try { (H as any)?.Heard_magnet_set?.(prepub) } catch {}
+        try { (H as any)?.top_House?.()?.bump_version?.() } catch {}
+    }
     // ── NAME YOURSELF — the first-time move: the chosen name (friendly) is what invites carry
     //  and what friends see; the auto-nick is only a stand-in.  Persists via Clustation_friendly.
     let naming = $state(false)
@@ -493,6 +506,10 @@
             <span class="df-instance"
                 title={`this device is the ${face.instance.role}${face.instance.name ? ' “' + face.instance.name + '”' : ''} of ${face.name ?? 'this soul'} — one soul, this body's own name`}>
                 · {face.instance.role}{#if face.instance.name} {face.instance.name}{/if}</span>
+            {#if face.magnet.show && face.instance.prepub && face.magnet.can.includes(face.instance.prepub)}
+                <button class="df-mag" class:on={face.magnet.at === face.instance.prepub} onclick={() => magnet_to(face.instance.prepub)}
+                    title={face.magnet.at === face.instance.prepub ? 'your hearts land HERE — this folder is your big pile' : 'land your hearts here instead'}>🧲</button>
+            {/if}
         {/if}
         {#if face.prepub && !naming}
             <button class="df-edit" onclick={name_open} title="name yourself — friends see this">✎</button>
@@ -607,6 +624,10 @@
                             {#if b.trove != null || b.pocket != null}
                                 <!-- THE PLOT lane's organ (SoundPool §5.5): what this body holds -->
                                 <span class="df-organ" title="what this body holds">{#if b.trove != null}{b.trove >= 1000 ? (b.trove / 1000).toFixed(0) + 'k' : b.trove} trove{/if}{#if b.pocket != null}{b.trove != null ? ' · ' : ''}{b.pocket} ready{/if}</span>
+                            {/if}
+                            {#if face.magnet.show && b.prepub && face.magnet.can.includes(b.prepub)}
+                                <button class="df-mag" class:on={face.magnet.at === b.prepub} onclick={() => magnet_to(b.prepub)}
+                                    title={face.magnet.at === b.prepub ? 'your hearts land on ' + (b.name || b.role) + ' — its folder is your big pile' : 'land your hearts on ' + (b.name || b.role) + ' instead'}>🧲</button>
                             {/if}
                             {#if true}
                                 <!-- EJECT A CREWMATE (owner 2026-09-03: "dropping Piers with the ✕ button as we
@@ -871,6 +892,13 @@
     }
     .df-family .df-friend { white-space: nowrap; margin-top: 0; }
     /* THE PLOT — the family box's semantics filled in (owner 2026-09-01) */
+    /* the 🧲: dim on every candidate, lit on the one holding it — moving it IS the setting */
+    .df-mag {
+        background: none; border: none; padding: 0 2px; margin-left: 4px; cursor: pointer;
+        font-size: 11px; opacity: 0.25; filter: grayscale(1); pointer-events: auto;
+    }
+    .df-mag:hover { opacity: 0.6; }
+    .df-mag.on { opacity: 1; filter: none; }
     .df-organ {
         font-size: 9px; opacity: 0.65; font-family: monospace; margin-left: 6px;
         color: #9fc9b4; letter-spacing: 0;

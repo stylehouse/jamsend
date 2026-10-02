@@ -12,7 +12,8 @@ Snap:H
         Song:LowTide,artist:Yara
         Song:Undertow,artist:Yara
         Song:SaltAir,artist:Yara
-        Stray:moth
-        Stray:lint
+        Stray:moth,loose
+        Stray:lint,loose
         req:stand_wait,finished
         see:the orchestra stands foam-cut — a stuffed bag beside kin songs and loose strays all seated
+        see:the strays ride the rim — a loose row takes no seat in the pile and feels no wall

@@ -1,0 +1,26 @@
+story:MusuMagnet
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.383
+      sample=0.481,at=1790982982
+      sample=0.481,at=1790982987
+      sample=0.188,at=1790983013
+    TimeTotal:step,avg=0.055
+      sample=0.069,at=1790982982
+      sample=0.069,at=1790982987
+      sample=0.027,at=1790983013
+  step,dige:ac14022b8c72c323
+  step=2,dige:339bfd31f9b30fb0
+  step=3,dige:39292f044f048c93
+    Assertion:the-magnet-goes-to,sentence:the magnet goes to the pick while it stands — else a Cave keeps its own — else a Cave that is here — else my own folder — else an away Cave — and with no crew to nobody
+  step=4,dige:ff067ba8c8e1299f
+    Assertion:a-heart-sent-to,sentence:a heart sent to the Cave is hauled there only — the Captain with a folder of its own leaves it be — and its row names where it went
+  step=5,dige:3285ffb83dabebde
+    Assertion:moving-the-magnet-home,sentence:moving the magnet home hauls the next heart here — and the Cave seeing it in the union leaves it be
+  step=6,dige:79f2ec61e4d5025b
+    Assertion:a-heart-that-names,sentence:a heart that names nobody is anyones to haul — exactly as before the magnet
+  step=7,dige:8856ff1f6dfa5440
+    Assertion:a-heart-carried-from,sentence:a heart carried from another body never asks this screen for the room — and its keep finds its own track through the folder census alias and starts with no form
