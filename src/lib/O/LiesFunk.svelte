@@ -1586,6 +1586,13 @@ await M.eatfunc({
             const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
             for (const g of (gl?.o({ group: 1 }) ?? []) as TheC[])
                 for (const d of g.o({ Doc: 1 }) as TheC[]) if (d.sc.Doc) paths.add(d.sc.Doc as string)
+            // + EVERY DOC ATLAS HAS ROSTERED, where it stands (2026-10-03).  A hacker room's w:Lies holds one
+            //  Waft and no GhostList, so its freetext covered a handful of files while Atlas knew the whole tree
+            //   and the search offered method names from everywhere but text from almost nowhere.  A roster is
+            //    a list of paths, not a merge of the two censuses (Atlas_vs_Stemdex stays settled): the Stemdex
+            //     still reads, stems and keeps its own rows; it just reads what the land already knows exists.
+            const atlas_w = H.top_House().o({ A: 'Atlas' })[0]?.o({ w: 'Atlas' })[0] as TheC | undefined
+            for (const d of (atlas_w?.o({ Doc: 1 }) ?? []) as TheC[]) if (d.sc.Doc) paths.add(d.sc.Doc as string)
             for (const p of [...paths])                                  // generated output is not source
                 if (p.includes('/gen/') && p.endsWith('.go')) paths.delete(p)
 

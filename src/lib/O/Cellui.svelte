@@ -969,7 +969,9 @@
                 //     first/last glyph vanishes, defeating the mold's 12% horizontal padding.  Cap the
                 //      stretched case at 1 (fill the column at natural scale; shrink only if genuinely too
                 //       tall).  A compact face still scales up on the min(width,height) term as before.
-                const raw = stretched ? Math.min(STRETCH_CAP, ih / nh) : Math.min(iw / nw, ih / nh)
+                // the Link takes a bigger inlay than the rest (owner 2026-10-03: "20% bigger") — it is main-or-gone, so only as main
+                const scap = (key === main_key && main_cell?.mk === 'Link') ? STRETCH_CAP * 1.2 : STRETCH_CAP
+                const raw = stretched ? Math.min(scap, ih / nh) : Math.min(iw / nw, ih / nh)
                 const fit = Math.max(FIT_MIN, Math.min(cap, raw))
                 const cur = fits.get(key) ?? 1
                 if (Math.abs(fit - cur) / cur <= FIT_DEADBAND) continue   // dead-band damp

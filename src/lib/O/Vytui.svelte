@@ -177,6 +177,63 @@
         hand = null
     }
 
+    // field_bind — a producer's text box (guise `field`).  Two rules keep typing whole across re-sows:
+    //  · SEEDED, NOT FORCED.  An update writes the producer's value only if the box is not focused, or nobody has
+    //     typed since it was last seeded — a re-sow carries the value the producer last HEARD, which lags the
+    //      hand by the debounce, and writing it over live typing would eat keys.
+    //  · CARRIED ACROSS A REMOUNT.  The glass can re-create the node mid-typing (a re-sow re-lays the label), and
+    //     the fresh node may even be handed the PREVIOUS sow's field (seen live: a stale '' seeded, focused, and
+    //      then never corrected).  So a focused box that goes away leaves its text, caret and focus for the next
+    //       box of the same cell, picked up if it mounts within a moment.
+    let field_carry: { key: string, value: string, start: number, end: number, at: number } | null = null
+    function field_bind(node: HTMLInputElement, p: { fld: any, key: string }) {
+        let cur = p.fld
+        let key = p.key
+        let seeded = String(cur?.value ?? '')
+        let focused = false
+        let blurred_at = -1
+        const carry = field_carry && field_carry.key === key && performance.now() - field_carry.at < 1500 ? field_carry : null
+        field_carry = null
+        node.value = carry ? carry.value : seeded
+        if (carry) seeded = '\u0000'   // the hand's text, not the producer's — never overwrite it as a stale seed
+        node.placeholder = String(cur?.placeholder ?? '')
+        const on = () => { try { cur?.oninput?.(node.value) } catch (e) { console.warn('◈ Vyto field threw', e) } }
+        const onf = () => { focused = true }
+        // Chrome fires blur when a focused node is REMOVED, before the action's destroy — so "was it focused" is
+        //  read as "lost focus this very moment", not as the live flag
+        const onb = () => { focused = false; blurred_at = performance.now() }
+        node.addEventListener('input', on)
+        node.addEventListener('focus', onf)
+        node.addEventListener('blur', onb)
+        if (carry || cur?.autofocus) requestAnimationFrame(() => {
+            node.focus()
+            const st = carry ? carry.start : node.value.length
+            const en = carry ? carry.end : node.value.length
+            try { node.setSelectionRange(st, en) } catch {}
+        })
+        return {
+            update(q: { fld: any, key: string }) {
+                cur = q.fld
+                key = q.key
+                node.placeholder = String(cur?.placeholder ?? '')
+                const v = String(cur?.value ?? '')
+                if (document.activeElement !== node || node.value === seeded) {
+                    if (node.value !== v) node.value = v
+                    seeded = v
+                }
+                if (cur?.autofocus && document.activeElement !== node && !focused) node.focus()
+            },
+            destroy() {
+                if (focused || document.activeElement === node || performance.now() - blurred_at < 80)
+                    field_carry = { key, value: node.value, start: node.selectionStart ?? node.value.length,
+                                    end: node.selectionEnd ?? node.value.length, at: performance.now() }
+                node.removeEventListener('input', on)
+                node.removeEventListener('focus', onf)
+                node.removeEventListener('blur', onb)
+            },
+        }
+    }
+
     function cell_click(w: TheC, cell: PaintCell) {
         if (performance.now() - hand_swallow < 400) return   // the click that ends a drag is not a press
         // A CLICK IS A PRESS OR IT IS NOTHING (the owner 2026-08-10, the focus pivot: *"currently we
@@ -4871,7 +4928,18 @@
                     {#snippet folio(w: TheC, cell: PaintCell)}
                       {#if fo(w, 'spine')}
                         {@const bl = bone_label(w, cell)}
-                        {#if bl}
+                        {@const fld = (cell.row.c as any)?.source_n?.c?.field}
+                        {#if bl && fld}
+                            <!-- A FIELD — the producer's text box in the label place (Vyto_guise `field`; the cave's head).
+                                 HTML inside the svg, so it pans and zooms with the glass; the hand never takes it. -->
+                            <foreignObject class="vy-fieldo" x={(bl.x - 6).toFixed(1)} y={(bl.y - 25).toFixed(1)}
+                                           width="620" height="38">
+                                <div class="vy-field" role="presentation" onpointerdown={(e) => e.stopPropagation()}>
+                                    <input class="vy-field-in" spellcheck="false" autocomplete="off" use:field_bind={{ fld, key: cell.key }} />
+                                    {#if fld.rest}<span class="vy-field-rest">{fld.rest}</span>{/if}
+                                </div>
+                            </foreignObject>
+                        {:else if bl}
                             {@const g0 = cell_ground(cell)}
                             <text class="bone-label" class:bone-vert={Object.keys((cell.row.sc as any) ?? {})[0] === 'Doc'}
                                   x={bl.x.toFixed(1)} y={bl.y.toFixed(1)} font-size={bl.fs.toFixed(1)} text-anchor={bl.anchor}
@@ -5973,4 +6041,17 @@
     .hold .hchan  { min-width: 6em; color: #8a8aa0; }
     .hold .hstr   { min-width: 5em; color: #9a9ab0; }
     .hold .hby    { color: #66667a; }
+    /* THE FIELD — a producer's text box drawn in a cell's label place (the cave's head) */
+    .vy-fieldo { overflow: visible; }
+    .vy-field { display: flex; align-items: baseline; gap: 10px; height: 100%; }
+    .vy-field-in {
+        width: 300px; height: 32px; box-sizing: border-box;
+        font: 600 19px/1 system-ui, sans-serif; color: #ffe8bf; letter-spacing: 0.01em;
+        background: rgba(14, 12, 10, 0.72); border: 1px solid rgba(224, 180, 110, 0.55); border-radius: 16px;
+        padding: 0 14px; outline: none; caret-color: #ffd27a;
+        box-shadow: 0 0 14px rgba(224, 170, 90, 0.18) inset;
+    }
+    .vy-field-in:focus { border-color: rgba(255, 210, 130, 0.9); box-shadow: 0 0 18px rgba(255, 200, 110, 0.35); }
+    .vy-field-in::placeholder { color: rgba(230, 200, 160, 0.45); font-weight: 400; }
+    .vy-field-rest { font: 13px/1 system-ui, sans-serif; color: rgba(240, 215, 175, 0.75); white-space: nowrap; }
 </style>

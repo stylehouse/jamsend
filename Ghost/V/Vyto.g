@@ -534,6 +534,11 @@ Vyto_guise(spec):
     // `press` — what pressing this cell does (Vytui's cell_click calls source `.c.press`; a crest of these
     //  calls the first member's press with the whole group).  How a producer makes its matter explorable.
     if (typeof g.press === 'function') n.c.press = g.press
+    // `field` — a TEXT BOX in this cell's label place: `{ value, placeholder, rest, oninput(v), autofocus }`.  The
+    //  producer owns what typing means, exactly as it owns a press; the glass only draws the hole.  Born for the
+    //   cave's head (2026-10-03, the owner: *"a big spine-root spine-label-sized hole we type into, and everything
+    //    pings around it"*).  `.c` only, so no Book that never sets it can see it.
+    if (g.field && typeof g.field.oninput === 'function') n.c.field = g.field
     // `foldby` — a HINT to the fold election for this scope's children: "partition by this fact when it
     //  partitions at all" (Vyto_fold_scope).  The producer knows its domain — a code search's children carry
     //   both a kind and a stem, and only it knows which grouping the reader wants.

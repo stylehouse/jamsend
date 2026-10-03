@@ -147,35 +147,86 @@
         return segs[segs.length - 1] ?? path
     }
 
-    // THE CAVE (2026-09-25) — a search, worn as a creature, over the code.  The owner: *"I wanted to start
-    //  using it as the visual when we search for anything in there… bring it in over the top of the code."*
-    //   The producer is Lagoon's (Lagoon.g, THE CAVE): every settled result set goes to it by q; it sows a
-    //    Vyto glass on this room's Run House, and UI:Vyto — an ordinary piece in the loop below — is lifted
-    //     out of the flow into `.bw-glass`, over the code and left of the results list.  Nothing here
-    //      decides what the glass shows; the room only says when it is up.
-    //  A press that DELIVERS (a chamber's line, a file with no map) tells the room through the Lagoon world's
-    //   `cave_ondeliver`, and the room dismisses the whole search — the landed line is what you wanted to see.
-    let cave_q  = $state('')
-    let dismiss = $state(0)
-    let search_el: HTMLDivElement | undefined = $state()
-    let glass_w = $state(0)
+    // THE CAVE (2026-09-25; re-cut 2026-10-03; ONE VISUAL 2026-10-03) — search, worn as a creature, over the
+    //  code.  The owner: *"I'm wanting just the one visual: a big spine-root spine-label-sized hole we type into,
+    //   and everything pings around it pretty fast."*  So where the glass is loaded, the top bar holds no search
+    //    box at all — a ⌕ chip (or `/`) opens the cave, and the HOLE you type into is the spine's own head
+    //     (Lagoon.g THE CAVE, a Vyto guise `field`).  Empty, the code's families stand around it; typed, its
+    //      files and their stem families.  The Searchbar remains only as the fallback when Vyto is absent.
+    //  The producer tells the room three things through `cave_on`: LAND (show this code — the Searchbar's own
+    //   delivery, `Lies_ghost_pick`), LEAVE (the head pressed at the surface, or Esc — the cave closes) and MODE
+    //    (at a method the glass folds to a left RAIL and the room steps right, so the code sits beside its doors).
+    //  The Stemdex is FED from here, as the Searchbar used to: nudged while the cave is open and the index has
+    //   not converged, and the cave re-reads it so text hits fill in as they land.
+    let cave_open = $state(false)
+    let cave_mode = $state('full')
+    let dismiss   = $state(0)
+    let vyto_ready = $state(false)
     const lagoon_w = () => (H as any)?.o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
+    $effect(() => {
+        if (vyto_ready) return
+        const t = setInterval(() => { if (typeof (H as any)?.Vyto_guise === 'function') { vyto_ready = true; clearInterval(t) } }, 400)
+        return () => clearInterval(t)
+    })
+    function cave_on(ev: string, a: any) {
+        if (ev === 'land' && a?.path) {
+            lies?.house.i_elvisto('Lies/Lies', 'Lies_ghost_pick', a.point ? { path: a.path, point: a.point } : { path: a.path })
+            if (a.leave) close_cave()
+        }
+        if (ev === 'leave') close_cave()
+        if (ev === 'mode') cave_mode = a === 'rail' ? 'rail' : 'full'
+    }
+    function open_cave() {
+        if (!H) return
+        const lw = lagoon_w()
+        if (lw) lw.c.cave_on = cave_on
+        cave_open = true
+        lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
+        H.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { open: 1 })
+    }
+    function close_cave() {
+        if (!cave_open) return
+        cave_open = false
+        cave_mode = 'full'
+        H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { clear: 1 })
+    }
+    // the fallback Searchbar (no glass on this tab) still drives the cave's old door
     function on_results(r: any) {
         const q = r?.q ? String(r.q) : ''
-        if (!H) return
-        if (!q) {
-            if (cave_q) H.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { clear: 1 })
-            cave_q = ''
-            return
-        }
+        if (!H || !q) return
         const lw = lagoon_w()
-        if (lw) lw.c.cave_ondeliver = () => { dismiss = dismiss + 1 }
-        // the glass ends where the results list begins — the list hangs from the search input's left edge
-        const box = search_el?.getBoundingClientRect()
-        glass_w = box ? Math.max(0, Math.round(box.left) - 8) : 0
-        cave_q = q
-        H.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { q })
+        if (lw) lw.c.cave_on = cave_on
+        H.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { q, r })
     }
+    // feed the Stemdex while the cave is open and the index is still converging
+    $effect(() => {
+        if (!cave_open) return
+        const t = setInterval(() => {
+            const dex = (lies?.w as any)?.c?.stemdex
+            if (dex && dex.total > 0 && dex.done >= dex.total) return
+            lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
+            H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { refresh: 1 })
+        }, 1500)
+        return () => clearInterval(t)
+    })
+    // '/' opens the hole from anywhere that is not already typing (capture phase, à la the Searchbar)
+    $effect(() => {
+        if (!vyto_ready) return
+        const grab = (ev: KeyboardEvent) => {
+            if (ev.key !== '/' || ev.ctrlKey || ev.metaKey || ev.altKey) return
+            const t = ev.target as HTMLElement | null
+            if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+            ev.preventDefault()
+            open_cave()
+        }
+        window.addEventListener('keydown', grab, true)
+        return () => window.removeEventListener('keydown', grab, true)
+    })
+    let has_glass = $derived.by(() => {
+        void active?.UIs?.version
+        return !!(active as any)?.UIs?.ob({ UI: 'Vyto' })[0]
+    })
+    let cave_up = $derived(cave_open && has_glass)
     const is_glass = (uiC: any) => uiC.sc.UI === 'Vyto' && !sprawl
     //#endregion
 </script>
@@ -212,9 +263,11 @@
         <button class="bw-lies-chip" class:on={show_lies}
                 title="call Lies up — the straight Liesui, hidden by default in the room"
                 onclick={() => show_lies = !show_lies}>⌐ Lies</button>
-        {#if lies}
-            <div class="bw-search" bind:this={search_el}><Searchbar H={lies.house} w={lies.w} onpin={pin}
-                onresults={on_results} {dismiss} /></div>
+        {#if lies && vyto_ready}
+            <button class="bw-cave-chip" class:on={cave_open} onclick={() => cave_open ? close_cave() : open_cave()}
+                    title="search — the hole you type into is the spine's head  ( / )">⌕ search <span class="bw-key">/</span></button>
+        {:else if lies}
+            <div class="bw-search"><Searchbar H={lies.house} w={lies.w} onpin={pin} onresults={on_results} {dismiss} /></div>
         {/if}
     </div>
 
@@ -241,16 +294,17 @@
             {/each}
         {/each}
     </div>
-    <div class="bw-room" class:bw-railed={pins.length > 0} class:bw-sprawl={sprawl}>
+    <div class="bw-room" class:bw-railed={pins.length > 0} class:bw-sprawl={sprawl}
+         class:bw-caverail={cave_up && cave_mode === 'rail'}>
         {#each (sprawl ? houses : houses.filter(h => h.c.ip === active_ip)) as house (house.c.ip)}
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
                 {#if !ui_hidden(uiC.sc.UI)}
                     <section class="bw-piece" class:bw-piece-lies={uiC.sc.UI === 'Lies'}
-                             class:bw-glass={is_glass(uiC)} class:up={is_glass(uiC) && !!cave_q}
-                             style={is_glass(uiC) && glass_w ? `--glass-w: ${glass_w}px` : undefined}>
+                             class:bw-glass={is_glass(uiC)} class:up={is_glass(uiC) && cave_up}
+                             class:rail={is_glass(uiC) && cave_mode === 'rail'}>
                         {#if is_glass(uiC)}
                             <button class="bw-glass-x" title="close the cave (and the search)"
-                                    onclick={() => dismiss = dismiss + 1}>×</button>
+                                    onclick={close_cave}>×</button>
                         {:else}
                             <span class="bw-tag">{house.name} · {uiC.sc.UI}</span>
                         {/if}
@@ -405,17 +459,18 @@
         user-select: none; pointer-events: none;
     }
 
-    /* THE CAVE'S GLASS — UI:Vyto lifted out of the flow and laid over the code, left of the results list
-       (which hangs from the search input; --glass-w is measured to end just before it).  Always MOUNTED so
-       the glass keeps its world and its size; merely invisible and click-through until a search is up.
-       z 70 clears the top bar's stacking context (60), where the Searchbar's dim and panel live — the dim
-       still darkens the code underneath, which is the torchlight the cave wants. */
+    /* THE CAVE'S GLASS — UI:Vyto lifted out of the flow and laid over the code.  It IS the results while it
+       is up (the Searchbar's dropdown stands down), so it takes the room's whole width; at a method it folds
+       to a left RAIL and the room steps right (.bw-caverail) so the landed code sits beside the method's doors.
+       Always MOUNTED so the glass keeps its world and its size; merely invisible and click-through until a
+       search is up.  z 70 clears the top bar's stacking context (60). */
     .bw-piece.bw-glass {
-        position: fixed; top: 3rem; left: 0; bottom: 0; z-index: 70;
-        width: var(--glass-w, 62vw);
+        position: fixed; top: 3rem; left: 0; right: 0; bottom: 0; z-index: 70;
         display: flex; flex-direction: column;
         visibility: hidden; pointer-events: none;
     }
+    .bw-piece.bw-glass.rail { right: auto; width: min(28rem, 34vw); }
+    .bw-room.bw-caverail { padding-left: calc(min(28rem, 34vw) + 0.8rem); }
     .bw-piece.bw-glass.up { visibility: visible; pointer-events: auto; }
     /* the copper sheet goes translucent HERE only — a scoped :global, so no other page that mounts Vytui
        changes by a pixel — and the code ghosts through beneath the spine */
@@ -429,6 +484,13 @@
         cursor: pointer; font-family: inherit; font-size: 0.95rem; line-height: 1;
         color: rgba(255, 224, 168, 0.8); padding: 0.1rem 0.4rem;
     }
+    .bw-cave-chip {
+        margin-left: auto; flex: none; cursor: pointer; font-family: inherit; font-size: 0.82rem;
+        background: rgba(30, 24, 16, 0.6); border: 1px solid rgba(224, 180, 110, 0.4); border-radius: 14px;
+        color: rgba(255, 224, 168, 0.85); padding: 0.18rem 0.8rem;
+    }
+    .bw-cave-chip:hover, .bw-cave-chip.on { color: #ffe0a8; border-color: rgba(255, 210, 130, 0.85); background: rgba(60, 44, 24, 0.7); }
+    .bw-key { font-size: 0.7em; opacity: 0.6; border: 1px solid currentColor; border-radius: 3px; padding: 0 0.25em; margin-left: 0.3em; }
     .bw-glass-x:hover { color: #ffe0a8; border-color: rgba(224, 180, 110, 0.7); }
 
     /* the pin rail — the loose space at the right of the code */

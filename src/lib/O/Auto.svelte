@@ -158,6 +158,13 @@
             return true
         }
 
+        // ALREADY BEING IT IS DONE (2026-10-03, Inko lost its crew).  boot_param reads the LIVE bar, and a ceremony
+        //  pins ?I=<prepub> mid-session (LinkDevice finalize_url, InvitePanel) onto a page that booted bare — whose
+        //   identity is filed under its ROLE tag ('sound').  This path then concreted a SECOND %Identity filed under
+        //    the prepub — a crew of one, no piers — and made it active: the Captain became a stranger and the Door
+        //     shut.  The ?I= names a key, not a particle; if the active identity already wears that prepub, stop.
+        const act = (H as any).Clustation_self?.(H)
+        if (act && String(act.prepub || '') === param) return true
         const peeked = await (H as any).thang_peek('identities', param)
         // A row is only USABLE if its stored prepub IS the tag it is filed under. The old silent-mint
         //  bug wrote MISMATCHED rows — a freshly-minted keypair stored under the tag you ASKED for —
@@ -168,7 +175,18 @@
         //       looking perfectly healthy from the inside. Refuse it exactly like a miss, and say which.
         const usable = peeked?.pub && peeked?.key && peeked?.prepub === param
         if (usable) {
+            // TRIPWIRE (2026-10-03, Inko): a crew-joined Cave logged "Identity active" a SECOND time mid-session and
+            //  came out with no crew and no piers — its Captain then read as a stranger.  This path should run once
+            //   per page life; if it runs again, say who called and what the identity held before + after.
+            const topI = ((H as any).top_House?.() ?? H) as House
+            const was = A.o({ Identity: param })[0] as any
+            const mates = (n: any) => { try { return (n?.o?.({ Crew: 1 })?.[0]?.o?.({ mate: 1 }) ?? []).map((m: any) => String(m.sc.mate).slice(0, 8) + ':' + String(m.sc.role || '')).join(',') } catch { return '?' } }
+            if ((topI.c as any).identity_active_once) {
+                console.warn(`🪪⚠ identity RE-CONCRETED mid-session (${param}) — before: ${was ? 'crew[' + mates(was) + '] piers=' + (was.o({ Peering: 1 })[0]?.o({ Pier: 1 })?.length ?? 0) : 'NO %Identity'} — H is ${H === topI ? 'top' : 'NOT top'}`, new Error('re-concrete').stack)
+            }
+            ;(topI.c as any).identity_active_once = 1
             ;(H as any).Clustation_concrete(A, param, peeked)
+            if (was) { const now = A.o({ Identity: param })[0] as any; if (now !== was || mates(now) !== mates(was)) console.warn(`🪪⚠ identity concrete CHANGED the crew: ${mates(was)} → ${mates(now)}${now !== was ? ' (a NEW %Identity)' : ''}`) }
             console.log(`🪪 Identity active ${cluster_name(peeked.prepub)} (${peeked.prepub})`)
             return true
         }

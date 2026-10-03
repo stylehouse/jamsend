@@ -1,22 +1,18 @@
 Snap:H
   H:LagoonCave,Run
     A:LagoonCave
-      self,round=11	{"mung":["age"]}
       w:LagoonCave
-        self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
         req:stand_wait,finished
         aimed:fixture
+        req:open_wait,finished
+        saw:cave,lvl:open,rope:⌕ ,shape:Family=Sample…
         req:search_wait,finished
-        saw:cave,lvl:search,rope:⌕ Sample,vertebrae:Doc,ribs:Def+Def+Def
+        saw:cave,lvl:search,rope:⌕ Sample,shape:Doc=Ghost/L/test_corpus/Sample.g [Family=Sample… ×2 ; Family=Sample_gamma()]
         req:dive_wait,finished
-        saw:cave,lvl:file,rope:⌕ Sample › Sample,vertebrae:Region Region,ribs:Method+Method Method
-        req:chamber_wait,finished
-        saw:cave,lvl:method,rope:⌕ Sample › Sample › Sample_alpha(),vertebrae:Lines,ribs:Hit+Call+Line
+        saw:cave,lvl:file,rope:⌕ Sample › Sample,shape:Method=Sample_alpha() | Method=_beta() | Method=Sample_gamma()
     A:Vyto
-      self,round=8	{"mung":["age"]}
       w:Vyto,grawave_duration=0.4
-        self,round=8	{"mung":["age"]}
         Organ:Scan,family:chronicler,reads:the grappled worlds,writes:the mirror,status:stub
         Organ:Fold,family:solver,reads:the mirror,decides:which subtrees become one cell,status:stub
         Organ:Gang,family:solver,reads:a crowded sibling row,decides:who represents whom,status:stub
@@ -34,7 +30,7 @@ Snap:H
         Bar:holds,doctrine:paint every Hold and who placed it
         Bar:pelt,doctrine:comb the hair-field visible
         Bar:o,doctrine:we saw it — keep this moment,kind:act
-        Vytocon,spine:1,kindfold:1,budget:400
+        Vytocon,spine:1,kindfold:1,budget:400,ribs:48
         see:🫧 stir:0 yore:0
     watched:UIs
       UI:Vyto	{"ref":{"component":"Function()"}}

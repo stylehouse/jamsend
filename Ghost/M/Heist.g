@@ -4890,6 +4890,7 @@ async Berth_open(nav, root, prepub, name):
     if (!waft) waft = new TheC({ c: {}, sc: { Waft: path } })
     waft.c.berth_dir = dir
     waft.c.berth_parts = 0
+    waft.c.berth_part_rows = 0
     // BOUNDED, and stopping at the first gap.  A missing NNN.snap ends the chain rather than skipping it:
     //  parts are written in order and only ever removed all-at-once by a compaction, so a hole means the
     //   tail is gone, and reading past it would resurrect state the compaction already folded in.
@@ -4899,7 +4900,10 @@ async Berth_open(nav, root, prepub, name):
         try { ptxt = await nav.read_file(dir, this.Berth_part_name(n)) } catch (er) { ptxt = null }
         if (!ptxt) break
         let pdec = this.deWaft(ptxt, path)
-        if (pdec.Waft) this.Berth_fold(waft, pdec.Waft)
+        if (pdec.Waft) {
+            waft.c.berth_part_rows = waft.c.berth_part_rows + pdec.Waft.o({}).length
+            this.Berth_fold(waft, pdec.Waft)
+        }
         waft.c.berth_parts = n
         n = n + 1
     }
@@ -4909,8 +4913,19 @@ async Berth_open(nav, root, prepub, name):
 //  are indexed into a throwaway part root purely to be encoded — `i()` is index-only, so the originals
 //   keep their place in the base tree).  Falls back to a whole save if the encode complains, because a
 //    part that will not decode is worse than the write we were avoiding.
+//  SMALL DOCUMENTS DON'T APPEND (2026-10-04, the owner on a 2-folder share: `berth/Census` had 63 one-line
+//   parts — `soweto_disco,open:0` then `open:1` — and Newlyadded one part per track of a 7-track album: "there's
+//    no way this needs to be split into such small chunks").  A part saves bytes only when the toc is big next
+//     to the change.  So compact when the rows riding in parts (these included) reach a quarter of the base:
+//      a 2-row toc rewrites in place every time and never grows a tail, while a 5736-row census still appends
+//       until ~1400 rows have piled up.  Berth_parts_max stays as the bound on the read chain.
 async Berth_append(nav, waft, rows, ident):
     if (!rows || !rows.length) return 0
+    let pending = (+(waft.c.berth_part_rows || 0)) + rows.length
+    if (pending * 4 >= waft.o({}).length) {
+        await this.Berth_save(nav, waft)
+        return 1
+    }
     let part = new TheC({ c: {}, sc: { Waft: String(waft.sc.Waft || 'berth') } })
     if (ident) part.sc.ident = String(ident)
     for (const row of rows) part.i(row)
@@ -4922,6 +4937,7 @@ async Berth_append(nav, waft, rows, ident):
     let n = (+(waft.c.berth_parts || 0)) + 1
     await nav.write_file(waft.c.berth_dir, this.Berth_part_name(n), enc.snap)
     waft.c.berth_parts = n
+    waft.c.berth_part_rows = pending
     if (n >= this.Berth_parts_max()) await this.Berth_save(nav, waft)
     return 1
 
@@ -4952,6 +4968,7 @@ async Berth_save(nav, waft):
     }
     try { await this.Heist_unlink(nav, dir, 'toc.snap.crswap') } catch (er) {}
     waft.c.berth_parts = 0
+    waft.c.berth_part_rows = 0
 
 // Berth_reset — forget a Pier's Waft(s).  With a name, drop that ONE Waft's toc.snap AND its parts (a
 //  toc-only reset would leave the tail behind and the next open would rebuild the document out of it —

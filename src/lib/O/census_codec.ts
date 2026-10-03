@@ -1,48 +1,20 @@
-// census_codec.ts — the WANDER'S CENSUS, made durable.  Pure functions, no Dexie, no House, no
-//  DOM: encode/decode/merge/evict/select for the learned directory map that `Crate_nav_meander`
-//   (Ghost/M/Crate.g) builds as it walks a share.  The IO half lives in Census.svelte; keeping
+// census_codec.ts — the WANDER'S CENSUS, made durable.  Pure functions, no IO, no House, no
+//  DOM: merge/evict/select/restore for the learned directory map that `Crate_nav_meander`
+//   (Ghost/M/Crate.g) builds as it walks a share.  The IO half lives in Census.svelte (a Berth Waft); keeping
 //    the codec plain and importable is what let it be measured in node before it ever ran in a tab
 //     (a plain `npx tsx` harness that imports this file and synthesises a census — every number in
-//      the comments below is measured, none is asserted.  To re-measure, import census_encode/
-//       census_decode/census_select and build a Census by hand; the numbers quoted are from a
-//        synthesised 6721-entry census of a ~7900-directory share holding 16886 tracks:
-//         26 collections / 572 artists / ~4600 albums, PLUS a large music-free working tree hanging
-//          off the same share root, censused to 85% the way a real partial wander leaves it.)
+//      the comments below is measured, none is asserted.  The numbers quoted are from a synthesised
+//        6721-entry census of a ~7900-directory share holding 16886 tracks.)
+//  (2026-10-04: the Dexie table and the preorder-tree encode/decode that fed it are deleted — storage has
+//    been the Berth Waft since 2026-08-08.  Git history has them, with the size measurements.)
 //
 // ── WHY THIS EXISTS ──────────────────────────────────────────────────────────────────────────
 //  The census lives on `top_House().c.meander_learn`, and `.c` is NEVER encoded — so it died with
-//   the page.  Every reload restarted the wander at maximum bias, and the map's own comment
-//    ("biased at first, honest over time") could never be collected on: on a 7000-directory share
-//     "over time" is longer than a browser tab lives.  The owner's ask is exactly this — "remember
-//      where 10000 tracks are by remembering how many are in each of 7000 directories ... sizing
-//       the unknown expanse ... over time".  Over time needs a floor under it.
-//
-// ── WHY NOT sc / THE SNAP ────────────────────────────────────────────────────────────────────
-//  A snap is text the Story runner diffs between EVERY step.  7000 census rows in `sc` is ~1 MB of
-//   fixture on every Book that touches a world with a share, for state no assertion reads.  And the
-//    entries hold an ARRAY (`subs`) — an object value in `.sc` is fatal at encode time — so each row
-//     would have to explode into child particles, multiplying it again.  The census is bulky,
-//      page-local, non-ledger state: IndexedDB, which this repo already leans on (Housing's
-//       `H.stashed`, Thangs, LiesFunk's stemdex), is where it belongs.
-//  Nor `H.stashed`: Housing's persistence $effect re-runs `JSON.stringify` over the WHOLE stashed
-//   blob on any nested change, throttled to AMBIENT_MAIN_TICK_MS (200 ms).  Measured, the naive JSON
-//    of a 6721-entry census is 1060 KiB and ~6 ms to stringify — five times a second, on the main
-//     thread, for ever.  A private table written on its own slow cadence costs nothing between saves.
-//
-// ── THE FORM: A TREE, BECAUSE THE PATHS ARE THE PAYLOAD ──────────────────────────────────────
-//  Almost all the bytes in this map are path strings, and each path is written twice over: once as
-//   its own key and once inside its parent's `subs`.  Writing the census as a preorder TREE spends
-//    each directory NAME exactly once and lets the parent link be a depth column.  Measured on the
-//     same 6721-entry census:
-//        JSON.stringify(learn)                 1060.1 KiB  (162 B/entry)   gzip 115.0 KiB
-//        flat lines, subs as bare names        ~578   KiB   (88 B/entry)   (a prototype, not kept)
-//        preorder tree, each name written once  275.7 KiB   (42 B/entry)   gzip 63.6 KiB   ← this
-//     …3.85× smaller than the naive form, and the round trip is EXACT: all 6721 entries come back
-//      byte-identical on audio/open/z/n/subs (names holding tabs and newlines included), and
-//       `est`/`est_true` — lifted verbatim from Crate.g — return the SAME weight for all 6721
-//        directories.  Encode 20–40 ms, decode 15–25 ms against JSON's 6 ms: fine once per 30 s and
-//         at boot, ruinous five times a second, which is exactly the trade being made.
-//
+//   the page.  Every reload restarted the wander at maximum bias.  The owner's ask: "remember where
+//    10000 tracks are by remembering how many are in each of 7000 directories ... sizing the unknown
+//     expanse ... over time".  Over time needs a floor under it.
+//  Not in a snapped world's `sc`: 7000 rows would land in every Book fixture for state no assertion reads.
+
 // ── WHAT A RESTORED ENTRY IS NOT ─────────────────────────────────────────────────────────────
 //  It is not an observation.  `dead()` in Crate.g is PERMANENT for the life of the page and fires on
 //   `audio===0 && z>=2 && every sub dead`; restoring `z` verbatim hands it a verdict nobody checked
@@ -55,12 +27,12 @@
 //          failure this must not have; this is the whole reason the cap is here.
 
 // ── THE FIELD LIST IS A CONTRACT WITH Crate.g ────────────────────────────────────────────────
-//  This codec carries EXACTLY `{audio, open, subs, z, n}` — the five things `Crate_nav_meander`
+//  Census.svelte's rows_for/waft_to_map carry EXACTLY `{audio, open, subs, z, n}` plus the store-side `t` — the five things `Crate_nav_meander`
 //   writes.  If the estimator there ever grows a sixth (a per-directory rate, a last-seen stamp, a
 //    confidence), it must be added HERE in the same change or it will be silently dropped on every
 //     reload and the new field will look like it "resets for no reason".  That failure is invisible
 //      in a single session and only shows up as a slow, unattributable regression, so: grep this
-//       file whenever a field is added to a learn entry.  Fields prefixed `_c` are this layer's own
+//       rows_for whenever a field is added to a learn entry.  Fields prefixed `_c` are this layer's own
 //        (never Crate.g's) and are deliberately NOT persisted.
 //
 //  ── FOUR OF Crate.g's FIELDS ARE DELIBERATELY TRANSIENT (2026-08-08, the weighting rework) ──
@@ -81,7 +53,7 @@
 //   • `p` / `q` / `pk` — the per-pile cached weight sums, their per-pile sweep cursors, and the child
 //      count they were built against, for a directory with more than 300 children.  A derived cache
 //       over `est()`, rebuilt on the first visit (`!node.p || node.pk !== live.length`), and `p` is
-//        an array of numbers this tree-shaped codec has no column for.  Persisting them would buy
+//        an array of numbers a flat row has no column for.  Persisting them would buy
 //         one hop of arithmetic and cost a format change; letting them rebuild costs nothing.
 //  If you add a field, decide which of these two lists it joins and write down why.
 export type CensusEntry = {
@@ -111,123 +83,21 @@ export const CENSUS_STORE_MAX = 24000
  *      the full census was **0.049 at budgets 1000–4000 and 0.000 once the whole census fits**.  At
  *       CENSUS_STORE_MAX the restore reproduces the live draw exactly rather than approximately.
  *  Headroom is no longer the binding concern — 131072 − 24000 leaves ~107k entries for discovery,
- *   where before it was ~1100.  The ceiling that still binds is CENSUS_MAX_BYTES, not this.
+ *   where before it was ~1100.
  *  If Crate.g's cap is ever lowered again, lower this WITH it — they are one decision in two files,
  *   which is why both comments name the other's line. */
 export const CENSUS_RESTORE_MAX = CENSUS_STORE_MAX
-/** hard byte ceiling on one stored blob — the last line of defence against unbounded growth. */
-export const CENSUS_MAX_BYTES = 4 * 1024 * 1024
 /** an entry whose counts have not changed in this many days is dropped: a share that has gone away
  *  stops paying rent.  A directory that is still being visited re-stamps its own day. */
 export const CENSUS_STALE_DAYS = 120
 
-export const CENSUS_FORMAT = 'census1'
-
 export function census_day(now: number = Date.now()): number { return Math.floor(now / 86400000) }
-
-// tabs and newlines are the field/record separators, and a directory name may legally hold either.
-const esc = (s: string) => String(s).replace(/\\/g, '\\\\').replace(/\t/g, '\\t').replace(/\n/g, '\\n')
-const unesc = (s: string) => String(s).replace(/\\(.)/g, (_m, c) => c === 't' ? '\t' : c === 'n' ? '\n' : c)
 
 const num = (v: any) => { const x = +v; return Number.isFinite(x) ? x : 0 }
 
 /** the four numbers that make an entry "changed", as one short string — the save-side comparator. */
 export function census_pack(e: CensusEntry): string {
     return num(e.audio) + ',' + num(e.open) + ',' + num(e.z) + ',' + Math.round(num(e.n))
-}
-
-// ── encode ───────────────────────────────────────────────────────────────────────────────────
-//  Line 0:  census1 TAB <day>
-//  Then preorder, one line per node:
-//     <depth> TAB <kind> TAB <name> [TAB audio TAB open TAB z TAB n TAB age]
-//   kind 'r' a root (name is the whole path — a share base, which may be the empty string)
-//        'b' in its parent's subs AND visited      's' in its parent's subs, never visited (a stub)
-//        'v' visited but NOT named by its parent's subs (a listing flap dropped it; keep it anyway)
-//   `age` is days since the counts last changed, so the common case writes a single '0'.
-//  A STUB IS NOT FURNITURE.  ~1000 of the 6721 measured subs edges point at directories the wander
-//   has never stood in, and `dead(parent)` only prunes when every sub is dead — an unvisited sub is
-//    never dead.  Drop the stubs and a parent whose real children were simply never seen becomes
-//     prunable, taking a whole branch of the collection out of reach.  They cost a name each; keep them.
-export function census_encode(map: Census, day: number = census_day()): string {
-    type Node = { key: string, e: CensusEntry | null, kids: Node[], insub: boolean, parent?: string }
-    const nodes = new Map<string, Node>()
-    const node_of = (key: string): Node => {
-        let n = nodes.get(key)
-        if (!n) { n = { key, e: null, kids: [], insub: false }; nodes.set(key, n) }
-        return n
-    }
-    const keys = Object.keys(map)
-    for (const k of keys) node_of(k).e = map[k]
-    for (const k of keys) {
-        const p = node_of(k)
-        for (const s of (map[k].subs || [])) {
-            const c = node_of(s)
-            if (c.parent != null) continue          // already claimed (two parents can't happen, but be total)
-            c.insub = true; c.parent = k; p.kids.push(c)
-        }
-    }
-    // anything no `subs` named: re-attach under its longest known ancestor, else it is a root.
-    const roots: Node[] = []
-    for (const n of nodes.values()) {
-        if (n.parent != null) continue
-        let cut = n.key.lastIndexOf('/')
-        let attached = false
-        while (cut > 0) {
-            const anc = n.key.slice(0, cut)
-            const a = nodes.get(anc)
-            if (a) { n.parent = anc; a.kids.push(n); attached = true; break }
-            cut = anc.lastIndexOf('/')
-        }
-        if (!attached) roots.push(n)
-    }
-    const out: string[] = [CENSUS_FORMAT + '\t' + day]
-    // an explicit stack, not recursion: a pathological share is deep and this runs in a live tab.
-    const stack: { n: Node, depth: number, kind: string }[] = []
-    for (const r of roots.sort((a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0).reverse()) stack.push({ n: r, depth: 0, kind: 'r' })
-    while (stack.length) {
-        const { n, depth, kind } = stack.pop()!
-        const nm = (n.parent == null || n.parent === '') ? n.key : n.key.slice(n.parent.length + 1)
-        if (n.e) {
-            const age = Math.max(0, day - (n.e.t == null ? day : num(n.e.t)))
-            out.push(depth + '\t' + kind + '\t' + esc(nm) + '\t' + num(n.e.audio) + '\t' + num(n.e.open)
-                + '\t' + num(n.e.z) + '\t' + Math.round(num(n.e.n)) + '\t' + age)
-        } else {
-            out.push(depth + '\t' + kind + '\t' + esc(nm))
-        }
-        for (let i = n.kids.length - 1; i >= 0; i--) {
-            const c = n.kids[i]
-            stack.push({ n: c, depth: depth + 1, kind: c.e ? (c.insub ? 'b' : 'v') : 's' })
-        }
-    }
-    return out.join('\n')
-}
-
-// ── decode ───────────────────────────────────────────────────────────────────────────────────
-export function census_decode(txt: string): { day: number, map: Census } {
-    const map: Census = {}
-    if (!txt) return { day: census_day(), map }
-    const lines = txt.split('\n')
-    let day = census_day()
-    let start = 0
-    if (lines[0] && lines[0].indexOf(CENSUS_FORMAT + '\t') === 0) { day = num(lines[0].split('\t')[1]); start = 1 }
-    // stack[d] = { key, kids } — kids is the live `subs` array the entry at that depth will carry.
-    const stack: { key: string, kids: string[] }[] = []
-    for (let i = start; i < lines.length; i++) {
-        const line = lines[i]
-        if (!line) continue
-        const f = line.split('\t')
-        const d = num(f[0]); const kind = f[1]; const nm = unesc(f[2] == null ? '' : f[2])
-        if (d > 0 && !stack[d - 1]) continue                    // truncated/corrupt: skip, never throw
-        const parent = d === 0 ? null : stack[d - 1].key
-        const key = parent == null ? nm : (parent ? parent + '/' + nm : nm)
-        const me = { key, kids: [] as string[] }
-        stack[d] = me; stack.length = d + 1
-        if (parent != null && kind !== 'v') stack[d - 1].kids.push(key)
-        if (f.length > 3) {
-            map[key] = { audio: num(f[3]), open: num(f[4]), z: num(f[5]), n: Math.round(num(f[6])), subs: me.kids, t: day - num(f[7]) }
-        }
-    }
-    return { day, map }
 }
 
 // ── merge ────────────────────────────────────────────────────────────────────────────────────
@@ -262,7 +132,7 @@ export function census_merge(store: Census, live: Census, day: number = census_d
             audio: num(e.audio), open: e.open == null ? num(e.audio) : num(e.open),
             z: num(e.z), n: Math.round(num(e.n)),
             // CANONICALISE ON THE WAY IN.  One directory listing cannot name the same child twice
-            //  (Crate.g builds subs from a single expand()), and the tree form collapses a repeat by
+            //  (Crate.g builds subs from a single expand()), and subs derived from keys collapse a repeat by
             //   construction — so dedupe here rather than let the store hold something it cannot
             //    round-trip.  The only mismatches the codec has ever shown were exactly this, from a
             //     synthesiser that could mint a duplicate name; the real walk cannot.

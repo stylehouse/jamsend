@@ -1,6 +1,6 @@
 <script lang="ts">
     // Census.svelte — the DRIVER for the wander's census.  The codec is census_codec.ts (its header
-    //  carries the design and every measured number); the Dexie table is census_store.ts.  What this
+    //  carries the design and every measured number); storage is a Berth Waft.  What this
     //   file owns is when to restore and when to save.
     //
     //  The thing being made durable is the learned directory map `Crate_nav_meander`
@@ -67,11 +67,17 @@
     //        the way back: it exists only to be named in its parent's `subs`.
     const CENSUS_WAFT = 'Census'
 
-    function waft_to_map(waft: any): Census {
+    // `keep` (2026-10-04) — the reachability filter restore() passes: a key whose first segment is not a
+    //  directory at the share root is a spelling from some OTHER root (the stored census held both
+    //   `music/0 Jazz/…` and `0 Jazz/…` — 1584 directories twice, ~3000 tracks double-counted into the
+    //    prior and census_music).  Dropping one is safe by the codec's own eviction argument: an entry not
+    //     in the map just reads as unvisited.  `out.pruned` / `out.untimed` tell restore a rewrite is owed.
+    function waft_to_map(waft: any, keep?: (key: string) => boolean, out?: { pruned: number, untimed: number }): Census {
         const map: Census = {}
         const stubs: string[] = []
         for (const row of waft.o({ Dirtally: 1 }) as any[]) {
             const key = String(row.sc.of ?? '')
+            if (keep && !keep(key)) { if (out) out.pruned++; continue }
             if (row.sc.stub) { stubs.push(key); continue }
             const audio = +(row.sc.audio ?? 0)
             map[key] = {
@@ -81,6 +87,11 @@
                 n:    Math.round(+(row.sc.n ?? 0)),
                 subs: [],
             } as CensusEntry
+            // `t` — the day the counts last changed, which census_evict's 120-day rule ages on.  Absent
+            //  on every row written before 2026-10-04 (rows_for never wrote it, so nothing could ever
+            //   age out); such a row is stamped today and the census rewritten once to carry it.
+            if (row.sc.t != null) map[key].t = +row.sc.t
+            else if (out) out.untimed++
         }
         // subs from the keys themselves — every row, stub or not, is a child of its longest prefix.
         //  Derived rather than stored: a stored edge could contradict the key it points at, and there
@@ -109,6 +120,7 @@
             row.sc.open  = String(e.open ?? e.audio ?? 0)
             row.sc.z     = String(e.z ?? 0)
             row.sc.n     = String(Math.round(e.n ?? 0))
+            if (e.t != null) row.sc.t = String(e.t)
             out.push(row)
             for (const s of e.subs ?? []) named.add(s)
         }
@@ -145,7 +157,16 @@
         try {
             const waft = await (Hh as any).Berth_open(nv, '', '', CENSUS_WAFT)
             Hh.c.census_waft = waft
-            const map = waft_to_map(waft)
+            const tops = await root_dirs(nv)
+            const keep = tops ? (key: string) => !key || tops.has(key.split('/')[0]) : undefined
+            const tally = { pruned: 0, untimed: 0 }
+            const map = waft_to_map(waft, keep, tally)
+            const day = census_day()
+            for (const k in map) if (map[k].t == null) map[k].t = day
+            // the shelf no longer matches the map (pruned rows / rows missing `t`) — the next save
+            //  rewrites it whole rather than appending, which is the only way a removal reaches disk.
+            if (tally.pruned || tally.untimed) Hh.c.census_rewrite_due = 1
+            Hh.c.census_pruned = tally.pruned
             // the store is kept in memory as the ACCRETION BASE: every later save merges the live
             //  map onto it, so directories this session's budget could not carry are not lost.
             Hh.c.census_store = map
@@ -189,15 +210,27 @@
         }
     }
 
+    // root_dirs — the share root's directory names, or null when the listing can't be had or comes back
+    //  empty (a listing flap must never read as "nothing is reachable" and prune the whole census).
+    async function root_dirs(nv: any): Promise<Set<string> | null> {
+        try {
+            const dl = await nv.dir_at('')
+            if (!dl) return null
+            await dl.expand()
+            const names = (dl.directories || []).map((d: any) => String(d.name || ''))
+            return names.length ? new Set(names) : null
+        } catch { return null }
+    }
+
     // ── materiality ──────────────────────────────────────────────────────────────────────────
     // disk_base — the per-key facts the shelf actually holds, in the shape the compare reads.  subs
     //  rides as a COUNT: the edges are derived from the keys on the way back in, so their number is
     //   the only fact a write can change.
-    function disk_base(map: Census): Record<string, { audio: number, open: number, z: number, n: number, subs: number }> {
+    function disk_base(map: Census): Record<string, { audio: number, open: number, z: number, n: number, subs: number, t: number | null }> {
         const out: Record<string, any> = {}
         for (const k of Object.keys(map)) {
             const e = map[k] as any
-            out[k] = { audio: +(e.audio ?? 0), open: +(e.open ?? e.audio ?? 0), z: +(e.z ?? 0), n: Math.round(+(e.n ?? 0)), subs: e.subs?.length ?? 0 }
+            out[k] = { audio: +(e.audio ?? 0), open: +(e.open ?? e.audio ?? 0), z: +(e.z ?? 0), n: Math.round(+(e.n ?? 0)), subs: e.subs?.length ?? 0, t: e.t == null ? null : +e.t }
         }
         return out
     }
@@ -206,13 +239,20 @@
     //  root tally's 0.07% wobble stays in memory and a 3-file dir's 1-file jitter does too.
     const drifted = (a: number, b: number) => Math.abs(a - b) >= DRIFT_ABS && Math.abs(a - b) >= DRIFT_REL * Math.max(1, Math.abs(b))
 
-    // moved_key — structural truth always lands; pure z|n drift lands once it is material.
-    function moved_key(a: any, d: any): boolean {
+    // moved_key — structural truth (audio, subs) always lands; z|n|open drift lands once it is material.
+    //  `open` MOVED OUT OF STRUCTURE (2026-10-04, the owner's 2-folder share: 63 parts of
+    //   `soweto_disco,audio:28,open:0` / `open:1`).  open is "drawable as of the last visit" — it flips every
+    //    time a track shelves or whittles, and the walk already treats it as a hint a visit refreshes.
+    //  `t` re-lands monthly: merge re-stamps it on every visit, but a visited row whose stats stay under the
+    //   drift line would otherwise keep its old day on disk and age out after a reload though still in use.
+    const T_REFRESH_DAYS = 30
+    function moved_key(a: any, d: any, t?: number): boolean {
         if (!d) return true                                            // never on disk — a discovery
         if (+(a.audio ?? 0) !== d.audio) return true
-        if (+(a.open ?? a.audio ?? 0) !== d.open) return true
         if ((a.subs?.length ?? 0) !== d.subs) return true
+        if (t != null && (d.t == null || t - d.t >= T_REFRESH_DAYS)) return true
         return drifted(+(a.z ?? 0), d.z) || drifted(Math.round(+(a.n ?? 0)), d.n)
+            || drifted(+(a.open ?? a.audio ?? 0), d.open)
     }
 
     // ── save ─────────────────────────────────────────────────────────────────────────────────
@@ -239,13 +279,14 @@
             //     the DISK baseline through the materiality gate, so estimator wobble stays in memory
             //      (the part-per-minute churn, 2026-08-21) while structural truth still lands at once.
             const disk: Record<string, any> = Hh.c.census_disk || (Hh.c.census_disk = {})
+            const merged = census_merge(store, live, day)
             const moved: string[] = []
             for (const k of Object.keys(live)) {
-                if (moved_key(live[k] as any, disk[k])) moved.push(k)
+                if (moved_key(live[k] as any, disk[k], merged[k]?.t)) moved.push(k)
             }
-            const merged = census_merge(store, live, day)
             const ev = census_evict(merged, day)
-            if (ev.dropped) {
+            const rewrite = ev.dropped > 0 || !!Hh.c.census_rewrite_due
+            if (rewrite) {
                 // EVICTION CANNOT RIDE AN APPEND LOG — a removal has no line to write.  So eviction is
                 //  the one thing that forces a whole rewrite, which is exactly right: it is rare (past
                 //   CENSUS_STORE_MAX entries), and Berth_save is also the compaction that folds every
@@ -255,6 +296,7 @@
                 rows_for(waft, ev.map, Object.keys(ev.map))
                 await (Hh as any).Berth_save(nv, waft)
                 Hh.c.census_disk = disk_base(ev.map)                   // the rewrite IS the new shelf
+                Hh.c.census_rewrite_due = 0
             } else if (moved.length) {
                 await (Hh as any).Berth_append(nv, waft, rows_for(waft, merged, moved), 'of')
                 for (const k of moved) if (merged[k]) disk[k] = disk_base({ [k]: merged[k] } as Census)[k]
@@ -290,6 +332,7 @@
                 const conf = census_confidence(live)
                 return {
                     phase: Hh.c.census_phase || 'off', humdinger: !!Hh.c.humdinger,
+                    pruned: Hh.c.census_pruned || 0,
                     live: conf.total, restored: conf.restored, unconfirmed: conf.unconfirmed,
                     stored: Hh.c.census_n || (Hh.c.census_store ? Object.keys(Hh.c.census_store).length : 0),
                     // `parts` is the new number worth watching: it is how many appends stand unfolded.

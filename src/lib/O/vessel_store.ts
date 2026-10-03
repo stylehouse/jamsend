@@ -10,7 +10,7 @@
 //      per-instance token; grouped by root_prepub it yields that soul's local SUBNET (the vessels
 //       serving it here, now).  Pure runtime census — it is the machine's live truth, never soul-truth.
 //
-// ITS OWN DATABASE, the census_store precedent: not Housing's `House` table (whose $effect
+// ITS OWN DATABASE, the precedent the old census_store.ts set (deleted 2026-10-04): not Housing's `House` table (whose $effect
 //  re-stringifies the whole stashed blob on every nested change), own schema, own version line, own
 //   cadence.  A plain .ts (no `<script module>`) so it has no HMR boundary — the tax lands only when
 //    THIS file changes, ~never.

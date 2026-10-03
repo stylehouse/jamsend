@@ -517,6 +517,15 @@ Every identity is born a crew of ONE (`crew_keys_home` at the mint), so this sha
    re-importing it; "the Captain controls the ledger" = only the soul key signs that snap. No parallel
     structure to keep in sync — the ledger and the picture are one thing.
 - SoundPooling and every quiet crew protocol ENUMERATE `/Crew` directly; Books `%see` the bundle.
+- **What a mate HOLDS is not ledger — it is the mate's own word** (owner 2026-10-04: "get this in as a fundamental
+   fact of a Crewmate").  `role` is signed ledger; **`folder`** — this body holds a music folder, so it can take
+    originals (a Heist lands there, the 🧲 can point at it), even an EMPTY one — is a self-description: it changes
+     when a grant is given or lost, and only the body itself knows it, so the soul does not sign it.  It rides as the
+      body's `%Organ,kind:trove` (declared whenever a folder is open, `tracks:0` included — Swarm_organ_refresh),
+       crosses on the charter mile (Swarm_organ_wire → Swarm_organ_absorb onto the `%Body` row), and is READ in ONE
+        place: `Swarm_crew_view` rows carry `folder` (mine from `Crate_has_folder`; another's = a trove organ on its
+         `%Body`).  Consumers ask the row, never the role: Heard_magnet_candidates (who can hold the 🧲), HaulFace's
+          remote-heist section.  A Captain on a laptop is a folder-holder exactly like a Cave.  Unheard = no.
 - Migration: the seal mints the row + homes the grant there; `Swarm_crew_grant(ident)` reads `/Crew`
    (fall back to the pier-scan for pre-migration accounts); the roster (`%Body` rows) stays the
     contact-learned ROUTING convenience it already is.

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_LagoonTesting(): string { return 'faff3deb099af6d2~g1' },
+    Ghostmeta_Ghost_L_LagoonTesting(): string { return '1fde34f1a5472da8~g1' },
 
 // LagoonTesting.g — né Lagoonation.g.  The Lagoon.g proof, under the `<Name>Testing.g` convention
 //  (owner ruling 2026-09-09; src/lib/L/testing.ts is the one predicate).
@@ -42,7 +42,7 @@ LagoonStaple(A,w) {
 },
 async LagoonStaple_drive(w, req) {
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 8
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 9
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
@@ -397,22 +397,22 @@ LagoonStaple_witness(w) {
     }
 
 },
-// ═══ Book LagoonCave — THE CAVE (Lagoon.g, 2026-09-25): a seek worn as a creature ═══════════════════════
+// ═══ Book LagoonCave — THE CAVE (Lagoon.g; re-cut 2026-10-03): a seek worn as a creature ═══════════════
 // The live cave BigWordland lifts over the code, walked over the same FROZEN corpus LagoonStaple stands
-//  (Ghost/L/test_corpus/Sample.g: three defs, one bead around the first two, one call alpha → beta).  It
-//   swears the PRODUCER — what the reader hands the glass at each depth — by reading the commission's own
-//    grapples (the seeds Vyto was given), never the drawn geometry: the spine assigns every bone, so the
-//     model's pile is not what a seeker sees, and a Book that waited on it would be waiting on the wrong
-//      thing.  Every move is a PRESS, made the way a hand would (the seed's own `.c.press`), so the Book
-//       walks exactly the doors the glass offers.
+//  (Ghost/L/test_corpus/Sample.g: Sample_alpha + Sample_beta inside one bead, Sample_gamma beyond it, one call
+//   alpha → beta).  It swears the PRODUCER — what the reader hands the glass at each place — by reading the
+//    commission's own grapples (the seeds Vyto was given), never the drawn geometry.  Every move is a PRESS,
+//     made the way a hand would (the seed's own `.c.press`), so the Book walks exactly the doors the glass offers.
 //   · beat 2 — the census stands on the corpus (LagoonStaple_stand, reused whole)
-//   · beat 3 — a search stands: the rope as the head, one vertebra per file wearing its stem, Def ribs
-//   · beat 4 — press the file: its regions are the bead its author drew and the name prefix beyond it
-//   · beat 5 — press a method: the chamber is the method itself, read through Atlas's nav because a
-//      runner's Stemdex holds nothing (the fallback the live room needs for most of what Atlas maps)
-//   · beat 6 — press the line that calls: the tunnel walks into Sample_beta's chamber
-//   · beat 7 — press the head: the rope climbs back out
-// The glass stands on THIS Run House (`face_on`) — the room, as far as a Book has one.
+//   · beat 3 — open the HOLE: the head is a field to type into, and the code's families stand around it
+//   · beat 4 — type into the field: one vertebra per file, its ribs the STEM FAMILIES holding hits
+//   · beat 5 — press the file: its methods in file order, a family named once then by suffix, fused by `stem`
+//   · beat 6 — press a method: the code LANDS (the face's hook) and the glass folds to a rail of doors
+//   · beat 7 — press what it calls: the walk lands in Sample_beta, whose door back is its caller
+//   · beat 8 — press the head: the rope climbs one step
+//   · beat 9 — climb past the surface: the seeker LEAVES — the cave tells the face, and the rope is gone
+// The glass stands on THIS Run House (`face_on`); the face is a recorder (`cave_on`), so nothing lands in an
+//  editor on a runner.
 
 LagoonCave(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
@@ -423,16 +423,18 @@ LagoonCave(A,w) {
 },
 async LagoonCave_drive(w, req) {
     let run = this.c.run
-    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 7
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 8
     let n = run?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.LagoonStaple_stand(w)
-        if (n === 3) this.LagoonCave_search(w)
-        if (n === 4) this.LagoonCave_dive(w)
-        if (n === 5) this.LagoonCave_chamber(w)
-        if (n === 6) this.LagoonCave_tunnel(w)
-        if (n === 7) this.LagoonCave_climb(w)
+        if (n === 3) this.LagoonCave_open(w)
+        if (n === 4) this.LagoonCave_search(w)
+        if (n === 5) this.LagoonCave_dive(w)
+        if (n === 6) this.LagoonCave_method(w)
+        if (n === 7) this.LagoonCave_walk(w)
+        if (n === 8) this.LagoonCave_climb(w)
+        if (n === 9) this.LagoonCave_leave(w)
     }
     this.LagoonCave_witness(w)
 
@@ -450,19 +452,24 @@ LagoonCave_sown(w) {
     return req.sc.grapples || null
 
 },
-// the rope the glass was last handed — its head's own saying, so the claim is about what was SOWN
 LagoonCave_rope(w) {
     let seeds = this.LagoonCave_sown(w)
     return seeds && seeds[0] ? String(seeds[0].sc.Head ?? '') : ''
 
 },
-// wait until the glass has been handed `rope`, then leave a snapped trace of the level's shape
+// what a level IS, said plainly: each vertebra's mainkey=value and its ribs' — the snapped trace
+LagoonCave_shape(w) {
+    let seeds = (this.LagoonCave_sown(w) || []).slice(1)
+    return seeds.map(s => {
+        let k = Object.keys(s.sc)[0]
+        let ribs = s.o().map(r => { let rk = Object.keys(r.sc)[0]; return rk + '=' + r.sc[rk] })
+        return k + '=' + s.sc[k] + (ribs.length ? ' [' + ribs.join(' ; ') + ']' : '')
+    }).join(' | ')
+
+},
 async LagoonCave_until(w, rope, lvl) {
     await this.LagoonStaple_await(w, 15, () => this.LagoonCave_rope(w) === rope)
-    let seeds = this.LagoonCave_sown(w) || []
-    let kinds = seeds.slice(1).map(s => Object.keys(s.sc)[0]).join(' ')
-    let kids = seeds.slice(1).map(s => s.o().map(k => Object.keys(k.sc)[0]).join('+')).join(' ')
-    w.i({ saw: 'cave', lvl: lvl, rope: this.LagoonCave_rope(w), vertebrae: kinds, ribs: kids })
+    w.i({ saw: 'cave', lvl: lvl, rope: this.LagoonCave_rope(w), shape: this.LagoonCave_shape(w) })
 
 },
 // press a seed the way a hand would — Vytui's cell_click calls the source's own `.c.press`
@@ -470,68 +477,80 @@ LagoonCave_press(seed) {
     if (seed && typeof seed.c.press === 'function') seed.c.press(seed, null)
 
 },
-async LagoonCave_search(w) {
-    w.i({desc: 'a search stands as a spine — the rope as its head and one vertebra per file'})
-    this.expecting(w, 'search_wait', 20, async () => {
+async LagoonCave_open(w) {
+    w.i({desc: 'open the hole — the head is a field to type into and the families stand around it'})
+    this.expecting(w, 'open_wait', 20, async () => {
         let top = this.top_House()
         let lw = this.LagoonStaple_lw(w)
         if (!lw || typeof top.e_Lagoon_cave !== 'function') return
         lw.c.face_on = this
-        top.e_Lagoon_cave(null, lw, { sc: { q: 'Sample' } })
+        // the face, as a recorder — every event the room would act on, kept for the witness
+        w.c.events = []
+        lw.c.cave_on = (ev, a) => { w.c.events.push(ev + (a && a.path ? ':' + a.path.replace(/^.*\//, '') + '#' + (a.point || '') : (a ? ':' + a : ''))) }
+        top.e_Lagoon_cave(null, lw, { sc: { open: 1 } })
+        await this.LagoonCave_until(w, '⌕ ', 'open')
+        let seeds = this.LagoonCave_sown(w) || []
+        let fld = seeds[0] ? seeds[0].c.field : null
+        w.c.open_field = fld && typeof fld.oninput === 'function' && fld.autofocus && fld.value === '' ? 1 : 0
+        w.c.open_fams = seeds.slice(1).map(s => s.sc.Family).join(' ')
+        w.c.open_root = seeds.length > 1 && Number(seeds[0].sc.dose) > Number(seeds[1].sc.dose) ? 1 : 0
+    })
+
+},
+async LagoonCave_search(w) {
+    w.i({desc: 'type into the hole — one vertebra per file and its ribs the stem families holding hits'})
+    this.expecting(w, 'search_wait', 20, async () => {
+        let head = (this.LagoonCave_sown(w) || [])[0]
+        let fld = head ? head.c.field : null
+        if (fld) fld.oninput('Sample')
         await this.LagoonCave_until(w, '⌕ Sample', 'search')
         let seeds = this.LagoonCave_sown(w) || []
         let doc = seeds.find(s => s.sc.Doc === 'Ghost/L/test_corpus/Sample.g')
         w.c.search_files = seeds.filter(s => s.sc.Doc).length
         w.c.search_stem = doc ? doc.sc.stem : null
-        w.c.search_defs = doc ? doc.o().filter(k => k.sc.Def).length : 0
-        w.c.search_ribs = doc ? doc.o().length : 0
+        w.c.search_fams = doc ? doc.o().map(k => k.sc.Family).join(' ; ') : ''
     })
 
 },
 async LagoonCave_dive(w) {
-    w.i({desc: 'press the file — its regions are the bead its author drew and the name prefix beyond it'})
+    w.i({desc: 'press the file — its methods in file order with a family named once and fused by stem'})
     this.expecting(w, 'dive_wait', 20, async () => {
         let seeds = this.LagoonCave_sown(w) || []
         this.LagoonCave_press(seeds.find(s => s.sc.Doc === 'Ghost/L/test_corpus/Sample.g'))
         await this.LagoonCave_until(w, '⌕ Sample › Sample', 'file')
-        let regions = (this.LagoonCave_sown(w) || []).filter(s => s.sc.Region != null)
-        let gamma = regions.find(r => r.o().some(k => k.sc.Method === 'Sample_gamma()'))
-        let alpha = regions.find(r => r.o().some(k => k.sc.Method === 'Sample_alpha()'))
-        w.c.dive_regions = regions.length
-        w.c.dive_gamma_prefix = gamma && gamma.sc.Region === 'Sample' ? 1 : 0
-        w.c.dive_bead_pair = alpha && alpha !== gamma && alpha.o().some(k => k.sc.Method === 'Sample_beta()') ? 1 : 0
+        let ms = (this.LagoonCave_sown(w) || []).filter(s => s.sc.Method != null)
+        w.c.dive_labels = ms.map(m => m.sc.Method).join(' ')
+        w.c.dive_fused = ms.length === 3 && ms[0].sc.stem === ms[1].sc.stem && ms[1].sc.stem !== ms[2].sc.stem ? 1 : 0
     })
 
 },
-async LagoonCave_chamber(w) {
-    w.i({desc: 'press a method — the chamber is the method itself and read through the census nav'})
-    this.expecting(w, 'chamber_wait', 20, async () => {
-        let region = (this.LagoonCave_sown(w) || []).find(s => s.sc.Region != null && s.o().some(k => k.sc.Method === 'Sample_alpha()'))
-        let rib = region ? region.o().find(k => k.sc.Method === 'Sample_alpha()') : null
-        this.LagoonCave_press(rib)
+async LagoonCave_method(w) {
+    w.i({desc: 'press a method — its code lands and the glass becomes its doors'})
+    this.expecting(w, 'method_wait', 20, async () => {
+        let m = (this.LagoonCave_sown(w) || []).find(s => s.sc.Method === 'Sample_alpha()')
+        this.LagoonCave_press(m)
         await this.LagoonCave_until(w, '⌕ Sample › Sample › Sample_alpha()', 'method')
         let lw = this.LagoonStaple_lw(w)
-        let here = lw && lw.c.cave ? lw.c.cave[lw.c.cave.length - 1] : null
-        let paras = (this.LagoonCave_sown(w) || []).filter(s => s.sc.Lines != null)
-        let kinds = paras.length ? paras[0].o().map(k => Object.keys(k.sc)[0]).join(' ') : ''
-        w.c.chamber_lines = kinds
-        w.c.chamber_via_nav = here && here.src ? 1 : 0
+        w.c.method_doors = (this.LagoonCave_sown(w) || []).slice(1).map(s => Object.keys(s.sc)[0]).join(' ')
+        w.c.method_landed = (w.c.events || []).indexOf('land:Sample.g#Sample_alpha') >= 0 ? 1 : 0
+        w.c.method_rail = lw && lw.c.cave_mode === 'rail' ? 1 : 0
     })
 
 },
-async LagoonCave_tunnel(w) {
-    w.i({desc: 'press the line that calls — the tunnel walks into the chamber of the method it calls'})
-    this.expecting(w, 'tunnel_wait', 20, async () => {
-        let para = (this.LagoonCave_sown(w) || []).find(s => s.sc.Lines != null)
-        let call = para ? para.o().find(k => k.sc.Call != null) : null
-        this.LagoonCave_press(call)
-        await this.LagoonCave_until(w, '⌕ Sample › Sample › Sample_alpha() › ⇝ Sample_beta()', 'tunnel')
-        w.c.tunnel_walked = this.LagoonCave_rope(w) === '⌕ Sample › Sample › Sample_alpha() › ⇝ Sample_beta()' ? 1 : 0
+async LagoonCave_walk(w) {
+    w.i({desc: 'press what it calls — the walk lands in that method and its door back is its caller'})
+    this.expecting(w, 'walk_wait', 20, async () => {
+        let calls = (this.LagoonCave_sown(w) || []).find(s => s.sc.Calls != null)
+        this.LagoonCave_press(calls ? calls.o().find(k => k.sc.Call === 'Sample_beta()') : null)
+        await this.LagoonCave_until(w, '⌕ Sample › Sample › Sample_alpha() › ⇝ Sample_beta()', 'walk')
+        let callers = (this.LagoonCave_sown(w) || []).find(s => s.sc.Callers != null)
+        w.c.walk_back = callers ? callers.o().map(k => k.sc.Caller).join(' ') : ''
+        w.c.walk_landed = (w.c.events || []).indexOf('land:Sample.g#Sample_beta') >= 0 ? 1 : 0
     })
 
 },
 async LagoonCave_climb(w) {
-    w.i({desc: 'press the head — the rope climbs back out one step'})
+    w.i({desc: 'press the head — the rope climbs back one step'})
     this.expecting(w, 'climb_wait', 20, async () => {
         this.LagoonCave_press((this.LagoonCave_sown(w) || [])[0])
         await this.LagoonCave_until(w, '⌕ Sample › Sample › Sample_alpha()', 'climb')
@@ -539,27 +558,55 @@ async LagoonCave_climb(w) {
     })
 
 },
+async LagoonCave_leave(w) {
+    w.i({desc: 'climb past the surface — the seeker leaves and the cave tells the face'})
+    this.expecting(w, 'leave_wait', 20, async () => {
+        let lw = this.LagoonStaple_lw(w)
+        for (const rope of ['⌕ Sample › Sample', '⌕ Sample']) {
+            this.LagoonCave_press((this.LagoonCave_sown(w) || [])[0])
+            await this.LagoonCave_until(w, rope, 'up')
+        }
+        let at_top = this.LagoonCave_rope(w) === '⌕ Sample'
+        this.LagoonCave_press((this.LagoonCave_sown(w) || [])[0])
+        w.c.left = at_top && (w.c.events || []).indexOf('leave') >= 0 ? 1 : 0
+        w.c.modes = (w.c.events || []).filter(e => e.indexOf('mode') === 0).join(' ')
+        w.i({ saw: 'cave', lvl: 'left', events: (w.c.events || []).join(' ') })
+    })
+
+},
 LagoonCave_witness(w) {
-    if (w.c.search_files === 1 && w.c.search_stem === 'Sample' && this.LagoonStaple_at(w, 3)) {
+    if (w.c.open_field && w.c.open_root && this.LagoonStaple_at(w, 3)) {
+        this.story_swear(w, 'the hole is the head — a field to type into and the biggest bone of the creature')
+    }
+    if (w.c.open_fams === 'Sample…' && this.LagoonStaple_at(w, 3)) {
+        this.story_swear(w, 'with nothing typed the code families stand around the hole')
+    }
+    if (w.c.search_files === 1 && w.c.search_stem === 'Sample' && this.LagoonStaple_at(w, 4)) {
         this.story_swear(w, 'a search stands as a spine — the rope as its head and one vertebra per file wearing its stem')
     }
-    if (w.c.search_defs === 3 && w.c.search_ribs === 3 && this.LagoonStaple_at(w, 3)) {
-        this.story_swear(w, 'every hit wears its kind as its mainkey — the fixture seek is three Def ribs')
+    if (w.c.search_fams === 'Sample… ×2 ; Sample_gamma()' && this.LagoonStaple_at(w, 4)) {
+        this.story_swear(w, 'a file says its hits as stem families — and a family never crosses the bead its author drew')
     }
-    if (w.c.dive_regions === 2 && w.c.dive_gamma_prefix && w.c.dive_bead_pair && this.LagoonStaple_at(w, 4)) {
-        this.story_swear(w, 'pressing a file dives into it — the bead its author drew and the name prefix beyond it')
+    if (w.c.dive_labels === 'Sample_alpha() _beta() Sample_gamma()' && this.LagoonStaple_at(w, 5)) {
+        this.story_swear(w, 'a file is its methods in file order — a family names itself once and its members by what they add')
     }
-    if (w.c.chamber_lines === 'Hit Call Line' && this.LagoonStaple_at(w, 5)) {
-        this.story_swear(w, 'a chamber is the method itself — the line that names the query lit and the line that calls marked')
+    if (w.c.dive_fused && this.LagoonStaple_at(w, 5)) {
+        this.story_swear(w, 'a family wears one stem so the glass fuses it — two families never share one')
     }
-    if (w.c.chamber_via_nav && this.LagoonStaple_at(w, 5)) {
-        this.story_swear(w, 'a chamber the Stemdex never read is read through the census nav — the door still opens')
+    if (w.c.method_landed && w.c.method_rail && this.LagoonStaple_at(w, 6)) {
+        this.story_swear(w, 'pressing a method lands its code — the face is told and the glass folds to a rail')
     }
-    if (w.c.tunnel_walked && this.LagoonStaple_at(w, 6)) {
-        this.story_swear(w, 'a line that calls a mapped method is a tunnel — pressing it walks into that chamber')
+    if (w.c.method_doors === 'Calls Family' && this.LagoonStaple_at(w, 6)) {
+        this.story_swear(w, 'a method is a place with doors — what it calls and its family — and an empty door is not drawn')
     }
-    if (w.c.climbed && this.LagoonStaple_at(w, 7)) {
-        this.story_swear(w, 'the head is the rope — pressing it climbs back out')
+    if (w.c.walk_landed && w.c.walk_back === 'Sample_alpha()' && this.LagoonStaple_at(w, 7)) {
+        this.story_swear(w, 'pressing what it calls walks there — and the door back is the caller')
+    }
+    if (w.c.climbed && this.LagoonStaple_at(w, 8)) {
+        this.story_swear(w, 'the head is the rope — pressing it climbs back one step')
+    }
+    if (w.c.left && this.LagoonStaple_at(w, 9)) {
+        this.story_swear(w, 'climbing past the surface leaves the cave — and the face is told')
     }
 },
 // (ends on a comment — a .g must not end on a method-final brace)

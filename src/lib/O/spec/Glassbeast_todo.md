@@ -52,6 +52,7 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 | a cell grows to hold its words (folio measured at natural size) | `measure_world` (Vytui) | VytoNeed |
 | render regimes: foam (default) · seat · focus · grid · spine/rib · folio text | `Vytui.svelte`, `vyto_seat/focus/pane/geometry.ts` | VytoSeat · VytoFocus · VytoPane · VytoGauge specs · VytoSpine |
 | the code cave: search → file → region → method chamber; head = rope; tunnels | VytoSpine producer (`VytoTesting.g`) | VytoSpine 9/9, 7 sworn |
+| **the LIVE cave over BigWordland — ONE VISUAL**: the hole you type into IS the spine's head (guise `field`); empty, the code's families stand around it; typed: files with stem-family ribs → methods in file order fused by family → a method = its code LANDS in the editor + the glass folds to a rail of doors (calls ⇝ · called by ⇜ · family).  No search box in the room; ⌕ chip or `/` opens it | `Lagoon.g` THE CAVE, `Vyto.g` guise `field`, `Vytui.svelte` field_bind, `BigWordland.svelte` | LagoonCave 9/9 ok_pct 1 caveat 0 (check, ×2), 11 sworn — **undeclared** |
 **Fleet, 2026-10-03, da06: all 20 Vyto Books `ok_pct 1`** (Orchestra caveat 6 = the `self,round` clock).
  VytoPosed has no fixtures.  **Specs: `node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs
   scripts/Vyto*.spec.ts` — 6 files, 94 tests.**  Five Books DRAW on `/BigShapeland` (Orchestra, Membrane,
@@ -119,6 +120,69 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 ## 0′. THE LOG — dated entries, newest first (trail: how each thing came to be; §0 above is the state)
 
 ### HANDOVER — 2026-09-10, written at 92% context.
+
+### ONE VISUAL — THE HOLE IS THE HEAD — 2026-10-03, later the same day
+The owner: *"I'm wanting just the one visual: a big spine-root spine-label-sized hole we type into, and everything
+ pings around it pretty fast"* — and *"it says 'stemdex not scanned yet'"*.
+- **A guise can carry a text box**: `guise.field = { value, placeholder, rest, oninput(v), autofocus }` (`Vyto_guise`
+   → `.c.field`; additive, `.c`-only, every Vyto Book byte-identical — VytoSpine 9/9, VytoGuise ok_pct 1 after).
+    Vytui draws it as an HTML input in a `foreignObject` at the cell's label place (`field_bind`).  The producer owns
+     what typing means, as it owns a press.
+- **⚠ FOR THE VYTO AGENT — the glass re-creates a cell's folio on EVERY re-sow**, and the fresh node can be handed the
+   PREVIOUS sowing's source (the row's `source_n` is not yet updated when the remount paints).  A text box made that
+    visible at once: typed text vanished, the box re-seeded with the last-but-one value.  `field_bind` survives it two
+     ways (seeded-not-forced: overwrite only if untyped since the last seed; a focused box that is removed hands its
+      text, caret and focus to the next box of the same cell — Chrome fires `blur` on removal BEFORE the action's
+       destroy, so "was focused" reads as "lost focus this very moment").  The remount itself is yours: worth knowing
+        why a persisting tok re-mounts at all — it is a flicker for every label, not just the field.
+- **The cave's head is the field**; the head is crowned the biggest bone; empty, the BROWSE door shows
+   `Lagoon_families` (the code's larger objects) around the hole and pressing one types its stem.  Typing re-asks
+    directly (90ms debounce), like every press.  BigWordland has no search box when the glass is loaded — a ⌕ chip
+     and `/` open the hole; the old Searchbar stays only as the fallback with no Vyto.
+- **"stemdex not scanned yet" was a real bug**: `Lagoon_lies()` read the TOP House's w:Lies, but a hacker room stands
+   its Lies on the ROOM, so every seek reported an empty Stemdex while the room's was being fed.  Now the room's
+    (via `face_on`) is asked first.  And the Stemdex roster now includes **every doc Atlas has rostered** — a hacker
+     Lies holds one Waft and no GhostList, so freetext covered a handful of files (roster union, not a census merge).
+      BigWordland now feeds the scan itself while the cave is open (the Searchbar used to), and the cave re-reads.
+- **Proof**: LagoonCave re-recorded with the hole (9 beats: open → type → file → method → walk → climb → leave),
+   accepted after reading step 9's snap, then **CHECK 9/9 ok_pct 1 caveat 0, twice** (it needed LagoonStaple's
+    `EntropyArrest Entcase:Self_round` — standing a Vyto world on the Run House brings Vyto's round clock).  Eye on
+     /BigWordland: no search box, `/` opens, the hole is focused, typing reaches the cave and the box keeps the text.
+- **The owner's bigger thread — EMOTION** (a will that drives the worlds' work, weighted by how sure each leg is) now
+   has its own doc: `spec/Emotion_todo.md`.  Its first slice is the cave's legs knowing their sureness and the
+    Stemdex spending its reads nearest the will — and Layer 2 (the jostle) turns out to be the same idea seen from the
+     glass: motion is unsureness and news.
+
+### THE CAVE RE-CUT — 2026-10-03 (the owner walked the live cave and said what was wrong)
+*"one of the things I wanted out of this spine thing was stemming! all those VytoSpine_* should be grouped… in file
+ order, with encircling syntax structure… I want a way to jump to a code presentation of the thing… [the crests]
+  need a style like they are final places, not like 'Def x31'."*  Plus: clicking the head didn't climb; a stack of
+   `spine_frame() › spine_frame() › …` built up; the dropdown and the spine showed the same results twice.
+- **Three places, no crests.**  SEARCH — a file's ribs are its STEM FAMILIES holding hits (`VytoSpine… ×31`).  FILE —
+   its methods in file order, each wearing its family's `stem` so Vytui's existing FUSED VERTEBRAE join a family
+    into one bone; the family names itself once, then members by suffix (`VytoSpine() _drive() _load() …`).  The
+     region level is gone.  METHOD — the code LANDS in the editor and the glass shows the method's doors: calls ⇝
+      (Atlas's call/elvisto rows, `via` = this method), called by ⇜ (`Lagoon_callers`), its family.  The chamber
+       (lines as ribs, read through the nav) is gone too: CodeMirror is the code presentation.  Deck `ribs:48` so a
+        family never folds into "Method ×30".
+- **A family = adjacent methods inside one `//#region` sharing the head before the first `_`.**  StemHive's own rule
+   (longest run sharing ANY edge stem) was extracted, proven byte-identical to the hive, and then dropped: with no
+    bead to break it every name in VytoTesting.g shares `Vyto` and the file became ONE family.  The head gives 23
+     families over 272 methods there, which is the grain asked for.  StemHive untouched.
+- **The face hook** `lw.c.cave_on(ev, arg)` — `land` {path, point} (BigWordland fires the Searchbar's own
+   `Lies_ghost_pick`), `leave` (head pressed at the surface / Esc → the whole search closes), `mode` full|rail (at a
+    method the glass is a left rail `min(28rem,34vw)` and the room pads right).  A Book's face is a recorder, so a
+     runner never lands anything in an editor.  The Searchbar gained `list` (dropdown off while the spine is up) and
+      already had `dismiss`; its reply rides into the cave (`{q, r}`) so the seek is asked once.
+- **The stacked `spine_frame()`s** were one press pushing the same place repeatedly while a slow nav read was in
+   flight; one climb then popped a duplicate and looked like nothing.  `Lagoon_cave_go` no longer pushes the place it
+    stands on, and the async read is gone with the chamber.
+- **Proof**: LagoonCave re-recorded 8/8, 9 sworn, then CHECK 8/8 ok_pct 1; LagoonStaple 8/8 10/10; eye on
+   /BigWordland: dropdown down + ≡ + glass up, ≡ → list up + ◈ + glass down.  Still unseen with real data in a real
+    tab — owed: walk it, then declare + accept LagoonCave.
+- **Open**: unify the Lagoon panel's own "seek…" box with the top bar (same `Lagoon_seek`, two inputs); a family's
+   NESTING (`Vyto…` → `VytoSpine…`, the owner's "indentation into some branch") is not drawn — one level only;
+    `//#region` beads bound families but are not shown by name.
 
 ### THE VYTO FLEET IS GREEN — 2026-10-03 (/loop; the owner: *"you CAN accept Book changes, just make sure you look and understand them"*)
 Every Vyto Book `ok_pct 1` on da06.  What was accepted, and why each diff was understood:

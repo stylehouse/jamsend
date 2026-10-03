@@ -548,7 +548,7 @@
         //       the whole pasted URL.  Mirrors the `?Adopt=` branch in paste_load — a deliberate page move, not a
         //        redeem.  A landed ?Iz (landed_url) already has its fragment in the bar and is left untouched.
         if (device_link(invite) && !landed_url) {
-            if (paste_full) { try { window.location.href = paste_full; return } catch {} }
+            if (paste_full) { try { go_link(paste_full); return } catch {} }
             joined = '⚠ paste the WHOLE device link — the seal after the # got left off, so the soul can’t cross'
             return
         }
@@ -629,6 +629,23 @@
     //    seal-less token — so keep the absolute URL here and let `join()` navigate to it.  '' unless the paste
     //     parsed as an absolute URL with a fragment.
     let paste_full = $state('')
+    // go_link — open a pasted device link WITHOUT a reload when we can (owner 2026-10-03: "do we have to have the page
+    //  navigation … when we input a link and have /#Iz=…").  An anchor-form link to THIS page only needs its fragment:
+    //   SwarmStandup's hashchange lands the offer in place (Swarm_offer_land reads location.hash).  Assigning the whole
+    //    href reloaded whenever the ?search differed (ours carries ?I=, the link does not).  Anything else — another
+    //     page, a ?Iz in the search — still navigates.
+    function go_link(full: string) {
+        try {
+            const u = new URL(full)
+            const here = new URL(window.location.href)
+            const hashIz = !!new URLSearchParams(String(u.hash || '').slice(1)).get('Iz')
+            if (hashIz && !u.searchParams.get('Iz') && u.origin === here.origin && u.pathname === here.pathname) {
+                window.location.hash = u.hash
+                return
+            }
+        } catch {}
+        window.location.href = full
+    }
     function url_with_frag(text: string): string {
         try { const u = new URL(String(text || '').trim()); return u.hash ? u.toString() : '' } catch { return '' }
     }
@@ -687,7 +704,7 @@
         //     → the Link cell asks consent.  A seal-less paste (no #fc → full empty) stays SILENT here — showing
         //      the "opening in the Link panel" note without navigating was the lie; ⏎ (paste_load) explains why.
         if (device_link(t)) {
-            if (full) { try { window.location.href = full; return } catch {} }
+            if (full) { try { go_link(full); return } catch {} }
             return
         }
         iz = tok; invite = t; iz_err = ''; joined = ''; auto_fired = false; join_over = false; join_focused = false
@@ -723,7 +740,7 @@
         //   the paste the same way here.  `iz_from` drops the `#fc=` seal, so we MUST reload on the full pasted
         //    URL (fragment and all): landing arms ferry_offer (the effect above) and the Link cell asks consent.
         if (device_link(t)) {
-            if (paste_full) { try { window.location.href = paste_full; return } catch {} }
+            if (paste_full) { try { go_link(paste_full); return } catch {} }
             paste_err = 'paste the WHOLE device link — the seal after the # got left off, so the soul can’t cross'
         }
     }

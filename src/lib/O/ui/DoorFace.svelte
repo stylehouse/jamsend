@@ -437,7 +437,14 @@
         void H?.version; void tick
         try {
             const w = H?.Swarm_station_world?.() ?? null
-            return !!(w && (H?.Swarm_link_active?.(w) || H?.Swarm_ferry_pending?.(w)))
+            if (!w) return false
+            if (H?.Swarm_ferry_pending?.(w)) return true
+            // a RECEIPT is not "in progress" (2026-10-03, Inko's Door after the link was made): link_active counts
+            //  the got|received|ended|… phases too, because they hold the Link cell up for its own ✓ — the Door only
+            //   offers the way back while something is still to happen.
+            const done = ['got', 'received', 'ended', 'cancelled', 'declined']
+            const busy = (r: any) => !!(r && !r.sc?.finished && r.sc?.phase && !done.includes(String(r.sc.phase)))
+            return busy(H?.Swarm_ferry_role?.('soul')) || busy(H?.Swarm_ferry_role?.('cave'))
         } catch { return false }
     })
     let small = $derived(pose === 'small')
@@ -499,28 +506,18 @@
 {:else}
 <div class="df">
     <div class="df-title">🚪 {face.name ?? 'standing you up…'}
-        {#if face.instance}
-            <!-- WHO THIS DEVICE IS (facet D): the soul name above is what FRIENDS see + what the ✎
-                 edits; this badge is THIS body's own instance (role + its name-gate name), so a Cave
-                 reads "Cave Guw" at the top even though its account is the soul Grav. -->
-            <span class="df-instance"
-                title={`this device is the ${face.instance.role}${face.instance.name ? ' “' + face.instance.name + '”' : ''} of ${face.name ?? 'this soul'} — one soul, this body's own name`}>
-                · {face.instance.role}{#if face.instance.name} {face.instance.name}{/if}</span>
-            {#if face.magnet.show && face.instance.prepub && face.magnet.can.includes(face.instance.prepub)}
-                <button class="df-mag" class:on={face.magnet.at === face.instance.prepub} onclick={() => magnet_to(face.instance.prepub)}
-                    title={face.magnet.at === face.instance.prepub ? 'your hearts land HERE — this folder is your big pile' : 'land your hearts here instead'}>🧲</button>
-            {/if}
-        {/if}
         {#if face.prepub && !naming}
             <button class="df-edit" onclick={name_open} title="name yourself — friends see this">✎</button>
         {/if}
         {#if face.prepub}<span class="df-pub">{face.prepub}</span>{/if}
-        {#if face.newborn}<span class="df-born">✨ born today</span>{/if}
+
         {#if face.listen_only}<span class="df-listen"
             title="listening only — this browser can't open a music folder, so you're a radio terminal. Your identity lives only in this browser: clearing site data forgets you (linked devices will fix that).">🎧 listening only</span>{/if}
-        {#if settle?.state === 'settling'}<span class="df-settle busy"
-            title={`writing your ledger to disk now${settle.why ? ` (${settle.why})` : ''}…`}>⛁ settling…</span>
-        {:else if settle?.state === 'owed'}<span class="df-settle owed"
+        <!-- "settling…" is gone from the face (owner 2026-10-03: "unsettling") — every save flashed it; the save
+             logs `🪪 account mirrored` in the console.  Only the real worry stays: a write with nowhere to go. -->
+        {#if face.up}<span class="df-tag dim df-up" class:fresh={!!face.up.fresh}
+            title={`this tab has been up ${face.up.label} — resets on reload, so a near-zero reading means the reload landed`}>up {face.up.label}</span>{/if}
+        {#if settle?.state === 'owed'}<span class="df-settle owed"
             title="your ledger changed but no share folder is open to write it to — it lives only in this tab until you open one.">⛁ write owed</span>{/if}
     </div>
     <!-- INVITE SITS ABOVE THE PIER LIST (the owner 2026-08-10) — it was at the bottom, under a list
@@ -582,14 +579,14 @@
                      condition (owner 2026-08-30: "why can't it see itself" — incognito has no %Uptime
                      row in its radio world, and the whole self-row used to vanish with it). -->
                 <div class="df-me" class:fresh={!!face.up?.fresh}
-                    title={face.up
-                        ? `this tab has been up ${face.up.label} — resets on reload, so a near-zero reading means the reload landed`
-                        : 'this tab — no uptime reading here (no %Uptime row in this world)'}>
+                    title="this tab">
                     <span class="df-dot here">●</span>
-                    <span class="df-name">you</span>
-                    {#if face.up}
-                        <span class="df-tag dim">up {face.up.label}</span>
-                        {#if face.up.fresh}<span class="df-tag">fresh reload</span>{/if}
+                    <!-- the device's own role rides the "you" row (owner 2026-10-03: the title is just the name) —
+                         and its 🧲, beside the others' -->
+                    <span class="df-name">you{#if face.instance}<span class="df-role"> · {face.instance.role}{#if face.instance.name && face.instance.name !== face.name} {face.instance.name}{/if}</span>{/if}</span>
+                    {#if face.magnet.show && face.instance?.prepub && face.magnet.can.includes(face.instance.prepub)}
+                        <button class="df-mag" class:on={face.magnet.at === face.instance.prepub} onclick={() => magnet_to(face.instance.prepub)}
+                            title={face.magnet.at === face.instance.prepub ? 'your hearts land HERE — this folder is your big pile' : 'land your hearts here instead'}>🧲</button>
                     {/if}
                 </div>
                 {#if face.prepub}
@@ -621,10 +618,6 @@
                                 + (b.ago == null ? ' · not heard this session (closed or away)' : ` · heard ${b.ago}s ago`)}>
                             <span class="df-dot" class:here={b.rung === 'here'} class:fading={b.rung === 'fading'}>●</span>
                             <span class="df-name"><span class="df-role">{b.role}</span> {#if b.name}{b.name}{:else}<span class="df-fpub df-fpub-solo">{b.pub8}</span>{/if}</span>
-                            {#if b.trove != null || b.pocket != null}
-                                <!-- THE PLOT lane's organ (SoundPool §5.5): what this body holds -->
-                                <span class="df-organ" title="what this body holds">{#if b.trove != null}{b.trove >= 1000 ? (b.trove / 1000).toFixed(0) + 'k' : b.trove} trove{/if}{#if b.pocket != null}{b.trove != null ? ' · ' : ''}{b.pocket} ready{/if}</span>
-                            {/if}
                             {#if face.magnet.show && b.prepub && face.magnet.can.includes(b.prepub)}
                                 <button class="df-mag" class:on={face.magnet.at === b.prepub} onclick={() => magnet_to(b.prepub)}
                                     title={face.magnet.at === b.prepub ? 'your hearts land on ' + (b.name || b.role) + ' — its folder is your big pile' : 'land your hearts on ' + (b.name || b.role) + ' instead'}>🧲</button>
@@ -778,12 +771,6 @@
         display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
         gap: 0.15rem 0.4rem;
     }
-    /* the instance badge — "· CAVE Guw", THIS device's own name beside the soul name.  Quieter than
-       the soul name (it's context, not the account), cursor:help for the one-soul-many-bodies whisper. */
-    .df-instance {
-        font-size: 10px; font-weight: 600; color: #b48fc9;
-        cursor: help; pointer-events: auto; letter-spacing: 0.02em;
-    }
     /* the invite door — a quiet disclosure at the foot of the friends list, not a call to action
        competing with them.  It only shouts (via InvitePanel's own `.ip-go`) once it is open and
         there is actually a stranger to greet. */
@@ -841,16 +828,6 @@
         width: 170px;
     }
     .df-pub { font-size: 8px; opacity: 0.55; font-family: monospace; margin-left: 4px; }
-    .df-born {
-        font-size: 9px;
-        color: #ffd869;
-        margin-left: 5px;
-        animation: df-twinkle 1.6s ease-in-out infinite;
-    }
-    @keyframes df-twinkle {
-        0%, 100% { opacity: 1; }
-        50%      { opacity: 0.45; }
-    }
     /* 🎧 the listening-only badge — a quiet, honest tag on the self line, not an alarm: the mode
        works, it just can't hold a share, and hover carries the mortal-identity whisper. */
     .df-listen { font-size: 9px; color: #8fd0e8; margin-left: 5px; cursor: help; pointer-events: auto; }
@@ -899,10 +876,6 @@
     }
     .df-mag:hover { opacity: 0.6; }
     .df-mag.on { opacity: 1; filter: none; }
-    .df-organ {
-        font-size: 9px; opacity: 0.65; font-family: monospace; margin-left: 6px;
-        color: #9fc9b4; letter-spacing: 0;
-    }
     .df-flow {
         display: flex; align-items: center; gap: 6px; font-size: 11px;
         opacity: 0.75; white-space: nowrap;
@@ -951,6 +924,8 @@
     @keyframes df-halfpulse { 0%, 100% { opacity: 0.6 } 50% { opacity: 1 } }
     .df-tag { font-size: 8px; color: #b48fc9; }
     .df-tag.dim { opacity: 0.6; }
+    .df-up { margin-left: 6px; font-weight: 400; cursor: help; pointer-events: auto; }
+    .df-up.fresh { opacity: 1; color: #7fc98a; }
     /* the bodies line — the same voice as a .df-tag row: small, dim, informative.  cursor:help +
        pointer-events:auto so the hover long-form is reachable through the .df pointer shield. */
     .df-bodies {

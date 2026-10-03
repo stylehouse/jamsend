@@ -450,7 +450,12 @@ Swarm_crew_view(ident):
         let g = m.o({ Grant: 'Crew' })[0]
         let since = +((pier && pier.sc.since) || (g && g.sc.time) || 0)
         let fresh = since && (now_ms / 1000 - since) < 240 ? 1 : 0
-        out.push({ prepub: prepub, role: String(m.sc.role || 'Cave'), name: name, pub8: prepub.slice(0, 8), pub: String(m.sc.pub || ''), mine: mine ? 1 : 0,
+        // FOLDER — does this body hold a music folder (it can take originals: a Heist lands there, a 🧲 can point at
+        //  it)?  A fundamental fact of a crewmate, owner 2026-10-04.  Mine from my own grant; another's from its
+        //   self-description — a folder always declares a trove organ, even empty (Swarm_organ_refresh), and a
+        //    no-folder phone never does.  Unknown (not heard yet) reads as no.
+        let folder = mine ? (this.Crate_has_folder ? this.Crate_has_folder() : 0) : (bodies.some((b) => this.Swarm_organ_of(b, 'trove')) ? 1 : 0)
+        out.push({ prepub: prepub, role: String(m.sc.role || 'Cave'), name: name, pub8: prepub.slice(0, 8), pub: String(m.sc.pub || ''), mine: mine ? 1 : 0, folder: folder,
                    cert: g ? 1 : 0, since: since, fresh: fresh, ago: ago, rung: mine ? 'here' : (ago == null ? 'away' : ago < 15 ? 'here' : ago < 45 ? 'fading' : 'away') })
     }
     out.sort((a, b) => (a.role === 'Captain' ? 0 : 1) - (b.role === 'Captain' ? 0 : 1) || (a.prepub < b.prepub ? -1 : 1))
@@ -1998,6 +2003,9 @@ Swarm_arm(w):
                 if (gs) { delete gs.c.secret; delete gs.c.ferrying }
                 // 'got' is a pull phase — the ✓ done flip shows itself NOW (the phase verb's policy).
                 this.Swarm_ferry_phase(w2, 'got', { pub: String(from || ''), role: 'soul' })
+                // THE LINK IS MADE — whatever its door refused on the way in is spent (2026-10-03: a re-link left
+                //  `unvouched_reach` ×3 on the Captain's Door; the Linkee's ask crossed before its new voucher stood).
+                if (from) { this.Swarm_rebuff_forgive(ident, String(from)) }
                 // FACET D — the Captain FINALISES THE FAMILY ROSTER (the ferry path never did; only the old
                 //  adopt finalise rostered).  It takes its OWN %Body,post:Captain wearing the name this human
                 //   wrote at ITS name-gate (ident.sc.friendly), and notes the Cave that just acked — the
@@ -2472,22 +2480,24 @@ Swarm_station_up(w, ident):
     //    it met on its first read and the Butler would never once have a task to show.  Idempotent by
     //     key (oai merges), so the retries cost a lookup.
     this.Swarm_watch_station(w)
-    if (!w.c.iz_rehydrated && this.top_House().stashed) { w.c.iz_rehydrated = 1; this.Swarm_iz_rehydrate(w, ident) }
-    if (!w.c.piers_rehydrated && this.top_House().stashed) { w.c.piers_rehydrated = 1; this.Swarm_piers_rehydrate(w, ident) }
-    if (!w.c.roots_rehydrated && this.top_House().stashed) { w.c.roots_rehydrated = 1; this.Swarm_chainroots_rehydrate(w, ident) }
+    // EACH RAIL SURVIVES ITS OWN THROW (2026-10-04): the latch is set before the call, so one throw used to skip
+    //  every rail after it for the life of the tab — a dead standup with nothing on screen to say why.
+    if (!w.c.iz_rehydrated && this.top_House().stashed) { w.c.iz_rehydrated = 1; try { this.Swarm_iz_rehydrate(w, ident) } catch (er) { console.log('🪪⚠ iz rehydrate threw — the rest of the standup carries on: ' + String(er).slice(0, 120)) } }
+    if (!w.c.piers_rehydrated && this.top_House().stashed) { w.c.piers_rehydrated = 1; try { this.Swarm_piers_rehydrate(w, ident) } catch (er) { console.log('🪪⚠ piers rehydrate threw — the rest of the standup carries on: ' + String(er).slice(0, 120)) } }
+    if (!w.c.roots_rehydrated && this.top_House().stashed) { w.c.roots_rehydrated = 1; try { this.Swarm_chainroots_rehydrate(w, ident) } catch (er) { console.log('🪪⚠ roots rehydrate threw — the rest of the standup carries on: ' + String(er).slice(0, 120)) } }
     if (!w.c.roster_rehydrated && this.top_House().stashed) { w.c.roster_rehydrated = 1; this.Swarm_roster_rehydrate(w, ident).catch((er) => console.log('🪪⚠ roster rehydrate failed: ' + String(er).slice(0, 120))) }
     // the crew ledger + my cert, SYNC (see Swarm_restash_crew's header): the voucher mint reads
     //  Swarm_crew_grant, so a phone's cert must stand BEFORE the socket opens, not a tick later.
-    if (!w.c.crew_rehydrated && this.top_House().stashed) { w.c.crew_rehydrated = 1; this.Swarm_crew_rehydrate(w, ident) }
+    if (!w.c.crew_rehydrated && this.top_House().stashed) { w.c.crew_rehydrated = 1; try { this.Swarm_crew_rehydrate(w, ident) } catch (er) { console.log('🪪⚠ crew rehydrate threw — the rest of the standup carries on: ' + String(er).slice(0, 120)) } }
     // the standing bookings (sixth pillar): a phone that booked a pool fill still wants it after a reload.
-    if (!w.c.reaches_rehydrated && this.top_House().stashed) { w.c.reaches_rehydrated = 1; this.Swarm_reaches_rehydrate(w, ident) }
+    if (!w.c.reaches_rehydrated && this.top_House().stashed) { w.c.reaches_rehydrated = 1; try { this.Swarm_reaches_rehydrate(w, ident) } catch (er) { console.log('🪪⚠ reaches rehydrate threw — the rest of the standup carries on: ' + String(er).slice(0, 120)) } }
     // the pool compartments (seventh pillar): a phone's declared composition outlives its boot.
-    if (!w.c.pools_rehydrated && this.top_House().stashed) { w.c.pools_rehydrated = 1; this.Swarm_pools_rehydrate(w, ident) }
+    if (!w.c.pools_rehydrated && this.top_House().stashed) { w.c.pools_rehydrated = 1; try { this.Swarm_pools_rehydrate(w, ident) } catch (er) { console.log('🪪⚠ pools rehydrate threw — the rest of the standup carries on: ' + String(er).slice(0, 120)) } }
     // the hearts (eighth pillar): a wish pressed on a phone still stands after that phone reloads.
-    if (!w.c.heard_rehydrated && this.top_House().stashed) { w.c.heard_rehydrated = 1; this.Swarm_heard_rehydrate(w, ident) }
+    if (!w.c.heard_rehydrated && this.top_House().stashed) { w.c.heard_rehydrated = 1; try { this.Swarm_heard_rehydrate(w, ident) } catch (er) { console.log('🪪⚠ heard rehydrate threw — the rest of the standup carries on: ' + String(er).slice(0, 120)) } }
     // the whole identity as one text (the account pillar, Phase 5 rung 3): grafted LAST, on top of the seven,
     //  so a shelf the loops above never knew comes back too — and nothing they stood is doubled.
-    if (!w.c.account_rehydrated && this.top_House().stashed) { w.c.account_rehydrated = 1; this.Swarm_account_rehydrate(w, ident) }
+    if (!w.c.account_rehydrated && this.top_House().stashed) { w.c.account_rehydrated = 1; try { this.Swarm_account_rehydrate(w, ident) } catch (er) { console.log('🪪⚠ account rehydrate threw — the rest of the standup carries on: ' + String(er).slice(0, 120)) } }
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     if (station && w.c.station_up) return station
     if (typeof this.Socket_real !== 'function') return null
@@ -3855,6 +3865,10 @@ Swarm_piers_rehydrate(w, ident, st0):
             let e = mine[theirPrepub]
             if (!e?.page?.prepub) continue
             let pier = this.Swarm_seal(w, ident, e.page, e.grants?.[0] ?? null, e.grants?.[1] ?? null)
+            // Swarm_seal REFUSES an unbound page (pub ≠ its prepub) — skip it, never throw: a throw here sits inside the
+            //  station standup AFTER its rehydrated latch, so every rail below it (crew, reaches, pools, hearts) never
+            //   ran and the tab came up dead (2026-10-04, Inko 'failing to start randomly').
+            if (!pier) { console.log('🪪⚠ piers rehydrate: skipped an unbound stashed pier ' + String(theirPrepub).slice(0, 16) + ' (page.pub ' + String(e.page.pub || '').slice(0, 16) + ')'); continue }
             // RESTORE `since` AFTER the seal, deliberately.  Swarm_seal stamps Swarm_now when it finds the
             //  key absent (3357) — which is right for a NEW bond and wrong for one we are merely standing
             //   back up — so the durable value has to land on top of that stamp, not before it.  Order
@@ -7492,7 +7506,10 @@ Swarm_organ_refresh(w, ident):
         let pool = this.Ra_home_pool ? this.Ra_home_pool(rw, String(ident.sc.prepub)) : null
         if (pool && this.Ra_recs) { pocket = this.Ra_recs(pool).length }
     } catch (er) {}
-    if (trove) { this.Swarm_organ_take(ident, 'trove', { tracks: trove }) }
+    // a FOLDER always declares its trove, even empty (owner 2026-10-04: "it might be an empty folder … certainly we'd want
+    //  to be able to start putting music there") — the trove organ's presence IS the crew's "this body has a folder" (the 🧲)
+    let folder = this.Crate_has_folder ? this.Crate_has_folder() : 0
+    if (trove || folder) { this.Swarm_organ_take(ident, 'trove', { tracks: trove || 0 }) }
     if (pocket) { this.Swarm_organ_take(ident, 'pocket', { tracks: pocket }) }
     return 1
 // Swarm_organ_wire — my OWN organs as the wire shape ({pub, kind, tracks, tags}[]), each body authoritative
