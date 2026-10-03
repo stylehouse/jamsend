@@ -12,7 +12,7 @@ import { poly_area } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_VytoTesting(): string { return '95ff974bfd3b4a8b~g1' },
+    Ghostmeta_Ghost_V_VytoTesting(): string { return '5048022f099100be~g1' },
 
 // VytoTesting.g — né Vytonation.g.  Vyto's demo Books (the VoroTesting.g sibling, one directory over
 //  in Ghost/V/), under the `<Name>Testing.g` convention (owner ruling 2026-09-09; the one predicate
@@ -3696,6 +3696,74 @@ VytoHand_witness(w) {
         this.story_swear(w, 'lifting the hand frees the stone and the put rows leave the world')
         if (!(w.oa({see: 'lifting the hand frees the stone and the put rows leave the world'}))) w.i({see: 'lifting the hand frees the stone and the put rows leave the world'})
     }
+
+},
+// ══ VytoSketch — THE SKETCHPAD: draw whatever `/vyto/sketch.json` says, for a headless agent to iterate on ══
+//  The owner, 2026-10-04: *"another agent … very direct easy headless iteration, visual feedbacking itself … perhaps
+//   I'll input some drawings of structures I want it to be able to create … 6-nodes-in-a-pyramid-flotilla … the
+//    holes the data descends into, and that each one is separate, and whatever commonalities they have as string
+//     cheese stretched between limbs"*.  A sketch is plain objects in the GUISE notation (first key = mainkey,
+//      plain keys = facts, `guise: { tok, dose, kids, … }`): `kids` are the holes the data descends into, shared
+//       facts are the string cheese (the weave draws a vine between two words that agree — deck stop `crosslink`),
+//        and optional `puts` POSE the drawing (the hand's `%Put` — an attractor per cell, per-mille of the frame).
+//  Every draw is a FRESH glass, so a frame is a pure function of the file.  `scripts/glass_sketch.mjs` drives it:
+//   one headless page kept alive, re-drawn (VytoSketch_draw via the page) whenever the sketch or the renderer
+//    changes, a PNG + metrics out each time.  `unusual:sketchpad` — never swept, never fixtured.
+//  World VytoSketch.
+VytoSketch(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VytoSketch_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VytoSketch_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.VytoSketch_load(w)
+        if (n === 3) this.VytoSketch_stand(w)
+    }
+
+},
+async VytoSketch_load(w) {
+    w.i({desc: 'fetch the sketch — plain objects in the guise notation'})
+    let r = await fetch('/vyto/sketch.json', { cache: 'no-store' })
+    w.c.sketch = await r.json()
+
+},
+async VytoSketch_stand(w) {
+    w.i({desc: 'stand the sketch on the glass'})
+    this.VytoSketch_draw(w, w.c.sketch)
+    this.expecting(w, 'stand_wait', 18, async () => { await this.VytoStaple_await(w, 18, () => this.VytoSketch_ready(w)) })
+
+},
+// VytoSketch_draw — (re)stand a sketch on a FRESH glass.  The sketch's own knobs, all optional:
+//  `deck` (a foamereo string) · `nested` (default on) · `folded` · `foam` (default on) · `puts` ([{Put: tok, x, y, pin?, pull?}]).
+VytoSketch_draw(w, sk) {
+    if (!sk) return 0
+    w.c.sketch = sk
+    let seeds = []
+    for (const it of (sk.items || [])) {
+        let g = this.Vyto_guise(it)
+        if (g) seeds.push(g)
+    }
+    w.c.seeds = seeds
+    let nested = sk.nested === 0 ? 0 : 1
+    let foamy = sk.foam === 0 ? 0 : 1
+    this.Vyto_commission_on(w, seeds, 1, 0, nested, sk.folded ? 1 : 0, 0, 1, foamy, sk.deck || null, sk.puts || null)
+    this.Vyto_rest_reset(w)
+    return seeds.length
+
+},
+VytoSketch_ready(w) {
+    let n = (w.c.seeds || []).length
+    if (!n) return 0
+    if (!this.Vyto_rest_poll(w, n)) return 0
+    w.c.saw_stand = 1
+    return 1
 
 },
 

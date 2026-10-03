@@ -39,5 +39,5 @@ Snap:H
         reached:step_3
         testing
           loaned,winner_fixed,mint_gated,sign_gated,exp_gated
-          slotted,one_seat,newest_wins,lapse_returns,own_grant_only
+          slotted,two_seats,newest_wins,lapse_returns,own_grant_only
         reached:step_4

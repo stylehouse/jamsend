@@ -1,0 +1,20 @@
+{
+  "about": "THE FLOTILLA — six nodes in a pyramid (1 · 2 · 3), each a separate hole the data descends into, with what they share stretched between them as string cheese.  Edit freely: items are guise objects (first key = mainkey, plain keys = facts, guise.kids = what lives inside); puts pose the pyramid (per-mille of the frame, attractors).",
+  "deck": "crosslink",
+  "items": [
+    { "Vessel": "crown",     "tide": "high", "guise": { "tok": "v:crown",     "dose": 3, "kids": [ { "Hold": "charts" }, { "Hold": "bell" }, { "Hold": "lamp" } ] } },
+    { "Vessel": "port",      "tide": "high", "reef": "north", "guise": { "tok": "v:port",      "dose": 2, "kids": [ { "Hold": "nets" }, { "Hold": "rope" } ] } },
+    { "Vessel": "starboard", "tide": "low",  "reef": "north", "guise": { "tok": "v:starboard", "dose": 2, "kids": [ { "Hold": "salt" }, { "Hold": "oars" } ] } },
+    { "Vessel": "keel-a",    "tide": "low",  "reef": "south", "guise": { "tok": "v:keel-a",    "dose": 1, "kids": [ { "Hold": "ballast" } ] } },
+    { "Vessel": "keel-b",    "tide": "high", "reef": "south", "guise": { "tok": "v:keel-b",    "dose": 1, "kids": [ { "Hold": "pumps" }, { "Hold": "tar" } ] } },
+    { "Vessel": "keel-c",    "tide": "low",  "reef": "south", "guise": { "tok": "v:keel-c",    "dose": 1, "kids": [ { "Hold": "cargo" } ] } }
+  ],
+  "puts": [
+    { "Put": "v:crown",     "x": 500, "y": 180 },
+    { "Put": "v:port",      "x": 330, "y": 470 },
+    { "Put": "v:starboard", "x": 670, "y": 470 },
+    { "Put": "v:keel-a",    "x": 180, "y": 790 },
+    { "Put": "v:keel-b",    "x": 500, "y": 790 },
+    { "Put": "v:keel-c",    "x": 820, "y": 790 }
+  ]
+}

@@ -34,11 +34,13 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 | `Meaningfold_todo.md` | the RULINGS — three organs, the absorption, the Vytocon, the fibre bundle (§0.2) | live — read §0.2 for *why* |
 | `Vyto_client.md` | an app hosting its UI on the glass (commission, faces, press) | live (2026-09-04) |
 | `Vyto_spec.md` | the July vision — shapes, pelt, board, coined words (§14) | reference, unpreened, parts disowned (Meaningfold §4) |
-| `Vyto_todo.md` | July–Sept working log, 267KB | keep its **autopsy** (F1–F3, LAWS A–E) + **THE PIN**; the rest is trail — **retire candidate** |
+| `Glassbeast_voice.md` | **the owner's own words** about the glass, verbatim + dated (193, July–Sept) | live — read it before arguing about the look |
+| `history/Vyto_todo.md` | July–Sept working log (retired 2026-10-04; its quotes → the voice file) | history — the autopsy (F1–F3, LAWS A–E) + THE PIN still worth a read |
 | `Vyto_sizing_todo.md` | the type-scale algebra (φ, AREA_BASE, the floor) | reference |
 | `Cstructures_todo.md` · `UI_seams_todo.md` | the readable-C** language · wire capabilities the glass never showed | reference |
 | `vyto_workingouts/` | appendices: calm · pile · pelt · shapes · spool · commission · client · processes | reference |
 | `history/Voro_*` · `history/Vyto_perf_todo.md` | Voro's design (the stained glass) · the absorbed perf handoff | history |
+| **`scripts/glass_sketch.mjs`** + `static/vyto/sketch.json` | the headless sketch loop (§0.8) | live |
 
 ### 0.3 What stands — the ledger (claim · code · proof)
 | claim | code | proof |
@@ -112,8 +114,47 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 ### 0.7 Owed to the owner
 - **Commit point**: the hand drag (Vytui, BigShapeland), the pile extraction (`vyto_geometry.ts`, `Vyto.g` +
    `.go`) and `scripts/VytoPile.spec.ts`, the VytoOrchestra accept, this consolidation.
-- **Rulings**: retire `Vyto_todo.md` to history (keeping its autopsy + THE PIN quoted here)? · should the hand
-   be on by default? · record VytoPosed's fixtures?
+- **Rulings**: should the hand be on by default? · **VytoPosed** (born 2026-09-11 from *"might faces have some
+   posability… posed to match the cell nicely"*): the pose is REAL in Vytui, but the Book reads it back off the
+    render side, never sees it, and settles by timeout (`unusual:UNPROVEN`, no fixtures) — the effect-side witness
+     problem in one Book.  Recommended: drop the Book, prove the pose as a pure function with a spec (law 1).
+
+### 0.8 Working headless — the SKETCH LOOP (for an agent in another environment)
+**What it is**: one headless chromium page kept alive on `/BigShapeland?B=VytoSketch`; every change to the sketch
+ or to the renderer re-draws the glass IN PLACE (~2s, no reboot) and writes a PNG + a metrics line.  The agent
+  LOOKS at the PNG (the only witness of the look) and READS the metrics (cells, nested, vines, words, no-room rows,
+   the render watchdog).  Cheap on purpose: one browser, no runner, no relay, no polling beyond a file-stat.
+**Setup, fresh box**: `npm ci` · `npx playwright install chromium` (`--with-deps` on a bare Linux) ·
+ `npx vite dev --port 9091 --host 127.0.0.1` (the app needs localhost — a secure context; the script proxies a
+  non-local URL onto localhost by itself).  First boot of the page ≈ 30s.
+**The loop**: `node scripts/glass_sketch.mjs --watch --out=/tmp/glass` (`--sketch=<file>`, `--url=<dev server>`).
+ Each frame: `/tmp/glass/sketch_NNN.png` (the glass), `…_page.png` (with the desk), `last.json` (metrics).
+**A drawing → a sketch** (`static/vyto/sketch.json`, the GUISE notation — see §0′ "THE GUISE"):
+ · a NODE is an item: `{ "Vessel": "crown", <facts…>, "guise": { "tok": "v:crown", "dose": 3, "kids": [...] } }` —
+    the first key is what it IS (the mainkey), plain keys are facts, `dose` is its size;
+ · a HOLE the data descends into is `kids` (each kid is itself an item — recursion is free, each hole separate);
+ · STRING CHEESE between limbs is a SHARED FACT — two items carrying `"reef": "north"` get a vine between the words
+    (deck stop `crosslink`); the weave finds them by itself, nothing names the tie;
+ · the ARRANGEMENT (a pyramid, a flotilla) is `puts`: `{ "Put": "v:crown", "x": 500, "y": 180 }`, per-mille of the frame,
+    an attractor per node (`"pin": 1` to nail it) — the hand's law, §0 0.3;
+ · `deck` takes any stops (§0.3 list); `folded: 1` lets a crowded hole fold its contents into crests.
+ The shipped sketch is the owner's archetype: **six vessels in a pyramid flotilla, 1·2·3, each a hold with its cargo,
+  `tide`/`reef` stretched between them** — and frame 1 (2026-10-04) shows the honest gap to close: the vines KNOT in
+   the middle instead of stretching limb to limb, and the shared words they are about are not printed where they land.
+**Where the look lives** (all HOT — edit and the loop re-shoots): `src/lib/O/Vytui.svelte` (cells, folio, vines,
+ crosslink, regimes) · `vyto_geometry.ts` (the cut, the pile, spine/grid/rib) · `vyto_pane.ts` (the folio's fit) ·
+  `vyto_foam.ts` (the fold election).  **The model** (`Ghost/V/Vyto.g`, `VytoTesting.g`) is NOT hot: compile without
+   an editor — `GFILES="Ghost/V/Vyto.g" node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs
+    scripts/LocalGen.spec.ts`, then parse-gate the `.go` (`awk '/<script/{f=1;next} /<\/script>/{f=0} f'
+     src/lib/gen/V/Vyto.go | node_modules/.bin/esbuild --loader=ts --log-level=warning >/dev/null`); the loop sees the
+      `.go` change and reloads the page itself.
+**The gates, cheapest first**: the PNG (taste — the owner's, ultimately) · `last.json` (nothing lost: no-room rows,
+ watchdog) · the specs (`vitest run -c scripts/Story_cli.vitest.config.mjs scripts/Vyto*.spec.ts`, 94 tests, ~30s —
+  every pure law) · the Book fleet (needs a runner tab + relay, §0.4 — run it before handing work back, not per frame).
+**Traps**: the page needs its boot gate pressed + `showDirectoryPicker` stubbed (the script does both) · a sketch item
+ without `guise.tok` gets an identity from its mainkey value — give every node a tok or puts cannot find it · a
+  `spine`/`grid` deck ASSIGNS seats, so puts do nothing there · law 1 (§0.5): a new behaviour lands its cause as data
+   and its law as a pure function with a spec, or it decays — the PNG alone is not a proof.
 
 ---
 

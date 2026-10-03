@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '478628712d71d0ca~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '4aa36f92755eadd7~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -1593,6 +1593,11 @@ Radio_aim_set(n, pub) {
     if (!w || !radio || !radio.sc) { return '' }
     let want = String(pub || '')
     if (want !== String(radio.sc.aim || '')) { this.Radio_queue_clear(radio) }
+    // PINNED = A HUMAN CHOSE THIS (2026-10-04, Lump aimed at Grav kept playing Inko): the dial's own aim lock
+    //  (Radio_aim_at, "who we are listening with") hands the radio on when its holder runs dry; a CHOSEN source
+    //   never does — it waits for that holder and says so.  On .c (runtime; a restored stash re-pins it,
+    //    Swarm_radio_rehydrate), so no snap moves.
+    if (want) { radio.c.pinned = 1 } else { delete radio.c.pinned }
     if (!want) {
         if (radio.sc.aim) { delete radio.sc.aim }
         if (radio.sc.aim_by) { delete radio.sc.aim_by }
@@ -2637,7 +2642,8 @@ Radio_lineup_fill(w, radio) {
         let aimk = radio ? String(radio.sc.aim || '') : ''
         if (aimk) {
             let only = pools.filter((p) => p.key === aimk)
-            if (only.length) { pools = only }
+            // a PINNED source stays alone even when dry — the radio waits for it rather than leaking another holder
+            if (only.length || radio.c.pinned) { pools = only }
         }
         // FALL BACK TO SP WHEN NO FRIEND YIELDS ANYTHING (2026-09-23, owner ruling on Option 2:
         //  "yeah fall back to SP I guess"). Every friend still gets their own precise %error row
@@ -2842,7 +2848,7 @@ Radio_dial_pool(w, radio, all, peek) {
             if (!rec.c.from_pub) rec.c.from_pub = pub
         }
     }
-    let pool = aimed.length ? aimed : cands
+    let pool = aimed.length ? aimed : (aim && radio.c.pinned ? [] : cands)
     if (!pool.length) return null
     let pick = pool[this.Ra_rand(w, pool.length)]
     if (!peek) this.Radio_aim_at(w, radio, pick)
@@ -2857,6 +2863,7 @@ Radio_dial_pool(w, radio, all, peek) {
 Radio_aim_at(w, radio, rec) {
     let pub = String(rec?.c?.from_pub || '')
     if (!pub || radio.sc.aim === pub) return
+    if (radio.c.pinned && radio.sc.aim) return
     radio.sc.aim = pub
     let name = this.Radio_friendly ? this.Radio_friendly(w, pub) : ''
     if (name) radio.sc.aim_by = name

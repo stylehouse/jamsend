@@ -995,12 +995,24 @@ Swarm_pier_slot(pier, now_s):
     if (loan && loan.sc.to && +loan.sc.exp > now) return String(loan.sc.to)
     return String(pier.sc.pub || '')
 
-// Swarm_slot_granted — may `peer` (a requester's ADDRESS) draw my music?  Only if it holds the slot on a
-//  Music-live friendship.  While a friendship is lent, its OWN address is refused — one seat, never two.
-//   First pier whose slot matches, exactly as the old `o({Pier, pub:peer})[0]` lookup took the first.
+// Swarm_pier_seats — EVERY address this friendship is served to right now (owner 2026-10-04, RemoteHeist §4.1: "a
+//  Captain and a Cave may use it simultaneously … the one Grant to Grav … just no more than that").  TWO seats: the
+//   friend's own address (the soul — the Captain) ALWAYS, plus the one Cave its unexpired %Loan names.  The loan is
+//    still ONE: a newer Cave presenting logs the last Cave out (Swarm_borrow_heard), but no Cave ever displaces the
+//     Captain.  Swarm_pier_slot (above) stays as "where the loan points", for callers that ask exactly that.
+Swarm_pier_seats(pier, now_s):
+    if (!pier) return []
+    let own = String(pier.sc.pub || '')
+    let out = own ? [own] : []
+    let loan = pier.o({ Loan: 1 })[0]
+    let now = (now_s != null) ? +now_s : Math.floor(Date.now() / 1000)
+    if (loan && loan.sc.to && +loan.sc.exp > now && String(loan.sc.to) !== own) { out.push(String(loan.sc.to)) }
+    return out
+// Swarm_slot_granted — may `peer` (a requester's ADDRESS) draw my music?  Only if it holds one of the seats on a
+//  Music-live friendship (Swarm_pier_seats: the Captain, and the one Cave on loan).  First pier that seats it.
 Swarm_slot_granted(ident, peer, now_s):
     if (!ident || !peer) return false
-    let p = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((q) => this.Swarm_pier_slot(q, now_s) === String(peer))
+    let p = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((q) => this.Swarm_pier_seats(q, now_s).includes(String(peer)))
     return !!(p && this.Swarm_pier_live(p, 'Music'))
 
 // Swarm_borrow_heard — the FRIEND seats a borrower (a `borrow` frame).  LOGIN = presenting the loan
@@ -1024,7 +1036,9 @@ async Swarm_borrow_heard(w, ident, frame, from):
     let to = prepubOf(String(seen.borrower))
     let presenter = String(from || frame?.page?.prepub || '')
     if (presenter && presenter !== to && presenter !== String(pier.sc.pub)) { this.Swarm_rebuff(ident, 'borrow_not_presenter', presenter.slice(0, 8)); return null }
-    let prev = this.Swarm_pier_slot(pier, this.Swarm_now(w))
+    // THE CAVE SEAT is what moves — the loan's address before and after; the Captain's seat never does (Swarm_pier_seats)
+    let cave_of = () => { let l = pier.o({ Loan: 1 })[0]; return (l && l.sc.to && +l.sc.exp > this.Swarm_now(w)) ? String(l.sc.to) : '' }
+    let prev = cave_of()
     let old = pier.o({ Loan: 1 })[0]
     if (old) pier.drop(old)
     let loan = null
@@ -1033,11 +1047,12 @@ async Swarm_borrow_heard(w, ident, frame, from):
         loan.c.up = pier
     }
     pier.bump()
-    let seat = this.Swarm_pier_slot(pier, this.Swarm_now(w))
-    // LOGGED OUT, SAID OUT LOUD: the previous holder is told, so its radio stops asking for tracks it will be
-    //  refused (and its face can say why) instead of going silently dry.  `by` = the new holder's address.
-    if (prev && prev !== seat) this.Swarm_deliver(w, ident, prev, { kind: 'seat_lost', page: this.Swarm_page(ident), by: seat })
-    if (w && w.c && w.c.station_up) this.Swarm_offer_now(w, ident, seat).catch((er) => console.log('⨳ seat offer threw —', er))
+    let seat = cave_of()
+    // LOGGED OUT, SAID OUT LOUD: the previous CAVE is told, so its radio stops asking for tracks it will be refused
+    //  (and its face can say why) instead of going silently dry.  `by` = the new holder's address (the soul's when the
+    //   loan simply ended).  The Captain is never told — it never loses its seat.
+    if (prev && prev !== seat) this.Swarm_deliver(w, ident, prev, { kind: 'seat_lost', page: this.Swarm_page(ident), by: seat || String(pier.sc.pub || '') })
+    if (seat && w && w.c && w.c.station_up) this.Swarm_offer_now(w, ident, seat).catch((er) => console.log('⨳ seat offer threw —', er))
     return loan
 
 // Swarm_lend — the CAPTAIN's verb: mint a loan of my Grant:Music from `pier`'s friend (for my key) to
@@ -1188,8 +1203,8 @@ Swarm_borrow_use(w, ident, of):
     let pier = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((p) => String(p.sc.pub) === String(of))
     let mine = String(this.Swarm_keys(ident)?.pub || '')
     if (pier && mine && pier.o({ Grant: 'Music' }).find((g) => String(g.sc.for) === mine) && this.Swarm_captain_here && this.Swarm_captain_here(ident)) {
-        // detached (the radio's switch is sync); the promise rides .c so a Book can await the send.
-        ident.c.borrow_p = this.Swarm_lend(w, ident, pier, mine, 60).then((rib) => { if (rib) this.Swarm_deliver(w, ident, String(of), { kind: 'borrow', page: this.Swarm_page(ident), loan: rib }) }).catch((er) => console.log('⨳ take-back threw —', er))
+        // THE CAPTAIN IS ALWAYS SEATED (2026-10-04, two seats — Swarm_pier_seats): switching to my own friend takes
+        //  nothing back and logs no Cave out.  (It used to present a loan to itself, which ended the Cave's.)
         return 'own'
     }
     let b = this.Swarm_borrowing(ident, of)
@@ -4442,6 +4457,8 @@ Swarm_radio_rehydrate(w, ident, st0, radio0):
     let said = ''
     if (mine.aim) {
         if (String(radio.sc.aim || '') !== String(mine.aim)) { radio.sc.aim = String(mine.aim) }
+        // a stashed aim was CHOSEN (only Radio_aim_set stashes one) — it comes back pinned, never roaming
+        radio.c.pinned = 1
         if (mine.aim_by && String(radio.sc.aim_by || '') !== String(mine.aim_by)) { radio.sc.aim_by = String(mine.aim_by) }
         said = 'aimed at ' + String(mine.aim_by || String(mine.aim).slice(0, 8))
     }
@@ -5154,8 +5171,8 @@ async Swarm_offer_now(w, ident, pub):
     let me = String(ident.sc.prepub)
     let them = String(pub)
     if (them === me) return 0
-    // THE ONE SLOT: the friendship whose seat `them` holds — its own address, or a Cave it is lent to.
-    let p = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((q) => this.Swarm_pier_slot(q) === them)
+    // THE SEATS: the friendship that seats `them` — its own address (the Captain), or the Cave it is lent to.
+    let p = (this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []).find((q) => this.Swarm_pier_seats(q).includes(them))
     if (!p || !this.Swarm_pier_live(p, 'Music')) return 0
     let route = this.Swarm_station_pier(w, ident, them)
     if (!route) return 0
@@ -5743,41 +5760,42 @@ async Swarm_share_beat(w, ident):
     for (const p of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
         if (!p.sc.pub) continue
         if (!this.Swarm_pier_live(p, 'Music')) continue
-        // THE ONE SLOT: cast to whoever holds this friendship's seat — the soul, or a lent Cave (Swarm_pier_slot).
-        let pub = this.Swarm_pier_slot(p)
-        // never treat my OWN Pier as a friend: a self-offer echoes back and Repli_mirror_lib would mint a
-        //  spurious %Theirs,pub:<me> right beside my %Mine — the self-mirror the human saw on Righto.
-        if (pub === me) continue
-        let route = this.Swarm_station_pier(w, ident, pub)
-        if (!route) continue
-        if (!route.c.repli_src) this.Repli_register_caster(w, route, stock)
-        if (!route.c.repli_rx) this.Repli_register_rx(w, route)
-        // OFFER on change: stock grew, or the peer was reborn (offered_mark carries both).
-        //  Presence-gated — husking at silence is litter.  Repli_merge dedups the far side,
-        //   so a re-offer after rebirth is safe, just not free.  The unit is the MAG (the wire
-        //    cut, Mag_todo §4.1): the whole shuffle Mag crosses as ONE husk fragment, so the
-        //     friend's mirror wears the same paged shape — a collection arrives as its rooms.
-        if (!p.c.heard_at || ((Date.now() - p.c.heard_at) >= 40000 && !this.Swarm_socket_fresh(p, 20000))) continue
-        let n = this.Ra_recs(stock).length
-        // the tour count rides the mark because the count ALONE cannot see a rotation: a turn of the
-        //  wheel that adds one and drops one leaves `n` identical, so a pure-count mark would call a
-        //   completely different catalog "unchanged" and sit on it until the 60s floor tripped.
-        let tour = String(rw.o({ Stoker: 1 })[0]?.sc?.toured || 0)
-        let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n + ':' + tour
-        // ── THE RE-OFFER FLOOR (2026-08-04) — the last-resort backstop under the whole epoch machine ──
-        //  Everything above makes "A learns B was reborn" robust; this makes "A stops sending B new
-        //   music" structurally impossible even if all of it fails.  The mark is CHANGE-triggered, so a
-        //    mark that is wrong-but-stable (a missed era, a mirror that lost the husks, a stock count
-        //     that happens to match) is a silent permanent hole with no self-heal at all.  A floor turns
-        //      any such hole into a delay of at most one interval.  Cheap: husk fragments only (no
-        //       bytes), and Repli_merge dedups the whole thing at the far side — a re-offer costs the
-        //        wire one catalog fragment per friend per minute, and buys an unconditional guarantee.
-        let floor = (w.c.swarm_offer_floor_ms == null ? 60000 : +w.c.swarm_offer_floor_ms)
-        let stale = !route.c.offered_at || (Date.now() - route.c.offered_at) > floor
-        if (route.c.offered_mark !== mark || stale) {
-            route.c.offered_mark = mark
-            route.c.offered_at = Date.now()
-            await this.Ra_offer_stock(w, route, me, pub, stock)
+        // THE SEATS: cast to every address this friendship seats — the soul (the Captain), and a lent Cave (Swarm_pier_seats).
+        for (const pub of this.Swarm_pier_seats(p)) {
+            // never treat my OWN Pier as a friend: a self-offer echoes back and Repli_mirror_lib would mint a
+            //  spurious %Theirs,pub:<me> right beside my %Mine — the self-mirror the human saw on Righto.
+            if (pub === me) continue
+            let route = this.Swarm_station_pier(w, ident, pub)
+            if (!route) continue
+            if (!route.c.repli_src) this.Repli_register_caster(w, route, stock)
+            if (!route.c.repli_rx) this.Repli_register_rx(w, route)
+            // OFFER on change: stock grew, or the peer was reborn (offered_mark carries both).
+            //  Presence-gated — husking at silence is litter.  Repli_merge dedups the far side,
+            //   so a re-offer after rebirth is safe, just not free.  The unit is the MAG (the wire
+            //    cut, Mag_todo §4.1): the whole shuffle Mag crosses as ONE husk fragment, so the
+            //     friend's mirror wears the same paged shape — a collection arrives as its rooms.
+            if (!p.c.heard_at || ((Date.now() - p.c.heard_at) >= 40000 && !this.Swarm_socket_fresh(p, 20000))) continue
+            let n = this.Ra_recs(stock).length
+            // the tour count rides the mark because the count ALONE cannot see a rotation: a turn of the
+            //  wheel that adds one and drops one leaves `n` identical, so a pure-count mark would call a
+            //   completely different catalog "unchanged" and sit on it until the 60s floor tripped.
+            let tour = String(rw.o({ Stoker: 1 })[0]?.sc?.toured || 0)
+            let mark = String(w.c.station_era || 0) + ':' + String(route.c.peer_era || 0) + ':' + n + ':' + tour
+            // ── THE RE-OFFER FLOOR (2026-08-04) — the last-resort backstop under the whole epoch machine ──
+            //  Everything above makes "A learns B was reborn" robust; this makes "A stops sending B new
+            //   music" structurally impossible even if all of it fails.  The mark is CHANGE-triggered, so a
+            //    mark that is wrong-but-stable (a missed era, a mirror that lost the husks, a stock count
+            //     that happens to match) is a silent permanent hole with no self-heal at all.  A floor turns
+            //      any such hole into a delay of at most one interval.  Cheap: husk fragments only (no
+            //       bytes), and Repli_merge dedups the whole thing at the far side — a re-offer costs the
+            //        wire one catalog fragment per friend per minute, and buys an unconditional guarantee.
+            let floor = (w.c.swarm_offer_floor_ms == null ? 60000 : +w.c.swarm_offer_floor_ms)
+            let stale = !route.c.offered_at || (Date.now() - route.c.offered_at) > floor
+            if (route.c.offered_mark !== mark || stale) {
+                route.c.offered_mark = mark
+                route.c.offered_at = Date.now()
+                await this.Ra_offer_stock(w, route, me, pub, stock)
+            }
         }
     }
     for (const peering of w.o({ Peering: 1 })) await peering.do()

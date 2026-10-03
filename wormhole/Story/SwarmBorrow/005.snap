@@ -12,12 +12,12 @@ Snap:H
               Pier,pub:bcdc46c43b34e4d7
                 Peering,pub:bcdc46c43b34e4d73f18b55b3f17451a77c2c1249c1859b4323022edaf616a64
                 Grant:Music,by:bcdc46c43b34e4d73f18b55b3f17451a77c2c1249c1859b4323022edaf616a64,for:8af86bcb122bdcd1eea4b3ca141f94e55337edba1320e2f83b09891e5d313ea8,time:1751700010,sign:d42e1899fa67b2773209f80f2cc0a99a148660e69f6a356244138f1f2ef3e678d469a1846aa62cced73dbc4768c12ed4d8d6137e32fc9d6b07491cb1d8980103
+                Loan,to:99a818f9ecd5bc1f,at:1751702000,exp:1751705600
             Crew,soul:8af86bcb122bdcd1eea4b3ca141f94e55337edba1320e2f83b09891e5d313ea8
               mate:8af86bcb122bdcd1,role:Captain,pub:8af86bcb122bdcd1eea4b3ca141f94e55337edba1320e2f83b09891e5d313ea8
               Key,pub:8af86bcb122bdcd1eea4b3ca141f94e55337edba1320e2f83b09891e5d313ea8	{"mung":["secret"]}
             rebuff:borrow_not_presenter,say:60272043
             mail
-              frame:borrow,did
               frame:borrow,did
         Account,of:Captain
           Identity:bcdc46c43b34e4d7,prepub:bcdc46c43b34e4d7,friendly:Captain
@@ -30,8 +30,6 @@ Snap:H
               mate:bcdc46c43b34e4d7,role:Captain,pub:bcdc46c43b34e4d73f18b55b3f17451a77c2c1249c1859b4323022edaf616a64
               Key,pub:bcdc46c43b34e4d73f18b55b3f17451a77c2c1249c1859b4323022edaf616a64	{"mung":["secret"]}
             rebuff:borrow_not_my_grant,say:8af86bcb
-            mail
-              frame:seat_lost,did
         Account,of:Cave
           Identity:99a818f9ecd5bc1f,prepub:99a818f9ecd5bc1f,friendly:Cave
             Peering,name:99a818f9ecd5bc1f,friendly:Cave,online
@@ -42,7 +40,6 @@ Snap:H
             mail
               frame:borrow_give,did
               frame:borrow_give,did
-              frame:seat_lost,did
         Account,of:Mallory
           Identity:60272043020b1715,prepub:60272043020b1715,friendly:Mallory
             Peering,name:60272043020b1715,friendly:Mallory
@@ -53,7 +50,7 @@ Snap:H
         reached:step_3
         testing
           loaned,winner_fixed,mint_gated,sign_gated,exp_gated
-          slotted,one_seat,newest_wins,lapse_returns,own_grant_only
-          lent,online_caves_lent,menu_needs_captain,switch_seats,displaced_told
+          slotted,two_seats,newest_wins,lapse_returns,own_grant_only
+          lent,online_caves_lent,menu_needs_captain,switch_seats,captain_kept
         reached:step_4
         reached:step_5

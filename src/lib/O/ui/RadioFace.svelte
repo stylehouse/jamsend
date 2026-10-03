@@ -65,6 +65,19 @@
     //    mirror, which is the only thing that can move a row.
     let sources = $derived.by(() => { void H?.version; try { return (H as any)?.Radio_sources?.(n?.c?.w, n) ?? [] } catch { return [] } })
     let aimed_by = $derived.by(() => { void H?.version; return (n?.sc?.aim ? String(n?.sc?.aim_by || '') : '') })
+    // A BROKEN PUCK SAYS SO (owner 2026-10-04: "it's failing to get the right stuff... a broken bit of the source puck?").
+    //  The chip read "⦿ Grav" while this body held nothing of Grav's (its seat had been lent away) and the dial played
+    //   another holder.  The aim is pinned now (Radio.g — a chosen source never hands the radio on), so a dry pin is a
+    //    real state to SHOW: the aimed holder is missing from the sources, has nothing playable, or needs the Captain.
+    let aim_dry = $derived.by(() => {
+        if (!n?.sc?.aim) return ''
+        const a = String(n.sc.aim)
+        const row = sources.find((x: any) => !x.own && x.pub && (x.pub.startsWith(a) || a.startsWith(x.pub)))
+        if (!row) return 'nothing from them on this device — not a source here (their seat may be lent to another of your crew)'
+        if (row.needs_captain) return 'your Captain needs to come online to reach them'
+        if (!row.tracks && !row.borrow) return 'nothing playable from them yet'
+        return ''
+    })
     let menu = $state(false)
     let srcwrap: HTMLDivElement | undefined = $state()
     // A CHOSEN SOURCE SHOULD BE HEARD (owner 2026-09-22: "when I change the source it should hit the
@@ -327,11 +340,11 @@
                 {#if !pool_ok}<button class="rf-src-sub rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')} title="open SoundPool">setup</button>
                 {:else if !pool_n}<div class="rf-src-sub">{pool_c.cards ? pool_c.cards + ' pooled · none playable yet' : 'empty'}</div>{/if}
             {:else if face.by}
-                <button class="rf-src rf-src-remote" class:rf-src-aimed={aimed_by} onclick={chip_press}
-                    title={chooser
+                <button class="rf-src rf-src-remote" class:rf-src-aimed={aimed_by} class:rf-src-dry={aim_dry} onclick={chip_press}
+                    title={aim_dry ? '⚠ pinned to ' + aimed_by + ' — ' + aim_dry + ' — press to choose someone else' : chooser
                         ? (aimed_by ? 'pinned to ' + aimed_by + ' — press to choose someone else' : 'the source — press to choose who you are listening to')
                         : 'the source — press to flip friends | SoundPool'}
-                    >{aimed_by ? '⦿ ' : 'from '}{aimed_by || face.byName || 'a friend'}{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
+                    >{aim_dry ? '⚠ ' : aimed_by ? '⦿ ' : 'from '}{aimed_by || face.byName || 'a friend'}{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
             {:else if face.solo}
                 <button class="rf-src rf-src-local" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'the source — press to flip friends | SoundPool'}>♪ LOCAL · {soloWhy(face)}{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
             {:else}
@@ -465,6 +478,7 @@
        distinguishable at a glance from across the room, which is the whole point of a badge. */
     .rf-menu-label { font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; padding: 4px 8px 1px; }
     .rf-src-aimed { background: rgba(127, 200, 232, 0.34); color: #d8f0ff; border-color: rgba(127, 200, 232, 0.75); }
+    .rf-src-dry { background: rgba(224, 150, 94, 0.18); color: #f0c8a8; border-style: dashed; border-color: rgba(224, 150, 94, 0.7); }
     .rf-src-caret { opacity: .7; font-size: .9em; }
     /* the upward chooser.  `position:absolute; bottom:100%` is the "but upwards" — anchored to the chip so
        it tracks wherever the glass puts the face, and pointer-events re-armed because the .rf overlay is

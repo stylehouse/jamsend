@@ -1,3 +1,10 @@
+> **HISTORICAL (retired 2026-10-04, the owner: *"I suppose drop it yeah"*).** The Vyto working log, July–September
+>  2026 (its framing disowned by `Meaningfold_todo.md` §4).  What survives, and where:
+>   · the STATE of the visual work → `Glassbeast_todo.md` `## 0 START HERE`;
+>   · the owner's own words from this file (193 quotes, dated) → `Glassbeast_voice.md`;
+>   · the autopsy (F1–F3) and the LAWS A–E → quoted in `Glassbeast_todo.md` §0.5 / §0′;
+>   · the rulings → `Meaningfold_todo.md`.  Line numbers cited as `(L1234)` in the voice file are into THIS file.
+
 # Vyto — the working doc
 
 The new glass.  Spec: `Vyto_spec.md` (unpreened — three rounds 2026-07-19).  Machine-level

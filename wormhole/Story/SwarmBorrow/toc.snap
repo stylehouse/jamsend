@@ -4,24 +4,28 @@ story:SwarmBorrow
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.08
-      sample=0.051,at=1790546669
-      sample=0.036,at=1790546677
-      sample=0.058,at=1790546681
-      sample=0.069,at=1790546795
+    TimeTotal:beliefs,avg=0.12
       sample=0.103,at=1790546799
       sample=0.113,at=1790655561
       sample=0.112,at=1790728123
       sample=0.1,at=1790746877
-    TimeTotal:step,avg=0.016
-      sample=0.01,at=1790546669
-      sample=0.007,at=1790546677
-      sample=0.012,at=1790546681
-      sample=0.014,at=1790546795
+      sample=0.25,at=1791069789
+      sample=0.097,at=1791069830
+      sample=0.137,at=1791069849
+      sample=0.105,at=1791069864
+      sample=0.092,at=1791069875
+      sample=0.093,at=1791070035
+    TimeTotal:step,avg=0.024
       sample=0.021,at=1790546799
       sample=0.023,at=1790655561
       sample=0.022,at=1790728123
       sample=0.02,at=1790746877
+      sample=0.05,at=1791069789
+      sample=0.019,at=1791069830
+      sample=0.027,at=1791069849
+      sample=0.021,at=1791069864
+      sample=0.018,at=1791069875
+      sample=0.019,at=1791070035
   step,dige:83d178fe182f5ae4
   step=2,dige:dec91a81098c575d
   step=3,dige:e7a8d1a20a9fb2fc
@@ -29,13 +33,13 @@ story:SwarmBorrow
     Assertion:only-the-grant-s,sentence:only the grant's own bearer may lend it — a body that does not hold the grant cannot mint a loan off it
     Assertion:a-forged-loan-around,sentence:a forged loan around a real grant is refused — the outer signature must be the grant's own bearer and never a borrower or a stranger
     Assertion:a-borrowed-grant-expires,sentence:a borrowed grant expires on its own — checked past its TTL the loan is refused with no revocation needed
-  step=4,dige:4433a25cda646b16
-    Assertion:one-friendship-serves-one,sentence:one friendship serves one seat — lent to a Cave the soul address is refused until the loan ends
+  step=4,dige:e34605ec0e2c9efd
+    Assertion:a-friendship-seats-its,sentence:a friendship seats its Captain and one Cave at once — lending to a Cave never logs the Captain out
     Assertion:a-newer-presentation-takes,sentence:a newer presentation takes the seat — the previous borrower is logged out and only the borrower itself can present its loan
-    Assertion:a-lapsed-loan-hands,sentence:a lapsed loan hands the seat back to the Captain with nothing sent — and lending to itself ends a loan early
+    Assertion:a-lapsed-loan-frees,sentence:a lapsed loan frees the Cave seat with nothing sent — and lending to itself ends a loan early
     Assertion:a-friend-only-honours,sentence:a friend only honours a loan of a grant it issued itself — a loan of anyone else is refused
-  step=5,dige:a3f6473acbc64e43
-    Assertion:whoever-loses-the-seat,sentence:whoever loses the seat is told it was logged out and stops pulling from that friend — switching back takes the seat home
+  step=5,dige:646c87c699c09220
+    Assertion:the-captain-is-never,sentence:the Captain is never logged out by its Cave — switching to that friend itself takes nothing back and both stay seated
     Assertion:while-the-captain-is,sentence:while the Captain is online every online Cave holds its own loan per friend — renewed before it lapses and not re-sent while fresh
     Assertion:a-cave-lists-its,sentence:a Cave lists its Captain's friends — live while its loan stands and needing the Captain once it lapses
     Assertion:switching-to-a-friend,sentence:switching to a friend presents the Cave's own loan and the friend seats it — a lapsed loan sends nothing and says the Captain must come online

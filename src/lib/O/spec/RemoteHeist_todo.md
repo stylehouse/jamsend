@@ -16,6 +16,30 @@ Read with: `Heist_todo.md` (what a Heist is, the `%Heist` keep, the cost line), 
 
 ## 0. What to get on with next
 
+### ✅ 2026-10-04 — TWO SEATS + A PINNED AIM (live walk: Lump/Inko/Grav)
+
+Owner's walk: Lump aimed at Grav kept playing Inko, and heard Inko's own tracks "from Grav". Two fixes, both
+ compiled; **SwarmBorrow 5/5 and MusuRadioAim 3/3 on e747, caveat 0**. Not walked live yet.
+- **§4.1 BUILT: a friendship seats its Captain AND one Cave.** `Swarm_pier_seats(pier)` = the soul's own address always +
+   the unexpired loan's Cave. Used by `Swarm_slot_granted`, `Swarm_offer_now`, `Swarm_share_beat` (which now casts to
+    every seat). `Swarm_pier_slot` still exists and means only "where the loan points". `Swarm_borrow_heard` tracks the
+     CAVE seat: a newer Cave still logs the previous Cave out (`seat_lost`); the Captain is never told and never loses its
+      seat. `Swarm_borrow_use` on the Captain no longer lends to itself to "take back" — it just returns `'own'`.
+       SwarmBorrow's oaths were RE-SWORN (step 4 `a-friendship-seats-its`, `a-lapsed-loan-frees`; step 5
+        `the-captain-is-never`), not just re-recorded.
+- **A chosen aim is PINNED** (Radio.g). `Radio_aim_set` sets `radio.c.pinned` (.c, so no snap moves; `Swarm_radio_rehydrate`
+   re-pins a stashed aim). Pinned: `Radio_aim_at` won't roam to another holder, `Radio_lineup_fill` keeps only the aimed pool
+    even when dry, `Radio_dial_pool` returns nothing rather than another holder's track. RadioFace shows a dry pin as a dashed
+     amber `⚠ <name>` chip, with the reason in its title (not a source here / needs the Captain / nothing playable yet).
+- ✗ **NOT the cause: a `pool/` folder on disk.** A browser's SoundPool is OPFS, mounted at `pool/` by MountNav
+   (Housing `Wormhole_mount_pool`). The mount root lists only the FSA, so no music walk can reach it. Only the daemon
+    keeps a real `pool/` dir, and it walks that as an explicit base on purpose. A walk-skip was built on the wrong
+     premise and reverted the same day. "Inko's tracks from Grav" is most likely the aim drift above: the chip said Grav
+      while the dial played another holder.
+- **Sounditron is red on a peerless runner** (5 peer-dependent gaps, `ok:0` every step) — environmental, same as before.
+**Owner to walk:** Lump aimed at Grav → only Grav's tracks, or the ⚠ chip if Grav has nothing for this body; Captain + Cave
+ both pulling from one friend at once.
+
 ### ⇄ HAND-BACK 2026-10-03 (the 🧲 sidetrack, forked off the main session — read this first)
 
 **Where it stands:** R1 (Captain ▶/✕ on a Cave's Heists from the Haul cell), the 🧲 (where hearts are hauled) and
@@ -31,8 +55,7 @@ Read with: `Heist_todo.md` (what a Heist is, the `%Heist` keep, the cost line), 
      Sounditron: a keep marked `.c.carried` (Heard_haul_beat, card has `pressed_on`) is neither a setup nor the
       insistent stager; a pin (clicking its Haul row) still opens it.
 - **A shared runner:** another session uses da06; this work ran on **e747** (`--runner=e747cbed6a9ca919`).
-- **Owner said item 3 (1 Captain + 1 Cave seat at a friend) may already be done** — "I've seen it reject"; verify
-   against §4.1 before building anything.
+- ~~Owner said item 3 may already be done~~ — it wasn't; BUILT 2026-10-04 (entry above).
 **Next:** owner's live walk (R1 + 🧲, steps in the 🧲 entry below) → then G2 → R2 (R2 = ⇊/♥ on the Captain becomes a
  `create` call to the 🧲 body; the 🧲 already decides WHERE, R2 makes the Captain's ⇊ go there).
 
@@ -350,7 +373,7 @@ What it deliberately does NOT try to be: a general RPC for arbitrary ghost metho
       loan), and **don't** restrict the Cave's loan to heist traffic by protocol — not worth the complexity. On
        an access rejection, show a UI message **under the source button in Cell:Radio** (the `radio.sc.note`
         seam `Radio_aim_set` already uses for "your Captain needs to come online"). Touches SwarmBorrow's oaths
-         (the "one seat" sentences) — re-swear, don't just re-record.
+         (the "one seat" sentences) — re-swear, don't just re-record. **BUILT 2026-10-04** (`Swarm_pier_seats`, §0).
 2. **Which Cave — the online one; a picker only when it matters.** Default to the one online. When there are
     **two or more Caves** and it's the first remote act this session, ask once: a **targeted-Cave control in
      Door** (the family list gains a "heists go here" mark). Fewer than two Caves: never shown.

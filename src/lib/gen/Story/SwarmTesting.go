@@ -15,7 +15,7 @@ import { sas_transcript, sas_row, sas_agree } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_SwarmTesting(): string { return 'dc82cd02bad9f728~g1' },
+    Ghostmeta_Ghost_Story_SwarmTesting(): string { return '143ff067c7a718ec~g1' },
 
 // SwarmTesting.g — né Swarmation.g (the `<Name>Testing.g` convention, owner ruling 2026-09-09;
 //  src/lib/L/testing.ts is the one predicate).  Book NAMES did not move with the file.
@@ -5602,12 +5602,13 @@ async SwarmBorrow_slot(w) {
         return rib
     }
     let row = { slotted: 1 }
-    // #1 one seat: before any loan the soul holds it; lent to the Cave, the soul is refused.
+    // #1 two seats (owner 2026-10-04): before any loan only the soul is seated; lent to the Cave, BOTH are — the
+    //  Captain is never refused for its Cave.
     w.sc.now = 1751700100
     let before = ok(CAP) && !ok(CAVE)
     let caveRib = await lend(cave.pub, 900)
-    let lent = ok(CAVE, 1751700100) && !ok(CAP, 1751700100)
-    if (before && lent) row.one_seat = 1
+    let lent = ok(CAVE, 1751700100) && ok(CAP, 1751700100)
+    if (before && lent) row.two_seats = 1
     // #2 newest PRESENTATION wins: Mallory presenting her loan logs the Cave out; Mallory presenting the
     //  Cave's loan is refused (only the borrower can present it); the Cave re-presenting its own retakes the seat.
     w.sc.now = 1751700200
@@ -5686,23 +5687,21 @@ async SwarmBorrow_lendbeat(w) {
     // #3 switching presents the Cave's own loan and the friend seats it; a lapsed loan sends nothing.
     let got = this.Swarm_borrow_use(w, V, FR)
     await this.Swarm_pump(w, F)
-    let seated = got === 'seated' && this.Swarm_slot_granted(F, String(V.sc.prepub), now) && !this.Swarm_slot_granted(F, String(cap.prepub), now)
+    let seated = got === 'seated' && this.Swarm_slot_granted(F, String(V.sc.prepub), now) && this.Swarm_slot_granted(F, String(cap.prepub), now)
     w.sc.now = now + 7300
     let got2 = this.Swarm_borrow_use(w, V, FR)
     w.sc.now = now
     if (seated && got2 === 'needs_captain') row.switch_seats = 1
-    // #4 the one it displaced is TOLD: the Captain (the seat before) gets seat_lost, stops pulling from them,
-    //  and switching back clears it and takes the seat home.
+    // #4 the Captain is never displaced by its Cave (two seats, 2026-10-04): no seat_lost reaches it, and its own
+    //  switch to that friend takes nothing back — both stay seated and the Cave is not told anything.
     await this.Swarm_pump(w, C)
-    let told = !!(C.c.seat_lost && C.c.seat_lost[FR]) && !this.Swarm_share_present_of(C, FR)
+    let kept = !(C.c.seat_lost && C.c.seat_lost[FR])
     let back = this.Swarm_borrow_use(w, C, FR)
-    let cleared = !(C.c.seat_lost && C.c.seat_lost[FR])
-    if (C.c.borrow_p) { await C.c.borrow_p }
     await this.Swarm_pump(w, F)
-    let home = this.Swarm_slot_granted(F, String(cap.prepub), now) && !this.Swarm_slot_granted(F, String(V.sc.prepub), now)
+    let both = this.Swarm_slot_granted(F, String(cap.prepub), now) && this.Swarm_slot_granted(F, String(V.sc.prepub), now)
     await this.Swarm_pump(w, V)
-    let caveTold = !!(V.c.seat_lost && V.c.seat_lost[FR])
-    if (told && back === 'own' && cleared && home && caveTold) row.displaced_told = 1
+    let caveKept = !(V.c.seat_lost && V.c.seat_lost[FR])
+    if (kept && back === 'own' && both && caveKept) row.captain_kept = 1
     this.SwarmBorrow_note(w, row)
 
 },
@@ -5722,12 +5721,12 @@ SwarmBorrow_witness(w) {
     if (+f.sc.exp_gated === 1)
         this.story_swear(w, 'a borrowed grant expires on its own — checked past its TTL the loan is refused with no revocation needed')
     let sl = T.o({ slotted: 1 })[0]
-    if (sl && +sl.sc.one_seat === 1)
-        this.story_swear(w, 'one friendship serves one seat — lent to a Cave the soul address is refused until the loan ends')
+    if (sl && +sl.sc.two_seats === 1)
+        this.story_swear(w, 'a friendship seats its Captain and one Cave at once — lending to a Cave never logs the Captain out')
     if (sl && +sl.sc.newest_wins === 1)
         this.story_swear(w, 'a newer presentation takes the seat — the previous borrower is logged out and only the borrower itself can present its loan')
     if (sl && +sl.sc.lapse_returns === 1)
-        this.story_swear(w, 'a lapsed loan hands the seat back to the Captain with nothing sent — and lending to itself ends a loan early')
+        this.story_swear(w, 'a lapsed loan frees the Cave seat with nothing sent — and lending to itself ends a loan early')
     if (sl && +sl.sc.own_grant_only === 1)
         this.story_swear(w, 'a friend only honours a loan of a grant it issued itself — a loan of anyone else is refused')
     let lb = T.o({ lent: 1 })[0]
@@ -5735,8 +5734,8 @@ SwarmBorrow_witness(w) {
         this.story_swear(w, 'while the Captain is online every online Cave holds its own loan per friend — renewed before it lapses and not re-sent while fresh')
     if (lb && +lb.sc.menu_needs_captain === 1)
         this.story_swear(w, "a Cave lists its Captain's friends — live while its loan stands and needing the Captain once it lapses")
-    if (lb && +lb.sc.displaced_told === 1)
-        this.story_swear(w, 'whoever loses the seat is told it was logged out and stops pulling from that friend — switching back takes the seat home')
+    if (lb && +lb.sc.captain_kept === 1)
+        this.story_swear(w, 'the Captain is never logged out by its Cave — switching to that friend itself takes nothing back and both stay seated')
     if (lb && +lb.sc.switch_seats === 1)
         this.story_swear(w, "switching to a friend presents the Cave's own loan and the friend seats it — a lapsed loan sends nothing and says the Captain must come online")
 
