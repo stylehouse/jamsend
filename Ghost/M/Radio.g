@@ -469,6 +469,13 @@ async Radio_pump_tick(radio, era):
             return
         }
         radio.c.dial_dry = 0
+        // WHERE THIS TRACK CAME FROM, one line per open (the owner 2026-10-03, debugging Next + the source chip):
+        //  the holder as @name+prepub4, the pool/tuned mark, and the aim it was dialled under.
+        try {
+            let tag = (this.Radio_rec_pooled && this.Radio_rec_pooled(radio, rec) ? ' [pool]' : '') + (pick ? ' [tuned]' : '')
+            let aim = radio.sc.own ? ' · source: own' : (radio.sc.source === 'pool' ? ' · source: pool' : (radio.sc.aim ? ' · aimed ' + this.Radio_who(w, radio.sc.aim) : ''))
+            console.log('📻▶ ' + (rec.sc.artist ? String(rec.sc.artist) + ' — ' : '') + String(rec.sc.title || rec.sc.id || '?') + '  ← ' + this.Radio_who(w, this.Ra_pub_of(rec)) + tag + aim)
+        } catch (er) {}
         this.Radio_open(radio, rec)
         // LAY THE PRIMED PCM DOWN IMMEDIATELY (Radio_prime).  Before the map, before the feed loop,
         //  before the 30ms harvest wait — this is the whole point of priming: the first sound is
@@ -1205,6 +1212,22 @@ Radio_pool_wanted(w, who):
 // Radio_friendly — a source pub → the friend's chosen name (%Pier.friendly under my Peering), the SAME
 //  lookup Riffle_homes and the lineup error already use; falls back to a short pub when the Pier isn't
 //   sealed yet.  The human 2026-07-28 wanted "to know which Pier we're streaming from" — this names it.
+// Radio_who — a holder as ONE token for a log line: @<name>+<prepub4>, e.g. @Lump+940f (the owner 2026-10-03).
+//  Me reads as my own friendly name; a pub nobody has named reads @?+<prepub4>.
+Radio_who(w, pub):
+    let p = String(pub || '')
+    if (!p) { return '@?' }
+    let me = this.Radio_pub ? String(this.Radio_pub(w) || '') : ''
+    let name = ''
+    if (me && (p.startsWith(me) || me.startsWith(p))) {
+        let self = this.Swarm_live_self ? this.Swarm_live_self() : null
+        name = self && self.sc.friendly ? String(self.sc.friendly) : 'me'
+    } else {
+        let f = this.Radio_friendly ? this.Radio_friendly(w, p) : ''
+        name = f && f !== p.slice(0, 8) ? f : ''
+    }
+    return '@' + (name || '?') + '+' + p.slice(0, 4)
+
 Radio_friendly(w, pub):
     let M = this.top_House()
     let ident = M.Swarm_live_self ? M.Swarm_live_self() : null

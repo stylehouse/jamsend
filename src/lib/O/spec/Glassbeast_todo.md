@@ -3,16 +3,137 @@
 > *"we make our case for a bunch of fancy UI biologies with it and see how it goes."*
 > — the owner, `Vyto_todo §0.1`, 2026-08-08
 
-A **working `_todo`**, written in an unusual register on purpose. `Meaningfold_todo.md` is the front
- door and holds the rulings; this holds the **essence and the confusions**. Where the two disagree,
-  Meaningfold wins on rulings and this wins on doubt. Nothing here is promoted, blessed, or settled
-   except where it says so.
+A **working `_todo`**, written in an unusual register on purpose. **This is the visual front door**
+ (consolidated 2026-10-03): `## 0 START HERE` below is the STATE; `## 0′` is the dated log it was
+  distilled from; §I–§IX are the bestiary (the essence and the confusions).  `Meaningfold_todo.md` keeps
+   the RULINGS — where the two disagree, Meaningfold wins on rulings and this wins on doubt.  Nothing here
+    is promoted, blessed, or settled except where it says so.
 
 Read it as a field guide. The animal is real, most of its organs exist, and it is not well.
 
 ---
 
-## 0. HANDOVER — 2026-09-10, written at 92% context. Read this, then §I.
+## 0. START HERE — the visual work, consolidated (2026-10-03)
+One page of state.  Everything under it is trail: read `## 0′` for how a thing came to be, not what it is.
+
+### 0.1 The destination, and the law that gets us there
+**A glass that folds at the meaning and looks like a made thing — and the look is a deck of stops you
+ compose, record and hand on, never a fourth engine.**  (unchanged since 2026-09-10)
+**The law (found 2026-10-03, `## 0′` "THE WALL, AND THE SHAPE OF ITS CRACK"): CAUSES ARE MATTER, EFFECTS ARE
+ RECOMPUTED.**  Where a hand put a cell, which level a dive is at, which stops are on — decisions, on the model
+  clock — live as sc on the PRODUCER and snap, so a Book proves them.  The walls, the label fits, the wobble —
+   effects, on the render clock — are recomputed by PURE functions, proven by vitest specs in node.  The owner's
+    eye is spent on what only an eye can judge: the lettering and the feel of motion.  Every visual organ that
+     starved (F1, `Vyto_todo` autopsy) starved because it lived on the effect side with no cause to snap.
+  *"some of the display should stay stable and some of it should change"* — the owner, agreeing.
+
+### 0.2 The doc map — which doc for what
+| doc | for | status |
+|---|---|---|
+| **`Glassbeast_todo.md`** (this) | the STATE (§0), the log (§0′), the bestiary (§I–IX) | **front door** |
+| `Meaningfold_todo.md` | the RULINGS — three organs, the absorption, the Vytocon, the fibre bundle (§0.2) | live — read §0.2 for *why* |
+| `Vyto_client.md` | an app hosting its UI on the glass (commission, faces, press) | live (2026-09-04) |
+| `Vyto_spec.md` | the July vision — shapes, pelt, board, coined words (§14) | reference, unpreened, parts disowned (Meaningfold §4) |
+| `Vyto_todo.md` | July–Sept working log, 267KB | keep its **autopsy** (F1–F3, LAWS A–E) + **THE PIN**; the rest is trail — **retire candidate** |
+| `Vyto_sizing_todo.md` | the type-scale algebra (φ, AREA_BASE, the floor) | reference |
+| `Cstructures_todo.md` · `UI_seams_todo.md` | the readable-C** language · wire capabilities the glass never showed | reference |
+| `vyto_workingouts/` | appendices: calm · pile · pelt · shapes · spool · commission · client · processes | reference |
+| `history/Voro_*` · `history/Vyto_perf_todo.md` | Voro's design (the stained glass) · the absorbed perf handoff | history |
+
+### 0.3 What stands — the ledger (claim · code · proof)
+| claim | code | proof |
+|---|---|---|
+| the stir: Scan → Fold → Gang → Membrane → Relate → Express → Solve | `Ghost/V/Vyto.g` | the fleet |
+| a crowded scope folds at the meaning (kindfold ladder · nested · `ribs:N` · `foldby` hint) | `Vyto_fold_scope`, `vyto_foam.ts` | VytoFold · VytoFoldLadder.spec · VytoSpine |
+| crests hold still (the sweep leaves them to the fold) | `Vyto_scan_sweep` | VytoSpine · VytoGuise (re-recorded 2026-10-03) |
+| plain objects lay out — a Guise reads as a snap line | `Vyto_guise` | VytoGuise |
+| a family is a scope, its bump a self-seat | the Membrane station | VytoMembrane |
+| **the hand: `%Put` pin or attractor, producer-owned, survives a fresh glass** | `Vyto_hand_*` + `pile_rest`/`hand_pull` | **VytoHand · VytoPile.spec** |
+| a cell grows to hold its words (folio measured at natural size) | `measure_world` (Vytui) | VytoNeed |
+| render regimes: foam (default) · seat · focus · grid · spine/rib · folio text | `Vytui.svelte`, `vyto_seat/focus/pane/geometry.ts` | VytoSeat · VytoFocus · VytoPane · VytoGauge specs · VytoSpine |
+| the code cave: search → file → region → method chamber; head = rope; tunnels | VytoSpine producer (`VytoTesting.g`) | VytoSpine 9/9, 7 sworn |
+**Fleet, 2026-10-03, da06: all 20 Vyto Books `ok_pct 1`** (Orchestra caveat 6 = the `self,round` clock).
+ VytoPosed has no fixtures.  **Specs: `node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs
+  scripts/Vyto*.spec.ts` — 6 files, 94 tests.**  Five Books DRAW on `/BigShapeland` (Orchestra, Membrane,
+   Spine, Hand, Guise); the rest are model benches (`draws: null`).
+**Deck stops** (BigShapeland, `?deck=`): wallcarve wave junction keep spine **hand** grid crosslink pinch seal
+ copperless nohall simmer still seat focus plump · model: kindfold membrane kinweave saylaw room fold.
+**Voro** (VoroMitosis/Scape/Radio/Test; VoroClinic is `unusual:` — a diagnostic, never swept) is obsoleted by
+ Vyto but is **the stained glass the owner calls beautiful**.  It renders on a runner's Cytui only (hollow in
+  BigShapeland); film it with `runner_shot --svg` and move its seeds with `runner_shot --drag`.
+
+### 0.4 Instruments, and the trap each one hides
+- **Run a Book**: `runner_ask run <B> --watch --runner=da060c944e310adb`, then `release`.  ⚠ After ANY compile,
+   grep the `.go` for the new symbol (`ghost-compile` once said "0 compiled") and **reload the runner** — a stale
+    tab ran GREEN under a deliberate sabotage.  ⚠ Deleting a fixture dir under a live tab wedges it at `begun`.
+- **See the glass**: `runner_shot --svg` (Voro and Vyto) · `--why` (the render film strip) · `--drag-list` /
+   `--drag=<id>,dx,dy` (a remote hand on Cytoscape; runner tabs only).  Rasterise with the eye's chromium.
+- **The eye**: `runner_eye.mjs <url> <out> <ticks> --eval=… --click=…` — act on tick A, read on tick B
+   (Svelte flushes async); `window.__H` is BigShapeland's House.  A custom page script must click the boot gate
+    (`.bg-listen`) and stub `showDirectoryPicker`, or the Book never starts (scratch `hand_drag.mjs` shows how).
+- **Accept**: `story_accept.mjs <B> --allow=<regex>` — ⚠ never ADDS a missing step dige; new-mode fixture files
+   land seconds after `--watch` says done.  A Book's dige is `sha256(NNN.snap)[:16]`.
+- **Fleet sweep**: a sonnet subagent pinned to one runner, told the expected outcomes, asked to flag deviations.
+- **A tab you can't reach**: identity is shared across tabs of one browser, so `--player=<pub>` answers with
+   whichever tab holds that relay seat (2026-10-03: the music page answered for BigShapeland).
+- **Pictures**: `wormhole/shots/seq_NNNN_*.png` (gitignored) + `make_movie.sh`; the tractograms of the code's
+   one-many (shots 362–373) were made by scratch generators — promote to `scripts/tractogram.mjs` if wanted.
+
+### 0.5 The laws, as they stand
+1. **Causes are matter; effects are recomputed** (0.1).  A new display behaviour lands its CAUSE as sc on the
+    producer and its LAW as a pure function with a spec — or it lands on the eye alone, and decays (F1).
+2. **The producer owns its causes** — press, dive, put; Vyto only draws (the cave's law, VytoSpine).
+3. **Additive by presence**: when the rows ARE the gate (a `%Put`), no token is needed; a new regime is a
+    deck stop.  Everything else stays byte-identical — proven by a fleet sweep, not asserted.
+4. **Read every fixture you accept** (the owner, 2026-10-03: *"you CAN accept Book changes, just make sure you
+    look and understand them"*).  A fixture RECORDED DURING A FAILURE is the common case: VytoSpine and
+     VytoGuise both were (a `req:*_wait` with a `ttlilt` under it is the tell).
+5. **No commas in a sworn sentence** (the parser splits on them → `{"see":…}` in the fixture).
+6. **Say which**: an instrument that logs a world object, or a tally with no names, is unreadable (the
+    watchdog now names its three worst cells).
+7. **The owner's eye is the gate for taste** — photograph it into the shots; never claim a look is good.
+
+### 0.6 Open, in order
+1. **The look — Voro's stained glass into Vyto.**  The lettering molded to each cell (Voro's Stuffing) is the
+    thing the owner calls beautiful and Vyto lacks (`Vyto_todo` gap list, §12).  Effect-side: typography,
+     the eye's.  Put the two side by side first (Voro films are in the shots).
+2. **The hand's gaps**: nested cells · the spine/grid regimes (make `spineScroll` a cause — it is the cave's
+    one unproven organ, still a Svelte Map) · a lift gesture · `op:'drag'` for Vyto (so Vyto can be filmed
+     moving, as Voro was).
+3. **Story step nav does not drive the live glass** (§0′ 2026-09-11): Books run in ms and the glass draws
+    after, so no mid-Book state can be photographed in BigShapeland.
+4. **Owner-open since 2026-09-23** (§0′ "OPEN, RULED BY THE OWNER"): overrun atoms dropped silently
+    (`Pane.hid` counted, never drawn) · a scope's running head paints UNDER its children · the centred-ident
+     fallback prints the mainkey · the model benches' `draws` column unmeasured.
+5. **Leaks**: the `springs` map never forgets a world.
+6. **Tooling**: `story_accept` should add missing diges and wait for new-mode files.
+
+### 0.7 Owed to the owner
+- **Commit point**: the hand drag (Vytui, BigShapeland), the pile extraction (`vyto_geometry.ts`, `Vyto.g` +
+   `.go`) and `scripts/VytoPile.spec.ts`, the VytoOrchestra accept, this consolidation.
+- **Rulings**: retire `Vyto_todo.md` to history (keeping its autopsy + THE PIN quoted here)? · should the hand
+   be on by default? · record VytoPosed's fixtures?
+
+---
+
+## 0′. THE LOG — dated entries, newest first (trail: how each thing came to be; §0 above is the state)
+
+### HANDOVER — 2026-09-10, written at 92% context.
+
+### THE VYTO FLEET IS GREEN — 2026-10-03 (/loop; the owner: *"you CAN accept Book changes, just make sure you look and understand them"*)
+Every Vyto Book `ok_pct 1` on da06.  What was accepted, and why each diff was understood:
+- **VytoSpine** — re-recorded 9 beats (the crest flicker had been recorded INTO its step 4; see below).
+- **VytoGuise** — its step 3 had been RECORDED FAILING (`req:stand_wait` + a ttlilt — the flicker again);
+   the "malformed fixture line" was MY oath carrying a comma (`anywhere, only the hits`) → JSON-wrapped
+    `{"see":…}`; sentence now em-dashed.  Re-recorded: steps 1–2 byte-identical, 3–4 gain the success lines.
+- **VytoOrchestra** — the long-owed Accept (`Stray:*` gains `loose` + the rim `see:`, additive) via
+   story_accept with `--allow` for exactly those lines.  Its toc had NO dige on steps 2–8 (HEAD too) and
+    story_accept only REPLACES diges, so they were added by sha256.  Stands at caveat 6 = `self,round`
+     run-volatility (the "CAVEATS ARE A CLOCK" class, not drift).
+- **VytoMemo** — toc `dige:lie` on steps 1–3 (left from 150027d5, which fixed only step 4) → real sha256s;
+   caveat 3 → 0.  **VytoNeed** — the need-floor fix below; green on its ORIGINAL fixture.
+- ⚠ Two story_accept gaps worth fixing in the tool: it never ADDS a missing step dige; and new-mode fixture
+   files land seconds AFTER `--watch` reports done (read too early ⇒ "no such file").
 
 ### THE NEED FLOOR WAS SILENTLY OFF — FIXED 2026-10-03 (/loop, VytoNeed red since the folio)
 `measure_world` (Vytui) stamped `need_area` only off `text.ident` — and since the folio became the default
@@ -101,9 +222,21 @@ Every crest, at every level, flickered with period 2 forever: the fold stamps `c
 - **Book `VytoHand`** (6 beats, 4 sworn, recorded new-mode on da06, then **check ×5 green ok_pct 1 caveat 0**).
    **LAW D proven**: sabotaging `Vyto_hand_puts` reds it (ok_pct 0.5, 0 sworn) — after a RELOAD; the first
     sabotage run was GREEN because the tab still ran the old .go ([[reload-runner-after-recompile]] again).
-- ② half: `e_Vyto_put` exists; NOTHING calls it yet — Vytui's pointer and the runner's `op:'drag'`
-   (Cytoscape-only today) are unwired.  That is the next build, and the one the owner will FEEL.
-- **④ is a wall, and it is the owner's "weird how singular this code is"**: the causes snap and the cut
+- ② **the live hand, LANDED (/loop, 2026-10-03)** behind the `hand` stop (BigShapeland desk): drag a ROOT foam
+   cell (or its folio words) past 5px → `Vyto_hand_put` pinned under the pointer, its spring AND target jump to
+    the pointer (no lag — the 2026-08-10 complaint), neighbours re-cut each stir; let go → the put becomes an
+     ATTRACTOR; the ending click is swallowed; `preventDefault` stops text selection.  Proven by a real
+      Playwright drag (scratchpad/hand_drag.mjs — it needs the eye's boot-gate click + showDirectoryPicker stub):
+       mid-drag `Put:stone:flint,x=483,y=670,pin`, after `x=352,y=780` (no pin).  NOT done: nested cells, the
+        spine/grid regimes (they assign seats), a lift gesture, the runner's `op:'drag'` (still Cytoscape-only).
+         ⚠ a hand used DURING a Book run adds a Put the Book does not expect (VytoHand's put_ready counts 2).
+- **④ LANDED (/loop, 2026-10-03): the pile is OUT of `Vyto_solve`** — `vyto_geometry.ts` `pile_rest` + `hand_pull`
+   (same arithmetic, same order; the solve calls one line).  `node scripts/vyto_pile_test.mjs` proves the hand's law
+    by arithmetic, no browser: no-puts byte-identical to the hand-iterated pile_step loop · deterministic · a pin
+     Δ0 · an attractor nearer than free AND within its radius · an attractor put onto a neighbour pressed off ·
+      hand_pull exact.  LAW D: sabotaging hand_pull reds 3 of 7.  Fleet after the move: all 20 Vyto Books ok_pct 1 on da06 (Orchestra
+      caveat 6 = the known clock, all others 0) — the extraction moved nothing.
+- *(was:)* **④ is a wall, and it is the owner's "weird how singular this code is"**: the causes snap and the cut
    (`foam_cells`) is pure, but the solve BETWEEN them — express sizing, bag pressure, the pile + attractor,
     fit/room — lives inside `Vyto_solve` in the .g, unreachable from node.  So "pixels by purity" needs the
      pile extracted to `vyto_geometry.ts` (`solve_pile(seeds, radii, frame, nbrs, pinned, puts)`), fleet

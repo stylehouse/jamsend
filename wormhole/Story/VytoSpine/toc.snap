@@ -4,16 +4,24 @@ story:VytoSpine
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.578
+    TimeTotal:beliefs,avg=0.654
       sample=0.541,at=1790982635
       sample=0.481,at=1790982661
       sample=0.463,at=1790982675
       sample=0.828,at=1790982966
-    TimeTotal:step,avg=0.064
+      sample=0.655,at=1790983666
+      sample=0.733,at=1790984013
+      sample=1.184,at=1790984136
+      sample=0.344,at=1790985199
+    TimeTotal:step,avg=0.073
       sample=0.06,at=1790982635
       sample=0.053,at=1790982661
       sample=0.051,at=1790982675
       sample=0.092,at=1790982966
+      sample=0.073,at=1790983666
+      sample=0.081,at=1790984013
+      sample=0.132,at=1790984136
+      sample=0.038,at=1790985199
   step,dige:1fcc5bcdd71c806a
   step=2,desc:a code search lands — the Door hits across twelve files fetched from the sample in the Searchbar hit shape,dige:254f9557d6288f57
   step=3,desc:stand the search as a spine — every file a vertebra behind the head and every crowded file folded to a few ribs by kind,dige:a870aca422c1b562

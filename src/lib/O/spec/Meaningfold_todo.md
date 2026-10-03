@@ -1,6 +1,11 @@
 # Meaningfold_todo.md — the glass folds at the meaning, and says everything it holds
 
-A **working `_todo`** (not self-promoted). The front door for the **visual** branch of the
+> **2026-10-03: the visual STATE now lives in `Glassbeast_todo.md` `## 0 START HERE`** (one page — the ledger,
+>  instruments, laws, open work).  This doc keeps the **RULINGS** — §0.2's three organs, the absorption, the
+>   Vytocon, the fibre bundle — and they still win where the two disagree.  The absorption was re-aimed there:
+>    absorb the CAUSES (a `%Put`, a dive), recompute the effects — §0.2b's settle never fires on a runner.
+
+A **working `_todo`** (not self-promoted). The rulings for the **visual** branch of the
  three-way split the owner drew on 2026-09-08: **code|metaphysics · infra|social · visual**.
   Point a fresh session HERE, not at `Vyto_todo.md` (3,249 lines, and its framing is disowned —
    see §4) and not at the raw agent report (`ulative/visualisation-2026-09-08/findings.md`,

@@ -4,7 +4,7 @@
     import { onMount } from "svelte"
 
 import Vytui from "$lib/O/Vytui.svelte"
-import { power_cells, poly_centroid, poly_area, pile_step, foam_cells } from "$lib/O/vyto_geometry"
+import { power_cells, poly_centroid, poly_area, pile_step, pile_rest, hand_pull, foam_cells } from "$lib/O/vyto_geometry"
 import { sig_of, group_edges, kin_of, kin_edges, bucket_key_of, fold_key_compat, fold_group_of, pull_step, budget_for, SIG_JOINS, FOCUS_BOOST, FOCUS_SHRINK, AREA_BASE } from "$lib/O/vyto_foam"
 
 // HEAT_BUY — what a full purse of attention actually BUYS, as a multiplier on env_area.
@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return 'f4a3d7dafb94144a~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '0c4356bc01b14e8a~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -1954,11 +1954,17 @@ Vyto_hand_seat(w, puts) {
 //  lift it (`lift:1`).  Writes the world's row directly — the producer-owned road is the commission;
 //   this is the live glass's own, for a hand that has no producer behind it.
 e_Vyto_put(A, w, e) {
-    let p = e?.sc
-    if (!p || p.Put == null) return
-    for (const r of w.o({ Put: p.Put })) w.drop(r)
+    this.Vyto_hand_put(w, e?.sc)
+
+},
+// Vyto_hand_put — the verb under the door, callable straight from the glass (Vytui's `hand` stop): put
+//  ONE cell (replacing its standing put), or lift it (`lift:1`), and stir.  Returns 1 on a change.
+Vyto_hand_put(w, p) {
+    if (!w || !p || p.Put == null) return 0
+    for (const r of w.o({ Put: String(p.Put) })) w.drop(r)
     if (!p.lift) this.Vyto_hand_seat_one(w, p)
     this.Vyto_stir_soon(w)
+    return 1
 
 },
 Vyto_hand_seat_one(w, p) {
@@ -1968,10 +1974,6 @@ Vyto_hand_seat_one(w, p) {
     if (p.pull != null) sc.pull = String(p.pull)
     w.i(sc)
 
-},
-// Vyto_hand_pull — one attractor step: the seed moves k of the way toward where the hand put it.
-Vyto_hand_pull(s, at) {
-    return { x: s.x + at.k * (at.x - s.x), y: s.y + at.k * (at.y - s.y) }
 
 },
 // Vyto_solve — the cut.  For now ONE root scope (the scope milestone comes later): a fixed
@@ -2186,23 +2188,8 @@ Vyto_solve(w) {
     //  Pins are restored after every step — pile_step is pin-blind on purpose, it stays pure.
     //   Deterministic throughout (solver law 4): same members, same seeds, same pile.
     if (w.c.foam) {
-        let centre = { x: fw / 2, y: fh / 2 }
-        let pk = 0
-        while (pk < 400) {
-            let next = pile_step(seeds, radii, centre, nbrs || [])
-            let moved = 0
-            let pi = 0
-            while (pi < seeds.length) {
-                if (pinned[pi]) next[pi] = seeds[pi]
-                else if (puts && puts[pi]) next[pi] = this.Vyto_hand_pull(next[pi], puts[pi])
-                let dd = Math.abs(next[pi].x - seeds[pi].x) + Math.abs(next[pi].y - seeds[pi].y)
-                if (dd > moved) moved = dd
-                pi = pi + 1
-            }
-            seeds = next
-            pk = pk + 1
-            if (moved < 0.05) pk = 999
-        }
+        // the pile to rest — pins restored each step, puts pulled (vyto_geometry.pile_rest, node-testable)
+        seeds = pile_rest(seeds, radii, { x: fw / 2, y: fh / 2 }, nbrs || [], pinned, puts)
         // THE CLOUD SITS IN THE SHOT (fit law, part two).  A settled pile can still poke past an
         //  edge — a wired chain is long, gravity is gentle — so after rest, translate the pile's
         //   bounding box the MINIMUM distance that brings it inside, then (only if it still cannot
@@ -2332,7 +2319,7 @@ Vyto_solve(w) {
                 i = i + 1
             }
             if (nbrs) seeds = pull_step(seeds, nbrs, pinned, 0.15)
-            if (puts) seeds = seeds.map((s, si) => (puts[si] && !pinned[si]) ? this.Vyto_hand_pull(s, puts[si]) : s)
+            if (puts) seeds = seeds.map((s, si) => (puts[si] && !pinned[si]) ? hand_pull(s, puts[si]) : s)
             k = k + 1
         }
     }

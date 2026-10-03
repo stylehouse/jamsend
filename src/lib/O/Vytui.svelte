@@ -121,7 +121,64 @@
     //  basically be interacted with").  A posed particle carries `.c.press` (a ref — never encoded,
     //   exactly what .c is for); a cell whose SOURCE wears one is a button, whatever its mainkey.
     //    The handler is handed the source particle so a one-line .g handler can read and write it.
+    // ── THE HAND, BACK — as a CAUSE (2026-10-03, Glassbeast §0 "THE WALL, AND THE SHAPE OF ITS CRACK").
+    //  The drag left on 2026-08-10 (*"far too slow to be visually nice… I want GONE"*) because a SPRING sat
+    //   between the hand and the wall.  It returns behind the `hand` stop, differently: dragging a cell
+    //    writes a `%Put` (Vyto_hand_put — pinned under the pointer while held, an ATTRACTOR once let go: the
+    //     owner's *"or be like an attractor"*), and the held cell's spring AND target jump to the pointer, so
+    //      nothing lags the hand; the neighbours re-cut around it at the next stir.  A drag past 5px is a
+    //       drag; anything less stays a press, and the click that ends a drag is swallowed.
+    //  Root foam cells only (Vyto_hand_puts reads the root members); the spine/grid regimes assign seats
+    //   outright, so the stop does nothing there.
+    let hand: { w: TheC, cell: PaintCell, sx: number, sy: number, svg: SVGSVGElement, moved: boolean } | null = null
+    let hand_swallow = 0
+    function hand_at(e: PointerEvent): { x: number, y: number } | null {
+        const m = hand?.svg.getScreenCTM(); if (!m) return null
+        const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse())
+        return { x: p.x, y: p.y }
+    }
+    function hand_put(pin: boolean, at: { x: number, y: number }) {
+        if (!hand) return
+        const vf = (hand.w.c as any).vw_frame
+        const fw = Number(vf?.w) > 0 ? Number(vf.w) : 800, fh = Number(vf?.h) > 0 ? Number(vf.h) : 450
+        ;(H as any).Vyto_hand_put?.(hand.w, { Put: hand.cell.tok, x: at.x / fw * 1000, y: at.y / fh * 1000, ...(pin ? { pin: 1 } : {}) })
+    }
+    function hand_down(e: PointerEvent, w: TheC, cell: PaintCell) {
+        if (!fo(w, 'hand') || e.button !== 0 || cell.depth > 0) return
+        const svg = (e.currentTarget as SVGElement).ownerSVGElement; if (!svg) return
+        hand = { w, cell, sx: e.clientX, sy: e.clientY, svg, moved: false }
+        e.preventDefault()   // no text selection riding along with the drag (the click still fires)
+        window.addEventListener('pointermove', hand_move)
+        window.addEventListener('pointerup', hand_up)
+        window.addEventListener('pointercancel', hand_up)
+    }
+    function hand_move(e: PointerEvent) {
+        if (!hand) return
+        if (!hand.moved && Math.hypot(e.clientX - hand.sx, e.clientY - hand.sy) < 5) return
+        hand.moved = true
+        const at = hand_at(e); if (!at) return
+        // no spring between hand and cell: the target AND the sprung position both jump to the pointer
+        const row: any = hand.cell.row
+        if (row.c.T) row.c.T = { ...row.c.T, x: at.x, y: at.y }
+        const s = springs.get(hand.w)?.get(hand.cell.key)
+        if (s) { s.x = at.x; s.y = at.y; s.vx = 0; s.vy = 0 }
+        hand_put(true, at)
+        kick(hand.w); paint_tick++
+    }
+    function hand_up(e: PointerEvent) {
+        window.removeEventListener('pointermove', hand_move)
+        window.removeEventListener('pointerup', hand_up)
+        window.removeEventListener('pointercancel', hand_up)
+        if (hand?.moved) {
+            const at = hand_at(e)
+            if (at) hand_put(false, at)   // let go: the pin becomes an attractor
+            hand_swallow = performance.now()
+        }
+        hand = null
+    }
+
     function cell_click(w: TheC, cell: PaintCell) {
+        if (performance.now() - hand_swallow < 400) return   // the click that ends a drag is not a press
         // A CLICK IS A PRESS OR IT IS NOTHING (the owner 2026-08-10, the focus pivot: *"currently we
         //  can drag cells around ... and click to enlarge them, and click another button to reset
         //   them all, all that I want GONE!"*).  The attention buy and the camera engage are out —
@@ -4824,7 +4881,7 @@
                       {:else}
                         {@const fp = folio_of(w, cell)}
                         {#if fp}
-                            <g class="folio" class:sunk={cell.sunk} data-fkey={cell.key}>
+                            <g class="folio" class:sunk={cell.sunk} data-fkey={cell.key} onpointerdown={(e) => hand_down(e, w, cell)}>
                                 {#each fp.seats as st, si (si)}
                                     <text class="fo {st.cls}" class:fo-linkable={!!st.k} class:fo-glow={!!st.k && st.k === glow_key}
                                           x={st.x.toFixed(1)} y={st.y.toFixed(1)} font-size={st.fs.toFixed(1)}
@@ -4896,6 +4953,7 @@
                                   style={(g ? `fill:${g.bg}; stroke:${g.border};` : '') + (wallpaper_of(cell) ? ` fill:url(#${wallpaper_of(cell)});` : '') + (cdv > 0 ? ` stroke-width:${(1.2 + Math.min(3, cdv) * 0.55).toFixed(2)};` : '') + (cell.fx === 'arrive' ? ` animation-delay:${cell.fxi * 55}ms;` : ` --bd:-${ci * 430}ms;`)}
                                   onpointerenter={() => on_enter(w, cell.key, cell.tok)}
                                   onpointerleave={() => on_leave(w, cell.key, cell.tok)}
+                                  onpointerdown={(e) => hand_down(e, w, cell)}
                                   onclick={() => cell_click(w, cell)}
                                   ondblclick={(e) => open_inspect(w, cell, e)}
                                   role="button" tabindex={0} aria-label={cell.ident}

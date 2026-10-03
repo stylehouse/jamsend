@@ -209,6 +209,39 @@ export function pile_step(
 
 // shoelace signed area — Σ(pₖ × pₖ₊₁) / 2.  The sign follows winding; readers wanting
 //  magnitude take Math.abs.
+
+// pile_rest — THE PILE, AT REST (extracted from Vyto_solve 2026-10-03, so the hand's law is node-testable;
+//  the owner: *"weird how singular this code is"*).  Iterates pile_step to its fixed point — bounded at 400,
+//   quit when the largest move falls under 0.05 (both MEASURED, see Vyto_solve's note) — restoring PINS after
+//    every step (pile_step stays pin-blind and pure) and pulling every PUT seed toward where the hand put it
+//     (hand_pull, an attractor; a pinned put is already in `pinned`).  Same arithmetic, same order as the
+//      loop it replaced, so every recorded world solves byte-identically.
+export type HandAt = { x: number, y: number, k: number }
+export function hand_pull(s: Pt, at: HandAt): Pt {
+    return { x: s.x + at.k * (at.x - s.x), y: s.y + at.k * (at.y - s.y) }
+}
+export function pile_rest(
+    seeds: Pt[], radii: number[], centre: Pt,
+    nbrs: Array<{ j: number, w: number }[] | null | undefined>,
+    pinned: boolean[], puts?: (HandAt | null)[] | null,
+): Pt[] {
+    let pk = 0
+    while (pk < 400) {
+        const next = pile_step(seeds, radii, centre, nbrs || [])
+        let moved = 0
+        for (let pi = 0; pi < seeds.length; pi++) {
+            if (pinned[pi]) next[pi] = seeds[pi]
+            else if (puts && puts[pi]) next[pi] = hand_pull(next[pi], puts[pi]!)
+            const dd = Math.abs(next[pi].x - seeds[pi].x) + Math.abs(next[pi].y - seeds[pi].y)
+            if (dd > moved) moved = dd
+        }
+        seeds = next
+        pk = pk + 1
+        if (moved < 0.05) pk = 999
+    }
+    return seeds
+}
+
 export function poly_area(poly: Pt[]): number {
     let A2 = 0
     for (let i = 0; i < poly.length; i++) {

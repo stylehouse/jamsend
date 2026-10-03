@@ -4,8 +4,7 @@ story:VytoNeed
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.036
-      sample=0.044,at=1789117100
+    TimeTotal:beliefs,avg=0.033
       sample=0.015,at=1789118327
       sample=0.02,at=1789118608
       sample=0.033,at=1790973910
@@ -15,8 +14,8 @@ story:VytoNeed
       sample=0.045,at=1790982729
       sample=0.047,at=1790983000
       sample=0.057,at=1790983014
-    TimeTotal:step,avg=0.009
-      sample=0.011,at=1789117100
+      sample=0.017,at=1790985150
+    TimeTotal:step,avg=0.008
       sample=0.004,at=1789118327
       sample=0.005,at=1789118608
       sample=0.008,at=1790973910
@@ -26,6 +25,7 @@ story:VytoNeed
       sample=0.011,at=1790982729
       sample=0.012,at=1790983000
       sample=0.014,at=1790983014
+      sample=0.004,at=1790985150
   step,dige:dc40af5f4c50fba5
   step=2,dige:fde1716fa9281cda,desc:seed three doseless cogs — one wearing a preposterously long name
   step=3,dige:8f2823aaf4ed6115,desc:commission the glass need-floored — the measured label must lift its cell

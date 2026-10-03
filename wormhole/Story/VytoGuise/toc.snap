@@ -4,14 +4,16 @@ story:VytoGuise
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.038
+    TimeTotal:beliefs,avg=0.036
       sample=0.054,at=1790983258
       sample=0.039,at=1790983289
       sample=0.02,at=1790983294
+      sample=0.032,at=1790984977
     TimeTotal:step,avg=0.009
       sample=0.013,at=1790983258
       sample=0.01,at=1790983289
       sample=0.005,at=1790983294
+      sample=0.008,at=1790984977
   step,dige:8316a1ab6c7c5000
   step=2,desc:build a result set — six flat hits and a collapsed tail from plain objects not particles,dige:ffc6e6dc39f2d2d1
   {"step":3,"desc":"stand the flat set — every hit is its own cell, and the shared-scalar ties are drawn as vines landing on the word","dige":"c5b7f1506ffabf8f"}

@@ -4,33 +4,33 @@ story:VytoOrchestra
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.076
-      sample=0.113,at=1790121926
-      sample=0.047,at=1790195867
-      sample=0.139,at=1790209061
-      sample=0.037,at=1790211115
-      sample=0.043,at=1790220285
-      sample=0.048,at=1790224489
-      sample=0.064,at=1790973977
-      sample=0.057,at=1790982453
+    TimeTotal:beliefs,avg=0.081
       sample=0.071,at=1790983312
       sample=0.144,at=1790983337
+      sample=0.082,at=1790983359
+      sample=0.085,at=1790983374
+      sample=0.056,at=1790983394
+      sample=0.058,at=1790983402
+      sample=0.072,at=1790983422
+      sample=0.038,at=1790983431
+      sample=0.041,at=1790985174
+      sample=0.167,at=1790989474
     TimeTotal:step,avg=0.01
-      sample=0.014,at=1790121926
-      sample=0.006,at=1790195867
-      sample=0.017,at=1790209061
-      sample=0.005,at=1790211115
-      sample=0.005,at=1790220285
-      sample=0.006,at=1790224489
-      sample=0.008,at=1790973977
-      sample=0.007,at=1790982453
       sample=0.009,at=1790983312
       sample=0.018,at=1790983337
+      sample=0.01,at=1790983359
+      sample=0.011,at=1790983374
+      sample=0.007,at=1790983394
+      sample=0.007,at=1790983402
+      sample=0.009,at=1790983422
+      sample=0.005,at=1790983431
+      sample=0.005,at=1790985174
+      sample=0.021,at=1790989474
   step,dige:4d8d5b4a1abafbd1
-  step=2,desc:seed the orchestra — a stuffed band beside three kin songs and two loose strays,dige:d516aa5f8f793f5e
-  step=3,desc:commission the glass foam-cut and nested — six top cells with the band carrying three,dige:9d653dccb345c38e
-  step=4,desc:read the weave — flow among the kin songs and none touching the strays,dige:273be0d36aabc6f8
-  step=5,desc:give two songs a shared mood — the weave must deepen live,dige:8f4ac83722ee3aae
-  step=6,desc:focus one song — its cell must swell while an off-focus sibling compresses,dige:fcfc2bc9fa471ba2
-  step=7,desc:re-pose the commission — drop a stray and admit a pull,dige:6e84329fdb0df98b
-  step=8,desc:drop the drummer — the escort marks one stir then the row leaves the bag,dige:32ea0b3b607a0498
+  step=2,dige:d516aa5f8f793f5e,desc:seed the orchestra — a stuffed band beside three kin songs and two loose strays
+  step=3,dige:9d653dccb345c38e,desc:commission the glass foam-cut and nested — six top cells with the band carrying three
+  step=4,dige:273be0d36aabc6f8,desc:read the weave — flow among the kin songs and none touching the strays
+  step=5,dige:8f4ac83722ee3aae,desc:give two songs a shared mood — the weave must deepen live
+  step=6,dige:fcfc2bc9fa471ba2,desc:focus one song — its cell must swell while an off-focus sibling compresses
+  step=7,dige:6e84329fdb0df98b,desc:re-pose the commission — drop a stray and admit a pull
+  step=8,dige:82ecf0af2b793167,desc:drop the drummer — the escort marks one stir then the row leaves the bag

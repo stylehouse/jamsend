@@ -1,3 +1,7 @@
+> **HISTORICAL (retired 2026-10-03).** The wire-side perf handoff of 2026-07-29.  Absorbed the same day into
+>  `Vyto_todo.md` `## THE PIN` (P1/P3/P4); its §3 landed in Vytui.  The visual front door is now
+>  `Glassbeast_todo.md` `## 0 START HERE`.
+
 # Vyto_perf_todo — the renderer fixes that make nested/branchy Vyto safe
 
 Written 2026-07-29 by the wire-side worker (Claude), from a focused diagnosis, FOR the Vyto owner.

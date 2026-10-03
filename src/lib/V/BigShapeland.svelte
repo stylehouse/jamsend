@@ -107,6 +107,7 @@
         { stop: 'junction',   what: 'sibling cells of one mainkey say it ONCE where they meet — each keeps only its value (the owner\'s idea)' },
         { stop: 'keep',       what: 'with spine: someone else owns a column of the screen — ?deck=keep:right:0.4 keeps the right 40% (an editor) and the creature lives in the rest' },
         { stop: 'spine',      what: 'THE SPINE — root rows become vertebrae down a backbone, their children become ribs (VytoSpine)' },
+        { stop: 'hand',       what: 'THE HAND — drag a root foam cell: it is PUT (a %Put — pinned while held, an attractor once let go) and the walls re-cut around it (VytoHand)' },
         { stop: 'grid',       what: 'a THIRD outright-assigned regime beside seat/focus, root scope only -- rows lay out HTML-block-flow, banded into ROWS by the strongest shared scalar (bucket_key_of), no cell drawn to hold the group; try alongside crosslink -- a tie the row alignment already says is not also drawn as a line' },
         { stop: 'crosslink', what: 'the grouping-as-vines pass paints ON TOP of the cells instead of underneath — for a dense pile with no gaps to show a substrate through (the owner: "a layer on top of them with lines connecting")' },
         { stop: 'pinch',      what: 'with membrane on: each petal is carved to a NECK onto its family\'s bump — the disc shows through the pinches between necks' },
