@@ -209,8 +209,8 @@
     function caves_here(): any[] {
         const self = A?.Swarm_live_self?.()
         if (!self) return []
-        // any crewmate holding a folder can hold heists (the crew row's `folder` fact), not only a Cave by role
-        return (A?.Swarm_crew_view?.(self) ?? []).filter((r: any) => !r.mine && r.folder && r.rung !== 'away')
+        // any crewmate that takes heists (the crew row's `dest` fact), not only a Cave by role
+        return (A?.Swarm_crew_view?.(self) ?? []).filter((r: any) => !r.mine && r.dest && r.rung !== 'away')
     }
     $effect(() => {
         if (bud) return

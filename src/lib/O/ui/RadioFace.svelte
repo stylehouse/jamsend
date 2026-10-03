@@ -293,7 +293,13 @@
         <div class="rf-srcwrap" bind:this={srcwrap}>
             {#if menu}
                 <div class="rf-menu">
-                    {#each sources.filter((x: any) => !x.own) as s}
+                    <!-- CREW, THEN FRIENDS — each group under its own small label (owner 2026-10-04), a label only when
+                         both kinds are present (one group needs no heading). -->
+                    {#each sources.filter((x: any) => !x.own) as s, i}
+                        {#if sources.some((x: any) => x.crew) && sources.some((x: any) => !x.own && !x.crew)}
+                            {#if i === 0 && s.crew}<div class="rf-menu-label">crew</div>{/if}
+                            {#if !s.crew && (i === 0 || sources.filter((x: any) => !x.own)[i - 1]?.crew)}<div class="rf-menu-label">friends</div>{/if}
+                        {/if}
                         <button class="rf-menu-row" class:rf-menu-on={s.aimed && face.source !== 'pool' && !face.own} onclick={() => aim_to(s.pub)}
                             title={s.needs_captain ? 'borrowed through your Captain — your Captain needs to come online to reach them' : s.borrow ? 'borrowed through your Captain — choosing takes the one seat, logging out anyone else in your crew listening to them' : s.live ? 'online now' : 'not heard from lately — the dial will pass over them'}>
                             <span class="rf-menu-dot" class:rf-menu-live={s.live}>●</span><span class="rf-menu-name">{s.name || s.pub.slice(0, 8)}</span><span class="rf-menu-n">{s.tracks}</span>
@@ -457,6 +463,7 @@
     .rf-src-remote { background: rgba(127, 200, 232, 0.16); color: #8fd0ee; border: 1px solid rgba(127, 200, 232, 0.4); }
     /* PINNED reads as a filled chip, not a differently-worded one: "⦿ Grink" and "from Grink" must be
        distinguishable at a glance from across the room, which is the whole point of a badge. */
+    .rf-menu-label { font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; padding: 4px 8px 1px; }
     .rf-src-aimed { background: rgba(127, 200, 232, 0.34); color: #d8f0ff; border-color: rgba(127, 200, 232, 0.75); }
     .rf-src-caret { opacity: .7; font-size: .9em; }
     /* the upward chooser.  `position:absolute; bottom:100%` is the "but upwards" — anchored to the chip so

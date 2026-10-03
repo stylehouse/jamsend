@@ -83,7 +83,7 @@ import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs
 //  below for why this is safe (the tab, not the CLI, is the authority on what it will do).
 const UNKNOWN_OK = process.argv.includes('--unknown-ok')
 let PLAYER_PUB = ''   // set by --player=: the one music page a slot-addressed ask is for (sendAsk stamps it into ask.pub)
-const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon']
+const OPS = ['ping', 'probe', 'world', 'minisnap', 'pick', 'stemdex', 'supervisor', 'run', 'state', 'steps', 'snap', 'trace', 'assertions', 'declare', 'rungos', 'accept', 'release', 'runners', 'reload', 'socklog', 'dump', 'poke', 'retain', 'console', 'crew', 'tidy', 'ghost_load', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'electrode', 'lagoon', 'census']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -176,7 +176,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|pick <Ghost/X/Y.g> [<point>]|poke <verb>|crew|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|lagoon [seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths|figurines|errands] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|supervisor|run <Book>|state|steps|snap <n>|assertions|declare \'<sentence>\'|rungos|accept|release|runners|reload|socklog [on|off] [--reload]|dump|console [--tail=N] [--grep=PAT] [--follow]|pick <Ghost/X/Y.g> [<point>]|poke <verb>|crew|census|tidy <crew|rebuffs|forget:<pub>>|ghost_load <Ghost/X/Y.g> [--stand=Name] [--fresh] [--swap]|atlas_callers <name> [--stale]|atlas_refresh|atlas_lint [--sees] [--stale]|electrode [top|arm|disarm|reset|reduce|hangs|film|join] [--k=N] [--older=ms]|lagoon [seek|beads|defs|families|mentions|rot|rotwork|callers|lint|join|oaths|figurines|errands] [<name>] [--k=N]> [@uid] [--runner=<id>|--player=<id>] [--live] [--watch]')
 	process.exit(2)
 }
 
@@ -208,7 +208,7 @@ const live  = flags.has('--live') || !localHost
 // READ-ONLY verbs — the only ones that may target a role:'player' tab (someone's actual music page).
 //  Module-scope because it now gates TWO doors: explicit --player= targeting (below), and the
 //   auto-court's humdinger veto (a player can answer a to:'runner' broadcast — see the veto).
-const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'lagoon']
+const PLAYER_OPS = ['ping', 'probe', 'world', 'minisnap', 'supervisor', 'state', 'rungos', 'runners', 'socklog', 'dump', 'poke', 'reload', 'snap', 'steps', 'assertions', 'console', 'crew', 'tidy', 'atlas_callers', 'atlas_refresh', 'atlas_lint', 'lagoon', 'census']
 
 // ── liveCensus — learn who is on THIS relay, FROM the relay ─────────────────────────────────
 //  clusterRunners() above reads a LOCAL FILE.  Point RUNNER_URL at another host and that file is
@@ -1315,6 +1315,17 @@ else if (op === 'snap' && reply.result?.got_snap) {
 	console.error(`console: ${r.returned}/${r.total} line(s)${ask.grep ? ` matching ${JSON.stringify(ask.grep)}` : ''}${ask.tail ? ` (tail ${ask.tail})` : ''} from ${TARGET.slice(0, 8)}`)
 	for (const c of r.lines) { conSeen.add(`${c.t}|${c.line}`); console.log(`${fmtConLine(c)}`) }
 	if (!flags.has('--follow') && !r.total) console.error('  (ring empty — nothing has logged since this tab booted; is it a fresh reload?)')
+} else if (op === 'census' && reply.result && reply.result.diag) {
+	// the wander's map: diag on one line, then a folder table — est% is where the music is believed to be,
+	//  pick% where the draws actually went; a shuffle that is "random enough" keeps those two columns close.
+	const r = reply.result
+	console.log(`census: ${JSON.stringify(r.diag)}`)
+	if (r.depth_prior) console.log(`  fog priced by depth: ${Object.entries(r.depth_prior).map(([d, v]) => `d${d}=${(+v).toFixed(1)}`).join(' ')}`)
+	const tops = Object.entries(r.tops || {})
+	const se = tops.reduce((a, [, t]) => a + t.est, 0) || 1, sp = tops.reduce((a, [, t]) => a + t.picks, 0) || 1
+	tops.sort((a, b) => b[1].est - a[1].est)
+	console.log(`  ${'folder'.padEnd(32)} ${'known'.padStart(6)} ${'dirs'.padStart(5)} ${'fog'.padStart(5)} ${'est'.padStart(7)} ${'est%'.padStart(6)} ${'picks'.padStart(6)} ${'pick%'.padStart(6)}`)
+	for (const [k, t] of tops) console.log(`  ${k.slice(0, 32).padEnd(32)} ${String(t.known).padStart(6)} ${String(t.dirs).padStart(5)} ${String(t.fog).padStart(5)} ${String(t.est).padStart(7)} ${(100 * t.est / se).toFixed(1).padStart(6)} ${String(t.picks).padStart(6)} ${(100 * t.picks / sp).toFixed(1).padStart(6)}`)
 } else if (reply.ok === false) {
 	// a refused/failed op — surface the runner's reason on stderr (busy lease, GC'd run, unknown Book…)
 	console.error(`✗ ${op}: ${reply.result?.error ?? 'failed'}`)

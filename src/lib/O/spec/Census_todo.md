@@ -28,30 +28,32 @@ The census is the lazy map the shuffle draws over: `{audio, open, subs, z, n}` p
     nothing. `Census_diag().pruned` shows the count.
 - **Dexie leftovers deleted** (was item 4): census_store.ts, encode/decode, CENSUS_FORMAT/MAX_BYTES.
 
-**To verify live:** on the owner's Nopethings share, the first save should leave `berth/Census` as a single
- `toc.snap` (no NNN parts), and the next album landing should leave Newlyadded the same way.
+- **The fog is priced by depth** (was item 3; Crate.g `Crate_depth_fold` + the PD table in
+   `Crate_nav_meander`). Per depth d: visited dirs V, audio A, child count C. Solve S_d = A/V + (C/V)·S_{d+1}
+    from the deepest level up, then shrink toward the global PRIOR with 8 pseudo-dirs. A branching-process
+     estimate, so unvisited children count. The simulation (meander ported to node, 5 seeds) measured KL of
+      picks-per-top-level against the true track share. Real tree, cold start: 0.634 → 0.151 at 200 tours,
+       0.278 → 0.052 at 800. Warm: 0.259 → 0.050. Synthetic: 0.829 → 0.031. Coverage didn't change. Cost:
+        synthetic dry tours went from 2–3% to 4–5%; real tree unchanged. Live pages only; Books are
+         untouched (MusuStock ok_pct 1; its 5 caveats are not attributable to this, since a runner is
+          not humdinger).
+- **`runner_ask census`** (was item 5): `node scripts/runner_ask.mjs census --player=<pub>` prints
+   `Census_diag` (now with `restore_ms` and `pruned`), the depth-prior table, and one row per top-level
+    folder: known · dirs · fog · est · est% · picks · pick%. **est% vs pick% is the "random enough" check.**
+     `picks` counts from page boot (`meander_picks_top`, .c-only).
 
-3. **Price the fog by depth.** Unvisited folders all get one global PRIOR = mean subtree size of a random
-    folder, about **24.8** on the real census. Real subtree sizes fall steeply with depth: depth 1 ≈ 646,
-     2 ≈ 30, 3 ≈ 13, 4 ≈ 11, 5 ≈ 5. So an unseen genre leg is priced at 25 when it holds about 650, and an
-      unseen album is priced at about 2× its size. That second case is the common one: 2953 of the 5736
-       rows are stubs. Leave-one-out over the 2782 visited folders, mean absolute error:
-        global prior 27.1, **depth prior 21.1**, depth prior plus sibling shrink 20.3. The counters are
-         already there: bucket `meander_stat` by depth (`dirs/audio` per level, shrunk to the global value),
-          then `est()` returns `PRIOR[depth]` for an unseen key. The sibling term adds little, so skip it at
-           first. **Gate:** prediction error is not the shuffle metric. Before landing, re-run the
-            coverage/KL/dry-tour simulation the Crate.g comments quote, using this real census as the
-             shape. The real tree beats the synthetic ones we measured against before.
-4. **Delete the Dexie leftovers.** `census_store.ts` has no importers. `census_encode/decode/pack`,
-    `CENSUS_FORMAT` and `CENSUS_MAX_BYTES` are unused since the Berth move. The codec header still
-     describes Dexie, and its "the ceiling that still binds is CENSUS_MAX_BYTES" line is false because
-      nothing enforces that ceiling. Keep the pure merge/evict/select/restore functions and rewrite the
-       header around the Berth.
-5. **Make it legible.** `Census_diag`, `Census_flush` and `Census_forget` have no callers. The map is the
-    only state in this area nobody can see, which goes against the one bet. Smallest useful step: a
-     `runner_ask --player=<pub> census` op that returns `Census_diag()` plus a per-top-level-folder line
-      (known tracks, unvisited folders, the share of recent draws that went there). The last column answers
-       "is it random enough" in numbers instead of by feel. Later, a face could show the same rows.
+**To verify live (owner):**
+1. Nopethings share: after the first census save, `berth/Census` is a single `toc.snap` with the 63 parts
+    gone. After the next album lands, Newlyadded is the same.
+2. `runner_ask census --player=<pub>` on a music tab: `restore_ms` answers the old 49 s question,
+    `pruned` should be ~2100 on the big /music share (the `music/…` spelling), and after a while of
+     playing, pick% should track est%.
+3. If the shuffle seems to linger in barren structure more than before, the depth prior is the suspect.
+    Compare dry tours in the Radio trace.
+
+**Next candidates:** a face for the census table (the glass, not just the CLI); exclude the fog estimate
+ for a folder whose root has gone (today it just stops being walked); and decide whether `n` (the φ
+  cursor) needs persisting at all.
 
 **Measure before acting on.** The supervisor comment in Radio.g (≈1964) recorded a warm restore landing
  1465 folders at t+49s (2026-08-13). The Berth open reads the toc plus up to 64 parts in series and

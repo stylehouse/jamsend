@@ -16,7 +16,7 @@ import { sas_transcript, sas_row } from "$lib/O/Funk/Emojiconfirm.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '2a3ebe3eddb57d4e~g1' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '8de8aadf0cfa4f71~g1' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -484,12 +484,15 @@ Swarm_crew_view(ident) {
         let g = m.o({ Grant: 'Crew' })[0]
         let since = +((pier && pier.sc.since) || (g && g.sc.time) || 0)
         let fresh = since && (now_ms / 1000 - since) < 240 ? 1 : 0
-        // FOLDER — does this body hold a music folder (it can take originals: a Heist lands there, a 🧲 can point at
-        //  it)?  A fundamental fact of a crewmate, owner 2026-10-04.  Mine from my own grant; another's from its
-        //   self-description — a folder always declares a trove organ, even empty (Swarm_organ_refresh), and a
-        //    no-folder phone never does.  Unknown (not heard yet) reads as no.
-        let folder = mine ? (this.Crate_has_folder ? this.Crate_has_folder() : 0) : (bodies.some((b) => this.Swarm_organ_of(b, 'trove')) ? 1 : 0)
-        out.push({ prepub: prepub, role: String(m.sc.role || 'Cave'), name: name, pub8: prepub.slice(0, 8), pub: String(m.sc.pub || ''), mine: mine ? 1 : 0, folder: folder,
+        // DEST — will this body take Heists (a writable music folder open THIS session, even empty: a Heist lands
+        //  there, a 🧲 can point at it)?  A fundamental fact of a crewmate, its OWN word (owner 2026-10-04 — Crew_todo
+        //   §3): mine from my folder now; another's from its `%Organ,kind:dest` (Swarm_organ_refresh, retracted when
+        //    its folder shuts).  A body that has described NOTHING yet (an older build, or no charter crossed) falls
+        //     back to its role — a Cave is presumed a destination until it says otherwise.
+        let described = bodies.some((b) => b.o({ Organ: 1 }).length)
+        let dest = mine ? (this.Crate_has_folder ? this.Crate_has_folder() : 0)
+            : (bodies.some((b) => this.Swarm_organ_of(b, 'dest')) ? 1 : (!described && String(m.sc.role || 'Cave') === 'Cave' ? 1 : 0))
+        out.push({ prepub: prepub, role: String(m.sc.role || 'Cave'), name: name, pub8: prepub.slice(0, 8), pub: String(m.sc.pub || ''), mine: mine ? 1 : 0, dest: dest,
                    cert: g ? 1 : 0, since: since, fresh: fresh, ago: ago, rung: mine ? 'here' : (ago == null ? 'away' : ago < 15 ? 'here' : ago < 45 ? 'fading' : 'away') })
     }
     out.sort((a, b) => (a.role === 'Captain' ? 0 : 1) - (b.role === 'Captain' ? 0 : 1) || (a.prepub < b.prepub ? -1 : 1))
@@ -7786,10 +7789,16 @@ Swarm_organ_refresh(w, ident) {
         let pool = this.Ra_home_pool ? this.Ra_home_pool(rw, String(ident.sc.prepub)) : null
         if (pool && this.Ra_recs) { pocket = this.Ra_recs(pool).length }
     } catch (er) {}
-    // a FOLDER always declares its trove, even empty (owner 2026-10-04: "it might be an empty folder … certainly we'd want
-    //  to be able to start putting music there") — the trove organ's presence IS the crew's "this body has a folder" (the 🧲)
+    if (trove) { this.Swarm_organ_take(ident, 'trove', { tracks: trove }) }
+    // DEST — "I will take Heists": declared while this body holds a writable folder THIS SESSION, even an empty one
+    //  (owner 2026-10-04: "it might be an empty folder … certainly we'd want to be able to start putting music there").
+    //   A folder's permission comes and goes per session (a browser restart leaves it 'prompt' until a gesture), so
+    //    it is retracted the moment the folder is not open — and the retraction travels (Swarm_organ_absorb replaces).
     let folder = this.Crate_has_folder ? this.Crate_has_folder() : 0
-    if (trove || folder) { this.Swarm_organ_take(ident, 'trove', { tracks: trove || 0 }) }
+    let mineb = this.Swarm_body_mine(ident)
+    if (folder) { this.Swarm_organ_take(ident, 'dest', {}) }
+    let od = folder ? null : mineb.o({ Organ: 1, kind: 'dest' })[0]
+    if (od) { mineb.drop(od); mineb.bump() }
     if (pocket) { this.Swarm_organ_take(ident, 'pocket', { tracks: pocket }) }
     return 1
 },
@@ -7815,6 +7824,15 @@ Swarm_organ_absorb(host, organs) {
     if (!peering) { return 0 }
     let same = (a, b) => a && b ? (a.startsWith(b) || b.startsWith(a) ? 1 : 0) : 0
     let n = 0
+    // THE BODY'S WORD IS WHOLE (2026-10-04): each body ships ALL its organs at once, so a kind it no longer lists
+    //  is retracted here — otherwise a `dest` (folder open) could never be taken back once its folder shut.
+    let kinds = {}
+    for (const orn of organs) { if (orn && orn.pub && orn.kind) { let k = String(orn.pub); if (!kinds[k]) { kinds[k] = {} }; kinds[k][String(orn.kind)] = 1 } }
+    for (const bpub of Object.keys(kinds)) {
+        let brow = peering.o({ Body: 1 }).find((b) => same(String(b.sc.pub || ''), bpub))
+        if (!brow) { continue }
+        for (const old of brow.o({ Organ: 1 })) { if (!kinds[bpub][String(old.sc.kind || '')]) { brow.drop(old); brow.bump() } }
+    }
     for (const orn of organs) {
         if (!orn || !orn.pub || !orn.kind) { continue }
         let row = peering.o({ Body: 1 }).find((b) => same(String(b.sc.pub || ''), String(orn.pub)))

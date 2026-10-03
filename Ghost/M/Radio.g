@@ -1454,7 +1454,12 @@ Radio_sources(w, radio):
         if (aim && (pub.startsWith(aim) || aim.startsWith(pub))) { row.aimed = 1 }
         out.push(row)
     }
-    out.sort((a, b) => (b.live - a.live) || (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0)))
+    // CREW FIRST, LABELLED (owner 2026-10-04: "group|label the Crew in sources") — my own other bodies are a different
+    //  kind of source from a friend: same soul, no seat, no loan.  `crew:1` off the crew view; the face groups on it.
+    let cself = this.Swarm_live_self ? this.Swarm_live_self() : null
+    let crewpubs = (cself && this.Swarm_crew_view) ? this.Swarm_crew_view(cself).filter((r) => !r.mine).map((r) => String(r.prepub)) : []
+    for (const row of out) { if (crewpubs.some((c) => c && (row.pub.startsWith(c) || c.startsWith(row.pub)))) { row.crew = 1 } }
+    out.sort((a, b) => ((b.crew || 0) - (a.crew || 0)) || (b.live - a.live) || (a.name < b.name ? -1 : (a.name > b.name ? 1 : 0)))
     // BORROWABLE FRIENDS (GrantBorrowing): a Cave lists its Captain's friends too — reachable by presenting a
     //  loan when chosen.  One with a live loan reads as a normal (empty-until-seated) row; one without says
     //   the Captain must come online.  A crate row already standing for the same friend just gets the flag.

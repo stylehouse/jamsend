@@ -358,6 +358,15 @@ async Crate_nav_meander(nav, base, want, skip):
     //        the life of the page.  Census.svelte sets `meander_fold_due` when a restore installs
     //         entries; this clears it.  The fold stays order-independent: the flag can land at any
     //          time and the next meander call absorbs it.
+    // a map that predates the per-depth counters (HMR keeps .c across a recompile) seeds them once from
+    //  every entry already folded, so the first revisit's retract never takes a level below zero.
+    if (learn && !TOP.c.meander_sd) {
+        TOP.c.meander_sd = {}
+        for (const sk of Object.keys(learn)) {
+            let se = learn[sk]
+            if (se && se.seen) this.Crate_depth_fold(TOP, sk, +se.audio || 0, se.subs ? se.subs.length : 0, 1)
+        }
+    }
     if (learn && TOP.c.meander_fold_due) {
         TOP.c.meander_fold_due = 0
         let ST0 = TOP.c.meander_stat || (TOP.c.meander_stat = { dirs: 0, audio: 0, depth: 0 })
@@ -368,6 +377,7 @@ async Crate_nav_meander(nav, base, want, skip):
             ST0.dirs = ST0.dirs + 1
             ST0.audio = ST0.audio + (+ce.audio || 0)
             ST0.depth = ST0.depth + (+ce.audio || 0) * cd
+            this.Crate_depth_fold(TOP, ck, +ce.audio || 0, ce.subs ? ce.subs.length : 0, 1)
             ce.seen = 1
         }
     }
@@ -381,6 +391,50 @@ async Crate_nav_meander(nav, base, want, skip):
             PRIOR = (8 * 8 + (a_bar * (dbar + 1)) * ST.dirs) / (8 + ST.dirs)
         }
         PRIOR = Math.max(1 / SC, PRIOR)
+    }
+    // THE FOG IS PRICED BY DEPTH (2026-10-04, the owner: "the lazy|foggy map of the music collection, which
+    //  lets us shuffle it all randomly enough").  One PRIOR for every unvisited folder said an unseen genre
+    //   and an unseen album are the same size.  On the owner's real census they are not: mean subtree is
+    //    ~646 tracks at depth 1, 30 at 2, 13 at 3, 11 at 4, 5 at 5, against a single PRIOR of ~25 — so an
+    //     unexplored genre was priced 26× too small and an unexplored album 2× too big, and the draw
+    //      leaned on whichever genres happened to be walked first.
+    //  Per depth d we keep visited dirs V, their audio A and their child count C (Crate_depth_fold — the
+    //   same visit, three more adds).  A dir at depth d then holds on average a_d = A/V files itself plus
+    //    b_d = C/V children, each a depth-(d+1) dir: S_d = a_d + b_d·S_{d+1}, solved from the deepest level
+    //     up — a branching-process estimate that counts the unvisited children too, which a mean over
+    //      what was walked cannot.  Each S_d is shrunk toward the global PRIOR with 8 pseudo-dirs, so a
+    //       barely-seen level stays vague.
+    //  SIMULATED before landing (scratchpad sim.mjs — this walk ported to node over the owner's real
+    //   census tree and a wide synthetic with a barren code tree, 5 seeds): KL of picks-per-top-level
+    //    against the true track share, real tree cold 0.634 → 0.151 at 200 tours and 0.278 → 0.052 at 800,
+    //     warm 0.259 → 0.050; synthetic cold 0.829 → 0.031.  Coverage unchanged (it is 2 tracks a tour
+    //      either way).  The cost: dry tours on the synthetic 2–3% → 4–5% (a big shallow prior walks into a
+    //       barren tree a little more before dead() prunes it); on the real tree they did not move.
+    let PD = null
+    if (learn && TOP.c.meander_sd) {
+        let SD = TOP.c.meander_sd
+        PD = {}
+        let deepest = 0
+        for (const dk of Object.keys(SD)) { if (+dk > deepest) deepest = +dk }
+        let dd = Math.min(deepest, 64)
+        while (dd >= 0) {
+            let sd = SD[dd]
+            let S = PRIOR
+            if (sd && sd.V > 0) {
+                let next = PD[dd + 1] != null ? PD[dd + 1] : PRIOR
+                let raw = sd.A / sd.V + (sd.C / sd.V) * next
+                S = (8 * PRIOR + sd.V * raw) / (8 + sd.V)
+            }
+            PD[dd] = Math.max(1 / SC, Math.min(S, 1000000))
+            dd = dd - 1
+        }
+    }
+    if (learn) TOP.c.meander_pd = PD
+    // the prior for one unvisited key — by its depth when the table has that level, else the global one.
+    const prior_of = (p) => {
+        if (!PD) return PRIOR
+        let pd = PD[p ? p.split('/').length : 0]
+        return pd != null ? pd : PRIOR
     }
     // estimate a subtree's track count from the learned map alone (no IO): known audio here plus
     //  the recursive estimate of known subdirs; unvisited → the learned PRIOR above; a fully-learned
@@ -406,7 +460,7 @@ async Crate_nav_meander(nav, base, want, skip):
     const est = (p, depth) => {
         if (emem && emem[p] !== undefined) return emem[p]
         let e = learn[p]
-        if (!e) return PRIOR
+        if (!e) return prior_of(p)
         let s = (e.open == null ? e.audio : e.open)
         if (depth > 40) return s
         for (const sp of e.subs) s = s + est(sp, depth + 1)
@@ -418,7 +472,7 @@ async Crate_nav_meander(nav, base, want, skip):
     const est_true = (p, depth) => {
         if (tmem && tmem[p] !== undefined) return tmem[p]
         let e = learn[p]
-        if (!e) return PRIOR
+        if (!e) return prior_of(p)
         let s = +(e.audio || 0)
         if (depth > 40) return s
         for (const sp of e.subs) s = s + est_true(sp, depth + 1)
@@ -625,11 +679,16 @@ async Crate_nav_meander(nav, base, want, skip):
             //      two halves of one average disagreeing about what a level is.
             let ST = TOP.c.meander_stat || (TOP.c.meander_stat = { dirs: 0, audio: 0, depth: 0 })
             let d0 = here ? here.split('/').length - 1 : 0
-            if (node.seen) { ST.audio = ST.audio + (audio_all.length - node.audio); ST.depth = ST.depth + (audio_all.length - node.audio) * d0 }
+            if (node.seen) {
+                ST.audio = ST.audio + (audio_all.length - node.audio)
+                ST.depth = ST.depth + (audio_all.length - node.audio) * d0
+                this.Crate_depth_fold(TOP, here, +node.audio || 0, node.subs ? node.subs.length : 0, -1)
+            }
             if (!node.seen) { ST.dirs = ST.dirs + 1; ST.audio = ST.audio + audio_all.length; ST.depth = ST.depth + audio_all.length * d0; node.seen = 1 }
             node.audio = audio_all.length
             node.open = audio.length
             node.subs = dirs.map(d => kid(String(d.name)))
+            this.Crate_depth_fold(TOP, here, audio_all.length, dirs.length, 1)
         }
         // the memo is per HOP: this hop's visit has just rewritten the map, so anything remembered
         //  from the last hop would be quoting the world as it was before we looked.  Object.create
@@ -673,7 +732,7 @@ async Crate_nav_meander(nav, base, want, skip):
             //          library, a 9-deep one, a 30-track collection, the 200k flat crate) never
             //           reaches the threshold and draws exactly as before.
             let piled = node && live.length > 300
-            if (piled) k = this.Crate_pile_draw(node, live, audio.length * SC, kid, wof, 300, PRIOR * SC)
+            if (piled) k = this.Crate_pile_draw(node, live, audio.length * SC, kid, wof, 300, prior_of(kid('x')) * SC)
             if (!piled) {
                 let weights = live.map(d => wof(kid(String(d.name))))
                 if (audio.length) weights.push(audio.length * SC)
@@ -707,6 +766,13 @@ async Crate_nav_meander(nav, base, want, skip):
             let picks = []
             let pool = [...audio]
             while (pool.length && picks.length < want) picks.push(pool.splice(this.prandle(pool.length), 1)[0])
+            // WHERE THE PICKS LAND, per top-level folder — the census readout (runner_ask census) sets this
+            //  beside each folder's estimated share, so "random enough" is a number, not a feeling.  .c-only.
+            if (learn && picks.length) {
+                let ptop = TOP.c.meander_picks_top || (TOP.c.meander_picks_top = {})
+                let pt = here.split('/')[0]
+                ptop[pt] = (+(ptop[pt] || 0)) + picks.length
+            }
             return picks.map(f => rel ? (rel + '/' + f.name) : f.name)
         }
         let d = live[k]
@@ -717,6 +783,18 @@ async Crate_nav_meander(nav, base, want, skip):
     //   fixes, and guessing between them is how this week went.  Costs one .c string per give-up.
     if (learn) TOP.c.meander_last = rel + ' h' + hops
     return []
+
+// Crate_depth_fold — add (sign 1) or retract (sign -1) one learned directory from the per-depth counters
+//  behind the depth-priced fog (see Crate_nav_meander).  Depth is the key's segment count, '' = 0, so the
+//   restore fold and the live visit agree on what a level is.  .c-only, like meander_stat: rebuilt from the
+//    restored map by the same `seen` fold, never persisted.
+Crate_depth_fold(TOP, key, audio, nsubs, sign):
+    let SD = TOP.c.meander_sd || (TOP.c.meander_sd = {})
+    let d = key ? key.split('/').length : 0
+    let sd = SD[d] || (SD[d] = { V: 0, A: 0, C: 0 })
+    sd.V = sd.V + sign
+    sd.A = sd.A + sign * audio
+    sd.C = sd.C + sign * nsubs
 
 // Crate_pile_draw — the TWO-LEVEL branch draw for a directory with more children than one CDF should
 //  carry.  Returns an index into `live`, or live.length to mean "the local audio pool won".

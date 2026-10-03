@@ -4,20 +4,24 @@ story:SwarmCall
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.03
+    TimeTotal:beliefs,avg=0.064
       sample=0.037,at=1790746775
       sample=0.022,at=1790746802
       sample=0.009,at=1790746805
       sample=0.02,at=1790747007
       sample=0.033,at=1790749892
       sample=0.061,at=1790983310
-    TimeTotal:step,avg=0.008
+      sample=0.206,at=1791064855
+      sample=0.123,at=1791067489
+    TimeTotal:step,avg=0.016
       sample=0.009,at=1790746775
       sample=0.006,at=1790746802
       sample=0.002,at=1790746805
       sample=0.005,at=1790747007
       sample=0.008,at=1790749892
       sample=0.015,at=1790983310
+      sample=0.052,at=1791064855
+      sample=0.031,at=1791067489
   step,dige:6ff5b022a54efa9f
   step=2,dige:89c81bf56b6b2b74
   step=3,dige:60d0d14f119ae61c

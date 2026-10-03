@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return 'f8d1c3ad9ea8878a~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return '2f1702bfb4ff0b65~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -672,10 +672,10 @@ Heard_magnet_candidates(ident0, folder0) {
     if (!ident || !this.Swarm_crew_view) { return [] }
     let folder = folder0 != null ? folder0 : (this.Crate_has_folder ? this.Crate_has_folder() : 0)
     let out = []
-    // ANY CREW BODY WITH A FOLDER (owner 2026-10-04: "anyone in the Crew could have the magnets right?") — the crew
-    //  row's own `folder` fact (Swarm_crew_view), not a role: a Captain on a laptop holds originals as well as a Cave.
+    // ANY CREWMATE THAT WILL TAKE HEISTS (owner 2026-10-04: "anyone in the Crew could have the magnets right?") — the
+    //  crew row's own `dest` fact (Swarm_crew_view), not a role: a Captain on a laptop takes originals as well as a Cave.
     for (const r of this.Swarm_crew_view(ident)) {
-        if (r.mine ? folder : r.folder) { out.push(r) }
+        if (r.mine ? folder : r.dest) { out.push(r) }
     }
     return out
 },

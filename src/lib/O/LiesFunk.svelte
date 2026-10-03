@@ -3535,6 +3535,13 @@ await M.eatfunc({
                     else { ok = false; result = { error: `tidy ${what || '(none)'} — allowed: crew | rebuffs | forget:<pub prefix>` } }
                     if (ok && self) { try { (H as any).Swarm_account_settle?.(self, 'tidy') } catch {} }
                     try { (H.top_House() as any).bump_version?.() } catch {}
+                } else if (op === 'census') {
+                    // THE WANDER'S MAP, READ-ONLY (2026-10-04): Census.svelte's diag (phase, restore_ms, pruned,
+                    //  parts…) plus one row per top-level folder — known tracks, fog, estimated size, picks drawn.
+                    //   Safe on a humdinger: it reads .c and moves nothing.
+                    const diag = (H as any).Census_diag?.()
+                    if (!diag) { ok = false; result = { error: 'no Census on this tab (Census.svelte not mounted)' } }
+                    else result = { diag, ...((H as any).Census_tops?.() ?? {}) }
                 } else if (op === 'dump') {
                     // FORCE A TRACE DUMP NOW.  Lies_dump_supply throttles to ~5s (w.c.last_supplylog), so
                     //  a CLI reading wormhole/_trace/ right after an event sees an up-to-5s-stale ring and

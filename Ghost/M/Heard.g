@@ -613,10 +613,10 @@ Heard_magnet_candidates(ident0, folder0):
     if (!ident || !this.Swarm_crew_view) { return [] }
     let folder = folder0 != null ? folder0 : (this.Crate_has_folder ? this.Crate_has_folder() : 0)
     let out = []
-    // ANY CREW BODY WITH A FOLDER (owner 2026-10-04: "anyone in the Crew could have the magnets right?") — the crew
-    //  row's own `folder` fact (Swarm_crew_view), not a role: a Captain on a laptop holds originals as well as a Cave.
+    // ANY CREWMATE THAT WILL TAKE HEISTS (owner 2026-10-04: "anyone in the Crew could have the magnets right?") — the
+    //  crew row's own `dest` fact (Swarm_crew_view), not a role: a Captain on a laptop takes originals as well as a Cave.
     for (const r of this.Swarm_crew_view(ident)) {
-        if (r.mine ? folder : r.folder) { out.push(r) }
+        if (r.mine ? folder : r.dest) { out.push(r) }
     }
     return out
 // Heard_magnet_pick — THE DECISION, pure: candidate rows + the human's pick → a prepub or ''.

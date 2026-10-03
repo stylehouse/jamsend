@@ -200,6 +200,9 @@
             for (const k in working) if ((working[k] as any)?.audio > 0) music++
             Hh.c.census_music = music
             Hh.c.census_sig = census_signature(live)
+            // how long the restore took, open to ready — the 2026-08-13 report had 1465 folders landing at
+            //  t+49s; nobody had re-measured since, so the readout carries it.
+            Hh.c.census_restore_ms = Date.now() - Hh.c.census_phase_at
             Hh.c.census_phase = 'ready'
             if (r.installed && Hh.tlog) Hh.tlog(`🗺 census restored — ${r.installed} directories of ${Object.keys(map).length} remembered`)
         } catch (e) {
@@ -332,7 +335,7 @@
                 const conf = census_confidence(live)
                 return {
                     phase: Hh.c.census_phase || 'off', humdinger: !!Hh.c.humdinger,
-                    pruned: Hh.c.census_pruned || 0,
+                    pruned: Hh.c.census_pruned || 0, restore_ms: Hh.c.census_restore_ms ?? null,
                     live: conf.total, restored: conf.restored, unconfirmed: conf.unconfirmed,
                     stored: Hh.c.census_n || (Hh.c.census_store ? Object.keys(Hh.c.census_store).length : 0),
                     // `parts` is the new number worth watching: it is how many appends stand unfolded.
@@ -342,6 +345,33 @@
                     dropped: Hh.c.census_dropped || 0,
                     saved_at: Hh.c.census_at || 0, err: Hh.c.census_err || '',
                 }
+            },
+            // Census_tops — READ-ONLY: one row per top-level folder of the live map.  `known` is audio the
+            //  wander has counted, `fog` the folders named but never stood in, `est` known + each fog folder
+            //   priced at its depth's prior (Crate.g meander_pd), `picks` the tracks drawn there this page.
+            //    picks/Σpicks against est/Σest is the "is it random enough" comparison.
+            Census_tops() {
+                const Hh = (this as any).top_House()
+                const live: Census = Hh.c.meander_learn || {}
+                const pd = Hh.c.meander_pd || null
+                const ptop = Hh.c.meander_picks_top || {}
+                const rows: Record<string, { known: number, dirs: number, fog: number, est: number, picks: number }> = {}
+                const row = (t: string) => rows[t] || (rows[t] = { known: 0, dirs: 0, fog: 0, est: 0, picks: 0 })
+                for (const k in live) {
+                    if (!k) continue
+                    const e = live[k] as any
+                    const r = row(k.split('/')[0])
+                    r.dirs++; r.known += +(e.audio || 0); r.est += +(e.audio || 0)
+                    for (const s of (e.subs || [])) {
+                        if (live[s]) continue
+                        r.fog++
+                        const d = String(s).split('/').length
+                        r.est += pd && pd[d] != null ? +pd[d] : 0
+                    }
+                }
+                for (const t in ptop) row(t).picks = +ptop[t]
+                for (const t in rows) rows[t].est = Math.round(rows[t].est)
+                return { depth_prior: pd, tops: rows }
             },
             // Census_flush — save now (a UI seam, and what the hide handler does).
             async Census_flush() { await save(true) },
