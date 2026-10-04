@@ -1185,11 +1185,21 @@ async Heard_haul_beat(w, rw, me, nav, shop, ident):
         //  THE 🧲 FIRST: a take whose 'to' names another body is that body's to haul — not adopted, not
         //   minted here (two folder-holders in one crew used to haul the same heart twice).
         let myprepub = ident ? String(ident.sc.prepub || '') : ''
+        // SAY WHY, ONCE (owner 2026-10-04, Lump's ♥ that Inko never picked up: "wanting Inko to log something"): each
+        //  heart's haul verdict here is logged when it first appears or changes — never per beat.  .c only.
+        let said = rw.c.haul_said || (rw.c.haul_said = {})
+        let say = (c, why) => {
+            let k = String(c.sc.id || '')
+            if (!k || said[k] === why) { return }
+            said[k] = why
+            console.log('♥⇢ ' + String(c.sc.title || k).slice(0, 32) + ' — ' + why)
+        }
+        for (const c of row.cards) { if (!this.Heard_for_me(c, myprepub)) { say(c, 'not mine to haul — the 🧲 is on ' + (this.Heard_to_name(c) || String(c.sc.to).slice(0, 8))) } }
         let cards = row.cards.filter((c) => this.Heard_for_me(c, myprepub)).map((c) => this.Heard_adopt(w, me, c)).filter((c) => c)
         if (!cards.length) { continue }
         let busy = 0
         for (const k of shop.o({ Heist: 1, pub: row.pub })) { if (String(k.sc.state || 'primed') !== 'done') { busy = 1 } }
-        if (busy) { continue }
+        if (busy) { for (const card of cards) { say(card, 'waiting — a haul from this holder is already running') } continue }
         let mir = rw.o({ Theirs: 1, pub: row.pub })[0]
         let mirstock = mir ? mir.o({ stock: 1, pub: row.pub })[0] : null
         if (!mirstock) {
@@ -1201,6 +1211,7 @@ async Heard_haul_beat(w, rw, me, nav, shop, ident):
             for (const card of cards) {
                 if (this.Heard_verdict(card)) { continue }
                 if (card.sc.waiting_for !== word) { card.sc.waiting_for = word; card.bump() }
+                say(card, 'waiting for ' + word + ' — no mirror of them here')
             }
             continue
         }
@@ -1210,9 +1221,10 @@ async Heard_haul_beat(w, rw, me, nav, shop, ident):
             if (!id || this.Heard_verdict(card)) { continue }
             if (shop.o({ Heist: 1, seed: id })[0]) { continue }
             let rec = this.Ra_rec_find(mirstock, { Record: 1, id: id })
-            if (!rec) { continue }
+            if (!rec) { say(card, 'not in what ' + (this.Radio_friendly ? this.Radio_friendly(rw, row.pub) : String(row.pub).slice(0, 8)) + ' offers this device — cannot seed a haul'); continue }
             let kept = this.Heard_keep(w, rw, shop, row.pub, rec)
             if (kept) {
+                say(card, 'haul started on this device')
                 // a heart pressed on ANOTHER body: nobody here asked, so it never takes this screen (R4, Sounditron)
                 if (card.sc.pressed_on) { kept.c.carried = 1 }
                 // "carried_by = which body's Card has a keep" (SoundPooling_todo §0.0 rung 3): the only

@@ -1,20 +1,596 @@
 {
-  "about": "THE FLOTILLA — six nodes in a pyramid (1 · 2 · 3), each a separate hole the data descends into, with what they share stretched between them as string cheese.  Edit freely: items are guise objects (first key = mainkey, plain keys = facts, guise.kids = what lives inside); puts pose the pyramid (per-mille of the frame, attractors).",
-  "deck": "crosslink",
-  "items": [
-    { "Vessel": "crown",     "tide": "high", "guise": { "tok": "v:crown",     "dose": 3, "kids": [ { "Hold": "charts" }, { "Hold": "bell" }, { "Hold": "lamp" } ] } },
-    { "Vessel": "port",      "tide": "high", "reef": "north", "guise": { "tok": "v:port",      "dose": 2, "kids": [ { "Hold": "nets" }, { "Hold": "rope" } ] } },
-    { "Vessel": "starboard", "tide": "low",  "reef": "north", "guise": { "tok": "v:starboard", "dose": 2, "kids": [ { "Hold": "salt" }, { "Hold": "oars" } ] } },
-    { "Vessel": "keel-a",    "tide": "low",  "reef": "south", "guise": { "tok": "v:keel-a",    "dose": 1, "kids": [ { "Hold": "ballast" } ] } },
-    { "Vessel": "keel-b",    "tide": "high", "reef": "south", "guise": { "tok": "v:keel-b",    "dose": 1, "kids": [ { "Hold": "pumps" }, { "Hold": "tar" } ] } },
-    { "Vessel": "keel-c",    "tide": "low",  "reef": "south", "guise": { "tok": "v:keel-c",    "dose": 1, "kids": [ { "Hold": "cargo" } ] } }
-  ],
-  "puts": [
-    { "Put": "v:crown",     "x": 500, "y": 180 },
-    { "Put": "v:port",      "x": 330, "y": 470 },
-    { "Put": "v:starboard", "x": 670, "y": 470 },
-    { "Put": "v:keel-a",    "x": 180, "y": 790 },
-    { "Put": "v:keel-b",    "x": 500, "y": 790 },
-    { "Put": "v:keel-c",    "x": 820, "y": 790 }
-  ]
+ "about": "THE FLOTILLA — six nodes in a pyramid (1 · 2 · 3), each a separate hole the data descends into, with what they share stretched between them as string cheese.  Edit freely: items are guise objects (first key = mainkey, plain keys = facts, guise.kids = what lives inside); puts pose the pyramid (per-mille of the frame, attractors).  Press a vessel to SLIDE DOWN into it (the `descend` stop): its holds become the whole glass; press a hold to fall again; the Rope climbs back.",
+ "deck": "crosslink,descend",
+ "items": [
+  {
+   "Vessel": "crown",
+   "tide": "high",
+   "guise": {
+    "tok": "v:crown",
+    "dose": 3,
+    "kids": [
+     {
+      "Hold": "charts",
+      "guise": {
+       "tok": "v:crown>charts",
+       "kids": [
+        {
+         "Crate": "north",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:crown>charts>north",
+          "kids": [
+           {
+            "Thing": "north-1"
+           },
+           {
+            "Thing": "north-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "south",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:crown>charts>south",
+          "kids": [
+           {
+            "Thing": "south-1"
+           },
+           {
+            "Thing": "south-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "reef",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:crown>charts>reef",
+          "kids": [
+           {
+            "Thing": "reef-1"
+           },
+           {
+            "Thing": "reef-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     },
+     {
+      "Hold": "bell",
+      "guise": {
+       "tok": "v:crown>bell",
+       "kids": [
+        {
+         "Crate": "clapper",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:crown>bell>clapper",
+          "kids": [
+           {
+            "Thing": "clapper-1"
+           },
+           {
+            "Thing": "clapper-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "rope",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:crown>bell>rope",
+          "kids": [
+           {
+            "Thing": "rope-1"
+           },
+           {
+            "Thing": "rope-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     },
+     {
+      "Hold": "lamp",
+      "guise": {
+       "tok": "v:crown>lamp",
+       "kids": [
+        {
+         "Crate": "wick",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:crown>lamp>wick",
+          "kids": [
+           {
+            "Thing": "wick-1"
+           },
+           {
+            "Thing": "wick-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "oil",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:crown>lamp>oil",
+          "kids": [
+           {
+            "Thing": "oil-1"
+           },
+           {
+            "Thing": "oil-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "glass",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:crown>lamp>glass",
+          "kids": [
+           {
+            "Thing": "glass-1"
+           },
+           {
+            "Thing": "glass-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "Vessel": "port",
+   "tide": "high",
+   "reef": "north",
+   "guise": {
+    "tok": "v:port",
+    "dose": 2,
+    "kids": [
+     {
+      "Hold": "nets",
+      "guise": {
+       "tok": "v:port>nets",
+       "kids": [
+        {
+         "Crate": "mesh",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:port>nets>mesh",
+          "kids": [
+           {
+            "Thing": "mesh-1"
+           },
+           {
+            "Thing": "mesh-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "floats",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:port>nets>floats",
+          "kids": [
+           {
+            "Thing": "floats-1"
+           },
+           {
+            "Thing": "floats-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     },
+     {
+      "Hold": "rope",
+      "guise": {
+       "tok": "v:port>rope",
+       "kids": [
+        {
+         "Crate": "hemp",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:port>rope>hemp",
+          "kids": [
+           {
+            "Thing": "hemp-1"
+           },
+           {
+            "Thing": "hemp-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "tar",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:port>rope>tar",
+          "kids": [
+           {
+            "Thing": "tar-1"
+           },
+           {
+            "Thing": "tar-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "Vessel": "starboard",
+   "tide": "low",
+   "reef": "north",
+   "guise": {
+    "tok": "v:starboard",
+    "dose": 2,
+    "kids": [
+     {
+      "Hold": "salt",
+      "guise": {
+       "tok": "v:starboard>salt",
+       "kids": [
+        {
+         "Crate": "crystal",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:starboard>salt>crystal",
+          "kids": [
+           {
+            "Thing": "crystal-1"
+           },
+           {
+            "Thing": "crystal-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "brine",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:starboard>salt>brine",
+          "kids": [
+           {
+            "Thing": "brine-1"
+           },
+           {
+            "Thing": "brine-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     },
+     {
+      "Hold": "oars",
+      "guise": {
+       "tok": "v:starboard>oars",
+       "kids": [
+        {
+         "Crate": "blade",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:starboard>oars>blade",
+          "kids": [
+           {
+            "Thing": "blade-1"
+           },
+           {
+            "Thing": "blade-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "loom",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:starboard>oars>loom",
+          "kids": [
+           {
+            "Thing": "loom-1"
+           },
+           {
+            "Thing": "loom-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "Vessel": "keel-a",
+   "tide": "low",
+   "reef": "south",
+   "guise": {
+    "tok": "v:keel-a",
+    "dose": 1,
+    "kids": [
+     {
+      "Hold": "ballast",
+      "guise": {
+       "tok": "v:keel-a>ballast",
+       "kids": [
+        {
+         "Crate": "iron",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:keel-a>ballast>iron",
+          "kids": [
+           {
+            "Thing": "iron-1"
+           },
+           {
+            "Thing": "iron-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "stone",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:keel-a>ballast>stone",
+          "kids": [
+           {
+            "Thing": "stone-1"
+           },
+           {
+            "Thing": "stone-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "sand",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:keel-a>ballast>sand",
+          "kids": [
+           {
+            "Thing": "sand-1"
+           },
+           {
+            "Thing": "sand-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "Vessel": "keel-b",
+   "tide": "high",
+   "reef": "south",
+   "guise": {
+    "tok": "v:keel-b",
+    "dose": 1,
+    "kids": [
+     {
+      "Hold": "pumps",
+      "guise": {
+       "tok": "v:keel-b>pumps",
+       "kids": [
+        {
+         "Crate": "valve",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:keel-b>pumps>valve",
+          "kids": [
+           {
+            "Thing": "valve-1"
+           },
+           {
+            "Thing": "valve-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "piston",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:keel-b>pumps>piston",
+          "kids": [
+           {
+            "Thing": "piston-1"
+           },
+           {
+            "Thing": "piston-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     },
+     {
+      "Hold": "tar",
+      "guise": {
+       "tok": "v:keel-b>tar",
+       "kids": [
+        {
+         "Crate": "pitch",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:keel-b>tar>pitch",
+          "kids": [
+           {
+            "Thing": "pitch-1"
+           },
+           {
+            "Thing": "pitch-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "resin",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:keel-b>tar>resin",
+          "kids": [
+           {
+            "Thing": "resin-1"
+           },
+           {
+            "Thing": "resin-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "Vessel": "keel-c",
+   "tide": "low",
+   "reef": "south",
+   "guise": {
+    "tok": "v:keel-c",
+    "dose": 1,
+    "kids": [
+     {
+      "Hold": "cargo",
+      "guise": {
+       "tok": "v:keel-c>cargo",
+       "kids": [
+        {
+         "Crate": "tea",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:keel-c>cargo>tea",
+          "kids": [
+           {
+            "Thing": "tea-1"
+           },
+           {
+            "Thing": "tea-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "silk",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:keel-c>cargo>silk",
+          "kids": [
+           {
+            "Thing": "silk-1"
+           },
+           {
+            "Thing": "silk-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "spice",
+         "sea": "shallow",
+         "guise": {
+          "tok": "v:keel-c>cargo>spice",
+          "kids": [
+           {
+            "Thing": "spice-1"
+           },
+           {
+            "Thing": "spice-2"
+           }
+          ]
+         }
+        },
+        {
+         "Crate": "amber",
+         "sea": "deep",
+         "guise": {
+          "tok": "v:keel-c>cargo>amber",
+          "kids": [
+           {
+            "Thing": "amber-1"
+           },
+           {
+            "Thing": "amber-2"
+           }
+          ]
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "puts": [
+  {
+   "Put": "v:crown",
+   "x": 500,
+   "y": 180
+  },
+  {
+   "Put": "v:port",
+   "x": 330,
+   "y": 470
+  },
+  {
+   "Put": "v:starboard",
+   "x": 670,
+   "y": 470
+  },
+  {
+   "Put": "v:keel-a",
+   "x": 180,
+   "y": 790
+  },
+  {
+   "Put": "v:keel-b",
+   "x": 500,
+   "y": 790
+  },
+  {
+   "Put": "v:keel-c",
+   "x": 820,
+   "y": 790
+  }
+ ]
 }

@@ -34,8 +34,9 @@ Owner's walk: Lump aimed at Grav kept playing Inko, and heard Inko's own tracks 
 - ✗ **NOT the cause: a `pool/` folder on disk.** A browser's SoundPool is OPFS, mounted at `pool/` by MountNav
    (Housing `Wormhole_mount_pool`). The mount root lists only the FSA, so no music walk can reach it. Only the daemon
     keeps a real `pool/` dir, and it walks that as an explicit base on purpose. A walk-skip was built on the wrong
-     premise and reverted the same day. "Inko's tracks from Grav" is most likely the aim drift above: the chip said Grav
-      while the dial played another holder.
+     premise and reverted the same day. The real cause of "Inko's tracks from Grav" was found live
+      the same day: the pool's preview heal wrote into radiostock under Grav's pub and the Stoker resurrect stood them on
+       Mine. Fixed + ruled in SoundPooling_todo §0 (the pool is not a radio source).
 - **Sounditron is red on a peerless runner** (5 peer-dependent gaps, `ok:0` every step) — environmental, same as before.
 **Owner to walk:** Lump aimed at Grav → only Grav's tracks, or the ⚠ chip if Grav has nothing for this body; Captain + Cave
  both pulling from one friend at once.

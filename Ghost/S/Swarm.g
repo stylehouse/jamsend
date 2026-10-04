@@ -2134,7 +2134,10 @@ Swarm_arm(w):
     //    (the station funnel above, header.type === 'reach') was the only one that heard.  So eed re-sent the
     //     same six seqs to the daemon every 5s for an hour and the daemon's 5600s log held ZERO reach
     //      lines — not "ignored, unrostered", simply never dispatched.  reach_done rides back the same road.
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'roster', 'crew', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held', 'reach', 'reach_done', 'borrow', 'borrow_give', 'seat_lost']) w.c.on[kind] = hear
+    // …AND `heard` (2026-10-04, Lump's ♥s that Inko never hauled): the heard-Mag mirror mile (Heard_gossip_beat) sends
+    //  over this road and Swarm_heard_mirror was wired in the funnel above, but the kind was never armed here — every
+    //   sibling's heard snap died on arrival, so no Cave ever saw its Captain's hearts.  Same shape as reach, above.
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_confirm', 'pier_reject', 'reinvite', 'reinvite_honour', 'reinvite_seal', 'reinvite_ok', 'ive_got', 'pulse', 'swarm_hi', 'suggest', 'suggest_got', 'repli_ready', 'charter', 'roster', 'crew', 'ferry', 'ferry_want', 'ferry_cancel', 'ferry_got', 'ferry_held', 'reach', 'reach_done', 'borrow', 'borrow_give', 'seat_lost', 'heard']) w.c.on[kind] = hear
 
 // Swarm_voucher_ok — is this voucher a valid proof the sealed friend `from` sent the frame?
 //  (1) a cache hit — a voucher whose sign we already proved this era — passes without crypto.

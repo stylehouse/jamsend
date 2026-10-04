@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return '4aa36f92755eadd7~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return '7cc18803f9abed0c~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -3203,7 +3203,12 @@ async Stoker_look(st, era) {
             let stand = null
             try { stand = await this.Ra_stock_standing(nav, pub, ls[k].enid) } catch (er) { stand = null }
             if (st.c.era !== era) return
-            if (stand && +(stand.info.preview_secs || 0) === this.Ra_preview_secs()) {
+            // THE POOL IS NOT MY COLLECTION (2026-10-04, Lump hearing Inko's Hello Mo'Girl "@Grav"): the pool's
+            //  preview heal (Ra_pool_previews_heal → Ra_stock_one, base 'pool') writes into this same radiostock
+            //   dir under this same pub, so a reload stood those lofi copies on Mine and the share beat offered a
+            //    friend's track back out as mine.  Their headers say base:'pool' — they belong to the Pocket only.
+            let pooled = stand && String(stand.info.base || '') === 'pool'
+            if (stand && !pooled && +(stand.info.preview_secs || 0) === this.Ra_preview_secs()) {
                 // shape-agnostic existence check — a flat shelf.oa misses a record already sitting
                 //  PAGED (%Mag:shuffle > %Cloud), so it would re-stock it and over-count stood.
                 if (!this.Ra_rec_find(shelf, { Record: 1, id: ls[k].enid })) {

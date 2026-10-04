@@ -252,6 +252,7 @@
         //   fire because it was spelled the DOM way is a bad half hour for whoever wrote it.  Both work.
         const fn = src?.c?.press ?? src?.c?.onclick
         if (typeof fn === 'function') {
+            if (fo(w, 'descend') && cell.hasKids && !parked(w)) { descend(w, cell, () => fn(src)); return }
             spine_dive_cam(w, cell)
             try { fn(src) } catch (e) { console.warn('◈ Vyto press threw', cell.ident, e) }
             return
@@ -1761,7 +1762,11 @@
     //   to the pre-camera renderer (`x:0 y:0 w:vw_w h:vw_h` is exactly the old `0 0 {vw_w} {vw_h}`).
     function cam_view(w: TheC): { x: number, y: number, w: number, h: number } {
         void paint_tick
-        return cams.get(w) ?? ref_cam()
+        // a FRESH rect every read (2026-10-04): the camera is mutated in place, so handing back the same object
+        //  let the template's `{@const cam}` see an unchanged reference and keep a stale viewBox — the descent's
+        //   glide (and the spine's dive camera) moved the model of the camera but never the picture.
+        const c = cams.get(w)
+        return c ? { x: c.x, y: c.y, w: c.w, h: c.h } : ref_cam()
     }
     // pad a rect out to the frame's aspect (grow the short axis; never crop, so the whole cell always
     //  stays inside the shot), then clamp inside the frame without changing the size that was chosen.
@@ -1835,6 +1840,69 @@
         const c = cam_of(w)
         c.x = r.x; c.y = r.y; c.w = r.w; c.h = r.h; c.vx = 0; c.vy = 0; c.vw = 0; c.vh = 0
         kick(w); paint_tick++
+    }
+    // ── THE DESCENT (stop `descend`, 2026-10-04 — the owner: *"a sliding down-into-caves aspect, where cells get way
+    //  larger and we disappear within them"*).  Pressing a cell that HAS KIDS no longer just presses: the camera first
+    //   slides DOWN into it — an eased tween from the current view to a box INSIDE the cell's walls, so the walls slide
+    //    off the screen edges — while a shade closes over everything outside it (a frame-sized path with the cell's own
+    //     outline as its hole).  At the bottom the press fires (the PRODUCER swaps the level — the cave's law: the
+    //      producer owns the dive, Vyto only draws), the camera lets go, and the new level SURFACES out of the dark,
+    //       as if we were now standing inside the cell.  A fixed-duration tween, not a spring: the same press always
+    //        travels the same path in the same time, so a filmed descent is reproducible.  Leaf presses are untouched.
+    type Rect = { x: number, y: number, w: number, h: number }
+    type Descent = { w: TheC, key: string, d: string, from: Rect, to: Rect, t0: number, dur: number, p: number, then: () => void }
+    let descent = $state<Descent | null>(null)
+    // SURFACING — the new level rising out of the dark: a JS tween (not CSS) so a film can step it frame by frame
+    let surface = $state<{ t0: number, dur: number, p: number } | null>(null)
+    // FILM MODE (`window.__vy_film = 1`, set by glass_sketch --dive): nothing advances by the clock; the film steps the
+    //  fall with `__vy_descend_at(u)` and the surfacing with `__vy_surface_at(u)`, u ∈ [0,1], one screenshot per step —
+    //   so every frame of the fall is caught however slowly the zoomed glass paints, and a film is the same every run.
+    const film_mode = (): boolean => !!(globalThis as any).__vy_film
+    if (typeof globalThis !== 'undefined') {
+        ;(globalThis as any).__vy_descend_at = (u: number) => { if (descent) descend_apply(u) ; return !!descent }
+        ;(globalThis as any).__vy_surface_at = (u: number) => { if (surface) { surface.p = Math.min(1, Math.max(0, u)); paint_tick++; if (surface.p >= 1) surface = null } ; return !!surface }
+    }
+    // the fall's length — 1.1s live; a FILM can slow it (`window.__vy_descend_ms`, set by glass_sketch --slow) so a
+    //  screencast catches more than three frames of it.  The surfacing fade scales with it.
+    const descend_ms = (): number => Number((globalThis as any).__vy_descend_ms) > 0 ? Number((globalThis as any).__vy_descend_ms) : 1100
+    function descend(w: TheC, cell: PaintCell, then: () => void) {
+        if (descent) return
+        const from = { ...cam_view(w) }
+        // a box well INSIDE the walls (55% of the cell's span), so by the end the walls are past the screen edges
+        const cw = Math.max(cell.bw, 40) * 0.55, ch = Math.max(cell.bh, 30) * 0.55
+        const to = aspect_fit(cell.bx + (cell.bw - cw) / 2, cell.by + (cell.bh - ch) / 2, cw, ch)
+        descent = { w, key: cell.key, d: cell.d, from, to, t0: performance.now(), dur: descend_ms(), p: 0, then }
+        engaged.set(w, cell.key)
+        if (!film_mode()) requestAnimationFrame(descend_frame)
+    }
+    function descend_frame(now: number) {
+        const ds = descent; if (!ds) return
+        descend_apply((now - ds.t0) / ds.dur)
+        if (descent) requestAnimationFrame(descend_frame)
+    }
+    function surface_frame(now: number) {
+        const s = surface; if (!s) return
+        s.p = Math.min(1, (now - s.t0) / s.dur); paint_tick++
+        if (s.p >= 1) { surface = null; return }
+        requestAnimationFrame(surface_frame)
+    }
+    function descend_apply(u0: number) {
+        const ds = descent; if (!ds) return
+        const u = Math.min(1, Math.max(0, u0))
+        const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2   // ease in-out: lean in, fall, land
+        const c: any = cam_of(ds.w)
+        for (const k of ['x', 'y', 'w', 'h'] as const) { c[k] = (ds.from as any)[k] + ((ds.to as any)[k] - (ds.from as any)[k]) * e; c['t' + k] = c[k] }
+        c.vx = 0; c.vy = 0; c.vw = 0; c.vh = 0
+        ds.p = e
+        paint_tick++; kick(ds.w)
+        if (u < 1) return
+        // THROUGH: let the camera go, swap the level, surface from the dark
+        engaged.delete(ds.w); cams.delete(ds.w)
+        descent = null
+        surface = { t0: performance.now(), dur: descend_ms() * 0.82, p: 0 }
+        if (!film_mode()) requestAnimationFrame(surface_frame)
+        try { ds.then() } catch (err) { console.warn('◈ Vyto descend press threw', err) }
+        paint_tick++
     }
     function cam_step(w: TheC, dt: number): boolean {
         const c = cams.get(w); if (!c) return false
@@ -5367,6 +5435,16 @@
                             {/each}
                         {/if}
                     {/if}
+                    {#if descent && descent.w === w}
+                        <!-- THE DESCENT'S SHADE: a frame-sized path with the descended cell as its hole (evenodd), closing as we fall -->
+                        <path class="descend-shade" fill-rule="evenodd" style={`opacity:${(0.97 * descent.p).toFixed(3)}`}
+                              d={`M${(cam.x - cam.w).toFixed(1)},${(cam.y - cam.h).toFixed(1)}h${(cam.w * 3).toFixed(1)}v${(cam.h * 3).toFixed(1)}h${(-cam.w * 3).toFixed(1)}Z ${descent.d}`}></path>
+                    {/if}
+                    {#if surface}
+                        <!-- SURFACING: the new level rises out of the dark we fell into (ease-out: the dark lifts fast, then lingers) -->
+                        <rect class="surface-shade" x={cam.x} y={cam.y} width={cam.w} height={cam.h}
+                              style={`opacity:${(1 - (1 - Math.pow(1 - surface.p, 3))).toFixed(3)}`}></rect>
+                    {/if}
                 </svg>
                 <!-- the FACE overlay: an HTML layer molded to the SVG in viewBox percentages (the SVG
                      keeps its 800×450 aspect at width:100%, so a % box tracks its cell exactly — no
@@ -5764,6 +5842,8 @@
     /* THE GRID BAND LABEL (stop `grid`) -- the alignment named in words above the row it groups; small
        and out of the way, the same register a scope's own running head reads at (.fo-head territory). */
     .cave-dark { pointer-events: none; }
+    .descend-shade { fill: #050403; pointer-events: none; }
+    .surface-shade { fill: #050403; pointer-events: none; }
     .gauge-rail { stroke: rgba(205, 191, 159, 0.18); stroke-width: 3; stroke-linecap: round; pointer-events: none; }
     .gauge-lit { stroke: rgba(205, 191, 159, 0.75); stroke-width: 5; stroke-linecap: round; pointer-events: none; }
     .keep-col { fill: rgba(120, 140, 170, 0.07); stroke: rgba(160, 180, 210, 0.25); stroke-dasharray: 6 5; pointer-events: none; }

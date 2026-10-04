@@ -328,15 +328,12 @@
                         <button class="rf-menu-row rf-menu-any" class:rf-menu-on={!!face.own && face.source !== 'pool'} onclick={aim_own} title={s.tracks + ' of your own records playable'}>
                             <span class="rf-menu-name">♪ LOCAL</span><span class="rf-menu-n">{s.tracks}</span></button>
                     {/each}
-                    <!-- the pool wears its count like every holder row — the PLAYABLE count, the one the dial obeys;
-                         "4 asked, 1 here" reads as 1/4 so the row never claims more than next can deliver. -->
-                    {#if pool_ok}<button class="rf-menu-row rf-menu-any" class:rf-menu-on={face.source === 'pool'} onclick={aim_pool}
-                        title={pool_c.cards > pool_c.ready ? pool_c.ready + ' playable of ' + pool_c.cards + ' asked for' : pool_c.ready + ' playable'}>
-                        <span class="rf-menu-name">♪ SOUNDPOOL</span><span class="rf-menu-n">{pool_c.cards > pool_c.ready ? pool_c.ready + '/' + pool_c.cards : pool_c.ready}</span></button>{/if}
+                    <!-- no ♪ SOUNDPOOL row (owner 2026-10-04): the pool isn't a radio source to choose — it only stands in when
+                         every friend runs dry (Radio_lineup_fill's exhausted fallback). -->
                 </div>
             {/if}
             {#if face.source === 'pool'}
-                <button class="rf-src rf-src-local rf-src-pool" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'press to flip to friends'}>♪ SOUNDPOOL{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
+                <button class="rf-src rf-src-local rf-src-pool" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'press to flip to friends'}>♪ SOUNDPOOL</button>
                 {#if !pool_ok}<button class="rf-src-sub rf-invite-link" onclick={() => (H as any)?.Sounditron_focus?.('Pooling')} title="open SoundPool">setup</button>
                 {:else if !pool_n}<div class="rf-src-sub">{pool_c.cards ? pool_c.cards + ' pooled · none playable yet' : 'empty'}</div>{/if}
             {:else if face.by}
@@ -344,11 +341,11 @@
                     title={aim_dry ? '⚠ pinned to ' + aimed_by + ' — ' + aim_dry + ' — press to choose someone else' : chooser
                         ? (aimed_by ? 'pinned to ' + aimed_by + ' — press to choose someone else' : 'the source — press to choose who you are listening to')
                         : 'the source — press to flip friends | SoundPool'}
-                    >{aim_dry ? '⚠ ' : aimed_by ? '⦿ ' : 'from '}{aimed_by || face.byName || 'a friend'}{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
+                    >{aim_dry ? '⚠ ' : aimed_by ? '' : 'from '}{aimed_by || face.byName || 'a friend'}</button>
             {:else if face.solo}
-                <button class="rf-src rf-src-local" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'the source — press to flip friends | SoundPool'}>♪ LOCAL · {soloWhy(face)}{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
+                <button class="rf-src rf-src-local" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'the source — press to flip friends | SoundPool'}>♪ LOCAL · {soloWhy(face)}</button>
             {:else}
-                <button class="rf-src rf-src-local" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'the source — press to flip friends | SoundPool'}>♪ LOCAL — your music{#if chooser}<span class="rf-src-caret"> ▴</span>{/if}</button>
+                <button class="rf-src rf-src-local" onclick={chip_press} title={chooser ? 'press to choose where to listen from' : 'the source — press to flip friends | SoundPool'}>♪ LOCAL — your music</button>
             {/if}
         </div>
     {/if}
@@ -479,7 +476,6 @@
     .rf-menu-label { font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; padding: 4px 8px 1px; }
     .rf-src-aimed { background: rgba(127, 200, 232, 0.34); color: #d8f0ff; border-color: rgba(127, 200, 232, 0.75); }
     .rf-src-dry { background: rgba(224, 150, 94, 0.18); color: #f0c8a8; border-style: dashed; border-color: rgba(224, 150, 94, 0.7); }
-    .rf-src-caret { opacity: .7; font-size: .9em; }
     /* the upward chooser.  `position:absolute; bottom:100%` is the "but upwards" — anchored to the chip so
        it tracks wherever the glass puts the face, and pointer-events re-armed because the .rf overlay is
        pointer-events:none (the glass must stay pannable; only controls opt back in). */

@@ -1599,7 +1599,6 @@ async Ra_pool_previews_heal(w, ident):
     let homes = this.Ra_pool_fill_homes(w, ident)
     if (!homes.pool || !homes.mw) { return 0 }
     let healed = 0
-    let encoded = 0
     for (const card of this.Ra_recs(homes.pool)) {
         if (healed >= 4) { break }
         if (+(card.sc.preview || 0) > 0) { continue }
@@ -1608,36 +1607,18 @@ async Ra_pool_previews_heal(w, ident):
         //   whose bytes genuinely differ (the comment on Ra_rec_previews_carry's own guard).  But that guard
         //    used to skip the card ENTIRELY, before the ENCODE rung below ever got a look — and encoding is
         //     exactly right for a lofi card: it re-reads THIS card's own bytes off disk and makes its own
-        //      preview, no theft involved.  So: skip carrying, never skip encoding.
+        //      preview, no theft involved.  (The encode rung is gone since 2026-10-04 — a lofi card with no
+        //       preview of its own simply stays out of the radio.)
         if (!(card.sc.grade || card.sc.lofi)) {
             let src = this.Ra_pool_source_rec(homes.mw, String(card.sc.id || ''))
             if (src) { healed = healed + this.Ra_rec_previews_carry(card, src); continue }
         }
-        // NOTHING TO BORROW → ENCODE ONE OURSELVES (2026-09-06, eed's log: "12 cards · 8 playable · 4 no
-        //  preview" — and the four were exactly the daemon's real tracks).  The carry lends a preview from a
-        //   standing record with the same id, and a track this body has NEVER HEARD has none anywhere: the
-        //    mirror card for a circulation fill is a catalog row, its chunks only ever cross when you stream
-        //     it.  So the last rung of "a track you never heard becomes dialable" is the pool encoding its
-        //      OWN preview from the file it already holds — Ra_stock_one, the Stoker's per-file encoder,
-        //       pointed at the pool shelf and the pool mount.  ONE a pass (a whole-file read + decode +
-        //        opus encode), live only (a Book must never spin a real encoder), and only when the file is
-        //         actually on disk (a card whose bytes are gone has nothing to encode).
-        let top = this.top_House ? this.top_House() : null
-        if (!top || !top.c || !top.c.humdinger || encoded > 0 || !homes.nav || !card.sc.path) { continue }
-        let rel = String(card.sc.path)
-        let files = homes.mw.c.pool_files || []
-        if (!files.includes(rel)) { continue }
-        encoded = encoded + 1
-        let r = null
-        try { r = await this.Ra_stock_one(homes.mw, homes.pool, homes.nav, 'pool', rel) } catch (er) { console.log('🏊⚠ pool encode failed for ' + rel.slice(0, 40) + ' — ' + String(er).slice(0, 80)); r = null }
-        // Ra_record_from stamps path as base + '/' + path ('pool/<rel>'); a pool card's path is pool-relative
-        //  (<rel>) everywhere else — unfile, resurrect, the report — so put it back the way the shelf keeps it.
-        let again = this.Ra_rec_find(homes.pool, { Record: 1, id: String(card.sc.id || '') }) || card
-        if (again && again.sc.path !== rel) { again.sc.path = rel; again.bump() }
-        if (r && +(again.sc.preview || 0) > 0) {
-            healed = healed + 1
-            console.log('🏊 pool: ' + (r.stood ? 'resurrected the preview for ' : 'encoded a preview for ') + String(again.sc.title || rel).slice(0, 40) + ' — now dialable')
-        }
+        // NO ENCODE RUNG ANY MORE (owner 2026-10-04: "SoundPooling ISN'T available as Radio for now … we want to hear from
+        //  the Piers directly, to what they have in their collection proper").  It decoded the OPFS file, re-encoded a preview
+        //   and wrote it to .jamsend/radiostock under MY pub — on-disk junk in the share, and the Stoker resurrect then stood
+        //    those lofi copies on Mine and offered a friend's track back out as mine.  The pool plays only as the Lineup's
+        //     run-dry fallback, and only what was HEARD (the carry above lends it the chunks that crossed while listening);
+        //      a never-heard circulation fill is not radio material.
     }
     if (healed > 0) { console.log('🏊 pool: ' + healed + ' pooled track(s) now dialable') }
     await this.Ra_pool_heads_heal(w, ident, homes)

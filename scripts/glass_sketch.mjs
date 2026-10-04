@@ -124,8 +124,48 @@ async function shoot(why) {
     fs.writeFileSync(path.join(OUT, 'last.json'), JSON.stringify(line, null, 1))
 }
 
+// --dive=<key>,<key>,…,up — FILM a descent: press each cell in turn (its data-key, or a suffix of it; `up` = the Rope),
+//  burst-capturing the fall and the surfacing (≈25 fps) into <out>/dive_NNNN.png.  Needs the `descend` stop on the deck.
+async function press(key) {
+    return p.evaluate((key) => {
+        const els = [...document.querySelectorAll('.vyto svg.viewport path.cell')]
+        const el = key === 'up' ? els.find(e => (e.getAttribute('data-key') || '').startsWith('rope:'))
+                                : (els.find(e => e.getAttribute('data-key') === key) ?? els.find(e => (e.getAttribute('data-key') || '').endsWith(key)))
+        if (!el) return 'no cell ' + key + ' among ' + els.map(e => e.getAttribute('data-key')).slice(0, 12).join(' ')
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        return 'pressed ' + el.getAttribute('data-key')
+    }, key)
+}
+// FILM MODE: the page's own clock is switched off (`__vy_film`) and THIS script steps the fall and the surfacing
+//  frame by frame (`__vy_descend_at(u)`, `__vy_surface_at(u)`), one screenshot per step — so every frame is caught however
+//   slowly the zoomed glass paints, and the same --dive makes the same film every run.  --fall=N / --rise=M frames.
+async function film(keys) {
+    let f = 0
+    const FALL = Number(kv.fall ?? 36), RISE = Number(kv.rise ?? 18), HOLD = Number(kv.hold ?? 10)
+    const grab = async () => { f++; try { await p.locator('.vyto svg.viewport').first().screenshot({ path: path.join(OUT, `dive_${String(f).padStart(4, '0')}.png`) }) } catch { f-- } }
+    const frame = () => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))
+    await p.evaluate(() => { globalThis.__vy_film = 1 })
+    for (let i = 0; i < HOLD; i++) await grab()                    // the level before the first fall
+    for (const k of keys) {
+        console.log(JSON.stringify({ dive: k, said: await press(k), frames_so_far: f }))
+        for (let i = 1; i <= FALL; i++) {                            // THE FALL
+            await p.evaluate((u) => globalThis.__vy_descend_at?.(u), i / FALL)
+            await frame(); await grab()
+        }
+        await settle()                                               // the producer stands the new level
+        for (let i = 0; i <= RISE; i++) {                            // THE SURFACING
+            await p.evaluate((u) => globalThis.__vy_surface_at?.(u), i / RISE)
+            await frame(); await grab()
+        }
+        for (let i = 0; i < HOLD; i++) await grab()                  // stand in the new level a moment
+    }
+    await p.evaluate(() => { globalThis.__vy_film = 0 })
+    console.log(JSON.stringify({ filmed: f, out: OUT }))
+}
+
 await boot()
 await shoot('boot')
+if (kv.dive) { await film(kv.dive.split(',')); await b.close(); proxy?.close(); process.exit(0) }
 if (!flags.has('--watch')) { await b.close(); proxy?.close(); process.exit(0) }
 
 // WATCH: the sketch file → re-draw; the renderer (HMR'd into the page) → re-shoot; a .go (model) → reload + re-shoot

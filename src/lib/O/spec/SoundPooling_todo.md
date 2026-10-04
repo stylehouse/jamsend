@@ -2,6 +2,20 @@
 
 ## 0. WHAT TO GET ON WITH NEXT (rewritten 2026-09-11 night; the older §0s are §0.6–§0.8 below, intact)
 
+### 0.0 2026-10-04 — RULED: the pool is not a radio source (owner)
+
+*"SoundPooling ISN'T available as Radio for now … unless we run out of Radio … we want to hear from the Piers directly, to
+ what they have (in their collection proper) not what they're pooling. maybe the latter, but it would take so much more UI
+  fine-grainity."*  Landed the same day:
+- **♪ SOUNDPOOL is gone from the source chooser** (RadioFace). The pool still stands in when every friend runs dry
+   (`Radio_lineup_fill`'s `exhausted` fallback, the 2026-09-23 ruling). The `source:'pool'` code stays for Books.
+- **The heal's ENCODE rung is deleted** (`Ra_pool_previews_heal`). It re-encoded a preview from the OPFS file and wrote it to
+   `.jamsend/radiostock` under MY pub. The Stoker resurrect then stood those lofi copies on Mine, and the share beat offered a
+    friend's track back out as mine (Lump hearing Inko's tracks "@Grav"). Only the in-memory CARRY remains, so the fallback plays
+     what was heard. Belt and braces: the Stoker resurrect (Radio.g) skips any radiostock header with `base:'pool'`.
+- **Open:** the radio's own-track road needs a radiostock card (`Ra_card`) to find a source. If the pool ever becomes a real
+   source again, give it a direct OPFS road (path + gain off the pool card, stream from seq 0), not a radiostock cache.
+
 ### 0.0 2026-09-23 — SELF-CIRCULATION: why a Lineup can say "no music coming across" with real records mirrored
 ##  (owner, live: "somehow we should be smarter than that" — ANALYSIS, nothing coded yet, owner's call pending)
 

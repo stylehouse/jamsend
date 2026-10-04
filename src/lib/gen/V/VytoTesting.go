@@ -12,7 +12,7 @@ import { poly_area } from "$lib/O/vyto_geometry"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_VytoTesting(): string { return '5048022f099100be~g1' },
+    Ghostmeta_Ghost_V_VytoTesting(): string { return '50d031f8912698b8~g1' },
 
 // VytoTesting.g — né Vytonation.g.  Vyto's demo Books (the VoroTesting.g sibling, one directory over
 //  in Ghost/V/), under the `<Name>Testing.g` convention (owner ruling 2026-09-09; the one predicate
@@ -3743,10 +3743,55 @@ async VytoSketch_stand(w) {
 // VytoSketch_draw — (re)stand a sketch on a FRESH glass.  The sketch's own knobs, all optional:
 //  `deck` (a foamereo string) · `nested` (default on) · `folded` · `foam` (default on) · `puts` ([{Put: tok, x, y, pin?, pull?}]).
 VytoSketch_draw(w, sk) {
+    w.c.trail = []
+    return this.VytoSketch_show(w, sk)
+
+},
+// THE DESCENT, producer side (2026-10-04, the owner: *"sliding down-into-caves … cells get way larger and we disappear
+//  within them"*).  Every item with kids is a HOLE you can go down into: its press (re-armed on every draw — a sketch
+//   is JSON, it carries no functions) stands its KIDS as the whole next level, with a Rope back up at the head.  The
+//    glass does the falling (Vytui's `descend` stop); this only says what is at the bottom.  The trail of levels above
+//     rides `w.c.trail`, so the rope climbs exactly back.
+VytoSketch_arm(w, it) {
+    let g = it.guise
+    if (!g) { g = {}; it.guise = g }
+    if (it.Rope != null) { g.press = () => this.VytoSketch_up(w); return it }
+    let kids = g.kids || []
+    if (kids.length) g.press = () => this.VytoSketch_down(w, it)
+    for (const k of kids) this.VytoSketch_arm(w, k)
+    return it
+
+},
+VytoSketch_down(w, it) {
+    let sk = w.c.sketch
+    w.c.trail = (w.c.trail || []).concat([sk])
+    let mk = Object.keys(it).find(k => k !== 'guise')
+    let name = mk ? String(it[mk]) : 'it'
+    let items = [{ Rope: 'up from ' + name, guise: { tok: 'rope:' + w.c.trail.length } }]
+    for (const k of ((it.guise && it.guise.kids) || [])) items.push(JSON.parse(JSON.stringify(k)))
+    this.VytoSketch_show(w, Object.assign({}, sk, { items: items, puts: null }))
+
+},
+VytoSketch_up(w) {
+    let tr = w.c.trail || []
+    if (!tr.length) return
+    let sk = tr[tr.length - 1]
+    w.c.trail = tr.slice(0, -1)
+    this.VytoSketch_show(w, sk)
+
+},
+// stand ONE level on a fresh glass: the raw sketch is kept; a CLONE is armed with presses and grown into seeds
+VytoSketch_show(w, sk) {
     if (!sk) return 0
     w.c.sketch = sk
     let seeds = []
-    for (const it of (sk.items || [])) {
+    for (const raw of (sk.items || [])) {
+        let it = this.VytoSketch_arm(w, JSON.parse(JSON.stringify(raw)))
+        // ONE LEVEL OF INSIDES PER LEVEL — the owner: *"the holes the data descends into, and that each one is
+        //  separate"*.  A level shows its holes and what is directly in them; anything deeper is SEALED (guise
+        //   `flat` — the source keeps its guts, the glass does not draw them) until you go down into it.  Drawing
+        //    every generation at once crushed the grandchildren to labels that ballooned as the descent zoomed.
+        for (const k of ((it.guise && it.guise.kids) || [])) { if (k.guise && k.guise.kids && k.guise.kids.length) k.guise.flat = 1 }
         let g = this.Vyto_guise(it)
         if (g) seeds.push(g)
     }
