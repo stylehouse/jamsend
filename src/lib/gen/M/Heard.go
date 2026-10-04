@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return '3f65062f9ab15adc~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return 'b6f8ce949165c9a4~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -525,15 +525,35 @@ async Heard_gossip_beat(w, ident) {
     if (!this.Heard_hand_on(w, me)) { return 0 }   // the person switched the cross-device road off
     let mag = this.Heard_mag_find(w, me)
     if (!mag) { return 0 }
+    // SAY WHY NOTHING WENT (2026-10-04: Lump had sent ZERO heard frames all session while Inko sent 64 — every exit
+    //  here was silent).  Logged when the verdict CHANGES, never per beat; .c only.
+    let say = (why) => { if (ident.c.heard_gossip_said !== why) { ident.c.heard_gossip_said = why; console.log('♥↗ heard mirror — ' + why) } }
     let out = await this.enWaft(mag, { matching: this.Swarm_protocol('heard') })
-    if (out.errors && out.errors.length) { return 0 }
+    if (out.errors && out.errors.length) { say('NOT SENT: my heard Mag will not encode — ' + String(out.errors.join('; ')).slice(0, 200)); return 0 }
+    // THE STATION WORLD, NOT THE RADIO'S (2026-10-04, the cause of Lump's zero sends): Heard_settle hands us the RADIO
+    //  world (w:Sounditron), which holds no station %Peering — Swarm_sibling_send / Swarm_deliver both look the route up
+    //   on the world they are given and returned false, silently, every time.  A Cave also gossips off Swarm_roster_heard
+    //    (which runs ON the station world) so it got through; a Captain, receiving no roster, never sent at all.  For the
+    //     LIVE self only, carry the frame on the live station (A:Clustation > w:Swarm — a pure read, never minted); a Book's
+    //      puppet identities keep the world they were handed.
+    let M = this.top_House ? this.top_House() : null
+    let live = (M && M.Swarm_live_self) ? M.Swarm_live_self() : null
+    if (!(w.c && w.c.station_up) && live === ident) {
+        let A = M.o({ A: 'Clustation' })[0]
+        let sw = A ? A.o({ w: 'Swarm' })[0] : null
+        if (sw && sw.c && sw.c.station_up) { w = sw }
+    }
     let mineaddr = this.Heard_hand_myaddr(ident)
     let sent = 0
+    let tried = []
     for (const b of this.Swarm_body_roster(ident)) {
         let addr = this.Swarm_body_addr(b)
         if (!addr || addr === mineaddr) { continue }
-        if (this.Swarm_sibling_reach(w, ident, b, { kind: 'heard', page: this.Swarm_page(ident), from: mineaddr, snap: out.snap })) { sent = sent + 1 }
+        let ok = this.Swarm_sibling_reach(w, ident, b, { kind: 'heard', page: this.Swarm_page(ident), from: mineaddr, snap: out.snap })
+        if (ok) { sent = sent + 1 }
+        tried.push(String(b.sc.name || addr).slice(0, 12) + (ok ? ' ✓' : ' ✗ no route'))
     }
+    say(tried.length ? ('sent to ' + tried.join(', ')) : ('NOT SENT: no sibling with an address in my roster (I am ' + String(mineaddr).slice(0, 8) + ')'))
     return sent
 },
 // Heard_react_at — the timestamp a reaction writer stamps: `Heard_now`, floored past whatever the OTHER

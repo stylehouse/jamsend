@@ -54,6 +54,7 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 | a cell grows to hold its words (folio measured at natural size) | `measure_world` (Vytui) | VytoNeed |
 | render regimes: foam (default) · seat · focus · grid · spine/rib · folio text | `Vytui.svelte`, `vyto_seat/focus/pane/geometry.ts` | VytoSeat · VytoFocus · VytoPane · VytoGauge specs · VytoSpine |
 | the code cave: search → file → region → method chamber; head = rope; tunnels | VytoSpine producer (`VytoTesting.g`) | VytoSpine 9/9, 7 sworn |
+| **the DESCENT — ALWAYS INWARD (stop `descend`)**: pressing a cell with kids OPENS it at the top of the fall (its `×N` unseals in place — the finer grain grows while we fall), the camera slides past its walls under a cell-shaped shade, and at the bottom its insides become the level.  The level LEFT is forgotten but not lost: it stands among the new things as a `%Landscape` cell (the whole level, us included, sealed one deep), and getting back is descending INTO it — no rope, no up.  One level of insides per level (deeper holes sealed, `×N`) | `descend(w, cell, then, open)` (Vytui), `VytoSketch_open/down/landscape/seal` | filmed: shots 374–708 (the first, rope version) and the inward film after them — eye only, no Book yet |
 | **the LIVE cave over BigWordland — ONE VISUAL**: the hole you type into IS the spine's head (guise `field`); empty, the code's families stand around it; typed: files with stem-family ribs → methods in file order fused by family → a method = its code LANDS in the editor + the glass folds to a rail of doors (calls ⇝ · called by ⇜ · family).  No search box in the room; ⌕ chip or `/` opens it | `Lagoon.g` THE CAVE, `Vyto.g` guise `field`, `Vytui.svelte` field_bind, `BigWordland.svelte` | LagoonCave 9/9 ok_pct 1 caveat 0 (check, ×2), 11 sworn — **undeclared** |
 **Fleet, 2026-10-03, da06: all 20 Vyto Books `ok_pct 1`** (Orchestra caveat 6 = the `self,round` clock).
  VytoPosed has no fixtures.  **Specs: `node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs
@@ -95,6 +96,10 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 6. **Say which**: an instrument that logs a world object, or a tally with no names, is unreadable (the
     watchdog now names its three worst cells).
 7. **The owner's eye is the gate for taste** — photograph it into the shots; never claim a look is good.
+8. **Staging is a social act** (the owner, 2026-10-04: *"the science of projecting things into that space, to stage
+    them, is a social act — to regulate the media"*).  Every `%Put` says whose hand placed it (`by`: `hand`, `sketch`,
+     `descent`, a producer, eventually a person) — the seam where who-may-stage-what becomes regulable (the crew/
+      DoorKeeper machinery, not the glass, decides that; the glass only keeps the attribution honest).
 
 ### 0.6 Open, in order
 1. **The look — Voro's stained glass into Vyto.**  The lettering molded to each cell (Voro's Stuffing) is the
@@ -151,6 +156,10 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 **The gates, cheapest first**: the PNG (taste — the owner's, ultimately) · `last.json` (nothing lost: no-room rows,
  watchdog) · the specs (`vitest run -c scripts/Story_cli.vitest.config.mjs scripts/Vyto*.spec.ts`, 94 tests, ~30s —
   every pure law) · the Book fleet (needs a runner tab + relay, §0.4 — run it before handing work back, not per frame).
+**Film a descent**: `node scripts/glass_sketch.mjs --dive='v:crown,v:crown>charts,up'` (deck needs `descend`): the
+ page's clock is switched OFF (`__vy_film`) and the script STEPS the fall (`__vy_descend_at(u)`) and the surfacing
+  (`__vy_surface_at(u)`) one screenshot per step (`--fall=36 --rise=18 --hold=10`) — real-time capture dropped the whole
+   fall (a zoomed textured glass paints slower than a screencast frame).  `<out>/dive_NNNN.png`, the same every run.
 **Traps**: the page needs its boot gate pressed + `showDirectoryPicker` stubbed (the script does both) · a sketch item
  without `guise.tok` gets an identity from its mainkey value — give every node a tok or puts cannot find it · a
   `spine`/`grid` deck ASSIGNS seats, so puts do nothing there · law 1 (§0.5): a new behaviour lands its cause as data

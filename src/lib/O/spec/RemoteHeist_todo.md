@@ -38,6 +38,12 @@ Owner's walk: Lump aimed at Grav kept playing Inko, and heard Inko's own tracks 
       the same day: the pool's preview heal wrote into radiostock under Grav's pub and the Stoker resurrect stood them on
        Mine. Fixed + ruled in SoundPooling_todo §0 (the pool is not a radio source).
 - **Sounditron is red on a peerless runner** (5 peer-dependent gaps, `ok:0` every step) — environmental, same as before.
+- **The 🧲 road was dead Captain→Cave — two silent faults** (found live 2026-10-04: Lump's console had 0 `SEND heard` while
+   Inko sent 64). (1) `heard` was never in Swarm.g's frame-kind registration list, so every heard frame dropped on arrival.
+    (2) `Heard_settle` hands `Heard_gossip_beat` the RADIO world, which has no station %Peering, so a Captain's send always
+     failed; a Cave also gossips from `Swarm_roster_heard` on the station world, so only Cave→Captain ever worked. Fixed: the
+      kind is registered, and the live self sends on A:Clustation > w:Swarm. New logs: `♥↗` (sender verdict), `♥⇢` (haul verdict).
+       No Book catches this (they carry frames by hand) — a two-tab live walk is the only gate.
 **Owner to walk:** Lump aimed at Grav → only Grav's tracks, or the ⚠ chip if Grav has nothing for this body; Captain + Cave
  both pulling from one friend at once.
 

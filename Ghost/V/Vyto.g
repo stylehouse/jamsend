@@ -1866,13 +1866,14 @@ Vyto_hand_seat(w, puts):
         let sc = { Put: String(p.Put), x: String(Math.round(Number(p.x))), y: String(Math.round(Number(p.y))) }
         if (p.pin) sc.pin = 1
         if (p.pull != null) sc.pull = String(p.pull)
+        if (p.by != null) sc.by = String(p.by)      // WHOSE hand staged it — staging is a social act (2026-10-04)
         want[sc.Put] = sc
     }
     for (const r of w.o({ Put: 1 })) {
         let s = want[r.sc.Put]
         if (!s) { w.drop(r); continue }
         delete want[r.sc.Put]
-        if (r.sc.x !== s.x || r.sc.y !== s.y || r.sc.pin != s.pin || r.sc.pull != s.pull) { w.drop(r); want[s.Put] = s }
+        if (r.sc.x !== s.x || r.sc.y !== s.y || r.sc.pin != s.pin || r.sc.pull != s.pull || r.sc.by != s.by) { w.drop(r); want[s.Put] = s }
     }
     for (const k of Object.keys(want)) w.i(want[k])
 
@@ -1896,6 +1897,7 @@ Vyto_hand_seat_one(w, p):
     let sc = { Put: String(p.Put), x: String(Math.round(Number(p.x))), y: String(Math.round(Number(p.y))) }
     if (p.pin) sc.pin = 1
     if (p.pull != null) sc.pull = String(p.pull)
+    if (p.by != null) sc.by = String(p.by)
     w.i(sc)
 
 

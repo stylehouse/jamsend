@@ -124,12 +124,12 @@ async function shoot(why) {
     fs.writeFileSync(path.join(OUT, 'last.json'), JSON.stringify(line, null, 1))
 }
 
-// --dive=<key>,<key>,…,up — FILM a descent: press each cell in turn (its data-key, or a suffix of it; `up` = the Rope),
+// --dive=<key>,<key>,…,up — FILM a descent: press each cell in turn (its data-key, or a suffix of it; `up` = descend into the Landscape — the level left behind),
 //  burst-capturing the fall and the surfacing (≈25 fps) into <out>/dive_NNNN.png.  Needs the `descend` stop on the deck.
 async function press(key) {
     return p.evaluate((key) => {
         const els = [...document.querySelectorAll('.vyto svg.viewport path.cell')]
-        const el = key === 'up' ? els.find(e => (e.getAttribute('data-key') || '').startsWith('rope:'))
+        const el = key === 'up' ? els.find(e => (e.getAttribute('data-key') || '').startsWith('landscape:'))
                                 : (els.find(e => e.getAttribute('data-key') === key) ?? els.find(e => (e.getAttribute('data-key') || '').endsWith(key)))
         if (!el) return 'no cell ' + key + ' among ' + els.map(e => e.getAttribute('data-key')).slice(0, 12).join(' ')
         el.dispatchEvent(new MouseEvent('click', { bubbles: true }))

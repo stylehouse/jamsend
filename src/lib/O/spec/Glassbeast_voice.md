@@ -7,7 +7,7 @@ Every direct quote of the owner's that lived in `Vyto_todo.md` (retired to `hist
     the surrounding entry carried; `(L1241)` is the line in `history/Vyto_todo.md` for context; **↗** marks a quote
      that also lives in another live doc.  Extracted by script (paragraph-level, italic `*"…"*` or attributed to
       the owner|human), then the agent's own phrases removed by hand — 193 quotes.  Newer words (Sept–Oct)
-       live in `Glassbeast_todo.md` §0′ and `Meaningfold_todo.md`.
+       live in `Glassbeast_todo.md` §0′ and `Meaningfold_todo.md`; the newest are appended at the end, by date.
 
 
 ## 2026-07-20
@@ -222,3 +222,10 @@ Every direct quote of the owner's that lived in `Vyto_todo.md` (retired to `hist
 - *"text line breaking before A"* (L289)
 - *"oop, it's still doing it. the rapid jitterbugging of size or something, maybe a throttle() would help? and initially Radio has its component face way off to the side and tidy. a bit more trying to get that jiggled out?"* (L305)
 - *"it requires mousing over the simulation"* (L334)
+
+## 2026-10-04 (appended — the descent and the sketchpad)
+- *"I'm also wanting to prepare this for another agent to work on in another environment, wanting very direct easy headless … iteration, visual feedbacking itself"*
+- *"perhaps I'll input some drawings of structures I want it to be able to create... basically any of your archetypal 6-nodes-in-a-pyramid-flotilla-configuration … having some sense of the holes the data descends into, and that each one is separate, and whatever commonalities they have as string cheese stretched between limbs"*
+- *"perhaps we could try and build a sliding down-into-caves aspect, where cells get way larger and we disappear within them"*
+- *"by zooming in I mean the inside data should become more fine grained, opening the promised things underneath the x3. then the surrounding landscape is forgotten, but can be got back to... probably, since metaphysics, in whatever shape we might like, where ever we want it. so the space that was above and encircling us may then appear inside us next to other things"*
+- *"and the science of projecting things into that space, to stage them, is a social act — to regulate the media"*

@@ -99,9 +99,7 @@ story:Sounditron
         lematch,Need
           means,spayer,re:Need:(.*),tol:any
   TimeSpool
-    TimeTotal:beliefs,avg=0.995
-      sample=0.962,at=1791068731
-      sample=0.996,at=1791069053
+    TimeTotal:beliefs,avg=1.145
       sample=0.4,at=1791070070
       sample=1.129,at=1791071289
       sample=1.165,at=1791072344
@@ -110,9 +108,9 @@ story:Sounditron
       sample=1.249,at=1791109930
       sample=0.267,at=1791110026
       sample=1.658,at=1791110693
-    TimeTotal:step,avg=0.124
-      sample=0.12,at=1791068731
-      sample=0.125,at=1791069053
+      sample=1.095,at=1791111045
+      sample=2.365,at=1791111374
+    TimeTotal:step,avg=0.143
       sample=0.05,at=1791070070
       sample=0.141,at=1791071289
       sample=0.146,at=1791072344
@@ -121,6 +119,8 @@ story:Sounditron
       sample=0.156,at=1791109930
       sample=0.033,at=1791110026
       sample=0.207,at=1791110693
+      sample=0.137,at=1791111045
+      sample=0.296,at=1791111374
   step,dige:2f267f12dc49197f
   step=2,dige:aaeeb3f668aead3e,desc:the machine stands
     Assertion:machine-stood,sentence:the machine stood — an addressable self emerged on the spine

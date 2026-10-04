@@ -3435,58 +3435,87 @@ VytoSketch_stand(w):
 // VytoSketch_draw — (re)stand a sketch on a FRESH glass.  The sketch's own knobs, all optional:
 //  `deck` (a foamereo string) · `nested` (default on) · `folded` · `foam` (default on) · `puts` ([{Put: tok, x, y, pin?, pull?}]).
 VytoSketch_draw(w, sk):
-    w.c.trail = []
     return this.VytoSketch_show(w, sk)
 
-// THE DESCENT, producer side (2026-10-04, the owner: *"sliding down-into-caves … cells get way larger and we disappear
-//  within them"*).  Every item with kids is a HOLE you can go down into: its press (re-armed on every draw — a sketch
-//   is JSON, it carries no functions) stands its KIDS as the whole next level, with a Rope back up at the head.  The
-//    glass does the falling (Vytui's `descend` stop); this only says what is at the bottom.  The trail of levels above
-//     rides `w.c.trail`, so the rope climbs exactly back.
+// THE DESCENT, producer side — REWRITTEN 2026-10-04 on the owner's correction: *"by zooming in I mean the inside data
+//  should become more fine grained, opening the promised things underneath the x3. then the surrounding landscape is
+//   forgotten, but can be got back to … in whatever shape we might like, where ever we want it. so the space that was
+//    above and encircling us may then appear inside us next to other things"*.  So:
+//  · OPEN (the press's `{open:1}`, fired at the TOP of the fall): the level re-stands IN PLACE (a morph, not a fresh
+//     glass) with the pressed cell unsealed one level deeper — its `×N` opens into the finer grain while we fall.
+//  · DOWN (the press itself, at the bottom): the pressed cell's insides become the whole level, and the level we LEFT
+//     is not lost but FORGOTTEN — it stands among the new things as one `%Landscape` cell holding that whole level
+//      (ourselves included), sealed one deep.  There is no rope and no climbing: getting back is descending INTO the
+//       landscape, which stands that level again with the one we just left as a landscape inside it.  Always inward.
+//  · WHERE the landscape stands is a choice, not a law — a put (`landscape_at`, per-mille; default high right).  Owner,
+//     same sitting: *"the science of projecting things into that space, to stage them, is a social act — to regulate
+//      the media"* — so every put here says whose hand staged it (`by`), the start of that being regulable.
 VytoSketch_arm(w, it):
     let g = it.guise
     if (!g) { g = {}; it.guise = g }
-    if (it.Rope != null) { g.press = () => this.VytoSketch_up(w); return it }
     let kids = g.kids || []
-    if (kids.length) g.press = () => this.VytoSketch_down(w, it)
+    if (kids.length) g.press = (src, o) => (o && o.open) ? this.VytoSketch_open(w, it) : this.VytoSketch_down(w, it)
     for (const k of kids) this.VytoSketch_arm(w, k)
     return it
 
+VytoSketch_name(it):
+    let mk = Object.keys(it || {}).find(k => k !== 'guise')
+    return mk ? String(it[mk]) : 'somewhere'
+
+// the level we leave, as ONE cell: its whole landscape inside it (ourselves included)
+VytoSketch_landscape(sk):
+    let name = sk.name || 'above'
+    let kids = (sk.items || []).map(x => JSON.parse(JSON.stringify(x)))
+    return { Landscape: name, guise: { tok: 'landscape:' + name, kids: kids } }
+
+VytoSketch_open(w, it):
+    let tok = it.guise && it.guise.tok
+    this.VytoSketch_show(w, w.c.sketch, { opened: tok, fresh: 0 })
+
 VytoSketch_down(w, it):
     let sk = w.c.sketch
-    w.c.trail = (w.c.trail || []).concat([sk])
-    let mk = Object.keys(it).find(k => k !== 'guise')
-    let name = mk ? String(it[mk]) : 'it'
-    let items = [{ Rope: 'up from ' + name, guise: { tok: 'rope:' + w.c.trail.length } }]
-    for (const k of ((it.guise && it.guise.kids) || [])) items.push(JSON.parse(JSON.stringify(k)))
-    this.VytoSketch_show(w, Object.assign({}, sk, { items: items, puts: null }))
+    let here = this.VytoSketch_name(it)
+    let items = ((it.guise && it.guise.kids) || []).map(k => JSON.parse(JSON.stringify(k)))
+    let land = this.VytoSketch_landscape(sk)
+    items.push(land)
+    let at = sk.landscape_at || { x: 860, y: 170 }
+    let next = Object.assign({}, sk, { name: here, items: items, puts: [{ Put: land.guise.tok, x: at.x, y: at.y, by: 'descent' }] })
+    this.VytoSketch_show(w, next, { fresh: 1 })
 
-VytoSketch_up(w):
-    let tr = w.c.trail || []
-    if (!tr.length) return
-    let sk = tr[tr.length - 1]
-    w.c.trail = tr.slice(0, -1)
-    this.VytoSketch_show(w, sk)
+// SEAL — show `keep` levels of insides beneath a node; anything deeper is sealed (guise `flat`: kept, not drawn, `×N`)
+VytoSketch_seal(node, keep):
+    let kids = (node.guise && node.guise.kids) || []
+    for (const k of kids) {
+        let deeper = k.guise && k.guise.kids && k.guise.kids.length
+        if (!deeper) continue
+        if (keep <= 1) {
+            k.guise.flat = 1
+        } else {
+            this.VytoSketch_seal(k, keep - 1)
+        }
+    }
 
-// stand ONE level on a fresh glass: the raw sketch is kept; a CLONE is armed with presses and grown into seeds
-VytoSketch_show(w, sk):
+// stand ONE level: the raw sketch is kept; a CLONE is armed with presses, sealed, and grown into seeds.
+//  o.opened = the tok unsealed one level deeper (the open at the top of a fall); o.fresh = 0 morphs in place.
+VytoSketch_show(w, sk, o):
     if (!sk) return 0
     w.c.sketch = sk
+    let opened = o && o.opened
     let seeds = []
     for (const raw of (sk.items || [])) {
         let it = this.VytoSketch_arm(w, JSON.parse(JSON.stringify(raw)))
-        // ONE LEVEL OF INSIDES PER LEVEL — the owner: *"the holes the data descends into, and that each one is
-        //  separate"*.  A level shows its holes and what is directly in them; anything deeper is SEALED (guise
-        //   `flat` — the source keeps its guts, the glass does not draw them) until you go down into it.  Drawing
-        //    every generation at once crushed the grandchildren to labels that ballooned as the descent zoomed.
-        for (const k of ((it.guise && it.guise.kids) || [])) { if (k.guise && k.guise.kids && k.guise.kids.length) k.guise.flat = 1 }
+        // ONE LEVEL OF INSIDES PER LEVEL (the opened cell: two) — *"the holes the data descends into, and that each one
+        //  is separate"*; deeper holes stay sealed, `×N`, until a fall opens them
+        this.VytoSketch_seal(it, (opened && it.guise && it.guise.tok === opened) ? 2 : 1)
         let g = this.Vyto_guise(it)
         if (g) seeds.push(g)
     }
     w.c.seeds = seeds
     let nested = sk.nested === 0 ? 0 : 1
     let foamy = sk.foam === 0 ? 0 : 1
-    this.Vyto_commission_on(w, seeds, 1, 0, nested, sk.folded ? 1 : 0, 0, 1, foamy, sk.deck || null, sk.puts || null)
+    let fresh = (o && o.fresh === 0) ? 0 : 1
+    let puts = (sk.puts || []).map(p => Object.assign({ by: 'sketch' }, p))
+    this.Vyto_commission_on(w, seeds, fresh, 0, nested, sk.folded ? 1 : 0, 0, 1, foamy, sk.deck || null, puts)
     this.Vyto_rest_reset(w)
     return seeds.length
 

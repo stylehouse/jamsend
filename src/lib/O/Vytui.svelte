@@ -141,7 +141,7 @@
         if (!hand) return
         const vf = (hand.w.c as any).vw_frame
         const fw = Number(vf?.w) > 0 ? Number(vf.w) : 800, fh = Number(vf?.h) > 0 ? Number(vf.h) : 450
-        ;(H as any).Vyto_hand_put?.(hand.w, { Put: hand.cell.tok, x: at.x / fw * 1000, y: at.y / fh * 1000, ...(pin ? { pin: 1 } : {}) })
+        ;(H as any).Vyto_hand_put?.(hand.w, { Put: hand.cell.tok, x: at.x / fw * 1000, y: at.y / fh * 1000, by: 'hand', ...(pin ? { pin: 1 } : {}) })
     }
     function hand_down(e: PointerEvent, w: TheC, cell: PaintCell) {
         if (!fo(w, 'hand') || e.button !== 0 || cell.depth > 0) return
@@ -252,7 +252,7 @@
         //   fire because it was spelled the DOM way is a bad half hour for whoever wrote it.  Both work.
         const fn = src?.c?.press ?? src?.c?.onclick
         if (typeof fn === 'function') {
-            if (fo(w, 'descend') && cell.hasKids && !parked(w)) { descend(w, cell, () => fn(src)); return }
+            if (fo(w, 'descend') && cell.hasKids && !parked(w)) { descend(w, cell, () => fn(src), () => fn(src, { open: 1 })); return }
             spine_dive_cam(w, cell)
             try { fn(src) } catch (e) { console.warn('◈ Vyto press threw', cell.ident, e) }
             return
@@ -1865,8 +1865,13 @@
     // the fall's length — 1.1s live; a FILM can slow it (`window.__vy_descend_ms`, set by glass_sketch --slow) so a
     //  screencast catches more than three frames of it.  The surfacing fade scales with it.
     const descend_ms = (): number => Number((globalThis as any).__vy_descend_ms) > 0 ? Number((globalThis as any).__vy_descend_ms) : 1100
-    function descend(w: TheC, cell: PaintCell, then: () => void) {
+    // `open` (2026-10-04, the owner: *"by zooming in I mean the inside data should become more fine grained, opening the
+    //  promised things underneath the x3"*) fires at the TOP of the fall: the producer unseals the cell's insides IN PLACE,
+    //   so the finer grain grows inside the walls while we are still falling toward it, and at the bottom what we were
+    //    looking into simply becomes the world.  The press itself still fires at the bottom.
+    function descend(w: TheC, cell: PaintCell, then: () => void, open?: () => void) {
         if (descent) return
+        try { open?.() } catch (err) { console.warn('◈ Vyto descend open threw', err) }
         const from = { ...cam_view(w) }
         // a box well INSIDE the walls (55% of the cell's span), so by the end the walls are past the screen edges
         const cw = Math.max(cell.bw, 40) * 0.55, ch = Math.max(cell.bh, 30) * 0.55
@@ -2059,7 +2064,10 @@
     // 'dose'/'loose' are display CHANNELS (how big; on the pile or off it) — the cut already says them by
     //  being the shape it is, so printing them as k:v facts says the same thing twice in the wrong
     //   language.  same_n/flat_n deliberately stay: those are DOORS carrying a count, which must be said.
-    const GUT_SKIP = new Set(['face', 'departing', 'active', 'created_at', 'new', 'not_found', 'dontSnap', 'dose', 'loose'])
+    // `same_n` / `flat_n` are the MIRROR's door counts, not facts about the thing — printed as facts they read as raw
+    //  C** (`flat_n 3`) and the crosslink even stretched vines between cells that merely shared a count (2026-10-04).
+    //   A sealed hole says its count in the door vocabulary instead (`×3`, folio_of).
+    const GUT_SKIP = new Set(['face', 'departing', 'active', 'created_at', 'new', 'not_found', 'dontSnap', 'dose', 'loose', 'same_n', 'flat_n'])
     function under_guts(row: TheC, max: number): string[] {
         const sc: any = row?.sc; if (!sc || max <= 0) return []
         const keys = Object.keys(sc)
@@ -2308,8 +2316,10 @@
         const guts = crest || head ? []
                    : mem ? guts_pairs(cell.row, 12).filter(g => g.k !== 'n')
                    : guts_pairs(cell.row, 12).filter(g => (!jn || !jn.shared.some(sh => sh.k === g.k)) && !(said && said.has(g.k)))
+        // a SEALED hole (a flat source — its insides kept, not drawn) says how much is inside as a door: `×N`
+        const sealed = !crest && !head && !mem && !vrows && Number(sc.flat_n) > 0 ? [{ row: 'dip', n: Number(sc.flat_n) } as any] : null
         const rows = head ? rows_of(ident, [], null, { hue: g?.color ?? undefined, title_fs: 11 }).slice(0, 1)
-                          : rows_of(ident, guts, vrows, { hue: g?.color ?? undefined })
+                          : rows_of(ident, guts, vrows ?? sealed, { hue: g?.color ?? undefined })
         if (head) for (const a of rows[0]) a.cls = a.cls + ' fo-head'
         const sig = (cell.d || (cell.x.toFixed(1) + ',' + cell.y.toFixed(1) + ',' + cell.r.toFixed(1))) + '|' + rows.map(r => r.map(a => a.text).join('\u0001')).join('\u0002')
         const m = folioMemo.get(cell.key)

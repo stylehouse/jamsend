@@ -248,7 +248,10 @@ What still holds: **don't `npm install` on a whim** — the lockfile pins the tr
 **Diagnosing without guessing.** The dev server lives OUTSIDE the claude container (no docker socket,
  not in `/proc`), so you cannot restart it — but you CAN stand up your own on a spare port to decide
   whether the fault is the repo or their process: `npx vite dev --port 9099 --host 127.0.0.1`, then
-   fetch `/BigSoundland` (a 200 with ~280KB of SSR'd HTML means the repo is healthy; `/` legitimately
+   fetch `/BigSoundland` ⚠ **but booting it RELOADS EVERY LIVE TAB ON :9091** (found 2026-10-04): any fresh process
+    loading the sveltekit plugin rewrites the shared `.svelte-kit/generated/` (its skip-unchanged cache is in-memory),
+     and :9091's Vite answers with a path-less full reload to every tab — wedging Books mid-run. Do it only when nobody
+      is running anything (a 200 with ~280KB of SSR'd HTML means the repo is healthy; `/` legitimately
     404s, the app has no root route). Related tell: `fetch('…:9091/src/lib/O/X.svelte')` returning 200
      while `/` returns 500 means your SOURCE is fine and the fault is server/tree state.
 **Ownership.** Everything the dev server writes into the mount (`.svelte-kit`, `node_modules/.vite/deps`,

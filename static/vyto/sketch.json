@@ -1,5 +1,5 @@
 {
- "about": "THE FLOTILLA — six nodes in a pyramid (1 · 2 · 3), each a separate hole the data descends into, with what they share stretched between them as string cheese.  Edit freely: items are guise objects (first key = mainkey, plain keys = facts, guise.kids = what lives inside); puts pose the pyramid (per-mille of the frame, attractors).  Press a vessel to SLIDE DOWN into it (the `descend` stop): its holds become the whole glass; press a hold to fall again; the Rope climbs back.",
+ "about": "THE FLOTILLA — six nodes in a pyramid (1 · 2 · 3), each a separate hole the data descends into, with what they share stretched between them as string cheese.  Edit freely: items are guise objects (first key = mainkey, plain keys = facts, guise.kids = what lives inside); puts pose the pyramid (per-mille of the frame, attractors).  Press a vessel to SLIDE DOWN into it (the `descend` stop): its holds become the whole glass; press a hold to fall again; the level you leave is not lost: it stands among the new things as a Landscape cell (landscape_at places it), and descending into it brings that level back — always inward.",
  "deck": "crosslink,descend",
  "items": [
   {
@@ -592,5 +592,10 @@
    "x": 820,
    "y": 790
   }
- ]
+ ],
+ "name": "the flotilla",
+ "landscape_at": {
+  "x": 880,
+  "y": 160
+ }
 }

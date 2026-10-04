@@ -172,11 +172,16 @@ function concap_last_life() {
         }
     } catch {}
     // Vite 6's client says NOTHING before a server-decided full reload (client.mjs `case "full-reload"` →
-    //  pageReload(), no log) — so a tail that simply ends is that.  Name it: the payload's path is the
-    //   file whose update could not be hot-applied (a circular import chain, or a non-accepting root).
+    //  pageReload(), no log) — so a tail that simply ends is that.  Name it.  ⚠ The FILE rides
+    //   `triggeredBy`, not `path` (2026-10-04): a dead-end update (vite 6 updateModules) sends
+    //    {type:'full-reload', triggeredBy} with NO path, so printing only `path` said "(no path)" and hid
+    //     the culprit.  `path:'*'` = a whole-graph reload (dep re-optimise, tsconfig change).  The usual
+    //      triggeredBy is `.svelte-kit/generated/client/*.js` — some OTHER process booted the sveltekit
+    //       plugin (a spare `vite dev`, `vite build`) and rewrote the shared generated dir with identical
+    //        bytes; app.js has no importer, so every open tab reloads.  Not a src import loop.
     try {
         const hot = (import.meta as any).hot
-        hot?.on?.('vite:beforeFullReload', (p: any) => { try { console.log(`[vite] FULL RELOAD — ${p?.path ?? '(no path)'} could not be hot-applied (circular imports / no accepting boundary); this tab reloads now`) } catch {} })
+        hot?.on?.('vite:beforeFullReload', (p: any) => { try { console.log(`[vite] FULL RELOAD — triggeredBy=${p?.triggeredBy ?? '?'} path=${p?.path ?? '-'} — no accepting boundary (or a generated .svelte-kit file was rewritten); this tab reloads now`) } catch {} })
     } catch {}
     try {
         window.addEventListener('pagehide', () => {
