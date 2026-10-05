@@ -12,7 +12,7 @@
     //   H={house}), so a House with no w:Vyto renders nothing at all.
     import { TheC }   from "$lib/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { power_cells, foam_cells, slab_seat, poly_area, poly_centroid, membrane_carve, grid_cells, spine_cells, rib_cells, type Pt, type SpineBand, type BoneMeta } from "$lib/O/vyto_geometry"
+    import { power_cells, foam_cells, slab_seat, poly_area, poly_centroid, membrane_carve, grid_cells, grid2_cells, grid_keys, spine_cells, rib_cells, type GridAxis, type Pt, type SpineBand, type BoneMeta } from "$lib/O/vyto_geometry"
     import { bucket_key_of } from "$lib/O/vyto_foam"
     import { deal_rows, seat_on_deal, deal_fits, deal_badness, box_poly,
              type Deal, type SeatRow } from "$lib/O/vyto_seat"
@@ -2512,7 +2512,9 @@
             const spineR = !focusR && !seatR && scopeKey === '' && !!fo(w, 'spine')
             const ribBand = (!focusR && !seatR && selfOf && fo(w, 'spine')) ? spineBands.get(selfOf.key) ?? null : null
             const ribR = !!ribBand
-            const gridR = !focusR && !seatR && !spineR && scopeKey === '' && !!fo(w, 'grid')
+            // the grid tiles EVERY scope now (2026-10-06): the order the owner asked for goes all the way down — a vessel's
+            //  holds tile its square the same way the vessels tile the frame
+            const gridR = !focusR && !seatR && !spineR && !!fo(w, 'grid')
             const assignedR = focusR || gridR || spineR || ribR
             const foam = !!(w.c as any).foam && !seatR && !focusR && !gridR && !spineR && !ribR
             const live: Node[] = []
@@ -2717,8 +2719,15 @@
                 //  cheaper than the sig it would be keyed under.  bucket_key_of picks the band from the
                 //   rows' OWN scalars -- the SAME heuristic the fold ladder already trusts to elect a
                 //    partition key, so the grouping the grid aligns on is never a second guess.
+                // THE GRID OF SAMENESS (grid2_cells): rows by one shared fact, columns by a second, each value said once on
+                //  its axis.  A nested scope keeps a header strip for its own name along the top.
                 const fb = bbox_of(framePoly)
-                polys = grid_cells(live.map(n => n.row.sc as any), radii, { x: fb.bx, y: fb.by, w: fb.bw, h: fb.bh }, gap, bucket_key_of)
+                const head = scopeKey === '' ? 0 : Math.min(24, fb.bh * 0.2)
+                const scs = live.map(n => n.row.sc as any)
+                const g2 = grid2_cells(scs, radii, { x: fb.bx, y: fb.by + head, w: fb.bw, h: fb.bh - head }, gap, grid_keys(scs, bucket_key_of))
+                polys = g2.polys
+                let ax = gridAxes.get(w); if (!ax) { ax = new Map(); gridAxes.set(w, ax) }
+                ax.set(scopeKey, { rows: g2.rows, cols: g2.cols, depth: scopeKey === '' ? 0 : scopeKey.split('>').length })
             } else if (had && had.sig === sig) {
                 polys = had.polys
             } else {
@@ -4596,13 +4605,14 @@
         for (let i = 1; i < pts.length; i++) d += ' L ' + pts[i].x.toFixed(1) + ' ' + pts[i].y.toFixed(1)
         return d
     }
-    function vines_of(w: TheC, cells: PaintCell[], excludeKey?: string | null): { d: string, sw: number }[] {
+    function vines_of(w: TheC, cells: PaintCell[], excludeKey?: string | null): { d: string, sw: number, say: string, mx: number, my: number }[] {
+        if (fo(w, 'grid')) return []   // under the grid the ALIGNMENT is the tie — no lines careening over it
         const rel: any = (w.c as any).relations
         if (!rel) return []
         const at = new Map<string, PaintCell>()
         for (const c of cells) if (c.key === c.tok && !c.departing) at.set(c.tok, c)
         if (!at.size) return []
-        const out: { d: string, sw: number }[] = []
+        const out: { d: string, sw: number, say: string, mx: number, my: number }[] = []
         for (const e of rel.o() as TheC[]) {
             const a = at.get(String((e.sc as any).a)), b = at.get(String((e.sc as any).b))
             if (!a || !b || a === b) continue
@@ -4615,7 +4625,45 @@
             // an alignment already SAYS a tie on the band key -- do not also draw it as a line
             if (excludeKey && via && via.slice(0, via.indexOf('=')) === excludeKey) continue
             const pa = vine_anchor(w, a, via) ?? a, pb = vine_anchor(w, b, via) ?? b
-            out.push({ d: vine_curve(pa, pb), sw: +(1 + Math.log2(1 + (Number((e.sc as any).n) || 1))).toFixed(2) })
+            // A LINE SAYS WHAT IT IS ABOUT (2026-10-06, the owner: *"what are these squiggles … why is Hold:rope tied to
+            //  Hold:lamp?"* — it wasn't: it was crown↔port on `tide=high`, landing mid-cell on a hold because a scope
+            //   prints no facts).  The `via` rides the line's middle as words, so a tie can be read, not guessed.
+            const eq = via.indexOf('=')
+            const say = eq > 0 ? via.slice(0, eq) + ' ' + via.slice(eq + 1) : via
+            out.push({ d: vine_curve(pa, pb), sw: +(1 + Math.log2(1 + (Number((e.sc as any).n) || 1))).toFixed(2), say, mx: (pa.x + pb.x) / 2, my: (pa.y + pb.y) / 2 })
+        }
+        return out
+    }
+    // ── SAY IT ONCE (2026-10-06, the owner: *"sharing something should let us use less graphics to express the fact...
+    //  like using a big 'Hold' label that diverges into each lamp|nets|charts"*).  Pairwise vines draw a fact shared by n
+    //   cells n(n-1)/2 times — three vessels on `tide=high` made three squiggles all saying the same thing.  A STAR says
+    //    it once: the shared fact's words at the middle of its holders, one ray out to each holder's word (or name).
+    //     Built from the same relations the vines read (every edge's `via`), grouped by via; a via held by one pair
+    //      is a star of two — a single labelled line.
+    function vine_stars(w: TheC, cells: PaintCell[], excludeKey?: string | null): { say: string, x: number, y: number, rays: string[], sw: number }[] {
+        if (fo(w, 'grid')) return []
+        const rel: any = (w.c as any).relations
+        if (!rel) return []
+        const at = new Map<string, PaintCell>()
+        for (const c of cells) if (c.key === c.tok && !c.departing) at.set(c.tok, c)
+        const groups = new Map<string, Set<string>>()
+        for (const e of rel.o() as TheC[]) {
+            const via = (e.sc as any).via ? String((e.sc as any).via) : ''
+            if (!via) continue
+            if (excludeKey && via.slice(0, via.indexOf('=')) === excludeKey) continue
+            let g = groups.get(via); if (!g) { g = new Set(); groups.set(via, g) }
+            g.add(String((e.sc as any).a)); g.add(String((e.sc as any).b))
+        }
+        const out: { say: string, x: number, y: number, rays: string[], sw: number }[] = []
+        for (const [via, toks] of groups) {
+            const ends: { x: number, y: number }[] = []
+            for (const tk of toks) { const c = at.get(tk); if (c) ends.push(vine_anchor(w, c, via) ?? { x: c.x, y: c.y }) }
+            if (ends.length < 2) continue
+            let x = 0, y = 0; for (const p of ends) { x += p.x; y += p.y }
+            x /= ends.length; y /= ends.length
+            const eq = via.indexOf('=')
+            out.push({ say: eq > 0 ? via.slice(0, eq) + ' ' + via.slice(eq + 1) : via, x, y,
+                       rays: ends.map(p => vine_curve({ x, y }, p)), sw: +(1 + Math.log2(ends.length)).toFixed(2) })
         }
         return out
     }
@@ -4634,6 +4682,9 @@
         const pane = folio_of(w, cell); if (!pane) return null
         for (const s of pane.seats) if (s.k === k && s.text === val) return { x: s.x, y: s.y }
         for (const s of pane.seats) if (s.k === k) return { x: s.x, y: s.y }
+        // the fact is not printed (a SCOPE wears only its running head) — land on the NAME on its wall, never the middle:
+        //  the middle of a scope is somebody else's cell, so a line landing there seemed to tie two of its insides
+        if (cell.hasKids && pane.seats.length) { const s = pane.seats[pane.seats.length - 1]; return { x: s.x, y: s.y } }
         return null
     }
     // grid_bands_of -- THE ALIGNMENT ITSELF, LABELLED (2026-09-24, the grid regime's own label pass,
@@ -4641,9 +4692,22 @@
     //   value already SAYS the grouping by where it sits; one small label per row confirms it in words,
     //    so the alignment reads intentionally rather than being left for the eye to infer alone.
     type GridBand = { key: string, value: string, y: number, x0: number, x1: number }
-    function grid_bands_of(w: TheC): GridBand[] {
+    // the axes the grid of sameness laid out, per scope (grid2_cells' own labels) — each shared value said once
+    const gridAxes = new Map<TheC, Map<string, { rows: GridAxis[], cols: GridAxis[], depth: number }>>()
+    function grid_axes_of(w: TheC): { k: string, x: number, y: number, text: string, kind: 'row' | 'col', depth: number }[] {
         void paint_tick
         if (!fo(w, 'grid')) return []
+        const out: { k: string, x: number, y: number, text: string, kind: 'row' | 'col', depth: number }[] = []
+        for (const [sk, a] of gridAxes.get(w) ?? []) {
+            for (const r of a.rows) out.push({ k: sk + '|r|' + r.value, x: r.x, y: r.y, text: r.key + ' ' + r.value, kind: 'row', depth: a.depth })
+            for (const c of a.cols) out.push({ k: sk + '|c|' + c.value, x: c.x, y: c.y, text: c.key + ' ' + c.value, kind: 'col', depth: a.depth })
+        }
+        return out
+    }
+    function grid_bands_of(w: TheC): GridBand[] {
+        void paint_tick
+        // SUPERSEDED by grid_axes_of (2026-10-06) — the old single-key band labels skipped every scope; kept as the seam
+        if (fo(w, 'grid')) return []
         const cells = viewport_cells(w).filter(c => c.kind === 'poly' && !c.hasKids && !c.departing && !c.loose && c.depth === 0)
         if (cells.length < 2) return []
         const key = bucket_key_of(cells.map(c => (c.row.sc as any)))
@@ -5264,10 +5328,15 @@
                          reason.  Gated so the sparse-graph substrate everywhere else stands byte-identical. -->
                     {#if fo(w, 'crosslink')}
                         {@const bandKey = grid_band_key_of(w)}
-                        {#each vines_of(w, viewport_cells(w), bandKey) as v (v.d)}
-                            <path class="crosslink" d={v.d} style="stroke-width:{v.sw + 0.6};"></path>
+                        {#each vine_stars(w, viewport_cells(w), bandKey) as st (st.say)}
+                            {#each st.rays as d (d)}<path class="crosslink" d={d} style="stroke-width:{st.sw};"></path>{/each}
+                            <text class="crosslink-say" x={st.x.toFixed(1)} y={st.y.toFixed(1)}>{st.say}</text>
                         {/each}
                     {/if}
+                    {#each grid_axes_of(w) as a (a.k)}
+                        <text class="grid-axis" class:grid-axis-col={a.kind === 'col'} class:grid-axis-deep={a.depth > 0}
+                              x={a.x.toFixed(1)} y={a.y.toFixed(1)}>{a.text}</text>
+                    {/each}
                     {#each grid_bands_of(w) as b (b.key + ':' + b.value)}
                         <text class="grid-band" x={(b.x0).toFixed(1)} y={(b.y - 6).toFixed(1)}
                               text-anchor="start" dominant-baseline="alphabetic">{b.key} {b.value}</text>
@@ -5845,6 +5914,12 @@
     /* THE CROSSLINK — `.vine`'s on-top twin (stop `crosslink`).  Same curve, painted last: warm amber
        against the glass's cold violets (the PLUG's own contrast trick), a soft glow so it survives
        crossing a cell of any colour, and real enough opacity to read as a drawn line rather than a hint. */
+    .grid-axis { fill: #e7c58a; font: 700 15px/1 system-ui, sans-serif; dominant-baseline: middle; pointer-events: none;
+        paint-order: stroke; stroke: #120d08; stroke-width: 3px; }
+    .grid-axis-col { text-anchor: middle; }
+    .grid-axis-deep { font-size: 10px; fill: #c9ad7d; }
+    .crosslink-say { fill: #f3c27a; font: 700 15px/1 system-ui, sans-serif; text-anchor: middle; dominant-baseline: middle;
+        paint-order: stroke; stroke: #1a120a; stroke-width: 3px; pointer-events: none; }
     .crosslink {
         fill: none; stroke: #ffb86b; stroke-linecap: round; opacity: 0.75; pointer-events: none;
         filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));

@@ -248,10 +248,13 @@
         } catch { family = []; flows = [] }
         // THE 🧲 — where my hearts land (RemoteHeist_todo §4.2).  Shown only when there is a CHOICE (two or more
         //  bodies that can take originals: my Caves, and me if I hold a folder); the row wearing it is the big pile.
-        let magnet = { show: false, at: '', can: [] as string[] }
+        let magnet = { show: false, at: '', can: [] as string[], lofi: false }
         try {
             const cands = ((H as any)?.Heard_magnet_candidates?.() ?? []) as any[]
-            if (cands.length >= 2) magnet = { show: true, at: String((H as any)?.Heard_magnet?.((H as any)?.top_House?.()?.c?.radio_w) || ''), can: cands.map((r: any) => String(r.prepub)) }
+            // lofi = how my hearts ARRIVE there (owner 2026-10-04): my own remembered heist default, stamped on each heart
+            //  at the press and honoured by whichever body hauls it (Heard_take / Heard_haul_beat)
+            const lofi = !!((H as any)?.Heist_defaults_get?.() ?? {}).lofi
+            if (cands.length >= 2) magnet = { show: true, at: String((H as any)?.Heard_magnet?.((H as any)?.top_House?.()?.c?.radio_w) || ''), can: cands.map((r: any) => String(r.prepub)), lofi }
         } catch {}
         return {
             magnet,
@@ -385,6 +388,15 @@
     // the 🧲 moves: it only sets the default for the NEXT heart (a heart already pressed keeps its 'to').
     function magnet_to(prepub: string) {
         try { (H as any)?.Heard_magnet_set?.(prepub) } catch {}
+        try { (H as any)?.top_House?.()?.bump_version?.() } catch {}
+    }
+    // LOFI beside the lit 🧲: flips my remembered heist default, which every NEXT heart carries to whoever hauls it
+    //  (a heart already pressed keeps what it was pressed with; pressing it again re-stamps).
+    function magnet_lofi() {
+        try {
+            const on = !((H as any)?.Heist_defaults_get?.() ?? {}).lofi
+            ;(H as any)?.Heist_defaults_set?.({ lofi: on ? '1' : '' })
+        } catch {}
         try { (H as any)?.top_House?.()?.bump_version?.() } catch {}
     }
     // ── NAME YOURSELF — the first-time move: the chosen name (friendly) is what invites carry
@@ -587,6 +599,8 @@
                     {#if face.magnet.show && face.instance?.prepub && face.magnet.can.includes(face.instance.prepub)}
                         <button class="df-mag" class:on={face.magnet.at === face.instance.prepub} onclick={() => magnet_to(face.instance.prepub)}
                             title={face.magnet.at === face.instance.prepub ? 'your hearts land HERE — this folder is your big pile' : 'land your hearts here instead'}>🧲</button>
+                        {#if face.magnet.at === face.instance.prepub}<button class="df-lofi" class:on={face.magnet.lofi} onclick={magnet_lofi}
+                            title={face.magnet.lofi ? 'LOFI — your hearts arrive as small ogg copies · press for originals' : 'ORIGINALS — your hearts arrive as the full files · press for LOFI (small ogg copies)'}>LOFI</button>{/if}
                     {/if}
                 </div>
                 {#if face.prepub}
@@ -621,6 +635,8 @@
                             {#if face.magnet.show && b.prepub && face.magnet.can.includes(b.prepub)}
                                 <button class="df-mag" class:on={face.magnet.at === b.prepub} onclick={() => magnet_to(b.prepub)}
                                     title={face.magnet.at === b.prepub ? 'your hearts land on ' + (b.name || b.role) + ' — its folder is your big pile' : 'land your hearts on ' + (b.name || b.role) + ' instead'}>🧲</button>
+                                {#if face.magnet.at === b.prepub}<button class="df-lofi" class:on={face.magnet.lofi} onclick={magnet_lofi}
+                                    title={face.magnet.lofi ? 'LOFI — your hearts arrive as small ogg copies · press for originals' : 'ORIGINALS — your hearts arrive as the full files · press for LOFI (small ogg copies)'}>LOFI</button>{/if}
                             {/if}
                             {#if true}
                                 <!-- EJECT A CREWMATE (owner 2026-09-03: "dropping Piers with the ✕ button as we
@@ -876,6 +892,13 @@
     }
     .df-mag:hover { opacity: 0.6; }
     .df-mag.on { opacity: 1; filter: none; }
+    /* LOFI rides only the lit 🧲 — dim = originals, lit = small ogg copies */
+    .df-lofi {
+        background: none; border: 1px solid currentColor; border-radius: 3px; padding: 0 3px; margin-left: 3px; cursor: pointer;
+        font-size: 8px; letter-spacing: 0.08em; opacity: 0.3; pointer-events: auto; color: inherit;
+    }
+    .df-lofi:hover { opacity: 0.6; }
+    .df-lofi.on { opacity: 1; color: #f0c8a8; }
     .df-flow {
         display: flex; align-items: center; gap: 6px; font-size: 11px;
         opacity: 0.75; white-space: nowrap;

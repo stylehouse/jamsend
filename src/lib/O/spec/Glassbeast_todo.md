@@ -41,6 +41,7 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 | `vyto_workingouts/` | appendices: calm · pile · pelt · shapes · spool · commission · client · processes | reference |
 | `history/Voro_*` · `history/Vyto_perf_todo.md` | Voro's design (the stained glass) · the absorbed perf handoff | history |
 | **`scripts/glass_sketch.mjs`** + `static/vyto/sketch.json` | the headless sketch loop (§0.8) | live |
+| **`scripts/vyto_code_sketch.mjs`** → `static/vyto/code_sketch.json` | the REAL CODE as a sketch, for Book VytoCodeCave | live — regenerate as code moves |
 
 ### 0.3 What stands — the ledger (claim · code · proof)
 | claim | code | proof |
@@ -156,6 +157,22 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 **The gates, cheapest first**: the PNG (taste — the owner's, ultimately) · `last.json` (nothing lost: no-room rows,
  watchdog) · the specs (`vitest run -c scripts/Story_cli.vitest.config.mjs scripts/Vyto*.spec.ts`, 94 tests, ~30s —
   every pure law) · the Book fleet (needs a runner tab + relay, §0.4 — run it before handing work back, not per frame).
+**Play it on real data — Book `VytoCodeCave`** (the owner: *"I'd like to be able to run and play with this thing you're
+ building as a Book … the data is so fake … probably use it to explore code so we have our words in it"*): the code
+  itself — folder → ghost → `//#region` (or, for a regionless ghost, its Books/organs by name prefix) → method; `part`
+   (the organ, read off the method's name) lets a crowded region FOLD into crests (`budget:16`), `leans_on` (the other
+    ghost a thing calls most) stretches the vines.  On `/BigShapeland` pick VytoCodeCave and press cells to fall in; the
+     Landscape cell is the way back.  Headless: `glass_sketch.mjs --book=VytoCodeCave --dive=code:V,code:V/Vyto`.
+      Regenerate with `node scripts/vyto_code_sketch.mjs`.  Gaps seen: a 68-method region is legible but still busy at its
+       middle; a crest still SAYS `dose` (a glass channel riding sc — skipping it would move bench fixtures, owed a look).
+**SAY IT ONCE** (2026-10-06, the owner: *"what are these squiggles … why is Hold:rope tied to Hold:lamp?"* then *"sharing
+ something should let us use less graphics to express the fact... like using a big 'Hold' label that diverges into each
+  lamp|nets|charts"*).  The squiggles were pairwise vines between VESSELS sharing `tide=high`, landing mid-scope on a hold
+   because a scope prints no facts — they said nothing and seemed to tie the wrong things.  Now (stop `crosslink`): one
+    STAR per shared fact (`vine_stars`, Vytui) — the fact's words once, at its holders' middle, a ray to each holder's word
+     or NAME (never a scope's middle).  The shared KIND is the existing `junction` stop: one `Hold` knot, rays to
+      lamp|bell|charts.  Both on in the flotilla's deck.  Open: the hubs all sit at their members' centroid, so they crowd the
+       middle — place hubs in free space; a few holds keep their own label instead of joining the junction.
 **Film a descent**: `node scripts/glass_sketch.mjs --dive='v:crown,v:crown>charts,up'` (deck needs `descend`): the
  page's clock is switched OFF (`__vy_film`) and the script STEPS the fall (`__vy_descend_at(u)`) and the surfacing
   (`__vy_surface_at(u)`) one screenshot per step (`--fall=36 --rise=18 --hold=10`) — real-time capture dropped the whole

@@ -22,7 +22,9 @@ const argv = process.argv.slice(2)
 const kv = Object.fromEntries(argv.filter(a => a.startsWith('--') && a.includes('=')).map(a => { const i = a.indexOf('='); return [a.slice(2, i), a.slice(i + 1)] }))
 const flags = new Set(argv.filter(a => a.startsWith('--') && !a.includes('=')))
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
-const SKETCH = path.resolve(ROOT, kv.sketch ?? 'static/vyto/sketch.json')
+// --book=VytoCodeCave drives the code cave (its sketch: static/vyto/code_sketch.json); default the sketchpad
+const BOOK = kv.book ?? 'VytoSketch'
+const SKETCH = path.resolve(ROOT, kv.sketch ?? (BOOK === 'VytoCodeCave' ? 'static/vyto/code_sketch.json' : 'static/vyto/sketch.json'))
 const OUT = kv.out ?? '/tmp/glass'
 const BASE = kv.url ?? process.env.GLASS_URL ?? 'http://127.0.0.1:9091'
 const W = +(kv.w ?? 1280), H = +(kv.h ?? 820)
@@ -47,7 +49,7 @@ if (url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') {
     url = new URL(`http://localhost:${proxy.address().port}`)
 }
 const sketch0 = JSON.parse(fs.readFileSync(SKETCH, 'utf8'))
-const page_url = `${url.origin}/BigShapeland?B=VytoSketch${sketch0.deck ? '&deck=' + encodeURIComponent(sketch0.deck) : ''}`
+const page_url = `${url.origin}/BigShapeland?B=${BOOK}${sketch0.deck ? '&deck=' + encodeURIComponent(sketch0.deck) : ''}`
 
 const b = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream'] })
 const p = await (await b.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })).newPage()
@@ -70,17 +72,17 @@ async function boot() {
 
 // re-draw IN PLACE: find w:VytoSketch and the House that carries VytoSketch_draw, hand it the sketch
 async function draw(sk) {
-    return p.evaluate((sk) => {
+    return p.evaluate(([sk, book]) => {
         const H = window.__H; if (!H) return 'no window.__H — not BigShapeland?'
         let w = null, host = null; const seen = new Set()
         const walk = (n, d) => { if (!n || seen.has(n) || d > 9) return; seen.add(n)
-            if (n.sc && n.sc.w === 'VytoSketch') w = n
+            if (n.sc && n.sc.w === book) w = n
             if (!host && typeof n.VytoSketch_draw === 'function') host = n
             try { for (const k of n.o()) walk(k, d + 1) } catch { } }
         walk(H, 0); if (!host && typeof H.VytoSketch_draw === 'function') host = H
-        if (!w || !host) return 'no w:VytoSketch yet'
+        if (!w || !host) return 'no w:' + book + ' yet'
         try { return 'drew ' + host.VytoSketch_draw(w, sk) } catch (e) { return 'draw threw ' + e.message }
-    }, sk)
+    }, [sk, BOOK])
 }
 
 // wait until the glass stops changing: the cell geometry signature stable across 3 reads (≤ 15s)

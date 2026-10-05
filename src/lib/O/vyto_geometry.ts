@@ -539,3 +539,83 @@ export function rib_cells(radii: number[], band: SpineBand, gap: number): { poly
     }
     return { polys, metas }
 }
+
+// ── THE GRID OF SAMENESS (2026-10-06, the owner: *"if there's order we want to draw down entropy into some kind of
+//  grid|alignment. the vines shouldn't be careening all over things, they should be tightening nodes together, showing
+//   the path through which there is sameness"*).  Two shared facts, two axes: ROWS by one elected key, COLUMNS by a
+//    second, aligned across rows — so things that share a value literally line up, and the value is said ONCE, on its
+//     row or column, instead of drawn as lines between holders.  A thing missing a key rides alone (its own row, or the
+//      unlabelled last column).  Natural sizes from the radii, then ONE scale so the whole grid fills its frame; gutters
+//       left/top for the axis labels.  Pure: (rows' scalars, radii, frame) → rects + the axes to label.
+export type GridAxis = { key: string, value: string, x: number, y: number }
+const GRID_CHANNELS = new Set(['dose', 'loose', 'same_n', 'flat_n', 'departing'])
+// elect the two axes from the rows' OWN facts (never the glass's channels, never a mainkey's distinct names)
+export function grid_keys(scs: Record<string, any>[], bucket: (rows: Record<string, any>[]) => string | null): [string | null, string | null] {
+    const strip = (drop: Set<string>) => scs.map(sc => { const o: Record<string, any> = {}; for (const k of Object.keys(sc || {})) if (!GRID_CHANNELS.has(k) && !drop.has(k)) o[k] = sc[k]; return o })
+    const k1 = bucket(strip(new Set()))
+    const k2 = k1 ? bucket(strip(new Set([k1]))) : null
+    return [k1, k2]
+}
+export function grid2_cells(scs: Record<string, any>[], radii: number[], frame: Rect, gap: number,
+                            keys: [string | null, string | null]): { polys: (Pt[] | null)[], rows: GridAxis[], cols: GridAxis[] } {
+    const n = scs.length
+    if (!n) return { polys: [], rows: [], cols: [] }
+    const [rk, ck] = keys
+    const side = radii.map(r => Math.max(6, r * 1.772))
+    const val = (i: number, k: string | null) => (k && scs[i] && scs[i][k] != null && scs[i][k] !== '') ? String(scs[i][k]) : null
+    // rows: by rk's value (first-seen), a row-less thing alone; no rk ⇒ a near-square wrap
+    const rowOf: number[] = [], rowVal: (string | null)[] = []
+    const rIdx = new Map<string, number>()
+    const wrap = rk ? 0 : Math.max(1, Math.ceil(Math.sqrt(n)))
+    for (let i = 0; i < n; i++) {
+        if (!rk) { const r = Math.floor(i / wrap); rowOf.push(r); rowVal[r] = null; continue }
+        const v = val(i, rk)
+        if (v == null) { rowOf.push(rowVal.length); rowVal.push(null); continue }
+        let r = rIdx.get(v); if (r == null) { r = rowVal.length; rIdx.set(v, r); rowVal.push(v) }
+        rowOf.push(r)
+    }
+    // columns: by ck's value, aligned ACROSS rows (a column-less thing goes to the unlabelled last column);
+    //  no ck ⇒ each row just flows left to right (its own order)
+    const colOf: number[] = [], colVal: (string | null)[] = []
+    const cIdx = new Map<string, number>()
+    let lone = -1
+    for (let i = 0; i < n; i++) {
+        if (!ck) { colOf.push(-1); continue }
+        const v = val(i, ck)
+        if (v == null) { if (lone < 0) { lone = -2 } colOf.push(-2); continue }
+        let c = cIdx.get(v); if (c == null) { c = colVal.length; cIdx.set(v, c); colVal.push(v) }
+        colOf.push(c)
+    }
+    if (ck && lone === -2) { const L = colVal.length; colVal.push(null); for (let i = 0; i < n; i++) if (colOf[i] === -2) colOf[i] = L }
+    const nr = rowVal.length
+    // no ck: per-row slot index becomes the column
+    if (!ck) { const seen: number[] = new Array(nr).fill(0); for (let i = 0; i < n; i++) colOf[i] = seen[rowOf[i]]++; const nc = Math.max(...seen); for (let c = 0; c < nc; c++) colVal.push(null) }
+    const nc = colVal.length
+    // natural extents: a (row, col) cell may hold several — they sit side by side
+    const cellW = Array.from({ length: nr }, () => new Array(nc).fill(0))
+    const rowH = new Array(nr).fill(0)
+    const slot: number[] = []
+    for (let i = 0; i < n; i++) { const r = rowOf[i], c = colOf[i]; slot.push(cellW[r][c]); cellW[r][c] += side[i] + (cellW[r][c] ? gap : 0); if (side[i] > rowH[r]) rowH[r] = side[i] }
+    const colW = new Array(nc).fill(0)
+    for (let c = 0; c < nc; c++) for (let r = 0; r < nr; r++) if (cellW[r][c] > colW[c]) colW[c] = cellW[r][c]
+    const pad = Math.max(3, gap)
+    const L = rk && rowVal.some(v => v != null) ? Math.min(frame.w * 0.16, 130) : 0
+    const T = ck && colVal.some(v => v != null) ? Math.min(frame.h * 0.1, 26) : 0
+    const W = colW.reduce((s, x) => s + x, 0) + pad * (nc + 1)
+    const H = rowH.reduce((s, x) => s + x, 0) + pad * (nr + 1)
+    const s = Math.max(0.05, Math.min((frame.w - L) / W, (frame.h - T) / H))
+    const ox = frame.x + L + ((frame.w - L) - W * s) / 2, oy = frame.y + T + ((frame.h - T) - H * s) / 2
+    const colX: number[] = []; let x = ox + pad * s; for (let c = 0; c < nc; c++) { colX.push(x); x += (colW[c] + pad) * s }
+    const rowY: number[] = []; let y = oy + pad * s; for (let r = 0; r < nr; r++) { rowY.push(y); y += (rowH[r] + pad) * s }
+    const polys: (Pt[] | null)[] = []
+    for (let i = 0; i < n; i++) {
+        const r = rowOf[i], c = colOf[i]
+        const x0 = colX[c] + (slot[i] ? slot[i] + 0 : 0) * s, y0 = rowY[r] + (rowH[r] - side[i]) * s / 2
+        const w = side[i] * s, h = side[i] * s
+        polys.push([{ x: x0, y: y0 }, { x: x0 + w, y: y0 }, { x: x0 + w, y: y0 + h }, { x: x0, y: y0 + h }])
+    }
+    const rows: GridAxis[] = [], cols: GridAxis[] = []
+    if (rk) for (let r = 0; r < nr; r++) if (rowVal[r] != null) rows.push({ key: rk, value: rowVal[r]!, x: frame.x + 4, y: rowY[r] + rowH[r] * s / 2 })
+    if (ck) for (let c = 0; c < nc; c++) if (colVal[c] != null) cols.push({ key: ck, value: colVal[c]!, x: colX[c] + colW[c] * s / 2, y: frame.y + T * 0.6 })
+    return { polys, rows, cols }
+}

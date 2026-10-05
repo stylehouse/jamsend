@@ -44,6 +44,22 @@ Owner's walk: Lump aimed at Grav kept playing Inko, and heard Inko's own tracks 
      failed; a Cave also gossips from `Swarm_roster_heard` on the station world, so only Cave→Captain ever worked. Fixed: the
       kind is registered, and the live self sends on A:Clustation > w:Swarm. New logs: `♥↗` (sender verdict), `♥⇢` (haul verdict).
        No Book catches this (they carry frames by hand) — a two-tab live walk is the only gate.
+- **LOFI rides the heart (owner ruling 2026-10-04: "LOFI on the 🧲 row").** A LOFI tick sits beside the lit 🧲 in Door's
+   crew list. It flips the presser's own `Heist_defaults.lofi`; `Heard_take` stamps `lofi:1` on each heart the live 🧲
+    routes; the mirror carries it exactly on each newer press (absence too); `Heard_haul_beat` sets the keep's lofi from the
+     card, quietly, so the hauler's own default stays its own. MusuMagnet / MusuHandoff / MusuHeard green, caveat 0.
+- **.jamsend cleanup (owner-approved 2026-10-04):** radiostock 171MB → 4MB — 91 of Grav's 100 files were pool previews.
+   `Ra_stock_gc_strangers` (Ra.g, called once a boot behind the Stoker resurrect, live only) drops other pubs' files idle
+    30 days. svelte.config.js `kit.outDir` reads `SVELTEKIT_OUTDIR` so a spare vite stops reloading every :9091 tab.
+- **R2 DROPPED (owner 2026-10-04):** *"does this involve adding ⇊ to the Radio interface? … it's sleek now … people can magnet
+   themselves to download to themselves … I don't buy it."* The 🧲 already says where hearts land; no ⇊-to-the-Cave on the
+    Captain's radio. (The G2 face refactor is unaffected.)
+- **The rung-3 heal was steering friends' radios (crack sweep, 2026-10-04).** `Swarm_reaccept_incomplete` rung 3 re-sends
+   `pier_accept` after 120s of silence — and a live BACKGROUNDED tab pulses about once a minute, so it fired on live friends
+    every 10 minutes. `Swarm_accept` stamped `aim_wish` on every one, and the dial wrote it straight into `radio.sc.aim`:
+     Lump's heal yanked Grav's and Inko's radios onto Lump all night (Grav was found aimed at Inko the same way). Now only a
+      NEW seal stamps the wish (`was_whole`), and a pinned aim spends any wish without obeying it. Also: Inko warned it was
+       drawing pool fills from "a Cave we have not heard from" — its own body (`Ra_pool_fill_homes` now skips self).
 **Owner to walk:** Lump aimed at Grav → only Grav's tracks, or the ⚠ chip if Grav has nothing for this body; Captain + Cave
  both pulling from one friend at once.
 

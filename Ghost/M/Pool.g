@@ -1266,6 +1266,10 @@ Ra_pool_fill_homes(w, ident):
     let now_s = (typeof this.Swarm_now === 'function') ? this.Swarm_now(w) : 0
     // (no ident ⇒ no roster to pick from; a world-only caller — the CLI poke — used to throw here)
     let cave = (ident && this.Swarm_body_for) ? this.Swarm_body_for(ident, 'Cave', now_s) : null
+    // NOT MYSELF (2026-10-04, Inko warning "a Cave we have not heard from (2de6d631)" — about its own body): a Cave's
+    //  roster holds its own row, and nobody ever "hears" from themselves.  My own body is no Cave to draw a fill from.
+    let mineb = (cave && this.Swarm_body_mine) ? this.Swarm_body_mine(ident) : null
+    if (cave && mineb && String(mineb.sc.pub || '') === String(cave.sc.pub || '')) { cave = null }
     // AND SAY IT, when the only Cave on the roster is one the Door would call away.  A preference that
     //  falls back silently rebuilds the original defect one layer down: the fill still goes to a ghost,
     //   and the log still reads exactly like a slow peer.  Throttled to once a minute per identity —

@@ -56,3 +56,52 @@ describe('the hand — a pin, an attractor, and neighbours that still press', ()
         expect(hand_pull({ x: 0, y: 0 }, { x: 100, y: 50, k: 0.15 })).toEqual({ x: 15, y: 7.5 })
     })
 })
+
+// THE GRID OF SAMENESS — the alignment is the tie (grid2_cells, vyto_geometry.ts)
+import { grid2_cells, grid_keys } from '../src/lib/O/vyto_geometry'
+import { bucket_key_of } from '../src/lib/O/vyto_foam'
+describe('grid2_cells — things that share a fact line up', () => {
+    const scs = [
+        { Vessel: 'crown', tide: 'high', dose: '3' }, { Vessel: 'port', tide: 'high', reef: 'north', dose: '2' },
+        { Vessel: 'starboard', tide: 'low', reef: 'north', dose: '2' }, { Vessel: 'keel-a', tide: 'low', reef: 'south', dose: '1' },
+        { Vessel: 'keel-b', tide: 'high', reef: 'south', dose: '1' }, { Vessel: 'keel-c', tide: 'low', reef: 'south', dose: '1' },
+    ]
+    const radii = scs.map(s => 20 + 10 * Number(s.dose))
+    const frame = { x: 0, y: 0, w: 800, h: 450 }
+    const keys = grid_keys(scs, bucket_key_of)
+    const g = grid2_cells(scs, radii, frame, 4, keys)
+    const box = (p: { x: number, y: number }[]) => ({ x: p[0].x, y: p[0].y, cx: (p[0].x + p[1].x) / 2, cy: (p[0].y + p[2].y) / 2 })
+    it('elects real facts for the axes, never a glass channel (dose)', () => {
+        expect(keys[0]).not.toBe('dose'); expect(keys[1]).not.toBe('dose')
+        expect(new Set(keys)).toEqual(new Set(['tide', 'reef']))
+    })
+    it('same ROW value ⇒ same row band; same COLUMN value ⇒ same column, across rows', () => {
+        const rowKey = keys[0]!, colKey = keys[1]!
+        const B = g.polys.map(p => box(p!))
+        for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) {
+            if (i === j) continue
+            if (scs[i][rowKey as 'tide'] === scs[j][rowKey as 'tide']) expect(Math.abs(B[i].cy - B[j].cy)).toBeLessThan(40)
+        }
+        // columns align: two things sharing the column value start at the same x
+        const byCol: Record<string, number[]> = {}
+        scs.forEach((s, i) => { const v = (s as any)[colKey]; if (v) (byCol[v] ||= []).push(i) })
+        // the CELL starts align (two things sharing both values sit side by side inside one cell — compare each row's first)
+        for (const ids of Object.values(byCol)) {
+            const firstPerRow: Record<string, number> = {}
+            for (const i of ids) { const rv = (scs[i] as any)[rowKey]; firstPerRow[rv] = Math.min(firstPerRow[rv] ?? Infinity, B[i].x) }
+            const xs = Object.values(firstPerRow); expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(0.01)
+        }
+    })
+    it('says each shared value ONCE — one label per row value and per column value', () => {
+        expect(g.rows.map(r => r.value).sort()).toEqual([...new Set(scs.map(s => (s as any)[keys[0]!]).filter(Boolean))].sort())
+        expect(g.cols.map(c => c.value).sort()).toEqual([...new Set(scs.map(s => (s as any)[keys[1]!]).filter(Boolean))].sort())
+    })
+    it('nothing overlaps and everything is inside the frame', () => {
+        const R = g.polys.map(p => ({ x0: p![0].x, y0: p![0].y, x1: p![2].x, y1: p![2].y }))
+        for (const r of R) { expect(r.x0).toBeGreaterThanOrEqual(-0.01); expect(r.y0).toBeGreaterThanOrEqual(-0.01); expect(r.x1).toBeLessThanOrEqual(800.01); expect(r.y1).toBeLessThanOrEqual(450.01) }
+        for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) {
+            const a = R[i], b = R[j]
+            expect(a.x1 <= b.x0 + 0.01 || b.x1 <= a.x0 + 0.01 || a.y1 <= b.y0 + 0.01 || b.y1 <= a.y0 + 0.01).toBe(true)
+        }
+    })
+})

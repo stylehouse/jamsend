@@ -828,11 +828,14 @@ Vyto_fold_scope(w, scope, depth):
         //    door is RE-OPENABLE.  A distil with no election (a detached mint) carries neither.
         let saylaw = this.Vyto_fo(w, 'saylaw') ? 1 : 0
         if (!crest) {
-            crest = this.Vyto_distil(scope, grp, ofk, [], 0, ofk, saylaw)
+            // the mirror's own door counts (same_n · flat_n) are never source facts — a crest must not SAY them
+            //  (2026-10-04: a folded Story folder said `flat_n` in the code cave).  No bench mints either, so no
+            //   recorded crest moves.
+            crest = this.Vyto_distil(scope, grp, ofk, ['same_n', 'flat_n'], 0, ofk, saylaw)
         } else if (crest.sc.n !== grp.length) {
             for (const vr of crest.o()) crest.drop(vr)
             crest.sc.n = grp.length
-            this.Vyto_distil_fill(crest, grp, [], 0, ofk, saylaw)
+            this.Vyto_distil_fill(crest, grp, ['same_n', 'flat_n'], 0, ofk, saylaw)
         }
         // ── THE MIRROR-SIDE WIRING, first inch (2026-09-09) ──────────────────────────────────────
         //  A crest had a spring TARGET and no `.c.tok`, and `Vytui.tree_nodes` opens with

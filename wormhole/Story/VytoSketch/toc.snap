@@ -1,0 +1,15 @@
+story:VytoSketch
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.069
+      sample=0.031,at=1791179265
+      sample=0.106,at=1791239584
+    TimeTotal:step,avg=0.023
+      sample=0.01,at=1791179265
+      sample=0.035,at=1791239584
+  step,dige:8154f14fd36db19d
+  step=2,desc:fetch the sketch — plain objects in the guise notation,dige:59dec67e6cf9875c
+  step=3,desc:stand the sketch on the glass,dige:6016f7eb88190ec4

@@ -1690,6 +1690,8 @@ async Radio_dial(radio):
     //     preempted forever, the exact symptom just fixed for the manual switch, hitting every
     //      newcomer who happened to be playing their own music before joining.
     let wish = this.top_House().c.aim_wish
+    // a PINNED aim (a human chose it — Radio_aim_set) outranks any wish: the wish is spent, the choice stands
+    if (wish && radio.c.pinned && radio.sc.aim) { delete this.top_House().c.aim_wish; wish = '' }
     if (wish) {
         delete this.top_House().c.aim_wish
         if (radio.sc.own) { this.Radio_source_toggle(radio) }
@@ -3143,6 +3145,9 @@ async Stoker_look(st, era):
         }
         // backstop nudge for any later stands past the first
         if (+(st.sc.stood || 0) > stood0) this.Radio_nudge(w)
+        // once a boot, behind the stands, never blocking them: other pubs' long-idle stock (Ra_stock_gc_strangers).
+        //  Live only — a Book's world shares no disk worth tidying and its fixtures must not see a sweep.
+        if (this.top_House().c.humdinger && this.Ra_stock_gc_strangers) { this.Ra_stock_gc_strangers(nav, pub, 30).catch(() => {}) }
     }
     // THE POCKET RESURRECTS HERE TOO (2026-09-05).  This is the one seam that runs on EVERY body with a nav
     //  — the preheat churn fires it once at boot even with the radio off — and it is already where the

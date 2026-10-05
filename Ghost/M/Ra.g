@@ -634,6 +634,37 @@ async Ra_stock_gc_cap(nav, pub):
     }
     return dropped
 
+// Ra_stock_gc_strangers — the per-pub cap above never touches ANOTHER pub's files, so a shared .jamsend kept every
+//  identity that ever used it (owner 2026-10-04: 171MB, 20+ pubs — two identities idle since August, a dozen runner
+//   tabs, Book pubs like radioaim/reap/ogg.shop).  Drop every file of a pub that is not `me` and has minted nothing
+//    for `days` (judged by that pub's NEWEST file, so a live runner keeps its cache).  It is a byte-cache: a returning
+//     pub re-digs from source.  One listing, direct deletes, one re-expand.  Live pages only (the caller gates).
+async Ra_stock_gc_strangers(nav, me, days):
+    let dl = null
+    try { dl = await nav.dir_at(this.Ra_stock_dir()) } catch (er) { dl = null }
+    if (!dl || typeof dl.deleteEntry !== 'function') return 0
+    try { await dl.expand() } catch (er) { return 0 }
+    let newest = {}
+    let all = []
+    for (const f of dl.files) {
+        let p = this.Ra_stock_parse(f.name)
+        if (!p || p.pub === me) continue
+        all.push(p)
+        if (!newest[p.pub] || p.ts > newest[p.pub]) newest[p.pub] = p.ts
+    }
+    let cut = Date.now() - (+(days || 30)) * 86400000
+    let dropped = 0
+    let pubs = {}
+    for (const p of all) {
+        if (newest[p.pub] >= cut) continue
+        try { await dl.deleteEntry(p.name); dropped = dropped + 1; pubs[p.pub] = 1 } catch (er) {}
+    }
+    if (dropped) {
+        try { await dl.expand() } catch (er) {}
+        console.log('🧹 radiostock: dropped ' + dropped + ' file(s) of ' + Object.keys(pubs).length + ' pub(s) idle over ' + (+(days || 30)) + ' days')
+    }
+    return dropped
+
 // Ra_stock_peek — the card line only (~600 bytes of JSON before the first '\n'): read_range where
 //  the nav can seek, whole-file where it can't.  For the GC's is-this-my-path question — never pay
 //   a full read per shelf file just to ask it.

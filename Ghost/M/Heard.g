@@ -360,6 +360,7 @@ Heard_adopt(w, me, card):
     if (card.sc.title && !mine.sc.title) { mine.sc.title = String(card.sc.title) }
     if (card.sc.artist && !mine.sc.artist) { mine.sc.artist = String(card.sc.artist) }
     if (card.sc.to) { mine.sc.to = String(card.sc.to) }
+    if (card.sc.lofi) { mine.sc.lofi = 1 }
     mine.bump()
     this.Heard_settle(w, me, 'heard_adopt')
     return mine
@@ -384,13 +385,17 @@ Heard_mirror_merge(mag, got_C, now):
             let card = this.Heard_mag_card(mag, String(inc.sc.id), String(inc.sc.pub || ''), now)
             if (!card) { continue }
             let advanced = 0
+            let pressed = 0
             for (const k of this.Heard_mirror_stamp_keys()) {
                 let a = +(card.sc[k] || 0)
                 let b = +(inc.sc[k] || 0)
-                if (b > a) { card.sc[k] = String(b); advanced = 1 }
+                if (b > a) { card.sc[k] = String(b); advanced = 1; if (k === 'hearted_at') { pressed = 1 } }
             }
             if (!advanced) { continue }
             for (const k of this.Heard_mirror_listing_keys()) { if (inc.sc[k] != null && inc.sc[k] !== '') { card.sc[k] = String(inc.sc[k]) } }
+            // lofi is a choice made AT the press, so a newer press carries it exactly — its absence too (the listing
+            //  copy above only ever adds, which would leave an un-ticked LOFI stuck on).
+            if (pressed) { if (inc.sc.lofi) { card.sc.lofi = 1 } else if (card.sc.lofi) { delete card.sc.lofi } }
             card.bump()
             n = n + 1
         }
@@ -699,6 +704,14 @@ Heard_take(w, me, rec, by, to0):
     //  body it names hauls and every other folder-holder leaves it be (Heard_for_me, in the haul beat)
     let to = to0 != null ? String(to0) : this.Heard_magnet(w)
     if (to && card.sc.to !== to) { card.sc.to = to }
+    // …AND HOW IT ARRIVES (owner 2026-10-04, "LOFI on the 🧲 row"): lofi is the presser's choice, decided at the press
+    //  like 'to' and riding the mirror to the body that hauls (Heard_haul_beat honours it over that body's own default).
+    //   Only on a heart the LIVE 🧲 routed (no to0): no 'to' means no crew road and the hauler's own default stands,
+    //    and a Book that names its hauler outright never reads this runner tab's own remembered default.
+    if (to && to0 == null) {
+        let lo = this.Heist_defaults_get ? this.Heist_defaults_get().lofi : ''
+        if (lo) { if (!card.sc.lofi) { card.sc.lofi = 1 } } else if (card.sc.lofi) { delete card.sc.lofi }
+    }
     card.bump()
     this.Heard_settle(w, me, 'heard_take')
     return 1
@@ -1244,7 +1257,10 @@ async Heard_haul_beat(w, rw, me, nav, shop, ident):
             if (!rec) { say(card, 'not in what ' + (this.Radio_friendly ? this.Radio_friendly(rw, row.pub) : String(row.pub).slice(0, 8)) + ' offers this device — cannot seed a haul'); continue }
             let kept = this.Heard_keep(w, rw, shop, row.pub, rec)
             if (kept) {
-                say(card, 'haul started on this device')
+                // a 🧲-routed heart carries the presser's LOFI choice; it wins over this body's own default (quiet: the
+                //  default stays this body's).  No 'to' ⇒ Heard_keep's own default, as before.
+                if (card.sc.to && this.Heist_keep_set_lofi && (!!card.sc.lofi) !== (!!kept.sc.lofi)) { this.Heist_keep_set_lofi(kept, !!card.sc.lofi, true) }
+                say(card, 'haul started on this device' + (kept.sc.lofi ? ' (LOFI)' : ''))
                 // a heart pressed on ANOTHER body: nobody here asked, so it never takes this screen (R4, Sounditron)
                 if (card.sc.pressed_on) { kept.c.carried = 1 }
                 // "carried_by = which body's Card has a keep" (SoundPooling_todo §0.0 rung 3): the only

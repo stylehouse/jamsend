@@ -3494,6 +3494,12 @@ async Swarm_accept(w, ident, frame):
         this.Swarm_rebuff(ident, 'accept_spoofed', frame.page?.prepub)
         return null
     }
+    // WAS THIS FRIENDSHIP ALREADY WHOLE?  Then this accept is the far side's rung-3 heal re-asserting it (Swarm_reaccept_incomplete
+    //  fires on 120s of silence — and a live but BACKGROUNDED tab pulses about once a minute), not a join.  2026-10-04: every
+    //   such re-offer stamped aim_wish below, and the dial consumed it straight into radio.sc.aim — Lump's heal yanked Grav's and
+    //    Inko's radios onto Lump every ten minutes.  Only a seal that is NEW may carry the "listen with them" wish.
+    let was = this.Swarm_peering(ident)?.o({ Pier: 1, pub: String(frame.page.prepub) })[0]
+    let was_whole = !!(was && was.o({ Grant: 1, by: String(this.Swarm_keys(ident).pub) })[0] && was.o({ Grant: 1, by: String(frame.page.pub) })[0])
     let mine = await mint_grant(this.Swarm_keys(ident), frame.page.pub, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
     let pier = this.Swarm_seal(w, ident, frame.page, frame.grant, mine)
     // FAVOUR THE INVITE'S ORIGIN (2026-08-11, the owner: *"would favour the Invite's origin when
@@ -3503,7 +3509,7 @@ async Swarm_accept(w, ident, frame):
     //     may not be standing yet on a fresh tab, and their crate is certainly still empty — the
     //      dial consumes the wish into its own aim (Radio_dial), which the aimed pool then
     //       prefers the moment any of their records land.  `.c`, one-shot, never snapped.
-    this.top_House().c.aim_wish = String(frame.page.prepub)
+    if (!was_whole) { this.top_House().c.aim_wish = String(frame.page.prepub) }
     this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_confirm', grant: mine, page: this.Swarm_page(ident) })
     return pier
 

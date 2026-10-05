@@ -11,7 +11,7 @@ import { Idento } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '1cee21a1d8a56976~g1' },
+    Ghostmeta_Ghost_M_Ra(): string { return '2e5dd1a4c3269c2b~g1' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -675,6 +675,38 @@ async Ra_stock_gc_cap(nav, pub) {
     for (const old of mine.slice(cap)) {
         await this.Ra_stock_drop(nav, old.name)
         dropped = dropped + 1
+    }
+    return dropped
+
+},
+// Ra_stock_gc_strangers — the per-pub cap above never touches ANOTHER pub's files, so a shared .jamsend kept every
+//  identity that ever used it (owner 2026-10-04: 171MB, 20+ pubs — two identities idle since August, a dozen runner
+//   tabs, Book pubs like radioaim/reap/ogg.shop).  Drop every file of a pub that is not `me` and has minted nothing
+//    for `days` (judged by that pub's NEWEST file, so a live runner keeps its cache).  It is a byte-cache: a returning
+//     pub re-digs from source.  One listing, direct deletes, one re-expand.  Live pages only (the caller gates).
+async Ra_stock_gc_strangers(nav, me, days) {
+    let dl = null
+    try { dl = await nav.dir_at(this.Ra_stock_dir()) } catch (er) { dl = null }
+    if (!dl || typeof dl.deleteEntry !== 'function') return 0
+    try { await dl.expand() } catch (er) { return 0 }
+    let newest = {}
+    let all = []
+    for (const f of dl.files) {
+        let p = this.Ra_stock_parse(f.name)
+        if (!p || p.pub === me) continue
+        all.push(p)
+        if (!newest[p.pub] || p.ts > newest[p.pub]) newest[p.pub] = p.ts
+    }
+    let cut = Date.now() - (+(days || 30)) * 86400000
+    let dropped = 0
+    let pubs = {}
+    for (const p of all) {
+        if (newest[p.pub] >= cut) continue
+        try { await dl.deleteEntry(p.name); dropped = dropped + 1; pubs[p.pub] = 1 } catch (er) {}
+    }
+    if (dropped) {
+        try { await dl.expand() } catch (er) {}
+        console.log('🧹 radiostock: dropped ' + dropped + ' file(s) of ' + Object.keys(pubs).length + ' pub(s) idle over ' + (+(days || 30)) + ' days')
     }
     return dropped
 
