@@ -580,7 +580,8 @@
     .hf-who { color: #e8a9c0; font-weight: 600; pointer-events: auto; }
     .hf-owed { color: rgba(150, 170, 200, 0.5); font-size: 8.5px; white-space: nowrap; }
     /* a ♥ that has not been carried yet — quiet by construction: it is a promise, not an event. */
-    .hf-wait { grid-template-columns: 1rem 1fr auto; opacity: 0.7; }
+    /* four columns: ♥ · name · when · ✕ — the ✕ (wish-retire) arrived after this was three, and wrapped to a line of its own */
+    .hf-wait { grid-template-columns: 1rem 1fr auto auto; opacity: 0.7; }
     .hf-heart { color: rgba(232, 169, 192, 0.7); font-size: 9px; text-align: center; }
     /* the byte bar.  2px and no label: the number is on the row already, this is the thing you read
        without reading.  Inside the row's own indent so it reads as belonging to the row above it. */

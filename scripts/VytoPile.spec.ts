@@ -68,7 +68,7 @@ describe('grid2_cells — things that share a fact line up', () => {
     ]
     const radii = scs.map(s => 20 + 10 * Number(s.dose))
     const frame = { x: 0, y: 0, w: 800, h: 450 }
-    const keys = grid_keys(scs, bucket_key_of)
+    const keys = grid_keys(scs)
     const g = grid2_cells(scs, radii, frame, 4, keys)
     const box = (p: { x: number, y: number }[]) => ({ x: p[0].x, y: p[0].y, cx: (p[0].x + p[1].x) / 2, cy: (p[0].y + p[2].y) / 2 })
     it('elects real facts for the axes, never a glass channel (dose)', () => {
@@ -103,5 +103,20 @@ describe('grid2_cells — things that share a fact line up', () => {
             const a = R[i], b = R[j]
             expect(a.x1 <= b.x0 + 0.01 || b.x1 <= a.x0 + 0.01 || a.y1 <= b.y0 + 0.01 || b.y1 <= a.y0 + 0.01).toBe(true)
         }
+    })
+})
+
+describe('grid_keys — an axis must be an ORDER, not a list', () => {
+    it('never elects a mainkey (names), even when one row lacks it', () => {
+        const rows = [{ Region: 'the world' }, { Region: 'the board' }, { Region: 'the organs' }, { Landscape: 'the code' }]
+        expect(grid_keys(rows)).toEqual([null, null])
+    })
+    it('never elects a crest\'s internals', () => {
+        const rows = [{ Vtuffing: 1, of: 'part=hand', n: '4' }, { Vtuffing: 1, of: 'part=fold', n: '3' }, { Vtuffing: 1, of: 'part=scan', n: '3' }]
+        expect(grid_keys(rows)).toEqual([null, null])
+    })
+    it('rejects a key with too many values (39 parts is a list) and one too few rows hold', () => {
+        const rows = Array.from({ length: 20 }, (_, i) => ({ Method: 'm' + i, part: 'p' + i, leans_on: i % 3 ? 'Ra' : 'Radio' }))
+        expect(grid_keys(rows)[0]).toBe('leans_on')
     })
 })

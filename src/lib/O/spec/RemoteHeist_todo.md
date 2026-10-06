@@ -60,6 +60,12 @@ Owner's walk: Lump aimed at Grav kept playing Inko, and heard Inko's own tracks 
      Lump's heal yanked Grav's and Inko's radios onto Lump all night (Grav was found aimed at Inko the same way). Now only a
       NEW seal stamps the wish (`was_whole`), and a pinned aim spends any wish without obeying it. Also: Inko warned it was
        drawing pool fills from "a Cave we have not heard from" — its own body (`Ra_pool_fill_homes` now skips self).
+- **The haul loop (2026-10-04, Inko re-hauling Cosmic C / Echo E / Deep A / Query E forever; an rm -rf of testsounds/ refilled
+   in a minute).** `Heard_takes` learned "landed" only from `Heard_landed` — a record on the STOCK shelf, the Stoker's culled
+    ~27-record window — so a landed file fell out and the heart was hauled again. Now `Heist_keep_pull` at 'done' calls
+     `Heard_mark_landed` for a take:1 keep, and the haul beat skips it by verdict. A fresher ♥ still re-hauls. Also: Haul's
+      waiting row grid (✕ wrapped), and Cellui re-fits on stage HEIGHT (DevTools docked below never re-fit the inlay).
+       Books: MusuHeard 9/9, MusuHandoff 9/9, MusuMagnet 7/7 clean; MusuHeist's 13 caveats predate this (17 on 10-04).
 **Owner to walk:** Lump aimed at Grav → only Grav's tracks, or the ⚠ chip if Grav has nothing for this body; Captain + Cave
  both pulling from one friend at once.
 

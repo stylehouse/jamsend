@@ -549,12 +549,32 @@ export function rib_cells(radii: number[], band: SpineBand, gap: number): { poly
 //       left/top for the axis labels.  Pure: (rows' scalars, radii, frame) → rects + the axes to label.
 export type GridAxis = { key: string, value: string, x: number, y: number }
 const GRID_CHANNELS = new Set(['dose', 'loose', 'same_n', 'flat_n', 'departing'])
-// elect the two axes from the rows' OWN facts (never the glass's channels, never a mainkey's distinct names)
-export function grid_keys(scs: Record<string, any>[], bucket: (rows: Record<string, any>[]) => string | null): [string | null, string | null] {
-    const strip = (drop: Set<string>) => scs.map(sc => { const o: Record<string, any> = {}; for (const k of Object.keys(sc || {})) if (!GRID_CHANNELS.has(k) && !drop.has(k)) o[k] = sc[k]; return o })
-    const k1 = bucket(strip(new Set()))
-    const k2 = k1 ? bucket(strip(new Set([k1]))) : null
-    return [k1, k2]
+// elect the two axes from the rows' OWN facts.  NOT a row's mainkey (its name — names are all different, an axis of
+//  names is a list, and one row lacking the key made the names look like a partition: `Region the world` as a row
+//   label, 2026-10-06), NOT a crest's internals (`n`, `of` — a fold's bookkeeping), NOT a glass channel (`dose`…).
+//    An axis must partition: held by at least half the rows, with 2..8 values (an axis of 39 values is a list, not
+//     an order — that level falls back to a plain wrap).  Prefer the key the most rows hold, then the fewest values.
+export function grid_keys(scs: Record<string, any>[], _bucket?: unknown): [string | null, string | null] {
+    const n = scs.length
+    const facts = scs.map(sc => {
+        const ks = Object.keys(sc || {}); const mk = ks[0]; const o: Record<string, string> = {}
+        if (mk === 'Vtuffing') return o
+        for (const k of ks.slice(1)) { const v = sc[k]; if (GRID_CHANNELS.has(k) || v == null || v === '' || v === 1 || v === '1') continue; o[k] = String(v) }
+        return o
+    })
+    const elect = (skip: string | null): string | null => {
+        const st: Record<string, { have: number, vals: Set<string> }> = {}
+        for (const f of facts) for (const [k, v] of Object.entries(f)) { if (k === skip) continue; (st[k] ||= { have: 0, vals: new Set() }); st[k].have++; st[k].vals.add(v) }
+        let best: { k: string, have: number, d: number } | null = null
+        for (const [k, s] of Object.entries(st)) {
+            const d = s.vals.size
+            if (d < 2 || d > 8 || s.have * 2 < n) continue
+            if (!best || s.have > best.have || (s.have === best.have && d < best.d)) best = { k, have: s.have, d }
+        }
+        return best ? best.k : null
+    }
+    const k1 = elect(null)
+    return [k1, k1 ? elect(k1) : null]
 }
 export function grid2_cells(scs: Record<string, any>[], radii: number[], frame: Rect, gap: number,
                             keys: [string | null, string | null]): { polys: (Pt[] | null)[], rows: GridAxis[], cols: GridAxis[] } {

@@ -3988,6 +3988,11 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route):
     if (!left) {
         keep.sc.state = 'done'
         keep.bump()
+        // A HEART'S HAUL CLOSES ITS HEART (2026-10-04, Inko re-hauling the same four tracks in a loop): the haul beat only
+        //  ever learned "landed" by finding the record on the STOCK shelf (Heard_landed), a rolling ~27-record window the
+        //   Stoker culls — so a landed file fell out of it and the heart was hauled again, forever (and an rm -rf of the
+        //    folder was refilled within a minute).  The durable fact is the card's own landed_at; stamp it here.
+        if (keep.sc.take && keep.sc.seed && this.Heard_mark_landed) { try { this.Heard_mark_landed(w, rw, me, String(keep.sc.seed), String(keep.sc.pub || '')) } catch (er) {} }
         try { this.Heist_job_drop(shop, keep) } catch (er) {}
     }
 

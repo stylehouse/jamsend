@@ -173,6 +173,25 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
      or NAME (never a scope's middle).  The shared KIND is the existing `junction` stop: one `Hold` knot, rays to
       lamp|bell|charts.  Both on in the flotilla's deck.  Open: the hubs all sit at their members' centroid, so they crowd the
        middle — place hubs in free space; a few holds keep their own label instead of joining the junction.
+**THE GRID OF SAMENESS** (2026-10-06, the owner: *"what comes out of that is a pretty terrible calamity … if there's order
+ we want to draw down entropy into some kind of grid|alignment. the vines shouldn't be careening all over things, they
+  should be tightening nodes together, showing the path through which there is sameness"*).  The stars above were a
+   calamity; the answer is LAYOUT, not lines.  Stop `grid` now: `grid2_cells` + `grid_keys` (vyto_geometry.ts, proven in
+    VytoPile.spec — 13 tests): ROWS by one shared fact, COLUMNS by a second, aligned across rows, each value said ONCE on
+     its axis; every scope tiles (a vessel's holds too); NO vines under the grid (the alignment is the tie).  The election
+      refuses names (mainkeys), crest internals, glass channels, and any key that is a list (>8 values) or held by < half
+       the rows — so a level with no real partition gets a plain calm wrap, never a pretend order.  Both sketches default
+        to `grid,descend`.  The flotilla: tide high|low × reef north|south, the crown alone in the unlabelled column.
+**NEXT, the owner's PATCHWORK** (same sitting): *"many springengine graphlayout things, but not too conventionally! perhaps
+ for data derived from the data we're actually laying out... a patchwork of nodes comes from a smaller team of actual objects
+  we want to lay out, then that more complicated patchwork settles into a form we can then read the position of vines (if
+   there are any, it might score badly on tidiness, and we can just have a longer message with less vines|cleverness)"*.
+    The shape: DERIVE a bipartite patchwork — a node per object AND a node per shared fact value (`tide=high`,
+     `part=fold`) — spring it (a pure TS force layout, the pile_step family) so objects are pulled to the values they hold;
+      read the settled positions back as the objects' seeds (the cut draws around them) and the value nodes as HUBS whose
+       rays are short by construction; SCORE it (ray length, crossings, overlaps) against the grid and the plain wrap, and
+        when it scores badly say the sameness in WORDS on the cell instead (a longer message, fewer vines).  A fourth regime
+         beside foam/grid/spine, chosen by score, not by deck alone.
 **Film a descent**: `node scripts/glass_sketch.mjs --dive='v:crown,v:crown>charts,up'` (deck needs `descend`): the
  page's clock is switched OFF (`__vy_film`) and the script STEPS the fall (`__vy_descend_at(u)`) and the surfacing
   (`__vy_surface_at(u)`) one screenshot per step (`--fall=36 --rise=18 --hold=10`) — real-time capture dropped the whole
@@ -208,9 +227,12 @@ The owner: *"I'm wanting just the one visual: a big spine-root spine-label-sized
      and `/` open the hole; the old Searchbar stays only as the fallback with no Vyto.
 - **"stemdex not scanned yet" was a real bug**: `Lagoon_lies()` read the TOP House's w:Lies, but a hacker room stands
    its Lies on the ROOM, so every seek reported an empty Stemdex while the room's was being fed.  Now the room's
-    (via `face_on`) is asked first.  And the Stemdex roster now includes **every doc Atlas has rostered** — a hacker
-     Lies holds one Waft and no GhostList, so freetext covered a handful of files (roster union, not a census merge).
-      BigWordland now feeds the scan itself while the cave is open (the Searchbar used to), and the cave re-reads.
+    (via `face_on`) is asked first.  ⚠ **REVERTED 2026-10-06**: widening the Stemdex roster to every Atlas doc, with an
+     unconditional 1.5s re-ask, was a `read STUCK` storm and a re-sow tailspin (the owner: *"way too slow… stuck tailspinning on
+      unending compute… we don't have to read shittons of documents all at once any more right?"* — right: Atlas already
+       has the tree).  The roster is the room's own Wafts again; BigWordland nudges the scan while the cave is open and
+        re-asks the cave ONLY when the index read something new.  Freetext over the whole tree wants a different road
+         (Atlas's own text, not a second reader of every file).  The cave now logs any sowing over 40ms (`🕳 cave sow …`).
 - **Proof**: LagoonCave re-recorded with the hole (9 beats: open → type → file → method → walk → climb → leave),
    accepted after reading step 9's snap, then **CHECK 9/9 ok_pct 1 caveat 0, twice** (it needed LagoonStaple's
     `EntropyArrest Entcase:Self_round` — standing a Vyto world on the Run House brings Vyto's round clock).  Eye on

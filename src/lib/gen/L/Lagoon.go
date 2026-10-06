@@ -27,7 +27,7 @@ const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return '4876ebbb07e9812a~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return '4c2e230141e8f131~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -1450,7 +1450,9 @@ Lagoon_cave_show(w) {
             this.Lagoon_cave_emit(w, 'land', { path: here.path, point: here.point || here.m })
         }
     }
+    let t0 = performance.now()
     let guises = this.Lagoon_cave_level(w)
+    let t1 = performance.now()
     // the same sowing twice is not news: the Searchbar re-asks every 1.5s while its index converges
     let sig = this.Lagoon_cave_sig(guises)
     if (sig === w.c.cave_sig) return
@@ -1461,6 +1463,13 @@ Lagoon_cave_show(w) {
         nested: 1, folded: 1, depth_scale: 1, foamereo: w.c.cave_deck || LAGOON_CAVE_DECK } })
     commission.c.Run = this
     SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
+    // THE SOWING SAYS ITSELF when it is slow (2026-10-06, the owner: "way too slow… stuck tailspinning") — the
+    //  reader's half of a keystroke (the seek + the anatomy) and how many cells the glass was handed.  The glass's
+    //   own half rides its stir; this line is so a slow report arrives with a number in it.  `.c` + console only.
+    w.c.cave_sows = (w.c.cave_sows || 0) + 1
+    let t2 = performance.now()
+    if (t2 - t0 > 40) console.log('🕳 cave sow #' + w.c.cave_sows + ' ' + (here ? here.lvl : '?') + ' — ' + guises.length + ' vertebrae, '
+        + Math.round(t1 - t0) + 'ms reading, ' + Math.round(t2 - t1) + 'ms to commission')
 
 },
 Lagoon_cave_sig(guises) {

@@ -8,8 +8,7 @@ story:LagoonCave
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.157
-      sample=0.176,at=1791009318
+    TimeTotal:beliefs,avg=0.475
       sample=0.176,at=1791009328
       sample=0.095,at=1791009341
       sample=0.15,at=1791009357
@@ -19,8 +18,8 @@ story:LagoonCave
       sample=0.209,at=1791009484
       sample=0.121,at=1791009500
       sample=0.127,at=1791009517
-    TimeTotal:step,avg=0.018
-      sample=0.02,at=1791009318
+      sample=3.353,at=1791243120
+    TimeTotal:step,avg=0.053
       sample=0.02,at=1791009328
       sample=0.011,at=1791009341
       sample=0.017,at=1791009357
@@ -30,6 +29,7 @@ story:LagoonCave
       sample=0.023,at=1791009484
       sample=0.013,at=1791009500
       sample=0.014,at=1791009517
+      sample=0.373,at=1791243120
   step,dige:46f0d4746b79dccf
   step=2,desc:load Atlas and Lagoon on demand — stand Atlas on the frozen corpus and the reader beside it,dige:8072b19f8378bd2f
   step=3,desc:open the hole — the head is a field to type into and the families stand around it,dige:2080d71d27accc4c

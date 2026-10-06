@@ -1177,6 +1177,18 @@ Heard_verdict_of(job):
 //  shelf (rung 3).  Heard_landed is a live derived check this body can always make for itself (it has
 //   the shelf right there) — but under the mirror model there is no separate ack any more, so the stamp
 //    itself is what tells EVERY OTHER body, reading this card only through a mirror, that it finished.
+// Heard_mark_landed — a heart-driven heist (take:1) finished: stamp MY card for it landed (Heist_keep_pull calls this at
+//  'done').  Heard_haul_beat then skips it by verdict ('landed'); a fresher press outdates it by comparison, as ever.
+Heard_mark_landed(w, rw, me, id, pub):
+    let mag = this.Heard_mag_find(rw, me)
+    if (!mag || !id) { return 0 }
+    let card = this.Heard_find(mag, String(id), pub ? String(pub) : '') || this.Heard_find(mag, String(id), '')
+    if (!card || this.Heard_reaction(card) !== 'take') { return 0 }
+    if (+(card.sc.landed_at || 0) >= +(card.sc.hearted_at || 0)) { return 0 }
+    card.sc.landed_at = '' + this.Heard_react_at(w, card, ['hearted_at'])
+    card.bump()
+    this.Heard_settle(w, me, 'heard_landed')
+    return 1
 Heard_land_beat(w, rw, me, shelf):
     if (!shelf) { return 0 }
     let mag = this.Heard_mag_find(rw, me)

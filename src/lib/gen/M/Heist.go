@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '30b120cda1283b31~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '052608e420180a78~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -4095,6 +4095,11 @@ async Heist_keep_pull(w, rw, ident, me, nav, keep, shop, srcmir, route) {
     if (!left) {
         keep.sc.state = 'done'
         keep.bump()
+        // A HEART'S HAUL CLOSES ITS HEART (2026-10-04, Inko re-hauling the same four tracks in a loop): the haul beat only
+        //  ever learned "landed" by finding the record on the STOCK shelf (Heard_landed), a rolling ~27-record window the
+        //   Stoker culls — so a landed file fell out of it and the heart was hauled again, forever (and an rm -rf of the
+        //    folder was refilled within a minute).  The durable fact is the card's own landed_at; stamp it here.
+        if (keep.sc.take && keep.sc.seed && this.Heard_mark_landed) { try { this.Heard_mark_landed(w, rw, me, String(keep.sc.seed), String(keep.sc.pub || '')) } catch (er) {} }
         try { this.Heist_job_drop(shop, keep) } catch (er) {}
     }
 

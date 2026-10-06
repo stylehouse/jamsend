@@ -2724,7 +2724,7 @@
                 const fb = bbox_of(framePoly)
                 const head = scopeKey === '' ? 0 : Math.min(24, fb.bh * 0.2)
                 const scs = live.map(n => n.row.sc as any)
-                const g2 = grid2_cells(scs, radii, { x: fb.bx, y: fb.by + head, w: fb.bw, h: fb.bh - head }, gap, grid_keys(scs, bucket_key_of))
+                const g2 = grid2_cells(scs, radii, { x: fb.bx, y: fb.by + head, w: fb.bw, h: fb.bh - head }, gap, grid_keys(scs))
                 polys = g2.polys
                 let ax = gridAxes.get(w); if (!ax) { ax = new Map(); gridAxes.set(w, ax) }
                 ax.set(scopeKey, { rows: g2.rows, cols: g2.cols, depth: scopeKey === '' ? 0 : scopeKey.split('>').length })

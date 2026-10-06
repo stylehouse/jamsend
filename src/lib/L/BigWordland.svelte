@@ -32,6 +32,7 @@
     import Stuffing   from "$lib/data/Stuffing.svelte"
     import Searchbar  from "$lib/O/ui/Searchbar.svelte"
     import BootGate   from "$lib/O/ui/BootGate.svelte"
+    import TodoSpool  from "$lib/O/ui/TodoSpool.svelte"
     import { boot_param } from "$lib/boot"
     import { boot_qualand } from "$lib/O/BigQualand.svelte"
 
@@ -198,14 +199,20 @@
         if (lw) lw.c.cave_on = cave_on
         H.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { q, r })
     }
-    // feed the Stemdex while the cave is open and the index is still converging
+    // feed the Stemdex while the cave is open and its (small — the room's own Wafts) roster is converging, and
+    //  re-ask the cave ONLY when the index actually read something new.  (2026-10-06: a roster widened to every
+    //   Atlas doc plus an unconditional 1.5s re-ask was a read-STUCK storm and a re-sow tailspin — reverted.)
     $effect(() => {
         if (!cave_open) return
+        let seen_done = -1
         const t = setInterval(() => {
             const dex = (lies?.w as any)?.c?.stemdex
             if (dex && dex.total > 0 && dex.done >= dex.total) return
-            lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
-            H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { refresh: 1 })
+            if (!dex?.scanning) lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
+            if (dex && dex.done !== seen_done) {
+                seen_done = dex.done
+                H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { refresh: 1 })
+            }
         }, 1500)
         return () => clearInterval(t)
     })
@@ -246,8 +253,10 @@
                         class:off={!house.started}
                         onclick={() => view = house.c.ip}
                         title="{house.name} — show it fullscreen">
-                    <span class="bw-h-name">{house.name}{#if house.todo.length}<span class="bw-todo">{house.todo.length}</span>{/if}</span>
+                    <span class="bw-h-name">{house.name}</span>
                 </button>
+                <!-- the drain-queue badge + flood tracer (Otro's and BigSoundland's own) — the traffic-jam readout -->
+                <span class="bw-spool"><TodoSpool {house} {H} /></span>
                 {#if active_ip === house.c.ip}
                     <button class="bw-cog" class:on={show_actions}
                             onclick={() => show_actions = !show_actions}
@@ -401,11 +410,7 @@
        is OUT OF FLOW: a flashing count never re-sizes the chip, so the toc no longer shoves the
        margin-left:auto searchbar (the vibrate).  left:100% pins it just past the last letter. */
     .bw-h-name { position: relative; }
-    .bw-todo {
-        position: absolute; left: 100%; top: -0.35em;
-        font-size: 0.6em; line-height: 1; color: #e0965a;
-        pointer-events: none; white-space: nowrap;
-    }
+    .bw-spool { display: inline-flex; align-items: center; font-size: 0.72rem; margin-left: -0.1rem; }
 
     /* ▦ the sprawl toggle — flip between the one-thing switcher and the dump-it-all page */
     .bw-sprawl-btn {

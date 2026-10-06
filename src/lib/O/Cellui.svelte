@@ -827,12 +827,16 @@
     //       an SSR/no-RO environment.
     let stage_el = $state<HTMLDivElement | null>(null)
     let stage_w = $state(0)
+    // the HEIGHT too (owner 2026-10-04: "if I resize the window (eg opening devtools) the Cell inlay doesn't resize into the
+    //  new space") — DevTools docked at the bottom moves only the height, so a width-only watch never re-fit the faces.
+    let stage_h = $state(0)
     const NARROW_FLOOR = 640   // below this the satellites go UNDER the main, not beside
 
     $effect(() => {
         const el = stage_el
         if (!el || typeof ResizeObserver === 'undefined') return
         stage_w = el.clientWidth
+        stage_h = el.clientHeight
         let raf = 0
         const ro = new ResizeObserver((entries) => {
             // coalesce to a frame so a resize storm doesn't thrash reactivity
@@ -842,6 +846,8 @@
                 try {
                     const w = entries[0]?.contentRect?.width ?? el.clientWidth
                     if (Number.isFinite(w)) stage_w = w
+                    const h = entries[0]?.contentRect?.height ?? el.clientHeight
+                    if (Number.isFinite(h)) stage_h = h
                 } catch { /* never let a measure throw white-screen the glass */ }
             })
         })
@@ -1075,7 +1081,7 @@
     // a MOLD size change (window resize, compact toggle, off-edge flip) is also a reason to
     //  re-fit — piggyback on the stage observer's seam rather than adding another RO.
     $effect(() => {
-        void stage_w; void main_offedge
+        void stage_w; void stage_h; void main_offedge
         measure_soon(); measure_lately()
     })
 
