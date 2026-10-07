@@ -555,10 +555,20 @@
         press_probe('scrub', () => { A?.Heist_keep_scrub?.(A?.top_House?.()?.c?.radio_w, n) })
     }
 
+    // "FOR EVERY ♥" (owner 2026-10-07): a ♥ keep asking (sc.ask) is the one-time setup.  Ticked, ▶ start also writes this
+    //  form's answer as the default — lofi as shown, and ask off — so the next ♥ heists straight away.  Door → you
+    //   carries the same two toggles, which is where the explainer points.
+    let everyHeart = $state(false)
     function start() {
         // already-lofi takes the ORIGINALS: clear a standing lofi (a remembered default) before the want-ask reads it
         const drop_lofi = face.alreadyLofi && face.lofi
-        press_probe('start', () => { if (drop_lofi) A?.Heist_keep_set_lofi?.(n, false); A?.Heist_keep_start?.(n) })
+        const every = everyHeart && !!n?.sc?.ask
+        const lofiNow = !!(lofiWish ?? !!n?.sc?.lofi)
+        press_probe('start', () => {
+            if (every) A?.Heist_defaults_set?.({ ask: '0', lofi: lofiNow ? '1' : '' })
+            if (drop_lofi) A?.Heist_keep_set_lofi?.(n, false)
+            A?.Heist_keep_start?.(n)
+        })
     }
     // lofi — the phone answer.  Framed as what it does to the TRANSFER, not as a codec setting: the friend
     //  transcodes and sends the small thing, which is the only reason to want it.  Settable while primed and
@@ -826,8 +836,19 @@
                 <button class="kf-why-x" onclick={() => (lofiWhy = false)} title="close">✕</button>
             </div>
         {/if}
+        {#if n?.sc?.ask && everyHeart}
+            <!-- what ticking it means, said once, inline (a phone has no hover) -->
+            <div class="kf-why">
+                from now on a <strong>♥</strong> heists the whole album straight away{(lofiWish ?? n?.sc?.lofi) ? ', as lofi' : ''}, without this screen.
+                Change it any time in <strong>Door → you</strong>: <em>ask</em> brings this screen back · <em>lofi</em> for small copies.
+            </div>
+        {/if}
         <div class="kf-foot">
             <button class="kf-start" onclick={start} title="start downloading these tracks into your collection">▶ start</button>
+            {#if n?.sc?.ask}
+                <button class="kf-lofi kf-every" class:on={everyHeart} onclick={() => (everyHeart = !everyHeart)} role="checkbox" aria-checked={everyHeart}
+                    title="use these settings for every ♥ and stop asking"><span class="kf-lofi-box">{everyHeart ? '☑' : '☐'}</span><span class="kf-lofi-lbl">for every ♥</span></button>
+            {/if}
             <!-- lofi and its "?" are ONE unit (the human 2026-08-07: "the '?' should be closer to the
                  LOFI") — the gap that separates groups in this footer must not fall between a control and
                  its own explainer. -->
@@ -946,6 +967,7 @@
     }
     .kf-lofi:hover, .kf-lofi.on { opacity: 1; }
     .kf-lofi.ghost { cursor: default; opacity: 0.45; width: auto; }
+    .kf-lofi.kf-every { width: auto; flex: 0 0 auto; }
     .kf-lofi.ghost:hover { opacity: 0.45; }
     .kf-lofi-box { font-size: 11px; color: #7fe8bf; flex: none; }
     .kf-lofi-lbl { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; flex: none; }

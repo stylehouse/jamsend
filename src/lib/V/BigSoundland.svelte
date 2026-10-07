@@ -394,7 +394,11 @@
         // through post_do like every other UI verb, so the write rides the House mutex rather than
         //  racing the pump — the same discipline HeistFace/RadioFace already use.
         if (e.key === ' ') A?.post_do?.(() => { A?.Radio_skip?.(n) }, { see: 'radio skip (space)' })
-        else A?.post_do?.(() => { A?.Radio_heist_now?.(n) }, { see: 'radio heist (enter)' })
+        // ⏎ PRESSES ♥ (owner 2026-10-07: "I guess we just Heist the whole thing with no Heist setup at all?").  It used to
+        //  call Radio_heist_now, which mints a PRIMED keep — the old setup form — for whatever is playing, even a track
+        //   already on disk; a stray Enter after clicking a minicell dropped you into Cell:Heist.  ♥ takes the album in
+        //    the background, skips what has landed, and never asks.
+        else A?.post_do?.(() => { A?.Radio_like?.(n) }, { see: 'radio like (enter)' })
     }
 </script>
 

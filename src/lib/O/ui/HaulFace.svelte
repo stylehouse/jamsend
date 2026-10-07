@@ -375,7 +375,7 @@
                                  elided thing has to show the thing (hovering anywhere else still offers the
                                  door's own tooltip — the innermost title wins). -->
                             <span class="hf-name" title={r.name}>{r.name}</span>
-                            <span class="hf-state">{r.word}{#if !r.form && r.total}&nbsp;{r.landed}/{r.total}{:else if r.form && r.liked}&nbsp;1 track{:else if r.form && r.unN}&nbsp;{r.unN} track{r.unN === 1 ? '' : 's'}{/if}</span>
+                            <span class="hf-state">{r.word}{#if !r.form && r.total}&nbsp;{r.landed}/{r.total}{:else if r.form && r.unN}&nbsp;{r.unN} track{r.unN === 1 ? '' : 's'}{/if}</span>
                         </button>
                         <span class="hf-acts">
                             {#if r.paused}

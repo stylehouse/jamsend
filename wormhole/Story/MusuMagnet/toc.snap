@@ -4,24 +4,28 @@ story:MusuMagnet
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.201
-      sample=0.481,at=1790982982
-      sample=0.481,at=1790982987
+    TimeTotal:beliefs,avg=0.1
       sample=0.188,at=1790983013
       sample=0.161,at=1791064742
       sample=0.082,at=1791067484
       sample=0.075,at=1791155133
       sample=0.064,at=1791328521
       sample=0.078,at=1791330835
-    TimeTotal:step,avg=0.029
-      sample=0.069,at=1790982982
-      sample=0.069,at=1790982987
+      sample=0.043,at=1791362455
+      sample=0.073,at=1791362717
+      sample=0.053,at=1791362862
+      sample=0.179,at=1791363324
+    TimeTotal:step,avg=0.014
       sample=0.027,at=1790983013
       sample=0.023,at=1791064742
       sample=0.012,at=1791067484
       sample=0.011,at=1791155133
       sample=0.009,at=1791328521
       sample=0.011,at=1791330835
+      sample=0.006,at=1791362455
+      sample=0.01,at=1791362717
+      sample=0.008,at=1791362862
+      sample=0.026,at=1791363324
   step,dige:ac14022b8c72c323
   step=2,dige:339bfd31f9b30fb0
   step=3,dige:39292f044f048c93
@@ -33,4 +37,4 @@ story:MusuMagnet
   step=6,dige:79f2ec61e4d5025b
     Assertion:a-heart-that-names,sentence:a heart that names nobody is anyones to haul — exactly as before the magnet
   step=7,dige:8856ff1f6dfa5440
-    Assertion:a-heart-carried-from,sentence:a heart carried from another body never asks this screen for the room — and its keep finds its own track through the folder census alias and starts with no form
+    Assertion:a-heart-carried-from,sentence:a heart carried from another body never asks this screen for the room — and its keep takes the whole described album and starts with no form

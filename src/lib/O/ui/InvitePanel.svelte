@@ -322,8 +322,12 @@
     $effect(() => { void H?.version; if (!named && self?.sc?.friendly) named = true })
     let name_draft = $state('')
     let name_err = $state('')
+    // a name needs one letter or digit, any script — the same rule Clustation_friendly enforces, here so the
+    //  button stays dim and a refusal says why instead of blaming a still-standing identity
+    function name_fit(s: string): boolean { return /[\p{L}\p{N}]/u.test(String(s || '')) }
     async function name_save() {
         name_err = ''
+        if (!name_fit(name_draft)) { name_err = 'a name needs at least one letter or number'; return }
         try {
             const ok = await H?.Clustation_friendly?.(name_draft)
             if (!ok) { name_err = 'not saved — is the identity still standing up? try again'; return }
@@ -632,15 +636,18 @@
     // go_link — open a pasted device link WITHOUT a reload when we can (owner 2026-10-03: "do we have to have the page
     //  navigation … when we input a link and have /#Iz=…").  An anchor-form link to THIS page only needs its fragment:
     //   SwarmStandup's hashchange lands the offer in place (Swarm_offer_land reads location.hash).  Assigning the whole
-    //    href reloaded whenever the ?search differed (ours carries ?I=, the link does not).  Anything else — another
-    //     page, a ?Iz in the search — still navigates.
+    //    href reloaded whenever the ?search differed (ours carries ?I=, the link does not).
+    //   PARSE, DON'T FOLLOW (owner 2026-10-07: "parsing it first and setting onto the existing domain is the way to
+    //    go"): the link's origin|path are the SENDER's (djamsend vs localhost, /BigSoundland vs another room), and
+    //     following them dropped our ?I= and booted elsewhere.  Lift its Iz (query or fragment) + fc onto THIS page's
+    //      fragment — Swarm_offer_land reads the fragment first — whatever host the link names.
     function go_link(full: string) {
         try {
             const u = new URL(full)
-            const here = new URL(window.location.href)
-            const hashIz = !!new URLSearchParams(String(u.hash || '').slice(1)).get('Iz')
-            if (hashIz && !u.searchParams.get('Iz') && u.origin === here.origin && u.pathname === here.pathname) {
-                window.location.hash = u.hash
+            const lift = new URLSearchParams(String(u.hash || '').slice(1))
+            if (!lift.get('Iz') && u.searchParams.get('Iz')) lift.set('Iz', String(u.searchParams.get('Iz')))
+            if (lift.get('Iz')) {
+                window.location.hash = lift.toString()
                 return
             }
         } catch {}
@@ -762,8 +769,8 @@
             onkeydown={(e) => { if (e.key === 'Enter') name_save() }} />
         <!-- disabled until something is typed: the greyed button is what says "type first", far more
              cheaply than an error message appearing after the click. -->
-        <button class="ip-go" class:ip-waiting={!name_draft.trim()}
-            disabled={!name_draft.trim()} onclick={name_save}>that's me →</button>
+        <button class="ip-go" class:ip-waiting={!name_fit(name_draft)}
+            disabled={!name_fit(name_draft)} onclick={name_save}>that's me →</button>
     </span>
     <span class="ip-note">{hint}</span>
     {#if name_err}<span class="ip-note">⚠ {name_err}</span>{/if}

@@ -627,6 +627,50 @@ Swarm_invite_note(w, tok):
     inv.bump()
     return inv
 
+// Swarm_invite_settle — THE LEGS THE WALK NEVER GREW (2026-10-07, owner: "I just got Invited, right, but… in Door
+//  it still says 'redeeming'").  Nothing ever moved a %Invite past `redeeming`, so a sealed friendship and a hello
+//   lost on the wire read the same, forever.  Every outcome now lands HERE, in words a user can read back to us:
+//    sealed (the accept came), refused (the issuer said why), unreachable (no route at send).  Matched on the
+//     issuer's prepub; station-world only, like the note.  `why` is display, never a key.
+Swarm_invite_settle(w, prepub, state, why):
+    if (!w || !w.c || !w.c.station_up || !prepub) return 0
+    let pp = String(prepub)
+    let n = 0
+    for (const inv of w.o({ Invite: 1 })) {
+        let ip = String(inv.sc.prepub || '')
+        if (!ip || !(ip === pp || ip.startsWith(pp) || pp.startsWith(ip))) continue
+        if (inv.sc.state === 'sealed') continue
+        if (inv.sc.state === state && String(inv.sc.why || '') === String(why || '')) continue
+        inv.sc.state = state
+        if (why) { inv.sc.why = String(why) } else if (inv.sc.why) { delete inv.sc.why }
+        inv.bump()
+        n = n + 1
+        console.log('✉ invite #' + String(inv.sc.Invite) + ' from ' + ip.slice(0, 8) + ' → ' + state + (why ? ' — ' + why : ''))
+    }
+    return n
+
+// Swarm_invite_words — a refusal's code, said the way a person would say it.
+Swarm_invite_words(why):
+    let k = String(why || '')
+    if (k === 'spent') return 'this invite was already used — ask them for a fresh one'
+    if (k === 'held') return 'they have this invite on hold — try again in a moment'
+    if (k === 'bad_grant') return 'the invite did not check out on their side — ask for a fresh one'
+    if (k === 'unknown') return 'they do not recognise this invite — it may be from another of their devices'
+    return 'refused (' + k + ')'
+
+// Swarm_invite_retry — say hello again for a still-unsealed invite (the Door's ↻, or a caller that knows the
+//  issuer just came online).  A hello that already landed answers `spent`, which settles the row honestly.
+async Swarm_invite_retry(serial):
+    let A = this.top_House().o({ A: 'Clustation' })[0]
+    let w = A ? A.o({ w: 'Swarm' })[0] : null
+    let ident = A ? this.Swarm_active_ident(A) : null
+    if (!w || !ident) return 0
+    let inv = w.o({ Invite: String(serial) })[0]
+    if (!inv || !inv.c.iz || inv.sc.state === 'sealed') return 0
+    console.log('✉ invite #' + String(serial) + ' — saying hello again to ' + String(inv.sc.prepub || '').slice(0, 8))
+    await this.Swarm_redeem(w, ident, inv.c.iz)
+    return 1
+
 // Swarm_iz_params — the Feature params riding a claim: every key that isn't the claim's envelope.
 //  (Grant's `to` names the Feature mainkey; its params ride alongside as plain string keys — §6.1.)
 //   ttl is INVITE policy, never grant policy (grants are infinite — §6.1): it stays on the maker's
@@ -3148,7 +3192,14 @@ async Swarm_redeem(w, ident, iz, advice):
     //      never set station_up; that line is already this file's own law.
     if (w.c && w.c.station_up) {
         let inv = this.Swarm_invite_note(w, iz)
-        if (inv) { inv.sc.state = 'redeeming'; inv.bump() }
+        if (inv) {
+            inv.sc.state = 'redeeming'
+            if (inv.sc.why) { delete inv.sc.why }
+            inv.c.iz = iz
+            inv.c.redeem_at = Date.now()
+            inv.bump()
+            console.log('✉ invite #' + String(inv.sc.Invite) + ' — hello sent to ' + String(t.prepub || '').slice(0, 8) + ', waiting for their accept')
+        }
     }
     // DEAD-WINDOW FIX (2026-08-28) — redeeming a MyCave (device-link) invite means a soul is about to be
     //  ferried to THIS device.  Mark it so Swarm_link_active surfaces the RECEIVING cell in a "connecting…
@@ -3182,6 +3233,7 @@ async Swarm_redeem(w, ident, iz, advice):
     if (advice) hello.relic = String(advice)
     if (!this.Swarm_deliver(w, ident, t.prepub, hello)) {
         this.Swarm_rebuff(ident, 'offline', t.prepub)
+        this.Swarm_invite_settle(w, t.prepub, 'unreachable', 'could not reach them — are they online? no route to ' + String(t.prepub || '').slice(0, 8))
         return null
     }
     // the hello is on the wire — WE are now joining somebody, and the radio must wait for them
@@ -3516,6 +3568,7 @@ async Swarm_accept(w, ident, frame):
 // Swarm_rejected — the inviter said no (spent|held|bad_grant…): surface it, nothing sealed.
 Swarm_rejected(w, ident, frame):
     this.Swarm_rebuff(ident, 'rejected_' + frame.why, frame.prepub)
+    this.Swarm_invite_settle(w, frame.prepub, 'refused', this.Swarm_invite_words(frame.why))
     // SPENT MEANS NEVER (Linkee side; owner 2026-08-31 "it is rejecting the link I copied").  The soul just told
     //  us the invite this ceremony rides was already redeemed once.  With no sealed pier to fall back on the
     //   ceremony can NEVER complete — the steady ask would only draw the generic "called off" cancel, a lie of
@@ -3758,6 +3811,7 @@ Swarm_seal(w, ident, page, theirGrant, myGrant):
     if (!this.Swarm_page_bound(page)) return null
     let peering = this.Swarm_peering(ident)
     let pier = peering.oai({ Pier: 1, pub: page.prepub })
+    this.Swarm_invite_settle(w, page.prepub, 'sealed')
     let re_seal = pier.sc.since ? 1 : 0   // read BEFORE the since-stamp below, for the electrode at the tail
     pier.c.up = peering
     // A NAME IS A NAME, NOT AN ADDRESS (2026-09-03 live walk: a Door row reading

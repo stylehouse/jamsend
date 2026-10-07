@@ -16,6 +16,27 @@ Read with: `Heist_todo.md` (what a Heist is, the `%Heist` keep, the cost line), 
 
 ## 0. What to get on with next
 
+### ❓ 2026-10-07 — OPEN DESIGN QUESTIONS (owner, posed together; nothing here is ruled yet)
+
+Landed the same day, so these are asked against the new floor:
+- **♥ takes the WHOLE album** (`Heist_keep_take_go`); the path/section choosing is dropped from the ♥ road. Owner: "lets ignore our
+   ability to change the path... just downloading whole albums is fine". `Heist_defaults.one` keeps the old one-track take, hidden.
+- **⏎ presses ♥** (BigSoundland), no longer `Radio_heist_now`'s primed setup form. A take keep never draws as a form
+   (`Heist_keep_gist` → "finding the album").
+
+The questions:
+1. ✅ **RULED + BUILT 2026-10-07 (untested live):** the first ♥ on a live tab opens Cell:Heist (`keep.sc.ask`); its **☐ for every ♥** tickbox explains itself when ticked and, on ▶ start, writes `Heist_defaults {ask:'0', lofi}`. **Door → you** carries the pair as **♥ ☑ask ☐lofi** (`Heist_take_asks` is the one rule; LOFI left the 🧲 row). A heart carried from another body never asks. Books never ask (humdinger gate). *Original question:* **Where does LOFI live?** Today it's a tickbox beside the lit 🧲 in Door. The owner's idea: the FIRST ♥ opens Cell:Heist once
+    as a one-time setup (LOFI · where it lands), its submit reads **"for every ♥"**, and after that you never see it, only your own row
+    in Door. *Leaning:* yes. It's the old setup form's one remaining honest job: a once-per-listener choice, never per album. Store it as
+    `Heist_defaults.asked` so "first" survives reloads. The Door tickbox stays as the way back.
+2. **Is there still a Heist setup at all?** With whole albums and no path, the per-keep form has nothing left to ask. Candidates to
+    delete: `Radio_heist_now`, the primed-form branch of the glass, `Radio_keep`'s cell pop. Keep only the done/progress views in Haul.
+3. **Getting a new user onto the radio after the invite.** Redeem now settles (sealed/refused/unreachable, `Swarm_invite_settle`), and
+    the Door explains silence after 20s with ↻. Still open: should the splash HOLD a fresh invitee until the first friend's catalog has
+    landed and something can play, rather than lifting on boot_ready and leaving "redeeming" in the Door?
+4. **Already-on-disk tracks.** A ♥ on a track whose album is partly on disk: pull only the missing tracks (today the keep's own
+    on-disk check), and say "3 of 11 already here". This ties into `Radio_future.md` §5 "Knowing your collection" (album completeness).
+
 ### ✅ 2026-10-04 — TWO SEATS + A PINNED AIM (live walk: Lump/Inko/Grav)
 
 Owner's walk: Lump aimed at Grav kept playing Inko, and heard Inko's own tracks "from Grav". Two fixes, both

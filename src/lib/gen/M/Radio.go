@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radio(): string { return 'b4da7238523e9429~g1' },
+    Ghostmeta_Ghost_M_Radio(): string { return 'dcd6394872f1a4cd~g1' },
 
 // Radio.g — the RADIO: continuous listening over the Ra chunk machine.  The one wire the
 //  pipeline never had: chunk particles (%Preview|%Stream,seq) DECODED and LAID ON THE REAL
@@ -3450,6 +3450,17 @@ async Stoker_tour(w, shelf) {
     let filling = this.Ra_recs(shelf).length < W
     let floor = +(filling ? (w.c.tour_fill_ms == null ? 20000 : +w.c.tour_fill_ms) : (w.c.tour_floor_ms == null ? 90000 : +w.c.tour_floor_ms))
     if (st.c.tour_at && (Date.now() - st.c.tour_at) < floor) return 0
+    // NO AUDIENCE, NO ROTATION (2026-10-07, the daemon idling at 60–80% CPU): a FULL shelf only
+    //  rotates, and every rotation is a whole-file read + ffmpeg probe/measure/encode — 1,160 of them
+    //   in 2.65 days with them=0 and nothing served.  Rotating for nobody is pure heat.  Filling stays
+    //    ungated (a short shelf is real shortage); tour_at is NOT stamped here, so the first beat after
+    //     a friend is heard again turns the wheel at once.
+    if (!filling && !this.Stoker_has_audience()) {
+        if (!st.c.tour_idle) console.log('🎡⏸ tour resting — shelf full (' + W + ') and no friend heard in 10 min')
+        st.c.tour_idle = 1
+        return 0
+    }
+    st.c.tour_idle = 0
     st.c.tour_at = Date.now()
     let nav = this.Crate_nav ? this.Crate_nav() : null
     if (!nav) return 0
@@ -3717,6 +3728,21 @@ async Stoker_tour(w, shelf) {
         hit: thit, dup: tdup, bad: tbad, rounds: rounds,
         barren: Object.keys(this.top_House().c.dig_barren || {}).length, err: st.c.dig_err || '' })
     return dropped
+
+},
+// Stoker_has_audience — has ANY pier of the live self been heard in the last 10 minutes?  `heard_at`
+//  is the hear funnel's own stamp (.c, every sealed frame), so a friend online — listening, mirroring
+//   my catalog, or just pulsing — counts, and a box nobody has spoken to for ten minutes does not.
+//    Generous on purpose: this only rests a rotation, it never stops a fill.
+Stoker_has_audience() {
+    let me = this.Swarm_live_self ? this.Swarm_live_self() : null
+    let pg = me && this.Swarm_peering ? this.Swarm_peering(me) : null
+    if (!pg) return false
+    let now = Date.now()
+    for (const p of pg.o({ Pier: 1 })) {
+        if (p.c && p.c.heard_at && (now - p.c.heard_at) < 600000) return true
+    }
+    return false
 
 },
 // Stoker_mag_draw — the CULTURE trace of a churn (Radio_spec §2.3): every dig round that

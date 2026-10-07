@@ -10,7 +10,7 @@ import { sha256_hex, sha256_hex_fast, sha256_incremental } from "$lib/Common"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heist(): string { return '052608e420180a78~g1' },
+    Ghostmeta_Ghost_M_Heist(): string { return '9463310a31c067dc~g1' },
 
 // Heist.g — the HEIST engine: %Caper,at:<pier> — the rsync job creator over Repli (Radio_todo §0
 //  2026-07-11 + §10 rung 1).  The rest of Radio+Piracy points MUSIC at a listener; the heist points
@@ -3342,10 +3342,33 @@ Heist_keep_pool_go(keep, srcmir, seed) {
 //   folder census mints picks under RUMMAGE ids — so solo by the bare seed answered -1 forever and the keep sat
 //    primed holding the whole album, which the glass drew as a setup form nobody had asked for.  Resolve first.
 //     And the same give-up as the pool: unable to find its own track after 45s, it yields its holder's slot.
+// Heist_take_asks — does a ♥ open Cell:Heist first?  ON until the listener answers "for every ♥" (owner 2026-10-07:
+//  "perhaps we hit Cell:Heist the first time, and there's a submit button that does 'for every <3' so you never see it
+//   again, only in Door on yourself").  `Heist_defaults.ask`: '1' asks, '0' doesn't, absent = never answered = ask.
+Heist_take_asks() {
+    let d = this.Heist_defaults_get ? this.Heist_defaults_get() : {}
+    return String((d && d.ask) ?? '1') !== '0'
+
+},
 Heist_keep_take_go(keep, srcmir, seed) {
     if (!keep.sc.take) { return 0 }
     if (this.Pool_is_machinery(keep)) { return 0 }
-    let cut = this.Heist_keep_solo(keep, this.Heist_keep_seed_ref(keep, srcmir, seed))
+    // ASK FIRST, on the body the human is at: a live page (humdinger — Books never ask) with a heart pressed HERE.
+    //  A heart carried in from another body is hauled for someone who isn't looking at this screen, so it never asks.
+    //   `sc.ask` turns the keep back into a form (Heist_keep_gist) until ▶ start, which clears it.
+    let atop = this.top_House ? this.top_House() : null
+    if (!keep.sc.asked && !keep.c.carried && atop && atop.c && atop.c.humdinger && this.Heist_take_asks()) {
+        if (!keep.sc.ask) { keep.sc.ask = 1; keep.bump() }
+        return 0
+    }
+    // THE WHOLE ALBUM, NOT THE TRACK (owner 2026-10-07: "it only downloads one track when I clicked yay? we want
+    //  the whole album").  Still WAIT for the seed's pick — that is the proof the folder census has described the
+    //   album — but keep its siblings.  `Heist_defaults.one` restores the old one-track take.
+    let sref = this.Heist_keep_seed_ref(keep, srcmir, seed)
+    let one = !!((this.Heist_defaults_get && this.Heist_defaults_get()) || {}).one
+    //  In album mode ANY pick is the proof — the seed's own pick can miss forever on an alias the census never
+    //   minted, which is how a ♥ keep used to sit primed and get drawn as a setup form.
+    let cut = one ? (keep.o({ Pick: 1, ref: String(sref) })[0] ? this.Heist_keep_solo(keep, sref) : -1) : (keep.o({ Pick: 1 })[0] ? 0 : -1)
     if (cut < 0) {
         if (!keep.c.solo_wait_since) { keep.c.solo_wait_since = Date.now() }
         else if (!keep.c.no_route_ts && Date.now() - keep.c.solo_wait_since > 45000) { keep.c.no_route_ts = Date.now() }
@@ -3355,12 +3378,15 @@ Heist_keep_take_go(keep, srcmir, seed) {
     keep.sc.state = 'pulling'
     if (keep.sc.dose) { delete keep.sc.dose }
     keep.bump()
-    console.log('♥⇊ ' + String(keep.sc.Heist || seed).slice(0, 32) + ' — the track you liked' + (cut ? ' (' + cut + ' folder sibling(s) left behind)' : ''))
+    let npk = keep.o({ Pick: 1 }).length
+    console.log('♥⇊ ' + String(keep.sc.Heist || seed).slice(0, 32) + (one ? ' — the track you liked' + (cut ? ' (' + cut + ' folder sibling(s) left behind)' : '') : ' — the album you liked (' + npk + ' track' + (npk === 1 ? '' : 's') + ')'))
     return 1
 
 },
 async Heist_keep_start(keep) {
     let s = keep.sc.state || 'primed'
+    // the ♥ form was answered: this keep never asks again, whatever the default says next
+    if (keep.sc.ask) { delete keep.sc.ask; keep.sc.asked = 1 }
     if (s === 'primed' || s === 'wanted' || s === 'asking') {
         keep.sc.state = 'pulling'
         keep.bump()
@@ -4805,6 +4831,8 @@ Heist_keep_gist(keep) {
     if (keep.sc.paused) { g.word = 'paused'; g.form = (st === 'pulling' || st === 'committing') ? 0 : 1; return g }
     if (st === 'committing') { g.word = 'finishing'; return g }
     if (st === 'choosing') { g.word = 'nothing picked yet'; g.form = 1; return g }
+    // a ♥ keep has no form — it is finding the album, not waiting for a human (2026-10-07)
+    if ((st === 'primed' || st === 'wanted' || st === 'asking') && keep.sc.take && !keep.sc.ask) { g.word = 'finding the album'; return g }
     if (st === 'primed' || st === 'wanted' || st === 'asking') { g.word = 'setting up'; g.form = 1; return g }
     if (keep.c.stale_secs) { g.word = 'given up — ' + Math.round(+keep.c.stale_secs / 3600) + 'h, nothing landed'; g.stale = 1; return g }
     if (keep.c.no_route_ts) { g.word = 'waiting for ' + String(keep.sc.from_name || 'them'); return g }

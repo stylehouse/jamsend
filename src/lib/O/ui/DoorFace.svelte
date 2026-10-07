@@ -378,6 +378,8 @@
                 to: inv.sc?.to ? String(inv.sc.to) : '',
                 n: inv.sc?.n ? String(inv.sc.n) : '',
                 state: String(inv.sc?.state ?? 'arrived'),
+                why: inv.sc?.why ? String(inv.sc.why) : '',
+                waited: inv.c?.redeem_at ? Math.round((Date.now() - inv.c.redeem_at) / 1000) : 0,
             // a MyCave invite IS the device-link ceremony — that lives whole in the Link cell now, so its
             //  worker row here is a fossil of the earlier course (owner 2026-08-30: "`✉ #65 MyCave …
             //   redeeming` — this line in Door should have been tidied away").  Friend invites still show.
@@ -385,6 +387,9 @@
         } catch { return [] }
     })
 
+    function invite_retry(serial: string) {
+        try { void (H as any)?.Swarm_invite_retry?.(serial) } catch {}
+    }
     // the 🧲 moves: it only sets the default for the NEXT heart (a heart already pressed keeps its 'to').
     function magnet_to(prepub: string) {
         try { (H as any)?.Heard_magnet_set?.(prepub) } catch {}
@@ -392,6 +397,20 @@
     }
     // LOFI beside the lit 🧲: flips my remembered heist default, which every NEXT heart carries to whoever hauls it
     //  (a heart already pressed keeps what it was pressed with; pressing it again re-stamps).
+    // the ♥ heist defaults, read on the Door's own tick.  `ask` reads ON until someone answers "for every ♥" —
+    //  Heist_take_asks is the one rule, shared with the ghost that decides whether to show the form.
+    let heistab = $derived.by(() => {
+        void H?.version
+        void tick
+        try {
+            const d = ((H as any)?.Heist_defaults_get?.() ?? {}) as any
+            return { ask: !!(H as any)?.Heist_take_asks?.(), lofi: !!d.lofi }
+        } catch { return { ask: true, lofi: false } }
+    })
+    function heistab_ask() {
+        try { (H as any)?.Heist_defaults_set?.({ ask: heistab.ask ? '0' : '1' }) } catch {}
+        try { (H as any)?.top_House?.()?.bump_version?.() } catch {}
+    }
     function magnet_lofi() {
         try {
             const on = !((H as any)?.Heist_defaults_get?.() ?? {}).lofi
@@ -527,8 +546,7 @@
             title="listening only — this browser can't open a music folder, so you're a radio terminal. Your identity lives only in this browser: clearing site data forgets you (linked devices will fix that).">🎧 listening only</span>{/if}
         <!-- "settling…" is gone from the face (owner 2026-10-03: "unsettling") — every save flashed it; the save
              logs `🪪 account mirrored` in the console.  Only the real worry stays: a write with nowhere to go. -->
-        {#if face.up}<span class="df-tag dim df-up" class:fresh={!!face.up.fresh}
-            title={`this tab has been up ${face.up.label} — resets on reload, so a near-zero reading means the reload landed`}>up {face.up.label}</span>{/if}
+        <!-- the "up 3m" uptime tag is gone (owner 2026-10-07: "pointless") -->
         {#if settle?.state === 'owed'}<span class="df-settle owed"
             title="your ledger changed but no share folder is open to write it to — it lives only in this tab until you open one.">⛁ write owed</span>{/if}
     </div>
@@ -568,10 +586,18 @@
          stands.  arrived|redeeming are the live states today; sealed|refused wear their colours
          for when the walk grows those legs. -->
     {#each invites as inv (inv.serial + inv.prepub)}
-        <div class="df-invrow" class:sealed={inv.state === 'sealed'} class:refused={inv.state === 'refused'}
+        <div class="df-invrow" class:sealed={inv.state === 'sealed'} class:refused={inv.state === 'refused'} class:unreachable={inv.state === 'unreachable'}
             title={`invite #${inv.serial} from ${inv.prepub}${inv.to ? ` — grants ${inv.to}` : ''}${inv.n ? ` (n ${inv.n})` : ''} — ${inv.state}`}>
             <span>✉ #{inv.serial}{inv.to ? ` ${inv.to}` : ''} from {inv.prepub}</span>
             <span class="df-invstate">{inv.state}</span>
+            {#if inv.state === 'redeeming' && inv.waited >= 20}
+                <!-- SILENCE IS THE ONLY NO A STRANGER GETS: an issuer never answers a hello it cannot verify, so the
+                     clock is all the invitee has.  Say what the silence usually means, and offer the hello again. -->
+                <span class="df-invwhy">no answer for {inv.waited}s — they may be offline, or this invite came from another of their devices
+                    <button class="df-invretry" onclick={() => invite_retry(inv.serial)}>↻ again</button></span>
+            {:else if inv.why}
+                <span class="df-invwhy">{inv.why}</span>
+            {/if}
         </div>
     {/each}
     <!-- THE OUR-BOX (owner 2026-08-30: "we should have ourselves and all our Piers that are Linked in
@@ -599,9 +625,15 @@
                     {#if face.magnet.show && face.instance?.prepub && face.magnet.can.includes(face.instance.prepub)}
                         <button class="df-mag" class:on={face.magnet.at === face.instance.prepub} onclick={() => magnet_to(face.instance.prepub)}
                             title={face.magnet.at === face.instance.prepub ? 'your hearts land HERE — this folder is your big pile' : 'land your hearts here instead'}>🧲</button>
-                        {#if face.magnet.at === face.instance.prepub}<button class="df-lofi" class:on={face.magnet.lofi} onclick={magnet_lofi} role="checkbox" aria-checked={face.magnet.lofi}
-                            title={face.magnet.lofi ? 'LOFI ticked — your hearts arrive as small ogg copies · untick for originals' : 'LOFI unticked — your hearts arrive as the full files · tick for small ogg copies'}><span class="df-tick">{face.magnet.lofi ? '☑' : '☐'}</span>LOFI</button>{/if}
                     {/if}
+                    <!-- HEISTABILITY (owner 2026-10-07): how a ♥ becomes a heist, on YOUR row — the two answers the first
+                         Cell:Heist asked for "every ♥".  ask = open Cell:Heist on each ♥ · lofi = hearts arrive as small ogg copies. -->
+                    <span class="df-heistab" title="how your ♥ heists whole albums">♥
+                        <button class="df-lofi" class:on={heistab.ask} onclick={heistab_ask} role="checkbox" aria-checked={heistab.ask}
+                            title={heistab.ask ? 'ask ticked — each ♥ opens Cell:Heist first · untick to heist straight away' : 'ask unticked — each ♥ heists the album straight away · tick to see Cell:Heist first'}><span class="df-tick">{heistab.ask ? '☑' : '☐'}</span>ask</button>
+                        <button class="df-lofi" class:on={heistab.lofi} onclick={magnet_lofi} role="checkbox" aria-checked={heistab.lofi}
+                            title={heistab.lofi ? 'LOFI ticked — your hearts arrive as small ogg copies · untick for originals' : 'LOFI unticked — your hearts arrive as the full files · tick for small ogg copies'}><span class="df-tick">{heistab.lofi ? '☑' : '☐'}</span>lofi</button>
+                    </span>
                 </div>
                 {#if face.prepub}
                     <!-- LINK A DEVICE — opens the Link ceremony as a BELLY CELL (owner 2026-08-29: "I want a
@@ -635,8 +667,6 @@
                             {#if face.magnet.show && b.prepub && face.magnet.can.includes(b.prepub)}
                                 <button class="df-mag" class:on={face.magnet.at === b.prepub} onclick={() => magnet_to(b.prepub)}
                                     title={face.magnet.at === b.prepub ? 'your hearts land on ' + (b.name || b.role) + ' — its folder is your big pile' : 'land your hearts on ' + (b.name || b.role) + ' instead'}>🧲</button>
-                                {#if face.magnet.at === b.prepub}<button class="df-lofi" class:on={face.magnet.lofi} onclick={magnet_lofi} role="checkbox" aria-checked={face.magnet.lofi}
-                                    title={face.magnet.lofi ? 'LOFI ticked — your hearts arrive as small ogg copies · untick for originals' : 'LOFI unticked — your hearts arrive as the full files · tick for small ogg copies'}><span class="df-tick">{face.magnet.lofi ? '☑' : '☐'}</span>LOFI</button>{/if}
                             {/if}
                             {#if true}
                                 <!-- EJECT A CREWMATE (owner 2026-09-03: "dropping Piers with the ✕ button as we
@@ -900,6 +930,7 @@
         font-size: 9px; letter-spacing: 0.06em; opacity: 0.45; pointer-events: auto; color: inherit;
     }
     .df-lofi .df-tick { font-size: 11px; line-height: 1; }
+    .df-heistab { display: inline-flex; align-items: center; gap: 1px; margin-left: 6px; font-size: 10px; opacity: 0.8; pointer-events: auto; }
     .df-lofi:hover { opacity: 0.75; }
     .df-lofi.on { opacity: 1; color: #f0c8a8; }
     .df-flow {
@@ -950,8 +981,6 @@
     @keyframes df-halfpulse { 0%, 100% { opacity: 0.6 } 50% { opacity: 1 } }
     .df-tag { font-size: 8px; color: #b48fc9; }
     .df-tag.dim { opacity: 0.6; }
-    .df-up { margin-left: 6px; font-weight: 400; cursor: help; pointer-events: auto; }
-    .df-up.fresh { opacity: 1; color: #7fc98a; }
     /* the bodies line — the same voice as a .df-tag row: small, dim, informative.  cursor:help +
        pointer-events:auto so the hover long-form is reachable through the .df pointer shield. */
     .df-bodies {
@@ -963,7 +992,10 @@
     .df-invrow { display: flex; align-items: center; gap: 6px; font-size: 10px; margin-top: 2px; cursor: help; pointer-events: auto; }
     .df-invstate { font-size: 8px; color: #d8c56b; }
     .df-invrow.sealed .df-invstate { color: #7fc98a; }
-    .df-invrow.refused .df-invstate { color: #e06a6a; }
+    .df-invrow.refused .df-invstate, .df-invrow.unreachable .df-invstate { color: #e06a6a; }
+    .df-invrow { flex-wrap: wrap; }
+    .df-invwhy { flex-basis: 100%; font-size: 9px; color: #b9a98a; }
+    .df-invretry { font-size: 9px; margin-left: 4px; padding: 0 4px; cursor: pointer; }
     /* the +N more toggle — the cap's release valve, styled to whisper */
     .df-more {
         pointer-events: auto; cursor: pointer; background: none; border: none;

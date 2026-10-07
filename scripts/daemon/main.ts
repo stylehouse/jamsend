@@ -737,6 +737,62 @@ const vyto_state = () => {
     return null
 }
 
+// cpu_state — process CPU since the LAST /status read, as a percent of one core (2026-10-07: "60–80% CPU while
+//  idle" was a docker-stats reading nobody here could take).  Two reads a minute apart give the idle figure.
+let cpu_last = { t: Date.now(), u: process.cpuUsage() }
+const cpu_state = () => {
+    const now = Date.now(), u = process.cpuUsage()
+    const ms = (u.user - cpu_last.u.user + u.system - cpu_last.u.system) / 1000
+    const pct = now > cpu_last.t ? Math.round(100 * ms / (now - cpu_last.t)) : 0
+    const over_s = Math.round((now - cpu_last.t) / 1000)
+    cpu_last = { t: now, u }
+    return { pct, over_s, ticks_per_s: +(ticks / Math.max(1, (now - t0) / 1000)).toFixed(2) }
+}
+
+// census_state — WHERE THE HEAP IS (2026-10-07: heap 1.5GB of a 1.65GB cap while /c dumped 5MB of sc).  The weight
+//  lives on `.c`, which /c never shows: walk EVERY particle, uncapped, and per mainkey count the nodes, the bytes
+//   in binary .c values (ArrayBuffer / typed arrays / arrays of them, one level), and the entries of .c maps
+//    and arrays.  Read it twice an hour apart and diff: the row that grows is the leak.
+const census_state = () => {
+    const by: Record<string, { n: number, bytes: number, entries: number }> = {}
+    const ckeys: Record<string, { bytes: number, entries: number }> = {}
+    const seen = new Set<any>()
+    const bin = (v: any): number => {
+        if (!v) return 0
+        if (v instanceof ArrayBuffer) return v.byteLength
+        if (ArrayBuffer.isView(v)) return (v as any).byteLength
+        if (typeof v.getChannelData === 'function' && v.length && v.numberOfChannels) return v.length * v.numberOfChannels * 4
+        return 0
+    }
+    let nodes = 0
+    const visit = (n: any) => {
+        if (!n || seen.has(n)) return
+        seen.add(n); nodes++
+        const k = n.sc ? Object.keys(n.sc)[0] ?? '?' : '?'
+        const row = by[k] ?? (by[k] = { n: 0, bytes: 0, entries: 0 })
+        row.n++
+        const c = n.c
+        if (c && typeof c === 'object') {
+            for (const ck of Object.keys(c)) {
+                const v = c[ck]
+                if (!v || typeof v !== 'object' || ck === 'up' || ck === 'w') continue
+                let b = bin(v), e = 0
+                if (Array.isArray(v)) { e = v.length; for (const x of v) b += bin(x) || (x && typeof x === 'object' && ArrayBuffer.isView(x?.data) ? x.data.byteLength : 0) }
+                else if (v instanceof Map || v instanceof Set) e = v.size
+                else if (!b && Object.getPrototypeOf(v) === Object.prototype) e = Object.keys(v).length
+                row.bytes += b; row.entries += e
+                const kk = k + '.c.' + ck
+                const cr = ckeys[kk] ?? (ckeys[kk] = { bytes: 0, entries: 0 })
+                cr.bytes += b; cr.entries += e
+            }
+        }
+        for (const kid of (n.o?.({}) ?? [])) visit(kid)
+    }
+    for (const h of allHouses(H)) visit(h)
+    const top = (o: Record<string, any>, f: (r: any) => number) => Object.entries(o).sort((a, b) => f(b[1]) - f(a[1])).slice(0, 25).map(([k, r]) => ({ k, ...r }))
+    return { nodes, mem: mem_state(), by_nodes: top(by, r => r.n), by_bytes: top(by, r => r.bytes), c_bytes: top(ckeys, r => r.bytes), c_entries: top(ckeys, r => r.entries) }
+}
+
 const stats = () => {
     const hs = allHouses(H)
     return {
@@ -752,6 +808,7 @@ const stats = () => {
         })),
         wedge: (H.top_House?.() as any)?.mutex_held?.('beliefs') ?? null,
         mem: mem_state(),
+        cpu: cpu_state(),
         inside: probe_line(),
         book: book_state(),
         stock: stock_state(),
@@ -814,6 +871,10 @@ const server = http.createServer((req, res) => {
     const url = new URL(req.url || '/', 'http://x')
     res.setHeader('content-type', 'application/json')
     if (url.pathname === '/status') return res.end(safe_json(stats()))
+    if (url.pathname === '/census') {
+        if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required"}') }
+        try { return res.end(safe_json(census_state())) } catch (e: any) { res.statusCode = 500; return res.end(JSON.stringify({ error: String(e?.message || e) })) }
+    }
     if (url.pathname === '/c') {
         if (!token_ok(req, url)) { res.statusCode = 401; return res.end('{"error":"token required — ?token=<STATUS_TOKEN> or X-Daemon-Token header (logged once at boot)"}') }
         // the C tree at a bounded depth — the daemon's `snap`, without needing Story.
@@ -915,7 +976,7 @@ const server = http.createServer((req, res) => {
             }
         })()
     }
-    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)","/restock (token)","/invite?base=<url> (token)"]}')
+    res.statusCode = 404; res.end('{"paths":["/status","/c?depth=3 (token)","/stop (token)","/restock (token)","/invite?base=<url> (token)","/census (token)"]}')
   } catch (e: any) {
     // The backstop.  Nothing this server does is worth the process, and everything above is a READ.
     try { res.statusCode = 500; res.end(`{"error":${JSON.stringify(String(e?.message || e))}}`) } catch {}
@@ -1409,6 +1470,7 @@ const arrest_watch = async () => {
 }
 
 // ── 5. run ───────────────────────────────────────────────────────────────────────────────────
+let tt = { count: 0, soonest: Infinity }, tt_at = 0
 let last_beat = 0
 let last_full = 0        // when the heartbeat last printed its state lines in full
 let last_sig = ''        // their content last time, so an unchanged beat stays silent
@@ -1450,7 +1512,10 @@ while (!stopping) {
 
     wrap_probe()
     flushSync()
-    const tt = liveTtlilts(H)
+    // THE WHOLE-TREE WALK AT MOST ONCE A SECOND (2026-10-07, idle CPU): it ran every tick — ~6/s over every particle,
+    //  an `o({})` array allocated per node per tick, steady garbage on a box doing nothing.  The answer only paces the
+    //   sleep below (clamped to 120ms anyway), so a second-old count costs at most one longer nap.
+    if (Date.now() - tt_at > 1000) { tt = liveTtlilts(H); tt_at = Date.now() }
     for (const h of allHouses(H)) h.i_elvisto?.(h, 'think')
     await drain(); drains++
     flushSync()

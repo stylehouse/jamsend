@@ -30,8 +30,10 @@ Snap:H
               Card,id:own1,pub:me,hearted_at:1788400200,title:Mine,landed_at:1788400300
               Card,id:o1,pub:otherfriend,hearted_at:1788400200,title:Over There
           shop,pub:me
-            Heist:Track Two,seed:r2,pub:friendo,state:done,take,at:1788400300,from_name:friendo,artist:Friendo,pick_edited
+            Heist:Track Two,seed:r2,pub:friendo,state:done,take,at:1788400300,from_name:friendo,artist:Friendo
+              Pick,ref:r1
               Pick,ref:r2
+              Pick,ref:r3
             Heist:Over There,seed:o1,pub:otherfriend,state:primed,take,at:1788400300,from_name:otherfri
             Heist:Track One,seed:r1,pub:friendo,state:primed,take,at:1788400300,from_name:friendo,artist:Friendo
           stock,pub:me

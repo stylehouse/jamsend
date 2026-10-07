@@ -6351,10 +6351,11 @@ async MusuHeard_carry(w):
     // no share is no haul at all — the wish stands, nothing is minted
     let bare = await this.Heard_haul_beat(w, w, 'me', null, shop)
     if (bare === 0) { row.no_share_no_haul = 1 }
-    // a ♥ keep has no form and no human: it prunes the described folder to the one track and starts itself
+    // a ♥ keep has no form and no human: it keeps the whole described album and starts itself
     for (const ref of ['r1', 'r2', 'r3']) { let pk = k.i({ Pick: 1, ref: ref }); pk.c.up = k }
     let went = this.Heist_keep_take_go(k, null, 'r2')
-    if (went === 1 && k.o({ Pick: 1 }).length === 1 && String(k.o({ Pick: 1 })[0].sc.ref) === 'r2' && String(k.sc.state) === 'pulling') { row.a_wish_is_a_track = 1 }
+    // the WHOLE album now (owner 2026-10-07: "we want the whole album") — every described pick survives
+    if (went === 1 && k.o({ Pick: 1 }).length > 1 && k.o({ Pick: 1, ref: 'r2' })[0] && String(k.sc.state) === 'pulling') { row.a_wish_is_a_track = 1 }
     // the CELL cap, not the transfer cap: three standing keeps is as many as the heart may open
     let filler = shop.i({ Heist: 'Filler', seed: 'y1', pub: 'someone', state: 'primed' })
     filler.c.up = shop
@@ -6527,7 +6528,7 @@ MusuHeard_witness(w):
     if (c && +c.sc.one_mint === 1 && +c.sc.oldest_wish_first === 1 && +c.sc.the_shape_the_button_made === 1 && +c.sc.a_busy_holder_waits === 1 && +c.sc.no_share_no_haul === 1)
         this.story_swear(w, 'the beat carries the oldest wish per holder into the very heist the button used to mint — one at a time — the rest waiting legibly as wishes — and with no share it carries none')
     if (c && +c.sc.a_wish_is_a_track === 1 && +c.sc.the_cell_cap_holds === 1)
-        this.story_swear(w, 'a wish is a track so the described folder is pruned to the one that was asked for and started with no form at all — and three standing keeps is as many as the heart may ever open')
+        this.story_swear(w, 'a wish takes the whole album so the described folder is kept entire and started with no form at all — and three standing keeps is as many as the heart may ever open')
     if (cl && +cl.sc.the_listing_lands_on_the_card === 1 && +cl.sc.the_way_back_rides_the_line === 1 && +cl.sc.cloning_twice_writes_nothing === 1)
         this.story_swear(w, 'the original the describe answers with teaches the card its own keep id and its real size and hash — so everything a later reader needs for the way back rides the line — and re-reading it writes nothing')
     if (cl && +cl.sc.the_verdict_lands_on_the_card === 1 && +cl.sc.the_wedged_keep_is_ended === 1 && +cl.sc.the_queue_moves_on === 1 && +cl.sc.loving_it_back_clears_the_verdict === 1)
@@ -6966,7 +6967,7 @@ async MusuMagnet_quiet(w):
     for (const r of ['r1', 'r2', 'r3']) { let pk = keep.i({ Pick: 1, ref: r }); pk.c.up = keep }
     let went = this.Heist_keep_take_go(keep, mir, 's9')
     let left = keep.o({ Pick: 1 }).map((p) => String(p.sc.ref))
-    if (went === 1 && String(keep.sc.state) === 'pulling' && left.length === 1 && left[0] === 'r2') { row.the_alias_finds_its_track = 1 }
+    if (went === 1 && String(keep.sc.state) === 'pulling' && left.length === 3) { row.the_alias_finds_its_track = 1 }
     w.c.lshop.drop(keep)
     mir.drop(alias)
     this.MusuMagnet_note(w, row)
@@ -6979,4 +6980,4 @@ MusuMagnet_witness(w):
     if (n >= 4 && has({ away: 1, the_desk_leaves_it_be: 1, the_laptop_hauls_it: 1, the_adopted_card_keeps_its_to: 1, the_row_names_where: 1 })) { say('a heart sent to the Cave is hauled there only — the Captain with a folder of its own leaves it be — and its row names where it went') }
     if (n >= 5 && has({ home: 1, the_laptop_sees_it_and_leaves_it: 1, the_desk_hauls_it: 1 })) { say('moving the magnet home hauls the next heart here — and the Cave seeing it in the union leaves it be') }
     if (n >= 6 && has({ nobody: 1, no_to_is_stamped: 1, anyone_may_haul_it: 1 })) { say('a heart that names nobody is anyones to haul — exactly as before the magnet') }
-    if (n >= 7 && has({ quiet: 1, a_carried_heart_is_marked: 1, the_alias_finds_its_track: 1 })) { say('a heart carried from another body never asks this screen for the room — and its keep finds its own track through the folder census alias and starts with no form') }
+    if (n >= 7 && has({ quiet: 1, a_carried_heart_is_marked: 1, the_alias_finds_its_track: 1 })) { say('a heart carried from another body never asks this screen for the room — and its keep takes the whole described album and starts with no form') }
