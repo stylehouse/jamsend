@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_LagoonTesting(): string { return '1fde34f1a5472da8~g1' },
+    Ghostmeta_Ghost_L_LagoonTesting(): string { return 'f5d98e4f724fbb1f~g1' },
 
 // LagoonTesting.g — né Lagoonation.g.  The Lagoon.g proof, under the `<Name>Testing.g` convention
 //  (owner ruling 2026-09-09; src/lib/L/testing.ts is the one predicate).
@@ -484,6 +484,8 @@ async LagoonCave_open(w) {
         let lw = this.LagoonStaple_lw(w)
         if (!lw || typeof top.e_Lagoon_cave !== 'function') return
         lw.c.face_on = this
+        // the rest is PINNED to the families: Everything's areas are regenerated as the code moves, and a fixture must not move
+        lw.c.cave_rest = 'families'
         // the face, as a recorder — every event the room would act on, kept for the witness
         w.c.events = []
         lw.c.cave_on = (ev, a) => { w.c.events.push(ev + (a && a.path ? ':' + a.path.replace(/^.*\//, '') + '#' + (a.point || '') : (a ? ':' + a : ''))) }
@@ -491,7 +493,7 @@ async LagoonCave_open(w) {
         await this.LagoonCave_until(w, '⌕ ', 'open')
         let seeds = this.LagoonCave_sown(w) || []
         let fld = seeds[0] ? seeds[0].c.field : null
-        w.c.open_field = fld && typeof fld.oninput === 'function' && fld.autofocus && fld.value === '' ? 1 : 0
+        w.c.open_field = fld && typeof fld.oninput === 'function' && fld.value === '' ? 1 : 0
         w.c.open_fams = seeds.slice(1).map(s => s.sc.Family).join(' ')
         w.c.open_root = seeds.length > 1 && Number(seeds[0].sc.dose) > Number(seeds[1].sc.dose) ? 1 : 0
     })
@@ -581,8 +583,8 @@ LagoonCave_witness(w) {
     if (w.c.open_fams === 'Sample…' && this.LagoonStaple_at(w, 3)) {
         this.story_swear(w, 'with nothing typed the code families stand around the hole')
     }
-    if (w.c.search_files === 1 && w.c.search_stem === 'Sample' && this.LagoonStaple_at(w, 4)) {
-        this.story_swear(w, 'a search stands as a spine — the rope as its head and one vertebra per file wearing its stem')
+    if (w.c.search_files === 1 && w.c.search_stem === 'Ghost/L/test_corpus' && this.LagoonStaple_at(w, 4)) {
+        this.story_swear(w, 'a search stands as a spine — one vertebra per file stemmed by its directory')
     }
     if (w.c.search_fams === 'Sample… ×2 ; Sample_gamma()' && this.LagoonStaple_at(w, 4)) {
         this.story_swear(w, 'a file says its hits as stem families — and a family never crosses the bead its author drew')
@@ -608,6 +610,109 @@ LagoonCave_witness(w) {
     if (w.c.left && this.LagoonStaple_at(w, 9)) {
         this.story_swear(w, 'climbing past the surface leaves the cave — and the face is told')
     }
+},
+// (ends on a comment — a .g must not end on a method-final brace)
+
+// ═══ Book LagoonCaveBench — a MEASUREMENT, not a gate (2026-10-07, the owner: "this needs to be quite performant.
+//  maybe you could put some timers in and figure out what's slow") ═════════════════════════════════════════════════
+// Stands Atlas over the WHOLE tree (no roots override) and, per real query, times the three hops of a keystroke:
+//   READ  — Lagoon's half: the seek, the anatomy, the guises (e_Lagoon_cave's synchronous body)
+//   CROSS — the commission elvisto reaching Vyto (its grapples become the new sowing)
+//   STIR  — the glass's own compute, cranked by hand (Vyto_stir: scan → fold → … → solve)
+//   PAINT — Vytui drawing it (as many bone labels as the level has vertebrae)
+// Swears nothing and its recording is not kept: run it in `new`, read `runner_ask console --grep=⏱`, pair it with the
+//  Electrode tap (`electrode arm` before, `electrode top` after) for the per-method split.  Numbers ride `.c`/console.
+
+LagoonCaveBench(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.LagoonCaveBench_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async LagoonCaveBench_drive(w, req) {
+    let run = this.c.run
+    if (run && run.sc && run.sc.mode === 'new') run.sc.total = 3
+    let n = run?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.LagoonCaveBench_stand(w)
+        if (n === 3) this.LagoonCaveBench_time(w)
+    }
+
+},
+async LagoonCaveBench_stand(w) {
+    w.i({desc: 'stand Atlas over the whole tree and Lagoon beside it'})
+    this.expecting(w, 'bench_stand', 240, async () => {
+        let top = this.top_House()
+        if (typeof top.Atlas !== 'function') {
+            await top.Lies_ghost_set('Ghost/L/Atlas.g')
+            await this.LagoonStaple_await(w, 12, () => typeof top.Atlas === 'function')
+        }
+        if (typeof top.Lagoon !== 'function') {
+            await top.Lies_ghost_set('Ghost/L/Lagoon.g')
+            await this.LagoonStaple_await(w, 12, () => typeof top.Lagoon === 'function')
+        }
+        let SH = top
+        let olda = SH.o({ A: 'Atlas' })[0]
+        if (olda) SH.drop(olda)
+        let oldl = SH.o({ A: 'Lagoon' })[0]
+        if (oldl) SH.drop(oldl)
+        let aw = SH.i({ A: 'Atlas' }).i({ w: 'Atlas' })
+        SH.i({ A: 'Lagoon' }).i({ w: 'Lagoon' })
+        let t0 = performance.now()
+        let nav = top.Atlas_nav()
+        if (nav) await top.Atlas_refresh(aw, nav)
+        let mapped = () => aw.o({ Doc: 1 }).filter(d => d.oa({ Map: 1 })).length
+        await this.LagoonStaple_await(w, 220, () => aw.o({ Doc: 1 }).length > 300 && mapped() >= aw.o({ Doc: 1 }).length - 5)
+        console.log('⏱ cave bench — Atlas stood: ' + aw.o({ Doc: 1 }).length + ' docs, ' + mapped() + ' mapped, ' + Math.round(performance.now() - t0) + 'ms')
+    })
+
+},
+async LagoonCaveBench_time(w) {
+    w.i({desc: 'time the three hops of a keystroke for real queries'})
+    this.expecting(w, 'bench_time', 200, async () => {
+        let top = this.top_House()
+        let lw = top.o({ A: 'Lagoon' })[0]?.o({ w: 'Lagoon' })[0]
+        if (!lw) return
+        lw.c.face_on = this
+        lw.c.cave_on = () => {}
+        top.e_Lagoon_cave(null, lw, { sc: { open: 1 } })
+        await new Promise(res => setTimeout(res, 1500))
+        let vw = () => this.o({ A: 'Vyto' })[0]?.o({ w: 'Vyto' })[0]
+        let head = () => (vw()?.c.mirror?.o() || []).find(r => !r.sc.departing && Object.keys(r.sc)[0] === 'Head')
+        let rows = []
+        for (const q of ['spine', 'Heist', 'Vyto', 'Lagoon_seek', 'req', 'spine']) {
+            let t0 = performance.now()
+            top.e_Lagoon_cave(null, lw, { sc: { q: q, typed: 1 } })
+            let t1 = performance.now()
+            let want = '⌕ ' + q
+            // CROSS — the commission elvisto reaching Vyto (its grapples become this sowing)
+            let fresh = () => { let g = vw()?.c.commission?.sc.grapples; return g && g[0] && String(g[0].sc.Head ?? '') === want }
+            while (performance.now() - t1 < 15000 && !fresh()) await new Promise(res => setTimeout(res, 4))
+            let t2 = performance.now()
+            // STIR — the glass's own compute (scan → fold → gang → membrane → relate → express → solve), cranked by hand as
+            //  every Vyto Book does: under a Story step the beliefs mutex is not free, so the deferred stir would wait.  Live,
+            //   this same stir runs as soon as the House is clear — so how CLEAR the House is decides the rest.
+            let vwo = vw()
+            if (vwo) this.Vyto_stir(vwo)
+            let t3 = performance.now()
+            let nv = (vwo?.c.mirror?.o() || []).filter(r => !r.sc.departing).length
+            while (performance.now() - t3 < 15000 && document.querySelectorAll('.bone-label').length < nv - 1) {
+                await new Promise(res => requestAnimationFrame(res))
+            }
+            let t4 = performance.now()
+            let seeds = (vw()?.c.commission?.sc.grapples) || []
+            let ribs = 0
+            for (const s of seeds) ribs = ribs + s.o().length
+            let row = q + ': read ' + Math.round(t1 - t0) + 'ms · cross ' + Math.round(t2 - t1) + 'ms · stir ' + Math.round(t3 - t2) + 'ms · paint ' + Math.round(t4 - t3) + 'ms — '
+                + (seeds.length - 1) + ' vertebrae, ' + ribs + ' ribs, ' + (lw.c.cave_hits || []).length + ' hits'
+            rows.push(row)
+            console.log('⏱ cave bench — ' + row)
+            await new Promise(res => setTimeout(res, 800))
+        }
+        w.c.bench = rows
+    })
 },
 // (ends on a comment — a .g must not end on a method-final brace)
 

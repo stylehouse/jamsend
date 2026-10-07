@@ -207,6 +207,57 @@ One page of state.  Everything under it is trail: read `## 0′` for how a thing
 
 ### HANDOVER — 2026-09-10, written at 92% context.
 
+### THE CAVE MEASURED — the wait was the queue, not the work — 2026-10-07, later
+The owner: *"it does a big laggy search far too often… this needs to be quite performant. maybe you could put some timers in
+ and figure out what's slow."*  Book **`LagoonCaveBench`** (LagoonTesting.g — a MEASUREMENT, no oaths, recording not kept) stands
+  Atlas over the whole tree (697 docs) and times each hop of a keystroke for six real queries:
+| | read (Lagoon) | cross (commission → Vyto) | stir (Vyto's compute) |
+|---|---|---|---|
+| before | 11–73ms | **70–2322ms** | 3–62ms |
+| after  | 5–55ms  | **4–5ms** (100 when it lands behind a tick) | 1–8ms |
+- **The cross was the whole problem**: the commission rode an elvisto through H.todo behind everything the House was doing, then
+   Vyto deferred its stir to a SECOND wait (`Vyto_stir_soon` → `H.clear`).  Now the cave hands it over with `SH.clear(() =>
+    SH.e_Vyto_commission(...))` — one wait, for whoever holds the mutex now, no queue — and a commission marked **`detached`**
+     (every grapple a guise no beliefs pass walks) stirs at once inside it (`Vyto.g`, opt-in; everything else defers as before).
+- **Debounce**: 320ms of no typing (`LAGOON_CAVE_PAUSE`), never the query already standing, nothing under three letters.
+- **Left on the table — FOR THE VYTO AGENT**: Vytui's PAINT is now the largest hop, ~270ms when a level's layout changes — it is the
+   remount-every-cell-on-re-sow already noted above.  And a bench poll that calls `main()` starves `H.clear` (the first two runs
+    read 20s "scans" that were the bench's own doing) — under a Story step a Book must hand-crank `Vyto_stir`, as every Vyto Book does.
+- **Directories**: each run is headed by a **`Dir` vertebra** — the full path, the directory's `hue`, fused with its files; pressing it
+   narrows the search to that directory (the rope says `Ghost/V/`).  The `tag` key is gone again (the header replaced it).
+- **The rest is the whole project**: the empty hole stands `wormhole/Everything/toc.snap`'s AREAS (the wire · the swarm · the music ·
+   the cave · the visual · the land · the foundation · the Books · the shelves · **the policy**), each area's docs as ribs (press to
+    dive in), the policy's rules as ribs — the advice.  Read once off Atlas's nav as face state; families stand in until then.  A
+     Book pins the families (`lw.c.cave_rest = 'families'`) — Everything is regenerated as the code moves.
+- **The ⌕ chip**: the glass is drawn as its own layer from the House that holds it, whichever House the switcher shows; the chip and
+   `/` look for the hole for up to 40 frames, scroll to it and focus it; landing a method switches the room to the glass's House.
+- **Proof**: LagoonCave re-accepted after reading (only the search shape moved — `Dir=… |` ahead of the file), check **9/9 ok_pct 1
+   caveat 0 ×2**; VytoSpine 9/9 · VytoGuise 1 · LagoonStaple 8/8.
+
+### THE ONE THING — ALWAYS ON SCREEN, FILES STEMMED BY DIRECTORY — 2026-10-07
+The owner: *"I click search and it takes aaaages to get me to the point. that thing has to be on screen AT ALL TIMES if
+ it's going to exist… it has to be The One Thing"* — then *"I'd like the filenames stemmed by their directories. this must
+  have a graphical indication of some sort, so our eye is able to read a big landscape of these cells."*
+- **A summon was always cold** (stand A:Vyto → plan → UI enrol → commission → scan, behind whatever H.todo held).  Now
+   BigWordland stands the cave the moment Vyto + Lagoon + a Lies exist and it never hides.  Three postures, chosen by the
+    producer (`mode`): **rest** (the hole + the families) and **full** (a search, a file) fill the room, near-opaque;
+     **rail** (a method) folds left and the room pads right so the landed code comes through.  The chip / `/` only focus
+      the hole; climbing out of the surface, Esc in the hole, ✕ all return to **rest** (empty box, families).
+- **The hole never grabs focus** (no producer autofocus — a hole re-focusing on every sowing would steal the hand from the
+   editor), and the head's press **ignores an Escape typed into the editor** or any other box (Vytui presses the head on
+    any Escape).  `field_bind` gained one rule: when the producer's value equals the box, they agree and it becomes the
+     seed — without it a reset to rest could never clear a box the hand had typed in.
+- **Directories**: a search-level file's `stem` IS its directory, so FUSED VERTEBRAE join a directory's run into one bone;
+   new additive guise keys `hue` (Matstyle's jewel for a producer-chosen string — the directory) and `tag` (words before a
+    vertebra's specimen tag — the first file of a run says `Ghost/V/`).  Directories are ordered by their best-ranked file,
+     families of files likewise inside them, the ghost before its Testing.  Both keys are `.c`-only; VytoSpine 9/9 and
+      VytoGuise ok_pct 1 after.
+- **The traffic readout**: BigWordland's House chips carry Otro's `TodoSpool` (drain-queue badge + flood tracer), and the
+   cave logs any sowing over 40ms (`🕳 cave sow …`).
+- **Proof**: LagoonCave — only step 9 moved (the postures: `mode:rest mode:full mode:rail … mode:full leave`), read and
+   accepted, then **check 9/9 ok_pct 1 caveat 0 ×2**; LagoonStaple 8/8.  Eye: glass up at boot with no click, `/` focuses,
+    typing goes full, Esc returns to rest with the box cleared.  Still owed: the landscape with real data in the owner's tab.
+
 ### ONE VISUAL — THE HOLE IS THE HEAD — 2026-10-03, later the same day
 The owner: *"I'm wanting just the one visual: a big spine-root spine-label-sized hole we type into, and everything
  pings around it pretty fast"* — and *"it says 'stemdex not scanned yet'"*.

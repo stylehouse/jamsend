@@ -8,7 +8,7 @@ Snap:H
         req:open_wait,finished
         saw:cave,lvl:open,rope:⌕ ,shape:Family=Sample…
         req:search_wait,finished
-        saw:cave,lvl:search,rope:⌕ Sample,shape:Doc=Ghost/L/test_corpus/Sample.g [Family=Sample… ×2 ; Family=Sample_gamma()]
+        saw:cave,lvl:search,rope:⌕ Sample,shape:Dir=Ghost/L/test_corpus/ | Doc=Ghost/L/test_corpus/Sample.g [Family=Sample… ×2 ; Family=Sample_gamma()]
     A:Vyto
       w:Vyto,grawave_duration=0.4
         Organ:Scan,family:chronicler,reads:the grappled worlds,writes:the mirror,status:stub

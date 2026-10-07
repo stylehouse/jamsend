@@ -8,34 +8,34 @@ story:LagoonCave
       lematch,self,round
         means,drop
   TimeSpool
-    TimeTotal:beliefs,avg=0.475
-      sample=0.176,at=1791009328
-      sample=0.095,at=1791009341
-      sample=0.15,at=1791009357
-      sample=0.178,at=1791009431
-      sample=0.132,at=1791009449
-      sample=0.209,at=1791009480
-      sample=0.209,at=1791009484
+    TimeTotal:beliefs,avg=0.504
       sample=0.121,at=1791009500
       sample=0.127,at=1791009517
       sample=3.353,at=1791243120
-    TimeTotal:step,avg=0.053
-      sample=0.02,at=1791009328
-      sample=0.011,at=1791009341
-      sample=0.017,at=1791009357
-      sample=0.02,at=1791009431
-      sample=0.015,at=1791009449
-      sample=0.023,at=1791009480
-      sample=0.023,at=1791009484
+      sample=0.276,at=1791330927
+      sample=0.247,at=1791330958
+      sample=0.124,at=1791330971
+      sample=0.24,at=1791336657
+      sample=0.24,at=1791336682
+      sample=0.178,at=1791336705
+      sample=0.139,at=1791336722
+    TimeTotal:step,avg=0.056
       sample=0.013,at=1791009500
       sample=0.014,at=1791009517
       sample=0.373,at=1791243120
+      sample=0.031,at=1791330927
+      sample=0.027,at=1791330958
+      sample=0.014,at=1791330971
+      sample=0.027,at=1791336657
+      sample=0.027,at=1791336682
+      sample=0.02,at=1791336705
+      sample=0.015,at=1791336722
   step,dige:46f0d4746b79dccf
   step=2,desc:load Atlas and Lagoon on demand — stand Atlas on the frozen corpus and the reader beside it,dige:8072b19f8378bd2f
   step=3,desc:open the hole — the head is a field to type into and the families stand around it,dige:2080d71d27accc4c
-  step=4,desc:type into the hole — one vertebra per file and its ribs the stem families holding hits,dige:9e6bfcb7cea2d930
-  step=5,desc:press the file — its methods in file order with a family named once and fused by stem,dige:e98911c16c103352
-  step=6,desc:press a method — its code lands and the glass becomes its doors,dige:aebc3d52837f2b04
-  step=7,desc:press what it calls — the walk lands in that method and its door back is its caller,dige:4b633bc3ab8ba70c
-  step=8,desc:press the head — the rope climbs back one step,dige:0ec97a5cad5bed72
-  step=9,dige:b0c46d554deabde7,desc:climb past the surface — the seeker leaves and the cave tells the face
+  step=4,desc:type into the hole — one vertebra per file and its ribs the stem families holding hits,dige:f5b5f10d5e86dbb3
+  step=5,desc:press the file — its methods in file order with a family named once and fused by stem,dige:55015c6ce8295590
+  step=6,desc:press a method — its code lands and the glass becomes its doors,dige:b14e8700fe4bd559
+  step=7,desc:press what it calls — the walk lands in that method and its door back is its caller,dige:640cce9245235350
+  step=8,desc:press the head — the rope climbs back one step,dige:e756733689a3ea56
+  step=9,dige:5d26da0a8b301df6,desc:climb past the surface — the seeker leaves and the cave tells the face

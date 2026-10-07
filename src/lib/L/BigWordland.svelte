@@ -169,13 +169,39 @@
         const t = setInterval(() => { if (typeof (H as any)?.Vyto_guise === 'function') { vyto_ready = true; clearInterval(t) } }, 400)
         return () => clearInterval(t)
     })
+    // THE ONE THING (2026-10-07, the owner: "that thing has to be on screen AT ALL TIMES if it's going to exist…
+    //  it has to be The One Thing").  The cave is stood at boot and never hides: REST (the hole + the families) and a
+    //   search fill the room; a method folds it to a rail so the landed code comes through beside it.  Climbing out
+    //    (the head at the surface, Esc in the hole, ✕) returns it to REST.  The chip and `/` only put the hand in it.
     function cave_on(ev: string, a: any) {
         if (ev === 'land' && a?.path) {
+            // the code lands in the glass's own room — show that House so the code comes through beside the rail
+            if (glass_house) view = (glass_house as any).c.ip
             lies?.house.i_elvisto('Lies/Lies', 'Lies_ghost_pick', a.point ? { path: a.path, point: a.point } : { path: a.path })
-            if (a.leave) close_cave()
+            if (a.leave) rest_cave()
         }
-        if (ev === 'leave') close_cave()
+        if (ev === 'leave') rest_cave()
         if (ev === 'mode') cave_mode = a === 'rail' ? 'rail' : 'full'
+    }
+    function rest_cave() {
+        H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { open: 1 })
+    }
+    // the hand into the hole — the glass is already there, so a summon costs nothing
+    function focus_hole() {
+        if (!cave_open) open_cave()
+        // the hole may not be painted yet (a first open, a remount) — look for it for a moment rather than once
+        let n = 0
+        const look = () => {
+            const el = document.querySelector('.vy-field-in') as HTMLInputElement | null
+            if (el) {
+                el.closest('section')?.scrollIntoView({ block: 'nearest' })
+                el.focus()
+                el.setSelectionRange(el.value.length, el.value.length)
+                return
+            }
+            if (n++ < 40) requestAnimationFrame(look)
+        }
+        look()
     }
     function open_cave() {
         if (!H) return
@@ -185,12 +211,12 @@
         lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
         H.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { open: 1 })
     }
-    function close_cave() {
-        if (!cave_open) return
-        cave_open = false
-        cave_mode = 'full'
-        H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { clear: 1 })
-    }
+    // stand it as soon as the room can: the glass loaded, Lagoon standing, a Lies to land code in
+    $effect(() => {
+        if (cave_open) return
+        const t = setInterval(() => { if (vyto_ready && lies && lagoon_w()) { clearInterval(t); open_cave() } }, 400)
+        return () => clearInterval(t)
+    })
     // the fallback Searchbar (no glass on this tab) still drives the cave's old door
     function on_results(r: any) {
         const q = r?.q ? String(r.q) : ''
@@ -207,12 +233,15 @@
         let seen_done = -1
         const t = setInterval(() => {
             const dex = (lies?.w as any)?.c?.stemdex
-            if (dex && dex.total > 0 && dex.done >= dex.total) return
-            if (!dex?.scanning) lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
-            if (dex && dex.done !== seen_done) {
+            const converged = !!(dex && dex.total > 0 && dex.done >= dex.total)
+            if (!converged && !dex?.scanning) lies?.house.i_elvisto('Lies/Lies', 'Lies_stemdex_scan', {})
+            if (!converged && dex && dex.done !== seen_done) {
                 seen_done = dex.done
                 H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { refresh: 1 })
             }
+            // at rest with no families yet: Atlas is still mapping — look again
+            const lw = lagoon_w()
+            if (lw && lw.c.cave_browse_n === 0 && (lw.c.cave || [])[0]?.q === '') H?.i_elvisto('Lagoon/Lagoon', 'Lagoon_cave', { refresh: 1 })
         }, 1500)
         return () => clearInterval(t)
     })
@@ -224,15 +253,19 @@
             const t = ev.target as HTMLElement | null
             if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
             ev.preventDefault()
-            open_cave()
+            focus_hole()
         }
         window.addEventListener('keydown', grab, true)
         return () => window.removeEventListener('keydown', grab, true)
     })
-    let has_glass = $derived.by(() => {
-        void active?.UIs?.version
-        return !!(active as any)?.UIs?.ob({ UI: 'Vyto' })[0]
+    // the House that holds the glass (the cave stands A:Vyto on the room's Run House).  It is drawn from THERE as its
+    //  own layer, whichever House the switcher shows — "on screen AT ALL TIMES" cannot depend on which chip is lit.
+    let glass_house = $derived.by(() => {
+        for (const h of houses) { void (h as any).UIs?.version; if ((h as any).UIs?.ob({ UI: 'Vyto' })[0]) return h }
+        return undefined
     })
+    let glass_ui = $derived.by(() => { void (glass_house as any)?.UIs?.version; return (glass_house as any)?.UIs?.ob({ UI: 'Vyto' })[0] })
+    let has_glass = $derived(!!glass_ui)
     let cave_up = $derived(cave_open && has_glass)
     const is_glass = (uiC: any) => uiC.sc.UI === 'Vyto' && !sprawl
     //#endregion
@@ -273,7 +306,7 @@
                 title="call Lies up — the straight Liesui, hidden by default in the room"
                 onclick={() => show_lies = !show_lies}>⌐ Lies</button>
         {#if lies && vyto_ready}
-            <button class="bw-cave-chip" class:on={cave_open} onclick={() => cave_open ? close_cave() : open_cave()}
+            <button class="bw-cave-chip" onclick={focus_hole}
                     title="search — the hole you type into is the spine's head  ( / )">⌕ search <span class="bw-key">/</span></button>
         {:else if lies}
             <div class="bw-search"><Searchbar H={lies.house} w={lies.w} onpin={pin} onresults={on_results} {dismiss} /></div>
@@ -307,16 +340,9 @@
          class:bw-caverail={cave_up && cave_mode === 'rail'}>
         {#each (sprawl ? houses : houses.filter(h => h.c.ip === active_ip)) as house (house.c.ip)}
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
-                {#if !ui_hidden(uiC.sc.UI)}
-                    <section class="bw-piece" class:bw-piece-lies={uiC.sc.UI === 'Lies'}
-                             class:bw-glass={is_glass(uiC)} class:up={is_glass(uiC) && cave_up}
-                             class:rail={is_glass(uiC) && cave_mode === 'rail'}>
-                        {#if is_glass(uiC)}
-                            <button class="bw-glass-x" title="close the cave (and the search)"
-                                    onclick={close_cave}>×</button>
-                        {:else}
-                            <span class="bw-tag">{house.name} · {uiC.sc.UI}</span>
-                        {/if}
+                {#if !ui_hidden(uiC.sc.UI) && !is_glass(uiC)}
+                    <section class="bw-piece" class:bw-piece-lies={uiC.sc.UI === 'Lies'}>
+                        <span class="bw-tag">{house.name} · {uiC.sc.UI}</span>
                         <svelte:component this={uiC.sc.component} H={house} />
                     </section>
                 {/if}
@@ -331,6 +357,14 @@
             {/if}
         {/each}
     </div>
+
+    <!-- THE GLASS — its own layer, drawn from the House that holds it, whichever House the switcher shows -->
+    {#if glass_ui && glass_house && !sprawl}
+        <section class="bw-piece bw-glass" class:up={cave_up} class:rail={cave_mode === 'rail'}>
+            <button class="bw-glass-x" title="back to rest — the hole and the families" onclick={rest_cave}>×</button>
+            <svelte:component this={glass_ui.sc.component} H={glass_house} />
+        </section>
+    {/if}
 
     <!-- the pin rail — the loose space at the right of the code -->
     {#if pins.length}
@@ -480,7 +514,7 @@
     /* the copper sheet goes translucent HERE only — a scoped :global, so no other page that mounts Vytui
        changes by a pixel — and the code ghosts through beneath the spine */
     .bw-glass :global(.vyto) {
-        flex: 1; background-color: rgba(26, 20, 16, 0.62) !important; background-image: none !important;
+        flex: 1; background-color: rgba(22, 17, 13, 0.94) !important; background-image: none !important;
         backdrop-filter: blur(1.5px);
     }
     .bw-glass-x {
@@ -494,7 +528,7 @@
         background: rgba(30, 24, 16, 0.6); border: 1px solid rgba(224, 180, 110, 0.4); border-radius: 14px;
         color: rgba(255, 224, 168, 0.85); padding: 0.18rem 0.8rem;
     }
-    .bw-cave-chip:hover, .bw-cave-chip.on { color: #ffe0a8; border-color: rgba(255, 210, 130, 0.85); background: rgba(60, 44, 24, 0.7); }
+    .bw-cave-chip:hover { color: #ffe0a8; border-color: rgba(255, 210, 130, 0.85); background: rgba(60, 44, 24, 0.7); }
     .bw-key { font-size: 0.7em; opacity: 0.6; border: 1px solid currentColor; border-radius: 3px; padding: 0 0.25em; margin-left: 0.3em; }
     .bw-glass-x:hover { color: #ffe0a8; border-color: rgba(224, 180, 110, 0.7); }
 

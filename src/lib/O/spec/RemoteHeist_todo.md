@@ -63,7 +63,10 @@ Owner's walk: Lump aimed at Grav kept playing Inko, and heard Inko's own tracks 
 - **The haul loop (2026-10-04, Inko re-hauling Cosmic C / Echo E / Deep A / Query E forever; an rm -rf of testsounds/ refilled
    in a minute).** `Heard_takes` learned "landed" only from `Heard_landed` — a record on the STOCK shelf, the Stoker's culled
     ~27-record window — so a landed file fell out and the heart was hauled again. Now `Heist_keep_pull` at 'done' calls
-     `Heard_mark_landed` for a take:1 keep, and the haul beat skips it by verdict. A fresher ♥ still re-hauls. Also: Haul's
+     `Heard_mark_landed` for a take:1 keep, and `Heard_takes` skips a card whose `landed_at` ≥ `hearted_at` (⚠ NOT
+     `Heard_verdict` — it covers only held/unvouched/landfail; `landed` is `Heard_word`'s, display only — the first cut of this
+      fix stamped a field nothing gated on). A fresher ♥ still re-hauls. Haul rows for a ♥ keep say "1 track", not the
+       folder's un_n (the "setting up 8 tracks"). Door's LOFI is a ☐/☑ tickbox. Also: Haul's
       waiting row grid (✕ wrapped), and Cellui re-fits on stage HEIGHT (DevTools docked below never re-fit the inlay).
        Books: MusuHeard 9/9, MusuHandoff 9/9, MusuMagnet 7/7 clean; MusuHeist's 13 caveats predate this (17 on 10-04).
 **Owner to walk:** Lump aimed at Grav → only Grav's tracks, or the ⚠ chip if Grav has nothing for this body; Captain + Cave

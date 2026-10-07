@@ -24,7 +24,7 @@ const HEAT_BUY = 3.5
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Vyto(): string { return '3e3428386dead604~g1' },
+    Ghostmeta_Ghost_V_Vyto(): string { return '7e9196d20557ac1f~g1' },
 
 // Vyto.g — the model side of the NEW glass (Ghost/V/, beside Voro.g; spec: Vyto_spec.md,
 //  unpreened; workingouts: spec/vyto_workingouts/*).  Cyto grew a substrate problem — a
@@ -215,7 +215,13 @@ e_Vyto_commission(A, w, e) {
     //  THE BOOK CONTRACT HOLDS: every recorded fixture comes from a runner tab, and a runner has no
     //   humdinger — so the else below never fires there and every recorded rhythm stays byte-identical.
     //    Only a live end-user room (humdinger) takes the stamp, which is exactly the DRIVE's jurisdiction.
-    if (w.c.vw_frame) { this.Vyto_stir_soon(w) }
+    //  …AND A DETACHED COMMISSION STIRS NOW (2026-10-07, the cave: "it takes aaaages").  `req.sc.detached` says every grapple
+    //   is a detached guise no beliefs pass ever walks, and that the client delivered the commission INSIDE the mutex
+    //    (H.clear) — so there is no transaction to wait out, and deferring the stir to another clear() only queued it behind
+    //     whatever held the House next.  Measured on a runner: the work is 3–60ms, the waiting was the rest.  Opt-in; every
+    //      other commission defers exactly as before.
+    if (w.c.vw_frame && req.sc.detached) { this.Vyto_stir(w) }
+    else if (w.c.vw_frame) { this.Vyto_stir_soon(w) }
     else if (this.top_House && this.top_House().c.humdinger) {
         w.c.vw_frame = { w: 800, h: 450 }
         this.Vyto_stir_soon(w)
@@ -562,6 +568,10 @@ Vyto_guise(spec) {
     //   cave's head (2026-10-03, the owner: *"a big spine-root spine-label-sized hole we type into, and everything
     //    pings around it"*).  `.c` only, so no Book that never sets it can see it.
     if (g.field && typeof g.field.oninput === 'function') n.c.field = g.field
+    // `hue` — colour this cell by a key of the producer's choosing instead of its mainkey (Matstyle's deterministic
+    //  jewel for any string).  For the cave's landscape (2026-10-07, the owner: "filenames stemmed by their directories…
+    //   a graphical indication… so our eye is able to read a big landscape of these cells") — a file wears its directory's.
+    if (g.hue) n.c.hue = String(g.hue)
     // `foldby` — a HINT to the fold election for this scope's children: "partition by this fact when it
     //  partitions at all" (Vyto_fold_scope).  The producer knows its domain — a code search's children carry
     //   both a kind and a stem, and only it knows which grouping the reader wants.

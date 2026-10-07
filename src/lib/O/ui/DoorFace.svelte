@@ -599,8 +599,8 @@
                     {#if face.magnet.show && face.instance?.prepub && face.magnet.can.includes(face.instance.prepub)}
                         <button class="df-mag" class:on={face.magnet.at === face.instance.prepub} onclick={() => magnet_to(face.instance.prepub)}
                             title={face.magnet.at === face.instance.prepub ? 'your hearts land HERE — this folder is your big pile' : 'land your hearts here instead'}>🧲</button>
-                        {#if face.magnet.at === face.instance.prepub}<button class="df-lofi" class:on={face.magnet.lofi} onclick={magnet_lofi}
-                            title={face.magnet.lofi ? 'LOFI — your hearts arrive as small ogg copies · press for originals' : 'ORIGINALS — your hearts arrive as the full files · press for LOFI (small ogg copies)'}>LOFI</button>{/if}
+                        {#if face.magnet.at === face.instance.prepub}<button class="df-lofi" class:on={face.magnet.lofi} onclick={magnet_lofi} role="checkbox" aria-checked={face.magnet.lofi}
+                            title={face.magnet.lofi ? 'LOFI ticked — your hearts arrive as small ogg copies · untick for originals' : 'LOFI unticked — your hearts arrive as the full files · tick for small ogg copies'}><span class="df-tick">{face.magnet.lofi ? '☑' : '☐'}</span>LOFI</button>{/if}
                     {/if}
                 </div>
                 {#if face.prepub}
@@ -635,8 +635,8 @@
                             {#if face.magnet.show && b.prepub && face.magnet.can.includes(b.prepub)}
                                 <button class="df-mag" class:on={face.magnet.at === b.prepub} onclick={() => magnet_to(b.prepub)}
                                     title={face.magnet.at === b.prepub ? 'your hearts land on ' + (b.name || b.role) + ' — its folder is your big pile' : 'land your hearts on ' + (b.name || b.role) + ' instead'}>🧲</button>
-                                {#if face.magnet.at === b.prepub}<button class="df-lofi" class:on={face.magnet.lofi} onclick={magnet_lofi}
-                                    title={face.magnet.lofi ? 'LOFI — your hearts arrive as small ogg copies · press for originals' : 'ORIGINALS — your hearts arrive as the full files · press for LOFI (small ogg copies)'}>LOFI</button>{/if}
+                                {#if face.magnet.at === b.prepub}<button class="df-lofi" class:on={face.magnet.lofi} onclick={magnet_lofi} role="checkbox" aria-checked={face.magnet.lofi}
+                                    title={face.magnet.lofi ? 'LOFI ticked — your hearts arrive as small ogg copies · untick for originals' : 'LOFI unticked — your hearts arrive as the full files · tick for small ogg copies'}><span class="df-tick">{face.magnet.lofi ? '☑' : '☐'}</span>LOFI</button>{/if}
                             {/if}
                             {#if true}
                                 <!-- EJECT A CREWMATE (owner 2026-09-03: "dropping Piers with the ✕ button as we
@@ -892,12 +892,15 @@
     }
     .df-mag:hover { opacity: 0.6; }
     .df-mag.on { opacity: 1; filter: none; }
-    /* LOFI rides only the lit 🧲 — dim = originals, lit = small ogg copies */
+    /* LOFI rides only the lit 🧲, as a TICKBOX (owner 2026-10-04: "should look more like a tickbox") — a box glyph + label,
+       no button chrome; dim unticked, lit ticked */
     .df-lofi {
-        background: none; border: 1px solid currentColor; border-radius: 3px; padding: 0 3px; margin-left: 3px; cursor: pointer;
-        font-size: 8px; letter-spacing: 0.08em; opacity: 0.3; pointer-events: auto; color: inherit;
+        display: inline-flex; align-items: center; gap: 2px;
+        background: none; border: none; padding: 0 2px; margin-left: 3px; cursor: pointer;
+        font-size: 9px; letter-spacing: 0.06em; opacity: 0.45; pointer-events: auto; color: inherit;
     }
-    .df-lofi:hover { opacity: 0.6; }
+    .df-lofi .df-tick { font-size: 11px; line-height: 1; }
+    .df-lofi:hover { opacity: 0.75; }
     .df-lofi.on { opacity: 1; color: #f0c8a8; }
     .df-flow {
         display: flex; align-items: center; gap: 6px; font-size: 11px;

@@ -1,5 +1,5 @@
 Credulation,of_Book:MusuHeard
-  run=0,at=1791328675.832,ok,ok_pct,mode:check
+  run=0,at=1791330814.83,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:ee39d52bb1441684~g1
     uses:Ghost_N_Reliable,dige:50a8b7076dec22fe~g1
     uses:Ghost_N_Tribunal,dige:8f51a3d0dfa19017~g1
@@ -15,7 +15,7 @@ Credulation,of_Book:MusuHeard
     uses:Ghost_M_Pool,dige:3cec8b8a4c4b8609~g1
     uses:Ghost_M_Booth,dige:29a57d8fed02b58e~g1
     uses:Ghost_M_Heist,dige:052608e420180a78~g1
-    uses:Ghost_M_Heard,dige:4ec078db8e2d76db~g1
+    uses:Ghost_M_Heard,dige:6c8abd9b65b40a8c~g1
     uses:Ghost_M_Orig,dige:a8cd03dd83707cd5~g1
     uses:Ghost_M_Radio,dige:b4da7238523e9429~g1
     uses:Ghost_M_Siphon,dige:222c9a4992b2bc7d~g1

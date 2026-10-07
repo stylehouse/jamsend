@@ -217,6 +217,9 @@
                 key = q.key
                 node.placeholder = String(cur?.placeholder ?? '')
                 const v = String(cur?.value ?? '')
+                // the producer has caught up with the hand — they agree, so this is the seed now (a later reset to
+                //  '' — the cave returning to rest — must be able to clear the box)
+                if (node.value === v) seeded = v
                 if (document.activeElement !== node || node.value === seeded) {
                     if (node.value !== v) node.value = v
                     seeded = v
@@ -1568,6 +1571,9 @@
     }
     const cell_ground = (cell: any): { bg: string, color: string, border: string } | null => {
         try {
+            // a producer may name the colour itself (guise `hue` — the cave colours a file by its directory)
+            const hk = cell?.source?.c?.hue ?? cell?.row?.c?.source_n?.c?.hue
+            if (hk) return (H as any)?.matstyle_ground?.(String(hk)) ?? null
             const sc = cell?.source?.sc ?? cell?.row?.sc
             if (!sc) return null
             const mk = Object.keys(sc)[0]

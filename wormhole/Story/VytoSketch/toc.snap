@@ -4,18 +4,22 @@ story:VytoSketch
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.081
+    TimeTotal:beliefs,avg=0.09
       sample=0.031,at=1791179265
       sample=0.106,at=1791239584
       sample=0.062,at=1791241526
       sample=0.074,at=1791241699
       sample=0.13,at=1791328514
-    TimeTotal:step,avg=0.027
+      sample=0.112,at=1791330547
+      sample=0.116,at=1791336561
+    TimeTotal:step,avg=0.03
       sample=0.01,at=1791179265
       sample=0.035,at=1791239584
       sample=0.021,at=1791241526
       sample=0.025,at=1791241699
       sample=0.043,at=1791328514
+      sample=0.037,at=1791330547
+      sample=0.039,at=1791336561
   step,dige:8154f14fd36db19d
   step=2,desc:fetch the sketch — plain objects in the guise notation,dige:59dec67e6cf9875c
   step=3,desc:stand the sketch on the glass,dige:6016f7eb88190ec4

@@ -8,7 +8,7 @@ Snap:H
         req:open_wait,finished
         saw:cave,lvl:open,rope:⌕ ,shape:Family=Sample…
         req:search_wait,finished
-        saw:cave,lvl:search,rope:⌕ Sample,shape:Doc=Ghost/L/test_corpus/Sample.g [Family=Sample… ×2 ; Family=Sample_gamma()]
+        saw:cave,lvl:search,rope:⌕ Sample,shape:Dir=Ghost/L/test_corpus/ | Doc=Ghost/L/test_corpus/Sample.g [Family=Sample… ×2 ; Family=Sample_gamma()]
         req:dive_wait,finished
         saw:cave,lvl:file,rope:⌕ Sample › Sample,shape:Method=Sample_alpha() | Method=_beta() | Method=Sample_gamma()
     A:Vyto

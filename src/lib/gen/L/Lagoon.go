@@ -9,6 +9,7 @@ import { TESTING_RE } from "$lib/L/testing"
 // THE CAVE's deck — VytoSpine's own, with room for a family's members on one vertebra before the fold
 //  one scope down crests them (ribs:N, default 7 — "Method ×30" was that crest, and it is not a place)
 const LAGOON_CAVE_DECK      = 'spine,kindfold,budget:400,ribs:48'
+const LAGOON_CAVE_PAUSE     = 320        // ms of no typing before the hole asks — a keystroke is not a question
 // Copies of the constants the moved verbs need.  Module consts do not cross ghosts, and a shared
 //  module for four regexes would be a third thing to keep in step — the duplication is deliberate
 //   and each is annotated with its twin in Atlas.g so a drift is greppable.
@@ -27,7 +28,7 @@ const OATH_LINE_RE      = /^\s*Assertion:([a-z0-9-]+),/gm
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_L_Lagoon(): string { return '4c2e230141e8f131~g1' },
+    Ghostmeta_Ghost_L_Lagoon(): string { return '28776e7e3d946dd1~g1' },
 
 // Lagoon.g — the READER LAYER over the censuses.  The third ghost in Ghost/L/ (the land); spec home:
 //  src/lib/O/spec/Lagoon_todo.md.  `Lagoon` is the owner's working title (2026-09-08) and the image is
@@ -1413,7 +1414,7 @@ Lagoon_cave_mode(w, mode) {
 Lagoon_cave_go(w, step) {
     let st = w.c.cave || []
     let top = st[st.length - 1]
-    let same = top && top.lvl === step.lvl && top.path === step.path && top.m === step.m && top.fam === step.fam
+    let same = top && top.lvl === step.lvl && top.path === step.path && top.m === step.m && top.fam === step.fam && top.dir === step.dir
     if (!same) w.c.cave = st.concat([step])
     this.Lagoon_cave_show(w)
 
@@ -1442,7 +1443,10 @@ Lagoon_cave_show(w) {
     delete w.c.cave_refused
     let st = w.c.cave || []
     let here = st[st.length - 1]
-    this.Lagoon_cave_mode(w, here && here.lvl === 'method' ? 'rail' : 'full')
+    // THE ONE THING (2026-10-06/07, the owner: "that thing has to be on screen AT ALL TIMES if it's going to exist…
+    //  it has to be The One Thing").  REST — the hole and the families, the whole room; FULL — a search or a file;
+    //   RAIL — a method, folded back so its landed code comes through beside its doors.  The face decides widths.
+    this.Lagoon_cave_mode(w, here && here.lvl === 'method' ? 'rail' : (here && here.lvl === 'search' && !here.q ? 'rest' : 'full'))
     if (here && here.lvl === 'method') {
         let key = here.path + '#' + here.m + '@' + (here.point || '')
         if (w.c.cave_landed !== key) {
@@ -1460,9 +1464,18 @@ Lagoon_cave_show(w) {
     let seeds = guises.map(g => this.Vyto_guise(g))
     if (!SH.o({ A: 'Vyto' })[0]) SH.i({ A: 'Vyto' }).i({ w: 'Vyto' })
     let commission = new TheC({ c: {}, sc: { Scannable: seeds[0], client_w: w, grapples: seeds.slice(),
-        nested: 1, folded: 1, depth_scale: 1, foamereo: w.c.cave_deck || LAGOON_CAVE_DECK } })
+        nested: 1, folded: 1, depth_scale: 1, detached: 1, foamereo: w.c.cave_deck || LAGOON_CAVE_DECK } })
     commission.c.Run = this
-    SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
+    // HANDED OVER, NOT QUEUED (2026-10-07).  An elvisto waits in H.todo behind everything the House is doing — measured 70-300ms
+    //  on an idle runner, seconds in a busy room — and then Vyto deferred its stir to ANOTHER wait.  `clear()` waits only for
+    //   whoever holds the mutex now, and inside it a `detached` commission (every grapple is a guise no beliefs pass walks)
+    //    stirs at once.  One wait, no queue.
+    let vwo = SH.o({ A: 'Vyto' })[0]?.o({ w: 'Vyto' })[0]
+    if (vwo && typeof SH.clear === 'function' && typeof SH.e_Vyto_commission === 'function') {
+        SH.clear(() => SH.e_Vyto_commission(null, vwo, { sc: { req: commission } }))
+    } else {
+        SH.i_elvisto('Vyto/Vyto', 'Vyto_commission', { req: commission })
+    }
     // THE SOWING SAYS ITSELF when it is slow (2026-10-06, the owner: "way too slow… stuck tailspinning") — the
     //  reader's half of a keystroke (the seek + the anatomy) and how many cells the glass was handed.  The glass's
     //   own half rides its stir; this line is so a slow report arrives with a number in it.  `.c` + console only.
@@ -1489,8 +1502,8 @@ Lagoon_cave_level(w) {
     let out = [this.Lagoon_cave_head(w)]
     if (!here) return out
     let sx = {}
-    if (here.lvl === 'search' && !here.q) return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_browse(w)))
-    if (here.lvl === 'search') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_files(w, sx)))
+    if (here.lvl === 'search' && !here.q) return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_rest(w)))
+    if (here.lvl === 'search') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_files(w, sx, here.dir)))
     if (here.lvl === 'file') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_methods(w, here, sx)))
     if (here.lvl === 'method') return this.Lagoon_cave_crown(out.concat(this.Lagoon_cave_place(w, here, sx)))
     return out
@@ -1508,11 +1521,84 @@ Lagoon_cave_crown(out) {
     return out
 
 },
+// THE REST — THE WHOLE PROJECT, COHERENTLY (2026-10-07, the owner: *"hopefully it can present the whole project coherently,
+//  possibly with some advice about what to favour"*).  The project already says this of itself: `wormhole/Everything/
+//   toc.snap` — the front door every session is told to read first — one What per AREA (the wire · the swarm · the music
+//    · the cave · the visual · the land · the foundation · the Books · the shelves), each with the docs to start from and
+//     its keywords, and a last What, the POLICY, whose rules are the advice.  So the empty hole stands those areas around
+//      it: an area's ribs are its docs (press one to dive into it), the policy's ribs are its rules.  It is READ (once, off
+//       Atlas's own nav, kept as face state on `.c`), never invented here and never kept as a census.  Until it is read —
+//        or where it cannot be (no nav) — the families stand in, as before.  A Book may pin the families
+//         (`w.c.cave_rest = 'families'`): Everything is regenerated as the code moves, and a fixture must not move with it.
+Lagoon_cave_rest(w) {
+    if (w.c.cave_rest !== 'families') {
+        let areas = this.Lagoon_cave_everything(w)
+        if (areas && areas.length) return this.Lagoon_cave_areas(w, areas)
+    }
+    return this.Lagoon_cave_browse(w)
+
+},
+Lagoon_cave_everything(w) {
+    if (Array.isArray(w.c.cave_every)) return w.c.cave_every
+    if (w.c.cave_every_loading) return null
+    w.c.cave_every_loading = 1
+    let nav = typeof this.Atlas_nav === 'function' ? this.Atlas_nav() : null
+    if (!nav || typeof nav.read_file !== 'function') return null
+    Promise.resolve(nav.read_file('wormhole/Everything', 'toc.snap')).then(text => {
+        w.c.cave_every = this.Lagoon_cave_parse_everything(String(text ?? ''))
+        let st = w.c.cave || []
+        if (st.length === 1 && !st[0].q) {
+            delete w.c.cave_sig
+            this.Lagoon_cave_show(w)
+        }
+    }).catch(() => { w.c.cave_every = [] })
+    return null
+
+},
+// one area per depth-1 What (`  What:<name>,desc:<keywords>,FromWhat:<Waft>`), its `Doc:` rows, and — for a What with
+//  Whats under it (the policy) — those as rules.  No commas in a desc is Everything's own policy, so the split is safe.
+Lagoon_cave_parse_everything(text) {
+    let areas = []
+    let cur = null
+    for (const line of text.split('\n')) {
+        let m = line.match(/^( *)(What|Doc):(.*)$/)
+        if (!m) continue
+        let depth = m[1].length / 2
+        let rest = m[3]
+        if (m[2] === 'What' && depth === 1) {
+            let name = rest.split(',desc:')[0]
+            let tail = rest.split(',desc:')[1] || ''
+            cur = { name: name, desc: tail.split(',FromWhat:')[0], docs: [], rules: [] }
+            areas.push(cur)
+        } else if (cur && m[2] === 'Doc') {
+            cur.docs.push(rest.split(',')[0])
+        } else if (cur && m[2] === 'What' && depth >= 2) {
+            cur.rules.push({ name: rest.split(',desc:')[0], desc: (rest.split(',desc:')[1] || '') })
+        }
+    }
+    return areas
+
+},
+Lagoon_cave_areas(w, areas) {
+    return areas.map(a => {
+        let kids = []
+        for (const d of a.docs) {
+            kids.push({ Doc: d.replace(/^.*\//, ''), line: 1, guise: { tok: 'area:' + a.name + '>' + d, hue: this.Lagoon_cave_dir(d) || '(root)',
+                press: () => this.Lagoon_cave_enter(w, d, null) } })
+        }
+        for (const r of a.rules) kids.push({ Rule: r.name, guise: { tok: 'rule:' + r.name } })
+        let v = { Area: a.name, guise: { tok: 'area:' + a.name, hue: 'area:' + a.name, dose: Math.max(1, kids.length), kids: kids } }
+        if (a.docs.length) v.guise.press = () => this.Lagoon_cave_enter(w, a.docs[0], null)
+        return v
+    })
+
+},
 // THE BROWSE DOOR — nothing typed, so nothing to rank: the code's LARGER OBJECTS (Lagoon_families — every def
 //  bucketed by the stem of its first token) stand around the empty hole, biggest first.  Pressing one types its
 //   stem into the hole — the search a family is the answer to.
 Lagoon_cave_browse(w) {
     let f = this.Lagoon_families(w, 36)
+    w.c.cave_browse_n = f && f.families ? f.families.length : 0
     if (!f || f.error || !f.families) return []
     return f.families.map(x => ({ Family: (x.head || x.stem) + '…', guise: { tok: 'browse:' + x.stem, dose: x.defs,
         press: () => this.e_Lagoon_cave(null, w, { sc: { q: x.head || x.stem } }) } }))
@@ -1524,33 +1610,49 @@ Lagoon_cave_browse(w) {
 //  the root of the creature is where you type.  Its value is the query; the rest of the rope rides beside it.
 //   Typing re-asks through the door directly, as every press does (the sowing's only tree write is the
 //    commission, and that already rides an elvisto), lightly debounced — the owner wants things to ping around
-//     it "pretty fast".  It only grabs focus at the surface: deeper down the code is in the editor.
+//     it "pretty fast".  It never grabs focus itself: the hole is always on screen, and the face focuses it on a
+//      summon (`/`) — a hole that took focus on every sowing would steal the hand out of the editor.
 Lagoon_cave_head(w) {
     let st = w.c.cave || []
     let deep = st.length - 1
     let q = (st[0] || {}).q || ''
     let rope = this.Lagoon_cave_rope(w)
     let rest = rope.indexOf(' › ') >= 0 ? rope.slice(rope.indexOf(' › ')) : ''
-    let field = { value: q, placeholder: 'search code & prose', rest: rest, autofocus: deep === 0 ? 1 : 0,
+    let field = { value: q, placeholder: 'search code & prose  ( / )', rest: rest,
         oninput: (v) => this.Lagoon_cave_type(w, v) }
-    let head = { Head: rope, guise: { tok: 'cave:head', dose: 1, field: field, press: () => this.Lagoon_cave_rise(w) } }
+    let head = { Head: rope, guise: { tok: 'cave:head', dose: 1, field: field, press: () => {
+        // the glass is always on screen, and Vytui presses the head on ANY Escape — one typed into the editor (or
+        //  any other box) belongs to that box, not to a climb
+        let a = typeof document !== 'undefined' ? document.activeElement : null
+        if (a && (a.isContentEditable || ((a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') && !a.classList.contains('vy-field-in')))) return
+        this.Lagoon_cave_rise(w)
+    } } }
     if (deep > 0) head.deep = deep
     return head
 
 },
+// THE DEBOUNCE (2026-10-07, the owner: "it does a big laggy search far too often for the user to put up with").
+//  A search runs only after the hand PAUSES (LAGOON_CAVE_PAUSE), never for a query it already stands on, and never
+//   for one or two letters (the browse door stays up until a word is forming) — a keystroke is not a question.
 Lagoon_cave_type(w, v) {
     if (w.c.cave_typing) clearTimeout(w.c.cave_typing)
+    let q = String(v ?? '').trim()
     w.c.cave_typing = setTimeout(() => {
         w.c.cave_typing = null
-        this.e_Lagoon_cave(null, w, { sc: { q: String(v ?? ''), typed: 1 } })
-    }, 90)
+        let st = w.c.cave || []
+        let now = (st[0] || {}).q || ''
+        if (q.length > 0 && q.length < 3) q = ''
+        if (q === now && st.length === 1) return
+        this.e_Lagoon_cave(null, w, { sc: { q: q, typed: 1 } })
+    }, LAGOON_CAVE_PAUSE)
 
 },
 // the rope, read aloud: ⌕ spine › VytoTesting · VytoSpine… › VytoSpine_show() › ⇝ Vyto_guise()
 Lagoon_cave_rope(w) {
     let out = []
     for (const s of w.c.cave || []) {
-        if (s.lvl === 'search') out.push('⌕ ' + (s.q || ''))
+        if (s.lvl === 'search' && !s.dir) out.push('⌕ ' + (s.q || ''))
+        if (s.lvl === 'search' && s.dir) out.push(s.dir + '/')
         if (s.lvl === 'file') out.push(this.Lagoon_cave_base(s.path) + (s.fam ? ' · ' + s.fam + '…' : ''))
         if (s.lvl === 'method') {
             let far = s.from && s.path !== s.from ? this.Lagoon_cave_base(s.path) + '.' : ''
@@ -1679,11 +1781,22 @@ Lagoon_cave_method_at(w, path, line, sx) {
     return m
 
 },
-// THE SEARCH LEVEL — one vertebra per file.  THE ANSWER DECIDES WHICH FAMILY OF FILES LEADS, THE STEM KEEPS
-//  ONE TOGETHER: a family's place is its best-ranked file's place in the seek's order; inside it the ghost
-//   comes before its Testing, then path.  A file's ribs are its stem families holding hits, in file order.
-Lagoon_cave_files(w, sx) {
+// THE SEARCH LEVEL — one vertebra per file, FILES STEMMED BY THEIR DIRECTORIES (2026-10-07, the owner: *"I'd like the
+//  filenames stemmed by their directories. this must have a graphical indication of some sort, so our eye is able to
+//   read a big landscape of these cells"*).  A file's `stem` IS its directory, so the glass's FUSED VERTEBRAE join a
+//    directory's run into one bone; it wears the directory's `hue` (Matstyle's jewel for that string); and the first
+//     file of each run carries the directory as its `tag` (`Ghost/V/ Vyto`).  A ghost and its Testing file share a
+//      directory, so they still sit together — inside it, the ghost first.
+//  THE ANSWER STILL DECIDES WHAT LEADS: a directory's place is its best-ranked file's place in the seek's order, and
+//   inside a directory so is each file family's (Swarm beside SwarmTesting).  A file's ribs are its stem families.
+Lagoon_cave_dir(path) {
+    let cut = String(path).lastIndexOf('/')
+    return cut > 0 ? String(path).slice(0, cut) : ''
+
+},
+Lagoon_cave_files(w, sx, only_dir) {
     let hits = this.Lagoon_cave_hits(w)
+    if (only_dir != null) hits = hits.filter(h => this.Lagoon_cave_dir(h.path) === only_dir)
     let byPath = {}
     let first = {}
     let order = []
@@ -1696,26 +1809,50 @@ Lagoon_cave_files(w, sx) {
         }
         byPath[h.path].push(h)
     }
-    let fam = {}
+    let dbest = {}
+    let fbest = {}
     for (const p of order) {
-        let s = this.Lagoon_cave_stem(p)
-        if (fam[s] == null || first[p] < fam[s]) fam[s] = first[p]
+        let d = this.Lagoon_cave_dir(p)
+        let f = d + '/' + this.Lagoon_cave_stem(p)
+        if (dbest[d] == null || first[p] < dbest[d]) dbest[d] = first[p]
+        if (fbest[f] == null || first[p] < fbest[f]) fbest[f] = first[p]
     }
     order.sort((a, b) => {
-        let fa = fam[this.Lagoon_cave_stem(a)]
-        let fb = fam[this.Lagoon_cave_stem(b)]
+        let da = this.Lagoon_cave_dir(a)
+        let db = this.Lagoon_cave_dir(b)
+        if (dbest[da] !== dbest[db]) return dbest[da] - dbest[db]
+        if (da !== db) return da < db ? -1 : 1
+        let fa = fbest[da + '/' + this.Lagoon_cave_stem(a)]
+        let fb = fbest[db + '/' + this.Lagoon_cave_stem(b)]
         if (fa !== fb) return fa - fb
         let ta = TESTING_RE.test(a) ? 1 : 0
         let tb = TESTING_RE.test(b) ? 1 : 0
         if (ta !== tb) return ta - tb
         return a < b ? -1 : (a > b ? 1 : 0)
     })
-    let out = []
+    let dsum = {}
     for (const p of order) {
+        let d = this.Lagoon_cave_dir(p)
+        dsum[d] = (dsum[d] || 0) + byPath[p].length
+    }
+    let st = w.c.cave || []
+    let q = (st[0] || {}).q || ''
+    let out = []
+    let last_dir = null
+    for (const p of order) {
+        let d = this.Lagoon_cave_dir(p)
+        // A DIRECTORY HEADS ITS RUN — its own vertebra, the whole path as its name, the directory's hue, fused with
+        //  its files by the shared stem.  Pressing it narrows the search to that directory (and climbing widens it).
+        if (d !== last_dir) {
+            out.push({ Dir: (d ? d + '/' : '(root)/'), stem: d, guise: { tok: 'dir:' + d, hue: d || '(root)', dose: dsum[d],
+                press: () => this.Lagoon_cave_go(w, { lvl: 'search', q: q, dir: d }) } })
+            last_dir = d
+        }
         // the snapped-boolean law: a true rides as 1 and a false is ABSENT, never 0
-        let doc = { Doc: p, stem: this.Lagoon_cave_stem(p) }
+        let doc = { Doc: p, stem: d }
         if (TESTING_RE.test(p)) doc.testing = 1
-        doc.guise = { tok: 'doc:' + p, dose: byPath[p].length, kids: this.Lagoon_cave_families(w, p, byPath[p], sx),
+        doc.guise = { tok: 'doc:' + p, dose: byPath[p].length, hue: d || '(root)',
+            kids: this.Lagoon_cave_families(w, p, byPath[p], sx),
             press: () => this.Lagoon_cave_enter(w, p, null) }
         out.push(doc)
     }

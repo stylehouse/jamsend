@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Heard(): string { return '4ec078db8e2d76db~g1' },
+    Ghostmeta_Ghost_M_Heard(): string { return '6c8abd9b65b40a8c~g1' },
 
 // Heard.g — THE HEARD MAG: what I heard, of whom, and what I took (Radio_circuit_todo.md).
 //  One Mag under my own identity — `%Mag:heard,pub:<me>` — holding one `%Card,id,pub` per track the
@@ -1032,6 +1032,11 @@ Heard_takes(w, me, shelf) {
         if (this.Heard_reaction(c) !== 'take' || !c.sc.id) { continue }
         let pub = String(c.sc.pub || '')
         if (pub === String(me)) { continue }
+        // LANDED IS A FACT ON THE CARD, not only a record on the shelf (2026-10-04, Inko's haul loop): Heard_landed asks the
+        //  STOCK shelf — the Stoker's culled ~27-record window — so a landed file fell out of it and was hauled again.  A
+        //   landed_at at least as new as the heart closes it (Heard_mark_landed / Heard_land_beat stamp it); a fresher ♥
+        //    re-opens it.  The union already prefers the landed copy of a card (Heard_card_rank).
+        if (c.sc.landed_at && +c.sc.landed_at >= +(c.sc.hearted_at || 0)) { continue }
         if (this.Heard_landed(shelf, c)) { continue }
         // no holder on the card ⇒ whoever has it now (a pooled take): the %Theirs mirrors are local
         //  catalogs of every shelf shared with me, so this is a local lookup, crew first (Heard_holders,
